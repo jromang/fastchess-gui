@@ -2,8 +2,7 @@ name: Fastchess
 
 on:
   push:
-    tags:
-      - "v*"
+    # fastchess-gui fork: v* tags are fastchess-gui releases (see gui.yml), not fastchess ones.
     branches: ["master"]
   pull_request:
     branches: ["master"]

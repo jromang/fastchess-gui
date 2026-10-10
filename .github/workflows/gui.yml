@@ -17,7 +17,7 @@ jobs:
     # The oldest supported runner, so that the binary runs on older glibc versions too.
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install dependencies
         run: |
@@ -44,7 +44,7 @@ jobs:
           make -C app -j"$(nproc)" tests CXX=g++-12
           ./app/fastchess-tests
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux
           path: |
@@ -55,7 +55,7 @@ jobs:
     name: Windows cross-build
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install mingw-w64
         run: |
@@ -70,7 +70,7 @@ jobs:
       - name: Build
         run: cmake --build build-win
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows
           path: |
@@ -84,9 +84,9 @@ jobs:
     needs: windows-build
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: windows
           path: bin
@@ -104,9 +104,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
 
