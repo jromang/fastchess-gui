@@ -306,7 +306,12 @@ class Process : public IProcess {
             auto& out_fd = fds[STDOUT_IDX];
             if (out_fd.revents & (POLLIN | POLLHUP | POLLERR)) {
                 if (out_fd.revents & (POLLHUP | POLLERR)) return Result::Error("Engine crashed (stdout)");
-                if (auto r = sg_out_.readLine(lines, searchword); r.code != Status::NONE) return r;
+
+                const auto before = lines.size();
+                const auto r      = sg_out_.readLine(lines, searchword);
+                notifyLines(lines, before);
+
+                if (r.code != Status::NONE) return r;
             }
 
             // 3. Check Stderr

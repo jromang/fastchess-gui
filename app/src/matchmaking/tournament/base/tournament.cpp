@@ -12,6 +12,7 @@
 #include <core/globals/globals.hpp>
 #include <core/logger/logger.hpp>
 #include <core/memory/cache.hpp>
+#include <core/observer.hpp>
 #include <core/threading/threadpool.hpp>
 #include <engine/uci_engine.hpp>
 #include <game/book/opening_book.hpp>
@@ -226,7 +227,29 @@ void BaseTournament::playGame(const GamePair<EngineConfiguration, EngineConfigur
     start();
 
     auto match = Match(opening);
+
+    auto* const obs = observer::get();
+
+    if (obs) {
+        observer::GameStart info;
+        info.slot      = observer::slot();
+        info.game_id   = game_id;
+        info.round_id  = round_id;
+        info.white     = white_name;
+        info.black     = black_name;
+        info.start_fen = match.get().fen;
+        for (const auto& move : match.get().moves) info.book_moves.push_back(move.move);
+        info.white_time = TimeControl(engine_configs.white.limit.tc).getTimeLeft();
+        info.black_time = TimeControl(engine_configs.black.limit.tc).getTimeLeft();
+        obs->onGameStart(info);
+    }
+
     match.start(*white_engine->get(), *black_engine->get(), cpus);
+
+    // Tells the observer whether the game was scored, using the same decision as below.
+    const auto notify_end = [&](bool scored) {
+        if (obs) obs->onGameEnd(observer::slot(), game_id, round_id, match.get(), scored);
+    };
 
     LOG_TRACE_THREAD("Game {} between {} and {} finished", game_id, white_name, black_name);
 
@@ -241,9 +264,12 @@ void BaseTournament::playGame(const GamePair<EngineConfiguration, EngineConfigur
 
                 const auto match_data = match.get();
 
+                notify_end(true);
                 finish({match_data}, match_data.reason, {*white_engine->get(), *black_engine->get()});
 
                 atomic::abnormal_termination = true;
+            } else {
+                notify_end(false);
             }
             return;
         }
@@ -261,7 +287,10 @@ void BaseTournament::playGame(const GamePair<EngineConfiguration, EngineConfigur
     const auto match_data = match.get();
 
     // If the game was interrupted(didn't completely finish)
-    if (match_data.termination != MatchTermination::INTERRUPT && !atomic::stop) {
+    const bool scored = match_data.termination != MatchTermination::INTERRUPT && !atomic::stop;
+    notify_end(scored);
+
+    if (scored) {
         if (!config.pgn.file.empty()) {
             const auto pgn_str = pgn::PgnBuilder(config.pgn, match_data, round_id + 1).get();
             file_writer_pgn_->write(pgn_str);

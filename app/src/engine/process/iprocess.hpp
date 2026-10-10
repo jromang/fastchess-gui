@@ -47,6 +47,10 @@ class IProcess {
 
     void setRealtimeLogging(bool realtime_logging) noexcept { realtime_logging_ = realtime_logging; }
 
+    // Called with every stdout line as soon as it has been read. Pass an empty function to remove it.
+    using LineObserver = std::function<void(std::string_view)>;
+    void setLineObserver(LineObserver observer) { line_observer_ = std::move(observer); }
+
     virtual void setupRead() = 0;
 
     // Initialize the process
@@ -75,7 +79,17 @@ class IProcess {
         return p.string();
     }
 
+    void notifyLines(const std::vector<Line>& lines, std::size_t from) const {
+        if (!line_observer_) return;
+
+        for (std::size_t i = from; i < lines.size(); ++i) {
+            if (lines[i].std == Standard::OUTPUT) line_observer_(lines[i].line);
+        }
+    }
+
     bool realtime_logging_ = true;
+
+    LineObserver line_observer_;
 };
 
 }  // namespace fastchess::engine::process

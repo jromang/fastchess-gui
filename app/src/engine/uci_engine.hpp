@@ -96,6 +96,9 @@ class UciEngine {
 
     void setupReadEngine() { process_.setupRead(); }
 
+    // Forward every stdout line to observer as it is read (see IProcess::setLineObserver).
+    void setLineObserver(process::IProcess::LineObserver observer) { process_.setLineObserver(std::move(observer)); }
+
     // Logs are not written in realtime to avoid slowing down the engine.
     // This function writes the logs to the logger.
     void writeLog() const;

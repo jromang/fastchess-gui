@@ -10,6 +10,7 @@
 #include <core/globals/globals.hpp>
 #include <core/helper.hpp>
 #include <core/logger/logger.hpp>
+#include <core/observer.hpp>
 #include <core/time/time.hpp>
 #include <types/exception.hpp>
 #include <types/tournament.hpp>
@@ -371,6 +372,23 @@ void Match::start(engine::UciEngine& white, engine::UciEngine& black, std::optio
     // check connection
     validConnection(white_player, black_player);
 
+    // Stream the engines' output to the observer for the duration of this game only:
+    // cached engines are handed to other worker threads afterwards.
+    struct LineObserverGuard {
+        engine::UciEngine& white;
+        engine::UciEngine& black;
+        ~LineObserverGuard() {
+            white.setLineObserver({});
+            black.setLineObserver({});
+        }
+    } line_observer_guard{white, black};
+
+    if (auto* obs = observer::get()) {
+        const int slot = observer::slot();
+        white.setLineObserver([obs, slot](std::string_view line) { obs->onEngineLine(slot, Color::WHITE, line); });
+        black.setLineObserver([obs, slot](std::string_view line) { obs->onEngineLine(slot, Color::BLACK, line); });
+    }
+
     auto& first  = board_.sideToMove() == Color::WHITE ? white_player : black_player;
     auto& second = board_.sideToMove() == Color::WHITE ? black_player : white_player;
 
@@ -475,6 +493,11 @@ bool Match::playMove(Player& us, Player& them) {
         return false;
     }
 
+    if (auto* obs = observer::get()) {
+        obs->onThinking(observer::slot(), board_.sideToMove(),
+                        us.hasTimeControl() ? us.getTimeControl().getTimeLeft() : 0);
+    }
+
     // prepare the engine for reading
     us.engine.setupReadEngine();
 
@@ -556,7 +579,18 @@ bool Match::playMove(Player& us, Player& them) {
         return false;
     }
 
+    auto* obs = observer::get();
+    const auto san = obs ? uci::moveToSan(board_, move) : std::string();
+
     board_.makeMove<true>(move);
+
+    if (obs) {
+        const auto mover   = ~board_.sideToMove();
+        const auto us_tl   = us.hasTimeControl() ? us.getTimeControl().getTimeLeft() : 0;
+        const auto them_tl = them.hasTimeControl() ? them.getTimeControl().getTimeLeft() : 0;
+        obs->onMove(observer::slot(), mover, data_.moves.back(), san, mover == Color::WHITE ? us_tl : them_tl,
+                    mover == Color::WHITE ? them_tl : us_tl);
+    }
 
     // CuteChess uses plycount/2 for its movenumber, which is wrong for epd books as it doesnt take
     // into account the fullmove counter of the starting FEN, leading to different behavior between

@@ -245,7 +245,11 @@ class Process : public IProcess {
                 continue;
             }
 
-            if (readBytes(buffer, bytesRead, lines, last_word)) {
+            const auto before   = lines.size();
+            const auto finished = readBytes(buffer, bytesRead, lines, last_word);
+            notifyLines(lines, before);
+
+            if (finished) {
                 return Result::OK();
             }
         }
@@ -312,13 +316,16 @@ class Process : public IProcess {
     [[nodiscard]] bool createProcess(STARTUPINFOA& si) {
         const auto cmd = fmt::format("{} {}", command_, args_);
 
+        // A GUI parent has no console; without CREATE_NO_WINDOW every console engine would open its own window.
+        const DWORD flags = CREATE_NEW_PROCESS_GROUP | (GetConsoleWindow() == nullptr ? CREATE_NO_WINDOW : 0);
+
         const auto success = CreateProcessA(      //
             nullptr,                              //
             const_cast<char*>(cmd.c_str()),       //
             nullptr,                              //
             nullptr,                              //
             TRUE,                                 //
-            CREATE_NEW_PROCESS_GROUP,             //
+            flags,                                //
             nullptr,                              //
             wd_.empty() ? nullptr : wd_.c_str(),  //
             &si,                                  //

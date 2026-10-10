@@ -10,6 +10,7 @@
 
 #include <core/logger/logger.hpp>
 #include <core/memory/scope_guard.hpp>
+#include <core/observer.hpp>
 #include <core/rand.hpp>
 #include <game/pgn/pgn_builder.hpp>
 #include <matchmaking/output/output_factory.hpp>
@@ -65,6 +66,10 @@ void RoundRobin::startNext() {
 
     pool_.enqueue([this, match]() {
         try {
+            // A paused tournament lets running games (and their pair) finish but does not start new pairs.
+            const auto ticket =
+                observer::PauseGate::instance().enter(match->pairing_id, config::TournamentConfig->games);
+
             this->createMatch(match.value());
         } catch (const std::exception& e) {
             Logger::print<Logger::Level::ERR>("Error while creating match: {}", e.what());
@@ -118,6 +123,8 @@ void RoundRobin::createMatch(const Scheduler::Pairing& pairing) {
         }
 
         const auto updated_stats = scoreboard_.getStats(first.name, second.name);
+
+        if (auto* obs = observer::get()) obs->onResult(updated_stats, first.name, second.name);
 
         if (shouldPrintScoreInterval() || allMatchesPlayed()) {
             output_->printResult(updated_stats, first.name, second.name);

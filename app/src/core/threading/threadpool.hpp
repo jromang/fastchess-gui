@@ -8,6 +8,7 @@
 #include <thread>
 #include <vector>
 
+#include <core/threading/slot.hpp>
 #include <types/exception.hpp>
 
 namespace fastchess::util {
@@ -15,7 +16,7 @@ namespace fastchess::util {
 class ThreadPool {
    public:
     explicit ThreadPool(std::size_t num_threads) : stop_(false) {
-        for (std::size_t i = 0; i < num_threads; ++i) workers_.emplace_back([this] { work(); });
+        for (std::size_t i = 0; i < num_threads; ++i) workers_.emplace_back([this, i] { work(i); });
     }
 
     template <class F, class... Args>
@@ -43,9 +44,9 @@ class ThreadPool {
         stop_ = false;
 
         workers_.clear();
-        workers_.resize(num_threads);
+        workers_.reserve(num_threads);
 
-        for (std::size_t i = 0; i < num_threads; ++i) workers_.emplace_back([this] { work(); });
+        for (std::size_t i = 0; i < num_threads; ++i) workers_.emplace_back([this, i] { work(i); });
     }
 
     void kill() {
@@ -78,7 +79,9 @@ class ThreadPool {
     [[nodiscard]] int getNumThreads() { return workers_.size(); }
 
    private:
-    void work() {
+    void work(std::size_t index) {
+        t_worker_index = static_cast<int>(index);
+
         while (!stop_) {
             std::function<void()> task;
 

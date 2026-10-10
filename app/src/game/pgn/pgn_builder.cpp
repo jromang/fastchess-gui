@@ -18,8 +18,9 @@ std::string to_string(const T& obj) {
 }
 }  // namespace str
 
-PgnBuilder::PgnBuilder(const config::Pgn& pgn_config, const MatchData& match, std::size_t round_id)
-    : pgn_config_(pgn_config), match_(match) {
+PgnBuilder::PgnBuilder(const config::Pgn& pgn_config, const MatchData& match, std::size_t round_id,
+                       CommentStyle style)
+    : pgn_config_(pgn_config), match_(match), style_(style) {
     const auto& white_player = match.players.white;
     const auto& black_player = match.players.black;
 
@@ -107,7 +108,7 @@ PgnBuilder::PgnBuilder(const config::Pgn& pgn_config, const MatchData& match, st
 
         const auto last     = std::next(it) == match_.moves.end() || next_illegal;
         const auto move_str = moveNotation(board, it->move);
-        const auto cmt_str  = createComment(*it, *std::next(it), next_illegal, last);
+        const auto cmt_str  = createComment(*it, *std::next(it), next_illegal, last, board.sideToMove());
 
         pgn_generator_.addMove(move_str, cmt_str);
 
@@ -159,8 +160,44 @@ std::string PgnBuilder::moveNotation(chess::Board& board, const std::string& mov
     }
 }
 
-std::string PgnBuilder::createComment(const MoveData& move, const MoveData& next_move, bool illegal,
-                                      bool last) noexcept {
+std::string PgnBuilder::formatClock(int64_t millis) {
+    if (millis < 0) millis = 0;
+
+    const auto h  = millis / 3'600'000;
+    const auto m  = millis / 60'000 % 60;
+    const auto s  = millis / 1000 % 60;
+    const auto ms = millis % 1000;
+
+    return fmt::format("{}:{:02}:{:02}.{:03}", h, m, s, ms);
+}
+
+std::string PgnBuilder::chessBaseCommands(const MoveData& move, chess::Color mover) const {
+    std::string out;
+
+    if (move.score) {
+        const auto sign = mover == chess::Color::WHITE ? 1 : -1;
+
+        if (move.score->type == ScoreType::MATE) {
+            fmt::format_to(std::back_inserter(out), "[%eval #{},{}]", sign * move.score->value, move.depth);
+        } else if (move.score->type == ScoreType::CP) {
+            fmt::format_to(std::back_inserter(out), "[%eval {:.2f},{}]", sign * move.score->value / 100.0,
+                           move.depth);
+        }
+    }
+
+    const auto& player = mover == chess::Color::WHITE ? match_.players.white : match_.players.black;
+
+    if (player.config.limit.tc.time != 0) {
+        fmt::format_to(std::back_inserter(out), "{}[%clk {}]", out.empty() ? "" : " ", formatClock(move.timeleft));
+    }
+
+    fmt::format_to(std::back_inserter(out), "{}[%emt {}]", out.empty() ? "" : " ", formatClock(move.elapsed_millis));
+
+    return out;
+}
+
+std::string PgnBuilder::createComment(const MoveData& move, const MoveData& next_move, bool illegal, bool last,
+                                      chess::Color mover) noexcept {
     std::string info_lines;
 
     if (!move.additional_lines.empty()) {
@@ -177,6 +214,21 @@ std::string PgnBuilder::createComment(const MoveData& move, const MoveData& next
 
         const auto match_str = illegal ? fmt::format("{}: {}", match_.reason, next_move.move) : match_.reason;
         const auto score     = move.score ? static_cast<std::string>(*move.score) : "";
+
+        if (style_ == CommentStyle::ChessBase) {
+            // The clock is already in [%clk], so tl= would only repeat it.
+            return addComment(chessBaseCommands(move, mover),
+                              pgn_config_.track_latency ? fmt::format("latency={}", formatTime(move.latency)) : "",
+                              pgn_config_.track_nodes ? fmt::format("n={}", move.nodes) : "",
+                              pgn_config_.track_seldepth ? fmt::format("sd={}", move.seldepth) : "",
+                              pgn_config_.track_nps ? fmt::format("nps={}", move.nps) : "",
+                              pgn_config_.track_hashfull ? fmt::format("hashfull={}", move.hashfull) : "",
+                              pgn_config_.track_tbhits ? fmt::format("tbhits={}", move.tbhits) : "",
+                              pgn_config_.track_pv ? fmt::format("pv=\"{}\"", move.pv) : "",
+                              info_lines.empty() ? "" : info_lines,  //
+                              last ? match_str : ""                  //
+            );
+        }
 
         return addComment(fmt::format("{}/{} {}", score, move.depth, formatTime(move.elapsed_millis)),
                           pgn_config_.track_timeleft ? fmt::format("tl={}", formatTime(move.timeleft)) : "",

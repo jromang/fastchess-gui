@@ -16,9 +16,15 @@
 
 namespace fastchess::pgn {
 
+// How engine data is written in the move comments.
+//  Fastchess: {+0.35/18 1.234s, ...}  (score from the mover's point of view, the cutechess layout)
+//  ChessBase: {[%eval 0.35,18] [%clk 0:00:59.200] [%emt 0:00:01.234]}  (eval from White's point of view)
+enum class CommentStyle { Fastchess, ChessBase };
+
 class PgnBuilder {
    public:
-    PgnBuilder(const config::Pgn& pgn_config, const MatchData& match, std::size_t round_id);
+    PgnBuilder(const config::Pgn& pgn_config, const MatchData& match, std::size_t round_id,
+               CommentStyle style = CommentStyle::Fastchess);
 
     // Get the newly created pgn
     [[nodiscard]] std::string get() const noexcept { return fmt::format("{}\n\n", pgn_generator_.generate()); }
@@ -33,7 +39,13 @@ class PgnBuilder {
     // Converts a UCI move to either SAN, LAN or keeps it as UCI
     [[nodiscard]] std::string moveNotation(chess::Board& board, const std::string& move) const noexcept;
 
-    std::string createComment(const MoveData& move, const MoveData& next_move, bool illegal, bool last) noexcept;
+    std::string createComment(const MoveData& move, const MoveData& next_move, bool illegal, bool last,
+                              chess::Color mover) noexcept;
+
+    // The [%eval ...] [%clk ...] [%emt ...] part of a ChessBase style comment.
+    [[nodiscard]] std::string chessBaseCommands(const MoveData& move, chess::Color mover) const;
+
+    [[nodiscard]] static std::string formatClock(int64_t millis);
 
     std::optional<Opening> getOpeningClassification(bool is_frc_variant) const;
 
@@ -50,6 +62,7 @@ class PgnBuilder {
 
     const config::Pgn& pgn_config_;
     const MatchData& match_;
+    CommentStyle style_;
 
     PGNGenerator pgn_generator_;
 };

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <variant>
 
@@ -47,6 +48,10 @@ class Logger {
     static void openFile(const std::string& file, bool append = true);
     static void setEngineComs(bool engine_coms) { engine_coms_ = engine_coms; }
 
+    // Receives a copy of everything print() writes to stdout (used by the GUI console). nullptr to remove.
+    using PrintSink = void (*)(Level level, std::string_view message);
+    static void setPrintSink(PrintSink sink) { print_sink_.store(sink, std::memory_order_release); }
+
     // Direct function calls - no file path
     template <bool thread = false, typename... T>
     static void trace(fmt::format_string<T...> format, T&&... args) {
@@ -78,6 +83,8 @@ class Logger {
         const auto msg = fmt::format(format, std::forward<T>(args)...) + "\n";
 
         std::cout << msg << std::flush;
+
+        if (const auto sink = print_sink_.load(std::memory_order_acquire)) sink(LEVEL, msg);
         if (strict_ && LEVEL >= Level::WARN) {
             atomic::abnormal_termination = true;
             atomic::stop                 = true;
@@ -95,6 +102,8 @@ class Logger {
                                bool err = false, std::thread::id id = std::this_thread::get_id());
 
     static std::atomic_bool should_log_;
+
+    static inline std::atomic<PrintSink> print_sink_{nullptr};
 
    private:
     template <Level level = Level::WARN, bool thread = false, typename... T>
