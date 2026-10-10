@@ -91,3 +91,8 @@ test.c
 .cache
 
 scripted_result
+# fastchess-gui
+/build/
+/build-*/
+!gui/win/fastchess-gui.rc
+!gui/win/fastchess-gui.manifest
