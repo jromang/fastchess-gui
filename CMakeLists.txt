@@ -4,12 +4,17 @@ project(fastchess_gui VERSION 0.1.0 LANGUAGES C CXX)
 
 option(FCG_BUILD_GUI "Build the fastchess-gui desktop application" ON)
 option(FCG_BUILD_TESTS "Build the fastchess-gui unit tests" ON)
+option(FCG_STATIC_RUNTIME "Link libstdc++ and libgcc statically on Linux (release binaries)" OFF)
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+if(FCG_STATIC_RUNTIME AND NOT WIN32)
+    add_link_options(-static-libstdc++ -static-libgcc)
+endif()
 
 # Small release binaries: drop unused functions and strip symbols.
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
