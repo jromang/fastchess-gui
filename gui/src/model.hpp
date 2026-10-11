@@ -98,7 +98,7 @@ struct MatchSetup {
 
     bool concurrency_auto = true;
     int concurrency       = 1;
-    bool affinity         = true;
+    bool affinity         = false;
 
     std::string book;
     bool book_random = true;

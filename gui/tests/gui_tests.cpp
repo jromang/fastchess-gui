@@ -353,7 +353,9 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     CHECK(run.info.total_games == 0);
     CHECK(run.info.limit_text == "10+0.1");
 
-    // A multi-threaded engine turns affinity off.
+    // Affinity is off by default; a multi-threaded engine turns it off when asked.
+    CHECK_FALSE(buildRun(setup, engines, topology, dir).tournament.affinity);
+    setup.affinity     = true;
     engines[0].options = {{"Threads", "4"}};
     CHECK_FALSE(buildRun(setup, engines, topology, dir).tournament.affinity);
     engines[0].options.clear();

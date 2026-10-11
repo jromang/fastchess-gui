@@ -33,10 +33,10 @@ a different network file…). Entries are named after the UCI `id name` when fir
   - fixed nodes: one game per hardware thread, since Hyper-Threading does not change a node count;
   - with a clock: physical cores − 1, so that engines do not slow each other down.
 
-  *CPU affinity* pins every game to one processor, shared by its two engines since they never think at the same
-  time: two games keep two cores busy and leave the others idle. fastchess only supports it for single-threaded
-  engines, so it is turned off automatically when an engine has `Threads` > 1. A warning appears when
-  concurrency × threads exceeds the hardware threads (or, with a clock, the physical cores).
+  *CPU affinity* (off by default) pins every game to one processor, shared by its two engines since they never
+  think at the same time: two games keep two cores busy and leave the others idle. fastchess only supports it for
+  single-threaded engines, so it is turned off automatically when an engine has `Threads` > 1. A warning appears
+  when concurrency × threads exceeds the hardware threads (or, with a clock, the physical cores).
 - **Openings**: an EPD or PGN book, random or sequential order, the number of plies kept from a PGN book, the
   starting index and the random seed (0 = a new order for every match).
 - **Adjudication**: draw (from a move number, for N consecutive moves, under a score), resign (N consecutive
