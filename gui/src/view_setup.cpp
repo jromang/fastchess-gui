@@ -247,7 +247,10 @@ void App::setupConcurrency() {
     if (!setup_.concurrency_auto) setup_.concurrency = std::clamp(setup_.concurrency, 1, topology_.logical);
 
     changed |= ImGui::Checkbox(TR("CPU affinity"), &setup_.affinity);
-    ui::help(TR("Pins every game to its own processor. Useful with a clock, irrelevant to a node count."));
+    ui::help(
+        TR("Pins every game to its own processor, shared by its two engines since they never think at the "
+           "same time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to "
+           "a node count."));
 
     // Warn about oversubscription, which distorts timed games.
     const EngineEntry* a = nullptr;

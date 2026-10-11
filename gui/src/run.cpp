@@ -127,7 +127,8 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     t.concurrency          = setup.concurrency_auto ? topology.defaultConcurrency(fixed_nodes) : setup.concurrency;
     t.concurrency          = std::clamp(t.concurrency, 1, topology.logical);
 
-    // fastchess pins each engine to one CPU, which only makes sense for single threaded engines.
+    // fastchess pins each game, both engines included, to one CPU, which only makes sense for single threaded
+    // engines.
     t.affinity = setup.affinity && a->threads() == 1 && b->threads() == 1;
 
     if (!setup.book.empty()) {

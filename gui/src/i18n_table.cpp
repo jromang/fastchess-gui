@@ -188,8 +188,12 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Paused", "En pause"},
         {"Paused (1 game finishing)", "En pause (1 partie se termine)"},
         {"Paused ({} games finishing)", "En pause ({} parties se terminent)"},
-        {"Pins every game to its own processor. Useful with a clock, irrelevant to a node count.",
-         "Épingle chaque partie sur son propre processeur. Utile au temps, sans effet sur un compte de nœuds."},
+        {"Pins every game to its own processor, shared by its two engines since they never think at the same "
+         "time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to a node "
+         "count.",
+         "Épingle chaque partie sur son propre processeur, partagé par ses deux moteurs puisqu'ils ne calculent "
+         "jamais en même temps : 2 parties occupent 2 cœurs à fond et laissent les autres au repos. Utile au "
+         "temps, sans effet sur un compte de nœuds."},
         {"Played in pairs: each opening is played twice, with colours reversed.",
          "Joué par paires : chaque ouverture est jouée deux fois, couleurs inversées."},
         {"Plays until you stop the match.", "Joue jusqu'à ce que tu arrêtes le match."},
