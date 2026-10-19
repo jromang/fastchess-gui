@@ -23,6 +23,7 @@
 
 #include "app.hpp"
 #include "console.hpp"
+#include "engines.hpp"
 #include "gl.hpp"
 #include "i18n.hpp"
 #include "screenshot.hpp"
@@ -175,7 +176,8 @@ int main(int argc, char** argv) {
     fcg::Console::instance().attach();
 
     // Engine probes read timeouts from the global configuration before any run exists.
-    fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
+    fastchess::config::TournamentConfig               = std::make_unique<fastchess::config::Tournament>();
+    fastchess::config::TournamentConfig->startup_time = fcg::ENGINE_STARTUP_TIME;
 
     if (!SDL_Init(SDL_INIT_VIDEO)) return fatal("SDL_Init");
 

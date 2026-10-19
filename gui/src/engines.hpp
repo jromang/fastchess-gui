@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -8,6 +9,10 @@
 #include "model.hpp"
 
 namespace fcg {
+
+// How long an engine may take to answer uciok, when probed and in games. fastchess' 10 s is too short for engines
+// that load a large network before reading stdin, on a slow machine or on a first launch the antivirus scans.
+inline constexpr std::chrono::milliseconds ENGINE_STARTUP_TIME = std::chrono::seconds(60);
 
 // Parses "option name <n> type <t> [default <d>] [min <a>] [max <b>] [var <v>]...".
 [[nodiscard]] std::optional<UciOptionInfo> parseUciOption(std::string_view line);

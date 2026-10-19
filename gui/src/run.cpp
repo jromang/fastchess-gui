@@ -103,6 +103,7 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     t.seed             = setup.seed != 0 ? setup.seed : fastchess::random::random_uint64();
     t.config_name      = (run_dir / "config.json").string();
     t.autosaveinterval = 20;
+    t.startup_time     = ENGINE_STARTUP_TIME;
 
     switch (setup.mode) {
         case MatchMode::Fixed:

@@ -330,6 +330,7 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     auto run = buildRun(setup, engines, topology, dir);
     CHECK(run.tournament.rounds == 51);
     CHECK(run.tournament.games == 2);
+    CHECK(run.tournament.startup_time == ENGINE_STARTUP_TIME);
     CHECK(run.tournament.concurrency == 4);  // every hardware thread at fixed nodes
     CHECK(run.engines[0].name == "new");
     CHECK(run.engines[0].limit.nodes == 5000);
