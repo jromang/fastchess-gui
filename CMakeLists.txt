@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(fastchess_gui VERSION 0.2.0 LANGUAGES C CXX)
+project(fastchess_gui VERSION 0.2.1 LANGUAGES C CXX)
 
 option(FCG_BUILD_GUI "Build the fastchess-gui desktop application" ON)
 option(FCG_BUILD_TESTS "Build the fastchess-gui unit tests" ON)
