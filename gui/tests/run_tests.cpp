@@ -4,10 +4,13 @@
 
 #include <chrono>
 #include <filesystem>
+#include <fstream>
 #include <thread>
 
+#include <core/config/config.hpp>
 #include <core/globals/globals.hpp>
 
+#include "engines.hpp"
 #include "run.hpp"
 
 #ifdef _WIN32
@@ -141,4 +144,34 @@ TEST_CASE("pause lets running games finish and starts no new one; stop when idle
     CHECK_FALSE(second.run.stoppedByUser());
     CHECK(second.games.size() == 6);
     CHECK(second.stats.back().sum() == 6);
+}
+
+TEST_CASE("an engine whose file name has a space is the one started, not the program named like its first word") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+
+    if (!fastchess::config::TournamentConfig)
+        fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
+
+    // The engine may still be exiting when the directory is removed, so removal errors are ignored.
+    std::error_code ec;
+    const auto dir = fs::temp_directory_path() / "fcg-probe-tests";
+    fs::remove_all(dir, ec);
+    fs::create_directories(dir);
+
+    // Started unquoted, "mover 4.4.exe" would run the decoy "mover.exe" with the argument "4.4.exe".
+    const auto ext = fs::path(randomMover()).extension().string();
+    fs::copy_file(randomMover(), dir / ("mover 4.4" + ext));
+    std::ofstream(dir / ("mover" + ext)) << "not a program";
+
+    EngineEntry entry;
+    entry.cmd = (dir / ("mover 4.4" + ext)).string();
+
+    const auto result = probeEngine(entry);
+    CHECK_MESSAGE(result.ok, result.error);
+    CHECK_FALSE(result.options.empty());
+
+    fs::remove_all(dir, ec);
 }

@@ -314,7 +314,11 @@ class Process : public IProcess {
     }
 
     [[nodiscard]] bool createProcess(STARTUPINFOA& si) {
-        const auto cmd = fmt::format("{} {}", command_, args_);
+        // Unquoted, Windows splits the path at its spaces and starts the first program it finds: "C:\e\gaia 4.4.exe"
+        // runs C:\e\gaia.exe with the argument "4.4.exe" when that file exists. A path cannot contain '"', so one
+        // that starts with it was quoted by the user.
+        const bool quoted = !command_.empty() && command_.front() == '"';
+        const auto cmd    = fmt::format("{} {}", quoted ? command_ : fmt::format("\"{}\"", command_), args_);
 
         // A GUI parent has no console; without CREATE_NO_WINDOW every console engine would open its own window.
         const DWORD flags = CREATE_NEW_PROCESS_GROUP | (GetConsoleWindow() == nullptr ? CREATE_NO_WINDOW : 0);
