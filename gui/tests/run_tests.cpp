@@ -257,6 +257,11 @@ TEST_CASE("a round robin of three engines plays every pairing and shows every na
     REQUIRE(summary);
     CHECK(summary->spec.name == "Three randoms");
     CHECK(summary->finished);
+
+    // fastchess does not keep its timeouts in tournament.json: engines must still get the GUI's startup time
+    // (Windows scans a new executable before it can answer), in the run and in the probes after it.
+    REQUIRE(fastchess::config::TournamentConfig);
+    CHECK(fastchess::config::TournamentConfig->startup_time == ENGINE_STARTUP_TIME);
 }
 
 TEST_CASE("a finished round robin extended by a cycle resumes to play exactly the new games") {

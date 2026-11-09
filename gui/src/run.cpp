@@ -352,7 +352,10 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     if (match) spec.max_games = t.rounds >= UNBOUNDED_ROUNDS ? 0 : t.rounds * t.games;
     spec.conditions = t;
     for (std::size_t i = 0; i < run.engines.size(); ++i) {
-        spec.participants.push_back({static_cast<int>(i), run.engines[i]});
+        tour::Participant p;
+        p.id     = static_cast<int>(i);
+        p.engine = run.engines[i];
+        spec.participants.push_back(p);
     }
 
     run.info = runInfo(spec, run_dir);
@@ -475,6 +478,8 @@ std::string RunController::launch(std::unique_ptr<tour::TournamentState> tournam
     config.pgn.file     = "";
     config.config_name  = "";
     config.output       = fastchess::OutputType::FASTCHESS;
+    // fastchess does not store the timeouts in JSON: tournament.json brought back its defaults.
+    config.startup_time = ENGINE_STARTUP_TIME;
 
     std::vector<fastchess::EngineConfiguration> engines;
     for (const auto& p : spec.participants) engines.push_back(p.engine);
