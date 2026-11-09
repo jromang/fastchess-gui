@@ -471,6 +471,14 @@ std::string RunController::launch(std::unique_ptr<tour::TournamentState> tournam
     thread_done_    = false;
     state_          = State::Running;
 
+    // The globals are replaced here, on the GUI thread, while nothing else reads them.
+    configureFastchess(spec);
+
+    thread_ = std::thread(&RunController::threadMain, this);
+    return {};
+}
+
+void configureFastchess(const tour::TournamentSpec& spec) {
     // fastchess plays the games the runner gives it: no opening book, PGN or config file of its own.
     auto config         = spec.conditions;
     config.games        = 2;
@@ -484,20 +492,16 @@ std::string RunController::launch(std::unique_ptr<tour::TournamentState> tournam
     std::vector<fastchess::EngineConfiguration> engines;
     for (const auto& p : spec.participants) engines.push_back(p.engine);
 
-    // The globals are replaced here, on the GUI thread, while nothing else reads them.
     fastchess::atomic::stop                 = false;
     fastchess::atomic::abnormal_termination = false;
     fastchess::config::TournamentConfig     = std::make_unique<fastchess::config::Tournament>(config);
     fastchess::config::EngineConfigs        = std::make_unique<std::vector<fastchess::EngineConfiguration>>(engines);
     fastchess::observer::PauseGate::instance().reset();
-
-    thread_ = std::thread(&RunController::threadMain, this);
-    return {};
 }
 
-void RunController::threadMain() {
+std::string playTournament(tour::TournamentState& tournament, fastchess::observer::GameObserver* observer,
+                           tour::RecordListener* listener) {
     std::string error;
-
     try {
         const auto& tb = fastchess::config::TournamentConfig->tb_adjudication;
         if (tb.enabled && fastchess::initSyzygy(tb.syzygy_dirs) == 0) {
@@ -505,7 +509,7 @@ void RunController::threadMain() {
         }
 
         // The runner is fastchess' observer while it plays, and forwards everything to ours.
-        tour::Runner runner(*tournament_, observer_.get(), observer_.get());
+        tour::Runner runner(tournament, observer, listener);
         runner.start();
         error = runner.error();
     } catch (const std::exception& e) {
@@ -520,6 +524,11 @@ void RunController::threadMain() {
     // stopped); left set, it would make the engine probes that follow give up at once (fastchess' Windows process
     // reader checks it).
     fastchess::atomic::stop = false;
+    return error;
+}
+
+void RunController::threadMain() {
+    const auto error = playTournament(*tournament_, observer_.get(), observer_.get());
 
     {
         std::lock_guard<std::mutex> lock(outcome_mutex_);

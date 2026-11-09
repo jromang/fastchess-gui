@@ -61,6 +61,14 @@ struct BuiltRun {
 [[nodiscard]] fastchess::EngineConfiguration participantConfig(const EngineEntry& entry,
                                                                const tour::TournamentSpec& spec);
 
+// Sets fastchess' global configuration to play `spec` (one tournament at a time, fastchess keeps it in globals).
+void configureFastchess(const tour::TournamentSpec& spec);
+
+// Plays `tournament` on this thread until it is finished or fastchess::atomic::stop is set; configureFastchess()
+// first. Returns an error message, empty on success.
+[[nodiscard]] std::string playTournament(tour::TournamentState& tournament, fastchess::observer::GameObserver* observer,
+                                         tour::RecordListener* listener);
+
 // The most recent match in `runs_root`, if it is not finished (stopped, or interrupted by a crash).
 [[nodiscard]] std::optional<tour::Summary> unfinishedMatch(const std::filesystem::path& runs_root);
 

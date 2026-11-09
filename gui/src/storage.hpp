@@ -27,6 +27,10 @@ class Storage {
     [[nodiscard]] MatchSetup loadSetup() const;
     void saveSetup(const MatchSetup& setup) const;
 
+    // Tournaments waiting to be started one after the other (queue.json).
+    [[nodiscard]] std::vector<QueuedTournament> loadQueue() const;
+    void saveQueue(const std::vector<QueuedTournament>& queue) const;
+
    private:
     std::filesystem::path root_;
 };

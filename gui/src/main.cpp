@@ -25,6 +25,7 @@
 #include "console.hpp"
 #include "engines.hpp"
 #include "gl.hpp"
+#include "headless.hpp"
 #include "i18n.hpp"
 #include "screenshot.hpp"
 #include "storage.hpp"
@@ -62,6 +63,7 @@ struct Args {
     double quit_after = 0;
     int width         = 0;
     int height        = 0;
+    std::string run;  // --run: a tournament folder or a setup file, played without a window
 };
 
 Args parseArgs(int argc, char** argv) {
@@ -91,13 +93,16 @@ Args parseArgs(int argc, char** argv) {
             args.focus = next();
         else if (a == "--quit-after")
             args.quit_after = std::atof(next().c_str());
+        else if (a == "--run")
+            args.run = next();
         else if (a == "--size")
             std::sscanf(next().c_str(), "%dx%d", &args.width, &args.height);
         else if (a == "--help" || a == "-h") {
             std::printf(
                 "fastchess-gui [--profile DIR] [--autostart] [--size WxH]\n"
                 "              [--shot FILE.png[@WINDOW[@SECONDS]]]... [--select-game N] [--focus WINDOW]\n"
-                "              [--quit-after SECONDS]\n");
+                "              [--quit-after SECONDS]\n"
+                "fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json   (no window)\n");
             std::exit(0);
         }
     }
@@ -178,6 +183,13 @@ int main(int argc, char** argv) {
     // Engine probes read timeouts from the global configuration before any run exists.
     fastchess::config::TournamentConfig               = std::make_unique<fastchess::config::Tournament>();
     fastchess::config::TournamentConfig->startup_time = fcg::ENGINE_STARTUP_TIME;
+
+    // No window: play a tournament from the command line.
+    if (!args.run.empty()) {
+        const char* pref = SDL_GetPrefPath("fastchess", "fastchess-gui");
+        const fcg::Storage storage(args.profile.empty() ? fs::path(pref ? pref : ".") : fs::path(args.profile));
+        return fcg::runHeadless(args.run, storage, fcg::detectTopology());
+    }
 
     if (!SDL_Init(SDL_INIT_VIDEO)) return fatal("SDL_Init");
 

@@ -41,6 +41,7 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
         trf("fastchess-gui {} — {} physical cores, {} threads", FCG_VERSION, topology_.physical, topology_.logical));
 
     unfinished_ = unfinishedMatch(storage_.runsDir());
+    queue_      = storage_.loadQueue();
 }
 
 App::~App() {
@@ -362,6 +363,32 @@ void App::onRunFinished() {
     if (setup_.notify) {
         notifyRunFinished(window_, info.name, finish_message_);
     }
+
+    // The queue goes on after a tournament that ended by itself, not after a stop or an error.
+    const bool completed = error.empty() && !run_.stoppedByUser() && !fastchess::atomic::abnormal_termination;
+    if (completed && !queue_.empty() && !quit_pending_) startFromQueue();
+}
+
+void App::enqueue() {
+    QueuedTournament item;
+    item.setup = setup_;
+    item.label = setup_.name.empty() ? defaultTournamentName(setup_) : setup_.name;
+    queue_.push_back(item);
+    storage_.saveQueue(queue_);
+    Console::instance().add(trf("Queued: {}", item.label));
+}
+
+void App::startFromQueue() {
+    if (queue_.empty() || run_.running()) return;
+    auto next = queue_.front().setup;
+    // The look of the program follows the settings, not the queued setup.
+    next.language = setup_.language;
+    next.theme    = setup_.theme;
+    next.notify   = setup_.notify;
+    setup_        = next;
+    queue_.erase(queue_.begin());
+    storage_.saveQueue(queue_);
+    startRun();
 }
 
 std::string App::summaryText() const {

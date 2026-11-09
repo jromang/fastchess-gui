@@ -12,7 +12,9 @@
 #include <core/globals/globals.hpp>
 
 #include "engines.hpp"
+#include "headless.hpp"
 #include "run.hpp"
+#include "storage.hpp"
 
 #ifdef _WIN32
 #    include <windows.h>
@@ -308,4 +310,40 @@ TEST_CASE("a finished round robin extended by a cycle resumes to play exactly th
     REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
     CHECK(h.run.error().empty());
     CHECK(h.games.size() == 12);
+}
+
+TEST_CASE("headless: a setup file becomes a tournament played to the end; the queue is stored") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+
+    const auto profile = fs::temp_directory_path() / "fcg-run-tests-headless";
+    fs::remove_all(profile);
+    fs::create_directories(profile);
+    const Storage storage(profile);
+    storage.saveEngines(randomEngines());
+
+    MatchSetup setup = randomSetup(10);
+    REQUIRE(writeJson(profile / "setup-file.json", setup));
+
+    const auto cores = topologyFromCores({{0, 0}, {0, 1}});
+    CHECK(runHeadless((profile / "setup-file.json").string(), storage, cores) == 0);
+
+    const auto dirs = tour::tournamentDirs(storage.runsDir());
+    REQUIRE(dirs.size() == 1);
+    const auto summary = tour::summarize(dirs[0]);
+    REQUIRE(summary);
+    CHECK(summary->finished);
+    CHECK(summary->played == 10);
+
+    // Running a finished tournament again does nothing and succeeds.
+    CHECK(runHeadless(dirs[0].string(), storage, cores) == 0);
+
+    std::vector<QueuedTournament> queue = {{"first", setup}, {"second", setup}};
+    storage.saveQueue(queue);
+    const auto loaded = storage.loadQueue();
+    REQUIRE(loaded.size() == 2);
+    CHECK(loaded[1].label == "second");
+    CHECK(loaded[1].setup.fixed_games == 10);
 }

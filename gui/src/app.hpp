@@ -141,6 +141,10 @@ class App {
     // run lifecycle
     void startRun();
     void resumeRun();
+    void enqueue();         // the current setup, to start after the running tournament
+    void startFromQueue();  // the first queued tournament, if any
+    void drawQueue();
+    void drawRelaunch();  // "Relaunch with…" of a finished match
     void resetRunView();  // forgets the games and statistics shown, before a run starts
     void pollRun();
     void onRunFinished();
@@ -235,6 +239,10 @@ class App {
     int edit_replay_filter_ = 0;  // 0 losses on time and crashes, 1 every game of a participant
     std::string edit_message_;
     bool edit_error_ = false;
+
+    // Queue and relaunch.
+    std::vector<QueuedTournament> queue_;
+    std::string relaunch_engine_;
 
     // Shell.
     Page page_ = Page::Home;

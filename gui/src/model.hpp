@@ -175,4 +175,11 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
     resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result, pgn_event,
     export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, recover, notify, language, theme)
 
+// A tournament waiting to be started after the running one.
+struct QueuedTournament {
+    std::string label;
+    MatchSetup setup;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(QueuedTournament, label, setup)
+
 }  // namespace fcg

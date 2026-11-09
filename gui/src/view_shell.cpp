@@ -258,6 +258,8 @@ void App::drawHome() {
         ui::endCard();
     }
 
+    drawQueue();
+
     if (legacy_runs_ > 0) {
         ImGui::Spacing();
         ui::beginCard("legacy_card");
@@ -334,6 +336,11 @@ void App::drawNewMatch() {
                           ui::currentTheme() == ui::Theme::Dark ? ImVec4(0.04f, 0.07f, 0.13f, 1) : ImVec4(1, 1, 1, 1));
     if (ui::iconButton("start", ui::Icon::Play, TR("Start"), ready && !probing && !locked)) startRun();
     ImGui::PopStyleColor(2);
+    ImGui::SameLine();
+    if (ui::iconButton("enqueue", ui::Icon::Plus, TR("Add to the queue"), ready)) enqueue();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("%s", TR("Starts by itself when the running tournament ends."));
+    }
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
         if (locked)
             ImGui::SetTooltip("%s", TR("A match is already running."));
@@ -425,6 +432,10 @@ void App::drawWorkspaceHeader() {
             if (ui::iconButton("resume_match", ui::Icon::Play, TR("Resume"))) resumeRun();
             ImGui::SameLine();
         }
+        if (isMatch()) {
+            drawRelaunch();
+            ImGui::SameLine();
+        }
         if (ui::iconButton("folder", ui::Icon::Folder, TR("Folder"))) openFolder(t->dir());
     }
     if (run_.running() && t) {
@@ -484,6 +495,80 @@ void App::drawWorkspace() {
         ImGui::EndTabItem();
     }
     ImGui::EndTabBar();
+}
+
+void App::drawQueue() {
+    if (queue_.empty()) return;
+
+    sectionTitle(TR("Queue"));
+    ui::beginCard("queue_card");
+    ImGui::TextDisabled("%s", TR("Started one after the other, when the running tournament ends by itself."));
+    int remove = -1, up = -1;
+    for (std::size_t i = 0; i < queue_.size(); ++i) {
+        ImGui::PushID(static_cast<int>(i));
+        ImGui::TextDisabled("%d", static_cast<int>(i + 1));
+        ImGui::SameLine();
+        ImGui::TextUnformatted(queue_[i].label.c_str());
+        ImGui::SameLine();
+        ImGui::TextDisabled("%s", formatLabel(static_cast<tour::Format>(queue_[i].setup.format)).c_str());
+        ImGui::SameLine(std::max(ImGui::GetCursorPosX() + px(10),
+                                 ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX() - px(200)));
+        ImGui::BeginDisabled(i == 0);
+        if (ImGui::SmallButton("^")) up = static_cast<int>(i);
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Remove"))) remove = static_cast<int>(i);
+        if (i == 0 && !run_.running()) {
+            ImGui::SameLine();
+            if (ImGui::SmallButton(TR("Start now"))) {
+                ImGui::PopID();
+                startFromQueue();
+                ui::endCard();
+                return;
+            }
+        }
+        ImGui::PopID();
+    }
+    ui::endCard();
+
+    if (remove >= 0) queue_.erase(queue_.begin() + remove);
+    if (up > 0) std::swap(queue_[up], queue_[up - 1]);
+    if (remove >= 0 || up > 0) storage_.saveQueue(queue_);
+}
+
+void App::drawRelaunch() {
+    if (ui::iconButton("relaunch", ui::Icon::Play, TR("Relaunch with…"))) {
+        relaunch_engine_ = run_.info().engine_a;
+        ImGui::OpenPopup("relaunch_popup");
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("The same match with a new engine A, e.g. the next version: every other setting "
+                                   "stays."));
+    }
+    if (!ImGui::BeginPopup("relaunch_popup")) return;
+
+    ImGui::TextUnformatted(TR("New engine A"));
+    ImGui::SetNextItemWidth(px(260));
+    if (ImGui::BeginCombo("##relaunch_engine", relaunch_engine_.c_str())) {
+        for (const auto& e : engines_) {
+            if (ImGui::Selectable(e.name.c_str(), e.name == relaunch_engine_)) relaunch_engine_ = e.name;
+        }
+        ImGui::EndCombo();
+    }
+    ImGui::TextDisabled("%s", trf("against {}", run_.info().engine_b).c_str());
+    const bool known =
+        std::any_of(engines_.begin(), engines_.end(), [&](const EngineEntry& e) { return e.name == relaunch_engine_; });
+    ImGui::BeginDisabled(!known || run_.running());
+    if (ImGui::Button(TR("Start"))) {
+        setup_.format   = TournamentFormat::Match;
+        setup_.engine_a = relaunch_engine_;
+        setup_.engine_b = run_.info().engine_b;
+        setup_.name.clear();
+        ImGui::CloseCurrentPopup();
+        startRun();
+    }
+    ImGui::EndDisabled();
+    ImGui::EndPopup();
 }
 
 // ---------------------------------------------------------------------------

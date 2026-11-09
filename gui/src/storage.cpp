@@ -21,6 +21,7 @@ std::optional<T> readJson(const fs::path& file) {
 
 template std::optional<std::vector<EngineEntry>> readJson(const fs::path&);
 template std::optional<MatchSetup> readJson(const fs::path&);
+template std::optional<std::vector<QueuedTournament>> readJson(const fs::path&);
 
 bool writeJson(const fs::path& file, const nlohmann::json& value) {
     std::error_code ec;
@@ -53,5 +54,11 @@ void Storage::saveEngines(const std::vector<EngineEntry>& engines) const { write
 MatchSetup Storage::loadSetup() const { return readJson<MatchSetup>(root_ / "setup.json").value_or(MatchSetup{}); }
 
 void Storage::saveSetup(const MatchSetup& setup) const { writeJson(root_ / "setup.json", setup); }
+
+std::vector<QueuedTournament> Storage::loadQueue() const {
+    return readJson<std::vector<QueuedTournament>>(root_ / "queue.json").value_or(std::vector<QueuedTournament>{});
+}
+
+void Storage::saveQueue(const std::vector<QueuedTournament>& queue) const { writeJson(root_ / "queue.json", queue); }
 
 }  // namespace fcg
