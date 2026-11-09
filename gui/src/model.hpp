@@ -166,8 +166,8 @@ struct MatchSetup {
     bool recover = true;
     bool notify  = true;
 
-    std::string language = "auto";    // "auto" (system), "en" or "fr"
-    std::string theme    = "system";  // "system", "dark" or "light"
+    std::string language = "auto";   // "auto" (system), "en" or "fr"
+    std::string theme    = "light";  // "light", "dark" or "system"
 
     // Broadcast.
     bool broadcast_files = false;  // live.pgn, standings.html, tournament.json

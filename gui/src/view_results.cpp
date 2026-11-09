@@ -75,7 +75,8 @@ ImPlotSpec barSpec() {
 }  // namespace
 
 void App::drawResults() {
-    if (!ui::beginPanel(TR("Results###results"))) {
+    // As tall as its contents: the charts below take the rest.
+    if (!ImGui::BeginChild("results", ImVec2(0, 0), ImGuiChildFlags_AutoResizeY)) {
         ui::endPanel();
         return;
     }

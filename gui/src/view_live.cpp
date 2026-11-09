@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include <imgui.h>
+#include <imgui_internal.h>
 #include <implot.h>
 
 #include <fmt/include/fmt/format.h>
@@ -243,13 +244,13 @@ void App::drawMosaic(float width) {
             const auto clock = clockText(st, color, elapsed);
             const bool moves = st.active && st.stm == color;
             ImGui::PushStyleColor(ImGuiCol_Text, moves ? ui::ACCENT : ImGui::GetColorU32(ImGuiCol_Text));
-            ImGui::PushClipRect(
-                ImGui::GetCursorScreenPos(),
-                ImVec2(ImGui::GetCursorScreenPos().x + inner - ImGui::CalcTextSize(clock.c_str()).x - px(6),
-                       ImGui::GetCursorScreenPos().y + line),
-                true);
-            ImGui::TextUnformatted(st.has_game ? name.c_str() : "—");
-            ImGui::PopClipRect();
+            // A name too long for the card ends with "…" before the clock.
+            const char* text = st.has_game ? name.c_str() : "—";
+            const ImVec2 pos = ImGui::GetCursorScreenPos();
+            const float end  = pos.x + inner - ImGui::CalcTextSize(clock.c_str()).x - px(6);
+            ImGui::RenderTextEllipsis(ImGui::GetWindowDrawList(), pos, ImVec2(end, pos.y + line), end, text, nullptr,
+                                      nullptr);
+            ImGui::Dummy(ImVec2(end - pos.x, ImGui::GetTextLineHeight()));
             ImGui::PopStyleColor();
             if (!clock.empty()) {
                 ImGui::SameLine(inner - ImGui::CalcTextSize(clock.c_str()).x + ImGui::GetStyle().WindowPadding.x);

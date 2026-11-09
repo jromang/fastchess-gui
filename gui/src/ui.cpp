@@ -13,7 +13,7 @@ namespace fcg::ui {
 
 namespace {
 
-Theme g_theme = Theme::Dark;
+Theme g_theme = Theme::Light;
 
 ImVec4 rgb(int r, int g, int b, float a = 1.0f) { return ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, a); }
 

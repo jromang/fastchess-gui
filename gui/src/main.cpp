@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <string>
 #include <thread>
@@ -184,6 +185,11 @@ int main(int argc, char** argv) {
         return fcg::runHeadless(args.run, storage, fcg::detectTopology());
     }
 
+#ifndef _WIN32
+    // Scripted screenshots render off screen (EGL), so no window shows up on the desktop. SDL_VIDEODRIVER still
+    // overrides it.
+    if (!args.shots.empty() && !std::getenv("SDL_VIDEODRIVER")) SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "offscreen");
+#endif
     if (!SDL_Init(SDL_INIT_VIDEO)) return fatal("SDL_Init");
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
@@ -233,7 +239,7 @@ int main(int argc, char** argv) {
     // support it on Wayland: there, detached boards stay floating windows inside the main one.
     if (args.shots.empty()) io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-    fcg::ui::applyTheme(fcg::ui::Theme::Dark, scale);  // the app applies the chosen theme on its first frame
+    fcg::ui::applyTheme(fcg::ui::Theme::Light, scale);  // the app applies the chosen theme on its first frame
     ImGui::GetStyle().FontScaleDpi = scale;
     loadFonts(16.0f);
 

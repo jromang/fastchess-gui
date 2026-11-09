@@ -69,10 +69,10 @@ void sectionTitle(const char* text) {
 }  // namespace
 
 void App::applyThemeSetting() {
-    ui::Theme wanted = ui::Theme::Dark;
-    if (setup_.theme == "light") {
-        wanted = ui::Theme::Light;
-    } else if (setup_.theme != "dark") {
+    ui::Theme wanted = ui::Theme::Light;
+    if (setup_.theme == "dark") {
+        wanted = ui::Theme::Dark;
+    } else if (setup_.theme == "system") {
         wanted = SDL_GetSystemTheme() == SDL_SYSTEM_THEME_LIGHT ? ui::Theme::Light : ui::Theme::Dark;
     }
     if (theme_applied_ == wanted) return;
@@ -230,7 +230,7 @@ void App::drawHome() {
     ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
     ImGui::PushStyleColor(ImGuiCol_Text,
                           ui::currentTheme() == ui::Theme::Dark ? ImVec4(0.04f, 0.07f, 0.13f, 1) : ImVec4(1, 1, 1, 1));
-    if (ui::iconButton("new_match", ui::Icon::Plus, TR("New match"))) page_ = Page::NewMatch;
+    if (ui::iconButton("new_match", ui::Icon::Plus, TR("New tournament"))) page_ = Page::NewMatch;
     ImGui::PopStyleColor(2);
 
     ImGui::TextDisabled(
@@ -282,7 +282,7 @@ void App::drawHome() {
 
     sectionTitle(TR("All tournaments"));
     if (tournaments_.empty()) {
-        ImGui::TextDisabled("%s", TR("No tournament yet. Start with a new match."));
+        ImGui::TextDisabled("%s", TR("No tournament yet. Start with a new tournament."));
         return;
     }
 
@@ -458,7 +458,7 @@ void App::drawWorkspaceHeader() {
 void App::drawWorkspace() {
     if (!run_.tournament()) {
         ui::pageTitle(TR("No match"));
-        ImGui::TextDisabled("%s", TR("Start a new match, or open one from the list of tournaments."));
+        ImGui::TextDisabled("%s", TR("Start a new tournament, or open one from the list of tournaments."));
         if (ImGui::Button(TR("Tournaments"))) page_ = Page::Home;
         return;
     }
@@ -479,10 +479,7 @@ void App::drawWorkspace() {
 
     if (tab(TR("Overview###tab_overview"), Tab::Overview)) {
         if (isMatch()) {
-            const float results_h = std::max(px(150), ImGui::GetContentRegionAvail().y * 0.30f);
-            ImGui::BeginChild("##overview_results", ImVec2(0, results_h));
             drawResults();
-            ImGui::EndChild();
             drawCharts();
         } else {
             drawTournamentOverview();
