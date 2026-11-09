@@ -75,14 +75,14 @@ ImPlotSpec barSpec() {
 }  // namespace
 
 void App::drawResults() {
-    if (!ImGui::Begin(TR("Results###results"))) {
-        ImGui::End();
+    if (!ui::beginPanel(TR("Results###results"))) {
+        ui::endPanel();
         return;
     }
 
     if (run_.state() == RunController::State::Idle) {
         ImGui::TextDisabled("%s", TR("No results yet."));
-        ImGui::End();
+        ui::endPanel();
         return;
     }
 
@@ -148,18 +148,18 @@ void App::drawResults() {
                            i == 0 ? info.engine_a.c_str() : info.engine_b.c_str(), t.timeouts, t.crashes, t.illegal);
     }
 
-    ImGui::End();
+    ui::endPanel();
 }
 
 void App::drawCharts() {
-    if (!ImGui::Begin(TR("Charts###charts"))) {
-        ImGui::End();
+    if (!ui::beginPanel(TR("Charts###charts"))) {
+        ui::endPanel();
         return;
     }
 
     if (history_.empty()) {
         ImGui::TextDisabled("%s", TR("The charts appear with the first results."));
-        ImGui::End();
+        ui::endPanel();
         return;
     }
 
@@ -337,7 +337,7 @@ void App::drawCharts() {
     }
     ImGui::EndChild();
 
-    ImGui::End();
+    ui::endPanel();
 }
 
 }  // namespace fcg

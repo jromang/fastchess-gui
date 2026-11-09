@@ -13,7 +13,16 @@ namespace fcg {
 // SDL may answer on another thread, so answers are queued and picked up with take().
 class Dialogs {
    public:
-    enum class Purpose { AddEngine, EngineCommand, EngineDir, Book, Tablebases, ExportGames, ExportAll };
+    enum class Purpose {
+        AddEngine,
+        EngineCommand,
+        EngineDir,
+        Book,
+        Tablebases,
+        ExportGames,
+        ExportAll,
+        OpenTournament
+    };
 
     struct Answer {
         Purpose purpose;

@@ -94,15 +94,15 @@ int plotEval(const char* id, const std::vector<float>& evals, int marker_ply, fl
 }
 
 void App::drawLive() {
-    if (!ImGui::Begin(TR("Live###live"))) {
-        ImGui::End();
+    if (!ui::beginPanel(TR("Live###live"))) {
+        ui::endPanel();
         return;
     }
 
     auto* obs = run_.observer();
     if (!obs) {
         ImGui::TextDisabled("%s", TR("No match yet. Choose two engines, then click Start."));
-        ImGui::End();
+        ui::endPanel();
         return;
     }
 
@@ -131,7 +131,7 @@ void App::drawLive() {
 
     if (!live_.has_game) {
         ImGui::TextDisabled("%s", TR("No game in this slot yet."));
-        ImGui::End();
+        ui::endPanel();
         return;
     }
 
@@ -350,7 +350,7 @@ void App::drawLive() {
     plotEval("##live_eval", evals, -1, std::max(60.0f, ImGui::GetContentRegionAvail().y));
 
     ImGui::EndChild();
-    ImGui::End();
+    ui::endPanel();
 }
 
 }  // namespace fcg

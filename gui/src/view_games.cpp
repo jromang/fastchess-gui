@@ -111,15 +111,15 @@ void App::exportGames(const std::string& path, bool all) {
 }
 
 void App::drawGames() {
-    if (!ImGui::Begin(TR("Games###games"))) {
-        ImGui::End();
+    if (!ui::beginPanel(TR("Games###games"))) {
+        ui::endPanel();
         return;
     }
 
     auto* obs = run_.observer();
     if (!obs) {
         ImGui::TextDisabled("%s", TR("The finished games of the match will appear here."));
-        ImGui::End();
+        ui::endPanel();
         return;
     }
 
@@ -233,7 +233,7 @@ void App::drawGames() {
     ImGui::EndChild();
 
     if (!replay) {
-        ImGui::End();
+        ui::endPanel();
         return;
     }
 
@@ -243,7 +243,7 @@ void App::drawGames() {
     if (!replay_) {
         ImGui::TextColored(ImVec4(0.9f, 0.43f, 0.39f, 1), "%s", replay_error_.c_str());
         ImGui::EndChild();
-        ImGui::End();
+        ui::endPanel();
         return;
     }
 
@@ -348,7 +348,7 @@ void App::drawGames() {
     if (clicked >= 0) replay_ply_ = std::clamp(clicked, 0, total);
 
     ImGui::EndChild();
-    ImGui::End();
+    ui::endPanel();
 }
 
 }  // namespace fcg

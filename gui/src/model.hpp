@@ -135,7 +135,8 @@ struct MatchSetup {
     bool recover = true;
     bool notify  = true;
 
-    std::string language = "auto";  // "auto" (system), "en" or "fr"
+    std::string language = "auto";    // "auto" (system), "en" or "fr"
+    std::string theme    = "system";  // "system", "dark" or "light"
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MatchSetup, engine_a, engine_b, mode, fixed_games, sprt_elo0, sprt_elo1,
                                                 sprt_alpha, sprt_beta, sprt_model, sprt_max_games, limit, tc_base_s,
@@ -145,6 +146,6 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MatchSetup, engine_a, engine_b, 
                                                 resign_movecount, resign_score, resign_twosided, maxmoves_enabled,
                                                 maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,
                                                 pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv,
-                                                recover, notify, language)
+                                                recover, notify, language, theme)
 
 }  // namespace fcg

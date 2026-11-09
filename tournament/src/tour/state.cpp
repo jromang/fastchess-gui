@@ -126,7 +126,12 @@ std::unique_ptr<TournamentState> TournamentState::create(const fs::path& dir, To
     spec.book = fingerprint(spec.conditions.opening.file);
     writeFileAtomically(dir / SPEC_FILE, nlohmann::json(spec).dump(4) + "\n");
 
-    return open(dir);
+    auto state = open(dir);
+
+    // A missing or unreadable book is reported now, not when the first game starts.
+    std::lock_guard<std::mutex> lock(state->mutex_);
+    (void)state->openings();
+    return state;
 }
 
 std::unique_ptr<TournamentState> TournamentState::open(const fs::path& dir) {
@@ -146,10 +151,7 @@ std::unique_ptr<TournamentState> TournamentState::open(const fs::path& dir) {
 }
 
 TournamentState::TournamentState(fs::path dir, TournamentSpec spec)
-    : dir_(std::move(dir)),
-      spec_(std::move(spec)),
-      schedule_(spec_),
-      openings_(spec_.conditions.opening, frc(), spec_.conditions.seed) {
+    : dir_(std::move(dir)), spec_(std::move(spec)), schedule_(spec_) {
     const auto& s = spec_.conditions.sprt;
     if (spec_.format == Format::Match && s.enabled) {
         sprt_ = fastchess::SPRT(s.alpha, s.beta, s.elo0, s.elo1, s.model, true);
@@ -157,6 +159,13 @@ TournamentState::TournamentState(fs::path dir, TournamentSpec spec)
 }
 
 bool TournamentState::frc() const noexcept { return spec_.conditions.variant == fastchess::VariantType::FRC; }
+
+const OpeningSource& TournamentState::openings() {
+    if (!openings_) {
+        openings_ = std::make_unique<OpeningSource>(spec_.conditions.opening, frc(), spec_.conditions.seed);
+    }
+    return *openings_;
+}
 
 void TournamentState::load() {
     const auto events = Journal::read(dir_ / JOURNAL_FILE);
@@ -242,7 +251,7 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
 
     auto it = started_.find(encounter);
     if (it == started_.end()) {
-        const auto opening = openings_.at(encounter);
+        const auto opening = openings().at(encounter);
         const auto text    = toText(opening, frc());
         journal_->append(
             {{"t", "encounter_started"}, {"encounter", encounter}, {"fen", text.fen}, {"moves", text.moves}});

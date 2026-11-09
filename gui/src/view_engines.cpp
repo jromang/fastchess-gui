@@ -138,8 +138,8 @@ void App::pollProbe() {
 }
 
 void App::drawEngines() {
-    if (!ImGui::Begin(TR("Engines###engines"))) {
-        ImGui::End();
+    if (!ui::beginPanel(TR("Engines###engines"))) {
+        ui::endPanel();
         return;
     }
 
@@ -201,7 +201,7 @@ void App::drawEngines() {
     if (selected_engine_ < 0 || selected_engine_ >= static_cast<int>(engines_.size())) {
         ImGui::TextDisabled("%s", TR("Choose an engine in the list."));
         ImGui::EndChild();
-        ImGui::End();
+        ui::endPanel();
         return;
     }
 
@@ -408,12 +408,12 @@ void App::drawEngines() {
     if (changed) storage_.saveEngines(engines_);
 
     ImGui::EndChild();
-    ImGui::End();
+    ui::endPanel();
 }
 
 void App::drawConsole() {
-    if (!ImGui::Begin(TR("Console###console"))) {
-        ImGui::End();
+    if (!ui::beginPanel(TR("Console###console"))) {
+        ui::endPanel();
         return;
     }
 
@@ -443,7 +443,7 @@ void App::drawConsole() {
     if (console_follow_) ImGui::SetScrollHereY(1.0f);
     ImGui::EndChild();
 
-    ImGui::End();
+    ui::endPanel();
 }
 
 }  // namespace fcg

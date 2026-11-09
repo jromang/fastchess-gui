@@ -224,11 +224,10 @@ int main(int argc, char** argv) {
     // Scripted screenshots must not show hover effects from wherever the real mouse happens to be.
     if (!args.shots.empty()) io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
 
-    fcg::ui::applyTheme(scale);
+    fcg::ui::applyTheme(fcg::ui::Theme::Dark, scale);  // the app applies the chosen theme on its first frame
     ImGui::GetStyle().FontScaleDpi = scale;
     loadFonts(16.0f);
 
-    ImPlot::StyleColorsDark();
     ImPlot::GetStyle().PlotPadding = ImVec2(6, 6);
 
     ImGui_ImplSDL3_InitForOpenGL(window, gl_context);
@@ -237,6 +236,7 @@ int main(int argc, char** argv) {
     fcg::AppOptions options;
     options.autostart    = args.autostart;
     options.focus_window = args.focus;
+    options.ui_scale     = scale;
 
     // The app lives in its own scope so its destructor (which joins the run thread) runs before teardown.
     {

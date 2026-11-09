@@ -150,11 +150,12 @@ class TournamentState {
     [[nodiscard]] GameTask makeTask(uint32_t encounter, int game);
     [[nodiscard]] bool done(uint32_t encounter, int game) const;
     [[nodiscard]] bool frc() const noexcept;
+    const OpeningSource& openings();  // loads the book on first use; mutex_ held
 
     std::filesystem::path dir_;
     TournamentSpec spec_;
     Schedule schedule_;
-    OpeningSource openings_;
+    std::unique_ptr<OpeningSource> openings_;  // loaded when a new encounter first needs it
     std::vector<std::string> warnings_;
 
     mutable std::mutex mutex_;

@@ -89,32 +89,30 @@ void App::frame() {
         startRun();
     }
 
-    drawToolbar();
+    applyThemeSetting();
 
-    const ImGuiID dockspace = ImGui::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_None);
-    if (!layout_checked_) {
-        layout_checked_ = true;
-        auto* node      = ImGui::DockBuilderGetNode(dockspace);
-        if (!node || (!node->IsSplitNode() && node->Windows.Size == 0)) buildDefaultLayout(dockspace);
-    }
-
-    drawSetup();
-    drawLive();
-    drawGames();
-    drawResults();
-    drawCharts();
-    drawEngines();
-    drawConsole();
-    drawQuitModal();
-
-    if (!options_.focus_window.empty() && !focus_done_ && ImGui::GetFrameCount() > 2) {
-        const auto name = "###" + options_.focus_window;  // windows are known by their stable id
-        if (auto* w = ImGui::FindWindowByName(name.c_str())) {
-            if (w->DockNode && w->DockNode->TabBar) w->DockNode->TabBar->NextSelectedTabId = w->TabId;
+    // --shot and --focus: show the requested page or tab once the first frames are drawn.
+    if (!options_.focus_window.empty() && !focus_done_) {
+        const auto& w = options_.focus_window;
+        if (w == "setup")
+            page_ = Page::NewMatch;
+        else if (w == "engines")
+            page_ = Page::Engines;
+        else if (w == "console")
+            page_ = Page::Log;
+        else if (w == "settings")
+            page_ = Page::Settings;
+        else if (w == "home")
+            page_ = Page::Home;
+        else {
+            page_        = Page::Tournament;
+            tab_request_ = w == "live" ? Tab::Live : w == "games" ? Tab::Games : Tab::Overview;
         }
-        ImGui::SetWindowFocus(name.c_str());
         focus_done_ = true;
     }
+
+    drawShell();
+    drawQuitModal();
 
     // The window title tells how the run is going, also when the window is in the background.
     {
@@ -142,30 +140,8 @@ void App::frame() {
     }
 }
 
-void App::buildDefaultLayout(unsigned int dockspace) {
-    const auto* viewport = ImGui::GetMainViewport();
-
-    ImGui::DockBuilderRemoveNode(dockspace);
-    ImGui::DockBuilderAddNode(dockspace, ImGuiDockNodeFlags_DockSpace);
-    ImGui::DockBuilderSetNodeSize(dockspace, viewport->WorkSize);
-
-    ImGuiID left = 0, rest = 0, bottom = 0, center = 0;
-    ImGui::DockBuilderSplitNode(dockspace, ImGuiDir_Left, 0.27f, &left, &rest);
-    ImGui::DockBuilderSplitNode(rest, ImGuiDir_Down, 0.27f, &bottom, &center);
-
-    // Windows are known by their "###id", which does not change with the language.
-    ImGui::DockBuilderDockWindow("###setup", left);
-    ImGui::DockBuilderDockWindow("###live", center);
-    ImGui::DockBuilderDockWindow("###games", center);
-    ImGui::DockBuilderDockWindow("###charts", center);
-    ImGui::DockBuilderDockWindow("###engines", center);
-    ImGui::DockBuilderDockWindow("###console", center);
-    ImGui::DockBuilderDockWindow("###results", bottom);
-    ImGui::DockBuilderFinish(dockspace);
-}
-
 // ---------------------------------------------------------------------------
-// Toolbar
+// Status
 
 std::string App::runStatusText() const {
     if (run_.state() == RunController::State::Idle) {
@@ -200,78 +176,6 @@ std::string App::runStatusText() const {
     }
 
     return text;
-}
-
-void App::drawToolbar() {
-    if (!ImGui::BeginMainMenuBar()) return;
-
-    const bool running = run_.running();
-
-    if (!running) {
-        const bool engines_set = !setup_.engine_a.empty() && !setup_.engine_b.empty();
-        const bool probing     = probe_.valid() || !probe_queue_.empty();
-        if (ui::iconButton("start", ui::Icon::Play, TR("Start"), engines_set && !probing)) startRun();
-        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-            if (!engines_set)
-                ImGui::SetTooltip("%s", TR("Choose engines A and B in Setup."));
-            else if (probing)
-                ImGui::SetTooltip("%s", TR("Reading the options of an engine…"));
-        }
-
-        if (unfinished_) {
-            const auto& u     = *unfinished_;
-            const auto played = u.total ? trf("{} / {} games", u.played, *u.total) : trf("{} games", u.played);
-            if (ui::iconButton("resume_match", ui::Icon::Play, TR("Resume the last match"), !probing)) resumeRun();
-            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-                ImGui::SetTooltip("%s", trf("{} · {}\nIt continues exactly where it stopped: no game is lost "
-                                            "or played twice.",
-                                            u.spec.name, played)
-                                            .c_str());
-            }
-        }
-    } else {
-        const bool paused = run_.paused();
-        if (paused) {
-            if (ui::iconButton("resume", ui::Icon::Play, TR("Resume"), !run_.stopping() && !run_.stoppingWhenIdle())) {
-                run_.setPaused(false);
-            }
-        } else {
-            if (ui::iconButton("pause", ui::Icon::Pause, TR("Pause"), !run_.stopping())) run_.setPaused(true);
-        }
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("%s", TR("Pause: no new pair starts. Running games, and the second game of their "
-                                       "pair,\nplay to the end (pair statistics stay complete)."));
-        }
-
-        if (ui::iconButton("stop", ui::Icon::Stop, TR("Stop"), !run_.stopping())) ImGui::OpenPopup("stop_menu");
-        if (ImGui::BeginPopup("stop_menu")) {
-            if (ImGui::MenuItem(TR("Finish the running games, then stop"))) run_.stopWhenIdle();
-            if (ImGui::MenuItem(TR("Stop now (running games are lost)"))) run_.stopNow();
-            ImGui::EndPopup();
-        }
-    }
-
-    ImGui::Separator();
-
-    const auto status = runStatusText();
-    if (run_.state() == RunController::State::Finished && !run_.error().empty()) {
-        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
-        ImGui::TextUnformatted(status.c_str());
-        ImGui::PopStyleColor();
-    } else {
-        ImGui::TextUnformatted(status.c_str());
-    }
-
-    if (!start_error_.empty()) {
-        ImGui::Separator();
-        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
-        ImGui::TextUnformatted(start_error_.c_str());
-        ImGui::PopStyleColor();
-        ImGui::SameLine();
-        if (ImGui::SmallButton("x")) start_error_.clear();
-    }
-
-    ImGui::EndMainMenuBar();
 }
 
 void App::drawQuitModal() {
@@ -342,6 +246,9 @@ void App::resumeRun() {
 }
 
 void App::resetRunView() {
+    page_              = Page::Tournament;
+    tab_request_       = Tab::Overview;
+    tournaments_dirty_ = true;
     unfinished_.reset();
     games_.clear();
     history_.clear();
@@ -432,7 +339,8 @@ void App::onRunFinished() {
     Console::instance().add(finish_message_, !error.empty());
 
     // A stopped or interrupted match can be continued later.
-    unfinished_ = unfinishedMatch(storage_.runsDir());
+    unfinished_        = unfinishedMatch(storage_.runsDir());
+    tournaments_dirty_ = true;
 
     if (setup_.notify) {
         notifyRunFinished(window_, trf("{} vs {}", info.engine_a, info.engine_b), finish_message_);
@@ -471,6 +379,9 @@ void App::handleDialogs() {
         switch (answer->purpose) {
             case Dialogs::Purpose::AddEngine:
                 addEngine(path);
+                break;
+            case Dialogs::Purpose::OpenTournament:
+                openTournament(path);
                 break;
             case Dialogs::Purpose::EngineCommand:
                 if (selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size())) {

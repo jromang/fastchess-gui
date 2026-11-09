@@ -79,6 +79,9 @@ class RunController {
     // Continues the match stored in `dir`; returns an error message, empty on success.
     std::string resume(const std::filesystem::path& dir);
 
+    // Opens the match stored in `dir` to look at it, without playing; returns an error message, empty on success.
+    std::string view(const std::filesystem::path& dir);
+
     void setPaused(bool paused);
     [[nodiscard]] bool paused() const;
 

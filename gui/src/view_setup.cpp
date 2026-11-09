@@ -68,8 +68,8 @@ bool engineCombo(const char* id, std::string& value, const std::vector<EngineEnt
 }  // namespace
 
 void App::drawSetup() {
-    if (!ImGui::Begin(TR("Setup###setup"))) {
-        ImGui::End();
+    if (!ui::beginPanel(TR("Setup###setup"))) {
+        ui::endPanel();
         return;
     }
 
@@ -90,7 +90,7 @@ void App::drawSetup() {
     setupPgn();
 
     ImGui::EndDisabled();
-    ImGui::End();
+    ui::endPanel();
 }
 
 void App::setupEngines() {
@@ -402,18 +402,6 @@ void App::setupPgn() {
     ImGui::Spacing();
     changed |= ImGui::Checkbox(TR("Restart an engine that crashes"), &setup_.recover);
     ui::help(TR("Otherwise an engine that crashes or hangs stops the whole match."));
-    changed |= ImGui::Checkbox(TR("Notify when the match ends"), &setup_.notify);
-
-    ui::label(TR("Language"), labelWidth());
-    ImGui::SetNextItemWidth(200.0f * ImGui::GetFontSize() / 16.0f);
-    const char* languages[] = {TR("Automatic (system)"), "Français", "English"};
-    int language            = setup_.language == "fr" ? 1 : setup_.language == "en" ? 2 : 0;
-    if (ImGui::Combo("##language", &language, languages, 3)) {
-        setup_.language = language == 1 ? "fr" : language == 2 ? "en" : "auto";
-        i18n::setLanguage(i18n::resolve(setup_.language));
-        changed = true;
-    }
-
     if (changed) saveSetupSoon();
 }
 

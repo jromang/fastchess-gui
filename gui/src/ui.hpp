@@ -13,14 +13,25 @@
 
 namespace fcg::ui {
 
-// Colours of the sober dark theme, reused for plots and highlights.
-inline constexpr ImU32 ACCENT  = IM_COL32(110, 168, 222, 255);
-inline constexpr ImU32 GOOD    = IM_COL32(120, 200, 120, 255);
-inline constexpr ImU32 BAD     = IM_COL32(230, 110, 100, 255);
-inline constexpr ImU32 MUTED   = IM_COL32(150, 150, 150, 255);
-inline constexpr ImVec4 MUTED4 = ImVec4(0.59f, 0.59f, 0.59f, 1.0f);
+enum class Theme { Dark, Light };
 
-void applyTheme(float scale);
+// Applies a theme to Dear ImGui and ImPlot and sets the colours below. Can be called again to switch: the style
+// is rebuilt from scratch, then scaled.
+void applyTheme(Theme theme, float scale);
+[[nodiscard]] Theme currentTheme() noexcept;
+
+// Colours of the current theme, for custom drawing, plots and highlights.
+inline ImU32 ACCENT  = IM_COL32(110, 168, 222, 255);
+inline ImU32 GOOD    = IM_COL32(120, 200, 120, 255);
+inline ImU32 BAD     = IM_COL32(230, 110, 100, 255);
+inline ImU32 WARN    = IM_COL32(240, 163, 91, 255);
+inline ImU32 MUTED   = IM_COL32(150, 150, 150, 255);
+inline ImVec4 MUTED4 = ImVec4(0.59f, 0.59f, 0.59f, 1.0f);
+inline ImU32 RAIL_BG = IM_COL32(13, 15, 18, 255);  // navigation rail
+inline ImU32 HEAD_BG = IM_COL32(21, 24, 29, 255);  // page and tournament headers
+inline ImU32 CARD_BG = IM_COL32(26, 29, 35, 255);  // cards on a page
+inline ImU32 CARD_BD = IM_COL32(38, 42, 50, 255);  // card borders
+inline ImU32 SELECT  = IM_COL32(30, 38, 51, 255);  // selected rail item
 
 // "1:02:03", "2:03.4" or "4.2s".
 std::string formatClock(int64_t ms);
@@ -37,10 +48,28 @@ float whitePawns(const std::optional<fastchess::Score>& score, chess::Color move
 // Duration "1 h 02 min", "3 min 05 s", "12 s".
 std::string formatDuration(double seconds);
 
-enum class Icon { Play, Pause, Stop, Swap };
+enum class Icon { Play, Pause, Stop, Swap, Trophy, Engine, Log, Settings, Plus, Folder, Back };
+
+// Draws `icon` centred on `center`, `size` pixels wide, in `col`.
+void drawIcon(ImDrawList* dl, Icon icon, ImVec2 center, float size, ImU32 col);
 
 // A button with a small drawn icon, so no icon font is needed.
 bool iconButton(const char* id, Icon icon, const char* label, bool enabled = true);
+
+// The content region of a page section. The views used to be dockable windows; they now draw inside a child of
+// the page. Always pair with endPanel(), even when it returns false.
+bool beginPanel(const char* title, ImVec2 size = ImVec2(0, 0));
+void endPanel();
+
+// A tall navigation button for the rail: icon above a short label.
+bool railButton(const char* id, Icon icon, const char* label, bool selected, float width);
+
+// Large page title.
+void pageTitle(const char* text);
+
+// A rounded card filling the available width, with a border; pair with endCard().
+void beginCard(const char* id, ImVec2 size = ImVec2(0, 0));
+void endCard();
 
 // "(?)" with a tooltip.
 void help(const char* text);

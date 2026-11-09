@@ -284,6 +284,33 @@ std::string RunController::resume(const fs::path& dir) {
     return launch(std::move(tournament));
 }
 
+std::string RunController::view(const fs::path& dir) {
+    if (state_ == State::Running) return TR("A match is already running.");
+    if (thread_.joinable()) thread_.join();
+
+    std::unique_ptr<tour::TournamentState> tournament;
+    try {
+        tournament = tour::TournamentState::open(dir);
+    } catch (const std::exception& e) {
+        return trf("Cannot open the tournament: {}", e.what());
+    }
+    if (tournament->spec().format != tour::Format::Match) return TR("Only matches can be opened for now.");
+
+    info_         = runInfo(tournament->spec(), tournament->dir());
+    info_.started = info_.finished = Clock::now();
+    observer_       = std::make_unique<GuiObserver>(tournament->spec().conditions.concurrency, *tournament);
+    tournament_     = std::move(tournament);
+    stop_requested_ = false;
+    stop_when_idle_ = false;
+    finished_event_ = false;
+    state_          = State::Finished;
+    {
+        std::lock_guard<std::mutex> lock(outcome_mutex_);
+        error_.clear();
+    }
+    return {};
+}
+
 std::string RunController::launch(std::unique_ptr<tour::TournamentState> tournament) {
     if (thread_.joinable()) thread_.join();
 

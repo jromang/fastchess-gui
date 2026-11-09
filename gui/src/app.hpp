@@ -22,6 +22,7 @@
 #include "stats.hpp"
 #include "storage.hpp"
 #include "topology.hpp"
+#include "ui.hpp"
 
 struct SDL_Window;
 
@@ -33,7 +34,8 @@ int plotEval(const char* id, const std::vector<float>& evals, int marker_ply, fl
 
 struct AppOptions {
     bool autostart = false;
-    std::string focus_window;  // window brought to front at startup (for screenshots)
+    std::string focus_window;  // page or tab shown at startup (for screenshots)
+    float ui_scale = 1.0f;     // DPI scale, to rebuild the style when the theme changes
 };
 
 class App {
@@ -58,8 +60,23 @@ class App {
     [[nodiscard]] bool initGraphics();
 
    private:
+    enum class Page { Home, NewMatch, Tournament, Engines, Log, Settings };
+    enum class Tab { Overview, Live, Games };
+
+    // shell
+    void drawShell();
+    void drawRail(float width);
+    void drawHome();
+    void drawNewMatch();
+    void drawWorkspace();
+    void drawWorkspaceHeader();
+    void drawSettings();
+    void applyThemeSetting();
+    void refreshTournaments();
+    void openTournament(const std::filesystem::path& dir);
+    void importLegacyRuns();
+
     // views
-    void drawToolbar();
     void drawSetup();
     void drawLive();
     void drawGames();
@@ -68,8 +85,6 @@ class App {
     void drawEngines();
     void drawConsole();
     void drawQuitModal();
-
-    void buildDefaultLayout(unsigned int dockspace);
 
     // setup sections
     void setupEngines();
@@ -161,6 +176,14 @@ class App {
     uint64_t console_version_ = 0;
     bool console_follow_      = true;
 
+    // Shell.
+    Page page_ = Page::Home;
+    std::optional<Tab> tab_request_;  // tab to select on the next frame
+    std::vector<tour::Summary> tournaments_;
+    bool tournaments_dirty_  = true;
+    std::size_t legacy_runs_ = 0;
+    std::optional<ui::Theme> theme_applied_;
+
     // Messages and state.
     std::string start_error_;
     std::string finish_message_;
@@ -168,7 +191,6 @@ class App {
     bool quit_            = false;
     bool quit_pending_    = false;
     bool open_quit_modal_ = false;
-    bool layout_checked_  = false;
     bool focus_done_      = false;
     bool autostart_done_  = false;
 };
