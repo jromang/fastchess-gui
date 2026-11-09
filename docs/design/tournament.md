@@ -1,6 +1,7 @@
 # Tournament layer: technical design
 
-Status: milestone 1 implemented (#1); the rest is the plan (2026-11-09). UX reference: the mockups at
+Status: implemented, phases 1 to 3 (2026-11-09). This page was written as the plan and is kept as the
+description of the design; the user side is in [the guide](../guide.md). UX reference: the mockups at
 https://claude.ai/artifact/SvpApxS661ctzGNLTuvMQ4 (private link).
 
 ## 1. Goals
@@ -23,7 +24,8 @@ Non-goals: CECP/WinBoard (external adapters), pondering, 10x8 variants, distribu
 ```
 app/            fastchess, unchanged apart from the existing hooks (fastchess_core)
 tournament/     NEW: fcg_tournament, a static library, no ImGui, no SDL
-  src/tour/       model, schedule, openings, journal, pgn_file, state, summary, runner (ratings: milestone 3)
+  src/tour/       model, schedule, openings, journal, pgn_file, state, summary, runner, standings, edits,
+                  pairing (Swiss, knockout), ratinglist (across tournaments), legacy (0.2.x runs)
   tests/          unit and integration tests (doctest, random mover engine)
 gui/            fcg_lib + fastchess-gui: views only, reads the tournament library
 ```
@@ -193,8 +195,11 @@ Writing the PGN first means the journal never points at a game that is not on di
 - **Gauntlet**: the seeds against every other participant, interleaved round by round so that every opponent is
   met before any is met twice.
 - **Match**: one encounter per round, generated in blocks of 1000 as needed (infinite or SPRT), up to `max_games`.
-- Swiss and knockout (later) generate round r+1 only when round r is complete. The dispatcher already supports
-  that: `claimNext()` can answer "nothing yet, wait" (6.4).
+- **Swiss and knockout** generate round r+1 only when round r is complete (`claimNext()` answers "nothing yet,
+  wait", 6.4). `pairing.cpp` pairs them: Swiss by score groups, top half against bottom half, no rematch unless
+  impossible, the bye to the lowest ranked player without one; knockout by a seeded bracket with byes for the top
+  seeds, a tied match getting one more game pair at a time (ten at most, then the higher seed). Each round is
+  journaled (`round_paired`, `tiebreak_added`), so a resume replays it instead of pairing again.
 
 ### 6.2 Edits
 
@@ -255,7 +260,10 @@ tournaments and offers to resume them.
   default), solved by Newton iteration on at most a few hundred players. Confidence intervals from the inverse of
   the Hessian (Fisher information). Either the mean is 0 or one participant is the anchor at a given rating.
   Checked in tests against Ordo's output on a fixed PGN.
-- **Tiebreaks**: points, then Sonneborn-Berger, then head-to-head, then wins. Buchholz is added with Swiss.
+- **Tiebreaks**: points, then Sonneborn-Berger, then head-to-head, then wins; a Swiss ranks by Buchholz before
+  Sonneborn-Berger, and its byes count a point.
+- **Rating list**: the same maximum likelihood over every game of every tournament folder, engines identified by
+  name, optionally restricted to one time control (`ratinglist.cpp`).
 - **Health**: per participant time losses, crashes, illegal moves and response latency, from `MatchData`.
 
 ## 10. GUI structure
@@ -286,7 +294,9 @@ tournaments and offers to resume them.
 
 Each milestone ships and keeps everything that works today working.
 
-1. **Library core** (done): model, journal, schedule (match, round robin, gauntlet), state, runner. The
+All done.
+
+1. **Library core**: model, journal, schedule (match, round robin, gauntlet), state, runner. The
    current GUI runs its matches through it: SPRT matches gain exact resume. No UI change.
 2. **New shell**: navigation rail, home (tournament list, resume), dark and light themes, fonts and icons, the match
    workspace with today's views moved into tabs.
@@ -301,6 +311,9 @@ Then phase 2 (broadcast: files, TLCS, web page) and phase 3 (Swiss, knockout, ra
 
 ## 13. Open points
 
-- Default location of tournaments (profile folder, or a folder chosen by the user).
-- Importing the `runs/` of earlier versions as finished matches (their PGN is enough).
-- The `saveJson()` change in the fork, or not.
+- Tournaments live in `runs/` of the profile folder; *Open a folder…* opens one from anywhere, but there is no
+  setting for another default location yet.
+- Earlier `runs/` (0.2.x) are imported as finished matches from their PGN and `config.json` (`legacy.cpp`).
+- Edits cannot be undone; a mistaken change is corrected by another one (replay, cycles).
+- The TLCS server follows the protocol as documented by TLCV and node-tlcv, but has not been tried against a real
+  TLCV client yet.
