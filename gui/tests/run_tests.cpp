@@ -262,6 +262,8 @@ TEST_CASE("a round robin of three engines plays every pairing and shows every na
     // (Windows scans a new executable before it can answer), in the run and in the probes after it.
     REQUIRE(fastchess::config::TournamentConfig);
     CHECK(fastchess::config::TournamentConfig->startup_time == ENGINE_STARTUP_TIME);
+    // Nor be stopped at once by a stop flag left behind by the run.
+    CHECK_FALSE(fastchess::atomic::stop.load());
 }
 
 TEST_CASE("a finished round robin extended by a cycle resumes to play exactly the new games") {

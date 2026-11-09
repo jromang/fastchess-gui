@@ -516,6 +516,11 @@ void RunController::threadMain() {
     fastchess::tearDownSyzygy();
     fastchess::stopProcesses();
 
+    // The runner sets fastchess' stop flag to interrupt the games still running when it ends (SPRT decided, or
+    // stopped); left set, it would make the engine probes that follow give up at once (fastchess' Windows process
+    // reader checks it).
+    fastchess::atomic::stop = false;
+
     {
         std::lock_guard<std::mutex> lock(outcome_mutex_);
         error_ = error;
