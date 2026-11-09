@@ -322,18 +322,23 @@ void App::drawHome() {
 void App::drawNewMatch() {
     const bool locked = run_.running();
 
-    ui::pageTitle(TR("New match"));
-    ImGui::TextDisabled("%s", TR("Two engines, played until a fixed number of games, until stopped, or until the "
-                                 "SPRT decides."));
+    ui::pageTitle(TR("New tournament"));
+    ImGui::TextDisabled("%s", TR("A match between two versions, a round robin or a gauntlet."));
 
-    const bool engines_set = !setup_.engine_a.empty() && !setup_.engine_b.empty();
-    const bool probing     = probe_.valid() || !probe_queue_.empty();
-    if (ui::iconButton("start", ui::Icon::Play, TR("Start"), engines_set && !probing && !locked)) startRun();
+    const bool ready   = setup_.format == TournamentFormat::Match ? !setup_.engine_a.empty() && !setup_.engine_b.empty()
+                                                                  : setup_.participants.size() >= 2;
+    const bool probing = probe_.valid() || !probe_queue_.empty();
+    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
+    ImGui::PushStyleColor(ImGuiCol_Text,
+                          ui::currentTheme() == ui::Theme::Dark ? ImVec4(0.04f, 0.07f, 0.13f, 1) : ImVec4(1, 1, 1, 1));
+    if (ui::iconButton("start", ui::Icon::Play, TR("Start"), ready && !probing && !locked)) startRun();
+    ImGui::PopStyleColor(2);
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
         if (locked)
             ImGui::SetTooltip("%s", TR("A match is already running."));
-        else if (!engines_set)
-            ImGui::SetTooltip("%s", TR("Choose engines A and B."));
+        else if (!ready)
+            ImGui::SetTooltip("%s", setup_.format == TournamentFormat::Match ? TR("Choose engines A and B.")
+                                                                             : TR("Choose at least two engines."));
         else if (probing)
             ImGui::SetTooltip("%s", TR("Reading the options of an engine…"));
     }
@@ -345,11 +350,23 @@ void App::drawNewMatch() {
     }
     ImGui::Spacing();
 
-    // One readable column, not the whole width.
-    const float width = std::min(ImGui::GetContentRegionAvail().x, px(760));
+    // The form in one readable column, the summary beside it when there is room.
+    const float avail   = ImGui::GetContentRegionAvail().x;
+    const float summary = px(330);
+    const bool side     = avail > px(760) + summary;
+    const float width   = side ? std::min(px(760), avail - summary - px(20)) : avail;
+
     ImGui::BeginChild("##new_match", ImVec2(width, 0));
+    if (!side) drawSetupSummary();
     drawSetup();
     ImGui::EndChild();
+
+    if (side) {
+        ImGui::SameLine(0, px(20));
+        ImGui::BeginChild("##new_summary", ImVec2(summary, 0));
+        drawSetupSummary();
+        ImGui::EndChild();
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -359,12 +376,12 @@ void App::drawWorkspaceHeader() {
     const auto& info = run_.info();
     const auto* t    = run_.tournament();
 
-    ImGui::TextDisabled("%s",
-                        fmt::format("{} · {} · {}", TR("Match"), info.limit_text,
-                                    info.sprt ? fmt::format("SPRT [{:g}, {:g}] {}", info.elo0, info.elo1, info.model)
-                                    : info.total_games ? trf("{} games", info.total_games)
-                                                       : std::string(TR("until stopped")))
-                            .c_str());
+    const auto detail = info.format == tour::Format::Match
+                            ? (info.sprt ? fmt::format("SPRT [{:g}, {:g}] {}", info.elo0, info.elo1, info.model)
+                               : info.total_games ? trf("{} games", info.total_games)
+                                                  : std::string(TR("until stopped")))
+                            : trf("{} engines · {} games", info.participants, info.total_games);
+    ImGui::TextDisabled("%s", fmt::format("{} · {} · {}", formatLabel(info.format), info.limit_text, detail).c_str());
     ui::pageTitle(t ? t->spec().name.c_str() : TR("No match"));
 
     const auto status = runStatusText();
@@ -438,11 +455,19 @@ void App::drawWorkspace() {
     };
 
     if (tab(TR("Overview###tab_overview"), Tab::Overview)) {
-        const float results_h = std::max(px(150), ImGui::GetContentRegionAvail().y * 0.30f);
-        ImGui::BeginChild("##overview_results", ImVec2(0, results_h));
-        drawResults();
-        ImGui::EndChild();
-        drawCharts();
+        if (isMatch()) {
+            const float results_h = std::max(px(150), ImGui::GetContentRegionAvail().y * 0.30f);
+            ImGui::BeginChild("##overview_results", ImVec2(0, results_h));
+            drawResults();
+            ImGui::EndChild();
+            drawCharts();
+        } else {
+            drawTournamentOverview();
+        }
+        ImGui::EndTabItem();
+    }
+    if (!isMatch() && tab(TR("Standings###tab_standings"), Tab::Standings)) {
+        drawStandings();
         ImGui::EndTabItem();
     }
     if (tab(TR("Live###tab_live"), Tab::Live)) {

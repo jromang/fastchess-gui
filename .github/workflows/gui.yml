@@ -39,6 +39,9 @@ jobs:
       - name: GUI tests
         run: ./build/fastchess-gui-tests
 
+      - name: Tournament layer tests
+        run: ./build/fcg-tournament-tests
+
       - name: Upstream fastchess tests
         run: |
           make -C app -j"$(nproc)" tests CXX=g++-12
@@ -77,6 +80,7 @@ jobs:
             build-win/fastchess-gui.exe
             build-win/fastchess.exe
             build-win/fastchess-gui-tests.exe
+            build-win/fcg-tournament-tests.exe
             build-win/fcg_random_mover.exe
 
   windows-tests:
@@ -95,6 +99,9 @@ jobs:
         env:
           FCG_SOURCE_DIR: ${{ github.workspace }}
         run: bin\fastchess-gui-tests.exe
+
+      - name: Tournament layer tests
+        run: bin\fcg-tournament-tests.exe
 
   release:
     name: Release

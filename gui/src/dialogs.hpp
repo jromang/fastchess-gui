@@ -21,7 +21,8 @@ class Dialogs {
         Tablebases,
         ExportGames,
         ExportAll,
-        OpenTournament
+        OpenTournament,
+        ExportStandings
     };
 
     struct Answer {

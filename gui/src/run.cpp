@@ -1,5 +1,6 @@
 #include "run.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <ctime>
 
@@ -38,7 +39,32 @@ std::string formatSeconds(double s) {
     return fmt::format("{:g}", s);
 }
 
-fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSetup& setup) {
+bool hasOption(const EngineEntry& entry, const std::string& name) {
+    for (const auto& o : entry.uci_options) {
+        if (o.name == name) return true;
+    }
+    return false;
+}
+
+// The participant's own setting, else the common one, else what the engine entry says.
+void overrideOption(fastchess::EngineConfiguration& config, const EngineEntry& entry, const std::string& name, int own,
+                    int common) {
+    const int value = own > 0 ? own : common;
+    if (value <= 0) return;
+    // An engine that does not have the option would print an error for it.
+    if (!entry.uci_options.empty() && !hasOption(entry, name)) return;
+
+    for (auto& [k, v] : config.options) {
+        if (k == name) {
+            v = std::to_string(value);
+            return;
+        }
+    }
+    config.options.emplace_back(name, std::to_string(value));
+}
+
+fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSetup& setup,
+                                        const ParticipantSetup& participant = {}) {
     fastchess::EngineConfiguration config;
     config.name    = entry.name;
     config.cmd     = entry.cmd;
@@ -47,16 +73,54 @@ fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSet
     config.restart = entry.restart;
     config.options = entry.options;
 
+    overrideOption(config, entry, "Hash", participant.hash, setup.common_hash);
+    overrideOption(config, entry, "Threads", participant.threads, setup.common_threads);
+
     if (setup.limit == LimitKind::Time) {
-        config.limit.tc.time       = static_cast<int64_t>(std::llround(setup.tc_base_s * 1000.0));
-        config.limit.tc.increment  = static_cast<int64_t>(std::llround(setup.tc_inc_s * 1000.0));
+        const double share         = std::max(1, participant.time_percent) / 100.0;
+        config.limit.tc.time       = static_cast<int64_t>(std::llround(setup.tc_base_s * 1000.0 * share));
+        config.limit.tc.increment  = static_cast<int64_t>(std::llround(setup.tc_inc_s * 1000.0 * share));
         config.limit.tc.moves      = setup.tc_moves;
         config.limit.tc.timemargin = setup.tc_margin_ms;
     } else {
-        config.limit.nodes = setup.nodes;
+        config.limit.nodes = participant.nodes > 0 ? participant.nodes : setup.nodes;
     }
 
     return config;
+}
+
+int configThreads(const fastchess::EngineConfiguration& config) {
+    for (const auto& [k, v] : config.options) {
+        if (k == "Threads") {
+            try {
+                return std::max(1, std::stoi(v));
+            } catch (...) {
+            }
+        }
+    }
+    return 1;
+}
+
+std::string cleanName(std::string s) {
+    for (auto& c : s) {
+        const bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' ||
+                        c == '.' || c == '_';
+        if (!ok) c = '_';
+    }
+    return s.substr(0, 60);
+}
+
+std::string timestamp() {
+    const auto now = std::time(nullptr);
+    std::tm tm{};
+#ifdef _WIN32
+    localtime_s(&tm, &now);
+#else
+    localtime_r(&now, &tm);
+#endif
+    char stamp[32];
+    std::strftime(stamp, sizeof(stamp), "%Y%m%d-%H%M%S", &tm);
+    return stamp;
 }
 
 std::string limitText(const fastchess::Limit& limit) {
@@ -72,22 +136,26 @@ RunInfo runInfo(const tour::TournamentSpec& spec, const fs::path& dir) {
     const auto& t = spec.conditions;
 
     RunInfo info;
-    info.engine_a    = spec.participants.at(0).engine.name;
-    info.engine_b    = spec.participants.at(1).engine.name;
-    info.dir         = dir;
-    info.mode        = t.sprt.enabled ? MatchMode::Sprt : spec.max_games > 0 ? MatchMode::Fixed : MatchMode::Infinite;
-    info.limit       = spec.participants[0].engine.limit.nodes > 0 ? LimitKind::Nodes : LimitKind::Time;
-    info.limit_text  = limitText(spec.participants[0].engine.limit);
-    info.total_games = spec.max_games;
-    info.concurrency = t.concurrency;
-    info.affinity    = t.affinity;
-    info.sprt        = t.sprt.enabled;
-    info.elo0        = t.sprt.elo0;
-    info.elo1        = t.sprt.elo1;
-    info.alpha       = t.sprt.alpha;
-    info.beta        = t.sprt.beta;
-    info.model       = t.sprt.model;
-    info.penta       = true;
+    info.format       = spec.format;
+    info.name         = spec.name;
+    info.participants = static_cast<int>(spec.participants.size());
+    info.engine_a     = spec.participants.at(0).engine.name;
+    info.engine_b     = spec.participants.at(1).engine.name;
+    info.dir          = dir;
+    info.mode         = t.sprt.enabled ? MatchMode::Sprt : spec.max_games > 0 ? MatchMode::Fixed : MatchMode::Infinite;
+    info.limit        = spec.participants[0].engine.limit.nodes > 0 ? LimitKind::Nodes : LimitKind::Time;
+    info.limit_text   = limitText(spec.participants[0].engine.limit);
+    const auto encounters = tour::Schedule(spec).size();
+    info.total_games      = encounters ? uint64_t{*encounters} * 2 : 0;
+    info.concurrency      = t.concurrency;
+    info.affinity         = t.affinity;
+    info.sprt             = t.sprt.enabled;
+    info.elo0             = t.sprt.elo0;
+    info.elo1             = t.sprt.elo1;
+    info.alpha            = t.sprt.alpha;
+    info.beta             = t.sprt.beta;
+    info.model            = t.sprt.model;
+    info.penta            = true;
     return info;
 }
 
@@ -96,39 +164,57 @@ std::optional<tour::Summary> unfinishedMatch(const fs::path& runs_root) {
     if (dirs.empty()) return std::nullopt;
 
     auto summary = tour::summarize(dirs.front());
-    if (!summary || summary->finished || summary->spec.format != tour::Format::Match) return std::nullopt;
+    if (!summary || summary->finished) return std::nullopt;
     if (summary->total && summary->played >= *summary->total) return std::nullopt;
     return summary;
 }
 
 std::string makeRunDirName(const std::string& a, const std::string& b) {
-    auto clean = [](std::string s) {
-        for (auto& c : s) {
-            const bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' ||
-                            c == '.' || c == '_';
-            if (!ok) c = '_';
-        }
-        return s.substr(0, 40);
-    };
+    return fmt::format("{}_{}_vs_{}", timestamp(), cleanName(a).substr(0, 40), cleanName(b).substr(0, 40));
+}
 
-    const auto now = std::time(nullptr);
-    std::tm tm{};
-#ifdef _WIN32
-    localtime_s(&tm, &now);
-#else
-    localtime_r(&now, &tm);
-#endif
-    char stamp[32];
-    std::strftime(stamp, sizeof(stamp), "%Y%m%d-%H%M%S", &tm);
+std::string makeTournamentDirName(const std::string& name) {
+    return fmt::format("{}_{}", timestamp(), cleanName(name));
+}
 
-    return fmt::format("{}_{}_vs_{}", stamp, clean(a), clean(b));
+std::string defaultTournamentName(const MatchSetup& setup) {
+    const auto n = setup.participants.size();
+    switch (setup.format) {
+        case TournamentFormat::Match:
+            return fmt::format("{} vs {}", setup.engine_a, setup.engine_b);
+        case TournamentFormat::RoundRobin:
+            return trf("Round robin, {} engines", n);
+        case TournamentFormat::Gauntlet:
+            return setup.participants.empty() ? std::string(TR("Gauntlet"))
+                                              : trf("Gauntlet {} vs {} engines", setup.participants[0].name,
+                                                    n > 0 ? n - std::min<std::size_t>(n, std::max(1, setup.seeds)) : 0);
+    }
+    return {};
 }
 
 BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engines, const CpuTopology& topology,
                   const fs::path& run_dir) {
-    const auto* a = findEngine(engines, setup.engine_a);
-    const auto* b = findEngine(engines, setup.engine_b);
-    if (!a || !b) throw fastchess_exception(TR("Choose two engines (A and B) from the engine list."));
+    // The participants, in order, with their own settings.
+    std::vector<std::pair<const EngineEntry*, ParticipantSetup>> people;
+    if (setup.format == TournamentFormat::Match) {
+        const auto* a = findEngine(engines, setup.engine_a);
+        const auto* b = findEngine(engines, setup.engine_b);
+        if (!a || !b) throw fastchess_exception(TR("Choose two engines (A and B) from the engine list."));
+        people = {{a, {}}, {b, {}}};
+    } else {
+        for (const auto& p : setup.participants) {
+            const auto* e = findEngine(engines, p.name);
+            if (!e) throw fastchess_exception(trf("Unknown engine: {}", p.name));
+            for (const auto& [other, _] : people) {
+                if (other == e) throw fastchess_exception(trf("{} is twice in the list of participants.", p.name));
+            }
+            people.emplace_back(e, p);
+        }
+        if (people.size() < 2) throw fastchess_exception(TR("Choose at least two engines."));
+        if (setup.format == TournamentFormat::Gauntlet && setup.seeds >= static_cast<int>(people.size())) {
+            throw fastchess_exception(TR("A gauntlet needs at least one engine besides the tested ones."));
+        }
+    }
 
     if (setup.limit == LimitKind::Time && setup.tc_base_s <= 0 && setup.tc_inc_s <= 0)
         throw fastchess_exception(TR("The time control needs a base time or an increment."));
@@ -147,7 +233,9 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     // The tournament layer keeps the results (tournament.json, journal.jsonl): no fastchess config.json.
     t.config_name = "";
 
-    switch (setup.mode) {
+    // The game count of a round robin or a gauntlet comes from its schedule; the match settings do not apply.
+    const bool match = setup.format == TournamentFormat::Match;
+    switch (match ? setup.mode : MatchMode::Fixed) {
         case MatchMode::Fixed:
             t.rounds = static_cast<std::size_t>(std::max(1, (setup.fixed_games + 1) / 2));
             break;
@@ -170,9 +258,13 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     t.concurrency          = setup.concurrency_auto ? topology.defaultConcurrency(fixed_nodes) : setup.concurrency;
     t.concurrency          = std::clamp(t.concurrency, 1, topology.logical);
 
+    run.engines.clear();
+    for (const auto& [entry, participant] : people) run.engines.push_back(toConfig(*entry, setup, participant));
+
     // fastchess pins each game, both engines included, to one CPU, which only makes sense for single threaded
     // engines.
-    t.affinity = setup.affinity && a->threads() == 1 && b->threads() == 1;
+    t.affinity = setup.affinity && std::all_of(run.engines.begin(), run.engines.end(),
+                                               [](const auto& c) { return configThreads(c) == 1; });
 
     if (!setup.book.empty()) {
         t.opening.file = setup.book;
@@ -222,17 +314,21 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     t.pgn.track_nps      = setup.pgn_nps;
     t.pgn.track_pv       = setup.pgn_pv;
 
-    run.engines = {toConfig(*a, setup), toConfig(*b, setup)};
-
     fastchess::cli::sanitize(t);
     fastchess::cli::sanitize(run.engines);
 
-    auto& spec      = run.spec;
-    spec.name       = fmt::format("{} vs {}", run.engines[0].name, run.engines[1].name);
-    spec.format     = tour::Format::Match;
-    spec.max_games  = t.rounds >= UNBOUNDED_ROUNDS ? 0 : t.rounds * t.games;
+    if (!match) t.sprt.enabled = false;
+
+    auto& spec  = run.spec;
+    spec.name   = setup.name.empty() ? defaultTournamentName(setup) : setup.name;
+    spec.format = static_cast<tour::Format>(setup.format);
+    spec.cycles = std::max(1, setup.cycles);
+    spec.seeds  = std::max(1, setup.seeds);
+    if (match) spec.max_games = t.rounds >= UNBOUNDED_ROUNDS ? 0 : t.rounds * t.games;
     spec.conditions = t;
-    for (int i = 0; i < 2; ++i) spec.participants.push_back({i, run.engines[i]});
+    for (std::size_t i = 0; i < run.engines.size(); ++i) {
+        spec.participants.push_back({static_cast<int>(i), run.engines[i]});
+    }
 
     run.info = runInfo(spec, run_dir);
 
@@ -252,9 +348,11 @@ std::string RunController::start(const MatchSetup& setup, const std::vector<Engi
     if (state_ == State::Running) return TR("A match is already running.");
     if (g_probes_in_flight > 0) return TR("An engine is being read, try again in a moment.");
 
-    const auto* a  = findEngine(engines, setup.engine_a);
-    const auto* b  = findEngine(engines, setup.engine_b);
-    const auto dir = runs_root / makeRunDirName(a ? a->name : "A", b ? b->name : "B");
+    const auto dir =
+        setup.format == TournamentFormat::Match
+            ? runs_root / makeRunDirName(setup.engine_a.empty() ? "A" : setup.engine_a,
+                                         setup.engine_b.empty() ? "B" : setup.engine_b)
+            : runs_root / makeTournamentDirName(setup.name.empty() ? defaultTournamentName(setup) : setup.name);
 
     std::unique_ptr<tour::TournamentState> tournament;
     try {
@@ -277,7 +375,6 @@ std::string RunController::resume(const fs::path& dir) {
     } catch (const std::exception& e) {
         return trf("Cannot resume the match: {}", e.what());
     }
-    if (tournament->spec().format != tour::Format::Match) return TR("Only matches can be resumed for now.");
     if (tournament->finished()) return TR("This match is already finished.");
 
     for (const auto& warning : tournament->warnings()) Console::instance().add(warning, true);
@@ -294,7 +391,6 @@ std::string RunController::view(const fs::path& dir) {
     } catch (const std::exception& e) {
         return trf("Cannot open the tournament: {}", e.what());
     }
-    if (tournament->spec().format != tour::Format::Match) return TR("Only matches can be opened for now.");
 
     info_         = runInfo(tournament->spec(), tournament->dir());
     info_.started = info_.finished = Clock::now();

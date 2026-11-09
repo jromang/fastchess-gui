@@ -19,17 +19,30 @@ namespace {
 const char* FILTERS[] = {"All",          "Wins of A", "Draws", "Losses of A", "Losses on time", "Crash / illegal move",
                          "Adjudications"};
 
-bool matches(const GameRecord& g, int filter) {
+// In a tournament, results are seen from the engine chosen in the filter, or from White when none is.
+const char* TOURNAMENT_FILTERS[] = {"All",          "Wins", "Draws", "Losses", "Losses on time", "Crash / illegal move",
+                                    "Adjudications"};
+
+// Result of `g` for participant `subject` (+1, 0, -1); a match uses A, a tournament without subject uses White.
+int resultFor(const GameRecord& g, int subject, bool match) {
+    if (match) return g.a_result;
+    if (subject < 0 || g.white == subject) return g.white_result;
+    return -g.white_result;
+}
+
+bool matches(const GameRecord& g, int filter, int subject, bool match) {
     using T         = fastchess::MatchTermination;
     const auto term = static_cast<T>(g.termination);
 
+    if (!match && subject >= 0 && g.white != subject && g.black != subject) return false;
+
     switch (filter) {
         case 1:
-            return g.a_result > 0;
+            return resultFor(g, subject, match) > 0;
         case 2:
-            return g.a_result == 0;
+            return resultFor(g, subject, match) == 0;
         case 3:
-            return g.a_result < 0;
+            return resultFor(g, subject, match) < 0;
         case 4:
             return term == T::TIMEOUT;
         case 5:
@@ -42,8 +55,8 @@ bool matches(const GameRecord& g, int filter) {
 }
 
 const char* resultText(const GameRecord& g) {
-    if (g.a_result == 0) return "½-½";
-    return (g.a_result > 0) == g.a_white ? "1-0" : "0-1";
+    if (g.white_result == 0) return "½-½";
+    return g.white_result > 0 ? "1-0" : "0-1";
 }
 
 }  // namespace
@@ -52,9 +65,9 @@ void App::rebuildGameFilter() {
     if (filtered_for_ == games_.size()) return;
 
     filtered_.clear();
-    if (games_filter_ != 0) {
+    if (games_filter_ != 0 || (!isMatch() && games_subject_ >= 0)) {
         for (std::size_t i = 0; i < games_.size(); ++i) {
-            if (matches(games_[i], games_filter_)) filtered_.push_back(static_cast<int>(i));
+            if (matches(games_[i], games_filter_, games_subject_, isMatch())) filtered_.push_back(static_cast<int>(i));
         }
     }
     filtered_for_ = games_.size();
@@ -91,7 +104,7 @@ void App::exportGames(const std::string& path, bool all) {
 
     std::vector<PgnSpan> spans;
     if (all) {
-        if (games_filter_ == 0) {
+        if (games_filter_ == 0 && (isMatch() || games_subject_ < 0)) {
             for (const auto& g : games_) spans.push_back(chessbase ? g.chessbase_span : g.fastchess_span);
         } else {
             for (int i : filtered_) spans.push_back(chessbase ? games_[i].chessbase_span : games_[i].fastchess_span);
@@ -125,12 +138,37 @@ void App::drawGames() {
 
     // Toolbar: filter, export, folder.
     ImGui::SetNextItemWidth(190.0f * ImGui::GetFontSize() / 16.0f);
+    const bool match = isMatch();
     const char* filters[IM_ARRAYSIZE(FILTERS)];
-    for (int i = 0; i < IM_ARRAYSIZE(FILTERS); ++i) filters[i] = TR(FILTERS[i]);
+    for (int i = 0; i < IM_ARRAYSIZE(FILTERS); ++i) filters[i] = TR(match ? FILTERS[i] : TOURNAMENT_FILTERS[i]);
     if (ImGui::Combo("##filter", &games_filter_, filters, IM_ARRAYSIZE(FILTERS))) filtered_for_ = ~std::size_t(0);
+
+    // A tournament: the games of one engine.
+    if (!match) {
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(190.0f * ImGui::GetFontSize() / 16.0f);
+        const auto& names   = obs->names();
+        const char* current = games_subject_ >= 0 && games_subject_ < static_cast<int>(names.size())
+                                  ? names[games_subject_].c_str()
+                                  : TR("All engines");
+        if (ImGui::BeginCombo("##subject", current)) {
+            if (ImGui::Selectable(TR("All engines"), games_subject_ < 0)) {
+                games_subject_ = -1;
+                filtered_for_  = ~std::size_t(0);
+            }
+            for (int i = 0; i < static_cast<int>(names.size()); ++i) {
+                if (ImGui::Selectable(names[i].c_str(), games_subject_ == i)) {
+                    games_subject_ = i;
+                    filtered_for_  = ~std::size_t(0);
+                }
+            }
+            ImGui::EndCombo();
+        }
+    }
     rebuildGameFilter();
 
-    const std::size_t shown = games_filter_ == 0 ? games_.size() : filtered_.size();
+    const bool all_games    = games_filter_ == 0 && (match || games_subject_ < 0);
+    const std::size_t shown = all_games ? games_.size() : filtered_.size();
     ImGui::SameLine();
     ImGui::TextDisabled("%s", (shown == 1 ? std::string(TR("1 game")) : trf("{} games", shown)).c_str());
 
@@ -160,7 +198,8 @@ void App::drawGames() {
     ImGui::EndDisabled();
     ImGui::SameLine();
     ImGui::BeginDisabled(shown == 0);
-    if (ImGui::Button(games_filter_ == 0 ? TR("Export all…") : TR("Export filtered…"))) {
+    if (ImGui::Button(games_filter_ == 0 && (isMatch() || games_subject_ < 0) ? TR("Export all…")
+                                                                              : TR("Export filtered…"))) {
         dialogs_.saveFile(Dialogs::Purpose::ExportAll, {{"PGN", "pgn"}}, (run_.info().dir / "export.pgn").string());
     }
     ImGui::EndDisabled();
@@ -180,8 +219,8 @@ void App::drawGames() {
     constexpr ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersInnerV |
                                       ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit;
     if (ImGui::BeginTable("##games", 7, flags)) {
-        const float name_w =
-            std::max(ImGui::CalcTextSize(obs->engineA().c_str()).x, ImGui::CalcTextSize(obs->engineB().c_str()).x);
+        float name_w = 0;
+        for (const auto& n : obs->names()) name_w = std::max(name_w, ImGui::CalcTextSize(n.c_str()).x);
         const auto width = [](const char* sample) { return ImGui::CalcTextSize(sample).x; };
 
         ImGui::TableSetupScrollFreeze(0, 1);
@@ -200,7 +239,7 @@ void App::drawGames() {
             for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row) {
                 // Newest first.
                 const int pos   = static_cast<int>(shown) - 1 - row;
-                const int index = games_filter_ == 0 ? pos : filtered_[pos];
+                const int index = all_games ? pos : filtered_[pos];
                 const auto& g   = games_[index];
 
                 ImGui::TableNextRow();
@@ -212,14 +251,15 @@ void App::drawGames() {
                 }
 
                 ImGui::TableNextColumn();
-                ImGui::TextUnformatted(g.a_white ? obs->engineA().c_str() : obs->engineB().c_str());
+                ImGui::TextUnformatted(obs->name(g.white).c_str());
                 ImGui::TableNextColumn();
-                ImGui::TextUnformatted(g.a_white ? obs->engineB().c_str() : obs->engineA().c_str());
+                ImGui::TextUnformatted(obs->name(g.black).c_str());
                 ImGui::TableNextColumn();
-                ImGui::TextColored(g.a_result > 0   ? ImVec4(0.47f, 0.78f, 0.47f, 1)
-                                   : g.a_result < 0 ? ImVec4(0.9f, 0.43f, 0.39f, 1)
-                                                    : ui::MUTED4,
-                                   "%s", resultText(g));
+                // Coloured from A's point of view in a match, from the chosen engine's (or White's) otherwise.
+                const int r = resultFor(g, games_subject_, match);
+                ImGui::PushStyleColor(ImGuiCol_Text, r > 0 ? ui::GOOD : r < 0 ? ui::BAD : ui::MUTED);
+                ImGui::TextUnformatted(resultText(g));
+                ImGui::PopStyleColor();
                 ImGui::TableNextColumn();
                 ImGui::TextUnformatted(g.reason < reasons_.size() ? TR(reasons_[g.reason]) : "");
                 ImGui::TableNextColumn();

@@ -4,8 +4,13 @@
 
 #include <fmt/include/fmt/core.h>
 
+#include <algorithm>
+#include <filesystem>
+
 #include "app.hpp"
 #include "i18n.hpp"
+#include "run.hpp"
+#include "storage.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -81,8 +86,13 @@ void App::drawSetup() {
 
     ImGui::BeginDisabled(locked);
 
-    setupEngines();
-    setupMatch();
+    setupFormat();
+    if (setup_.format == TournamentFormat::Match) {
+        setupEngines();
+        setupMatch();
+    } else {
+        setupParticipants();
+    }
     setupLimit();
     setupConcurrency();
     setupOpenings();
@@ -253,13 +263,19 @@ void App::setupConcurrency() {
            "a node count."));
 
     // Warn about oversubscription, which distorts timed games.
-    const EngineEntry* a = nullptr;
-    const EngineEntry* b = nullptr;
-    for (const auto& e : engines_) {
-        if (e.name == setup_.engine_a) a = &e;
-        if (e.name == setup_.engine_b) b = &e;
+    int threads         = 1;
+    const auto consider = [&](const std::string& name, int own) {
+        const int forced = own > 0 ? own : setup_.common_threads;
+        for (const auto& e : engines_) {
+            if (e.name == name) threads = std::max(threads, forced > 0 ? forced : e.threads());
+        }
+    };
+    if (setup_.format == TournamentFormat::Match) {
+        consider(setup_.engine_a, 0);
+        consider(setup_.engine_b, 0);
+    } else {
+        for (const auto& p : setup_.participants) consider(p.name, p.threads);
     }
-    const int threads = std::max(a ? a->threads() : 1, b ? b->threads() : 1);
 
     if (setup_.affinity && threads > 1) {
         ImGui::TextColored(ui::MUTED4, TR("Affinity ignored: an engine uses %d threads."), threads);
@@ -403,6 +419,331 @@ void App::setupPgn() {
     changed |= ImGui::Checkbox(TR("Restart an engine that crashes"), &setup_.recover);
     ui::help(TR("Otherwise an engine that crashes or hangs stops the whole match."));
     if (changed) saveSetupSoon();
+}
+
+void App::setupFormat() {
+    if (!ImGui::CollapsingHeader(TR("Format###sec_format"), ImGuiTreeNodeFlags_DefaultOpen)) return;
+
+    bool changed = false;
+    int format   = static_cast<int>(setup_.format);
+    changed |= ImGui::RadioButton(TR("Match"), &format, 0);
+    ImGui::SameLine();
+    changed |= ImGui::RadioButton(TR("Round robin"), &format, 1);
+    ImGui::SameLine();
+    changed |= ImGui::RadioButton(TR("Gauntlet"), &format, 2);
+    setup_.format = static_cast<TournamentFormat>(format);
+
+    switch (setup_.format) {
+        case TournamentFormat::Match:
+            ImGui::TextDisabled("%s",
+                                TR("Two engines: is the new version stronger? Statistics from A's point of view."));
+            break;
+        case TournamentFormat::RoundRobin:
+            ImGui::TextDisabled("%s", TR("Every engine meets every other one, each time on two games with the same "
+                                         "opening, colours reversed."));
+            break;
+        case TournamentFormat::Gauntlet:
+            ImGui::TextDisabled("%s", TR("The first engines of the list (the tested ones) meet every other engine."));
+            break;
+    }
+
+    ui::label(TR("Name"), labelWidth());
+    {
+        char buffer[256];
+        const auto n = std::min(setup_.name.size(), sizeof(buffer) - 1);
+        std::copy_n(setup_.name.data(), n, buffer);
+        buffer[n] = 0;
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        if (ImGui::InputTextWithHint("##tname", defaultTournamentName(setup_).c_str(), buffer, sizeof(buffer))) {
+            setup_.name = buffer;
+            changed     = true;
+        }
+    }
+
+    if (setup_.format != TournamentFormat::Match) {
+        changed |= inputInt(TR("Cycles"), "##cycles", setup_.cycles, 1, 10000);
+        ui::help(TR("How many times every pairing is played; each time is two games, colours reversed."));
+        if (setup_.format == TournamentFormat::Gauntlet) {
+            const int most = std::max(1, static_cast<int>(setup_.participants.size()) - 1);
+            changed |= inputInt(TR("Tested engines"), "##seeds", setup_.seeds, 1, most);
+            ui::help(TR("The first engines of the list play every other engine, not each other."));
+        }
+    }
+
+    if (changed) saveSetupSoon();
+}
+
+void App::setupParticipants() {
+    if (!ImGui::CollapsingHeader(TR("Participants###sec_participants"), ImGuiTreeNodeFlags_DefaultOpen)) return;
+
+    bool changed = false;
+    auto& list   = setup_.participants;
+
+    // Settings forced on everyone unless an engine overrides them.
+    ImGui::TextDisabled("%s", TR("Common settings, forced on every engine (0 = each engine's own):"));
+    changed |= inputInt(TR("Hash (MB)"), "##common_hash", setup_.common_hash, 0, 1 << 20);
+    changed |= inputInt(TR("Threads"), "##common_threads", setup_.common_threads, 0, 1024);
+
+    const bool nodes     = setup_.limit == LimitKind::Nodes;
+    constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit;
+    const float small    = 70.0f * ImGui::GetFontSize() / 16.0f;
+    int remove = -1, up = -1;
+
+    if (!list.empty() && ImGui::BeginTable("##participants", 7, flags)) {
+        ImGui::TableSetupColumn("#");
+        ImGui::TableSetupColumn(TR("Engine"), ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn(TR("Hash"), ImGuiTableColumnFlags_WidthFixed, small);
+        ImGui::TableSetupColumn(TR("Threads"), ImGuiTableColumnFlags_WidthFixed, small);
+        ImGui::TableSetupColumn(nodes ? TR("Nodes") : TR("Time %"), ImGuiTableColumnFlags_WidthFixed,
+                                nodes ? small * 1.5f : small);
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableHeadersRow();
+
+        for (std::size_t i = 0; i < list.size(); ++i) {
+            auto& p = list[i];
+            ImGui::PushID(static_cast<int>(i));
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            const bool seed = setup_.format == TournamentFormat::Gauntlet && static_cast<int>(i) < setup_.seeds;
+            if (seed) {
+                ImGui::PushStyleColor(ImGuiCol_Text, ui::ACCENT);
+                ImGui::Text("%d", static_cast<int>(i + 1));
+                ImGui::PopStyleColor();
+            } else {
+                ImGui::TextDisabled("%d", static_cast<int>(i + 1));
+            }
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(p.name.c_str());
+            if (std::none_of(engines_.begin(), engines_.end(),
+                             [&](const EngineEntry& e) { return e.name == p.name; })) {
+                ImGui::SameLine();
+                ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+                ImGui::TextUnformatted(TR("(not in the engine list)"));
+                ImGui::PopStyleColor();
+            }
+            ImGui::TableNextColumn();
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            if (ImGui::InputInt("##hash", &p.hash, 0, 0)) {
+                p.hash  = std::max(0, p.hash);
+                changed = true;
+            }
+            ImGui::TableNextColumn();
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            if (ImGui::InputInt("##threads", &p.threads, 0, 0)) {
+                p.threads = std::clamp(p.threads, 0, 1024);
+                changed   = true;
+            }
+            ImGui::TableNextColumn();
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            if (nodes) {
+                int value = static_cast<int>(std::min<uint64_t>(p.nodes, INT32_MAX));
+                if (ImGui::InputInt("##nodes", &value, 0, 0)) {
+                    p.nodes = static_cast<uint64_t>(std::max(0, value));
+                    changed = true;
+                }
+            } else if (ImGui::InputInt("##time", &p.time_percent, 0, 0)) {
+                p.time_percent = std::clamp(p.time_percent, 1, 1000);
+                changed        = true;
+            }
+            ImGui::TableNextColumn();
+            ImGui::BeginDisabled(i == 0);
+            if (ImGui::SmallButton("^")) up = static_cast<int>(i);
+            ImGui::EndDisabled();
+            ImGui::TableNextColumn();
+            if (ImGui::SmallButton("x")) remove = static_cast<int>(i);
+            ImGui::PopID();
+        }
+        ImGui::EndTable();
+        ImGui::TextDisabled("%s", nodes ? TR("Hash, Threads, Nodes: 0 = the common value.")
+                                        : TR("Hash, Threads: 0 = the common value. Time %: time odds, 100 = the "
+                                             "same clock as the others."));
+    }
+
+    if (remove >= 0) {
+        list.erase(list.begin() + remove);
+        changed = true;
+    }
+    if (up > 0) {
+        std::swap(list[up], list[up - 1]);
+        changed = true;
+    }
+
+    // Adding engines.
+    ImGui::SetNextItemWidth(260.0f * ImGui::GetFontSize() / 16.0f);
+    if (ImGui::BeginCombo("##add_participant", TR("Add an engine…"))) {
+        for (const auto& e : engines_) {
+            const bool in = std::any_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; });
+            if (in) continue;
+            if (ImGui::Selectable(e.name.c_str())) {
+                list.push_back({e.name});
+                changed = true;
+            }
+        }
+        if (engines_.empty()) ImGui::TextDisabled(TR("Add engines in the Engines window."));
+        ImGui::EndCombo();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(TR("Add all"))) {
+        for (const auto& e : engines_) {
+            if (std::none_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; })) {
+                list.push_back({e.name});
+            }
+        }
+        changed = true;
+    }
+    if (!list.empty()) {
+        ImGui::SameLine();
+        if (ImGui::Button(TR("Clear"))) {
+            list.clear();
+            changed = true;
+        }
+    }
+
+    if (changed) saveSetupSoon();
+}
+
+void App::drawSetupSummary() {
+    ui::beginCard("summary_card");
+    ImGui::TextDisabled("%s", TR("Summary"));
+
+    const auto n     = static_cast<int>(setup_.participants.size());
+    const int cycles = std::max(1, setup_.cycles);
+    const int seeds  = std::clamp(setup_.seeds, 1, std::max(1, n - 1));
+    uint64_t games   = 0;
+    std::string formula;
+    std::string per_engine;
+
+    switch (setup_.format) {
+        case TournamentFormat::Match:
+            if (setup_.mode == MatchMode::Fixed) {
+                games = static_cast<uint64_t>((setup_.fixed_games + 1) / 2 * 2);
+            } else if (setup_.mode == MatchMode::Sprt && setup_.sprt_max_games > 0) {
+                games = static_cast<uint64_t>((setup_.sprt_max_games + 1) / 2 * 2);
+            }
+            formula = setup_.mode == MatchMode::Sprt       ? std::string(TR("until the SPRT decides"))
+                      : setup_.mode == MatchMode::Infinite ? std::string(TR("until stopped"))
+                                                           : trf("{} game pairs", games / 2);
+            break;
+        case TournamentFormat::RoundRobin: {
+            const uint64_t pairs = n >= 2 ? static_cast<uint64_t>(n) * (n - 1) / 2 : 0;
+            games                = pairs * 2 * cycles;
+            formula              = trf("{} pairings × 2 games × {} cycles", pairs, cycles);
+            per_engine           = trf("{} games per engine", n >= 2 ? (n - 1) * 2 * cycles : 0);
+            break;
+        }
+        case TournamentFormat::Gauntlet: {
+            const uint64_t pairs = n >= 2 ? static_cast<uint64_t>(seeds) * (n - seeds) : 0;
+            games                = pairs * 2 * cycles;
+            formula              = trf("{} pairings × 2 games × {} cycles", pairs, cycles);
+            per_engine           = trf("{} games per tested engine", n >= 2 ? (n - seeds) * 2 * cycles : 0);
+            break;
+        }
+    }
+
+    ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.8f);
+    ImGui::TextUnformatted(games ? trf("{} games", games).c_str() : "∞");
+    ImGui::PopFont();
+    ImGui::TextDisabled("%s", formula.c_str());
+    if (!per_engine.empty()) ImGui::TextDisabled("%s", per_engine.c_str());
+
+    // A rough duration: a game lasts about two base times and 60 increments per side.
+    const bool fixed_nodes = setup_.limit == LimitKind::Nodes;
+    const int concurrency  = setup_.concurrency_auto ? topology_.defaultConcurrency(fixed_nodes) : setup_.concurrency;
+    if (games > 0 && !fixed_nodes) {
+        const double game_s  = 2.0 * (setup_.tc_base_s + 60.0 * setup_.tc_inc_s);
+        const double seconds = static_cast<double>(games) * game_s / std::max(1, concurrency);
+        ImGui::Spacing();
+        ImGui::TextUnformatted(
+            trf("About {} with {} games at a time", ui::formatDuration(seconds), concurrency).c_str());
+    }
+
+    // What could go wrong.
+    ImGui::Spacing();
+    const auto check = [](bool ok, const std::string& text) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ok ? ui::GOOD : ui::WARN);
+        ImGui::TextUnformatted(ok ? "✓" : "!");
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        ImGui::TextWrapped("%s", text.c_str());
+    };
+    if (setup_.format == TournamentFormat::Match) {
+        check(!setup_.engine_a.empty() && !setup_.engine_b.empty() && setup_.engine_a != setup_.engine_b,
+              TR("Two different engines chosen"));
+    } else {
+        check(n >= 2, trf("{} engines", n));
+    }
+    check(!setup_.book.empty(), setup_.book.empty()
+                                    ? std::string(TR("No opening book: every game starts from the "
+                                                     "initial position"))
+                                    : trf("Openings: {}", std::filesystem::path(setup_.book).filename().string()));
+    if (setup_.common_hash > 0 || setup_.common_threads > 0) {
+        std::string parts;
+        if (setup_.common_hash > 0) parts += fmt::format("Hash {} MB", setup_.common_hash);
+        if (setup_.common_threads > 0)
+            parts += fmt::format("{}Threads {}", parts.empty() ? "" : ", ", setup_.common_threads);
+        check(true, trf("Common settings: {}", parts));
+    }
+    for (const auto& p : setup_.participants) {
+        if (setup_.format != TournamentFormat::Match && !fixed_nodes && p.time_percent != 100) {
+            check(true, trf("{} plays with {} % of the time", p.name, p.time_percent));
+        }
+    }
+    ui::endCard();
+
+    ImGui::Spacing();
+    drawTemplates();
+}
+
+void App::drawTemplates() {
+    ui::beginCard("templates_card");
+    ImGui::TextDisabled("%s", TR("Templates"));
+
+    const auto dir = storage_.root() / "templates";
+    std::vector<std::string> names;
+    std::error_code ec;
+    for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
+        if (entry.path().extension() == ".json") names.push_back(entry.path().stem().string());
+    }
+    std::sort(names.begin(), names.end());
+
+    for (const auto& name : names) {
+        ImGui::PushID(name.c_str());
+        if (ImGui::SmallButton(TR("Load"))) {
+            if (auto loaded = readJson<MatchSetup>(dir / (name + ".json"))) {
+                // The look of the program is not part of a template.
+                loaded->language = setup_.language;
+                loaded->theme    = setup_.theme;
+                loaded->notify   = setup_.notify;
+                setup_           = *loaded;
+                saveSetupSoon();
+            }
+        }
+        ImGui::SameLine();
+        ImGui::TextUnformatted(name.c_str());
+        ImGui::PopID();
+    }
+    if (names.empty()) ImGui::TextDisabled("%s", TR("No template yet."));
+
+    char buffer[128];
+    const auto n = std::min(template_name_.size(), sizeof(buffer) - 1);
+    std::copy_n(template_name_.data(), n, buffer);
+    buffer[n] = 0;
+    ImGui::SetNextItemWidth(-ImGui::CalcTextSize(TR("Save")).x - ImGui::GetStyle().FramePadding.x * 4);
+    if (ImGui::InputTextWithHint("##template_name", TR("Template name"), buffer, sizeof(buffer)))
+        template_name_ = buffer;
+    ImGui::SameLine();
+    ImGui::BeginDisabled(template_name_.empty());
+    if (ImGui::Button(TR("Save"))) {
+        std::filesystem::create_directories(dir, ec);
+        std::string file = template_name_;
+        for (auto& c : file) {
+            if (c == '/' || c == '\\' || c == ':') c = '_';
+        }
+        if (writeJson(dir / (file + ".json"), setup_)) template_name_.clear();
+    }
+    ImGui::EndDisabled();
+    ui::endCard();
 }
 
 }  // namespace fcg

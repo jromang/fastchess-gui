@@ -73,12 +73,32 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineEntry, name, cmd, args, di
                                                 uci_options)
 
 enum class MatchMode { Fixed = 0, Infinite = 1, Sprt = 2 };
+enum class TournamentFormat { Match = 0, RoundRobin = 1, Gauntlet = 2 };
+
+// One engine of a round robin or gauntlet, with what it does differently from the others.
+struct ParticipantSetup {
+    std::string name;        // engine list entry
+    int hash         = 0;    // MB, 0 = the common setting (or the engine's own)
+    int threads      = 0;    // 0 = the common setting (or the engine's own)
+    int time_percent = 100;  // time odds: share of the time control it gets
+    uint64_t nodes   = 0;    // fixed nodes: 0 = the common value
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ParticipantSetup, name, hash, threads, time_percent, nodes)
 enum class LimitKind { Time = 0, Nodes = 1 };
 enum class PgnStyle { Fastchess = 0, ChessBase = 1 };
 
 struct MatchSetup {
-    std::string engine_a;  // the engine under test, statistics are from its point of view
-    std::string engine_b;  // the reference
+    TournamentFormat format = TournamentFormat::Match;
+    std::string name;  // tournament name, empty = made from the engines
+
+    std::string engine_a;  // match: the engine under test, statistics are from its point of view
+    std::string engine_b;  // match: the reference
+
+    std::vector<ParticipantSetup> participants;  // round robin and gauntlet, seeds first
+    int cycles         = 1;                      // every pairing is played 2 x cycles times
+    int seeds          = 1;                      // gauntlet: the first `seeds` participants play all the others
+    int common_hash    = 0;  // MB, forced on every participant unless overridden; 0 = each engine's own
+    int common_threads = 0;
 
     MatchMode mode         = MatchMode::Sprt;
     int fixed_games        = 1000;
@@ -138,14 +158,12 @@ struct MatchSetup {
     std::string language = "auto";    // "auto" (system), "en" or "fr"
     std::string theme    = "system";  // "system", "dark" or "light"
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MatchSetup, engine_a, engine_b, mode, fixed_games, sprt_elo0, sprt_elo1,
-                                                sprt_alpha, sprt_beta, sprt_model, sprt_max_games, limit, tc_base_s,
-                                                tc_inc_s, tc_moves, tc_margin_ms, nodes, concurrency_auto, concurrency,
-                                                affinity, book, book_random, book_plies, book_start, seed, draw_enabled,
-                                                draw_movenumber, draw_movecount, draw_score, resign_enabled,
-                                                resign_movecount, resign_score, resign_twosided, maxmoves_enabled,
-                                                maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,
-                                                pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv,
-                                                recover, notify, language, theme)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
+    MatchSetup, format, name, engine_a, engine_b, participants, cycles, seeds, common_hash, common_threads, mode,
+    fixed_games, sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, limit, tc_base_s, tc_inc_s,
+    tc_moves, tc_margin_ms, nodes, concurrency_auto, concurrency, affinity, book, book_random, book_plies, book_start,
+    seed, draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,
+    resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result, pgn_event,
+    export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, recover, notify, language, theme)
 
 }  // namespace fcg

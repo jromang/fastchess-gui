@@ -23,7 +23,10 @@ namespace fcg {
 
 // What a run was started with, for display.
 struct RunInfo {
-    std::string engine_a;
+    tour::Format format = tour::Format::Match;
+    std::string name;  // the tournament's
+    int participants = 2;
+    std::string engine_a;  // match: the two engines; otherwise the first two participants
     std::string engine_b;
     std::filesystem::path dir;
 
@@ -62,6 +65,12 @@ struct BuiltRun {
                                 const CpuTopology& topology, const std::filesystem::path& run_dir);
 
 [[nodiscard]] std::string makeRunDirName(const std::string& a, const std::string& b);
+
+// "20261109-185927_<name>" for a round robin or a gauntlet.
+[[nodiscard]] std::string makeTournamentDirName(const std::string& name);
+
+// The tournament's name when the user gave none: "A vs B", "Round robin, 8 engines"...
+[[nodiscard]] std::string defaultTournamentName(const MatchSetup& setup);
 
 // Owns the thread a tournament runs on, and the tournament's state. Only one run exists at a time, because
 // fastchess keeps its configuration and stop flag in globals.

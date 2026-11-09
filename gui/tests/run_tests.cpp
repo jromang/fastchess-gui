@@ -220,3 +220,41 @@ TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly 
     CHECK_FALSE(unfinishedMatch(root));
     CHECK_FALSE(h.run.resume(unfinished->dir).empty());  // already finished
 }
+
+TEST_CASE("a round robin of three engines plays every pairing and shows every name") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+
+    const auto root = fs::temp_directory_path() / "fcg-run-tests-rr";
+    fs::remove_all(root);
+
+    auto engines = randomEngines();
+    engines.push_back(engines[0]);
+    engines[2].name = "random-c";
+
+    MatchSetup setup   = randomSetup(0);
+    setup.format       = TournamentFormat::RoundRobin;
+    setup.cycles       = 2;
+    setup.participants = {{"random-a"}, {"random-b"}, {"random-c"}};
+    setup.name         = "Three randoms";
+
+    Harness h;
+    REQUIRE(h.run.start(setup, engines, topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}}), root).empty());
+    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
+    CHECK(h.run.error().empty());
+
+    // 3 pairings x 2 games x 2 cycles.
+    CHECK(h.games.size() == 12);
+    REQUIRE(h.run.observer());
+    CHECK(h.run.observer()->names().size() == 3);
+    std::set<std::pair<int, int>> colours;
+    for (const auto& g : h.games) colours.insert({g.white, g.black});
+    CHECK(colours.size() == 6);  // every ordered pair had White at least once
+
+    const auto summary = tour::summarize(h.run.tournament()->dir());
+    REQUIRE(summary);
+    CHECK(summary->spec.name == "Three randoms");
+    CHECK(summary->finished);
+}

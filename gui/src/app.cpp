@@ -1,5 +1,7 @@
 #include "app.hpp"
 
+#include <fstream>
+
 #include <SDL3/SDL.h>
 
 #include <imgui.h>
@@ -106,7 +108,10 @@ void App::frame() {
             page_ = Page::Home;
         else {
             page_        = Page::Tournament;
-            tab_request_ = w == "live" ? Tab::Live : w == "games" ? Tab::Games : Tab::Overview;
+            tab_request_ = w == "live"        ? Tab::Live
+                           : w == "games"     ? Tab::Games
+                           : w == "standings" ? Tab::Standings
+                                              : Tab::Overview;
         }
         focus_done_ = true;
     }
@@ -119,8 +124,7 @@ void App::frame() {
         std::string title = "fastchess-gui";
         if (run_.running()) {
             const auto& info = run_.info();
-            title = trf("{} – {} vs {} · {} games", run_.paused() ? TR("Paused") : TR("Running"), info.engine_a,
-                        info.engine_b, games_.size());
+            title = trf("{} – {} · {} games", run_.paused() ? TR("Paused") : TR("Running"), info.name, games_.size());
             if (info.sprt) title += fmt::format(" · LLR {:.2f}", current_.llr);
         } else if (run_.state() == RunController::State::Finished) {
             title = trf("{} – fastchess-gui", TR("Finished"));
@@ -224,9 +228,8 @@ void App::startRun() {
 
     resetRunView();
     const auto& info = run_.info();
-    Console::instance().add(trf("Match started: {} vs {}, {}, {} concurrent games{}. Folder: {}", info.engine_a,
-                                info.engine_b, info.limit_text, info.concurrency,
-                                info.affinity ? TR(", CPU affinity") : "", info.dir.string()));
+    Console::instance().add(trf("Started: {}, {}, {} concurrent games{}. Folder: {}", info.name, info.limit_text,
+                                info.concurrency, info.affinity ? TR(", CPU affinity") : "", info.dir.string()));
 }
 
 void App::resumeRun() {
@@ -241,8 +244,8 @@ void App::resumeRun() {
     resetRunView();
     games_at_start_  = run_.tournament() ? run_.tournament()->results().size() : 0;
     const auto& info = run_.info();
-    Console::instance().add(trf("Match resumed: {} vs {}, {} games already played. Folder: {}", info.engine_a,
-                                info.engine_b, games_at_start_, info.dir.string()));
+    Console::instance().add(
+        trf("Resumed: {}, {} games already played. Folder: {}", info.name, games_at_start_, info.dir.string()));
 }
 
 void App::resetRunView() {
@@ -255,7 +258,12 @@ void App::resetRunView() {
     stats_   = {};
     current_ = {};
     reasons_.clear();
-    totals_ = {};
+    totals_.clear();
+    table_     = {};
+    table_for_ = ~std::size_t(0);
+    anchor_.reset();
+    crosstable_cell_.reset();
+    games_subject_ = -1;
     filtered_.clear();
     filtered_for_  = ~std::size_t(0);
     selected_game_ = -1;
@@ -331,10 +339,16 @@ void App::onRunFinished() {
         verdict = TR("Finished");
     }
 
-    finish_message_ = trf("{} · {} games · Elo {} · {}", verdict, played,
-                          current_.valid ? formatElo(current_.elo, current_.elo_err) : std::string("—"),
-                          ui::formatDuration(std::chrono::duration<double>(info.finished - info.started).count()));
-    if (info.sprt) finish_message_ += fmt::format(" · LLR {:.2f}", current_.llr);
+    const auto duration = ui::formatDuration(std::chrono::duration<double>(info.finished - info.started).count());
+    if (isMatch()) {
+        finish_message_ = trf("{} · {} games · Elo {} · {}", verdict, played,
+                              current_.valid ? formatElo(current_.elo, current_.elo_err) : std::string("—"), duration);
+        if (info.sprt) finish_message_ += fmt::format(" · LLR {:.2f}", current_.llr);
+    } else {
+        refreshTable();
+        const auto leader = table_.rows.empty() ? std::string("—") : table_.rows.front().name;
+        finish_message_   = trf("{} · {} games · first: {} · {}", verdict, games_.size(), leader, duration);
+    }
 
     Console::instance().add(finish_message_, !error.empty());
 
@@ -343,7 +357,7 @@ void App::onRunFinished() {
     tournaments_dirty_ = true;
 
     if (setup_.notify) {
-        notifyRunFinished(window_, trf("{} vs {}", info.engine_a, info.engine_b), finish_message_);
+        notifyRunFinished(window_, info.name, finish_message_);
     }
 }
 
@@ -382,6 +396,14 @@ void App::handleDialogs() {
                 break;
             case Dialogs::Purpose::OpenTournament:
                 openTournament(path);
+                break;
+            case Dialogs::Purpose::ExportStandings:
+                if (const auto* t = run_.tournament()) {
+                    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+                    out << tour::tableHtml(table_, t->spec().name);
+                    Console::instance().add(out ? trf("Standings written to {}", path) : trf("Cannot write {}", path),
+                                            !out);
+                }
                 break;
             case Dialogs::Purpose::EngineCommand:
                 if (selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size())) {

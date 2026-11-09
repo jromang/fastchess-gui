@@ -24,6 +24,8 @@
 #include "topology.hpp"
 #include "ui.hpp"
 
+#include <tour/standings.hpp>
+
 struct SDL_Window;
 
 namespace fcg {
@@ -61,7 +63,7 @@ class App {
 
    private:
     enum class Page { Home, NewMatch, Tournament, Engines, Log, Settings };
-    enum class Tab { Overview, Live, Games };
+    enum class Tab { Overview, Standings, Live, Games };
 
     // shell
     void drawShell();
@@ -86,7 +88,19 @@ class App {
     void drawConsole();
     void drawQuitModal();
 
+    // tournaments
+    [[nodiscard]] bool isMatch() const;
+    void refreshTable();
+    void drawTournamentOverview();
+    void drawStandings();
+    void drawStandingsTable(bool compact);
+    void drawCrosstable();
+
     // setup sections
+    void setupFormat();
+    void setupParticipants();
+    void drawSetupSummary();
+    void drawTemplates();
     void setupEngines();
     void setupMatch();
     void setupLimit();
@@ -139,7 +153,7 @@ class App {
     StatPoint current_;
     std::optional<fastchess::SPRT> sprt_;
     std::vector<std::string> reasons_;
-    std::array<EngineTotals, 2> totals_{};
+    std::vector<EngineTotals> totals_;
     std::chrono::steady_clock::time_point last_totals_{};
     double games_per_hour_      = 0;
     std::size_t games_at_start_ = 0;           // games a resumed match already had
@@ -154,7 +168,8 @@ class App {
     bool flip_live_ = false;
 
     // Games view.
-    int games_filter_ = 0;
+    int games_filter_  = 0;
+    int games_subject_ = -1;  // a tournament: participant index whose games are shown, -1 = all
     std::vector<int> filtered_;
     std::size_t filtered_for_ = ~std::size_t(0);
     int selected_game_        = -1;
@@ -175,6 +190,14 @@ class App {
     std::vector<Console::Line> console_lines_;
     uint64_t console_version_ = 0;
     bool console_follow_      = true;
+
+    // Standings of a round robin or gauntlet, recomputed when games arrive.
+    tour::Table table_;
+    std::size_t table_for_ = ~std::size_t(0);
+    std::optional<tour::Anchor> anchor_;
+    int crosstable_mode_ = 0;                             // 0 score, 1 wins/draws/losses, 2 Elo difference
+    std::optional<std::pair<int, int>> crosstable_cell_;  // participant ids (row, column)
+    std::string template_name_;
 
     // Shell.
     Page page_ = Page::Home;

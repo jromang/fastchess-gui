@@ -140,7 +140,7 @@ void App::drawResults() {
     }
 
     // Engine health, shown only when something happened.
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < std::min(2, static_cast<int>(totals_.size())); ++i) {
         const auto& t = totals_[i];
         if (t.timeouts + t.crashes + t.illegal == 0) continue;
         ImGui::TextColored(ImVec4(0.95f, 0.65f, 0.3f, 1),
@@ -320,7 +320,7 @@ void App::drawCharts() {
         ImGui::TableSetupColumn(TR("Avg NPS"));
         ImGui::TableSetupColumn(TR("Time / move"));
         ImGui::TableHeadersRow();
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < std::min(2, static_cast<int>(totals_.size())); ++i) {
             const auto& t = totals_[i];
             ImGui::TableNextRow();
             ImGui::TableNextColumn();

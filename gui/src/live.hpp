@@ -75,8 +75,11 @@ struct SlotState {
 struct GameRecord {
     uint64_t game_id     = 0;
     uint32_t round_id    = 0;
-    bool a_white         = true;
-    int8_t a_result      = 0;  // +1 A won, 0 draw, -1 A lost
+    uint16_t white       = 0;  // participant indexes
+    uint16_t black       = 0;
+    int8_t white_result  = 0;     // +1 White won, 0 draw, -1 Black won
+    bool a_white         = true;  // a match: did A (participant 0) have White, and how did it do
+    int8_t a_result      = 0;     // +1 A won, 0 draw, -1 A lost
     uint8_t termination  = 0;
     uint16_t reason      = 0;  // index into GuiObserver::reasons()
     uint16_t plies       = 0;
@@ -127,7 +130,11 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     void drain(std::vector<GameRecord>& games, std::vector<fastchess::Stats>& stats);
 
     [[nodiscard]] std::vector<std::string> reasons() const;
-    [[nodiscard]] std::array<EngineTotals, 2> totals() const;  // [0] = A, [1] = B
+    [[nodiscard]] std::vector<EngineTotals> totals() const;  // by participant index ([0] = A, [1] = B in a match)
+
+    // Participant names, by index.
+    [[nodiscard]] const std::vector<std::string>& names() const noexcept { return names_; }
+    [[nodiscard]] const std::string& name(std::size_t index) const;
 
     [[nodiscard]] const std::filesystem::path& fastchessPgn() const noexcept { return pgn_fastchess_; }
     [[nodiscard]] const std::filesystem::path& chessbasePgn() const noexcept { return pgn_chessbase_; }
@@ -150,8 +157,11 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
 
     std::string engine_a_;
     std::string engine_b_;
-    int id_a_ = 0;  // participant ids
-    int id_b_ = 1;
+    int id_a_   = 0;  // participant ids
+    int id_b_   = 1;
+    bool match_ = true;
+    std::vector<std::string> names_;
+    std::unordered_map<int, uint16_t> index_;  // participant id -> index
 
     std::vector<std::unique_ptr<Slot>> slots_;
 
@@ -163,7 +173,7 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     std::vector<fastchess::Stats> pending_stats_;
     std::vector<std::string> reasons_;
     std::unordered_map<std::string, uint16_t> reason_index_;
-    std::array<EngineTotals, 2> totals_{};
+    std::vector<EngineTotals> totals_;
 };
 
 }  // namespace fcg

@@ -369,5 +369,39 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     setup.engine_b = "missing";
     CHECK_THROWS((void)buildRun(setup, engines, topology, dir));
 
+    // A round robin: common Hash, an engine's own Threads, time odds; the engine without a Hash option keeps none.
+    engines[0].uci_options = {{"Hash", "spin", "16", "1", "1024"}, {"Threads", "spin", "1", "1", "64"}};
+    engines[1].uci_options = {{"Threads", "spin", "1", "1", "64"}};
+    setup.format           = TournamentFormat::RoundRobin;
+    setup.participants     = {{"new", 0, 4, 50}, {"old"}};
+    setup.common_hash      = 256;
+    setup.cycles           = 3;
+    setup.limit            = LimitKind::Time;
+    setup.tc_base_s        = 60;
+    setup.tc_inc_s         = 1;
+    run                    = buildRun(setup, engines, topology, dir);
+    REQUIRE(run.engines.size() == 2);
+    CHECK(run.spec.format == tour::Format::RoundRobin);
+    CHECK(run.spec.cycles == 3);
+    CHECK_FALSE(run.tournament.sprt.enabled);
+    CHECK(run.info.total_games == 6);
+    const auto option = [](const fastchess::EngineConfiguration& c, const std::string& name) -> std::string {
+        for (const auto& [k, v] : c.options) {
+            if (k == name) return v;
+        }
+        return "";
+    };
+    CHECK(option(run.engines[0], "Hash") == "256");
+    CHECK(option(run.engines[0], "Threads") == "4");
+    CHECK(option(run.engines[1], "Hash") == "64");  // its own value: it has no Hash option to force
+    CHECK(run.engines[0].limit.tc.time == 30000);
+    CHECK(run.engines[0].limit.tc.increment == 500);
+    CHECK(run.engines[1].limit.tc.time == 60000);
+
+    setup.participants = {{"new"}, {"new"}};
+    CHECK_THROWS((void)buildRun(setup, engines, topology, dir));
+    setup.participants = {{"new"}};
+    CHECK_THROWS((void)buildRun(setup, engines, topology, dir));
+
     fs::remove_all(dir);
 }

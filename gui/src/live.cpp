@@ -24,6 +24,14 @@ GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
       id_b_(state.spec().participants.at(1).id),
       pgn_fastchess_(state.pgnPath()),
       pgn_chessbase_(state.chessbasePgnPath()) {
+    const auto& spec = state.spec();
+    match_           = spec.format == tour::Format::Match;
+    for (const auto& p : spec.participants) {
+        index_[p.id] = static_cast<uint16_t>(names_.size());
+        names_.push_back(p.engine.name);
+    }
+    totals_.resize(names_.size());
+
     slots_.reserve(static_cast<std::size_t>(std::max(1, slots)));
     for (int i = 0; i < std::max(1, slots); ++i) slots_.push_back(std::make_unique<Slot>());
 
@@ -33,7 +41,12 @@ GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
         pending_games_.push_back(makeRecord(result));
         countLoss(result);
     }
-    pending_stats_ = state.pairHistory(id_a_, id_b_);
+    if (match_) pending_stats_ = state.pairHistory(id_a_, id_b_);
+}
+
+const std::string& GuiObserver::name(std::size_t index) const {
+    static const std::string unknown = "?";
+    return index < names_.size() ? names_[index] : unknown;
 }
 
 void GuiObserver::onGameStart(const fastchess::observer::GameStart& info) {
@@ -170,6 +183,9 @@ GameRecord GuiObserver::makeRecord(const tour::GameResult& result) {
     GameRecord record;
     record.game_id        = result.number() + 1;
     record.round_id       = result.encounter + 1;
+    record.white          = index_.count(result.white) ? index_.at(result.white) : 0;
+    record.black          = index_.count(result.black) ? index_.at(result.black) : 0;
+    record.white_result   = resultForA(result, result.white);
     record.a_white        = result.white == id_a_;
     record.a_result       = resultForA(result, id_a_);
     record.termination    = static_cast<uint8_t>(result.termination);
@@ -184,7 +200,9 @@ GameRecord GuiObserver::makeRecord(const tour::GameResult& result) {
 void GuiObserver::countLoss(const tour::GameResult& result) {
     if (result.result == "1/2-1/2") return;
     const int loser = result.result == "1-0" ? result.black : result.white;
-    auto& t         = totals_[loser == id_a_ ? 0 : 1];
+    const auto it   = index_.find(loser);
+    if (it == index_.end()) return;
+    auto& t = totals_[it->second];
 
     switch (result.termination) {
         case fastchess::MatchTermination::TIMEOUT:
@@ -220,8 +238,7 @@ void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::Ma
         if (mv.book || !mv.legal) continue;
 
         const bool white_moved = (i % 2 == 0) == white_first;
-        const bool by_a        = white_moved == record.a_white;
-        auto& t                = totals_[by_a ? 0 : 1];
+        auto& t                = totals_[white_moved ? record.white : record.black];
 
         t.moves++;
         t.depth_sum += static_cast<uint64_t>(std::max<int64_t>(0, mv.depth));
@@ -235,7 +252,7 @@ void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::Ma
     pending_games_.push_back(record);
 
     // `pair` is from the lower id's point of view; statistics are shown from A's.
-    if (pair) pending_stats_.push_back(id_a_ < id_b_ ? *pair : ~*pair);
+    if (pair && match_) pending_stats_.push_back(id_a_ < id_b_ ? *pair : ~*pair);
 }
 
 bool GuiObserver::copySlot(int i, SlotState& out) const {
@@ -268,7 +285,7 @@ std::vector<std::string> GuiObserver::reasons() const {
     return reasons_;
 }
 
-std::array<EngineTotals, 2> GuiObserver::totals() const {
+std::vector<EngineTotals> GuiObserver::totals() const {
     std::lock_guard<std::mutex> lock(data_mutex_);
     return totals_;
 }
