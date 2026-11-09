@@ -46,7 +46,7 @@ this repository still builds unchanged.
   Arena engine lists. WinBoard engines through a UCI adapter such as PolyGlot.
 - Opening books (EPD/PGN), draw / resign / max moves / Syzygy adjudication, crash recovery, a desktop
   notification when a match ends.
-- Dark and light themes; English or French, following the system (can be changed in the settings).
+- Light and dark themes; English, French or German, following the system (can be changed in the settings).
 
 | Standings and crosstable | Games and replay |
 |---|---|

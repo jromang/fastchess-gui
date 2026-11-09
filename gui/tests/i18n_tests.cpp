@@ -30,11 +30,26 @@ std::string unescape(const std::string& literal) {
 
 }  // namespace
 
-TEST_CASE("every TR() and trf() string has a French translation") {
-    std::set<std::string_view> french;
-    for (const auto& [en, fr] : i18n::frenchTable()) {
-        CHECK_MESSAGE(french.insert(en).second, "duplicate entry: " << en);
-        CHECK_FALSE(fr.empty());
+// The {} and printf placeholders of a string, sorted: a translation must keep them, or trf() throws.
+std::multiset<std::string> placeholders(std::string_view text) {
+    static const std::regex mark(R"re(\{[^{}]*\}|%[-+#0]*\d*(?:\.\d+)?(?:zu|ld|lld|[dsfcu%]))re");
+    std::multiset<std::string> out;
+    const std::string s(text);
+    for (std::sregex_iterator it(s.begin(), s.end(), mark), end; it != end; ++it) out.insert(it->str());
+    return out;
+}
+
+TEST_CASE("every TR() and trf() string has a French and a German translation, with the same placeholders") {
+    const std::pair<const char*, const std::vector<std::pair<std::string_view, std::string_view>>*> tables[] = {
+        {"French", &i18n::frenchTable()}, {"German", &i18n::germanTable()}};
+    std::set<std::string_view> keys[2];
+    for (int t = 0; t < 2; ++t) {
+        for (const auto& [en, text] : *tables[t].second) {
+            CHECK_MESSAGE(keys[t].insert(en).second, tables[t].first << ": duplicate entry: " << en);
+            CHECK_FALSE(text.empty());
+            CHECK_MESSAGE(placeholders(en) == placeholders(text),
+                          tables[t].first << ": placeholders differ: \"" << en << "\" / \"" << text << "\"");
+        }
     }
 
     // TR("a" "b") is one string: clang-format splits long literals.
@@ -62,8 +77,10 @@ TEST_CASE("every TR() and trf() string has a French translation") {
             for (std::sregex_iterator p(parts.begin(), parts.end(), literal), e; p != e; ++p)
                 text += unescape((*p)[1].str());
             text = text.substr(0, text.find("##"));
-            CHECK_MESSAGE(french.count(text) == 1, entry.path().filename().string()
-                                                       << ": no French for \"" << text << "\"");
+            for (int t = 0; t < 2; ++t) {
+                CHECK_MESSAGE(keys[t].count(text) == 1, entry.path().filename().string()
+                                                            << ": no " << tables[t].first << " for \"" << text << "\"");
+            }
             ++checked;
         }
     }
@@ -89,9 +106,15 @@ TEST_CASE("translation keeps ImGui ids and falls back to English") {
     const char* b = i18n::tr("Stop");
     CHECK(a == b);
 
+    i18n::setLanguage(i18n::Language::German);
+    CHECK(std::string(i18n::tr("Games###games")) == "Partien###games");
+    CHECK(trf("{} games", 12) == "12 Partien");
+    CHECK(std::string(i18n::tr(std::string("White mates"))) == "Weiß setzt matt");
+
     i18n::setLanguage(i18n::Language::English);
     CHECK(trf("{} games", 12) == "12 games");
 
+    CHECK(i18n::resolve("de") == i18n::Language::German);
     CHECK(i18n::resolve("fr") == i18n::Language::French);
     CHECK(i18n::resolve("en") == i18n::Language::English);
 }

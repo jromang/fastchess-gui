@@ -599,10 +599,15 @@ void App::drawSettings() {
 
     ui::label(TR("Language"), label);
     ImGui::SetNextItemWidth(px(220));
-    const char* languages[] = {TR("Automatic (system)"), "Français", "English"};
-    int language            = setup_.language == "fr" ? 1 : setup_.language == "en" ? 2 : 0;
-    if (ImGui::Combo("##language", &language, languages, 3)) {
-        setup_.language = language == 1 ? "fr" : language == 2 ? "en" : "auto";
+    // Each language under its own name.
+    const char* languages[] = {TR("Automatic (system)"), "Deutsch", "English", "Français"};
+    const char* codes[]     = {"auto", "de", "en", "fr"};
+    int language            = 0;
+    for (int i = 1; i < 4; ++i) {
+        if (setup_.language == codes[i]) language = i;
+    }
+    if (ImGui::Combo("##language", &language, languages, 4)) {
+        setup_.language = codes[language];
         i18n::setLanguage(i18n::resolve(setup_.language));
         changed = true;
     }

@@ -1,6 +1,7 @@
 #pragma once
 
-// User interface language. The code is written in English; i18n_table.cpp holds the French text.
+// User interface language. The code is written in English; i18n_table.cpp holds the French text and
+// i18n_table_de.cpp the German.
 //
 //   ImGui::Button(TR("Start"));
 //   ImGui::Begin(TR("Games###games"));            // "###id" keeps the ImGui id stable across languages
@@ -15,12 +16,12 @@
 
 namespace fcg::i18n {
 
-enum class Language { English, French };
+enum class Language { English, French, German };
 
-// The first preferred language of the system: French if it is French, English otherwise.
+// The first preferred language of the system: French or German if it is one of them, English otherwise.
 [[nodiscard]] Language systemLanguage();
 
-// "auto", "en" or "fr", as stored in the setup.
+// "auto", "en", "fr" or "de", as stored in the setup.
 [[nodiscard]] Language resolve(const std::string& setting);
 
 void setLanguage(Language language);
@@ -31,8 +32,9 @@ void setLanguage(Language language);
 [[nodiscard]] const char* tr(const char* english);
 [[nodiscard]] const char* tr(const std::string& english);
 
-// The table itself, for the completeness test.
+// The tables themselves, for the completeness test.
 [[nodiscard]] const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable();
+[[nodiscard]] const std::vector<std::pair<std::string_view, std::string_view>>& germanTable();
 
 }  // namespace fcg::i18n
 

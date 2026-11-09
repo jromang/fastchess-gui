@@ -212,7 +212,7 @@ void App::setupLimit() {
     setup_.limit = static_cast<LimitKind>(limit);
 
     if (setup_.limit == LimitKind::Time) {
-        changed |= inputDouble("Base (s)", "##tc_base", setup_.tc_base_s, 0, 36000, "%.2f");
+        changed |= inputDouble(TR("Base (s)"), "##tc_base", setup_.tc_base_s, 0, 36000, "%.2f");
         changed |= inputDouble(TR("Increment (s)"), "##tc_inc", setup_.tc_inc_s, 0, 3600, "%.3f");
         changed |= inputInt(TR("Moves / period"), "##tc_moves", setup_.tc_moves, 0, 1000);
         ui::help(TR("0 = the base time covers the whole game. Otherwise it is given again every N moves."));
@@ -313,7 +313,7 @@ void App::setupOpenings() {
     if (setup_.book.empty()) ImGui::TextDisabled(TR("Without a book, every game starts from the initial position."));
 
     changed |= ImGui::Checkbox(TR("Random order"), &setup_.book_random);
-    changed |= inputInt("Plies (PGN)", "##plies", setup_.book_plies, -1, 1000);
+    changed |= inputInt(TR("Plies (PGN)"), "##plies", setup_.book_plies, -1, 1000);
     ui::help(TR("For a PGN book: number of plies kept. -1 = all."));
     changed |= inputInt(TR("Start at"), "##book_start", setup_.book_start, 1, 100'000'000);
 
@@ -350,7 +350,7 @@ void App::setupAdjudication() {
     if (setup_.resign_enabled) {
         ImGui::Indent();
         changed |= inputInt(TR("Consecutive moves"), "##res_mc", setup_.resign_movecount, 1, 1000);
-        changed |= inputInt("Score (cp)", "##res_sc", setup_.resign_score, 0, 100000);
+        changed |= inputInt(TR("Score (cp)"), "##res_sc", setup_.resign_score, 0, 100000);
         changed |= ImGui::Checkbox(TR("Both engines must agree"), &setup_.resign_twosided);
         ImGui::Unindent();
     }

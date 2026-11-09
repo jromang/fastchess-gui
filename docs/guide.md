@@ -14,9 +14,9 @@ A navigation rail on the left leads to five pages:
 | Log | fastchess' own output and the messages of the GUI |
 | Settings | Language, theme (automatic, dark, light), end of tournament notification, the tournaments folder |
 
-The interface is in English or French. At startup it follows the first preferred language of the system (French
-if that is French, English otherwise); it can be forced in **Settings**. The theme follows the system too, unless
-dark or light is chosen.
+The interface is in English, French or German. At startup it follows the first preferred language of the system
+(French or German if it is one of them, English otherwise); it can be forced in **Settings**. The theme is light
+unless dark, or the system's choice, is picked in **Settings**.
 
 ## Engines
 
@@ -215,7 +215,8 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json
   its own tests, `fcg-tournament-tests`. [docs/design/tournament.md](design/tournament.md) describes it.
 - `gui/src` holds the application, `gui/tests` its tests (`fastchess-gui-tests`, including real tournaments with
   fastchess' random mover engine). The code is written in English; every user visible string goes through `TR()`
-  or `trf()`, and `gui/src/i18n_table.cpp` holds the French text. A test fails when a `TR()` string has no French
-  translation.
+  or `trf()`; `gui/src/i18n_table.cpp` holds the French text and `gui/src/i18n_table_de.cpp` the German. A test
+  fails when a `TR()` string has no French or German translation, or when a translation does not keep the `{}` and
+  `%d` placeholders of the English text.
 - The fastchess hooks are listed in the README. `make` in `app/` still builds and tests the upstream command line
   tool.
