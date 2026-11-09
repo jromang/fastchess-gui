@@ -280,6 +280,7 @@ void App::drawMosaic(float width) {
             const float bar = px(4);
             dl->AddRectFilled(pos, ImVec2(pos.x + inner, pos.y + bar), IM_COL32(25, 25, 25, 255), bar);
             dl->AddRectFilled(pos, ImVec2(pos.x + inner * f, pos.y + bar), IM_COL32(236, 236, 236, 255), bar);
+            dl->AddRect(pos, ImVec2(pos.x + inner, pos.y + bar), IM_COL32(130, 130, 130, 255), bar);  // seen on white
             ImGui::Dummy(ImVec2(inner, bar));
         }
 

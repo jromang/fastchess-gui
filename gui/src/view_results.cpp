@@ -17,7 +17,7 @@ namespace fcg {
 
 namespace {
 
-void bigValue(const char* caption, const std::string& value, ImVec4 colour = ImVec4(1, 1, 1, 1)) {
+void bigValue(const char* caption, const std::string& value, ImVec4 colour = ImGui::GetStyleColorVec4(ImGuiCol_Text)) {
     ImGui::BeginGroup();
     ImGui::TextDisabled("%s", caption);
     ImGui::PushStyleColor(ImGuiCol_Text, colour);
@@ -29,10 +29,10 @@ void bigValue(const char* caption, const std::string& value, ImVec4 colour = ImV
 }
 
 ImVec4 eloColour(double elo, double err) {
-    if (!std::isfinite(elo) || !std::isfinite(err)) return ImVec4(1, 1, 1, 1);
-    if (elo - err > 0) return ImVec4(0.47f, 0.78f, 0.47f, 1);
-    if (elo + err < 0) return ImVec4(0.9f, 0.43f, 0.39f, 1);
-    return ImVec4(1, 1, 1, 1);
+    // The theme's colours, so the value stays readable in light and dark.
+    if (std::isfinite(elo) && std::isfinite(err) && elo - err > 0) return ImGui::ColorConvertU32ToFloat4(ui::GOOD);
+    if (std::isfinite(elo) && std::isfinite(err) && elo + err < 0) return ImGui::ColorConvertU32ToFloat4(ui::BAD);
+    return ImGui::GetStyleColorVec4(ImGuiCol_Text);
 }
 
 // Keeps at most `limit` evenly spaced points (always the last one), so long runs plot fast.

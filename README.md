@@ -6,7 +6,7 @@ start an SPRT, follow Elo and LLR as results come in), and running engine tourna
 Swiss, knockout) that resume exactly after any interruption, can be changed while they run and can be broadcast
 live.
 
-![Live games](docs/screenshots/live.png)
+![A round robin in progress](docs/screenshots/live.png)
 
 The tournament engine is fastchess itself, running inside the application (no command line parsing, no log
 scraping): the games, the statistics and the SPRT are exactly those of the fastchess command line tool, which
@@ -48,9 +48,13 @@ this repository still builds unchanged.
   notification when a match ends.
 - Dark and light themes; English or French, following the system (can be changed in the settings).
 
-| Games and replay | Charts |
+| Standings and crosstable | Games and replay |
 |---|---|
-| ![Games](docs/screenshots/games.png) | ![Charts](docs/screenshots/charts.png) |
+| ![Standings](docs/screenshots/standings.png) | ![Games](docs/screenshots/games.png) |
+
+| A two-engine SPRT match |
+|---|
+| ![Charts](docs/screenshots/charts.png) |
 
 ## Building
 
