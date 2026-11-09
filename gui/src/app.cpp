@@ -117,6 +117,7 @@ void App::frame() {
     }
 
     drawShell();
+    drawDetached();
     drawQuitModal();
 
     // The window title tells how the run is going, also when the window is in the background.
@@ -268,8 +269,8 @@ void App::resetRunView() {
     filtered_for_  = ~std::size_t(0);
     selected_game_ = -1;
     replay_.reset();
-    live_               = {};
-    live_board_version_ = ~0ULL;
+    slot_views_.clear();
+    detached_.clear();
     finish_message_.clear();
 
     const auto& info = run_.info();

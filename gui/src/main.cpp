@@ -224,6 +224,10 @@ int main(int argc, char** argv) {
     // Scripted screenshots must not show hover effects from wherever the real mouse happens to be.
     if (!args.shots.empty()) io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
 
+    // A detached board can be dragged out of the main window, onto a second screen. The SDL backend does not
+    // support it on Wayland: there, detached boards stay floating windows inside the main one.
+    if (args.shots.empty()) io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
     fcg::ui::applyTheme(fcg::ui::Theme::Dark, scale);  // the app applies the chosen theme on its first frame
     ImGui::GetStyle().FontScaleDpi = scale;
     loadFonts(16.0f);
@@ -304,6 +308,15 @@ int main(int argc, char** argv) {
             }
             if (all_taken && args.quit_after <= 0) app.forceQuit();
             if (args.quit_after > 0 && elapsed >= args.quit_after) app.forceQuit();
+
+            // Windows dragged out of the main one.
+            if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+                SDL_Window* current_window    = SDL_GL_GetCurrentWindow();
+                SDL_GLContext current_context = SDL_GL_GetCurrentContext();
+                ImGui::UpdatePlatformWindows();
+                ImGui::RenderPlatformWindowsDefault();
+                SDL_GL_MakeCurrent(current_window, current_context);
+            }
 
             SDL_GL_SwapWindow(window);
 

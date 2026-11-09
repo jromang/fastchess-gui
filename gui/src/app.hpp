@@ -5,6 +5,7 @@
 #include <deque>
 #include <future>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -62,6 +63,16 @@ class App {
     [[nodiscard]] bool initGraphics();
 
    private:
+    // One view per concurrent game, shared by the mosaic, the focus panel and detached windows.
+    struct SlotView {
+        SlotState state;
+        chess::Board board;
+        uint64_t board_version = ~0ULL;
+        bool flip              = false;
+        std::size_t followed   = 0;  // moves shown, to keep the move list scrolled to the end
+        int follow_frames      = 0;
+    };
+
     enum class Page { Home, NewMatch, Tournament, Engines, Log, Settings };
     enum class Tab { Overview, Standings, Live, Games };
 
@@ -81,6 +92,10 @@ class App {
     // views
     void drawSetup();
     void drawLive();
+    void refreshSlot(int slot);
+    void drawLiveGame(SlotView& view, const char* id, bool allow_detach, int slot);
+    void drawMosaic(float width);
+    void drawDetached();
     void drawGames();
     void drawResults();
     void drawCharts();
@@ -162,10 +177,9 @@ class App {
 
     // Live view.
     int live_slot_ = 0;
-    SlotState live_;
-    uint64_t live_board_version_ = ~0ULL;
-    chess::Board live_board_;
-    bool flip_live_ = false;
+    std::vector<SlotView> slot_views_;
+    std::set<int> detached_;  // slots shown in their own window
+    bool live_mosaic_ = true;
 
     // Games view.
     int games_filter_  = 0;
