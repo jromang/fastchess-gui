@@ -1,14 +1,18 @@
 #include "headless.hpp"
 
+#include <atomic>
+#include <chrono>
 #include <csignal>
 #include <cstdio>
 #include <mutex>
+#include <thread>
 
 #include <fmt/include/fmt/format.h>
 #include <core/globals/globals.hpp>
 #include <matchmaking/elo/elo_pentanomial.hpp>
 #include <tour/standings.hpp>
 
+#include "broadcaster.hpp"
 #include "run.hpp"
 
 namespace fcg {
@@ -64,8 +68,10 @@ class ConsoleListener final : public tour::RecordListener {
 
 }  // namespace
 
-int runHeadless(const std::string& target, const Storage& storage, const CpuTopology& topology) {
+int runHeadless(const std::string& target, const Storage& storage, const CpuTopology& topology,
+                const HeadlessBroadcast& broadcast) {
     std::unique_ptr<tour::TournamentState> state;
+    BroadcastSettings settings;
     try {
         if (tour::TournamentState::isTournament(target)) {
             state = tour::TournamentState::open(target);
@@ -76,6 +82,12 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
                 std::fprintf(stderr, "%s is neither a tournament folder nor a setup file\n", target.c_str());
                 return 2;
             }
+            settings.files     = setup->broadcast_files;
+            settings.dir       = setup->broadcast_dir;
+            settings.tlcs      = setup->broadcast_tlcs;
+            settings.tlcs_port = setup->tlcs_port;
+            settings.web       = setup->broadcast_web;
+            settings.web_port  = setup->web_port;
             const auto engines = storage.loadEngines();
             const auto dir =
                 storage.runsDir() /
@@ -105,11 +117,55 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
     ConsoleListener listener(*state);
     listener.setAlready(state->results().size());
 
+    // The command line comes before the setup file.
+    if (broadcast.tlcs_port) settings.tlcs = true, settings.tlcs_port = *broadcast.tlcs_port;
+    if (broadcast.web_port) settings.web = true, settings.web_port = *broadcast.web_port;
+    if (broadcast.live_dir) settings.files = true, settings.dir = *broadcast.live_dir;
+    const bool broadcasting = settings.files || settings.tlcs || settings.web;
+
+    // Broadcasting needs the games in progress: the observer the window uses, read by a thread of its own.
+    std::unique_ptr<GuiObserver> observer;
+    Broadcaster broadcaster;
+    std::atomic_bool playing{true};
+    std::thread broadcast_thread;
+    if (broadcasting) {
+        for (const auto& error : broadcaster.configure(settings)) std::fprintf(stderr, "warning: %s\n", error.c_str());
+        if (broadcaster.tlcs().running()) std::printf("TLCS server on UDP port %d\n", settings.tlcs_port);
+        if (broadcaster.web().running()) std::printf("Web page on http://localhost:%d/\n", settings.web_port);
+        if (settings.files) {
+            std::printf("Live files in %s\n",
+                        (settings.dir.empty() ? state->dir() / "live" : settings.dir).string().c_str());
+        }
+        std::printf("\n");
+
+        observer         = std::make_unique<GuiObserver>(state->spec().conditions.concurrency, *state);
+        broadcast_thread = std::thread([&] {
+            std::vector<GameRecord> games;
+            std::vector<fastchess::Stats> stats;
+            while (playing) {
+                broadcaster.update(*state, *observer, std::nullopt, -1);
+                observer->drain(games, stats);  // the window's lists, not needed here
+                games.clear();
+                stats.clear();
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+            // The end of the last games, then time for the clients to acknowledge it.
+            const auto until = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+            while (std::chrono::steady_clock::now() < until) {
+                broadcaster.update(*state, *observer, std::nullopt, -1);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
+            broadcaster.stop();
+        });
+    }
+
     std::signal(SIGINT, onSignal);
     std::signal(SIGTERM, onSignal);
 
     configureFastchess(state->spec());
-    const auto error = playTournament(*state, nullptr, &listener);
+    const auto error = playTournament(*state, observer.get(), &listener);
+    playing          = false;
+    if (broadcast_thread.joinable()) broadcast_thread.join();
 
     listener.printStatus();
     if (!error.empty()) {

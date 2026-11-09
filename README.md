@@ -25,7 +25,7 @@ this repository still builds unchanged.
 - **Broadcast**: live PGN, HTML standings and JSON files, a TLCS server for TLCV and other viewers, and a built-in
   web page.
 - **Workflow**: a queue of tournaments, *Relaunch with…* a new engine version, templates, and a headless mode
-  (`fastchess-gui --run`) for servers.
+  (`fastchess-gui --run`) for servers, which can broadcast too.
 - **Ratings** over every tournament played, by time control, anchored on a reference Elo.
 - **Matches**: a fixed number of games, unlimited, or an SPRT (normalized, logistic or BayesElo model, with
   gainer and non-regression presets). Time control (base + increment, moves per period) or fixed nodes.

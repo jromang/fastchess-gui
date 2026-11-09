@@ -165,6 +165,18 @@ No window is opened; progress is printed on the console. **Ctrl+C** stops after 
 tournament can be resumed later, from the command line or the GUI. Exit codes: 0 finished, 1 error while
 playing, 2 nothing to run, 3 stopped before the end.
 
+The tournament can be broadcast at the same time, as from the *Broadcast* tab:
+
+```
+fastchess-gui --run FOLDER --tlcs 16001             # a TLCS server on UDP port 16001
+fastchess-gui --run FOLDER --web 8080               # the web page on http://<this machine>:8080/
+fastchess-gui --run FOLDER --live-files [DIR]       # live.pgn, standings.html, tournament.json ("live" by default)
+```
+
+The options can be combined. A setup file saved with broadcasting switched on broadcasts the same way without
+them. For viewers outside the local network, open the ports in the router: TLCV and node-tlcv (ccrl.live)
+connect to the TLCS port.
+
 ## Files
 
 Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/` on Linux,
@@ -193,7 +205,8 @@ tournaments.
 fastchess-gui [--profile DIR] [--autostart] [--size WxH]
               [--shot FILE.png[@WINDOW[@SECONDS]]]... [--select-game N] [--focus WINDOW]
               [--quit-after SECONDS]
-fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json
+fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_PORT] [--web TCP_PORT]
+              [--live-files [DIR]]
 ```
 
 - `--profile DIR` uses another profile folder;

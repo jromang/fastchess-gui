@@ -9,6 +9,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <deque>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -123,9 +124,10 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     // Copies slot `i` into `out` if it changed since `out.version`. Returns true if it did.
     bool copySlot(int i, SlotState& out) const;
 
-    // The last game that ended in slot `i`, kept when the next one starts (the next game often starts before a
-    // broadcast saw the end of the previous one). has_game is false when there is none.
-    [[nodiscard]] SlotState endedGame(int i) const;
+    // The last games that ended in slot `i`, oldest first, kept when the next ones start: the next game often starts
+    // before a broadcast saw the end of the previous one, and fast games (a few nodes per move) end several at a
+    // time between two snapshots.
+    [[nodiscard]] std::vector<SlotState> endedGames(int i) const;
 
     // Is anything going on in slot `i` (cheap, for tab labels)?
     [[nodiscard]] bool slotActive(int i) const;
@@ -156,8 +158,8 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     struct Slot {
         mutable std::mutex mutex;
         SlotState state;
-        SlotState ended;     // the previous game, once it has a result
-        chess::Board board;  // current position of the game in this slot
+        std::deque<SlotState> ended;  // the previous games, once they have a result; at most 8
+        chess::Board board;           // current position of the game in this slot
     };
 
     Slot* slot(int i) { return i >= 0 && i < static_cast<int>(slots_.size()) ? slots_[i].get() : nullptr; }

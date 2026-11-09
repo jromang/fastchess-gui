@@ -54,13 +54,14 @@ void darkColors(ImVec4* c) {
 }
 
 void lightColors(ImVec4* c) {
-    c[ImGuiCol_WindowBg]            = rgb(244, 245, 247);
-    c[ImGuiCol_ChildBg]             = rgb(244, 245, 247, 0.0f);
-    c[ImGuiCol_PopupBg]             = rgb(255, 255, 255, 0.98f);
-    c[ImGuiCol_Border]              = rgb(222, 225, 231);
-    c[ImGuiCol_FrameBg]             = rgb(255, 255, 255);
-    c[ImGuiCol_FrameBgHovered]      = rgb(236, 240, 246);
-    c[ImGuiCol_FrameBgActive]       = rgb(224, 232, 245);
+    c[ImGuiCol_WindowBg] = rgb(244, 245, 247);
+    c[ImGuiCol_ChildBg]  = rgb(244, 245, 247, 0.0f);
+    c[ImGuiCol_PopupBg]  = rgb(255, 255, 255, 0.98f);
+    c[ImGuiCol_Border]   = rgb(222, 225, 231);
+    // Grey, not white: fields, check boxes and radio buttons must show on the white cards too.
+    c[ImGuiCol_FrameBg]             = rgb(232, 235, 240);
+    c[ImGuiCol_FrameBgHovered]      = rgb(222, 228, 237);
+    c[ImGuiCol_FrameBgActive]       = rgb(212, 223, 240);
     c[ImGuiCol_TitleBg]             = rgb(233, 236, 240);
     c[ImGuiCol_TitleBgActive]       = rgb(255, 255, 255);
     c[ImGuiCol_MenuBarBg]           = rgb(255, 255, 255);

@@ -68,7 +68,10 @@ struct Args {
     double quit_after = 0;
     int width         = 0;
     int height        = 0;
-    std::string run;  // --run: a tournament folder or a setup file, played without a window
+    std::string run;               // --run: a tournament folder or a setup file, played without a window
+    std::optional<int> tlcs_port;  // --run: broadcast options
+    std::optional<int> web_port;
+    std::optional<std::string> live_dir;  // empty = "live" in the tournament folder
 };
 
 Args parseArgs(int argc, char** argv) {
@@ -100,6 +103,12 @@ Args parseArgs(int argc, char** argv) {
             args.quit_after = std::atof(next().c_str());
         else if (a == "--run")
             args.run = next();
+        else if (a == "--tlcs")
+            args.tlcs_port = std::atoi(next().c_str());
+        else if (a == "--web")
+            args.web_port = std::atoi(next().c_str());
+        else if (a == "--live-files")
+            args.live_dir = i + 1 < argc && argv[i + 1][0] != '-' ? next() : std::string();
         else if (a == "--size")
             std::sscanf(next().c_str(), "%dx%d", &args.width, &args.height);
         else if (a == "--help" || a == "-h") {
@@ -107,7 +116,8 @@ Args parseArgs(int argc, char** argv) {
                 "fastchess-gui [--profile DIR] [--autostart] [--size WxH]\n"
                 "              [--shot FILE.png[@WINDOW[@SECONDS]]]... [--select-game N] [--focus WINDOW]\n"
                 "              [--quit-after SECONDS]\n"
-                "fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json   (no window)\n");
+                "fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json   (no window)\n"
+                "              [--tlcs UDP_PORT] [--web TCP_PORT] [--live-files [DIR]]\n");
             std::exit(0);
         }
     }
@@ -182,7 +192,11 @@ int main(int argc, char** argv) {
     if (!args.run.empty()) {
         const char* pref = SDL_GetPrefPath("fastchess", "fastchess-gui");
         const fcg::Storage storage(args.profile.empty() ? fs::path(pref ? pref : ".") : fs::path(args.profile));
-        return fcg::runHeadless(args.run, storage, fcg::detectTopology());
+        fcg::HeadlessBroadcast broadcast;
+        broadcast.tlcs_port = args.tlcs_port;
+        broadcast.web_port  = args.web_port;
+        broadcast.live_dir  = args.live_dir;
+        return fcg::runHeadless(args.run, storage, fcg::detectTopology(), broadcast);
     }
 
 #ifndef _WIN32

@@ -107,7 +107,10 @@ void GuiObserver::onGameStart(const fastchess::observer::GameStart& info) {
 
     std::lock_guard<std::mutex> lock(s->mutex);
     auto& st = s->state;
-    if (st.has_game && !st.result.empty()) s->ended = st;
+    if (st.has_game && !st.result.empty()) {
+        s->ended.push_back(st);
+        if (s->ended.size() > 8) s->ended.pop_front();
+    }
 
     s->board = board;
 
@@ -293,10 +296,10 @@ void GuiObserver::addMove(EngineTotals& t, int64_t depth, int64_t time_ms, int64
     }
 }
 
-SlotState GuiObserver::endedGame(int i) const {
+std::vector<SlotState> GuiObserver::endedGames(int i) const {
     if (i < 0 || i >= static_cast<int>(slots_.size())) return {};
     std::lock_guard<std::mutex> lock(slots_[i]->mutex);
-    return slots_[i]->ended;
+    return {slots_[i]->ended.begin(), slots_[i]->ended.end()};
 }
 
 bool GuiObserver::copySlot(int i, SlotState& out) const {

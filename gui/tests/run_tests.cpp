@@ -2,6 +2,7 @@
 
 #include <doctest/doctest.hpp>
 
+#include <atomic>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -13,6 +14,7 @@
 
 #include "engines.hpp"
 #include "headless.hpp"
+#include "net.hpp"
 #include "run.hpp"
 #include "storage.hpp"
 
@@ -436,4 +438,80 @@ TEST_CASE("the engines' search output reaches the live view while they think") {
 
     h.run.stopWhenIdle();
     REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
+}
+
+TEST_CASE("headless: the tournament is broadcast over TLCS and as live files") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+
+    const auto profile = fs::temp_directory_path() / "fcg-run-tests-headless-broadcast";
+    fs::remove_all(profile);
+    fs::create_directories(profile);
+    const Storage storage(profile);
+    storage.saveEngines(randomEngines());
+    REQUIRE(writeJson(profile / "setup-file.json", randomSetup(200)));
+
+    HeadlessBroadcast broadcast;
+    broadcast.tlcs_port = 26041;
+    broadcast.live_dir  = (profile / "live").string();
+
+    std::atomic_int code{-1};
+    std::thread play([&] {
+        code = runHeadless((profile / "setup-file.json").string(), storage, topologyFromCores({{0, 0}, {0, 1}}),
+                           broadcast);
+    });
+
+    // A viewer: logs on until the server answers, then acknowledges and keeps what it receives.
+    net::UdpSocket client;
+    REQUIRE(client.bind(26042).empty());
+    const net::Endpoint to{0x7F000001, 26041};
+    std::vector<std::string> received;
+    bool logged_on   = false;
+    const auto until = std::chrono::steady_clock::now() + 60s;
+    auto next_logon  = std::chrono::steady_clock::now();
+    while (std::chrono::steady_clock::now() < until && (code < 0 || !logged_on)) {
+        if (!logged_on && std::chrono::steady_clock::now() >= next_logon) {
+            client.send(to, "LOGONv15:tester");
+            next_logon = std::chrono::steady_clock::now() + 100ms;
+        }
+        net::Endpoint from;
+        const auto msg = client.receive(from, 50);
+        if (!msg) continue;
+        if (*msg == "LOGON SUCCESSFUL") logged_on = true;
+        if (msg->front() == '<') {
+            const auto close = msg->find('>');
+            client.send(to, "ACK: " + msg->substr(1, close - 1));
+            received.push_back(msg->substr(close + 1));
+        } else {
+            received.push_back(*msg);
+        }
+    }
+    play.join();
+    CHECK(code == 0);
+    CHECK(logged_on);
+    for (;;) {  // what is still on its way
+        net::Endpoint from;
+        const auto msg = client.receive(from, 200);
+        if (!msg) break;
+        const auto close = msg->front() == '<' ? msg->find('>') : std::string::npos;
+        received.push_back(close == std::string::npos ? *msg : msg->substr(close + 1));
+    }
+
+    const auto count = [&](const std::string& prefix) {
+        return std::count_if(received.begin(), received.end(),
+                             [&](const std::string& m) { return m.rfind(prefix, 0) == 0; });
+    };
+    CHECK(count("WPLAYER: ") > 0);
+    CHECK(count("WMOVE: ") > 0);
+    // Random games last a few milliseconds, several end between two snapshots: the last one is told at least.
+    CHECK(count("result: ") > 0);
+    CHECK(count("CT: total games = ") > 0);
+
+    // The live files describe the finished tournament.
+    std::ifstream json(profile / "live" / "tournament.json");
+    const std::string text((std::istreambuf_iterator<char>(json)), std::istreambuf_iterator<char>());
+    CHECK(text.find("\"finished\":true") != std::string::npos);
+    CHECK(fs::is_regular_file(profile / "live" / "standings.html"));
 }

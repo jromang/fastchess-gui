@@ -316,5 +316,5 @@ Then phase 2 (broadcast: files, TLCS, web page) and phase 3 (Swiss, knockout, ra
 - Earlier `runs/` (0.2.x) are imported as finished matches from their PGN and `config.json` (`legacy.cpp`).
 - Only the last edit can be undone, and only until the next game is claimed (`edit_undone`; the replay drops
   the cancelled edit and any end of tournament it caused). Older mistakes are corrected by another edit.
-- The TLCS server follows the protocol as documented by TLCV and node-tlcv, but has not been tried against a real
-  TLCV client yet.
+- The TLCS server follows the protocol as node-tlcv's notes describe TLCV 2.1 and node-tlcv itself, checked with a
+  client written from them on a live tournament; not yet with TLCV or a running node-tlcv.

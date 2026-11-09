@@ -54,7 +54,7 @@ struct BroadcastSnapshot {
     uint64_t total  = 0;  // 0 = unbounded
     bool finished   = false;
     std::vector<LiveGame> games;
-    std::vector<LiveGame> ended;  // the last game ended in each slot, so its end is not missed (TLCS)
+    std::vector<LiveGame> ended;  // the last games ended in each slot, so their end is not missed (TLCS)
     tour::Table table;
     std::vector<std::string> recent;  // latest results, newest first: "White - Black 1-0"
 };

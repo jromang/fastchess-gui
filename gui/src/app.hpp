@@ -13,7 +13,7 @@
 #include <matchmaking/stats.hpp>
 
 #include "board_view.hpp"
-#include "broadcast.hpp"
+#include "broadcaster.hpp"
 #include "console.hpp"
 #include "dialogs.hpp"
 #include "engine_import.hpp"
@@ -123,7 +123,6 @@ class App {
 
     // broadcast
     void updateBroadcast();
-    [[nodiscard]] BroadcastSnapshot makeSnapshot();
     void drawBroadcast();
 
     // setup sections
@@ -256,13 +255,7 @@ class App {
     std::string relaunch_engine_;
 
     // Broadcast.
-    TlcsServer tlcs_;
-    WebServer web_;
-    std::chrono::steady_clock::time_point last_snapshot_{};
-    std::chrono::steady_clock::time_point last_files_{};
-    std::string files_status_;
-    std::string tlcs_error_;
-    std::string web_error_;
+    Broadcaster broadcaster_;
 
     // Rating list over every tournament.
     tour::RatingList rating_list_;

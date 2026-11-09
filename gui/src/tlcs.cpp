@@ -215,6 +215,16 @@ struct TlcsServer::Impl {
                 }
             }
         }
+        // Nothing in progress (the end of the tournament) and the game followed was not told to its end: a game
+        // that ended, so that viewers see the last result.
+        if (!next && (!has_game || !result_sent)) {
+            for (const auto& g : s.games) {
+                if (!g.result.empty()) {
+                    next = &g;
+                    break;
+                }
+            }
+        }
 
         if (next) {
             const bool new_game = !has_game || next->number != game.number;
