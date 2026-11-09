@@ -272,3 +272,75 @@ TEST_CASE("edit: a match only accepts voided games") {
     CHECK_FALSE(state->preview(add).error.empty());
     CHECK_THROWS(state->applyEdit(add));
 }
+
+TEST_CASE("edit: the last change is undone until the next game starts, and stays undone after a reopen") {
+    const auto dir = freshDir("undo");
+    auto state     = TournamentState::create(dir, roundRobin(4, 1));
+    play(*state, 3);
+    const auto total = state->totalGames();
+
+    // A game is running when an engine is withdrawn with its games voided.
+    auto running = state->claimNext();
+    REQUIRE(running);
+    Edit withdraw;
+    withdraw.kind        = Edit::Kind::Withdraw;
+    withdraw.participant = 1;
+    withdraw.void_played = true;
+    state->applyEdit(withdraw);
+    CHECK(state->totalGames() < total);
+    CHECK(state->canUndo());
+
+    // The running game finishes (it is kept), then the change is undone.
+    state->complete(*running, data(*running, "1-0"));
+    CHECK(state->canUndo());
+    state->undoEdit();
+    CHECK_FALSE(state->canUndo());
+    CHECK(state->totalGames() == total);
+    for (const auto& r : state->results()) CHECK_FALSE(r.voided);
+    const auto played = state->results().size();
+
+    // The journal says the same after a reopen.
+    state.reset();
+    state = TournamentState::open(dir);
+    CHECK(state->totalGames() == total);
+    CHECK(state->results().size() == played);
+    for (const auto& r : state->results()) CHECK_FALSE(r.voided);
+    CHECK(play(*state, -1) == static_cast<int>(*total - played));
+    CHECK(state->finished());
+
+    // Too late once a game has started under the change.
+    Edit more;
+    more.kind   = Edit::Kind::SetCycles;
+    more.cycles = 2;
+    state->applyEdit(more);
+    CHECK_FALSE(state->finished());
+    CHECK(state->canUndo());
+    play(*state, 1);
+    CHECK_FALSE(state->canUndo());
+    CHECK_THROWS(state->undoEdit());
+}
+
+TEST_CASE("edit: undoing cycles added to a finished tournament finishes it again") {
+    const auto dir = freshDir("undo-reopen");
+    auto state     = TournamentState::create(dir, roundRobin(3, 1));
+    play(*state, -1);
+    REQUIRE(state->finished());
+
+    Edit more;
+    more.kind   = Edit::Kind::SetCycles;
+    more.cycles = 2;
+    state->applyEdit(more);
+    CHECK_FALSE(state->finished());
+    state->undoEdit();
+    CHECK(state->finished());
+    CHECK(state->totalGames() == 6u);
+
+    state.reset();
+    state = TournamentState::open(dir);
+    CHECK(state->finished());
+    CHECK(state->totalGames() == 6u);
+    const auto summary = summarize(dir);
+    REQUIRE(summary);
+    CHECK(summary->finished);
+    CHECK(summary->total == 6u);
+}

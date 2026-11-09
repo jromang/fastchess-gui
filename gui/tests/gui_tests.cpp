@@ -18,6 +18,7 @@
 #include "pgn_store.hpp"
 #include "run.hpp"
 #include "stats.hpp"
+#include "storage.hpp"
 #include "topology.hpp"
 
 using namespace fcg;
@@ -446,4 +447,24 @@ TEST_CASE("engine lists of ChessGUI, cutechess and Arena are imported") {
     CHECK(result.engines[0].name == "Fruit");
 
     fs::remove_all(dir);
+}
+
+TEST_CASE("the tournaments folder is kept in settings.json, the default restored by an empty path") {
+    namespace fs     = std::filesystem;
+    const auto root  = fs::temp_directory_path() / "fcg-storage-test";
+    const auto other = fs::temp_directory_path() / "fcg-storage-test-elsewhere";
+    fs::remove_all(root);
+
+    {
+        Storage storage(root);
+        CHECK(storage.runsDir() == root / "runs");
+        storage.setRunsDir(other);
+        CHECK(storage.runsDir() == other);
+    }
+    Storage reopened(root);
+    CHECK(reopened.runsDir() == other);  // headless mode reads it too
+
+    reopened.setRunsDir({});
+    CHECK(reopened.runsDir() == root / "runs");
+    CHECK(Storage(root).runsDir() == root / "runs");
 }

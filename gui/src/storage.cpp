@@ -22,6 +22,7 @@ std::optional<T> readJson(const fs::path& file) {
 template std::optional<std::vector<EngineEntry>> readJson(const fs::path&);
 template std::optional<MatchSetup> readJson(const fs::path&);
 template std::optional<std::vector<QueuedTournament>> readJson(const fs::path&);
+template std::optional<nlohmann::json> readJson(const fs::path&);
 
 bool writeJson(const fs::path& file, const nlohmann::json& value) {
     std::error_code ec;
@@ -43,6 +44,17 @@ Storage::Storage(fs::path root) : root_(std::move(root)) {
     std::error_code ec;
     fs::create_directories(root_, ec);
     fs::remove(root_ / "imgui.ini", ec);
+
+    if (const auto settings = readJson<nlohmann::json>(root_ / "settings.json")) {
+        runs_dir_ = fs::path(settings->value("tournaments_dir", std::string{}));
+    }
+}
+
+void Storage::setRunsDir(const fs::path& dir) {
+    runs_dir_                   = dir == defaultRunsDir() ? fs::path{} : dir;
+    auto settings               = readJson<nlohmann::json>(root_ / "settings.json").value_or(nlohmann::json::object());
+    settings["tournaments_dir"] = runs_dir_.string();
+    writeJson(root_ / "settings.json", settings);
 }
 
 std::vector<EngineEntry> Storage::loadEngines() const {

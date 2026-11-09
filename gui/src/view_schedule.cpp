@@ -51,7 +51,19 @@ void App::applyTournamentEdit(const tour::Edit& edit) {
     }
     edit_message_ = TR("Done: the tournament goes on with the change.");
     Console::instance().add(TR("The tournament was changed."));
+    refreshAfterEdit();
+}
 
+void App::undoTournamentEdit() {
+    const auto error = run_.undoEdit();
+    edit_error_      = !error.empty();
+    edit_message_    = edit_error_ ? error : TR("The change was undone.");
+    if (edit_error_) return;
+    Console::instance().add(TR("The last change of the tournament was undone."));
+    refreshAfterEdit();
+}
+
+void App::refreshAfterEdit() {
     // Voided games leave the views; everything is shown again from the tournament's results.
     const auto* t = run_.tournament();
     if (auto* obs = run_.observer(); obs && t) {
@@ -64,7 +76,11 @@ void App::applyTournamentEdit(const tour::Edit& edit) {
     tournaments_dirty_ = true;
     if (!run_.running() && t) {
         const auto summary = tour::summarize(t->dir());
-        if (summary && !summary->finished) unfinished_ = summary;
+        if (summary && !summary->finished) {
+            unfinished_ = summary;
+        } else if (unfinished_ && unfinished_->dir == t->dir()) {
+            unfinished_.reset();
+        }
     }
 }
 
@@ -328,6 +344,11 @@ void App::drawEditPanel() {
         ImGui::PushStyleColor(ImGuiCol_Text, edit_error_ ? ui::BAD : ui::GOOD);
         ImGui::TextWrapped("%s", edit_message_.c_str());
         ImGui::PopStyleColor();
+    }
+    if (t->canUndo()) {
+        if (ImGui::Button(TR("Undo the last change"))) undoTournamentEdit();
+        ImGui::SameLine();
+        ImGui::TextDisabled("%s", TR("until the next game starts"));
     }
     if (!run_.running()) {
         ImGui::TextDisabled("%s", TR("The tournament is not running: resume it to play the new games."));

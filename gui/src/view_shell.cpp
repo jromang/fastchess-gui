@@ -624,8 +624,29 @@ void App::drawSettings() {
 
     ImGui::Spacing();
     ImGui::Separator();
-    ImGui::TextDisabled("%s", trf("Tournaments are stored in {}", storage_.runsDir().string()).c_str());
+    ui::label(TR("Tournaments folder"), label);
+    ImGui::TextUnformatted(storage_.runsDir().string().c_str());
+    ImGui::Dummy(ImVec2(label, 0));
+    ImGui::SameLine();
+    if (ImGui::Button(TR("Change…"))) {
+        dialogs_.openFolder(Dialogs::Purpose::TournamentsFolder, storage_.runsDir().string());
+    }
+    ImGui::SameLine();
     if (ImGui::Button(TR("Open the folder"))) openFolder(storage_.runsDir());
+    if (storage_.runsDir() != storage_.defaultRunsDir()) {
+        ImGui::SameLine();
+        if (ImGui::Button(TR("Back to the default"))) {
+            storage_.setRunsDir({});
+            tournaments_dirty_ = true;
+            ratings_dirty_     = true;
+            unfinished_        = unfinishedMatch(storage_.runsDir());
+        }
+    }
+    ImGui::Dummy(ImVec2(label, 0));
+    ImGui::SameLine();
+    ImGui::TextDisabled("%s",
+                        TR("New tournaments go there, and the lists show the tournaments found there. Tournaments "
+                           "already played are not moved: a tournament is a folder, move it yourself."));
 
     if (changed) saveSetupSoon();
 }

@@ -448,11 +448,26 @@ std::string RunController::applyEdit(const tour::Edit& edit) {
     } catch (const std::exception& e) {
         return e.what();
     }
+    afterEdit();
+    return {};
+}
+
+std::string RunController::undoEdit() {
+    if (!tournament_) return TR("No tournament is open.");
+    try {
+        tournament_->undoEdit();
+    } catch (const std::exception& e) {
+        return e.what();
+    }
+    afterEdit();
+    return {};
+}
+
+void RunController::afterEdit() {
     // The views know the participants by index: new ones get a name and counters.
     if (observer_) observer_->updateParticipants(tournament_->spec());
     info_.total_games  = tournament_->totalGames().value_or(0);
     info_.participants = static_cast<int>(tournament_->spec().participants.size());
-    return {};
 }
 
 std::string RunController::launch(std::unique_ptr<tour::TournamentState> tournament) {

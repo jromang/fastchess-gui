@@ -441,6 +441,12 @@ void App::handleDialogs() {
             case Dialogs::Purpose::AddEngine:
                 addEngine(path);
                 break;
+            case Dialogs::Purpose::TournamentsFolder:
+                storage_.setRunsDir(path);
+                tournaments_dirty_ = true;
+                ratings_dirty_     = true;
+                unfinished_        = unfinishedMatch(storage_.runsDir());
+                break;
             case Dialogs::Purpose::ExportRatings: {
                 std::ofstream out(path, std::ios::binary | std::ios::trunc);
                 out << tour::ratingListCsv(rating_list_);

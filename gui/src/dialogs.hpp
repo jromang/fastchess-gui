@@ -25,7 +25,8 @@ class Dialogs {
         ExportStandings,
         ImportEngineList,
         ImportEngineFolder,
-        ExportRatings
+        ExportRatings,
+        TournamentsFolder
     };
 
     struct Answer {

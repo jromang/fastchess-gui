@@ -9,14 +9,17 @@
 
 namespace fcg {
 
-// Where the GUI keeps its files: engines.json, setup.json, imgui.ini and runs/.
-// Defaults to SDL_GetPrefPath(); --profile <dir> overrides it.
+// Where the GUI keeps its files: engines.json, setup.json, layout.ini, settings.json and the tournaments (runs/
+// unless settings.json names another folder). Defaults to SDL_GetPrefPath(); --profile <dir> overrides it.
 class Storage {
    public:
     explicit Storage(std::filesystem::path root);
 
     [[nodiscard]] const std::filesystem::path& root() const noexcept { return root_; }
-    [[nodiscard]] std::filesystem::path runsDir() const { return root_ / "runs"; }
+    [[nodiscard]] std::filesystem::path runsDir() const { return runs_dir_.empty() ? defaultRunsDir() : runs_dir_; }
+    [[nodiscard]] std::filesystem::path defaultRunsDir() const { return root_ / "runs"; }
+    // Another folder for new tournaments and the lists, empty for the default; kept in settings.json.
+    void setRunsDir(const std::filesystem::path& dir);
     // Window layout. Named layout.ini since the windows got language independent ids;
     // the imgui.ini of earlier versions is removed at startup.
     [[nodiscard]] std::filesystem::path iniFile() const { return root_ / "layout.ini"; }
@@ -33,6 +36,7 @@ class Storage {
 
    private:
     std::filesystem::path root_;
+    std::filesystem::path runs_dir_;
 };
 
 // Reads a JSON file into T, nullopt when it is missing or unreadable.

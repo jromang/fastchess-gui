@@ -138,6 +138,12 @@ class TournamentState {
     // readable message when the edit cannot be made.
     void applyEdit(const Edit& edit);
 
+    // The last edit can be undone until the next game starts: nothing has been played under it yet. Games that
+    // were running when it was made and finished since are kept. Journaled, so it holds after a resume. Throws
+    // when it is too late.
+    [[nodiscard]] bool canUndo() const;
+    void undoEdit();
+
     // The whole schedule with the status of each game (empty for a match).
     [[nodiscard]] std::vector<ScheduleRow> scheduleRows() const;
 
@@ -209,6 +215,16 @@ class TournamentState {
     [[nodiscard]] bool frc() const noexcept;
     const OpeningSource& openings();  // loads the book on first use; mutex_ held
 
+    // What the last edit changed, to undo it (see canUndo()).
+    struct UndoPoint {
+        TournamentSpec spec;
+        Schedule schedule;
+        std::vector<std::pair<bool, std::string>> voided;  // voided and void_reason of each result then
+        std::set<uint64_t> done;
+        std::set<uint64_t> dropped;
+        uint64_t claims = 0;
+    };
+
     std::filesystem::path dir_;
     TournamentSpec spec_;
     Schedule schedule_;
@@ -234,6 +250,9 @@ class TournamentState {
     std::set<uint64_t> running_;   // claimed by the runner, not finished
     uint32_t next_encounter_ = 0;  // first encounter never started
     std::deque<std::pair<uint32_t, int>> open_;  // games of started encounters still to play
+
+    std::optional<UndoPoint> undo_;
+    uint64_t claims_ = 0;  // games claimed since the tournament was opened
 
     fastchess::SPRT sprt_;
     bool finished_ = false;

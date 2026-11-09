@@ -19,6 +19,29 @@ namespace {
 constexpr const char* SPEC_FILE    = "tournament.json";
 constexpr const char* JOURNAL_FILE = "journal.jsonl";
 
+// The events without the edits an "edit_undone" cancels, nor the end of tournament such an edit caused.
+std::vector<nlohmann::json> withoutUndoneEdits(const std::vector<nlohmann::json>& events) {
+    std::vector<nlohmann::json> out;
+    out.reserve(events.size());
+    for (const auto& e : events) {
+        if (e.value("t", std::string{}) != "edit_undone") {
+            out.push_back(e);
+            continue;
+        }
+        for (auto i = out.size(); i-- > 0;) {
+            if (!isEditEvent(out[i].value("t", std::string{}))) continue;
+            const auto completed = [](const nlohmann::json& x) {
+                return x.value("t", std::string{}) == "finished" && x.value("why", std::string{}) == "complete";
+            };
+            out.erase(std::remove_if(out.begin() + static_cast<std::ptrdiff_t>(i) + 1, out.end(), completed),
+                      out.end());
+            out.erase(out.begin() + static_cast<std::ptrdiff_t>(i));
+            break;
+        }
+    }
+    return out;
+}
+
 nlohmann::json toJson(const GameResult& r) {
     return {{"t", "game_finished"},
             {"encounter", r.encounter},
@@ -116,7 +139,7 @@ TournamentState::Replayed TournamentState::replay(const std::vector<nlohmann::js
     std::vector<GameResult> results;
     std::set<uint64_t> done, dropped;
 
-    for (const auto& e : events) {
+    for (const auto& e : withoutUndoneEdits(events)) {
         const auto type = e.value("t", std::string{});
         if (type == "game_finished") {
             const auto r = resultFromJson(e);
@@ -210,7 +233,7 @@ const OpeningSource& TournamentState::openings() {
 }
 
 void TournamentState::load() {
-    const auto events = Journal::read(dir_ / JOURNAL_FILE);
+    const auto events = withoutUndoneEdits(Journal::read(dir_ / JOURNAL_FILE));
 
     for (std::size_t i = 0; i < events.size(); ++i) {
         const auto& e = events[i];
@@ -253,6 +276,13 @@ void TournamentState::load() {
 
     // A round may have ended right before a stop, before the next one was paired.
     pairIfReady();
+
+    // Every game played but no end recorded: a stop right after the last game, or an undone edit had ended it.
+    if (!finished_ && schedule_.size() && !gamesLeft()) {
+        finished_      = true;
+        finish_reason_ = "complete";
+        journal_->append({{"t", "finished"}, {"why", finish_reason_}});
+    }
 
     if (spec_.book.size > 0 && fingerprint(spec_.conditions.opening.file) != spec_.book) {
         warnings_.push_back("the opening book changed since the tournament started: " + spec_.conditions.opening.file);
@@ -573,7 +603,53 @@ void TournamentState::applyEdit(const Edit& edit) {
 
     const auto event = editEvent(edit, next_encounter_, new_id, spec_);
     journal_->append(event);
+
+    UndoPoint undo{spec_, schedule_, {}, done_, dropped_, claims_};
+    undo.voided.reserve(results_.size());
+    for (const auto& r : results_) undo.voided.emplace_back(r.voided, r.void_reason);
+    undo_ = std::move(undo);
+
     applyEvent(event);
+}
+
+bool TournamentState::canUndo() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return undo_ && undo_->claims == claims_;
+}
+
+void TournamentState::undoEdit() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!undo_ || undo_->claims != claims_) {
+        throw std::runtime_error("a game started since the last change, which can no longer be undone");
+    }
+    journal_->append({{"t", "edit_undone"}});
+
+    auto& u   = *undo_;
+    spec_     = std::move(u.spec);
+    schedule_ = std::move(u.schedule);
+    done_     = std::move(u.done);
+    dropped_  = std::move(u.dropped);
+    for (std::size_t i = 0; i < results_.size(); ++i) {
+        if (i < u.voided.size()) {
+            results_[i].voided      = u.voided[i].first;
+            results_[i].void_reason = u.voided[i].second;
+        } else {
+            done_.insert(results_[i].number());  // running when the edit was made, finished since
+        }
+    }
+    undo_.reset();
+
+    rebuildStats();
+    rebuildOpen();
+    if (finished_ && finish_reason_ == "complete" && gamesLeft()) {
+        finished_ = false;
+        finish_reason_.clear();
+    } else if (!finished_ && schedule_.size() && !gamesLeft() && running_.empty()) {
+        // The edit had reopened a finished tournament.
+        finished_      = true;
+        finish_reason_ = "complete";
+        journal_->append({{"t", "finished"}, {"why", finish_reason_}});
+    }
 }
 
 std::vector<ScheduleRow> TournamentState::scheduleRows() const {
@@ -645,6 +721,7 @@ std::optional<GameTask> TournamentState::claimNext() {
         if (done(encounter, game) || dropped_.count(n) || running_.count(n)) continue;
         auto task = makeTask(encounter, game);
         running_.insert(n);
+        ++claims_;
         return task;
     }
 
@@ -654,6 +731,7 @@ std::optional<GameTask> TournamentState::claimNext() {
     open_.emplace_front(encounter, 1);  // its second game comes next
     auto task = makeTask(encounter, 0);
     running_.insert(task.number());
+    ++claims_;
     return task;
 }
 

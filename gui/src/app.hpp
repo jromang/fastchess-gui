@@ -118,6 +118,8 @@ class App {
     void drawBracket();
     void drawEditPanel();
     void applyTournamentEdit(const tour::Edit& edit);
+    void undoTournamentEdit();
+    void refreshAfterEdit();
 
     // broadcast
     void updateBroadcast();

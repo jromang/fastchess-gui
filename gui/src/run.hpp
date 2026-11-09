@@ -106,6 +106,8 @@ class RunController {
 
     // Changes the open tournament, running or not; returns an error message, empty on success.
     std::string applyEdit(const tour::Edit& edit);
+    // Undoes the last change while no game started since (TournamentState::canUndo()).
+    std::string undoEdit();
 
     void setPaused(bool paused);
     [[nodiscard]] bool paused() const;
@@ -138,6 +140,7 @@ class RunController {
     [[nodiscard]] bool takeFinishedEvent();
 
    private:
+    void afterEdit();  // after a change or its undo: participants and totals
     std::string launch(std::unique_ptr<tour::TournamentState> tournament);
     void threadMain();
 
