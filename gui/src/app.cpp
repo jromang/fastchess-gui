@@ -94,6 +94,7 @@ void App::frame() {
     }
 
     applyThemeSetting();
+    updateBroadcast();
 
     // --shot and --focus: show the requested page or tab once the first frames are drawn.
     if (!options_.focus_window.empty() && !focus_done_) {
@@ -114,6 +115,7 @@ void App::frame() {
                            : w == "games"     ? Tab::Games
                            : w == "standings" ? Tab::Standings
                            : w == "schedule"  ? Tab::Schedule
+                           : w == "broadcast" ? Tab::Broadcast
                                               : Tab::Overview;
         }
         focus_done_ = true;

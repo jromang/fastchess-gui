@@ -13,6 +13,7 @@
 #include <matchmaking/stats.hpp>
 
 #include "board_view.hpp"
+#include "broadcast.hpp"
 #include "console.hpp"
 #include "dialogs.hpp"
 #include "engine_import.hpp"
@@ -75,7 +76,7 @@ class App {
     };
 
     enum class Page { Home, NewMatch, Tournament, Engines, Log, Settings };
-    enum class Tab { Overview, Standings, Schedule, Live, Games };
+    enum class Tab { Overview, Standings, Schedule, Live, Games, Broadcast };
 
     // shell
     void drawShell();
@@ -114,6 +115,11 @@ class App {
     void drawSchedule();
     void drawEditPanel();
     void applyTournamentEdit(const tour::Edit& edit);
+
+    // broadcast
+    void updateBroadcast();
+    [[nodiscard]] BroadcastSnapshot makeSnapshot();
+    void drawBroadcast();
 
     // setup sections
     void setupFormat();
@@ -243,6 +249,15 @@ class App {
     // Queue and relaunch.
     std::vector<QueuedTournament> queue_;
     std::string relaunch_engine_;
+
+    // Broadcast.
+    TlcsServer tlcs_;
+    WebServer web_;
+    std::chrono::steady_clock::time_point last_snapshot_{};
+    std::chrono::steady_clock::time_point last_files_{};
+    std::string files_status_;
+    std::string tlcs_error_;
+    std::string web_error_;
 
     // Shell.
     Page page_ = Page::Home;

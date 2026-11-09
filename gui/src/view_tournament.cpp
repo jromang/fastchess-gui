@@ -111,7 +111,7 @@ void App::drawStandingsTable(bool compact) {
         ImGui::TextDisabled("%.1f", 100.0 * r.score());
         ImGui::TableNextColumn();
         if (r.rated) {
-            ImGui::Text("%+.0f", r.rating.elo);
+            ImGui::Text("%+ld", std::lround(r.rating.elo));
         } else {
             ImGui::TextDisabled("—");
         }
@@ -360,7 +360,7 @@ void App::drawCrosstable() {
             ImGui::TextDisabled("%.2f", r.sb);
             ImGui::TableNextColumn();
             if (r.rated) {
-                ImGui::Text("%+.0f ±%.0f", r.rating.elo, r.rating.error);
+                ImGui::Text("%+ld ±%.0f", std::lround(r.rating.elo), r.rating.error);
             } else {
                 ImGui::TextDisabled("—");
             }

@@ -486,6 +486,10 @@ void App::drawWorkspace() {
         drawSchedule();
         ImGui::EndTabItem();
     }
+    if (tab(TR("Broadcast###tab_broadcast"), Tab::Broadcast)) {
+        drawBroadcast();
+        ImGui::EndTabItem();
+    }
     if (tab(TR("Live###tab_live"), Tab::Live)) {
         drawLive();
         ImGui::EndTabItem();

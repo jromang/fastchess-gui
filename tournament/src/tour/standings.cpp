@@ -276,8 +276,8 @@ std::string tableText(const Table& table, const std::string& title) {
 
     for (std::size_t i = 0; i < table.rows.size(); ++i) {
         const auto& r = table.rows[i];
-        out += fmt::format("{:>3}  {:<{}}  {:>6}  {:>5}  {:>5.1f}%  {:>+7.0f}  {:>5.0f}  {:>14}", i + 1, r.name, width,
-                           half(r.points), r.games, 100.0 * r.score(), r.rating.elo, r.rating.error,
+        out += fmt::format("{:>3}  {:<{}}  {:>6}  {:>5}  {:>5.1f}%  {:>+7}  {:>5.0f}  {:>14}", i + 1, r.name, width,
+                           half(r.points), r.games, 100.0 * r.score(), std::lround(r.rating.elo), r.rating.error,
                            fmt::format("+{} ={} -{}", r.wins, r.draws, r.losses));
         for (const auto& c : table.rows) {
             if (c.id == r.id) {
@@ -317,10 +317,10 @@ td.x{color:var(--muted)}
     for (std::size_t i = 0; i < table.rows.size(); ++i) {
         const auto& r = table.rows[i];
         out += fmt::format(
-            "<tr><td>{}</td><td class=\"l\">{}</td><td>{}</td><td>{}</td><td>{:.1f}</td><td>{:+.0f}</td><td>{:.0f}</td>"
+            "<tr><td>{}</td><td class=\"l\">{}</td><td>{}</td><td>{}</td><td>{:.1f}</td><td>{:+}</td><td>{:.0f}</td>"
             "<td>{}</td><td>{}</td><td>{}</td><td>{:.2f}</td>",
-            i + 1, escapeHtml(r.name), half(r.points), r.games, 100.0 * r.score(), r.rating.elo, r.rating.error, r.wins,
-            r.draws, r.losses, r.sb);
+            i + 1, escapeHtml(r.name), half(r.points), r.games, 100.0 * r.score(), std::lround(r.rating.elo),
+            r.rating.error, r.wins, r.draws, r.losses, r.sb);
         for (const auto& c : table.rows) {
             if (c.id == r.id) {
                 out += "<td class=\"x\">&ndash;</td>";

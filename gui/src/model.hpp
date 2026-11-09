@@ -166,6 +166,15 @@ struct MatchSetup {
 
     std::string language = "auto";    // "auto" (system), "en" or "fr"
     std::string theme    = "system";  // "system", "dark" or "light"
+
+    // Broadcast.
+    bool broadcast_files = false;  // live.pgn, standings.html, tournament.json
+    std::string broadcast_dir;     // empty = "live" in the tournament folder
+    bool broadcast_tlcs  = false;
+    int tlcs_port        = 16001;
+    bool broadcast_web   = false;
+    int web_port         = 8080;
+    int broadcast_follow = 0;  // TLCS game: 0 automatic, 1 the game shown in the Live tab
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
     MatchSetup, format, name, engine_a, engine_b, participants, cycles, seeds, common_hash, common_threads, mode,
@@ -173,7 +182,8 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
     tc_moves, tc_margin_ms, nodes, concurrency_auto, concurrency, affinity, book, book_random, book_plies, book_start,
     seed, draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,
     resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result, pgn_event,
-    export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, recover, notify, language, theme)
+    export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, recover, notify, language, theme, broadcast_files,
+    broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port, broadcast_follow)
 
 // A tournament waiting to be started after the running one.
 struct QueuedTournament {
