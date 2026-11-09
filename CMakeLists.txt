@@ -31,6 +31,7 @@ set(FC_APP ${CMAKE_CURRENT_SOURCE_DIR}/app)
 set(FC_CORE_SOURCES
     ${FC_APP}/src/cli/cli.cpp
     ${FC_APP}/src/cli/sanitize.cpp
+    ${FC_APP}/src/core/events/events.cpp
     ${FC_APP}/src/core/globals/globals.cpp
     ${FC_APP}/src/core/logger/logger.cpp
     ${FC_APP}/src/core/printing/printing.cpp

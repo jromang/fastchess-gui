@@ -68,7 +68,7 @@ class Runner final : public fastchess::BaseTournament {
 - One runner at a time, as now (fastchess keeps its configuration and stop flag in globals).
 
 Fork change: one line, `saveJson()` returns when `config_name` is empty, so fastchess writes no `config.json`
-next to the tournament files (#8). The 165 upstream tests still pass.
+next to the tournament files (#8). The upstream tests (167 with fastchess 1.8.3) still pass.
 
 Things to respect when building the runner's `config::Tournament`:
 

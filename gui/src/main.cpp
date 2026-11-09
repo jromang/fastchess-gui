@@ -18,7 +18,7 @@
 #    include <csignal>
 #endif
 
-#include <fmt/include/fmt/core.h>
+#include <fmt/include/fmt/format.h>
 #include <core/config/config.hpp>
 
 #include "app.hpp"

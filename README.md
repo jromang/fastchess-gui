@@ -95,7 +95,7 @@ The [user guide](docs/guide.md) covers every setting, window and file in detail.
 
 ## Relationship with fastchess
 
-This is a fork of fastchess. The command line tool, its Makefile and its 165 tests are untouched in behaviour.
+This is a fork of fastchess. The command line tool, its Makefile and its 167 tests are untouched in behaviour.
 The GUI only adds hooks that do nothing until an observer is installed (the command line tool never installs
 one):
 
@@ -103,7 +103,6 @@ one):
   game end, statistics) and the pair aware `PauseGate`;
 - a worker index per thread in the thread pool, plus a fix for `ThreadPool::resize`, which created 2N entries
   for N threads;
-- `IProcess::setLineObserver`, to read engine output as it arrives;
 - a ChessBase comment style in `PgnBuilder`;
 - `Logger::setPrintSink`, which feeds the console window;
 - on Windows, `CREATE_NO_WINDOW` when the parent has no console, so engines do not open console windows.

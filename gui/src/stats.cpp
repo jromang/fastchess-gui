@@ -3,7 +3,7 @@
 #include <cmath>
 #include <string>
 
-#include <fmt/include/fmt/core.h>
+#include <fmt/include/fmt/format.h>
 #include <matchmaking/elo/elo_pentanomial.hpp>
 #include <matchmaking/elo/elo_wdl.hpp>
 

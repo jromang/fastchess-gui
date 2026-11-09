@@ -6,7 +6,7 @@
 #include <imgui.h>
 #include <implot.h>
 
-#include <fmt/include/fmt/core.h>
+#include <fmt/include/fmt/format.h>
 #include <types/match_data.hpp>
 
 #include "app.hpp"

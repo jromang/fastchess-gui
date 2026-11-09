@@ -245,11 +245,7 @@ class Process : public IProcess {
                 continue;
             }
 
-            const auto before   = lines.size();
-            const auto finished = readBytes(buffer, bytesRead, lines, last_word);
-            notifyLines(lines, before);
-
-            if (finished) {
+            if (readBytes(buffer, bytesRead, lines, last_word)) {
                 return Result::OK();
             }
         }
@@ -349,6 +345,8 @@ class Process : public IProcess {
         if (realtime_logging_) {
             Logger::readFromEngine(current_line_, timestamp, log_name_, false, thread_id);
         }
+
+        if (line_callback_) line_callback_(current_line_);
     }
 
     // The working directory

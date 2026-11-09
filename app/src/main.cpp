@@ -4,13 +4,14 @@
 #include <cli/cli.hpp>
 #include <cli/cli_args.hpp>
 #include <core/config/config.hpp>
+#include <core/events/events.hpp>
 #include <core/globals/globals.hpp>
 #include <core/rand.hpp>
 #include <engine/compliance.hpp>
 #include <matchmaking/tournament/tournament_manager.hpp>
 
 namespace fastchess {
-const char* version = "alpha 1.8.2 ";
+const char* version = "alpha 1.8.3 ";
 }
 
 namespace ch = std::chrono;
@@ -39,11 +40,13 @@ int main(int argc, char const* argv[]) {
             }
         }
     } catch (const fastchess_exception& e) {
+        events::EventWriter::finishTournament("error", true);
         stopProcesses();
 
         Logger::print("{}", e.what());
         return EXIT_FAILURE;
     } catch (const std::exception& e) {
+        events::EventWriter::finishTournament("error", true);
         stopProcesses();
 
         Logger::print(

@@ -7,7 +7,7 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 
-#include <fmt/include/fmt/core.h>
+#include <fmt/include/fmt/format.h>
 #include <core/globals/globals.hpp>
 
 #include "i18n.hpp"

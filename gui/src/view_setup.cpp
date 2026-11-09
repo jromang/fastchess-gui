@@ -2,7 +2,7 @@
 
 #include <imgui.h>
 
-#include <fmt/include/fmt/core.h>
+#include <fmt/include/fmt/format.h>
 
 #include <algorithm>
 #include <filesystem>

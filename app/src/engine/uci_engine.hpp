@@ -96,8 +96,8 @@ class UciEngine {
 
     void setupReadEngine() { process_.setupRead(); }
 
-    // Forward every stdout line to observer as it is read (see IProcess::setLineObserver).
-    void setLineObserver(process::IProcess::LineObserver observer) { process_.setLineObserver(std::move(observer)); }
+    // Called for every stdout line read from the engine, pass an empty function to disable.
+    void setLineCallback(process::IProcess::LineCallback callback) { process_.setLineCallback(std::move(callback)); }
 
     // Logs are not written in realtime to avoid slowing down the engine.
     // This function writes the logs to the logger.

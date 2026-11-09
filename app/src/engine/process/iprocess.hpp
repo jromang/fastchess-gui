@@ -45,11 +45,12 @@ class IProcess {
     IProcess& operator=(const IProcess&) = delete;
     IProcess& operator=(IProcess&&)      = delete;
 
+    using LineCallback = std::function<void(const std::string&)>;
+
     void setRealtimeLogging(bool realtime_logging) noexcept { realtime_logging_ = realtime_logging; }
 
-    // Called with every stdout line as soon as it has been read. Pass an empty function to remove it.
-    using LineObserver = std::function<void(std::string_view)>;
-    void setLineObserver(LineObserver observer) { line_observer_ = std::move(observer); }
+    // Called for every complete stdout line while reading, empty to disable.
+    void setLineCallback(LineCallback callback) { line_callback_ = std::move(callback); }
 
     virtual void setupRead() = 0;
 
@@ -79,17 +80,9 @@ class IProcess {
         return p.string();
     }
 
-    void notifyLines(const std::vector<Line>& lines, std::size_t from) const {
-        if (!line_observer_) return;
-
-        for (std::size_t i = from; i < lines.size(); ++i) {
-            if (lines[i].std == Standard::OUTPUT) line_observer_(lines[i].line);
-        }
-    }
-
     bool realtime_logging_ = true;
 
-    LineObserver line_observer_;
+    LineCallback line_callback_;
 };
 
 }  // namespace fastchess::engine::process

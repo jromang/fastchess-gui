@@ -18,6 +18,7 @@ namespace fastchess {
 namespace atomic {
 std::atomic_bool stop                 = false;
 std::atomic_bool abnormal_termination = false;
+std::atomic_bool interrupted          = false;
 }  // namespace atomic
 
 util::ThreadVector<ProcessInformation> process_list;
@@ -63,6 +64,7 @@ void stopProcesses() {
 void consoleHandlerAction() {
     // Logger::print<Logger::Level::WARN>("Received signal, stopping tournament.");
 
+    atomic::interrupted          = true;
     atomic::stop                 = true;
     atomic::abnormal_termination = true;
 }
@@ -108,6 +110,12 @@ void setCtrlCHandler() {
     sigfillset(&sa.sa_mask);
 
     if (sigaction(SIGINT, &sa, NULL) == -1) {
+        perror("Error setting up signal handler");
+    }
+
+    // Handle SIGTERM like SIGINT, so that job schedulers and container
+    // stops wind the tournament down gracefully as well.
+    if (sigaction(SIGTERM, &sa, NULL) == -1) {
         perror("Error setting up signal handler");
     }
 }

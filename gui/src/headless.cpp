@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <mutex>
 
-#include <fmt/include/fmt/core.h>
+#include <fmt/include/fmt/format.h>
 #include <core/globals/globals.hpp>
 #include <matchmaking/elo/elo_pentanomial.hpp>
 #include <tour/standings.hpp>

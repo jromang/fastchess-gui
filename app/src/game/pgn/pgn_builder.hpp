@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -12,7 +13,7 @@
 #include <game/pgn/openings_data.hpp>
 #include <game/pgn/pgn_gen.hpp>
 
-#include <fmt/include/fmt/core.h>
+#include <fmt/include/fmt/format.h>
 
 namespace fastchess::pgn {
 
@@ -23,8 +24,12 @@ enum class CommentStyle { Fastchess, ChessBase };
 
 class PgnBuilder {
    public:
+    // game_id adds a [GameId] tag, used to link -events games to their PGN entry
     PgnBuilder(const config::Pgn& pgn_config, const MatchData& match, std::size_t round_id,
-               CommentStyle style = CommentStyle::Fastchess);
+               std::optional<std::size_t> game_id = std::nullopt, CommentStyle style = CommentStyle::Fastchess);
+
+    PgnBuilder(const config::Pgn& pgn_config, const MatchData& match, std::size_t round_id, CommentStyle style)
+        : PgnBuilder(pgn_config, match, round_id, std::nullopt, style) {}
 
     // Get the newly created pgn
     [[nodiscard]] std::string get() const noexcept { return fmt::format("{}\n\n", pgn_generator_.generate()); }

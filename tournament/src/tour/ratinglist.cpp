@@ -5,7 +5,7 @@
 #include <map>
 #include <set>
 
-#include <fmt/include/fmt/core.h>
+#include <fmt/include/fmt/format.h>
 
 #include "journal.hpp"
 #include "state.hpp"

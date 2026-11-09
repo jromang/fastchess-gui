@@ -5,7 +5,7 @@
 #include <imgui.h>
 #include <implot.h>
 
-#include <fmt/include/fmt/core.h>
+#include <fmt/include/fmt/format.h>
 #include <engine/uci_engine.hpp>
 
 #include "app.hpp"

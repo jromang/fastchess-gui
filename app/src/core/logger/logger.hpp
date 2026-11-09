@@ -12,7 +12,7 @@
 #include <core/globals/globals.hpp>
 #include <core/time/time.hpp>
 
-#include <fmt/include/fmt/core.h>
+#include <fmt/include/fmt/format.h>
 #include "fmt/include/fmt/std.h"
 
 #ifdef USE_ZLIB

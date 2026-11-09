@@ -19,7 +19,7 @@
 
 #include <chess.hpp>
 
-#include <fmt/include/fmt/core.h>
+#include <fmt/include/fmt/format.h>
 
 #include "broadcast.hpp"
 
