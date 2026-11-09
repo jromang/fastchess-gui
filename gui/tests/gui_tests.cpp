@@ -13,6 +13,7 @@
 #include <matchmaking/elo/elo_pentanomial.hpp>
 #include <matchmaking/sprt/sprt.hpp>
 
+#include "engine_import.hpp"
 #include "engines.hpp"
 #include "pgn_store.hpp"
 #include "run.hpp"
@@ -402,6 +403,47 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     CHECK_THROWS((void)buildRun(setup, engines, topology, dir));
     setup.participants = {{"new"}};
     CHECK_THROWS((void)buildRun(setup, engines, topology, dir));
+
+    fs::remove_all(dir);
+}
+
+TEST_CASE("engine lists of ChessGUI, cutechess and Arena are imported") {
+    const auto dir = tempDir("import");
+    fs::create_directories(dir / "engines" / "fruit");
+    std::ofstream(dir / "engines" / "fruit" / "fruit.exe") << "x";
+
+    // ChessGUI: ChsGUI_Eng.TXT and the UCI options in ChsGUI_Cfg.ini, Windows paths.
+    std::ofstream(dir / "ChsGUI_Eng.TXT")
+        << "[Fruit 2.1]\r\nMyName=Fruit 2.1\r\nEngineFile=engines\\fruit\\fruit.exe\r\n"
+           "CommandLine=\r\nEngineCode=1 0 0\r\n\r\n[Human_1]\r\nMyName=Human_1\r\n";
+    std::ofstream(dir / "ChsGUI_Cfg.ini") << "[Fruit 2.1]\r\nHash=64\r\nOwnBook=false\r\n";
+    auto result = importEngineList(dir / "ChsGUI_Eng.TXT");
+    REQUIRE(result.engines.size() == 1);
+    CHECK(result.engines[0].name == "Fruit 2.1");
+    CHECK(fs::path(result.engines[0].cmd) == (dir / "engines" / "fruit" / "fruit.exe").lexically_normal());
+    REQUIRE(result.engines[0].options.size() == 2);
+    CHECK(result.engines[0].options[0] == std::make_pair(std::string("Hash"), std::string("64")));
+
+    // cutechess: engines.json, a WinBoard engine skipped with a note.
+    std::ofstream(dir / "engines.json") << R"([
+        {"name": "Fruit", "command": "fruit.exe", "workingDirectory": "engines/fruit", "protocol": "uci",
+         "options": [{"name": "Hash", "type": "spin", "default": 16, "value": 128}]},
+        {"name": "Crafty", "command": "crafty", "protocol": "xboard"}])";
+    result = importEngineList(dir / "engines.json");
+    REQUIRE(result.engines.size() == 1);
+    CHECK(result.engines[0].name == "Fruit");
+    CHECK(fs::path(result.engines[0].cmd).filename() == "fruit.exe");
+    REQUIRE(result.engines[0].options.size() == 1);
+    CHECK(result.engines[0].options[0].second == "128");
+    REQUIRE(result.notes.size() == 1);
+    CHECK(result.notes[0].find("Crafty") != std::string::npos);
+
+    // An INI list with Command= and Type= (Arena style).
+    std::ofstream(dir / "arena.cfg")
+        << "[Fruit]\nCommand=engines/fruit/fruit.exe\nType=UCI\n[Old]\nCommand=old.exe\nType=Winboard\n";
+    result = importEngineList(dir / "arena.cfg");
+    REQUIRE(result.engines.size() == 1);
+    CHECK(result.engines[0].name == "Fruit");
 
     fs::remove_all(dir);
 }

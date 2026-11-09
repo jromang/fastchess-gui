@@ -150,6 +150,7 @@ void App::drawShell() {
             drawWorkspace();
             break;
         case Page::Engines:
+            ui::pageTitle(TR("Engines"));
             drawEngines();
             break;
         case Page::Log:

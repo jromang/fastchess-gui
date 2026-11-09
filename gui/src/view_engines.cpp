@@ -114,7 +114,10 @@ void App::pollProbe() {
     auto& e = engines_[index];
 
     if (!result.ok) {
-        probe_message_ = trf("Failed: {}", result.error);
+        probe_message_  = trf("Failed: {}", result.error);
+        e.check_ok      = 0;
+        e.check_message = result.error;
+        storage_.saveEngines(engines_);
         return;
     }
 
@@ -144,7 +147,7 @@ void App::drawEngines() {
     }
 
     // List on the left.
-    const float list_w = 220.0f * ImGui::GetFontSize() / 16.0f;
+    const float list_w = 320.0f * ImGui::GetFontSize() / 16.0f;
     ImGui::BeginChild("##engine_list", ImVec2(list_w, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX);
 
     if (ImGui::Button(TR("Add…"))) {
@@ -153,6 +156,17 @@ void App::drawEngines() {
 #else
         dialogs_.openFile(Dialogs::Purpose::AddEngine);
 #endif
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(TR("Import…"))) ImGui::OpenPopup("import_menu");
+    if (ImGui::BeginPopup("import_menu")) {
+        if (ImGui::MenuItem(TR("An engine list…"))) {
+            dialogs_.openFile(Dialogs::Purpose::ImportEngineList,
+                              {{TR("Engine lists"), "txt;json;cfg;ini"}, {TR("All files"), "*"}});
+        }
+        ImGui::TextDisabled("%s", TR("ChessGUI (ChsGUI_Eng.TXT), cutechess or Banksia (engines.json), Arena…"));
+        if (ImGui::MenuItem(TR("Every engine of a folder…"))) dialogs_.openFolder(Dialogs::Purpose::ImportEngineFolder);
+        ImGui::EndPopup();
     }
     ImGui::SameLine();
     ImGui::BeginDisabled(selected_engine_ < 0);
@@ -183,14 +197,57 @@ void App::drawEngines() {
         ImGui::EndPopup();
     }
 
+    // Search and groups.
+    {
+        char buffer[128];
+        const auto n = std::min(engine_search_.size(), sizeof(buffer) - 1);
+        std::copy_n(engine_search_.data(), n, buffer);
+        buffer[n] = 0;
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        if (ImGui::InputTextWithHint("##engine_search", TR("Search"), buffer, sizeof(buffer))) engine_search_ = buffer;
+
+        std::vector<std::string> groups;
+        for (const auto& e : engines_) {
+            for (const auto& g : e.groups) {
+                if (std::find(groups.begin(), groups.end(), g) == groups.end()) groups.push_back(g);
+            }
+        }
+        std::sort(groups.begin(), groups.end());
+        if (!groups.empty()) {
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            if (ImGui::BeginCombo("##engine_group", engine_group_.empty() ? TR("All groups") : engine_group_.c_str())) {
+                if (ImGui::Selectable(TR("All groups"), engine_group_.empty())) engine_group_.clear();
+                for (const auto& g : groups) {
+                    if (ImGui::Selectable(g.c_str(), g == engine_group_)) engine_group_ = g;
+                }
+                ImGui::EndCombo();
+            }
+        }
+    }
+
     ImGui::Separator();
     for (int i = 0; i < static_cast<int>(engines_.size()); ++i) {
         const auto& e = engines_[i];
+        if (!engine_group_.empty() && std::find(e.groups.begin(), e.groups.end(), engine_group_) == e.groups.end()) {
+            continue;
+        }
+        if (!engine_search_.empty() && !containsCaseInsensitive(e.name, engine_search_) &&
+            !containsCaseInsensitive(e.id_author, engine_search_)) {
+            continue;
+        }
         std::string tag;
         if (e.name == setup_.engine_a) tag = "  [A]";
         if (e.name == setup_.engine_b) tag += "  [B]";
+
+        // A mark for the health: checked, failed, or reached through an adapter.
+        const char* mark = e.check_ok == 1 ? "✓" : e.check_ok == 0 ? "!" : viaAdapter(e) ? "↔" : "·";
+        ImGui::PushStyleColor(ImGuiCol_Text, e.check_ok == 1 ? ui::GOOD : e.check_ok == 0 ? ui::WARN : ui::MUTED);
+        ImGui::TextUnformatted(mark);
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
         const auto label = fmt::format("{}{}##engine{}", e.name, tag, i);
         if (ImGui::Selectable(label.c_str(), selected_engine_ == i)) selected_engine_ = i;
+        if (ImGui::IsItemHovered() && !e.check_message.empty()) ImGui::SetTooltip("%s", e.check_message.c_str());
     }
     if (engines_.empty()) ImGui::TextDisabled("%s", TR("No engine yet. Click Add."));
 
@@ -207,7 +264,7 @@ void App::drawEngines() {
 
     auto& e            = engines_[selected_engine_];
     bool changed       = false;
-    const bool in_use  = run_.running() && (e.name == run_.info().engine_a || e.name == run_.info().engine_b);
+    const bool in_use  = engineInUse(e.name);
     const float label  = 150.0f * ImGui::GetFontSize() / 16.0f;
     const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
 
@@ -245,6 +302,57 @@ void App::drawEngines() {
 
     changed |= ImGui::Checkbox(TR("Restart the engine for every game"), &e.restart);
 
+    ui::label(TR("Groups"), label);
+    {
+        std::string text;
+        for (const auto& g : e.groups) text += (text.empty() ? "" : ", ") + g;
+        if (editText("##groups", text)) {
+            e.groups.clear();
+            std::size_t pos = 0;
+            while (pos <= text.size()) {
+                const auto comma = text.find(',', pos);
+                auto part        = text.substr(pos, comma == std::string::npos ? std::string::npos : comma - pos);
+                part.erase(0, part.find_first_not_of(' '));
+                part.erase(part.find_last_not_of(' ') + 1);
+                if (!part.empty()) e.groups.push_back(part);
+                if (comma == std::string::npos) break;
+                pos = comma + 1;
+            }
+            changed = true;
+        }
+    }
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + label);
+    ImGui::TextDisabled("%s", TR("Separated by commas, e.g. a pool or a rating list."));
+
+    ui::label(TR("Reference Elo"), label);
+    ImGui::SetNextItemWidth(120.0f * ImGui::GetFontSize() / 16.0f);
+    if (ImGui::InputInt("##elo", &e.elo, 0, 0)) {
+        e.elo   = std::clamp(e.elo, 0, 5000);
+        changed = true;
+    }
+    ui::help(TR("Its rating on a list you trust, to anchor a tournament's ratings. 0 = none."));
+
+    // Health check.
+    ImGui::Spacing();
+    ImGui::BeginDisabled(check_.valid() || in_use);
+    if (ImGui::Button(check_.valid() && check_index_ == selected_engine_ ? TR("Checking…") : TR("Check"))) {
+        startCheck(selected_engine_);
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (e.check_ok >= 0) {
+        ImGui::PushStyleColor(ImGuiCol_Text, e.check_ok ? ui::GOOD : ui::WARN);
+        ImGui::TextWrapped("%s %s", e.check_ok ? "✓" : "!", e.check_message.c_str());
+        ImGui::PopStyleColor();
+        if (!e.check_when.empty()) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("(%s)", e.check_when.c_str());
+        }
+    } else {
+        ImGui::TextDisabled("%s", TR("Starts the engine, measures how fast it answers and checks one move."));
+    }
+    if (viaAdapter(e)) ImGui::TextDisabled("%s", TR("A WinBoard engine reached through a UCI adapter."));
+
     ImGui::EndDisabled();
     if (in_use) ImGui::TextDisabled("%s", TR("Engine used by the running match: changes are locked."));
 
@@ -272,7 +380,7 @@ void App::drawEngines() {
         std::copy_n(option_filter_.data(), n, filter);
         filter[n] = 0;
         ImGui::SetNextItemWidth(160.0f * ImGui::GetFontSize() / 16.0f);
-        if (ImGui::InputTextWithHint("##option_filter", "filtrer", filter, sizeof(filter))) option_filter_ = filter;
+        if (ImGui::InputTextWithHint("##option_filter", TR("filter"), filter, sizeof(filter))) option_filter_ = filter;
         ImGui::SameLine();
         if (ImGui::Button(TR("All to default"))) {
             e.options.clear();
@@ -444,6 +552,60 @@ void App::drawConsole() {
     ImGui::EndChild();
 
     ui::endPanel();
+}
+
+bool App::engineInUse(const std::string& name) const {
+    if (!run_.running()) return false;
+    if (const auto* t = run_.tournament()) {
+        for (const auto& p : t->spec().participants) {
+            if (p.engine.name == name) return true;
+        }
+    }
+    return false;
+}
+
+void App::startCheck(int index) {
+    if (check_.valid() || index < 0 || index >= static_cast<int>(engines_.size())) return;
+    check_index_     = index;
+    const auto entry = engines_[index];
+    check_           = std::async(std::launch::async, [entry] { return checkEngine(entry); });
+}
+
+void App::pollCheck() {
+    if (!check_.valid() || check_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
+    const auto result = check_.get();
+    const int index   = check_index_;
+    check_index_      = -1;
+    if (index < 0 || index >= static_cast<int>(engines_.size())) return;
+
+    auto& e         = engines_[index];
+    e.check_ok      = result.ok ? 1 : 0;
+    e.check_message = result.message;
+    char when[32];
+    const auto now = std::time(nullptr);
+    std::strftime(when, sizeof(when), "%Y-%m-%d %H:%M", std::localtime(&now));
+    e.check_when = when;
+    storage_.saveEngines(engines_);
+    Console::instance().add(fmt::format("{}: {}", e.name, result.message), !result.ok);
+}
+
+void App::importEngines(const ImportResult& imported) {
+    int added = 0;
+    for (auto e : imported.engines) {
+        // Already in the list with the same program and arguments: skipped.
+        const bool known = std::any_of(engines_.begin(), engines_.end(), [&](const EngineEntry& o) {
+            return o.cmd == e.cmd && o.args == e.args && o.options == e.options;
+        });
+        if (known) continue;
+        e.name = uniqueEngineName(e.name.empty() ? fs::path(e.cmd).stem().string() : e.name, -1);
+        engines_.push_back(e);
+        probe_queue_.push_back(e.name);
+        ++added;
+    }
+    for (const auto& note : imported.notes) Console::instance().add(note, true);
+    Console::instance().add(trf("{} engines imported; their options are being read.", added));
+    if (added > 0) selected_engine_ = static_cast<int>(engines_.size()) - added;
+    storage_.saveEngines(engines_);
 }
 
 }  // namespace fcg

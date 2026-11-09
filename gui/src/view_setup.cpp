@@ -592,6 +592,31 @@ void App::setupParticipants() {
         }
         changed = true;
     }
+    // A whole group of engines, e.g. a pool.
+    std::vector<std::string> groups;
+    for (const auto& e : engines_) {
+        for (const auto& g : e.groups) {
+            if (std::find(groups.begin(), groups.end(), g) == groups.end()) groups.push_back(g);
+        }
+    }
+    if (!groups.empty()) {
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(200.0f * ImGui::GetFontSize() / 16.0f);
+        if (ImGui::BeginCombo("##add_group", TR("Add a group…"))) {
+            std::sort(groups.begin(), groups.end());
+            for (const auto& g : groups) {
+                if (!ImGui::Selectable(g.c_str())) continue;
+                for (const auto& e : engines_) {
+                    const bool member = std::find(e.groups.begin(), e.groups.end(), g) != e.groups.end();
+                    const bool in =
+                        std::any_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; });
+                    if (member && !in) list.push_back({e.name});
+                }
+                changed = true;
+            }
+            ImGui::EndCombo();
+        }
+    }
     if (!list.empty()) {
         ImGui::SameLine();
         if (ImGui::Button(TR("Clear"))) {

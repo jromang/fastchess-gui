@@ -15,6 +15,7 @@
 #include "board_view.hpp"
 #include "console.hpp"
 #include "dialogs.hpp"
+#include "engine_import.hpp"
 #include "engines.hpp"
 #include "live.hpp"
 #include "model.hpp"
@@ -130,6 +131,10 @@ class App {
     // engines
     void startProbe(int index);
     void pollProbe();
+    void startCheck(int index);
+    void pollCheck();
+    void importEngines(const ImportResult& imported);
+    [[nodiscard]] bool engineInUse(const std::string& name) const;
     void addEngine(const std::string& path);
     std::string uniqueEngineName(const std::string& base, int ignore_index) const;
 
@@ -202,6 +207,10 @@ class App {
     std::vector<std::string> probe_queue_;  // engine names waiting for a probe
     std::string probe_message_;
     std::string option_filter_;
+    std::future<CheckResult> check_;
+    int check_index_ = -1;
+    std::string engine_search_;
+    std::string engine_group_;  // shown group, empty = all
 
     // Console view.
     std::vector<Console::Line> console_lines_;

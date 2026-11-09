@@ -84,6 +84,7 @@ void App::forceQuit() {
 void App::frame() {
     pollRun();
     pollProbe();
+    pollCheck();
     handleDialogs();
 
     if (options_.autostart && !autostart_done_ && !probe_.valid() && probe_queue_.empty()) {
@@ -395,6 +396,12 @@ void App::handleDialogs() {
         switch (answer->purpose) {
             case Dialogs::Purpose::AddEngine:
                 addEngine(path);
+                break;
+            case Dialogs::Purpose::ImportEngineList:
+                importEngines(importEngineList(path));
+                break;
+            case Dialogs::Purpose::ImportEngineFolder:
+                importEngines(findEngines(path));
                 break;
             case Dialogs::Purpose::OpenTournament:
                 openTournament(path);

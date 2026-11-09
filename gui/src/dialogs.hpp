@@ -22,7 +22,9 @@ class Dialogs {
         ExportGames,
         ExportAll,
         OpenTournament,
-        ExportStandings
+        ExportStandings,
+        ImportEngineList,
+        ImportEngineFolder
     };
 
     struct Answer {

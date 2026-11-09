@@ -38,6 +38,15 @@ struct EngineEntry {
     std::string id_author;
     std::vector<UciOptionInfo> uci_options;
 
+    // Organisation.
+    std::vector<std::string> groups;  // e.g. a pool, a rating list
+    int elo = 0;                      // reference rating, 0 = none
+
+    // Last health check: -1 never, 0 failed, 1 passed.
+    int check_ok = -1;
+    std::string check_message;
+    std::string check_when;
+
     [[nodiscard]] const std::string* option(const std::string& key) const {
         for (const auto& [k, v] : options) {
             if (k == key) return &v;
@@ -70,7 +79,7 @@ struct EngineEntry {
     }
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineEntry, name, cmd, args, dir, restart, options, id_name, id_author,
-                                                uci_options)
+                                                uci_options, groups, elo, check_ok, check_message, check_when)
 
 enum class MatchMode { Fixed = 0, Infinite = 1, Sprt = 2 };
 enum class TournamentFormat { Match = 0, RoundRobin = 1, Gauntlet = 2 };
