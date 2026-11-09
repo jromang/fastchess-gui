@@ -103,6 +103,35 @@ if(WIN32)
 endif()
 
 # ---------------------------------------------------------------------------
+# Tournament layer: schedules, journal, results, runner (no UI)
+# ---------------------------------------------------------------------------
+
+file(GLOB FCG_TOURNAMENT_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tournament/src/tour/*.cpp)
+add_library(fcg_tournament STATIC ${FCG_TOURNAMENT_SOURCES})
+target_compile_features(fcg_tournament PUBLIC cxx_std_20)
+target_include_directories(fcg_tournament PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/tournament/src)
+target_compile_options(fcg_tournament PRIVATE -Wall -Wextra)
+target_link_libraries(fcg_tournament PUBLIC fastchess_core)
+
+if(FCG_BUILD_TESTS)
+    # fastchess' own mock engine, so the integration tests play real (random) games.
+    add_executable(fcg_random_mover ${FC_APP}/tests/mock/engine/random_mover.cpp)
+    set_target_properties(fcg_random_mover PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+    if(WIN32)
+        target_link_options(fcg_random_mover PRIVATE -static -static-libgcc -static-libstdc++)
+    endif()
+
+    file(GLOB FCG_TOURNAMENT_TEST_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/tournament/tests/*.cpp)
+    add_executable(fcg-tournament-tests ${FCG_TOURNAMENT_TEST_SOURCES})
+    target_link_libraries(fcg-tournament-tests PRIVATE fcg_tournament)
+    add_dependencies(fcg-tournament-tests fcg_random_mover)
+    target_compile_definitions(fcg-tournament-tests PRIVATE FCG_RANDOM_MOVER="$<TARGET_FILE_NAME:fcg_random_mover>")
+    if(WIN32)
+        target_link_options(fcg-tournament-tests PRIVATE -static -static-libgcc -static-libstdc++)
+    endif()
+endif()
+
+# ---------------------------------------------------------------------------
 # GUI
 # ---------------------------------------------------------------------------
 
@@ -203,7 +232,7 @@ if(FCG_BUILD_GUI)
     )
     target_compile_options(fcg_lib PRIVATE -Wall -Wextra)
     target_compile_definitions(fcg_lib PUBLIC FCG_VERSION="${PROJECT_VERSION}")
-    target_link_libraries(fcg_lib PUBLIC fastchess_core imgui_lib)
+    target_link_libraries(fcg_lib PUBLIC fcg_tournament imgui_lib)
 
     set(FCG_WIN_RESOURCES "")
     if(WIN32)
@@ -219,13 +248,6 @@ if(FCG_BUILD_GUI)
 
     if(FCG_BUILD_TESTS)
         file(GLOB FCG_TEST_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gui/tests/*.cpp)
-        # fastchess' own mock engine, so the integration test plays real (random) games.
-        add_executable(fcg_random_mover ${FC_APP}/tests/mock/engine/random_mover.cpp)
-        set_target_properties(fcg_random_mover PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
-        if(WIN32)
-            target_link_options(fcg_random_mover PRIVATE -static -static-libgcc -static-libstdc++)
-        endif()
-
         add_executable(fastchess-gui-tests ${FCG_TEST_SOURCES})
         target_link_libraries(fastchess-gui-tests PRIVATE fcg_lib)
         add_dependencies(fastchess-gui-tests fcg_random_mover)

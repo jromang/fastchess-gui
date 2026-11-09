@@ -37,6 +37,8 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
 
     Console::instance().add(
         trf("fastchess-gui {} — {} physical cores, {} threads", FCG_VERSION, topology_.physical, topology_.logical));
+
+    unfinished_ = unfinishedMatch(storage_.runsDir());
 }
 
 App::~App() {
@@ -215,6 +217,18 @@ void App::drawToolbar() {
             else if (probing)
                 ImGui::SetTooltip("%s", TR("Reading the options of an engine…"));
         }
+
+        if (unfinished_) {
+            const auto& u     = *unfinished_;
+            const auto played = u.total ? trf("{} / {} games", u.played, *u.total) : trf("{} games", u.played);
+            if (ui::iconButton("resume_match", ui::Icon::Play, TR("Resume the last match"), !probing)) resumeRun();
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+                ImGui::SetTooltip("%s", trf("{} · {}\nIt continues exactly where it stopped: no game is lost "
+                                            "or played twice.",
+                                            u.spec.name, played)
+                                            .c_str());
+            }
+        }
     } else {
         const bool paused = run_.paused();
         if (paused) {
@@ -304,6 +318,31 @@ void App::startRun() {
         return;
     }
 
+    resetRunView();
+    const auto& info = run_.info();
+    Console::instance().add(trf("Match started: {} vs {}, {}, {} concurrent games{}. Folder: {}", info.engine_a,
+                                info.engine_b, info.limit_text, info.concurrency,
+                                info.affinity ? TR(", CPU affinity") : "", info.dir.string()));
+}
+
+void App::resumeRun() {
+    if (!unfinished_) return;
+
+    start_error_ = run_.resume(unfinished_->dir);
+    if (!start_error_.empty()) {
+        Console::instance().add(start_error_, true);
+        return;
+    }
+
+    resetRunView();
+    games_at_start_  = run_.tournament() ? run_.tournament()->results().size() : 0;
+    const auto& info = run_.info();
+    Console::instance().add(trf("Match resumed: {} vs {}, {} games already played. Folder: {}", info.engine_a,
+                                info.engine_b, games_at_start_, info.dir.string()));
+}
+
+void App::resetRunView() {
+    unfinished_.reset();
     games_.clear();
     history_.clear();
     stats_   = {};
@@ -324,11 +363,8 @@ void App::startRun() {
 
     live_slot_        = std::clamp(live_slot_, 0, info.concurrency - 1);
     games_per_hour_   = 0;
+    games_at_start_   = 0;
     last_rate_update_ = {};
-
-    Console::instance().add(trf("Match started: {} vs {}, {}, {} concurrent games{}. Folder: {}", info.engine_a,
-                                info.engine_b, info.limit_text, info.concurrency,
-                                info.affinity ? TR(", CPU affinity") : "", info.dir.string()));
 }
 
 void App::pollRun() {
@@ -358,7 +394,7 @@ void App::pollRun() {
         const auto now = Clock::now();
         if (now - last_rate_update_ >= std::chrono::seconds(1)) {
             const auto elapsed = std::chrono::duration<double>(now - run_.info().started).count();
-            games_per_hour_    = elapsed > 5 ? games_.size() / (elapsed / 3600.0) : 0.0;
+            games_per_hour_    = elapsed > 5 ? (games_.size() - games_at_start_) / (elapsed / 3600.0) : 0.0;
             last_rate_update_  = now;
         }
     }
@@ -394,6 +430,9 @@ void App::onRunFinished() {
     if (info.sprt) finish_message_ += fmt::format(" · LLR {:.2f}", current_.llr);
 
     Console::instance().add(finish_message_, !error.empty());
+
+    // A stopped or interrupted match can be continued later.
+    unfinished_ = unfinishedMatch(storage_.runsDir());
 
     if (setup_.notify) {
         notifyRunFinished(window_, trf("{} vs {}", info.engine_a, info.engine_b), finish_message_);

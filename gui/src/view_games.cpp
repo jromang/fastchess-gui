@@ -68,9 +68,9 @@ void App::selectGame(int index) {
     auto* obs = run_.observer();
     if (!obs || index < 0 || index >= static_cast<int>(games_.size())) return;
 
-    const auto text = obs->fastchessPgn().read(games_[index].fastchess_span);
+    const auto text = tour::readSpan(obs->fastchessPgn(), games_[index].fastchess_span);
     if (!text) {
-        replay_error_ = trf("Cannot read the game back from {}", obs->fastchessPgn().path().string());
+        replay_error_ = trf("Cannot read the game back from {}", obs->fastchessPgn().string());
         return;
     }
 
@@ -101,7 +101,7 @@ void App::exportGames(const std::string& path, bool all) {
         spans.push_back(chessbase ? g.chessbase_span : g.fastchess_span);
     }
 
-    const auto error = exportSpans(file.path(), spans, path);
+    const auto error = exportSpans(file, spans, path);
     if (error.empty()) {
         Console::instance().add(spans.size() == 1 ? trf("1 game exported to {}", path)
                                                   : trf("{} games exported to {}", spans.size(), path));

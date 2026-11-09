@@ -88,6 +88,8 @@ class App {
 
     // run lifecycle
     void startRun();
+    void resumeRun();
+    void resetRunView();  // forgets the games and statistics shown, before a run starts
     void pollRun();
     void onRunFinished();
     std::string runStatusText() const;
@@ -124,7 +126,9 @@ class App {
     std::vector<std::string> reasons_;
     std::array<EngineTotals, 2> totals_{};
     std::chrono::steady_clock::time_point last_totals_{};
-    double games_per_hour_ = 0;
+    double games_per_hour_      = 0;
+    std::size_t games_at_start_ = 0;           // games a resumed match already had
+    std::optional<tour::Summary> unfinished_;  // the last match, if it can be resumed
     std::chrono::steady_clock::time_point last_rate_update_{};
 
     // Live view.

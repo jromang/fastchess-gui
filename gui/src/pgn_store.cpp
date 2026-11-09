@@ -8,35 +8,6 @@ namespace fcg {
 
 namespace fs = std::filesystem;
 
-PgnFile::PgnFile(fs::path path) : path_(std::move(path)) {
-    std::error_code ec;
-    fs::create_directories(path_.parent_path(), ec);
-
-    out_.open(path_, std::ios::binary | std::ios::app);
-    size_ = fs::exists(path_, ec) ? fs::file_size(path_, ec) : 0;
-}
-
-PgnSpan PgnFile::append(const std::string& pgn) {
-    std::lock_guard<std::mutex> lock(mutex_);
-
-    PgnSpan span{size_, static_cast<uint32_t>(pgn.size())};
-    out_.write(pgn.data(), static_cast<std::streamsize>(pgn.size()));
-    out_.flush();
-    size_ += pgn.size();
-    return span;
-}
-
-std::optional<std::string> PgnFile::read(const PgnSpan& span) const {
-    std::ifstream in(path_, std::ios::binary);
-    if (!in) return std::nullopt;
-
-    in.seekg(static_cast<std::streamoff>(span.offset));
-    std::string text(span.length, '\0');
-    in.read(text.data(), span.length);
-    if (in.gcount() != static_cast<std::streamsize>(span.length)) return std::nullopt;
-    return text;
-}
-
 std::string exportSpans(const fs::path& source, const std::vector<PgnSpan>& spans, const fs::path& target) {
     std::ifstream in(source, std::ios::binary);
     if (!in) return trf("Cannot read {}", source.string());

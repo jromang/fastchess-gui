@@ -2,7 +2,8 @@
 
 // GuiObserver receives the tournament callbacks on the worker threads and turns them into
 // state the GUI thread can copy cheaply: one locked record per slot, plus queues of finished
-// games and statistics that the GUI drains once per frame.
+// games and statistics that the GUI drains once per frame. The games themselves are recorded
+// (PGN files, journal) by the tournament layer, which tells the observer about each one.
 
 #include <array>
 #include <atomic>
@@ -20,6 +21,8 @@
 #include <game/pgn/pgn_builder.hpp>
 #include <matchmaking/stats.hpp>
 #include <types/score.hpp>
+
+#include <tour/runner.hpp>
 
 #include "pgn_store.hpp"
 
@@ -94,9 +97,11 @@ struct EngineTotals {
     int illegal          = 0;
 };
 
-class GuiObserver final : public fastchess::observer::GameObserver {
+class GuiObserver final : public fastchess::observer::GameObserver, public tour::RecordListener {
    public:
-    GuiObserver(int slots, std::string engine_a, std::string engine_b, const std::filesystem::path& run_dir);
+    // `state` is the match about to be played; the games it already holds (a resumed match) are queued as if
+    // they had just been played, except for the search statistics, which are not kept.
+    GuiObserver(int slots, const tour::TournamentState& state);
 
     // --- callbacks, tournament threads ---
     void onGameStart(const fastchess::observer::GameStart& info) override;
@@ -106,7 +111,8 @@ class GuiObserver final : public fastchess::observer::GameObserver {
                 int64_t white_time_left, int64_t black_time_left) override;
     void onGameEnd(int slot, std::size_t game_id, std::size_t round_id, const fastchess::MatchData& data,
                    bool counted) override;
-    void onResult(const fastchess::Stats& h2h, const std::string& first, const std::string& second) override;
+    void onRecorded(const tour::GameResult& result, const fastchess::MatchData& data,
+                    const std::optional<fastchess::Stats>& pair) override;
 
     // --- GUI thread ---
     [[nodiscard]] int slotCount() const noexcept { return static_cast<int>(slots_.size()); }
@@ -123,8 +129,8 @@ class GuiObserver final : public fastchess::observer::GameObserver {
     [[nodiscard]] std::vector<std::string> reasons() const;
     [[nodiscard]] std::array<EngineTotals, 2> totals() const;  // [0] = A, [1] = B
 
-    [[nodiscard]] const PgnFile& fastchessPgn() const noexcept { return pgn_fastchess_; }
-    [[nodiscard]] const PgnFile& chessbasePgn() const noexcept { return pgn_chessbase_; }
+    [[nodiscard]] const std::filesystem::path& fastchessPgn() const noexcept { return pgn_fastchess_; }
+    [[nodiscard]] const std::filesystem::path& chessbasePgn() const noexcept { return pgn_chessbase_; }
 
     [[nodiscard]] const std::string& engineA() const noexcept { return engine_a_; }
     [[nodiscard]] const std::string& engineB() const noexcept { return engine_b_; }
@@ -139,14 +145,18 @@ class GuiObserver final : public fastchess::observer::GameObserver {
     Slot* slot(int i) { return i >= 0 && i < static_cast<int>(slots_.size()) ? slots_[i].get() : nullptr; }
 
     uint16_t internReason(const std::string& reason);
+    GameRecord makeRecord(const tour::GameResult& result);  // data_mutex_ held
+    void countLoss(const tour::GameResult& result);         // data_mutex_ held
 
     std::string engine_a_;
     std::string engine_b_;
+    int id_a_ = 0;  // participant ids
+    int id_b_ = 1;
 
     std::vector<std::unique_ptr<Slot>> slots_;
 
-    PgnFile pgn_fastchess_;
-    PgnFile pgn_chessbase_;
+    std::filesystem::path pgn_fastchess_;
+    std::filesystem::path pgn_chessbase_;
 
     mutable std::mutex data_mutex_;
     std::vector<GameRecord> pending_games_;

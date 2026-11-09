@@ -189,7 +189,7 @@ TEST_CASE("fastchess comments parse back") {
 TEST_CASE("pgn file offsets read games back, and replay parses them") {
     const auto dir = tempDir("pgn");
     {
-        PgnFile file(dir / "games.pgn");
+        tour::PgnFile file(dir / "games.pgn");
 
         fastchess::config::Pgn config;
         const auto first  = fastchess::pgn::PgnBuilder(config, sampleGame(true), 1).get();
@@ -200,10 +200,10 @@ TEST_CASE("pgn file offsets read games back, and replay parses them") {
         CHECK(s1.offset == 0);
         CHECK(s2.offset == first.size());
 
-        REQUIRE(file.read(s2));
-        CHECK(*file.read(s2) == second);
+        REQUIRE(tour::readSpan(file.path(), s2));
+        CHECK(*tour::readSpan(file.path(), s2) == second);
 
-        const auto replay = parseReplay(*file.read(s1));
+        const auto replay = parseReplay(*tour::readSpan(file.path(), s1));
         REQUIRE(replay);
         REQUIRE(replay->moves.size() == 7);
         CHECK(replay->moves[0].san == "e4");
@@ -337,7 +337,11 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     CHECK(run.engines[0].dir == dir.string());
     CHECK(run.engines[1].options.size() == 1);
     CHECK(run.tournament.pgn.file.empty());
-    CHECK(fs::path(run.tournament.config_name).is_absolute());
+    CHECK(run.tournament.config_name.empty());  // results are kept by the tournament layer
+    CHECK(run.spec.format == tour::Format::Match);
+    CHECK(run.spec.max_games == 102);
+    REQUIRE(run.spec.participants.size() == 2);
+    CHECK(run.spec.participants[1].engine.name == "old");
     CHECK(run.info.limit_text == "5000 nodes");
     CHECK(run.info.total_games == 102);
 

@@ -12,6 +12,9 @@
 #include <types/engine_config.hpp>
 #include <types/tournament.hpp>
 
+#include <tour/state.hpp>
+#include <tour/summary.hpp>
+
 #include "live.hpp"
 #include "model.hpp"
 #include "topology.hpp"
@@ -43,8 +46,15 @@ struct RunInfo {
 struct BuiltRun {
     fastchess::config::Tournament tournament;
     std::vector<fastchess::EngineConfiguration> engines;  // [0] = A, [1] = B
+    tour::TournamentSpec spec;                            // the match as the tournament layer stores it
     RunInfo info;
 };
+
+// What the toolbar and the views show about a match, from its stored settings.
+[[nodiscard]] RunInfo runInfo(const tour::TournamentSpec& spec, const std::filesystem::path& dir);
+
+// The most recent match in `runs_root`, if it is not finished (stopped, or interrupted by a crash).
+[[nodiscard]] std::optional<tour::Summary> unfinishedMatch(const std::filesystem::path& runs_root);
 
 // Turns the GUI setup into fastchess configuration, sanitized the way the command line would be.
 // Throws fastchess_exception with a readable message on invalid input.
@@ -53,8 +63,8 @@ struct BuiltRun {
 
 [[nodiscard]] std::string makeRunDirName(const std::string& a, const std::string& b);
 
-// Owns the thread a tournament runs on. Only one run exists at a time, because fastchess keeps its
-// configuration and stop flag in globals.
+// Owns the thread a tournament runs on, and the tournament's state. Only one run exists at a time, because
+// fastchess keeps its configuration and stop flag in globals.
 class RunController {
    public:
     enum class State { Idle, Running, Finished };
@@ -65,6 +75,9 @@ class RunController {
     // Starts a run; returns an error message, empty on success.
     std::string start(const MatchSetup& setup, const std::vector<EngineEntry>& engines, const CpuTopology& topology,
                       const std::filesystem::path& runs_root);
+
+    // Continues the match stored in `dir`; returns an error message, empty on success.
+    std::string resume(const std::filesystem::path& dir);
 
     void setPaused(bool paused);
     [[nodiscard]] bool paused() const;
@@ -86,6 +99,7 @@ class RunController {
     [[nodiscard]] int runningGames() const;
 
     [[nodiscard]] GuiObserver* observer() const noexcept { return observer_.get(); }
+    [[nodiscard]] const tour::TournamentState* tournament() const noexcept { return tournament_.get(); }
     [[nodiscard]] const RunInfo& info() const noexcept { return info_; }
 
     // Why the run thread ended: an error message (empty if none), and whether the user stopped it.
@@ -96,9 +110,11 @@ class RunController {
     [[nodiscard]] bool takeFinishedEvent();
 
    private:
-    void threadMain(fastchess::config::Tournament tournament, std::vector<fastchess::EngineConfiguration> engines);
+    std::string launch(std::unique_ptr<tour::TournamentState> tournament);
+    void threadMain();
 
     std::thread thread_;
+    std::unique_ptr<tour::TournamentState> tournament_;
     std::unique_ptr<GuiObserver> observer_;
     RunInfo info_;
 

@@ -5,6 +5,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <set>
 #include <thread>
 
 #include <core/config/config.hpp>
@@ -134,8 +135,8 @@ TEST_CASE("pause lets running games finish and starts no new one; stop when idle
     auto* obs = h.run.observer();
     REQUIRE(obs);
     const auto& last = h.games.back();
-    CHECK(obs->fastchessPgn().read(last.fastchess_span).has_value());
-    CHECK(obs->chessbasePgn().read(last.chessbase_span).has_value());
+    CHECK(tour::readSpan(obs->fastchessPgn(), last.fastchess_span).has_value());
+    CHECK(tour::readSpan(obs->chessbasePgn(), last.chessbase_span).has_value());
 
     // A second run in the same process works (fastchess keeps its state in globals).
     Harness second;
@@ -174,4 +175,48 @@ TEST_CASE("an engine whose file name has a space is the one started, not the pro
     CHECK_FALSE(result.options.empty());
 
     fs::remove_all(dir, ec);
+}
+
+TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly its games") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+
+    const auto root = fs::temp_directory_path() / "fcg-run-tests-resume";
+    fs::remove_all(root);
+    const auto topology = topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}});
+
+    {
+        Harness h;
+        REQUIRE(h.run.start(randomSetup(40), randomEngines(), topology, root).empty());
+        REQUIRE(h.waitFor([&] { return h.games.size() >= 8; }));
+        h.run.stopNow();  // running games are lost, as when the program is killed
+        REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }));
+    }
+
+    const auto unfinished = unfinishedMatch(root);
+    REQUIRE(unfinished);
+    CHECK(unfinished->played >= 8);
+    CHECK(unfinished->played < 40);
+    REQUIRE(unfinished->total);
+    CHECK(*unfinished->total == 40);
+
+    Harness h;
+    REQUIRE(h.run.resume(unfinished->dir).empty());
+    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
+    CHECK(h.run.error().empty());
+    CHECK_FALSE(h.run.stoppedByUser());
+
+    // The games played before the stop are shown again, and the match ends with exactly 40.
+    CHECK(h.games.size() == 40);
+    REQUIRE_FALSE(h.stats.empty());
+    CHECK(h.stats.back().sum() == 40);
+
+    std::set<uint64_t> ids;
+    for (const auto& g : h.games) ids.insert(g.game_id);
+    CHECK(ids.size() == 40);
+
+    CHECK_FALSE(unfinishedMatch(root));
+    CHECK_FALSE(h.run.resume(unfinished->dir).empty());  // already finished
 }

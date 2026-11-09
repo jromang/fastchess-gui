@@ -11,34 +11,12 @@
 #include <chess.hpp>
 #include <types/score.hpp>
 
+#include <tour/pgn_file.hpp>
+
 namespace fcg {
 
-// A byte range inside a PGN file.
-struct PgnSpan {
-    uint64_t offset = 0;
-    uint32_t length = 0;
-};
-
-// Append-only PGN file shared by the tournament threads. Remembers nothing itself:
-// append() returns where the game went, and the caller keeps that.
-class PgnFile {
-   public:
-    explicit PgnFile(std::filesystem::path path);
-
-    [[nodiscard]] const std::filesystem::path& path() const noexcept { return path_; }
-
-    // Thread safe.
-    PgnSpan append(const std::string& pgn);
-
-    // Reads one game back.
-    [[nodiscard]] std::optional<std::string> read(const PgnSpan& span) const;
-
-   private:
-    std::filesystem::path path_;
-    std::ofstream out_;
-    uint64_t size_ = 0;
-    mutable std::mutex mutex_;
-};
+// The PGN files are written by the tournament layer.
+using tour::PgnSpan;
 
 // Copies the given games, in order, into a new file. Returns an error message, empty on success.
 std::string exportSpans(const std::filesystem::path& source, const std::vector<PgnSpan>& spans,

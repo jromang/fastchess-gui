@@ -10,27 +10,30 @@ namespace {
 
 constexpr int colorIndex(chess::Color c) { return c == chess::Color::WHITE ? 0 : 1; }
 
-int8_t resultForA(const fastchess::MatchData& data, bool a_white) {
-    const auto white = data.players.white.result;
-    const auto black = data.players.black.result;
-
-    if (white == chess::GameResult::DRAW || black == chess::GameResult::DRAW) return 0;
-    const bool white_won = white == chess::GameResult::WIN || black == chess::GameResult::LOSE;
-    const bool black_won = black == chess::GameResult::WIN || white == chess::GameResult::LOSE;
-    if (white_won) return a_white ? 1 : -1;
-    if (black_won) return a_white ? -1 : 1;
-    return 0;
+int8_t resultForA(const tour::GameResult& result, int id_a) {
+    const double score = result.scoreOf(id_a);
+    return score == 1.0 ? 1 : score == 0.0 ? -1 : 0;
 }
 
 }  // namespace
 
-GuiObserver::GuiObserver(int slots, std::string engine_a, std::string engine_b, const std::filesystem::path& run_dir)
-    : engine_a_(std::move(engine_a)),
-      engine_b_(std::move(engine_b)),
-      pgn_fastchess_(run_dir / "games.pgn"),
-      pgn_chessbase_(run_dir / "games-chessbase.pgn") {
+GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
+    : engine_a_(state.spec().participants.at(0).engine.name),
+      engine_b_(state.spec().participants.at(1).engine.name),
+      id_a_(state.spec().participants.at(0).id),
+      id_b_(state.spec().participants.at(1).id),
+      pgn_fastchess_(state.pgnPath()),
+      pgn_chessbase_(state.chessbasePgnPath()) {
     slots_.reserve(static_cast<std::size_t>(std::max(1, slots)));
     for (int i = 0; i < std::max(1, slots); ++i) slots_.push_back(std::make_unique<Slot>());
+
+    // A resumed match: its games and statistics so far, as if they had just been played.
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    for (const auto& result : state.results()) {
+        pending_games_.push_back(makeRecord(result));
+        countLoss(result);
+    }
+    pending_stats_ = state.pairHistory(id_a_, id_b_);
 }
 
 void GuiObserver::onGameStart(const fastchess::observer::GameStart& info) {
@@ -150,52 +153,61 @@ uint16_t GuiObserver::internReason(const std::string& reason) {
     return index;
 }
 
-void GuiObserver::onGameEnd(int slot_index, std::size_t game_id, std::size_t round_id, const fastchess::MatchData& data,
-                            bool counted) {
-    const auto result = fastchess::pgn::PgnBuilder::getResultFromWhiteMatch(data.players.white);
+void GuiObserver::onGameEnd(int slot_index, std::size_t, std::size_t, const fastchess::MatchData& data, bool counted) {
+    auto* s = slot(slot_index);
+    if (!s) return;
 
-    int64_t duration_ms = 0;
-    if (auto* s = slot(slot_index)) {
-        std::lock_guard<std::mutex> lock(s->mutex);
-        auto& st    = s->state;
-        st.active   = false;
-        st.thinking = false;
-        st.result   = counted ? result : "*";
-        st.reason   = counted ? data.reason : "Game interrupted";
-        st.version++;
-    }
+    std::lock_guard<std::mutex> lock(s->mutex);
+    auto& st    = s->state;
+    st.active   = false;
+    st.thinking = false;
+    st.result   = counted ? fastchess::pgn::PgnBuilder::getResultFromWhiteMatch(data.players.white) : "*";
+    st.reason   = counted ? data.reason : "Game interrupted";
+    st.version++;
+}
 
-    if (!counted || !fastchess::config::TournamentConfig) return;
-
-    const auto& pgn_config = fastchess::config::TournamentConfig->pgn;
-    const auto round       = round_id + 1;
-
-    const auto pgn_fc =
-        fastchess::pgn::PgnBuilder(pgn_config, data, round, fastchess::pgn::CommentStyle::Fastchess).get();
-    const auto pgn_cb =
-        fastchess::pgn::PgnBuilder(pgn_config, data, round, fastchess::pgn::CommentStyle::ChessBase).get();
-
+GameRecord GuiObserver::makeRecord(const tour::GameResult& result) {
     GameRecord record;
-    record.game_id        = game_id;
-    record.round_id       = static_cast<uint32_t>(round);
-    record.a_white        = data.players.white.config.name == engine_a_;
-    record.a_result       = resultForA(data, record.a_white);
-    record.termination    = static_cast<uint8_t>(data.termination);
-    record.plies          = static_cast<uint16_t>(std::min<std::size_t>(data.moves.size(), 65535));
-    record.fastchess_span = pgn_fastchess_.append(pgn_fc);
-    record.chessbase_span = pgn_chessbase_.append(pgn_cb);
+    record.game_id        = result.number() + 1;
+    record.round_id       = result.encounter + 1;
+    record.a_white        = result.white == id_a_;
+    record.a_result       = resultForA(result, id_a_);
+    record.termination    = static_cast<uint8_t>(result.termination);
+    record.reason         = internReason(result.reason);
+    record.plies          = static_cast<uint16_t>(std::min<uint32_t>(result.plies, 65535));
+    record.duration_ms    = result.duration_ms;
+    record.fastchess_span = result.pgn;
+    record.chessbase_span = result.pgn_chessbase;
+    return record;
+}
 
-    // "HH:MM:SS" from fastchess.
-    {
-        int h = 0, m = 0, sec = 0;
-        if (std::sscanf(data.duration.c_str(), "%d:%d:%d", &h, &m, &sec) == 3) {
-            duration_ms = (static_cast<int64_t>(h) * 3600 + m * 60 + sec) * 1000;
-        }
-        record.duration_ms = static_cast<uint32_t>(std::clamp<int64_t>(duration_ms, 0, UINT32_MAX));
+void GuiObserver::countLoss(const tour::GameResult& result) {
+    if (result.result == "1/2-1/2") return;
+    const int loser = result.result == "1-0" ? result.black : result.white;
+    auto& t         = totals_[loser == id_a_ ? 0 : 1];
+
+    switch (result.termination) {
+        case fastchess::MatchTermination::TIMEOUT:
+            t.timeouts++;
+            break;
+        case fastchess::MatchTermination::DISCONNECT:
+        case fastchess::MatchTermination::STALL:
+            t.crashes++;
+            break;
+        case fastchess::MatchTermination::ILLEGAL_MOVE:
+            t.illegal++;
+            break;
+        default:
+            break;
     }
+}
 
+void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::MatchData& data,
+                             const std::optional<fastchess::Stats>& pair) {
     std::lock_guard<std::mutex> lock(data_mutex_);
-    record.reason = internReason(data.reason);
+
+    const auto record = makeRecord(result);
+    countLoss(result);
 
     // Per engine search statistics, from the moves each side actually played.
     chess::Board board;
@@ -220,30 +232,10 @@ void GuiObserver::onGameEnd(int slot_index, std::size_t game_id, std::size_t rou
         }
     }
 
-    if (const auto loser = data.getLosingPlayer()) {
-        auto& t = totals_[loser->config.name == engine_a_ ? 0 : 1];
-        switch (data.termination) {
-            case fastchess::MatchTermination::TIMEOUT:
-                t.timeouts++;
-                break;
-            case fastchess::MatchTermination::DISCONNECT:
-            case fastchess::MatchTermination::STALL:
-                t.crashes++;
-                break;
-            case fastchess::MatchTermination::ILLEGAL_MOVE:
-                t.illegal++;
-                break;
-            default:
-                break;
-        }
-    }
-
     pending_games_.push_back(record);
-}
 
-void GuiObserver::onResult(const fastchess::Stats& h2h, const std::string& first, const std::string&) {
-    std::lock_guard<std::mutex> lock(data_mutex_);
-    pending_stats_.push_back(first == engine_a_ ? h2h : ~h2h);
+    // `pair` is from the lower id's point of view; statistics are shown from A's.
+    if (pair) pending_stats_.push_back(id_a_ < id_b_ ? *pair : ~*pair);
 }
 
 bool GuiObserver::copySlot(int i, SlotState& out) const {

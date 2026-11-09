@@ -131,6 +131,9 @@ void BaseTournament::saveJson() {
 
     const auto& config = *config::TournamentConfig;
 
+    // An embedding front end that keeps its own files gives no name.
+    if (config.config_name.empty()) return;
+
     const auto merged_results = [this]() {
         stats_map map;
 

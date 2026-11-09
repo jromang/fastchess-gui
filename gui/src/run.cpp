@@ -9,9 +9,11 @@
 #include <core/observer.hpp>
 #include <core/rand.hpp>
 #include <matchmaking/syzygy.hpp>
-#include <matchmaking/tournament/roundrobin/roundrobin.hpp>
 #include <types/exception.hpp>
 
+#include <tour/runner.hpp>
+
+#include "console.hpp"
 #include "engines.hpp"
 #include "i18n.hpp"
 
@@ -57,7 +59,47 @@ fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSet
     return config;
 }
 
+std::string limitText(const fastchess::Limit& limit) {
+    if (limit.nodes > 0) return trf("{} nodes", limit.nodes);
+    const auto& tc = limit.tc;
+    return fmt::format("{}{}+{}", tc.moves > 0 ? fmt::format("{}/", tc.moves) : "", formatSeconds(tc.time / 1000.0),
+                       formatSeconds(tc.increment / 1000.0));
+}
+
 }  // namespace
+
+RunInfo runInfo(const tour::TournamentSpec& spec, const fs::path& dir) {
+    const auto& t = spec.conditions;
+
+    RunInfo info;
+    info.engine_a    = spec.participants.at(0).engine.name;
+    info.engine_b    = spec.participants.at(1).engine.name;
+    info.dir         = dir;
+    info.mode        = t.sprt.enabled ? MatchMode::Sprt : spec.max_games > 0 ? MatchMode::Fixed : MatchMode::Infinite;
+    info.limit       = spec.participants[0].engine.limit.nodes > 0 ? LimitKind::Nodes : LimitKind::Time;
+    info.limit_text  = limitText(spec.participants[0].engine.limit);
+    info.total_games = spec.max_games;
+    info.concurrency = t.concurrency;
+    info.affinity    = t.affinity;
+    info.sprt        = t.sprt.enabled;
+    info.elo0        = t.sprt.elo0;
+    info.elo1        = t.sprt.elo1;
+    info.alpha       = t.sprt.alpha;
+    info.beta        = t.sprt.beta;
+    info.model       = t.sprt.model;
+    info.penta       = true;
+    return info;
+}
+
+std::optional<tour::Summary> unfinishedMatch(const fs::path& runs_root) {
+    const auto dirs = tour::tournamentDirs(runs_root);
+    if (dirs.empty()) return std::nullopt;
+
+    auto summary = tour::summarize(dirs.front());
+    if (!summary || summary->finished || summary->spec.format != tour::Format::Match) return std::nullopt;
+    if (summary->total && summary->played >= *summary->total) return std::nullopt;
+    return summary;
+}
 
 std::string makeRunDirName(const std::string& a, const std::string& b) {
     auto clean = [](std::string s) {
@@ -96,14 +138,14 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     BuiltRun run;
     auto& t = run.tournament;
 
-    t.games            = 2;
-    t.report_penta     = true;
-    t.output           = fastchess::OutputType::FASTCHESS;
-    t.recover          = setup.recover;
-    t.seed             = setup.seed != 0 ? setup.seed : fastchess::random::random_uint64();
-    t.config_name      = (run_dir / "config.json").string();
-    t.autosaveinterval = 20;
-    t.startup_time     = ENGINE_STARTUP_TIME;
+    t.games        = 2;
+    t.report_penta = true;
+    t.output       = fastchess::OutputType::FASTCHESS;
+    t.recover      = setup.recover;
+    t.seed         = setup.seed != 0 ? setup.seed : fastchess::random::random_uint64();
+    t.startup_time = ENGINE_STARTUP_TIME;
+    // The tournament layer keeps the results (tournament.json, journal.jsonl): no fastchess config.json.
+    t.config_name = "";
 
     switch (setup.mode) {
         case MatchMode::Fixed:
@@ -185,25 +227,14 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     fastchess::cli::sanitize(t);
     fastchess::cli::sanitize(run.engines);
 
-    auto& info      = run.info;
-    info.engine_a   = run.engines[0].name;
-    info.engine_b   = run.engines[1].name;
-    info.dir        = run_dir;
-    info.mode       = setup.mode;
-    info.limit      = setup.limit;
-    info.limit_text = fixed_nodes ? trf("{} nodes", setup.nodes)
-                                  : fmt::format("{}{}+{}", setup.tc_moves > 0 ? fmt::format("{}/", setup.tc_moves) : "",
-                                                formatSeconds(setup.tc_base_s), formatSeconds(setup.tc_inc_s));
-    info.total_games = t.rounds >= UNBOUNDED_ROUNDS ? 0 : t.rounds * t.games;
-    info.concurrency = t.concurrency;
-    info.affinity    = t.affinity;
-    info.sprt        = t.sprt.enabled;
-    info.elo0        = t.sprt.elo0;
-    info.elo1        = t.sprt.elo1;
-    info.alpha       = t.sprt.alpha;
-    info.beta        = t.sprt.beta;
-    info.model       = t.sprt.model;
-    info.penta       = t.report_penta;
+    auto& spec      = run.spec;
+    spec.name       = fmt::format("{} vs {}", run.engines[0].name, run.engines[1].name);
+    spec.format     = tour::Format::Match;
+    spec.max_games  = t.rounds >= UNBOUNDED_ROUNDS ? 0 : t.rounds * t.games;
+    spec.conditions = t;
+    for (int i = 0; i < 2; ++i) spec.participants.push_back({i, run.engines[i]});
+
+    run.info = runInfo(spec, run_dir);
 
     return run;
 }
@@ -221,26 +252,48 @@ std::string RunController::start(const MatchSetup& setup, const std::vector<Engi
     if (state_ == State::Running) return TR("A match is already running.");
     if (g_probes_in_flight > 0) return TR("An engine is being read, try again in a moment.");
 
-    if (thread_.joinable()) thread_.join();
-
     const auto* a  = findEngine(engines, setup.engine_a);
     const auto* b  = findEngine(engines, setup.engine_b);
     const auto dir = runs_root / makeRunDirName(a ? a->name : "A", b ? b->name : "B");
 
-    BuiltRun run;
+    std::unique_ptr<tour::TournamentState> tournament;
     try {
-        run = buildRun(setup, engines, topology, dir);
+        const auto run = buildRun(setup, engines, topology, dir);
+        tournament     = tour::TournamentState::create(dir, run.spec);
     } catch (const std::exception& e) {
         return e.what();
     }
 
-    std::error_code ec;
-    fs::create_directories(dir, ec);
-    if (ec) return trf("Cannot create the folder {}", dir.string());
+    return launch(std::move(tournament));
+}
 
-    info_         = run.info;
-    info_.started = Clock::now();
-    observer_     = std::make_unique<GuiObserver>(run.tournament.concurrency, info_.engine_a, info_.engine_b, dir);
+std::string RunController::resume(const fs::path& dir) {
+    if (state_ == State::Running) return TR("A match is already running.");
+    if (g_probes_in_flight > 0) return TR("An engine is being read, try again in a moment.");
+
+    std::unique_ptr<tour::TournamentState> tournament;
+    try {
+        tournament = tour::TournamentState::open(dir);
+    } catch (const std::exception& e) {
+        return trf("Cannot resume the match: {}", e.what());
+    }
+    if (tournament->spec().format != tour::Format::Match) return TR("Only matches can be resumed for now.");
+    if (tournament->finished()) return TR("This match is already finished.");
+
+    for (const auto& warning : tournament->warnings()) Console::instance().add(warning, true);
+    return launch(std::move(tournament));
+}
+
+std::string RunController::launch(std::unique_ptr<tour::TournamentState> tournament) {
+    if (thread_.joinable()) thread_.join();
+
+    const auto& spec = tournament->spec();
+    info_            = runInfo(spec, tournament->dir());
+    info_.started    = Clock::now();
+
+    // The observer queues the games a resumed match already has.
+    observer_   = std::make_unique<GuiObserver>(spec.conditions.concurrency, *tournament);
+    tournament_ = std::move(tournament);
 
     {
         std::lock_guard<std::mutex> lock(outcome_mutex_);
@@ -253,40 +306,47 @@ std::string RunController::start(const MatchSetup& setup, const std::vector<Engi
     thread_done_    = false;
     state_          = State::Running;
 
+    // fastchess plays the games the runner gives it: no opening book, PGN or config file of its own.
+    auto config         = spec.conditions;
+    config.games        = 2;
+    config.opening.file = "";
+    config.pgn.file     = "";
+    config.config_name  = "";
+    config.output       = fastchess::OutputType::FASTCHESS;
+
+    std::vector<fastchess::EngineConfiguration> engines;
+    for (const auto& p : spec.participants) engines.push_back(p.engine);
+
     // The globals are replaced here, on the GUI thread, while nothing else reads them.
     fastchess::atomic::stop                 = false;
     fastchess::atomic::abnormal_termination = false;
-    fastchess::config::TournamentConfig     = std::make_unique<fastchess::config::Tournament>(run.tournament);
-    fastchess::config::EngineConfigs = std::make_unique<std::vector<fastchess::EngineConfiguration>>(run.engines);
+    fastchess::config::TournamentConfig     = std::make_unique<fastchess::config::Tournament>(config);
+    fastchess::config::EngineConfigs        = std::make_unique<std::vector<fastchess::EngineConfiguration>>(engines);
     fastchess::observer::PauseGate::instance().reset();
-    fastchess::observer::set(observer_.get());
 
-    thread_ = std::thread(&RunController::threadMain, this, run.tournament, run.engines);
+    thread_ = std::thread(&RunController::threadMain, this);
     return {};
 }
 
-void RunController::threadMain(fastchess::config::Tournament tournament, std::vector<fastchess::EngineConfiguration>) {
+void RunController::threadMain() {
     std::string error;
 
     try {
-        fastchess::random::seed(tournament.seed);
-
-        if (tournament.tb_adjudication.enabled) {
-            if (fastchess::initSyzygy(tournament.tb_adjudication.syzygy_dirs) == 0) {
-                throw fastchess_exception(TR("Cannot load the Syzygy tablebases from ") +
-                                          tournament.tb_adjudication.syzygy_dirs);
-            }
+        const auto& tb = fastchess::config::TournamentConfig->tb_adjudication;
+        if (tb.enabled && fastchess::initSyzygy(tb.syzygy_dirs) == 0) {
+            throw fastchess_exception(TR("Cannot load the Syzygy tablebases from ") + tb.syzygy_dirs);
         }
 
-        fastchess::RoundRobin round_robin(fastchess::stats_map{});
-        round_robin.start();
+        // The runner is fastchess' observer while it plays, and forwards everything to ours.
+        tour::Runner runner(*tournament_, observer_.get(), observer_.get());
+        runner.start();
+        error = runner.error();
     } catch (const std::exception& e) {
         error = e.what();
     }
 
     // The tournament has joined its workers: no callback can arrive any more.
     fastchess::tearDownSyzygy();
-    fastchess::observer::set(nullptr);
     fastchess::stopProcesses();
 
     {

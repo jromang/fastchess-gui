@@ -1,0 +1,215 @@
+#include <doctest/doctest.hpp>
+
+#include <filesystem>
+#include <fstream>
+#include <set>
+
+#include <tour/journal.hpp>
+#include <tour/state.hpp>
+
+using namespace fcg::tour;
+namespace fs = std::filesystem;
+
+namespace {
+
+fs::path freshDir(const std::string& name) {
+    const auto dir = fs::temp_directory_path() / ("fcg-tour-" + name);
+    fs::remove_all(dir);
+    return dir;
+}
+
+TournamentSpec matchSpec(uint64_t max_games = 0) {
+    TournamentSpec spec;
+    spec.name      = "test";
+    spec.format    = Format::Match;
+    spec.max_games = max_games;
+    for (int i = 0; i < 2; ++i) {
+        Participant p;
+        p.id          = i;
+        p.engine.name = i == 0 ? "A" : "B";
+        spec.participants.push_back(p);
+    }
+    return spec;
+}
+
+// A finished game as fastchess would report it, without moves.
+fastchess::MatchData gameData(const GameTask& task, const std::string& result) {
+    using chess::GameResult;
+    fastchess::MatchData data(chess::constants::STARTPOS);
+    const auto white = result == "1-0" ? GameResult::WIN : result == "0-1" ? GameResult::LOSE : GameResult::DRAW;
+    const auto black = result == "1-0" ? GameResult::LOSE : result == "0-1" ? GameResult::WIN : GameResult::DRAW;
+    data.players     = {fastchess::MatchData::PlayerInfo(task.white, white),
+                        fastchess::MatchData::PlayerInfo(task.black, black)};
+    data.termination = fastchess::MatchTermination::NORMAL;
+    data.reason      = "test";
+    data.duration    = "00:00:02";
+    return data;
+}
+
+std::string readAll(const fs::path& file) {
+    std::ifstream in(file, std::ios::binary);
+    return {std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
+}
+
+}  // namespace
+
+TEST_CASE("journal: a last line cut short is dropped and removed; a bad line is an error") {
+    const auto dir = freshDir("journal");
+    fs::create_directories(dir);
+    const auto file = dir / "journal.jsonl";
+
+    {
+        Journal journal(file);
+        journal.append({{"t", "a"}});
+        journal.append({{"t", "b"}});
+    }
+    {
+        std::ofstream out(file, std::ios::binary | std::ios::app);
+        out << R"({"t":"c","cut)";
+    }
+
+    const auto events = Journal::read(file);
+    REQUIRE(events.size() == 2);
+    CHECK(events[1]["t"] == "b");
+    CHECK(readAll(file).back() == '\n');
+
+    {
+        std::ofstream out(file, std::ios::binary | std::ios::app);
+        out << "not json\n";
+    }
+    CHECK_THROWS_AS((void)Journal::read(file), std::runtime_error);
+}
+
+TEST_CASE("state: pairs are played back to back, results survive a reopen, PGN orphans are cut") {
+    const auto dir = freshDir("state");
+
+    std::vector<GameTask> claimed;
+    {
+        auto state = TournamentState::create(dir, matchSpec(10));
+        CHECK(state->totalGames() == 10u);
+
+        // Game 0 then game 1 of the same encounter, colours swapped.
+        for (int i = 0; i < 4; ++i) {
+            auto task = state->claimNext();
+            REQUIRE(task);
+            claimed.push_back(*task);
+        }
+        CHECK(claimed[0].encounter.index == 0);
+        CHECK(claimed[0].game == 0);
+        CHECK(claimed[1].encounter.index == 0);
+        CHECK(claimed[1].game == 1);
+        CHECK(claimed[0].white.name == "A");
+        CHECK(claimed[1].white.name == "B");
+        CHECK(claimed[2].encounter.index == 1);
+
+        // Encounter 0 complete (A wins both), encounter 1 half played, game 3 still "running" at the crash.
+        const auto r0 = state->complete(claimed[0], gameData(claimed[0], "1-0"));
+        CHECK_FALSE(r0.pair);
+        const auto r1 = state->complete(claimed[1], gameData(claimed[1], "0-1"));
+        REQUIRE(r1.pair);
+        CHECK(r1.pair->wins == 2);
+        CHECK(r1.pair->penta_WW == 1);
+        state->complete(claimed[2], gameData(claimed[2], "1/2-1/2"));
+
+        const auto stats = state->pairStats(0, 1);
+        CHECK(stats.wins == 2);
+        CHECK(stats.sum() == 2);  // only complete encounters count
+        CHECK(state->pairStats(1, 0).losses == 2);
+    }
+
+    // A game written to the PGN files but never journaled (crash between the two writes).
+    const auto pgn_before = fs::file_size(dir / "games.pgn");
+    {
+        std::ofstream out(dir / "games.pgn", std::ios::binary | std::ios::app);
+        out << "[Event \"orphan\"]\n\n1. e4 *\n\n";
+    }
+
+    auto state = TournamentState::open(dir);
+    CHECK(fs::file_size(dir / "games.pgn") == pgn_before);
+    CHECK(state->results().size() == 3);
+    CHECK_FALSE(state->finished());
+
+    // The interrupted game comes first, with the opening its encounter started with.
+    auto next = state->claimNext();
+    REQUIRE(next);
+    CHECK(next->encounter.index == 1);
+    CHECK(next->game == 1);
+    CHECK(next->opening.fen_epd == claimed[3].opening.fen_epd);
+
+    // Playing everything that is left finishes the match with exactly 10 games, each once.
+    std::set<uint64_t> numbers;
+    for (const auto& r : state->results()) numbers.insert(r.number());
+    for (auto task = next; task; task = state->claimNext()) {
+        const auto rec = state->complete(*task, gameData(*task, "1/2-1/2"));
+        CHECK(numbers.insert(rec.result.number()).second);
+    }
+    CHECK(numbers.size() == 10);
+    CHECK(state->finished());
+    CHECK(state->finishReason() == "complete");
+    CHECK_FALSE(state->hasWork());
+
+    // Every game is in the PGN, once.
+    const auto text  = readAll(dir / "games.pgn");
+    std::size_t hits = 0;
+    for (auto pos = text.find("[Event "); pos != std::string::npos; pos = text.find("[Event ", pos + 1)) ++hits;
+    CHECK(hits == 10);
+
+    // And a reopened finished tournament has nothing to play.
+    state.reset();
+    auto again = TournamentState::open(dir);
+    CHECK(again->finished());
+    CHECK_FALSE(again->claimNext());
+}
+
+TEST_CASE("state: a released game is played again first") {
+    auto state   = TournamentState::create(freshDir("release"), matchSpec());
+    const auto a = state->claimNext();
+    const auto b = state->claimNext();
+    REQUIRE(a);
+    REQUIRE(b);
+    state->release(*a);
+    const auto c = state->claimNext();
+    REQUIRE(c);
+    CHECK(c->number() == a->number());
+}
+
+TEST_CASE("state: the SPRT ends a match and the verdict is journaled") {
+    auto spec                    = matchSpec();
+    spec.conditions.sprt.enabled = true;
+    spec.conditions.sprt.elo0    = 0;
+    spec.conditions.sprt.elo1    = 5;
+    spec.conditions.sprt.alpha   = 0.05;
+    spec.conditions.sprt.beta    = 0.05;
+    spec.conditions.sprt.model   = "normalized";
+    const auto dir               = freshDir("sprt");
+
+    {
+        auto state = TournamentState::create(dir, spec);
+        int played = 0;
+        // A wins every pair 1.5 - 0.5: H1 is accepted quickly.
+        while (auto task = state->claimNext()) {
+            const bool a_white = task->white.name == "A";
+            const auto result  = task->game == 0 ? (a_white ? "1-0" : "0-1") : "1/2-1/2";
+            state->complete(*task, gameData(*task, result));
+            REQUIRE(++played < 5000);
+        }
+        CHECK(state->finished());
+        CHECK(state->finishReason() == "sprt_h1");
+    }
+
+    auto reopened = TournamentState::open(dir);
+    CHECK(reopened->finished());
+    CHECK(reopened->finishReason() == "sprt_h1");
+}
+
+TEST_CASE("state: a malformed journal is reported with its position") {
+    const auto dir = freshDir("bad-journal");
+    {
+        auto state = TournamentState::create(dir, matchSpec());
+    }
+    {
+        std::ofstream out(dir / "journal.jsonl", std::ios::binary | std::ios::app);
+        out << R"({"t":"teleport"})" << "\n";
+    }
+    CHECK_THROWS_WITH_AS((void)TournamentState::open(dir), doctest::Contains("event 1"), std::runtime_error);
+}

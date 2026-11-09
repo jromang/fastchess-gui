@@ -1,0 +1,76 @@
+#pragma once
+
+// Plays the games of a TournamentState with fastchess.
+//
+// Runner derives from fastchess' BaseTournament like RoundRobin does, and reuses its thread pool, engine cache,
+// CPU affinity and playGame() (time control, adjudication, crash recovery). It asks the TournamentState which
+// game to play next instead of a fastchess Scheduler.
+//
+// While it runs, the runner is also fastchess' game observer: it records every scored game in the state, then
+// forwards each callback to `downstream` (the GUI), which may be null.
+//
+// The caller sets fastchess' global configuration first (config::TournamentConfig with an empty opening file,
+// pgn file and config name; config::EngineConfigs with the participants), as for any fastchess tournament.
+
+#include <mutex>
+#include <optional>
+#include <string>
+
+#include <core/observer.hpp>
+#include <matchmaking/tournament/base/tournament.hpp>
+
+#include "state.hpp"
+
+namespace fcg::tour {
+
+// Told about every game the runner records, on the tournament thread that played it.
+class RecordListener {
+   public:
+    virtual ~RecordListener() = default;
+
+    // `pair` is set when the game completed its encounter: the statistics of the two participants from the
+    // point of view of the lower id, after this encounter.
+    virtual void onRecorded(const GameResult& result, const fastchess::MatchData& data,
+                            const std::optional<fastchess::Stats>& pair) = 0;
+};
+
+class Runner final : public fastchess::BaseTournament, public fastchess::observer::GameObserver {
+   public:
+    Runner(TournamentState& state, fastchess::observer::GameObserver* downstream, RecordListener* listener);
+    ~Runner() override;
+
+    // Plays until the tournament is finished or fastchess::atomic::stop is set, and returns once every game
+    // thread has ended. Errors stop the tournament and are reported by error().
+    void start() override;
+
+    [[nodiscard]] std::string error() const;
+
+   protected:
+    void startNext() override;
+
+   private:
+    void play(const GameTask& task);
+    void fail(const std::string& message);
+
+    // fastchess::observer::GameObserver
+    void onGameStart(const fastchess::observer::GameStart& info) override;
+    void onThinking(int slot, chess::Color stm, int64_t time_left_ms) override;
+    void onEngineLine(int slot, chess::Color side, std::string_view line) override;
+    void onMove(int slot, chess::Color mover, const fastchess::MoveData& move, const std::string& san,
+                int64_t white_time_left, int64_t black_time_left) override;
+    void onGameEnd(int slot, std::size_t game_id, std::size_t round_id, const fastchess::MatchData& data,
+                   bool counted) override;
+
+    TournamentState& state_;
+    fastchess::observer::GameObserver* downstream_;
+    RecordListener* listener_;
+    fastchess::observer::GameObserver* previous_ = nullptr;
+
+    std::mutex mutex_;
+    int in_flight_ = 0;  // games handed to the pool and not finished
+
+    mutable std::mutex error_mutex_;
+    std::string error_;
+};
+
+}  // namespace fcg::tour
