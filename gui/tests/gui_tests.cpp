@@ -468,3 +468,31 @@ TEST_CASE("the tournaments folder is kept in settings.json, the default restored
     CHECK(reopened.runsDir() == root / "runs");
     CHECK(Storage(root).runsDir() == root / "runs");
 }
+
+TEST_CASE("search statistics are read back from the move comments, without replaying the moves") {
+    fastchess::config::Pgn config;
+    config.track_nps = true;
+    auto data        = sampleGame(true);
+    for (std::size_t i = 0; i < data.moves.size(); ++i) data.moves[i].nps = 1000 * (i + 1);
+    const auto pgn = fastchess::pgn::PgnBuilder(config, data, 1).get();
+
+    int white = 0, black = 0, depth = 0;
+    int64_t time = 0, nps = 0;
+    forEachMoveComment(pgn, [&](bool white_moved, const ReplayMove& move) {
+        (white_moved ? white : black)++;
+        depth += move.depth;
+        time += move.time_ms;
+        nps += move.nps;
+    });
+    CHECK(white == 4);
+    CHECK(black == 3);
+    CHECK(depth == 10 + 11 + 12 + 13 + 14 + 15 + 16);
+    CHECK(time == 7 * 1234 + 21);
+    CHECK(nps == 1000 * 28);
+
+    // Black first from a FEN.
+    const auto fen = "[FEN \"8/8/8/8/8/8/8/k6K b - - 0 1\"]\n\n1... Ka2 {+0.00/5 0.100s} 2. Kh2 {+0.00/6 0.200s}";
+    std::vector<bool> movers;
+    forEachMoveComment(fen, [&](bool white_moved, const ReplayMove&) { movers.push_back(white_moved); });
+    CHECK(movers == std::vector<bool>{false, true});
+}

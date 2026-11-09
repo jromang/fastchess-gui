@@ -82,6 +82,34 @@ void parseFastchessComment(std::string_view comment, ReplayMove& move) {
         } catch (...) {
         }
     }
+
+    if (const auto at = rest.find("nps="); at != std::string_view::npos) {
+        const auto value = rest.substr(at + 4);
+        std::from_chars(value.data(), value.data() + value.size(), move.nps);
+    }
+}
+
+void forEachMoveComment(std::string_view pgn, const std::function<void(bool, const ReplayMove&)>& f) {
+    // The side to move first: White, unless a FEN header says otherwise.
+    bool white = true;
+    if (const auto fen = pgn.find("[FEN \""); fen != std::string_view::npos) {
+        const auto space = pgn.find(' ', fen + 6);
+        white            = space == std::string_view::npos || pgn.substr(space + 1, 1) != "b";
+    }
+
+    // Every move has a comment, {book} included.
+    const auto body = pgn.find("\n\n");
+    if (body == std::string_view::npos) return;
+    for (auto open = pgn.find('{', body); open != std::string_view::npos; open = pgn.find('{', open)) {
+        const auto close = pgn.find('}', open);
+        if (close == std::string_view::npos) break;
+
+        ReplayMove move;
+        parseFastchessComment(pgn.substr(open + 1, close - open - 1), move);
+        f(white, move);
+        white = !white;
+        open  = close;
+    }
 }
 
 namespace {

@@ -158,6 +158,8 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     Slot* slot(int i) { return i >= 0 && i < static_cast<int>(slots_.size()) ? slots_[i].get() : nullptr; }
 
     uint16_t internReason(const std::string& reason);
+    // One move of an engine in its search statistics; data_mutex_ held.
+    static void addMove(EngineTotals& totals, int64_t depth, int64_t time_ms, int64_t nps);
     GameRecord makeRecord(const tour::GameResult& result);  // data_mutex_ held
     void countLoss(const tour::GameResult& result);         // data_mutex_ held
 

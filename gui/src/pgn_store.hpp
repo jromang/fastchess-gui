@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -32,6 +33,7 @@ struct ReplayMove {
     std::optional<fastchess::Score> score;  // from the mover's point of view
     int depth       = 0;
     int64_t time_ms = -1;
+    int64_t nps     = 0;  // only when the PGN was written with nps=
 };
 
 struct ReplayGame {
@@ -46,7 +48,11 @@ struct ReplayGame {
 
 [[nodiscard]] std::optional<ReplayGame> parseReplay(const std::string& pgn);
 
-// "{+0.35/18 1.234s, ...}" (the body without braces) into score, depth and time.
+// "{+0.35/18 1.234s, ...}" (the body without braces) into score, depth, time and nps.
 void parseFastchessComment(std::string_view comment, ReplayMove& move);
+
+// Calls f(white_moved, move) for every move of a game in the fastchess comment style, from the comments alone:
+// the moves are not replayed, so it is fast enough for every game of a big tournament.
+void forEachMoveComment(std::string_view pgn, const std::function<void(bool, const ReplayMove&)>& f);
 
 }  // namespace fcg

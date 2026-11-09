@@ -311,9 +311,10 @@ Then phase 2 (broadcast: files, TLCS, web page) and phase 3 (Swiss, knockout, ra
 
 ## 13. Open points
 
-- Tournaments live in `runs/` of the profile folder; *Open a folder…* opens one from anywhere, but there is no
-  setting for another default location yet.
+- Tournaments live in `runs/` of the profile folder, or in the folder chosen in the settings (`settings.json`,
+  read by `Storage`, so headless mode follows it).
 - Earlier `runs/` (0.2.x) are imported as finished matches from their PGN and `config.json` (`legacy.cpp`).
-- Edits cannot be undone; a mistaken change is corrected by another one (replay, cycles).
+- Only the last edit can be undone, and only until the next game is claimed (`edit_undone`; the replay drops
+  the cancelled edit and any end of tournament it caused). Older mistakes are corrected by another edit.
 - The TLCS server follows the protocol as documented by TLCV and node-tlcv, but has not been tried against a real
   TLCV client yet.

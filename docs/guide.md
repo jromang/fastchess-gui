@@ -12,7 +12,7 @@ A navigation rail on the left leads to five pages:
 | Engines | The engine library: options, health check, groups, reference Elo, import of other programs' lists |
 | Ratings | One rating list over every game of every tournament |
 | Log | fastchess' own output and the messages of the GUI |
-| Settings | Language, theme (automatic, dark, light), end of tournament notification |
+| Settings | Language, theme (automatic, dark, light), end of tournament notification, the tournaments folder |
 
 The interface is in English or French. At startup it follows the first preferred language of the system (French
 if that is French, English otherwise); it can be forced in **Settings**. The theme follows the system too, unless
@@ -106,7 +106,9 @@ the running games first, or stops now (the interrupted games are not counted and
 
 **Every tournament resumes exactly where it stopped**, after a stop, a closed window, a crash or a power cut: no
 game is lost and none is played twice, and a half-played game pair is completed with the same opening and
-colours. *Resume* on the home page continues it.
+colours. *Resume* on the home page continues it, with the statistics of the games already played: results,
+and the engines' depth, time per move and NPS read back from the move comments (NPS only when the PGN records
+it, *nps* in *PGN and misc*).
 
 ### Changing a running tournament
 
@@ -120,7 +122,9 @@ played game is lost. Each change shows its impact before it is applied.
 - **Play games again**: every game of an engine, or the losses on time and crashes.
 - Right click on a game: play it again, or void it (no replay).
 
-Voided games stay in the PGN files and the journal; they only stop counting.
+Voided games stay in the PGN files and the journal; they only stop counting. **Undo the last change** is offered
+until the next game starts: nothing has been played under the change yet, so it can be taken back exactly (games
+that were already running when it was made are kept).
 
 ### Queue and relaunch
 
@@ -169,7 +173,9 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
 - `engines.json`: the engine library;
 - `setup.json`: the last setup; `templates/*.json`: the saved templates; `queue.json`: the queue;
 - `layout.ini`: the window layout; `fastchess-gui.log`: the log of the last session;
-- `runs/<date>_<A>_vs_<B>/` for a match, `runs/<date>_<name>/` for a tournament, one folder each, which can be moved, copied, zipped and sent:
+- `settings.json`: the tournaments folder, when another one was chosen in **Settings**;
+- `runs/<date>_<A>_vs_<B>/` for a match, `runs/<date>_<name>/` for a tournament (in `runs/` or the chosen
+  folder), one folder each, which can be moved, copied, zipped and sent:
   - `tournament.json`: the format, the participants (engines copied with their options) and the conditions;
   - `journal.jsonl`: everything that happened since, one line per event (game pairs started, games finished,
     changes, Swiss and knockout pairings); with the PGN files, it is what a resume reads;

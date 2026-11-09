@@ -1,6 +1,7 @@
 #include "live.hpp"
 
 #include <algorithm>
+#include <fstream>
 
 #include <core/config/config.hpp>
 
@@ -35,12 +36,25 @@ GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
     slots_.reserve(static_cast<std::size_t>(std::max(1, slots)));
     for (int i = 0; i < std::max(1, slots); ++i) slots_.push_back(std::make_unique<Slot>());
 
-    // A resumed match: its games and statistics so far, as if they had just been played.
+    // A resumed match: its games and statistics so far, as if they had just been played. The search statistics
+    // come from the move comments of the PGN (nps only when it was written with nps=).
     std::lock_guard<std::mutex> lock(data_mutex_);
+    std::ifstream pgn(pgn_fastchess_, std::ios::binary);
+    std::string text;
     for (const auto& result : state.results()) {
         if (result.voided) continue;
-        pending_games_.push_back(makeRecord(result));
+        const auto record = makeRecord(result);
+        pending_games_.push_back(record);
         countLoss(result);
+
+        text.resize(result.pgn.length);
+        if (!pgn.seekg(static_cast<std::streamoff>(result.pgn.offset)) || !pgn.read(text.data(), result.pgn.length)) {
+            pgn.clear();
+            continue;
+        }
+        forEachMoveComment(text, [&](bool white, const ReplayMove& move) {
+            if (!move.book) addMove(totals_[white ? record.white : record.black], move.depth, move.time_ms, move.nps);
+        });
     }
     if (match_) pending_stats_ = state.pairHistory(id_a_, id_b_);
 }
@@ -258,21 +272,24 @@ void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::Ma
         if (mv.book || !mv.legal) continue;
 
         const bool white_moved = (i % 2 == 0) == white_first;
-        auto& t                = totals_[white_moved ? record.white : record.black];
-
-        t.moves++;
-        t.depth_sum += static_cast<uint64_t>(std::max<int64_t>(0, mv.depth));
-        t.time_ms += static_cast<uint64_t>(std::max<int64_t>(0, mv.elapsed_millis));
-        if (mv.nps > 0) {
-            t.nps_sum += static_cast<double>(mv.nps);
-            t.nps_samples++;
-        }
+        addMove(totals_[white_moved ? record.white : record.black], mv.depth, mv.elapsed_millis,
+                static_cast<int64_t>(mv.nps));
     }
 
     pending_games_.push_back(record);
 
     // `pair` is from the lower id's point of view; statistics are shown from A's.
     if (pair && match_) pending_stats_.push_back(id_a_ < id_b_ ? *pair : ~*pair);
+}
+
+void GuiObserver::addMove(EngineTotals& t, int64_t depth, int64_t time_ms, int64_t nps) {
+    t.moves++;
+    t.depth_sum += static_cast<uint64_t>(std::max<int64_t>(0, depth));
+    t.time_ms += static_cast<uint64_t>(std::max<int64_t>(0, time_ms));
+    if (nps > 0) {
+        t.nps_sum += static_cast<double>(nps);
+        t.nps_samples++;
+    }
 }
 
 bool GuiObserver::copySlot(int i, SlotState& out) const {

@@ -189,12 +189,14 @@ TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly 
     fs::remove_all(root);
     const auto topology = topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}});
 
+    std::vector<EngineTotals> totals;
     {
         Harness h;
         REQUIRE(h.run.start(randomSetup(40), randomEngines(), topology, root).empty());
         REQUIRE(h.waitFor([&] { return h.games.size() >= 8; }));
         h.run.stopNow();  // running games are lost, as when the program is killed
         REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }));
+        totals = h.run.observer()->totals();
     }
 
     const auto unfinished = unfinishedMatch(root);
@@ -203,6 +205,20 @@ TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly 
     CHECK(unfinished->played < 40);
     REQUIRE(unfinished->total);
     CHECK(*unfinished->total == 40);
+
+    // The search statistics of the games played are read back from the PGN.
+    {
+        Harness viewer;
+        REQUIRE(viewer.run.view(unfinished->dir).empty());
+        const auto again = viewer.run.observer()->totals();
+        REQUIRE(again.size() == totals.size());
+        for (std::size_t i = 0; i < totals.size(); ++i) {
+            CHECK(totals[i].moves > 0);
+            CHECK(again[i].moves == totals[i].moves);
+            CHECK(again[i].depth_sum == totals[i].depth_sum);
+            CHECK(again[i].time_ms == totals[i].time_ms);
+        }
+    }
 
     Harness h;
     REQUIRE(h.run.resume(unfinished->dir).empty());
