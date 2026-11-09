@@ -50,7 +50,9 @@ class ConsoleListener final : public tour::RecordListener {
                         elo.getElo().c_str());
             return;
         }
-        std::printf("\n%s\n", tour::tableText(tour::computeTable(spec, state_.results()), spec.name).c_str());
+        std::printf("\n%s\n",
+                    tour::tableText(tour::computeTable(spec, state_.results(), std::nullopt, state_.byes()), spec.name)
+                        .c_str());
     }
 
    private:

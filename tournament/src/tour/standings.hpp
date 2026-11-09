@@ -32,12 +32,14 @@ struct Standing {
     int id = 0;
     std::string name;
 
-    int games     = 0;
-    int wins      = 0;
-    int draws     = 0;
-    int losses    = 0;
-    double points = 0;
-    double sb     = 0;  // Sonneborn-Berger: for each opponent, points scored against it times its total
+    int games       = 0;
+    int wins        = 0;
+    int draws       = 0;
+    int losses      = 0;
+    double points   = 0;
+    double sb       = 0;  // Sonneborn-Berger: for each opponent, points scored against it times its total
+    double buchholz = 0;  // the sum of the opponents' totals, one per game played against them
+    int byes        = 0;  // Swiss: rounds without an opponent, a point each (in `points`)
 
     Rating rating;
     bool rated = false;  // has played at least one game
@@ -57,7 +59,8 @@ struct Anchor {
 };
 
 struct Table {
-    std::vector<Standing> rows;  // ranked: points, then Sonneborn-Berger, then head-to-head, then wins
+    // Ranked: points, then Sonneborn-Berger, head-to-head and wins; a Swiss uses Buchholz before Sonneborn-Berger.
+    std::vector<Standing> rows;
 
     // Record of `a` against `b`, from a's point of view.
     [[nodiscard]] PairRecord pair(int a, int b) const;
@@ -65,9 +68,9 @@ struct Table {
     std::map<std::pair<int, int>, PairRecord> pairs;
 };
 
-// Without an anchor, ratings are relative to the average of the participants.
+// Without an anchor, ratings are relative to the average of the participants. `byes`: Swiss byes by id.
 [[nodiscard]] Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& results,
-                                 std::optional<Anchor> anchor = std::nullopt);
+                                 std::optional<Anchor> anchor = std::nullopt, const std::map<int, int>& byes = {});
 
 // Maximum likelihood ratings of n players on the logistic Elo model, a draw counting as half a win (like Ordo by
 // default). points[i][j] is what i scored against j in games[i][j] games. A very wide prior (sigma 1000 Elo) keeps

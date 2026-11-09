@@ -27,6 +27,7 @@
 #include "topology.hpp"
 #include "ui.hpp"
 
+#include <tour/ratinglist.hpp>
 #include <tour/standings.hpp>
 
 struct SDL_Window;
@@ -75,8 +76,8 @@ class App {
         int follow_frames      = 0;
     };
 
-    enum class Page { Home, NewMatch, Tournament, Engines, Log, Settings };
-    enum class Tab { Overview, Standings, Schedule, Live, Games, Broadcast };
+    enum class Page { Home, NewMatch, Tournament, Engines, Ratings, Log, Settings };
+    enum class Tab { Overview, Standings, Bracket, Schedule, Live, Games, Broadcast };
 
     // shell
     void drawShell();
@@ -86,6 +87,7 @@ class App {
     void drawWorkspace();
     void drawWorkspaceHeader();
     void drawSettings();
+    void drawRatings();
     void applyThemeSetting();
     void refreshTournaments();
     void openTournament(const std::filesystem::path& dir);
@@ -113,6 +115,7 @@ class App {
     void drawStandingsTable(bool compact);
     void drawCrosstable();
     void drawSchedule();
+    void drawBracket();
     void drawEditPanel();
     void applyTournamentEdit(const tour::Edit& edit);
 
@@ -258,6 +261,13 @@ class App {
     std::string files_status_;
     std::string tlcs_error_;
     std::string web_error_;
+
+    // Rating list over every tournament.
+    tour::RatingList rating_list_;
+    bool ratings_dirty_ = true;
+    std::string rating_tc_;      // time control shown, empty = all
+    std::string rating_anchor_;  // engine whose rating is fixed, empty = average 0
+    double rating_anchor_elo_ = 0;
 
     // Shell.
     Page page_ = Page::Home;

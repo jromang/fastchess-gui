@@ -347,3 +347,44 @@ TEST_CASE("headless: a setup file becomes a tournament played to the end; the qu
     CHECK(loaded[1].label == "second");
     CHECK(loaded[1].setup.fixed_games == 10);
 }
+
+TEST_CASE("a Swiss and a knockout are played to the end through the GUI's controller") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+
+    const auto root = fs::temp_directory_path() / "fcg-run-tests-swiss";
+    fs::remove_all(root);
+    auto engines = randomEngines();
+    for (const char* name : {"random-c", "random-d", "random-e"}) {
+        engines.push_back(engines[0]);
+        engines.back().name = name;
+    }
+    const auto cores = topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}});
+
+    MatchSetup setup   = randomSetup(0);
+    setup.format       = TournamentFormat::Swiss;
+    setup.cycles       = 3;  // rounds
+    setup.participants = {{"random-a"}, {"random-b"}, {"random-c"}, {"random-d"}, {"random-e"}};
+    {
+        Harness h;
+        REQUIRE(h.run.start(setup, engines, cores, root).empty());
+        REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
+        CHECK(h.run.error().empty());
+        CHECK(h.games.size() == 3u * 2u * 2u);  // 3 rounds, 2 pairings (one bye), 2 games
+        CHECK(h.run.tournament()->byes().size() == 3);
+    }
+
+    setup.format = TournamentFormat::Knockout;
+    setup.cycles = 1;
+    Harness h;
+    REQUIRE(h.run.start(setup, engines, cores, root).empty());
+    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 60s));
+    CHECK(h.run.error().empty());
+    CHECK(h.run.tournament()->finished());
+    const auto brackets = h.run.tournament()->brackets();
+    REQUIRE_FALSE(brackets.empty());
+    CHECK(brackets.rbegin()->second.size() == 1);  // a final
+    CHECK(h.games.size() >= 4u * 2u);              // 4 matches, plus tiebreaks
+}

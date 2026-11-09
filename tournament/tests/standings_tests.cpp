@@ -138,3 +138,60 @@ TEST_CASE("table: a head-to-head result breaks an otherwise complete tie") {
     table = computeTable(spec, results);
     CHECK(table.rows[0].name == "B");
 }
+
+#include <filesystem>
+
+#include <tour/ratinglist.hpp>
+
+TEST_CASE("rating list: games of several tournaments, engines by name, filters and anchor") {
+    namespace fs    = std::filesystem;
+    const auto root = fs::temp_directory_path() / "fcg-tour-ratinglist";
+    fs::remove_all(root);
+
+    // Two tournaments sharing B, at two time controls.
+    const auto play = [&](const std::string& folder, std::vector<std::string> names, int64_t time_ms, double a_score) {
+        TournamentSpec spec;
+        spec.format = Format::RoundRobin;
+        for (int i = 0; i < static_cast<int>(names.size()); ++i) {
+            Participant p;
+            p.id                        = i;
+            p.engine.name               = names[static_cast<std::size_t>(i)];
+            p.engine.limit.tc.time      = time_ms;
+            p.engine.limit.tc.increment = 100;
+            spec.participants.push_back(p);
+        }
+        auto state = TournamentState::create(root / folder, spec);
+        while (auto task = state->claimNext()) {
+            fastchess::MatchData d(chess::constants::STARTPOS);
+            using chess::GameResult;
+            const bool first_white = task->game == 0;
+            const auto r  = a_score == 1.0 ? (first_white ? GameResult::WIN : GameResult::LOSE) : GameResult::DRAW;
+            const auto o  = r == GameResult::WIN ? GameResult::LOSE : r == GameResult::LOSE ? GameResult::WIN : r;
+            d.players     = {fastchess::MatchData::PlayerInfo(task->white, r),
+                             fastchess::MatchData::PlayerInfo(task->black, o)};
+            d.termination = fastchess::MatchTermination::NORMAL;
+            state->complete(*task, d);
+        }
+    };
+    play("1", {"A", "B"}, 10000, 1.0);  // the first engine of each encounter wins: A and B win one game each
+    play("2", {"B", "C"}, 60000, 0.5);  // draws
+
+    const std::vector<fs::path> dirs = {root / "1", root / "2", root / "missing"};
+    const auto all                   = buildRatingList(dirs, "", std::nullopt);
+    CHECK(all.tournaments == 2);
+    CHECK(all.games == 4);
+    REQUIRE(all.entries.size() == 3);
+    CHECK(all.time_controls.size() == 2);
+    const auto b = std::find_if(all.entries.begin(), all.entries.end(), [](const auto& e) { return e.name == "B"; });
+    CHECK(b->games == 4);
+    CHECK(b->tournaments == 2);
+
+    const auto fast = buildRatingList(dirs, "10+0.1", std::make_pair(std::string("A"), 3000.0));
+    CHECK(fast.tournaments == 1);
+    REQUIRE(fast.entries.size() == 2);
+    const auto a = std::find_if(fast.entries.begin(), fast.entries.end(), [](const auto& e) { return e.name == "A"; });
+    CHECK(a->rating.elo == doctest::Approx(3000));
+
+    CHECK(ratingListText(all).find("B") != std::string::npos);
+    CHECK(ratingListCsv(all).rfind("rank,engine", 0) == 0);
+}

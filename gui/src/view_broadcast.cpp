@@ -37,11 +37,13 @@ BroadcastSnapshot App::makeSnapshot() {
     s.name           = spec.name;
     s.format         = spec.format == tour::Format::Match        ? "match"
                        : spec.format == tour::Format::RoundRobin ? "round_robin"
-                                                                 : "gauntlet";
+                       : spec.format == tour::Format::Gauntlet   ? "gauntlet"
+                       : spec.format == tour::Format::Swiss      ? "swiss"
+                                                                 : "knockout";
     s.played         = games_.size();
     s.total          = run_.info().total_games;
     s.finished       = t->finished();
-    s.table          = tour::computeTable(spec, t->results(), anchor_);
+    s.table          = tour::computeTable(spec, t->results(), anchor_, t->byes());
 
     for (int i = static_cast<int>(games_.size()) - 1; i >= 0 && s.recent.size() < 20; --i) {
         const auto& g = games_[static_cast<std::size_t>(i)];

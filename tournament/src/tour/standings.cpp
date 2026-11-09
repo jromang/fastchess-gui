@@ -170,7 +170,8 @@ PairRecord Table::pair(int a, int b) const {
     return it == pairs.end() ? PairRecord{} : it->second;
 }
 
-Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& results, std::optional<Anchor> anchor) {
+Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& results, std::optional<Anchor> anchor,
+                   const std::map<int, int>& byes) {
     Table table;
     const auto& people = spec.participants;
     const auto n       = people.size();
@@ -235,10 +236,20 @@ Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& re
         }
     }
 
-    // Sonneborn-Berger.
+    // A bye is worth a drawn pair of games.
+    for (const auto& [id, count] : byes) {
+        if (const auto it = index.find(id); it != index.end()) {
+            table.rows[it->second].byes = count;
+            table.rows[it->second].points += count;
+        }
+    }
+
+    // Sonneborn-Berger and Buchholz.
     for (std::size_t i = 0; i < n; ++i) {
         for (std::size_t j = 0; j < n; ++j) {
-            if (i != j) table.rows[i].sb += points[i][j] * table.rows[j].points;
+            if (i == j) continue;
+            table.rows[i].sb += points[i][j] * table.rows[j].points;
+            table.rows[i].buchholz += games[i][j] * table.rows[j].points;
         }
     }
 
@@ -254,8 +265,10 @@ Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& re
         table.rows[i].rated  = table.rows[i].games > 0;
     }
 
+    const bool swiss = spec.format == Format::Swiss;
     std::stable_sort(table.rows.begin(), table.rows.end(), [&](const Standing& a, const Standing& b) {
         if (a.points != b.points) return a.points > b.points;
+        if (swiss && a.buchholz != b.buchholz) return a.buchholz > b.buchholz;
         if (a.sb != b.sb) return a.sb > b.sb;
         const double ab = table.pair(a.id, b.id).points(), ba = table.pair(b.id, a.id).points();
         if (ab != ba) return ab > ba;

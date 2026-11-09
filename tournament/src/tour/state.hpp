@@ -114,6 +114,7 @@ class TournamentState {
         std::optional<uint64_t> total;
         bool finished = false;
         std::string finish_reason;
+        std::vector<GameResult> results;  // the games that count
     };
     [[nodiscard]] static Replayed replay(const std::vector<nlohmann::json>& events, TournamentSpec& spec);
 
@@ -139,6 +140,12 @@ class TournamentState {
 
     // The whole schedule with the status of each game (empty for a match).
     [[nodiscard]] std::vector<ScheduleRow> scheduleRows() const;
+
+    // Swiss: byes received, by participant id (a bye counts as a drawn pair of games, 1 point).
+    [[nodiscard]] std::map<int, int> byes() const;
+
+    // Knockout: the places of each round in bracket order (a pair, or a single player with a bye).
+    [[nodiscard]] std::map<uint32_t, std::vector<std::vector<int>>> brackets() const;
 
     // Things the user should know about, found when the tournament was opened (a changed opening book...).
     [[nodiscard]] const std::vector<std::string>& warnings() const noexcept { return warnings_; }
@@ -188,6 +195,10 @@ class TournamentState {
     static void effects(const nlohmann::json& event, TournamentSpec& spec, Schedule& schedule,
                         std::vector<GameResult>& results, std::set<uint64_t>& done, std::set<uint64_t>& dropped);
     void rebuildStats();
+    void pairIfReady();                                 // Swiss, knockout: the next round when one is due
+    void applyRoundEvent(const nlohmann::json& event);  // round_paired, tiebreak_added; mutex_ held
+    [[nodiscard]] double pairPoints(int a, int b, uint32_t round) const;  // a's points against b in a round
+    static void roundEventTo(const nlohmann::json& event, const TournamentSpec& spec, Schedule& schedule);
     void rebuildOpen();
     [[nodiscard]] bool hasWorkLocked() const;
     [[nodiscard]] bool gamesLeft() const;  // games to claim, finished or not; mutex_ held
@@ -216,6 +227,9 @@ class TournamentState {
     std::map<uint32_t, std::size_t> half_;                   // encounter -> index in results_ of its first game
     std::map<std::pair<int, int>, fastchess::Stats> pairs_;  // (lower id, higher id), lower id's point of view
 
+    std::map<int, int> byes_;
+    std::map<uint32_t, std::vector<std::vector<int>>> brackets_;
+    uint32_t round_ = 0;           // Swiss, knockout: last round paired
     std::set<uint64_t> dropped_;   // games that will not be played (withdrawn participant, voided without replay)
     std::set<uint64_t> running_;   // claimed by the runner, not finished
     uint32_t next_encounter_ = 0;  // first encounter never started

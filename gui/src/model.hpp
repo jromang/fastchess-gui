@@ -82,7 +82,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineEntry, name, cmd, args, di
                                                 uci_options, groups, elo, check_ok, check_message, check_when)
 
 enum class MatchMode { Fixed = 0, Infinite = 1, Sprt = 2 };
-enum class TournamentFormat { Match = 0, RoundRobin = 1, Gauntlet = 2 };
+enum class TournamentFormat { Match = 0, RoundRobin = 1, Gauntlet = 2, Swiss = 3, Knockout = 4 };
 
 // One engine of a round robin or gauntlet, with what it does differently from the others.
 struct ParticipantSetup {
@@ -104,8 +104,10 @@ struct MatchSetup {
     std::string engine_b;  // match: the reference
 
     std::vector<ParticipantSetup> participants;  // round robin and gauntlet, seeds first
-    int cycles         = 1;                      // every pairing is played 2 x cycles times
-    int seeds          = 1;                      // gauntlet: the first `seeds` participants play all the others
+    // Round robin, gauntlet: every pairing is played 2 x cycles times; Swiss: number of rounds; knockout: game
+    // pairs per match.
+    int cycles         = 1;
+    int seeds          = 1;  // gauntlet: the first `seeds` participants play all the others
     int common_hash    = 0;  // MB, forced on every participant unless overridden; 0 = each engine's own
     int common_threads = 0;
 

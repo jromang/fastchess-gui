@@ -291,6 +291,14 @@ void drawIcon(ImDrawList* dl, Icon icon, ImVec2 c, float size, ImU32 col) {
             dl->PathLineTo(ImVec2(cx - r, cy + r * 0.7f));
             dl->PathStroke(col, ImDrawFlags_Closed, t);
             break;
+        case Icon::Chart:
+            for (int i = 0; i < 3; ++i) {
+                const float x = cx + (i - 1) * r * 0.62f;
+                const float h = r * (0.7f + 0.45f * i);
+                dl->AddLine(ImVec2(x, cy + r * 0.85f), ImVec2(x, cy + r * 0.85f - h * 1.2f), col, t * 1.8f);
+            }
+            dl->AddLine(ImVec2(cx - r, cy + r * 0.95f), ImVec2(cx + r, cy + r * 0.95f), col, t);
+            break;
         case Icon::Back:
             dl->AddLine(ImVec2(cx + r * 0.3f, cy - r * 0.7f), ImVec2(cx - r * 0.4f, cy), col, t * 1.3f);
             dl->AddLine(ImVec2(cx - r * 0.4f, cy), ImVec2(cx + r * 0.3f, cy + r * 0.7f), col, t * 1.3f);

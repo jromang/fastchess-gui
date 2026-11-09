@@ -29,6 +29,7 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
          {"cycles", s.cycles},
          {"seeds", s.seeds},
          {"max_games", s.max_games},
+         {"rounds", s.rounds},
          {"conditions", s.conditions},
          {"participants", s.participants},
          {"book", s.book}};
@@ -43,6 +44,7 @@ void from_json(const nlohmann::json& j, TournamentSpec& s) {
     s.cycles    = j.value("cycles", 1);
     s.seeds     = j.value("seeds", 1);
     s.max_games = j.value("max_games", uint64_t{0});
+    s.rounds    = j.value("rounds", 0);
     j.at("conditions").get_to(s.conditions);
     j.at("participants").get_to(s.participants);
     if (j.contains("book")) j.at("book").get_to(s.book);

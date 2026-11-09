@@ -14,11 +14,16 @@
 
 namespace fcg::tour {
 
-enum class Format { Match = 0, RoundRobin = 1, Gauntlet = 2 };
+enum class Format { Match = 0, RoundRobin = 1, Gauntlet = 2, Swiss = 3, Knockout = 4 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(Format, {{Format::Match, "match"},
                                       {Format::RoundRobin, "round_robin"},
-                                      {Format::Gauntlet, "gauntlet"}})
+                                      {Format::Gauntlet, "gauntlet"},
+                                      {Format::Swiss, "swiss"},
+                                      {Format::Knockout, "knockout"}})
+
+// Formats whose rounds are paired from the results, as the tournament goes.
+[[nodiscard]] inline bool pairedAsItGoes(Format f) noexcept { return f == Format::Swiss || f == Format::Knockout; }
 
 struct Participant {
     int id = 0;  // never reused within a tournament
@@ -45,7 +50,9 @@ struct TournamentSpec {
     std::string name;
     Format format = Format::Match;
 
-    int cycles         = 1;  // round robin and gauntlet: how often every pairing is played (two games each time)
+    int cycles         = 1;  // round robin and gauntlet: how often every pairing is played (two games each time);
+                             // knockout: game pairs per match before tiebreaks
+    int rounds         = 0;  // Swiss: number of rounds
     int seeds          = 1;  // gauntlet: the first `seeds` participants play every other one
     uint64_t max_games = 0;  // match: 0 = until stopped or decided by the SPRT
 

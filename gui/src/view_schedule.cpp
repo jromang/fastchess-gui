@@ -100,34 +100,39 @@ void App::drawSchedule() {
     }
     ImGui::TextDisabled("%s", trf("{} played · {} running · {} to play", done, running, pending).c_str());
 
-    uint32_t cycle = 0;
-    bool open      = false;
+    // Grouped by cycle; a Swiss or a knockout, by round.
+    const bool by_round = tour::pairedAsItGoes(spec.format);
+    const auto group_of = [&](const tour::ScheduleRow& r) { return by_round ? r.encounter.round : r.encounter.cycle; };
+    uint32_t cycle      = 0;
+    bool open           = false;
     for (std::size_t i = 0; i < rows.size(); ++i) {
         const auto& row = rows[i];
-        if (row.encounter.cycle != cycle) {
+        if (group_of(row) != cycle) {
             if (open) ImGui::TreePop();
-            cycle = row.encounter.cycle;
+            cycle = group_of(row);
 
             // A cycle's progress in its header; the one being played is open.
             std::size_t c_done = 0, c_total = 0;
             bool c_running = false;
             for (const auto& r : rows) {
-                if (r.encounter.cycle != cycle) continue;
+                if (group_of(r) != cycle) continue;
                 for (const auto status : r.status) {
                     c_total += status != tour::GameStatus::Dropped;
                     c_done += status == tour::GameStatus::Done;
                     c_running |= status == tour::GameStatus::Running;
                 }
             }
-            const auto label =
-                trf("Cycle {} · {} / {} games", cycle, c_done, c_total) + fmt::format("###cycle{}", cycle);
+            const auto label = (by_round ? trf("Round {} · {} / {} games", cycle, c_done, c_total)
+                                         : trf("Cycle {} · {} / {} games", cycle, c_done, c_total)) +
+                               fmt::format("###cycle{}", cycle);
             ImGui::SetNextItemOpen(c_running || (c_done > 0 && c_done < c_total), ImGuiCond_Appearing);
             open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_SpanAvailWidth);
         }
         if (!open) continue;
 
         ImGui::PushID(static_cast<int>(i));
-        ImGui::TextDisabled("%s", trf("R{}", row.encounter.round).c_str());
+        ImGui::TextDisabled("%s",
+                            (by_round ? trf("G{}", row.encounter.cycle) : trf("R{}", row.encounter.round)).c_str());
         ImGui::SameLine(px(60));
         ImGui::TextUnformatted(fmt::format("{} – {}", name(row.encounter.first), name(row.encounter.second)).c_str());
         for (int g = 0; g < 2; ++g) {
@@ -186,8 +191,14 @@ void App::drawEditPanel() {
 
     const char* kinds[] = {TR("Add an engine"), TR("Replace an engine"), TR("Withdraw an engine"), TR("Cycles"),
                            TR("Play games again")};
-    ImGui::SetNextItemWidth(-FLT_MIN);
-    if (ImGui::Combo("##edit_kind", &edit_kind_, kinds, IM_ARRAYSIZE(kinds))) edit_message_.clear();
+    // The participants and rounds of a Swiss or a knockout follow from the results: only games can be replayed.
+    if (tour::pairedAsItGoes(spec.format)) {
+        edit_kind_ = static_cast<int>(tour::Edit::Kind::VoidGames);
+        ImGui::TextUnformatted(kinds[edit_kind_]);
+    } else {
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        if (ImGui::Combo("##edit_kind", &edit_kind_, kinds, IM_ARRAYSIZE(kinds))) edit_message_.clear();
+    }
 
     tour::Edit edit;
     edit.kind  = static_cast<tour::Edit::Kind>(edit_kind_);

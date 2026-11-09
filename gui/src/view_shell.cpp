@@ -37,6 +37,10 @@ std::string formatLabel(tour::Format format) {
             return TR("Round robin");
         case tour::Format::Gauntlet:
             return TR("Gauntlet");
+        case tour::Format::Swiss:
+            return TR("Swiss");
+        case tour::Format::Knockout:
+            return TR("Knockout");
     }
     return "";
 }
@@ -153,6 +157,9 @@ void App::drawShell() {
             ui::pageTitle(TR("Engines"));
             drawEngines();
             break;
+        case Page::Ratings:
+            drawRatings();
+            break;
         case Page::Log:
             ui::pageTitle(TR("Log"));
             drawConsole();
@@ -192,6 +199,10 @@ void App::drawRail(float width) {
     }
     if (ui::railButton("rail_engines", ui::Icon::Engine, TR("Engines"), page_ == Page::Engines, width)) {
         page_ = Page::Engines;
+    }
+    if (ui::railButton("rail_ratings", ui::Icon::Chart, TR("Ratings"), page_ == Page::Ratings, width)) {
+        page_          = Page::Ratings;
+        ratings_dirty_ = true;
     }
     if (ui::railButton("rail_log", ui::Icon::Log, TR("Log"), page_ == Page::Log, width)) page_ = Page::Log;
     if (ui::railButton("rail_settings", ui::Icon::Settings, TR("Settings"), page_ == Page::Settings, width)) {
@@ -482,6 +493,10 @@ void App::drawWorkspace() {
         drawStandings();
         ImGui::EndTabItem();
     }
+    if (run_.tournament()->spec().format == tour::Format::Knockout && tab(TR("Bracket###tab_bracket"), Tab::Bracket)) {
+        drawBracket();
+        ImGui::EndTabItem();
+    }
     if (!isMatch() && tab(TR("Schedule###tab_schedule"), Tab::Schedule)) {
         drawSchedule();
         ImGui::EndTabItem();
@@ -613,6 +628,112 @@ void App::drawSettings() {
     if (ImGui::Button(TR("Open the folder"))) openFolder(storage_.runsDir());
 
     if (changed) saveSetupSoon();
+}
+
+}  // namespace fcg
+
+namespace fcg {
+
+void App::drawRatings() {
+    ui::pageTitle(TR("Ratings"));
+    ImGui::TextDisabled("%s", TR("Every game of every tournament, engines known by name; maximum likelihood ratings "
+                                 "with 95 % intervals."));
+
+    // The default anchor: the first engine of the list with a reference rating.
+    if (rating_anchor_.empty()) {
+        for (const auto& e : engines_) {
+            if (e.elo > 0) {
+                rating_anchor_     = e.name;
+                rating_anchor_elo_ = e.elo;
+                break;
+            }
+        }
+    }
+    if (ratings_dirty_) {
+        std::optional<std::pair<std::string, double>> anchor;
+        if (!rating_anchor_.empty()) anchor = std::make_pair(rating_anchor_, rating_anchor_elo_);
+        rating_list_   = tour::buildRatingList(tour::tournamentDirs(storage_.runsDir()), rating_tc_, anchor);
+        ratings_dirty_ = false;
+    }
+
+    // Time control and anchor.
+    ImGui::SetNextItemWidth(px(180));
+    if (ImGui::BeginCombo("##rating_tc", rating_tc_.empty() ? TR("Every time control") : rating_tc_.c_str())) {
+        if (ImGui::Selectable(TR("Every time control"), rating_tc_.empty())) rating_tc_.clear(), ratings_dirty_ = true;
+        for (const auto& tc : rating_list_.time_controls) {
+            if (ImGui::Selectable(tc.c_str(), tc == rating_tc_)) rating_tc_ = tc, ratings_dirty_ = true;
+        }
+        ImGui::EndCombo();
+    }
+    ImGui::SameLine();
+    ImGui::TextUnformatted(TR("Anchor:"));
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(px(200));
+    if (ImGui::BeginCombo("##rating_anchor", rating_anchor_.empty() ? TR("Average") : rating_anchor_.c_str())) {
+        if (ImGui::Selectable(TR("Average"), rating_anchor_.empty())) rating_anchor_.clear(), ratings_dirty_ = true;
+        for (const auto& e : rating_list_.entries) {
+            if (ImGui::Selectable(e.name.c_str(), e.name == rating_anchor_)) {
+                rating_anchor_ = e.name;
+                for (const auto& lib : engines_) {
+                    if (lib.name == e.name && lib.elo > 0) rating_anchor_elo_ = lib.elo;
+                }
+                ratings_dirty_ = true;
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if (!rating_anchor_.empty()) {
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(px(90));
+        if (ImGui::InputDouble("##rating_anchor_elo", &rating_anchor_elo_, 0, 0, "%.0f")) ratings_dirty_ = true;
+    }
+    ImGui::SameLine(0, px(24));
+    if (ImGui::Button(TR("Refresh"))) ratings_dirty_ = true;
+    ImGui::SameLine();
+    if (ImGui::Button(TR("Copy as text"))) ImGui::SetClipboardText(tour::ratingListText(rating_list_).c_str());
+    ImGui::SameLine();
+    if (ImGui::Button(TR("Export CSV…"))) {
+        dialogs_.saveFile(Dialogs::Purpose::ExportRatings, {{"CSV", "csv"}},
+                          (storage_.root() / "ratings.csv").string());
+    }
+
+    ImGui::TextDisabled("%s", trf("{} games, {} tournaments", rating_list_.games, rating_list_.tournaments).c_str());
+    if (rating_list_.entries.empty()) {
+        ImGui::TextDisabled("%s", TR("No game yet."));
+        return;
+    }
+
+    constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_ScrollY |
+                           ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_PadOuterX;
+    if (!ImGui::BeginTable("##ratings", 7, flags)) return;
+    ImGui::TableSetupScrollFreeze(0, 1);
+    ImGui::TableSetupColumn("#");
+    ImGui::TableSetupColumn(TR("Engine"), ImGuiTableColumnFlags_WidthStretch);
+    ImGui::TableSetupColumn("Elo");
+    ImGui::TableSetupColumn("±");
+    ImGui::TableSetupColumn(TR("Games"));
+    ImGui::TableSetupColumn("%");
+    ImGui::TableSetupColumn(TR("Tournaments"));
+    ImGui::TableHeadersRow();
+    for (std::size_t i = 0; i < rating_list_.entries.size(); ++i) {
+        const auto& e = rating_list_.entries[i];
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextDisabled("%d", static_cast<int>(i + 1));
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted(e.name.c_str());
+        ImGui::TableNextColumn();
+        ImGui::Text("%ld", std::lround(e.rating.elo));
+        ImGui::TableNextColumn();
+        ImGui::TextDisabled("%.0f", e.rating.error);
+        ImGui::TableNextColumn();
+        ImGui::Text("%d", e.games);
+        ImGui::TableNextColumn();
+        ImGui::TextDisabled("%.1f", 100.0 * e.score());
+        ImGui::TableNextColumn();
+        ImGui::TextDisabled("%d", e.tournaments);
+    }
+    ImGui::EndTable();
 }
 
 }  // namespace fcg

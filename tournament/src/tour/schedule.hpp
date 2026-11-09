@@ -34,7 +34,14 @@ class Schedule {
 
     // --- edits of a round robin or a gauntlet (see edits.hpp); a match cannot be edited this way ---
 
-    [[nodiscard]] bool editable() const noexcept { return format_ != Format::Match; }
+    [[nodiscard]] bool editable() const noexcept {
+        return format_ == Format::RoundRobin || format_ == Format::Gauntlet;
+    }
+
+    // Swiss and knockout: the schedule grows a round at a time, as rounds are paired.
+    void append(const std::vector<Encounter>& encounters) { insert(size_.value_or(0), encounters); }
+
+    [[nodiscard]] Format format() const noexcept { return format_; }
 
     // Inserts encounters before position `at` (at most size()); everything from `at` on is renumbered.
     void insert(uint32_t at, const std::vector<Encounter>& encounters);

@@ -60,14 +60,15 @@ bool App::isMatch() const {
 void App::refreshTable() {
     const auto* t = run_.tournament();
     if (!t || isMatch() || table_for_ == games_.size()) return;
-    table_     = tour::computeTable(t->spec(), t->results(), anchor_);
+    table_     = tour::computeTable(t->spec(), t->results(), anchor_, t->byes());
     table_for_ = games_.size();
 }
 
 void App::drawStandingsTable(bool compact) {
     constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit |
                            ImGuiTableFlags_ScrollX | ImGuiTableFlags_PadOuterX;
-    const int columns    = compact ? 10 : 12;
+    const bool swiss     = run_.tournament() && run_.tournament()->spec().format == tour::Format::Swiss;
+    const int columns    = compact ? 10 : swiss ? 13 : 12;
     if (!ImGui::BeginTable("##standings", columns, flags)) return;
 
     ImGui::TableSetupColumn("#");
@@ -81,6 +82,7 @@ void App::drawStandingsTable(bool compact) {
     ImGui::TableSetupColumn("=");
     ImGui::TableSetupColumn("−");
     if (!compact) {
+        if (swiss) ImGui::TableSetupColumn("BH");
         ImGui::TableSetupColumn("SB");
         ImGui::TableSetupColumn(TR("Health"));
     }
@@ -132,6 +134,10 @@ void App::drawStandingsTable(bool compact) {
         ImGui::Text("%d", r.losses);
         ImGui::PopStyleColor();
         if (!compact) {
+            if (swiss) {
+                ImGui::TableNextColumn();
+                ImGui::TextDisabled("%.1f", r.buchholz);
+            }
             ImGui::TableNextColumn();
             ImGui::TextDisabled("%.2f", r.sb);
             ImGui::TableNextColumn();
@@ -169,40 +175,53 @@ void App::drawTournamentOverview() {
     ImGui::SameLine();
     ImGui::BeginChild("##ov_right", ImVec2(0, 0));
 
-    // Progress by cycle.
+    // Progress by cycle (by round for a Swiss or a knockout).
     ui::beginCard("progress_card");
-    const auto& spec   = t->spec();
-    const auto total   = run_.info().total_games;
-    const int cycles   = std::max(1, spec.cycles);
-    const uint64_t per = total / 2 / static_cast<uint64_t>(cycles);  // encounters per cycle
-    std::vector<int> done(static_cast<std::size_t>(cycles), 0);
-    for (const auto& g : games_) {
-        const auto cycle = per ? static_cast<std::size_t>((g.round_id - 1) / per) : 0;
-        if (cycle < done.size()) done[cycle]++;
-    }
-    int current = 0;
-    while (current < cycles - 1 && done[static_cast<std::size_t>(current)] >= static_cast<int>(per * 2)) ++current;
-    ImGui::TextUnformatted(trf("Cycle {} / {}", current + 1, cycles).c_str());
-    {
-        ImDrawList* dl    = ImGui::GetWindowDrawList();
-        const auto pos    = ImGui::GetCursorScreenPos();
-        const float width = ImGui::GetContentRegionAvail().x;
-        const float gap   = px(4);
-        const float w     = (width - gap * (cycles - 1)) / cycles;
-        for (int c = 0; c < cycles; ++c) {
-            const float x0 = pos.x + c * (w + gap);
-            const float f  = per ? std::min(1.0f, done[static_cast<std::size_t>(c)] / static_cast<float>(per * 2)) : 0;
-            dl->AddRectFilled(ImVec2(x0, pos.y), ImVec2(x0 + w, pos.y + px(10)), ImGui::GetColorU32(ImGuiCol_FrameBg),
-                              px(3));
-            if (f > 0) dl->AddRectFilled(ImVec2(x0, pos.y), ImVec2(x0 + w * f, pos.y + px(10)), ui::ACCENT, px(3));
+    const auto& spec = t->spec();
+    if (tour::pairedAsItGoes(spec.format)) {
+        uint32_t round = 0;
+        for (const auto& row : t->scheduleRows()) round = std::max(round, row.encounter.round);
+        ImGui::TextUnformatted(spec.format == tour::Format::Swiss ? trf("Round {} / {}", round, spec.rounds).c_str()
+                                                                  : trf("Round {}", round).c_str());
+        const auto all = run_.info().total_games;
+        ImGui::ProgressBar(all ? static_cast<float>(games_.size()) / static_cast<float>(all) : 0.0f,
+                           ImVec2(-FLT_MIN, px(8)), "");
+        ImGui::TextDisabled("%s", trf("{} / {} games", games_.size(), all).c_str());
+    } else {
+        const auto total   = run_.info().total_games;
+        const int cycles   = std::max(1, spec.cycles);
+        const uint64_t per = total / 2 / static_cast<uint64_t>(cycles);  // encounters per cycle
+        std::vector<int> done(static_cast<std::size_t>(cycles), 0);
+        for (const auto& g : games_) {
+            const auto cycle = per ? static_cast<std::size_t>((g.round_id - 1) / per) : 0;
+            if (cycle < done.size()) done[cycle]++;
         }
-        ImGui::Dummy(ImVec2(width, px(14)));
-    }
-    ImGui::TextDisabled("%s", trf("{} / {} games", games_.size(), total).c_str());
-    if (games_per_hour_ > 0 && total > games_.size()) {
-        const double hours = static_cast<double>(total - games_.size()) / games_per_hour_;
-        ImGui::TextDisabled(
-            "%s", trf("{:.0f} games/h · about {} left", games_per_hour_, ui::formatDuration(hours * 3600.0)).c_str());
+        int current = 0;
+        while (current < cycles - 1 && done[static_cast<std::size_t>(current)] >= static_cast<int>(per * 2)) ++current;
+        ImGui::TextUnformatted(trf("Cycle {} / {}", current + 1, cycles).c_str());
+        {
+            ImDrawList* dl    = ImGui::GetWindowDrawList();
+            const auto pos    = ImGui::GetCursorScreenPos();
+            const float width = ImGui::GetContentRegionAvail().x;
+            const float gap   = px(4);
+            const float w     = (width - gap * (cycles - 1)) / cycles;
+            for (int c = 0; c < cycles; ++c) {
+                const float x0 = pos.x + c * (w + gap);
+                const float f =
+                    per ? std::min(1.0f, done[static_cast<std::size_t>(c)] / static_cast<float>(per * 2)) : 0;
+                dl->AddRectFilled(ImVec2(x0, pos.y), ImVec2(x0 + w, pos.y + px(10)),
+                                  ImGui::GetColorU32(ImGuiCol_FrameBg), px(3));
+                if (f > 0) dl->AddRectFilled(ImVec2(x0, pos.y), ImVec2(x0 + w * f, pos.y + px(10)), ui::ACCENT, px(3));
+            }
+            ImGui::Dummy(ImVec2(width, px(14)));
+        }
+        ImGui::TextDisabled("%s", trf("{} / {} games", games_.size(), total).c_str());
+        if (games_per_hour_ > 0 && total > games_.size()) {
+            const double hours = static_cast<double>(total - games_.size()) / games_per_hour_;
+            ImGui::TextDisabled(
+                "%s",
+                trf("{:.0f} games/h · about {} left", games_per_hour_, ui::formatDuration(hours * 3600.0)).c_str());
+        }
     }
     ui::endCard();
 
@@ -425,6 +444,71 @@ void App::drawCrosstable() {
             ImGui::TextUnformatted(g.reason < reasons_.size() ? TR(reasons_[g.reason]) : "");
         }
         ImGui::EndTable();
+    }
+    ImGui::EndChild();
+}
+
+}  // namespace fcg
+
+namespace fcg {
+
+void App::drawBracket() {
+    refreshTable();
+    const auto* t = run_.tournament();
+    if (!t) return;
+
+    const auto brackets = t->brackets();
+    const auto& spec    = t->spec();
+    const auto name     = [&](int id) { return spec.participant(id) ? spec.participant(id)->engine.name : "?"; };
+    if (brackets.empty()) {
+        ImGui::TextDisabled("%s", TR("No round yet."));
+        return;
+    }
+
+    // Who went through a round: the players of the next one, or for the last round, a match decided.
+    const auto advanced = [&](uint32_t round, int id) {
+        const auto next = brackets.find(round + 1);
+        if (next == brackets.end()) return false;
+        for (const auto& place : next->second) {
+            if (std::find(place.begin(), place.end(), id) != place.end()) return true;
+        }
+        return false;
+    };
+
+    const float column = px(220);
+    ImGui::BeginChild("##bracket", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
+    for (const auto& [round, places] : brackets) {
+        if (round > 1) ImGui::SameLine(0, px(24));
+        ImGui::BeginGroup();
+        const bool final_round = places.size() == 1 && brackets.rbegin()->first == round;
+        ImGui::TextDisabled("%s", final_round ? TR("Final") : trf("Round {}", round).c_str());
+
+        for (std::size_t i = 0; i < places.size(); ++i) {
+            const auto& place = places[i];
+            ImGui::PushID(static_cast<int>(round * 1000 + i));
+            ui::beginCard("place", ImVec2(column, 0));
+            for (std::size_t k = 0; k < place.size(); ++k) {
+                const int id     = place[k];
+                const bool bye   = place.size() == 1;
+                const double pts = bye ? 0 : table_.pair(id, place[1 - k]).points();
+                bool won         = advanced(round, id);
+                if (final_round && !bye && t->finished())
+                    won = pts > table_.pair(place[1 - k], id).points() ||
+                          (pts == table_.pair(place[1 - k], id).points() && k == 0);
+                ImGui::PushStyleColor(ImGuiCol_Text, won ? ui::GOOD : ImGui::GetColorU32(ImGuiCol_Text));
+                ImGui::TextUnformatted(name(id).c_str());
+                ImGui::PopStyleColor();
+                ImGui::SameLine(column - px(48));
+                if (bye) {
+                    ImGui::TextDisabled("%s", TR("bye"));
+                } else {
+                    ImGui::Text("%s", half(pts).c_str());
+                }
+            }
+            ui::endCard();
+            ImGui::PopID();
+        }
+        ImGui::EndGroup();
     }
     ImGui::EndChild();
 }

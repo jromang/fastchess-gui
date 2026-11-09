@@ -59,6 +59,13 @@ Schedule::Schedule(const TournamentSpec& spec) : format_(spec.format) {
     if (n < 2) throw std::invalid_argument("a tournament needs at least two participants");
     if (spec.cycles < 1) throw std::invalid_argument("a tournament needs at least one cycle");
 
+    // Swiss and knockout rounds are added as they are paired.
+    if (pairedAsItGoes(format_)) {
+        if (format_ == Format::Swiss && spec.rounds < 1) throw std::invalid_argument("a Swiss needs rounds");
+        size_ = 0;
+        return;
+    }
+
     const auto rounds = format_ == Format::RoundRobin ? bergerRounds(n) : gauntletRounds(n, spec.seeds);
 
     for (int c = 0; c < spec.cycles; ++c) {

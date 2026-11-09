@@ -213,6 +213,10 @@ std::string defaultTournamentName(const MatchSetup& setup) {
             return setup.participants.empty() ? std::string(TR("Gauntlet"))
                                               : trf("Gauntlet {} vs {} engines", setup.participants[0].name,
                                                     n > 0 ? n - std::min<std::size_t>(n, std::max(1, setup.seeds)) : 0);
+        case TournamentFormat::Swiss:
+            return trf("Swiss, {} engines", n);
+        case TournamentFormat::Knockout:
+            return trf("Knockout, {} engines", n);
     }
     return {};
 }
@@ -347,7 +351,8 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     auto& spec  = run.spec;
     spec.name   = setup.name.empty() ? defaultTournamentName(setup) : setup.name;
     spec.format = static_cast<tour::Format>(setup.format);
-    spec.cycles = std::max(1, setup.cycles);
+    spec.cycles = setup.format == TournamentFormat::Swiss ? 1 : std::max(1, setup.cycles);
+    spec.rounds = setup.format == TournamentFormat::Swiss ? std::max(1, setup.cycles) : 0;
     spec.seeds  = std::max(1, setup.seeds);
     if (match) spec.max_games = t.rounds >= UNBOUNDED_ROUNDS ? 0 : t.rounds * t.games;
     spec.conditions = t;
@@ -422,6 +427,7 @@ std::string RunController::view(const fs::path& dir) {
 
     info_         = runInfo(tournament->spec(), tournament->dir());
     info_.started = info_.finished = Clock::now();
+    info_.total_games              = tournament->totalGames().value_or(0);
     observer_       = std::make_unique<GuiObserver>(tournament->spec().conditions.concurrency, *tournament);
     tournament_     = std::move(tournament);
     stop_requested_ = false;
@@ -452,9 +458,10 @@ std::string RunController::applyEdit(const tour::Edit& edit) {
 std::string RunController::launch(std::unique_ptr<tour::TournamentState> tournament) {
     if (thread_.joinable()) thread_.join();
 
-    const auto& spec = tournament->spec();
-    info_            = runInfo(spec, tournament->dir());
-    info_.started    = Clock::now();
+    const auto& spec  = tournament->spec();
+    info_             = runInfo(spec, tournament->dir());
+    info_.total_games = tournament->totalGames().value_or(0);  // a Swiss or a knockout plans more than it paired
+    info_.started     = Clock::now();
 
     // The observer queues the games a resumed match already has.
     observer_   = std::make_unique<GuiObserver>(spec.conditions.concurrency, *tournament);

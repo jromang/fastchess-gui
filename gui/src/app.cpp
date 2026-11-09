@@ -107,6 +107,8 @@ void App::frame() {
             page_ = Page::Log;
         else if (w == "settings")
             page_ = Page::Settings;
+        else if (w == "ratings")
+            page_ = Page::Ratings;
         else if (w == "home")
             page_ = Page::Home;
         else {
@@ -115,6 +117,7 @@ void App::frame() {
                            : w == "games"     ? Tab::Games
                            : w == "standings" ? Tab::Standings
                            : w == "schedule"  ? Tab::Schedule
+                           : w == "bracket"   ? Tab::Bracket
                            : w == "broadcast" ? Tab::Broadcast
                                               : Tab::Overview;
         }
@@ -352,8 +355,20 @@ void App::onRunFinished() {
         if (info.sprt) finish_message_ += fmt::format(" · LLR {:.2f}", current_.llr);
     } else {
         refreshTable();
-        const auto leader = table_.rows.empty() ? std::string("—") : table_.rows.front().name;
-        finish_message_   = trf("{} · {} games · first: {} · {}", verdict, games_.size(), leader, duration);
+        auto leader = table_.rows.empty() ? std::string("—") : table_.rows.front().name;
+        // A knockout is won in its final, not on points.
+        if (const auto* t = run_.tournament(); t && t->spec().format == tour::Format::Knockout && t->finished()) {
+            const auto brackets = t->brackets();
+            if (!brackets.empty() && brackets.rbegin()->second.size() == 1 &&
+                brackets.rbegin()->second[0].size() == 2) {
+                const auto& final_pair = brackets.rbegin()->second[0];
+                const double a         = table_.pair(final_pair[0], final_pair[1]).points();
+                const double b         = table_.pair(final_pair[1], final_pair[0]).points();
+                if (const auto* p = t->spec().participant(b > a ? final_pair[1] : final_pair[0]))
+                    leader = p->engine.name;
+            }
+        }
+        finish_message_ = trf("{} · {} games · first: {} · {}", verdict, games_.size(), leader, duration);
     }
 
     Console::instance().add(finish_message_, !error.empty());
@@ -426,6 +441,13 @@ void App::handleDialogs() {
             case Dialogs::Purpose::AddEngine:
                 addEngine(path);
                 break;
+            case Dialogs::Purpose::ExportRatings: {
+                std::ofstream out(path, std::ios::binary | std::ios::trunc);
+                out << tour::ratingListCsv(rating_list_);
+                Console::instance().add(out ? trf("Rating list written to {}", path) : trf("Cannot write {}", path),
+                                        !out);
+                break;
+            }
             case Dialogs::Purpose::ImportEngineList:
                 importEngines(importEngineList(path));
                 break;

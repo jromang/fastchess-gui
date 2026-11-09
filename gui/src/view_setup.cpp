@@ -431,6 +431,10 @@ void App::setupFormat() {
     changed |= ImGui::RadioButton(TR("Round robin"), &format, 1);
     ImGui::SameLine();
     changed |= ImGui::RadioButton(TR("Gauntlet"), &format, 2);
+    ImGui::SameLine();
+    changed |= ImGui::RadioButton(TR("Swiss"), &format, 3);
+    ImGui::SameLine();
+    changed |= ImGui::RadioButton(TR("Knockout"), &format, 4);
     setup_.format = static_cast<TournamentFormat>(format);
 
     switch (setup_.format) {
@@ -444,6 +448,14 @@ void App::setupFormat() {
             break;
         case TournamentFormat::Gauntlet:
             ImGui::TextDisabled("%s", TR("The first engines of the list (the tested ones) meet every other engine."));
+            break;
+        case TournamentFormat::Swiss:
+            ImGui::TextDisabled("%s", TR("Each round pairs engines with similar scores, never twice the same; for "
+                                         "large fields. The list order is the seeding."));
+            break;
+        case TournamentFormat::Knockout:
+            ImGui::TextDisabled("%s", TR("Matches in a bracket, the winner goes through; tiebreak pairs of games when "
+                                         "a match is tied. The list order is the seeding."));
             break;
     }
 
@@ -460,7 +472,13 @@ void App::setupFormat() {
         }
     }
 
-    if (setup_.format != TournamentFormat::Match) {
+    if (setup_.format == TournamentFormat::Swiss) {
+        changed |= inputInt(TR("Rounds"), "##rounds", setup_.cycles, 1, 1000);
+        ui::help(TR("Each round is two games, colours reversed, against an engine with a similar score."));
+    } else if (setup_.format == TournamentFormat::Knockout) {
+        changed |= inputInt(TR("Game pairs per match"), "##ko_cycles", setup_.cycles, 1, 100);
+        ui::help(TR("Each pair is two games on the same opening, colours reversed."));
+    } else if (setup_.format != TournamentFormat::Match) {
         changed |= inputInt(TR("Cycles"), "##cycles", setup_.cycles, 1, 10000);
         ui::help(TR("How many times every pairing is played; each time is two games, colours reversed."));
         if (setup_.format == TournamentFormat::Gauntlet) {
@@ -662,6 +680,19 @@ void App::drawSetupSummary() {
             games                = pairs * 2 * cycles;
             formula              = trf("{} pairings × 2 games × {} cycles", pairs, cycles);
             per_engine           = trf("{} games per tested engine", n >= 2 ? (n - seeds) * 2 * cycles : 0);
+            break;
+        }
+        case TournamentFormat::Swiss: {
+            const uint64_t pairs = static_cast<uint64_t>(n / 2);
+            games                = pairs * 2 * cycles;
+            formula              = trf("{} rounds × {} pairings × 2 games", cycles, pairs);
+            per_engine           = trf("{} games per engine", 2 * cycles);
+            break;
+        }
+        case TournamentFormat::Knockout: {
+            const uint64_t matches = n >= 2 ? static_cast<uint64_t>(n - 1) : 0;
+            games                  = matches * 2 * cycles;
+            formula                = trf("{} matches × {} pairs of games, plus tiebreaks", matches, cycles);
             break;
         }
     }
