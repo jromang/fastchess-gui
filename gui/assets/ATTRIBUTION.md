@@ -31,11 +31,14 @@ the **BSD 3-clause license**:
     NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
     POSSIBILITY OF SUCH DAMAGE.
 
-## Fallback font
+## Fonts (fetched at build time and embedded)
 
-Droid Sans, Copyright Google Inc., Apache License 2.0, taken from Dear ImGui (`misc/fonts/DroidSans.ttf`).
-Only used when none of the usual system fonts (Noto Sans, DejaVu Sans, Liberation Sans, Segoe UI, Tahoma,
-Arial) is installed.
+- **Inter** 4.1 by Rasmus Andersson (https://rsms.me/inter/), the text and titles (Regular and SemiBold),
+  under the SIL Open Font License 1.1: [licenses/Inter-OFL-1.1.txt](licenses/Inter-OFL-1.1.txt).
+- **Lucide** 1.59 icon font (https://lucide.dev), the icons, under the ISC license:
+  [licenses/Lucide-ISC.txt](licenses/Lucide-ISC.txt).
+
+A system font (DejaVu Sans or Segoe UI Symbol) is merged in when present, for the few signs Inter lacks.
 
 ## Libraries fetched at build time
 

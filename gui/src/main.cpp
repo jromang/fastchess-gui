@@ -33,12 +33,16 @@
 #include "ui.hpp"
 
 namespace fastchess {
-const char* version = "alpha 1.8.2 gui ";
+const char* version = "alpha 1.8.3 gui ";
 }
 
 namespace fcg::assets {
-extern const unsigned char fallback_font[];
-extern const std::size_t fallback_font_size;
+extern const unsigned char inter_regular[];
+extern const std::size_t inter_regular_size;
+extern const unsigned char inter_semibold[];
+extern const std::size_t inter_semibold_size;
+extern const unsigned char lucide_icons[];
+extern const std::size_t lucide_icons_size;
 }  // namespace fcg::assets
 
 namespace {
@@ -109,55 +113,44 @@ Args parseArgs(int argc, char** argv) {
     return args;
 }
 
-// A proportional system font with accents, and a symbol font merged in for the few signs we use.
+ImFont* addEmbedded(const unsigned char* data, std::size_t size, float pixels, bool merge = false) {
+    ImFontConfig config;
+    config.FontDataOwnedByAtlas = false;
+    config.MergeMode            = merge;
+    return ImGui::GetIO().Fonts->AddFontFromMemoryTTF(const_cast<unsigned char*>(data), static_cast<int>(size), pixels,
+                                                      &config);
+}
+
+// Inter, with a system font merged in for the few signs it lacks (✓ ✗ ⚠); Inter SemiBold for the titles; Lucide
+// on its own for the icons (Inter has glyphs of its own in the private use area Lucide uses).
 void loadFonts(float size) {
-    ImGuiIO& io = ImGui::GetIO();
+    using namespace fcg::assets;
 
 #ifdef _WIN32
-    const char* main_fonts[]     = {"C:\\Windows\\Fonts\\segoeui.ttf", "C:\\Windows\\Fonts\\tahoma.ttf",
-                                    "C:\\Windows\\Fonts\\arial.ttf"};
-    const char* fallback_fonts[] = {"C:\\Windows\\Fonts\\seguisym.ttf"};
+    const char* symbol_fonts[] = {"C:\\Windows\\Fonts\\seguisym.ttf", "C:\\Windows\\Fonts\\segoeui.ttf"};
 #else
-    const char* main_fonts[]     = {"/usr/share/fonts/noto/NotoSans-Regular.ttf",
-                                    "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
-                                    "/usr/share/fonts/TTF/DejaVuSans.ttf",
-                                    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-                                    "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",
-                                    "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"};
-    const char* fallback_fonts[] = {"/usr/share/fonts/TTF/DejaVuSans.ttf",
-                                    "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"};
+    const char* symbol_fonts[] = {"/usr/share/fonts/TTF/DejaVuSans.ttf",
+                                  "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                                  "/usr/share/fonts/noto/NotoSansSymbols2-Regular.ttf",
+                                  "/usr/share/fonts/truetype/noto/NotoSansSymbols2-Regular.ttf"};
 #endif
 
-    ImFont* font = nullptr;
-    for (const char* path : main_fonts) {
-        std::error_code ec;
-        if (fs::is_regular_file(path, ec)) {
-            font = io.Fonts->AddFontFromFileTTF(path, size);
-            if (font) break;
-        }
-    }
-
-    if (!font) {
-        // The embedded font: Latin with the French ligatures and punctuation.
-        ImFontConfig config;
-        config.FontDataOwnedByAtlas = false;
-        font = io.Fonts->AddFontFromMemoryTTF(const_cast<unsigned char*>(fcg::assets::fallback_font),
-                                              static_cast<int>(fcg::assets::fallback_font_size), size, &config);
-        if (!font) {
-            io.Fonts->AddFontDefault();
-            return;
-        }
-    }
-
-    for (const char* path : fallback_fonts) {
-        std::error_code ec;
-        if (fs::is_regular_file(path, ec)) {
+    const auto add_symbols = [&] {
+        for (const char* path : symbol_fonts) {
+            std::error_code ec;
+            if (!fs::is_regular_file(path, ec)) continue;
             ImFontConfig config;
             config.MergeMode = true;
-            io.Fonts->AddFontFromFileTTF(path, size, &config);
-            break;
+            if (ImGui::GetIO().Fonts->AddFontFromFileTTF(path, size, &config)) break;
         }
-    }
+    };
+
+    ImFont* text = addEmbedded(inter_regular, inter_regular_size, size);
+    add_symbols();
+    ImFont* titles = addEmbedded(inter_semibold, inter_semibold_size, size);
+    add_symbols();
+    ImFont* icons = addEmbedded(lucide_icons, lucide_icons_size, size);
+    fcg::ui::setFonts(text, titles, icons);
 }
 
 // Startup failures are reported in a message box too: a Windows GUI program has no console.

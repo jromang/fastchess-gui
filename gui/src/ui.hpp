@@ -53,6 +53,9 @@ enum class Icon { Play, Pause, Stop, Swap, Trophy, Engine, Log, Settings, Plus, 
 // Draws `icon` centred on `center`, `size` pixels wide, in `col`.
 void drawIcon(ImDrawList* dl, Icon icon, ImVec2 center, float size, ImU32 col);
 
+// The fonts loaded at startup: titles and icons; the text font is ImGui's default.
+void setFonts(ImFont* text, ImFont* titles, ImFont* icons);
+
 // A button with a small drawn icon, so no icon font is needed.
 bool iconButton(const char* id, Icon icon, const char* label, bool enabled = true);
 

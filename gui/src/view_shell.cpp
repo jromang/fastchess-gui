@@ -626,8 +626,7 @@ void App::drawSettings() {
     ImGui::Separator();
     ui::label(TR("Tournaments folder"), label);
     ImGui::TextUnformatted(storage_.runsDir().string().c_str());
-    ImGui::Dummy(ImVec2(label, 0));
-    ImGui::SameLine();
+    ImGui::SetCursorPosX(label);  // under the path: ui::label() places it at `label` from the window's left
     if (ImGui::Button(TR("Change…"))) {
         dialogs_.openFolder(Dialogs::Purpose::TournamentsFolder, storage_.runsDir().string());
     }
@@ -642,11 +641,11 @@ void App::drawSettings() {
             unfinished_        = unfinishedMatch(storage_.runsDir());
         }
     }
-    ImGui::Dummy(ImVec2(label, 0));
-    ImGui::SameLine();
-    ImGui::TextDisabled("%s",
-                        TR("New tournaments go there, and the lists show the tournaments found there. Tournaments "
-                           "already played are not moved: a tournament is a folder, move it yourself."));
+    ImGui::SetCursorPosX(label);
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    ImGui::TextWrapped("%s", TR("New tournaments go there, and the lists show the tournaments found there. Tournaments "
+                                "already played are not moved: a tournament is a folder, move it yourself."));
+    ImGui::PopStyleColor();
 
     if (changed) saveSetupSoon();
 }

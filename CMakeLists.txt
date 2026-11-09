@@ -173,9 +173,19 @@ if(FCG_BUILD_GUI)
         GIT_TAG 2c980bb59875b0d32144a71867fbdebb2f77cd20
         SOURCE_SUBDIR fcg-no-cmake)
 
+    # Fonts: Inter for the text (SIL OFL 1.1), Lucide for the icons (ISC).
+    FetchContent_Declare(inter
+        URL https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip
+        URL_HASH SHA256=9883fdd4a49d4fb66bd8177ba6625ef9a64aa45899767dde3d36aa425756b11e
+        SOURCE_SUBDIR fcg-no-cmake)
+    FetchContent_Declare(lucide
+        URL https://registry.npmjs.org/lucide-static/-/lucide-static-1.59.0.tgz
+        URL_HASH SHA256=39e2f835692c193233ac7bcdf34eb0cc2da0f839fd9f3674c34d2751bccf37f0
+        SOURCE_SUBDIR fcg-no-cmake)
+
     # SOURCE_SUBDIR points nowhere for the header/source-only dependencies,
     # so MakeAvailable only downloads them.
-    FetchContent_MakeAvailable(sdl3 imgui implot nanosvg stb)
+    FetchContent_MakeAvailable(sdl3 imgui implot nanosvg stb inter lucide)
 
     add_library(imgui_lib STATIC
         ${imgui_SOURCE_DIR}/imgui.cpp
@@ -211,20 +221,29 @@ if(FCG_BUILD_GUI)
         DEPENDS ${FCG_PIECE_SVGS} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_pieces.cmake
         COMMENT "Embedding piece SVGs")
 
-    # Fallback UI font for systems without the usual ones (DroidSans, Apache 2.0, shipped with Dear ImGui).
-    set(FCG_FONT_CPP ${CMAKE_CURRENT_BINARY_DIR}/generated/fallback_font.cpp)
-    add_custom_command(
-        OUTPUT ${FCG_FONT_CPP}
-        COMMAND ${CMAKE_COMMAND} -DIN=${imgui_SOURCE_DIR}/misc/fonts/DroidSans.ttf -DOUT=${FCG_FONT_CPP}
-                -DSYMBOL=fallback_font -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_binary.cmake
-        DEPENDS ${imgui_SOURCE_DIR}/misc/fonts/DroidSans.ttf ${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_binary.cmake
-        COMMENT "Embedding the fallback font")
+    # The fonts, embedded as byte arrays.
+    set(FCG_FONT_CPPS)
+    foreach(font IN ITEMS "inter_regular|${inter_SOURCE_DIR}/extras/ttf/Inter-Regular.ttf"
+                          "inter_semibold|${inter_SOURCE_DIR}/extras/ttf/Inter-SemiBold.ttf"
+                          "lucide_icons|${lucide_SOURCE_DIR}/font/lucide.ttf")
+        string(REPLACE "|" ";" font "${font}")
+        list(GET font 0 symbol)
+        list(GET font 1 ttf)
+        set(cpp ${CMAKE_CURRENT_BINARY_DIR}/generated/${symbol}.cpp)
+        add_custom_command(
+            OUTPUT ${cpp}
+            COMMAND ${CMAKE_COMMAND} -DIN=${ttf} -DOUT=${cpp} -DSYMBOL=${symbol}
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_binary.cmake
+            DEPENDS ${ttf} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_binary.cmake
+            COMMENT "Embedding ${symbol}")
+        list(APPEND FCG_FONT_CPPS ${cpp})
+    endforeach()
 
     file(GLOB FCG_GUI_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/*.cpp)
     list(REMOVE_ITEM FCG_GUI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/main.cpp)
 
     # Everything except main(), so the unit tests can link it too.
-    add_library(fcg_lib STATIC ${FCG_GUI_SOURCES} ${FCG_ASSET_CPP} ${FCG_FONT_CPP})
+    add_library(fcg_lib STATIC ${FCG_GUI_SOURCES} ${FCG_ASSET_CPP} ${FCG_FONT_CPPS})
     target_compile_features(fcg_lib PUBLIC cxx_std_20)
     target_include_directories(fcg_lib PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/gui/src

@@ -54,8 +54,8 @@ this repository still builds unchanged.
 
 ## Building
 
-A C++20 compiler and CMake 3.24 or newer. SDL3, Dear ImGui (docking branch), ImPlot, nanosvg and
-stb_image_write are downloaded by CMake at pinned versions and linked statically.
+A C++20 compiler and CMake 3.24 or newer. SDL3, Dear ImGui (docking branch), ImPlot, nanosvg,
+stb_image_write and the Inter and Lucide fonts are downloaded by CMake at pinned versions and linked statically.
 
 ```bash
 # Linux

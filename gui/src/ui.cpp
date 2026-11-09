@@ -207,103 +207,55 @@ std::string formatDuration(double seconds) {
     return fmt::format("{} s", s);
 }
 
-void drawIcon(ImDrawList* dl, Icon icon, ImVec2 c, float size, ImU32 col) {
-    const float r  = size * 0.5f;
-    const float t  = std::max(1.0f, size * 0.09f);  // stroke
-    const float cx = c.x, cy = c.y;
+namespace {
 
+ImFont* g_title_font = nullptr;
+ImFont* g_icon_font  = nullptr;
+
+// Lucide 1.59 code points (font/codepoints.json).
+const char* glyph(Icon icon) {
     switch (icon) {
         case Icon::Play:
-            dl->AddTriangleFilled(ImVec2(cx - r * 0.75f, cy - r), ImVec2(cx - r * 0.75f, cy + r), ImVec2(cx + r, cy),
-                                  GOOD);
-            break;
+            return "\uE13C";  // play
         case Icon::Pause:
-            dl->AddRectFilled(ImVec2(cx - r * 0.8f, cy - r), ImVec2(cx - r * 0.25f, cy + r), col);
-            dl->AddRectFilled(ImVec2(cx + r * 0.25f, cy - r), ImVec2(cx + r * 0.8f, cy + r), col);
-            break;
+            return "\uE12E";  // pause
         case Icon::Stop:
-            dl->AddRectFilled(ImVec2(cx - r * 0.85f, cy - r * 0.85f), ImVec2(cx + r * 0.85f, cy + r * 0.85f), BAD);
-            break;
+            return "\uE167";  // square
         case Icon::Swap:
-            dl->AddLine(ImVec2(cx - r, cy - r * 0.45f), ImVec2(cx + r, cy - r * 0.45f), col, 1.5f);
-            dl->AddTriangleFilled(ImVec2(cx + r, cy - r * 0.9f), ImVec2(cx + r, cy),
-                                  ImVec2(cx + r * 1.4f, cy - r * 0.45f), col);
-            dl->AddLine(ImVec2(cx - r, cy + r * 0.45f), ImVec2(cx + r, cy + r * 0.45f), col, 1.5f);
-            dl->AddTriangleFilled(ImVec2(cx - r, cy), ImVec2(cx - r, cy + r * 0.9f),
-                                  ImVec2(cx - r * 1.4f, cy + r * 0.45f), col);
-            break;
-        case Icon::Trophy: {
-            // Cup, handles, stem and base.
-            dl->PathLineTo(ImVec2(cx - r * 0.6f, cy - r));
-            dl->PathLineTo(ImVec2(cx + r * 0.6f, cy - r));
-            dl->PathLineTo(ImVec2(cx + r * 0.6f, cy - r * 0.35f));
-            dl->PathArcTo(ImVec2(cx, cy - r * 0.35f), r * 0.6f, 0.0f, IM_PI);
-            dl->PathStroke(col, ImDrawFlags_Closed, t);
-            dl->AddBezierQuadratic(ImVec2(cx + r * 0.6f, cy - r * 0.8f), ImVec2(cx + r * 1.05f, cy - r * 0.75f),
-                                   ImVec2(cx + r * 0.5f, cy - r * 0.05f), col, t);
-            dl->AddBezierQuadratic(ImVec2(cx - r * 0.6f, cy - r * 0.8f), ImVec2(cx - r * 1.05f, cy - r * 0.75f),
-                                   ImVec2(cx - r * 0.5f, cy - r * 0.05f), col, t);
-            dl->AddLine(ImVec2(cx, cy + r * 0.25f), ImVec2(cx, cy + r * 0.75f), col, t);
-            dl->AddLine(ImVec2(cx - r * 0.5f, cy + r * 0.85f), ImVec2(cx + r * 0.5f, cy + r * 0.85f), col, t);
-            break;
-        }
-        case Icon::Engine: {
-            // A chip: square, inner square, pins.
-            dl->AddRect(ImVec2(cx - r * 0.62f, cy - r * 0.62f), ImVec2(cx + r * 0.62f, cy + r * 0.62f), col, r * 0.15f,
-                        0, t);
-            dl->AddRect(ImVec2(cx - r * 0.25f, cy - r * 0.25f), ImVec2(cx + r * 0.25f, cy + r * 0.25f), col, 0, 0, t);
-            for (const float o : {-0.3f, 0.3f}) {
-                dl->AddLine(ImVec2(cx + r * o, cy - r * 0.62f), ImVec2(cx + r * o, cy - r), col, t);
-                dl->AddLine(ImVec2(cx + r * o, cy + r * 0.62f), ImVec2(cx + r * o, cy + r), col, t);
-                dl->AddLine(ImVec2(cx - r * 0.62f, cy + r * o), ImVec2(cx - r, cy + r * o), col, t);
-                dl->AddLine(ImVec2(cx + r * 0.62f, cy + r * o), ImVec2(cx + r, cy + r * o), col, t);
-            }
-            break;
-        }
+            return "\uE24A";  // arrow-left-right
+        case Icon::Trophy:
+            return "\uE373";  // trophy
+        case Icon::Engine:
+            return "\uE0A9";  // cpu
         case Icon::Log:
-            for (int i = -1; i <= 1; ++i) {
-                const float y = cy + i * r * 0.6f;
-                dl->AddCircleFilled(ImVec2(cx - r * 0.8f, y), t * 0.8f, col);
-                dl->AddLine(ImVec2(cx - r * 0.45f, y), ImVec2(cx + r, y), col, t);
-            }
-            break;
-        case Icon::Settings: {
-            // A gear: ring and eight teeth.
-            dl->AddCircle(ImVec2(cx, cy), r * 0.5f, col, 0, t);
-            dl->AddCircle(ImVec2(cx, cy), r * 0.18f, col, 0, t);
-            for (int i = 0; i < 8; ++i) {
-                const float a = i * IM_PI / 4.0f;
-                dl->AddLine(ImVec2(cx + std::cos(a) * r * 0.55f, cy + std::sin(a) * r * 0.55f),
-                            ImVec2(cx + std::cos(a) * r * 0.92f, cy + std::sin(a) * r * 0.92f), col, t * 1.6f);
-            }
-            break;
-        }
+            return "\uE45F";  // scroll-text
+        case Icon::Settings:
+            return "\uE154";  // settings
         case Icon::Plus:
-            dl->AddLine(ImVec2(cx - r * 0.8f, cy), ImVec2(cx + r * 0.8f, cy), col, t * 1.3f);
-            dl->AddLine(ImVec2(cx, cy - r * 0.8f), ImVec2(cx, cy + r * 0.8f), col, t * 1.3f);
-            break;
+            return "\uE13D";  // plus
         case Icon::Folder:
-            dl->PathLineTo(ImVec2(cx - r, cy - r * 0.7f));
-            dl->PathLineTo(ImVec2(cx - r * 0.25f, cy - r * 0.7f));
-            dl->PathLineTo(ImVec2(cx, cy - r * 0.4f));
-            dl->PathLineTo(ImVec2(cx + r, cy - r * 0.4f));
-            dl->PathLineTo(ImVec2(cx + r, cy + r * 0.7f));
-            dl->PathLineTo(ImVec2(cx - r, cy + r * 0.7f));
-            dl->PathStroke(col, ImDrawFlags_Closed, t);
-            break;
-        case Icon::Chart:
-            for (int i = 0; i < 3; ++i) {
-                const float x = cx + (i - 1) * r * 0.62f;
-                const float h = r * (0.7f + 0.45f * i);
-                dl->AddLine(ImVec2(x, cy + r * 0.85f), ImVec2(x, cy + r * 0.85f - h * 1.2f), col, t * 1.8f);
-            }
-            dl->AddLine(ImVec2(cx - r, cy + r * 0.95f), ImVec2(cx + r, cy + r * 0.95f), col, t);
-            break;
+            return "\uE247";  // folder-open
         case Icon::Back:
-            dl->AddLine(ImVec2(cx + r * 0.3f, cy - r * 0.7f), ImVec2(cx - r * 0.4f, cy), col, t * 1.3f);
-            dl->AddLine(ImVec2(cx - r * 0.4f, cy), ImVec2(cx + r * 0.3f, cy + r * 0.7f), col, t * 1.3f);
-            break;
+            return "\uE048";  // arrow-left
+        case Icon::Chart:
+            return "\uE2A3";  // chart-column
     }
+    return "";
+}
+
+}  // namespace
+
+void setFonts(ImFont* text, ImFont* titles, ImFont* icons) {
+    ImGui::GetIO().FontDefault = text;
+    g_title_font               = titles;
+    g_icon_font                = icons;
+}
+
+void drawIcon(ImDrawList* dl, Icon icon, ImVec2 c, float size, ImU32 col) {
+    ImFont* font     = g_icon_font ? g_icon_font : ImGui::GetFont();
+    const char* text = glyph(icon);
+    const ImVec2 ext = font->CalcTextSizeA(size, FLT_MAX, 0.0f, text);
+    dl->AddText(font, size, ImVec2(c.x - ext.x * 0.5f, c.y - ext.y * 0.5f), col, text);
 }
 
 bool iconButton(const char* id, Icon icon, const char* label, bool enabled) {
@@ -370,7 +322,7 @@ bool railButton(const char* id, Icon icon, const char* label, bool selected, flo
 }
 
 void pageTitle(const char* text) {
-    ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.45f);
+    ImGui::PushFont(g_title_font, ImGui::GetStyle().FontSizeBase * 1.45f);
     ImGui::TextUnformatted(text);
     ImGui::PopFont();
 }
