@@ -93,6 +93,9 @@ TEST_CASE("broadcast: the crosstable keeps the columns node-tlcv reads") {
 }
 
 TEST_CASE("broadcast: a TLCS client logs on and receives the game, the crosstable, and answers to PING") {
+    // What Tom's Live Chess Viewer 2.1 needs, from node-tlcv's docs/official-client.md: LOGON SUCCESSFUL before
+    // anything counts, FEATURE: PING for its keepalive, its own numbered PING acknowledged, "XTIME: <cs> otim <cs>",
+    // and the FEN after each move, sent before the move.
     TlcsServer server;
     const uint16_t port = 26017;
     REQUIRE(server.start(port).empty());
@@ -111,7 +114,7 @@ TEST_CASE("broadcast: a TLCS client logs on and receives the game, the crosstabl
         net::Endpoint from;
         const auto msg = client.receive(from, 100);
         if (!msg) {
-            if (!pinged) client.send(to, "PING"), pinged = true;
+            if (!pinged) client.send(to, "< 7>PING"), pinged = true;  // numbered, the way TLCV sends it
             continue;
         }
         if (msg->front() == '<') {
@@ -127,6 +130,9 @@ TEST_CASE("broadcast: a TLCS client logs on and receives the game, the crosstabl
     const auto has = [&](const std::string& text) {
         return std::find(received.begin(), received.end(), text) != received.end();
     };
+    REQUIRE_FALSE(received.empty());
+    CHECK(received.front() == "LOGON SUCCESSFUL");
+    CHECK(has("FEATURE: PING"));
     CHECK(has("SITE: Test broadcast"));
     CHECK(has("WPLAYER: Alpha"));
     CHECK(has("BPLAYER: Beta"));
@@ -134,10 +140,77 @@ TEST_CASE("broadcast: a TLCS client logs on and receives the game, the crosstabl
     CHECK(has("WMOVE: 1. e4"));
     CHECK(has("BMOVE: 1. e5"));
     CHECK(has("WMOVE: 2. Nf3"));
-    CHECK(has("BTIME: 5800"));
+    CHECK(has("BTIME: 5800 otim 5900"));  // Black to move
+    CHECK(has("FMR: 1"));
+
+    // The position after a move comes right before it.
+    const auto e4 = std::find(received.begin(), received.end(), "WMOVE: 1. e4");
+    REQUIRE(e4 != received.end());
+    REQUIRE(e4 != received.begin());
+    CHECK(*(e4 - 1) == "FEN: rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq");
     CHECK(has("CTRESET"));
     CHECK(has("CT: total games = 3"));
     CHECK(has("PONG"));
+    CHECK(has("ACK: 7"));
+
+    server.stop();
+}
+
+TEST_CASE("broadcast: TLCS tells the end of the game it follows, even once the next game took its slot") {
+    TlcsServer server;
+    const uint16_t port = 26019;
+    REQUIRE(server.start(port).empty());
+    server.publish(sample(), -1);
+    std::this_thread::sleep_for(300ms);
+
+    net::UdpSocket client;
+    REQUIRE(client.bind(26020).empty());
+    const net::Endpoint to{0x7F000001, port};
+    client.send(to, "LOGONv15:tester");
+
+    std::vector<std::string> received;
+    const auto listen = [&](std::chrono::milliseconds how_long) {
+        const auto until = std::chrono::steady_clock::now() + how_long;
+        while (std::chrono::steady_clock::now() < until) {
+            net::Endpoint from;
+            const auto msg = client.receive(from, 50);
+            if (!msg) continue;
+            if (msg->front() == '<') {
+                const auto close = msg->find('>');
+                client.send(to, "ACK: " + msg->substr(1, close - 1));
+                received.push_back(msg->substr(close + 1));
+            } else {
+                received.push_back(*msg);
+            }
+        }
+    };
+    listen(600ms);
+
+    // Game 4 ended with 2...Nc6 3.Bb5 1-0 and game 5 already started in its slot: game 4 is only among the ended.
+    auto next            = sample();
+    auto ended           = next.games[0];
+    ended.san            = {"e4", "e5", "Nf3", "Nc6", "Bb5"};
+    ended.uci            = {"e2e4", "e7e5", "g1f3", "b8c6", "f1b5"};
+    ended.active         = false;
+    ended.result         = "1-0";
+    next.ended           = {ended};
+    next.games[0]        = sample().games[0];
+    next.games[0].number = 5;
+    next.games[0].white  = "Gamma";
+    next.games[0].san.clear();
+    next.games[0].uci.clear();
+    server.publish(next, -1);
+    listen(800ms);
+    server.publish(next, -1);  // the following snapshot moves on to game 5
+    listen(800ms);
+
+    const auto at = [&](const std::string& text) { return std::find(received.begin(), received.end(), text); };
+    REQUIRE(at("WMOVE: 3. Bb5") != received.end());
+    REQUIRE(at("result: 1-0") != received.end());
+    REQUIRE(at("WPLAYER: Gamma") != received.end());
+    CHECK(at("BMOVE: 2. Nc6") < at("WMOVE: 3. Bb5"));
+    CHECK(at("WMOVE: 3. Bb5") < at("result: 1-0"));
+    CHECK(at("result: 1-0") < at("WPLAYER: Gamma"));
 
     server.stop();
 }

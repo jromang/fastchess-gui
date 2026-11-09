@@ -20,7 +20,8 @@ namespace {
 float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
 
 int scoreCp(const fastchess::Score& s) {
-    if (s.type == fastchess::ScoreType::MATE) return s.value > 0 ? 100000 - 2 * s.value : -100000 - 2 * s.value;
+    // Mate in N moves as +-(100000 - N), what TLCS clients read back.
+    if (s.type == fastchess::ScoreType::MATE) return s.value > 0 ? 100000 - s.value : -100000 - s.value;
     return static_cast<int>(s.value);
 }
 
@@ -53,20 +54,14 @@ BroadcastSnapshot App::makeSnapshot() {
                                                             : "0-1"));
     }
 
-    const auto now = Clock::now();
-    for (int slot = 0; slot < obs->slotCount(); ++slot) {
-        refreshSlot(slot);
-        const auto& v  = slot_views_[static_cast<std::size_t>(slot)];
-        const auto& st = v.state;
-        if (!st.has_game) continue;
-
+    const auto now  = Clock::now();
+    const auto live = [&](int slot, const SlotState& st) {
         LiveGame g;
         g.slot          = slot;
         g.number        = st.game_id;
         g.white         = st.white;
         g.black         = st.black;
         g.start_fen     = st.start_fen;
-        g.fen           = v.board.getFen();
         g.white_to_move = st.stm == chess::Color::WHITE;
         g.clocks        = st.clocks;
         g.active        = st.active;
@@ -104,7 +99,19 @@ BroadcastSnapshot App::makeSnapshot() {
                 break;
             }
         }
-        s.games.push_back(std::move(g));
+        return g;
+    };
+
+    for (int slot = 0; slot < obs->slotCount(); ++slot) {
+        refreshSlot(slot);
+        const auto& v  = slot_views_[static_cast<std::size_t>(slot)];
+        const auto& st = v.state;
+        if (st.has_game) {
+            auto g = live(slot, st);
+            g.fen  = v.board.getFen();
+            s.games.push_back(std::move(g));
+        }
+        if (const auto ended = obs->endedGame(slot); ended.has_game) s.ended.push_back(live(slot, ended));
     }
     return s;
 }

@@ -39,7 +39,7 @@ struct LiveGame {
 
     struct Search {
         int depth       = 0;
-        int score_cp    = 0;  // the searching side's point of view; mates as +-(100000 - plies)
+        int score_cp    = 0;  // the searching side's point of view; mate in N moves as +-(100000 - N)
         uint64_t nodes  = 0;
         int64_t time_ms = 0;
         std::vector<std::string> pv;  // UCI
@@ -54,6 +54,7 @@ struct BroadcastSnapshot {
     uint64_t total  = 0;  // 0 = unbounded
     bool finished   = false;
     std::vector<LiveGame> games;
+    std::vector<LiveGame> ended;  // the last game ended in each slot, so its end is not missed (TLCS)
     tour::Table table;
     std::vector<std::string> recent;  // latest results, newest first: "White - Black 1-0"
 };

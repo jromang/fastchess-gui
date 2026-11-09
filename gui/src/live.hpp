@@ -123,6 +123,10 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     // Copies slot `i` into `out` if it changed since `out.version`. Returns true if it did.
     bool copySlot(int i, SlotState& out) const;
 
+    // The last game that ended in slot `i`, kept when the next one starts (the next game often starts before a
+    // broadcast saw the end of the previous one). has_game is false when there is none.
+    [[nodiscard]] SlotState endedGame(int i) const;
+
     // Is anything going on in slot `i` (cheap, for tab labels)?
     [[nodiscard]] bool slotActive(int i) const;
 
@@ -152,6 +156,7 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     struct Slot {
         mutable std::mutex mutex;
         SlotState state;
+        SlotState ended;     // the previous game, once it has a result
         chess::Board board;  // current position of the game in this slot
     };
 

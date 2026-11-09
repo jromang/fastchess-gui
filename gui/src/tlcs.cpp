@@ -1,12 +1,16 @@
-// A TLCS compatible server. The protocol, as TLCV clients and node-tlcv speak it:
+// A TLCS compatible server. The protocol, as Tom's Live Chess Viewer 2.1 and node-tlcv expect it (node-tlcv's
+// docs/protocol.md and docs/official-client.md describe both):
 //
-//   client -> server   LOGONv15:<name>, PING, ACK: <id>, RESULTTABLE, LOGOFF
-//   server -> client   "<id>" + one command per datagram, acknowledged with "ACK: <id>"; resent until it is:
+//   client -> server   LOGONv15:<name>, PING, ACK: <id>, RESULTTABLE, LOGOFF; the client numbers some of them
+//                      ("<id>PING"), which are acknowledged too
+//   server -> client   LOGON SUCCESSFUL (not numbered; TLCV ignores everything until it comes), then "<id>" + one
+//                      command per datagram, acknowledged with "ACK: <id>"; resent until it is:
+//     FEATURE: PING                 (TLCV only sends its keepalive PING when told)
 //     SITE: <event>                 WPLAYER: <name>        BPLAYER: <name>
-//     FEN: <board> <side> <castling>                       (the position; the initial one resets the game)
-//     WMOVE: <n>. <san>             BMOVE: <n>. <san>
-//     WTIME: <centiseconds>         BTIME: <centiseconds>
-//     WPV: <depth> <score cp> <time cs> <nodes> <uci moves...>   (and BPV)
+//     FEN: <board> <side> <castling>                       (the initial position resets the game)
+//     XTIME: <cs> otim <cs>         when X starts thinking: its clock, then the other one (X = W or B)
+//     XPV: <depth> <score cp> <time cs> <nodes> <uci moves...>   (mate in N: +-(100000 - N))
+//     FEN: <position after the move>, XMOVE: <n>. <san>, FMR: <halfmove clock>    for each move
 //     result: <1-0|0-1|1/2-1/2>
 //     CTRESET, then CT: <line> for each line of the crosstable, ending with "total games = N"
 //     PONG                          (answer to PING, not numbered)
@@ -99,15 +103,19 @@ struct TlcsServer::Impl {
         out.push_back("BPLAYER: " + game.black);
         const auto moves = movesFrom(0);
         out.insert(out.end(), moves.begin(), moves.end());
-        if (game.clocks) {
-            out.push_back(fmt::format("WTIME: {}", game.white_ms / 10));
-            out.push_back(fmt::format("BTIME: {}", game.black_ms / 10));
-        }
+        if (game.clocks) out.push_back(clocks());
         return out;
     }
 
-    // Moves from index `from` on. Each is preceded by the position it is played from, so that a client whose
-    // board went astray (a game started from a book position) reloads it instead of failing on the move.
+    // The clocks, from the side to move: TLCV sets both from it.
+    std::string clocks() const {
+        const bool white = game.white_to_move;
+        return fmt::format("{}: {} otim {}", white ? "WTIME" : "BTIME", (white ? game.white_ms : game.black_ms) / 10,
+                           (white ? game.black_ms : game.white_ms) / 10);
+    }
+
+    // Moves from index `from` on, each preceded by the position after it, as TLCS does: TLCV draws the board from
+    // the last FEN, and node-tlcv reloads it when a move does not fit its board (a game started from a book position).
     std::vector<std::string> movesFrom(std::size_t from) const {
         std::vector<std::string> out;
         chess::Board board;
@@ -115,13 +123,14 @@ struct TlcsServer::Impl {
         for (std::size_t i = 0; i < game.uci.size() && i < game.san.size(); ++i) {
             const bool white  = board.sideToMove() == chess::Color::WHITE;
             const auto number = board.fullMoveNumber();
+            const auto move   = chess::uci::uciToMove(board, game.uci[i]);
+            if (move == chess::Move::NO_MOVE) break;
+            board.makeMove<true>(move);
             if (i >= from) {
                 out.push_back("FEN: " + shortFen(board.getFen()));
                 out.push_back(fmt::format("{}: {}. {}", white ? "WMOVE" : "BMOVE", number, game.san[i]));
+                out.push_back(fmt::format("FMR: {}", board.halfMoveClock()));
             }
-            const auto move = chess::uci::uciToMove(board, game.uci[i]);
-            if (move == chess::Move::NO_MOVE) break;
-            board.makeMove<true>(move);
         }
         return out;
     }
@@ -130,6 +139,8 @@ struct TlcsServer::Impl {
         auto& c     = clients[from];
         c.name      = name;
         c.last_seen = Clock::now();
+        socket.send(from, "LOGON SUCCESSFUL");
+        send(from, c, "FEATURE: PING");
         if (!site.empty()) send(from, c, "SITE: " + site);
         if (!table_lines.empty()) {
             send(from, c, "CTRESET");
@@ -140,7 +151,13 @@ struct TlcsServer::Impl {
     }
 
     void handle(const net::Endpoint& from, const std::string& raw) {
-        const auto msg = trim(raw);
+        auto msg = trim(raw);
+        // A numbered message: acknowledged, then read like the others (TLCV numbers its PING and CHAT).
+        if (const auto close = msg.find('>'); !msg.empty() && msg.front() == '<' && close != std::string::npos) {
+            const auto id = std::strtoul(msg.c_str() + 1, nullptr, 10);
+            if (id > 0) socket.send(from, fmt::format("ACK: {}", id));
+            msg = trim(msg.substr(close + 1));
+        }
         if (msg.rfind("LOGON", 0) == 0) {
             const auto colon = msg.find(':');
             logon(from, colon == std::string::npos ? std::string("viewer") : trim(msg.substr(colon + 1)));
@@ -177,14 +194,17 @@ struct TlcsServer::Impl {
             broadcast("SITE: " + site);
         }
 
-        // The game to follow: the one asked for, else the current one while it lasts, else any game in progress.
+        // The game to follow: the one asked for, else the current one until its result is told (it may already have
+        // left its slot for the next game: then it is among the ended ones), else any game in progress.
         const LiveGame* next = nullptr;
         for (const auto& g : s.games) {
             if (g.slot == slot && g.active) next = &g;
         }
-        if (!next && has_game) {
-            for (const auto& g : s.games) {
-                if (g.number == game.number) next = &g;
+        if (!next && has_game && !result_sent) {
+            for (const auto* list : {&s.games, &s.ended}) {
+                for (const auto& g : *list) {
+                    if (!next && g.number == game.number) next = &g;
+                }
             }
         }
         if (!next) {
@@ -213,13 +233,10 @@ struct TlcsServer::Impl {
                 times_sent[0] = times_sent[1] = -1;  // with each move, the clocks again
             }
 
-            if (game.clocks) {
-                const int64_t ms[2] = {game.white_ms, game.black_ms};
-                for (int side = 0; side < 2; ++side) {
-                    if (times_sent[side] >= 0) continue;
-                    broadcast(fmt::format("{}: {}", side == 0 ? "WTIME" : "BTIME", ms[side] / 10));
-                    times_sent[side] = ms[side];
-                }
+            // The clocks when a side starts thinking.
+            if (game.clocks && times_sent[0] < 0) {
+                broadcast(clocks());
+                times_sent[0] = times_sent[1] = 0;
             }
 
             // The searching side's PV, at most once a second.
