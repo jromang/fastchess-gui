@@ -3,6 +3,7 @@
 // What a tournament is: its settings and its participants, as stored in tournament.json.
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -25,6 +26,10 @@ struct Participant {
     // Resolved when the participant is added: name (unique in the tournament), command, options and limits.
     // Later edits of the engine list do not change a tournament.
     fastchess::EngineConfiguration engine;
+
+    // Withdrawn or replaced participants stay in the list, so that their games keep a name.
+    bool active = true;
+    std::optional<int> replaced_by;
 };
 
 // Identifies the opening book a tournament was started with, to warn when it changed.
@@ -53,6 +58,12 @@ struct TournamentSpec {
 
     [[nodiscard]] const Participant* participant(int id) const {
         for (const auto& p : participants) {
+            if (p.id == id) return &p;
+        }
+        return nullptr;
+    }
+    [[nodiscard]] Participant* participant(int id) {
+        for (auto& p : participants) {
             if (p.id == id) return &p;
         }
         return nullptr;

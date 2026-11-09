@@ -5,6 +5,7 @@
 
 #include "journal.hpp"
 #include "schedule.hpp"
+#include "state.hpp"
 
 namespace fcg::tour {
 
@@ -19,18 +20,11 @@ std::optional<Summary> summarize(const fs::path& dir) {
         s.dir  = dir;
         s.spec = nlohmann::json::parse(in).get<TournamentSpec>();
 
-        const auto size = Schedule(s.spec).size();
-        if (size) s.total = uint64_t{*size} * 2;
-
-        for (const auto& event : Journal::read(dir / "journal.jsonl", false)) {
-            const auto type = event.value("t", std::string{});
-            if (type == "game_finished") {
-                ++s.played;
-            } else if (type == "finished") {
-                s.finished      = true;
-                s.finish_reason = event.value("why", std::string{});
-            }
-        }
+        const auto replayed = TournamentState::replay(Journal::read(dir / "journal.jsonl", false), s.spec);
+        s.played            = replayed.played;
+        s.total             = replayed.total;
+        s.finished          = replayed.finished;
+        s.finish_reason     = replayed.finish_reason;
         return s;
     } catch (const std::exception&) {
         return std::nullopt;

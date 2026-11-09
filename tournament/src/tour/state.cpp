@@ -108,6 +108,31 @@ double GameResult::scoreOf(int id) const noexcept {
     return 0.0;
 }
 
+TournamentState::Replayed TournamentState::replay(const std::vector<nlohmann::json>& events, TournamentSpec& spec) {
+    Replayed out;
+    Schedule schedule(spec);
+    std::vector<GameResult> results;
+    std::set<uint64_t> done, dropped;
+
+    for (const auto& e : events) {
+        const auto type = e.value("t", std::string{});
+        if (type == "game_finished") {
+            const auto r = resultFromJson(e);
+            if (done.insert(r.number()).second) results.push_back(r);
+        } else if (isEditEvent(type)) {
+            effects(e, spec, schedule, results, done, dropped);
+            if (out.finished && out.finish_reason == "complete") out.finished = false;
+        } else if (type == "finished") {
+            out.finished      = true;
+            out.finish_reason = e.value("why", std::string{});
+        }
+    }
+
+    for (const auto& r : results) out.played += r.voided ? 0 : 1;
+    if (const auto size = schedule.size()) out.total = uint64_t{*size} * 2 - dropped.size();
+    return out;
+}
+
 bool TournamentState::isTournament(const fs::path& dir) {
     std::error_code ec;
     return fs::is_regular_file(dir / SPEC_FILE, ec);
@@ -176,7 +201,11 @@ void TournamentState::load() {
             const auto type = e.at("t").get<std::string>();
             if (type == "encounter_started") {
                 OpeningText text{e.at("fen").get<std::string>(), e.value("moves", std::vector<std::string>{})};
-                started_[e.at("encounter").get<uint32_t>()] = fromText(text, frc());
+                const auto encounter = e.at("encounter").get<uint32_t>();
+                started_[encounter]  = fromText(text, frc());
+                next_encounter_      = std::max(next_encounter_, encounter + 1);
+            } else if (isEditEvent(type)) {
+                applyEvent(e);
             } else if (type == "game_finished") {
                 apply(resultFromJson(e));
             } else if (type == "finished") {
@@ -191,12 +220,7 @@ void TournamentState::load() {
         }
     }
 
-    for (const auto& [encounter, opening] : started_) next_encounter_ = std::max(next_encounter_, encounter + 1);
-    for (uint32_t e = 0; e < next_encounter_; ++e) {
-        for (int g = 0; g < 2; ++g) {
-            if (!done(e, g)) open_.emplace_back(e, g);
-        }
-    }
+    rebuildOpen();
 
     // Text written after the last game the journal knows about belongs to no game.
     uint64_t keep = 0, keep_cb = 0;
@@ -219,10 +243,14 @@ bool TournamentState::apply(const GameResult& result) {
     results_.push_back(result);
     done_.insert(result.number());
     next_encounter_ = std::max(next_encounter_, result.encounter + 1);
+    return count(results_.size() - 1);
+}
 
-    const auto it = half_.find(result.encounter);
+bool TournamentState::count(std::size_t index) {
+    const auto& result = results_[index];
+    const auto it      = half_.find(result.encounter);
     if (it == half_.end()) {
-        half_[result.encounter] = results_.size() - 1;
+        half_[result.encounter] = index;
         return false;
     }
 
@@ -235,14 +263,164 @@ bool TournamentState::apply(const GameResult& result) {
     return true;
 }
 
+void TournamentState::rebuildStats() {
+    pairs_.clear();
+    half_.clear();
+    for (std::size_t i = 0; i < results_.size(); ++i) {
+        if (!results_[i].voided) count(i);
+    }
+}
+
+void TournamentState::rebuildOpen() {
+    open_.clear();
+    const auto size = schedule_.size();
+    const auto end  = size ? std::min(next_encounter_, *size) : next_encounter_;
+    for (uint32_t e = 0; e < end; ++e) {
+        for (int g = 0; g < 2; ++g) {
+            const auto n = uint64_t{e} * 2 + g;
+            if (!done_.count(n) && !dropped_.count(n) && !running_.count(n)) open_.emplace_back(e, g);
+        }
+    }
+}
+
+void TournamentState::effects(const nlohmann::json& event, TournamentSpec& spec, Schedule& schedule,
+                              std::vector<GameResult>& results, std::set<uint64_t>& done, std::set<uint64_t>& dropped) {
+    const auto type = event.at("t").get<std::string>();
+    applyEditEvent(event, spec, schedule);
+
+    const auto voidWhere = [&](auto involves, bool replay, const std::string& why) {
+        for (auto& r : results) {
+            if (r.voided || !involves(r)) continue;
+            r.voided      = true;
+            r.void_reason = why;
+            done.erase(r.number());
+            if (!replay) dropped.insert(r.number());
+        }
+    };
+
+    if (type == "participant_replaced") {
+        // The new engine plays again every game of the old one.
+        const int old = event.at("old").get<int>();
+        voidWhere([&](const GameResult& r) { return r.white == old || r.black == old; }, true, "replaced");
+    } else if (type == "participant_withdrawn") {
+        const int id = event.at("participant").get<int>();
+        // Games of started encounters it has not played will not be played.
+        const auto at = std::min(event.at("at").get<uint32_t>(), schedule.size().value_or(0));
+        for (uint32_t e = 0; e < at; ++e) {
+            const auto enc = schedule.at(e);
+            if (!enc || (enc->first != id && enc->second != id)) continue;
+            for (int g = 0; g < 2; ++g) {
+                if (!done.count(uint64_t{e} * 2 + g)) dropped.insert(uint64_t{e} * 2 + g);
+            }
+        }
+        if (event.value("void_played", false)) {
+            voidWhere([&](const GameResult& r) { return r.white == id || r.black == id; }, false, "withdrawn");
+        }
+    } else if (type == "games_voided") {
+        const bool replay = event.value("replay", true);
+        const auto why    = event.value("why", std::string{});
+        for (const auto& g : event.at("games")) {
+            const auto n = g.at(0).get<uint64_t>() * 2 + g.at(1).get<uint64_t>();
+            voidWhere([&](const GameResult& r) { return r.number() == n; }, replay, why);
+            if (!replay && !done.count(n)) dropped.insert(n);
+        }
+    }
+}
+
+void TournamentState::applyEvent(const nlohmann::json& event) {
+    effects(event, spec_, schedule_, results_, done_, dropped_);
+    rebuildStats();
+    rebuildOpen();
+
+    // Games added to a finished tournament reopen it.
+    if (finished_ && finish_reason_ == "complete" && gamesLeft()) {
+        finished_ = false;
+        finish_reason_.clear();
+    }
+}
+
+uint64_t TournamentState::totalLocked() const {
+    const auto size = schedule_.size();
+    return size ? uint64_t{*size} * 2 - dropped_.size() : 0;
+}
+
+Impact TournamentState::preview(const Edit& edit) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    Impact impact;
+    impact.games_before = totalLocked();
+    if (edit.kind != Edit::Kind::VoidGames && !schedule_.editable()) {
+        impact.error = "a match cannot be edited this way";
+        return impact;
+    }
+
+    int new_id = 0;
+    for (const auto& p : spec_.participants) new_id = std::max(new_id, p.id + 1);
+
+    auto spec     = spec_;
+    auto schedule = schedule_;
+    auto results  = results_;
+    auto done     = done_;
+    auto dropped  = dropped_;
+    try {
+        effects(editEvent(edit, next_encounter_, new_id, spec_), spec, schedule, results, done, dropped);
+    } catch (const std::exception& e) {
+        impact.error = e.what();
+        return impact;
+    }
+
+    const auto size    = schedule.size();
+    impact.games_after = size ? uint64_t{*size} * 2 - dropped.size() : 0;
+    for (std::size_t i = 0; i < results.size(); ++i) {
+        if (!results[i].voided || results_[i].voided) continue;
+        (dropped.count(results[i].number()) ? impact.voided : impact.replayed)++;
+    }
+    return impact;
+}
+
+void TournamentState::applyEdit(const Edit& edit) {
+    const auto impact = preview(edit);
+    if (!impact.error.empty()) throw std::runtime_error(impact.error);
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    int new_id = 0;
+    for (const auto& p : spec_.participants) new_id = std::max(new_id, p.id + 1);
+
+    const auto event = editEvent(edit, next_encounter_, new_id, spec_);
+    journal_->append(event);
+    applyEvent(event);
+}
+
+std::vector<ScheduleRow> TournamentState::scheduleRows() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::vector<ScheduleRow> rows;
+    if (!schedule_.editable()) return rows;
+
+    const auto size = schedule_.size().value_or(0);
+    rows.reserve(size);
+    for (uint32_t e = 0; e < size; ++e) {
+        ScheduleRow row;
+        row.encounter = *schedule_.at(e);
+        for (int g = 0; g < 2; ++g) {
+            const auto n  = uint64_t{e} * 2 + g;
+            row.status[g] = done_.count(n)      ? GameStatus::Done
+                            : dropped_.count(n) ? GameStatus::Dropped
+                            : running_.count(n) ? GameStatus::Running
+                                                : GameStatus::Pending;
+        }
+        rows.push_back(row);
+    }
+    return rows;
+}
+
 bool TournamentState::done(uint32_t encounter, int game) const {
     return done_.count(uint64_t{encounter} * 2 + game) > 0;
 }
 
 std::optional<uint64_t> TournamentState::totalGames() const {
-    const auto size = schedule_.size();
-    if (!size) return std::nullopt;
-    return uint64_t{*size} * 2;
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!schedule_.size()) return std::nullopt;
+    return totalLocked();
 }
 
 GameTask TournamentState::makeTask(uint32_t encounter, int game) {
@@ -278,19 +456,28 @@ std::optional<GameTask> TournamentState::claimNext() {
     while (!open_.empty()) {
         const auto [encounter, game] = open_.front();
         open_.pop_front();
-        if (!done(encounter, game)) return makeTask(encounter, game);
+        const auto n = uint64_t{encounter} * 2 + game;
+        if (done(encounter, game) || dropped_.count(n) || running_.count(n)) continue;
+        auto task = makeTask(encounter, game);
+        running_.insert(n);
+        return task;
     }
 
     if (!schedule_.at(next_encounter_)) return std::nullopt;
 
     const auto encounter = next_encounter_++;
     open_.emplace_front(encounter, 1);  // its second game comes next
-    return makeTask(encounter, 0);
+    auto task = makeTask(encounter, 0);
+    running_.insert(task.number());
+    return task;
 }
 
 void TournamentState::release(const GameTask& task) {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (!done(task.encounter.index, task.game)) open_.emplace_front(task.encounter.index, task.game);
+    running_.erase(task.number());
+    if (!done(task.encounter.index, task.game) && !dropped_.count(task.number())) {
+        open_.emplace_front(task.encounter.index, task.game);
+    }
 }
 
 Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchData& data) {
@@ -315,7 +502,9 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     result.finished_at = nowMs();
 
     std::lock_guard<std::mutex> lock(mutex_);
-    if (done(task.encounter.index, task.game)) return {result, std::nullopt};
+    running_.erase(task.number());
+    // Already played, or no longer to be played (its participant was withdrawn meanwhile).
+    if (done(task.encounter.index, task.game) || dropped_.count(task.number())) return {result, std::nullopt};
 
     result.pgn           = pgn_->append(text);
     result.pgn_chessbase = pgn_chessbase_->append(text_cb);
@@ -327,7 +516,7 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     }
     checkSprt();
 
-    if (!finished_ && schedule_.size() && done_.size() >= uint64_t{*schedule_.size()} * 2) {
+    if (!finished_ && schedule_.size() && !hasWorkLocked() && running_.empty()) {
         finished_      = true;
         finish_reason_ = "complete";
         journal_->append({{"t", "finished"}, {"why", finish_reason_}});
@@ -355,9 +544,15 @@ void TournamentState::checkSprt() {
 
 bool TournamentState::hasWork() const {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (finished_) return false;
+    return hasWorkLocked();
+}
+
+bool TournamentState::hasWorkLocked() const { return !finished_ && gamesLeft(); }
+
+bool TournamentState::gamesLeft() const {
     for (const auto& [encounter, game] : open_) {
-        if (!done(encounter, game)) return true;
+        const auto n = uint64_t{encounter} * 2 + game;
+        if (!done(encounter, game) && !dropped_.count(n) && !running_.count(n)) return true;
     }
     return schedule_.at(next_encounter_).has_value();
 }
@@ -393,7 +588,7 @@ std::vector<fastchess::Stats> TournamentState::pairHistory(int a, int b) const {
 
     for (const auto& r : results_) {
         const bool between = (r.white == a && r.black == b) || (r.white == b && r.black == a);
-        if (!between) continue;
+        if (!between || r.voided) continue;
 
         const auto it = first.find(r.encounter);
         if (it == first.end()) {

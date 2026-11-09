@@ -132,6 +132,12 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     [[nodiscard]] std::vector<std::string> reasons() const;
     [[nodiscard]] std::vector<EngineTotals> totals() const;  // by participant index ([0] = A, [1] = B in a match)
 
+    // New participants (added or replacing one) get a name and counters; existing indexes do not change.
+    void updateParticipants(const tour::TournamentSpec& spec);
+
+    // The records of the games that count, for the views to start over after an edit.
+    [[nodiscard]] std::vector<GameRecord> records(const std::vector<tour::GameResult>& results);
+
     // Participant names, by index.
     [[nodiscard]] const std::vector<std::string>& names() const noexcept { return names_; }
     [[nodiscard]] const std::string& name(std::size_t index) const;

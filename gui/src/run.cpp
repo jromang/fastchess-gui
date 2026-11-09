@@ -159,6 +159,31 @@ RunInfo runInfo(const tour::TournamentSpec& spec, const fs::path& dir) {
     return info;
 }
 
+fastchess::EngineConfiguration participantConfig(const EngineEntry& entry, const tour::TournamentSpec& spec) {
+    fastchess::EngineConfiguration config;
+    config.name    = entry.name;
+    config.cmd     = entry.cmd;
+    config.args    = entry.args;
+    config.dir     = engineWorkingDir(entry);
+    config.restart = entry.restart;
+    config.options = entry.options;
+    if (spec.participants.empty()) return config;
+
+    const auto& model = spec.participants.front().engine;
+    config.limit      = model.limit;
+    config.variant    = model.variant;
+    for (const auto& [k, v] : model.options) {
+        if (k != "Hash" && k != "Threads") continue;
+        if (!entry.uci_options.empty() && !hasOption(entry, k)) continue;
+        bool set = false;
+        for (auto& [ck, cv] : config.options) {
+            if (ck == k) cv = v, set = true;
+        }
+        if (!set) config.options.emplace_back(k, v);
+    }
+    return config;
+}
+
 std::optional<tour::Summary> unfinishedMatch(const fs::path& runs_root) {
     const auto dirs = tour::tournamentDirs(runs_root);
     if (dirs.empty()) return std::nullopt;
@@ -404,6 +429,20 @@ std::string RunController::view(const fs::path& dir) {
         std::lock_guard<std::mutex> lock(outcome_mutex_);
         error_.clear();
     }
+    return {};
+}
+
+std::string RunController::applyEdit(const tour::Edit& edit) {
+    if (!tournament_) return TR("No tournament is open.");
+    try {
+        tournament_->applyEdit(edit);
+    } catch (const std::exception& e) {
+        return e.what();
+    }
+    // The views know the participants by index: new ones get a name and counters.
+    if (observer_) observer_->updateParticipants(tournament_->spec());
+    info_.total_games  = tournament_->totalGames().value_or(0);
+    info_.participants = static_cast<int>(tournament_->spec().participants.size());
     return {};
 }
 

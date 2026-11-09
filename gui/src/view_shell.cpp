@@ -470,6 +470,10 @@ void App::drawWorkspace() {
         drawStandings();
         ImGui::EndTabItem();
     }
+    if (!isMatch() && tab(TR("Schedule###tab_schedule"), Tab::Schedule)) {
+        drawSchedule();
+        ImGui::EndTabItem();
+    }
     if (tab(TR("Live###tab_live"), Tab::Live)) {
         drawLive();
         ImGui::EndTabItem();

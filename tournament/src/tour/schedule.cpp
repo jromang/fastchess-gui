@@ -96,4 +96,43 @@ std::optional<Encounter> Schedule::at(uint32_t index) const {
     return list_[index];
 }
 
+void Schedule::renumber() {
+    for (std::size_t i = 0; i < list_.size(); ++i) list_[i].index = static_cast<uint32_t>(i);
+    size_ = static_cast<uint32_t>(list_.size());
+}
+
+void Schedule::insert(uint32_t at, const std::vector<Encounter>& encounters) {
+    const auto pos = list_.begin() + std::min<std::size_t>(at, list_.size());
+    list_.insert(pos, encounters.begin(), encounters.end());
+    renumber();
+}
+
+void Schedule::replaceParticipant(int old_id, int new_id) {
+    for (auto& e : list_) {
+        if (e.first == old_id) e.first = new_id;
+        if (e.second == old_id) e.second = new_id;
+    }
+}
+
+uint32_t Schedule::endOfCycle(uint32_t cycle) const {
+    for (std::size_t i = list_.size(); i-- > 0;) {
+        if (list_[i].cycle == cycle) return static_cast<uint32_t>(i + 1);
+    }
+    return static_cast<uint32_t>(list_.size());
+}
+
+uint32_t Schedule::lastCycle() const {
+    uint32_t c = 0;
+    for (const auto& e : list_) c = std::max(c, e.cycle);
+    return c;
+}
+
+uint32_t Schedule::lastRound(uint32_t cycle) const {
+    uint32_t r = 0;
+    for (const auto& e : list_) {
+        if (e.cycle == cycle) r = std::max(r, e.round);
+    }
+    return r;
+}
+
 }  // namespace fcg::tour

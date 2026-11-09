@@ -188,6 +188,7 @@ Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& re
     Matrix points(n, std::vector<double>(n, 0.0));
 
     for (const auto& r : results) {
+        if (r.voided) continue;
         const auto w = index.find(r.white);
         const auto b = index.find(r.black);
         if (w == index.end() || b == index.end()) continue;

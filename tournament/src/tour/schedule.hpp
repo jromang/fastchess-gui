@@ -32,7 +32,37 @@ class Schedule {
     // Number of encounters, nullopt for a match without a game limit.
     [[nodiscard]] std::optional<uint32_t> size() const noexcept { return size_; }
 
+    // --- edits of a round robin or a gauntlet (see edits.hpp); a match cannot be edited this way ---
+
+    [[nodiscard]] bool editable() const noexcept { return format_ != Format::Match; }
+
+    // Inserts encounters before position `at` (at most size()); everything from `at` on is renumbered.
+    void insert(uint32_t at, const std::vector<Encounter>& encounters);
+
+    // Removes the encounters from position `from` on for which `remove` is true.
+    template <typename F>
+    void eraseFrom(uint32_t from, F remove) {
+        std::vector<Encounter> kept(list_.begin(), list_.begin() + std::min<std::size_t>(from, list_.size()));
+        for (std::size_t i = from; i < list_.size(); ++i) {
+            if (!remove(list_[i])) kept.push_back(list_[i]);
+        }
+        list_ = std::move(kept);
+        renumber();
+    }
+
+    // Every encounter of `old_id`, played or not, becomes one of `new_id`.
+    void replaceParticipant(int old_id, int new_id);
+
+    // Position after the last encounter of `cycle`, or size() when there is none.
+    [[nodiscard]] uint32_t endOfCycle(uint32_t cycle) const;
+
+    // Highest cycle and highest round of a cycle in the schedule.
+    [[nodiscard]] uint32_t lastCycle() const;
+    [[nodiscard]] uint32_t lastRound(uint32_t cycle) const;
+
    private:
+    void renumber();
+
     Format format_ = Format::Match;
     std::vector<Encounter> list_;  // round robin and gauntlet
     int match_a_ = 0;              // match: the two participant ids

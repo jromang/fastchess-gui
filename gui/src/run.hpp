@@ -56,6 +56,11 @@ struct BuiltRun {
 // What the toolbar and the views show about a match, from its stored settings.
 [[nodiscard]] RunInfo runInfo(const tour::TournamentSpec& spec, const std::filesystem::path& dir);
 
+// An engine of the list as a new participant of `spec`: the tournament's time control (or nodes) and its common
+// Hash and Threads, taken from the first participant.
+[[nodiscard]] fastchess::EngineConfiguration participantConfig(const EngineEntry& entry,
+                                                               const tour::TournamentSpec& spec);
+
 // The most recent match in `runs_root`, if it is not finished (stopped, or interrupted by a crash).
 [[nodiscard]] std::optional<tour::Summary> unfinishedMatch(const std::filesystem::path& runs_root);
 
@@ -90,6 +95,9 @@ class RunController {
 
     // Opens the match stored in `dir` to look at it, without playing; returns an error message, empty on success.
     std::string view(const std::filesystem::path& dir);
+
+    // Changes the open tournament, running or not; returns an error message, empty on success.
+    std::string applyEdit(const tour::Edit& edit);
 
     void setPaused(bool paused);
     [[nodiscard]] bool paused() const;

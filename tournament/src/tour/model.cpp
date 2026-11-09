@@ -2,11 +2,17 @@
 
 namespace fcg::tour {
 
-void to_json(nlohmann::json& j, const Participant& p) { j = {{"id", p.id}, {"engine", p.engine}}; }
+void to_json(nlohmann::json& j, const Participant& p) {
+    j = {{"id", p.id}, {"engine", p.engine}};
+    if (!p.active) j["active"] = false;
+    if (p.replaced_by) j["replaced_by"] = *p.replaced_by;
+}
 
 void from_json(const nlohmann::json& j, Participant& p) {
     j.at("id").get_to(p.id);
     j.at("engine").get_to(p.engine);
+    p.active = j.value("active", true);
+    if (j.contains("replaced_by")) p.replaced_by = j.at("replaced_by").get<int>();
 }
 
 void to_json(nlohmann::json& j, const BookFingerprint& b) { j = {{"size", b.size}, {"crc32", b.crc32}}; }

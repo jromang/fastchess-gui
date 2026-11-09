@@ -38,10 +38,30 @@ GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
     // A resumed match: its games and statistics so far, as if they had just been played.
     std::lock_guard<std::mutex> lock(data_mutex_);
     for (const auto& result : state.results()) {
+        if (result.voided) continue;
         pending_games_.push_back(makeRecord(result));
         countLoss(result);
     }
     if (match_) pending_stats_ = state.pairHistory(id_a_, id_b_);
+}
+
+void GuiObserver::updateParticipants(const tour::TournamentSpec& spec) {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    for (const auto& p : spec.participants) {
+        if (index_.count(p.id)) continue;
+        index_[p.id] = static_cast<uint16_t>(names_.size());
+        names_.push_back(p.engine.name);
+    }
+    totals_.resize(names_.size());
+}
+
+std::vector<GameRecord> GuiObserver::records(const std::vector<tour::GameResult>& results) {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    std::vector<GameRecord> out;
+    for (const auto& r : results) {
+        if (!r.voided) out.push_back(makeRecord(r));
+    }
+    return out;
 }
 
 const std::string& GuiObserver::name(std::size_t index) const {

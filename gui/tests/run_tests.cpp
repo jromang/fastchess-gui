@@ -258,3 +258,47 @@ TEST_CASE("a round robin of three engines plays every pairing and shows every na
     CHECK(summary->spec.name == "Three randoms");
     CHECK(summary->finished);
 }
+
+TEST_CASE("a finished round robin extended by a cycle resumes to play exactly the new games") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+
+    const auto root = fs::temp_directory_path() / "fcg-run-tests-edit";
+    fs::remove_all(root);
+    auto engines = randomEngines();
+    engines.push_back(engines[0]);
+    engines[2].name = "random-c";
+
+    MatchSetup setup   = randomSetup(0);
+    setup.format       = TournamentFormat::RoundRobin;
+    setup.participants = {{"random-a"}, {"random-b"}, {"random-c"}};
+    const auto cores   = topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}});
+
+    fs::path dir;
+    {
+        Harness h;
+        REQUIRE(h.run.start(setup, engines, cores, root).empty());
+        REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
+        CHECK(h.games.size() == 6);
+        dir = h.run.tournament()->dir();
+
+        tour::Edit more;
+        more.kind   = tour::Edit::Kind::SetCycles;
+        more.cycles = 2;
+        CHECK(h.run.applyEdit(more).empty());
+        CHECK(h.run.info().total_games == 12);
+    }
+
+    const auto unfinished = unfinishedMatch(root);
+    REQUIRE(unfinished);
+    CHECK(unfinished->played == 6);
+    CHECK(unfinished->total == 12u);
+
+    Harness h;
+    REQUIRE(h.run.resume(dir).empty());
+    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
+    CHECK(h.run.error().empty());
+    CHECK(h.games.size() == 12);
+}

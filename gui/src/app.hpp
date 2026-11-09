@@ -74,7 +74,7 @@ class App {
     };
 
     enum class Page { Home, NewMatch, Tournament, Engines, Log, Settings };
-    enum class Tab { Overview, Standings, Live, Games };
+    enum class Tab { Overview, Standings, Schedule, Live, Games };
 
     // shell
     void drawShell();
@@ -110,6 +110,9 @@ class App {
     void drawStandings();
     void drawStandingsTable(bool compact);
     void drawCrosstable();
+    void drawSchedule();
+    void drawEditPanel();
+    void applyTournamentEdit(const tour::Edit& edit);
 
     // setup sections
     void setupFormat();
@@ -212,6 +215,17 @@ class App {
     int crosstable_mode_ = 0;                             // 0 score, 1 wins/draws/losses, 2 Elo difference
     std::optional<std::pair<int, int>> crosstable_cell_;  // participant ids (row, column)
     std::string template_name_;
+
+    // Schedule tab and edits.
+    int edit_kind_ = 0;        // tour::Edit::Kind
+    std::string edit_engine_;  // engine list entry to add or bring in
+    bool edit_catch_up_     = true;
+    int edit_participant_   = -1;  // participant id
+    bool edit_void_played_  = false;
+    int edit_cycles_        = 0;
+    int edit_replay_filter_ = 0;  // 0 losses on time and crashes, 1 every game of a participant
+    std::string edit_message_;
+    bool edit_error_ = false;
 
     // Shell.
     Page page_ = Page::Home;

@@ -111,6 +111,7 @@ void App::frame() {
             tab_request_ = w == "live"        ? Tab::Live
                            : w == "games"     ? Tab::Games
                            : w == "standings" ? Tab::Standings
+                           : w == "schedule"  ? Tab::Schedule
                                               : Tab::Overview;
         }
         focus_done_ = true;

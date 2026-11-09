@@ -30,6 +30,7 @@
 #include <types/engine_config.hpp>
 #include <types/match_data.hpp>
 
+#include "edits.hpp"
 #include "journal.hpp"
 #include "model.hpp"
 #include "openings.hpp"
@@ -65,6 +66,10 @@ struct GameResult {
     PgnSpan pgn_chessbase;    // games-chessbase.pgn
     int64_t finished_at = 0;  // unix time, milliseconds
 
+    // No longer counted (replay requested, participant replaced or withdrawn); kept to be shown as such.
+    bool voided = false;
+    std::string void_reason;
+
     [[nodiscard]] uint64_t number() const noexcept { return uint64_t{encounter} * 2 + game; }
 
     // Score of participant `id` in this game: 1, 0.5 or 0.
@@ -83,6 +88,14 @@ struct Recorded {
     std::optional<fastchess::Stats> pair;
 };
 
+// Where a game of the schedule stands.
+enum class GameStatus { Pending, Running, Done, Dropped };
+
+struct ScheduleRow {
+    Encounter encounter;
+    GameStatus status[2] = {GameStatus::Pending, GameStatus::Pending};
+};
+
 class TournamentState {
    public:
     // Creates the folder (which must not hold a tournament yet) and its tournament.json. Throws on error.
@@ -94,6 +107,16 @@ class TournamentState {
 
     [[nodiscard]] static bool isTournament(const std::filesystem::path& dir);
 
+    // Replays journal events on settings and schedule only, touching no file (for a summary of a tournament that
+    // may be running). `spec` receives the participants as edits left them.
+    struct Replayed {
+        uint64_t played = 0;  // results that count
+        std::optional<uint64_t> total;
+        bool finished = false;
+        std::string finish_reason;
+    };
+    [[nodiscard]] static Replayed replay(const std::vector<nlohmann::json>& events, TournamentSpec& spec);
+
     TournamentState(const TournamentState&)            = delete;
     TournamentState& operator=(const TournamentState&) = delete;
 
@@ -104,6 +127,18 @@ class TournamentState {
 
     // Number of games the tournament plays, nullopt for a match without a game limit.
     [[nodiscard]] std::optional<uint64_t> totalGames() const;
+
+    // --- edits (round robin and gauntlet; voiding games works for a match too) ---
+
+    // What `edit` would change, without making it; Impact::error says why it cannot be made.
+    [[nodiscard]] Impact preview(const Edit& edit) const;
+
+    // Makes `edit`: journaled, then applied; the runner sees the new schedule at its next claim. Throws with a
+    // readable message when the edit cannot be made.
+    void applyEdit(const Edit& edit);
+
+    // The whole schedule with the status of each game (empty for a match).
+    [[nodiscard]] std::vector<ScheduleRow> scheduleRows() const;
 
     // Things the user should know about, found when the tournament was opened (a changed opening book...).
     [[nodiscard]] const std::vector<std::string>& warnings() const noexcept { return warnings_; }
@@ -130,7 +165,7 @@ class TournamentState {
 
     // --- any thread ---
 
-    // Scored games, in the order they finished.
+    // Scored games, in the order they finished, voided ones included (flagged).
     [[nodiscard]] std::vector<GameResult> results() const;
 
     // Statistics of `a` against `b` from a's point of view, counted on complete encounters only (both games),
@@ -146,6 +181,17 @@ class TournamentState {
     void load();  // replays the journal
     // Returns true when the result completes its encounter.
     bool apply(const GameResult& result);
+    bool count(std::size_t index);                 // adds results_[index] to the statistics
+    void applyEvent(const nlohmann::json& event);  // an edit event, journal replay or new; mutex_ held
+
+    // What an edit event does to participants, schedule and results, on the given state (members or copies).
+    static void effects(const nlohmann::json& event, TournamentSpec& spec, Schedule& schedule,
+                        std::vector<GameResult>& results, std::set<uint64_t>& done, std::set<uint64_t>& dropped);
+    void rebuildStats();
+    void rebuildOpen();
+    [[nodiscard]] bool hasWorkLocked() const;
+    [[nodiscard]] bool gamesLeft() const;  // games to claim, finished or not; mutex_ held
+    [[nodiscard]] uint64_t totalLocked() const;
     void checkSprt();
     [[nodiscard]] GameTask makeTask(uint32_t encounter, int game);
     [[nodiscard]] bool done(uint32_t encounter, int game) const;
@@ -170,7 +216,9 @@ class TournamentState {
     std::map<uint32_t, std::size_t> half_;                   // encounter -> index in results_ of its first game
     std::map<std::pair<int, int>, fastchess::Stats> pairs_;  // (lower id, higher id), lower id's point of view
 
-    uint32_t next_encounter_ = 0;                // first encounter never started
+    std::set<uint64_t> dropped_;   // games that will not be played (withdrawn participant, voided without replay)
+    std::set<uint64_t> running_;   // claimed by the runner, not finished
+    uint32_t next_encounter_ = 0;  // first encounter never started
     std::deque<std::pair<uint32_t, int>> open_;  // games of started encounters still to play
 
     fastchess::SPRT sprt_;
