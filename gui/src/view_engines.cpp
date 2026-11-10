@@ -431,6 +431,41 @@ void App::drawEngines() {
         ImGui::TextDisabled("%s", TR("Starts the engine, measures how fast it answers and checks one move."));
     }
 
+    // Quick test: a short match, through the tournament code.
+    ImGui::BeginDisabled(run_.running());
+    if (ImGui::Button(quick_test_engine_ == e.name ? TR("Testing…") : TR("Quick test")))
+        startQuickTest(selected_engine_);
+    ImGui::EndDisabled();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("%s", run_.running() ? TR("After the running match.")
+                                               : TR("10 games at 10+0.1 from 5 positions, to see before a long "
+                                                    "tournament whether it loses on time, crashes, plays an illegal "
+                                                    "move or uses its clock badly."));
+    }
+    ImGui::SameLine();
+    ImGui::TextUnformatted(TR("against"));
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(160.0f * ImGui::GetFontSize() / 16.0f);
+    if (ImGui::BeginCombo("##test_opponent",
+                          quick_test_opponent_.empty() ? TR("itself") : quick_test_opponent_.c_str())) {
+        if (ImGui::Selectable(TR("itself"), quick_test_opponent_.empty())) quick_test_opponent_.clear();
+        for (const auto& o : engines_) {
+            if (o.name != e.name && ImGui::Selectable(o.name.c_str(), o.name == quick_test_opponent_)) {
+                quick_test_opponent_ = o.name;
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if (e.test_ok >= 0) {
+        ImGui::PushStyleColor(ImGuiCol_Text, e.test_ok ? ui::GOOD : ui::WARN);
+        ImGui::TextWrapped("%s %s", e.test_ok ? "✓" : "!", e.test_message.c_str());
+        ImGui::PopStyleColor();
+        if (!e.test_when.empty()) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("(%s)", e.test_when.c_str());
+        }
+    }
+
     ImGui::EndDisabled();
     if (in_use) ImGui::TextDisabled("%s", TR("Engine used by the running match: changes are locked."));
 
@@ -650,6 +685,55 @@ void App::startCheck(int index) {
     check_index_     = index;
     const auto entry = engines_[index];
     check_           = std::async(std::launch::async, [entry] { return checkEngine(entry); });
+}
+
+void App::startQuickTest(int index) {
+    if (index < 0 || index >= static_cast<int>(engines_.size()) || run_.running()) return;
+    // Only the last quick test is kept: its result stays with the engine.
+    const auto dir = storage_.root() / "tests";
+    std::error_code ec;
+    for (const auto& entry : fs::directory_iterator(dir, ec)) {
+        if (entry.is_directory(ec)) fs::remove_all(entry.path(), ec);
+    }
+
+    auto engines     = engines_;
+    const auto setup = quickTestSetup(engines_[index], quick_test_opponent_, dir / "quick-test.epd", engines);
+    start_error_     = run_.start(setup, engines, topology_, dir);
+    if (!start_error_.empty()) {
+        Console::instance().add(trf("Cannot start the quick test: {}", start_error_), true);
+        return;
+    }
+    resetRunView();
+    quick_test_engine_ = engines_[index].name;
+    tab_request_       = Tab::Live;
+    Console::instance().add(trf("Quick test of {} started.", quick_test_engine_));
+}
+
+void App::finishQuickTest() {
+    const auto name = std::exchange(quick_test_engine_, {});
+    const auto* t   = run_.tournament();
+    const auto it   = std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == name; });
+    if (!t || it == engines_.end()) return;
+
+    QuickTestReport report;
+    if (!run_.error().empty()) {
+        report.message = trf("Error: {}", run_.error());
+    } else if (run_.stoppedByUser()) {
+        report.message = TR("Stopped before the end.");
+    } else {
+        const auto totals = totals_.empty() ? EngineTotals{} : totals_[0];  // [0]: the engine tested, A
+        report            = quickTestReport(*t, t->spec().participants.at(0).id, totals.time_ms, totals.moves);
+    }
+    it->test_ok      = report.ok ? 1 : 0;
+    it->test_message = report.message;
+    char when[32];
+    const auto now = std::time(nullptr);
+    std::strftime(when, sizeof(when), "%Y-%m-%d %H:%M", std::localtime(&now));
+    it->test_when = when;
+    storage_.saveEngines(engines_);
+
+    finish_message_ = trf("{}: {}", name, report.message);
+    Console::instance().add(finish_message_, !report.ok);
 }
 
 void App::pollCheck() {

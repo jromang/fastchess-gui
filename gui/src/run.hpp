@@ -82,6 +82,21 @@ void configureFastchess(const tour::TournamentSpec& spec);
 // Chess960 starting position number n (0-959, Scharnagl's numbering: 518 is the usual one), as a FEN.
 [[nodiscard]] std::string chess960Fen(int n);
 
+// A quick test of `engine`: a short match against `opponent` (the engine itself when empty, under another name) at
+// 10+0.1, from a few positions written to `book`, every game played twice. `engines` receives the library to start
+// it with (a copy of the engine for a match against itself).
+[[nodiscard]] MatchSetup quickTestSetup(const EngineEntry& engine, const std::string& opponent,
+                                        const std::filesystem::path& book, std::vector<EngineEntry>& engines);
+
+// What a quick test showed about the engine of participant `id`: its result, its losses on time, crashes and
+// illegal moves, and the share of its clock it used. `time_used_ms` and `moves` are its totals.
+struct QuickTestReport {
+    bool ok = false;
+    std::string message;
+};
+[[nodiscard]] QuickTestReport quickTestReport(const tour::TournamentState& tournament, int id, uint64_t time_used_ms,
+                                              uint64_t moves);
+
 // How deep the lines of a Polyglot book are followed when the setup does not say (book_plies -1).
 inline constexpr int POLYGLOT_PLIES = 8;
 

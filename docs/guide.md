@@ -29,6 +29,11 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   a different network file…). Entries are named after the UCI `id name` when first added and can be renamed.
 - **Check** starts the engine, measures how fast it answers `uci` and `isready`, and has it play one move. The
   result (✓ or the error) stays next to the engine with its date.
+- **Quick test** plays a short match against the engine itself or another one: 10 games at 10+0.1 from 5 positions
+  (one with an en passant capture), through the same code as a tournament, shown in its workspace while it plays.
+  The result stays next to the engine: its score, its losses on time, crashes and illegal moves, and the share of
+  its clock it used, which tells an engine that plays far too fast or too close to the flag. Only the last quick test
+  is kept, in `tests/` in the profile (with the engine logs of its games that ended badly).
 - **Groups**: free labels separated by commas (`pool A`, `CCRL 40/15`…). The list can be filtered by group or
   searched, and a group can be added to a tournament in one click.
 - **Reference Elo**: the engine's rating on a list you trust. A tournament or the rating list can be anchored on it.

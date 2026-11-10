@@ -465,6 +465,83 @@ RunController::~RunController() {
     }
 }
 
+MatchSetup quickTestSetup(const EngineEntry& engine, const std::string& opponent, const fs::path& book,
+                          std::vector<EngineEntry>& engines) {
+    // Five openings, one with an en passant capture available: every game sets a position with moves.
+    static constexpr const char* POSITIONS[] = {
+        "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq -",
+        "rnbqkb1r/pppp1ppp/5n2/4p3/2P5/2N5/PP1PPPPP/R1BQKBNR w KQkq -",
+        "r1bqkbnr/pppp1ppp/2n5/1B2p3/4P3/5N2/PPPP1PPP/RNBQK2R b KQkq -",
+        "rnbqkb1r/ppp1pppp/5n2/3p4/2PP4/8/PP2PPPP/RNBQKBNR w KQkq -",
+        "rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6",
+    };
+    {
+        std::error_code ec;
+        fs::create_directories(book.parent_path(), ec);
+        std::ofstream out(book, std::ios::binary | std::ios::trunc);
+        for (const auto* p : POSITIONS) out << p << '\n';
+    }
+
+    MatchSetup s;
+    s.format   = TournamentFormat::Match;
+    s.name     = trf("Quick test: {}", engine.name);
+    s.engine_a = engine.name;
+    if (opponent.empty() || opponent == engine.name) {
+        auto copy = engine;
+        copy.name = engine.name + " (2)";
+        engines.push_back(copy);
+        s.engine_b = copy.name;
+    } else {
+        s.engine_b = opponent;
+    }
+    s.mode             = MatchMode::Fixed;
+    s.fixed_games      = static_cast<int>(2 * std::size(POSITIONS));
+    s.limit            = LimitKind::Time;
+    s.tc_base_s        = 10;
+    s.tc_inc_s         = 0.1;
+    s.concurrency_auto = false;
+    s.concurrency      = 2;
+    s.book             = book.string();
+    s.book_random      = false;
+    s.recover          = true;  // a crash is reported, the test goes on
+    s.maxmoves_enabled = true;  // games that would go on forever end, as draws
+    s.maxmoves         = 150;
+    s.notify           = false;
+    s.pgn_event        = s.name;
+    return s;
+}
+
+QuickTestReport quickTestReport(const tour::TournamentState& tournament, int id, uint64_t time_used_ms,
+                                uint64_t moves) {
+    int wins = 0, draws = 0, losses = 0, timeouts = 0, crashes = 0, illegal = 0, games = 0;
+    for (const auto& r : tournament.results()) {
+        if (r.voided || (r.white != id && r.black != id)) continue;
+        games++;
+        const double score = r.scoreOf(id);
+        (score == 1 ? wins : score == 0 ? losses : draws)++;
+        if (score != 0) continue;
+        using T = fastchess::MatchTermination;
+        if (r.termination == T::TIMEOUT) timeouts++;
+        if (r.termination == T::DISCONNECT || r.termination == T::STALL) crashes++;
+        if (r.termination == T::ILLEGAL_MOVE) illegal++;
+    }
+
+    // The clock it had: the base time of every game, and the increment of every move it made.
+    const auto* p      = tournament.spec().participant(id);
+    const auto tc      = p ? p->engine.limit.tc : fastchess::TimeControl::Limits{};
+    const double clock = static_cast<double>(games) * static_cast<double>(tc.time) +
+                         static_cast<double>(moves) * static_cast<double>(tc.increment);
+    const double share = clock > 0 ? 100.0 * static_cast<double>(time_used_ms) / clock : 0;
+
+    QuickTestReport report;
+    report.ok = games > 0 && timeouts == 0 && crashes == 0 && illegal == 0;
+    report.message =
+        trf("{} games +{} ={} -{} · {} lost on time, {} crashes, {} illegal moves · {:.0f} % of its clock "
+            "used",
+            games, wins, draws, losses, timeouts, crashes, illegal, share);
+    return report;
+}
+
 std::string RunController::start(const MatchSetup& setup, const std::vector<EngineEntry>& engines,
                                  const CpuTopology& topology, const fs::path& runs_root) {
     if (state_ == State::Running) return TR("A match is already running.");

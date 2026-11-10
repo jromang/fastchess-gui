@@ -173,6 +173,8 @@ class App {
     void startProbe(int index);
     void pollProbe();
     void startCheck(int index);
+    void startQuickTest(int index);
+    void finishQuickTest();
     void pollCheck();
     void importEngines(const ImportResult& imported);
     [[nodiscard]] bool engineInUse(const std::string& name) const;
@@ -281,6 +283,8 @@ class App {
     bool drop_mirrored_   = false;  // the cleaned copy also leaves out mirrored positions
 
     // Engines view.
+    std::string quick_test_engine_;    // the engine of the quick test running, empty when none
+    std::string quick_test_opponent_;  // empty: the engine itself
     int selected_engine_ = -1;
     std::future<ProbeResult> probe_;
     int probe_index_ = -1;

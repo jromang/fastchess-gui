@@ -515,3 +515,33 @@ TEST_CASE("headless: the tournament is broadcast over TLCS and as live files") {
     CHECK(text.find("\"finished\":true") != std::string::npos);
     CHECK(fs::is_regular_file(profile / "live" / "standings.html"));
 }
+
+TEST_CASE("quick test: ten games against the engine itself, then a report on its health and its clock") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+
+    const auto root = fs::temp_directory_path() / "fcg-run-tests-quick";
+    fs::remove_all(root);
+
+    auto library = randomEngines();
+    auto engines = library;
+    const auto setup = quickTestSetup(library[0], "", root / "quick-test.epd", engines);
+    REQUIRE(engines.size() == 3);  // a copy of the engine, to play itself
+    CHECK(setup.engine_b == "random-a (2)");
+    CHECK(fs::is_regular_file(root / "quick-test.epd"));
+
+    Harness h;
+    REQUIRE(h.run.start(setup, engines, topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}}), root).empty());
+    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 60s));
+    CHECK(h.run.error().empty());
+    CHECK(h.games.size() == 10);
+
+    const auto* t     = h.run.tournament();
+    const auto totals = h.run.observer()->totals();
+    const auto report = quickTestReport(*t, t->spec().participants.at(0).id, totals.at(0).time_ms, totals.at(0).moves);
+    CHECK(report.ok);
+    CHECK(report.message.find("10 games") != std::string::npos);
+    CHECK(report.message.find("0 lost on time, 0 crashes, 0 illegal moves") != std::string::npos);
+}

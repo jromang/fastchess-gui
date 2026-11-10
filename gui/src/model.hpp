@@ -54,6 +54,11 @@ struct EngineEntry {
     std::string check_message;
     std::string check_when;
 
+    // Last quick test (a short match): -1 never, 0 something went wrong, 1 passed.
+    int test_ok = -1;
+    std::string test_message;
+    std::string test_when;
+
     ProgramState program_state = ProgramState::Unknown;  // not saved: refreshProgram() finds it out
 
     [[nodiscard]] const std::string* option(const std::string& key) const {
@@ -89,7 +94,7 @@ struct EngineEntry {
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineEntry, name, cmd, args, dir, restart, protocol, options, program,
                                                 id_name, id_author, uci_options, groups, elo, check_ok, check_message,
-                                                check_when)
+                                                check_when, test_ok, test_message, test_when)
 
 // An opening book of the library: registered once, chosen by name in the setup.
 struct BookEntry {

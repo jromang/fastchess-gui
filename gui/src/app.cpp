@@ -356,6 +356,10 @@ void App::pollRun() {
 }
 
 void App::onRunFinished() {
+    if (!quick_test_engine_.empty()) {
+        finishQuickTest();
+        return;
+    }
     const auto& info  = run_.info();
     const auto error  = run_.error();
     const auto played = stats_.sum();
