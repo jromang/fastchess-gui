@@ -496,6 +496,13 @@ TEST_SUITE("Uci Engine Communication Tests") {
         const auto res = process.readOutput(output, "bestmove", std::chrono::milliseconds(0));
 
         CHECK(res.code == engine::process::Status::ERR);
+
+        // The crash shows on stdout as soon as the engine closes it, a moment before the process is gone and
+        // writes fail: wait for it to be gone.
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while (process.alive().code == engine::process::Status::OK && std::chrono::steady_clock::now() < deadline) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
         CHECK(process.writeInput("stop\n").code == engine::process::Status::ERR);
         CHECK(process.writeInput("quit\n").code == engine::process::Status::ERR);
     }
