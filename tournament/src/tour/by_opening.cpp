@@ -13,6 +13,28 @@ double whiteScore(const GameResult& r) { return r.result == "1-0" ? 1.0 : r.resu
 
 }  // namespace
 
+ClassifiedOpening classify(const fastchess::book::Opening& opening, bool chess960) {
+    ClassifiedOpening out;
+    chess::Board board;
+    board.set960(chess960);
+    board.setFen(opening.fen_epd);
+    const auto known = [&] {
+        if (chess960) return;
+        const auto o = fastchess::pgn::EPD_TO_OPENING.find(board.getFen(false));
+        if (o == fastchess::pgn::EPD_TO_OPENING.end()) return;
+        out.eco  = std::string(o->second.eco);
+        out.name = std::string(o->second.name);
+    };
+    known();
+    for (const auto& m : opening.moves) {
+        out.moves.push_back(chess::uci::moveToUci(m, chess960));
+        board.makeMove<true>(m);
+        known();
+    }
+    out.fen = board.getFen(false);
+    return out;
+}
+
 std::vector<OpeningStats> resultsByOpening(const std::vector<GameResult>& results,
                                            const std::map<uint32_t, fastchess::book::Opening>& openings,
                                            bool chess960) {
@@ -30,34 +52,15 @@ std::vector<OpeningStats> resultsByOpening(const std::vector<GameResult>& result
         const auto it = openings.find(r.encounter);
         if (it == openings.end()) continue;
 
-        chess::Board board;
-        board.set960(chess960);
-        board.setFen(it->second.fen_epd);
-        const fastchess::pgn::Opening* known = nullptr;
-        const auto classify                  = [&] {
-            if (chess960) return;
-            const auto o = fastchess::pgn::EPD_TO_OPENING.find(board.getFen(false));
-            if (o != fastchess::pgn::EPD_TO_OPENING.end()) known = &o->second;
-        };
-        classify();
-        std::vector<std::string> moves;
-        for (const auto& m : it->second.moves) {
-            moves.push_back(chess::uci::moveToUci(m, chess960));
-            board.makeMove<true>(m);
-            classify();
-        }
-        auto fen = board.getFen(false);
-
-        const auto [pos, added] = index.emplace(fen, out.size());
+        auto c                  = classify(it->second, chess960);
+        const auto [pos, added] = index.emplace(c.fen, out.size());
         if (added) {
             OpeningStats s;
-            s.fen      = std::move(fen);
+            s.fen      = std::move(c.fen);
             s.book_fen = it->second.fen_epd;
-            s.moves    = std::move(moves);
-            if (known) {
-                s.eco  = std::string(known->eco);
-                s.name = std::string(known->name);
-            }
+            s.moves    = std::move(c.moves);
+            s.eco      = std::move(c.eco);
+            s.name     = std::move(c.name);
             out.push_back(std::move(s));
         }
         auto& s = out[pos->second];

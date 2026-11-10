@@ -262,6 +262,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
          "ratings with 95 % intervals.",
          "Alle Partien aller Turniere und der importierten PGN-Dateien, Engines nach Namen; "
          "Maximum-Likelihood-Wertungen mit 95-%-Intervallen."},
+        {"Every game pair of a round plays the same opening, the next of the book for each round: no engine gets easier openings than the others of its round. Otherwise each pair takes the next one.", "Alle Partiepaare einer Runde spielen dieselbe Eröffnung, für jede Runde die nächste des Buchs: Keine Engine bekommt leichtere Eröffnungen als die anderen ihrer Runde. Sonst nimmt jedes Paar die nächste."},
         {"Every line exchanged with the engines during this game:\n{}",
          "Jede mit den Engines ausgetauschte Zeile dieser Partie:\n{}"},
         {"Every line exchanged with the engines, in logs/ in the tournament folder, opened from the Games tab. Always "
@@ -714,6 +715,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
          "Die Wertung der gewählten Engines nach jedem gespielten Turnier: die Versionen einer Engine nebeneinander."},
         {"The same match with a new engine A, e.g. the next version: every other setting stays.",
          "Dasselbe Match mit einer neuen Engine A, z. B. der nächsten Version: alle anderen Einstellungen bleiben."},
+        {"The same opening for every pair of a round", "Dieselbe Eröffnung für alle Paare einer Runde"},
         {"The share of drawn games expected between the two engines, at this time control.",
          "Der erwartete Anteil an Remispartien zwischen den beiden Engines bei dieser Bedenkzeit."},
         {"The spread of the advantage the openings give, in Elo: what playing each opening twice, colours reversed, "
@@ -838,6 +840,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"games at least", "Partien mindestens"},
         {"illegal position", "illegale Stellung"},
         {"illegal positions", "illegale Stellungen"},
+        {"initial position", "Ausgangsstellung"},
         {"itself", "sich selbst"},
         {"live.pgn: the games in progress · standings.html · tournament.json (for scripts)",
          "live.pgn: die laufenden Partien · standings.html · tournament.json (für Skripte)"},

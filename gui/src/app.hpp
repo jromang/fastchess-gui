@@ -345,6 +345,10 @@ class App {
     MoveChart replay_chart_ = MoveChart::Eval;
 
     // SPRT calculator: its own copy of the bounds, applied to the setup on request.
+    // Schedule tab: the names of the openings its encounters started with, by encounter.
+    const tour::TournamentState* schedule_openings_for_ = nullptr;
+    std::map<uint32_t, std::string> schedule_openings_;
+
     bool sprt_calc_open_  = false;
     bool open_statistics_ = false;  // --focus statistics: the match's Statistics section opens
     MatchSetup sprt_calc_;

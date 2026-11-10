@@ -5,6 +5,8 @@
 
 #include <imgui.h>
 
+#include <tour/by_opening.hpp>
+
 #include "app.hpp"
 #include "console.hpp"
 #include "i18n.hpp"
@@ -100,6 +102,31 @@ void App::drawSchedule() {
         return p ? p->engine.name : "?";
     };
 
+    // The openings the encounters started with, named once; with one opening per round, a round's for the encounters
+    // of it still to play.
+    if (schedule_openings_for_ != t) {
+        schedule_openings_for_ = t;
+        schedule_openings_.clear();
+    }
+    const bool frc = spec.conditions.variant == fastchess::VariantType::FRC;
+    for (const auto& [encounter, opening] : t->encounterOpenings()) {
+        if (schedule_openings_.count(encounter)) continue;
+        const auto c      = tour::classify(opening, frc);
+        std::string label = c.eco.empty() ? "" : c.eco + " " + c.name;
+        if (label.empty()) {
+            for (const auto& m : c.moves) label += (label.empty() ? "" : " ") + m;
+        }
+        schedule_openings_[encounter] = label.empty() ? TR("initial position") : label;
+    }
+    std::map<std::pair<uint32_t, uint32_t>, std::string> round_opening;
+    if (spec.opening_per_round) {
+        for (const auto& row : rows) {
+            if (const auto it = schedule_openings_.find(row.encounter.index); it != schedule_openings_.end()) {
+                round_opening.emplace(std::pair{row.encounter.cycle, row.encounter.round}, it->second);
+            }
+        }
+    }
+
     // Results of the games, by game number, to show them in the list.
     std::map<uint64_t, std::string> result_of;
     for (const auto& r : t->results()) {
@@ -183,6 +210,17 @@ void App::drawSchedule() {
             if (row.status[g] == tour::GameStatus::Done && ImGui::IsItemHovered()) {
                 ImGui::SetTooltip("%s", TR("Right click: play again or void this game."));
             }
+        }
+        const std::string* opening = nullptr;
+        if (const auto it = schedule_openings_.find(row.encounter.index); it != schedule_openings_.end()) {
+            opening = &it->second;
+        } else if (const auto r = round_opening.find({row.encounter.cycle, row.encounter.round});
+                   r != round_opening.end()) {
+            opening = &r->second;
+        }
+        if (opening) {
+            ImGui::SameLine(px(380) + 2 * px(90) + px(10));
+            ImGui::TextDisabled("%s", opening->c_str());
         }
         ImGui::PopID();
     }

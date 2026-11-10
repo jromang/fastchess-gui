@@ -454,8 +454,9 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     spec.rounds = setup.format == TournamentFormat::Swiss ? std::max(1, setup.cycles) : 0;
     spec.seeds  = std::max(1, setup.seeds);
     if (match) spec.max_games = t.rounds >= UNBOUNDED_ROUNDS ? 0 : t.rounds * t.games;
-    spec.log_every_game = setup.log_every_game;
-    spec.conditions     = t;
+    spec.log_every_game    = setup.log_every_game;
+    spec.opening_per_round = setup.opening_per_round && !match && setup.format != TournamentFormat::Knockout;
+    spec.conditions        = t;
     for (std::size_t i = 0; i < run.engines.size(); ++i) {
         tour::Participant p;
         p.id     = static_cast<int>(i);

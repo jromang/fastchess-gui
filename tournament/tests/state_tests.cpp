@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <set>
 
 #include <tour/journal.hpp>
@@ -244,4 +245,72 @@ TEST_CASE("state: a tournament written before a PGN setting existed still opens"
     std::ofstream(dir / "tournament.json", std::ios::binary | std::ios::trunc) << spec.dump(2);
     const auto state = TournamentState::open(dir);
     CHECK_FALSE(state->spec().conditions.pgn.track_wdl);
+}
+
+TEST_CASE("state: one opening per round, the next of the book for each round, kept on reopening") {
+    const auto dir  = freshDir("state-per-round");
+    const auto book = dir.parent_path() / "fcg-tour-per-round.epd";
+    {
+        std::ofstream out(book);
+        for (const auto* fen : {"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+                                "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1",
+                                "rnbqkbnr/pppppppp/8/8/2P5/8/PP1PPPPP/RNBQKBNR b KQkq - 0 1",
+                                "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1"}) {
+            out << fen << "\n";
+        }
+    }
+    TournamentSpec spec;
+    spec.name                      = "per round";
+    spec.format                    = Format::RoundRobin;
+    spec.opening_per_round         = true;
+    spec.conditions.opening.file   = book.string();
+    spec.conditions.opening.format = fastchess::FormatType::EPD;
+    spec.conditions.opening.order  = fastchess::OrderType::SEQUENTIAL;
+    spec.conditions.opening.start  = 1;
+    for (int i = 0; i < 4; ++i) {
+        Participant p;
+        p.id          = i;
+        p.engine.name = std::string(1, char('A' + i));
+        spec.participants.push_back(p);
+    }
+
+    // 4 engines: 3 rounds of 2 encounters. Half of them played before a reopening.
+    std::map<uint32_t, std::set<std::string>> by_round;
+    const auto play = [&](TournamentState& state, int games) {
+        for (int i = 0; i < games; ++i) {
+            auto task = state.claimNext();
+            REQUIRE(task);
+            by_round[task->encounter.round].insert(task->opening.fen_epd);
+            state.complete(*task, gameData(*task, "1/2-1/2"));
+        }
+    };
+    {
+        auto state = TournamentState::create(dir, spec);
+        play(*state, 6);
+    }
+    auto state = TournamentState::open(dir);
+    play(*state, 6);
+    CHECK(state->finished());
+
+    REQUIRE(by_round.size() == 3);
+    std::set<std::string> all;
+    for (const auto& [round, fens] : by_round) {
+        CHECK(fens.size() == 1);  // every encounter of the round, the same
+        all.insert(*fens.begin());
+    }
+    CHECK(all.size() == 3);  // a new one for each round
+    CHECK(by_round[1].count("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1") == 1);
+
+    // Without the rule, each encounter takes the next one.
+    spec.opening_per_round = false;
+    const auto other       = freshDir("state-per-encounter");
+    auto plain             = TournamentState::create(other, spec);
+    std::set<std::string> first_round;
+    for (int i = 0; i < 4; ++i) {
+        auto task = plain->claimNext();
+        REQUIRE(task);
+        if (task->encounter.round == 1) first_round.insert(task->opening.fen_epd);
+        plain->complete(*task, gameData(*task, "1/2-1/2"));
+    }
+    CHECK(first_round.size() == 2);
 }

@@ -73,6 +73,9 @@ struct TournamentSpec {
     FileFingerprint book;
 
     bool log_every_game = false;  // keep the engine log of every game, not only of those that end badly
+    // Round robin, gauntlet, Swiss: every encounter of a round (in a cycle) plays the same opening, the next one of
+    // the book for each new round, so that no engine gets easier openings than the others of its round.
+    bool opening_per_round = false;
 
     [[nodiscard]] const Participant* participant(int id) const {
         for (const auto& p : participants) {

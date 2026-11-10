@@ -172,11 +172,12 @@ struct MatchSetup {
     bool affinity         = false;
 
     std::string book;
-    bool book_random = true;
-    int book_plies   = -1;
-    int book_start   = 1;
-    bool chess960    = false;  // Fischer random; without a book, the 960 starting positions
-    uint64_t seed    = 0;      // 0 = new seed for every run
+    bool book_random       = true;
+    int book_plies         = -1;
+    int book_start         = 1;
+    bool chess960          = false;  // Fischer random; without a book, the 960 starting positions
+    bool opening_per_round = false;  // round robin, gauntlet, Swiss: one opening for every pair of a round
+    uint64_t seed          = 0;      // 0 = new seed for every run
 
     bool draw_enabled   = false;
     int draw_movenumber = 40;
@@ -229,7 +230,7 @@ struct MatchSetup {
     format, name, engine_a, engine_b, participants, cycles, seeds, common_hash, common_threads, mode, fixed_games, \
         sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, sprt_draw_ratio, sprt_rms_bias,   \
         limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto, concurrency,   \
-        affinity, book, book_random, book_plies, book_start, chess960, seed
+        affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed
 #define FCG_MATCH_SETUP_FIELDS_2                                                                               \
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score, \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,  \

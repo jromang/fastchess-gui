@@ -219,6 +219,9 @@ class TournamentState {
     [[nodiscard]] bool done(uint32_t encounter, int game) const;
     [[nodiscard]] bool frc() const noexcept;
     const OpeningSource& openings();  // loads the book on first use; mutex_ held
+    // The opening a new encounter starts with: the next of the book, or its round's (spec_.opening_per_round).
+    fastchess::book::Opening openingFor(const Encounter& encounter);
+    [[nodiscard]] bool openingPerRound() const noexcept;
 
     // What the last edit changed, to undo it (see canUndo()).
     struct UndoPoint {
@@ -243,8 +246,10 @@ class TournamentState {
     std::unique_ptr<PgnFile> pgn_chessbase_;
 
     std::vector<GameResult> results_;
-    std::set<uint64_t> done_;                                // game numbers
-    std::map<uint32_t, fastchess::book::Opening> started_;   // encounter -> opening it started with
+    std::set<uint64_t> done_;                               // game numbers
+    std::map<uint32_t, fastchess::book::Opening> started_;  // encounter -> opening it started with
+    // spec_.opening_per_round: (cycle, round) -> the opening of its encounters.
+    std::map<std::pair<uint32_t, uint32_t>, fastchess::book::Opening> round_openings_;
     std::map<uint32_t, std::size_t> half_;                   // encounter -> index in results_ of its first game
     std::map<std::pair<int, int>, fastchess::Stats> pairs_;  // (lower id, higher id), lower id's point of view
 

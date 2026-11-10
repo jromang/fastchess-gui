@@ -249,6 +249,19 @@ const OpeningSource& TournamentState::openings() {
     return *openings_;
 }
 
+bool TournamentState::openingPerRound() const noexcept {
+    return spec_.opening_per_round && spec_.format != Format::Match && spec_.format != Format::Knockout;
+}
+
+fastchess::book::Opening TournamentState::openingFor(const Encounter& encounter) {
+    if (!openingPerRound()) return openings().at(encounter.index);
+    const auto key = std::pair{encounter.cycle, encounter.round};
+    if (const auto it = round_openings_.find(key); it != round_openings_.end()) return it->second;
+    const auto opening = openings().at(round_openings_.size());
+    round_openings_.emplace(key, opening);
+    return opening;
+}
+
 void TournamentState::load() {
     const auto events = withoutUndoneEdits(Journal::read(dir_ / JOURNAL_FILE));
 
@@ -260,7 +273,10 @@ void TournamentState::load() {
                 OpeningText text{e.at("fen").get<std::string>(), e.value("moves", std::vector<std::string>{})};
                 const auto encounter = e.at("encounter").get<uint32_t>();
                 started_[encounter]  = fromText(text, frc());
-                next_encounter_      = std::max(next_encounter_, encounter + 1);
+                if (const auto enc = schedule_.at(encounter); enc && openingPerRound()) {
+                    round_openings_.emplace(std::pair{enc->cycle, enc->round}, started_[encounter]);
+                }
+                next_encounter_ = std::max(next_encounter_, encounter + 1);
             } else if (isEditEvent(type)) {
                 applyEvent(e);
             } else if (type == "round_paired" || type == "tiebreak_added") {
@@ -720,7 +736,7 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
 
     auto it = started_.find(encounter);
     if (it == started_.end()) {
-        const auto opening = openings().at(encounter);
+        const auto opening = openingFor(*enc);
         const auto text    = toText(opening, frc());
         journal_->append(
             {{"t", "encounter_started"}, {"encounter", encounter}, {"fen", text.fen}, {"moves", text.moves}});

@@ -509,6 +509,13 @@ void App::setupOpenings() {
         ui::help(TR("For a PGN book: number of plies kept. -1 = all."));
     }
     changed |= inputInt(TR("Start at"), "##book_start", setup_.book_start, 1, 100'000'000);
+    if (setup_.format == TournamentFormat::RoundRobin || setup_.format == TournamentFormat::Gauntlet ||
+        setup_.format == TournamentFormat::Swiss) {
+        changed |= ImGui::Checkbox(TR("The same opening for every pair of a round"), &setup_.opening_per_round);
+        ui::help(
+            TR("Every game pair of a round plays the same opening, the next of the book for each round: no engine "
+               "gets easier openings than the others of its round. Otherwise each pair takes the next one."));
+    }
 
     int64_t seed = static_cast<int64_t>(setup_.seed);
     ui::label(TR("Seed"), labelWidth());
@@ -981,6 +988,9 @@ void App::drawSetupSummary() {
                             setup_.book_plies > 0 ? setup_.book_plies : POLYGLOT_PLIES));
         }
     }
+    const bool per_round = setup_.format == TournamentFormat::RoundRobin ||
+                           setup_.format == TournamentFormat::Gauntlet || setup_.format == TournamentFormat::Swiss;
+    if (per_round && setup_.opening_per_round) check(true, TR("The same opening for every pair of a round"));
     if (setup_.common_hash > 0 || setup_.common_threads > 0) {
         std::string parts;
         if (setup_.common_hash > 0) parts += fmt::format("Hash {} MB", setup_.common_hash);

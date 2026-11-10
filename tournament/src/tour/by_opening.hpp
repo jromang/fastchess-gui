@@ -43,6 +43,16 @@ struct OpeningStats {
     }
 };
 
+// Where a book opening leads: the position after its moves (EPD), the moves (UCI), and the classification of the
+// deepest known position along them (empty eco and name when none is known, and in Chess960).
+struct ClassifiedOpening {
+    std::string fen;
+    std::vector<std::string> moves;
+    std::string eco;
+    std::string name;
+};
+[[nodiscard]] ClassifiedOpening classify(const fastchess::book::Opening& opening, bool chess960);
+
 // One entry per starting position, in the order they were first played. Voided games do not count.
 [[nodiscard]] std::vector<OpeningStats> resultsByOpening(const std::vector<GameResult>& results,
                                                          const std::map<uint32_t, fastchess::book::Opening>& openings,
