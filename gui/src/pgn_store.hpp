@@ -48,6 +48,13 @@ struct ReplayGame {
 
 [[nodiscard]] std::optional<ReplayGame> parseReplay(const std::string& pgn);
 
+// The value of a tag of the game's header, empty when it has none. Reads only the header.
+[[nodiscard]] std::string pgnTag(std::string_view pgn, std::string_view tag);
+
+// Whether an opening matches what was typed in the Games filter: an ECO code or its beginning ("B9"), a range
+// ("B20-B99"), or words of the name in any order, ignoring case. An empty query matches everything.
+[[nodiscard]] bool openingMatches(const std::string& eco, const std::string& name, const std::string& query);
+
 // "{+0.35/18 1.234s, ...}" (the body without braces) into score, depth, time and nps.
 void parseFastchessComment(std::string_view comment, ReplayMove& move);
 

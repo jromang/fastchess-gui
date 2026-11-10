@@ -1,5 +1,6 @@
 // The "Games" window: finished games, replay and export.
 
+#include <algorithm>
 #include <cmath>
 
 #include <imgui.h>
@@ -61,13 +62,24 @@ const char* resultText(const GameRecord& g) {
 
 }  // namespace
 
+bool App::gamesFiltered() const {
+    return games_filter_ != 0 || (!isMatch() && games_subject_ >= 0) || !opening_filter_.empty();
+}
+
 void App::rebuildGameFilter() {
     if (filtered_for_ == games_.size()) return;
 
     filtered_.clear();
-    if (games_filter_ != 0 || (!isMatch() && games_subject_ >= 0)) {
+    if (gamesFiltered()) {
+        const auto opening = [&](const GameRecord& g) {
+            if (opening_filter_.empty()) return true;
+            if (g.opening == 0 || g.opening >= openings_.size()) return false;
+            return openingMatches(openings_[g.opening].eco, openings_[g.opening].name, opening_filter_);
+        };
         for (std::size_t i = 0; i < games_.size(); ++i) {
-            if (matches(games_[i], games_filter_, games_subject_, isMatch())) filtered_.push_back(static_cast<int>(i));
+            if (matches(games_[i], games_filter_, games_subject_, isMatch()) && opening(games_[i])) {
+                filtered_.push_back(static_cast<int>(i));
+            }
         }
     }
     filtered_for_ = games_.size();
@@ -111,7 +123,7 @@ void App::exportGames(const std::string& path, bool all) {
 
     std::vector<PgnSpan> spans;
     if (all) {
-        if (games_filter_ == 0 && (isMatch() || games_subject_ < 0)) {
+        if (!gamesFiltered()) {
             for (const auto& g : games_) spans.push_back(chessbase ? g.chessbase_span : g.fastchess_span);
         } else {
             for (int i : filtered_) spans.push_back(chessbase ? games_[i].chessbase_span : games_[i].fastchess_span);
@@ -172,9 +184,25 @@ void App::drawGames() {
             ImGui::EndCombo();
         }
     }
+    ImGui::SameLine();
+    {
+        char buffer[64];
+        const auto n = std::min(opening_filter_.size(), sizeof(buffer) - 1);
+        std::copy_n(opening_filter_.data(), n, buffer);
+        buffer[n] = 0;
+        ImGui::SetNextItemWidth(150.0f * ImGui::GetFontSize() / 16.0f);
+        if (ImGui::InputTextWithHint("##opening_filter", TR("Opening"), buffer, sizeof(buffer))) {
+            opening_filter_ = buffer;
+            filtered_for_   = ~std::size_t(0);
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("An ECO code or its beginning (B9), a range (B20-B99), or words of the name "
+                                       "(sicilian najdorf)."));
+        }
+    }
     rebuildGameFilter();
 
-    const bool all_games    = games_filter_ == 0 && (match || games_subject_ < 0);
+    const bool all_games    = !gamesFiltered();
     const std::size_t shown = all_games ? games_.size() : filtered_.size();
     ImGui::SameLine();
     ImGui::TextDisabled("%s", (shown == 1 ? std::string(TR("1 game")) : trf("{} games", shown)).c_str());
@@ -205,8 +233,7 @@ void App::drawGames() {
     ImGui::EndDisabled();
     ImGui::SameLine();
     ImGui::BeginDisabled(shown == 0);
-    if (ImGui::Button(games_filter_ == 0 && (isMatch() || games_subject_ < 0) ? TR("Export all…")
-                                                                              : TR("Export filtered…"))) {
+    if (ImGui::Button(all_games ? TR("Export all…") : TR("Export filtered…"))) {
         dialogs_.saveFile(Dialogs::Purpose::ExportAll, {{"PGN", "pgn"}}, (run_.info().dir / "export.pgn").string());
     }
     ImGui::EndDisabled();
@@ -221,7 +248,7 @@ void App::drawGames() {
     ImGui::BeginChild("##game_list", ImVec2(list_w, 0));
     constexpr ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersInnerV |
                                       ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingFixedFit;
-    if (ImGui::BeginTable("##games", 7, flags)) {
+    if (ImGui::BeginTable("##games", 8, flags)) {
         float name_w = 0;
         for (const auto& n : obs->names()) name_w = std::max(name_w, ImGui::CalcTextSize(n.c_str()).x);
         const auto width = [](const char* sample) { return ImGui::CalcTextSize(sample).x; };
@@ -231,6 +258,7 @@ void App::drawGames() {
         ImGui::TableSetupColumn(TR("White"), ImGuiTableColumnFlags_WidthFixed, std::max(name_w, width(TR("White"))));
         ImGui::TableSetupColumn(TR("Black"), ImGuiTableColumnFlags_WidthFixed, std::max(name_w, width(TR("Black"))));
         ImGui::TableSetupColumn(TR("Result"), ImGuiTableColumnFlags_WidthFixed, width(TR("Result")));
+        ImGui::TableSetupColumn(TR("Opening"), ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn(TR("End"), ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn(TR("Moves"), ImGuiTableColumnFlags_WidthFixed, width(TR("Moves")));
         ImGui::TableSetupColumn(TR("Duration"), ImGuiTableColumnFlags_WidthFixed, width("00 min 00 s"));
@@ -263,6 +291,14 @@ void App::drawGames() {
                 ImGui::PushStyleColor(ImGuiCol_Text, r > 0 ? ui::GOOD : r < 0 ? ui::BAD : ui::MUTED);
                 ImGui::TextUnformatted(resultText(g));
                 ImGui::PopStyleColor();
+                ImGui::TableNextColumn();
+                if (g.opening != 0 && g.opening < openings_.size()) {
+                    const auto& o = openings_[g.opening];
+                    ImGui::TextUnformatted(o.eco.c_str());
+                    ImGui::SameLine();
+                    ImGui::TextDisabled("%s", o.name.c_str());
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s %s", o.eco.c_str(), o.name.c_str());
+                }
                 ImGui::TableNextColumn();
                 ImGui::TextUnformatted(g.reason < reasons_.size() ? TR(reasons_[g.reason]) : "");
                 ImGui::TableNextColumn();
@@ -315,6 +351,9 @@ void App::drawGames() {
             ImGui::SetTooltip(
                 "%s", trf("Every line exchanged with the engines during this game:\n{}", replay_log_.string()).c_str());
         }
+    }
+    if (const auto& g = games_[selected_game_]; g.opening != 0 && g.opening < openings_.size()) {
+        ImGui::TextDisabled("%s %s", openings_[g.opening].eco.c_str(), openings_[g.opening].name.c_str());
     }
 
     chess::Board board;

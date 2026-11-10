@@ -43,15 +43,15 @@ GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
     std::string text;
     for (const auto& result : state.results()) {
         if (result.voided) continue;
-        const auto record = makeRecord(result);
-        pending_games_.push_back(record);
-        countLoss(result);
-
         text.resize(result.pgn.length);
         if (!pgn.seekg(static_cast<std::streamoff>(result.pgn.offset)) || !pgn.read(text.data(), result.pgn.length)) {
             pgn.clear();
-            continue;
+            text.clear();
         }
+        const auto record = makeRecord(result, text);
+        pending_games_.push_back(record);
+        countLoss(result);
+
         forEachMoveComment(text, [&](bool white, const ReplayMove& move) {
             if (!move.book) addMove(totals_[white ? record.white : record.black], move.depth, move.time_ms, move.nps);
         });
@@ -217,7 +217,31 @@ void GuiObserver::onGameEnd(int slot_index, std::size_t, std::size_t, const fast
     st.version++;
 }
 
-GameRecord GuiObserver::makeRecord(const tour::GameResult& result) {
+uint16_t GuiObserver::openingOf(const tour::GameResult& result, std::string_view pgn) {
+    if (const auto it = opening_by_offset_.find(result.pgn.offset); it != opening_by_offset_.end()) return it->second;
+
+    std::string text;
+    if (pgn.empty()) {
+        text = tour::readSpan(pgn_fastchess_, result.pgn).value_or("");
+        pgn  = text;
+    }
+    OpeningName opening{pgnTag(pgn, "ECO"), pgnTag(pgn, "Opening")};
+    uint16_t index = 0;
+    if (!opening.eco.empty() || !opening.name.empty()) {
+        const auto key = opening.eco + "|" + opening.name;
+        if (const auto it = opening_index_.find(key); it != opening_index_.end()) {
+            index = it->second;
+        } else if (openings_.size() < 65535) {
+            index = static_cast<uint16_t>(openings_.size());
+            openings_.push_back(std::move(opening));
+            opening_index_.emplace(key, index);
+        }
+    }
+    opening_by_offset_.emplace(result.pgn.offset, index);
+    return index;
+}
+
+GameRecord GuiObserver::makeRecord(const tour::GameResult& result, std::string_view pgn) {
     GameRecord record;
     record.game_id        = result.number() + 1;
     record.round_id       = result.encounter + 1;
@@ -228,6 +252,7 @@ GameRecord GuiObserver::makeRecord(const tour::GameResult& result) {
     record.a_result       = resultForA(result, id_a_);
     record.termination    = static_cast<uint8_t>(result.termination);
     record.reason         = internReason(result.reason);
+    record.opening        = openingOf(result, pgn);
     record.plies          = static_cast<uint16_t>(std::min<uint32_t>(result.plies, 65535));
     record.duration_ms    = result.duration_ms;
     record.fastchess_span = result.pgn;
@@ -330,6 +355,11 @@ void GuiObserver::drain(std::vector<GameRecord>& games, std::vector<fastchess::S
 std::vector<std::string> GuiObserver::reasons() const {
     std::lock_guard<std::mutex> lock(data_mutex_);
     return reasons_;
+}
+
+std::vector<OpeningName> GuiObserver::openings() const {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    return openings_;
 }
 
 std::vector<EngineTotals> GuiObserver::totals() const {

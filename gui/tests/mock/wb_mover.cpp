@@ -32,9 +32,13 @@ int own_moves   = 0;
 bool editing      = false;
 Color edit_colour = Color::WHITE;
 
+// A random legal move, castling whenever it can, so that the tests see castling in every game that allows it.
 Move randomMove() {
     Movelist moves;
     movegen::legalmoves(moves, board);
+    for (const auto& m : moves) {
+        if (m.typeOf() == Move::CASTLING) return m;
+    }
     std::uniform_int_distribution<int> pick(0, moves.size() - 1);
     return moves[pick(gen)];
 }

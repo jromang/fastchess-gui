@@ -167,6 +167,7 @@ class App {
 
     // games
     void rebuildGameFilter();
+    [[nodiscard]] bool gamesFiltered() const;  // some games of the Games tab are hidden
     void selectGame(int index);
     void exportGames(const std::string& path, bool all);
 
@@ -194,6 +195,8 @@ class App {
     StatPoint current_;
     std::optional<fastchess::SPRT> sprt_;
     std::vector<std::string> reasons_;
+    std::vector<OpeningName> openings_;
+    std::string opening_filter_;  // Games tab: ECO code, range or words of the opening name
     std::vector<EngineTotals> totals_;
     std::chrono::steady_clock::time_point last_totals_{};
     double games_per_hour_      = 0;

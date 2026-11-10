@@ -59,6 +59,9 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"All groups", "Alle Gruppen"},
         {"All to default", "Alle auf Standard"},
         {"All tournaments", "Alle Turniere"},
+        {"An ECO code or its beginning (B9), a range (B20-B99), or words of the name (sicilian najdorf).",
+         "Ein ECO-Code oder sein Anfang (B9), ein Bereich (B20-B99) oder Wörter des Namens, auf Englisch (sicilian "
+         "najdorf)."},
         {"An engine is being read, try again in a moment.",
          "Eine Engine wird gerade gelesen, versuche es gleich noch einmal."},
         {"An engine list…", "Eine Engine-Liste…"},
@@ -359,6 +362,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Open", "Öffnen"},
         {"Open a folder…", "Ordner öffnen…"},
         {"Open the folder", "Ordner öffnen"},
+        {"Opening", "Eröffnung"},
         {"Opening book not found: {}", "Eröffnungsbuch nicht gefunden: {}"},
         {"Openings", "Eröffnungen"},
         {"Openings: {}", "Eröffnungen: {}"},

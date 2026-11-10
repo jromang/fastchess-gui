@@ -269,6 +269,7 @@ void App::resetRunView() {
     stats_   = {};
     current_ = {};
     reasons_.clear();
+    openings_.clear();
     totals_.clear();
     table_     = {};
     table_for_ = ~std::size_t(0);
@@ -309,7 +310,10 @@ void App::pollRun() {
 
         const auto now = std::chrono::steady_clock::now();
         if (games_.size() != before || now - last_totals_ > std::chrono::milliseconds(500)) {
-            if (games_.size() != before) reasons_ = obs->reasons();
+            if (games_.size() != before) {
+                reasons_  = obs->reasons();
+                openings_ = obs->openings();
+            }
             totals_      = obs->totals();
             last_totals_ = now;
         }

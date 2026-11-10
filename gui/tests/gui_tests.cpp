@@ -162,6 +162,28 @@ TEST_CASE("an engine's program: taken as it is, then noticed when rebuilt, moved
     CHECK(e.program_state == ProgramState::Missing);
 }
 
+TEST_CASE("openings: PGN tags, and the Games filter by ECO code, range or words of the name") {
+    const std::string pgn =
+        "[Event \"x\"]\n[ECO \"B90\"]\n[Opening \"Sicilian Defense: Najdorf Variation\"]\n\n"
+        "1. e4 {[ECO \"A00\"]} c5 1-0\n";
+    CHECK(pgnTag(pgn, "ECO") == "B90");
+    CHECK(pgnTag(pgn, "Opening") == "Sicilian Defense: Najdorf Variation");
+    CHECK(pgnTag(pgn, "EC").empty());
+    CHECK(pgnTag(pgn, "Round").empty());
+
+    const std::string eco = "B90", name = "Sicilian Defense: Najdorf Variation";
+    CHECK(openingMatches(eco, name, ""));
+    CHECK(openingMatches(eco, name, "B"));
+    CHECK(openingMatches(eco, name, "b9"));
+    CHECK(openingMatches(eco, name, "B90"));
+    CHECK_FALSE(openingMatches(eco, name, "B91"));
+    CHECK(openingMatches(eco, name, "B20-B99"));
+    CHECK(openingMatches(eco, name, "b20 - b99"));
+    CHECK_FALSE(openingMatches(eco, name, "C00-C99"));
+    CHECK(openingMatches(eco, name, "najdorf sicilian"));
+    CHECK_FALSE(openingMatches(eco, name, "sicilian dragon"));
+}
+
 TEST_CASE("ChessBase comments give White's point of view, clocks and move times") {
     fastchess::config::Pgn config;
     const auto data = sampleGame(true);

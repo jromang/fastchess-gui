@@ -1,6 +1,8 @@
 #include "pgn_store.hpp"
 #include "i18n.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <charconv>
 #include <sstream>
 
@@ -24,6 +26,64 @@ std::string exportSpans(const fs::path& source, const std::vector<PgnSpan>& span
     }
 
     return out ? "" : trf("Write error in {}", target.string());
+}
+
+std::string pgnTag(std::string_view pgn, std::string_view tag) {
+    std::size_t pos = 0;
+    while (pos < pgn.size()) {
+        auto end = pgn.find('\n', pos);
+        if (end == std::string_view::npos) end = pgn.size();
+        auto line = pgn.substr(pos, end - pos);
+        pos       = end + 1;
+        while (!line.empty() && (line.back() == '\r' || line.back() == ' ')) line.remove_suffix(1);
+        if (line.empty()) continue;
+        if (line.front() != '[') break;  // the moves: the header is over
+
+        // [Tag "value"]
+        line.remove_prefix(1);
+        if (line.substr(0, tag.size()) != tag || line.size() <= tag.size() || line[tag.size()] != ' ') continue;
+        const auto open  = line.find('"');
+        const auto close = line.rfind('"');
+        if (open == std::string_view::npos || close <= open) return {};
+        return std::string(line.substr(open + 1, close - open - 1));
+    }
+    return {};
+}
+
+bool openingMatches(const std::string& eco, const std::string& name, const std::string& query) {
+    auto upper = [](std::string s) {
+        for (auto& c : s) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+        return s;
+    };
+    std::string q;
+    for (const char c : query) {
+        if (c != ' ') q += static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    }
+    if (q.empty()) return true;
+
+    const auto is_eco = [](const std::string& s) {
+        return s.size() == 3 && s[0] >= 'A' && s[0] <= 'E' && std::isdigit(static_cast<unsigned char>(s[1])) &&
+               std::isdigit(static_cast<unsigned char>(s[2]));
+    };
+    const auto code = upper(eco);
+
+    // A range of codes.
+    if (const auto dash = q.find('-'); dash != std::string::npos) {
+        const auto from = q.substr(0, dash), to = q.substr(dash + 1);
+        if (is_eco(from) && is_eco(to)) return is_eco(code) && code >= from && code <= to;
+    }
+    // A code or its beginning: a letter A to E and up to two digits.
+    if (q.size() <= 3 && q[0] >= 'A' && q[0] <= 'E' &&
+        std::all_of(q.begin() + 1, q.end(), [](char c) { return std::isdigit(static_cast<unsigned char>(c)); })) {
+        return code.rfind(q, 0) == 0;
+    }
+    // Words of the name, in any order: "sicilian najdorf".
+    const auto haystack = upper(name);
+    std::istringstream words(upper(query));
+    for (std::string word; words >> word;) {
+        if (haystack.find(word) == std::string::npos) return false;
+    }
+    return true;
 }
 
 std::string ReplayGame::header(const std::string& key) const {

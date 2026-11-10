@@ -116,7 +116,7 @@ A running or opened tournament has a workspace with a header (name, progress, *P
 | Schedule | Every game pair by cycle or round, with its state; editing (see below) |
 | Broadcast | Live files, the TLCS server and the web page (see below) |
 | Live | The games in progress, as a mosaic of boards or one game in focus with the clocks, the running search of each engine (depth, score, nodes, nps, PV in SAN), the move list and the evaluation curve. *Detach* opens a board in its own window |
-| Games | The finished games, filterable (wins, draws, losses, losses on time, crashes and illegal moves, adjudications), with a replay board (← → Home End, or click a move or the curve) and the export of one, all or the filtered games. *Engine log* opens the log of a game that has one (see *Files*) |
+| Games | The finished games with their opening (ECO code and name), filterable by result (wins, draws, losses, losses on time, crashes and illegal moves, adjudications) and by opening (an ECO code or its beginning, a range such as `B20-B99`, or words of the name), with a replay board (← → Home End, or click a move or the curve) and the export of one, all or the filtered games. *Engine log* opens the log of a game that has one (see *Files*) |
 
 **Pause** starts no new game pair. Games in progress play to the end, and so does the second game of a pair whose
 first game has started, so a pause never throws a result away. **Resume** continues. **Stop** either finishes

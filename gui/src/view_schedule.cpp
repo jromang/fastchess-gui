@@ -67,8 +67,9 @@ void App::refreshAfterEdit() {
     // Voided games leave the views; everything is shown again from the tournament's results.
     const auto* t = run_.tournament();
     if (auto* obs = run_.observer(); obs && t) {
-        games_   = obs->records(t->results());
-        reasons_ = obs->reasons();
+        games_    = obs->records(t->results());
+        reasons_  = obs->reasons();
+        openings_ = obs->openings();
     }
     filtered_for_      = ~std::size_t(0);
     table_for_         = ~std::size_t(0);
