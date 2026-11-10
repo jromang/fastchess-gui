@@ -35,6 +35,69 @@ ImVec4 eloColour(double elo, double err) {
     return ImGui::GetStyleColorVec4(ImGuiCol_Text);
 }
 
+// fishtest's statistics of the match, games against pairs, in a table.
+void statisticsTable(const MatchStatistics& m, bool penta, bool sprt) {
+    constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit;
+    if (!ImGui::BeginTable("##statistics", penta ? 3 : 2, flags)) return;
+    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableSetupColumn(TR("Games"), ImGuiTableColumnFlags_WidthFixed);
+    if (penta) ImGui::TableSetupColumn(TR("Pairs"), ImGuiTableColumnFlags_WidthFixed);
+    ImGui::TableHeadersRow();
+
+    const auto interval = [](const Interval& i, double scale, const char* unit) {
+        if (!std::isfinite(i.value)) return std::string("—");
+        return fmt::format("{:+.2f}{}  [{:+.2f}, {:+.2f}]", scale * i.value, unit, scale * i.low, scale * i.high);
+    };
+    const auto row = [&](const char* label, const char* help, const std::string& games, const std::string& pairs) {
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextDisabled("%s", label);
+        if (help && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", help);
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted(games.c_str());
+        if (penta) {
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(pairs.c_str());
+        }
+    };
+    const auto number = [](double v, const char* format) {
+        return std::isfinite(v) ? fmt::format(fmt::runtime(format), v) : std::string("—");
+    };
+
+    row(TR("Count"), nullptr, std::to_string(m.games.count), std::to_string(m.pairs.count));
+    row(TR("Draw ratio"), TR("Pairs: those scoring 1 for each engine, a win and a loss or two draws."),
+        fmt::format("{:.1f} %", 100 * m.games.draw_ratio), fmt::format("{:.1f} %", 100 * m.pairs.draw_ratio));
+    const auto score = [](const Interval& i) {
+        return std::isfinite(i.value)
+                   ? fmt::format("{:.2f} %  [{:.2f}, {:.2f}]", 100 * i.value, 100 * i.low, 100 * i.high)
+                   : std::string("—");
+    };
+    row(TR("Score"), nullptr, score(m.games.score), score(m.pairs.score));
+    row("Elo", TR("Logistic Elo, with its 95 % interval."), interval(m.games.elo, 1, ""), interval(m.pairs.elo, 1, ""));
+    row("nElo", TR("Normalized Elo (fishtest, OpenBench), with its 95 % interval."), interval(m.games.nelo, 1, ""),
+        interval(m.pairs.nelo, 1, ""));
+    row("BayesElo", TR("From the games only, with the DrawElo that goes with it."),
+        std::isfinite(m.bayeselo) ? trf("{:+.2f}  (DrawElo {:.0f})", m.bayeselo, m.drawelo) : std::string("—"), "");
+    row(TR("Standard deviation"), TR("Of one game's score. Pairs: as measured on the pairs."),
+        number(m.games.stdev, "{:.4f}"), number(m.pairs.stdev, "{:.4f}"));
+    if (sprt) row("LLR", nullptr, number(m.games.llr, "{:.3f}"), number(m.pairs.llr, "{:.3f}"));
+    if (penta) {
+        row(TR("Variance ratio"),
+            TR("The variance of a game when the games are counted in pairs, over the variance of single games: "
+               "below 1, the pairs need that much fewer games for the same precision."),
+            "", number(m.variance_ratio, "{:.3f}"));
+        row(TR("RMS bias"),
+            TR("The spread of the advantage the openings give, in Elo: what playing each opening twice, colours "
+               "reversed, cancels out."),
+            "", std::isfinite(m.rms_bias) ? fmt::format("{:.1f} Elo", m.rms_bias) : std::string("—"));
+        row(TR("Pair kinds"), TR("Two draws, and a win and a loss, among the pairs scoring 1."), "",
+            trf("two draws {:.1f} % · a win and a loss {:.1f} %", 100 * m.two_draws, 100 * m.win_and_loss));
+        row(TR("Pairs won / lost"), TR("Pairs scoring more than 1 for A, over those scoring less."), "",
+            number(m.pairs_ratio, "{:.2f}"));
+    }
+    ImGui::EndTable();
+}
+
 // Keeps at most `limit` evenly spaced points (always the last one), so long runs plot fast.
 std::vector<std::size_t> decimate(std::size_t n, std::size_t limit) {
     std::vector<std::size_t> idx;
@@ -141,6 +204,15 @@ void App::drawResults() {
                               current_.llr >= 0 ? ImVec4(0.47f, 0.78f, 0.47f, 1) : ImVec4(0.9f, 0.43f, 0.39f, 1));
         ImGui::ProgressBar(static_cast<float>(t), ImVec2(-FLT_MIN, 0), overlay.c_str());
         ImGui::PopStyleColor();
+    }
+
+    if (open_statistics_ && n > 0) {
+        ImGui::SetNextItemOpen(true);
+        open_statistics_ = false;
+    }
+    if (n > 0 && ImGui::TreeNode(TR("Statistics"))) {
+        statisticsTable(matchStatistics(s, sprt_ ? &*sprt_ : nullptr), info.penta, info.sprt && sprt_);
+        ImGui::TreePop();
     }
 
     // Engine health, shown only when something happened.

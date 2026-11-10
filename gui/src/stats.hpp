@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
 #include <optional>
 #include <string>
 
@@ -23,6 +24,40 @@ struct StatPoint {
 };
 
 [[nodiscard]] StatPoint computeStats(const fastchess::Stats& stats, bool penta, const fastchess::SPRT* sprt);
+
+// The numbers of fishtest's statistics page for a match (server/fishtest/http/template_helpers.py), from the game
+// counts and from the pair counts. Intervals at 95 %; NaN where undefined (no game, no variance yet).
+struct Interval {
+    double value = std::numeric_limits<double>::quiet_NaN();
+    double low   = std::numeric_limits<double>::quiet_NaN();
+    double high  = std::numeric_limits<double>::quiet_NaN();
+};
+struct MatchStatistics {
+    struct Common {
+        uint64_t count    = 0;  // games, or pairs
+        double draw_ratio = 0;  // draws, or pairs scoring 1 (a win and a loss, or two draws)
+        Interval score;         // per game, 0 to 1
+        Interval elo;           // logistic
+        Interval nelo;
+        double stdev = std::numeric_limits<double>::quiet_NaN();  // of one game's score
+        double llr   = std::numeric_limits<double>::quiet_NaN();  // with the match's SPRT
+    };
+    Common games;
+    Common pairs;
+    double bayeselo = std::numeric_limits<double>::quiet_NaN();  // and the DrawElo that goes with it
+    double drawelo  = std::numeric_limits<double>::quiet_NaN();
+    // Pairs only.
+    double two_draws      = 0;                                         // share of the pairs of two draws
+    double win_and_loss   = 0;                                         // share of the pairs of a win and a loss
+    double pairs_ratio    = std::numeric_limits<double>::quiet_NaN();  // pairs won / pairs lost
+    double variance_ratio = std::numeric_limits<double>::quiet_NaN();  // per game variance, pairs / games
+    double rms_bias       = std::numeric_limits<double>::quiet_NaN();  // Elo spread due to the openings
+};
+
+[[nodiscard]] MatchStatistics matchStatistics(const fastchess::Stats& stats, const fastchess::SPRT* sprt);
+
+// MatchStatistics as text lines, for the copied summary.
+[[nodiscard]] std::string statisticsText(const MatchStatistics& m);
 
 // What an SPRT is likely to do, from fishtest's SPRT calculator (http://hardy.uhasselt.be/Fishtest/sprta.pdf): the
 // log-likelihood ratio taken as a Brownian motion with drift between its two bounds.

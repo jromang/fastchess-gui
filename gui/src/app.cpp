@@ -107,12 +107,15 @@ void App::frame() {
         const auto& w = options_.focus_window;
         if (w == "setup")
             page_ = Page::NewMatch;
-        else if (w == "sprt-calc") {
+        else if (w == "statistics") {
+            page_            = Page::Tournament;
+            tab_request_     = Tab::Overview;
+            open_statistics_ = true;
+        } else if (w == "sprt-calc") {
             page_           = Page::NewMatch;
             sprt_calc_      = setup_;
             sprt_calc_open_ = true;
-        }
-        else if (w == "engines")
+        } else if (w == "engines")
             page_ = Page::Engines;
         else if (w == "console")
             page_ = Page::Log;
@@ -464,6 +467,7 @@ std::string App::summaryText() const {
         text += fmt::format("LLR: {:.2f} ({:.2f}, {:.2f}) [{:.2f}, {:.2f}] {}\n", current_.llr, sprt_->getLowerBound(),
                             sprt_->getUpperBound(), info.elo0, info.elo1, info.model);
     }
+    if (s.sum() > 0 && info.penta) text += statisticsText(matchStatistics(s, sprt_ ? &*sprt_ : nullptr));
     return text;
 }
 

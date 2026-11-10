@@ -854,3 +854,46 @@ TEST_CASE("SPRT calculator: fishtest's pass probabilities and expected games") {
     CHECK_FALSE(sprtPlan(0.05, 0.05, 0, 2, "normalized", 0.9, 191).valid);
     CHECK_FALSE(sprtPlan(0.05, 0.05, 2, 0, "logistic", 0.5, 0).valid);
 }
+
+TEST_CASE("match statistics: fishtest's numbers, from the games and from the pairs") {
+    fastchess::Stats s(120, 80, 600);
+    s.penta_LL = 2, s.penta_LD = 50, s.penta_WL = 30, s.penta_DD = 250, s.penta_WD = 60, s.penta_WW = 8;
+    const auto m = matchStatistics(s, nullptr);
+
+    // Reference values from fishtest's formulas (template_helpers.py).
+    CHECK(m.games.count == 800);
+    CHECK(m.games.draw_ratio == doctest::Approx(0.75));
+    CHECK(m.games.score.value == doctest::Approx(0.525));
+    CHECK(m.games.score.low == doctest::Approx(0.5077630388));
+    CHECK(m.games.stdev == doctest::Approx(0.2487468593));
+    CHECK(m.games.nelo.value == doctest::Approx(34.9185901817));
+    CHECK(m.games.nelo.low == doctest::Approx(10.8777251228));
+    CHECK(m.games.nelo.high == doctest::Approx(58.9594552406));
+    CHECK(m.pairs.count == 400);
+    CHECK(m.pairs.draw_ratio == doctest::Approx(0.7));
+    CHECK(m.pairs.score.value == doctest::Approx(0.51375));
+    CHECK(m.pairs.stdev == doctest::Approx(0.2156313405));
+    CHECK(m.pairs.nelo.value == doctest::Approx(22.1546612388));
+    CHECK(m.pairs.nelo.low == doctest::Approx(-1.6100760439));
+    CHECK(m.variance_ratio == doctest::Approx(0.7514646465));
+    CHECK(m.rms_bias == doctest::Approx(88.0050419444));
+    CHECK(m.bayeselo == doctest::Approx(40.1829685561));
+    CHECK(m.drawelo == doctest::Approx(341.5140352196));
+    CHECK(m.pairs_ratio == doctest::Approx(1.3076923077));
+    CHECK(m.two_draws == doctest::Approx(0.625));
+    CHECK(m.win_and_loss == doctest::Approx(0.075));
+    CHECK(std::isnan(m.games.llr));
+
+    // The LLR of both counts with the match's SPRT.
+    const fastchess::SPRT sprt(0.05, 0.05, 0, 5, "normalized", true);
+    const auto with_sprt = matchStatistics(s, &sprt);
+    CHECK(with_sprt.games.llr == doctest::Approx(sprt.getLLR(s, false)));
+    CHECK(with_sprt.pairs.llr == doctest::Approx(sprt.getLLR(s, true)));
+    CHECK(statisticsText(with_sprt).find("RMS bias: 88.0 Elo") != std::string::npos);
+
+    // Nothing played: nothing defined, nothing thrown.
+    const auto empty = matchStatistics(fastchess::Stats{}, nullptr);
+    CHECK(empty.games.count == 0);
+    CHECK(std::isnan(empty.games.nelo.value));
+    CHECK(std::isnan(empty.rms_bias));
+}

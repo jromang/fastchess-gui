@@ -273,7 +273,8 @@ class App {
     bool live_mosaic_ = true;
 
     // SPRT calculator: its own copy of the bounds, applied to the setup on request.
-    bool sprt_calc_open_ = false;
+    bool sprt_calc_open_  = false;
+    bool open_statistics_ = false;  // --focus statistics: the match's Statistics section opens
     MatchSetup sprt_calc_;
     // The running tournament's tablebase adjudication limit (see tablebasePieces), read once per tournament.
     int tbPieces();

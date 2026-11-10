@@ -155,7 +155,7 @@ A running or opened tournament has a workspace with a header (name, progress, *P
 
 | Tab | Contents |
 |---|---|
-| Overview | Match: Elo and nElo with their 95 % confidence interval, LOS, score, pentanomial counts, SPRT bounds and LLR, and the charts (Elo and LLR over time, game lengths, how games ended, depth, NPS and time per move). Tournament: the standings, progress by cycle or round, games per hour and time left, the latest results |
+| Overview | Match: Elo and nElo with their 95 % confidence interval, LOS, score, pentanomial counts, SPRT bounds and LLR; *Statistics* (folded) gives fishtest's numbers from the games and from the pairs: score, Elo, nElo and BayesElo with DrawElo, standard deviation per game, LLR of both, the variance ratio of pairs to single games, the RMS bias of the openings, the kinds of balanced pairs and the pairs won over lost, which *Copy* includes; and the charts (Elo and LLR over time, game lengths, how games ended, depth, NPS and time per move). Tournament: the standings, progress by cycle or round, games per hour and time left, the latest results |
 | Standings | Points, games, wins/draws/losses, ratings with their confidence interval, Sonneborn-Berger (Buchholz for a Swiss), byes, and the crosstable. *Copy* as text, or as BBCode for a forum post (with a line giving the format, time control, games and book), *Export HTML…* |
 | Bracket | Knockout only: the bracket, round by round, with the score of every match |
 | Schedule | Every game pair by cycle or round, with its state; editing (see below) |
