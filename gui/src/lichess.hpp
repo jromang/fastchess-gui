@@ -27,28 +27,44 @@ namespace fcg {
 
 // Where a tournament goes on lichess: lichess.json in its folder (the token is not there).
 struct LichessTarget {
-    std::string tour_id;                        // the broadcast tournament; empty when only a round was given
-    std::string round_id;                       // the round games go to now
-    std::string url;                            // its page
-    int round_index = 1;                        // the rounds made here: "Part 1", "Part 2"...
-    std::map<std::string, std::string> rounds;  // game key -> the round it was pushed to
-    std::set<std::string> finished;             // game keys pushed with their result
+    std::string tour_id;                           // the broadcast tournament; empty when only a round was given
+    std::string round_id;                          // the round games go to now
+    std::string url;                               // its page
+    int round_index = 1;                           // the rounds made here: "Part 1", "Part 2"...
+    std::map<std::string, std::string> rounds;     // game key -> the round it was pushed to
+    std::set<std::string> finished;                // game keys pushed with their result
+    std::map<std::string, std::size_t> annotated;  // game key -> the moves pushed with their comments
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(LichessTarget, tour_id, round_id, url, round_index, rounds, finished)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(LichessTarget, tour_id, round_id, url, round_index, rounds, finished,
+                                                annotated)
 
 // A lichess round holds this many games; the next ones go to a new round of the same broadcast.
 constexpr std::size_t LICHESS_ROUND_GAMES = 64;
 
 // A game as lichess gets it. The tags stay the same while it is played and once it is finished, so that lichess
-// updates the same board: the encounter as Round, the engines, no date.
+// updates the same board: the encounter as Round, the engines, no date. Each move may carry its evaluation (White's
+// point of view) and clock, sent once: lichess keeps the comments of the moves it has, and rewriting the comments of
+// many moves at once overflows its queue of changes to the study.
 struct LichessGame {
-    std::string key;  // "round|white|black"
-    std::string pgn;
-    bool finished = false;
+    std::string key;      // "round|white|black"
+    std::string headers;  // the tags
+    bool white_first = true;
+    int first_number = 1;  // the move number of the first move
+    struct Move {
+        std::string san;
+        std::string comment;  // "[%eval 0.35] [%clk 0:00:59]", or empty
+    };
+    std::vector<Move> moves;
+    std::string result = "*";
+    bool finished      = false;
+
+    // Its PGN, with the comments of the moves from `annotate_from` on.
+    [[nodiscard]] std::string pgn(std::size_t annotate_from) const;
 };
+// A game in progress: the evaluation of every move, the clocks after the last move of each side.
 [[nodiscard]] LichessGame lichessLiveGame(const LiveGame& game, const std::string& event, int white_elo, int black_elo,
                                           bool frc);
-// A finished game, from its PGN (the ChessBase style one: evaluations and clocks lichess reads), with the same tags.
+// A finished game, from its ChessBase style PGN: its evaluations and clocks, with the same tags.
 [[nodiscard]] LichessGame lichessFinishedGame(std::string_view pgn, const std::string& event, uint32_t round,
                                               const std::string& white, const std::string& black, int white_elo,
                                               int black_elo, const std::string& result, bool frc);

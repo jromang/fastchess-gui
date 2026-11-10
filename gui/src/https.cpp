@@ -1,14 +1,19 @@
 #include "https.hpp"
 
 #include <atomic>
+#include <cerrno>
 #include <chrono>
 #include <cstdlib>
 #include <fstream>
+#include <optional>
 
 #ifdef _WIN32
-#    include <engine/process/process_win.hpp>
+#    include <windows.h>
 #else
-#    include <engine/process/process_posix.hpp>
+#    include <spawn.h>
+#    include <sys/wait.h>
+#    include <unistd.h>
+extern char** environ;
 #endif
 
 #include <fmt/include/fmt/format.h>
@@ -60,34 +65,101 @@ bool writePrivate(const fs::path& file, std::string_view text) {
     return static_cast<bool>(out);
 }
 
-HttpResult run(const fs::path& dir, const std::string& args, std::chrono::seconds timeout) {
-    using fastchess::engine::process::Line;
-    using fastchess::engine::process::Process;
-    using fastchess::engine::process::Status;
+// Runs `program` with `args` in `dir` and returns everything it wrote on its standard output, read to the end
+// (curl's own --max-time bounds it); nullopt when it cannot be started.
+std::optional<std::string> capture(const std::string& program, const std::vector<std::string>& args,
+                                   const fs::path& dir) {
+    std::string out;
+#ifdef _WIN32
+    SECURITY_ATTRIBUTES sa{sizeof(sa), nullptr, TRUE};
+    HANDLE read = nullptr, write = nullptr;
+    if (!CreatePipe(&read, &write, &sa, 0)) return std::nullopt;
+    SetHandleInformation(read, HANDLE_FLAG_INHERIT, 0);
+    std::string command = "\"" + program + "\"";
+    for (const auto& a : args) command += " \"" + a + "\"";
+    STARTUPINFOA si{};
+    si.cb         = sizeof(si);
+    si.dwFlags    = STARTF_USESTDHANDLES;
+    si.hStdOutput = write;
+    si.hStdError  = write;
+    si.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
+    PROCESS_INFORMATION pi{};
+    const auto cwd = dir.string();
+    const bool ok  = CreateProcessA(nullptr, command.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr,
+                                    cwd.c_str(), &si, &pi);
+    CloseHandle(write);
+    if (!ok) {
+        CloseHandle(read);
+        return std::nullopt;
+    }
+    char buffer[4096];
+    DWORD n = 0;
+    while (ReadFile(read, buffer, sizeof(buffer), &n, nullptr) && n > 0) out.append(buffer, n);
+    CloseHandle(read);
+    WaitForSingleObject(pi.hProcess, 10000);
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+#else
+    int pipe_fds[2];
+    if (pipe(pipe_fds) != 0) return std::nullopt;
+    posix_spawn_file_actions_t actions;
+    posix_spawn_file_actions_init(&actions);
+    posix_spawn_file_actions_adddup2(&actions, pipe_fds[1], STDOUT_FILENO);
+    posix_spawn_file_actions_adddup2(&actions, pipe_fds[1], STDERR_FILENO);
+    posix_spawn_file_actions_addclose(&actions, pipe_fds[0]);
+    posix_spawn_file_actions_addclose(&actions, pipe_fds[1]);
+    // The config file is given by its absolute path: no change of directory needed in the child.
+    (void)dir;
+    std::vector<char*> argv;
+    argv.push_back(const_cast<char*>(program.c_str()));
+    for (const auto& a : args) argv.push_back(const_cast<char*>(a.c_str()));
+    argv.push_back(nullptr);
+    pid_t pid    = 0;
+    const int rc = posix_spawnp(&pid, program.c_str(), &actions, nullptr, argv.data(), environ);
+    posix_spawn_file_actions_destroy(&actions);
+    close(pipe_fds[1]);
+    if (rc != 0) {
+        close(pipe_fds[0]);
+        return std::nullopt;
+    }
+    char buffer[4096];
+    for (ssize_t n; (n = ::read(pipe_fds[0], buffer, sizeof(buffer))) != 0;) {
+        if (n < 0) {
+            if (errno == EINTR) continue;
+            break;
+        }
+        out.append(buffer, static_cast<std::size_t>(n));
+    }
+    close(pipe_fds[0]);
+    int status = 0;
+    while (waitpid(pid, &status, 0) < 0 && errno == EINTR) {
+    }
+#endif
+    return out;
+}
 
+HttpResult run(const fs::path& config) {
     HttpResult result;
-    Process process;
-    process.setRealtimeLogging(false);
-    if (const auto started = process.init(dir.string(), curlProgram(), args, "curl"); started.code != Status::OK) {
-        result.error = "curl: " + started.message;
+    const auto out = capture(curlProgram(), {"--config", config.string()}, config.parent_path());
+    if (!out) {
+        result.error = "curl cannot be started";
         return result;
     }
-    std::vector<Line> lines;
-    const auto read = process.readOutput(lines, STATUS_LINE, timeout);
-    if (read.code != Status::OK) {
-        result.error = read.code == Status::TIMEOUT ? "no answer in time" : "curl stopped: " + read.message;
+    const auto at = out->rfind(STATUS_LINE);
+    if (at == std::string::npos) {
+        result.error = "curl: " + *out;
         return result;
     }
-    for (std::size_t i = 0; i + 1 < lines.size(); ++i) result.body += lines[i].line + "\n";
-    const auto& last = lines.back().line;
-    const auto rest  = last.substr(STATUS_LINE.size());
+    result.body     = out->substr(0, at);
+    const auto rest = out->substr(at + STATUS_LINE.size());
     try {
         result.status = std::stoi(rest);
     } catch (...) {
     }
     if (result.status == 0) {
-        const auto space = rest.find(' ');
-        result.error     = space == std::string::npos ? "no answer" : rest.substr(space + 1);
+        auto message = rest.substr(std::min(rest.size(), rest.find(' ') + 1));
+        while (!message.empty() && (message.back() == '\n' || message.back() == '\r')) message.pop_back();
+        result.error = message.empty() ? "no answer" : message;
     }
     return result;
 }
@@ -96,17 +168,8 @@ HttpResult run(const fs::path& dir, const std::string& args, std::chrono::second
 
 bool curlAvailable() {
     static const bool available = [] {
-        // "--version" prints a first line starting with "curl".
-        using fastchess::engine::process::Line;
-        using fastchess::engine::process::Process;
-        using fastchess::engine::process::Status;
-        Process process;
-        process.setRealtimeLogging(false);
-        if (process.init(fs::current_path().string(), curlProgram(), "--version", "curl").code != Status::OK) {
-            return false;
-        }
-        std::vector<Line> lines;
-        return process.readOutput(lines, "curl", std::chrono::seconds(5)).code == Status::OK;
+        const auto out = capture(curlProgram(), {"--version"}, fs::current_path());
+        return out && out->rfind("curl", 0) == 0;
     }();
     return available;
 }
@@ -152,8 +215,7 @@ HttpResult httpPost(const HttpRequest& request, const fs::path& tmp_dir) {
     if (!writePrivate(config, text) || !writePrivate(body, request.body)) {
         result.error = "cannot write in " + tmp_dir.string();
     } else {
-        result = run(tmp_dir, fmt::format("--config \"{}\"", config.filename().string()),
-                     std::chrono::seconds(request.timeout_s + 5));
+        result = run(config);
     }
     fs::remove(config, ec);
     fs::remove(body, ec);

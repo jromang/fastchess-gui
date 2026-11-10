@@ -68,6 +68,14 @@ BroadcastSnapshot makeSnapshot(const tour::TournamentState& state, const GuiObse
         g.active        = st.active;
         g.result        = st.result;
         for (const auto& m : st.moves) {
+            std::string eval;
+            if (!m.book && m.score) {
+                const int sign = m.mover == chess::Color::WHITE ? 1 : -1;
+                eval           = m.score->type == fastchess::ScoreType::MATE
+                                     ? fmt::format("#{}", sign * m.score->value)
+                                     : fmt::format("{:.2f}", sign * static_cast<double>(m.score->value) / 100.0);
+            }
+            g.evals.push_back(std::move(eval));
             g.san.push_back(m.san);
             g.uci.push_back(chess::uci::moveToUci(m.move, frc));
         }

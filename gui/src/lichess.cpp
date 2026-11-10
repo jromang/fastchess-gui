@@ -57,99 +57,110 @@ std::string now() {
 
 }  // namespace
 
+std::string LichessGame::pgn(std::size_t annotate_from) const {
+    std::string out = headers + "\n";
+    bool white      = white_first;
+    int number      = first_number;
+    for (std::size_t i = 0; i < moves.size(); ++i) {
+        if (white) {
+            out += fmt::format("{}. ", number);
+        } else if (i == 0) {
+            out += fmt::format("{}... ", number);
+        }
+        out += moves[i].san;
+        if (i >= annotate_from && !moves[i].comment.empty()) out += " {" + moves[i].comment + "}";
+        out += ' ';
+        if (!white) number++;
+        white = !white;
+    }
+    return out + result + "\n\n";
+}
+
 LichessGame lichessLiveGame(const LiveGame& g, const std::string& event, int white_elo, int black_elo, bool frc) {
     // The game number is 1-based; its encounter, the round of its PGN, too.
     const auto round = static_cast<uint32_t>((std::max<uint64_t>(1, g.number) - 1) / 2 + 1);
     LichessGame game;
-    game.key = key(round, g.white, g.black);
-    game.pgn = headers(event, round, g.white, g.black, white_elo, black_elo, "*",
-                       frc || g.start_fen != START ? g.start_fen : "", frc) +
-               "\n";
+    game.key          = key(round, g.white, g.black);
+    game.headers      = headers(event, round, g.white, g.black, white_elo, black_elo, "*",
+                                frc || g.start_fen != START ? g.start_fen : "", frc);
+    const auto space  = g.start_fen.find(' ');
+    game.white_first  = space == std::string::npos || g.start_fen[space + 1] == 'w';
+    const auto last   = g.start_fen.rfind(' ');
+    game.first_number = last == std::string::npos ? 1 : std::max(1, std::atoi(g.start_fen.c_str() + last + 1));
 
-    // The moves, with the clock of each side after its last one.
-    const auto space = g.start_fen.find(' ');
-    bool white       = space == std::string::npos || g.start_fen[space + 1] == 'w';
-    const auto last  = g.start_fen.rfind(' ');
-    int number       = last == std::string::npos ? 1 : std::max(1, std::atoi(g.start_fen.c_str() + last + 1));
-    const auto n     = g.san.size();
-    std::string moves;
+    bool white   = game.white_first;
+    const auto n = g.san.size();
     for (std::size_t i = 0; i < n; ++i) {
-        if (white) {
-            moves += fmt::format("{}. ", number);
-        } else if (i == 0) {
-            moves += fmt::format("{}... ", number);
+        LichessGame::Move m{g.san[i], {}};
+        if (i < g.evals.size() && !g.evals[i].empty()) m.comment = "[%eval " + g.evals[i] + "]";
+        // The last move of each side is one of the last two: its clock is the side's clock now.
+        if (g.clocks && i + 2 >= n) {
+            m.comment += (m.comment.empty() ? "" : " ") + clock(white ? g.white_ms : g.black_ms);
         }
-        moves += g.san[i];
-        // The last move of each side: White's or Black's is one of the last two.
-        if (g.clocks && i + 2 >= n) moves += " {" + clock(white ? g.white_ms : g.black_ms) + "}";
-        moves += ' ';
-        if (!white) number++;
+        game.moves.push_back(std::move(m));
         white = !white;
     }
-    game.pgn += moves + "*\n\n";
     return game;
 }
 
 LichessGame lichessFinishedGame(std::string_view pgn, const std::string& event, uint32_t round,
                                 const std::string& white, const std::string& black, int white_elo, int black_elo,
                                 const std::string& result, bool frc) {
-    // The moves, in the form the game had while it was played: lichess then only adds the last moves and the
-    // result. Rewriting the comment of every move overflows its queue of changes to the study.
+    LichessGame game;
+    game.key      = key(round, white, black);
+    game.result   = result;
+    game.finished = true;
+
     std::string fen;
     if (const auto at = pgn.find("[FEN \""); at != std::string_view::npos) {
         const auto end = pgn.find("\"]", at + 6);
         if (end != std::string_view::npos) fen = std::string(pgn.substr(at + 6, end - at - 6));
     }
+    game.headers = headers(event, round, white, black, white_elo, black_elo, result, fen, frc);
+    if (!fen.empty()) {
+        const auto space  = fen.find(' ');
+        game.white_first  = space == std::string::npos || fen[space + 1] == 'w';
+        const auto last   = fen.rfind(' ');
+        game.first_number = last == std::string::npos ? 1 : std::max(1, std::atoi(fen.c_str() + last + 1));
+    }
+
+    // The moves; from each comment, the evaluation and the clock (without milliseconds), as lichess reads them.
     auto body           = pgn.find("\n\n");
     body                = body == std::string_view::npos ? pgn.size() : body + 2;
     const auto movetext = pgn.substr(body);
-
-    // Tokens without the comments; the clock a move's comment gives, h:mm:ss.
-    struct Token {
-        std::string text;
-        std::string clock;
-        bool move = false;
+    const auto command  = [](std::string_view comment, std::string_view name) -> std::string {
+        const auto at = comment.find(name);
+        if (at == std::string_view::npos) return {};
+        const auto start = at + name.size();
+        const auto value = comment.substr(start, comment.find(']', start) - start);
+        // "0.30,12": the depth left out; "0:00:59.120": the milliseconds.
+        return std::string(value.substr(0, value.find(name == "[%clk " ? '.' : ',')));
     };
-    std::vector<Token> tokens;
     for (std::size_t i = 0; i < movetext.size();) {
         const char c = movetext[i];
         if (c == ' ' || c == '\n' || c == '\r' || c == '\t') {
             ++i;
         } else if (c == '{') {
             const auto end     = movetext.find('}', i);
-            const auto comment = movetext.substr(i, end == std::string_view::npos ? end : end - i);
-            if (const auto clk = comment.find("[%clk "); clk != std::string_view::npos && !tokens.empty()) {
-                const auto value    = comment.substr(clk + 6, comment.find(']', clk) - clk - 6);
-                tokens.back().clock = std::string(value.substr(0, value.find('.')));
+            const auto comment = movetext.substr(i, end == std::string_view::npos ? std::string_view::npos : end - i);
+            if (!game.moves.empty()) {
+                const auto eval  = command(comment, "[%eval ");
+                const auto clock = command(comment, "[%clk ");
+                auto& text       = game.moves.back().comment;
+                if (!eval.empty()) text = "[%eval " + eval + "]";
+                if (!clock.empty()) text += (text.empty() ? "" : " ") + std::string("[%clk ") + clock + "]";
             }
             i = end == std::string_view::npos ? movetext.size() : end + 1;
         } else {
             auto end = movetext.find_first_of(" \n\r\t{", i);
             if (end == std::string_view::npos) end = movetext.size();
-            Token t{std::string(movetext.substr(i, end - i))};
-            const bool number = std::isdigit(static_cast<unsigned char>(t.text[0])) && t.text.back() == '.';
-            const bool over   = t.text == "1-0" || t.text == "0-1" || t.text == "1/2-1/2" || t.text == "*";
-            t.move            = !number && !over;
-            tokens.push_back(std::move(t));
+            const auto token  = movetext.substr(i, end - i);
+            const bool number = std::isdigit(static_cast<unsigned char>(token[0])) && token.back() == '.';
+            const bool over   = token == "1-0" || token == "0-1" || token == "1/2-1/2" || token == "*";
+            if (!number && !over) game.moves.push_back({std::string(token), {}});
             i = end;
         }
     }
-    std::vector<std::size_t> moves;
-    for (std::size_t i = 0; i < tokens.size(); ++i) {
-        if (tokens[i].move) moves.push_back(i);
-    }
-    std::string text;
-    for (std::size_t i = 0; i < tokens.size(); ++i) {
-        text += (text.empty() ? "" : " ") + tokens[i].text;
-        const bool last_two =
-            moves.size() >= 1 && (i == moves.back() || (moves.size() >= 2 && i == moves[moves.size() - 2]));
-        if (last_two && !tokens[i].clock.empty()) text += " {[%clk " + tokens[i].clock + "]}";
-    }
-
-    LichessGame game;
-    game.key      = key(round, white, black);
-    game.pgn      = headers(event, round, white, black, white_elo, black_elo, result, fen, frc) + "\n" + text + "\n\n";
-    game.finished = true;
     return game;
 }
 
@@ -319,7 +330,7 @@ void LichessRelay::push() {
     std::string error;
     for (const auto& [round, list] : by_round) {
         std::string body;
-        for (const auto* g : list) body += g->pgn;
+        for (const auto* g : list) body += g->pgn(target_.annotated[g->key]);
         const auto r = post("/api/broadcast/round/" + round + "/push", "text/plain", body);
         if (r.status == 429) {
             not_before_ = std::chrono::steady_clock::now() + std::chrono::minutes(1);
@@ -339,6 +350,8 @@ void LichessRelay::push() {
         }
         for (const auto* g : list) {
             if (g->finished) target_.finished.insert(g->key);
+            auto& annotated = target_.annotated[g->key];
+            annotated       = std::max(annotated, g->moves.size());
         }
     }
     save();

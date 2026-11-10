@@ -105,36 +105,37 @@ LiveGame liveGame(uint64_t number) {
 
 }  // namespace
 
-TEST_CASE("lichess: the same tags in progress and finished, clocks, the round id of a URL") {
-    const auto live = lichessLiveGame(liveGame(3), "Test", 3500, 0, false);
+TEST_CASE("lichess: the same tags in progress and finished, evaluations and clocks sent once, round ids") {
+    auto game       = liveGame(3);
+    game.evals      = {"0.30", "-0.20", "#3"};
+    const auto live = lichessLiveGame(game, "Test", 3500, 0, false);
     CHECK(live.key == "2|Alpha|Beta");  // games 3 and 4 are the second encounter
     CHECK_FALSE(live.finished);
-    CHECK(live.pgn.find("[Round \"2\"]\n[White \"Alpha\"]\n[Black \"Beta\"]\n[Result \"*\"]\n[WhiteElo \"3500\"]") !=
+    const auto pgn = live.pgn(0);
+    CHECK(pgn.find("[Round \"2\"]\n[White \"Alpha\"]\n[Black \"Beta\"]\n[Result \"*\"]\n[WhiteElo \"3500\"]") !=
           std::string::npos);
-    CHECK(live.pgn.find("[BlackElo") == std::string::npos);
-    CHECK(live.pgn.find("[FEN") == std::string::npos);
-    CHECK(live.pgn.find("1. e4 e5 {[%clk 1:02:03]} 2. Nf3 {[%clk 0:00:59]} *") != std::string::npos);
+    CHECK(pgn.find("[BlackElo") == std::string::npos);
+    CHECK(pgn.find("[FEN") == std::string::npos);
+    CHECK(pgn.find("\n\n1. e4 {[%eval 0.30]} e5 {[%eval -0.20] [%clk 1:02:03]} 2. Nf3 {[%eval #3] [%clk 0:00:59]} *") !=
+          std::string::npos);
+    // The moves pushed before keep their comments on lichess: only the new ones get theirs.
+    CHECK(live.pgn(2).find("\n\n1. e4 e5 2. Nf3 {[%eval #3] [%clk 0:00:59]} *") != std::string::npos);
 
-    const std::string pgn =
+    const std::string cb =
         "[Event \"x\"]\n[Round \"2\"]\n[White \"Alpha\"]\n[Black \"Beta\"]\n[Result \"1-0\"]\n"
-        "[GameDuration \"00:00:10\"]\n\n1. e4 {[%eval 0.30,12] [%clk 0:00:59]} e5 1-0\n\n";
-    const auto done = lichessFinishedGame(pgn, "Test", 2, "Alpha", "Beta", 3500, 0, "1-0", false);
+        "[GameDuration \"00:00:10\"]\n\n1. e4 {[%eval 0.30,12] [%clk 0:00:59.120] [%emt 0:00:01.000]} 1... e5 "
+        "{[%eval -0.20,11] [%clk 0:00:58.000]} 2. Nf3 {[%clk 0:00:57.500]} 2... Nc6 {[%eval #-2,30]} 1-0\n\n";
+    const auto done = lichessFinishedGame(cb, "Test", 2, "Alpha", "Beta", 3500, 0, "1-0", false);
     CHECK(done.key == live.key);
     CHECK(done.finished);
-    CHECK(done.pgn.rfind("[Event \"Test\"]\n[Site \"fastchess-gui\"]\n[Round \"2\"]", 0) == 0);
-    CHECK(done.pgn.find("GameDuration") == std::string::npos);
-    CHECK(done.pgn.find("\n\n1. e4 {[%clk 0:00:59]} e5 1-0\n\n") != std::string::npos);
-
-    // Only the clocks of the last move of each side, as while it was played; move numbers after a comment kept.
-    const std::string cb =
-        "[Event \"x\"]\n\n1. e4 {[%eval 0.30,12] [%clk 0:00:59.120] [%emt 0:00:01.000]} 1... e5 "
-        "{[%eval -0.20,11] [%clk 0:00:58.000]} 2. Nf3 {[%clk 0:00:57.500]} 2... Nc6 "
-        "{[%clk 0:00:56.900]} 3. Bb5 {[%eval 0.40,14] [%clk 0:00:55.000]} 1/2-1/2\n";
-    const auto short_form = lichessFinishedGame(cb, "Test", 1, "Alpha", "Beta", 0, 0, "1/2-1/2", false);
-    CHECK(
-        short_form.pgn.find("\n\n1. e4 1... e5 2. Nf3 2... Nc6 {[%clk 0:00:56]} 3. Bb5 {[%clk 0:00:55]} 1/2-1/2\n\n") !=
-        std::string::npos);
-    CHECK(short_form.pgn.find("%eval") == std::string::npos);
+    const auto all = done.pgn(0);
+    CHECK(all.rfind("[Event \"Test\"]\n[Site \"fastchess-gui\"]\n[Round \"2\"]", 0) == 0);
+    CHECK(all.find("GameDuration") == std::string::npos);
+    CHECK(all.find("\n\n1. e4 {[%eval 0.30] [%clk 0:00:59]} e5 {[%eval -0.20] [%clk 0:00:58]} 2. Nf3 "
+                   "{[%clk 0:00:57]} Nc6 {[%eval #-2]} 1-0\n\n") != std::string::npos);
+    CHECK(all.find("%emt") == std::string::npos);
+    // Its moves pushed while it was played: only the last one and the result are new.
+    CHECK(done.pgn(3).find("\n\n1. e4 e5 2. Nf3 Nc6 {[%eval #-2]} 1-0\n\n") != std::string::npos);
 
     CHECK(lichessRoundId("https://lichess.org/broadcast/my-event/round-1/AbCd1234") == "AbCd1234");
     CHECK(lichessRoundId("AbCd1234/") == "AbCd1234");
@@ -179,8 +180,8 @@ TEST_CASE("lichess: a broadcast made, its rounds filled up to 64 games, through 
     relay.start({"secret", "", false, "Relay test", dir, dir / "tmp", fmt::format("http://127.0.0.1:{}", port)});
     std::vector<LichessGame> finished;
     for (uint32_t round = 1; round <= 65; ++round) {
-        finished.push_back(lichessFinishedGame("[Event \"x\"]\n\n1. e4 1-0\n", "Relay test", round, "Alpha", "Beta", 0,
-                                               0, "1-0", false));
+        finished.push_back(lichessFinishedGame("[Event \"x\"]\n\n1. e4 {[%clk 0:00:10]} 1-0\n", "Relay test", round,
+                                               "Alpha", "Beta", 0, 0, "1-0", false));
     }
     relay.offer({lichessLiveGame(liveGame(131), "Relay test", 0, 0, false)}, finished);
     relay.stop();  // the last push, then stop
@@ -213,7 +214,7 @@ TEST_CASE("lichess: a broadcast made, its rounds filled up to 64 games, through 
     CHECK((*saved)["round_id"] == "ROUND002");
     CHECK((*saved)["finished"].size() == 65);
     CHECK(saved->dump().find("secret") == std::string::npos);
-    CHECK(relay.status().error.empty());
+    CHECK_MESSAGE(relay.status().error.empty(), relay.status().error);
 
     // Started again on the same tournament: the broadcast is kept, the finished games are not pushed again.
     const auto before = server.requests().size();
