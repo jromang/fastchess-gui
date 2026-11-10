@@ -336,6 +336,28 @@ void Match::start(engine::UciEngine& white, engine::UciEngine& black, std::optio
     Player white_player = Player(white);
     Player black_player = Player(black);
 
+    // Stream the engines' input and output to the observer for the duration of this game only, from the engine's
+    // start (a new process) or preparation (a cached one): cached engines are handed to other worker threads
+    // afterwards.
+    struct LineCallbackGuard {
+        engine::UciEngine& white;
+        engine::UciEngine& black;
+        ~LineCallbackGuard() {
+            white.setLineCallback({});
+            black.setLineCallback({});
+            white.setInputCallback({});
+            black.setInputCallback({});
+        }
+    } line_callback_guard{white, black};
+
+    if (auto* obs = observer::get()) {
+        const int slot = observer::slot();
+        white.setLineCallback([obs, slot](const std::string& line) { obs->onEngineLine(slot, Color::WHITE, line); });
+        black.setLineCallback([obs, slot](const std::string& line) { obs->onEngineLine(slot, Color::BLACK, line); });
+        white.setInputCallback([obs, slot](const std::string& line) { obs->onEngineInput(slot, Color::WHITE, line); });
+        black.setInputCallback([obs, slot](const std::string& line) { obs->onEngineInput(slot, Color::BLACK, line); });
+    }
+
     if (auto ret = white_player.engine.start(cpus); !ret) {
         if (atomic::stop.load()) return;
 
@@ -373,23 +395,6 @@ void Match::start(engine::UciEngine& white, engine::UciEngine& black, std::optio
 
     // check connection
     validConnection(white_player, black_player);
-
-    // Stream the engines' output to the observer for the duration of this game only:
-    // cached engines are handed to other worker threads afterwards.
-    struct LineCallbackGuard {
-        engine::UciEngine& white;
-        engine::UciEngine& black;
-        ~LineCallbackGuard() {
-            white.setLineCallback({});
-            black.setLineCallback({});
-        }
-    } line_callback_guard{white, black};
-
-    if (auto* obs = observer::get()) {
-        const int slot = observer::slot();
-        white.setLineCallback([obs, slot](const std::string& line) { obs->onEngineLine(slot, Color::WHITE, line); });
-        black.setLineCallback([obs, slot](const std::string& line) { obs->onEngineLine(slot, Color::BLACK, line); });
-    }
 
     auto& first  = board_.sideToMove() == Color::WHITE ? white_player : black_player;
     auto& second = board_.sideToMove() == Color::WHITE ? black_player : white_player;

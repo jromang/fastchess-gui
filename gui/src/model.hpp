@@ -174,8 +174,9 @@ struct MatchSetup {
     bool pgn_nps          = false;
     bool pgn_pv           = false;
 
-    bool recover = true;
-    bool notify  = true;
+    bool recover        = true;
+    bool log_every_game = false;  // the engine log of every game, not only of those that end badly
+    bool notify         = true;
 
     std::string language = "auto";   // "auto" (system), "en" or "fr"
     std::string theme    = "light";  // "light", "dark" or "system"
@@ -195,11 +196,11 @@ struct MatchSetup {
         sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, limit, tc_base_s, tc_inc_s, tc_moves, \
         tc_margin_ms, nodes, concurrency_auto, concurrency, affinity, book, book_random, book_plies, book_start,       \
         chess960, seed
-#define FCG_MATCH_SETUP_FIELDS_2                                                                               \
-    draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score, \
-        resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,  \
-        pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, recover, notify, language, theme,   \
-        broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port, broadcast_follow
+#define FCG_MATCH_SETUP_FIELDS_2                                                                                      \
+    draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,        \
+        resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,         \
+        pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, recover, log_every_game, notify, language, \
+        theme, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port, broadcast_follow
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
 void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) {

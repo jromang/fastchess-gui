@@ -55,6 +55,10 @@ class GameObserver {
     // Every stdout line of the engine playing `side` in `slot`, as soon as it has been read.
     virtual void onEngineLine(int /*slot*/, chess::Color /*side*/, std::string_view /*line*/) {}
 
+    // Every line sent to the engine playing `side` in `slot`, from the preparation of the game (ucinewgame, options)
+    // to its end.
+    virtual void onEngineInput(int /*slot*/, chess::Color /*side*/, std::string_view /*line*/) {}
+
     // A legal move has been played. san is computed on the position before the move.
     virtual void onMove(int /*slot*/, chess::Color /*mover*/, const MoveData& /*move*/, const std::string& /*san*/,
                         int64_t /*white_time_left*/, int64_t /*black_time_left*/) {}

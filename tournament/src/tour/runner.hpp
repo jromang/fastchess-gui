@@ -6,12 +6,15 @@
 // CPU affinity and playGame() (time control, adjudication, crash recovery). It asks the TournamentState which
 // game to play next instead of a fastchess Scheduler.
 //
-// While it runs, the runner is also fastchess' game observer: it records every scored game in the state, then
-// forwards each callback to `downstream` (the GUI), which may be null.
+// While it runs, the runner is also fastchess' game observer: it records every scored game in the state, keeps
+// the engine log of the games that end badly (see engine_log.hpp), then forwards each callback to `downstream`
+// (the GUI), which may be null.
 //
 // The caller sets fastchess' global configuration first (config::TournamentConfig with an empty opening file,
 // pgn file and config name; config::EngineConfigs with the participants), as for any fastchess tournament.
 
+#include <map>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -19,6 +22,7 @@
 #include <core/observer.hpp>
 #include <matchmaking/tournament/base/tournament.hpp>
 
+#include "engine_log.hpp"
 #include "state.hpp"
 
 namespace fcg::tour {
@@ -51,11 +55,14 @@ class Runner final : public fastchess::BaseTournament, public fastchess::observe
    private:
     void play(const GameTask& task);
     void fail(const std::string& message);
+    EngineLog& log(int slot);
+    void writeLog(int slot, uint64_t game_number, const fastchess::MatchData& data);
 
     // fastchess::observer::GameObserver
     void onGameStart(const fastchess::observer::GameStart& info) override;
     void onThinking(int slot, chess::Color stm, int64_t time_left_ms) override;
     void onEngineLine(int slot, chess::Color side, std::string_view line) override;
+    void onEngineInput(int slot, chess::Color side, std::string_view line) override;
     void onMove(int slot, chess::Color mover, const fastchess::MoveData& move, const std::string& san,
                 int64_t white_time_left, int64_t black_time_left) override;
     void onGameEnd(int slot, std::size_t game_id, std::size_t round_id, const fastchess::MatchData& data,
@@ -71,6 +78,10 @@ class Runner final : public fastchess::BaseTournament, public fastchess::observe
 
     mutable std::mutex error_mutex_;
     std::string error_;
+
+    const bool log_every_game_;
+    std::mutex logs_mutex_;
+    std::map<int, std::unique_ptr<EngineLog>> logs_;  // by worker slot
 };
 
 }  // namespace fcg::tour

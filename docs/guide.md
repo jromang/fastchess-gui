@@ -99,7 +99,7 @@ engine, estimated duration, openings, common settings, time odds). The setup of 
 - **Adjudication**: draw (from a move number, for N consecutive moves, under a score), resign (N consecutive moves
   above a score, optionally both engines agreeing), a maximum number of moves, and Syzygy tablebases.
 - **PGN and misc**: event name, extra fields in the move comments (nodes, seldepth, nps, pv), restarting engines
-  that crash.
+  that crash, keeping the engine log of every game (it is always kept for the games that end badly).
 
 **Templates** save the current setup under a name and load it back later. **Start** creates the tournament and
 plays it; **Add to the queue** keeps it for later (see *Queue*).
@@ -116,7 +116,7 @@ A running or opened tournament has a workspace with a header (name, progress, *P
 | Schedule | Every game pair by cycle or round, with its state; editing (see below) |
 | Broadcast | Live files, the TLCS server and the web page (see below) |
 | Live | The games in progress, as a mosaic of boards or one game in focus with the clocks, the running search of each engine (depth, score, nodes, nps, PV in SAN), the move list and the evaluation curve. *Detach* opens a board in its own window |
-| Games | The finished games, filterable (wins, draws, losses, losses on time, crashes and illegal moves, adjudications), with a replay board (← → Home End, or click a move or the curve) and the export of one, all or the filtered games |
+| Games | The finished games, filterable (wins, draws, losses, losses on time, crashes and illegal moves, adjudications), with a replay board (← → Home End, or click a move or the curve) and the export of one, all or the filtered games. *Engine log* opens the log of a game that has one (see *Files*) |
 
 **Pause** starts no new game pair. Games in progress play to the end, and so does the second game of a pair whose
 first game has started, so a pause never throws a result away. **Resume** continues. **Stop** either finishes
@@ -212,7 +212,12 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
   - `games.pgn`: move comments in the cutechess / fastchess style, `{+0.35/18 1.234s}`, with the score from the
     point of view of the side that moved;
   - `games-chessbase.pgn`: `{[%eval 0.35,18] [%clk 0:00:59.200] [%emt 0:00:01.234]}`, with the evaluation from
-    White's point of view, as read by ChessBase / Fritz and Lichess.
+    White's point of view, as read by ChessBase / Fritz and Lichess;
+  - `logs/game-N.log`: every line exchanged with both engines during game N (the number shown in the *Games*
+    tab), with the time it was sent or read, for the games lost on time, by a crash, a stall or an illegal move
+    (or every game, if asked). The first 300 and the last 5000 lines of a game are kept. It is what an engine
+    author needs to reproduce a bug. For a WinBoard engine it shows the UCI side; `FCG_WB2UCI_LOG` gives the
+    WinBoard side.
 
 Matches played with an earlier version (0.2.x) appear on the home page: *Import them* turns them into finished
 tournaments.

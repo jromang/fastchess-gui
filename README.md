@@ -103,8 +103,8 @@ This is a fork of fastchess. The command line tool, its Makefile and its 167 tes
 The GUI only adds hooks that do nothing until an observer is installed (the command line tool never installs
 one):
 
-- `app/src/core/observer.hpp`: the `GameObserver` interface (game start, thinking, engine output lines, moves,
-  game end, statistics) and the pair aware `PauseGate`;
+- `app/src/core/observer.hpp`: the `GameObserver` interface (game start, thinking, the lines read from and sent
+  to the engines, moves, game end, statistics) and the pair aware `PauseGate`;
 - a worker index per thread in the thread pool, plus a fix for `ThreadPool::resize`, which created 2N entries
   for N threads;
 - a ChessBase comment style in `PgnBuilder`;

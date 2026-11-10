@@ -2,11 +2,11 @@
 
 #include <cmath>
 
-#include <SDL3/SDL_misc.h>
-
 #include <imgui.h>
 
 #include <fmt/include/fmt/format.h>
+
+#include <tour/engine_log.hpp>
 
 #include "app.hpp"
 #include "i18n.hpp"
@@ -77,9 +77,16 @@ void App::selectGame(int index) {
     selected_game_ = index;
     replay_.reset();
     replay_error_.clear();
+    replay_log_.clear();
 
     auto* obs = run_.observer();
     if (!obs || index < 0 || index >= static_cast<int>(games_.size())) return;
+
+    std::error_code ec;
+    if (const auto log = tour::engineLogPath(run_.info().dir, games_[index].game_id);
+        std::filesystem::is_regular_file(log, ec)) {
+        replay_log_ = log;
+    }
 
     const auto text = tour::readSpan(obs->fastchessPgn(), games_[index].fastchess_span);
     if (!text) {
@@ -204,11 +211,7 @@ void App::drawGames() {
     }
     ImGui::EndDisabled();
     ImGui::SameLine();
-    if (ImGui::Button(TR("Folder"))) {
-        auto path = run_.info().dir.generic_string();  // forward slashes, also on Windows
-        if (!path.empty() && path.front() != '/') path.insert(path.begin(), '/');
-        SDL_OpenURL(("file://" + path).c_str());
-    }
+    if (ImGui::Button(TR("Folder"))) ui::openPath(run_.info().dir);
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", run_.info().dir.string().c_str());
 
     const ImVec2 avail = ImGui::GetContentRegionAvail();
@@ -299,10 +302,19 @@ void App::drawGames() {
     }
     replay_ply_ = std::clamp(replay_ply_, 0, total);
 
+    ImGui::AlignTextToFramePadding();  // the same height with or without the engine log button
     ImGui::Text("%s – %s  %s", game.header("White").c_str(), game.header("Black").c_str(), game.result.c_str());
     if (!game.final_comment.empty()) {
         ImGui::SameLine();
         ImGui::TextDisabled("%s", TR(game.final_comment));
+    }
+    if (!replay_log_.empty()) {
+        ImGui::SameLine();
+        if (ui::iconButton("engine_log", ui::Icon::Log, TR("Engine log"))) ui::openPath(replay_log_);
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip(
+                "%s", trf("Every line exchanged with the engines during this game:\n{}", replay_log_.string()).c_str());
+        }
     }
 
     chess::Board board;

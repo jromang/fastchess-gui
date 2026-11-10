@@ -1,6 +1,7 @@
 #include "runner.hpp"
 
 #include <chrono>
+#include <fstream>
 #include <thread>
 
 #include <core/globals/globals.hpp>
@@ -17,7 +18,11 @@ thread_local bool t_recorded        = false;
 }  // namespace
 
 Runner::Runner(TournamentState& state, fastchess::observer::GameObserver* downstream, RecordListener* listener)
-    : BaseTournament(fastchess::stats_map{}), state_(state), downstream_(downstream), listener_(listener) {}
+    : BaseTournament(fastchess::stats_map{}),
+      state_(state),
+      downstream_(downstream),
+      listener_(listener),
+      log_every_game_(state.spec().log_every_game) {}
 
 Runner::~Runner() {
     // Workers may still be inside a callback of ours: join them before our members go away.
@@ -106,7 +111,23 @@ std::string Runner::error() const {
     return error_;
 }
 
+EngineLog& Runner::log(int slot) {
+    std::lock_guard<std::mutex> lock(logs_mutex_);
+    auto& log = logs_[slot];
+    if (!log) log = std::make_unique<EngineLog>();
+    return *log;
+}
+
+void Runner::writeLog(int slot, uint64_t game_number, const fastchess::MatchData& data) {
+    // A log that cannot be written must not stop the tournament.
+    const auto path = engineLogPath(state_.dir(), game_number);
+    std::error_code ec;
+    std::filesystem::create_directories(path.parent_path(), ec);
+    std::ofstream(path, std::ios::binary | std::ios::trunc) << log(slot).text(game_number, data);
+}
+
 void Runner::onGameStart(const fastchess::observer::GameStart& info) {
+    log(info.slot).start();
     if (downstream_) downstream_->onGameStart(info);
 }
 
@@ -115,7 +136,13 @@ void Runner::onThinking(int slot, chess::Color stm, int64_t time_left_ms) {
 }
 
 void Runner::onEngineLine(int slot, chess::Color side, std::string_view line) {
+    log(slot).add(side, false, line);
     if (downstream_) downstream_->onEngineLine(slot, side, line);
+}
+
+void Runner::onEngineInput(int slot, chess::Color side, std::string_view line) {
+    log(slot).add(side, true, line);
+    if (downstream_) downstream_->onEngineInput(slot, side, line);
 }
 
 void Runner::onMove(int slot, chess::Color mover, const fastchess::MoveData& move, const std::string& san,
@@ -127,6 +154,8 @@ void Runner::onGameEnd(int slot, std::size_t game_id, std::size_t round_id, cons
                        bool counted) {
     if (downstream_) downstream_->onGameEnd(slot, game_id, round_id, data, counted);
     if (!counted || !t_task) return;
+
+    if (log_every_game_ || endsBadly(data.termination)) writeLog(slot, t_task->number() + 1, data);
 
     try {
         const auto recorded = state_.complete(*t_task, data);

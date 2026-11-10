@@ -426,6 +426,10 @@ void App::setupPgn() {
     ImGui::Spacing();
     changed |= ImGui::Checkbox(TR("Restart an engine that crashes"), &setup_.recover);
     ui::help(TR("Otherwise an engine that crashes or hangs stops the whole match."));
+    changed |= ImGui::Checkbox(TR("Keep the engine log of every game"), &setup_.log_every_game);
+    ui::help(
+        TR("Every line exchanged with the engines, in logs/ in the tournament folder, opened from the Games tab. "
+           "Always kept for the games lost on time, by a crash, a stall or an illegal move."));
     if (changed) saveSetupSoon();
 }
 

@@ -176,6 +176,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"End", "Fin"},
         {"Engine", "Moteur"},
         {"Engine lists", "Listes de moteurs"},
+        {"Engine log", "Journal moteur"},
         {"Engine to add", "Moteur à ajouter"},
         {"Engine to replace", "Moteur à remplacer"},
         {"Engine to withdraw", "Moteur à retirer"},
@@ -197,6 +198,12 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Every game of every tournament, engines known by name; maximum likelihood ratings with 95 % intervals.",
          "Toutes les parties de tous les tournois, moteurs identifiés par leur nom ; classement Elo au maximum de "
          "vraisemblance avec intervalles à 95 %."},
+        {"Every line exchanged with the engines during this game:\n{}",
+         "Chaque ligne échangée avec les moteurs pendant cette partie :\n{}"},
+        {"Every line exchanged with the engines, in logs/ in the tournament folder, opened from the Games tab. Always "
+         "kept for the games lost on time, by a crash, a stall or an illegal move.",
+         "Chaque ligne échangée avec les moteurs, dans logs/ du dossier du tournoi, à ouvrir depuis l'onglet Parties. "
+         "Toujours gardé pour les parties perdues au temps, par un crash, un blocage ou un coup illégal."},
         {"Every time control", "Toutes les cadences"},
         {"Every tournament is a folder: it resumes exactly where it stopped, even after a power cut.",
          "Chaque tournoi est un dossier : il reprend exactement où il s'est arrêté, même après une coupure de "
@@ -278,6 +285,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
          "Ses parties ne comptent plus et sont rejouées par le nouveau moteur."},
         {"Its rating on a list you trust, to anchor a tournament's ratings. 0 = none.",
          "Son classement sur une liste de référence, pour ancrer l'Elo d'un tournoi. 0 = aucun."},
+        {"Keep the engine log of every game", "Garder le journal moteur de chaque partie"},
         {"Knockout", "KO"},
         {"Knockout, {} engines", "KO, {} moteurs"},
         {"Language", "Langue"},

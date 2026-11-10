@@ -436,6 +436,7 @@ std::vector<const std::string*> UciEngine::getInfoLines() const {
 
 bool UciEngine::writeEngine(const std::string& input) {
     Logger::writeToEngine(input, "", config_.name);
+    if (input_callback_) input_callback_(input);
     return process_.writeInput(fmt::format("{}\n", input)).code == process::Status::OK;
 }
 

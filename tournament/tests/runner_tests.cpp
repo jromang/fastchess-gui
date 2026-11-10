@@ -179,3 +179,46 @@ TEST_CASE("runner: a match stopped abruptly resumes to exactly its number of gam
 
     CHECK(countGames(dir / "games.pgn") == 60);
 }
+
+TEST_CASE("runner: engine logs, of every game when asked, with both directions of both engines") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-logs";
+    fs::remove_all(dir);
+    auto s           = spec(Format::Match, 2, 1, 4);
+    s.log_every_game = true;
+    auto state       = TournamentState::create(dir, s);
+    CHECK(play(*state).empty());
+    REQUIRE(state->results().size() == 4u);
+
+    for (uint64_t n = 1; n <= 4; ++n) {
+        std::ifstream in(engineLogPath(dir, n), std::ios::binary);
+        const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+        CHECK(text.find(fmt::format("engine log, game {}", n)) != std::string::npos);
+        CHECK(text.find("W> ucinewgame") != std::string::npos);
+        CHECK(text.find("B> go ") != std::string::npos);
+        CHECK(text.find("W< bestmove ") != std::string::npos);
+    }
+}
+
+TEST_CASE("engine log: the first and the last lines of a long game; which endings keep it") {
+    EngineLog log;
+    log.start();
+    const auto total = EngineLog::HEAD_LINES + EngineLog::TAIL_LINES + 10;
+    for (std::size_t i = 0; i < total; ++i) log.add(chess::Color::WHITE, i % 2 == 0, fmt::format("line {}", i));
+    fastchess::MatchData data("startpos");
+    const auto text = log.text(7, data);
+    CHECK(text.find("W> line 0\n") != std::string::npos);
+    CHECK(text.find("... 10 lines left out ...") != std::string::npos);
+    CHECK(text.find(fmt::format("line {}\n", EngineLog::HEAD_LINES + 5)) == std::string::npos);
+    CHECK(text.find(fmt::format("line {}\n", total - 1)) != std::string::npos);
+
+    CHECK(endsBadly(fastchess::MatchTermination::TIMEOUT));
+    CHECK(endsBadly(fastchess::MatchTermination::DISCONNECT));
+    CHECK(endsBadly(fastchess::MatchTermination::ILLEGAL_MOVE));
+    CHECK_FALSE(endsBadly(fastchess::MatchTermination::NORMAL));
+    CHECK_FALSE(endsBadly(fastchess::MatchTermination::ADJUDICATION));
+}

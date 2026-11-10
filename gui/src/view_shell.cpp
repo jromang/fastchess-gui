@@ -54,10 +54,7 @@ std::string statusLabel(const tour::Summary& s, bool running) {
     return TR("Finished");
 }
 
-void openFolder(const fs::path& dir) {
-    const auto url = "file://" + dir.generic_string();
-    SDL_OpenURL(url.c_str());
-}
+void openFolder(const fs::path& dir) { ui::openPath(dir); }
 
 void sectionTitle(const char* text) {
     ImGui::Spacing();

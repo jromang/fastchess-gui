@@ -3,6 +3,7 @@
 // Small formatting and widget helpers shared by the views.
 
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <string>
 
@@ -79,6 +80,9 @@ enum class CopyAs { None, Text, Bbcode };
 // A "Copy" button with a menu: as plain text, or as BBCode for a forum post. Returns the choice, None until one is
 // made.
 CopyAs copyButton(const char* id, bool small = false);
+
+// Opens a file or a folder with the program the system associates with it.
+void openPath(const std::filesystem::path& path);
 
 // "(?)" with a tooltip.
 void help(const char* text);

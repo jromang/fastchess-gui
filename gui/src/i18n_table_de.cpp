@@ -176,6 +176,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"End", "Ende"},
         {"Engine", "Engine"},
         {"Engine lists", "Engine-Listen"},
+        {"Engine log", "Engine-Log"},
         {"Engine to add", "Hinzuzufügende Engine"},
         {"Engine to replace", "Zu ersetzende Engine"},
         {"Engine to withdraw", "Zurückzuziehende Engine"},
@@ -196,6 +197,12 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Every game of every tournament, engines known by name; maximum likelihood ratings with 95 % intervals.",
          "Alle Partien aller Turniere, Engines anhand des Namens erkannt; Maximum-Likelihood-Elo mit "
          "95-%-Intervallen."},
+        {"Every line exchanged with the engines during this game:\n{}",
+         "Jede mit den Engines ausgetauschte Zeile dieser Partie:\n{}"},
+        {"Every line exchanged with the engines, in logs/ in the tournament folder, opened from the Games tab. Always "
+         "kept for the games lost on time, by a crash, a stall or an illegal move.",
+         "Jede mit den Engines ausgetauschte Zeile, in logs/ im Turnierordner, zu öffnen im Reiter Partien. Für "
+         "Partien, die durch Zeitüberschreitung, Absturz, Hänger oder illegalen Zug verloren gehen, immer behalten."},
         {"Every time control", "Alle Bedenkzeiten"},
         {"Every tournament is a folder: it resumes exactly where it stopped, even after a power cut.",
          "Jedes Turnier ist ein Ordner: es wird genau dort fortgesetzt, wo es aufgehört hat, selbst nach einem "
@@ -277,6 +284,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
          "Ihre Partien zählen nicht mehr und werden von der neuen Engine erneut gespielt."},
         {"Its rating on a list you trust, to anchor a tournament's ratings. 0 = none.",
          "Ihre Wertung auf einer Liste, der du vertraust, um die Elo eines Turniers zu verankern. 0 = keine."},
+        {"Keep the engine log of every game", "Das Engine-Log jeder Partie behalten"},
         {"Knockout", "K.-o.-System"},
         {"Knockout, {} engines", "K.-o.-System, {} Engines"},
         {"Language", "Sprache"},

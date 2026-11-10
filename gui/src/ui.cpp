@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstring>
 
+#include <SDL3/SDL_misc.h>
 #include <imgui_internal.h>
 #include <implot.h>
 
@@ -362,6 +363,12 @@ void label(const char* text, float width) {
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(text);
     ImGui::SameLine(width);
+}
+
+void openPath(const std::filesystem::path& path) {
+    auto text = path.generic_string();  // forward slashes, also on Windows: file:///C:/...
+    if (!text.empty() && text.front() != '/') text.insert(text.begin(), '/');
+    SDL_OpenURL(("file://" + text).c_str());
 }
 
 CopyAs copyButton(const char* id, bool small) {

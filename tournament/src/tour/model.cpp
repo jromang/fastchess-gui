@@ -69,6 +69,7 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
          {"conditions", s.conditions},
          {"participants", s.participants},
          {"book", s.book}};
+    if (s.log_every_game) j["log_every_game"] = true;
 }
 
 void from_json(const nlohmann::json& j, TournamentSpec& s) {
@@ -84,6 +85,7 @@ void from_json(const nlohmann::json& j, TournamentSpec& s) {
     j.at("conditions").get_to(s.conditions);
     j.at("participants").get_to(s.participants);
     if (j.contains("book")) j.at("book").get_to(s.book);
+    s.log_every_game = j.value("log_every_game", false);
 }
 
 }  // namespace fcg::tour

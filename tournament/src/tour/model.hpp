@@ -71,6 +71,8 @@ struct TournamentSpec {
     std::vector<Participant> participants;
     FileFingerprint book;
 
+    bool log_every_game = false;  // keep the engine log of every game, not only of those that end badly
+
     [[nodiscard]] const Participant* participant(int id) const {
         for (const auto& p : participants) {
             if (p.id == id) return &p;
