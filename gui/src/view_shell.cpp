@@ -475,13 +475,12 @@ void App::drawWorkspace() {
 
     if (!ImGui::BeginTabBar("workspace_tabs")) return;
 
+    // A requested tab is asked for until it shows: a tab bar's first frame can ignore it.
     const auto tab = [&](const char* label, Tab which) {
-        ImGuiTabItemFlags flags = 0;
-        if (tab_request_ == which) {
-            flags        = ImGuiTabItemFlags_SetSelected;
-            tab_request_ = std::nullopt;
-        }
-        return ImGui::BeginTabItem(label, nullptr, flags);
+        const bool requested = tab_request_ == which;
+        const bool open      = ImGui::BeginTabItem(label, nullptr, requested ? ImGuiTabItemFlags_SetSelected : 0);
+        if (requested && open) tab_request_ = std::nullopt;
+        return open;
     };
 
     if (tab(TR("Overview###tab_overview"), Tab::Overview)) {
