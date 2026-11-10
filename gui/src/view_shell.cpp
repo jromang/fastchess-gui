@@ -209,6 +209,11 @@ void App::drawRail(float width) {
         page_ = Page::Settings;
     }
 
+    // Quit, at the bottom: the window's own close button is not always in reach.
+    const float quit_h = ImGui::GetFontSize() * 3.4f;
+    ImGui::SetCursorPosY(std::max(ImGui::GetCursorPosY(), ImGui::GetWindowHeight() - quit_h - px(14)));
+    if (ui::railButton("rail_quit", ui::Icon::Quit, TR("Quit"), false, width)) requestQuit();
+
     ImGui::EndChild();
     ImGui::PopStyleVar();
     ImGui::PopStyleColor();

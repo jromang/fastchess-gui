@@ -382,6 +382,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Programs", "Programme"},
         {"Queue", "Warteschlange"},
         {"Queued: {}", "In der Warteschlange: {}"},
+        {"Quit", "Beenden"},
         {"Quit?", "Beenden?"},
         {"Random order", "Zufällige Reihenfolge"},
         {"Rating list written to {}", "Elo-Liste geschrieben nach {}"},

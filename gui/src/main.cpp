@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -215,8 +216,26 @@ int main(int argc, char** argv) {
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
     const float scale = std::max(1.0f, SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay()));
-    const int width   = args.width > 0 ? args.width : static_cast<int>(1440 * scale);
-    const int height  = args.height > 0 ? args.height : static_cast<int>(900 * scale);
+    int width         = args.width > 0 ? args.width : static_cast<int>(1440 * scale);
+    int height        = args.height > 0 ? args.height : static_cast<int>(900 * scale);
+
+    // The window must fit the screen with its title bar: centred, a window taller than the screen has its title bar
+    // (and its close button) above the top edge. When the default size does not fit, it opens maximized.
+    std::optional<SDL_Rect> usable;
+    bool maximize = false;
+    if (args.width <= 0 && args.height <= 0) {
+        SDL_Rect bounds;
+        if (SDL_GetDisplayUsableBounds(SDL_GetPrimaryDisplay(), &bounds) && bounds.w > 0 && bounds.h > 0) {
+            const int margin_x = static_cast<int>(32 * scale);
+            const int margin_y = static_cast<int>(96 * scale);  // title bar above, some room below
+            if (width > bounds.w - margin_x || height > bounds.h - margin_y) {
+                width    = std::max(640, std::min(width, bounds.w - margin_x));
+                height   = std::max(480, std::min(height, bounds.h - margin_y));
+                maximize = true;
+            }
+            usable = bounds;
+        }
+    }
 
     SDL_Window* window =
         SDL_CreateWindow("fastchess-gui", width, height,
@@ -228,8 +247,15 @@ int main(int argc, char** argv) {
     SDL_GL_MakeCurrent(window, gl_context);
     // No vsync: on Wayland a hidden window would block in SwapWindow. The loop paces itself.
     SDL_GL_SetSwapInterval(0);
-    SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+    if (usable) {
+        // Centred in the usable area (not the whole screen, which SDL falls back to), below the title bar.
+        SDL_SetWindowPosition(window, usable->x + (usable->w - width) / 2,
+                              usable->y + std::max(static_cast<int>(48 * scale), (usable->h - height) / 2));
+    } else {
+        SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+    }
     SDL_ShowWindow(window);
+    if (maximize) SDL_MaximizeWindow(window);
 
     if (!fcg::gl::load()) return fatal("Fonctions OpenGL manquantes");
 

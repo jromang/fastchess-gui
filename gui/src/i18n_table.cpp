@@ -384,6 +384,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Programs", "Programmes"},
         {"Queue", "File d'attente"},
         {"Queued: {}", "En file d'attente : {}"},
+        {"Quit", "Quitter"},
         {"Quit?", "Quitter ?"},
         {"Random order", "Ordre aléatoire"},
         {"Rating list written to {}", "Liste Elo écrite dans {}"},

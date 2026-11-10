@@ -240,6 +240,8 @@ const char* glyph(Icon icon) {
             return "\uE048";  // arrow-left
         case Icon::Chart:
             return "\uE2A3";  // chart-column
+        case Icon::Quit:
+            return "\uE10E";  // log-out
     }
     return "";
 }
