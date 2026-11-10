@@ -1,6 +1,7 @@
 #include "ratinglist.hpp"
 
 #include <algorithm>
+#include <ctime>
 #include <fstream>
 #include <map>
 #include <set>
@@ -30,92 +31,135 @@ std::string timeControlText(const fastchess::Limit& limit) {
                        seconds(tc.increment));
 }
 
-RatingList buildRatingList(const std::vector<fs::path>& dirs, const std::string& time_control,
-                           const std::optional<std::pair<std::string, double>>& anchor) {
+namespace {
+
+// Maximum likelihood ratings of the games of `db` for which `accept(game)` holds.
+template <typename Accept>
+RatingList rate(const GameDb& db, const NamedAnchor& anchor, int min_games, Accept&& accept) {
     RatingList list;
-    std::map<std::string, std::size_t> index;
-    std::vector<RatingEntry> entries;
-    std::vector<std::set<std::string>> seen_in;  // tournaments of each engine
-    std::vector<std::vector<double>> games, points;
+    const auto n = db.engines.size();
+    std::vector<std::vector<double>> games(n, std::vector<double>(n, 0.0)), points = games;
+    std::vector<RatingEntry> entries(n);
+    std::vector<std::set<uint32_t>> sources(n);
+    std::set<uint32_t> counted;
     std::set<std::string> tcs;
 
-    const auto id = [&](const std::string& name) {
-        const auto it = index.find(name);
-        if (it != index.end()) return it->second;
-        const auto i = entries.size();
-        index[name]  = i;
-        entries.push_back(RatingEntry{name});
-        seen_in.emplace_back();
-        for (auto& row : games) row.push_back(0);
-        for (auto& row : points) row.push_back(0);
-        games.emplace_back(entries.size(), 0.0);
-        points.emplace_back(entries.size(), 0.0);
-        return i;
-    };
-
-    for (const auto& dir : dirs) {
-        TournamentSpec spec;
-        try {
-            std::ifstream in(dir / "tournament.json", std::ios::binary);
-            if (!in) continue;
-            spec = nlohmann::json::parse(in).get<TournamentSpec>();
-        } catch (const std::exception&) {
-            continue;
-        }
-        if (spec.participants.empty()) continue;
-
-        const auto tc = timeControlText(spec.participants.front().engine.limit);
-        tcs.insert(tc);
-        if (!time_control.empty() && tc != time_control) continue;
-
-        TournamentState::Replayed replayed;
-        try {
-            replayed = TournamentState::replay(Journal::read(dir / "journal.jsonl", false), spec);
-        } catch (const std::exception&) {
-            continue;
-        }
-        if (replayed.results.empty()) continue;
-
-        list.tournaments++;
-        const auto name = [&](int pid) {
-            const auto* p = spec.participant(pid);
-            return p ? p->engine.name : std::string();
-        };
-        for (const auto& r : replayed.results) {
-            const auto w = name(r.white), b = name(r.black);
-            if (w.empty() || b.empty() || w == b) continue;
-            const auto i = id(w), j = id(b);
-            const double sw = r.scoreOf(r.white);
-            games[i][j] += 1;
-            games[j][i] += 1;
-            points[i][j] += sw;
-            points[j][i] += 1 - sw;
-            entries[i].games++, entries[j].games++;
-            entries[i].points += sw;
-            entries[j].points += 1 - sw;
-            seen_in[i].insert(dir.filename().string());
-            seen_in[j].insert(dir.filename().string());
-            list.games++;
-        }
+    for (const auto& g : db.games) {
+        tcs.insert(db.time_controls[g.time_control]);
+        if (!accept(g)) continue;
+        const auto i = g.white, j = g.black;
+        games[i][j] += 1;
+        games[j][i] += 1;
+        points[i][j] += g.white_score;
+        points[j][i] += 1 - g.white_score;
+        entries[i].games++, entries[j].games++;
+        entries[i].points += g.white_score;
+        entries[j].points += 1 - g.white_score;
+        sources[i].insert(g.source), sources[j].insert(g.source);
+        counted.insert(g.source);
+        list.games++;
     }
 
+    // Engines without a game are not rated at all.
+    std::vector<uint32_t> present;
+    for (uint32_t i = 0; i < n; ++i) {
+        if (entries[i].games > 0) present.push_back(i);
+    }
+    std::vector<std::vector<double>> g2(present.size(), std::vector<double>(present.size())), p2 = g2;
     std::optional<std::pair<int, double>> fixed;
-    if (anchor) {
-        if (const auto it = index.find(anchor->first); it != index.end()) {
-            fixed = std::make_pair(static_cast<int>(it->second), anchor->second);
+    for (std::size_t a = 0; a < present.size(); ++a) {
+        for (std::size_t b = 0; b < present.size(); ++b) {
+            g2[a][b] = games[present[a]][present[b]];
+            p2[a][b] = points[present[a]][present[b]];
         }
+        if (anchor && db.engines[present[a]] == anchor->first)
+            fixed = std::make_pair(static_cast<int>(a), anchor->second);
     }
-    const auto ratings = maximumLikelihood(games, points, fixed);
-    for (std::size_t i = 0; i < entries.size(); ++i) {
-        entries[i].rating      = ratings[i];
-        entries[i].tournaments = static_cast<int>(seen_in[i].size());
+    const auto ratings = maximumLikelihood(g2, p2, fixed);
+    for (std::size_t a = 0; a < present.size(); ++a) {
+        auto& e       = entries[present[a]];
+        e.name        = db.engines[present[a]];
+        e.rating      = ratings[a];
+        e.tournaments = static_cast<int>(sources[present[a]].size());
+        if (e.games >= min_games) list.entries.push_back(e);
     }
-    std::sort(entries.begin(), entries.end(),
+    std::sort(list.entries.begin(), list.entries.end(),
               [](const RatingEntry& a, const RatingEntry& b) { return a.rating.elo > b.rating.elo; });
 
-    list.entries       = std::move(entries);
+    list.tournaments   = static_cast<int>(counted.size());
     list.time_controls = {tcs.begin(), tcs.end()};
     return list;
+}
+
+}  // namespace
+
+RatingList ratingList(const GameDb& db, const GameFilter& filter, const NamedAnchor& anchor, int min_games) {
+    return rate(db, anchor, min_games, [&](const DbGame& g) { return filter.accepts(db, g); });
+}
+
+RatingList buildRatingList(const std::vector<fs::path>& dirs, const std::string& time_control,
+                           const NamedAnchor& anchor) {
+    GameFilter filter;
+    filter.time_control = time_control;
+    return ratingList(readGameDb(dirs), filter, anchor);
+}
+
+std::vector<RatingPoint> ratingHistory(const GameDb& db, const GameFilter& filter, const NamedAnchor& anchor,
+                                       const std::string& engine) {
+    const auto id = db.engine(engine);
+    if (!id) return {};
+
+    // The sources the engine played in, by the time of their last game.
+    std::map<uint32_t, int64_t> last;
+    for (const auto& g : db.games) {
+        if ((g.white == *id || g.black == *id) && filter.accepts(db, g)) {
+            last[g.source] = std::max(last[g.source], g.played_at);
+        }
+    }
+    std::vector<std::pair<int64_t, uint32_t>> order;
+    for (const auto& [source, time] : last) order.emplace_back(time, source);
+    std::sort(order.begin(), order.end());
+
+    std::vector<RatingPoint> out;
+    for (const auto& [time, source] : order) {
+        // Every game played up to the end of this source: earlier sources, and this one.
+        const auto list = rate(db, anchor, 0, [&](const DbGame& g) {
+            if (!filter.accepts(db, g)) return false;
+            if (g.source == source) return true;
+            const auto it  = last.find(g.source);
+            const auto end = it != last.end() ? it->second : g.played_at;
+            return end < time || (end == time && g.source < source);
+        });
+        for (const auto& e : list.entries) {
+            if (e.name == engine) out.push_back({time, db.sources[source].name, e.rating, e.games});
+        }
+    }
+    return out;
+}
+
+std::string ratingPgn(const GameDb& db, const GameFilter& filter) {
+    std::string out;
+    for (const auto& g : db.games) {
+        if (!filter.accepts(db, g)) continue;
+        std::string date = "????.??.??";
+        if (g.played_at > 0) {
+            const std::time_t t = static_cast<std::time_t>(g.played_at / 1000);
+            std::tm tm{};
+#ifdef _WIN32
+            gmtime_s(&tm, &t);
+#else
+            gmtime_r(&t, &tm);
+#endif
+            date = fmt::format("{:04}.{:02}.{:02}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+        }
+        const char* result = g.white_score == 1 ? "1-0" : g.white_score == 0 ? "0-1" : "1/2-1/2";
+        out += fmt::format(
+            "[Event \"{}\"]\n[Date \"{}\"]\n[White \"{}\"]\n[Black \"{}\"]\n[Result \"{}\"]\n"
+            "[TimeControl \"{}\"]\n\n{}\n\n",
+            db.sources[g.source].name, date, db.engines[g.white], db.engines[g.black], result,
+            db.time_controls[g.time_control], result);
+    }
+    return out;
 }
 
 std::string ratingListText(const RatingList& list) {

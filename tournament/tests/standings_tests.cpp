@@ -158,6 +158,9 @@ TEST_CASE("table: a head-to-head result breaks an otherwise complete tie") {
 
 #include <filesystem>
 
+#include <fstream>
+
+#include <tour/game_db.hpp>
 #include <tour/ratinglist.hpp>
 
 TEST_CASE("rating list: games of several tournaments, engines by name, filters and anchor") {
@@ -211,6 +214,37 @@ TEST_CASE("rating list: games of several tournaments, engines by name, filters a
 
     CHECK(ratingListText(all).find("B") != std::string::npos);
     CHECK(ratingListCsv(all).rfind("rank,engine", 0) == 0);
+
+    // The same games as a database, with imported PGN files: headers only, and with moves.
+    std::ofstream(root / "ccrl.pgn") << "[White \"A\"]\n[Black \"D\"]\n[Result \"1-0\"]\n[Date \"2024.01.31\"]\n\n"
+                                        "[White \"D\"]\n[Black \"A\"]\n[Result \"1/2-1/2\"]\n\n";
+    std::ofstream(root / "games.pgn") << "[Event \"x\"]\n[White \"C\"]\n[Black \"D\"]\n[Result \"0-1\"]\n"
+                                         "[TimeControl \"60+0.6\"]\n\n1. e4 e5 0-1\n\n"
+                                         "[Event \"x\"]\n[White \"C\"]\n[Black \"D\"]\n[Result \"*\"]\n\n1. e4 *\n";
+    const auto db = readGameDb(dirs, {root / "ccrl.pgn", root / "games.pgn", root / "missing.pgn"});
+    CHECK(db.sources.size() == 4);
+    CHECK(db.games.size() == 4u + 2u + 1u);  // the unfinished game does not count
+    CHECK(db.games[4].played_at == 1706659200000);
+    CHECK(ratingList(db, {}, std::nullopt).entries.size() == 4);
+    GameFilter own;
+    own.external = false;
+    CHECK(ratingList(db, own, std::nullopt).entries.size() == 3);
+    CHECK(ratingList(db, {}, std::nullopt, 4).entries.size() == 2);  // A and B have 4 games, C and D 3
+
+    const auto h2h = headToHead(db, {}, "A", "B");
+    CHECK(h2h.games.size() == 2);
+    CHECK(h2h.total.wins == 2);  // the first engine of the encounter won both games
+    CHECK(h2h.total.losses == 0);
+    CHECK(h2h.total.penta_WW == 1);
+
+    const auto record = engineRecord(db, {}, "B");
+    CHECK(record.total.wins + record.total.draws + record.total.losses == 4);
+    CHECK(record.sources.size() == 2);
+    CHECK(record.by_time_control.size() == 2);
+
+    const auto history = ratingHistory(db, own, std::nullopt, "B");
+    CHECK(history.size() == 2);
+    CHECK(ratingPgn(db, own).find("[White \"A\"]") != std::string::npos);
 }
 
 TEST_CASE("results by opening: games, pairs by kind, the starting position after the book moves") {

@@ -11,6 +11,7 @@
 
 #include <types/engine_config.hpp>
 
+#include "game_db.hpp"
 #include "standings.hpp"
 
 namespace fcg::tour {
@@ -35,12 +36,31 @@ struct RatingList {
 // "10+0.1", "40/900+0", "5000 nodes": how a time control is shown and filtered.
 [[nodiscard]] std::string timeControlText(const fastchess::Limit& limit);
 
-// The games of the tournaments in `dirs` (folders that are not tournaments are skipped). `time_control`: only the
-// tournaments played at that time control, empty for all. `anchor`: an engine name and its rating; without it the
-// ratings average 0.
+using NamedAnchor = std::optional<std::pair<std::string, double>>;  // an engine name and its rating
+
+// The games of `db` that `filter` accepts. Without an anchor the ratings average 0. Engines with fewer than
+// `min_games` games are left out of the list (their games still count for their opponents).
+[[nodiscard]] RatingList ratingList(const GameDb& db, const GameFilter& filter, const NamedAnchor& anchor,
+                                    int min_games = 0);
+
+// The tournaments in `dirs` at `time_control` (empty for all).
 [[nodiscard]] RatingList buildRatingList(const std::vector<std::filesystem::path>& dirs,
-                                         const std::string& time_control,
-                                         const std::optional<std::pair<std::string, double>>& anchor);
+                                         const std::string& time_control, const NamedAnchor& anchor);
+
+// An engine's rating after each tournament (or imported file) it played in, in the order they were played: the
+// list computed on the games up to that one.
+struct RatingPoint {
+    int64_t time = 0;  // when the last game counted was played
+    std::string source;
+    Rating rating;
+    int games = 0;
+};
+[[nodiscard]] std::vector<RatingPoint> ratingHistory(const GameDb& db, const GameFilter& filter,
+                                                     const NamedAnchor& anchor, const std::string& engine);
+
+// The games accepted, as a PGN of headers only (White, Black, Result, Date, TimeControl), which Ordo and
+// BayesElo read.
+[[nodiscard]] std::string ratingPgn(const GameDb& db, const GameFilter& filter);
 
 // The list as text, for the clipboard; and as CSV.
 [[nodiscard]] std::string ratingListText(const RatingList& list);

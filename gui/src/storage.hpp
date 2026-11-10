@@ -27,6 +27,10 @@ class Storage {
     [[nodiscard]] std::vector<EngineEntry> loadEngines() const;
     void saveEngines(const std::vector<EngineEntry>& engines) const;
 
+    // PGN files whose games count in the ratings too (settings.json).
+    [[nodiscard]] std::vector<std::filesystem::path> ratingPgns() const;
+    void setRatingPgns(const std::vector<std::filesystem::path>& files) const;
+
     [[nodiscard]] std::vector<BookEntry> loadBooks() const;
     void saveBooks(const std::vector<BookEntry>& books) const;
 

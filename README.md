@@ -26,7 +26,9 @@ this repository still builds unchanged.
   web page.
 - **Workflow**: a queue of tournaments, *Relaunch with…* a new engine version, templates, and a headless mode
   (`fastchess-gui --run`) for servers, which can broadcast too.
-- **Ratings** over every tournament played, by time control, anchored on a reference Elo.
+- **Ratings** over every tournament played (and imported PGN files), by time control, group or period, anchored on a
+  reference Elo; an engine's card (results, health, rating over time), head to head records, the progress of an
+  engine's versions, an export for Ordo and BayesElo.
 - **Matches**: a fixed number of games, unlimited, or an SPRT (normalized, logistic or BayesElo model, with
   gainer and non-regression presets). Time control (base + increment, moves per period) or fixed nodes.
 - **Concurrency** detected at startup: one game per hardware thread at fixed nodes, physical cores − 1 with a

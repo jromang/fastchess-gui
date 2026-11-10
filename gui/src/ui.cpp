@@ -138,6 +138,9 @@ void applyTheme(Theme theme, float scale) {
         CARD_BD = IM_COL32(224, 227, 232, 255);
         SELECT  = IM_COL32(221, 227, 236, 255);
     }
+    // Dates on time axes as 2026-11-09 and 14:05, not 11/9/26 and 2:05pm.
+    ImPlot::GetStyle().UseISO8601     = true;
+    ImPlot::GetStyle().Use24HourClock = true;
 
     style.WindowRounding    = 6.0f;
     style.ChildRounding     = 8.0f;

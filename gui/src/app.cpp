@@ -113,9 +113,10 @@ void App::frame() {
             page_ = Page::Log;
         else if (w == "settings")
             page_ = Page::Settings;
-        else if (w == "ratings")
-            page_ = Page::Ratings;
-        else if (w == "books")
+        else if (w == "ratings" || w == "ratings-engine" || w == "ratings-h2h" || w == "ratings-progress") {
+            page_                = Page::Ratings;
+            ratings_tab_request_ = w == "ratings-engine" ? 1 : w == "ratings-h2h" ? 2 : w == "ratings-progress" ? 3 : 0;
+        } else if (w == "books")
             page_ = Page::Books;
         else if (w == "home")
             page_ = Page::Home;
@@ -267,7 +268,8 @@ void App::resumeRun() {
 }
 
 void App::resetRunView() {
-    page_              = Page::Tournament;
+    page_ = Page::Tournament;
+    select_game_id_.reset();
     tab_request_       = Tab::Overview;
     tournaments_dirty_ = true;
     unfinished_.reset();
@@ -323,6 +325,15 @@ void App::pollRun() {
             if (games_.size() != before) {
                 reasons_  = obs->reasons();
                 openings_ = obs->openings();
+            }
+            // A game asked for from the Ratings page, once its tournament's games are there.
+            if (select_game_id_) {
+                const auto it = std::find_if(games_.begin(), games_.end(),
+                                             [&](const GameRecord& g) { return g.game_id == *select_game_id_; });
+                if (it != games_.end()) {
+                    selectGame(static_cast<int>(it - games_.begin()));
+                    select_game_id_.reset();
+                }
             }
             totals_      = obs->totals();
             last_totals_ = now;
@@ -460,13 +471,43 @@ void App::handleDialogs() {
             case Dialogs::Purpose::TournamentsFolder:
                 storage_.setRunsDir(path);
                 tournaments_dirty_ = true;
-                ratings_dirty_     = true;
+                game_db_dirty_     = true;
                 unfinished_        = unfinishedMatch(storage_.runsDir());
                 break;
             case Dialogs::Purpose::ExportRatings: {
                 std::ofstream out(path, std::ios::binary | std::ios::trunc);
                 out << tour::ratingListCsv(rating_list_);
                 Console::instance().add(out ? trf("Rating list written to {}", path) : trf("Cannot write {}", path),
+                                        !out);
+                break;
+            }
+            case Dialogs::Purpose::ExportRatingPgn: {
+                std::ofstream out(path, std::ios::binary | std::ios::trunc);
+                out << tour::ratingPgn(game_db_, ratingFilter());
+                Console::instance().add(out ? trf("Games written to {}", path) : trf("Cannot write {}", path), !out);
+                break;
+            }
+            case Dialogs::Purpose::ImportRatingPgn: {
+                auto list = storage_.ratingPgns();
+                if (std::find(list.begin(), list.end(), std::filesystem::path(path)) == list.end())
+                    list.emplace_back(path);
+                storage_.setRatingPgns(list);
+                game_db_dirty_ = true;
+                break;
+            }
+            case Dialogs::Purpose::ExportHeadToHead: {
+                std::ofstream out(path, std::ios::binary | std::ios::trunc);
+                std::size_t n = 0;
+                for (const auto i : h2h_.games) {
+                    const auto& g   = game_db_.games[i];
+                    const auto& src = game_db_.sources[g.source];
+                    if (src.external) continue;
+                    if (const auto text = tour::readSpan(src.path / "games.pgn", g.pgn)) {
+                        out << *text;
+                        ++n;
+                    }
+                }
+                Console::instance().add(out ? trf("{} games exported to {}", n, path) : trf("Cannot write {}", path),
                                         !out);
                 break;
             }

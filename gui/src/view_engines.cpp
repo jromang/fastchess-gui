@@ -406,6 +406,10 @@ void App::drawEngines() {
         changed = true;
     }
     ui::help(TR("Its rating on a list you trust, to anchor a tournament's ratings. 0 = none."));
+    ImGui::SameLine(0, ImGui::GetFontSize() * 1.5f);
+    if (ImGui::SmallButton(TR("Its results…"))) showEngineCard(e.name);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s", TR("Its card in Ratings: results, health and rating over every tournament."));
 
     // Health check.
     ImGui::Spacing();

@@ -180,11 +180,24 @@ more or with an engine replaced by another (typically the next version).
 ## Ratings
 
 The **Ratings** page computes maximum likelihood ratings (the logistic model, draws as half a point, as Ordo does
-by default) over every game of every tournament in the profile. Engines are identified by their name.
+by default) over every game of every tournament in the profile, and of PGN files imported. Engines are identified
+by their name. The games counted can be narrowed at the top of the page, for every tab:
 
-- *Every time control* or one of them;
-- *Anchor*: the average at 0, or one engine at a fixed rating (by default the first engine with a reference Elo);
-- *Copy* (as text or BBCode), *Export CSV…*, *Refresh*.
+- a time control, a group of the engine library (the games between its engines), the last 30 or 365 days;
+- *Imported games*: the games of the PGN files listed under *PGN files…* (a CCRL or CEGT download, the games of
+  another program), read from their headers; their engines are known by the names the PGN gives them;
+- *Anchor*: the average at 0, or one engine at a fixed rating (by default the first engine with a reference Elo).
+
+Four tabs:
+
+| Tab | Contents |
+|---|---|
+| Rating list | The list, with a minimum number of games; *Copy* (as text or BBCode), *Export CSV…*, and *Export for Ordo…*: the games counted as a PGN of headers, which Ordo and BayesElo read (`ordo -p ratings.pgn -o ratings.txt`). A click on an engine opens its card |
+| Engine | An engine's card: its rating, its results overall and by time control, its losses on time, crashes and illegal moves (each game opens in its tournament), its tournaments (each opens), its average depth, time per move and NPS read from the move comments, and its rating after each tournament |
+| Head to head | Two engines against each other: the score, Elo and LOS, the pentanomial counts of the pairs they played both games of, by time control and by tournament, their games (each opens in its tournament) and *Export the games…* |
+| Progress | The rating of the engines ticked after each tournament they played, on a time axis: the versions of an engine side by side |
+
+The *Engines* page leads to an engine's card with *Its results…*.
 
 ## Broadcast
 
@@ -263,7 +276,8 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
 - `--autostart` starts the saved setup at launch;
 - `--shot` saves a screenshot of the window after the given number of seconds (default 5), with WINDOW brought to
   the front, and quits once every screenshot is taken. It can be repeated. WINDOW is a page (`home`, `setup`,
-  `engines`, `ratings`, `console`, `settings`) or a tab (`live`, `games`, `openings`, `standings`, `schedule`,
+  `engines`, `books`, `ratings`, `ratings-engine`, `ratings-h2h`, `ratings-progress`, `console`,
+  `settings`) or a tab (`live`, `games`, `openings`, `standings`, `schedule`,
   `bracket`, `broadcast`). The mouse is ignored in this mode and, on Linux, the window is rendered off screen (no window
   appears; set `SDL_VIDEODRIVER` to override);
 - `--focus WINDOW` opens that page or tab at launch;

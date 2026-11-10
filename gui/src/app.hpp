@@ -4,6 +4,7 @@
 #include <atomic>
 #include <chrono>
 #include <deque>
+#include <map>
 #include <future>
 #include <memory>
 #include <optional>
@@ -31,6 +32,7 @@
 
 #include <tour/book_scan.hpp>
 #include <tour/by_opening.hpp>
+#include <tour/game_db.hpp>
 #include <tour/ratinglist.hpp>
 #include <tour/standings.hpp>
 
@@ -95,6 +97,15 @@ class App {
     void drawWorkspaceHeader();
     void drawSettings();
     void drawRatings();
+    void drawRatingFilters();
+    void drawRatingList();
+    void drawEngineCard();
+    void drawHeadToHead();
+    void drawProgress();
+    void refreshRatings();
+    [[nodiscard]] tour::GameFilter ratingFilter() const;
+    void showEngineCard(const std::string& name);
+    void openGame(const tour::DbGame& game);  // opens its tournament on the Games tab, the game selected
     void applyThemeSetting();
     void refreshTournaments();
     void openTournament(const std::filesystem::path& dir);
@@ -311,12 +322,32 @@ class App {
     // Broadcast.
     Broadcaster broadcaster_;
 
-    // Rating list over every tournament.
+    // Ratings page: every game of the profile, and what is computed from them.
+    tour::GameDb game_db_;
+    bool game_db_dirty_ = true;  // read the tournaments again
+    bool ratings_dirty_ = true;  // compute again, with other filters
     tour::RatingList rating_list_;
-    bool ratings_dirty_ = true;
     std::string rating_tc_;      // time control shown, empty = all
     std::string rating_anchor_;  // engine whose rating is fixed, empty = average 0
     double rating_anchor_elo_ = 0;
+    std::string rating_group_;  // only the engines of this library group, empty = all
+    int rating_period_    = 0;  // 0 every game, 1 the last 30 days, 2 the last 365 days
+    int rating_min_games_ = 0;
+    bool rating_external_ = true;  // with the games of the imported PGN files
+    std::optional<int> ratings_tab_request_;
+    std::string card_engine_;  // Engine tab
+    tour::EngineRecord card_;
+    std::vector<tour::RatingPoint> card_history_;
+    struct SearchAverages {
+        bool read     = false;
+        uint64_t moves = 0;
+        double depth = 0, nps = 0, time_ms = 0;
+    } card_search_;
+    std::string h2h_a_, h2h_b_;  // Head to head tab
+    tour::HeadToHead h2h_;
+    std::set<std::string> progress_engines_;  // Progress tab
+    std::map<std::string, std::vector<tour::RatingPoint>> progress_;
+    std::optional<uint64_t> select_game_id_;  // a game to show once its tournament is open
 
     // Shell.
     Page page_ = Page::Home;

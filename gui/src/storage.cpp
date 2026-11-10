@@ -63,6 +63,22 @@ std::vector<EngineEntry> Storage::loadEngines() const {
 
 void Storage::saveEngines(const std::vector<EngineEntry>& engines) const { writeJson(root_ / "engines.json", engines); }
 
+std::vector<fs::path> Storage::ratingPgns() const {
+    std::vector<fs::path> out;
+    if (const auto settings = readJson<nlohmann::json>(root_ / "settings.json")) {
+        for (const auto& f : settings->value("rating_pgns", std::vector<std::string>{})) out.emplace_back(f);
+    }
+    return out;
+}
+
+void Storage::setRatingPgns(const std::vector<fs::path>& files) const {
+    auto settings = readJson<nlohmann::json>(root_ / "settings.json").value_or(nlohmann::json::object());
+    std::vector<std::string> list;
+    for (const auto& f : files) list.push_back(f.string());
+    settings["rating_pgns"] = list;
+    writeJson(root_ / "settings.json", settings);
+}
+
 std::vector<BookEntry> Storage::loadBooks() const {
     return readJson<std::vector<BookEntry>>(root_ / "books.json").value_or(std::vector<BookEntry>{});
 }
