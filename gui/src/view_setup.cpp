@@ -304,6 +304,34 @@ void App::setupOpenings() {
     bool changed       = false;
     const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
 
+    // A book of the library, or any file.
+    if (!books_.empty()) {
+        const auto current =
+            std::find_if(books_.begin(), books_.end(), [&](const auto& b) { return b.path == setup_.book; });
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        const auto preview = current != books_.end() ? current->name
+                             : setup_.book.empty()   ? std::string(TR("No book"))
+                                                     : std::string(TR("A file of your choice"));
+        if (ImGui::BeginCombo("##book_library", preview.c_str())) {
+            if (ImGui::Selectable(TR("No book"), setup_.book.empty())) {
+                setup_.book.clear();
+                changed = true;
+            }
+            for (const auto& b : books_) {
+                const auto label =
+                    b.positions > 0 ? trf("{}  ({} openings)", b.name, ui::formatCount(b.positions)) : b.name;
+                if (ImGui::Selectable(label.c_str(), b.path == setup_.book)) {
+                    setup_.book       = b.path;
+                    setup_.book_plies = b.plies;
+                    if (b.chess960) setup_.chess960 = true;
+                    changed = true;
+                }
+                if (ImGui::IsItemHovered() && !b.description.empty()) ImGui::SetTooltip("%s", b.description.c_str());
+            }
+            ImGui::EndCombo();
+        }
+    }
+
     changed |=
         inputText("##book", setup_.book, ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x);
     if (ImGui::IsItemHovered() && !setup_.book.empty()) ImGui::SetTooltip("%s", setup_.book.c_str());

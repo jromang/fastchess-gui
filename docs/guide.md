@@ -4,12 +4,13 @@ The [README](../README.md) explains what fastchess-gui is and how to build it. T
 
 ## The window
 
-A navigation rail on the left leads to five pages:
+A navigation rail on the left leads to six pages:
 
 | Page | Contents |
 |---|---|
 | Tournaments | The home page: the running tournament, the queue, every tournament of the profile (resume, open, relaunch), *New tournament* |
 | Engines | The engine library: options, health check, groups, reference Elo, import of other programs' lists |
+| Books | The opening book library, and the openings of each book with what is wrong with them |
 | Ratings | One rating list over every game of every tournament |
 | Log | fastchess' own output and the messages of the GUI |
 | Settings | Language, theme (automatic, dark, light), end of tournament notification, the tournaments folder |
@@ -55,6 +56,29 @@ output, resignation. Engines marked ↔ in the list are WinBoard engines.
 - Chess960 for an engine with the `fischerandom` variant: `variant fischerandom`, positions in X-FEN, castling as
   `O-O`/`O-O-O`, as WinBoard sends them.
 - `FCG_WB2UCI_LOG=FILE` in the environment writes every line exchanged with WinBoard engines to `FILE`.
+
+## Books
+
+**Add…** registers an opening book (EPD, PGN or Polyglot `.bin`) under a name, with a description; for a PGN
+book the number of plies kept, for a Polyglot book the depth its lines are followed to. The setup's *Openings*
+section then offers the books of the library by name, with their number of openings (any other file can still
+be chosen). *Remove* takes a book out of the library and leaves the file alone.
+
+The book chosen is read in the background, with fastchess' own readers (so its openings are exactly those a
+tournament plays), and checked:
+
+- **illegal positions**: not one king of each colour, pawns on the first or last rank, the side not to move in
+  check;
+- **duplicates**: the same position as an earlier opening, by transposition included;
+- **colours reversed**: an earlier opening with the colours swapped (a book meant to be played twice, colours
+  reversed, does not need both);
+- **games already over**: no legal move, or not enough material to mate.
+
+Its openings are listed below, every one or only those with a problem, searched by part of a FEN or by moves (a
+PGN book shows its moves in SAN); a click shows the position on a board. *Use it for the next tournament* puts it
+in the setup (with Chess960 for a Chess960 book). *Save a cleaned copy…* writes an EPD book without the illegal
+positions, the duplicates and the finished games (and, if ticked, the positions with colours reversed), and adds
+it to the library.
 
 ## New tournament
 

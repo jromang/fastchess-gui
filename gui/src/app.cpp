@@ -25,7 +25,9 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
       options_(std::move(options)),
       dialogs_(window) {
     engines_ = storage_.loadEngines();
-    setup_   = storage_.loadSetup();
+    books_   = storage_.loadBooks();
+    if (!books_.empty()) selected_book_ = 0;
+    setup_ = storage_.loadSetup();
     i18n::setLanguage(i18n::resolve(setup_.language));
 
     if (!setup_.concurrency_auto) setup_.concurrency = std::clamp(setup_.concurrency, 1, topology_.logical);
@@ -47,6 +49,8 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
 }
 
 App::~App() {
+    cancelBookScan();
+    for (auto& f : abandoned_scans_) f.wait();
     storage_.saveSetup(setup_);
     storage_.saveEngines(engines_);
 }
@@ -111,6 +115,8 @@ void App::frame() {
             page_ = Page::Settings;
         else if (w == "ratings")
             page_ = Page::Ratings;
+        else if (w == "books")
+            page_ = Page::Books;
         else if (w == "home")
             page_ = Page::Home;
         else {
@@ -472,6 +478,29 @@ void App::handleDialogs() {
                     out ? trf("{} openings written to {}", shown.size(), path) : trf("Cannot write {}", path), !out);
                 break;
             }
+            case Dialogs::Purpose::AddBook:
+                addBook(path);
+                break;
+            case Dialogs::Purpose::BookFile:
+                if (selected_book_ >= 0 && selected_book_ < static_cast<int>(books_.size())) {
+                    books_[selected_book_].path = path;
+                    storage_.saveBooks(books_);
+                    startBookScan(selected_book_);
+                }
+                break;
+            case Dialogs::Purpose::SaveCleanBook:
+                if (book_scan_) {
+                    uint8_t drop = tour::BOOK_ILLEGAL | tour::BOOK_DUPLICATE | tour::BOOK_OVER;
+                    if (drop_mirrored_) drop |= tour::BOOK_MIRRORED;
+                    try {
+                        const auto n = book_scan_->writeEpd(path, drop);
+                        Console::instance().add(trf("{} positions written to {}", n, path));
+                        addBook(path);
+                    } catch (const std::exception& e) {
+                        Console::instance().add(e.what(), true);
+                    }
+                }
+                break;
             case Dialogs::Purpose::ImportEngineList:
                 importEngines(importEngineList(path));
                 break;

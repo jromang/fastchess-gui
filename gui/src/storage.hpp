@@ -9,7 +9,7 @@
 
 namespace fcg {
 
-// Where the GUI keeps its files: engines.json, setup.json, layout.ini, settings.json and the tournaments (runs/
+// Where the GUI keeps its files: engines.json, books.json, setup.json, layout.ini, settings.json and the tournaments (runs/
 // unless settings.json names another folder). Defaults to SDL_GetPrefPath(); --profile <dir> overrides it.
 class Storage {
    public:
@@ -26,6 +26,9 @@ class Storage {
 
     [[nodiscard]] std::vector<EngineEntry> loadEngines() const;
     void saveEngines(const std::vector<EngineEntry>& engines) const;
+
+    [[nodiscard]] std::vector<BookEntry> loadBooks() const;
+    void saveBooks(const std::vector<BookEntry>& books) const;
 
     [[nodiscard]] MatchSetup loadSetup() const;
     void saveSetup(const MatchSetup& setup) const;

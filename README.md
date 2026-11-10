@@ -44,7 +44,10 @@ this repository still builds unchanged.
 - **Engines**: UCI options are read from the engine and edited in a table; only values that differ from the
   default are sent. A health check, groups, a reference Elo, and the import of ChessGUI, cutechess, Banksia and
   Arena engine lists. WinBoard engines too, through a translation to UCI built in.
-- Opening books (EPD, PGN, Polyglot), Chess960 (the 960 positions, or a book), draw / resign / max moves / Syzygy
+- **Opening books**: EPD, PGN or Polyglot, in a library; each book checked for illegal, duplicate, mirrored and
+  finished positions, browsed on a board, and cleaned. Results by opening after a tournament: the unbalanced, the
+  drawish and the decisive ones, exported as EPD.
+- Chess960 (the 960 positions, or a book), draw / resign / max moves / Syzygy
   adjudication, crash recovery, a desktop notification when a match ends.
 - Light and dark themes; English, French or German, following the system (can be changed in the settings).
 

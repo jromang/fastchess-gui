@@ -27,6 +27,9 @@ class Dialogs {
         ImportEngineFolder,
         ExportRatings,
         ExportOpenings,
+        AddBook,
+        BookFile,
+        SaveCleanBook,
         TournamentsFolder
     };
 

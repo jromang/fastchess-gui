@@ -49,7 +49,7 @@ float whitePawns(const std::optional<fastchess::Score>& score, chess::Color move
 // Duration "1 h 02 min", "3 min 05 s", "12 s".
 std::string formatDuration(double seconds);
 
-enum class Icon { Play, Pause, Stop, Swap, Trophy, Engine, Log, Settings, Plus, Folder, Back, Chart, Quit };
+enum class Icon { Play, Pause, Stop, Swap, Trophy, Engine, Book, Log, Settings, Plus, Folder, Back, Chart, Quit };
 
 // Draws `icon` centred on `center`, `size` pixels wide, in `col`.
 void drawIcon(ImDrawList* dl, Icon icon, ImVec2 center, float size, ImU32 col);

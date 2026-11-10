@@ -91,6 +91,22 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineEntry, name, cmd, args, di
                                                 id_name, id_author, uci_options, groups, elo, check_ok, check_message,
                                                 check_when)
 
+// An opening book of the library: registered once, chosen by name in the setup.
+struct BookEntry {
+    std::string name;
+    std::string path;
+    std::string description;
+    int plies = -1;  // PGN: plies kept, -1 all; Polyglot: depth, -1 the default
+
+    // What the last reading found; positions is 0 until the book has been read.
+    tour::FileFingerprint file;
+    uint64_t positions = 0;
+    uint64_t problems  = 0;  // illegal, duplicate, mirrored or finished positions
+    bool chess960      = false;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BookEntry, name, path, description, plies, file, positions, problems,
+                                                chess960)
+
 enum class MatchMode { Fixed = 0, Infinite = 1, Sprt = 2 };
 enum class TournamentFormat { Match = 0, RoundRobin = 1, Gauntlet = 2, Swiss = 3, Knockout = 4 };
 

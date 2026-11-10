@@ -1,9 +1,11 @@
 #pragma once
 
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <deque>
 #include <future>
+#include <memory>
 #include <optional>
 #include <set>
 #include <string>
@@ -27,6 +29,7 @@
 #include "topology.hpp"
 #include "ui.hpp"
 
+#include <tour/book_scan.hpp>
 #include <tour/by_opening.hpp>
 #include <tour/ratinglist.hpp>
 #include <tour/standings.hpp>
@@ -80,7 +83,7 @@ class App {
         int follow_frames      = 0;
     };
 
-    enum class Page { Home, NewMatch, Tournament, Engines, Ratings, Log, Settings };
+    enum class Page { Home, NewMatch, Tournament, Engines, Books, Ratings, Log, Settings };
     enum class Tab { Overview, Standings, Bracket, Schedule, Live, Games, Openings, Broadcast };
 
     // shell
@@ -144,6 +147,15 @@ class App {
     void setupOpenings();
     void setupAdjudication();
     void setupPgn();
+
+    // books
+    void drawBooks();
+    void drawBookDetail(BookEntry& book);
+    void drawBookPositions();
+    void addBook(const std::string& path);
+    void startBookScan(int index);
+    void pollBookScan();
+    void cancelBookScan();
 
     // engines
     void refreshPrograms();
@@ -233,6 +245,28 @@ class App {
     std::vector<int> opening_order_;                // rows shown, sorted
     bool opening_order_dirty_ = true;
     int selected_opening_     = -1;  // index into by_opening_
+
+    // Books view: the library, and the book shown, read in the background.
+    std::vector<BookEntry> books_;
+    int selected_book_ = -1;
+    struct BookReading {
+        int index = -1;
+        std::string path;
+        std::future<std::shared_ptr<tour::BookScan>> result;
+        std::shared_ptr<std::atomic<bool>> cancel;
+        std::shared_ptr<std::atomic<std::size_t>> done;
+    };
+    std::optional<BookReading> book_reading_;
+    std::vector<std::future<std::shared_ptr<tour::BookScan>>> abandoned_scans_;  // cancelled, still ending
+    std::shared_ptr<const tour::BookScan> book_scan_;                            // of book book_scan_index_
+    int book_scan_index_ = -1;
+    std::string book_scan_error_;
+    int book_show_ = 0;  // 0 every opening, 1 those with a problem
+    std::string book_search_;
+    std::vector<int> book_rows_;  // openings shown
+    bool book_rows_dirty_ = true;
+    int book_item_        = -1;     // opening shown on the board
+    bool drop_mirrored_   = false;  // the cleaned copy also leaves out mirrored positions
 
     // Engines view.
     int selected_engine_ = -1;

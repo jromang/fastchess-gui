@@ -63,6 +63,12 @@ std::vector<EngineEntry> Storage::loadEngines() const {
 
 void Storage::saveEngines(const std::vector<EngineEntry>& engines) const { writeJson(root_ / "engines.json", engines); }
 
+std::vector<BookEntry> Storage::loadBooks() const {
+    return readJson<std::vector<BookEntry>>(root_ / "books.json").value_or(std::vector<BookEntry>{});
+}
+
+void Storage::saveBooks(const std::vector<BookEntry>& books) const { writeJson(root_ / "books.json", books); }
+
 MatchSetup Storage::loadSetup() const { return readJson<MatchSetup>(root_ / "setup.json").value_or(MatchSetup{}); }
 
 void Storage::saveSetup(const MatchSetup& setup) const { writeJson(root_ / "setup.json", setup); }

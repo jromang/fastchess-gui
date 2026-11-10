@@ -154,6 +154,10 @@ void App::drawShell() {
             ui::pageTitle(TR("Engines"));
             drawEngines();
             break;
+        case Page::Books:
+            ui::pageTitle(TR("Books"));
+            drawBooks();
+            break;
         case Page::Ratings:
             drawRatings();
             break;
@@ -197,6 +201,7 @@ void App::drawRail(float width) {
     if (ui::railButton("rail_engines", ui::Icon::Engine, TR("Engines"), page_ == Page::Engines, width)) {
         page_ = Page::Engines;
     }
+    if (ui::railButton("rail_books", ui::Icon::Book, TR("Books"), page_ == Page::Books, width)) page_ = Page::Books;
     if (ui::railButton("rail_ratings", ui::Icon::Chart, TR("Ratings"), page_ == Page::Ratings, width)) {
         page_          = Page::Ratings;
         ratings_dirty_ = true;

@@ -231,6 +231,8 @@ const char* glyph(Icon icon) {
             return "\uE373";  // trophy
         case Icon::Engine:
             return "\uE0A9";  // cpu
+        case Icon::Book:
+            return "\uE05F";  // book-open
         case Icon::Log:
             return "\uE45F";  // scroll-text
         case Icon::Settings:
