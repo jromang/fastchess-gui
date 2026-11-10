@@ -82,6 +82,9 @@ void configureFastchess(const tour::TournamentSpec& spec);
 // Chess960 starting position number n (0-959, Scharnagl's numbering: 518 is the usual one), as a FEN.
 [[nodiscard]] std::string chess960Fen(int n);
 
+// How deep the lines of a Polyglot book are followed when the setup does not say (book_plies -1).
+inline constexpr int POLYGLOT_PLIES = 8;
+
 // Writes the 960 starting positions to `path` as an EPD book, unless it is there already.
 void writeChess960Book(const std::filesystem::path& path);
 

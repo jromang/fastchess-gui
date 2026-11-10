@@ -89,9 +89,11 @@ engine, estimated duration, openings, common settings, time odds). The setup of 
   think at the same time. fastchess only supports it for single-threaded engines, so it is turned off
   automatically when an engine has `Threads` > 1. A warning appears when concurrency × threads exceeds the hardware
   threads (or, with a clock, the physical cores).
-- **Openings**: an EPD or PGN book, random or sequential order, the number of plies kept from a PGN book, the
-  starting index and the random seed (0 = a new order for every tournament). Every opening is played twice, with
-  colours reversed.
+- **Openings**: an EPD, PGN or Polyglot (`.bin`) book, random or sequential order, the number of plies kept from a
+  PGN book, the starting index and the random seed (0 = a new order for every tournament). Every opening is played
+  twice, with colours reversed. A Polyglot book is followed from the initial position to a depth (8 plies unless
+  set), leaving out the moves that weigh less than a tenth of the best one of their position; the positions
+  reached are written once to `<book>-<N>plies.epd` in the tournament folder and played like an EPD book.
 - **Chess960** (Fischer random): without a book, the 960 starting positions in random order (written once to
   `chess960.epd` in the tournaments folder); with a book, its positions. Every engine must play Chess960: UCI
   engines with the `UCI_Chess960` option, WinBoard engines with the `fischerandom` variant. The summary names those

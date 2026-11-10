@@ -13,6 +13,7 @@
 #include <matchmaking/syzygy.hpp>
 #include <types/exception.hpp>
 
+#include <tour/polyglot.hpp>
 #include <tour/runner.hpp>
 
 #include "console.hpp"
@@ -364,6 +365,24 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         book_random = true;
     }
 
+    // A Polyglot book becomes the positions its lines lead to, kept in the tournament folder.
+    auto book_plies = setup.book_plies;
+    if (!book.empty() && tour::isPolyglot(book)) {
+        if (!fs::is_regular_file(book)) throw fastchess_exception(trf("Opening book not found: {}", book));
+        tour::PolyglotWalk walk;
+        walk.plies = book_plies > 0 ? book_plies : POLYGLOT_PLIES;
+        std::error_code ec;
+        fs::create_directories(run_dir, ec);
+        const auto epd = run_dir / fmt::format("{}-{}plies.epd", fs::path(book).stem().string(), walk.plies);
+        try {
+            (void)tour::polyglotToEpd(book, epd, walk);
+        } catch (const std::exception& e) {
+            throw fastchess_exception(e.what());
+        }
+        book       = epd.string();
+        book_plies = -1;
+    }
+
     if (!book.empty()) {
         t.opening.file = book;
         auto ext       = fs::path(book).extension().string();
@@ -373,12 +392,12 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         else if (ext == ".epd")
             t.opening.format = fastchess::FormatType::EPD;
         else
-            throw fastchess_exception(TR("The opening book must be an .epd or .pgn file."));
+            throw fastchess_exception(TR("The opening book must be an .epd, .pgn or .bin (Polyglot) file."));
 
         if (!fs::is_regular_file(book)) throw fastchess_exception(trf("Opening book not found: {}", book));
 
         t.opening.order = book_random ? fastchess::OrderType::RANDOM : fastchess::OrderType::SEQUENTIAL;
-        t.opening.plies = setup.book_plies;
+        t.opening.plies = book_plies;
         t.opening.start = std::max(1, setup.book_start);
     }
 

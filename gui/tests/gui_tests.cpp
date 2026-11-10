@@ -489,8 +489,35 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     setup.participants = {{"new"}};
     CHECK_THROWS((void)buildRun(setup, engines, topology, dir));
 
-    // A program that is not there any more.
+    // A Polyglot book: its lines become positions in the tournament folder.
     setup.participants = {{"new"}, {"old"}};
+    {
+        const auto bin = dir / "tiny.bin";
+        std::ofstream out(bin, std::ios::binary);
+        const auto put = [&](uint64_t v, int bytes) {
+            for (int i = bytes - 1; i >= 0; --i) out.put(static_cast<char>((v >> (8 * i)) & 0xff));
+        };
+        for (const uint16_t move : {uint16_t(0x031c), uint16_t(0x02db)}) {  // e2e4, d2d4
+            put(chess::Board().hash(), 8);
+            put(move, 2);
+            put(10, 2);
+            put(0, 4);
+        }
+        out.close();
+        setup.book       = bin.string();
+        setup.book_plies = 1;
+        run              = buildRun(setup, engines, topology, dir / "polyglot");
+        CHECK(run.tournament.opening.format == fastchess::FormatType::EPD);
+        CHECK(fs::path(run.tournament.opening.file) == dir / "polyglot" / "tiny-1plies.epd");
+        std::ifstream epd(run.tournament.opening.file);
+        int lines = 0;
+        for (std::string line; std::getline(epd, line);) ++lines;
+        CHECK(lines == 2);
+        setup.book.clear();
+        setup.book_plies = -1;
+    }
+
+    // A program that is not there any more.
     engines[1].cmd     = (dir / "moved.exe").string();
     CHECK_THROWS_WITH((void)buildRun(setup, engines, topology, dir),
                       doctest::Contains("The program of old is not found"));

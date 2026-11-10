@@ -4,6 +4,8 @@
 
 #include <fmt/include/fmt/format.h>
 
+#include <tour/polyglot.hpp>
+
 #include <algorithm>
 #include <filesystem>
 
@@ -307,8 +309,8 @@ void App::setupOpenings() {
     if (ImGui::IsItemHovered() && !setup_.book.empty()) ImGui::SetTooltip("%s", setup_.book.c_str());
     ImGui::SameLine();
     if (ImGui::Button("…##book_browse")) {
-        dialogs_.openFile(Dialogs::Purpose::Book, {{TR("Books (EPD, PGN)"), "epd;pgn"}, {TR("All files"), "*"}},
-                          setup_.book);
+        dialogs_.openFile(Dialogs::Purpose::Book,
+                          {{TR("Books (EPD, PGN, Polyglot)"), "epd;pgn;bin"}, {TR("All files"), "*"}}, setup_.book);
     }
     if (setup_.book.empty()) {
         ImGui::TextDisabled("%s", setup_.chess960 ? TR("Without a book, the 960 starting positions, in random order.")
@@ -321,8 +323,16 @@ void App::setupOpenings() {
            "variant of a WinBoard engine). A book of Chess960 positions, or none for all 960."));
 
     changed |= ImGui::Checkbox(TR("Random order"), &setup_.book_random);
-    changed |= inputInt(TR("Plies (PGN)"), "##plies", setup_.book_plies, -1, 1000);
-    ui::help(TR("For a PGN book: number of plies kept. -1 = all."));
+    if (tour::isPolyglot(setup_.book)) {
+        changed |= inputInt(TR("Depth (plies)"), "##plies", setup_.book_plies, -1, 40);
+        ui::help(trf("A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the "
+                     "moves weighing less than a tenth of the best one; the positions reached are the openings.",
+                     POLYGLOT_PLIES)
+                     .c_str());
+    } else {
+        changed |= inputInt(TR("Plies (PGN)"), "##plies", setup_.book_plies, -1, 1000);
+        ui::help(TR("For a PGN book: number of plies kept. -1 = all."));
+    }
     changed |= inputInt(TR("Start at"), "##book_start", setup_.book_start, 1, 100'000'000);
 
     int64_t seed = static_cast<int64_t>(setup_.seed);
@@ -770,6 +780,10 @@ void App::drawSetupSummary() {
         check(!setup_.book.empty(),
               setup_.book.empty() ? std::string(TR("No opening book: every game starts from the initial position"))
                                   : trf("Openings: {}", std::filesystem::path(setup_.book).filename().string()));
+        if (tour::isPolyglot(setup_.book)) {
+            check(true, trf("Polyglot book: its lines to {} plies, as positions",
+                            setup_.book_plies > 0 ? setup_.book_plies : POLYGLOT_PLIES));
+        }
     }
     if (setup_.common_hash > 0 || setup_.common_threads > 0) {
         std::string parts;
