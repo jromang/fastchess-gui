@@ -201,6 +201,11 @@ std::string PgnBuilder::wdl(const MoveData& move) const {
     return fmt::format("wdl={}/{}/{}", (*move.wdl)[0], (*move.wdl)[1], (*move.wdl)[2]);
 }
 
+std::string PgnBuilder::decision(const MoveData& move) const {
+    if (!pgn_config_.track_decision || !move.decision_millis) return "";
+    return fmt::format("dt={}", formatTime(*move.decision_millis));
+}
+
 std::string PgnBuilder::createComment(const MoveData& move, const MoveData& next_move, bool illegal, bool last,
                                       chess::Color mover) noexcept {
     std::string info_lines;
@@ -229,7 +234,7 @@ std::string PgnBuilder::createComment(const MoveData& move, const MoveData& next
                               pgn_config_.track_nps ? fmt::format("nps={}", move.nps) : "",
                               pgn_config_.track_hashfull ? fmt::format("hashfull={}", move.hashfull) : "",
                               pgn_config_.track_tbhits ? fmt::format("tbhits={}", move.tbhits) : "",
-                              pgn_config_.track_pv ? fmt::format("pv=\"{}\"", move.pv) : "", wdl(move),
+                              pgn_config_.track_pv ? fmt::format("pv=\"{}\"", move.pv) : "", wdl(move), decision(move),
                               info_lines.empty() ? "" : info_lines,  //
                               last ? match_str : ""                  //
             );
@@ -243,7 +248,7 @@ std::string PgnBuilder::createComment(const MoveData& move, const MoveData& next
                           pgn_config_.track_nps ? fmt::format("nps={}", move.nps) : "",
                           pgn_config_.track_hashfull ? fmt::format("hashfull={}", move.hashfull) : "",
                           pgn_config_.track_tbhits ? fmt::format("tbhits={}", move.tbhits) : "",
-                          pgn_config_.track_pv ? fmt::format("pv=\"{}\"", move.pv) : "", wdl(move),
+                          pgn_config_.track_pv ? fmt::format("pv=\"{}\"", move.pv) : "", wdl(move), decision(move),
                           info_lines.empty() ? "" : info_lines,  //
                           last ? match_str : ""                  //
         );

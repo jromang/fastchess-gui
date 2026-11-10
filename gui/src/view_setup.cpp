@@ -607,6 +607,13 @@ void App::setupPgn() {
     changed |= ImGui::Checkbox("nps", &setup_.pgn_nps);
     ImGui::SameLine();
     changed |= ImGui::Checkbox("pv", &setup_.pgn_pv);
+    ImGui::SameLine();
+    changed |= ImGui::Checkbox("tbhits", &setup_.pgn_tbhits);
+    ImGui::SameLine();
+    changed |= ImGui::Checkbox(TR("decision time"), &setup_.pgn_decision);
+    ui::help(
+        TR("dt=: when, during its search, the engine settled on the move it played. The Games tab draws these "
+           "fields, move by move, for both engines."));
 
     ImGui::Spacing();
     changed |= ImGui::Checkbox(TR("Restart an engine that crashes"), &setup_.recover);

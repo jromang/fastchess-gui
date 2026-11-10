@@ -44,6 +44,9 @@ struct LiveMove {
     int64_t time_ms  = 0;
     uint64_t nodes   = 0;
     uint64_t nps     = 0;
+    uint64_t tbhits  = 0;
+    std::optional<int64_t> decision_ms;  // when it settled on the move
+    std::string pv;                      // UCI moves, from the move played
 };
 
 // Everything the live view shows about one concurrent game.
@@ -102,14 +105,16 @@ struct OpeningName {
 
 // Per engine counters collected from finished games.
 struct EngineTotals {
-    uint64_t moves       = 0;
-    uint64_t depth_sum   = 0;
-    double nps_sum       = 0;
-    uint64_t nps_samples = 0;
-    uint64_t time_ms     = 0;
-    int timeouts         = 0;
-    int crashes          = 0;
-    int illegal          = 0;
+    uint64_t moves            = 0;
+    uint64_t depth_sum        = 0;
+    double nps_sum            = 0;
+    uint64_t nps_samples      = 0;
+    uint64_t time_ms          = 0;
+    uint64_t decision_ms      = 0;  // when it settled on its move, summed over decision_samples moves
+    uint64_t decision_samples = 0;
+    int timeouts              = 0;
+    int crashes               = 0;
+    int illegal               = 0;
 
     // Processor time of its processes while it thinks and while its opponent does, with the time those lasted;
     // since the tournament was started or resumed.
@@ -212,7 +217,8 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     };
     const GameExtras& extrasOf(const tour::GameResult& result, std::string_view pgn = {});
     // One move of an engine in its search statistics; data_mutex_ held.
-    static void addMove(EngineTotals& totals, int64_t depth, int64_t time_ms, int64_t nps);
+    static void addMove(EngineTotals& totals, int64_t depth, int64_t time_ms, int64_t nps,
+                        std::optional<int64_t> decision_ms);
     GameRecord makeRecord(const tour::GameResult& result, std::string_view pgn = {});  // data_mutex_ held
     void countLoss(const tour::GameResult& result);                                    // data_mutex_ held
 

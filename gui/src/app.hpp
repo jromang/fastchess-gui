@@ -73,6 +73,76 @@ WdlSeries wdlSeries(const Moves& moves) {
 // Returns the ply clicked, or -1.
 int plotWdl(const char* id, const WdlSeries& wdl, std::size_t plies, int marker_ply, float height);
 
+// What the chart under a game shows, move by move.
+enum class MoveChart { Eval, Time, Depth, Nodes, Speed, TbHits, Agreement };
+
+// Each side's values, at the plies of its moves: [0] White, [1] Black. `extra` is the seldepth beside the depth and
+// the decision time beside the move time.
+struct MoveSeries {
+    std::array<std::vector<float>, 2> ply, value, extra;
+    [[nodiscard]] bool empty() const noexcept { return ply[0].empty() && ply[1].empty(); }
+};
+
+// How many plies the PV of a move repeats of what the opponent's previous PV predicted after its own move.
+[[nodiscard]] int pvAgreement(const std::string& previous_pv, const std::string& pv);
+
+template <typename Moves>
+MoveSeries moveSeries(const Moves& moves, MoveChart chart) {
+    MoveSeries s;
+    for (std::size_t i = 0; i < moves.size(); ++i) {
+        const auto& m = moves[i];
+        if (m.book) continue;
+        float value = 0, extra = std::nanf("");
+        switch (chart) {
+            case MoveChart::Eval:
+                return s;
+            case MoveChart::Time:
+                if (m.time_ms < 0) continue;
+                value = static_cast<float>(m.time_ms) / 1000.0f;
+                if (m.decision_ms) extra = static_cast<float>(*m.decision_ms) / 1000.0f;
+                break;
+            case MoveChart::Depth:
+                if (m.depth <= 0) continue;
+                value = static_cast<float>(m.depth);
+                if (m.seldepth > 0) extra = static_cast<float>(m.seldepth);
+                break;
+            case MoveChart::Nodes:
+                if (m.nodes == 0) continue;
+                value = static_cast<float>(m.nodes);
+                break;
+            case MoveChart::Speed:
+                if (m.nps == 0) continue;
+                value = static_cast<float>(m.nps);
+                break;
+            case MoveChart::TbHits:
+                value = static_cast<float>(m.tbhits);
+                break;
+            case MoveChart::Agreement:
+                if (i == 0 || moves[i - 1].book || moves[i - 1].pv.empty() || m.pv.empty()) continue;
+                value = static_cast<float>(pvAgreement(moves[i - 1].pv, m.pv));
+                break;
+        }
+        const int side = m.mover == chess::Color::WHITE ? 0 : 1;
+        s.ply[side].push_back(static_cast<float>(i + 1));
+        s.value[side].push_back(value);
+        s.extra[side].push_back(extra);
+    }
+    if (chart == MoveChart::TbHits) {
+        const auto none = [](const std::vector<float>& v) {
+            return std::all_of(v.begin(), v.end(), [](float x) { return x == 0; });
+        };
+        if (none(s.value[0]) && none(s.value[1])) return {};
+    }
+    return s;
+}
+
+// The chart choice above the curve; true when it changed.
+bool moveChartChoice(const char* id, MoveChart& chart);
+
+// The MoveSeries of both engines, named, over `plies` plies. Returns the ply clicked, or -1.
+int plotMoves(const char* id, MoveChart chart, const MoveSeries& series, const std::array<std::string, 2>& names,
+              std::size_t plies, int marker_ply, float height);
+
 // "W 12 · D 80 · L 8 %" and a thin bar of the three, for a side's own win, draw, loss in permille.
 void wdlLine(const std::array<int64_t, 3>& wdl);
 
@@ -270,7 +340,9 @@ class App {
     int live_slot_ = 0;
     std::vector<SlotView> slot_views_;
     std::set<int> detached_;  // slots shown in their own window
-    bool live_mosaic_ = true;
+    bool live_mosaic_       = true;
+    MoveChart live_chart_   = MoveChart::Eval;
+    MoveChart replay_chart_ = MoveChart::Eval;
 
     // SPRT calculator: its own copy of the bounds, applied to the setup on request.
     bool sprt_calc_open_  = false;

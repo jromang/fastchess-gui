@@ -36,6 +36,12 @@ struct ReplayMove {
     int64_t time_ms = -1;
     int64_t nps     = 0;                        // only when the PGN was written with nps=
     std::optional<std::array<int64_t, 3>> wdl;  // wdl=W/D/L: permille, from the mover's point of view
+    // Only when the PGN was written with them: n=, sd=, tbhits=, pv="...", dt=.
+    uint64_t nodes   = 0;
+    int64_t seldepth = 0;
+    uint64_t tbhits  = 0;
+    std::string pv;  // UCI moves, from the move played
+    std::optional<int64_t> decision_ms;
 };
 
 struct ReplayGame {

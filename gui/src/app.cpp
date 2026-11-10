@@ -128,7 +128,21 @@ void App::frame() {
             page_ = Page::Books;
         else if (w == "home")
             page_ = Page::Home;
-        else {
+        else if (w.rfind("games-", 0) == 0 || w.rfind("live-", 0) == 0) {
+            // The tab with a chart under the game: games-time, live-agreement...
+            const auto chart                     = w.substr(w.find('-') + 1);
+            const auto kind                      = chart == "time"        ? MoveChart::Time
+                                                   : chart == "depth"     ? MoveChart::Depth
+                                                   : chart == "nodes"     ? MoveChart::Nodes
+                                                   : chart == "speed"     ? MoveChart::Speed
+                                                   : chart == "tbhits"    ? MoveChart::TbHits
+                                                   : chart == "agreement" ? MoveChart::Agreement
+                                                                          : MoveChart::Eval;
+            page_                                = Page::Tournament;
+            const bool live                      = w[0] == 'l';
+            tab_request_                         = live ? Tab::Live : Tab::Games;
+            (live ? live_chart_ : replay_chart_) = kind;
+        } else {
             page_        = Page::Tournament;
             tab_request_ = w == "live"        ? Tab::Live
                            : w == "games"     ? Tab::Games

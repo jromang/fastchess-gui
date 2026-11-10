@@ -56,7 +56,10 @@ GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
         countLoss(result);
 
         forEachMoveComment(text, [&](bool white, const ReplayMove& move) {
-            if (!move.book) addMove(totals_[white ? record.white : record.black], move.depth, move.time_ms, move.nps);
+            if (!move.book) {
+                addMove(totals_[white ? record.white : record.black], move.depth, move.time_ms, move.nps,
+                        move.decision_ms);
+            }
         });
     }
     if (match_) pending_stats_ = state.pairHistory(id_a_, id_b_);
@@ -230,6 +233,10 @@ void GuiObserver::onMove(int slot_index, chess::Color mover, const fastchess::Mo
     m.time_ms  = data.elapsed_millis;
     m.nodes    = data.nodes;
     m.nps      = data.nps;
+    m.tbhits   = data.tbhits;
+    m.pv       = data.pv;
+
+    m.decision_ms = data.decision_millis;
 
     // What the engines used while the mover thought.
     std::array<std::vector<int64_t>, 2> processes;
@@ -386,7 +393,7 @@ void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::Ma
 
         const bool white_moved = (i % 2 == 0) == white_first;
         addMove(totals_[white_moved ? record.white : record.black], mv.depth, mv.elapsed_millis,
-                static_cast<int64_t>(mv.nps));
+                static_cast<int64_t>(mv.nps), mv.decision_millis);
     }
 
     pending_games_.push_back(record);
@@ -395,8 +402,13 @@ void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::Ma
     if (pair && match_) pending_stats_.push_back(id_a_ < id_b_ ? *pair : ~*pair);
 }
 
-void GuiObserver::addMove(EngineTotals& t, int64_t depth, int64_t time_ms, int64_t nps) {
+void GuiObserver::addMove(EngineTotals& t, int64_t depth, int64_t time_ms, int64_t nps,
+                          std::optional<int64_t> decision_ms) {
     t.moves++;
+    if (decision_ms) {
+        t.decision_ms += static_cast<uint64_t>(std::max<int64_t>(0, *decision_ms));
+        t.decision_samples++;
+    }
     t.depth_sum += static_cast<uint64_t>(std::max<int64_t>(0, depth));
     t.time_ms += static_cast<uint64_t>(std::max<int64_t>(0, time_ms));
     if (nps > 0) {

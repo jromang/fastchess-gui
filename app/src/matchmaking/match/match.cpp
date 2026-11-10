@@ -216,6 +216,26 @@ std::optional<PvCheckResult> checkParsedPvLine(Board board, const engine::UciInf
     return std::nullopt;
 }
 
+std::optional<int64_t> decisionTime(const std::vector<std::string_view>& info_lines, std::string_view best_move,
+                                    int64_t elapsed_millis) {
+    if (best_move.empty()) return std::nullopt;
+    std::optional<int64_t> since;
+    std::string first;
+    bool timed = false;
+    for (const auto line : info_lines) {
+        const auto info = engine::UciEngine::parseInfo(line);
+        if (info.pv.empty() || info.isBound() || (info.multipv && *info.multipv != 1)) continue;
+        timed |= info.time.has_value();
+        if (info.pv[0] != first) {
+            first = info.pv[0];
+            since = info.time;
+        }
+    }
+    if (!timed) return std::nullopt;
+    if (first != best_move || !since) return elapsed_millis;
+    return std::min(*since, elapsed_millis);
+}
+
 std::optional<PvCheckResult> checkParsedBestmovePv(const engine::UciInfo& info, std::string_view best_move) {
     if (best_move.empty() || info.isBound() || info.pv.empty() || best_move == info.pv[0]) {
         return std::nullopt;
@@ -328,6 +348,11 @@ void Match::addMoveData(const Player& player, const std::string& move, int64_t m
         }
     }
 
+    {
+        std::vector<std::string_view> lines;
+        for (const auto* line : player.engine.getInfoLines()) lines.emplace_back(*line);
+        move_data.decision_millis = decisionTime(lines, legal ? move : "", move_data.elapsed_millis);
+    }
     verifyPvLines(player, legal ? move : "", move_data);
 
     data_.moves.push_back(move_data);

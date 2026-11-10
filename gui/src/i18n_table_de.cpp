@@ -8,6 +8,8 @@ namespace fcg::i18n {
 
 const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() {
     static const std::vector<std::pair<std::string_view, std::string_view>> table = {
+        {"  decided at {}", "  entschieden bei {}"},
+        {" (decided at {})", " (entschieden bei {})"},
         {" Export:", " Export:"},
         {" · UCI: {} steps passed", " · UCI: {} Schritte bestanden"},
         {" · affinity", " · Affinität"},
@@ -191,6 +193,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Cycles", "Zyklen"},
         {"Dark", "Dunkel"},
         {"Date", "Datum"},
+        {"Decision", "Entscheidung"},
         {"Default", "Standard"},
         {"Depth", "Tiefe"},
         {"Depth (plies)", "Tiefe (Halbzüge)"},
@@ -243,6 +246,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
          "Engine des laufenden Matches: Änderungen sind gesperrt."},
         {"Engines", "Engines"},
         {"Error: {}", "Fehler: {}"},
+        {"Evaluation", "Bewertung"},
         {"Event", "Veranstaltung"},
         {"Every engine meets every other one, each time on two games with the same opening, colours reversed.",
          "Jede Engine trifft auf jede andere, jedes Mal in zwei Partien mit derselben Eröffnung und vertauschten "
@@ -428,6 +432,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
          "Neue Turniere werden dort angelegt, und die Listen zeigen die dort gefundenen Turniere. Bereits gespielte "
          "Turniere werden nicht verschoben: ein Turnier ist ein Ordner, verschiebe ihn selbst."},
         {"No PGN file imported.", "Keine PGN-Datei importiert."},
+        {"No PVs: turn on pv in the PGN options of the setup.",
+         "Keine PVs: Schalte pv in den PGN-Optionen der Einrichtung ein."},
         {"No book", "Kein Buch"},
         {"No book yet. Click Add.", "Noch kein Buch. Klicke auf Hinzufügen."},
         {"No engine yet. Click Add.", "Noch keine Engine. Klicke auf Hinzufügen."},
@@ -452,6 +458,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Non-regression [-5, 0]", "Keine Verschlechterung [-5, 0]"},
         {"Normalized Elo (fishtest, OpenBench), with its 95 % interval.",
          "Normalisierte Elo (fishtest, OpenBench), mit ihrem 95-%-Intervall."},
+        {"Not in this game's PGN: turn the field on in the PGN options of the setup.",
+         "Nicht im PGN dieser Partie: Schalte das Feld in den PGN-Optionen der Einrichtung ein."},
         {"Notify when a match ends", "Benachrichtigen, wenn ein Match endet"},
         {"Notify when the match ends", "Benachrichtigen, wenn das Match endet"},
         {"Now {}. Only cycles not started can be removed.",
@@ -485,6 +493,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Overview", "Übersicht"},
         {"PGN and misc", "PGN und Sonstiges"},
         {"PGN files…", "PGN-Dateien…"},
+        {"PV agreement", "PV-Übereinstimmung"},
         {"Pair kinds", "Paararten"},
         {"Pairs", "Paare"},
         {"Pairs (points of A out of 2)", "Paare (Punkte von A aus 2)"},
@@ -620,6 +629,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Share of drawn games.", "Anteil der Remispartien."},
         {"Show this game in its own window, which can be moved to another screen.",
          "Diese Partie in einem eigenen Fenster zeigen, das auf einen anderen Bildschirm verschoben werden kann."},
+        {"Speed", "Geschwindigkeit"},
         {"Standard deviation", "Standardabweichung"},
         {"Standings", "Tabelle"},
         {"Standings copied to the clipboard.", "Tabelle in die Zwischenablage kopiert."},
@@ -654,6 +664,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Swiss", "Schweizer System"},
         {"Swiss, {} engines", "Schweizer System, {} Engines"},
         {"Syzygy tablebases", "Syzygy-Tablebases"},
+        {"TB hits", "TB-Treffer"},
         {"TCP port", "TCP-Port"},
         {"TLCS server", "TLCS-Server"},
         {"Template name", "Name der Vorlage"},
@@ -761,6 +772,10 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Void this game (no replay)", "Diese Partie annullieren (nicht neu spielen)"},
         {"W {:.0f} · D {:.0f} · L {:.0f} %", "S {:.0f} · R {:.0f} · N {:.0f} %"},
         {"Web page", "Webseite"},
+        {"When it settled on the move it played, on average: a decision long before the end of the time spent says the "
+         "time was not used well.",
+         "Wann sie sich im Schnitt auf den gespielten Zug festgelegt hat: Eine Entscheidung lange vor dem Ende der "
+         "verbrauchten Zeit zeigt, dass die Zeit schlecht genutzt wurde."},
         {"White", "Weiß"},
         {"White disconnects", "Weiß verliert die Verbindung"},
         {"White makes an illegal move", "Weiß macht einen illegalen Zug"},
@@ -804,8 +819,13 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"by %s", "von %s"},
         {"bye", "spielfrei"},
         {"colours reversed of an earlier one", "vertauschte Farben einer früheren"},
+        {"decision time", "Entscheidungszeit"},
         {"depth {}", "Tiefe {}"},
         {"draws", "Remisen"},
+        {"dt=: when, during its search, the engine settled on the move it played. The Games tab draws these fields, "
+         "move by move, for both engines.",
+         "dt=: wann sich die Engine während ihrer Suche auf den gespielten Zug festgelegt hat. Der Tab Partien "
+         "zeichnet diese Felder Zug für Zug für beide Engines."},
         {"duplicate", "Duplikat"},
         {"duplicates", "Duplikate"},
         {"elo1 must be larger than elo0.", "elo1 muss größer als elo0 sein."},
@@ -905,7 +925,9 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"{} – fastchess-gui", "{} – fastchess-gui"},
         {"{} – {} vs {} · {} games", "{} – {} gegen {} · {} Partien"},
         {"{} – {} · {} games", "{} – {} · {} Partien"},
+        {"{}: decision", "{}: Entscheidung"},
         {"{}: program not found ({})", "{}: Programm nicht gefunden ({})"},
+        {"{}: seldepth", "{}: Seldepth"},
         {"{}: {}", "{}: {}"},
         {"· %s · %d in parallel%s", "· %s · %d parallel%s"},
         {"· draws %.1f %%", "· Remisen %.1f %%"},

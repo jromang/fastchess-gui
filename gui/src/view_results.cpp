@@ -396,11 +396,12 @@ void App::drawCharts() {
     ImGui::BeginChild("##engine_stats", ImVec2(half_w, row_h), ImGuiChildFlags_Borders);
     ImGui::TextUnformatted(TR("Search per engine"));
     ImGui::Separator();
-    if (ImGui::BeginTable("##search", 5, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg)) {
+    if (ImGui::BeginTable("##search", 6, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg)) {
         ImGui::TableSetupColumn(TR("Engine"));
         ImGui::TableSetupColumn(TR("Avg depth"));
         ImGui::TableSetupColumn(TR("Avg NPS"));
         ImGui::TableSetupColumn(TR("Time / move"));
+        ImGui::TableSetupColumn(TR("Decision"));
         ImGui::TableSetupColumn(TR("Processor"));
         ImGui::TableHeadersRow();
         for (int i = 0; i < std::min(2, static_cast<int>(totals_.size())); ++i) {
@@ -415,6 +416,14 @@ void App::drawCharts() {
                 ui::formatCount(t.nps_samples ? static_cast<uint64_t>(t.nps_sum / t.nps_samples) : 0).c_str());
             ImGui::TableNextColumn();
             ImGui::TextUnformatted(ui::formatClock(t.moves ? static_cast<int64_t>(t.time_ms / t.moves) : 0).c_str());
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(
+                t.decision_samples ? ui::formatClock(static_cast<int64_t>(t.decision_ms / t.decision_samples)).c_str()
+                                   : "—");
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", TR("When it settled on the move it played, on average: a decision long "
+                                           "before the end of the time spent says the time was not used well."));
+            }
             ImGui::TableNextColumn();
             const auto use = cpuUse(t);
             ImGui::TextUnformatted(

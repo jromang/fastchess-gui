@@ -13,6 +13,7 @@
 #include <engine/uci_engine.hpp>
 #include <game/pgn/pgn_builder.hpp>
 #include <matchmaking/elo/elo_pentanomial.hpp>
+#include <matchmaking/match/match.hpp>
 #include <matchmaking/sprt/sprt.hpp>
 
 #include "app.hpp"
@@ -896,4 +897,62 @@ TEST_CASE("match statistics: fishtest's numbers, from the games and from the pai
     CHECK(empty.games.count == 0);
     CHECK(std::isnan(empty.games.nelo.value));
     CHECK(std::isnan(empty.rms_bias));
+}
+
+TEST_CASE("decision time: when the first PV move last changed, from the lines of the search") {
+    using fastchess::decisionTime;
+    const std::vector<std::string_view> lines = {
+        "info depth 1 time 5 score cp 10 pv e2e4",
+        "info depth 2 time 20 score cp 15 pv d2d4 d7d5",
+        "info depth 3 multipv 2 time 30 score cp 5 pv e2e4",    // not the main line
+        "info depth 3 time 35 score cp 40 lowerbound pv c2c4",  // a bound, not a PV yet
+        "info depth 3 time 50 score cp 16 pv d2d4 d7d5 c2c4",
+        "info depth 4 time 90 score cp 17 pv d2d4",
+    };
+    CHECK(decisionTime(lines, "d2d4", 100) == 20);
+    CHECK(decisionTime(lines, "e2e4", 100) == 100);  // played against its last PV: decided at the end
+    CHECK_FALSE(decisionTime({"info depth 1 score cp 10 pv e2e4"}, "e2e4", 100));  // no time in the lines
+    CHECK_FALSE(decisionTime(lines, "", 100));
+
+    ReplayMove m;
+    parseFastchessComment("+0.17/4 0.100s, n=12345, sd=9, tbhits=7, pv=\"d2d4 d7d5\", dt=0.020s", m);
+    CHECK(m.nodes == 12345u);
+    CHECK(m.seldepth == 9);
+    CHECK(m.tbhits == 7u);
+    CHECK(m.pv == "d2d4 d7d5");
+    CHECK(m.decision_ms == 20);
+    CHECK(m.time_ms == 100);
+}
+
+TEST_CASE("move charts: each side's values at its plies, and how far the PVs agree") {
+    CHECK(pvAgreement("e2e4 e7e5 g1f3 b8c6", "e7e5 g1f3 g8f6") == 2);
+    CHECK(pvAgreement("e2e4 e7e5", "c7c5") == 0);
+    CHECK(pvAgreement("", "e7e5") == 0);
+
+    std::vector<LiveMove> moves(4);
+    moves[0].book = true;
+    for (std::size_t i = 1; i < moves.size(); ++i) {
+        moves[i].mover   = i % 2 ? chess::Color::BLACK : chess::Color::WHITE;
+        moves[i].time_ms = static_cast<int64_t>(i) * 1000;
+        moves[i].depth   = static_cast<int64_t>(10 + i);
+    }
+    moves[1].decision_ms = 250;
+    moves[1].pv          = "e7e5 g1f3 b8c6";
+    moves[2].pv          = "g1f3 b8c6 f1b5";
+    moves[3].pv          = "b8c6 a2a3";
+
+    const auto time = moveSeries(moves, MoveChart::Time);
+    REQUIRE(time.ply[1].size() == 2);  // Black's moves: plies 2 and 4
+    CHECK(time.ply[1][0] == 2);
+    CHECK(time.value[1][0] == doctest::Approx(1.0));
+    CHECK(time.extra[1][0] == doctest::Approx(0.25));
+    CHECK(std::isnan(time.extra[1][1]));
+    CHECK(time.ply[0].size() == 1);
+
+    const auto agreement = moveSeries(moves, MoveChart::Agreement);
+    REQUIRE(agreement.ply[0].size() == 1);
+    CHECK(agreement.value[0][0] == 2);  // White's g1f3 b8c6 after Black's e7e5 g1f3 b8c6
+    CHECK(agreement.value[1][0] == 1);
+    CHECK(moveSeries(moves, MoveChart::TbHits).empty());
+    CHECK(moveSeries(moves, MoveChart::Eval).empty());
 }

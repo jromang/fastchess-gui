@@ -150,6 +150,26 @@ void parseFastchessComment(std::string_view comment, ReplayMove& move) {
         std::from_chars(value.data(), value.data() + value.size(), move.nps);
     }
 
+    // ", key=value" fields after the time.
+    const auto field = [&](std::string_view key) -> std::optional<std::string_view> {
+        for (auto at = rest.find(key); at != std::string_view::npos; at = rest.find(key, at + 1)) {
+            if (at == 0 || rest[at - 1] == ' ') return rest.substr(at + key.size());
+        }
+        return std::nullopt;
+    };
+    if (const auto v = field("n=")) std::from_chars(v->data(), v->data() + v->size(), move.nodes);
+    if (const auto v = field("sd=")) std::from_chars(v->data(), v->data() + v->size(), move.seldepth);
+    if (const auto v = field("tbhits=")) std::from_chars(v->data(), v->data() + v->size(), move.tbhits);
+    if (const auto v = field("pv=\""); v && v->find('"') != std::string_view::npos) {
+        move.pv = std::string(v->substr(0, v->find('"')));
+    }
+    if (const auto v = field("dt=")) {
+        try {
+            move.decision_ms = static_cast<int64_t>(std::stod(std::string(v->substr(0, v->find('s')))) * 1000.0 + 0.5);
+        } catch (...) {
+        }
+    }
+
     if (const auto at = rest.find("wdl="); at != std::string_view::npos) {
         std::array<int64_t, 3> wdl{};
         const char* p   = rest.data() + at + 4;

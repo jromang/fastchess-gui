@@ -43,6 +43,7 @@ struct MoveData {
     int64_t seldepth           = 0;
     std::optional<Score> score = std::nullopt;
     std::optional<std::array<int64_t, 3>> wdl;  // fastchess-gui: win, draw, loss in permille, the mover's view
+    std::optional<int64_t> decision_millis;     // fastchess-gui: when the engine settled on its move
     int64_t timeleft = 0;
     int64_t latency  = 0;
     int64_t hashfull = 0;

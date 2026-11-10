@@ -35,6 +35,12 @@ struct PvCheckResult {
 };
 
 [[nodiscard]] std::optional<PvCheckResult> checkPvLine(chess::Board board, std::string_view info, bool check_mate_pvs);
+
+// fastchess-gui: when the engine settled on the move it played, from the info lines of its search (in order): the
+// "time" of the line after which the first PV move stayed `best_move`. The whole search when the last PV disagrees,
+// nothing without a time in the lines.
+[[nodiscard]] std::optional<int64_t> decisionTime(const std::vector<std::string_view>& info_lines,
+                                                  std::string_view best_move, int64_t elapsed_millis);
 [[nodiscard]] std::optional<PvCheckResult> checkBestmovePv(std::string_view info, std::string_view best_move);
 
 class DrawTracker {
