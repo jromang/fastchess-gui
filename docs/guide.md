@@ -99,7 +99,11 @@ engine, estimated duration, openings, common settings, time odds). The setup of 
   - *Match*: two engines, A (the engine under test; every statistic is from its point of view) and B (the
     baseline). A fixed number of games, until you stop it, or an SPRT: elo0, elo1, alpha, beta, model
     (`normalized` uses nElo bounds like fishtest and OpenBench, `logistic` classic Elo, `bayesian` BayesElo) and an
-    optional maximum number of games. The *Gainer [0, 3]* and *Non-regression [-5, 0]* presets fill in the bounds.
+    optional maximum number of games. The *Gainer [0, 3]* and *Non-regression [-5, 0]* presets fill in the bounds,
+    and the line under them tells how many games the test is likely to last. *Calculator…* draws, as fishtest's
+    SPRT calculator does, the probability that H1 is accepted and the expected number of games against the true
+    Elo difference, from an expected draw ratio and the RMS bias of the openings; *Use these bounds* copies the
+    bounds it was given back to the setup.
     This is the quickest way to compare two versions of an engine, and nothing else is needed.
   - *Round robin*: every engine plays every other one, *Cycles* times, each time two games with colours reversed.
     The rounds follow Berger tables, so every engine plays once per round.

@@ -816,3 +816,41 @@ TEST_CASE("search statistics are read back from the move comments, without repla
     forEachMoveComment(fen, [&](bool white_moved, const ReplayMove&) { movers.push_back(white_moved); });
     CHECK(movers == std::vector<bool>{false, true});
 }
+
+TEST_CASE("SPRT calculator: fishtest's pass probabilities and expected games") {
+    // Reference values from fishtest's own sprt.js.
+    const auto normalized = sprtPlan(0.05, 0.05, 0, 2, "normalized", 0.49, 191);
+    REQUIRE(normalized.valid);
+    CHECK(normalized.elo0 == doctest::Approx(0.0));
+    CHECK(normalized.elo1 == doctest::Approx(1.019165186));
+    CHECK(normalized.at(normalized.elo0).pass == doctest::Approx(0.05));
+    CHECK(normalized.at(normalized.elo1).pass == doctest::Approx(0.95));
+    CHECK(normalized.at(normalized.elo1).games == doctest::Approx(159942.4222));
+    CHECK(normalized.at(1).pass == doctest::Approx(0.9444699991));
+    CHECK(normalized.at(1).games == doctest::Approx(164150.5039));
+    CHECK(normalized.at(-1).pass == doctest::Approx(0.0001628401842).epsilon(1e-6));
+    CHECK(normalized.at(-1).games == doctest::Approx(59970.45852));
+
+    const auto logistic = sprtPlan(0.05, 0.05, 0, 3, "logistic", 0.6, 0);
+    REQUIRE(logistic.valid);
+    CHECK(logistic.elo1 == doctest::Approx(3.0));
+    CHECK(logistic.at(1).pass == doctest::Approx(0.2726068841));
+    CHECK(logistic.at(1).games == doctest::Approx(43109.00216));
+    CHECK(logistic.at(0).games == doctest::Approx(28435.62173));
+
+    const auto regression = sprtPlan(0.05, 0.05, -1.75, 0.25, "normalized", 0.49, 191);
+    CHECK(regression.elo0 == doctest::Approx(-0.8917689382));
+    CHECK(regression.at(0).pass == doctest::Approx(0.9009949893));
+    CHECK(regression.at(0).games == doctest::Approx(190032.9181));
+
+    // BayesElo: bounds in BayesElo, larger than logistic ones for the same scores.
+    const auto bayes = sprtPlan(0.05, 0.05, 0, 5, "bayesian", 0.5, 0);
+    REQUIRE(bayes.valid);
+    CHECK(bayes.elo1 > 0);
+    CHECK(bayes.elo1 < 5);
+    CHECK(bayes.at(bayes.elo1).pass == doctest::Approx(0.95));
+
+    // A bias the draw ratio cannot hold, and bounds in the wrong order.
+    CHECK_FALSE(sprtPlan(0.05, 0.05, 0, 2, "normalized", 0.9, 191).valid);
+    CHECK_FALSE(sprtPlan(0.05, 0.05, 2, 0, "logistic", 0.5, 0).valid);
+}

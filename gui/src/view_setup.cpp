@@ -1,17 +1,20 @@
 // The "Setup" window: everything a run is started with.
 
 #include <imgui.h>
+#include <implot.h>
 
 #include <fmt/include/fmt/format.h>
 
 #include <tour/polyglot.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 
 #include "app.hpp"
 #include "i18n.hpp"
 #include "run.hpp"
+#include "stats.hpp"
 #include "storage.hpp"
 #include "ui.hpp"
 
@@ -22,6 +25,7 @@ namespace {
 constexpr float LABEL_WIDTH = 150.0f;
 
 float labelWidth() { return LABEL_WIDTH * ImGui::GetFontSize() / 16.0f; }
+float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
 
 bool inputInt(const char* label, const char* id, int& value, int min, int max, float width = 110.0f) {
     ui::label(label, labelWidth());
@@ -196,11 +200,134 @@ void App::setupMatch() {
                 setup_.sprt_elo1 = 0;
                 changed          = true;
             }
+
+            // What these bounds are likely to cost, from the calculator's guesses.
+            const auto plan = sprtPlan(setup_.sprt_alpha, setup_.sprt_beta, setup_.sprt_elo0, setup_.sprt_elo1,
+                                       setup_.sprt_model, setup_.sprt_draw_ratio, setup_.sprt_rms_bias);
+            if (plan.valid) {
+                ImGui::TextDisabled("%s", trf("About {} games if the change is worth elo0, {} if it is worth elo1.",
+                                              ui::formatCount(static_cast<uint64_t>(plan.at(plan.elo0).games)),
+                                              ui::formatCount(static_cast<uint64_t>(plan.at(plan.elo1).games)))
+                                              .c_str());
+                ImGui::SameLine();
+            }
+            if (ImGui::SmallButton(TR("Calculator…"))) {
+                sprt_calc_      = setup_;
+                sprt_calc_open_ = true;
+                ImGui::SetWindowFocus(TR("SPRT calculator###sprt_calc"));
+            }
             break;
         }
     }
 
     if (changed) saveSetupSoon();
+}
+
+void App::drawSprtCalculator() {
+    if (!sprt_calc_open_) return;
+    ImGui::SetNextWindowSize(ImVec2(px(860), px(560)), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_FirstUseEver, ImVec2(0.5f, 0.5f));
+    if (!ImGui::Begin(TR("SPRT calculator###sprt_calc"), &sprt_calc_open_, ImGuiWindowFlags_NoDocking)) {
+        ImGui::End();
+        return;
+    }
+    auto& c = sprt_calc_;
+
+    // The bounds and the guesses on the left, the curves on the right.
+    ImGui::BeginChild("##sprt_inputs", ImVec2(px(300), 0));
+    inputDouble("elo0", "##calc_elo0", c.sprt_elo0, -1000, 1000);
+    inputDouble("elo1", "##calc_elo1", c.sprt_elo1, -1000, 1000);
+    inputDouble("alpha", "##calc_alpha", c.sprt_alpha, 0.001, 0.5, "%.3f");
+    inputDouble("beta", "##calc_beta", c.sprt_beta, 0.001, 0.5, "%.3f");
+    ui::label(TR("Model"), labelWidth());
+    ImGui::SetNextItemWidth(px(110));
+    const char* models[] = {"normalized", "logistic", "bayesian"};
+    int model            = 0;
+    for (int i = 0; i < 3; ++i) {
+        if (c.sprt_model == models[i]) model = i;
+    }
+    if (ImGui::Combo("##calc_model", &model, models, 3)) c.sprt_model = models[model];
+    ImGui::Spacing();
+    inputDouble(TR("Draw ratio"), "##calc_draws", c.sprt_draw_ratio, 0.01, 0.99, "%.2f");
+    ui::help(TR("The share of drawn games expected between the two engines, at this time control."));
+    ImGui::BeginDisabled(c.sprt_model == "bayesian");
+    inputDouble(TR("RMS bias (Elo)"), "##calc_bias", c.sprt_rms_bias, 0, 1000, "%.0f");
+    ImGui::EndDisabled();
+    ui::help(
+        TR("How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the "
+           "same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."));
+
+    const auto plan =
+        sprtPlan(c.sprt_alpha, c.sprt_beta, c.sprt_elo0, c.sprt_elo1, c.sprt_model, c.sprt_draw_ratio, c.sprt_rms_bias);
+    ImGui::Spacing();
+    if (!plan.valid) {
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ui::WARN), "%s",
+                           c.sprt_elo1 <= c.sprt_elo0 ? TR("elo1 must be larger than elo0.")
+                                                      : TR("This draw ratio and this RMS bias are not compatible."));
+        ImGui::PopTextWrapPos();
+    } else {
+        for (const auto& [name, elo] : {std::pair{"elo0", plan.elo0}, std::pair{"elo1", plan.elo1}}) {
+            const auto o = plan.at(elo);
+            ImGui::TextUnformatted(name);
+            if (c.sprt_model != "logistic") {
+                ImGui::SameLine();
+                ImGui::TextDisabled("%s", trf("= {:.2f} logistic Elo", std::abs(elo) < 0.005 ? 0.0 : elo).c_str());
+            }
+            ImGui::BulletText("%s", trf("accepted: {:.1f} %", 100 * o.pass).c_str());
+            ImGui::BulletText("%s", trf("about {} games", ui::formatCount(static_cast<uint64_t>(o.games))).c_str());
+        }
+    }
+    ImGui::Spacing();
+    if (ImGui::Button(TR("Use these bounds"))) {
+        setup_.mode            = MatchMode::Sprt;
+        setup_.sprt_elo0       = c.sprt_elo0;
+        setup_.sprt_elo1       = c.sprt_elo1;
+        setup_.sprt_alpha      = c.sprt_alpha;
+        setup_.sprt_beta       = c.sprt_beta;
+        setup_.sprt_model      = c.sprt_model;
+        setup_.sprt_draw_ratio = c.sprt_draw_ratio;
+        setup_.sprt_rms_bias   = c.sprt_rms_bias;
+        saveSetupSoon();
+    }
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+    ImGui::BeginChild("##sprt_curves");
+    if (plan.valid) {
+        // fishtest's range: a third of the bounds' width on each side.
+        const double width = plan.elo1 - plan.elo0;
+        const double from = std::floor(plan.elo0 - width / 3), to = std::ceil(plan.elo1 + width / 3);
+        const int steps = 200;
+        std::vector<double> xs, pass, games;
+        for (int i = 0; i <= steps; ++i) {
+            const double elo = from + (to - from) * i / steps;
+            const auto o     = plan.at(elo);
+            xs.push_back(elo);
+            pass.push_back(100 * o.pass);
+            games.push_back(o.games);
+        }
+        const double bounds[2] = {plan.elo0, plan.elo1};
+        const float height     = (ImGui::GetContentRegionAvail().y - ImGui::GetStyle().ItemSpacing.y) / 2;
+        const auto curve = [&](const char* title, const char* y_label, const std::vector<double>& ys, double y_max) {
+            if (!ImPlot::BeginPlot(title, ImVec2(-1, height), ImPlotFlags_NoLegend | ImPlotFlags_NoMenus)) return;
+            ImPlot::SetupAxes(TR("true difference (Elo)"), y_label);
+            ImPlot::SetupAxisLimits(ImAxis_X1, from, to, ImPlotCond_Always);
+            ImPlot::SetupAxisLimits(ImAxis_Y1, 0, y_max, ImPlotCond_Always);
+            ImPlotSpec marks;
+            marks.LineColor = ImVec4(0.95f, 0.75f, 0.3f, 0.8f);
+            ImPlot::PlotInfLines("##bounds", bounds, 2, marks);
+            ImPlotSpec line;
+            line.LineColor  = ImGui::ColorConvertU32ToFloat4(ui::ACCENT);
+            line.LineWeight = 2.0f;
+            ImPlot::PlotLine("##curve", xs.data(), ys.data(), static_cast<int>(xs.size()), line);
+            ImPlot::EndPlot();
+        };
+        curve(TR("Probability that H1 is accepted (%)"), "%", pass, 100);
+        curve(TR("Expected number of games"), TR("games"), games, *std::max_element(games.begin(), games.end()) * 1.1);
+    }
+    ImGui::EndChild();
+    ImGui::End();
 }
 
 void App::setupLimit() {

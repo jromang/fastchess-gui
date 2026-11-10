@@ -185,6 +185,7 @@ class App {
     void drawTemplates();
     void setupEngines();
     void setupMatch();
+    void drawSprtCalculator();
     void setupLimit();
     void setupConcurrency();
     void setupOpenings();
@@ -270,6 +271,10 @@ class App {
     std::vector<SlotView> slot_views_;
     std::set<int> detached_;  // slots shown in their own window
     bool live_mosaic_ = true;
+
+    // SPRT calculator: its own copy of the bounds, applied to the setup on request.
+    bool sprt_calc_open_ = false;
+    MatchSetup sprt_calc_;
     // The running tournament's tablebase adjudication limit (see tablebasePieces), read once per tournament.
     int tbPieces();
     const tour::TournamentState* tb_tournament_ = nullptr;

@@ -154,6 +154,9 @@ struct MatchSetup {
     double sprt_beta       = 0.05;
     std::string sprt_model = "normalized";
     int sprt_max_games     = 0;  // 0 = no limit
+    // The SPRT calculator's guesses about the games to come; fishtest's values for its openings by default.
+    double sprt_draw_ratio = 0.49;
+    double sprt_rms_bias   = 191;  // Elo
 
     LimitKind limit  = LimitKind::Nodes;
     double tc_base_s = 10.0;
@@ -220,11 +223,11 @@ struct MatchSetup {
     int broadcast_follow = 0;  // TLCS game: 0 automatic, 1 the game shown in the Live tab
 };
 // More fields than NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT takes (64): its expansion, in two halves.
-#define FCG_MATCH_SETUP_FIELDS_1                                                                                       \
-    format, name, engine_a, engine_b, participants, cycles, seeds, common_hash, common_threads, mode, fixed_games,     \
-        sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, limit, tc_base_s, tc_inc_s, tc_moves, \
-        tc_margin_ms, nodes, move_s, depth, concurrency_auto, concurrency, affinity, book, book_random, book_plies,    \
-        book_start, chess960, seed
+#define FCG_MATCH_SETUP_FIELDS_1                                                                                   \
+    format, name, engine_a, engine_b, participants, cycles, seeds, common_hash, common_threads, mode, fixed_games, \
+        sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, sprt_draw_ratio, sprt_rms_bias,   \
+        limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto, concurrency,   \
+        affinity, book, book_random, book_plies, book_start, chess960, seed
 #define FCG_MATCH_SETUP_FIELDS_2                                                                                      \
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,        \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,         \

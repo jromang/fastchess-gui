@@ -107,6 +107,11 @@ void App::frame() {
         const auto& w = options_.focus_window;
         if (w == "setup")
             page_ = Page::NewMatch;
+        else if (w == "sprt-calc") {
+            page_           = Page::NewMatch;
+            sprt_calc_      = setup_;
+            sprt_calc_open_ = true;
+        }
         else if (w == "engines")
             page_ = Page::Engines;
         else if (w == "console")
@@ -136,6 +141,7 @@ void App::frame() {
 
     drawShell();
     drawDetached();
+    drawSprtCalculator();
     drawQuitModal();
 
     // The window title tells how the run is going, also when the window is in the background.
