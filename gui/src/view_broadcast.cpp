@@ -34,7 +34,6 @@ void App::updateBroadcast() {
     settings.lichess_token  = lichess_token_;
     settings.lichess_round  = setup_.lichess_round;
     settings.lichess_listed = setup_.lichess_listed;
-    settings.tmp_dir        = storage_.root() / "tmp";
     for (const auto& error : broadcaster_.configure(settings)) Console::instance().add(error, true);
 
     const auto* t   = run_.tournament();
@@ -184,15 +183,9 @@ void App::drawLichess(bool& changed) {
     changed |= ImGui::Checkbox(TR("Listed among lichess' broadcasts"), &setup_.lichess_listed);
     ui::help(TR("Otherwise the broadcast is unlisted: only those who have its link see it."));
 
-    const bool curl = curlAvailable();
-    ImGui::BeginDisabled(lichess_token_.empty() || !curl);
+    ImGui::BeginDisabled(lichess_token_.empty());
     changed |= ImGui::Checkbox(TR("Push the games to lichess"), &setup_.broadcast_lichess);
     ImGui::EndDisabled();
-    if (!curl) {
-        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
-        ImGui::TextWrapped("%s", TR("curl is needed to reach lichess, and was not found."));
-        ImGui::PopStyleColor();
-    }
 
     const auto status = broadcaster_.lichess();
     if (!status.error.empty()) {

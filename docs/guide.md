@@ -66,6 +66,10 @@ output, resignation. Engines marked ↔ in the list are WinBoard engines.
   position: give it openings as moves (a PGN book), not as positions (EPD).
 - Chess960 for an engine with the `fischerandom` variant: `variant fischerandom`, positions in X-FEN, castling as
   `O-O`/`O-O-O`, as WinBoard sends them.
+- *Scores from White's side*, among the engine's options: for the old engines that give their scores from White's
+  point of view rather than the side to move's, as the protocol asks; their scores as Black are reversed.
+- An engine that asks to be started again for every game (`feature reuse=0`) gets *Restart the engine for every
+  game* ticked when it is added.
 - `FCG_WB2UCI_LOG=FILE` in the environment writes every line exchanged with WinBoard engines to `FILE`.
 
 ## Books
@@ -269,11 +273,14 @@ The *Broadcast* tab of a running tournament publishes it while it plays; the sna
   in the profile only. With no round given, a broadcast named after the tournament is made, unlisted unless
   *Listed among lichess' broadcasts* is ticked; its link is shown once it is on air. Otherwise the games go to the
   round whose URL or id is given (a broadcast fed by pushes, not by a source URL). The games in progress are
-  pushed every 8 seconds, and each finished game once, with its evaluations and clocks; a round holds 64 games,
+  pushed every 8 seconds with their clocks, and each finished game once; a round holds 64 games,
   after which the next round of the same broadcast is made. Only the games finished after it was switched on are
   pushed; `lichess.json` in the tournament folder remembers where they went, so a resumed tournament continues
-  the same broadcast. The requests go through the system's `curl` (present on Linux and on Windows 10 and later),
-  with the system's certificates and proxy settings.
+  the same broadcast. lichess keeps only the clocks of what it is sent: its evaluation bar is its own, and the
+  engines' evaluations do not show there.
+
+  The connection uses Mbed TLS, built into the program, and trusts only the root certificates that sign lichess.org
+  (Google Trust Services) and those of Let's Encrypt; it goes straight to lichess, not through a proxy.
 
 ## Headless mode
 
@@ -309,7 +316,6 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
 - `engines.json`: the engine library;
 - `setup.json`: the last setup; `templates/*.json`: the saved templates; `queue.json`: the queue;
 - `layout.ini`: the window layout; `fastchess-gui.log`: the log of the last session;
-- `tmp/`: curl's files while a lichess request is made (removed right after);
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**;
 - `runs/<date>_<A>_vs_<B>/` for a match, `runs/<date>_<name>/` for a tournament (in `runs/` or the chosen

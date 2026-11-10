@@ -30,7 +30,6 @@ struct BroadcastSettings {
     std::string lichess_token;
     std::string lichess_round;  // a round's URL or id; empty: a new broadcast
     bool lichess_listed = false;
-    std::filesystem::path tmp_dir;  // curl's files
 };
 
 // The tournament as broadcast: the games in progress (from the observer), the last game ended in each slot, the

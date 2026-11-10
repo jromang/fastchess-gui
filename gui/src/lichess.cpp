@@ -92,10 +92,9 @@ LichessGame lichessLiveGame(const LiveGame& g, const std::string& event, int whi
     const auto n = g.san.size();
     for (std::size_t i = 0; i < n; ++i) {
         LichessGame::Move m{g.san[i], {}};
-        if (i < g.evals.size() && !g.evals[i].empty()) m.comment = "[%eval " + g.evals[i] + "]";
         // The last move of each side is one of the last two: its clock is the side's clock now.
         if (g.clocks && i + 2 >= n) {
-            m.comment += (m.comment.empty() ? "" : " ") + clock(white ? g.white_ms : g.black_ms);
+            m.comment = clock(white ? g.white_ms : g.black_ms);
         }
         game.moves.push_back(std::move(m));
         white = !white;
@@ -124,7 +123,8 @@ LichessGame lichessFinishedGame(std::string_view pgn, const std::string& event, 
         game.first_number = last == std::string::npos ? 1 : std::max(1, std::atoi(fen.c_str() + last + 1));
     }
 
-    // The moves; from each comment, the evaluation and the clock (without milliseconds), as lichess reads them.
+    // The moves; from each comment, the clock (without milliseconds): the one thing of a comment lichess keeps in a
+    // broadcast, which drops the evaluations and the text.
     auto body           = pgn.find("\n\n");
     body                = body == std::string_view::npos ? pgn.size() : body + 2;
     const auto movetext = pgn.substr(body);
@@ -133,8 +133,7 @@ LichessGame lichessFinishedGame(std::string_view pgn, const std::string& event, 
         if (at == std::string_view::npos) return {};
         const auto start = at + name.size();
         const auto value = comment.substr(start, comment.find(']', start) - start);
-        // "0.30,12": the depth left out; "0:00:59.120": the milliseconds.
-        return std::string(value.substr(0, value.find(name == "[%clk " ? '.' : ',')));
+        return std::string(value.substr(0, value.find('.')));  // "0:00:59.120": the milliseconds left out
     };
     for (std::size_t i = 0; i < movetext.size();) {
         const char c = movetext[i];
@@ -143,12 +142,8 @@ LichessGame lichessFinishedGame(std::string_view pgn, const std::string& event, 
         } else if (c == '{') {
             const auto end     = movetext.find('}', i);
             const auto comment = movetext.substr(i, end == std::string_view::npos ? std::string_view::npos : end - i);
-            if (!game.moves.empty()) {
-                const auto eval  = command(comment, "[%eval ");
-                const auto clock = command(comment, "[%clk ");
-                auto& text       = game.moves.back().comment;
-                if (!eval.empty()) text = "[%eval " + eval + "]";
-                if (!clock.empty()) text += (text.empty() ? "" : " ") + std::string("[%clk ") + clock + "]";
+            if (const auto clock = command(comment, "[%clk "); !game.moves.empty() && !clock.empty()) {
+                game.moves.back().comment = "[%clk " + clock + "]";
             }
             i = end == std::string_view::npos ? movetext.size() : end + 1;
         } else {
@@ -214,7 +209,7 @@ void LichessRelay::offer(std::vector<LichessGame> live, std::vector<LichessGame>
 }
 
 HttpResult LichessRelay::post(const std::string& path, const std::string& type, const std::string& body) {
-    return httpPost({settings_.base + path, settings_.token, type, body}, settings_.tmp_dir);
+    return httpPost({settings_.base + path, settings_.token, type, body});
 }
 
 void LichessRelay::save() { writeJson(settings_.dir / "lichess.json", target_); }

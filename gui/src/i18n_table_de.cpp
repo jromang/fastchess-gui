@@ -873,8 +873,6 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"by %s", "von %s"},
         {"bye", "spielfrei"},
         {"colours reversed of an earlier one", "vertauschte Farben einer früheren"},
-        {"curl is needed to reach lichess, and was not found.",
-         "curl wird für lichess benötigt und wurde nicht gefunden."},
         {"decision time", "Entscheidungszeit"},
         {"depth {}", "Tiefe {}"},
         {"draws", "Remisen"},

@@ -187,6 +187,17 @@ if(FCG_BUILD_GUI)
     # so MakeAvailable only downloads them.
     FetchContent_MakeAvailable(sdl3 imgui implot nanosvg stb inter lucide)
 
+    # TLS for the lichess broadcasts: Mbed TLS (long term support branch), static, its libraries only.
+    FetchContent_Declare(mbedtls
+        URL https://github.com/Mbed-TLS/mbedtls/releases/download/mbedtls-4.1.1/mbedtls-4.1.1.tar.bz2
+        URL_HASH SHA256=3359a349e23db3d5536fcee032ae7b2ecbfc08972fab643089b5cbf2a375c98c)
+    set(ENABLE_PROGRAMS OFF CACHE BOOL "" FORCE)
+    set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+    set(MBEDTLS_FATAL_WARNINGS OFF CACHE BOOL "" FORCE)
+    set(TF_PSA_CRYPTO_FATAL_WARNINGS OFF CACHE BOOL "" FORCE)
+    set(DISABLE_PACKAGE_CONFIG_AND_INSTALL ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(mbedtls)
+
     add_library(imgui_lib STATIC
         ${imgui_SOURCE_DIR}/imgui.cpp
         ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -252,7 +263,7 @@ if(FCG_BUILD_GUI)
     )
     target_compile_options(fcg_lib PRIVATE -Wall -Wextra)
     target_compile_definitions(fcg_lib PUBLIC FCG_VERSION="${PROJECT_VERSION}")
-    target_link_libraries(fcg_lib PUBLIC fcg_tournament imgui_lib)
+    target_link_libraries(fcg_lib PUBLIC fcg_tournament imgui_lib PRIVATE mbedtls)
     if(WIN32)
         target_link_libraries(fcg_lib PUBLIC ws2_32)
     endif()

@@ -1,9 +1,10 @@
-// lichess broadcasts: the PGN lichess gets, and the relay against a server playing lichess' part, through curl.
+// lichess broadcasts: the PGN lichess gets, and the relay against a server playing lichess' part.
 
 #include <doctest/doctest.hpp>
 
 #include <algorithm>
 #include <atomic>
+#include <cstdlib>
 #include <filesystem>
 #include <functional>
 #include <map>
@@ -105,9 +106,13 @@ LiveGame liveGame(uint64_t number) {
 
 }  // namespace
 
-TEST_CASE("lichess: the same tags in progress and finished, evaluations and clocks sent once, round ids") {
+TEST_CASE("HTTP: a chunked body put back together") {
+    CHECK(unchunk("4\r\nWiki\r\n6\r\npedia \r\n0\r\n\r\n") == "Wikipedia ");
+    CHECK(unchunk("not chunked") == "not chunked");
+}
+
+TEST_CASE("lichess: the same tags in progress and finished, clocks sent once, round ids") {
     auto game       = liveGame(3);
-    game.evals      = {"0.30", "-0.20", "#3"};
     const auto live = lichessLiveGame(game, "Test", 3500, 0, false);
     CHECK(live.key == "2|Alpha|Beta");  // games 3 and 4 are the second encounter
     CHECK_FALSE(live.finished);
@@ -116,10 +121,9 @@ TEST_CASE("lichess: the same tags in progress and finished, evaluations and cloc
           std::string::npos);
     CHECK(pgn.find("[BlackElo") == std::string::npos);
     CHECK(pgn.find("[FEN") == std::string::npos);
-    CHECK(pgn.find("\n\n1. e4 {[%eval 0.30]} e5 {[%eval -0.20] [%clk 1:02:03]} 2. Nf3 {[%eval #3] [%clk 0:00:59]} *") !=
-          std::string::npos);
+    CHECK(pgn.find("\n\n1. e4 e5 {[%clk 1:02:03]} 2. Nf3 {[%clk 0:00:59]} *") != std::string::npos);
     // The moves pushed before keep their comments on lichess: only the new ones get theirs.
-    CHECK(live.pgn(2).find("\n\n1. e4 e5 2. Nf3 {[%eval #3] [%clk 0:00:59]} *") != std::string::npos);
+    CHECK(live.pgn(2).find("\n\n1. e4 e5 2. Nf3 {[%clk 0:00:59]} *") != std::string::npos);
 
     const std::string cb =
         "[Event \"x\"]\n[Round \"2\"]\n[White \"Alpha\"]\n[Black \"Beta\"]\n[Result \"1-0\"]\n"
@@ -131,11 +135,11 @@ TEST_CASE("lichess: the same tags in progress and finished, evaluations and cloc
     const auto all = done.pgn(0);
     CHECK(all.rfind("[Event \"Test\"]\n[Site \"fastchess-gui\"]\n[Round \"2\"]", 0) == 0);
     CHECK(all.find("GameDuration") == std::string::npos);
-    CHECK(all.find("\n\n1. e4 {[%eval 0.30] [%clk 0:00:59]} e5 {[%eval -0.20] [%clk 0:00:58]} 2. Nf3 "
-                   "{[%clk 0:00:57]} Nc6 {[%eval #-2]} 1-0\n\n") != std::string::npos);
+    CHECK(all.find("\n\n1. e4 {[%clk 0:00:59]} e5 {[%clk 0:00:58]} 2. Nf3 {[%clk 0:00:57]} Nc6 1-0\n\n") !=
+          std::string::npos);
     CHECK(all.find("%emt") == std::string::npos);
-    // Its moves pushed while it was played: only the last one and the result are new.
-    CHECK(done.pgn(3).find("\n\n1. e4 e5 2. Nf3 Nc6 {[%eval #-2]} 1-0\n\n") != std::string::npos);
+    // Its first moves pushed while it was played: only the others and the result are new.
+    CHECK(done.pgn(2).find("\n\n1. e4 e5 2. Nf3 {[%clk 0:00:57]} Nc6 1-0\n\n") != std::string::npos);
 
     CHECK(lichessRoundId("https://lichess.org/broadcast/my-event/round-1/AbCd1234") == "AbCd1234");
     CHECK(lichessRoundId("AbCd1234/") == "AbCd1234");
@@ -143,11 +147,7 @@ TEST_CASE("lichess: the same tags in progress and finished, evaluations and cloc
     CHECK(formEncode({{"name", "A & B"}, {"x", "é"}}) == "name=A+%26+B&x=%C3%A9");
 }
 
-TEST_CASE("lichess: a broadcast made, its rounds filled up to 64 games, through curl") {
-    if (!curlAvailable()) {
-        MESSAGE("curl not available, skipped");
-        return;
-    }
+TEST_CASE("lichess: a broadcast made, its rounds filled up to 64 games, over HTTP") {
     const uint16_t port = 26031;
     std::atomic<int> rounds{0};
     FakeServer server(port, [&](const FakeServer::Request& r) -> std::string {
@@ -165,8 +165,7 @@ TEST_CASE("lichess: a broadcast made, its rounds filled up to 64 games, through 
     fs::create_directories(dir);
 
     // The token goes in a header, never on the command line.
-    const auto echo =
-        httpPost({fmt::format("http://127.0.0.1:{}/api/echo", port), "secret", "text/plain", "body"}, dir / "tmp");
+    const auto echo = httpPost({fmt::format("http://127.0.0.1:{}/api/echo", port), "secret", "text/plain", "body"});
     CHECK(echo.status == 200);
     CHECK(echo.body.find("games") != std::string::npos);
     auto requests = server.requests();
@@ -174,10 +173,9 @@ TEST_CASE("lichess: a broadcast made, its rounds filled up to 64 games, through 
     CHECK(requests[0].authorization == "Bearer secret");
     CHECK(requests[0].content_type == "text/plain");
     CHECK(requests[0].body == "body");
-    CHECK(fs::is_empty(dir / "tmp"));  // the config and the body are gone
 
     LichessRelay relay;
-    relay.start({"secret", "", false, "Relay test", dir, dir / "tmp", fmt::format("http://127.0.0.1:{}", port)});
+    relay.start({"secret", "", false, "Relay test", dir, fmt::format("http://127.0.0.1:{}", port)});
     std::vector<LichessGame> finished;
     for (uint32_t round = 1; round <= 65; ++round) {
         finished.push_back(lichessFinishedGame("[Event \"x\"]\n\n1. e4 {[%clk 0:00:10]} 1-0\n", "Relay test", round,
@@ -218,9 +216,25 @@ TEST_CASE("lichess: a broadcast made, its rounds filled up to 64 games, through 
 
     // Started again on the same tournament: the broadcast is kept, the finished games are not pushed again.
     const auto before = server.requests().size();
-    relay.start({"secret", "", false, "Relay test", dir, dir / "tmp", fmt::format("http://127.0.0.1:{}", port)});
+    relay.start({"secret", "", false, "Relay test", dir, fmt::format("http://127.0.0.1:{}", port)});
     relay.offer({}, finished);
     relay.stop();
     CHECK(server.requests().size() == before);
     fs::remove_all(dir);
+}
+
+TEST_CASE("HTTPS: lichess.org trusted, a site of another authority refused (FCG_NET_TESTS=1 only)") {
+    const char* wanted = std::getenv("FCG_NET_TESTS");
+    if (!wanted || std::string(wanted) != "1") {
+        MESSAGE("needs the internet: FCG_NET_TESTS=1, skipped");
+        return;
+    }
+    // Without a token: refused by lichess, but over a connection whose certificate was checked.
+    const auto lichess = httpPost({"https://lichess.org/api/broadcast/round/abcdefgh/push", "", "text/plain", "x"});
+    CHECK_MESSAGE(lichess.status == 401, lichess.error);
+
+    // example.com is not signed by Google Trust Services nor Let's Encrypt: no connection.
+    const auto other = httpPost({"https://example.com/", "", "text/plain", "x"});
+    CHECK(other.status == 0);
+    CHECK_MESSAGE(other.error.find("not trusted") != std::string::npos, other.error);
 }

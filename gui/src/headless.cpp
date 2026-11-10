@@ -127,7 +127,6 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
         settings.lichess       = true;
         settings.lichess_token = token && *token ? token : storage.lichessToken();
         settings.lichess_round = *broadcast.lichess == "new" ? "" : *broadcast.lichess;
-        settings.tmp_dir       = storage.root() / "tmp";
         if (settings.lichess_token.empty()) {
             std::fprintf(stderr, "error: --lichess needs a token in FCG_LICHESS_TOKEN (scope study:write)\n");
             return 2;

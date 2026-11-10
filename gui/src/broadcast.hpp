@@ -29,8 +29,7 @@ struct LiveGame {
     int white_elo = 0;  // reference ratings, 0 = none
     int black_elo = 0;
     std::string start_fen;
-    std::vector<std::string> san;    // moves from start_fen
-    std::vector<std::string> evals;  // of each move, White's point of view: "0.35", "#-3"; empty when unknown
+    std::vector<std::string> san;  // moves from start_fen
     std::vector<std::string> uci;
     std::string fen;  // current position
     bool white_to_move = true;

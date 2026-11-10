@@ -878,8 +878,6 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"by %s", "par %s"},
         {"bye", "exempt"},
         {"colours reversed of an earlier one", "couleurs inversées d'une précédente"},
-        {"curl is needed to reach lichess, and was not found.",
-         "curl est nécessaire pour joindre lichess, et n'a pas été trouvé."},
         {"decision time", "temps de décision"},
         {"depth {}", "profondeur {}"},
         {"draws", "nulles"},

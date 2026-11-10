@@ -1,177 +1,182 @@
 #include "https.hpp"
 
-#include <atomic>
-#include <cerrno>
-#include <chrono>
-#include <cstdlib>
-#include <fstream>
+#include <algorithm>
+#include <cctype>
 #include <optional>
 
-#ifdef _WIN32
-#    include <windows.h>
-#else
-#    include <spawn.h>
-#    include <sys/wait.h>
-#    include <unistd.h>
-extern char** environ;
-#endif
+#include <mbedtls/error.h>
+#include <mbedtls/net_sockets.h>
+#include <mbedtls/ssl.h>
+#include <mbedtls/x509_crt.h>
+#include <psa/crypto.h>
 
 #include <fmt/include/fmt/format.h>
 
-namespace fcg {
+#include "tls_roots.hpp"
 
-namespace fs = std::filesystem;
+namespace fcg {
 
 namespace {
 
-// The marker curl writes after the body, with the status and its error message.
-constexpr std::string_view STATUS_LINE = "fcg-http-status ";
+struct Url {
+    bool tls = true;
+    std::string host;
+    std::string port;
+    std::string path;
+};
 
-std::string curlProgram() {
-#ifdef _WIN32
-    // Windows' own, rather than whatever another program put first in the PATH.
-    if (const char* root = std::getenv("SystemRoot")) {
-        const auto own = fs::path(root) / "System32" / "curl.exe";
-        std::error_code ec;
-        if (fs::is_regular_file(own, ec)) return own.string();
-    }
-    return "curl.exe";
-#else
-    return "curl";
-#endif
-}
-
-// A string of a curl config file: in double quotes, with \ and " escaped.
-std::string configString(std::string_view s) {
-    std::string out = "\"";
-    for (const char c : s) {
-        if (c == '\\' || c == '"') out += '\\';
-        if (c == '\n' || c == '\r') continue;
-        out += c;
-    }
-    return out + "\"";
-}
-
-// A file readable by its owner only.
-bool writePrivate(const fs::path& file, std::string_view text) {
-    {
-        std::ofstream out(file, std::ios::binary | std::ios::trunc);
-        if (!out) return false;
-    }
-    std::error_code ec;
-    fs::permissions(file, fs::perms::owner_read | fs::perms::owner_write, fs::perm_options::replace, ec);
-    std::ofstream out(file, std::ios::binary | std::ios::trunc);
-    out << text;
-    return static_cast<bool>(out);
-}
-
-// Runs `program` with `args` in `dir` and returns everything it wrote on its standard output, read to the end
-// (curl's own --max-time bounds it); nullopt when it cannot be started.
-std::optional<std::string> capture(const std::string& program, const std::vector<std::string>& args,
-                                   const fs::path& dir) {
-    std::string out;
-#ifdef _WIN32
-    SECURITY_ATTRIBUTES sa{sizeof(sa), nullptr, TRUE};
-    HANDLE read = nullptr, write = nullptr;
-    if (!CreatePipe(&read, &write, &sa, 0)) return std::nullopt;
-    SetHandleInformation(read, HANDLE_FLAG_INHERIT, 0);
-    std::string command = "\"" + program + "\"";
-    for (const auto& a : args) command += " \"" + a + "\"";
-    STARTUPINFOA si{};
-    si.cb         = sizeof(si);
-    si.dwFlags    = STARTF_USESTDHANDLES;
-    si.hStdOutput = write;
-    si.hStdError  = write;
-    si.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
-    PROCESS_INFORMATION pi{};
-    const auto cwd = dir.string();
-    const bool ok  = CreateProcessA(nullptr, command.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr,
-                                    cwd.c_str(), &si, &pi);
-    CloseHandle(write);
-    if (!ok) {
-        CloseHandle(read);
+std::optional<Url> parseUrl(std::string_view url) {
+    Url u;
+    if (url.rfind("https://", 0) == 0) {
+        url.remove_prefix(8);
+    } else if (url.rfind("http://", 0) == 0) {
+        u.tls = false;
+        url.remove_prefix(7);
+    } else {
         return std::nullopt;
     }
-    char buffer[4096];
-    DWORD n = 0;
-    while (ReadFile(read, buffer, sizeof(buffer), &n, nullptr) && n > 0) out.append(buffer, n);
-    CloseHandle(read);
-    WaitForSingleObject(pi.hProcess, 10000);
-    CloseHandle(pi.hThread);
-    CloseHandle(pi.hProcess);
-#else
-    int pipe_fds[2];
-    if (pipe(pipe_fds) != 0) return std::nullopt;
-    posix_spawn_file_actions_t actions;
-    posix_spawn_file_actions_init(&actions);
-    posix_spawn_file_actions_adddup2(&actions, pipe_fds[1], STDOUT_FILENO);
-    posix_spawn_file_actions_adddup2(&actions, pipe_fds[1], STDERR_FILENO);
-    posix_spawn_file_actions_addclose(&actions, pipe_fds[0]);
-    posix_spawn_file_actions_addclose(&actions, pipe_fds[1]);
-    // The config file is given by its absolute path: no change of directory needed in the child.
-    (void)dir;
-    std::vector<char*> argv;
-    argv.push_back(const_cast<char*>(program.c_str()));
-    for (const auto& a : args) argv.push_back(const_cast<char*>(a.c_str()));
-    argv.push_back(nullptr);
-    pid_t pid    = 0;
-    const int rc = posix_spawnp(&pid, program.c_str(), &actions, nullptr, argv.data(), environ);
-    posix_spawn_file_actions_destroy(&actions);
-    close(pipe_fds[1]);
-    if (rc != 0) {
-        close(pipe_fds[0]);
-        return std::nullopt;
+    const auto slash = url.find('/');
+    const auto host  = url.substr(0, slash);
+    u.path           = slash == std::string_view::npos ? "/" : std::string(url.substr(slash));
+    const auto colon = host.rfind(':');
+    u.host           = std::string(host.substr(0, colon));
+    u.port           = colon == std::string_view::npos ? (u.tls ? "443" : "80") : std::string(host.substr(colon + 1));
+    if (u.host.empty()) return std::nullopt;
+    return u;
+}
+
+std::string mbedError(int code) {
+    char text[200];
+    mbedtls_strerror(code, text, sizeof(text));
+    return fmt::format("{} (-0x{:04x})", text, -code);
+}
+
+// The connection, plain or TLS, closed when it goes out of scope.
+class Connection {
+   public:
+    Connection() {
+        mbedtls_net_init(&net_);
+        mbedtls_ssl_init(&ssl_);
+        mbedtls_ssl_config_init(&conf_);
+        mbedtls_x509_crt_init(&roots_);
     }
-    char buffer[4096];
-    for (ssize_t n; (n = ::read(pipe_fds[0], buffer, sizeof(buffer))) != 0;) {
-        if (n < 0) {
-            if (errno == EINTR) continue;
-            break;
+    ~Connection() {
+        if (tls_) mbedtls_ssl_close_notify(&ssl_);
+        mbedtls_net_free(&net_);
+        mbedtls_ssl_free(&ssl_);
+        mbedtls_ssl_config_free(&conf_);
+        mbedtls_x509_crt_free(&roots_);
+    }
+    Connection(const Connection&)            = delete;
+    Connection& operator=(const Connection&) = delete;
+
+    // An error message, empty once connected (and the server's certificate checked).
+    std::string open(const Url& url, int timeout_ms) {
+        timeout_ms_ = static_cast<uint32_t>(timeout_ms);
+        if (const int rc = mbedtls_net_connect(&net_, url.host.c_str(), url.port.c_str(), MBEDTLS_NET_PROTO_TCP)) {
+            return "cannot connect to " + url.host + ": " + mbedError(rc);
         }
-        out.append(buffer, static_cast<std::size_t>(n));
-    }
-    close(pipe_fds[0]);
-    int status = 0;
-    while (waitpid(pid, &status, 0) < 0 && errno == EINTR) {
-    }
-#endif
-    return out;
-}
+        if (!url.tls) return {};
+        tls_ = true;
 
-HttpResult run(const fs::path& config) {
-    HttpResult result;
-    const auto out = capture(curlProgram(), {"--config", config.string()}, config.parent_path());
-    if (!out) {
-        result.error = "curl cannot be started";
-        return result;
+        if (psa_crypto_init() != PSA_SUCCESS) return "cannot start the cryptography";
+        // The PEM text with its final NUL, as mbedtls_x509_crt_parse wants it.
+        const auto* pem = reinterpret_cast<const unsigned char*>(TLS_ROOTS);
+        if (const int rc = mbedtls_x509_crt_parse(&roots_, pem, std::char_traits<char>::length(TLS_ROOTS) + 1)) {
+            return "bad root certificates: " + mbedError(rc);
+        }
+        if (const int rc = mbedtls_ssl_config_defaults(&conf_, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM,
+                                                       MBEDTLS_SSL_PRESET_DEFAULT)) {
+            return mbedError(rc);
+        }
+        // The server's certificate must chain to one of the roots and name the host.
+        mbedtls_ssl_conf_authmode(&conf_, MBEDTLS_SSL_VERIFY_REQUIRED);
+        mbedtls_ssl_conf_ca_chain(&conf_, &roots_, nullptr);
+        mbedtls_ssl_conf_read_timeout(&conf_, timeout_ms_);
+        if (const int rc = mbedtls_ssl_setup(&ssl_, &conf_)) return mbedError(rc);
+        if (const int rc = mbedtls_ssl_set_hostname(&ssl_, url.host.c_str())) return mbedError(rc);
+        mbedtls_ssl_set_bio(&ssl_, &net_, mbedtls_net_send, nullptr, mbedtls_net_recv_timeout);
+
+        int rc = 0;
+        while ((rc = mbedtls_ssl_handshake(&ssl_)) != 0) {
+            if (rc == MBEDTLS_ERR_SSL_WANT_READ || rc == MBEDTLS_ERR_SSL_WANT_WRITE) continue;
+            if (const auto flags = mbedtls_ssl_get_verify_result(&ssl_); flags != 0 && flags != uint32_t(-1)) {
+                char why[256];
+                mbedtls_x509_crt_verify_info(why, sizeof(why), "", flags);
+                std::string text(why);
+                while (!text.empty() && (text.back() == '\n' || text.back() == ' ')) text.pop_back();
+                return "the certificate of " + url.host + " is not trusted: " + text;
+            }
+            return "TLS with " + url.host + ": " + mbedError(rc);
+        }
+        return {};
     }
-    const auto at = out->rfind(STATUS_LINE);
-    if (at == std::string::npos) {
-        result.error = "curl: " + *out;
-        return result;
+
+    bool send(std::string_view data) {
+        while (!data.empty()) {
+            const auto* p = reinterpret_cast<const unsigned char*>(data.data());
+            const int n   = tls_ ? mbedtls_ssl_write(&ssl_, p, data.size()) : mbedtls_net_send(&net_, p, data.size());
+            if (n == MBEDTLS_ERR_SSL_WANT_READ || n == MBEDTLS_ERR_SSL_WANT_WRITE) continue;
+            if (n <= 0) return false;
+            data.remove_prefix(static_cast<std::size_t>(n));
+        }
+        return true;
     }
-    result.body     = out->substr(0, at);
-    const auto rest = out->substr(at + STATUS_LINE.size());
-    try {
-        result.status = std::stoi(rest);
-    } catch (...) {
+
+    // Everything the server sends until it closes the connection; false on a timeout or an error.
+    bool receiveAll(std::string& out) {
+        unsigned char buffer[4096];
+        while (true) {
+            const int n = tls_ ? mbedtls_ssl_read(&ssl_, buffer, sizeof(buffer))
+                               : mbedtls_net_recv_timeout(&net_, buffer, sizeof(buffer), timeout_ms_);
+            if (n > 0) {
+                out.append(reinterpret_cast<const char*>(buffer), static_cast<std::size_t>(n));
+                continue;
+            }
+            if (n == 0 || n == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) return true;
+            if (n == MBEDTLS_ERR_SSL_WANT_READ || n == MBEDTLS_ERR_SSL_WANT_WRITE ||
+                n == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
+                continue;
+            }
+            // Some servers just close the socket once the answer is sent.
+            return n == MBEDTLS_ERR_NET_CONN_RESET && !out.empty();
+        }
     }
-    if (result.status == 0) {
-        auto message = rest.substr(std::min(rest.size(), rest.find(' ') + 1));
-        while (!message.empty() && (message.back() == '\n' || message.back() == '\r')) message.pop_back();
-        result.error = message.empty() ? "no answer" : message;
-    }
-    return result;
+
+   private:
+    mbedtls_net_context net_;
+    mbedtls_ssl_context ssl_;
+    mbedtls_ssl_config conf_;
+    mbedtls_x509_crt roots_;
+    bool tls_            = false;
+    uint32_t timeout_ms_ = 20000;
+};
+
+std::string lower(std::string s) {
+    for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return s;
 }
 
 }  // namespace
 
-bool curlAvailable() {
-    static const bool available = [] {
-        const auto out = capture(curlProgram(), {"--version"}, fs::current_path());
-        return out && out->rfind("curl", 0) == 0;
-    }();
-    return available;
+std::string unchunk(std::string_view body) {
+    std::string out;
+    std::size_t at = 0;
+    while (at < body.size()) {
+        const auto eol = body.find("\r\n", at);
+        if (eol == std::string_view::npos) return std::string(body);
+        std::size_t size = 0;
+        try {
+            size = std::stoul(std::string(body.substr(at, eol - at)), nullptr, 16);
+        } catch (...) {
+            return std::string(body);
+        }
+        if (size == 0) return out;
+        if (eol + 2 + size > body.size()) return std::string(body);
+        out.append(body.substr(eol + 2, size));
+        at = eol + 2 + size + 2;  // the chunk, then its CRLF
+    }
+    return out;
 }
 
 std::string formEncode(const std::vector<std::pair<std::string, std::string>>& fields) {
@@ -193,32 +198,50 @@ std::string formEncode(const std::vector<std::pair<std::string, std::string>>& f
     return out;
 }
 
-HttpResult httpPost(const HttpRequest& request, const fs::path& tmp_dir) {
-    static std::atomic<unsigned> counter{0};
-    std::error_code ec;
-    fs::create_directories(tmp_dir, ec);
-    const auto stem = fmt::format("http-{}-{}", std::chrono::steady_clock::now().time_since_epoch().count(), counter++);
-    const auto config = tmp_dir / (stem + ".curl");
-    const auto body   = tmp_dir / (stem + ".body");
-
-    std::string text = fmt::format("url = {}\nrequest = \"POST\"\nsilent\nshow-error\nmax-time = {}\n",
-                                   configString(request.url), request.timeout_s);
-    if (!request.token.empty()) text += "header = " + configString("Authorization: Bearer " + request.token) + "\n";
-    if (!request.content_type.empty())
-        text += "header = " + configString("Content-Type: " + request.content_type) + "\n";
-    text += "data-binary = " + configString("@" + body.generic_string()) + "\n";
-    text +=
-        "write-out = " + configString(std::string("\\n") + std::string(STATUS_LINE) + "%{http_code} %{errormsg}\\n") +
-        "\n";
-
+HttpResult httpPost(const HttpRequest& request) {
     HttpResult result;
-    if (!writePrivate(config, text) || !writePrivate(body, request.body)) {
-        result.error = "cannot write in " + tmp_dir.string();
-    } else {
-        result = run(config);
+    const auto url = parseUrl(request.url);
+    if (!url) {
+        result.error = "not an http or https URL: " + request.url;
+        return result;
     }
-    fs::remove(config, ec);
-    fs::remove(body, ec);
+
+    Connection connection;
+    if (auto error = connection.open(*url, request.timeout_s * 1000); !error.empty()) {
+        result.error = std::move(error);
+        return result;
+    }
+    std::string head =
+        fmt::format("POST {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: fastchess-gui\r\n", url->path, url->host);
+    if (!request.token.empty()) head += "Authorization: Bearer " + request.token + "\r\n";
+    if (!request.content_type.empty()) head += "Content-Type: " + request.content_type + "\r\n";
+    head += fmt::format("Content-Length: {}\r\nConnection: close\r\n\r\n", request.body.size());
+    if (!connection.send(head) || !connection.send(request.body)) {
+        result.error = "the request could not be sent to " + url->host;
+        return result;
+    }
+    std::string answer;
+    if (!connection.receiveAll(answer) && answer.empty()) {
+        result.error = "no answer from " + url->host + " in time";
+        return result;
+    }
+
+    // "HTTP/1.1 200 OK", headers, a blank line, the body.
+    const auto headers_end = answer.find("\r\n\r\n");
+    const auto space       = answer.find(' ');
+    if (answer.rfind("HTTP/", 0) != 0 || headers_end == std::string::npos || space == std::string::npos) {
+        result.error = "not an HTTP answer from " + url->host;
+        return result;
+    }
+    try {
+        result.status = std::stoi(answer.substr(space + 1, 3));
+    } catch (...) {
+        result.error = "not an HTTP answer from " + url->host;
+        return result;
+    }
+    const auto headers = lower(answer.substr(0, headers_end));
+    result.body        = answer.substr(headers_end + 4);
+    if (headers.find("\r\ntransfer-encoding: chunked") != std::string::npos) result.body = unchunk(result.body);
     return result;
 }
 
