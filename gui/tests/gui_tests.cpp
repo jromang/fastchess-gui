@@ -184,6 +184,24 @@ TEST_CASE("openings: PGN tags, and the Games filter by ECO code, range or words 
     CHECK_FALSE(openingMatches(eco, name, "sicilian dragon"));
 }
 
+TEST_CASE("evaluation facts: a disagreement, a swing, the loser's best score, and where they happen") {
+    const std::string pgn =
+        "[Event \"x\"]\n[Result \"0-1\"]\n\n"
+        "1. e4 {book} e5 {book} 2. Nf3 {+0.30/10 0.1s} Nc6 {+2.50/10 0.1s} 3. Bb5 {+0.40/10 0.1s} "
+        "a6 {+2.60/10 0.1s} 4. Ba4 {+0.50/10 0.1s} Nf6 {+2.70/10 0.1s} 5. O-O {+6.00/10 0.1s} "
+        "Be7 {+M3/12 0.1s} 0-1\n";
+    const auto facts = evalFacts(pgn, -1);
+    CHECK(facts.disagreement == doctest::Approx(3.0f));  // plies 4 to 9: 3.0, 3.1, 3.2, 8.7, 16
+    CHECK(facts.disagree_ply == 4);
+    CHECK(facts.swing == doctest::Approx(7.3f));  // Black: -2.7 for White, then a mate, -10
+    CHECK(facts.swing_ply == 9);
+    CHECK(facts.loser_best == doctest::Approx(6.0f));
+    CHECK(facts.loser_ply == 8);
+
+    const auto draw = evalFacts(pgn, 0);
+    CHECK(draw.loser_ply == -1);
+}
+
 TEST_CASE("ChessBase comments give White's point of view, clocks and move times") {
     fastchess::config::Pgn config;
     const auto data = sampleGame(true);

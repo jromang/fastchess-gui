@@ -74,16 +74,17 @@ struct SlotState {
 
 // A finished, scored game, small enough to keep millions of them.
 struct GameRecord {
-    uint64_t game_id     = 0;
-    uint32_t round_id    = 0;
-    uint16_t white       = 0;  // participant indexes
-    uint16_t black       = 0;
-    int8_t white_result  = 0;     // +1 White won, 0 draw, -1 Black won
-    bool a_white         = true;  // a match: did A (participant 0) have White, and how did it do
-    int8_t a_result      = 0;     // +1 A won, 0 draw, -1 A lost
-    uint8_t termination  = 0;
-    uint16_t reason      = 0;  // index into GuiObserver::reasons()
-    uint16_t opening     = 0;  // index into GuiObserver::openings(); 0: none (Chess960, or an older PGN)
+    uint64_t game_id    = 0;
+    uint32_t round_id   = 0;
+    uint16_t white      = 0;  // participant indexes
+    uint16_t black      = 0;
+    int8_t white_result = 0;     // +1 White won, 0 draw, -1 Black won
+    bool a_white        = true;  // a match: did A (participant 0) have White, and how did it do
+    int8_t a_result     = 0;     // +1 A won, 0 draw, -1 A lost
+    uint8_t termination = 0;
+    uint16_t reason     = 0;  // index into GuiObserver::reasons()
+    uint16_t opening    = 0;  // index into GuiObserver::openings(); 0: none (Chess960, or an older PGN)
+    EvalFacts facts;          // what its evaluations tell, for the "interesting games" filters
     uint16_t plies       = 0;
     uint32_t duration_ms = 0;
     PgnSpan fastchess_span;
@@ -173,8 +174,12 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     Slot* slot(int i) { return i >= 0 && i < static_cast<int>(slots_.size()) ? slots_[i].get() : nullptr; }
 
     uint16_t internReason(const std::string& reason);
-    // The opening of a game, from its PGN text, or read from the file when `pgn` is empty; data_mutex_ held.
-    uint16_t openingOf(const tour::GameResult& result, std::string_view pgn = {});
+    // What a game's PGN text tells (read from the file when `pgn` is empty), once per game; data_mutex_ held.
+    struct GameExtras {
+        uint16_t opening = 0;
+        EvalFacts facts;
+    };
+    const GameExtras& extrasOf(const tour::GameResult& result, std::string_view pgn = {});
     // One move of an engine in its search statistics; data_mutex_ held.
     static void addMove(EngineTotals& totals, int64_t depth, int64_t time_ms, int64_t nps);
     GameRecord makeRecord(const tour::GameResult& result, std::string_view pgn = {});  // data_mutex_ held
@@ -199,8 +204,8 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     std::vector<std::string> reasons_;
     std::unordered_map<std::string, uint16_t> reason_index_;
     std::vector<OpeningName> openings_{1};
-    std::unordered_map<std::string, uint16_t> opening_index_;   // "eco|name" -> index
-    std::unordered_map<uint64_t, uint16_t> opening_by_offset_;  // a game's PGN offset -> its opening
+    std::unordered_map<std::string, uint16_t> opening_index_;  // "eco|name" -> index
+    std::unordered_map<uint64_t, GameExtras> extras_;          // by the game's PGN offset
     std::vector<EngineTotals> totals_;
 };
 

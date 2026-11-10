@@ -17,12 +17,45 @@ namespace fcg {
 
 namespace {
 
-const char* FILTERS[] = {"All",          "Wins of A", "Draws", "Losses of A", "Losses on time", "Crash / illegal move",
-                         "Adjudications"};
+const char* FILTERS[] = {"All",
+                         "Wins of A",
+                         "Draws",
+                         "Losses of A",
+                         "Losses on time",
+                         "Crash / illegal move",
+                         "Adjudications",
+                         "The engines disagree",
+                         "An evaluation swings",
+                         "Lost after a winning score"};
 
 // In a tournament, results are seen from the engine chosen in the filter, or from White when none is.
-const char* TOURNAMENT_FILTERS[] = {"All",          "Wins", "Draws", "Losses", "Losses on time", "Crash / illegal move",
-                                    "Adjudications"};
+const char* TOURNAMENT_FILTERS[] = {"All",
+                                    "Wins",
+                                    "Draws",
+                                    "Losses",
+                                    "Losses on time",
+                                    "Crash / illegal move",
+                                    "Adjudications",
+                                    "The engines disagree",
+                                    "An evaluation swings",
+                                    "Lost after a winning score"};
+
+// The filters on what the evaluations tell, which take a threshold in pawns.
+constexpr int FIRST_EVAL_FILTER = 7;
+
+// The ply an evaluation filter is about, -1 for the others.
+int pliesOfInterest(const GameRecord& g, int filter) {
+    switch (filter) {
+        case 7:
+            return g.facts.disagree_ply;
+        case 8:
+            return g.facts.swing_ply;
+        case 9:
+            return g.facts.loser_ply;
+        default:
+            return -1;
+    }
+}
 
 // Result of `g` for participant `subject` (+1, 0, -1); a match uses A, a tournament without subject uses White.
 int resultFor(const GameRecord& g, int subject, bool match) {
@@ -31,7 +64,7 @@ int resultFor(const GameRecord& g, int subject, bool match) {
     return -g.white_result;
 }
 
-bool matches(const GameRecord& g, int filter, int subject, bool match) {
+bool matches(const GameRecord& g, int filter, int subject, bool match, float pawns) {
     using T         = fastchess::MatchTermination;
     const auto term = static_cast<T>(g.termination);
 
@@ -50,6 +83,12 @@ bool matches(const GameRecord& g, int filter, int subject, bool match) {
             return term == T::DISCONNECT || term == T::STALL || term == T::ILLEGAL_MOVE;
         case 6:
             return term == T::ADJUDICATION;
+        case 7:
+            return g.facts.disagreement >= pawns;
+        case 8:
+            return g.facts.swing >= pawns;
+        case 9:
+            return g.facts.loser_best >= pawns;
         default:
             return true;
     }
@@ -77,7 +116,7 @@ void App::rebuildGameFilter() {
             return openingMatches(openings_[g.opening].eco, openings_[g.opening].name, opening_filter_);
         };
         for (std::size_t i = 0; i < games_.size(); ++i) {
-            if (matches(games_[i], games_filter_, games_subject_, isMatch()) && opening(games_[i])) {
+            if (matches(games_[i], games_filter_, games_subject_, isMatch(), eval_threshold_) && opening(games_[i])) {
                 filtered_.push_back(static_cast<int>(i));
             }
         }
@@ -112,6 +151,10 @@ void App::selectGame(int index) {
         return;
     }
     replay_ply_ = static_cast<int>(replay_->moves.size());
+    // Filtered on what the evaluations tell: the board shows the moment it happens.
+    if (const int ply = pliesOfInterest(games_[index], games_filter_); ply >= 0) {
+        replay_ply_ = std::min(ply + 1, static_cast<int>(replay_->moves.size()));
+    }
 }
 
 void App::exportGames(const std::string& path, bool all) {
@@ -161,6 +204,18 @@ void App::drawGames() {
     const char* filters[IM_ARRAYSIZE(FILTERS)];
     for (int i = 0; i < IM_ARRAYSIZE(FILTERS); ++i) filters[i] = TR(match ? FILTERS[i] : TOURNAMENT_FILTERS[i]);
     if (ImGui::Combo("##filter", &games_filter_, filters, IM_ARRAYSIZE(FILTERS))) filtered_for_ = ~std::size_t(0);
+    if (games_filter_ >= FIRST_EVAL_FILTER) {
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(110.0f * ImGui::GetFontSize() / 16.0f);
+        if (ImGui::SliderFloat("##eval_threshold", &eval_threshold_, 0.5f, 10.0f, TR("%.1f pawns"))) {
+            filtered_for_ = ~std::size_t(0);
+        }
+        ui::help(
+            TR("The engines disagree: their evaluations differ by this much for 3 moves each in a row.\nAn "
+               "evaluation swings: an engine's evaluation changes by this much from one of its moves to the "
+               "next.\nLost after a winning score: the loser thought it was this much better.\nA game opens at "
+               "that moment."));
+    }
 
     // A tournament: the games of one engine.
     if (!match) {

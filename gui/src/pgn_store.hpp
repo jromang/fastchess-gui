@@ -48,6 +48,21 @@ struct ReplayGame {
 
 [[nodiscard]] std::optional<ReplayGame> parseReplay(const std::string& pgn);
 
+// What the evaluations of a game (fastchess comment style) tell, in pawns from the engines' own scores, a mate
+// counting as 10: how far the two engines disagreed for 3 moves each in a row, the largest change of one engine's
+// evaluation between two of its moves, and the best evaluation the loser had, from its own point of view. Each
+// with the ply it happens at (0-based, -1 when it does not), to show it.
+struct EvalFacts {
+    float disagreement   = 0;
+    int16_t disagree_ply = -1;
+    float swing          = 0;
+    int16_t swing_ply    = -1;
+    float loser_best     = 0;
+    int16_t loser_ply    = -1;
+};
+// `white_result`: +1 White won, 0 a draw, -1 Black won.
+[[nodiscard]] EvalFacts evalFacts(std::string_view pgn, int white_result);
+
 // The value of a tag of the game's header, empty when it has none. Reads only the header.
 [[nodiscard]] std::string pgnTag(std::string_view pgn, std::string_view tag);
 

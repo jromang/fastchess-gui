@@ -11,6 +11,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {" · affinity", " · affinité"},
         {" — not a UCI engine? For a WinBoard engine, choose the WinBoard protocol.",
          " — pas un moteur UCI ? Pour un moteur WinBoard, choisis le protocole WinBoard."},
+        {"%.1f pawns", "%.1f pions"},
         {"%d games × %d threads > %d available threads.", "%d parties × %d threads > %d threads disponibles."},
         {"%s  vs  %s", "%s  contre  %s"},
         {"%s: %d loss(es) on time, %d crash(es), %d illegal move(s)",
@@ -75,6 +76,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"An engine is being read, try again in a moment.",
          "Un moteur est en cours d'analyse, réessaie dans un instant."},
         {"An engine list…", "Une liste de moteurs…"},
+        {"An evaluation swings", "Une évaluation bascule"},
         {"Anchor:", "Ancre :"},
         {"Apply", "Appliquer"},
         {"Arguments", "Arguments"},
@@ -355,6 +357,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Losses of A", "Pertes de A"},
         {"Losses on time", "Pertes au temps"},
         {"Losses on time and crashes", "Pertes au temps et crashs"},
+        {"Lost after a winning score", "Perdue après un score gagnant"},
         {"Machine: %d physical cores, %d threads", "Machine : %d cœurs physiques, %d threads"},
         {"Margin (ms)", "Marge (ms)"},
         {"Match", "Match"},
@@ -591,6 +594,13 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"The engine does not answer isready.", "Le moteur ne répond pas à isready."},
         {"The engine stopped while it was asked to think.",
          "Le moteur s'est arrêté pendant qu'on lui demandait de réfléchir."},
+        {"The engines disagree", "Les moteurs divergent"},
+        {"The engines disagree: their evaluations differ by this much for 3 moves each in a row.\nAn evaluation "
+         "swings: an engine's evaluation changes by this much from one of its moves to the next.\nLost after a winning "
+         "score: the loser thought it was this much better.\nA game opens at that moment.",
+         "Les moteurs divergent : leurs évaluations diffèrent d'autant pendant 3 coups chacun de suite.\nUne "
+         "évaluation bascule : l'évaluation d'un moteur change d'autant d'un de ses coups au suivant.\nPerdue après un "
+         "score gagnant : le perdant se croyait mieux d'autant.\nUne partie s'ouvre à ce moment-là."},
         {"The finished games of the match will appear here.", "Les parties terminées du match apparaîtront ici."},
         {"The first engines of the list (the tested ones) meet every other engine.",
          "Les premiers moteurs de la liste (les moteurs testés) rencontrent tous les autres."},

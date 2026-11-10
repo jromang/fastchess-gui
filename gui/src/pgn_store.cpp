@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <cctype>
 #include <charconv>
+#include <cmath>
+#include <limits>
 #include <sstream>
 
 namespace fcg {
@@ -170,6 +172,55 @@ void forEachMoveComment(std::string_view pgn, const std::function<void(bool, con
         white = !white;
         open  = close;
     }
+}
+
+EvalFacts evalFacts(std::string_view pgn, int white_result) {
+    // White's point of view, by ply; NaN for a book move or a move without a score.
+    std::vector<float> eval;
+    std::vector<bool> by_white;
+    forEachMoveComment(pgn, [&](bool white, const ReplayMove& m) {
+        float e = std::numeric_limits<float>::quiet_NaN();
+        if (!m.book && m.score) {
+            e = m.score->type == fastchess::ScoreType::MATE ? (m.score->value >= 0 ? 10.0f : -10.0f)
+                                                            : std::clamp(m.score->value / 100.0f, -10.0f, 10.0f);
+            if (!white) e = -e;
+        }
+        eval.push_back(e);
+        by_white.push_back(white);
+    });
+
+    EvalFacts facts;
+    const auto n     = static_cast<int>(eval.size());
+    const auto known = [&](int i) { return i >= 0 && i < n && !std::isnan(eval[i]); };
+
+    // The engines disagree for 6 plies in a row: the smallest gap between two consecutive plies of the window.
+    constexpr int WINDOW = 6;
+    for (int i = 0; i + WINDOW <= n; ++i) {
+        float gap = std::numeric_limits<float>::max();
+        for (int j = i; j + 1 < i + WINDOW; ++j) {
+            gap = known(j) && known(j + 1) ? std::min(gap, std::abs(eval[j] - eval[j + 1])) : 0.0f;
+            if (gap == 0) break;
+        }
+        if (gap > facts.disagreement) facts.disagreement = gap, facts.disagree_ply = static_cast<int16_t>(i);
+    }
+
+    // One engine's evaluation from one of its moves to the next.
+    for (int i = 2; i < n; ++i) {
+        if (!known(i) || !known(i - 2)) continue;
+        const float change = std::abs(eval[i] - eval[i - 2]);
+        if (change > facts.swing) facts.swing = change, facts.swing_ply = static_cast<int16_t>(i);
+    }
+
+    // The loser's best evaluation of its own position.
+    if (white_result != 0) {
+        const bool loser_white = white_result < 0;
+        for (int i = 0; i < n; ++i) {
+            if (!known(i) || by_white[i] != loser_white) continue;
+            const float own = loser_white ? eval[i] : -eval[i];
+            if (own > facts.loser_best) facts.loser_best = own, facts.loser_ply = static_cast<int16_t>(i);
+        }
+    }
+    return facts;
 }
 
 namespace {

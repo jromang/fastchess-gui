@@ -4,8 +4,8 @@
 #include <atomic>
 #include <chrono>
 #include <deque>
-#include <map>
 #include <future>
+#include <map>
 #include <memory>
 #include <optional>
 #include <set>
@@ -238,8 +238,9 @@ class App {
     bool live_mosaic_ = true;
 
     // Games view.
-    int games_filter_  = 0;
-    int games_subject_ = -1;  // a tournament: participant index whose games are shown, -1 = all
+    int games_filter_     = 0;
+    int games_subject_    = -1;    // a tournament: participant index whose games are shown, -1 = all
+    float eval_threshold_ = 2.0f;  // pawns, for the filters on what the evaluations tell
     std::vector<int> filtered_;
     std::size_t filtered_for_ = ~std::size_t(0);
     int selected_game_        = -1;
@@ -339,7 +340,7 @@ class App {
     tour::EngineRecord card_;
     std::vector<tour::RatingPoint> card_history_;
     struct SearchAverages {
-        bool read     = false;
+        bool read      = false;
         uint64_t moves = 0;
         double depth = 0, nps = 0, time_ms = 0;
     } card_search_;

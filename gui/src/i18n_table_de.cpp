@@ -12,6 +12,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {" · affinity", " · Affinität"},
         {" — not a UCI engine? For a WinBoard engine, choose the WinBoard protocol.",
          " — keine UCI-Engine? Für eine WinBoard-Engine wähle das WinBoard-Protokoll."},
+        {"%.1f pawns", "%.1f Bauern"},
         {"%d games × %d threads > %d available threads.", "%d Partien × %d Threads > %d verfügbare Threads."},
         {"%s  vs  %s", "%s  gegen  %s"},
         {"%s: %d loss(es) on time, %d crash(es), %d illegal move(s)",
@@ -77,6 +78,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"An engine is being read, try again in a moment.",
          "Eine Engine wird gerade gelesen, versuche es gleich noch einmal."},
         {"An engine list…", "Eine Engine-Liste…"},
+        {"An evaluation swings", "Eine Bewertung kippt"},
         {"Anchor:", "Anker:"},
         {"Apply", "Anwenden"},
         {"Arguments", "Argumente"},
@@ -355,6 +357,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Losses of A", "Niederlagen von A"},
         {"Losses on time", "Zeitverluste"},
         {"Losses on time and crashes", "Zeitverluste und Abstürze"},
+        {"Lost after a winning score", "Verloren nach Gewinnstellung"},
         {"Machine: %d physical cores, %d threads", "Rechner: %d physische Kerne, %d Threads"},
         {"Margin (ms)", "Toleranz (ms)"},
         {"Match", "Match"},
@@ -588,6 +591,13 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"The charts appear with the first results.", "Die Diagramme erscheinen mit den ersten Ergebnissen."},
         {"The engine does not answer isready.", "Die Engine antwortet nicht auf isready."},
         {"The engine stopped while it was asked to think.", "Die Engine hat sich beendet, während sie rechnen sollte."},
+        {"The engines disagree", "Die Engines sind uneins"},
+        {"The engines disagree: their evaluations differ by this much for 3 moves each in a row.\nAn evaluation "
+         "swings: an engine's evaluation changes by this much from one of its moves to the next.\nLost after a winning "
+         "score: the loser thought it was this much better.\nA game opens at that moment.",
+         "Die Engines sind uneins: ihre Bewertungen unterscheiden sich so stark, 3 Züge jede in Folge.\nEine Bewertung "
+         "kippt: die Bewertung einer Engine ändert sich so stark von einem ihrer Züge zum nächsten.\nVerloren nach "
+         "Gewinnstellung: der Verlierer glaubte, so viel besser zu stehen.\nEine Partie öffnet sich an dieser Stelle."},
         {"The finished games of the match will appear here.", "Die beendeten Partien des Matches erscheinen hier."},
         {"The first engines of the list (the tested ones) meet every other engine.",
          "Die ersten Engines der Liste (die getesteten) treffen auf jede andere Engine."},
