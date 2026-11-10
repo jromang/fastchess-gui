@@ -173,6 +173,23 @@ std::vector<std::string> tlcsCrosstable(const BroadcastSnapshot& s, uint64_t tot
     }
     out.push_back("");
     out.push_back(fmt::format("total games = {}", total_games));
+
+    // The games, newest first, as TLCS lists them after the table; node-tlcv numbers its games from them. Three
+    // spaces at least between the columns.
+    if (!s.played_games.empty()) {
+        std::size_t white_w = 5, black_w = 5;
+        for (const auto& g : s.played_games) {
+            white_w = std::max(white_w, g.white.size());
+            black_w = std::max(black_w, g.black.size());
+        }
+        out.push_back("");
+        out.push_back(fmt::format("Game No.  {:<{}}   {:<{}}   Result", "White", white_w, "Black", black_w));
+        out.push_back(std::string(white_w + black_w + 25, '-'));
+        for (const auto& g : s.played_games) {
+            out.push_back(
+                fmt::format("{:>8}  {:<{}}   {:<{}}   {}", g.number, g.white, white_w, g.black, black_w, g.result));
+        }
+    }
     return out;
 }
 

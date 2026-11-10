@@ -3,9 +3,12 @@
 #include <doctest/doctest.hpp>
 
 #include <chrono>
+#include <regex>
 #include <thread>
 
 #include <json.hpp>
+
+#include <fmt/include/fmt/format.h>
 
 #include "broadcast.hpp"
 #include "net.hpp"
@@ -51,8 +54,9 @@ BroadcastSnapshot sample() {
     results[0].white = 0, results[0].black = 1, results[0].result = "1-0";
     results[1].white = 1, results[1].black = 2, results[1].result = "1/2-1/2";
     results[2].white = 2, results[2].black = 0, results[2].result = "0-1";
-    s.table  = fcg::tour::computeTable(spec, results);
-    s.recent = {"Calpha - Alpha 0-1"};
+    s.table        = fcg::tour::computeTable(spec, results);
+    s.recent       = {"Calpha - Alpha 0-1"};
+    s.played_games = {{3, "Calpha", "Alpha", "0-1"}, {2, "Balpha", "Calpha", "1/2-1/2"}, {1, "Alpha", "Balpha", "1-0"}};
     return s;
 }
 
@@ -93,7 +97,24 @@ TEST_CASE("broadcast: the crosstable keeps the columns node-tlcv reads") {
     CHECK(first.rfind("1.", 0) == 0);
     CHECK(std::stoi(first.substr(games_col)) == 2);
     CHECK(first.find("**") != std::string::npos);
-    CHECK(lines.back() == "total games = 3");
+    CHECK(std::find(lines.begin(), lines.end(), "total games = 3") != lines.end());
+
+    // The games played, newest first, read as node-tlcv's parseGames reads them: its game numbers follow them.
+    const auto heading = std::find_if(lines.begin(), lines.end(), [](const std::string& l) {
+        return std::regex_search(l, std::regex(R"(game\s+no\.)", std::regex::icase));
+    });
+    REQUIRE(heading != lines.end());
+    const std::regex row(R"(^\s*(\d+)\s+(.+?)\s{3,}(.+?)\s{3,}(.+?)\s*$)");
+    std::vector<std::string> games;
+    for (auto it = heading + 1; it != lines.end(); ++it) {
+        std::smatch m;
+        if (std::regex_match(*it, m, row))
+            games.push_back(m[1].str() + " " + m[2].str() + "|" + m[3].str() + "|" + m[4].str());
+    }
+    REQUIRE(games.size() == 3);
+    CHECK(games[0] == "3 Calpha|Alpha|0-1");
+    CHECK(games[1] == "2 Balpha|Calpha|1/2-1/2");
+    CHECK(games[2] == "1 Alpha|Balpha|1-0");
 }
 
 TEST_CASE("broadcast: a TLCS client logs on and receives the game, the crosstable, and answers to PING") {
@@ -141,6 +162,11 @@ TEST_CASE("broadcast: a TLCS client logs on and receives the game, the crosstabl
     CHECK(has("WPLAYER: Alpha"));
     CHECK(has("BPLAYER: Beta"));
     CHECK(has("FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"));
+    // The players before the initial position, which node-tlcv names its PGN with.
+    const auto index = [&](const std::string& text) {
+        return std::find(received.begin(), received.end(), text) - received.begin();
+    };
+    CHECK(index("BPLAYER: Beta") < index("FEN: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"));
     CHECK(has("WMOVE: 1. e4"));
     CHECK(has("BMOVE: 1. e5"));
     CHECK(has("WMOVE: 2. Nf3"));
@@ -216,6 +242,46 @@ TEST_CASE("broadcast: TLCS tells the end of the game it follows, even once the n
     CHECK(at("WMOVE: 3. Bb5") < at("result: 1-0"));
     CHECK(at("result: 1-0") < at("WPLAYER: Gamma"));
 
+    server.stop();
+}
+
+TEST_CASE("broadcast: TLCS sends one numbered command at a time, in order, the PV lines unnumbered") {
+    // node-tlcv drops a numbered command lower than one it already has: the next one waits for the ACK.
+    TlcsServer server;
+    const uint16_t port = 26021;
+    REQUIRE(server.start(port).empty());
+    server.publish(sample(), -1);
+    std::this_thread::sleep_for(300ms);
+
+    net::UdpSocket client;
+    REQUIRE(client.bind(26022).empty());
+    const net::Endpoint to{0x7F000001, port};
+    client.send(to, "LOGONv15:tester");
+
+    // Without an ACK: the first command only, sent again.
+    std::vector<std::string> numbered;
+    auto until = std::chrono::steady_clock::now() + 1500ms;
+    while (std::chrono::steady_clock::now() < until) {
+        net::Endpoint from;
+        if (const auto msg = client.receive(from, 50); msg && msg->front() == '<') numbered.push_back(*msg);
+    }
+    REQUIRE(numbered.size() >= 2);
+    for (const auto& m : numbered) CHECK(m == "<1>FEATURE: PING");
+
+    // With ACKs: every number once, in order.
+    std::vector<uint32_t> ids;
+    client.send(to, "ACK: 1");
+    until = std::chrono::steady_clock::now() + 1500ms;
+    while (std::chrono::steady_clock::now() < until) {
+        net::Endpoint from;
+        const auto msg = client.receive(from, 50);
+        if (!msg || msg->front() != '<') continue;
+        const auto id = static_cast<uint32_t>(std::stoul(msg->substr(1)));
+        ids.push_back(id);
+        client.send(to, fmt::format("ACK: {}", id));
+    }
+    REQUIRE(ids.size() > 5);
+    for (std::size_t i = 0; i < ids.size(); ++i) CHECK(ids[i] == i + 2);
     server.stop();
 }
 

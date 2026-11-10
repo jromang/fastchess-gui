@@ -59,6 +59,11 @@ struct BroadcastSnapshot {
     std::vector<LiveGame> ended;  // the last games ended in each slot, so their end is not missed (TLCS)
     tour::Table table;
     std::vector<std::string> recent;  // latest results, newest first: "White - Black 1-0"
+    struct Played {
+        uint64_t number = 0;  // 1-based
+        std::string white, black, result;
+    };
+    std::vector<Played> played_games;  // the last 300 games played, newest first (TLCS game list)
 };
 
 // The snapshot as JSON, for scripts and for the web page.

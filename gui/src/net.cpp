@@ -30,11 +30,19 @@ void ensureStarted() {
 }
 void closeHandle(Handle fd) { closesocket(static_cast<SOCKET>(fd)); }
 constexpr Handle INVALID = static_cast<Handle>(INVALID_SOCKET);
+// The engines started while a server runs must not inherit its socket (they would keep its port).
+Handle openSocket(int type) {
+    const auto fd = static_cast<Handle>(socket(AF_INET, type, 0));
+    if (fd != INVALID) SetHandleInformation(reinterpret_cast<HANDLE>(fd), HANDLE_FLAG_INHERIT, 0);
+    return fd;
+}
 #else
 using SockLen = socklen_t;
 void ensureStarted() {}
 void closeHandle(Handle fd) { ::close(fd); }
 constexpr Handle INVALID = -1;
+// The engines started while a server runs must not inherit its socket (they would keep its port).
+Handle openSocket(int type) { return socket(AF_INET, type | SOCK_CLOEXEC, 0); }
 #endif
 
 // True when `fd` has something to read within `timeout_ms`.
@@ -79,7 +87,7 @@ bool UdpSocket::open() const noexcept { return fd_ != INVALID; }
 std::string UdpSocket::bind(uint16_t port) {
     ensureStarted();
     close();
-    fd_ = static_cast<Handle>(socket(AF_INET, SOCK_DGRAM, 0));
+    fd_ = openSocket(SOCK_DGRAM);
     if (fd_ == INVALID) return "cannot create a UDP socket";
     reuse(fd_);
     const auto a = address(INADDR_ANY, port);
@@ -140,7 +148,7 @@ TcpListener::~TcpListener() { close(); }
 std::string TcpListener::listen(uint16_t port) {
     ensureStarted();
     close();
-    fd_ = static_cast<Handle>(socket(AF_INET, SOCK_STREAM, 0));
+    fd_ = openSocket(SOCK_STREAM);
     if (fd_ == INVALID) return "cannot create a TCP socket";
     open_ = true;
     reuse(fd_);
@@ -159,14 +167,20 @@ void TcpListener::close() {
 
 std::optional<Handle> TcpListener::accept(int timeout_ms) {
     if (!open_ || !readable(fd_, timeout_ms)) return std::nullopt;
+#ifdef _WIN32
     const auto fd = static_cast<Handle>(::accept(fd_, nullptr, nullptr));
     if (fd == INVALID) return std::nullopt;
+    SetHandleInformation(reinterpret_cast<HANDLE>(fd), HANDLE_FLAG_INHERIT, 0);
+#else
+    const auto fd = ::accept4(fd_, nullptr, nullptr, SOCK_CLOEXEC);
+    if (fd == INVALID) return std::nullopt;
+#endif
     return fd;
 }
 
 std::optional<Handle> connectTo(uint32_t ip, uint16_t port) {
     ensureStarted();
-    const auto fd = static_cast<Handle>(socket(AF_INET, SOCK_STREAM, 0));
+    const auto fd = openSocket(SOCK_STREAM);
     if (fd == INVALID) return std::nullopt;
     const auto a = address(ip, port);
     if (::connect(fd, reinterpret_cast<const sockaddr*>(&a), sizeof(a)) != 0) {

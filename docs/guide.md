@@ -265,7 +265,8 @@ The *Broadcast* tab of a running tournament publishes it while it plays; the sna
   `live.pgn` (the games in progress), `standings.html` (standings and crosstable), `tournament.json` (everything,
   for scripts).
 - **TLCS server** (UDP port, 16001 by default): the protocol of Tom's Live Chess Server, so TLCV and other TLCS
-  viewers can follow the tournament (board, clocks, PV, crosstable).
+  viewers can follow the tournament (board, clocks, PV, crosstable and the games played). It is checked against
+  node-tlcv, the viewer behind ccrl.live.
 - **Web page** (TCP port): a page with the board, clocks, PV and standings, served by fastchess-gui itself, for any
   browser on the network.
 - **lichess**: a lichess broadcast, with lichess' board, evaluation bar and chat, for anyone on the internet. It

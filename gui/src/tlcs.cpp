@@ -4,16 +4,20 @@
 //   client -> server   LOGONv15:<name>, PING, ACK: <id>, RESULTTABLE, LOGOFF; the client numbers some of them
 //                      ("<id>PING"), which are acknowledged too
 //   server -> client   LOGON SUCCESSFUL (not numbered; TLCV ignores everything until it comes), then "<id>" + one
-//                      command per datagram, acknowledged with "ACK: <id>"; resent until it is:
+//                      command per datagram, acknowledged with "ACK: <id>"; resent until it is. One numbered command
+//                      at a time per client: node-tlcv drops a number lower than one it has, so a command resent
+//                      after later ones would be lost to it. Numbered:
 //     FEATURE: PING                 (TLCV only sends its keepalive PING when told)
 //     SITE: <event>                 WPLAYER: <name>        BPLAYER: <name>
 //     FEN: <board> <side> <castling>                       (the initial position resets the game)
-//     XTIME: <cs> otim <cs>         when X starts thinking: its clock, then the other one (X = W or B)
-//     XPV: <depth> <score cp> <time cs> <nodes> <uci moves...>   (mate in N: +-(100000 - N))
-//     FEN: <position after the move>, XMOVE: <n>. <san>, FMR: <halfmove clock>    for each move
+//     FEN: <position after the move>, XMOVE: <n>. <san>, FMR: <halfmove clock>    for each move (X = W or B)
 //     result: <1-0|0-1|1/2-1/2>
-//     CTRESET, then CT: <line> for each line of the crosstable, ending with "total games = N"
-//     PONG                          (answer to PING, not numbered)
+//   and not numbered, nor resent, as TLCS sends them (a lost one is replaced by the next):
+//     XTIME: <cs> otim <cs>         when X starts thinking: its clock, then the other one
+//     XPV: <depth> <score cp> <time cs> <nodes> <uci moves...>   (mate in N: +-(100000 - N))
+//     CTRESET, then CT: <line> for each line of the crosstable, "total games = N", then the games played, newest
+//                                   first, under "Game No." (node-tlcv numbers its games from them)
+//     PONG                          (answer to PING)
 
 #include <chrono>
 #include <cstdlib>
@@ -59,7 +63,8 @@ struct TlcsServer::Impl {
     struct Client {
         std::string name;
         uint32_t next_id = 1;
-        std::deque<Pending> unacked;
+        std::deque<Pending> unacked;  // sent, waiting for their ACK: at most one
+        std::deque<Pending> queued;   // not sent yet, in order
         Clock::time_point last_seen;
     };
 
@@ -85,7 +90,17 @@ struct TlcsServer::Impl {
     std::vector<std::string> table_lines;
 
     void send(const net::Endpoint& to, Client& c, const std::string& text) {
-        Pending p{c.next_id++, text, Clock::now(), 1};
+        c.queued.push_back({c.next_id++, text, {}, 0});
+        pump(to, c);
+    }
+
+    // The next numbered command, once the previous one is acknowledged (or given up).
+    void pump(const net::Endpoint& to, Client& c) {
+        if (!c.unacked.empty() || c.queued.empty()) return;
+        auto p  = std::move(c.queued.front());
+        p.sent  = Clock::now();
+        p.tries = 1;
+        c.queued.pop_front();
         socket.send(to, fmt::format("<{}>{}", p.id, p.text));
         c.unacked.push_back(std::move(p));
     }
@@ -94,16 +109,21 @@ struct TlcsServer::Impl {
         for (auto& [to, c] : clients) send(to, c, text);
     }
 
+    // Not numbered, not resent: a lost one is replaced by the next.
+    void broadcastUnnumbered(const std::string& text) {
+        for (const auto& [to, c] : clients) socket.send(to, text);
+    }
+
     // Everything about the game followed, from its start: for a new game, or a client that just logged on.
     std::vector<std::string> gameFromStart() const {
         std::vector<std::string> out;
         if (!has_game) return out;
-        out.push_back("FEN: " + shortFen(game.start_fen));
+        // The players first: node-tlcv names the game's PGN when the initial position comes.
         out.push_back("WPLAYER: " + game.white);
         out.push_back("BPLAYER: " + game.black);
+        out.push_back("FEN: " + shortFen(game.start_fen));
         const auto moves = movesFrom(0);
         out.insert(out.end(), moves.begin(), moves.end());
-        if (game.clocks) out.push_back(clocks());
         return out;
     }
 
@@ -143,10 +163,11 @@ struct TlcsServer::Impl {
         send(from, c, "FEATURE: PING");
         if (!site.empty()) send(from, c, "SITE: " + site);
         if (!table_lines.empty()) {
-            send(from, c, "CTRESET");
-            for (const auto& line : table_lines) send(from, c, "CT: " + line);
+            socket.send(from, "CTRESET");
+            for (const auto& line : table_lines) socket.send(from, "CT: " + line);
         }
         for (const auto& m : gameFromStart()) send(from, c, m);
+        if (has_game && game.clocks) socket.send(from, clocks());
         if (result_sent) send(from, c, "result: " + game.result);
     }
 
@@ -177,13 +198,14 @@ struct TlcsServer::Impl {
                     break;
                 }
             }
+            pump(from, it->second);
         } else if (msg == "PING") {
             socket.send(from, "PONG");
         } else if (msg == "LOGOFF") {
             clients.erase(it);
         } else if (msg == "RESULTTABLE") {
-            send(from, it->second, "CTRESET");
-            for (const auto& line : table_lines) send(from, it->second, "CT: " + line);
+            socket.send(from, "CTRESET");
+            for (const auto& line : table_lines) socket.send(from, "CT: " + line);
         }
     }
 
@@ -245,7 +267,7 @@ struct TlcsServer::Impl {
 
             // The clocks when a side starts thinking.
             if (game.clocks && times_sent[0] < 0) {
-                broadcast(clocks());
+                broadcastUnnumbered(clocks());
                 times_sent[0] = times_sent[1] = 0;
             }
 
@@ -258,7 +280,7 @@ struct TlcsServer::Impl {
                 const auto text = fmt::format("{}: {} {} {} {}{}", side == 0 ? "WPV" : "BPV", sr.depth, sr.score_cp,
                                               sr.time_ms / 10, sr.nodes, pv);
                 if (text != pv_sent[side]) {
-                    broadcast(text);
+                    broadcastUnnumbered(text);
                     pv_sent[side] = text;
                     pv_at[side]   = Clock::now();
                 }
@@ -273,8 +295,8 @@ struct TlcsServer::Impl {
         if (s.played != table_played && !s.table.rows.empty()) {
             table_played = s.played;
             table_lines  = tlcsCrosstable(s, s.played);
-            broadcast("CTRESET");
-            for (const auto& line : table_lines) broadcast("CT: " + line);
+            broadcastUnnumbered("CTRESET");
+            for (const auto& line : table_lines) broadcastUnnumbered("CT: " + line);
         }
     }
 
@@ -287,16 +309,16 @@ struct TlcsServer::Impl {
                 it = clients.erase(it);
                 continue;
             }
-            for (auto p = c.unacked.begin(); p != c.unacked.end();) {
-                if (now - p->sent < std::chrono::seconds(1)) {
-                    ++p;
-                } else if (p->tries >= 8) {
-                    p = c.unacked.erase(p);
+            // The command waiting for its ACK: sent again every second, given up after 8 tries.
+            if (!c.unacked.empty() && now - c.unacked.front().sent >= std::chrono::seconds(1)) {
+                auto& p = c.unacked.front();
+                if (p.tries >= 8) {
+                    c.unacked.pop_front();
+                    pump(it->first, c);
                 } else {
-                    socket.send(it->first, fmt::format("<{}>{}", p->id, p->text));
-                    p->sent = now;
-                    p->tries++;
-                    ++p;
+                    socket.send(it->first, fmt::format("<{}>{}", p.id, p.text));
+                    p.sent = now;
+                    p.tries++;
                 }
             }
             ++it;

@@ -43,6 +43,9 @@ BroadcastSnapshot makeSnapshot(const tour::TournamentState& state, const GuiObse
         if (it->voided) continue;
         if (s.recent.size() < 20)
             s.recent.push_back(fmt::format("{} - {} {}", name(it->white), name(it->black), it->result));
+        if (s.played_games.size() < 300) {
+            s.played_games.push_back({it->number() + 1, name(it->white), name(it->black), it->result});
+        }
         s.played++;
     }
 
