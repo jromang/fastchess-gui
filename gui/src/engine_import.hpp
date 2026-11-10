@@ -14,7 +14,7 @@ namespace fcg {
 
 struct ImportResult {
     std::vector<EngineEntry> engines;
-    std::vector<std::string> notes;  // engines skipped and why (WinBoard engines, missing files)
+    std::vector<std::string> notes;  // engines skipped and why (missing files)
 };
 
 // Reads an engine list, whatever program wrote it. Relative paths are taken from the list's folder.

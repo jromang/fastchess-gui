@@ -101,6 +101,11 @@ class Process : public IProcess {
         hChildStdoutRead = hChildStdoutWrite = hChildStdinRead = hChildStdinWrite = NULL;
     }
 
+    // Ends the process at once, if it still runs.
+    void forceKill() noexcept {
+        if (is_initialized_ && alive()) TerminateProcess(pi_.hProcess, 1);
+    }
+
     [[nodiscard]] Result alive() noexcept override {
         assert(is_initialized_);
 

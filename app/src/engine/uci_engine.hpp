@@ -25,6 +25,10 @@
 
 namespace fastchess::engine {
 
+// The program that runs a WinBoard engine as a UCI one, given the engine's command and arguments (fastchess-gui
+// --wb2uci). Engines whose configuration says protocol "xboard" are started through it; empty: they cannot be.
+inline std::string xboard_adapter;
+
 using ms = std::chrono::milliseconds;
 
 struct UciInfo {

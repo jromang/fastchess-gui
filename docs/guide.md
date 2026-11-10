@@ -36,11 +36,19 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
 **Import…** reads the engine list of another program: ChessGUI (`ChsGUI_Eng.TXT`, with the options of
 `ChsGUI_Cfg.ini` next to it), cutechess and Banksia (`engines.json`), Arena and other INI style lists, or every
 program found in a folder. Engines already in the library (same program, arguments and options) are skipped;
-the options of the others are read. WinBoard engines of a list are reported in the log, not imported.
+the options of the others are read; WinBoard engines are imported too.
 
-**WinBoard engines** are played through a UCI adapter such as PolyGlot: add the adapter as the program and the
-engine as its argument (`polyglot -noini -ec engine.exe`, or a PolyGlot `.ini`). Entries going through
-`polyglot` or `wb2uci` are marked as adapted. fastchess-gui itself only speaks UCI.
+**WinBoard engines** (xboard protocol, CECP) are played like the others. The *Protocol* of an engine is found
+out when it is added (*Automatic*), or chosen: UCI or WinBoard. fastchess only speaks UCI: a WinBoard engine is
+started through a translation built into fastchess-gui (`fastchess-gui --wb2uci ENGINE [ARGS]`, which fastchess
+starts in place of the engine), and its options, `memory`, `cores` and Syzygy path become UCI options. It drives
+the engine the way WinBoard does: protocol 2 features, or protocol 1 for engines that send none; positions with
+`setboard`, or edit mode; moves in coordinates or SAN; `level`, `time`/`otim`, `st`, `sd`, `nps`; thinking
+output, resignation. Engines marked ↔ in the list are WinBoard engines.
+
+- An engine of protocol 1 without `setboard` nor edit mode (TSCP, for instance) can only start from the initial
+  position: give it openings as moves (a PGN book), not as positions (EPD).
+- `FCG_WB2UCI_LOG=FILE` in the environment writes every line exchanged with WinBoard engines to `FILE`.
 
 ## New tournament
 

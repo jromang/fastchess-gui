@@ -47,6 +47,9 @@ struct EngineConfiguration {
     // Chess variant
     VariantType variant = VariantType::STANDARD;
 
+    // "xboard": a WinBoard engine, started through engine::xboard_adapter; anything else: a UCI engine
+    std::string protocol;
+
     template <typename T, typename Predicate>
     std::optional<T> getOption(std::string_view option_name, Predicate transform) const {
         const auto it = std::find_if(options.begin(), options.end(),
@@ -67,6 +70,8 @@ struct EngineConfiguration {
         return std::filesystem::path(cmd);
     }
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(EngineConfiguration, name, dir, cmd, args, restart, options, limit, variant)
+// With defaults, so that configurations saved before a field existed still load.
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineConfiguration, name, dir, cmd, args, restart, options, limit,
+                                                variant, protocol)
 
 }  // namespace fastchess

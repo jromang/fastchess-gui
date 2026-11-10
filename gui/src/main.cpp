@@ -6,10 +6,15 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
 #include <SDL3/SDL.h>
+
+#ifdef _WIN32
+#    include <windows.h>
+#endif
 
 #include <imgui.h>
 #include <imgui_impl_opengl3.h>
@@ -22,6 +27,7 @@
 
 #include <fmt/include/fmt/format.h>
 #include <core/config/config.hpp>
+#include <engine/uci_engine.hpp>
 
 #include "app.hpp"
 #include "console.hpp"
@@ -33,6 +39,7 @@
 #include "storage.hpp"
 #include "topology.hpp"
 #include "ui.hpp"
+#include "wb2uci.hpp"
 
 namespace fastchess {
 const char* version = "alpha 1.8.3 gui ";
@@ -173,17 +180,38 @@ int fatal(const std::string& what) {
     return 1;
 }
 
+// This program's own path, to start it again as the WinBoard adapter.
+std::string selfPath(const char* argv0) {
+#ifdef _WIN32
+    char buffer[MAX_PATH];
+    const DWORD n = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+    if (n > 0 && n < MAX_PATH) return std::string(buffer, n);
+#else
+    std::error_code ec;
+    const auto exe = fs::read_symlink("/proc/self/exe", ec);
+    if (!ec) return exe.string();
+#endif
+    const char* base = SDL_GetBasePath();
+    const auto name  = fs::path(argv0).filename();
+    return base && !name.empty() ? (fs::path(base) / name).string() : std::string(argv0);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
-    const auto args = parseArgs(argc, argv);
-
 #ifndef _WIN32
     // A write to an engine that just died must not kill the GUI.
     std::signal(SIGPIPE, SIG_IGN);
 #endif
 
+    // A WinBoard engine, run as a UCI one for fastchess: stdin and stdout are the engine's UCI side, untouched.
+    if (argc >= 2 && std::string_view(argv[1]) == "--wb2uci") {
+        return fcg::wb2uci::run(std::vector<std::string>(argv + 2, argv + argc));
+    }
+
+    const auto args = parseArgs(argc, argv);
     fcg::Console::instance().attach();
+    fastchess::engine::xboard_adapter = selfPath(argc > 0 ? argv[0] : "");
 
     // Engine probes read timeouts from the global configuration before any run exists.
     fastchess::config::TournamentConfig               = std::make_unique<fastchess::config::Tournament>();

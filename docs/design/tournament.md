@@ -17,7 +17,8 @@ https://claude.ai/artifact/SvpApxS661ctzGNLTuvMQ4 (private link).
 - fastchess stays the game engine: timing, adjudication, engine processes, recovery, PGN building. The fork keeps
   its current, small set of hooks.
 
-Non-goals: CECP/WinBoard (external adapters), pondering, 10x8 variants, distributed testing.
+Non-goals: pondering, 10x8 variants, distributed testing. CECP/WinBoard engines are run through a translation to
+UCI built into fastchess-gui (`gui/src/wb2uci.*`), so the tournament layer and fastchess only see UCI.
 
 ## 2. Where it lives
 

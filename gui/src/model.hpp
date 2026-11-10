@@ -29,6 +29,7 @@ struct EngineEntry {
     std::string args;
     std::string dir;  // working directory, empty = the binary's directory
     bool restart = false;
+    std::string protocol;  // "uci", "xboard" (WinBoard), empty = not known yet: found out by the next probe
 
     // Only the options whose value differs from the engine default.
     std::vector<std::pair<std::string, std::string>> options;
@@ -78,8 +79,9 @@ struct EngineEntry {
         return 1;
     }
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineEntry, name, cmd, args, dir, restart, options, id_name, id_author,
-                                                uci_options, groups, elo, check_ok, check_message, check_when)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineEntry, name, cmd, args, dir, restart, protocol, options, id_name,
+                                                id_author, uci_options, groups, elo, check_ok, check_message,
+                                                check_when)
 
 enum class MatchMode { Fixed = 0, Infinite = 1, Sprt = 2 };
 enum class TournamentFormat { Match = 0, RoundRobin = 1, Gauntlet = 2, Swiss = 3, Knockout = 4 };

@@ -211,6 +211,11 @@ class Process : public IProcess {
         return Result::OK();
     }
 
+    // Ends the process at once, if it still runs.
+    void forceKill() noexcept {
+        if (is_initalized_ && !startup_error_ && !exit_code_) ::kill(process_pid_, SIGKILL);
+    }
+
     Result alive() noexcept override {
         assert(is_initalized_);
 

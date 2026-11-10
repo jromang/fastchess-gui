@@ -86,28 +86,77 @@ std::string engineWorkingDir(const EngineEntry& entry) {
     return std::filesystem::path(entry.cmd).parent_path().string();
 }
 
+std::string detectProtocol(const EngineEntry& entry) {
+    using namespace std::chrono;
+    using fastchess::engine::process::Status;
+
+    fastchess::engine::process::Process process;
+    process.setRealtimeLogging(false);
+    if (!process.init(engineWorkingDir(entry), entry.cmd, entry.args, "detect")) return "uci";
+
+    // A UCI engine answers uciok, possibly after loading a network. A WinBoard engine answers protover 2 with its
+    // features; one of protocol 1 says nothing, but it usually complains about "uci" first.
+    (void)process.writeInput("uci\n");
+    std::string protocol;
+    bool complained   = false;
+    auto xboard_since = steady_clock::time_point{};
+    const auto start  = steady_clock::now();
+    std::vector<fastchess::engine::process::Line> lines;
+    while (protocol.empty()) {
+        const auto now = steady_clock::now();
+        if (xboard_since != steady_clock::time_point{} && now - xboard_since > seconds(3)) {
+            protocol = complained ? "xboard" : "uci";
+            break;
+        }
+        if (xboard_since == steady_clock::time_point{} && (complained || now - start > seconds(10))) {
+            (void)process.writeInput("xboard\nprotover 2\n");
+            xboard_since = now;
+        }
+        const auto r = process.readOutput(lines, "uciok", milliseconds(200));
+        for (const auto& l : lines) {
+            if (l.line.rfind("uciok", 0) == 0) protocol = "uci";
+            if (l.line.rfind("feature ", 0) == 0) protocol = "xboard";
+            const auto lower = [&] {
+                std::string s = l.line;
+                for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+                return s;
+            }();
+            if (lower.find("illegal") != std::string::npos || lower.find("error") != std::string::npos ||
+                lower.find("unknown") != std::string::npos || lower.find("invalid") != std::string::npos) {
+                complained = true;
+            }
+        }
+        if (r.code == Status::ERR) break;  // it stopped: let the probe tell why
+    }
+    (void)process.writeInput("quit\n");
+    return protocol.empty() ? "uci" : protocol;
+}
+
 ProbeResult probeEngine(const EngineEntry& entry) {
     ProbeResult result;
-
-    fastchess::EngineConfiguration config;
-    config.name = entry.name.empty() ? std::filesystem::path(entry.cmd).stem().string() : entry.name;
-    config.cmd  = entry.cmd;
-    config.args = entry.args;
-    config.dir  = engineWorkingDir(entry);
 
     if (!std::filesystem::is_regular_file(entry.cmd)) {
         result.error = trf("File not found: {}", entry.cmd);
         return result;
     }
 
+    result.protocol = entry.protocol.empty() ? detectProtocol(entry) : entry.protocol;
+
+    fastchess::EngineConfiguration config;
+    config.name     = entry.name.empty() ? std::filesystem::path(entry.cmd).stem().string() : entry.name;
+    config.cmd      = entry.cmd;
+    config.args     = entry.args;
+    config.dir      = engineWorkingDir(entry);
+    config.protocol = result.protocol;
+
     try {
         fastchess::engine::UciEngine engine(config, false);
 
         if (auto started = engine.start(std::nullopt); !started) {
             result.error = started.error();
-            // The usual reason: a WinBoard engine, which never says uciok.
-            if (result.error.find("uciok") != std::string::npos) {
-                result.error += TR(" — not a UCI engine? WinBoard engines need a UCI adapter such as polyglot.");
+            // The usual reason: a WinBoard engine taken for a UCI one.
+            if (result.error.find("uciok") != std::string::npos && result.protocol != "xboard") {
+                result.error += TR(" — not a UCI engine? For a WinBoard engine, choose the WinBoard protocol.");
             }
             return result;
         }
@@ -127,13 +176,13 @@ ProbeResult probeEngine(const EngineEntry& entry) {
     return result;
 }
 
-bool viaAdapter(const EngineEntry& entry) {
+bool isWinboard(const EngineEntry& entry) {
+    if (entry.protocol == "xboard") return true;
     auto lower = [](std::string s) {
         for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
         return s;
     };
-    const auto text = lower(entry.cmd + " " + entry.args);
-    return text.find("polyglot") != std::string::npos || text.find("wb2uci") != std::string::npos;
+    return lower(entry.cmd + " " + entry.args).find("wb2uci") != std::string::npos;
 }
 
 CheckResult checkEngine(const EngineEntry& entry) {
@@ -141,11 +190,12 @@ CheckResult checkEngine(const EngineEntry& entry) {
     CheckResult result;
 
     fastchess::EngineConfiguration config;
-    config.name    = entry.name.empty() ? std::filesystem::path(entry.cmd).stem().string() : entry.name;
-    config.cmd     = entry.cmd;
-    config.args    = entry.args;
-    config.dir     = engineWorkingDir(entry);
-    config.options = entry.options;
+    config.name     = entry.name.empty() ? std::filesystem::path(entry.cmd).stem().string() : entry.name;
+    config.cmd      = entry.cmd;
+    config.args     = entry.args;
+    config.dir      = engineWorkingDir(entry);
+    config.options  = entry.options;
+    config.protocol = entry.protocol;
 
     if (!std::filesystem::is_regular_file(entry.cmd)) {
         result.message = trf("File not found: {}", entry.cmd);

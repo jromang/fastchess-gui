@@ -248,6 +248,7 @@ class Match {
     inline static constexpr char FIFTY_MSG[]                = "Draw by fifty moves rule";
     inline static constexpr char STALEMATE_MSG[]            = "Draw by stalemate";
     inline static constexpr char CHECKMATE_MSG[]            = "{} mates";
+    inline static constexpr char RESIGN_MSG[]               = "{} resigns";
     inline static constexpr char TIMEOUT_MSG[]              = "{} loses on time ({}ms overrun)";
     inline static constexpr char DISCONNECT_MSG[]           = "{} disconnects";
     inline static constexpr char STALL_MSG[]                = "{}'s connection stalls";

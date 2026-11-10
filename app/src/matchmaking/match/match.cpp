@@ -567,6 +567,15 @@ bool Match::playMove(Player& us, Player& them) {
     const auto timeleft   = us.hasTimeControl() ? us.getTimeControl().getTimeLeft() : 0;
     const auto overrun_ms = timeleft < 0 ? -timeleft : 0;
 
+    // A WinBoard engine resigns through its adapter.
+    if (best_move && *best_move == "resign") {
+        us.setLost();
+        them.setWon();
+        data_.termination = MatchTermination::NORMAL;
+        data_.reason      = fmt::format(Match::RESIGN_MSG, board_.sideToMove().longStr());
+        return false;
+    }
+
     if (best_move) {
         addMoveData(us, *best_move, elapsed_ms, latency, timeleft, legal);
 
@@ -600,7 +609,7 @@ bool Match::playMove(Player& us, Player& them) {
         return false;
     }
 
-    auto* obs = observer::get();
+    auto* obs      = observer::get();
     const auto san = obs ? uci::moveToSan(board_, move) : std::string();
 
     board_.makeMove<true>(move);

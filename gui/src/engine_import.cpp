@@ -73,10 +73,7 @@ void collectJson(const nlohmann::json& node, const fs::path& base, ImportResult&
         EngineEntry e;
         e.name              = jsonText(node["name"]);
         const auto protocol = node.contains("protocol") ? jsonText(node["protocol"]) : "uci";
-        if (isWinboard(protocol)) {
-            out.notes.push_back(trf("{}: WinBoard engine, needs a UCI adapter (polyglot)", e.name));
-            return;
-        }
+        e.protocol          = isWinboard(protocol) ? "xboard" : "uci";
         // cutechess puts arguments after the program in the command; a quoted program may contain spaces.
         std::string program = command, args;
         if (!command.empty() && command.front() == '"') {
@@ -163,10 +160,8 @@ void collectIni(const std::string& text, const fs::path& base, ImportResult& out
 
         EngineEntry e;
         e.name = name ? *name : section;
-        if (proto && isWinboard(*proto)) {
-            out.notes.push_back(trf("{}: WinBoard engine, needs a UCI adapter (polyglot)", e.name));
-            continue;
-        }
+        // ChessGUI's lists do not say: the probe after the import finds out.
+        if (proto) e.protocol = isWinboard(*proto) ? "xboard" : "uci";
         e.cmd = resolve(base, *file).lexically_normal().string();
         if (const auto* args = find(keys, {"CommandLine", "Arguments", "Parameters"})) e.args = *args;
         if (const auto* dir = find(keys, {"WorkingDirectory", "Directory", "Dir"}))

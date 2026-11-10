@@ -312,11 +312,17 @@ tl::expected<bool, std::string> UciEngine::start(const std::optional<std::vector
 
     AcquireSemaphore semaphore_acquire(semaphore);
 
-    const auto path = config_.cmd;
+    auto path = config_.cmd;
+    auto args = config_.args;
+    if (config_.protocol == "xboard") {
+        if (xboard_adapter.empty()) return tl::make_unexpected("WinBoard engines are not supported here");
+        path = xboard_adapter;
+        args = fmt::format("--wb2uci \"{}\"{}{}", config_.cmd, args.empty() ? "" : " ", args);
+    }
     LOG_TRACE_THREAD("Starting engine {} at {}", config_.name, path);
 
     // Creates the engine process and sets the pipes
-    if (auto res = process_.init(config_.dir, path, config_.args, config_.name); !res) {
+    if (auto res = process_.init(config_.dir, path, args, config_.name); !res) {
         return tl::make_unexpected(res.message);
     }
 

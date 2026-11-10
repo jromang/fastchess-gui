@@ -66,12 +66,13 @@ void overrideOption(fastchess::EngineConfiguration& config, const EngineEntry& e
 fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSetup& setup,
                                         const ParticipantSetup& participant = {}) {
     fastchess::EngineConfiguration config;
-    config.name    = entry.name;
-    config.cmd     = entry.cmd;
-    config.args    = entry.args;
-    config.dir     = engineWorkingDir(entry);
-    config.restart = entry.restart;
-    config.options = entry.options;
+    config.name     = entry.name;
+    config.cmd      = entry.cmd;
+    config.args     = entry.args;
+    config.dir      = engineWorkingDir(entry);
+    config.restart  = entry.restart;
+    config.options  = entry.options;
+    config.protocol = entry.protocol;
 
     overrideOption(config, entry, "Hash", participant.hash, setup.common_hash);
     overrideOption(config, entry, "Threads", participant.threads, setup.common_threads);
@@ -161,12 +162,13 @@ RunInfo runInfo(const tour::TournamentSpec& spec, const fs::path& dir) {
 
 fastchess::EngineConfiguration participantConfig(const EngineEntry& entry, const tour::TournamentSpec& spec) {
     fastchess::EngineConfiguration config;
-    config.name    = entry.name;
-    config.cmd     = entry.cmd;
-    config.args    = entry.args;
-    config.dir     = engineWorkingDir(entry);
-    config.restart = entry.restart;
-    config.options = entry.options;
+    config.name     = entry.name;
+    config.cmd      = entry.cmd;
+    config.args     = entry.args;
+    config.dir      = engineWorkingDir(entry);
+    config.restart  = entry.restart;
+    config.options  = entry.options;
+    config.protocol = entry.protocol;
     if (spec.participants.empty()) return config;
 
     const auto& model = spec.participants.front().engine;

@@ -421,30 +421,34 @@ TEST_CASE("engine lists of ChessGUI, cutechess and Arena are imported") {
     auto result = importEngineList(dir / "ChsGUI_Eng.TXT");
     REQUIRE(result.engines.size() == 1);
     CHECK(result.engines[0].name == "Fruit 2.1");
+    CHECK(result.engines[0].protocol.empty());  // ChessGUI does not say: the probe finds out
     CHECK(fs::path(result.engines[0].cmd) == (dir / "engines" / "fruit" / "fruit.exe").lexically_normal());
     REQUIRE(result.engines[0].options.size() == 2);
     CHECK(result.engines[0].options[0] == std::make_pair(std::string("Hash"), std::string("64")));
 
-    // cutechess: engines.json, a WinBoard engine skipped with a note.
+    // cutechess: engines.json, with a WinBoard engine.
     std::ofstream(dir / "engines.json") << R"([
         {"name": "Fruit", "command": "fruit.exe", "workingDirectory": "engines/fruit", "protocol": "uci",
          "options": [{"name": "Hash", "type": "spin", "default": 16, "value": 128}]},
         {"name": "Crafty", "command": "crafty", "protocol": "xboard"}])";
     result = importEngineList(dir / "engines.json");
-    REQUIRE(result.engines.size() == 1);
+    REQUIRE(result.engines.size() == 2);
     CHECK(result.engines[0].name == "Fruit");
+    CHECK(result.engines[0].protocol == "uci");
     CHECK(fs::path(result.engines[0].cmd).filename() == "fruit.exe");
     REQUIRE(result.engines[0].options.size() == 1);
     CHECK(result.engines[0].options[0].second == "128");
-    REQUIRE(result.notes.size() == 1);
-    CHECK(result.notes[0].find("Crafty") != std::string::npos);
+    CHECK(result.engines[1].name == "Crafty");
+    CHECK(result.engines[1].protocol == "xboard");
 
     // An INI list with Command= and Type= (Arena style).
     std::ofstream(dir / "arena.cfg")
         << "[Fruit]\nCommand=engines/fruit/fruit.exe\nType=UCI\n[Old]\nCommand=old.exe\nType=Winboard\n";
     result = importEngineList(dir / "arena.cfg");
-    REQUIRE(result.engines.size() == 1);
+    REQUIRE(result.engines.size() == 2);
     CHECK(result.engines[0].name == "Fruit");
+    CHECK(result.engines[0].protocol == "uci");
+    CHECK(result.engines[1].protocol == "xboard");
 
     fs::remove_all(dir);
 }

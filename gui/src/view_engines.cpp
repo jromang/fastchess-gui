@@ -122,6 +122,7 @@ void App::pollProbe() {
     }
 
     const bool first_probe = e.id_name.empty();
+    e.protocol             = result.protocol;
 
     e.id_name     = result.id_name;
     e.id_author   = result.id_author;
@@ -240,7 +241,7 @@ void App::drawEngines() {
         if (e.name == setup_.engine_b) tag += "  [B]";
 
         // A mark for the health: checked, failed, or reached through an adapter.
-        const char* mark = e.check_ok == 1 ? "✓" : e.check_ok == 0 ? "!" : viaAdapter(e) ? "↔" : "·";
+        const char* mark = e.check_ok == 1 ? "✓" : e.check_ok == 0 ? "!" : isWinboard(e) ? "↔" : "·";
         ImGui::PushStyleColor(ImGuiCol_Text, e.check_ok == 1 ? ui::GOOD : e.check_ok == 0 ? ui::WARN : ui::MUTED);
         ImGui::TextUnformatted(mark);
         ImGui::PopStyleColor();
@@ -300,6 +301,21 @@ void App::drawEngines() {
         ImGui::TextDisabled("%s", TR("Empty: the program's directory."));
     }
 
+    ui::label(TR("Protocol"), label);
+    {
+        const char* names[] = {TR("Automatic"), "UCI", "WinBoard"};
+        int current         = e.protocol == "uci" ? 1 : e.protocol == "xboard" ? 2 : 0;
+        ImGui::SetNextItemWidth(160.0f * ImGui::GetFontSize() / 16.0f);
+        if (ImGui::Combo("##protocol", &current, names, 3)) {
+            e.protocol = current == 1 ? "uci" : current == 2 ? "xboard" : "";
+            changed    = true;
+            startProbe(selected_engine_);
+        }
+        ui::help(
+            TR("WinBoard engines (xboard protocol) are run through a translation to UCI built into "
+               "fastchess-gui. Automatic: found out when the engine is read."));
+    }
+
     changed |= ImGui::Checkbox(TR("Restart the engine for every game"), &e.restart);
 
     ui::label(TR("Groups"), label);
@@ -351,7 +367,6 @@ void App::drawEngines() {
     } else {
         ImGui::TextDisabled("%s", TR("Starts the engine, measures how fast it answers and checks one move."));
     }
-    if (viaAdapter(e)) ImGui::TextDisabled("%s", TR("A WinBoard engine reached through a UCI adapter."));
 
     ImGui::EndDisabled();
     if (in_use) ImGui::TextDisabled("%s", TR("Engine used by the running match: changes are locked."));

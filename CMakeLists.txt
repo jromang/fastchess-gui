@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 
-project(fastchess_gui VERSION 0.3.1 LANGUAGES C CXX)
+project(fastchess_gui VERSION 0.3.2 LANGUAGES C CXX)
 
 option(FCG_BUILD_GUI "Build the fastchess-gui desktop application" ON)
 option(FCG_BUILD_TESTS "Build the fastchess-gui unit tests" ON)
@@ -273,8 +273,16 @@ if(FCG_BUILD_GUI)
         file(GLOB FCG_TEST_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gui/tests/*.cpp)
         add_executable(fastchess-gui-tests ${FCG_TEST_SOURCES})
         target_link_libraries(fastchess-gui-tests PRIVATE fcg_lib)
-        add_dependencies(fastchess-gui-tests fcg_random_mover)
+        # A WinBoard engine for the tests of the adapter.
+        add_executable(fcg_wb_mover ${CMAKE_CURRENT_SOURCE_DIR}/gui/tests/mock/wb_mover.cpp)
+        set_target_properties(fcg_wb_mover PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+        if(WIN32)
+            target_link_options(fcg_wb_mover PRIVATE -static -static-libgcc -static-libstdc++)
+        endif()
+
+        add_dependencies(fastchess-gui-tests fcg_random_mover fcg_wb_mover)
         target_compile_definitions(fastchess-gui-tests PRIVATE FCG_RANDOM_MOVER="$<TARGET_FILE_NAME:fcg_random_mover>"
+                                                              FCG_WB_MOVER="$<TARGET_FILE_NAME:fcg_wb_mover>"
                                                               FCG_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
         if(WIN32)
             target_link_options(fastchess-gui-tests PRIVATE -static -static-libgcc -static-libstdc++)

@@ -23,10 +23,14 @@ struct ProbeResult {
     std::string id_name;
     std::string id_author;
     std::vector<UciOptionInfo> options;
+    std::string protocol;  // "uci" or "xboard": the entry's, or the one found out
 };
 
-// Starts the engine, waits for uciok and quits it. Blocks for up to the startup timeout,
-// so call it from a background thread. Needs config::TournamentConfig to be set.
+// Finds out whether the engine speaks UCI or WinBoard (xboard). Blocks for up to 13 seconds.
+[[nodiscard]] std::string detectProtocol(const EngineEntry& entry);
+
+// Finds out the protocol when the entry does not say it, then starts the engine, waits for uciok and quits it. Blocks
+// for up to the startup timeout, so call it from a background thread. Needs config::TournamentConfig to be set.
 [[nodiscard]] ProbeResult probeEngine(const EngineEntry& entry);
 
 struct CheckResult {
@@ -38,8 +42,8 @@ struct CheckResult {
 // initial position and checks that its move is legal. Blocks for up to the startup timeout plus a few seconds.
 [[nodiscard]] CheckResult checkEngine(const EngineEntry& entry);
 
-// Does the command line go through a WinBoard to UCI adapter (polyglot, wb2uci)?
-[[nodiscard]] bool viaAdapter(const EngineEntry& entry);
+// A WinBoard engine: its protocol is xboard, or it goes through an external adapter (wb2uci).
+[[nodiscard]] bool isWinboard(const EngineEntry& entry);
 
 // The working directory fastchess should use for this engine.
 [[nodiscard]] std::string engineWorkingDir(const EngineEntry& entry);

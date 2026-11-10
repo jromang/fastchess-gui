@@ -43,7 +43,7 @@ this repository still builds unchanged.
   bounds, Elo and LLR over time, game lengths, how games ended, average depth and NPS per engine.
 - **Engines**: UCI options are read from the engine and edited in a table; only values that differ from the
   default are sent. A health check, groups, a reference Elo, and the import of ChessGUI, cutechess, Banksia and
-  Arena engine lists. WinBoard engines through a UCI adapter such as PolyGlot.
+  Arena engine lists. WinBoard engines too, through a translation to UCI built in.
 - Opening books (EPD/PGN), draw / resign / max moves / Syzygy adjudication, crash recovery, a desktop
   notification when a match ends.
 - Light and dark themes; English, French or German, following the system (can be changed in the settings).
