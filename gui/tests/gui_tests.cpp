@@ -4,6 +4,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <set>
 #include <thread>
 
 #include <core/config/config.hpp>
@@ -186,6 +187,25 @@ TEST_CASE("fastchess comments parse back") {
     ReplayMove book;
     parseFastchessComment("book", book);
     CHECK(book.book);
+}
+
+TEST_CASE("a Chess960 game replays, castling included") {
+    const auto game = parseReplay(R"([White "A"]
+[Black "B"]
+[Result "*"]
+[SetUp "1"]
+[FEN "brnbnkqr/pppppppp/8/8/8/8/PPPPPPPP/BRNBNKQR w HBhb - 0 1"]
+[Variant "Chess960"]
+
+1. c3 f6 2. b3 c5 3. Bc2 Ned6 4. c4 Kf7 5. d4 cxd4 6. f3 e5 7. e3 Qe8 8. exd4 Ne7 9. Ne2 b5 10. c5 Nb7
+11. dxe5 Nxc5 12. Qxc5 Bd5 13. exf6 Rc8 14. Qxa7 Rxc2 15. Nxc2 Bxf3 16. gxf3 gxf6 17. h4 Nf5 18. O-O-O Be7 *
+)");
+    REQUIRE(game);
+    REQUIRE(game->moves.size() == 36);
+    const auto& castle = game->moves[34];
+    CHECK(castle.san == "O-O-O");
+    CHECK(castle.move.typeOf() == chess::Move::CASTLING);
+    CHECK(chess::uci::moveToUci(castle.move, true) == "f1b1");  // king takes the b1 rook
 }
 
 TEST_CASE("pgn file offsets read games back, and replay parses them") {
@@ -400,12 +420,43 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     CHECK(run.engines[0].limit.tc.increment == 500);
     CHECK(run.engines[1].limit.tc.time == 60000);
 
+    // Chess960: every engine plays it, the 960 positions when there is no book.
+    setup.chess960 = true;
+    CHECK_THROWS((void)buildRun(setup, engines, topology, dir));  // neither has UCI_Chess960
+    engines[0].uci_options.push_back({"UCI_Chess960", "check", "false"});
+    engines[1].uci_options.push_back({"UCI_Chess960", "check", "false"});
+    run = buildRun(setup, engines, topology, dir);
+    CHECK(run.tournament.variant == fastchess::VariantType::FRC);
+    CHECK(run.engines[0].variant == fastchess::VariantType::FRC);
+    CHECK(fs::path(run.tournament.opening.file).filename() == "chess960.epd");
+    CHECK(fs::is_regular_file(run.tournament.opening.file));
+    setup.chess960 = false;
+
     setup.participants = {{"new"}, {"new"}};
     CHECK_THROWS((void)buildRun(setup, engines, topology, dir));
     setup.participants = {{"new"}};
     CHECK_THROWS((void)buildRun(setup, engines, topology, dir));
 
     fs::remove_all(dir);
+}
+
+TEST_CASE("the 960 Chess960 starting positions: 518 is the usual one, all different and legal") {
+    CHECK(chess960Fen(518) == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    CHECK(chess960Fen(0) == "bbqnnrkr/pppppppp/8/8/8/8/PPPPPPPP/BBQNNRKR w KQkq - 0 1");
+    std::set<std::string> seen;
+    for (int n = 0; n < 960; ++n) {
+        const auto fen  = chess960Fen(n);
+        const auto rank = fen.substr(fen.rfind('/') + 1, 8);
+        seen.insert(rank);
+        // Bishops on squares of both colours, the king between the rooks.
+        const auto b1 = rank.find('B'), b2 = rank.rfind('B');
+        CHECK((b1 + b2) % 2 == 1);
+        const auto r1 = rank.find('R'), k = rank.find('K'), r2 = rank.rfind('R');
+        CHECK((r1 < k && k < r2));
+        chess::Board board(fen, true);
+        CHECK(board.getFen(false).substr(0, 8) == fen.substr(0, 8));
+    }
+    CHECK(seen.size() == 960);
 }
 
 TEST_CASE("engine lists of ChessGUI, cutechess and Arena are imported") {

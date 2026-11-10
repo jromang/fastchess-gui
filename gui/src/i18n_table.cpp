@@ -104,6 +104,10 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Charts", "Graphiques"},
         {"Check", "Vérifier"},
         {"Checking…", "Vérification…"},
+        {"Chess960", "Chess960"},
+        {"Chess960: the 960 starting positions, in random order",
+         "Chess960 : les 960 positions de départ, dans un ordre aléatoire"},
+        {"Chess960: {}", "Chess960 : {}"},
         {"ChessBase / Lichess: {[%eval 0.35,18] [%emt 0:00:01.234]}, eval from White's point of view.\ncutechess: "
          "{+0.35/18 1.234s}, score from the point of view of the side that moved.",
          "ChessBase / Lichess : {[%eval 0.35,18] [%emt 0:00:01.234]}, éval du point de vue des Blancs.\ncutechess : "
@@ -208,6 +212,10 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Final", "Finale"},
         {"Finish the running games, then stop", "Finir les parties en cours, puis arrêter"},
         {"Finished", "Terminé"},
+        {"Fischer random chess. The engines must play it (the UCI_Chess960 option, or the fischerandom variant of a "
+         "WinBoard engine). A book of Chess960 positions, or none for all 960.",
+         "Échecs aléatoires de Fischer. Les moteurs doivent le jouer (l'option UCI_Chess960, ou la variante "
+         "fischerandom d'un moteur WinBoard). Un livre de positions Chess960, ou aucun pour les 960."},
         {"Fixed games", "Parties fixes"},
         {"Fixed nodes", "Nœuds fixes"},
         {"Fixed nodes: one game per hardware thread (Hyper-Threading does not change a node count). With a clock: "
@@ -543,6 +551,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Withdraw an engine", "Retirer un moteur"},
         {"Without a book, every game starts from the initial position.",
          "Sans livre, toutes les parties partent de la position initiale."},
+        {"Without a book, the 960 starting positions, in random order.",
+         "Sans livre, les 960 positions de départ, dans un ordre aléatoire."},
         {"Without stopping it: running games go on, nothing played is lost.",
          "Sans l'arrêter : les parties en cours continuent, rien de ce qui est joué n'est perdu."},
         {"Working directory", "Dossier de travail"},
@@ -584,6 +594,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"{:.0f} games/h · about {} left", "{:.0f} parties/h · encore environ {}"},
         {"{} / {} games", "{} / {} parties"},
         {"{} crashes", "{} crashs"},
+        {"{} does not play Chess960.", "{} ne joue pas le Chess960."},
         {"{} earlier matches imported.", "{} matchs d'une version précédente importés."},
         {"{} engines", "{} moteurs"},
         {"{} engines imported; their options are being read.",

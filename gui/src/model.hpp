@@ -137,7 +137,8 @@ struct MatchSetup {
     bool book_random = true;
     int book_plies   = -1;
     int book_start   = 1;
-    uint64_t seed    = 0;  // 0 = new seed for every run
+    bool chess960    = false;  // Fischer random; without a book, the 960 starting positions
+    uint64_t seed    = 0;      // 0 = new seed for every run
 
     bool draw_enabled   = false;
     int draw_movenumber = 40;
@@ -180,14 +181,32 @@ struct MatchSetup {
     int web_port         = 8080;
     int broadcast_follow = 0;  // TLCS game: 0 automatic, 1 the game shown in the Live tab
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-    MatchSetup, format, name, engine_a, engine_b, participants, cycles, seeds, common_hash, common_threads, mode,
-    fixed_games, sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, limit, tc_base_s, tc_inc_s,
-    tc_moves, tc_margin_ms, nodes, concurrency_auto, concurrency, affinity, book, book_random, book_plies, book_start,
-    seed, draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,
-    resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result, pgn_event,
-    export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, recover, notify, language, theme, broadcast_files,
-    broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port, broadcast_follow)
+// More fields than NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT takes (64): its expansion, in two halves.
+#define FCG_MATCH_SETUP_FIELDS_1                                                                                       \
+    format, name, engine_a, engine_b, participants, cycles, seeds, common_hash, common_threads, mode, fixed_games,     \
+        sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, limit, tc_base_s, tc_inc_s, tc_moves, \
+        tc_margin_ms, nodes, concurrency_auto, concurrency, affinity, book, book_random, book_plies, book_start,       \
+        chess960, seed
+#define FCG_MATCH_SETUP_FIELDS_2                                                                               \
+    draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score, \
+        resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,  \
+        pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, recover, notify, language, theme,   \
+        broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port, broadcast_follow
+template <typename BasicJsonType,
+          nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
+void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) {
+    NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_MATCH_SETUP_FIELDS_1))
+    NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_MATCH_SETUP_FIELDS_2))
+}
+template <typename BasicJsonType,
+          nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
+void from_json(const BasicJsonType& nlohmann_json_j, MatchSetup& nlohmann_json_t) {
+    const MatchSetup nlohmann_json_default_obj{};
+    NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_MATCH_SETUP_FIELDS_1))
+    NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_MATCH_SETUP_FIELDS_2))
+}
+#undef FCG_MATCH_SETUP_FIELDS_1
+#undef FCG_MATCH_SETUP_FIELDS_2
 
 // A tournament waiting to be started after the running one.
 struct QueuedTournament {

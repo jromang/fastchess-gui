@@ -79,6 +79,12 @@ void configureFastchess(const tour::TournamentSpec& spec);
 
 [[nodiscard]] std::string makeRunDirName(const std::string& a, const std::string& b);
 
+// Chess960 starting position number n (0-959, Scharnagl's numbering: 518 is the usual one), as a FEN.
+[[nodiscard]] std::string chess960Fen(int n);
+
+// Writes the 960 starting positions to `path` as an EPD book, unless it is there already.
+void writeChess960Book(const std::filesystem::path& path);
+
 // "20261109-185927_<name>" for a round robin or a gauntlet.
 [[nodiscard]] std::string makeTournamentDirName(const std::string& name);
 

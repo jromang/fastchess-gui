@@ -48,6 +48,8 @@ output, resignation. Engines marked ↔ in the list are WinBoard engines.
 
 - An engine of protocol 1 without `setboard` nor edit mode (TSCP, for instance) can only start from the initial
   position: give it openings as moves (a PGN book), not as positions (EPD).
+- Chess960 for an engine with the `fischerandom` variant: `variant fischerandom`, positions in X-FEN, castling as
+  `O-O`/`O-O-O`, as WinBoard sends them.
 - `FCG_WB2UCI_LOG=FILE` in the environment writes every line exchanged with WinBoard engines to `FILE`.
 
 ## New tournament
@@ -86,6 +88,10 @@ engine, estimated duration, openings, common settings, time odds). The setup of 
 - **Openings**: an EPD or PGN book, random or sequential order, the number of plies kept from a PGN book, the
   starting index and the random seed (0 = a new order for every tournament). Every opening is played twice, with
   colours reversed.
+- **Chess960** (Fischer random): without a book, the 960 starting positions in random order (written once to
+  `chess960.epd` in the tournaments folder); with a book, its positions. Every engine must play Chess960: UCI
+  engines with the `UCI_Chess960` option, WinBoard engines with the `fischerandom` variant. The summary names those
+  that do not, and such a tournament does not start.
 - **Adjudication**: draw (from a move number, for N consecutive moves, under a score), resign (N consecutive moves
   above a score, optionally both engines agreeing), a maximum number of moves, and Syzygy tablebases.
 - **PGN and misc**: event name, extra fields in the move comments (nodes, seldepth, nps, pv), restarting engines

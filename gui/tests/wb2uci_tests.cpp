@@ -369,3 +369,96 @@ TEST_CASE("wb2uci: an engine added without a protocol is found out to be a WinBo
     CHECK(detectProtocol(u) == "uci");
     fastchess::engine::xboard_adapter.clear();
 }
+
+TEST_CASE("wb2uci: Chess960: variant fischerandom, X-FEN, castling as O-O to the engine and king takes rook back") {
+    Wire w;
+    w.fromEngine(R"(feature ping=1 setboard=1 usermove=1 variants="normal,fischerandom" done=1)");
+    w.fromGui("uci");
+    CHECK(w.sentToGui("option name UCI_Chess960 type check default false"));
+    w.fromGui("setoption name UCI_Chess960 value true");
+
+    // White: king f1, rooks e1 and h1; Black: king f8, rooks e8 and g8 (Shredder-FEN HEge, as fastchess writes it):
+    // X-FEN KQkq for the engine.
+    w.engine.clear();
+    w.fromGui("position fen bqnbrkrn/pppppppp/8/8/8/8/PPPPPPPP/BQNBRK1R w HEge - 0 1 moves f1h1");
+    CHECK(w.engine[0] == "new");
+    CHECK(w.engine[1] == "variant fischerandom");
+    CHECK(w.sentToEngine("setboard bqnbrkrn/pppppppp/8/8/8/8/PPPPPPPP/BQNBRK1R w KQkq - 0 1"));
+    CHECK(w.sentToEngine("usermove O-O"));  // f1h1: king takes rook
+
+    // Black castles: the engine writes O-O, or the king's move; fastchess gets king takes rook.
+    w.fromGui("go wtime 1000 btime 1000");
+    w.fromEngine("move O-O");
+    CHECK(w.gui.back() == "bestmove f8g8");
+
+    // A new game without Chess960 sends no variant.
+    w.fromGui("setoption name UCI_Chess960 value false");
+    w.engine.clear();
+    w.fromGui("position startpos");
+    CHECK_FALSE(w.sentToEngine("variant fischerandom"));
+}
+
+TEST_CASE("wb2uci: a Chess960 tournament of WinBoard engines through the adapter") {
+    const auto wb = (self().parent_path() / FCG_WB_MOVER).string();
+    if (!fs::is_regular_file(wb)) {
+        MESSAGE("mock engine not available on this platform, skipped");
+        return;
+    }
+    fastchess::engine::xboard_adapter = self().string();
+
+    const auto root = fs::temp_directory_path() / "fcg-wb2uci-960" / "run";
+    fs::remove_all(root.parent_path());
+    fs::create_directories(root.parent_path());
+
+    std::vector<EngineEntry> engines(3);
+    for (int i = 0; i < 3; ++i) {
+        engines[i].name     = "wb" + std::to_string(i);
+        engines[i].cmd      = wb;
+        engines[i].args     = "v2";
+        engines[i].protocol = "xboard";
+    }
+
+    MatchSetup setup;
+    setup.format           = TournamentFormat::RoundRobin;
+    setup.name             = "Chess960";
+    setup.participants     = {{"wb0"}, {"wb1"}, {"wb2"}};
+    setup.cycles           = 2;
+    setup.limit            = LimitKind::Time;
+    setup.tc_base_s        = 10;
+    setup.tc_inc_s         = 0.1;
+    setup.chess960         = true;  // no book: the 960 starting positions
+    setup.concurrency_auto = false;
+    setup.concurrency      = 3;
+    setup.affinity         = false;
+    setup.notify           = false;
+
+    RunController run;
+    std::vector<GameRecord> games;
+    std::vector<fastchess::Stats> stats;
+    REQUIRE(run.start(setup, engines, topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}}), root).empty());
+    const auto end = std::chrono::steady_clock::now() + 120s;
+    while (run.state() != RunController::State::Finished && std::chrono::steady_clock::now() < end) {
+        run.update();
+        if (auto* obs = run.observer()) obs->drain(games, stats);
+        std::this_thread::sleep_for(10ms);
+    }
+    REQUIRE(run.state() == RunController::State::Finished);
+    CHECK(run.error().empty());
+    CHECK(fs::is_regular_file(root / "chess960.epd"));
+
+    const auto& results = run.tournament()->results();
+    CHECK(results.size() == 12);
+    for (const auto& r : results) {
+        INFO(r.reason);
+        CHECK(r.reason.find("illegal") == std::string::npos);
+        CHECK(r.reason.find("disconnect") == std::string::npos);
+        CHECK(r.reason.find("on time") == std::string::npos);
+    }
+
+    // The games are Chess960 games in the PGN, and castling happened in some of them.
+    std::ifstream pgn_file(run.tournament()->dir() / "games.pgn");
+    const std::string pgn((std::istreambuf_iterator<char>(pgn_file)), std::istreambuf_iterator<char>());
+    CHECK(pgn.find("[Variant \"Chess960\"]") != std::string::npos);
+    CHECK(pgn.find("O-O") != std::string::npos);
+    fastchess::engine::xboard_adapter.clear();
+}

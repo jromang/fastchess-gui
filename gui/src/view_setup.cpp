@@ -310,7 +310,15 @@ void App::setupOpenings() {
         dialogs_.openFile(Dialogs::Purpose::Book, {{TR("Books (EPD, PGN)"), "epd;pgn"}, {TR("All files"), "*"}},
                           setup_.book);
     }
-    if (setup_.book.empty()) ImGui::TextDisabled(TR("Without a book, every game starts from the initial position."));
+    if (setup_.book.empty()) {
+        ImGui::TextDisabled("%s", setup_.chess960 ? TR("Without a book, the 960 starting positions, in random order.")
+                                                  : TR("Without a book, every game starts from the initial position."));
+    }
+
+    changed |= ImGui::Checkbox(TR("Chess960"), &setup_.chess960);
+    ui::help(
+        TR("Fischer random chess. The engines must play it (the UCI_Chess960 option, or the fischerandom "
+           "variant of a WinBoard engine). A book of Chess960 positions, or none for all 960."));
 
     changed |= ImGui::Checkbox(TR("Random order"), &setup_.book_random);
     changed |= inputInt(TR("Plies (PGN)"), "##plies", setup_.book_plies, -1, 1000);
@@ -729,10 +737,27 @@ void App::drawSetupSummary() {
     } else {
         check(n >= 2, trf("{} engines", n));
     }
-    check(!setup_.book.empty(), setup_.book.empty()
-                                    ? std::string(TR("No opening book: every game starts from the "
-                                                     "initial position"))
-                                    : trf("Openings: {}", std::filesystem::path(setup_.book).filename().string()));
+    if (setup_.chess960) {
+        check(true, setup_.book.empty() ? std::string(TR("Chess960: the 960 starting positions, in random order"))
+                                        : trf("Chess960: {}", std::filesystem::path(setup_.book).filename().string()));
+        std::vector<std::string> names;
+        if (setup_.format == TournamentFormat::Match) {
+            names = {setup_.engine_a, setup_.engine_b};
+        } else {
+            for (const auto& p : setup_.participants) names.push_back(p.name);
+        }
+        for (const auto& e : engines_) {
+            const bool chosen = std::find(names.begin(), names.end(), e.name) != names.end();
+            const bool plays =
+                e.uci_options.empty() || std::any_of(e.uci_options.begin(), e.uci_options.end(),
+                                                     [](const auto& o) { return o.name == "UCI_Chess960"; });
+            if (chosen && !plays) check(false, trf("{} does not play Chess960.", e.name));
+        }
+    } else {
+        check(!setup_.book.empty(),
+              setup_.book.empty() ? std::string(TR("No opening book: every game starts from the initial position"))
+                                  : trf("Openings: {}", std::filesystem::path(setup_.book).filename().string()));
+    }
     if (setup_.common_hash > 0 || setup_.common_threads > 0) {
         std::string parts;
         if (setup_.common_hash > 0) parts += fmt::format("Hash {} MB", setup_.common_hash);

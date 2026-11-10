@@ -23,6 +23,7 @@ bool v1     = false;
 bool resign = false;
 
 Board board;
+bool chess960   = false;
 bool force      = false;
 Color engine_on = Color::BLACK;
 int own_moves   = 0;
@@ -140,12 +141,20 @@ int main(int argc, char* argv[]) {
 
         if (cmd == "protover") {
             if (!v1) {
-                std::cout << "feature ping=1 setboard=1 usermove=1 san=1 myname=\"WB Mover\" memory=1" << std::endl;
+                std::cout << "feature ping=1 setboard=1 usermove=1 san=1 myname=\"WB Mover\" memory=1 "
+                             "variants=\"normal,fischerandom\""
+                          << std::endl;
                 std::cout << "feature option=\"Style -combo Solid /// *Normal /// Risky\" option=\"Clear Hash -button\""
                           << std::endl;
                 std::cout << "feature done=1" << std::endl;
             }
+        } else if (cmd == "variant") {
+            std::string v;
+            in >> v;
+            chess960 = v == "fischerandom";
+            board.set960(chess960);
         } else if (cmd == "new") {
+            chess960  = false;
             board     = Board();
             force     = false;
             engine_on = Color::BLACK;
@@ -167,7 +176,7 @@ int main(int argc, char* argv[]) {
                 std::cout << "Error (unknown command): setboard" << std::endl;
                 continue;
             }
-            board.setFen(line.substr(9));
+            board = Board(line.substr(9), chess960);
         } else if (cmd == "edit") {
             if (!v1) {
                 std::cout << "Error (unknown command): edit" << std::endl;

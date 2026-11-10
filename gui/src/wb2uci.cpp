@@ -95,10 +95,42 @@ std::optional<chess::Move> parseMove(const chess::Board& board, std::string text
         if (m != chess::Move::NO_MOVE && isLegal(m)) return m;
     } catch (...) {
     }
+
+    // Castling as the king's own move (e1g1), which is also how Chess960 engines may write it.
+    if (coord.size() == 4 && chess::uci::isUciMove(coord)) {
+        for (const auto m : legal) {
+            if (m.typeOf() != chess::Move::CASTLING || std::string(m.from()) != coord.substr(0, 2)) continue;
+            const bool king_side = m.to() > m.from();
+            if (coord.substr(2) == std::string(1, king_side ? 'g' : 'c') + coord[1]) return m;
+        }
+    }
     return std::nullopt;
 }
 
-std::string uciMove(chess::Move m) { return chess::uci::moveToUci(m); }
+// UCI castling in Chess960 is king takes rook (e1h1); in standard chess, the king's move (e1g1).
+std::string uciMove(chess::Move m, bool chess960) { return chess::uci::moveToUci(m, chess960); }
+
+// The castling rights of a Shredder-FEN (HAha) as X-FEN (KQkq), which is what WinBoard sends in Chess960.
+std::string xfen(const std::string& fen) {
+    auto parts = split(fen);
+    if (parts.size() < 3 || parts[2] == "-") return fen;
+    const chess::Board board(fen, true);
+    std::string rights;
+    for (const char c : parts[2]) {
+        const bool white = std::isupper(static_cast<unsigned char>(c));
+        const char lower = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        if (lower == 'k' || lower == 'q') {
+            rights += c;
+            continue;
+        }
+        const auto king      = board.kingSq(white ? chess::Color::WHITE : chess::Color::BLACK);
+        const bool king_side = lower - 'a' > static_cast<int>(king.file());
+        rights += white ? (king_side ? 'K' : 'Q') : (king_side ? 'k' : 'q');
+    }
+    std::string out;
+    for (size_t i = 0; i < parts.size(); ++i) out += (i ? " " : "") + (i == 2 ? rights : parts[i]);
+    return out;
+}
 
 // "level MPS BASE INC": BASE in minutes or minutes:seconds, INC in seconds.
 std::string levelCommand(long long moves, long long base_ms, long long inc_ms) {
@@ -240,6 +272,11 @@ void Adapter::finishInit() {
     }
 }
 
+bool Adapter::playsChess960() const {
+    const auto it = features_.find("variants");
+    return it != features_.end() && ("," + it->second + ",").find(",fischerandom,") != std::string::npos;
+}
+
 bool Adapter::feature(const std::string& name, bool def) const {
     const auto it = features_.find(name);
     return it == features_.end() ? def : it->second == "1";
@@ -312,6 +349,7 @@ void Adapter::sendUciId() {
     };
     if (feature("memory", false) && !has("Hash")) to_gui_("option name Hash type spin default 64 min 1 max 1048576");
     if (feature("smp", false) && !has("Threads")) to_gui_("option name Threads type spin default 1 min 1 max 1024");
+    if (playsChess960()) to_gui_("option name UCI_Chess960 type check default false");
     const auto egt = features_.find("egt");
     if (egt != features_.end() && egt->second.find("syzygy") != std::string::npos && !has("SyzygyPath")) {
         to_gui_("option name SyzygyPath type string default <empty>");
@@ -337,6 +375,11 @@ void Adapter::sendUciId() {
 }
 
 void Adapter::setOption(const std::string& name, const std::string& value) {
+    if (name == "UCI_Chess960" && playsChess960()) {
+        chess960_ = value == "true";
+        new_game_ = true;
+        return;
+    }
     for (const auto& o : options_) {
         if (o.name != name) continue;
         if (o.kind == "-button" || o.kind == "-save" || o.kind == "-reset") {
@@ -429,15 +472,16 @@ void Adapter::newGame(const std::string& fen) {
     start_fen_  = fen;
     moves_.clear();
     sent_moves_.clear();
-    board_ = chess::Board(fen);
+    board_ = chess::Board(fen, chess960_);
 
     // As WinBoard: memory, cores and egtpath before every new game.
     sendHeld();
     to_engine_("new");
+    if (chess960_) to_engine_("variant fischerandom");
     to_engine_("force");
-    if (fen != chess::constants::STARTPOS) {
+    if (fen != chess::constants::STARTPOS || chess960_) {
         if (feature("setboard", false)) {
-            to_engine_("setboard " + fen);
+            to_engine_("setboard " + (chess960_ ? xfen(fen) : fen));
         } else {
             // Protocol 1: edit mode, which keeps the side to move (black to move: a white move first) and
             // assumes castling rights wherever king and rook stand at home.
@@ -534,7 +578,10 @@ void Adapter::go(const std::vector<std::string>& tokens) {
 }
 
 std::string Adapter::moveText(const chess::Board& board, chess::Move move) const {
-    const auto text = feature("san", false) ? chess::uci::moveToSan(board, move) : uciMove(move);
+    // In Chess960 castling is always O-O or O-O-O (the protocol's rule: coordinates would be ambiguous).
+    const auto text = chess960_ && move.typeOf() == chess::Move::CASTLING ? chess::uci::moveToSan(board, move)
+                      : feature("san", false)                             ? chess::uci::moveToSan(board, move)
+                                                                          : uciMove(move, chess960_);
     return feature("usermove", false) ? "usermove " + text : text;
 }
 
@@ -687,7 +734,7 @@ void Adapter::engineMove(const std::string& text) {
         to_gui_("bestmove " + text);  // the GUI forfeits it
         return;
     }
-    const auto uci = uciMove(*move);
+    const auto uci = uciMove(*move, chess960_);
     board_.makeMove(*move);
     moves_.push_back(uci);
     to_gui_("bestmove " + uci);
@@ -737,7 +784,7 @@ void Adapter::thinking(const std::string& line) {
         if (t.empty()) continue;
         const auto move = parseMove(board, t);
         if (!move) break;
-        pv += " " + uciMove(*move);
+        pv += " " + uciMove(*move, chess960_);
         board.makeMove(*move);
     }
 

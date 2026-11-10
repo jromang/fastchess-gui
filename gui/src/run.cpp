@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <ctime>
+#include <fstream>
 
 #include <cli/sanitize.hpp>
 #include <core/config/config.hpp>
@@ -73,6 +74,7 @@ fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSet
     config.restart  = entry.restart;
     config.options  = entry.options;
     config.protocol = entry.protocol;
+    config.variant  = setup.chess960 ? fastchess::VariantType::FRC : fastchess::VariantType::STANDARD;
 
     overrideOption(config, entry, "Hash", participant.hash, setup.common_hash);
     overrideOption(config, entry, "Threads", participant.threads, setup.common_threads);
@@ -196,6 +198,51 @@ std::optional<tour::Summary> unfinishedMatch(const fs::path& runs_root) {
     return summary;
 }
 
+std::string chess960Fen(int n) {
+    std::string rank(8, ' ');
+    const auto place = [&](char piece, int nth_empty) {
+        for (auto& c : rank) {
+            if (c != ' ') continue;
+            if (nth_empty-- == 0) {
+                c = piece;
+                return;
+            }
+        }
+    };
+    n                   = std::clamp(n, 0, 959);
+    rank[n % 4 * 2 + 1] = 'B';  // light squares: b, d, f, h
+    n /= 4;
+    rank[n % 4 * 2] = 'B';  // dark squares: a, c, e, g
+    n /= 4;
+    place('Q', n % 6);
+    n /= 6;
+    static constexpr int KNIGHTS[10][2] = {{0, 1}, {0, 2}, {0, 3}, {0, 4}, {1, 2},
+                                           {1, 3}, {1, 4}, {2, 3}, {2, 4}, {3, 4}};
+    place('N', KNIGHTS[n][1]);  // the second one first: the first one's index still counts the same squares
+    place('N', KNIGHTS[n][0]);
+    place('R', 0);
+    place('K', 0);
+    place('R', 0);
+
+    std::string black = rank;
+    for (auto& c : black) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return black + "/pppppppp/8/8/8/8/PPPPPPPP/" + rank + " w KQkq - 0 1";
+}
+
+void writeChess960Book(const fs::path& path) {
+    if (fs::is_regular_file(path)) return;
+    fs::create_directories(path.parent_path());
+    const auto tmp = path.string() + ".tmp";
+    {
+        std::ofstream out(tmp, std::ios::binary);
+        for (int n = 0; n < 960; ++n) {
+            const auto fen = chess960Fen(n);
+            out << fen.substr(0, fen.size() - 4) << "\n";  // EPD: no move counters
+        }
+    }
+    fs::rename(tmp, path);
+}
+
 std::string makeRunDirName(const std::string& a, const std::string& b) {
     return fmt::format("{}_{}_vs_{}", timestamp(), cleanName(a).substr(0, 40), cleanName(b).substr(0, 40));
 }
@@ -290,16 +337,33 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     t.concurrency          = std::clamp(t.concurrency, 1, topology.logical);
 
     run.engines.clear();
-    for (const auto& [entry, participant] : people) run.engines.push_back(toConfig(*entry, setup, participant));
+    for (const auto& [entry, participant] : people) {
+        // An engine without UCI_Chess960 (a WinBoard one: without the fischerandom variant) would play other
+        // games than the GUI. Not known before the engine was read.
+        if (setup.chess960 && !entry->uci_options.empty() && !hasOption(*entry, "UCI_Chess960")) {
+            throw fastchess_exception(trf("{} does not play Chess960.", entry->name));
+        }
+        run.engines.push_back(toConfig(*entry, setup, participant));
+    }
+    t.variant = setup.chess960 ? fastchess::VariantType::FRC : fastchess::VariantType::STANDARD;
 
     // fastchess pins each game, both engines included, to one CPU, which only makes sense for single threaded
     // engines.
     t.affinity = setup.affinity && std::all_of(run.engines.begin(), run.engines.end(),
                                                [](const auto& c) { return configThreads(c) == 1; });
 
-    if (!setup.book.empty()) {
-        t.opening.file = setup.book;
-        auto ext       = fs::path(setup.book).extension().string();
+    // Chess960 without a book: every starting position, in random order.
+    auto book        = setup.book;
+    auto book_random = setup.book_random;
+    if (setup.chess960 && book.empty()) {
+        book = (run_dir.parent_path() / "chess960.epd").string();
+        writeChess960Book(book);
+        book_random = true;
+    }
+
+    if (!book.empty()) {
+        t.opening.file = book;
+        auto ext       = fs::path(book).extension().string();
         for (auto& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
         if (ext == ".pgn")
             t.opening.format = fastchess::FormatType::PGN;
@@ -308,9 +372,9 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         else
             throw fastchess_exception(TR("The opening book must be an .epd or .pgn file."));
 
-        if (!fs::is_regular_file(setup.book)) throw fastchess_exception(trf("Opening book not found: {}", setup.book));
+        if (!fs::is_regular_file(book)) throw fastchess_exception(trf("Opening book not found: {}", book));
 
-        t.opening.order = setup.book_random ? fastchess::OrderType::RANDOM : fastchess::OrderType::SEQUENTIAL;
+        t.opening.order = book_random ? fastchess::OrderType::RANDOM : fastchess::OrderType::SEQUENTIAL;
         t.opening.plies = setup.book_plies;
         t.opening.start = std::max(1, setup.book_start);
     }

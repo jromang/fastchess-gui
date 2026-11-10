@@ -6,7 +6,7 @@
 //
 // The translation follows the protocol as WinBoard and cutechess speak it: protover 2 features (with a timeout and
 // protocol 1 defaults for engines that send none), setboard or edit mode, usermove and SAN moves, ping, level/time/
-// otim, st, sd, nps, options, thinking output as info lines.
+// otim, st, sd, nps, options, thinking output as info lines, Chess960 (variant fischerandom).
 
 #include <chrono>
 #include <deque>
@@ -88,6 +88,7 @@ class Adapter {
     void onFeatures(const std::string& args);
     [[nodiscard]] std::string moveText(const chess::Board& board, chess::Move move) const;
     [[nodiscard]] bool feature(const std::string& name, bool def) const;
+    [[nodiscard]] bool playsChess960() const;  // its variants feature has fischerandom
     void info(const std::string& text) const;
 
     Sink to_gui_;
@@ -121,6 +122,7 @@ class Adapter {
     std::vector<std::string> sent_moves_;  // as written to the engine, to tell which "Illegal move" is about one
     chess::Board board_;
     bool level_sent_ = false;
+    bool chess960_   = false;  // UCI_Chess960: variant fischerandom, castling as O-O and king takes rook
 
     bool searching_             = false;
     bool stale_                 = false;  // a search the GUI gave up on: its move, when it comes, is dropped
