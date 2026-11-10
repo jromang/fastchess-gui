@@ -327,7 +327,7 @@ void Match::addMoveData(const Player& player, const std::string& move, int64_t m
         }
     }
 
-    verifyPvLines(player, legal ? move : "");
+    verifyPvLines(player, legal ? move : "", move_data);
 
     data_.moves.push_back(move_data);
 }
@@ -831,7 +831,12 @@ void Match::setEngineIllegalMoveStatus(Player& loser, Player& winner, const std:
     Logger::print<Logger::Level::WARN>("Warning; Illegal move {} played by {}", best_move.value_or("<none>"), name);
 }
 
-void Match::verifyPvLines(const Player& us, const std::string& best_move) {
+void Match::verifyPvLines(const Player& us, const std::string& best_move, MoveData& move_data) {
+    const auto keep = [&move_data](const std::string& warning) {
+        auto& kept = move_data.pv_warnings;
+        if (std::find(kept.begin(), kept.end(), warning) == kept.end()) kept.push_back(warning);
+    };
+
     const auto info_lines = us.engine.getInfoLines();
     std::vector<std::pair<const std::string*, engine::UciInfo>> parsed_lines;
     parsed_lines.reserve(info_lines.size());
@@ -856,6 +861,7 @@ void Match::verifyPvLines(const Player& us, const std::string& best_move) {
         auto separator = config::TournamentConfig->test_env ? " :: " : "\n";
 
         Logger::print<Logger::Level::WARN>("{1}{0}{2}{0}{3}{0}{4}", separator, out, uci_info, position, moves);
+        keep(out);
     }
 
     // finally check if the final PV matches bestmove
@@ -885,6 +891,7 @@ void Match::verifyPvLines(const Player& us, const std::string& best_move) {
         auto separator = config::TournamentConfig->test_env ? " :: " : "\n";
 
         Logger::print<Logger::Level::WARN>("{1}{0}{2}{0}{3}{0}{4}", separator, out, uci_info, position, ucimoves);
+        keep(out);
     }
 }
 

@@ -194,7 +194,7 @@ class Match {
                                 int64_t overrun_ms, bool engine_started = true);
     void setEngineIllegalMoveStatus(Player& loser, Player& winner, const std::optional<std::string>& best_move);
 
-    void verifyPvLines(const Player& us, const std::string& best_move);
+    void verifyPvLines(const Player& us, const std::string& best_move, MoveData& move_data);
 
     // append the move data to the match data
     void addMoveData(const Player& player, const std::string& move, int64_t measured_time_ms, int64_t latency,

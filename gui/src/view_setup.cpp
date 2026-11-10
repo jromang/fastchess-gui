@@ -488,6 +488,10 @@ void App::setupPgn() {
     ui::help(
         TR("Every line exchanged with the engines, in logs/ in the tournament folder, opened from the Games tab. "
            "Always kept for the games lost on time, by a crash, a stall or an illegal move."));
+    changed |= ImGui::Checkbox(TR("Check the mate PVs"), &setup_.check_mate_pvs);
+    ui::help(
+        TR("A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; "
+           "the moves whose PV is wrong are marked in the Games tab."));
     if (changed) saveSetupSoon();
 }
 

@@ -321,19 +321,22 @@ const GuiObserver::GameExtras& GuiObserver::extrasOf(const tour::GameResult& res
 
 GameRecord GuiObserver::makeRecord(const tour::GameResult& result, std::string_view pgn) {
     GameRecord record;
-    record.game_id        = result.number() + 1;
-    record.round_id       = result.encounter + 1;
-    record.white          = index_.count(result.white) ? index_.at(result.white) : 0;
-    record.black          = index_.count(result.black) ? index_.at(result.black) : 0;
-    record.white_result   = resultForA(result, result.white);
-    record.a_white        = result.white == id_a_;
-    record.a_result       = resultForA(result, id_a_);
-    record.termination    = static_cast<uint8_t>(result.termination);
-    record.reason         = internReason(result.reason);
-    const auto& extras    = extrasOf(result, pgn);
-    record.opening        = extras.opening;
-    record.facts          = extras.facts;
-    record.plies          = static_cast<uint16_t>(std::min<uint32_t>(result.plies, 65535));
+    record.game_id      = result.number() + 1;
+    record.round_id     = result.encounter + 1;
+    record.white        = index_.count(result.white) ? index_.at(result.white) : 0;
+    record.black        = index_.count(result.black) ? index_.at(result.black) : 0;
+    record.white_result = resultForA(result, result.white);
+    record.a_white      = result.white == id_a_;
+    record.a_result     = resultForA(result, id_a_);
+    record.termination  = static_cast<uint8_t>(result.termination);
+    record.reason       = internReason(result.reason);
+    const auto& extras  = extrasOf(result, pgn);
+    record.opening      = extras.opening;
+    record.facts        = extras.facts;
+    record.plies        = static_cast<uint16_t>(std::min<uint32_t>(result.plies, 65535));
+    record.pv_warnings  = static_cast<uint16_t>(std::min<std::size_t>(result.pv_warnings.size(), 65535));
+    record.pv_ply =
+        result.pv_warnings.empty() ? -1 : static_cast<int16_t>(std::min(result.pv_warnings[0].first, 32767u));
     record.duration_ms    = result.duration_ms;
     record.fastchess_span = result.pgn;
     record.chessbase_span = result.pgn_chessbase;

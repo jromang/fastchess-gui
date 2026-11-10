@@ -39,44 +39,10 @@ inline bool isValidInfoLine(const std::string& infoLine) {
     return true;
 }
 
-inline bool compliant(int argc, char const* argv[]) {
-    config::TournamentConfig = std::make_unique<config::Tournament>(config::Tournament{});
-
-    int step = 0;
-
-    EngineConfiguration config;
-    config.cmd  = argv[2];
-    config.args = argc > 3 ? std::string(argv[3]) : "";
-
-    UciEngine uci_engine(config, false);
-
-    auto executeStep = [&step, &uci_engine](const std::string& description, const std::function<bool()>& action) {
-        step++;
-
-        std::cout << fmt::format("Step {}: {}...", step, description) << std::flush;
-
-        if (!action()) {
-            std::cerr << fmt::format("\r\033[1;31m Failed\033[0m Step {}: {}\n", step, description) << std::flush;
-
-            std::cerr << "\033[1;33m Your engine's stdout output was:\033[0m" << std::endl;
-            for (const auto& line : uci_engine.getStdoutLines())
-                std::cerr << fmt::format(" {}\n", line->line) << std::flush;
-
-            if (uci_engine.getStderrLines().size()) {
-                std::cerr << "\033[1;33m Your engine's stderr output was:\033[0m" << std::endl;
-                for (const auto& line : uci_engine.getStderrLines())
-                    std::cerr << fmt::format(" {}\n", line->line) << std::flush;
-            }
-
-            return false;
-        }
-
-        std::cout << fmt::format("\r\033[1;32m Passed\033[0m Step {}: {}\n", step, description) << std::flush;
-
-        return true;
-    };
-
-    std::vector<std::pair<std::string, std::function<bool()>>> steps = {
+// fastchess-gui: the steps of the compliance check, each a description and its action on `uci_engine`, which the
+// first step starts. They are run in order, up to the first that fails.
+inline std::vector<std::pair<std::string, std::function<bool()>>> complianceSteps(UciEngine& uci_engine) {
+    return {
         {"Start the engine", [&uci_engine] { return uci_engine.start(/*cpus*/ std::nullopt).has_value(); }},
         {"Check if engine is ready", [&uci_engine] { return uci_engine.isready().code == process::Status::OK; }},
         {"Check id name", [&uci_engine] { return uci_engine.idName().has_value(); }},
@@ -155,6 +121,46 @@ inline bool compliant(int argc, char const* argv[]) {
          }},
         {"Verify info line format is valid after position startpos moves e2e4 e7e5",
          [&uci_engine] { return isValidInfoLine(uci_engine.lastInfoLine()); }}};
+}
+
+inline bool compliant(int argc, char const* argv[]) {
+    config::TournamentConfig = std::make_unique<config::Tournament>(config::Tournament{});
+
+    int step = 0;
+
+    EngineConfiguration config;
+    config.cmd  = argv[2];
+    config.args = argc > 3 ? std::string(argv[3]) : "";
+
+    UciEngine uci_engine(config, false);
+
+    auto executeStep = [&step, &uci_engine](const std::string& description, const std::function<bool()>& action) {
+        step++;
+
+        std::cout << fmt::format("Step {}: {}...", step, description) << std::flush;
+
+        if (!action()) {
+            std::cerr << fmt::format("\r\033[1;31m Failed\033[0m Step {}: {}\n", step, description) << std::flush;
+
+            std::cerr << "\033[1;33m Your engine's stdout output was:\033[0m" << std::endl;
+            for (const auto& line : uci_engine.getStdoutLines())
+                std::cerr << fmt::format(" {}\n", line->line) << std::flush;
+
+            if (uci_engine.getStderrLines().size()) {
+                std::cerr << "\033[1;33m Your engine's stderr output was:\033[0m" << std::endl;
+                for (const auto& line : uci_engine.getStderrLines())
+                    std::cerr << fmt::format(" {}\n", line->line) << std::flush;
+            }
+
+            return false;
+        }
+
+        std::cout << fmt::format("\r\033[1;32m Passed\033[0m Step {}: {}\n", step, description) << std::flush;
+
+        return true;
+    };
+
+    const auto steps = complianceSteps(uci_engine);
 
     for (const auto& [description, action] : steps) {
         if (!executeStep(description, action)) {

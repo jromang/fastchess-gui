@@ -253,7 +253,8 @@ class App {
     std::optional<ReplayGame> replay_;
     std::string replay_error_;
     std::filesystem::path replay_log_;  // the engine log of the game shown, empty when it has none
-    int replay_ply_   = 0;              // number of moves played on the replay board
+    std::vector<std::pair<uint32_t, std::string>> replay_pv_;  // its PV warnings: (ply, warning)
+    int replay_ply_   = 0;                                     // number of moves played on the replay board
     bool flip_replay_ = false;
 
     // Openings view: results by starting position.

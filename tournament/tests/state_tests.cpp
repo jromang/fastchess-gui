@@ -213,3 +213,25 @@ TEST_CASE("state: a malformed journal is reported with its position") {
     }
     CHECK_THROWS_WITH_AS((void)TournamentState::open(dir), doctest::Contains("event 1"), std::runtime_error);
 }
+
+TEST_CASE("state: the PV warnings of a game are kept with its result, by ply") {
+    const auto dir = freshDir("state-pv");
+    {
+        auto state = TournamentState::create(dir, matchSpec(2));
+        auto task  = state->claimNext();
+        REQUIRE(task);
+        auto data = gameData(*task, "1-0");
+        for (const auto* move : {"e2e4", "e7e5", "g1f3"}) data.moves.emplace_back(move);
+        data.moves[1].pv_warnings = {"Warning; Illegal PV move - move e5e4 from B"};
+        data.moves[2].pv_warnings = {"Warning; Incomplete mating PV - from A", "Warning; Too long mating PV - from A"};
+        const auto recorded       = state->complete(*task, data);
+        CHECK(recorded.result.pv_warnings.size() == 3);
+    }
+    const auto results = TournamentState::open(dir)->results();
+    REQUIRE(results.size() == 1);
+    const auto& pv = results[0].pv_warnings;
+    REQUIRE(pv.size() == 3);
+    CHECK(pv[0] == std::pair<uint32_t, std::string>{1, "Warning; Illegal PV move - move e5e4 from B"});
+    CHECK(pv[2].first == 2);
+    CHECK(pv[2].second == "Warning; Too long mating PV - from A");
+}

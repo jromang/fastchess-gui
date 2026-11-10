@@ -181,6 +181,46 @@ TEST_CASE("an engine whose file name has a space is the one started, not the pro
     fs::remove_all(dir, ec);
 }
 
+TEST_CASE("the engine check runs fastchess' UCI compliance steps, and stops at the first that fails") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+    if (!fastchess::config::TournamentConfig)
+        fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
+
+    EngineEntry entry;
+    entry.cmd         = randomMover();
+    const auto passed = checkEngine(entry);
+    CHECK_MESSAGE(passed.ok, passed.message);
+    CHECK(passed.report.rfind("✓ Start the engine\n", 0) == 0);
+    CHECK(passed.report.find("✗") == std::string::npos);
+    CHECK(passed.message.find("UCI: ") != std::string::npos);
+
+#ifndef _WIN32
+    // An engine that plays, but gives no "id author": the fourth step fails, with what it wrote.
+    const auto dir = fs::temp_directory_path() / "fcg-check-tests";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+    const auto script = dir / "no-author.sh";
+    std::ofstream(script) << "#!/bin/sh\n"
+                             "while read line; do case \"$line\" in\n"
+                             "uci) echo 'id name No author'; echo uciok;;\n"
+                             "isready) echo readyok;;\n"
+                             "go*) echo 'info depth 1 score cp 0 pv e2e4'; echo 'bestmove e2e4';;\n"
+                             "quit) exit 0;;\n"
+                             "esac; done\n";
+    fs::permissions(script, fs::perms::owner_all);
+    entry.cmd         = script.string();
+    const auto failed = checkEngine(entry);
+    CHECK_FALSE(failed.ok);
+    CHECK(failed.message.find("4") != std::string::npos);
+    CHECK(failed.report.find("✓ Check id name\n✗ Check id author\n") != std::string::npos);
+    CHECK(failed.report.find("id name No author") != std::string::npos);
+    fs::remove_all(dir);
+#endif
+}
+
 TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly its games") {
     if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available on this platform, skipped");

@@ -311,12 +311,13 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     BuiltRun run;
     auto& t = run.tournament;
 
-    t.games        = 2;
-    t.report_penta = true;
-    t.output       = fastchess::OutputType::FASTCHESS;
-    t.recover      = setup.recover;
-    t.seed         = setup.seed != 0 ? setup.seed : fastchess::random::random_uint64();
-    t.startup_time = ENGINE_STARTUP_TIME;
+    t.games          = 2;
+    t.report_penta   = true;
+    t.output         = fastchess::OutputType::FASTCHESS;
+    t.recover        = setup.recover;
+    t.check_mate_pvs = setup.check_mate_pvs;
+    t.seed           = setup.seed != 0 ? setup.seed : fastchess::random::random_uint64();
+    t.startup_time   = ENGINE_STARTUP_TIME;
     // The tournament layer keeps the results (tournament.json, journal.jsonl): no fastchess config.json.
     t.config_name = "";
 
@@ -551,6 +552,7 @@ MatchSetup quickTestSetup(const EngineEntry& engine, const std::string& opponent
     s.book             = book.string();
     s.book_random      = false;
     s.recover          = true;  // a crash is reported, the test goes on
+    s.check_mate_pvs   = true;
     s.maxmoves_enabled = true;  // games that would go on forever end, as draws
     s.maxmoves         = 150;
     s.notify           = false;

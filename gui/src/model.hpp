@@ -53,6 +53,7 @@ struct EngineEntry {
     int check_ok = -1;
     std::string check_message;
     std::string check_when;
+    std::string check_report;  // the UCI compliance steps
 
     // Last quick test (a short match): -1 never, 0 something went wrong, 1 passed.
     int test_ok = -1;
@@ -94,7 +95,7 @@ struct EngineEntry {
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineEntry, name, cmd, args, dir, restart, protocol, options, program,
                                                 id_name, id_author, uci_options, groups, elo, check_ok, check_message,
-                                                check_when, test_ok, test_message, test_when)
+                                                check_when, check_report, test_ok, test_message, test_when)
 
 // An opening book of the library: registered once, chosen by name in the setup.
 struct BookEntry {
@@ -202,6 +203,7 @@ struct MatchSetup {
 
     bool recover        = true;
     bool log_every_game = false;  // the engine log of every game, not only of those that end badly
+    bool check_mate_pvs = false;  // fastchess' -check-mate-pvs: a mate score's PV must end in mate
     bool notify         = true;
 
     std::string language = "auto";   // "auto" (system), "en" or "fr"
@@ -226,9 +228,9 @@ struct MatchSetup {
 #define FCG_MATCH_SETUP_FIELDS_2                                                                                      \
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,        \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,         \
-        pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, recover, log_every_game, notify, language, \
-        theme, tile_info, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port,         \
-        broadcast_follow
+        pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, recover, log_every_game, check_mate_pvs,   \
+        notify, language, theme, tile_info, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, \
+        web_port, broadcast_follow
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
 void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) {

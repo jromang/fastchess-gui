@@ -428,7 +428,27 @@ void App::drawEngines() {
             ImGui::TextDisabled("(%s)", e.check_when.c_str());
         }
     } else {
-        ImGui::TextDisabled("%s", TR("Starts the engine, measures how fast it answers and checks one move."));
+        ImGui::TextDisabled("%s", TR("Starts the engine, measures how fast it answers, checks one move, then runs "
+                                     "fastchess' UCI compliance steps."));
+    }
+    if (!e.check_report.empty() && ImGui::TreeNode(TR("UCI compliance report"))) {
+        const float lines =
+            std::min(14.0f, static_cast<float>(std::count(e.check_report.begin(), e.check_report.end(), '\n')));
+        ImGui::BeginChild("##compliance", ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * (lines + 0.5f)),
+                          ImGuiChildFlags_Borders);
+        std::size_t begin = 0;
+        while (begin < e.check_report.size()) {
+            auto end = e.check_report.find('\n', begin);
+            if (end == std::string::npos) end = e.check_report.size();
+            const std::string_view line(e.check_report.data() + begin, end - begin);
+            const bool failed = line.rfind("✗", 0) == 0;
+            if (failed) ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+            ImGui::TextUnformatted(line.data(), line.data() + line.size());
+            if (failed) ImGui::PopStyleColor();
+            begin = end + 1;
+        }
+        ImGui::EndChild();
+        ImGui::TreePop();
     }
 
     // Quick test: a short match, through the tournament code.
@@ -746,6 +766,7 @@ void App::pollCheck() {
     auto& e         = engines_[index];
     e.check_ok      = result.ok ? 1 : 0;
     e.check_message = result.message;
+    e.check_report  = result.report;
     char when[32];
     const auto now = std::time(nullptr);
     std::strftime(when, sizeof(when), "%Y-%m-%d %H:%M", std::localtime(&now));

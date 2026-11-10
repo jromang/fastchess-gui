@@ -37,10 +37,12 @@ struct ProbeResult {
 struct CheckResult {
     bool ok = false;
     std::string message;  // what was measured, or what went wrong
+    std::string report;   // the UCI compliance steps, one per line, with the engine's output after a failed one
 };
 
 // Starts the engine with its options, measures how long it takes to answer uciok and isready, lets it think on the
-// initial position and checks that its move is legal. Blocks for up to the startup timeout plus a few seconds.
+// initial position and checks that its move is legal; then runs fastchess' UCI compliance steps (not for an engine
+// spoken to in xboard). Blocks for up to the startup timeout plus a few seconds.
 [[nodiscard]] CheckResult checkEngine(const EngineEntry& entry);
 
 // A WinBoard engine: its protocol is xboard, or it goes through an external adapter (wb2uci).

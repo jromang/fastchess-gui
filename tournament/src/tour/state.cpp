@@ -45,19 +45,21 @@ std::vector<nlohmann::json> withoutUndoneEdits(const std::vector<nlohmann::json>
 }
 
 nlohmann::json toJson(const GameResult& r) {
-    return {{"t", "game_finished"},
-            {"encounter", r.encounter},
-            {"game", r.game},
-            {"white", r.white},
-            {"black", r.black},
-            {"result", r.result},
-            {"termination", static_cast<int>(r.termination)},
-            {"reason", r.reason},
-            {"plies", r.plies},
-            {"ms", r.duration_ms},
-            {"pgn", {r.pgn.offset, r.pgn.length}},
-            {"cb", {r.pgn_chessbase.offset, r.pgn_chessbase.length}},
-            {"at", r.finished_at}};
+    nlohmann::json j = {{"t", "game_finished"},
+                        {"encounter", r.encounter},
+                        {"game", r.game},
+                        {"white", r.white},
+                        {"black", r.black},
+                        {"result", r.result},
+                        {"termination", static_cast<int>(r.termination)},
+                        {"reason", r.reason},
+                        {"plies", r.plies},
+                        {"ms", r.duration_ms},
+                        {"pgn", {r.pgn.offset, r.pgn.length}},
+                        {"cb", {r.pgn_chessbase.offset, r.pgn_chessbase.length}},
+                        {"at", r.finished_at}};
+    if (!r.pv_warnings.empty()) j["pv"] = r.pv_warnings;
+    return j;
 }
 
 GameResult resultFromJson(const nlohmann::json& j) {
@@ -74,6 +76,7 @@ GameResult resultFromJson(const nlohmann::json& j) {
     r.pgn           = {j.at("pgn").at(0).get<uint64_t>(), j.at("pgn").at(1).get<uint32_t>()};
     r.pgn_chessbase = {j.at("cb").at(0).get<uint64_t>(), j.at("cb").at(1).get<uint32_t>()};
     r.finished_at   = j.value("at", int64_t{0});
+    if (j.contains("pv")) j.at("pv").get_to(r.pv_warnings);
     if (r.game != 0 && r.game != 1) throw std::runtime_error("bad game number");
     return r;
 }
@@ -788,6 +791,9 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     result.plies       = static_cast<uint32_t>(data.moves.size());
     result.duration_ms = parseDuration(data.duration);
     result.finished_at = nowMs();
+    for (std::size_t ply = 0; ply < data.moves.size(); ++ply) {
+        for (const auto& w : data.moves[ply].pv_warnings) result.pv_warnings.emplace_back(ply, w);
+    }
 
     std::lock_guard<std::mutex> lock(mutex_);
     const auto elo     = [&](int id) { return spec_.participant(id) ? spec_.participant(id)->elo : 0; };

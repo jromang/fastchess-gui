@@ -8,9 +8,11 @@ namespace fcg::i18n {
 const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() {
     static const std::vector<std::pair<std::string_view, std::string_view>> table = {
         {" Export:", " Export :"},
+        {" · UCI: {} steps passed", " · UCI : {} étapes réussies"},
         {" · affinity", " · affinité"},
         {" — not a UCI engine? For a WinBoard engine, choose the WinBoard protocol.",
          " — pas un moteur UCI ? Pour un moteur WinBoard, choisis le protocole WinBoard."},
+        {"! {} wrong PVs, on the moves in this colour", "! {} PV fausses, sur les coups de cette couleur"},
         {"%.1f pawns", "%.1f pions"},
         {"%d games × %d threads > %d available threads.", "%d parties × %d threads > %d threads disponibles."},
         {"%s  vs  %s", "%s  contre  %s"},
@@ -50,6 +52,10 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
          "Un match est en cours. Les parties en cours seront perdues."},
         {"A match is running: wait for its end to open another one.",
          "Un match est en cours : attends sa fin pour en ouvrir un autre."},
+        {"A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the "
+         "moves whose PV is wrong are marked in the Games tab.",
+         "La PV d'un score de mat doit avoir la bonne longueur et finir par le mat. Les coups illégaux des PV sont "
+         "toujours vérifiés ; les coups dont la PV est fausse sont marqués dans l'onglet Parties."},
         {"A: +%d  =%d  -%d", "A : +%d  =%d  -%d"},
         {"About {} with {} games at a time", "Environ {} avec {} parties simultanées"},
         {"About {} {}", "Environ {} {}"},
@@ -132,6 +138,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Change…", "Changer…"},
         {"Charts", "Graphiques"},
         {"Check", "Vérifier"},
+        {"Check the mate PVs", "Vérifier les PV de mat"},
         {"Checking…", "Vérification…"},
         {"Chess960", "Chess960"},
         {"Chess960: the 960 starting positions, in random order",
@@ -435,6 +442,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Now {}. Only cycles not started can be removed.",
          "Actuellement {}. Seuls les cycles non commencés peuvent être retirés."},
         {"Number of cycles", "Nombre de cycles"},
+        {"On its error output:", "Sur sa sortie d'erreur :"},
         {"Once it has played two tournaments.", "Dès qu'il a joué deux tournois."},
         {"One game", "Une partie"},
         {"Only matches can be opened for now.", "Pour l'instant, seuls les matchs peuvent être ouverts."},
@@ -600,8 +608,9 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Starts by itself when the running tournament ends.", "Démarre tout seul à la fin du tournoi en cours."},
         {"Starts in {} ms · isready {:.1f} ms · first move {}",
          "Démarre en {} ms · isready {:.1f} ms · premier coup {}"},
-        {"Starts the engine, measures how fast it answers and checks one move.",
-         "Lance le moteur, mesure sa vitesse de réponse et vérifie un coup."},
+        {"Starts the engine, measures how fast it answers, checks one move, then runs fastchess' UCI compliance steps.",
+         "Lance le moteur, mesure sa vitesse de réponse, vérifie un coup, puis passe les étapes de conformité UCI de "
+         "fastchess."},
         {"State", "État"},
         {"Statistics are given from A's point of view.", "Les statistiques sont données du point de vue de A."},
         {"Stop", "Arrêter"},
@@ -631,6 +640,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"The engine does not answer isready.", "Le moteur ne répond pas à isready."},
         {"The engine stopped while it was asked to think.",
          "Le moteur s'est arrêté pendant qu'on lui demandait de réfléchir."},
+        {"The engine wrote:", "Le moteur a écrit :"},
         {"The engines disagree", "Les moteurs divergent"},
         {"The engines disagree: their evaluations differ by this much for 3 moves each in a row.\nAn evaluation "
          "swings: an engine's evaluation changes by this much from one of its moves to the next.\nLost after a winning "
@@ -697,6 +707,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
          "Deux moteurs, jusqu'à un nombre fixe de parties, jusqu'à l'arrêt, ou jusqu'à la décision du SPRT."},
         {"Two engines: is the new version stronger? Statistics from A's point of view.",
          "Deux moteurs : la nouvelle version est-elle plus forte ? Statistiques du point de vue de A."},
+        {"UCI compliance report", "Rapport de conformité UCI"},
+        {"UCI compliance: step {} failed, see the report", "Conformité UCI : l'étape {} a échoué, voir le rapport"},
         {"UDP port", "Port UDP"},
         {"Undo the last change", "Annuler la dernière modification"},
         {"Unknown engine: {}", "Moteur inconnu : {}"},
@@ -736,6 +748,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Write error in {}", "Erreur d'écriture dans {}"},
         {"Write the live files", "Écrire les fichiers en direct"},
         {"Written at {} in {}", "Écrits à {} dans {}"},
+        {"Wrong PVs", "PV fausses"},
         {"against", "contre"},
         {"against {}", "contre {}"},
         {"automatic", "automatique"},

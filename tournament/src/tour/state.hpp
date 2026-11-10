@@ -65,6 +65,8 @@ struct GameResult {
     PgnSpan pgn;              // games.pgn
     PgnSpan pgn_chessbase;    // games-chessbase.pgn
     int64_t finished_at = 0;  // unix time, milliseconds
+    // What fastchess' PV checks found (an illegal PV move, a mate PV that does not mate...): (ply, warning).
+    std::vector<std::pair<uint32_t, std::string>> pv_warnings;
 
     // No longer counted (replay requested, participant replaced or withdrawn); kept to be shown as such.
     bool voided = false;

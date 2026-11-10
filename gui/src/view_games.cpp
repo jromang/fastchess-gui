@@ -26,7 +26,8 @@ const char* FILTERS[] = {"All",
                          "Adjudications",
                          "The engines disagree",
                          "An evaluation swings",
-                         "Lost after a winning score"};
+                         "Lost after a winning score",
+                         "Wrong PVs"};
 
 // In a tournament, results are seen from the engine chosen in the filter, or from White when none is.
 const char* TOURNAMENT_FILTERS[] = {"All",
@@ -38,10 +39,12 @@ const char* TOURNAMENT_FILTERS[] = {"All",
                                     "Adjudications",
                                     "The engines disagree",
                                     "An evaluation swings",
-                                    "Lost after a winning score"};
+                                    "Lost after a winning score",
+                                    "Wrong PVs"};
 
 // The filters on what the evaluations tell, which take a threshold in pawns.
 constexpr int FIRST_EVAL_FILTER = 7;
+constexpr int LAST_EVAL_FILTER  = 9;
 
 // The ply an evaluation filter is about, -1 for the others.
 int pliesOfInterest(const GameRecord& g, int filter) {
@@ -52,6 +55,8 @@ int pliesOfInterest(const GameRecord& g, int filter) {
             return g.facts.swing_ply;
         case 9:
             return g.facts.loser_ply;
+        case 10:
+            return g.pv_ply;
         default:
             return -1;
     }
@@ -89,6 +94,8 @@ bool matches(const GameRecord& g, int filter, int subject, bool match, float paw
             return g.facts.swing >= pawns;
         case 9:
             return g.facts.loser_best >= pawns;
+        case 10:
+            return g.pv_warnings > 0;
         default:
             return true;
     }
@@ -129,9 +136,16 @@ void App::selectGame(int index) {
     replay_.reset();
     replay_error_.clear();
     replay_log_.clear();
+    replay_pv_.clear();
 
     auto* obs = run_.observer();
     if (!obs || index < 0 || index >= static_cast<int>(games_.size())) return;
+
+    if (const auto* t = run_.tournament(); t && games_[index].pv_warnings > 0) {
+        for (const auto& r : t->results()) {
+            if (r.pgn.offset == games_[index].fastchess_span.offset) replay_pv_ = r.pv_warnings;
+        }
+    }
 
     std::error_code ec;
     if (const auto log = tour::engineLogPath(run_.info().dir, games_[index].game_id);
@@ -204,7 +218,7 @@ void App::drawGames() {
     const char* filters[IM_ARRAYSIZE(FILTERS)];
     for (int i = 0; i < IM_ARRAYSIZE(FILTERS); ++i) filters[i] = TR(match ? FILTERS[i] : TOURNAMENT_FILTERS[i]);
     if (ImGui::Combo("##filter", &games_filter_, filters, IM_ARRAYSIZE(FILTERS))) filtered_for_ = ~std::size_t(0);
-    if (games_filter_ >= FIRST_EVAL_FILTER) {
+    if (games_filter_ >= FIRST_EVAL_FILTER && games_filter_ <= LAST_EVAL_FILTER) {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(110.0f * ImGui::GetFontSize() / 16.0f);
         if (ImGui::SliderFloat("##eval_threshold", &eval_threshold_, 0.5f, 10.0f, TR("%.1f pawns"))) {
@@ -410,6 +424,10 @@ void App::drawGames() {
     if (const auto& g = games_[selected_game_]; g.opening != 0 && g.opening < openings_.size()) {
         ImGui::TextDisabled("%s %s", openings_[g.opening].eco.c_str(), openings_[g.opening].name.c_str());
     }
+    if (!replay_pv_.empty()) {
+        ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ui::WARN), "%s",
+                           trf("! {} wrong PVs, on the moves in this colour", replay_pv_.size()).c_str());
+    }
 
     chess::Board board;
     board.setFen(game.start_fen);
@@ -469,16 +487,23 @@ void App::drawGames() {
 
             const bool current = i + 1 == replay_ply_;
             const auto label   = fmt::format("{}##rm{}", m.san, i);
-            if (m.book) ImGui::PushStyleColor(ImGuiCol_Text, ui::MUTED4);
+            // A move whose PV fastchess found wrong: in the warning colour, the warnings in its tooltip.
+            std::string pv_problems;
+            for (const auto& [ply, warning] : replay_pv_) {
+                if (ply == static_cast<uint32_t>(i)) pv_problems += "\n" + warning;
+            }
+            if (m.book || !pv_problems.empty()) {
+                ImGui::PushStyleColor(ImGuiCol_Text, m.book ? ui::MUTED4 : ImGui::ColorConvertU32ToFloat4(ui::WARN));
+            }
             if (ImGui::Selectable(label.c_str(), current, ImGuiSelectableFlags_None,
                                   ImGui::CalcTextSize(m.san.c_str()))) {
                 replay_ply_ = i + 1;
             }
-            if (m.book) ImGui::PopStyleColor();
+            if (m.book || !pv_problems.empty()) ImGui::PopStyleColor();
             if (current && ImGui::IsWindowAppearing()) ImGui::SetScrollHereY();
             if (ImGui::IsItemHovered() && !m.book) {
-                ImGui::SetTooltip("%s/%d  %s", ui::formatScore(m.score).c_str(), m.depth,
-                                  m.time_ms >= 0 ? ui::formatClock(m.time_ms).c_str() : "");
+                ImGui::SetTooltip("%s/%d  %s%s", ui::formatScore(m.score).c_str(), m.depth,
+                                  m.time_ms >= 0 ? ui::formatClock(m.time_ms).c_str() : "", pv_problems.c_str());
             }
             ImGui::SameLine();
         }

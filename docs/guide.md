@@ -27,12 +27,16 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
 
 - **Duplicate** makes a second entry for the same binary, with other options (a different `Hash`, a skill level,
   a different network file…). Entries are named after the UCI `id name` when first added and can be renamed.
-- **Check** starts the engine, measures how fast it answers `uci` and `isready`, and has it play one move. The
-  result (✓ or the error) stays next to the engine with its date.
+- **Check** starts the engine, measures how fast it answers `uci` and `isready`, and has it play one move; then it
+  runs fastchess' UCI compliance steps (`id name` and `id author`, positions from a FEN and with moves, `go` with
+  each clock, info lines with an integer score…), up to the first that fails. The result (✓ or the error) stays
+  next to the engine with its date, and *UCI compliance report* lists the steps, with what the engine wrote after
+  a failed one. An engine spoken to in xboard only gets the first part.
 - **Quick test** plays a short match against the engine itself or another one: 10 games at 10+0.1 from 5 positions
   (one with an en passant capture), through the same code as a tournament, shown in its workspace while it plays.
   The result stays next to the engine: its score, its losses on time, crashes and illegal moves, and the share of
-  its clock it used, which tells an engine that plays far too fast or too close to the flag. Only the last quick test
+  its clock it used, which tells an engine that plays far too fast or too close to the flag. Its mate PVs are
+  checked (see *Check the mate PVs*). Only the last quick test
   is kept, in `tests/` in the profile (with the engine logs of its games that ended badly).
 - **Groups**: free labels separated by commas (`pool A`, `CCRL 40/15`…). The list can be filtered by group or
   searched, and a group can be added to a tournament in one click.
@@ -132,7 +136,10 @@ engine, estimated duration, openings, common settings, time odds). The setup of 
 - **Adjudication**: draw (from a move number, for N consecutive moves, under a score), resign (N consecutive moves
   above a score, optionally both engines agreeing), a maximum number of moves, and Syzygy tablebases.
 - **PGN and misc**: event name, extra fields in the move comments (nodes, seldepth, nps, pv), restarting engines
-  that crash, keeping the engine log of every game (it is always kept for the games that end badly).
+  that crash, keeping the engine log of every game (it is always kept for the games that end badly), and *Check the
+  mate PVs*: a mate score's PV must have the right length and end in mate. Every PV is checked for illegal moves,
+  moves after the end of the game and a best move that is not its first move; the moves with a wrong PV are marked
+  in the Games tab and written in the log.
 
 **Templates** save the current setup under a name and load it back later. **Start** creates the tournament and
 plays it; **Add to the queue** keeps it for later (see *Queue*).
@@ -149,7 +156,7 @@ A running or opened tournament has a workspace with a header (name, progress, *P
 | Schedule | Every game pair by cycle or round, with its state; editing (see below) |
 | Broadcast | Live files, the TLCS server and the web page (see below) |
 | Live | The games in progress, as a mosaic of boards or one game in focus with the clocks, the running search of each engine (depth, score, nodes, nps, PV in SAN), the move list and the evaluation curve. Under the board: the 50-move counter (plies since the last capture or pawn move, out of 100), the material difference with the pieces one side has more of, and the pieces left, marked *TB* when the tablebase adjudication can end the game; *Details under the boards* adds them to the mosaic. *Detach* opens a board in its own window |
-| Games | The finished games with their opening (ECO code and name), filterable by result (wins, draws, losses, losses on time, crashes and illegal moves, adjudications), by what the evaluations tell (the engines disagree by N pawns for 3 moves each in a row, an engine's evaluation swings by N pawns from one of its moves to the next, the loser thought it was N pawns better; the game opens at that moment) and by opening (an ECO code or its beginning, a range such as `B20-B99`, or words of the name), with a replay board (← → Home End, or click a move or the curve; the same details under it as in *Live*) and the export of one, all or the filtered games. *Engine log* opens the log of a game that has one (see *Files*) |
+| Games | The finished games with their opening (ECO code and name), filterable by result (wins, draws, losses, losses on time, crashes and illegal moves, adjudications, wrong PVs), by what the evaluations tell (the engines disagree by N pawns for 3 moves each in a row, an engine's evaluation swings by N pawns from one of its moves to the next, the loser thought it was N pawns better; the game opens at that moment) and by opening (an ECO code or its beginning, a range such as `B20-B99`, or words of the name), with a replay board (← → Home End, or click a move or the curve; the same details under it as in *Live*) and the export of one, all or the filtered games. *Engine log* opens the log of a game that has one (see *Files*) |
 | Openings | Results by starting position: its game pairs, White's score, the draws, and how many pairs White won twice, Black won twice (the opening favours a colour) or one engine won twice (it tells the engines apart), with the average length. Sorted by any column, filtered to the unbalanced, the drawn or the decisive ones; *Export as EPD…* writes the positions shown, to keep them or to clean a book. A click shows the position and its games |
 
 **Processor use**: while games are played, the processor time of every engine's processes (the engine behind a

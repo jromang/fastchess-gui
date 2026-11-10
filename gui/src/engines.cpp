@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <sstream>
 
+#include <engine/compliance.hpp>
 #include <engine/uci_engine.hpp>
 
 namespace fcg {
@@ -218,6 +219,48 @@ bool isWinboard(const EngineEntry& entry) {
     return lower(entry.cmd + " " + entry.args).find("wb2uci") != std::string::npos;
 }
 
+namespace {
+
+struct Compliance {
+    bool passed = true;
+    int steps   = 0;  // passed
+    std::string report;
+};
+
+// fastchess' compliance steps on a new process of the engine, up to the first that fails, one line each; then what the
+// engine wrote last.
+Compliance compliance(const fastchess::EngineConfiguration& config) {
+    constexpr std::size_t OUTPUT_LINES = 40;
+    fastchess::engine::UciEngine engine(config, false);
+    Compliance result;
+    auto& report = result.report;
+    for (const auto& [description, action] : fastchess::engine::complianceSteps(engine)) {
+        if (action()) {
+            report += fmt::format("✓ {}\n", description);
+            result.steps++;
+            continue;
+        }
+        result.passed = false;
+        report += fmt::format("✗ {}\n", description);
+        for (const auto standard :
+             {fastchess::engine::process::Standard::OUTPUT, fastchess::engine::process::Standard::ERR}) {
+            const auto lines = standard == fastchess::engine::process::Standard::OUTPUT ? engine.getStdoutLines()
+                                                                                        : engine.getStderrLines();
+            if (lines.empty()) continue;
+            report += standard == fastchess::engine::process::Standard::OUTPUT ? TR("The engine wrote:")
+                                                                               : TR("On its error output:");
+            report += "\n";
+            for (std::size_t i = lines.size() > OUTPUT_LINES ? lines.size() - OUTPUT_LINES : 0; i < lines.size(); ++i)
+                report += "    " + lines[i]->line + "\n";
+        }
+        break;
+    }
+    engine.quit();
+    return result;
+}
+
+}  // namespace
+
 CheckResult checkEngine(const EngineEntry& entry) {
     using namespace std::chrono;
     CheckResult result;
@@ -276,6 +319,14 @@ CheckResult checkEngine(const EngineEntry& entry) {
         engine.quit();
         result.ok      = true;
         result.message = trf("Starts in {} ms · isready {:.1f} ms · first move {}", start_ms, ready_ms, *best);
+
+        if (config.protocol != "xboard") {
+            const auto uci = compliance(config);
+            result.report  = uci.report;
+            result.ok      = uci.passed;
+            result.message = uci.passed ? result.message + trf(" · UCI: {} steps passed", uci.steps)
+                                        : trf("UCI compliance: step {} failed, see the report", uci.steps + 1);
+        }
     } catch (const std::exception& e) {
         result.message = e.what();
     }

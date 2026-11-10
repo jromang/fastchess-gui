@@ -29,6 +29,7 @@ struct MoveData {
           legal(_legal) {}
 
     std::vector<std::string> additional_lines;
+    std::vector<std::string> pv_warnings;  // fastchess-gui: what the PV checks found for this move, once each
     std::string move;
     std::string pv = "";
 

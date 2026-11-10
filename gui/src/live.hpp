@@ -86,6 +86,8 @@ struct GameRecord {
     uint16_t opening    = 0;  // index into GuiObserver::openings(); 0: none (Chess960, or an older PGN)
     EvalFacts facts;          // what its evaluations tell, for the "interesting games" filters
     uint16_t plies       = 0;
+    uint16_t pv_warnings = 0;   // what fastchess' PV checks found
+    int16_t pv_ply       = -1;  // the first move they were about
     uint32_t duration_ms = 0;
     PgnSpan fastchess_span;
     PgnSpan chessbase_span;
