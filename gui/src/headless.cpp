@@ -155,8 +155,23 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
         broadcast_thread = std::thread([&] {
             std::vector<GameRecord> games;
             std::vector<fastchess::Stats> stats;
+            // lichess: its link once on air, and every new error.
+            std::string lichess_url, lichess_error;
+            const auto lichessStatus = [&] {
+                if (!settings.lichess) return;
+                const auto s = broadcaster.lichess();
+                if (!s.url.empty() && s.url != lichess_url) {
+                    lichess_url = s.url;
+                    std::printf("lichess: %s\n", s.url.c_str());
+                }
+                if (s.error != lichess_error) {
+                    lichess_error = s.error;
+                    if (!s.error.empty()) std::fprintf(stderr, "warning: %s\n", s.error.c_str());
+                }
+            };
             while (playing) {
                 broadcaster.update(*state, *observer, std::nullopt, -1);
+                lichessStatus();
                 observer->drain(games, stats);  // the window's lists, not needed here
                 games.clear();
                 stats.clear();
@@ -169,6 +184,7 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
             broadcaster.stop();
+            lichessStatus();
         });
     }
 
