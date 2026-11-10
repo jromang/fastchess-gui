@@ -238,6 +238,10 @@ class App {
     std::vector<SlotView> slot_views_;
     std::set<int> detached_;  // slots shown in their own window
     bool live_mosaic_ = true;
+    // The running tournament's tablebase adjudication limit (see tablebasePieces), read once per tournament.
+    int tbPieces();
+    const tour::TournamentState* tb_tournament_ = nullptr;
+    int tb_pieces_                              = 0;
 
     // Games view.
     int games_filter_     = 0;

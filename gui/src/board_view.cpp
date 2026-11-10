@@ -14,6 +14,8 @@
 #include <nanosvgrast.h>
 
 #include "gl.hpp"
+#include "i18n.hpp"
+#include "ui.hpp"
 
 namespace fcg::assets {
 extern const std::array<std::string_view, 12> piece_svgs;
@@ -184,6 +186,85 @@ void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, c
     }
 
     ImGui::Dummy(ImVec2(size + bar_w + gap, size));
+}
+
+BoardInfo boardInfo(const chess::Board& board) {
+    using chess::Color;
+    using chess::PieceType;
+    static constexpr PieceType types[5] = {PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP, PieceType::ROOK,
+                                           PieceType::QUEEN};
+    static constexpr int values[5]      = {1, 3, 3, 5, 9};
+
+    BoardInfo info;
+    info.halfmoves = board.halfMoveClock();
+    info.pieces    = board.occ().count();
+    for (int i = 0; i < 5; ++i) {
+        info.surplus[i] = board.pieces(types[i], Color::WHITE).count() - board.pieces(types[i], Color::BLACK).count();
+        info.balance += info.surplus[i] * values[i];
+    }
+    return info;
+}
+
+void drawBoardInfo(const PieceAtlas& atlas, const chess::Board& board, float width, int tb_pieces) {
+    const auto info    = boardInfo(board);
+    const bool labels  = width >= ImGui::GetFontSize() * 22.0f;
+    const float icon   = ImGui::GetTextLineHeight();
+    const float spread = ImGui::GetFontSize() * (labels ? 1.2f : 0.6f);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, ImGui::GetStyle().ItemSpacing.y));
+
+    // 50-move counter, in the warning colour for its last 20 plies.
+    const auto fifty = labels ? trf("50 moves {}/100", info.halfmoves) : fmt::format("{}/100", info.halfmoves);
+    ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(info.halfmoves >= 80 ? ui::WARN : ui::MUTED), "%s",
+                       fifty.c_str());
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s", TR("Plies since the last capture or pawn move; 100 is a draw."));
+
+    // Material: the pieces one side has more of, then the balance.
+    ImGui::SameLine(0, spread);
+    ImGui::BeginGroup();
+    static constexpr chess::PieceType types[5] = {chess::PieceType::QUEEN, chess::PieceType::ROOK,
+                                                  chess::PieceType::BISHOP, chess::PieceType::KNIGHT,
+                                                  chess::PieceType::PAWN};
+    // Pieces of a kind overlap a little, as on a score sheet.
+    const ImVec2 start = ImGui::GetCursorScreenPos();
+    float x            = start.x;
+    for (int i = 0; i < 5 && atlas.ready(); ++i) {
+        const int n = info.surplus[4 - i];
+        if (n == 0) continue;
+        ImVec2 uv0, uv1;
+        atlas.uv(chess::Piece(types[i], n > 0 ? chess::Color::WHITE : chess::Color::BLACK), uv0, uv1);
+        for (int k = 0; k < std::min(std::abs(n), 8); ++k) {
+            ImGui::GetWindowDrawList()->AddImage(atlas.texture(), ImVec2(x, start.y), ImVec2(x + icon, start.y + icon),
+                                                 uv0, uv1);
+            x += icon * 0.6f;
+        }
+        x += icon * 0.5f;
+    }
+    if (x > start.x) {
+        ImGui::Dummy(ImVec2(x - start.x, icon));
+        ImGui::SameLine();
+    }
+    ImGui::TextDisabled("%s", info.balance == 0  ? "="
+                              : info.balance > 0 ? fmt::format("+{}", info.balance).c_str()
+                                                 : fmt::format("−{}", -info.balance).c_str());
+    ImGui::EndGroup();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Material difference, in pawns, from White's side."));
+
+    // Pieces left, and whether the tablebases can end the game.
+    ImGui::SameLine(0, spread);
+    ImGui::BeginGroup();
+    ImGui::TextDisabled("%s", labels ? trf("{} pieces", info.pieces).c_str() : std::to_string(info.pieces).c_str());
+    const bool tb = tb_pieces > 0 && info.pieces <= tb_pieces;
+    if (tb) {
+        ImGui::SameLine(0, ImGui::GetFontSize() * 0.3f);
+        ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ui::ACCENT), "TB");
+    }
+    ImGui::EndGroup();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", tb ? TR("Few enough pieces for the tablebase adjudication.")
+                                   : TR("Pieces on the board, kings included."));
+    }
+    ImGui::PopStyleVar();
 }
 
 }  // namespace fcg

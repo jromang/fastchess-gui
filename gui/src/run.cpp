@@ -485,6 +485,33 @@ int configThreads(const fastchess::EngineConfiguration& config) {
     return 1;
 }
 
+int tablebasePieces(const fastchess::config::TbAdjudication& tb) {
+    if (!tb.enabled) return 0;
+    if (tb.max_pieces > 0) return tb.max_pieces;
+
+    // Syzygy files are named after their pieces, KQvKR.rtbw: as many pieces as letters besides the "v".
+#ifdef _WIN32
+    constexpr char separator = ';';
+#else
+    constexpr char separator = ':';
+#endif
+    int largest       = 0;
+    std::size_t begin = 0;
+    while (begin <= tb.syzygy_dirs.size()) {
+        auto end = tb.syzygy_dirs.find(separator, begin);
+        if (end == std::string::npos) end = tb.syzygy_dirs.size();
+        std::error_code ec;
+        for (fs::directory_iterator it(tb.syzygy_dirs.substr(begin, end - begin), ec), last; !ec && it != last;
+             it.increment(ec)) {
+            if (it->path().extension() != ".rtbw") continue;
+            const auto stem = it->path().stem().string();
+            largest         = std::max(largest, static_cast<int>(stem.size()) - 1);
+        }
+        begin = end + 1;
+    }
+    return largest;
+}
+
 MatchSetup quickTestSetup(const EngineEntry& engine, const std::string& opponent, const fs::path& book,
                           std::vector<EngineEntry>& engines) {
     // Five openings, one with an en passant capture available: every game sets a position with moves.

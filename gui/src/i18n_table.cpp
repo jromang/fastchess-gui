@@ -33,6 +33,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
          "plays an illegal move or uses its clock badly.",
          "10 parties en 10+0.1 depuis 5 positions, pour voir avant un long tournoi s'il perd au temps, plante, joue un "
          "coup illégal ou gère mal sa pendule."},
+        {"50 moves {}/100", "50 coups {}/100"},
         {"A (tested)", "A (testé)"},
         {"A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves "
          "weighing less than a tenth of the best one; the positions reached are the openings.",
@@ -182,6 +183,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Depth (plies)", "Profondeur (demi-coups)"},
         {"Description", "Description"},
         {"Detach", "Détacher"},
+        {"Details under the boards", "Détails sous les échiquiers"},
         {"Directories separated by ':' (WDL files are enough).",
          "Dossiers séparés par ':' (les fichiers WDL suffisent)."},
         {"Directories separated by ';' (WDL files are enough).",
@@ -268,6 +270,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Export the games…", "Exporter les parties…"},
         {"Extra fields in the comments:", "Champs en plus dans les commentaires :"},
         {"Failed: {}", "Échec : {}"},
+        {"Few enough pieces for the tablebase adjudication.",
+         "Assez peu de pièces pour l'arbitrage par les tables Syzygy."},
         {"File", "Fichier"},
         {"File not found: {}", "Fichier introuvable : {}"},
         {"Files", "Fichiers"},
@@ -385,6 +389,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
          "is the seeding.",
          "Des matchs en tableau, le vainqueur se qualifie ; des paires de départage en cas d'égalité. L'ordre de la "
          "liste fait le classement de départ."},
+        {"Material difference, in pawns, from White's side.",
+         "Différence de matériel, en pions, du point de vue des Blancs."},
         {"Max games", "Parties max"},
         {"Max pieces", "Pièces max"},
         {"Max score (cp)", "Score max (cp)"},
@@ -475,6 +481,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Paused", "En pause"},
         {"Paused (1 game finishing)", "En pause (1 partie se termine)"},
         {"Paused ({} games finishing)", "En pause ({} parties se terminent)"},
+        {"Pieces on the board, kings included.", "Pièces sur l'échiquier, rois compris."},
         {"Pins every game to its own processor, shared by its two engines since they never think at the same "
          "time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to a node "
          "count.",
@@ -488,6 +495,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Plays until you stop the match.", "Joue jusqu'à ce que tu arrêtes le match."},
         {"Plies", "Demi-coups"},
         {"Plies (PGN)", "Demi-coups (PGN)"},
+        {"Plies since the last capture or pawn move; 100 is a draw.",
+         "Demi-coups depuis la dernière prise ou le dernier coup de pion ; à 100, la partie est nulle."},
         {"Points", "Points"},
         {"Polyglot book: its lines to {} plies, as positions",
          "Livre Polyglot : ses lignes jusqu'à {} demi-coups, en positions"},
@@ -614,6 +623,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Templates", "Modèles"},
         {"Tested engines", "Moteurs testés"},
         {"Testing…", "Test en cours…"},
+        {"The 50-move counter, the material and the pieces left, under every board of the mosaic.",
+         "Le compteur des 50 coups, le matériel et les pièces restantes, sous chaque échiquier de la mosaïque."},
         {"The change was undone.", "La modification a été annulée."},
         {"The charts appear with the first results.", "Les graphiques apparaissent avec les premiers résultats."},
         {"The depth must be positive.", "La profondeur doit être positive."},
@@ -810,6 +821,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"{} openings written to {}", "{} ouvertures écrites dans {}"},
         {"{} options read.", "{} options lues."},
         {"{} pairings × 2 games × {} cycles", "{} appariements × 2 parties × {} cycles"},
+        {"{} pieces", "{} pièces"},
         {"{} played games are played again", "{} parties jouées sont rejouées"},
         {"{} played games stop counting", "{} parties jouées ne comptent plus"},
         {"{} played · {} running · {} to play", "{} jouées · {} en cours · {} à jouer"},

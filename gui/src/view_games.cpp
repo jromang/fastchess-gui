@@ -436,6 +436,7 @@ void App::drawGames() {
 
     ImGui::BeginGroup();
     drawBoard(atlas_, board, board_size, decor);
+    drawBoardInfo(atlas_, board, board_size, tbPieces());
     if (ImGui::Button("|<")) replay_ply_ = 0;
     ImGui::SameLine();
     if (ImGui::Button("<")) replay_ply_ = std::max(0, replay_ply_ - 1);
@@ -448,8 +449,10 @@ void App::drawGames() {
     ImGui::EndGroup();
 
     ImGui::SameLine();
-    ImGui::BeginChild("##replay_moves", ImVec2(0, board_size + ImGui::GetFrameHeightWithSpacing()),
-                      ImGuiChildFlags_Borders);
+    ImGui::BeginChild(
+        "##replay_moves",
+        ImVec2(0, board_size + ImGui::GetTextLineHeightWithSpacing() + ImGui::GetFrameHeightWithSpacing()),
+        ImGuiChildFlags_Borders);
     {
         chess::Board start;
         start.setFen(game.start_fen);

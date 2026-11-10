@@ -85,6 +85,10 @@ void configureFastchess(const tour::TournamentSpec& spec);
 // The Threads option of an engine's configuration, 1 when it has none.
 [[nodiscard]] int configThreads(const fastchess::EngineConfiguration& config);
 
+// The most pieces a position can have for the tablebase adjudication to end the game: its own limit, or the
+// largest Syzygy tables found in its directories; 0 when it is off.
+[[nodiscard]] int tablebasePieces(const fastchess::config::TbAdjudication& tb);
+
 // A quick test of `engine`: a short match against `opponent` (the engine itself when empty, under another name) at
 // 10+0.1, from a few positions written to `book`, every game played twice. `engines` receives the library to start
 // it with (a copy of the engine for a match against itself).

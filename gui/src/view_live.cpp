@@ -155,6 +155,15 @@ void App::refreshSlot(int slot) {
     }
 }
 
+int App::tbPieces() {
+    const auto* t = run_.tournament();
+    if (t != tb_tournament_) {
+        tb_tournament_ = t;
+        tb_pieces_     = t ? tablebasePieces(t->spec().conditions.tb_adjudication) : 0;
+    }
+    return tb_pieces_;
+}
+
 void App::drawLive() {
     if (!ui::beginPanel(TR("Live###live"))) {
         ui::endPanel();
@@ -179,6 +188,11 @@ void App::drawLive() {
         ImGui::SameLine();
         if (ImGui::RadioButton(TR("One game"), !live_mosaic_)) live_mosaic_ = false;
         ImGui::SameLine(0, px(24));
+        if (mosaic) {
+            if (ImGui::Checkbox(TR("Details under the boards"), &setup_.tile_info)) saveSetupSoon();
+            ui::help(TR("The 50-move counter, the material and the pieces left, under every board of the mosaic."));
+            ImGui::SameLine(0, px(24));
+        }
     }
 
     if (!mosaic) {
@@ -219,8 +233,9 @@ void App::drawMosaic(float width) {
     const int cols   = std::max(1, static_cast<int>((width + gap) / (px(170) + gap)));
     const float card = (width - gap * (cols - 1) - ImGui::GetStyle().ScrollbarSize) / cols;
     const float line = ImGui::GetTextLineHeightWithSpacing();
-    // Board, two name rows and the evaluation bar, inside the card's padding.
-    const float h = (card - 2 * px(6)) + 2 * line + px(4) + 2 * ImGui::GetStyle().ItemSpacing.y + 2 * px(5);
+    // Board, two name rows, the details and the evaluation bar, inside the card's padding.
+    const float info = setup_.tile_info ? line : 0.0f;
+    const float h    = (card - 2 * px(6)) + 2 * line + info + px(4) + 2 * ImGui::GetStyle().ItemSpacing.y + 2 * px(5);
 
     const auto now = Clock::now();
     for (int i = 0; i < slots; ++i) {
@@ -271,6 +286,13 @@ void App::drawMosaic(float width) {
             ImGui::Dummy(ImVec2(inner, inner));
         }
         name_row(bottom);
+        if (setup_.tile_info) {
+            if (st.has_game) {
+                drawBoardInfo(atlas_, v.board, inner, tbPieces());
+            } else {
+                ImGui::Dummy(ImVec2(inner, ImGui::GetTextLineHeight()));
+            }
+        }
 
         // A thin evaluation bar and the move number.
         {
@@ -326,7 +348,8 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
     }
 
     const ImVec2 avail     = ImGui::GetContentRegionAvail();
-    const float board_size = std::max(160.0f, std::min(avail.y - 4.0f, avail.x * 0.52f));
+    const float info_h     = ImGui::GetTextLineHeightWithSpacing();
+    const float board_size = std::max(160.0f, std::min(avail.y - 4.0f - info_h, avail.x * 0.52f));
 
     ImGui::BeginGroup();
     BoardDecor decor;
@@ -334,10 +357,12 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
     decor.eval_white = evalBar(st);
     if (!st.moves.empty()) decor.last_move = st.moves.back().move;
     drawBoard(atlas_, view.board, board_size, decor);
+    drawBoardInfo(atlas_, view.board, board_size, tbPieces());
     ImGui::EndGroup();
 
     ImGui::SameLine();
-    ImGui::BeginChild("##live_side", ImVec2(0, board_size), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
+    ImGui::BeginChild("##live_side", ImVec2(0, board_size + info_h), ImGuiChildFlags_None,
+                      ImGuiWindowFlags_NoScrollbar);
 
     // Players, top of the board first.
     const auto now     = Clock::now();

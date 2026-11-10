@@ -34,6 +34,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
          "plays an illegal move or uses its clock badly.",
          "10 Partien mit 10+0.1 aus 5 Stellungen, um vor einem langen Turnier zu sehen, ob sie die Zeit überschreitet, "
          "abstürzt, einen illegalen Zug spielt oder ihre Uhr schlecht nutzt."},
+        {"50 moves {}/100", "50 Züge {}/100"},
         {"A (tested)", "A (getestet)"},
         {"A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves "
          "weighing less than a tenth of the best one; the positions reached are the openings.",
@@ -183,6 +184,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Depth (plies)", "Tiefe (Halbzüge)"},
         {"Description", "Beschreibung"},
         {"Detach", "Abtrennen"},
+        {"Details under the boards", "Details unter den Brettern"},
         {"Directories separated by ':' (WDL files are enough).",
          "Verzeichnisse, getrennt durch ':' (WDL-Dateien genügen)."},
         {"Directories separated by ';' (WDL files are enough).",
@@ -268,6 +270,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Export the games…", "Partien exportieren…"},
         {"Extra fields in the comments:", "Zusätzliche Felder in den Kommentaren:"},
         {"Failed: {}", "Fehlgeschlagen: {}"},
+        {"Few enough pieces for the tablebase adjudication.", "Wenig genug Steine für die Abschätzung per Tablebases."},
         {"File", "Datei"},
         {"File not found: {}", "Datei nicht gefunden: {}"},
         {"Files", "Dateien"},
@@ -385,6 +388,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
          "is the seeding.",
          "Matches in einem Turnierbaum, der Sieger kommt weiter; Stichkampf-Partiepaare bei Gleichstand. Die "
          "Reihenfolge der Liste ist die Setzliste."},
+        {"Material difference, in pawns, from White's side.",
+         "Materialdifferenz in Bauerneinheiten, aus Sicht von Weiß."},
         {"Max games", "Max. Partien"},
         {"Max pieces", "Max. Steine"},
         {"Max score (cp)", "Max. Bewertung (cp)"},
@@ -474,6 +479,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Paused", "Pausiert"},
         {"Paused (1 game finishing)", "Pausiert (1 Partie läuft aus)"},
         {"Paused ({} games finishing)", "Pausiert ({} Partien laufen aus)"},
+        {"Pieces on the board, kings included.", "Steine auf dem Brett, Könige eingeschlossen."},
         {"Pins every game to its own processor, shared by its two engines since they never think at the same time: 2 "
          "games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to a node count.",
          "Bindet jede Partie an einen eigenen Prozessor, geteilt von ihren zwei Engines, da sie nie gleichzeitig "
@@ -486,6 +492,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Plays until you stop the match.", "Spielt, bis du das Match stoppst."},
         {"Plies", "Halbzüge"},
         {"Plies (PGN)", "Halbzüge (PGN)"},
+        {"Plies since the last capture or pawn move; 100 is a draw.",
+         "Halbzüge seit dem letzten Schlagen oder Bauernzug; bei 100 ist die Partie remis."},
         {"Points", "Punkte"},
         {"Polyglot book: its lines to {} plies, as positions",
          "Polyglot-Buch: seine Linien bis {} Halbzüge, als Stellungen"},
@@ -612,6 +620,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Templates", "Vorlagen"},
         {"Tested engines", "Getestete Engines"},
         {"Testing…", "Teste…"},
+        {"The 50-move counter, the material and the pieces left, under every board of the mosaic.",
+         "Der 50-Züge-Zähler, das Material und die verbleibenden Steine unter jedem Brett der Mosaikansicht."},
         {"The change was undone.", "Die Änderung wurde rückgängig gemacht."},
         {"The charts appear with the first results.", "Die Diagramme erscheinen mit den ersten Ergebnissen."},
         {"The depth must be positive.", "Die Tiefe muss positiv sein."},
@@ -803,6 +813,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"{} openings written to {}", "{} Eröffnungen nach {} geschrieben"},
         {"{} options read.", "{} Optionen gelesen."},
         {"{} pairings × 2 games × {} cycles", "{} Paarungen × 2 Partien × {} Zyklen"},
+        {"{} pieces", "{} Steine"},
         {"{} played games are played again", "{} gespielte Partien werden neu gespielt"},
         {"{} played games stop counting", "{} gespielte Partien zählen nicht mehr"},
         {"{} played · {} running · {} to play", "{} gespielt · {} laufen · {} zu spielen"},

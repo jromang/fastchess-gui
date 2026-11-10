@@ -206,6 +206,7 @@ struct MatchSetup {
 
     std::string language = "auto";   // "auto" (system), "en" or "fr"
     std::string theme    = "light";  // "light", "dark" or "system"
+    bool tile_info       = false;    // live mosaic: the 50-move counter, material and pieces under every board
 
     // Broadcast.
     bool broadcast_files = false;  // live.pgn, standings.html, tournament.json
@@ -226,7 +227,8 @@ struct MatchSetup {
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,        \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,         \
         pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, recover, log_every_game, notify, language, \
-        theme, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port, broadcast_follow
+        theme, tile_info, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port,         \
+        broadcast_follow
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
 void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) {

@@ -14,6 +14,7 @@
 #include <matchmaking/elo/elo_pentanomial.hpp>
 #include <matchmaking/sprt/sprt.hpp>
 
+#include "board_view.hpp"
 #include "cpu_time.hpp"
 #include "engine_import.hpp"
 #include "engines.hpp"
@@ -296,6 +297,47 @@ TEST_CASE("fastchess comments parse back") {
     ReplayMove book;
     parseFastchessComment("book", book);
     CHECK(book.book);
+}
+
+TEST_CASE("board details: the 50-move counter, the material difference and the pieces left") {
+    chess::Board board;
+    auto info = boardInfo(board);
+    CHECK(info.halfmoves == 0);
+    CHECK(info.pieces == 32);
+    CHECK(info.balance == 0);
+
+    // Three pawns and a rook against a queen, a knight each.
+    board.setFen("4k3/1q6/8/8/3n4/8/PPP5/1R2K1N1 w - - 37 60");
+    info = boardInfo(board);
+    CHECK(info.halfmoves == 37);
+    CHECK(info.pieces == 9);
+    CHECK(info.surplus == std::array<int, 5>{3, 0, 0, 1, -1});
+    CHECK(info.balance == 3 + 5 - 9);
+}
+
+TEST_CASE("tablebase adjudication: its own limit, or the largest tables in its folders") {
+    namespace fs   = std::filesystem;
+    const auto dir = fs::temp_directory_path() / "fcg-gui-syzygy";
+    fs::remove_all(dir);
+    fs::create_directories(dir / "a");
+    fs::create_directories(dir / "b");
+    for (const auto* f : {"a/KQvK.rtbw", "a/KQvK.rtbz", "b/KRPvKR.rtbw", "b/KRPPvKRP.rtbz", "b/readme.txt"}) {
+        std::ofstream(dir / f) << "x";
+    }
+    fastchess::config::TbAdjudication tb;
+    tb.syzygy_dirs = (dir / "a").string();
+    CHECK(tablebasePieces(tb) == 0);  // off
+    tb.enabled = true;
+    CHECK(tablebasePieces(tb) == 3);
+#ifdef _WIN32
+    tb.syzygy_dirs += ";" + (dir / "b").string();
+#else
+    tb.syzygy_dirs += ":" + (dir / "b").string();
+#endif
+    CHECK(tablebasePieces(tb) == 5);  // the WDL tables decide, not the larger DTZ one
+    tb.max_pieces = 4;
+    CHECK(tablebasePieces(tb) == 4);
+    fs::remove_all(dir);
 }
 
 TEST_CASE("a Chess960 game replays, castling included") {
