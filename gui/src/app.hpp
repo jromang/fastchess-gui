@@ -249,6 +249,7 @@ class App {
     void updateBroadcast();
     void drawBroadcast();
     void drawLichess(bool& changed);
+    void lichessTokenField();    // in the Broadcast tab and in Settings
     std::string lichess_token_;  // from the profile's settings
 
     // setup sections

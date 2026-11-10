@@ -138,6 +138,24 @@ void App::drawBroadcast() {
     if (changed) saveSetupSoon();
 }
 
+void App::lichessTokenField() {
+    ImGui::TextUnformatted(TR("API token (with the study:write scope)"));
+    char buffer[512];
+    const auto n = std::min(lichess_token_.size(), sizeof(buffer) - 1);
+    std::copy_n(lichess_token_.data(), n, buffer);
+    buffer[n] = 0;
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    if (ImGui::InputText("##lichess_token", buffer, sizeof(buffer), ImGuiInputTextFlags_Password)) {
+        lichess_token_ = buffer;
+        storage_.setLichessToken(lichess_token_);
+    }
+    if (ImGui::SmallButton(TR("Create a token on lichess…"))) {
+        SDL_OpenURL("https://lichess.org/account/oauth/token/create?scopes[]=study:write&description=fastchess-gui");
+    }
+    ImGui::SameLine();
+    ImGui::TextDisabled("%s", TR("Kept in the profile only, never in a tournament's files or the log."));
+}
+
 void App::drawLichess(bool& changed) {
     ui::beginCard("bc_lichess");
     ui::pageTitle("lichess");
@@ -159,15 +177,7 @@ void App::drawLichess(bool& changed) {
         return true;
     };
 
-    ImGui::TextUnformatted(TR("API token (with the study:write scope)"));
-    if (text("##lichess_token", lichess_token_, ImGuiInputTextFlags_Password)) {
-        storage_.setLichessToken(lichess_token_);
-    }
-    if (ImGui::SmallButton(TR("Create a token on lichess…"))) {
-        SDL_OpenURL("https://lichess.org/account/oauth/token/create?scopes[]=study:write&description=fastchess-gui");
-    }
-    ImGui::SameLine();
-    ImGui::TextDisabled("%s", TR("Kept in the profile only, never in a tournament's files or the log."));
+    lichessTokenField();
 
     ImGui::TextUnformatted(TR("Round (its URL or id; empty: a new broadcast named after the tournament)"));
     changed |= text("##lichess_round", setup_.lichess_round, 0);

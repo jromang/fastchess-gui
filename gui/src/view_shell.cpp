@@ -666,6 +666,16 @@ void App::drawSettings() {
                                 "already played are not moved: a tournament is a folder, move it yourself."));
     ImGui::PopStyleColor();
 
+    // lichess, for the broadcasts of the Broadcast tab.
+    ImGui::Spacing();
+    ImGui::Separator();
+    ui::label("lichess", label);
+    ImGui::BeginGroup();
+    ImGui::PushItemWidth(px(420));
+    lichessTokenField();
+    ImGui::PopItemWidth();
+    ImGui::EndGroup();
+
     if (changed) saveSetupSoon();
 }
 
