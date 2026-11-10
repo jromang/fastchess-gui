@@ -116,7 +116,9 @@ TEST_CASE("runner: a round robin plays every encounter, both colours, once") {
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-rr";
     fs::remove_all(dir);
-    auto state = TournamentState::create(dir, spec(Format::RoundRobin, 4, 2));
+    auto s                = spec(Format::RoundRobin, 4, 2);
+    s.participants[0].elo = 3500;
+    auto state            = TournamentState::create(dir, s);
 
     CHECK(play(*state).empty());
     CHECK(state->finished());
@@ -136,6 +138,21 @@ TEST_CASE("runner: a round robin plays every encounter, both colours, once") {
 
     CHECK(countGames(dir / "games.pgn") == results.size());
     CHECK(countGames(dir / "games-chessbase.pgn") == results.size());
+
+    // The rated engine's Elo in both files, after the Result tag; nothing for the others. 3 opponents x 4 games.
+    for (const auto* name : {"games.pgn", "games-chessbase.pgn"}) {
+        std::ifstream in(dir / name, std::ios::binary);
+        const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+        std::size_t tags = 0;
+        for (auto pos = text.find("Elo \""); pos != std::string::npos; pos = text.find("Elo \"", pos + 1)) ++tags;
+        CHECK(tags == 12);
+        CHECK(text.find("\"]\n[WhiteElo \"3500\"]\n") != std::string::npos);
+        const auto white = text.find("[White \"random0\"]");
+        REQUIRE(white != std::string::npos);
+        CHECK(text.find("[WhiteElo \"3500\"]", white) > text.find("[Result ", white));
+    }
+    state.reset();
+    CHECK(TournamentState::open(dir)->spec().participants[0].elo == 3500);
 }
 
 TEST_CASE("runner: a match stopped abruptly resumes to exactly its number of games") {

@@ -23,6 +23,7 @@ struct Edit {
     Kind kind = Kind::AddParticipant;
 
     fastchess::EngineConfiguration engine;        // add, replace: the new engine (its name is made unique if needed)
+    int elo          = 0;                         // add, replace: the new engine's reference rating, 0 = none
     bool catch_up    = true;                      // add: also play the cycles already started
     int participant  = -1;                        // replace, withdraw: the participant's id
     bool void_played = false;                     // withdraw: its played games stop counting

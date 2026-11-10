@@ -36,7 +36,8 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   is kept, in `tests/` in the profile (with the engine logs of its games that ended badly).
 - **Groups**: free labels separated by commas (`pool A`, `CCRL 40/15`…). The list can be filtered by group or
   searched, and a group can be added to a tournament in one click.
-- **Reference Elo**: the engine's rating on a list you trust. A tournament or the rating list can be anchored on it.
+- **Reference Elo**: the engine's rating on a list you trust. A tournament or the rating list can be anchored on it,
+  and the games of a tournament carry it in their `WhiteElo` and `BlackElo` tags (copied when the engine joins).
 - *Restart the engine for every game* starts a new process for each game instead of reusing it.
 - **Moved or rebuilt programs**: the library remembers each program (size, date, CRC32). A program that is no
   longer there is marked **!** with *Locate…*, and a tournament does not start with it. A program that changed

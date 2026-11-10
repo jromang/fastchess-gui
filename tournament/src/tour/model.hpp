@@ -51,6 +51,7 @@ struct Participant {
     std::optional<int> replaced_by;
 
     FileFingerprint program;  // engine.cmd when the participant joined, to warn when it was rebuilt or moved
+    int elo = 0;              // reference rating from the engine list, 0 = none; written in the PGN headers
 };
 
 struct TournamentSpec {

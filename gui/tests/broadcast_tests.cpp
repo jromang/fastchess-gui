@@ -32,6 +32,7 @@ BroadcastSnapshot sample() {
     g.uci           = {"e2e4", "e7e5", "g1f3"};
     g.fen           = "rnbqkbnr/pppp1ppp/8/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2";
     g.white_to_move = false;
+    g.white_elo     = 3500;
     g.clocks        = true;
     g.white_ms      = 59000;
     g.black_ms      = 58000;
@@ -70,6 +71,9 @@ TEST_CASE("broadcast: JSON and live PGN") {
 
     const auto pgn = livePgn(s);
     CHECK(pgn.find("[White \"Alpha\"]") != std::string::npos);
+    CHECK(pgn.find("[WhiteElo \"3500\"]") != std::string::npos);
+    CHECK(pgn.find("[BlackElo") == std::string::npos);  // an engine without a rating gets no tag
+    CHECK(json["games"][0]["white_elo"] == 3500);
     CHECK(pgn.find("1. e4 e5 2. Nf3 *") != std::string::npos);
     CHECK(pgn.find("[FEN") == std::string::npos);  // the initial position needs none
 }

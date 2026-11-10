@@ -104,14 +104,15 @@ function board(fen){let html='',r=0,f=0;for(const ch of fen.split(' ')[0]){if(ch
  const white=ch===ch.toUpperCase();html+=`<div class="sq ${(r+f)%2?'d':'l'} ${white?'w':'b'}">${P[ch.toLowerCase()]}&#xFE0E;</div>`;f++}return html}
 function evalBar(g){const s=g.white_to_move?g.white_search:g.black_search;if(!s||!s.depth)return 50;
  let cp=g.white_to_move?s.score_cp:-s.score_cp;cp=Math.max(-1000,Math.min(1000,cp));return 50+50*(2/(1+Math.exp(-cp/250))-1)}
+function player(name,elo){return esc(name)+(elo?` <span class="muted">${elo}</span>`:'')}
 function half(x){return Number.isInteger(x)?String(x):Math.floor(x)+'½'}
 async function refresh(){try{const s=await (await fetch('state.json',{cache:'no-store'})).json();
  document.getElementById('name').textContent=s.name||'fastchess-gui';document.title=s.name||'fastchess-gui';
  document.getElementById('progress').textContent=`${s.played}${s.total?' / '+s.total:''} games${s.finished?' · finished':''}`;
  document.getElementById('games').innerHTML=s.games.map(g=>`<div class="card">
-  <div class="row"><b class="${!g.white_to_move&&g.active?'tomove':''}">${esc(g.black)}</b><span class="muted">${g.clocks?clock(g.black_ms):''}</span></div>
+  <div class="row"><b class="${!g.white_to_move&&g.active?'tomove':''}">${player(g.black,g.black_elo)}</b><span class="muted">${g.clocks?clock(g.black_ms):''}</span></div>
   <div class="board">${board(g.fen)}</div>
-  <div class="row"><b class="${g.white_to_move&&g.active?'tomove':''}">${esc(g.white)}</b><span class="muted">${g.clocks?clock(g.white_ms):''}</span></div>
+  <div class="row"><b class="${g.white_to_move&&g.active?'tomove':''}">${player(g.white,g.white_elo)}</b><span class="muted">${g.clocks?clock(g.white_ms):''}</span></div>
   <div class="bar"><div style="width:${evalBar(g)}%"></div></div>
   <div class="row muted"><span>#${g.number} · ${Math.ceil(g.moves.length/2)} moves</span><span>${g.active?'':esc(g.result)}</span></div></div>`).join('')||'<div class="muted">No game in progress.</div>';
  const rows=s.standings;let t='<tr><th>#</th><th class="n">Engine</th><th>Games</th><th>Points</th><th>Elo</th><th>±</th><th>+</th><th>=</th><th>−</th>'+rows.map((_,i)=>`<th>${i+1}</th>`).join('')+'</tr>';

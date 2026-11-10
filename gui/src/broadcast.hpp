@@ -26,6 +26,8 @@ struct LiveGame {
     uint64_t number = 0;  // game number in the tournament
     std::string white;
     std::string black;
+    int white_elo = 0;  // reference ratings, 0 = none
+    int black_elo = 0;
     std::string start_fen;
     std::vector<std::string> san;  // moves from start_fen
     std::vector<std::string> uci;

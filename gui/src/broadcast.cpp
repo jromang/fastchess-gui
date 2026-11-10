@@ -42,12 +42,20 @@ std::string snapshotJson(const BroadcastSnapshot& s) {
 
     auto& games = j["games"] = nlohmann::json::array();
     for (const auto& g : s.games) {
-        nlohmann::json game = {{"slot", g.slot},         {"number", g.number},
-                               {"white", g.white},       {"black", g.black},
-                               {"fen", g.fen},           {"start_fen", g.start_fen},
-                               {"moves", g.san},         {"white_to_move", g.white_to_move},
-                               {"clocks", g.clocks},     {"white_ms", g.white_ms},
-                               {"black_ms", g.black_ms}, {"active", g.active},
+        nlohmann::json game = {{"slot", g.slot},
+                               {"number", g.number},
+                               {"white", g.white},
+                               {"black", g.black},
+                               {"white_elo", g.white_elo},
+                               {"black_elo", g.black_elo},
+                               {"fen", g.fen},
+                               {"start_fen", g.start_fen},
+                               {"moves", g.san},
+                               {"white_to_move", g.white_to_move},
+                               {"clocks", g.clocks},
+                               {"white_ms", g.white_ms},
+                               {"black_ms", g.black_ms},
+                               {"active", g.active},
                                {"result", g.result}};
         for (int side = 0; side < 2; ++side) {
             const auto& sr                                    = g.search[side];
@@ -88,6 +96,8 @@ std::string livePgn(const BroadcastSnapshot& s) {
     for (const auto& g : s.games) {
         out += fmt::format("[Event \"{}\"]\n[Round \"{}\"]\n[White \"{}\"]\n[Black \"{}\"]\n[Result \"{}\"]\n", s.name,
                            g.number, g.white, g.black, g.active ? "*" : g.result);
+        if (g.white_elo > 0) out += fmt::format("[WhiteElo \"{}\"]\n", g.white_elo);
+        if (g.black_elo > 0) out += fmt::format("[BlackElo \"{}\"]\n", g.black_elo);
         if (g.start_fen != "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {
             out += fmt::format("[SetUp \"1\"]\n[FEN \"{}\"]\n", g.start_fen);
         }

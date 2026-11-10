@@ -8,6 +8,8 @@
 
 #include <game/pgn/pgn_builder.hpp>
 
+#include <fmt/include/fmt/format.h>
+
 #include "pairing.hpp"
 
 namespace fcg::tour {
@@ -99,6 +101,17 @@ void writeFileAtomically(const fs::path& file, const std::string& text) {
     std::error_code ec;
     fs::rename(tmp, file, ec);
     if (ec) throw std::runtime_error("cannot write " + file.string());
+}
+
+// The reference ratings after the Result tag, where rating lists and databases read them.
+std::string withElo(std::string pgn, int white_elo, int black_elo) {
+    std::string tags;
+    if (white_elo > 0) tags += fmt::format("[WhiteElo \"{}\"]\n", white_elo);
+    if (black_elo > 0) tags += fmt::format("[BlackElo \"{}\"]\n", black_elo);
+    const auto result = pgn.find("\n[Result ");
+    const auto end    = result == std::string::npos ? result : pgn.find('\n', result + 1);
+    if (!tags.empty() && end != std::string::npos) pgn.insert(end + 1, tags);
+    return pgn;
 }
 
 }  // namespace
@@ -763,8 +776,6 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
 
     const auto& pgn_config = spec_.conditions.pgn;
     const auto round       = std::size_t{task.encounter.index} + 1;
-    const auto text        = PgnBuilder(pgn_config, data, round, CommentStyle::Fastchess).get();
-    const auto text_cb     = PgnBuilder(pgn_config, data, round, CommentStyle::ChessBase).get();
 
     GameResult result;
     result.encounter   = task.encounter.index;
@@ -779,6 +790,11 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     result.finished_at = nowMs();
 
     std::lock_guard<std::mutex> lock(mutex_);
+    const auto elo     = [&](int id) { return spec_.participant(id) ? spec_.participant(id)->elo : 0; };
+    const auto text    = withElo(PgnBuilder(pgn_config, data, round, CommentStyle::Fastchess).get(), elo(result.white),
+                                 elo(result.black));
+    const auto text_cb = withElo(PgnBuilder(pgn_config, data, round, CommentStyle::ChessBase).get(), elo(result.white),
+                                 elo(result.black));
     running_.erase(task.number());
     // Already played, or no longer to be played (its participant was withdrawn meanwhile).
     if (done(task.encounter.index, task.game) || dropped_.count(task.number())) return {result, std::nullopt};

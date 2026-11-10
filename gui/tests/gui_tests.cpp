@@ -447,6 +447,7 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     engines[1].name    = "old";
     engines[1].cmd     = binary.string();
     engines[1].options = {{"Hash", "64"}};
+    engines[1].elo     = 3200;
 
     MatchSetup setup;
     setup.engine_a    = "new";
@@ -473,6 +474,7 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     CHECK(run.spec.max_games == 102);
     REQUIRE(run.spec.participants.size() == 2);
     CHECK(run.spec.participants[1].engine.name == "old");
+    CHECK(run.spec.participants[1].elo == 3200);
     CHECK(run.info.limit_text == "5000 nodes");
     CHECK(run.info.total_games == 102);
 

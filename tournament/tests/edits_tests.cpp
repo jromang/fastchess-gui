@@ -366,10 +366,12 @@ TEST_CASE("programs: rebuilt, missing and new programs are noticed when the tour
     add.kind       = Edit::Kind::AddParticipant;
     add.engine     = engine("D");
     add.engine.cmd = write("D", "build 1 of D");
+    add.elo        = 3100;
     state->applyEdit(add);
     CHECK(state->spec().participants.back().program.size > 0);
     state.reset();
     CHECK(TournamentState::open(dir)->warnings().empty());
+    CHECK(TournamentState::open(dir)->spec().participants.back().elo == 3100);  // the newcomer's Elo, kept
 
     // Rebuilt later: same size, other contents (the date moves on, as it does; some file systems only keep seconds).
     const auto built = fs::last_write_time(bins / "A");

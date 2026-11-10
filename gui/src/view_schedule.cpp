@@ -238,6 +238,7 @@ void App::drawEditPanel() {
             return;
         }
         edit.engine = participantConfig(*it, spec);
+        edit.elo    = it->elo;
     };
     // An active participant.
     const auto participantChoice = [&](const char* label) {

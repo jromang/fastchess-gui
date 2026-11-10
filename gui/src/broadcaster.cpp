@@ -46,6 +46,13 @@ BroadcastSnapshot makeSnapshot(const tour::TournamentState& state, const GuiObse
         s.played++;
     }
 
+    const auto elo = [&](const std::string& engine) {
+        for (const auto& p : spec.participants) {
+            if (p.engine.name == engine) return p.elo;
+        }
+        return 0;
+    };
+
     const auto now  = Clock::now();
     const auto live = [&](int slot, const SlotState& st) {
         LiveGame g;
@@ -53,6 +60,8 @@ BroadcastSnapshot makeSnapshot(const tour::TournamentState& state, const GuiObse
         g.number        = st.game_id;
         g.white         = st.white;
         g.black         = st.black;
+        g.white_elo     = elo(st.white);
+        g.black_elo     = elo(st.black);
         g.start_fen     = st.start_fen;
         g.white_to_move = st.stm == chess::Color::WHITE;
         g.clocks        = st.clocks;

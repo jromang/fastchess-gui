@@ -456,6 +456,7 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         tour::Participant p;
         p.id     = static_cast<int>(i);
         p.engine = run.engines[i];
+        p.elo    = people[i].first->elo;
         spec.participants.push_back(p);
     }
 

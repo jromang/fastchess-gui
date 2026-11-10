@@ -93,6 +93,7 @@ nlohmann::json editEvent(const Edit& edit, uint32_t at, int new_id, const Tourna
             p.id          = new_id;
             p.engine      = edit.engine;
             p.engine.name = uniqueName(spec, edit.engine.name);
+            p.elo         = edit.elo;
             return {{"t", "participant_added"}, {"at", at}, {"participant", p}, {"catch_up", edit.catch_up}};
         }
         case Edit::Kind::ReplaceParticipant: {
@@ -100,6 +101,7 @@ nlohmann::json editEvent(const Edit& edit, uint32_t at, int new_id, const Tourna
             p.id          = new_id;
             p.engine      = edit.engine;
             p.engine.name = uniqueName(spec, edit.engine.name);
+            p.elo         = edit.elo;
             return {{"t", "participant_replaced"}, {"at", at}, {"old", edit.participant}, {"participant", p}};
         }
         case Edit::Kind::Withdraw:
