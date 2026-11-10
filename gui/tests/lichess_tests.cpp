@@ -123,7 +123,18 @@ TEST_CASE("lichess: the same tags in progress and finished, clocks, the round id
     CHECK(done.finished);
     CHECK(done.pgn.rfind("[Event \"Test\"]\n[Site \"fastchess-gui\"]\n[Round \"2\"]", 0) == 0);
     CHECK(done.pgn.find("GameDuration") == std::string::npos);
-    CHECK(done.pgn.find("\n\n1. e4 {[%eval 0.30,12] [%clk 0:00:59]} e5 1-0\n\n") != std::string::npos);
+    CHECK(done.pgn.find("\n\n1. e4 {[%clk 0:00:59]} e5 1-0\n\n") != std::string::npos);
+
+    // Only the clocks of the last move of each side, as while it was played; move numbers after a comment kept.
+    const std::string cb =
+        "[Event \"x\"]\n\n1. e4 {[%eval 0.30,12] [%clk 0:00:59.120] [%emt 0:00:01.000]} 1... e5 "
+        "{[%eval -0.20,11] [%clk 0:00:58.000]} 2. Nf3 {[%clk 0:00:57.500]} 2... Nc6 "
+        "{[%clk 0:00:56.900]} 3. Bb5 {[%eval 0.40,14] [%clk 0:00:55.000]} 1/2-1/2\n";
+    const auto short_form = lichessFinishedGame(cb, "Test", 1, "Alpha", "Beta", 0, 0, "1/2-1/2", false);
+    CHECK(
+        short_form.pgn.find("\n\n1. e4 1... e5 2. Nf3 2... Nc6 {[%clk 0:00:56]} 3. Bb5 {[%clk 0:00:55]} 1/2-1/2\n\n") !=
+        std::string::npos);
+    CHECK(short_form.pgn.find("%eval") == std::string::npos);
 
     CHECK(lichessRoundId("https://lichess.org/broadcast/my-event/round-1/AbCd1234") == "AbCd1234");
     CHECK(lichessRoundId("AbCd1234/") == "AbCd1234");
