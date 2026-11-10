@@ -26,7 +26,9 @@ std::string seconds(int64_t ms) {
 
 std::string timeControlText(const fastchess::Limit& limit) {
     if (limit.nodes > 0) return fmt::format("{} nodes", limit.nodes);
+    if (limit.plies > 0) return fmt::format("depth {}", limit.plies);
     const auto& tc = limit.tc;
+    if (tc.fixed_time > 0) return fmt::format("{}s/move", seconds(tc.fixed_time));
     return fmt::format("{}{}+{}", tc.moves > 0 ? fmt::format("{}/", tc.moves) : "", seconds(tc.time),
                        seconds(tc.increment));
 }

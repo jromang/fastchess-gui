@@ -30,9 +30,10 @@ this repository still builds unchanged.
   reference Elo; an engine's card (results, health, rating over time), head to head records, the progress of an
   engine's versions, an export for Ordo and BayesElo.
 - **Matches**: a fixed number of games, unlimited, or an SPRT (normalized, logistic or BayesElo model, with
-  gainer and non-regression presets). Time control (base + increment, moves per period) or fixed nodes.
-- **Concurrency** detected at startup: one game per hardware thread at fixed nodes, physical cores − 1 with a
-  clock. Optional CPU affinity.
+  gainer and non-regression presets). Time control (base + increment, moves per period), time per move, fixed
+  nodes or fixed depth.
+- **Concurrency** detected at startup: one game per hardware thread at fixed nodes or depth, physical cores − 1
+  with a clock. Optional CPU affinity.
 - **Live view**: every game in progress as a mosaic, or one in focus, with the board, clocks, the running search of each engine
   (depth, score, nodes, nps, PV in SAN), the annotated move list and the evaluation curve. Boards can be
   detached into their own windows.

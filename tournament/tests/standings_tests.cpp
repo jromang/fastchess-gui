@@ -289,3 +289,23 @@ TEST_CASE("results by opening: games, pairs by kind, the starting position after
     CHECK(by[1].drawRate() == 1.0);
     CHECK(openingsEpd({&by[1]}) == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -\n");
 }
+
+TEST_CASE("rating list: the time control text of every kind of limit") {
+    fastchess::Limit limit;
+    limit.tc.time      = 10000;
+    limit.tc.increment = 100;
+    CHECK(timeControlText(limit) == "10+0.1");
+    limit.tc.moves = 40;
+    CHECK(timeControlText(limit) == "40/10+0.1");
+    limit.tc            = {};
+    limit.tc.fixed_time = 5000;
+    CHECK(timeControlText(limit) == "5s/move");
+    limit.tc.fixed_time = 250;
+    CHECK(timeControlText(limit) == "0.25s/move");
+    limit.tc    = {};
+    limit.plies = 12;
+    CHECK(timeControlText(limit) == "depth 12");
+    limit.plies = 0;
+    limit.nodes = 5000;
+    CHECK(timeControlText(limit) == "5000 nodes");
+}

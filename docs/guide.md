@@ -106,12 +106,13 @@ engine, estimated duration, openings, common settings, time odds). The setup of 
     two, and the first two seeds can only meet in the final. A match is *Game pairs per match* pairs of games; a
     tied match gets one more pair at a time, up to ten, after which the higher seed goes through.
 - **Participants**: engines from the library, in seed order. Each one can have its own `Hash`, `Threads`, fixed
-  nodes and time odds (a percentage of the time control). *Common settings* force `Hash` and `Threads` on every
+  nodes or depth, and time odds (a percentage of the time control). *Common settings* force `Hash` and `Threads` on every
   engine (0 = each engine's own).
 - **Time control**: base time and increment in seconds, optional moves per period, and a margin before a game is
-  lost on time; or a fixed number of nodes per move.
+  lost on time; a fixed time per move (`go movetime`, with the same margin); a fixed number of nodes per move; or a
+  fixed depth in plies (`go depth`), which no engine can lose on time.
 - **Concurrency**: the number of games played at the same time. In automatic mode it is measured at startup:
-  - fixed nodes: one game per hardware thread, since Hyper-Threading does not change a node count;
+  - fixed nodes or depth: one game per hardware thread, since Hyper-Threading does not change the moves played;
   - with a clock: physical cores − 1, so that engines do not slow each other down.
 
   *CPU affinity* (off by default) pins every game to one processor, shared by its two engines since they never

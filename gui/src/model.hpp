@@ -122,9 +122,12 @@ struct ParticipantSetup {
     int threads      = 0;    // 0 = the common setting (or the engine's own)
     int time_percent = 100;  // time odds: share of the time control it gets
     uint64_t nodes   = 0;    // fixed nodes: 0 = the common value
+    int depth        = 0;    // fixed depth: 0 = the common value
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ParticipantSetup, name, hash, threads, time_percent, nodes)
-enum class LimitKind { Time = 0, Nodes = 1 };
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ParticipantSetup, name, hash, threads, time_percent, nodes, depth)
+enum class LimitKind { Time = 0, Nodes = 1, MoveTime = 2, Depth = 3 };
+// A node count or a depth: the same moves however fast the machine, so no clock to share fairly.
+inline bool clockFree(LimitKind limit) { return limit == LimitKind::Nodes || limit == LimitKind::Depth; }
 enum class PgnStyle { Fastchess = 0, ChessBase = 1 };
 
 struct MatchSetup {
@@ -155,8 +158,10 @@ struct MatchSetup {
     double tc_base_s = 10.0;
     double tc_inc_s  = 0.1;
     int tc_moves     = 0;  // moves per period, 0 = whole game
-    int tc_margin_ms = 0;
+    int tc_margin_ms = 0;  // clock and time per move
     uint64_t nodes   = 200000;
+    double move_s    = 1.0;  // time per move
+    int depth        = 10;   // plies
 
     bool concurrency_auto = true;
     int concurrency       = 1;
@@ -215,8 +220,8 @@ struct MatchSetup {
 #define FCG_MATCH_SETUP_FIELDS_1                                                                                       \
     format, name, engine_a, engine_b, participants, cycles, seeds, common_hash, common_threads, mode, fixed_games,     \
         sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, limit, tc_base_s, tc_inc_s, tc_moves, \
-        tc_margin_ms, nodes, concurrency_auto, concurrency, affinity, book, book_random, book_plies, book_start,       \
-        chess960, seed
+        tc_margin_ms, nodes, move_s, depth, concurrency_auto, concurrency, affinity, book, book_random, book_plies,    \
+        book_start, chess960, seed
 #define FCG_MATCH_SETUP_FIELDS_2                                                                                      \
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,        \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,         \

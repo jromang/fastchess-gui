@@ -80,14 +80,24 @@ fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSet
     overrideOption(config, entry, "Hash", participant.hash, setup.common_hash);
     overrideOption(config, entry, "Threads", participant.threads, setup.common_threads);
 
-    if (setup.limit == LimitKind::Time) {
-        const double share         = std::max(1, participant.time_percent) / 100.0;
-        config.limit.tc.time       = static_cast<int64_t>(std::llround(setup.tc_base_s * 1000.0 * share));
-        config.limit.tc.increment  = static_cast<int64_t>(std::llround(setup.tc_inc_s * 1000.0 * share));
-        config.limit.tc.moves      = setup.tc_moves;
-        config.limit.tc.timemargin = setup.tc_margin_ms;
-    } else {
-        config.limit.nodes = participant.nodes > 0 ? participant.nodes : setup.nodes;
+    const double share = std::max(1, participant.time_percent) / 100.0;
+    switch (setup.limit) {
+        case LimitKind::Time:
+            config.limit.tc.time       = static_cast<int64_t>(std::llround(setup.tc_base_s * 1000.0 * share));
+            config.limit.tc.increment  = static_cast<int64_t>(std::llround(setup.tc_inc_s * 1000.0 * share));
+            config.limit.tc.moves      = setup.tc_moves;
+            config.limit.tc.timemargin = setup.tc_margin_ms;
+            break;
+        case LimitKind::MoveTime:
+            config.limit.tc.fixed_time = std::max<int64_t>(1, std::llround(setup.move_s * 1000.0 * share));
+            config.limit.tc.timemargin = setup.tc_margin_ms;
+            break;
+        case LimitKind::Nodes:
+            config.limit.nodes = participant.nodes > 0 ? participant.nodes : setup.nodes;
+            break;
+        case LimitKind::Depth:
+            config.limit.plies = static_cast<uint64_t>(participant.depth > 0 ? participant.depth : setup.depth);
+            break;
     }
 
     return config;
@@ -117,7 +127,9 @@ std::string timestamp() {
 
 std::string limitText(const fastchess::Limit& limit) {
     if (limit.nodes > 0) return trf("{} nodes", limit.nodes);
+    if (limit.plies > 0) return trf("depth {}", limit.plies);
     const auto& tc = limit.tc;
+    if (tc.fixed_time > 0) return trf("{} s/move", formatSeconds(tc.fixed_time / 1000.0));
     return fmt::format("{}{}+{}", tc.moves > 0 ? fmt::format("{}/", tc.moves) : "", formatSeconds(tc.time / 1000.0),
                        formatSeconds(tc.increment / 1000.0));
 }
@@ -135,8 +147,12 @@ RunInfo runInfo(const tour::TournamentSpec& spec, const fs::path& dir) {
     info.engine_b     = spec.participants.at(1).engine.name;
     info.dir          = dir;
     info.mode         = t.sprt.enabled ? MatchMode::Sprt : spec.max_games > 0 ? MatchMode::Fixed : MatchMode::Infinite;
-    info.limit        = spec.participants[0].engine.limit.nodes > 0 ? LimitKind::Nodes : LimitKind::Time;
-    info.limit_text   = limitText(spec.participants[0].engine.limit);
+    const auto& limit = spec.participants[0].engine.limit;
+    info.limit        = limit.nodes > 0           ? LimitKind::Nodes
+                        : limit.plies > 0         ? LimitKind::Depth
+                        : limit.tc.fixed_time > 0 ? LimitKind::MoveTime
+                                                  : LimitKind::Time;
+    info.limit_text   = limitText(limit);
     const auto encounters = tour::Schedule(spec).size();
     info.total_games      = encounters ? uint64_t{*encounters} * 2 : 0;
     info.concurrency      = t.concurrency;
@@ -287,6 +303,10 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         throw fastchess_exception(TR("The time control needs a base time or an increment."));
     if (setup.limit == LimitKind::Nodes && setup.nodes == 0)
         throw fastchess_exception(TR("The number of nodes must be positive."));
+    if (setup.limit == LimitKind::MoveTime && setup.move_s <= 0)
+        throw fastchess_exception(TR("The time per move must be positive."));
+    if (setup.limit == LimitKind::Depth && setup.depth <= 0)
+        throw fastchess_exception(TR("The depth must be positive."));
 
     BuiltRun run;
     auto& t = run.tournament;
@@ -321,9 +341,8 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
             break;
     }
 
-    const bool fixed_nodes = setup.limit == LimitKind::Nodes;
-    t.concurrency          = setup.concurrency_auto ? topology.defaultConcurrency(fixed_nodes) : setup.concurrency;
-    t.concurrency          = std::clamp(t.concurrency, 1, topology.logical);
+    t.concurrency = setup.concurrency_auto ? topology.defaultConcurrency(clockFree(setup.limit)) : setup.concurrency;
+    t.concurrency = std::clamp(t.concurrency, 1, topology.logical);
 
     run.engines.clear();
     for (const auto& [entry, participant] : people) {

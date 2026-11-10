@@ -208,26 +208,46 @@ void App::setupLimit() {
 
     int limit    = static_cast<int>(setup_.limit);
     bool changed = false;
-    changed |= ImGui::RadioButton(TR("Time"), &limit, 0);
+    changed |= ImGui::RadioButton(TR("Time"), &limit, static_cast<int>(LimitKind::Time));
     ImGui::SameLine();
-    changed |= ImGui::RadioButton(TR("Fixed nodes"), &limit, 1);
+    changed |= ImGui::RadioButton(TR("Time per move"), &limit, static_cast<int>(LimitKind::MoveTime));
+    ImGui::SameLine();
+    changed |= ImGui::RadioButton(TR("Fixed nodes"), &limit, static_cast<int>(LimitKind::Nodes));
+    ImGui::SameLine();
+    changed |= ImGui::RadioButton(TR("Depth"), &limit, static_cast<int>(LimitKind::Depth));
     setup_.limit = static_cast<LimitKind>(limit);
 
-    if (setup_.limit == LimitKind::Time) {
-        changed |= inputDouble(TR("Base (s)"), "##tc_base", setup_.tc_base_s, 0, 36000, "%.2f");
-        changed |= inputDouble(TR("Increment (s)"), "##tc_inc", setup_.tc_inc_s, 0, 3600, "%.3f");
-        changed |= inputInt(TR("Moves / period"), "##tc_moves", setup_.tc_moves, 0, 1000);
-        ui::help(TR("0 = the base time covers the whole game. Otherwise it is given again every N moves."));
+    const auto margin = [&] {
         changed |= inputInt(TR("Margin (ms)"), "##tc_margin", setup_.tc_margin_ms, 0, 100000);
         ui::help(TR("Overrun tolerated before a game is lost on time."));
-    } else {
-        int64_t nodes = static_cast<int64_t>(setup_.nodes);
-        ui::label(TR("Nodes per move"), labelWidth());
-        ImGui::SetNextItemWidth(140.0f * ImGui::GetFontSize() / 16.0f);
-        if (ImGui::InputScalar("##nodes", ImGuiDataType_S64, &nodes)) {
-            setup_.nodes = static_cast<uint64_t>(std::max<int64_t>(1, nodes));
-            changed      = true;
+    };
+    switch (setup_.limit) {
+        case LimitKind::Time:
+            changed |= inputDouble(TR("Base (s)"), "##tc_base", setup_.tc_base_s, 0, 36000, "%.2f");
+            changed |= inputDouble(TR("Increment (s)"), "##tc_inc", setup_.tc_inc_s, 0, 3600, "%.3f");
+            changed |= inputInt(TR("Moves / period"), "##tc_moves", setup_.tc_moves, 0, 1000);
+            ui::help(TR("0 = the base time covers the whole game. Otherwise it is given again every N moves."));
+            margin();
+            break;
+        case LimitKind::MoveTime:
+            changed |= inputDouble(TR("Seconds per move"), "##move_s", setup_.move_s, 0.001, 3600, "%.3f");
+            ui::help(TR("Every move gets this time, whatever was used before (go movetime)."));
+            margin();
+            break;
+        case LimitKind::Nodes: {
+            int64_t nodes = static_cast<int64_t>(setup_.nodes);
+            ui::label(TR("Nodes per move"), labelWidth());
+            ImGui::SetNextItemWidth(140.0f * ImGui::GetFontSize() / 16.0f);
+            if (ImGui::InputScalar("##nodes", ImGuiDataType_S64, &nodes)) {
+                setup_.nodes = static_cast<uint64_t>(std::max<int64_t>(1, nodes));
+                changed      = true;
+            }
+            break;
         }
+        case LimitKind::Depth:
+            changed |= inputInt(TR("Plies"), "##depth", setup_.depth, 1, 200);
+            ui::help(TR("Every move is searched to this depth (go depth), however long it takes: no time loss."));
+            break;
     }
 
     if (changed) saveSetupSoon();
@@ -237,15 +257,15 @@ void App::setupConcurrency() {
     if (!ImGui::CollapsingHeader(TR("Concurrency###sec_concurrency"), ImGuiTreeNodeFlags_DefaultOpen)) return;
 
     bool changed           = false;
-    const bool fixed_nodes = setup_.limit == LimitKind::Nodes;
+    const bool fixed_nodes = clockFree(setup_.limit);
     const int auto_value   = topology_.defaultConcurrency(fixed_nodes);
 
     ImGui::TextDisabled(TR("Machine: %d physical cores, %d threads"), topology_.physical, topology_.logical);
 
     changed |= ImGui::Checkbox(TR("Automatic"), &setup_.concurrency_auto);
     ui::help(
-        TR("Fixed nodes: one game per hardware thread (Hyper-Threading does not change a node count). With a clock: "
-           "physical cores − 1, so the engines do not slow each other down."));
+        TR("Fixed nodes or depth: one game per hardware thread (Hyper-Threading does not change the moves played). "
+           "With a clock: physical cores − 1, so the engines do not slow each other down."));
 
     int value = setup_.concurrency_auto ? auto_value : setup_.concurrency;
     ui::label(TR("Concurrent games"), labelWidth());
@@ -553,6 +573,7 @@ void App::setupParticipants() {
     changed |= inputInt(TR("Threads"), "##common_threads", setup_.common_threads, 0, 1024);
 
     const bool nodes     = setup_.limit == LimitKind::Nodes;
+    const bool depth     = setup_.limit == LimitKind::Depth;
     constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit;
     const float small    = 70.0f * ImGui::GetFontSize() / 16.0f;
     int remove = -1, up = -1;
@@ -562,8 +583,10 @@ void App::setupParticipants() {
         ImGui::TableSetupColumn(TR("Engine"), ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn(TR("Hash"), ImGuiTableColumnFlags_WidthFixed, small);
         ImGui::TableSetupColumn(TR("Threads"), ImGuiTableColumnFlags_WidthFixed, small);
-        ImGui::TableSetupColumn(nodes ? TR("Nodes") : TR("Time %"), ImGuiTableColumnFlags_WidthFixed,
-                                nodes ? small * 1.5f : small);
+        ImGui::TableSetupColumn(nodes   ? TR("Nodes")
+                                : depth ? TR("Depth")
+                                        : TR("Time %"),
+                                ImGuiTableColumnFlags_WidthFixed, nodes ? small * 1.5f : small);
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableHeadersRow();
@@ -610,6 +633,11 @@ void App::setupParticipants() {
                     p.nodes = static_cast<uint64_t>(std::max(0, value));
                     changed = true;
                 }
+            } else if (depth) {
+                if (ImGui::InputInt("##depth", &p.depth, 0, 0)) {
+                    p.depth = std::clamp(p.depth, 0, 200);
+                    changed = true;
+                }
             } else if (ImGui::InputInt("##time", &p.time_percent, 0, 0)) {
                 p.time_percent = std::clamp(p.time_percent, 1, 1000);
                 changed        = true;
@@ -623,9 +651,10 @@ void App::setupParticipants() {
             ImGui::PopID();
         }
         ImGui::EndTable();
-        ImGui::TextDisabled("%s", nodes ? TR("Hash, Threads, Nodes: 0 = the common value.")
-                                        : TR("Hash, Threads: 0 = the common value. Time %: time odds, 100 = the "
-                                             "same clock as the others."));
+        ImGui::TextDisabled("%s", nodes   ? TR("Hash, Threads, Nodes: 0 = the common value.")
+                                  : depth ? TR("Hash, Threads, Depth: 0 = the common value.")
+                                          : TR("Hash, Threads: 0 = the common value. Time %: time odds, 100 = the "
+                                               "same clock as the others."));
     }
 
     if (remove >= 0) {
@@ -753,11 +782,12 @@ void App::drawSetupSummary() {
     ImGui::TextDisabled("%s", formula.c_str());
     if (!per_engine.empty()) ImGui::TextDisabled("%s", per_engine.c_str());
 
-    // A rough duration: a game lasts about two base times and 60 increments per side.
-    const bool fixed_nodes = setup_.limit == LimitKind::Nodes;
+    // A rough duration: a game lasts about two base times and 60 increments, or 120 moves, per side.
+    const bool fixed_nodes = clockFree(setup_.limit);
     const int concurrency  = setup_.concurrency_auto ? topology_.defaultConcurrency(fixed_nodes) : setup_.concurrency;
     if (games > 0 && !fixed_nodes) {
-        const double game_s  = 2.0 * (setup_.tc_base_s + 60.0 * setup_.tc_inc_s);
+        const double game_s  = setup_.limit == LimitKind::MoveTime ? 120.0 * setup_.move_s
+                                                                   : 2.0 * (setup_.tc_base_s + 60.0 * setup_.tc_inc_s);
         const double seconds = static_cast<double>(games) * game_s / std::max(1, concurrency);
         ImGui::Spacing();
         ImGui::TextUnformatted(
@@ -823,6 +853,9 @@ void App::drawSetupSummary() {
     for (const auto& p : setup_.participants) {
         if (setup_.format != TournamentFormat::Match && !fixed_nodes && p.time_percent != 100) {
             check(true, trf("{} plays with {} % of the time", p.name, p.time_percent));
+        }
+        if (setup_.format != TournamentFormat::Match && setup_.limit == LimitKind::Depth && p.depth > 0) {
+            check(true, trf("{} searches to depth {}", p.name, p.depth));
         }
     }
     ui::endCard();

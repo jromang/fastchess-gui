@@ -489,6 +489,29 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     CHECK(run.info.total_games == 0);
     CHECK(run.info.limit_text == "10+0.1");
 
+    // A time per move, and a depth: like a node count, it does not depend on the machine's speed.
+    setup.limit        = LimitKind::MoveTime;
+    setup.move_s       = 0.5;
+    setup.tc_margin_ms = 50;
+    run                = buildRun(setup, engines, topology, dir);
+    CHECK(run.engines[0].limit.tc.fixed_time == 500);
+    CHECK(run.engines[0].limit.tc.timemargin == 50);
+    CHECK(run.engines[0].limit.tc.time == 0);
+    CHECK(run.info.limit == LimitKind::MoveTime);
+    CHECK(run.info.limit_text == "0.5 s/move");
+    setup.limit = LimitKind::Depth;
+    setup.depth = 12;
+    run         = buildRun(setup, engines, topology, dir);
+    CHECK(run.engines[1].limit.plies == 12);
+    CHECK(run.engines[1].limit.tc.fixed_time == 0);
+    CHECK(run.tournament.concurrency == 4);
+    CHECK(run.info.limit == LimitKind::Depth);
+    CHECK(run.info.limit_text == "depth 12");
+    setup.depth = 0;
+    CHECK_THROWS((void)buildRun(setup, engines, topology, dir));
+    setup.limit        = LimitKind::Time;
+    setup.tc_margin_ms = 0;
+
     // Affinity is off by default; a multi-threaded engine turns it off when asked.
     CHECK_FALSE(buildRun(setup, engines, topology, dir).tournament.affinity);
     setup.affinity     = true;
