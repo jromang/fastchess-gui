@@ -59,6 +59,9 @@ class App {
     // Stops a running match without asking (used by --quit-after).
     void forceQuit();
 
+    // The window came back to the front: an engine may have been rebuilt or moved meanwhile.
+    void onFocusGained() { refreshPrograms(); }
+
     // For scripted screenshots.
     void focusWindow(const std::string& name);
     bool debugSelectGame(int index);
@@ -139,6 +142,7 @@ class App {
     void setupPgn();
 
     // engines
+    void refreshPrograms();
     void startProbe(int index);
     void pollProbe();
     void startCheck(int index);

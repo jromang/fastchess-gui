@@ -1,6 +1,7 @@
 #include <doctest/doctest.hpp>
 
 #include <filesystem>
+#include <fstream>
 #include <map>
 #include <set>
 
@@ -343,4 +344,36 @@ TEST_CASE("edit: undoing cycles added to a finished tournament finishes it again
     REQUIRE(summary);
     CHECK(summary->finished);
     CHECK(summary->total == 6u);
+}
+
+TEST_CASE("programs: rebuilt, missing and new programs are noticed when the tournament is opened again") {
+    const auto dir  = freshDir("programs");
+    const auto bins = dir.parent_path() / "fcg-tour-edit-programs-bin";
+    fs::remove_all(bins);
+    fs::create_directories(bins);
+    auto write = [&](const std::string& name, const std::string& contents) {
+        std::ofstream(bins / name, std::ios::binary) << contents;
+        return (bins / name).string();
+    };
+
+    auto spec = roundRobin(3, 1);
+    for (auto& p : spec.participants) p.engine.cmd = write(p.engine.name, "build 1 of " + p.engine.name);
+    auto state = TournamentState::create(dir, spec);
+    CHECK(state->spec().participants[0].program.size > 0);
+
+    Edit add;
+    add.kind       = Edit::Kind::AddParticipant;
+    add.engine     = engine("D");
+    add.engine.cmd = write("D", "build 1 of D");
+    state->applyEdit(add);
+    CHECK(state->spec().participants.back().program.size > 0);
+    state.reset();
+    CHECK(TournamentState::open(dir)->warnings().empty());
+
+    write("A", "build 2 of A");  // same size, other contents
+    fs::remove(bins / "B");
+    const auto warnings = TournamentState::open(dir)->warnings();
+    REQUIRE(warnings.size() == 2);
+    CHECK(warnings[0].find("program of A changed") != std::string::npos);
+    CHECK(warnings[1].find("program of B is missing") != std::string::npos);
 }

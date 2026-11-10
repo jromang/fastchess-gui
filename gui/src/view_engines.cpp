@@ -30,6 +30,20 @@ bool editText(const char* id, std::string& value, float width = -FLT_MIN) {
     return false;
 }
 
+// What is wrong with the engine's program, empty when nothing is.
+std::string programProblem(const EngineEntry& e) {
+    switch (e.program_state) {
+        case ProgramState::Missing:
+            return trf("Program not found: {}", e.cmd);
+        case ProgramState::MissingDir:
+            return trf("Working directory not found: {}", e.dir);
+        case ProgramState::Changed:
+            return TR("The program changed since it was last read (rebuilt or replaced).");
+        default:
+            return "";
+    }
+}
+
 bool lessCaseInsensitive(const std::string& a, const std::string& b) {
     return std::lexicographical_compare(a.begin(), a.end(), b.begin(), b.end(), [](char x, char y) {
         return std::tolower(static_cast<unsigned char>(x)) < std::tolower(static_cast<unsigned char>(y));
@@ -73,6 +87,19 @@ void App::addEngine(const std::string& path) {
     storage_.saveEngines(engines_);
 
     startProbe(selected_engine_);
+}
+
+void App::refreshPrograms() {
+    bool save = false;
+    for (auto& e : engines_) {
+        save |= refreshProgram(e);
+        // A rebuilt engine has its options read again, so that the option table matches the new build.
+        if (e.program_state == ProgramState::Changed &&
+            std::find(probe_queue_.begin(), probe_queue_.end(), e.name) == probe_queue_.end()) {
+            probe_queue_.push_back(e.name);
+        }
+    }
+    if (save) storage_.saveEngines(engines_);
 }
 
 void App::startProbe(int index) {
@@ -122,7 +149,11 @@ void App::pollProbe() {
     }
 
     const bool first_probe = e.id_name.empty();
+    const bool rebuilt     = e.program_state == ProgramState::Changed;
     e.protocol             = result.protocol;
+    e.program              = result.program;
+    refreshProgram(e);
+    if (rebuilt) Console::instance().add(trf("{} changed: its options were read again.", e.name));
 
     e.id_name     = result.id_name;
     e.id_author   = result.id_author;
@@ -240,15 +271,26 @@ void App::drawEngines() {
         if (e.name == setup_.engine_a) tag = "  [A]";
         if (e.name == setup_.engine_b) tag += "  [B]";
 
-        // A mark for the health: checked, failed, or reached through an adapter.
-        const char* mark = e.check_ok == 1 ? "✓" : e.check_ok == 0 ? "!" : isWinboard(e) ? "↔" : "·";
-        ImGui::PushStyleColor(ImGuiCol_Text, e.check_ok == 1 ? ui::GOOD : e.check_ok == 0 ? ui::WARN : ui::MUTED);
+        // A mark for the health: program missing or changed, checked, failed, or a WinBoard engine.
+        const auto problem = programProblem(e);
+        const char* mark   = !problem.empty()  ? "!"
+                             : e.check_ok == 1 ? "✓"
+                             : e.check_ok == 0 ? "!"
+                             : isWinboard(e)   ? "↔"
+                                               : "·";
+        const bool missing = e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
+        ImGui::PushStyleColor(ImGuiCol_Text, missing            ? ui::BAD
+                                             : !problem.empty() ? ui::WARN
+                                             : e.check_ok == 1  ? ui::GOOD
+                                             : e.check_ok == 0  ? ui::WARN
+                                                                : ui::MUTED);
         ImGui::TextUnformatted(mark);
         ImGui::PopStyleColor();
         ImGui::SameLine();
         const auto label = fmt::format("{}{}##engine{}", e.name, tag, i);
         if (ImGui::Selectable(label.c_str(), selected_engine_ == i)) selected_engine_ = i;
-        if (ImGui::IsItemHovered() && !e.check_message.empty()) ImGui::SetTooltip("%s", e.check_message.c_str());
+        const auto& tooltip = problem.empty() ? e.check_message : problem;
+        if (ImGui::IsItemHovered() && !tooltip.empty()) ImGui::SetTooltip("%s", tooltip.c_str());
     }
     if (engines_.empty()) ImGui::TextDisabled("%s", TR("No engine yet. Click Add."));
 
@@ -299,6 +341,23 @@ void App::drawEngines() {
     if (e.dir.empty()) {
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + label);
         ImGui::TextDisabled("%s", TR("Empty: the program's directory."));
+    }
+    if (const auto problem = programProblem(e); !problem.empty()) {
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + label);
+        ImGui::AlignTextToFramePadding();
+        ImGui::PushStyleColor(ImGuiCol_Text, e.program_state == ProgramState::Changed ? ui::WARN : ui::BAD);
+        ImGui::TextUnformatted(problem.c_str());
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        if (e.program_state == ProgramState::Missing) {
+            if (ImGui::Button(TR("Locate…"))) dialogs_.openFile(Dialogs::Purpose::EngineCommand, {}, e.cmd);
+        } else if (e.program_state == ProgramState::MissingDir) {
+            if (ImGui::Button(TR("Choose…"))) dialogs_.openFolder(Dialogs::Purpose::EngineDir, e.dir);
+        } else {
+            ImGui::BeginDisabled(probe_.valid());
+            if (ImGui::Button(TR("Read it again"))) startProbe(selected_engine_);
+            ImGui::EndDisabled();
+        }
     }
 
     ui::label(TR("Protocol"), label);
@@ -528,7 +587,10 @@ void App::drawEngines() {
         }
     }
 
-    if (changed) storage_.saveEngines(engines_);
+    if (changed) {
+        refreshProgram(e);
+        storage_.saveEngines(engines_);
+    }
 
     ImGui::EndChild();
     ui::endPanel();

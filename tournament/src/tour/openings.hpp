@@ -35,9 +35,6 @@ class OpeningSource {
     std::variant<std::monostate, fastchess::book::EpdReader, fastchess::book::PgnReader> book_;
 };
 
-// Size and CRC32 of the book file; zero when it cannot be read.
-[[nodiscard]] BookFingerprint fingerprint(const std::string& file);
-
 // An opening as text (FEN and UCI moves), for the journal.
 struct OpeningText {
     std::string fen;

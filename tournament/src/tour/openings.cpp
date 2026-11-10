@@ -5,8 +5,6 @@
 #include <random>
 #include <stdexcept>
 
-#include <core/crc32.hpp>
-
 namespace fcg::tour {
 
 namespace {
@@ -58,16 +56,6 @@ fastchess::book::Opening OpeningSource::at(std::size_t index) const {
         return {std::string(epd->get()[index % n].view()), {}};
     }
     return std::get<fastchess::book::PgnReader>(book_).get()[index % n];
-}
-
-BookFingerprint fingerprint(const std::string& file) {
-    BookFingerprint fp;
-    std::error_code ec;
-    if (file.empty() || !std::filesystem::is_regular_file(file, ec)) return fp;
-
-    fp.size  = std::filesystem::file_size(file, ec);
-    fp.crc32 = fastchess::crc::calculate_crc32(file).value_or(0);
-    return fp;
 }
 
 OpeningText toText(const fastchess::book::Opening& opening, bool frc) {

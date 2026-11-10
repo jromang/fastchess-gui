@@ -1,11 +1,16 @@
 #include "model.hpp"
 
+#include <filesystem>
+
+#include <core/crc32.hpp>
+
 namespace fcg::tour {
 
 void to_json(nlohmann::json& j, const Participant& p) {
     j = {{"id", p.id}, {"engine", p.engine}};
     if (!p.active) j["active"] = false;
     if (p.replaced_by) j["replaced_by"] = *p.replaced_by;
+    if (p.program.size > 0) j["program"] = p.program;
 }
 
 void from_json(const nlohmann::json& j, Participant& p) {
@@ -13,13 +18,44 @@ void from_json(const nlohmann::json& j, Participant& p) {
     j.at("engine").get_to(p.engine);
     p.active = j.value("active", true);
     if (j.contains("replaced_by")) p.replaced_by = j.at("replaced_by").get<int>();
+    if (j.contains("program")) j.at("program").get_to(p.program);
 }
 
-void to_json(nlohmann::json& j, const BookFingerprint& b) { j = {{"size", b.size}, {"crc32", b.crc32}}; }
+FileFingerprint fingerprint(const std::string& file) {
+    namespace fs = std::filesystem;
+    FileFingerprint fp;
+    std::error_code ec;
+    if (file.empty() || !fs::is_regular_file(file, ec)) return fp;
 
-void from_json(const nlohmann::json& j, BookFingerprint& b) {
-    b.size  = j.value("size", uint64_t{0});
-    b.crc32 = j.value("crc32", uint32_t{0});
+    const auto size  = fs::file_size(file, ec);
+    const auto mtime = fs::last_write_time(file, ec);
+    if (ec) return fp;
+    fp.size  = size;
+    fp.mtime = mtime.time_since_epoch().count();
+    fp.crc32 = fastchess::crc::calculate_crc32(file).value_or(0);
+    return fp;
+}
+
+bool changedSince(const std::string& file, const FileFingerprint& recorded) {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    if (!fs::is_regular_file(file, ec)) return true;
+    const auto size  = fs::file_size(file, ec);
+    const auto mtime = fs::last_write_time(file, ec);
+    if (ec || size != recorded.size) return true;
+    if (recorded.mtime != 0 && mtime.time_since_epoch().count() == recorded.mtime) return false;
+    return fastchess::crc::calculate_crc32(file).value_or(0) != recorded.crc32;
+}
+
+void to_json(nlohmann::json& j, const FileFingerprint& f) {
+    j = {{"size", f.size}, {"crc32", f.crc32}};
+    if (f.mtime != 0) j["mtime"] = f.mtime;
+}
+
+void from_json(const nlohmann::json& j, FileFingerprint& f) {
+    f.size  = j.value("size", uint64_t{0});
+    f.crc32 = j.value("crc32", uint32_t{0});
+    f.mtime = j.value("mtime", int64_t{0});
 }
 
 void to_json(nlohmann::json& j, const TournamentSpec& s) {

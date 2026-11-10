@@ -32,6 +32,10 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   searched, and a group can be added to a tournament in one click.
 - **Reference Elo**: the engine's rating on a list you trust. A tournament or the rating list can be anchored on it.
 - *Restart the engine for every game* starts a new process for each game instead of reusing it.
+- **Moved or rebuilt programs**: the library remembers each program (size, date, CRC32). A program that is no
+  longer there is marked **!** with *Locate…*, and a tournament does not start with it. A program that changed
+  (a new build) has its options read again automatically. Each tournament also records the programs it was
+  started with: resuming it with a program rebuilt or missing since is reported in the *Log*.
 
 **Import…** reads the engine list of another program: ChessGUI (`ChsGUI_Eng.TXT`, with the options of
 `ChsGUI_Cfg.ini` next to it), cutechess and Banksia (`engines.json`), Arena and other INI style lists, or every

@@ -81,6 +81,38 @@ std::optional<UciOptionInfo> parseUciOption(std::string_view line) {
     return option;
 }
 
+bool refreshProgram(EngineEntry& entry) {
+    namespace fs = std::filesystem;
+    std::error_code ec;
+    if (entry.cmd.empty()) {
+        entry.program_state = ProgramState::Unknown;
+        return false;
+    }
+    if (!fs::is_regular_file(entry.cmd, ec)) {
+        entry.program_state = ProgramState::Missing;
+        return false;
+    }
+    if (!entry.dir.empty() && !fs::is_directory(entry.dir, ec)) {
+        entry.program_state = ProgramState::MissingDir;
+        return false;
+    }
+    if (entry.program.size == 0) {
+        entry.program       = tour::fingerprint(entry.cmd);
+        entry.program_state = ProgramState::Ok;
+        return true;
+    }
+    if (tour::changedSince(entry.cmd, entry.program)) {
+        entry.program_state = ProgramState::Changed;
+        return false;
+    }
+    entry.program_state = ProgramState::Ok;
+    // Same contents under a new date (copied, touched): remember the date, so the CRC is not read every time.
+    const auto mtime = fs::last_write_time(entry.cmd, ec).time_since_epoch().count();
+    if (ec || mtime == entry.program.mtime) return false;
+    entry.program.mtime = mtime;
+    return true;
+}
+
 std::string engineWorkingDir(const EngineEntry& entry) {
     if (!entry.dir.empty()) return entry.dir;
     return std::filesystem::path(entry.cmd).parent_path().string();
@@ -140,6 +172,7 @@ ProbeResult probeEngine(const EngineEntry& entry) {
         return result;
     }
 
+    result.program  = tour::fingerprint(entry.cmd);
     result.protocol = entry.protocol.empty() ? detectProtocol(entry) : entry.protocol;
 
     fastchess::EngineConfiguration config;

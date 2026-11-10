@@ -132,6 +132,36 @@ TEST_CASE("pruneOptions keeps only values that differ from the engine default") 
     CHECK(e.threads() == 1);
 }
 
+TEST_CASE("an engine's program: taken as it is, then noticed when rebuilt, moved, or without its folder") {
+    const auto dir     = tempDir("program");
+    const auto program = dir / "engine";
+    std::ofstream(program) << "build 1";
+
+    EngineEntry e;
+    e.cmd = program.string();
+    CHECK(refreshProgram(e));  // fingerprinted, to be saved
+    CHECK(e.program_state == ProgramState::Ok);
+    CHECK(e.program.size == 7);
+    CHECK_FALSE(refreshProgram(e));
+
+    // Copied over with the same contents: still the same program, under a new date.
+    fs::last_write_time(program, fs::last_write_time(program) + std::chrono::seconds(5));
+    CHECK(refreshProgram(e));
+    CHECK(e.program_state == ProgramState::Ok);
+
+    std::ofstream(program) << "build 2";
+    CHECK_FALSE(refreshProgram(e));
+    CHECK(e.program_state == ProgramState::Changed);
+
+    e.dir = (dir / "gone").string();
+    (void)refreshProgram(e);
+    CHECK(e.program_state == ProgramState::MissingDir);
+
+    fs::remove(program);
+    (void)refreshProgram(e);
+    CHECK(e.program_state == ProgramState::Missing);
+}
+
 TEST_CASE("ChessBase comments give White's point of view, clocks and move times") {
     fastchess::config::Pgn config;
     const auto data = sampleGame(true);
@@ -436,6 +466,12 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     CHECK_THROWS((void)buildRun(setup, engines, topology, dir));
     setup.participants = {{"new"}};
     CHECK_THROWS((void)buildRun(setup, engines, topology, dir));
+
+    // A program that is not there any more.
+    setup.participants = {{"new"}, {"old"}};
+    engines[1].cmd     = (dir / "moved.exe").string();
+    CHECK_THROWS_WITH((void)buildRun(setup, engines, topology, dir),
+                      doctest::Contains("The program of old is not found"));
 
     fs::remove_all(dir);
 }

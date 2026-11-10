@@ -24,6 +24,7 @@ struct ProbeResult {
     std::string id_author;
     std::vector<UciOptionInfo> options;
     std::string protocol;  // "uci" or "xboard": the entry's, or the one found out
+    tour::FileFingerprint program;
 };
 
 // Finds out whether the engine speaks UCI or WinBoard (xboard). Blocks for up to 13 seconds.
@@ -44,6 +45,10 @@ struct CheckResult {
 
 // A WinBoard engine: its protocol is xboard, or it goes through an external adapter (wb2uci).
 [[nodiscard]] bool isWinboard(const EngineEntry& entry);
+
+// Sets entry.program_state. A program never fingerprinted (an engine list of an earlier version) is taken as it is
+// now. Cheap unless the program's date moved: then its CRC is read. Returns true when the entry must be saved.
+bool refreshProgram(EngineEntry& entry);
 
 // The working directory fastchess should use for this engine.
 [[nodiscard]] std::string engineWorkingDir(const EngineEntry& entry);

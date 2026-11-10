@@ -10,7 +10,12 @@
 
 #include <json.hpp>
 
+#include <tour/model.hpp>
+
 namespace fcg {
+
+// Whether an engine's program is where its entry says, and still the one last read.
+enum class ProgramState { Unknown, Ok, Changed, Missing, MissingDir };
 
 // One "option name ..." line of an engine's uci output.
 struct UciOptionInfo {
@@ -34,7 +39,8 @@ struct EngineEntry {
     // Only the options whose value differs from the engine default.
     std::vector<std::pair<std::string, std::string>> options;
 
-    // What the last probe reported.
+    // What the last probe reported, and the program it read (to notice a rebuild).
+    tour::FileFingerprint program;
     std::string id_name;
     std::string id_author;
     std::vector<UciOptionInfo> uci_options;
@@ -47,6 +53,8 @@ struct EngineEntry {
     int check_ok = -1;
     std::string check_message;
     std::string check_when;
+
+    ProgramState program_state = ProgramState::Unknown;  // not saved: refreshProgram() finds it out
 
     [[nodiscard]] const std::string* option(const std::string& key) const {
         for (const auto& [k, v] : options) {
@@ -79,8 +87,8 @@ struct EngineEntry {
         return 1;
     }
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineEntry, name, cmd, args, dir, restart, protocol, options, id_name,
-                                                id_author, uci_options, groups, elo, check_ok, check_message,
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineEntry, name, cmd, args, dir, restart, protocol, options, program,
+                                                id_name, id_author, uci_options, groups, elo, check_ok, check_message,
                                                 check_when)
 
 enum class MatchMode { Fixed = 0, Infinite = 1, Sprt = 2 };

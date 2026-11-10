@@ -25,6 +25,20 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Format, {{Format::Match, "match"},
 // Formats whose rounds are paired from the results, as the tournament goes.
 [[nodiscard]] inline bool pairedAsItGoes(Format f) noexcept { return f == Format::Swiss || f == Format::Knockout; }
 
+// Identifies a file a tournament depends on, an opening book or an engine's program, to warn when it changed.
+struct FileFingerprint {
+    uint64_t size  = 0;  // 0: unknown, the file could not be read
+    uint32_t crc32 = 0;
+    int64_t mtime  = 0;  // modification time, in the file clock's units: when it has not moved, the CRC is not read
+};
+
+// Size, modification time and CRC32 of the file; all zero when it cannot be read.
+[[nodiscard]] FileFingerprint fingerprint(const std::string& file);
+
+// Whether `file` is no longer the one `recorded` describes (missing, or other contents). The CRC is only read when
+// the size is the same and the modification time differs.
+[[nodiscard]] bool changedSince(const std::string& file, const FileFingerprint& recorded);
+
 struct Participant {
     int id = 0;  // never reused within a tournament
 
@@ -35,14 +49,8 @@ struct Participant {
     // Withdrawn or replaced participants stay in the list, so that their games keep a name.
     bool active = true;
     std::optional<int> replaced_by;
-};
 
-// Identifies the opening book a tournament was started with, to warn when it changed.
-struct BookFingerprint {
-    uint64_t size  = 0;
-    uint32_t crc32 = 0;
-
-    bool operator==(const BookFingerprint&) const = default;
+    FileFingerprint program;  // engine.cmd when the participant joined, to warn when it was rebuilt or moved
 };
 
 struct TournamentSpec {
@@ -61,7 +69,7 @@ struct TournamentSpec {
     fastchess::config::Tournament conditions;
 
     std::vector<Participant> participants;
-    BookFingerprint book;
+    FileFingerprint book;
 
     [[nodiscard]] const Participant* participant(int id) const {
         for (const auto& p : participants) {
@@ -79,8 +87,8 @@ struct TournamentSpec {
 
 void to_json(nlohmann::json& j, const Participant& p);
 void from_json(const nlohmann::json& j, Participant& p);
-void to_json(nlohmann::json& j, const BookFingerprint& b);
-void from_json(const nlohmann::json& j, BookFingerprint& b);
+void to_json(nlohmann::json& j, const FileFingerprint& f);
+void from_json(const nlohmann::json& j, FileFingerprint& f);
 void to_json(nlohmann::json& j, const TournamentSpec& s);
 void from_json(const nlohmann::json& j, TournamentSpec& s);
 

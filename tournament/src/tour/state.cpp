@@ -189,6 +189,7 @@ std::unique_ptr<TournamentState> TournamentState::create(const fs::path& dir, To
     if (ec) throw std::runtime_error("cannot create the folder " + dir.string());
 
     spec.book = fingerprint(spec.conditions.opening.file);
+    for (auto& p : spec.participants) p.program = fingerprint(p.engine.cmd);
     writeFileAtomically(dir / SPEC_FILE, nlohmann::json(spec).dump(4) + "\n");
 
     auto state = open(dir);
@@ -284,8 +285,15 @@ void TournamentState::load() {
         journal_->append({{"t", "finished"}, {"why", finish_reason_}});
     }
 
-    if (spec_.book.size > 0 && fingerprint(spec_.conditions.opening.file) != spec_.book) {
+    if (spec_.book.size > 0 && changedSince(spec_.conditions.opening.file, spec_.book)) {
         warnings_.push_back("the opening book changed since the tournament started: " + spec_.conditions.opening.file);
+    }
+    for (const auto& p : spec_.participants) {
+        if (!p.active || p.program.size == 0 || !changedSince(p.engine.cmd, p.program)) continue;
+        warnings_.push_back(std::filesystem::exists(p.engine.cmd)
+                                ? "the program of " + p.engine.name +
+                                      " changed since it joined the tournament: " + p.engine.cmd
+                                : "the program of " + p.engine.name + " is missing: " + p.engine.cmd);
     }
 }
 
@@ -601,7 +609,13 @@ void TournamentState::applyEdit(const Edit& edit) {
     int new_id = 0;
     for (const auto& p : spec_.participants) new_id = std::max(new_id, p.id + 1);
 
-    const auto event = editEvent(edit, next_encounter_, new_id, spec_);
+    auto event = editEvent(edit, next_encounter_, new_id, spec_);
+    // The newcomer's program is read here rather than in editEvent(), which every preview calls.
+    if (auto it = event.find("participant"); it != event.end() && it->is_object()) {
+        auto p    = it->get<Participant>();
+        p.program = fingerprint(p.engine.cmd);
+        *it       = p;
+    }
     journal_->append(event);
 
     UndoPoint undo{spec_, schedule_, {}, done_, dropped_, claims_};

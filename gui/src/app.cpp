@@ -32,6 +32,8 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
 
     if (!engines_.empty()) selected_engine_ = 0;
 
+    refreshPrograms();
+
     // Engines added by hand to engines.json, or never probed, get their options read in the background.
     for (const auto& e : engines_) {
         if (e.uci_options.empty() && !e.cmd.empty()) probe_queue_.push_back(e.name);
@@ -474,6 +476,7 @@ void App::handleDialogs() {
             case Dialogs::Purpose::EngineCommand:
                 if (selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size())) {
                     engines_[selected_engine_].cmd = path;
+                    refreshProgram(engines_[selected_engine_]);
                     storage_.saveEngines(engines_);
                     startProbe(selected_engine_);
                 }
@@ -481,6 +484,7 @@ void App::handleDialogs() {
             case Dialogs::Purpose::EngineDir:
                 if (selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size())) {
                     engines_[selected_engine_].dir = path;
+                    refreshProgram(engines_[selected_engine_]);
                     storage_.saveEngines(engines_);
                 }
                 break;

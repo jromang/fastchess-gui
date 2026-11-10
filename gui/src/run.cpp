@@ -338,6 +338,9 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
 
     run.engines.clear();
     for (const auto& [entry, participant] : people) {
+        if (!fs::is_regular_file(entry->cmd)) {
+            throw fastchess_exception(trf("The program of {} is not found: {}", entry->name, entry->cmd));
+        }
         // An engine without UCI_Chess960 (a WinBoard one: without the fischerandom variant) would play other
         // games than the GUI. Not known before the engine was read.
         if (setup.chess960 && !entry->uci_options.empty() && !hasOption(*entry, "UCI_Chess960")) {

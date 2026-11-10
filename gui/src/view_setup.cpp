@@ -737,21 +737,30 @@ void App::drawSetupSummary() {
     } else {
         check(n >= 2, trf("{} engines", n));
     }
+    std::vector<std::string> names;
+    if (setup_.format == TournamentFormat::Match) {
+        names = {setup_.engine_a, setup_.engine_b};
+    } else {
+        for (const auto& p : setup_.participants) names.push_back(p.name);
+    }
+    const auto chosen = [&](const EngineEntry& e) {
+        return std::find(names.begin(), names.end(), e.name) != names.end();
+    };
+    for (const auto& e : engines_) {
+        if (!chosen(e)) continue;
+        if (e.program_state == ProgramState::Missing) check(false, trf("The program of {} is not found.", e.name));
+        if (e.program_state == ProgramState::MissingDir) {
+            check(false, trf("The working directory of {} is not found.", e.name));
+        }
+    }
     if (setup_.chess960) {
         check(true, setup_.book.empty() ? std::string(TR("Chess960: the 960 starting positions, in random order"))
                                         : trf("Chess960: {}", std::filesystem::path(setup_.book).filename().string()));
-        std::vector<std::string> names;
-        if (setup_.format == TournamentFormat::Match) {
-            names = {setup_.engine_a, setup_.engine_b};
-        } else {
-            for (const auto& p : setup_.participants) names.push_back(p.name);
-        }
         for (const auto& e : engines_) {
-            const bool chosen = std::find(names.begin(), names.end(), e.name) != names.end();
             const bool plays =
                 e.uci_options.empty() || std::any_of(e.uci_options.begin(), e.uci_options.end(),
                                                      [](const auto& o) { return o.name == "UCI_Chess960"; });
-            if (chosen && !plays) check(false, trf("{} does not play Chess960.", e.name));
+            if (chosen(e) && !plays) check(false, trf("{} does not play Chess960.", e.name));
         }
     } else {
         check(!setup_.book.empty(),
