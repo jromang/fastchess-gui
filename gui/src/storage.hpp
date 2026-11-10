@@ -31,6 +31,10 @@ class Storage {
     [[nodiscard]] std::vector<std::filesystem::path> ratingPgns() const;
     void setRatingPgns(const std::vector<std::filesystem::path>& files) const;
 
+    // The lichess API token, in settings.json: never in a tournament's files or in the log.
+    [[nodiscard]] std::string lichessToken() const;
+    void setLichessToken(const std::string& token) const;
+
     [[nodiscard]] std::vector<BookEntry> loadBooks() const;
     void saveBooks(const std::vector<BookEntry>& books) const;
 

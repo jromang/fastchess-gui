@@ -22,8 +22,8 @@ this repository still builds unchanged.
   a power cut it continues with no game lost or played twice.
 - **Changes while running**: add, withdraw or replace an engine, change the number of cycles, play games again or
   void them, with the impact shown first. No played game is lost.
-- **Broadcast**: live PGN, HTML standings and JSON files, a TLCS server for TLCV and other viewers, and a built-in
-  web page.
+- **Broadcast**: live PGN, HTML standings and JSON files, a TLCS server for TLCV and other viewers, a built-in
+  web page, and lichess broadcasts (pushed through the API with a personal token).
 - **Workflow**: a queue of tournaments, *Relaunch with…* a new engine version, templates, and a headless mode
   (`fastchess-gui --run`) for servers, which can broadcast too.
 - **Ratings** over every tournament played (and imported PGN files), by time control, group or period, anchored on a

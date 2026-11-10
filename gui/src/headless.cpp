@@ -121,7 +121,19 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
     if (broadcast.tlcs_port) settings.tlcs = true, settings.tlcs_port = *broadcast.tlcs_port;
     if (broadcast.web_port) settings.web = true, settings.web_port = *broadcast.web_port;
     if (broadcast.live_dir) settings.files = true, settings.dir = *broadcast.live_dir;
-    const bool broadcasting = settings.files || settings.tlcs || settings.web;
+    if (broadcast.lichess) {
+        // The token from the environment, or the profile's.
+        const char* token      = std::getenv("FCG_LICHESS_TOKEN");
+        settings.lichess       = true;
+        settings.lichess_token = token && *token ? token : storage.lichessToken();
+        settings.lichess_round = *broadcast.lichess == "new" ? "" : *broadcast.lichess;
+        settings.tmp_dir       = storage.root() / "tmp";
+        if (settings.lichess_token.empty()) {
+            std::fprintf(stderr, "error: --lichess needs a token in FCG_LICHESS_TOKEN (scope study:write)\n");
+            return 2;
+        }
+    }
+    const bool broadcasting = settings.files || settings.tlcs || settings.web || settings.lichess;
 
     // Broadcasting needs the games in progress: the observer the window uses, read by a thread of its own.
     std::unique_ptr<GuiObserver> observer;
@@ -132,6 +144,7 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
         for (const auto& error : broadcaster.configure(settings)) std::fprintf(stderr, "warning: %s\n", error.c_str());
         if (broadcaster.tlcs().running()) std::printf("TLCS server on UDP port %d\n", settings.tlcs_port);
         if (broadcaster.web().running()) std::printf("Web page on http://localhost:%d/\n", settings.web_port);
+        if (settings.lichess) std::printf("Pushing the games to lichess\n");
         if (settings.files) {
             std::printf("Live files in %s\n",
                         (settings.dir.empty() ? state->dir() / "live" : settings.dir).string().c_str());

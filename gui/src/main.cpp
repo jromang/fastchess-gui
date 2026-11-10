@@ -80,6 +80,7 @@ struct Args {
     std::optional<int> tlcs_port;  // --run: broadcast options
     std::optional<int> web_port;
     std::optional<std::string> live_dir;  // empty = "live" in the tournament folder
+    std::optional<std::string> lichess;   // a lichess round, or "new"
 };
 
 Args parseArgs(int argc, char** argv) {
@@ -117,6 +118,8 @@ Args parseArgs(int argc, char** argv) {
             args.web_port = std::atoi(next().c_str());
         else if (a == "--live-files")
             args.live_dir = i + 1 < argc && argv[i + 1][0] != '-' ? next() : std::string();
+        else if (a == "--lichess")
+            args.lichess = next();
         else if (a == "--size")
             std::sscanf(next().c_str(), "%dx%d", &args.width, &args.height);
         else if (a == "--help" || a == "-h") {
@@ -125,7 +128,8 @@ Args parseArgs(int argc, char** argv) {
                 "              [--shot FILE.png[@WINDOW[@SECONDS]]]... [--select-game N] [--focus WINDOW]\n"
                 "              [--quit-after SECONDS]\n"
                 "fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json   (no window)\n"
-                "              [--tlcs UDP_PORT] [--web TCP_PORT] [--live-files [DIR]]\n");
+                "              [--tlcs UDP_PORT] [--web TCP_PORT] [--live-files [DIR]]\n"
+                "              [--lichess ROUND_URL|ROUND_ID|new]   (token in FCG_LICHESS_TOKEN)\n");
             std::exit(0);
         }
     }
@@ -225,6 +229,7 @@ int main(int argc, char** argv) {
         broadcast.tlcs_port = args.tlcs_port;
         broadcast.web_port  = args.web_port;
         broadcast.live_dir  = args.live_dir;
+        broadcast.lichess   = args.lichess;
         return fcg::runHeadless(args.run, storage, fcg::detectTopology(), broadcast);
     }
 

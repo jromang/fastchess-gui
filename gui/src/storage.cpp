@@ -79,6 +79,25 @@ void Storage::setRatingPgns(const std::vector<fs::path>& files) const {
     writeJson(root_ / "settings.json", settings);
 }
 
+std::string Storage::lichessToken() const {
+    const auto settings = readJson<nlohmann::json>(root_ / "settings.json");
+    return settings ? settings->value("lichess_token", std::string{}) : std::string{};
+}
+
+void Storage::setLichessToken(const std::string& token) const {
+    auto settings = readJson<nlohmann::json>(root_ / "settings.json").value_or(nlohmann::json::object());
+    if (token.empty()) {
+        settings.erase("lichess_token");
+    } else {
+        settings["lichess_token"] = token;
+    }
+    const auto file = root_ / "settings.json";
+    writeJson(file, settings);
+    // Readable by its owner only, as it holds a token.
+    std::error_code ec;
+    fs::permissions(file, fs::perms::owner_read | fs::perms::owner_write, fs::perm_options::replace, ec);
+}
+
 std::vector<BookEntry> Storage::loadBooks() const {
     return readJson<std::vector<BookEntry>>(root_ / "books.json").value_or(std::vector<BookEntry>{});
 }

@@ -15,6 +15,7 @@ struct HeadlessBroadcast {
     std::optional<int> tlcs_port;         // TLCS server on this UDP port
     std::optional<int> web_port;          // web page on this TCP port
     std::optional<std::string> live_dir;  // live files in this folder; empty = "live" in the tournament folder
+    std::optional<std::string> lichess;   // a lichess round's URL or id, "new" for a new broadcast
 };
 
 // Resumes the tournament in `target`, or creates one from a setup (or template) file with the engines of the

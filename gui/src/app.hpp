@@ -248,6 +248,8 @@ class App {
     // broadcast
     void updateBroadcast();
     void drawBroadcast();
+    void drawLichess(bool& changed);
+    std::string lichess_token_;  // from the profile's settings
 
     // setup sections
     void setupFormat();

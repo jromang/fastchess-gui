@@ -24,12 +24,17 @@ float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
 
 void App::updateBroadcast() {
     BroadcastSettings settings;
-    settings.files     = setup_.broadcast_files;
-    settings.dir       = setup_.broadcast_dir;
-    settings.tlcs      = setup_.broadcast_tlcs;
-    settings.tlcs_port = setup_.tlcs_port;
-    settings.web       = setup_.broadcast_web;
-    settings.web_port  = setup_.web_port;
+    settings.files          = setup_.broadcast_files;
+    settings.dir            = setup_.broadcast_dir;
+    settings.tlcs           = setup_.broadcast_tlcs;
+    settings.tlcs_port      = setup_.tlcs_port;
+    settings.web            = setup_.broadcast_web;
+    settings.web_port       = setup_.web_port;
+    settings.lichess        = setup_.broadcast_lichess;
+    settings.lichess_token  = lichess_token_;
+    settings.lichess_round  = setup_.lichess_round;
+    settings.lichess_listed = setup_.lichess_listed;
+    settings.tmp_dir        = storage_.root() / "tmp";
     for (const auto& error : broadcaster_.configure(settings)) Console::instance().add(error, true);
 
     const auto* t   = run_.tournament();
@@ -127,7 +132,73 @@ void App::drawBroadcast() {
     }
     ui::endCard();
 
+    ImGui::Spacing();
+    drawLichess(changed);
+
     if (changed) saveSetupSoon();
+}
+
+void App::drawLichess(bool& changed) {
+    ui::beginCard("bc_lichess");
+    ui::pageTitle("lichess");
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextDisabled("%s",
+                        TR("A lichess broadcast: its board, evaluation bar and chat, for anyone, on the internet. "
+                           "The games in progress are pushed every few seconds, each finished game once with "
+                           "its evaluations and clocks."));
+    ImGui::PopTextWrapPos();
+
+    const auto text = [&](const char* id, std::string& value, ImGuiInputTextFlags flags) {
+        char buffer[512];
+        const auto n = std::min(value.size(), sizeof(buffer) - 1);
+        std::copy_n(value.data(), n, buffer);
+        buffer[n] = 0;
+        ImGui::SetNextItemWidth(-FLT_MIN);
+        if (!ImGui::InputText(id, buffer, sizeof(buffer), flags)) return false;
+        value = buffer;
+        return true;
+    };
+
+    ImGui::TextUnformatted(TR("API token (with the study:write scope)"));
+    if (text("##lichess_token", lichess_token_, ImGuiInputTextFlags_Password)) {
+        storage_.setLichessToken(lichess_token_);
+    }
+    if (ImGui::SmallButton(TR("Create a token on lichess…"))) {
+        SDL_OpenURL("https://lichess.org/account/oauth/token/create?scopes[]=study:write&description=fastchess-gui");
+    }
+    ImGui::SameLine();
+    ImGui::TextDisabled("%s", TR("Kept in the profile only, never in a tournament's files or the log."));
+
+    ImGui::TextUnformatted(TR("Round (its URL or id; empty: a new broadcast named after the tournament)"));
+    changed |= text("##lichess_round", setup_.lichess_round, 0);
+    changed |= ImGui::Checkbox(TR("Listed among lichess' broadcasts"), &setup_.lichess_listed);
+    ui::help(TR("Otherwise the broadcast is unlisted: only those who have its link see it."));
+
+    const bool curl = curlAvailable();
+    ImGui::BeginDisabled(lichess_token_.empty() || !curl);
+    changed |= ImGui::Checkbox(TR("Push the games to lichess"), &setup_.broadcast_lichess);
+    ImGui::EndDisabled();
+    if (!curl) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+        ImGui::TextWrapped("%s", TR("curl is needed to reach lichess, and was not found."));
+        ImGui::PopStyleColor();
+    }
+
+    const auto status = broadcaster_.lichess();
+    if (!status.error.empty()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+        ImGui::TextWrapped("%s", status.error.c_str());
+        ImGui::PopStyleColor();
+    }
+    if (status.running) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::GOOD);
+        ImGui::TextUnformatted(status.last_push.empty()
+                                   ? TR("● On air")
+                                   : trf("● On air · {} games · pushed at {}", status.games, status.last_push).c_str());
+        ImGui::PopStyleColor();
+    }
+    if (!status.url.empty() && ImGui::SmallButton(status.url.c_str())) SDL_OpenURL(status.url.c_str());
+    ui::endCard();
 }
 
 }  // namespace fcg

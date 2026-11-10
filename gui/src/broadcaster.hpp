@@ -13,6 +13,7 @@
 #include <tour/state.hpp>
 
 #include "broadcast.hpp"
+#include "lichess.hpp"
 #include "live.hpp"
 
 namespace fcg {
@@ -24,6 +25,12 @@ struct BroadcastSettings {
     int tlcs_port = 16001;
     bool web      = false;
     int web_port  = 8080;
+
+    bool lichess = false;
+    std::string lichess_token;
+    std::string lichess_round;  // a round's URL or id; empty: a new broadcast
+    bool lichess_listed = false;
+    std::filesystem::path tmp_dir;  // curl's files
 };
 
 // The tournament as broadcast: the games in progress (from the observer), the last game ended in each slot, the
@@ -50,6 +57,7 @@ class Broadcaster {
     [[nodiscard]] const std::string& webError() const noexcept { return web_error_; }
     // Where and when the files were last written, or why they could not be.
     [[nodiscard]] const std::string& filesStatus() const noexcept { return files_status_; }
+    [[nodiscard]] LichessRelay::Status lichess() const { return lichess_.status(); }
 
    private:
     BroadcastSettings settings_;
@@ -60,6 +68,13 @@ class Broadcaster {
     std::string files_status_;
     std::chrono::steady_clock::time_point last_snapshot_{};
     std::chrono::steady_clock::time_point last_files_{};
+
+    // lichess: started with the first update of a tournament, from its results at that moment on.
+    LichessRelay lichess_;
+    const tour::TournamentState* lichess_for_ = nullptr;
+    std::size_t lichess_results_              = 0;
+    std::chrono::steady_clock::time_point last_lichess_{};
+    void updateLichess(const tour::TournamentState& state, const BroadcastSnapshot& snapshot);
 };
 
 }  // namespace fcg

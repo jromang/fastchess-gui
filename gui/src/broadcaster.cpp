@@ -133,13 +133,21 @@ std::vector<std::string> Broadcaster::configure(const BroadcastSettings& setting
     };
     sync(tlcs_, settings.tlcs, settings.tlcs_port, tlcs_error_);
     sync(web_, settings.web, settings.web_port, web_error_);
+    // Other lichess settings: a new start, with the next update.
+    const bool lichess_changed =
+        settings.lichess != settings_.lichess || settings.lichess_token != settings_.lichess_token ||
+        settings.lichess_round != settings_.lichess_round || settings.lichess_listed != settings_.lichess_listed;
+    if (lichess_changed) {
+        lichess_.stop();
+        lichess_for_ = nullptr;
+    }
     settings_ = settings;
     return errors;
 }
 
 void Broadcaster::update(const tour::TournamentState& state, const GuiObserver& observer,
                          const std::optional<tour::Anchor>& anchor, int featured) {
-    if (!settings_.files && !tlcs_.running() && !web_.running()) return;
+    if (!settings_.files && !tlcs_.running() && !web_.running() && !settings_.lichess) return;
 
     // A few times per second is enough for spectators, and costs nothing to the engines.
     const auto now = Clock::now();
@@ -149,6 +157,7 @@ void Broadcaster::update(const tour::TournamentState& state, const GuiObserver& 
     const auto snapshot = makeSnapshot(state, observer, anchor);
     if (tlcs_.running()) tlcs_.publish(snapshot, featured);
     if (web_.running()) web_.publish(snapshot);
+    if (settings_.lichess) updateLichess(state, snapshot);
 
     if (settings_.files && now - last_files_ >= std::chrono::seconds(1)) {
         last_files_      = now;
@@ -161,9 +170,47 @@ void Broadcaster::update(const tour::TournamentState& state, const GuiObserver& 
     }
 }
 
+void Broadcaster::updateLichess(const tour::TournamentState& state, const BroadcastSnapshot& snapshot) {
+    const auto& spec = state.spec();
+    const bool frc   = spec.conditions.variant == fastchess::VariantType::FRC;
+    if (lichess_for_ != &state) {
+        // Started once per tournament and settings; after an error it waits for them to change.
+        lichess_.stop();
+        lichess_for_ = &state;
+        if (settings_.lichess_token.empty()) return;
+        lichess_results_ = state.results().size();
+        lichess_.start({settings_.lichess_token, settings_.lichess_round, settings_.lichess_listed, spec.name,
+                        state.dir(), settings_.tmp_dir});
+    }
+    if (!lichess_.running()) return;
+    const auto now = Clock::now();
+    if (now - last_lichess_ < std::chrono::seconds(2)) return;
+    last_lichess_ = now;
+
+    std::vector<LichessGame> live;
+    for (const auto& g : snapshot.games) {
+        if (g.active) live.push_back(lichessLiveGame(g, spec.name, g.white_elo, g.black_elo, frc));
+    }
+    std::vector<LichessGame> finished;
+    const auto results = state.results();
+    for (; lichess_results_ < results.size(); ++lichess_results_) {
+        const auto& r = results[lichess_results_];
+        if (r.voided) continue;
+        const auto* white = spec.participant(r.white);
+        const auto* black = spec.participant(r.black);
+        const auto pgn    = tour::readSpan(state.chessbasePgnPath(), r.pgn_chessbase);
+        if (!white || !black || !pgn) continue;
+        finished.push_back(lichessFinishedGame(*pgn, spec.name, r.encounter + 1, white->engine.name, black->engine.name,
+                                               white->elo, black->elo, r.result, frc));
+    }
+    lichess_.offer(std::move(live), std::move(finished));
+}
+
 void Broadcaster::stop() {
     tlcs_.stop();
     web_.stop();
+    lichess_.stop();
+    lichess_for_ = nullptr;
 }
 
 }  // namespace fcg

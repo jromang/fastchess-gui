@@ -264,6 +264,16 @@ The *Broadcast* tab of a running tournament publishes it while it plays; the sna
   viewers can follow the tournament (board, clocks, PV, crosstable).
 - **Web page** (TCP port): a page with the board, clocks, PV and standings, served by fastchess-gui itself, for any
   browser on the network.
+- **lichess**: a lichess broadcast, with lichess' board, evaluation bar and chat, for anyone on the internet. It
+  needs a personal API token with the `study:write` scope (*Create a token on lichess…*), kept in `settings.json`
+  in the profile only. With no round given, a broadcast named after the tournament is made, unlisted unless
+  *Listed among lichess' broadcasts* is ticked; its link is shown once it is on air. Otherwise the games go to the
+  round whose URL or id is given (a broadcast fed by pushes, not by a source URL). The games in progress are
+  pushed every 8 seconds, and each finished game once, with its evaluations and clocks; a round holds 64 games,
+  after which the next round of the same broadcast is made. Only the games finished after it was switched on are
+  pushed; `lichess.json` in the tournament folder remembers where they went, so a resumed tournament continues
+  the same broadcast. The requests go through the system's `curl` (present on Linux and on Windows 10 and later),
+  with the system's certificates and proxy settings.
 
 ## Headless mode
 
@@ -282,7 +292,10 @@ The tournament can be broadcast at the same time, as from the *Broadcast* tab:
 fastchess-gui --run FOLDER --tlcs 16001             # a TLCS server on UDP port 16001
 fastchess-gui --run FOLDER --web 8080               # the web page on http://<this machine>:8080/
 fastchess-gui --run FOLDER --live-files [DIR]       # live.pgn, standings.html, tournament.json ("live" by default)
+fastchess-gui --run FOLDER --lichess new            # a new lichess broadcast; or --lichess ROUND_URL|ROUND_ID
 ```
+
+`--lichess` takes the token from the `FCG_LICHESS_TOKEN` environment variable, or the profile's.
 
 The options can be combined. A setup file saved with broadcasting switched on broadcasts the same way without
 them. For viewers outside the local network, open the ports in the router: TLCV and node-tlcv (ccrl.live)
@@ -296,6 +309,7 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
 - `engines.json`: the engine library;
 - `setup.json`: the last setup; `templates/*.json`: the saved templates; `queue.json`: the queue;
 - `layout.ini`: the window layout; `fastchess-gui.log`: the log of the last session;
+- `tmp/`: curl's files while a lichess request is made (removed right after);
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**;
 - `runs/<date>_<A>_vs_<B>/` for a match, `runs/<date>_<name>/` for a tournament (in `runs/` or the chosen
@@ -307,6 +321,7 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
     point of view of the side that moved;
   - `games-chessbase.pgn`: `{[%eval 0.35,18] [%clk 0:00:59.200] [%emt 0:00:01.234]}`, with the evaluation from
     White's point of view, as read by ChessBase / Fritz and Lichess;
+  - `lichess.json`: the lichess broadcast and round its games went to (no token);
   - `logs/game-N.log`: every line exchanged with both engines during game N (the number shown in the *Games*
     tab), with the time it was sent or read, for the games lost on time, by a crash, a stall or an illegal move
     (or every game, if asked). The first 300 and the last 5000 lines of a game are kept. It is what an engine

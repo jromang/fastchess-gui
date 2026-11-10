@@ -24,8 +24,9 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
       topology_(topology),
       options_(std::move(options)),
       dialogs_(window) {
-    engines_ = storage_.loadEngines();
-    books_   = storage_.loadBooks();
+    engines_       = storage_.loadEngines();
+    books_         = storage_.loadBooks();
+    lichess_token_ = storage_.lichessToken();
     if (!books_.empty()) selected_book_ = 0;
     setup_ = storage_.loadSetup();
     i18n::setLanguage(i18n::resolve(setup_.language));
