@@ -159,6 +159,7 @@ void App::pollProbe() {
     e.id_author   = result.id_author;
     e.uci_options = result.options;
     pruneOptions(e);
+    if (first_probe) showWdlByDefault(e);
 
     // A freshly added engine takes the name it reports.
     if (first_probe && !e.id_name.empty() && e.name == uniqueEngineName(fs::path(e.cmd).stem().string(), index)) {

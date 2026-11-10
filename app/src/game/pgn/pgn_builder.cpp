@@ -181,8 +181,7 @@ std::string PgnBuilder::chessBaseCommands(const MoveData& move, chess::Color mov
         if (move.score->type == ScoreType::MATE) {
             fmt::format_to(std::back_inserter(out), "[%eval #{},{}]", sign * move.score->value, move.depth);
         } else if (move.score->type == ScoreType::CP) {
-            fmt::format_to(std::back_inserter(out), "[%eval {:.2f},{}]", sign * move.score->value / 100.0,
-                           move.depth);
+            fmt::format_to(std::back_inserter(out), "[%eval {:.2f},{}]", sign * move.score->value / 100.0, move.depth);
         }
     }
 
@@ -195,6 +194,11 @@ std::string PgnBuilder::chessBaseCommands(const MoveData& move, chess::Color mov
     fmt::format_to(std::back_inserter(out), "{}[%emt {}]", out.empty() ? "" : " ", formatClock(move.elapsed_millis));
 
     return out;
+}
+
+std::string PgnBuilder::wdl(const MoveData& move) const {
+    if (!pgn_config_.track_wdl || !move.wdl) return "";
+    return fmt::format("wdl={}/{}/{}", (*move.wdl)[0], (*move.wdl)[1], (*move.wdl)[2]);
 }
 
 std::string PgnBuilder::createComment(const MoveData& move, const MoveData& next_move, bool illegal, bool last,
@@ -225,7 +229,7 @@ std::string PgnBuilder::createComment(const MoveData& move, const MoveData& next
                               pgn_config_.track_nps ? fmt::format("nps={}", move.nps) : "",
                               pgn_config_.track_hashfull ? fmt::format("hashfull={}", move.hashfull) : "",
                               pgn_config_.track_tbhits ? fmt::format("tbhits={}", move.tbhits) : "",
-                              pgn_config_.track_pv ? fmt::format("pv=\"{}\"", move.pv) : "",
+                              pgn_config_.track_pv ? fmt::format("pv=\"{}\"", move.pv) : "", wdl(move),
                               info_lines.empty() ? "" : info_lines,  //
                               last ? match_str : ""                  //
             );
@@ -239,7 +243,7 @@ std::string PgnBuilder::createComment(const MoveData& move, const MoveData& next
                           pgn_config_.track_nps ? fmt::format("nps={}", move.nps) : "",
                           pgn_config_.track_hashfull ? fmt::format("hashfull={}", move.hashfull) : "",
                           pgn_config_.track_tbhits ? fmt::format("tbhits={}", move.tbhits) : "",
-                          pgn_config_.track_pv ? fmt::format("pv=\"{}\"", move.pv) : "",
+                          pgn_config_.track_pv ? fmt::format("pv=\"{}\"", move.pv) : "", wdl(move),
                           info_lines.empty() ? "" : info_lines,  //
                           last ? match_str : ""                  //
         );

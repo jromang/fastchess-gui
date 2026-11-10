@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -41,9 +42,10 @@ struct MoveData {
     int64_t depth              = 0;
     int64_t seldepth           = 0;
     std::optional<Score> score = std::nullopt;
-    int64_t timeleft           = 0;
-    int64_t latency            = 0;
-    int64_t hashfull           = 0;
+    std::optional<std::array<int64_t, 3>> wdl;  // fastchess-gui: win, draw, loss in permille, the mover's view
+    int64_t timeleft = 0;
+    int64_t latency  = 0;
+    int64_t hashfull = 0;
 
     bool legal = true;
     bool book  = false;

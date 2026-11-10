@@ -235,3 +235,13 @@ TEST_CASE("state: the PV warnings of a game are kept with its result, by ply") {
     CHECK(pv[2].first == 2);
     CHECK(pv[2].second == "Warning; Too long mating PV - from A");
 }
+
+TEST_CASE("state: a tournament written before a PGN setting existed still opens") {
+    const auto dir = freshDir("state-old-spec");
+    TournamentState::create(dir, matchSpec(2));
+    auto spec = nlohmann::json::parse(readAll(dir / "tournament.json"));
+    REQUIRE(spec["conditions"]["pgn"].erase("track_wdl") == 1);
+    std::ofstream(dir / "tournament.json", std::ios::binary | std::ios::trunc) << spec.dump(2);
+    const auto state = TournamentState::open(dir);
+    CHECK_FALSE(state->spec().conditions.pgn.track_wdl);
+}

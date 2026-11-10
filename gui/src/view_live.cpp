@@ -94,6 +94,69 @@ int plotEval(const char* id, const std::vector<float>& evals, int marker_ply, fl
     return clicked;
 }
 
+int plotWdl(const char* id, const WdlSeries& wdl, std::size_t plies, int marker_ply, float height) {
+    int clicked                 = -1;
+    constexpr ImPlotFlags flags = ImPlotFlags_NoTitle | ImPlotFlags_NoLegend | ImPlotFlags_NoMenus |
+                                  ImPlotFlags_NoBoxSelect | ImPlotFlags_NoMouseText;
+
+    if (ImPlot::BeginPlot(id, ImVec2(-1, height), flags)) {
+        ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_NoGridLines,
+                          ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickLabels);
+        ImPlot::SetupAxisLimits(ImAxis_X1, 0, std::max<double>(20, static_cast<double>(plies)), ImPlotCond_Always);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 1, ImPlotCond_Always);
+
+        const int n = static_cast<int>(wdl.ply.size());
+        std::vector<float> zero(wdl.ply.size(), 0.0f), one(wdl.ply.size(), 1.0f);
+        ImPlotSpec band;
+        band.FillColor = ImVec4(0.97f, 0.97f, 0.97f, 1.0f);
+        ImPlot::PlotShaded("##win", wdl.ply.data(), zero.data(), wdl.win.data(), n, band);
+        band.FillColor = ImVec4(0.74f, 0.74f, 0.74f, 1.0f);
+        ImPlot::PlotShaded("##draw", wdl.ply.data(), wdl.win.data(), wdl.not_lost.data(), n, band);
+        band.FillColor = ImVec4(0.32f, 0.32f, 0.32f, 1.0f);
+        ImPlot::PlotShaded("##loss", wdl.ply.data(), wdl.not_lost.data(), one.data(), n, band);
+
+        if (marker_ply > 0) {
+            const double x = marker_ply;
+            ImPlotSpec marker;
+            marker.LineColor = ImVec4(0.95f, 0.75f, 0.3f, 0.8f);
+            ImPlot::PlotInfLines("##marker", &x, 1, marker);
+        }
+        if (ImPlot::IsPlotHovered()) {
+            const auto mouse = ImPlot::GetPlotMousePos();
+            const auto it    = std::lower_bound(wdl.ply.begin(), wdl.ply.end(), static_cast<float>(mouse.x));
+            if (it != wdl.ply.end()) {
+                const auto k = static_cast<std::size_t>(it - wdl.ply.begin());
+                ImGui::SetTooltip("%s", trf("White {:.0f} % · draw {:.0f} % · Black {:.0f} %", 100 * wdl.win[k],
+                                            100 * (wdl.not_lost[k] - wdl.win[k]), 100 * (1 - wdl.not_lost[k]))
+                                            .c_str());
+            }
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) clicked = static_cast<int>(std::lround(mouse.x));
+        }
+        ImPlot::EndPlot();
+    }
+    return clicked;
+}
+
+void wdlLine(const std::array<int64_t, 3>& wdl) {
+    const double sum = std::max<int64_t>(1, wdl[0] + wdl[1] + wdl[2]);
+    const auto text =
+        trf("W {:.0f} · D {:.0f} · L {:.0f} %", 100 * wdl[0] / sum, 100 * wdl[1] / sum, 100 * wdl[2] / sum);
+    ImGui::TextColored(ui::MUTED4, "%s", text.c_str());
+    ImGui::SameLine();
+
+    // The three shares in a thin bar, vertically centred on the text.
+    const float width = ImGui::GetFontSize() * 6.0f, height = ImGui::GetFontSize() * 0.4f;
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const float y  = p.y + (ImGui::GetTextLineHeight() - height) / 2;
+    const float x1 = p.x + width * static_cast<float>(wdl[0] / sum);
+    const float x2 = x1 + width * static_cast<float>(wdl[1] / sum);
+    auto* dl       = ImGui::GetWindowDrawList();
+    dl->AddRectFilled(ImVec2(p.x, y), ImVec2(x1, y + height), IM_COL32(110, 190, 120, 255));
+    dl->AddRectFilled(ImVec2(x1, y), ImVec2(x2, y + height), IM_COL32(160, 160, 160, 255));
+    dl->AddRectFilled(ImVec2(x2, y), ImVec2(p.x + width, y + height), IM_COL32(215, 95, 95, 255));
+    ImGui::Dummy(ImVec2(width, ImGui::GetTextLineHeight()));
+}
+
 namespace {
 
 float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
@@ -411,6 +474,7 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
                 ui::MUTED4, "d%lld/%lld  %s  %s n  %s n/s", static_cast<long long>(info.depth.value_or(0)),
                 static_cast<long long>(info.seldepth.value_or(0)), ui::formatScore(score).c_str(),
                 ui::formatCount(info.nodes.value_or(0)).c_str(), ui::formatCount(info.nps.value_or(0)).c_str());
+            if (info.wdl) wdlLine(*info.wdl);
             const auto pv = pvToSan(view.board, info.pv, 12);
             ImGui::PushTextWrapPos(0);
             ImGui::TextUnformatted(pv.empty() ? " " : pv.c_str());
@@ -428,6 +492,7 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
                                    static_cast<long long>(last->seldepth), ui::formatScore(last->score).c_str(),
                                    ui::formatCount(last->nodes).c_str(), ui::formatCount(last->nps).c_str(),
                                    ui::formatClock(last->time_ms).c_str());
+                if (last->wdl) wdlLine(*last->wdl);
             } else {
                 ImGui::TextDisabled("—");
             }
@@ -531,7 +596,14 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
         if (std::isfinite(v)) previous = v;
         evals.push_back(previous);
     }
-    plotEval("##live_eval", evals, -1, std::max(60.0f, ImGui::GetContentRegionAvail().y));
+    const auto wdl     = wdlSeries(st.moves);
+    const float height = std::max(60.0f, ImGui::GetContentRegionAvail().y);
+    const float eval_h = wdl.empty() ? height : std::max(60.0f, std::floor(height * 0.62f));
+    plotEval("##live_eval", evals, -1, eval_h);
+    if (!wdl.empty()) {
+        plotWdl("##live_wdl", wdl, evals.size(), -1,
+                std::max(30.0f, height - eval_h - ImGui::GetStyle().ItemSpacing.y - 1.0f));
+    }
 
     ImGui::EndChild();
     ImGui::PopID();

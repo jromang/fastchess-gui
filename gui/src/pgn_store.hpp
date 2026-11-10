@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -33,7 +34,8 @@ struct ReplayMove {
     std::optional<fastchess::Score> score;  // from the mover's point of view
     int depth       = 0;
     int64_t time_ms = -1;
-    int64_t nps     = 0;  // only when the PGN was written with nps=
+    int64_t nps     = 0;                        // only when the PGN was written with nps=
+    std::optional<std::array<int64_t, 3>> wdl;  // wdl=W/D/L: permille, from the mover's point of view
 };
 
 struct ReplayGame {

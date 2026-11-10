@@ -550,6 +550,12 @@ UciInfo UciEngine::parseInfo(std::string_view info_line) {
             parse_integer(result.hashfull, i + 1);
         } else if (token == "multipv") {
             parse_integer(result.multipv, i + 1);
+        } else if (token == "wdl") {
+            std::optional<int64_t> w, d, l;
+            parse_integer(w, i + 1);
+            parse_integer(d, i + 2);
+            parse_integer(l, i + 3);
+            if (w && d && l) result.wdl = std::array<int64_t, 3>{*w, *d, *l};
         } else if (token == "lowerbound") {
             result.lowerbound = true;
         } else if (token == "upperbound") {

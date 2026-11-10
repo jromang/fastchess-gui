@@ -437,6 +437,7 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     t.pgn.track_nodes    = setup.pgn_nodes;
     t.pgn.track_seldepth = setup.pgn_seldepth;
     t.pgn.track_nps      = setup.pgn_nps;
+    t.pgn.track_wdl      = true;  // only written for the engines that report it
     t.pgn.track_pv       = setup.pgn_pv;
 
     fastchess::cli::sanitize(t);

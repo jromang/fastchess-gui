@@ -37,7 +37,8 @@ struct LiveMove {
     chess::Color mover = chess::Color::WHITE;
     bool book          = false;
 
-    std::optional<fastchess::Score> score;  // mover's point of view
+    std::optional<fastchess::Score> score;      // mover's point of view
+    std::optional<std::array<int64_t, 3>> wdl;  // win, draw, loss in permille, mover's point of view
     int64_t depth    = 0;
     int64_t seldepth = 0;
     int64_t time_ms  = 0;

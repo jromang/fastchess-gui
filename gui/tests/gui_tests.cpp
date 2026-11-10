@@ -10,10 +10,12 @@
 #include <core/config/config.hpp>
 #include <core/globals/globals.hpp>
 #include <core/observer.hpp>
+#include <engine/uci_engine.hpp>
 #include <game/pgn/pgn_builder.hpp>
 #include <matchmaking/elo/elo_pentanomial.hpp>
 #include <matchmaking/sprt/sprt.hpp>
 
+#include "app.hpp"
 #include "board_view.hpp"
 #include "cpu_time.hpp"
 #include "engine_import.hpp"
@@ -141,6 +143,20 @@ TEST_CASE("pruneOptions keeps only values that differ from the engine default") 
     CHECK(e.threads() == 1);
 }
 
+TEST_CASE("UCI_ShowWDL is switched on for a new engine that has it, and left as it was set") {
+    EngineEntry e;
+    showWdlByDefault(e);
+    CHECK(e.options.empty());
+    e.uci_options = {{"UCI_ShowWDL", "check", "false", "", "", {}}};
+    showWdlByDefault(e);
+    REQUIRE(e.options.size() == 1);
+    CHECK(e.options[0] == std::pair<std::string, std::string>{"UCI_ShowWDL", "true"});
+    e.options[0].second = "false";
+    showWdlByDefault(e);
+    CHECK(e.options.size() == 1);
+    CHECK(e.options[0].second == "false");
+}
+
 TEST_CASE("an engine's program: taken as it is, then noticed when rebuilt, moved, or without its folder") {
     const auto dir     = tempDir("program");
     const auto program = dir / "engine";
@@ -264,6 +280,22 @@ TEST_CASE("ChessBase comments give White's point of view, clocks and move times"
     const auto classic = fastchess::pgn::PgnBuilder(config, data, 1).get();
     CHECK(classic.find("1. e4 {+0.35/10 1.234s}") != std::string::npos);
     CHECK(classic.find("e5 {-0.20/11 1.235s}") != std::string::npos);
+
+    // WDL, read from the info line, written when asked and known.
+    const auto info = fastchess::engine::UciEngine::parseInfo(
+        "info depth 10 seldepth 14 score cp 30 wdl 120 830 50 nodes 1000 pv e2e4 e7e5");
+    REQUIRE(info.wdl);
+    CHECK(*info.wdl == std::array<int64_t, 3>{120, 830, 50});
+    CHECK(info.nodes == 1000u);
+    CHECK_FALSE(fastchess::engine::UciEngine::parseInfo("info depth 10 score cp 30 wdl 120 830").wdl);
+    auto with_wdl         = data;
+    with_wdl.moves[0].wdl = info.wdl;
+    config.track_wdl      = true;
+    const auto wdl        = fastchess::pgn::PgnBuilder(config, with_wdl, 1).get();
+    CHECK(wdl.find("1. e4 {+0.35/10 1.234s, wdl=120/830/50}") != std::string::npos);
+    CHECK(wdl.find("e5 {-0.20/11 1.235s}") != std::string::npos);
+    const auto wdl_cb = fastchess::pgn::PgnBuilder(config, with_wdl, 1, fastchess::pgn::CommentStyle::ChessBase).get();
+    CHECK(wdl_cb.find("[%emt 0:00:01.234], wdl=120/830/50}") != std::string::npos);
 }
 
 TEST_CASE("fastchess comments parse back") {
@@ -297,6 +329,30 @@ TEST_CASE("fastchess comments parse back") {
     ReplayMove book;
     parseFastchessComment("book", book);
     CHECK(book.book);
+
+    ReplayMove wdl;
+    parseFastchessComment("+0.35/18 1.234s, nps=900000, wdl=120/830/50", wdl);
+    REQUIRE(wdl.wdl);
+    CHECK(*wdl.wdl == std::array<int64_t, 3>{120, 830, 50});
+    CHECK(wdl.nps == 900000);
+    ReplayMove cut;
+    parseFastchessComment("+0.35/18 1.234s, wdl=120/830", cut);
+    CHECK_FALSE(cut.wdl);
+}
+
+TEST_CASE("WDL: from the mover's point of view to White's, after the plies that have it") {
+    std::vector<ReplayMove> moves(3);
+    moves[0].book  = true;
+    moves[1].mover = chess::Color::BLACK;
+    moves[1].wdl   = std::array<int64_t, 3>{600, 300, 100};  // Black wins 60 %
+    moves[2].wdl   = std::array<int64_t, 3>{200, 700, 100};
+    const auto s   = wdlSeries(moves);
+    REQUIRE(s.ply.size() == 2);
+    CHECK(s.ply[0] == 2);
+    CHECK(s.win[0] == doctest::Approx(0.1));
+    CHECK(s.not_lost[0] == doctest::Approx(0.4));
+    CHECK(s.win[1] == doctest::Approx(0.2));
+    CHECK(s.not_lost[1] == doctest::Approx(0.9));
 }
 
 TEST_CASE("board details: the 50-move counter, the material difference and the pieces left") {

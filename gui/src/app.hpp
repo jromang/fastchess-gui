@@ -44,6 +44,38 @@ namespace fcg {
 // Returns the ply clicked in the plot, or -1.
 int plotEval(const char* id, const std::vector<float>& evals, int marker_ply, float height);
 
+// The win, draw and loss shares engines reported (UCI_ShowWDL), from White's point of view, after the plies that
+// have them.
+struct WdlSeries {
+    std::vector<float> ply;
+    std::vector<float> win;       // White wins
+    std::vector<float> not_lost;  // White wins or draws
+    [[nodiscard]] bool empty() const noexcept { return ply.empty(); }
+};
+template <typename Moves>
+WdlSeries wdlSeries(const Moves& moves) {
+    WdlSeries s;
+    for (std::size_t i = 0; i < moves.size(); ++i) {
+        const auto& m = moves[i];
+        if (m.book || !m.wdl) continue;
+        const bool white = m.mover == chess::Color::WHITE;
+        const float w = static_cast<float>((*m.wdl)[white ? 0 : 2]), d = static_cast<float>((*m.wdl)[1]),
+                    l   = static_cast<float>((*m.wdl)[white ? 2 : 0]);
+        const float sum = std::max(1.0f, w + d + l);
+        s.ply.push_back(static_cast<float>(i + 1));
+        s.win.push_back(w / sum);
+        s.not_lost.push_back((w + d) / sum);
+    }
+    return s;
+}
+
+// The WdlSeries as three bands, White's wins at the bottom; the x axis is the eval curve's for `plies` plies.
+// Returns the ply clicked, or -1.
+int plotWdl(const char* id, const WdlSeries& wdl, std::size_t plies, int marker_ply, float height);
+
+// "W 12 · D 80 · L 8 %" and a thin bar of the three, for a side's own win, draw, loss in permille.
+void wdlLine(const std::array<int64_t, 3>& wdl);
+
 struct AppOptions {
     bool autostart = false;
     std::string focus_window;  // page or tab shown at startup (for screenshots)

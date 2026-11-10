@@ -149,6 +149,19 @@ void parseFastchessComment(std::string_view comment, ReplayMove& move) {
         const auto value = rest.substr(at + 4);
         std::from_chars(value.data(), value.data() + value.size(), move.nps);
     }
+
+    if (const auto at = rest.find("wdl="); at != std::string_view::npos) {
+        std::array<int64_t, 3> wdl{};
+        const char* p   = rest.data() + at + 4;
+        const char* end = rest.data() + rest.size();
+        bool ok         = true;
+        for (int i = 0; i < 3 && ok; ++i) {
+            const auto r = std::from_chars(p, end, wdl[i]);
+            ok           = r.ec == std::errc() && (i == 2 || (r.ptr < end && *r.ptr == '/'));
+            p            = r.ptr + 1;
+        }
+        if (ok) move.wdl = wdl;
+    }
 }
 
 void forEachMoveComment(std::string_view pgn, const std::function<void(bool, const ReplayMove&)>& f) {

@@ -333,6 +333,14 @@ CheckResult checkEngine(const EngineEntry& entry) {
     return result;
 }
 
+void showWdlByDefault(EngineEntry& entry) {
+    const bool has = std::any_of(entry.uci_options.begin(), entry.uci_options.end(),
+                                 [](const UciOptionInfo& o) { return o.name == "UCI_ShowWDL" && o.type == "check"; });
+    const bool set = std::any_of(entry.options.begin(), entry.options.end(),
+                                 [](const auto& kv) { return kv.first == "UCI_ShowWDL"; });
+    if (has && !set) entry.options.emplace_back("UCI_ShowWDL", "true");
+}
+
 void pruneOptions(EngineEntry& entry) {
     if (entry.uci_options.empty()) return;
 

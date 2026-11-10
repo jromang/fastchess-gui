@@ -49,6 +49,8 @@ class PgnBuilder {
 
     // The [%eval ...] [%clk ...] [%emt ...] part of a ChessBase style comment.
     [[nodiscard]] std::string chessBaseCommands(const MoveData& move, chess::Color mover) const;
+    // fastchess-gui: "wdl=W/D/L" when asked and the engine reported it, empty otherwise.
+    [[nodiscard]] std::string wdl(const MoveData& move) const;
 
     [[nodiscard]] static std::string formatClock(int64_t millis);
 

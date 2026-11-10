@@ -308,6 +308,7 @@ void Match::addMoveData(const Player& player, const std::string& move, int64_t m
     move_data.seldepth = info.seldepth.value_or(0);
     move_data.nodes    = info.nodes.value_or(0);
     move_data.pv       = str_utils::join(info.pv, " ");
+    move_data.wdl      = info.wdl;
     move_data.score =
         info.score.has_value() ? std::make_optional(Score{info.score->type, info.score->value}) : std::nullopt;
     move_data.timeleft = timeleft;

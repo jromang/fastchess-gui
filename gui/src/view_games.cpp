@@ -502,8 +502,10 @@ void App::drawGames() {
             if (m.book || !pv_problems.empty()) ImGui::PopStyleColor();
             if (current && ImGui::IsWindowAppearing()) ImGui::SetScrollHereY();
             if (ImGui::IsItemHovered() && !m.book) {
-                ImGui::SetTooltip("%s/%d  %s%s", ui::formatScore(m.score).c_str(), m.depth,
-                                  m.time_ms >= 0 ? ui::formatClock(m.time_ms).c_str() : "", pv_problems.c_str());
+                const auto wdl = m.wdl ? fmt::format("  W/D/L {}/{}/{}", (*m.wdl)[0], (*m.wdl)[1], (*m.wdl)[2]) : "";
+                ImGui::SetTooltip("%s/%d  %s%s%s", ui::formatScore(m.score).c_str(), m.depth,
+                                  m.time_ms >= 0 ? ui::formatClock(m.time_ms).c_str() : "", wdl.c_str(),
+                                  pv_problems.c_str());
             }
             ImGui::SameLine();
         }
@@ -518,7 +520,14 @@ void App::drawGames() {
         if (std::isfinite(v)) previous = v;
         evals.push_back(previous);
     }
-    const int clicked = plotEval("##replay_eval", evals, replay_ply_, -1);
+    const auto wdl     = wdlSeries(game.moves);
+    const float height = ImGui::GetContentRegionAvail().y;
+    const float eval_h = std::floor(height * 0.62f);
+    int clicked        = plotEval("##replay_eval", evals, replay_ply_, wdl.empty() ? -1 : eval_h);
+    if (!wdl.empty()) {
+        const float wdl_h = std::max(30.0f, height - eval_h - ImGui::GetStyle().ItemSpacing.y - 1.0f);
+        if (const int ply = plotWdl("##replay_wdl", wdl, evals.size(), replay_ply_, wdl_h); ply >= 0) clicked = ply;
+    }
     if (clicked >= 0) replay_ply_ = std::clamp(clicked, 0, total);
 
     ImGui::EndChild();

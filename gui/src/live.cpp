@@ -224,6 +224,7 @@ void GuiObserver::onMove(int slot_index, chess::Color mover, const fastchess::Mo
     m.san      = san;
     m.mover    = mover;
     m.score    = data.score;
+    m.wdl      = data.wdl;
     m.depth    = data.depth;
     m.seldepth = data.seldepth;
     m.time_ms  = data.elapsed_millis;

@@ -58,4 +58,8 @@ bool refreshProgram(EngineEntry& entry);
 // Removes options the engine does not have (any more) and values equal to the default.
 void pruneOptions(EngineEntry& entry);
 
+// A newly added engine that can report its win, draw and loss shares (UCI_ShowWDL) is asked to. Set off by hand, the
+// option stays off.
+void showWdlByDefault(EngineEntry& entry);
+
 }  // namespace fcg

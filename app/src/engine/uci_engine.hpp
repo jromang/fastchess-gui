@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <iterator>
@@ -41,6 +42,7 @@ struct UciInfo {
     std::optional<uint64_t> tbhits;
     std::optional<int64_t> hashfull;
     std::optional<int64_t> multipv;
+    std::optional<std::array<int64_t, 3>> wdl;  // fastchess-gui: win, draw, loss in permille (UCI_ShowWDL)
     std::vector<std::string> pv;
     bool lowerbound = false;
     bool upperbound = false;
