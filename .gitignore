@@ -48,6 +48,7 @@ Testing
 #Executable files
 fast-chess*
 fastchess*
+!gui/win/fastchess-gui.ico
 dummy_engine
 random_mover
 

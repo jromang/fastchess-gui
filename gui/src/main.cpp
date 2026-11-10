@@ -35,6 +35,7 @@
 #include "gl.hpp"
 #include "headless.hpp"
 #include "i18n.hpp"
+#include "logo.hpp"
 #include "screenshot.hpp"
 #include "storage.hpp"
 #include "topology.hpp"
@@ -274,6 +275,16 @@ int main(int argc, char** argv) {
         SDL_CreateWindow("fastchess-gui", width, height,
                          SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!window) return fatal("SDL_CreateWindow");
+    {
+        // The window's icon, with a larger image for high densities and the task switcher.
+        auto small = fcg::logo::icon(64), large = fcg::logo::icon(256);
+        SDL_Surface* icon = SDL_CreateSurfaceFrom(64, 64, SDL_PIXELFORMAT_RGBA32, small.data(), 64 * 4);
+        SDL_Surface* hd   = SDL_CreateSurfaceFrom(256, 256, SDL_PIXELFORMAT_RGBA32, large.data(), 256 * 4);
+        if (icon && hd) SDL_AddSurfaceAlternateImage(icon, hd);
+        if (icon) SDL_SetWindowIcon(window, icon);
+        SDL_DestroySurface(hd);
+        SDL_DestroySurface(icon);
+    }
 
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     if (!gl_context) return fatal("OpenGL 3.2 indisponible (SDL_GL_CreateContext)");

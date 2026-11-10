@@ -11,6 +11,7 @@
 #include "app.hpp"
 #include "console.hpp"
 #include "i18n.hpp"
+#include "logo.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -184,16 +185,12 @@ void App::drawRail(float width) {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, px(14)));
     ImGui::BeginChild("##rail", ImVec2(width, 0), ImGuiChildFlags_AlwaysUseWindowPadding);
 
-    // The logo: "fc" on the accent colour.
+    // The logo, on the accent colour.
     {
-        ImDrawList* dl   = ImGui::GetWindowDrawList();
         const auto pos   = ImGui::GetCursorScreenPos();
         const float size = px(36);
-        const ImVec2 min(pos.x + (width - size) * 0.5f, pos.y);
-        dl->AddRectFilled(min, ImVec2(min.x + size, min.y + size), ui::ACCENT, px(10));
-        const auto ts = ImGui::CalcTextSize("fc");
-        dl->AddText(ImVec2(min.x + (size - ts.x) * 0.5f, min.y + (size - ts.y) * 0.5f),
-                    ui::currentTheme() == ui::Theme::Dark ? IM_COL32(11, 18, 32, 255) : IM_COL32_WHITE, "fc");
+        logo::draw(ImGui::GetWindowDrawList(), ImVec2(pos.x + (width - size) * 0.5f, pos.y), size, ui::ACCENT,
+                   ui::currentTheme() == ui::Theme::Dark ? IM_COL32(11, 18, 32, 255) : IM_COL32_WHITE);
         ImGui::Dummy(ImVec2(width, size + px(12)));
     }
 

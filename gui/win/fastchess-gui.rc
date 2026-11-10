@@ -1,2 +1,4 @@
 // The manifest is resource 1 of type RT_MANIFEST (24).
 1 24 "fastchess-gui.manifest"
+// The executable's icon (written by the test "logo: the Windows icon is the logo drawn"), the window's too.
+1 ICON "fastchess-gui.ico"
