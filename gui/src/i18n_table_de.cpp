@@ -929,6 +929,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"{}  ({} openings)", "{}  ({} Eröffnungen)"},
         {"{} / {} games", "{} / {} Partien"},
         {"{} / {} points", "{} / {} Punkte"},
+        {"{} asks to be started again for every game: Restart the engine for every game is ticked.",
+         "{} möchte für jede Partie neu gestartet werden: „Die Engine für jede Partie neu starten“ ist angehakt."},
         {"{} changed: its options were read again.", "{} hat sich geändert: seine Optionen wurden neu eingelesen."},
         {"{} crashes", "{} Abstürze"},
         {"{} crashes or stalls", "{} Abstürze oder Hänger"},

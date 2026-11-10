@@ -40,6 +40,13 @@ struct CecpOption {
     std::vector<std::string> vars;  // -combo
 };
 
+// The option the adapter adds for engines that give their scores from White's point of view (some old ones do),
+// not from the side to move's as the protocol asks: with it, the scores of their searches as Black are reversed.
+inline constexpr const char* WHITE_POV_OPTION = "Scores from White's side";
+
+// Told before uciok when the engine asks to be started again for every game (feature reuse=0).
+inline constexpr const char* NO_REUSE_INFO = "info string feature reuse=0";
+
 // Parses the text of a "feature option" value, e.g. "Hash File -file book.bin", "Style -combo Solid /// *Normal".
 [[nodiscard]] std::optional<CecpOption> parseOption(const std::string& text);
 
@@ -123,6 +130,7 @@ class Adapter {
     chess::Board board_;
     bool level_sent_ = false;
     bool chess960_   = false;  // UCI_Chess960: variant fischerandom, castling as O-O and king takes rook
+    bool white_pov_  = false;  // WHITE_POV_OPTION: the engine's scores are White's, not the side to move's
 
     bool searching_             = false;
     bool stale_                 = false;  // a search the GUI gave up on: its move, when it comes, is dropped

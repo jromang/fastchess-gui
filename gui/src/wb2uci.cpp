@@ -350,6 +350,7 @@ void Adapter::sendUciId() {
     if (feature("memory", false) && !has("Hash")) to_gui_("option name Hash type spin default 64 min 1 max 1048576");
     if (feature("smp", false) && !has("Threads")) to_gui_("option name Threads type spin default 1 min 1 max 1024");
     if (playsChess960()) to_gui_("option name UCI_Chess960 type check default false");
+    to_gui_(fmt::format("option name {} type check default false", WHITE_POV_OPTION));
     const auto egt = features_.find("egt");
     if (egt != features_.end() && egt->second.find("syzygy") != std::string::npos && !has("SyzygyPath")) {
         to_gui_("option name SyzygyPath type string default <empty>");
@@ -371,10 +372,15 @@ void Adapter::sendUciId() {
             to_gui_(fmt::format("option name {} type button", o.name));
         }
     }
+    if (!feature("reuse", true)) to_gui_(NO_REUSE_INFO);
     to_gui_("uciok");
 }
 
 void Adapter::setOption(const std::string& name, const std::string& value) {
+    if (name == WHITE_POV_OPTION) {
+        white_pov_ = value == "true";
+        return;
+    }
     if (name == "UCI_Chess960" && playsChess960()) {
         chess960_ = value == "true";
         new_game_ = true;
@@ -752,8 +758,9 @@ void Adapter::thinking(const std::string& line) {
     while (!ply_text.empty() && !std::isdigit(static_cast<unsigned char>(ply_text.back()))) ply_text.pop_back();
     auto score_text = tokens[1];  // a bound may follow: "35?" "35!"
     while (!score_text.empty() && !std::isdigit(static_cast<unsigned char>(score_text.back()))) score_text.pop_back();
-    const auto ply   = toInt(ply_text);
-    const auto score = toInt(score_text);
+    const auto ply = toInt(ply_text);
+    auto score     = toInt(score_text);
+    if (score && white_pov_ && board_.sideToMove() == chess::Color::BLACK) score = -*score;
     const auto time  = toInt(tokens[2]);
     const auto nodes = toInt(tokens[3]);
     if (!ply || !score || !time || !nodes) return;

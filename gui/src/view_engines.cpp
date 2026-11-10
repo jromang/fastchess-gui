@@ -160,6 +160,11 @@ void App::pollProbe() {
     e.uci_options = result.options;
     pruneOptions(e);
     if (first_probe) showWdlByDefault(e);
+    if (first_probe && result.restart && !e.restart) {
+        e.restart = true;
+        Console::instance().add(
+            trf("{} asks to be started again for every game: Restart the engine for every game is ticked.", e.name));
+    }
 
     // A freshly added engine takes the name it reports.
     if (first_probe && !e.id_name.empty() && e.name == uniqueEngineName(fs::path(e.cmd).stem().string(), index)) {

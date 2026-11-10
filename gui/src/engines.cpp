@@ -1,5 +1,6 @@
 #include "engines.hpp"
 #include "i18n.hpp"
+#include "wb2uci.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -200,6 +201,7 @@ ProbeResult probeEngine(const EngineEntry& entry) {
 
         for (const auto* line : engine.getStdoutLines()) {
             if (auto option = parseUciOption(line->line)) result.options.push_back(std::move(*option));
+            if (line->line == wb2uci::NO_REUSE_INFO) result.restart = true;
         }
 
         result.ok = true;

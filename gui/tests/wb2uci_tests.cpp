@@ -13,6 +13,7 @@
 
 #include "engines.hpp"
 #include "run.hpp"
+#include "suite_run.hpp"
 #include "wb2uci.hpp"
 
 #ifdef _WIN32
@@ -116,6 +117,38 @@ TEST_CASE("wb2uci: uci waits for the features, then lists the engine's options")
     CHECK_FALSE(w.sentToGui("readyok"));
     w.fromEngine("pong 1");
     CHECK(w.sentToGui("readyok"));
+}
+
+TEST_CASE("wb2uci: scores from White's side reversed for Black when asked; reuse=0 told before uciok") {
+    Wire w;
+    w.fromGui("uci");
+    w.fromEngine("feature ping=1 setboard=1 san=1 usermove=1 reuse=0 done=1");
+    CHECK(w.sentToGui("option name Scores from White's side type check default false"));
+    REQUIRE(w.gui.size() >= 2);
+    CHECK(w.gui[w.gui.size() - 2] == wb2uci::NO_REUSE_INFO);
+    CHECK(w.gui.back() == "uciok");
+
+    // Black to move: the engine says +50 for White, that is -50 for Black, the side to move.
+    w.fromGui("setoption name Scores from White's side value true");
+    w.fromGui("position fen rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1");
+    w.fromGui("go wtime 60000 btime 60000");
+    w.fromEngine("9 50 100 1000 e5");
+    CHECK(w.gui.back().find("score cp -50") != std::string::npos);
+    w.fromEngine("10 100003 100 1000 e5");  // White mates: Black is mated
+    CHECK(w.gui.back().find("score mate -3") != std::string::npos);
+    w.fromEngine("move e5");
+
+    // White to move: unchanged.
+    w.fromGui("position fen rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2");
+    w.fromGui("go wtime 60000 btime 60000");
+    w.fromEngine("9 40 100 1000 Nf3");
+    CHECK(w.gui.back().find("score cp 40") != std::string::npos);
+
+    // Without reuse=0, nothing is told.
+    Wire plain;
+    plain.fromGui("uci");
+    plain.fromEngine("feature done=1");
+    CHECK_FALSE(plain.sentToGui(wb2uci::NO_REUSE_INFO));
 }
 
 TEST_CASE("wb2uci: a game in protocol 2: setboard, SAN with usermove, clocks, thinking, the move") {
@@ -461,4 +494,44 @@ TEST_CASE("wb2uci: a Chess960 tournament of WinBoard engines through the adapter
     CHECK(pgn.find("[Variant \"Chess960\"]") != std::string::npos);
     CHECK(pgn.find("O-O") != std::string::npos);
     fastchess::engine::xboard_adapter.clear();
+}
+
+TEST_CASE("wb2uci: a test suite with WinBoard engines (protocol 1 and 2), White and Black to move") {
+    const auto wb = (self().parent_path() / FCG_WB_MOVER).string();
+    if (!fs::is_regular_file(wb)) {
+        MESSAGE("mock engines not available on this platform, skipped");
+        return;
+    }
+    fastchess::engine::xboard_adapter = self().string();
+    if (!fastchess::config::TournamentConfig)
+        fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
+
+    // One legal move each: whatever the mover picks, it finds it.
+    tour::Suite suite;
+    suite.positions.resize(2);
+    REQUIRE(tour::parseSuiteLine("k7/8/8/8/8/8/1q6/K7 w - - bm Kxb2; id \"white\";", suite.positions[0]));
+    REQUIRE(tour::parseSuiteLine("K7/8/8/8/8/8/1Q6/k7 b - - bm Kxb2; id \"black\";", suite.positions[1]));
+
+    std::vector<fastchess::EngineConfiguration> engines(2);
+    for (int i = 0; i < 2; ++i) {
+        engines[i].name     = i == 0 ? "wb-v2" : "wb-v1";
+        engines[i].cmd      = wb;
+        engines[i].args     = i == 0 ? "v2" : "v1";
+        engines[i].protocol = "xboard";
+    }
+    SuiteSetup setup;
+    setup.move_s = 0.2;
+    SuiteRunner runner;
+    runner.start(suite, engines, setup, 2);
+    const auto deadline = std::chrono::steady_clock::now() + 60s;
+    while (runner.running() && std::chrono::steady_clock::now() < deadline) std::this_thread::sleep_for(20ms);
+    REQUIRE_FALSE(runner.running());
+    for (const auto& c : runner.columns()) {
+        for (std::size_t i = 0; i < 2; ++i) {
+            INFO(c.engine << " on " << suite.positions[i].id);
+            REQUIRE(c.answers[i]);
+            CHECK(c.answers[i]->solved);
+            CHECK(c.answers[i]->move == "Kxb2");
+        }
+    }
 }

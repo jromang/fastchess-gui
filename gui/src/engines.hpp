@@ -25,6 +25,7 @@ struct ProbeResult {
     std::vector<UciOptionInfo> options;
     std::string protocol;  // "uci" or "xboard": the entry's, or the one found out
     tour::FileFingerprint program;
+    bool restart = false;  // a WinBoard engine that asks to be started again for every game (reuse=0)
 };
 
 // Finds out whether the engine speaks UCI or WinBoard (xboard). Blocks for up to 13 seconds.
