@@ -850,6 +850,11 @@ std::vector<GameResult> TournamentState::results() const {
     return results_;
 }
 
+std::map<uint32_t, fastchess::book::Opening> TournamentState::encounterOpenings() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return started_;
+}
+
 fastchess::Stats TournamentState::pairStats(int a, int b) const {
     std::lock_guard<std::mutex> lock(mutex_);
     const auto it = pairs_.find({std::min(a, b), std::max(a, b)});

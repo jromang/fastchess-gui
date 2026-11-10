@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include <tour/by_opening.hpp>
 #include <tour/standings.hpp>
 
 using namespace fcg::tour;
@@ -210,4 +211,47 @@ TEST_CASE("rating list: games of several tournaments, engines by name, filters a
 
     CHECK(ratingListText(all).find("B") != std::string::npos);
     CHECK(ratingListCsv(all).rfind("rank,engine", 0) == 0);
+}
+
+TEST_CASE("results by opening: games, pairs by kind, the starting position after the book moves") {
+    chess::Board board;
+    const auto e4 = chess::uci::uciToMove(board, "e2e4");
+    std::map<uint32_t, fastchess::book::Opening> openings;
+    openings[0] = fastchess::book::Opening(chess::constants::STARTPOS, {e4});
+    openings[1] = fastchess::book::Opening(chess::constants::STARTPOS, {e4});  // the same position again
+    openings[2] = fastchess::book::Opening(chess::constants::STARTPOS, {});
+
+    const auto game = [](uint32_t encounter, int g, const std::string& result) {
+        GameResult r;
+        r.encounter = encounter;
+        r.game      = g;
+        r.result    = result;
+        r.plies     = 40;
+        return r;
+    };
+    std::vector<GameResult> results = {game(0, 0, "1-0"),     game(0, 1, "1-0"),      // White won both
+                                       game(1, 0, "1-0"),     game(1, 1, "0-1"),      // one engine won both
+                                       game(2, 0, "1/2-1/2"), game(2, 1, "1/2-1/2"),  // drawn twice
+                                       game(3, 0, "1-0")};                            // no opening known
+    auto voided                     = game(2, 0, "1-0");
+    voided.voided                   = true;
+    results.push_back(voided);
+
+    const auto by = resultsByOpening(results, openings, false);
+    REQUIRE(by.size() == 2);
+    CHECK(by[0].fen == "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -");
+    CHECK(by[0].moves == std::vector<std::string>{"e2e4"});
+    CHECK(by[0].eco == "B00");
+    CHECK(by[0].name == "King's Pawn Game");
+    CHECK(by[1].eco.empty());  // the initial position is no opening
+    CHECK(by[0].games == 4);
+    CHECK(by[0].pairs == 2);
+    CHECK(by[0].white_twice == 1);
+    CHECK(by[0].one_engine_twice == 1);
+    CHECK(by[0].whiteScore() == doctest::Approx(0.75));
+    CHECK(by[0].unbalanced() == doctest::Approx(0.5));
+    CHECK(by[0].game_numbers == std::vector<uint64_t>{1, 2, 3, 4});
+    CHECK(by[1].drawn_twice == 1);
+    CHECK(by[1].drawRate() == 1.0);
+    CHECK(openingsEpd({&by[1]}) == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -\n");
 }

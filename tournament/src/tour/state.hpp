@@ -181,6 +181,9 @@ class TournamentState {
     // Scored games, in the order they finished, voided ones included (flagged).
     [[nodiscard]] std::vector<GameResult> results() const;
 
+    // The opening each encounter started with (book position and moves), by encounter index.
+    [[nodiscard]] std::map<uint32_t, fastchess::book::Opening> encounterOpenings() const;
+
     // Statistics of `a` against `b` from a's point of view, counted on complete encounters only (both games),
     // like fastchess does with pentanomial reporting. Includes the pentanomial counts.
     [[nodiscard]] fastchess::Stats pairStats(int a, int b) const;

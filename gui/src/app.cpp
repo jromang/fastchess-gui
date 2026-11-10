@@ -117,6 +117,7 @@ void App::frame() {
             page_        = Page::Tournament;
             tab_request_ = w == "live"        ? Tab::Live
                            : w == "games"     ? Tab::Games
+                           : w == "openings"  ? Tab::Openings
                            : w == "standings" ? Tab::Standings
                            : w == "schedule"  ? Tab::Schedule
                            : w == "bracket"   ? Tab::Bracket
@@ -270,6 +271,9 @@ void App::resetRunView() {
     current_ = {};
     reasons_.clear();
     openings_.clear();
+    by_opening_.clear();
+    by_opening_for_   = ~std::size_t(0);
+    selected_opening_ = -1;
     totals_.clear();
     table_     = {};
     table_for_ = ~std::size_t(0);
@@ -458,6 +462,14 @@ void App::handleDialogs() {
                 out << tour::ratingListCsv(rating_list_);
                 Console::instance().add(out ? trf("Rating list written to {}", path) : trf("Cannot write {}", path),
                                         !out);
+                break;
+            }
+            case Dialogs::Purpose::ExportOpenings: {
+                const auto shown = shownOpenings();
+                std::ofstream out(path, std::ios::binary | std::ios::trunc);
+                out << tour::openingsEpd(shown);
+                Console::instance().add(
+                    out ? trf("{} openings written to {}", shown.size(), path) : trf("Cannot write {}", path), !out);
                 break;
             }
             case Dialogs::Purpose::ImportEngineList:

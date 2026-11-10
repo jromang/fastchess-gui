@@ -26,6 +26,7 @@ class Dialogs {
         ImportEngineList,
         ImportEngineFolder,
         ExportRatings,
+        ExportOpenings,
         TournamentsFolder
     };
 

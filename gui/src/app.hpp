@@ -27,6 +27,7 @@
 #include "topology.hpp"
 #include "ui.hpp"
 
+#include <tour/by_opening.hpp>
 #include <tour/ratinglist.hpp>
 #include <tour/standings.hpp>
 
@@ -80,7 +81,7 @@ class App {
     };
 
     enum class Page { Home, NewMatch, Tournament, Engines, Ratings, Log, Settings };
-    enum class Tab { Overview, Standings, Bracket, Schedule, Live, Games, Broadcast };
+    enum class Tab { Overview, Standings, Bracket, Schedule, Live, Games, Openings, Broadcast };
 
     // shell
     void drawShell();
@@ -104,6 +105,9 @@ class App {
     void drawMosaic(float width);
     void drawDetached();
     void drawGames();
+    void drawOpenings();
+    void refreshOpenings();
+    [[nodiscard]] std::vector<const tour::OpeningStats*> shownOpenings() const;  // filtered, in the shown order
     void drawResults();
     void drawCharts();
     void drawEngines();
@@ -221,6 +225,14 @@ class App {
     std::filesystem::path replay_log_;  // the engine log of the game shown, empty when it has none
     int replay_ply_   = 0;              // number of moves played on the replay board
     bool flip_replay_ = false;
+
+    // Openings view: results by starting position.
+    std::vector<tour::OpeningStats> by_opening_;
+    std::size_t by_opening_for_ = ~std::size_t(0);  // games_.size() they were computed for
+    int opening_show_           = 0;                // 0 all, 1 a colour won both games, 2 drawn twice, 3 decisive
+    std::vector<int> opening_order_;                // rows shown, sorted
+    bool opening_order_dirty_ = true;
+    int selected_opening_     = -1;  // index into by_opening_
 
     // Engines view.
     int selected_engine_ = -1;

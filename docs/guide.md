@@ -117,6 +117,7 @@ A running or opened tournament has a workspace with a header (name, progress, *P
 | Broadcast | Live files, the TLCS server and the web page (see below) |
 | Live | The games in progress, as a mosaic of boards or one game in focus with the clocks, the running search of each engine (depth, score, nodes, nps, PV in SAN), the move list and the evaluation curve. *Detach* opens a board in its own window |
 | Games | The finished games with their opening (ECO code and name), filterable by result (wins, draws, losses, losses on time, crashes and illegal moves, adjudications) and by opening (an ECO code or its beginning, a range such as `B20-B99`, or words of the name), with a replay board (← → Home End, or click a move or the curve) and the export of one, all or the filtered games. *Engine log* opens the log of a game that has one (see *Files*) |
+| Openings | Results by starting position: its game pairs, White's score, the draws, and how many pairs White won twice, Black won twice (the opening favours a colour) or one engine won twice (it tells the engines apart), with the average length. Sorted by any column, filtered to the unbalanced, the drawn or the decisive ones; *Export as EPD…* writes the positions shown, to keep them or to clean a book. A click shows the position and its games |
 
 **Pause** starts no new game pair. Games in progress play to the end, and so does the second game of a pair whose
 first game has started, so a pause never throws a result away. **Resume** continues. **Stop** either finishes
@@ -236,8 +237,8 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
 - `--autostart` starts the saved setup at launch;
 - `--shot` saves a screenshot of the window after the given number of seconds (default 5), with WINDOW brought to
   the front, and quits once every screenshot is taken. It can be repeated. WINDOW is a page (`home`, `setup`,
-  `engines`, `ratings`, `console`, `settings`) or a tab (`live`, `games`, `standings`, `schedule`, `bracket`,
-  `broadcast`). The mouse is ignored in this mode and, on Linux, the window is rendered off screen (no window
+  `engines`, `ratings`, `console`, `settings`) or a tab (`live`, `games`, `openings`, `standings`, `schedule`,
+  `bracket`, `broadcast`). The mouse is ignored in this mode and, on Linux, the window is rendered off screen (no window
   appears; set `SDL_VIDEODRIVER` to override);
 - `--focus WINDOW` opens that page or tab at launch;
 - `--select-game N` opens game N (in finishing order) in the *Games* tab as soon as it exists;

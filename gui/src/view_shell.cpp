@@ -512,6 +512,10 @@ void App::drawWorkspace() {
         drawGames();
         ImGui::EndTabItem();
     }
+    if (tab(TR("Openings###tab_openings"), Tab::Openings)) {
+        drawOpenings();
+        ImGui::EndTabItem();
+    }
     ImGui::EndTabBar();
 }
 
