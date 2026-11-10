@@ -127,6 +127,22 @@ TEST_CASE("table: points, crosstable, Sonneborn-Berger, tiebreaks and health") {
     CHECK(html.find("prefers-color-scheme") != std::string::npos);
 }
 
+TEST_CASE("bbcode: title in bold, details, the text in a code block") {
+    CHECK(bbcode("Cup", "Round robin, 10+0.1", "1  A\n") == "[b]Cup[/b]\nRound robin, 10+0.1\n[code]\n1  A\n[/code]\n");
+    CHECK(bbcode("", "", "x") == "[code]\nx\n[/code]\n");
+    CHECK(tableText(Table{}, "").rfind("  #", 0) == 0);
+
+    auto spec = players(3);
+    for (auto& p : spec.participants) {
+        p.engine.limit.tc.time      = 10000;
+        p.engine.limit.tc.increment = 100;
+    }
+    spec.conditions.opening.file = "/books/UHO.epd";
+    std::vector<GameResult> results;
+    add(results, 100, 101, 1.0, 2);
+    CHECK(forumDetails(spec, computeTable(spec, results)) == "Round robin, 3 engines, 10+0.1, 2 games, book UHO.epd");
+}
+
 TEST_CASE("table: a head-to-head result breaks an otherwise complete tie") {
     const auto spec = players(2);
     std::vector<GameResult> results;

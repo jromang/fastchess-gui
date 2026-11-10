@@ -286,8 +286,12 @@ void App::drawStandings() {
     }
 
     ImGui::SameLine(0, px(30));
-    if (ImGui::Button(TR("Copy as text"))) {
-        ImGui::SetClipboardText(tour::tableText(table_, t->spec().name).c_str());
+    if (const auto as = ui::copyButton("standings"); as != ui::CopyAs::None) {
+        const auto& spec = t->spec();
+        const auto text  = as == ui::CopyAs::Text
+                               ? tour::tableText(table_, spec.name)
+                               : tour::bbcode(spec.name, tour::forumDetails(spec, table_), tour::tableText(table_, ""));
+        ImGui::SetClipboardText(text.c_str());
         Console::instance().add(TR("Standings copied to the clipboard."));
     }
     ImGui::SameLine();

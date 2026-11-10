@@ -80,8 +80,16 @@ struct Table {
                                                     const std::vector<std::vector<double>>& points,
                                                     std::optional<std::pair<int, double>> anchor = std::nullopt);
 
-// The table as plain text, for the clipboard or a forum post.
+// The table as plain text, for the clipboard or a forum post; an empty title is left out.
 [[nodiscard]] std::string tableText(const Table& table, const std::string& title);
+
+// A forum post in BBCode: the title in bold, a line of details, then `text` in a code block, so that its columns
+// stay aligned on any forum (phpBB, Talkchess). An empty title or details line is left out.
+[[nodiscard]] std::string bbcode(const std::string& title, const std::string& details, const std::string& text);
+
+// One line describing the tournament under its standings in a forum post: format, engines, time control, games
+// played, book. In English, like the table.
+[[nodiscard]] std::string forumDetails(const TournamentSpec& spec, const Table& table);
 
 // A self-contained HTML page with the standings and the crosstable.
 [[nodiscard]] std::string tableHtml(const Table& table, const std::string& title);

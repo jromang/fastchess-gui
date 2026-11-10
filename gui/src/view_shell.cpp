@@ -717,7 +717,11 @@ void App::drawRatings() {
     ImGui::SameLine(0, px(24));
     if (ImGui::Button(TR("Refresh"))) ratings_dirty_ = true;
     ImGui::SameLine();
-    if (ImGui::Button(TR("Copy as text"))) ImGui::SetClipboardText(tour::ratingListText(rating_list_).c_str());
+    if (const auto as = ui::copyButton("ratings"); as != ui::CopyAs::None) {
+        const auto text = tour::ratingListText(rating_list_);
+        ImGui::SetClipboardText(
+            (as == ui::CopyAs::Text ? text : tour::bbcode("Rating list", rating_tc_, text)).c_str());
+    }
     ImGui::SameLine();
     if (ImGui::Button(TR("Export CSV…"))) {
         dialogs_.saveFile(Dialogs::Purpose::ExportRatings, {{"CSV", "csv"}},

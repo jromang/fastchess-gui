@@ -95,9 +95,12 @@ void App::drawResults() {
     ImGui::SameLine();
     ImGui::TextDisabled(TR("· %s · %d in parallel%s"), info.limit_text.c_str(), info.concurrency,
                         info.affinity ? TR(" · affinity") : "");
-    ImGui::SameLine(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(TR("Copy summary")).x -
-                    ImGui::GetStyle().FramePadding.x * 2 + ImGui::GetCursorPosX() - ImGui::GetStyle().WindowPadding.x);
-    if (ImGui::SmallButton(TR("Copy summary"))) ImGui::SetClipboardText(summaryText().c_str());
+    ImGui::SameLine(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(TR("Copy")).x - ImGui::GetFontSize() * 1.5f +
+                    ImGui::GetCursorPosX() - ImGui::GetStyle().WindowPadding.x);
+    if (const auto as = ui::copyButton("summary", true); as != ui::CopyAs::None) {
+        const auto text = summaryText();
+        ImGui::SetClipboardText((as == ui::CopyAs::Text ? text : tour::bbcode("", "", text)).c_str());
+    }
 
     ImGui::Separator();
 

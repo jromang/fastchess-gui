@@ -2,8 +2,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 
 #include <fmt/include/fmt/format.h>
+
+#include "ratinglist.hpp"
 
 namespace fcg::tour {
 
@@ -281,7 +284,7 @@ std::string tableText(const Table& table, const std::string& title) {
     std::size_t width = 6;
     for (const auto& r : table.rows) width = std::max(width, r.name.size());
 
-    std::string out = title + "\n\n";
+    std::string out = title.empty() ? "" : title + "\n\n";
     out += fmt::format("{:>3}  {:<{}}  {:>6}  {:>5}  {:>6}  {:>7}  {:>5}  {:>14}", "#", "Engine", width, "Points",
                        "Games", "%", "Elo", "+/-", "+ = -");
     for (std::size_t c = 0; c < table.rows.size(); ++c) out += fmt::format("  {:>4}", c + 1);
@@ -302,6 +305,32 @@ std::string tableText(const Table& table, const std::string& title) {
         }
         out += "\n";
     }
+    return out;
+}
+
+std::string bbcode(const std::string& title, const std::string& details, const std::string& text) {
+    std::string out;
+    if (!title.empty()) out += "[b]" + title + "[/b]\n";
+    if (!details.empty()) out += details + "\n";
+    out += "[code]\n" + text;
+    if (!text.empty() && text.back() != '\n') out += '\n';
+    return out + "[/code]\n";
+}
+
+std::string forumDetails(const TournamentSpec& spec, const Table& table) {
+    static constexpr const char* FORMATS[] = {"Match", "Round robin", "Gauntlet", "Swiss", "Knockout"};
+    int games                              = 0;
+    for (const auto& r : table.rows) games += r.games;
+    games /= 2;
+
+    std::string out = FORMATS[static_cast<int>(spec.format)];
+    if (spec.format != Format::Match) out += fmt::format(", {} engines", table.rows.size());
+    if (!spec.participants.empty()) out += ", " + timeControlText(spec.participants.front().engine.limit);
+    out += fmt::format(", {} game{}", games, games == 1 ? "" : "s");
+    if (!spec.conditions.opening.file.empty()) {
+        out += ", book " + std::filesystem::path(spec.conditions.opening.file).filename().string();
+    }
+    if (spec.conditions.variant == fastchess::VariantType::FRC) out += ", Chess960";
     return out;
 }
 

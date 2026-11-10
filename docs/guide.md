@@ -107,7 +107,7 @@ A running or opened tournament has a workspace with a header (name, progress, *P
 | Tab | Contents |
 |---|---|
 | Overview | Match: Elo and nElo with their 95 % confidence interval, LOS, score, pentanomial counts, SPRT bounds and LLR, and the charts (Elo and LLR over time, game lengths, how games ended, depth, NPS and time per move). Tournament: the standings, progress by cycle or round, games per hour and time left, the latest results |
-| Standings | Points, games, wins/draws/losses, ratings with their confidence interval, Sonneborn-Berger (Buchholz for a Swiss), byes, and the crosstable. *Copy as text* for a forum post, *Export HTML…* |
+| Standings | Points, games, wins/draws/losses, ratings with their confidence interval, Sonneborn-Berger (Buchholz for a Swiss), byes, and the crosstable. *Copy* as text, or as BBCode for a forum post (with a line giving the format, time control, games and book), *Export HTML…* |
 | Bracket | Knockout only: the bracket, round by round, with the score of every match |
 | Schedule | Every game pair by cycle or round, with its state; editing (see below) |
 | Broadcast | Live files, the TLCS server and the web page (see below) |
@@ -153,7 +153,7 @@ by default) over every game of every tournament in the profile. Engines are iden
 
 - *Every time control* or one of them;
 - *Anchor*: the average at 0, or one engine at a fixed rating (by default the first engine with a reference Elo);
-- *Copy as text*, *Export CSV…*, *Refresh*.
+- *Copy* (as text or BBCode), *Export CSV…*, *Refresh*.
 
 ## Broadcast
 

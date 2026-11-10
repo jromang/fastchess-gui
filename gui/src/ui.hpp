@@ -74,6 +74,12 @@ void pageTitle(const char* text);
 void beginCard(const char* id, ImVec2 size = ImVec2(0, 0));
 void endCard();
 
+enum class CopyAs { None, Text, Bbcode };
+
+// A "Copy" button with a menu: as plain text, or as BBCode for a forum post. Returns the choice, None until one is
+// made.
+CopyAs copyButton(const char* id, bool small = false);
+
 // "(?)" with a tooltip.
 void help(const char* text);
 

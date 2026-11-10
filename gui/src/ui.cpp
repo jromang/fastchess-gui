@@ -9,6 +9,8 @@
 
 #include <fmt/include/fmt/format.h>
 
+#include "i18n.hpp"
+
 namespace fcg::ui {
 
 namespace {
@@ -360,6 +362,29 @@ void label(const char* text, float width) {
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(text);
     ImGui::SameLine(width);
+}
+
+CopyAs copyButton(const char* id, bool small) {
+    // The label is followed by room for a small arrow, drawn rather than taken from the font.
+    const float arrow   = ImGui::GetFontSize() * 0.6f;
+    const auto label    = fmt::format("{}     ##{}", TR("Copy"), id);
+    const bool clicked  = small ? ImGui::SmallButton(label.c_str()) : ImGui::Button(label.c_str());
+    const ImVec2 max    = ImGui::GetItemRectMax();
+    const ImVec2 min    = ImGui::GetItemRectMin();
+    const float padding = small ? 0.0f : ImGui::GetStyle().FramePadding.x;
+    ImGui::RenderArrow(ImGui::GetWindowDrawList(),
+                       ImVec2(max.x - padding - arrow * 1.4f, min.y + (max.y - min.y - arrow) * 0.5f),
+                       ImGui::GetColorU32(ImGuiCol_Text), ImGuiDir_Down, 0.6f);
+
+    const auto popup = fmt::format("##copy_menu_{}", id);
+    if (clicked) ImGui::OpenPopup(popup.c_str());
+    CopyAs choice = CopyAs::None;
+    if (ImGui::BeginPopup(popup.c_str())) {
+        if (ImGui::MenuItem(TR("As text"))) choice = CopyAs::Text;
+        if (ImGui::MenuItem(TR("As BBCode, for a forum"))) choice = CopyAs::Bbcode;
+        ImGui::EndPopup();
+    }
+    return choice;
 }
 
 }  // namespace fcg::ui
