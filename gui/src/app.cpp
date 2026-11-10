@@ -96,7 +96,13 @@ void App::frame() {
 
     if (options_.autostart && !autostart_done_ && !probe_.valid() && probe_queue_.empty()) {
         autostart_done_ = true;
-        startRun();
+        // --focus suites: the test suite of the Suites page, instead of a tournament.
+        if (options_.focus_window == "suites") {
+            loadSuiteSetup();
+            startSuite();
+        } else {
+            startRun();
+        }
     }
 
     applyThemeSetting();
@@ -128,6 +134,8 @@ void App::frame() {
             page_ = Page::Books;
         else if (w == "home")
             page_ = Page::Home;
+        else if (w == "suites")
+            page_ = Page::Suites;
         else if (w.rfind("games-", 0) == 0 || w.rfind("live-", 0) == 0) {
             // The tab with a chart under the game: games-time, live-agreement...
             const auto chart                     = w.substr(w.find('-') + 1);
@@ -556,6 +564,12 @@ void App::handleDialogs() {
                     storage_.saveBooks(books_);
                     startBookScan(selected_book_);
                 }
+                break;
+            case Dialogs::Purpose::SuiteFile:
+                openSuite(path);
+                break;
+            case Dialogs::Purpose::ExportSuiteCsv:
+                exportSuiteCsv(path);
                 break;
             case Dialogs::Purpose::SaveCleanBook:
                 if (book_scan_) {

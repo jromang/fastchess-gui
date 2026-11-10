@@ -27,6 +27,7 @@
 #include "run.hpp"
 #include "stats.hpp"
 #include "storage.hpp"
+#include "suite_run.hpp"
 #include "topology.hpp"
 #include "ui.hpp"
 
@@ -187,7 +188,7 @@ class App {
         int follow_frames      = 0;
     };
 
-    enum class Page { Home, NewMatch, Tournament, Engines, Books, Ratings, Log, Settings };
+    enum class Page { Home, NewMatch, Tournament, Engines, Books, Suites, Ratings, Log, Settings };
     enum class Tab { Overview, Standings, Bracket, Schedule, Live, Games, Openings, Broadcast };
 
     // shell
@@ -261,6 +262,24 @@ class App {
     void setupOpenings();
     void setupAdjudication();
     void setupPgn();
+
+    // test suites
+    void drawSuites();
+    void drawSuiteGrid();
+    void loadSuiteSetup();  // suite.json and its suite, once
+    void loadSuite();
+    void openSuite(const std::string& file);  // and shows the Suites page
+    void startSuite();
+    void exportSuiteCsv(const std::string& path);
+    SuiteSetup suite_setup_;
+    bool suite_loaded_ = false;  // suite.json read
+    std::optional<tour::Suite> suite_;
+    std::string suite_error_;
+    SuiteRunner suite_runner_;
+    bool suite_saved_run_ = true;                                            // the last run was kept
+    std::vector<SuiteColumn> suite_saved_;                                   // saved runs added to the grid
+    std::vector<std::pair<std::filesystem::path, std::string>> suite_runs_;  // the saved runs of this suite
+    std::string suite_csv_;                                                  // waiting for its file name
 
     // books
     void drawBooks();

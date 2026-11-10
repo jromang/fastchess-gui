@@ -254,6 +254,14 @@ void App::drawBookDetail(BookEntry& book) {
             saveSetupSoon();
             Console::instance().add(trf("{} will be the book of the next tournament.", book.name));
         }
+        if (fs::path(book.path).extension() == ".epd") {
+            ImGui::SameLine();
+            if (ImGui::Button(TR("Run as a test suite…"))) openSuite(book.path);
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", TR("Its positions with a best move (bm), moves to avoid (am) or STS points, "
+                                           "in the Suites page."));
+            }
+        }
         ImGui::SameLine();
         ImGui::BeginDisabled(scan.count(ANY_PROBLEM) == 0);
         if (ImGui::Button(TR("Save a cleaned copy…"))) {

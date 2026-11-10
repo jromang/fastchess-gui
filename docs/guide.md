@@ -11,6 +11,7 @@ A navigation rail on the left leads to six pages:
 | Tournaments | The home page: the running tournament, the queue, every tournament of the profile (resume, open, relaunch), *New tournament* |
 | Engines | The engine library: options, health check, groups, reference Elo, import of other programs' lists |
 | Books | The opening book library, and the openings of each book with what is wrong with them |
+| Suites | Test suites (STS, WAC, ERET…): engines against the positions of an EPD file |
 | Ratings | One rating list over every game of every tournament |
 | Log | fastchess' own output and the messages of the GUI |
 | Settings | Language, theme (automatic, dark, light), end of tournament notification, the tournaments folder |
@@ -88,7 +89,28 @@ Its openings are listed below, every one or only those with a problem, searched 
 PGN book shows its moves in SAN); a click shows the position on a board. *Use it for the next tournament* puts it
 in the setup (with Chess960 for a Chess960 book). *Save a cleaned copy…* writes an EPD book without the illegal
 positions, the duplicates and the finished games (and, if ticked, the positions with colours reversed), and adds
-it to the library.
+it to the library. *Run as a test suite…* opens an EPD book in **Suites**.
+
+## Test suites
+
+The **Suites** page runs an EPD test suite: positions with their best move (`bm`), the moves to avoid (`am`), or,
+for the Strategic Test Suite, the points of several moves (`c0 "f5=10, Be5+=2"`).
+
+- **Suite**: an EPD file, or an EPD book of the library. The lines without a legal position or without one of
+  these operations are left out (their number is shown).
+- **Engines**: any number of engines of the library, with their options; *Hash* and *Threads* force a value on
+  every one (0 = each engine's own).
+- **Time**, **Nodes** or **Depth** per position. *Found for (plies)*: a search stops once a solution has stayed
+  the engine's first move for that many more plies of depth (0 = every search takes its whole time).
+- **Automatic concurrency**: with a time, physical cores − 1 divided by the engines' threads; with nodes or a
+  depth, every hardware thread.
+
+A position is solved when the engine's final move is a solution: one of `bm`, none of `am`, or, with points only,
+the move with the most. Its time to solution is when the engine settled on that move. The grid shows the
+positions against the engines, ✓ with the time to solution or ✗ with the move played, and the STS points; the
+totals come first: positions solved, their average time, and the STS score. A finished run is kept in `suites/`
+in the profile; *Compare with a saved run…* adds the columns of an earlier run of the same suite, to compare
+versions of an engine. *Export CSV…* writes the grid.
 
 ## New tournament
 
@@ -274,6 +296,7 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
 - `engines.json`: the engine library;
 - `setup.json`: the last setup; `templates/*.json`: the saved templates; `queue.json`: the queue;
 - `layout.ini`: the window layout; `fastchess-gui.log`: the log of the last session;
+- `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**;
 - `runs/<date>_<A>_vs_<B>/` for a match, `runs/<date>_<name>/` for a tournament (in `runs/` or the chosen
   folder), one folder each, which can be moved, copied, zipped and sent:

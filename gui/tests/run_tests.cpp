@@ -17,6 +17,7 @@
 #include "net.hpp"
 #include "run.hpp"
 #include "storage.hpp"
+#include "suite_run.hpp"
 
 #ifdef _WIN32
 #    include <windows.h>
@@ -584,4 +585,70 @@ TEST_CASE("quick test: ten games against the engine itself, then a report on its
     CHECK(report.ok);
     CHECK(report.message.find("10 games") != std::string::npos);
     CHECK(report.message.find("0 lost on time, 0 crashes, 0 illegal moves") != std::string::npos);
+}
+
+TEST_CASE("EPD suite runs: every engine on every position, the totals, CSV and saved runs") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+    if (!fastchess::config::TournamentConfig)
+        fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
+
+    // One legal move in both: found in the first, avoided in vain in the second.
+    tour::Suite suite;
+    suite.positions.resize(2);
+    REQUIRE(tour::parseSuiteLine("k7/8/8/8/8/8/1q6/K7 w - - bm Kxb2; id \"forced\";", suite.positions[0]));
+    REQUIRE(tour::parseSuiteLine("k7/8/8/8/8/8/1q6/K7 w - - am Kxb2;", suite.positions[1]));
+    suite.positions[1].id = "#2";
+
+    std::vector<fastchess::EngineConfiguration> engines(2);
+    for (int i = 0; i < 2; ++i) {
+        engines[i].name = "random" + std::to_string(i);
+        engines[i].cmd  = randomMover();
+    }
+    SuiteSetup setup;
+    setup.move_s = 0.05;
+    SuiteRunner runner;
+    runner.start(suite, engines, setup, 3);
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+    while (runner.running() && std::chrono::steady_clock::now() < deadline) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+    REQUIRE_FALSE(runner.running());
+    CHECK(runner.answered() == 4);
+
+    const auto columns = runner.columns();
+    REQUIRE(columns.size() == 2);
+    for (const auto& c : columns) {
+        REQUIRE(c.answers.size() == 2);
+        REQUIRE(c.answers[0]);
+        CHECK(c.answers[0]->solved);
+        CHECK(c.answers[0]->move == "Kxb2");
+        CHECK_FALSE(c.answers[1]->solved);
+        const auto t = c.totals();
+        CHECK(t.answered == 2);
+        CHECK(t.solved == 1);
+    }
+
+    const auto csv = suiteCsv(suite, columns);
+    CHECK(csv.rfind("id,solution,random0,random0 ms,random1,random1 ms\n", 0) == 0);
+    CHECK(csv.find("forced,Kxb2,Kxb2 ✓,") != std::string::npos);
+    CHECK(csv.find("total,,1/2,") != std::string::npos);
+
+    // Kept, then found again for the same suite only, and read back.
+    const auto dir = fs::temp_directory_path() / "fcg-suite-runs";
+    fs::remove_all(dir);
+    const auto saved = saveSuiteRun(dir, "/books/bk.epd", 2, columns);
+    REQUIRE_FALSE(saved.empty());
+    CHECK(savedSuiteRuns(dir, "/elsewhere/bk.epd", 2).size() == 1);
+    CHECK(savedSuiteRuns(dir, "/books/bk.epd", 3).empty());
+    CHECK(savedSuiteRuns(dir, "/books/wac.epd", 2).empty());
+    const auto back = loadSuiteRun(saved);
+    REQUIRE(back.size() == 2);
+    CHECK(back[1].engine == "random1");
+    CHECK_FALSE(back[1].when.empty());
+    REQUIRE(back[1].answers[0]);
+    CHECK(back[1].answers[0]->move == "Kxb2");
+    fs::remove_all(dir);
 }

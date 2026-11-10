@@ -33,6 +33,8 @@ class Dialogs {
         AddBook,
         BookFile,
         SaveCleanBook,
+        SuiteFile,
+        ExportSuiteCsv,
         TournamentsFolder
     };
 

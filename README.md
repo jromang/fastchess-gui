@@ -53,6 +53,8 @@ this repository still builds unchanged.
 - **Opening books**: EPD, PGN or Polyglot, in a library; each book checked for illegal, duplicate, mirrored and
   finished positions, browsed on a board, and cleaned. Results by opening after a tournament: the unbalanced, the
   drawish and the decisive ones, exported as EPD.
+- **Test suites** (STS, WAC, ERET…): several engines on the positions of an EPD file (`bm`, `am`, STS points),
+  as a grid with the time to solution, the totals and the STS score, saved to compare versions, exported as CSV.
 - Chess960 (the 960 positions, or a book), draw / resign / max moves / Syzygy
   adjudication, crash recovery, a desktop notification when a match ends.
 - Light and dark themes; English, French or German, following the system (can be changed in the settings).
