@@ -525,8 +525,8 @@ TEST_CASE("quick test: ten games against the engine itself, then a report on its
     const auto root = fs::temp_directory_path() / "fcg-run-tests-quick";
     fs::remove_all(root);
 
-    auto library = randomEngines();
-    auto engines = library;
+    auto library     = randomEngines();
+    auto engines     = library;
     const auto setup = quickTestSetup(library[0], "", root / "quick-test.epd", engines);
     REQUIRE(engines.size() == 3);  // a copy of the engine, to play itself
     CHECK(setup.engine_b == "random-a (2)");

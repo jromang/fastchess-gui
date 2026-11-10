@@ -110,6 +110,9 @@ class UciEngine {
     // This function writes the logs to the logger.
     void writeLog() const;
 
+    // The operating system's id of the engine's process, 0 when it is not running.
+    [[nodiscard]] int64_t pid() const noexcept { return process_.pid(); }
+
     void setCpus(const std::vector<int>& cpus) {
         if (cpus.empty()) return;
 

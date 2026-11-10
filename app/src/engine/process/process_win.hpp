@@ -106,6 +106,9 @@ class Process : public IProcess {
         if (is_initialized_ && alive()) TerminateProcess(pi_.hProcess, 1);
     }
 
+    // The operating system's id of the process, 0 before it started.
+    [[nodiscard]] int64_t pid() const noexcept { return is_initialized_ ? pi_.dwProcessId : 0; }
+
     [[nodiscard]] Result alive() noexcept override {
         assert(is_initialized_);
 

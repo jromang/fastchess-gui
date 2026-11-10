@@ -225,6 +225,36 @@ void App::drawTournamentOverview() {
     }
     ui::endCard();
 
+    // Fair play: the processor time of every engine, measured while it thinks and while its opponents do.
+    {
+        std::vector<std::string> problems;
+        int measured = 0;
+        for (std::size_t i = 0; i < totals_.size() && i < spec.participants.size(); ++i) {
+            if (!spec.participants[i].active || !cpuUse(totals_[i]).measured) continue;
+            measured++;
+            const auto problem = cpuProblem(totals_[i], configThreads(spec.participants[i].engine));
+            if (!problem.empty()) problems.push_back(fmt::format("{}: {}", spec.participants[i].engine.name, problem));
+        }
+        if (measured > 0) {
+            ImGui::Spacing();
+            ui::beginCard("cpu_card");
+            ImGui::TextUnformatted(TR("Processor use"));
+            ui::help(
+                TR("The processor time of each engine's processes, while it thinks (no more cores than its "
+                   "threads) and while its opponent does (none without pondering). Measured since the "
+                   "tournament was started or resumed."));
+            for (const auto& p : problems) {
+                ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+                ImGui::TextWrapped("! %s", p.c_str());
+                ImGui::PopStyleColor();
+            }
+            if (problems.empty()) {
+                ImGui::TextDisabled("%s", trf("✓ As expected for the {} engines measured", measured).c_str());
+            }
+            ui::endCard();
+        }
+    }
+
     ImGui::Spacing();
     ui::beginCard("latest_card");
     ImGui::TextUnformatted(TR("Latest results"));

@@ -82,6 +82,9 @@ void configureFastchess(const tour::TournamentSpec& spec);
 // Chess960 starting position number n (0-959, Scharnagl's numbering: 518 is the usual one), as a FEN.
 [[nodiscard]] std::string chess960Fen(int n);
 
+// The Threads option of an engine's configuration, 1 when it has none.
+[[nodiscard]] int configThreads(const fastchess::EngineConfiguration& config);
+
 // A quick test of `engine`: a short match against `opponent` (the engine itself when empty, under another name) at
 // 10+0.1, from a few positions written to `book`, every game played twice. `engines` receives the library to start
 // it with (a copy of the engine for a match against itself).

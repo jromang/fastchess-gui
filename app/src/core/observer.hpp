@@ -49,6 +49,9 @@ class GameObserver {
     // Called on the worker thread right before the engines are prepared.
     virtual void onGameStart(const GameStart&) {}
 
+    // The engines of the game are started (or reused): their process ids, to measure the processor time they use.
+    virtual void onEngineProcesses(int /*slot*/, int64_t /*white_pid*/, int64_t /*black_pid*/) {}
+
     // The side to move has been sent "go". time_left_ms is the clock that was sent (0 without a clock).
     virtual void onThinking(int /*slot*/, chess::Color /*stm*/, int64_t /*time_left_ms*/) {}
 

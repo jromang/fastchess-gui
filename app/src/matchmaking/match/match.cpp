@@ -385,6 +385,8 @@ void Match::start(engine::UciEngine& white, engine::UciEngine& black, std::optio
         return;
     }
 
+    if (auto* obs = observer::get()) obs->onEngineProcesses(observer::slot(), white.pid(), black.pid());
+
     if (!white_player.engine.refreshUci()) {
         setEngineCrashStatus(white_player, black_player);
     }

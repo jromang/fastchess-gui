@@ -131,6 +131,10 @@ void Runner::onGameStart(const fastchess::observer::GameStart& info) {
     if (downstream_) downstream_->onGameStart(info);
 }
 
+void Runner::onEngineProcesses(int slot, int64_t white_pid, int64_t black_pid) {
+    if (downstream_) downstream_->onEngineProcesses(slot, white_pid, black_pid);
+}
+
 void Runner::onThinking(int slot, chess::Color stm, int64_t time_left_ms) {
     if (downstream_) downstream_->onThinking(slot, stm, time_left_ms);
 }

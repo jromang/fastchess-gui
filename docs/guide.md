@@ -150,6 +150,13 @@ A running or opened tournament has a workspace with a header (name, progress, *P
 | Games | The finished games with their opening (ECO code and name), filterable by result (wins, draws, losses, losses on time, crashes and illegal moves, adjudications), by what the evaluations tell (the engines disagree by N pawns for 3 moves each in a row, an engine's evaluation swings by N pawns from one of its moves to the next, the loser thought it was N pawns better; the game opens at that moment) and by opening (an ECO code or its beginning, a range such as `B20-B99`, or words of the name), with a replay board (← → Home End, or click a move or the curve) and the export of one, all or the filtered games. *Engine log* opens the log of a game that has one (see *Files*) |
 | Openings | Results by starting position: its game pairs, White's score, the draws, and how many pairs White won twice, Black won twice (the opening favours a colour) or one engine won twice (it tells the engines apart), with the average length. Sorted by any column, filtered to the unbalanced, the drawn or the decisive ones; *Export as EPD…* writes the positions shown, to keep them or to clean a book. A click shows the position and its games |
 
+**Processor use**: while games are played, the processor time of every engine's processes (the engine behind a
+WinBoard adapter included) is measured at each `go` and each move. The Overview shows, for each engine, the cores it
+keeps busy while it thinks and the share of a core it uses while its opponent thinks, and warns when an engine uses
+clearly more cores than its `Threads`, or thinks on its opponent's time (pondering it was not asked for, a background
+thread): what makes a game unfair to the opponent and to the other games running. It needs 20 s of each to tell, and
+counts from the start or the resumption of the tournament. It only warns; it never decides a game.
+
 **Pause** starts no new game pair. Games in progress play to the end, and so does the second game of a pair whose
 first game has started, so a pause never throws a result away. **Resume** continues. **Stop** either finishes
 the running games first, or stops now (the interrupted games are not counted and will be played again).

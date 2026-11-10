@@ -167,6 +167,10 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Consecutive moves", "Coups consécutifs"},
         {"Console", "Console"},
         {"Copy", "Copier"},
+        {"Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). "
+         "Measured after 20 s of each.",
+         "Cœurs occupés pendant qu'il réfléchit · part d'un cœur utilisée pendant que l'adversaire réfléchit (0 % sans "
+         "pondering). Mesuré après 20 s de chaque."},
         {"Crash / illegal move", "Crash / coup illégal"},
         {"Cycle {} / {}", "Cycle {} / {}"},
         {"Cycle {} · {} / {} games", "Cycle {} · {} / {} parties"},
@@ -483,6 +487,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Position", "Position"},
         {"Presets:", "Préréglages :"},
         {"Problem", "Problème"},
+        {"Processor", "Processeur"},
+        {"Processor use", "Utilisation du processeur"},
         {"Program", "Programme"},
         {"Program not found: {}", "Programme introuvable : {}"},
         {"Programs", "Programmes"},
@@ -627,6 +633,11 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
          "Le livre d'ouvertures doit être un fichier .epd, .pgn ou .bin (Polyglot)."},
         {"The openings appear here once their games are played.",
          "Les ouvertures apparaissent ici dès que leurs parties sont jouées."},
+        {"The processor time of each engine's processes, while it thinks (no more cores than its threads) and while "
+         "its opponent does (none without pondering). Measured since the tournament was started or resumed.",
+         "Le temps processeur des processus de chaque moteur, pendant qu'il réfléchit (pas plus de cœurs que ses "
+         "threads) et pendant que son adversaire réfléchit (aucun sans pondering). Mesuré depuis le lancement ou la "
+         "reprise du tournoi."},
         {"The program changed since it was last read (rebuilt or replaced).",
          "Le programme a changé depuis sa dernière lecture (recompilé ou remplacé)."},
         {"The program of {} is not found.", "Le programme de {} est introuvable."},
@@ -742,6 +753,10 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"until stopped", "jusqu'à l'arrêt"},
         {"until the SPRT decides", "jusqu'à la décision du SPRT"},
         {"until the next game starts", "jusqu'au début de la prochaine partie"},
+        {"uses {:.0f} % of a core while its opponent thinks",
+         "utilise {:.0f} % d'un cœur pendant que son adversaire réfléchit"},
+        {"uses {:.1f} cores while it thinks, with {} thread(s)",
+         "utilise {:.1f} cœurs quand il réfléchit, avec {} thread(s)"},
         {"voided", "annulée"},
         {"wins", "gains"},
         {"wins and losses", "gains et pertes"},
@@ -809,6 +824,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"· pairs [0-2]: %d  %d  %d  %d  %d", "· paires [0-2] : %d  %d  %d  %d  %d"},
         {"● On air · {} clients", "● En direct · {} clients"},
         {"● On air · {} viewers", "● En direct · {} spectateurs"},
+        {"✓ As expected for the {} engines measured", "✓ Conforme pour les {} moteurs mesurés"},
         {"✓ No played game is lost: voided games stay in the PGN files and the journal.",
          "✓ Aucune partie jouée n'est perdue : les parties annulées restent dans les PGN et le journal."},
     };

@@ -1,5 +1,8 @@
 #include "live.hpp"
 
+#include "cpu_time.hpp"
+#include "i18n.hpp"
+
 #include <algorithm>
 #include <fstream>
 
@@ -132,14 +135,63 @@ void GuiObserver::onGameStart(const fastchess::observer::GameStart& info) {
     st.reason.clear();
     st.think_start = Clock::now();
     st.version++;
+
+    s->processes   = {};
+    s->cpu_at_go   = {-1, -1};
+    s->participant = {participantIndex(info.white), participantIndex(info.black)};
+}
+
+CpuUse cpuUse(const EngineTotals& t) {
+    // 20 s of each, so that the start of the engine (a network to load) does not count for much.
+    constexpr uint64_t ENOUGH_MS = 20'000;
+    CpuUse use;
+    use.measured = t.own_wall_ms >= ENOUGH_MS && t.wait_wall_ms >= ENOUGH_MS;
+    if (t.own_wall_ms) use.thinking = static_cast<double>(t.own_cpu_ms) / static_cast<double>(t.own_wall_ms);
+    if (t.wait_wall_ms) use.waiting = static_cast<double>(t.wait_cpu_ms) / static_cast<double>(t.wait_wall_ms);
+    return use;
+}
+
+std::string cpuProblem(const EngineTotals& t, int threads) {
+    const auto use = cpuUse(t);
+    if (!use.measured) return {};
+    if (use.thinking > threads * 1.3 + 0.3) {
+        return trf("uses {:.1f} cores while it thinks, with {} thread(s)", use.thinking, threads);
+    }
+    if (use.waiting > 0.2) return trf("uses {:.0f} % of a core while its opponent thinks", 100 * use.waiting);
+    return {};
+}
+
+int GuiObserver::participantIndex(const std::string& name) const {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    for (std::size_t i = 0; i < names_.size(); ++i) {
+        if (names_[i] == name) return static_cast<int>(i);
+    }
+    return -1;
+}
+
+void GuiObserver::onEngineProcesses(int slot_index, int64_t white_pid, int64_t black_pid) {
+    auto* s = slot(slot_index);
+    if (!s) return;
+    auto white = processTree(white_pid), black = processTree(black_pid);
+    std::lock_guard<std::mutex> lock(s->mutex);
+    s->processes = {std::move(white), std::move(black)};
 }
 
 void GuiObserver::onThinking(int slot_index, chess::Color stm, int64_t time_left_ms) {
     auto* s = slot(slot_index);
     if (!s) return;
 
+    std::array<std::vector<int64_t>, 2> processes;
+    {
+        std::lock_guard<std::mutex> lock(s->mutex);
+        processes = s->processes;
+    }
+    const std::array<int64_t, 2> cpu{cpuTimeMs(processes[0]), cpuTimeMs(processes[1])};
+
     std::lock_guard<std::mutex> lock(s->mutex);
-    auto& st = s->state;
+    s->cpu_at_go = cpu;
+    s->go_at     = Clock::now();
+    auto& st     = s->state;
 
     st.stm                                                   = stm;
     st.thinking                                              = true;
@@ -178,8 +230,34 @@ void GuiObserver::onMove(int slot_index, chess::Color mover, const fastchess::Mo
     m.nodes    = data.nodes;
     m.nps      = data.nps;
 
+    // What the engines used while the mover thought.
+    std::array<std::vector<int64_t>, 2> processes;
+    {
+        std::lock_guard<std::mutex> lock(s->mutex);
+        processes = s->processes;
+    }
+    const std::array<int64_t, 2> cpu{cpuTimeMs(processes[0]), cpuTimeMs(processes[1])};
+
     std::lock_guard<std::mutex> lock(s->mutex);
     auto& st = s->state;
+
+    if (s->cpu_at_go[0] >= 0 && s->cpu_at_go[1] >= 0 && cpu[0] >= 0 && cpu[1] >= 0) {
+        const auto wall = static_cast<uint64_t>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - s->go_at).count());
+        const int me = colorIndex(mover), other = 1 - me;
+        std::lock_guard<std::mutex> data_lock(data_mutex_);
+        const auto add = [&](int side, bool own) {
+            const int p = s->participant[side];
+            if (p < 0 || p >= static_cast<int>(totals_.size())) return;
+            const auto used = static_cast<uint64_t>(std::max<int64_t>(0, cpu[side] - s->cpu_at_go[side]));
+            auto& t         = totals_[p];
+            (own ? t.own_cpu_ms : t.wait_cpu_ms) += used;
+            (own ? t.own_wall_ms : t.wait_wall_ms) += wall;
+        };
+        add(me, true);
+        add(other, false);
+    }
+    s->cpu_at_go = {-1, -1};
 
     m.move = chess::uci::uciToMove(s->board, data.move);
     s->board.makeMove<true>(m.move);

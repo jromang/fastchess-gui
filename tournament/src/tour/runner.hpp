@@ -60,6 +60,7 @@ class Runner final : public fastchess::BaseTournament, public fastchess::observe
 
     // fastchess::observer::GameObserver
     void onGameStart(const fastchess::observer::GameStart& info) override;
+    void onEngineProcesses(int slot, int64_t white_pid, int64_t black_pid) override;
     void onThinking(int slot, chess::Color stm, int64_t time_left_ms) override;
     void onEngineLine(int slot, chess::Color side, std::string_view line) override;
     void onEngineInput(int slot, chess::Color side, std::string_view line) override;

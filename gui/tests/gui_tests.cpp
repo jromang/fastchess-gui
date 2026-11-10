@@ -14,13 +14,21 @@
 #include <matchmaking/elo/elo_pentanomial.hpp>
 #include <matchmaking/sprt/sprt.hpp>
 
+#include "cpu_time.hpp"
 #include "engine_import.hpp"
 #include "engines.hpp"
+#include "live.hpp"
 #include "pgn_store.hpp"
 #include "run.hpp"
 #include "stats.hpp"
 #include "storage.hpp"
 #include "topology.hpp"
+
+#ifdef _WIN32
+#    include <windows.h>
+#else
+#    include <unistd.h>
+#endif
 
 using namespace fcg;
 namespace fs = std::filesystem;
@@ -200,6 +208,37 @@ TEST_CASE("evaluation facts: a disagreement, a swing, the loser's best score, an
 
     const auto draw = evalFacts(pgn, 0);
     CHECK(draw.loser_ply == -1);
+}
+
+TEST_CASE("processor use: our own process is measured; too many cores or thinking on the other's time is told") {
+#ifdef _WIN32
+    const auto self = static_cast<int64_t>(GetCurrentProcessId());
+#else
+    const auto self = static_cast<int64_t>(getpid());
+#endif
+    const auto tree = processTree(self);
+    REQUIRE_FALSE(tree.empty());
+    CHECK(tree.front() == self);
+    const auto before = cpuTimeMs(tree);
+    REQUIRE(before >= 0);
+    volatile uint64_t x = 0;
+    const auto end      = std::chrono::steady_clock::now() + std::chrono::milliseconds(300);
+    while (std::chrono::steady_clock::now() < end) x = x + 1;
+    CHECK(cpuTimeMs(tree) >= before + 100);
+    CHECK(cpuTimeMs({}) == -1);
+
+    EngineTotals t;
+    t.own_wall_ms = t.wait_wall_ms = 60'000;
+    t.own_cpu_ms                   = 60'000;  // one core while it thinks
+    CHECK(cpuProblem(t, 1).empty());
+    t.own_cpu_ms = 180'000;  // three
+    CHECK(cpuProblem(t, 1).find("3.0 cores") != std::string::npos);
+    CHECK(cpuProblem(t, 4).empty());
+    t.own_cpu_ms  = 60'000;
+    t.wait_cpu_ms = 30'000;  // half a core while waiting
+    CHECK(cpuProblem(t, 1).find("50 %") != std::string::npos);
+    t.wait_wall_ms = 5'000;  // too little measured to tell
+    CHECK(cpuProblem(t, 1).empty());
 }
 
 TEST_CASE("ChessBase comments give White's point of view, clocks and move times") {
@@ -536,7 +575,7 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     }
 
     // A program that is not there any more.
-    engines[1].cmd     = (dir / "moved.exe").string();
+    engines[1].cmd = (dir / "moved.exe").string();
     CHECK_THROWS_WITH((void)buildRun(setup, engines, topology, dir),
                       doctest::Contains("The program of old is not found"));
 

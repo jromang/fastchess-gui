@@ -107,7 +107,27 @@ struct EngineTotals {
     int timeouts         = 0;
     int crashes          = 0;
     int illegal          = 0;
+
+    // Processor time of its processes while it thinks and while its opponent does, with the time those lasted;
+    // since the tournament was started or resumed.
+    uint64_t own_cpu_ms   = 0;
+    uint64_t own_wall_ms  = 0;
+    uint64_t wait_cpu_ms  = 0;
+    uint64_t wait_wall_ms = 0;
 };
+
+// How an engine used the processor: the cores it kept busy while it thought, and the share of a core it used while
+// its opponent thought. Not measured until it has thought, and waited, for a while.
+struct CpuUse {
+    bool measured   = false;
+    double thinking = 0;
+    double waiting  = 0;
+};
+[[nodiscard]] CpuUse cpuUse(const EngineTotals& totals);
+
+// What looks unfair, empty when nothing does: more cores than its `threads` while it thinks, or thinking on its
+// opponent's time (pondering it was not asked for, a background thread).
+[[nodiscard]] std::string cpuProblem(const EngineTotals& totals, int threads);
 
 class GuiObserver final : public fastchess::observer::GameObserver, public tour::RecordListener {
    public:
@@ -117,6 +137,7 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
 
     // --- callbacks, tournament threads ---
     void onGameStart(const fastchess::observer::GameStart& info) override;
+    void onEngineProcesses(int slot, int64_t white_pid, int64_t black_pid) override;
     void onThinking(int slot, chess::Color stm, int64_t time_left_ms) override;
     void onEngineLine(int slot, chess::Color side, std::string_view line) override;
     void onMove(int slot, chess::Color mover, const fastchess::MoveData& move, const std::string& san,
@@ -169,11 +190,18 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
         SlotState state;
         std::deque<SlotState> ended;  // the previous games, once they have a result; at most 8
         chess::Board board;           // current position of the game in this slot
+
+        // Processor time: the engines' processes, their participant indexes, and the readings when "go" was sent.
+        std::array<std::vector<int64_t>, 2> processes;
+        std::array<int, 2> participant{-1, -1};
+        std::array<int64_t, 2> cpu_at_go{-1, -1};
+        Clock::time_point go_at{};
     };
 
     Slot* slot(int i) { return i >= 0 && i < static_cast<int>(slots_.size()) ? slots_[i].get() : nullptr; }
 
     uint16_t internReason(const std::string& reason);
+    [[nodiscard]] int participantIndex(const std::string& name) const;  // -1 when unknown
     // What a game's PGN text tells (read from the file when `pgn` is empty), once per game; data_mutex_ held.
     struct GameExtras {
         uint16_t opening = 0;

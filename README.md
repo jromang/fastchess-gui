@@ -36,6 +36,8 @@ this repository still builds unchanged.
 - **Live view**: every game in progress as a mosaic, or one in focus, with the board, clocks, the running search of each engine
   (depth, score, nodes, nps, PV in SAN), the annotated move list and the evaluation curve. Boards can be
   detached into their own windows.
+- **Fair play**: the processor time of every engine, while it thinks and while its opponent does, with a warning
+  when it uses more cores than its threads or thinks on its opponent's time.
 - **Pause / resume** without losing anything: no new game pair starts, running games (and the second game of
   their pair) play to the end. Stop either after the running games or immediately.
 - **Games**: every finished game, filterable, with a replay board and evaluation curve. Each game is written to
@@ -114,6 +116,7 @@ one):
   for N threads;
 - a ChessBase comment style in `PgnBuilder`;
 - `Logger::setPrintSink`, which feeds the console window;
+- `UciEngine::pid()` and `setInputCallback()`, for the processor time and the engine logs;
 - on Windows, `CREATE_NO_WINDOW` when the parent has no console, so engines do not open console windows.
 - `BaseTournament::saveJson()` does nothing without a configuration file name, so a tournament run by the GUI
   leaves no `config.json` next to its own files.

@@ -145,11 +145,17 @@ void App::drawResults() {
 
     // Engine health, shown only when something happened.
     for (int i = 0; i < std::min(2, static_cast<int>(totals_.size())); ++i) {
-        const auto& t = totals_[i];
-        if (t.timeouts + t.crashes + t.illegal == 0) continue;
-        ImGui::TextColored(ImVec4(0.95f, 0.65f, 0.3f, 1),
-                           TR("%s: %d loss(es) on time, %d crash(es), %d illegal move(s)"),
-                           i == 0 ? info.engine_a.c_str() : info.engine_b.c_str(), t.timeouts, t.crashes, t.illegal);
+        const auto& t    = totals_[i];
+        const auto* name = i == 0 ? info.engine_a.c_str() : info.engine_b.c_str();
+        if (t.timeouts + t.crashes + t.illegal > 0) {
+            ImGui::TextColored(ImVec4(0.95f, 0.65f, 0.3f, 1),
+                               TR("%s: %d loss(es) on time, %d crash(es), %d illegal move(s)"), name, t.timeouts,
+                               t.crashes, t.illegal);
+        }
+        if (const auto* tour = run_.tournament(); tour && i < static_cast<int>(tour->spec().participants.size())) {
+            const auto problem = cpuProblem(t, configThreads(tour->spec().participants[i].engine));
+            if (!problem.empty()) ImGui::TextColored(ImVec4(0.95f, 0.65f, 0.3f, 1), "%s: %s", name, problem.c_str());
+        }
     }
 
     ui::endPanel();
@@ -318,11 +324,12 @@ void App::drawCharts() {
     ImGui::BeginChild("##engine_stats", ImVec2(half_w, row_h), ImGuiChildFlags_Borders);
     ImGui::TextUnformatted(TR("Search per engine"));
     ImGui::Separator();
-    if (ImGui::BeginTable("##search", 4, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg)) {
+    if (ImGui::BeginTable("##search", 5, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg)) {
         ImGui::TableSetupColumn(TR("Engine"));
         ImGui::TableSetupColumn(TR("Avg depth"));
         ImGui::TableSetupColumn(TR("Avg NPS"));
         ImGui::TableSetupColumn(TR("Time / move"));
+        ImGui::TableSetupColumn(TR("Processor"));
         ImGui::TableHeadersRow();
         for (int i = 0; i < std::min(2, static_cast<int>(totals_.size())); ++i) {
             const auto& t = totals_[i];
@@ -336,6 +343,14 @@ void App::drawCharts() {
                 ui::formatCount(t.nps_samples ? static_cast<uint64_t>(t.nps_sum / t.nps_samples) : 0).c_str());
             ImGui::TableNextColumn();
             ImGui::TextUnformatted(ui::formatClock(t.moves ? static_cast<int64_t>(t.time_ms / t.moves) : 0).c_str());
+            ImGui::TableNextColumn();
+            const auto use = cpuUse(t);
+            ImGui::TextUnformatted(
+                use.measured ? fmt::format("{:.1f} · {:.0f} %", use.thinking, 100 * use.waiting).c_str() : "—");
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", TR("Cores kept busy while it thinks · share of a core used while its opponent "
+                                           "thinks (0 % without pondering). Measured after 20 s of each."));
+            }
         }
         ImGui::EndTable();
     }

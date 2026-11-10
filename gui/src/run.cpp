@@ -93,18 +93,6 @@ fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSet
     return config;
 }
 
-int configThreads(const fastchess::EngineConfiguration& config) {
-    for (const auto& [k, v] : config.options) {
-        if (k == "Threads") {
-            try {
-                return std::max(1, std::stoi(v));
-            } catch (...) {
-            }
-        }
-    }
-    return 1;
-}
-
 std::string cleanName(std::string s) {
     for (auto& c : s) {
         const bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' ||
@@ -463,6 +451,18 @@ RunController::~RunController() {
         fastchess::observer::PauseGate::instance().setPaused(false);
         thread_.join();
     }
+}
+
+int configThreads(const fastchess::EngineConfiguration& config) {
+    for (const auto& [k, v] : config.options) {
+        if (k == "Threads") {
+            try {
+                return std::max(1, std::stoi(v));
+            } catch (...) {
+            }
+        }
+    }
+    return 1;
 }
 
 MatchSetup quickTestSetup(const EngineEntry& engine, const std::string& opponent, const fs::path& book,

@@ -216,6 +216,9 @@ class Process : public IProcess {
         if (is_initalized_ && !startup_error_ && !exit_code_) ::kill(process_pid_, SIGKILL);
     }
 
+    // The operating system's id of the process, 0 before it started.
+    [[nodiscard]] int64_t pid() const noexcept { return is_initalized_ && !startup_error_ ? process_pid_ : 0; }
+
     Result alive() noexcept override {
         assert(is_initalized_);
 
