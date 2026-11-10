@@ -1,5 +1,6 @@
 #include <doctest/doctest.hpp>
 
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -370,7 +371,10 @@ TEST_CASE("programs: rebuilt, missing and new programs are noticed when the tour
     state.reset();
     CHECK(TournamentState::open(dir)->warnings().empty());
 
-    write("A", "build 2 of A");  // same size, other contents
+    // Rebuilt later: same size, other contents (the date moves on, as it does; some file systems only keep seconds).
+    const auto built = fs::last_write_time(bins / "A");
+    write("A", "build 2 of A");
+    fs::last_write_time(bins / "A", built + std::chrono::seconds(2));
     fs::remove(bins / "B");
     const auto warnings = TournamentState::open(dir)->warnings();
     REQUIRE(warnings.size() == 2);

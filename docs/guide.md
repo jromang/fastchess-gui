@@ -288,10 +288,9 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
 - `--autostart` starts the saved setup at launch;
 - `--shot` saves a screenshot of the window after the given number of seconds (default 5), with WINDOW brought to
   the front, and quits once every screenshot is taken. It can be repeated. WINDOW is a page (`home`, `setup`,
-  `engines`, `books`, `ratings`, `ratings-engine`, `ratings-h2h`, `ratings-progress`, `console`,
-  `settings`) or a tab (`live`, `games`, `openings`, `standings`, `schedule`,
-  `bracket`, `broadcast`). The mouse is ignored in this mode and, on Linux, the window is rendered off screen (no window
-  appears; set `SDL_VIDEODRIVER` to override);
+  `engines`, `books`, `ratings`, `ratings-engine`, `ratings-h2h`, `ratings-progress`, `console`, `settings`) or a
+  tab (`live`, `games`, `openings`, `standings`, `schedule`, `bracket`, `broadcast`). The mouse is ignored in this
+  mode and, on Linux, the window is rendered off screen (no window appears; set `SDL_VIDEODRIVER` to override);
 - `--focus WINDOW` opens that page or tab at launch;
 - `--select-game N` opens game N (in finishing order) in the *Games* tab as soon as it exists;
 - `--quit-after SECONDS` stops the tournament and quits;
