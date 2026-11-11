@@ -288,6 +288,14 @@ void App::drawEngines() {
     std::stable_sort(shown.begin(), shown.end(),
                      [&](int a, int b) { return lessCaseInsensitive(engines_[a].name, engines_[b].name); });
     bool remove_asked = false, duplicate_asked = false;
+
+    // Only the engines scroll: the buttons above and the legend below stay in sight.
+    const char* legend   = TR("✓ works · ! problem · ↔ WinBoard · right click: more");
+    const float legend_h = engines_.empty()
+                               ? 0.0f
+                               : ImGui::CalcTextSize(legend, nullptr, false, ImGui::GetContentRegionAvail().x).y +
+                                     ImGui::GetStyle().ItemSpacing.y * 2;
+    ImGui::BeginChild("##engine_entries", ImVec2(0, -legend_h));
     for (const int i : shown) {
         const auto& e = engines_[i];
         if (!engine_group_.empty() && std::find(e.groups.begin(), e.groups.end(), engine_group_) == e.groups.end()) {
@@ -343,16 +351,18 @@ void App::drawEngines() {
         ImGui::PushTextWrapPos(0);
         ImGui::TextDisabled("%s", TR("No engine yet. Click Add."));
         ImGui::PopTextWrapPos();
-    } else {
-        ImGui::Spacing();
-        ImGui::PushTextWrapPos(0);
-        ImGui::TextDisabled("%s", TR("✓ works · ! problem · ↔ WinBoard · right click: more"));
-        ImGui::PopTextWrapPos();
     }
     if (selected_engine_ >= 0 && ImGui::IsWindowFocused() && !ImGui::GetIO().WantTextInput &&
         ImGui::IsKeyPressed(ImGuiKey_Delete)) {
         remove_asked = true;
     }
+    ImGui::EndChild();
+    if (!engines_.empty()) {
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextDisabled("%s", legend);
+        ImGui::PopTextWrapPos();
+    }
+    // Here, in the list's window: the confirmation is drawn there, and a popup is found by the window it is opened in.
     if (remove_asked) ImGui::OpenPopup(TR("Remove the engine?###remove"));
     if (duplicate_asked) duplicate();  // after the loop, which holds references into engines_
 
@@ -850,6 +860,12 @@ void App::pollCheck() {
     e.check_when = when;
     storage_.saveEngines(engines_);
     Console::instance().add(fmt::format("{}: {}", e.name, result.message), !result.ok);
+
+    // No options yet: their reading failed once (an earlier version refused some engines). The engine has just been
+    // started, so they are read again.
+    if (e.uci_options.empty() && std::find(probe_queue_.begin(), probe_queue_.end(), e.name) == probe_queue_.end()) {
+        probe_queue_.push_back(e.name);
+    }
 }
 
 void App::importEngines(const ImportResult& imported) {

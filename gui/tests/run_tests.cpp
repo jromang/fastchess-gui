@@ -273,6 +273,40 @@ TEST_CASE("an engine that describes an option badly is read and checked, the opt
 }
 #endif
 
+#ifndef _WIN32
+TEST_CASE("the check takes a move from the engine's own book, without a search line, as compliant") {
+    // Amyan 1.72 answers the start position from its book: "info string  e2e4 70%,d2d4 30%", then bestmove (#45).
+    if (!fastchess::config::TournamentConfig)
+        fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
+    const auto dir = fs::temp_directory_path() / "fcg-book-move";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+    const auto script = dir / "book-move.sh";
+    std::ofstream(script) << "#!/bin/sh\n"
+                             "start=0\n"
+                             "while read line; do case \"$line\" in\n"
+                             "uci) echo 'id name Book mover'; echo 'id author Test'; echo uciok;;\n"
+                             "isready) echo readyok;;\n"
+                             "'position startpos') start=1;;\n"
+                             "position*) start=0;;\n"
+                             "'go wtime 100 btime 100') if [ $start = 1 ]; then\n"
+                             "    echo 'info string  e2e4 70%,d2d4 30%'; echo 'bestmove d2d4'\n"
+                             "  else echo 'info depth 1 score cp 0 pv e2e4'; echo 'bestmove e2e4'; fi;;\n"
+                             "go*) echo 'info depth 1 score cp 0 pv e2e4'; echo 'bestmove e2e4';;\n"
+                             "quit) exit 0;;\n"
+                             "esac; done\n";
+    fs::permissions(script, fs::perms::owner_all);
+
+    EngineEntry entry;
+    entry.name         = "Book mover";
+    entry.cmd          = script.string();
+    entry.protocol     = "uci";
+    const auto checked = checkEngine(entry);
+    CHECK_MESSAGE(checked.ok, checked.message << "\n" << checked.report);
+    fs::remove_all(dir);
+}
+#endif
+
 TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly its games") {
     if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available on this platform, skipped");
