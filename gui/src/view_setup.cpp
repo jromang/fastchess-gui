@@ -78,7 +78,7 @@ bool engineCombo(const char* id, std::string& value, const std::vector<EngineEnt
 
 }  // namespace
 
-void App::drawSetup(bool two_columns) {
+void App::drawSetup(bool two_columns, bool with_summary) {
     if (!ui::beginPanel(TR("Setup###setup"))) {
         ui::endPanel();
         return;
@@ -88,6 +88,12 @@ void App::drawSetup(bool two_columns) {
     if (locked) {
         ImGui::TextDisabled(TR("Settings are locked while a match is running."));
         ImGui::Separator();
+    }
+
+    // A narrow window: the summary and the templates scroll with the form, one scroll bar for the page.
+    if (with_summary) {
+        drawSetupSummary();
+        ImGui::Spacing();
     }
 
     ImGui::BeginDisabled(locked);
@@ -111,6 +117,10 @@ void App::drawSetup(bool two_columns) {
     if (table) ImGui::EndTable();
 
     ImGui::EndDisabled();
+    if (with_summary) {
+        ImGui::Spacing();
+        drawTemplates();
+    }
     ui::endPanel();
 }
 

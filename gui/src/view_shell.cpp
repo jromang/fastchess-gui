@@ -215,7 +215,11 @@ void App::drawShell() {
 void App::drawRail(float width) {
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(ui::RAIL_BG));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, px(14)));
-    ImGui::BeginChild("##rail", ImVec2(width, 0), ImGuiChildFlags_AlwaysUseWindowPadding);
+    ImGui::BeginChild("##rail", ImVec2(width, 0), ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoScrollbar);
+    // Eight buttons under the logo: lower ones in a low window, rather than a scroll bar.
+    const float spacing = ImGui::GetStyle().ItemSpacing.y;
+    const float button  = std::clamp((ImGui::GetContentRegionAvail().y - px(48) - 8 * spacing) / 8,
+                                     ImGui::GetFontSize() * 2.3f, ui::railButtonHeight());
 
     // The logo, on the accent colour.
     {
@@ -227,30 +231,30 @@ void App::drawRail(float width) {
     }
 
     const bool in_tournaments = page_ == Page::Home || page_ == Page::NewMatch || page_ == Page::Tournament;
-    if (ui::railButton("rail_home", ui::Icon::Trophy, TR("Tournaments"), in_tournaments, width)) {
+    if (ui::railButton("rail_home", ui::Icon::Trophy, TR("Tournaments"), in_tournaments, width, button)) {
         page_              = Page::Home;
         tournaments_dirty_ = true;
     }
-    if (ui::railButton("rail_engines", ui::Icon::Engine, TR("Engines"), page_ == Page::Engines, width)) {
+    if (ui::railButton("rail_engines", ui::Icon::Engine, TR("Engines"), page_ == Page::Engines, width, button)) {
         page_ = Page::Engines;
     }
-    if (ui::railButton("rail_books", ui::Icon::Book, TR("Books"), page_ == Page::Books, width)) page_ = Page::Books;
-    if (ui::railButton("rail_suites", ui::Icon::Suite, TR("Suites"), page_ == Page::Suites, width)) {
+    if (ui::railButton("rail_books", ui::Icon::Book, TR("Books"), page_ == Page::Books, width, button))
+        page_ = Page::Books;
+    if (ui::railButton("rail_suites", ui::Icon::Suite, TR("Suites"), page_ == Page::Suites, width, button)) {
         page_ = Page::Suites;
     }
-    if (ui::railButton("rail_ratings", ui::Icon::Chart, TR("Ratings"), page_ == Page::Ratings, width)) {
+    if (ui::railButton("rail_ratings", ui::Icon::Chart, TR("Ratings"), page_ == Page::Ratings, width, button)) {
         page_          = Page::Ratings;
         game_db_dirty_ = true;
     }
-    if (ui::railButton("rail_log", ui::Icon::Log, TR("Log"), page_ == Page::Log, width)) page_ = Page::Log;
-    if (ui::railButton("rail_settings", ui::Icon::Settings, TR("Settings"), page_ == Page::Settings, width)) {
+    if (ui::railButton("rail_log", ui::Icon::Log, TR("Log"), page_ == Page::Log, width, button)) page_ = Page::Log;
+    if (ui::railButton("rail_settings", ui::Icon::Settings, TR("Settings"), page_ == Page::Settings, width, button)) {
         page_ = Page::Settings;
     }
 
     // Quit, at the bottom: the window's own close button is not always in reach.
-    const float quit_h = ImGui::GetFontSize() * 3.4f;
-    ImGui::SetCursorPosY(std::max(ImGui::GetCursorPosY(), ImGui::GetWindowHeight() - quit_h - px(14)));
-    if (ui::railButton("rail_quit", ui::Icon::Quit, TR("Quit"), false, width)) requestQuit();
+    ImGui::SetCursorPosY(std::max(ImGui::GetCursorPosY(), ImGui::GetWindowHeight() - button - px(14)));
+    if (ui::railButton("rail_quit", ui::Icon::Quit, TR("Quit"), false, width, button)) requestQuit();
 
     ImGui::EndChild();
     ImGui::PopStyleVar();
@@ -413,7 +417,7 @@ void App::drawNewMatch() {
     ImGui::Spacing();
 
     // The summary on the right, the form beside it: in two columns when both are wide enough to read, centred when
-    // even two columns leave room. A narrow window gets one column, under the summary.
+    // even two columns leave room. A narrow window gets one column, under the summary, in the same scroll.
     const float avail   = ImGui::GetContentRegionAvail().x;
     const float gap     = px(20);
     const float column  = px(760);
@@ -425,12 +429,7 @@ void App::drawNewMatch() {
     if (side) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::floor((rest - width) * 0.5f));
 
     ImGui::BeginChild("##new_match", ImVec2(width, 0));
-    if (!side) drawSetupSummary();
-    drawSetup(two);
-    if (!side) {
-        ImGui::Spacing();
-        drawTemplates();
-    }
+    drawSetup(two, !side);
     ImGui::EndChild();
 
     if (side) {

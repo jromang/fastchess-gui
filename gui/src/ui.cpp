@@ -307,8 +307,10 @@ bool beginPanel(const char* title, ImVec2 size) {
 
 void endPanel() { ImGui::EndChild(); }
 
-bool railButton(const char* id, Icon icon, const char* label, bool selected, float width) {
-    const float h  = ImGui::GetFontSize() * 3.4f;
+float railButtonHeight() { return ImGui::GetFontSize() * 3.4f; }
+
+bool railButton(const char* id, Icon icon, const char* label, bool selected, float width, float height) {
+    const float h  = height > 0 ? height : railButtonHeight();
     const auto pos = ImGui::GetCursorScreenPos();
 
     ImGui::PushID(id);
@@ -399,11 +401,12 @@ bool splitter(const char* id, float& fraction, float total) {
 }
 
 void sameLineOrWrap(const char* next) {
-    const auto& style = ImGui::GetStyle();
-    ImGui::SameLine();
-    if (ImGui::GetContentRegionAvail().x < ImGui::CalcTextSize(next, nullptr, true).x + style.FramePadding.x * 2) {
-        ImGui::NewLine();
-    }
+    sameLineOrWrap(ImGui::CalcTextSize(next, nullptr, true).x + ImGui::GetStyle().FramePadding.x * 2);
+}
+
+void sameLineOrWrap(float width, float spacing) {
+    ImGui::SameLine(0, spacing);
+    if (ImGui::GetContentRegionAvail().x < width) ImGui::NewLine();
 }
 
 void emptyState(const char* text) {

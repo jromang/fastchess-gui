@@ -81,8 +81,11 @@ bool iconButton(const char* id, Icon icon, const char* label, bool enabled = tru
 bool beginPanel(const char* title, ImVec2 size = ImVec2(0, 0));
 void endPanel();
 
-// A tall navigation button for the rail: icon above a short label.
-bool railButton(const char* id, Icon icon, const char* label, bool selected, float width);
+// A tall navigation button for the rail: icon above a short label. `height` 0: the usual one.
+bool railButton(const char* id, Icon icon, const char* label, bool selected, float width, float height = 0);
+
+// The usual height of a rail button.
+[[nodiscard]] float railButtonHeight();
 
 // Large page title.
 void pageTitle(const char* text);
@@ -115,6 +118,8 @@ bool splitter(const char* id, float& fraction, float total);
 
 // Before a button labelled `next`: on the same line if it fits, else on the next one.
 void sameLineOrWrap(const char* next);
+// The same for items `width` wide, `spacing` after the previous one (-1: the usual spacing).
+void sameLineOrWrap(float width, float spacing = -1.0f);
 
 // A grey message in the middle of the space left, for an empty detail pane.
 void emptyState(const char* text);

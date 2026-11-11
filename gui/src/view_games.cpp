@@ -444,8 +444,14 @@ void App::drawGames() {
         break;
     }
 
+    // The board, its info line and buttons, then the chart (its menu and a plot of at least 110 pixels) in the height
+    // left: nothing under a scroll bar of its own beside the moves' one.
     const ImVec2 area      = ImGui::GetContentRegionAvail();
-    const float board_size = std::max(140.0f, std::min(area.x * 0.62f, area.y * 0.62f));
+    const float under      = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetFrameHeightWithSpacing();
+    const float chart_min  = ImGui::GetFrameHeightWithSpacing() + 110.0f * ImGui::GetFontSize() / 16.0f;
+    const float board_size = std::floor(std::max(
+        120.0f,
+        std::min({area.x * 0.62f, area.y * 0.62f, area.y - under - chart_min - ImGui::GetStyle().ItemSpacing.y})));
 
     BoardDecor decor;
     decor.flipped    = flip_replay_;
@@ -512,6 +518,11 @@ void App::drawGames() {
         }
     }
     ImGui::EndChild();
+    if (ImGui::GetContentRegionAvail().y < chart_min) {  // a window too low for it
+        ImGui::EndChild();
+        ui::endPanel();
+        return;
+    }
 
     std::vector<float> evals;
     evals.reserve(game.moves.size());

@@ -216,7 +216,7 @@ class App {
     void importLegacyRuns();
 
     // views
-    void drawSetup(bool two_columns);
+    void drawSetup(bool two_columns, bool with_summary);
     void drawLive();
     void refreshSlot(int slot);
     void drawLiveGame(SlotView& view, const char* id, bool allow_detach, int slot);

@@ -208,15 +208,16 @@ void App::drawRatingFilters() {
             ImGui::SetTooltip("%s", TR("Only the games between engines of a group of the library."));
     }
 
-    ImGui::SameLine();
+    ui::sameLineOrWrap(px(160));
     ImGui::SetNextItemWidth(px(160));
     const char* periods[] = {TR("Every game"), TR("The last 30 days"), TR("The last 365 days")};
     if (ImGui::Combo("##rating_period", &rating_period_, periods, 3)) ratings_dirty_ = true;
 
-    ImGui::SameLine();
     const auto pgns = storage_.ratingPgns();
+    ui::sameLineOrWrap(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x +
+                       ImGui::CalcTextSize(TR("Imported games")).x);
     if (ImGui::Checkbox(TR("Imported games"), &rating_external_)) ratings_dirty_ = true;
-    ImGui::SameLine();
+    ui::sameLineOrWrap(TR("PGN files…"));
     if (ImGui::Button(TR("PGN files…"))) ImGui::OpenPopup("rating_pgns");
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("%s", TR("Games of other programs or rating lists (CCRL, CEGT…) counted with the "
@@ -245,8 +246,8 @@ void App::drawRatingFilters() {
         ImGui::EndPopup();
     }
 
-    // The anchor.
-    ImGui::SameLine(0, px(24));
+    // The anchor, on a line of its own if the window is narrow.
+    ui::sameLineOrWrap(ImGui::CalcTextSize(TR("Anchor:")).x + px(200) + ImGui::GetStyle().ItemSpacing.x, px(24));
     ImGui::TextUnformatted(TR("Anchor:"));
     ImGui::SameLine();
     ImGui::SetNextItemWidth(px(200));
@@ -269,6 +270,8 @@ void App::drawRatingFilters() {
         if (ImGui::InputDouble("##rating_anchor_elo", &rating_anchor_elo_, 0, 0, "%.0f")) ratings_dirty_ = true;
     }
     ImGui::SameLine(0, px(24));
+    if (ImGui::GetContentRegionAvail().x < ImGui::CalcTextSize(TR("Refresh")).x + ImGui::GetStyle().FramePadding.x * 2)
+        ImGui::NewLine();
     if (ImGui::Button(TR("Refresh"))) game_db_dirty_ = true;
 }
 

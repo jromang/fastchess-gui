@@ -549,8 +549,11 @@ void App::drawEngines() {
     });
 
     ImGui::BeginDisabled(in_use);
-    constexpr ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_BordersInnerV |
-                                      ImGuiTableFlags_SizingStretchProp;
+    // The options scroll on their own in the height left; in a low window, with the page, not under a second scroll
+    // bar beside the page's.
+    const bool own_scroll       = ImGui::GetContentRegionAvail().y >= ImGui::GetFrameHeightWithSpacing() * 7;
+    const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerV |
+                                  ImGuiTableFlags_SizingStretchProp | (own_scroll ? ImGuiTableFlags_ScrollY : 0);
     if (!e.uci_options.empty() && ImGui::BeginTable("##options", 4, flags)) {
         ImGui::TableSetupScrollFreeze(0, 1);
         ImGui::TableSetupColumn(TR("Option"), ImGuiTableColumnFlags_WidthStretch, 0.35f);
