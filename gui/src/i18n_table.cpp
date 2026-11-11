@@ -406,6 +406,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Its games played so far stop counting", "Ses parties déjà jouées ne comptent plus"},
         {"Its games stop counting and are played again by the new engine.",
          "Ses parties ne comptent plus et sont rejouées par le nouveau moteur."},
+        {"Its path is in the clipboard.", "Son chemin est dans le presse-papiers."},
         {"Its positions with a best move (bm), moves to avoid (am) or STS points, in the Suites page.",
          "Ses positions avec un meilleur coup (bm), des coups à éviter (am) ou des points STS, dans la page Suites."},
         {"Its rating on a list you trust, to anchor a tournament's ratings. 0 = none.",
@@ -790,6 +791,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
          "them from another book.",
          "Les positions de départ des ouvertures affichées, dans l'ordre affiché : un livre de celles-ci, pour les "
          "garder ou les retirer d'un autre livre."},
+        {"The system could not open:", "Le système n'a pas pu ouvrir :"},
         {"The time control needs a base time or an increment.",
          "La cadence doit avoir un temps de base ou un incrément."},
         {"The time per move must be positive.", "Le temps par coup doit être positif."},

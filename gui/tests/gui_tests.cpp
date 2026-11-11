@@ -27,6 +27,7 @@
 #include "stats.hpp"
 #include "storage.hpp"
 #include "topology.hpp"
+#include "ui.hpp"
 
 #ifdef _WIN32
 #    include <windows.h>
@@ -768,6 +769,13 @@ TEST_CASE("engine lists of ChessGUI, cutechess and Arena are imported") {
     CHECK(result.engines[1].protocol == "xboard");
 
     fs::remove_all(dir);
+}
+
+TEST_CASE("a folder is opened by a file URL that spaces, accents and # cannot break") {
+    CHECK(ui::fileUrl("/home/jeff/runs/2026_RR") == "file:///home/jeff/runs/2026_RR");
+    CHECK(ui::fileUrl(std::filesystem::path(u8"/home/Hélène/Mes tournois #2")) ==
+          "file:///home/H%C3%A9l%C3%A8ne/Mes%20tournois%20%232");
+    CHECK(ui::fileUrl("C:/Users/x") == "file:///C:/Users/x");
 }
 
 TEST_CASE("text that is not UTF-8 is read as Windows-1252, and never stops engines.json from being written") {

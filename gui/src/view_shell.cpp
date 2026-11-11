@@ -208,6 +208,7 @@ void App::drawShell() {
     }
     ImGui::EndChild();
     ImGui::PopStyleVar();
+    ui::drawOpenPathError();
 
     ImGui::End();
 }

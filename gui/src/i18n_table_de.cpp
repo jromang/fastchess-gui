@@ -404,6 +404,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Its games played so far stop counting", "Ihre bisher gespielten Partien zählen nicht mehr"},
         {"Its games stop counting and are played again by the new engine.",
          "Ihre Partien zählen nicht mehr und werden von der neuen Engine erneut gespielt."},
+        {"Its path is in the clipboard.", "Der Pfad ist in der Zwischenablage."},
         {"Its positions with a best move (bm), moves to avoid (am) or STS points, in the Suites page.",
          "Seine Stellungen mit bestem Zug (bm), zu vermeidenden Zügen (am) oder STS-Punkten, auf der Seite Suiten."},
         {"Its rating on a list you trust, to anchor a tournament's ratings. 0 = none.",
@@ -785,6 +786,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
          "them from another book.",
          "Die Ausgangsstellungen der angezeigten Eröffnungen, in der angezeigten Reihenfolge: ein Buch daraus, um sie "
          "zu behalten oder aus einem anderen Buch zu entfernen."},
+        {"The system could not open:", "Das System konnte nicht öffnen:"},
         {"The time control needs a base time or an increment.",
          "Die Bedenkzeit braucht eine Grundzeit oder ein Inkrement."},
         {"The time per move must be positive.", "Die Zeit pro Zug muss positiv sein."},

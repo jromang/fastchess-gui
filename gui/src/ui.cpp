@@ -421,10 +421,50 @@ void emptyState(const char* text) {
     ImGui::PopTextWrapPos();
 }
 
+std::string fileUrl(const std::filesystem::path& path) {
+    const auto u8   = path.generic_u8string();  // forward slashes, also on Windows: file:///C:/...
+    std::string url = "file://";
+    if (u8.empty() || u8.front() != u8'/') url += '/';
+    for (const char8_t c : u8) {
+        const bool plain = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '/' ||
+                           c == '-' || c == '.' || c == '_' || c == '~' || c == ':';
+        if (plain)
+            url += static_cast<char>(c);
+        else
+            url += fmt::format("%{:02X}", static_cast<unsigned>(c));
+    }
+    return url;
+}
+
+namespace {
+std::string open_error;
+}
+
 void openPath(const std::filesystem::path& path) {
-    auto text = path.generic_string();  // forward slashes, also on Windows: file:///C:/...
-    if (!text.empty() && text.front() != '/') text.insert(text.begin(), '/');
-    SDL_OpenURL(("file://" + text).c_str());
+    const auto u8 = path.u8string();
+    const std::string text(u8.begin(), u8.end());
+#ifdef _WIN32
+    // The path itself: ShellExecute opens it with Explorer, with no URL to escape.
+    const auto& target = text;
+#else
+    const auto target = fileUrl(path);
+#endif
+    if (SDL_OpenURL(target.c_str())) return;
+    open_error = fmt::format("{}\n{}", text, SDL_GetError());
+    ImGui::SetClipboardText(text.c_str());
+}
+
+void drawOpenPathError() {
+    if (!open_error.empty() && !ImGui::IsPopupOpen("##open_error")) ImGui::OpenPopup("##open_error");
+    if (!ImGui::BeginPopupModal("##open_error", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) return;
+    ImGui::TextUnformatted(TR("The system could not open:"));
+    ImGui::TextDisabled("%s", open_error.c_str());
+    ImGui::TextUnformatted(TR("Its path is in the clipboard."));
+    if (ImGui::Button(TR("Close"))) {
+        open_error.clear();
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
 }
 
 CopyAs copyButton(const char* id, bool small) {

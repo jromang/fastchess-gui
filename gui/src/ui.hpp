@@ -100,8 +100,13 @@ enum class CopyAs { None, Text, Bbcode };
 // made.
 CopyAs copyButton(const char* id, bool small = false);
 
-// Opens a file or a folder with the program the system associates with it.
+// Opens a file or a folder with the program the system associates with it. When the system refuses, the path goes
+// to the clipboard and drawOpenPathError(), called once a frame, says so.
 void openPath(const std::filesystem::path& path);
+void drawOpenPathError();
+
+// file:///... with every byte outside [A-Za-z0-9/-._~:] percent-encoded.
+[[nodiscard]] std::string fileUrl(const std::filesystem::path& path);
 
 // "(?)" with a tooltip.
 void help(const char* text);
