@@ -69,6 +69,14 @@ this repository still builds unchanged.
 |---|
 | ![Charts](docs/screenshots/charts.png) |
 
+## Downloads
+
+Ready-made binaries are on the [releases page](https://github.com/jromang/fastchess-gui/releases):
+
+- **Windows**: 64-bit Windows 10 version 1903 (May 2019) or newer. No installer, nothing else to install. Older
+  versions (7, 8.1, LTSC 2019) are not supported: they may work while no path has accents.
+- **Linux**: x86-64, glibc 2.35 or newer, X11 or Wayland and OpenGL 3.2.
+
 ## Building
 
 A C++20 compiler and CMake 3.24 or newer. SDL3, Dear ImGui (docking branch), ImPlot, nanosvg,
