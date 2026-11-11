@@ -236,7 +236,11 @@ EngineRecord engineRecord(const GameDb& db, const GameFilter& filter, const std:
 
         auto it =
             std::find_if(out.sources.begin(), out.sources.end(), [&](const auto& s) { return s.source == g.source; });
-        if (it == out.sources.end()) it = out.sources.insert(out.sources.end(), EngineRecord::Source{g.source});
+        if (it == out.sources.end()) {
+            EngineRecord::Source source;
+            source.source = g.source;
+            it            = out.sources.insert(out.sources.end(), source);
+        }
         add(it->stats, g, *id);
         it->last_game = std::max(it->last_game, g.played_at);
 

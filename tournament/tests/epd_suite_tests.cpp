@@ -55,7 +55,7 @@ TEST_CASE("EPD suite: a file, and its STS score") {
     CHECK(suite.positions[1].id == "#2");
     CHECK(suite.hasPoints());
     CHECK(suite.maxPoints() == 20);
-    CHECK_THROWS(readSuite(file.parent_path() / "fcg-tour-no-such-suite.epd"));
+    CHECK_THROWS((void)readSuite(file.parent_path() / "fcg-tour-no-such-suite.epd"));
     std::filesystem::remove(file);
 }
 

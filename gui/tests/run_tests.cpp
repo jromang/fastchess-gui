@@ -460,7 +460,7 @@ TEST_CASE("the engines' search output reaches the live view while they think") {
     Harness h;
     REQUIRE(h.run.start(randomSetup(20), randomEngines(), topologyFromCores({{0, 0}, {0, 1}}), root).empty());
 
-    // The random mover prints "info depth 1 pv <move> score cp 0" before every bestmove.
+    // The random mover prints "info depth 1 score cp 0 pv <move>" before every bestmove.
     std::vector<SlotState> slots(2);
     bool seen = false;
     h.waitFor(
@@ -469,7 +469,7 @@ TEST_CASE("the engines' search output reaches the live view while they think") {
             for (int i = 0; obs && i < obs->slotCount() && i < 2; ++i) {
                 obs->copySlot(i, slots[static_cast<std::size_t>(i)]);
                 for (const auto& line : slots[static_cast<std::size_t>(i)].info) {
-                    if (line.rfind("info depth 1 pv ", 0) == 0) seen = true;
+                    if (line.rfind("info depth 1 score cp 0 pv ", 0) == 0) seen = true;
                 }
             }
             return seen || h.run.state() == RunController::State::Finished;

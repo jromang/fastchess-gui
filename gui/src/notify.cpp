@@ -12,7 +12,8 @@ extern char** environ;
 
 namespace fcg {
 
-void notifyRunFinished(SDL_Window* window, const std::string& title, const std::string& body) {
+void notifyRunFinished(SDL_Window* window, [[maybe_unused]] const std::string& title,
+                       [[maybe_unused]] const std::string& body) {  // the flash only, on Windows
     if (window) SDL_FlashWindow(window, SDL_FLASH_UNTIL_FOCUSED);
 
 #ifndef _WIN32

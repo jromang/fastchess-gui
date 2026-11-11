@@ -116,7 +116,8 @@ target_link_libraries(fcg_tournament PUBLIC fastchess_core)
 
 if(FCG_BUILD_TESTS)
     # fastchess' own mock engine, so the integration tests play real (random) games.
-    add_executable(fcg_random_mover ${FC_APP}/tests/mock/engine/random_mover.cpp)
+    add_executable(fcg_random_mover ${CMAKE_CURRENT_SOURCE_DIR}/tournament/tests/mock/random_mover.cpp)
+    target_include_directories(fcg_random_mover PRIVATE ${FC_APP}/third_party)
     set_target_properties(fcg_random_mover PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
     if(WIN32)
         target_link_options(fcg_random_mover PRIVATE -static -static-libgcc -static-libstdc++)
@@ -196,7 +197,10 @@ if(FCG_BUILD_GUI)
     set(MBEDTLS_FATAL_WARNINGS OFF CACHE BOOL "" FORCE)
     set(TF_PSA_CRYPTO_FATAL_WARNINGS OFF CACHE BOOL "" FORCE)
     set(DISABLE_PACKAGE_CONFIG_AND_INSTALL ON CACHE BOOL "" FORCE)
+    # Its CMakeLists asks for a CMake older than 3.10, which recent versions warn about: run it with 3.10 rules.
+    set(CMAKE_POLICY_VERSION_MINIMUM 3.10)
     FetchContent_MakeAvailable(mbedtls)
+    unset(CMAKE_POLICY_VERSION_MINIMUM)
 
     # The translations: .po files read by tinygettext, UTF-8 only (no iconv).
     FetchContent_Declare(tinygettext
@@ -276,8 +280,9 @@ if(FCG_BUILD_GUI)
     # Everything except main(), so the unit tests can link it too.
     add_library(fcg_lib STATIC ${FCG_GUI_SOURCES} ${FCG_ASSET_CPP} ${FCG_FONT_CPPS} ${FCG_PO_CPP})
     target_compile_features(fcg_lib PUBLIC cxx_std_20)
-    target_include_directories(fcg_lib PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/gui/src
+    target_include_directories(fcg_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/gui/src)
+    # Header-only libraries compiled in our files: their warnings are not ours to fix.
+    target_include_directories(fcg_lib SYSTEM PUBLIC
         ${nanosvg_SOURCE_DIR}/src
         ${stb_SOURCE_DIR}
     )

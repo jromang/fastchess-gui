@@ -103,7 +103,12 @@ void importLegacyRun(const fs::path& dir) {
         config.get_to(spec.conditions);
         const auto engines = config.at("engines").get<std::vector<fastchess::EngineConfiguration>>();
         if (engines.size() != 2) throw std::runtime_error("not a two-engine match");
-        for (int i = 0; i < 2; ++i) spec.participants.push_back({i, engines[i]});
+        for (int i = 0; i < 2; ++i) {
+            Participant p;
+            p.id     = i;
+            p.engine = engines[i];
+            spec.participants.push_back(std::move(p));
+        }
     } catch (const std::exception& e) {
         throw std::runtime_error((dir / "config.json").string() + ": " + e.what());
     }

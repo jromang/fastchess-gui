@@ -3,8 +3,12 @@
 #include <algorithm>
 
 #ifdef _WIN32
-#    define WIN32_LEAN_AND_MEAN
-#    define NOMINMAX
+#    ifndef WIN32_LEAN_AND_MEAN
+#        define WIN32_LEAN_AND_MEAN
+#    endif
+#    ifndef NOMINMAX  // the toolchain may define it already
+#        define NOMINMAX
+#    endif
 #    include <windows.h>
 #endif
 

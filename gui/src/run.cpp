@@ -442,7 +442,15 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     t.pgn.track_tbhits   = setup.pgn_tbhits;
     t.pgn.track_decision = setup.pgn_decision;
 
+    // Without a book, fastchess warns on stdout (and in the log) at every start: the setup already says it, in the
+    // language of the interface. Its only checks of the opening are those warnings, so it is shown a stand-in.
+    const auto opening = t.opening;
+    if (t.opening.file.empty() && t.variant != fastchess::VariantType::FRC) {
+        t.opening.file   = "-";
+        t.opening.format = fastchess::FormatType::EPD;
+    }
     fastchess::cli::sanitize(t);
+    t.opening = opening;
     fastchess::cli::sanitize(run.engines);
 
     if (!match) t.sprt.enabled = false;

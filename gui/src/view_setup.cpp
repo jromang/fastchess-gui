@@ -70,7 +70,7 @@ bool engineCombo(const char* id, std::string& value, const std::vector<EngineEnt
             }
             if (selected) ImGui::SetItemDefaultFocus();
         }
-        if (engines.empty()) ImGui::TextDisabled(TR("Add engines in the Engines window."));
+        if (engines.empty()) ImGui::TextDisabled("%s", TR("Add engines in the Engines window."));
         ImGui::EndCombo();
     }
     return changed;
@@ -86,7 +86,7 @@ void App::drawSetup(bool two_columns, bool with_summary) {
 
     const bool locked = run_.running();
     if (locked) {
-        ImGui::TextDisabled(TR("Settings are locked while a match is running."));
+        ImGui::TextDisabled("%s", TR("Settings are locked while a match is running."));
         ImGui::Separator();
     }
 
@@ -142,7 +142,7 @@ void App::setupEngines() {
                     changed         = true;
                 }
             }
-            if (engines_.empty()) ImGui::TextDisabled(TR("Add engines in the Engines window."));
+            if (engines_.empty()) ImGui::TextDisabled("%s", TR("Add engines in the Engines window."));
             ImGui::EndCombo();
         }
         if (changed) saveSetupSoon();
@@ -153,9 +153,9 @@ void App::setupEngines() {
         std::swap(setup_.engine_a, setup_.engine_b);
         saveSetupSoon();
     }
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip(TR("Swap A and B"));
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Swap A and B"));
 
-    ImGui::TextDisabled(TR("Statistics are given from A's point of view."));
+    ImGui::TextDisabled("%s", TR("Statistics are given from A's point of view."));
 }
 
 void App::setupMatch() {
@@ -176,7 +176,7 @@ void App::setupMatch() {
             ui::help(TR("Played in pairs: each opening is played twice, with colours reversed."));
             break;
         case MatchMode::Infinite:
-            ImGui::TextDisabled(TR("Plays until you stop the match."));
+            ImGui::TextDisabled("%s", TR("Plays until you stop the match."));
             break;
         case MatchMode::Sprt: {
             changed |= inputDouble("elo0", "##elo0", setup_.sprt_elo0, -1000, 1000);
@@ -202,7 +202,7 @@ void App::setupMatch() {
             changed |= inputInt(TR("Max games"), "##sprt_max", setup_.sprt_max_games, 0, 100'000'000);
             ui::help(TR("0 = no limit."));
 
-            ImGui::TextDisabled(TR("Presets:"));
+            ImGui::TextDisabled("%s", TR("Presets:"));
             ImGui::SameLine();
             if (ImGui::SmallButton(TR("Gainer [0, 3]"))) {
                 setup_.sprt_elo0 = 0;
@@ -589,9 +589,9 @@ void App::setupAdjudication() {
         ImGui::SameLine();
         if (ImGui::Button("…##tb_browse")) dialogs_.openFolder(Dialogs::Purpose::Tablebases);
 #ifdef _WIN32
-        ImGui::TextDisabled(TR("Directories separated by ';' (WDL files are enough)."));
+        ImGui::TextDisabled("%s", TR("Directories separated by ';' (WDL files are enough)."));
 #else
-        ImGui::TextDisabled(TR("Directories separated by ':' (WDL files are enough)."));
+        ImGui::TextDisabled("%s", TR("Directories separated by ':' (WDL files are enough)."));
 #endif
         changed |= inputInt(TR("Max pieces"), "##tb_pieces", setup_.tb_pieces, 0, 7);
         ui::help(TR("0 = everything the tables cover."));
@@ -623,7 +623,7 @@ void App::setupPgn() {
     ui::label(TR("Event"), labelWidth());
     changed |= inputText("##event", setup_.pgn_event, -FLT_MIN);
 
-    ImGui::TextDisabled(TR("Every game is written to two files in the match folder:"));
+    ImGui::TextDisabled("%s", TR("Every game is written to two files in the match folder:"));
     ImGui::BulletText("games.pgn : {+0.35/18 1.234s} (cutechess, fastchess)");
     ImGui::BulletText("games-chessbase.pgn : {[%%eval 0.35,18] [%%emt …]}");
 
@@ -867,7 +867,7 @@ void App::setupParticipants() {
                 changed = true;
             }
         }
-        if (engines_.empty()) ImGui::TextDisabled(TR("Add engines in the Engines window."));
+        if (engines_.empty()) ImGui::TextDisabled("%s", TR("Add engines in the Engines window."));
         ImGui::EndCombo();
     }
     ImGui::SameLine();
