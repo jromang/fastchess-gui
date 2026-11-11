@@ -59,9 +59,9 @@ this repository still builds unchanged.
   adjudication, crash recovery, a desktop notification when a match ends.
 - Light and dark themes; English, French or German, following the system (can be changed in the settings).
 
-| Standings and crosstable | Games and replay |
+| Standings, ratings and latest results | Games and replay |
 |---|---|
-| ![Standings](docs/screenshots/standings.png) | ![Games](docs/screenshots/games.png) |
+| ![Overview](docs/screenshots/overview.png) | ![Games](docs/screenshots/games.png) |
 
 | A two-engine SPRT match |
 |---|
