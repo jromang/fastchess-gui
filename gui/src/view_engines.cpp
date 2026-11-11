@@ -631,13 +631,18 @@ void App::drawEngines() {
             bool edited = false;
 
             if (opt.type == "spin") {
-                long long v = 0, lo = 0, hi = 0;
-                try {
-                    v  = std::stoll(value);
-                    lo = opt.min.empty() ? LLONG_MIN : std::stoll(opt.min);
-                    hi = opt.max.empty() ? LLONG_MAX : std::stoll(opt.max);
-                } catch (...) {
-                }
+                // Engines do not always describe them well: a bound missing or not a number is no bound.
+                const auto number = [](const std::string& text, long long fallback) {
+                    try {
+                        return std::stoll(text);
+                    } catch (...) {
+                        return fallback;
+                    }
+                };
+                long long v  = number(value, 0);
+                long long lo = number(opt.min, LLONG_MIN);
+                long long hi = number(opt.max, LLONG_MAX);
+                if (lo > hi) std::swap(lo, hi);
                 if (ImGui::InputScalar("##v", ImGuiDataType_S64, &v)) {
                     v      = std::clamp(v, lo, hi);
                     value  = std::to_string(v);

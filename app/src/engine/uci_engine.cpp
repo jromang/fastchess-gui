@@ -54,6 +54,22 @@ class AcquireSemaphore {
 };
 
 namespace {
+
+// "option name <name> type <type> default <value> [min ...] [max ...]" as a string option with that default.
+std::unique_ptr<UCIOption> lenientOption(const std::string& line) {
+    const auto name_at = line.find("name ");
+    const auto type_at = line.find(" type ");
+    if (name_at == std::string::npos || type_at == std::string::npos || type_at < name_at + 5) return nullptr;
+    const auto name = line.substr(name_at + 5, type_at - name_at - 5);
+
+    std::string value;
+    if (const auto default_at = line.find(" default ", type_at); default_at != std::string::npos) {
+        value          = line.substr(default_at + 9);
+        const auto end = std::min({value.find(" min "), value.find(" max "), value.find(" var ")});
+        value          = value.substr(0, end);
+    }
+    return std::make_unique<StringOption>(name, value);
+}
 CountingSemaphore semaphore(16);
 
 }  // namespace
@@ -242,7 +258,15 @@ bool UciEngine::uciok(std::optional<ms> threshold) {
             id_author_ = line->line.substr(10);
         }
 
-        auto option = UCIOptionFactory::parseUCIOptionLine(line->line);
+        std::unique_ptr<UCIOption> option;
+        try {
+            option = UCIOptionFactory::parseUCIOptionLine(line->line);
+        } catch (const std::exception& e) {
+            // fastchess-gui: an option the engine describes badly (a spin without numbers, a default outside its
+            // range) is kept as a string option, so that it can still be set, rather than failing the engine.
+            LOG_WARN_THREAD("Engine {}: {}", config_.name, e.what());
+            option = lenientOption(line->line);
+        }
 
         if (option != nullptr) {
             uci_options_.addOption(std::move(option));

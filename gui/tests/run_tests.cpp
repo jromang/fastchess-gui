@@ -222,6 +222,46 @@ TEST_CASE("the engine check runs fastchess' UCI compliance steps, and stops at t
 #endif
 }
 
+#ifndef _WIN32
+TEST_CASE("an engine that describes an option badly is read and checked, the option kept and settable") {
+    // Like Amyan 1.72 (a spin option without numbers) and Cerebro 3.03d (a default outside its range): fastchess
+    // refused the whole engine, so no option was shown and no game could start.
+    if (!fastchess::config::TournamentConfig)
+        fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
+    const auto dir = fs::temp_directory_path() / "fcg-bad-options";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+    const auto script = dir / "bad-options.sh";
+    std::ofstream(script) << "#!/bin/sh\n"
+                             "while read line; do case \"$line\" in\n"
+                             "uci) echo 'id name Bad options'; echo 'id author Test';\n"
+                             "     echo 'option name MultiPV type spin default 1';\n"
+                             "     echo 'option name Nalimov Cache type spin default 32 min 1 max 16';\n"
+                             "     echo 'option name Hash type spin default 16 min 1 max 1024';\n"
+                             "     echo uciok;;\n"
+                             "isready) echo readyok;;\n"
+                             "go*) echo 'info depth 1 score cp 0 pv e2e4'; echo 'bestmove e2e4';;\n"
+                             "quit) exit 0;;\n"
+                             "esac; done\n";
+    fs::permissions(script, fs::perms::owner_all);
+
+    EngineEntry entry;
+    entry.name       = "Bad options";
+    entry.cmd        = script.string();
+    entry.protocol   = "uci";
+    const auto probe = probeEngine(entry);
+    REQUIRE_MESSAGE(probe.ok, probe.error);
+    std::set<std::string> names;
+    for (const auto& o : probe.options) names.insert(o.name);
+    CHECK(names == std::set<std::string>{"MultiPV", "Nalimov Cache", "Hash"});
+
+    entry.options      = {{"MultiPV", "2"}, {"Nalimov Cache", "8"}};
+    const auto checked = checkEngine(entry);
+    CHECK_MESSAGE(checked.ok, checked.message);
+    fs::remove_all(dir);
+}
+#endif
+
 TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly its games") {
     if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available on this platform, skipped");

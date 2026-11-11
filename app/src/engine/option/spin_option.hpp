@@ -47,8 +47,13 @@ class SpinOption : public UCIOption {
     }
 
     bool isValid(const std::string& value) const override {
-        T parsedValue = parseValue(value);
-        return parsedValue >= minValue && parsedValue <= maxValue;
+        // fastchess-gui: a value that is not a number is not valid, it does not throw.
+        try {
+            T parsedValue = parseValue(value);
+            return parsedValue >= minValue && parsedValue <= maxValue;
+        } catch (const std::exception&) {
+            return false;
+        }
     }
 
     Type getType() const override { return Type::Spin; }
