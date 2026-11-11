@@ -191,23 +191,14 @@ if(FCG_BUILD_GUI)
     # TLS for the lichess broadcasts: Mbed TLS (long term support branch), static, its libraries only.
     FetchContent_Declare(mbedtls
         URL https://github.com/Mbed-TLS/mbedtls/releases/download/mbedtls-4.1.1/mbedtls-4.1.1.tar.bz2
-        URL_HASH SHA256=3359a349e23db3d5536fcee032ae7b2ecbfc08972fab643089b5cbf2a375c98c)
+        URL_HASH SHA256=3359a349e23db3d5536fcee032ae7b2ecbfc08972fab643089b5cbf2a375c98c
+        PATCH_COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/patch_mbedtls.cmake)
     set(ENABLE_PROGRAMS OFF CACHE BOOL "" FORCE)
     set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
     set(MBEDTLS_FATAL_WARNINGS OFF CACHE BOOL "" FORCE)
     set(TF_PSA_CRYPTO_FATAL_WARNINGS OFF CACHE BOOL "" FORCE)
     set(DISABLE_PACKAGE_CONFIG_AND_INSTALL ON CACHE BOOL "" FORCE)
-    # Its CMakeLists asks for a CMake older than 3.10, which recent versions warn about: run it with 3.10 rules
-    # (CMake 4), and without the deprecation notice (CMake 3, which knows no such rule).
-    set(CMAKE_POLICY_VERSION_MINIMUM 3.10)
-    if(CMAKE_VERSION VERSION_LESS 4.0)
-        set(CMAKE_WARN_DEPRECATED OFF)
-    endif()
     FetchContent_MakeAvailable(mbedtls)
-    if(CMAKE_VERSION VERSION_LESS 4.0)
-        unset(CMAKE_WARN_DEPRECATED)
-    endif()
-    unset(CMAKE_POLICY_VERSION_MINIMUM)
 
     # The translations: .po files read by tinygettext, UTF-8 only (no iconv).
     FetchContent_Declare(tinygettext
