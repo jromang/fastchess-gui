@@ -34,10 +34,9 @@ std::optional<Summary> summarize(const fs::path& dir) {
 std::vector<fs::path> tournamentDirs(const fs::path& root) {
     std::vector<fs::path> dirs;
     std::error_code ec;
-    for (const auto& entry : fs::directory_iterator(root, ec)) {
-        if (entry.is_directory(ec) && fs::is_regular_file(entry.path() / "tournament.json", ec)) {
-            dirs.push_back(entry.path());
-        }
+    // increment(ec): a folder that cannot be read further (a network drive gone...) ends the list, it does not throw.
+    for (fs::directory_iterator it(root, ec), last; !ec && it != last; it.increment(ec)) {
+        if (it->is_directory(ec) && fs::is_regular_file(it->path() / "tournament.json", ec)) dirs.push_back(it->path());
     }
     std::sort(dirs.begin(), dirs.end(), [](const auto& a, const auto& b) { return a.filename() > b.filename(); });
     return dirs;

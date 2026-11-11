@@ -1062,8 +1062,8 @@ void App::drawTemplates() {
     const auto dir = storage_.root() / "templates";
     std::vector<std::string> names;
     std::error_code ec;
-    for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
-        if (entry.path().extension() == ".json") names.push_back(entry.path().stem().string());
+    for (std::filesystem::directory_iterator it(dir, ec), last; !ec && it != last; it.increment(ec)) {
+        if (it->path().extension() == ".json") names.push_back(it->path().stem().string());
     }
     std::sort(names.begin(), names.end());
 

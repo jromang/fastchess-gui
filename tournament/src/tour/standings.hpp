@@ -49,7 +49,11 @@ struct Standing {
     int crashes  = 0;
     int illegal  = 0;
 
-    [[nodiscard]] double score() const noexcept { return games ? points / games : 0.0; }
+    // A bye is a drawn pair of games: one point out of two, so that it does not raise the score above 50 %.
+    [[nodiscard]] double score() const noexcept {
+        const int counted = games + 2 * byes;
+        return counted ? points / counted : 0.0;
+    }
 };
 
 // A participant whose rating is fixed, the others being measured against it.

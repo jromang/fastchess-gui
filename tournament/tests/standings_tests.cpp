@@ -309,3 +309,11 @@ TEST_CASE("rating list: the time control text of every kind of limit") {
     limit.nodes = 5000;
     CHECK(timeControlText(limit) == "5000 nodes");
 }
+
+TEST_CASE("table: a bye counts as a drawn pair in the score, not as points out of nothing") {
+    Standing s;
+    s.games  = 2;
+    s.points = 1.0 + 1.0;  // a drawn pair played, and a bye
+    s.byes   = 1;
+    CHECK(s.score() == doctest::Approx(0.5));
+}

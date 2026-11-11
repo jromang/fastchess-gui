@@ -1,5 +1,7 @@
 // "Engines": the engine list and the UCI option editor; "Console": fastchess output.
 
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
 
 #include <imgui.h>
@@ -135,9 +137,14 @@ void App::pollProbe() {
     if (!probe_.valid()) return;
     if (probe_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
 
-    const auto result = probe_.get();
-    const int index   = probe_index_;
-    probe_index_      = -1;
+    ProbeResult result;
+    try {
+        result = probe_.get();
+    } catch (const std::exception& e) {
+        result.error = e.what();
+    }
+    const int index = probe_index_;
+    probe_index_    = -1;
 
     if (index < 0 || index >= static_cast<int>(engines_.size())) return;
     auto& e = engines_[index];
@@ -228,6 +235,13 @@ void App::drawEngines() {
                         engines_[selected_engine_].name.c_str());
         }
         if (ImGui::Button(TR("Remove##confirm")) && selected_engine_ >= 0) {
+            // A read or a check still running belongs to an index: keep it on its engine, or drop it with it.
+            for (int* busy : {&probe_index_, &check_index_}) {
+                if (*busy == selected_engine_)
+                    *busy = -1;
+                else if (*busy > selected_engine_)
+                    --*busy;
+            }
             engines_.erase(engines_.begin() + selected_engine_);
             selected_engine_ = std::min(selected_engine_, static_cast<int>(engines_.size()) - 1);
             storage_.saveEngines(engines_);
@@ -728,9 +742,11 @@ void App::startQuickTest(int index) {
     // Only the last quick test is kept: its result stays with the engine.
     const auto dir = storage_.root() / "tests";
     std::error_code ec;
-    for (const auto& entry : fs::directory_iterator(dir, ec)) {
-        if (entry.is_directory(ec)) fs::remove_all(entry.path(), ec);
+    std::vector<fs::path> old;
+    for (fs::directory_iterator it(dir, ec), last; !ec && it != last; it.increment(ec)) {
+        if (it->is_directory(ec)) old.push_back(it->path());
     }
+    for (const auto& path : old) fs::remove_all(path, ec);
 
     auto engines     = engines_;
     const auto setup = quickTestSetup(engines_[index], quick_test_opponent_, dir / "quick-test.epd", engines);
@@ -774,9 +790,14 @@ void App::finishQuickTest() {
 
 void App::pollCheck() {
     if (!check_.valid() || check_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
-    const auto result = check_.get();
-    const int index   = check_index_;
-    check_index_      = -1;
+    CheckResult result;
+    try {
+        result = check_.get();
+    } catch (const std::exception& e) {
+        result.message = e.what();
+    }
+    const int index = check_index_;
+    check_index_    = -1;
     if (index < 0 || index >= static_cast<int>(engines_.size())) return;
 
     auto& e         = engines_[index];
@@ -792,11 +813,20 @@ void App::pollCheck() {
 }
 
 void App::importEngines(const ImportResult& imported) {
+    // Windows file names ignore case: C:\Engines\SF.EXE is c:\engines\sf.exe.
+    const auto same_program = [](const std::string& a, const std::string& b) {
+#ifdef _WIN32
+        return std::equal(a.begin(), a.end(), b.begin(), b.end(),
+                          [](unsigned char x, unsigned char y) { return std::tolower(x) == std::tolower(y); });
+#else
+        return a == b;
+#endif
+    };
     int added = 0;
     for (auto e : imported.engines) {
         // Already in the list with the same program and arguments: skipped.
         const bool known = std::any_of(engines_.begin(), engines_.end(), [&](const EngineEntry& o) {
-            return o.cmd == e.cmd && o.args == e.args && o.options == e.options;
+            return same_program(o.cmd, e.cmd) && o.args == e.args && o.options == e.options;
         });
         if (known) continue;
         e.name = uniqueEngineName(e.name.empty() ? fs::path(e.cmd).stem().string() : e.name, -1);

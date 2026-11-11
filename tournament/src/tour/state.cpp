@@ -117,6 +117,22 @@ std::string withElo(std::string pgn, int white_elo, int black_elo) {
     return pgn;
 }
 
+// Games the tournament will have; Swiss and knockout schedules grow round by round, so their plan counts too.
+uint64_t plannedGames(const TournamentSpec& spec, const Schedule& schedule, std::size_t dropped) {
+    const auto size = schedule.size();
+    if (!size) return 0;
+    const auto n = spec.participants.size();
+    if (spec.format == Format::Swiss) {
+        return std::max<uint64_t>(*size, uint64_t(std::max(1, spec.rounds)) * (n / 2)) * 2 - dropped;
+    }
+    if (spec.format == Format::Knockout) {
+        // Every match eliminates one player; tiebreaks come on top.
+        const uint64_t planned = (n > 0 ? n - 1 : 0) * uint64_t(std::max(1, spec.cycles));
+        return std::max<uint64_t>(*size, planned) * 2 - dropped;
+    }
+    return uint64_t{*size} * 2 - dropped;
+}
+
 }  // namespace
 
 fastchess::Stats encounterStats(const GameResult& a, const GameResult& b, int pov) {
@@ -446,20 +462,7 @@ void TournamentState::applyEvent(const nlohmann::json& event) {
     }
 }
 
-uint64_t TournamentState::totalLocked() const {
-    const auto size = schedule_.size();
-    if (!size) return 0;
-    const auto n = spec_.participants.size();
-    if (spec_.format == Format::Swiss) {
-        return std::max<uint64_t>(*size, uint64_t(std::max(1, spec_.rounds)) * (n / 2)) * 2 - dropped_.size();
-    }
-    if (spec_.format == Format::Knockout) {
-        // Every match eliminates one player; tiebreaks come on top.
-        const uint64_t planned = (n > 0 ? n - 1 : 0) * uint64_t(std::max(1, spec_.cycles));
-        return std::max<uint64_t>(*size, planned) * 2 - dropped_.size();
-    }
-    return uint64_t{*size} * 2 - dropped_.size();
-}
+uint64_t TournamentState::totalLocked() const { return plannedGames(spec_, schedule_, dropped_.size()); }
 
 void TournamentState::roundEventTo(const nlohmann::json& event, const TournamentSpec& spec, Schedule& schedule) {
     const auto type  = event.at("t").get<std::string>();
@@ -639,8 +642,7 @@ Impact TournamentState::preview(const Edit& edit) const {
         return impact;
     }
 
-    const auto size    = schedule.size();
-    impact.games_after = size ? uint64_t{*size} * 2 - dropped.size() : 0;
+    impact.games_after = plannedGames(spec, schedule, dropped.size());
     for (std::size_t i = 0; i < results.size(); ++i) {
         if (!results[i].voided || results_[i].voided) continue;
         (dropped.count(results[i].number()) ? impact.voided : impact.replayed)++;
@@ -837,7 +839,13 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
                                  elo(result.black));
     running_.erase(task.number());
     // Already played, or no longer to be played (its participant was withdrawn meanwhile).
-    if (done(task.encounter.index, task.game) || dropped_.count(task.number())) return {result, std::nullopt};
+    if (done(task.encounter.index, task.game) || dropped_.count(task.number())) return {result, std::nullopt, false};
+    // One of its engines was replaced meanwhile: the game is played again, by the new engine.
+    const auto now = schedule_.at(task.encounter.index);
+    if (!now || now->first != task.encounter.first || now->second != task.encounter.second) {
+        open_.emplace_front(task.encounter.index, task.game);
+        return {result, std::nullopt, false};
+    }
 
     result.pgn           = pgn_->append(text);
     result.pgn_chessbase = pgn_chessbase_->append(text_cb);

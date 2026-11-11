@@ -339,7 +339,8 @@ CheckResult checkEngine(const EngineEntry& entry) {
     config.options  = entry.options;
     config.protocol = entry.protocol;
 
-    if (!std::filesystem::is_regular_file(entry.cmd)) {
+    std::error_code ec;
+    if (!std::filesystem::is_regular_file(entry.cmd, ec)) {
         result.message = trf("File not found: {}", entry.cmd);
         return result;
     }

@@ -951,6 +951,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"{} asks to be started again for every game: Restart the engine for every game is ticked.",
          "{} demande à être relancé à chaque partie : « Relancer le moteur à chaque partie » est coché."},
         {"{} changed: its options were read again.", "{} a changé : ses options ont été relues."},
+        {"{} could not be read: kept as {}", "{} illisible : gardé sous le nom {}"},
         {"{} crashes", "{} crashs"},
         {"{} crashes or stalls", "{} crashs ou blocages"},
         {"{} does not play Chess960.", "{} ne joue pas le Chess960."},

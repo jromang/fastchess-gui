@@ -77,6 +77,9 @@ void configureFastchess(const tour::TournamentSpec& spec);
 [[nodiscard]] BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engines,
                                 const CpuTopology& topology, const std::filesystem::path& run_dir);
 
+// A name made fit for a file name: anything but [A-Za-z0-9._-] becomes '_', at most 60 characters.
+[[nodiscard]] std::string cleanName(std::string s);
+
 [[nodiscard]] std::string makeRunDirName(const std::string& a, const std::string& b);
 
 // Chess960 starting position number n (0-959, Scharnagl's numbering: 518 is the usual one), as a FEN.

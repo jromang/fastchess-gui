@@ -68,7 +68,12 @@ GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
 void GuiObserver::updateParticipants(const tour::TournamentSpec& spec) {
     std::lock_guard<std::mutex> lock(data_mutex_);
     for (const auto& p : spec.participants) {
-        if (index_.count(p.id)) continue;
+        // An id seen before can come back with another engine: an added engine undone, then another one added.
+        if (const auto it = index_.find(p.id); it != index_.end()) {
+            if (names_[it->second] != p.engine.name && it->second < totals_.size()) totals_[it->second] = {};
+            names_[it->second] = p.engine.name;
+            continue;
+        }
         index_[p.id] = static_cast<uint16_t>(names_.size());
         names_.push_back(p.engine.name);
     }
@@ -78,8 +83,11 @@ void GuiObserver::updateParticipants(const tour::TournamentSpec& spec) {
 std::vector<GameRecord> GuiObserver::records(const std::vector<tour::GameResult>& results) {
     std::lock_guard<std::mutex> lock(data_mutex_);
     std::vector<GameRecord> out;
+    shown_.clear();
     for (const auto& r : results) {
-        if (!r.voided) out.push_back(makeRecord(r));
+        if (r.voided) continue;
+        out.push_back(makeRecord(r));
+        shown_.insert(out.back().game_id);
     }
     return out;
 }
@@ -442,7 +450,9 @@ bool GuiObserver::slotActive(int i) const {
 
 void GuiObserver::drain(std::vector<GameRecord>& games, std::vector<fastchess::Stats>& stats) {
     std::lock_guard<std::mutex> lock(data_mutex_);
-    games.insert(games.end(), pending_games_.begin(), pending_games_.end());
+    for (const auto& g : pending_games_) {
+        if (shown_.insert(g.game_id).second) games.push_back(g);
+    }
     stats.insert(stats.end(), pending_stats_.begin(), pending_stats_.end());
     pending_games_.clear();
     pending_stats_.clear();

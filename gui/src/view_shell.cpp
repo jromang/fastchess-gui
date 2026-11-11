@@ -394,12 +394,6 @@ void App::drawNewMatch() {
     ImGui::PushStyleColor(ImGuiCol_Text,
                           ui::currentTheme() == ui::Theme::Dark ? ImVec4(0.04f, 0.07f, 0.13f, 1) : ImVec4(1, 1, 1, 1));
     if (ui::iconButton("start", ui::Icon::Play, TR("Start"), ready && !probing && !locked)) startRun();
-    ImGui::PopStyleColor(2);
-    ImGui::SameLine();
-    if (ui::iconButton("enqueue", ui::Icon::Plus, TR("Add to the queue"), ready)) enqueue();
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-        ImGui::SetTooltip("%s", TR("Starts by itself when the running tournament ends."));
-    }
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
         if (locked)
             ImGui::SetTooltip("%s", TR("A match is already running."));
@@ -408,6 +402,12 @@ void App::drawNewMatch() {
                                                                              : TR("Choose at least two engines."));
         else if (probing)
             ImGui::SetTooltip("%s", TR("Reading the options of an engine…"));
+    }
+    ImGui::PopStyleColor(2);
+    ImGui::SameLine();
+    if (ui::iconButton("enqueue", ui::Icon::Plus, TR("Add to the queue"), ready)) enqueue();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("%s", TR("Starts by itself when the running tournament ends."));
     }
     if (!start_error_.empty()) {
         ImGui::SameLine();

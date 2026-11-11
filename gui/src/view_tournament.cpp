@@ -382,20 +382,22 @@ void App::drawStandings() {
     ImGui::TextUnformatted(TR("Anchor:"));
     ImGui::SameLine();
     ImGui::SetNextItemWidth(px(180));
-    const auto* obs        = run_.observer();
-    const auto& names      = obs->names();
-    const int anchor_index = anchor_ ? indexOf(t->spec(), anchor_->id) : -1;
-    const char* current    = anchor_index >= 0 ? names[static_cast<std::size_t>(anchor_index)].c_str() : TR("Average");
+    const auto& participants = t->spec().participants;
+    const int anchor_index   = anchor_ ? indexOf(t->spec(), anchor_->id) : -1;
+    const char* current =
+        anchor_index >= 0 ? participants[static_cast<std::size_t>(anchor_index)].engine.name.c_str() : TR("Average");
     if (ImGui::BeginCombo("##anchor", current)) {
         if (ImGui::Selectable(TR("Average"), !anchor_)) {
             anchor_.reset();
             table_for_ = ~std::size_t(0);
         }
-        for (std::size_t i = 0; i < names.size(); ++i) {
-            if (ImGui::Selectable(names[i].c_str(), anchor_index == static_cast<int>(i))) {
-                anchor_    = tour::Anchor{t->spec().participants[i].id, anchor_ ? anchor_->elo : 0.0};
+        for (std::size_t i = 0; i < participants.size(); ++i) {
+            ImGui::PushID(static_cast<int>(i));
+            if (ImGui::Selectable(participants[i].engine.name.c_str(), anchor_index == static_cast<int>(i))) {
+                anchor_    = tour::Anchor{participants[i].id, anchor_ ? anchor_->elo : 0.0};
                 table_for_ = ~std::size_t(0);
             }
+            ImGui::PopID();
         }
         ImGui::EndCombo();
     }

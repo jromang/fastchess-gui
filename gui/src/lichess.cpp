@@ -260,7 +260,10 @@ bool LichessRelay::prepare() {
             save();
         }
     } else if (target_.round_id.empty() || target_.tour_id.empty()) {
-        auto name = settings_.name.substr(0, 80);
+        // 80 bytes at most, never cut inside a UTF-8 character.
+        std::size_t cut = std::min<std::size_t>(settings_.name.size(), 80);
+        while (cut > 0 && cut < settings_.name.size() && (settings_.name[cut] & 0xC0) == 0x80) --cut;
+        auto name = settings_.name.substr(0, cut);
         while (name.size() < 3) name += '.';
         const auto r = post("/broadcast/new", "application/x-www-form-urlencoded",
                             formEncode({{"name", name},

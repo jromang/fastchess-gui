@@ -828,6 +828,67 @@ TEST_CASE("the tournaments folder is kept in settings.json, the default restored
     CHECK(Storage(root).runsDir() == root / "runs");
 }
 
+TEST_CASE("an engine list that cannot be read is set aside, not replaced by an empty one") {
+    namespace fs    = std::filesystem;
+    const auto root = fs::temp_directory_path() / "fcg-storage-unreadable";
+    fs::remove_all(root);
+    fs::create_directories(root);
+    std::ofstream(root / "engines.json") << "[{\"name\": \"Stockfish\", ";  // cut short
+
+    Storage storage(root);
+    CHECK(storage.loadEngines().empty());
+    REQUIRE(fs::exists(root / "engines.json.unreadable"));
+    storage.saveEngines({});  // what quitting does
+    std::ifstream in(root / "engines.json.unreadable");
+    CHECK(std::string(std::istreambuf_iterator<char>(in), {}).find("Stockfish") != std::string::npos);
+
+    // A second unreadable list does not replace the first one set aside.
+    std::ofstream(root / "engines.json") << "garbage";
+    CHECK(storage.loadEngines().empty());
+    CHECK(fs::exists(root / "engines.json.unreadable2"));
+    fs::remove_all(root);
+}
+
+TEST_CASE("a settings.json of another shape is taken as empty, at start and when a setting is saved") {
+    namespace fs    = std::filesystem;
+    const auto root = fs::temp_directory_path() / "fcg-storage-settings";
+    for (const char* text : {"[]", "null", "\"x\"", "{\"tournaments_dir\": 5, \"lichess_token\": null}"}) {
+        CAPTURE(text);
+        fs::remove_all(root);
+        fs::create_directories(root);
+        std::ofstream(root / "settings.json") << text;
+        Storage storage(root);
+        CHECK(storage.runsDir() == root / "runs");
+        CHECK(storage.lichessToken().empty());
+        CHECK(storage.ratingPgns().empty());
+        storage.setLichessToken("token");
+        CHECK(storage.lichessToken() == "token");
+    }
+    fs::remove_all(root);
+}
+
+#ifndef _WIN32
+TEST_CASE("checking an engine in a folder that cannot be searched says so, it does not throw") {
+    namespace fs   = std::filesystem;
+    const auto dir = fs::temp_directory_path() / "fcg-check-locked";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+    fs::permissions(dir, fs::perms::none);
+    EngineEntry entry;
+    entry.cmd = (dir / "engine").string();
+    CheckResult result;
+    CHECK_NOTHROW(result = checkEngine(entry));
+    CHECK_FALSE(result.ok);
+    fs::permissions(dir, fs::perms::owner_all);
+    fs::remove_all(dir);
+}
+#endif
+
+TEST_CASE("names that cannot be file names are made fit for one") {
+    CHECK(cleanName("Hiarcs \xDC 15/x:y") == "Hiarcs___15_x_y");
+    CHECK(cleanName("Stockfish-17.1_dev") == "Stockfish-17.1_dev");
+}
+
 TEST_CASE("search statistics are read back from the move comments, without replaying the moves") {
     fastchess::config::Pgn config;
     config.track_nps = true;

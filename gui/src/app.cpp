@@ -1,5 +1,6 @@
 #include "app.hpp"
 
+#include <algorithm>
 #include <fstream>
 
 #include <SDL3/SDL.h>
@@ -297,7 +298,11 @@ void App::resumeRun() {
     }
 
     resetRunView();
-    games_at_start_  = run_.tournament() ? run_.tournament()->results().size() : 0;
+    // The games that count, as games_ holds: voided games are not shown.
+    if (const auto* t = run_.tournament()) {
+        games_at_start_ = static_cast<std::size_t>(
+            std::count_if(t->results().begin(), t->results().end(), [](const auto& r) { return !r.voided; }));
+    }
     const auto& info = run_.info();
     Console::instance().add(
         trf("Resumed: {}, {} games already played. Folder: {}", info.name, games_at_start_, info.dir.string()));
@@ -381,8 +386,10 @@ void App::pollRun() {
         const auto now = Clock::now();
         if (now - last_rate_update_ >= std::chrono::seconds(1)) {
             const auto elapsed = std::chrono::duration<double>(now - run_.info().started).count();
-            games_per_hour_    = elapsed > 5 ? (games_.size() - games_at_start_) / (elapsed / 3600.0) : 0.0;
-            last_rate_update_  = now;
+            // games_ can get below games_at_start_ when games are voided meanwhile.
+            const auto played = games_.size() > games_at_start_ ? games_.size() - games_at_start_ : 0;
+            games_per_hour_   = elapsed > 5 ? static_cast<double>(played) / (elapsed / 3600.0) : 0.0;
+            last_rate_update_ = now;
         }
     }
 

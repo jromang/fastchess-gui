@@ -15,6 +15,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <chess.hpp>
@@ -237,6 +238,9 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
 
     mutable std::mutex data_mutex_;
     std::vector<GameRecord> pending_games_;
+    // game_id of every game handed out since records(): a game recorded while records() read the results would
+    // otherwise come again through drain().
+    std::unordered_set<uint64_t> shown_;
     std::vector<fastchess::Stats> pending_stats_;
     std::vector<std::string> reasons_;
     std::unordered_map<std::string, uint16_t> reason_index_;

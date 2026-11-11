@@ -15,6 +15,7 @@
 
 #include "app.hpp"
 #include "i18n.hpp"
+#include "run.hpp"
 #include "stats.hpp"
 #include "ui.hpp"
 
@@ -525,8 +526,9 @@ void App::drawHeadToHead() {
     }
     ImGui::SameLine(0, px(24));
     if (ImGui::Button(TR("Export the games…"))) {
-        dialogs_.saveFile(Dialogs::Purpose::ExportHeadToHead, {{"PGN", "pgn"}},
-                          (storage_.root() / fmt::format("{}-vs-{}.pgn", h2h_a_, h2h_b_)).string());
+        // Names of imported PGNs may hold any bytes, and characters a file name cannot have.
+        const auto name = fmt::format("{}-vs-{}.pgn", cleanName(h2h_a_), cleanName(h2h_b_));
+        dialogs_.saveFile(Dialogs::Purpose::ExportHeadToHead, {{"PGN", "pgn"}}, (storage_.root() / name).string());
     }
 
     const float third    = (ImGui::GetContentRegionAvail().x - 2 * ImGui::GetStyle().ItemSpacing.x) / 3;

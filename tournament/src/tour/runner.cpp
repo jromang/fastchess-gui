@@ -164,7 +164,7 @@ void Runner::onGameEnd(int slot, std::size_t game_id, std::size_t round_id, cons
     try {
         const auto recorded = state_.complete(*t_task, data);
         t_recorded          = true;
-        if (listener_) listener_->onRecorded(recorded.result, data, recorded.pair);
+        if (listener_ && recorded.kept) listener_->onRecorded(recorded.result, data, recorded.pair);
     } catch (const std::exception& e) {
         fail(e.what());
         return;

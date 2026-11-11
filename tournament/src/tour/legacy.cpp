@@ -88,8 +88,8 @@ bool isLegacyRun(const fs::path& dir) {
 std::vector<fs::path> legacyRuns(const fs::path& root) {
     std::vector<fs::path> dirs;
     std::error_code ec;
-    for (const auto& entry : fs::directory_iterator(root, ec)) {
-        if (entry.is_directory(ec) && isLegacyRun(entry.path())) dirs.push_back(entry.path());
+    for (fs::directory_iterator it(root, ec), last; !ec && it != last; it.increment(ec)) {
+        if (it->is_directory(ec) && isLegacyRun(it->path())) dirs.push_back(it->path());
     }
     return dirs;
 }

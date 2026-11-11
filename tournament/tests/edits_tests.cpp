@@ -180,6 +180,62 @@ TEST_CASE("edit: a replaced participant's games are played again by its successo
     CHECK(voided == 4);
 }
 
+TEST_CASE("edit: a game of a replaced participant still being played is not recorded; its successor plays it") {
+    auto state      = TournamentState::create(freshDir("replace-running"), roundRobin(3, 1));
+    const auto task = state->claimNext();
+    REQUIRE(task);
+    const int old_id = task->encounter.first;
+
+    Edit replace;
+    replace.kind        = Edit::Kind::ReplaceParticipant;
+    replace.participant = old_id;
+    replace.engine      = engine("New");
+    state->applyEdit(replace);
+
+    CHECK_FALSE(state->complete(*task, data(*task, "1-0")).kept);
+    play(*state, -1);
+    CHECK(state->finished());
+
+    const auto table = computeTable(state->spec(), state->results());
+    std::map<std::string, int> games;
+    for (const auto& row : table.rows) games[row.name] = row.games;
+    CHECK(games["New"] == 4);
+    CHECK(games[std::string(1, char('A' + old_id))] == 0);
+    for (const auto& r : state->results()) {
+        if (!r.voided) CHECK((r.white != old_id && r.black != old_id));
+    }
+}
+
+TEST_CASE("edit: a game of a withdrawn participant still being played is not recorded") {
+    auto state      = TournamentState::create(freshDir("withdraw-running"), roundRobin(4, 1));
+    const auto task = state->claimNext();
+    REQUIRE(task);
+
+    Edit withdraw;
+    withdraw.kind        = Edit::Kind::Withdraw;
+    withdraw.participant = task->encounter.first;
+    state->applyEdit(withdraw);
+
+    CHECK_FALSE(state->complete(*task, data(*task, "1-0")).kept);
+    CHECK(state->results().empty());
+}
+
+TEST_CASE("edit: the preview of a Swiss counts the rounds still to pair") {
+    auto spec   = roundRobin(8, 1);
+    spec.format = Format::Swiss;
+    spec.rounds = 7;
+    auto state  = TournamentState::create(freshDir("swiss-preview"), spec);
+    play(*state, 2);  // the first encounter of round 1
+
+    Edit replay;
+    replay.kind       = Edit::Kind::VoidGames;
+    replay.games      = {{0, 0}};
+    const auto impact = state->preview(replay);
+    CHECK(impact.error.empty());
+    CHECK(impact.games_before == 56u);
+    CHECK(impact.games_after == impact.games_before);
+}
+
 TEST_CASE("edit: a withdrawn participant plays no more; its games can stop counting") {
     auto state = TournamentState::create(freshDir("withdraw"), roundRobin(4, 1));
     play(*state, 3);  // encounter 0 complete, encounter 1 half played

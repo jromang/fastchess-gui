@@ -91,6 +91,8 @@ struct Recorded {
     // Set when the game completed its encounter: statistics of the two participants after it, from the point of
     // view of the lower id.
     std::optional<fastchess::Stats> pair;
+    // False when the game was not recorded: already played, dropped, or its encounter changed while it was played.
+    bool kept = true;
 };
 
 // Where a game of the schedule stands.

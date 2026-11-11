@@ -149,18 +149,19 @@ void App::drawSchedule() {
     const auto group_of = [&](const tour::ScheduleRow& r) { return by_round ? r.encounter.round : r.encounter.cycle; };
     uint32_t cycle      = 0;
     bool open           = false;
+    // A cycle can come in two blocks: an engine added during cycle 2 catches up on cycles 1 and 2 after it.
+    std::map<uint32_t, int> blocks;
     for (std::size_t i = 0; i < rows.size(); ++i) {
         const auto& row = rows[i];
-        if (group_of(row) != cycle) {
+        if (i == 0 || group_of(row) != group_of(rows[i - 1])) {
             if (open) ImGui::TreePop();
             cycle = group_of(row);
 
-            // A cycle's progress in its header; the one being played is open.
+            // The block's progress in its header; the one being played is open.
             std::size_t c_done = 0, c_total = 0;
             bool c_running = false;
-            for (const auto& r : rows) {
-                if (group_of(r) != cycle) continue;
-                for (const auto status : r.status) {
+            for (std::size_t j = i; j < rows.size() && group_of(rows[j]) == cycle; ++j) {
+                for (const auto status : rows[j].status) {
                     c_total += status != tour::GameStatus::Dropped;
                     c_done += status == tour::GameStatus::Done;
                     c_running |= status == tour::GameStatus::Running;
@@ -168,7 +169,7 @@ void App::drawSchedule() {
             }
             const auto label = (by_round ? trf("Round {} · {} / {} games", cycle, c_done, c_total)
                                          : trf("Cycle {} · {} / {} games", cycle, c_done, c_total)) +
-                               fmt::format("###cycle{}", cycle);
+                               fmt::format("###cycle{}-{}", cycle, blocks[cycle]++);
             ImGui::SetNextItemOpen(c_running || (c_done > 0 && c_done < c_total), ImGuiCond_Appearing);
             open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_SpanAvailWidth);
         }

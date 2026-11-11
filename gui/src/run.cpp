@@ -103,15 +103,6 @@ fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSet
     return config;
 }
 
-std::string cleanName(std::string s) {
-    for (auto& c : s) {
-        const bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' ||
-                        c == '.' || c == '_';
-        if (!ok) c = '_';
-    }
-    return s.substr(0, 60);
-}
-
 std::string timestamp() {
     const auto now = std::time(nullptr);
     std::tm tm{};
@@ -246,6 +237,15 @@ void writeChess960Book(const fs::path& path) {
         }
     }
     fs::rename(tmp, path);
+}
+
+std::string cleanName(std::string s) {
+    for (auto& c : s) {
+        const bool ok = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' ||
+                        c == '.' || c == '_';
+        if (!ok) c = '_';
+    }
+    return s.substr(0, 60);
 }
 
 std::string makeRunDirName(const std::string& a, const std::string& b) {

@@ -46,6 +46,9 @@ class Storage {
     void saveQueue(const std::vector<QueuedTournament>& queue) const;
 
    private:
+    // settings.json, an empty object when it is missing, unreadable or not an object.
+    [[nodiscard]] nlohmann::json settings() const;
+
     std::filesystem::path root_;
     std::filesystem::path runs_dir_;
 };
