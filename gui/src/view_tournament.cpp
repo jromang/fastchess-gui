@@ -37,6 +37,26 @@ std::string health(const tour::Standing& s) {
     return out;
 }
 
+// The header row, the losses on time explained on their column ("TF", as engine testers write it).
+void headers(int columns, int tf_column) {
+    ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
+    for (int c = 0; c < columns; ++c) {
+        ImGui::TableSetColumnIndex(c);
+        ImGui::TableHeader(ImGui::TableGetColumnName(c));
+        if (c == tf_column && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Losses on time"));
+    }
+}
+
+void timeoutsCell(int timeouts) {
+    if (timeouts == 0) {
+        ImGui::TextDisabled("0");
+        return;
+    }
+    ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+    ImGui::Text("%d", timeouts);
+    ImGui::PopStyleColor();
+}
+
 // Index in the participant list of the participant with this id, -1 if none.
 int indexOf(const tour::TournamentSpec& spec, int id) {
     for (std::size_t i = 0; i < spec.participants.size(); ++i) {
@@ -80,7 +100,7 @@ void App::drawStandingsTable(bool compact) {
     constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit |
                            ImGuiTableFlags_ScrollX | ImGuiTableFlags_PadOuterX;
     const bool swiss     = run_.tournament() && run_.tournament()->spec().format == tour::Format::Swiss;
-    const int columns    = compact ? 10 : swiss ? 13 : 12;
+    const int columns    = compact ? 11 : swiss ? 14 : 13;
     if (!ImGui::BeginTable("##standings", columns, flags)) return;
 
     ImGui::TableSetupColumn("#");
@@ -93,12 +113,13 @@ void App::drawStandingsTable(bool compact) {
     ImGui::TableSetupColumn("+");
     ImGui::TableSetupColumn("=");
     ImGui::TableSetupColumn("−");
+    ImGui::TableSetupColumn("TF");
     if (!compact) {
         if (swiss) ImGui::TableSetupColumn("BH");
         ImGui::TableSetupColumn("SB");
         ImGui::TableSetupColumn(TR("Health"));
     }
-    ImGui::TableHeadersRow();
+    headers(columns, 10);
 
     for (std::size_t i = 0; i < table_.rows.size(); ++i) {
         const auto& r = table_.rows[i];
@@ -145,6 +166,8 @@ void App::drawStandingsTable(bool compact) {
         ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
         ImGui::Text("%d", r.losses);
         ImGui::PopStyleColor();
+        ImGui::TableNextColumn();
+        timeoutsCell(r.timeouts);
         if (!compact) {
             if (swiss) {
                 ImGui::TableNextColumn();
@@ -412,7 +435,7 @@ void App::drawCrosstable() {
     const float list_h   = crosstable_cell_ ? std::max(px(120), ImGui::GetContentRegionAvail().y * 0.35f) : 0.0f;
 
     ImGui::BeginChild("##crosstable", ImVec2(0, crosstable_cell_ ? -list_h : 0));
-    if (ImGui::BeginTable("##xt", 6 + n, flags)) {
+    if (ImGui::BeginTable("##xt", 7 + n, flags)) {
         ImGui::TableSetupColumn("#");
         ImGui::TableSetupColumn(TR("Engine"));
         for (int c = 0; c < n; ++c) {
@@ -420,9 +443,10 @@ void App::drawCrosstable() {
         }
         ImGui::TableSetupColumn(TR("Points"));
         ImGui::TableSetupColumn(TR("Games"));
+        ImGui::TableSetupColumn("TF");
         ImGui::TableSetupColumn("SB");
         ImGui::TableSetupColumn("Elo");
-        ImGui::TableHeadersRow();
+        headers(7 + n, 4 + n);
 
         for (int i = 0; i < n; ++i) {
             const auto& r = rows[static_cast<std::size_t>(i)];
@@ -476,6 +500,8 @@ void App::drawCrosstable() {
             ImGui::TextUnformatted(half(r.points).c_str());
             ImGui::TableNextColumn();
             ImGui::TextDisabled("%d", r.games);
+            ImGui::TableNextColumn();
+            timeoutsCell(r.timeouts);
             ImGui::TableNextColumn();
             ImGui::TextDisabled("%.2f", r.sb);
             ImGui::TableNextColumn();
