@@ -39,6 +39,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
          "10 parties en 10+0.1 depuis 5 positions, pour voir avant un long tournoi s'il perd au temps, plante, joue un "
          "coup illégal ou gère mal sa pendule."},
         {"50 moves {}/100", "50 coups {}/100"},
+        {"95 % interval", "intervalle à 95 %"},
         {"= {:.2f} logistic Elo", "= {:.2f} Elo logistique"},
         {"A (tested)", "A (testé)"},
         {"A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves "
@@ -200,6 +201,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Count", "Nombre"},
         {"Crash / illegal move", "Crash / coup illégal"},
         {"Create a token on lichess…", "Créer un jeton sur lichess…"},
+        {"Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0", "Ctrl + molette, Ctrl + et Ctrl -, Ctrl 0"},
         {"Cycle {} / {}", "Cycle {} / {}"},
         {"Cycle {} · {} / {} games", "Cycle {} · {} / {} parties"},
         {"Cycles", "Cycles"},
@@ -390,6 +392,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& frenchTable() 
         {"Import…", "Importer…"},
         {"Increment (s)", "Incrément (s)"},
         {"Infinite", "Infini"},
+        {"Interface size", "Taille de l'interface"},
         {"Interrupted", "Interrompu"},
         {"Interrupted: an engine crashed or stopped responding (see Console)",
          "Interrompu : un moteur a planté ou ne répond plus (voir Console)"},

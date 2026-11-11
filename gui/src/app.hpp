@@ -210,16 +210,17 @@ class App {
     void showEngineCard(const std::string& name);
     void openGame(const tour::DbGame& game);  // opens its tournament on the Games tab, the game selected
     void applyThemeSetting();
+    void handleZoomKeys();
     void refreshTournaments();
     void openTournament(const std::filesystem::path& dir);
     void importLegacyRuns();
 
     // views
-    void drawSetup();
+    void drawSetup(bool two_columns);
     void drawLive();
     void refreshSlot(int slot);
     void drawLiveGame(SlotView& view, const char* id, bool allow_detach, int slot);
-    void drawMosaic(float width);
+    void drawMosaic(int cols, float card);
     void drawDetached();
     void drawGames();
     void drawOpenings();
@@ -502,6 +503,7 @@ class App {
     bool tournaments_dirty_  = true;
     std::size_t legacy_runs_ = 0;
     std::optional<ui::Theme> theme_applied_;
+    int zoom_applied_ = 0;
 
     // Messages and state.
     std::string start_error_;

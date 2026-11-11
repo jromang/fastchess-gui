@@ -583,7 +583,9 @@ void App::drawHeadToHead() {
 void App::drawProgress() {
     ImGui::TextDisabled("%s", TR("The rating of the engines chosen after each tournament they played: the versions "
                                  "of an engine, side by side."));
-    ImGui::BeginChild("##progress_pick", ImVec2(px(260), 0), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX);
+    const float page = ImGui::GetContentRegionAvail().x;
+    ImGui::BeginChild("##progress_pick", ImVec2(ui::paneWidth(setup_.panes["progress"], page, px(220), px(480)), 0),
+                      ImGuiChildFlags_Borders);
     for (const auto& e : rating_list_.entries) {
         bool on = progress_engines_.count(e.name) > 0;
         if (ImGui::Checkbox(e.name.c_str(), &on)) {
@@ -596,10 +598,10 @@ void App::drawProgress() {
         }
     }
     ImGui::EndChild();
-    ImGui::SameLine();
+    if (ui::splitter("##progress_split", setup_.panes["progress"], page)) saveSetupSoon();
     ImGui::BeginChild("##progress_plot");
     if (progress_.empty()) {
-        ImGui::TextDisabled("%s", TR("Tick engines on the left."));
+        ui::emptyState(TR("Tick engines on the left."));
     } else if (ImPlot::BeginPlot("##progress", ImVec2(-1, -1))) {
         ImPlot::SetupAxes(TR("Date"), "Elo");
         ImPlot::SetupAxisScale(ImAxis_X1, ImPlotScale_Time);

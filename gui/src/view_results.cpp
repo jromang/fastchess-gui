@@ -240,7 +240,7 @@ void App::drawCharts() {
     }
 
     if (history_.empty()) {
-        ImGui::TextDisabled("%s", TR("The charts appear with the first results."));
+        ui::emptyState(TR("The charts appear with the first results."));
         ui::endPanel();
         return;
     }

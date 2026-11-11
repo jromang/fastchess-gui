@@ -118,8 +118,9 @@ void App::drawSuites() {
         }
     }
 
-    bool changed = false;
-    ImGui::BeginChild("##suite_setup", ImVec2(px(330), 0), ImGuiChildFlags_None);
+    bool changed        = false;
+    const float setup_w = std::clamp(ImGui::GetContentRegionAvail().x * 0.25f, px(300), px(440));
+    ImGui::BeginChild("##suite_setup", ImVec2(std::floor(setup_w), 0), ImGuiChildFlags_None);
     ImGui::BeginDisabled(running);
 
     // The suite: a file, or an EPD book of the library.
@@ -294,8 +295,9 @@ void App::drawSuites() {
 
 void App::drawSuiteGrid() {
     if (!suite_ || suite_->positions.empty()) {
-        ImGui::TextDisabled("%s", TR("Choose an EPD file whose positions have their best move (bm), the moves to "
-                                     "avoid (am), or STS points (c0)."));
+        ui::emptyState(
+            TR("Choose an EPD file whose positions have their best move (bm), the moves to avoid (am), or "
+               "STS points (c0)."));
         return;
     }
     auto columns = suite_runner_.columns();

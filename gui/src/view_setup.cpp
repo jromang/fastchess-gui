@@ -78,7 +78,7 @@ bool engineCombo(const char* id, std::string& value, const std::vector<EngineEnt
 
 }  // namespace
 
-void App::drawSetup() {
+void App::drawSetup(bool two_columns) {
     if (!ui::beginPanel(TR("Setup###setup"))) {
         ui::endPanel();
         return;
@@ -92,6 +92,9 @@ void App::drawSetup() {
 
     ImGui::BeginDisabled(locked);
 
+    // Side by side on a wide window: who plays and how long, then how the games are run.
+    const bool table = two_columns && ImGui::BeginTable("##setup_columns", 2, ImGuiTableFlags_SizingStretchSame);
+    if (table) ImGui::TableNextColumn();
     setupFormat();
     if (setup_.format == TournamentFormat::Match) {
         setupEngines();
@@ -100,10 +103,12 @@ void App::drawSetup() {
         setupParticipants();
     }
     setupLimit();
+    if (table) ImGui::TableNextColumn();
     setupConcurrency();
     setupOpenings();
     setupAdjudication();
     setupPgn();
+    if (table) ImGui::EndTable();
 
     ImGui::EndDisabled();
     ui::endPanel();
@@ -1007,9 +1012,6 @@ void App::drawSetupSummary() {
         }
     }
     ui::endCard();
-
-    ImGui::Spacing();
-    drawTemplates();
 }
 
 void App::drawTemplates() {
@@ -1031,6 +1033,8 @@ void App::drawTemplates() {
                 // The look of the program is not part of a template.
                 loaded->language = setup_.language;
                 loaded->theme    = setup_.theme;
+                loaded->ui_zoom  = setup_.ui_zoom;
+                loaded->panes    = setup_.panes;
                 loaded->notify   = setup_.notify;
                 setup_           = *loaded;
                 saveSetupSoon();

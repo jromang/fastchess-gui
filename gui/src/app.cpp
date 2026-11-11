@@ -106,6 +106,7 @@ void App::frame() {
         }
     }
 
+    handleZoomKeys();
     applyThemeSetting();
     updateBroadcast();
 

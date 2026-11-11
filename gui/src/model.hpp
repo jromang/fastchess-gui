@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -212,9 +213,11 @@ struct MatchSetup {
     bool check_mate_pvs = false;  // fastchess' -check-mate-pvs: a mate score's PV must end in mate
     bool notify         = true;
 
-    std::string language = "auto";   // "auto" (system), "en" or "fr"
-    std::string theme    = "light";  // "light", "dark" or "system"
-    bool tile_info       = false;    // live mosaic: the 50-move counter, material and pieces under every board
+    std::string language = "auto";       // "auto" (system), "en" or "fr"
+    std::string theme    = "light";      // "light", "dark" or "system"
+    int ui_zoom          = 100;          // size of the interface, in percent of the default (on top of the screen's)
+    bool tile_info       = false;        // live mosaic: the 50-move counter, material and pieces under every board
+    std::map<std::string, float> panes;  // the list's share of the width on list + detail pages, by page
 
     // Broadcast.
     bool broadcast_files = false;  // live.pgn, standings.html, tournament.json
@@ -238,9 +241,9 @@ struct MatchSetup {
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,  \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,   \
         pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,   \
-        log_every_game, check_mate_pvs, notify, language, theme, tile_info, broadcast_files, broadcast_dir,     \
-        broadcast_tlcs, tlcs_port, broadcast_web, web_port, broadcast_follow, broadcast_lichess, lichess_round, \
-        lichess_listed
+        log_every_game, check_mate_pvs, notify, language, theme, ui_zoom, tile_info, panes, broadcast_files,    \
+        broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port, broadcast_follow, broadcast_lichess, \
+        lichess_round, lichess_listed
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
 void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) {

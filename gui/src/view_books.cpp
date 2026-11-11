@@ -123,7 +123,9 @@ void App::drawBooks() {
     pollBookScan();
 
     // The library on the left.
-    ImGui::BeginChild("##book_list", ImVec2(px(320), 0), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX);
+    const float page = ImGui::GetContentRegionAvail().x;
+    ImGui::BeginChild("##book_list", ImVec2(ui::paneWidth(setup_.panes["books"], page, px(260), px(520)), 0),
+                      ImGuiChildFlags_Borders);
     if (ImGui::Button(TR("Add…"))) {
         dialogs_.openFile(Dialogs::Purpose::AddBook,
                           {{TR("Books (EPD, PGN, Polyglot)"), "epd;pgn;bin"}, {TR("All files"), "*"}});
@@ -164,13 +166,17 @@ void App::drawBooks() {
             ImGui::TextDisabled("%s", ui::formatCount(b.positions).c_str());
         }
     }
-    if (books_.empty()) ImGui::TextDisabled("%s", TR("No book yet. Click Add."));
+    if (books_.empty()) {
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextDisabled("%s", TR("No book yet. Click Add."));
+        ImGui::PopTextWrapPos();
+    }
     ImGui::EndChild();
+    if (ui::splitter("##book_split", setup_.panes["books"], page)) saveSetupSoon();
 
-    ImGui::SameLine();
     ImGui::BeginChild("##book_detail");
     if (selected_book_ < 0 || selected_book_ >= static_cast<int>(books_.size())) {
-        ImGui::TextDisabled("%s", TR("Choose a book in the list."));
+        ui::emptyState(TR("Choose a book in the list."));
     } else {
         drawBookDetail(books_[selected_book_]);
     }

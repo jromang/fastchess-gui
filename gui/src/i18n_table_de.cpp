@@ -40,6 +40,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
          "10 Partien mit 10+0.1 aus 5 Stellungen, um vor einem langen Turnier zu sehen, ob sie die Zeit überschreitet, "
          "abstürzt, einen illegalen Zug spielt oder ihre Uhr schlecht nutzt."},
         {"50 moves {}/100", "50 Züge {}/100"},
+        {"95 % interval", "95-%-Intervall"},
         {"= {:.2f} logistic Elo", "= {:.2f} logistische Elo"},
         {"A (tested)", "A (getestet)"},
         {"A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves "
@@ -201,6 +202,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Count", "Anzahl"},
         {"Crash / illegal move", "Absturz / illegaler Zug"},
         {"Create a token on lichess…", "Token auf lichess erstellen…"},
+        {"Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0", "Strg + Mausrad, Strg + und Strg -, Strg 0"},
         {"Cycle {} / {}", "Zyklus {} / {}"},
         {"Cycle {} · {} / {} games", "Zyklus {} · {} / {} Partien"},
         {"Cycles", "Zyklen"},
@@ -388,6 +390,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Import…", "Importieren…"},
         {"Increment (s)", "Inkrement (s)"},
         {"Infinite", "Unbegrenzt"},
+        {"Interface size", "Größe der Oberfläche"},
         {"Interrupted", "Unterbrochen"},
         {"Interrupted: an engine crashed or stopped responding (see Console)",
          "Unterbrochen: eine Engine ist abgestürzt oder antwortet nicht mehr (siehe Konsole)"},

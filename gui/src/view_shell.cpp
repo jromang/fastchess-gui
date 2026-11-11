@@ -2,6 +2,7 @@
 // settings). The tournament views themselves live in view_*.cpp and draw inside these pages.
 
 #include <algorithm>
+#include <array>
 
 #include <SDL3/SDL.h>
 #include <imgui.h>
@@ -57,6 +58,9 @@ std::string statusLabel(const tour::Summary& s, bool running) {
 
 void openFolder(const fs::path& dir) { ui::openPath(dir); }
 
+// The interface sizes offered, in percent.
+constexpr std::array<int, 9> ZOOMS = {80, 90, 100, 110, 125, 150, 175, 200, 250};
+
 void sectionTitle(const char* text) {
     ImGui::Spacing();
     ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.1f);
@@ -73,10 +77,38 @@ void App::applyThemeSetting() {
     } else if (setup_.theme == "system") {
         wanted = SDL_GetSystemTheme() == SDL_SYSTEM_THEME_LIGHT ? ui::Theme::Light : ui::Theme::Dark;
     }
-    if (theme_applied_ == wanted) return;
+    const int zoom = std::clamp(setup_.ui_zoom, ZOOMS.front(), ZOOMS.back());
+    if (theme_applied_ == wanted && zoom_applied_ == zoom) return;
 
-    ui::applyTheme(wanted, options_.ui_scale);
-    theme_applied_ = wanted;
+    // The fonts follow FontScaleMain; paddings, spacings and roundings are rebuilt at the new scale.
+    ui::applyTheme(wanted, options_.ui_scale * zoom / 100.0f);
+    ImGui::GetStyle().FontScaleMain = zoom / 100.0f;
+    theme_applied_                  = wanted;
+    zoom_applied_                   = zoom;
+}
+
+// Ctrl + and Ctrl -, or Ctrl and the mouse wheel, step through the sizes; Ctrl 0 goes back to 100 %.
+void App::handleZoomKeys() {
+    const auto& io = ImGui::GetIO();
+    if (!io.KeyCtrl) return;
+    int step = 0;
+    if (ImGui::IsKeyPressed(ImGuiKey_Equal) || ImGui::IsKeyPressed(ImGuiKey_KeypadAdd)) step = 1;
+    if (ImGui::IsKeyPressed(ImGuiKey_Minus) || ImGui::IsKeyPressed(ImGuiKey_KeypadSubtract)) step = -1;
+    if (io.MouseWheel != 0 && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) step = io.MouseWheel > 0 ? 1 : -1;
+
+    int zoom = setup_.ui_zoom;
+    if (ImGui::IsKeyPressed(ImGuiKey_0) || ImGui::IsKeyPressed(ImGuiKey_Keypad0)) {
+        zoom = 100;
+    } else if (step > 0) {
+        const auto* next = std::upper_bound(ZOOMS.begin(), ZOOMS.end(), zoom);
+        if (next != ZOOMS.end()) zoom = *next;
+    } else if (step < 0) {
+        const auto* next = std::lower_bound(ZOOMS.begin(), ZOOMS.end(), zoom);
+        if (next != ZOOMS.begin()) zoom = *(next - 1);
+    }
+    if (zoom == setup_.ui_zoom) return;
+    setup_.ui_zoom = zoom;
+    saveSetupSoon();
 }
 
 void App::refreshTournaments() {
@@ -380,21 +412,33 @@ void App::drawNewMatch() {
     }
     ImGui::Spacing();
 
-    // The form in one readable column, the summary beside it when there is room.
+    // The summary on the right, the form beside it: in two columns when both are wide enough to read, centred when
+    // even two columns leave room. A narrow window gets one column, under the summary.
     const float avail   = ImGui::GetContentRegionAvail().x;
-    const float summary = px(330);
-    const bool side     = avail > px(760) + summary;
-    const float width   = side ? std::min(px(760), avail - summary - px(20)) : avail;
+    const float gap     = px(20);
+    const float column  = px(760);
+    const float summary = std::clamp(avail * 0.24f, px(300), px(400));
+    const float rest    = avail - summary - gap;
+    const bool side     = rest >= px(560);
+    const bool two      = side && rest >= 2 * px(480) + ImGui::GetStyle().ItemSpacing.x;
+    const float width   = side ? std::min(rest, two ? 2 * column + ImGui::GetStyle().ItemSpacing.x : column) : avail;
+    if (side) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::floor((rest - width) * 0.5f));
 
     ImGui::BeginChild("##new_match", ImVec2(width, 0));
     if (!side) drawSetupSummary();
-    drawSetup();
+    drawSetup(two);
+    if (!side) {
+        ImGui::Spacing();
+        drawTemplates();
+    }
     ImGui::EndChild();
 
     if (side) {
-        ImGui::SameLine(0, px(20));
+        ImGui::SameLine(0, gap);
         ImGui::BeginChild("##new_summary", ImVec2(summary, 0));
         drawSetupSummary();
+        ImGui::Spacing();
+        drawTemplates();
         ImGui::EndChild();
     }
 }
@@ -634,6 +678,20 @@ void App::drawSettings() {
         setup_.theme = theme == 1 ? "dark" : theme == 2 ? "light" : "system";
         changed      = true;
     }
+
+    ui::label(TR("Interface size"), label);
+    ImGui::SetNextItemWidth(px(220));
+    if (ImGui::BeginCombo("##zoom", fmt::format("{} %", setup_.ui_zoom).c_str())) {
+        for (const int zoom : ZOOMS) {
+            if (ImGui::Selectable(fmt::format("{} %", zoom).c_str(), zoom == setup_.ui_zoom)) {
+                setup_.ui_zoom = zoom;
+                changed        = true;
+            }
+        }
+        ImGui::EndCombo();
+    }
+    ImGui::SameLine();
+    ImGui::TextDisabled("%s", TR("Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"));
 
     ImGui::Spacing();
     changed |= ImGui::Checkbox(TR("Notify when a match ends"), &setup_.notify);

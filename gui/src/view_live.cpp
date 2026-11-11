@@ -248,6 +248,49 @@ namespace {
 
 float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
 
+// Width of the panel beside the followed board: players, moves and charts.
+float sidePanel() { return px(330); }
+
+// Height of a mosaic card `card` wide: the board, two name rows, the details and the evaluation bar, inside the
+// card's padding.
+float cardHeight(float card, bool tile_info) {
+    const float line = ImGui::GetTextLineHeightWithSpacing();
+    return (card - 2 * px(6)) + 2 * line + (tile_info ? line : 0.0f) + px(4) + 2 * ImGui::GetStyle().ItemSpacing.y +
+           2 * px(5);
+}
+
+struct MosaicGrid {
+    int cols     = 1;
+    float card   = 0;      // width of a card
+    bool scrolls = false;  // too many games for the room: cards of the smallest size, under a scroll bar
+
+    [[nodiscard]] float width() const {
+        return cols * card + (cols - 1) * ImGui::GetStyle().ItemSpacing.x +
+               (scrolls ? ImGui::GetStyle().ScrollbarSize : 0.0f);
+    }
+};
+
+// The number of columns that gives `n` games the largest boards in `size`, like the tiles of a video call.
+MosaicGrid mosaicGrid(int n, ImVec2 size, bool tile_info) {
+    const ImVec2 gap  = ImGui::GetStyle().ItemSpacing;
+    const float extra = cardHeight(0, tile_info);
+    MosaicGrid grid;
+    for (int cols = 1; cols <= n; ++cols) {
+        const int rows   = (n + cols - 1) / cols;
+        const float wide = (size.x - gap.x * (cols - 1)) / cols;
+        const float tall = (size.y - gap.y * (rows - 1)) / rows - extra;
+        const float card = std::floor(std::min(wide, tall) - 1.0f);  // a pixel spare, against a stray scroll bar
+        if (card > grid.card) grid = {cols, card, false};
+    }
+    if (grid.card < px(120)) {
+        const float width = size.x - ImGui::GetStyle().ScrollbarSize;
+        grid.cols         = std::max(1, static_cast<int>((width + gap.x) / (px(120) + gap.x)));
+        grid.card         = std::floor((width - gap.x * (grid.cols - 1)) / grid.cols);
+        grid.scrolls      = true;
+    }
+    return grid;
+}
+
 // Evaluation shown by the bar: the side to move's current search, else the last move's score.
 float evalBar(const SlotState& st) {
     std::optional<fastchess::Score> score;
@@ -362,12 +405,26 @@ void App::drawLive() {
         drawLiveGame(slot_views_[static_cast<std::size_t>(live_slot_)], "##focus", true, live_slot_);
     } else {
         ImGui::NewLine();
-        const float avail = ImGui::GetContentRegionAvail().x;
-        const float grid  = std::max(px(360), avail * 0.48f);
-        ImGui::BeginChild("##mosaic", ImVec2(grid, 0));
-        drawMosaic(grid);
-        ImGui::EndChild();
-        ImGui::SameLine();
+        const ImVec2 avail = ImGui::GetContentRegionAvail();
+        const float gap    = ImGui::GetStyle().ItemSpacing.x;
+        if (avail.x < px(700)) {
+            // Narrow: the mosaic above, the followed game under it.
+            const ImVec2 strip(avail.x, std::floor(avail.y * 0.4f));
+            const auto grid = mosaicGrid(slots, strip, setup_.tile_info);
+            ImGui::BeginChild("##mosaic", ImVec2(0, strip.y));
+            drawMosaic(grid.cols, grid.card);
+            ImGui::EndChild();
+        } else {
+            // The followed game gets the width its board needs at full height, beside its panel, within 40 to 70 % of
+            // the width; the mosaic the rest, less what its cards leave unused.
+            const float board = avail.y - ImGui::GetTextLineHeightWithSpacing();
+            const float focus = std::clamp(board + gap + sidePanel(), avail.x * 0.4f, avail.x * 0.7f);
+            const auto grid   = mosaicGrid(slots, ImVec2(avail.x - focus - gap, avail.y), setup_.tile_info);
+            ImGui::BeginChild("##mosaic", ImVec2(std::min(grid.width(), avail.x - focus - gap), 0));
+            drawMosaic(grid.cols, grid.card);
+            ImGui::EndChild();
+            ImGui::SameLine();
+        }
         ImGui::BeginChild("##focus_panel", ImVec2(0, 0));
         drawLiveGame(slot_views_[static_cast<std::size_t>(live_slot_)], "##focus", true, live_slot_);
         ImGui::EndChild();
@@ -376,16 +433,11 @@ void App::drawLive() {
     ui::endPanel();
 }
 
-void App::drawMosaic(float width) {
+void App::drawMosaic(int cols, float card) {
     auto* obs        = run_.observer();
     const int slots  = obs->slotCount();
-    const float gap  = ImGui::GetStyle().ItemSpacing.x;
-    const int cols   = std::max(1, static_cast<int>((width + gap) / (px(170) + gap)));
-    const float card = (width - gap * (cols - 1) - ImGui::GetStyle().ScrollbarSize) / cols;
     const float line = ImGui::GetTextLineHeightWithSpacing();
-    // Board, two name rows, the details and the evaluation bar, inside the card's padding.
-    const float info = setup_.tile_info ? line : 0.0f;
-    const float h    = (card - 2 * px(6)) + 2 * line + info + px(4) + 2 * ImGui::GetStyle().ItemSpacing.y + 2 * px(5);
+    const float h    = cardHeight(card, setup_.tile_info);
 
     const auto now = Clock::now();
     for (int i = 0; i < slots; ++i) {
@@ -497,10 +549,16 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
         return;
     }
 
+    // The board as large as the panel allows, with the players, moves and charts beside it; under it when that
+    // gives a much larger board (a narrow, tall panel).
     const ImVec2 avail     = ImGui::GetContentRegionAvail();
     const float info_h     = ImGui::GetTextLineHeightWithSpacing();
-    const float board_size = std::max(160.0f, std::min(avail.y - 4.0f - info_h, avail.x * 0.52f));
+    const float beside     = std::min(avail.y - 4.0f - info_h, avail.x - sidePanel() - ImGui::GetStyle().ItemSpacing.x);
+    const float under      = std::min(avail.x, (avail.y - info_h) * 0.6f);
+    const bool stacked     = beside < under * 0.75f;
+    const float board_size = std::floor(std::max(px(160), stacked ? under : beside));
 
+    if (stacked) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (avail.x - board_size) * 0.5f));
     ImGui::BeginGroup();
     BoardDecor decor;
     decor.flipped    = view.flip;
@@ -510,9 +568,13 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
     drawBoardInfo(atlas_, view.board, board_size, tbPieces());
     ImGui::EndGroup();
 
-    ImGui::SameLine();
-    ImGui::BeginChild("##live_side", ImVec2(0, board_size + info_h), ImGuiChildFlags_None,
-                      ImGuiWindowFlags_NoScrollbar);
+    float side_h = std::max(avail.y, board_size + info_h);
+    if (stacked) {
+        side_h = std::max(px(260), ImGui::GetContentRegionAvail().y);
+    } else {
+        ImGui::SameLine();
+    }
+    ImGui::BeginChild("##live_side", ImVec2(0, side_h), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
 
     // Players, top of the board first.
     const auto now     = Clock::now();
@@ -552,7 +614,9 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
             if (thinks) ImGui::PopStyleColor();
         }
 
-        // Search info: the running search for the side to move, else what its last move reported.
+        // Search info: the running search for the side to move, else what its last move reported. Wrapped in a
+        // narrow panel.
+        ImGui::PushTextWrapPos(0);
         const auto& line = st.info[white ? 0 : 1];
         if (thinks && !line.empty()) {
             const auto info  = fastchess::engine::UciEngine::parseInfo(line);
@@ -563,9 +627,7 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
                 ui::formatCount(info.nodes.value_or(0)).c_str(), ui::formatCount(info.nps.value_or(0)).c_str());
             if (info.wdl) wdlLine(*info.wdl);
             const auto pv = pvToSan(view.board, info.pv, 12);
-            ImGui::PushTextWrapPos(0);
             ImGui::TextUnformatted(pv.empty() ? " " : pv.c_str());
-            ImGui::PopTextWrapPos();
         } else {
             const LiveMove* last = nullptr;
             for (auto it = st.moves.rbegin(); it != st.moves.rend(); ++it) {
@@ -588,6 +650,7 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
             }
             ImGui::TextUnformatted(" ");
         }
+        ImGui::PopTextWrapPos();
     };
 
     player(view.flip ? chess::Color::WHITE : chess::Color::BLACK);
@@ -606,8 +669,11 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
         const float detach_w =
             allow_detach ? ImGui::CalcTextSize(TR("Detach")).x + ImGui::GetStyle().FramePadding.x * 2 + px(8) : 0;
         ImGui::SameLine();
-        ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(),
-                                      ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - flip_w - detach_w));
+        if (ImGui::GetContentRegionAvail().x < flip_w + detach_w) {
+            ImGui::NewLine();  // on a line of their own in a narrow panel
+        } else {
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - flip_w - detach_w);
+        }
         if (allow_detach) {
             if (ImGui::SmallButton(TR("Detach"))) detached_.insert(slot);
             if (ImGui::IsItemHovered()) {
@@ -619,8 +685,12 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
     }
 
     // Moves, then the evaluation curve.
-    const float plot_h  = std::max(90.0f, ImGui::GetContentRegionAvail().y * 0.30f);
-    const float moves_h = ImGui::GetContentRegionAvail().y - plot_h - ImGui::GetStyle().ItemSpacing.y;
+    const float plot_h = std::max(px(110), ImGui::GetContentRegionAvail().y * 0.30f) +
+                         ImGui::GetFrameHeightWithSpacing();  // and its menu
+    // Too low for both (a small window): the moves only.
+    const float left    = ImGui::GetContentRegionAvail().y;
+    const bool chart    = left - plot_h >= ImGui::GetFrameHeightWithSpacing() * 4;
+    const float moves_h = chart ? left - plot_h - ImGui::GetStyle().ItemSpacing.y : left;
 
     ImGui::BeginChild("##moves", ImVec2(0, moves_h), ImGuiChildFlags_Borders);
     if (ImGui::BeginTable("##movetable", 3, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg)) {
@@ -677,6 +747,11 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
         view.follow_frames--;
     }
     ImGui::EndChild();
+    if (!chart) {
+        ImGui::EndChild();
+        ImGui::PopID();
+        return;
+    }
 
     std::vector<float> evals;
     evals.reserve(st.moves.size());

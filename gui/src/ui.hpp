@@ -106,4 +106,17 @@ void help(const char* text);
 // Label in the left column, widget in the right one (for the setup panel).
 void label(const char* text, float width);
 
+// Width of the list of a list + detail page: `fraction` of `total` (0: a quarter), within [min, max].
+[[nodiscard]] float paneWidth(float fraction, float total, float min, float max);
+
+// A thin bar after the list, which the mouse drags to change `fraction`, the list's share of `total`. True when it
+// changed.
+bool splitter(const char* id, float& fraction, float total);
+
+// Before a button labelled `next`: on the same line if it fits, else on the next one.
+void sameLineOrWrap(const char* next);
+
+// A grey message in the middle of the space left, for an empty detail pane.
+void emptyState(const char* text);
+
 }  // namespace fcg::ui

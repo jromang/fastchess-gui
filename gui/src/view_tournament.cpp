@@ -4,6 +4,7 @@
 #include <cmath>
 
 #include <imgui.h>
+#include <implot.h>
 
 #include "app.hpp"
 #include "console.hpp"
@@ -170,6 +171,51 @@ void App::drawTournamentOverview() {
     }
     drawStandingsTable(true);
     ui::endCard();
+
+    // The ratings and their intervals, in the height left under the table.
+    const float chart_h = ImGui::GetContentRegionAvail().y - ImGui::GetStyle().ItemSpacing.y;
+    const auto rated    = std::count_if(table_.rows.begin(), table_.rows.end(), [](const auto& r) { return r.rated; });
+    if (rated >= 2 && chart_h >= px(160)) {
+        ImGui::Spacing();
+        ui::beginCard("elo_card", ImVec2(0, chart_h));
+        ImGui::TextUnformatted("Elo");
+        ImGui::SameLine();
+        ImGui::TextDisabled("%s", TR("95 % interval"));
+        std::vector<double> elo, error, rank;
+        std::vector<const char*> names;
+        for (std::size_t i = 0; i < table_.rows.size(); ++i) {
+            const auto& r = table_.rows[i];
+            if (!r.rated) continue;
+            elo.push_back(r.rating.elo);
+            error.push_back(r.rating.error);
+            rank.push_back(-static_cast<double>(i));  // the leader on top
+            names.push_back(r.name.c_str());
+        }
+        constexpr auto plot_flags = ImPlotFlags_NoLegend | ImPlotFlags_NoMenus | ImPlotFlags_NoMouseText;
+        if (ImPlot::BeginPlot("##elo_chart", ImVec2(-1, -1), plot_flags)) {
+            // Half a row and a tenth of the width spare around the dots and the bars.
+            const int n = static_cast<int>(elo.size());
+            double low  = 0;
+            double high = 0;
+            for (int i = 0; i < n; ++i) {
+                low  = std::min(low, elo[i] - error[i]);
+                high = std::max(high, elo[i] + error[i]);
+            }
+            const double margin = std::max(10.0, (high - low) * 0.05);
+            ImPlot::SetupAxes(nullptr, nullptr);
+            ImPlot::SetupAxisLimits(ImAxis_X1, low - margin, high + margin, ImPlotCond_Always);
+            ImPlot::SetupAxisLimits(ImAxis_Y1, rank.back() - 0.5, 0.5, ImPlotCond_Always);
+            ImPlot::SetupAxisTicks(ImAxis_Y1, rank.data(), n, names.data());
+            ImPlotSpec bars;
+            bars.Flags = ImPlotErrorBarsFlags_Horizontal;
+            ImPlot::PlotErrorBars("Elo", elo.data(), rank.data(), error.data(), n, bars);
+            ImPlotSpec dots;
+            dots.Marker = ImPlotMarker_Circle;
+            ImPlot::PlotScatter("Elo", elo.data(), rank.data(), n, dots);
+            ImPlot::EndPlot();
+        }
+        ui::endCard();
+    }
     ImGui::EndChild();
 
     ImGui::SameLine();
@@ -255,20 +301,29 @@ void App::drawTournamentOverview() {
         }
     }
 
+    // The latest results, as many as the height left holds; the others under a scroll bar.
     ImGui::Spacing();
-    ui::beginCard("latest_card");
+    ui::beginCard("latest_card", ImVec2(0, std::max(px(160), ImGui::GetContentRegionAvail().y)));
     ImGui::TextUnformatted(TR("Latest results"));
-    const auto* obs     = run_.observer();
-    const float right_x = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - px(36);
-    for (int i = static_cast<int>(games_.size()) - 1, shown = 0; i >= 0 && shown < 12; --i, ++shown) {
-        const auto& g = games_[i];
-        ImGui::TextUnformatted(fmt::format("{} – {}", obs->name(g.white), obs->name(g.black)).c_str());
-        ImGui::SameLine(right_x);
-        ImGui::PushStyleColor(ImGuiCol_Text, g.white_result > 0 ? ui::GOOD : g.white_result < 0 ? ui::BAD : ui::MUTED);
-        ImGui::TextUnformatted(g.white_result == 0 ? "½-½" : g.white_result > 0 ? "1-0" : "0-1");
-        ImGui::PopStyleColor();
+    const auto* obs = run_.observer();
+    ImGui::BeginChild("##latest");
+    const float right_x = ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize("½-½").x;
+    ImGuiListClipper clipper;
+    clipper.Begin(static_cast<int>(games_.size()));
+    while (clipper.Step()) {
+        for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row) {
+            const auto& g = games_[games_.size() - 1 - static_cast<std::size_t>(row)];
+            ImGui::TextUnformatted(fmt::format("{} – {}", obs->name(g.white), obs->name(g.black)).c_str());
+            ImGui::SameLine(right_x);
+            ImGui::PushStyleColor(ImGuiCol_Text, g.white_result > 0   ? ui::GOOD
+                                                 : g.white_result < 0 ? ui::BAD
+                                                                      : ui::MUTED);
+            ImGui::TextUnformatted(g.white_result == 0 ? "½-½" : g.white_result > 0 ? "1-0" : "0-1");
+            ImGui::PopStyleColor();
+        }
     }
     if (games_.empty()) ImGui::TextDisabled("%s", TR("No game finished yet."));
+    ImGui::EndChild();
     ui::endCard();
 
     ImGui::EndChild();

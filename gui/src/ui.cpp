@@ -343,7 +343,8 @@ void pageTitle(const char* text) {
 void beginCard(const char* id, ImVec2 size) {
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(CARD_BG));
     ImGui::PushStyleColor(ImGuiCol_Border, ImGui::ColorConvertU32ToFloat4(CARD_BD));
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14, 12));
+    const float k = ImGui::GetFontSize() / 16.0f;
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14 * k, 12 * k));
     ImGui::BeginChild(id, size,
                       ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding |
                           (size.y == 0 ? ImGuiChildFlags_AutoResizeY : 0));
@@ -370,6 +371,51 @@ void label(const char* text, float width) {
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(text);
     ImGui::SameLine(width);
+}
+
+float paneWidth(float fraction, float total, float min, float max) {
+    const float width = (fraction > 0 ? fraction : 0.25f) * total;
+    return std::floor(std::clamp(width, min, std::max(min, std::min(max, total - min))));
+}
+
+bool splitter(const char* id, float& fraction, float total) {
+    const float width = ImGui::GetStyle().ItemSpacing.x;
+    ImGui::SameLine(0, 0);
+    ImGui::InvisibleButton(id, ImVec2(width, std::max(1.0f, ImGui::GetContentRegionAvail().y)));
+    const bool hovered = ImGui::IsItemHovered() || ImGui::IsItemActive();
+    if (hovered) ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+    if (hovered) {
+        const ImVec2 min = ImGui::GetItemRectMin(), max = ImGui::GetItemRectMax();
+        const float x = std::floor((min.x + max.x) * 0.5f);
+        ImGui::GetWindowDrawList()->AddLine(ImVec2(x, min.y), ImVec2(x, max.y), ACCENT, 2.0f);
+    }
+    bool changed = false;
+    if (ImGui::IsItemActive() && ImGui::GetIO().MouseDelta.x != 0 && total > 0) {
+        fraction = std::clamp((fraction > 0 ? fraction : 0.25f) + ImGui::GetIO().MouseDelta.x / total, 0.1f, 0.8f);
+        changed  = true;
+    }
+    ImGui::SameLine(0, 0);
+    return changed;
+}
+
+void sameLineOrWrap(const char* next) {
+    const auto& style = ImGui::GetStyle();
+    ImGui::SameLine();
+    if (ImGui::GetContentRegionAvail().x < ImGui::CalcTextSize(next, nullptr, true).x + style.FramePadding.x * 2) {
+        ImGui::NewLine();
+    }
+}
+
+void emptyState(const char* text) {
+    const ImVec2 avail = ImGui::GetContentRegionAvail();
+    const float wrap   = std::min(avail.x, ImGui::GetFontSize() * 24);
+    const ImVec2 size  = ImGui::CalcTextSize(text, nullptr, false, wrap);
+    const ImVec2 at    = ImGui::GetCursorPos();
+    ImGui::SetCursorPos(
+        ImVec2(at.x + std::max(0.0f, (avail.x - size.x) * 0.5f), at.y + std::max(0.0f, (avail.y - size.y) * 0.4f)));
+    ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + wrap);
+    ImGui::TextDisabled("%s", text);
+    ImGui::PopTextWrapPos();
 }
 
 void openPath(const std::filesystem::path& path) {

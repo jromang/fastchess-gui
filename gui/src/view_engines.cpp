@@ -16,6 +16,8 @@ namespace fs = std::filesystem;
 
 namespace {
 
+float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
+
 bool editText(const char* id, std::string& value, float width = -FLT_MIN) {
     char buffer[4096];
     const auto n = std::min(value.size(), sizeof(buffer) - 1);
@@ -185,8 +187,9 @@ void App::drawEngines() {
     }
 
     // List on the left.
-    const float list_w = 320.0f * ImGui::GetFontSize() / 16.0f;
-    ImGui::BeginChild("##engine_list", ImVec2(list_w, 0), ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX);
+    const float page   = ImGui::GetContentRegionAvail().x;
+    const float list_w = ui::paneWidth(setup_.panes["engines"], page, px(260), px(520));
+    ImGui::BeginChild("##engine_list", ImVec2(list_w, 0), ImGuiChildFlags_Borders);
 
     if (ImGui::Button(TR("Add…"))) {
 #ifdef _WIN32
@@ -195,7 +198,7 @@ void App::drawEngines() {
         dialogs_.openFile(Dialogs::Purpose::AddEngine);
 #endif
     }
-    ImGui::SameLine();
+    ui::sameLineOrWrap(TR("Import…"));
     if (ImGui::Button(TR("Import…"))) ImGui::OpenPopup("import_menu");
     if (ImGui::BeginPopup("import_menu")) {
         if (ImGui::MenuItem(TR("An engine list…"))) {
@@ -206,7 +209,7 @@ void App::drawEngines() {
         if (ImGui::MenuItem(TR("Every engine of a folder…"))) dialogs_.openFolder(Dialogs::Purpose::ImportEngineFolder);
         ImGui::EndPopup();
     }
-    ImGui::SameLine();
+    ui::sameLineOrWrap(TR("Duplicate"));
     ImGui::BeginDisabled(selected_engine_ < 0);
     if (ImGui::Button(TR("Duplicate")) && selected_engine_ >= 0) {
         auto copy = engines_[selected_engine_];
@@ -215,7 +218,7 @@ void App::drawEngines() {
         selected_engine_ = static_cast<int>(engines_.size()) - 1;
         storage_.saveEngines(engines_);
     }
-    ImGui::SameLine();
+    ui::sameLineOrWrap(TR("Remove"));
     if (ImGui::Button(TR("Remove")) && selected_engine_ >= 0) ImGui::OpenPopup(TR("Remove the engine?###remove"));
     ImGui::EndDisabled();
 
@@ -298,14 +301,18 @@ void App::drawEngines() {
         const auto& tooltip = problem.empty() ? e.check_message : problem;
         if (ImGui::IsItemHovered() && !tooltip.empty()) ImGui::SetTooltip("%s", tooltip.c_str());
     }
-    if (engines_.empty()) ImGui::TextDisabled("%s", TR("No engine yet. Click Add."));
+    if (engines_.empty()) {
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextDisabled("%s", TR("No engine yet. Click Add."));
+        ImGui::PopTextWrapPos();
+    }
 
     ImGui::EndChild();
-    ImGui::SameLine();
+    if (ui::splitter("##engine_split", setup_.panes["engines"], page)) saveSetupSoon();
 
     ImGui::BeginChild("##engine_detail");
     if (selected_engine_ < 0 || selected_engine_ >= static_cast<int>(engines_.size())) {
-        ImGui::TextDisabled("%s", TR("Choose an engine in the list."));
+        ui::emptyState(TR("Choose an engine in the list."));
         ImGui::EndChild();
         ui::endPanel();
         return;

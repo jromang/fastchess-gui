@@ -14,11 +14,16 @@ A navigation rail on the left leads to six pages:
 | Suites | Test suites (STS, WAC, ERET…): engines against the positions of an EPD file |
 | Ratings | One rating list over every game of every tournament |
 | Log | fastchess' own output and the messages of the GUI |
-| Settings | Language, theme (automatic, dark, light), end of tournament notification, the tournaments folder |
+| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, the tournaments folder |
 
 The interface is in English, French or German. At startup it follows the first preferred language of the system
 (French or German if it is one of them, English otherwise); it can be forced in **Settings**. The theme is light
 unless dark, or the system's choice, is picked in **Settings**.
+
+The pages use the whole window, whatever its size: the Live tab's boards grow with it, the new tournament form
+splits into two columns on a wide window, and the list of the Engines, Books and Ratings pages can be widened by
+dragging its right edge. Everything (text, buttons, boards) can also be made larger or smaller, from 80 to 250 %:
+**Settings** > Interface size, or Ctrl + mouse wheel, Ctrl + and Ctrl -, and Ctrl 0 to go back to 100 %.
 
 ## Engines
 
