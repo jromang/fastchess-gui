@@ -154,13 +154,14 @@ void importLegacyRun(const fs::path& dir) {
     // The journal first: a folder with a journal but no tournament.json is still seen as legacy and imported again.
     {
         std::ofstream out(dir / "journal.jsonl", std::ios::binary | std::ios::trunc);
-        for (const auto& event : journal) out << event.dump() << '\n';
+        for (const auto& event : journal)
+            out << event.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) << '\n';
         if (!out) throw std::runtime_error("cannot write " + (dir / "journal.jsonl").string());
     }
     {
         const auto tmp = dir / "tournament.json.tmp";
         std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
-        out << nlohmann::json(spec).dump(4) << '\n';
+        out << nlohmann::json(spec).dump(4, ' ', false, nlohmann::json::error_handler_t::replace) << '\n';
         out.close();
         if (!out) throw std::runtime_error("cannot write " + tmp.string());
         fs::rename(tmp, dir / "tournament.json");

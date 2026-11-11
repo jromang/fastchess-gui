@@ -79,6 +79,16 @@ TEST_CASE("journal: a last line cut short is dropped and removed; a bad line is 
         out << "not json\n";
     }
     CHECK_THROWS_AS((void)Journal::read(file), std::runtime_error);
+
+    // Text that is not UTF-8 (an engine's) is journaled with U+FFFD, not refused.
+    const auto other = dir / "other.jsonl";
+    {
+        Journal journal(other);
+        journal.append({{"t", "a"}, {"reason", "G\xE9za"}});
+    }
+    const auto latin = Journal::read(other);
+    REQUIRE(latin.size() == 1);
+    CHECK(latin[0]["reason"] == "G\xEF\xBF\xBDza");
 }
 
 TEST_CASE("state: pairs are played back to back, results survive a reopen, PGN orphans are cut") {

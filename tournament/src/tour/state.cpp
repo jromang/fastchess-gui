@@ -206,7 +206,8 @@ std::unique_ptr<TournamentState> TournamentState::create(const fs::path& dir, To
 
     spec.book = fingerprint(spec.conditions.opening.file);
     for (auto& p : spec.participants) p.program = fingerprint(p.engine.cmd);
-    writeFileAtomically(dir / SPEC_FILE, nlohmann::json(spec).dump(4) + "\n");
+    writeFileAtomically(dir / SPEC_FILE,
+                        nlohmann::json(spec).dump(4, ' ', false, nlohmann::json::error_handler_t::replace) + "\n");
 
     auto state = open(dir);
 

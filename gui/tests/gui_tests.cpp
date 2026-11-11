@@ -770,6 +770,36 @@ TEST_CASE("engine lists of ChessGUI, cutechess and Arena are imported") {
     fs::remove_all(dir);
 }
 
+TEST_CASE("text that is not UTF-8 is read as Windows-1252, and never stops engines.json from being written") {
+    namespace fs = std::filesystem;
+    CHECK(toUtf8("G\xC3\xA9za") == "G\xC3\xA9za");                    // already UTF-8
+    CHECK(toUtf8("G\xE9za") == "G\xC3\xA9za");                        // Latin-1
+    CHECK(toUtf8("\x80 \x99") == "\xE2\x82\xAC \xE2\x84\xA2");        // Windows-1252: euro, trade mark
+    CHECK(toUtf8("\xC0\xAF") == "\xC3\x80\xC2\xAF");                  // an overlong form is not UTF-8
+    CHECK(toUtf8("\xED\xA0\x80") == "\xC3\xAD\xC2\xA0\xE2\x82\xAC");  // nor a surrogate
+    CHECK(toUtf8("caf\xC3") == "caf\xC3\x83");                        // nor a sequence cut short
+
+    // An engine list written by a Windows program, accents in Windows-1252.
+    const auto dir = fs::temp_directory_path() / "fcg-utf8-test";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+    std::ofstream(dir / "arena.cfg") << "[R\xE9sum\xE9]\nCommand=engines/r\xE9sum\xE9.exe\nType=UCI\n";
+    const auto imported = importEngineList(dir / "arena.cfg");
+    REQUIRE(imported.engines.size() == 1);
+    CHECK(imported.engines[0].name == "R\xC3\xA9sum\xC3\xA9");
+
+    // Whatever an engine wrote is saved, with U+FFFD for what is not UTF-8.
+    Storage storage(dir / "profile");
+    EngineEntry e;
+    e.name      = "Old";
+    e.id_author = "G\xE9za";
+    storage.saveEngines({e});
+    const auto engines = storage.loadEngines();
+    REQUIRE(engines.size() == 1);
+    CHECK(engines[0].id_author == "G\xEF\xBF\xBDza");
+    fs::remove_all(dir);
+}
+
 TEST_CASE("the tournaments folder is kept in settings.json, the default restored by an empty path") {
     namespace fs     = std::filesystem;
     const auto root  = fs::temp_directory_path() / "fcg-storage-test";

@@ -8,6 +8,7 @@
 
 #include <json.hpp>
 
+#include "engines.hpp"
 #include "i18n.hpp"
 
 namespace fcg {
@@ -28,9 +29,10 @@ std::string trim(const std::string& s) {
     return s.substr(a, b - a + 1);
 }
 
+// Lists written by Windows programs are often in Windows-1252: names and paths with accents become UTF-8.
 std::string readFile(const fs::path& file) {
     std::ifstream in(file, std::ios::binary);
-    return {std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
+    return toUtf8({std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()});
 }
 
 // Windows paths in lists written on Windows, read anywhere.

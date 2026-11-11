@@ -88,7 +88,7 @@ std::string snapshotJson(const BroadcastSnapshot& s) {
         rows.push_back(std::move(row));
     }
     j["recent"] = s.recent;
-    return j.dump();
+    return j.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
 }
 
 std::string livePgn(const BroadcastSnapshot& s) {

@@ -115,6 +115,69 @@ bool refreshProgram(EngineEntry& entry) {
     return true;
 }
 
+namespace {
+
+// Well-formed UTF-8 (RFC 3629): no overlong forms, no surrogates, nothing above U+10FFFF.
+bool isUtf8(std::string_view text) {
+    const auto byte = [&](std::size_t i) { return static_cast<unsigned char>(text[i]); };
+    for (std::size_t i = 0; i < text.size();) {
+        const auto c = byte(i);
+        int extra    = 0;
+        unsigned lo = 0x80, hi = 0xBF;  // the second byte's range
+        if (c < 0x80) {
+            ++i;
+            continue;
+        } else if (c >= 0xC2 && c <= 0xDF) {
+            extra = 1;
+        } else if (c >= 0xE0 && c <= 0xEF) {
+            extra = 2;
+            if (c == 0xE0) lo = 0xA0;
+            if (c == 0xED) hi = 0x9F;
+        } else if (c >= 0xF0 && c <= 0xF4) {
+            extra = 3;
+            if (c == 0xF0) lo = 0x90;
+            if (c == 0xF4) hi = 0x8F;
+        } else {
+            return false;
+        }
+        if (i + extra >= text.size() || byte(i + 1) < lo || byte(i + 1) > hi) return false;
+        for (int k = 2; k <= extra; ++k) {
+            if ((byte(i + k) & 0xC0) != 0x80) return false;
+        }
+        i += extra + 1;
+    }
+    return true;
+}
+
+}  // namespace
+
+std::string toUtf8(std::string text) {
+    if (isUtf8(text)) return text;
+
+    // 0x80 to 0x9F in Windows-1252; the other bytes are Latin-1, the same code points.
+    static constexpr char16_t CP1252[32] = {0x20AC, 0x81,   0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021,
+                                            0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, 0x8D,   0x017D, 0x8F,
+                                            0x90,   0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
+                                            0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x9D,   0x017E, 0x0178};
+    std::string out;
+    out.reserve(text.size() + text.size() / 4);
+    for (const char ch : text) {
+        const auto c      = static_cast<unsigned char>(ch);
+        const char16_t cp = c >= 0x80 && c < 0xA0 ? CP1252[c - 0x80] : c;
+        if (cp < 0x80) {
+            out += static_cast<char>(cp);
+        } else if (cp < 0x800) {
+            out += static_cast<char>(0xC0 | (cp >> 6));
+            out += static_cast<char>(0x80 | (cp & 0x3F));
+        } else {
+            out += static_cast<char>(0xE0 | (cp >> 12));
+            out += static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+            out += static_cast<char>(0x80 | (cp & 0x3F));
+        }
+    }
+    return out;
+}
+
 std::string engineWorkingDir(const EngineEntry& entry) {
     if (!entry.dir.empty()) return entry.dir;
     return std::filesystem::path(entry.cmd).parent_path().string();
@@ -169,7 +232,8 @@ std::string detectProtocol(const EngineEntry& entry) {
 ProbeResult probeEngine(const EngineEntry& entry) {
     ProbeResult result;
 
-    if (!std::filesystem::is_regular_file(entry.cmd)) {
+    std::error_code ec;
+    if (!std::filesystem::is_regular_file(entry.cmd, ec)) {
         result.error = trf("File not found: {}", entry.cmd);
         return result;
     }
@@ -188,7 +252,7 @@ ProbeResult probeEngine(const EngineEntry& entry) {
         fastchess::engine::UciEngine engine(config, false);
 
         if (auto started = engine.start(std::nullopt); !started) {
-            result.error = started.error();
+            result.error = toUtf8(started.error());
             // The usual reason: a WinBoard engine taken for a UCI one.
             if (result.error.find("uciok") != std::string::npos && result.protocol != "xboard") {
                 result.error += TR(" — not a UCI engine? For a WinBoard engine, choose the WinBoard protocol.");
@@ -196,17 +260,17 @@ ProbeResult probeEngine(const EngineEntry& entry) {
             return result;
         }
 
-        result.id_name   = engine.idName().value_or("");
-        result.id_author = engine.idAuthor().value_or("");
+        result.id_name   = toUtf8(engine.idName().value_or(""));
+        result.id_author = toUtf8(engine.idAuthor().value_or(""));
 
         for (const auto* line : engine.getStdoutLines()) {
-            if (auto option = parseUciOption(line->line)) result.options.push_back(std::move(*option));
+            if (auto option = parseUciOption(toUtf8(line->line))) result.options.push_back(std::move(*option));
             if (line->line == wb2uci::NO_REUSE_INFO) result.restart = true;
         }
 
         result.ok = true;
     } catch (const std::exception& e) {
-        result.error = e.what();
+        result.error = toUtf8(e.what());
     }
 
     return result;
@@ -253,7 +317,7 @@ Compliance compliance(const fastchess::EngineConfiguration& config) {
                                                                                : TR("On its error output:");
             report += "\n";
             for (std::size_t i = lines.size() > OUTPUT_LINES ? lines.size() - OUTPUT_LINES : 0; i < lines.size(); ++i)
-                report += "    " + lines[i]->line + "\n";
+                report += "    " + toUtf8(lines[i]->line) + "\n";
         }
         break;
     }
@@ -285,7 +349,7 @@ CheckResult checkEngine(const EngineEntry& entry) {
 
         const auto t0 = steady_clock::now();
         if (auto started = engine.start(std::nullopt); !started) {
-            result.message = started.error();
+            result.message = toUtf8(started.error());
             return result;
         }
         const auto start_ms = duration_cast<milliseconds>(steady_clock::now() - t0).count();
@@ -330,7 +394,7 @@ CheckResult checkEngine(const EngineEntry& entry) {
                                         : trf("UCI compliance: step {} failed, see the report", uci.steps + 1);
         }
     } catch (const std::exception& e) {
-        result.message = e.what();
+        result.message = toUtf8(e.what());
     }
     return result;
 }

@@ -77,7 +77,7 @@ Journal::~Journal() {
 }
 
 void Journal::append(const nlohmann::json& event) {
-    const auto line = event.dump() + '\n';
+    const auto line = event.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + '\n';
     if (std::fwrite(line.data(), 1, line.size(), file_) != line.size() || std::fflush(file_) != 0) {
         throw std::runtime_error("cannot write the tournament journal");
     }

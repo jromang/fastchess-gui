@@ -32,7 +32,8 @@ bool writeJson(const fs::path& file, const nlohmann::json& value) {
     {
         std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
         if (!out) return false;
-        out << value.dump(2) << '\n';
+        // Text that is not UTF-8 (an engine's output...) is written with U+FFFD rather than failing.
+        out << value.dump(2, ' ', false, nlohmann::json::error_handler_t::replace) << '\n';
         if (!out) return false;
     }
 
