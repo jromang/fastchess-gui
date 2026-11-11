@@ -19,6 +19,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Use the main Ubuntu archive
+        # The runners' Azure mirror can stay unresolvable for hours; the main archive does not depend on it.
+        run: |
+          sudo sed -i -e 's#mirror+file:/etc/apt/apt-mirrors.txt#http://archive.ubuntu.com/ubuntu/#' \
+            -e 's#http://azure.archive.ubuntu.com/ubuntu/*#http://archive.ubuntu.com/ubuntu/#' \
+            /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+          echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80-retries
+
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -59,6 +67,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
+
+      - name: Use the main Ubuntu archive
+        # The runners' Azure mirror can stay unresolvable for hours; the main archive does not depend on it.
+        run: |
+          sudo sed -i -e 's#mirror+file:/etc/apt/apt-mirrors.txt#http://archive.ubuntu.com/ubuntu/#' \
+            -e 's#http://azure.archive.ubuntu.com/ubuntu/*#http://archive.ubuntu.com/ubuntu/#' \
+            /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+          echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80-retries
 
       - name: Install mingw-w64
         run: |
