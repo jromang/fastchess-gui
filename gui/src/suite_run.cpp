@@ -7,6 +7,8 @@
 
 #include <engine/uci_engine.hpp>
 
+#include <tour/engine_text.hpp>
+
 #include <fmt/include/fmt/format.h>
 
 #include "i18n.hpp"
@@ -226,8 +228,10 @@ void SuiteRunner::work() {
         bool failed = false;
         if (e != current || !engine) {
             engine.reset();
-            engine  = std::make_unique<fastchess::engine::UciEngine>(engines_[e], false);
-            current = e;
+            auto config    = engines_[e];
+            config.options = tour::forEngine(std::move(config.options));  // as the engine reads them
+            engine         = std::make_unique<fastchess::engine::UciEngine>(config, false);
+            current        = e;
             if (!engine->start(std::nullopt) || !engine->refreshUci()) failed = true;
         }
         const auto answer = failed ? tour::SuiteAnswer{} : think(*engine, suite_.positions[p], failed);

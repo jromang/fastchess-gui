@@ -10,6 +10,7 @@
 
 #include <engine/compliance.hpp>
 #include <engine/uci_engine.hpp>
+#include <tour/engine_text.hpp>
 
 namespace fcg {
 
@@ -336,7 +337,7 @@ CheckResult checkEngine(const EngineEntry& entry) {
     config.cmd      = entry.cmd;
     config.args     = entry.args;
     config.dir      = engineWorkingDir(entry);
-    config.options  = entry.options;
+    config.options  = tour::forEngine(entry.options);
     config.protocol = entry.protocol;
 
     std::error_code ec;

@@ -10,6 +10,7 @@
 
 #include <fmt/include/fmt/format.h>
 
+#include "engine_text.hpp"
 #include "pairing.hpp"
 
 namespace fcg::tour {
@@ -773,6 +774,9 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
     task.opening   = it->second;
     task.white     = game == 0 ? first->engine : second->engine;
     task.black     = game == 0 ? second->engine : first->engine;
+    // As the engines read them; the spec keeps the UTF-8.
+    task.white.options = forEngine(std::move(task.white.options));
+    task.black.options = forEngine(std::move(task.black.options));
     return task;
 }
 

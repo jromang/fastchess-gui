@@ -5,6 +5,7 @@
 #include <map>
 #include <set>
 
+#include <tour/engine_text.hpp>
 #include <tour/journal.hpp>
 #include <tour/state.hpp>
 
@@ -450,4 +451,39 @@ TEST_CASE("state: a replayed game goes to the PGN file of the user's when it end
 
     const std::vector<std::pair<std::string, std::string>> expected = {{"1", "A"}, {"1", "B"}, {"2", "A"}, {"1", "A"}};
     CHECK(gamesOf(dir / "all.pgn") == expected);
+}
+
+TEST_CASE("engine options: as a Windows engine reads them, ASCII and the spec untouched") {
+    CHECK(forEngine(std::string("C:\\Engines\\book.bin")) == "C:\\Engines\\book.bin");
+    CHECK(forEngine(std::string("")).empty());
+#ifdef _WIN32
+    // Windows-1252 on the test machines: É is one byte there. A name with Cyrillic has no place in it and no short
+    // name when the file does not exist: sent as it is.
+    if (forEngine(std::string("\xC3\x89")) == "\xC9") {
+        MESSAGE("Windows-1252");
+        CHECK(forEngine(std::string("C:\\\xC3\x89"
+                                    "checs\\book.bin")) ==
+              "C:\\\xC9"
+              "checs\\book.bin");
+    }
+    CHECK(forEngine(std::string("C:\\\xD0\x96\\none.bin")) == "C:\\\xD0\x96\\none.bin");
+#else
+    CHECK(forEngine(std::string("/home/h\xC3\xA9l\xC3\xA8ne/book.bin")) == "/home/h\xC3\xA9l\xC3\xA8ne/book.bin");
+#endif
+
+    auto spec                           = matchSpec();
+    spec.participants[0].engine.options = {{"BookFile",
+                                            "C:\\\xC3\x89"
+                                            "checs\\b.bin"},
+                                           {"Hash", "16"}};
+    auto state                          = TournamentState::create(freshDir("engine-text"), spec);
+    const auto task                     = state->claimNext();
+    REQUIRE(task);
+    const auto& mine = task->game == 0 ? task->white : task->black;
+    CHECK(mine.options[1].second == "16");
+    CHECK(mine.options[0].second == forEngine(std::string("C:\\\xC3\x89"
+                                                          "checs\\b.bin")));
+    CHECK(state->spec().participants[0].engine.options[0].second ==
+          "C:\\\xC3\x89"
+          "checs\\b.bin");  // kept in UTF-8
 }
