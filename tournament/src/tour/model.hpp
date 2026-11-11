@@ -77,6 +77,11 @@ struct TournamentSpec {
     // the book for each new round, so that no engine gets easier openings than the others of its round.
     bool opening_per_round = false;
 
+    // A PGN file of the user's, outside the folder, that every game is also appended to, in schedule order (see
+    // TournamentState::writeOut()); empty = none. Several tournaments may share it.
+    std::string pgn_out;
+    bool pgn_out_chessbase = false;  // [%eval] [%emt] comments rather than cutechess' {+0.35/18 1.234s}
+
     [[nodiscard]] const Participant* participant(int id) const {
         for (const auto& p : participants) {
             if (p.id == id) return &p;

@@ -180,11 +180,16 @@ void App::exportGames(const std::string& path, bool all) {
 
     std::vector<PgnSpan> spans;
     if (all) {
+        // In schedule order, not in the order they ended: the two games of an opening side by side.
+        std::vector<std::size_t> order;
         if (!gamesFiltered()) {
-            for (const auto& g : games_) spans.push_back(chessbase ? g.chessbase_span : g.fastchess_span);
+            for (std::size_t i = 0; i < games_.size(); ++i) order.push_back(i);
         } else {
-            for (int i : filtered_) spans.push_back(chessbase ? games_[i].chessbase_span : games_[i].fastchess_span);
+            for (int i : filtered_) order.push_back(static_cast<std::size_t>(i));
         }
+        std::stable_sort(order.begin(), order.end(),
+                         [&](std::size_t a, std::size_t b) { return games_[a].game_id < games_[b].game_id; });
+        for (auto i : order) spans.push_back(chessbase ? games_[i].chessbase_span : games_[i].fastchess_span);
     } else if (selected_game_ >= 0 && selected_game_ < static_cast<int>(games_.size())) {
         const auto& g = games_[selected_game_];
         spans.push_back(chessbase ? g.chessbase_span : g.fastchess_span);

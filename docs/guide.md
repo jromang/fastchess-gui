@@ -173,7 +173,11 @@ engine, estimated duration, openings, common settings, time odds). The setup of 
   that do not, and such a tournament does not start.
 - **Adjudication**: draw (from a move number, for N consecutive moves, under a score), resign (N consecutive moves
   above a score, optionally both engines agreeing), a maximum number of moves, and Syzygy tablebases.
-- **PGN and misc**: event name, extra fields in the move comments (nodes, seldepth, nps, pv, tbhits, and the
+- **PGN and misc**: event name, *Also append every game to*: a PGN file of yours that every tournament adds its
+  games to, like cutechess' `-pgnout` (never overwritten, in the ChessBase / Lichess or cutechess comment style),
+  in schedule order: the two games of an opening side by side, rounds in order, whatever order they end in. A game
+  waits there until those before it are written; a resume carries on; when the file cannot be written (locked,
+  moved), the games wait and the tournament goes on, with a warning in the overview. Extra fields in the move comments (nodes, seldepth, nps, pv, tbhits, and the
   decision time `dt=`: when the engine settled on the move it played; `wdl=W/D/L` is always written for the
   engines that report it), restarting engines
   that crash, keeping the engine log of every game (it is always kept for the games that end badly), and *Check the
@@ -330,7 +334,8 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
   - `journal.jsonl`: everything that happened since, one line per event (game pairs started, games finished,
     changes, Swiss and knockout pairings); with the PGN files, it is what a resume reads;
   - `games.pgn`: move comments in the cutechess / fastchess style, `{+0.35/18 1.234s}`, with the score from the
-    point of view of the side that moved;
+    point of view of the side that moved; games in the order they ended (the journal finds each one by its place
+    in the file; *Export all* in the *Games* tab, and the file of *Also append every game to*, follow the schedule);
   - `games-chessbase.pgn`: `{[%eval 0.35,18] [%clk 0:00:59.200] [%emt 0:00:01.234]}`, with the evaluation from
     White's point of view, as read by ChessBase / Fritz and Lichess;
   - `lichess.json`: the lichess broadcast and round its games went to (no token);

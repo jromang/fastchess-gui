@@ -35,7 +35,8 @@ class Dialogs {
         SaveCleanBook,
         SuiteFile,
         ExportSuiteCsv,
-        TournamentsFolder
+        TournamentsFolder,
+        PgnOut
     };
 
     struct Answer {

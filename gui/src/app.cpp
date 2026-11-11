@@ -115,7 +115,10 @@ void App::frame() {
         const auto& w = options_.focus_window;
         if (w == "setup")
             page_ = Page::NewMatch;
-        else if (w == "statistics") {
+        else if (w == "setup-pgn") {
+            page_           = Page::NewMatch;
+            open_pgn_setup_ = true;
+        } else if (w == "statistics") {
             page_            = Page::Tournament;
             tab_request_     = Tab::Overview;
             open_statistics_ = true;
@@ -620,6 +623,10 @@ void App::handleDialogs() {
                 break;
             case Dialogs::Purpose::Book:
                 setup_.book = path;
+                saveSetupSoon();
+                break;
+            case Dialogs::Purpose::PgnOut:
+                setup_.pgn_out = path;
                 saveSetupSoon();
                 break;
             case Dialogs::Purpose::Tablebases: {

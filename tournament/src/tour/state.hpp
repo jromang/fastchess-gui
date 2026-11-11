@@ -8,6 +8,9 @@
 //   games.pgn            move comments in the cutechess / fastchess style
 //   games-chessbase.pgn  [%eval] [%clk] [%emt] comments
 //
+// Both are written in the order games end, and the journal finds every game by its place in them. The PGN file of
+// the user's (spec.pgn_out) gets them in schedule order instead: see writeOut().
+//
 // A finished game is written to both PGN files first, then to the journal (synced to disk). When a tournament is
 // opened, PGN text past the last journaled game is cut, and games that were running are simply played again,
 // with the opening their encounter started with. Resuming is therefore exact at any concurrency.
@@ -183,6 +186,9 @@ class TournamentState {
     // Scored games, in the order they finished, voided ones included (flagged).
     [[nodiscard]] std::vector<GameResult> results() const;
 
+    // Why the last write to spec().pgn_out failed, empty when it worked; the games wait for the next try.
+    [[nodiscard]] std::string pgnOutError() const;
+
     // The opening each encounter started with (book position and moves), by encounter index.
     [[nodiscard]] std::map<uint32_t, fastchess::book::Opening> encounterOpenings() const;
 
@@ -222,6 +228,11 @@ class TournamentState {
     // The opening a new encounter starts with: the next of the book, or its round's (spec_.opening_per_round).
     fastchess::book::Opening openingFor(const Encounter& encounter);
     [[nodiscard]] bool openingPerRound() const noexcept;
+    // Appends to spec_.pgn_out the finished games every game before which, in the schedule, is written there or
+    // will not be played: the two games of an encounter side by side, rounds in order. A replayed game is written
+    // when it ends; at the end of the tournament, everything left. Journaled ("pgn_out"), so a resume carries on.
+    // A failure is kept for pgnOutError() and tried again next time. mutex_ held.
+    void writeOut();
 
     // What the last edit changed, to undo it (see canUndo()).
     struct UndoPoint {
@@ -260,6 +271,12 @@ class TournamentState {
     std::set<uint64_t> running_;   // claimed by the runner, not finished
     uint32_t next_encounter_ = 0;  // first encounter never started
     std::deque<std::pair<uint32_t, int>> open_;  // games of started encounters still to play
+
+    // spec_.pgn_out
+    std::vector<std::size_t> out_held_;  // indexes in results_ of the games not written there yet, voided included
+    std::set<uint64_t> out_written_;     // numbers of the games written there
+    uint64_t out_floor_ = 0;             // every game number below is written there, done or dropped
+    std::string out_error_;
 
     std::optional<UndoPoint> undo_;
     uint64_t claims_ = 0;  // games claimed since the tournament was opened

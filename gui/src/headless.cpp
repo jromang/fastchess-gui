@@ -39,6 +39,11 @@ class ConsoleListener final : public tour::RecordListener {
                     result.reason.c_str());
         if (played_ % 20 == 0) printStatus();
         std::fflush(stdout);
+        if (auto error = state_.pgnOutError(); error != out_error_) {
+            if (!error.empty())
+                std::fprintf(stderr, "warning: the games wait for %s: %s\n", spec.pgn_out.c_str(), error.c_str());
+            out_error_ = std::move(error);
+        }
     }
 
     void setAlready(uint64_t n) { already_ = n; }
@@ -64,6 +69,7 @@ class ConsoleListener final : public tour::RecordListener {
     std::mutex mutex_;
     uint64_t played_  = 0;
     uint64_t already_ = 0;
+    std::string out_error_;  // the last pgnOutError() reported
 };
 
 }  // namespace

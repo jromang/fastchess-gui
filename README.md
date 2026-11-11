@@ -44,7 +44,8 @@ this repository still builds unchanged.
   their pair) play to the end. Stop either after the running games or immediately.
 - **Games**: every finished game, filterable, with a replay board and evaluation curve. Each game is written to
   two PGN files, `{+0.35/18 1.234s}` (cutechess style) and `{[%eval 0.35,18] [%clk …] [%emt …]}`
-  (ChessBase / Fritz / Lichess), and can be exported in either.
+  (ChessBase / Fritz / Lichess), and can be exported in either. One PGN file can also collect the games of every
+  tournament, like cutechess' `-pgnout`, in schedule order: the two games of an opening side by side.
 - **Results and charts**: Elo and nElo with 95 % confidence interval, LOS, pentanomial counts, LLR against its
   bounds, Elo and LLR over time, game lengths, how games ended, average depth and NPS per engine.
 - **Engines**: UCI options are read from the engine and edited in a table; only values that differ from the

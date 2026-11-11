@@ -238,6 +238,7 @@ class App {
     void drawTournamentOverview();
     void drawStandings();
     void drawStandingsTable(bool compact);
+    void drawPgnOutError();  // when the PGN file of setup "Also append every game to" cannot be written
     void drawCrosstable();
     void drawSchedule();
     void drawBracket();
@@ -374,6 +375,7 @@ class App {
 
     bool sprt_calc_open_  = false;
     bool open_statistics_ = false;  // --focus statistics: the match's Statistics section opens
+    bool open_pgn_setup_  = false;  // --focus setup-pgn: the setup's PGN section opens
     MatchSetup sprt_calc_;
     // The running tournament's tablebase adjudication limit (see tablebasePieces), read once per tournament.
     int tbPieces();

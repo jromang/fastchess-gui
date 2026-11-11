@@ -93,6 +93,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"All openings", "Alle Eröffnungen"},
         {"All to default", "Alle auf Standard"},
         {"All tournaments", "Alle Turniere"},
+        {"Also append every game to:", "Jede Partie zusätzlich anhängen an:"},
         {"An ECO code or its beginning (B9), a range (B20-B99), or words of the name (sicilian najdorf).",
          "Ein ECO-Code oder sein Anfang (B9), ein Bereich (B20-B99) oder Wörter des Namens, auf Englisch (sicilian "
          "najdorf)."},
@@ -349,6 +350,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Game shown:", "Gezeigte Partie:"},
         {"Game {} · move {}", "Partie {} · Zug {}"},
         {"Games", "Partien"},
+        {"Games also appended to {}", "Partien auch angehängt an {}"},
         {"Games lost on time, by a crash or an illegal move",
          "Partien verloren durch Zeit, Absturz oder illegalen Zug"},
         {"Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by "
@@ -415,6 +417,11 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Language", "Sprache"},
         {"Latest results", "Letzte Ergebnisse"},
         {"Light", "Hell"},
+        {"Like cutechess' -pgnout: the games of every tournament go on after those already in the file, which is never "
+         "overwritten, in the order of the schedule: the two games of an opening side by side. Empty: none.",
+         "Wie -pgnout bei cutechess: Die Partien jedes Turniers kommen hinter die, die schon in der Datei stehen; sie "
+         "wird nie überschrieben. In der Reihenfolge des Spielplans: die beiden Partien einer Eröffnung nebeneinander. "
+         "Leer: keine."},
         {"Listed among lichess' broadcasts", "Unter den lichess-Übertragungen aufgeführt"},
         {"Live", "Live"},
         {"Live PGN, standings and crosstable, to publish anywhere (FTP, rsync, a website).",
@@ -741,6 +748,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"The games counted, as a PGN of headers, which Ordo and BayesElo read: ordo -p ratings.pgn -o ratings.txt",
          "Die gezählten Partien als PGN mit Kopfzeilen, die Ordo und BayesElo lesen: ordo -p ratings.pgn -o "
          "ratings.txt"},
+        {"The games wait for {}: {}. Another try after each game.",
+         "Die Partien warten auf {}: {}. Neuer Versuch nach jeder Partie."},
         {"The last 30 days", "Die letzten 30 Tage"},
         {"The last 365 days", "Die letzten 365 Tage"},
         {"The last change of the tournament was undone.", "Die letzte Änderung des Turniers wurde rückgängig gemacht."},

@@ -1,5 +1,7 @@
 #include "pgn_file.hpp"
 
+#include <stdexcept>
+
 namespace fcg::tour {
 
 namespace fs = std::filesystem;
@@ -22,6 +24,18 @@ PgnSpan PgnFile::append(const std::string& pgn) {
     out_.flush();
     size_ += pgn.size();
     return span;
+}
+
+void appendShared(const fs::path& file, const std::string& text) {
+    static std::mutex mutex;
+    std::lock_guard<std::mutex> lock(mutex);
+
+    std::error_code ec;
+    if (file.has_parent_path()) fs::create_directories(file.parent_path(), ec);
+    std::ofstream out(file, std::ios::binary | std::ios::app);
+    out.write(text.data(), static_cast<std::streamsize>(text.size()));
+    out.close();
+    if (!out) throw std::runtime_error("cannot write " + file.string());
 }
 
 std::optional<std::string> readSpan(const fs::path& file, const PgnSpan& span) {

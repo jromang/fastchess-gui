@@ -610,6 +610,10 @@ void App::setupAdjudication() {
 }
 
 void App::setupPgn() {
+    if (open_pgn_setup_) {
+        ImGui::SetNextItemOpen(true);
+        open_pgn_setup_ = false;
+    }
     if (!ImGui::CollapsingHeader(TR("PGN and misc###sec_misc"))) return;
 
     bool changed = false;
@@ -620,6 +624,30 @@ void App::setupPgn() {
     ImGui::TextDisabled(TR("Every game is written to two files in the match folder:"));
     ImGui::BulletText("games.pgn : {+0.35/18 1.234s} (cutechess, fastchess)");
     ImGui::BulletText("games-chessbase.pgn : {[%%eval 0.35,18] [%%emt …]}");
+
+    ImGui::TextUnformatted(TR("Also append every game to:"));
+    const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
+    changed |= inputText("##pgn_out", setup_.pgn_out,
+                         ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x);
+    if (ImGui::IsItemHovered() && !setup_.pgn_out.empty()) ImGui::SetTooltip("%s", setup_.pgn_out.c_str());
+    ImGui::SameLine();
+    if (ImGui::Button("…##pgn_out_browse")) {
+        dialogs_.saveFile(Dialogs::Purpose::PgnOut, {{"PGN", "pgn"}}, setup_.pgn_out);
+    }
+    if (!setup_.pgn_out.empty()) {
+        int style          = setup_.export_style == PgnStyle::ChessBase ? 1 : 0;
+        bool style_changed = ImGui::RadioButton("ChessBase / Lichess##pgn_out", &style, 1);
+        ImGui::SameLine();
+        style_changed |= ImGui::RadioButton("cutechess##pgn_out", &style, 0);
+        if (style_changed) {
+            setup_.export_style = style == 1 ? PgnStyle::ChessBase : PgnStyle::Fastchess;
+            changed             = true;
+        }
+    }
+    ui::help(
+        TR("Like cutechess' -pgnout: the games of every tournament go on after those already in the file, which is "
+           "never overwritten, in the order of the schedule: the two games of an opening side by side. Empty: "
+           "none."));
 
     ImGui::TextUnformatted(TR("Extra fields in the comments:"));
     changed |= ImGui::Checkbox(TR("nodes"), &setup_.pgn_nodes);
@@ -1006,6 +1034,9 @@ void App::drawSetupSummary() {
     const bool per_round = setup_.format == TournamentFormat::RoundRobin ||
                            setup_.format == TournamentFormat::Gauntlet || setup_.format == TournamentFormat::Swiss;
     if (per_round && setup_.opening_per_round) check(true, TR("The same opening for every pair of a round"));
+    if (!setup_.pgn_out.empty()) {
+        check(true, trf("Games also appended to {}", std::filesystem::path(setup_.pgn_out).filename().string()));
+    }
     if (setup_.common_hash > 0 || setup_.common_threads > 0) {
         std::string parts;
         if (setup_.common_hash > 0) parts += fmt::format("Hash {} MB", setup_.common_hash);

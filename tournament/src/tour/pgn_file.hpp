@@ -37,6 +37,10 @@ class PgnFile {
     std::mutex mutex_;
 };
 
+// Appends `text` to a file other tournaments may write as well, in one write, under a lock of the process; the
+// file is not kept open. Throws when it cannot be written.
+void appendShared(const std::filesystem::path& file, const std::string& text);
+
 // Reads one game back.
 [[nodiscard]] std::optional<std::string> readSpan(const std::filesystem::path& file, const PgnSpan& span);
 

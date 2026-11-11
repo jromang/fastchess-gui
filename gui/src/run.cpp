@@ -456,6 +456,8 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     if (match) spec.max_games = t.rounds >= UNBOUNDED_ROUNDS ? 0 : t.rounds * t.games;
     spec.log_every_game    = setup.log_every_game;
     spec.opening_per_round = setup.opening_per_round && !match && setup.format != TournamentFormat::Knockout;
+    spec.pgn_out           = setup.pgn_out;
+    spec.pgn_out_chessbase = setup.export_style == PgnStyle::ChessBase;
     spec.conditions        = t;
     for (std::size_t i = 0; i < run.engines.size(); ++i) {
         tour::Participant p;

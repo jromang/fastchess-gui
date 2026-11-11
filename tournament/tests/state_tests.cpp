@@ -314,3 +314,130 @@ TEST_CASE("state: one opening per round, the next of the book for each round, ke
     }
     CHECK(first_round.size() == 2);
 }
+
+namespace {
+
+// The (Round, White) of each game of a PGN file, in file order.
+std::vector<std::pair<std::string, std::string>> gamesOf(const fs::path& file) {
+    const auto text = readAll(file);
+    std::vector<std::pair<std::string, std::string>> games;
+    const auto tag = [&](std::size_t from, const std::string& name) {
+        const auto at    = text.find("[" + name + " \"", from);
+        const auto start = at + name.size() + 3;
+        return text.substr(start, text.find('"', start) - start);
+    };
+    for (auto pos = text.find("[Event "); pos != std::string::npos; pos = text.find("[Event ", pos + 1)) {
+        games.emplace_back(tag(pos, "Round"), tag(pos, "White"));
+    }
+    return games;
+}
+
+const std::vector<std::pair<std::string, std::string>> IN_ORDER = {{"1", "A"}, {"1", "B"}, {"2", "A"},
+                                                                   {"2", "B"}, {"3", "A"}, {"3", "B"}};
+
+}  // namespace
+
+TEST_CASE("state: the PGN file of the user's gets the games in schedule order, appended, across a resume") {
+    const auto dir = freshDir("pgn-out");
+    const auto out = dir.parent_path() / "fcg-tour-pgn-out-all.pgn";
+    {
+        std::ofstream old(out, std::ios::binary | std::ios::trunc);
+        old << "[Event \"older\"]\n[Round \"9\"]\n[White \"X\"]\n\n1. e4 *\n\n";
+    }
+    auto spec    = matchSpec(6);
+    spec.pgn_out = out.string();
+
+    {
+        auto state = TournamentState::create(dir, spec);
+        std::vector<GameTask> t;
+        for (int i = 0; i < 4; ++i) t.push_back(*state->claimNext());
+
+        // Games 1 and 3 end first: they wait for game 0.
+        state->complete(t[1], gameData(t[1], "1-0"));
+        state->complete(t[3], gameData(t[3], "1-0"));
+        CHECK(gamesOf(out).size() == 1);
+
+        // Game 0 lets game 1 out; game 3 still waits for game 2, which the stop interrupts.
+        state->complete(t[0], gameData(t[0], "1-0"));
+        CHECK(gamesOf(out).size() == 3);
+        CHECK(state->pgnOutError().empty());
+    }
+
+    auto state = TournamentState::open(dir);
+    CHECK(gamesOf(out).size() == 3);  // nothing written twice, game 3 held still
+    while (auto task = state->claimNext()) state->complete(*task, gameData(*task, "1/2-1/2"));
+    CHECK(state->finished());
+
+    auto games = gamesOf(out);
+    REQUIRE(games.size() == 7);
+    CHECK(games.front().first == "9");  // what was there stays
+    games.erase(games.begin());
+    CHECK(games == IN_ORDER);
+    CHECK(gamesOf(dir / "games.pgn").size() == 6);
+}
+
+TEST_CASE("state: the PGN file of the user's gets what is left when the tournament ends, and waits out failures") {
+    const auto dir = freshDir("pgn-out-sprt");
+    const auto out = dir / "missing-folder";  // a folder for now: it cannot be written
+    fs::create_directories(out);
+
+    auto spec                    = matchSpec();
+    spec.pgn_out                 = out.string();
+    spec.pgn_out_chessbase       = true;
+    spec.conditions.sprt.enabled = true;
+    spec.conditions.sprt.elo0    = 0;
+    spec.conditions.sprt.elo1    = 5;
+    spec.conditions.sprt.alpha   = 0.05;
+    spec.conditions.sprt.beta    = 0.05;
+    spec.conditions.sprt.model   = "normalized";
+
+    auto state  = TournamentState::create(dir, spec);
+    auto first  = state->claimNext();
+    auto second = state->claimNext();  // runs until the end
+    REQUIRE(second);
+    state->complete(*first, gameData(*first, "1/2-1/2"));
+    CHECK_FALSE(state->pgnOutError().empty());
+
+    fs::remove_all(out);
+    int played = 1;
+    while (auto task = state->claimNext()) {
+        const bool a_white = task->white.name == "A";
+        state->complete(*task, gameData(*task, task->game == 0 ? (a_white ? "1-0" : "0-1") : "1/2-1/2"));
+        REQUIRE(++played < 5000);
+    }
+    CHECK(state->finishReason() == "sprt_h1");
+    CHECK(state->pgnOutError().empty());
+
+    // Every game played but the second, which never ended, in the ChessBase style.
+    CHECK(gamesOf(out).size() == static_cast<std::size_t>(played));
+    CHECK(readAll(out) == readAll(dir / "games-chessbase.pgn"));
+}
+
+TEST_CASE("state: a replayed game goes to the PGN file of the user's when it ends, without holding the others") {
+    const auto dir = freshDir("pgn-out-replay");
+    auto spec      = matchSpec(6);
+    spec.pgn_out   = (dir / "all.pgn").string();
+    auto state     = TournamentState::create(dir, spec);
+
+    for (int i = 0; i < 2; ++i) {
+        auto task = state->claimNext();
+        state->complete(*task, gameData(*task, "1-0"));
+    }
+    Edit edit;
+    edit.kind  = Edit::Kind::VoidGames;
+    edit.games = {{0, 0}};
+    state->applyEdit(edit);
+
+    auto replay = state->claimNext();
+    REQUIRE(replay);
+    CHECK(replay->number() == 0);
+    auto next = state->claimNext();
+    REQUIRE(next);
+    CHECK(next->number() == 2);
+    state->complete(*next, gameData(*next, "1-0"));
+    CHECK(gamesOf(dir / "all.pgn").size() == 3);  // game 0 was written once already: it holds nothing
+    state->complete(*replay, gameData(*replay, "0-1"));
+
+    const std::vector<std::pair<std::string, std::string>> expected = {{"1", "A"}, {"1", "B"}, {"2", "A"}, {"1", "A"}};
+    CHECK(gamesOf(dir / "all.pgn") == expected);
+}

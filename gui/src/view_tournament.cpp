@@ -53,6 +53,17 @@ ImU32 scoreColor(double score, float strength) {
 
 }  // namespace
 
+void App::drawPgnOutError() {
+    const auto* t = run_.tournament();
+    if (!t || t->spec().pgn_out.empty()) return;
+    const auto error = t->pgnOutError();
+    if (error.empty()) return;
+    ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+    ImGui::TextWrapped(
+        "%s", trf("The games wait for {}: {}. Another try after each game.", t->spec().pgn_out, error).c_str());
+    ImGui::PopStyleColor();
+}
+
 bool App::isMatch() const {
     const auto* t = run_.tournament();
     return !t || t->spec().format == tour::Format::Match;
@@ -160,6 +171,7 @@ void App::drawTournamentOverview() {
     const float left  = ImGui::GetContentRegionAvail().x - right - ImGui::GetStyle().ItemSpacing.x;
 
     ImGui::BeginChild("##ov_left", ImVec2(left, 0));
+    drawPgnOutError();
     ui::beginCard("standings_card");
     ImGui::TextUnformatted(TR("Standings"));
     ImGui::SameLine();
