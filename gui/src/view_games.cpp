@@ -17,30 +17,30 @@ namespace fcg {
 
 namespace {
 
-const char* FILTERS[] = {"All",
-                         "Wins of A",
-                         "Draws",
-                         "Losses of A",
-                         "Losses on time",
-                         "Crash / illegal move",
-                         "Adjudications",
-                         "The engines disagree",
-                         "An evaluation swings",
-                         "Lost after a winning score",
-                         "Wrong PVs"};
+const char* FILTERS[] = {N_("All"),
+                         N_("Wins of A"),
+                         N_("Draws"),
+                         N_("Losses of A"),
+                         N_("Losses on time"),
+                         N_("Crash / illegal move"),
+                         N_("Adjudications"),
+                         N_("The engines disagree"),
+                         N_("An evaluation swings"),
+                         N_("Lost after a winning score"),
+                         N_("Wrong PVs")};
 
 // In a tournament, results are seen from the engine chosen in the filter, or from White when none is.
-const char* TOURNAMENT_FILTERS[] = {"All",
-                                    "Wins",
-                                    "Draws",
-                                    "Losses",
-                                    "Losses on time",
-                                    "Crash / illegal move",
-                                    "Adjudications",
-                                    "The engines disagree",
-                                    "An evaluation swings",
-                                    "Lost after a winning score",
-                                    "Wrong PVs"};
+const char* TOURNAMENT_FILTERS[] = {N_("All"),
+                                    N_("Wins"),
+                                    N_("Draws"),
+                                    N_("Losses"),
+                                    N_("Losses on time"),
+                                    N_("Crash / illegal move"),
+                                    N_("Adjudications"),
+                                    N_("The engines disagree"),
+                                    N_("An evaluation swings"),
+                                    N_("Lost after a winning score"),
+                                    N_("Wrong PVs")};
 
 // The filters on what the evaluations tell, which take a threshold in pawns.
 constexpr int FIRST_EVAL_FILTER = 7;
@@ -198,7 +198,8 @@ void App::exportGames(const std::string& path, bool all) {
     const auto error = exportSpans(file, spans, path);
     if (error.empty()) {
         Console::instance().add(spans.size() == 1 ? trf("1 game exported to {}", path)
-                                                  : trf("{} games exported to {}", spans.size(), path));
+                                                  : trn("{} game exported to {}", "{} games exported to {}",
+                                                        spans.size(), spans.size(), path));
     } else {
         Console::instance().add(error, true);
     }
@@ -279,7 +280,7 @@ void App::drawGames() {
     const bool all_games    = !gamesFiltered();
     const std::size_t shown = all_games ? games_.size() : filtered_.size();
     ImGui::SameLine();
-    ImGui::TextDisabled("%s", (shown == 1 ? std::string(TR("1 game")) : trf("{} games", shown)).c_str());
+    ImGui::TextDisabled("%s", trn("{} game", "{} games", shown, shown).c_str());
 
     ImGui::SameLine();
     ImGui::TextUnformatted(TR(" Export:"));

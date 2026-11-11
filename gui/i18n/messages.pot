@@ -1,0 +1,2386 @@
+# Template: every message of the interface, in English.
+msgid ""
+msgstr ""
+"Project-Id-Version: fastchess-gui\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+msgid "  decided at {}"
+msgstr ""
+
+msgid " (decided at {})"
+msgstr ""
+
+msgid " Export:"
+msgstr ""
+
+msgid " · UCI: {} steps passed"
+msgstr ""
+
+msgid " · affinity"
+msgstr ""
+
+msgid " — not a UCI engine? For a WinBoard engine, choose the WinBoard protocol."
+msgstr ""
+
+msgid "! {} wrong PVs, on the moves in this colour"
+msgstr ""
+
+msgid "%.1f pawns"
+msgstr ""
+
+msgid "%d games × %d threads > %d available threads."
+msgstr ""
+
+msgid "%s  vs  %s"
+msgstr ""
+
+msgid "%s: %d loss(es) on time, %d crash(es), %d illegal move(s)"
+msgstr ""
+
+msgid "(choose)"
+msgstr ""
+
+msgid "(not in the engine list)"
+msgstr ""
+
+msgid ", CPU affinity"
+msgstr ""
+
+msgid "0 = a new random order for every match."
+msgstr ""
+
+msgid "0 = each engine's own setting."
+msgstr ""
+
+msgid "0 = everything the tables cover."
+msgstr ""
+
+msgid "0 = no limit."
+msgstr ""
+
+msgid "0 = the base time covers the whole game. Otherwise it is given again every N moves."
+msgstr ""
+
+msgid "1 crash"
+msgstr ""
+
+msgid "1 game exported to {}"
+msgstr ""
+
+msgid "1 illegal move"
+msgstr ""
+
+msgid "1 loss on time"
+msgstr ""
+
+msgid "10 games at 10+0.1 from 5 positions, to see before a long tournament whether it loses on time, crashes, plays an illegal move or uses its clock badly."
+msgstr ""
+
+msgid "50 moves {}/100"
+msgstr ""
+
+msgid "95 % interval"
+msgstr ""
+
+msgid "= {:.2f} logistic Elo"
+msgstr ""
+
+msgid "A (tested)"
+msgstr ""
+
+msgid "A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves weighing less than a tenth of the best one; the positions reached are the openings."
+msgstr ""
+
+msgid "A WinBoard engine."
+msgstr ""
+
+msgid "A colour won both games of a pair"
+msgstr ""
+
+msgid "A file of your choice"
+msgstr ""
+
+msgid "A gauntlet needs at least one engine besides the tested ones."
+msgstr ""
+
+msgid "A lichess broadcast: its board, evaluation bar and chat, for anyone, on the internet. The games in progress are pushed every few seconds, each finished game once with its evaluations and clocks."
+msgstr ""
+
+msgid "A match between two versions, a round robin or a gauntlet."
+msgstr ""
+
+msgid "A match is already running."
+msgstr ""
+
+msgid "A match is running. The games in progress will be lost."
+msgstr ""
+
+msgid "A match is running: wait for its end to open another one."
+msgstr ""
+
+msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
+msgstr ""
+
+msgid "A: +%d  =%d  -%d"
+msgstr ""
+
+msgid "API token (with the study:write scope)"
+msgstr ""
+
+msgid "About {} games if the change is worth elo0, {} if it is worth elo1."
+msgstr ""
+
+msgid "About {} with {} games at a time"
+msgstr ""
+
+msgid "About {} {}"
+msgstr ""
+
+msgid "Add a PGN file…"
+msgstr ""
+
+msgid "Add a group…"
+msgstr ""
+
+msgid "Add all"
+msgstr ""
+
+msgid "Add an engine"
+msgstr ""
+
+msgid "Add an engine…"
+msgstr ""
+
+msgid "Add engines in the Engines window."
+msgstr ""
+
+msgid "Add to the queue"
+msgstr ""
+
+msgid "Add…"
+msgstr ""
+
+msgid "Adjudicate"
+msgstr ""
+
+msgid "Adjudication"
+msgstr ""
+
+msgid "Adjudications"
+msgstr ""
+
+msgid "Affinity ignored: an engine uses %d threads."
+msgstr ""
+
+msgid "After the running match."
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "All engines"
+msgstr ""
+
+msgid "All files"
+msgstr ""
+
+msgid "All groups"
+msgstr ""
+
+msgid "All openings"
+msgstr ""
+
+msgid "All to default"
+msgstr ""
+
+msgid "All tournaments"
+msgstr ""
+
+msgid "Also append every game to:"
+msgstr ""
+
+msgid "An ECO code or its beginning (B9), a range (B20-B99), or words of the name (sicilian najdorf)."
+msgstr ""
+
+msgid "An EPD book without the illegal positions, the duplicates and the games already over (and the positions with colours reversed of an earlier one, if ticked), added to the library."
+msgstr ""
+
+msgid "An engine is being read, try again in a moment."
+msgstr ""
+
+msgid "An engine list…"
+msgstr ""
+
+msgid "An evaluation swings"
+msgstr ""
+
+msgid "Anchor:"
+msgstr ""
+
+msgid "Apply"
+msgstr ""
+
+msgid "Arguments"
+msgstr ""
+
+msgid "As BBCode, for a forum"
+msgstr ""
+
+msgid "As text"
+msgstr ""
+
+msgid "Automatic"
+msgstr ""
+
+msgid "Automatic (system)"
+msgstr ""
+
+msgid "Automatic concurrency"
+msgstr ""
+
+msgid "Average"
+msgstr ""
+
+msgid "Average length of the games, in moves."
+msgstr ""
+
+msgid "Avg NPS"
+msgstr ""
+
+msgid "Avg depth"
+msgstr ""
+
+msgid "B (baseline)"
+msgstr ""
+
+msgid "Back to the default"
+msgstr ""
+
+msgid "Back to the default value"
+msgstr ""
+
+msgid "Base (s)"
+msgstr ""
+
+msgid "Black"
+msgstr ""
+
+msgid "Black disconnects"
+msgstr ""
+
+msgid "Black makes an illegal move"
+msgstr ""
+
+msgid "Black mates"
+msgstr ""
+
+msgid "Black resigns"
+msgstr ""
+
+msgid "Black wins by adjudication"
+msgstr ""
+
+msgid "Black wins by adjudication: SyzygyTB"
+msgstr ""
+
+msgid "Black ×2"
+msgstr ""
+
+msgid "Black's connection stalls"
+msgstr ""
+
+msgid "Books"
+msgstr ""
+
+msgid "Books (EPD, PGN, Polyglot)"
+msgstr ""
+
+msgid "Both engines must agree"
+msgstr ""
+
+msgid "Bracket"
+msgstr ""
+
+msgid "Broadcast"
+msgstr ""
+
+msgid "By time control"
+msgstr ""
+
+msgid "CPU affinity"
+msgstr ""
+
+msgid "Calculator…"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Cannot draw the pieces."
+msgstr ""
+
+msgid "Cannot import {}: {}"
+msgstr ""
+
+msgid "Cannot load the Syzygy tablebases from "
+msgstr ""
+
+msgid "Cannot open the tournament: {}"
+msgstr ""
+
+msgid "Cannot read the game back from {}"
+msgstr ""
+
+msgid "Cannot read {}"
+msgstr ""
+
+msgid "Cannot resume the match: {}"
+msgstr ""
+
+msgid "Cannot start the match: {}"
+msgstr ""
+
+msgid "Cannot start the quick test: {}"
+msgstr ""
+
+msgid "Cannot write {}"
+msgstr ""
+
+msgid "Catch up the cycles already started"
+msgstr ""
+
+msgid "Cells:"
+msgstr ""
+
+msgid "Change the tournament"
+msgstr ""
+
+msgid "Change…"
+msgstr ""
+
+msgid "Charts"
+msgstr ""
+
+msgid "Check"
+msgstr ""
+
+msgid "Check the mate PVs"
+msgstr ""
+
+msgid "Checked: it works."
+msgstr ""
+
+msgid "Checking…"
+msgstr ""
+
+msgid "Chess960"
+msgstr ""
+
+msgid "Chess960: the 960 starting positions, in random order"
+msgstr ""
+
+msgid "Chess960: {}"
+msgstr ""
+
+msgid "ChessBase / Lichess: {[%eval 0.35,18] [%emt 0:00:01.234]}, eval from White's point of view.\ncutechess: {+0.35/18 1.234s}, score from the point of view of the side that moved."
+msgstr ""
+
+msgid "ChessGUI (ChsGUI_Eng.TXT), cutechess or Banksia (engines.json), Arena…"
+msgstr ""
+
+msgid "Choose a book in the list."
+msgstr ""
+
+msgid "Choose an EPD file whose positions have their best move (bm), the moves to avoid (am), or STS points (c0)."
+msgstr ""
+
+msgid "Choose an engine in the list."
+msgstr ""
+
+msgid "Choose an engine: its results, its health and its rating over every tournament."
+msgstr ""
+
+msgid "Choose an opening to see it."
+msgstr ""
+
+msgid "Choose at least two engines."
+msgstr ""
+
+msgid "Choose engines A and B."
+msgstr ""
+
+msgid "Choose two engines (A and B) from the engine list."
+msgstr ""
+
+msgid "Choose two engines: their games against each other, over every tournament."
+msgstr ""
+
+msgid "Choose…"
+msgstr ""
+
+msgid "Clear"
+msgstr ""
+
+msgid "Click for its card."
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "Common settings, forced on every engine (0 = each engine's own):"
+msgstr ""
+
+msgid "Common settings: {}"
+msgstr ""
+
+msgid "Compare with a saved run…"
+msgstr ""
+
+msgid "Concurrency"
+msgstr ""
+
+msgid "Concurrent games"
+msgstr ""
+
+msgid "Consecutive moves"
+msgstr ""
+
+msgid "Console"
+msgstr ""
+
+msgid "Copy"
+msgstr ""
+
+msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
+msgstr ""
+
+msgid "Count"
+msgstr ""
+
+msgid "Crash / illegal move"
+msgstr ""
+
+msgid "Create a token on lichess…"
+msgstr ""
+
+msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
+msgstr ""
+
+msgid "Cycle {} / {}"
+msgstr ""
+
+msgid "Cycle {} · {} / {} games"
+msgstr ""
+
+msgid "Cycles"
+msgstr ""
+
+msgid "Dark"
+msgstr ""
+
+msgid "Date"
+msgstr ""
+
+msgid "Decision"
+msgstr ""
+
+msgid "Default"
+msgstr ""
+
+msgid "Depth"
+msgstr ""
+
+msgid "Depth (plies)"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Detach"
+msgstr ""
+
+msgid "Details under the boards"
+msgstr ""
+
+msgid "Directories separated by ':' (WDL files are enough)."
+msgstr ""
+
+msgid "Directories separated by ';' (WDL files are enough)."
+msgstr ""
+
+msgid "Done: the tournament goes on with the change."
+msgstr ""
+
+msgid "Draw"
+msgstr ""
+
+msgid "Draw by 3-fold repetition"
+msgstr ""
+
+msgid "Draw by adjudication"
+msgstr ""
+
+msgid "Draw by adjudication: SyzygyTB"
+msgstr ""
+
+msgid "Draw by fifty moves rule"
+msgstr ""
+
+msgid "Draw by insufficient mating material"
+msgstr ""
+
+msgid "Draw by stalemate"
+msgstr ""
+
+msgid "Draw ratio"
+msgstr ""
+
+msgid "Draw when both engines report |score| ≤ threshold for N consecutive moves, after a given move number."
+msgstr ""
+
+msgid "Drawn twice"
+msgstr ""
+
+msgid "Draws"
+msgstr ""
+
+msgid "Duplicate"
+msgstr ""
+
+msgid "Duration"
+msgstr ""
+
+msgid "EPD suites"
+msgstr ""
+
+msgid "Each pair is two games on the same opening, colours reversed."
+msgstr ""
+
+msgid "Each round is two games, colours reversed, against an engine with a similar score."
+msgstr ""
+
+msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
+msgstr ""
+
+msgid "Elo (95% CI)"
+msgstr ""
+
+msgid "Elo difference"
+msgstr ""
+
+msgid "Elo of A (95% CI)"
+msgstr ""
+
+msgid "Elo relative to the average, 95 % interval"
+msgstr ""
+
+msgid "Elo {}  ·  LOS {:.1f} %"
+msgstr ""
+
+msgid "Elo {} ± {:.0f}"
+msgstr ""
+
+msgid "Elo: {} = {:.0f}, 95 % interval"
+msgstr ""
+
+msgid "Empty: the program's directory."
+msgstr ""
+
+msgid "End"
+msgstr ""
+
+msgid "Engine"
+msgstr ""
+
+msgid "Engine lists"
+msgstr ""
+
+msgid "Engine log"
+msgstr ""
+
+msgid "Engine to add"
+msgstr ""
+
+msgid "Engine to replace"
+msgstr ""
+
+msgid "Engine to withdraw"
+msgstr ""
+
+msgid "Engine used by the running match: changes are locked."
+msgstr ""
+
+msgid "Engines"
+msgstr ""
+
+msgid "Error: {}"
+msgstr ""
+
+msgid "Evaluation"
+msgstr ""
+
+msgid "Event"
+msgstr ""
+
+msgid "Every engine meets every other one, each time on two games with the same opening, colours reversed."
+msgstr ""
+
+msgid "Every engine of a folder…"
+msgstr ""
+
+msgid "Every game"
+msgstr ""
+
+msgid "Every game in progress, the standings and the crosstable, read-only, refreshed every second."
+msgstr ""
+
+msgid "Every game is written to two files in the match folder:"
+msgstr ""
+
+msgid "Every game of an engine"
+msgstr ""
+
+msgid "Every game of every tournament, and of the PGN files imported, engines known by name; maximum likelihood ratings with 95 % intervals."
+msgstr ""
+
+msgid "Every game pair of a round plays the same opening, the next of the book for each round: no engine gets easier openings than the others of its round. Otherwise each pair takes the next one."
+msgstr ""
+
+msgid "Every line exchanged with the engines during this game:\n{}"
+msgstr ""
+
+msgid "Every line exchanged with the engines, in logs/ in the tournament folder, opened from the Games tab. Always kept for the games lost on time, by a crash, a stall or an illegal move."
+msgstr ""
+
+msgid "Every move gets this time, whatever was used before (go movetime)."
+msgstr ""
+
+msgid "Every move is searched to this depth (go depth), however long it takes: no time loss."
+msgstr ""
+
+msgid "Every opening"
+msgstr ""
+
+msgid "Every time control"
+msgstr ""
+
+msgid "Every tournament is a folder: it resumes exactly where it stopped, even after a power cut."
+msgstr ""
+
+msgid "Expected number of games"
+msgstr ""
+
+msgid "Export CSV…"
+msgstr ""
+
+msgid "Export HTML…"
+msgstr ""
+
+msgid "Export all…"
+msgstr ""
+
+msgid "Export as EPD…"
+msgstr ""
+
+msgid "Export filtered…"
+msgstr ""
+
+msgid "Export for Ordo…"
+msgstr ""
+
+msgid "Export game…"
+msgstr ""
+
+msgid "Export the games…"
+msgstr ""
+
+msgid "Extra fields in the comments:"
+msgstr ""
+
+msgid "Failed: {}"
+msgstr ""
+
+msgid "Few enough pieces for the tablebase adjudication."
+msgstr ""
+
+msgid "File"
+msgstr ""
+
+msgid "File not found: {}"
+msgstr ""
+
+msgid "Files"
+msgstr ""
+
+msgid "Final"
+msgstr ""
+
+msgid "Finish the running games, then stop"
+msgstr ""
+
+msgid "Finished"
+msgstr ""
+
+msgid "Fischer random chess. The engines must play it (the UCI_Chess960 option, or the fischerandom variant of a WinBoard engine). A book of Chess960 positions, or none for all 960."
+msgstr ""
+
+msgid "Fixed games"
+msgstr ""
+
+msgid "Fixed nodes"
+msgstr ""
+
+msgid "Fixed nodes or depth: one game per hardware thread (Hyper-Threading does not change the moves played). With a clock: physical cores − 1, so the engines do not slow each other down."
+msgstr ""
+
+msgid "Flip"
+msgstr ""
+
+msgid "Folder"
+msgstr ""
+
+msgid "Folder (empty: \"live\" in the tournament folder)"
+msgstr ""
+
+msgid "Follow"
+msgstr ""
+
+msgid "For TLCV, node-tlcv (as used by ccrl.live) and Livius: one game at a time, with the engines' searches, and the crosstable."
+msgstr ""
+
+msgid "For a PGN book: number of plies kept. -1 = all."
+msgstr ""
+
+msgid "Format"
+msgstr ""
+
+msgid "Found for (plies)"
+msgstr ""
+
+msgid "From move"
+msgstr ""
+
+msgid "From the games only, with the DrawElo that goes with it."
+msgstr ""
+
+msgid "Gainer [0, 3]"
+msgstr ""
+
+msgid "Game #{}"
+msgstr ""
+
+msgid "Game %zu · round %zu"
+msgstr ""
+
+msgid "Game interrupted"
+msgstr ""
+
+msgid "Game length"
+msgstr ""
+
+msgid "Game pairs per match"
+msgstr ""
+
+msgid "Game shown:"
+msgstr ""
+
+msgid "Game {} · move {}"
+msgstr ""
+
+msgid "Games"
+msgstr ""
+
+msgid "Games also appended to {}"
+msgstr ""
+
+msgid "Games lost on time, by a crash or an illegal move"
+msgstr ""
+
+msgid "Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by their name, as in the PGN."
+msgstr ""
+
+msgid "Games written to {}"
+msgstr ""
+
+msgid "Gauntlet"
+msgstr ""
+
+msgid "Gauntlet {} vs {} engines"
+msgstr ""
+
+msgid "Give the Syzygy tablebase directory."
+msgstr ""
+
+msgid "Groups"
+msgstr ""
+
+msgid "G{}"
+msgstr ""
+
+msgid "H0 accepted"
+msgstr ""
+
+msgid "H1 accepted"
+msgstr ""
+
+msgid "Hash"
+msgstr ""
+
+msgid "Hash (MB)"
+msgstr ""
+
+msgid "Hash, Threads, Depth: 0 = the common value."
+msgstr ""
+
+msgid "Hash, Threads, Nodes: 0 = the common value."
+msgstr ""
+
+msgid "Hash, Threads: 0 = the common value. Time %: time odds, 100 = the same clock as the others."
+msgstr ""
+
+msgid "Head to head"
+msgstr ""
+
+msgid "Health"
+msgstr ""
+
+msgid "How deep the lines of the book are followed; -1 = {}."
+msgstr ""
+
+msgid "How games ended"
+msgstr ""
+
+msgid "How many times every pairing is played; each time is two games, colours reversed."
+msgstr ""
+
+msgid "How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."
+msgstr ""
+
+msgid "Ignore the 50-move rule"
+msgstr ""
+
+msgid "Illegal move from the initial position: {}"
+msgstr ""
+
+msgid "Impact"
+msgstr ""
+
+msgid "Import them"
+msgstr ""
+
+msgid "Imported"
+msgstr ""
+
+msgid "Imported games"
+msgstr ""
+
+msgid "Import…"
+msgstr ""
+
+msgid "Increment (s)"
+msgstr ""
+
+msgid "Infinite"
+msgstr ""
+
+msgid "Interface size"
+msgstr ""
+
+msgid "Interrupted"
+msgstr ""
+
+msgid "Interrupted: an engine crashed or stopped responding (see Console)"
+msgstr ""
+
+msgid "It continues exactly where it stopped: no game is lost or played twice."
+msgstr ""
+
+msgid "Its card in Ratings: results, health and rating over every tournament."
+msgstr ""
+
+msgid "Its games"
+msgstr ""
+
+msgid "Its games played so far stop counting"
+msgstr ""
+
+msgid "Its games stop counting and are played again by the new engine."
+msgstr ""
+
+msgid "Its path is in the clipboard."
+msgstr ""
+
+msgid "Its positions with a best move (bm), moves to avoid (am) or STS points, in the Suites page."
+msgstr ""
+
+msgid "Its rating on a list you trust, to anchor a tournament's ratings. 0 = none."
+msgstr ""
+
+msgid "Its results…"
+msgstr ""
+
+msgid "Keep the engine log of every game"
+msgstr ""
+
+msgid "Kept in the profile only, never in a tournament's files or the log."
+msgstr ""
+
+msgid "Knockout"
+msgstr ""
+
+msgid "Knockout, {} engines"
+msgstr ""
+
+msgid "Language"
+msgstr ""
+
+msgid "Latest results"
+msgstr ""
+
+msgid "Light"
+msgstr ""
+
+msgid "Like cutechess' -pgnout: the games of every tournament go on after those already in the file, which is never overwritten, in the order of the schedule: the two games of an opening side by side. Empty: none."
+msgstr ""
+
+msgid "Listed among lichess' broadcasts"
+msgstr ""
+
+msgid "Live"
+msgstr ""
+
+msgid "Live PGN, standings and crosstable, to publish anywhere (FTP, rsync, a website)."
+msgstr ""
+
+msgid "Load"
+msgstr ""
+
+msgid "Locate…"
+msgstr ""
+
+msgid "Log"
+msgstr ""
+
+msgid "Logistic Elo, with its 95 % interval."
+msgstr ""
+
+msgid "Loss when an engine reports a score ≤ -threshold for N consecutive moves."
+msgstr ""
+
+msgid "Losses"
+msgstr ""
+
+msgid "Losses of A"
+msgstr ""
+
+msgid "Losses on time"
+msgstr ""
+
+msgid "Losses on time and crashes"
+msgstr ""
+
+msgid "Lost after a winning score"
+msgstr ""
+
+msgid "Machine: %d physical cores, %d threads"
+msgstr ""
+
+msgid "Margin (ms)"
+msgstr ""
+
+msgid "Match"
+msgstr ""
+
+msgid "Matches in a bracket, the winner goes through; tiebreak pairs of games when a match is tied. The list order is the seeding."
+msgstr ""
+
+msgid "Material difference, in pawns, from White's side."
+msgstr ""
+
+msgid "Max games"
+msgstr ""
+
+msgid "Max pieces"
+msgstr ""
+
+msgid "Max score (cp)"
+msgstr ""
+
+msgid "Maximum number of moves"
+msgstr ""
+
+msgid "Model"
+msgstr ""
+
+msgid "Mosaic"
+msgstr ""
+
+msgid "Moves"
+msgstr ""
+
+msgid "Moves / period"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "New engine A"
+msgstr ""
+
+msgid "New tournament"
+msgstr ""
+
+msgid "New tournaments go there, and the lists show the tournaments found there. Tournaments already played are not moved: a tournament is a folder, move it yourself."
+msgstr ""
+
+msgid "No PGN file imported."
+msgstr ""
+
+msgid "No PVs: turn on pv in the PGN options of the setup."
+msgstr ""
+
+msgid "No book"
+msgstr ""
+
+msgid "No book yet. Click Add."
+msgstr ""
+
+msgid "No engine yet. Click Add."
+msgstr ""
+
+msgid "No game finished yet."
+msgstr ""
+
+msgid "No game in this slot yet."
+msgstr ""
+
+msgid "No game yet."
+msgstr ""
+
+msgid "No match"
+msgstr ""
+
+msgid "No match yet. Choose two engines, then click Start."
+msgstr ""
+
+msgid "No move after 10 seconds of a 0.3 s search."
+msgstr ""
+
+msgid "No opening book: every game starts from the initial position"
+msgstr ""
+
+msgid "No options yet: click Read the UCI options again."
+msgstr ""
+
+msgid "No position with bm, am or c0 in this file."
+msgstr ""
+
+msgid "No results yet."
+msgstr ""
+
+msgid "No round yet."
+msgstr ""
+
+msgid "No template yet."
+msgstr ""
+
+msgid "No tournament is open."
+msgstr ""
+
+msgid "No tournament yet. Start with a new tournament."
+msgstr ""
+
+msgid "Nodes"
+msgstr ""
+
+msgid "Nodes per move"
+msgstr ""
+
+msgid "Nodes per position"
+msgstr ""
+
+msgid "Non-regression [-5, 0]"
+msgstr ""
+
+msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
+msgstr ""
+
+msgid "Not checked yet."
+msgstr ""
+
+msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
+msgstr ""
+
+msgid "Notify when a match ends"
+msgstr ""
+
+msgid "Now {}. Only cycles not started can be removed."
+msgstr ""
+
+msgid "Number of cycles"
+msgstr ""
+
+msgid "Of one game's score. Pairs: as measured on the pairs."
+msgstr ""
+
+msgid "On its error output:"
+msgstr ""
+
+msgid "Once it has played two tournaments."
+msgstr ""
+
+msgid "One game"
+msgstr ""
+
+msgid "Only the games between engines of a group of the library."
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Open a folder…"
+msgstr ""
+
+msgid "Open the folder"
+msgstr ""
+
+msgid "Open the tournament."
+msgstr ""
+
+msgid "Opening"
+msgstr ""
+
+msgid "Opening book not found: {}"
+msgstr ""
+
+msgid "Openings"
+msgstr ""
+
+msgid "Openings: {}"
+msgstr ""
+
+msgid "Option"
+msgstr ""
+
+msgid "Option unknown to the engine: %s = %s"
+msgstr ""
+
+msgid "Otherwise an engine that crashes or hangs stops the whole match."
+msgstr ""
+
+msgid "Otherwise it joins from the next cycle and plays fewer games than the others."
+msgstr ""
+
+msgid "Otherwise the broadcast is unlisted: only those who have its link see it."
+msgstr ""
+
+msgid "Overrun tolerated before a game is lost on time."
+msgstr ""
+
+msgid "Overview"
+msgstr ""
+
+msgid "PGN and misc"
+msgstr ""
+
+msgid "PGN files…"
+msgstr ""
+
+msgid "PV agreement"
+msgstr ""
+
+msgid "Pair kinds"
+msgstr ""
+
+msgid "Pairs"
+msgstr ""
+
+msgid "Pairs (points of A out of 2)"
+msgstr ""
+
+msgid "Pairs of games played from this position, colours reversed."
+msgstr ""
+
+msgid "Pairs scoring more than 1 for A, over those scoring less."
+msgstr ""
+
+msgid "Pairs where Black won both games: the opening favours Black."
+msgstr ""
+
+msgid "Pairs where White won both games: the opening favours White."
+msgstr ""
+
+msgid "Pairs where the same engine won both games: the opening tells the engines apart."
+msgstr ""
+
+msgid "Pairs won / lost"
+msgstr ""
+
+msgid "Pairs: those scoring 1 for each engine, a win and a loss or two draws."
+msgstr ""
+
+msgid "Part of a FEN, or moves of a PGN book (e4 e5 Nf3)."
+msgstr ""
+
+msgid "Participants"
+msgstr ""
+
+msgid "Pause"
+msgstr ""
+
+msgid "Pause: no new pair starts. Running games, and the second game of their pair,\nplay to the end (pair statistics stay complete)."
+msgstr ""
+
+msgid "Paused"
+msgstr ""
+
+msgid "Paused ({} game finishing)"
+msgid_plural "Paused ({} games finishing)"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Pieces on the board, kings included."
+msgstr ""
+
+msgid "Pins every game to its own processor, shared by its two engines since they never think at the same time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to a node count."
+msgstr ""
+
+msgid "Play games again"
+msgstr ""
+
+msgid "Play this game again"
+msgstr ""
+
+msgid "Played in pairs: each opening is played twice, with colours reversed."
+msgstr ""
+
+msgid "Plays until you stop the match."
+msgstr ""
+
+msgid "Plies"
+msgstr ""
+
+msgid "Plies (PGN)"
+msgstr ""
+
+msgid "Plies since the last capture or pawn move; 100 is a draw."
+msgstr ""
+
+msgid "Points"
+msgstr ""
+
+msgid "Polyglot book: its lines to {} plies, as positions"
+msgstr ""
+
+msgid "Position"
+msgstr ""
+
+msgid "Presets:"
+msgstr ""
+
+msgid "Probability that H1 is accepted (%)"
+msgstr ""
+
+msgid "Problem"
+msgstr ""
+
+msgid "Processor"
+msgstr ""
+
+msgid "Processor use"
+msgstr ""
+
+msgid "Program"
+msgstr ""
+
+msgid "Program not found: {}"
+msgstr ""
+
+msgid "Programs"
+msgstr ""
+
+msgid "Progress"
+msgstr ""
+
+msgid "Protocol"
+msgstr ""
+
+msgid "Push the games to lichess"
+msgstr ""
+
+msgid "Queue"
+msgstr ""
+
+msgid "Queued: {}"
+msgstr ""
+
+msgid "Quick test"
+msgstr ""
+
+msgid "Quick test of {} started."
+msgstr ""
+
+msgid "Quick test: {}"
+msgstr ""
+
+msgid "Quit"
+msgstr ""
+
+msgid "Quit?"
+msgstr ""
+
+msgid "RMS bias"
+msgstr ""
+
+msgid "RMS bias (Elo)"
+msgstr ""
+
+msgid "Random order"
+msgstr ""
+
+msgid "Rating after each tournament"
+msgstr ""
+
+msgid "Rating list"
+msgstr ""
+
+msgid "Rating list written to {}"
+msgstr ""
+
+msgid "Ratings"
+msgstr ""
+
+msgid "Reachable from the local network; open the port in your router to share it further."
+msgstr ""
+
+msgid "Read it again"
+msgstr ""
+
+msgid "Read its search statistics"
+msgstr ""
+
+msgid "Read the UCI options again"
+msgstr ""
+
+msgid "Reading the engine…"
+msgstr ""
+
+msgid "Reading the options of an engine…"
+msgstr ""
+
+msgid "Reading…"
+msgstr ""
+
+msgid "Reading… {} opening"
+msgid_plural "Reading… {} openings"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Ready · {} cores, {} threads"
+msgstr ""
+
+msgid "Reference Elo"
+msgstr ""
+
+msgid "Refresh"
+msgstr ""
+
+msgid "Relaunch with…"
+msgstr ""
+
+msgid "Remove"
+msgstr ""
+
+msgid "Remove the engine?"
+msgstr ""
+
+msgid "Remove the saved runs from the grid"
+msgstr ""
+
+msgid "Remove “%s” from the list? The file is not deleted."
+msgstr ""
+
+msgid "Removes the book from the library; the file stays where it is."
+msgstr ""
+
+msgid "Remove…"
+msgstr ""
+
+msgid "Replace an engine"
+msgstr ""
+
+msgid "Replaced by"
+msgstr ""
+
+msgid "Resign"
+msgstr ""
+
+msgid "Restart an engine that crashes"
+msgstr ""
+
+msgid "Restart the engine for every game"
+msgstr ""
+
+msgid "Result"
+msgstr ""
+
+msgid "Results of A"
+msgstr ""
+
+msgid "Results per game pair (same opening, colours reversed), in points for A: 0, 0.5, 1, 1.5, 2."
+msgstr ""
+
+msgid "Resume"
+msgstr ""
+
+msgid "Resumed: {}, {} games already played. Folder: {}"
+msgstr ""
+
+msgid "Right click: play again or void this game."
+msgstr ""
+
+msgid "Round (its URL or id; empty: a new broadcast named after the tournament)"
+msgstr ""
+
+msgid "Round robin"
+msgstr ""
+
+msgid "Round robin, {} engines"
+msgstr ""
+
+msgid "Round {}"
+msgstr ""
+
+msgid "Round {} / {}"
+msgstr ""
+
+msgid "Round {} · {} / {} games"
+msgstr ""
+
+msgid "Rounds"
+msgstr ""
+
+msgid "Run as a test suite…"
+msgstr ""
+
+msgid "Run the TLCS server"
+msgstr ""
+
+msgid "Running"
+msgstr ""
+
+msgid "R{}"
+msgstr ""
+
+msgid "SPRT calculator"
+msgstr ""
+
+msgid "SPRT finished: H0 accepted, {} is not stronger"
+msgstr ""
+
+msgid "SPRT finished: H1 accepted, {} is stronger"
+msgstr ""
+
+msgid "Same number of games"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Save a cleaned copy…"
+msgstr ""
+
+msgid "Schedule"
+msgstr ""
+
+msgid "Score"
+msgstr ""
+
+msgid "Score (cp)"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search per engine"
+msgstr ""
+
+msgid "Searches at a time"
+msgstr ""
+
+msgid "Seconds per move"
+msgstr ""
+
+msgid "Seconds per position"
+msgstr ""
+
+msgid "Seed"
+msgstr ""
+
+msgid "Separated by commas, e.g. a pool or a rating list."
+msgstr ""
+
+msgid "Serve the web page"
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Settings are locked while a match is running."
+msgstr ""
+
+msgid "Setup"
+msgstr ""
+
+msgid "Share of drawn games."
+msgstr ""
+
+msgid "Show this game in its own window, which can be moved to another screen."
+msgstr ""
+
+msgid "Solution"
+msgstr ""
+
+msgid "Speed"
+msgstr ""
+
+msgid "Standard deviation"
+msgstr ""
+
+msgid "Standings"
+msgstr ""
+
+msgid "Standings copied to the clipboard."
+msgstr ""
+
+msgid "Standings written to {}"
+msgstr ""
+
+msgid "Start"
+msgstr ""
+
+msgid "Start a new tournament, or open one from the list of tournaments."
+msgstr ""
+
+msgid "Start at"
+msgstr ""
+
+msgid "Start now"
+msgstr ""
+
+msgid "Started one after the other, when the running tournament ends by itself."
+msgstr ""
+
+msgid "Started: {}, {}, {} concurrent games{}. Folder: {}"
+msgstr ""
+
+msgid "Starts by itself when the running tournament ends."
+msgstr ""
+
+msgid "Starts in {} ms · isready {:.1f} ms · first move {}"
+msgstr ""
+
+msgid "Starts the engine, measures how fast it answers, checks one move, then runs fastchess' UCI compliance steps."
+msgstr ""
+
+msgid "State"
+msgstr ""
+
+msgid "Statistics"
+msgstr ""
+
+msgid "Statistics are given from A's point of view."
+msgstr ""
+
+msgid "Stop"
+msgstr ""
+
+msgid "Stop and quit"
+msgstr ""
+
+msgid "Stop now (running games are lost)"
+msgstr ""
+
+msgid "Stopped"
+msgstr ""
+
+msgid "Stopped before the end."
+msgstr ""
+
+msgid "Stopping after the running games ({})"
+msgstr ""
+
+msgid "Stopping the engines…"
+msgstr ""
+
+msgid "Stopping…"
+msgstr ""
+
+msgid "Suite"
+msgstr ""
+
+msgid "Suites"
+msgstr ""
+
+msgid "Summary"
+msgstr ""
+
+msgid "Swap A and B"
+msgstr ""
+
+msgid "Swiss"
+msgstr ""
+
+msgid "Swiss, {} engines"
+msgstr ""
+
+msgid "Syzygy tablebases"
+msgstr ""
+
+msgid "TB hits"
+msgstr ""
+
+msgid "TCP port"
+msgstr ""
+
+msgid "TLCS server"
+msgstr ""
+
+msgid "Template name"
+msgstr ""
+
+msgid "Templates"
+msgstr ""
+
+msgid "Test suite finished; its results are kept in suites/ in the profile."
+msgstr ""
+
+msgid "Test suite results written to {}"
+msgstr ""
+
+msgid "Test suite {}: {} positions, {} engines, {} at a time."
+msgstr ""
+
+msgid "Test suites"
+msgstr ""
+
+msgid "Tested engines"
+msgstr ""
+
+msgid "Testing…"
+msgstr ""
+
+msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
+msgstr ""
+
+msgid "The change was undone."
+msgstr ""
+
+msgid "The charts appear with the first results."
+msgstr ""
+
+msgid "The depth must be positive."
+msgstr ""
+
+msgid "The engine does not answer isready."
+msgstr ""
+
+msgid "The engine stopped while it was asked to think."
+msgstr ""
+
+msgid "The engine wrote:"
+msgstr ""
+
+msgid "The engines disagree"
+msgstr ""
+
+msgid "The engines disagree: their evaluations differ by this much for 3 moves each in a row.\nAn evaluation swings: an engine's evaluation changes by this much from one of its moves to the next.\nLost after a winning score: the loser thought it was this much better.\nA game opens at that moment."
+msgstr ""
+
+msgid "The finished games of the match will appear here."
+msgstr ""
+
+msgid "The first engines of the list (the tested ones) meet every other engine."
+msgstr ""
+
+msgid "The first engines of the list play every other engine, not each other."
+msgstr ""
+
+msgid "The games counted, as a PGN of headers, which Ordo and BayesElo read: ordo -p ratings.pgn -o ratings.txt"
+msgstr ""
+
+msgid "The games wait for {}: {}. Another try after each game."
+msgstr ""
+
+msgid "The last 30 days"
+msgstr ""
+
+msgid "The last 365 days"
+msgstr ""
+
+msgid "The last change of the tournament was undone."
+msgstr ""
+
+msgid "The last check or reading failed."
+msgstr ""
+
+msgid "The number of nodes must be positive."
+msgstr ""
+
+msgid "The opening book must be an .epd, .pgn or .bin (Polyglot) file."
+msgstr ""
+
+msgid "The openings appear here once their games are played."
+msgstr ""
+
+msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured since the tournament was started or resumed."
+msgstr ""
+
+msgid "The program changed since it was last read (rebuilt or replaced)."
+msgstr ""
+
+msgid "The program of {} is not found."
+msgstr ""
+
+msgid "The program of {} is not found: {}"
+msgstr ""
+
+msgid "The rating of the engines chosen after each tournament they played: the versions of an engine, side by side."
+msgstr ""
+
+msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
+msgstr ""
+
+msgid "The same opening for every pair of a round"
+msgstr ""
+
+msgid "The search stops once a solution has stayed the engine's first move for this many more plies of depth. 0: every search takes its whole time."
+msgstr ""
+
+msgid "The share of drawn games expected between the two engines, at this time control."
+msgstr ""
+
+msgid "The spread of the advantage the openings give, in Elo: what playing each opening twice, colours reversed, cancels out."
+msgstr ""
+
+msgid "The starting positions of the openings shown, in the order shown: a book of them, to keep them or to remove them from another book."
+msgstr ""
+
+msgid "The system could not open:"
+msgstr ""
+
+msgid "The time control needs a base time or an increment."
+msgstr ""
+
+msgid "The time per move must be positive."
+msgstr ""
+
+msgid "The tournament is not running: resume it to play the new games."
+msgstr ""
+
+msgid "The tournament was changed."
+msgstr ""
+
+msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
+msgstr ""
+
+msgid "The working directory of {} is not found."
+msgstr ""
+
+msgid "Theme"
+msgstr ""
+
+msgid "They have not played each other."
+msgstr ""
+
+msgid "This draw ratio and this RMS bias are not compatible."
+msgstr ""
+
+msgid "This match is already finished."
+msgstr ""
+
+msgid "Those with a problem"
+msgstr ""
+
+msgid "Threads"
+msgstr ""
+
+msgid "Tick engines on the left."
+msgstr ""
+
+msgid "Time"
+msgstr ""
+
+msgid "Time %"
+msgstr ""
+
+msgid "Time / move"
+msgstr ""
+
+msgid "Time control"
+msgstr ""
+
+msgid "Time per move"
+msgstr ""
+
+msgid "Total"
+msgstr ""
+
+msgid "Tournament"
+msgstr ""
+
+msgid "Tournaments"
+msgstr ""
+
+msgid "Tournaments folder"
+msgstr ""
+
+msgid "Two different engines chosen"
+msgstr ""
+
+msgid "Two draws, and a win and a loss, among the pairs scoring 1."
+msgstr ""
+
+msgid "Two engines: is the new version stronger? Statistics from A's point of view."
+msgstr ""
+
+msgid "UCI compliance report"
+msgstr ""
+
+msgid "UCI compliance: step {} failed, see the report"
+msgstr ""
+
+msgid "UDP port"
+msgstr ""
+
+msgid "Undo the last change"
+msgstr ""
+
+msgid "Unknown engine: {}"
+msgstr ""
+
+msgid "Unreadable PGN."
+msgstr ""
+
+msgid "Use it for the next tournament"
+msgstr ""
+
+msgid "Use these bounds"
+msgstr ""
+
+msgid "Value"
+msgstr ""
+
+msgid "Variance ratio"
+msgstr ""
+
+msgid "Void this game (no replay)"
+msgstr ""
+
+msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
+msgstr ""
+
+msgid "Web page"
+msgstr ""
+
+msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
+msgstr ""
+
+msgid "White"
+msgstr ""
+
+msgid "White disconnects"
+msgstr ""
+
+msgid "White makes an illegal move"
+msgstr ""
+
+msgid "White mates"
+msgstr ""
+
+msgid "White resigns"
+msgstr ""
+
+msgid "White wins by adjudication"
+msgstr ""
+
+msgid "White wins by adjudication: SyzygyTB"
+msgstr ""
+
+msgid "White {:.0f} % · draw {:.0f} % · Black {:.0f} %"
+msgstr ""
+
+msgid "White ×2"
+msgstr ""
+
+msgid "White's connection stalls"
+msgstr ""
+
+msgid "White's score over the games."
+msgstr ""
+
+msgid "WinBoard engines (xboard protocol) are run through a translation to UCI built into fastchess-gui. Automatic: found out when the engine is read."
+msgstr ""
+
+msgid "Wins"
+msgstr ""
+
+msgid "Wins of A"
+msgstr ""
+
+msgid "With a clock, %d games × %d threads exceed the %d physical cores."
+msgstr ""
+
+msgid "With a time: physical cores − 1, divided by the engines' threads; with nodes or a depth, every hardware thread."
+msgstr ""
+
+msgid "Withdraw an engine"
+msgstr ""
+
+msgid "Without a book, every game starts from the initial position."
+msgstr ""
+
+msgid "Without a book, the 960 starting positions, in random order."
+msgstr ""
+
+msgid "Without stopping it: running games go on, nothing played is lost."
+msgstr ""
+
+msgid "Won twice by one engine"
+msgstr ""
+
+msgid "Working directory"
+msgstr ""
+
+msgid "Working directory not found: {}"
+msgstr ""
+
+msgid "Write error in {}"
+msgstr ""
+
+msgid "Write the live files"
+msgstr ""
+
+msgid "Written at {} in {}"
+msgstr ""
+
+msgid "Wrong PVs"
+msgstr ""
+
+msgid "about {} game"
+msgid_plural "about {} games"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "accepted: {:.1f} %"
+msgstr ""
+
+msgid "against"
+msgstr ""
+
+msgid "against {}"
+msgstr ""
+
+msgid "automatic"
+msgstr ""
+
+msgid "both"
+msgstr ""
+
+msgid "button"
+msgstr ""
+
+msgid "by %s"
+msgstr ""
+
+msgid "bye"
+msgstr ""
+
+msgid "colours reversed of an earlier one"
+msgstr ""
+
+msgid "decision time"
+msgstr ""
+
+msgid "depth {}"
+msgstr ""
+
+msgid "draws"
+msgstr ""
+
+msgid "dt=: when, during its search, the engine settled on the move it played. The Games tab draws these fields, move by move, for both engines."
+msgstr ""
+
+msgid "duplicate"
+msgstr ""
+
+msgid "duplicates"
+msgstr ""
+
+msgid "elo1 must be larger than elo0."
+msgstr ""
+
+msgid "fastchess-gui {} — {} physical cores, {} threads"
+msgstr ""
+
+msgid "filter"
+msgstr ""
+
+msgid "from a Polyglot book"
+msgstr ""
+
+msgid "game already over"
+msgstr ""
+
+msgid "games"
+msgstr ""
+
+msgid "games already over"
+msgstr ""
+
+msgid "games at least"
+msgstr ""
+
+msgid "illegal position"
+msgstr ""
+
+msgid "illegal positions"
+msgstr ""
+
+msgid "initial position"
+msgstr ""
+
+msgid "itself"
+msgstr ""
+
+msgid "live.pgn: the games in progress · standings.html · tournament.json (for scripts)"
+msgstr ""
+
+msgid "loss on time or crash"
+msgstr ""
+
+msgid "losses"
+msgstr ""
+
+msgid "moves"
+msgstr ""
+
+msgid "nElo of A (95% CI)"
+msgstr ""
+
+msgid "nodes"
+msgstr ""
+
+msgid "normalized: bounds in nElo (fishtest, OpenBench). logistic: classic Elo. bayesian: BayesElo, without pentanomial."
+msgstr ""
+
+msgid "pairs"
+msgstr ""
+
+msgid "replay requested"
+msgstr ""
+
+msgid "send at startup"
+msgstr ""
+
+msgid "the one chosen in the Live tab"
+msgstr ""
+
+msgid "true difference (Elo)"
+msgstr ""
+
+msgid "two draws {:.1f} % · a win and a loss {:.1f} %"
+msgstr ""
+
+msgid "until stopped"
+msgstr ""
+
+msgid "until the SPRT decides"
+msgstr ""
+
+msgid "until the next game starts"
+msgstr ""
+
+msgid "uses {:.0f} % of a core while its opponent thinks"
+msgstr ""
+
+msgid "uses {:.1f} cores while it thinks, with {} thread(s)"
+msgstr ""
+
+msgid "voided"
+msgstr ""
+
+msgid "wins"
+msgstr ""
+
+msgid "wins and losses"
+msgstr ""
+
+msgid "without mirrored positions"
+msgstr ""
+
+msgid "{:+.2f}  (DrawElo {:.0f})"
+msgstr ""
+
+msgid "{:+} games ({} → {})"
+msgstr ""
+
+msgid "{:.0f} games/h · about {} left"
+msgstr ""
+
+msgid "{}  ({} openings)"
+msgstr ""
+
+msgid "{} / {} games"
+msgstr ""
+
+msgid "{} / {} points"
+msgstr ""
+
+msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
+msgstr ""
+
+msgid "{} changed: its options were read again."
+msgstr ""
+
+msgid "{} could not be read: kept as {}"
+msgstr ""
+
+msgid "{} crash or stall"
+msgid_plural "{} crashes or stalls"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} crashes"
+msgstr ""
+
+msgid "{} does not play Chess960."
+msgstr ""
+
+msgid "{} earlier match imported."
+msgid_plural "{} earlier matches imported."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} engine"
+msgid_plural "{} engines"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} engine imported; its options are being read."
+msgid_plural "{} engines imported; their options are being read."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} engines · {} games"
+msgstr ""
+
+msgid "{} game"
+msgid_plural "{} games"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} game adjudicated"
+msgid_plural "{} games adjudicated"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} game exported to {}"
+msgid_plural "{} games exported to {}"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} game pair"
+msgid_plural "{} game pairs"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} game per engine"
+msgid_plural "{} games per engine"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} game per tested engine"
+msgid_plural "{} games per tested engine"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} games +{} ={} -{} · {} lost on time, {} crashes, {} illegal moves · {:.0f} % of its clock used"
+msgstr ""
+
+msgid "{} games · {}"
+msgstr ""
+
+msgid "{} games, {} tournaments"
+msgstr ""
+
+msgid "{} illegal move"
+msgid_plural "{} illegal moves"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} illegal moves"
+msgstr ""
+
+msgid "{} is twice in the list of participants."
+msgstr ""
+
+msgid "{} loss on time"
+msgid_plural "{} losses on time"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} losses on time"
+msgstr ""
+
+msgid "{} match of an earlier version is not in the list yet."
+msgid_plural "{} matches of an earlier version are not in the list yet."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} matches × {} pairs of games, plus tiebreaks"
+msgstr ""
+
+msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
+msgstr ""
+
+msgid "{} nodes"
+msgstr ""
+
+msgid "{} of {} openings"
+msgstr ""
+
+msgid "{} opening"
+msgid_plural "{} openings"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} opening written to {}"
+msgid_plural "{} openings written to {}"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} option read."
+msgid_plural "{} options read."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} pairings × 2 games × {} cycles"
+msgstr ""
+
+msgid "{} pieces"
+msgstr ""
+
+msgid "{} played game is played again"
+msgid_plural "{} played games are played again"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} played game stops counting"
+msgid_plural "{} played games stop counting"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} played · {} running · {} to play"
+msgstr ""
+
+msgid "{} plays with {} % of the time"
+msgstr ""
+
+msgid "{} position"
+msgid_plural "{} positions"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} position written to {}"
+msgid_plural "{} positions written to {}"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} rounds × {} pairings × 2 games"
+msgstr ""
+
+msgid "{} s/move"
+msgstr ""
+
+msgid "{} searches to depth {}"
+msgstr ""
+
+msgid "{} shown"
+msgstr ""
+
+msgid "{} will be the book of the next tournament."
+msgstr ""
+
+msgid "{} · depth {} · {}"
+msgstr ""
+
+msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
+msgstr ""
+
+msgid "{} · {} games"
+msgstr ""
+
+msgid "{} · {} games · Elo {} · {}"
+msgstr ""
+
+msgid "{} · {} games · first: {} · {}"
+msgstr ""
+
+msgid "{} – fastchess-gui"
+msgstr ""
+
+msgid "{} – {} · {} games"
+msgstr ""
+
+msgid "{}: decision"
+msgstr ""
+
+msgid "{}: program not found ({})"
+msgstr ""
+
+msgid "{}: seldepth"
+msgstr ""
+
+msgid "{}: {}"
+msgstr ""
+
+msgid "· %s · %d in parallel%s"
+msgstr ""
+
+msgid "· STS points"
+msgstr ""
+
+msgid "· draws %.1f %%"
+msgstr ""
+
+msgid "· pairs [0-2]: %d  %d  %d  %d  %d"
+msgstr ""
+
+msgid "· {} lines left out"
+msgstr ""
+
+msgid "● On air"
+msgstr ""
+
+msgid "● On air · {} clients"
+msgstr ""
+
+msgid "● On air · {} games · pushed at {}"
+msgstr ""
+
+msgid "● On air · {} viewers"
+msgstr ""
+
+msgid "✓ As expected for the {} engines measured"
+msgstr ""
+
+msgid "✓ No played game is lost: voided games stay in the PGN files and the journal."
+msgstr ""
+
+msgid "✓ works · ! problem · ↔ WinBoard · right click: more"
+msgstr ""

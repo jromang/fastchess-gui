@@ -58,7 +58,8 @@ this repository still builds unchanged.
   as a grid with the time to solution, the totals and the STS score, saved to compare versions, exported as CSV.
 - Chess960 (the 960 positions, or a book), draw / resign / max moves / Syzygy
   adjudication, crash recovery, a desktop notification when a match ends.
-- Light and dark themes; English, French or German, following the system (can be changed in the settings).
+- Light and dark themes; English, French, German, Spanish, Italian, Portuguese (Brazil), Russian or Chinese
+  (simplified), following the system (can be changed in the settings).
 
 | Standings, ratings and latest results | Games and replay |
 |---|---|

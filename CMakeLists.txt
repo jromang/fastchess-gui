@@ -198,6 +198,14 @@ if(FCG_BUILD_GUI)
     set(DISABLE_PACKAGE_CONFIG_AND_INSTALL ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(mbedtls)
 
+    # The translations: .po files read by tinygettext, UTF-8 only (no iconv).
+    FetchContent_Declare(tinygettext
+        GIT_REPOSITORY https://github.com/tinygettext/tinygettext.git
+        GIT_TAG 0ebef71ef7aa07ec6d026164fbe9472e6f82a583)
+    set(TINYGETTEXT_UTF8_ONLY ON CACHE BOOL "" FORCE)
+    set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(tinygettext)
+
     add_library(imgui_lib STATIC
         ${imgui_SOURCE_DIR}/imgui.cpp
         ${imgui_SOURCE_DIR}/imgui_draw.cpp
@@ -250,11 +258,23 @@ if(FCG_BUILD_GUI)
         list(APPEND FCG_FONT_CPPS ${cpp})
     endforeach()
 
+    # The translations, embedded with their language codes (gui/i18n/<code>.po).
+    file(GLOB FCG_PO_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gui/i18n/*.po)
+    set(FCG_PO_CPP ${CMAKE_CURRENT_BINARY_DIR}/generated/translations.cpp)
+    string(REPLACE ";" "|" FCG_PO_LIST "${FCG_PO_FILES}")
+    add_custom_command(
+        OUTPUT ${FCG_PO_CPP}
+        COMMAND ${CMAKE_COMMAND} -DOUT=${FCG_PO_CPP} "-DFILES=${FCG_PO_LIST}"
+                -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_po.cmake
+        DEPENDS ${FCG_PO_FILES} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_po.cmake
+        COMMENT "Embedding translations"
+        VERBATIM)
+
     file(GLOB FCG_GUI_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/*.cpp)
     list(REMOVE_ITEM FCG_GUI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/main.cpp)
 
     # Everything except main(), so the unit tests can link it too.
-    add_library(fcg_lib STATIC ${FCG_GUI_SOURCES} ${FCG_ASSET_CPP} ${FCG_FONT_CPPS})
+    add_library(fcg_lib STATIC ${FCG_GUI_SOURCES} ${FCG_ASSET_CPP} ${FCG_FONT_CPPS} ${FCG_PO_CPP})
     target_compile_features(fcg_lib PUBLIC cxx_std_20)
     target_include_directories(fcg_lib PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/gui/src
@@ -263,7 +283,7 @@ if(FCG_BUILD_GUI)
     )
     target_compile_options(fcg_lib PRIVATE -Wall -Wextra)
     target_compile_definitions(fcg_lib PUBLIC FCG_VERSION="${PROJECT_VERSION}")
-    target_link_libraries(fcg_lib PUBLIC fcg_tournament imgui_lib PRIVATE mbedtls)
+    target_link_libraries(fcg_lib PUBLIC fcg_tournament imgui_lib PRIVATE mbedtls tinygettext)
     if(WIN32)
         target_link_libraries(fcg_lib PUBLIC ws2_32)
     endif()

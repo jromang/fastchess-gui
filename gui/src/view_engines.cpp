@@ -183,7 +183,7 @@ void App::pollProbe() {
         if (setup_.engine_b == old) setup_.engine_b = e.name;
     }
 
-    probe_message_ = trf("{} options read.", e.uci_options.size());
+    probe_message_ = trn("{} option read.", "{} options read.", e.uci_options.size(), e.uci_options.size());
     storage_.saveEngines(engines_);
 }
 
@@ -870,7 +870,8 @@ void App::importEngines(const ImportResult& imported) {
         ++added;
     }
     for (const auto& note : imported.notes) Console::instance().add(note, true);
-    Console::instance().add(trf("{} engines imported; their options are being read.", added));
+    Console::instance().add(trn("{} engine imported; its options are being read.",
+                                "{} engines imported; their options are being read.", added, added));
     if (added > 0) selected_engine_ = static_cast<int>(engines_.size()) - added;
     storage_.saveEngines(engines_);
 }

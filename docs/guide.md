@@ -16,9 +16,13 @@ A navigation rail on the left leads to six pages:
 | Log | fastchess' own output and the messages of the GUI |
 | Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, the tournaments folder |
 
-The interface is in English, French or German. At startup it follows the first preferred language of the system
-(French or German if it is one of them, English otherwise); it can be forced in **Settings**. The theme is light
-unless dark, or the system's choice, is picked in **Settings**.
+The interface is in English, French, German, Spanish, Italian, Brazilian Portuguese, Russian or simplified Chinese.
+At startup it follows the first preferred language of the system (English when there is no translation for it); it
+can be forced in **Settings**. Chinese uses a font of the system: Microsoft YaHei on Windows, Noto Sans CJK or
+WenQuanYi on Linux. The theme is light unless dark, or the system's choice, is picked in **Settings**.
+
+The Spanish, Italian, Portuguese, Russian and Chinese translations are new: corrections from players of those
+languages are welcome. They are plain `.po` files in `gui/i18n`, which Poedit and the like open.
 
 The pages use the whole window, whatever its size: the Live tab's boards grow with it, the new tournament form
 splits into two columns on a wide window, and the list of the Engines, Books and Ratings pages can be widened by
@@ -377,8 +381,11 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
   its own tests, `fcg-tournament-tests`. [docs/design/tournament.md](design/tournament.md) describes it.
 - `gui/src` holds the application, `gui/tests` its tests (`fastchess-gui-tests`, including real tournaments with
   fastchess' random mover engine). The code is written in English; every user visible string goes through `TR()`
-  or `trf()`; `gui/src/i18n_table.cpp` holds the French text and `gui/src/i18n_table_de.cpp` the German. A test
-  fails when a `TR()` string has no French or German translation, or when a translation does not keep the `{}` and
-  `%d` placeholders of the English text.
+  or `trf()`, `trn()` when it holds a count (`trn("{} game", "{} games", n, n)`: the right plural in every
+  language), and `N_()` marks the strings translated later through a variable. The translations are the `.po`
+  files of `gui/i18n`, embedded in the program and read with tinygettext. `python3 gui/i18n/update.py` writes
+  `messages.pot` from the sources and adds new messages to every `.po` file (removing those gone). A test fails
+  when a message has no translation in a language, when a translation does not keep the `{}` and `%d`
+  placeholders of the English text, or when a plural message lacks one of its language's forms.
 - The fastchess hooks are listed in the README. `make` in `app/` still builds and tests the upstream command line
   tool.

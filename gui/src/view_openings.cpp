@@ -19,7 +19,8 @@ float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
 
 bool chess960(const tour::TournamentState& t) { return t.spec().conditions.variant == fastchess::VariantType::FRC; }
 
-const char* SHOW[] = {"All openings", "A colour won both games of a pair", "Drawn twice", "Won twice by one engine"};
+const char* SHOW[] = {N_("All openings"), N_("A colour won both games of a pair"), N_("Drawn twice"),
+                      N_("Won twice by one engine")};
 
 bool shown(const tour::OpeningStats& o, int show) {
     switch (show) {

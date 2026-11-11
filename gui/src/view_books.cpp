@@ -226,14 +226,16 @@ void App::drawBookDetail(BookEntry& book) {
     // What the reading found.
     ImGui::Spacing();
     if (book_reading_ && book_reading_->index == selected_book_) {
-        ImGui::TextDisabled("%s", trf("Reading… {} openings", ui::formatCount(book_reading_->done->load())).c_str());
+        ImGui::TextDisabled("%s", trn("Reading… {} opening", "Reading… {} openings", book_reading_->done->load(),
+                                      ui::formatCount(book_reading_->done->load()))
+                                      .c_str());
     } else if (!book_scan_error_.empty() && book_scan_index_ == selected_book_) {
         ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
         ImGui::TextWrapped("%s", book_scan_error_.c_str());
         ImGui::PopStyleColor();
     } else if (book_scan_ && book_scan_index_ == selected_book_) {
         const auto& scan    = *book_scan_;
-        std::string summary = trf("{} openings", scan.size());
+        std::string summary = trn("{} opening", "{} openings", scan.size(), scan.size());
         if (scan.kind() == tour::BookScan::Kind::Polyglot) summary += " · " + std::string(TR("from a Polyglot book"));
         if (scan.chess960()) summary += " · Chess960";
         ImGui::TextUnformatted(summary.c_str());

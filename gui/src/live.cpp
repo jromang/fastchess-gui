@@ -288,6 +288,30 @@ void GuiObserver::onMove(int slot_index, chess::Color mover, const fastchess::Mo
     st.version++;
 }
 
+// The reasons fastchess gives for the end of a game, translated where they are shown: TR(reasons_[i]).
+[[maybe_unused]] const char* const GAME_END_REASONS[] = {
+    N_("White mates"),
+    N_("Black mates"),
+    N_("White resigns"),
+    N_("Black resigns"),
+    N_("White makes an illegal move"),
+    N_("Black makes an illegal move"),
+    N_("White disconnects"),
+    N_("Black disconnects"),
+    N_("White's connection stalls"),
+    N_("Black's connection stalls"),
+    N_("White wins by adjudication"),
+    N_("Black wins by adjudication"),
+    N_("White wins by adjudication: SyzygyTB"),
+    N_("Black wins by adjudication: SyzygyTB"),
+    N_("Draw by adjudication"),
+    N_("Draw by adjudication: SyzygyTB"),
+    N_("Draw by 3-fold repetition"),
+    N_("Draw by fifty moves rule"),
+    N_("Draw by insufficient mating material"),
+    N_("Draw by stalemate"),
+};
+
 uint16_t GuiObserver::internReason(const std::string& reason) {
     if (auto it = reason_index_.find(reason); it != reason_index_.end()) return it->second;
     if (reasons_.size() >= 65535) return 0;
@@ -307,7 +331,7 @@ void GuiObserver::onGameEnd(int slot_index, std::size_t, std::size_t, const fast
     st.active   = false;
     st.thinking = false;
     st.result   = counted ? fastchess::pgn::PgnBuilder::getResultFromWhiteMatch(data.players.white) : "*";
-    st.reason   = counted ? data.reason : "Game interrupted";
+    st.reason   = counted ? data.reason : N_("Game interrupted");
     st.version++;
 }
 

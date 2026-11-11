@@ -73,6 +73,11 @@ void drawIcon(ImDrawList* dl, Icon icon, ImVec2 center, float size, ImU32 col);
 // The fonts loaded at startup: titles and icons; the text font is ImGui's default.
 void setFonts(ImFont* text, ImFont* titles, ImFont* icons);
 
+// Chinese needs a system font: requestCjkFont() when Chinese text is to be shown, and it is merged in by
+// loadRequestedFonts(), called between frames.
+void requestCjkFont();
+void loadRequestedFonts(float size);
+
 // A button with a small drawn icon, so no icon font is needed.
 bool iconButton(const char* id, Icon icon, const char* label, bool enabled = true);
 

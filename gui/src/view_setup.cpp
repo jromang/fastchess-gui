@@ -290,7 +290,9 @@ void App::drawSprtCalculator() {
                 ImGui::TextDisabled("%s", trf("= {:.2f} logistic Elo", std::abs(elo) < 0.005 ? 0.0 : elo).c_str());
             }
             ImGui::BulletText("%s", trf("accepted: {:.1f} %", 100 * o.pass).c_str());
-            ImGui::BulletText("%s", trf("about {} games", ui::formatCount(static_cast<uint64_t>(o.games))).c_str());
+            ImGui::BulletText("%s", trn("about {} game", "about {} games", static_cast<uint64_t>(o.games),
+                                        ui::formatCount(static_cast<uint64_t>(o.games)))
+                                        .c_str());
         }
     }
     ImGui::Spacing();
@@ -933,27 +935,29 @@ void App::drawSetupSummary() {
             }
             formula = setup_.mode == MatchMode::Sprt       ? std::string(TR("until the SPRT decides"))
                       : setup_.mode == MatchMode::Infinite ? std::string(TR("until stopped"))
-                                                           : trf("{} game pairs", games / 2);
+                                                           : trn("{} game pair", "{} game pairs", games / 2, games / 2);
             break;
         case TournamentFormat::RoundRobin: {
             const uint64_t pairs = n >= 2 ? static_cast<uint64_t>(n) * (n - 1) / 2 : 0;
             games                = pairs * 2 * cycles;
             formula              = trf("{} pairings × 2 games × {} cycles", pairs, cycles);
-            per_engine           = trf("{} games per engine", n >= 2 ? (n - 1) * 2 * cycles : 0);
+            const auto each      = static_cast<uint64_t>(n >= 2 ? (n - 1) * 2 * cycles : 0);
+            per_engine           = trn("{} game per engine", "{} games per engine", each, each);
             break;
         }
         case TournamentFormat::Gauntlet: {
             const uint64_t pairs = n >= 2 ? static_cast<uint64_t>(seeds) * (n - seeds) : 0;
             games                = pairs * 2 * cycles;
             formula              = trf("{} pairings × 2 games × {} cycles", pairs, cycles);
-            per_engine           = trf("{} games per tested engine", n >= 2 ? (n - seeds) * 2 * cycles : 0);
+            const auto each      = static_cast<uint64_t>(n >= 2 ? (n - seeds) * 2 * cycles : 0);
+            per_engine           = trn("{} game per tested engine", "{} games per tested engine", each, each);
             break;
         }
         case TournamentFormat::Swiss: {
             const uint64_t pairs = static_cast<uint64_t>(n / 2);
             games                = pairs * 2 * cycles;
             formula              = trf("{} rounds × {} pairings × 2 games", cycles, pairs);
-            per_engine           = trf("{} games per engine", 2 * cycles);
+            per_engine           = trn("{} game per engine", "{} games per engine", 2 * cycles, 2 * cycles);
             break;
         }
         case TournamentFormat::Knockout: {
@@ -965,7 +969,7 @@ void App::drawSetupSummary() {
     }
 
     ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.8f);
-    ImGui::TextUnformatted(games ? trf("{} games", games).c_str() : "∞");
+    ImGui::TextUnformatted(games ? trn("{} game", "{} games", games, games).c_str() : "∞");
     ImGui::PopFont();
     ImGui::TextDisabled("%s", formula.c_str());
     if (!per_engine.empty()) ImGui::TextDisabled("%s", per_engine.c_str());
@@ -995,7 +999,7 @@ void App::drawSetupSummary() {
         check(!setup_.engine_a.empty() && !setup_.engine_b.empty() && setup_.engine_a != setup_.engine_b,
               TR("Two different engines chosen"));
     } else {
-        check(n >= 2, trf("{} engines", n));
+        check(n >= 2, trn("{} engine", "{} engines", n, n));
     }
     std::vector<std::string> names;
     if (setup_.format == TournamentFormat::Match) {

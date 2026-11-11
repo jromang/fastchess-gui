@@ -360,6 +360,7 @@ int main(int argc, char** argv) {
                 }
             }
 
+            fcg::ui::loadRequestedFonts(16.0f);  // between frames: the size loadFonts() used
             if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
                 ImGui_ImplOpenGL3_NewFrame();

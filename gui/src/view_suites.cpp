@@ -146,7 +146,8 @@ void App::drawSuites() {
         ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ui::WARN), "%s", suite_error_.c_str());
         ImGui::PopTextWrapPos();
     } else if (suite_) {
-        ImGui::TextDisabled("%s", trf("{} positions", suite_->positions.size()).c_str());
+        ImGui::TextDisabled(
+            "%s", trn("{} position", "{} positions", suite_->positions.size(), suite_->positions.size()).c_str());
         if (suite_->skipped > 0) {
             ImGui::SameLine();
             ImGui::TextDisabled("%s", trf("· {} lines left out", suite_->skipped).c_str());

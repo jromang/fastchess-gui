@@ -370,13 +370,14 @@ void App::drawEngineCard() {
         ImGui::SameLine();
         ImGui::TextUnformatted(text.c_str());
     };
-    health(card_.timeouts == 0, trf("{} losses on time", card_.timeouts));
+    health(card_.timeouts == 0, trn("{} loss on time", "{} losses on time", card_.timeouts, card_.timeouts));
     ImGui::SameLine(0, px(24));
-    health(card_.crashes == 0, trf("{} crashes or stalls", card_.crashes));
+    health(card_.crashes == 0, trn("{} crash or stall", "{} crashes or stalls", card_.crashes, card_.crashes));
     ImGui::SameLine(0, px(24));
-    health(card_.illegal == 0, trf("{} illegal moves", card_.illegal));
+    health(card_.illegal == 0, trn("{} illegal move", "{} illegal moves", card_.illegal, card_.illegal));
     ImGui::SameLine(0, px(24));
-    ImGui::TextDisabled("%s", trf("{} games adjudicated", card_.adjudicated).c_str());
+    ImGui::TextDisabled(
+        "%s", trn("{} game adjudicated", "{} games adjudicated", card_.adjudicated, card_.adjudicated).c_str());
 
     // Search statistics, read from the move comments of its games when asked: thousands of games take a moment.
     if (!card_search_.read) {

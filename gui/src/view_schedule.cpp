@@ -335,7 +335,7 @@ void App::drawEditPanel() {
                 if (pick) edit.games.emplace_back(r.encounter, r.game);
             }
             edit.why = edit_replay_filter_ == 0 ? TR("loss on time or crash") : TR("replay requested");
-            ImGui::TextDisabled("%s", trf("{} games", edit.games.size()).c_str());
+            ImGui::TextDisabled("%s", trn("{} game", "{} games", edit.games.size(), edit.games.size()).c_str());
             if (edit.games.empty()) ready = false;
             break;
         }
@@ -360,8 +360,13 @@ void App::drawEditPanel() {
                            : trf("{:+} games ({} → {})", delta, impact.games_before, impact.games_after).c_str());
             ImGui::PopFont();
             if (impact.replayed)
-                ImGui::TextUnformatted(trf("{} played games are played again", impact.replayed).c_str());
-            if (impact.voided) ImGui::TextUnformatted(trf("{} played games stop counting", impact.voided).c_str());
+                ImGui::TextUnformatted(trn("{} played game is played again", "{} played games are played again",
+                                           impact.replayed, impact.replayed)
+                                           .c_str());
+            if (impact.voided)
+                ImGui::TextUnformatted(
+                    trn("{} played game stops counting", "{} played games stop counting", impact.voided, impact.voided)
+                        .c_str());
             if (games_per_hour_ > 0 && delta + static_cast<int64_t>(impact.replayed) != 0) {
                 const double hours = (delta + static_cast<double>(impact.replayed)) / games_per_hour_;
                 ImGui::TextDisabled(

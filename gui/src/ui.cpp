@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <fstream>
+#include <iterator>
+#include <vector>
 
 #include <SDL3/SDL_misc.h>
 #include <imgui_internal.h>
@@ -262,6 +265,53 @@ void setFonts(ImFont* text, ImFont* titles, ImFont* icons) {
     ImGui::GetIO().FontDefault = text;
     g_title_font               = titles;
     g_icon_font                = icons;
+}
+
+namespace {
+bool g_cjk_requested = false;
+bool g_cjk_loaded    = false;
+}  // namespace
+
+void requestCjkFont() { g_cjk_requested = true; }
+
+void loadRequestedFonts(float size) {
+    if (!g_cjk_requested || g_cjk_loaded) return;
+    g_cjk_loaded = true;
+
+    // A system font with the Chinese characters, read once and merged into the text and the title fonts: some
+    // 20 MB, so only when Chinese is shown. Its glyphs are made when first drawn.
+    struct Candidate {
+        const char* path;
+        int face;  // in a collection: Noto Sans CJK has JP, KR, SC (2), TC...
+    };
+#ifdef _WIN32
+    const Candidate candidates[] = {{"C:\\Windows\\Fonts\\msyh.ttc", 0},
+                                    {"C:\\Windows\\Fonts\\msyh.ttf", 0},
+                                    {"C:\\Windows\\Fonts\\simsun.ttc", 0}};
+#else
+    const Candidate candidates[] = {{"/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc", 2},
+                                    {"/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 2},
+                                    {"/usr/share/fonts/google-noto-cjk/NotoSansCJK-Regular.ttc", 2},
+                                    {"/usr/share/fonts/truetype/wqy/wqy-microhei.ttc", 0},
+                                    {"/usr/share/fonts/wenquanyi/wqy-microhei/wqy-microhei.ttc", 0}};
+#endif
+    static std::vector<unsigned char> data;  // the atlas reads from it for as long as the program runs
+    for (const auto& c : candidates) {
+        std::ifstream in(c.path, std::ios::binary);
+        if (!in) continue;
+        data.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+        if (data.empty()) continue;
+        for (ImFont* font : {ImGui::GetIO().FontDefault, g_title_font}) {
+            if (!font) continue;
+            ImFontConfig config;
+            config.MergeMode            = true;
+            config.DstFont              = font;
+            config.FontNo               = static_cast<ImU32>(c.face);
+            config.FontDataOwnedByAtlas = false;
+            ImGui::GetIO().Fonts->AddFontFromMemoryTTF(data.data(), static_cast<int>(data.size()), size, &config);
+        }
+        return;
+    }
 }
 
 void drawIcon(ImDrawList* dl, Icon icon, ImVec2 c, float size, ImU32 col) {

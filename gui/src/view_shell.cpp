@@ -127,7 +127,7 @@ void App::importLegacyRuns() {
             Console::instance().add(trf("Cannot import {}: {}", dir.string(), e.what()), true);
         }
     }
-    Console::instance().add(trf("{} earlier matches imported.", imported));
+    Console::instance().add(trn("{} earlier match imported.", "{} earlier matches imported.", imported, imported));
     tournaments_dirty_ = true;
 }
 
@@ -155,6 +155,7 @@ void App::openTournament(const fs::path& dir) {
 // ---------------------------------------------------------------------------
 
 void App::drawShell() {
+    if (i18n::language() == i18n::Language::Chinese) ui::requestCjkFont();
     const auto* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
@@ -309,8 +310,9 @@ void App::drawHome() {
         ui::beginCard("unfinished_card");
         const auto& u = *unfinished_;
         ImGui::TextUnformatted(u.spec.name.c_str());
-        ImGui::TextDisabled("%s",
-                            (u.total ? trf("{} / {} games", u.played, *u.total) : trf("{} games", u.played)).c_str());
+        ImGui::TextDisabled(
+            "%s", (u.total ? trf("{} / {} games", u.played, *u.total) : trn("{} game", "{} games", u.played, u.played))
+                      .c_str());
         if (ui::iconButton("resume_match", ui::Icon::Play, TR("Resume"))) resumeRun();
         ImGui::SameLine();
         ImGui::TextDisabled("%s", TR("It continues exactly where it stopped: no game is lost or played twice."));
@@ -322,7 +324,10 @@ void App::drawHome() {
     if (legacy_runs_ > 0) {
         ImGui::Spacing();
         ui::beginCard("legacy_card");
-        ImGui::TextUnformatted(trf("{} matches of an earlier version are not in the list yet.", legacy_runs_).c_str());
+        ImGui::TextUnformatted(trn("{} match of an earlier version is not in the list yet.",
+                                   "{} matches of an earlier version are not in the list yet.", legacy_runs_,
+                                   legacy_runs_)
+                                   .c_str());
         ImGui::SameLine();
         if (ImGui::SmallButton(TR("Import them"))) importLegacyRuns();
         ui::endCard();
@@ -452,7 +457,7 @@ void App::drawWorkspaceHeader() {
 
     const auto detail = info.format == tour::Format::Match
                             ? (info.sprt ? fmt::format("SPRT [{:g}, {:g}] {}", info.elo0, info.elo1, info.model)
-                               : info.total_games ? trf("{} games", info.total_games)
+                               : info.total_games ? trn("{} game", "{} games", info.total_games, info.total_games)
                                                   : std::string(TR("until stopped")))
                             : trf("{} engines · {} games", info.participants, info.total_games);
     ImGui::TextDisabled("%s", fmt::format("{} · {} · {}", formatLabel(info.format), info.limit_text, detail).c_str());
@@ -657,15 +662,17 @@ void App::drawSettings() {
 
     ui::label(TR("Language"), label);
     ImGui::SetNextItemWidth(px(220));
-    // Each language under its own name.
-    const char* languages[] = {TR("Automatic (system)"), "Deutsch", "English", "Français"};
-    const char* codes[]     = {"auto", "de", "en", "fr"};
-    int language            = 0;
-    for (int i = 1; i < 4; ++i) {
-        if (setup_.language == codes[i]) language = i;
+    // Each language under its own name: Chinese too, hence its font.
+    ui::requestCjkFont();
+    const auto& all = i18n::languages();
+    std::vector<const char*> names{TR("Automatic (system)")};
+    int language = 0;
+    for (std::size_t i = 0; i < all.size(); ++i) {
+        names.push_back(all[i].name);
+        if (setup_.language == all[i].code) language = static_cast<int>(i) + 1;
     }
-    if (ImGui::Combo("##language", &language, languages, 4)) {
-        setup_.language = codes[language];
+    if (ImGui::Combo("##language", &language, names.data(), static_cast<int>(names.size()))) {
+        setup_.language = language == 0 ? "auto" : all[static_cast<std::size_t>(language) - 1].code;
         i18n::setLanguage(i18n::resolve(setup_.language));
         changed = true;
     }

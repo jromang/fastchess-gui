@@ -216,7 +216,8 @@ std::string App::runStatusText() const {
         state = TR("Stopping…");
     } else if (run_.paused()) {
         const int n = run_.runningGames();
-        state = n > 1 ? trf("Paused ({} games finishing)", n) : n == 1 ? TR("Paused (1 game finishing)") : TR("Paused");
+        state =
+            n > 0 ? trn("Paused ({} game finishing)", "Paused ({} games finishing)", n, n) : std::string(TR("Paused"));
         if (run_.stoppingWhenIdle()) state = trf("Stopping after the running games ({})", n);
     } else {
         state = TR("Running");
@@ -555,7 +556,8 @@ void App::handleDialogs() {
                         ++n;
                     }
                 }
-                Console::instance().add(out ? trf("{} games exported to {}", n, path) : trf("Cannot write {}", path),
+                Console::instance().add(out ? trn("{} game exported to {}", "{} games exported to {}", n, n, path)
+                                            : trf("Cannot write {}", path),
                                         !out);
                 break;
             }
@@ -564,7 +566,9 @@ void App::handleDialogs() {
                 std::ofstream out(path, std::ios::binary | std::ios::trunc);
                 out << tour::openingsEpd(shown);
                 Console::instance().add(
-                    out ? trf("{} openings written to {}", shown.size(), path) : trf("Cannot write {}", path), !out);
+                    out ? trn("{} opening written to {}", "{} openings written to {}", shown.size(), shown.size(), path)
+                        : trf("Cannot write {}", path),
+                    !out);
                 break;
             }
             case Dialogs::Purpose::AddBook:
@@ -589,7 +593,8 @@ void App::handleDialogs() {
                     if (drop_mirrored_) drop |= tour::BOOK_MIRRORED;
                     try {
                         const auto n = book_scan_->writeEpd(path, drop);
-                        Console::instance().add(trf("{} positions written to {}", n, path));
+                        Console::instance().add(
+                            trn("{} position written to {}", "{} positions written to {}", n, n, path));
                         addBook(path);
                     } catch (const std::exception& e) {
                         Console::instance().add(e.what(), true);
