@@ -197,9 +197,16 @@ if(FCG_BUILD_GUI)
     set(MBEDTLS_FATAL_WARNINGS OFF CACHE BOOL "" FORCE)
     set(TF_PSA_CRYPTO_FATAL_WARNINGS OFF CACHE BOOL "" FORCE)
     set(DISABLE_PACKAGE_CONFIG_AND_INSTALL ON CACHE BOOL "" FORCE)
-    # Its CMakeLists asks for a CMake older than 3.10, which recent versions warn about: run it with 3.10 rules.
+    # Its CMakeLists asks for a CMake older than 3.10, which recent versions warn about: run it with 3.10 rules
+    # (CMake 4), and without the deprecation notice (CMake 3, which knows no such rule).
     set(CMAKE_POLICY_VERSION_MINIMUM 3.10)
+    if(CMAKE_VERSION VERSION_LESS 4.0)
+        set(CMAKE_WARN_DEPRECATED OFF)
+    endif()
     FetchContent_MakeAvailable(mbedtls)
+    if(CMAKE_VERSION VERSION_LESS 4.0)
+        unset(CMAKE_WARN_DEPRECATED)
+    endif()
     unset(CMAKE_POLICY_VERSION_MINIMUM)
 
     # The translations: .po files read by tinygettext, UTF-8 only (no iconv).

@@ -194,7 +194,12 @@ std::string formEncode(const std::vector<std::pair<std::string, std::string>>& f
         return out;
     };
     std::string out;
-    for (const auto& [name, value] : fields) out += (out.empty() ? "" : "&") + encode(name) + "=" + encode(value);
+    for (const auto& [name, value] : fields) {
+        if (!out.empty()) out += '&';
+        out += encode(name);
+        out += '=';
+        out += encode(value);
+    }
     return out;
 }
 
