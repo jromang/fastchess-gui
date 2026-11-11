@@ -224,21 +224,31 @@ TEST_CASE("the engine check runs fastchess' UCI compliance steps, and stops at t
 
 #ifndef _WIN32
 TEST_CASE("an engine that describes an option badly is read and checked, the option kept and settable") {
-    // Like Amyan 1.72 (a spin option without numbers) and Cerebro 3.03d (a default outside its range): fastchess
-    // refused the whole engine, so no option was shown and no game could start.
+    // What Amyan 1.72 and Cerebro 3.03d announce (#45): a spin option without bounds, one whose default is outside
+    // its range, a combo whose default is not one of its values. fastchess refused the whole engine for the first
+    // two, so no option was shown and no game could start.
     if (!fastchess::config::TournamentConfig)
         fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
     const auto dir = fs::temp_directory_path() / "fcg-bad-options";
     fs::remove_all(dir);
     fs::create_directories(dir);
+    std::ofstream(dir / "uci.txt") << "id name Cerebro 3.03d\n"
+                                      "id author Antonio Senatore\n"
+                                      "option name Hash type spin default 256 min 1 max 512\n"
+                                      "option name Pawn Hash type spin default 8 min 1 max 512\n"
+                                      "option name NalimovCache type spin default 64 min 2 max 16\n"
+                                      "option name NalimovPath type string default F:\\Sakk\\TB\n"
+                                      "option name MultiPV type spin min 1 max 255 default 1\n"
+                                      "option name Noise type spin default 4 min 2 max 6\n"
+                                      "option name Book Mode type combo default Tournamen var Tournament var Normal\n"
+                                      "option name Ponder type check default false\n"
+                                      "option name Clear Hash type button\n"
+                                      "option name Amyan MultiPV type spin default 1\n"
+                                      "uciok\n";
     const auto script = dir / "bad-options.sh";
     std::ofstream(script) << "#!/bin/sh\n"
                              "while read line; do case \"$line\" in\n"
-                             "uci) echo 'id name Bad options'; echo 'id author Test';\n"
-                             "     echo 'option name MultiPV type spin default 1';\n"
-                             "     echo 'option name Nalimov Cache type spin default 32 min 1 max 16';\n"
-                             "     echo 'option name Hash type spin default 16 min 1 max 1024';\n"
-                             "     echo uciok;;\n"
+                             "uci) cat \"$(dirname \"$0\")/uci.txt\";;\n"
                              "isready) echo readyok;;\n"
                              "go*) echo 'info depth 1 score cp 0 pv e2e4'; echo 'bestmove e2e4';;\n"
                              "quit) exit 0;;\n"
@@ -246,16 +256,17 @@ TEST_CASE("an engine that describes an option badly is read and checked, the opt
     fs::permissions(script, fs::perms::owner_all);
 
     EngineEntry entry;
-    entry.name       = "Bad options";
+    entry.name       = "Cerebro 3.03d";
     entry.cmd        = script.string();
     entry.protocol   = "uci";
     const auto probe = probeEngine(entry);
     REQUIRE_MESSAGE(probe.ok, probe.error);
     std::set<std::string> names;
     for (const auto& o : probe.options) names.insert(o.name);
-    CHECK(names == std::set<std::string>{"MultiPV", "Nalimov Cache", "Hash"});
+    CHECK(names == std::set<std::string>{"Hash", "Pawn Hash", "NalimovCache", "NalimovPath", "MultiPV", "Noise",
+                                         "Book Mode", "Ponder", "Clear Hash", "Amyan MultiPV"});
 
-    entry.options      = {{"MultiPV", "2"}, {"Nalimov Cache", "8"}};
+    entry.options      = {{"NalimovCache", "16"}, {"Amyan MultiPV", "2"}, {"MultiPV", "3"}};
     const auto checked = checkEngine(entry);
     CHECK_MESSAGE(checked.ok, checked.message);
     fs::remove_all(dir);
