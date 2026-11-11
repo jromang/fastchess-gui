@@ -839,8 +839,10 @@ TEST_CASE("an engine list that cannot be read is set aside, not replaced by an e
     CHECK(storage.loadEngines().empty());
     REQUIRE(fs::exists(root / "engines.json.unreadable"));
     storage.saveEngines({});  // what quitting does
-    std::ifstream in(root / "engines.json.unreadable");
-    CHECK(std::string(std::istreambuf_iterator<char>(in), {}).find("Stockfish") != std::string::npos);
+    {
+        std::ifstream in(root / "engines.json.unreadable");  // closed before the folder is removed (Windows)
+        CHECK(std::string(std::istreambuf_iterator<char>(in), {}).find("Stockfish") != std::string::npos);
+    }
 
     // A second unreadable list does not replace the first one set aside.
     std::ofstream(root / "engines.json") << "garbage";
