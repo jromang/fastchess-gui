@@ -47,6 +47,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
          "weighing less than a tenth of the best one; the positions reached are the openings.",
          "Ein Polyglot-Buch wird von der Grundstellung bis zu dieser Tiefe verfolgt (-1 = {}), ohne die Züge, die "
          "weniger als ein Zehntel des besten wiegen; die erreichten Stellungen sind die Eröffnungen."},
+        {"A WinBoard engine.", "Eine WinBoard-Engine."},
         {"A colour won both games of a pair", "Eine Farbe gewann beide Partien eines Paares"},
         {"A file of your choice", "Eine Datei deiner Wahl"},
         {"A gauntlet needs at least one engine besides the tested ones.",
@@ -157,6 +158,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Charts", "Diagramme"},
         {"Check", "Prüfen"},
         {"Check the mate PVs", "Matt-PVs prüfen"},
+        {"Checked: it works.", "Geprüft: es funktioniert."},
         {"Checking…", "Prüfe…"},
         {"Chess960", "Chess960"},
         {"Chess960: the 960 starting positions, in random order",
@@ -495,6 +497,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"Non-regression [-5, 0]", "Keine Verschlechterung [-5, 0]"},
         {"Normalized Elo (fishtest, OpenBench), with its 95 % interval.",
          "Normalisierte Elo (fishtest, OpenBench), mit ihrem 95-%-Intervall."},
+        {"Not checked yet.", "Noch nicht geprüft."},
         {"Not in this game's PGN: turn the field on in the PGN options of the setup.",
          "Nicht im PGN dieser Partie: Schalte das Feld in den PGN-Optionen der Einrichtung ein."},
         {"Notify when a match ends", "Benachrichtigen, wenn ein Match endet"},
@@ -624,6 +627,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
          "„%s“ aus der Liste entfernen? Die Datei wird nicht gelöscht."},
         {"Removes the book from the library; the file stays where it is.",
          "Entfernt das Buch aus der Bibliothek; die Datei bleibt, wo sie ist."},
+        {"Remove…", "Entfernen…"},
         {"Replace an engine", "Engine ersetzen"},
         {"Replaced by", "Ersetzt durch"},
         {"Resign", "Aufgabe"},
@@ -754,6 +758,7 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"The last 30 days", "Die letzten 30 Tage"},
         {"The last 365 days", "Die letzten 365 Tage"},
         {"The last change of the tournament was undone.", "Die letzte Änderung des Turniers wurde rückgängig gemacht."},
+        {"The last check or reading failed.", "Die letzte Prüfung oder Abfrage ist fehlgeschlagen."},
         {"The number of nodes must be positive.", "Die Knotenzahl muss positiv sein."},
         {"The opening book must be an .epd, .pgn or .bin (Polyglot) file.",
          "Das Eröffnungsbuch muss eine .epd-, .pgn- oder .bin-Datei (Polyglot) sein."},
@@ -1016,6 +1021,8 @@ const std::vector<std::pair<std::string_view, std::string_view>>& germanTable() 
         {"✓ As expected for the {} engines measured", "✓ Wie erwartet für die {} gemessenen Engines"},
         {"✓ No played game is lost: voided games stay in the PGN files and the journal.",
          "✓ Keine gespielte Partie geht verloren: annullierte Partien bleiben in den PGN-Dateien und im Journal."},
+        {"✓ works · ! problem · ↔ WinBoard · right click: more",
+         "✓ funktioniert · ! Problem · ↔ WinBoard · Rechtsklick: mehr"},
     };
     return table;
 }

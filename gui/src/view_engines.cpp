@@ -216,15 +216,16 @@ void App::drawEngines() {
         if (ImGui::MenuItem(TR("Every engine of a folder…"))) dialogs_.openFolder(Dialogs::Purpose::ImportEngineFolder);
         ImGui::EndPopup();
     }
-    ui::sameLineOrWrap(TR("Duplicate"));
-    ImGui::BeginDisabled(selected_engine_ < 0);
-    if (ImGui::Button(TR("Duplicate")) && selected_engine_ >= 0) {
+    const auto duplicate = [&] {
         auto copy = engines_[selected_engine_];
         copy.name = uniqueEngineName(copy.name, -1);
         engines_.push_back(copy);
         selected_engine_ = static_cast<int>(engines_.size()) - 1;
         storage_.saveEngines(engines_);
-    }
+    };
+    ui::sameLineOrWrap(TR("Duplicate"));
+    ImGui::BeginDisabled(selected_engine_ < 0);
+    if (ImGui::Button(TR("Duplicate")) && selected_engine_ >= 0) duplicate();
     ui::sameLineOrWrap(TR("Remove"));
     if (ImGui::Button(TR("Remove")) && selected_engine_ >= 0) ImGui::OpenPopup(TR("Remove the engine?###remove"));
     ImGui::EndDisabled();
@@ -281,7 +282,13 @@ void App::drawEngines() {
     }
 
     ImGui::Separator();
-    for (int i = 0; i < static_cast<int>(engines_.size()); ++i) {
+    // In alphabetical order; engines_ keeps the order they were added in, which the indexes follow.
+    std::vector<int> shown(engines_.size());
+    for (int i = 0; i < static_cast<int>(shown.size()); ++i) shown[i] = i;
+    std::stable_sort(shown.begin(), shown.end(),
+                     [&](int a, int b) { return lessCaseInsensitive(engines_[a].name, engines_[b].name); });
+    bool remove_asked = false, duplicate_asked = false;
+    for (const int i : shown) {
         const auto& e = engines_[i];
         if (!engine_group_.empty() && std::find(e.groups.begin(), e.groups.end(), engine_group_) == e.groups.end()) {
             continue;
@@ -312,14 +319,42 @@ void App::drawEngines() {
         ImGui::SameLine();
         const auto label = fmt::format("{}{}##engine{}", e.name, tag, i);
         if (ImGui::Selectable(label.c_str(), selected_engine_ == i)) selected_engine_ = i;
-        const auto& tooltip = problem.empty() ? e.check_message : problem;
-        if (ImGui::IsItemHovered() && !tooltip.empty()) ImGui::SetTooltip("%s", tooltip.c_str());
+        if (ImGui::IsItemHovered()) {
+            // What the mark means, then what was found.
+            const std::string meaning = !problem.empty()  ? problem
+                                        : e.check_ok == 1 ? std::string(TR("Checked: it works."))
+                                        : e.check_ok == 0 ? std::string(TR("The last check or reading failed."))
+                                        : isWinboard(e)   ? std::string(TR("A WinBoard engine."))
+                                                          : std::string(TR("Not checked yet."));
+            const bool more           = problem.empty() && !e.check_message.empty();
+            ImGui::SetTooltip("%s %s%s%s", mark, meaning.c_str(), more ? "\n" : "",
+                              more ? e.check_message.c_str() : "");
+        }
+        if (ImGui::BeginPopupContextItem()) {
+            selected_engine_ = i;
+            if (ImGui::MenuItem(TR("Check"), nullptr, false, !check_.valid())) startCheck(i);
+            if (ImGui::MenuItem(TR("Read the UCI options again"), nullptr, false, !probe_.valid())) startProbe(i);
+            if (ImGui::MenuItem(TR("Duplicate"))) duplicate_asked = true;
+            if (ImGui::MenuItem(TR("Remove…"))) remove_asked = true;
+            ImGui::EndPopup();
+        }
     }
     if (engines_.empty()) {
         ImGui::PushTextWrapPos(0);
         ImGui::TextDisabled("%s", TR("No engine yet. Click Add."));
         ImGui::PopTextWrapPos();
+    } else {
+        ImGui::Spacing();
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextDisabled("%s", TR("✓ works · ! problem · ↔ WinBoard · right click: more"));
+        ImGui::PopTextWrapPos();
     }
+    if (selected_engine_ >= 0 && ImGui::IsWindowFocused() && !ImGui::GetIO().WantTextInput &&
+        ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+        remove_asked = true;
+    }
+    if (remove_asked) ImGui::OpenPopup(TR("Remove the engine?###remove"));
+    if (duplicate_asked) duplicate();  // after the loop, which holds references into engines_
 
     ImGui::EndChild();
     if (ui::splitter("##engine_split", setup_.panes["engines"], page)) saveSetupSoon();
