@@ -26,6 +26,13 @@ jobs:
             -e 's#http://azure.archive.ubuntu.com/ubuntu/*#http://archive.ubuntu.com/ubuntu/#' \
             /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
           echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80-retries
+          # The runner's resolver can fail on Ubuntu's hosts alone: public resolvers then.
+          if ! getent hosts archive.ubuntu.com > /dev/null; then
+            sudo mkdir -p /etc/systemd/resolved.conf.d
+            printf '[Resolve]\nDNS=1.1.1.1 8.8.8.8\n' | sudo tee /etc/systemd/resolved.conf.d/fallback.conf
+            sudo systemctl restart systemd-resolved
+            getent hosts archive.ubuntu.com || true
+          fi
 
       - name: Install dependencies
         run: |
@@ -75,6 +82,13 @@ jobs:
             -e 's#http://azure.archive.ubuntu.com/ubuntu/*#http://archive.ubuntu.com/ubuntu/#' \
             /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
           echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80-retries
+          # The runner's resolver can fail on Ubuntu's hosts alone: public resolvers then.
+          if ! getent hosts archive.ubuntu.com > /dev/null; then
+            sudo mkdir -p /etc/systemd/resolved.conf.d
+            printf '[Resolve]\nDNS=1.1.1.1 8.8.8.8\n' | sudo tee /etc/systemd/resolved.conf.d/fallback.conf
+            sudo systemctl restart systemd-resolved
+            getent hosts archive.ubuntu.com || true
+          fi
 
       - name: Install mingw-w64
         run: |
