@@ -392,9 +392,15 @@ void App::drawNewMatch() {
     ui::pageTitle(TR("New tournament"));
     ImGui::TextDisabled("%s", TR("A match between two versions, a round robin or a gauntlet."));
 
-    const bool ready   = setup_.format == TournamentFormat::Match ? !setup_.engine_a.empty() && !setup_.engine_b.empty()
-                                                                  : setup_.participants.size() >= 2;
-    const bool probing = probe_.valid() || !probe_queue_.empty();
+    const bool ready = setup_.format == TournamentFormat::Match ? !setup_.engine_a.empty() && !setup_.engine_b.empty()
+                                                                : setup_.participants.size() >= 2;
+    // Only the engines of this setup matter: the others' options can be read while it plays.
+    bool probing = false;
+    if (setup_.format == TournamentFormat::Match) {
+        probing = this->probing(setup_.engine_a) || this->probing(setup_.engine_b);
+    } else {
+        for (const auto& p : setup_.participants) probing |= this->probing(p.name);
+    }
     ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
     ImGui::PushStyleColor(ImGuiCol_Text,
                           ui::currentTheme() == ui::Theme::Dark ? ImVec4(0.04f, 0.07f, 0.13f, 1) : ImVec4(1, 1, 1, 1));

@@ -1884,6 +1884,9 @@ msgstr ""
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr ""
 
+msgid "Waiting to be read…"
+msgstr ""
+
 msgid "Web page"
 msgstr ""
 

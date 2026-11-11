@@ -1884,6 +1884,9 @@ msgstr "Annuler cette partie (sans la rejouer)"
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "G {:.0f} · N {:.0f} · P {:.0f} %"
 
+msgid "Waiting to be read…"
+msgstr "En attente de lecture…"
+
 msgid "Web page"
 msgstr "Page web"
 

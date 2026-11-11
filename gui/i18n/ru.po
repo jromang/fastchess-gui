@@ -1886,6 +1886,9 @@ msgstr "Аннулировать эту партию (без переигров�
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "В {:.0f} · Н {:.0f} · П {:.0f} %"
 
+msgid "Waiting to be read…"
+msgstr "Ожидает чтения…"
+
 msgid "Web page"
 msgstr "Веб-страница"
 

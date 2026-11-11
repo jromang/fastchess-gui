@@ -297,7 +297,10 @@ class App {
 
     // engines
     void refreshPrograms();
+    // Reads the engine's options now, or first when another engine is being read.
     void startProbe(int index);
+    // This engine's options are being read, or waiting to be.
+    [[nodiscard]] bool probing(const std::string& name) const;
     void pollProbe();
     void startCheck(int index);
     void startQuickTest(int index);

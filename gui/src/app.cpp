@@ -38,9 +38,10 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
 
     refreshPrograms();
 
-    // Engines added by hand to engines.json, or never probed, get their options read in the background.
+    // Engines added by hand to engines.json, never read, or read by an earlier version (which may have refused
+    // them), get their options read in the background: once per version, not at every start.
     for (const auto& e : engines_) {
-        if (e.uci_options.empty() && !e.cmd.empty()) probe_queue_.push_back(e.name);
+        if (e.uci_options.empty() && !e.cmd.empty() && e.read_by != FCG_VERSION) probe_queue_.push_back(e.name);
     }
 
     Console::instance().add(

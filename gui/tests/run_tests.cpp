@@ -245,10 +245,19 @@ TEST_CASE("an engine that describes an option badly is read and checked, the opt
                                       "option name Clear Hash type button\n"
                                       "option name Amyan MultiPV type spin default 1\n"
                                       "uciok\n";
+    // Cerebro's banner, its board and its prompt, without a newline, before it reads anything.
+    std::ofstream(dir / "banner.txt") << "by Antonio Senatore, Argentina\n"
+                                         "Version 3.03d (Jun-08-08)\n\n"
+                                         "Found Cerebro.cfg!\n"
+                                         "Hash table memory = 256 Mb\n\n"
+                                         "                             8  r n b q k b n r\n"
+                                         "                             1  R N B Q K B N R\n\n"
+                                         "white(1): ";
     const auto script = dir / "bad-options.sh";
     std::ofstream(script) << "#!/bin/sh\n"
+                             "cat \"$(dirname \"$0\")/banner.txt\"\n"
                              "while read line; do case \"$line\" in\n"
-                             "uci) cat \"$(dirname \"$0\")/uci.txt\";;\n"
+                             "uci) echo; cat \"$(dirname \"$0\")/uci.txt\";;\n"
                              "isready) echo readyok;;\n"
                              "go*) echo 'info depth 1 score cp 0 pv e2e4'; echo 'bestmove e2e4';;\n"
                              "quit) exit 0;;\n"

@@ -45,6 +45,7 @@ struct EngineEntry {
     std::string id_name;
     std::string id_author;
     std::vector<UciOptionInfo> uci_options;
+    std::string read_by;  // the fastchess-gui version that last read them: each version reads an empty list once
 
     // Organisation.
     std::vector<std::string> groups;  // e.g. a pool, a rating list
@@ -95,8 +96,9 @@ struct EngineEntry {
     }
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineEntry, name, cmd, args, dir, restart, protocol, options, program,
-                                                id_name, id_author, uci_options, groups, elo, check_ok, check_message,
-                                                check_when, check_report, test_ok, test_message, test_when)
+                                                id_name, id_author, uci_options, read_by, groups, elo, check_ok,
+                                                check_message, check_when, check_report, test_ok, test_message,
+                                                test_when)
 
 // An opening book of the library: registered once, chosen by name in the setup.
 struct BookEntry {

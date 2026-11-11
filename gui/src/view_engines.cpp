@@ -108,7 +108,14 @@ void App::refreshPrograms() {
 
 void App::startProbe(int index) {
     if (index < 0 || index >= static_cast<int>(engines_.size())) return;
-    if (probe_.valid()) return;
+    if (probe_.valid()) {
+        // Asked for by name (a button, a new protocol, a check): first in the queue, not dropped.
+        const auto& name = engines_[index].name;
+        if (index == probe_index_) return;
+        std::erase(probe_queue_, name);
+        probe_queue_.insert(probe_queue_.begin(), name);
+        return;
+    }
 
     probe_index_   = index;
     probe_message_ = TR("Reading the engine…");
@@ -119,6 +126,14 @@ void App::startProbe(int index) {
         g_probes_in_flight--;
         return result;
     });
+}
+
+bool App::probing(const std::string& name) const {
+    if (probe_.valid() && probe_index_ >= 0 && probe_index_ < static_cast<int>(engines_.size()) &&
+        engines_[probe_index_].name == name) {
+        return true;
+    }
+    return std::find(probe_queue_.begin(), probe_queue_.end(), name) != probe_queue_.end();
 }
 
 void App::pollProbe() {
@@ -147,7 +162,8 @@ void App::pollProbe() {
     probe_index_    = -1;
 
     if (index < 0 || index >= static_cast<int>(engines_.size())) return;
-    auto& e = engines_[index];
+    auto& e   = engines_[index];
+    e.read_by = FCG_VERSION;
 
     if (!result.ok) {
         probe_message_  = trf("Failed: {}", result.error);
@@ -341,7 +357,7 @@ void App::drawEngines() {
         if (ImGui::BeginPopupContextItem()) {
             selected_engine_ = i;
             if (ImGui::MenuItem(TR("Check"), nullptr, false, !check_.valid())) startCheck(i);
-            if (ImGui::MenuItem(TR("Read the UCI options again"), nullptr, false, !probe_.valid())) startProbe(i);
+            if (ImGui::MenuItem(TR("Read the UCI options again"), nullptr, false, !probing(e.name))) startProbe(i);
             if (ImGui::MenuItem(TR("Duplicate"))) duplicate_asked = true;
             if (ImGui::MenuItem(TR("Remove…"))) remove_asked = true;
             ImGui::EndPopup();
@@ -426,7 +442,7 @@ void App::drawEngines() {
         } else if (e.program_state == ProgramState::MissingDir) {
             if (ImGui::Button(TR("Choose…"))) dialogs_.openFolder(Dialogs::Purpose::EngineDir, e.dir);
         } else {
-            ImGui::BeginDisabled(probe_.valid());
+            ImGui::BeginDisabled(probing(e.name));
             if (ImGui::Button(TR("Read it again"))) startProbe(selected_engine_);
             ImGui::EndDisabled();
         }
@@ -570,8 +586,13 @@ void App::drawEngines() {
         }
     }
 
-    ImGui::BeginDisabled(probe_.valid());
-    if (ImGui::Button(probe_.valid() ? TR("Reading…") : TR("Read the UCI options again"))) startProbe(selected_engine_);
+    const bool reading = probe_.valid() && probe_index_ == selected_engine_;
+    ImGui::BeginDisabled(probing(e.name));
+    if (ImGui::Button(reading           ? TR("Reading…")
+                      : probing(e.name) ? TR("Waiting to be read…")
+                                        : TR("Read the UCI options again"))) {
+        startProbe(selected_engine_);
+    }
     ImGui::EndDisabled();
     if (!probe_message_.empty()) {
         ImGui::SameLine();
@@ -863,9 +884,7 @@ void App::pollCheck() {
 
     // No options yet: their reading failed once (an earlier version refused some engines). The engine has just been
     // started, so they are read again.
-    if (e.uci_options.empty() && std::find(probe_queue_.begin(), probe_queue_.end(), e.name) == probe_queue_.end()) {
-        probe_queue_.push_back(e.name);
-    }
+    if (e.uci_options.empty()) startProbe(index);
 }
 
 void App::importEngines(const ImportResult& imported) {
