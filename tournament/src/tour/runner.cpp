@@ -93,6 +93,10 @@ void Runner::play(const GameTask& task) {
     t_task = nullptr;
     closeSettledPairs();
 
+    // The processes kept for the next games of withdrawn or replaced participants are not needed any more.
+    const auto active = state_.activeEngines();
+    retireEngines([&](const std::string& name) { return !active.count(name); });
+
     {
         std::lock_guard<std::mutex> lock(mutex_);
         --in_flight_;

@@ -49,6 +49,10 @@ class BaseTournament {
 
     EngineCache& getEngineCache();
 
+    // Ends the processes kept for later games of the engines `retired` names (withdrawn, replaced...) that are
+    // not playing now.
+    void retireEngines(const std::function<bool(const std::string& name)>& retired);
+
     // Gets called after a game has finished
     virtual void startNext() = 0;
 

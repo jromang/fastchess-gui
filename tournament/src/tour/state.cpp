@@ -977,6 +977,15 @@ bool TournamentState::settled(uint32_t encounter) const {
     return true;
 }
 
+std::set<std::string> TournamentState::activeEngines() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::set<std::string> names;
+    for (const auto& p : spec_.participants) {
+        if (p.active) names.insert(p.engine.name);
+    }
+    return names;
+}
+
 bool TournamentState::hasWorkLocked() const { return !finished_ && gamesLeft(); }
 
 bool TournamentState::gamesLeft() const {

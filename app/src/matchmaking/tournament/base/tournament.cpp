@@ -1,5 +1,6 @@
 #include <matchmaking/tournament/base/tournament.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <memory>
@@ -108,18 +109,27 @@ BaseTournament::EngineCache& BaseTournament::getEngineCache() {
         auto it = thread_caches_.find(tid);
 
         if (it == thread_caches_.end()) {
-            thread_caches_[tid] = std::make_unique<EngineCache>();
+            // The two engines of the thread's game, and two more waiting for their next one.
+            thread_caches_[tid] = std::make_unique<EngineCache>(4);
             return *thread_caches_[tid];
         }
 
         return *it->second;
 
     } else {
-        // Use single shared cache
+        // Use single shared cache: the engines of the games being played, and as many waiting for their next one.
         std::lock_guard<std::mutex> lock(cache_management_mutex_);
-        if (!global_cache_) global_cache_ = std::make_unique<EngineCache>();
+        if (!global_cache_) {
+            global_cache_ = std::make_unique<EngineCache>(4 * std::max(1, config::TournamentConfig->concurrency));
+        }
         return *global_cache_;
     }
+}
+
+void BaseTournament::retireEngines(const std::function<bool(const std::string& name)>& retired) {
+    std::lock_guard<std::mutex> lock(cache_management_mutex_);
+    if (global_cache_) global_cache_->evictIdle(retired);
+    for (auto& [tid, cache] : thread_caches_) cache->evictIdle(retired);
 }
 
 void BaseTournament::create() {

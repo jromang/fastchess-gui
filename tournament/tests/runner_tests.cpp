@@ -12,6 +12,7 @@
 
 #include <core/config/config.hpp>
 #include <core/globals/globals.hpp>
+#include <core/memory/cache.hpp>
 #include <core/observer.hpp>
 
 #include <tour/runner.hpp>
@@ -276,6 +277,46 @@ TEST_CASE("runner: engine logs, of every game when asked, with both directions o
         CHECK(text.find("B> go ") != std::string::npos);
         CHECK(text.find("W< bestmove ") != std::string::npos);
     }
+}
+
+TEST_CASE("engine cache: the idle entries used the longest ago make room; retired ones go at once") {
+    struct Engine {
+        explicit Engine(int* alive) : alive_(alive) { ++*alive_; }
+        ~Engine() { --*alive_; }
+        int* alive_;
+    };
+    int alive = 0;
+    fastchess::util::CachePool<Engine, std::string> cache(3);
+
+    const auto use = [&](const std::string& name) {
+        auto it = cache.getEntry(name, &alive);
+        fastchess::util::ScopeGuard guard(&*it);
+    };
+    use("a");
+    use("b");
+    use("c");
+    CHECK(alive == 3);
+    use("a");  // reused, and now the most recent
+    use("d");  // b goes
+    CHECK(alive == 3);
+    use("a");
+    use("c");
+    CHECK(alive == 3);
+    use("b");  // d goes, a and c stay
+    CHECK(alive == 3);
+
+    // Entries in use are never taken away, even past the limit.
+    {
+        auto e1 = cache.getEntry("e", &alive);
+        auto e2 = cache.getEntry("e", &alive);
+        auto e3 = cache.getEntry("e", &alive);
+        auto e4 = cache.getEntry("e", &alive);
+        CHECK(alive == 4);
+        fastchess::util::ScopeGuard g1(&*e1), g2(&*e2), g3(&*e3), g4(&*e4);
+    }
+
+    cache.evictIdle([](const std::string& name) { return name == "e"; });
+    CHECK(alive == 0);
 }
 
 TEST_CASE("engine log: the first and the last lines of a long game; which endings keep it") {
