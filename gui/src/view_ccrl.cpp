@@ -258,4 +258,168 @@ void App::writeCcrlExport(const std::string& path) {
     }
 }
 
+void App::drawCcrlChecklist() {
+    const auto* t = run_.tournament();
+    if (!t || !t->finished()) return;
+    if (ccrl_facts_for_ != t->version()) {
+        ccrl_facts_     = tour::ccrlFacts(t->spec(), t->results(), t->totalGames());
+        ccrl_facts_for_ = t->version();
+    }
+    const auto& f    = ccrl_facts_;
+    const auto& spec = t->spec();
+    const auto name  = [&](int id) {
+        const auto* p = spec.participant(id);
+        return p ? p->engine.name : std::string("?");
+    };
+
+    enum class Status { Ok, Info, Warn, Fail };
+    // A line: its mark, what is checked, and what was found.
+    const auto line = [&](Status status, const char* label, const std::string& detail) {
+        static constexpr const char* MARKS[] = {"✓", "i", "!", "×"};
+        const ImU32 colors[]                 = {ui::GOOD, ui::MUTED, ui::WARN, ui::BAD};
+        const float x                        = ImGui::GetCursorPosX();
+        ImGui::PushStyleColor(ImGuiCol_Text, colors[static_cast<int>(status)]);
+        ImGui::TextUnformatted(MARKS[static_cast<int>(status)]);
+        ImGui::PopStyleColor();
+        ImGui::SameLine(x + px(20));
+        ImGui::TextUnformatted(label);
+        if (!detail.empty()) {
+            ImGui::SameLine();
+            ImGui::PushTextWrapPos(0.0f);
+            ImGui::TextDisabled("%s", detail.c_str());
+            ImGui::PopTextWrapPos();
+        }
+    };
+    // Buttons that open games in the Games tab, by number, the first ones of a list.
+    const auto links = [&](const char* id, const std::vector<uint64_t>& numbers) {
+        constexpr std::size_t SHOWN = 12;
+        ImGui::PushID(id);
+        ImGui::Indent(px(20));
+        for (std::size_t i = 0; i < numbers.size() && i < SHOWN; ++i) {
+            if (i > 0) ImGui::SameLine();
+            const uint64_t game_id = numbers[i] + 1;
+            if (ImGui::SmallButton(fmt::format("#{}##{}", game_id, i).c_str())) {
+                const auto it = std::find_if(games_.begin(), games_.end(),
+                                             [&](const GameRecord& g) { return g.game_id == game_id; });
+                if (it != games_.end()) {
+                    selectGame(static_cast<int>(it - games_.begin()));
+                    tab_request_ = Tab::Games;
+                }
+            }
+        }
+        if (numbers.size() > SHOWN) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("%s", trf("and {} more", numbers.size() - SHOWN).c_str());
+        }
+        ImGui::Unindent(px(20));
+        ImGui::PopID();
+    };
+
+    ImGui::Spacing();
+    ui::beginCard("ccrl_card");
+    ImGui::TextUnformatted(TR("CCRL checklist"));
+    ui::help(
+        TR("What a tester checks before sending the games to the CCRL. Export for CCRL… in the Games tab "
+           "leaves the voided games and the duplicates out."));
+
+    // Games and colours.
+    const uint64_t planned = f.planned.value_or(f.played);
+    line(f.played >= planned ? Status::Ok : Status::Fail, TR("All games played"), trf("{} / {}", f.played, planned));
+    if (f.unpaired.empty()) {
+        line(Status::Ok, TR("Every pair with both colours"), "");
+    } else {
+        std::string pairs;
+        for (std::size_t i = 0; i < f.unpaired.size() && i < 4; ++i) {
+            pairs += (i ? ", " : "") + name(f.unpaired[i].first) + " – " + name(f.unpaired[i].second);
+        }
+        if (f.unpaired.size() > 4) pairs += ", …";
+        line(Status::Fail, TR("Every pair with both colours"),
+             trn("{} pair without its game with colours reversed: {}",
+                 "{} pairs without their game with colours reversed: {}", f.unpaired.size(), f.unpaired.size(), pairs));
+    }
+    std::string duplicates =
+        f.duplicates == 0 ? std::string(TR("none"))
+                          : trn("{} game recorded twice: the export keeps the first",
+                                "{} games recorded twice: the export keeps the first", f.duplicates, f.duplicates);
+    if (f.voided > 0) {
+        duplicates += " · " + trn("{} voided game, left out", "{} voided games, left out", f.voided, f.voided);
+    }
+    line(f.duplicates == 0 ? Status::Ok : Status::Warn, TR("No duplicate games"), duplicates);
+
+    // How games ended badly, with the games.
+    if (f.crashes.empty() && f.timeouts.empty() && f.illegal.empty()) {
+        line(Status::Ok, TR("No crashes, time losses or illegal moves"), "");
+    } else {
+        line(Status::Warn, TR("No crashes, time losses or illegal moves"),
+             TR("to mention in the post, or to test the engine again:"));
+        if (!f.crashes.empty()) {
+            ImGui::Indent(px(20));
+            ImGui::TextUnformatted(
+                trn("{} crash or stall", "{} crashes or stalls", f.crashes.size(), f.crashes.size()).c_str());
+            ImGui::Unindent(px(20));
+            links("crashes", f.crashes);
+        }
+        if (!f.timeouts.empty()) {
+            ImGui::Indent(px(20));
+            ImGui::TextUnformatted(
+                trn("{} loss on time", "{} losses on time", f.timeouts.size(), f.timeouts.size()).c_str());
+            ImGui::Unindent(px(20));
+            links("timeouts", f.timeouts);
+        }
+        if (!f.illegal.empty()) {
+            ImGui::Indent(px(20));
+            ImGui::TextUnformatted(
+                trn("{} illegal move", "{} illegal moves", f.illegal.size(), f.illegal.size()).c_str());
+            ImGui::Unindent(px(20));
+            links("illegal", f.illegal);
+        }
+    }
+
+    // The conditions. The CCRL's hash depends on the list and the threads: the values are shown, not judged.
+    std::string hash;
+    const bool same_hash = std::all_of(f.engines.begin(), f.engines.end(), [&](const auto& e) {
+        return e.hash == f.engines.front().hash && e.threads == f.engines.front().threads;
+    });
+    const auto hash_of   = [](const tour::CcrlFacts::Engine& e) {
+        const auto mb = e.hash > 0 ? fmt::format("{} MB", e.hash) : std::string(TR("its default"));
+        return trn("{}, {} thread", "{}, {} threads", e.threads, mb, e.threads);
+    };
+    if (!f.engines.empty() && same_hash) {
+        hash = trf("{} for every engine", hash_of(f.engines.front()));
+    } else {
+        for (const auto& e : f.engines) hash += (hash.empty() ? "" : " · ") + e.name + ": " + hash_of(e);
+    }
+    line(Status::Info, TR("Hash"), hash);
+
+    std::string ponder;
+    for (const auto& e : f.engines) {
+        if (e.ponder) ponder += (ponder.empty() ? "" : ", ") + e.name;
+    }
+    line(ponder.empty() ? Status::Ok : Status::Fail, TR("Ponder off"),
+         ponder.empty() ? std::string() : trf("Ponder is on for {}", ponder));
+
+    line(f.book.empty() ? Status::Warn : Status::Ok, TR("Opening book"),
+         f.book.empty() ? std::string(TR("none: every game starts from the initial position")) : f.book);
+
+    std::string tablebases;
+    std::size_t with = 0;
+    for (const auto& e : f.engines) with += e.syzygy.empty() ? 0 : 1;
+    if (with == 0) {
+        tablebases = TR("no engine has a SyzygyPath");
+    } else {
+        fastchess::config::TbAdjudication tb;
+        tb.enabled = true;
+        tb.syzygy_dirs =
+            std::find_if(f.engines.begin(), f.engines.end(), [](const auto& e) { return !e.syzygy.empty(); })->syzygy;
+        const int pieces = tablebasePieces(tb);
+        tablebases       = with == f.engines.size()
+                               ? trf("{}-man Syzygy for every engine", pieces)
+                               : trf("{}-man Syzygy for {} of {} engines", pieces, with, f.engines.size());
+    }
+    if (!f.adjudication_tb.empty()) tablebases += " · " + std::string(TR("adjudication with tablebases"));
+    line(Status::Info, TR("Tablebases"), tablebases);
+
+    ui::endCard();
+}
+
 }  // namespace fcg

@@ -332,6 +332,7 @@ void App::drawTournamentOverview() {
         }
     }
     ui::endCard();
+    drawCcrlChecklist();  // once it is finished
 
     // Fair play: the processor time of every engine, measured while it thinks and while its opponents do.
     {

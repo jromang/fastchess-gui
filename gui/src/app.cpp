@@ -366,6 +366,7 @@ void App::resetRunView() {
     anchor_.reset();
     crosstable_cell_.reset();
     standings_engine_.reset();
+    ccrl_facts_for_ = ~uint64_t(0);
     standings_view_ = -1;
     games_subject_ = -1;
     filtered_.clear();

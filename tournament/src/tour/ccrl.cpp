@@ -191,4 +191,63 @@ CcrlGames ccrlGames(const std::filesystem::path& pgn, const std::vector<GameResu
     return out;
 }
 
+CcrlFacts ccrlFacts(const TournamentSpec& spec, const std::vector<GameResult>& results,
+                    std::optional<uint64_t> planned) {
+    CcrlFacts f;
+    f.planned = planned;
+
+    std::set<uint64_t> seen;
+    std::map<uint32_t, std::pair<const GameResult*, int>> encounters;  // first game, games that count
+    for (const auto& r : results) {
+        if (r.voided) {
+            f.voided++;
+            continue;
+        }
+        if (!seen.insert(r.number()).second) {
+            f.duplicates++;
+            continue;
+        }
+        f.played++;
+        auto& e = encounters[r.encounter];
+        if (!e.first) e.first = &r;
+        e.second++;
+        switch (r.termination) {
+            case fastchess::MatchTermination::DISCONNECT:
+            case fastchess::MatchTermination::STALL:
+                f.crashes.push_back(r.number());
+                break;
+            case fastchess::MatchTermination::TIMEOUT:
+                f.timeouts.push_back(r.number());
+                break;
+            case fastchess::MatchTermination::ILLEGAL_MOVE:
+                f.illegal.push_back(r.number());
+                break;
+            default:
+                break;
+        }
+    }
+    for (const auto& [number, e] : encounters) {
+        if (e.second == 1) f.unpaired.emplace_back(e.first->white, e.first->black);
+    }
+
+    for (const auto& p : spec.participants) {
+        if (!p.active) continue;
+        CcrlFacts::Engine e;
+        e.id      = p.id;
+        e.name    = p.engine.name;
+        e.hash    = optionValue(p.engine, "Hash", 0);
+        e.threads = std::max(1, optionValue(p.engine, "Threads", 1));
+        for (const auto& [name, value] : p.engine.options) {
+            if (name == "Ponder") e.ponder = endsWithNoCase(value, "true") && value.size() == 4;
+            if (name == "SyzygyPath" && value != "<empty>") e.syzygy = value;
+        }
+        f.engines.push_back(e);
+    }
+    if (!spec.conditions.opening.file.empty()) {
+        f.book = std::filesystem::path(spec.conditions.opening.file).filename().string();
+    }
+    if (spec.conditions.tb_adjudication.enabled) f.adjudication_tb = spec.conditions.tb_adjudication.syzygy_dirs;
+    return f;
+}
+
 }  // namespace fcg::tour

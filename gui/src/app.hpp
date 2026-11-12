@@ -360,6 +360,7 @@ class App {
     void openCcrlExport();
     void drawCcrlExport();
     void writeCcrlExport(const std::string& path);
+    void drawCcrlChecklist();  // in the overview of a finished tournament
 
     void handleDialogs();
     void saveSetupSoon() { setup_dirty_ = true; }
@@ -538,6 +539,8 @@ class App {
         bool zip  = true;
         tour::CcrlExport e;
     } ccrl_;
+    tour::CcrlFacts ccrl_facts_;  // of the checklist, for the tournament at this version()
+    uint64_t ccrl_facts_for_ = ~uint64_t(0);
     std::string template_name_;
     std::vector<std::string> template_names_;  // the templates folder, listed now and then rather than every frame
     std::chrono::steady_clock::time_point templates_listed_{};

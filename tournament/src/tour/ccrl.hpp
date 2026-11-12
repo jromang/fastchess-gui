@@ -8,8 +8,10 @@
 #include <cstdint>
 #include <filesystem>
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include "model.hpp"
@@ -64,6 +66,34 @@ struct CcrlGames {
 // tag stays as played.
 [[nodiscard]] CcrlGames ccrlGames(const std::filesystem::path& pgn, const std::vector<GameResult>& results,
                                   const TournamentSpec& spec, const CcrlExport& e);
+
+// What a tester checks before sending a tournament's games to the CCRL (TorsGUI's guide, §7), as found in its
+// settings and results: the GUI writes the checklist from it.
+struct CcrlFacts {
+    uint64_t played = 0;  // games that count
+    std::optional<uint64_t> planned;
+    // Encounters of which one game only counts (the game with colours reversed missing), by participant ids.
+    std::vector<std::pair<int, int>> unpaired;
+    std::size_t duplicates = 0;  // games of the schedule recorded twice
+    std::size_t voided     = 0;
+    // The games that count lost by a crash or a stall, on time, by an illegal move: their numbers (number()).
+    std::vector<uint64_t> crashes, timeouts, illegal;
+
+    struct Engine {
+        int id = 0;
+        std::string name;
+        int hash    = 0;  // MB, 0: the engine's default
+        int threads = 1;
+        bool ponder = false;  // its Ponder option is on
+        std::string syzygy;   // its SyzygyPath
+    };
+    std::vector<Engine> engines;  // the active participants
+    std::string book;             // the opening book's file name, empty without
+    std::string adjudication_tb;  // the tablebases of the adjudication, empty without
+};
+
+[[nodiscard]] CcrlFacts ccrlFacts(const TournamentSpec& spec, const std::vector<GameResult>& results,
+                                  std::optional<uint64_t> planned);
 
 // The value of a tag of one game's PGN text, empty when it has none.
 [[nodiscard]] std::string pgnTag(std::string_view game, std::string_view tag);

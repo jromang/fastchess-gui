@@ -136,3 +136,60 @@ TEST_CASE("ccrl: the games renamed and numbered again, the voided, duplicated an
 
     fs::remove_all(dir);
 }
+
+TEST_CASE("ccrl: the facts of the checklist, from the settings and the results") {
+    TournamentSpec spec;
+    for (int i = 0; i < 3; ++i) {
+        Participant p;
+        p.id          = 10 + i;
+        p.engine.name = std::string("Engine ") + static_cast<char>('A' + i);
+        spec.participants.push_back(p);
+    }
+    spec.participants[0].engine.options = {{"Hash", "256"}, {"Threads", "4"}, {"SyzygyPath", "/tb/345"}};
+    spec.participants[1].engine.options = {{"Hash", "128"}, {"Ponder", "True"}};
+    spec.participants[2].active         = false;
+    spec.conditions.opening.file        = "/books/UHO_2024.epd";
+
+    std::vector<GameResult> results;
+    const auto add = [&](uint32_t encounter, int g, int white, int black,
+                         fastchess::MatchTermination term = fastchess::MatchTermination::NORMAL) {
+        GameResult r;
+        r.encounter   = encounter;
+        r.game        = g;
+        r.white       = white;
+        r.black       = black;
+        r.result      = "1-0";
+        r.termination = term;
+        results.push_back(r);
+    };
+    add(0, 0, 10, 11);
+    add(0, 1, 11, 10, fastchess::MatchTermination::TIMEOUT);
+    add(1, 0, 10, 11, fastchess::MatchTermination::ILLEGAL_MOVE);  // its second game missing
+    add(1, 0, 10, 11);                                             // and this one recorded twice
+    add(2, 0, 10, 12, fastchess::MatchTermination::DISCONNECT);
+    add(2, 1, 12, 10);
+    results.back().voided = true;  // Engine C withdrawn
+
+    const auto f = ccrlFacts(spec, results, 6);
+    CHECK(f.played == 4);
+    CHECK(*f.planned == 6);
+    CHECK(f.duplicates == 1);
+    CHECK(f.voided == 1);
+    REQUIRE(f.unpaired.size() == 2);
+    CHECK(f.unpaired[0] == std::make_pair(10, 11));
+    CHECK(f.unpaired[1] == std::make_pair(10, 12));
+    CHECK(f.timeouts == std::vector<uint64_t>{1});
+    CHECK(f.illegal == std::vector<uint64_t>{2});
+    CHECK(f.crashes == std::vector<uint64_t>{4});
+
+    REQUIRE(f.engines.size() == 2);  // the active ones
+    CHECK(f.engines[0].hash == 256);
+    CHECK(f.engines[0].threads == 4);
+    CHECK(f.engines[0].syzygy == "/tb/345");
+    CHECK_FALSE(f.engines[0].ponder);
+    CHECK(f.engines[1].hash == 128);
+    CHECK(f.engines[1].threads == 1);
+    CHECK(f.engines[1].ponder);
+    CHECK(f.book == "UHO_2024.epd");
+    CHECK(f.adjudication_tb.empty());
+}
