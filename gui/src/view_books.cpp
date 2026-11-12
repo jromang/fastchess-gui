@@ -214,7 +214,7 @@ void App::drawBookDetail(BookEntry& book) {
     if (polyglot || ext == ".pgn" || ext == ".PGN") {
         ui::label(polyglot ? TR("Depth (plies)") : TR("Plies (PGN)"), label);
         ImGui::SetNextItemWidth(px(120));
-        if (ImGui::InputInt("##book_plies", &book.plies, 0, 0)) {
+        if (ui::inputInt("##book_plies", &book.plies)) {
             book.plies = std::clamp(book.plies, -1, polyglot ? 40 : 1000);
             changed    = true;
         }

@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <imgui.h>
@@ -117,6 +118,20 @@ void drawOpenPathError();
 // "(?)" with a tooltip.
 void help(const char* text);
 
+// The value of arithmetic typed in a number field: "40*60", "15+10", "(3+2)*60", with + - * / and parentheses, the
+// decimal mark a point or a comma. nullopt when the text is not one (or divides by zero).
+[[nodiscard]] std::optional<double> evaluate(std::string_view text);
+
+// Number fields whose text may be arithmetic (see evaluate), applied when the field is left or Enter pressed, like
+// ImGui::InputInt(label, v, 0, 0) and its kind. True when the value changed.
+bool inputInt(const char* label, int* value);
+bool inputInt64(const char* label, int64_t* value);
+bool inputDouble(const char* label, double* value, const char* format = "%.3f");
+
+// A small round label with a count, such as the games being played, drawn on top of what is at `center`.
+void drawBadge(ImDrawList* dl, ImVec2 center, const char* text);
+[[nodiscard]] float badgeWidth(const char* text);
+
 // With Ctrl held, the mouse wheel of this frame: +1 up, -1 down, 0 without Ctrl or a turn. It is taken from the frame
 // (call before drawing), so that the chart under the mouse (ImPlot reads io.MouseWheel) does not zoom as well.
 int takeCtrlWheel();
@@ -141,7 +156,10 @@ void emptyState(const char* text);
 
 // The inside of a combo of many names, such as the engines of a large library, once BeginCombo returned true: a
 // search field on top, focused, then the names containing what is typed (Enter takes the first), only the rows in
-// sight drawn. `current` is marked and scrolled to. Returns the index of the name chosen, or -1. Call EndCombo after.
-int searchComboItems(const std::vector<std::string>& names, const std::string& current);
+// sight drawn. `current` is marked and scrolled to. `more`, when given, holds by name other text the search looks in
+// too (an engine's author, program and notes, see engineSearchText). Returns the index of the name chosen, or -1. Call
+// EndCombo after.
+int searchComboItems(const std::vector<std::string>& names, const std::string& current,
+                     const std::vector<std::string>* more = nullptr);
 
 }  // namespace fcg::ui

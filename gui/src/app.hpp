@@ -199,6 +199,7 @@ class App {
     // shell
     void drawShell();
     void drawRail(float width);
+    [[nodiscard]] int gamesPlaying() const;  // games in progress, shown beside the live view in the navigation
     void drawHome();
     void drawNewMatch();
     void drawWorkspace();
@@ -266,6 +267,20 @@ class App {
     // setup sections
     void setupFormat();
     void setupParticipants();
+    // "Add an engine…": the library's engines with their reference Elo, sorted and filtered by it, opponents
+    // suggested around the first participant's. True when engines were added to `list`.
+    bool participantPicker(std::vector<ParticipantSetup>& list);
+    struct ParticipantPicker {
+        std::string search;
+        int elo_min = 0, elo_max = 0;  // reference Elo shown, 0: no bound
+        bool works_only = false;
+        std::set<std::string> ticked;
+        int suggest = 8;      // opponents to suggest
+        int range   = 150;    // Elo, around the first participant's
+        std::string message;  // what the last suggestion found
+    } picker_;
+    int open_picker_ = 0;  // --focus setup-picker: 1 the picker opens, 2 with opponents suggested
+    int selected_participant_ = -1;  // clicked in the list, for Ctrl+Up and Ctrl+Down
     void drawSetupSummary();
     void drawTemplates();
     void setupEngines();
@@ -323,10 +338,21 @@ class App {
     void startQuickTest(int index);
     void finishQuickTest();
     void pollCheck();
-    // Shows what an engine list or a folder holds, to choose the engines to add.
-    void importEngines(const ImportResult& imported);
+    // Shows what an engine list or a folder holds, to choose the engines to add. `refreshed`: the remembered folder
+    // looked in again, whose engines already in the library are left out.
+    void importEngines(const ImportResult& imported, const std::filesystem::path& refreshed = {});
+    void refreshEngineFolder();  // the new engines of the remembered folder, see Storage::engineFolder
+    [[nodiscard]] const std::filesystem::path& engineFolder();
+    void setInactive(const std::vector<std::string>& names, bool inactive);
     void drawImportPreview();
     void addImported();  // the engines chosen
+    // A rating list (CCRL, Ordo, CSV) whose ratings become the reference Elo of the library engines it names, once
+    // seen in a preview.
+    void openRatingImport(const std::string& text = {});
+    void loadRatingList(const std::string& path);  // a file chosen, read into the preview
+    void readRatingImport();                       // the text of the preview, read and matched again
+    void drawRatingImport();
+    void applyRatingImport();
     [[nodiscard]] bool engineInUse(const std::string& name) const;
     void addEngine(const std::string& path);
     std::string uniqueEngineName(const std::string& base, int ignore_index) const;
@@ -512,10 +538,25 @@ class App {
     std::string option_browse_;  // the UCI option a file dialog is open for
     struct ImportPreview {
         ImportResult result;
+        std::string refreshed;     // the remembered folder, looked in again: only its new engines are shown
         std::vector<char> known;   // by engine: already in the list, not added again
         std::vector<char> chosen;  // by engine: to add
     };
     std::optional<ImportPreview> import_preview_;
+    std::optional<std::filesystem::path> engine_folder_;  // settings.json's, read once
+    struct RatingImport {
+        std::string text;  // as pasted or read from a file
+        struct Row {
+            std::string engine, listed;  // the library's name and the list's
+            int elo_now = 0, elo = 0;
+            bool chosen = true;
+        };
+        std::vector<Row> rows;               // the library engines the list names
+        std::vector<std::string> unmatched;  // the names of the list that are no library engine
+        std::size_t listed = 0;              // engines on the list
+    };
+    std::optional<RatingImport> rating_import_;
+    bool open_rating_import_  = false;
     bool open_import_preview_ = false;
 
     // Console view.

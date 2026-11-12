@@ -369,6 +369,74 @@ TEST_CASE("Ctrl and the mouse wheel zoom the interface, not the chart under the 
     ImGui::DestroyContext(context);
 }
 
+TEST_CASE("number fields take arithmetic: + - * / and parentheses") {
+    CHECK(ui::evaluate("40*60") == 2400);
+    CHECK(ui::evaluate("15+10") == 25);
+    CHECK(ui::evaluate(" 2 + 3 * 4 ") == 14);
+    CHECK(ui::evaluate("(2+3)*4") == 20);
+    CHECK(ui::evaluate("100-30-20") == 50);
+    CHECK(ui::evaluate("60/4/3") == 5);
+    CHECK(ui::evaluate("-5+-(3)") == -8);
+    CHECK(ui::evaluate("0,5*3") == 1.5);  // a decimal comma
+    CHECK(ui::evaluate(".25") == 0.25);
+    CHECK(ui::evaluate("1024") == 1024);
+    CHECK_FALSE(ui::evaluate(""));
+    CHECK_FALSE(ui::evaluate("1/0"));
+    CHECK_FALSE(ui::evaluate("2*"));
+    CHECK_FALSE(ui::evaluate("(1+2"));
+    CHECK_FALSE(ui::evaluate("1+2)"));
+    CHECK_FALSE(ui::evaluate("1.2.3"));
+    CHECK_FALSE(ui::evaluate("abc"));
+    CHECK_FALSE(ui::evaluate(std::string(200, '(') + "1" + std::string(200, ')')));
+
+    // Typed in a field, the value is applied by Enter, rounded for an integer; Escape puts it back.
+    auto* context = ImGui::CreateContext();
+    auto& io      = ImGui::GetIO();
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
+    io.IniFilename   = nullptr;
+    io.DisplaySize   = ImVec2(800, 600);
+    io.DeltaTime     = 1.0f / 60.0f;
+    int value        = 10;
+    double seconds   = 1.5;
+    bool changed     = false;
+    const auto frame = [&](int focus) {
+        ImGui::NewFrame();
+        ImGui::Begin("fields");
+        if (focus == 1) ImGui::SetKeyboardFocusHere();
+        changed |= ui::inputInt("##int", &value);
+        if (focus == 2) ImGui::SetKeyboardFocusHere();
+        changed |= ui::inputDouble("##double", &seconds, "%.2f");
+        ImGui::End();
+        ImGui::Render();
+    };
+    const auto type = [&](int field, const char* text, ImGuiKey key) {
+        frame(field);
+        frame(0);
+        io.AddInputCharactersUTF8(text);
+        frame(0);
+        io.AddKeyEvent(key, true);
+        frame(0);
+        io.AddKeyEvent(key, false);
+        frame(0);
+        frame(0);
+    };
+    frame(0);
+    type(1, "40*60", ImGuiKey_Enter);
+    CHECK(value == 2400);
+    CHECK(changed);
+    type(1, "10/4", ImGuiKey_Enter);
+    CHECK(value == 3);  // 2.5 rounded away from zero
+    changed = false;
+    type(1, "7*7", ImGuiKey_Escape);
+    CHECK(value == 3);
+    CHECK_FALSE(changed);
+    type(1, "x9a", ImGuiKey_Enter);  // the letters are not taken
+    CHECK(value == 9);
+    type(2, "(15+10)/10", ImGuiKey_Enter);
+    CHECK(seconds == 2.5);
+    ImGui::DestroyContext(context);
+}
+
 TEST_CASE("ChessBase comments give White's point of view, clocks and move times") {
     fastchess::config::Pgn config;
     const auto data = sampleGame(true);
@@ -932,6 +1000,64 @@ TEST_CASE("an engine imported again is known by its program and arguments, not b
 #endif
 }
 
+TEST_CASE("the engine searches find the name, the name reported, the author, the program and the notes") {
+    namespace fs = std::filesystem;
+    EngineEntry e;
+    e.name      = "SF dev";
+    e.id_name   = "Stockfish 250101";
+    e.id_author = "the Stockfish developers";
+    e.cmd       = "/engines/sf/stockfish-avx2";
+    e.notes     = "Strong at blitz.\nLoses on time at 1+0.01 with Hash 4096.";
+    CHECK(engineMatches(e, ""));
+    CHECK(engineMatches(e, "sf DEV"));
+    CHECK(engineMatches(e, "250101"));
+    CHECK(engineMatches(e, "developers"));
+    CHECK(engineMatches(e, "avx2"));
+    CHECK(engineMatches(e, "BLITZ"));
+    CHECK(engineMatches(e, "loses on time"));
+    CHECK_FALSE(engineMatches(e, "komodo"));
+
+    // The notes are kept in engines.json.
+    const auto dir = fs::temp_directory_path() / "fcg-notes-test";
+    fs::remove_all(dir);
+    Storage storage(dir);
+    storage.saveEngines({e});
+    const auto engines = storage.loadEngines();
+    REQUIRE(engines.size() == 1);
+    CHECK(engines[0].notes == e.notes);
+    fs::remove_all(dir);
+}
+
+TEST_CASE("opponents are suggested around a rating, among the active engines that work, the closest first") {
+    const auto engine = [](std::string name, int elo, int check_ok = 1) {
+        EngineEntry e;
+        e.name     = std::move(name);
+        e.elo      = elo;
+        e.check_ok = check_ok;
+        return e;
+    };
+    std::vector<EngineEntry> library = {
+        engine("Seed", 3000),          engine("Near", 3040),     engine("Below", 2950),   engine("Tie A", 3100),
+        engine("Tie B", 2900),         engine("Far", 3200),      engine("No Elo", 0),     engine("Failed", 3010, 0),
+        engine("Unchecked", 3005, -1), engine("Inactive", 3001), engine("Rebuilt", 3002), engine("Gone", 3003)};
+    library[9].inactive       = true;
+    library[10].program_state = ProgramState::Changed;
+    library[11].program_state = ProgramState::Missing;
+
+    CHECK(engineWorks(library[0]));
+    CHECK_FALSE(engineWorks(library[7]));
+    CHECK_FALSE(engineWorks(library[8]));
+    CHECK_FALSE(engineWorks(library[10]));
+    CHECK_FALSE(engineWorks(library[11]));
+
+    CHECK(suggestOpponents(library, 3000, 150, 8, {"Seed"}) ==
+          std::vector<std::string>{"Near", "Below", "Tie A", "Tie B"});
+    CHECK(suggestOpponents(library, 3000, 150, 2, {"Seed"}) == std::vector<std::string>{"Near", "Below"});
+    CHECK(suggestOpponents(library, 3000, 250, 8, {"Seed", "Near"}) ==
+          std::vector<std::string>{"Below", "Tie A", "Tie B", "Far"});
+    CHECK(suggestOpponents(library, 3000, 10, 8, {"Seed"}).empty());
+}
+
 TEST_CASE("a folder is opened by a file URL that spaces, accents and # cannot break") {
     CHECK(ui::fileUrl("/home/jeff/runs/2026_RR") == "file:///home/jeff/runs/2026_RR");
     CHECK(ui::fileUrl(std::filesystem::path(u8"/home/Hélène/Mes tournois #2")) ==
@@ -987,6 +1113,32 @@ TEST_CASE("the tournaments folder is kept in settings.json, the default restored
     reopened.setRunsDir({});
     CHECK(reopened.runsDir() == root / "runs");
     CHECK(Storage(root).runsDir() == root / "runs");
+}
+
+TEST_CASE("the engine folder is remembered in settings.json; an engine is active unless marked inactive") {
+    namespace fs    = std::filesystem;
+    const auto root = fs::temp_directory_path() / "fcg-storage-engine-folder";
+    fs::remove_all(root);
+    fs::create_directories(root);
+    {
+        Storage storage(root);
+        CHECK(storage.engineFolder().empty());
+        storage.setEngineFolder(root / "engines");
+        storage.setRunsDir(root / "elsewhere");  // the other settings stay
+    }
+    Storage storage(root);
+    CHECK(storage.engineFolder() == root / "engines");
+    CHECK(storage.runsDir() == root / "elsewhere");
+
+    // engines.json of an earlier version: no "inactive", every engine active.
+    std::ofstream(root / "engines.json") << R"([{"name": "Old", "cmd": "/e/old"}])";
+    auto engines = storage.loadEngines();
+    REQUIRE(engines.size() == 1);
+    CHECK_FALSE(engines[0].inactive);
+    engines[0].inactive = true;
+    storage.saveEngines(engines);
+    CHECK(storage.loadEngines().at(0).inactive);
+    fs::remove_all(root);
 }
 
 TEST_CASE("an engine list that cannot be read is set aside, not replaced by an empty one") {

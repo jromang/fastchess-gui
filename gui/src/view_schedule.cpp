@@ -285,9 +285,13 @@ void App::drawEditPanel() {
         ImGui::SetNextItemWidth(-FLT_MIN);
         if (ImGui::BeginCombo("##edit_engine", edit_engine_.empty() ? TR("(choose)") : edit_engine_.c_str(),
                               ImGuiComboFlags_HeightLargest)) {
-            std::vector<std::string> names;
-            for (const auto& e : engines_) names.push_back(e.name);
-            if (const int i = ui::searchComboItems(names, edit_engine_); i >= 0) edit_engine_ = names[i];
+            std::vector<std::string> names, more;
+            for (const auto& e : engines_) {
+                if (e.inactive && e.name != edit_engine_) continue;
+                names.push_back(e.name);
+                more.push_back(engineSearchText(e));
+            }
+            if (const int i = ui::searchComboItems(names, edit_engine_, &more); i >= 0) edit_engine_ = names[i];
             ImGui::EndCombo();
         }
         const auto it = std::find_if(engines_.begin(), engines_.end(),

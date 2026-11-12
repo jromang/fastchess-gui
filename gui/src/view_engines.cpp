@@ -3,10 +3,14 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 
 #include <imgui.h>
 
 #include <fmt/include/fmt/format.h>
+
+#include <tour/rating_import.hpp>
 
 #include "app.hpp"
 #include "i18n.hpp"
@@ -32,6 +36,20 @@ bool editText(const char* id, std::string& value, float width = -FLT_MIN) {
         return true;
     }
     return false;
+}
+
+// A text of several lines, of any length.
+bool editLines(const char* id, std::string& value, ImVec2 size) {
+    const auto resize = [](ImGuiInputTextCallbackData* data) {
+        if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
+            auto* text = static_cast<std::string*>(data->UserData);
+            text->resize(static_cast<std::size_t>(data->BufTextLen));
+            data->Buf = text->data();
+        }
+        return 0;
+    };
+    return ImGui::InputTextMultiline(id, value.data(), value.capacity() + 1, size, ImGuiInputTextFlags_CallbackResize,
+                                     resize, &value);
 }
 
 // What is wrong with the engine's program, empty when nothing is.
@@ -390,6 +408,13 @@ void App::drawEngines() {
         }
         ImGui::TextDisabled("%s", TR("ChessGUI (ChsGUI_Eng.TXT), cutechess or Banksia (engines.json), Arena…"));
         if (ImGui::MenuItem(TR("Every engine of a folder…"))) dialogs_.openFolder(Dialogs::Purpose::ImportEngineFolder);
+        if (const auto& folder = engineFolder(); !folder.empty()) {
+            if (ImGui::MenuItem(TR("Refresh: the new engines of the folder"))) refreshEngineFolder();
+            ImGui::TextDisabled("%s", folder.string().c_str());
+        }
+        ImGui::Separator();
+        if (ImGui::MenuItem(TR("A rating list, for the reference Elo…"))) openRatingImport();
+        ImGui::TextDisabled("%s", TR("CCRL, Ordo, CSV (name,elo)"));
         ImGui::EndPopup();
     }
     const auto duplicate = [&] {
@@ -427,13 +452,13 @@ void App::drawEngines() {
         for (const auto& e : engines_) {
             const bool gone = e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
             if (gone) missing.push_back(e.name);
-            if (!gone && e.check_ok < 0 && !e.cmd.empty()) unchecked.push_back(e.name);
+            if (!gone && e.check_ok < 0 && !e.cmd.empty() && !e.inactive) unchecked.push_back(e.name);
         }
         if (ImGui::MenuItem(trf("Check those not checked ({})", unchecked.size()).c_str(), nullptr, false,
                             !unchecked.empty()))
             queueChecks(unchecked);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-            ImGui::SetTooltip("%s", TR("One after the other, not while a tournament plays."));
+            ImGui::SetTooltip("%s", TR("One after the other, not while a tournament plays. Not the inactive ones."));
         if (ImGui::MenuItem(trf("Remove the missing programs ({})…", missing.size()).c_str(), nullptr, false,
                             !missing.empty()))
             askRemove(missing);
@@ -476,7 +501,8 @@ void App::drawEngines() {
         std::copy_n(engine_search_.data(), n, buffer);
         buffer[n] = 0;
         ImGui::SetNextItemWidth(-FLT_MIN);
-        if (ImGui::InputTextWithHint("##engine_search", TR("Search: name, program, author"), buffer, sizeof(buffer)))
+        if (ImGui::InputTextWithHint("##engine_search", TR("Search: name, program, author, notes"), buffer,
+                                     sizeof(buffer)))
             engine_search_ = buffer;
 
         const float half = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2;
@@ -491,8 +517,8 @@ void App::drawEngines() {
             }
             ImGui::SameLine();
         }
-        const char* statuses[] = {TR("Every state"), TR("Works"),           TR("Failed or changed"),
-                                  TR("Not checked"), TR("Program missing"), TR("WinBoard")};
+        const char* statuses[] = {TR("Every state"),     TR("Works"),    TR("Failed or changed"), TR("Not checked"),
+                                  TR("Program missing"), TR("WinBoard"), TR("Inactive")};
         ImGui::SetNextItemWidth(groups.empty() ? -FLT_MIN : half);
         ImGui::Combo("##engine_status", &engine_status_, statuses, IM_ARRAYSIZE(statuses));
     }
@@ -553,26 +579,25 @@ void App::drawEngines() {
         const auto& e = engines_[i];
         if (!engine_group_.empty() && std::find(e.groups.begin(), e.groups.end(), engine_group_) == e.groups.end())
             continue;
-        if (!engine_search_.empty() && !containsCaseInsensitive(e.name, engine_search_) &&
-            !containsCaseInsensitive(e.id_name, engine_search_) &&
-            !containsCaseInsensitive(e.id_author, engine_search_) && !containsCaseInsensitive(e.cmd, engine_search_)) {
-            continue;
-        }
+        if (!engineMatches(e, engine_search_)) continue;
         const bool gone = e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
-        const bool keep = engine_status_ == 1   ? !gone && e.program_state != ProgramState::Changed && e.check_ok == 1
+        const bool keep = engine_status_ == 1   ? engineWorks(e)
                           : engine_status_ == 2 ? !gone && (e.check_ok == 0 || e.program_state == ProgramState::Changed)
                           : engine_status_ == 3 ? !gone && e.check_ok < 0
                           : engine_status_ == 4 ? gone
                           : engine_status_ == 5 ? isWinboard(e)
+                          : engine_status_ == 6 ? e.inactive
                                                 : true;
         if (keep) shown.push_back(i);
     }
     std::stable_sort(shown.begin(), shown.end(),
                      [&](int a, int b) { return lessCaseInsensitive(engines_[a].name, engines_[b].name); });
     bool remove_one = false, duplicate_asked = false;
+    int inactive_asked = -1;  // from the right click's menu: 1 inactive, 0 active again
 
     // Only the engines scroll: the buttons above and the legend below stay in sight.
-    const char* legend   = TR("✓ works · ! problem · ↔ WinBoard · Ctrl or Shift click: several · right click: more");
+    const char* legend =
+        TR("✓ works · ! problem · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right click: more");
     const float legend_h = engines_.empty()
                                ? 0.0f
                                : ImGui::CalcTextSize(legend, nullptr, false, ImGui::GetContentRegionAvail().x).y +
@@ -607,7 +632,10 @@ void App::drawEngines() {
             ImGui::SameLine();
             const auto label  = fmt::format("{}{}##engine{}", e.name, tag, i);
             const bool marked = engine_marked_.count(e.name) > 0;
-            if (ImGui::Selectable(label.c_str(), selected_engine_ == i || marked)) {
+            if (e.inactive) ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+            const bool clicked = ImGui::Selectable(label.c_str(), selected_engine_ == i || marked);
+            if (e.inactive) ImGui::PopStyleColor();
+            if (clicked) {
                 const auto& io = ImGui::GetIO();
                 if (io.KeyCtrl) {
                     // The one selected is part of the marked ones.
@@ -638,8 +666,10 @@ void App::drawEngines() {
                                             : isWinboard(e)   ? std::string(TR("A WinBoard engine."))
                                                               : std::string(TR("Not checked yet."));
                 const bool more           = problem.empty() && !e.check_message.empty();
-                ImGui::SetTooltip("%s %s%s%s", mark, meaning.c_str(), more ? "\n" : "",
-                                  more ? e.check_message.c_str() : "");
+                ImGui::SetTooltip("%s %s%s%s%s%s%s%s", mark, meaning.c_str(), more ? "\n" : "",
+                                  more ? e.check_message.c_str() : "", e.inactive ? "\n" : "",
+                                  e.inactive ? TR("Inactive: out of the engine pickers.") : "",
+                                  e.notes.empty() ? "" : "\n\n", e.notes.c_str());
             }
             if (ImGui::BeginPopupContextItem()) {
                 if (!marked) {
@@ -653,6 +683,7 @@ void App::drawEngines() {
                         false, !being_read))
                     startProbe(i);
                 if (ImGui::MenuItem(TR("Duplicate"))) duplicate_asked = true;
+                if (ImGui::MenuItem(TR("Inactive"), nullptr, e.inactive)) inactive_asked = e.inactive ? 0 : 1;
                 if (ImGui::MenuItem(TR("Remove…"))) remove_one = true;
                 ImGui::EndPopup();
             }
@@ -685,6 +716,15 @@ void App::drawEngines() {
     }
     if (remove_asked) ImGui::OpenPopup(TR("Remove the engine?###remove"));
     if (duplicate_asked) duplicate();  // after the loop, which holds references into engines_
+    if (inactive_asked >= 0) {
+        // Those marked, or the one right clicked.
+        chosen.clear();
+        for (const auto& e : engines_) {
+            if (engine_marked_.count(e.name)) chosen.push_back(e.name);
+        }
+        if (chosen.empty() && selected_engine_ >= 0) chosen.push_back(engines_[selected_engine_].name);
+        setInactive(chosen, inactive_asked == 1);
+    }
 
     ImGui::EndChild();
     if (ui::splitter("##engine_split", setup_.panes["engines"], page)) saveSetupSoon();
@@ -780,6 +820,11 @@ void App::drawEngines() {
     }
 
     changed |= ImGui::Checkbox(TR("Restart the engine for every game"), &e.restart);
+    ImGui::SameLine(0, ImGui::GetFontSize() * 1.5f);
+    changed |= ImGui::Checkbox(TR("Inactive"), &e.inactive);
+    ui::help(
+        TR("Kept in the library, but out of the engine pickers (setup, suites, quick test, relaunch, adding to a "
+           "tournament) and of Check those not checked. A tournament that has it already plays it as before."));
 
     // The usual start timeout is shown rather than 0, and saved as 0 when typed back.
     ui::label(TR("Start timeout (s)"), label);
@@ -788,7 +833,7 @@ void App::drawEngines() {
             static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(ENGINE_STARTUP_TIME).count());
         int seconds = e.start_timeout > 0 ? e.start_timeout : usual;
         ImGui::SetNextItemWidth(120.0f * ImGui::GetFontSize() / 16.0f);
-        if (ImGui::InputInt("##start_timeout", &seconds, 0, 0)) {
+        if (ui::inputInt("##start_timeout", &seconds)) {
             seconds         = std::clamp(seconds, 1, 3600);
             e.start_timeout = seconds == usual ? 0 : seconds;
             changed         = true;
@@ -823,7 +868,7 @@ void App::drawEngines() {
 
     ui::label(TR("Reference Elo"), label);
     ImGui::SetNextItemWidth(120.0f * ImGui::GetFontSize() / 16.0f);
-    if (ImGui::InputInt("##elo", &e.elo, 0, 0)) {
+    if (ui::inputInt("##elo", &e.elo)) {
         e.elo   = std::clamp(e.elo, 0, 5000);
         changed = true;
     }
@@ -832,6 +877,11 @@ void App::drawEngines() {
     if (ImGui::SmallButton(TR("Its results…"))) showEngineCard(e.name);
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("%s", TR("Its card in Ratings: results, health and rating over every tournament."));
+
+    ui::label(TR("Notes"), label);
+    changed |= editLines("##notes", e.notes, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 3.5f));
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + label);
+    ImGui::TextDisabled("%s", TR("Anything to remember about it; the engine searches find it."));
 
     // Health check.
     ImGui::Spacing();
@@ -890,11 +940,14 @@ void App::drawEngines() {
     ImGui::SetNextItemWidth(160.0f * ImGui::GetFontSize() / 16.0f);
     if (ImGui::BeginCombo("##test_opponent", quick_test_opponent_.empty() ? TR("itself") : quick_test_opponent_.c_str(),
                           ImGuiComboFlags_HeightLargest)) {
-        std::vector<std::string> names{TR("itself")};  // first: the engine itself
+        std::vector<std::string> names{TR("itself")}, more{""};  // first: the engine itself
         for (const auto& o : engines_) {
-            if (o.name != e.name) names.push_back(o.name);
+            if (o.name == e.name || (o.inactive && o.name != quick_test_opponent_)) continue;
+            names.push_back(o.name);
+            more.push_back(engineSearchText(o));
         }
-        if (const int i = ui::searchComboItems(names, quick_test_opponent_.empty() ? names[0] : quick_test_opponent_);
+        if (const int i =
+                ui::searchComboItems(names, quick_test_opponent_.empty() ? names[0] : quick_test_opponent_, &more);
             i >= 0) {
             quick_test_opponent_ = i == 0 ? std::string() : names[i];
         }
@@ -1008,11 +1061,11 @@ void App::drawEngines() {
                         return fallback;
                     }
                 };
-                long long v  = number(value, 0);
-                long long lo = number(opt.min, LLONG_MIN);
-                long long hi = number(opt.max, LLONG_MAX);
+                int64_t v  = number(value, 0);
+                int64_t lo = number(opt.min, LLONG_MIN);
+                int64_t hi = number(opt.max, LLONG_MAX);
                 if (lo > hi) std::swap(lo, hi);
-                if (ImGui::InputScalar("##v", ImGuiDataType_S64, &v)) {
+                if (ui::inputInt64("##v", &v)) {
                     v      = std::clamp(v, lo, hi);
                     value  = std::to_string(v);
                     edited = true;
@@ -1251,19 +1304,46 @@ void App::pollCheck() {
     if (e.uci_options.empty()) startProbe(index);
 }
 
-void App::importEngines(const ImportResult& imported) {
+void App::importEngines(const ImportResult& imported, const std::filesystem::path& refreshed) {
     // Shown first, to choose: a folder scan takes every program, the GUI it holds too (Arena.exe).
     ImportPreview preview;
-    preview.result = imported;
+    preview.result.notes = imported.notes;
+    preview.refreshed    = refreshed.string();
     for (const auto& e : imported.engines) {
-        // Already in the list: not added again.
+        // Already in the list: not added again, nor even shown when the remembered folder is looked in again.
         const bool known =
             std::any_of(engines_.begin(), engines_.end(), [&](const EngineEntry& o) { return sameEngine(o, e); });
+        if (known && !refreshed.empty()) continue;
+        preview.result.engines.push_back(e);
         preview.known.push_back(known);
         preview.chosen.push_back(!known);
     }
     import_preview_      = std::move(preview);
     open_import_preview_ = true;
+}
+
+const std::filesystem::path& App::engineFolder() {
+    if (!engine_folder_) engine_folder_ = storage_.engineFolder();
+    return *engine_folder_;
+}
+
+void App::refreshEngineFolder() {
+    const auto folder = engineFolder();
+    if (folder.empty()) return;
+    ImportResult found;
+    std::error_code ec;
+    if (fs::is_directory(folder, ec))
+        found = findEngines(folder);
+    else
+        found.notes.push_back(trf("The folder {} is not there any more.", folder.string()));
+    importEngines(found, folder);
+}
+
+void App::setInactive(const std::vector<std::string>& names, bool inactive) {
+    for (auto& e : engines_) {
+        if (std::find(names.begin(), names.end(), e.name) != names.end()) e.inactive = inactive;
+    }
+    storage_.saveEngines(engines_);
 }
 
 void App::addImported() {
@@ -1302,9 +1382,18 @@ void App::drawImportPreview() {
     auto& p           = *import_preview_;
     const auto& found = p.result.engines;
 
-    ImGui::TextUnformatted(trn("{} engine found. Untick those to leave out.",
-                               "{} engines found. Untick those to leave out.", found.size(), found.size())
-                               .c_str());
+    if (!p.refreshed.empty()) {
+        ImGui::TextDisabled("%s", p.refreshed.c_str());
+        if (found.empty()) ImGui::TextUnformatted(TR("No new engine in the folder."));
+    }
+    if (!found.empty()) {
+        const auto text = p.refreshed.empty()
+                              ? trn("{} engine found. Untick those to leave out.",
+                                    "{} engines found. Untick those to leave out.", found.size(), found.size())
+                              : trn("{} new engine found. Untick those to leave out.",
+                                    "{} new engines found. Untick those to leave out.", found.size(), found.size());
+        ImGui::TextUnformatted(text.c_str());
+    }
     if (!p.result.notes.empty()) {
         ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
         for (const auto& note : p.result.notes) ImGui::TextWrapped("%s", note.c_str());
@@ -1361,6 +1450,184 @@ void App::drawImportPreview() {
     ImGui::SameLine();
     if (ImGui::Button(TR("Cancel"))) {
         import_preview_.reset();
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+}
+
+void App::openRatingImport(const std::string& text) {
+    rating_import_.emplace();
+    rating_import_->text = text;
+    readRatingImport();
+    open_rating_import_ = true;
+}
+
+void App::loadRatingList(const std::string& path) {
+    std::ifstream in(fs::path(path), std::ios::binary);
+    std::string text{std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
+    if (!in && !in.eof()) {
+        Console::instance().add(trf("Cannot read {}", path), true);
+        return;
+    }
+    openRatingImport(toUtf8(std::move(text)));
+}
+
+void App::readRatingImport() {
+    if (!rating_import_) return;
+    auto& r         = *rating_import_;
+    const auto list = tour::parseRatingList(r.text);
+    auto names      = std::vector<std::string>{};
+    for (const auto& e : engines_) names.push_back(e.name);
+    const auto found = tour::matchRatings(list, names);
+
+    r.listed    = list.size();
+    r.unmatched = found.unmatched;
+    r.rows.clear();
+    for (const auto& m : found.matched) {
+        const auto it =
+            std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == m.engine; });
+        if (it == engines_.end()) continue;
+        r.rows.push_back({m.engine, m.listed, it->elo, m.elo, it->elo != m.elo});
+    }
+    // In alphabetical order, as the engine list shows them.
+    std::stable_sort(r.rows.begin(), r.rows.end(),
+                     [](const auto& a, const auto& b) { return lessCaseInsensitive(a.engine, b.engine); });
+}
+
+void App::applyRatingImport() {
+    if (!rating_import_) return;
+    int applied = 0;
+    for (const auto& row : rating_import_->rows) {
+        if (!row.chosen || row.elo == row.elo_now) continue;
+        for (auto& e : engines_) {
+            if (e.name != row.engine) continue;
+            e.elo = row.elo;
+            ++applied;
+        }
+    }
+    storage_.saveEngines(engines_);
+    ratings_dirty_ = true;  // a reference rating anchors the rating list
+    Console::instance().add(trn("{} reference Elo set from the rating list.",
+                                "{} reference Elo set from the rating list.", applied, applied));
+    rating_import_.reset();
+}
+
+void App::drawRatingImport() {
+    const char* title = TR("Import a rating list###rating_import");
+    if (open_rating_import_) {
+        ImGui::OpenPopup(title);
+        open_rating_import_ = false;
+    }
+    ImGui::SetNextWindowSize(ImVec2(px(820), 0), ImGuiCond_Appearing);
+    if (!ImGui::BeginPopupModal(title, nullptr)) return;
+    if (!rating_import_) {
+        ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+        return;
+    }
+    auto& r = *rating_import_;
+
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextDisabled("%s",
+                        TR("Paste a rating list, or open its file: a CCRL list (its text version, or its web page "
+                           "copied from the browser or saved), Ordo's output, or CSV (name,elo). The library "
+                           "engines it names get their reference Elo from it: the same name, letter case and "
+                           "spaces aside."));
+    ImGui::PopTextWrapPos();
+    if (ImGui::Button(TR("Open a file…"))) {
+        dialogs_.openFile(Dialogs::Purpose::ImportRatingList,
+                          {{TR("Rating lists"), "txt;csv;htm;html"}, {TR("All files"), "*"}});
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(TR("Paste"))) {
+        if (const char* clip = ImGui::GetClipboardText()) {
+            r.text = clip;
+            readRatingImport();
+        }
+    }
+    if (editLines("##rating_text", r.text, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 6))) readRatingImport();
+
+    // What it changes.
+    int changes = 0;
+    for (const auto& row : r.rows) changes += row.chosen && row.elo != row.elo_now;
+    if (!r.text.empty()) {
+        ImGui::TextUnformatted(trf("{} engines on the list · {} in the library · {} not in the library", r.listed,
+                                   r.rows.size(), r.unmatched.size())
+                                   .c_str());
+    }
+    if (!r.unmatched.empty() && ImGui::TreeNode(TR("Names of the list that are no library engine"))) {
+        ImGui::BeginChild("##unmatched", ImVec2(0, ImGui::GetTextLineHeightWithSpacing() *
+                                                       std::min(8.0f, static_cast<float>(r.unmatched.size()) + 0.5f)));
+        ImGuiListClipper clipper;
+        clipper.Begin(static_cast<int>(r.unmatched.size()));
+        while (clipper.Step()) {
+            for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
+                ImGui::TextDisabled("%s", r.unmatched[i].c_str());
+        }
+        ImGui::EndChild();
+        ImGui::TreePop();
+    }
+
+    if (!r.rows.empty()) {
+        const float rows = std::min(12.0f, static_cast<float>(r.rows.size()) + 1);
+        if (ImGui::BeginTable("##rating_rows", 4,
+                              ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp,
+                              ImVec2(0, ImGui::GetFrameHeightWithSpacing() * rows))) {
+            ImGui::TableSetupScrollFreeze(0, 1);
+            ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
+            ImGui::TableSetupColumn(TR("Engine"), ImGuiTableColumnFlags_WidthStretch, 0.35f);
+            ImGui::TableSetupColumn(TR("On the list"), ImGuiTableColumnFlags_WidthStretch, 0.4f);
+            ImGui::TableSetupColumn(TR("Reference Elo"), ImGuiTableColumnFlags_WidthStretch, 0.25f);
+            ImGui::TableHeadersRow();
+            ImGuiListClipper clipper;
+            clipper.Begin(static_cast<int>(r.rows.size()));
+            while (clipper.Step()) {
+                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
+                    auto& row       = r.rows[i];
+                    const bool same = row.elo == row.elo_now;
+                    ImGui::TableNextRow();
+                    ImGui::PushID(i);
+                    ImGui::TableNextColumn();
+                    bool chosen = row.chosen && !same;
+                    ImGui::BeginDisabled(same);
+                    if (ImGui::Checkbox("##chosen", &chosen)) row.chosen = chosen;
+                    ImGui::EndDisabled();
+                    ImGui::TableNextColumn();
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted(row.engine.c_str());
+                    ImGui::TableNextColumn();
+                    ImGui::TextDisabled("%s", row.listed.c_str());
+                    ImGui::TableNextColumn();
+                    if (same) {
+                        ImGui::TextDisabled("%d  %s", row.elo, TR("(the same)"));
+                    } else if (row.elo_now == 0) {
+                        ImGui::Text("— → %d", row.elo);
+                    } else {
+                        ImGui::Text("%d → %d", row.elo_now, row.elo);
+                        ImGui::SameLine();
+                        ImGui::TextDisabled("(%+d)", row.elo - row.elo_now);
+                    }
+                    ImGui::PopID();
+                }
+            }
+            ImGui::EndTable();
+        }
+    } else if (!r.text.empty()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+        ImGui::TextWrapped("%s", r.listed == 0 ? TR("No engine and rating found in this text.")
+                                               : TR("None of these engines is in the library under the same name."));
+        ImGui::PopStyleColor();
+    }
+
+    ImGui::BeginDisabled(changes == 0);
+    if (ImGui::Button(trn("Set {} reference Elo", "Set {} reference Elo", changes, changes).c_str())) {
+        applyRatingImport();
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (ImGui::Button(TR("Cancel"))) {
+        rating_import_.reset();
         ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();

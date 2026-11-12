@@ -445,7 +445,7 @@ void App::drawStandings() {
     if (anchor_) {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(px(90));
-        if (ImGui::InputDouble("##anchor_elo", &anchor_->elo, 0, 0, "%.0f")) table_for_ = ~std::size_t(0);
+        if (ui::inputDouble("##anchor_elo", &anchor_->elo, "%.0f")) table_for_ = ~std::size_t(0);
     }
 
     ImGui::SameLine(0, px(30));

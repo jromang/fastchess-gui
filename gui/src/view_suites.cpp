@@ -167,6 +167,7 @@ void App::drawSuites() {
         auto& list    = suite_setup_.engines;
         const auto it = std::find(list.begin(), list.end(), e.name);
         bool on       = it != list.end();
+        if (e.inactive && !on) continue;  // out of the pickers, unless it was chosen before
         if (ImGui::Checkbox(e.name.c_str(), &on)) {
             if (on) {
                 list.push_back(e.name);
@@ -204,7 +205,7 @@ void App::drawSuites() {
         case LimitKind::Nodes: {
             label(TR("Nodes per position"));
             auto nodes = static_cast<int64_t>(suite_setup_.nodes);
-            if (ImGui::InputScalar("##suite_nodes", ImGuiDataType_S64, &nodes)) {
+            if (ui::inputInt64("##suite_nodes", &nodes)) {
                 suite_setup_.nodes = static_cast<uint64_t>(std::max<int64_t>(1, nodes));
                 changed            = true;
             }
@@ -212,7 +213,7 @@ void App::drawSuites() {
         }
         case LimitKind::Depth:
             label(TR("Plies"));
-            if (ImGui::InputInt("##suite_depth", &suite_setup_.depth, 0, 0)) {
+            if (ui::inputInt("##suite_depth", &suite_setup_.depth)) {
                 suite_setup_.depth = std::clamp(suite_setup_.depth, 1, 200);
                 changed            = true;
             }
@@ -220,13 +221,13 @@ void App::drawSuites() {
         default:
             suite_setup_.limit = LimitKind::MoveTime;
             label(TR("Seconds per position"));
-            if (ImGui::InputDouble("##suite_time", &suite_setup_.move_s, 0, 0, "%.2f")) {
+            if (ui::inputDouble("##suite_time", &suite_setup_.move_s, "%.2f")) {
                 suite_setup_.move_s = std::clamp(suite_setup_.move_s, 0.01, 3600.0);
                 changed             = true;
             }
     }
     label(TR("Found for (plies)"));
-    if (ImGui::InputInt("##suite_hold", &suite_setup_.hold, 0, 0)) {
+    if (ui::inputInt("##suite_hold", &suite_setup_.hold)) {
         suite_setup_.hold = std::clamp(suite_setup_.hold, 0, 50);
         changed           = true;
     }
@@ -234,12 +235,12 @@ void App::drawSuites() {
         TR("The search stops once a solution has stayed the engine's first move for this many more plies of "
            "depth. 0: every search takes its whole time."));
     label(TR("Hash (MB)"));
-    if (ImGui::InputInt("##suite_hash", &suite_setup_.hash, 0, 0)) {
+    if (ui::inputInt("##suite_hash", &suite_setup_.hash)) {
         suite_setup_.hash = std::clamp(suite_setup_.hash, 0, 1 << 20);
         changed           = true;
     }
     label(TR("Threads"));
-    if (ImGui::InputInt("##suite_threads", &suite_setup_.threads, 0, 0)) {
+    if (ui::inputInt("##suite_threads", &suite_setup_.threads)) {
         suite_setup_.threads = std::clamp(suite_setup_.threads, 0, 1024);
         changed              = true;
     }
@@ -250,7 +251,7 @@ void App::drawSuites() {
            "hardware thread."));
     if (!suite_setup_.concurrency_auto) {
         label(TR("Searches at a time"));
-        if (ImGui::InputInt("##suite_concurrency", &suite_setup_.concurrency, 0, 0)) {
+        if (ui::inputInt("##suite_concurrency", &suite_setup_.concurrency)) {
             suite_setup_.concurrency = std::clamp(suite_setup_.concurrency, 1, topology_.logical);
             changed                  = true;
         }

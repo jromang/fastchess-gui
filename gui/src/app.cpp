@@ -142,7 +142,10 @@ void App::frame() {
         const auto& w = options_.focus_window;
         if (w == "setup")
             page_ = Page::NewMatch;
-        else if (w == "setup-pgn") {
+        else if (w == "setup-picker" || w == "setup-suggest") {
+            page_        = Page::NewMatch;
+            open_picker_ = w == "setup-picker" ? 1 : 2;
+        } else if (w == "setup-pgn") {
             page_           = Page::NewMatch;
             open_pgn_setup_ = true;
         } else if (w == "statistics") {
@@ -155,7 +158,20 @@ void App::frame() {
             sprt_calc_open_ = true;
         } else if (w == "engines")
             page_ = Page::Engines;
-        else if (w == "console")
+        else if (w == "engines-card") {
+            page_            = Page::Engines;
+            selected_engine_ = engines_.empty() ? -1 : 0;
+        } else if (w == "engines-refresh") {
+            page_ = Page::Engines;
+            refreshEngineFolder();
+        } else if (w.rfind("engines-ratings", 0) == 0) {
+            // engines-ratings=FILE: the preview of that rating list.
+            page_ = Page::Engines;
+            if (const auto eq = w.find('='); eq != std::string::npos)
+                loadRatingList(w.substr(eq + 1));
+            else
+                openRatingImport();
+        } else if (w == "console")
             page_ = Page::Log;
         else if (w == "settings")
             page_ = Page::Settings;
@@ -201,6 +217,7 @@ void App::frame() {
     drawSprtCalculator();
     drawQuitModal();
     drawImportPreview();
+    drawRatingImport();
 
     // The window title tells how the run is going, also when the window is in the background.
     {
@@ -698,7 +715,13 @@ void App::handleDialogs() {
                 importEngines(importEngineList(path));
                 break;
             case Dialogs::Purpose::ImportEngineFolder:
+                // Remembered, for Refresh to look in again.
+                storage_.setEngineFolder(path);
+                engine_folder_ = std::filesystem::path(path);
                 importEngines(findEngines(path));
+                break;
+            case Dialogs::Purpose::ImportRatingList:
+                loadRatingList(path);
                 break;
             case Dialogs::Purpose::OpenTournament:
                 openTournament(path);

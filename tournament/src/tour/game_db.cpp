@@ -222,6 +222,15 @@ std::optional<std::string> libraryEngine(const std::string& player, const std::v
     return LibraryMatcher(library).find(player);
 }
 
+std::vector<std::optional<std::string>> libraryEngines(const std::vector<std::string>& players,
+                                                       const std::vector<std::string>& library) {
+    const LibraryMatcher matcher(library);
+    std::vector<std::optional<std::string>> out;
+    out.reserve(players.size());
+    for (const auto& player : players) out.push_back(matcher.find(player));
+    return out;
+}
+
 GameDb readGameDb(const std::vector<fs::path>& dirs, const std::vector<fs::path>& pgns,
                   const std::vector<std::string>& library) {
     GameDb db;

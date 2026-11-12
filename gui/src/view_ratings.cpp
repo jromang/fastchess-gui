@@ -320,7 +320,7 @@ void App::drawRatingFilters() {
     if (!rating_anchor_.empty()) {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(px(90));
-        if (ImGui::InputDouble("##rating_anchor_elo", &rating_anchor_elo_, 0, 0, "%.0f")) ratings_dirty_ = true;
+        if (ui::inputDouble("##rating_anchor_elo", &rating_anchor_elo_, "%.0f")) ratings_dirty_ = true;
     }
     ImGui::SameLine(0, px(24));
     if (ImGui::GetContentRegionAvail().x < ImGui::CalcTextSize(TR("Refresh")).x + ImGui::GetStyle().FramePadding.x * 2)
@@ -334,7 +334,7 @@ void App::drawRatingFilters() {
 
 void App::drawRatingList() {
     ImGui::SetNextItemWidth(px(110));
-    if (ImGui::InputInt(TR("games at least"), &rating_min_games_, 0, 0)) {
+    if (ui::inputInt(TR("games at least"), &rating_min_games_)) {
         rating_min_games_ = std::max(0, rating_min_games_);
         ratings_dirty_    = true;
     }

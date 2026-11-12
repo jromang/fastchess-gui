@@ -2,10 +2,14 @@
 
 #include <algorithm>
 #include <cctype>
+#include <climits>
 #include <cmath>
+#include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iterator>
+#include <utility>
 #include <vector>
 
 #include <SDL3/SDL_misc.h>
@@ -428,6 +432,171 @@ int takeCtrlWheel() {
     return step;
 }
 
+namespace {
+
+// The arithmetic of a number field, read from left to right: expression := term (('+' | '-') term)*, term :=
+// factor (('*' | '/') factor)*, factor := ('+' | '-') factor | number | '(' expression ')'.
+class Arithmetic {
+   public:
+    explicit Arithmetic(std::string_view text) : text_(text) {}
+
+    std::optional<double> value() {
+        const auto v = expression(0);
+        skipSpaces();
+        if (!v || at_ != text_.size() || !std::isfinite(*v)) return std::nullopt;
+        return v;
+    }
+
+   private:
+    void skipSpaces() {
+        while (at_ < text_.size() && text_[at_] == ' ') ++at_;
+    }
+
+    bool take(char c) {
+        skipSpaces();
+        if (at_ < text_.size() && text_[at_] == c) {
+            ++at_;
+            return true;
+        }
+        return false;
+    }
+
+    std::optional<double> expression(int depth) {
+        auto v = term(depth);
+        while (v) {
+            if (take('+')) {
+                const auto r = term(depth);
+                v            = r ? std::optional(*v + *r) : std::nullopt;
+            } else if (take('-')) {
+                const auto r = term(depth);
+                v            = r ? std::optional(*v - *r) : std::nullopt;
+            } else {
+                break;
+            }
+        }
+        return v;
+    }
+
+    std::optional<double> term(int depth) {
+        auto v = factor(depth);
+        while (v) {
+            if (take('*')) {
+                const auto r = factor(depth);
+                v            = r ? std::optional(*v * *r) : std::nullopt;
+            } else if (take('/')) {
+                const auto r = factor(depth);
+                v            = r && *r != 0 ? std::optional(*v / *r) : std::nullopt;
+            } else {
+                break;
+            }
+        }
+        return v;
+    }
+
+    std::optional<double> factor(int depth) {
+        if (depth > 64) return std::nullopt;  // parentheses without end
+        if (take('-')) {
+            const auto v = factor(depth + 1);
+            return v ? std::optional(-*v) : std::nullopt;
+        }
+        if (take('+')) return factor(depth + 1);
+        if (take('(')) {
+            const auto v = expression(depth + 1);
+            return v && take(')') ? v : std::nullopt;
+        }
+        return number();
+    }
+
+    std::optional<double> number() {
+        skipSpaces();
+        std::string digits;
+        bool point = false;
+        while (at_ < text_.size()) {
+            const char c = text_[at_];
+            if (c >= '0' && c <= '9') {
+                digits += c;
+            } else if ((c == '.' || c == ',') && !point) {
+                digits += '.';
+                point = true;
+            } else {
+                break;
+            }
+            ++at_;
+        }
+        if (digits.empty() || digits == ".") return std::nullopt;
+        return std::strtod(digits.c_str(), nullptr);
+    }
+
+    std::string_view text_;
+    std::size_t at_ = 0;
+};
+
+// The characters arithmetic is typed with.
+int arithmeticChars(ImGuiInputTextCallbackData* data) {
+    const auto c  = data->EventChar;
+    const bool ok = (c >= '0' && c <= '9') || c == '.' || c == ',' || c == '+' || c == '-' || c == '*' || c == '/' ||
+                    c == '(' || c == ')' || c == ' ';
+    return ok ? 0 : 1;
+}
+
+// A number field: `shown` is the value as text, `apply` takes what was typed, when the field is left.
+template <typename Apply>
+bool numberField(const char* label, const std::string& shown, Apply apply) {
+    char buffer[64];
+    const auto n = std::min(shown.size(), sizeof(buffer) - 1);
+    std::copy_n(shown.data(), n, buffer);
+    buffer[n] = 0;
+    ImGui::InputText(label, buffer, sizeof(buffer),
+                     ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CallbackCharFilter, arithmeticChars);
+    // As ImGui's own number fields: applied when the field is left (Enter, Tab, a click elsewhere); Escape has put the
+    // text back. Left unchanged, a value shown rounded stays as it is.
+    if (!ImGui::IsItemDeactivated() || shown == buffer) return false;
+    const auto value = evaluate(buffer);
+    return value && apply(*value);
+}
+
+}  // namespace
+
+std::optional<double> evaluate(std::string_view text) { return Arithmetic(text).value(); }
+
+bool inputInt(const char* label, int* value) {
+    return numberField(label, std::to_string(*value), [&](double v) {
+        const int now = static_cast<int>(std::llround(std::clamp(v, double(INT_MIN), double(INT_MAX))));
+        return std::exchange(*value, now) != now;
+    });
+}
+
+bool inputInt64(const char* label, int64_t* value) {
+    return numberField(label, std::to_string(*value), [&](double v) {
+        // The largest double below 2^63, so that the conversion cannot overflow.
+        const auto now =
+            static_cast<int64_t>(std::llround(std::clamp(v, -9.2233720368547748e18, 9.2233720368547748e18)));
+        return std::exchange(*value, now) != now;
+    });
+}
+
+bool inputDouble(const char* label, double* value, const char* format) {
+    char shown[64];
+    std::snprintf(shown, sizeof(shown), format, *value);
+    return numberField(label, shown, [&](double v) { return std::exchange(*value, v) != v; });
+}
+
+void drawBadge(ImDrawList* dl, ImVec2 center, const char* text) {
+    const float size = ImGui::GetFontSize() * 0.75f;
+    const ImVec2 ts  = ImGui::GetFont()->CalcTextSizeA(size, FLT_MAX, 0.0f, text);
+    const float h    = size * 1.35f;
+    const float w    = std::max(h, ts.x + size * 0.9f);
+    const ImVec2 min = ImVec2(center.x - w * 0.5f, center.y - h * 0.5f);
+    dl->AddRectFilled(min, ImVec2(min.x + w, min.y + h), ACCENT, h * 0.5f);
+    dl->AddText(ImGui::GetFont(), size, ImVec2(center.x - ts.x * 0.5f, center.y - ts.y * 0.5f), IM_COL32_WHITE, text);
+}
+
+float badgeWidth(const char* text) {
+    const float size = ImGui::GetFontSize() * 0.75f;
+    const float h    = size * 1.35f;
+    return std::max(h, ImGui::GetFont()->CalcTextSizeA(size, FLT_MAX, 0.0f, text).x + size * 0.9f);
+}
+
 void label(const char* text, float width) {
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(text);
@@ -549,7 +718,8 @@ CopyAs copyButton(const char* id, bool small) {
     return choice;
 }
 
-int searchComboItems(const std::vector<std::string>& names, const std::string& current) {
+int searchComboItems(const std::vector<std::string>& names, const std::string& current,
+                     const std::vector<std::string>* more) {
     static std::string search;  // one combo is open at a time
     const bool appearing = ImGui::IsWindowAppearing();
     if (appearing) {
@@ -572,7 +742,10 @@ int searchComboItems(const std::vector<std::string>& names, const std::string& c
     std::vector<int> shown;
     int current_row = -1;
     for (int i = 0; i < static_cast<int>(names.size()); ++i) {
-        if (!needle.empty() && lower(names[i]).find(needle) == std::string::npos) continue;
+        const bool found = needle.empty() || lower(names[i]).find(needle) != std::string::npos ||
+                           (more && i < static_cast<int>(more->size()) &&
+                            lower((*more)[i]).find(needle) != std::string::npos);
+        if (!found) continue;
         if (names[i] == current) current_row = static_cast<int>(shown.size());
         shown.push_back(i);
     }

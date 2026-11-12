@@ -91,7 +91,7 @@ void App::drawBroadcast() {
     toggle(TR("Run the TLCS server"), setup_.broadcast_tlcs);
     ImGui::SetNextItemWidth(px(120));
     ImGui::BeginDisabled(broadcaster_.tlcs().running());
-    if (ImGui::InputInt(TR("UDP port"), &setup_.tlcs_port, 0, 0)) {
+    if (ui::inputInt(TR("UDP port"), &setup_.tlcs_port)) {
         setup_.tlcs_port = std::clamp(setup_.tlcs_port, 1, 65535);
         changed          = true;
     }
@@ -122,7 +122,7 @@ void App::drawBroadcast() {
     toggle(TR("Serve the web page"), setup_.broadcast_web);
     ImGui::SetNextItemWidth(px(120));
     ImGui::BeginDisabled(broadcaster_.web().running());
-    if (ImGui::InputInt(TR("TCP port"), &setup_.web_port, 0, 0)) {
+    if (ui::inputInt(TR("TCP port"), &setup_.web_port)) {
         setup_.web_port = std::clamp(setup_.web_port, 1, 65535);
         changed         = true;
     }
