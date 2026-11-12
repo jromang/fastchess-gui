@@ -9,6 +9,7 @@
 #include <fmt/include/fmt/format.h>
 
 #include "journal.hpp"
+#include "pgn_file.hpp"
 #include "state.hpp"
 
 namespace fcg::tour {
@@ -158,8 +159,8 @@ std::string ratingPgn(const GameDb& db, const GameFilter& filter) {
         out += fmt::format(
             "[Event \"{}\"]\n[Date \"{}\"]\n[White \"{}\"]\n[Black \"{}\"]\n[Result \"{}\"]\n"
             "[TimeControl \"{}\"]\n\n{}\n\n",
-            db.sources[g.source].name, date, db.engines[g.white], db.engines[g.black], result,
-            db.time_controls[g.time_control], result);
+            pgnTagValue(db.sources[g.source].name), date, pgnTagValue(db.engines[g.white]),
+            pgnTagValue(db.engines[g.black]), result, pgnTagValue(db.time_controls[g.time_control]), result);
     }
     return out;
 }

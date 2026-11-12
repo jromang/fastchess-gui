@@ -6,6 +6,7 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <string_view>
 
 namespace fcg::tour {
 
@@ -43,5 +44,8 @@ void appendShared(const std::filesystem::path& file, const std::string& text);
 
 // Reads one game back.
 [[nodiscard]] std::optional<std::string> readSpan(const std::filesystem::path& file, const PgnSpan& span);
+
+// A tag value as PGN writes it between the quotes: its quotes and backslashes escaped.
+[[nodiscard]] std::string pgnTagValue(std::string_view value);
 
 }  // namespace fcg::tour

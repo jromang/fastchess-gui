@@ -2,6 +2,8 @@
 
 #include <ctime>
 
+#include <tour/pgn_file.hpp>
+
 #include <fmt/include/fmt/format.h>
 
 #include "storage.hpp"
@@ -15,12 +17,7 @@ constexpr auto PUSH_EVERY = std::chrono::seconds(8);
 std::string headers(const std::string& event, uint32_t round, const std::string& white, const std::string& black,
                     int white_elo, int black_elo, const std::string& result, const std::string& fen, bool frc) {
     const auto tag = [](const char* name, const std::string& value) {
-        std::string escaped;
-        for (const char c : value) {
-            if (c == '"' || c == '\\') escaped += '\\';
-            escaped += c;
-        }
-        return fmt::format("[{} \"{}\"]\n", name, escaped);
+        return fmt::format("[{} \"{}\"]\n", name, tour::pgnTagValue(value));
     };
     std::string out = tag("Event", event) + tag("Site", "fastchess-gui") + tag("Round", std::to_string(round)) +
                       tag("White", white) + tag("Black", black) + tag("Result", result);

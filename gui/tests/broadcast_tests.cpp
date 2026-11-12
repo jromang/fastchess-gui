@@ -4,6 +4,8 @@
 
 #include <algorithm>
 #include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <memory>
 #include <regex>
 #include <thread>
@@ -14,6 +16,10 @@
 
 #include "broadcast.hpp"
 #include "net.hpp"
+
+#ifdef _WIN32
+#    include <windows.h>
+#endif
 
 using namespace fcg;
 using namespace std::chrono_literals;
@@ -82,6 +88,14 @@ TEST_CASE("broadcast: JSON and live PGN") {
     CHECK(json["games"][0]["white_elo"] == 3500);
     CHECK(pgn.find("1. e4 e5 2. Nf3 *") != std::string::npos);
     CHECK(pgn.find("[FEN") == std::string::npos);  // the initial position needs none
+
+    // Quotes and backslashes in a name are escaped.
+    auto odd           = s;
+    odd.name           = "The \"big\" one";
+    odd.games[0].white = "C:\\engines\\Alpha";
+    const auto escaped = livePgn(odd);
+    CHECK(escaped.find("[Event \"The \\\"big\\\" one\"]") != std::string::npos);
+    CHECK(escaped.find("[White \"C:\\\\engines\\\\Alpha\"]") != std::string::npos);
 }
 
 TEST_CASE("broadcast: the crosstable keeps the columns node-tlcv reads") {
@@ -444,4 +458,37 @@ TEST_CASE("broadcast: the web page and its state") {
     {
         net::TcpConnection close(*silent);
     }
+}
+
+TEST_CASE("broadcast: the live files, no temporary file left") {
+    const auto dir = std::filesystem::temp_directory_path() / "fcg-live-files";
+    std::filesystem::remove_all(dir);
+    REQUIRE(writeBroadcastFiles(sample(), dir).empty());
+    CHECK(std::filesystem::exists(dir / "live.pgn"));
+    CHECK_FALSE(std::filesystem::exists(dir / "live.pgn.tmp"));
+    const auto read = [&] {
+        std::ifstream in(dir / "live.pgn", std::ios::binary);
+        return std::string(std::istreambuf_iterator<char>(in), {});
+    };
+    CHECK(read().find("[Event \"Test broadcast\"]") != std::string::npos);
+
+#ifdef _WIN32
+    // A reader that lets others write but not replace the file: written over in place.
+    auto replaced           = sample();
+    replaced.games[0].white = "Replaced";
+    HANDLE reader = CreateFileW((dir / "live.pgn").c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                                OPEN_EXISTING, 0, nullptr);
+    REQUIRE(reader != INVALID_HANDLE_VALUE);
+    CHECK(writeBroadcastFiles(replaced, dir).empty());
+    CloseHandle(reader);
+    CHECK(read().find("[White \"Replaced\"]") != std::string::npos);
+
+    // One that shares nothing: an error, and still no temporary file.
+    reader = CreateFileW((dir / "live.pgn").c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+    REQUIRE(reader != INVALID_HANDLE_VALUE);
+    CHECK_FALSE(writeBroadcastFiles(sample(), dir).empty());
+    CloseHandle(reader);
+    CHECK_FALSE(std::filesystem::exists(dir / "live.pgn.tmp"));
+#endif
+    std::filesystem::remove_all(dir);
 }
