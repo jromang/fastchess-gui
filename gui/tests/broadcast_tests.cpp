@@ -400,7 +400,7 @@ TEST_CASE("broadcast: TLCS logons are limited in rate") {
 
 TEST_CASE("broadcast: TLCS with lanes serves each concurrent game on its own port, the crosstable after every game") {
     TlcsServer server;
-    const uint16_t port = 26031;
+    const uint16_t port = 26111;
     REQUIRE(server.start(port, true).empty());
     CHECK(server.ports() == std::vector<uint16_t>{port});
 
@@ -447,9 +447,9 @@ TEST_CASE("broadcast: TLCS with lanes serves each concurrent game on its own por
         }
     };
     Viewer first, second, silent;
-    REQUIRE(first.socket.bind(26033).empty());
-    REQUIRE(second.socket.bind(26034).empty());
-    REQUIRE(silent.socket.bind(26035).empty());
+    REQUIRE(first.socket.bind(26113).empty());
+    REQUIRE(second.socket.bind(26114).empty());
+    REQUIRE(silent.socket.bind(26115).empty());
     first.to  = {0x7F000001, port};
     second.to = silent.to = {0x7F000001, static_cast<uint16_t>(port + 1)};
     silent.acks           = false;
@@ -502,15 +502,15 @@ TEST_CASE("broadcast: TLCS with lanes serves each concurrent game on its own por
 
 TEST_CASE("broadcast: TLCS lanes say when the port of a game is in use") {
     net::UdpSocket taken;
-    REQUIRE(taken.bind(26038).empty());
+    REQUIRE(taken.bind(26118).empty());
     TlcsServer server;
-    REQUIRE(server.start(26037, true).empty());
+    REQUIRE(server.start(26117, true).empty());
     auto s     = sample();
     auto other = s.games[0];
     other.slot = 1;
     s.games.push_back(other);
     server.publish(s, -1);
-    CHECK(server.ports() == std::vector<uint16_t>{26037});
+    CHECK(server.ports() == std::vector<uint16_t>{26117});
     CHECK(server.laneError().find("in use") != std::string::npos);
     server.stop();
 }
@@ -697,7 +697,7 @@ TEST_CASE("broadcast: the web page offers the PGN file, the games recorded only,
     }
 
     WebServer server;
-    const uint16_t port = 26041;
+    const uint16_t port = 26119;
     REQUIRE(server.start(port).empty());
     auto s = sample();
     server.publish(s);
