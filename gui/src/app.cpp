@@ -592,7 +592,7 @@ void App::handleDialogs() {
                     const auto& g   = game_db_->games[i];
                     const auto& src = game_db_->sources[g.source];
                     if (src.external) continue;
-                    if (const auto text = tour::readSpan(src.path / "games.pgn", g.pgn)) {
+                    if (const auto text = tour::readSpan(src.pgn, g.pgn)) {
                         out << *text;
                         ++n;
                     }

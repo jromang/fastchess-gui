@@ -291,7 +291,7 @@ void Broadcaster::updateLichess(const BroadcastInput& input, const BroadcastSnap
     }
     std::vector<LichessGame> finished;
     const auto& results = input.results;
-    const auto pgn_file = input.dir / "games-chessbase.pgn";  // TournamentState::chessbasePgnPath()
+    const auto pgn_file = input.dir / spec.chessbasePgnFile();  // TournamentState::chessbasePgnPath()
     for (; lichess_results_ < results.size(); ++lichess_results_) {
         const auto& r = results[lichess_results_];
         if (r.voided) continue;

@@ -24,6 +24,7 @@ namespace fcg::tour {
 
 struct DbSource {
     std::filesystem::path path;  // a tournament folder, or an imported PGN file
+    std::filesystem::path pgn;   // a tournament's: the PGN file its games are read from (cutechess style)
     std::string name;
     bool external = false;  // an imported PGN file
 };
@@ -39,7 +40,7 @@ struct DbGame {
     int64_t played_at                       = 0;    // unix time, milliseconds (an imported game: its date)
     uint64_t number                         = 0;    // 1-based game number in its tournament; 0 for an imported game
     uint32_t encounter                      = ~0u;  // the game pair it belongs to in its tournament
-    PgnSpan pgn;                                    // in the tournament's games.pgn
+    PgnSpan pgn;                                    // in its tournament's DbSource::pgn
 };
 
 struct GameDb {

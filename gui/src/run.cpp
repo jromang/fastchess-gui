@@ -250,23 +250,6 @@ std::string cleanName(std::string s) {
     return s.substr(0, 60);
 }
 
-std::string fileNameOf(std::string name) {
-    for (auto& c : name) {
-        if (static_cast<unsigned char>(c) < 32 || std::string_view("<>:\"/\\|?*").find(c) != std::string_view::npos)
-            c = '_';
-    }
-    for (auto i = name.size(); i > 0 && (name[i - 1] == '.' || name[i - 1] == ' '); --i) name[i - 1] = '_';
-
-    // CON, PRN, AUX, NUL, COM1 to COM9 and LPT1 to LPT9, in any case and with any extension, are devices.
-    std::string stem = name.substr(0, name.find('.'));
-    for (auto& c : stem) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
-    const bool device = stem == "CON" || stem == "PRN" || stem == "AUX" || stem == "NUL" ||
-                        (stem.size() == 4 && (stem.rfind("COM", 0) == 0 || stem.rfind("LPT", 0) == 0) &&
-                         stem[3] >= '1' && stem[3] <= '9');
-    if (device) name.insert(0, "_");
-    return name;
-}
-
 std::string makeRunDirName(const std::string& a, const std::string& b) {
     return fmt::format("{}_{}_vs_{}", timestamp(), cleanName(a).substr(0, 40), cleanName(b).substr(0, 40));
 }

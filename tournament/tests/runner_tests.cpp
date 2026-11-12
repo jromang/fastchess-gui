@@ -164,11 +164,11 @@ TEST_CASE("runner: a round robin plays every encounter, both colours, once") {
     CHECK(colours.size() == 12);
     for (const auto& [pair, n] : colours) CHECK(n == 2);
 
-    CHECK(countGames(dir / "games.pgn") == results.size());
-    CHECK(countGames(dir / "games-chessbase.pgn") == results.size());
+    CHECK(countGames(dir / "runner test.pgn") == results.size());
+    CHECK(countGames(dir / "runner test-chessbase.pgn") == results.size());
 
     // The rated engine's Elo in both files, after the Result tag; nothing for the others. 3 opponents x 4 games.
-    for (const auto* name : {"games.pgn", "games-chessbase.pgn"}) {
+    for (const auto* name : {"runner test.pgn", "runner test-chessbase.pgn"}) {
         std::ifstream in(dir / name, std::ios::binary);
         const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
         std::size_t tags = 0;
@@ -222,7 +222,7 @@ TEST_CASE("runner: a match stopped abruptly resumes to exactly its number of gam
     CHECK(stats.sum() == 60);
     CHECK(stats.penta_WW + stats.penta_WD + stats.penta_WL + stats.penta_DD + stats.penta_LD + stats.penta_LL == 30);
 
-    CHECK(countGames(dir / "games.pgn") == 60);
+    CHECK(countGames(dir / "runner test.pgn") == 60);
 }
 
 TEST_CASE("runner: a game whose pair partner was played before leaves no pair open in the pause gate") {

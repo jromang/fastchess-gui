@@ -15,6 +15,7 @@
 
 #include <tour/engine_text.hpp>
 #include <tour/files.hpp>
+#include <tour/game_db.hpp>
 #include <tour/journal.hpp>
 #include <tour/state.hpp>
 #include <tour/summary.hpp>
@@ -140,14 +141,14 @@ TEST_CASE("state: pairs are played back to back, results survive a reopen, PGN o
     }
 
     // A game written to the PGN files but never journaled (crash between the two writes).
-    const auto pgn_before = fs::file_size(dir / "games.pgn");
+    const auto pgn_before = fs::file_size(dir / "test.pgn");
     {
-        std::ofstream out(dir / "games.pgn", std::ios::binary | std::ios::app);
+        std::ofstream out(dir / "test.pgn", std::ios::binary | std::ios::app);
         out << "[Event \"orphan\"]\n\n1. e4 *\n\n";
     }
 
     auto state = TournamentState::open(dir);
-    CHECK(fs::file_size(dir / "games.pgn") == pgn_before);
+    CHECK(fs::file_size(dir / "test.pgn") == pgn_before);
     CHECK(state->results().size() == 3);
     CHECK_FALSE(state->finished());
 
@@ -171,7 +172,7 @@ TEST_CASE("state: pairs are played back to back, results survive a reopen, PGN o
     CHECK_FALSE(state->hasWork());
 
     // Every game is in the PGN, once.
-    const auto text  = readAll(dir / "games.pgn");
+    const auto text  = readAll(dir / "test.pgn");
     std::size_t hits = 0;
     for (auto pos = text.find("[Event "); pos != std::string::npos; pos = text.find("[Event ", pos + 1)) ++hits;
     CHECK(hits == 10);
@@ -321,7 +322,7 @@ TEST_CASE("state: a PGN file that lost its end is filled up, new games do not la
         end = state->results().back().pgn.end();
     }
     // The disk kept the journal but not the end of the PGN (a power cut on a disk that reorders writes).
-    fs::resize_file(dir / "games.pgn", end - 10);
+    fs::resize_file(dir / "test.pgn", end - 10);
 
     auto state = TournamentState::open(dir);
     REQUIRE(state->warnings().size() == 1);
@@ -329,7 +330,7 @@ TEST_CASE("state: a PGN file that lost its end is filled up, new games do not la
     const auto task = state->claimNext();
     const auto rec  = state->complete(*task, gameData(*task, "1-0"));
     CHECK(rec.result.pgn.offset == end);
-    CHECK(readSpan(dir / "games.pgn", rec.result.pgn)->find("[Event ") == 0);
+    CHECK(readSpan(dir / "test.pgn", rec.result.pgn)->find("[Event ") == 0);
 }
 
 TEST_CASE("state: one program at a time writes a tournament folder; others can read it") {
@@ -559,7 +560,7 @@ TEST_CASE("state: the PGN file of the user's gets the games in schedule order, a
     CHECK(games.front().first == "9");  // what was there stays
     games.erase(games.begin());
     CHECK(games == IN_ORDER);
-    CHECK(gamesOf(dir / "games.pgn").size() == 6);
+    CHECK(gamesOf(dir / "test.pgn").size() == 6);
 }
 
 TEST_CASE("state: the PGN file of the user's gets what is left when the tournament ends, and waits out failures") {
@@ -596,7 +597,7 @@ TEST_CASE("state: the PGN file of the user's gets what is left when the tourname
 
     // Every game played but the second, which never ended, in the ChessBase style.
     CHECK(gamesOf(out).size() == static_cast<std::size_t>(played));
-    CHECK(readAll(out) == readAll(dir / "games-chessbase.pgn"));
+    CHECK(readAll(out) == readAll(dir / "test-chessbase.pgn"));
 }
 
 TEST_CASE("state: a write to the PGN file of the user's that fails partway is completed, not written again") {
@@ -624,15 +625,15 @@ TEST_CASE("state: a write to the PGN file of the user's that fails partway is co
             state->complete(*second, gameData(*second, "0-1"));
             CHECK(state->pgnOutError().empty());
             CHECK(gamesOf(out).size() == 2);
-            CHECK(readAll(out) == readAll(dir / "games.pgn"));
+            CHECK(readAll(out) == readAll(dir / "test.pgn"));
         }
 
         // Nothing is left to settle when the tournament is opened again.
         auto state = TournamentState::open(dir);
-        CHECK(readAll(out) == readAll(dir / "games.pgn"));
+        CHECK(readAll(out) == readAll(dir / "test.pgn"));
         while (auto task = state->claimNext()) state->complete(*task, gameData(*task, "1/2-1/2"));
         CHECK(gamesOf(out).size() == 4);
-        CHECK(readAll(out) == readAll(dir / "games.pgn"));
+        CHECK(readAll(out) == readAll(dir / "test.pgn"));
     }
 }
 
@@ -751,8 +752,8 @@ TEST_CASE("state: game text whose journal line a crash lost, in the middle of th
             state->complete(*task, gameData(*task, "1-0"));
         }
     }
-    const auto size    = fs::file_size(dir / "games.pgn");
-    const auto size_cb = fs::file_size(dir / "games-chessbase.pgn");
+    const auto size    = fs::file_size(dir / "test.pgn");
+    const auto size_cb = fs::file_size(dir / "test-chessbase.pgn");
 
     // Games recorded at once by several threads: the line of a later game reached the disk, not that of game 1.
     auto events = Journal::read(dir / "journal.jsonl");
@@ -771,29 +772,29 @@ TEST_CASE("state: game text whose journal line a crash lost, in the middle of th
 
     auto state = TournamentState::open(dir);
     // The games after it keep their places; its text is now blank lines.
-    CHECK(fs::file_size(dir / "games.pgn") == size);
-    CHECK(fs::file_size(dir / "games-chessbase.pgn") == size_cb);
-    CHECK(countGames(dir / "games.pgn") == 2);
-    CHECK(countGames(dir / "games-chessbase.pgn") == 2);
-    CHECK(*readSpan(dir / "games.pgn", lost) == std::string(lost.length, '\n'));
-    CHECK(*readSpan(dir / "games-chessbase.pgn", lost_cb) == std::string(lost_cb.length, '\n'));
+    CHECK(fs::file_size(dir / "test.pgn") == size);
+    CHECK(fs::file_size(dir / "test-chessbase.pgn") == size_cb);
+    CHECK(countGames(dir / "test.pgn") == 2);
+    CHECK(countGames(dir / "test-chessbase.pgn") == 2);
+    CHECK(*readSpan(dir / "test.pgn", lost) == std::string(lost.length, '\n'));
+    CHECK(*readSpan(dir / "test-chessbase.pgn", lost_cb) == std::string(lost_cb.length, '\n'));
     REQUIRE(state->results().size() == 2);
     for (const auto& r : state->results()) {
-        CHECK(readSpan(dir / "games.pgn", r.pgn)->find("[Event ") == 0);
-        CHECK(readSpan(dir / "games-chessbase.pgn", r.pgn_chessbase)->find("[Event ") == 0);
+        CHECK(readSpan(dir / "test.pgn", r.pgn)->find("[Event ") == 0);
+        CHECK(readSpan(dir / "test-chessbase.pgn", r.pgn_chessbase)->find("[Event ") == 0);
     }
 
     // Game 1 is played again; at the end every game is there once.
     while (auto task = state->claimNext()) state->complete(*task, gameData(*task, "1/2-1/2"));
     CHECK(state->finished());
-    CHECK(countGames(dir / "games.pgn") == 6);
-    CHECK(countGames(dir / "games-chessbase.pgn") == 6);
+    CHECK(countGames(dir / "test.pgn") == 6);
+    CHECK(countGames(dir / "test-chessbase.pgn") == 6);
 
     // Nothing more to do on the next opening.
-    const auto text = readAll(dir / "games.pgn");
+    const auto text = readAll(dir / "test.pgn");
     state.reset();
     state = TournamentState::open(dir);
-    CHECK(readAll(dir / "games.pgn") == text);
+    CHECK(readAll(dir / "test.pgn") == text);
     CHECK(state->results().size() == 6);
 }
 
@@ -843,14 +844,14 @@ TEST_CASE("state: games dropped by an edit while their text was written leave no
         CHECK(state->finished());
         results = state->results().size();
 
-        CHECK(countGames(dir / "games.pgn") == results);
-        CHECK(countGames(dir / "games-chessbase.pgn") == results);
+        CHECK(countGames(dir / "test.pgn") == results);
+        CHECK(countGames(dir / "test-chessbase.pgn") == results);
     }
 
     auto state = TournamentState::open(dir);
     CHECK(state->results().size() == results);
-    CHECK(countGames(dir / "games.pgn") == results);
-    CHECK(countGames(dir / "games-chessbase.pgn") == results);
+    CHECK(countGames(dir / "test.pgn") == results);
+    CHECK(countGames(dir / "test-chessbase.pgn") == results);
 }
 
 TEST_CASE("state: a crash in the middle of a write to the PGN file of the user's writes no game twice, loses none") {
@@ -959,4 +960,130 @@ TEST_CASE("engine options: as a Windows engine reads them, ASCII and the spec un
     CHECK(state->spec().participants[0].engine.options[0].second ==
           "C:\\\xC3\x89"
           "checs\\b.bin");  // kept in UTF-8
+}
+
+TEST_CASE("PGN file names: the tournament's name, made fit for a file name on any system") {
+    const auto named = [](const std::string& name) {
+        TournamentSpec spec;
+        spec.name = name;
+        namePgnFiles(spec);
+        return std::pair{spec.pgn_file, spec.pgn_chessbase_file};
+    };
+    CHECK(named("Blitz 3+2") == std::pair<std::string, std::string>{"Blitz 3+2.pgn", "Blitz 3+2-chessbase.pgn"});
+    CHECK(named("\xC3\x89lite \xC3\xA0 Z\xC3\xBCrich").first == "\xC3\x89lite \xC3\xA0 Z\xC3\xBCrich.pgn");
+    CHECK(named("a<b>c:d\"e/f\\g|h?i*j\tk").first == "a_b_c_d_e_f_g_h_i_j_k.pgn");
+    CHECK(named("  spaces around  ").first == "spaces around.pgn");
+    CHECK(named("Round 1.").first == "Round 1_.pgn");
+    CHECK(named("con").first == "_con.pgn");
+    CHECK(named("../up").first == ".._up.pgn");
+    CHECK(named("").first == "games.pgn");
+    CHECK(named("   ").second == "games-chessbase.pgn");
+
+    // At most 64 bytes, cut between characters: é is two bytes, the 64th would be the first of one.
+    const auto long_name = std::string(63, 'x') + "\xC3\xA9" + "yyy";
+    CHECK(fileStemOf(long_name) == std::string(63, 'x'));
+    CHECK(fileStemOf(std::string(100, 'z')).size() == 64);
+    CHECK(fileStemOf("").empty());
+}
+
+TEST_CASE("state: a new tournament writes its games to <name>.pgn, kept when it is renamed, and resumes") {
+    const auto dir  = freshDir("named-pgn");
+    const auto file = std::string("\xC3\x89lite \xC3\xA0 Z\xC3\xBCrich_ R1_2_");
+    auto spec       = matchSpec(4);
+    spec.name       = "\xC3\x89lite \xC3\xA0 Z\xC3\xBCrich: R1/2?";
+    {
+        auto state = TournamentState::create(dir, spec);
+        CHECK(state->pgnPath() == dir / (file + ".pgn"));
+        CHECK(state->chessbasePgnPath() == dir / (file + "-chessbase.pgn"));
+        for (int i = 0; i < 2; ++i) {
+            const auto task = state->claimNext();
+            REQUIRE(task);
+            state->complete(*task, gameData(*task, "1-0"));
+        }
+    }
+    CHECK(countGames(dir / (file + ".pgn")) == 2);
+    CHECK(countGames(dir / (file + "-chessbase.pgn")) == 2);
+    CHECK_FALSE(fs::exists(dir / "games.pgn"));
+
+    // In tournament.json from the start; a name changed afterwards keeps the files.
+    auto json = nlohmann::json::parse(readAll(dir / "tournament.json"));
+    CHECK(json["pgn_file"] == file + ".pgn");
+    CHECK(json["pgn_chessbase_file"] == file + "-chessbase.pgn");
+    json["name"] = "Another name";
+    std::ofstream(dir / "tournament.json", std::ios::binary | std::ios::trunc) << json.dump(2);
+
+    auto state = TournamentState::open(dir);
+    CHECK(state->spec().name == "Another name");
+    CHECK(state->pgnPath() == dir / (file + ".pgn"));
+    while (const auto task = state->claimNext()) state->complete(*task, gameData(*task, "1/2-1/2"));
+    CHECK(state->finished());
+    REQUIRE(state->results().size() == 4);
+    for (const auto& r : state->results()) {
+        CHECK(readSpan(state->pgnPath(), r.pgn)->find("[Event ") == 0);
+        CHECK(readSpan(state->chessbasePgnPath(), r.pgn_chessbase)->find("[Event ") == 0);
+    }
+    CHECK(countGames(dir / (file + ".pgn")) == 4);
+    CHECK_FALSE(fs::exists(dir / "games.pgn"));
+    CHECK_FALSE(fs::exists(dir / "Another name.pgn"));
+    state.reset();
+
+    // A file name that is not one of the folder's is refused: the games would be written there.
+    json["pgn_file"] = "../elsewhere.pgn";
+    std::ofstream(dir / "tournament.json", std::ios::binary | std::ios::trunc) << json.dump(2);
+    CHECK_THROWS_AS((void)TournamentState::open(dir), std::runtime_error);
+}
+
+namespace {
+
+// A tournament as 0.4.12 and earlier left it: games.pgn and games-chessbase.pgn, no file names in tournament.json.
+void makeOld(const fs::path& dir) {
+    auto json = nlohmann::json::parse(readAll(dir / "tournament.json"));
+    CHECK(json.erase("pgn_file") == 1);
+    CHECK(json.erase("pgn_chessbase_file") == 1);
+    std::ofstream(dir / "tournament.json", std::ios::binary | std::ios::trunc) << json.dump(2);
+    fs::rename(dir / "test.pgn", dir / "games.pgn");
+    fs::rename(dir / "test-chessbase.pgn", dir / "games-chessbase.pgn");
+}
+
+}  // namespace
+
+TEST_CASE("state: a tournament of an earlier version keeps games.pgn; the game database reads both kinds") {
+    const auto old_dir = freshDir("old-pgn");
+    const auto new_dir = freshDir("new-pgn");
+    for (const auto& dir : {old_dir, new_dir}) {
+        auto state = TournamentState::create(dir, matchSpec(4));
+        for (int i = 0; i < 2; ++i) {
+            const auto task = state->claimNext();
+            REQUIRE(task);
+            state->complete(*task, gameData(*task, "1-0"));
+        }
+    }
+    makeOld(old_dir);
+
+    {
+        auto state = TournamentState::open(old_dir);
+        CHECK(state->spec().pgn_file.empty());
+        CHECK(state->pgnPath() == old_dir / "games.pgn");
+        CHECK(state->chessbasePgnPath() == old_dir / "games-chessbase.pgn");
+        CHECK(state->warnings().empty());
+        while (const auto task = state->claimNext()) state->complete(*task, gameData(*task, "0-1"));
+        CHECK(state->results().size() == 4);
+        for (const auto& r : state->results()) CHECK(readSpan(state->pgnPath(), r.pgn)->find("[Event ") == 0);
+    }
+    CHECK(countGames(old_dir / "games.pgn") == 4);
+    CHECK(countGames(old_dir / "games-chessbase.pgn") == 4);
+    CHECK_FALSE(fs::exists(old_dir / "test.pgn"));
+    // Still without the names: an earlier version opens it as before.
+    CHECK_FALSE(nlohmann::json::parse(readAll(old_dir / "tournament.json")).contains("pgn_file"));
+
+    const auto db = readGameDb({old_dir, new_dir});
+    REQUIRE(db.sources.size() == 2);
+    CHECK(db.sources[0].pgn == old_dir / "games.pgn");
+    CHECK(db.sources[1].pgn == new_dir / "test.pgn");
+    CHECK(db.games.size() == 6);
+    for (const auto& g : db.games) {
+        const auto text = readSpan(db.sources[g.source].pgn, g.pgn);
+        REQUIRE(text);
+        CHECK(text->find("[Event ") == 0);
+    }
 }

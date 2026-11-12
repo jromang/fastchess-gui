@@ -483,7 +483,7 @@ void App::drawEngineCard() {
                 if ((g.white != id && g.black != id) || !filter.accepts(*game_db_, g)) continue;
                 const auto& src = game_db_->sources[g.source];
                 if (src.external) continue;
-                const auto text = tour::readSpan(src.path / "games.pgn", g.pgn);
+                const auto text = tour::readSpan(src.pgn, g.pgn);
                 if (!text) continue;
                 forEachMoveComment(*text, [&](bool white, const ReplayMove& m) {
                     if (m.book || white != (g.white == id)) return;

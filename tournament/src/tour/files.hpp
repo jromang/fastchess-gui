@@ -24,6 +24,11 @@ namespace fcg::tour {
 // Throws std::runtime_error with the reason.
 void replaceFile(const std::filesystem::path& file, std::string_view text, bool backup = false);
 
+// A name the user typed, as a file name on any system: the characters Windows forbids (<>:"/\|?* and control
+// characters) become '_', as do a trailing dot or space and the names Windows keeps (CON, NUL, COM1…). Other
+// characters, accents included, stay.
+[[nodiscard]] std::string fileNameOf(std::string name);
+
 // Another program holds the lock of a tournament folder.
 class FolderBusy : public std::runtime_error {
    public:

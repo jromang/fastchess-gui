@@ -82,6 +82,17 @@ struct TournamentSpec {
     std::string pgn_out;
     bool pgn_out_chessbase = false;  // [%eval] [%emt] comments rather than cutechess' {+0.35/18 1.234s}
 
+    // The names of the two PGN files of the folder (see state.hpp), given after the tournament's name when it is
+    // created (namePgnFiles()) and never changed afterwards. Empty in the tournaments of 0.4.12 and earlier, whose
+    // files are games.pgn and games-chessbase.pgn.
+    std::string pgn_file;
+    std::string pgn_chessbase_file;
+
+    [[nodiscard]] std::string pgnFile() const { return pgn_file.empty() ? "games.pgn" : pgn_file; }
+    [[nodiscard]] std::string chessbasePgnFile() const {
+        return pgn_chessbase_file.empty() ? "games-chessbase.pgn" : pgn_chessbase_file;
+    }
+
     [[nodiscard]] const Participant* participant(int id) const {
         for (const auto& p : participants) {
             if (p.id == id) return &p;
@@ -95,6 +106,14 @@ struct TournamentSpec {
         return nullptr;
     }
 };
+
+// A tournament's name as the stem of a file name: made fit for one by fileNameOf(), spaces around it removed, at
+// most 64 bytes (whole characters). Empty when the name is.
+[[nodiscard]] std::string fileStemOf(const std::string& name);
+
+// Names the PGN files of a new tournament after it: <name>.pgn and <name>-chessbase.pgn, the name made a file stem
+// by fileStemOf(); games.pgn and games-chessbase.pgn when it has no name.
+void namePgnFiles(TournamentSpec& spec);
 
 void to_json(nlohmann::json& j, const Participant& p);
 void from_json(const nlohmann::json& j, Participant& p);

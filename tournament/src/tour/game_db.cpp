@@ -138,7 +138,7 @@ void readTournament(const fs::path& dir, GameDb& db, Builder& builder) {
     if (replayed.results.empty()) return;
 
     const auto source = static_cast<uint32_t>(db.sources.size());
-    db.sources.push_back({dir, spec.name.empty() ? dir.filename().string() : spec.name, false});
+    db.sources.push_back({dir, dir / spec.pgnFile(), spec.name.empty() ? dir.filename().string() : spec.name, false});
     const auto tc = builder.timeControl(timeControlText(spec.participants.front().engine.limit));
 
     for (const auto& r : replayed.results) {
@@ -166,7 +166,7 @@ void readPgn(const fs::path& file, GameDb& db, Builder& builder, LibraryMatcher&
     std::ifstream in(file, std::ios::binary);
     if (!in) return;
     const auto source = static_cast<uint32_t>(db.sources.size());
-    db.sources.push_back({file, file.filename().string(), true});
+    db.sources.push_back({file, {}, file.filename().string(), true});
 
     std::map<std::string, std::string> tags;
     const auto flush = [&] {
