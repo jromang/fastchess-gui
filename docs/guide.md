@@ -253,7 +253,8 @@ plays it; **Add to the queue** keeps it for later (see *Queue*).
 
 ## Running a tournament
 
-A running or opened tournament has a workspace with a header (name, progress, *Pause*, *Stop*) and tabs:
+A running or opened tournament has a workspace with a header (name, progress, *Pause*, *Stop*, *Layout*) and
+panels, shown by default as tabs:
 
 | Tab | Contents |
 |---|---|
@@ -266,6 +267,18 @@ A running or opened tournament has a workspace with a header (name, progress, *P
 | Games | The finished games with their opening (ECO code and name), filterable by result (wins, draws, losses, losses on time, crashes and illegal moves, adjudications, wrong PVs), by what the evaluations tell (the engines disagree by N pawns for 3 moves each in a row, an engine's evaluation swings by N pawns from one of its moves to the next, the loser thought it was N pawns better; the game opens at that moment) and by opening (an ECO code or its beginning, a range such as `B20-B99`, or words of the name), with a replay board (← → Home End, or click a move or the curve; the same details under it and the same charts as in *Live*, from the fields the PGN was written with; with the win, draw and loss shares of the engines that report them under the
 evaluation curve) and the export of one, all or the filtered games (*Export all* proposes `<name>.pgn` next to the tournament's folder; the tournament's own PGN files are refused as a target). *Export for a rating list…* writes the games as rating list testers (e.g. CCRL) send them: `[Tester YYYY-MM-DD] Event (hash NMB) (book X) (egtb N-man).pgn`, a zip too if asked; the players named as the lists write them, `<engine> 64-bit 4CPU` (editable for each participant), the rounds numbered again, the `Event` and `Site` tags set, the voided games and the duplicates left out, and those lost by a crash or a stall too unless unticked; the `PlyCount` of a game lost by an illegal move counts only the moves written. The tester and the site are remembered. *Engine log* opens the log of a game that has one (see *Files*) |
 | Openings | Results by starting position: its game pairs, White's score, the draws, and how many pairs White won twice, Black won twice (the opening favours a colour) or one engine won twice (it tells the engines apart), with the average length. Sorted by any column, filtered to the unbalanced, the drawn or the decisive ones; *Export as EPD…* writes the positions shown, to keep them or to clean a book. A click shows the position and its games |
+
+**Panels and layouts**: every tab is a panel. Drag one by its tab to dock it on a side of another panel or as a tab
+next to it, or drop it elsewhere to float it (also onto a second screen on Windows and Linux/X11, not on Wayland).
+The game followed in *Live* comes apart in *Board*, *Players*, *Searches*, *Moves* and *Chart* panels; the parts
+that have no panel open stay beside the mosaic in *Live*, and detached boards dock like the other panels. Close a
+panel with the x on its tab; bring it back from *Layout* > *Panels*, or with *Show …* in the command palette, and it
+comes back docked. *Layout* also offers ready-made layouts (*Tabs*, as by default; *Follow a game*: the board on the
+left, the players, searches and chart on the right, the standings under them; *Large tournament*: the mosaic beside
+the standings; *Broadcast*: a large board with the players, searches and standings), *Save the layout as…* (your
+own, by name, kept in `layouts.json` in the profile), *Delete* and *Default layout*. A panel taken out of the
+workspace stays on screen on the other pages; the arrangement is kept between sessions. F1 and the `?` open this
+guide at the panel last clicked.
 
 **Processor use**: while games are played, the processor time of every engine's processes (the engine behind a
 WinBoard adapter included) is measured at each `go` and each move. The Overview shows, for each engine, the cores it
@@ -412,7 +425,7 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
 
 - `engines.json`: the engine library, and `engines.json.bak` its previous version, read if the first is lost;
 - `setup.json`: the last setup; `templates/*.json`: the saved templates; `queue.json`: the queue;
-- `layout.ini`: the window layout; `fastchess-gui.log`: the log of the last session;
+- `layout.ini`: the window layout and the panels of the workspace; `layouts.json`: the layouts saved by name; `fastchess-gui.log`: the log of the last session;
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**, the folder of *Every engine
   of a folder…*, the tester and site of *Export for a rating list…*, and the lichess token;
