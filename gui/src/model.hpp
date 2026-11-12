@@ -148,6 +148,9 @@ struct MatchSetup {
     int seeds          = 1;  // gauntlet: the first `seeds` participants play all the others
     int common_hash    = 0;  // MB, forced on every participant unless overridden; 0 = each engine's own
     int common_threads = 0;
+    // Forced on the engines that have the option: SyzygyPath = tb_paths, OwnBook = false.
+    bool engine_syzygy      = false;
+    bool engine_ownbook_off = false;
 
     MatchMode mode         = MatchMode::Sprt;
     int fixed_games        = 1000;
@@ -239,7 +242,8 @@ struct MatchSetup {
     format, name, engine_a, engine_b, participants, cycles, seeds, common_hash, common_threads, mode, fixed_games, \
         sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, sprt_draw_ratio, sprt_rms_bias,   \
         limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto, concurrency,   \
-        affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out
+        affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out,           \
+        engine_syzygy, engine_ownbook_off
 #define FCG_MATCH_SETUP_FIELDS_2                                                                                \
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,  \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,   \

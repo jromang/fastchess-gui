@@ -173,9 +173,9 @@ std::vector<uint64_t> specHashes(const tour::TournamentSpec& spec, const std::ve
 }
 
 MemoryNeed setupMemory(const MatchSetup& setup, const std::vector<EngineEntry>& engines, const CpuTopology& topology) {
-    const int concurrency = std::clamp(
-        setup.concurrency_auto ? topology.defaultConcurrency(clockFree(setup.limit)) : setup.concurrency, 1,
-        std::max(1, topology.logical));
+    const int concurrency =
+        std::clamp(setup.concurrency_auto ? topology.defaultConcurrency(clockFree(setup.limit)) : setup.concurrency, 1,
+                   std::max(1, topology.logical));
     auto need   = hashMemory(setupHashes(setup, engines), concurrency, setup.affinity);
     need.system = systemMemory();
     return need;

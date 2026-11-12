@@ -50,6 +50,16 @@ bool hasOption(const EngineEntry& entry, const std::string& name) {
     return false;
 }
 
+void setOption(fastchess::EngineConfiguration& config, const std::string& name, const std::string& value) {
+    for (auto& [k, v] : config.options) {
+        if (k == name) {
+            v = value;
+            return;
+        }
+    }
+    config.options.emplace_back(name, value);
+}
+
 // The participant's own setting, else the common one, else what the engine entry says.
 void overrideOption(fastchess::EngineConfiguration& config, const EngineEntry& entry, const std::string& name, int own,
                     int common) {
@@ -57,15 +67,11 @@ void overrideOption(fastchess::EngineConfiguration& config, const EngineEntry& e
     if (value <= 0) return;
     // An engine that does not have the option would print an error for it.
     if (!entry.uci_options.empty() && !hasOption(entry, name)) return;
-
-    for (auto& [k, v] : config.options) {
-        if (k == name) {
-            v = std::to_string(value);
-            return;
-        }
-    }
-    config.options.emplace_back(name, std::to_string(value));
+    setOption(config, name, std::to_string(value));
 }
+
+// The options the setup forces on the engines that have them, besides Hash and Threads.
+constexpr const char* FORCED_OPTIONS[] = {"SyzygyPath", "OwnBook"};
 
 fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSetup& setup,
                                         const ParticipantSetup& participant = {}) {
@@ -81,6 +87,9 @@ fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSet
 
     overrideOption(config, entry, "Hash", participant.hash, setup.common_hash);
     overrideOption(config, entry, "Threads", participant.threads, setup.common_threads);
+    // Only on the engines known to have them: these are not options every engine has.
+    if (setup.engine_syzygy && hasOption(entry, "SyzygyPath")) setOption(config, "SyzygyPath", setup.tb_paths);
+    if (setup.engine_ownbook_off && hasOption(entry, "OwnBook")) setOption(config, "OwnBook", "false");
 
     const double share = std::max(1, participant.time_percent) / 100.0;
     switch (setup.limit) {
@@ -182,6 +191,17 @@ fastchess::EngineConfiguration participantConfig(const EngineEntry& entry, const
             if (ck == k) cv = v, set = true;
         }
         if (!set) config.options.emplace_back(k, v);
+    }
+    // SyzygyPath and OwnBook, as the first participant given them got them (they are not options every engine has).
+    for (const char* name : FORCED_OPTIONS) {
+        if (!hasOption(entry, name)) continue;
+        const std::string* given = nullptr;
+        for (const auto& p : spec.participants) {
+            for (const auto& [k, v] : p.engine.options) {
+                if (k == name && !given) given = &v;
+            }
+        }
+        if (given) setOption(config, name, *given);
     }
     return config;
 }
@@ -309,6 +329,8 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         throw fastchess_exception(TR("The time per move must be positive."));
     if (setup.limit == LimitKind::Depth && setup.depth <= 0)
         throw fastchess_exception(TR("The depth must be positive."));
+    if (setup.engine_syzygy && setup.tb_paths.empty())
+        throw fastchess_exception(TR("Give the Syzygy tablebase directory."));
 
     BuiltRun run;
     auto& t = run.tournament;

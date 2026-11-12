@@ -60,6 +60,24 @@ bool inputText(const char* id, std::string& value, float width) {
 }
 
 // An engine of the list, `width` wide (-FLT_MIN: the width left), with a search field.
+// The Syzygy directories of the setup, typed or added with the folder dialog.
+bool tablebaseDirs(const char* id, std::string& paths, Dialogs& dialogs) {
+    const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
+    const bool changed =
+        inputText(id, paths, ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x);
+    if (ImGui::IsItemHovered() && !paths.empty()) ImGui::SetTooltip("%s", paths.c_str());
+    ImGui::SameLine();
+    ImGui::PushID(id);
+    if (ImGui::Button("…")) dialogs.openFolder(Dialogs::Purpose::Tablebases);
+    ImGui::PopID();
+#ifdef _WIN32
+    ImGui::TextDisabled("%s", TR("Directories separated by ';' (WDL files are enough)."));
+#else
+    ImGui::TextDisabled("%s", TR("Directories separated by ':' (WDL files are enough)."));
+#endif
+    return changed;
+}
+
 bool engineCombo(const char* id, std::string& value, const std::vector<EngineEntry>& engines, float width = -FLT_MIN) {
     bool changed = false;
     ImGui::SetNextItemWidth(width);
@@ -143,6 +161,31 @@ void App::setupEngines() {
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Swap A and B"));
 
     ImGui::TextDisabled("%s", TR("Statistics are given from A's point of view."));
+    ImGui::Spacing();
+    setupEngineOptions();
+}
+
+void App::setupEngineOptions() {
+    bool changed = false;
+    ImGui::TextDisabled("%s", TR("Common settings, forced on every engine (0 = each engine's own):"));
+    changed |= inputInt(TR("Hash (MB)"), "##common_hash", setup_.common_hash, 0, 1 << 20);
+    changed |= inputInt(TR("Threads"), "##common_threads", setup_.common_threads, 0, 1024);
+
+    changed |= ImGui::Checkbox(TR("Syzygy tablebases for the engines"), &setup_.engine_syzygy);
+    ui::help(
+        TR("The engines that have a SyzygyPath option get these directories, those of the adjudication: "
+           "otherwise each engine keeps its own setting."));
+    if (setup_.engine_syzygy) {
+        ImGui::Indent();
+        changed |= tablebaseDirs("##engine_tb_paths", setup_.tb_paths, dialogs_);
+        ImGui::Unindent();
+    }
+    changed |= ImGui::Checkbox(TR("Engines' own books off"), &setup_.engine_ownbook_off);
+    ui::help(
+        TR("OwnBook is set to false on the engines that have it, so that every game is played from the "
+           "openings of the tournament."));
+
+    if (changed) saveSetupSoon();
 }
 
 void App::setupMatch() {
@@ -575,17 +618,7 @@ void App::setupAdjudication() {
     changed |= ImGui::Checkbox(TR("Syzygy tablebases"), &setup_.tb_enabled);
     if (setup_.tb_enabled) {
         ImGui::Indent();
-        const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
-        changed |= inputText("##tb_paths", setup_.tb_paths,
-                             ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x);
-        if (ImGui::IsItemHovered() && !setup_.tb_paths.empty()) ImGui::SetTooltip("%s", setup_.tb_paths.c_str());
-        ImGui::SameLine();
-        if (ImGui::Button("…##tb_browse")) dialogs_.openFolder(Dialogs::Purpose::Tablebases);
-#ifdef _WIN32
-        ImGui::TextDisabled("%s", TR("Directories separated by ';' (WDL files are enough)."));
-#else
-        ImGui::TextDisabled("%s", TR("Directories separated by ':' (WDL files are enough)."));
-#endif
+        changed |= tablebaseDirs("##tb_paths", setup_.tb_paths, dialogs_);
         changed |= inputInt(TR("Max pieces"), "##tb_pieces", setup_.tb_pieces, 0, 7);
         ui::help(TR("0 = everything the tables cover."));
         changed |= ImGui::Checkbox(TR("Ignore the 50-move rule"), &setup_.tb_ignore50);
@@ -755,9 +788,7 @@ void App::setupParticipants() {
     auto& list   = setup_.participants;
 
     // Settings forced on everyone unless an engine overrides them.
-    ImGui::TextDisabled("%s", TR("Common settings, forced on every engine (0 = each engine's own):"));
-    changed |= inputInt(TR("Hash (MB)"), "##common_hash", setup_.common_hash, 0, 1 << 20);
-    changed |= inputInt(TR("Threads"), "##common_threads", setup_.common_threads, 0, 1024);
+    setupEngineOptions();
 
     const bool nodes     = setup_.limit == LimitKind::Nodes;
     const bool depth     = setup_.limit == LimitKind::Depth;
@@ -1045,6 +1076,12 @@ void App::drawSetupSummary() {
         if (setup_.common_threads > 0) parts += (parts.empty() ? "" : ", ") + trf("Threads {}", setup_.common_threads);
         check(true, trf("Common settings: {}", parts));
     }
+    if (setup_.engine_syzygy) {
+        check(!setup_.tb_paths.empty(), setup_.tb_paths.empty()
+                                            ? std::string(TR("Syzygy tablebases for the engines: no directory given"))
+                                            : trf("Syzygy tablebases for the engines: {}", setup_.tb_paths));
+    }
+    if (setup_.engine_ownbook_off) check(true, TR("The engines' own books are off"));
     // The hash tables against the memory: a warning above the free memory, an error above the installed one.
     if (const auto memory = setupMemory(setup_, engines_, topology_); memory.hash_mb > 0) {
         if (memory.aboveInstalled()) {

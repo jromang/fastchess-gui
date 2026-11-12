@@ -2,11 +2,15 @@
 
 #include <doctest/doctest.hpp>
 
+#include <filesystem>
+#include <fstream>
 #include <vector>
 
 #include "memory.hpp"
+#include "run.hpp"
 
 using namespace fcg;
+namespace fs = std::filesystem;
 
 TEST_CASE("memory: the hash tables of the engine processes fastchess keeps, the largest first") {
     // A match: one process of each engine per game, however many fastchess may keep.
@@ -49,8 +53,8 @@ TEST_CASE("memory: each participant's Hash, its own before the common one before
     setup.participants = {{"set"}, {"default"}, {"none"}, {"unread"}, {"missing"}};
     CHECK(setupHashes(setup, engines) == std::vector<uint64_t>{128, 32, 0, 0});
 
-    setup.common_hash             = 256;
-    setup.participants[1].hash    = 512;
+    setup.common_hash          = 256;
+    setup.participants[1].hash = 512;
     CHECK(setupHashes(setup, engines) == std::vector<uint64_t>{256, 512, 0, 256});
 
     setup.format   = TournamentFormat::Match;
@@ -90,4 +94,68 @@ TEST_CASE("memory: above the free memory is a warning, above the installed memor
     REQUIRE(memory);
     CHECK(memory->total_mb > 0);
     CHECK(memory->available_mb <= memory->total_mb);
+}
+
+TEST_CASE("the setup's Syzygy path and OwnBook off are given to the engines that have the options") {
+    const auto dir = fs::temp_directory_path() / "fcg-tests-forced-options";
+    fs::create_directories(dir);
+    // fastchess appends .exe to extension-less commands on Windows.
+    const auto binary = dir / "engine.exe";
+    std::ofstream(binary) << "x";
+
+    std::vector<EngineEntry> engines(3);
+    for (auto& e : engines) e.cmd = binary.string();
+    engines[0].name        = "both";
+    engines[0].uci_options = {{"SyzygyPath", "string", "<empty>"}, {"OwnBook", "check", "true"}};
+    engines[1].name        = "neither";
+    engines[1].uci_options = {{"Hash", "spin", "16", "1", "1024"}};
+    engines[2].name        = "unread";  // not known to have them: left alone
+    engines[2].options     = {{"OwnBook", "true"}};
+
+    MatchSetup setup;
+    setup.format       = TournamentFormat::RoundRobin;
+    setup.participants = {{"both"}, {"neither"}, {"unread"}};
+    setup.limit        = LimitKind::Nodes;
+    setup.tb_paths     = "/tb/wdl";
+
+    const auto topology = topologyFromCores({{0, 0}, {0, 1}});
+    const auto option   = [](const fastchess::EngineConfiguration& c, const std::string& name) -> std::string {
+        for (const auto& [k, v] : c.options) {
+            if (k == name) return v;
+        }
+        return "-";
+    };
+
+    // Off by default: nothing changes.
+    auto run = buildRun(setup, engines, topology, dir);
+    CHECK(option(run.engines[0], "SyzygyPath") == "-");
+    CHECK(option(run.engines[0], "OwnBook") == "-");
+
+    setup.engine_syzygy      = true;
+    setup.engine_ownbook_off = true;
+    run                      = buildRun(setup, engines, topology, dir);
+    CHECK(option(run.engines[0], "SyzygyPath") == "/tb/wdl");
+    CHECK(option(run.engines[0], "OwnBook") == "false");
+    CHECK(option(run.engines[1], "SyzygyPath") == "-");
+    CHECK(option(run.engines[1], "OwnBook") == "-");
+    CHECK(option(run.engines[2], "OwnBook") == "true");
+
+    // An engine added to the tournament later gets them too.
+    EngineEntry later = engines[0];
+    later.name        = "later";
+    const auto config = participantConfig(later, run.spec);
+    CHECK(option(config, "SyzygyPath") == "/tb/wdl");
+    CHECK(option(config, "OwnBook") == "false");
+
+    // Kept with the setup, as templates and the queue store it.
+    const auto back = nlohmann::json(setup).get<MatchSetup>();
+    CHECK(back.engine_syzygy);
+    CHECK(back.engine_ownbook_off);
+    CHECK_FALSE(nlohmann::json::object().get<MatchSetup>().engine_syzygy);
+
+    // Asked for without a directory: said before the start.
+    setup.tb_paths.clear();
+    CHECK_THROWS_WITH((void)buildRun(setup, engines, topology, dir), doctest::Contains("Syzygy"));
+
+    fs::remove_all(dir);
 }

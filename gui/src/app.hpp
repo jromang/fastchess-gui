@@ -268,6 +268,7 @@ class App {
     void drawSetupSummary();
     void drawTemplates();
     void setupEngines();
+    void setupEngineOptions();  // the settings forced on every engine
     void setupMatch();
     void drawSprtCalculator();
     void setupLimit();
