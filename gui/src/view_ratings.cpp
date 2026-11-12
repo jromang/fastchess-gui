@@ -194,7 +194,7 @@ void App::openGame(const tour::DbGame& game) {
 }
 
 void App::drawRatings() {
-    ui::pageTitle(TR("Ratings"));
+    ui::pageTitle(TR("Ratings"), guideSection());
     ImGui::TextDisabled("%s", TR("Every game of every tournament, and of the PGN files imported, engines known by "
                                  "name; maximum likelihood ratings with 95 % intervals."));
     refreshRatings();

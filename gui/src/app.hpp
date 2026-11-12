@@ -44,6 +44,9 @@ struct SDL_Window;
 
 namespace fcg {
 
+// The date in the name of a tournament's folder: "20261109-185927_a_vs_b" -> "2026-11-09 18:59".
+std::string folderDate(const std::filesystem::path& dir);
+
 // Plots a White point of view evaluation curve (one value per ply, in pawns).
 // Returns the ply clicked in the plot, or -1.
 int plotEval(const char* id, const std::vector<float>& evals, int marker_ply, float height);
@@ -205,6 +208,11 @@ class App {
     [[nodiscard]] int gamesPlaying() const;  // games in progress, shown beside the live view in the navigation
     void drawHome();
     void drawNewMatch();
+    // The setup of the new tournament page: its engines chosen, its SPRT bounds the wrong way round, an engine of it
+    // being read. Start and Add to the queue follow them.
+    [[nodiscard]] bool setupChosen() const;
+    [[nodiscard]] bool setupBadSprt() const;
+    [[nodiscard]] bool setupProbing() const;
     void drawWorkspace();
     void drawWorkspaceHeader();
     void drawSettings();
@@ -242,12 +250,26 @@ class App {
     void drawConsole();
     void drawQuitModal();
 
+    // The command palette (Ctrl+K) and the guide (F1, the `?` of the page titles), see view_palette.cpp.
+    struct PaletteEntry {
+        std::string label;
+        std::string where;  // the page, the tournament or the menu it belongs to, shown beside it, searched after it
+        std::function<void()> run;
+    };
+    void drawPalette();
+    [[nodiscard]] std::vector<PaletteEntry> paletteEntries();
+    [[nodiscard]] guide::Section guideSection() const;  // the section of the page and tab shown
+    bool palette_request_ = false;                      // opens on the next frame (Ctrl+K, --focus palette)
+    std::string palette_query_;
+    int palette_selected_ = 0;  // in the matches, best first
+
     // tournaments
     [[nodiscard]] bool isMatch() const;
     void refreshTable();
     void drawTournamentOverview();
     void drawStandings();
     void drawStandingsTable(bool compact);
+    void copyStandings(ui::CopyAs as);  // to the clipboard, in the order shown
     void drawStandingsRow(std::size_t i, bool compact, bool swiss);
     void drawPgnOutError();  // when the PGN file of setup "Also append every game to" cannot be written
     void drawCrosstable();
@@ -364,7 +386,9 @@ class App {
     // the read and check queues, the quick test, the relaunch, the schedule's edit and the test suite.
     void renameEngine(int index, const std::string& name);
     void removeEngines(const std::vector<std::string>& names);
-    void queueChecks(const std::vector<std::string>& names);  // checked one after the other, see pollCheck
+    void queueChecks(const std::vector<std::string>& names);          // checked one after the other, see pollCheck
+    [[nodiscard]] std::vector<std::string> uncheckedEngines() const;  // what "Check those not checked" checks
+    void askEngineList();                                             // Import > An engine list…: the file dialog
 
     // run lifecycle
     void startRun();
@@ -674,6 +698,7 @@ class App {
     // Shell.
     Page page_ = Page::Home;
     std::optional<Tab> tab_request_;  // tab to select on the next frame
+    Tab shown_tab_ = Tab::Overview;   // the tab of the last frame, for the guide
     std::vector<tour::Summary> tournaments_;
     bool tournaments_dirty_  = true;
     std::size_t legacy_runs_ = 0;

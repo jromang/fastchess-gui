@@ -392,6 +392,33 @@ void App::drawTournamentOverview() {
     ImGui::EndChild();
 }
 
+void App::copyStandings(ui::CopyAs as) {
+    const auto* t = run_.tournament();
+    if (!t || isMatch()) return;
+    refreshTable();
+    // In the order shown, the line of the event, the games and the book under it.
+    const auto& spec  = t->spec();
+    const auto footer = tour::footerLine(spec, shown_, t->totalGames());
+    std::string text;
+    switch (as) {
+        case ui::CopyAs::None:
+            return;
+        case ui::CopyAs::Text:
+            text = tour::tableText(shown_, spec.name, footer);
+            break;
+        case ui::CopyAs::Bbcode:
+            text = tour::bbcode(spec.name, tour::forumDetails(spec, shown_), tour::tableText(shown_, "", footer));
+            break;
+        case ui::CopyAs::GauntletText:
+            text = tour::gauntletText(spec, table_, spec.name, t->totalGames());
+            break;
+        case ui::CopyAs::GauntletBbcode:
+            text = tour::bbcode(spec.name, "", tour::gauntletText(spec, table_, "", t->totalGames()));
+    }
+    ImGui::SetClipboardText(text.c_str());
+    Console::instance().add(TR("Standings copied to the clipboard."));
+}
+
 void App::drawStandings() {
     refreshTable();
     const auto* t = run_.tournament();
@@ -479,27 +506,8 @@ void App::drawStandings() {
     }
 
     ImGui::SameLine(0, px(30));
-    if (const auto as = ui::copyButton("standings", false, format == tour::Format::Gauntlet); as != ui::CopyAs::None) {
-        // In the order shown, the line of the event, the games and the book under it.
-        const auto& spec  = t->spec();
-        const auto footer = tour::footerLine(spec, shown_, t->totalGames());
-        std::string text;
-        switch (as) {
-            case ui::CopyAs::Text:
-                text = tour::tableText(shown_, spec.name, footer);
-                break;
-            case ui::CopyAs::Bbcode:
-                text = tour::bbcode(spec.name, tour::forumDetails(spec, shown_), tour::tableText(shown_, "", footer));
-                break;
-            case ui::CopyAs::GauntletText:
-                text = tour::gauntletText(spec, table_, spec.name, t->totalGames());
-                break;
-            default:
-                text = tour::bbcode(spec.name, "", tour::gauntletText(spec, table_, "", t->totalGames()));
-        }
-        ImGui::SetClipboardText(text.c_str());
-        Console::instance().add(TR("Standings copied to the clipboard."));
-    }
+    if (const auto as = ui::copyButton("standings", false, format == tour::Format::Gauntlet); as != ui::CopyAs::None)
+        copyStandings(as);
     ImGui::SameLine();
     if (ImGui::Button(TR("Export HTML…"))) {
         dialogs_.saveFile(Dialogs::Purpose::ExportStandings, {{"HTML", "html"}},

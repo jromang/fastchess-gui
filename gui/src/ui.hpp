@@ -14,6 +14,8 @@
 #include <chess.hpp>
 #include <types/score.hpp>
 
+#include "guide.hpp"
+
 namespace fcg::ui {
 
 enum class Theme { Dark, Light };
@@ -96,6 +98,8 @@ bool railButton(const char* id, Icon icon, const char* label, bool selected, flo
 
 // Large page title.
 void pageTitle(const char* text);
+// The same, followed by a round `?` that opens the guide at `help` (as F1 does).
+void pageTitle(const char* text, guide::Section help);
 
 // A rounded card filling the available width, with a border; pair with endCard().
 void beginCard(const char* id, ImVec2 size = ImVec2(0, 0));
