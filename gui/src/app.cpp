@@ -12,6 +12,7 @@
 #include <core/globals/globals.hpp>
 
 #include "i18n.hpp"
+#include "memory.hpp"
 #include "notify.hpp"
 #include "ui.hpp"
 
@@ -298,6 +299,15 @@ void App::drawQuitModal() {
 void App::startRun() {
     storage_.saveSetup(setup_);
     if (startAfterReads([this] { startRun(); })) return;
+
+    // Hash tables larger than the memory installed cannot work; larger than the free memory, they swap.
+    if (const auto memory = setupMemory(setup_, engines_, topology_); memory.aboveInstalled()) {
+        start_error_ = memory.text();
+        Console::instance().add(trf("Cannot start the match: {}", start_error_), true);
+        return;
+    } else if (memory.aboveAvailable()) {
+        Console::instance().add(memory.text(), true);
+    }
 
     start_error_ = run_.start(setup_, engines_, topology_, storage_.runsDir());
     if (!start_error_.empty()) {

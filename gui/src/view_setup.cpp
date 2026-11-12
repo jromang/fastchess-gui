@@ -13,6 +13,7 @@
 
 #include "app.hpp"
 #include "i18n.hpp"
+#include "memory.hpp"
 #include "run.hpp"
 #include "stats.hpp"
 #include "storage.hpp"
@@ -1043,6 +1044,18 @@ void App::drawSetupSummary() {
         if (setup_.common_hash > 0) parts += trf("Hash {} MB", setup_.common_hash);
         if (setup_.common_threads > 0) parts += (parts.empty() ? "" : ", ") + trf("Threads {}", setup_.common_threads);
         check(true, trf("Common settings: {}", parts));
+    }
+    // The hash tables against the memory: a warning above the free memory, an error above the installed one.
+    if (const auto memory = setupMemory(setup_, engines_, topology_); memory.hash_mb > 0) {
+        if (memory.aboveInstalled()) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+            ImGui::TextUnformatted("!");
+            ImGui::SameLine();
+            ImGui::TextWrapped("%s", memory.text().c_str());
+            ImGui::PopStyleColor();
+        } else {
+            check(!memory.aboveAvailable(), memory.text());
+        }
     }
     for (const auto& p : setup_.participants) {
         if (setup_.format != TournamentFormat::Match && !fixed_nodes && p.time_percent != 100) {
