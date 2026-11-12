@@ -435,6 +435,8 @@ class App {
     std::string quick_test_engine_;    // the engine of the quick test running, empty when none
     std::string quick_test_opponent_;  // empty: the engine itself
     int selected_engine_ = -1;
+    // engines.json is saved once typing in the detail panel pauses, not at every key.
+    std::optional<std::chrono::steady_clock::time_point> engines_save_due_;
     std::future<ProbeResult> probe_;
     int probe_index_ = -1;
     std::vector<std::string> probe_queue_;  // engine names waiting for a probe

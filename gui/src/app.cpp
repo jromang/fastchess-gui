@@ -97,6 +97,11 @@ void App::frame() {
     pollCheck();
     handleDialogs();
 
+    if (engines_save_due_ && std::chrono::steady_clock::now() >= *engines_save_due_) {
+        engines_save_due_.reset();
+        storage_.saveEngines(engines_);
+    }
+
     if (options_.autostart && !autostart_done_ && !probe_.valid() && probe_queue_.empty()) {
         autostart_done_ = true;
         // --focus suites: the test suite of the Suites page, instead of a tournament.

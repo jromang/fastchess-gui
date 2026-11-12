@@ -57,7 +57,10 @@ class Storage {
 template <typename T>
 std::optional<T> readJson(const std::filesystem::path& file);
 
-// Writes through a temporary file so a crash never leaves half a file behind.
-bool writeJson(const std::filesystem::path& file, const nlohmann::json& value);
+// Writes through a temporary file synced to the disk, so a crash or a power cut never leaves half a file behind
+// (see tour::replaceFile: the file keeps its permissions). False on failure, with the reason in `error`. With
+// `backup`, the previous content is kept as <file>.bak.
+bool writeJson(const std::filesystem::path& file, const nlohmann::json& value, std::string* error = nullptr,
+               bool backup = false);
 
 }  // namespace fcg

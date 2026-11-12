@@ -3,6 +3,8 @@
 #include <fstream>
 #include <system_error>
 
+#include <tour/files.hpp>
+
 #include "console.hpp"
 #include "i18n.hpp"
 
@@ -27,24 +29,25 @@ template std::optional<MatchSetup> readJson(const fs::path&);
 template std::optional<std::vector<QueuedTournament>> readJson(const fs::path&);
 template std::optional<nlohmann::json> readJson(const fs::path&);
 
-bool writeJson(const fs::path& file, const nlohmann::json& value) {
-    std::error_code ec;
-    fs::create_directories(file.parent_path(), ec);
-
-    const auto tmp = fs::path(file).concat(".tmp");
-    {
-        std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
-        if (!out) return false;
+bool writeJson(const fs::path& file, const nlohmann::json& value, std::string* error, bool backup) {
+    try {
         // Text that is not UTF-8 (an engine's output...) is written with U+FFFD rather than failing.
-        out << value.dump(2, ' ', false, nlohmann::json::error_handler_t::replace) << '\n';
-        if (!out) return false;
+        tour::replaceFile(file, value.dump(2, ' ', false, nlohmann::json::error_handler_t::replace) + '\n', backup);
+        return true;
+    } catch (const std::exception& e) {
+        if (error) *error = e.what();
+        return false;
     }
-
-    fs::rename(tmp, file, ec);
-    return !ec;
 }
 
 namespace {
+
+// A profile file written, or the reason it could not be on the Console.
+void save(const fs::path& file, const nlohmann::json& value, bool backup = false) {
+    std::string error;
+    if (!writeJson(file, value, &error, backup))
+        Console::instance().add(trf("Cannot save {}: {}", file.string(), error), true);
+}
 
 // A profile file that is there but cannot be read is set aside, so that the defaults saved in its place do not
 // replace it: a typo in a hand edit, or a file left empty by a power cut, must not cost the list of engines.
@@ -92,14 +95,28 @@ void Storage::setRunsDir(const fs::path& dir) {
     runs_dir_                   = dir == defaultRunsDir() ? fs::path{} : dir;
     auto settings               = this->settings();
     settings["tournaments_dir"] = runs_dir_.string();
-    writeJson(root_ / "settings.json", settings);
+    save(root_ / "settings.json", settings);
 }
 
 std::vector<EngineEntry> Storage::loadEngines() const {
-    return readProfileFile<std::vector<EngineEntry>>(root_ / "engines.json").value_or(std::vector<EngineEntry>{});
+    const auto file = root_ / "engines.json";
+    if (auto engines = readProfileFile<std::vector<EngineEntry>>(file)) return *engines;
+
+    // The list as it was before its last change, when the file is gone or could not be read.
+    const auto backup = fs::path(file).concat(".bak");
+    if (auto engines = readJson<std::vector<EngineEntry>>(backup)) {
+        Console::instance().add(trf("The engines are those of {}, kept before the last change.", backup.string()),
+                                true);
+        return *engines;
+    }
+    return {};
 }
 
-void Storage::saveEngines(const std::vector<EngineEntry>& engines) const { writeJson(root_ / "engines.json", engines); }
+void Storage::saveEngines(const std::vector<EngineEntry>& engines) const {
+    // With the list before this change as engines.json.bak: hundreds of engines and their settings are not lost
+    // to one bad write.
+    save(root_ / "engines.json", engines, true);
+}
 
 std::vector<fs::path> Storage::ratingPgns() const {
     std::vector<fs::path> out;
@@ -112,7 +129,7 @@ void Storage::setRatingPgns(const std::vector<fs::path>& files) const {
     std::vector<std::string> list;
     for (const auto& f : files) list.push_back(f.string());
     settings["rating_pgns"] = list;
-    writeJson(root_ / "settings.json", settings);
+    save(root_ / "settings.json", settings);
 }
 
 std::string Storage::lichessToken() const { return setting(settings(), "lichess_token", std::string{}); }
@@ -125,8 +142,8 @@ void Storage::setLichessToken(const std::string& token) const {
         settings["lichess_token"] = token;
     }
     const auto file = root_ / "settings.json";
-    writeJson(file, settings);
-    // Readable by its owner only, as it holds a token.
+    save(file, settings);
+    // Readable by its owner only, as it holds a token; later rewrites keep that.
     std::error_code ec;
     fs::permissions(file, fs::perms::owner_read | fs::perms::owner_write, fs::perm_options::replace, ec);
 }
@@ -135,19 +152,19 @@ std::vector<BookEntry> Storage::loadBooks() const {
     return readProfileFile<std::vector<BookEntry>>(root_ / "books.json").value_or(std::vector<BookEntry>{});
 }
 
-void Storage::saveBooks(const std::vector<BookEntry>& books) const { writeJson(root_ / "books.json", books); }
+void Storage::saveBooks(const std::vector<BookEntry>& books) const { save(root_ / "books.json", books); }
 
 MatchSetup Storage::loadSetup() const {
     return readProfileFile<MatchSetup>(root_ / "setup.json").value_or(MatchSetup{});
 }
 
-void Storage::saveSetup(const MatchSetup& setup) const { writeJson(root_ / "setup.json", setup); }
+void Storage::saveSetup(const MatchSetup& setup) const { save(root_ / "setup.json", setup); }
 
 std::vector<QueuedTournament> Storage::loadQueue() const {
     return readProfileFile<std::vector<QueuedTournament>>(root_ / "queue.json")
         .value_or(std::vector<QueuedTournament>{});
 }
 
-void Storage::saveQueue(const std::vector<QueuedTournament>& queue) const { writeJson(root_ / "queue.json", queue); }
+void Storage::saveQueue(const std::vector<QueuedTournament>& queue) const { save(root_ / "queue.json", queue); }
 
 }  // namespace fcg

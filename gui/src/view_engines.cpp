@@ -749,7 +749,7 @@ void App::drawEngines() {
 
     if (changed) {
         refreshProgram(e);
-        storage_.saveEngines(engines_);
+        engines_save_due_ = std::chrono::steady_clock::now() + std::chrono::seconds(1);
     }
 
     ImGui::EndChild();

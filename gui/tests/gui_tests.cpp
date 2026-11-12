@@ -851,6 +851,46 @@ TEST_CASE("an engine list that cannot be read is set aside, not replaced by an e
     fs::remove_all(root);
 }
 
+TEST_CASE("the engine list before its last change is kept, and used when engines.json is lost") {
+    namespace fs    = std::filesystem;
+    const auto root = fs::temp_directory_path() / "fcg-storage-backup";
+    fs::remove_all(root);
+
+    Storage storage(root);
+    EngineEntry a, b;
+    a.name = "A";
+    b.name = "B";
+    storage.saveEngines({a});
+    storage.saveEngines({a, b});
+    CHECK(storage.loadEngines().size() == 2);
+
+    // Emptied by a power cut on a disk that did not keep its promise.
+    std::ofstream(root / "engines.json", std::ios::trunc).close();
+    const auto engines = storage.loadEngines();
+    REQUIRE(engines.size() == 1);
+    CHECK(engines[0].name == "A");
+    fs::remove_all(root);
+}
+
+#ifndef _WIN32
+TEST_CASE("settings.json stays readable by its owner only once it holds the lichess token") {
+    namespace fs    = std::filesystem;
+    const auto root = fs::temp_directory_path() / "fcg-storage-token";
+    fs::remove_all(root);
+
+    Storage storage(root);
+    storage.setLichessToken("lip_secret");
+    const auto owner_only = fs::perms::owner_read | fs::perms::owner_write;
+    CHECK(fs::status(root / "settings.json").permissions() == owner_only);
+    // Other settings rewrite the file.
+    storage.setRunsDir(root / "elsewhere");
+    storage.setRatingPgns({root / "a.pgn"});
+    CHECK(fs::status(root / "settings.json").permissions() == owner_only);
+    CHECK(storage.lichessToken() == "lip_secret");
+    fs::remove_all(root);
+}
+#endif
+
 TEST_CASE("a settings.json of another shape is taken as empty, at start and when a setting is saved") {
     namespace fs    = std::filesystem;
     const auto root = fs::temp_directory_path() / "fcg-storage-settings";
