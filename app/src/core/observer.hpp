@@ -59,6 +59,10 @@ class GameObserver {
     // Every stdout line of the engine playing `side` in `slot`, as soon as it has been read.
     virtual void onEngineLine(int /*slot*/, chess::Color /*side*/, std::string_view /*line*/) {}
 
+    // Every line of the error output of the engine playing `side` in `slot`, when it is read (see
+    // engine::process::capture_stderr): on the engine's next read of its output, or when it ends.
+    virtual void onEngineError(int /*slot*/, chess::Color /*side*/, std::string_view /*line*/) {}
+
     // Every line sent to the engine playing `side` in `slot`, from the preparation of the game (ucinewgame, options)
     // to its end.
     virtual void onEngineInput(int /*slot*/, chess::Color /*side*/, std::string_view /*line*/) {}
@@ -98,16 +102,31 @@ class PauseGate {
         {
             std::lock_guard<std::mutex> lock(mutex_);
             paused_ = paused;
+            if (!paused) stop_when_idle_ = false;
         }
         cv_.notify_all();
     }
 
     [[nodiscard]] bool paused() const noexcept { return paused_.load(); }
 
+    // The pause of "finish the running games, then stop": no resume will follow, so a running game that would
+    // wait for one (an engine that failed to start) is given up instead.
+    void stopWhenIdle() {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            paused_         = true;
+            stop_when_idle_ = true;
+        }
+        cv_.notify_all();
+    }
+
+    [[nodiscard]] bool stoppingWhenIdle() const noexcept { return stop_when_idle_.load(); }
+
     // Forgets the pairs of a previous tournament.
     void reset() {
         std::lock_guard<std::mutex> lock(mutex_);
-        paused_ = false;
+        paused_         = false;
+        stop_when_idle_ = false;
         open_pairs_.clear();
         cv_.notify_all();
     }
@@ -176,6 +195,7 @@ class PauseGate {
     std::mutex mutex_;
     std::condition_variable cv_;
     std::atomic_bool paused_{false};
+    std::atomic_bool stop_when_idle_{false};
     std::atomic_int running_{0};
 
     // Pairs with at least one game started, and how many of their games did.

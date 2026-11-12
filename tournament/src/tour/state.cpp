@@ -1125,11 +1125,40 @@ bool TournamentState::settled(uint32_t encounter) const {
     return true;
 }
 
-std::set<std::string> TournamentState::activeEngines() const {
+std::set<std::string> TournamentState::enginesLeft() const {
     std::lock_guard<std::mutex> lock(mutex_);
+
+    std::set<int> active;
+    for (const auto& p : spec_.participants) {
+        if (p.active) active.insert(p.id);
+    }
+
+    if (!finished_ && schedule_.editable()) {
+        // The games of started encounters, then the encounters never started, until every participant is seen:
+        // after a round or two in a round robin, after the whole rest of the schedule in a gauntlet.
+        std::set<int> left;
+        const auto add = [&](const Encounter& e) {
+            if (active.count(e.first)) left.insert(e.first);
+            if (active.count(e.second)) left.insert(e.second);
+        };
+        for (const auto& [encounter, game] : open_) {
+            const auto n = uint64_t{encounter} * 2 + game;
+            if (done(encounter, game) || dropped_.count(n)) continue;
+            if (const auto e = schedule_.at(encounter)) add(*e);
+        }
+        for (auto i = next_encounter_; left.size() < active.size(); ++i) {
+            const auto e = schedule_.at(i);
+            if (!e) break;
+            add(*e);
+        }
+        active = std::move(left);
+    } else if (finished_) {
+        active.clear();
+    }
+
     std::set<std::string> names;
     for (const auto& p : spec_.participants) {
-        if (p.active) names.insert(p.engine.name);
+        if (active.count(p.id)) names.insert(p.engine.name);
     }
     return names;
 }

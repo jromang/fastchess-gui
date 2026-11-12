@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -296,6 +297,125 @@ TEST_CASE("runner: a game whose engine fails to start is given up quietly once i
     CHECK(state->results().size() == 2u);  // the games of 0 and 1
     CHECK(std::chrono::steady_clock::now() - begun < fastchess::BaseTournament::ENGINE_START_RETRY_PAUSE);
 }
+
+TEST_CASE("runner: a pause holds the next try of an engine that failed to start, without using it up") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-retry-pause";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    // Exits at once the first time it is started, then is the random mover.
+    const auto started = dir / "started";
+    const auto script  = dir / "flaky.sh";
+    {
+        std::ofstream out(script);
+        out << "#!/bin/sh\nif [ ! -e \"" << started.string() << "\" ]; then touch \"" << started.string()
+            << "\"; exit 1; fi\nexec \"" << randomMover() << "\"\n";
+    }
+    fs::permissions(script, fs::perms::owner_all);
+
+    auto s                       = spec(Format::Match, 2, 1, 2);
+    s.conditions.concurrency     = 1;
+    s.participants[1].engine.cmd = script.string();
+    auto state                   = TournamentState::create(dir / "t", s);
+
+    // Paused while the engine waits for its next try: nothing is played during the pause, the try comes after it.
+    constexpr auto held = 3s;
+    std::thread pauser([&] {
+        while (!fs::exists(started)) std::this_thread::sleep_for(10ms);
+        fastchess::observer::PauseGate::instance().setPaused(true);
+        std::this_thread::sleep_for(held);
+        CHECK(state->results().empty());
+        fastchess::observer::PauseGate::instance().setPaused(false);
+    });
+    const auto begun = std::chrono::steady_clock::now();
+    const auto error = play(*state);
+    pauser.join();
+
+    CHECK(error.empty());
+    CHECK_FALSE(fastchess::atomic::abnormal_termination);
+    CHECK(state->finished());
+    CHECK(state->results().size() == 2u);
+    CHECK(std::chrono::steady_clock::now() - begun >= fastchess::BaseTournament::ENGINE_START_RETRY_PAUSE + held);
+}
+
+TEST_CASE("runner: \"stop when idle\" gives up at once a game whose engine waits for its next try") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-retry-idle";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    // Never starts; tells that it was tried.
+    const auto started = dir / "started";
+    const auto script  = dir / "broken.sh";
+    {
+        std::ofstream out(script);
+        out << "#!/bin/sh\ntouch \"" << started.string() << "\"\nexit 1\n";
+    }
+    fs::permissions(script, fs::perms::owner_all);
+
+    auto s                       = spec(Format::Match, 2, 1, 2);
+    s.conditions.concurrency     = 1;
+    s.participants[1].engine.cmd = script.string();
+    auto state                   = TournamentState::create(dir / "t", s);
+
+    // As the GUI does: stops once no game runs and no pair waits for its second game.
+    std::thread stopper([&] {
+        while (!fs::exists(started)) std::this_thread::sleep_for(10ms);
+        auto& gate = fastchess::observer::PauseGate::instance();
+        gate.stopWhenIdle();
+        while (gate.running() > 0 || gate.openPairs() > 0) std::this_thread::sleep_for(10ms);
+        fastchess::atomic::stop = true;
+    });
+    const auto begun = std::chrono::steady_clock::now();
+    const auto error = play(*state);
+    stopper.join();
+
+    CHECK(error.empty());
+    CHECK_FALSE(fastchess::atomic::abnormal_termination);
+    CHECK(state->results().empty());
+    CHECK(std::chrono::steady_clock::now() - begun < fastchess::BaseTournament::ENGINE_START_RETRY_PAUSE);
+}
+
+TEST_CASE("runner: a round robin of more engines than games at a time starts each engine once") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-starts";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    // The random mover, writing a line to `starts` each time it is started.
+    const auto starts = dir / "starts";
+    const auto script = dir / "counted.sh";
+    {
+        std::ofstream out(script);
+        out << "#!/bin/sh\necho started >> \"" << starts.string() << "\"\nexec \"" << randomMover() << "\"\n";
+    }
+    fs::permissions(script, fs::perms::owner_all);
+
+    auto s                   = spec(Format::RoundRobin, 7, 1);
+    s.conditions.concurrency = 1;
+    for (auto& p : s.participants) p.engine.cmd = script.string();
+    auto state = TournamentState::create(dir / "t", s);
+    CHECK(play(*state).empty());
+    CHECK(state->results().size() == 42u);
+
+    std::ifstream in(starts);
+    std::size_t lines = 0;
+    for (std::string line; std::getline(in, line);) ++lines;
+    CHECK(lines == 7u);
+}
 #endif
 
 TEST_CASE("runner: engine logs, of every game when asked, with both directions of both engines") {
@@ -320,6 +440,51 @@ TEST_CASE("runner: engine logs, of every game when asked, with both directions o
         CHECK(text.find("B> go ") != std::string::npos);
         CHECK(text.find("W< bestmove ") != std::string::npos);
     }
+}
+
+TEST_CASE("runner: engine logs keep the engines' error output, marked apart, even more than a pipe holds") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto set_env = [](const char* name, const char* value) {
+#ifdef _WIN32
+        SetEnvironmentVariableA(name, value);
+#else
+        if (value) {
+            setenv(name, value, 1);
+        } else {
+            unsetenv(name);
+        }
+#endif
+    };
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-stderr";
+    fs::remove_all(dir);
+    auto s           = spec(Format::Match, 2, 1, 2);
+    s.log_every_game = true;
+    auto state       = TournamentState::create(dir, s);
+
+    set_env("FCG_MOCK_STDERR", "on stderr:");
+    set_env("FCG_MOCK_STDERR_FLOOD", "1000");
+    const auto error = play(*state);
+    set_env("FCG_MOCK_STDERR", nullptr);
+    set_env("FCG_MOCK_STDERR_FLOOD", nullptr);
+
+    CHECK(error.empty());
+    REQUIRE(state->results().size() == 2u);
+
+    // Both engines started for the first game.
+    std::ifstream in(engineLogPath(dir, 1), std::ios::binary);
+    const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    CHECK(text.find("! read from its error output") != std::string::npos);
+    CHECK(text.find("W! flood ...") != std::string::npos);
+    CHECK(text.find("B! flood ...") != std::string::npos);
+    CHECK(text.find("W! on stderr: ") != std::string::npos);
+    CHECK(text.find("B! on stderr: ") != std::string::npos);
+    CHECK(text.find("< on stderr: ") == std::string::npos);
+    CHECK(text.find("W< bestmove ") != std::string::npos);
 }
 
 TEST_CASE("engine cache: the idle entries used the longest ago make room; retired ones go at once") {
@@ -365,11 +530,55 @@ TEST_CASE("engine cache: the idle entries used the longest ago make room; retire
     CHECK(alive == 0);
 }
 
+TEST_CASE("engine cache: one idle process per engine left in moderate fields, a cap in big ones") {
+    using fastchess::BaseTournament;
+    constexpr auto cap = BaseTournament::MAX_IDLE_ENGINES;
+
+    // A round robin of 10 at concurrency 1: the two playing, and every engine kept for its next game.
+    CHECK(BaseTournament::engineCacheSize(10, 1, 1) == 12u);
+    // At concurrency 8, never fewer idle processes than in 0.4.11 (two per game).
+    CHECK(BaseTournament::engineCacheSize(10, 8, 1) == 32u);
+    // Hundreds of engines: the cap.
+    CHECK(BaseTournament::engineCacheSize(500, 1, 1) == 2 + cap);
+    CHECK(BaseTournament::engineCacheSize(500, 4, 1) == 8 + cap);
+    // With affinity, a cache per game thread shares the cap with the others.
+    CHECK(BaseTournament::engineCacheSize(10, 1, 4) == 2 + cap / 4);
+    CHECK(BaseTournament::engineCacheSize(500, 1, 64) == 4u);
+    CHECK(BaseTournament::engineCacheSize(0, 0, 0) == 4u);
+
+    // A new size applies from the next entry made.
+    struct Engine {
+        explicit Engine(int* alive) : alive_(alive) { ++*alive_; }
+        ~Engine() { --*alive_; }
+        int* alive_;
+    };
+    int alive = 0;
+    fastchess::util::CachePool<Engine, std::string> cache(2);
+    const auto use = [&](const std::string& name) {
+        auto it = cache.getEntry(name, &alive);
+        fastchess::util::ScopeGuard guard(&*it);
+    };
+    use("a");
+    use("b");
+    use("c");
+    CHECK(alive == 2);
+    cache.setMaxSize(3);
+    use("a");
+    CHECK(alive == 3);
+    cache.setMaxSize(1);
+    CHECK(alive == 3);
+    use("d");
+    CHECK(alive == 1);
+}
+
 TEST_CASE("engine log: the first and the last lines of a long game; which endings keep it") {
     EngineLog log;
     log.start();
     const auto total = EngineLog::HEAD_LINES + EngineLog::TAIL_LINES + 10;
-    for (std::size_t i = 0; i < total; ++i) log.add(chess::Color::WHITE, i % 2 == 0, fmt::format("line {}", i));
+    for (std::size_t i = 0; i < total; ++i) {
+        log.add(chess::Color::WHITE, i % 2 == 0 ? EngineLog::Stream::Input : EngineLog::Stream::Output,
+                fmt::format("line {}", i));
+    }
     fastchess::MatchData data("startpos");
     const auto text = log.text(7, data);
     CHECK(text.find("W> line 0\n") != std::string::npos);

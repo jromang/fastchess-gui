@@ -371,6 +371,8 @@ void Match::start(engine::UciEngine& white, engine::UciEngine& black, std::optio
         ~LineCallbackGuard() {
             white.setLineCallback({});
             black.setLineCallback({});
+            white.setErrorLineCallback({});
+            black.setErrorLineCallback({});
             white.setInputCallback({});
             black.setInputCallback({});
         }
@@ -380,6 +382,10 @@ void Match::start(engine::UciEngine& white, engine::UciEngine& black, std::optio
         const int slot = observer::slot();
         white.setLineCallback([obs, slot](const std::string& line) { obs->onEngineLine(slot, Color::WHITE, line); });
         black.setLineCallback([obs, slot](const std::string& line) { obs->onEngineLine(slot, Color::BLACK, line); });
+        white.setErrorLineCallback(
+            [obs, slot](const std::string& line) { obs->onEngineError(slot, Color::WHITE, line); });
+        black.setErrorLineCallback(
+            [obs, slot](const std::string& line) { obs->onEngineError(slot, Color::BLACK, line); });
         white.setInputCallback([obs, slot](const std::string& line) { obs->onEngineInput(slot, Color::WHITE, line); });
         black.setInputCallback([obs, slot](const std::string& line) { obs->onEngineInput(slot, Color::BLACK, line); });
     }

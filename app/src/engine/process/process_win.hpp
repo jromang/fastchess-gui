@@ -4,6 +4,8 @@
 
 #    include <engine/process/iprocess.hpp>
 
+#    include <algorithm>
+#    include <array>
 #    include <cassert>
 #    include <chrono>
 #    include <string>
@@ -31,7 +33,12 @@ class Process : public IProcess {
     HANDLE hChildStdoutWrite = NULL;
     HANDLE hChildStdinRead   = NULL;
     HANDLE hChildStdinWrite  = NULL;
+    // fastchess-gui: the error output's own pipe, when it is read (see capture_stderr); otherwise it goes to
+    // stdout's pipe.
+    HANDLE hChildStderrRead  = NULL;
+    HANDLE hChildStderrWrite = NULL;
     std::array<char, buffer_size> buffer;
+    std::array<char, buffer_size> err_buffer_;
 
    public:
     ~Process() override {
@@ -74,15 +81,35 @@ class Process : public IProcess {
             return Result::Error("failed to set stdin handle information");
         }
 
+        err_open_ = Logger::should_log_ || capture_stderr;
+        if (err_open_) {
+            if (!CreatePipeEx(&hChildStderrRead, &hChildStderrWrite, &saAttr)) {
+                closesHandles();
+                return Result::Error("failed to create stderr pipe");
+            }
+            if (!SetHandleInformation(hChildStderrRead, HANDLE_FLAG_INHERIT, 0)) {
+                closesHandles();
+                return Result::Error("failed to set stderr handle information");
+            }
+        }
+
         try {
             STARTUPINFOA si = {};
             si.cb           = sizeof(STARTUPINFOA);
             si.hStdOutput   = hChildStdoutWrite;
             si.hStdInput    = hChildStdinRead;
-            si.hStdError    = hChildStdoutWrite;
+            si.hStdError    = err_open_ ? hChildStderrWrite : hChildStdoutWrite;
             si.dwFlags |= STARTF_USESTDHANDLES;
 
-            if (createProcess(si)) {
+            const bool created = createProcess(si);
+
+            // Only the engine writes there: its end is then seen when the engine ends.
+            if (hChildStderrWrite) {
+                CloseHandle(hChildStderrWrite);
+                hChildStderrWrite = NULL;
+            }
+
+            if (created) {
                 process_list.push(ProcessInformation{pi_.hProcess, hChildStdoutWrite});
                 return Result::OK();
             }
@@ -98,7 +125,10 @@ class Process : public IProcess {
         if (hChildStdoutWrite) CloseHandle(hChildStdoutWrite);
         if (hChildStdinRead) CloseHandle(hChildStdinRead);
         if (hChildStdinWrite) CloseHandle(hChildStdinWrite);
+        if (hChildStderrRead) CloseHandle(hChildStderrRead);
+        if (hChildStderrWrite) CloseHandle(hChildStderrWrite);
         hChildStdoutRead = hChildStdoutWrite = hChildStdinRead = hChildStdinWrite = NULL;
+        hChildStderrRead = hChildStderrWrite = NULL;
     }
 
     // Ends the process at once, if it still runs.
@@ -167,10 +197,16 @@ class Process : public IProcess {
         is_initialized_ = false;
     }
 
-    void setupRead() override { current_line_.clear(); }
+    void setupRead() override {
+        current_line_.clear();
+        err_line_.clear();
+    }
 
     // Read stdout until the line matches last_word or timeout is reached
     // 0 means no timeout
+    //
+    // fastchess-gui: the error output, when it has a pipe of its own (see capture_stderr), is read in the same
+    // waits: an engine blocked on a full error pipe would otherwise never write the line waited for.
     Result readOutput(std::vector<Line>& lines, std::string_view last_word,
                       std::chrono::milliseconds threshold) override {
         assert(is_initialized_);
@@ -178,91 +214,121 @@ class Process : public IProcess {
         lines.clear();
 
         const auto startTime = std::chrono::steady_clock::now();
-        const auto timeout   = threshold.count() == 0 ? INFINITE : static_cast<DWORD>(threshold.count());
+        const bool infinite  = threshold.count() <= 0;
+
+        PipeRead out(hChildStdoutRead, buffer);
+        PipeRead err(hChildStderrRead, err_buffer_);
+
+        if (!out.ready() || (err_open_ && !err.ready())) {
+            LOG_FATAL_THREAD("Failed to create event for overlapped I/O");
+            return Result::Error("failed to create event for overlapped I/O");
+        }
+
+        // Every return goes through here: the reads still pending are cancelled, and what they read meanwhile kept.
+        const auto finish = [&](Result result) {
+            DWORD bytes = 0;
+            if (out.cancel(bytes) && bytes > 0) (void)readBytes(buffer, bytes, lines, "", current_line_, false);
+            if (err.cancel(bytes) && bytes > 0) (void)readBytes(err_buffer_, bytes, lines, "", err_line_, true);
+            return result;
+        };
+
+        const auto terminatedOr = [&](const char* message) {
+            if (!alive()) return finish(Result::Error("process terminated"));
+            LOG_FATAL_THREAD("{}", message);
+            return finish(Result::Error(message));
+        };
 
         while (true) {
-            auto currentTime = std::chrono::steady_clock::now();
-            auto elapsedMs   = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count();
+            const auto elapsed =
+                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime);
 
-            if (elapsedMs >= timeout) {
-                return Result{Status::TIMEOUT, "timeout"};
+            if (!infinite && elapsed >= threshold) {
+                return finish(Result{Status::TIMEOUT, "timeout"});
             }
 
             if (atomic::stop) {
-                return Result::Error("stop requested");
+                return finish(Result::Error("stop requested"));
             }
 
-            DWORD bytesRead;
-            OVERLAPPED overlapped = {};
-            overlapped.hEvent     = CreateEvent(NULL, TRUE, FALSE, NULL);
+            DWORD bytesRead = 0;
 
-            if (!overlapped.hEvent) {
-                LOG_FATAL_THREAD("Failed to create event for overlapped I/O");
-                return Result::Error("failed to create event for overlapped I/O");
-            }
-
-            if (!ReadFile(hChildStdoutRead, buffer.data(), buffer.size(), &bytesRead, &overlapped)) {
-                if (GetLastError() != ERROR_IO_PENDING) {
-                    CloseHandle(overlapped.hEvent);
-
-                    if (!alive()) {
-                        return Result::Error("process terminated");
+            if (!out.pending) {
+                const auto started = out.start(bytesRead);
+                if (started == PipeRead::Started::Failed) return terminatedOr("Failed to read from pipe");
+                if (started == PipeRead::Started::Done) {
+                    if (bytesRead == 0) {
+                        if (!alive()) return finish(Result::Error("process terminated"));
+                        continue;
                     }
-
-                    LOG_FATAL_THREAD("Failed to read from pipe");
-                    return Result::Error("failed to read from pipe");
-                }
-
-                HANDLE wait_handles[] = {overlapped.hEvent, pi_.hProcess};
-                DWORD waitResult      = WaitForMultipleObjects(2, wait_handles, FALSE, timeout);
-                if (waitResult == WAIT_TIMEOUT) {
-                    CancelIo(hChildStdoutRead);
-                    CloseHandle(overlapped.hEvent);
-                    return Result{Status::TIMEOUT, "timeout"};
-                }
-
-                if (waitResult == WAIT_OBJECT_0 + 1) {
-                    CloseHandle(overlapped.hEvent);
-
-                    if (!alive()) {
-                        return Result::Error("process terminated");
+                    if (readBytes(buffer, bytesRead, lines, last_word, current_line_, false)) {
+                        return finish(Result::OK());
                     }
-
-                    LOG_FATAL_THREAD("Process handle signaled but process is still alive");
-                    return Result::Error("wait failed");
-                }
-
-                if (waitResult != WAIT_OBJECT_0) {
-                    CloseHandle(overlapped.hEvent);
-                    LOG_FATAL_THREAD("Wait failed");
-                    return Result::Error("wait failed");
-                }
-
-                if (!GetOverlappedResult(hChildStdoutRead, &overlapped, &bytesRead, FALSE)) {
-                    CloseHandle(overlapped.hEvent);
-
-                    if (!alive()) {
-                        return Result::Error("process terminated");
-                    }
-
-                    LOG_FATAL_THREAD("Failed to get overlapped result");
-                    return Result::Error("failed to get overlapped result");
+                    continue;
                 }
             }
 
-            CloseHandle(overlapped.hEvent);
-
-            if (bytesRead == 0) {
-                if (!alive()) {
-                    return Result::Error("process terminated");
+            if (err_open_ && !err.pending) {
+                const auto started = err.start(bytesRead);
+                if (started == PipeRead::Started::Failed) {
+                    // Closed by the engine, or the engine ended: its output tells which.
+                    err_open_ = false;
+                } else if (started == PipeRead::Started::Done) {
+                    (void)readBytes(err_buffer_, bytesRead, lines, "", err_line_, true);
+                    continue;
                 }
+            }
 
+            // The pipes first: what an engine wrote before it ended is read before its end is seen.
+            HANDLE wait_handles[3];
+            DWORD count           = 0;
+            const DWORD out_index = count;
+            wait_handles[count++] = out.event();
+            const DWORD err_index = err.pending ? count : MAXDWORD;
+            if (err.pending) wait_handles[count++] = err.event();
+            const DWORD proc_index = count;
+            wait_handles[count++]  = pi_.hProcess;
+
+            const auto remaining =
+                infinite ? INFINITE
+                         : static_cast<DWORD>(std::clamp<int64_t>((threshold - elapsed).count(), 0, INFINITE - 1));
+            const DWORD waitResult = WaitForMultipleObjects(count, wait_handles, FALSE, remaining);
+
+            if (waitResult == WAIT_TIMEOUT) {
+                return finish(Result{Status::TIMEOUT, "timeout"});
+            }
+
+            if (waitResult == WAIT_OBJECT_0 + out_index) {
+                if (!out.complete(bytesRead)) return terminatedOr("Failed to get overlapped result");
+                if (bytesRead == 0) {
+                    if (!alive()) return finish(Result::Error("process terminated"));
+                    continue;
+                }
+                if (readBytes(buffer, bytesRead, lines, last_word, current_line_, false)) {
+                    return finish(Result::OK());
+                }
                 continue;
             }
 
-            if (readBytes(buffer, bytesRead, lines, last_word)) {
-                return Result::OK();
+            if (err_index != MAXDWORD && waitResult == WAIT_OBJECT_0 + err_index) {
+                if (err.complete(bytesRead)) {
+                    (void)readBytes(err_buffer_, bytesRead, lines, "", err_line_, true);
+                } else {
+                    err_open_ = false;
+                }
+                continue;
             }
+
+            if (waitResult == WAIT_OBJECT_0 + proc_index) {
+                if (!alive()) {
+                    return finish(Result::Error("process terminated"));
+                }
+
+                LOG_FATAL_THREAD("Process handle signaled but process is still alive");
+                return finish(Result::Error("wait failed"));
+            }
+
+            LOG_FATAL_THREAD("Wait failed");
+            return finish(Result::Error("wait failed"));
         }
     }
 
@@ -280,8 +346,72 @@ class Process : public IProcess {
     }
 
    private:
+    // fastchess-gui: an overlapped read of a pipe, which may stay pending through several waits of readOutput().
+    // The read must be over before its buffer and its OVERLAPPED go away: cancel() waits for it.
+    class PipeRead {
+       public:
+        enum class Started { Done, Pending, Failed };
+
+        PipeRead(HANDLE pipe, std::array<char, buffer_size>& data) : pipe_(pipe), data_(data) {
+            if (pipe_) overlapped_.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+        }
+
+        ~PipeRead() {
+            DWORD bytes = 0;
+            (void)cancel(bytes);
+            if (overlapped_.hEvent) CloseHandle(overlapped_.hEvent);
+        }
+
+        PipeRead(const PipeRead&)            = delete;
+        PipeRead& operator=(const PipeRead&) = delete;
+
+        [[nodiscard]] bool ready() const noexcept { return overlapped_.hEvent != NULL; }
+        [[nodiscard]] HANDLE event() const noexcept { return overlapped_.hEvent; }
+
+        // Done: `bytes` were read at once; Pending: event() is set once complete() can tell; Failed: the pipe is
+        // closed or broken.
+        Started start(DWORD& bytes) {
+            const HANDLE event = overlapped_.hEvent;
+            overlapped_        = OVERLAPPED{};
+            overlapped_.hEvent = event;
+            ResetEvent(event);
+
+            bytes = 0;
+            if (ReadFile(pipe_, data_.data(), static_cast<DWORD>(data_.size()), &bytes, &overlapped_)) {
+                return Started::Done;
+            }
+            if (GetLastError() != ERROR_IO_PENDING) return Started::Failed;
+            pending = true;
+            return Started::Pending;
+        }
+
+        // The read is over (event() is set): false when it failed.
+        bool complete(DWORD& bytes) {
+            pending = false;
+            bytes   = 0;
+            return GetOverlappedResult(pipe_, &overlapped_, &bytes, FALSE);
+        }
+
+        // Ends a pending read and waits until it is over: true when it read `bytes` meanwhile.
+        bool cancel(DWORD& bytes) {
+            bytes = 0;
+            if (!pending) return false;
+            pending = false;
+            CancelIoEx(pipe_, &overlapped_);
+            return GetOverlappedResult(pipe_, &overlapped_, &bytes, TRUE);
+        }
+
+        bool pending = false;
+
+       private:
+        HANDLE pipe_;
+        std::array<char, buffer_size>& data_;
+        OVERLAPPED overlapped_{};
+    };
+
+    // `line`: the line being read from this pipe, `err`: whether it is the error output.
     [[nodiscard]] bool readBytes(const std::array<char, buffer_size>& buffer, DWORD bytes_read,
-                                 std::vector<Line>& lines, std::string_view searchword) {
+                                 std::vector<Line>& lines, std::string_view searchword, std::string& line, bool err) {
         assert(bytes_read <= buffer.size());
 
         std::string_view data(buffer.data(), static_cast<size_t>(bytes_read));
@@ -291,24 +421,24 @@ class Process : public IProcess {
             const size_t pos = data.find_first_of("\r\n", start);
 
             if (pos == std::string_view::npos) {
-                current_line_.append(data.substr(start));
+                line.append(data.substr(start));
                 break;
             }
 
             assert(pos >= start);
             assert(pos < data.size());
 
-            current_line_.append(data.substr(start, pos - start));
+            line.append(data.substr(start, pos - start));
 
-            if (!current_line_.empty()) {
-                addLine(lines);
+            if (!line.empty()) {
+                addLine(lines, line, err);
 
-                if (!searchword.empty() && current_line_.rfind(searchword, 0) == 0) {
-                    current_line_.clear();
+                if (!searchword.empty() && line.rfind(searchword, 0) == 0) {
+                    line.clear();
                     return true;
                 }
 
-                current_line_.clear();
+                line.clear();
             }
 
             // Treat "\r\n" as one delimiter.
@@ -376,16 +506,17 @@ class Process : public IProcess {
         }
     }
 
-    void addLine(std::vector<Line>& lines) const {
+    void addLine(std::vector<Line>& lines, const std::string& line, bool err) const {
         const auto timestamp = Logger::should_log_ ? time::datetime_precise() : "";
 
-        lines.emplace_back(Line{current_line_, timestamp});
+        lines.emplace_back(Line{line, timestamp, err ? Standard::ERR : Standard::OUTPUT});
 
         if (realtime_logging_) {
-            Logger::readFromEngine(current_line_, timestamp, log_name_, false, thread_id);
+            Logger::readFromEngine(line, timestamp, log_name_, err, thread_id);
         }
 
-        if (line_callback_) line_callback_(current_line_);
+        const auto& callback = err ? err_line_callback_ : line_callback_;
+        if (callback) callback(line);
     }
 
     // The working directory
@@ -398,6 +529,9 @@ class Process : public IProcess {
     std::string log_name_;
     // The current line read from the engine, avoids reallocations
     std::string current_line_;
+    // fastchess-gui: the same for the error output, and whether it is read and has not ended
+    std::string err_line_;
+    bool err_open_ = false;
 
     // True if the process has been initialized
     bool is_initialized_ = false;

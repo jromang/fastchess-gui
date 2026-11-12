@@ -29,11 +29,15 @@ class EngineLog {
     // Forgets the previous game.
     void start();
 
-    // `sent`: a line written to the engine, otherwise one read from it. Thread safe.
-    void add(chess::Color side, bool sent, std::string_view line);
+    // Input: a line written to the engine; Output: one read from its output; Error: one read from its error output.
+    enum class Stream { Input, Output, Error };
+
+    // Thread safe.
+    void add(chess::Color side, Stream stream, std::string_view line);
 
     // The whole log: a header describing the game, then one line per exchange, as
-    // "   12.345 W> go wtime 1000 ..." (sent to White's engine) or "   12.346 B< bestmove e7e5" (read from Black's).
+    // "   12.345 W> go wtime 1000 ..." (sent to White's engine), "   12.346 B< bestmove e7e5" (read from Black's) or
+    // "   12.347 B! assertion failed" (read from the error output of Black's).
     [[nodiscard]] std::string text(uint64_t game_number, const fastchess::MatchData& data) const;
 
    private:

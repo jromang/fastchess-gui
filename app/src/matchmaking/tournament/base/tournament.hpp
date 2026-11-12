@@ -43,23 +43,39 @@ class BaseTournament {
     static constexpr int ENGINE_START_RETRIES = 3;
     static constexpr std::chrono::seconds ENGINE_START_RETRY_PAUSE{10};
 
+    // At most this many engine processes wait for their next game, besides those of the games being played (see
+    // engineCacheSize()).
+    static constexpr std::size_t MAX_IDLE_ENGINES = 32;
+
+    // The size of an engine cache serving `games` games at a time, `caches` caches sharing the tournament's
+    // `engines` different engines (one cache per game thread with affinity, otherwise a single one).
+    [[nodiscard]] static std::size_t engineCacheSize(std::size_t engines, std::size_t games, std::size_t caches);
+
    protected:
     using start_fn  = std::function<void()>;
     using finish_fn = std::function<void(const Stats& stats, const std::string& reason, const engines&)>;
 
     EngineCache& getEngineCache();
 
-    // Ends the processes kept for later games of the engines `retired` names (withdrawn, replaced...) that are
-    // not playing now.
+    // Ends the processes kept for later games of the engines `retired` names (no game left, withdrawn,
+    // replaced...) that are not playing now.
     void retireEngines(const std::function<bool(const std::string& name)>& retired);
+
+    // How many different engines still have games to play, as the front end knows it; the engine caches are sized
+    // on it. Until it is told, the engines of the configuration are counted.
+    void setEnginesLeft(std::size_t engines);
 
     // Gets called after a game has finished
     virtual void startNext() = 0;
 
     // Asked on the thread of game `game_id` while an engine of it fails to start: false gives the game up without
     // scoring it, rather than trying again and then stopping the tournament (a front end whose participant was
-    // withdrawn meanwhile, or that is pausing).
+    // withdrawn meanwhile, or that is stopping once the running games are over).
     [[nodiscard]] virtual bool gameWanted(std::size_t /*game_id*/) const { return true; }
+
+    // Asked like gameWanted(): true while the front end holds its games back (a pause). The wait before the next try
+    // does not count meanwhile, so the try comes after the pause, and the pause uses up none of the tries.
+    [[nodiscard]] virtual bool gameHeld(std::size_t /*game_id*/) const { return false; }
 
     // creates the matches
     void create();
@@ -95,6 +111,9 @@ class BaseTournament {
 
     // Only need mutex for managing the cache containers, not the EngineCache itself
     std::mutex cache_management_mutex_;
+
+    // setEnginesLeft(), 0 until it is called; cache_management_mutex_ held.
+    std::size_t engines_left_ = 0;
 
    private:
     [[nodiscard]] std::size_t setResults(const stats_map& results);

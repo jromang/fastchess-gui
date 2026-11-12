@@ -82,6 +82,8 @@ class Stream {
         }
 
         if (bytes_read == 0) {
+            // fastchess-gui: a last line without its end of line is what an engine wrote before it ended.
+            flushPartial(lines, callback);
             return Result::Error("EOF");
         }
 
@@ -126,7 +128,7 @@ class Stream {
 
     bool hasPartial() const { return !line_buffer_.empty(); }
 
-    void flushPartial(std::vector<Line>& lines) {
+    void flushPartial(std::vector<Line>& lines, const IProcess::LineCallback* callback = nullptr) {
         if (line_buffer_.empty()) return;
 
         auto ts = time::datetime_precise();
@@ -135,6 +137,8 @@ class Stream {
         if (realtime_logging_) {
             Logger::readFromEngine(line_buffer_, ts, log_name_, type_ == Standard::ERR);
         }
+
+        if (callback && *callback) (*callback)(line_buffer_);
 
         line_buffer_.clear();
     }
@@ -166,6 +170,8 @@ class Process : public IProcess {
         is_initalized_ = true;
         startup_error_ = false;
         exit_code_.reset();
+        capture_err_ = Logger::should_log_ || capture_stderr;
+        err_open_    = capture_err_;
 
 #    ifdef NO_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR
         command_ = getPath(wd_, command_);
@@ -185,7 +191,7 @@ class Process : public IProcess {
 
         sg_out_ = Stream(in_pipe_.read_end(), realtime_logging_, Standard::OUTPUT, log_name_);
 
-        if (Logger::should_log_) {
+        if (capture_err_) {
             sg_err_ = Stream(err_pipe_.read_end(), realtime_logging_, Standard::ERR, log_name_);
         }
 
@@ -286,7 +292,7 @@ class Process : public IProcess {
         fds[INT_IDX]         = create_pollfd(interrupt_.get_read_fd(), POLLIN);
 
         std::optional<size_t> STDERR_IDX;
-        if (Logger::should_log_) {
+        if (err_open_) {
             STDERR_IDX       = fds_count++;
             fds[*STDERR_IDX] = create_pollfd(err_pipe_.read_end(), POLLIN | POLLERR | POLLHUP);
         }
@@ -323,12 +329,16 @@ class Process : public IProcess {
             }
 
             // 3. Check Stderr
+            // fastchess-gui: read to its end like stdout, then no longer watched. Its end is not a crash (an
+            // engine may close it); the end of stdout tells when the engine stopped.
             if (STDERR_IDX) {
                 auto& err_fd = fds[*STDERR_IDX];
-                if (err_fd.revents & POLLIN) {
-                    if (auto r = sg_err_.readLine(lines, ""); r.code != Status::NONE) return r;
+                if (err_fd.revents & (POLLIN | POLLHUP | POLLERR)) {
+                    if (auto r = sg_err_.readLine(lines, "", &err_line_callback_); r.code != Status::NONE) {
+                        err_open_ = false;
+                        err_fd.fd = -1;  // ignored by poll
+                    }
                 }
-                if (err_fd.revents & (POLLHUP | POLLERR)) return Result::Error("Engine crashed (stderr)");
             }
         }
 
@@ -388,7 +398,7 @@ class Process : public IProcess {
         out_pipe_ = {};
         in_pipe_  = {};
 
-        if (Logger::should_log_) {
+        if (capture_err_) {
             err_pipe_ = {};
         } else {
             err_pipe_.close_fds();
@@ -400,7 +410,7 @@ class Process : public IProcess {
             fa.add_dup2(out_pipe_.read_end(), STDIN_FILENO);
             fa.add_dup2(in_pipe_.write_end(), STDOUT_FILENO);
 
-            if (Logger::should_log_) {
+            if (capture_err_) {
                 fa.add_dup2(err_pipe_.write_end(), STDERR_FILENO);
             }
 
@@ -449,8 +459,8 @@ class Process : public IProcess {
 
     void flush_partials_on_timeout(std::vector<Line>& lines) {
         sg_out_.flushPartial(lines);
-        if (Logger::should_log_) {
-            sg_err_.flushPartial(lines);
+        if (capture_err_) {
+            sg_err_.flushPartial(lines, &err_line_callback_);
         }
     }
 
@@ -473,6 +483,10 @@ class Process : public IProcess {
 
     bool is_initalized_ = false;
     bool startup_error_ = false;
+
+    // fastchess-gui: the error output is read (see capture_stderr), and has not ended yet.
+    bool capture_err_ = false;
+    bool err_open_    = false;
 
     pid_t process_pid_{0};
     Pipe in_pipe_, out_pipe_, err_pipe_;

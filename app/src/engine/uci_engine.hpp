@@ -105,6 +105,11 @@ class UciEngine {
     // Called for every stdout line read from the engine, pass an empty function to disable.
     void setLineCallback(process::IProcess::LineCallback callback) { process_.setLineCallback(std::move(callback)); }
 
+    // Called for every line of the engine's error output, when it is read (see process::capture_stderr).
+    void setErrorLineCallback(process::IProcess::LineCallback callback) {
+        process_.setErrorLineCallback(std::move(callback));
+    }
+
     // Called for every line written to the engine (without its newline), pass an empty function to disable.
     void setInputCallback(process::IProcess::LineCallback callback) { input_callback_ = std::move(callback); }
 

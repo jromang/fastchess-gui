@@ -45,6 +45,12 @@ class CachePool {
 
     explicit CachePool(std::size_t max_size = 0) : max_size_(max_size) {}
 
+    // A new maximum size (0: no limit), applied when the next entry is made: entries are never destroyed here.
+    void setMaxSize(std::size_t max_size) {
+        std::lock_guard<std::mutex> lock(access_mutex_);
+        max_size_ = max_size;
+    }
+
     template <typename... ARGS>
     [[nodiscard]] auto getEntry(const ID& identifier, ARGS&&... arg) {
         // Destroyed after the lock is released: an engine takes a moment to quit.

@@ -100,30 +100,64 @@ void BaseTournament::start() {
     create();
 }
 
+// Every idle engine process holds memory (its hash table, its network, its tablebase caches), while every restart
+// costs time and changes the conditions of an engine slow to start (a large network, tablebases). Up to 0.4.10
+// fastchess kept a process of every engine that had played, which piled up in big fields; 0.4.11 kept two idle
+// processes per game being played, which at concurrency 1 restarted the engines of a round robin of 10 at
+// nearly every game. Now:
+// - two processes per game being played, whose engines are in use;
+// - one idle process per engine still to play, so that a field of moderate size (a round robin of up to
+//   MAX_IDLE_ENGINES engines) starts each engine once, whatever the concurrency;
+// - but at most MAX_IDLE_ENGINES idle processes in all, for the big fields (gauntlets of hundreds of opponents,
+//   Swiss tournaments of large libraries), which is what bounds the memory: there every engine plays about once
+//   a round, so keeping a process for its next game means keeping one for every engine of the field;
+// - and never fewer than two per game being played, as in 0.4.11.
+// The engines with no game left (the opponents of a gauntlet once they played, withdrawn or replaced
+// participants) are ended right after each game by the front end (retireEngines()), not kept until they are the
+// least recently used: the idle processes are those of the engines still to play.
+std::size_t BaseTournament::engineCacheSize(std::size_t engines, std::size_t games, std::size_t caches) {
+    games  = std::max<std::size_t>(1, games);
+    caches = std::max<std::size_t>(1, caches);
+
+    const auto playing = 2 * games;
+    const auto idle    = std::min(engines, (MAX_IDLE_ENGINES + caches - 1) / caches);
+    return playing + std::max(playing, idle);
+}
+
 BaseTournament::EngineCache& BaseTournament::getEngineCache() {
+    const auto concurrency = static_cast<std::size_t>(std::max(1, config::TournamentConfig->concurrency));
+    std::lock_guard<std::mutex> lock(cache_management_mutex_);
+    const auto engines = engines_left_ > 0 ? engines_left_ : config::EngineConfigs ? config::EngineConfigs->size() : 0;
+
     if (config::TournamentConfig->affinity) {
-        // Use per-thread cache
+        // Use per-thread cache: its engines are bound to the thread's processors.
         std::thread::id tid = std::this_thread::get_id();
-        std::lock_guard<std::mutex> lock(cache_management_mutex_);
 
         auto it = thread_caches_.find(tid);
 
         if (it == thread_caches_.end()) {
-            // The two engines of the thread's game, and two more waiting for their next one.
-            thread_caches_[tid] = std::make_unique<EngineCache>(4);
-            return *thread_caches_[tid];
+            it = thread_caches_.emplace(tid, std::make_unique<EngineCache>(engineCacheSize(engines, 1, concurrency)))
+                     .first;
         }
 
         return *it->second;
 
     } else {
-        // Use single shared cache: the engines of the games being played, and as many waiting for their next one.
-        std::lock_guard<std::mutex> lock(cache_management_mutex_);
+        // Use single shared cache
         if (!global_cache_) {
-            global_cache_ = std::make_unique<EngineCache>(4 * std::max(1, config::TournamentConfig->concurrency));
+            global_cache_ = std::make_unique<EngineCache>(engineCacheSize(engines, concurrency, 1));
         }
         return *global_cache_;
     }
+}
+
+void BaseTournament::setEnginesLeft(std::size_t engines) {
+    const auto concurrency = static_cast<std::size_t>(std::max(1, config::TournamentConfig->concurrency));
+    std::lock_guard<std::mutex> lock(cache_management_mutex_);
+    if (engines == engines_left_) return;
+    engines_left_ = engines;
+    if (global_cache_) global_cache_->setMaxSize(engineCacheSize(engines, concurrency, 1));
+    for (auto& [tid, cache] : thread_caches_) cache->setMaxSize(engineCacheSize(engines, 1, concurrency));
 }
 
 void BaseTournament::retireEngines(const std::function<bool(const std::string& name)>& retired) {
@@ -378,9 +412,14 @@ void BaseTournament::playGame(const GamePair<EngineConfiguration, EngineConfigur
         Logger::print<Logger::Level::WARN>("Warning; {} engine startup failure: \"{}\", trying again in {} s", name,
                                            failure->second, ENGINE_START_RETRY_PAUSE.count());
         restartEngine(engine);
-        const auto until = std::chrono::steady_clock::now() + ENGINE_START_RETRY_PAUSE;
-        while (!atomic::stop.load() && std::chrono::steady_clock::now() < until && gameWanted(game_id)) {
+        // Only the time the game is not held counts: a pause stops the clock of the wait.
+        auto waited = std::chrono::steady_clock::duration::zero();
+        auto last   = std::chrono::steady_clock::now();
+        while (!atomic::stop.load() && waited < ENGINE_START_RETRY_PAUSE && gameWanted(game_id)) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            const auto now = std::chrono::steady_clock::now();
+            if (!gameHeld(game_id)) waited += now - last;
+            last = now;
         }
         if (!atomic::stop.load() && !gameWanted(game_id)) {
             given_up = true;

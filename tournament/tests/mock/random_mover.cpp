@@ -1,6 +1,10 @@
 // fastchess' mock engine (app/tests/mock/engine/random_mover.cpp), with its score before the pv: after "pv" every
 // word is a move, so fastchess found no score and warned at every move of every test game.
+//
+// With FCG_MOCK_STDERR=TEXT it writes "TEXT <move>" on its error output at each move, and with
+// FCG_MOCK_STDERR_FLOOD=N, N long lines there before its uciok: more than a pipe holds.
 
+#include <cstdlib>
 #include <random>
 
 #include <chess.hpp>
@@ -67,6 +71,10 @@ void uci_line(Board &board, const std::string &line) {
             }
         }
     } else if (tokens[0] == "uci") {
+        if (const char *flood = std::getenv("FCG_MOCK_STDERR_FLOOD")) {
+            for (int i = 0, n = std::atoi(flood); i < n; ++i) std::cerr << "flood " << std::string(100, '.') << '\n';
+            std::cerr << std::flush;
+        }
         std::cout << "id name random_move" << std::endl;
         std::cout << "id author fastchess" << std::endl;
         std::cout << "option name Hash type spin default 16 min 1 max 33554432" << std::endl;
@@ -77,6 +85,8 @@ void uci_line(Board &board, const std::string &line) {
         board = Board();
     } else if (tokens[0] == "go") {
         const auto move = random_move(board);
+        if (const char *text = std::getenv("FCG_MOCK_STDERR"))
+            std::cerr << text << " " << uci::moveToUci(move) << std::endl;
         std::cout << "info depth 1 score cp 0 pv " << uci::moveToUci(move) << std::endl;
         std::cout << "bestmove " << uci::moveToUci(move) << std::endl;
     }

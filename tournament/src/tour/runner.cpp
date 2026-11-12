@@ -5,6 +5,7 @@
 #include <thread>
 
 #include <core/globals/globals.hpp>
+#include <engine/process/iprocess.hpp>
 
 namespace fcg::tour {
 
@@ -22,7 +23,10 @@ Runner::Runner(TournamentState& state, fastchess::observer::GameObserver* downst
       state_(state),
       downstream_(downstream),
       listener_(listener),
-      log_every_game_(state.spec().log_every_game) {}
+      log_every_game_(state.spec().log_every_game) {
+    // What the engines write on their error output goes to their logs.
+    fastchess::engine::process::capture_stderr = true;
+}
 
 Runner::~Runner() {
     // Workers may still be inside a callback of ours: join them before our members go away.
@@ -71,9 +75,12 @@ void Runner::startNext() {
 }
 
 bool Runner::gameWanted(std::size_t /*game_id*/) const {
-    if (fastchess::observer::PauseGate::instance().paused()) return false;
+    // A game waiting for a resume that will not come would keep "stop when idle" waiting forever.
+    if (fastchess::observer::PauseGate::instance().stoppingWhenIdle()) return false;
     return !t_task || state_.wanted(*t_task);
 }
+
+bool Runner::gameHeld(std::size_t /*game_id*/) const { return fastchess::observer::PauseGate::instance().paused(); }
 
 void Runner::play(const GameTask& task) {
     t_task     = &task;
@@ -98,9 +105,11 @@ void Runner::play(const GameTask& task) {
     t_task = nullptr;
     closeSettledPairs();
 
-    // The processes kept for the next games of withdrawn or replaced participants are not needed any more.
-    const auto active = state_.activeEngines();
-    retireEngines([&](const std::string& name) { return !active.count(name); });
+    // The processes kept for engines with no game left (withdrawn or replaced participants, the opponents of a
+    // gauntlet once they played) are not needed any more; the idle processes kept are sized on the engines left.
+    const auto left = state_.enginesLeft();
+    retireEngines([&](const std::string& name) { return !left.count(name); });
+    setEnginesLeft(std::max<std::size_t>(1, left.size()));
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -160,12 +169,17 @@ void Runner::onThinking(int slot, chess::Color stm, int64_t time_left_ms) {
 }
 
 void Runner::onEngineLine(int slot, chess::Color side, std::string_view line) {
-    log(slot).add(side, false, line);
+    log(slot).add(side, EngineLog::Stream::Output, line);
     if (downstream_) downstream_->onEngineLine(slot, side, line);
 }
 
+void Runner::onEngineError(int slot, chess::Color side, std::string_view line) {
+    log(slot).add(side, EngineLog::Stream::Error, line);
+    if (downstream_) downstream_->onEngineError(slot, side, line);
+}
+
 void Runner::onEngineInput(int slot, chess::Color side, std::string_view line) {
-    log(slot).add(side, true, line);
+    log(slot).add(side, EngineLog::Stream::Input, line);
     if (downstream_) downstream_->onEngineInput(slot, side, line);
 }
 

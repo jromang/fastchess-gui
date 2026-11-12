@@ -51,9 +51,11 @@ class Runner final : public fastchess::BaseTournament, public fastchess::observe
 
    protected:
     void startNext() override;
-    // While an engine fails to start: the game is still to be played, and the tournament is not pausing (a pause,
-    // or a stop once the running games are over). It is otherwise given up, to be played again later if needed.
+    // While an engine fails to start: the game is still to be played, and the tournament is not stopping once the
+    // running games are over. It is otherwise given up, to be played again later if needed.
     [[nodiscard]] bool gameWanted(std::size_t game_id) const override;
+    // While the tournament is paused: the next try of the engine waits for the resume.
+    [[nodiscard]] bool gameHeld(std::size_t game_id) const override;
 
    private:
     void play(const GameTask& task);
@@ -67,6 +69,7 @@ class Runner final : public fastchess::BaseTournament, public fastchess::observe
     void onEngineProcesses(int slot, int64_t white_pid, int64_t black_pid) override;
     void onThinking(int slot, chess::Color stm, int64_t time_left_ms) override;
     void onEngineLine(int slot, chess::Color side, std::string_view line) override;
+    void onEngineError(int slot, chess::Color side, std::string_view line) override;
     void onEngineInput(int slot, chess::Color side, std::string_view line) override;
     void onMove(int slot, chess::Color mover, const fastchess::MoveData& move, const std::string& san,
                 int64_t white_time_left, int64_t black_time_left) override;
