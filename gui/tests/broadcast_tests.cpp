@@ -15,6 +15,7 @@
 #include <fmt/include/fmt/format.h>
 
 #include "broadcast.hpp"
+#include "broadcaster.hpp"
 #include "net.hpp"
 
 #ifdef _WIN32
@@ -397,6 +398,123 @@ TEST_CASE("broadcast: TLCS logons are limited in rate") {
     server.stop();
 }
 
+TEST_CASE("broadcast: TLCS with lanes serves each concurrent game on its own port, the crosstable after every game") {
+    TlcsServer server;
+    const uint16_t port = 26111;
+    REQUIRE(server.start(port, true).empty());
+    CHECK(server.ports() == std::vector<uint16_t>{port});
+
+    // Two games at once: slot 0 on the first port, slot 1 on the next one, opened when its game comes.
+    auto s              = sample();
+    auto other          = s.games[0];
+    other.slot          = 1;
+    other.number        = 5;
+    other.white         = "Gamma";
+    other.black         = "Delta";
+    other.san           = {"d4"};
+    other.uci           = {"d2d4"};
+    other.white_to_move = false;
+    s.games.push_back(other);
+    server.publish(s, 1);  // a featured slot means nothing to lanes
+    std::this_thread::sleep_for(300ms);
+    CHECK(server.ports() == std::vector<uint16_t>{port, static_cast<uint16_t>(port + 1)});
+    CHECK(server.laneError().empty());
+
+    struct Viewer {
+        net::UdpSocket socket;
+        net::Endpoint to;
+        std::vector<std::string> received;
+        std::size_t raw = 0;  // datagrams, before any is acknowledged
+        bool acks       = true;
+        void listen(std::chrono::milliseconds how_long) {
+            const auto until = std::chrono::steady_clock::now() + how_long;
+            while (std::chrono::steady_clock::now() < until) {
+                net::Endpoint from;
+                const auto msg = socket.receive(from, 50);
+                if (!msg) continue;
+                raw++;
+                if (msg->front() == '<') {
+                    const auto close = msg->find('>');
+                    if (acks) socket.send(to, "ACK: " + msg->substr(1, close - 1));
+                    received.push_back(msg->substr(close + 1));
+                } else {
+                    received.push_back(*msg);
+                }
+            }
+        }
+        [[nodiscard]] bool has(const std::string& text) const {
+            return std::find(received.begin(), received.end(), text) != received.end();
+        }
+    };
+    Viewer first, second, silent;
+    REQUIRE(first.socket.bind(26113).empty());
+    REQUIRE(second.socket.bind(26114).empty());
+    REQUIRE(silent.socket.bind(26115).empty());
+    first.to  = {0x7F000001, port};
+    second.to = silent.to = {0x7F000001, static_cast<uint16_t>(port + 1)};
+    silent.acks           = false;
+    first.socket.send(first.to, "LOGONv15:first");
+    second.socket.send(second.to, "LOGONv15:second");
+    silent.socket.send(silent.to, "LOGONv15:silent");
+    for (int i = 0; i < 6; ++i) {
+        first.listen(100ms);
+        second.listen(100ms);
+        silent.listen(100ms);
+    }
+
+    CHECK(first.has("WPLAYER: Alpha"));
+    CHECK_FALSE(first.has("WPLAYER: Gamma"));
+    CHECK(second.has("WPLAYER: Gamma"));
+    CHECK(second.has("BPLAYER: Delta"));
+    CHECK(second.has("WMOVE: 1. d4"));
+    CHECK_FALSE(second.has("WPLAYER: Alpha"));
+    CHECK(first.has("CT: total games = 3"));
+    CHECK(second.has("CT: total games = 3"));
+    CHECK(server.clients() == 2);
+    // The next port keeps the handshake: a client that does not prove its address gets LOGON SUCCESSFUL and the
+    // first command (sent again for its ACK), nothing of the game.
+    CHECK(silent.has("LOGON SUCCESSFUL"));
+    CHECK_FALSE(silent.has("WPLAYER: Gamma"));
+    CHECK_FALSE(silent.has("CTRESET"));
+
+    // Game 5 ends: its port tells the result, and both send the crosstable again.
+    first.received.clear();
+    second.received.clear();
+    auto after            = s;
+    after.games[1].active = false;
+    after.games[1].result = "0-1";
+    after.played          = 4;
+    server.publish(after, -1);
+    for (int i = 0; i < 6; ++i) {
+        first.listen(100ms);
+        second.listen(100ms);
+    }
+    CHECK(second.has("result: 0-1"));
+    CHECK_FALSE(first.has("result: 0-1"));
+    CHECK(first.has("CTRESET"));
+    CHECK(second.has("CTRESET"));
+    CHECK(first.has("CT: total games = 4"));
+    CHECK(second.has("CT: total games = 4"));
+
+    server.stop();
+    CHECK(server.ports().empty());
+}
+
+TEST_CASE("broadcast: TLCS lanes say when the port of a game is in use") {
+    net::UdpSocket taken;
+    REQUIRE(taken.bind(26118).empty());
+    TlcsServer server;
+    REQUIRE(server.start(26117, true).empty());
+    auto s     = sample();
+    auto other = s.games[0];
+    other.slot = 1;
+    s.games.push_back(other);
+    server.publish(s, -1);
+    CHECK(server.ports() == std::vector<uint16_t>{26117});
+    CHECK(server.laneError().find("in use") != std::string::npos);
+    server.stop();
+}
+
 TEST_CASE("broadcast: a port in use is said to be") {
     net::UdpSocket a, b;
     REQUIRE(a.bind(26027).empty());
@@ -458,6 +576,188 @@ TEST_CASE("broadcast: the web page and its state") {
     {
         net::TcpConnection close(*silent);
     }
+}
+
+TEST_CASE("broadcast: the statistics, the anomalies and each move's search, for the web page") {
+    BroadcastInput in;
+    in.dir           = "/tournaments/Big one";
+    in.spec.format   = fcg::tour::Format::RoundRobin;
+    in.spec.pgn_file = "Big one.pgn";
+    for (const auto* name : {"Alpha", "Beta", "Gamma"}) {
+        fcg::tour::Participant p;
+        p.id          = static_cast<int>(in.spec.participants.size());
+        p.engine.name = name;
+        in.spec.participants.push_back(p);
+    }
+    const auto result = [](int white, int black, const char* score, fastchess::MatchTermination how, uint64_t offset) {
+        fcg::tour::GameResult r;
+        r.white       = white;
+        r.black       = black;
+        r.result      = score;
+        r.termination = how;
+        r.plies       = 80;
+        r.duration_ms = 60000;
+        r.pgn         = {offset, 1000};
+        return r;
+    };
+    using fastchess::MatchTermination;
+    in.results              = {result(0, 1, "1-0", MatchTermination::NORMAL, 0),
+                               result(1, 2, "0-1", MatchTermination::TIMEOUT, 1000),
+                               result(2, 0, "1-0", MatchTermination::DISCONNECT, 2000),
+                               result(0, 2, "1/2-1/2", MatchTermination::ADJUDICATION, 3000),
+                               result(1, 0, "0-1", MatchTermination::ILLEGAL_MOVE, 4000)};
+    in.results[2].encounter = 1;
+    in.results[2].reason    = "Gamma's connection lost";
+    // A voided game is not counted, but its PGN is in the file.
+    in.results.push_back(result(2, 1, "0-1", MatchTermination::STALL, 5000));
+    in.results.back().voided = true;
+
+    // A game in progress: a book move, then two searched ones.
+    SlotState st;
+    st.has_game  = true;
+    st.active    = true;
+    st.game_id   = 7;
+    st.white     = "Alpha";
+    st.black     = "Beta";
+    st.start_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    chess::Board board;
+    for (const auto* uci : {"e2e4", "e7e5", "g1f3"}) {
+        LiveMove m;
+        m.move  = chess::uci::uciToMove(board, uci);
+        m.san   = chess::uci::moveToSan(board, m.move);
+        m.mover = board.sideToMove();
+        board.makeMove<true>(m.move);
+        st.moves.push_back(m);
+    }
+    st.moves[0].book    = true;
+    st.moves[1].score   = fastchess::Score{fastchess::ScoreType::CP, 30};  // Black's point of view
+    st.moves[1].depth   = 14;
+    st.moves[1].time_ms = 900;
+    st.moves[2].score   = fastchess::Score{fastchess::ScoreType::MATE, 3};
+    st.moves[2].depth   = 20;
+    st.moves[2].time_ms = 1500;
+    st.stm              = chess::Color::BLACK;
+    in.slots            = {st};
+    in.ended.resize(1);
+
+    const auto s = makeSnapshot(in);
+    CHECK(s.stats.games == 5);
+    CHECK(s.stats.white_wins == 2);
+    CHECK(s.stats.black_wins == 2);
+    CHECK(s.stats.draws == 1);
+    CHECK(s.stats.plies == 400);
+    CHECK(s.stats.adjudications == 1);
+    CHECK(s.stats.time_losses == 1);
+    CHECK(s.stats.crashes == 1);
+    CHECK(s.stats.illegal_moves == 1);
+    CHECK(s.stats.stalls == 0);
+    // Complete up to the end of the last game recorded, voided or not.
+    CHECK(s.pgn_bytes == 6000);
+    CHECK(s.pgn_file == std::filesystem::path("/tournaments/Big one") / "Big one.pgn");
+
+    const auto json = nlohmann::json::parse(snapshotJson(s));
+    CHECK(json["pgn"] == "Big one.pgn");
+    CHECK(json.dump().find("/tournaments") == std::string::npos);  // where it is stays private
+    CHECK(json["stats"]["time_losses"] == 1);
+    REQUIRE(json["anomalies"].size() == 3);  // newest first
+    CHECK(json["anomalies"][0]["kind"] == "illegal");
+    CHECK(json["anomalies"][0]["engine"] == "Beta");
+    CHECK(json["anomalies"][1]["kind"] == "crash");
+    CHECK(json["anomalies"][1]["number"] == 3);
+    CHECK(json["anomalies"][1]["engine"] == "Alpha");
+    CHECK(json["anomalies"][1]["reason"] == "Gamma's connection lost");
+    CHECK(json["anomalies"][2]["kind"] == "time");
+    CHECK(json["anomalies"][2]["engine"] == "Beta");
+
+    const auto& game = json["games"][0];
+    CHECK(game["evals"] == nlohmann::json::parse("[null, -30, 99997]"));  // White's point of view; mate in 3
+    CHECK(game["depths"] == nlohmann::json::parse("[null, 14, 20]"));
+    CHECK(game["times_ms"] == nlohmann::json::parse("[null, 900, 1500]"));
+
+    // No game recorded yet: nothing to download.
+    in.results.clear();
+    const auto empty = makeSnapshot(in);
+    CHECK(empty.pgn_file.empty());
+    CHECK(nlohmann::json::parse(snapshotJson(empty))["pgn"].is_null());
+}
+
+TEST_CASE("broadcast: the web page offers the PGN file, the games recorded only, without holding the page") {
+    const auto dir = std::filesystem::temp_directory_path() / "fcg-web-pgn";
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+    const auto file = dir / "Été 2026.pgn";
+    // 3 MB of games, then the start of one being written.
+    std::string games;
+    for (int i = 0; games.size() < (3u << 20); ++i) {
+        games += fmt::format("[Event \"Été\"]\n[Round \"{}\"]\n[Result \"1-0\"]\n\n1. e4 e5 2. Nf3 1-0\n\n", i);
+    }
+    {
+        std::ofstream out(file, std::ios::binary);
+        out << games << "[Event \"Été\"]\n[Round";
+    }
+
+    WebServer server;
+    const uint16_t port = 26119;
+    REQUIRE(server.start(port).empty());
+    auto s = sample();
+    server.publish(s);
+
+    const auto get = [&](const std::string& path) {
+        const auto fd = net::connectTo(0x7F000001, port);
+        if (!fd) return std::string();
+        net::TcpConnection c(*fd);
+        c.sendAll("GET " + path + " HTTP/1.0\r\nHost: localhost\r\n\r\n");
+        return c.readUntil("\n\n\n\n", 8 << 20, 10000);
+    };
+    // Nothing recorded yet.
+    CHECK(get("/games.pgn").rfind("HTTP/1.0 404", 0) == 0);
+
+    s.pgn_file  = file;
+    s.pgn_name  = "Été 2026.pgn";
+    s.pgn_bytes = games.size();
+    server.publish(s);
+    CHECK(get("/").find("games.pgn") != std::string::npos);
+
+    const auto answer = get("/games.pgn");
+    REQUIRE(answer.rfind("HTTP/1.0 200", 0) == 0);
+    const auto body = answer.find("\r\n\r\n");
+    REQUIRE(body != std::string::npos);
+    const auto head = answer.substr(0, body);
+    CHECK(head.find("Content-Type: application/x-chess-pgn") != std::string::npos);
+    CHECK(head.find(fmt::format("Content-Length: {}", games.size())) != std::string::npos);
+    CHECK(head.find("filename=\"__t__ 2026.pgn\"") != std::string::npos);
+    CHECK(head.find("filename*=UTF-8''%C3%89t%C3%A9%202026.pgn") != std::string::npos);
+    CHECK(answer.substr(body + 4) == games);  // all of it, the game being written left out
+
+    // Downloads that take nothing hold neither the page nor its state, two at a time; the next is told to wait. The
+    // file larger than what the system's buffers take in for them.
+    {
+        std::ofstream out(file, std::ios::binary | std::ios::app);
+        const std::string line(1023, 'x');
+        for (int i = 0; i < 48 * 1024; ++i) out << line << '\n';
+    }
+    s.pgn_bytes = std::filesystem::file_size(file);
+    server.publish(s);
+    std::vector<std::unique_ptr<net::TcpConnection>> stuck;
+    for (int i = 0; i < 2; ++i) {
+        const auto fd = net::connectTo(0x7F000001, port);
+        REQUIRE(fd);
+        stuck.push_back(std::make_unique<net::TcpConnection>(*fd));
+        stuck.back()->sendAll("GET /games.pgn HTTP/1.0\r\n\r\n");
+    }
+    std::this_thread::sleep_for(500ms);
+    auto start = std::chrono::steady_clock::now();
+    CHECK(get("/state.json").rfind("HTTP/1.0 200", 0) == 0);
+    CHECK(get("/").rfind("HTTP/1.0 200", 0) == 0);
+    CHECK(std::chrono::steady_clock::now() - start < 2s);
+    CHECK(get("/games.pgn").rfind("HTTP/1.0 503", 0) == 0);
+
+    // A stop does not wait for them.
+    start = std::chrono::steady_clock::now();
+    server.stop();
+    CHECK(std::chrono::steady_clock::now() - start < 2s);
+    stuck.clear();
+    std::filesystem::remove_all(dir);
 }
 
 TEST_CASE("broadcast: the live files, no temporary file left") {

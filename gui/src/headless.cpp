@@ -99,13 +99,14 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
                 std::fprintf(stderr, "%s is neither a tournament folder nor a setup file\n", target.c_str());
                 return 2;
             }
-            settings.files     = setup->broadcast_files;
-            settings.dir       = setup->broadcast_dir;
-            settings.tlcs      = setup->broadcast_tlcs;
-            settings.tlcs_port = setup->tlcs_port;
-            settings.web       = setup->broadcast_web;
-            settings.web_port  = setup->web_port;
-            const auto engines = storage.loadEngines();
+            settings.files      = setup->broadcast_files;
+            settings.dir        = setup->broadcast_dir;
+            settings.tlcs       = setup->broadcast_tlcs;
+            settings.tlcs_port  = setup->tlcs_port;
+            settings.tlcs_lanes = setup->tlcs_lanes;
+            settings.web        = setup->broadcast_web;
+            settings.web_port   = setup->web_port;
+            const auto engines  = storage.loadEngines();
             const auto dir =
                 storage.runsDir() /
                 (setup->format == TournamentFormat::Match
@@ -140,6 +141,7 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
 
     // The command line comes before the setup file.
     if (broadcast.tlcs_port) settings.tlcs = true, settings.tlcs_port = *broadcast.tlcs_port;
+    if (broadcast.tlcs_lanes) settings.tlcs_lanes = true;
     if (broadcast.web_port) settings.web = true, settings.web_port = *broadcast.web_port;
     if (broadcast.live_dir) settings.files = true, settings.dir = *broadcast.live_dir;
     if (broadcast.lichess) {
@@ -162,7 +164,11 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
     std::thread broadcast_thread;
     if (broadcasting) {
         for (const auto& error : broadcaster.configure(settings)) std::fprintf(stderr, "warning: %s\n", error.c_str());
-        if (broadcaster.tlcs().running()) std::printf("TLCS server on UDP port %d\n", settings.tlcs_port);
+        if (broadcaster.tlcs().running()) {
+            std::printf(settings.tlcs_lanes ? "TLCS server on UDP port %d and the next ones, one per game\n"
+                                            : "TLCS server on UDP port %d\n",
+                        settings.tlcs_port);
+        }
         if (broadcaster.web().running()) std::printf("Web page on http://localhost:%d/\n", settings.web_port);
         if (settings.lichess) std::printf("Pushing the games to lichess\n");
         if (settings.files) {

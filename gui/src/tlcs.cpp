@@ -21,7 +21,10 @@
 //
 // The port may be open to the internet, where the address of a UDP datagram can be forged: until a client proves
 // its address by acknowledging the first numbered command (whose number it can only learn by receiving it), it gets
-// that command and LOGON SUCCESSFUL only, a few bytes. Logons are limited in number and rate.
+// that command and LOGON SUCCESSFUL only, a few bytes. Logons are limited in number and rate, on each port.
+//
+// With lanes, as TorsGUI does, every concurrent game is served on a port of its own (slot k on the first port + k),
+// each port a server of its own, with its own thread, clients and limits.
 
 #include <chrono>
 #include <cstdlib>
@@ -29,6 +32,7 @@
 #include <map>
 #include <optional>
 #include <random>
+#include <thread>
 
 #include <chess.hpp>
 
@@ -42,9 +46,10 @@ namespace {
 
 using Clock = std::chrono::steady_clock;
 
-constexpr std::size_t MAX_CLIENTS       = 100;  // viewers in all
+constexpr std::size_t MAX_CLIENTS       = 100;  // viewers in all, on a port
 constexpr std::size_t MAX_WAITING       = 20;   // of which have not proved their address yet
 constexpr std::size_t LOGONS_PER_SECOND = 10;   // in all, and one per second from an address
+constexpr std::size_t MAX_LANES         = 64;   // ports, with lanes
 
 std::string trim(const std::string& s) {
     const auto a = s.find_first_not_of(" \t\r\n");
@@ -79,6 +84,10 @@ struct TlcsServer::Impl {
         bool verified     = false;  // has acknowledged `first_id`: the address is the client's
         uint32_t first_id = 0;
     };
+
+    int lane = -1;  // the slot this port follows, -1: the featured game
+    std::thread thread;
+    std::atomic_int verified{0};  // clients whose address is proved
 
     net::UdpSocket socket;
     std::map<net::Endpoint, Client> clients;
@@ -278,7 +287,9 @@ struct TlcsServer::Impl {
         }
 
         // The game to follow: the one asked for, else the current one until its result is told (it may already have
-        // left its slot for the next game: then it is among the ended ones), else any game in progress.
+        // left its slot for the next game: then it is among the ended ones), else any game in progress. A lane's
+        // games are those of its slot only.
+        const auto mine      = [&](const LiveGame& g) { return lane < 0 || g.slot == lane; };
         const LiveGame* next = nullptr;
         for (const auto& g : s.games) {
             if (g.slot == slot && g.active) next = &g;
@@ -292,7 +303,7 @@ struct TlcsServer::Impl {
         }
         if (!next) {
             for (const auto& g : s.games) {
-                if (g.active) {
+                if (g.active && mine(g)) {
                     next = &g;
                     break;
                 }
@@ -302,7 +313,7 @@ struct TlcsServer::Impl {
         // that ended, so that viewers see the last result.
         if (!next && (!has_game || !result_sent)) {
             for (const auto& g : s.games) {
-                if (!g.result.empty()) {
+                if (!g.result.empty() && mine(g)) {
                     next = &g;
                     break;
                 }
@@ -388,52 +399,110 @@ struct TlcsServer::Impl {
             ++it;
         }
     }
+
+    // The server's loop, until `running` turns false.
+    void run(const std::atomic_bool& running) {
+        while (running) {
+            net::Endpoint from;
+            if (const auto msg = socket.receive(from, 100)) handle(from, *msg);
+
+            std::optional<BroadcastSnapshot> snapshot;
+            int follow = -1;
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                if (fresh) {
+                    snapshot = latest;
+                    follow   = lane >= 0 ? lane : featured;
+                    fresh    = false;
+                }
+            }
+            if (snapshot) update(*snapshot, follow);
+            resendAndExpire();
+            verified = verifiedClients();
+        }
+    }
 };
 
-TlcsServer::TlcsServer() : impl_(std::make_unique<Impl>()) {}
+TlcsServer::TlcsServer() = default;
 
 TlcsServer::~TlcsServer() { stop(); }
 
-std::string TlcsServer::start(uint16_t port) {
-    stop();
-    if (auto error = impl_->socket.bind(port); !error.empty()) return error;
-    running_ = true;
-    thread_  = std::thread([this] {
-        while (running_) {
-            net::Endpoint from;
-            if (const auto msg = impl_->socket.receive(from, 100)) impl_->handle(from, *msg);
+std::string TlcsServer::open(uint16_t port, int lane) {
+    auto impl  = std::make_unique<Impl>();
+    impl->lane = lane;
+    if (auto error = impl->socket.bind(port); !error.empty()) return error;
+    impl->thread = std::thread([this, p = impl.get()] { p->run(running_); });
+    impls_.push_back(std::move(impl));
+    return {};
+}
 
-            std::optional<BroadcastSnapshot> snapshot;
-            int featured = -1;
-            {
-                std::lock_guard<std::mutex> lock(impl_->mutex);
-                if (impl_->fresh) {
-                    snapshot     = impl_->latest;
-                    featured     = impl_->featured;
-                    impl_->fresh = false;
-                }
-            }
-            if (snapshot) impl_->update(*snapshot, featured);
-            impl_->resendAndExpire();
-            clients_ = impl_->verifiedClients();
-        }
-    });
+std::string TlcsServer::start(uint16_t port, bool lanes) {
+    stop();
+    std::lock_guard<std::mutex> lock(mutex_);
+    port_    = port;
+    lanes_   = lanes;
+    running_ = true;
+    if (auto error = open(port, lanes ? 0 : -1); !error.empty()) {
+        running_ = false;
+        return error;
+    }
     return {};
 }
 
 void TlcsServer::stop() {
     running_ = false;
-    if (thread_.joinable()) thread_.join();
-    impl_->socket.close();
-    impl_->clients.clear();
-    clients_ = 0;
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto& impl : impls_) {
+        if (impl->thread.joinable()) impl->thread.join();
+        impl->socket.close();
+    }
+    impls_.clear();
+    lane_error_.clear();
 }
 
 void TlcsServer::publish(const BroadcastSnapshot& snapshot, int featured) {
-    std::lock_guard<std::mutex> lock(impl_->mutex);
-    impl_->latest   = snapshot;
-    impl_->featured = featured;
-    impl_->fresh    = true;
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!running_) return;
+    if (lanes_) {
+        // A port for every slot that has had a game, opened in order; one that cannot be is not tried again.
+        std::size_t slots = 0;
+        for (const auto* list : {&snapshot.games, &snapshot.ended}) {
+            for (const auto& g : *list) slots = std::max(slots, static_cast<std::size_t>(g.slot) + 1);
+        }
+        while (impls_.size() < std::min(slots, MAX_LANES) && lane_error_.empty()) {
+            const auto lane = impls_.size();
+            if (port_ + lane > 65535) {
+                lane_error_ = fmt::format("no UDP port after {}", port_ + lane - 1);
+                break;
+            }
+            lane_error_ = open(static_cast<uint16_t>(port_ + lane), static_cast<int>(lane));
+        }
+    }
+    for (auto& impl : impls_) {
+        std::lock_guard<std::mutex> impl_lock(impl->mutex);
+        impl->latest   = snapshot;
+        impl->featured = featured;
+        impl->fresh    = true;
+    }
+}
+
+int TlcsServer::clients() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    int n = 0;
+    for (const auto& impl : impls_) n += impl->verified;
+    return n;
+}
+
+std::vector<uint16_t> TlcsServer::ports() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::vector<uint16_t> out;
+    for (std::size_t i = 0; i < impls_.size(); ++i) out.push_back(static_cast<uint16_t>(port_ + i));
+    return out;
+}
+
+std::string TlcsServer::laneError() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return lane_error_;
 }
 
 }  // namespace fcg

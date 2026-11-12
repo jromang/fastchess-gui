@@ -550,6 +550,62 @@ TEST_CASE("board details: the 50-move counter, the material difference and the p
     CHECK(info.balance == 3 + 5 - 9);
 }
 
+TEST_CASE("live arrows: the legal start of a PV, between the centres of its squares, the board turned or not") {
+    chess::Board board;
+    // e2e4 e7e5, then a move that is not legal there: the arrows stop before it.
+    const auto moves = legalPrefix(board, {"e2e4", "e7e5", "e1e3", "g1f3"}, 5);
+    REQUIRE(moves.size() == 2);
+    CHECK(chess::uci::moveToUci(moves[0]) == "e2e4");
+    CHECK(chess::uci::moveToUci(moves[1]) == "e7e5");
+    CHECK(legalPrefix(board, {"e2e4", "e7e5", "g1f3"}, 2).size() == 2);
+    CHECK(legalPrefix(board, {"e7e5"}, 2).empty());  // not White's move
+
+    // A board 800 wide at (100, 50): squares of 100.
+    const ImVec2 origin(100, 50);
+    const auto a1 = squareCentre(chess::Square::SQ_A1, origin, 800, false);
+    CHECK(a1.x == doctest::Approx(150));
+    CHECK(a1.y == doctest::Approx(800));
+    const auto h8 = squareCentre(chess::Square::SQ_H8, origin, 800, false);
+    CHECK(h8.x == doctest::Approx(850));
+    CHECK(h8.y == doctest::Approx(100));
+    // Turned: a1 at the top right, h8 at the bottom left.
+    const auto a1_turned = squareCentre(chess::Square::SQ_A1, origin, 800, true);
+    CHECK(a1_turned.x == doctest::Approx(850));
+    CHECK(a1_turned.y == doctest::Approx(100));
+    const auto e4_turned = squareCentre(chess::Square::SQ_E4, origin, 800, true);
+    CHECK(e4_turned.x == doctest::Approx(100 + 3.5 * 100));
+    CHECK(e4_turned.y == doctest::Approx(50 + 3.5 * 100));
+}
+
+TEST_CASE("live: a gauntlet's board is turned to the seed's side, its replacement's too") {
+    tour::TournamentSpec spec;
+    spec.format = tour::Format::Gauntlet;
+    spec.seeds  = 1;
+    for (const auto* name : {"Seed", "A", "B", "Heir"}) {
+        tour::Participant p;
+        p.id          = static_cast<int>(spec.participants.size()) + 1;
+        p.engine.name = name;
+        spec.participants.push_back(p);
+    }
+    CHECK(seedHasBlack(spec, "Seed", "A") == false);
+    CHECK(seedHasBlack(spec, "A", "Seed") == true);
+    CHECK_FALSE(seedHasBlack(spec, "A", "B").has_value());
+
+    // Replaced: its games go on with the engine that took its place.
+    spec.participants[0].active      = false;
+    spec.participants[0].replaced_by = 4;
+    CHECK(seedHasBlack(spec, "B", "Heir") == true);
+
+    // Two seeds meeting: no side to prefer.
+    spec.seeds = 2;
+    CHECK_FALSE(seedHasBlack(spec, "Heir", "A").has_value());
+    CHECK(seedHasBlack(spec, "B", "A") == true);
+
+    // Only gauntlets have seeds.
+    spec.format = tour::Format::RoundRobin;
+    CHECK_FALSE(seedHasBlack(spec, "A", "Seed").has_value());
+}
+
 TEST_CASE("tablebase adjudication: its own limit, or the largest tables in its folders") {
     namespace fs   = std::filesystem;
     const auto dir = fs::temp_directory_path() / "fcg-gui-syzygy";

@@ -28,6 +28,7 @@ void App::updateBroadcast() {
     settings.dir            = setup_.broadcast_dir;
     settings.tlcs           = setup_.broadcast_tlcs;
     settings.tlcs_port      = setup_.tlcs_port;
+    settings.tlcs_lanes     = setup_.tlcs_lanes;
     settings.web            = setup_.broadcast_web;
     settings.web_port       = setup_.web_port;
     settings.lichess        = setup_.broadcast_lichess;
@@ -87,7 +88,7 @@ void App::drawBroadcast() {
     ui::beginCard("bc_tlcs");
     ui::pageTitle(TR("TLCS server"));
     ImGui::TextDisabled("%s", TR("For TLCV, node-tlcv (as used by ccrl.live) and Livius: one game at a time, with the "
-                                 "engines' searches, and the crosstable."));
+                                 "engines' searches, and the crosstable after every game."));
     toggle(TR("Run the TLCS server"), setup_.broadcast_tlcs);
     ImGui::SetNextItemWidth(px(120));
     ImGui::BeginDisabled(broadcaster_.tlcs().running());
@@ -95,20 +96,39 @@ void App::drawBroadcast() {
         setup_.tlcs_port = std::clamp(setup_.tlcs_port, 1, 65535);
         changed          = true;
     }
+    ImGui::SameLine(0, px(24));
+    toggle(TR("One port per game"), setup_.tlcs_lanes);
     ImGui::EndDisabled();
+    ui::help(
+        TR("Every concurrent game on a port of its own: game #1 of the Live tab on the UDP port, #2 on the next "
+           "one, and so on, so that every game can be followed. Each port is opened when its game starts."));
+    ImGui::BeginDisabled(setup_.tlcs_lanes);
     ImGui::TextUnformatted(TR("Game shown:"));
     ImGui::SameLine();
     changed |= ImGui::RadioButton(TR("automatic"), &setup_.broadcast_follow, 0);
     ImGui::SameLine();
     changed |= ImGui::RadioButton(TR("the one chosen in the Live tab"), &setup_.broadcast_follow, 1);
+    ImGui::EndDisabled();
     if (!broadcaster_.tlcsError().empty()) {
         ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
         ImGui::TextWrapped("%s", broadcaster_.tlcsError().c_str());
         ImGui::PopStyleColor();
     } else if (broadcaster_.tlcs().running()) {
+        const auto& tlcs = broadcaster_.tlcs();
+        const auto ports = tlcs.ports();
         ImGui::PushStyleColor(ImGuiCol_Text, ui::GOOD);
-        ImGui::TextUnformatted(trf("● On air · {} clients", broadcaster_.tlcs().clients()).c_str());
+        if (setup_.tlcs_lanes && ports.size() > 1) {
+            ImGui::TextUnformatted(
+                trf("● On air · {} clients · UDP ports {} to {}", tlcs.clients(), ports.front(), ports.back()).c_str());
+        } else {
+            ImGui::TextUnformatted(trf("● On air · {} clients", tlcs.clients()).c_str());
+        }
         ImGui::PopStyleColor();
+        if (const auto error = tlcs.laneError(); !error.empty()) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+            ImGui::TextWrapped("%s", trf("A game has no port: {}", error).c_str());
+            ImGui::PopStyleColor();
+        }
     }
     ui::endCard();
 
@@ -117,8 +137,11 @@ void App::drawBroadcast() {
     // Web page.
     ui::beginCard("bc_web");
     ui::pageTitle(TR("Web page"));
-    ImGui::TextDisabled("%s", TR("Every game in progress, the standings and the crosstable, read-only, refreshed "
-                                 "every second."));
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextDisabled("%s", TR("Every game in progress, the one followed with its evaluation bar, arrows and charts; "
+                                 "the standings, the crosstable, the statistics and anomalies, and the games' PGN "
+                                 "file to download. Read-only, refreshed every second."));
+    ImGui::PopTextWrapPos();
     toggle(TR("Serve the web page"), setup_.broadcast_web);
     ImGui::SetNextItemWidth(px(120));
     ImGui::BeginDisabled(broadcaster_.web().running());

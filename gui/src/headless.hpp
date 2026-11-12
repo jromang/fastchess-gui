@@ -13,6 +13,7 @@ namespace fcg {
 // What to broadcast while playing: from the command line, else from the setup file's broadcast settings.
 struct HeadlessBroadcast {
     std::optional<int> tlcs_port;         // TLCS server on this UDP port
+    bool tlcs_lanes = false;              // and every concurrent game on a port of its own, from it on
     std::optional<int> web_port;          // web page on this TCP port
     std::optional<std::string> live_dir;  // live files in this folder; empty = "live" in the tournament folder
     std::optional<std::string> lichess;   // a lichess round's URL or id, "new" for a new broadcast

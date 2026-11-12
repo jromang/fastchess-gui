@@ -185,7 +185,49 @@ void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, c
         }
     }
 
+    // The arrows: a shaft from the centre of the first square, a head whose tip stops short of the second's centre.
+    for (const auto& arrow : decor.arrows) {
+        const ImVec2 a = squareCentre(arrow.move.from(), origin, size, decor.flipped);
+        const ImVec2 b = squareCentre(displayedTarget(arrow.move), origin, size, decor.flipped);
+        const float dx = b.x - a.x, dy = b.y - a.y;
+        const float length = std::sqrt(dx * dx + dy * dy);
+        if (length < 1.0f) continue;
+        const ImVec2 u(dx / length, dy / length);  // along the arrow
+        const ImVec2 n(-u.y, u.x);                 // across it
+        const float shaft = sq * 0.09f, head = sq * 0.24f, head_len = sq * 0.42f, stop = sq * 0.12f;
+        const ImVec2 tip(b.x - u.x * stop, b.y - u.y * stop);
+        const ImVec2 base(tip.x - u.x * head_len, tip.y - u.y * head_len);
+        dl->AddQuadFilled(ImVec2(a.x + n.x * shaft, a.y + n.y * shaft),
+                          ImVec2(base.x + n.x * shaft, base.y + n.y * shaft),
+                          ImVec2(base.x - n.x * shaft, base.y - n.y * shaft),
+                          ImVec2(a.x - n.x * shaft, a.y - n.y * shaft), arrow.colour);
+        dl->AddTriangleFilled(tip, ImVec2(base.x + n.x * head, base.y + n.y * head),
+                              ImVec2(base.x - n.x * head, base.y - n.y * head), arrow.colour);
+    }
+
     ImGui::Dummy(ImVec2(size + bar_w + gap, size));
+}
+
+ImVec2 squareCentre(chess::Square square, ImVec2 origin, float size, bool flipped) {
+    const int file = static_cast<int>(square.file());
+    const int rank = static_cast<int>(square.rank());
+    const int col  = flipped ? 7 - file : file;
+    const int row  = flipped ? rank : 7 - rank;
+    const float sq = size / 8.0f;
+    return ImVec2(origin.x + (static_cast<float>(col) + 0.5f) * sq, origin.y + (static_cast<float>(row) + 0.5f) * sq);
+}
+
+std::vector<chess::Move> legalPrefix(chess::Board board, const std::vector<std::string>& pv, std::size_t max_moves) {
+    std::vector<chess::Move> out;
+    for (std::size_t i = 0; i < pv.size() && out.size() < max_moves; ++i) {
+        const auto move = chess::uci::uciToMove(board, pv[i]);
+        chess::Movelist legal;
+        chess::movegen::legalmoves(legal, board);
+        if (move == chess::Move::NO_MOVE || std::find(legal.begin(), legal.end(), move) == legal.end()) break;
+        out.push_back(move);
+        board.makeMove<true>(move);
+    }
+    return out;
 }
 
 BoardInfo boardInfo(const chess::Board& board) {

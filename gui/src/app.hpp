@@ -189,6 +189,8 @@ class App {
         chess::Board board;
         uint64_t board_version = ~0ULL;
         bool flip              = false;
+        // The game whose board was turned to the seed's side (gauntlet).
+        std::size_t turned_for = ~std::size_t{0};
         std::size_t followed   = 0;  // moves shown, to keep the move list scrolled to the end
         int follow_frames      = 0;
     };

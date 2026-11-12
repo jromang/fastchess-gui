@@ -44,7 +44,9 @@ constexpr std::size_t LICHESS_ROUND_GAMES = 64;
 
 // A game as lichess gets it. The tags stay the same while it is played and once it is finished, so that lichess
 // updates the same board: the encounter as Round, the engines, no date. The last moves of each side carry their clocks
-// (lichess keeps nothing else of a comment in a broadcast: not the engines' evaluations, nor any text), sent once:
+// (lichess keeps nothing else of a comment in a broadcast: not the engines' evaluations, nor any text; in lila,
+// StudyPgnImport keeps the clock, the move time and the arrows and circles of a comment and strips every other [%...]
+// command, [%eval] among them, and RelayGame.fromStudyImport drops the text), sent once:
 // lichess keeps the comments of the moves it has, and rewriting the comments of many moves at once overflows its queue
 // of changes to the study.
 struct LichessGame {

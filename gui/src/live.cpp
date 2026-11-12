@@ -31,6 +31,26 @@ thread_local std::optional<EndedCpu> t_ended_cpu;
 
 }  // namespace
 
+std::optional<bool> seedHasBlack(const tour::TournamentSpec& spec, const std::string& white, const std::string& black) {
+    if (spec.format != tour::Format::Gauntlet) return std::nullopt;
+    const auto seed = [&](const std::string& name) {
+        const auto n =
+            std::min<std::size_t>(static_cast<std::size_t>(std::max(1, spec.seeds)), spec.participants.size());
+        for (std::size_t i = 0; i < n; ++i) {
+            // A replaced seed's games are played by its replacement, and so on.
+            const auto* p = &spec.participants[i];
+            for (int hops = 0; p && hops <= static_cast<int>(spec.participants.size()); ++hops) {
+                if (p->engine.name == name) return true;
+                p = p->replaced_by ? spec.participant(*p->replaced_by) : nullptr;
+            }
+        }
+        return false;
+    };
+    const bool w = seed(white), b = seed(black);
+    if (w == b) return std::nullopt;
+    return b;
+}
+
 std::string gameCpuLine(const GameCpuLine& line) {
     const auto& c = line.cpu;
     return fmt::format("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n", line.offset, line.finished_at, c.own_cpu_ms[0],

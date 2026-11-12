@@ -87,8 +87,42 @@ std::string snapshotJson(const BroadcastSnapshot& s) {
                                                                  {"time_ms", sr.time_ms},
                                                                  {"pv", sr.pv}};
         }
+        // By ply, for the charts: White's evaluation (null for a book move or none), depth and time.
+        auto& evals = game["evals"] = nlohmann::json::array();
+        auto& depths = game["depths"] = nlohmann::json::array();
+        auto& times = game["times_ms"] = nlohmann::json::array();
+        for (const auto& p : g.plies) {
+            evals.push_back(p.score_cp ? nlohmann::json(*p.score_cp) : nlohmann::json(nullptr));
+            depths.push_back(p.book ? nlohmann::json(nullptr) : nlohmann::json(p.depth));
+            times.push_back(p.book ? nlohmann::json(nullptr) : nlohmann::json(p.time_ms));
+        }
         games.push_back(std::move(game));
     }
+
+    const auto& st  = s.stats;
+    j["stats"]      = {{"games", st.games},
+                       {"white_wins", st.white_wins},
+                       {"black_wins", st.black_wins},
+                       {"draws", st.draws},
+                       {"plies", st.plies},
+                       {"duration_ms", st.duration_ms},
+                       {"adjudications", st.adjudications},
+                       {"time_losses", st.time_losses},
+                       {"crashes", st.crashes},
+                       {"stalls", st.stalls},
+                       {"illegal_moves", st.illegal_moves}};
+    auto& anomalies = j["anomalies"] = nlohmann::json::array();
+    for (const auto& a : s.anomalies) {
+        anomalies.push_back({{"number", a.number},
+                             {"white", a.white},
+                             {"black", a.black},
+                             {"result", a.result},
+                             {"kind", a.kind},
+                             {"engine", a.engine},
+                             {"reason", a.reason}});
+    }
+    // The name of the PGN file the page offers, not where it is.
+    j["pgn"] = s.pgn_file.empty() ? nlohmann::json(nullptr) : nlohmann::json(s.pgn_name);
 
     auto& rows = j["standings"] = nlohmann::json::array();
     for (std::size_t i = 0; i < s.table.rows.size(); ++i) {

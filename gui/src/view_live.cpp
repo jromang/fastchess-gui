@@ -319,6 +319,24 @@ float evalBar(const SlotState& st) {
     return 0.5f;
 }
 
+// The colours of the engines in the live view: White's light blue, Black's orange.
+ImU32 engineColour(chess::Color color, int alpha) {
+    return color == chess::Color::WHITE ? IM_COL32(110, 168, 222, alpha) : IM_COL32(237, 153, 77, alpha);
+}
+
+// The move the side to move thinks of and the reply it expects (the first two moves of its PV), each in the colour of
+// the engine that would play it, the reply lighter; none between searches.
+std::vector<BoardArrow> pvArrows(const SlotState& st, const chess::Board& board) {
+    std::vector<BoardArrow> arrows;
+    const auto& line = st.info[st.stm == chess::Color::WHITE ? 0 : 1];
+    if (!st.active || !st.thinking || line.empty()) return arrows;
+    const auto moves = legalPrefix(board, fastchess::engine::UciEngine::parseInfo(line).pv, 2);
+    // The reply first, so that the move is drawn over it.
+    if (moves.size() > 1) arrows.push_back({moves[1], engineColour(~st.stm, 150)});
+    if (!moves.empty()) arrows.push_back({moves[0], engineColour(st.stm, 210)});
+    return arrows;
+}
+
 std::string clockText(const SlotState& st, chess::Color color, int64_t elapsed) {
     const bool thinks = st.active && st.stm == color && st.thinking;
     if (st.clocks) {
@@ -340,6 +358,13 @@ void App::refreshSlot(int slot) {
 
     auto& v = slot_views_[static_cast<std::size_t>(slot)];
     obs->copySlot(slot, v.state);
+    // A gauntlet's new game, from its seed's side; Flip turns it over until the next game.
+    if (setup_.live_seed_side && v.state.has_game && v.state.game_id != v.turned_for) {
+        v.turned_for = v.state.game_id;
+        if (const auto* t = run_.tournament()) {
+            if (const auto black = seedHasBlack(t->spec(), v.state.white, v.state.black)) v.flip = *black;
+        }
+    }
     if (v.state.has_game && v.state.version != v.board_version) {
         v.board = chess::Board();
         v.board.setFen(v.state.start_fen);
@@ -386,6 +411,17 @@ void App::drawLive() {
             ui::help(TR("The 50-move counter, the material and the pieces left, under every board of the mosaic."));
             ImGui::SameLine(0, px(24));
         }
+    }
+
+    if (const auto* t = run_.tournament(); t && t->spec().format == tour::Format::Gauntlet) {
+        if (ImGui::Checkbox(TR("Seed at the bottom"), &setup_.live_seed_side)) {
+            for (auto& v : slot_views_) v.turned_for = ~std::size_t{0};  // turned at once
+            saveSetupSoon();
+        }
+        ui::help(
+            TR("Each new game of the gauntlet is shown from the side of its seed, the engine that meets all the "
+               "others. Flip still turns the board over."));
+        ImGui::SameLine(0, px(24));
     }
 
     if (!mosaic) {
@@ -564,6 +600,7 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
     decor.flipped    = view.flip;
     decor.eval_white = evalBar(st);
     if (!st.moves.empty()) decor.last_move = st.moves.back().move;
+    if (setup_.live_arrows) decor.arrows = pvArrows(st, view.board);
     drawBoard(atlas_, view.board, board_size, decor);
     drawBoardInfo(atlas_, view.board, board_size, tbPieces());
     ImGui::EndGroup();
@@ -664,15 +701,19 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
         ImGui::TextColored(ImVec4(0.95f, 0.75f, 0.3f, 1), "%s  %s", st.result.c_str(), TR(st.reason));
     }
     {
-        const float flip_w =
-            ImGui::CalcTextSize(TR("Flip")).x + ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x;
+        const auto check_w = [](const char* label) {
+            return ImGui::CalcTextSize(label).x + ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x;
+        };
+        const float flip_w   = check_w(TR("Flip"));
+        const float arrows_w = check_w(TR("Arrows")) + ImGui::GetStyle().ItemSpacing.x;
         const float detach_w =
             allow_detach ? ImGui::CalcTextSize(TR("Detach")).x + ImGui::GetStyle().FramePadding.x * 2 + px(8) : 0;
         ImGui::SameLine();
-        if (ImGui::GetContentRegionAvail().x < flip_w + detach_w) {
+        if (ImGui::GetContentRegionAvail().x < flip_w + arrows_w + detach_w) {
             ImGui::NewLine();  // on a line of their own in a narrow panel
         } else {
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - flip_w - detach_w);
+            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - flip_w - arrows_w -
+                                 detach_w);
         }
         if (allow_detach) {
             if (ImGui::SmallButton(TR("Detach"))) detached_.insert(slot);
@@ -681,6 +722,12 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
             }
             ImGui::SameLine();
         }
+        if (ImGui::Checkbox(TR("Arrows"), &setup_.live_arrows)) saveSetupSoon();
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("The move the side to move is thinking of, and the reply it expects, in the "
+                                       "colours of the engines that would play them."));
+        }
+        ImGui::SameLine();
         ImGui::Checkbox(TR("Flip"), &view.flip);
     }
 

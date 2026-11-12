@@ -246,6 +246,8 @@ struct MatchSetup {
     std::string theme    = "light";      // "light", "dark" or "system"
     int ui_zoom          = 100;          // size of the interface, in percent of the default (on top of the screen's)
     bool tile_info       = false;        // live mosaic: the 50-move counter, material and pieces under every board
+    bool live_seed_side  = true;         // live boards of a gauntlet turned to the seed's side
+    bool live_arrows     = true;         // live board: the PV move of the side to move and the reply it expects
     std::map<std::string, float> panes;  // the list's share of the width on list + detail pages, by page
 
     // Broadcast.
@@ -253,6 +255,7 @@ struct MatchSetup {
     std::string broadcast_dir;     // empty = "live" in the tournament folder
     bool broadcast_tlcs    = false;
     int tlcs_port          = 16001;
+    bool tlcs_lanes        = false;  // a port per concurrent game, from tlcs_port on
     bool broadcast_web     = false;
     int web_port           = 8080;
     int broadcast_follow   = 0;  // TLCS game: 0 automatic, 1 the game shown in the Live tab
@@ -267,13 +270,13 @@ struct MatchSetup {
         limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto, concurrency,   \
         affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out,           \
         engine_syzygy, engine_ownbook_off
-#define FCG_MATCH_SETUP_FIELDS_2                                                                                \
-    draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,  \
-        resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,   \
-        pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,   \
-        log_every_game, check_mate_pvs, notify, language, theme, ui_zoom, tile_info, panes, broadcast_files,    \
-        broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port, broadcast_follow, broadcast_lichess, \
-        lichess_round, lichess_listed, resume_at_launch
+#define FCG_MATCH_SETUP_FIELDS_2                                                                                  \
+    draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,    \
+        resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,     \
+        pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,     \
+        log_every_game, check_mate_pvs, notify, language, theme, ui_zoom, tile_info, live_seed_side, live_arrows, \
+        panes, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, tlcs_lanes, broadcast_web, web_port,    \
+        broadcast_follow, broadcast_lichess, lichess_round, lichess_listed, resume_at_launch
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
 void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) {

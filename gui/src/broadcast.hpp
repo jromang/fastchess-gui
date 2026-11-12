@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -47,6 +48,40 @@ struct LiveGame {
         std::vector<std::string> pv;  // UCI
     };
     Search search[2];  // [0] White's last or current search, [1] Black's
+
+    // What each move's search reported, for the charts: by ply, from start_fen.
+    struct Ply {
+        bool book = false;
+        std::optional<int> score_cp;  // White's point of view, mate as in Search; none from a book or no score
+        int depth       = 0;
+        int64_t time_ms = 0;
+    };
+    std::vector<Ply> plies;
+};
+
+// The games played so far, counted: results, lengths and how they ended.
+struct BroadcastStats {
+    uint64_t games         = 0;
+    uint64_t white_wins    = 0;
+    uint64_t black_wins    = 0;
+    uint64_t draws         = 0;
+    uint64_t plies         = 0;  // in all the games
+    uint64_t duration_ms   = 0;
+    uint64_t adjudications = 0;
+    // The anomalies.
+    uint64_t time_losses   = 0;
+    uint64_t crashes       = 0;  // the engine's connection lost: it ended, or crashed
+    uint64_t stalls        = 0;  // it stopped answering
+    uint64_t illegal_moves = 0;
+};
+
+// A game that ended badly.
+struct BroadcastAnomaly {
+    uint64_t number = 0;  // 1-based
+    std::string white, black, result;
+    std::string kind;    // "time", "crash", "stall" or "illegal"
+    std::string engine;  // the side that lost, empty for a draw
+    std::string reason;  // fastchess' words
 };
 
 struct BroadcastSnapshot {
@@ -64,6 +99,14 @@ struct BroadcastSnapshot {
         std::string white, black, result;
     };
     std::vector<Played> played_games;  // the last 300 games played, newest first (TLCS game list)
+    BroadcastStats stats;
+    std::vector<BroadcastAnomaly> anomalies;  // the last 100, newest first
+
+    // The tournament's PGN file (cutechess style), complete up to `pgn_bytes`: the games recorded, not one being
+    // written. Empty when there is none yet.
+    std::filesystem::path pgn_file;
+    std::string pgn_name;  // its name, UTF-8
+    uint64_t pgn_bytes = 0;
 };
 
 // The snapshot as JSON, for scripts and for the web page.
@@ -81,32 +124,42 @@ struct BroadcastSnapshot {
 std::string writeBroadcastFiles(const BroadcastSnapshot& s, const std::filesystem::path& dir);
 
 // A TLCS compatible server: TLCV clients, node-tlcv (ccrl.live) and Livius log on over UDP and follow one game:
-// players, moves, clocks, the engines' searches, the result, and the crosstable.
+// players, moves, clocks, the engines' searches, the result, and the crosstable, sent again after every game.
 class TlcsServer {
    public:
     TlcsServer();
     ~TlcsServer();
 
-    // Returns an error message, empty on success.
-    std::string start(uint16_t port);
+    // Returns an error message, empty on success. With `lanes`, every concurrent game has a port of its own: the game
+    // of slot k on port + k, each port opened when its slot first has a game.
+    std::string start(uint16_t port, bool lanes = false);
     void stop();
     [[nodiscard]] bool running() const noexcept { return running_; }
 
-    // The game to follow is the one of `featured` (a slot), or the first game in progress.
+    // The game to follow is the one of `featured` (a slot), or the first game in progress; with lanes, each port's
+    // own slot.
     void publish(const BroadcastSnapshot& snapshot, int featured);
 
-    [[nodiscard]] int clients() const noexcept { return clients_; }
+    // Viewers on every port.
+    [[nodiscard]] int clients() const;
+    // The ports open, the first one first; why the next one could not be opened (lanes), empty if it could.
+    [[nodiscard]] std::vector<uint16_t> ports() const;
+    [[nodiscard]] std::string laneError() const;
 
    private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-    std::thread thread_;
+    struct Impl;  // one port
+    std::string open(uint16_t port, int lane);
+
+    mutable std::mutex mutex_;  // what follows
+    std::vector<std::unique_ptr<Impl>> impls_;
+    uint16_t port_ = 0;
+    bool lanes_    = false;
+    std::string lane_error_;
     std::atomic_bool running_{false};
-    std::atomic_int clients_{0};
 };
 
 // A small web server: a page showing every game in progress, the standings and the crosstable, refreshed every
-// second from /state.json.
+// second from /state.json; the games played as one PGN file, from /games.pgn.
 class WebServer {
    public:
     ~WebServer();
@@ -121,6 +174,9 @@ class WebServer {
 
    private:
     void serve();
+    // Sends the PGN file on a thread of its own, so that a slow download holds no other request.
+    void download(std::unique_ptr<net::TcpConnection> connection, const std::filesystem::path& file,
+                  const std::string& name, uint64_t bytes);
 
     net::TcpListener listener_;
     std::thread thread_;
@@ -128,7 +184,16 @@ class WebServer {
     std::atomic_int viewers_{0};
     std::mutex mutex_;
     std::string state_json_ = "{}";
+    std::filesystem::path pgn_file_;
+    std::string pgn_name_;
+    uint64_t pgn_bytes_ = 0;
     std::vector<std::chrono::steady_clock::time_point> recent_;  // state requests, to count viewers
+
+    struct Download {
+        std::thread thread;
+        std::shared_ptr<std::atomic_bool> done;
+    };
+    std::vector<Download> downloads_;  // the serving thread's own
 };
 
 // The viewer page served at "/".
