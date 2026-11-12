@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <cstdlib>
 #include <optional>
 
 #include <mbedtls/error.h>
@@ -50,6 +51,92 @@ std::optional<Url> parseUrl(std::string_view url) {
 // A server that answers at all connects in far less.
 constexpr int CONNECT_TIMEOUT_MS = 10000;
 
+std::string lower(std::string s) {
+    for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return s;
+}
+
+std::string base64(std::string_view data) {
+    static constexpr char DIGITS[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::string out;
+    for (std::size_t i = 0; i < data.size(); i += 3) {
+        uint32_t n = static_cast<uint32_t>(static_cast<unsigned char>(data[i])) << 16;
+        if (i + 1 < data.size()) n |= static_cast<uint32_t>(static_cast<unsigned char>(data[i + 1])) << 8;
+        if (i + 2 < data.size()) n |= static_cast<unsigned char>(data[i + 2]);
+        out += DIGITS[(n >> 18) & 63];
+        out += DIGITS[(n >> 12) & 63];
+        out += i + 1 < data.size() ? DIGITS[(n >> 6) & 63] : '=';
+        out += i + 2 < data.size() ? DIGITS[n & 63] : '=';
+    }
+    return out;
+}
+
+// "p%40ss" is "p@ss": a user or a password in a URL is percent-encoded.
+std::string percentDecode(std::string_view text) {
+    std::string out;
+    for (std::size_t i = 0; i < text.size(); ++i) {
+        if (text[i] == '%' && i + 2 < text.size() && std::isxdigit(static_cast<unsigned char>(text[i + 1])) &&
+            std::isxdigit(static_cast<unsigned char>(text[i + 2]))) {
+            out += static_cast<char>(std::stoi(std::string(text.substr(i + 1, 2)), nullptr, 16));
+            i += 2;
+        } else {
+            out += text[i];
+        }
+    }
+    return out;
+}
+
+// http://[user:password@]host[:port][/], or host[:port] alone. The messages never repeat the user nor the password.
+Proxy parseProxy(std::string_view text, const char* variable) {
+    Proxy proxy;
+    proxy.variable = variable;
+    if (const auto scheme = text.find("://"); scheme != std::string_view::npos) {
+        if (lower(std::string(text.substr(0, scheme))) != "http") {
+            proxy.error =
+                fmt::format("{}: only http:// proxies can be used, not {}://", variable, text.substr(0, scheme));
+            return proxy;
+        }
+        text.remove_prefix(scheme + 3);
+    }
+    text = text.substr(0, text.find_first_of("/?#"));
+    if (const auto at = text.rfind('@'); at != std::string_view::npos) {
+        const auto user     = text.substr(0, at);
+        const auto colon    = user.find(':');
+        const auto password = colon == std::string_view::npos ? std::string{} : percentDecode(user.substr(colon + 1));
+        proxy.authorization = "Basic " + base64(percentDecode(user.substr(0, colon)) + ":" + password);
+        text.remove_prefix(at + 1);
+    }
+    std::string_view port;
+    if (text.rfind('[', 0) == 0 && text.find(']') != std::string_view::npos) {  // [::1]:3128
+        const auto close = text.find(']');
+        proxy.host       = std::string(text.substr(1, close - 1));
+        if (text.substr(close + 1).rfind(':', 0) == 0) port = text.substr(close + 2);
+    } else {
+        const auto colon = text.rfind(':');
+        proxy.host       = std::string(text.substr(0, colon));
+        if (colon != std::string_view::npos) port = text.substr(colon + 1);
+    }
+    proxy.port        = port.empty() ? "1080" : std::string(port);  // curl's default
+    const bool digits = proxy.port.size() <= 5 && std::all_of(proxy.port.begin(), proxy.port.end(),
+                                                              [](unsigned char c) { return std::isdigit(c) != 0; });
+    if (proxy.host.empty() || !digits || std::stoi(proxy.port) < 1 || std::stoi(proxy.port) > 65535) {
+        proxy.error = fmt::format("{}: not a proxy's address", variable);
+    }
+    return proxy;
+}
+
+std::optional<std::string> environmentVariable(const char* name) {
+    const char* value = std::getenv(name);
+    if (!value) return std::nullopt;
+    return std::string(value);
+}
+
+int msLeft(std::chrono::steady_clock::time_point deadline) {
+    const auto left =
+        std::chrono::duration_cast<std::chrono::milliseconds>(deadline - std::chrono::steady_clock::now()).count();
+    return static_cast<int>(std::clamp<long long>(left, 0, 1 << 30));
+}
+
 std::string mbedError(int code) {
     char text[200];
     mbedtls_strerror(code, text, sizeof(text));
@@ -75,15 +162,19 @@ class Connection {
     Connection(const Connection&)            = delete;
     Connection& operator=(const Connection&) = delete;
 
-    // An error message, empty once connected (and the server's certificate checked).
-    std::string open(const Url& url, int timeout_ms) {
+    // An error message, empty once connected (and the server's certificate checked). Through `proxy`, when given.
+    std::string open(const Url& url, const std::optional<Proxy>& proxy, int timeout_ms) {
         timeout_ms_ = static_cast<uint32_t>(timeout_ms);
         // Our own connect, which gives up in time (mbedtls_net_connect waits as long as the system does), and whose
         // socket the engines started meanwhile do not inherit. Mbed TLS keeps sockets as int, on Windows too.
         std::string error;
-        const auto fd = net::connectHost(url.host, url.port, std::min(timeout_ms, CONNECT_TIMEOUT_MS), error);
-        if (!fd) return error;
+        const auto fd = net::connectHost(proxy ? proxy->host : url.host, proxy ? proxy->port : url.port,
+                                         std::min(timeout_ms, CONNECT_TIMEOUT_MS), error);
+        if (!fd) return proxy ? fmt::format("{} (the proxy of {})", error, proxy->variable) : error;
         net_.fd = static_cast<int>(*fd);
+        if (proxy) {
+            if (auto refused = tunnel(url, *proxy); !refused.empty()) return refused;
+        }
         if (!url.tls) return {};
         tls_ = true;
 
@@ -157,6 +248,44 @@ class Connection {
     }
 
    private:
+    // Asks the proxy for a tunnel to the server, through which TLS then goes as it would directly, the server's name
+    // in its handshake. An error message, empty once the tunnel is open.
+    std::string tunnel(const Url& url, const Proxy& proxy) {
+        const auto target =
+            fmt::format("{}:{}", url.host.find(':') != std::string::npos ? "[" + url.host + "]" : url.host, url.port);
+        auto request = fmt::format("CONNECT {0} HTTP/1.1\r\nHost: {0}\r\nUser-Agent: fastchess-gui\r\n", target);
+        if (!proxy.authorization.empty()) request += "Proxy-Authorization: " + proxy.authorization + "\r\n";
+        request += "\r\n";
+        if (!send(request)) return "the request could not be sent to the proxy " + proxy.host;
+
+        // Its answer, read up to the end of its headers and no further: what follows is the server's.
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms_);
+        std::string answer;
+        while (answer.size() < 4 || answer.compare(answer.size() - 4, 4, "\r\n\r\n") != 0) {
+            const int left = msLeft(deadline);
+            if (left <= 0) return "no answer from the proxy " + proxy.host + " in time";
+            if (answer.size() > 65536) return "not an HTTP answer from the proxy " + proxy.host;
+            unsigned char c = 0;
+            const int n     = mbedtls_net_recv_timeout(&net_, &c, 1, static_cast<uint32_t>(left));
+            if (n == 1) {
+                answer += static_cast<char>(c);
+            } else if (n != MBEDTLS_ERR_SSL_TIMEOUT && n != MBEDTLS_ERR_SSL_WANT_READ) {
+                return "the proxy " + proxy.host + " closed the connection";
+            }
+        }
+        // "HTTP/1.1 200 Connection established"
+        const auto line = answer.substr(0, answer.find("\r\n"));
+        const auto code = line.find(' ');
+        if (line.rfind("HTTP/", 0) != 0 || code == std::string::npos || line.size() < code + 4) {
+            return "not an HTTP answer from the proxy " + proxy.host;
+        }
+        if (line[code + 1] != '2') {
+            return fmt::format("the proxy {} refused the connection to {}: {}", proxy.host, url.host,
+                               line.substr(code + 1));
+        }
+        return {};
+    }
+
     mbedtls_net_context net_;
     mbedtls_ssl_context ssl_;
     mbedtls_ssl_config conf_;
@@ -164,11 +293,6 @@ class Connection {
     bool tls_            = false;
     uint32_t timeout_ms_ = 20000;
 };
-
-std::string lower(std::string s) {
-    for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    return s;
-}
 
 }  // namespace
 
@@ -216,6 +340,49 @@ std::string formEncode(const std::vector<std::pair<std::string, std::string>>& f
     return out;
 }
 
+bool noProxy(std::string_view list, std::string_view host) {
+    const auto bare = [](std::string text) {
+        if (text.size() > 1 && text.front() == '[' && text.find(']') != std::string::npos) {
+            return text.substr(1, text.find(']') - 1);  // [::1], [::1]:8080
+        }
+        if (std::count(text.begin(), text.end(), ':') == 1) text.erase(text.find(':'));  // the port of name:port
+        while (!text.empty() && text.front() == '.') text.erase(0, 1);                   // .example.com
+        while (!text.empty() && text.back() == '.') text.pop_back();                     // a fully qualified name
+        return text;
+    };
+    const auto name = bare(lower(std::string(host)));
+    std::size_t at  = 0;
+    while (at < list.size()) {
+        const auto end   = std::min(list.find_first_of(", \t", at), list.size());
+        const auto entry = bare(lower(std::string(list.substr(at, end - at))));
+        at               = end + 1;
+        if (entry.empty()) continue;
+        if (entry == "*" || entry == name) return true;
+        if (name.size() > entry.size() && name.compare(name.size() - entry.size(), entry.size(), entry) == 0 &&
+            name[name.size() - entry.size() - 1] == '.') {
+            return true;
+        }
+    }
+    return false;
+}
+
+std::optional<Proxy> proxyFor(std::string_view host, const Environment& environment) {
+    // As curl: the lowercase name first, and a variable set empty is not set.
+    const auto first = [&](const char* a, const char* b) -> std::optional<std::pair<std::string, const char*>> {
+        for (const char* name : {a, b}) {
+            if (auto value = environment(name); value && !value->empty()) return std::pair{*value, name};
+        }
+        return std::nullopt;
+    };
+    auto setting = first("https_proxy", "HTTPS_PROXY");
+    if (!setting) setting = first("all_proxy", "ALL_PROXY");
+    if (!setting) return std::nullopt;
+    if (const auto passed = first("no_proxy", "NO_PROXY"); passed && noProxy(passed->first, host)) return std::nullopt;
+    return parseProxy(setting->first, setting->second);
+}
+
+std::optional<Proxy> proxyFor(std::string_view host) { return proxyFor(host, environmentVariable); }
+
 HttpResult httpPost(const HttpRequest& request) {
     HttpResult result;
     const auto url = parseUrl(request.url);
@@ -224,8 +391,14 @@ HttpResult httpPost(const HttpRequest& request) {
         return result;
     }
 
+    // HTTPS only: plain HTTP is for the tests, on this machine.
+    const auto proxy = url->tls ? proxyFor(url->host) : std::nullopt;
+    if (proxy && !proxy->error.empty()) {
+        result.error = proxy->error;
+        return result;
+    }
     Connection connection;
-    if (auto error = connection.open(*url, request.timeout_s * 1000); !error.empty()) {
+    if (auto error = connection.open(*url, proxy, request.timeout_s * 1000); !error.empty()) {
         result.error = std::move(error);
         return result;
     }
