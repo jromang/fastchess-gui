@@ -76,9 +76,6 @@ void overrideOption(fastchess::EngineConfiguration& config, const EngineEntry& e
     setOption(config, name, std::to_string(value));
 }
 
-// The options the setup forces on the engines that have them, besides Hash and Threads.
-constexpr const char* FORCED_OPTIONS[] = {"SyzygyPath", "OwnBook"};
-
 fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSetup& setup,
                                         const ParticipantSetup& participant = {}) {
     fastchess::EngineConfiguration config;
@@ -202,16 +199,10 @@ fastchess::EngineConfiguration participantConfig(const EngineEntry& entry, const
         }
         if (!set) config.options.emplace_back(k, v);
     }
-    // SyzygyPath and OwnBook, as the first participant given them got them (they are not options every engine has).
-    for (const char* name : FORCED_OPTIONS) {
-        if (!hasOption(entry, name)) continue;
-        const std::string* given = nullptr;
-        for (const auto& p : spec.participants) {
-            for (const auto& [k, v] : p.engine.options) {
-                if (k == name && !given) given = &v;
-            }
-        }
-        if (given) setOption(config, name, *given);
+    // SyzygyPath and OwnBook, if the setup forced them (they are not options every engine has). Never taken from
+    // another participant: its options are also its own, which this engine keeps.
+    for (const auto& [name, value] : spec.forced_options) {
+        if (hasOption(entry, name)) setOption(config, name, value);
     }
     return config;
 }
@@ -501,6 +492,8 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     spec.pgn_out           = setup.pgn_out;
     spec.pgn_out_chessbase = setup.export_style == PgnStyle::ChessBase;
     spec.conditions        = t;
+    if (setup.engine_syzygy) spec.forced_options.emplace_back("SyzygyPath", setup.tb_paths);
+    if (setup.engine_ownbook_off) spec.forced_options.emplace_back("OwnBook", "false");
     for (std::size_t i = 0; i < run.engines.size(); ++i) {
         tour::Participant p;
         p.id     = static_cast<int>(i);

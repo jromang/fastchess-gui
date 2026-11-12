@@ -392,9 +392,11 @@ class App {
 
     // run lifecycle
     void startRun();
-    void resumeRun();
+    void resumeRun(bool at_launch = false);
     void resumeAtLaunch();           // the tournament running when the program ended, see RunningMarker
     void setRunPaused(bool paused);  // and the marker follows
+    void stopRun(bool now);          // the user's stop: now, or once the running games are over
+    [[nodiscard]] std::string runMarkerDir() const;  // the running tournament's folder, as the marker names it
     void enqueue();         // the current setup, to start after the running tournament
     // The first queued tournament, if any; with `go_on`, the next ones when it cannot start. One that cannot
     // start stays queued.
@@ -615,6 +617,7 @@ class App {
     } ccrl_;
     tour::CcrlFacts ccrl_facts_;  // of the checklist, for the tournament at this version()
     uint64_t ccrl_facts_for_ = ~uint64_t(0);
+    int ccrl_tb_pieces_      = 0;  // the pieces of the first engine's SyzygyPath, read with ccrl_facts_
     std::string template_name_;
     std::vector<std::string> template_names_;  // the templates folder, listed now and then rather than every frame
     std::chrono::steady_clock::time_point templates_listed_{};
@@ -728,6 +731,9 @@ class App {
     bool focus_done_      = false;
     bool autostart_done_  = false;
     bool launch_checked_  = false;  // resumeAtLaunch() done
+    bool user_stop_       = false;  // the user stopped the running tournament (not by quitting)
+    bool resume_guarded_  = false;  // resumed at launch, the marker says so until it has played a while
+    std::filesystem::path resume_crashed_;  // the tournament whose resume at launch ended the program
 };
 
 }  // namespace fcg

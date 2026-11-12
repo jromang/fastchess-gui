@@ -2132,6 +2132,12 @@ msgstr "Il tempo di processore dei processi di ogni motore, mentre pensa (non pi
 msgid "The program changed since it was last read (rebuilt or replaced)."
 msgstr "Il programma è cambiato dall'ultima lettura (ricompilato o sostituito)."
 
+msgid "The program ended while it resumed this tournament at the last launch: it is not resumed automatically again."
+msgstr "Il programma si è chiuso mentre riprendeva questo torneo all'ultimo avvio: non riprende più automaticamente."
+
+msgid "The program ended while it resumed {} at the last launch: it is not resumed automatically again. Resume it from the Tournaments page."
+msgstr "Il programma si è chiuso mentre riprendeva {} all'ultimo avvio: non riprende più automaticamente. Riprendilo dalla pagina Tornei."
+
 msgid "The program of {} is not found."
 msgstr "Il programma di {} non è stato trovato."
 
@@ -2748,6 +2754,9 @@ msgstr "{} mosse illegali"
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} è aperto in un altro programma: qui viene solo mostrato, com'era all'apertura."
 
+msgid "{} is playing in another window: it is not resumed here."
+msgstr "{} si sta giocando in un'altra finestra: non riprende qui."
+
 msgid "{} is the tournament's own PGN file: choose another one."
 msgstr "{} è il file PGN del torneo stesso: scegline un altro."
 
@@ -2887,6 +2896,9 @@ msgstr "{} era in corso alla chiusura del programma: riprende."
 
 msgid "{} will be the book of the next tournament."
 msgstr "{} sarà il libro del prossimo torneo."
+
+msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
+msgstr "{} sarebbe sia il file PGN sia il suo zip: scegli un nome che finisca con .pgn."
 
 msgid "{} · depth {} · {}"
 msgstr "{} · profondità {} · {}"

@@ -45,6 +45,10 @@ struct CcrlExport {
 // "Tester_2026-11-12_Event_hash_256MB_book_UHO_egtb_5-man.zip".
 [[nodiscard]] std::string ccrlZipName(const std::string& stem);
 
+// The zip of the export written to `pgn`: next to it, named by ccrlZipName() after its stem. Empty when that would
+// be the PGN file itself (a PGN named "x.zip"), the names compared as Windows does, letter case aside.
+[[nodiscard]] std::filesystem::path ccrlZipPath(const std::filesystem::path& pgn);
+
 // The event of a gauntlet as the CCRL testers name it, after its seed and the day its first game started (local
 // time): "Stockfish 19 64-bit 4CPU - Nov 12".
 [[nodiscard]] std::string ccrlEvent(const std::string& seed, int64_t first_game_ms);

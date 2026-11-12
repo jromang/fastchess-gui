@@ -10,6 +10,7 @@
 
 #include <fmt/include/fmt/format.h>
 #include <core/globals/globals.hpp>
+#include <tour/files.hpp>
 
 #include "i18n.hpp"
 #include "memory.hpp"
@@ -346,28 +347,37 @@ void App::startRun() {
     }
 
     resetRunView();
+    user_stop_       = false;
+    resume_guarded_  = false;
     const auto& info = run_.info();
-    storage_.setRunningMarker(RunningMarker{fs::absolute(info.dir).lexically_normal().string(), false});
+    storage_.setRunningMarker(RunningMarker{runMarkerDir(), false});
     Console::instance().add(trf("Started: {}, {}, {} concurrent games{}. Folder: {}", info.name, info.limit_text,
                                 info.concurrency, info.affinity ? TR(", CPU affinity") : "", info.dir.string()));
 }
 
-void App::resumeRun() {
+void App::resumeRun(bool at_launch) {
     if (!unfinished_) return;
     // Put off: still the same tournament when the reads end, not one opened meanwhile.
-    if (startAfterReads([this, dir = unfinished_->dir] {
-            if (unfinished_ && unfinished_->dir == dir) resumeRun();
+    if (startAfterReads([this, at_launch, dir = unfinished_->dir] {
+            if (unfinished_ && unfinished_->dir == dir) resumeRun(at_launch);
         })) {
         return;
     }
 
+    // Resumed at launch: the marker says so before anything can end the program (RunningMarker::resuming).
+    const auto dir = fs::absolute(unfinished_->dir).lexically_normal().string();
+    if (at_launch) storage_.setRunningMarker(RunningMarker{dir, false, true});
     start_error_ = run_.resume(unfinished_->dir);
     if (!start_error_.empty()) {
+        // It did not start, which ended nothing: it is tried again at the next launch.
+        if (at_launch) storage_.setRunningMarker(RunningMarker{dir, false, false});
         Console::instance().add(start_error_, true);
         return;
     }
 
     resetRunView();
+    user_stop_      = false;
+    resume_guarded_ = at_launch;
     // The games that count, as games_ holds: voided games are not shown.
     if (const auto* t = run_.tournament()) {
         const auto results = t->results();
@@ -375,7 +385,8 @@ void App::resumeRun() {
             std::count_if(results.begin(), results.end(), [](const auto& r) { return !r.voided; }));
     }
     const auto& info = run_.info();
-    storage_.setRunningMarker(RunningMarker{fs::absolute(info.dir).lexically_normal().string(), false});
+    storage_.setRunningMarker(RunningMarker{runMarkerDir(), false, at_launch});
+    if (at_launch) Console::instance().add(trf("{} was running when the program ended: it resumes.", info.name));
     Console::instance().add(
         trf("Resumed: {}, {} games already played. Folder: {}", info.name, games_at_start_, info.dir.string()));
 }
@@ -385,13 +396,37 @@ void App::resumeAtLaunch() {
     if (!marker) return;
     const auto summary    = tour::summarize(marker->dir);
     const bool unfinished = summary && !summary->finished && !(summary->total && summary->played >= *summary->total);
-    switch (launchResume(setup_.resume_at_launch, options_.autostart, marker, unfinished, queue_.empty())) {
+    // Another window of the profile plays it, and the marker is that window's: its folder is locked.
+    bool busy = false;
+    std::error_code ec;
+    if (fs::is_directory(marker->dir, ec)) {
+        try {
+            const tour::FolderLock probe(marker->dir);
+        } catch (const tour::FolderBusy&) {
+            busy = true;
+        } catch (const std::exception&) {
+        }
+    }
+    const auto name = summary ? summary->spec.name : marker->dir;
+    switch (launchResume(setup_.resume_at_launch, options_.autostart, marker, unfinished, queue_.empty(), busy)) {
         case LaunchResume::Resume:
-            // The marker stays until the tournament ends: a resume that cannot start (the folder open in another
-            // window...) is tried again at the next launch.
-            Console::instance().add(trf("{} was running when the program ended: it resumes.", summary->spec.name));
+            // The marker stays until the tournament ends: a resume that cannot start is tried again at the next
+            // launch. resumeRun() says that it resumes once it does.
             unfinished_ = summary;
-            resumeRun();
+            resumeRun(true);
+            break;
+        case LaunchResume::Busy:
+            Console::instance().add(trf("{} is playing in another window: it is not resumed here.", name));
+            break;
+        case LaunchResume::Crashed:
+            // Resuming it again could end the program again, at every launch: the user decides.
+            storage_.setRunningMarker(std::nullopt);
+            unfinished_     = summary;
+            resume_crashed_ = fs::absolute(summary->dir).lexically_normal();
+            Console::instance().add(trf("The program ended while it resumed {} at the last launch: it is not resumed "
+                                        "automatically again. Resume it from the Tournaments page.",
+                                        name),
+                                    true);
             break;
         case LaunchResume::Queue:
             storage_.setRunningMarker(std::nullopt);
@@ -407,9 +442,23 @@ void App::resumeAtLaunch() {
 
 void App::setRunPaused(bool paused) {
     run_.setPaused(paused);
-    if (quick_test_engine_.empty())
-        storage_.setRunningMarker(RunningMarker{fs::absolute(run_.info().dir).lexically_normal().string(), paused});
+    if (quick_test_engine_.empty() && !user_stop_)
+        storage_.setRunningMarker(RunningMarker{runMarkerDir(), paused, resume_guarded_});
 }
+
+void App::stopRun(bool now) {
+    if (!run_.running()) return;
+    user_stop_ = true;
+    if (now) {
+        run_.stopNow();
+    } else {
+        run_.stopWhenIdle();
+    }
+    // Stopped, not interrupted: not resumed at the next launch, even if the program ends before the engines stop.
+    storage_.clearRunningMarker(runMarkerDir());
+}
+
+std::string App::runMarkerDir() const { return fs::absolute(run_.info().dir).lexically_normal().string(); }
 
 void App::resetRunView() {
     page_ = Page::Tournament;
@@ -502,6 +551,15 @@ void App::pollRun() {
         }
     }
 
+    // A resume at launch that has played a while did not end the program: the next launch may resume it again.
+    if (resume_guarded_ && run_.running() && Clock::now() - run_.info().started >= std::chrono::seconds(30)) {
+        resume_guarded_ = false;
+        if (auto marker = storage_.runningMarker(); markerNames(marker, runMarkerDir())) {
+            marker->resuming = false;
+            storage_.setRunningMarker(marker);
+        }
+    }
+
     if (run_.takeFinishedEvent()) onRunFinished();
 
     if (quit_pending_ && !run_.running()) quit_ = true;
@@ -517,7 +575,15 @@ void App::onRunFinished() {
     const auto played = stats_.sum();
 
     // Quitting while it runs leaves it to be resumed at the next launch; otherwise it ended, or the user stopped it.
-    if (!quit_pending_) storage_.setRunningMarker(std::nullopt);
+    // Only this window's marker: another window of the profile may have written its own since.
+    const auto marker_dir = runMarkerDir();
+    if (!keepMarkerAtEnd(quit_pending_, user_stop_)) {
+        storage_.clearRunningMarker(marker_dir);
+    } else if (auto marker = storage_.runningMarker(); markerNames(marker, marker_dir) && marker->resuming) {
+        marker->resuming = false;  // quit by the user: the resume did not end the program
+        storage_.setRunningMarker(marker);
+    }
+    resume_guarded_ = false;
 
     std::string verdict;
     if (!error.empty()) {
@@ -589,11 +655,8 @@ void App::startFromQueue(bool go_on) {
     for (std::size_t i = 0; i < queue_.size(); ++i) {
         auto next = queue_[i].setup;
         // The look of the program follows the settings, not the queued setup.
-        next.language = setup_.language;
-        next.theme    = setup_.theme;
-        next.notify           = setup_.notify;
-        next.resume_at_launch = setup_.resume_at_launch;
-        setup_                = next;
+        keepProgramSettings(next, setup_);
+        setup_ = next;
         startRun();
         // Taken off the queue once started: one that cannot start (an engine removed since...) is not lost.
         if (run_.running()) {

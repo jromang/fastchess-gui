@@ -88,6 +88,11 @@ struct TournamentSpec {
     std::string pgn_file;
     std::string pgn_chessbase_file;
 
+    // The options the setup forced on the participants that have them (SyzygyPath, OwnBook), as name and value, so
+    // that an engine added later gets them too; the engines' own options are in their configuration. Empty when
+    // the setup forced none, and in the tournaments of 0.4.13 and earlier.
+    std::vector<std::pair<std::string, std::string>> forced_options;
+
     [[nodiscard]] std::string pgnFile() const { return pgn_file.empty() ? "games.pgn" : pgn_file; }
     [[nodiscard]] std::string chessbasePgnFile() const {
         return pgn_chessbase_file.empty() ? "games-chessbase.pgn" : pgn_chessbase_file;

@@ -98,6 +98,10 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
     }
     if (!s.pgn_file.empty()) j["pgn_file"] = s.pgn_file;
     if (!s.pgn_chessbase_file.empty()) j["pgn_chessbase_file"] = s.pgn_chessbase_file;
+    if (!s.forced_options.empty()) {
+        auto& forced = j["forced_options"] = nlohmann::json::object();
+        for (const auto& [name, value] : s.forced_options) forced[name] = value;
+    }
 }
 
 void from_json(const nlohmann::json& j, TournamentSpec& s) {
@@ -117,6 +121,10 @@ void from_json(const nlohmann::json& j, TournamentSpec& s) {
     s.opening_per_round = j.value("opening_per_round", false);
     s.pgn_out           = j.value("pgn_out", std::string{});
     s.pgn_out_chessbase = j.value("pgn_out_chessbase", false);
+    s.forced_options.clear();
+    if (const auto it = j.find("forced_options"); it != j.end() && it->is_object()) {
+        for (const auto& [name, value] : it->items()) s.forced_options.emplace_back(name, value.get<std::string>());
+    }
 
     // A file of the folder, nothing else: the games are written to it.
     s.pgn_file           = j.value("pgn_file", std::string{});

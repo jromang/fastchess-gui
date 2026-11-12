@@ -57,6 +57,8 @@ class Storage {
     // The tournament running now (running.json, see RunningMarker); nullopt removes it.
     [[nodiscard]] std::optional<RunningMarker> runningMarker() const;
     void setRunningMarker(const std::optional<RunningMarker>& marker) const;
+    // Removes it if it names the tournament in `dir`, not one another window of the profile wrote since.
+    void clearRunningMarker(const std::string& dir) const;
 
    private:
     // settings.json, an empty object when it is missing, unreadable or not an object.

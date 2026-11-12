@@ -57,7 +57,8 @@ struct BuiltRun {
 [[nodiscard]] RunInfo runInfo(const tour::TournamentSpec& spec, const std::filesystem::path& dir);
 
 // An engine of the list as a new participant of `spec`: the tournament's time control (or nodes) and its common
-// Hash and Threads, taken from the first participant; SyzygyPath and OwnBook from the first participant given them.
+// Hash and Threads, taken from the first participant; SyzygyPath and OwnBook if the setup forced them (as
+// TournamentSpec::forced_options records), its own options otherwise.
 [[nodiscard]] fastchess::EngineConfiguration participantConfig(const EngineEntry& entry,
                                                                const tour::TournamentSpec& spec);
 

@@ -2141,6 +2141,12 @@ msgstr "Процессорное время процессов каждого д
 msgid "The program changed since it was last read (rebuilt or replaced)."
 msgstr "Программа изменилась с момента последнего чтения (пересобрана или заменена)."
 
+msgid "The program ended while it resumed this tournament at the last launch: it is not resumed automatically again."
+msgstr "Программа завершилась, когда возобновляла этот турнир при последнем запуске: он больше не возобновляется автоматически."
+
+msgid "The program ended while it resumed {} at the last launch: it is not resumed automatically again. Resume it from the Tournaments page."
+msgstr "Программа завершилась, когда возобновляла {} при последнем запуске: он больше не возобновляется автоматически. Возобновите его на странице «Турниры»."
+
 msgid "The program of {} is not found."
 msgstr "Программа движка {} не найдена."
 
@@ -2777,6 +2783,9 @@ msgstr "нелегальных ходов: {}"
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} открыт в другой программе: здесь он только показан в том виде, в каком был при открытии."
 
+msgid "{} is playing in another window: it is not resumed here."
+msgstr "{} играется в другом окне: здесь он не возобновляется."
+
 msgid "{} is the tournament's own PGN file: choose another one."
 msgstr "{} — собственный PGN-файл турнира: выберите другой."
 
@@ -2932,6 +2941,9 @@ msgstr "{} шёл, когда программа завершилась: он п
 
 msgid "{} will be the book of the next tournament."
 msgstr "{} станет книгой следующего турнира."
+
+msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
+msgstr "{} был бы одновременно PGN-файлом и его zip-архивом: выберите имя, оканчивающееся на .pgn."
 
 msgid "{} · depth {} · {}"
 msgstr "{} · глубина {} · {}"

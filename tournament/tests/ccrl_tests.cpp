@@ -45,6 +45,11 @@ TEST_CASE("ccrl: names as the lists write them, the file and zip names, the even
     CHECK(ccrlZipName(stem) ==
           "Francesco_Torsello_2026-09-28_Triumviratus_7.0_64-bit_8CPU_-_Sep_27_hash_4096MB_book_avt-book-2026_egtb_5-"
           "man.zip");
+    // Next to the PGN, never the PGN itself.
+    CHECK(ccrlZipPath(std::filesystem::path("out") / "a b.pgn") == std::filesystem::path("out") / "a_b.zip");
+    CHECK(ccrlZipPath(std::filesystem::path("out") / "x.zip").empty());
+    CHECK(ccrlZipPath(std::filesystem::path("out") / "X.ZIP").empty());
+    CHECK(ccrlZipPath("x.zip.pgn") == "x.zip.zip");
 
     // Noon, so that the day is the same in every time zone of the tests.
     CHECK(ccrlEvent("Caissa 2.0 64-bit 4CPU", int64_t{1758542400} * 1000) == "Caissa 2.0 64-bit 4CPU - Sep 22");

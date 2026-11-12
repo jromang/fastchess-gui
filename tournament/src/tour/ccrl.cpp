@@ -140,6 +140,18 @@ std::string ccrlZipName(const std::string& stem) {
     return out + ".zip";
 }
 
+std::filesystem::path ccrlZipPath(const std::filesystem::path& pgn) {
+    const auto name  = ccrlZipName(pgn.stem().string());
+    const auto lower = [](std::string s) {
+        for (auto& c : s) {
+            if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+        }
+        return s;
+    };
+    if (lower(name) == lower(pgn.filename().string())) return {};
+    return pgn.parent_path() / name;
+}
+
 std::string ccrlEvent(const std::string& seed, int64_t first_game_ms) {
     static constexpr const char* MONTHS[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                                              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};

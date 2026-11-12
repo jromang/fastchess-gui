@@ -223,6 +223,14 @@ void App::writeCcrlExport(const std::string& path) {
         return;
     }
 
+    // A PGN named x.zip would be overwritten by its own zip.
+    const auto zip = tour::ccrlZipPath(file);
+    if (ccrl_.zip && zip.empty()) {
+        Console::instance().add(trf("{} would be both the PGN file and its zip: choose a name ending in .pgn.", path),
+                                true);
+        return;
+    }
+
     const auto out = tour::ccrlGames(t->pgnPath(), t->results(), t->spec(), ccrl_.e);
     {
         std::ofstream pgn(file, std::ios::binary | std::ios::trunc);
@@ -248,7 +256,6 @@ void App::writeCcrlExport(const std::string& path) {
 
     if (ccrl_.zip) {
         // The zip next to the PGN, named as the testers' scripts name it, holding the PGN under its own name.
-        const auto zip = file.parent_path() / tour::ccrlZipName(file.stem().string());
         std::string error;
         if (writeZip(zip, file.filename().string(), out.pgn, &error)) {
             Console::instance().add(trf("Zip written to {}", zip.string()));
@@ -264,6 +271,16 @@ void App::drawCcrlChecklist() {
     if (ccrl_facts_for_ != t->version()) {
         ccrl_facts_     = tour::ccrlFacts(t->spec(), t->results(), t->totalGames());
         ccrl_facts_for_ = t->version();
+        // The tablebase directory is read here, not every frame: its files are listed.
+        const auto it   = std::find_if(ccrl_facts_.engines.begin(), ccrl_facts_.engines.end(),
+                                       [](const auto& e) { return !e.syzygy.empty(); });
+        ccrl_tb_pieces_ = 0;
+        if (it != ccrl_facts_.engines.end()) {
+            fastchess::config::TbAdjudication tb;
+            tb.enabled      = true;
+            tb.syzygy_dirs  = it->syzygy;
+            ccrl_tb_pieces_ = tablebasePieces(tb);
+        }
     }
     const auto& f    = ccrl_facts_;
     const auto& spec = t->spec();
@@ -407,11 +424,7 @@ void App::drawCcrlChecklist() {
     if (with == 0) {
         tablebases = TR("no engine has a SyzygyPath");
     } else {
-        fastchess::config::TbAdjudication tb;
-        tb.enabled = true;
-        tb.syzygy_dirs =
-            std::find_if(f.engines.begin(), f.engines.end(), [](const auto& e) { return !e.syzygy.empty(); })->syzygy;
-        const int pieces = tablebasePieces(tb);
+        const int pieces = ccrl_tb_pieces_;
         tablebases       = with == f.engines.size()
                                ? trf("{}-man Syzygy for every engine", pieces)
                                : trf("{}-man Syzygy for {} of {} engines", pieces, with, f.engines.size());

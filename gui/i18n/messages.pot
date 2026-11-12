@@ -2132,6 +2132,12 @@ msgstr ""
 msgid "The program changed since it was last read (rebuilt or replaced)."
 msgstr ""
 
+msgid "The program ended while it resumed this tournament at the last launch: it is not resumed automatically again."
+msgstr ""
+
+msgid "The program ended while it resumed {} at the last launch: it is not resumed automatically again. Resume it from the Tournaments page."
+msgstr ""
+
 msgid "The program of {} is not found."
 msgstr ""
 
@@ -2748,6 +2754,9 @@ msgstr ""
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr ""
 
+msgid "{} is playing in another window: it is not resumed here."
+msgstr ""
+
 msgid "{} is the tournament's own PGN file: choose another one."
 msgstr ""
 
@@ -2886,6 +2895,9 @@ msgid "{} was running when the program ended: it resumes."
 msgstr ""
 
 msgid "{} will be the book of the next tournament."
+msgstr ""
+
+msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
 msgstr ""
 
 msgid "{} · depth {} · {}"

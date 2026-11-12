@@ -127,10 +127,20 @@ TEST_CASE("the setup's Syzygy path and OwnBook off are given to the engines that
         return "-";
     };
 
+    // An engine added to the tournament later, with options of its own.
+    EngineEntry later = engines[0];
+    later.name        = "later";
+    later.options     = {{"SyzygyPath", "/own/tb"}, {"OwnBook", "false"}};
+
     // Off by default: nothing changes.
     auto run = buildRun(setup, engines, topology, dir);
     CHECK(option(run.engines[0], "SyzygyPath") == "-");
     CHECK(option(run.engines[0], "OwnBook") == "-");
+    CHECK(run.spec.forced_options.empty());
+    // An engine added later keeps its own options, not another participant's ("unread"'s OwnBook).
+    auto config = participantConfig(later, run.spec);
+    CHECK(option(config, "SyzygyPath") == "/own/tb");
+    CHECK(option(config, "OwnBook") == "false");
 
     setup.engine_syzygy      = true;
     setup.engine_ownbook_off = true;
@@ -141,12 +151,29 @@ TEST_CASE("the setup's Syzygy path and OwnBook off are given to the engines that
     CHECK(option(run.engines[1], "OwnBook") == "-");
     CHECK(option(run.engines[2], "OwnBook") == "true");
 
-    // An engine added to the tournament later gets them too.
-    EngineEntry later = engines[0];
-    later.name        = "later";
-    const auto config = participantConfig(later, run.spec);
+    // An engine added to the tournament later gets them too, also once the tournament is read back from its folder.
+    config = participantConfig(later, run.spec);
     CHECK(option(config, "SyzygyPath") == "/tb/wdl");
     CHECK(option(config, "OwnBook") == "false");
+    const auto stored = nlohmann::json(run.spec).get<tour::TournamentSpec>();
+    config            = participantConfig(later, stored);
+    CHECK(option(config, "SyzygyPath") == "/tb/wdl");
+    CHECK(option(config, "OwnBook") == "false");
+    // An engine that does not have them is left alone.
+    EngineEntry plain = engines[1];
+    plain.options     = {{"OwnBook", "true"}};
+    config            = participantConfig(plain, stored);
+    CHECK(option(config, "SyzygyPath") == "-");
+    CHECK(option(config, "OwnBook") == "true");
+
+    // Only what the setup forced: with the own books left alone, the engine added later keeps its own OwnBook.
+    setup.engine_ownbook_off = false;
+    run                      = buildRun(setup, engines, topology, dir);
+    later.options            = {{"OwnBook", "true"}};
+    config                   = participantConfig(later, run.spec);
+    CHECK(option(config, "SyzygyPath") == "/tb/wdl");
+    CHECK(option(config, "OwnBook") == "true");
+    setup.engine_ownbook_off = true;
 
     // Kept with the setup, as templates and the queue store it.
     const auto back = nlohmann::json(setup).get<MatchSetup>();
@@ -177,6 +204,24 @@ TEST_CASE("at launch, the tournament running when the program ended resumes, the
     CHECK(launchResume(true, false, running, false, false) == LaunchResume::Queue);
     CHECK(launchResume(true, false, running, false, true) == LaunchResume::Nothing);
 
+    // Another window of the profile plays it: its marker is left alone, whatever this window's settings.
+    CHECK(launchResume(true, false, running, true, true, true) == LaunchResume::Busy);
+    CHECK(launchResume(false, true, paused, false, false, true) == LaunchResume::Busy);
+    CHECK(launchResume(true, false, std::nullopt, true, true, true) == LaunchResume::Nothing);
+
+    // The program ended while it resumed it at the last launch: not resumed again, unless it is over.
+    const RunningMarker resuming{"/runs/t", false, true};
+    CHECK(launchResume(true, false, resuming, true, true) == LaunchResume::Crashed);
+    CHECK(launchResume(true, false, resuming, false, false) == LaunchResume::Queue);
+    CHECK(launchResume(false, false, resuming, true, true) == LaunchResume::Nothing);
+
+    // When the run ends the marker stays only if the window quits while it runs; a stop the user asked for removes
+    // it, even when they quit before the engines stopped.
+    CHECK(keepMarkerAtEnd(true, false));
+    CHECK_FALSE(keepMarkerAtEnd(true, true));
+    CHECK_FALSE(keepMarkerAtEnd(false, false));
+    CHECK_FALSE(keepMarkerAtEnd(false, true));
+
     // On by default, and kept in the profile.
     CHECK(MatchSetup{}.resume_at_launch);
     CHECK(nlohmann::json::object().get<MatchSetup>().resume_at_launch);
@@ -189,9 +234,23 @@ TEST_CASE("at launch, the tournament running when the program ended resumes, the
     REQUIRE(storage.runningMarker());
     CHECK(storage.runningMarker()->dir == "/runs/t");
     CHECK(storage.runningMarker()->paused);
+    CHECK_FALSE(storage.runningMarker()->resuming);
     storage.setRunningMarker(std::nullopt);
     CHECK_FALSE(storage.runningMarker());
     CHECK_FALSE(fs::exists(dir / "running.json"));
+
+    // The resume flag is kept; a window removes only the marker of its own tournament.
+    storage.setRunningMarker(resuming);
+    REQUIRE(storage.runningMarker());
+    CHECK(storage.runningMarker()->resuming);
+    storage.setRunningMarker(RunningMarker{"/runs/u"});
+    storage.clearRunningMarker("/runs/t");
+    REQUIRE(storage.runningMarker());
+    CHECK(storage.runningMarker()->dir == "/runs/u");
+    CHECK(markerNames(storage.runningMarker(), "/runs/u"));
+    CHECK_FALSE(markerNames(std::nullopt, "/runs/u"));
+    storage.clearRunningMarker("/runs/u");
+    CHECK_FALSE(storage.runningMarker());
     fs::remove_all(dir);
 }
 
@@ -239,4 +298,35 @@ TEST_CASE("the games a setup plans, and about how long they last with a clock") 
     // No clock: no estimate.
     setup.limit = LimitKind::Nodes;
     CHECK_FALSE(plannedSeconds(setup, topology));
+}
+
+TEST_CASE("a template or a queued setup keeps the program's settings: its look, the live boards, the notifications") {
+    MatchSetup current;
+    current.language         = "fr";
+    current.theme            = "dark";
+    current.ui_zoom          = 125;
+    current.tile_info        = true;
+    current.live_seed_side   = false;
+    current.live_arrows      = false;
+    current.panes["engines"] = 0.3f;
+    current.notify           = false;
+    current.resume_at_launch = false;
+
+    // A setup stored with the defaults, as a template or the queue holds it.
+    MatchSetup next;
+    next.name   = "stored";
+    next.cycles = 4;
+    keepProgramSettings(next, current);
+    CHECK(next.language == "fr");
+    CHECK(next.theme == "dark");
+    CHECK(next.ui_zoom == 125);
+    CHECK(next.tile_info);
+    CHECK_FALSE(next.live_seed_side);
+    CHECK_FALSE(next.live_arrows);
+    CHECK(next.panes == current.panes);
+    CHECK_FALSE(next.notify);
+    CHECK_FALSE(next.resume_at_launch);
+    // The tournament itself is the stored one.
+    CHECK(next.name == "stored");
+    CHECK(next.cycles == 4);
 }

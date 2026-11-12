@@ -1129,13 +1129,8 @@ void App::drawTemplates() {
         if (ImGui::SmallButton(TR("Load"))) {
             if (auto loaded = readJson<MatchSetup>(dir / (name + ".json"))) {
                 // The look of the program is not part of a template.
-                loaded->language = setup_.language;
-                loaded->theme    = setup_.theme;
-                loaded->ui_zoom  = setup_.ui_zoom;
-                loaded->panes    = setup_.panes;
-                loaded->notify   = setup_.notify;
-                loaded->resume_at_launch = setup_.resume_at_launch;
-                setup_           = *loaded;
+                keepProgramSettings(*loaded, setup_);
+                setup_ = *loaded;
                 template_message_.clear();
                 saveSetupSoon();
             } else {
