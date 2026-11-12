@@ -315,7 +315,10 @@ TEST_CASE("engine cache: the idle entries used the longest ago make room; retire
         fastchess::util::ScopeGuard g1(&*e1), g2(&*e2), g3(&*e3), g4(&*e4);
     }
 
-    cache.evictIdle([](const std::string& name) { return name == "e"; });
+    // Handed over to be destroyed outside the pool's lock.
+    auto retired = cache.evictIdle([](const std::string& name) { return name == "e"; });
+    CHECK(alive == 4);
+    retired.clear();
     CHECK(alive == 0);
 }
 

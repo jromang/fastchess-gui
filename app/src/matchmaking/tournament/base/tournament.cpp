@@ -127,9 +127,12 @@ BaseTournament::EngineCache& BaseTournament::getEngineCache() {
 }
 
 void BaseTournament::retireEngines(const std::function<bool(const std::string& name)>& retired) {
+    // Destroyed after the lock is released: an engine that hangs can take its kill timeout to quit, and every game
+    // thread takes this lock to find its cache.
+    EngineCache::Entries evicted;
     std::lock_guard<std::mutex> lock(cache_management_mutex_);
-    if (global_cache_) global_cache_->evictIdle(retired);
-    for (auto& [tid, cache] : thread_caches_) cache->evictIdle(retired);
+    if (global_cache_) evicted.splice(evicted.end(), global_cache_->evictIdle(retired));
+    for (auto& [tid, cache] : thread_caches_) evicted.splice(evicted.end(), cache->evictIdle(retired));
 }
 
 void BaseTournament::create() {
