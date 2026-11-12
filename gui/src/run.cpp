@@ -12,6 +12,7 @@
 #include <core/globals/globals.hpp>
 #include <core/observer.hpp>
 #include <core/rand.hpp>
+#include <core/threading/thread_vector.hpp>
 #include <matchmaking/syzygy.hpp>
 #include <types/exception.hpp>
 
@@ -21,6 +22,11 @@
 #include "console.hpp"
 #include "engines.hpp"
 #include "i18n.hpp"
+
+namespace fastchess {
+// The engine processes started (see core/globals/globals.cpp).
+extern util::ThreadVector<ProcessInformation> process_list;
+}  // namespace fastchess
 
 namespace fcg {
 
@@ -502,6 +508,46 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     run.info = runInfo(spec, run_dir);
 
     return run;
+}
+
+uint64_t plannedGames(const MatchSetup& setup) {
+    const auto n      = static_cast<uint64_t>(setup.participants.size());
+    const auto cycles = static_cast<uint64_t>(std::max(1, setup.cycles));
+    switch (setup.format) {
+        case TournamentFormat::Match:
+            if (setup.mode == MatchMode::Fixed) return static_cast<uint64_t>((setup.fixed_games + 1) / 2 * 2);
+            if (setup.mode == MatchMode::Sprt && setup.sprt_max_games > 0)
+                return static_cast<uint64_t>((setup.sprt_max_games + 1) / 2 * 2);
+            return 0;
+        case TournamentFormat::RoundRobin:
+            return n >= 2 ? n * (n - 1) / 2 * 2 * cycles : 0;
+        case TournamentFormat::Gauntlet: {
+            const auto seeds = static_cast<uint64_t>(std::clamp(setup.seeds, 1, std::max(1, static_cast<int>(n) - 1)));
+            return n >= 2 ? seeds * (n - seeds) * 2 * cycles : 0;
+        }
+        case TournamentFormat::Swiss:
+            return n / 2 * 2 * cycles;
+        case TournamentFormat::Knockout:
+            return n >= 2 ? (n - 1) * 2 * cycles : 0;
+    }
+    return 0;
+}
+
+std::optional<double> plannedSeconds(const MatchSetup& setup, const CpuTopology& topology) {
+    const auto games = plannedGames(setup);
+    if (games == 0 || clockFree(setup.limit)) return std::nullopt;
+    const int concurrency = setup.concurrency_auto ? topology.defaultConcurrency(false)
+                                                   : std::clamp(setup.concurrency, 1, topology.logical);
+    const double game_s =
+        setup.limit == LimitKind::MoveTime ? 120.0 * setup.move_s : 2.0 * (setup.tc_base_s + 60.0 * setup.tc_inc_s);
+    return static_cast<double>(games) * game_s / std::max(1, concurrency);
+}
+
+int engineProcesses() {
+    fastchess::process_list.lock();
+    const auto n = std::distance(fastchess::process_list.begin(), fastchess::process_list.end());
+    fastchess::process_list.unlock();
+    return static_cast<int>(n);
 }
 
 RunController::~RunController() {

@@ -35,6 +35,7 @@
 #include <tour/book_scan.hpp>
 #include <tour/by_opening.hpp>
 #include <tour/game_db.hpp>
+#include <tour/incidents.hpp>
 #include <tour/ratinglist.hpp>
 #include <tour/standings.hpp>
 
@@ -345,6 +346,9 @@ class App {
     // start stays queued.
     void startFromQueue(bool go_on = false);
     void drawQueue();
+    void drawHealth();  // the home page's: incidents of the last 24 hours, memory, engine processes
+    // About how long the running tournament has left at its pace; nullopt without a game count or a pace yet.
+    [[nodiscard]] std::optional<double> runSecondsLeft() const;
     void drawRelaunch();  // "Relaunch with…" of a finished match
     void resetRunView();  // forgets the games and statistics shown, before a run starts
     void pollRun();
@@ -621,6 +625,11 @@ class App {
     std::future<TournamentList> tournaments_job_;
     std::shared_ptr<tour::SummaryCache> summary_cache_ = std::make_shared<tour::SummaryCache>();
     bool tournaments_read_                             = false;  // once at least
+    // The health panel's incidents, read on a worker thread now and then.
+    std::shared_ptr<tour::IncidentScanner> incident_scanner_ = std::make_shared<tour::IncidentScanner>();
+    std::future<tour::Incidents> incidents_job_;
+    std::optional<tour::Incidents> incidents_;
+    std::chrono::steady_clock::time_point incidents_asked_{};
     std::optional<ui::Theme> theme_applied_;
     int zoom_applied_ = 0;
 

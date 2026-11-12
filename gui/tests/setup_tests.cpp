@@ -194,3 +194,49 @@ TEST_CASE("at launch, the tournament running when the program ended resumes, the
     CHECK_FALSE(fs::exists(dir / "running.json"));
     fs::remove_all(dir);
 }
+
+TEST_CASE("the games a setup plans, and about how long they last with a clock") {
+    const auto topology = topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}});
+
+    MatchSetup setup;
+    setup.mode        = MatchMode::Fixed;
+    setup.fixed_games = 101;
+    CHECK(plannedGames(setup) == 102);
+    setup.mode = MatchMode::Sprt;
+    CHECK(plannedGames(setup) == 0);
+    setup.sprt_max_games = 1000;
+    CHECK(plannedGames(setup) == 1000);
+    setup.mode = MatchMode::Infinite;
+    CHECK(plannedGames(setup) == 0);
+
+    setup.participants = {{"a"}, {"b"}, {"c"}, {"d"}, {"e"}};
+    setup.cycles       = 2;
+    setup.format       = TournamentFormat::RoundRobin;
+    CHECK(plannedGames(setup) == 10 * 2 * 2);
+    setup.format = TournamentFormat::Gauntlet;
+    setup.seeds  = 2;
+    CHECK(plannedGames(setup) == 2 * 3 * 2 * 2);
+    setup.format = TournamentFormat::Swiss;  // cycles = rounds
+    CHECK(plannedGames(setup) == 2 * 2 * 2);
+    setup.format = TournamentFormat::Knockout;
+    CHECK(plannedGames(setup) == 4 * 2 * 2);
+
+    // 6 games of about 2 × (60 + 60 × 1) s, three at a time (physical cores - 1).
+    setup.format = TournamentFormat::RoundRobin;
+    setup.cycles = 1;
+    setup.participants.resize(3);
+    setup.limit     = LimitKind::Time;
+    setup.tc_base_s = 60;
+    setup.tc_inc_s  = 1;
+    REQUIRE(plannedSeconds(setup, topology));
+    CHECK(*plannedSeconds(setup, topology) == doctest::Approx(6 * 240.0 / 3));
+    setup.concurrency_auto = false;
+    setup.concurrency      = 2;
+    CHECK(*plannedSeconds(setup, topology) == doctest::Approx(6 * 240.0 / 2));
+    setup.limit  = LimitKind::MoveTime;
+    setup.move_s = 0.5;
+    CHECK(*plannedSeconds(setup, topology) == doctest::Approx(6 * 60.0 / 2));
+    // No clock: no estimate.
+    setup.limit = LimitKind::Nodes;
+    CHECK_FALSE(plannedSeconds(setup, topology));
+}

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <ctime>
 
 #include <SDL3/SDL.h>
 #include <imgui.h>
@@ -13,6 +14,7 @@
 #include "console.hpp"
 #include "i18n.hpp"
 #include "logo.hpp"
+#include "memory.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -60,6 +62,24 @@ void openFolder(const fs::path& dir) { ui::openPath(dir); }
 
 // The interface sizes offered, in percent.
 constexpr std::array<int, 9> ZOOMS = {80, 90, 100, 110, 125, 150, 175, 200, 250};
+
+// When something `seconds` from now ends, in local time: "18:40" today, "2026-11-14 03:10" another day.
+std::string endTime(double seconds) {
+    const auto now = std::time(nullptr);
+    const auto end = now + static_cast<std::time_t>(seconds);
+    std::tm today{}, then{};
+#ifdef _WIN32
+    localtime_s(&today, &now);
+    localtime_s(&then, &end);
+#else
+    localtime_r(&now, &today);
+    localtime_r(&end, &then);
+#endif
+    char text[32];
+    const bool same_day = today.tm_year == then.tm_year && today.tm_yday == then.tm_yday;
+    std::strftime(text, sizeof(text), same_day ? "%H:%M" : "%Y-%m-%d %H:%M", &then);
+    return text;
+}
 
 void sectionTitle(const char* text) {
     ImGui::Spacing();
@@ -322,6 +342,9 @@ void App::drawHome() {
                                ImVec2(-FLT_MIN, px(8)), "");
         }
         ImGui::TextDisabled("%s", runStatusText().c_str());
+        if (const auto left = runSecondsLeft()) {
+            ImGui::TextDisabled("%s", trf("Ends about {} (in {})", endTime(*left), ui::formatDuration(*left)).c_str());
+        }
         if (ImGui::Button(TR("Open"))) page_ = Page::Tournament;
         ui::endCard();
     } else if (unfinished_) {
@@ -339,6 +362,7 @@ void App::drawHome() {
     }
 
     drawQueue();
+    drawHealth();
 
     if (legacy_runs_ > 0) {
         ImGui::Spacing();
@@ -622,6 +646,32 @@ void App::drawQueue() {
     sectionTitle(TR("Queue"));
     ui::beginCard("queue_card");
     ImGui::TextDisabled("%s", TR("Started one after the other, when the running tournament ends by itself."));
+
+    // When it is all over: the running tournament at its pace, the queued ones from their games and time control.
+    double seconds = 0;
+    int unknown    = 0;
+    if (run_.running()) {
+        if (const auto left = runSecondsLeft())
+            seconds += *left;
+        else
+            ++unknown;
+    }
+    for (const auto& q : queue_) {
+        if (const auto s = plannedSeconds(q.setup, topology_))
+            seconds += *s;
+        else
+            ++unknown;
+    }
+    const bool everything = unknown == static_cast<int>(queue_.size()) + (run_.running() ? 1 : 0);
+    if (!everything) {
+        auto text = trf("The queue ends about {} (in {})", endTime(seconds), ui::formatDuration(seconds));
+        if (unknown > 0) {
+            text += trn(", and {} tournament of unknown length", ", and {} tournaments of unknown length", unknown,
+                        unknown);
+        }
+        ImGui::TextUnformatted(text.c_str());
+    }
+
     int remove = -1, up = -1;
     for (std::size_t i = 0; i < queue_.size(); ++i) {
         ImGui::PushID(static_cast<int>(i));
@@ -653,6 +703,62 @@ void App::drawQueue() {
     if (remove >= 0) queue_.erase(queue_.begin() + remove);
     if (up > 0) std::swap(queue_[up], queue_[up - 1]);
     if (remove >= 0 || up > 0) storage_.saveQueue(queue_);
+}
+
+std::optional<double> App::runSecondsLeft() const {
+    const auto total = run_.info().total_games;
+    if (!run_.running() || total == 0 || games_per_hour_ <= 0) return std::nullopt;
+    const auto played = static_cast<uint64_t>(games_.size());
+    return played >= total ? 0.0 : static_cast<double>(total - played) / games_per_hour_ * 3600.0;
+}
+
+void App::drawHealth() {
+    // The journals of the last 24 hours, read again every 30 seconds on a worker thread: only what they gained.
+    const auto now = std::chrono::steady_clock::now();
+    if (incidents_job_.valid() && incidents_job_.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+        incidents_ = incidents_job_.get();
+    if (!incidents_job_.valid() && now - incidents_asked_ > std::chrono::seconds(30)) {
+        incidents_asked_ = now;
+        const auto since = std::chrono::duration_cast<std::chrono::milliseconds>(
+                               (std::chrono::system_clock::now() - std::chrono::hours(24)).time_since_epoch())
+                               .count();
+        incidents_job_   = std::async(std::launch::async, [scanner = incident_scanner_, root = storage_.runsDir(),
+                                                           since] { return scanner->scan(root, since); });
+    }
+
+    sectionTitle(TR("Health"));
+    ui::beginCard("health_card");
+    const auto item = [&](bool warn, const std::string& text, bool first = false) {
+        if (!first) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("·");
+            ImGui::SameLine();
+        }
+        ImGui::PushStyleColor(ImGuiCol_Text, warn ? ui::WARN : ImGui::GetColorU32(ImGuiCol_Text));
+        ImGui::TextUnformatted(text.c_str());
+        ImGui::PopStyleColor();
+    };
+
+    ImGui::TextDisabled("%s", TR("Last 24 hours:"));
+    ImGui::SameLine();
+    if (incidents_) {
+        const auto& i = *incidents_;
+        item(i.crashes > 0, trn("{} crash or hang", "{} crashes or hangs", i.crashes, i.crashes), true);
+        item(i.time_losses > 0, trn("{} loss on time", "{} losses on time", i.time_losses, i.time_losses));
+        item(i.illegal_moves > 0, trn("{} illegal move", "{} illegal moves", i.illegal_moves, i.illegal_moves));
+    } else {
+        ImGui::TextDisabled("%s", TR("reading the tournaments…"));
+    }
+
+    // Free memory below a tenth of the installed is worth a look.
+    if (const auto memory = systemMemory()) {
+        item(memory->available_mb * 10 < memory->total_mb,
+             trf("{} of memory free of {}", formatMemory(memory->available_mb), formatMemory(memory->total_mb)), true);
+    }
+    const int processes = engineProcesses();
+    item(false, trn("{} engine process running", "{} engine processes running", processes, processes),
+         !systemMemory().has_value());
+    ui::endCard();
 }
 
 void App::drawRelaunch() {

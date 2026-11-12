@@ -951,24 +951,18 @@ void App::drawSetupSummary() {
     const auto n     = static_cast<int>(setup_.participants.size());
     const int cycles = std::max(1, setup_.cycles);
     const int seeds  = std::clamp(setup_.seeds, 1, std::max(1, n - 1));
-    uint64_t games   = 0;
+    const auto games = plannedGames(setup_);
     std::string formula;
     std::string per_engine;
 
     switch (setup_.format) {
         case TournamentFormat::Match:
-            if (setup_.mode == MatchMode::Fixed) {
-                games = static_cast<uint64_t>((setup_.fixed_games + 1) / 2 * 2);
-            } else if (setup_.mode == MatchMode::Sprt && setup_.sprt_max_games > 0) {
-                games = static_cast<uint64_t>((setup_.sprt_max_games + 1) / 2 * 2);
-            }
             formula = setup_.mode == MatchMode::Sprt       ? std::string(TR("until the SPRT decides"))
                       : setup_.mode == MatchMode::Infinite ? std::string(TR("until stopped"))
                                                            : trn("{} game pair", "{} game pairs", games / 2, games / 2);
             break;
         case TournamentFormat::RoundRobin: {
             const uint64_t pairs = n >= 2 ? static_cast<uint64_t>(n) * (n - 1) / 2 : 0;
-            games                = pairs * 2 * cycles;
             formula              = trf("{} pairings × 2 games × {} cycles", pairs, cycles);
             const auto each      = static_cast<uint64_t>(n >= 2 ? (n - 1) * 2 * cycles : 0);
             per_engine           = trn("{} game per engine", "{} games per engine", each, each);
@@ -976,7 +970,6 @@ void App::drawSetupSummary() {
         }
         case TournamentFormat::Gauntlet: {
             const uint64_t pairs = n >= 2 ? static_cast<uint64_t>(seeds) * (n - seeds) : 0;
-            games                = pairs * 2 * cycles;
             formula              = trf("{} pairings × 2 games × {} cycles", pairs, cycles);
             const auto each      = static_cast<uint64_t>(n >= 2 ? (n - seeds) * 2 * cycles : 0);
             per_engine           = trn("{} game per tested engine", "{} games per tested engine", each, each);
@@ -984,14 +977,12 @@ void App::drawSetupSummary() {
         }
         case TournamentFormat::Swiss: {
             const uint64_t pairs = static_cast<uint64_t>(n / 2);
-            games                = pairs * 2 * cycles;
             formula              = trf("{} rounds × {} pairings × 2 games", cycles, pairs);
             per_engine           = trn("{} game per engine", "{} games per engine", 2 * cycles, 2 * cycles);
             break;
         }
         case TournamentFormat::Knockout: {
             const uint64_t matches = n >= 2 ? static_cast<uint64_t>(n - 1) : 0;
-            games                  = matches * 2 * cycles;
             formula                = trf("{} matches × {} pairs of games, plus tiebreaks", matches, cycles);
             break;
         }
@@ -1003,16 +994,13 @@ void App::drawSetupSummary() {
     ImGui::TextDisabled("%s", formula.c_str());
     if (!per_engine.empty()) ImGui::TextDisabled("%s", per_engine.c_str());
 
-    // A rough duration: a game lasts about two base times and 60 increments, or 120 moves, per side.
+    // A rough duration, with a clock.
     const bool fixed_nodes = clockFree(setup_.limit);
     const int concurrency  = setup_.concurrency_auto ? topology_.defaultConcurrency(fixed_nodes) : setup_.concurrency;
-    if (games > 0 && !fixed_nodes) {
-        const double game_s  = setup_.limit == LimitKind::MoveTime ? 120.0 * setup_.move_s
-                                                                   : 2.0 * (setup_.tc_base_s + 60.0 * setup_.tc_inc_s);
-        const double seconds = static_cast<double>(games) * game_s / std::max(1, concurrency);
+    if (const auto seconds = plannedSeconds(setup_, topology_)) {
         ImGui::Spacing();
         ImGui::TextUnformatted(
-            trf("About {} with {} games at a time", ui::formatDuration(seconds), concurrency).c_str());
+            trf("About {} with {} games at a time", ui::formatDuration(*seconds), concurrency).c_str());
     }
 
     // What could go wrong.
