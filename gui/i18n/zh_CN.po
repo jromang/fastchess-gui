@@ -151,6 +151,9 @@ msgstr "将杀分数的 PV 必须长度正确并以将杀结束。PV 中的非�
 msgid "A page, an engine, a tournament, an action…"
 msgstr "页面、引擎、锦标赛、操作…"
 
+msgid "A rating list's text or web page, Ordo, CSV (name,elo)"
+msgstr "等级分列表的文本或网页、Ordo、CSV (name,elo)"
+
 msgid "A rating list, for the reference Elo…"
 msgstr "等级分榜，用于参考 Elo…"
 
@@ -371,12 +374,6 @@ msgstr "直播"
 
 msgid "By time control"
 msgstr "按时限"
-
-msgid "CCRL checklist"
-msgstr "CCRL 检查清单"
-
-msgid "CCRL, Ordo, CSV (name,elo)"
-msgstr "CCRL、Ordo、CSV (name,elo)"
 
 msgid "CPU affinity"
 msgstr "CPU 亲和性"
@@ -807,14 +804,14 @@ msgstr "导出为 EPD…"
 msgid "Export filtered…"
 msgstr "导出筛选结果…"
 
-msgid "Export for CCRL"
-msgstr "导出给 CCRL"
-
-msgid "Export for CCRL…"
-msgstr "导出给 CCRL…"
-
 msgid "Export for Ordo…"
 msgstr "导出给 Ordo…"
+
+msgid "Export for a rating list"
+msgstr "导出给等级分列表"
+
+msgid "Export for a rating list…"
+msgstr "导出给等级分列表…"
 
 msgid "Export game…"
 msgstr "导出对局…"
@@ -879,8 +876,8 @@ msgstr "文件夹（留空：锦标赛文件夹中的 \"live\"）"
 msgid "Follow"
 msgstr "自动滚动"
 
-msgid "For TLCV, node-tlcv (as used by ccrl.live) and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
-msgstr "用于 TLCV、node-tlcv（ccrl.live 所用）和 Livius：一次一局，附带引擎的搜索信息，每局后附交叉表。"
+msgid "For TLCV, node-tlcv and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
+msgstr "用于 TLCV、node-tlcv和 Livius：一次一局，附带引擎的搜索信息，每局后附交叉表。"
 
 msgid "For a PGN book: number of plies kept. -1 = all."
 msgstr "对于 PGN 开局库：保留的半回合数。-1 = 全部。"
@@ -930,8 +927,8 @@ msgstr "对局也已追加到 {}"
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr "超时判负、崩溃或非法着法而输掉的对局"
 
-msgid "Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
-msgstr "其他程序或等级分列表（CCRL、CEGT…）的对局，与锦标赛的对局一起计算。引擎按名称识别，与 PGN 中一致；名称与库中某引擎相同（忽略大小写和空格）的棋手即为该引擎。"
+msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
+msgstr "其他程序或等级分列表的对局，与锦标赛的对局一起计算。引擎按名称识别，与 PGN 中一致；名称与库中某引擎相同（忽略大小写和空格）的棋手即为该引擎。"
 
 msgid "Games written to {}"
 msgstr "对局已写入 {}"
@@ -1204,8 +1201,8 @@ msgstr "步数 / 时段"
 msgid "Name"
 msgstr "名称"
 
-msgid "Name for CCRL"
-msgstr "CCRL 用名"
+msgid "Name on the list"
+msgstr "列表中的名称"
 
 msgid "Names of the list that are no library engine"
 msgstr "列表中不属于库中引擎的名称"
@@ -1483,8 +1480,8 @@ msgstr "参赛者"
 msgid "Paste"
 msgstr "粘贴"
 
-msgid "Paste a rating list, or open its file: a CCRL list (its text version, or its web page copied from the browser or saved), Ordo's output, or CSV (name,elo). The library engines it names get their reference Elo from it: the same name, letter case and spaces aside."
-msgstr "粘贴等级分榜，或打开其文件：CCRL 列表（其文本版本，或从浏览器复制或保存的网页）、Ordo 的输出，或 CSV (name,elo)。榜中提到的库中引擎从中获得参考 Elo：名称相同即可，忽略大小写和空格。"
+msgid "Paste a rating list, or open its file: a rating list's text version or its web page (copied from the browser or saved), Ordo's output, or CSV (name,elo). The library engines it names get their reference Elo from it: the same name, letter case and spaces aside."
+msgstr "粘贴等级分榜，或打开其文件：等级分榜的文本版本或其网页（从浏览器复制或保存）、Ordo 的输出，或 CSV (name,elo)。榜中提到的库中引擎从中获得参考 Elo：名称相同即可，忽略大小写和空格。"
 
 msgid "Pause"
 msgstr "暂停"
@@ -1946,6 +1943,9 @@ msgstr "正在停止引擎…"
 msgid "Stopping…"
 msgstr "正在停止…"
 
+msgid "Submission checklist"
+msgstr "提交检查清单"
+
 msgid "Suggest"
 msgstr "建议"
 
@@ -2078,8 +2078,8 @@ msgstr "第一个参赛者 {} 没有参考 Elo。"
 msgid "The folder {} is not there any more."
 msgstr "文件夹 {} 已不存在。"
 
-msgid "The games as CCRL testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
-msgstr "按 CCRL 测试者提交的方式整理对局：文件以你的名字命名，附日期和条件，棋手名称按列表的写法，轮次重新编号，去除作废对局和重复对局。"
+msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
+msgstr "按等级分列表测试者提交的方式整理对局：文件以你的名字命名，附日期和条件，棋手名称按列表的写法，轮次重新编号，去除作废对局和重复对局。"
 
 msgid "The games counted, as a PGN of headers, which Ordo and BayesElo read: ordo -p ratings.pgn -o ratings.txt"
 msgstr "计入的对局，以只含头信息的 PGN 输出，可供 Ordo 和 BayesElo 读取：ordo -p ratings.pgn -o ratings.txt"
@@ -2288,8 +2288,8 @@ msgstr "等待读取 · 下一个读取"
 msgid "Web page"
 msgstr "网页"
 
-msgid "What a tester checks before sending the games to the CCRL. Export for CCRL… in the Games tab leaves the voided games and the duplicates out."
-msgstr "测试者向 CCRL 提交对局前检查的内容。“对局”页中的“导出给 CCRL…”会去除作废对局和重复对局。"
+msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
+msgstr "测试者向等级分列表提交对局前检查的内容。“对局”页中的“导出给等级分列表…”会去除作废对局和重复对局。"
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "它平均何时确定最终走出的着法：如果远早于所用时间结束就已确定，说明时间没有用好。"

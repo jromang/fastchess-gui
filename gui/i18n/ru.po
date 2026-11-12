@@ -155,6 +155,9 @@ msgstr "PV матовой оценки должен иметь правильн�
 msgid "A page, an engine, a tournament, an action…"
 msgstr "Страница, движок, турнир, действие…"
 
+msgid "A rating list's text or web page, Ordo, CSV (name,elo)"
+msgstr "Текст или веб-страница рейтинг-листа, Ordo, CSV (name,elo)"
+
 msgid "A rating list, for the reference Elo…"
 msgstr "Рейтинг-лист для опорного рейтинга Elo…"
 
@@ -379,12 +382,6 @@ msgstr "Трансляция"
 
 msgid "By time control"
 msgstr "По контролю времени"
-
-msgid "CCRL checklist"
-msgstr "Чек-лист CCRL"
-
-msgid "CCRL, Ordo, CSV (name,elo)"
-msgstr "CCRL, Ordo, CSV (name,elo)"
 
 msgid "CPU affinity"
 msgstr "Привязка к CPU"
@@ -815,14 +812,14 @@ msgstr "Экспорт в EPD…"
 msgid "Export filtered…"
 msgstr "Экспортировать отфильтрованные…"
 
-msgid "Export for CCRL"
-msgstr "Экспорт для CCRL"
-
-msgid "Export for CCRL…"
-msgstr "Экспорт для CCRL…"
-
 msgid "Export for Ordo…"
 msgstr "Экспорт для Ordo…"
+
+msgid "Export for a rating list"
+msgstr "Экспорт для рейтинг-листа"
+
+msgid "Export for a rating list…"
+msgstr "Экспорт для рейтинг-листа…"
 
 msgid "Export game…"
 msgstr "Экспортировать партию…"
@@ -887,8 +884,8 @@ msgstr "Папка (пусто: «live» в папке турнира)"
 msgid "Follow"
 msgstr "Следить"
 
-msgid "For TLCV, node-tlcv (as used by ccrl.live) and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
-msgstr "Для TLCV, node-tlcv (используется на ccrl.live) и Livius: по одной партии, с поиском движков и перекрёстной таблицей после каждой партии."
+msgid "For TLCV, node-tlcv and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
+msgstr "Для TLCV, node-tlcv и Livius: по одной партии, с поиском движков и перекрёстной таблицей после каждой партии."
 
 msgid "For a PGN book: number of plies kept. -1 = all."
 msgstr "Для книги PGN: число сохраняемых полуходов. -1 = все."
@@ -938,8 +935,8 @@ msgstr "Партии также дописаны в {}"
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr "Партии, проигранные по времени, из-за вылета или нелегального хода"
 
-msgid "Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
-msgstr "Партии других программ или рейтинг-листов (CCRL, CEGT…), учитываемые вместе с турнирными. Движки различаются по имени, как в PGN; игрок с именем движка из библиотеки (без учёта регистра и пробелов) считается этим движком."
+msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
+msgstr "Партии других программ или рейтинг-листов, учитываемые вместе с турнирными. Движки различаются по имени, как в PGN; игрок с именем движка из библиотеки (без учёта регистра и пробелов) считается этим движком."
 
 msgid "Games written to {}"
 msgstr "Партии записаны в {}"
@@ -1214,8 +1211,8 @@ msgstr "Ходов / период"
 msgid "Name"
 msgstr "Имя"
 
-msgid "Name for CCRL"
-msgstr "Имя для CCRL"
+msgid "Name on the list"
+msgstr "Имя в списке"
 
 msgid "Names of the list that are no library engine"
 msgstr "Имена из списка, которых нет среди движков библиотеки"
@@ -1493,8 +1490,8 @@ msgstr "Участники"
 msgid "Paste"
 msgstr "Вставить"
 
-msgid "Paste a rating list, or open its file: a CCRL list (its text version, or its web page copied from the browser or saved), Ordo's output, or CSV (name,elo). The library engines it names get their reference Elo from it: the same name, letter case and spaces aside."
-msgstr "Вставьте рейтинг-лист или откройте его файл: список CCRL (текстовую версию или веб-страницу, скопированную из браузера или сохранённую), вывод Ordo или CSV (name,elo). Названные в нём движки библиотеки получают из него опорный рейтинг Elo: по тому же имени, без учёта регистра и пробелов."
+msgid "Paste a rating list, or open its file: a rating list's text version or its web page (copied from the browser or saved), Ordo's output, or CSV (name,elo). The library engines it names get their reference Elo from it: the same name, letter case and spaces aside."
+msgstr "Вставьте рейтинг-лист или откройте его файл: текстовую версию рейтинг-листа или его веб-страницу (скопированную из браузера или сохранённую), вывод Ordo или CSV (name,elo). Названные в нём движки библиотеки получают из него опорный рейтинг Elo: по тому же имени, без учёта регистра и пробелов."
 
 msgid "Pause"
 msgstr "Пауза"
@@ -1964,6 +1961,9 @@ msgstr "Остановка движков…"
 msgid "Stopping…"
 msgstr "Остановка…"
 
+msgid "Submission checklist"
+msgstr "Чек-лист перед отправкой"
+
 msgid "Suggest"
 msgstr "Предложить"
 
@@ -2096,8 +2096,8 @@ msgstr "У первого участника, {}, нет опорного рей
 msgid "The folder {} is not there any more."
 msgstr "Папки {} больше нет."
 
-msgid "The games as CCRL testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
-msgstr "Партии в том виде, в каком их присылают тестеры CCRL: файл назван вашим именем, дата и условия, игроки записаны так, как в списках, туры перенумерованы, аннулированные партии и дубликаты исключены."
+msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
+msgstr "Партии в том виде, в каком их присылают тестеры рейтинг-листов: файл назван вашим именем, дата и условия, игроки записаны так, как в списках, туры перенумерованы, аннулированные партии и дубликаты исключены."
 
 msgid "The games counted, as a PGN of headers, which Ordo and BayesElo read: ordo -p ratings.pgn -o ratings.txt"
 msgstr "Учтённые партии в виде PGN из одних заголовков, который читают Ordo и BayesElo: ordo -p ratings.pgn -o ratings.txt"
@@ -2306,8 +2306,8 @@ msgstr "Ожидает чтения · прочитать следующим"
 msgid "Web page"
 msgstr "Веб-страница"
 
-msgid "What a tester checks before sending the games to the CCRL. Export for CCRL… in the Games tab leaves the voided games and the duplicates out."
-msgstr "Что проверяет тестер перед отправкой партий в CCRL. «Экспорт для CCRL…» на вкладке «Партии» исключает аннулированные партии и дубликаты."
+msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
+msgstr "Что проверяет тестер перед отправкой партий в рейтинг-лист. «Экспорт для рейтинг-листа…» на вкладке «Партии» исключает аннулированные партии и дубликаты."
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "Когда в среднем он останавливался на сыгранном ходе: решение задолго до конца затраченного времени говорит о том, что время использовалось неэффективно."

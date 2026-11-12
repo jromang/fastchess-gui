@@ -157,15 +157,15 @@ void Storage::setLichessToken(const std::string& token) const {
     fs::permissions(file, fs::perms::owner_read | fs::perms::owner_write, fs::perm_options::replace, ec);
 }
 
-std::pair<std::string, std::string> Storage::ccrlTester() const {
+std::pair<std::string, std::string> Storage::submissionTester() const {
     const auto s = settings();
-    return {setting(s, "ccrl_tester", std::string{}), setting(s, "ccrl_site", std::string{})};
+    return {setting(s, "submission_tester", std::string{}), setting(s, "submission_site", std::string{})};
 }
 
-void Storage::setCcrlTester(const std::string& name, const std::string& site) const {
-    auto settings           = this->settings();
-    settings["ccrl_tester"] = name;
-    settings["ccrl_site"]   = site;
+void Storage::setSubmissionTester(const std::string& name, const std::string& site) const {
+    auto settings                 = this->settings();
+    settings["submission_tester"] = name;
+    settings["submission_site"]   = site;
     save(root_ / "settings.json", settings);
 }
 

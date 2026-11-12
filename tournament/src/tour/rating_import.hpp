@@ -1,8 +1,8 @@
 #pragma once
 
-// Rating lists of others, read to fill the reference Elo of the library's engines: the CCRL lists (their text
-// version, the web page copied and pasted, or the page itself), Ordo's output (text or CSV) and plain CSV files
-// (name,elo).
+// Rating lists of others, read to fill the reference Elo of the library's engines: the lists of rating list sites
+// (their text version, the web page copied and pasted, or the page itself), Ordo's output (text or CSV) and plain
+// CSV files (name,elo).
 
 #include <string>
 #include <string_view>
@@ -15,13 +15,13 @@ struct ListedRating {
     int elo = 0;  // rounded
 };
 
-// The engines a rating list names, in the list's order; a name met again is left out (a CCRL page shows each engine a
-// second time, in its crosstable). Whatever is not an engine's line (titles, headers, a CCRL page's LOS) is skipped.
-// Each line is read by its look: cells separated by tabs (a table copied from a web page) or by commas or
-// semicolons (CSV), Ordo's "rank name : rating ...", or columns aligned with spaces (CCRL's text lists); the rows of
-// an HTML table are cells too. In cells, a header naming a Name (Engine, Player) and an Elo (Rating) column tells
-// where they are; without one, the name is the first cell with a letter and the rating the first number after it.
-// A rating is a number from 1 to 5000.
+// The engines a rating list names, in the list's order; a name met again is left out (a list site's page may show
+// each engine a second time, in its crosstable). Whatever is not an engine's line (titles, headers, a list page's
+// LOS) is skipped. Each line is read by its look: cells separated by tabs (a table copied from a web page) or by
+// commas or semicolons (CSV), Ordo's "rank name : rating ...", or columns aligned with spaces (a list site's text
+// lists); the rows of an HTML table are cells too. In cells, a header naming a Name (Engine, Player) and an Elo
+// (Rating) column tells where they are; without one, the name is the first cell with a letter and the rating the first
+// number after it. A rating is a number from 1 to 5000.
 [[nodiscard]] std::vector<ListedRating> parseRatingList(std::string_view text);
 
 struct RatingMatch {

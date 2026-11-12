@@ -425,7 +425,7 @@ void App::drawEngines() {
         }
         ImGui::Separator();
         if (ImGui::MenuItem(TR("A rating list, for the reference Elo…"))) openRatingImport();
-        ImGui::TextDisabled("%s", TR("CCRL, Ordo, CSV (name,elo)"));
+        ImGui::TextDisabled("%s", TR("A rating list's text or web page, Ordo, CSV (name,elo)"));
         ImGui::EndPopup();
     }
     const auto duplicate = [&] {
@@ -1539,11 +1539,10 @@ void App::drawRatingImport() {
     auto& r = *rating_import_;
 
     ImGui::PushTextWrapPos(0);
-    ImGui::TextDisabled("%s",
-                        TR("Paste a rating list, or open its file: a CCRL list (its text version, or its web page "
-                           "copied from the browser or saved), Ordo's output, or CSV (name,elo). The library "
-                           "engines it names get their reference Elo from it: the same name, letter case and "
-                           "spaces aside."));
+    ImGui::TextDisabled("%s", TR("Paste a rating list, or open its file: a rating list's text version or its web page "
+                                 "(copied from the browser or saved), Ordo's output, or CSV (name,elo). The library "
+                                 "engines it names get their reference Elo from it: the same name, letter case and "
+                                 "spaces aside."));
     ImGui::PopTextWrapPos();
     if (ImGui::Button(TR("Open a file…"))) {
         dialogs_.openFile(Dialogs::Purpose::ImportRatingList,

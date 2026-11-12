@@ -49,7 +49,7 @@ std::pair<std::string, std::string> unzip(const std::string& zip) {
 TEST_CASE("zip: one file deflated, read back as written, with its central directory") {
     std::string pgn;
     for (int i = 0; i < 200; ++i)
-        pgn += "[Event \"CCRL\"]\n[Round \"" + std::to_string(i + 1) + "\"]\n\n1. e4 e5 1-0\n\n";
+        pgn += "[Event \"Rating list\"]\n[Round \"" + std::to_string(i + 1) + "\"]\n\n1. e4 e5 1-0\n\n";
     const std::string name = "[Tester 2026-11-12] Seed 64-bit - Nov 12 (hash 256MB).pgn";
     const auto zip         = fcg::zipArchive(name, pgn, 0x6000, 0x5d6c);
 

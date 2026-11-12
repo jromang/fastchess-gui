@@ -153,6 +153,9 @@ msgstr ""
 msgid "A page, an engine, a tournament, an action…"
 msgstr ""
 
+msgid "A rating list's text or web page, Ordo, CSV (name,elo)"
+msgstr ""
+
 msgid "A rating list, for the reference Elo…"
 msgstr ""
 
@@ -374,12 +377,6 @@ msgid "Broadcast"
 msgstr ""
 
 msgid "By time control"
-msgstr ""
-
-msgid "CCRL checklist"
-msgstr ""
-
-msgid "CCRL, Ordo, CSV (name,elo)"
 msgstr ""
 
 msgid "CPU affinity"
@@ -811,13 +808,13 @@ msgstr ""
 msgid "Export filtered…"
 msgstr ""
 
-msgid "Export for CCRL"
-msgstr ""
-
-msgid "Export for CCRL…"
-msgstr ""
-
 msgid "Export for Ordo…"
+msgstr ""
+
+msgid "Export for a rating list"
+msgstr ""
+
+msgid "Export for a rating list…"
 msgstr ""
 
 msgid "Export game…"
@@ -883,7 +880,7 @@ msgstr ""
 msgid "Follow"
 msgstr ""
 
-msgid "For TLCV, node-tlcv (as used by ccrl.live) and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
+msgid "For TLCV, node-tlcv and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
 msgstr ""
 
 msgid "For a PGN book: number of plies kept. -1 = all."
@@ -934,7 +931,7 @@ msgstr ""
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr ""
 
-msgid "Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
+msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
 msgstr ""
 
 msgid "Games written to {}"
@@ -1209,7 +1206,7 @@ msgstr ""
 msgid "Name"
 msgstr ""
 
-msgid "Name for CCRL"
+msgid "Name on the list"
 msgstr ""
 
 msgid "Names of the list that are no library engine"
@@ -1488,7 +1485,7 @@ msgstr ""
 msgid "Paste"
 msgstr ""
 
-msgid "Paste a rating list, or open its file: a CCRL list (its text version, or its web page copied from the browser or saved), Ordo's output, or CSV (name,elo). The library engines it names get their reference Elo from it: the same name, letter case and spaces aside."
+msgid "Paste a rating list, or open its file: a rating list's text version or its web page (copied from the browser or saved), Ordo's output, or CSV (name,elo). The library engines it names get their reference Elo from it: the same name, letter case and spaces aside."
 msgstr ""
 
 msgid "Pause"
@@ -1955,6 +1952,9 @@ msgstr ""
 msgid "Stopping…"
 msgstr ""
 
+msgid "Submission checklist"
+msgstr ""
+
 msgid "Suggest"
 msgstr ""
 
@@ -2087,7 +2087,7 @@ msgstr ""
 msgid "The folder {} is not there any more."
 msgstr ""
 
-msgid "The games as CCRL testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
+msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr ""
 
 msgid "The games counted, as a PGN of headers, which Ordo and BayesElo read: ordo -p ratings.pgn -o ratings.txt"
@@ -2297,7 +2297,7 @@ msgstr ""
 msgid "Web page"
 msgstr ""
 
-msgid "What a tester checks before sending the games to the CCRL. Export for CCRL… in the Games tab leaves the voided games and the duplicates out."
+msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr ""
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."

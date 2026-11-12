@@ -188,10 +188,10 @@ void App::frame() {
         else if (w.rfind("palette", 0) == 0) {  // palette=TEXT: the command palette, TEXT typed in it
             palette_request_ = true;
             if (const auto eq = w.find('='); eq != std::string::npos) palette_query_ = w.substr(eq + 1);
-        } else if (w == "ccrl-export") {  // the Export for CCRL dialog of the Games tab
+        } else if (w == "submission-export") {  // the Export for a rating list dialog of the Games tab
             page_        = Page::Tournament;
             tab_request_ = Tab::Games;
-            openCcrlExport();
+            openSubmissionExport();
         } else if (w.rfind("games-", 0) == 0 || w.rfind("live-", 0) == 0) {
             // The tab with a chart under the game: games-time, live-agreement...
             const auto chart                     = w.substr(w.find('-') + 1);
@@ -484,7 +484,7 @@ void App::resetRunView() {
     anchor_.reset();
     crosstable_cell_.reset();
     standings_engine_.reset();
-    ccrl_facts_for_ = ~uint64_t(0);
+    submission_facts_for_ = ~uint64_t(0);
     standings_view_ = -1;
     games_subject_ = -1;
     filtered_.clear();
@@ -855,8 +855,8 @@ void App::handleDialogs() {
             case Dialogs::Purpose::ExportAll:
                 exportGames(path, true);
                 break;
-            case Dialogs::Purpose::ExportCcrl:
-                writeCcrlExport(path);
+            case Dialogs::Purpose::ExportSubmission:
+                writeSubmissionExport(path);
                 break;
         }
     }

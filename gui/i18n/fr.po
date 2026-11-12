@@ -153,6 +153,9 @@ msgstr "La PV d'un score de mat doit avoir la bonne longueur et finir par le mat
 msgid "A page, an engine, a tournament, an action…"
 msgstr "Une page, un moteur, un tournoi, une action…"
 
+msgid "A rating list's text or web page, Ordo, CSV (name,elo)"
+msgstr "Texte ou page web d'une liste de classement, Ordo, CSV (name,elo)"
+
 msgid "A rating list, for the reference Elo…"
 msgstr "Une liste de classement, pour l'Elo de référence…"
 
@@ -375,12 +378,6 @@ msgstr "Diffusion"
 
 msgid "By time control"
 msgstr "Par cadence"
-
-msgid "CCRL checklist"
-msgstr "Liste de contrôle CCRL"
-
-msgid "CCRL, Ordo, CSV (name,elo)"
-msgstr "CCRL, Ordo, CSV (name,elo)"
 
 msgid "CPU affinity"
 msgstr "Affinité CPU"
@@ -811,14 +808,14 @@ msgstr "Exporter en EPD…"
 msgid "Export filtered…"
 msgstr "Exporter le filtre…"
 
-msgid "Export for CCRL"
-msgstr "Exporter pour CCRL"
-
-msgid "Export for CCRL…"
-msgstr "Exporter pour CCRL…"
-
 msgid "Export for Ordo…"
 msgstr "Exporter pour Ordo…"
+
+msgid "Export for a rating list"
+msgstr "Exporter pour une liste de classement"
+
+msgid "Export for a rating list…"
+msgstr "Exporter pour une liste de classement…"
 
 msgid "Export game…"
 msgstr "Exporter la partie…"
@@ -883,8 +880,8 @@ msgstr "Dossier (vide : « live » dans le dossier du tournoi)"
 msgid "Follow"
 msgstr "Suivre"
 
-msgid "For TLCV, node-tlcv (as used by ccrl.live) and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
-msgstr "Pour TLCV, node-tlcv (utilisé par ccrl.live) et Livius : une partie à la fois, avec les recherches des moteurs, et la table croisée après chaque partie."
+msgid "For TLCV, node-tlcv and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
+msgstr "Pour TLCV, node-tlcv et Livius : une partie à la fois, avec les recherches des moteurs, et la table croisée après chaque partie."
 
 msgid "For a PGN book: number of plies kept. -1 = all."
 msgstr "Pour un livre PGN : nombre de demi-coups gardés. -1 = tous."
@@ -934,8 +931,8 @@ msgstr "Parties ajoutées aussi à {}"
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr "Parties perdues au temps, par un crash ou un coup illégal"
 
-msgid "Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
-msgstr "Les parties d'autres programmes ou de listes de classement (CCRL, CEGT…) comptées avec celles des tournois. Les moteurs sont connus par leur nom, comme dans le PGN ; un joueur qui porte le nom d'un moteur de la bibliothèque, à la casse et aux espaces près, est ce moteur."
+msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
+msgstr "Les parties d'autres programmes ou de listes de classement comptées avec celles des tournois. Les moteurs sont connus par leur nom, comme dans le PGN ; un joueur qui porte le nom d'un moteur de la bibliothèque, à la casse et aux espaces près, est ce moteur."
 
 msgid "Games written to {}"
 msgstr "Parties écrites dans {}"
@@ -1209,8 +1206,8 @@ msgstr "Coups / période"
 msgid "Name"
 msgstr "Nom"
 
-msgid "Name for CCRL"
-msgstr "Nom pour CCRL"
+msgid "Name on the list"
+msgstr "Nom sur la liste"
 
 msgid "Names of the list that are no library engine"
 msgstr "Noms de la liste qui ne sont pas des moteurs de la bibliothèque"
@@ -1488,8 +1485,8 @@ msgstr "Participants"
 msgid "Paste"
 msgstr "Coller"
 
-msgid "Paste a rating list, or open its file: a CCRL list (its text version, or its web page copied from the browser or saved), Ordo's output, or CSV (name,elo). The library engines it names get their reference Elo from it: the same name, letter case and spaces aside."
-msgstr "Colle une liste de classement, ou ouvre son fichier : une liste CCRL (sa version texte, ou sa page web copiée depuis le navigateur ou enregistrée), la sortie d'Ordo, ou du CSV (name,elo). Les moteurs de la bibliothèque qu'elle nomme en reçoivent leur Elo de référence : même nom, à la casse et aux espaces près."
+msgid "Paste a rating list, or open its file: a rating list's text version or its web page (copied from the browser or saved), Ordo's output, or CSV (name,elo). The library engines it names get their reference Elo from it: the same name, letter case and spaces aside."
+msgstr "Colle une liste de classement, ou ouvre son fichier : la version texte d'une liste de classement ou sa page web (copiée depuis le navigateur ou enregistrée), la sortie d'Ordo, ou du CSV (name,elo). Les moteurs de la bibliothèque qu'elle nomme en reçoivent leur Elo de référence : même nom, à la casse et aux espaces près."
 
 msgid "Pause"
 msgstr "Pause"
@@ -1955,6 +1952,9 @@ msgstr "Arrêt des moteurs…"
 msgid "Stopping…"
 msgstr "Arrêt en cours…"
 
+msgid "Submission checklist"
+msgstr "Liste de contrôle avant envoi"
+
 msgid "Suggest"
 msgstr "Suggérer"
 
@@ -2087,8 +2087,8 @@ msgstr "Le premier participant, {}, n'a pas d'Elo de référence."
 msgid "The folder {} is not there any more."
 msgstr "Le dossier {} n'existe plus."
 
-msgid "The games as CCRL testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
-msgstr "Les parties telles que les testeurs du CCRL les envoient : le fichier à ton nom, la date et les conditions, les joueurs comme les listes les écrivent, les rondes renumérotées, les parties annulées et les doublons écartés."
+msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
+msgstr "Les parties telles que les testeurs des listes de classement les envoient : le fichier à ton nom, la date et les conditions, les joueurs comme les listes les écrivent, les rondes renumérotées, les parties annulées et les doublons écartés."
 
 msgid "The games counted, as a PGN of headers, which Ordo and BayesElo read: ordo -p ratings.pgn -o ratings.txt"
 msgstr "Les parties comptées, en PGN d'en-têtes, que lisent Ordo et BayesElo : ordo -p ratings.pgn -o ratings.txt"
@@ -2297,8 +2297,8 @@ msgstr "En attente de lecture · le lire ensuite"
 msgid "Web page"
 msgstr "Page web"
 
-msgid "What a tester checks before sending the games to the CCRL. Export for CCRL… in the Games tab leaves the voided games and the duplicates out."
-msgstr "Ce qu'un testeur vérifie avant d'envoyer les parties au CCRL. « Exporter pour CCRL… » dans l'onglet Parties écarte les parties annulées et les doublons."
+msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
+msgstr "Ce qu'un testeur vérifie avant d'envoyer les parties à une liste de classement. « Exporter pour une liste de classement… » dans l'onglet Parties écarte les parties annulées et les doublons."
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "Quand il s'est fixé sur le coup joué, en moyenne : une décision bien avant la fin du temps passé dit que le temps a été mal employé."

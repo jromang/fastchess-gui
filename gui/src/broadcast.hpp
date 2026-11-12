@@ -123,7 +123,7 @@ struct BroadcastSnapshot {
 // uploading them never reads half a file. Returns an error message, empty on success.
 std::string writeBroadcastFiles(const BroadcastSnapshot& s, const std::filesystem::path& dir);
 
-// A TLCS compatible server: TLCV clients, node-tlcv (ccrl.live) and Livius log on over UDP and follow one game:
+// A TLCS compatible server: TLCV clients, node-tlcv and Livius log on over UDP and follow one game:
 // players, moves, clocks, the engines' searches, the result, and the crosstable, sent again after every game.
 class TlcsServer {
    public:

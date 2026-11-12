@@ -413,12 +413,12 @@ TEST_CASE("rating list: games of several tournaments, engines by name, filters a
     CHECK(ratingListCsv(all).rfind("rank,engine", 0) == 0);
 
     // The same games as a database, with imported PGN files: headers only, and with moves.
-    std::ofstream(root / "ccrl.pgn") << "[White \"A\"]\n[Black \"D\"]\n[Result \"1-0\"]\n[Date \"2024.01.31\"]\n\n"
+    std::ofstream(root / "list.pgn") << "[White \"A\"]\n[Black \"D\"]\n[Result \"1-0\"]\n[Date \"2024.01.31\"]\n\n"
                                         "[White \"D\"]\n[Black \"A\"]\n[Result \"1/2-1/2\"]\n\n";
     std::ofstream(root / "games.pgn") << "[Event \"x\"]\n[White \"C\"]\n[Black \"D\"]\n[Result \"0-1\"]\n"
                                          "[TimeControl \"60+0.6\"]\n\n1. e4 e5 0-1\n\n"
                                          "[Event \"x\"]\n[White \"C\"]\n[Black \"D\"]\n[Result \"*\"]\n\n1. e4 *\n";
-    const auto db = readGameDb(dirs, {root / "ccrl.pgn", root / "games.pgn", root / "missing.pgn"});
+    const auto db = readGameDb(dirs, {root / "list.pgn", root / "games.pgn", root / "missing.pgn"});
     CHECK(db.sources.size() == 4);
     CHECK(db.games.size() == 4u + 2u + 1u);  // the unfinished game does not count
     CHECK(db.games[4].played_at == 1706659200000);

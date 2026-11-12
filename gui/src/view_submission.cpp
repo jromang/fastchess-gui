@@ -1,4 +1,4 @@
-// For the CCRL testers: the export of a tournament's games as the lists want them (Games tab).
+// For the rating list testers: the export of a tournament's games as the lists want them (Games tab).
 
 #include <algorithm>
 #include <ctime>
@@ -69,17 +69,17 @@ int egtbPieces(const tour::TournamentSpec& spec) {
 
 }  // namespace
 
-void App::openCcrlExport() {
+void App::openSubmissionExport() {
     const auto* t = run_.tournament();
     if (!t) return;
     const auto& spec = t->spec();
 
-    auto& e                    = ccrl_.e;
-    std::tie(e.tester, e.site) = storage_.ccrlTester();
+    auto& e                    = submission_.e;
+    std::tie(e.tester, e.site) = storage_.submissionTester();
     e.date                     = today();
     e.names.clear();
     for (const auto& p : spec.participants) {
-        e.names[p.id] = tour::ccrlName(p.engine.name, tour::optionValue(p.engine, "Threads", 1));
+        e.names[p.id] = tour::listName(p.engine.name, tour::optionValue(p.engine, "Threads", 1));
     }
 
     // The seed (a gauntlet's) or the first engine gives the hash; a gauntlet is named after its seed and the day it
@@ -94,33 +94,34 @@ void App::openCcrlExport() {
         const auto& seed = spec.participants.front();
         e.hash_mb        = tour::optionValue(seed.engine, "Hash", 0);
         e.event          = spec.format == tour::Format::Gauntlet && spec.seeds == 1 && first > 0
-                               ? tour::ccrlEvent(e.names[seed.id], first)
+                               ? tour::submissionEvent(e.names[seed.id], first)
                                : spec.name;
     }
     e.book = spec.conditions.opening.file.empty() ? std::string()
                                                   : std::filesystem::path(spec.conditions.opening.file).stem().string();
     e.egtb = egtbPieces(spec);
-    ccrl_.open = true;
+    submission_.open = true;
 }
 
-void App::drawCcrlExport() {
+void App::drawSubmissionExport() {
     const auto* t = run_.tournament();
-    if (ccrl_.open) {
-        ImGui::OpenPopup(TR("Export for CCRL###ccrl_export"));
-        ccrl_.open = false;
+    if (submission_.open) {
+        ImGui::OpenPopup(TR("Export for a rating list###submission_export"));
+        submission_.open = false;
     }
     ImGui::SetNextWindowSize(ImVec2(px(720), 0), ImGuiCond_Appearing);
-    if (!ImGui::BeginPopupModal(TR("Export for CCRL###ccrl_export"), nullptr)) return;
+    if (!ImGui::BeginPopupModal(TR("Export for a rating list###submission_export"), nullptr)) return;
     if (!t) {
         ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
         return;
     }
-    auto& e = ccrl_.e;
+    auto& e = submission_.e;
 
-    ImGui::TextWrapped("%s", TR("The games as CCRL testers send them: the file named after you, the date and the "
-                                "conditions, the players as the lists write them, the rounds numbered again, the "
-                                "voided games and the duplicates left out."));
+    ImGui::TextWrapped("%s",
+                       TR("The games as rating list testers send them: the file named after you, the date and the "
+                          "conditions, the players as the lists write them, the rounds numbered again, the "
+                          "voided games and the duplicates left out."));
     ImGui::Spacing();
 
     const float label = px(150);
@@ -130,43 +131,43 @@ void App::drawCcrlExport() {
         ImGui::SameLine(label);
     };
     field(TR("Tester"));
-    editText("##ccrl_tester", e.tester, px(260));
+    editText("##submission_tester", e.tester, px(260));
     ImGui::SameLine();
     ImGui::TextUnformatted(TR("Site"));
     ImGui::SameLine();
-    editText("##ccrl_site", e.site);
+    editText("##submission_site", e.site);
     field(TR("Date"));
-    editText("##ccrl_date", e.date, px(120));
+    editText("##submission_date", e.date, px(120));
     field(TR("Event"));
-    editText("##ccrl_event", e.event);
+    editText("##submission_event", e.event);
     field(TR("Hash (MB)"));
     ImGui::SetNextItemWidth(px(120));
-    ImGui::InputInt("##ccrl_hash", &e.hash_mb, 0);
+    ImGui::InputInt("##submission_hash", &e.hash_mb, 0);
     ImGui::SameLine();
     ImGui::TextUnformatted(TR("Book"));
     ImGui::SameLine();
-    editText("##ccrl_book", e.book, px(220));
+    editText("##submission_book", e.book, px(220));
     ImGui::SameLine();
     ImGui::TextUnformatted(TR("EGTB pieces"));
     ImGui::SameLine();
     ImGui::SetNextItemWidth(px(60));
-    ImGui::InputInt("##ccrl_egtb", &e.egtb, 0);
+    ImGui::InputInt("##submission_egtb", &e.egtb, 0);
     e.hash_mb = std::max(0, e.hash_mb);
     e.egtb    = std::clamp(e.egtb, 0, 7);
 
-    // The names, as the CCRL lists write them: "<engine> 64-bit NCPU" by default, to correct when a list spells
+    // The names, as the lists write them: "<engine> 64-bit NCPU" by default, to correct when a list spells
     // the engine otherwise.
     ImGui::SeparatorText(TR("Players in the PGN"));
     const auto& spec   = t->spec();
     const float row_h  = ImGui::GetFrameHeight() + 2 * ImGui::GetStyle().CellPadding.y;
     const float rows_h = row_h * (static_cast<float>(spec.participants.size()) + 1) + px(2);
-    if (ImGui::BeginTable("##ccrl_names", 3,
+    if (ImGui::BeginTable("##submission_names", 3,
                           ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp,
                           ImVec2(0, std::min(px(300), rows_h)))) {
         ImGui::TableSetupScrollFreeze(0, 1);
         ImGui::TableSetupColumn(TR("Engine"));
         ImGui::TableSetupColumn(TR("Threads"), ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn(TR("Name for CCRL"));
+        ImGui::TableSetupColumn(TR("Name on the list"));
         ImGui::TableHeadersRow();
         for (const auto& p : spec.participants) {
             ImGui::PushID(p.id);
@@ -181,25 +182,25 @@ void App::drawCcrlExport() {
             ImGui::TableNextColumn();
             ImGui::TextDisabled("%d", tour::optionValue(p.engine, "Threads", 1));
             ImGui::TableNextColumn();
-            editText("##ccrl_name", e.names[p.id]);
+            editText("##submission_name", e.names[p.id]);
             ImGui::PopID();
         }
         ImGui::EndTable();
     }
 
     ImGui::Checkbox(TR("Leave out the games lost by a crash or a stall"), &e.leave_out_crashes);
-    ImGui::Checkbox(TR("Also as a zip"), &ccrl_.zip);
+    ImGui::Checkbox(TR("Also as a zip"), &submission_.zip);
 
-    const auto stem = tour::ccrlFileStem(e);
+    const auto stem = tour::submissionFileStem(e);
     ImGui::TextDisabled("%s", (stem + ".pgn").c_str());
-    if (ccrl_.zip) ImGui::TextDisabled("%s", tour::ccrlZipName(stem).c_str());
+    if (submission_.zip) ImGui::TextDisabled("%s", tour::submissionZipName(stem).c_str());
 
     ImGui::Spacing();
     const bool ready = !e.tester.empty() && !e.event.empty();
     ImGui::BeginDisabled(!ready);
     if (ImGui::Button(TR("Export…"))) {
-        storage_.setCcrlTester(e.tester, e.site);
-        dialogs_.saveFile(Dialogs::Purpose::ExportCcrl, {{"PGN", "pgn"}},
+        storage_.setSubmissionTester(e.tester, e.site);
+        dialogs_.saveFile(Dialogs::Purpose::ExportSubmission, {{"PGN", "pgn"}},
                           (t->dir().parent_path() / (tour::fileNameOf(stem) + ".pgn")).string());
         ImGui::CloseCurrentPopup();
     }
@@ -212,7 +213,7 @@ void App::drawCcrlExport() {
     ImGui::EndPopup();
 }
 
-void App::writeCcrlExport(const std::string& path) {
+void App::writeSubmissionExport(const std::string& path) {
     const auto* t = run_.tournament();
     if (!t) return;
     const std::filesystem::path file(path);
@@ -224,14 +225,14 @@ void App::writeCcrlExport(const std::string& path) {
     }
 
     // A PGN named x.zip would be overwritten by its own zip.
-    const auto zip = tour::ccrlZipPath(file);
-    if (ccrl_.zip && zip.empty()) {
+    const auto zip = tour::submissionZipPath(file);
+    if (submission_.zip && zip.empty()) {
         Console::instance().add(trf("{} would be both the PGN file and its zip: choose a name ending in .pgn.", path),
                                 true);
         return;
     }
 
-    const auto out = tour::ccrlGames(t->pgnPath(), t->results(), t->spec(), ccrl_.e);
+    const auto out = tour::submissionGames(t->pgnPath(), t->results(), t->spec(), submission_.e);
     {
         std::ofstream pgn(file, std::ios::binary | std::ios::trunc);
         pgn << out.pgn;
@@ -254,7 +255,7 @@ void App::writeCcrlExport(const std::string& path) {
     }
     Console::instance().add(message, out.unreadable > 0);
 
-    if (ccrl_.zip) {
+    if (submission_.zip) {
         // The zip next to the PGN, named as the testers' scripts name it, holding the PGN under its own name.
         std::string error;
         if (writeZip(zip, file.filename().string(), out.pgn, &error)) {
@@ -265,24 +266,24 @@ void App::writeCcrlExport(const std::string& path) {
     }
 }
 
-void App::drawCcrlChecklist() {
+void App::drawSubmissionChecklist() {
     const auto* t = run_.tournament();
     if (!t || !t->finished()) return;
-    if (ccrl_facts_for_ != t->version()) {
-        ccrl_facts_     = tour::ccrlFacts(t->spec(), t->results(), t->totalGames());
-        ccrl_facts_for_ = t->version();
+    if (submission_facts_for_ != t->version()) {
+        submission_facts_     = tour::submissionFacts(t->spec(), t->results(), t->totalGames());
+        submission_facts_for_ = t->version();
         // The tablebase directory is read here, not every frame: its files are listed.
-        const auto it   = std::find_if(ccrl_facts_.engines.begin(), ccrl_facts_.engines.end(),
-                                       [](const auto& e) { return !e.syzygy.empty(); });
-        ccrl_tb_pieces_ = 0;
-        if (it != ccrl_facts_.engines.end()) {
+        const auto it         = std::find_if(submission_facts_.engines.begin(), submission_facts_.engines.end(),
+                                             [](const auto& e) { return !e.syzygy.empty(); });
+        submission_tb_pieces_ = 0;
+        if (it != submission_facts_.engines.end()) {
             fastchess::config::TbAdjudication tb;
-            tb.enabled      = true;
-            tb.syzygy_dirs  = it->syzygy;
-            ccrl_tb_pieces_ = tablebasePieces(tb);
+            tb.enabled            = true;
+            tb.syzygy_dirs        = it->syzygy;
+            submission_tb_pieces_ = tablebasePieces(tb);
         }
     }
-    const auto& f    = ccrl_facts_;
+    const auto& f    = submission_facts_;
     const auto& spec = t->spec();
     const auto name  = [&](int id) {
         const auto* p = spec.participant(id);
@@ -333,10 +334,10 @@ void App::drawCcrlChecklist() {
     };
 
     ImGui::Spacing();
-    ui::beginCard("ccrl_card");
-    ImGui::TextUnformatted(TR("CCRL checklist"));
+    ui::beginCard("submission_card");
+    ImGui::TextUnformatted(TR("Submission checklist"));
     ui::help(
-        TR("What a tester checks before sending the games to the CCRL. Export for CCRL… in the Games tab "
+        TR("What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab "
            "leaves the voided games and the duplicates out."));
 
     // Games and colours.
@@ -392,12 +393,12 @@ void App::drawCcrlChecklist() {
         }
     }
 
-    // The conditions. The CCRL's hash depends on the list and the threads: the values are shown, not judged.
+    // The conditions. The hash a list wants depends on the list and the threads: the values are shown, not judged.
     std::string hash;
     const bool same_hash = std::all_of(f.engines.begin(), f.engines.end(), [&](const auto& e) {
         return e.hash == f.engines.front().hash && e.threads == f.engines.front().threads;
     });
-    const auto hash_of   = [](const tour::CcrlFacts::Engine& e) {
+    const auto hash_of   = [](const tour::SubmissionFacts::Engine& e) {
         const auto mb = e.hash > 0 ? fmt::format("{} MB", e.hash) : std::string(TR("its default"));
         return trn("{}, {} thread", "{}, {} threads", e.threads, mb, e.threads);
     };
@@ -424,7 +425,7 @@ void App::drawCcrlChecklist() {
     if (with == 0) {
         tablebases = TR("no engine has a SyzygyPath");
     } else {
-        const int pieces = ccrl_tb_pieces_;
+        const int pieces = submission_tb_pieces_;
         tablebases       = with == f.engines.size()
                                ? trf("{}-man Syzygy for every engine", pieces)
                                : trf("{}-man Syzygy for {} of {} engines", pieces, with, f.engines.size());

@@ -1,6 +1,6 @@
 #pragma once
 
-// Every game of every tournament of the profile, and of PGN files imported for the ratings (CCRL, CEGT, other
+// Every game of every tournament of the profile, and of PGN files imported for the ratings (rating lists, other
 // programs): who played whom, at which time control, when, the result and how the game ended. What the rating
 // list, the engine cards and the head to head records are computed from. Read only; tournaments that are running
 // can be included.

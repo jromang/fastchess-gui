@@ -34,7 +34,7 @@
 
 #include <tour/book_scan.hpp>
 #include <tour/by_opening.hpp>
-#include <tour/ccrl.hpp>
+#include <tour/submission.hpp>
 #include <tour/game_db.hpp>
 #include <tour/incidents.hpp>
 #include <tour/ratinglist.hpp>
@@ -372,7 +372,7 @@ class App {
     void setInactive(const std::vector<std::string>& names, bool inactive);
     void drawImportPreview();
     void addImported();  // the engines chosen
-    // A rating list (CCRL, Ordo, CSV) whose ratings become the reference Elo of the library engines it names, once
+    // A rating list (a list site's text or page, Ordo, CSV) whose ratings become the reference Elo of the library engines it names, once
     // seen in a preview.
     void openRatingImport(const std::string& text = {});
     void loadRatingList(const std::string& path);  // a file chosen, read into the preview
@@ -417,11 +417,11 @@ class App {
     [[nodiscard]] bool gamesFiltered() const;  // some games of the Games tab are hidden
     void selectGame(int index);
     void exportGames(const std::string& path, bool all);
-    // Export for CCRL: the dialog, then the files once their place is chosen (view_ccrl.cpp).
-    void openCcrlExport();
-    void drawCcrlExport();
-    void writeCcrlExport(const std::string& path);
-    void drawCcrlChecklist();  // in the overview of a finished tournament
+    // Export for a rating list: the dialog, then the files once their place is chosen (view_submission.cpp).
+    void openSubmissionExport();
+    void drawSubmissionExport();
+    void writeSubmissionExport(const std::string& path);
+    void drawSubmissionChecklist();  // in the overview of a finished tournament
 
     void handleDialogs();
     void saveSetupSoon() { setup_dirty_ = true; }
@@ -610,14 +610,14 @@ class App {
     int standings_view_  = -1;                            // 0 table, 1 crosstable, -1 as suits the tournament
     std::optional<std::pair<int, int>> crosstable_cell_;  // participant ids (row, column)
     std::optional<int> standings_engine_;  // participant id whose opponents are listed under the table
-    struct CcrlDialog {  // Export for CCRL, from the Games tab
+    struct SubmissionDialog {  // Export for a rating list, from the Games tab
         bool open = false;
         bool zip  = true;
-        tour::CcrlExport e;
-    } ccrl_;
-    tour::CcrlFacts ccrl_facts_;  // of the checklist, for the tournament at this version()
-    uint64_t ccrl_facts_for_ = ~uint64_t(0);
-    int ccrl_tb_pieces_      = 0;  // the pieces of the first engine's SyzygyPath, read with ccrl_facts_
+        tour::SubmissionExport e;
+    } submission_;
+    tour::SubmissionFacts submission_facts_;  // of the checklist, for the tournament at this version()
+    uint64_t submission_facts_for_ = ~uint64_t(0);
+    int submission_tb_pieces_      = 0;  // the pieces of the first engine's SyzygyPath, read with submission_facts_
     std::string template_name_;
     std::vector<std::string> template_names_;  // the templates folder, listed now and then rather than every frame
     std::chrono::steady_clock::time_point templates_listed_{};

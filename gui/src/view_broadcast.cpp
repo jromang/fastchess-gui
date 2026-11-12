@@ -87,7 +87,7 @@ void App::drawBroadcast() {
     // TLCS.
     ui::beginCard("bc_tlcs");
     ui::pageTitle(TR("TLCS server"));
-    ImGui::TextDisabled("%s", TR("For TLCV, node-tlcv (as used by ccrl.live) and Livius: one game at a time, with the "
+    ImGui::TextDisabled("%s", TR("For TLCV, node-tlcv and Livius: one game at a time, with the "
                                  "engines' searches, and the crosstable after every game."));
     toggle(TR("Run the TLCS server"), setup_.broadcast_tlcs);
     ImGui::SetNextItemWidth(px(120));

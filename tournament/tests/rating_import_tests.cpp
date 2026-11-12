@@ -18,16 +18,16 @@ std::vector<std::string> read(const std::string& text) {
 
 }  // namespace
 
-// The samples are taken from the CCRL 40/15 pages of November 2026 (computerchess.org.uk/ccrl/4040/) and from Ordo
+// The samples are taken from the 40/15 pages of a rating list site (November 2026) and from Ordo
 // output posted on talkchess.com and sites.google.com/site/computerschess, cut short.
 
-TEST_CASE("rating list: CCRL's text list, its title and footer left out") {
-    const std::string text = R"(CCRL 40/15 Rating List - All engines, best versions only
+TEST_CASE("rating list: a list site's text list, its title and footer left out") {
+    const std::string text = R"(Engine List 40/15 Rating List - All engines, best versions only
 2483177 games played by 4792 programs, run by 31 testers
 Ponder off, General books (up to 12 moves), 3-4-5 piece EGTB
 Time control: Equivalent to 40 moves in 15 minutes on an Intel i7-4770k.
 Computed on November 7, 2026 with Bayeselo based on 2'483'177 games
-Tested by CCRL team, 2005-2026, http://ccrl.chessdom.com/ccrl/4040/
+Tested by the list team, 2005-2026, http://ratings.example.org/4040/
 
    Rank                 Engine                   Elo   +    -   Score  AvOp  Games
 
@@ -41,7 +41,7 @@ Tested by CCRL team, 2005-2026, http://ccrl.chessdom.com/ccrl/4040/
 
     737 BACE 4.6                                1280  +22  -22  21.5% +259.2  1027
 
-Back to CCRL 40/15
+Back to Engine List 40/15
 Last games added on November 7, 2026
 )";
     CHECK(read(text) == std::vector<std::string>{"Stockfish 19 64-bit 4CPU 3650", "Triumviratus 8.0 64-bit 4CPU 3650",
@@ -59,7 +59,7 @@ Last games added on November 7, 2026
     CHECK(read(windows) == read(text));
 }
 
-TEST_CASE("rating list: CCRL's text list saved as a web page") {
+TEST_CASE("rating list: a list site's text list saved as a web page") {
     const std::string html =
         "<html><body><pre>\n"
         "&nbsp;&nbsp;&nbsp;&nbsp;1-2&nbsp;<span class=\"oss\"><a href=\"engine_details.cgi?match_length=30&amp;"
@@ -78,7 +78,7 @@ TEST_CASE("rating list: CCRL's text list saved as a web page") {
     CHECK(read(html) == std::vector<std::string>{"Stockfish 19 64-bit 4CPU 3650", "Triumviratus 8.0 64-bit 4CPU 3650"});
 }
 
-TEST_CASE("rating list: CCRL's web page, its rating table and the crosstable that names the engines again") {
+TEST_CASE("rating list: a list site's web page, its rating table and the crosstable that names the engines again") {
     const std::string html = R"(<table border=0 cellspacing=0 cellpadding=0 class=rating_table>
 <tr><td rowspan=2 class=header>Rank</td><td rowspan=2 class=header>Name</td><td colspan=3 class=header>Rating</td><td rowspan=2 class=header>Score</td><td rowspan=2 class=header>Average<br>Opponent</td><td rowspan=2 class=header>Draws</td><td rowspan=2 class=header>Games</td><td rowspan=2 class=header>LOS</td></tr>
 <tr><td class=header>Elo</td><td class=header>+</td><td class=header>&#8722;</td></tr>
@@ -95,7 +95,7 @@ TEST_CASE("rating list: CCRL's web page, its rating table and the crosstable tha
     CHECK(read(html) == std::vector<std::string>{"Stockfish 19 64-bit 4CPU 3650", "Reckless 0.9.0 64-bit 4CPU 3644"});
 }
 
-TEST_CASE("rating list: CCRL's table copied from the browser and pasted, cells apart by tabs") {
+TEST_CASE("rating list: a list site's table copied from the browser and pasted, cells apart by tabs") {
     const std::string text =
         "Rank\tName\tRating\tScore\tAverage Opponent\tDraws\tGames\tLOS\n"
         "Elo\t+\t\xE2\x88\x92\n"

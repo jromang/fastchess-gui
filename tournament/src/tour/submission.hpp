@@ -1,8 +1,8 @@
 #pragma once
 
-// Games for the CCRL (Computer Chess Rating Lists), packaged the way its testers send them: the file named after
-// the tester, the date and the conditions, the players named as the lists write them, the rounds numbered again.
-// TorsGUI's CCRL export does the same, after the testers' export_ccrl.py script.
+// Games for a rating list, packaged the way its testers send them: the file named after the tester, the date and
+// the conditions, the players named as the lists write them, the rounds numbered again. TorsGUI's export does the
+// same, after the testers' own export script.
 
 #include <cstddef>
 #include <cstdint>
@@ -19,14 +19,14 @@
 
 namespace fcg::tour {
 
-// A player as the CCRL lists write it: "Stockfish 19" on 4 threads is "Stockfish 19 64-bit 4CPU", on one thread
+// A player as the lists write it: "Stockfish 19" on 4 threads is "Stockfish 19 64-bit 4CPU", on one thread
 // "Stockfish 19 64-bit". A name that already ends with "64-bit" (any case) or "NCPU" does not get them twice.
-[[nodiscard]] std::string ccrlName(const std::string& name, int threads);
+[[nodiscard]] std::string listName(const std::string& name, int threads);
 
 // The integer value of a UCI option of the engine (Threads, Hash), `fallback` when it has none or it is no number.
 [[nodiscard]] int optionValue(const fastchess::EngineConfiguration& engine, std::string_view option, int fallback);
 
-struct CcrlExport {
+struct SubmissionExport {
     std::string tester;
     std::string site;   // the Site tag of every game; empty: as played
     std::string date;   // of the submission, YYYY-MM-DD
@@ -39,22 +39,22 @@ struct CcrlExport {
 };
 
 // The file name without its extension: "[Tester 2026-11-12] Event (hash 256MB) (book UHO) (egtb 5-man)".
-[[nodiscard]] std::string ccrlFileStem(const CcrlExport& e);
+[[nodiscard]] std::string submissionFileStem(const SubmissionExport& e);
 
 // The zip file of a stem: spaces, brackets and parentheses made one "_", none at the ends, ".zip" after it:
 // "Tester_2026-11-12_Event_hash_256MB_book_UHO_egtb_5-man.zip".
-[[nodiscard]] std::string ccrlZipName(const std::string& stem);
+[[nodiscard]] std::string submissionZipName(const std::string& stem);
 
-// The zip of the export written to `pgn`: next to it, named by ccrlZipName() after its stem. Empty when that would
-// be the PGN file itself (a PGN named "x.zip"), the names compared as Windows does, letter case aside.
-[[nodiscard]] std::filesystem::path ccrlZipPath(const std::filesystem::path& pgn);
+// The zip of the export written to `pgn`: next to it, named by submissionZipName() after its stem. Empty when that
+// would be the PGN file itself (a PGN named "x.zip"), the names compared as Windows does, letter case aside.
+[[nodiscard]] std::filesystem::path submissionZipPath(const std::filesystem::path& pgn);
 
-// The event of a gauntlet as the CCRL testers name it, after its seed and the day its first game started (local
+// The event of a gauntlet as the testers name it, after its seed and the day its first game started (local
 // time): "Stockfish 19 64-bit 4CPU - Nov 12".
-[[nodiscard]] std::string ccrlEvent(const std::string& seed, int64_t first_game_ms);
+[[nodiscard]] std::string submissionEvent(const std::string& seed, int64_t first_game_ms);
 
 // What went into the export, and what was left out.
-struct CcrlGames {
+struct SubmissionGames {
     std::string pgn;
     std::size_t games      = 0;
     std::size_t voided     = 0;  // games that no longer count (replayed, of a withdrawn or replaced engine)
@@ -63,17 +63,17 @@ struct CcrlGames {
     std::size_t unreadable = 0;  // games the PGN file no longer holds
 };
 
-// The games of a tournament for the CCRL, from its cutechess-style PGN file (`pgn`, where results point): each
+// The games of a tournament for a rating list, from its cutechess-style PGN file (`pgn`, where results point): each
 // game that counts once, in the order they ended, with its Event, Site, Round (1 to N), White and Black tags
 // rewritten, and the PlyCount of a game lost by an illegal move giving the moves played (fastchess counts the
-// illegal one, which is not in the movetext, and the CCRL scripts take such a game for a broken one). Every other
+// illegal one, which is not in the movetext, and the testers' scripts take such a game for a broken one). Every other
 // tag stays as played.
-[[nodiscard]] CcrlGames ccrlGames(const std::filesystem::path& pgn, const std::vector<GameResult>& results,
-                                  const TournamentSpec& spec, const CcrlExport& e);
+[[nodiscard]] SubmissionGames submissionGames(const std::filesystem::path& pgn, const std::vector<GameResult>& results,
+                                              const TournamentSpec& spec, const SubmissionExport& e);
 
-// What a tester checks before sending a tournament's games to the CCRL (TorsGUI's guide, §7), as found in its
+// What a tester checks before sending a tournament's games to a rating list (TorsGUI's guide, §7), as found in its
 // settings and results: the GUI writes the checklist from it.
-struct CcrlFacts {
+struct SubmissionFacts {
     uint64_t played = 0;  // games that count
     std::optional<uint64_t> planned;
     // Encounters of which one game only counts (the game with colours reversed missing), by participant ids.
@@ -96,8 +96,8 @@ struct CcrlFacts {
     std::string adjudication_tb;  // the tablebases of the adjudication, empty without
 };
 
-[[nodiscard]] CcrlFacts ccrlFacts(const TournamentSpec& spec, const std::vector<GameResult>& results,
-                                  std::optional<uint64_t> planned);
+[[nodiscard]] SubmissionFacts submissionFacts(const TournamentSpec& spec, const std::vector<GameResult>& results,
+                                              std::optional<uint64_t> planned);
 
 // The value of a tag of one game's PGN text, empty when it has none.
 [[nodiscard]] std::string pgnTag(std::string_view game, std::string_view tag);

@@ -38,7 +38,7 @@ class Dialogs {
         ExportSuiteCsv,
         TournamentsFolder,
         PgnOut,
-        ExportCcrl,
+        ExportSubmission,
         EngineOption  // a file or a folder for a UCI option (EvalFile, SyzygyPath)
     };
 

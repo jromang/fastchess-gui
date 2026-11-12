@@ -273,7 +273,7 @@ void App::drawRatingFilters() {
     ui::sameLineOrWrap(TR("PGN files…"));
     if (ImGui::Button(TR("PGN files…"))) ImGui::OpenPopup("rating_pgns");
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", TR("Games of other programs or rating lists (CCRL, CEGT…) counted with the "
+        ImGui::SetTooltip("%s", TR("Games of other programs or rating lists counted with the "
                                    "tournaments'. Engines are known by their name, as in the PGN; a player whose "
                                    "name is a library engine's, letter case and spaces aside, is that engine."));
     }

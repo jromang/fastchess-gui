@@ -1,6 +1,6 @@
 #pragma once
 
-// A zip archive of one file, as the CCRL testers send their games: deflated with stb_image_write's compressor
+// A zip archive of one file, as the rating list testers send their games: deflated with stb_image_write's compressor
 // (the one of the PNG screenshots), stored as is when that does not make it smaller.
 
 #include <cstdint>

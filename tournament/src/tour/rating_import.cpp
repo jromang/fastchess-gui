@@ -305,7 +305,7 @@ std::optional<ListedRating> fromOrdo(std::string_view line) {
     return made(withoutRank(name), rating(first));
 }
 
-// CCRL's text lists: "    1-2 Stockfish 19 64-bit 4CPU                3650  +16  -16  53.4% ...".
+// The text lists of rating list sites: "    1-2 Stockfish 19 64-bit 4CPU                3650  +16  -16  53.4% ...".
 std::optional<ListedRating> fromColumns(std::string_view line) {
     auto cells = fields(line);
     if (cells.size() >= 2 && isRank(cells[0])) cells.erase(cells.begin());

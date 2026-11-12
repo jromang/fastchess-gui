@@ -1,4 +1,4 @@
-#include "ccrl.hpp"
+#include "submission.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -95,7 +95,7 @@ void setTag(std::string& game, std::string_view tag, const std::string& value) {
 
 }  // namespace
 
-std::string ccrlName(const std::string& name, int threads) {
+std::string listName(const std::string& name, int threads) {
     std::string n = trim(name);
     // A "4CPU" at the end is the threads of another export: the threads given here replace it.
     if (const auto space = n.find_last_of(' '); space != std::string::npos && endsWithNoCase(n, "CPU")) {
@@ -121,12 +121,12 @@ int optionValue(const fastchess::EngineConfiguration& engine, std::string_view o
     return fallback;
 }
 
-std::string ccrlFileStem(const CcrlExport& e) {
+std::string submissionFileStem(const SubmissionExport& e) {
     return fmt::format("[{} {}] {} (hash {}MB) (book {}) (egtb {}-man)", e.tester, e.date, e.event, e.hash_mb, e.book,
                        e.egtb);
 }
 
-std::string ccrlZipName(const std::string& stem) {
+std::string submissionZipName(const std::string& stem) {
     std::string out;
     for (const char c : stem) {
         const bool blank = std::isspace(static_cast<unsigned char>(c)) || c == '[' || c == ']' || c == '(' || c == ')';
@@ -140,8 +140,8 @@ std::string ccrlZipName(const std::string& stem) {
     return out + ".zip";
 }
 
-std::filesystem::path ccrlZipPath(const std::filesystem::path& pgn) {
-    const auto name  = ccrlZipName(pgn.stem().string());
+std::filesystem::path submissionZipPath(const std::filesystem::path& pgn) {
+    const auto name  = submissionZipName(pgn.stem().string());
     const auto lower = [](std::string s) {
         for (auto& c : s) {
             if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
@@ -152,7 +152,7 @@ std::filesystem::path ccrlZipPath(const std::filesystem::path& pgn) {
     return pgn.parent_path() / name;
 }
 
-std::string ccrlEvent(const std::string& seed, int64_t first_game_ms) {
+std::string submissionEvent(const std::string& seed, int64_t first_game_ms) {
     static constexpr const char* MONTHS[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
                                              "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
     const auto t                          = static_cast<std::time_t>(first_game_ms / 1000);
@@ -180,9 +180,9 @@ std::string pgnTag(std::string_view game, std::string_view tag) {
     return out;
 }
 
-CcrlGames ccrlGames(const std::filesystem::path& pgn, const std::vector<GameResult>& results,
-                    const TournamentSpec& spec, const CcrlExport& e) {
-    CcrlGames out;
+SubmissionGames submissionGames(const std::filesystem::path& pgn, const std::vector<GameResult>& results,
+                                const TournamentSpec& spec, const SubmissionExport& e) {
+    SubmissionGames out;
 
     // The games that count, each game of the schedule once (the first recorded), in the order they ended.
     std::vector<const GameResult*> kept;
@@ -241,9 +241,9 @@ CcrlGames ccrlGames(const std::filesystem::path& pgn, const std::vector<GameResu
     return out;
 }
 
-CcrlFacts ccrlFacts(const TournamentSpec& spec, const std::vector<GameResult>& results,
-                    std::optional<uint64_t> planned) {
-    CcrlFacts f;
+SubmissionFacts submissionFacts(const TournamentSpec& spec, const std::vector<GameResult>& results,
+                                std::optional<uint64_t> planned) {
+    SubmissionFacts f;
     f.planned = planned;
 
     std::set<uint64_t> seen;
@@ -282,7 +282,7 @@ CcrlFacts ccrlFacts(const TournamentSpec& spec, const std::vector<GameResult>& r
 
     for (const auto& p : spec.participants) {
         if (!p.active) continue;
-        CcrlFacts::Engine e;
+        SubmissionFacts::Engine e;
         e.id      = p.id;
         e.name    = p.engine.name;
         e.hash    = optionValue(p.engine, "Hash", 0);

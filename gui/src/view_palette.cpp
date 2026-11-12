@@ -82,10 +82,10 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         add(TR("Start"), TR("New tournament"), [this] { startRun(); });
     if (ready) add(TR("Add to the queue"), TR("New tournament"), [this] { enqueue(); });
     if (t && !games_.empty()) {
-        add(TR("Export for CCRL…"), name, [this] {
+        add(TR("Export for a rating list…"), name, [this] {
             page_        = Page::Tournament;
             tab_request_ = Tab::Games;
-            openCcrlExport();
+            openSubmissionExport();
         });
     }
     if (t && !isMatch()) {

@@ -31,10 +31,10 @@ dragging its right edge. Everything (text, buttons, boards) can also be made lar
 
 **Ctrl+K** opens the command palette: the pages and tabs, the engines of the library (it opens the card), the books,
 the tournaments of the home page, and the actions possible now (*Pause*, *Resume*, *Stop*, *Start*, *Add to the
-queue*, the entries of *Import…*, *Check those not checked*, *Export for CCRL…*, *Copy* the standings…). Letter case
-does not matter and the letters typed need not be adjacent ("rl" finds *Rating list*); names that start with them,
-or with a word that does, come first. Up and Down choose, Enter runs, Escape closes; Ctrl+K is left alone while a
-text field is being typed in. The *?* beside each page's title, or F1, opens this guide at the page's section.
+queue*, the entries of *Import…*, *Check those not checked*, *Export for a rating list…*, *Copy* the standings…).
+Letter case does not matter and the letters typed need not be adjacent ("rl" finds *Rating list*); names that start
+with them, or with a word that does, come first. Up and Down choose, Enter runs, Escape closes; Ctrl+K is left alone
+while a text field is being typed in. The *?* beside each page's title, or F1, opens this guide at the page's section.
 
 A badge on the *Live* tab and on the *Tournaments* button gives the number of games in progress. A number field
 takes arithmetic: `40*60`, `15+10`, with `+ - * /` and parentheses, worked out on Enter or when the field is left;
@@ -59,7 +59,7 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   its clock it used, which tells an engine that plays far too fast or too close to the flag. Its mate PVs are
   checked (see *Check the mate PVs*). Only the last quick test
   is kept, in `tests/` in the profile (with the engine logs of its games that ended badly).
-- **Groups**: free labels separated by commas (`pool A`, `CCRL 40/15`…). The list can be filtered by group or
+- **Groups**: free labels separated by commas (`pool A`, `list 40/15`…). The list can be filtered by group or
   searched, and a group can be added to a tournament in one click. *Notes*: anything to remember about the engine.
 - **A large library**: every engine search (the library, and the engine lists of the other pages) finds a name, the
   name the engine reports, its author, its program path or its notes; the state filter shows the engines that work,
@@ -94,12 +94,12 @@ engines of the folder* then offers only the engines added to it since. The engin
 those to leave out; engines already in the library (same program and arguments) are skipped; the options of the
 others are read; WinBoard engines are imported too.
 
-*Import…* > *A rating list, for the reference Elo…* reads a rating list, pasted or opened: a CCRL list (its text
-version, or its web page, saved or copied), Ordo's output (text or CSV), or a CSV of `name,elo` lines. A name of the
+*Import…* > *A rating list, for the reference Elo…* reads a rating list, pasted or opened: a rating list's text
+version or its web page (saved or copied), Ordo's output (text or CSV), or a CSV of `name,elo` lines. A name of the
 list is a library engine with the same name, or the only one whose name is the same letter case and spaces aside
 (as for the players of imported PGN files, see *Ratings*). The preview shows each engine's reference Elo, old and
-new, ticked to be set, and the names of the list that are no library engine. CCRL names carry their build (`64-bit
-4CPU`): rename the engines to match them if needed.
+new, ticked to be set, and the names of the list that are no library engine. The names of a list often carry their
+build (`64-bit 4CPU`): rename the engines to match them if needed.
 
 **WinBoard engines** (xboard protocol, CECP) are played like the others. The *Protocol* of an engine is found
 out when it is added (*Automatic*), or chosen: UCI or WinBoard. fastchess only speaks UCI: a WinBoard engine is
@@ -257,14 +257,14 @@ A running or opened tournament has a workspace with a header (name, progress, *P
 
 | Tab | Contents |
 |---|---|
-| Overview | Match: Elo and nElo with their 95 % confidence interval, LOS, score, pentanomial counts, SPRT bounds and LLR; *Statistics* (folded) gives fishtest's numbers from the games and from the pairs: score, Elo, nElo and BayesElo with DrawElo, standard deviation per game, LLR of both, the variance ratio of pairs to single games, the RMS bias of the openings, the kinds of balanced pairs and the pairs won over lost, which *Copy* includes; and the charts (Elo and LLR over time, game lengths, how games ended, depth, NPS, time per move and decision time). Tournament: the standings (with *TF*, each engine's losses on time, in orange as soon as there is one; a *!* beside an engine that crashed or played an illegal move), progress by cycle or round, games per hour and time left, the latest results. A finished tournament adds a *CCRL checklist*: all games played, every pair with both colours, no duplicate games, no crashes, time losses or illegal moves (with buttons that open those games), the hash of each engine (shown, not judged), ponder off, the opening book, the tablebases |
+| Overview | Match: Elo and nElo with their 95 % confidence interval, LOS, score, pentanomial counts, SPRT bounds and LLR; *Statistics* (folded) gives fishtest's numbers from the games and from the pairs: score, Elo, nElo and BayesElo with DrawElo, standard deviation per game, LLR of both, the variance ratio of pairs to single games, the RMS bias of the openings, the kinds of balanced pairs and the pairs won over lost, which *Copy* includes; and the charts (Elo and LLR over time, game lengths, how games ended, depth, NPS, time per move and decision time). Tournament: the standings (with *TF*, each engine's losses on time, in orange as soon as there is one; a *!* beside an engine that crashed or played an illegal move), progress by cycle or round, games per hour and time left, the latest results. A finished tournament adds a *Submission checklist*: all games played, every pair with both colours, no duplicate games, no crashes, time losses or illegal moves (with buttons that open those games), the hash of each engine (shown, not judged), ponder off, the opening book, the tablebases |
 | Standings | Points, games, losses on time (*TF*), wins/draws/losses, ratings with their confidence interval, Sonneborn-Berger (Buchholz for a Swiss), byes. *Table* lists them one engine per row; *Crosstable* (round robins, up to 200 engines) shows every pairing. *Order:* by points, score % or seed order (which keeps the columns of a gauntlet's crosstable in place). A click on an engine lists its opponents below: games, with White, with Black, + = −, points and %, with the pairs of which only one game was played marked; a gauntlet opens with its seed selected. *Copy* as text, or as BBCode for a forum post (with a line giving the format, time control, games and book), and in a gauntlet *Gauntlet table as text* or *as BBCode, for a forum* (the seed, then its opponents by their own points, each with points, %, Elo ±, W-L-D, as TorsGUI lays it out); *Export HTML…*; all with *TF* like the headless mode's standings, in the order chosen, and ending with a line giving the games played of those planned, the draw rate, time control, book and event |
 | Bracket | Knockout only: the bracket, round by round, with the score of every match |
 | Schedule | Every game pair by cycle or round, with its state and the opening it plays (once started, or once its round started when the round shares one); editing (see below) |
 | Broadcast | Live files, the TLCS server and the web page (see below) |
 | Live | The games in progress, as a mosaic of boards or one game in focus with the clocks, the running search of each engine (depth, score, nodes, nps, PV in SAN), the move list and the evaluation curve (or, chosen above it, each engine's time per move with its decision time, depth with seldepth, nodes, speed, tablebase hits, or how many plies its PV repeats of what the other engine's PV predicted), with the win/draw/loss shares (`UCI_ShowWDL`, switched on for the engines that have it when they are added) after each search line and as bands under the curve, White's wins at the bottom. Under the board: the 50-move counter (plies since the last capture or pawn move, out of 100), the material difference with the pieces one side has more of, and the pieces left, marked *TB* when the tablebase adjudication can end the game; *Details under the boards* adds them to the mosaic. *Arrows* (beside *Flip*, on by default) draws the move the side to move is thinking of in its engine's colour and the reply it expects, lighter, in the opponent's colour, on the board in focus and the detached ones (not the mosaic). In a gauntlet, *Seed at the bottom* (on by default) shows each new game from the seed's side; *Flip* still turns the board over until the next game. *Detach* opens a board in its own window |
 | Games | The finished games with their opening (ECO code and name), filterable by result (wins, draws, losses, losses on time, crashes and illegal moves, adjudications, wrong PVs), by what the evaluations tell (the engines disagree by N pawns for 3 moves each in a row, an engine's evaluation swings by N pawns from one of its moves to the next, the loser thought it was N pawns better; the game opens at that moment) and by opening (an ECO code or its beginning, a range such as `B20-B99`, or words of the name), with a replay board (← → Home End, or click a move or the curve; the same details under it and the same charts as in *Live*, from the fields the PGN was written with; with the win, draw and loss shares of the engines that report them under the
-evaluation curve) and the export of one, all or the filtered games (*Export all* proposes `<name>.pgn` next to the tournament's folder; the tournament's own PGN files are refused as a target). *Export for CCRL…* writes the games as CCRL testers send them: `[Tester YYYY-MM-DD] Event (hash NMB) (book X) (egtb N-man).pgn`, a zip too if asked; the players named as the lists write them, `<engine> 64-bit 4CPU` (editable for each participant), the rounds numbered again, the `Event` and `Site` tags set, the voided games and the duplicates left out, and those lost by a crash or a stall too unless unticked; the `PlyCount` of a game lost by an illegal move counts only the moves written. The tester and the site are remembered. *Engine log* opens the log of a game that has one (see *Files*) |
+evaluation curve) and the export of one, all or the filtered games (*Export all* proposes `<name>.pgn` next to the tournament's folder; the tournament's own PGN files are refused as a target). *Export for a rating list…* writes the games as rating list testers (e.g. CCRL) send them: `[Tester YYYY-MM-DD] Event (hash NMB) (book X) (egtb N-man).pgn`, a zip too if asked; the players named as the lists write them, `<engine> 64-bit 4CPU` (editable for each participant), the rounds numbered again, the `Event` and `Site` tags set, the voided games and the duplicates left out, and those lost by a crash or a stall too unless unticked; the `PlyCount` of a game lost by an illegal move counts only the moves written. The tester and the site are remembered. *Engine log* opens the log of a game that has one (see *Files*) |
 | Openings | Results by starting position: its game pairs, White's score, the draws, and how many pairs White won twice, Black won twice (the opening favours a colour) or one engine won twice (it tells the engines apart), with the average length. Sorted by any column, filtered to the unbalanced, the drawn or the decisive ones; *Export as EPD…* writes the positions shown, to keep them or to clean a book. A click shows the position and its games |
 
 **Processor use**: while games are played, the processor time of every engine's processes (the engine behind a
@@ -323,7 +323,7 @@ by default) over every game of every tournament in the profile, and of PGN files
 by their name. The games counted can be narrowed at the top of the page, for every tab:
 
 - a time control, a group of the engine library (the games between its engines), the last 30 or 365 days;
-- *Imported games*: the games of the PGN files listed under *PGN files…* (a CCRL or CEGT download, the games of
+- *Imported games*: the games of the PGN files listed under *PGN files…* (a rating list's download, the games of
   another program), read from their headers; their engines are known by the names the PGN gives them, and a name
   that is a library engine's, letter case and spaces aside ("stockfish  17" for "Stockfish 17"), is that engine:
   its games count as the engine's and its reference Elo can anchor them. Nothing looser: "Stockfish 17 64-bit"
@@ -351,7 +351,7 @@ The *Broadcast* tab of a running tournament publishes it while it plays; the sna
   for scripts).
 - **TLCS server** (UDP port, 16001 by default): the protocol of Tom's Live Chess Server, so TLCV and other TLCS
   viewers can follow the tournament (board, clocks, PV, crosstable and the games played). It is checked against
-  node-tlcv, the viewer behind ccrl.live. *One port per game* puts every concurrent game on a port of its own: game
+  node-tlcv. *One port per game* puts every concurrent game on a port of its own: game
   #1 of the *Live* tab on the UDP port, #2 on the next one, and so on. Each port opens when its game starts, with
   its own limits on clients and logons, and gets the crosstable after every game; *Game shown* then does not
   apply.
@@ -402,8 +402,8 @@ fastchess-gui --run FOLDER --lichess new            # a new lichess broadcast; o
 `--lichess` takes the token from the `FCG_LICHESS_TOKEN` environment variable, or the profile's.
 
 The options can be combined. A setup file saved with broadcasting switched on broadcasts the same way without
-them. For viewers outside the local network, open the ports in the router: TLCV and node-tlcv (ccrl.live)
-connect to the TLCS port.
+them. For viewers outside the local network, open the ports in the router: TLCV and node-tlcv connect to
+the TLCS port.
 
 ## Files
 
@@ -415,7 +415,7 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
 - `layout.ini`: the window layout; `fastchess-gui.log`: the log of the last session;
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**, the folder of *Every engine
-  of a folder…*, the tester and site of *Export for CCRL…*, and the lichess token;
+  of a folder…*, the tester and site of *Export for a rating list…*, and the lichess token;
 - `running.json`: the tournament running now, removed when it stops; found at launch, it tells what to resume;
 - `runs/<date>_<A>_vs_<B>/` for a match, `runs/<date>_<name>/` for a tournament (in `runs/` or the chosen
   folder), one folder each, which can be moved, copied, zipped and sent:
@@ -468,8 +468,8 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
   mode and, on Linux, the window is rendered off screen (no window appears; set `SDL_VIDEODRIVER` to override);
 - `--focus WINDOW` opens that page or tab at launch, or: `engines-card` (the first engine's card),
   `engines-refresh` (*Refresh: the new engines of the folder*), `engines-ratings=FILE` (the preview of that rating
-  list), `setup-picker` and `setup-suggest` (*Add an engine…*, with the suggestion made), `ccrl-export` (*Export
-  for CCRL…*), `palette[=TEXT]` (the command palette, with TEXT typed in it);
+  list), `setup-picker` and `setup-suggest` (*Add an engine…*, with the suggestion made), `submission-export`
+  (*Export for a rating list…*), `palette[=TEXT]` (the command palette, with TEXT typed in it);
 - `--select-game N` opens game N (in finishing order) in the *Games* tab as soon as it exists;
 - `--quit-after SECONDS` stops the tournament and quits;
 - `--run`: see *Headless mode*.
