@@ -132,6 +132,14 @@ void Storage::setRatingPgns(const std::vector<fs::path>& files) const {
     save(root_ / "settings.json", settings);
 }
 
+fs::path Storage::engineFolder() const { return fs::path(setting(settings(), "engine_folder", std::string{})); }
+
+void Storage::setEngineFolder(const fs::path& folder) const {
+    auto settings             = this->settings();
+    settings["engine_folder"] = folder.string();
+    save(root_ / "settings.json", settings);
+}
+
 std::string Storage::lichessToken() const { return setting(settings(), "lichess_token", std::string{}); }
 
 void Storage::setLichessToken(const std::string& token) const {

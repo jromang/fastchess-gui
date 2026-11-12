@@ -671,6 +671,7 @@ void App::drawRelaunch() {
     if (ImGui::BeginCombo("##relaunch_engine", relaunch_engine_.c_str(), ImGuiComboFlags_HeightLargest)) {
         std::vector<std::string> names, more;
         for (const auto& e : engines_) {
+            if (e.inactive && e.name != relaunch_engine_) continue;
             names.push_back(e.name);
             more.push_back(engineSearchText(e));
         }

@@ -404,6 +404,10 @@ void App::drawEngines() {
         }
         ImGui::TextDisabled("%s", TR("ChessGUI (ChsGUI_Eng.TXT), cutechess or Banksia (engines.json), Arena…"));
         if (ImGui::MenuItem(TR("Every engine of a folder…"))) dialogs_.openFolder(Dialogs::Purpose::ImportEngineFolder);
+        if (const auto& folder = engineFolder(); !folder.empty()) {
+            if (ImGui::MenuItem(TR("Refresh: the new engines of the folder"))) refreshEngineFolder();
+            ImGui::TextDisabled("%s", folder.string().c_str());
+        }
         ImGui::EndPopup();
     }
     const auto duplicate = [&] {
@@ -441,13 +445,13 @@ void App::drawEngines() {
         for (const auto& e : engines_) {
             const bool gone = e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
             if (gone) missing.push_back(e.name);
-            if (!gone && e.check_ok < 0 && !e.cmd.empty()) unchecked.push_back(e.name);
+            if (!gone && e.check_ok < 0 && !e.cmd.empty() && !e.inactive) unchecked.push_back(e.name);
         }
         if (ImGui::MenuItem(trf("Check those not checked ({})", unchecked.size()).c_str(), nullptr, false,
                             !unchecked.empty()))
             queueChecks(unchecked);
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-            ImGui::SetTooltip("%s", TR("One after the other, not while a tournament plays."));
+            ImGui::SetTooltip("%s", TR("One after the other, not while a tournament plays. Not the inactive ones."));
         if (ImGui::MenuItem(trf("Remove the missing programs ({})…", missing.size()).c_str(), nullptr, false,
                             !missing.empty()))
             askRemove(missing);
@@ -506,8 +510,8 @@ void App::drawEngines() {
             }
             ImGui::SameLine();
         }
-        const char* statuses[] = {TR("Every state"), TR("Works"),           TR("Failed or changed"),
-                                  TR("Not checked"), TR("Program missing"), TR("WinBoard")};
+        const char* statuses[] = {TR("Every state"),     TR("Works"),    TR("Failed or changed"), TR("Not checked"),
+                                  TR("Program missing"), TR("WinBoard"), TR("Inactive")};
         ImGui::SetNextItemWidth(groups.empty() ? -FLT_MIN : half);
         ImGui::Combo("##engine_status", &engine_status_, statuses, IM_ARRAYSIZE(statuses));
     }
@@ -575,15 +579,18 @@ void App::drawEngines() {
                           : engine_status_ == 3 ? !gone && e.check_ok < 0
                           : engine_status_ == 4 ? gone
                           : engine_status_ == 5 ? isWinboard(e)
+                          : engine_status_ == 6 ? e.inactive
                                                 : true;
         if (keep) shown.push_back(i);
     }
     std::stable_sort(shown.begin(), shown.end(),
                      [&](int a, int b) { return lessCaseInsensitive(engines_[a].name, engines_[b].name); });
     bool remove_one = false, duplicate_asked = false;
+    int inactive_asked = -1;  // from the right click's menu: 1 inactive, 0 active again
 
     // Only the engines scroll: the buttons above and the legend below stay in sight.
-    const char* legend   = TR("✓ works · ! problem · ↔ WinBoard · Ctrl or Shift click: several · right click: more");
+    const char* legend =
+        TR("✓ works · ! problem · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right click: more");
     const float legend_h = engines_.empty()
                                ? 0.0f
                                : ImGui::CalcTextSize(legend, nullptr, false, ImGui::GetContentRegionAvail().x).y +
@@ -618,7 +625,10 @@ void App::drawEngines() {
             ImGui::SameLine();
             const auto label  = fmt::format("{}{}##engine{}", e.name, tag, i);
             const bool marked = engine_marked_.count(e.name) > 0;
-            if (ImGui::Selectable(label.c_str(), selected_engine_ == i || marked)) {
+            if (e.inactive) ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+            const bool clicked = ImGui::Selectable(label.c_str(), selected_engine_ == i || marked);
+            if (e.inactive) ImGui::PopStyleColor();
+            if (clicked) {
                 const auto& io = ImGui::GetIO();
                 if (io.KeyCtrl) {
                     // The one selected is part of the marked ones.
@@ -649,9 +659,10 @@ void App::drawEngines() {
                                             : isWinboard(e)   ? std::string(TR("A WinBoard engine."))
                                                               : std::string(TR("Not checked yet."));
                 const bool more           = problem.empty() && !e.check_message.empty();
-                ImGui::SetTooltip("%s %s%s%s%s%s", mark, meaning.c_str(), more ? "\n" : "",
-                                  more ? e.check_message.c_str() : "", e.notes.empty() ? "" : "\n\n",
-                                  e.notes.c_str());
+                ImGui::SetTooltip("%s %s%s%s%s%s%s%s", mark, meaning.c_str(), more ? "\n" : "",
+                                  more ? e.check_message.c_str() : "", e.inactive ? "\n" : "",
+                                  e.inactive ? TR("Inactive: out of the engine pickers.") : "",
+                                  e.notes.empty() ? "" : "\n\n", e.notes.c_str());
             }
             if (ImGui::BeginPopupContextItem()) {
                 if (!marked) {
@@ -665,6 +676,7 @@ void App::drawEngines() {
                         false, !being_read))
                     startProbe(i);
                 if (ImGui::MenuItem(TR("Duplicate"))) duplicate_asked = true;
+                if (ImGui::MenuItem(TR("Inactive"), nullptr, e.inactive)) inactive_asked = e.inactive ? 0 : 1;
                 if (ImGui::MenuItem(TR("Remove…"))) remove_one = true;
                 ImGui::EndPopup();
             }
@@ -697,6 +709,15 @@ void App::drawEngines() {
     }
     if (remove_asked) ImGui::OpenPopup(TR("Remove the engine?###remove"));
     if (duplicate_asked) duplicate();  // after the loop, which holds references into engines_
+    if (inactive_asked >= 0) {
+        // Those marked, or the one right clicked.
+        chosen.clear();
+        for (const auto& e : engines_) {
+            if (engine_marked_.count(e.name)) chosen.push_back(e.name);
+        }
+        if (chosen.empty() && selected_engine_ >= 0) chosen.push_back(engines_[selected_engine_].name);
+        setInactive(chosen, inactive_asked == 1);
+    }
 
     ImGui::EndChild();
     if (ui::splitter("##engine_split", setup_.panes["engines"], page)) saveSetupSoon();
@@ -792,6 +813,11 @@ void App::drawEngines() {
     }
 
     changed |= ImGui::Checkbox(TR("Restart the engine for every game"), &e.restart);
+    ImGui::SameLine(0, ImGui::GetFontSize() * 1.5f);
+    changed |= ImGui::Checkbox(TR("Inactive"), &e.inactive);
+    ui::help(
+        TR("Kept in the library, but out of the engine pickers (setup, suites, quick test, relaunch, adding to a "
+           "tournament) and of Check those not checked. A tournament that has it already plays it as before."));
 
     ui::label(TR("Groups"), label);
     {
@@ -891,7 +917,7 @@ void App::drawEngines() {
                           ImGuiComboFlags_HeightLargest)) {
         std::vector<std::string> names{TR("itself")}, more{""};  // first: the engine itself
         for (const auto& o : engines_) {
-            if (o.name == e.name) continue;
+            if (o.name == e.name || (o.inactive && o.name != quick_test_opponent_)) continue;
             names.push_back(o.name);
             more.push_back(engineSearchText(o));
         }
@@ -1253,19 +1279,46 @@ void App::pollCheck() {
     if (e.uci_options.empty()) startProbe(index);
 }
 
-void App::importEngines(const ImportResult& imported) {
+void App::importEngines(const ImportResult& imported, const std::filesystem::path& refreshed) {
     // Shown first, to choose: a folder scan takes every program, the GUI it holds too (Arena.exe).
     ImportPreview preview;
-    preview.result = imported;
+    preview.result.notes = imported.notes;
+    preview.refreshed    = refreshed.string();
     for (const auto& e : imported.engines) {
-        // Already in the list: not added again.
+        // Already in the list: not added again, nor even shown when the remembered folder is looked in again.
         const bool known =
             std::any_of(engines_.begin(), engines_.end(), [&](const EngineEntry& o) { return sameEngine(o, e); });
+        if (known && !refreshed.empty()) continue;
+        preview.result.engines.push_back(e);
         preview.known.push_back(known);
         preview.chosen.push_back(!known);
     }
     import_preview_      = std::move(preview);
     open_import_preview_ = true;
+}
+
+const std::filesystem::path& App::engineFolder() {
+    if (!engine_folder_) engine_folder_ = storage_.engineFolder();
+    return *engine_folder_;
+}
+
+void App::refreshEngineFolder() {
+    const auto folder = engineFolder();
+    if (folder.empty()) return;
+    ImportResult found;
+    std::error_code ec;
+    if (fs::is_directory(folder, ec))
+        found = findEngines(folder);
+    else
+        found.notes.push_back(trf("The folder {} is not there any more.", folder.string()));
+    importEngines(found, folder);
+}
+
+void App::setInactive(const std::vector<std::string>& names, bool inactive) {
+    for (auto& e : engines_) {
+        if (std::find(names.begin(), names.end(), e.name) != names.end()) e.inactive = inactive;
+    }
+    storage_.saveEngines(engines_);
 }
 
 void App::addImported() {
@@ -1304,9 +1357,18 @@ void App::drawImportPreview() {
     auto& p           = *import_preview_;
     const auto& found = p.result.engines;
 
-    ImGui::TextUnformatted(trn("{} engine found. Untick those to leave out.",
-                               "{} engines found. Untick those to leave out.", found.size(), found.size())
-                               .c_str());
+    if (!p.refreshed.empty()) {
+        ImGui::TextDisabled("%s", p.refreshed.c_str());
+        if (found.empty()) ImGui::TextUnformatted(TR("No new engine in the folder."));
+    }
+    if (!found.empty()) {
+        const auto text = p.refreshed.empty()
+                              ? trn("{} engine found. Untick those to leave out.",
+                                    "{} engines found. Untick those to leave out.", found.size(), found.size())
+                              : trn("{} new engine found. Untick those to leave out.",
+                                    "{} new engines found. Untick those to leave out.", found.size(), found.size());
+        ImGui::TextUnformatted(text.c_str());
+    }
     if (!p.result.notes.empty()) {
         ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
         for (const auto& note : p.result.notes) ImGui::TextWrapped("%s", note.c_str());

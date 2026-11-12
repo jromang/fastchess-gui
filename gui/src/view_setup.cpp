@@ -58,13 +58,15 @@ bool inputText(const char* id, std::string& value, float width) {
     return false;
 }
 
-// An engine of the list, `width` wide (-FLT_MIN: the width left), with a search field.
+// An engine of the list, `width` wide (-FLT_MIN: the width left), with a search field. The inactive engines are not
+// offered.
 bool engineCombo(const char* id, std::string& value, const std::vector<EngineEntry>& engines, float width = -FLT_MIN) {
     bool changed = false;
     ImGui::SetNextItemWidth(width);
     if (ImGui::BeginCombo(id, value.empty() ? TR("(choose)") : value.c_str(), ImGuiComboFlags_HeightLargest)) {
         std::vector<std::string> names, more;
         for (const auto& e : engines) {
+            if (e.inactive && e.name != value) continue;
             names.push_back(e.name);
             more.push_back(engineSearchText(e));
         }
@@ -860,7 +862,8 @@ void App::setupParticipants() {
     if (ImGui::BeginCombo("##add_participant", TR("Add an engine…"), ImGuiComboFlags_HeightLargest)) {
         std::vector<std::string> names, more;
         for (const auto& e : engines_) {
-            if (std::none_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; })) {
+            if (!e.inactive &&
+                std::none_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; })) {
                 names.push_back(e.name);
                 more.push_back(engineSearchText(e));
             }
@@ -875,7 +878,8 @@ void App::setupParticipants() {
     ImGui::SameLine();
     if (ImGui::Button(TR("Add all"))) {
         for (const auto& e : engines_) {
-            if (std::none_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; })) {
+            if (!e.inactive &&
+                std::none_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; })) {
                 list.push_back({e.name});
             }
         }
@@ -899,7 +903,7 @@ void App::setupParticipants() {
                     const bool member = std::find(e.groups.begin(), e.groups.end(), g) != e.groups.end();
                     const bool in =
                         std::any_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; });
-                    if (member && !in) list.push_back({e.name});
+                    if (member && !in && !e.inactive) list.push_back({e.name});
                 }
                 changed = true;
             }

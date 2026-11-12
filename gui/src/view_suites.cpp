@@ -166,6 +166,7 @@ void App::drawSuites() {
         auto& list    = suite_setup_.engines;
         const auto it = std::find(list.begin(), list.end(), e.name);
         bool on       = it != list.end();
+        if (e.inactive && !on) continue;  // out of the pickers, unless it was chosen before
         if (ImGui::Checkbox(e.name.c_str(), &on)) {
             if (on) {
                 list.push_back(e.name);

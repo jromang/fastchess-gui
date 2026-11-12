@@ -1011,6 +1011,32 @@ TEST_CASE("the tournaments folder is kept in settings.json, the default restored
     CHECK(Storage(root).runsDir() == root / "runs");
 }
 
+TEST_CASE("the engine folder is remembered in settings.json; an engine is active unless marked inactive") {
+    namespace fs    = std::filesystem;
+    const auto root = fs::temp_directory_path() / "fcg-storage-engine-folder";
+    fs::remove_all(root);
+    fs::create_directories(root);
+    {
+        Storage storage(root);
+        CHECK(storage.engineFolder().empty());
+        storage.setEngineFolder(root / "engines");
+        storage.setRunsDir(root / "elsewhere");  // the other settings stay
+    }
+    Storage storage(root);
+    CHECK(storage.engineFolder() == root / "engines");
+    CHECK(storage.runsDir() == root / "elsewhere");
+
+    // engines.json of an earlier version: no "inactive", every engine active.
+    std::ofstream(root / "engines.json") << R"([{"name": "Old", "cmd": "/e/old"}])";
+    auto engines = storage.loadEngines();
+    REQUIRE(engines.size() == 1);
+    CHECK_FALSE(engines[0].inactive);
+    engines[0].inactive = true;
+    storage.saveEngines(engines);
+    CHECK(storage.loadEngines().at(0).inactive);
+    fs::remove_all(root);
+}
+
 TEST_CASE("an engine list that cannot be read is set aside, not replaced by an empty one") {
     namespace fs    = std::filesystem;
     const auto root = fs::temp_directory_path() / "fcg-storage-unreadable";

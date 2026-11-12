@@ -152,8 +152,10 @@ void App::frame() {
         else if (w == "engines-card") {
             page_            = Page::Engines;
             selected_engine_ = engines_.empty() ? -1 : 0;
-        }
-        else if (w == "console")
+        } else if (w == "engines-refresh") {
+            page_ = Page::Engines;
+            refreshEngineFolder();
+        } else if (w == "console")
             page_ = Page::Log;
         else if (w == "settings")
             page_ = Page::Settings;
@@ -650,6 +652,9 @@ void App::handleDialogs() {
                 importEngines(importEngineList(path));
                 break;
             case Dialogs::Purpose::ImportEngineFolder:
+                // Remembered, for Refresh to look in again.
+                storage_.setEngineFolder(path);
+                engine_folder_ = std::filesystem::path(path);
                 importEngines(findEngines(path));
                 break;
             case Dialogs::Purpose::OpenTournament:

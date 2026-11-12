@@ -321,8 +321,12 @@ class App {
     void startQuickTest(int index);
     void finishQuickTest();
     void pollCheck();
-    // Shows what an engine list or a folder holds, to choose the engines to add.
-    void importEngines(const ImportResult& imported);
+    // Shows what an engine list or a folder holds, to choose the engines to add. `refreshed`: the remembered folder
+    // looked in again, whose engines already in the library are left out.
+    void importEngines(const ImportResult& imported, const std::filesystem::path& refreshed = {});
+    void refreshEngineFolder();  // the new engines of the remembered folder, see Storage::engineFolder
+    [[nodiscard]] const std::filesystem::path& engineFolder();
+    void setInactive(const std::vector<std::string>& names, bool inactive);
     void drawImportPreview();
     void addImported();  // the engines chosen
     [[nodiscard]] bool engineInUse(const std::string& name) const;
@@ -505,10 +509,12 @@ class App {
     std::string option_browse_;  // the UCI option a file dialog is open for
     struct ImportPreview {
         ImportResult result;
+        std::string refreshed;     // the remembered folder, looked in again: only its new engines are shown
         std::vector<char> known;   // by engine: already in the list, not added again
         std::vector<char> chosen;  // by engine: to add
     };
     std::optional<ImportPreview> import_preview_;
+    std::optional<std::filesystem::path> engine_folder_;  // settings.json's, read once
     bool open_import_preview_ = false;
 
     // Console view.

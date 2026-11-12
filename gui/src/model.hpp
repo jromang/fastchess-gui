@@ -51,6 +51,9 @@ struct EngineEntry {
     std::vector<std::string> groups;  // e.g. a pool, a rating list
     int elo = 0;                      // reference rating, 0 = none
     std::string notes;                // free text of the user's, found by the engine searches
+    // Kept in the library, but out of the engine pickers and of the checks of the whole library. A tournament that
+    // has it already plays it as before.
+    bool inactive = false;
 
     // Last health check: -1 never, 0 failed, 1 passed.
     int check_ok = -1;
@@ -97,7 +100,7 @@ struct EngineEntry {
     }
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineEntry, name, cmd, args, dir, restart, protocol, options, program,
-                                                id_name, id_author, uci_options, read_by, groups, elo, notes,
+                                                id_name, id_author, uci_options, read_by, groups, elo, notes, inactive,
                                                 check_ok, check_message, check_when, check_report, test_ok,
                                                 test_message, test_when)
 

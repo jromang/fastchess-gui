@@ -287,6 +287,7 @@ void App::drawEditPanel() {
                               ImGuiComboFlags_HeightLargest)) {
             std::vector<std::string> names, more;
             for (const auto& e : engines_) {
+                if (e.inactive && e.name != edit_engine_) continue;
                 names.push_back(e.name);
                 more.push_back(engineSearchText(e));
             }
