@@ -176,7 +176,7 @@ void App::drawResults() {
     ImGui::SameLine(column * 2.4f);
     bigValue("LOS", current_.valid ? fmt::format("{:.1f} %", current_.los) : "—");
     ImGui::SameLine(column * 3.2f);
-    bigValue("Score", n ? fmt::format("{:.1f} %", s.pointsRatio()) : "—");
+    bigValue(TR("Score"), n ? fmt::format("{:.1f} %", s.pointsRatio()) : "—");
     ImGui::SameLine(column * 4.0f);
     bigValue(TR("Games"), fmt::format("{}", n));
 
