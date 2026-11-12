@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -218,6 +219,7 @@ struct MatchSetup {
     bool log_every_game = false;  // the engine log of every game, not only of those that end badly
     bool check_mate_pvs = false;  // fastchess' -check-mate-pvs: a mate score's PV must end in mate
     bool notify         = true;
+    bool resume_at_launch = true;  // the tournament running when the program ended, then the queue
 
     std::string language = "auto";       // "auto" (system), "en" or "fr"
     std::string theme    = "light";      // "light", "dark" or "system"
@@ -250,7 +252,7 @@ struct MatchSetup {
         pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,   \
         log_every_game, check_mate_pvs, notify, language, theme, ui_zoom, tile_info, panes, broadcast_files,    \
         broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port, broadcast_follow, broadcast_lichess, \
-        lichess_round, lichess_listed
+        lichess_round, lichess_listed, resume_at_launch
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
 void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) {
@@ -273,5 +275,25 @@ struct QueuedTournament {
     MatchSetup setup;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(QueuedTournament, label, setup)
+
+// The tournament the window was running, kept while it runs (running.json), so that one still there when the
+// program starts again was interrupted: by a crash, a power cut, a reboot, or by quitting while it ran.
+struct RunningMarker {
+    std::string dir;
+    bool paused = false;  // the user paused it: it waits for them at the next launch too
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RunningMarker, dir, paused)
+
+// What to do at launch about the tournament running when the program ended.
+enum class LaunchResume { Nothing, Resume, Queue };
+
+// Resume it when the setting allows and it was not paused, unless --autostart starts the setup; when it is over or
+// gone (it ended as the program did), the queue starts instead.
+[[nodiscard]] inline LaunchResume launchResume(bool enabled, bool autostart, const std::optional<RunningMarker>& marker,
+                                               bool unfinished, bool queue_empty) {
+    if (!enabled || autostart || !marker || marker->paused) return LaunchResume::Nothing;
+    if (unfinished) return LaunchResume::Resume;
+    return queue_empty ? LaunchResume::Nothing : LaunchResume::Queue;
+}
 
 }  // namespace fcg

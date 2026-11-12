@@ -1131,6 +1131,7 @@ void App::drawTemplates() {
                 loaded->ui_zoom  = setup_.ui_zoom;
                 loaded->panes    = setup_.panes;
                 loaded->notify   = setup_.notify;
+                loaded->resume_at_launch = setup_.resume_at_launch;
                 setup_           = *loaded;
                 template_message_.clear();
                 saveSetupSoon();

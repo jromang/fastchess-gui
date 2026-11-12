@@ -8,6 +8,7 @@
 
 #include "memory.hpp"
 #include "run.hpp"
+#include "storage.hpp"
 
 using namespace fcg;
 namespace fs = std::filesystem;
@@ -157,5 +158,39 @@ TEST_CASE("the setup's Syzygy path and OwnBook off are given to the engines that
     setup.tb_paths.clear();
     CHECK_THROWS_WITH((void)buildRun(setup, engines, topology, dir), doctest::Contains("Syzygy"));
 
+    fs::remove_all(dir);
+}
+
+TEST_CASE("at launch, the tournament running when the program ended resumes, then the queue") {
+    const RunningMarker running{"/runs/t", false};
+    const RunningMarker paused{"/runs/t", true};
+
+    // Interrupted while it ran: resumed, unless the setting is off or --autostart starts the setup.
+    CHECK(launchResume(true, false, running, true, true) == LaunchResume::Resume);
+    CHECK(launchResume(true, false, running, true, false) == LaunchResume::Resume);
+    CHECK(launchResume(false, false, running, true, false) == LaunchResume::Nothing);
+    CHECK(launchResume(true, true, running, true, false) == LaunchResume::Nothing);
+    // Paused by the user, or nothing was running (it ended, or the user stopped it): it waits.
+    CHECK(launchResume(true, false, paused, true, false) == LaunchResume::Nothing);
+    CHECK(launchResume(true, false, std::nullopt, true, false) == LaunchResume::Nothing);
+    // Over or gone: the queue goes on, if there is one.
+    CHECK(launchResume(true, false, running, false, false) == LaunchResume::Queue);
+    CHECK(launchResume(true, false, running, false, true) == LaunchResume::Nothing);
+
+    // On by default, and kept in the profile.
+    CHECK(MatchSetup{}.resume_at_launch);
+    CHECK(nlohmann::json::object().get<MatchSetup>().resume_at_launch);
+    const auto dir = fs::temp_directory_path() / "fcg-tests-running-marker";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+    const Storage storage(dir);
+    CHECK_FALSE(storage.runningMarker());
+    storage.setRunningMarker(paused);
+    REQUIRE(storage.runningMarker());
+    CHECK(storage.runningMarker()->dir == "/runs/t");
+    CHECK(storage.runningMarker()->paused);
+    storage.setRunningMarker(std::nullopt);
+    CHECK_FALSE(storage.runningMarker());
+    CHECK_FALSE(fs::exists(dir / "running.json"));
     fs::remove_all(dir);
 }

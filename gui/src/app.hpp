@@ -338,6 +338,8 @@ class App {
     // run lifecycle
     void startRun();
     void resumeRun();
+    void resumeAtLaunch();           // the tournament running when the program ended, see RunningMarker
+    void setRunPaused(bool paused);  // and the marker follows
     void enqueue();         // the current setup, to start after the running tournament
     // The first queued tournament, if any; with `go_on`, the next ones when it cannot start. One that cannot
     // start stays queued.
@@ -631,6 +633,7 @@ class App {
     bool open_quit_modal_ = false;
     bool focus_done_      = false;
     bool autostart_done_  = false;
+    bool launch_checked_  = false;  // resumeAtLaunch() done
 };
 
 }  // namespace fcg

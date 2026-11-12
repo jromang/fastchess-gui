@@ -45,6 +45,10 @@ class Storage {
     [[nodiscard]] std::vector<QueuedTournament> loadQueue() const;
     void saveQueue(const std::vector<QueuedTournament>& queue) const;
 
+    // The tournament running now (running.json, see RunningMarker); nullopt removes it.
+    [[nodiscard]] std::optional<RunningMarker> runningMarker() const;
+    void setRunningMarker(const std::optional<RunningMarker>& marker) const;
+
    private:
     // settings.json, an empty object when it is missing, unreadable or not an object.
     [[nodiscard]] nlohmann::json settings() const;

@@ -521,10 +521,10 @@ void App::drawWorkspaceHeader() {
         const bool paused = run_.paused();
         if (paused) {
             if (ui::iconButton("resume", ui::Icon::Play, TR("Resume"), !run_.stopping() && !run_.stoppingWhenIdle())) {
-                run_.setPaused(false);
+                setRunPaused(false);
             }
         } else {
-            if (ui::iconButton("pause", ui::Icon::Pause, TR("Pause"), !run_.stopping())) run_.setPaused(true);
+            if (ui::iconButton("pause", ui::Icon::Pause, TR("Pause"), !run_.stopping())) setRunPaused(true);
         }
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("%s", TR("Pause: no new pair starts. Running games, and the second game of their "
@@ -742,6 +742,11 @@ void App::drawSettings() {
 
     ImGui::Spacing();
     changed |= ImGui::Checkbox(TR("Notify when a match ends"), &setup_.notify);
+    changed |= ImGui::Checkbox(TR("Resume at launch the tournament that was running"), &setup_.resume_at_launch);
+    ui::help(
+        TR("When the program ended while a tournament was running (a crash, a power cut, a reboot, or quitting "
+           "while it ran), it resumes at the next launch, and the queue goes on after it. A tournament paused or "
+           "stopped waits for you."));
 
     ImGui::Spacing();
     ImGui::Separator();
