@@ -180,6 +180,12 @@ class UciEngine {
     [[nodiscard]] static ms getUciNewGameTime() { return config::TournamentConfig->ucinewgame_time; }
     [[nodiscard]] static ms getStartupTime() { return config::TournamentConfig->startup_time; }
 
+    // fastchess-gui: the engine's own timeout for uciok after its start and for the isready of a new game, if any.
+    [[nodiscard]] std::optional<ms> startTimeout() const {
+        if (config_.start_timeout_ms <= 0) return std::nullopt;
+        return ms(config_.start_timeout_ms);
+    }
+
     [[nodiscard]] static bool isBound(std::string_view info_line) {
         return (info_line.find("lowerbound") != std::string::npos || info_line.find("upperbound") != std::string::npos);
     }

@@ -37,6 +37,10 @@ struct EngineEntry {
     bool restart = false;
     std::string protocol;  // "uci", "xboard" (WinBoard), empty = not known yet: found out by the next probe
 
+    // Seconds the engine may take to answer uciok when started, and the isready of each new game; 0 = the default,
+    // ENGINE_STARTUP_TIME. Saved only when set.
+    int start_timeout = 0;
+
     // Only the options whose value differs from the engine default.
     std::vector<std::pair<std::string, std::string>> options;
 
@@ -95,10 +99,23 @@ struct EngineEntry {
         return 1;
     }
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineEntry, name, cmd, args, dir, restart, protocol, options, program,
-                                                id_name, id_author, uci_options, read_by, groups, elo, check_ok,
-                                                check_message, check_when, check_report, test_ok, test_message,
-                                                test_when)
+#define FCG_ENGINE_ENTRY_FIELDS                                                                                       \
+    name, cmd, args, dir, restart, protocol, options, program, id_name, id_author, uci_options, read_by, groups, elo, \
+        check_ok, check_message, check_when, check_report, test_ok, test_message, test_when
+template <typename BasicJsonType,
+          nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
+void to_json(BasicJsonType& nlohmann_json_j, const EngineEntry& nlohmann_json_t) {
+    NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_ENGINE_ENTRY_FIELDS))
+    if (nlohmann_json_t.start_timeout > 0) nlohmann_json_j["start_timeout"] = nlohmann_json_t.start_timeout;
+}
+template <typename BasicJsonType,
+          nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
+void from_json(const BasicJsonType& nlohmann_json_j, EngineEntry& nlohmann_json_t) {
+    const EngineEntry nlohmann_json_default_obj{};
+    NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_ENGINE_ENTRY_FIELDS))
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(start_timeout)
+}
+#undef FCG_ENGINE_ENTRY_FIELDS
 
 // An opening book of the library: registered once, chosen by name in the setup.
 struct BookEntry {

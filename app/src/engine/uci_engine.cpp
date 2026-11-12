@@ -189,7 +189,7 @@ bool UciEngine::ucinewgame() {
         return false;
     }
 
-    return isready(getUciNewGameTime()).code == process::Status::OK;
+    return isready(startTimeout().value_or(getUciNewGameTime())).code == process::Status::OK;
 }
 
 std::optional<std::string> UciEngine::idName() {
@@ -361,7 +361,7 @@ tl::expected<bool, std::string> UciEngine::start(const std::optional<std::vector
         return tl::make_unexpected("Couldn't write uci to engine");
     }
 
-    if (!uciok(getStartupTime())) {
+    if (!uciok(startTimeout().value_or(getStartupTime()))) {
         return tl::make_unexpected("Engine didn't respond to uciok after startup");
     }
 

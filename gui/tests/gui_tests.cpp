@@ -658,12 +658,13 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     std::ofstream(binary) << "x";
 
     std::vector<EngineEntry> engines(2);
-    engines[0].name    = "new";
-    engines[0].cmd     = binary.string();
-    engines[1].name    = "old";
-    engines[1].cmd     = binary.string();
-    engines[1].options = {{"Hash", "64"}};
-    engines[1].elo     = 3200;
+    engines[0].name          = "new";
+    engines[0].cmd           = binary.string();
+    engines[1].name          = "old";
+    engines[1].cmd           = binary.string();
+    engines[1].options       = {{"Hash", "64"}};
+    engines[1].elo           = 3200;
+    engines[1].start_timeout = 120;
 
     MatchSetup setup;
     setup.engine_a    = "new";
@@ -691,6 +692,11 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     REQUIRE(run.spec.participants.size() == 2);
     CHECK(run.spec.participants[1].engine.name == "old");
     CHECK(run.spec.participants[1].elo == 3200);
+    CHECK(run.engines[0].start_timeout_ms == 0);
+    CHECK(run.spec.participants[1].engine.start_timeout_ms == 120000);
+    // The start timeout is saved in engines.json only when set.
+    CHECK_FALSE(nlohmann::json(engines[0]).contains("start_timeout"));
+    CHECK(nlohmann::json(engines[1]).get<EngineEntry>().start_timeout == 120);
     CHECK(run.info.limit_text == "5000 nodes");
     CHECK(run.info.total_games == 102);
 

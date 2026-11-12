@@ -42,6 +42,7 @@ fastchess::EngineConfiguration suiteEngine(const EngineEntry& entry, int hash, i
     };
     force("Hash", hash);
     force("Threads", threads);
+    config.start_timeout_ms = entry.start_timeout * 1000LL;
     return config;
 }
 

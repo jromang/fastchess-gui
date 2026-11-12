@@ -79,6 +79,8 @@ fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSet
     config.protocol = entry.protocol;
     config.variant  = setup.chess960 ? fastchess::VariantType::FRC : fastchess::VariantType::STANDARD;
 
+    config.start_timeout_ms = entry.start_timeout * 1000LL;
+
     overrideOption(config, entry, "Hash", participant.hash, setup.common_hash);
     overrideOption(config, entry, "Threads", participant.threads, setup.common_threads);
 
@@ -169,6 +171,8 @@ fastchess::EngineConfiguration participantConfig(const EngineEntry& entry, const
     config.restart  = entry.restart;
     config.options  = entry.options;
     config.protocol = entry.protocol;
+
+    config.start_timeout_ms = entry.start_timeout * 1000LL;
     if (spec.participants.empty()) return config;
 
     const auto& model = spec.participants.front().engine;
