@@ -171,50 +171,90 @@ std::optional<std::string> lichessRoundId(std::string_view text) {
     return std::string(id);
 }
 
-LichessRelay::~LichessRelay() { stop(); }
+struct LichessRelay::Session {
+    void loop();
+    bool prepare();  // the broadcast and its first round, made or read; false when it cannot be
+    bool newRound();
+    void push();
+    HttpResult post(const std::string& path, const std::string& type, const std::string& body);
+    void save();
+
+    Settings settings_;
+    LichessTarget target_;
+    std::atomic<bool> running_{true};
+    std::chrono::steady_clock::time_point not_before_{};  // after a "too many requests"
+
+    std::mutex mutex_;  // what follows
+    std::condition_variable wake_, ended_;
+    bool stopping_ = false;
+    bool done_     = false;  // the thread has ended
+    std::vector<LichessGame> live_;
+    std::map<std::string, LichessGame> pending_;  // finished games not pushed yet
+    Status status_;
+};
+
+LichessRelay::~LichessRelay() {
+    stop();
+    // The session holds all the thread needs: detached, it ends on its own.
+    if (!wait(std::chrono::seconds(10))) thread_.detach();
+}
 
 void LichessRelay::start(Settings settings) {
     stop();
-    settings_ = std::move(settings);
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        status_ = {};
-        live_.clear();
-        pending_.clear();
-    }
-    stopping_ = false;
-    running_  = true;
-    thread_   = std::thread([this] { loop(); });
+    auto session       = std::make_shared<Session>();
+    session->settings_ = std::move(settings);
+    session_           = session;
+    // The previous start's last push, then this one: one at a time writes lichess.json.
+    thread_ = std::thread([session, previous = std::move(thread_)]() mutable {
+        if (previous.joinable()) previous.join();
+        session->loop();
+        std::lock_guard<std::mutex> lock(session->mutex_);
+        session->done_ = true;
+        session->ended_.notify_all();
+    });
 }
 
 void LichessRelay::stop() {
-    if (!thread_.joinable()) return;
-    stopping_ = true;
-    wake_.notify_all();
-    thread_.join();
-    running_ = false;
-    std::lock_guard<std::mutex> lock(mutex_);
-    status_.running = false;
+    if (!session_) return;
+    session_->running_ = false;
+    std::lock_guard<std::mutex> lock(session_->mutex_);
+    session_->stopping_       = true;
+    session_->status_.running = false;
+    session_->wake_.notify_all();
 }
 
+bool LichessRelay::wait(std::chrono::milliseconds timeout) {
+    if (!thread_.joinable()) return true;
+    {
+        std::unique_lock<std::mutex> lock(session_->mutex_);
+        if (!session_->ended_.wait_for(lock, timeout, [&] { return session_->done_; })) return false;
+    }
+    thread_.join();
+    return true;
+}
+
+bool LichessRelay::running() const noexcept { return session_ && session_->running_; }
+
 LichessRelay::Status LichessRelay::status() const {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return status_;
+    if (!session_) return {};
+    std::lock_guard<std::mutex> lock(session_->mutex_);
+    return session_->status_;
 }
 
 void LichessRelay::offer(std::vector<LichessGame> live, std::vector<LichessGame> finished) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    live_ = std::move(live);
-    for (auto& g : finished) pending_[g.key] = std::move(g);
+    if (!session_) return;
+    std::lock_guard<std::mutex> lock(session_->mutex_);
+    session_->live_ = std::move(live);
+    for (auto& g : finished) session_->pending_[g.key] = std::move(g);
 }
 
-HttpResult LichessRelay::post(const std::string& path, const std::string& type, const std::string& body) {
+HttpResult LichessRelay::Session::post(const std::string& path, const std::string& type, const std::string& body) {
     return httpPost({settings_.base + path, settings_.token, type, body});
 }
 
-void LichessRelay::save() { writeJson(settings_.dir / "lichess.json", target_); }
+void LichessRelay::Session::save() { writeJson(settings_.dir / "lichess.json", target_); }
 
-bool LichessRelay::newRound() {
+bool LichessRelay::Session::newRound() {
     const auto name = fmt::format("Part {}", target_.round_index);
     const auto r    = post("/broadcast/" + target_.tour_id + "/new", "application/x-www-form-urlencoded",
                            formEncode({{"name", name}}));
@@ -236,7 +276,7 @@ bool LichessRelay::newRound() {
     return false;
 }
 
-bool LichessRelay::prepare() {
+bool LichessRelay::Session::prepare() {
     // A round given by its URL or id; otherwise the one made earlier for this tournament, or a new broadcast.
     if (auto saved = readJson<nlohmann::json>(settings_.dir / "lichess.json")) {
         try {
@@ -288,12 +328,12 @@ bool LichessRelay::prepare() {
     }
     std::lock_guard<std::mutex> lock(mutex_);
     status_.url     = target_.url;
-    status_.running = true;
+    status_.running = !stopping_;
     status_.games   = target_.rounds.size();
     return true;
 }
 
-void LichessRelay::push() {
+void LichessRelay::Session::push() {
     std::vector<LichessGame> games;
     {
         std::lock_guard<std::mutex> lock(mutex_);
@@ -362,18 +402,19 @@ void LichessRelay::push() {
     status_.url       = target_.url;
 }
 
-void LichessRelay::loop() {
+void LichessRelay::Session::loop() {
     if (!prepare()) {
         running_ = false;
         return;
     }
     auto next = std::chrono::steady_clock::now();
     while (true) {
+        bool last = false;
         {
             std::unique_lock<std::mutex> lock(mutex_);
-            wake_.wait_until(lock, std::max(next, not_before_), [&] { return stopping_.load(); });
+            wake_.wait_until(lock, std::max(next, not_before_), [&] { return stopping_; });
+            last = stopping_;
         }
-        const bool last = stopping_;
         if (!last && std::chrono::steady_clock::now() < not_before_) continue;
         push();
         if (last) break;

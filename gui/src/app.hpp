@@ -473,6 +473,7 @@ class App {
 
     // Broadcast.
     Broadcaster broadcaster_;
+    bool broadcast_editing_ = false;  // a folder, token or round field was being typed in at the last frame
 
     // Ratings page: every game of the profile, and what is computed from them.
     tour::GameDb game_db_;

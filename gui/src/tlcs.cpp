@@ -18,12 +18,17 @@
 //     CTRESET, then CT: <line> for each line of the crosstable, "total games = N", then the games played, newest
 //                                   first, under "Game No." (node-tlcv numbers its games from them)
 //     PONG                          (answer to PING)
+//
+// The port may be open to the internet, where the address of a UDP datagram can be forged: until a client proves
+// its address by acknowledging the first numbered command (whose number it can only learn by receiving it), it gets
+// that command and LOGON SUCCESSFUL only, a few bytes. Logons are limited in number and rate.
 
 #include <chrono>
 #include <cstdlib>
 #include <deque>
 #include <map>
 #include <optional>
+#include <random>
 
 #include <chess.hpp>
 
@@ -36,6 +41,10 @@ namespace fcg {
 namespace {
 
 using Clock = std::chrono::steady_clock;
+
+constexpr std::size_t MAX_CLIENTS       = 100;  // viewers in all
+constexpr std::size_t MAX_WAITING       = 20;   // of which have not proved their address yet
+constexpr std::size_t LOGONS_PER_SECOND = 10;   // in all, and one per second from an address
 
 std::string trim(const std::string& s) {
     const auto a = s.find_first_not_of(" \t\r\n");
@@ -66,10 +75,15 @@ struct TlcsServer::Impl {
         std::deque<Pending> unacked;  // sent, waiting for their ACK: at most one
         std::deque<Pending> queued;   // not sent yet, in order
         Clock::time_point last_seen;
+        Clock::time_point logon_at;
+        bool verified     = false;  // has acknowledged `first_id`: the address is the client's
+        uint32_t first_id = 0;
     };
 
     net::UdpSocket socket;
     std::map<net::Endpoint, Client> clients;
+    std::mt19937 random{std::random_device{}()};
+    std::deque<Clock::time_point> logons;  // accepted in the last second
 
     // Latest snapshot from the app.
     std::mutex mutex;
@@ -106,12 +120,22 @@ struct TlcsServer::Impl {
     }
 
     void broadcast(const std::string& text) {
-        for (auto& [to, c] : clients) send(to, c, text);
+        for (auto& [to, c] : clients) {
+            if (c.verified) send(to, c, text);
+        }
     }
 
     // Not numbered, not resent: a lost one is replaced by the next.
     void broadcastUnnumbered(const std::string& text) {
-        for (const auto& [to, c] : clients) socket.send(to, text);
+        for (const auto& [to, c] : clients) {
+            if (c.verified) socket.send(to, text);
+        }
+    }
+
+    [[nodiscard]] int verifiedClients() const {
+        int n = 0;
+        for (const auto& [to, c] : clients) n += c.verified;
+        return n;
     }
 
     // Everything about the game followed, from its start: for a new game, or a client that just logged on.
@@ -155,12 +179,42 @@ struct TlcsServer::Impl {
         return out;
     }
 
+    // Room for one more logon from `from`, which is counted.
+    bool admit(const net::Endpoint& from) {
+        const auto now = Clock::now();
+        while (!logons.empty() && now - logons.front() >= std::chrono::seconds(1)) logons.pop_front();
+        if (logons.size() >= LOGONS_PER_SECOND) return false;
+        const auto it = clients.find(from);
+        if (it != clients.end() && now - it->second.logon_at < std::chrono::seconds(1)) return false;
+        if (it == clients.end()) {
+            std::size_t waiting = 0;
+            for (const auto& [to, c] : clients) waiting += !c.verified;
+            if (clients.size() >= MAX_CLIENTS || waiting >= MAX_WAITING) return false;
+        }
+        logons.push_back(now);
+        return true;
+    }
+
     void logon(const net::Endpoint& from, const std::string& name) {
-        auto& c     = clients[from];
+        if (!admit(from)) return;
+        const bool known = clients.count(from) > 0;
+        auto& c          = clients[from];
+        // The first number cannot be guessed, so that its ACK proves the address.
+        if (!known) c.next_id = std::uniform_int_distribution<uint32_t>(1, 100000)(random);
         c.name      = name;
-        c.last_seen = Clock::now();
+        c.last_seen = c.logon_at = Clock::now();
         socket.send(from, "LOGON SUCCESSFUL");
+        if (!c.verified) {
+            c.unacked.clear();
+            c.queued.clear();
+            c.first_id = c.next_id;
+        }
         send(from, c, "FEATURE: PING");
+        if (c.verified) welcome(from, c);
+    }
+
+    // Everything there is to know, for a client whose address is proved.
+    void welcome(const net::Endpoint& from, Client& c) {
         if (!site.empty()) send(from, c, "SITE: " + site);
         if (!table_lines.empty()) {
             socket.send(from, "CTRESET");
@@ -174,36 +228,43 @@ struct TlcsServer::Impl {
     void handle(const net::Endpoint& from, const std::string& raw) {
         auto msg = trim(raw);
         // A numbered message: acknowledged, then read like the others (TLCV numbers its PING and CHAT).
+        unsigned long number = 0;
         if (const auto close = msg.find('>'); !msg.empty() && msg.front() == '<' && close != std::string::npos) {
-            const auto id = std::strtoul(msg.c_str() + 1, nullptr, 10);
-            if (id > 0) socket.send(from, fmt::format("ACK: {}", id));
-            msg = trim(msg.substr(close + 1));
+            number = std::strtoul(msg.c_str() + 1, nullptr, 10);
+            msg    = trim(msg.substr(close + 1));
         }
         if (msg.rfind("LOGON", 0) == 0) {
             const auto colon = msg.find(':');
             logon(from, colon == std::string::npos ? std::string("viewer") : trim(msg.substr(colon + 1)));
-            return;
         }
+        // Clients only: anyone else gets no answer at all.
         const auto it = clients.find(from);
         if (it == clients.end()) return;
-        it->second.last_seen = Clock::now();
+        if (number > 0) socket.send(from, fmt::format("ACK: {}", number));
+        if (msg.rfind("LOGON", 0) == 0) return;
+        auto& c     = it->second;
+        c.last_seen = Clock::now();
 
         if (msg.rfind("ACK", 0) == 0) {
             const auto colon = msg.find(':');
             const auto id    = static_cast<uint32_t>(std::strtoul(msg.c_str() + (colon + 1), nullptr, 10));
-            auto& q          = it->second.unacked;
+            auto& q          = c.unacked;
             for (auto p = q.begin(); p != q.end(); ++p) {
                 if (p->id == id) {
                     q.erase(p);
                     break;
                 }
             }
-            pump(from, it->second);
+            if (!c.verified && id == c.first_id) {
+                c.verified = true;
+                welcome(from, c);
+            }
+            pump(from, c);
         } else if (msg == "PING") {
             socket.send(from, "PONG");
         } else if (msg == "LOGOFF") {
             clients.erase(it);
-        } else if (msg == "RESULTTABLE") {
+        } else if (msg == "RESULTTABLE" && c.verified) {
             socket.send(from, "CTRESET");
             for (const auto& line : table_lines) socket.send(from, "CT: " + line);
         }
@@ -304,15 +365,18 @@ struct TlcsServer::Impl {
         const auto now = Clock::now();
         for (auto it = clients.begin(); it != clients.end();) {
             auto& c = it->second;
-            // A client that says nothing for two minutes (they PING every few seconds) is gone.
-            if (now - c.last_seen > std::chrono::minutes(2)) {
+            // A client that says nothing for two minutes (they PING every few seconds) is gone, one that does not
+            // prove its address in ten seconds too.
+            if (now - c.last_seen > std::chrono::minutes(2) ||
+                (!c.verified && now - c.logon_at > std::chrono::seconds(10))) {
                 it = clients.erase(it);
                 continue;
             }
-            // The command waiting for its ACK: sent again every second, given up after 8 tries.
+            // The command waiting for its ACK: sent again every second, given up after 8 tries (3 before the
+            // address is proved).
             if (!c.unacked.empty() && now - c.unacked.front().sent >= std::chrono::seconds(1)) {
                 auto& p = c.unacked.front();
-                if (p.tries >= 8) {
+                if (p.tries >= (c.verified ? 8 : 3)) {
                     c.unacked.pop_front();
                     pump(it->first, c);
                 } else {
@@ -351,7 +415,7 @@ std::string TlcsServer::start(uint16_t port) {
             }
             if (snapshot) impl_->update(*snapshot, featured);
             impl_->resendAndExpire();
-            clients_ = static_cast<int>(impl_->clients.size());
+            clients_ = impl_->verifiedClients();
         }
     });
     return {};

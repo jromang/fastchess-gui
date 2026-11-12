@@ -34,6 +34,15 @@ void App::updateBroadcast() {
     settings.lichess_token  = lichess_token_;
     settings.lichess_round  = setup_.lichess_round;
     settings.lichess_listed = setup_.lichess_listed;
+    // What is being typed is taken once the field is left: not a folder per keystroke, nor a lichess broadcast for
+    // each letter of a round.
+    if (broadcast_editing_) {
+        const auto& applied    = broadcaster_.settings();
+        settings.dir           = applied.dir;
+        settings.lichess_token = applied.lichess_token;
+        settings.lichess_round = applied.lichess_round;
+    }
+    broadcast_editing_ = false;  // the fields drawn in this frame say again
     for (const auto& error : broadcaster_.configure(settings)) Console::instance().add(error, true);
 
     const auto* t   = run_.tournament();
@@ -63,6 +72,7 @@ void App::drawBroadcast() {
             setup_.broadcast_dir = buffer;
             changed              = true;
         }
+        broadcast_editing_ |= ImGui::IsItemActive();
     }
     if (setup_.broadcast_files && !broadcaster_.filesStatus().empty())
         ImGui::TextDisabled("%s", broadcaster_.filesStatus().c_str());
@@ -148,6 +158,7 @@ void App::lichessTokenField() {
         lichess_token_ = buffer;
         storage_.setLichessToken(lichess_token_);
     }
+    broadcast_editing_ |= ImGui::IsItemActive();
     if (ImGui::SmallButton(TR("Create a token on lichess…"))) {
         SDL_OpenURL("https://lichess.org/account/oauth/token/create?scopes[]=study:write&description=fastchess-gui");
     }
@@ -171,7 +182,9 @@ void App::drawLichess(bool& changed) {
         std::copy_n(value.data(), n, buffer);
         buffer[n] = 0;
         ImGui::SetNextItemWidth(-FLT_MIN);
-        if (!ImGui::InputText(id, buffer, sizeof(buffer), flags)) return false;
+        const bool edited = ImGui::InputText(id, buffer, sizeof(buffer), flags);
+        broadcast_editing_ |= ImGui::IsItemActive();
+        if (!edited) return false;
         value = buffer;
         return true;
     };

@@ -14,6 +14,11 @@ namespace {
 
 using Clock = std::chrono::steady_clock;
 
+bool sameLichess(const BroadcastSettings& a, const BroadcastSettings& b) {
+    return a.lichess == b.lichess && a.lichess_token == b.lichess_token && a.lichess_round == b.lichess_round &&
+           a.lichess_listed == b.lichess_listed;
+}
+
 int scoreCp(const fastchess::Score& s) {
     // Mate in N moves as +-(100000 - N), what TLCS clients read back.
     if (s.type == fastchess::ScoreType::MATE) return s.value > 0 ? 100000 - s.value : -100000 - s.value;
@@ -22,10 +27,30 @@ int scoreCp(const fastchess::Score& s) {
 
 }  // namespace
 
-BroadcastSnapshot makeSnapshot(const tour::TournamentState& state, const GuiObserver& observer,
-                               const std::optional<tour::Anchor>& anchor) {
+BroadcastInput broadcastInput(const tour::TournamentState& state, const GuiObserver& observer,
+                              const std::optional<tour::Anchor>& anchor) {
+    BroadcastInput in;
+    in.tournament = &state;
+    in.dir        = state.dir();
+    in.spec       = state.spec();
+    in.results    = state.results();
+    in.byes       = state.byes();
+    in.total      = state.totalGames().value_or(0);
+    in.finished   = state.finished();
+    in.anchor     = anchor;
+    in.slots.resize(static_cast<std::size_t>(observer.slotCount()));
+    in.ended.resize(in.slots.size());
+    for (int slot = 0; slot < observer.slotCount(); ++slot) {
+        observer.copySlot(slot, in.slots[static_cast<std::size_t>(slot)]);
+        in.ended[static_cast<std::size_t>(slot)] = observer.endedGames(slot);
+    }
+    in.taken = Clock::now();
+    return in;
+}
+
+BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
     BroadcastSnapshot s;
-    const auto& spec   = state.spec();
+    const auto& spec   = in.spec;
     const bool frc     = spec.conditions.variant == fastchess::VariantType::FRC;
     s.name             = spec.name;
     s.format           = spec.format == tour::Format::Match        ? "match"
@@ -33,10 +58,11 @@ BroadcastSnapshot makeSnapshot(const tour::TournamentState& state, const GuiObse
                          : spec.format == tour::Format::Gauntlet   ? "gauntlet"
                          : spec.format == tour::Format::Swiss      ? "swiss"
                                                                    : "knockout";
-    const auto results = state.results();
-    s.total            = state.totalGames().value_or(0);
-    s.finished         = state.finished();
-    s.table            = tour::computeTable(spec, results, anchor, state.byes());
+
+    const auto& results = in.results;
+    s.total             = in.total;
+    s.finished          = in.finished;
+    s.table             = tour::computeTable(spec, results, in.anchor, in.byes);
 
     const auto name = [&](int id) { return spec.participant(id) ? spec.participant(id)->engine.name : "?"; };
     for (auto it = results.rbegin(); it != results.rend(); ++it) {
@@ -56,7 +82,7 @@ BroadcastSnapshot makeSnapshot(const tour::TournamentState& state, const GuiObse
         return 0;
     };
 
-    const auto now  = Clock::now();
+    const auto now  = in.taken;
     const auto live = [&](int slot, const SlotState& st) {
         LiveGame g;
         g.slot          = slot;
@@ -106,9 +132,9 @@ BroadcastSnapshot makeSnapshot(const tour::TournamentState& state, const GuiObse
         return g;
     };
 
-    for (int slot = 0; slot < observer.slotCount(); ++slot) {
-        SlotState st;
-        observer.copySlot(slot, st);
+    for (std::size_t i = 0; i < in.slots.size(); ++i) {
+        const int slot = static_cast<int>(i);
+        const auto& st = in.slots[i];
         if (st.has_game) {
             auto g = live(slot, st);
             chess::Board board;
@@ -118,9 +144,22 @@ BroadcastSnapshot makeSnapshot(const tour::TournamentState& state, const GuiObse
             g.fen = board.getFen();
             s.games.push_back(std::move(g));
         }
-        for (const auto& ended : observer.endedGames(slot)) s.ended.push_back(live(slot, ended));
+        for (const auto& ended : in.ended[i]) s.ended.push_back(live(slot, ended));
     }
     return s;
+}
+
+Broadcaster::~Broadcaster() {
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        quit_ = true;
+    }
+    wake_.notify_all();
+    if (thread_.joinable()) thread_.join();
+    tlcs_.stop();
+    web_.stop();
+    // The relay's last push gets a few seconds more in its own destructor.
+    lichess_.stop();
 }
 
 std::vector<std::string> Broadcaster::configure(const BroadcastSettings& settings) {
@@ -136,15 +175,16 @@ std::vector<std::string> Broadcaster::configure(const BroadcastSettings& setting
     };
     sync(tlcs_, settings.tlcs, settings.tlcs_port, tlcs_error_);
     sync(web_, settings.web, settings.web_port, web_error_);
-    // Other lichess settings: a new start, with the next update.
-    const bool lichess_changed =
-        settings.lichess != settings_.lichess || settings.lichess_token != settings_.lichess_token ||
-        settings.lichess_round != settings_.lichess_round || settings.lichess_listed != settings_.lichess_listed;
-    if (lichess_changed) {
-        lichess_.stop();
-        lichess_for_ = nullptr;
+    // The thread takes the other settings with the next update, or at once when lichess' changed: the relay stops
+    // there, its last push made on its own thread.
+    const bool lichess_changed = !sameLichess(settings, settings_);
+    settings_                  = settings;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        next_settings_ = settings;
+        if (lichess_changed && !thread_.joinable()) thread_ = std::thread([this] { work(); });
     }
-    settings_ = settings;
+    if (lichess_changed) wake_.notify_all();
     return errors;
 }
 
@@ -157,33 +197,88 @@ void Broadcaster::update(const tour::TournamentState& state, const GuiObserver& 
     if (now - last_snapshot_ < std::chrono::milliseconds(500)) return;
     last_snapshot_ = now;
 
-    const auto snapshot = makeSnapshot(state, observer, anchor);
-    if (tlcs_.running()) tlcs_.publish(snapshot, featured);
-    if (web_.running()) web_.publish(snapshot);
-    if (settings_.lichess) updateLichess(state, snapshot);
+    Job job{broadcastInput(state, observer, anchor), featured};
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        job_ = std::move(job);  // replaces one the thread has not taken yet: only the latest counts
+        if (!thread_.joinable()) thread_ = std::thread([this] { work(); });
+    }
+    wake_.notify_all();
+}
 
-    if (settings_.files && now - last_files_ >= std::chrono::seconds(1)) {
-        last_files_      = now;
-        const auto dir   = settings_.dir.empty() ? state.dir() / "live" : settings_.dir;
-        const auto error = writeBroadcastFiles(snapshot, dir);
-        char when[16];
-        const auto t = std::time(nullptr);
-        std::strftime(when, sizeof(when), "%H:%M:%S", std::localtime(&t));
-        files_status_ = error.empty() ? trf("Written at {} in {}", when, dir.string()) : error;
+std::string Broadcaster::filesStatus() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!files_error_.empty()) return files_error_;
+    return files_when_.empty() ? std::string() : trf("Written at {} in {}", files_when_, files_dir_);
+}
+
+LichessRelay::Status Broadcaster::lichess() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return lichess_.status();
+}
+
+void Broadcaster::work() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    while (true) {
+        wake_.wait(lock, [&] { return quit_ || job_ || !sameLichess(next_settings_, lichess_settings_); });
+        // Other lichess settings: a new start, with the next update.
+        if (!sameLichess(next_settings_, lichess_settings_)) {
+            lichess_settings_ = next_settings_;
+            lichess_.stop();
+            lichess_for_ = nullptr;
+        }
+        if (job_) {
+            const auto job      = std::move(*job_);
+            const auto settings = next_settings_;
+            job_.reset();
+            lock.unlock();
+            publish(job, settings);
+            lock.lock();
+        } else if (quit_) {
+            return;
+        }
     }
 }
 
-void Broadcaster::updateLichess(const tour::TournamentState& state, const BroadcastSnapshot& snapshot) {
-    const auto& spec = state.spec();
+void Broadcaster::publish(const Job& job, const BroadcastSettings& settings) {
+    const auto snapshot = makeSnapshot(job.input);
+    if (tlcs_.running()) tlcs_.publish(snapshot, job.featured);
+    if (web_.running()) web_.publish(snapshot);
+    if (settings.lichess) updateLichess(job.input, snapshot, settings);
+
+    const auto now = Clock::now();
+    if (settings.files && now - last_files_ >= std::chrono::seconds(1)) {
+        last_files_      = now;
+        const auto dir   = settings.dir.empty() ? job.input.dir / "live" : settings.dir;
+        const auto error = writeBroadcastFiles(snapshot, dir);
+        const auto t     = std::time(nullptr);
+        std::tm tm{};
+#ifdef _WIN32
+        localtime_s(&tm, &t);
+#else
+        localtime_r(&t, &tm);
+#endif
+        char when[16];
+        std::strftime(when, sizeof(when), "%H:%M:%S", &tm);
+        std::lock_guard<std::mutex> lock(mutex_);
+        files_error_ = error;
+        files_when_  = when;
+        files_dir_   = dir.string();
+    }
+}
+
+void Broadcaster::updateLichess(const BroadcastInput& input, const BroadcastSnapshot& snapshot,
+                                const BroadcastSettings& settings) {
+    const auto& spec = input.spec;
     const bool frc   = spec.conditions.variant == fastchess::VariantType::FRC;
-    if (lichess_for_ != &state) {
+    if (lichess_for_ != input.tournament) {
         // Started once per tournament and settings; after an error it waits for them to change.
+        std::lock_guard<std::mutex> lock(mutex_);
         lichess_.stop();
-        lichess_for_ = &state;
-        if (settings_.lichess_token.empty()) return;
-        lichess_results_ = state.results().size();
-        lichess_.start(
-            {settings_.lichess_token, settings_.lichess_round, settings_.lichess_listed, spec.name, state.dir()});
+        lichess_for_ = input.tournament;
+        if (settings.lichess_token.empty()) return;
+        lichess_results_ = input.results.size();
+        lichess_.start({settings.lichess_token, settings.lichess_round, settings.lichess_listed, spec.name, input.dir});
     }
     if (!lichess_.running()) return;
     const auto now = Clock::now();
@@ -195,13 +290,14 @@ void Broadcaster::updateLichess(const tour::TournamentState& state, const Broadc
         if (g.active) live.push_back(lichessLiveGame(g, spec.name, g.white_elo, g.black_elo, frc));
     }
     std::vector<LichessGame> finished;
-    const auto results = state.results();
+    const auto& results = input.results;
+    const auto pgn_file = input.dir / "games-chessbase.pgn";  // TournamentState::chessbasePgnPath()
     for (; lichess_results_ < results.size(); ++lichess_results_) {
         const auto& r = results[lichess_results_];
         if (r.voided) continue;
         const auto* white = spec.participant(r.white);
         const auto* black = spec.participant(r.black);
-        const auto pgn    = tour::readSpan(state.chessbasePgnPath(), r.pgn_chessbase);
+        const auto pgn    = tour::readSpan(pgn_file, r.pgn_chessbase);
         if (!white || !black || !pgn) continue;
         finished.push_back(lichessFinishedGame(*pgn, spec.name, r.encounter + 1, white->engine.name, black->engine.name,
                                                white->elo, black->elo, r.result, frc));
@@ -210,10 +306,20 @@ void Broadcaster::updateLichess(const tour::TournamentState& state, const Broadc
 }
 
 void Broadcaster::stop() {
+    // The last update published first.
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        quit_ = true;
+    }
+    wake_.notify_all();
+    if (thread_.joinable()) thread_.join();
     tlcs_.stop();
     web_.stop();
     lichess_.stop();
+    lichess_.wait();
     lichess_for_ = nullptr;
+    std::lock_guard<std::mutex> lock(mutex_);
+    quit_ = false;
 }
 
 }  // namespace fcg

@@ -183,6 +183,7 @@ TEST_CASE("lichess: a broadcast made, its rounds filled up to 64 games, over HTT
     }
     relay.offer({lichessLiveGame(liveGame(131), "Relay test", 0, 0, false)}, finished);
     relay.stop();  // the last push, then stop
+    REQUIRE(relay.wait());
 
     requests = server.requests();
     std::map<std::string, std::string> pushes;  // path -> body
@@ -219,8 +220,70 @@ TEST_CASE("lichess: a broadcast made, its rounds filled up to 64 games, over HTT
     relay.start({"secret", "", false, "Relay test", dir, fmt::format("http://127.0.0.1:{}", port)});
     relay.offer({}, finished);
     relay.stop();
+    REQUIRE(relay.wait());
     CHECK(server.requests().size() == before);
     fs::remove_all(dir);
+}
+
+TEST_CASE("lichess: stopping returns at once, the last push made on the relay's thread") {
+    const uint16_t port = 26033;
+    std::atomic<int> pushes{0};
+    FakeServer server(port, [&](const FakeServer::Request& r) -> std::string {
+        if (r.path.find("/push") != std::string::npos) {
+            std::this_thread::sleep_for(1500ms);  // a slow lichess
+            pushes++;
+        }
+        return R"({"games":[]})";
+    });
+    REQUIRE(server.ok());
+    const auto dir = fs::temp_directory_path() / "fcg-lichess-stop";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    LichessRelay relay;
+    relay.start({"secret", "ABCDEFGH", false, "Stop test", dir, fmt::format("http://127.0.0.1:{}", port)});
+    relay.offer({lichessLiveGame(liveGame(1), "Stop test", 0, 0, false)}, {});
+    std::this_thread::sleep_for(200ms);  // the first push under way
+    auto start = std::chrono::steady_clock::now();
+    relay.stop();
+    CHECK(std::chrono::steady_clock::now() - start < 100ms);
+    CHECK_FALSE(relay.running());
+
+    // Started again at once: that waits, on its thread, for the last push of the first.
+    start = std::chrono::steady_clock::now();
+    relay.start({"secret", "ABCDEFGH", false, "Stop test", dir, fmt::format("http://127.0.0.1:{}", port)});
+    CHECK(std::chrono::steady_clock::now() - start < 100ms);
+    relay.stop();
+    REQUIRE(relay.wait(10s));
+    CHECK(pushes >= 2);
+    fs::remove_all(dir);
+}
+
+TEST_CASE("net: a connection that cannot be made gives up in time") {
+    // A listener that never accepts: once its queue is full, connecting waits for nothing.
+    net::TcpListener listener;
+    REQUIRE(listener.listen(26035).empty());
+    std::vector<net::Handle> open;
+    std::string error;
+    bool timed_out = false;
+    for (int i = 0; i < 200 && !timed_out; ++i) {
+        const auto start = std::chrono::steady_clock::now();
+        const auto fd    = net::connectHost("127.0.0.1", "26035", 300, error);
+        if (fd) {
+            open.push_back(*fd);
+            continue;
+        }
+        timed_out = true;
+        CHECK(std::chrono::steady_clock::now() - start < 2s);
+        CHECK_MESSAGE(error.find("in time") != std::string::npos, error);
+    }
+    CHECK(timed_out);
+    for (const auto fd : open) net::TcpConnection close(fd);
+
+    // Nobody on the port: refused at once.
+    const auto start = std::chrono::steady_clock::now();
+    CHECK_FALSE(net::connectHost("127.0.0.1", "26036", 5000, error));
+    CHECK(std::chrono::steady_clock::now() - start < 3s);
 }
 
 TEST_CASE("HTTPS: lichess.org trusted, a site of another authority refused (FCG_NET_TESTS=1 only)") {

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <optional>
 
 #include <mbedtls/error.h>
@@ -12,6 +13,7 @@
 
 #include <fmt/include/fmt/format.h>
 
+#include "net.hpp"
 #include "tls_roots.hpp"
 
 namespace fcg {
@@ -45,6 +47,9 @@ std::optional<Url> parseUrl(std::string_view url) {
     return u;
 }
 
+// A server that answers at all connects in far less.
+constexpr int CONNECT_TIMEOUT_MS = 10000;
+
 std::string mbedError(int code) {
     char text[200];
     mbedtls_strerror(code, text, sizeof(text));
@@ -73,9 +78,12 @@ class Connection {
     // An error message, empty once connected (and the server's certificate checked).
     std::string open(const Url& url, int timeout_ms) {
         timeout_ms_ = static_cast<uint32_t>(timeout_ms);
-        if (const int rc = mbedtls_net_connect(&net_, url.host.c_str(), url.port.c_str(), MBEDTLS_NET_PROTO_TCP)) {
-            return "cannot connect to " + url.host + ": " + mbedError(rc);
-        }
+        // Our own connect, which gives up in time (mbedtls_net_connect waits as long as the system does), and whose
+        // socket the engines started meanwhile do not inherit. Mbed TLS keeps sockets as int, on Windows too.
+        std::string error;
+        const auto fd = net::connectHost(url.host, url.port, std::min(timeout_ms, CONNECT_TIMEOUT_MS), error);
+        if (!fd) return error;
+        net_.fd = static_cast<int>(*fd);
         if (!url.tls) return {};
         tls_ = true;
 
@@ -113,10 +121,15 @@ class Connection {
     }
 
     bool send(std::string_view data) {
+        // A send that times out comes back as WANT_WRITE: tried again until the deadline only.
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeout_ms_);
         while (!data.empty()) {
             const auto* p = reinterpret_cast<const unsigned char*>(data.data());
             const int n   = tls_ ? mbedtls_ssl_write(&ssl_, p, data.size()) : mbedtls_net_send(&net_, p, data.size());
-            if (n == MBEDTLS_ERR_SSL_WANT_READ || n == MBEDTLS_ERR_SSL_WANT_WRITE) continue;
+            if ((n == MBEDTLS_ERR_SSL_WANT_READ || n == MBEDTLS_ERR_SSL_WANT_WRITE) &&
+                std::chrono::steady_clock::now() < deadline) {
+                continue;
+            }
             if (n <= 0) return false;
             data.remove_prefix(static_cast<std::size_t>(n));
         }
