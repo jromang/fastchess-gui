@@ -221,6 +221,7 @@ struct MatchSetup {
     int ui_zoom          = 100;          // size of the interface, in percent of the default (on top of the screen's)
     bool tile_info       = false;        // live mosaic: the 50-move counter, material and pieces under every board
     bool live_seed_side  = true;         // live boards of a gauntlet turned to the seed's side
+    bool live_arrows     = true;         // live board: the PV move of the side to move and the reply it expects
     std::map<std::string, float> panes;  // the list's share of the width on list + detail pages, by page
 
     // Broadcast.
@@ -241,12 +242,12 @@ struct MatchSetup {
         sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, sprt_draw_ratio, sprt_rms_bias,   \
         limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto, concurrency,   \
         affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out
-#define FCG_MATCH_SETUP_FIELDS_2                                                                               \
-    draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score, \
-        resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,  \
-        pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,  \
-        log_every_game, check_mate_pvs, notify, language, theme, ui_zoom, tile_info, live_seed_side, panes,    \
-        broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port, broadcast_follow,  \
+#define FCG_MATCH_SETUP_FIELDS_2                                                                                     \
+    draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,       \
+        resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,        \
+        pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,        \
+        log_every_game, check_mate_pvs, notify, language, theme, ui_zoom, tile_info, live_seed_side, live_arrows,    \
+        panes, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port, broadcast_follow, \
         broadcast_lichess, lichess_round, lichess_listed
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
