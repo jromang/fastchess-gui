@@ -57,7 +57,7 @@ struct BuiltRun {
 [[nodiscard]] RunInfo runInfo(const tour::TournamentSpec& spec, const std::filesystem::path& dir);
 
 // An engine of the list as a new participant of `spec`: the tournament's time control (or nodes) and its common
-// Hash and Threads, taken from the first participant.
+// Hash and Threads, taken from the first participant; SyzygyPath and OwnBook from the first participant given them.
 [[nodiscard]] fastchess::EngineConfiguration participantConfig(const EngineEntry& entry,
                                                                const tour::TournamentSpec& spec);
 
@@ -118,6 +118,17 @@ void writeChess960Book(const std::filesystem::path& path);
 
 // "20261109-185927_<name>" for a round robin or a gauntlet.
 [[nodiscard]] std::string makeTournamentDirName(const std::string& name);
+
+// The games a setup plans, 0 for a match played until stopped or decided by the SPRT (without a game limit). A
+// knockout's tiebreaks are not counted.
+[[nodiscard]] uint64_t plannedGames(const MatchSetup& setup);
+
+// About how long a setup's games last: a game takes about two base times and 60 increments, or 120 moves, per
+// side. nullopt without a clock (nodes, depth) or a game count.
+[[nodiscard]] std::optional<double> plannedSeconds(const MatchSetup& setup, const CpuTopology& topology);
+
+// The engine processes running now: the games', the engine reads' and checks'.
+[[nodiscard]] int engineProcesses();
 
 // The tournament's name when the user gave none: "A vs B", "Round robin, 8 engines"...
 [[nodiscard]] std::string defaultTournamentName(const MatchSetup& setup);

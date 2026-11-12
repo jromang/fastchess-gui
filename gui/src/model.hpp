@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -148,6 +149,9 @@ struct MatchSetup {
     int seeds          = 1;  // gauntlet: the first `seeds` participants play all the others
     int common_hash    = 0;  // MB, forced on every participant unless overridden; 0 = each engine's own
     int common_threads = 0;
+    // Forced on the engines that have the option: SyzygyPath = tb_paths, OwnBook = false.
+    bool engine_syzygy      = false;
+    bool engine_ownbook_off = false;
 
     MatchMode mode         = MatchMode::Sprt;
     int fixed_games        = 1000;
@@ -215,6 +219,7 @@ struct MatchSetup {
     bool log_every_game = false;  // the engine log of every game, not only of those that end badly
     bool check_mate_pvs = false;  // fastchess' -check-mate-pvs: a mate score's PV must end in mate
     bool notify         = true;
+    bool resume_at_launch = true;  // the tournament running when the program ended, then the queue
 
     std::string language = "auto";       // "auto" (system), "en" or "fr"
     std::string theme    = "light";      // "light", "dark" or "system"
@@ -239,14 +244,15 @@ struct MatchSetup {
     format, name, engine_a, engine_b, participants, cycles, seeds, common_hash, common_threads, mode, fixed_games, \
         sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, sprt_draw_ratio, sprt_rms_bias,   \
         limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto, concurrency,   \
-        affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out
+        affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out,           \
+        engine_syzygy, engine_ownbook_off
 #define FCG_MATCH_SETUP_FIELDS_2                                                                                \
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,  \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,   \
         pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,   \
         log_every_game, check_mate_pvs, notify, language, theme, ui_zoom, tile_info, panes, broadcast_files,    \
         broadcast_dir, broadcast_tlcs, tlcs_port, broadcast_web, web_port, broadcast_follow, broadcast_lichess, \
-        lichess_round, lichess_listed
+        lichess_round, lichess_listed, resume_at_launch
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
 void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) {
@@ -269,5 +275,25 @@ struct QueuedTournament {
     MatchSetup setup;
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(QueuedTournament, label, setup)
+
+// The tournament the window was running, kept while it runs (running.json), so that one still there when the
+// program starts again was interrupted: by a crash, a power cut, a reboot, or by quitting while it ran.
+struct RunningMarker {
+    std::string dir;
+    bool paused = false;  // the user paused it: it waits for them at the next launch too
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RunningMarker, dir, paused)
+
+// What to do at launch about the tournament running when the program ended.
+enum class LaunchResume { Nothing, Resume, Queue };
+
+// Resume it when the setting allows and it was not paused, unless --autostart starts the setup; when it is over or
+// gone (it ended as the program did), the queue starts instead.
+[[nodiscard]] inline LaunchResume launchResume(bool enabled, bool autostart, const std::optional<RunningMarker>& marker,
+                                               bool unfinished, bool queue_empty) {
+    if (!enabled || autostart || !marker || marker->paused) return LaunchResume::Nothing;
+    if (unfinished) return LaunchResume::Resume;
+    return queue_empty ? LaunchResume::Nothing : LaunchResume::Queue;
+}
 
 }  // namespace fcg

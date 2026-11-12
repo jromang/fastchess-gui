@@ -14,6 +14,7 @@
 #include <tour/standings.hpp>
 
 #include "broadcaster.hpp"
+#include "memory.hpp"
 #include "run.hpp"
 
 namespace fcg {
@@ -79,9 +80,18 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
                 const HeadlessBroadcast& broadcast) {
     std::unique_ptr<tour::TournamentState> state;
     BroadcastSettings settings;
+    // Hash tables larger than the memory installed cannot work; larger than the free memory, they swap.
+    const auto memoryFits = [&](const tour::TournamentSpec& spec, const std::vector<EngineEntry>& engines) {
+        const auto memory = specMemory(spec, engines);
+        if (memory.aboveInstalled() || memory.aboveAvailable()) {
+            std::fprintf(stderr, "%s: %s\n", memory.aboveInstalled() ? "error" : "warning", memory.text().c_str());
+        }
+        return !memory.aboveInstalled();
+    };
     try {
         if (tour::TournamentState::isTournament(target)) {
             state = tour::TournamentState::open(target);
+            if (!state->finished() && !memoryFits(state->spec(), storage.loadEngines())) return 2;
         } else {
             // A setup or template file: a new tournament, with the engines of the profile.
             const auto setup = readJson<MatchSetup>(target);
@@ -102,7 +112,8 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
                      ? makeRunDirName(setup->engine_a, setup->engine_b)
                      : makeTournamentDirName(setup->name.empty() ? defaultTournamentName(*setup) : setup->name));
             const auto run = buildRun(*setup, engines, topology, dir);
-            state          = tour::TournamentState::create(dir, run.spec);
+            if (!memoryFits(run.spec, engines)) return 2;
+            state = tour::TournamentState::create(dir, run.spec);
         }
     } catch (const std::exception& e) {
         std::fprintf(stderr, "error: %s\n", e.what());

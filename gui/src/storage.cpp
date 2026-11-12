@@ -28,6 +28,7 @@ template std::optional<std::vector<EngineEntry>> readJson(const fs::path&);
 template std::optional<MatchSetup> readJson(const fs::path&);
 template std::optional<std::vector<QueuedTournament>> readJson(const fs::path&);
 template std::optional<nlohmann::json> readJson(const fs::path&);
+template std::optional<RunningMarker> readJson(const fs::path&);
 
 bool writeJson(const fs::path& file, const nlohmann::json& value, std::string* error, bool backup) {
     try {
@@ -166,5 +167,16 @@ std::vector<QueuedTournament> Storage::loadQueue() const {
 }
 
 void Storage::saveQueue(const std::vector<QueuedTournament>& queue) const { save(root_ / "queue.json", queue); }
+
+std::optional<RunningMarker> Storage::runningMarker() const { return readJson<RunningMarker>(root_ / "running.json"); }
+
+void Storage::setRunningMarker(const std::optional<RunningMarker>& marker) const {
+    if (marker) {
+        save(root_ / "running.json", *marker);
+    } else {
+        std::error_code ec;
+        fs::remove(root_ / "running.json", ec);
+    }
+}
 
 }  // namespace fcg

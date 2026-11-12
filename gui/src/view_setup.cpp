@@ -13,6 +13,7 @@
 
 #include "app.hpp"
 #include "i18n.hpp"
+#include "memory.hpp"
 #include "run.hpp"
 #include "stats.hpp"
 #include "storage.hpp"
@@ -59,6 +60,24 @@ bool inputText(const char* id, std::string& value, float width) {
 }
 
 // An engine of the list, `width` wide (-FLT_MIN: the width left), with a search field.
+// The Syzygy directories of the setup, typed or added with the folder dialog.
+bool tablebaseDirs(const char* id, std::string& paths, Dialogs& dialogs) {
+    const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
+    const bool changed =
+        inputText(id, paths, ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x);
+    if (ImGui::IsItemHovered() && !paths.empty()) ImGui::SetTooltip("%s", paths.c_str());
+    ImGui::SameLine();
+    ImGui::PushID(id);
+    if (ImGui::Button("…")) dialogs.openFolder(Dialogs::Purpose::Tablebases);
+    ImGui::PopID();
+#ifdef _WIN32
+    ImGui::TextDisabled("%s", TR("Directories separated by ';' (WDL files are enough)."));
+#else
+    ImGui::TextDisabled("%s", TR("Directories separated by ':' (WDL files are enough)."));
+#endif
+    return changed;
+}
+
 bool engineCombo(const char* id, std::string& value, const std::vector<EngineEntry>& engines, float width = -FLT_MIN) {
     bool changed = false;
     ImGui::SetNextItemWidth(width);
@@ -142,6 +161,31 @@ void App::setupEngines() {
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Swap A and B"));
 
     ImGui::TextDisabled("%s", TR("Statistics are given from A's point of view."));
+    ImGui::Spacing();
+    setupEngineOptions();
+}
+
+void App::setupEngineOptions() {
+    bool changed = false;
+    ImGui::TextDisabled("%s", TR("Common settings, forced on every engine (0 = each engine's own):"));
+    changed |= inputInt(TR("Hash (MB)"), "##common_hash", setup_.common_hash, 0, 1 << 20);
+    changed |= inputInt(TR("Threads"), "##common_threads", setup_.common_threads, 0, 1024);
+
+    changed |= ImGui::Checkbox(TR("Syzygy tablebases for the engines"), &setup_.engine_syzygy);
+    ui::help(
+        TR("The engines that have a SyzygyPath option get these directories, those of the adjudication: "
+           "otherwise each engine keeps its own setting."));
+    if (setup_.engine_syzygy) {
+        ImGui::Indent();
+        changed |= tablebaseDirs("##engine_tb_paths", setup_.tb_paths, dialogs_);
+        ImGui::Unindent();
+    }
+    changed |= ImGui::Checkbox(TR("Engines' own books off"), &setup_.engine_ownbook_off);
+    ui::help(
+        TR("OwnBook is set to false on the engines that have it, so that every game is played from the "
+           "openings of the tournament."));
+
+    if (changed) saveSetupSoon();
 }
 
 void App::setupMatch() {
@@ -574,17 +618,7 @@ void App::setupAdjudication() {
     changed |= ImGui::Checkbox(TR("Syzygy tablebases"), &setup_.tb_enabled);
     if (setup_.tb_enabled) {
         ImGui::Indent();
-        const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
-        changed |= inputText("##tb_paths", setup_.tb_paths,
-                             ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x);
-        if (ImGui::IsItemHovered() && !setup_.tb_paths.empty()) ImGui::SetTooltip("%s", setup_.tb_paths.c_str());
-        ImGui::SameLine();
-        if (ImGui::Button("…##tb_browse")) dialogs_.openFolder(Dialogs::Purpose::Tablebases);
-#ifdef _WIN32
-        ImGui::TextDisabled("%s", TR("Directories separated by ';' (WDL files are enough)."));
-#else
-        ImGui::TextDisabled("%s", TR("Directories separated by ':' (WDL files are enough)."));
-#endif
+        changed |= tablebaseDirs("##tb_paths", setup_.tb_paths, dialogs_);
         changed |= inputInt(TR("Max pieces"), "##tb_pieces", setup_.tb_pieces, 0, 7);
         ui::help(TR("0 = everything the tables cover."));
         changed |= ImGui::Checkbox(TR("Ignore the 50-move rule"), &setup_.tb_ignore50);
@@ -754,9 +788,7 @@ void App::setupParticipants() {
     auto& list   = setup_.participants;
 
     // Settings forced on everyone unless an engine overrides them.
-    ImGui::TextDisabled("%s", TR("Common settings, forced on every engine (0 = each engine's own):"));
-    changed |= inputInt(TR("Hash (MB)"), "##common_hash", setup_.common_hash, 0, 1 << 20);
-    changed |= inputInt(TR("Threads"), "##common_threads", setup_.common_threads, 0, 1024);
+    setupEngineOptions();
 
     const bool nodes     = setup_.limit == LimitKind::Nodes;
     const bool depth     = setup_.limit == LimitKind::Depth;
@@ -919,24 +951,18 @@ void App::drawSetupSummary() {
     const auto n     = static_cast<int>(setup_.participants.size());
     const int cycles = std::max(1, setup_.cycles);
     const int seeds  = std::clamp(setup_.seeds, 1, std::max(1, n - 1));
-    uint64_t games   = 0;
+    const auto games = plannedGames(setup_);
     std::string formula;
     std::string per_engine;
 
     switch (setup_.format) {
         case TournamentFormat::Match:
-            if (setup_.mode == MatchMode::Fixed) {
-                games = static_cast<uint64_t>((setup_.fixed_games + 1) / 2 * 2);
-            } else if (setup_.mode == MatchMode::Sprt && setup_.sprt_max_games > 0) {
-                games = static_cast<uint64_t>((setup_.sprt_max_games + 1) / 2 * 2);
-            }
             formula = setup_.mode == MatchMode::Sprt       ? std::string(TR("until the SPRT decides"))
                       : setup_.mode == MatchMode::Infinite ? std::string(TR("until stopped"))
                                                            : trn("{} game pair", "{} game pairs", games / 2, games / 2);
             break;
         case TournamentFormat::RoundRobin: {
             const uint64_t pairs = n >= 2 ? static_cast<uint64_t>(n) * (n - 1) / 2 : 0;
-            games                = pairs * 2 * cycles;
             formula              = trf("{} pairings × 2 games × {} cycles", pairs, cycles);
             const auto each      = static_cast<uint64_t>(n >= 2 ? (n - 1) * 2 * cycles : 0);
             per_engine           = trn("{} game per engine", "{} games per engine", each, each);
@@ -944,7 +970,6 @@ void App::drawSetupSummary() {
         }
         case TournamentFormat::Gauntlet: {
             const uint64_t pairs = n >= 2 ? static_cast<uint64_t>(seeds) * (n - seeds) : 0;
-            games                = pairs * 2 * cycles;
             formula              = trf("{} pairings × 2 games × {} cycles", pairs, cycles);
             const auto each      = static_cast<uint64_t>(n >= 2 ? (n - seeds) * 2 * cycles : 0);
             per_engine           = trn("{} game per tested engine", "{} games per tested engine", each, each);
@@ -952,14 +977,12 @@ void App::drawSetupSummary() {
         }
         case TournamentFormat::Swiss: {
             const uint64_t pairs = static_cast<uint64_t>(n / 2);
-            games                = pairs * 2 * cycles;
             formula              = trf("{} rounds × {} pairings × 2 games", cycles, pairs);
             per_engine           = trn("{} game per engine", "{} games per engine", 2 * cycles, 2 * cycles);
             break;
         }
         case TournamentFormat::Knockout: {
             const uint64_t matches = n >= 2 ? static_cast<uint64_t>(n - 1) : 0;
-            games                  = matches * 2 * cycles;
             formula                = trf("{} matches × {} pairs of games, plus tiebreaks", matches, cycles);
             break;
         }
@@ -971,16 +994,13 @@ void App::drawSetupSummary() {
     ImGui::TextDisabled("%s", formula.c_str());
     if (!per_engine.empty()) ImGui::TextDisabled("%s", per_engine.c_str());
 
-    // A rough duration: a game lasts about two base times and 60 increments, or 120 moves, per side.
+    // A rough duration, with a clock.
     const bool fixed_nodes = clockFree(setup_.limit);
     const int concurrency  = setup_.concurrency_auto ? topology_.defaultConcurrency(fixed_nodes) : setup_.concurrency;
-    if (games > 0 && !fixed_nodes) {
-        const double game_s  = setup_.limit == LimitKind::MoveTime ? 120.0 * setup_.move_s
-                                                                   : 2.0 * (setup_.tc_base_s + 60.0 * setup_.tc_inc_s);
-        const double seconds = static_cast<double>(games) * game_s / std::max(1, concurrency);
+    if (const auto seconds = plannedSeconds(setup_, topology_)) {
         ImGui::Spacing();
         ImGui::TextUnformatted(
-            trf("About {} with {} games at a time", ui::formatDuration(seconds), concurrency).c_str());
+            trf("About {} with {} games at a time", ui::formatDuration(*seconds), concurrency).c_str());
     }
 
     // What could go wrong.
@@ -1044,6 +1064,24 @@ void App::drawSetupSummary() {
         if (setup_.common_threads > 0) parts += (parts.empty() ? "" : ", ") + trf("Threads {}", setup_.common_threads);
         check(true, trf("Common settings: {}", parts));
     }
+    if (setup_.engine_syzygy) {
+        check(!setup_.tb_paths.empty(), setup_.tb_paths.empty()
+                                            ? std::string(TR("Syzygy tablebases for the engines: no directory given"))
+                                            : trf("Syzygy tablebases for the engines: {}", setup_.tb_paths));
+    }
+    if (setup_.engine_ownbook_off) check(true, TR("The engines' own books are off"));
+    // The hash tables against the memory: a warning above the free memory, an error above the installed one.
+    if (const auto memory = setupMemory(setup_, engines_, topology_); memory.hash_mb > 0) {
+        if (memory.aboveInstalled()) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+            ImGui::TextUnformatted("!");
+            ImGui::SameLine();
+            ImGui::TextWrapped("%s", memory.text().c_str());
+            ImGui::PopStyleColor();
+        } else {
+            check(!memory.aboveAvailable(), memory.text());
+        }
+    }
     for (const auto& p : setup_.participants) {
         if (setup_.format != TournamentFormat::Match && !fixed_nodes && p.time_percent != 100) {
             check(true, trf("{} plays with {} % of the time", p.name, p.time_percent));
@@ -1081,6 +1119,7 @@ void App::drawTemplates() {
                 loaded->ui_zoom  = setup_.ui_zoom;
                 loaded->panes    = setup_.panes;
                 loaded->notify   = setup_.notify;
+                loaded->resume_at_launch = setup_.resume_at_launch;
                 setup_           = *loaded;
                 template_message_.clear();
                 saveSetupSoon();

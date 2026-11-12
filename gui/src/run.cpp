@@ -12,6 +12,7 @@
 #include <core/globals/globals.hpp>
 #include <core/observer.hpp>
 #include <core/rand.hpp>
+#include <core/threading/thread_vector.hpp>
 #include <matchmaking/syzygy.hpp>
 #include <types/exception.hpp>
 
@@ -21,6 +22,11 @@
 #include "console.hpp"
 #include "engines.hpp"
 #include "i18n.hpp"
+
+namespace fastchess {
+// The engine processes started (see core/globals/globals.cpp).
+extern util::ThreadVector<ProcessInformation> process_list;
+}  // namespace fastchess
 
 namespace fcg {
 
@@ -50,6 +56,16 @@ bool hasOption(const EngineEntry& entry, const std::string& name) {
     return false;
 }
 
+void setOption(fastchess::EngineConfiguration& config, const std::string& name, const std::string& value) {
+    for (auto& [k, v] : config.options) {
+        if (k == name) {
+            v = value;
+            return;
+        }
+    }
+    config.options.emplace_back(name, value);
+}
+
 // The participant's own setting, else the common one, else what the engine entry says.
 void overrideOption(fastchess::EngineConfiguration& config, const EngineEntry& entry, const std::string& name, int own,
                     int common) {
@@ -57,15 +73,11 @@ void overrideOption(fastchess::EngineConfiguration& config, const EngineEntry& e
     if (value <= 0) return;
     // An engine that does not have the option would print an error for it.
     if (!entry.uci_options.empty() && !hasOption(entry, name)) return;
-
-    for (auto& [k, v] : config.options) {
-        if (k == name) {
-            v = std::to_string(value);
-            return;
-        }
-    }
-    config.options.emplace_back(name, std::to_string(value));
+    setOption(config, name, std::to_string(value));
 }
+
+// The options the setup forces on the engines that have them, besides Hash and Threads.
+constexpr const char* FORCED_OPTIONS[] = {"SyzygyPath", "OwnBook"};
 
 fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSetup& setup,
                                         const ParticipantSetup& participant = {}) {
@@ -81,6 +93,9 @@ fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSet
 
     overrideOption(config, entry, "Hash", participant.hash, setup.common_hash);
     overrideOption(config, entry, "Threads", participant.threads, setup.common_threads);
+    // Only on the engines known to have them: these are not options every engine has.
+    if (setup.engine_syzygy && hasOption(entry, "SyzygyPath")) setOption(config, "SyzygyPath", setup.tb_paths);
+    if (setup.engine_ownbook_off && hasOption(entry, "OwnBook")) setOption(config, "OwnBook", "false");
 
     const double share = std::max(1, participant.time_percent) / 100.0;
     switch (setup.limit) {
@@ -182,6 +197,17 @@ fastchess::EngineConfiguration participantConfig(const EngineEntry& entry, const
             if (ck == k) cv = v, set = true;
         }
         if (!set) config.options.emplace_back(k, v);
+    }
+    // SyzygyPath and OwnBook, as the first participant given them got them (they are not options every engine has).
+    for (const char* name : FORCED_OPTIONS) {
+        if (!hasOption(entry, name)) continue;
+        const std::string* given = nullptr;
+        for (const auto& p : spec.participants) {
+            for (const auto& [k, v] : p.engine.options) {
+                if (k == name && !given) given = &v;
+            }
+        }
+        if (given) setOption(config, name, *given);
     }
     return config;
 }
@@ -309,6 +335,8 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         throw fastchess_exception(TR("The time per move must be positive."));
     if (setup.limit == LimitKind::Depth && setup.depth <= 0)
         throw fastchess_exception(TR("The depth must be positive."));
+    if (setup.engine_syzygy && setup.tb_paths.empty())
+        throw fastchess_exception(TR("Give the Syzygy tablebase directory."));
 
     BuiltRun run;
     auto& t = run.tournament;
@@ -480,6 +508,46 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     run.info = runInfo(spec, run_dir);
 
     return run;
+}
+
+uint64_t plannedGames(const MatchSetup& setup) {
+    const auto n      = static_cast<uint64_t>(setup.participants.size());
+    const auto cycles = static_cast<uint64_t>(std::max(1, setup.cycles));
+    switch (setup.format) {
+        case TournamentFormat::Match:
+            if (setup.mode == MatchMode::Fixed) return static_cast<uint64_t>((setup.fixed_games + 1) / 2 * 2);
+            if (setup.mode == MatchMode::Sprt && setup.sprt_max_games > 0)
+                return static_cast<uint64_t>((setup.sprt_max_games + 1) / 2 * 2);
+            return 0;
+        case TournamentFormat::RoundRobin:
+            return n >= 2 ? n * (n - 1) / 2 * 2 * cycles : 0;
+        case TournamentFormat::Gauntlet: {
+            const auto seeds = static_cast<uint64_t>(std::clamp(setup.seeds, 1, std::max(1, static_cast<int>(n) - 1)));
+            return n >= 2 ? seeds * (n - seeds) * 2 * cycles : 0;
+        }
+        case TournamentFormat::Swiss:
+            return n / 2 * 2 * cycles;
+        case TournamentFormat::Knockout:
+            return n >= 2 ? (n - 1) * 2 * cycles : 0;
+    }
+    return 0;
+}
+
+std::optional<double> plannedSeconds(const MatchSetup& setup, const CpuTopology& topology) {
+    const auto games = plannedGames(setup);
+    if (games == 0 || clockFree(setup.limit)) return std::nullopt;
+    const int concurrency = setup.concurrency_auto ? topology.defaultConcurrency(false)
+                                                   : std::clamp(setup.concurrency, 1, topology.logical);
+    const double game_s =
+        setup.limit == LimitKind::MoveTime ? 120.0 * setup.move_s : 2.0 * (setup.tc_base_s + 60.0 * setup.tc_inc_s);
+    return static_cast<double>(games) * game_s / std::max(1, concurrency);
+}
+
+int engineProcesses() {
+    fastchess::process_list.lock();
+    const auto n = std::distance(fastchess::process_list.begin(), fastchess::process_list.end());
+    fastchess::process_list.unlock();
+    return static_cast<int>(n);
 }
 
 RunController::~RunController() {
