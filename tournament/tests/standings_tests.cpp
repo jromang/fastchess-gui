@@ -161,6 +161,51 @@ TEST_CASE("bbcode: title in bold, details, the text in a code block") {
     CHECK(forumDetails(spec, computeTable(spec, results)) == "Round robin, 3 engines, 10+0.1, 2 games, book UHO.epd");
 }
 
+TEST_CASE("gauntlet table: the seed, its opponents by their own points, and the line under it") {
+    auto spec   = players(4);
+    spec.format = Format::Gauntlet;
+    spec.seeds  = 1;
+    spec.name   = "Gauntlet A";
+    for (auto& p : spec.participants) {
+        p.engine.limit.tc.time      = 10000;
+        p.engine.limit.tc.increment = 100;
+    }
+    spec.conditions.opening.file = "/books/UHO.epd";
+    std::vector<GameResult> results;
+    add(results, 100, 101, 1.0, 2);  // A beats B
+    add(results, 100, 102, 0.5, 2);  // draws C
+    add(results, 100, 103, 0.0, 2);  // loses to D
+    const auto table = computeTable(spec, results);
+
+    // 50 % over six games: +0, and the 95 % margin of the spread of +2 =2 -2. A score of 0 or 100 % has no Elo.
+    CHECK(gauntletText(spec, table, "Gauntlet A", 6) ==
+          "Gauntlet A\n"
+          "\n"
+          "#  Name  Points      %      Elo     +/-  W-L-D\n"
+          "------------------------------------------------------\n"
+          "1  A      3.0/6   50.0     +0.0   312.2  +2-2=2\n"
+          "2  D      2.0/2  100.0        -       -  +2-0=0\n"
+          "3  C      1.0/2   50.0     +0.0     0.0  +0-0=2\n"
+          "4  B      0.0/2    0.0        -       -  +0-2=0\n"
+          "\n"
+          "6/6 games, 33% draws, time control:10+0.1, book:UHO.epd, event: Gauntlet A\n");
+
+    // Planned games unknown, no book, no name; a game still to play.
+    spec.conditions.opening.file.clear();
+    spec.name.clear();
+    CHECK(gauntletLine(spec, table, std::nullopt) == "6 games, 33% draws, time control:10+0.1");
+    CHECK(gauntletLine(spec, table, 8) == "6/8 games, 33% draws, time control:10+0.1");
+
+    const auto even = scoreElo(10, 0, 10);
+    REQUIRE(even.elo);
+    CHECK(*even.elo == 0);
+    CHECK(*even.error > 0);
+    const auto ahead = scoreElo(6, 0, 4);
+    CHECK(*ahead.elo == doctest::Approx(70.44).epsilon(0.002));
+    CHECK_FALSE(scoreElo(3, 0, 0).elo);
+    CHECK_FALSE(scoreElo(0, 0, 0).error);
+}
+
 TEST_CASE("table: a head-to-head result breaks an otherwise complete tie") {
     const auto spec = players(2);
     std::vector<GameResult> results;

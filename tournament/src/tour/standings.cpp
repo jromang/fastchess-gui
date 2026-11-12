@@ -418,8 +418,8 @@ std::string tableText(const Table& table, const std::string& title) {
     for (std::size_t i = 0; i < table.rows.size(); ++i) {
         const auto& r = table.rows[i];
         out += fmt::format("{:>3}  {:<{}}  {:>6}  {:>5}  {:>5.1f}%  {:>+7}  {:>5.0f}  {:>14}  {:>3}", i + 1, r.name,
-                           width, half(r.points), r.games, 100.0 * r.score(), std::lround(r.rating.elo),
-                           r.rating.error, fmt::format("+{} ={} -{}", r.wins, r.draws, r.losses), r.timeouts);
+                           width, half(r.points), r.games, 100.0 * r.score(), std::lround(r.rating.elo), r.rating.error,
+                           fmt::format("+{} ={} -{}", r.wins, r.draws, r.losses), r.timeouts);
         for (const auto& c : table.rows) {
             if (c.id == r.id) {
                 out += "     -";
@@ -501,6 +501,94 @@ td.x{color:var(--muted)}
     }
     out += "</tbody></table></div></body></html>\n";
     return out;
+}
+
+ScoreElo scoreElo(int wins, int draws, int losses) {
+    const int n = wins + draws + losses;
+    if (n == 0) return {};
+    const double s = (wins + 0.5 * draws) / n;
+    if (s <= 0 || s >= 1) return {};
+
+    // The variance of one game's result around the mean (sample variance), then of the mean.
+    const auto sq     = [&](double r) { return (r - s) * (r - s); };
+    const double var  = (wins * sq(1.0) + draws * sq(0.5) + losses * sq(0.0)) / std::max(1, n - 1);
+    const double sd   = std::sqrt(var / n);
+    const auto elo    = [](double score) { return -400.0 * std::log10(1.0 / score - 1.0); };
+    const double low  = elo(std::max(s - Z95 * sd, 1e-9));
+    const double high = elo(std::min(s + Z95 * sd, 1.0 - 1e-9));
+    return {elo(s) + 0.0, (high - low) / 2.0};  // + 0.0: an even score is +0, not -0
+}
+
+std::string gauntletLine(const TournamentSpec& spec, const Table& table, std::optional<uint64_t> planned) {
+    int games = 0, draws = 0;
+    for (const auto& r : table.rows) games += r.games, draws += r.draws;
+    games /= 2;
+    draws /= 2;
+
+    std::string out = planned ? fmt::format("{}/{} games", games, std::max<uint64_t>(*planned, games))
+                              : fmt::format("{} games", games);
+    out += fmt::format(", {:.0f}% draws", games ? 100.0 * draws / games : 0.0);
+    if (!spec.participants.empty()) {
+        out += ", time control:" + timeControlText(spec.participants.front().engine.limit);
+    }
+    if (!spec.conditions.opening.file.empty()) {
+        out += ", book:" + std::filesystem::path(spec.conditions.opening.file).filename().string();
+    }
+    if (!spec.name.empty()) out += ", event: " + spec.name;
+    return out;
+}
+
+std::string gauntletText(const TournamentSpec& spec, const Table& table, const std::string& title,
+                         std::optional<uint64_t> planned) {
+    struct Row {
+        std::string name;
+        int wins = 0, draws = 0, losses = 0;
+        [[nodiscard]] int games() const { return wins + draws + losses; }
+        [[nodiscard]] double points() const { return wins + 0.5 * draws; }
+    };
+
+    std::string out  = title.empty() ? "" : title + "\n\n";
+    const auto seeds = std::min<std::size_t>(std::max(1, spec.seeds), spec.participants.size());
+    for (std::size_t s = 0; s < seeds; ++s) {
+        const auto& seed = spec.participants[s];
+        const auto it =
+            std::find_if(table.rows.begin(), table.rows.end(), [&](const Standing& r) { return r.id == seed.id; });
+        if (it == table.rows.end()) continue;
+
+        // The seed, then whoever it met with its score against it, the best first.
+        std::vector<Row> rows = {{it->name, it->wins, it->draws, it->losses}};
+        std::vector<Row> opponents;
+        for (const auto& r : table.rows) {
+            const auto p = table.pair(r.id, seed.id);
+            if (r.id != seed.id && p.games() > 0) opponents.push_back({r.name, p.wins, p.draws, p.losses});
+        }
+        std::stable_sort(opponents.begin(), opponents.end(), [](const Row& a, const Row& b) {
+            return a.points() != b.points() ? a.points() > b.points() : a.name < b.name;
+        });
+        rows.insert(rows.end(), opponents.begin(), opponents.end());
+
+        std::size_t name_w = 4, points_w = 6;
+        const auto points = [](const Row& r) { return fmt::format("{:.1f}/{}", r.points(), r.games()); };
+        for (const auto& r : rows) {
+            name_w   = std::max(name_w, r.name.size());
+            points_w = std::max(points_w, points(r).size());
+        }
+        const auto rank_w = fmt::format("{}", rows.size()).size();
+
+        if (s > 0) out += "\n";
+        const auto head = fmt::format("{:>{}}  {:<{}}  {:>{}}  {:>5}  {:>7}  {:>6}  W-L-D", "#", rank_w, "Name", name_w,
+                                      "Points", points_w, "%", "Elo", "+/-");
+        out += head + "\n" + std::string(head.size() + 8, '-') + "\n";
+        for (std::size_t i = 0; i < rows.size(); ++i) {
+            const auto& r  = rows[i];
+            const auto elo = scoreElo(r.wins, r.draws, r.losses);
+            out += fmt::format("{:>{}}  {:<{}}  {:>{}}  {:>5.1f}  {:>7}  {:>6}  +{}-{}={}\n", i + 1, rank_w, r.name,
+                               name_w, points(r), points_w, r.games() ? 100.0 * r.points() / r.games() : 0.0,
+                               elo.elo ? fmt::format("{:+.1f}", *elo.elo) : "-",
+                               elo.error ? fmt::format("{:.1f}", *elo.error) : "-", r.wins, r.losses, r.draws);
+        }
+    }
+    return out + "\n" + gauntletLine(spec, table, planned) + "\n";
 }
 
 }  // namespace fcg::tour

@@ -112,4 +112,24 @@ struct PairGames {
 // A self-contained HTML page with the standings and the crosstable.
 [[nodiscard]] std::string tableHtml(const Table& table, const std::string& title);
 
+// The rating difference a score stands for, -400 log10(1 / score - 1), and the half-width of its 95 % interval from
+// the spread of the results. Neither for a score of 0 or 100 %, nor without games.
+struct ScoreElo {
+    std::optional<double> elo;
+    std::optional<double> error;
+};
+[[nodiscard]] ScoreElo scoreElo(int wins, int draws, int losses);
+
+// A gauntlet as Gabor Szots posts it on the forums (TorsGUI's layout, asked for by him): for each seed, the seed
+// with its whole score, then its opponents by their own points against it, each row from its own point of view:
+// Points, %, the Elo difference its score stands for with its 95 % margin, and W-L-D (written +W-L=D). Then the
+// line of gauntletLine(). The seeds are the first spec.seeds participants. An empty title is left out.
+[[nodiscard]] std::string gauntletText(const TournamentSpec& spec, const Table& table, const std::string& title,
+                                       std::optional<uint64_t> planned);
+
+// The line under a gauntlet's table: "480/480 games, 30% draws, time control:90+1, book:UHO.epd, event: Cup", the
+// games played of those planned (when known), the time control of the first participant, the book and the event
+// (the tournament's name), the last two only when there is one.
+[[nodiscard]] std::string gauntletLine(const TournamentSpec& spec, const Table& table, std::optional<uint64_t> planned);
+
 }  // namespace fcg::tour
