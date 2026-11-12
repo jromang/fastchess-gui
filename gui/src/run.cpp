@@ -835,7 +835,7 @@ void RunController::stopWhenIdle() {
     if (state_ != State::Running) return;
 
     stop_when_idle_ = true;
-    setPaused(true);
+    fastchess::observer::PauseGate::instance().stopWhenIdle();
 }
 
 int RunController::runningGames() const {

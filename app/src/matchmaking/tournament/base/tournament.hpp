@@ -58,8 +58,12 @@ class BaseTournament {
 
     // Asked on the thread of game `game_id` while an engine of it fails to start: false gives the game up without
     // scoring it, rather than trying again and then stopping the tournament (a front end whose participant was
-    // withdrawn meanwhile, or that is pausing).
+    // withdrawn meanwhile, or that is stopping once the running games are over).
     [[nodiscard]] virtual bool gameWanted(std::size_t /*game_id*/) const { return true; }
+
+    // Asked like gameWanted(): true while the front end holds its games back (a pause). The wait before the next try
+    // does not count meanwhile, so the try comes after the pause, and the pause uses up none of the tries.
+    [[nodiscard]] virtual bool gameHeld(std::size_t /*game_id*/) const { return false; }
 
     // creates the matches
     void create();

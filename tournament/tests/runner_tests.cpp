@@ -296,6 +296,93 @@ TEST_CASE("runner: a game whose engine fails to start is given up quietly once i
     CHECK(state->results().size() == 2u);  // the games of 0 and 1
     CHECK(std::chrono::steady_clock::now() - begun < fastchess::BaseTournament::ENGINE_START_RETRY_PAUSE);
 }
+
+TEST_CASE("runner: a pause holds the next try of an engine that failed to start, without using it up") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-retry-pause";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    // Exits at once the first time it is started, then is the random mover.
+    const auto started = dir / "started";
+    const auto script  = dir / "flaky.sh";
+    {
+        std::ofstream out(script);
+        out << "#!/bin/sh\nif [ ! -e \"" << started.string() << "\" ]; then touch \"" << started.string()
+            << "\"; exit 1; fi\nexec \"" << randomMover() << "\"\n";
+    }
+    fs::permissions(script, fs::perms::owner_all);
+
+    auto s                       = spec(Format::Match, 2, 1, 2);
+    s.conditions.concurrency     = 1;
+    s.participants[1].engine.cmd = script.string();
+    auto state                   = TournamentState::create(dir / "t", s);
+
+    // Paused while the engine waits for its next try: nothing is played during the pause, the try comes after it.
+    constexpr auto held = 3s;
+    std::thread pauser([&] {
+        while (!fs::exists(started)) std::this_thread::sleep_for(10ms);
+        fastchess::observer::PauseGate::instance().setPaused(true);
+        std::this_thread::sleep_for(held);
+        CHECK(state->results().empty());
+        fastchess::observer::PauseGate::instance().setPaused(false);
+    });
+    const auto begun = std::chrono::steady_clock::now();
+    const auto error = play(*state);
+    pauser.join();
+
+    CHECK(error.empty());
+    CHECK_FALSE(fastchess::atomic::abnormal_termination);
+    CHECK(state->finished());
+    CHECK(state->results().size() == 2u);
+    CHECK(std::chrono::steady_clock::now() - begun >= fastchess::BaseTournament::ENGINE_START_RETRY_PAUSE + held);
+}
+
+TEST_CASE("runner: \"stop when idle\" gives up at once a game whose engine waits for its next try") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-retry-idle";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    // Never starts; tells that it was tried.
+    const auto started = dir / "started";
+    const auto script  = dir / "broken.sh";
+    {
+        std::ofstream out(script);
+        out << "#!/bin/sh\ntouch \"" << started.string() << "\"\nexit 1\n";
+    }
+    fs::permissions(script, fs::perms::owner_all);
+
+    auto s                       = spec(Format::Match, 2, 1, 2);
+    s.conditions.concurrency     = 1;
+    s.participants[1].engine.cmd = script.string();
+    auto state                   = TournamentState::create(dir / "t", s);
+
+    // As the GUI does: stops once no game runs and no pair waits for its second game.
+    std::thread stopper([&] {
+        while (!fs::exists(started)) std::this_thread::sleep_for(10ms);
+        auto& gate = fastchess::observer::PauseGate::instance();
+        gate.stopWhenIdle();
+        while (gate.running() > 0 || gate.openPairs() > 0) std::this_thread::sleep_for(10ms);
+        fastchess::atomic::stop = true;
+    });
+    const auto begun = std::chrono::steady_clock::now();
+    const auto error = play(*state);
+    stopper.join();
+
+    CHECK(error.empty());
+    CHECK_FALSE(fastchess::atomic::abnormal_termination);
+    CHECK(state->results().empty());
+    CHECK(std::chrono::steady_clock::now() - begun < fastchess::BaseTournament::ENGINE_START_RETRY_PAUSE);
+}
 #endif
 
 TEST_CASE("runner: engine logs, of every game when asked, with both directions of both engines") {

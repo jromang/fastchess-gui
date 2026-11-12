@@ -378,9 +378,14 @@ void BaseTournament::playGame(const GamePair<EngineConfiguration, EngineConfigur
         Logger::print<Logger::Level::WARN>("Warning; {} engine startup failure: \"{}\", trying again in {} s", name,
                                            failure->second, ENGINE_START_RETRY_PAUSE.count());
         restartEngine(engine);
-        const auto until = std::chrono::steady_clock::now() + ENGINE_START_RETRY_PAUSE;
-        while (!atomic::stop.load() && std::chrono::steady_clock::now() < until && gameWanted(game_id)) {
+        // Only the time the game is not held counts: a pause stops the clock of the wait.
+        auto waited = std::chrono::steady_clock::duration::zero();
+        auto last   = std::chrono::steady_clock::now();
+        while (!atomic::stop.load() && waited < ENGINE_START_RETRY_PAUSE && gameWanted(game_id)) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            const auto now = std::chrono::steady_clock::now();
+            if (!gameHeld(game_id)) waited += now - last;
+            last = now;
         }
         if (!atomic::stop.load() && !gameWanted(game_id)) {
             given_up = true;

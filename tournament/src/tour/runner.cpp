@@ -71,9 +71,12 @@ void Runner::startNext() {
 }
 
 bool Runner::gameWanted(std::size_t /*game_id*/) const {
-    if (fastchess::observer::PauseGate::instance().paused()) return false;
+    // A game waiting for a resume that will not come would keep "stop when idle" waiting forever.
+    if (fastchess::observer::PauseGate::instance().stoppingWhenIdle()) return false;
     return !t_task || state_.wanted(*t_task);
 }
+
+bool Runner::gameHeld(std::size_t /*game_id*/) const { return fastchess::observer::PauseGate::instance().paused(); }
 
 void Runner::play(const GameTask& task) {
     t_task     = &task;
