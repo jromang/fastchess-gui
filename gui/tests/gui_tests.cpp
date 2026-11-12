@@ -482,6 +482,35 @@ TEST_CASE("board details: the 50-move counter, the material difference and the p
     CHECK(info.balance == 3 + 5 - 9);
 }
 
+TEST_CASE("live: a gauntlet's board is turned to the seed's side, its replacement's too") {
+    tour::TournamentSpec spec;
+    spec.format = tour::Format::Gauntlet;
+    spec.seeds  = 1;
+    for (const auto* name : {"Seed", "A", "B", "Heir"}) {
+        tour::Participant p;
+        p.id          = static_cast<int>(spec.participants.size()) + 1;
+        p.engine.name = name;
+        spec.participants.push_back(p);
+    }
+    CHECK(seedHasBlack(spec, "Seed", "A") == false);
+    CHECK(seedHasBlack(spec, "A", "Seed") == true);
+    CHECK_FALSE(seedHasBlack(spec, "A", "B").has_value());
+
+    // Replaced: its games go on with the engine that took its place.
+    spec.participants[0].active      = false;
+    spec.participants[0].replaced_by = 4;
+    CHECK(seedHasBlack(spec, "B", "Heir") == true);
+
+    // Two seeds meeting: no side to prefer.
+    spec.seeds = 2;
+    CHECK_FALSE(seedHasBlack(spec, "Heir", "A").has_value());
+    CHECK(seedHasBlack(spec, "B", "A") == true);
+
+    // Only gauntlets have seeds.
+    spec.format = tour::Format::RoundRobin;
+    CHECK_FALSE(seedHasBlack(spec, "A", "Seed").has_value());
+}
+
 TEST_CASE("tablebase adjudication: its own limit, or the largest tables in its folders") {
     namespace fs   = std::filesystem;
     const auto dir = fs::temp_directory_path() / "fcg-gui-syzygy";

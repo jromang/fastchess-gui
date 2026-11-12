@@ -340,6 +340,13 @@ void App::refreshSlot(int slot) {
 
     auto& v = slot_views_[static_cast<std::size_t>(slot)];
     obs->copySlot(slot, v.state);
+    // A gauntlet's new game, from its seed's side; Flip turns it over until the next game.
+    if (setup_.live_seed_side && v.state.has_game && v.state.game_id != v.turned_for) {
+        v.turned_for = v.state.game_id;
+        if (const auto* t = run_.tournament()) {
+            if (const auto black = seedHasBlack(t->spec(), v.state.white, v.state.black)) v.flip = *black;
+        }
+    }
     if (v.state.has_game && v.state.version != v.board_version) {
         v.board = chess::Board();
         v.board.setFen(v.state.start_fen);
@@ -386,6 +393,17 @@ void App::drawLive() {
             ui::help(TR("The 50-move counter, the material and the pieces left, under every board of the mosaic."));
             ImGui::SameLine(0, px(24));
         }
+    }
+
+    if (const auto* t = run_.tournament(); t && t->spec().format == tour::Format::Gauntlet) {
+        if (ImGui::Checkbox(TR("Seed at the bottom"), &setup_.live_seed_side)) {
+            for (auto& v : slot_views_) v.turned_for = ~std::size_t{0};  // turned at once
+            saveSetupSoon();
+        }
+        ui::help(
+            TR("Each new game of the gauntlet is shown from the side of its seed, the engine that meets all the "
+               "others. Flip still turns the board over."));
+        ImGui::SameLine(0, px(24));
     }
 
     if (!mosaic) {

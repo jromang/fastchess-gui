@@ -80,6 +80,12 @@ struct SlotState {
     std::string reason;
 };
 
+// In a gauntlet, whether the seed of a game between `white` and `black` has Black (true: the board is turned to its
+// side) or White (false). nullopt for a game without a seed or between two seeds, and in the other formats. The
+// seeds are the first spec.seeds participants, and those who replaced them.
+[[nodiscard]] std::optional<bool> seedHasBlack(const tour::TournamentSpec& spec, const std::string& white,
+                                               const std::string& black);
+
 // A finished, scored game, small enough to keep millions of them.
 struct GameRecord {
     uint64_t game_id    = 0;
