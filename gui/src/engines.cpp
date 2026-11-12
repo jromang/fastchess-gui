@@ -270,8 +270,11 @@ class Transcript {
     Transcript(const Transcript&)            = delete;
     Transcript& operator=(const Transcript&) = delete;
 
-    // For a report, then what the engine wrote last on its error output; empty when it wrote nothing.
-    [[nodiscard]] std::string report() const {
+    // For a report, then what the engine wrote last on its error output; empty when it wrote nothing. What is still
+    // to read is read first: an engine that ended before it was asked anything (a DLL missing) failed the "uci" sent
+    // to it, so its last words were never read.
+    [[nodiscard]] std::string report() {
+        (void)engine_.readEngine("", std::chrono::milliseconds(200));
         std::string report;
         if (!lines_.empty()) report += std::string(TR("The engine wrote:")) + "\n";
         for (const auto& line : lines_) report += "    " + toUtf8(line) + "\n";
@@ -311,7 +314,7 @@ ProbeResult probeEngine(const EngineEntry& entry) {
 
     try {
         fastchess::engine::UciEngine engine(config, false);
-        const Transcript transcript(engine);
+        Transcript transcript(engine);
 
         if (auto started = engine.start(std::nullopt); !started) {
             result.error  = toUtf8(started.error());
@@ -371,7 +374,7 @@ struct Compliance {
 // engine wrote last.
 Compliance compliance(const fastchess::EngineConfiguration& config) {
     fastchess::engine::UciEngine engine(config, false);
-    const Transcript transcript(engine);
+    Transcript transcript(engine);
     auto steps = fastchess::engine::complianceSteps(engine);
     // Its options, sent as a game sends them, once it started.
     if (!config.options.empty())
@@ -415,7 +418,7 @@ CheckResult checkEngine(const EngineEntry& entry) {
 
     try {
         fastchess::engine::UciEngine engine(config, false);
-        const Transcript transcript(engine);
+        Transcript transcript(engine);
         // A failure comes with what the engine wrote last.
         const auto fail = [&](std::string message) {
             result.message = std::move(message);
