@@ -324,6 +324,8 @@ class App {
     // Renames the engine (made unique), and what refers to it by name follows: the setup and the queued tournaments,
     // the read and check queues, the quick test, the relaunch, the schedule's edit and the test suite.
     void renameEngine(int index, const std::string& name);
+    void removeEngines(const std::vector<std::string>& names);
+    void queueChecks(const std::vector<std::string>& names);  // checked one after the other, see pollCheck
 
     // run lifecycle
     void startRun();
@@ -463,6 +465,10 @@ class App {
     bool refresh_programs_again_ = false;  // asked while the CRCs were read
     std::string engine_search_;
     std::string engine_group_;  // shown group, empty = all
+    int engine_status_ = 0;     // shown: 0 all, 1 works, 2 failed or changed, 3 not checked, 4 missing, 5 WinBoard
+    std::set<std::string> engine_marked_;    // several engines chosen (Ctrl or Shift click), by name
+    std::vector<std::string> remove_names_;  // waiting for the removal to be confirmed
+    std::string group_to_add_;
     struct ImportPreview {
         ImportResult result;
         std::vector<char> known;   // by engine: already in the list, not added again

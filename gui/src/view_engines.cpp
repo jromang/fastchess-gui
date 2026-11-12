@@ -130,6 +130,38 @@ void App::renameEngine(int index, const std::string& name) {
     bool suite = false;
     for (auto& n : suite_setup_.engines) suite |= follow(n);
     if (suite) writeJson(storage_.root() / "suite.json", suite_setup_);
+    if (engine_marked_.erase(old)) engine_marked_.insert(now);
+}
+
+void App::removeEngines(const std::vector<std::string>& names) {
+    const int selected = selected_engine_;
+    for (int i = static_cast<int>(engines_.size()) - 1; i >= 0; --i) {
+        const auto name = engines_[i].name;
+        if (std::find(names.begin(), names.end(), name) == names.end()) continue;
+        // A read or a check still running belongs to an index: keep it on its engine, or drop it with it.
+        for (int* busy : {&probe_index_, &check_index_, &selected_engine_}) {
+            if (*busy == i)
+                *busy = -1;
+            else if (*busy > i)
+                --*busy;
+        }
+        std::erase(probe_queue_, name);
+        std::erase(check_queue_, name);
+        engine_marked_.erase(name);
+        engines_.erase(engines_.begin() + i);
+    }
+    // The one removed: the engine that took its place.
+    if (selected_engine_ < 0 && selected >= 0)
+        selected_engine_ = std::min(selected, static_cast<int>(engines_.size()) - 1);
+    storage_.saveEngines(engines_);
+}
+
+void App::queueChecks(const std::vector<std::string>& names) {
+    for (const auto& name : names) {
+        const bool checking = check_.valid() && check_index_ >= 0 && engines_[check_index_].name == name;
+        if (!checking && std::find(check_queue_.begin(), check_queue_.end(), name) == check_queue_.end())
+            check_queue_.push_back(name);
+    }
 }
 
 void App::addEngine(const std::string& path) {
@@ -364,56 +396,91 @@ void App::drawEngines() {
         copy.name = uniqueEngineName(copy.name, -1);
         engines_.push_back(copy);
         selected_engine_ = static_cast<int>(engines_.size()) - 1;
+        engine_marked_.clear();
         storage_.saveEngines(engines_);
     };
+    // The engines an action applies to: those marked (Ctrl or Shift click), or the one selected.
+    std::vector<std::string> chosen;
+    for (const auto& e : engines_) {
+        if (engine_marked_.count(e.name)) chosen.push_back(e.name);
+    }
+    if (chosen.empty() && selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size()))
+        chosen.push_back(engines_[selected_engine_].name);
+    // The confirmation is opened at the end, in the list's window: a popup is found by the window it is opened in.
+    bool remove_asked    = false;
+    const auto askRemove = [&](std::vector<std::string> names) {
+        remove_names_ = std::move(names);
+        remove_asked  = !remove_names_.empty();
+    };
+
     ui::sameLineOrWrap(TR("Duplicate"));
     ImGui::BeginDisabled(selected_engine_ < 0);
     if (ImGui::Button(TR("Duplicate")) && selected_engine_ >= 0) duplicate();
     ui::sameLineOrWrap(TR("Remove"));
-    if (ImGui::Button(TR("Remove")) && selected_engine_ >= 0) ImGui::OpenPopup(TR("Remove the engine?###remove"));
+    if (ImGui::Button(TR("Remove"))) askRemove(chosen);
     ImGui::EndDisabled();
-
-    if (ImGui::BeginPopupModal(TR("Remove the engine?###remove"), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        if (selected_engine_ >= 0) {
-            ImGui::Text(TR("Remove “%s” from the list? The file is not deleted."),
-                        engines_[selected_engine_].name.c_str());
+    ui::sameLineOrWrap(TR("More…"));
+    if (ImGui::Button(TR("More…"))) ImGui::OpenPopup("engines_more");
+    if (ImGui::BeginPopup("engines_more")) {
+        std::vector<std::string> unchecked, missing;
+        for (const auto& e : engines_) {
+            const bool gone = e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
+            if (gone) missing.push_back(e.name);
+            if (!gone && e.check_ok < 0 && !e.cmd.empty()) unchecked.push_back(e.name);
         }
-        if (ImGui::Button(TR("Remove##confirm")) && selected_engine_ >= 0) {
-            // A read or a check still running belongs to an index: keep it on its engine, or drop it with it.
-            for (int* busy : {&probe_index_, &check_index_}) {
-                if (*busy == selected_engine_)
-                    *busy = -1;
-                else if (*busy > selected_engine_)
-                    --*busy;
-            }
-            engines_.erase(engines_.begin() + selected_engine_);
-            selected_engine_ = std::min(selected_engine_, static_cast<int>(engines_.size()) - 1);
-            storage_.saveEngines(engines_);
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button(TR("Cancel"))) ImGui::CloseCurrentPopup();
+        if (ImGui::MenuItem(trf("Check those not checked ({})", unchecked.size()).c_str(), nullptr, false,
+                            !unchecked.empty()))
+            queueChecks(unchecked);
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+            ImGui::SetTooltip("%s", TR("One after the other, not while a tournament plays."));
+        if (ImGui::MenuItem(trf("Remove the missing programs ({})…", missing.size()).c_str(), nullptr, false,
+                            !missing.empty()))
+            askRemove(missing);
         ImGui::EndPopup();
     }
 
-    // Search and groups.
+    if (ImGui::BeginPopupModal(TR("Remove the engine?###remove"), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (remove_names_.size() == 1) {
+            ImGui::Text(TR("Remove “%s” from the list? The file is not deleted."), remove_names_[0].c_str());
+        } else {
+            ImGui::TextUnformatted(trn("Remove {} engine from the list? The files are not deleted.",
+                                       "Remove {} engines from the list? The files are not deleted.",
+                                       remove_names_.size(), remove_names_.size())
+                                       .c_str());
+        }
+        if (ImGui::Button(TR("Remove##confirm"))) {
+            removeEngines(remove_names_);
+            remove_names_.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(TR("Cancel"))) {
+            remove_names_.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    // Search, groups and health.
+    std::vector<std::string> groups;
+    for (const auto& e : engines_) {
+        for (const auto& g : e.groups) {
+            if (std::find(groups.begin(), groups.end(), g) == groups.end()) groups.push_back(g);
+        }
+    }
+    std::sort(groups.begin(), groups.end());
     {
         char buffer[128];
         const auto n = std::min(engine_search_.size(), sizeof(buffer) - 1);
         std::copy_n(engine_search_.data(), n, buffer);
         buffer[n] = 0;
         ImGui::SetNextItemWidth(-FLT_MIN);
-        if (ImGui::InputTextWithHint("##engine_search", TR("Search"), buffer, sizeof(buffer))) engine_search_ = buffer;
+        if (ImGui::InputTextWithHint("##engine_search", TR("Search: name, program, author"), buffer, sizeof(buffer)))
+            engine_search_ = buffer;
 
-        std::vector<std::string> groups;
-        for (const auto& e : engines_) {
-            for (const auto& g : e.groups) {
-                if (std::find(groups.begin(), groups.end(), g) == groups.end()) groups.push_back(g);
-            }
-        }
-        std::sort(groups.begin(), groups.end());
+        const float half = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2;
         if (!groups.empty()) {
-            ImGui::SetNextItemWidth(-FLT_MIN);
+            ImGui::SetNextItemWidth(half);
             if (ImGui::BeginCombo("##engine_group", engine_group_.empty() ? TR("All groups") : engine_group_.c_str())) {
                 if (ImGui::Selectable(TR("All groups"), engine_group_.empty())) engine_group_.clear();
                 for (const auto& g : groups) {
@@ -421,76 +488,173 @@ void App::drawEngines() {
                 }
                 ImGui::EndCombo();
             }
+            ImGui::SameLine();
         }
+        const char* statuses[] = {TR("Every state"), TR("Works"),           TR("Failed or changed"),
+                                  TR("Not checked"), TR("Program missing"), TR("WinBoard")};
+        ImGui::SetNextItemWidth(groups.empty() ? -FLT_MIN : half);
+        ImGui::Combo("##engine_status", &engine_status_, statuses, IM_ARRAYSIZE(statuses));
+    }
+
+    // The engines several actions apply to.
+    if (chosen.size() > 1) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(trn("{} selected", "{} selected", chosen.size(), chosen.size()).c_str());
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Check##marked"))) queueChecks(chosen);
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Add to a group…"))) {
+            group_to_add_.clear();
+            ImGui::OpenPopup("add_to_group");
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Remove…##marked"))) askRemove(chosen);
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Clear##marked"))) engine_marked_.clear();
+    }
+    if (ImGui::BeginPopup("add_to_group")) {
+        ImGui::TextUnformatted(TR("Group"));
+        if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
+        editText("##group_name", group_to_add_, px(220));
+        // A group there is, to pick.
+        for (const auto& g : groups) {
+            if (containsCaseInsensitive(g, group_to_add_) && ImGui::Selectable(g.c_str(), g == group_to_add_))
+                group_to_add_ = g;
+        }
+        ImGui::BeginDisabled(group_to_add_.empty());
+        const bool add = ImGui::Button(TR("Add"));
+        ImGui::EndDisabled();
+        if (add) {
+            for (auto& e : engines_) {
+                if (std::find(chosen.begin(), chosen.end(), e.name) != chosen.end() &&
+                    std::find(e.groups.begin(), e.groups.end(), group_to_add_) == e.groups.end()) {
+                    e.groups.push_back(group_to_add_);
+                }
+            }
+            storage_.saveEngines(engines_);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+    if (!check_queue_.empty()) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("%s", trn("{} engine waiting to be checked", "{} engines waiting to be checked",
+                                      check_queue_.size(), check_queue_.size())
+                                      .c_str());
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Stop##check_queue"))) check_queue_.clear();
     }
 
     ImGui::Separator();
     // In alphabetical order; engines_ keeps the order they were added in, which the indexes follow.
-    std::vector<int> shown(engines_.size());
-    for (int i = 0; i < static_cast<int>(shown.size()); ++i) shown[i] = i;
+    std::vector<int> shown;
+    for (int i = 0; i < static_cast<int>(engines_.size()); ++i) {
+        const auto& e = engines_[i];
+        if (!engine_group_.empty() && std::find(e.groups.begin(), e.groups.end(), engine_group_) == e.groups.end())
+            continue;
+        if (!engine_search_.empty() && !containsCaseInsensitive(e.name, engine_search_) &&
+            !containsCaseInsensitive(e.id_name, engine_search_) &&
+            !containsCaseInsensitive(e.id_author, engine_search_) && !containsCaseInsensitive(e.cmd, engine_search_)) {
+            continue;
+        }
+        const bool gone = e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
+        const bool keep = engine_status_ == 1   ? !gone && e.program_state != ProgramState::Changed && e.check_ok == 1
+                          : engine_status_ == 2 ? !gone && (e.check_ok == 0 || e.program_state == ProgramState::Changed)
+                          : engine_status_ == 3 ? !gone && e.check_ok < 0
+                          : engine_status_ == 4 ? gone
+                          : engine_status_ == 5 ? isWinboard(e)
+                                                : true;
+        if (keep) shown.push_back(i);
+    }
     std::stable_sort(shown.begin(), shown.end(),
                      [&](int a, int b) { return lessCaseInsensitive(engines_[a].name, engines_[b].name); });
-    bool remove_asked = false, duplicate_asked = false;
+    bool remove_one = false, duplicate_asked = false;
 
     // Only the engines scroll: the buttons above and the legend below stay in sight.
-    const char* legend   = TR("✓ works · ! problem · ↔ WinBoard · right click: more");
+    const char* legend   = TR("✓ works · ! problem · ↔ WinBoard · Ctrl or Shift click: several · right click: more");
     const float legend_h = engines_.empty()
                                ? 0.0f
                                : ImGui::CalcTextSize(legend, nullptr, false, ImGui::GetContentRegionAvail().x).y +
                                      ImGui::GetStyle().ItemSpacing.y * 2;
     ImGui::BeginChild("##engine_entries", ImVec2(0, -legend_h));
-    for (const int i : shown) {
-        const auto& e = engines_[i];
-        if (!engine_group_.empty() && std::find(e.groups.begin(), e.groups.end(), engine_group_) == e.groups.end()) {
-            continue;
-        }
-        if (!engine_search_.empty() && !containsCaseInsensitive(e.name, engine_search_) &&
-            !containsCaseInsensitive(e.id_author, engine_search_)) {
-            continue;
-        }
-        std::string tag;
-        if (e.name == setup_.engine_a) tag = "  [A]";
-        if (e.name == setup_.engine_b) tag += "  [B]";
+    ImGuiListClipper clipper;
+    clipper.Begin(static_cast<int>(shown.size()));
+    while (clipper.Step()) {
+        for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row) {
+            const int i   = shown[row];
+            const auto& e = engines_[i];
+            std::string tag;
+            if (e.name == setup_.engine_a) tag = "  [A]";
+            if (e.name == setup_.engine_b) tag += "  [B]";
 
-        // A mark for the health: program missing or changed, checked, failed, or a WinBoard engine.
-        const auto problem = programProblem(e);
-        const char* mark   = !problem.empty()  ? "!"
-                             : e.check_ok == 1 ? "✓"
-                             : e.check_ok == 0 ? "!"
-                             : isWinboard(e)   ? "↔"
-                                               : "·";
-        const bool missing = e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
-        ImGui::PushStyleColor(ImGuiCol_Text, missing            ? ui::BAD
-                                             : !problem.empty() ? ui::WARN
-                                             : e.check_ok == 1  ? ui::GOOD
-                                             : e.check_ok == 0  ? ui::WARN
-                                                                : ui::MUTED);
-        ImGui::TextUnformatted(mark);
-        ImGui::PopStyleColor();
-        ImGui::SameLine();
-        const auto label = fmt::format("{}{}##engine{}", e.name, tag, i);
-        if (ImGui::Selectable(label.c_str(), selected_engine_ == i)) selected_engine_ = i;
-        if (ImGui::IsItemHovered()) {
-            // What the mark means, then what was found.
-            const std::string meaning = !problem.empty()  ? problem
-                                        : e.check_ok == 1 ? std::string(TR("Checked: it works."))
-                                        : e.check_ok == 0 ? std::string(TR("The last check or reading failed."))
-                                        : isWinboard(e)   ? std::string(TR("A WinBoard engine."))
-                                                          : std::string(TR("Not checked yet."));
-            const bool more           = problem.empty() && !e.check_message.empty();
-            ImGui::SetTooltip("%s %s%s%s", mark, meaning.c_str(), more ? "\n" : "",
-                              more ? e.check_message.c_str() : "");
-        }
-        if (ImGui::BeginPopupContextItem()) {
-            selected_engine_ = i;
-            if (ImGui::MenuItem(TR("Check"), nullptr, false, !check_.valid() && !start_after_reads_)) startCheck(i);
-            const bool being_read = probe_.valid() && probe_index_ == i;
-            if (ImGui::MenuItem(probing(e.name) && !being_read ? TR("Read it next") : TR("Read the UCI options again"),
-                                nullptr, false, !being_read))
-                startProbe(i);
-            if (ImGui::MenuItem(TR("Duplicate"))) duplicate_asked = true;
-            if (ImGui::MenuItem(TR("Remove…"))) remove_asked = true;
-            ImGui::EndPopup();
+            // A mark for the health: program missing or changed, checked, failed, or a WinBoard engine.
+            const auto problem = programProblem(e);
+            const char* mark   = !problem.empty()  ? "!"
+                                 : e.check_ok == 1 ? "✓"
+                                 : e.check_ok == 0 ? "!"
+                                 : isWinboard(e)   ? "↔"
+                                                   : "·";
+            const bool missing =
+                e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
+            ImGui::PushStyleColor(ImGuiCol_Text, missing            ? ui::BAD
+                                                 : !problem.empty() ? ui::WARN
+                                                 : e.check_ok == 1  ? ui::GOOD
+                                                 : e.check_ok == 0  ? ui::WARN
+                                                                    : ui::MUTED);
+            ImGui::TextUnformatted(mark);
+            ImGui::PopStyleColor();
+            ImGui::SameLine();
+            const auto label  = fmt::format("{}{}##engine{}", e.name, tag, i);
+            const bool marked = engine_marked_.count(e.name) > 0;
+            if (ImGui::Selectable(label.c_str(), selected_engine_ == i || marked)) {
+                const auto& io = ImGui::GetIO();
+                if (io.KeyCtrl) {
+                    // The one selected is part of the marked ones.
+                    if (engine_marked_.empty() && selected_engine_ >= 0 && selected_engine_ != i)
+                        engine_marked_.insert(engines_[selected_engine_].name);
+                    if (marked)
+                        engine_marked_.erase(e.name);
+                    else
+                        engine_marked_.insert(e.name);
+                } else if (io.KeyShift && selected_engine_ >= 0) {
+                    // From the one selected to this one, as shown.
+                    const auto from = std::find(shown.begin(), shown.end(), selected_engine_);
+                    if (from != shown.end()) {
+                        const int a = static_cast<int>(from - shown.begin());
+                        for (int k = std::min(a, row); k <= std::max(a, row); ++k)
+                            engine_marked_.insert(engines_[shown[k]].name);
+                    }
+                } else {
+                    engine_marked_.clear();
+                }
+                if (!io.KeyShift) selected_engine_ = i;
+            }
+            if (ImGui::IsItemHovered()) {
+                // What the mark means, then what was found.
+                const std::string meaning = !problem.empty()  ? problem
+                                            : e.check_ok == 1 ? std::string(TR("Checked: it works."))
+                                            : e.check_ok == 0 ? std::string(TR("The last check or reading failed."))
+                                            : isWinboard(e)   ? std::string(TR("A WinBoard engine."))
+                                                              : std::string(TR("Not checked yet."));
+                const bool more           = problem.empty() && !e.check_message.empty();
+                ImGui::SetTooltip("%s %s%s%s", mark, meaning.c_str(), more ? "\n" : "",
+                                  more ? e.check_message.c_str() : "");
+            }
+            if (ImGui::BeginPopupContextItem()) {
+                if (!marked) {
+                    selected_engine_ = i;
+                    engine_marked_.clear();
+                }
+                if (ImGui::MenuItem(TR("Check"), nullptr, false, !check_.valid() && !start_after_reads_)) startCheck(i);
+                const bool being_read = probe_.valid() && probe_index_ == i;
+                if (ImGui::MenuItem(
+                        probing(e.name) && !being_read ? TR("Read it next") : TR("Read the UCI options again"), nullptr,
+                        false, !being_read))
+                    startProbe(i);
+                if (ImGui::MenuItem(TR("Duplicate"))) duplicate_asked = true;
+                if (ImGui::MenuItem(TR("Remove…"))) remove_one = true;
+                ImGui::EndPopup();
+            }
         }
     }
     if (engines_.empty()) {
@@ -500,7 +664,7 @@ void App::drawEngines() {
     }
     if (selected_engine_ >= 0 && ImGui::IsWindowFocused() && !ImGui::GetIO().WantTextInput &&
         ImGui::IsKeyPressed(ImGuiKey_Delete)) {
-        remove_asked = true;
+        remove_one = true;
     }
     ImGui::EndChild();
     if (!engines_.empty()) {
@@ -509,6 +673,15 @@ void App::drawEngines() {
         ImGui::PopTextWrapPos();
     }
     // Here, in the list's window: the confirmation is drawn there, and a popup is found by the window it is opened in.
+    if (remove_one) {
+        // Those marked, or the one right clicked, selected meanwhile.
+        chosen.clear();
+        for (const auto& e : engines_) {
+            if (engine_marked_.count(e.name)) chosen.push_back(e.name);
+        }
+        if (chosen.empty() && selected_engine_ >= 0) chosen.push_back(engines_[selected_engine_].name);
+        askRemove(chosen);
+    }
     if (remove_asked) ImGui::OpenPopup(TR("Remove the engine?###remove"));
     if (duplicate_asked) duplicate();  // after the loop, which holds references into engines_
 
@@ -997,6 +1170,14 @@ void App::finishQuickTest() {
 }
 
 void App::pollCheck() {
+    // The next queued check when idle: not while a run plays, whose games it would slow down, nor waits to start.
+    if (!check_.valid() && !check_queue_.empty() && !run_.running() && !start_after_reads_) {
+        const auto name = check_queue_.front();
+        check_queue_.erase(check_queue_.begin());
+        const auto it = std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == name; });
+        if (it != engines_.end()) startCheck(static_cast<int>(it - engines_.begin()));
+    }
+
     if (!check_.valid() || check_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
     CheckResult result;
     try {
