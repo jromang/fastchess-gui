@@ -225,10 +225,13 @@ class Process : public IProcess {
         }
 
         // Every return goes through here: the reads still pending are cancelled, and what they read meanwhile kept.
+        // What waits on the error output is read too: it was written before the line awaited (which may be the last
+        // of a game), or before the engine ended (its last words: an assertion, a crash report).
         const auto finish = [&](Result result) {
             DWORD bytes = 0;
             if (out.cancel(bytes) && bytes > 0) (void)readBytes(buffer, bytes, lines, "", current_line_, false);
             if (err.cancel(bytes) && bytes > 0) (void)readBytes(err_buffer_, bytes, lines, "", err_line_, true);
+            if (result.code != Status::TIMEOUT) drainErr(err, lines, result.code != Status::OK && !alive());
             return result;
         };
 
@@ -271,7 +274,7 @@ class Process : public IProcess {
                 const auto started = err.start(bytesRead);
                 if (started == PipeRead::Started::Failed) {
                     // Closed by the engine, or the engine ended: its output tells which.
-                    err_open_ = false;
+                    endErr(lines);
                 } else if (started == PipeRead::Started::Done) {
                     (void)readBytes(err_buffer_, bytesRead, lines, "", err_line_, true);
                     continue;
@@ -313,7 +316,7 @@ class Process : public IProcess {
                 if (err.complete(bytesRead)) {
                     (void)readBytes(err_buffer_, bytesRead, lines, "", err_line_, true);
                 } else {
-                    err_open_ = false;
+                    endErr(lines);
                 }
                 continue;
             }
@@ -408,6 +411,46 @@ class Process : public IProcess {
         std::array<char, buffer_size>& data_;
         OVERLAPPED overlapped_{};
     };
+
+    // fastchess-gui: how long the error output is read at most once the engine ended, should a process it started
+    // write on there.
+    static constexpr std::chrono::milliseconds ERR_END_READ{500};
+
+    // fastchess-gui: reads what waits on the error output, without waiting for more; `err` is not pending. Once the
+    // engine `ended`, until nothing is left (for ERR_END_READ at most); otherwise at most what a pipe holds, so that an
+    // engine writing there on and on cannot hold the read up.
+    void drainErr(PipeRead& err, std::vector<Line>& lines, bool ended) {
+        const auto deadline = std::chrono::steady_clock::now() + ERR_END_READ;
+        for (int reads = 0; err_open_; ++reads) {
+            if (ended ? std::chrono::steady_clock::now() >= deadline : reads >= 16) return;
+
+            DWORD available = 0;
+            if (!PeekNamedPipe(hChildStderrRead, NULL, 0, NULL, &available, NULL)) return endErr(lines);
+            if (available == 0) return;
+
+            DWORD bytes        = 0;
+            const auto started = err.start(bytes);
+            if (started == PipeRead::Started::Failed) return endErr(lines);
+            if (started == PipeRead::Started::Pending) {
+                // The bytes are there, the read ends at once.
+                if (WaitForSingleObject(err.event(), 100) != WAIT_OBJECT_0) {
+                    if (err.cancel(bytes) && bytes > 0) (void)readBytes(err_buffer_, bytes, lines, "", err_line_, true);
+                    return;
+                }
+                if (!err.complete(bytes)) return endErr(lines);
+            }
+            (void)readBytes(err_buffer_, bytes, lines, "", err_line_, true);
+        }
+    }
+
+    // fastchess-gui: the error output ended; a last line without its end of line is what the engine wrote last.
+    void endErr(std::vector<Line>& lines) {
+        err_open_ = false;
+        if (!err_line_.empty()) {
+            addLine(lines, err_line_, true);
+            err_line_.clear();
+        }
+    }
 
     // `line`: the line being read from this pipe, `err`: whether it is the error output.
     [[nodiscard]] bool readBytes(const std::array<char, buffer_size>& buffer, DWORD bytes_read,
