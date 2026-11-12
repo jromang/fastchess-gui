@@ -278,7 +278,12 @@ void TournamentState::load() {
     std::vector<std::string> damaged;
     const auto events = withoutUndoneEdits(Journal::read(dir_ / JOURNAL_FILE, !read_only_, &damaged));
     for (const auto& d : damaged) warnings_.push_back(d + ": skipped");
-    std::set<uint64_t> written_out;  // games.pgn offsets of the games written to spec_.pgn_out
+    std::set<uint64_t> written_out;           // games.pgn offsets of the games written to spec_.pgn_out
+    std::optional<nlohmann::json> out_begun;  // a write to spec_.pgn_out begun, its end not journaled
+    bool imported = false;                    // a match of fastchess-gui 0.2.x (see legacy.hpp)
+    // Every game a journal line points to, by its games.pgn offset: (games.pgn, games-chessbase.pgn). A game_finished
+    // line that a resume ignores (its game recorded already) points to its text all the same.
+    std::map<uint64_t, std::pair<PgnSpan, PgnSpan>> journaled;
 
     for (std::size_t i = 0; i < events.size(); ++i) {
         const auto& e = events[i];
@@ -297,12 +302,22 @@ void TournamentState::load() {
             } else if (type == "round_paired" || type == "tiebreak_added") {
                 applyRoundEvent(e);
             } else if (type == "game_finished") {
-                apply(resultFromJson(e));
+                const auto result            = resultFromJson(e);
+                journaled[result.pgn.offset] = {result.pgn, result.pgn_chessbase};
+                apply(result);
             } else if (type == "finished") {
                 finished_      = true;
                 finish_reason_ = e.value("why", std::string{});
+                imported       = imported || finish_reason_ == "imported";
             } else if (type == "pgn_out") {
+                // With "begun", the start of a write (with "pgn" empty, which older versions read as such); without,
+                // its end, or a write of older versions.
                 for (const auto& offset : e.at("pgn")) written_out.insert(offset.get<uint64_t>());
+                if (e.contains("begun")) {
+                    out_begun = e;
+                } else {
+                    out_begun.reset();
+                }
             } else {
                 throw std::runtime_error("unknown event \"" + type + "\"");
             }
@@ -313,28 +328,37 @@ void TournamentState::load() {
     }
 
     rebuildOpen();
-    for (std::size_t i = 0; i < results_.size(); ++i) {
-        if (written_out.count(results_[i].pgn.offset)) {
-            out_written_.insert(results_[i].number());
-        } else {
-            out_held_.push_back(i);
-        }
-    }
 
-    // Text written after the last game the journal knows about belongs to no game.
-    uint64_t keep = 0, keep_cb = 0;
-    for (const auto& r : results_) {
-        keep    = std::max(keep, r.pgn.end());
-        keep_cb = std::max(keep_cb, r.pgn_chessbase.end());
-    }
+    // Text no journal line points to belongs to no game: cut past the last game, blanked between games. Not between
+    // the games of an imported match of 0.2.x: the games the import left out (of other engines...) are the user's.
+    // Nor when a journal line was damaged: it may have been a game's, whose text is then the only trace of it.
     if (!read_only_) {
-        pgn_           = std::make_unique<PgnFile>(pgnPath(), keep);
-        pgn_chessbase_ = std::make_unique<PgnFile>(chessbasePgnPath(), keep_cb);
+        const bool between = !imported && damaged.empty();
+        std::vector<PgnSpan> kept, kept_cb;
+        kept.reserve(journaled.size());
+        kept_cb.reserve(journaled.size());
+        for (const auto& [offset, spans] : journaled) {
+            kept.push_back(spans.first);
+            kept_cb.push_back(spans.second);
+        }
+        pgn_           = std::make_unique<PgnFile>(pgnPath(), std::move(kept), between);
+        pgn_chessbase_ = std::make_unique<PgnFile>(chessbasePgnPath(), std::move(kept_cb), between);
         journal_       = std::make_unique<Journal>(dir_ / JOURNAL_FILE);
         for (const auto* file : {pgn_.get(), pgn_chessbase_.get()}) {
             if (file->missing() == 0) continue;
             warnings_.push_back(file->path().string() + " lost its end (a power cut?): " +
                                 std::to_string(file->missing()) + " bytes of the last games are missing");
+        }
+        if (out_begun && settleOut(*out_begun, journaled)) {
+            for (const auto& offset : out_begun->at("begun")) written_out.insert(offset.get<uint64_t>());
+        }
+    }
+
+    for (std::size_t i = 0; i < results_.size(); ++i) {
+        if (written_out.count(results_[i].pgn.offset)) {
+            out_written_.insert(results_[i].number());
+        } else {
+            out_held_.push_back(i);
         }
     }
 
@@ -889,18 +913,27 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     // PgnFile keeps the places of concurrent games apart. The game stays running until it is journaled.
     lock.unlock();
     PgnSpan span, span_cb;
+    bool written = false;
     try {
         span    = pgn_->append(text);
+        written = true;
         span_cb = pgn_chessbase_->append(text_cb);
     } catch (...) {
+        // The game will not be journaled: its text in games.pgn would show as a game in another PGN viewer.
+        if (written) (void)pgn_->blank(span);
         lock.lock();
         running_.erase(task.number());
         throw;
     }
     lock.lock();
-    // An edit made meanwhile may have dropped the game: its text then belongs to no game, as when a crash comes
-    // before the journal line, and the journal never points to it.
-    if (auto recorded = unwanted()) return *recorded;
+    // An edit made meanwhile may have dropped the game: the journal never points to its text, which is blanked
+    // (or, after a crash before that, when the tournament is opened again).
+    if (auto recorded = unwanted()) {
+        lock.unlock();
+        (void)pgn_->blank(span);
+        (void)pgn_chessbase_->blank(span_cb);
+        return *recorded;
+    }
 
     running_.erase(task.number());
     result.pgn           = span;
@@ -978,22 +1011,36 @@ void TournamentState::writeOut(std::unique_lock<std::mutex>& lock) {
             }
             text += *game;
         }
-        // Written, then journaled: a crash in between writes these games twice, rather than not at all.
-        if (error.empty()) {
+        // Journaled before, with the place it goes to, and after: a crash in between is settled by settleOut() when
+        // the tournament is opened again, which looks for the text there. No game is written twice, nor lost.
+        bool journal_failed = false;
+        const auto journal  = [&](const nlohmann::json& event) {
             try {
-                appendShared(out, text);
-            } catch (const std::exception& e) {
-                error = e.what();
-            }
-        }
-        if (error.empty()) {
-            try {
-                journal_->append({{"t", "pgn_out"}, {"pgn", offsets}});
+                journal_->append(event);
             } catch (...) {
+                journal_failed = true;
+                throw;
+            }
+        };
+        try {
+            if (error.empty()) {
+                appendShared(out, text, [&](uint64_t at) {
+                    journal({{"t", "pgn_out"},
+                             {"pgn", nlohmann::json::array()},
+                             {"begun", offsets},
+                             {"at", at},
+                             {"len", text.size()},
+                             {"cb", chessbase}});
+                });
+                journal({{"t", "pgn_out"}, {"pgn", offsets}});
+            }
+        } catch (const std::exception& e) {
+            if (journal_failed) {
                 lock.lock();
                 out_writing_ = false;
                 throw;
             }
+            error = e.what();
         }
         lock.lock();
 
@@ -1006,6 +1053,33 @@ void TournamentState::writeOut(std::unique_lock<std::mutex>& lock) {
             out_held_.end());
     } while (out_again_);
     out_writing_ = false;
+}
+
+bool TournamentState::settleOut(const nlohmann::json& begun,
+                                const std::map<uint64_t, std::pair<PgnSpan, PgnSpan>>& journaled) {
+    if (spec_.pgn_out.empty() || !journal_) return false;
+
+    // The text of the write, read back as writeOut() did. Games it cannot read back are written again, or fail to.
+    const bool chessbase = begun.value("cb", spec_.pgn_out_chessbase);
+    const auto from      = chessbase ? chessbasePgnPath() : pgnPath();
+    std::string text;
+    for (const auto& offset : begun.at("begun")) {
+        const auto it = journaled.find(offset.get<uint64_t>());
+        if (it == journaled.end()) return false;
+        const auto game = readSpan(from, chessbase ? it->second.second : it->second.first);
+        if (!game) return false;
+        text += *game;
+    }
+    if (text.size() != begun.value("len", uint64_t{0})) return false;
+
+    try {
+        if (!settleShared(spec_.pgn_out, begun.at("at").get<uint64_t>(), text)) return false;
+    } catch (const std::exception& e) {
+        out_error_ = e.what();
+        return false;
+    }
+    journal_->append({{"t", "pgn_out"}, {"pgn", begun.at("begun")}});
+    return true;
 }
 
 std::string TournamentState::pgnOutError() const {
