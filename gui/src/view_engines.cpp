@@ -581,7 +581,7 @@ void App::drawEngines() {
             continue;
         if (!engineMatches(e, engine_search_)) continue;
         const bool gone = e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
-        const bool keep = engine_status_ == 1   ? !gone && e.program_state != ProgramState::Changed && e.check_ok == 1
+        const bool keep = engine_status_ == 1   ? engineWorks(e)
                           : engine_status_ == 2 ? !gone && (e.check_ok == 0 || e.program_state == ProgramState::Changed)
                           : engine_status_ == 3 ? !gone && e.check_ok < 0
                           : engine_status_ == 4 ? gone

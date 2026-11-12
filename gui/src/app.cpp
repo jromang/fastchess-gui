@@ -136,7 +136,10 @@ void App::frame() {
         const auto& w = options_.focus_window;
         if (w == "setup")
             page_ = Page::NewMatch;
-        else if (w == "setup-pgn") {
+        else if (w == "setup-picker" || w == "setup-suggest") {
+            page_        = Page::NewMatch;
+            open_picker_ = w == "setup-picker" ? 1 : 2;
+        } else if (w == "setup-pgn") {
             page_           = Page::NewMatch;
             open_pgn_setup_ = true;
         } else if (w == "statistics") {

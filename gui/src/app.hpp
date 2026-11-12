@@ -265,6 +265,19 @@ class App {
     // setup sections
     void setupFormat();
     void setupParticipants();
+    // "Add an engine…": the library's engines with their reference Elo, sorted and filtered by it, opponents
+    // suggested around the first participant's. True when engines were added to `list`.
+    bool participantPicker(std::vector<ParticipantSetup>& list);
+    struct ParticipantPicker {
+        std::string search;
+        int elo_min = 0, elo_max = 0;  // reference Elo shown, 0: no bound
+        bool works_only = false;
+        std::set<std::string> ticked;
+        int suggest = 8;      // opponents to suggest
+        int range   = 150;    // Elo, around the first participant's
+        std::string message;  // what the last suggestion found
+    } picker_;
+    int open_picker_ = 0;  // --focus setup-picker: 1 the picker opens, 2 with opponents suggested
     void drawSetupSummary();
     void drawTemplates();
     void setupEngines();

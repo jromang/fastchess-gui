@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <cstdlib>
 #include <deque>
 #include <filesystem>
 #include <sstream>
@@ -365,6 +366,32 @@ bool engineMatches(const EngineEntry& entry, const std::string& needle) {
     };
     const auto n = lower(needle);
     return lower(entry.name).find(n) != std::string::npos || lower(engineSearchText(entry)).find(n) != std::string::npos;
+}
+
+bool engineWorks(const EngineEntry& entry) {
+    const auto state = entry.program_state;
+    return entry.check_ok == 1 && state != ProgramState::Missing && state != ProgramState::MissingDir &&
+           state != ProgramState::Changed;
+}
+
+std::vector<std::string> suggestOpponents(const std::vector<EngineEntry>& engines, int elo, int range, int count,
+                                          const std::vector<std::string>& exclude) {
+    std::vector<const EngineEntry*> candidates;
+    for (const auto& e : engines) {
+        if (e.inactive || e.elo <= 0 || !engineWorks(e) || std::abs(e.elo - elo) > range) continue;
+        if (std::find(exclude.begin(), exclude.end(), e.name) != exclude.end()) continue;
+        candidates.push_back(&e);
+    }
+    std::sort(candidates.begin(), candidates.end(), [&](const EngineEntry* a, const EngineEntry* b) {
+        const int da = std::abs(a->elo - elo), db = std::abs(b->elo - elo);
+        return da != db ? da < db : a->name < b->name;
+    });
+    std::vector<std::string> out;
+    for (const auto* e : candidates) {
+        if (static_cast<int>(out.size()) >= count) break;
+        out.push_back(e->name);
+    }
+    return out;
 }
 
 bool isWinboard(const EngineEntry& entry) {

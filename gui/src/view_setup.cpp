@@ -858,23 +858,7 @@ void App::setupParticipants() {
     }
 
     // Adding engines.
-    ImGui::SetNextItemWidth(260.0f * ImGui::GetFontSize() / 16.0f);
-    if (ImGui::BeginCombo("##add_participant", TR("Add an engine…"), ImGuiComboFlags_HeightLargest)) {
-        std::vector<std::string> names, more;
-        for (const auto& e : engines_) {
-            if (!e.inactive &&
-                std::none_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; })) {
-                names.push_back(e.name);
-                more.push_back(engineSearchText(e));
-            }
-        }
-        if (const int i = ui::searchComboItems(names, "", &more); i >= 0) {
-            list.push_back({names[i]});
-            changed = true;
-        }
-        if (engines_.empty()) ImGui::TextDisabled("%s", TR("Add engines in the Engines window."));
-        ImGui::EndCombo();
-    }
+    changed |= participantPicker(list);
     ImGui::SameLine();
     if (ImGui::Button(TR("Add all"))) {
         for (const auto& e : engines_) {

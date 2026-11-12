@@ -954,6 +954,36 @@ TEST_CASE("the engine searches find the name, the name reported, the author, the
     fs::remove_all(dir);
 }
 
+TEST_CASE("opponents are suggested around a rating, among the active engines that work, the closest first") {
+    const auto engine = [](std::string name, int elo, int check_ok = 1) {
+        EngineEntry e;
+        e.name     = std::move(name);
+        e.elo      = elo;
+        e.check_ok = check_ok;
+        return e;
+    };
+    std::vector<EngineEntry> library = {
+        engine("Seed", 3000),          engine("Near", 3040),     engine("Below", 2950),   engine("Tie A", 3100),
+        engine("Tie B", 2900),         engine("Far", 3200),      engine("No Elo", 0),     engine("Failed", 3010, 0),
+        engine("Unchecked", 3005, -1), engine("Inactive", 3001), engine("Rebuilt", 3002), engine("Gone", 3003)};
+    library[9].inactive       = true;
+    library[10].program_state = ProgramState::Changed;
+    library[11].program_state = ProgramState::Missing;
+
+    CHECK(engineWorks(library[0]));
+    CHECK_FALSE(engineWorks(library[7]));
+    CHECK_FALSE(engineWorks(library[8]));
+    CHECK_FALSE(engineWorks(library[10]));
+    CHECK_FALSE(engineWorks(library[11]));
+
+    CHECK(suggestOpponents(library, 3000, 150, 8, {"Seed"}) ==
+          std::vector<std::string>{"Near", "Below", "Tie A", "Tie B"});
+    CHECK(suggestOpponents(library, 3000, 150, 2, {"Seed"}) == std::vector<std::string>{"Near", "Below"});
+    CHECK(suggestOpponents(library, 3000, 250, 8, {"Seed", "Near"}) ==
+          std::vector<std::string>{"Below", "Tie A", "Tie B", "Far"});
+    CHECK(suggestOpponents(library, 3000, 10, 8, {"Seed"}).empty());
+}
+
 TEST_CASE("a folder is opened by a file URL that spaces, accents and # cannot break") {
     CHECK(ui::fileUrl("/home/jeff/runs/2026_RR") == "file:///home/jeff/runs/2026_RR");
     CHECK(ui::fileUrl(std::filesystem::path(u8"/home/Hélène/Mes tournois #2")) ==

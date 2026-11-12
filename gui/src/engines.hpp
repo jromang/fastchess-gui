@@ -63,6 +63,15 @@ struct CheckResult {
 // The engine's name or its engineSearchText() contains `needle`, letter case aside. An empty needle takes every engine.
 [[nodiscard]] bool engineMatches(const EngineEntry& entry, const std::string& needle);
 
+// The engine works: its last check passed, and its program is where it was, as it was then.
+[[nodiscard]] bool engineWorks(const EngineEntry& entry);
+
+// Opponents for an engine of reference Elo `elo`: the `count` engines whose reference Elo is closest to it, at most
+// `range` away, among the active engines that work and have a reference Elo, other than those of `exclude`. Closest
+// first; at the same distance, by name.
+[[nodiscard]] std::vector<std::string> suggestOpponents(const std::vector<EngineEntry>& engines, int elo, int range,
+                                                        int count, const std::vector<std::string>& exclude);
+
 // A WinBoard engine: its protocol is xboard, or it goes through an external adapter (wb2uci).
 [[nodiscard]] bool isWinboard(const EngineEntry& entry);
 
