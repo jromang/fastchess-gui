@@ -4,6 +4,7 @@
 #include <atomic>
 #include <chrono>
 #include <deque>
+#include <functional>
 #include <future>
 #include <map>
 #include <memory>
@@ -297,19 +298,34 @@ class App {
 
     // engines
     void refreshPrograms();
+    void pollFingerprints();  // the CRCs refreshPrograms reads in the background
     // Reads the engine's options now, or first when another engine is being read.
     void startProbe(int index);
     // This engine's options are being read, or waiting to be.
     [[nodiscard]] bool probing(const std::string& name) const;
     void pollProbe();
+    void applyProbe();  // the result of the read that ended
+    // An engine of the setup: its read comes first.
+    [[nodiscard]] bool inSetup(const std::string& name) const;
+    // A start (of a run, a resume, a quick test) waits for the reads and checks in flight, which read fastchess'
+    // configuration that it replaces; meanwhile no other read or check starts. True when `start` was put off.
+    bool startAfterReads(std::function<void()> start);
     void startCheck(int index);
     void startQuickTest(int index);
     void finishQuickTest();
     void pollCheck();
+    // Shows what an engine list or a folder holds, to choose the engines to add.
     void importEngines(const ImportResult& imported);
+    void drawImportPreview();
+    void addImported();  // the engines chosen
     [[nodiscard]] bool engineInUse(const std::string& name) const;
     void addEngine(const std::string& path);
     std::string uniqueEngineName(const std::string& base, int ignore_index) const;
+    // Renames the engine (made unique), and what refers to it by name follows: the setup and the queued tournaments,
+    // the read and check queues, the quick test, the relaunch, the schedule's edit and the test suite.
+    void renameEngine(int index, const std::string& name);
+    void removeEngines(const std::vector<std::string>& names);
+    void queueChecks(const std::vector<std::string>& names);  // checked one after the other, see pollCheck
 
     // run lifecycle
     void startRun();
@@ -439,13 +455,32 @@ class App {
     std::optional<std::chrono::steady_clock::time_point> engines_save_due_;
     std::future<ProbeResult> probe_;
     int probe_index_ = -1;
+    EngineEntry probe_entry_;   // the engine being read, as it was then: changed since, its result is stale
+    bool probe_again_ = false;  // asked for again while it was read: its result is dropped, it is read again
+    std::function<void()> start_after_reads_;  // see startAfterReads
     std::vector<std::string> probe_queue_;  // engine names waiting for a probe
     std::string probe_message_;
     std::string option_filter_;
     std::future<CheckResult> check_;
     int check_index_ = -1;
+    std::vector<std::string> check_queue_;  // engine names waiting for a check
+    std::atomic<bool> fingerprints_cancel_{false};
+    std::future<std::vector<std::pair<std::string, tour::FileFingerprint>>> fingerprints_;  // by program
+    bool refresh_programs_again_ = false;  // asked while the CRCs were read
     std::string engine_search_;
     std::string engine_group_;  // shown group, empty = all
+    int engine_status_ = 0;     // shown: 0 all, 1 works, 2 failed or changed, 3 not checked, 4 missing, 5 WinBoard
+    std::set<std::string> engine_marked_;    // several engines chosen (Ctrl or Shift click), by name
+    std::vector<std::string> remove_names_;  // waiting for the removal to be confirmed
+    std::string group_to_add_;
+    std::string option_browse_;  // the UCI option a file dialog is open for
+    struct ImportPreview {
+        ImportResult result;
+        std::vector<char> known;   // by engine: already in the list, not added again
+        std::vector<char> chosen;  // by engine: to add
+    };
+    std::optional<ImportPreview> import_preview_;
+    bool open_import_preview_ = false;
 
     // Console view.
     std::vector<Console::Line> console_lines_;

@@ -316,8 +316,10 @@ class Process : public IProcess {
             // 2. Check Stdout
             auto& out_fd = fds[STDOUT_IDX];
             if (out_fd.revents & (POLLIN | POLLHUP | POLLERR)) {
-                if (out_fd.revents & (POLLHUP | POLLERR)) return Result::Error("Engine crashed (stdout)");
-                if (auto r = sg_out_.readLine(lines, searchword, &line_callback_); r.code != Status::NONE) return r;
+                // fastchess-gui: what an engine wrote before it ended is read first, as it tells why (a missing
+                // file); the end is reported once nothing is left (end of file, or the read fails).
+                if (auto r = sg_out_.readLine(lines, searchword, &line_callback_); r.code != Status::NONE)
+                    return r.code == Status::OK ? r : Result::Error("Engine crashed (stdout)");
             }
 
             // 3. Check Stderr

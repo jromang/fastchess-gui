@@ -11,6 +11,7 @@
 
 #include <core/config/config.hpp>
 #include <core/globals/globals.hpp>
+#include <engine/uci_engine.hpp>
 
 #include "engines.hpp"
 #include "headless.hpp"
@@ -21,6 +22,8 @@
 
 #ifdef _WIN32
 #    include <windows.h>
+// After windows.h, which it needs.
+#    include <tlhelp32.h>
 #else
 #    include <unistd.h>
 #endif
@@ -312,6 +315,55 @@ TEST_CASE("the check takes a move from the engine's own book, without a search l
     entry.protocol     = "uci";
     const auto checked = checkEngine(entry);
     CHECK_MESSAGE(checked.ok, checked.message << "\n" << checked.report);
+    fs::remove_all(dir);
+}
+
+TEST_CASE("the check sends the engine's options, and a failed read or check shows what the engine wrote") {
+    if (!fastchess::config::TournamentConfig)
+        fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
+    const auto dir = fs::temp_directory_path() / "fcg-check-options";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+    // Like Stockfish with a wrong EvalFile: it stops once the network it was given cannot be loaded.
+    const auto script = dir / "evalfile.sh";
+    std::ofstream(script)
+        << "#!/bin/sh\n"
+           "eval=nn.bin\n"
+           "while read line; do case \"$line\" in\n"
+           "uci) echo 'id name Evalfile'; echo 'id author Test';\n"
+           "     echo 'option name EvalFile type string default nn.bin'; echo uciok;;\n"
+           "'setoption name EvalFile value '*) eval=${line#setoption name EvalFile value };;\n"
+           "isready) if [ \"$eval\" != nn.bin ]; then echo \"info string ERROR: cannot load $eval\";\n"
+           "         exit 1; fi; echo readyok;;\n"
+           "go*) echo 'info depth 1 score cp 0 pv e2e4'; echo 'bestmove e2e4';;\n"
+           "quit) exit 0;;\n"
+           "esac; done\n";
+    fs::permissions(script, fs::perms::owner_all);
+
+    EngineEntry entry;
+    entry.name     = "Evalfile";
+    entry.cmd      = script.string();
+    entry.protocol = "uci";
+    CHECK_MESSAGE(checkEngine(entry).ok, checkEngine(entry).message);
+
+    entry.options    = {{"EvalFile", "missing.bin"}};
+    const auto wrong = checkEngine(entry);
+    CHECK_FALSE(wrong.ok);
+    CHECK(wrong.report.find("ERROR: cannot load missing.bin") != std::string::npos);
+
+    entry.options      = {{"Threads", "4"}};
+    const auto unknown = checkEngine(entry);
+    CHECK_FALSE(unknown.ok);
+    CHECK(unknown.message.find("Threads") != std::string::npos);
+
+    // An engine that cannot start: the read fails with its last words.
+    const auto broken = dir / "broken.sh";
+    std::ofstream(broken) << "#!/bin/sh\necho 'cannot find MSVCR100.dll'\nexit 1\n";
+    fs::permissions(broken, fs::perms::owner_all);
+    entry.cmd        = broken.string();
+    const auto probe = probeEngine(entry);
+    CHECK_FALSE(probe.ok);
+    CHECK(probe.output.find("cannot find MSVCR100.dll") != std::string::npos);
     fs::remove_all(dir);
 }
 #endif
@@ -746,3 +798,56 @@ TEST_CASE("EPD suite runs: every engine on every position, the totals, CSV and s
     CHECK(back[1].answers[0]->move == "Kxb2");
     fs::remove_all(dir);
 }
+
+#ifdef _WIN32
+TEST_CASE("on Windows, what an engine starts is in the engine's job and ends with it") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+    // A .bat that starts the engine: cmd.exe is the process started, the engine its child.
+    std::error_code ec;
+    const auto dir = fs::temp_directory_path() / "fcg-job-tests";
+    fs::remove_all(dir, ec);
+    fs::create_directories(dir);
+    fs::copy_file(randomMover(), dir / "fcg-job-mover.exe");
+    std::ofstream(dir / "engine.bat") << "@\"" << (dir / "fcg-job-mover.exe").string() << "\"\r\n";
+
+    char system_dir[MAX_PATH];
+    const auto n   = GetSystemDirectoryA(system_dir, MAX_PATH);
+    const auto cmd = (fs::path(std::string(system_dir, n)) / "cmd.exe").string();
+
+    HANDLE engine = nullptr;
+    {
+        fastchess::engine::process::Process process;
+        process.setRealtimeLogging(false);
+        REQUIRE(process.init(dir.string(), cmd, "/c \"" + (dir / "engine.bat").string() + "\"", "job"));
+
+        // The engine, once cmd.exe started it.
+        for (int i = 0; i < 100 && !engine; ++i) {
+            const HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            PROCESSENTRY32 entry{};
+            entry.dwSize = sizeof(entry);
+            for (BOOL more = Process32First(snapshot, &entry); more; more = Process32Next(snapshot, &entry)) {
+                if (std::string(entry.szExeFile).find("fcg-job-mover") != std::string::npos &&
+                    static_cast<int64_t>(entry.th32ParentProcessID) == process.pid()) {
+                    engine = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, entry.th32ProcessID);
+                }
+            }
+            CloseHandle(snapshot);
+            if (!engine) std::this_thread::sleep_for(50ms);
+        }
+        REQUIRE(engine);
+        BOOL in_job = FALSE;
+        CHECK_MESSAGE(IsProcessInJob(engine, nullptr, &in_job), GetLastError());
+        CHECK(in_job);
+
+        // cmd.exe ended abruptly: the engine it started still runs, until the process is ended.
+        process.forceKill();
+        CHECK(WaitForSingleObject(engine, 300) == WAIT_TIMEOUT);
+    }
+    CHECK(WaitForSingleObject(engine, 5000) == WAIT_OBJECT_0);
+    CloseHandle(engine);
+    fs::remove_all(dir, ec);
+}
+#endif

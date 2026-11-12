@@ -24,6 +24,7 @@ inline constexpr std::chrono::milliseconds ENGINE_STARTUP_TIME = std::chrono::se
 struct ProbeResult {
     bool ok = false;
     std::string error;
+    std::string output;  // a failed read: what the engine wrote last
     std::string id_name;
     std::string id_author;
     std::vector<UciOptionInfo> options;
@@ -45,10 +46,15 @@ struct CheckResult {
     std::string report;   // the UCI compliance steps, one per line, with the engine's output after a failed one
 };
 
-// Starts the engine with its options, measures how long it takes to answer uciok and isready, lets it think on the
-// initial position and checks that its move is legal; then runs fastchess' UCI compliance steps (not for an engine
-// spoken to in xboard). Blocks for up to the startup timeout plus a few seconds.
+// Starts the engine and sends its options (one it does not have or a value it refuses fails the check), measures how
+// long it takes to answer uciok and isready, lets it think on the initial position and checks that its move is legal;
+// then runs fastchess' UCI compliance steps, its options sent too (not for an engine spoken to in xboard). Blocks for
+// up to the startup timeout plus a few seconds. Failures come with what the engine wrote last, in the report.
 [[nodiscard]] CheckResult checkEngine(const EngineEntry& entry);
+
+// The same program, with the same arguments: the same engine, whatever its options (its first read changes them).
+// Windows file names ignore case: C:\Engines\SF.EXE is c:\engines\sf.exe.
+[[nodiscard]] bool sameEngine(const EngineEntry& a, const EngineEntry& b);
 
 // A WinBoard engine: its protocol is xboard, or it goes through an external adapter (wb2uci).
 [[nodiscard]] bool isWinboard(const EngineEntry& entry);
@@ -57,8 +63,20 @@ struct CheckResult {
 // now. Cheap unless the program's date moved: then its CRC is read. Returns true when the entry must be saved.
 bool refreshProgram(EngineEntry& entry);
 
+// refreshProgram in two parts, to read the CRCs of many programs off the UI thread. The first asks only the file
+// system: it sets entry.program_state and returns false, or returns true, the state left as it was, when only the
+// program's CRC can tell (a program never fingerprinted, or the same size under another date).
+[[nodiscard]] bool programNeedsCrc(EngineEntry& entry);
+// The second, with the program's fingerprint now (tour::fingerprint). Returns true when the entry must be saved.
+bool applyFingerprint(EngineEntry& entry, const tour::FileFingerprint& now);
+
 // The working directory fastchess should use for this engine.
 [[nodiscard]] std::string engineWorkingDir(const EngineEntry& entry);
+
+// A string option that holds a file (EvalFile, BookFile) or a folder (SyzygyPath, NalimovPath), told by its name: the
+// option editor offers to browse for it.
+enum class OptionPath { None, File, Folder };
+[[nodiscard]] OptionPath optionPath(const UciOptionInfo& option);
 
 // Removes options the engine does not have (any more) and values equal to the default.
 void pruneOptions(EngineEntry& entry);

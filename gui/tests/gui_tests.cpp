@@ -189,6 +189,38 @@ TEST_CASE("an engine's program: taken as it is, then noticed when rebuilt, moved
     CHECK(e.program_state == ProgramState::Missing);
 }
 
+TEST_CASE("an engine's program is fingerprinted in two parts, its CRC read only when the file system cannot tell") {
+    const auto dir     = tempDir("program-crc");
+    const auto program = dir / "engine";
+    std::ofstream(program) << "build 1";
+
+    EngineEntry e;
+    e.cmd = program.string();
+    REQUIRE(programNeedsCrc(e));  // never fingerprinted
+    CHECK(applyFingerprint(e, tour::fingerprint(e.cmd)));
+    CHECK(e.program_state == ProgramState::Ok);
+    CHECK_FALSE(programNeedsCrc(e));  // same size, same date
+
+    // Another size: rebuilt, without reading it.
+    std::ofstream(program) << "build 10";
+    CHECK_FALSE(programNeedsCrc(e));
+    CHECK(e.program_state == ProgramState::Changed);
+
+    // The same size under another date: only the CRC tells.
+    std::ofstream(program) << "build 1";
+    fs::last_write_time(program, fs::last_write_time(program) + std::chrono::seconds(5));
+    e.program_state = ProgramState::Unknown;
+    REQUIRE(programNeedsCrc(e));
+    CHECK(applyFingerprint(e, tour::fingerprint(e.cmd)));  // the new date, to save
+    CHECK(e.program_state == ProgramState::Ok);
+    std::ofstream(program) << "build 2";
+    fs::last_write_time(program, fs::last_write_time(program) + std::chrono::seconds(10));
+    REQUIRE(programNeedsCrc(e));
+    CHECK_FALSE(applyFingerprint(e, tour::fingerprint(e.cmd)));
+    CHECK(e.program_state == ProgramState::Changed);
+    fs::remove_all(dir);
+}
+
 TEST_CASE("openings: PGN tags, and the Games filter by ECO code, range or words of the name") {
     const std::string pgn =
         "[Event \"x\"]\n[ECO \"B90\"]\n[Opening \"Sicilian Defense: Najdorf Variation\"]\n\n"
@@ -758,6 +790,9 @@ TEST_CASE("engine lists of ChessGUI, cutechess and Arena are imported") {
     CHECK(result.engines[0].options[0].second == "128");
     CHECK(result.engines[1].name == "Crafty");
     CHECK(result.engines[1].protocol == "xboard");
+    // The JSON lists too say which programs are not there.
+    REQUIRE(result.notes.size() == 1);
+    CHECK(result.notes[0].find("Crafty") != std::string::npos);
 
     // An INI list with Command= and Type= (Arena style).
     std::ofstream(dir / "arena.cfg")
@@ -769,6 +804,42 @@ TEST_CASE("engine lists of ChessGUI, cutechess and Arena are imported") {
     CHECK(result.engines[1].protocol == "xboard");
 
     fs::remove_all(dir);
+}
+
+TEST_CASE("string options that hold a file or a folder are told by their name") {
+    const auto kind = [](const char* name, const char* type = "string") {
+        UciOptionInfo o;
+        o.name = name;
+        o.type = type;
+        return optionPath(o);
+    };
+    CHECK(kind("EvalFile") == OptionPath::File);
+    CHECK(kind("BookFile") == OptionPath::File);
+    CHECK(kind("WeightsFile") == OptionPath::File);
+    CHECK(kind("SyzygyPath") == OptionPath::Folder);
+    CHECK(kind("NalimovPath") == OptionPath::Folder);
+    CHECK(kind("Book Path") == OptionPath::Folder);
+    CHECK(kind("UCI_Opponent") == OptionPath::None);
+    CHECK(kind("OwnBook", "check") == OptionPath::None);
+}
+
+TEST_CASE("an engine imported again is known by its program and arguments, not by its options") {
+    EngineEntry known;
+    known.cmd     = "/engines/sf/stockfish";
+    known.options = {{"UCI_ShowWDL", "true"}};  // what its first read added
+    EngineEntry again;
+    again.cmd     = "/engines/sf/stockfish";
+    again.options = {{"Hash", "16"}};
+    CHECK(sameEngine(known, again));
+    again.args = "--large-pages";
+    CHECK_FALSE(sameEngine(known, again));
+    again.args = "";
+    again.cmd  = "/engines/SF/Stockfish";
+#ifdef _WIN32
+    CHECK(sameEngine(known, again));
+#else
+    CHECK_FALSE(sameEngine(known, again));
+#endif
 }
 
 TEST_CASE("a folder is opened by a file URL that spaces, accents and # cannot break") {

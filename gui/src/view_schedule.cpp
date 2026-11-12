@@ -264,10 +264,11 @@ void App::drawEditPanel() {
     const auto engineChoice = [&](const char* label) {
         ImGui::TextUnformatted(label);
         ImGui::SetNextItemWidth(-FLT_MIN);
-        if (ImGui::BeginCombo("##edit_engine", edit_engine_.empty() ? TR("(choose)") : edit_engine_.c_str())) {
-            for (const auto& e : engines_) {
-                if (ImGui::Selectable(e.name.c_str(), e.name == edit_engine_)) edit_engine_ = e.name;
-            }
+        if (ImGui::BeginCombo("##edit_engine", edit_engine_.empty() ? TR("(choose)") : edit_engine_.c_str(),
+                              ImGuiComboFlags_HeightLargest)) {
+            std::vector<std::string> names;
+            for (const auto& e : engines_) names.push_back(e.name);
+            if (const int i = ui::searchComboItems(names, edit_engine_); i >= 0) edit_engine_ = names[i];
             ImGui::EndCombo();
         }
         const auto it = std::find_if(engines_.begin(), engines_.end(),

@@ -404,7 +404,8 @@ void App::drawNewMatch() {
     ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
     ImGui::PushStyleColor(ImGuiCol_Text,
                           ui::currentTheme() == ui::Theme::Dark ? ImVec4(0.04f, 0.07f, 0.13f, 1) : ImVec4(1, 1, 1, 1));
-    if (ui::iconButton("start", ui::Icon::Play, TR("Start"), ready && !probing && !locked)) startRun();
+    if (ui::iconButton("start", ui::Icon::Play, TR("Start"), ready && !probing && !locked && !start_after_reads_))
+        startRun();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
         if (locked)
             ImGui::SetTooltip("%s", TR("A match is already running."));
@@ -425,6 +426,13 @@ void App::drawNewMatch() {
         ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
         ImGui::TextWrapped("%s", start_error_.c_str());
         ImGui::PopStyleColor();
+    }
+    if (start_after_reads_) {
+        ImGui::SameLine();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("%s", TR("Starts once the engine being read or checked is done…"));
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Cancel##start_after_reads"))) start_after_reads_ = {};
     }
     ImGui::Spacing();
 
@@ -634,10 +642,10 @@ void App::drawRelaunch() {
 
     ImGui::TextUnformatted(TR("New engine A"));
     ImGui::SetNextItemWidth(px(260));
-    if (ImGui::BeginCombo("##relaunch_engine", relaunch_engine_.c_str())) {
-        for (const auto& e : engines_) {
-            if (ImGui::Selectable(e.name.c_str(), e.name == relaunch_engine_)) relaunch_engine_ = e.name;
-        }
+    if (ImGui::BeginCombo("##relaunch_engine", relaunch_engine_.c_str(), ImGuiComboFlags_HeightLargest)) {
+        std::vector<std::string> names;
+        for (const auto& e : engines_) names.push_back(e.name);
+        if (const int i = ui::searchComboItems(names, relaunch_engine_); i >= 0) relaunch_engine_ = names[i];
         ImGui::EndCombo();
     }
     ImGui::TextDisabled("%s", trf("against {}", run_.info().engine_b).c_str());

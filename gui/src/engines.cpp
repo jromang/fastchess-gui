@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <deque>
 #include <filesystem>
 #include <sstream>
 
@@ -84,7 +85,7 @@ std::optional<UciOptionInfo> parseUciOption(std::string_view line) {
     return option;
 }
 
-bool refreshProgram(EngineEntry& entry) {
+bool programNeedsCrc(EngineEntry& entry) {
     namespace fs = std::filesystem;
     std::error_code ec;
     if (entry.cmd.empty()) {
@@ -99,21 +100,44 @@ bool refreshProgram(EngineEntry& entry) {
         entry.program_state = ProgramState::MissingDir;
         return false;
     }
+    if (entry.program.size == 0) return true;
+    const auto size  = fs::file_size(entry.cmd, ec);
+    const auto mtime = fs::last_write_time(entry.cmd, ec).time_since_epoch().count();
+    if (ec || size != entry.program.size) {
+        entry.program_state = ProgramState::Changed;
+        return false;
+    }
+    if (entry.program.mtime != 0 && mtime == entry.program.mtime) {
+        entry.program_state = ProgramState::Ok;
+        return false;
+    }
+    return true;
+}
+
+bool applyFingerprint(EngineEntry& entry, const tour::FileFingerprint& now) {
+    if (now.size == 0) {
+        entry.program_state = ProgramState::Missing;  // gone, or unreadable, meanwhile
+        return false;
+    }
     if (entry.program.size == 0) {
-        entry.program       = tour::fingerprint(entry.cmd);
+        entry.program       = now;
         entry.program_state = ProgramState::Ok;
         return true;
     }
-    if (tour::changedSince(entry.cmd, entry.program)) {
+    if (now.size != entry.program.size || now.crc32 != entry.program.crc32) {
         entry.program_state = ProgramState::Changed;
         return false;
     }
     entry.program_state = ProgramState::Ok;
     // Same contents under a new date (copied, touched): remember the date, so the CRC is not read every time.
-    const auto mtime = fs::last_write_time(entry.cmd, ec).time_since_epoch().count();
-    if (ec || mtime == entry.program.mtime) return false;
-    entry.program.mtime = mtime;
+    if (now.mtime == entry.program.mtime) return false;
+    entry.program.mtime = now.mtime;
     return true;
+}
+
+bool refreshProgram(EngineEntry& entry) {
+    if (!programNeedsCrc(entry)) return false;
+    return applyFingerprint(entry, tour::fingerprint(entry.cmd));
 }
 
 namespace {
@@ -230,6 +254,45 @@ std::string detectProtocol(const EngineEntry& entry) {
     return protocol.empty() ? "uci" : protocol;
 }
 
+namespace {
+
+// The last lines an engine wrote on its output, kept as they come: the engine keeps only those of its last read, and
+// not those of isready.
+class Transcript {
+   public:
+    explicit Transcript(fastchess::engine::UciEngine& engine) : engine_(engine) {
+        engine.setLineCallback([this](const std::string& line) {
+            lines_.push_back(line);
+            if (lines_.size() > LINES) lines_.pop_front();
+        });
+    }
+    ~Transcript() { engine_.setLineCallback({}); }
+    Transcript(const Transcript&)            = delete;
+    Transcript& operator=(const Transcript&) = delete;
+
+    // For a report, then what the engine wrote last on its error output; empty when it wrote nothing. What is still
+    // to read is read first: an engine that ended before it was asked anything (a DLL missing) failed the "uci" sent
+    // to it, so its last words were never read.
+    [[nodiscard]] std::string report() {
+        (void)engine_.readEngine("", std::chrono::milliseconds(200));
+        std::string report;
+        if (!lines_.empty()) report += std::string(TR("The engine wrote:")) + "\n";
+        for (const auto& line : lines_) report += "    " + toUtf8(line) + "\n";
+        const auto errors = engine_.getStderrLines();
+        if (!errors.empty()) report += std::string(TR("On its error output:")) + "\n";
+        for (std::size_t i = errors.size() > LINES ? errors.size() - LINES : 0; i < errors.size(); ++i)
+            report += "    " + toUtf8(errors[i]->line) + "\n";
+        return report;
+    }
+
+   private:
+    static constexpr std::size_t LINES = 40;
+    fastchess::engine::UciEngine& engine_;
+    std::deque<std::string> lines_;
+};
+
+}  // namespace
+
 ProbeResult probeEngine(const EngineEntry& entry) {
     ProbeResult result;
 
@@ -251,9 +314,11 @@ ProbeResult probeEngine(const EngineEntry& entry) {
 
     try {
         fastchess::engine::UciEngine engine(config, false);
+        Transcript transcript(engine);
 
         if (auto started = engine.start(std::nullopt); !started) {
-            result.error = toUtf8(started.error());
+            result.error  = toUtf8(started.error());
+            result.output = transcript.report();
             // The usual reason: a WinBoard engine taken for a UCI one.
             if (result.error.find("uciok") != std::string::npos && result.protocol != "xboard") {
                 result.error += TR(" — not a UCI engine? For a WinBoard engine, choose the WinBoard protocol.");
@@ -277,6 +342,17 @@ ProbeResult probeEngine(const EngineEntry& entry) {
     return result;
 }
 
+bool sameEngine(const EngineEntry& a, const EngineEntry& b) {
+#ifdef _WIN32
+    const bool same_program = std::equal(a.cmd.begin(), a.cmd.end(), b.cmd.begin(), b.cmd.end(), [](char x, char y) {
+        return std::tolower(static_cast<unsigned char>(x)) == std::tolower(static_cast<unsigned char>(y));
+    });
+#else
+    const bool same_program = a.cmd == b.cmd;
+#endif
+    return same_program && a.args == b.args;
+}
+
 bool isWinboard(const EngineEntry& entry) {
     if (entry.protocol == "xboard") return true;
     auto lower = [](std::string s) {
@@ -297,11 +373,15 @@ struct Compliance {
 // fastchess' compliance steps on a new process of the engine, up to the first that fails, one line each; then what the
 // engine wrote last.
 Compliance compliance(const fastchess::EngineConfiguration& config) {
-    constexpr std::size_t OUTPUT_LINES = 40;
     fastchess::engine::UciEngine engine(config, false);
+    Transcript transcript(engine);
+    auto steps = fastchess::engine::complianceSteps(engine);
+    // Its options, sent as a game sends them, once it started.
+    if (!config.options.empty())
+        steps.insert(steps.begin() + 1, {TR("Send its options"), [&engine] { return engine.refreshUci(); }});
     Compliance result;
     auto& report = result.report;
-    for (const auto& [description, action] : fastchess::engine::complianceSteps(engine)) {
+    for (const auto& [description, action] : steps) {
         if (action()) {
             report += fmt::format("✓ {}\n", description);
             result.steps++;
@@ -309,17 +389,7 @@ Compliance compliance(const fastchess::EngineConfiguration& config) {
         }
         result.passed = false;
         report += fmt::format("✗ {}\n", description);
-        for (const auto standard :
-             {fastchess::engine::process::Standard::OUTPUT, fastchess::engine::process::Standard::ERR}) {
-            const auto lines = standard == fastchess::engine::process::Standard::OUTPUT ? engine.getStdoutLines()
-                                                                                        : engine.getStderrLines();
-            if (lines.empty()) continue;
-            report += standard == fastchess::engine::process::Standard::OUTPUT ? TR("The engine wrote:")
-                                                                               : TR("On its error output:");
-            report += "\n";
-            for (std::size_t i = lines.size() > OUTPUT_LINES ? lines.size() - OUTPUT_LINES : 0; i < lines.size(); ++i)
-                report += "    " + toUtf8(lines[i]->line) + "\n";
-        }
+        report += transcript.report();
         break;
     }
     engine.quit();
@@ -348,41 +418,51 @@ CheckResult checkEngine(const EngineEntry& entry) {
 
     try {
         fastchess::engine::UciEngine engine(config, false);
+        Transcript transcript(engine);
+        // A failure comes with what the engine wrote last.
+        const auto fail = [&](std::string message) {
+            result.message = std::move(message);
+            result.report  = transcript.report();
+            return result;
+        };
 
         const auto t0 = steady_clock::now();
-        if (auto started = engine.start(std::nullopt); !started) {
-            result.message = toUtf8(started.error());
-            return result;
-        }
+        if (auto started = engine.start(std::nullopt); !started) return fail(toUtf8(started.error()));
         const auto start_ms = duration_cast<milliseconds>(steady_clock::now() - t0).count();
 
-        const auto t1 = steady_clock::now();
-        if (engine.isready().code != fastchess::engine::process::Status::OK) {
-            result.message = TR("The engine does not answer isready.");
-            return result;
+        // Its options, as games send them: fastchess only warns, then plays without, about an option the engine does
+        // not have or a value it refuses. A wrong path (EvalFile, SyzygyPath) often makes it stop.
+        std::string refused;
+        for (const auto& [name, value] : config.options) {
+            const auto option = engine.uciOptions().getOption(name);
+            if (!option) {
+                refused += (refused.empty() ? "" : "; ") + trf("{}: unknown to the engine", name);
+            } else if (!(*option)->isValid(value)) {
+                refused += (refused.empty() ? "" : "; ") + trf("{} = {}: a value it refuses", name, value);
+            }
         }
+        if (!refused.empty()) return fail(trf("Options not sent: {}", refused));
+        if (!config.options.empty() && !engine.refreshUci())
+            return fail(TR("The engine stopped answering once its options were sent."));
+
+        const auto t1 = steady_clock::now();
+        if (engine.isready().code != fastchess::engine::process::Status::OK)
+            return fail(TR("The engine does not answer isready."));
         const auto ready_ms = duration_cast<microseconds>(steady_clock::now() - t1).count() / 1000.0;
 
         // A short search from the initial position: the move must be legal.
         chess::Board board;
         (void)engine.ucinewgame();
-        if (!engine.position({}, std::string(chess::constants::STARTPOS)) || !engine.writeEngine("go movetime 300")) {
-            result.message = TR("The engine stopped while it was asked to think.");
-            return result;
-        }
+        if (!engine.position({}, std::string(chess::constants::STARTPOS)) || !engine.writeEngine("go movetime 300"))
+            return fail(TR("The engine stopped while it was asked to think."));
         engine.readEngine("bestmove", seconds(10));
         const auto best = engine.bestmove(false);
-        if (!best) {
-            result.message = TR("No move after 10 seconds of a 0.3 s search.");
-            return result;
-        }
+        if (!best) return fail(TR("No move after 10 seconds of a 0.3 s search."));
         chess::Movelist legal;
         chess::movegen::legalmoves(legal, board);
         const auto move = chess::uci::uciToMove(board, *best);
-        if (std::find(legal.begin(), legal.end(), move) == legal.end()) {
-            result.message = trf("Illegal move from the initial position: {}", *best);
-            return result;
-        }
+        if (std::find(legal.begin(), legal.end(), move) == legal.end())
+            return fail(trf("Illegal move from the initial position: {}", *best));
 
         engine.quit();
         result.ok      = true;
@@ -399,6 +479,16 @@ CheckResult checkEngine(const EngineEntry& entry) {
         result.message = toUtf8(e.what());
     }
     return result;
+}
+
+OptionPath optionPath(const UciOptionInfo& option) {
+    if (option.type != "string") return OptionPath::None;
+    auto name = option.name;
+    for (auto& c : name) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    const auto has = [&](const char* word) { return name.find(word) != std::string::npos; };
+    if (has("path") || has("dir") || has("folder")) return OptionPath::Folder;
+    if (has("file") || has("book") || has("network") || has("weights")) return OptionPath::File;
+    return OptionPath::None;
 }
 
 void showWdlByDefault(EngineEntry& entry) {

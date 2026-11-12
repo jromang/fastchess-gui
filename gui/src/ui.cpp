@@ -1,6 +1,7 @@
 #include "ui.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -538,6 +539,63 @@ CopyAs copyButton(const char* id, bool small) {
         ImGui::EndPopup();
     }
     return choice;
+}
+
+int searchComboItems(const std::vector<std::string>& names, const std::string& current) {
+    static std::string search;  // one combo is open at a time
+    const bool appearing = ImGui::IsWindowAppearing();
+    if (appearing) {
+        search.clear();
+        ImGui::SetKeyboardFocusHere();
+    }
+    char buffer[128];
+    const auto n = std::min(search.size(), sizeof(buffer) - 1);
+    std::copy_n(search.data(), n, buffer);
+    buffer[n] = 0;
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    if (ImGui::InputTextWithHint("##combo_search", TR("Search"), buffer, sizeof(buffer))) search = buffer;
+    const bool enter = ImGui::IsItemDeactivated() && ImGui::IsKeyPressed(ImGuiKey_Enter, false);
+
+    const auto lower = [](std::string s) {
+        for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        return s;
+    };
+    const auto needle = lower(search);
+    std::vector<int> shown;
+    int current_row = -1;
+    for (int i = 0; i < static_cast<int>(names.size()); ++i) {
+        if (!needle.empty() && lower(names[i]).find(needle) == std::string::npos) continue;
+        if (names[i] == current) current_row = static_cast<int>(shown.size());
+        shown.push_back(i);
+    }
+    if (enter && !shown.empty()) {
+        ImGui::CloseCurrentPopup();
+        return shown.front();
+    }
+    if (shown.empty()) {
+        if (!names.empty()) ImGui::TextDisabled("%s", TR("Nothing found."));  // the caller says why there is nothing
+        return -1;
+    }
+
+    // The rows scroll under the search field.
+    const float row    = ImGui::GetTextLineHeightWithSpacing();
+    const float height = std::min(12.0f, static_cast<float>(shown.size())) * row + ImGui::GetStyle().WindowPadding.y;
+    int chosen         = -1;
+    ImGui::BeginChild("##combo_rows", ImVec2(0, height));
+    if (appearing && current_row >= 0) ImGui::SetScrollY(std::max(0.0f, (current_row - 5) * row));
+    ImGuiListClipper clipper;
+    clipper.Begin(static_cast<int>(shown.size()));
+    while (clipper.Step()) {
+        for (int r = clipper.DisplayStart; r < clipper.DisplayEnd; ++r) {
+            ImGui::PushID(shown[r]);
+            if (ImGui::Selectable(names[shown[r]].c_str(), r == current_row)) chosen = shown[r];
+            ImGui::PopID();
+        }
+    }
+    ImGui::EndChild();
+    // In a child window, a row does not close the combo by itself.
+    if (chosen >= 0) ImGui::CloseCurrentPopup();
+    return chosen;
 }
 
 }  // namespace fcg::ui

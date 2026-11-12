@@ -204,7 +204,11 @@ std::string selfPath(const char* argv0) {
 }  // namespace
 
 int main(int argc, char** argv) {
-#ifndef _WIN32
+#ifdef _WIN32
+    // The engines inherit it: one missing a DLL (MSVCR100.dll) or crashing fails at once, instead of waiting on a
+    // system error box until someone clicks it.
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+#else
     // A write to an engine that just died must not kill the GUI.
     std::signal(SIGPIPE, SIG_IGN);
 #endif
