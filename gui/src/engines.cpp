@@ -312,6 +312,8 @@ ProbeResult probeEngine(const EngineEntry& entry) {
     config.dir      = engineWorkingDir(entry);
     config.protocol = result.protocol;
 
+    config.start_timeout_ms = entry.start_timeout * 1000LL;
+
     try {
         fastchess::engine::UciEngine engine(config, false);
         Transcript transcript(engine);
@@ -409,6 +411,8 @@ CheckResult checkEngine(const EngineEntry& entry) {
     config.dir      = engineWorkingDir(entry);
     config.options  = tour::forEngine(entry.options);
     config.protocol = entry.protocol;
+
+    config.start_timeout_ms = entry.start_timeout * 1000LL;
 
     std::error_code ec;
     if (!std::filesystem::is_regular_file(entry.cmd, ec)) {

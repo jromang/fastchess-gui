@@ -444,6 +444,86 @@ TEST_CASE("runner: a round robin of more engines than games at a time starts eac
 }
 #endif
 
+TEST_CASE("engine start: an engine slow to start fails in the usual time, and starts within its own timeout") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    // The usual timeouts, short for the test: 500 ms for uciok and for the isready of a new game.
+    fastchess::atomic::stop                              = false;
+    fastchess::config::TournamentConfig                  = std::make_unique<fastchess::config::Tournament>();
+    fastchess::config::TournamentConfig->startup_time    = 500ms;
+    fastchess::config::TournamentConfig->ucinewgame_time = 500ms;
+
+    fastchess::EngineConfiguration config;
+    config.name            = "slow";
+    config.cmd             = randomMover();
+    auto timed             = config;
+    timed.start_timeout_ms = 5000;
+
+    // uciok after 1.5 s.
+    setEnv("FCG_MOCK_SLOW_UCIOK", "1500");
+    {
+        fastchess::engine::UciEngine engine(config, false);
+        const auto started = engine.start(std::nullopt);
+        REQUIRE_FALSE(started);
+        CHECK(started.error().find("uciok") != std::string::npos);
+    }
+    {
+        fastchess::engine::UciEngine engine(timed, false);
+        CHECK(engine.start(std::nullopt));
+    }
+    setEnv("FCG_MOCK_SLOW_UCIOK", nullptr);
+
+    // readyok after 1.5 s: the isready of a new game, once the options are set.
+    setEnv("FCG_MOCK_SLOW_READY", "1500");
+    {
+        fastchess::engine::UciEngine engine(config, false);
+        REQUIRE(engine.start(std::nullopt));
+        CHECK_FALSE(engine.refreshUci());
+    }
+    {
+        fastchess::engine::UciEngine engine(timed, false);
+        REQUIRE(engine.start(std::nullopt));
+        CHECK(engine.refreshUci());
+    }
+    setEnv("FCG_MOCK_SLOW_READY", nullptr);
+}
+
+TEST_CASE("runner: the start timeout of a participant reaches its engine, and is kept in tournament.json") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-start-timeout";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    // Both engines answer uciok after 1.5 s, beyond the tournament's 500 ms but within their own 5 s.
+    auto s                                    = spec(Format::Match, 2, 1, 2);
+    s.conditions.concurrency                  = 1;
+    s.conditions.startup_time                 = 500ms;
+    s.participants[0].engine.start_timeout_ms = 5000;
+    s.participants[1].engine.start_timeout_ms = 5000;
+    {
+        auto state = TournamentState::create(dir / "t", s);
+        setEnv("FCG_MOCK_SLOW_UCIOK", "1500");
+        const auto error = play(*state);
+        setEnv("FCG_MOCK_SLOW_UCIOK", nullptr);
+        CHECK(error.empty());
+        CHECK_FALSE(fastchess::atomic::abnormal_termination);
+        CHECK(state->results().size() == 2u);
+    }
+
+    const auto reopened = TournamentState::open(dir / "t", true);
+    CHECK(reopened->spec().participants[1].engine.start_timeout_ms == 5000);
+
+    // Written only when set.
+    CHECK_FALSE(nlohmann::json(fastchess::EngineConfiguration{}).contains("start_timeout_ms"));
+}
+
 TEST_CASE("runner: engine logs, of every game when asked, with both directions of both engines") {
     if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available, skipped");

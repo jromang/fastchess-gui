@@ -5,9 +5,14 @@
 // FCG_MOCK_STDERR_PAD dots, when set), and with FCG_MOCK_STDERR_FLOOD=N, N lines of 1000 characters there before its
 // uciok: from 70 on, more than a pipe holds. With FCG_MOCK_STDERR_CRASH=N, at its first "go" it writes a line on its
 // output, then at once N lines of 1000 characters on its error output ("crash report I/N"), and ends.
+//
+// With FCG_MOCK_SLOW_UCIOK=MS it waits MS milliseconds before its uciok, and with FCG_MOCK_SLOW_READY=MS before
+// each readyok: an engine slow to load its network or its hash table.
 
+#include <chrono>
 #include <cstdlib>
 #include <random>
+#include <thread>
 
 #include <chess.hpp>
 
@@ -80,8 +85,12 @@ void uci_line(Board &board, const std::string &line) {
         std::cout << "id name random_move" << std::endl;
         std::cout << "id author fastchess" << std::endl;
         std::cout << "option name Hash type spin default 16 min 1 max 33554432" << std::endl;
+        if (const char *slow = std::getenv("FCG_MOCK_SLOW_UCIOK"))
+            std::this_thread::sleep_for(std::chrono::milliseconds(std::atoi(slow)));
         std::cout << "uciok" << std::endl;
     } else if (tokens[0] == "isready") {
+        if (const char *slow = std::getenv("FCG_MOCK_SLOW_READY"))
+            std::this_thread::sleep_for(std::chrono::milliseconds(std::atoi(slow)));
         std::cout << "readyok" << std::endl;
     } else if (tokens[0] == "ucinewgame") {
         board = Board();

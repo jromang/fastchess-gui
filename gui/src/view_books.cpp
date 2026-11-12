@@ -253,6 +253,16 @@ void App::drawBookDetail(BookEntry& book) {
             ImGui::SameLine();
             ImGui::TextUnformatted(trf("{}: {}", text, ui::formatCount(n)).c_str());
         }
+        // Escape lines are skipped now, but earlier versions read them as moves: worth knowing for past results.
+        if (const auto n = scan.escapeLines()) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+            ImGui::TextUnformatted("!");
+            ImGui::PopStyleColor();
+            ImGui::SameLine();
+            ImGui::TextUnformatted(trf("{}: {}", TR("lines starting with %, ignored"), ui::formatCount(n)).c_str());
+            ui::help(TR("The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, "
+                        "and could play some openings of this book from a wrong position, often the starting one."));
+        }
 
         ImGui::Spacing();
         if (ImGui::Button(TR("Use it for the next tournament"))) {

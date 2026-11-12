@@ -50,6 +50,10 @@ struct EngineConfiguration {
     // "xboard": a WinBoard engine, started through engine::xboard_adapter; anything else: a UCI engine
     std::string protocol;
 
+    // fastchess-gui: how long the engine may take to answer uciok when started and the isready of a new game, in
+    // milliseconds, for an engine slow to load; 0: the tournament's startup_time and ucinewgame_time.
+    int64_t start_timeout_ms = 0;
+
     template <typename T, typename Predicate>
     std::optional<T> getOption(std::string_view option_name, Predicate transform) const {
         const auto it = std::find_if(options.begin(), options.end(),
@@ -70,8 +74,22 @@ struct EngineConfiguration {
         return std::filesystem::path(cmd);
     }
 };
-// With defaults, so that configurations saved before a field existed still load.
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(EngineConfiguration, name, dir, cmd, args, restart, options, limit,
-                                                variant, protocol)
+// With defaults, so that configurations saved before a field existed still load. start_timeout_ms is written only
+// when set, so that the configuration of an engine without one is saved as before.
+#define FCG_ENGINE_CONFIGURATION_FIELDS name, dir, cmd, args, restart, options, limit, variant, protocol
+template <typename BasicJsonType,
+          nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
+void to_json(BasicJsonType& nlohmann_json_j, const EngineConfiguration& nlohmann_json_t) {
+    NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_ENGINE_CONFIGURATION_FIELDS))
+    if (nlohmann_json_t.start_timeout_ms > 0) nlohmann_json_j["start_timeout_ms"] = nlohmann_json_t.start_timeout_ms;
+}
+template <typename BasicJsonType,
+          nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
+void from_json(const BasicJsonType& nlohmann_json_j, EngineConfiguration& nlohmann_json_t) {
+    const EngineConfiguration nlohmann_json_default_obj{};
+    NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_ENGINE_CONFIGURATION_FIELDS))
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(start_timeout_ms)
+}
+#undef FCG_ENGINE_CONFIGURATION_FIELDS
 
 }  // namespace fastchess

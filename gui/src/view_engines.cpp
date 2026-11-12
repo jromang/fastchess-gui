@@ -781,6 +781,24 @@ void App::drawEngines() {
 
     changed |= ImGui::Checkbox(TR("Restart the engine for every game"), &e.restart);
 
+    // The usual start timeout is shown rather than 0, and saved as 0 when typed back.
+    ui::label(TR("Start timeout (s)"), label);
+    {
+        const auto usual =
+            static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(ENGINE_STARTUP_TIME).count());
+        int seconds = e.start_timeout > 0 ? e.start_timeout : usual;
+        ImGui::SetNextItemWidth(120.0f * ImGui::GetFontSize() / 16.0f);
+        if (ImGui::InputInt("##start_timeout", &seconds, 0, 0)) {
+            seconds         = std::clamp(seconds, 1, 3600);
+            e.start_timeout = seconds == usual ? 0 : seconds;
+            changed         = true;
+        }
+        ui::help(trf("How long the engine may take to answer uciok when started and isready at the start of each "
+                     "game: more for an engine that loads a large network or hash table. Usually {} s.",
+                     usual)
+                     .c_str());
+    }
+
     ui::label(TR("Groups"), label);
     {
         std::string text;
