@@ -4,6 +4,8 @@
 #include <ctime>
 #include <fstream>
 #include <map>
+#include <set>
+#include <tuple>
 
 #include "journal.hpp"
 #include "ratinglist.hpp"
@@ -30,6 +32,69 @@ int64_t pgnDate(const std::string& date) {
     const int64_t days = static_cast<int64_t>(era) * 146097 + doe - 719468;
     return days * 86'400'000;
 }
+
+// A name with its letter case and spaces set aside: ASCII letters in lower case, the spaces and tabs at the ends
+// dropped, those in between made one space.
+std::string folded(const std::string& name) {
+    std::string out;
+    bool space = false;
+    for (const char c : name) {
+        if (c == ' ' || c == '\t') {
+            space = !out.empty();
+            continue;
+        }
+        if (space) out += ' ';
+        space = false;
+        out += c >= 'A' && c <= 'Z' ? static_cast<char>(c - 'A' + 'a') : c;
+    }
+    return out;
+}
+
+// The players of the PGN files and the library engines they are, each player looked up once.
+class LibraryMatcher {
+   public:
+    explicit LibraryMatcher(const std::vector<std::string>& library) {
+        for (const auto& name : library) {
+            exact_.insert(name);
+            // Two library engines of the same folded name: neither is guessed.
+            const auto [it, added] = folded_.emplace(folded(name), name);
+            if (!added && it->second != name) it->second.clear();
+        }
+    }
+
+    [[nodiscard]] std::optional<std::string> find(const std::string& player) const {
+        if (exact_.count(player)) return player;
+        const auto it = folded_.find(folded(player));
+        if (it == folded_.end() || it->second.empty()) return std::nullopt;
+        return it->second;
+    }
+
+    // The name the games of `player` are counted under.
+    const std::string& name(const std::string& player) {
+        const auto [it, added] = seen_.emplace(player, player);
+        if (added) {
+            if (const auto engine = find(player)) it->second = *engine;
+        }
+        return it->second;
+    }
+
+    // The players taken for a library engine, by engine, then by name.
+    [[nodiscard]] std::vector<std::pair<std::string, std::string>> matched() const {
+        std::vector<std::pair<std::string, std::string>> out;
+        for (const auto& [player, engine] : seen_) {
+            if (exact_.count(engine)) out.emplace_back(player, engine);
+        }
+        std::sort(out.begin(), out.end(), [](const auto& a, const auto& b) {
+            return std::tie(a.second, a.first) < std::tie(b.second, b.first);
+        });
+        return out;
+    }
+
+   private:
+    std::set<std::string> exact_;
+    std::map<std::string, std::string> folded_;  // folded name -> library name, empty when two have it
+    std::map<std::string, std::string> seen_;    // player -> the name its games are counted under
+};
 
 class Builder {
    public:
@@ -97,7 +162,7 @@ void readTournament(const fs::path& dir, GameDb& db, Builder& builder) {
 }
 
 // The games of a PGN file, from their headers only: fast enough for the big files of the rating lists.
-void readPgn(const fs::path& file, GameDb& db, Builder& builder) {
+void readPgn(const fs::path& file, GameDb& db, Builder& builder, LibraryMatcher& matcher) {
     std::ifstream in(file, std::ios::binary);
     if (!in) return;
     const auto source = static_cast<uint32_t>(db.sources.size());
@@ -105,7 +170,7 @@ void readPgn(const fs::path& file, GameDb& db, Builder& builder) {
 
     std::map<std::string, std::string> tags;
     const auto flush = [&] {
-        const auto w = tags["White"], b = tags["Black"], result = tags["Result"];
+        const auto w = matcher.name(tags["White"]), b = matcher.name(tags["Black"]), result = tags["Result"];
         if (!w.empty() && !b.empty() && w != b && (result == "1-0" || result == "0-1" || result == "1/2-1/2")) {
             DbGame g;
             g.source         = source;
@@ -153,11 +218,18 @@ std::optional<uint32_t> GameDb::engine(const std::string& name) const {
     return std::nullopt;
 }
 
-GameDb readGameDb(const std::vector<fs::path>& dirs, const std::vector<fs::path>& pgns) {
+std::optional<std::string> libraryEngine(const std::string& player, const std::vector<std::string>& library) {
+    return LibraryMatcher(library).find(player);
+}
+
+GameDb readGameDb(const std::vector<fs::path>& dirs, const std::vector<fs::path>& pgns,
+                  const std::vector<std::string>& library) {
     GameDb db;
     Builder builder(db);
+    LibraryMatcher matcher(library);
     for (const auto& dir : dirs) readTournament(dir, db, builder);
-    for (const auto& file : pgns) readPgn(file, db, builder);
+    for (const auto& file : pgns) readPgn(file, db, builder, matcher);
+    db.matched = matcher.matched();
     return db;
 }
 

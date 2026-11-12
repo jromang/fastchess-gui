@@ -396,3 +396,49 @@ TEST_CASE("table: a bye counts as a drawn pair in the score, not as points out o
     s.byes   = 1;
     CHECK(s.score() == doctest::Approx(0.5));
 }
+
+TEST_CASE("rating list: the players of imported PGN files are matched to the library's engines by name") {
+    // The same name; else the same once letter case and spaces are set aside, when only one engine has it.
+    const std::vector<std::string> library = {"Stockfish 17", "Komodo Dragon 3.3", "Ethereal 14", "ethereal 14",
+                                              "Berserk"};
+    CHECK(libraryEngine("Stockfish 17", library) == "Stockfish 17");
+    CHECK(libraryEngine("stockfish 17", library) == "Stockfish 17");
+    CHECK(libraryEngine("  STOCKFISH\t 17 ", library) == "Stockfish 17");
+    CHECK(libraryEngine("Komodo  Dragon 3.3", library) == "Komodo Dragon 3.3");
+    // Nothing looser: another version, a suffix, a missing space, a name two engines have.
+    CHECK(libraryEngine("Stockfish 16", library) == std::nullopt);
+    CHECK(libraryEngine("Stockfish 17 64-bit", library) == std::nullopt);
+    CHECK(libraryEngine("Stockfish17", library) == std::nullopt);
+    CHECK(libraryEngine("Berserk 13", library) == std::nullopt);
+    CHECK(libraryEngine("ETHEREAL 14", library) == std::nullopt);
+    CHECK(libraryEngine("ethereal 14", library) == "ethereal 14");  // its own name
+    CHECK(libraryEngine("", library) == std::nullopt);
+    CHECK(libraryEngine("Stockfish 17", {}) == std::nullopt);
+
+    // A rating list's games: the players matched count as the library engines, whose rating can be the anchor.
+    namespace fs    = std::filesystem;
+    const auto root = fs::temp_directory_path() / "fcg-tour-library-match";
+    fs::remove_all(root);
+    fs::create_directories(root);
+    std::ofstream(root / "list.pgn") << "[White \"stockfish 17\"]\n[Black \"Berserk 13\"]\n[Result \"1-0\"]\n\n"
+                                        "[White \"Berserk 13\"]\n[Black \"Stockfish  17\"]\n[Result \"1/2-1/2\"]\n\n"
+                                        "[White \"Berserk\"]\n[Black \"Stockfish 16\"]\n[Result \"0-1\"]\n\n";
+    const auto db = readGameDb({}, {root / "list.pgn"}, library);
+    CHECK(db.engines == std::vector<std::string>{"Stockfish 17", "Berserk 13", "Berserk", "Stockfish 16"});
+    using Match = std::pair<std::string, std::string>;
+    CHECK(db.matched == std::vector<Match>{{"Berserk", "Berserk"},
+                                           {"Stockfish  17", "Stockfish 17"},
+                                           {"stockfish 17", "Stockfish 17"}});
+    const auto anchored = ratingList(db, {}, std::make_pair(std::string("Stockfish 17"), 3600.0));
+    const auto sf       = std::find_if(anchored.entries.begin(), anchored.entries.end(),
+                                       [](const auto& e) { return e.name == "Stockfish 17"; });
+    REQUIRE(sf != anchored.entries.end());
+    CHECK(sf->games == 2);
+    CHECK(sf->rating.elo == doctest::Approx(3600));
+
+    // Without a library, the players are known by the names the file gives them.
+    const auto alone = readGameDb({}, {root / "list.pgn"});
+    CHECK(alone.engines.size() == 5);
+    CHECK(alone.matched.empty());
+    fs::remove_all(root);
+}

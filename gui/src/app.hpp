@@ -206,6 +206,7 @@ class App {
     void drawRatings();
     void drawRatingFilters();
     void drawRatingList();
+    void drawLibraryMatches();  // the players of the PGN files taken for library engines
     void drawEngineCard();
     void drawHeadToHead();
     void drawProgress();
@@ -573,6 +574,7 @@ class App {
     std::future<RatingsResult> ratings_job_;
     std::shared_ptr<const tour::GameDb> game_db_ = std::make_shared<tour::GameDb>();
     bool game_db_dirty_ = true;  // read the tournaments again
+    std::vector<std::string> game_db_library_;  // the library's names the PGN files' players were matched to
     bool ratings_dirty_ = true;  // compute again, with other filters
     std::optional<std::vector<std::filesystem::path>> rating_pgns_;  // settings.json's, read once
     const std::vector<std::filesystem::path>& ratingPgns();
