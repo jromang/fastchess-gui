@@ -52,6 +52,11 @@ void iniWrite(ImGuiContext*, ImGuiSettingsHandler* handler, ImGuiTextBuffer* buf
 
 float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
 
+// The frames a tab asked for (or in front in a layout) waits to be in front, the frames the tabs of a layout built are
+// put in order.
+constexpr int REQUEST_FRAMES = 30;
+constexpr int ORDER_FRAMES   = 3;
+
 const char* panelOfTab(int tab) {
     using namespace layout::panel;
     static constexpr const char* panels[] = {OVERVIEW, STANDINGS, BRACKET, SCHEDULE, LIVE, GAMES, OPENINGS, BROADCAST};
@@ -130,7 +135,8 @@ void App::showPanel(const std::string& panel) {
         if (!layout::detachedSlot(panel)) redock_.insert(panel);
         panelsChanged();
     }
-    panel_request_ = panel;
+    panel_request_        = panel;
+    panel_request_frames_ = 0;
 }
 
 void App::closePanel(const std::string& panel) {
@@ -164,7 +170,9 @@ layout::Layout App::currentLayout() const {
         viewport->Pos.y);
 }
 
-void App::saveLayoutAs(const std::string& name) {
+bool App::saveLayoutAs(const std::string& text) {
+    const auto name = layout::trimName(text);
+    if (name.empty()) return false;
     auto l = currentLayout();
     l.name = name;
     const auto it =
@@ -176,6 +184,7 @@ void App::saveLayoutAs(const std::string& name) {
     }
     storage_.saveLayouts(layouts_);
     Console::instance().add(trf("Layout saved: {}", name));
+    return true;
 }
 
 void App::deleteLayout(const std::string& name) {
@@ -189,26 +198,36 @@ void App::deleteLayout(const std::string& name) {
 void App::drawWorkspaceDock() {
     const ImGuiID dock = workspaceDock();
     loadPanels();
-    // Once a session: a layout.ini without the workspace's panels (none yet, one of an earlier version, or damaged)
-    // gets the default layout.
+    // Once a session: a layout.ini without a place for the panels open (none yet, one of an earlier version, or
+    // damaged) gets the default layout. Every panel floating is a layout of the user's.
     if (!layout_checked_) {
         layout_checked_ = true;
-        if (!layout_request_ && (!panelsIni().read || !layout::usable(dock)))
+        if (!layout_request_ && (!panelsIni().read || !layout::usable(panels_open_)))
             layout_request_ = layout::preset(layout::Preset::Tabs);
     }
     if (layout_request_) {
         const ImVec2 size    = ImGui::GetContentRegionAvail();
         const auto* viewport = ImGui::GetMainViewport();
+        // The panels of another format (the bracket of a knockout) are open, put away, to be there in that format; a
+        // node with none of the format's panels is left out rather than empty.
+        auto open        = layout_request_->panels();
+        const auto shown = layout::only(*layout_request_, [this](std::string_view p) { return panelAvailable(p); });
+        const auto shown_panels = shown.panels();
+        std::vector<std::string> hidden;
+        for (const auto& p : open) {
+            if (!shown_panels.count(p)) hidden.push_back(p);
+        }
         // The boards detached and floating stay, unless the layout places them.
-        auto open = layout_request_->panels();
         for (const auto& p : panels_open_) {
             if (layout::detachedSlot(p) && !layout::dockedIn(dock, p)) open.insert(p);
         }
         // No panel keeps the focus: the tab of the focused window is the one in front of its node.
         ImGui::FocusWindow(nullptr);
-        placements_  = layout::build(dock, size.x, size.y, *layout_request_, viewport->Pos.x, viewport->Pos.y);
-        panels_open_ = std::move(open);
-        fronts_      = layout_request_->fronts();
+        placements_   = layout::build(dock, size.x, size.y, shown, viewport->Pos.x, viewport->Pos.y, hidden);
+        panels_open_  = std::move(open);
+        fronts_       = shown.fronts();
+        built_        = shown;
+        built_frames_ = 0;
         redock_.clear();
         panelsChanged();
         layout_request_.reset();
@@ -234,8 +253,10 @@ void App::drawPanels() {
 
     // Docked in the workspace, a panel is shown with it; out of it, on every page. One closed, or that lost its
     // place, waits for the workspace to be docked again; a board detached for the first time floats in the middle.
+    // The dock space submitted this frame, not the page: the page can change while the shell is drawn (Open on the
+    // list of tournaments), and a panel drawn docked without its dock space would be undocked.
     const ImGuiID dock   = workspaceDock();
-    const bool workspace = page_ == Page::Tournament;
+    const bool workspace = layout::shown(dock);
     bool focused_one     = false;
     std::string first_shown;
     for (const auto& panel : panelsAvailable()) {
@@ -288,8 +309,9 @@ void App::drawPanels() {
         bool open          = true;
         const bool visible = ImGui::Begin(title.c_str(), &open, flags);
         if (panel == layout::panel::LIVE) drawLiveBadge();
-        // A tab asked for is asked for until it is in front: a dock node's first frames can ignore it.
-        if (requested && layout::bringToFront()) panel_request_.reset();
+        // A tab asked for is asked for until it is in front: a dock node's first frames can ignore it. Not for ever,
+        // as it is focused meanwhile.
+        if (requested && (layout::bringToFront() || ++panel_request_frames_ > REQUEST_FRAMES)) panel_request_.reset();
         if (fronts_.count(panel) && !requested && layout::bringToFront()) fronts_.erase(panel);
         if (visible) {
             if (first_shown.empty()) first_shown = panel;
@@ -303,6 +325,15 @@ void App::drawPanels() {
         }
         ImGui::End();
         if (!open) closePanel(panel);
+    }
+
+    // The layout built last: its tabs in its order, though ImGui adds those of new windows after the others; those
+    // in front, if they can be.
+    if (workspace && (built_ || !fronts_.empty())) {
+        ++built_frames_;
+        if (built_) layout::orderTabs(*built_);
+        if (built_frames_ >= ORDER_FRAMES) built_.reset();
+        if (built_frames_ > REQUEST_FRAMES) fronts_.clear();
     }
 
     // The guide (F1, the `?` of the title) opens at the section of the panel focused last, else of the first shown.
@@ -404,9 +435,10 @@ void App::drawLayoutMenu() {
     if (!layouts_.empty()) {
         ImGui::Separator();
         ImGui::TextDisabled("%s", TR("Yours"));
-        for (const auto& l : layouts_) {
-            ImGui::PushID(l.name.c_str());
-            if (ImGui::MenuItem(l.name.c_str())) applyLayout(l);
+        // By their rank: a name can be anything, "##" too.
+        for (std::size_t i = 0; i < layouts_.size(); ++i) {
+            ImGui::PushID(static_cast<int>(i));
+            if (ImGui::MenuItem(layouts_[i].name.c_str())) applyLayout(layouts_[i]);
             ImGui::PopID();
         }
     }
@@ -430,9 +462,9 @@ void App::drawLayoutMenu() {
     }
     if (!layouts_.empty() && ImGui::BeginMenu(TR("Delete"))) {
         std::string gone;
-        for (const auto& l : layouts_) {
-            ImGui::PushID(l.name.c_str());
-            if (ImGui::MenuItem(l.name.c_str())) gone = l.name;
+        for (std::size_t i = 0; i < layouts_.size(); ++i) {
+            ImGui::PushID(static_cast<int>(i));
+            if (ImGui::MenuItem(layouts_[i].name.c_str())) gone = layouts_[i].name;
             ImGui::PopID();
         }
         ImGui::EndMenu();
@@ -463,10 +495,7 @@ void App::drawSaveLayout() {
                                                 ImGuiInputTextFlags_EnterReturnsTrue);
     layout_name_     = buffer;
     // Spaces around the name are not part of it.
-    const auto first = layout_name_.find_first_not_of(' ');
-    const auto name  = first == std::string::npos
-                           ? std::string()
-                           : layout_name_.substr(first, layout_name_.find_last_not_of(' ') - first + 1);
+    const auto name = layout::trimName(layout_name_);
     const bool replaces =
         std::any_of(layouts_.begin(), layouts_.end(), [&](const layout::Layout& l) { return l.name == name; });
     if (replaces) ImGui::TextDisabled("%s", TR("Replaces your layout of that name."));

@@ -109,6 +109,17 @@ enum class Preset { Tabs, FollowGame, LargeTournament, Broadcast, Count };
 [[nodiscard]] const char* presetLabel(Preset which);  // English, to translate: "Follow a game"
 [[nodiscard]] std::optional<Preset> presetByKey(std::string_view key);
 
+// The layout with only the panels `available` accepts (those of the tournament's format): a node left without panels
+// drops out, its sibling takes its place (and is the central one if it was); the tab in front is the first when its own
+// is gone.
+[[nodiscard]] Layout only(const Layout& layout, const std::function<bool(std::string_view)>& available);
+
+// A layout's name as kept: without the spaces around it. Empty, it is no name.
+[[nodiscard]] std::string trimName(std::string_view name);
+// The user's layouts as read from the profile, named: each name trimmed, those without a name or with the name of an
+// earlier one left out.
+[[nodiscard]] std::vector<Layout> named(std::vector<Layout> layouts);
+
 void to_json(nlohmann::json& j, const Node& node);
 void from_json(const nlohmann::json& j, Node& node);
 void to_json(nlohmann::json& j, const Layout& layout);
@@ -128,10 +139,11 @@ void place(const Placement& placement);  // SetNextWindowPos() and SetNextWindow
 // Needs an ImGui context, in a frame, before the dock space is submitted. Replaces the dock space `dockspace`
 // (`width` x `height`) with the layout's tree and adds its floating nodes at `origin` (the main window's position).
 // The windows of its panels are docked in them (also those not created yet); the panels of the old tree it does not
-// show are put away in its node with the most tabs, to come back there if shown again; the panels floating out of
-// the tree are left where they are. Returns the panels floating alone, to place().
+// show, and those of `hidden` (of the layout, but not of the tournament's format), are put away in its node with the
+// most tabs, to come back there if shown again; the panels floating out of the tree are left where they are. Returns
+// the panels floating alone, to place().
 std::vector<Placement> build(ImGuiID dockspace, float width, float height, const Layout& layout, float origin_x = 0,
-                             float origin_y = 0);
+                             float origin_y = 0, const std::vector<std::string>& hidden = {});
 
 // The layout on screen: the dock space's tree and the floating panels, those `known` accepts (open panels of the
 // workspace), relative to `origin`. The panels of a node not on screen (a format without them) count when `known`
@@ -140,8 +152,19 @@ std::vector<Placement> build(ImGuiID dockspace, float width, float height, const
                              float origin_y = 0);
 
 // Called after Begin(): asks for the window's tab to be the one in front in its dock node (ImGui selects the tab
-// that appeared last when several appear together). True once it is, or when the window is not docked.
+// that appeared last when several appear together). True once it is, or when the window has no tab to bring forward:
+// not docked, or alone in a node that floats (ImGui draws it as a plain window).
 bool bringToFront();
+
+// Called after the panels of a frame, for the frames after a layout was built: puts the tabs of each of its nodes in
+// the layout's order. ImGui adds the tab of a window that already existed in the order the windows were submitted,
+// and those created later after them.
+void orderTabs(const Layout& layout);
+
+// Whether the dock space was submitted this frame, not only kept alive: the panels docked in it can be drawn.
+[[nodiscard]] bool shown(ImGuiID dockspace);
+// Keeps the dock space alive when it was not submitted this frame (another page): the panels docked in it stay there.
+void keepAlive(ImGuiID dockspace);
 
 // Whether the window of `panel` is docked in the dock space's tree (or will be, from its settings).
 [[nodiscard]] bool dockedIn(ImGuiID dockspace, std::string_view panel);
@@ -150,9 +173,11 @@ bool bringToFront();
 // or a node that went away while it was closed), or never placed.
 [[nodiscard]] bool lost(std::string_view panel);
 
-// Whether the dock space exists with panels in it: else (no layout.ini yet, one of an earlier version, or damaged) the
-// default layout is built.
-[[nodiscard]] bool usable(ImGuiID dockspace);
+// Whether layout.ini gives a place to one of the panels `open` at least: docked in a node that exists (of the dock
+// space, or floating out of it), or floating alone. Else (no panel open, none of them in layout.ini, or their nodes
+// gone: a layout.ini of an earlier version, or damaged) the default layout is built. Every panel floating, the
+// workspace empty, is a layout of the user's.
+[[nodiscard]] bool usable(const std::set<std::string>& open);
 
 // Where a panel without a place goes: the leaf of the dock space with the most panels (the larger one first), 0 when
 // the dock space does not exist.

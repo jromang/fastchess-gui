@@ -245,9 +245,9 @@ void App::drawShell() {
             drawSettings();
             break;
     }
-    // The workspace's dock space stays alive on the other pages: the panels docked in it stay there.
-    if (page_ != Page::Tournament || !run_.tournament())
-        ImGui::DockSpace(workspaceDock(), ImVec2(0, 0), ImGuiDockNodeFlags_KeepAliveOnly);
+    // The workspace's dock space stays alive on the other pages: the panels docked in it stay there. Also when the
+    // page changed to the workspace's during this frame (Open on the list of tournaments), after the switch above.
+    layout::keepAlive(workspaceDock());
     ImGui::EndChild();
     ImGui::PopStyleVar();
     ui::drawOpenPathError();

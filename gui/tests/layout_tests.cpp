@@ -4,6 +4,7 @@
 #include <doctest/doctest.hpp>
 
 #include <cmath>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -25,6 +26,7 @@ struct Context {
     ImGuiContext* context;
     std::set<std::string> open;            // the panels submitted at each frame
     std::vector<layout::Placement> alone;  // panels floating alone, placed at their next frame
+    std::optional<Layout> built;           // the layout built last, its tabs put in order after each frame
 
     Context() : context(ImGui::CreateContext()) {
         auto& io = ImGui::GetIO();
@@ -36,17 +38,22 @@ struct Context {
     }
     ~Context() { ImGui::DestroyContext(context); }
 
-    // A frame as the workspace draws it: `before` in the window of the dock space, before it, then every open
-    // panel, brought to the front of its node when `fronts` has it.
-    void frame(const std::function<void()>& before = {}, std::set<std::string>* fronts = nullptr) {
+    // A frame as the shell draws it: `before` in the window of the dock space, before it, the dock space when
+    // `workspace` (the page drawn is the workspace's), else kept alive; then every open panel, those docked in the
+    // dock space only when it was drawn, brought to the front of its node when `fronts` has it.
+    void frame(const std::function<void()>& before = {}, std::set<std::string>* fronts = nullptr,
+               bool workspace = true) {
         ImGui::NewFrame();
         ImGui::SetNextWindowPos(ImVec2(0, 0));
         ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
         ImGui::Begin("host", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking);
         if (before) before();
-        ImGui::DockSpace(DOCK, ImVec2(0, 0));
+        if (workspace) ImGui::DockSpace(DOCK, ImVec2(0, 0));
+        layout::keepAlive(DOCK);
         ImGui::End();
+        const bool shown = layout::shown(DOCK);
         for (const auto& panel : open) {
+            if (!shown && layout::dockedIn(DOCK, panel)) continue;
             for (auto it = alone.begin(); it != alone.end(); ++it) {
                 if (it->panel != panel) continue;
                 layout::place(*it);
@@ -57,15 +64,24 @@ struct Context {
             if (fronts && fronts->count(panel) && layout::bringToFront()) fronts->erase(panel);
             ImGui::End();
         }
+        if (built && shown) layout::orderTabs(*built);
         ImGui::Render();
     }
 
-    // Builds `l` and shows its panels for a few frames.
-    void apply(const Layout& l) {
-        open        = l.panels();
-        auto fronts = l.fronts();
-        frame([&] { alone = layout::build(DOCK, 1200, 800, l); }, &fronts);
+    // Builds `l` (with only the panels `available` accepts) and shows its panels for a few frames.
+    void apply(const Layout& l, const std::function<bool(std::string_view)>& available = {}) {
+        open             = l.panels();
+        const auto shown = available ? layout::only(l, available) : l;
+        std::vector<std::string> hidden;
+        for (const auto& p : open) {
+            if (!shown.panels().count(p)) hidden.push_back(p);
+        }
+        for (const auto& p : hidden) open.erase(p);
+        auto fronts = shown.fronts();
+        built       = shown;
+        frame([&] { alone = layout::build(DOCK, 1200, 800, shown, 0, 0, hidden); }, &fronts);
         for (int i = 0; i < 4; ++i) frame({}, &fronts);
+        built.reset();
     }
 
     [[nodiscard]] Layout capture() const {
@@ -206,11 +222,13 @@ TEST_CASE("layouts: the default one when layout.ini has none, the one kept when 
         Context c;
         c.frame();
         // No layout.ini: the dock space exists (DockSpace() made it) but holds no panel.
-        CHECK_FALSE(layout::usable(DOCK));
+        const auto follow = layout::preset(layout::Preset::FollowGame).panels();
+        CHECK_FALSE(layout::usable(follow));
+        CHECK_FALSE(layout::usable({}));
         CHECK(layout::lost("tab_standings"));
 
         c.apply(layout::preset(layout::Preset::FollowGame));
-        CHECK(layout::usable(DOCK));
+        CHECK(layout::usable(follow));
         CHECK_FALSE(layout::lost("tab_standings"));
         CHECK(layout::dockedIn(DOCK, "tab_standings"));
         CHECK_FALSE(layout::dockedIn(DOCK, "tab_nothing"));
@@ -222,7 +240,7 @@ TEST_CASE("layouts: the default one when layout.ini has none, the one kept when 
         Context c;
         ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini.size());
         c.frame();
-        CHECK(layout::usable(DOCK));
+        CHECK(layout::usable(layout::preset(layout::Preset::FollowGame).panels()));
         c.open = layout::preset(layout::Preset::FollowGame).panels();
         for (int i = 0; i < 3; ++i) c.frame();
         checkSame(c.capture().workspace, layout::preset(layout::Preset::FollowGame).workspace);
@@ -236,12 +254,12 @@ TEST_CASE("layouts: the default one when layout.ini has none, the one kept when 
         Context c;
         ImGui::LoadIniSettingsFromMemory(text);
         c.frame();
-        CHECK_FALSE(layout::usable(DOCK));
+        CHECK_FALSE(layout::usable({"tab_games", "tab_overview"}));
         // A panel docked in a node that is not there needs a place.
         CHECK(layout::lost("tab_games"));
         // The default layout built over it.
         c.apply(layout::preset(layout::Preset::Tabs));
-        CHECK(layout::usable(DOCK));
+        CHECK(layout::usable({"tab_games", "tab_overview"}));
         checkSame(c.capture().workspace, layout::preset(layout::Preset::Tabs).workspace);
     }
 }
@@ -307,4 +325,185 @@ TEST_CASE("layouts: the command palette lists every panel and every layout") {
                               [&](const layout::PanelInfo& p) { return panel == p.id; }));
         }
     }
+}
+
+TEST_CASE("layouts: a page changed while the shell is drawn leaves the panels docked") {
+    // Open on the list of tournaments: the page was not the workspace's when the shell decided on the dock space, it
+    // is when the panels are drawn. The dock space is kept alive, and the panels docked in it wait for it.
+    Context c;
+    c.apply(layout::preset(layout::Preset::FollowGame));
+    c.frame({}, nullptr, false);
+    CHECK_FALSE(layout::shown(DOCK));
+    for (int i = 0; i < 3; ++i) c.frame();
+    CHECK(layout::shown(DOCK));
+    for (const auto& panel : c.open) {
+        CAPTURE(panel);
+        CHECK(layout::dockedIn(DOCK, panel));
+    }
+    checkSame(c.capture().workspace, layout::preset(layout::Preset::FollowGame).workspace);
+
+    // Kept alive after it was drawn in the same frame, it would hide its panels: keepAlive() leaves it.
+    c.frame(
+        [] {
+            ImGui::DockSpace(DOCK, ImVec2(0, 0));
+            layout::keepAlive(DOCK);
+            CHECK(layout::shown(DOCK));
+        },
+        nullptr, false);
+    for (const auto& panel : c.open) CHECK(layout::dockedIn(DOCK, panel));
+}
+
+TEST_CASE("layouts: a panel left alone in a floating node is in front at once") {
+    // The board and the moves floating together, then the moves closed: ImGui draws the board as a plain window, but
+    // it stays docked in the node. Asked for, it is in front (else it would be focused at every frame).
+    Layout l = layout::preset(layout::Preset::Tabs);
+    l.floating.push_back({Node::leaf({"live_board", "live_moves"}), 100, 100, 400, 300});
+    Context c;
+    c.apply(l);
+    c.open.erase("live_moves");
+    for (int i = 0; i < 3; ++i) c.frame();
+    auto* window = ImGui::FindWindowByID(layout::windowId("live_board"));
+    REQUIRE(window);
+    CHECK(window->DockId != 0);
+    CHECK_FALSE(window->DockIsActive);
+    bool front = false;
+    c.frame({}, nullptr, true);
+    ImGui::NewFrame();
+    ImGui::Begin("###live_board", nullptr, ImGuiWindowFlags_NoFocusOnAppearing);
+    front = layout::bringToFront();
+    ImGui::End();
+    ImGui::Render();
+    CHECK(front);
+
+    // Not docked: in front too.
+    Context d;
+    ImGui::NewFrame();
+    ImGui::Begin("###tab_games");
+    front = layout::bringToFront();
+    ImGui::End();
+    ImGui::Render();
+    CHECK(front);
+}
+
+TEST_CASE("layouts: a floating group opens where it was, whatever the panels of the format") {
+    // Two panels floating together.
+    Layout l = layout::preset(layout::Preset::Tabs);
+    l.floating.push_back({Node::leaf({"live_board", "tab_bracket"}), 150, 120, 420, 330});
+    const auto at = [](const char* panel) {
+        CAPTURE(panel);
+        auto* window = ImGui::FindWindowByID(layout::windowId(panel));
+        REQUIRE(window);
+        auto* root        = window->DockNode ? ImGui::DockNodeGetRootNode(window->DockNode) : nullptr;
+        const ImVec2 pos  = root && window->DockIsActive ? root->Pos : window->Pos;
+        const ImVec2 size = root && window->DockIsActive ? root->Size : window->Size;
+        CHECK(std::abs(pos.x - 150) < 1);
+        CHECK(std::abs(pos.y - 120) < 1);
+        CHECK(std::abs(size.x - 420) < 1);
+        CHECK(std::abs(size.y - 330) < 1);
+    };
+    {
+        Context c;
+        c.apply(l);
+        at("live_board");
+        at("tab_bracket");
+    }
+    // A round robin has no bracket: the board floats alone, at the group's place, and the bracket is put away.
+    Context c;
+    c.apply(l, [](std::string_view p) { return layout::available(p, false, false); });
+    at("live_board");
+    CHECK(layout::dockedIn(DOCK, "tab_bracket"));
+}
+
+TEST_CASE("layouts: every panel floating is a layout kept, not replaced by the default one") {
+    Layout l;
+    l.workspace         = Node::leaf({});
+    l.workspace.central = true;
+    l.floating.push_back({Node::leaf({"tab_standings", "tab_games"}), 100, 100, 500, 300});
+    l.floating.push_back({Node::leaf({"tab_overview"}), 700, 100, 400, 300});
+    std::string ini;
+    {
+        Context c;
+        c.apply(l);
+        CHECK(layout::usable(l.panels()));
+        CHECK(c.capture().workspace.empty());
+        ini = ImGui::SaveIniSettingsToMemory();
+    }
+    // The next session: layout.ini gives every panel its place.
+    Context c;
+    ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini.size());
+    c.frame();
+    CHECK(layout::usable(l.panels()));
+    c.open = l.panels();
+    for (int i = 0; i < 3; ++i) c.frame();
+    const auto again = c.capture();
+    CHECK(again.workspace.empty());
+    CHECK(again.panels() == l.panels());
+    CHECK(again.floating.size() == 2);
+}
+
+TEST_CASE("layouts: a ready-made layout puts its tabs in its order, also next to panels already there") {
+    // The default layout first: its panels are there when another adds panels to their node (the moves and the
+    // chart beside the standings, for a broadcast). ImGui would put the panels already there first.
+    for (int i = 1; i < static_cast<int>(layout::Preset::Count); ++i) {
+        const auto which = static_cast<layout::Preset>(i);
+        CAPTURE(layout::presetKey(which));
+        Context c;
+        c.apply(layout::preset(layout::Preset::Tabs));
+        c.apply(layout::preset(which));
+        checkSame(c.capture().workspace, layout::preset(which).workspace);
+        // And again, every panel there.
+        c.apply(layout::preset(layout::Preset::Tabs));
+        c.apply(layout::preset(which));
+        checkSame(c.capture().workspace, layout::preset(which).workspace);
+    }
+}
+
+TEST_CASE("layouts: a node without a panel of the format drops out, its sibling takes its place") {
+    // The bracket alone beside the standings: in a round robin, the standings fill the workspace.
+    Layout l;
+    auto bracket    = Node::leaf({"tab_bracket"}, "tab_bracket");
+    bracket.central = true;
+    l.workspace =
+        Node::split2(Node::Split::Horizontal, 0.4f, std::move(bracket), Node::leaf({"tab_standings", "tab_overview"}));
+    l.floating.push_back({Node::leaf({"tab_bracket"}), 10, 10, 300, 200});
+    const auto round_robin = [](std::string_view p) { return layout::available(p, false, false); };
+    const auto shown       = layout::only(l, round_robin);
+    CHECK(shown.workspace.split == Node::Split::None);
+    CHECK(shown.workspace.tabs == std::vector<std::string>{"tab_standings", "tab_overview"});
+    CHECK(shown.workspace.central);  // what stays on screen
+    CHECK(shown.floating.empty());
+    // A match has neither the bracket nor the standings.
+    const auto match = layout::only(l, [](std::string_view p) { return layout::available(p, true, false); });
+    CHECK(match.workspace.split == Node::Split::None);
+    CHECK(match.workspace.tabs == std::vector<std::string>{"tab_overview"});
+    // The tab in front, gone: the first.
+    Layout picked;
+    picked.workspace = Node::leaf({"tab_bracket", "tab_games"}, "tab_bracket");
+    CHECK(layout::only(picked, round_robin).fronts() == std::set<std::string>{"tab_games"});
+
+    // Built: one node, no empty pane; the bracket put away there, to come back in a knockout.
+    Context c;
+    c.apply(l, round_robin);
+    auto* root = ImGui::DockBuilderGetNode(DOCK);
+    REQUIRE(root);
+    CHECK_FALSE(root->IsSplitNode());
+    CHECK(layout::dockedIn(DOCK, "tab_bracket"));
+    checkSame(c.capture().workspace, shown.workspace);
+}
+
+TEST_CASE("layouts: the names of the user's layouts") {
+    CHECK(layout::trimName("  Club night \t") == "Club night");
+    CHECK(layout::trimName(" \t\n").empty());
+    CHECK(layout::trimName("").empty());
+    // Read from layouts.json: trimmed, those without a name or with the name of an earlier one left out.
+    std::vector<Layout> read(5);
+    read[0].name    = " Mine ";
+    read[1].name    = "";
+    read[2].name    = "   ";
+    read[3].name    = "Mine";
+    read[4].name    = "##";
+    const auto kept = layout::named(read);
+    REQUIRE(kept.size() == 2);
+    CHECK(kept[0].name == "Mine");
+    CHECK(kept[1].name == "##");
 }

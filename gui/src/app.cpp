@@ -52,7 +52,7 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
 
     unfinished_ = unfinishedMatch(storage_.runsDir());
     queue_      = storage_.loadQueue();
-    layouts_    = storage_.loadLayouts();
+    layouts_    = layout::named(storage_.loadLayouts());
     if (ImGui::GetCurrentContext()) registerPanelSettings();
 }
 
@@ -203,7 +203,7 @@ void App::frame() {
             page_ = Page::Tournament;
             showPanel(layout::detachedPanel(std::max(0, std::atoi(w.c_str() + 7) - 1)));
         } else if (w.rfind("layout-save=", 0) == 0) {  // layout-save=NAME: the layout shown, saved as NAME
-            saveLayoutAs(w.substr(12));
+            if (!saveLayoutAs(w.substr(12))) Console::instance().add("No name for the layout.", true);
         } else if (w.rfind("layout=", 0) == 0) {  // layout=KEY|NAME: a ready-made layout (tabs, follow...) or one saved
             if (!applyLayout(w.substr(7)))
                 Console::instance().add(fmt::format("No layout named {}.", w.substr(7)), true);

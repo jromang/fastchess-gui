@@ -235,7 +235,7 @@ class App {
     void applyLayout(const layout::Layout& l);                       // on the next frame of the workspace
     bool applyLayout(const std::string& name);  // ready-made (by its key) or saved (by its name); false if none
     [[nodiscard]] layout::Layout currentLayout() const;
-    void saveLayoutAs(const std::string& name);
+    bool saveLayoutAs(const std::string& name);  // trimmed; false without a name
     void deleteLayout(const std::string& name);
     void drawLayoutMenu();  // the Layout button of the tournament header
     void drawSaveLayout();  // Save the layout as…: its name
@@ -758,7 +758,10 @@ class App {
     std::optional<layout::Layout> layout_request_;  // built on the next frame of the workspace
     std::set<std::string> redock_;                  // shown again after being closed: docked in the workspace
     std::optional<std::string> panel_request_;      // focused and brought to the front once shown
+    int panel_request_frames_ = 0;                  // the frames it was shown without being in front
     std::set<std::string> fronts_;                  // to bring to the front of their dock node (a layout built)
+    std::optional<layout::Layout> built_;           // the layout built last, its tabs put in order for a few frames
+    int built_frames_ = 0;                          // the frames of the workspace since
     std::vector<layout::Placement> placements_;     // panels floating alone, placed at their next frame
     std::string panel_focused_;                     // the panel last focused, for the guide
     std::vector<layout::Layout> layouts_;           // the user's own, kept in layouts.json

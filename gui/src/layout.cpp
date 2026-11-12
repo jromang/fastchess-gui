@@ -47,6 +47,27 @@ const Node* fullestLeaf(const Node& node) {
     return best;
 }
 
+// `node` with only the panels `available` accepts, a node without panels replaced by its sibling.
+Node onlyNode(const Node& node, const std::function<bool(std::string_view)>& available) {
+    if (node.split != Node::Split::None && node.children.size() == 2) {
+        Node first  = onlyNode(node.children[0], available);
+        Node second = onlyNode(node.children[1], available);
+        if (!first.empty() && !second.empty())
+            return Node::split2(node.split, node.ratio, std::move(first), std::move(second));
+        Node kept = first.empty() ? std::move(second) : std::move(first);
+        // The central node, which stays on screen, goes to what is left.
+        if (hasCentral(node) && !hasCentral(kept)) const_cast<Node*>(fullestLeaf(kept))->central = true;
+        return kept;
+    }
+    Node leaf    = Node::leaf({}, node.selected);
+    leaf.central = node.central;
+    for (const auto& panel : node.tabs) {
+        if (available(panel)) leaf.tabs.push_back(panel);
+    }
+    if (std::find(leaf.tabs.begin(), leaf.tabs.end(), leaf.selected) == leaf.tabs.end()) leaf.selected.clear();
+    return leaf;
+}
+
 void dockWindow(std::string_view panel, ImGuiID node, int order) {
     const auto name = windowName(panel);
     ImGui::DockBuilderDockWindow(name.c_str(), node);
@@ -146,6 +167,32 @@ Node captureNode(ImGuiDockNode* dock, const std::function<bool(std::string_view)
     const float r  = a + b > 0 ? a / (a + b) : 0.5f;
     return Node::split2(axis == 0 ? Node::Split::Horizontal : Node::Split::Vertical, r, std::move(first),
                         std::move(second));
+}
+
+// Puts the tabs of the dock nodes holding the panels of `node` in its order.
+void orderNode(const Node& node) {
+    for (const auto& c : node.children) orderNode(c);
+    if (node.split != Node::Split::None && node.children.size() == 2) return;
+    std::vector<ImGuiTabBar*> bars;
+    for (const auto& panel : node.tabs) {
+        const ImGuiWindow* window = ImGui::FindWindowByID(windowId(panel));
+        if (window && window->DockNode && window->DockNode->TabBar &&
+            std::find(bars.begin(), bars.end(), window->DockNode->TabBar) == bars.end())
+            bars.push_back(window->DockNode->TabBar);
+    }
+    // The tabs of other panels keep their order, after them.
+    const auto rank = [&](const ImGuiTabItem& tab) {
+        const auto panel = tab.Window ? panelOf(tab.Window->Name) : std::string();
+        return std::find(node.tabs.begin(), node.tabs.end(), panel) - node.tabs.begin();
+    };
+    for (ImGuiTabBar* bar : bars) {
+        std::stable_sort(bar->Tabs.begin(), bar->Tabs.end(),
+                         [&](const ImGuiTabItem& a, const ImGuiTabItem& b) { return rank(a) < rank(b); });
+        // The order ImGui sorts the tabs appearing together by, and keeps in layout.ini.
+        for (int i = 0; i < bar->Tabs.Size; ++i) {
+            if (bar->Tabs[i].Window) bar->Tabs[i].Window->DockOrder = static_cast<short>(i);
+        }
+    }
 }
 
 ImGuiID dockIdOf(ImGuiID window_id) {
@@ -328,6 +375,37 @@ std::optional<Preset> presetByKey(std::string_view key) {
     return std::nullopt;
 }
 
+Layout only(const Layout& layout, const std::function<bool(std::string_view)>& available) {
+    Layout out;
+    out.name      = layout.name;
+    out.workspace = onlyNode(layout.workspace, available);
+    for (const auto& f : layout.floating) {
+        Floating kept = f;
+        kept.node     = onlyNode(f.node, available);
+        if (!kept.node.empty()) out.floating.push_back(std::move(kept));
+    }
+    return out;
+}
+
+std::string trimName(std::string_view name) {
+    constexpr std::string_view space = " \t\r\n\v\f";
+    const auto first                 = name.find_first_not_of(space);
+    if (first == std::string_view::npos) return {};
+    return std::string(name.substr(first, name.find_last_not_of(space) - first + 1));
+}
+
+std::vector<Layout> named(std::vector<Layout> layouts) {
+    std::vector<Layout> out;
+    for (auto& l : layouts) {
+        l.name = trimName(l.name);
+        if (l.name.empty() ||
+            std::any_of(out.begin(), out.end(), [&](const Layout& other) { return other.name == l.name; }))
+            continue;
+        out.push_back(std::move(l));
+    }
+    return out;
+}
+
 std::vector<Command> commands(const std::vector<std::string>& panels, const std::vector<std::string>& saved) {
     std::vector<Command> out;
     for (const auto& p : panels) out.push_back({Command::Kind::Show, trf("Show {}", panelName(p)), p});
@@ -411,7 +489,7 @@ void place(const Placement& placement) {
 }
 
 std::vector<Placement> build(ImGuiID dockspace, float width, float height, const Layout& layout, float origin_x,
-                             float origin_y) {
+                             float origin_y, const std::vector<std::string>& hidden) {
     const Node* fullest = fullestLeaf(layout.workspace);
     ImGuiID away        = 0;
 
@@ -426,6 +504,10 @@ std::vector<Placement> build(ImGuiID dockspace, float width, float height, const
     for (auto* s = g.SettingsWindows.begin(); s != nullptr; s = g.SettingsWindows.next_chunk(s)) {
         const auto panel = settingsPanel(s);
         if (!panel.empty() && !shown.count(panel) && !ImGui::FindWindowByID(s->ID) && dockedIn(dockspace, panel))
+            others.push_back(panel);
+    }
+    for (const auto& panel : hidden) {
+        if (!shown.count(panel) && std::find(others.begin(), others.end(), panel) == others.end())
             others.push_back(panel);
     }
 
@@ -492,12 +574,33 @@ Layout capture(ImGuiID dockspace, const std::function<bool(std::string_view)>& k
 
 bool bringToFront() {
     ImGuiWindow* window = ImGui::GetCurrentWindow();
-    if (!window->DockIsActive) return window->DockId == 0;
+    if (!window->DockIsActive) {
+        // Alone in a floating node, ImGui shows the window without its node, nor a tab bar: nothing to bring forward.
+        // Docked in a node not on screen yet (its first frame), it waits.
+        const ImGuiDockNode* node = window->DockNode;
+        return window->DockId == 0 || (node && node->State == ImGuiDockNodeState_HostWindowHiddenBecauseSingleWindow);
+    }
     ImGuiTabBar* tab_bar = window->DockNode ? window->DockNode->TabBar : nullptr;
     if (!tab_bar) return false;
     if (tab_bar->SelectedTabId == window->TabId) return true;
     tab_bar->NextSelectedTabId = window->TabId;
     return false;
+}
+
+void orderTabs(const Layout& layout) {
+    orderNode(layout.workspace);
+    for (const auto& f : layout.floating) orderNode(f.node);
+}
+
+bool shown(ImGuiID dockspace) {
+    const ImGuiDockNode* node = ImGui::DockBuilderGetNode(dockspace);
+    return node && node->LastFrameActive == ImGui::GetFrameCount() &&
+           !(node->SharedFlags & ImGuiDockNodeFlags_KeepAliveOnly);
+}
+
+void keepAlive(ImGuiID dockspace) {
+    // Once it was submitted, a dock space kept alive in the same frame would hide its panels.
+    if (!shown(dockspace)) ImGui::DockSpace(dockspace, ImVec2(0, 0), ImGuiDockNodeFlags_KeepAliveOnly);
 }
 
 bool dockedIn(ImGuiID dockspace, std::string_view panel) {
@@ -514,19 +617,12 @@ bool lost(std::string_view panel) {
     return dock_id != 0 && !ImGui::DockBuilderGetNode(dock_id);
 }
 
-bool usable(ImGuiID dockspace) {
-    ImGuiDockNode* root = ImGui::DockBuilderGetNode(dockspace);
-    if (!root) return false;
-    auto& g           = *GImGui;
-    const auto inside = [&](ImGuiID dock_id) {
-        ImGuiDockNode* node = dock_id ? ImGui::DockBuilderGetNode(dock_id) : nullptr;
-        return node && ImGui::DockNodeGetRootNode(node) == root;
-    };
-    for (ImGuiWindow* window : g.Windows) {
-        if (!panelOf(window->Name).empty() && inside(window->DockId)) return true;
-    }
-    for (auto* s = g.SettingsWindows.begin(); s != nullptr; s = g.SettingsWindows.next_chunk(s)) {
-        if (!settingsPanel(s).empty() && inside(s->DockId)) return true;
+bool usable(const std::set<std::string>& open) {
+    for (const auto& panel : open) {
+        const ImGuiID id = windowId(panel);
+        if (!ImGui::FindWindowByID(id) && !ImGui::FindWindowSettingsByID(id)) continue;
+        const ImGuiID dock_id = dockIdOf(id);
+        if (dock_id == 0 || ImGui::DockBuilderGetNode(dock_id)) return true;
     }
     return false;
 }
