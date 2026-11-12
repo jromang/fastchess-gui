@@ -158,3 +158,42 @@ TEST_CASE("Knockout: winners go through, the top seed wins, tied matches get tie
     CHECK(drawn->finished());
     CHECK(drawn->results().size() == 2u * 11u);  // the match and ten tiebreak pairs
 }
+
+TEST_CASE("Knockout: the tied matches of a round all get their tiebreak at once") {
+    auto spec   = field(Format::Knockout, 4);
+    spec.cycles = 1;
+    auto state  = TournamentState::create(freshDir("ko-tied"), spec);
+    for (int i = 0; i < 4; ++i) {
+        const auto task = state->claimNext();
+        REQUIRE(task);
+        state->complete(*task, data(*task, true));
+    }
+    // Both matches of round 1 drawn: one tiebreak each, both to play now.
+    const auto rows = state->scheduleRows();
+    REQUIRE(rows.size() == 4);
+    CHECK(rows[2].encounter.round == 1);
+    CHECK(rows[3].encounter.round == 1);
+    for (int i = 0; i < 4; ++i) CHECK(state->claimNext());
+}
+
+TEST_CASE("Knockout: after ten tiebreaks the better seed goes through, wherever its place in the bracket") {
+    auto spec   = field(Format::Knockout, 8);
+    spec.cycles = 1;
+    auto state  = TournamentState::create(freshDir("ko-seed"), spec);
+
+    // Round 1: P7 knocks out the top seed P0, the stronger wins elsewhere. Round 2: P7 and P3 draw everything.
+    int n = 0;
+    while (auto task = state->claimNext()) {
+        const int w = std::stoi(task->white.name.substr(1)), b = std::stoi(task->black.name.substr(1));
+        const bool tied = std::min(w, b) == 3 && std::max(w, b) == 7;
+        auto d          = data(*task, tied);
+        if (std::min(w, b) == 0 && std::max(w, b) == 7) std::swap(d.players.white.result, d.players.black.result);
+        state->complete(*task, d);
+        REQUIRE(++n < 10000);
+    }
+    const auto brackets = state->brackets();
+    REQUIRE(brackets.count(2));
+    REQUIRE(brackets.count(3));
+    CHECK(brackets.at(2)[0] == std::vector<int>{7, 3});
+    CHECK(brackets.at(3)[0][0] == 3);
+}

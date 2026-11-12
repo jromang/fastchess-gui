@@ -220,6 +220,41 @@ TEST_CASE("edit: a game of a withdrawn participant still being played is not rec
     CHECK(state->results().empty());
 }
 
+TEST_CASE("edit: withdrawing a participant whose game was the last running finishes the tournament") {
+    const auto dir = freshDir("withdraw-last");
+    {
+        auto state = TournamentState::create(dir, roundRobin(3, 1));
+        CHECK(play(*state, 5) == 5);
+        const auto task = state->claimNext();
+        REQUIRE(task);
+        CHECK_FALSE(state->claimNext());
+
+        Edit withdraw;
+        withdraw.kind        = Edit::Kind::Withdraw;
+        withdraw.participant = task->encounter.first;
+        state->applyEdit(withdraw);
+        CHECK_FALSE(state->finished());  // its game is still being played
+
+        CHECK_FALSE(state->complete(*task, data(*task, "1-0")).kept);
+        CHECK(state->finished());
+        CHECK(state->finishReason() == "complete");
+    }
+    CHECK(TournamentState::open(dir)->finished());
+}
+
+TEST_CASE("edit: withdrawing the participant of the last games left, none running, finishes the tournament") {
+    auto state = TournamentState::create(freshDir("withdraw-idle"), roundRobin(3, 1));
+    CHECK(play(*state, 4) == 4);
+    // The last encounter has not started: its participants' games are no longer to play.
+    const auto rows = state->scheduleRows();
+    REQUIRE(rows.size() == 3);
+    Edit withdraw;
+    withdraw.kind        = Edit::Kind::Withdraw;
+    withdraw.participant = rows[2].encounter.first;
+    state->applyEdit(withdraw);
+    CHECK(state->finished());
+}
+
 TEST_CASE("edit: the preview of a Swiss counts the rounds still to pair") {
     auto spec   = roundRobin(8, 1);
     spec.format = Format::Swiss;

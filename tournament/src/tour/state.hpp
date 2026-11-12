@@ -223,6 +223,8 @@ class TournamentState {
     [[nodiscard]] bool gamesLeft() const;  // games to claim, finished or not; mutex_ held
     [[nodiscard]] uint64_t totalLocked() const;
     void checkSprt();
+    // Every game played, none running: the end is journaled. mutex_ held.
+    void finishIfComplete();
     [[nodiscard]] GameTask makeTask(uint32_t encounter, int game);
     [[nodiscard]] bool done(uint32_t encounter, int game) const;
     [[nodiscard]] bool frc() const noexcept;

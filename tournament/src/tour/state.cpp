@@ -562,8 +562,13 @@ void TournamentState::pairIfReady() {
         event["byes"]      = pairing.byes;
         event["bracket"]   = pairing.bracket;
     } else {
-        // Who won each place of the round; a tied match gets another pair of games first.
+        // Who won each place of the round; tied matches get another pair of games first, all at once.
+        const auto seed = [&](int id) {
+            const auto& ps = spec_.participants;
+            return std::find_if(ps.begin(), ps.end(), [&](const Participant& p) { return p.id == id; }) - ps.begin();
+        };
         std::vector<int> winners;
+        bool tiebreak_added = false;
         for (const auto& place : brackets_[round_]) {
             if (place.size() == 1) {
                 winners.push_back(place[0]);
@@ -587,11 +592,15 @@ void TournamentState::pairIfReady() {
                         {"t", "tiebreak_added"}, {"round", round_}, {"pair", {a, b}}, {"index", tiebreaks + 1}};
                     journal_->append(tiebreak);
                     applyRoundEvent(tiebreak);
-                    return;
+                    tiebreak_added = true;
+                    continue;
                 }
+                winners.push_back(seed(a) <= seed(b) ? a : b);
+                continue;
             }
-            winners.push_back(sa >= sb ? a : b);
+            winners.push_back(sa > sb ? a : b);
         }
+        if (tiebreak_added) return;      // the round goes on
         if (winners.size() < 2) return;  // the final is over
 
         std::vector<std::vector<int>> bracket;
@@ -674,6 +683,9 @@ void TournamentState::applyEdit(const Edit& edit) {
     undo_ = std::move(undo);
 
     applyEvent(event);
+    // The games of a withdrawn participant may have been the last ones to play. A Swiss or a knockout would pair
+    // its next round first, which only a game's end does.
+    if (!pairedAsItGoes(spec_.format)) finishIfComplete();
     writeOut();  // games of a withdrawn participant no longer hold the others
 }
 
@@ -842,8 +854,14 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     const auto text_cb = withElo(PgnBuilder(pgn_config, data, round, CommentStyle::ChessBase).get(), elo(result.white),
                                  elo(result.black));
     running_.erase(task.number());
-    // Already played, or no longer to be played (its participant was withdrawn meanwhile).
-    if (done(task.encounter.index, task.game) || dropped_.count(task.number())) return {result, std::nullopt, false};
+    // Already played, or no longer to be played (its participant was withdrawn meanwhile). It may have been the
+    // last game the tournament was waiting for.
+    if (done(task.encounter.index, task.game) || dropped_.count(task.number())) {
+        pairIfReady();
+        finishIfComplete();
+        writeOut();
+        return {result, std::nullopt, false};
+    }
     // One of its engines was replaced meanwhile: the game is played again, by the new engine.
     const auto now = schedule_.at(task.encounter.index);
     if (!now || now->first != task.encounter.first || now->second != task.encounter.second) {
@@ -862,15 +880,17 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     out_held_.push_back(results_.size() - 1);
     checkSprt();
     pairIfReady();
-
-    if (!finished_ && schedule_.size() && !hasWorkLocked() && running_.empty()) {
-        finished_      = true;
-        finish_reason_ = "complete";
-        journal_->append({{"t", "finished"}, {"why", finish_reason_}});
-    }
+    finishIfComplete();
     writeOut();
 
     return recorded;
+}
+
+void TournamentState::finishIfComplete() {
+    if (finished_ || !schedule_.size() || hasWorkLocked() || !running_.empty()) return;
+    finished_      = true;
+    finish_reason_ = "complete";
+    journal_->append({{"t", "finished"}, {"why", finish_reason_}});
 }
 
 void TournamentState::writeOut() {
