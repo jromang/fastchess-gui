@@ -7,6 +7,9 @@
 #include <set>
 #include <thread>
 
+#include <imgui.h>
+#include <implot.h>
+
 #include <core/config/config.hpp>
 #include <core/globals/globals.hpp>
 #include <core/observer.hpp>
@@ -290,6 +293,80 @@ TEST_CASE("processor use: our own process is measured; too many cores or thinkin
     CHECK(cpuProblem(t, 1).find("50 %") != std::string::npos);
     t.wait_wall_ms = 5'000;  // too little measured to tell
     CHECK(cpuProblem(t, 1).empty());
+}
+
+TEST_CASE("Ctrl and the mouse wheel zoom the interface, not the chart under the mouse") {
+    auto* context      = ImGui::CreateContext();
+    auto* plot_context = ImPlot::CreateContext();
+    auto& io           = ImGui::GetIO();
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
+    io.IniFilename = nullptr;
+    io.DisplaySize = ImVec2(800, 600);
+    io.DeltaTime   = 1.0f / 60.0f;
+
+    // A frame with a chart filling the window, the wheel taken first or not, as the window does; the x range shown.
+    int step         = 0;
+    const auto frame = [&](bool take) {
+        ImGui::NewFrame();
+        step = take ? ui::takeCtrlWheel() : 0;
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(io.DisplaySize);
+        ImGui::Begin("charts");
+        ImPlotRange range;
+        if (ImPlot::BeginPlot("##chart", ImVec2(-1, -1))) {
+            ImPlot::SetupAxesLimits(0, 10, 0, 10);
+            const double xs[] = {0, 10};
+            ImPlot::PlotLine("line", xs, xs, 2);
+            range = ImPlot::GetPlotLimits().X;
+            ImPlot::EndPlot();
+        }
+        ImGui::End();
+        ImGui::Render();
+        return range;
+    };
+    const auto zoomed = [](const ImPlotRange& r) { return std::abs(r.Min) > 1e-6 || std::abs(r.Max - 10) > 1e-6; };
+
+    io.AddMousePosEvent(400, 300);
+    for (int i = 0; i < 3; ++i) frame(true);
+    CHECK_FALSE(zoomed(frame(true)));
+
+    // With Ctrl held, the wheel is the interface's: the chart under the mouse stays as it was.
+    io.AddKeyEvent(ImGuiMod_Ctrl, true);
+    frame(true);
+    io.AddMouseWheelEvent(0, 1);
+    frame(true);
+    CHECK(step == 1);
+    CHECK_FALSE(zoomed(frame(true)));
+    io.AddMouseWheelEvent(0, -1);
+    frame(true);
+    CHECK(step == -1);
+    CHECK_FALSE(zoomed(frame(true)));
+
+    // ImPlot leaves the wheel alone with Ctrl only (its "override" modifier), but not with Ctrl and Shift, which
+    // zoom the interface too: there, a wheel not taken would zoom the chart as well.
+    io.AddKeyEvent(ImGuiMod_Shift, true);
+    frame(true);
+    io.AddMouseWheelEvent(0, 1);
+    frame(true);
+    CHECK(step == 1);
+    CHECK_FALSE(zoomed(frame(true)));
+    io.AddMouseWheelEvent(0, 1);
+    frame(false);
+    CHECK(zoomed(frame(false)));
+
+    // Without Ctrl, the wheel is left to the chart.
+    io.AddKeyEvent(ImGuiMod_Shift, false);
+    io.AddKeyEvent(ImGuiMod_Ctrl, false);
+    frame(true);
+    const auto before = frame(true);
+    io.AddMouseWheelEvent(0, -1);
+    frame(true);
+    CHECK(step == 0);
+    const auto after = frame(true);
+    CHECK(after.Size() > before.Size());
+
+    ImPlot::DestroyContext(plot_context);
+    ImGui::DestroyContext(context);
 }
 
 TEST_CASE("ChessBase comments give White's point of view, clocks and move times") {

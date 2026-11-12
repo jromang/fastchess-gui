@@ -420,6 +420,14 @@ void help(const char* text) {
     }
 }
 
+int takeCtrlWheel() {
+    auto& io = ImGui::GetIO();
+    if (!io.KeyCtrl || io.MouseWheel == 0) return 0;
+    const int step = io.MouseWheel > 0 ? 1 : -1;
+    io.MouseWheel  = 0;
+    return step;
+}
+
 void label(const char* text, float width) {
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(text);
