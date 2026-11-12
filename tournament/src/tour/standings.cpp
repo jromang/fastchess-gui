@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <tuple>
 
 #include <fmt/include/fmt/format.h>
 
@@ -18,43 +19,155 @@ constexpr double Z95         = 1.959963984540054;
 
 using Matrix = std::vector<std::vector<double>>;
 
-// Solves a x = b by Gaussian elimination with partial pivoting; a is n x n and invertible.
-std::vector<double> solve(Matrix a, std::vector<double> b) {
-    const auto n = b.size();
-    for (std::size_t col = 0; col < n; ++col) {
-        std::size_t pivot = col;
-        for (std::size_t r = col + 1; r < n; ++r) {
-            if (std::abs(a[r][col]) > std::abs(a[pivot][col])) pivot = r;
-        }
-        std::swap(a[col], a[pivot]);
-        std::swap(b[col], b[pivot]);
+// Up to this many players the covariance of the ratings is the exact inverse of the information matrix, O(n³);
+// beyond, an approximation from each rating's own games and its opponents', within a few percent of it on a rating
+// list of well connected engines.
+constexpr std::size_t EXACT_ERRORS = 1000;
 
-        for (std::size_t r = col + 1; r < n; ++r) {
-            const double f = a[r][col] / a[col][col];
-            if (f == 0.0) continue;
-            for (std::size_t c = col; c < n; ++c) a[r][c] -= f * a[col][c];
-            b[r] -= f * b[col];
+// The information matrix of the ratings (the negated Hessian of the log-likelihood with the prior), sparse: the
+// prior and the weights of each player's games on the diagonal, minus the weight of each pair off it.
+struct Information {
+    std::vector<double> diagonal;
+    std::vector<double> weight;  // by pair, as in `pairs`
+
+    // y = I x
+    void times(const std::vector<PairGames>& pairs, const std::vector<double>& x, std::vector<double>& y) const {
+        for (std::size_t i = 0; i < x.size(); ++i) y[i] = diagonal[i] * x[i];
+        for (std::size_t e = 0; e < pairs.size(); ++e) {
+            const auto a = pairs[e].a, b = pairs[e].b;
+            y[a] -= weight[e] * x[b];
+            y[b] -= weight[e] * x[a];
         }
     }
-    std::vector<double> x(n);
-    for (std::size_t i = n; i-- > 0;) {
-        double s = b[i];
-        for (std::size_t c = i + 1; c < n; ++c) s -= a[i][c] * x[c];
-        x[i] = s / a[i][i];
+};
+
+// Solves I x = b by conjugate gradients preconditioned by the diagonal: each step is one pass over the pairs, so
+// that thousands of engines take a moment where a dense solve would take minutes.
+std::vector<double> solve(const Information& info, const std::vector<PairGames>& pairs, const std::vector<double>& b) {
+    const auto n = b.size();
+    std::vector<double> x(n, 0.0), r = b, z(n), p(n), q(n);
+    double norm_b = 0;
+    for (const double v : b) norm_b += v * v;
+    if (norm_b == 0) return x;
+
+    double rz = 0;
+    for (std::size_t i = 0; i < n; ++i) {
+        z[i] = r[i] / info.diagonal[i];
+        rz += r[i] * z[i];
+    }
+    p                = z;
+    const auto steps = std::max<std::size_t>(200, 4 * n);
+    for (std::size_t step = 0; step < steps; ++step) {
+        info.times(pairs, p, q);
+        double pq = 0;
+        for (std::size_t i = 0; i < n; ++i) pq += p[i] * q[i];
+        if (pq <= 0) break;
+        const double alpha = rz / pq;
+        double norm_r      = 0;
+        for (std::size_t i = 0; i < n; ++i) {
+            x[i] += alpha * p[i];
+            r[i] -= alpha * q[i];
+            norm_r += r[i] * r[i];
+        }
+        if (norm_r <= 1e-24 * norm_b) break;
+        double rz_next = 0;
+        for (std::size_t i = 0; i < n; ++i) {
+            z[i] = r[i] / info.diagonal[i];
+            rz_next += r[i] * z[i];
+        }
+        const double beta = rz_next / rz;
+        rz                = rz_next;
+        for (std::size_t i = 0; i < n; ++i) p[i] = z[i] + beta * p[i];
     }
     return x;
 }
 
-Matrix inverse(const Matrix& a) {
-    const auto n = a.size();
-    Matrix inv(n, std::vector<double>(n));
-    for (std::size_t c = 0; c < n; ++c) {
-        std::vector<double> e(n, 0.0);
-        e[c]           = 1.0;
-        const auto col = solve(a, e);
-        for (std::size_t r = 0; r < n; ++r) inv[r][c] = col[r];
+// a = L Lᵀ: a, symmetric positive definite, n x n and row major, becomes L (its lower triangle).
+void cholesky(std::vector<double>& a, std::size_t n) {
+    for (std::size_t j = 0; j < n; ++j) {
+        double* row_j = &a[j * n];
+        double d      = row_j[j];
+        for (std::size_t k = 0; k < j; ++k) d -= row_j[k] * row_j[k];
+        d        = std::sqrt(std::max(d, 1e-300));
+        row_j[j] = d;
+        for (std::size_t i = j + 1; i < n; ++i) {
+            double* row_i = &a[i * n];
+            double s      = row_i[j];
+            for (std::size_t k = 0; k < j; ++k) s -= row_i[k] * row_j[k];
+            row_i[j] = s / d;
+        }
     }
-    return inv;
+}
+
+// x = (L Lᵀ)⁻¹ b
+std::vector<double> choleskySolve(const std::vector<double>& l, std::size_t n, std::vector<double> b) {
+    for (std::size_t i = 0; i < n; ++i) {
+        for (std::size_t k = 0; k < i; ++k) b[i] -= l[i * n + k] * b[k];
+        b[i] /= l[i * n + i];
+    }
+    for (std::size_t i = n; i-- > 0;) {
+        for (std::size_t k = i + 1; k < n; ++k) b[i] -= l[k * n + i] * b[k];
+        b[i] /= l[i * n + i];
+    }
+    return b;
+}
+
+// What the errors need of the covariance of the ratings: its diagonal, its row sums and the anchor's row.
+struct Covariance {
+    std::vector<double> diagonal, row_sum, anchor_row;
+};
+
+Covariance covariance(const Information& info, const std::vector<PairGames>& pairs, std::optional<std::size_t> anchor) {
+    const auto n = info.diagonal.size();
+    Covariance cov;
+    if (n > EXACT_ERRORS) {
+        // The first terms of I⁻¹ = D⁻¹ + D⁻¹ W D⁻¹ + D⁻¹ W D⁻¹ W D⁻¹ + …, W the pairs' weights: a rating's own
+        // information, and its opponents' uncertainty.
+        cov.diagonal.resize(n);
+        for (std::size_t i = 0; i < n; ++i) cov.diagonal[i] = 1.0 / info.diagonal[i];
+        auto own = cov.diagonal;
+        for (std::size_t e = 0; e < pairs.size(); ++e) {
+            const auto a = pairs[e].a, b = pairs[e].b;
+            const double w2 = info.weight[e] * info.weight[e];
+            cov.diagonal[a] += w2 * own[a] * own[a] * own[b];
+            cov.diagonal[b] += w2 * own[b] * own[b] * own[a];
+        }
+        cov.row_sum = cov.diagonal;
+        cov.anchor_row.assign(n, 0.0);
+        if (anchor) cov.anchor_row[*anchor] = cov.diagonal[*anchor];
+        return cov;
+    }
+
+    std::vector<double> l(n * n, 0.0);
+    for (std::size_t i = 0; i < n; ++i) l[i * n + i] = info.diagonal[i];
+    for (std::size_t e = 0; e < pairs.size(); ++e) {
+        l[pairs[e].a * n + pairs[e].b] -= info.weight[e];
+        l[pairs[e].b * n + pairs[e].a] -= info.weight[e];
+    }
+    cholesky(l, n);
+
+    // The diagonal of (L Lᵀ)⁻¹ = L⁻ᵀ L⁻¹ holds the squared norms of the columns of L⁻¹, column i being zero above
+    // row i: n³/6 steps instead of a whole inverse.
+    cov.diagonal.assign(n, 0.0);
+    std::vector<double> column(n);
+    for (std::size_t i = 0; i < n; ++i) {
+        column[i] = 1.0 / l[i * n + i];
+        double sq = column[i] * column[i];
+        for (std::size_t r = i + 1; r < n; ++r) {
+            double s = 0;
+            for (std::size_t k = i; k < r; ++k) s -= l[r * n + k] * column[k];
+            column[r] = s / l[r * n + r];
+            sq += column[r] * column[r];
+        }
+        cov.diagonal[i] = sq;
+    }
+    cov.row_sum = choleskySolve(l, n, std::vector<double>(n, 1.0));
+    if (anchor) {
+        std::vector<double> e(n, 0.0);
+        e[*anchor]     = 1.0;
+        cov.anchor_row = choleskySolve(l, n, e);
+    }
+    return cov;
 }
 
 std::string half(double points) {
@@ -89,36 +202,35 @@ std::string escapeHtml(const std::string& s) {
 
 }  // namespace
 
-std::vector<Rating> maximumLikelihood(const Matrix& games, const Matrix& points,
+std::vector<Rating> maximumLikelihood(std::size_t n, const std::vector<PairGames>& pairs,
                                       std::optional<std::pair<int, double>> anchor) {
-    const auto n = games.size();
     std::vector<Rating> out(n);
     if (n == 0) return out;
 
-    std::vector<double> r(n, 0.0);
-    Matrix h(n, std::vector<double>(n));
+    std::vector<double> r(n, 0.0), g(n);
+    Information info;
+    info.diagonal.resize(n);
+    info.weight.resize(pairs.size());
 
     for (int iter = 0; iter < 200; ++iter) {
-        std::vector<double> g(n, 0.0);
-        for (auto& row : h) std::fill(row.begin(), row.end(), 0.0);
-
         for (std::size_t i = 0; i < n; ++i) {
-            g[i] -= r[i] / (PRIOR_SIGMA * PRIOR_SIGMA);
-            h[i][i] -= 1.0 / (PRIOR_SIGMA * PRIOR_SIGMA);
-            for (std::size_t j = 0; j < n; ++j) {
-                if (i == j || games[i][j] <= 0) continue;
-                const double p = 1.0 / (1.0 + std::pow(10.0, -(r[i] - r[j]) / 400.0));
-                g[i] += K * (points[i][j] - games[i][j] * p);
-                const double w = K * K * games[i][j] * p * (1.0 - p);
-                h[i][i] -= w;
-                h[i][j] += w;
-            }
+            g[i]             = -r[i] / (PRIOR_SIGMA * PRIOR_SIGMA);
+            info.diagonal[i] = 1.0 / (PRIOR_SIGMA * PRIOR_SIGMA);
+        }
+        for (std::size_t e = 0; e < pairs.size(); ++e) {
+            const auto& pg = pairs[e];
+            const double p = 1.0 / (1.0 + std::pow(10.0, -(r[pg.a] - r[pg.b]) / 400.0));
+            const double d = K * (pg.points_a - pg.games * p);
+            g[pg.a] += d;
+            g[pg.b] -= d;
+            const double w = K * K * pg.games * p * (1.0 - p);
+            info.weight[e] = w;
+            info.diagonal[pg.a] += w;
+            info.diagonal[pg.b] += w;
         }
 
-        // Newton step: h * delta = -g
-        std::vector<double> minus_g(n);
-        for (std::size_t i = 0; i < n; ++i) minus_g[i] = -g[i];
-        const auto delta = solve(h, minus_g);
+        // Newton step: I delta = g
+        const auto delta = solve(info, pairs, g);
 
         double largest = 0;
         for (std::size_t i = 0; i < n; ++i) {
@@ -128,19 +240,19 @@ std::vector<Rating> maximumLikelihood(const Matrix& games, const Matrix& points,
         if (largest < 1e-7) break;
     }
 
-    // Covariance from the information matrix (without the prior's own weight on the common level, which the
-    // differences below cancel anyway).
-    Matrix information(n, std::vector<double>(n));
-    for (std::size_t i = 0; i < n; ++i) {
-        for (std::size_t j = 0; j < n; ++j) information[i][j] = -h[i][j];
-    }
-    const auto cov = inverse(information);
-
+    // Covariance from the information matrix (with the prior's weight on the common level, which the differences
+    // below cancel).
+    std::optional<std::size_t> fixed;
     if (anchor && anchor->first >= 0 && static_cast<std::size_t>(anchor->first) < n) {
-        const auto a = static_cast<std::size_t>(anchor->first);
+        fixed = static_cast<std::size_t>(anchor->first);
+    }
+    const auto cov = covariance(info, pairs, fixed);
+
+    if (fixed) {
+        const auto a = *fixed;
         for (std::size_t i = 0; i < n; ++i) {
             out[i].elo       = anchor->second + r[i] - r[a];
-            const double var = cov[i][i] + cov[a][a] - 2 * cov[i][a];
+            const double var = cov.diagonal[i] + cov.diagonal[a] - 2 * cov.anchor_row[i];
             out[i].error     = i == a ? 0.0 : Z95 * std::sqrt(std::max(0.0, var));
         }
         return out;
@@ -152,20 +264,25 @@ std::vector<Rating> maximumLikelihood(const Matrix& games, const Matrix& points,
 
     // Variance of r_i - mean, i.e. of the i-th coordinate of (I - J/n) r.
     double total = 0;
-    std::vector<double> row_sum(n, 0.0);
-    for (std::size_t i = 0; i < n; ++i) {
-        for (std::size_t j = 0; j < n; ++j) {
-            row_sum[i] += cov[i][j];
-            total += cov[i][j];
-        }
-    }
+    for (const double v : cov.row_sum) total += v;
     const double nn = static_cast<double>(n);
     for (std::size_t i = 0; i < n; ++i) {
-        const double var = cov[i][i] - 2.0 * row_sum[i] / nn + total / (nn * nn);
+        const double var = cov.diagonal[i] - 2.0 * cov.row_sum[i] / nn + total / (nn * nn);
         out[i].elo       = r[i] - mean;
         out[i].error     = Z95 * std::sqrt(std::max(0.0, var));
     }
     return out;
+}
+
+std::vector<Rating> maximumLikelihood(const Matrix& games, const Matrix& points,
+                                      std::optional<std::pair<int, double>> anchor) {
+    std::vector<PairGames> pairs;
+    for (std::size_t i = 0; i < games.size(); ++i) {
+        for (std::size_t j = i + 1; j < games.size(); ++j) {
+            if (games[i][j] > 0) pairs.push_back({i, j, games[i][j], points[i][j]});
+        }
+    }
+    return maximumLikelihood(games.size(), pairs, anchor);
 }
 
 PairRecord Table::pair(int a, int b) const {
@@ -187,9 +304,6 @@ Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& re
         s.name = people[i].engine.name;
         table.rows.push_back(s);
     }
-
-    Matrix games(n, std::vector<double>(n, 0.0));
-    Matrix points(n, std::vector<double>(n, 0.0));
 
     for (const auto& r : results) {
         if (r.voided) continue;
@@ -214,11 +328,6 @@ Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& re
         } else {
             white.draws++, black.draws++, wb.draws++, bw.draws++;
         }
-
-        games[w->second][b->second] += 1;
-        games[b->second][w->second] += 1;
-        points[w->second][b->second] += sw;
-        points[b->second][w->second] += 1.0 - sw;
 
         if (sw != 0.5) {
             auto& loser = sw == 1.0 ? black : white;
@@ -247,13 +356,13 @@ Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& re
         }
     }
 
-    // Sonneborn-Berger and Buchholz.
-    for (std::size_t i = 0; i < n; ++i) {
-        for (std::size_t j = 0; j < n; ++j) {
-            if (i == j) continue;
-            table.rows[i].sb += points[i][j] * table.rows[j].points;
-            table.rows[i].buchholz += games[i][j] * table.rows[j].points;
-        }
+    // Sonneborn-Berger and Buchholz; the pairs that met, once each, for the ratings.
+    std::vector<PairGames> met;
+    for (const auto& [ids, record] : table.pairs) {
+        const auto i = index.at(ids.first), j = index.at(ids.second);
+        table.rows[i].sb += record.points() * table.rows[j].points;
+        table.rows[i].buchholz += record.games() * table.rows[j].points;
+        if (i < j) met.push_back({i, j, static_cast<double>(record.games()), record.points()});
     }
 
     std::optional<std::pair<int, double>> fixed;
@@ -262,21 +371,36 @@ Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& re
             fixed = std::make_pair(static_cast<int>(it->second), anchor->elo);
         }
     }
-    const auto ratings = maximumLikelihood(games, points, fixed);
+    const auto ratings = maximumLikelihood(n, met, fixed);
     for (std::size_t i = 0; i < n; ++i) {
         table.rows[i].rating = ratings[i];
         table.rows[i].rated  = table.rows[i].games > 0;
     }
 
+    // Points and the tiebreaks every row has its own value of, so that the order is a strict weak ordering.
     const bool swiss = spec.format == Format::Swiss;
-    std::stable_sort(table.rows.begin(), table.rows.end(), [&](const Standing& a, const Standing& b) {
-        if (a.points != b.points) return a.points > b.points;
-        if (swiss && a.buchholz != b.buchholz) return a.buchholz > b.buchholz;
-        if (a.sb != b.sb) return a.sb > b.sb;
-        const double ab = table.pair(a.id, b.id).points(), ba = table.pair(b.id, a.id).points();
-        if (ab != ba) return ab > ba;
-        return a.wins > b.wins;
-    });
+    const auto key   = [&](const Standing& s) { return std::make_tuple(s.points, swiss ? s.buchholz : 0.0, s.sb); };
+    std::stable_sort(table.rows.begin(), table.rows.end(),
+                     [&](const Standing& a, const Standing& b) { return key(a) > key(b); });
+
+    // Head to head is not transitive (A beats B beats C beats A): it only orders the rows still tied, by the points
+    // each scored against the others of its group, then by wins.
+    for (auto first = table.rows.begin(); first != table.rows.end();) {
+        auto last = std::find_if(first, table.rows.end(), [&](const Standing& s) { return key(s) != key(*first); });
+        if (last - first > 1) {
+            std::map<int, double> among;
+            for (auto a = first; a != last; ++a) {
+                for (auto b = first; b != last; ++b) {
+                    if (a != b) among[a->id] += table.pair(a->id, b->id).points();
+                }
+            }
+            std::stable_sort(first, last, [&](const Standing& a, const Standing& b) {
+                if (among[a.id] != among[b.id]) return among[a.id] > among[b.id];
+                return a.wins > b.wins;
+            });
+        }
+        first = last;
+    }
     return table;
 }
 

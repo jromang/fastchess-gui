@@ -156,6 +156,68 @@ TEST_CASE("table: a head-to-head result breaks an otherwise complete tie") {
     CHECK(table.rows[0].name == "B");
 }
 
+TEST_CASE("table: head to head orders a tie, a cycle of head to head keeps a consistent order") {
+    // B and D tie on points and Sonneborn-Berger, with a win each; D beat B.
+    const auto spec = players(4);
+    std::vector<GameResult> results;
+    add(results, 101, 100, 1.0, 1);
+    add(results, 102, 100, 1.0, 1);
+    add(results, 100, 103, 0.5, 1);
+    add(results, 101, 102, 0.5, 1);
+    add(results, 103, 101, 1.0, 1);
+    add(results, 102, 103, 1.0, 1);
+    const auto table = computeTable(spec, results);
+    REQUIRE(table.rows.size() == 4);
+    CHECK(table.rows[0].name == "C");
+    CHECK(table.rows[1].name == "D");
+    CHECK(table.rows[2].name == "B");
+    CHECK(table.rows[3].name == "A");
+
+    // A beats B, B beats C, C beats A: everything ties, and the order is the participants'.
+    for (const auto& order : {std::vector<int>{0, 1, 2}, std::vector<int>{2, 0, 1}}) {
+        const auto three = players(3);
+        TournamentSpec shuffled;
+        for (const int i : order) shuffled.participants.push_back(three.participants[i]);
+        std::vector<GameResult> cycle;
+        add(cycle, 100, 101, 1.0, 1);
+        add(cycle, 101, 102, 1.0, 1);
+        add(cycle, 102, 100, 1.0, 1);
+        const auto t = computeTable(shuffled, cycle);
+        REQUIRE(t.rows.size() == 3);
+        for (std::size_t i = 0; i < 3; ++i) CHECK(t.rows[i].id == shuffled.participants[i].id);
+    }
+}
+
+TEST_CASE("ratings: thousands of engines, from the pairs that met") {
+    // 3000 engines of strengths 0 to 490 Elo, each meeting the next 8 for 1000 games scored as expected: the ratings
+    // find the strengths again.
+    constexpr std::size_t n = 3000;
+    const auto strength     = [](std::size_t i) { return static_cast<double>(i % 50) * 10; };
+    std::vector<PairGames> pairs;
+    for (std::size_t i = 0; i < n; ++i) {
+        for (std::size_t k = 1; k <= 8; ++k) {
+            const auto j   = (i + k) % n;
+            const double p = 1.0 / (1.0 + std::pow(10.0, -(strength(i) - strength(j)) / 400.0));
+            pairs.push_back({i, j, 1000, 1000 * p});
+        }
+    }
+    const auto ratings = maximumLikelihood(n, pairs, std::make_pair(0, 2000.0));
+    REQUIRE(ratings.size() == n);
+    CHECK(ratings[0].error == 0);
+    for (std::size_t i = 0; i < n; ++i) {
+        if (std::abs(ratings[i].elo - 2000 - strength(i)) > 1) FAIL("rating " << i << ": " << ratings[i].elo);
+        if (i > 0 && (!std::isfinite(ratings[i].error) || ratings[i].error <= 0)) FAIL("no error for " << i);
+    }
+
+    // The sparse and dense forms agree.
+    const auto dense  = maximumLikelihood({{0, 10, 4}, {10, 0, 6}, {4, 6, 0}}, {{0, 7, 1}, {3, 0, 4}, {3, 2, 0}});
+    const auto sparse = maximumLikelihood(3, {{0, 1, 10, 7}, {0, 2, 4, 1}, {1, 2, 6, 4}});
+    for (std::size_t i = 0; i < 3; ++i) {
+        CHECK(sparse[i].elo == doctest::Approx(dense[i].elo));
+        CHECK(sparse[i].error == doctest::Approx(dense[i].error));
+    }
+}
+
 #include <filesystem>
 
 #include <fstream>
