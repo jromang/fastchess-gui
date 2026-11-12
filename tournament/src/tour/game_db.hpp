@@ -60,6 +60,9 @@ struct GameDb {
 // a wrong guess would give a player another engine's rating on a list, as an anchor, without a word.
 [[nodiscard]] std::optional<std::string> libraryEngine(const std::string& player,
                                                        const std::vector<std::string>& library);
+// libraryEngine() of each name of `players`, the library looked through once.
+[[nodiscard]] std::vector<std::optional<std::string>> libraryEngines(const std::vector<std::string>& players,
+                                                                     const std::vector<std::string>& library);
 
 // The tournaments in `dirs` (folders that are not tournaments are skipped) and the PGN files in `pgns`, whose
 // players are matched to the engines of `library` (their names) by libraryEngine().

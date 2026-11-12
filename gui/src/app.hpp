@@ -329,6 +329,13 @@ class App {
     void setInactive(const std::vector<std::string>& names, bool inactive);
     void drawImportPreview();
     void addImported();  // the engines chosen
+    // A rating list (CCRL, Ordo, CSV) whose ratings become the reference Elo of the library engines it names, once
+    // seen in a preview.
+    void openRatingImport(const std::string& text = {});
+    void loadRatingList(const std::string& path);  // a file chosen, read into the preview
+    void readRatingImport();                       // the text of the preview, read and matched again
+    void drawRatingImport();
+    void applyRatingImport();
     [[nodiscard]] bool engineInUse(const std::string& name) const;
     void addEngine(const std::string& path);
     std::string uniqueEngineName(const std::string& base, int ignore_index) const;
@@ -515,6 +522,19 @@ class App {
     };
     std::optional<ImportPreview> import_preview_;
     std::optional<std::filesystem::path> engine_folder_;  // settings.json's, read once
+    struct RatingImport {
+        std::string text;  // as pasted or read from a file
+        struct Row {
+            std::string engine, listed;  // the library's name and the list's
+            int elo_now = 0, elo = 0;
+            bool chosen = true;
+        };
+        std::vector<Row> rows;               // the library engines the list names
+        std::vector<std::string> unmatched;  // the names of the list that are no library engine
+        std::size_t listed = 0;              // engines on the list
+    };
+    std::optional<RatingImport> rating_import_;
+    bool open_rating_import_  = false;
     bool open_import_preview_ = false;
 
     // Console view.

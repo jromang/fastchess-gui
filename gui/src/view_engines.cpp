@@ -3,10 +3,14 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 
 #include <imgui.h>
 
 #include <fmt/include/fmt/format.h>
+
+#include <tour/rating_import.hpp>
 
 #include "app.hpp"
 #include "i18n.hpp"
@@ -35,7 +39,7 @@ bool editText(const char* id, std::string& value, float width = -FLT_MIN) {
 }
 
 // A text of several lines, of any length.
-bool editNotes(const char* id, std::string& value, ImVec2 size) {
+bool editLines(const char* id, std::string& value, ImVec2 size) {
     const auto resize = [](ImGuiInputTextCallbackData* data) {
         if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
             auto* text = static_cast<std::string*>(data->UserData);
@@ -408,6 +412,9 @@ void App::drawEngines() {
             if (ImGui::MenuItem(TR("Refresh: the new engines of the folder"))) refreshEngineFolder();
             ImGui::TextDisabled("%s", folder.string().c_str());
         }
+        ImGui::Separator();
+        if (ImGui::MenuItem(TR("A rating list, for the reference Elo…"))) openRatingImport();
+        ImGui::TextDisabled("%s", TR("CCRL, Ordo, CSV (name,elo)"));
         ImGui::EndPopup();
     }
     const auto duplicate = [&] {
@@ -854,7 +861,7 @@ void App::drawEngines() {
         ImGui::SetTooltip("%s", TR("Its card in Ratings: results, health and rating over every tournament."));
 
     ui::label(TR("Notes"), label);
-    changed |= editNotes("##notes", e.notes, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 3.5f));
+    changed |= editLines("##notes", e.notes, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 3.5f));
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + label);
     ImGui::TextDisabled("%s", TR("Anything to remember about it; the engine searches find it."));
 
@@ -1425,6 +1432,184 @@ void App::drawImportPreview() {
     ImGui::SameLine();
     if (ImGui::Button(TR("Cancel"))) {
         import_preview_.reset();
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
+}
+
+void App::openRatingImport(const std::string& text) {
+    rating_import_.emplace();
+    rating_import_->text = text;
+    readRatingImport();
+    open_rating_import_ = true;
+}
+
+void App::loadRatingList(const std::string& path) {
+    std::ifstream in(fs::path(path), std::ios::binary);
+    std::string text{std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>()};
+    if (!in && !in.eof()) {
+        Console::instance().add(trf("Cannot read {}", path), true);
+        return;
+    }
+    openRatingImport(toUtf8(std::move(text)));
+}
+
+void App::readRatingImport() {
+    if (!rating_import_) return;
+    auto& r         = *rating_import_;
+    const auto list = tour::parseRatingList(r.text);
+    auto names      = std::vector<std::string>{};
+    for (const auto& e : engines_) names.push_back(e.name);
+    const auto found = tour::matchRatings(list, names);
+
+    r.listed    = list.size();
+    r.unmatched = found.unmatched;
+    r.rows.clear();
+    for (const auto& m : found.matched) {
+        const auto it =
+            std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == m.engine; });
+        if (it == engines_.end()) continue;
+        r.rows.push_back({m.engine, m.listed, it->elo, m.elo, it->elo != m.elo});
+    }
+    // In alphabetical order, as the engine list shows them.
+    std::stable_sort(r.rows.begin(), r.rows.end(),
+                     [](const auto& a, const auto& b) { return lessCaseInsensitive(a.engine, b.engine); });
+}
+
+void App::applyRatingImport() {
+    if (!rating_import_) return;
+    int applied = 0;
+    for (const auto& row : rating_import_->rows) {
+        if (!row.chosen || row.elo == row.elo_now) continue;
+        for (auto& e : engines_) {
+            if (e.name != row.engine) continue;
+            e.elo = row.elo;
+            ++applied;
+        }
+    }
+    storage_.saveEngines(engines_);
+    ratings_dirty_ = true;  // a reference rating anchors the rating list
+    Console::instance().add(trn("{} reference Elo set from the rating list.",
+                                "{} reference Elo set from the rating list.", applied, applied));
+    rating_import_.reset();
+}
+
+void App::drawRatingImport() {
+    const char* title = TR("Import a rating list###rating_import");
+    if (open_rating_import_) {
+        ImGui::OpenPopup(title);
+        open_rating_import_ = false;
+    }
+    ImGui::SetNextWindowSize(ImVec2(px(820), 0), ImGuiCond_Appearing);
+    if (!ImGui::BeginPopupModal(title, nullptr)) return;
+    if (!rating_import_) {
+        ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+        return;
+    }
+    auto& r = *rating_import_;
+
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextDisabled("%s",
+                        TR("Paste a rating list, or open its file: a CCRL list (its text version, or its web page "
+                           "copied from the browser or saved), Ordo's output, or CSV (name,elo). The library "
+                           "engines it names get their reference Elo from it: the same name, letter case and "
+                           "spaces aside."));
+    ImGui::PopTextWrapPos();
+    if (ImGui::Button(TR("Open a file…"))) {
+        dialogs_.openFile(Dialogs::Purpose::ImportRatingList,
+                          {{TR("Rating lists"), "txt;csv;htm;html"}, {TR("All files"), "*"}});
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(TR("Paste"))) {
+        if (const char* clip = ImGui::GetClipboardText()) {
+            r.text = clip;
+            readRatingImport();
+        }
+    }
+    if (editLines("##rating_text", r.text, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 6))) readRatingImport();
+
+    // What it changes.
+    int changes = 0;
+    for (const auto& row : r.rows) changes += row.chosen && row.elo != row.elo_now;
+    if (!r.text.empty()) {
+        ImGui::TextUnformatted(trf("{} engines on the list · {} in the library · {} not in the library", r.listed,
+                                   r.rows.size(), r.unmatched.size())
+                                   .c_str());
+    }
+    if (!r.unmatched.empty() && ImGui::TreeNode(TR("Names of the list that are no library engine"))) {
+        ImGui::BeginChild("##unmatched", ImVec2(0, ImGui::GetTextLineHeightWithSpacing() *
+                                                       std::min(8.0f, static_cast<float>(r.unmatched.size()) + 0.5f)));
+        ImGuiListClipper clipper;
+        clipper.Begin(static_cast<int>(r.unmatched.size()));
+        while (clipper.Step()) {
+            for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
+                ImGui::TextDisabled("%s", r.unmatched[i].c_str());
+        }
+        ImGui::EndChild();
+        ImGui::TreePop();
+    }
+
+    if (!r.rows.empty()) {
+        const float rows = std::min(12.0f, static_cast<float>(r.rows.size()) + 1);
+        if (ImGui::BeginTable("##rating_rows", 4,
+                              ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp,
+                              ImVec2(0, ImGui::GetFrameHeightWithSpacing() * rows))) {
+            ImGui::TableSetupScrollFreeze(0, 1);
+            ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
+            ImGui::TableSetupColumn(TR("Engine"), ImGuiTableColumnFlags_WidthStretch, 0.35f);
+            ImGui::TableSetupColumn(TR("On the list"), ImGuiTableColumnFlags_WidthStretch, 0.4f);
+            ImGui::TableSetupColumn(TR("Reference Elo"), ImGuiTableColumnFlags_WidthStretch, 0.25f);
+            ImGui::TableHeadersRow();
+            ImGuiListClipper clipper;
+            clipper.Begin(static_cast<int>(r.rows.size()));
+            while (clipper.Step()) {
+                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
+                    auto& row       = r.rows[i];
+                    const bool same = row.elo == row.elo_now;
+                    ImGui::TableNextRow();
+                    ImGui::PushID(i);
+                    ImGui::TableNextColumn();
+                    bool chosen = row.chosen && !same;
+                    ImGui::BeginDisabled(same);
+                    if (ImGui::Checkbox("##chosen", &chosen)) row.chosen = chosen;
+                    ImGui::EndDisabled();
+                    ImGui::TableNextColumn();
+                    ImGui::AlignTextToFramePadding();
+                    ImGui::TextUnformatted(row.engine.c_str());
+                    ImGui::TableNextColumn();
+                    ImGui::TextDisabled("%s", row.listed.c_str());
+                    ImGui::TableNextColumn();
+                    if (same) {
+                        ImGui::TextDisabled("%d  %s", row.elo, TR("(the same)"));
+                    } else if (row.elo_now == 0) {
+                        ImGui::Text("— → %d", row.elo);
+                    } else {
+                        ImGui::Text("%d → %d", row.elo_now, row.elo);
+                        ImGui::SameLine();
+                        ImGui::TextDisabled("(%+d)", row.elo - row.elo_now);
+                    }
+                    ImGui::PopID();
+                }
+            }
+            ImGui::EndTable();
+        }
+    } else if (!r.text.empty()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+        ImGui::TextWrapped("%s", r.listed == 0 ? TR("No engine and rating found in this text.")
+                                               : TR("None of these engines is in the library under the same name."));
+        ImGui::PopStyleColor();
+    }
+
+    ImGui::BeginDisabled(changes == 0);
+    if (ImGui::Button(trn("Set {} reference Elo", "Set {} reference Elo", changes, changes).c_str())) {
+        applyRatingImport();
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (ImGui::Button(TR("Cancel"))) {
+        rating_import_.reset();
         ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();

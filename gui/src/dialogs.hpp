@@ -25,6 +25,7 @@ class Dialogs {
         ExportStandings,
         ImportEngineList,
         ImportEngineFolder,
+        ImportRatingList,
         ExportRatings,
         ExportRatingPgn,
         ImportRatingPgn,

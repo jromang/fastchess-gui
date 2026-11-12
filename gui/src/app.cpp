@@ -155,6 +155,13 @@ void App::frame() {
         } else if (w == "engines-refresh") {
             page_ = Page::Engines;
             refreshEngineFolder();
+        } else if (w.rfind("engines-ratings", 0) == 0) {
+            // engines-ratings=FILE: the preview of that rating list.
+            page_ = Page::Engines;
+            if (const auto eq = w.find('='); eq != std::string::npos)
+                loadRatingList(w.substr(eq + 1));
+            else
+                openRatingImport();
         } else if (w == "console")
             page_ = Page::Log;
         else if (w == "settings")
@@ -201,6 +208,7 @@ void App::frame() {
     drawSprtCalculator();
     drawQuitModal();
     drawImportPreview();
+    drawRatingImport();
 
     // The window title tells how the run is going, also when the window is in the background.
     {
@@ -656,6 +664,9 @@ void App::handleDialogs() {
                 storage_.setEngineFolder(path);
                 engine_folder_ = std::filesystem::path(path);
                 importEngines(findEngines(path));
+                break;
+            case Dialogs::Purpose::ImportRatingList:
+                loadRatingList(path);
                 break;
             case Dialogs::Purpose::OpenTournament:
                 openTournament(path);
