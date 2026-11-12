@@ -181,6 +181,12 @@ void App::setupMatch() {
         case MatchMode::Sprt: {
             changed |= inputDouble("elo0", "##elo0", setup_.sprt_elo0, -1000, 1000);
             changed |= inputDouble("elo1", "##elo1", setup_.sprt_elo1, -1000, 1000);
+            if (setup_.sprt_elo1 <= setup_.sprt_elo0) {  // Start waits until they are right
+                ui::label("", labelWidth());
+                ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+                ImGui::TextUnformatted(TR("elo1 must be larger than elo0."));
+                ImGui::PopStyleColor();
+            }
             changed |= inputDouble("alpha", "##alpha", setup_.sprt_alpha, 0.001, 0.5, "%.3f");
             changed |= inputDouble("beta", "##beta", setup_.sprt_beta, 0.001, 0.5, "%.3f");
 

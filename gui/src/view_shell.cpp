@@ -403,8 +403,12 @@ void App::drawNewMatch() {
     ui::pageTitle(TR("New tournament"));
     ImGui::TextDisabled("%s", TR("A match between two versions, a round robin or a gauntlet."));
 
-    const bool ready = setup_.format == TournamentFormat::Match ? !setup_.engine_a.empty() && !setup_.engine_b.empty()
-                                                                : setup_.participants.size() >= 2;
+    const bool chosen = setup_.format == TournamentFormat::Match ? !setup_.engine_a.empty() && !setup_.engine_b.empty()
+                                                                 : setup_.participants.size() >= 2;
+    // SPRT bounds the wrong way round, said beside them, rather than fastchess' message once started.
+    const bool bad_sprt = setup_.format == TournamentFormat::Match && setup_.mode == MatchMode::Sprt &&
+                          setup_.sprt_elo1 <= setup_.sprt_elo0;
+    const bool ready    = chosen && !bad_sprt;
     // Only the engines of this setup matter: the others' options can be read while it plays.
     bool probing = false;
     if (setup_.format == TournamentFormat::Match) {
@@ -419,9 +423,11 @@ void App::drawNewMatch() {
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
         if (locked)
             ImGui::SetTooltip("%s", TR("A match is already running."));
-        else if (!ready)
+        else if (!chosen)
             ImGui::SetTooltip("%s", setup_.format == TournamentFormat::Match ? TR("Choose engines A and B.")
                                                                              : TR("Choose at least two engines."));
+        else if (bad_sprt)
+            ImGui::SetTooltip("%s", TR("elo1 must be larger than elo0."));
         else if (probing)
             ImGui::SetTooltip("%s", TR("Reading the options of an engine…"));
     }
@@ -429,7 +435,8 @@ void App::drawNewMatch() {
     ImGui::SameLine();
     if (ui::iconButton("enqueue", ui::Icon::Plus, TR("Add to the queue"), ready)) enqueue();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-        ImGui::SetTooltip("%s", TR("Starts by itself when the running tournament ends."));
+        ImGui::SetTooltip("%s", bad_sprt ? TR("elo1 must be larger than elo0.")
+                                         : TR("Starts by itself when the running tournament ends."));
     }
     if (!start_error_.empty()) {
         ImGui::SameLine();
