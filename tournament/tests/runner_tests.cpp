@@ -2,6 +2,7 @@
 
 #include <doctest/doctest.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstdlib>
@@ -15,6 +16,7 @@
 #include <core/globals/globals.hpp>
 #include <core/memory/cache.hpp>
 #include <core/observer.hpp>
+#include <engine/uci_engine.hpp>
 
 #include <tour/runner.hpp>
 
@@ -98,6 +100,30 @@ std::string play(TournamentState& state, std::size_t stop_after = 0) {
     if (killer.joinable()) killer.join();
     fastchess::stopProcesses();
     return error;
+}
+
+// Sets an environment variable of the engines started from now on; nullptr removes it.
+void setEnv(const char* name, const char* value) {
+#ifdef _WIN32
+    SetEnvironmentVariableA(name, value);
+#else
+    if (value) {
+        setenv(name, value, 1);
+    } else {
+        unsetenv(name);
+    }
+#endif
+}
+
+std::string readFile(const fs::path& path) {
+    std::ifstream in(path, std::ios::binary);
+    return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+}
+
+std::size_t countOf(const std::string& text, const std::string& what) {
+    std::size_t n = 0;
+    for (auto pos = text.find(what); pos != std::string::npos; pos = text.find(what, pos + 1)) ++n;
+    return n;
 }
 
 std::size_t countGames(const fs::path& pgn) {
@@ -448,54 +474,138 @@ TEST_CASE("runner: engine logs keep the engines' error output, marked apart, eve
         return;
     }
 
-    const auto set_env = [](const char* name, const char* value) {
-#ifdef _WIN32
-        SetEnvironmentVariableA(name, value);
-#else
-        if (value) {
-            setenv(name, value, 1);
-        } else {
-            unsetenv(name);
-        }
-#endif
-    };
-
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-stderr";
     fs::remove_all(dir);
     auto s           = spec(Format::Match, 2, 1, 2);
     s.log_every_game = true;
     auto state       = TournamentState::create(dir, s);
 
-    set_env("FCG_MOCK_STDERR", "on stderr:");
+    setEnv("FCG_MOCK_STDERR", "on stderr:");
     // About 100 KB on each engine's error output before it answers "uci", more than a pipe holds (64 KB on Linux,
     // 4 KB on Windows), in few enough lines that both engines' fit in the first lines of the log: the middle of a
     // long game's log is left out.
-    set_env("FCG_MOCK_STDERR_FLOOD", "100");
+    setEnv("FCG_MOCK_STDERR_FLOOD", "100");
     const auto error = play(*state);
-    set_env("FCG_MOCK_STDERR", nullptr);
-    set_env("FCG_MOCK_STDERR_FLOOD", nullptr);
+    setEnv("FCG_MOCK_STDERR", nullptr);
+    setEnv("FCG_MOCK_STDERR_FLOOD", nullptr);
 
     CHECK(error.empty());
     REQUIRE(state->results().size() == 2u);
 
     // Both engines started for the first game.
-    std::ifstream in(engineLogPath(dir, 1), std::ios::binary);
-    const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    const auto text = readFile(engineLogPath(dir, 1));
     CHECK(text.find("! read from its error output") != std::string::npos);
     CHECK(text.find("W! flood ...") != std::string::npos);
     CHECK(text.find("B! flood ...") != std::string::npos);
     // None lost.
-    const auto count = [&](const std::string& what) {
-        std::size_t n = 0;
-        for (auto pos = text.find(what); pos != std::string::npos; pos = text.find(what, pos + 1)) ++n;
-        return n;
-    };
-    CHECK(count("W! flood ...") == 100u);
-    CHECK(count("B! flood ...") == 100u);
+    CHECK(countOf(text, "W! flood ...") == 100u);
+    CHECK(countOf(text, "B! flood ...") == 100u);
     CHECK(text.find("W! on stderr: ") != std::string::npos);
     CHECK(text.find("B! on stderr: ") != std::string::npos);
     CHECK(text.find("< on stderr: ") == std::string::npos);
     CHECK(text.find("W< bestmove ") != std::string::npos);
+}
+
+TEST_CASE("runner: an engine's last words on its error output, before it ends, are all in the engine log") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-last-words";
+    fs::remove_all(dir);
+    auto s           = spec(Format::Match, 2, 1, 1);
+    s.log_every_game = true;
+    auto state       = TournamentState::create(dir, s);
+
+    // White's engine writes about 50 KB on its error output at its first move, at once, and ends: its end is seen
+    // when most of it is still to read.
+    setEnv("FCG_MOCK_STDERR_CRASH", "50");
+    (void)play(*state);
+    setEnv("FCG_MOCK_STDERR_CRASH", nullptr);
+
+    REQUIRE_FALSE(state->results().empty());
+    const auto text = readFile(engineLogPath(dir, 1));
+    CHECK(text.find("W< info string crashing") != std::string::npos);
+    CHECK(countOf(text, "W! crash report ") == 50u);
+    CHECK(text.find("W! crash report 50/50 ") != std::string::npos);
+}
+
+namespace {
+
+// The random mover, started with `variable` set to `value` in its environment, its error output read into `errors`.
+struct MockProcess {
+    MockProcess(const char* variable, const char* value) {
+        fastchess::engine::process::capture_stderr = true;
+        fastchess::atomic::stop                    = false;  // left set by the games played before
+        process.setErrorLineCallback([this](const std::string& line) { errors.push_back(line); });
+        setEnv(variable, value);
+        started = process.init(fs::path(randomMover()).parent_path().string(), randomMover(), "", "mock").code ==
+                  fastchess::engine::process::Status::OK;
+        setEnv(variable, nullptr);
+        process.setupRead();
+    }
+    // Ended at once, rather than after the minute an engine is given to end.
+    ~MockProcess() {
+        if (started) (void)process.writeInput("quit\n");
+    }
+    MockProcess(const MockProcess&)            = delete;
+    MockProcess& operator=(const MockProcess&) = delete;
+
+    fastchess::engine::process::Process process;
+    std::vector<std::string> errors;
+    bool started = false;
+};
+
+}  // namespace
+
+TEST_CASE("engine process: what an engine wrote on its error output before it ended is read before its end") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+    using fastchess::engine::process::Status;
+
+    // About 50 KB on its error output at once, then the engine ends, all before anything is read: its end (that
+    // of its output) and its last words are there together.
+    MockProcess mock("FCG_MOCK_STDERR_CRASH", "50");
+    REQUIRE(mock.started);
+    CHECK(mock.process.writeInput("go\n").code == Status::OK);
+    std::this_thread::sleep_for(500ms);
+
+    std::vector<fastchess::engine::process::Line> lines;
+    const auto begun = std::chrono::steady_clock::now();
+    CHECK(mock.process.readOutput(lines, "bestmove", 5000ms).code == Status::ERR);
+    CHECK(std::chrono::steady_clock::now() - begun < 2s);
+    REQUIRE(mock.errors.size() == 50u);
+    CHECK(mock.errors.front().rfind("crash report 1/50 ", 0) == 0);
+    CHECK(mock.errors.back().rfind("crash report 50/50 ", 0) == 0);
+    CHECK(std::count_if(lines.begin(), lines.end(),
+                        [](const auto& line) { return line.std == fastchess::engine::process::Standard::ERR; }) == 50);
+}
+
+TEST_CASE("engine process: what an engine wrote on its error output before the line awaited comes with it") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+    using fastchess::engine::process::Status;
+
+    // "on stderr: <move> ..." longer than a read takes at once, then its bestmove, all before anything is read:
+    // the read ends on the bestmove, which may be the last move of a game, and the engine's next read is in the
+    // next game.
+    setEnv("FCG_MOCK_STDERR_PAD", "6000");
+    MockProcess mock("FCG_MOCK_STDERR", "on stderr:");
+    setEnv("FCG_MOCK_STDERR_PAD", nullptr);
+    REQUIRE(mock.started);
+    CHECK(mock.process.writeInput("go\n").code == Status::OK);
+    std::this_thread::sleep_for(500ms);
+
+    std::vector<fastchess::engine::process::Line> lines;
+    REQUIRE(mock.process.readOutput(lines, "bestmove", 5000ms).code == Status::OK);
+    REQUIRE(mock.errors.size() == 1u);
+    CHECK(mock.errors.front().rfind("on stderr: ", 0) == 0);
+    CHECK(mock.errors.front().size() > 6000u);
 }
 
 TEST_CASE("engine cache: the idle entries used the longest ago make room; retired ones go at once") {

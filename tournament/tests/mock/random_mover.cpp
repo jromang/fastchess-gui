@@ -1,8 +1,10 @@
 // fastchess' mock engine (app/tests/mock/engine/random_mover.cpp), with its score before the pv: after "pv" every
 // word is a move, so fastchess found no score and warned at every move of every test game.
 //
-// With FCG_MOCK_STDERR=TEXT it writes "TEXT <move>" on its error output at each move, and with
-// FCG_MOCK_STDERR_FLOOD=N, N lines of 1000 characters there before its uciok: from 70 on, more than a pipe holds.
+// With FCG_MOCK_STDERR=TEXT it writes "TEXT <move>" on its error output at each move (followed by
+// FCG_MOCK_STDERR_PAD dots, when set), and with FCG_MOCK_STDERR_FLOOD=N, N lines of 1000 characters there before its
+// uciok: from 70 on, more than a pipe holds. With FCG_MOCK_STDERR_CRASH=N, at its first "go" it writes a line on its
+// output, then at once N lines of 1000 characters on its error output ("crash report I/N"), and ends.
 
 #include <cstdlib>
 #include <random>
@@ -84,9 +86,21 @@ void uci_line(Board &board, const std::string &line) {
     } else if (tokens[0] == "ucinewgame") {
         board = Board();
     } else if (tokens[0] == "go") {
+        if (const char *crash = std::getenv("FCG_MOCK_STDERR_CRASH")) {
+            std::cout << "info string crashing" << std::endl;
+            std::string report;
+            for (int i = 0, n = std::atoi(crash); i < n; ++i)
+                report += "crash report " + std::to_string(i + 1) + "/" + std::to_string(n) + " " +
+                          std::string(1000, '.') + '\n';
+            std::cerr << report << std::flush;
+            std::_Exit(3);
+        }
         const auto move = random_move(board);
-        if (const char *text = std::getenv("FCG_MOCK_STDERR"))
-            std::cerr << text << " " << uci::moveToUci(move) << std::endl;
+        if (const char *text = std::getenv("FCG_MOCK_STDERR")) {
+            const char *pad = std::getenv("FCG_MOCK_STDERR_PAD");
+            std::cerr << text << " " << uci::moveToUci(move) << " " << std::string(pad ? std::atoi(pad) : 0, '.')
+                      << std::endl;
+        }
         std::cout << "info depth 1 score cp 0 pv " << uci::moveToUci(move) << std::endl;
         std::cout << "bestmove " << uci::moveToUci(move) << std::endl;
     }

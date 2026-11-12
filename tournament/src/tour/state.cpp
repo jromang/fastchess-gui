@@ -970,8 +970,44 @@ void TournamentState::writeOut(std::unique_lock<std::mutex>& lock) {
         return;
     }
     out_writing_ = true;
+    const auto written = [&](const std::vector<std::size_t>& games) {
+        for (const auto i : games) out_written_.insert(results_[i].number());
+        const std::set<std::size_t> gone(games.begin(), games.end());
+        out_held_.erase(
+            std::remove_if(out_held_.begin(), out_held_.end(), [&](std::size_t i) { return gone.count(i); }),
+            out_held_.end());
+    };
     do {
         out_again_ = false;
+
+        // A write that failed partway first: what it left is completed (or is all there, only its sync failed).
+        // When its text is not there (nothing was written, or another program wrote right after the part), it is
+        // written again below.
+        if (out_cut_) {
+            const auto cut = *out_cut_;
+            lock.unlock();
+            bool settled = false;
+            std::string error;
+            try {
+                settled = settleShared(cut.file, cut.at, cut.text);
+            } catch (const std::exception& e) {
+                error = e.what();
+            }
+            if (settled) {
+                try {
+                    journal_->append({{"t", "pgn_out"}, {"pgn", cut.offsets}});
+                } catch (...) {
+                    lock.lock();
+                    out_writing_ = false;
+                    throw;
+                }
+            }
+            lock.lock();
+            out_error_ = error;
+            if (!error.empty()) break;
+            out_cut_.reset();
+            if (settled) written(cut.games);
+        }
 
         // The first game that holds the others: neither done, nor dropped, nor written once already (its replay).
         uint64_t until = UINT64_MAX;
@@ -1014,6 +1050,7 @@ void TournamentState::writeOut(std::unique_lock<std::mutex>& lock) {
         // Journaled before, with the place it goes to, and after: a crash in between is settled by settleOut() when
         // the tournament is opened again, which looks for the text there. No game is written twice, nor lost.
         bool journal_failed = false;
+        std::optional<uint64_t> begun_at;  // the write was journaled as begun there
         const auto journal  = [&](const nlohmann::json& event) {
             try {
                 journal_->append(event);
@@ -1031,6 +1068,7 @@ void TournamentState::writeOut(std::unique_lock<std::mutex>& lock) {
                              {"at", at},
                              {"len", text.size()},
                              {"cb", chessbase}});
+                    begun_at = at;
                 });
                 journal({{"t", "pgn_out"}, {"pgn", offsets}});
             }
@@ -1045,12 +1083,11 @@ void TournamentState::writeOut(std::unique_lock<std::mutex>& lock) {
         lock.lock();
 
         out_error_ = error;
-        if (!error.empty()) break;
-        for (const auto i : ready) out_written_.insert(results_[i].number());
-        const std::set<std::size_t> gone(ready.begin(), ready.end());
-        out_held_.erase(
-            std::remove_if(out_held_.begin(), out_held_.end(), [&](std::size_t i) { return gone.count(i); }),
-            out_held_.end());
+        if (!error.empty()) {
+            if (begun_at) out_cut_ = OutCut{ready, offsets, out, *begun_at, std::move(text)};
+            break;
+        }
+        written(ready);
     } while (out_again_);
     out_writing_ = false;
 }
@@ -1145,6 +1182,11 @@ std::set<std::string> TournamentState::enginesLeft() const {
             const auto n = uint64_t{encounter} * 2 + game;
             if (done(encounter, game) || dropped_.count(n)) continue;
             if (const auto e = schedule_.at(encounter)) add(*e);
+        }
+        // The games being played too: one just claimed by a runner thread has not taken its engines yet, and a game
+        // ending on another thread meanwhile would have their idle processes ended, to be started again.
+        for (const auto n : running_) {
+            if (const auto e = schedule_.at(static_cast<uint32_t>(n / 2))) add(*e);
         }
         for (auto i = next_encounter_; left.size() < active.size(); ++i) {
             const auto e = schedule_.at(i);

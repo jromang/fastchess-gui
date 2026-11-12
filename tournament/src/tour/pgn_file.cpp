@@ -135,7 +135,8 @@ void appendShared(const fs::path& file, const std::string& text, const std::func
             throw;
         }
     }
-    const bool written = std::fwrite(text.data(), 1, text.size(), out) == text.size() && syncFile(out);
+    const auto size    = appendSharedCut ? std::min(text.size(), appendSharedCut(text.size())) : text.size();
+    const bool written = std::fwrite(text.data(), 1, size, out) == text.size() && syncFile(out);
     if (std::fclose(out) != 0 || !written) throw std::runtime_error("cannot write " + file.string());
 }
 

@@ -123,7 +123,8 @@ void GuiObserver::loadPlayed() {
     }
 
     // The processor use of the games played before the tournament was opened, by PGN offset: the lines that were
-    // in processor.tsv then (the games played since are counted as they are played). Read by the first loader.
+    // in processor.tsv then (the games played since are counted as they are played). Read by the first loader; the
+    // lines of the games it did not count are kept for the next ones.
     if (!cpu_read_) {
         cpu_read_ = true;
         std::ifstream in(cpu_path_, std::ios::binary);
@@ -193,11 +194,13 @@ void GuiObserver::loadPlayed() {
         first = last;
     }
 
-    // Every game played before has been read: the lines are not needed any more.
-    cpu_lines_.clear();
-    cpu_lines_.shrink_to_fit();
-
     std::lock_guard<std::mutex> lock(data_mutex_);
+    // The lines of the games counted now are not needed any more. Those of the others (voided) are kept: a game
+    // voided while the games were read comes back when the edit is undone, and is read then.
+    cpu_lines_.erase(std::remove_if(cpu_lines_.begin(), cpu_lines_.end(),
+                                    [&](const GameCpuLine& l) { return extras_.count(l.offset) > 0; }),
+                     cpu_lines_.end());
+    cpu_lines_.shrink_to_fit();
     pending_games_.insert(pending_games_.end(), arrived_.begin(), arrived_.end());
     arrived_.clear();
     loading_ = false;

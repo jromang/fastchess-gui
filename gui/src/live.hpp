@@ -283,7 +283,8 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     std::mutex cpu_mutex_;
     std::FILE* cpu_file_ = nullptr;
     bool cpu_failed_     = false;  // could not be opened: not tried again
-    // The lines of the games played before, by PGN offset, while the loader reads those games; loader thread only.
+    // The lines of the games played before, by PGN offset, those of the games not counted yet once the first loader
+    // is done; loader thread only (one loader at a time).
     bool cpu_read_ = false;
     std::vector<GameCpuLine> cpu_lines_;
 

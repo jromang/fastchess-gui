@@ -219,7 +219,13 @@ TEST_CASE("state: the engines left are those with a game to play, of active part
     const int opponent = first->encounter.first == 0 ? first->encounter.second : first->encounter.first;
     state->complete(*first, data(*first, "1-0"));
     CHECK(state->enginesLeft().size() == 4u);  // the second game of the pair is still to play
-    CHECK(play(*state, 1) == 1);
+    // Claimed, it is still to play: the runner thread that claimed it has not taken the engines yet, and a game
+    // ending on another thread meanwhile must not have their idle processes ended.
+    const auto second = state->claimNext();
+    REQUIRE(second);
+    CHECK(second->encounter.index == first->encounter.index);
+    CHECK(state->enginesLeft().size() == 4u);
+    state->complete(*second, data(*second, "1-0"));
     auto left = state->enginesLeft();
     CHECK(left.size() == 3u);
     CHECK_FALSE(left.count(std::string(1, char('A' + opponent))));

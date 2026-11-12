@@ -323,8 +323,13 @@ class Process : public IProcess {
             if (out_fd.revents & (POLLIN | POLLHUP | POLLERR)) {
                 // fastchess-gui: what an engine wrote before it ended is read first, as it tells why (a missing
                 // file); the end is reported once nothing is left (end of file, or the read fails).
-                if (auto r = sg_out_.readLine(lines, searchword, &line_callback_); r.code != Status::NONE)
+                // What the engine wrote on its error output before goes with this read too: before its end (its
+                // last words: an assertion, a crash report), and before the line awaited, which may be the last of
+                // a game.
+                if (auto r = sg_out_.readLine(lines, searchword, &line_callback_); r.code != Status::NONE) {
+                    drainErr(lines, r.code != Status::OK);
                     return r.code == Status::OK ? r : Result::Error("Engine crashed (stdout)");
+                }
             }
 
             // 3. Check Stderr
@@ -454,6 +459,27 @@ class Process : public IProcess {
         if (threshold.count() <= 0) return -1;
         if (threshold.count() > (std::chrono::milliseconds::max)().count()) return -1;
         return static_cast<int>(threshold.count());
+    }
+
+    // fastchess-gui: how long the end of the error output is awaited once the standard output ended: what the
+    // engine wrote is there already, unless a process it started keeps the pipe open.
+    static constexpr std::chrono::milliseconds ERR_END_WAIT{500};
+
+    // fastchess-gui: reads what waits on the error output; with `until_end`, until it ends, for ERR_END_WAIT at most.
+    // Otherwise at most what a pipe holds, so that an engine writing there on and on cannot hold the read up.
+    void drainErr(std::vector<Line>& lines, bool until_end) {
+        const auto deadline = std::chrono::steady_clock::now() + ERR_END_WAIT;
+        for (int reads = 0; err_open_; ++reads) {
+            const auto left =
+                std::chrono::duration_cast<std::chrono::milliseconds>(deadline - std::chrono::steady_clock::now());
+            if (until_end ? left.count() <= 0 : reads >= 16) return;
+
+            pollfd fd       = create_pollfd(err_pipe_.read_end(), POLLIN | POLLERR | POLLHUP);
+            const int ready = poll(&fd, 1, until_end ? static_cast<int>(left.count()) : 0);
+            if (ready <= 0) return;  // nothing more for now, or poll failed
+
+            if (sg_err_.readLine(lines, "", &err_line_callback_).code != Status::NONE) err_open_ = false;
+        }
     }
 
     void flush_partials_on_timeout(std::vector<Line>& lines) {
