@@ -371,10 +371,29 @@ class App {
     MoveChart live_chart_   = MoveChart::Eval;
     MoveChart replay_chart_ = MoveChart::Eval;
 
+    // Schedule tab: its rows and what is shown with them, computed again when the tournament changes (its
+    // version), not every frame.
+    struct ScheduleGroup {
+        std::size_t first = 0, last = 0;  // rows
+        uint32_t number  = 0;             // cycle, or round
+        int block        = 0;             // a cycle can come in two blocks
+        std::size_t done = 0, total = 0;
+        bool running = false;
+    };
+    struct ScheduleView {
+        const tour::TournamentState* tournament = nullptr;
+        uint64_t version                        = ~uint64_t(0);
+        std::vector<tour::ScheduleRow> rows;
+        std::vector<ScheduleGroup> groups;
+        std::map<uint64_t, std::string> result_of;  // by game number
+        std::map<uint32_t, std::string> openings;   // the names of the openings encounters started with
+        std::map<std::pair<uint32_t, uint32_t>, std::string> round_openings;  // (cycle, round), one opening per round
+        std::size_t done = 0, running = 0, pending = 0;
+        uint32_t last_round = 0;
+    } schedule_;
+    void refreshSchedule();
+
     // SPRT calculator: its own copy of the bounds, applied to the setup on request.
-    // Schedule tab: the names of the openings its encounters started with, by encounter.
-    const tour::TournamentState* schedule_openings_for_ = nullptr;
-    std::map<uint32_t, std::string> schedule_openings_;
 
     bool sprt_calc_open_  = false;
     bool open_statistics_ = false;  // --focus statistics: the match's Statistics section opens
@@ -406,6 +425,8 @@ class App {
     std::vector<int> opening_order_;                // rows shown, sorted
     bool opening_order_dirty_ = true;
     int selected_opening_     = -1;  // index into by_opening_
+    std::vector<int> opening_games_;  // indexes into games_ of the selected opening's games
+    int opening_games_for_ = -1;      // the opening they are of, -1 when to find again
 
     // Books view: the library, and the book shown, read in the background.
     std::vector<BookEntry> books_;
@@ -466,6 +487,13 @@ class App {
     int edit_replay_filter_ = 0;  // 0 losses on time and crashes, 1 every game of a participant
     std::string edit_message_;
     bool edit_error_ = false;
+    // The games "Play games again" picks and the impact of the edit, computed again when they may have changed.
+    struct EditPreview {
+        std::string games_key;  // tournament version, filter, participant
+        std::vector<std::pair<uint32_t, int>> games;
+        std::string key;  // tournament version and the whole edit
+        tour::Impact impact;
+    } edit_preview_;
 
     // Queue and relaunch.
     std::vector<QueuedTournament> queue_;

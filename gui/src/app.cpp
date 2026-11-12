@@ -324,6 +324,8 @@ void App::resetRunView() {
     openings_.clear();
     by_opening_.clear();
     by_opening_for_   = ~std::size_t(0);
+    schedule_         = {};
+    edit_preview_     = {};
     selected_opening_ = -1;
     totals_.clear();
     table_     = {};

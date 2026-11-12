@@ -179,10 +179,15 @@ TEST_CASE("state: a released game is played again first") {
     const auto b = state->claimNext();
     REQUIRE(a);
     REQUIRE(b);
+    const auto claimed = state->version();
     state->release(*a);
+    CHECK(state->version() > claimed);  // the views see the change
     const auto c = state->claimNext();
     REQUIRE(c);
     CHECK(c->number() == a->number());
+    const auto before = state->version();
+    state->complete(*c, gameData(*c, "1-0"));
+    CHECK(state->version() > before);
 }
 
 TEST_CASE("state: the SPRT ends a match and the verdict is journaled") {

@@ -75,6 +75,7 @@ void App::refreshAfterEdit() {
     }
     filtered_for_      = ~std::size_t(0);
     table_for_         = ~std::size_t(0);
+    by_opening_for_    = ~std::size_t(0);
     selected_game_     = -1;
     tournaments_dirty_ = true;
     if (!run_.running() && t) {
@@ -87,146 +88,164 @@ void App::refreshAfterEdit() {
     }
 }
 
-void App::drawSchedule() {
+void App::refreshSchedule() {
     const auto* t = run_.tournament();
     if (!t) return;
+    const auto version = t->version();
+    if (schedule_.tournament == t && schedule_.version == version) return;
 
-    const float panel = std::max(px(340), ImGui::GetContentRegionAvail().x * 0.34f);
-    ImGui::BeginChild("##schedule_list", ImVec2(ImGui::GetContentRegionAvail().x - panel - px(16), 0));
-
-    const auto rows  = t->scheduleRows();
-    const auto* obs  = run_.observer();
+    auto& s = schedule_;
+    if (s.tournament != t) s.openings.clear();
+    s.tournament     = t;
+    s.version        = version;
+    s.rows           = t->scheduleRows();
     const auto& spec = t->spec();
-    const auto name  = [&](int id) -> std::string {
-        const auto* p = spec.participant(id);
-        return p ? p->engine.name : "?";
-    };
 
     // The openings the encounters started with, named once; with one opening per round, a round's for the encounters
     // of it still to play.
-    if (schedule_openings_for_ != t) {
-        schedule_openings_for_ = t;
-        schedule_openings_.clear();
-    }
     const bool frc = spec.conditions.variant == fastchess::VariantType::FRC;
     for (const auto& [encounter, opening] : t->encounterOpenings()) {
-        if (schedule_openings_.count(encounter)) continue;
+        if (s.openings.count(encounter)) continue;
         const auto c      = tour::classify(opening, frc);
         std::string label = c.eco.empty() ? "" : c.eco + " " + c.name;
         if (label.empty()) {
             for (const auto& m : c.moves) label += (label.empty() ? "" : " ") + m;
         }
-        schedule_openings_[encounter] = label.empty() ? TR("initial position") : label;
+        s.openings[encounter] = label.empty() ? TR("initial position") : label;
     }
-    std::map<std::pair<uint32_t, uint32_t>, std::string> round_opening;
+    s.round_openings.clear();
     if (spec.opening_per_round) {
-        for (const auto& row : rows) {
-            if (const auto it = schedule_openings_.find(row.encounter.index); it != schedule_openings_.end()) {
-                round_opening.emplace(std::pair{row.encounter.cycle, row.encounter.round}, it->second);
+        for (const auto& row : s.rows) {
+            if (const auto it = s.openings.find(row.encounter.index); it != s.openings.end()) {
+                s.round_openings.emplace(std::pair{row.encounter.cycle, row.encounter.round}, it->second);
             }
         }
     }
 
     // Results of the games, by game number, to show them in the list.
-    std::map<uint64_t, std::string> result_of;
+    s.result_of.clear();
     for (const auto& r : t->results()) {
-        if (!r.voided) result_of[r.number()] = r.result == "1/2-1/2" ? "½-½" : r.result;
+        if (!r.voided) s.result_of[r.number()] = r.result == "1/2-1/2" ? "½-½" : r.result;
     }
 
-    // Counts by status for the header.
-    std::size_t done = 0, running = 0, pending = 0;
-    for (const auto& row : rows) {
-        for (const auto status : row.status) {
-            done += status == tour::GameStatus::Done;
-            running += status == tour::GameStatus::Running;
-            pending += status == tour::GameStatus::Pending;
-        }
-    }
-    ImGui::TextDisabled("%s", trf("{} played · {} running · {} to play", done, running, pending).c_str());
-
-    // Grouped by cycle; a Swiss or a knockout, by round.
-    const bool by_round = tour::pairedAsItGoes(spec.format);
-    const auto group_of = [&](const tour::ScheduleRow& r) { return by_round ? r.encounter.round : r.encounter.cycle; };
-    uint32_t cycle      = 0;
-    bool open           = false;
+    // Counts by status for the header; groups by cycle (a Swiss or a knockout, by round), each with its progress.
     // A cycle can come in two blocks: an engine added during cycle 2 catches up on cycles 1 and 2 after it.
+    s.done = s.running = s.pending = 0;
+    s.last_round                   = 0;
+    s.groups.clear();
+    const bool by_round = tour::pairedAsItGoes(spec.format);
     std::map<uint32_t, int> blocks;
-    for (std::size_t i = 0; i < rows.size(); ++i) {
-        const auto& row = rows[i];
-        if (i == 0 || group_of(row) != group_of(rows[i - 1])) {
-            if (open) ImGui::TreePop();
-            cycle = group_of(row);
-
-            // The block's progress in its header; the one being played is open.
-            std::size_t c_done = 0, c_total = 0;
-            bool c_running = false;
-            for (std::size_t j = i; j < rows.size() && group_of(rows[j]) == cycle; ++j) {
-                for (const auto status : rows[j].status) {
-                    c_total += status != tour::GameStatus::Dropped;
-                    c_done += status == tour::GameStatus::Done;
-                    c_running |= status == tour::GameStatus::Running;
-                }
-            }
-            const auto label = (by_round ? trf("Round {} · {} / {} games", cycle, c_done, c_total)
-                                         : trf("Cycle {} · {} / {} games", cycle, c_done, c_total)) +
-                               fmt::format("###cycle{}-{}", cycle, blocks[cycle]++);
-            ImGui::SetNextItemOpen(c_running || (c_done > 0 && c_done < c_total), ImGuiCond_Appearing);
-            open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_SpanAvailWidth);
+    for (std::size_t i = 0; i < s.rows.size(); ++i) {
+        const auto& row   = s.rows[i];
+        const auto number = by_round ? row.encounter.round : row.encounter.cycle;
+        s.last_round      = std::max(s.last_round, row.encounter.round);
+        if (s.groups.empty() || s.groups.back().number != number) {
+            ScheduleGroup g;
+            g.first  = i;
+            g.number = number;
+            g.block  = blocks[number]++;
+            s.groups.push_back(g);
         }
-        if (!open) continue;
-
-        ImGui::PushID(static_cast<int>(i));
-        ImGui::TextDisabled("%s",
-                            (by_round ? trf("G{}", row.encounter.cycle) : trf("R{}", row.encounter.round)).c_str());
-        ImGui::SameLine(px(60));
-        ImGui::TextUnformatted(fmt::format("{} – {}", name(row.encounter.first), name(row.encounter.second)).c_str());
-        for (int g = 0; g < 2; ++g) {
-            ImGui::SameLine(ImGui::GetContentRegionAvail().x * 0 + px(380) + g * px(90));
-            const auto n = uint64_t{row.encounter.index} * 2 + g;
-            ImGui::PushStyleColor(ImGuiCol_Text, statusColor(row.status[g]));
-            const auto it = result_of.find(n);
-            ImGui::TextUnformatted(it != result_of.end()
-                                       ? fmt::format("{} {}", statusText(row.status[g]), it->second).c_str()
-                                       : statusText(row.status[g]));
-            ImGui::PopStyleColor();
-            if (row.status[g] == tour::GameStatus::Done &&
-                ImGui::BeginPopupContextItem(fmt::format("g{}", g).c_str())) {
-                if (ImGui::MenuItem(TR("Play this game again"))) {
-                    tour::Edit e;
-                    e.kind  = tour::Edit::Kind::VoidGames;
-                    e.games = {{row.encounter.index, g}};
-                    e.why   = TR("replay requested");
-                    applyTournamentEdit(e);
-                }
-                if (ImGui::MenuItem(TR("Void this game (no replay)"))) {
-                    tour::Edit e;
-                    e.kind   = tour::Edit::Kind::VoidGames;
-                    e.games  = {{row.encounter.index, g}};
-                    e.replay = false;
-                    e.why    = TR("voided");
-                    applyTournamentEdit(e);
-                }
-                ImGui::EndPopup();
-            }
-            if (row.status[g] == tour::GameStatus::Done && ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("%s", TR("Right click: play again or void this game."));
-            }
+        auto& g = s.groups.back();
+        g.last  = i + 1;
+        for (const auto status : row.status) {
+            s.done += status == tour::GameStatus::Done;
+            s.running += status == tour::GameStatus::Running;
+            s.pending += status == tour::GameStatus::Pending;
+            g.total += status != tour::GameStatus::Dropped;
+            g.done += status == tour::GameStatus::Done;
+            g.running |= status == tour::GameStatus::Running;
         }
-        const std::string* opening = nullptr;
-        if (const auto it = schedule_openings_.find(row.encounter.index); it != schedule_openings_.end()) {
-            opening = &it->second;
-        } else if (const auto r = round_opening.find({row.encounter.cycle, row.encounter.round});
-                   r != round_opening.end()) {
-            opening = &r->second;
-        }
-        if (opening) {
-            ImGui::SameLine(px(380) + 2 * px(90) + px(10));
-            ImGui::TextDisabled("%s", opening->c_str());
-        }
-        ImGui::PopID();
     }
-    if (open) ImGui::TreePop();
-    (void)obs;
+}
+
+void App::drawSchedule() {
+    const auto* t = run_.tournament();
+    if (!t) return;
+    refreshSchedule();
+
+    const float panel = std::max(px(340), ImGui::GetContentRegionAvail().x * 0.34f);
+    ImGui::BeginChild("##schedule_list", ImVec2(ImGui::GetContentRegionAvail().x - panel - px(16), 0));
+
+    const auto& spec = t->spec();
+    const auto name  = [&](int id) -> std::string {
+        const auto* p = spec.participant(id);
+        return p ? p->engine.name : "?";
+    };
+    ImGui::TextDisabled(
+        "%s", trf("{} played · {} running · {} to play", schedule_.done, schedule_.running, schedule_.pending).c_str());
+
+    const bool by_round = tour::pairedAsItGoes(spec.format);
+    for (const auto& group : schedule_.groups) {
+        // The block's progress in its header; the one being played is open.
+        const auto label = (by_round ? trf("Round {} · {} / {} games", group.number, group.done, group.total)
+                                     : trf("Cycle {} · {} / {} games", group.number, group.done, group.total)) +
+                           fmt::format("###cycle{}-{}", group.number, group.block);
+        ImGui::SetNextItemOpen(group.running || (group.done > 0 && group.done < group.total), ImGuiCond_Appearing);
+        if (!ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_SpanAvailWidth)) continue;
+
+        // Only the rows in sight are drawn: a cycle of a few hundred engines has tens of thousands.
+        ImGuiListClipper clipper;
+        clipper.Begin(static_cast<int>(group.last - group.first));
+        while (clipper.Step()) {
+            for (int k = clipper.DisplayStart; k < clipper.DisplayEnd; ++k) {
+                const auto i    = group.first + static_cast<std::size_t>(k);
+                const auto& row = schedule_.rows[i];
+                ImGui::PushID(static_cast<int>(i));
+                ImGui::TextDisabled(
+                    "%s", (by_round ? trf("G{}", row.encounter.cycle) : trf("R{}", row.encounter.round)).c_str());
+                ImGui::SameLine(px(60));
+                ImGui::TextUnformatted(
+                    fmt::format("{} – {}", name(row.encounter.first), name(row.encounter.second)).c_str());
+                for (int g = 0; g < 2; ++g) {
+                    ImGui::SameLine(px(380) + g * px(90));
+                    const auto n = uint64_t{row.encounter.index} * 2 + g;
+                    ImGui::PushStyleColor(ImGuiCol_Text, statusColor(row.status[g]));
+                    const auto it = schedule_.result_of.find(n);
+                    ImGui::TextUnformatted(it != schedule_.result_of.end()
+                                               ? fmt::format("{} {}", statusText(row.status[g]), it->second).c_str()
+                                               : statusText(row.status[g]));
+                    ImGui::PopStyleColor();
+                    if (row.status[g] == tour::GameStatus::Done &&
+                        ImGui::BeginPopupContextItem(fmt::format("g{}", g).c_str())) {
+                        // The journal keeps the reason in English, whatever the language of the interface.
+                        if (ImGui::MenuItem(TR("Play this game again"))) {
+                            tour::Edit e;
+                            e.kind  = tour::Edit::Kind::VoidGames;
+                            e.games = {{row.encounter.index, g}};
+                            e.why   = N_("replay requested");
+                            applyTournamentEdit(e);
+                        }
+                        if (ImGui::MenuItem(TR("Void this game (no replay)"))) {
+                            tour::Edit e;
+                            e.kind   = tour::Edit::Kind::VoidGames;
+                            e.games  = {{row.encounter.index, g}};
+                            e.replay = false;
+                            e.why    = N_("voided");
+                            applyTournamentEdit(e);
+                        }
+                        ImGui::EndPopup();
+                    }
+                    if (row.status[g] == tour::GameStatus::Done && ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip("%s", TR("Right click: play again or void this game."));
+                    }
+                }
+                const std::string* opening = nullptr;
+                if (const auto it = schedule_.openings.find(row.encounter.index); it != schedule_.openings.end()) {
+                    opening = &it->second;
+                } else if (const auto r = schedule_.round_openings.find({row.encounter.cycle, row.encounter.round});
+                           r != schedule_.round_openings.end()) {
+                    opening = &r->second;
+                }
+                if (opening) {
+                    ImGui::SameLine(px(380) + 2 * px(90) + px(10));
+                    ImGui::TextDisabled("%s", opening->c_str());
+                }
+                ImGui::PopID();
+            }
+        }
+        ImGui::TreePop();
+    }
     ImGui::EndChild();
 
     ImGui::SameLine(0, px(16));
@@ -325,16 +344,24 @@ void App::drawEditPanel() {
             ImGui::RadioButton(TR("Losses on time and crashes"), &edit_replay_filter_, 0);
             ImGui::RadioButton(TR("Every game of an engine"), &edit_replay_filter_, 1);
             if (edit_replay_filter_ == 1) participantChoice(TR("Engine"));
-            for (const auto& r : t->results()) {
-                if (r.voided) continue;
-                using T = fastchess::MatchTermination;
-                const bool pick =
-                    edit_replay_filter_ == 0
-                        ? r.termination == T::TIMEOUT || r.termination == T::DISCONNECT || r.termination == T::STALL
-                        : r.white == edit_participant_ || r.black == edit_participant_;
-                if (pick) edit.games.emplace_back(r.encounter, r.game);
+            const auto games_key = fmt::format("{}:{}:{}:{}", static_cast<const void*>(t), t->version(),
+                                               edit_replay_filter_, edit_participant_);
+            if (edit_preview_.games_key != games_key) {
+                edit_preview_.games_key = games_key;
+                edit_preview_.games.clear();
+                for (const auto& r : t->results()) {
+                    if (r.voided) continue;
+                    using T = fastchess::MatchTermination;
+                    const bool pick =
+                        edit_replay_filter_ == 0
+                            ? r.termination == T::TIMEOUT || r.termination == T::DISCONNECT || r.termination == T::STALL
+                            : r.white == edit_participant_ || r.black == edit_participant_;
+                    if (pick) edit_preview_.games.emplace_back(r.encounter, r.game);
+                }
             }
-            edit.why = edit_replay_filter_ == 0 ? TR("loss on time or crash") : TR("replay requested");
+            edit.games = edit_preview_.games;
+            // The journal keeps the reason in English, whatever the language of the interface.
+            edit.why = edit_replay_filter_ == 0 ? N_("loss on time or crash") : N_("replay requested");
             ImGui::TextDisabled("%s", trn("{} game", "{} games", edit.games.size(), edit.games.size()).c_str());
             if (edit.games.empty()) ready = false;
             break;
@@ -344,7 +371,16 @@ void App::drawEditPanel() {
     // What it would change, computed by making the change on a copy.
     ImGui::Spacing();
     if (ready) {
-        const auto impact = t->preview(edit);
+        // Made again when the tournament or the edit changed, not every frame: a copy of a big tournament.
+        const auto key =
+            fmt::format("{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}", static_cast<const void*>(t), t->version(),
+                        static_cast<int>(edit.kind), edit.engine.name, edit.engine.cmd, edit.catch_up, edit.participant,
+                        edit.void_played, edit.cycles, edit_preview_.games_key, edit.games.size());
+        if (edit_preview_.key != key) {
+            edit_preview_.key    = key;
+            edit_preview_.impact = t->preview(edit);
+        }
+        const auto& impact = edit_preview_.impact;
         if (!impact.error.empty()) {
             ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
             ImGui::TextWrapped("%s", impact.error.c_str());

@@ -260,8 +260,8 @@ void App::drawTournamentOverview() {
     ui::beginCard("progress_card");
     const auto& spec = t->spec();
     if (tour::pairedAsItGoes(spec.format)) {
-        uint32_t round = 0;
-        for (const auto& row : t->scheduleRows()) round = std::max(round, row.encounter.round);
+        refreshSchedule();
+        const auto round = schedule_.last_round;
         ImGui::TextUnformatted(spec.format == tour::Format::Swiss ? trf("Round {} / {}", round, spec.rounds).c_str()
                                                                   : trf("Round {}", round).c_str());
         const auto all = run_.info().total_games;

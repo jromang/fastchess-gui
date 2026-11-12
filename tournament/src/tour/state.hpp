@@ -15,6 +15,7 @@
 // opened, PGN text past the last journaled game is cut, and games that were running are simply played again,
 // with the opening their encounter started with. Resuming is therefore exact at any concurrency.
 
+#include <atomic>
 #include <cstdint>
 #include <deque>
 #include <filesystem>
@@ -188,6 +189,10 @@ class TournamentState {
     // Scored games, in the order they finished, voided ones included (flagged).
     [[nodiscard]] std::vector<GameResult> results() const;
 
+    // Changes each time a game is claimed, released or recorded and at each edit, once the change is made: what the
+    // views compute from the schedule and the results is computed again only when it moved.
+    [[nodiscard]] uint64_t version() const noexcept { return version_.load(); }
+
     // Why the last write to spec().pgn_out failed, empty when it worked; the games wait for the next try.
     [[nodiscard]] std::string pgnOutError() const;
 
@@ -282,6 +287,13 @@ class TournamentState {
 
     std::optional<UndoPoint> undo_;
     uint64_t claims_ = 0;  // games claimed since the tournament was opened
+
+    // version(): bumped when a change is over, the mutex released (declared before the lock_guard).
+    std::atomic<uint64_t> version_{0};
+    struct Bump {
+        std::atomic<uint64_t>& version;
+        ~Bump() { ++version; }
+    };
 
     fastchess::SPRT sprt_;
     bool finished_ = false;
