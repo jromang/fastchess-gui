@@ -63,9 +63,12 @@ bool engineCombo(const char* id, std::string& value, const std::vector<EngineEnt
     bool changed = false;
     ImGui::SetNextItemWidth(width);
     if (ImGui::BeginCombo(id, value.empty() ? TR("(choose)") : value.c_str(), ImGuiComboFlags_HeightLargest)) {
-        std::vector<std::string> names;
-        for (const auto& e : engines) names.push_back(e.name);
-        if (const int i = ui::searchComboItems(names, value); i >= 0) {
+        std::vector<std::string> names, more;
+        for (const auto& e : engines) {
+            names.push_back(e.name);
+            more.push_back(engineSearchText(e));
+        }
+        if (const int i = ui::searchComboItems(names, value, &more); i >= 0) {
             value   = names[i];
             changed = true;
         }
@@ -855,12 +858,14 @@ void App::setupParticipants() {
     // Adding engines.
     ImGui::SetNextItemWidth(260.0f * ImGui::GetFontSize() / 16.0f);
     if (ImGui::BeginCombo("##add_participant", TR("Add an engine…"), ImGuiComboFlags_HeightLargest)) {
-        std::vector<std::string> names;
+        std::vector<std::string> names, more;
         for (const auto& e : engines_) {
-            if (std::none_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; }))
+            if (std::none_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; })) {
                 names.push_back(e.name);
+                more.push_back(engineSearchText(e));
+            }
         }
-        if (const int i = ui::searchComboItems(names, ""); i >= 0) {
+        if (const int i = ui::searchComboItems(names, "", &more); i >= 0) {
             list.push_back({names[i]});
             changed = true;
         }

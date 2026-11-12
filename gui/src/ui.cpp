@@ -549,7 +549,8 @@ CopyAs copyButton(const char* id, bool small) {
     return choice;
 }
 
-int searchComboItems(const std::vector<std::string>& names, const std::string& current) {
+int searchComboItems(const std::vector<std::string>& names, const std::string& current,
+                     const std::vector<std::string>* more) {
     static std::string search;  // one combo is open at a time
     const bool appearing = ImGui::IsWindowAppearing();
     if (appearing) {
@@ -572,7 +573,10 @@ int searchComboItems(const std::vector<std::string>& names, const std::string& c
     std::vector<int> shown;
     int current_row = -1;
     for (int i = 0; i < static_cast<int>(names.size()); ++i) {
-        if (!needle.empty() && lower(names[i]).find(needle) == std::string::npos) continue;
+        const bool found = needle.empty() || lower(names[i]).find(needle) != std::string::npos ||
+                           (more && i < static_cast<int>(more->size()) &&
+                            lower((*more)[i]).find(needle) != std::string::npos);
+        if (!found) continue;
         if (names[i] == current) current_row = static_cast<int>(shown.size());
         shown.push_back(i);
     }

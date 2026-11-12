@@ -149,6 +149,10 @@ void App::frame() {
             sprt_calc_open_ = true;
         } else if (w == "engines")
             page_ = Page::Engines;
+        else if (w == "engines-card") {
+            page_            = Page::Engines;
+            selected_engine_ = engines_.empty() ? -1 : 0;
+        }
         else if (w == "console")
             page_ = Page::Log;
         else if (w == "settings")

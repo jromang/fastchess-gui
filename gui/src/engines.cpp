@@ -353,6 +353,20 @@ bool sameEngine(const EngineEntry& a, const EngineEntry& b) {
     return same_program && a.args == b.args;
 }
 
+std::string engineSearchText(const EngineEntry& entry) {
+    return entry.id_name + '\n' + entry.id_author + '\n' + entry.cmd + '\n' + entry.notes;
+}
+
+bool engineMatches(const EngineEntry& entry, const std::string& needle) {
+    if (needle.empty()) return true;
+    auto lower = [](std::string s) {
+        for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        return s;
+    };
+    const auto n = lower(needle);
+    return lower(entry.name).find(n) != std::string::npos || lower(engineSearchText(entry)).find(n) != std::string::npos;
+}
+
 bool isWinboard(const EngineEntry& entry) {
     if (entry.protocol == "xboard") return true;
     auto lower = [](std::string s) {

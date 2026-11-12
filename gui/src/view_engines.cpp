@@ -34,6 +34,20 @@ bool editText(const char* id, std::string& value, float width = -FLT_MIN) {
     return false;
 }
 
+// A text of several lines, of any length.
+bool editNotes(const char* id, std::string& value, ImVec2 size) {
+    const auto resize = [](ImGuiInputTextCallbackData* data) {
+        if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
+            auto* text = static_cast<std::string*>(data->UserData);
+            text->resize(static_cast<std::size_t>(data->BufTextLen));
+            data->Buf = text->data();
+        }
+        return 0;
+    };
+    return ImGui::InputTextMultiline(id, value.data(), value.capacity() + 1, size, ImGuiInputTextFlags_CallbackResize,
+                                     resize, &value);
+}
+
 // What is wrong with the engine's program, empty when nothing is.
 std::string programProblem(const EngineEntry& e) {
     switch (e.program_state) {
@@ -476,7 +490,8 @@ void App::drawEngines() {
         std::copy_n(engine_search_.data(), n, buffer);
         buffer[n] = 0;
         ImGui::SetNextItemWidth(-FLT_MIN);
-        if (ImGui::InputTextWithHint("##engine_search", TR("Search: name, program, author"), buffer, sizeof(buffer)))
+        if (ImGui::InputTextWithHint("##engine_search", TR("Search: name, program, author, notes"), buffer,
+                                     sizeof(buffer)))
             engine_search_ = buffer;
 
         const float half = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x) / 2;
@@ -553,11 +568,7 @@ void App::drawEngines() {
         const auto& e = engines_[i];
         if (!engine_group_.empty() && std::find(e.groups.begin(), e.groups.end(), engine_group_) == e.groups.end())
             continue;
-        if (!engine_search_.empty() && !containsCaseInsensitive(e.name, engine_search_) &&
-            !containsCaseInsensitive(e.id_name, engine_search_) &&
-            !containsCaseInsensitive(e.id_author, engine_search_) && !containsCaseInsensitive(e.cmd, engine_search_)) {
-            continue;
-        }
+        if (!engineMatches(e, engine_search_)) continue;
         const bool gone = e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
         const bool keep = engine_status_ == 1   ? !gone && e.program_state != ProgramState::Changed && e.check_ok == 1
                           : engine_status_ == 2 ? !gone && (e.check_ok == 0 || e.program_state == ProgramState::Changed)
@@ -638,8 +649,9 @@ void App::drawEngines() {
                                             : isWinboard(e)   ? std::string(TR("A WinBoard engine."))
                                                               : std::string(TR("Not checked yet."));
                 const bool more           = problem.empty() && !e.check_message.empty();
-                ImGui::SetTooltip("%s %s%s%s", mark, meaning.c_str(), more ? "\n" : "",
-                                  more ? e.check_message.c_str() : "");
+                ImGui::SetTooltip("%s %s%s%s%s%s", mark, meaning.c_str(), more ? "\n" : "",
+                                  more ? e.check_message.c_str() : "", e.notes.empty() ? "" : "\n\n",
+                                  e.notes.c_str());
             }
             if (ImGui::BeginPopupContextItem()) {
                 if (!marked) {
@@ -815,6 +827,11 @@ void App::drawEngines() {
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("%s", TR("Its card in Ratings: results, health and rating over every tournament."));
 
+    ui::label(TR("Notes"), label);
+    changed |= editNotes("##notes", e.notes, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 3.5f));
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + label);
+    ImGui::TextDisabled("%s", TR("Anything to remember about it; the engine searches find it."));
+
     // Health check.
     ImGui::Spacing();
     ImGui::BeginDisabled(check_.valid() || start_after_reads_ || in_use);
@@ -872,11 +889,14 @@ void App::drawEngines() {
     ImGui::SetNextItemWidth(160.0f * ImGui::GetFontSize() / 16.0f);
     if (ImGui::BeginCombo("##test_opponent", quick_test_opponent_.empty() ? TR("itself") : quick_test_opponent_.c_str(),
                           ImGuiComboFlags_HeightLargest)) {
-        std::vector<std::string> names{TR("itself")};  // first: the engine itself
+        std::vector<std::string> names{TR("itself")}, more{""};  // first: the engine itself
         for (const auto& o : engines_) {
-            if (o.name != e.name) names.push_back(o.name);
+            if (o.name == e.name) continue;
+            names.push_back(o.name);
+            more.push_back(engineSearchText(o));
         }
-        if (const int i = ui::searchComboItems(names, quick_test_opponent_.empty() ? names[0] : quick_test_opponent_);
+        if (const int i =
+                ui::searchComboItems(names, quick_test_opponent_.empty() ? names[0] : quick_test_opponent_, &more);
             i >= 0) {
             quick_test_opponent_ = i == 0 ? std::string() : names[i];
         }

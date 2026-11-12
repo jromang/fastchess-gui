@@ -56,6 +56,13 @@ struct CheckResult {
 // Windows file names ignore case: C:\Engines\SF.EXE is c:\engines\sf.exe.
 [[nodiscard]] bool sameEngine(const EngineEntry& a, const EngineEntry& b);
 
+// What the engine searches look in besides the engine's name: the name the engine reports, its author, its program
+// and the notes, one per line.
+[[nodiscard]] std::string engineSearchText(const EngineEntry& entry);
+
+// The engine's name or its engineSearchText() contains `needle`, letter case aside. An empty needle takes every engine.
+[[nodiscard]] bool engineMatches(const EngineEntry& entry, const std::string& needle);
+
 // A WinBoard engine: its protocol is xboard, or it goes through an external adapter (wb2uci).
 [[nodiscard]] bool isWinboard(const EngineEntry& entry);
 

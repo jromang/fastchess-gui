@@ -141,7 +141,10 @@ void emptyState(const char* text);
 
 // The inside of a combo of many names, such as the engines of a large library, once BeginCombo returned true: a
 // search field on top, focused, then the names containing what is typed (Enter takes the first), only the rows in
-// sight drawn. `current` is marked and scrolled to. Returns the index of the name chosen, or -1. Call EndCombo after.
-int searchComboItems(const std::vector<std::string>& names, const std::string& current);
+// sight drawn. `current` is marked and scrolled to. `more`, when given, holds by name other text the search looks in
+// too (an engine's author, program and notes, see engineSearchText). Returns the index of the name chosen, or -1. Call
+// EndCombo after.
+int searchComboItems(const std::vector<std::string>& names, const std::string& current,
+                     const std::vector<std::string>* more = nullptr);
 
 }  // namespace fcg::ui

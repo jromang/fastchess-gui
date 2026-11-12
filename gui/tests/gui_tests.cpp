@@ -926,6 +926,34 @@ TEST_CASE("an engine imported again is known by its program and arguments, not b
 #endif
 }
 
+TEST_CASE("the engine searches find the name, the name reported, the author, the program and the notes") {
+    namespace fs = std::filesystem;
+    EngineEntry e;
+    e.name      = "SF dev";
+    e.id_name   = "Stockfish 250101";
+    e.id_author = "the Stockfish developers";
+    e.cmd       = "/engines/sf/stockfish-avx2";
+    e.notes     = "Strong at blitz.\nLoses on time at 1+0.01 with Hash 4096.";
+    CHECK(engineMatches(e, ""));
+    CHECK(engineMatches(e, "sf DEV"));
+    CHECK(engineMatches(e, "250101"));
+    CHECK(engineMatches(e, "developers"));
+    CHECK(engineMatches(e, "avx2"));
+    CHECK(engineMatches(e, "BLITZ"));
+    CHECK(engineMatches(e, "loses on time"));
+    CHECK_FALSE(engineMatches(e, "komodo"));
+
+    // The notes are kept in engines.json.
+    const auto dir = fs::temp_directory_path() / "fcg-notes-test";
+    fs::remove_all(dir);
+    Storage storage(dir);
+    storage.saveEngines({e});
+    const auto engines = storage.loadEngines();
+    REQUIRE(engines.size() == 1);
+    CHECK(engines[0].notes == e.notes);
+    fs::remove_all(dir);
+}
+
 TEST_CASE("a folder is opened by a file URL that spaces, accents and # cannot break") {
     CHECK(ui::fileUrl("/home/jeff/runs/2026_RR") == "file:///home/jeff/runs/2026_RR");
     CHECK(ui::fileUrl(std::filesystem::path(u8"/home/Hélène/Mes tournois #2")) ==
