@@ -145,13 +145,45 @@ void App::addEngine(const std::string& path) {
 }
 
 void App::refreshPrograms() {
-    bool save = false;
+    // What the file system tells at once; the CRCs (seconds for hundreds of large engines after an import) are read
+    // in the background, see pollFingerprints.
+    std::vector<std::string> programs;
     for (auto& e : engines_) {
-        save |= refreshProgram(e);
+        if (programNeedsCrc(e)) {
+            if (std::find(programs.begin(), programs.end(), e.cmd) == programs.end()) programs.push_back(e.cmd);
+            continue;
+        }
         // A rebuilt engine has its options read again, so that the option table matches the new build.
         if (e.program_state == ProgramState::Changed && !probing(e.name)) probe_queue_.push_back(e.name);
     }
+    if (programs.empty()) return;
+    if (fingerprints_.valid()) {
+        refresh_programs_again_ = true;
+        return;
+    }
+    fingerprints_ = std::async(std::launch::async, [programs, cancel = &fingerprints_cancel_] {
+        std::vector<std::pair<std::string, tour::FileFingerprint>> out;
+        for (const auto& p : programs) {
+            if (*cancel) break;
+            out.emplace_back(p, tour::fingerprint(p));
+        }
+        return out;
+    });
+}
+
+void App::pollFingerprints() {
+    if (!fingerprints_.valid() || fingerprints_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
+    bool save = false;
+    for (const auto& [program, fingerprint] : fingerprints_.get()) {
+        for (auto& e : engines_) {
+            // Not if it changed meanwhile: another program, or found out since.
+            if (e.cmd != program || !programNeedsCrc(e)) continue;
+            save |= applyFingerprint(e, fingerprint);
+            if (e.program_state == ProgramState::Changed && !probing(e.name)) probe_queue_.push_back(e.name);
+        }
+    }
     if (save) storage_.saveEngines(engines_);
+    if (std::exchange(refresh_programs_again_, false)) refreshPrograms();
 }
 
 bool App::inSetup(const std::string& name) const {
@@ -206,6 +238,8 @@ bool App::startAfterReads(std::function<void()> start) {
 }
 
 void App::pollProbe() {
+    pollFingerprints();
+
     // Start the next queued probe when idle, but never while a run is being set up, or waits for the reads to end.
     // The engines of the setup first: its Start waits for them.
     if (!probe_.valid() && !probe_queue_.empty() && !run_.running() && !start_after_reads_) {

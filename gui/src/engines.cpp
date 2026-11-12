@@ -85,7 +85,7 @@ std::optional<UciOptionInfo> parseUciOption(std::string_view line) {
     return option;
 }
 
-bool refreshProgram(EngineEntry& entry) {
+bool programNeedsCrc(EngineEntry& entry) {
     namespace fs = std::filesystem;
     std::error_code ec;
     if (entry.cmd.empty()) {
@@ -100,21 +100,44 @@ bool refreshProgram(EngineEntry& entry) {
         entry.program_state = ProgramState::MissingDir;
         return false;
     }
+    if (entry.program.size == 0) return true;
+    const auto size  = fs::file_size(entry.cmd, ec);
+    const auto mtime = fs::last_write_time(entry.cmd, ec).time_since_epoch().count();
+    if (ec || size != entry.program.size) {
+        entry.program_state = ProgramState::Changed;
+        return false;
+    }
+    if (entry.program.mtime != 0 && mtime == entry.program.mtime) {
+        entry.program_state = ProgramState::Ok;
+        return false;
+    }
+    return true;
+}
+
+bool applyFingerprint(EngineEntry& entry, const tour::FileFingerprint& now) {
+    if (now.size == 0) {
+        entry.program_state = ProgramState::Missing;  // gone, or unreadable, meanwhile
+        return false;
+    }
     if (entry.program.size == 0) {
-        entry.program       = tour::fingerprint(entry.cmd);
+        entry.program       = now;
         entry.program_state = ProgramState::Ok;
         return true;
     }
-    if (tour::changedSince(entry.cmd, entry.program)) {
+    if (now.size != entry.program.size || now.crc32 != entry.program.crc32) {
         entry.program_state = ProgramState::Changed;
         return false;
     }
     entry.program_state = ProgramState::Ok;
     // Same contents under a new date (copied, touched): remember the date, so the CRC is not read every time.
-    const auto mtime = fs::last_write_time(entry.cmd, ec).time_since_epoch().count();
-    if (ec || mtime == entry.program.mtime) return false;
-    entry.program.mtime = mtime;
+    if (now.mtime == entry.program.mtime) return false;
+    entry.program.mtime = now.mtime;
     return true;
+}
+
+bool refreshProgram(EngineEntry& entry) {
+    if (!programNeedsCrc(entry)) return false;
+    return applyFingerprint(entry, tour::fingerprint(entry.cmd));
 }
 
 namespace {

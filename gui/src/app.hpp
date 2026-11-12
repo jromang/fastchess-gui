@@ -298,6 +298,7 @@ class App {
 
     // engines
     void refreshPrograms();
+    void pollFingerprints();  // the CRCs refreshPrograms reads in the background
     // Reads the engine's options now, or first when another engine is being read.
     void startProbe(int index);
     // This engine's options are being read, or waiting to be.
@@ -457,6 +458,9 @@ class App {
     std::future<CheckResult> check_;
     int check_index_ = -1;
     std::vector<std::string> check_queue_;  // engine names waiting for a check
+    std::atomic<bool> fingerprints_cancel_{false};
+    std::future<std::vector<std::pair<std::string, tour::FileFingerprint>>> fingerprints_;  // by program
+    bool refresh_programs_again_ = false;  // asked while the CRCs were read
     std::string engine_search_;
     std::string engine_group_;  // shown group, empty = all
     struct ImportPreview {

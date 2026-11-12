@@ -61,6 +61,8 @@ App::~App() {
         if (probe_.valid()) probe_.wait();
         if (check_.valid()) check_.wait();
     }
+    fingerprints_cancel_ = true;
+    if (fingerprints_.valid()) fingerprints_.wait();
     cancelBookScan();
     for (auto& f : abandoned_scans_) f.wait();
     storage_.saveSetup(setup_);

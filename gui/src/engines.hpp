@@ -63,6 +63,13 @@ struct CheckResult {
 // now. Cheap unless the program's date moved: then its CRC is read. Returns true when the entry must be saved.
 bool refreshProgram(EngineEntry& entry);
 
+// refreshProgram in two parts, to read the CRCs of many programs off the UI thread. The first asks only the file
+// system: it sets entry.program_state and returns false, or returns true, the state left as it was, when only the
+// program's CRC can tell (a program never fingerprinted, or the same size under another date).
+[[nodiscard]] bool programNeedsCrc(EngineEntry& entry);
+// The second, with the program's fingerprint now (tour::fingerprint). Returns true when the entry must be saved.
+bool applyFingerprint(EngineEntry& entry, const tour::FileFingerprint& now);
+
 // The working directory fastchess should use for this engine.
 [[nodiscard]] std::string engineWorkingDir(const EngineEntry& entry);
 

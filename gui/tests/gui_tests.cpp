@@ -189,6 +189,38 @@ TEST_CASE("an engine's program: taken as it is, then noticed when rebuilt, moved
     CHECK(e.program_state == ProgramState::Missing);
 }
 
+TEST_CASE("an engine's program is fingerprinted in two parts, its CRC read only when the file system cannot tell") {
+    const auto dir     = tempDir("program-crc");
+    const auto program = dir / "engine";
+    std::ofstream(program) << "build 1";
+
+    EngineEntry e;
+    e.cmd = program.string();
+    REQUIRE(programNeedsCrc(e));  // never fingerprinted
+    CHECK(applyFingerprint(e, tour::fingerprint(e.cmd)));
+    CHECK(e.program_state == ProgramState::Ok);
+    CHECK_FALSE(programNeedsCrc(e));  // same size, same date
+
+    // Another size: rebuilt, without reading it.
+    std::ofstream(program) << "build 10";
+    CHECK_FALSE(programNeedsCrc(e));
+    CHECK(e.program_state == ProgramState::Changed);
+
+    // The same size under another date: only the CRC tells.
+    std::ofstream(program) << "build 1";
+    fs::last_write_time(program, fs::last_write_time(program) + std::chrono::seconds(5));
+    e.program_state = ProgramState::Unknown;
+    REQUIRE(programNeedsCrc(e));
+    CHECK(applyFingerprint(e, tour::fingerprint(e.cmd)));  // the new date, to save
+    CHECK(e.program_state == ProgramState::Ok);
+    std::ofstream(program) << "build 2";
+    fs::last_write_time(program, fs::last_write_time(program) + std::chrono::seconds(10));
+    REQUIRE(programNeedsCrc(e));
+    CHECK_FALSE(applyFingerprint(e, tour::fingerprint(e.cmd)));
+    CHECK(e.program_state == ProgramState::Changed);
+    fs::remove_all(dir);
+}
+
 TEST_CASE("openings: PGN tags, and the Games filter by ECO code, range or words of the name") {
     const std::string pgn =
         "[Event \"x\"]\n[ECO \"B90\"]\n[Opening \"Sicilian Defense: Najdorf Variation\"]\n\n"
