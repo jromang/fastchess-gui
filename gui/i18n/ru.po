@@ -836,8 +836,8 @@ msgstr "Партии также дописаны в {}"
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr "Партии, проигранные по времени, из-за вылета или нелегального хода"
 
-msgid "Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by their name, as in the PGN."
-msgstr "Партии других программ или рейтинг-листов (CCRL, CEGT…), учитываемые вместе с турнирными. Движки опознаются по имени, как в PGN."
+msgid "Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
+msgstr "Партии других программ или рейтинг-листов (CCRL, CEGT…), учитываемые вместе с турнирными. Движки различаются по имени, как в PGN; игрок с именем движка из библиотеки (без учёта регистра и пробелов) считается этим движком."
 
 msgid "Games written to {}"
 msgstr "Партии записаны в {}"
@@ -1847,8 +1847,11 @@ msgstr "Дебютная книга должна быть файлом .epd, .pg
 msgid "The openings appear here once their games are played."
 msgstr "Дебюты появляются здесь, как только сыграны их партии."
 
-msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured since the tournament was started or resumed."
-msgstr "Процессорное время процессов каждого движка, пока он думает (не больше ядер, чем у него потоков), и пока думает соперник (ноль без ponder). Измеряется с момента запуска или возобновления турнира."
+msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
+msgstr "Игроки из PGN-файлов, опознанные как движки библиотеки по имени (без учёта регистра и пробелов): их партии считаются партиями движка, и применяются его настройки (рейтинг из списка как опорный)."
+
+msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
+msgstr "Процессорное время процессов каждого движка, пока он думает (не больше ядер, чем его потоков) и пока думает соперник (ноль без пондеринга). Измеряется во время партий, сыгранных в окне, и сохраняется вместе с ними для возобновления турнира."
 
 msgid "The program changed since it was last read (rebuilt or replaced)."
 msgstr "Программа изменилась с момента последнего чтения (пересобрана или заменена)."
@@ -2111,6 +2114,9 @@ msgstr "против"
 msgid "against {}"
 msgstr "против {}"
 
+msgid "and {} more"
+msgstr "и ещё {}"
+
 msgid "automatic"
 msgstr "автоматически"
 
@@ -2314,6 +2320,12 @@ msgid_plural "{} engines imported; their options are being read."
 msgstr[0] "{} движок импортирован; его опции считываются."
 msgstr[1] "{} движка импортированы; их опции считываются."
 msgstr[2] "{} движков импортировано; их опции считываются."
+
+msgid "{} engine of the library in the PGN files"
+msgid_plural "{} engines of the library in the PGN files"
+msgstr[0] "{} движок библиотеки в PGN-файлах"
+msgstr[1] "{} движка библиотеки в PGN-файлах"
+msgstr[2] "{} движков библиотеки в PGN-файлах"
 
 msgid "{} engine waiting to be checked"
 msgid_plural "{} engines waiting to be checked"

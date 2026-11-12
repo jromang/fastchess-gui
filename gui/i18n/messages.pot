@@ -835,7 +835,7 @@ msgstr ""
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr ""
 
-msgid "Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by their name, as in the PGN."
+msgid "Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
 msgstr ""
 
 msgid "Games written to {}"
@@ -1843,7 +1843,10 @@ msgstr ""
 msgid "The openings appear here once their games are played."
 msgstr ""
 
-msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured since the tournament was started or resumed."
+msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
+msgstr ""
+
+msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
 msgstr ""
 
 msgid "The program changed since it was last read (rebuilt or replaced)."
@@ -2106,6 +2109,9 @@ msgstr ""
 msgid "against {}"
 msgstr ""
 
+msgid "and {} more"
+msgstr ""
+
 msgid "automatic"
 msgstr ""
 
@@ -2302,6 +2308,11 @@ msgstr[1] ""
 
 msgid "{} engine imported; its options are being read."
 msgid_plural "{} engines imported; their options are being read."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} engine of the library in the PGN files"
+msgid_plural "{} engines of the library in the PGN files"
 msgstr[0] ""
 msgstr[1] ""
 

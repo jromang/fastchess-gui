@@ -834,8 +834,8 @@ msgstr "对局也已追加到 {}"
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr "超时判负、崩溃或非法着法而输掉的对局"
 
-msgid "Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by their name, as in the PGN."
-msgstr "其他程序或等级分榜（CCRL、CEGT…）的对局，与锦标赛的对局一起统计。引擎按 PGN 中的名称识别。"
+msgid "Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
+msgstr "其他程序或等级分列表（CCRL、CEGT…）的对局，与锦标赛的对局一起计算。引擎按名称识别，与 PGN 中一致；名称与库中某引擎相同（忽略大小写和空格）的棋手即为该引擎。"
 
 msgid "Games written to {}"
 msgstr "对局已写入 {}"
@@ -1839,8 +1839,11 @@ msgstr "开局库必须是 .epd、.pgn 或 .bin (Polyglot) 文件。"
 msgid "The openings appear here once their games are played."
 msgstr "开局的对局下完后，开局会显示在这里。"
 
-msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured since the tournament was started or resumed."
-msgstr "每个引擎进程所用的处理器时间，分别统计它思考时（核心数不超过其线程数）和对手思考时（不后台思考时为零）。从锦标赛开始或恢复时起测量。"
+msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
+msgstr "按名称（忽略大小写和空格）被识别为库中引擎的 PGN 文件棋手：其对局计为该引擎的对局，并应用该引擎的设置（其在某列表上的等级分，作为锚点）。"
+
+msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
+msgstr "每个引擎进程的处理器时间：思考时（核心数不超过其线程数）以及对手思考时（不开启后台思考则为零）。在窗口中进行的对局期间测量，并随对局保存，以便恢复锦标赛时使用。"
 
 msgid "The program changed since it was last read (rebuilt or replaced)."
 msgstr "自上次读取以来程序已改变（重新编译或被替换）。"
@@ -2101,6 +2104,9 @@ msgstr "对阵"
 msgid "against {}"
 msgstr "对阵 {}"
 
+msgid "and {} more"
+msgstr "以及另外 {} 个"
+
 msgid "automatic"
 msgstr "自动"
 
@@ -2294,6 +2300,10 @@ msgstr[0] "找到 {} 个引擎。取消勾选不需要的。"
 msgid "{} engine imported; its options are being read."
 msgid_plural "{} engines imported; their options are being read."
 msgstr[0] "已导入 {} 个引擎；正在读取其选项。"
+
+msgid "{} engine of the library in the PGN files"
+msgid_plural "{} engines of the library in the PGN files"
+msgstr[0] "PGN 文件中有 {} 个库引擎"
 
 msgid "{} engine waiting to be checked"
 msgid_plural "{} engines waiting to be checked"

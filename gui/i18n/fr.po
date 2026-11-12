@@ -835,8 +835,8 @@ msgstr "Parties ajoutées aussi à {}"
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr "Parties perdues au temps, par un crash ou un coup illégal"
 
-msgid "Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by their name, as in the PGN."
-msgstr "Parties d'autres programmes ou de listes de classement (CCRL, CEGT…) comptées avec celles des tournois. Les moteurs sont identifiés par leur nom, tel que dans le PGN."
+msgid "Games of other programs or rating lists (CCRL, CEGT…) counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
+msgstr "Les parties d'autres programmes ou de listes de classement (CCRL, CEGT…) comptées avec celles des tournois. Les moteurs sont connus par leur nom, comme dans le PGN ; un joueur qui porte le nom d'un moteur de la bibliothèque, à la casse et aux espaces près, est ce moteur."
 
 msgid "Games written to {}"
 msgstr "Parties écrites dans {}"
@@ -1843,8 +1843,11 @@ msgstr "Le livre d'ouvertures doit être un fichier .epd, .pgn ou .bin (Polyglot
 msgid "The openings appear here once their games are played."
 msgstr "Les ouvertures apparaissent ici dès que leurs parties sont jouées."
 
-msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured since the tournament was started or resumed."
-msgstr "Le temps processeur des processus de chaque moteur, pendant qu'il réfléchit (pas plus de cœurs que ses threads) et pendant que son adversaire réfléchit (aucun sans pondering). Mesuré depuis le lancement ou la reprise du tournoi."
+msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
+msgstr "Les joueurs des fichiers PGN reconnus comme moteurs de la bibliothèque, par leur nom, à la casse et aux espaces près : leurs parties sont celles du moteur, et ses réglages s'appliquent (son classement sur une liste, comme ancre)."
+
+msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
+msgstr "Le temps processeur des processus de chaque moteur, pendant qu'il réfléchit (pas plus de cœurs que ses threads) et pendant que son adversaire réfléchit (aucun sans ponder). Mesuré pendant les parties jouées dans la fenêtre, et gardé avec elles pour la reprise du tournoi."
 
 msgid "The program changed since it was last read (rebuilt or replaced)."
 msgstr "Le programme a changé depuis sa dernière lecture (recompilé ou remplacé)."
@@ -2106,6 +2109,9 @@ msgstr "contre"
 msgid "against {}"
 msgstr "contre {}"
 
+msgid "and {} more"
+msgstr "et {} de plus"
+
 msgid "automatic"
 msgstr "automatique"
 
@@ -2304,6 +2310,11 @@ msgid "{} engine imported; its options are being read."
 msgid_plural "{} engines imported; their options are being read."
 msgstr[0] "{} moteur importé ; lecture de ses options en cours."
 msgstr[1] "{} moteurs importés ; lecture de leurs options en cours."
+
+msgid "{} engine of the library in the PGN files"
+msgid_plural "{} engines of the library in the PGN files"
+msgstr[0] "{} moteur de la bibliothèque dans les fichiers PGN"
+msgstr[1] "{} moteurs de la bibliothèque dans les fichiers PGN"
 
 msgid "{} engine waiting to be checked"
 msgid_plural "{} engines waiting to be checked"
