@@ -2,11 +2,40 @@
 #include <types/exception.hpp>
 
 #include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #include <chess.hpp>
 #include <doctest/doctest.hpp>
 
 namespace fastchess {
+
+namespace {
+
+// The moves of each game, read with a parser of the given buffer size.
+template <std::size_t BUFFER_SIZE>
+std::vector<std::string> parseMoves(const std::string& pgn) {
+    class Moves : public chess::pgn::Visitor {
+       public:
+        void startPgn() override { games.emplace_back(); }
+        void header(std::string_view, std::string_view) override {}
+        void startMoves() override {}
+        void move(std::string_view move, std::string_view) override { games.back() += std::string(move) + " "; }
+        void endPgn() override {}
+
+        std::vector<std::string> games;
+    };
+
+    std::istringstream stream(pgn);
+    Moves visitor;
+    chess::pgn::StreamParser<BUFFER_SIZE> parser(stream);
+    parser.readGames(visitor);
+    return visitor.games;
+}
+
+}  // namespace
+
 TEST_SUITE("PGN Reader") {
     TEST_CASE("Read PGN file") {
         book::PgnReader reader("app/tests/data/test.pgn");
@@ -153,6 +182,39 @@ TEST_SUITE("PGN Reader") {
 
         CHECK_THROWS_WITH_AS(reader = std::make_unique<book::PgnReader>("app/tests/data/das.pgn"),
                              "Failed to open file: app/tests/data/das.pgn", fastchess_exception);
+    }
+
+    TEST_CASE("Read PGN file with escape lines") {
+        // A line starting with '%' is ignored (PGN standard 6), not read as a move or a header.
+        book::PgnReader reader("app/tests/data/escape_lines.pgn");
+        const auto games = reader.get();
+
+        REQUIRE(games.size() == 3);
+
+        const auto uci = [](const book::Opening& opening) {
+            std::vector<std::string> moves;
+            for (const auto& move : opening.moves) moves.push_back(chess::uci::moveToUci(move, false));
+            return moves;
+        };
+
+        CHECK(uci(games[0]) == std::vector<std::string>{"e2e4", "e7e5", "g1f3", "b8c6"});
+        CHECK(uci(games[1]) == std::vector<std::string>{"d2d4", "d7d5", "c2c4"});
+        CHECK(uci(games[2]) == std::vector<std::string>{"c2c4", "c7c5"});
+    }
+
+    TEST_CASE("PGN escape lines across buffer boundaries") {
+        // Tiny buffers put the chunk boundaries everywhere, inside the escape lines and around them.
+        const std::string pgn =
+            "% a book [v1]\n%\n[Event \"?\"]\n\n% x\n1. e4 e5 2. Nf3 *\n\n"
+            "[Event \"?\"]\n%% [Round \"9\"]\n\n1. d4\r\n%d5\r\nd5 *\n%%%\n";
+        const std::vector<std::string> expected = {"e4 e5 Nf3 ", "d4 d5 "};
+
+        CHECK(parseMoves<2>(pgn) == expected);
+        CHECK(parseMoves<3>(pgn) == expected);
+        CHECK(parseMoves<4>(pgn) == expected);
+        CHECK(parseMoves<5>(pgn) == expected);
+        CHECK(parseMoves<7>(pgn) == expected);
+        CHECK(parseMoves<1024>(pgn) == expected);
     }
 
     TEST_CASE("Read DFRC PGN file") {

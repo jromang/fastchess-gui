@@ -60,6 +60,25 @@ TEST_CASE("book scan: a PGN book gives the position after its moves, and the mov
     CHECK(BookScan(book, 2).item(0).san.size() == 2);  // cut at 2 plies
 }
 
+TEST_CASE("book scan: the escape lines of a PGN book are ignored, and counted") {
+    // PGN standard 6: a '%' in the first column makes the line a comment, here before the games, between the
+    // headers and the moves, inside the move text and inside the headers.
+    const auto book = write("fcg-scan-escape.pgn",
+                            "% an opening book [v1]\n% made by a tool\n\n"
+                            "[Event \"a\"]\n\n% before the moves\n1. e4 e5 2. Nf3 Nc6 *\n\n"
+                            "[Event \"b\"]\n\n1. d4 d5\r\n% inside the moves\r\n2. c4 *\n% between games\n\n"
+                            "[Event \"c\"]\n% inside the headers\n[Round \"3\"]\n\n1. c4 c5 *\n");
+    const BookScan scan(book, -1);
+    REQUIRE(scan.size() == 3);
+    CHECK(scan.item(0).san == std::vector<std::string>{"e4", "e5", "Nf3", "Nc6"});
+    CHECK(scan.item(1).san == std::vector<std::string>{"d4", "d5", "c4"});
+    CHECK(scan.item(2).san == std::vector<std::string>{"c4", "c5"});
+    CHECK(scan.escapeLines() == 6);
+    CHECK(scan.count(BOOK_ILLEGAL | BOOK_DUPLICATE | BOOK_MIRRORED | BOOK_OVER) == 0);
+
+    CHECK(BookScan(write("fcg-scan-plain.pgn", "[Event \"a\"]\n\n1. e4 e5 *\n"), -1).escapeLines() == 0);
+}
+
 TEST_CASE("book scan: Chess960 positions are recognised; unreadable books are reported") {
     const auto book = write("fcg-scan960.epd", "bbqnnrkr/pppppppp/8/8/8/8/PPPPPPPP/BBQNNRKR w HFhf -\n");
     const BookScan scan(book, -1);

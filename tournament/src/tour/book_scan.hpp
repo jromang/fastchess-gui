@@ -48,6 +48,10 @@ class BookScan {
     [[nodiscard]] uint8_t flags(std::size_t i) const { return flags_.at(i); }
     [[nodiscard]] std::size_t count(uint8_t flag) const;
 
+    // The escape lines of a PGN book (a '%' in the first column): ignored, as the PGN standard says, but read as
+    // moves by fastchess-gui 0.4.13 and earlier, which could then play some of its openings from a wrong position.
+    [[nodiscard]] std::size_t escapeLines() const noexcept { return escape_lines_; }
+
     // Opening `i`, in the book's order.
     [[nodiscard]] BookItem item(std::size_t i) const;
 
@@ -57,8 +61,9 @@ class BookScan {
    private:
     [[nodiscard]] std::string position(std::size_t i) const;  // the starting position, FEN
 
-    Kind kind_     = Kind::Epd;
-    bool chess960_ = false;
+    Kind kind_                = Kind::Epd;
+    bool chess960_            = false;
+    std::size_t escape_lines_ = 0;
     std::variant<fastchess::book::EpdReader, fastchess::book::PgnReader, std::vector<std::string>> book_;
     std::vector<uint8_t> flags_;
 };

@@ -60,6 +60,22 @@ bool looksChess960(const std::string& fen) {
     return false;
 }
 
+// The lines of `file` whose first character is '%'.
+std::size_t countEscapeLines(const fs::path& file) {
+    std::ifstream in(file, std::ios::binary);
+    std::vector<char> chunk(1 << 16);
+    std::size_t lines = 0;
+    bool line_start   = true;
+    while (in.read(chunk.data(), static_cast<std::streamsize>(chunk.size())) || in.gcount() > 0) {
+        const auto n = static_cast<std::size_t>(in.gcount());
+        for (std::size_t i = 0; i < n; ++i) {
+            if (line_start && chunk[i] == '%') ++lines;
+            line_start = chunk[i] == '\n';
+        }
+    }
+    return lines;
+}
+
 bool legal(const chess::Board& board) {
     using namespace chess;
     if (board.pieces(PieceType::KING, Color::WHITE).count() != 1) return false;
@@ -139,10 +155,11 @@ BookScan::BookScan(const fs::path& file, int plies, const std::atomic<bool>* can
         std::string head(1 << 16, '\0');
         in.read(head.data(), static_cast<std::streamsize>(head.size()));
         head.resize(static_cast<std::size_t>(in.gcount()));
-        const auto h = lower(head);
-        chess960_    = h.find("[variant \"chess960\"]") != std::string::npos ||
-                       h.find("[variant \"fischerandom\"]") != std::string::npos;
-        book_        = fastchess::book::PgnReader(file.string(), plies, chess960_);
+        const auto h  = lower(head);
+        chess960_     = h.find("[variant \"chess960\"]") != std::string::npos ||
+                        h.find("[variant \"fischerandom\"]") != std::string::npos;
+        book_         = fastchess::book::PgnReader(file.string(), plies, chess960_);
+        escape_lines_ = countEscapeLines(file);
     } else if (ext == ".epd") {
         kind_ = Kind::Epd;
         book_ = fastchess::book::EpdReader(file.string());
