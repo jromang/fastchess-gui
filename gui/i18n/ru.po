@@ -152,6 +152,9 @@ msgstr "Идёт матч: дождитесь его окончания, что�
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "PV матовой оценки должен иметь правильную длину и заканчиваться матом. PV всегда проверяются на нелегальные ходы; ходы с неверным PV отмечаются на вкладке «Партии»."
 
+msgid "A page, an engine, a tournament, an action…"
+msgstr "Страница, движок, турнир, действие…"
+
 msgid "A rating list, for the reference Elo…"
 msgstr "Рейтинг-лист для опорного рейтинга Elo…"
 
@@ -1334,6 +1337,9 @@ msgstr "Заметки"
 msgid "Nothing found."
 msgstr "Ничего не найдено."
 
+msgid "Nothing matches."
+msgstr "Ничего не найдено."
+
 msgid "Notify when a match ends"
 msgstr "Уведомлять об окончании матча"
 
@@ -2098,6 +2104,9 @@ msgstr "Учтённые партии в виде PGN из одних загол
 
 msgid "The games wait for {}: {}. Another try after each game."
 msgstr "Партии ждут {}: {}. Новая попытка после каждой партии."
+
+msgid "The guide, at this page (F1)"
+msgstr "Руководство по этой странице (F1)"
 
 msgid "The last 30 days"
 msgstr "Последние 30 дней"

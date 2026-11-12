@@ -150,6 +150,9 @@ msgstr "Un match è in corso: aspetta che finisca per aprirne un altro."
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "La PV di un punteggio di matto deve avere la lunghezza giusta e finire con il matto. Le PV vengono sempre controllate per mosse illegali; le mosse con una PV errata sono segnate nella scheda Partite."
 
+msgid "A page, an engine, a tournament, an action…"
+msgstr "Una pagina, un motore, un torneo, un'azione…"
+
 msgid "A rating list, for the reference Elo…"
 msgstr "Una lista Elo, per l'Elo di riferimento…"
 
@@ -1329,6 +1332,9 @@ msgstr "Note"
 msgid "Nothing found."
 msgstr "Nessun risultato."
 
+msgid "Nothing matches."
+msgstr "Nessuna corrispondenza."
+
 msgid "Notify when a match ends"
 msgstr "Notifica quando un match finisce"
 
@@ -2089,6 +2095,9 @@ msgstr "Le partite contate, come PGN di intestazioni, che Ordo e BayesElo leggon
 
 msgid "The games wait for {}: {}. Another try after each game."
 msgstr "Le partite aspettano {}: {}. Un nuovo tentativo dopo ogni partita."
+
+msgid "The guide, at this page (F1)"
+msgstr "La guida, a questa pagina (F1)"
 
 msgid "The last 30 days"
 msgstr "Gli ultimi 30 giorni"

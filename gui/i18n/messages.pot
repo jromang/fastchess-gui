@@ -150,6 +150,9 @@ msgstr ""
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr ""
 
+msgid "A page, an engine, a tournament, an action…"
+msgstr ""
+
 msgid "A rating list, for the reference Elo…"
 msgstr ""
 
@@ -1329,6 +1332,9 @@ msgstr ""
 msgid "Nothing found."
 msgstr ""
 
+msgid "Nothing matches."
+msgstr ""
+
 msgid "Notify when a match ends"
 msgstr ""
 
@@ -2088,6 +2094,9 @@ msgid "The games counted, as a PGN of headers, which Ordo and BayesElo read: ord
 msgstr ""
 
 msgid "The games wait for {}: {}. Another try after each game."
+msgstr ""
+
+msgid "The guide, at this page (F1)"
 msgstr ""
 
 msgid "The last 30 days"

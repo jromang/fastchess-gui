@@ -148,6 +148,9 @@ msgstr "比赛正在进行：请等它结束后再打开另一场。"
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "将杀分数的 PV 必须长度正确并以将杀结束。PV 中的非法着法总是会被检查；PV 错误的着法会在“对局”页中标出。"
 
+msgid "A page, an engine, a tournament, an action…"
+msgstr "页面、引擎、锦标赛、操作…"
+
 msgid "A rating list, for the reference Elo…"
 msgstr "等级分榜，用于参考 Elo…"
 
@@ -1324,6 +1327,9 @@ msgstr "备注"
 msgid "Nothing found."
 msgstr "未找到。"
 
+msgid "Nothing matches."
+msgstr "没有匹配项。"
+
 msgid "Notify when a match ends"
 msgstr "比赛结束时通知"
 
@@ -2080,6 +2086,9 @@ msgstr "计入的对局，以只含头信息的 PGN 输出，可供 Ordo 和 Bay
 
 msgid "The games wait for {}: {}. Another try after each game."
 msgstr "对局正在等待 {}：{}。每局结束后重试。"
+
+msgid "The guide, at this page (F1)"
+msgstr "本页的指南（F1）"
 
 msgid "The last 30 days"
 msgstr "最近 30 天"
