@@ -14,6 +14,7 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -141,8 +142,12 @@ struct CpuUse {
 class GuiObserver final : public fastchess::observer::GameObserver, public tour::RecordListener {
    public:
     // `state` is the match about to be played; the games it already holds (a resumed match) are queued as if
-    // they had just been played, except for the search statistics, which are not kept.
+    // they had just been played, read from the PGN on a thread of their own (a big tournament takes seconds), before
+    // the games played meanwhile.
     GuiObserver(int slots, const tour::TournamentState& state);
+    ~GuiObserver() override;
+    GuiObserver(const GuiObserver&)            = delete;
+    GuiObserver& operator=(const GuiObserver&) = delete;
 
     // --- callbacks, tournament threads ---
     void onGameStart(const fastchess::observer::GameStart& info) override;
@@ -169,6 +174,9 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
 
     // Is anything going on in slot `i` (cheap, for tab labels)?
     [[nodiscard]] bool slotActive(int i) const;
+
+    // The games a resumed tournament already holds are still being read.
+    [[nodiscard]] bool loading() const;
 
     // Moves the games and statistics that arrived since the last call into the given vectors.
     void drain(std::vector<GameRecord>& games, std::vector<fastchess::Stats>& stats);
@@ -222,6 +230,7 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
                         std::optional<int64_t> decision_ms);
     GameRecord makeRecord(const tour::GameResult& result, std::string_view pgn = {});  // data_mutex_ held
     void countLoss(const tour::GameResult& result);                                    // data_mutex_ held
+    void loadPlayed(std::vector<tour::GameResult> results);  // the games a resumed tournament holds; loader_
 
     std::string engine_a_;
     std::string engine_b_;
@@ -248,6 +257,12 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     std::unordered_map<std::string, uint16_t> opening_index_;  // "eco|name" -> index
     std::unordered_map<uint64_t, GameExtras> extras_;          // by the game's PGN offset
     std::vector<EngineTotals> totals_;
+
+    // While the games already played are read, the games recorded meanwhile wait here to come after them.
+    bool loading_ = false;
+    std::vector<GameRecord> arrived_;
+    std::atomic<bool> stop_loading_{false};
+    std::thread loader_;  // last: started once everything else is there
 };
 
 }  // namespace fcg
