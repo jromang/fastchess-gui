@@ -478,6 +478,16 @@ CheckResult checkEngine(const EngineEntry& entry) {
     return result;
 }
 
+OptionPath optionPath(const UciOptionInfo& option) {
+    if (option.type != "string") return OptionPath::None;
+    auto name = option.name;
+    for (auto& c : name) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    const auto has = [&](const char* word) { return name.find(word) != std::string::npos; };
+    if (has("path") || has("dir") || has("folder")) return OptionPath::Folder;
+    if (has("file") || has("book") || has("network") || has("weights")) return OptionPath::File;
+    return OptionPath::None;
+}
+
 void showWdlByDefault(EngineEntry& entry) {
     const bool has = std::any_of(entry.uci_options.begin(), entry.uci_options.end(),
                                  [](const UciOptionInfo& o) { return o.name == "UCI_ShowWDL" && o.type == "check"; });

@@ -806,6 +806,23 @@ TEST_CASE("engine lists of ChessGUI, cutechess and Arena are imported") {
     fs::remove_all(dir);
 }
 
+TEST_CASE("string options that hold a file or a folder are told by their name") {
+    const auto kind = [](const char* name, const char* type = "string") {
+        UciOptionInfo o;
+        o.name = name;
+        o.type = type;
+        return optionPath(o);
+    };
+    CHECK(kind("EvalFile") == OptionPath::File);
+    CHECK(kind("BookFile") == OptionPath::File);
+    CHECK(kind("WeightsFile") == OptionPath::File);
+    CHECK(kind("SyzygyPath") == OptionPath::Folder);
+    CHECK(kind("NalimovPath") == OptionPath::Folder);
+    CHECK(kind("Book Path") == OptionPath::Folder);
+    CHECK(kind("UCI_Opponent") == OptionPath::None);
+    CHECK(kind("OwnBook", "check") == OptionPath::None);
+}
+
 TEST_CASE("an engine imported again is known by its program and arguments, not by its options") {
     EngineEntry known;
     known.cmd     = "/engines/sf/stockfish";

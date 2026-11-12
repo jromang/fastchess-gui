@@ -648,6 +648,12 @@ void App::handleDialogs() {
                     storage_.saveEngines(engines_);
                 }
                 break;
+            case Dialogs::Purpose::EngineOption:
+                if (selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size())) {
+                    engines_[selected_engine_].setOption(option_browse_, path);
+                    storage_.saveEngines(engines_);
+                }
+                break;
             case Dialogs::Purpose::Book:
                 setup_.book = path;
                 saveSetupSoon();

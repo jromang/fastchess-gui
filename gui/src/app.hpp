@@ -469,6 +469,7 @@ class App {
     std::set<std::string> engine_marked_;    // several engines chosen (Ctrl or Shift click), by name
     std::vector<std::string> remove_names_;  // waiting for the removal to be confirmed
     std::string group_to_add_;
+    std::string option_browse_;  // the UCI option a file dialog is open for
     struct ImportPreview {
         ImportResult result;
         std::vector<char> known;   // by engine: already in the list, not added again

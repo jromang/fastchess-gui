@@ -36,7 +36,8 @@ class Dialogs {
         SuiteFile,
         ExportSuiteCsv,
         TournamentsFolder,
-        PgnOut
+        PgnOut,
+        EngineOption  // a file or a folder for a UCI option (EvalFile, SyzygyPath)
     };
 
     struct Answer {

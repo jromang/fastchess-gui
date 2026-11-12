@@ -1005,6 +1005,18 @@ void App::drawEngines() {
                     value  = v ? "true" : "false";
                     edited = true;
                 }
+            } else if (const auto path = optionPath(opt); path != OptionPath::None) {
+                // A file or a folder: typed, or chosen.
+                edited =
+                    editText("##v", value, ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x);
+                ImGui::SameLine();
+                if (ImGui::Button("…##browse")) {
+                    option_browse_ = opt.name;
+                    if (path == OptionPath::File)
+                        dialogs_.openFile(Dialogs::Purpose::EngineOption, {}, value);
+                    else
+                        dialogs_.openFolder(Dialogs::Purpose::EngineOption, value);
+                }
             } else {
                 edited = editText("##v", value);
             }

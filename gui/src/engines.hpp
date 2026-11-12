@@ -73,6 +73,11 @@ bool applyFingerprint(EngineEntry& entry, const tour::FileFingerprint& now);
 // The working directory fastchess should use for this engine.
 [[nodiscard]] std::string engineWorkingDir(const EngineEntry& entry);
 
+// A string option that holds a file (EvalFile, BookFile) or a folder (SyzygyPath, NalimovPath), told by its name: the
+// option editor offers to browse for it.
+enum class OptionPath { None, File, Folder };
+[[nodiscard]] OptionPath optionPath(const UciOptionInfo& option);
+
 // Removes options the engine does not have (any more) and values equal to the default.
 void pruneOptions(EngineEntry& entry);
 
