@@ -42,6 +42,8 @@ void Runner::start() {
             std::lock_guard<std::mutex> lock(mutex_);
             if (in_flight_ == 0 && !state_.hasWork()) break;
         }
+        // A withdrawal may have dropped the game a pair was waiting for.
+        closeSettledPairs();
         std::this_thread::sleep_for(20ms);
     }
 
@@ -74,6 +76,7 @@ void Runner::play(const GameTask& task) {
 
     try {
         // A paused tournament lets running games (and the other game of their pair) finish but starts no new pair.
+        // The pair is closed by closeSettledPairs() when its other game was played before, or will not be.
         const auto ticket = fastchess::observer::PauseGate::instance().enter(task.encounter.index, 2);
 
         const fastchess::GamePair<fastchess::EngineConfiguration, fastchess::EngineConfiguration> configs{task.white,
@@ -88,12 +91,20 @@ void Runner::play(const GameTask& task) {
 
     if (!t_recorded) state_.release(task);
     t_task = nullptr;
+    closeSettledPairs();
 
     {
         std::lock_guard<std::mutex> lock(mutex_);
         --in_flight_;
     }
     startNext();
+}
+
+void Runner::closeSettledPairs() {
+    // Otherwise a pair whose other game was played before a resume, voided without replay or dropped by a
+    // withdrawal would stay open, and "stop when idle" would wait for it forever.
+    fastchess::observer::PauseGate::instance().closeSettled(
+        [this](std::uint64_t encounter) { return state_.settled(static_cast<uint32_t>(encounter)); });
 }
 
 void Runner::fail(const std::string& message) {

@@ -968,6 +968,15 @@ bool TournamentState::hasWork() const {
     return hasWorkLocked();
 }
 
+bool TournamentState::settled(uint32_t encounter) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (int g = 0; g < 2; ++g) {
+        const auto n = uint64_t{encounter} * 2 + g;
+        if (!done_.count(n) && !dropped_.count(n)) return false;
+    }
+    return true;
+}
+
 bool TournamentState::hasWorkLocked() const { return !finished_ && gamesLeft(); }
 
 bool TournamentState::gamesLeft() const {

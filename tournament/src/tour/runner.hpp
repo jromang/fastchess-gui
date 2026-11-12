@@ -55,6 +55,7 @@ class Runner final : public fastchess::BaseTournament, public fastchess::observe
    private:
     void play(const GameTask& task);
     void fail(const std::string& message);
+    void closeSettledPairs();  // forgets the pause gate's pairs with no game left to start
     EngineLog& log(int slot);
     void writeLog(int slot, uint64_t game_number, const fastchess::MatchData& data);
 

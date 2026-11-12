@@ -197,6 +197,32 @@ TEST_CASE("runner: a match stopped abruptly resumes to exactly its number of gam
     CHECK(countGames(dir / "games.pgn") == 60);
 }
 
+TEST_CASE("runner: a game whose pair partner was played before leaves no pair open in the pause gate") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-lone";
+    fs::remove_all(dir);
+    auto state = TournamentState::create(dir, spec(Format::Match, 2, 1, 2));
+
+    // Game 1 of the only encounter, as if played before a stop; the runner plays game 2 alone.
+    const auto first = state->claimNext();
+    REQUIRE(first);
+    fastchess::MatchData data(chess::constants::STARTPOS);
+    data.players     = {fastchess::MatchData::PlayerInfo(first->white, chess::GameResult::DRAW),
+                        fastchess::MatchData::PlayerInfo(first->black, chess::GameResult::DRAW)};
+    data.termination = fastchess::MatchTermination::NORMAL;
+    data.duration    = "00:00:01";
+    state->complete(*first, data);
+
+    CHECK(play(*state).empty());
+    CHECK(state->finished());
+    // "Stop when idle" waits for open pairs: one left open would never let it stop.
+    CHECK(fastchess::observer::PauseGate::instance().openPairs() == 0);
+}
+
 TEST_CASE("runner: engine logs, of every game when asked, with both directions of both engines") {
     if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available, skipped");

@@ -10,6 +10,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <cstdint>
+#include <iterator>
 #include <mutex>
 #include <string>
 #include <string_view>
@@ -148,6 +149,16 @@ class PauseGate {
 
         running_++;
         return Ticket(*this);
+    }
+
+    // Forgets the open pairs for which `settled(pairing_id)` is true: no game of theirs is left to start (played,
+    // or no longer to be played), so none will come to complete them. `settled` runs under the gate's lock.
+    template <typename Settled>
+    void closeSettled(Settled settled) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        for (auto it = open_pairs_.begin(); it != open_pairs_.end();) {
+            it = settled(it->first) ? open_pairs_.erase(it) : std::next(it);
+        }
     }
 
     // Number of tasks that went through the gate and have not finished yet.

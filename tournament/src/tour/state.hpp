@@ -179,6 +179,9 @@ class TournamentState {
     // Is there anything left to claim?
     [[nodiscard]] bool hasWork() const;
 
+    // No game of the encounter is left to start: both played, or no longer to be played.
+    [[nodiscard]] bool settled(uint32_t encounter) const;
+
     // Every game played, or the SPRT decided.
     [[nodiscard]] bool finished() const;
     [[nodiscard]] std::string finishReason() const;
