@@ -59,7 +59,10 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   the tournament's engines are read first, and a queued engine can be read next from its menu.
 - **Reference Elo**: the engine's rating on a list you trust. A tournament or the rating list can be anchored on it,
   and the games of a tournament carry it in their `WhiteElo` and `BlackElo` tags (copied when the engine joins).
-- *Restart the engine for every game* starts a new process for each game instead of reusing it.
+- *Restart the engine for every game* starts a new process for each game instead of reusing it. Otherwise a
+  tournament keeps one waiting process per engine that still has games to play, up to 32 (plus two per game being
+  played), and closes an engine after its last game. An engine that fails to start is tried again three times, 10 s apart; a
+  pause holds the tries, without using them up.
 - **Moved or rebuilt programs**: the library remembers each program (size, date, CRC32). A program that is no
   longer there is marked **!** with *Locate…*, and a tournament does not start with it. A program that changed
   (a new build) has its options read again automatically. Each tournament also records the programs it was
@@ -189,7 +192,9 @@ engine, estimated duration, openings, common settings, time odds). The setup of 
   games to, like cutechess' `-pgnout` (never overwritten, in the ChessBase / Lichess or cutechess comment style),
   in schedule order: the two games of an opening side by side, rounds in order, whatever order they end in. A game
   waits there until those before it are written; a resume carries on; when the file cannot be written (locked,
-  moved), the games wait and the tournament goes on, with a warning in the overview. Extra fields in the move comments (nodes, seldepth, nps, pv, tbhits, and the
+  moved), the games wait and the tournament goes on, with a warning in the overview. A crash or a power cut while
+  games are appended never writes them twice: the resume checks the file and completes a write cut short, and
+  never removes anything from it. Extra fields in the move comments (nodes, seldepth, nps, pv, tbhits, and the
   decision time `dt=`: when the engine settled on the move it played; `wdl=W/D/L` is always written for the
   engines that report it), restarting engines
   that crash, keeping the engine log of every game (it is always kept for the games that end badly), and *Check the
@@ -207,7 +212,7 @@ A running or opened tournament has a workspace with a header (name, progress, *P
 | Tab | Contents |
 |---|---|
 | Overview | Match: Elo and nElo with their 95 % confidence interval, LOS, score, pentanomial counts, SPRT bounds and LLR; *Statistics* (folded) gives fishtest's numbers from the games and from the pairs: score, Elo, nElo and BayesElo with DrawElo, standard deviation per game, LLR of both, the variance ratio of pairs to single games, the RMS bias of the openings, the kinds of balanced pairs and the pairs won over lost, which *Copy* includes; and the charts (Elo and LLR over time, game lengths, how games ended, depth, NPS, time per move and decision time). Tournament: the standings (with *TF*, each engine's losses on time, in orange as soon as there is one; a *!* beside an engine that crashed or played an illegal move), progress by cycle or round, games per hour and time left, the latest results |
-| Standings | Points, games, losses on time (*TF*), wins/draws/losses, ratings with their confidence interval, Sonneborn-Berger (Buchholz for a Swiss), byes. *Table* lists them one engine per row; *Crosstable* (round robins, up to 200 engines) shows every pairing. *Copy* as text, or as BBCode for a forum post (with a line giving the format, time control, games and book), *Export HTML…* |
+| Standings | Points, games, losses on time (*TF*), wins/draws/losses, ratings with their confidence interval, Sonneborn-Berger (Buchholz for a Swiss), byes. *Table* lists them one engine per row; *Crosstable* (round robins, up to 200 engines) shows every pairing. *Copy* as text, or as BBCode for a forum post (with a line giving the format, time control, games and book), *Export HTML…*, all with *TF* like the headless mode's standings |
 | Bracket | Knockout only: the bracket, round by round, with the score of every match |
 | Schedule | Every game pair by cycle or round, with its state and the opening it plays (once started, or once its round started when the round shares one); editing (see below) |
 | Broadcast | Live files, the TLCS server and the web page (see below) |
@@ -221,7 +226,9 @@ WinBoard adapter included) is measured at each `go` and each move. The Overview 
 keeps busy while it thinks and the share of a core it uses while its opponent thinks, and warns when an engine uses
 clearly more cores than its `Threads`, or thinks on its opponent's time (pondering it was not asked for, a background
 thread): what makes a game unfair to the opponent and to the other games running. It needs 20 s of each to tell, and
-counts from the start or the resumption of the tournament. It only warns; it never decides a game.
+counts every game played in the window: what each game's engines used is written to `processor.tsv` in the
+tournament folder, so a resume keeps it (games played headless, or before 0.4.12, have no measure). It only warns;
+it never decides a game.
 
 **Pause** starts no new game pair. Games in progress play to the end, and so does the second game of a pair whose
 first game has started, so a pause never throws a result away. **Resume** continues. **Stop** either finishes
@@ -263,7 +270,10 @@ by their name. The games counted can be narrowed at the top of the page, for eve
 
 - a time control, a group of the engine library (the games between its engines), the last 30 or 365 days;
 - *Imported games*: the games of the PGN files listed under *PGN files…* (a CCRL or CEGT download, the games of
-  another program), read from their headers; their engines are known by the names the PGN gives them;
+  another program), read from their headers; their engines are known by the names the PGN gives them, and a name
+  that is a library engine's, letter case and spaces aside ("stockfish  17" for "Stockfish 17"), is that engine:
+  its games count as the engine's and its reference Elo can anchor them. Nothing looser: "Stockfish 17 64-bit"
+  stays a separate engine. The rating list says how many library engines the PGN files hold, its tooltip which;
 - *Anchor*: the average at 0, or one engine at a fixed rating (by default the first engine with a reference Elo).
 
 Four tabs:
@@ -292,7 +302,7 @@ The *Broadcast* tab of a running tournament publishes it while it plays; the sna
   browser on the network.
 - **lichess**: a lichess broadcast, with lichess' board, evaluation bar and chat, for anyone on the internet. It
   needs a personal API token with the `study:write` scope (*Create a token on lichess…*), kept in `settings.json`
-  in the profile only. With no round given, a broadcast named after the tournament is made, unlisted unless
+  in the profile only, saved when its field is left. With no round given, a broadcast named after the tournament is made, unlisted unless
   *Listed among lichess' broadcasts* is ticked; its link is shown once it is on air. Otherwise the games go to the
   round whose URL or id is given (a broadcast fed by pushes, not by a source URL). The games in progress are
   pushed every 8 seconds with their clocks, and each finished game once; a round holds 64 games,
@@ -302,7 +312,10 @@ The *Broadcast* tab of a running tournament publishes it while it plays; the sna
   engines' evaluations do not show there.
 
   The connection uses Mbed TLS, built into the program, and trusts only the root certificates that sign lichess.org
-  (Google Trust Services) and those of Let's Encrypt; it goes straight to lichess, not through a proxy.
+  (Google Trust Services) and those of Let's Encrypt. It goes through the HTTP proxy that `HTTPS_PROXY` (or
+  `ALL_PROXY`) names, as `http://proxy.example:3128` or `http://user:password@proxy.example:3128`, except for the
+  hosts of `NO_PROXY`; on Windows too the proxy comes from these variables, not from the system settings. SOCKS
+  proxies are not supported.
 
 ## Headless mode
 
@@ -345,7 +358,9 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
   - `tournament.json`: the format, the participants (engines copied with their options) and the conditions;
   - `journal.jsonl`: everything that happened since, one line per event (game pairs started, games finished,
     changes, Swiss and knockout pairings); with the PGN files, it is what a resume reads. A game is on disk before
-    its line, so a power cut loses at most the games being played;
+    its line, so a power cut loses at most the games being played. Game text no line points to (a game dropped by
+    a change while it was saved, or left by a crash) is replaced with blank lines, so other PGN viewers only show
+    the tournament's games;
   - `tournament.lock`: held by the program playing the tournament; another program opening the folder only
     shows it;
   - `games.pgn`: move comments in the cutechess / fastchess style, `{+0.35/18 1.234s}`, with the score from the
@@ -354,8 +369,10 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
   - `games-chessbase.pgn`: `{[%eval 0.35,18] [%clk 0:00:59.200] [%emt 0:00:01.234]}`, with the evaluation from
     White's point of view, as read by ChessBase / Fritz and Lichess;
   - `lichess.json`: the lichess broadcast and round its games went to (no token);
+  - `processor.tsv`: the processor time each game's engines used, for the *Processor use* of a resumed tournament;
   - `logs/game-N.log`: every line exchanged with both engines during game N (the number shown in the *Games*
-    tab), with the time it was sent or read, for the games lost on time, by a crash, a stall or an illegal move
+    tab), with the time it was sent or read (`W>` sent to White's engine, `W<` read from its output, `W!` read
+    from its error output: assertions, crash messages), for the games lost on time, by a crash, a stall or an illegal move
     (or every game, if asked). The first 300 and the last 5000 lines of a game are kept. It is what an engine
     author needs to reproduce a bug. For a WinBoard engine it shows the UCI side; `FCG_WB2UCI_LOG` gives the
     WinBoard side.
