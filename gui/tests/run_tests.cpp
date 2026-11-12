@@ -11,6 +11,7 @@
 
 #include <core/config/config.hpp>
 #include <core/globals/globals.hpp>
+#include <engine/uci_engine.hpp>
 
 #include "engines.hpp"
 #include "headless.hpp"
@@ -21,6 +22,8 @@
 
 #ifdef _WIN32
 #    include <windows.h>
+// After windows.h, which it needs.
+#    include <tlhelp32.h>
 #else
 #    include <unistd.h>
 #endif
@@ -746,3 +749,56 @@ TEST_CASE("EPD suite runs: every engine on every position, the totals, CSV and s
     CHECK(back[1].answers[0]->move == "Kxb2");
     fs::remove_all(dir);
 }
+
+#ifdef _WIN32
+TEST_CASE("on Windows, what an engine starts is in the engine's job and ends with it") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+    // A .bat that starts the engine: cmd.exe is the process started, the engine its child.
+    std::error_code ec;
+    const auto dir = fs::temp_directory_path() / "fcg-job-tests";
+    fs::remove_all(dir, ec);
+    fs::create_directories(dir);
+    fs::copy_file(randomMover(), dir / "fcg-job-mover.exe");
+    std::ofstream(dir / "engine.bat") << "@\"" << (dir / "fcg-job-mover.exe").string() << "\"\r\n";
+
+    char system_dir[MAX_PATH];
+    const auto n   = GetSystemDirectoryA(system_dir, MAX_PATH);
+    const auto cmd = (fs::path(std::string(system_dir, n)) / "cmd.exe").string();
+
+    HANDLE engine = nullptr;
+    {
+        fastchess::engine::process::Process process;
+        process.setRealtimeLogging(false);
+        REQUIRE(process.init(dir.string(), cmd, "/c \"" + (dir / "engine.bat").string() + "\"", "job"));
+
+        // The engine, once cmd.exe started it.
+        for (int i = 0; i < 100 && !engine; ++i) {
+            const HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+            PROCESSENTRY32 entry{};
+            entry.dwSize = sizeof(entry);
+            for (BOOL more = Process32First(snapshot, &entry); more; more = Process32Next(snapshot, &entry)) {
+                if (std::string(entry.szExeFile).find("fcg-job-mover") != std::string::npos &&
+                    static_cast<int64_t>(entry.th32ParentProcessID) == process.pid()) {
+                    engine = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, entry.th32ProcessID);
+                }
+            }
+            CloseHandle(snapshot);
+            if (!engine) std::this_thread::sleep_for(50ms);
+        }
+        REQUIRE(engine);
+        BOOL in_job = FALSE;
+        CHECK_MESSAGE(IsProcessInJob(engine, nullptr, &in_job), GetLastError());
+        CHECK(in_job);
+
+        // cmd.exe ended abruptly: the engine it started still runs, until the process is ended.
+        process.forceKill();
+        CHECK(WaitForSingleObject(engine, 300) == WAIT_TIMEOUT);
+    }
+    CHECK(WaitForSingleObject(engine, 5000) == WAIT_OBJECT_0);
+    CloseHandle(engine);
+    fs::remove_all(dir, ec);
+}
+#endif
