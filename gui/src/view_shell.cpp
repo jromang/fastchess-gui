@@ -87,6 +87,13 @@ void App::applyThemeSetting() {
     zoom_applied_                   = zoom;
 }
 
+void App::onDisplayScale(float scale) {
+    if (scale == options_.ui_scale) return;
+    options_.ui_scale              = scale;
+    ImGui::GetStyle().FontScaleDpi = scale;
+    theme_applied_.reset();  // the style is rebuilt at the new scale on the next frame
+}
+
 // Ctrl + and Ctrl -, or Ctrl and the mouse wheel, step through the sizes; Ctrl 0 goes back to 100 %.
 void App::handleZoomKeys() {
     const auto& io = ImGui::GetIO();

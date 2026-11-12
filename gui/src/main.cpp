@@ -356,6 +356,15 @@ int main(int argc, char** argv) {
                 ImGui_ImplSDL3_ProcessEvent(&event);
                 if (event.type == SDL_EVENT_QUIT) app.requestQuit();
                 if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED) app.onFocusGained();
+                // The scale of the screen the window is on, as at startup: moved to another, or changed in the
+                // system's settings.
+                if ((event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED ||
+                     event.type == SDL_EVENT_WINDOW_DISPLAY_CHANGED) &&
+                    event.window.windowID == SDL_GetWindowID(window)) {
+                    if (const auto display = SDL_GetDisplayForWindow(window)) {
+                        app.onDisplayScale(std::max(1.0f, SDL_GetDisplayContentScale(display)));
+                    }
+                }
                 if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
                     event.window.windowID == SDL_GetWindowID(window)) {
                     app.requestQuit();

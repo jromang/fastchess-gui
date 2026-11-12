@@ -171,6 +171,9 @@ class App {
     // The window came back to the front: an engine may have been rebuilt or moved meanwhile.
     void onFocusGained() { refreshPrograms(); }
 
+    // The window moved to a screen of another scale (or the screen's changed): fonts and sizes follow it.
+    void onDisplayScale(float scale);
+
     // For scripted screenshots.
     void focusWindow(const std::string& name);
     bool debugSelectGame(int index);
