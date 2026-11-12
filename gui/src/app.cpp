@@ -493,6 +493,8 @@ void App::enqueue() {
 
 void App::startFromQueue(bool go_on) {
     if (run_.running()) return;
+    // Put off as a whole while an engine is read: a start put off is not one that failed.
+    if (startAfterReads([this, go_on] { startFromQueue(go_on); })) return;
     for (std::size_t i = 0; i < queue_.size(); ++i) {
         auto next = queue_[i].setup;
         // The look of the program follows the settings, not the queued setup.
