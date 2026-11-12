@@ -381,6 +381,20 @@ void App::applyProbe() {
     storage_.saveEngines(engines_);
 }
 
+std::vector<std::string> App::uncheckedEngines() const {
+    std::vector<std::string> names;
+    for (const auto& e : engines_) {
+        const bool gone = e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
+        if (!gone && e.check_ok < 0 && !e.cmd.empty() && !e.inactive) names.push_back(e.name);
+    }
+    return names;
+}
+
+void App::askEngineList() {
+    dialogs_.openFile(Dialogs::Purpose::ImportEngineList,
+                      {{TR("Engine lists"), "txt;json;cfg;ini"}, {TR("All files"), "*"}});
+}
+
 void App::drawEngines() {
     if (!ui::beginPanel(TR("Engines###engines"))) {
         ui::endPanel();
@@ -402,10 +416,7 @@ void App::drawEngines() {
     ui::sameLineOrWrap(TR("Import…"));
     if (ImGui::Button(TR("Import…"))) ImGui::OpenPopup("import_menu");
     if (ImGui::BeginPopup("import_menu")) {
-        if (ImGui::MenuItem(TR("An engine list…"))) {
-            dialogs_.openFile(Dialogs::Purpose::ImportEngineList,
-                              {{TR("Engine lists"), "txt;json;cfg;ini"}, {TR("All files"), "*"}});
-        }
+        if (ImGui::MenuItem(TR("An engine list…"))) askEngineList();
         ImGui::TextDisabled("%s", TR("ChessGUI (ChsGUI_Eng.TXT), cutechess or Banksia (engines.json), Arena…"));
         if (ImGui::MenuItem(TR("Every engine of a folder…"))) dialogs_.openFolder(Dialogs::Purpose::ImportEngineFolder);
         if (const auto& folder = engineFolder(); !folder.empty()) {
@@ -448,11 +459,11 @@ void App::drawEngines() {
     ui::sameLineOrWrap(TR("More…"));
     if (ImGui::Button(TR("More…"))) ImGui::OpenPopup("engines_more");
     if (ImGui::BeginPopup("engines_more")) {
-        std::vector<std::string> unchecked, missing;
+        const auto unchecked = uncheckedEngines();
+        std::vector<std::string> missing;
         for (const auto& e : engines_) {
-            const bool gone = e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
-            if (gone) missing.push_back(e.name);
-            if (!gone && e.check_ok < 0 && !e.cmd.empty() && !e.inactive) unchecked.push_back(e.name);
+            if (e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir)
+                missing.push_back(e.name);
         }
         if (ImGui::MenuItem(trf("Check those not checked ({})", unchecked.size()).c_str(), nullptr, false,
                             !unchecked.empty()))

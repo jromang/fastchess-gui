@@ -21,17 +21,16 @@ namespace fcg {
 
 namespace fs = std::filesystem;
 
-namespace {
-
-float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
-
-// "20261109-185927_a_vs_b" -> "2026-11-09 18:59"
 std::string folderDate(const fs::path& dir) {
     const auto name = dir.filename().string();
     if (name.size() < 15 || name[8] != '-') return "";
     return name.substr(0, 4) + "-" + name.substr(4, 2) + "-" + name.substr(6, 2) + " " + name.substr(9, 2) + ":" +
            name.substr(11, 2);
 }
+
+namespace {
+
+float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
 
 std::string formatLabel(tour::Format format) {
     switch (format) {
@@ -224,22 +223,22 @@ void App::drawShell() {
             drawWorkspace();
             break;
         case Page::Engines:
-            ui::pageTitle(TR("Engines"));
+            ui::pageTitle(TR("Engines"), guideSection());
             drawEngines();
             break;
         case Page::Books:
-            ui::pageTitle(TR("Books"));
+            ui::pageTitle(TR("Books"), guideSection());
             drawBooks();
             break;
         case Page::Suites:
-            ui::pageTitle(TR("Test suites"));
+            ui::pageTitle(TR("Test suites"), guideSection());
             drawSuites();
             break;
         case Page::Ratings:
             drawRatings();
             break;
         case Page::Log:
-            ui::pageTitle(TR("Log"));
+            ui::pageTitle(TR("Log"), guideSection());
             drawConsole();
             break;
         case Page::Settings:
@@ -329,7 +328,7 @@ void App::drawHome() {
     refreshTournaments();
 
     const float buttons = px(330);
-    ui::pageTitle(TR("Tournaments"));
+    ui::pageTitle(TR("Tournaments"), guideSection());
     ImGui::SameLine(std::max(ImGui::GetCursorPosX() + px(20), ImGui::GetContentRegionMax().x - buttons));
     if (ui::iconButton("open_folder", ui::Icon::Folder, TR("Open a folder…"))) {
         dialogs_.openFolder(Dialogs::Purpose::OpenTournament, storage_.runsDir().string());
@@ -449,25 +448,34 @@ void App::drawHome() {
 // ---------------------------------------------------------------------------
 // New match
 
+bool App::setupChosen() const {
+    return setup_.format == TournamentFormat::Match ? !setup_.engine_a.empty() && !setup_.engine_b.empty()
+                                                    : setup_.participants.size() >= 2;
+}
+
+// SPRT bounds the wrong way round, said beside them, rather than fastchess' message once started.
+bool App::setupBadSprt() const {
+    return setup_.format == TournamentFormat::Match && setup_.mode == MatchMode::Sprt &&
+           setup_.sprt_elo1 <= setup_.sprt_elo0;
+}
+
+// Only the engines of this setup matter: the others' options can be read while it plays.
+bool App::setupProbing() const {
+    if (setup_.format == TournamentFormat::Match) return probing(setup_.engine_a) || probing(setup_.engine_b);
+    return std::any_of(setup_.participants.begin(), setup_.participants.end(),
+                       [&](const ParticipantSetup& p) { return probing(p.name); });
+}
+
 void App::drawNewMatch() {
     const bool locked = run_.running();
 
-    ui::pageTitle(TR("New tournament"));
+    ui::pageTitle(TR("New tournament"), guideSection());
     ImGui::TextDisabled("%s", TR("A match between two versions, a round robin or a gauntlet."));
 
-    const bool chosen = setup_.format == TournamentFormat::Match ? !setup_.engine_a.empty() && !setup_.engine_b.empty()
-                                                                 : setup_.participants.size() >= 2;
-    // SPRT bounds the wrong way round, said beside them, rather than fastchess' message once started.
-    const bool bad_sprt = setup_.format == TournamentFormat::Match && setup_.mode == MatchMode::Sprt &&
-                          setup_.sprt_elo1 <= setup_.sprt_elo0;
+    const bool chosen   = setupChosen();
+    const bool bad_sprt = setupBadSprt();
     const bool ready    = chosen && !bad_sprt;
-    // Only the engines of this setup matter: the others' options can be read while it plays.
-    bool probing = false;
-    if (setup_.format == TournamentFormat::Match) {
-        probing = this->probing(setup_.engine_a) || this->probing(setup_.engine_b);
-    } else {
-        for (const auto& p : setup_.participants) probing |= this->probing(p.name);
-    }
+    const bool probing  = setupProbing();
     ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
     ImGui::PushStyleColor(ImGuiCol_Text,
                           ui::currentTheme() == ui::Theme::Dark ? ImVec4(0.04f, 0.07f, 0.13f, 1) : ImVec4(1, 1, 1, 1));
@@ -545,7 +553,7 @@ void App::drawWorkspaceHeader() {
                                                   : std::string(TR("until stopped")))
                             : trf("{} engines · {} games", info.participants, info.total_games);
     ImGui::TextDisabled("%s", fmt::format("{} · {} · {}", formatLabel(info.format), info.limit_text, detail).c_str());
-    ui::pageTitle(t ? t->spec().name.c_str() : TR("No match"));
+    ui::pageTitle(t ? t->spec().name.c_str() : TR("No match"), guideSection());
 
     const auto status = runStatusText();
     if (run_.state() == RunController::State::Finished && !run_.error().empty()) {
@@ -601,7 +609,7 @@ void App::drawWorkspaceHeader() {
 
 void App::drawWorkspace() {
     if (!run_.tournament()) {
-        ui::pageTitle(TR("No match"));
+        ui::pageTitle(TR("No match"), guideSection());
         ImGui::TextDisabled("%s", TR("Start a new tournament, or open one from the list of tournaments."));
         if (ImGui::Button(TR("Tournaments"))) page_ = Page::Home;
         return;
@@ -617,6 +625,7 @@ void App::drawWorkspace() {
         const bool requested = tab_request_ == which;
         const bool open      = ImGui::BeginTabItem(label, nullptr, requested ? ImGuiTabItemFlags_SetSelected : 0);
         if (requested && open) tab_request_ = std::nullopt;
+        if (open) shown_tab_ = which;
         return open;
     };
 
@@ -845,7 +854,7 @@ void App::drawRelaunch() {
 // Settings
 
 void App::drawSettings() {
-    ui::pageTitle(TR("Settings"));
+    ui::pageTitle(TR("Settings"), guideSection());
     ImGui::Spacing();
 
     bool changed      = false;

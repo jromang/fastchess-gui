@@ -397,6 +397,25 @@ void pageTitle(const char* text) {
     ImGui::PopFont();
 }
 
+void pageTitle(const char* text, guide::Section help) {
+    pageTitle(text);
+    // As tall as the title, the circle in its middle: what follows is placed as after the title alone.
+    const float height = ImGui::GetItemRectSize().y;
+    const float size   = ImGui::GetFontSize() * 1.25f;
+    ImGui::SameLine(0, ImGui::GetFontSize() * 0.6f);
+    const bool clicked = ImGui::InvisibleButton("##guide", ImVec2(size, height));
+    const bool hovered = ImGui::IsItemHovered();
+    const ImVec2 min = ImGui::GetItemRectMin(), max = ImGui::GetItemRectMax();
+    const ImVec2 center((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f);
+    auto* dl = ImGui::GetWindowDrawList();
+    dl->AddCircleFilled(center, size * 0.5f, ImGui::GetColorU32(hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg));
+    const ImU32 col   = ImGui::GetColorU32(hovered ? ImGuiCol_Text : ImGuiCol_TextDisabled);
+    const ImVec2 mark = ImGui::CalcTextSize("?");
+    dl->AddText(ImVec2(center.x - mark.x * 0.5f, center.y - mark.y * 0.5f), col, "?");
+    if (hovered) ImGui::SetTooltip("%s", TR("The guide, at this page (F1)"));
+    if (clicked) guide::open(help);
+}
+
 void beginCard(const char* id, ImVec2 size) {
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(CARD_BG));
     ImGui::PushStyleColor(ImGuiCol_Border, ImGui::ColorConvertU32ToFloat4(CARD_BD));

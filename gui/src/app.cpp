@@ -184,7 +184,10 @@ void App::frame() {
             page_ = Page::Home;
         else if (w == "suites")
             page_ = Page::Suites;
-        else if (w == "ccrl-export") {  // the Export for CCRL dialog of the Games tab
+        else if (w.rfind("palette", 0) == 0) {  // palette=TEXT: the command palette, TEXT typed in it
+            palette_request_ = true;
+            if (const auto eq = w.find('='); eq != std::string::npos) palette_query_ = w.substr(eq + 1);
+        } else if (w == "ccrl-export") {  // the Export for CCRL dialog of the Games tab
             page_        = Page::Tournament;
             tab_request_ = Tab::Games;
             openCcrlExport();
@@ -222,6 +225,7 @@ void App::frame() {
     drawQuitModal();
     drawImportPreview();
     drawRatingImport();
+    drawPalette();
 
     // The window title tells how the run is going, also when the window is in the background.
     {
