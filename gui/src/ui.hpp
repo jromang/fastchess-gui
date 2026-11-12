@@ -117,6 +117,10 @@ void drawOpenPathError();
 // "(?)" with a tooltip.
 void help(const char* text);
 
+// With Ctrl held, the mouse wheel of this frame: +1 up, -1 down, 0 without Ctrl or a turn. It is taken from the frame
+// (call before drawing), so that the chart under the mouse (ImPlot reads io.MouseWheel) does not zoom as well.
+int takeCtrlWheel();
+
 // Label in the left column, widget in the right one (for the setup panel).
 void label(const char* text, float width);
 

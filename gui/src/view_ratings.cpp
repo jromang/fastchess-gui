@@ -109,6 +109,12 @@ void App::refreshRatings() {
         h2h_          = std::move(r.h2h);
         progress_     = std::move(r.progress);
     }
+    // The players of the PGN files are matched to the library's engines when the games are read: again when the
+    // library's names change.
+    if (!std::equal(engines_.begin(), engines_.end(), game_db_library_.begin(), game_db_library_.end(),
+                    [](const EngineEntry& e, const std::string& name) { return e.name == name; })) {
+        game_db_dirty_ = true;
+    }
     if (!game_db_dirty_ && !ratings_dirty_) return;
 
     std::vector<std::pair<std::string, double>> library;  // the engines with a reference rating, for the anchor
@@ -124,9 +130,13 @@ void App::refreshRatings() {
     in.h2h_b            = h2h_b_;
     in.progress_engines = progress_engines_;
     const auto dirs = game_db_dirty_ ? tour::tournamentDirs(storage_.runsDir()) : std::vector<std::filesystem::path>{};
+    if (game_db_dirty_) {
+        game_db_library_.clear();
+        for (const auto& e : engines_) game_db_library_.push_back(e.name);
+    }
     auto work = [in = std::move(in), dirs, pgns = ratingPgns(), filter = ratingFilter(), library = std::move(library),
-                 min_games = rating_min_games_]() mutable {
-        if (!in.db) in.db = std::make_shared<tour::GameDb>(tour::readGameDb(dirs, pgns));
+                 names = game_db_library_, min_games = rating_min_games_]() mutable {
+        if (!in.db) in.db = std::make_shared<tour::GameDb>(tour::readGameDb(dirs, pgns, names));
         const auto& db = *in.db;
 
         // The default anchor: the first engine of the library with a reference rating.
@@ -264,7 +274,8 @@ void App::drawRatingFilters() {
     if (ImGui::Button(TR("PGN files…"))) ImGui::OpenPopup("rating_pgns");
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("%s", TR("Games of other programs or rating lists (CCRL, CEGT…) counted with the "
-                                   "tournaments'. Engines are known by their name, as in the PGN."));
+                                   "tournaments'. Engines are known by their name, as in the PGN; a player whose "
+                                   "name is a library engine's, letter case and spaces aside, is that engine."));
     }
     if (ImGui::BeginPopup("rating_pgns")) {
         int remove = -1;
@@ -348,6 +359,7 @@ void App::drawRatingList() {
            "ratings.txt"));
 
     ImGui::TextDisabled("%s", trf("{} games, {} tournaments", rating_list_.games, rating_list_.tournaments).c_str());
+    drawLibraryMatches();
     if (rating_list_.entries.empty()) {
         if (!ratings_job_.valid()) ImGui::TextDisabled("%s", TR("No game yet."));
         return;
@@ -387,6 +399,40 @@ void App::drawRatingList() {
         ImGui::TextDisabled("%d", e.tournaments);
     }
     ImGui::EndTable();
+}
+
+void App::drawLibraryMatches() {
+    // The players of the PGN files taken for library engines: their games are the engine's, and its rating on a
+    // list can be the anchor.
+    const auto& matched = game_db_->matched;
+    if (matched.empty() || !rating_external_) return;
+    std::set<std::string> engines;
+    for (const auto& m : matched) engines.insert(m.second);
+    ImGui::SameLine();
+    ImGui::TextDisabled("·");
+    ImGui::SameLine();
+    ImGui::TextDisabled(
+        "%s",
+        trn("{} engine of the library in the PGN files", "{} engines of the library in the PGN files", engines.size(),
+            engines.size())
+            .c_str());
+    if (!ImGui::BeginItemTooltip()) return;
+    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+    ImGui::TextUnformatted(TR("The players of the PGN files taken for engines of the library, by their name, letter "
+                              "case and spaces aside: their games are the engine's, and its settings apply (its "
+                              "rating on a list, as the anchor)."));
+    ImGui::PopTextWrapPos();
+    constexpr std::size_t SHOWN = 30;
+    for (std::size_t i = 0; i < matched.size() && i < SHOWN; ++i) {
+        const auto& [player, engine] = matched[i];
+        if (player == engine) {
+            ImGui::BulletText("%s", engine.c_str());
+        } else {
+            ImGui::BulletText("%s → %s", player.c_str(), engine.c_str());
+        }
+    }
+    if (matched.size() > SHOWN) ImGui::TextDisabled("%s", trf("and {} more", matched.size() - SHOWN).c_str());
+    ImGui::EndTooltip();
 }
 
 void App::drawEngineCard() {

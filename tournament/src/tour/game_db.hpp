@@ -47,13 +47,24 @@ struct GameDb {
     std::vector<std::string> engines;
     std::vector<std::string> time_controls;
     std::vector<DbGame> games;  // sources in order, then each source's games in order
+    // The players of the PGN files taken for engines of the library: (name in the PGN, name in the library), by the
+    // library's name, then the PGN's. Their games are the library engine's.
+    std::vector<std::pair<std::string, std::string>> matched;
 
     [[nodiscard]] std::optional<uint32_t> engine(const std::string& name) const;
 };
 
-// The tournaments in `dirs` (folders that are not tournaments are skipped) and the PGN files in `pgns`.
+// The library engine a player of a PGN file is, nullopt when none: the one of the same name, else the only one whose
+// name is the same once letter case and spaces are set aside ("stockfish  17" is "Stockfish 17"). Nothing looser:
+// a wrong guess would give a player another engine's rating on a list, as an anchor, without a word.
+[[nodiscard]] std::optional<std::string> libraryEngine(const std::string& player,
+                                                       const std::vector<std::string>& library);
+
+// The tournaments in `dirs` (folders that are not tournaments are skipped) and the PGN files in `pgns`, whose
+// players are matched to the engines of `library` (their names) by libraryEngine().
 [[nodiscard]] GameDb readGameDb(const std::vector<std::filesystem::path>& dirs,
-                                const std::vector<std::filesystem::path>& pgns = {});
+                                const std::vector<std::filesystem::path>& pgns = {},
+                                const std::vector<std::string>& library        = {});
 
 // Which games count.
 struct GameFilter {

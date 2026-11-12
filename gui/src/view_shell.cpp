@@ -96,12 +96,13 @@ void App::onDisplayScale(float scale) {
 
 // Ctrl + and Ctrl -, or Ctrl and the mouse wheel, step through the sizes; Ctrl 0 goes back to 100 %.
 void App::handleZoomKeys() {
-    const auto& io = ImGui::GetIO();
-    if (!io.KeyCtrl) return;
+    // The wheel is taken even under a popup, where it does not zoom: with Ctrl held it never zooms a chart.
+    const int wheel = ui::takeCtrlWheel();
+    if (!ImGui::GetIO().KeyCtrl) return;
     int step = 0;
     if (ImGui::IsKeyPressed(ImGuiKey_Equal) || ImGui::IsKeyPressed(ImGuiKey_KeypadAdd)) step = 1;
     if (ImGui::IsKeyPressed(ImGuiKey_Minus) || ImGui::IsKeyPressed(ImGuiKey_KeypadSubtract)) step = -1;
-    if (io.MouseWheel != 0 && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) step = io.MouseWheel > 0 ? 1 : -1;
+    if (wheel != 0 && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) step = wheel;
 
     int zoom = setup_.ui_zoom;
     if (ImGui::IsKeyPressed(ImGuiKey_0) || ImGui::IsKeyPressed(ImGuiKey_Keypad0)) {

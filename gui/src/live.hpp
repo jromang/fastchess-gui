@@ -9,11 +9,13 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
 #include <deque>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
@@ -118,8 +120,8 @@ struct EngineTotals {
     int crashes               = 0;
     int illegal               = 0;
 
-    // Processor time of its processes while it thinks and while its opponent does, with the time those lasted;
-    // since the tournament was started or resumed.
+    // Processor time of its processes while it thinks and while its opponent does, with the time those lasted. Kept
+    // with each game (processor.tsv in the tournament's folder), so that a resumed tournament has its games' too.
     uint64_t own_cpu_ms   = 0;
     uint64_t own_wall_ms  = 0;
     uint64_t wait_cpu_ms  = 0;
@@ -138,6 +140,21 @@ struct CpuUse {
 // What looks unfair, empty when nothing does: more cores than its `threads` while it thinks, or thinking on its
 // opponent's time (pondering it was not asked for, a background thread).
 [[nodiscard]] std::string cpuProblem(const EngineTotals& totals, int threads);
+
+// What the processes of the two engines of a game used, White's then Black's: the totals of one game.
+struct GameCpu {
+    std::array<uint64_t, 2> own_cpu_ms{}, own_wall_ms{}, wait_cpu_ms{}, wait_wall_ms{};
+};
+
+// A line of processor.tsv: the game, by its PGN offset and when it ended, then what its engines used. nullopt when
+// the line is not one (cut short by a crash).
+struct GameCpuLine {
+    uint64_t offset     = 0;
+    int64_t finished_at = 0;
+    GameCpu cpu;
+};
+[[nodiscard]] std::string gameCpuLine(const GameCpuLine& line);
+[[nodiscard]] std::optional<GameCpuLine> parseGameCpuLine(std::string_view line);
 
 class GuiObserver final : public fastchess::observer::GameObserver, public tour::RecordListener {
    public:
@@ -215,6 +232,7 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
         std::array<int, 2> participant{-1, -1};
         std::array<int64_t, 2> cpu_at_go{-1, -1};
         Clock::time_point go_at{};
+        GameCpu game_cpu;  // of the game in progress
     };
 
     Slot* slot(int i) { return i >= 0 && i < static_cast<int>(slots_.size()) ? slots_[i].get() : nullptr; }
@@ -234,6 +252,8 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     void countLoss(const tour::GameResult& result);                                    // data_mutex_ held
     // Reads the games of to_load_, on loader_.
     void loadPlayed();
+    // Appends what a game's engines used to processor.tsv; tournament thread.
+    void writeGameCpu(const tour::GameResult& result, const GameCpu& cpu);
     // What the loader read of a game's PGN.
     struct LoadedGame {
         OpeningName opening;
@@ -256,6 +276,17 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     std::filesystem::path pgn_fastchess_;
     std::filesystem::path pgn_chessbase_;
 
+    // processor.tsv: its size when the tournament was opened (the lines of the games played before, which the
+    // loader reads), and the file the games played now are appended to.
+    std::filesystem::path cpu_path_;
+    uint64_t cpu_known_ = 0;
+    std::mutex cpu_mutex_;
+    std::FILE* cpu_file_ = nullptr;
+    bool cpu_failed_     = false;  // could not be opened: not tried again
+    // The lines of the games played before, by PGN offset, while the loader reads those games; loader thread only.
+    bool cpu_read_ = false;
+    std::vector<GameCpuLine> cpu_lines_;
+
     mutable std::mutex data_mutex_;
     std::vector<GameRecord> pending_games_;
     // game_id of every game handed out since records(): a game recorded while records() read the results would
@@ -266,7 +297,8 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     std::unordered_map<std::string, uint16_t> reason_index_;
     std::vector<OpeningName> openings_{1};
     std::unordered_map<std::string, uint16_t> opening_index_;  // "eco|name" -> index
-    std::unordered_map<uint64_t, GameExtras> extras_;          // by the game's PGN offset
+    // By the game's PGN offset. A game there is counted in totals_, once: by the loader or when it was recorded.
+    std::unordered_map<uint64_t, GameExtras> extras_;
     std::vector<EngineTotals> totals_;
 
     // While the games already played are read, the games recorded meanwhile wait here to come after them.

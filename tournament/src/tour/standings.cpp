@@ -409,16 +409,17 @@ std::string tableText(const Table& table, const std::string& title) {
     for (const auto& r : table.rows) width = std::max(width, r.name.size());
 
     std::string out = title.empty() ? "" : title + "\n\n";
-    out += fmt::format("{:>3}  {:<{}}  {:>6}  {:>5}  {:>6}  {:>7}  {:>5}  {:>14}", "#", "Engine", width, "Points",
-                       "Games", "%", "Elo", "+/-", "+ = -");
+    // TF: the losses on time, as in the view.
+    out += fmt::format("{:>3}  {:<{}}  {:>6}  {:>5}  {:>6}  {:>7}  {:>5}  {:>14}  {:>3}", "#", "Engine", width,
+                       "Points", "Games", "%", "Elo", "+/-", "+ = -", "TF");
     for (std::size_t c = 0; c < table.rows.size(); ++c) out += fmt::format("  {:>4}", c + 1);
     out += "\n";
 
     for (std::size_t i = 0; i < table.rows.size(); ++i) {
         const auto& r = table.rows[i];
-        out += fmt::format("{:>3}  {:<{}}  {:>6}  {:>5}  {:>5.1f}%  {:>+7}  {:>5.0f}  {:>14}", i + 1, r.name, width,
-                           half(r.points), r.games, 100.0 * r.score(), std::lround(r.rating.elo), r.rating.error,
-                           fmt::format("+{} ={} -{}", r.wins, r.draws, r.losses));
+        out += fmt::format("{:>3}  {:<{}}  {:>6}  {:>5}  {:>5.1f}%  {:>+7}  {:>5.0f}  {:>14}  {:>3}", i + 1, r.name,
+                           width, half(r.points), r.games, 100.0 * r.score(), std::lround(r.rating.elo),
+                           r.rating.error, fmt::format("+{} ={} -{}", r.wins, r.draws, r.losses), r.timeouts);
         for (const auto& c : table.rows) {
             if (c.id == r.id) {
                 out += "     -";
@@ -476,7 +477,7 @@ td.x{color:var(--muted)}
 </style></head><body>
 <h1>)" + escapeHtml(title) +
                       R"(</h1>
-<div class="card"><table><thead><tr><th>#</th><th class="l">Engine</th><th>Points</th><th>Games</th><th>%</th><th>Elo</th><th>&plusmn;</th><th>+</th><th>=</th><th>&minus;</th><th>SB</th>)";
+<div class="card"><table><thead><tr><th>#</th><th class="l">Engine</th><th>Points</th><th>Games</th><th>%</th><th>Elo</th><th>&plusmn;</th><th>+</th><th>=</th><th>&minus;</th><th title="Losses on time">TF</th><th>SB</th>)";
     for (std::size_t c = 0; c < table.rows.size(); ++c) out += fmt::format("<th>{}</th>", c + 1);
     out += "</tr></thead><tbody>\n";
 
@@ -484,9 +485,9 @@ td.x{color:var(--muted)}
         const auto& r = table.rows[i];
         out += fmt::format(
             "<tr><td>{}</td><td class=\"l\">{}</td><td>{}</td><td>{}</td><td>{:.1f}</td><td>{:+}</td><td>{:.0f}</td>"
-            "<td>{}</td><td>{}</td><td>{}</td><td>{:.2f}</td>",
+            "<td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{:.2f}</td>",
             i + 1, escapeHtml(r.name), half(r.points), r.games, 100.0 * r.score(), std::lround(r.rating.elo),
-            r.rating.error, r.wins, r.draws, r.losses, r.sb);
+            r.rating.error, r.wins, r.draws, r.losses, r.timeouts, r.sb);
         for (const auto& c : table.rows) {
             if (c.id == r.id) {
                 out += "<td class=\"x\">&ndash;</td>";
