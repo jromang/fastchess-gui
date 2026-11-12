@@ -246,6 +246,7 @@ class App {
     void drawStandingsRow(std::size_t i, bool compact, bool swiss);
     void drawPgnOutError();  // when the PGN file of setup "Also append every game to" cannot be written
     void drawCrosstable();
+    void drawOpponents(int id);  // the games of a participant against each opponent, under the standings table
     void drawSchedule();
     void drawBracket();
     void drawEditPanel();
@@ -526,6 +527,7 @@ class App {
     int crosstable_mode_ = 0;                             // 0 score, 1 wins/draws/losses, 2 Elo difference
     int standings_view_  = -1;                            // 0 table, 1 crosstable, -1 as suits the tournament
     std::optional<std::pair<int, int>> crosstable_cell_;  // participant ids (row, column)
+    std::optional<int> standings_engine_;  // participant id whose opponents are listed under the table
     std::string template_name_;
     std::vector<std::string> template_names_;  // the templates folder, listed now and then rather than every frame
     std::chrono::steady_clock::time_point templates_listed_{};

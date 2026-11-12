@@ -18,6 +18,10 @@ struct PairRecord {
     int wins   = 0;
     int draws  = 0;
     int losses = 0;
+    int white  = 0;  // games the first one played with White
+    // Encounters (a game and the one with colours reversed) of which one game only counts so far: played while the
+    // other one was not, or the other one voided.
+    int unpaired = 0;
 
     [[nodiscard]] int games() const noexcept { return wins + draws + losses; }
     [[nodiscard]] double points() const noexcept { return wins + 0.5 * draws; }

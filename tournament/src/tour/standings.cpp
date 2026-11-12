@@ -305,6 +305,12 @@ Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& re
         table.rows.push_back(s);
     }
 
+    // The games that count of each encounter, to find the pairs with one game only.
+    struct Encounter {
+        int a = 0, b = 0, games = 0;
+    };
+    std::map<uint32_t, Encounter> encounters;
+
     for (const auto& r : results) {
         if (r.voided) continue;
         const auto w = index.find(r.white);
@@ -316,7 +322,10 @@ Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& re
         auto& black     = table.rows[b->second];
         auto& wb        = table.pairs[{r.white, r.black}];
         auto& bw        = table.pairs[{r.black, r.white}];
+        auto& e         = encounters[r.encounter];
+        e               = {r.white, r.black, e.games + 1};
 
+        wb.white++;
         white.games++;
         black.games++;
         white.points += sw;
@@ -346,6 +355,12 @@ Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& re
                     break;
             }
         }
+    }
+
+    for (const auto& [number, e] : encounters) {
+        if (e.games != 1) continue;
+        table.pairs[{e.a, e.b}].unpaired++;
+        table.pairs[{e.b, e.a}].unpaired++;
     }
 
     // A bye is worth a drawn pair of games.

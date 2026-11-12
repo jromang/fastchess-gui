@@ -240,6 +240,45 @@ TEST_CASE("table: by points, by score, in seed order, with a footer in the copie
     CHECK(tableHtml(table, "Cup").find("<p class=\"foot\">") == std::string::npos);
 }
 
+TEST_CASE("table: the games of each colour against each opponent, and the pairs with one game only") {
+    auto spec   = players(4);
+    spec.format = Format::Gauntlet;
+    std::vector<GameResult> results;
+    const auto game = [&](uint32_t encounter, int white, int black, bool voided = false) {
+        GameResult r;
+        r.encounter = encounter;
+        r.game      = white == 100 ? 0 : 1;
+        r.white     = white;
+        r.black     = black;
+        r.result    = "1/2-1/2";
+        r.voided    = voided;
+        results.push_back(r);
+    };
+    game(0, 100, 101);  // A - B, both colours
+    game(0, 101, 100);
+    game(1, 100, 102);  // A - C, the second game not played yet
+    game(2, 100, 103);  // A - D, the second game voided (to be played again)
+    game(2, 103, 100, true);
+    game(3, 103, 100);  // and another pair, complete
+    game(3, 100, 103);
+    const auto table = computeTable(spec, results);
+
+    const auto ab = table.pair(100, 101);
+    CHECK(ab.games() == 2);
+    CHECK(ab.white == 1);
+    CHECK(ab.unpaired == 0);
+    const auto ac = table.pair(100, 102);
+    CHECK(ac.white == 1);
+    CHECK(ac.unpaired == 1);
+    CHECK(table.pair(102, 100).white == 0);
+    CHECK(table.pair(102, 100).unpaired == 1);
+    const auto ad = table.pair(100, 103);
+    CHECK(ad.games() == 3);
+    CHECK(ad.white == 2);
+    CHECK(ad.unpaired == 1);
+    CHECK(table.pair(103, 100).white == 1);
+}
+
 TEST_CASE("table: a head-to-head result breaks an otherwise complete tie") {
     const auto spec = players(2);
     std::vector<GameResult> results;

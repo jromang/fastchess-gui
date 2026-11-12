@@ -361,6 +361,7 @@ void App::resetRunView() {
     table_for_ = ~std::size_t(0);
     anchor_.reset();
     crosstable_cell_.reset();
+    standings_engine_.reset();
     standings_view_ = -1;
     games_subject_ = -1;
     filtered_.clear();

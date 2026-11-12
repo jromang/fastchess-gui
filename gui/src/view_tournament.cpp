@@ -150,7 +150,13 @@ void App::drawStandingsRow(std::size_t i, bool compact, bool swiss) {
     ImGui::TableNextColumn();
     ImGui::TextDisabled("%d", static_cast<int>(i + 1));
     ImGui::TableNextColumn();
-    ImGui::TextUnformatted(r.name.c_str());
+    if (compact) {
+        ImGui::TextUnformatted(r.name.c_str());
+    } else if (ImGui::Selectable(fmt::format("{}##st{}", r.name, r.id).c_str(),
+                                 standings_engine_ && *standings_engine_ == r.id,
+                                 ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap)) {
+        standings_engine_ = r.id;  // its opponents under the table
+    }
     if (compact) {
         const auto h = health(r);
         if (!h.empty()) {
@@ -397,6 +403,8 @@ void App::drawStandings() {
     const bool fits    = engines <= CROSSTABLE_MAX;
     if (standings_view_ < 0) {
         standings_view_ = format == tour::Format::RoundRobin && engines <= CROSSTABLE_AUTO ? 1 : 0;
+        // A gauntlet opens with the opponents of its (first) seed under the table.
+        if (format == tour::Format::Gauntlet && engines > 0) standings_engine_ = t->spec().participants.front().id;
     }
     if (!fits) standings_view_ = 0;
     ImGui::RadioButton(TR("Table"), &standings_view_, 0);
@@ -501,9 +509,108 @@ void App::drawStandings() {
     ImGui::Spacing();
     if (standings_view_ == 1) {
         drawCrosstable();
-    } else {
+    } else if (!standings_engine_) {
         drawStandingsTable(false);
+    } else {
+        const float list_h = std::max(px(160), ImGui::GetContentRegionAvail().y * 0.4f);
+        ImGui::BeginChild("##standings_top", ImVec2(0, -list_h));
+        drawStandingsTable(false);
+        ImGui::EndChild();
+        drawOpponents(*standings_engine_);
     }
+}
+
+void App::drawOpponents(int id) {
+    const auto* t = run_.tournament();
+    const auto* p = t ? t->spec().participant(id) : nullptr;
+    if (!p) {
+        standings_engine_.reset();
+        return;
+    }
+
+    // The opponents in the order of the table, with the games of each colour: an encounter is a game and the one
+    // with colours reversed, and a pair of which one game only counts so far is marked.
+    std::vector<std::pair<const tour::Standing*, tour::PairRecord>> rows;
+    int unpaired = 0;
+    for (const auto& r : shown_.rows) {
+        const auto record = shown_.pair(id, r.id);
+        if (r.id == id || record.games() == 0) continue;
+        rows.emplace_back(&r, record);
+        unpaired += record.unpaired;
+    }
+
+    ImGui::BeginChild("##opponents", ImVec2(0, 0));
+    ImGui::TextUnformatted(trf("{} against each opponent", p->engine.name).c_str());
+    ImGui::SameLine();
+    if (unpaired > 0) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+        ImGui::TextUnformatted(
+            trn("! {} pair with one game only", "! {} pairs with one game only", unpaired, unpaired).c_str());
+        ImGui::PopStyleColor();
+    } else if (!rows.empty()) {
+        ImGui::TextDisabled("%s", TR("every pair with both colours"));
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton(TR("Close"))) standings_engine_.reset();
+
+    constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit |
+                           ImGuiTableFlags_ScrollY | ImGuiTableFlags_PadOuterX;
+    if (ImGui::BeginTable("##opponent_list", 9, flags)) {
+        ImGui::TableSetupScrollFreeze(0, 1);
+        ImGui::TableSetupColumn(TR("Opponent"), ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn(TR("Games"));
+        ImGui::TableSetupColumn(TR("White"));
+        ImGui::TableSetupColumn(TR("Black"));
+        ImGui::TableSetupColumn("+");
+        ImGui::TableSetupColumn("=");
+        ImGui::TableSetupColumn("−");
+        ImGui::TableSetupColumn(TR("Points"));
+        ImGui::TableSetupColumn("%");
+        ImGui::TableHeadersRow();
+        for (const auto& [r, record] : rows) {
+            ImGui::TableNextRow();
+            const bool incomplete = record.unpaired > 0;
+            if (incomplete) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, (ui::WARN & 0x00FFFFFF) | 0x38000000);
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(r->name.c_str());
+            if (incomplete) {
+                ImGui::SameLine();
+                ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+                ImGui::TextUnformatted("!");
+                ImGui::PopStyleColor();
+            }
+            if (incomplete && ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                ImGui::SetTooltip("%s", trn("{} pair with one game only: the game with colours reversed is missing.",
+                                            "{} pairs with one game only: the games with colours reversed are "
+                                            "missing.",
+                                            record.unpaired, record.unpaired)
+                                            .c_str());
+            }
+            ImGui::TableNextColumn();
+            ImGui::TextDisabled("%d", record.games());
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", record.white);
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", record.games() - record.white);
+            ImGui::TableNextColumn();
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::GOOD);
+            ImGui::Text("%d", record.wins);
+            ImGui::PopStyleColor();
+            ImGui::TableNextColumn();
+            ImGui::TextDisabled("%d", record.draws);
+            ImGui::TableNextColumn();
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+            ImGui::Text("%d", record.losses);
+            ImGui::PopStyleColor();
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(half(record.points()).c_str());
+            ImGui::TableNextColumn();
+            ImGui::TextDisabled("%.1f", 100.0 * record.points() / record.games());
+        }
+        ImGui::EndTable();
+    }
+    if (rows.empty()) ImGui::TextDisabled("%s", TR("No game finished yet."));
+    ImGui::EndChild();
 }
 
 void App::drawCrosstable() {
