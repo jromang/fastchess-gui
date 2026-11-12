@@ -2843,6 +2843,9 @@ msgstr "程序结束时 {} 正在进行：现在恢复。"
 msgid "{} will be the book of the next tournament."
 msgstr "{} 将成为下一个锦标赛的开局库。"
 
+msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
+msgstr "{} 将同时是 PGN 文件和它的 zip 文件：请选择以 .pgn 结尾的名称。"
+
 msgid "{} · depth {} · {}"
 msgstr "{} · 深度 {} · {}"
 

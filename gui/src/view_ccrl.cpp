@@ -223,6 +223,14 @@ void App::writeCcrlExport(const std::string& path) {
         return;
     }
 
+    // A PGN named x.zip would be overwritten by its own zip.
+    const auto zip = tour::ccrlZipPath(file);
+    if (ccrl_.zip && zip.empty()) {
+        Console::instance().add(trf("{} would be both the PGN file and its zip: choose a name ending in .pgn.", path),
+                                true);
+        return;
+    }
+
     const auto out = tour::ccrlGames(t->pgnPath(), t->results(), t->spec(), ccrl_.e);
     {
         std::ofstream pgn(file, std::ios::binary | std::ios::trunc);
@@ -248,7 +256,6 @@ void App::writeCcrlExport(const std::string& path) {
 
     if (ccrl_.zip) {
         // The zip next to the PGN, named as the testers' scripts name it, holding the PGN under its own name.
-        const auto zip = file.parent_path() / tour::ccrlZipName(file.stem().string());
         std::string error;
         if (writeZip(zip, file.filename().string(), out.pgn, &error)) {
             Console::instance().add(trf("Zip written to {}", zip.string()));

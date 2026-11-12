@@ -2888,6 +2888,9 @@ msgstr ""
 msgid "{} will be the book of the next tournament."
 msgstr ""
 
+msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
+msgstr ""
+
 msgid "{} · depth {} · {}"
 msgstr ""
 

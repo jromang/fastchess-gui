@@ -2888,6 +2888,9 @@ msgstr "{} estava em andamento quando o programa foi encerrado: ele é retomado.
 msgid "{} will be the book of the next tournament."
 msgstr "{} será o livro do próximo torneio."
 
+msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
+msgstr "{} seria ao mesmo tempo o arquivo PGN e o seu zip: escolha um nome terminado em .pgn."
+
 msgid "{} · depth {} · {}"
 msgstr "{} · profundidade {} · {}"
 
