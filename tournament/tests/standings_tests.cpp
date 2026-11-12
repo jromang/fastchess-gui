@@ -193,8 +193,8 @@ TEST_CASE("gauntlet table: the seed, its opponents by their own points, and the 
     // Planned games unknown, no book, no name; a game still to play.
     spec.conditions.opening.file.clear();
     spec.name.clear();
-    CHECK(gauntletLine(spec, table, std::nullopt) == "6 games, 33% draws, time control:10+0.1");
-    CHECK(gauntletLine(spec, table, 8) == "6/8 games, 33% draws, time control:10+0.1");
+    CHECK(footerLine(spec, table, std::nullopt) == "6 games, 33% draws, time control:10+0.1");
+    CHECK(footerLine(spec, table, 8) == "6/8 games, 33% draws, time control:10+0.1");
 
     const auto even = scoreElo(10, 0, 10);
     REQUIRE(even.elo);
@@ -204,6 +204,40 @@ TEST_CASE("gauntlet table: the seed, its opponents by their own points, and the 
     CHECK(*ahead.elo == doctest::Approx(70.44).epsilon(0.002));
     CHECK_FALSE(scoreElo(3, 0, 0).elo);
     CHECK_FALSE(scoreElo(0, 0, 0).error);
+}
+
+TEST_CASE("table: by points, by score, in seed order, with a footer in the copies") {
+    auto spec = players(3);
+    spec.name = "Cup";
+    for (auto& p : spec.participants) p.engine.limit.tc.time = 60000;
+    std::vector<GameResult> results;
+    add(results, 100, 101, 1.0, 2);  // A beats B twice
+    add(results, 102, 100, 1.0, 1);  // C beats A, its only game so far
+    const auto table = computeTable(spec, results);
+
+    const auto names = [](const Table& t) {
+        std::string out;
+        for (const auto& r : t.rows) out += r.name;
+        return out;
+    };
+    CHECK(names(ordered(table, spec, Order::Points)) == "ACB");  // 2, 1, 0 points
+    CHECK(names(ordered(table, spec, Order::Score)) == "CAB");   // 100 %, 67 %, 0 %
+    CHECK(names(ordered(table, spec, Order::Seed)) == "ABC");
+    // The crosstable's columns follow the rows: in seed order, A's row reads -, B, C.
+    const auto seed_text = tableText(ordered(table, spec, Order::Seed), "");
+    CHECK(seed_text.find("  A  ") != std::string::npos);
+    CHECK(seed_text.find("     -     2     0\n") != std::string::npos);
+
+    const auto footer = footerLine(spec, table, 6);
+    CHECK(footer == "3/6 games, 0% draws, time control:60+0, event: Cup");
+    const auto text = tableText(table, "Cup", footer);
+    CHECK(text.size() > footer.size());
+    CHECK(text.substr(text.size() - footer.size() - 3) == "\n\n" + footer + "\n");
+    CHECK(tableText(table, "Cup").find("event") == std::string::npos);
+
+    const auto html = tableHtml(table, "Cup", "3 games & a book");
+    CHECK(html.find("<p class=\"foot\">3 games &amp; a book</p>") != std::string::npos);
+    CHECK(tableHtml(table, "Cup").find("<p class=\"foot\">") == std::string::npos);
 }
 
 TEST_CASE("table: a head-to-head result breaks an otherwise complete tie") {

@@ -98,8 +98,19 @@ struct PairGames {
 [[nodiscard]] std::vector<Rating> maximumLikelihood(std::size_t n, const std::vector<PairGames>& pairs,
                                                     std::optional<std::pair<int, double>> anchor = std::nullopt);
 
-// The table as plain text, for the clipboard or a forum post; an empty title is left out.
-[[nodiscard]] std::string tableText(const Table& table, const std::string& title);
+// The orders a table can be shown in.
+enum class Order {
+    Points,  // the ranking of computeTable()
+    Score,   // points per game (a Swiss bye counts as a drawn pair), the ranking breaking ties
+    Seed,    // as the participants were entered, the seeds of a gauntlet first: its crosstable columns stay in place
+};
+
+// `table` with its rows in `order`.
+[[nodiscard]] Table ordered(Table table, const TournamentSpec& spec, Order order);
+
+// The table as plain text, for the clipboard or a forum post; an empty title or footer is left out, the footer
+// (footerLine()) goes under the table after a blank line.
+[[nodiscard]] std::string tableText(const Table& table, const std::string& title, const std::string& footer = "");
 
 // A forum post in BBCode: the title in bold, a line of details, then `text` in a code block, so that its columns
 // stay aligned on any forum (phpBB, Talkchess). An empty title or details line is left out.
@@ -109,8 +120,8 @@ struct PairGames {
 // played, book. In English, like the table.
 [[nodiscard]] std::string forumDetails(const TournamentSpec& spec, const Table& table);
 
-// A self-contained HTML page with the standings and the crosstable.
-[[nodiscard]] std::string tableHtml(const Table& table, const std::string& title);
+// A self-contained HTML page with the standings and the crosstable, and the footer under them when there is one.
+[[nodiscard]] std::string tableHtml(const Table& table, const std::string& title, const std::string& footer = "");
 
 // The rating difference a score stands for, -400 log10(1 / score - 1), and the half-width of its 95 % interval from
 // the spread of the results. Neither for a score of 0 or 100 %, nor without games.
@@ -123,13 +134,13 @@ struct ScoreElo {
 // A gauntlet as Gabor Szots posts it on the forums (TorsGUI's layout, asked for by him): for each seed, the seed
 // with its whole score, then its opponents by their own points against it, each row from its own point of view:
 // Points, %, the Elo difference its score stands for with its 95 % margin, and W-L-D (written +W-L=D). Then the
-// line of gauntletLine(). The seeds are the first spec.seeds participants. An empty title is left out.
+// line of footerLine(). The seeds are the first spec.seeds participants. An empty title is left out.
 [[nodiscard]] std::string gauntletText(const TournamentSpec& spec, const Table& table, const std::string& title,
                                        std::optional<uint64_t> planned);
 
-// The line under a gauntlet's table: "480/480 games, 30% draws, time control:90+1, book:UHO.epd, event: Cup", the
-// games played of those planned (when known), the time control of the first participant, the book and the event
-// (the tournament's name), the last two only when there is one.
-[[nodiscard]] std::string gauntletLine(const TournamentSpec& spec, const Table& table, std::optional<uint64_t> planned);
+// The line under a table or a gauntlet's table, as Gabor Szots writes it: "480/480 games, 30% draws, time
+// control:90+1, book:UHO.epd, event: Cup", the games played of those planned (when known), the time control of the
+// first participant, the book and the event (the tournament's name), the last two only when there is one.
+[[nodiscard]] std::string footerLine(const TournamentSpec& spec, const Table& table, std::optional<uint64_t> planned);
 
 }  // namespace fcg::tour

@@ -100,6 +100,7 @@ void App::refreshTable() {
     const auto now = std::chrono::steady_clock::now();
     if (table_for_ != ~std::size_t(0) && now < table_next_) return;
     table_      = tour::computeTable(t->spec(), t->results(), anchor_, t->byes());
+    shown_      = tour::ordered(table_, t->spec(), standings_order_);
     table_for_  = games_.size();
     table_next_ = now + std::min<std::chrono::steady_clock::duration>(10 * (std::chrono::steady_clock::now() - now),
                                                                       std::chrono::seconds(5));
@@ -134,7 +135,7 @@ void App::drawStandingsTable(bool compact) {
 
     // Only the rows in sight: a Swiss or a gauntlet can have hundreds of engines.
     ImGuiListClipper clipper;
-    clipper.Begin(static_cast<int>(table_.rows.size()));
+    clipper.Begin(static_cast<int>((compact ? table_ : shown_).rows.size()));
     while (clipper.Step()) {
         for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row) {
             drawStandingsRow(static_cast<std::size_t>(row), compact, swiss);
@@ -144,7 +145,7 @@ void App::drawStandingsTable(bool compact) {
 }
 
 void App::drawStandingsRow(std::size_t i, bool compact, bool swiss) {
-    const auto& r = table_.rows[i];
+    const auto& r = (compact ? table_ : shown_).rows[i];
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
     ImGui::TextDisabled("%d", static_cast<int>(i + 1));
@@ -419,6 +420,26 @@ void App::drawStandings() {
         ImGui::RadioButton(TR("Elo difference"), &crosstable_mode_, 2);
     }
 
+    // The order of the rows (and of the crosstable's columns), which the copies follow.
+    ImGui::SameLine(0, px(30));
+    ImGui::TextUnformatted(TR("Order:"));
+    ImGui::SameLine();
+    static constexpr const char* ORDERS[] = {N_("Points"), N_("Score %"), N_("Seed order")};
+    ImGui::SetNextItemWidth(px(130));
+    if (ImGui::BeginCombo("##order", TR(ORDERS[static_cast<int>(standings_order_)]))) {
+        for (int o = 0; o < 3; ++o) {
+            if (ImGui::Selectable(TR(ORDERS[o]), static_cast<int>(standings_order_) == o)) {
+                standings_order_ = static_cast<tour::Order>(o);
+                table_for_       = ~std::size_t(0);
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("Seed order: as the engines were entered, the seeds of a gauntlet first; the "
+                                   "columns of a gauntlet's crosstable stay in place."));
+    }
+
     ImGui::SameLine(0, px(30));
     ImGui::TextUnformatted(TR("Anchor:"));
     ImGui::SameLine();
@@ -450,14 +471,16 @@ void App::drawStandings() {
 
     ImGui::SameLine(0, px(30));
     if (const auto as = ui::copyButton("standings", false, format == tour::Format::Gauntlet); as != ui::CopyAs::None) {
-        const auto& spec = t->spec();
+        // In the order shown, the line of the event, the games and the book under it.
+        const auto& spec  = t->spec();
+        const auto footer = tour::footerLine(spec, shown_, t->totalGames());
         std::string text;
         switch (as) {
             case ui::CopyAs::Text:
-                text = tour::tableText(table_, spec.name);
+                text = tour::tableText(shown_, spec.name, footer);
                 break;
             case ui::CopyAs::Bbcode:
-                text = tour::bbcode(spec.name, tour::forumDetails(spec, table_), tour::tableText(table_, ""));
+                text = tour::bbcode(spec.name, tour::forumDetails(spec, shown_), tour::tableText(shown_, "", footer));
                 break;
             case ui::CopyAs::GauntletText:
                 text = tour::gauntletText(spec, table_, spec.name, t->totalGames());
@@ -484,7 +507,7 @@ void App::drawStandings() {
 }
 
 void App::drawCrosstable() {
-    const auto& rows = table_.rows;
+    const auto& rows = shown_.rows;
     if (rows.size() > CROSSTABLE_MAX) return;
     const int n = static_cast<int>(rows.size());
 

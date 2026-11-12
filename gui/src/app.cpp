@@ -357,6 +357,7 @@ void App::resetRunView() {
     selected_opening_ = -1;
     totals_.clear();
     table_     = {};
+    shown_     = {};
     table_for_ = ~std::size_t(0);
     anchor_.reset();
     crosstable_cell_.reset();
@@ -654,7 +655,8 @@ void App::handleDialogs() {
             case Dialogs::Purpose::ExportStandings:
                 if (const auto* t = run_.tournament()) {
                     std::ofstream out(path, std::ios::binary | std::ios::trunc);
-                    out << tour::tableHtml(table_, t->spec().name);
+                    out << tour::tableHtml(shown_, t->spec().name,
+                                           tour::footerLine(t->spec(), shown_, t->totalGames()));
                     Console::instance().add(out ? trf("Standings written to {}", path) : trf("Cannot write {}", path),
                                             !out);
                 }

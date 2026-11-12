@@ -404,7 +404,21 @@ Table computeTable(const TournamentSpec& spec, const std::vector<GameResult>& re
     return table;
 }
 
-std::string tableText(const Table& table, const std::string& title) {
+Table ordered(Table table, const TournamentSpec& spec, Order order) {
+    if (order == Order::Points) return table;
+    if (order == Order::Score) {
+        std::stable_sort(table.rows.begin(), table.rows.end(),
+                         [](const Standing& a, const Standing& b) { return a.score() > b.score(); });
+        return table;
+    }
+    std::map<int, std::size_t> place;
+    for (std::size_t i = 0; i < spec.participants.size(); ++i) place[spec.participants[i].id] = i;
+    std::stable_sort(table.rows.begin(), table.rows.end(),
+                     [&](const Standing& a, const Standing& b) { return place[a.id] < place[b.id]; });
+    return table;
+}
+
+std::string tableText(const Table& table, const std::string& title, const std::string& footer) {
     std::size_t width = 6;
     for (const auto& r : table.rows) width = std::max(width, r.name.size());
 
@@ -430,6 +444,7 @@ std::string tableText(const Table& table, const std::string& title) {
         }
         out += "\n";
     }
+    if (!footer.empty()) out += "\n" + footer + "\n";
     return out;
 }
 
@@ -459,7 +474,7 @@ std::string forumDetails(const TournamentSpec& spec, const Table& table) {
     return out;
 }
 
-std::string tableHtml(const Table& table, const std::string& title) {
+std::string tableHtml(const Table& table, const std::string& title, const std::string& footer) {
     std::string out = R"(<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>)" + escapeHtml(title) +
@@ -474,6 +489,7 @@ table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
 th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
 th{color:var(--muted);font-weight:500}td.l,th.l{text-align:left}
 td.x{color:var(--muted)}
+p.foot{color:var(--muted);margin:12px 4px 0}
 </style></head><body>
 <h1>)" + escapeHtml(title) +
                       R"(</h1>
@@ -499,7 +515,9 @@ td.x{color:var(--muted)}
         }
         out += "</tr>\n";
     }
-    out += "</tbody></table></div></body></html>\n";
+    out += "</tbody></table></div>\n";
+    if (!footer.empty()) out += "<p class=\"foot\">" + escapeHtml(footer) + "</p>\n";
+    out += "</body></html>\n";
     return out;
 }
 
@@ -519,7 +537,7 @@ ScoreElo scoreElo(int wins, int draws, int losses) {
     return {elo(s) + 0.0, (high - low) / 2.0};  // + 0.0: an even score is +0, not -0
 }
 
-std::string gauntletLine(const TournamentSpec& spec, const Table& table, std::optional<uint64_t> planned) {
+std::string footerLine(const TournamentSpec& spec, const Table& table, std::optional<uint64_t> planned) {
     int games = 0, draws = 0;
     for (const auto& r : table.rows) games += r.games, draws += r.draws;
     games /= 2;
@@ -588,7 +606,7 @@ std::string gauntletText(const TournamentSpec& spec, const Table& table, const s
                                elo.error ? fmt::format("{:.1f}", *elo.error) : "-", r.wins, r.losses, r.draws);
         }
     }
-    return out + "\n" + gauntletLine(spec, table, planned) + "\n";
+    return out + "\n" + footerLine(spec, table, planned) + "\n";
 }
 
 }  // namespace fcg::tour
