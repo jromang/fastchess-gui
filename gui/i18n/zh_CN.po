@@ -2123,6 +2123,12 @@ msgstr "每个引擎进程的处理器时间：思考时（核心数不超过其
 msgid "The program changed since it was last read (rebuilt or replaced)."
 msgstr "自上次读取以来程序已改变（重新编译或被替换）。"
 
+msgid "The program ended while it resumed this tournament at the last launch: it is not resumed automatically again."
+msgstr "程序在上次启动恢复此锦标赛时终止：它不会再自动恢复。"
+
+msgid "The program ended while it resumed {} at the last launch: it is not resumed automatically again. Resume it from the Tournaments page."
+msgstr "程序在上次启动恢复 {} 时终止：它不会再自动恢复。请在“锦标赛”页面上恢复它。"
+
 msgid "The program of {} is not found."
 msgstr "找不到 {} 的程序。"
 
@@ -2718,6 +2724,9 @@ msgstr "{} 次非法着法"
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} 已在另一个程序中打开：此处仅按打开时的状态显示。"
+
+msgid "{} is playing in another window: it is not resumed here."
+msgstr "{} 正在另一个窗口中进行：此处不恢复。"
 
 msgid "{} is the tournament's own PGN file: choose another one."
 msgstr "{} 是锦标赛自己的 PGN 文件：请另选一个。"

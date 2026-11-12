@@ -374,6 +374,14 @@ void App::drawHome() {
         ImGui::TextDisabled(
             "%s", (u.total ? trf("{} / {} games", u.played, *u.total) : trn("{} game", "{} games", u.played, u.played))
                       .c_str());
+        if (!resume_crashed_.empty() && fs::absolute(u.dir).lexically_normal() == resume_crashed_) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+            ImGui::PushTextWrapPos(0.0f);
+            ImGui::TextUnformatted(TR("The program ended while it resumed this tournament at the last launch: it is "
+                                      "not resumed automatically again."));
+            ImGui::PopTextWrapPos();
+            ImGui::PopStyleColor();
+        }
         if (ui::iconButton("resume_match", ui::Icon::Play, TR("Resume"))) resumeRun();
         ImGui::SameLine();
         ImGui::TextDisabled("%s", TR("It continues exactly where it stopped: no game is lost or played twice."));
@@ -586,8 +594,8 @@ void App::drawWorkspaceHeader() {
         ImGui::SameLine();
         if (ui::iconButton("stop", ui::Icon::Stop, TR("Stop"), !run_.stopping())) ImGui::OpenPopup("stop_menu");
         if (ImGui::BeginPopup("stop_menu")) {
-            if (ImGui::MenuItem(TR("Finish the running games, then stop"))) run_.stopWhenIdle();
-            if (ImGui::MenuItem(TR("Stop now (running games are lost)"))) run_.stopNow();
+            if (ImGui::MenuItem(TR("Finish the running games, then stop"))) stopRun(false);
+            if (ImGui::MenuItem(TR("Stop now (running games are lost)"))) stopRun(true);
             ImGui::EndPopup();
         }
     } else if (t) {

@@ -199,4 +199,8 @@ void Storage::setRunningMarker(const std::optional<RunningMarker>& marker) const
     }
 }
 
+void Storage::clearRunningMarker(const std::string& dir) const {
+    if (markerNames(runningMarker(), dir)) setRunningMarker(std::nullopt);
+}
+
 }  // namespace fcg

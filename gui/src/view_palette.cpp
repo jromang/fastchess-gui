@@ -70,8 +70,8 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             add(TR("Pause"), name, [this] { setRunPaused(true); });
         }
         if (!run_.stopping()) {
-            add(TR("Finish the running games, then stop"), name, [this] { run_.stopWhenIdle(); });
-            add(TR("Stop now (running games are lost)"), name, [this] { run_.stopNow(); });
+            add(TR("Finish the running games, then stop"), name, [this] { stopRun(false); });
+            add(TR("Stop now (running games are lost)"), name, [this] { stopRun(true); });
         }
     } else {
         if (unfinished_) add(TR("Resume"), unfinished_->spec.name, [this] { resumeRun(); });

@@ -204,6 +204,24 @@ TEST_CASE("at launch, the tournament running when the program ended resumes, the
     CHECK(launchResume(true, false, running, false, false) == LaunchResume::Queue);
     CHECK(launchResume(true, false, running, false, true) == LaunchResume::Nothing);
 
+    // Another window of the profile plays it: its marker is left alone, whatever this window's settings.
+    CHECK(launchResume(true, false, running, true, true, true) == LaunchResume::Busy);
+    CHECK(launchResume(false, true, paused, false, false, true) == LaunchResume::Busy);
+    CHECK(launchResume(true, false, std::nullopt, true, true, true) == LaunchResume::Nothing);
+
+    // The program ended while it resumed it at the last launch: not resumed again, unless it is over.
+    const RunningMarker resuming{"/runs/t", false, true};
+    CHECK(launchResume(true, false, resuming, true, true) == LaunchResume::Crashed);
+    CHECK(launchResume(true, false, resuming, false, false) == LaunchResume::Queue);
+    CHECK(launchResume(false, false, resuming, true, true) == LaunchResume::Nothing);
+
+    // When the run ends the marker stays only if the window quits while it runs; a stop the user asked for removes
+    // it, even when they quit before the engines stopped.
+    CHECK(keepMarkerAtEnd(true, false));
+    CHECK_FALSE(keepMarkerAtEnd(true, true));
+    CHECK_FALSE(keepMarkerAtEnd(false, false));
+    CHECK_FALSE(keepMarkerAtEnd(false, true));
+
     // On by default, and kept in the profile.
     CHECK(MatchSetup{}.resume_at_launch);
     CHECK(nlohmann::json::object().get<MatchSetup>().resume_at_launch);
@@ -216,9 +234,23 @@ TEST_CASE("at launch, the tournament running when the program ended resumes, the
     REQUIRE(storage.runningMarker());
     CHECK(storage.runningMarker()->dir == "/runs/t");
     CHECK(storage.runningMarker()->paused);
+    CHECK_FALSE(storage.runningMarker()->resuming);
     storage.setRunningMarker(std::nullopt);
     CHECK_FALSE(storage.runningMarker());
     CHECK_FALSE(fs::exists(dir / "running.json"));
+
+    // The resume flag is kept; a window removes only the marker of its own tournament.
+    storage.setRunningMarker(resuming);
+    REQUIRE(storage.runningMarker());
+    CHECK(storage.runningMarker()->resuming);
+    storage.setRunningMarker(RunningMarker{"/runs/u"});
+    storage.clearRunningMarker("/runs/t");
+    REQUIRE(storage.runningMarker());
+    CHECK(storage.runningMarker()->dir == "/runs/u");
+    CHECK(markerNames(storage.runningMarker(), "/runs/u"));
+    CHECK_FALSE(markerNames(std::nullopt, "/runs/u"));
+    storage.clearRunningMarker("/runs/u");
+    CHECK_FALSE(storage.runningMarker());
     fs::remove_all(dir);
 }
 

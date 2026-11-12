@@ -2132,6 +2132,12 @@ msgstr "Die Prozessorzeit der Prozesse jeder Engine, während sie rechnet (nicht
 msgid "The program changed since it was last read (rebuilt or replaced)."
 msgstr "Das Programm hat sich seit dem letzten Einlesen geändert (neu kompiliert oder ersetzt)."
 
+msgid "The program ended while it resumed this tournament at the last launch: it is not resumed automatically again."
+msgstr "Das Programm wurde beendet, während es dieses Turnier beim letzten Start fortsetzte: Es wird nicht mehr automatisch fortgesetzt."
+
+msgid "The program ended while it resumed {} at the last launch: it is not resumed automatically again. Resume it from the Tournaments page."
+msgstr "Das Programm wurde beendet, während es {} beim letzten Start fortsetzte: Es wird nicht mehr automatisch fortgesetzt. Setze es auf der Seite „Turniere“ fort."
+
 msgid "The program of {} is not found."
 msgstr "Das Programm von {} wurde nicht gefunden."
 
@@ -2747,6 +2753,9 @@ msgstr "{} illegale Züge"
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} ist in einem anderen Programm geöffnet: Es wird hier nur angezeigt, so wie es beim Öffnen war."
+
+msgid "{} is playing in another window: it is not resumed here."
+msgstr "{} läuft in einem anderen Fenster: Es wird hier nicht fortgesetzt."
 
 msgid "{} is the tournament's own PGN file: choose another one."
 msgstr "{} ist die PGN-Datei des Turniers selbst: Wähle eine andere."

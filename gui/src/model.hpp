@@ -320,19 +320,39 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(QueuedTournament, label, setup)
 struct RunningMarker {
     std::string dir;
     bool paused = false;  // the user paused it: it waits for them at the next launch too
+    // Resumed at launch and not yet seen playing for a while: if the program ends meanwhile (the resume crashed
+    // it), the next launch does not resume it again.
+    bool resuming = false;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RunningMarker, dir, paused)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RunningMarker, dir, paused, resuming)
+
+// The marker names the tournament in `dir`: another window of the profile may have written its own since.
+[[nodiscard]] inline bool markerNames(const std::optional<RunningMarker>& marker, const std::string& dir) {
+    return marker && marker->dir == dir;
+}
 
 // What to do at launch about the tournament running when the program ended.
-enum class LaunchResume { Nothing, Resume, Queue };
+enum class LaunchResume {
+    Nothing,  // it waits for the user, the marker removed
+    Resume,
+    Queue,    // it is over: the queue starts, the marker removed
+    Busy,     // another window plays it: its marker, left alone
+    Crashed,  // the program ended while it resumed it at the last launch: it waits for the user, the marker removed
+};
 
 // Resume it when the setting allows and it was not paused, unless --autostart starts the setup; when it is over or
-// gone (it ended as the program did), the queue starts instead.
+// gone (it ended as the program did), the queue starts instead. `busy`: another program holds its folder.
 [[nodiscard]] inline LaunchResume launchResume(bool enabled, bool autostart, const std::optional<RunningMarker>& marker,
-                                               bool unfinished, bool queue_empty) {
-    if (!enabled || autostart || !marker || marker->paused) return LaunchResume::Nothing;
-    if (unfinished) return LaunchResume::Resume;
+                                               bool unfinished, bool queue_empty, bool busy = false) {
+    if (!marker) return LaunchResume::Nothing;
+    if (busy) return LaunchResume::Busy;
+    if (!enabled || autostart || marker->paused) return LaunchResume::Nothing;
+    if (unfinished) return marker->resuming ? LaunchResume::Crashed : LaunchResume::Resume;
     return queue_empty ? LaunchResume::Nothing : LaunchResume::Queue;
 }
+
+// Whether the marker stays when the run ends: only when the window quits while it runs, to be resumed at the next
+// launch. A stop the user asked for removes it, even if they quit before the engines stopped.
+[[nodiscard]] inline bool keepMarkerAtEnd(bool quitting, bool stopped_by_user) { return quitting && !stopped_by_user; }
 
 }  // namespace fcg
