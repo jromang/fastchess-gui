@@ -342,8 +342,8 @@ void App::drawTournamentOverview() {
             ImGui::TextUnformatted(TR("Processor use"));
             ui::help(
                 TR("The processor time of each engine's processes, while it thinks (no more cores than its "
-                   "threads) and while its opponent does (none without pondering). Measured since the "
-                   "tournament was started or resumed."));
+                   "threads) and while its opponent does (none without pondering). Measured during the games "
+                   "played in the window, and kept with them for when the tournament is resumed."));
             for (const auto& p : problems) {
                 ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
                 ImGui::TextWrapped("! %s", p.c_str());

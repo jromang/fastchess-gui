@@ -1348,3 +1348,134 @@ TEST_CASE("live: a game recorded while the lists start over is counted once in t
     REQUIRE(loaded());
     CHECK(moves() == 7 * 12);
 }
+
+TEST_CASE("processor use: kept with each game, so that a resumed tournament starts from it") {
+    // A line of processor.tsv, and lines that are not one (cut short by a crash).
+    GameCpuLine line;
+    line.offset           = 1234;
+    line.finished_at      = 1700000000123;
+    line.cpu.own_cpu_ms   = {1, 5};
+    line.cpu.own_wall_ms  = {2, 6};
+    line.cpu.wait_cpu_ms  = {3, 7};
+    line.cpu.wait_wall_ms = {4, 8};
+    const auto text       = gameCpuLine(line);
+    REQUIRE(text.back() == '\n');
+    const auto back = parseGameCpuLine(std::string_view(text).substr(0, text.size() - 1));
+    REQUIRE(back);
+    CHECK(back->offset == 1234);
+    CHECK(back->finished_at == 1700000000123);
+    CHECK(back->cpu.own_cpu_ms == std::array<uint64_t, 2>{1, 5});
+    CHECK(back->cpu.own_wall_ms == std::array<uint64_t, 2>{2, 6});
+    CHECK(back->cpu.wait_cpu_ms == std::array<uint64_t, 2>{3, 7});
+    CHECK(back->cpu.wait_wall_ms == std::array<uint64_t, 2>{4, 8});
+    CHECK(parseGameCpuLine(std::string_view(text).substr(0, text.size() - 2)) == std::nullopt);
+    CHECK(parseGameCpuLine("") == std::nullopt);
+    CHECK(parseGameCpuLine("1\t2\t3") == std::nullopt);
+    CHECK(parseGameCpuLine("1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11") == std::nullopt);
+    CHECK(parseGameCpuLine("1\t2\t3\t4\t5\t6\t7\t8\t9\t-10") == std::nullopt);
+    CHECK(parseGameCpuLine("1\t2\t3\t4\t5\t6\t7\t8\t9\t10\r"));
+
+    // Games played by our own process as both engines, as the window plays them, then the tournament opened again.
+#ifdef _WIN32
+    const auto self = static_cast<int64_t>(GetCurrentProcessId());
+#else
+    const auto self = static_cast<int64_t>(getpid());
+#endif
+    const auto dir = tempDir("processor-use");
+    tour::TournamentSpec spec;
+    spec.name      = "cpu";
+    spec.format    = tour::Format::Match;
+    spec.max_games = 10;
+    for (int i = 0; i < 2; ++i) {
+        tour::Participant p;
+        p.id          = i;
+        p.engine.name = i == 0 ? "A" : "B";
+        spec.participants.push_back(p);
+    }
+    const auto game = sampleGame(false);
+    const auto burn = [] {
+        volatile uint64_t x = 0;
+        const auto end      = std::chrono::steady_clock::now() + std::chrono::milliseconds(20);
+        while (std::chrono::steady_clock::now() < end) x = x + 1;
+    };
+    const auto cpuOf = [](const std::vector<EngineTotals>& totals) {
+        std::vector<std::array<uint64_t, 4>> out;
+        for (const auto& t : totals) out.push_back({t.own_cpu_ms, t.own_wall_ms, t.wait_cpu_ms, t.wait_wall_ms});
+        return out;
+    };
+
+    std::vector<std::array<uint64_t, 4>> played;
+    {
+        auto state = tour::TournamentState::create(dir / "t", spec);
+        GuiObserver obs(1, *state);
+        for (int g = 0; g < 3; ++g) {
+            const auto task = state->claimNext();
+            REQUIRE(task);
+            const int white = task->game == 0 ? task->encounter.first : task->encounter.second;
+            fastchess::observer::GameStart info;
+            info.slot      = 0;
+            info.white     = white == 0 ? "A" : "B";
+            info.black     = white == 0 ? "B" : "A";
+            info.start_fen = chess::constants::STARTPOS;
+            obs.onGameStart(info);
+            obs.onEngineProcesses(0, self, self);
+            for (std::size_t i = 0; i < game.moves.size(); ++i) {
+                const auto mover = i % 2 == 0 ? chess::Color::WHITE : chess::Color::BLACK;
+                obs.onThinking(0, mover, 60000);
+                burn();
+                obs.onMove(0, mover, game.moves[i], "?", 60000, 60000);
+            }
+            obs.onGameEnd(0, 0, 0, game, true);
+            const auto recorded = state->complete(*task, game);
+            obs.onRecorded(recorded.result, game, recorded.pair);
+        }
+        played = cpuOf(obs.totals());
+    }
+    REQUIRE(played.size() == 2);
+    CHECK(played[0][0] > 0);
+    CHECK(played[0][1] >= 11 * 20);  // A thought for 4 + 3 + 4 moves (colours alternate) of 20 ms or more
+    CHECK(played[1][3] >= 11 * 20);  // and B waited as long
+
+    // Opened again: the processor use of the games played before is there, read with the games.
+    {
+        auto state = tour::TournamentState::open(dir / "t");
+        GuiObserver obs(1, *state);
+        for (int i = 0; i < 1000 && obs.loading(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        REQUIRE_FALSE(obs.loading());
+        CHECK(cpuOf(obs.totals()) == played);
+    }
+
+    // A line cut short by a crash is ignored, and the next game's line does not get glued to it.
+    std::string tail;
+    {
+        std::ofstream(dir / "t" / "processor.tsv", std::ios::binary | std::ios::app) << "12\t34";
+        auto state = tour::TournamentState::open(dir / "t");
+        GuiObserver obs(1, *state);
+        for (int i = 0; i < 1000 && obs.loading(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        CHECK(cpuOf(obs.totals()) == played);
+
+        const auto task = state->claimNext();
+        REQUIRE(task);
+        fastchess::observer::GameStart info;
+        info.slot      = 0;
+        info.white     = "A";
+        info.black     = "B";
+        info.start_fen = chess::constants::STARTPOS;
+        obs.onGameStart(info);
+        obs.onEngineProcesses(0, self, self);
+        obs.onThinking(0, chess::Color::WHITE, 60000);
+        burn();
+        obs.onMove(0, chess::Color::WHITE, game.moves[0], "?", 60000, 60000);
+        obs.onGameEnd(0, 0, 0, game, true);
+        const auto recorded = state->complete(*task, game);
+        obs.onRecorded(recorded.result, game, recorded.pair);
+    }
+    std::ifstream in(dir / "t" / "processor.tsv", std::ios::binary);
+    std::vector<std::string> lines;
+    for (std::string l; std::getline(in, l);) lines.push_back(l);
+    REQUIRE(lines.size() == 5);
+    CHECK(lines[3] == "12\t34");
+    CHECK(parseGameCpuLine(lines[4]));
+    std::error_code ec;
+    fs::remove_all(dir, ec);
+}
