@@ -1349,6 +1349,64 @@ TEST_CASE("live: a game recorded while the lists start over is counted once in t
     CHECK(moves() == 7 * 12);
 }
 
+TEST_CASE("processor use: a game voided while the games are read has its figures when the edit is undone") {
+    const auto dir = tempDir("processor-undo");
+    tour::TournamentSpec spec;
+    spec.name      = "cpu undo";
+    spec.format    = tour::Format::Match;
+    spec.max_games = 1600;
+    for (int i = 0; i < 2; ++i) {
+        tour::Participant p;
+        p.id          = i;
+        p.engine.name = i == 0 ? "A" : "B";
+        spec.participants.push_back(p);
+    }
+    const auto game = sampleGame(false);
+    {
+        auto state = tour::TournamentState::create(dir / "t", spec);
+        for (int i = 0; i < 1500; ++i) state->complete(*state->claimNext(), game);
+        // Each game's engines used 1 ms of processor each, while thinking.
+        std::ofstream out(dir / "t" / "processor.tsv", std::ios::binary);
+        for (const auto& r : state->results()) {
+            GameCpuLine line;
+            line.offset          = r.pgn.offset;
+            line.finished_at     = r.finished_at;
+            line.cpu.own_cpu_ms  = {1, 1};
+            line.cpu.own_wall_ms = {2, 2};
+            out << gameCpuLine(line);
+        }
+    }
+
+    // Opened again: the last game is voided while the games are read (before they are all read), then the edit
+    // undone once they are.
+    auto state = tour::TournamentState::open(dir / "t");
+    GuiObserver obs(1, *state);
+    const auto loaded = [&] {
+        for (int i = 0; i < 1000 && obs.loading(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        return !obs.loading();
+    };
+    tour::Edit edit;
+    edit.kind   = tour::Edit::Kind::VoidGames;
+    edit.games  = {{749, 1}};
+    edit.replay = false;
+    state->applyEdit(edit);
+    auto games = obs.records(state->results());
+    REQUIRE(loaded());
+
+    REQUIRE(state->canUndo());
+    state->undoEdit();
+    games = obs.records(state->results());
+    REQUIRE(loaded());
+    CHECK(games.size() + 1 == 1500);  // the last one comes through drain()
+
+    const auto totals = obs.totals();
+    REQUIRE(totals.size() == 2);
+    CHECK(totals[0].own_cpu_ms + totals[1].own_cpu_ms == 2 * 1500);
+    CHECK(totals[0].own_wall_ms + totals[1].own_wall_ms == 4 * 1500);
+    std::error_code ec;
+    fs::remove_all(dir, ec);
+}
+
 TEST_CASE("processor use: kept with each game, so that a resumed tournament starts from it") {
     // A line of processor.tsv, and lines that are not one (cut short by a crash).
     GameCpuLine line;
