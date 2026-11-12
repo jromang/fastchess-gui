@@ -71,4 +71,14 @@ std::optional<std::string> readSpan(const fs::path& file, const PgnSpan& span) {
     return text;
 }
 
+std::string pgnTagValue(std::string_view value) {
+    std::string out;
+    out.reserve(value.size());
+    for (const char c : value) {
+        if (c == '"' || c == '\\') out += '\\';
+        out += c;
+    }
+    return out;
+}
+
 }  // namespace fcg::tour

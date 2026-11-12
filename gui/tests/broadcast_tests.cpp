@@ -2,7 +2,11 @@
 
 #include <doctest/doctest.hpp>
 
+#include <algorithm>
 #include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <memory>
 #include <regex>
 #include <thread>
 
@@ -12,6 +16,10 @@
 
 #include "broadcast.hpp"
 #include "net.hpp"
+
+#ifdef _WIN32
+#    include <windows.h>
+#endif
 
 using namespace fcg;
 using namespace std::chrono_literals;
@@ -80,6 +88,14 @@ TEST_CASE("broadcast: JSON and live PGN") {
     CHECK(json["games"][0]["white_elo"] == 3500);
     CHECK(pgn.find("1. e4 e5 2. Nf3 *") != std::string::npos);
     CHECK(pgn.find("[FEN") == std::string::npos);  // the initial position needs none
+
+    // Quotes and backslashes in a name are escaped.
+    auto odd           = s;
+    odd.name           = "The \"big\" one";
+    odd.games[0].white = "C:\\engines\\Alpha";
+    const auto escaped = livePgn(odd);
+    CHECK(escaped.find("[Event \"The \\\"big\\\" one\"]") != std::string::npos);
+    CHECK(escaped.find("[White \"C:\\\\engines\\\\Alpha\"]") != std::string::npos);
 }
 
 TEST_CASE("broadcast: the crosstable keeps the columns node-tlcv reads") {
@@ -266,11 +282,13 @@ TEST_CASE("broadcast: TLCS sends one numbered command at a time, in order, the P
         if (const auto msg = client.receive(from, 50); msg && msg->front() == '<') numbered.push_back(*msg);
     }
     REQUIRE(numbered.size() >= 2);
-    for (const auto& m : numbered) CHECK(m == "<1>FEATURE: PING");
+    for (const auto& m : numbered) CHECK(m == numbered.front());
+    REQUIRE(numbered.front().find(">FEATURE: PING") != std::string::npos);
+    const auto first = static_cast<uint32_t>(std::stoul(numbered.front().substr(1)));
 
     // With ACKs: every number once, in order.
     std::vector<uint32_t> ids;
-    client.send(to, "ACK: 1");
+    client.send(to, fmt::format("ACK: {}", first));
     until = std::chrono::steady_clock::now() + 1500ms;
     while (std::chrono::steady_clock::now() < until) {
         net::Endpoint from;
@@ -281,8 +299,117 @@ TEST_CASE("broadcast: TLCS sends one numbered command at a time, in order, the P
         client.send(to, fmt::format("ACK: {}", id));
     }
     REQUIRE(ids.size() > 5);
-    for (std::size_t i = 0; i < ids.size(); ++i) CHECK(ids[i] == i + 2);
+    for (std::size_t i = 0; i < ids.size(); ++i) CHECK(ids[i] == first + 1 + i);
     server.stop();
+}
+
+TEST_CASE("broadcast: TLCS answers a logon with a few bytes until the client proves its address") {
+    // A LOGON may come from a forged address: the game and the crosstable only go to a client that acknowledges
+    // the number of the first command, which it can only know by receiving it.
+    TlcsServer server;
+    const uint16_t port = 26023;
+    REQUIRE(server.start(port).empty());
+    server.publish(sample(), -1);
+    std::this_thread::sleep_for(300ms);
+
+    net::UdpSocket client;
+    REQUIRE(client.bind(26024).empty());
+    const net::Endpoint to{0x7F000001, port};
+    client.send(to, "LOGONv15:tester");
+    std::vector<std::string> received;
+    const auto listen = [&](std::chrono::milliseconds how_long) {
+        const auto until = std::chrono::steady_clock::now() + how_long;
+        while (std::chrono::steady_clock::now() < until) {
+            net::Endpoint from;
+            if (const auto msg = client.receive(from, 50)) received.push_back(*msg);
+        }
+    };
+    listen(400ms);
+    REQUIRE(received.size() == 2);
+    CHECK(received[0] == "LOGON SUCCESSFUL");
+    REQUIRE(received[1].find(">FEATURE: PING") != std::string::npos);
+    const auto first = static_cast<uint32_t>(std::stoul(received[1].substr(1)));
+    CHECK(server.clients() == 0);
+
+    // A wrong number, a PING, a RESULTTABLE: still nothing but the answer to the PING.
+    received.clear();
+    client.send(to, fmt::format("ACK: {}", first + 1));
+    client.send(to, "RESULTTABLE");
+    client.send(to, "PING");
+    listen(400ms);
+    for (const auto& m : received) CHECK((m == "PONG" || m.find(">FEATURE: PING") != std::string::npos));
+    CHECK(server.clients() == 0);
+
+    // The right number: the rest comes.
+    received.clear();
+    client.send(to, fmt::format("ACK: {}", first));
+    listen(400ms);
+    CHECK(server.clients() == 1);
+    CHECK(std::find(received.begin(), received.end(), "CTRESET") != received.end());
+    CHECK(std::any_of(received.begin(), received.end(),
+                      [](const std::string& m) { return m.find(">SITE: Test broadcast") != std::string::npos; }));
+
+    // Others not even logged on get no answer, not even an ACK.
+    net::UdpSocket stranger;
+    REQUIRE(stranger.bind(0).empty());
+    stranger.send(to, "<5>PING");
+    stranger.send(to, "RESULTTABLE");
+    net::Endpoint from;
+    CHECK_FALSE(stranger.receive(from, 300).has_value());
+    server.stop();
+}
+
+TEST_CASE("broadcast: TLCS logons are limited in rate") {
+    TlcsServer server;
+    const uint16_t port = 26025;
+    REQUIRE(server.start(port).empty());
+    std::this_thread::sleep_for(200ms);
+
+    // 30 logons at once from as many addresses (ports): 10 answered.
+    const net::Endpoint to{0x7F000001, port};
+    std::vector<std::unique_ptr<net::UdpSocket>> clients;
+    for (int i = 0; i < 30; ++i) {
+        clients.push_back(std::make_unique<net::UdpSocket>());
+        REQUIRE(clients.back()->bind(0).empty());
+        clients.back()->send(to, "LOGONv15:tester");
+    }
+    int answered = 0;
+    for (auto& c : clients) {
+        net::Endpoint from;
+        if (const auto msg = c->receive(from, 100); msg && *msg == "LOGON SUCCESSFUL") answered++;
+    }
+    CHECK(answered == 10);
+
+    // One per second from the same address.
+    net::UdpSocket again;
+    REQUIRE(again.bind(0).empty());
+    std::this_thread::sleep_for(1100ms);
+    again.send(to, "LOGONv15:tester");
+    again.send(to, "LOGONv15:tester");
+    int successes = 0;
+    for (;;) {
+        net::Endpoint from;
+        const auto msg = again.receive(from, 300);
+        if (!msg) break;
+        successes += *msg == "LOGON SUCCESSFUL";
+    }
+    CHECK(successes == 1);
+    server.stop();
+}
+
+TEST_CASE("broadcast: a port in use is said to be") {
+    net::UdpSocket a, b;
+    REQUIRE(a.bind(26027).empty());
+    CHECK_FALSE(b.bind(26027).empty());
+
+    net::TcpListener c, d;
+    REQUIRE(c.listen(26028).empty());
+    CHECK_FALSE(d.listen(26028).empty());
+
+    TlcsServer tlcs;
+    CHECK(tlcs.start(26027).find("in use") != std::string::npos);
+    WebServer web;
+    CHECK(web.start(26028).find("in use") != std::string::npos);
 }
 
 TEST_CASE("broadcast: the web page and its state") {
@@ -296,7 +423,7 @@ TEST_CASE("broadcast: the web page and its state") {
         if (!fd) return std::string();
         net::TcpConnection c(*fd);
         c.sendAll("GET " + path + " HTTP/1.0\r\nHost: localhost\r\n\r\n");
-        return c.readUntil("\n\n\n\n", 1 << 20, 1000);
+        return c.readUntil("\n\n\n\n", 1 << 20, 5000);
     };
 
     const auto page = get("/");
@@ -308,5 +435,60 @@ TEST_CASE("broadcast: the web page and its state") {
     CHECK(state.find("\"Test broadcast\"") != std::string::npos);
 
     CHECK(get("/nothing").rfind("HTTP/1.0 404", 0) == 0);
+
+    // A client that says nothing holds the others a moment only.
+    const auto silent = net::connectTo(0x7F000001, port);
+    REQUIRE(silent);
+    auto start = std::chrono::steady_clock::now();
+    CHECK(get("/").rfind("HTTP/1.0 200", 0) == 0);
+    CHECK(std::chrono::steady_clock::now() - start < 4s);
+
+    // One that never reads a large answer, nor the stop.
+    auto big = sample();
+    big.name = std::string(32 << 20, 'x');
+    server.publish(big);
+    const auto reader = net::connectTo(0x7F000001, port);
+    REQUIRE(reader);
+    net::TcpConnection c(*reader);
+    c.sendAll("GET /state.json HTTP/1.0\r\n\r\n");
+    std::this_thread::sleep_for(500ms);
+    start = std::chrono::steady_clock::now();
     server.stop();
+    CHECK(std::chrono::steady_clock::now() - start < 1s);
+    {
+        net::TcpConnection close(*silent);
+    }
+}
+
+TEST_CASE("broadcast: the live files, no temporary file left") {
+    const auto dir = std::filesystem::temp_directory_path() / "fcg-live-files";
+    std::filesystem::remove_all(dir);
+    REQUIRE(writeBroadcastFiles(sample(), dir).empty());
+    CHECK(std::filesystem::exists(dir / "live.pgn"));
+    CHECK_FALSE(std::filesystem::exists(dir / "live.pgn.tmp"));
+    const auto read = [&] {
+        std::ifstream in(dir / "live.pgn", std::ios::binary);
+        return std::string(std::istreambuf_iterator<char>(in), {});
+    };
+    CHECK(read().find("[Event \"Test broadcast\"]") != std::string::npos);
+
+#ifdef _WIN32
+    // A reader that lets others write but not replace the file: written over in place.
+    auto replaced           = sample();
+    replaced.games[0].white = "Replaced";
+    HANDLE reader = CreateFileW((dir / "live.pgn").c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                                OPEN_EXISTING, 0, nullptr);
+    REQUIRE(reader != INVALID_HANDLE_VALUE);
+    CHECK(writeBroadcastFiles(replaced, dir).empty());
+    CloseHandle(reader);
+    CHECK(read().find("[White \"Replaced\"]") != std::string::npos);
+
+    // One that shares nothing: an error, and still no temporary file.
+    reader = CreateFileW((dir / "live.pgn").c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, 0, nullptr);
+    REQUIRE(reader != INVALID_HANDLE_VALUE);
+    CHECK_FALSE(writeBroadcastFiles(sample(), dir).empty());
+    CloseHandle(reader);
+    CHECK_FALSE(std::filesystem::exists(dir / "live.pgn.tmp"));
+#endif
+    std::filesystem::remove_all(dir);
 }

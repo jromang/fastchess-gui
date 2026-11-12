@@ -44,13 +44,22 @@ void WebServer::serve() {
         const auto fd = listener_.accept(200);
         if (!fd) continue;
 
-        net::TcpConnection connection(*fd);
-        const auto request = connection.readUntil("\r\n\r\n", 8192, 1000);
+        // One request at a time, each within a few seconds in all: a slow or silent client cannot hold the others,
+        // and a stop does not wait for it.
+        constexpr int READ_MS = 1000, REQUEST_MS = 10000;
+        const auto start = Clock::now();
+        net::TcpConnection connection(*fd, &running_);
+        const auto request = connection.readUntil("\r\n\r\n", 8192, READ_MS);
+        const auto left    = [&] {
+            return REQUEST_MS -
+                   static_cast<int>(
+                       std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start).count());
+        };
         const auto end     = request.find(' ', 4);
         const auto path =
             request.rfind("GET ", 0) == 0 && end != std::string::npos ? request.substr(4, end - 4) : std::string();
         if (path == "/" || path == "/index.html") {
-            connection.sendAll(response("200 OK", "text/html; charset=utf-8", webPage()));
+            connection.sendAll(response("200 OK", "text/html; charset=utf-8", webPage()), left());
         } else if (path.rfind("/state.json", 0) == 0) {
             std::string body;
             {
@@ -62,9 +71,9 @@ void WebServer::serve() {
                 std::erase_if(recent_, [&](const auto& t) { return now - t > std::chrono::seconds(3); });
                 viewers_ = static_cast<int>((recent_.size() + 2) / 3);
             }
-            connection.sendAll(response("200 OK", "application/json", body));
+            connection.sendAll(response("200 OK", "application/json", body), left());
         } else {
-            connection.sendAll(response("404 Not Found", "text/plain", "not found"));
+            connection.sendAll(response("404 Not Found", "text/plain", "not found"), left());
         }
     }
 }

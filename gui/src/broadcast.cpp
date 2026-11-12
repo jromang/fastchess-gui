@@ -1,9 +1,12 @@
 #include "broadcast.hpp"
 
+#include <chrono>
 #include <cmath>
 #include <fstream>
+#include <thread>
 
 #include <json.hpp>
+#include <tour/pgn_file.hpp>
 
 #include <fmt/include/fmt/format.h>
 
@@ -18,16 +21,35 @@ std::string half(double points) {
     return points - whole > 0.25 ? fmt::format("{}.5", whole) : fmt::format("{}", whole);
 }
 
+bool writeFile(const fs::path& file, const std::string& text) {
+    std::ofstream out(file, std::ios::binary | std::ios::trunc);
+    out << text;
+    out.close();
+    return !out.fail();
+}
+
+// On Windows a program reading the file (an uploader, a viewer) can keep it from being replaced: tried again for a
+// moment, then written over in place, which a reader that shares writing allows. The temporary file never stays.
 bool writeAtomically(const fs::path& file, const std::string& text) {
     const auto tmp = fs::path(file).concat(".tmp");
-    {
-        std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
-        out << text;
-        if (!out) return false;
-    }
     std::error_code ec;
-    fs::rename(tmp, file, ec);
-    return !ec;
+    if (!writeFile(tmp, text)) {
+        fs::remove(tmp, ec);
+        return false;
+    }
+#ifdef _WIN32
+    constexpr int TRIES = 6;
+#else
+    constexpr int TRIES = 1;
+#endif
+    for (int i = 0; i < TRIES; ++i) {
+        if (i > 0) std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        fs::rename(tmp, file, ec);
+        if (!ec) return true;
+    }
+    const bool ok = writeFile(file, text);
+    fs::remove(tmp, ec);
+    return ok;
 }
 
 }  // namespace
@@ -94,8 +116,9 @@ std::string snapshotJson(const BroadcastSnapshot& s) {
 std::string livePgn(const BroadcastSnapshot& s) {
     std::string out;
     for (const auto& g : s.games) {
-        out += fmt::format("[Event \"{}\"]\n[Round \"{}\"]\n[White \"{}\"]\n[Black \"{}\"]\n[Result \"{}\"]\n", s.name,
-                           g.number, g.white, g.black, g.active ? "*" : g.result);
+        out += fmt::format("[Event \"{}\"]\n[Round \"{}\"]\n[White \"{}\"]\n[Black \"{}\"]\n[Result \"{}\"]\n",
+                           tour::pgnTagValue(s.name), g.number, tour::pgnTagValue(g.white), tour::pgnTagValue(g.black),
+                           g.active ? "*" : g.result);
         if (g.white_elo > 0) out += fmt::format("[WhiteElo \"{}\"]\n", g.white_elo);
         if (g.black_elo > 0) out += fmt::format("[BlackElo \"{}\"]\n", g.black_elo);
         if (g.start_fen != "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {

@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <map>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <set>
@@ -92,38 +93,28 @@ class LichessRelay {
     };
 
     LichessRelay() = default;
+    // Gives the last push a few seconds, then leaves it to end on its own.
     ~LichessRelay();
     LichessRelay(const LichessRelay&)            = delete;
     LichessRelay& operator=(const LichessRelay&) = delete;
 
+    // Starts on a thread of its own, which first waits for the last push of the previous start to end.
     void start(Settings settings);
-    // Pushes what was offered last, then stops.
+    // Pushes what was offered last, then stops, on the relay's thread: returns at once, the push may take seconds.
     void stop();
-    [[nodiscard]] bool running() const noexcept { return running_; }
+    // Waits up to `timeout` for the thread to end, after a stop; false when it did not.
+    bool wait(std::chrono::milliseconds timeout = std::chrono::minutes(2));
+    [[nodiscard]] bool running() const noexcept;
     [[nodiscard]] Status status() const;
-    [[nodiscard]] const Settings& settings() const noexcept { return settings_; }
 
     // The games to push: those in progress and those finished since the last offer.
     void offer(std::vector<LichessGame> live, std::vector<LichessGame> finished);
 
    private:
-    void loop();
-    bool prepare();  // the broadcast and its first round, made or read; false when it cannot be
-    bool newRound();
-    void push();
-    HttpResult post(const std::string& path, const std::string& type, const std::string& body);
-    void save();
-
-    Settings settings_;
-    LichessTarget target_;
+    // What the thread works with, shared with it: a stopped relay's last push can outlive the relay.
+    struct Session;
+    std::shared_ptr<Session> session_;
     std::thread thread_;
-    std::atomic<bool> running_{false}, stopping_{false};
-    mutable std::mutex mutex_;
-    std::condition_variable wake_;
-    std::vector<LichessGame> live_;
-    std::map<std::string, LichessGame> pending_;  // finished games not pushed yet
-    Status status_;
-    std::chrono::steady_clock::time_point not_before_{};  // after a "too many requests"
 };
 
 }  // namespace fcg
