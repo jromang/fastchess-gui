@@ -267,3 +267,34 @@ TEST_CASE("the games a setup plans, and about how long they last with a clock") 
     setup.limit = LimitKind::Nodes;
     CHECK_FALSE(plannedSeconds(setup, topology));
 }
+
+TEST_CASE("a template or a queued setup keeps the program's settings: its look, the live boards, the notifications") {
+    MatchSetup current;
+    current.language         = "fr";
+    current.theme            = "dark";
+    current.ui_zoom          = 125;
+    current.tile_info        = true;
+    current.live_seed_side   = false;
+    current.live_arrows      = false;
+    current.panes["engines"] = 0.3f;
+    current.notify           = false;
+    current.resume_at_launch = false;
+
+    // A setup stored with the defaults, as a template or the queue holds it.
+    MatchSetup next;
+    next.name   = "stored";
+    next.cycles = 4;
+    keepProgramSettings(next, current);
+    CHECK(next.language == "fr");
+    CHECK(next.theme == "dark");
+    CHECK(next.ui_zoom == 125);
+    CHECK(next.tile_info);
+    CHECK_FALSE(next.live_seed_side);
+    CHECK_FALSE(next.live_arrows);
+    CHECK(next.panes == current.panes);
+    CHECK_FALSE(next.notify);
+    CHECK_FALSE(next.resume_at_launch);
+    // The tournament itself is the stored one.
+    CHECK(next.name == "stored");
+    CHECK(next.cycles == 4);
+}

@@ -263,6 +263,21 @@ struct MatchSetup {
     std::string lichess_round;    // a round's URL or id; empty: a new broadcast named after the tournament
     bool lichess_listed = false;  // among lichess' community broadcasts, rather than for those with the link
 };
+
+// Gives `next`, a setup loaded from a template or started from the queue, the settings of the program that
+// `current` has: its look (language, theme, size, panes, live boards), the notifications and the resume at launch.
+// These follow the settings, not a stored setup.
+inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
+    next.language         = current.language;
+    next.theme            = current.theme;
+    next.ui_zoom          = current.ui_zoom;
+    next.tile_info        = current.tile_info;
+    next.live_seed_side   = current.live_seed_side;
+    next.live_arrows      = current.live_arrows;
+    next.panes            = current.panes;
+    next.notify           = current.notify;
+    next.resume_at_launch = current.resume_at_launch;
+}
 // More fields than NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT takes (64): its expansion, in two halves.
 #define FCG_MATCH_SETUP_FIELDS_1                                                                                   \
     format, name, engine_a, engine_b, participants, cycles, seeds, common_hash, common_threads, mode, fixed_games, \

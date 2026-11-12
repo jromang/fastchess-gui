@@ -589,11 +589,8 @@ void App::startFromQueue(bool go_on) {
     for (std::size_t i = 0; i < queue_.size(); ++i) {
         auto next = queue_[i].setup;
         // The look of the program follows the settings, not the queued setup.
-        next.language = setup_.language;
-        next.theme    = setup_.theme;
-        next.notify           = setup_.notify;
-        next.resume_at_launch = setup_.resume_at_launch;
-        setup_                = next;
+        keepProgramSettings(next, setup_);
+        setup_ = next;
         startRun();
         // Taken off the queue once started: one that cannot start (an engine removed since...) is not lost.
         if (run_.running()) {
