@@ -193,3 +193,53 @@ TEST_CASE("ccrl: the facts of the checklist, from the settings and the results")
     CHECK(f.book == "UHO_2024.epd");
     CHECK(f.adjudication_tb.empty());
 }
+
+TEST_CASE("ccrl: the PlyCount of an illegal move loss is the moves written, by any version") {
+    const auto dir = fs::temp_directory_path() / "fcg-ccrl-plycount";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+    const auto file = dir / "games.pgn";
+
+    TournamentSpec spec;
+    for (int i = 0; i < 2; ++i) {
+        Participant p;
+        p.id          = 10 + i;
+        p.engine.name = std::string("Engine ") + static_cast<char>('A' + i);
+        spec.participants.push_back(p);
+    }
+
+    std::vector<GameResult> results;
+    {
+        PgnFile pgn(file);
+        // Written by 0.4.13 (the illegal move counted), by later versions (not counted), and with a black move
+        // number, a NAG and a variation.
+        const std::string texts[] = {
+            game("Engine A", "Engine B", "0-1", 3, "illegal move"),
+            game("Engine B", "Engine A", "1-0", 2, "illegal move"),
+            "[Event \"x\"]\n[White \"Engine A\"]\n[Black \"Engine B\"]\n[Result \"0-1\"]\n[PlyCount \"4\"]\n\n"
+            "1. e4 {+0.30/20} 1... e5 $1 (1... c5 2. Nf3) 2.Nf3 {book} 0-1\n\n",
+        };
+        for (uint32_t i = 0; i < 3; ++i) {
+            GameResult r;
+            r.encounter   = i;
+            r.white       = i == 1 ? 11 : 10;
+            r.black       = i == 1 ? 10 : 11;
+            r.result      = i == 1 ? "1-0" : "0-1";
+            r.termination = fastchess::MatchTermination::ILLEGAL_MOVE;
+            r.pgn         = pgn.append(texts[i]);
+            r.finished_at = 100 * (i + 1);
+            results.push_back(r);
+        }
+    }
+
+    CcrlExport e;
+    e.event        = "Test";
+    const auto out = ccrlGames(file, results, spec, e);
+    REQUIRE(out.games == 3);
+    const auto first = out.pgn.find("[PlyCount \"2\"]");
+    REQUIRE(first != std::string::npos);
+    const auto second = out.pgn.find("[PlyCount \"2\"]", first + 1);
+    REQUIRE(second != std::string::npos);
+    CHECK(out.pgn.find("[PlyCount \"3\"]", second) != std::string::npos);
+    CHECK(out.pgn.find("[PlyCount \"3\"]") > second);
+}

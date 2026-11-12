@@ -14,6 +14,48 @@ namespace fcg::tour {
 
 namespace {
 
+// The plies of a game's movetext: its moves, without move numbers, comments, variations, NAGs and the result.
+std::size_t movetextPlies(std::string_view game) {
+    const auto start = game.find("\n\n");
+    if (start == std::string_view::npos) return 0;
+    std::size_t plies = 0;
+    int depth         = 0;  // inside ( ) variations
+    for (std::size_t i = start; i < game.size();) {
+        const char c = game[i];
+        if (c == '{') {
+            const auto end = game.find('}', i);
+            i              = end == std::string_view::npos ? game.size() : end + 1;
+        } else if (c == ';') {
+            const auto end = game.find('\n', i);
+            i              = end == std::string_view::npos ? game.size() : end + 1;
+        } else if (c == '(' || c == ')') {
+            depth += c == '(' ? 1 : -1;
+            ++i;
+        } else if (std::isspace(static_cast<unsigned char>(c))) {
+            ++i;
+        } else {
+            auto end = i;
+            while (end < game.size() && !std::isspace(static_cast<unsigned char>(game[end])) &&
+                   std::string_view("{};()").find(game[end]) == std::string_view::npos) {
+                ++end;
+            }
+            auto token = game.substr(i, end - i);
+            i          = end;
+            // "12." or "12..." before a move, possibly glued to it.
+            const auto digits = token.find_first_not_of("0123456789");
+            if (digits != std::string_view::npos && digits > 0 && token[digits] == '.') {
+                token.remove_prefix(token.find_first_not_of('.', digits) == std::string_view::npos
+                                        ? token.size()
+                                        : token.find_first_not_of('.', digits));
+            }
+            if (token.empty() || token[0] == '$' || depth > 0) continue;
+            if (token == "1-0" || token == "0-1" || token == "1/2-1/2" || token == "*") continue;
+            ++plies;
+        }
+    }
+    return plies;
+}
+
 bool endsWithNoCase(std::string_view s, std::string_view end) {
     if (s.size() < end.size()) return false;
     for (std::size_t i = 0; i < end.size(); ++i) {
@@ -174,14 +216,10 @@ CcrlGames ccrlGames(const std::filesystem::path& pgn, const std::vector<GameResu
         setTag(text, "Round", fmt::format("{}", games.size() + 1));
         setTag(text, "White", name(r->white));
         setTag(text, "Black", name(r->black));
-        if (r->termination == fastchess::MatchTermination::ILLEGAL_MOVE) {
-            const auto plies = pgnTag(text, "PlyCount");
-            if (!plies.empty() && plies != "0") {
-                try {
-                    setTag(text, "PlyCount", fmt::format("{}", std::stoul(plies) - 1));
-                } catch (...) {
-                }
-            }
+        // fastchess-gui 0.4.13 and earlier counted the illegal move that ends a game, which is not in the movetext: the
+        // count of the moves written, whichever version wrote the game.
+        if (r->termination == fastchess::MatchTermination::ILLEGAL_MOVE && !pgnTag(text, "PlyCount").empty()) {
+            setTag(text, "PlyCount", fmt::format("{}", movetextPlies(text)));
         }
         games.push_back(std::move(text));
     }
