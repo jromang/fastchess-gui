@@ -533,24 +533,23 @@ void App::handleDialogs() {
             }
             case Dialogs::Purpose::ExportRatingPgn: {
                 std::ofstream out(path, std::ios::binary | std::ios::trunc);
-                out << tour::ratingPgn(game_db_, ratingFilter());
+                out << tour::ratingPgn(*game_db_, ratingFilter());
                 Console::instance().add(out ? trf("Games written to {}", path) : trf("Cannot write {}", path), !out);
                 break;
             }
             case Dialogs::Purpose::ImportRatingPgn: {
-                auto list = storage_.ratingPgns();
+                auto list = ratingPgns();
                 if (std::find(list.begin(), list.end(), std::filesystem::path(path)) == list.end())
                     list.emplace_back(path);
-                storage_.setRatingPgns(list);
-                game_db_dirty_ = true;
+                setRatingPgns(list);
                 break;
             }
             case Dialogs::Purpose::ExportHeadToHead: {
                 std::ofstream out(path, std::ios::binary | std::ios::trunc);
                 std::size_t n = 0;
                 for (const auto i : h2h_.games) {
-                    const auto& g   = game_db_.games[i];
-                    const auto& src = game_db_.sources[g.source];
+                    const auto& g   = game_db_->games[i];
+                    const auto& src = game_db_->sources[g.source];
                     if (src.external) continue;
                     if (const auto text = tour::readSpan(src.path / "games.pgn", g.pgn)) {
                         out << *text;

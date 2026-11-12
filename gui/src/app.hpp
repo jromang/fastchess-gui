@@ -474,10 +474,28 @@ class App {
     // Broadcast.
     Broadcaster broadcaster_;
 
-    // Ratings page: every game of the profile, and what is computed from them.
-    tour::GameDb game_db_;
+    // Ratings page: every game of the profile, and what is computed from them, on a worker thread: a rating list
+    // of thousands of engines takes a moment.
+    struct RatingsResult {
+        std::shared_ptr<const tour::GameDb> db;
+        std::string anchor;  // the one used: the default when none was chosen
+        double anchor_elo = 0;
+        tour::RatingList list;
+        std::string card_engine;
+        tour::EngineRecord card;
+        std::vector<tour::RatingPoint> card_history;
+        std::string h2h_a, h2h_b;
+        tour::HeadToHead h2h;
+        std::set<std::string> progress_engines;
+        std::map<std::string, std::vector<tour::RatingPoint>> progress;
+    };
+    std::future<RatingsResult> ratings_job_;
+    std::shared_ptr<const tour::GameDb> game_db_ = std::make_shared<tour::GameDb>();
     bool game_db_dirty_ = true;  // read the tournaments again
     bool ratings_dirty_ = true;  // compute again, with other filters
+    std::optional<std::vector<std::filesystem::path>> rating_pgns_;  // settings.json's, read once
+    const std::vector<std::filesystem::path>& ratingPgns();
+    void setRatingPgns(const std::vector<std::filesystem::path>& files);
     tour::RatingList rating_list_;
     std::string rating_tc_;      // time control shown, empty = all
     std::string rating_anchor_;  // engine whose rating is fixed, empty = average 0
