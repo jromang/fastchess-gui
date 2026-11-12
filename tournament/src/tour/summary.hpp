@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <optional>
 #include <string>
 #include <vector>
@@ -30,5 +31,21 @@ struct Summary {
 
 // summarize() of each of tournamentDirs(root).
 [[nodiscard]] std::vector<Summary> listTournaments(const std::filesystem::path& root);
+
+// listTournaments() that keeps the summaries between two calls and reads a tournament again only when its
+// journal or its tournament.json changed (size or time): a list of hundreds of tournaments, most of them over.
+// Not thread safe: one thread at a time.
+class SummaryCache {
+   public:
+    [[nodiscard]] std::vector<Summary> list(const std::filesystem::path& root);
+
+   private:
+    struct Entry {
+        std::uintmax_t journal_size = 0;
+        std::filesystem::file_time_type journal_time, spec_time;
+        std::optional<Summary> summary;
+    };
+    std::map<std::filesystem::path, Entry> entries_;
+};
 
 }  // namespace fcg::tour

@@ -112,8 +112,19 @@ void App::handleZoomKeys() {
 }
 
 void App::refreshTournaments() {
-    tournaments_       = tour::listTournaments(storage_.runsDir());
-    legacy_runs_       = tour::legacyRuns(storage_.runsDir()).size();
+    if (tournaments_job_.valid()) {
+        if (tournaments_job_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
+        auto list         = tournaments_job_.get();
+        tournaments_      = std::move(list.summaries);
+        legacy_runs_      = list.legacy_runs;
+        tournaments_read_ = true;
+    }
+    if (!tournaments_dirty_) return;
+
+    // On a worker thread: hundreds of journals take a moment, and a folder on a network drive longer.
+    tournaments_job_   = std::async(std::launch::async, [cache = summary_cache_, root = storage_.runsDir()] {
+        return TournamentList{cache->list(root), tour::legacyRuns(root).size()};
+    });
     tournaments_dirty_ = false;
 }
 
@@ -267,7 +278,7 @@ void App::drawRail(float width) {
 // Home
 
 void App::drawHome() {
-    if (tournaments_dirty_) refreshTournaments();
+    refreshTournaments();
 
     const float buttons = px(330);
     ui::pageTitle(TR("Tournaments"));
@@ -335,7 +346,7 @@ void App::drawHome() {
 
     sectionTitle(TR("All tournaments"));
     if (tournaments_.empty()) {
-        ImGui::TextDisabled("%s", TR("No tournament yet. Start with a new tournament."));
+        if (tournaments_read_) ImGui::TextDisabled("%s", TR("No tournament yet. Start with a new tournament."));
         return;
     }
 

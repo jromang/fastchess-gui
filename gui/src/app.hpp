@@ -555,6 +555,14 @@ class App {
     std::vector<tour::Summary> tournaments_;
     bool tournaments_dirty_  = true;
     std::size_t legacy_runs_ = 0;
+    // The list read on a worker thread, each journal again only when it changed.
+    struct TournamentList {
+        std::vector<tour::Summary> summaries;
+        std::size_t legacy_runs = 0;
+    };
+    std::future<TournamentList> tournaments_job_;
+    std::shared_ptr<tour::SummaryCache> summary_cache_ = std::make_shared<tour::SummaryCache>();
+    bool tournaments_read_                             = false;  // once at least
     std::optional<ui::Theme> theme_applied_;
     int zoom_applied_ = 0;
 
