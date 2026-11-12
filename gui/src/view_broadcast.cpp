@@ -42,6 +42,9 @@ void App::updateBroadcast() {
         settings.lichess_token = applied.lichess_token;
         settings.lichess_round = applied.lichess_round;
     }
+    // The token is saved at the same moment: settings.json is not rewritten for each character, and the profile and
+    // the lichess session have the same token.
+    if (!broadcast_editing_) saveLichessToken();
     broadcast_editing_ = false;  // the fields drawn in this frame say again
     for (const auto& error : broadcaster_.configure(settings)) Console::instance().add(error, true);
 
@@ -147,6 +150,12 @@ void App::drawBroadcast() {
     if (changed) saveSetupSoon();
 }
 
+void App::saveLichessToken() {
+    if (lichess_token_ == lichess_token_saved_) return;
+    storage_.setLichessToken(lichess_token_);
+    lichess_token_saved_ = lichess_token_;
+}
+
 void App::lichessTokenField() {
     ImGui::TextUnformatted(TR("API token (with the study:write scope)"));
     char buffer[512];
@@ -154,9 +163,9 @@ void App::lichessTokenField() {
     std::copy_n(lichess_token_.data(), n, buffer);
     buffer[n] = 0;
     ImGui::SetNextItemWidth(-FLT_MIN);
+    // Saved once the field is left (updateBroadcast), or on the way out.
     if (ImGui::InputText("##lichess_token", buffer, sizeof(buffer), ImGuiInputTextFlags_Password)) {
         lichess_token_ = buffer;
-        storage_.setLichessToken(lichess_token_);
     }
     broadcast_editing_ |= ImGui::IsItemActive();
     if (ImGui::SmallButton(TR("Create a token on lichess…"))) {

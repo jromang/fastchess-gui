@@ -25,9 +25,10 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
       topology_(topology),
       options_(std::move(options)),
       dialogs_(window) {
-    engines_       = storage_.loadEngines();
-    books_         = storage_.loadBooks();
-    lichess_token_ = storage_.lichessToken();
+    engines_             = storage_.loadEngines();
+    books_               = storage_.loadBooks();
+    lichess_token_       = storage_.lichessToken();
+    lichess_token_saved_ = lichess_token_;
     if (!books_.empty()) selected_book_ = 0;
     setup_ = storage_.loadSetup();
     i18n::setLanguage(i18n::resolve(setup_.language));
@@ -67,6 +68,7 @@ App::~App() {
     for (auto& f : abandoned_scans_) f.wait();
     storage_.saveSetup(setup_);
     storage_.saveEngines(engines_);
+    saveLichessToken();  // a token still being typed when the program quits
 }
 
 bool App::initGraphics() { return atlas_.create(160); }

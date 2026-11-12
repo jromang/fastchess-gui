@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <cstdlib>
 #include <filesystem>
 #include <functional>
@@ -300,4 +301,226 @@ TEST_CASE("HTTPS: lichess.org trusted, a site of another authority refused (FCG_
     const auto other = httpPost({"https://example.com/", "", "text/plain", "x"});
     CHECK(other.status == 0);
     CHECK_MESSAGE(other.error.find("not trusted") != std::string::npos, other.error);
+}
+
+namespace {
+
+// The proxy variables, all unset for the time of a test (the lowercase ones would come first), then put back.
+class ProxyEnvironment {
+   public:
+    ProxyEnvironment() {
+        for (const char* name : NAMES) {
+            if (const char* value = std::getenv(name)) saved_[name] = value;
+            set(name, "");
+        }
+    }
+    ~ProxyEnvironment() {
+        for (const char* name : NAMES) set(name, saved_.count(name) ? saved_[name] : "");
+    }
+    ProxyEnvironment(const ProxyEnvironment&)            = delete;
+    ProxyEnvironment& operator=(const ProxyEnvironment&) = delete;
+
+    // An empty value unsets it.
+    static void set(const char* name, const std::string& value) {
+#ifdef _WIN32
+        _putenv_s(name, value.c_str());
+#else
+        if (value.empty()) {
+            unsetenv(name);
+        } else {
+            setenv(name, value.c_str(), 1);
+        }
+#endif
+    }
+
+   private:
+    static constexpr const char* NAMES[] = {"https_proxy", "HTTPS_PROXY", "all_proxy",
+                                            "ALL_PROXY",   "no_proxy",    "NO_PROXY"};
+    std::map<std::string, std::string> saved_;
+};
+
+// A proxy that answers each CONNECT with `answer`, and keeps the requests and what the client sent next.
+class FakeProxy {
+   public:
+    FakeProxy(uint16_t port, std::string answer) : answer_(std::move(answer)) {
+        ok_     = listener_.listen(port).empty();
+        thread_ = std::thread([this] {
+            while (!stop_) {
+                const auto fd = listener_.accept(100);
+                if (!fd) continue;
+                net::TcpConnection c(*fd);
+                const auto request = c.readUntil("\r\n\r\n", 1 << 16, 2000);
+                c.sendAll(answer_);
+                // A TLS client speaks first: its ClientHello, which names the server.
+                std::string then;
+                if (answer_.rfind("HTTP/1.1 200", 0) == 0) then = c.readUntil("\x01never", 1 << 16, 1000);
+                std::lock_guard<std::mutex> lock(mutex_);
+                requests_.push_back(request);
+                after_.push_back(then);
+            }
+        });
+    }
+    ~FakeProxy() {
+        stop_ = true;
+        thread_.join();
+    }
+    [[nodiscard]] bool ok() const { return ok_; }
+    [[nodiscard]] std::vector<std::string> requests() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return requests_;
+    }
+    [[nodiscard]] std::vector<std::string> after() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return after_;
+    }
+
+   private:
+    std::string answer_;
+    net::TcpListener listener_;
+    std::thread thread_;
+    std::atomic<bool> stop_{false};
+    bool ok_ = false;
+    std::mutex mutex_;
+    std::vector<std::string> requests_, after_;
+};
+
+}  // namespace
+
+TEST_CASE("proxy: the variables read as curl reads them, NO_PROXY names passed by") {
+    std::map<std::string, std::string> env;
+    const Environment lookup = [&](const char* name) -> std::optional<std::string> {
+        const auto it = env.find(name);
+        if (it == env.end()) return std::nullopt;
+        return it->second;
+    };
+    CHECK_FALSE(proxyFor("lichess.org", lookup));
+
+    env["HTTPS_PROXY"] = "http://proxy.corp:3128";
+    auto p             = proxyFor("lichess.org", lookup);
+    REQUIRE(p);
+    CHECK(p->host == "proxy.corp");
+    CHECK(p->port == "3128");
+    CHECK(p->authorization.empty());
+    CHECK(p->variable == "HTTPS_PROXY");
+    CHECK(p->error.empty());
+
+    // The lowercase one first; an empty one is not set; ALL_PROXY when there is no other.
+    env["https_proxy"] = "lower:8080";
+    CHECK(proxyFor("lichess.org", lookup)->host == "lower");
+    env["https_proxy"] = "";
+    CHECK(proxyFor("lichess.org", lookup)->host == "proxy.corp");
+    env.erase("HTTPS_PROXY");
+    env.erase("https_proxy");
+    env["ALL_PROXY"] = "http://all.corp/";
+    p                = proxyFor("lichess.org", lookup);
+    REQUIRE(p);
+    CHECK(p->host == "all.corp");
+    CHECK(p->port == "1080");
+    CHECK(p->variable == "ALL_PROXY");
+
+    // A user and a password, percent-encoded, for Basic authentication.
+    env["https_proxy"] = "http://jean%40corp:p%40ss:w0rd@[::1]:8080";
+    p                  = proxyFor("lichess.org", lookup);
+    REQUIRE(p);
+    CHECK(p->host == "::1");
+    CHECK(p->port == "8080");
+    CHECK(p->authorization == "Basic amVhbkBjb3JwOnBAc3M6dzByZA==");  // jean@corp:p@ss:w0rd
+
+    // A proxy that cannot be used says so, rather than be passed by, and never repeats the password.
+    env["https_proxy"] = "socks5://user:secret@tor:9050";
+    p                  = proxyFor("lichess.org", lookup);
+    REQUIRE(p);
+    CHECK(p->error.find("only http://") != std::string::npos);
+    CHECK(p->error.find("secret") == std::string::npos);
+    env["https_proxy"] = "http://proxy:99999";
+    CHECK_FALSE(proxyFor("lichess.org", lookup)->error.empty());
+    env["https_proxy"] = "http://:3128";
+    CHECK_FALSE(proxyFor("lichess.org", lookup)->error.empty());
+
+    env["https_proxy"] = "http://proxy.corp:3128";
+    env["NO_PROXY"]    = "localhost, .lichess.org";
+    CHECK_FALSE(proxyFor("lichess.org", lookup));
+    CHECK(proxyFor("example.com", lookup));
+    env["no_proxy"] = "*";
+    CHECK_FALSE(proxyFor("example.com", lookup));
+
+    CHECK(noProxy("lichess.org", "lichess.org"));
+    CHECK(noProxy("lichess.org", "Socket.Lichess.ORG"));
+    CHECK(noProxy(".lichess.org", "lichess.org"));
+    CHECK(noProxy("lichess.org:443", "lichess.org"));
+    CHECK_FALSE(noProxy("lichess.org", "notlichess.org"));
+    CHECK_FALSE(noProxy("socket.lichess.org", "lichess.org"));
+    CHECK(noProxy("a.com,b.com\tc.com", "c.com"));
+    CHECK(noProxy("10.0.0.1, [::1]", "::1"));
+    CHECK(noProxy("10.0.0.1, [::1]", "10.0.0.1"));
+    CHECK_FALSE(noProxy("", "lichess.org"));
+    CHECK_FALSE(noProxy(" , ", "lichess.org"));
+}
+
+TEST_CASE("proxy: HTTPS goes through a CONNECT tunnel, TLS naming the server, the password never told") {
+    ProxyEnvironment environment;
+    const uint16_t port = 26037;
+    // lichess.invalid cannot be reached directly: a request that went past the proxy would fail at once.
+    const HttpRequest request{"https://lichess.invalid/api/broadcast/round/abcdefgh/push", "token", "text/plain", "x",
+                              5};
+
+    SUBCASE("tunnel opened: TLS over it, with the server's name") {
+        FakeProxy proxy(port, "HTTP/1.1 200 Connection established\r\n\r\n");
+        REQUIRE(proxy.ok());
+        ProxyEnvironment::set("HTTPS_PROXY", fmt::format("http://jean:s3cret@127.0.0.1:{}", port));
+        const auto result = httpPost(request);
+        // The fake proxy goes no further than the ClientHello.
+        CHECK(result.status == 0);
+        CHECK_MESSAGE(result.error.find("lichess.invalid") != std::string::npos, result.error);
+        CHECK(result.error.find("s3cret") == std::string::npos);
+        const auto requests = proxy.requests();
+        REQUIRE(requests.size() == 1);
+        CHECK(requests[0].rfind("CONNECT lichess.invalid:443 HTTP/1.1\r\n", 0) == 0);
+        CHECK(requests[0].find("\r\nHost: lichess.invalid:443\r\n") != std::string::npos);
+        CHECK(requests[0].find("\r\nProxy-Authorization: Basic amVhbjpzM2NyZXQ=\r\n") != std::string::npos);
+        // Neither the token nor the request go to the proxy: they are in the TLS that follows.
+        CHECK(requests[0].find("token") == std::string::npos);
+        const auto hello = proxy.after()[0];
+        REQUIRE_FALSE(hello.empty());
+        CHECK(hello[0] == '\x16');                                  // a TLS handshake record
+        CHECK(hello.find("lichess.invalid") != std::string::npos);  // the server's name (SNI)
+    }
+
+    SUBCASE("tunnel refused: told, without the user nor the password") {
+        FakeProxy proxy(port, "HTTP/1.1 407 Proxy Authentication Required\r\nContent-Length: 0\r\n\r\n");
+        REQUIRE(proxy.ok());
+        ProxyEnvironment::set("https_proxy", fmt::format("jean:s3cret@127.0.0.1:{}", port));
+        const auto result = httpPost(request);
+        CHECK(result.status == 0);
+        CHECK_MESSAGE(result.error.find("refused the connection to lichess.invalid: 407") != std::string::npos,
+                      result.error);
+        CHECK(result.error.find("s3cret") == std::string::npos);
+        CHECK(result.error.find("jean") == std::string::npos);
+    }
+
+    SUBCASE("a host of NO_PROXY reached directly, and plain HTTP never goes through the proxy") {
+        FakeProxy proxy(port, "HTTP/1.1 200 Connection established\r\n\r\n");
+        REQUIRE(proxy.ok());
+        ProxyEnvironment::set("ALL_PROXY", fmt::format("http://127.0.0.1:{}", port));
+        ProxyEnvironment::set("NO_PROXY", "example.com, 127.0.0.1");
+        auto result = httpPost({"https://127.0.0.1:26038/", "", "text/plain", "x", 5});
+        CHECK_MESSAGE(result.error.find("cannot connect to 127.0.0.1") != std::string::npos, result.error);
+        ProxyEnvironment::set("NO_PROXY", "");
+        result = httpPost({"http://127.0.0.1:26038/", "", "text/plain", "x", 5});
+        CHECK_MESSAGE(result.error.find("cannot connect to 127.0.0.1") != std::string::npos, result.error);
+        CHECK(proxy.requests().empty());
+    }
+
+    SUBCASE("a proxy that cannot be reached, or of a kind not supported, named") {
+        ProxyEnvironment::set("HTTPS_PROXY", "http://127.0.0.1:26039");
+        auto result = httpPost(request);
+        // Windows' variables have no case: there, https_proxy is HTTPS_PROXY, and found by that name first.
+        auto error = result.error;
+        for (auto& c : error) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        CHECK_MESSAGE(error.find("(the proxy of https_proxy)") != std::string::npos, result.error);
+        ProxyEnvironment::set("HTTPS_PROXY", "");
+        ProxyEnvironment::set("all_proxy", "socks5h://127.0.0.1:26039");
+        result = httpPost(request);
+        CHECK_MESSAGE(result.error.find("all_proxy: only http:// proxies") != std::string::npos, result.error);
+    }
 }
