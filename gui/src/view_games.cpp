@@ -404,8 +404,8 @@ void App::drawGames() {
     const auto& game = *replay_;
     const int total  = static_cast<int>(game.moves.size());
 
-    // Keyboard navigation while the window has focus.
-    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+    // Keyboard navigation while the window has focus, unless the keys go to a text field (the opening filter).
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !ImGui::GetIO().WantTextInput) {
         if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) replay_ply_--;
         if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) replay_ply_++;
         if (ImGui::IsKeyPressed(ImGuiKey_Home)) replay_ply_ = 0;
@@ -487,6 +487,9 @@ void App::drawGames() {
         chess::Board start;
         start.setFen(game.start_fen);
         int number = start.fullMoveNumber();
+        // The move list follows the current move when it moves out of sight (keys, buttons, a click in the chart).
+        const bool follow = replay_ply_ != replay_followed_;
+        if (follow && replay_ply_ == 0) ImGui::SetScrollY(0);
 
         for (int i = 0; i < total; ++i) {
             const auto& m = game.moves[i];
@@ -512,7 +515,7 @@ void App::drawGames() {
                 replay_ply_ = i + 1;
             }
             if (m.book || !pv_problems.empty()) ImGui::PopStyleColor();
-            if (current && ImGui::IsWindowAppearing()) ImGui::SetScrollHereY();
+            if (current && (ImGui::IsWindowAppearing() || (follow && !ImGui::IsItemVisible()))) ImGui::SetScrollHereY();
             if (ImGui::IsItemHovered() && !m.book) {
                 auto wdl = m.wdl ? fmt::format("  W/D/L {}/{}/{}", (*m.wdl)[0], (*m.wdl)[1], (*m.wdl)[2]) : "";
                 if (m.decision_ms) wdl += trf("  decided at {}", ui::formatClock(*m.decision_ms));
@@ -522,6 +525,7 @@ void App::drawGames() {
             }
             ImGui::SameLine();
         }
+        replay_followed_ = replay_ply_;
     }
     ImGui::EndChild();
     if (ImGui::GetContentRegionAvail().y < chart_min) {  // a window too low for it

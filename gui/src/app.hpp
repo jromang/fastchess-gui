@@ -417,6 +417,7 @@ class App {
     std::filesystem::path replay_log_;  // the engine log of the game shown, empty when it has none
     std::vector<std::pair<uint32_t, std::string>> replay_pv_;  // its PV warnings: (ply, warning)
     int replay_ply_   = 0;                                     // number of moves played on the replay board
+    int replay_followed_ = -1;                                    // replay_ply_ the move list was last scrolled to
     bool flip_replay_ = false;
 
     // Openings view: results by starting position.
