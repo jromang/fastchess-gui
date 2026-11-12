@@ -44,6 +44,7 @@ void App::refreshOpenings() {
     by_opening_          = tour::resultsByOpening(t->results(), t->encounterOpenings(), chess960(*t));
     by_opening_for_      = games_.size();
     opening_order_dirty_ = true;
+    opening_games_for_   = -1;
     if (selected_opening_ >= static_cast<int>(by_opening_.size())) selected_opening_ = -1;
 }
 
@@ -59,9 +60,6 @@ void App::drawOpenings() {
         return;
     }
     refreshOpenings();
-
-    std::unordered_map<uint64_t, int> game_index;  // game number -> index into games_
-    for (int i = 0; i < static_cast<int>(games_.size()); ++i) game_index.emplace(games_[i].game_id, i);
     const auto name = [](const tour::OpeningStats& o) { return o.eco.empty() ? o.fen : o.eco + " " + o.name; };
 
     // Toolbar: what to show, how many, export.
@@ -223,10 +221,20 @@ void App::drawOpenings() {
 
     ImGui::Spacing();
     ImGui::TextUnformatted(TR("Its games"));
-    for (const auto n : o.game_numbers) {
-        const auto it = game_index.find(n);
-        if (it == game_index.end()) continue;
-        const auto& g    = games_[it->second];
+    if (opening_games_for_ != selected_opening_) {
+        // Found once per opening chosen rather than every frame over every game.
+        std::unordered_map<uint64_t, int> game_index;  // game number -> index into games_
+        for (int i = 0; i < static_cast<int>(games_.size()); ++i) game_index.emplace(games_[i].game_id, i);
+        opening_games_.clear();
+        for (const auto n : o.game_numbers) {
+            if (const auto it = game_index.find(n); it != game_index.end()) opening_games_.push_back(it->second);
+        }
+        opening_games_for_ = selected_opening_;
+    }
+    for (const int index : opening_games_) {
+        if (index >= static_cast<int>(games_.size())) continue;
+        const auto& g    = games_[static_cast<std::size_t>(index)];
+        const auto n     = g.game_id;
         const auto label = fmt::format("{}  {} – {}  {}##og{}", g.game_id, run_.observer()->name(g.white),
                                        run_.observer()->name(g.black),
                                        g.white_result > 0   ? "1-0"
@@ -234,7 +242,7 @@ void App::drawOpenings() {
                                                             : "½-½",
                                        n);
         if (ImGui::Selectable(label.c_str())) {
-            selectGame(it->second);
+            selectGame(index);
             tab_request_ = Tab::Games;
         }
     }

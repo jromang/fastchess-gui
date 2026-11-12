@@ -399,6 +399,7 @@ TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly 
     {
         Harness viewer;
         REQUIRE(viewer.run.view(unfinished->dir).empty());
+        REQUIRE(viewer.waitFor([&] { return !viewer.run.observer()->loading(); }));
         const auto again = viewer.run.observer()->totals();
         REQUIRE(again.size() == totals.size());
         for (std::size_t i = 0; i < totals.size(); ++i) {

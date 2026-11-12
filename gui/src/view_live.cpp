@@ -737,10 +737,14 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
 
         ImGui::EndTable();
     }
-    // Follow the game; repeated for a few frames because the table grows after the first one.
+    // Follow the game, if the list was at its end (or the game is a new one): earlier moves being read stay in sight.
+    // Repeated for a few frames because the table grows after the first one.
     if (st.moves.size() != view.followed) {
-        view.followed      = st.moves.size();
-        view.follow_frames = 3;
+        const bool new_game = view.followed == 0 || st.moves.size() < view.followed;
+        const bool at_end   = view.follow_frames > 0 ||
+                              ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - ImGui::GetTextLineHeightWithSpacing();
+        if (new_game || at_end) view.follow_frames = 3;
+        view.followed = st.moves.size();
     }
     if (view.follow_frames > 0) {
         ImGui::SetScrollY(ImGui::GetScrollMaxY());

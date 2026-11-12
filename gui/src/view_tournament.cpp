@@ -17,6 +17,9 @@ namespace {
 
 float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
 
+constexpr std::size_t CROSSTABLE_MAX  = 200;  // engines; 7 columns more, below ImGui's 512
+constexpr std::size_t CROSSTABLE_AUTO = 32;   // a round robin of up to this many opens on its crosstable
+
 std::string half(double points) {
     const auto whole = static_cast<long>(std::floor(points + 1e-9));
     const bool h     = points - whole > 0.25;
@@ -92,16 +95,24 @@ bool App::isMatch() const {
 void App::refreshTable() {
     const auto* t = run_.tournament();
     if (!t || isMatch() || table_for_ == games_.size()) return;
-    table_     = tour::computeTable(t->spec(), t->results(), anchor_, t->byes());
-    table_for_ = games_.size();
+    // Hundreds of engines and their games take a while: then the table waits ten times that before the next games
+    // count, so that fast games do not hold the window. Asked for (a new anchor, an edit), it is computed now.
+    const auto now = std::chrono::steady_clock::now();
+    if (table_for_ != ~std::size_t(0) && now < table_next_) return;
+    table_      = tour::computeTable(t->spec(), t->results(), anchor_, t->byes());
+    table_for_  = games_.size();
+    table_next_ = now + std::min<std::chrono::steady_clock::duration>(10 * (std::chrono::steady_clock::now() - now),
+                                                                      std::chrono::seconds(5));
 }
 
 void App::drawStandingsTable(bool compact) {
-    constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit |
-                           ImGuiTableFlags_ScrollX | ImGuiTableFlags_PadOuterX;
-    const bool swiss     = run_.tournament() && run_.tournament()->spec().format == tour::Format::Swiss;
-    const int columns    = compact ? 11 : swiss ? 14 : 13;
+    // The whole table scrolls under its header in the space left; the compact one is as tall as its rows.
+    const auto flags  = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit |
+                        ImGuiTableFlags_ScrollX | ImGuiTableFlags_PadOuterX | (compact ? 0 : ImGuiTableFlags_ScrollY);
+    const bool swiss  = run_.tournament() && run_.tournament()->spec().format == tour::Format::Swiss;
+    const int columns = compact ? 11 : swiss ? 14 : 13;
     if (!ImGui::BeginTable("##standings", columns, flags)) return;
+    if (!compact) ImGui::TableSetupScrollFreeze(2, 1);
 
     ImGui::TableSetupColumn("#");
     ImGui::TableSetupColumn(TR("Engine"), ImGuiTableColumnFlags_WidthStretch);
@@ -121,68 +132,77 @@ void App::drawStandingsTable(bool compact) {
     }
     headers(columns, 10);
 
-    for (std::size_t i = 0; i < table_.rows.size(); ++i) {
-        const auto& r = table_.rows[i];
-        ImGui::TableNextRow();
-        ImGui::TableNextColumn();
-        ImGui::TextDisabled("%d", static_cast<int>(i + 1));
-        ImGui::TableNextColumn();
-        ImGui::TextUnformatted(r.name.c_str());
-        if (compact) {
-            const auto h = health(r);
-            if (!h.empty()) {
-                ImGui::SameLine();
-                ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
-                ImGui::TextUnformatted("!");
-                ImGui::PopStyleColor();
-                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", h.c_str());
-            }
-        }
-        ImGui::TableNextColumn();
-        ImGui::TextDisabled("%d", r.games);
-        ImGui::TableNextColumn();
-        ImGui::TextUnformatted(half(r.points).c_str());
-        ImGui::TableNextColumn();
-        ImGui::TextDisabled("%.1f", 100.0 * r.score());
-        ImGui::TableNextColumn();
-        if (r.rated) {
-            ImGui::Text("%+ld", std::lround(r.rating.elo));
-        } else {
-            ImGui::TextDisabled("—");
-        }
-        ImGui::TableNextColumn();
-        if (r.rated && r.rating.error > 0) {
-            ImGui::TextDisabled("%.0f", r.rating.error);
-        } else {
-            ImGui::TextDisabled(" ");
-        }
-        ImGui::TableNextColumn();
-        ImGui::PushStyleColor(ImGuiCol_Text, ui::GOOD);
-        ImGui::Text("%d", r.wins);
-        ImGui::PopStyleColor();
-        ImGui::TableNextColumn();
-        ImGui::TextDisabled("%d", r.draws);
-        ImGui::TableNextColumn();
-        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
-        ImGui::Text("%d", r.losses);
-        ImGui::PopStyleColor();
-        ImGui::TableNextColumn();
-        timeoutsCell(r.timeouts);
-        if (!compact) {
-            if (swiss) {
-                ImGui::TableNextColumn();
-                ImGui::TextDisabled("%.1f", r.buchholz);
-            }
-            ImGui::TableNextColumn();
-            ImGui::TextDisabled("%.2f", r.sb);
-            ImGui::TableNextColumn();
-            const auto h = health(r);
-            ImGui::PushStyleColor(ImGuiCol_Text, h.empty() ? ui::GOOD : ui::WARN);
-            ImGui::TextUnformatted(h.empty() ? "✓" : h.c_str());
-            ImGui::PopStyleColor();
+    // Only the rows in sight: a Swiss or a gauntlet can have hundreds of engines.
+    ImGuiListClipper clipper;
+    clipper.Begin(static_cast<int>(table_.rows.size()));
+    while (clipper.Step()) {
+        for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row) {
+            drawStandingsRow(static_cast<std::size_t>(row), compact, swiss);
         }
     }
     ImGui::EndTable();
+}
+
+void App::drawStandingsRow(std::size_t i, bool compact, bool swiss) {
+    const auto& r = table_.rows[i];
+    ImGui::TableNextRow();
+    ImGui::TableNextColumn();
+    ImGui::TextDisabled("%d", static_cast<int>(i + 1));
+    ImGui::TableNextColumn();
+    ImGui::TextUnformatted(r.name.c_str());
+    if (compact) {
+        const auto h = health(r);
+        if (!h.empty()) {
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+            ImGui::TextUnformatted("!");
+            ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", h.c_str());
+        }
+    }
+    ImGui::TableNextColumn();
+    ImGui::TextDisabled("%d", r.games);
+    ImGui::TableNextColumn();
+    ImGui::TextUnformatted(half(r.points).c_str());
+    ImGui::TableNextColumn();
+    ImGui::TextDisabled("%.1f", 100.0 * r.score());
+    ImGui::TableNextColumn();
+    if (r.rated) {
+        ImGui::Text("%+ld", std::lround(r.rating.elo));
+    } else {
+        ImGui::TextDisabled("—");
+    }
+    ImGui::TableNextColumn();
+    if (r.rated && r.rating.error > 0) {
+        ImGui::TextDisabled("%.0f", r.rating.error);
+    } else {
+        ImGui::TextDisabled(" ");
+    }
+    ImGui::TableNextColumn();
+    ImGui::PushStyleColor(ImGuiCol_Text, ui::GOOD);
+    ImGui::Text("%d", r.wins);
+    ImGui::PopStyleColor();
+    ImGui::TableNextColumn();
+    ImGui::TextDisabled("%d", r.draws);
+    ImGui::TableNextColumn();
+    ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+    ImGui::Text("%d", r.losses);
+    ImGui::PopStyleColor();
+    ImGui::TableNextColumn();
+    timeoutsCell(r.timeouts);
+    if (!compact) {
+        if (swiss) {
+            ImGui::TableNextColumn();
+            ImGui::TextDisabled("%.1f", r.buchholz);
+        }
+        ImGui::TableNextColumn();
+        ImGui::TextDisabled("%.2f", r.sb);
+        ImGui::TableNextColumn();
+        const auto h = health(r);
+        ImGui::PushStyleColor(ImGuiCol_Text, h.empty() ? ui::GOOD : ui::WARN);
+        ImGui::TextUnformatted(h.empty() ? "✓" : h.c_str());
+        ImGui::PopStyleColor();
+    }
 }
 
 void App::drawTournamentOverview() {
@@ -260,8 +280,8 @@ void App::drawTournamentOverview() {
     ui::beginCard("progress_card");
     const auto& spec = t->spec();
     if (tour::pairedAsItGoes(spec.format)) {
-        uint32_t round = 0;
-        for (const auto& row : t->scheduleRows()) round = std::max(round, row.encounter.round);
+        refreshSchedule();
+        const auto round = schedule_.last_round;
         ImGui::TextUnformatted(spec.format == tour::Format::Swiss ? trf("Round {} / {}", round, spec.rounds).c_str()
                                                                   : trf("Round {}", round).c_str());
         const auto all = run_.info().total_games;
@@ -369,14 +389,35 @@ void App::drawStandings() {
     const auto* t = run_.tournament();
     if (!t) return;
 
+    // The table, or the crosstable for a round robin of a size that fits: a Swiss, a knockout or a gauntlet leaves
+    // most of its cells empty, and hundreds of columns are not read (ImGui allows no more than 512).
+    const auto format  = t->spec().format;
+    const auto engines = t->spec().participants.size();
+    const bool fits    = engines <= CROSSTABLE_MAX;
+    if (standings_view_ < 0) {
+        standings_view_ = format == tour::Format::RoundRobin && engines <= CROSSTABLE_AUTO ? 1 : 0;
+    }
+    if (!fits) standings_view_ = 0;
+    ImGui::RadioButton(TR("Table"), &standings_view_, 0);
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!fits);
+    ImGui::RadioButton(TR("Crosstable"), &standings_view_, 1);
+    ImGui::EndDisabled();
+    if (!fits && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("%s", trf("Up to {} engines.", CROSSTABLE_MAX).c_str());
+    }
+
     // What the cells show, the rating anchor, export.
-    ImGui::TextUnformatted(TR("Cells:"));
-    ImGui::SameLine();
-    ImGui::RadioButton(TR("Score"), &crosstable_mode_, 0);
-    ImGui::SameLine();
-    ImGui::RadioButton("+ = −", &crosstable_mode_, 1);
-    ImGui::SameLine();
-    ImGui::RadioButton(TR("Elo difference"), &crosstable_mode_, 2);
+    if (standings_view_ == 1) {
+        ImGui::SameLine(0, px(30));
+        ImGui::TextUnformatted(TR("Cells:"));
+        ImGui::SameLine();
+        ImGui::RadioButton(TR("Score"), &crosstable_mode_, 0);
+        ImGui::SameLine();
+        ImGui::RadioButton("+ = −", &crosstable_mode_, 1);
+        ImGui::SameLine();
+        ImGui::RadioButton(TR("Elo difference"), &crosstable_mode_, 2);
+    }
 
     ImGui::SameLine(0, px(30));
     ImGui::TextUnformatted(TR("Anchor:"));
@@ -424,20 +465,27 @@ void App::drawStandings() {
     refreshTable();
 
     ImGui::Spacing();
-    drawCrosstable();
+    if (standings_view_ == 1) {
+        drawCrosstable();
+    } else {
+        drawStandingsTable(false);
+    }
 }
 
 void App::drawCrosstable() {
     const auto& rows = table_.rows;
-    const int n      = static_cast<int>(rows.size());
+    if (rows.size() > CROSSTABLE_MAX) return;
+    const int n = static_cast<int>(rows.size());
 
+    // The header and the names stay in sight when it scrolls.
     constexpr auto flags = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX |
-                           ImGuiTableFlags_PadOuterX;
+                           ImGuiTableFlags_ScrollY | ImGuiTableFlags_PadOuterX;
     const float cell     = crosstable_mode_ == 1 ? px(78) : px(46);
     const float list_h   = crosstable_cell_ ? std::max(px(120), ImGui::GetContentRegionAvail().y * 0.35f) : 0.0f;
 
     ImGui::BeginChild("##crosstable", ImVec2(0, crosstable_cell_ ? -list_h : 0));
     if (ImGui::BeginTable("##xt", 7 + n, flags)) {
+        ImGui::TableSetupScrollFreeze(2, 1);
         ImGui::TableSetupColumn("#");
         ImGui::TableSetupColumn(TR("Engine"));
         for (int c = 0; c < n; ++c) {
@@ -450,69 +498,75 @@ void App::drawCrosstable() {
         ImGui::TableSetupColumn("Elo");
         headers(7 + n, 4 + n);
 
-        for (int i = 0; i < n; ++i) {
-            const auto& r = rows[static_cast<std::size_t>(i)];
-            ImGui::PushID(i);
-            ImGui::TableNextRow(0, px(28));
-            ImGui::TableNextColumn();
-            ImGui::TextDisabled("%d", i + 1);
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted(r.name.c_str());
-
-            for (int c = 0; c < n; ++c) {
+        // Only the rows in sight; the cells of the columns out of sight are skipped.
+        ImGuiListClipper clipper;
+        clipper.Begin(n);
+        while (clipper.Step()) {
+            for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
+                const auto& r = rows[static_cast<std::size_t>(i)];
+                ImGui::PushID(i);
+                ImGui::TableNextRow(0, px(28));
                 ImGui::TableNextColumn();
-                const auto& col = rows[static_cast<std::size_t>(c)];
-                if (col.id == r.id) {
-                    ImGui::TextDisabled("—");
-                    continue;
-                }
-                const auto p = table_.pair(r.id, col.id);
-                std::string text;
-                if (p.games() > 0) {
-                    switch (crosstable_mode_) {
-                        case 1:
-                            text = fmt::format("+{} ={} -{}", p.wins, p.draws, p.losses);
-                            break;
-                        case 2: {
-                            const double s = std::clamp(p.points() / p.games(), 0.01, 0.99);
-                            text           = fmt::format("{:+.0f}", -400.0 * std::log10(1.0 / s - 1.0));
-                            break;
-                        }
-                        default:
-                            text = half(p.points());
-                    }
-                    const auto min = ImGui::GetCursorScreenPos();
-                    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(min.x - px(4), min.y - px(3)),
-                                                              ImVec2(min.x + cell - px(4), min.y + px(22)),
-                                                              scoreColor(p.points() / p.games(), 1.1f), px(4));
-                }
-                const bool selected =
-                    crosstable_cell_ && crosstable_cell_->first == r.id && crosstable_cell_->second == col.id;
-                if (ImGui::Selectable(fmt::format("{}##x{}", text, c).c_str(), selected, 0, ImVec2(cell - px(8), 0)) &&
-                    p.games() > 0) {
-                    crosstable_cell_ = std::make_pair(r.id, col.id);
-                }
-                if (ImGui::IsItemHovered() && p.games() > 0) {
-                    ImGui::SetTooltip("%s – %s\n+%d =%d -%d (%s / %d)", r.name.c_str(), col.name.c_str(), p.wins,
-                                      p.draws, p.losses, half(p.points()).c_str(), p.games());
-                }
-            }
+                ImGui::TextDisabled("%d", i + 1);
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(r.name.c_str());
 
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted(half(r.points).c_str());
-            ImGui::TableNextColumn();
-            ImGui::TextDisabled("%d", r.games);
-            ImGui::TableNextColumn();
-            timeoutsCell(r.timeouts);
-            ImGui::TableNextColumn();
-            ImGui::TextDisabled("%.2f", r.sb);
-            ImGui::TableNextColumn();
-            if (r.rated) {
-                ImGui::Text("%+ld ±%.0f", std::lround(r.rating.elo), r.rating.error);
-            } else {
-                ImGui::TextDisabled("—");
+                for (int c = 0; c < n; ++c) {
+                    if (!ImGui::TableNextColumn()) continue;
+                    const auto& col = rows[static_cast<std::size_t>(c)];
+                    if (col.id == r.id) {
+                        ImGui::TextDisabled("—");
+                        continue;
+                    }
+                    const auto p = table_.pair(r.id, col.id);
+                    std::string text;
+                    if (p.games() > 0) {
+                        switch (crosstable_mode_) {
+                            case 1:
+                                text = fmt::format("+{} ={} -{}", p.wins, p.draws, p.losses);
+                                break;
+                            case 2: {
+                                const double s = std::clamp(p.points() / p.games(), 0.01, 0.99);
+                                text           = fmt::format("{:+.0f}", -400.0 * std::log10(1.0 / s - 1.0));
+                                break;
+                            }
+                            default:
+                                text = half(p.points());
+                        }
+                        const auto min = ImGui::GetCursorScreenPos();
+                        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(min.x - px(4), min.y - px(3)),
+                                                                  ImVec2(min.x + cell - px(4), min.y + px(22)),
+                                                                  scoreColor(p.points() / p.games(), 1.1f), px(4));
+                    }
+                    const bool selected =
+                        crosstable_cell_ && crosstable_cell_->first == r.id && crosstable_cell_->second == col.id;
+                    if (ImGui::Selectable(fmt::format("{}##x{}", text, c).c_str(), selected, 0,
+                                          ImVec2(cell - px(8), 0)) &&
+                        p.games() > 0) {
+                        crosstable_cell_ = std::make_pair(r.id, col.id);
+                    }
+                    if (ImGui::IsItemHovered() && p.games() > 0) {
+                        ImGui::SetTooltip("%s – %s\n+%d =%d -%d (%s / %d)", r.name.c_str(), col.name.c_str(), p.wins,
+                                          p.draws, p.losses, half(p.points()).c_str(), p.games());
+                    }
+                }
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(half(r.points).c_str());
+                ImGui::TableNextColumn();
+                ImGui::TextDisabled("%d", r.games);
+                ImGui::TableNextColumn();
+                timeoutsCell(r.timeouts);
+                ImGui::TableNextColumn();
+                ImGui::TextDisabled("%.2f", r.sb);
+                ImGui::TableNextColumn();
+                if (r.rated) {
+                    ImGui::Text("%+ld ±%.0f", std::lround(r.rating.elo), r.rating.error);
+                } else {
+                    ImGui::TextDisabled("—");
+                }
+                ImGui::PopID();
             }
-            ImGui::PopID();
         }
         ImGui::EndTable();
     }

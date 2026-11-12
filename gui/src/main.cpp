@@ -244,6 +244,8 @@ int main(int argc, char** argv) {
     if (!args.shots.empty() && !std::getenv("SDL_VIDEODRIVER")) SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "offscreen");
 #endif
     if (!SDL_Init(SDL_INIT_VIDEO)) return fatal("SDL_Init");
+    // Until the setup's language is known (App reads it), startup failures speak the system's.
+    fcg::i18n::setLanguage(fcg::i18n::systemLanguage());
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -291,7 +293,7 @@ int main(int argc, char** argv) {
     }
 
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
-    if (!gl_context) return fatal("OpenGL 3.2 indisponible (SDL_GL_CreateContext)");
+    if (!gl_context) return fatal(TR("OpenGL 3.2 is not available (SDL_GL_CreateContext)"));
     SDL_GL_MakeCurrent(window, gl_context);
     // No vsync: on Wayland a hidden window would block in SwapWindow. The loop paces itself.
     SDL_GL_SetSwapInterval(0);
@@ -305,7 +307,7 @@ int main(int argc, char** argv) {
     SDL_ShowWindow(window);
     if (maximize) SDL_MaximizeWindow(window);
 
-    if (!fcg::gl::load()) return fatal("Fonctions OpenGL manquantes");
+    if (!fcg::gl::load()) return fatal(TR("OpenGL functions are missing"));
 
     const char* pref = SDL_GetPrefPath("fastchess", "fastchess-gui");
     fcg::Storage storage(args.profile.empty() ? fs::path(pref ? pref : ".") : fs::path(args.profile));
@@ -358,6 +360,15 @@ int main(int argc, char** argv) {
                 ImGui_ImplSDL3_ProcessEvent(&event);
                 if (event.type == SDL_EVENT_QUIT) app.requestQuit();
                 if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED) app.onFocusGained();
+                // The scale of the screen the window is on, as at startup: moved to another, or changed in the
+                // system's settings.
+                if ((event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED ||
+                     event.type == SDL_EVENT_WINDOW_DISPLAY_CHANGED) &&
+                    event.window.windowID == SDL_GetWindowID(window)) {
+                    if (const auto display = SDL_GetDisplayForWindow(window)) {
+                        app.onDisplayScale(std::max(1.0f, SDL_GetDisplayContentScale(display)));
+                    }
+                }
                 if (event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED &&
                     event.window.windowID == SDL_GetWindowID(window)) {
                     app.requestQuit();

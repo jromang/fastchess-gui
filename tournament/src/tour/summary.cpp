@@ -52,4 +52,29 @@ std::vector<Summary> listTournaments(const fs::path& root) {
     return list;
 }
 
+std::vector<Summary> SummaryCache::list(const fs::path& root) {
+    std::map<fs::path, Entry> kept;
+    std::vector<Summary> list;
+    for (const auto& dir : tournamentDirs(root)) {
+        Entry now;
+        std::error_code ec;
+        now.journal_size = fs::file_size(dir / "journal.jsonl", ec);
+        if (ec) now.journal_size = 0;
+        now.journal_time = fs::last_write_time(dir / "journal.jsonl", ec);
+        now.spec_time    = fs::last_write_time(dir / "tournament.json", ec);
+
+        const auto it = entries_.find(dir);
+        if (it != entries_.end() && it->second.journal_size == now.journal_size &&
+            it->second.journal_time == now.journal_time && it->second.spec_time == now.spec_time) {
+            now.summary = std::move(it->second.summary);
+        } else {
+            now.summary = summarize(dir);
+        }
+        if (now.summary) list.push_back(*now.summary);
+        kept.emplace(dir, std::move(now));
+    }
+    entries_ = std::move(kept);  // folders gone are forgotten
+    return list;
+}
+
 }  // namespace fcg::tour

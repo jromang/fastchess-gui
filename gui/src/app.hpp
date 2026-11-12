@@ -172,6 +172,9 @@ class App {
     // The window came back to the front: an engine may have been rebuilt or moved meanwhile.
     void onFocusGained() { refreshPrograms(); }
 
+    // The window moved to a screen of another scale (or the screen's changed): fonts and sizes follow it.
+    void onDisplayScale(float scale);
+
     // For scripted screenshots.
     void focusWindow(const std::string& name);
     bool debugSelectGame(int index);
@@ -239,6 +242,7 @@ class App {
     void drawTournamentOverview();
     void drawStandings();
     void drawStandingsTable(bool compact);
+    void drawStandingsRow(std::size_t i, bool compact, bool swiss);
     void drawPgnOutError();  // when the PGN file of setup "Also append every game to" cannot be written
     void drawCrosstable();
     void drawSchedule();
@@ -389,10 +393,29 @@ class App {
     MoveChart live_chart_   = MoveChart::Eval;
     MoveChart replay_chart_ = MoveChart::Eval;
 
+    // Schedule tab: its rows and what is shown with them, computed again when the tournament changes (its
+    // version), not every frame.
+    struct ScheduleGroup {
+        std::size_t first = 0, last = 0;  // rows
+        uint32_t number  = 0;             // cycle, or round
+        int block        = 0;             // a cycle can come in two blocks
+        std::size_t done = 0, total = 0;
+        bool running = false;
+    };
+    struct ScheduleView {
+        const tour::TournamentState* tournament = nullptr;
+        uint64_t version                        = ~uint64_t(0);
+        std::vector<tour::ScheduleRow> rows;
+        std::vector<ScheduleGroup> groups;
+        std::map<uint64_t, std::string> result_of;  // by game number
+        std::map<uint32_t, std::string> openings;   // the names of the openings encounters started with
+        std::map<std::pair<uint32_t, uint32_t>, std::string> round_openings;  // (cycle, round), one opening per round
+        std::size_t done = 0, running = 0, pending = 0;
+        uint32_t last_round = 0;
+    } schedule_;
+    void refreshSchedule();
+
     // SPRT calculator: its own copy of the bounds, applied to the setup on request.
-    // Schedule tab: the names of the openings its encounters started with, by encounter.
-    const tour::TournamentState* schedule_openings_for_ = nullptr;
-    std::map<uint32_t, std::string> schedule_openings_;
 
     bool sprt_calc_open_  = false;
     bool open_statistics_ = false;  // --focus statistics: the match's Statistics section opens
@@ -415,6 +438,7 @@ class App {
     std::filesystem::path replay_log_;  // the engine log of the game shown, empty when it has none
     std::vector<std::pair<uint32_t, std::string>> replay_pv_;  // its PV warnings: (ply, warning)
     int replay_ply_   = 0;                                     // number of moves played on the replay board
+    int replay_followed_ = -1;                                    // replay_ply_ the move list was last scrolled to
     bool flip_replay_ = false;
 
     // Openings view: results by starting position.
@@ -424,6 +448,8 @@ class App {
     std::vector<int> opening_order_;                // rows shown, sorted
     bool opening_order_dirty_ = true;
     int selected_opening_     = -1;  // index into by_opening_
+    std::vector<int> opening_games_;  // indexes into games_ of the selected opening's games
+    int opening_games_for_ = -1;      // the opening they are of, -1 when to find again
 
     // Books view: the library, and the book shown, read in the background.
     std::vector<BookEntry> books_;
@@ -490,10 +516,16 @@ class App {
     // Standings of a round robin or gauntlet, recomputed when games arrive.
     tour::Table table_;
     std::size_t table_for_ = ~std::size_t(0);
+    std::chrono::steady_clock::time_point table_next_{};  // a big table waits a while before it is computed again
     std::optional<tour::Anchor> anchor_;
     int crosstable_mode_ = 0;                             // 0 score, 1 wins/draws/losses, 2 Elo difference
+    int standings_view_  = -1;                            // 0 table, 1 crosstable, -1 as suits the tournament
     std::optional<std::pair<int, int>> crosstable_cell_;  // participant ids (row, column)
     std::string template_name_;
+    std::vector<std::string> template_names_;  // the templates folder, listed now and then rather than every frame
+    std::chrono::steady_clock::time_point templates_listed_{};
+    std::string template_message_;  // why the last save or load failed
+    std::string template_replace_;  // the file name of a template to replace, once confirmed
 
     // Schedule tab and edits.
     int edit_kind_ = 0;        // tour::Edit::Kind
@@ -505,6 +537,13 @@ class App {
     int edit_replay_filter_ = 0;  // 0 losses on time and crashes, 1 every game of a participant
     std::string edit_message_;
     bool edit_error_ = false;
+    // The games "Play games again" picks and the impact of the edit, computed again when they may have changed.
+    struct EditPreview {
+        std::string games_key;  // tournament version, filter, participant
+        std::vector<std::pair<uint32_t, int>> games;
+        std::string key;  // tournament version and the whole edit
+        tour::Impact impact;
+    } edit_preview_;
 
     // Queue and relaunch.
     std::vector<QueuedTournament> queue_;
@@ -514,10 +553,28 @@ class App {
     Broadcaster broadcaster_;
     bool broadcast_editing_ = false;  // a folder, token or round field was being typed in at the last frame
 
-    // Ratings page: every game of the profile, and what is computed from them.
-    tour::GameDb game_db_;
+    // Ratings page: every game of the profile, and what is computed from them, on a worker thread: a rating list
+    // of thousands of engines takes a moment.
+    struct RatingsResult {
+        std::shared_ptr<const tour::GameDb> db;
+        std::string anchor;  // the one used: the default when none was chosen
+        double anchor_elo = 0;
+        tour::RatingList list;
+        std::string card_engine;
+        tour::EngineRecord card;
+        std::vector<tour::RatingPoint> card_history;
+        std::string h2h_a, h2h_b;
+        tour::HeadToHead h2h;
+        std::set<std::string> progress_engines;
+        std::map<std::string, std::vector<tour::RatingPoint>> progress;
+    };
+    std::future<RatingsResult> ratings_job_;
+    std::shared_ptr<const tour::GameDb> game_db_ = std::make_shared<tour::GameDb>();
     bool game_db_dirty_ = true;  // read the tournaments again
     bool ratings_dirty_ = true;  // compute again, with other filters
+    std::optional<std::vector<std::filesystem::path>> rating_pgns_;  // settings.json's, read once
+    const std::vector<std::filesystem::path>& ratingPgns();
+    void setRatingPgns(const std::vector<std::filesystem::path>& files);
     tour::RatingList rating_list_;
     std::string rating_tc_;      // time control shown, empty = all
     std::string rating_anchor_;  // engine whose rating is fixed, empty = average 0
@@ -547,6 +604,14 @@ class App {
     std::vector<tour::Summary> tournaments_;
     bool tournaments_dirty_  = true;
     std::size_t legacy_runs_ = 0;
+    // The list read on a worker thread, each journal again only when it changed.
+    struct TournamentList {
+        std::vector<tour::Summary> summaries;
+        std::size_t legacy_runs = 0;
+    };
+    std::future<TournamentList> tournaments_job_;
+    std::shared_ptr<tour::SummaryCache> summary_cache_ = std::make_shared<tour::SummaryCache>();
+    bool tournaments_read_                             = false;  // once at least
     std::optional<ui::Theme> theme_applied_;
     int zoom_applied_ = 0;
 

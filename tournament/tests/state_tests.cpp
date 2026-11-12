@@ -14,6 +14,7 @@
 #include <tour/files.hpp>
 #include <tour/journal.hpp>
 #include <tour/state.hpp>
+#include <tour/summary.hpp>
 
 using namespace fcg::tour;
 namespace fs = std::filesystem;
@@ -185,10 +186,38 @@ TEST_CASE("state: a released game is played again first") {
     const auto b = state->claimNext();
     REQUIRE(a);
     REQUIRE(b);
+    const auto claimed = state->version();
     state->release(*a);
+    CHECK(state->version() > claimed);  // the views see the change
     const auto c = state->claimNext();
     REQUIRE(c);
     CHECK(c->number() == a->number());
+    const auto before = state->version();
+    state->complete(*c, gameData(*c, "1-0"));
+    CHECK(state->version() > before);
+}
+
+TEST_CASE("summaries: kept between two listings, read again when the journal changed") {
+    const auto root = freshDir("summaries");
+    fs::create_directories(root);
+    auto state = TournamentState::create(root / "20260101-000000 test", matchSpec());
+
+    SummaryCache cache;
+    auto list = cache.list(root);
+    REQUIRE(list.size() == 1);
+    CHECK(list[0].played == 0);
+    CHECK(cache.list(root).size() == 1);
+
+    const auto task = state->claimNext();
+    REQUIRE(task);
+    state->complete(*task, gameData(*task, "1-0"));
+    list = cache.list(root);
+    REQUIRE(list.size() == 1);
+    CHECK(list[0].played == 1);
+
+    state.reset();
+    fs::remove_all(root / "20260101-000000 test");
+    CHECK(cache.list(root).empty());
 }
 
 TEST_CASE("state: the SPRT ends a match and the verdict is journaled") {

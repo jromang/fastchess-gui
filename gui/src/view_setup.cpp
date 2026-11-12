@@ -167,6 +167,12 @@ void App::setupMatch() {
         case MatchMode::Sprt: {
             changed |= inputDouble("elo0", "##elo0", setup_.sprt_elo0, -1000, 1000);
             changed |= inputDouble("elo1", "##elo1", setup_.sprt_elo1, -1000, 1000);
+            if (setup_.sprt_elo1 <= setup_.sprt_elo0) {  // Start waits until they are right
+                ui::label("", labelWidth());
+                ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+                ImGui::TextUnformatted(TR("elo1 must be larger than elo0."));
+                ImGui::PopStyleColor();
+            }
             changed |= inputDouble("alpha", "##alpha", setup_.sprt_alpha, 0.001, 0.5, "%.3f");
             changed |= inputDouble("beta", "##beta", setup_.sprt_beta, 0.001, 0.5, "%.3f");
 
@@ -1030,9 +1036,8 @@ void App::drawSetupSummary() {
     }
     if (setup_.common_hash > 0 || setup_.common_threads > 0) {
         std::string parts;
-        if (setup_.common_hash > 0) parts += fmt::format("Hash {} MB", setup_.common_hash);
-        if (setup_.common_threads > 0)
-            parts += fmt::format("{}Threads {}", parts.empty() ? "" : ", ", setup_.common_threads);
+        if (setup_.common_hash > 0) parts += trf("Hash {} MB", setup_.common_hash);
+        if (setup_.common_threads > 0) parts += (parts.empty() ? "" : ", ") + trf("Threads {}", setup_.common_threads);
         check(true, trf("Common settings: {}", parts));
     }
     for (const auto& p : setup_.participants) {
@@ -1050,15 +1055,19 @@ void App::drawTemplates() {
     ui::beginCard("templates_card");
     ImGui::TextDisabled("%s", TR("Templates"));
 
+    // Listed every few seconds rather than every frame; a template copied into the folder shows up soon enough.
     const auto dir = storage_.root() / "templates";
-    std::vector<std::string> names;
     std::error_code ec;
-    for (std::filesystem::directory_iterator it(dir, ec), last; !ec && it != last; it.increment(ec)) {
-        if (it->path().extension() == ".json") names.push_back(it->path().stem().string());
+    if (const auto now = std::chrono::steady_clock::now(); now - templates_listed_ > std::chrono::seconds(3)) {
+        templates_listed_ = now;
+        template_names_.clear();
+        for (std::filesystem::directory_iterator it(dir, ec), last; !ec && it != last; it.increment(ec)) {
+            if (it->path().extension() == ".json") template_names_.push_back(it->path().stem().string());
+        }
+        std::sort(template_names_.begin(), template_names_.end());
     }
-    std::sort(names.begin(), names.end());
 
-    for (const auto& name : names) {
+    for (const auto& name : template_names_) {
         ImGui::PushID(name.c_str());
         if (ImGui::SmallButton(TR("Load"))) {
             if (auto loaded = readJson<MatchSetup>(dir / (name + ".json"))) {
@@ -1069,14 +1078,17 @@ void App::drawTemplates() {
                 loaded->panes    = setup_.panes;
                 loaded->notify   = setup_.notify;
                 setup_           = *loaded;
+                template_message_.clear();
                 saveSetupSoon();
+            } else {
+                template_message_ = trf("Cannot read the template {}.", name);
             }
         }
         ImGui::SameLine();
         ImGui::TextUnformatted(name.c_str());
         ImGui::PopID();
     }
-    if (names.empty()) ImGui::TextDisabled("%s", TR("No template yet."));
+    if (template_names_.empty()) ImGui::TextDisabled("%s", TR("No template yet."));
 
     char buffer[128];
     const auto n = std::min(template_name_.size(), sizeof(buffer) - 1);
@@ -1086,16 +1098,44 @@ void App::drawTemplates() {
     if (ImGui::InputTextWithHint("##template_name", TR("Template name"), buffer, sizeof(buffer)))
         template_name_ = buffer;
     ImGui::SameLine();
+
+    const auto save = [&](const std::string& file) {
+        std::filesystem::create_directories(dir, ec);
+        if (writeJson(dir / (file + ".json"), setup_)) {
+            template_name_.clear();
+            template_message_.clear();
+        } else {
+            template_message_ = trf("Cannot write {}", (dir / (file + ".json")).string());
+        }
+        templates_listed_ = {};
+    };
     ImGui::BeginDisabled(template_name_.empty());
     if (ImGui::Button(TR("Save"))) {
-        std::filesystem::create_directories(dir, ec);
-        std::string file = template_name_;
-        for (auto& c : file) {
-            if (c == '/' || c == '\\' || c == ':') c = '_';
+        const auto file = fileNameOf(template_name_);
+        if (std::find(template_names_.begin(), template_names_.end(), file) != template_names_.end() ||
+            std::filesystem::exists(dir / (file + ".json"), ec)) {
+            template_replace_ = file;
+            ImGui::OpenPopup("replace_template");
+        } else {
+            save(file);
         }
-        if (writeJson(dir / (file + ".json"), setup_)) template_name_.clear();
     }
     ImGui::EndDisabled();
+    if (ImGui::BeginPopup("replace_template")) {
+        ImGui::TextUnformatted(trf("Replace the template {}?", template_replace_).c_str());
+        if (ImGui::Button(TR("Replace"))) {
+            save(template_replace_);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(TR("Cancel"))) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+    if (!template_message_.empty()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+        ImGui::TextWrapped("%s", template_message_.c_str());
+        ImGui::PopStyleColor();
+    }
     ui::endCard();
 }
 

@@ -87,6 +87,13 @@ void App::applyThemeSetting() {
     zoom_applied_                   = zoom;
 }
 
+void App::onDisplayScale(float scale) {
+    if (scale == options_.ui_scale) return;
+    options_.ui_scale              = scale;
+    ImGui::GetStyle().FontScaleDpi = scale;
+    theme_applied_.reset();  // the style is rebuilt at the new scale on the next frame
+}
+
 // Ctrl + and Ctrl -, or Ctrl and the mouse wheel, step through the sizes; Ctrl 0 goes back to 100 %.
 void App::handleZoomKeys() {
     const auto& io = ImGui::GetIO();
@@ -112,8 +119,19 @@ void App::handleZoomKeys() {
 }
 
 void App::refreshTournaments() {
-    tournaments_       = tour::listTournaments(storage_.runsDir());
-    legacy_runs_       = tour::legacyRuns(storage_.runsDir()).size();
+    if (tournaments_job_.valid()) {
+        if (tournaments_job_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
+        auto list         = tournaments_job_.get();
+        tournaments_      = std::move(list.summaries);
+        legacy_runs_      = list.legacy_runs;
+        tournaments_read_ = true;
+    }
+    if (!tournaments_dirty_) return;
+
+    // On a worker thread: hundreds of journals take a moment, and a folder on a network drive longer.
+    tournaments_job_   = std::async(std::launch::async, [cache = summary_cache_, root = storage_.runsDir()] {
+        return TournamentList{cache->list(root), tour::legacyRuns(root).size()};
+    });
     tournaments_dirty_ = false;
 }
 
@@ -267,7 +285,7 @@ void App::drawRail(float width) {
 // Home
 
 void App::drawHome() {
-    if (tournaments_dirty_) refreshTournaments();
+    refreshTournaments();
 
     const float buttons = px(330);
     ui::pageTitle(TR("Tournaments"));
@@ -335,7 +353,7 @@ void App::drawHome() {
 
     sectionTitle(TR("All tournaments"));
     if (tournaments_.empty()) {
-        ImGui::TextDisabled("%s", TR("No tournament yet. Start with a new tournament."));
+        if (tournaments_read_) ImGui::TextDisabled("%s", TR("No tournament yet. Start with a new tournament."));
         return;
     }
 
@@ -392,8 +410,12 @@ void App::drawNewMatch() {
     ui::pageTitle(TR("New tournament"));
     ImGui::TextDisabled("%s", TR("A match between two versions, a round robin or a gauntlet."));
 
-    const bool ready = setup_.format == TournamentFormat::Match ? !setup_.engine_a.empty() && !setup_.engine_b.empty()
-                                                                : setup_.participants.size() >= 2;
+    const bool chosen = setup_.format == TournamentFormat::Match ? !setup_.engine_a.empty() && !setup_.engine_b.empty()
+                                                                 : setup_.participants.size() >= 2;
+    // SPRT bounds the wrong way round, said beside them, rather than fastchess' message once started.
+    const bool bad_sprt = setup_.format == TournamentFormat::Match && setup_.mode == MatchMode::Sprt &&
+                          setup_.sprt_elo1 <= setup_.sprt_elo0;
+    const bool ready    = chosen && !bad_sprt;
     // Only the engines of this setup matter: the others' options can be read while it plays.
     bool probing = false;
     if (setup_.format == TournamentFormat::Match) {
@@ -409,9 +431,11 @@ void App::drawNewMatch() {
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
         if (locked)
             ImGui::SetTooltip("%s", TR("A match is already running."));
-        else if (!ready)
+        else if (!chosen)
             ImGui::SetTooltip("%s", setup_.format == TournamentFormat::Match ? TR("Choose engines A and B.")
                                                                              : TR("Choose at least two engines."));
+        else if (bad_sprt)
+            ImGui::SetTooltip("%s", TR("elo1 must be larger than elo0."));
         else if (probing)
             ImGui::SetTooltip("%s", TR("Reading the options of an engine…"));
     }
@@ -419,7 +443,8 @@ void App::drawNewMatch() {
     ImGui::SameLine();
     if (ui::iconButton("enqueue", ui::Icon::Plus, TR("Add to the queue"), ready)) enqueue();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-        ImGui::SetTooltip("%s", TR("Starts by itself when the running tournament ends."));
+        ImGui::SetTooltip("%s", bad_sprt ? TR("elo1 must be larger than elo0.")
+                                         : TR("Starts by itself when the running tournament ends."));
     }
     if (!start_error_.empty()) {
         ImGui::SameLine();

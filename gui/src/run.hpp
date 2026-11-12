@@ -80,6 +80,11 @@ void configureFastchess(const tour::TournamentSpec& spec);
 // A name made fit for a file name: anything but [A-Za-z0-9._-] becomes '_', at most 60 characters.
 [[nodiscard]] std::string cleanName(std::string s);
 
+// A name the user typed, as a file name on any system: the characters Windows forbids (<>:"/\|?* and control
+// characters) become '_', as do a trailing dot or space and the names Windows keeps (CON, NUL, COM1…). Other
+// characters, accents included, stay.
+[[nodiscard]] std::string fileNameOf(std::string name);
+
 [[nodiscard]] std::string makeRunDirName(const std::string& a, const std::string& b);
 
 // Chess960 starting position number n (0-959, Scharnagl's numbering: 518 is the usual one), as a FEN.

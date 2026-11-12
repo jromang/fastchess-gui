@@ -665,6 +665,7 @@ Impact TournamentState::preview(const Edit& edit) const {
 
 void TournamentState::applyEdit(const Edit& edit) {
     if (read_only_) throw std::runtime_error(READ_ONLY);
+    const Bump bump{version_};
     const auto impact = preview(edit);
     if (!impact.error.empty()) throw std::runtime_error(impact.error);
 
@@ -700,6 +701,7 @@ bool TournamentState::canUndo() const {
 
 void TournamentState::undoEdit() {
     if (read_only_) throw std::runtime_error(READ_ONLY);
+    const Bump bump{version_};
     std::lock_guard<std::mutex> lock(mutex_);
     if (!undo_ || undo_->claims != claims_) {
         throw std::runtime_error("a game started since the last change, which can no longer be undone");
@@ -798,6 +800,7 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
 }
 
 std::optional<GameTask> TournamentState::claimNext() {
+    const Bump bump{version_};
     std::lock_guard<std::mutex> lock(mutex_);
     if (finished_ || read_only_) return std::nullopt;
 
@@ -823,6 +826,7 @@ std::optional<GameTask> TournamentState::claimNext() {
 }
 
 void TournamentState::release(const GameTask& task) {
+    const Bump bump{version_};
     std::lock_guard<std::mutex> lock(mutex_);
     running_.erase(task.number());
     if (!done(task.encounter.index, task.game) && !dropped_.count(task.number())) {
@@ -831,6 +835,7 @@ void TournamentState::release(const GameTask& task) {
 }
 
 Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchData& data) {
+    const Bump bump{version_};
     using fastchess::pgn::CommentStyle;
     using fastchess::pgn::PgnBuilder;
 

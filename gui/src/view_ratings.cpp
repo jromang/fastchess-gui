@@ -4,7 +4,9 @@
 #include <algorithm>
 #include <chrono>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
+#include <future>
 
 #include <imgui.h>
 #include <implot.h>
@@ -79,48 +81,88 @@ tour::GameFilter App::ratingFilter() const {
     return f;
 }
 
-void App::refreshRatings() {
-    if (game_db_dirty_) {
-        game_db_       = tour::readGameDb(tour::tournamentDirs(storage_.runsDir()), storage_.ratingPgns());
-        game_db_dirty_ = false;
-        ratings_dirty_ = true;
-    }
-    if (!ratings_dirty_) return;
+const std::vector<std::filesystem::path>& App::ratingPgns() {
+    if (!rating_pgns_) rating_pgns_ = storage_.ratingPgns();
+    return *rating_pgns_;
+}
 
-    // The default anchor: the first engine of the library with a reference rating.
-    if (rating_anchor_.empty()) {
-        for (const auto& e : engines_) {
-            if (e.elo > 0 && game_db_.engine(e.name)) {
-                rating_anchor_     = e.name;
-                rating_anchor_elo_ = e.elo;
-                break;
+void App::setRatingPgns(const std::vector<std::filesystem::path>& files) {
+    storage_.setRatingPgns(files);
+    rating_pgns_   = files;
+    game_db_dirty_ = true;
+}
+
+void App::refreshRatings() {
+    if (ratings_job_.valid()) {
+        if (ratings_job_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
+        auto r       = ratings_job_.get();
+        game_db_     = std::move(r.db);
+        rating_list_ = std::move(r.list);
+        // What was chosen meanwhile stays; the defaults fill what is still empty.
+        if (rating_anchor_.empty()) rating_anchor_ = r.anchor, rating_anchor_elo_ = r.anchor_elo;
+        if (card_engine_.empty()) card_engine_ = r.card_engine;
+        if (h2h_a_.empty() && h2h_b_.empty()) h2h_a_ = r.h2h_a, h2h_b_ = r.h2h_b;
+        if (progress_engines_.empty()) progress_engines_ = r.progress_engines;
+        card_         = std::move(r.card);
+        card_history_ = std::move(r.card_history);
+        card_search_  = {};
+        h2h_          = std::move(r.h2h);
+        progress_     = std::move(r.progress);
+    }
+    if (!game_db_dirty_ && !ratings_dirty_) return;
+
+    std::vector<std::pair<std::string, double>> library;  // the engines with a reference rating, for the anchor
+    for (const auto& e : engines_) {
+        if (e.elo > 0) library.emplace_back(e.name, e.elo);
+    }
+    RatingsResult in;
+    if (!game_db_dirty_) in.db = game_db_;
+    in.anchor           = rating_anchor_;
+    in.anchor_elo       = rating_anchor_elo_;
+    in.card_engine      = card_engine_;
+    in.h2h_a            = h2h_a_;
+    in.h2h_b            = h2h_b_;
+    in.progress_engines = progress_engines_;
+    const auto dirs = game_db_dirty_ ? tour::tournamentDirs(storage_.runsDir()) : std::vector<std::filesystem::path>{};
+    auto work = [in = std::move(in), dirs, pgns = ratingPgns(), filter = ratingFilter(), library = std::move(library),
+                 min_games = rating_min_games_]() mutable {
+        if (!in.db) in.db = std::make_shared<tour::GameDb>(tour::readGameDb(dirs, pgns));
+        const auto& db = *in.db;
+
+        // The default anchor: the first engine of the library with a reference rating.
+        if (in.anchor.empty()) {
+            for (const auto& [name, elo] : library) {
+                if (db.engine(name)) {
+                    in.anchor     = name;
+                    in.anchor_elo = elo;
+                    break;
+                }
             }
         }
-    }
-    tour::NamedAnchor anchor;
-    if (!rating_anchor_.empty()) anchor = std::make_pair(rating_anchor_, rating_anchor_elo_);
+        tour::NamedAnchor anchor;
+        if (!in.anchor.empty()) anchor = std::make_pair(in.anchor, in.anchor_elo);
+        in.list = tour::ratingList(db, filter, anchor, min_games);
 
-    const auto filter = ratingFilter();
-    rating_list_      = tour::ratingList(game_db_, filter, anchor, rating_min_games_);
-
-    // The card, the head to head and the progress start with the leaders of the list, the anchor (whose rating
-    // does not move) last.
-    std::vector<std::string> top;
-    for (const auto& e : rating_list_.entries) {
-        if (e.name != rating_anchor_) top.push_back(e.name);
-    }
-    if (!rating_anchor_.empty() && game_db_.engine(rating_anchor_)) top.push_back(rating_anchor_);
-    if (card_engine_.empty() && !top.empty()) card_engine_ = top[0];
-    if (h2h_a_.empty() && h2h_b_.empty() && top.size() >= 2) h2h_a_ = top[0], h2h_b_ = top[1];
-    if (progress_engines_.empty() && !top.empty()) progress_engines_.insert(top[0]);
-    if (!card_engine_.empty()) {
-        card_         = tour::engineRecord(game_db_, filter, card_engine_);
-        card_history_ = tour::ratingHistory(game_db_, filter, anchor, card_engine_);
-        card_search_  = {};
-    }
-    if (!h2h_a_.empty() && !h2h_b_.empty()) h2h_ = tour::headToHead(game_db_, filter, h2h_a_, h2h_b_);
-    progress_.clear();
-    for (const auto& name : progress_engines_) progress_[name] = tour::ratingHistory(game_db_, filter, anchor, name);
+        // The card, the head to head and the progress start with the leaders of the list, the anchor (whose
+        // rating does not move) last.
+        std::vector<std::string> top;
+        for (const auto& e : in.list.entries) {
+            if (e.name != in.anchor) top.push_back(e.name);
+        }
+        if (!in.anchor.empty() && db.engine(in.anchor)) top.push_back(in.anchor);
+        if (in.card_engine.empty() && !top.empty()) in.card_engine = top[0];
+        if (in.h2h_a.empty() && in.h2h_b.empty() && top.size() >= 2) in.h2h_a = top[0], in.h2h_b = top[1];
+        if (in.progress_engines.empty() && !top.empty()) in.progress_engines.insert(top[0]);
+        if (!in.card_engine.empty()) {
+            in.card         = tour::engineRecord(db, filter, in.card_engine);
+            in.card_history = tour::ratingHistory(db, filter, anchor, in.card_engine);
+        }
+        if (!in.h2h_a.empty() && !in.h2h_b.empty()) in.h2h = tour::headToHead(db, filter, in.h2h_a, in.h2h_b);
+        for (const auto& name : in.progress_engines) in.progress[name] = tour::ratingHistory(db, filter, anchor, name);
+        return std::move(in);
+    };
+    ratings_job_   = std::async(std::launch::async, std::move(work));
+    game_db_dirty_ = false;
     ratings_dirty_ = false;
 }
 
@@ -132,7 +174,7 @@ void App::showEngineCard(const std::string& name) {
 }
 
 void App::openGame(const tour::DbGame& game) {
-    const auto& source = game_db_.sources[game.source];
+    const auto& source = game_db_->sources[game.source];
     if (source.external) return;
     openTournament(source.path);
     if (!start_error_.empty()) return;
@@ -214,7 +256,7 @@ void App::drawRatingFilters() {
     const char* periods[] = {TR("Every game"), TR("The last 30 days"), TR("The last 365 days")};
     if (ImGui::Combo("##rating_period", &rating_period_, periods, 3)) ratings_dirty_ = true;
 
-    const auto pgns = storage_.ratingPgns();
+    const auto& pgns = ratingPgns();
     ui::sameLineOrWrap(ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x +
                        ImGui::CalcTextSize(TR("Imported games")).x);
     if (ImGui::Checkbox(TR("Imported games"), &rating_external_)) ratings_dirty_ = true;
@@ -241,8 +283,7 @@ void App::drawRatingFilters() {
         if (remove >= 0) {
             auto list = pgns;
             list.erase(list.begin() + remove);
-            storage_.setRatingPgns(list);
-            game_db_dirty_ = true;
+            setRatingPgns(list);
         }
         ImGui::EndPopup();
     }
@@ -274,6 +315,10 @@ void App::drawRatingFilters() {
     if (ImGui::GetContentRegionAvail().x < ImGui::CalcTextSize(TR("Refresh")).x + ImGui::GetStyle().FramePadding.x * 2)
         ImGui::NewLine();
     if (ImGui::Button(TR("Refresh"))) game_db_dirty_ = true;
+    if (ratings_job_.valid()) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("%s", TR("Computing…"));
+    }
 }
 
 void App::drawRatingList() {
@@ -304,7 +349,7 @@ void App::drawRatingList() {
 
     ImGui::TextDisabled("%s", trf("{} games, {} tournaments", rating_list_.games, rating_list_.tournaments).c_str());
     if (rating_list_.entries.empty()) {
-        ImGui::TextDisabled("%s", TR("No game yet."));
+        if (!ratings_job_.valid()) ImGui::TextDisabled("%s", TR("No game yet."));
         return;
     }
 
@@ -345,8 +390,8 @@ void App::drawRatingList() {
 }
 
 void App::drawEngineCard() {
-    if (engineCombo("##card_engine", card_engine_, game_db_.engines)) ratings_dirty_ = true;
-    if (card_engine_.empty() || !game_db_.engine(card_engine_)) {
+    if (engineCombo("##card_engine", card_engine_, game_db_->engines)) ratings_dirty_ = true;
+    if (card_engine_.empty() || !game_db_->engine(card_engine_)) {
         ImGui::TextDisabled("%s",
                             TR("Choose an engine: its results, its health and its rating over every tournament."));
         return;
@@ -382,15 +427,15 @@ void App::drawEngineCard() {
     // Search statistics, read from the move comments of its games when asked: thousands of games take a moment.
     if (!card_search_.read) {
         if (ImGui::SmallButton(TR("Read its search statistics"))) {
-            const auto id = *game_db_.engine(card_engine_);
+            const auto id = *game_db_->engine(card_engine_);
             SearchAverages avg;
             avg.read = true;
             std::map<uint32_t, std::ifstream> files;
             uint64_t nps_samples = 0;
             const auto filter    = ratingFilter();
-            for (const auto& g : game_db_.games) {
-                if ((g.white != id && g.black != id) || !filter.accepts(game_db_, g)) continue;
-                const auto& src = game_db_.sources[g.source];
+            for (const auto& g : game_db_->games) {
+                if ((g.white != id && g.black != id) || !filter.accepts(*game_db_, g)) continue;
+                const auto& src = game_db_->sources[g.source];
                 if (src.external) continue;
                 const auto text = tour::readSpan(src.path / "games.pgn", g.pgn);
                 if (!text) continue;
@@ -436,7 +481,7 @@ void App::drawEngineCard() {
     ImGui::SeparatorText(TR("Tournaments"));
     if (ImGui::BeginTable("##card_sources", 3, flags | ImGuiTableFlags_ScrollY, ImVec2(0, px(260)))) {
         for (auto it = card_.sources.rbegin(); it != card_.sources.rend(); ++it) {
-            const auto& src = game_db_.sources[it->source];
+            const auto& src = game_db_->sources[it->source];
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             ImGui::TextDisabled("%s", date(it->last_game).c_str());
@@ -457,10 +502,10 @@ void App::drawEngineCard() {
     if (!card_.problem_games.empty()) {
         ImGui::SeparatorText(TR("Games lost on time, by a crash or an illegal move"));
         for (const auto i : card_.problem_games) {
-            const auto& g   = game_db_.games[i];
-            const auto& src = game_db_.sources[g.source];
+            const auto& g   = game_db_->games[i];
+            const auto& src = game_db_->sources[g.source];
             const auto label =
-                fmt::format("{}  {} – {}  {}##pg{}", src.name, game_db_.engines[g.white], game_db_.engines[g.black],
+                fmt::format("{}  {} – {}  {}##pg{}", src.name, game_db_->engines[g.white], game_db_->engines[g.black],
                             g.number ? fmt::format("#{}", g.number) : std::string(), i);
             if (ImGui::Selectable(label.c_str())) openGame(g);
         }
@@ -497,11 +542,11 @@ void App::drawEngineCard() {
 }
 
 void App::drawHeadToHead() {
-    bool changed = engineCombo("##h2h_a", h2h_a_, game_db_.engines);
+    bool changed = engineCombo("##h2h_a", h2h_a_, game_db_->engines);
     ImGui::SameLine();
     ImGui::TextUnformatted(TR("against"));
     ImGui::SameLine();
-    changed |= engineCombo("##h2h_b", h2h_b_, game_db_.engines);
+    changed |= engineCombo("##h2h_b", h2h_b_, game_db_->engines);
     if (changed) ratings_dirty_ = true;
     if (h2h_a_.empty() || h2h_b_.empty() || h2h_a_ == h2h_b_) {
         ImGui::TextDisabled("%s", TR("Choose two engines: their games against each other, over every tournament."));
@@ -551,7 +596,7 @@ void App::drawHeadToHead() {
         for (const auto& [source, st] : h2h_.by_source) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            ImGui::TextUnformatted(game_db_.sources[source].name.c_str());
+            ImGui::TextUnformatted(game_db_->sources[source].name.c_str());
             ImGui::TableNextColumn();
             ImGui::TextUnformatted(score(st).c_str());
         }
@@ -567,18 +612,18 @@ void App::drawHeadToHead() {
         clipper.Begin(static_cast<int>(h2h_.games.size()));
         while (clipper.Step()) {
             for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row) {
-                const auto& g = game_db_.games[h2h_.games[h2h_.games.size() - 1 - static_cast<std::size_t>(row)]];
+                const auto& g = game_db_->games[h2h_.games[h2h_.games.size() - 1 - static_cast<std::size_t>(row)]];
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
                 ImGui::TextDisabled("%s", date(g.played_at).c_str());
                 ImGui::TableNextColumn();
                 const auto label =
-                    fmt::format("{} – {}##hg{}", game_db_.engines[g.white], game_db_.engines[g.black], row);
+                    fmt::format("{} – {}##hg{}", game_db_->engines[g.white], game_db_->engines[g.black], row);
                 if (ImGui::Selectable(label.c_str(), false, ImGuiSelectableFlags_SpanAllColumns)) openGame(g);
                 ImGui::TableNextColumn();
                 ImGui::TextUnformatted(g.white_score == 1 ? "1-0" : g.white_score == 0 ? "0-1" : "½-½");
                 ImGui::TableNextColumn();
-                ImGui::TextDisabled("%s", game_db_.sources[g.source].name.c_str());
+                ImGui::TextDisabled("%s", game_db_->sources[g.source].name.c_str());
             }
         }
         ImGui::EndTable();

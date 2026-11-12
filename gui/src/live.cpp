@@ -41,28 +41,95 @@ GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
 
     // A resumed match: its games and statistics so far, as if they had just been played. The search statistics
     // come from the move comments of the PGN (nps only when it was written with nps=).
-    std::lock_guard<std::mutex> lock(data_mutex_);
-    std::ifstream pgn(pgn_fastchess_, std::ios::binary);
-    std::string text;
-    for (const auto& result : state.results()) {
-        if (result.voided) continue;
-        text.resize(result.pgn.length);
-        if (!pgn.seekg(static_cast<std::streamoff>(result.pgn.offset)) || !pgn.read(text.data(), result.pgn.length)) {
-            pgn.clear();
-            text.clear();
-        }
-        const auto record = makeRecord(result, text);
-        pending_games_.push_back(record);
-        countLoss(result);
-
-        forEachMoveComment(text, [&](bool white, const ReplayMove& move) {
-            if (!move.book) {
-                addMove(totals_[white ? record.white : record.black], move.depth, move.time_ms, move.nps,
-                        move.decision_ms);
-            }
-        });
+    std::vector<tour::GameResult> played;
+    for (auto& result : state.results()) {
+        if (!result.voided) played.push_back(std::move(result));
     }
     if (match_) pending_stats_ = state.pairHistory(id_a_, id_b_);
+    if (!played.empty()) {
+        loading_ = true;
+        loader_  = std::thread([this, played = std::move(played)]() mutable { loadPlayed(std::move(played)); });
+    }
+}
+
+GuiObserver::~GuiObserver() {
+    stop_loading_ = true;
+    if (loader_.joinable()) loader_.join();
+}
+
+void GuiObserver::loadPlayed(std::vector<tour::GameResult> results) {
+    // What each game's PGN tells, read and parsed without the lock, then handed over by batches: the games show up
+    // as they are read, and the tournament threads never wait long for the lock.
+    struct Parsed {
+        OpeningName opening;
+        EvalFacts facts;
+        std::array<EngineTotals, 2> side;  // White's moves, Black's
+    };
+    constexpr std::size_t BATCH = 256;
+    std::ifstream pgn(pgn_fastchess_, std::ios::binary);
+    std::string text;
+    std::vector<Parsed> parsed;
+    for (std::size_t first = 0; first < results.size() && !stop_loading_; first += BATCH) {
+        const auto last = std::min(results.size(), first + BATCH);
+        parsed.assign(last - first, {});
+        for (std::size_t i = first; i < last; ++i) {
+            const auto& result = results[i];
+            text.resize(result.pgn.length);
+            if (!pgn.seekg(static_cast<std::streamoff>(result.pgn.offset)) ||
+                !pgn.read(text.data(), result.pgn.length)) {
+                pgn.clear();
+                text.clear();
+            }
+            auto& p   = parsed[i - first];
+            p.opening = {pgnTag(text, "ECO"), pgnTag(text, "Opening")};
+            p.facts   = evalFacts(text, resultForA(result, result.white));
+            forEachMoveComment(text, [&](bool white, const ReplayMove& move) {
+                if (!move.book) addMove(p.side[white ? 0 : 1], move.depth, move.time_ms, move.nps, move.decision_ms);
+            });
+        }
+
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        for (std::size_t i = first; i < last; ++i) {
+            const auto& result = results[i];
+            auto& p            = parsed[i - first];
+            if (!extras_.count(result.pgn.offset)) {
+                GameExtras extras;
+                if (!p.opening.eco.empty() || !p.opening.name.empty()) {
+                    const auto key = p.opening.eco + "|" + p.opening.name;
+                    if (const auto it = opening_index_.find(key); it != opening_index_.end()) {
+                        extras.opening = it->second;
+                    } else if (openings_.size() < 65535) {
+                        extras.opening = static_cast<uint16_t>(openings_.size());
+                        openings_.push_back(std::move(p.opening));
+                        opening_index_.emplace(key, extras.opening);
+                    }
+                }
+                extras.facts = p.facts;
+                extras_.emplace(result.pgn.offset, extras);
+            }
+            const auto record = makeRecord(result);
+            pending_games_.push_back(record);
+            countLoss(result);
+            for (int side = 0; side < 2; ++side) {
+                const auto index = side == 0 ? record.white : record.black;
+                if (index >= totals_.size()) continue;
+                auto& t         = totals_[index];
+                const auto& add = p.side[static_cast<std::size_t>(side)];
+                t.moves += add.moves;
+                t.depth_sum += add.depth_sum;
+                t.nps_sum += add.nps_sum;
+                t.nps_samples += add.nps_samples;
+                t.time_ms += add.time_ms;
+                t.decision_ms += add.decision_ms;
+                t.decision_samples += add.decision_samples;
+            }
+        }
+    }
+
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    pending_games_.insert(pending_games_.end(), arrived_.begin(), arrived_.end());
+    arrived_.clear();
+    loading_ = false;
 }
 
 void GuiObserver::updateParticipants(const tour::TournamentSpec& spec) {
@@ -428,7 +495,8 @@ void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::Ma
                 static_cast<int64_t>(mv.nps), mv.decision_millis);
     }
 
-    pending_games_.push_back(record);
+    // After the games already played, while they are still being read.
+    (loading_ ? arrived_ : pending_games_).push_back(record);
 
     // `pair` is from the lower id's point of view; statistics are shown from A's.
     if (pair && match_) pending_stats_.push_back(id_a_ < id_b_ ? *pair : ~*pair);
@@ -470,6 +538,11 @@ bool GuiObserver::slotActive(int i) const {
     if (i < 0 || i >= static_cast<int>(slots_.size())) return false;
     std::lock_guard<std::mutex> lock(slots_[i]->mutex);
     return slots_[i]->state.active;
+}
+
+bool GuiObserver::loading() const {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    return loading_;
 }
 
 void GuiObserver::drain(std::vector<GameRecord>& games, std::vector<fastchess::Stats>& stats) {

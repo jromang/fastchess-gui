@@ -63,7 +63,8 @@ struct Anchor {
 };
 
 struct Table {
-    // Ranked: points, then Sonneborn-Berger, head-to-head and wins; a Swiss uses Buchholz before Sonneborn-Berger.
+    // Ranked: points, then Sonneborn-Berger (a Swiss: Buchholz first), then within a tie the points scored against
+    // the others tied (head to head), then wins.
     std::vector<Standing> rows;
 
     // Record of `a` against `b`, from a's point of view.
@@ -82,6 +83,19 @@ struct Table {
 // that average (or to the anchor), from the inverse of the Fisher information.
 [[nodiscard]] std::vector<Rating> maximumLikelihood(const std::vector<std::vector<double>>& games,
                                                     const std::vector<std::vector<double>>& points,
+                                                    std::optional<std::pair<int, double>> anchor = std::nullopt);
+
+// The games of two players a and b, each pair once.
+struct PairGames {
+    std::size_t a = 0, b = 0;
+    double games    = 0;
+    double points_a = 0;  // what a scored
+};
+
+// The same for n players from the pairs that met, in time and memory that grow with the pairs rather than n²: a
+// rating list of thousands of engines. Errors are exact up to 1000 players, then approximated from each player's
+// games and its opponents'.
+[[nodiscard]] std::vector<Rating> maximumLikelihood(std::size_t n, const std::vector<PairGames>& pairs,
                                                     std::optional<std::pair<int, double>> anchor = std::nullopt);
 
 // The table as plain text, for the clipboard or a forum post; an empty title is left out.

@@ -213,9 +213,9 @@ std::string formatDuration(double seconds) {
     const auto m     = total / 60 % 60;
     const auto s     = total % 60;
 
-    if (h > 0) return fmt::format("{} h {:02} min", h, m);
-    if (m > 0) return fmt::format("{} min {:02} s", m, s);
-    return fmt::format("{} s", s);
+    if (h > 0) return trf("{} h {:02} min", h, m);
+    if (m > 0) return trf("{} min {:02} s", m, s);
+    return trf("{} s", s);
 }
 
 namespace {

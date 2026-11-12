@@ -41,7 +41,9 @@ template <typename Accept>
 RatingList rate(const GameDb& db, const NamedAnchor& anchor, int min_games, Accept&& accept) {
     RatingList list;
     const auto n = db.engines.size();
-    std::vector<std::vector<double>> games(n, std::vector<double>(n, 0.0)), points = games;
+    // Games and the points of the lower id, by pair of engines that met: a database of thousands of engines has
+    // far fewer pairs than n².
+    std::map<std::pair<uint32_t, uint32_t>, std::pair<double, double>> met;
     std::vector<RatingEntry> entries(n);
     std::vector<std::set<uint32_t>> sources(n);
     std::set<uint32_t> counted;
@@ -51,10 +53,11 @@ RatingList rate(const GameDb& db, const NamedAnchor& anchor, int min_games, Acce
         tcs.insert(db.time_controls[g.time_control]);
         if (!accept(g)) continue;
         const auto i = g.white, j = g.black;
-        games[i][j] += 1;
-        games[j][i] += 1;
-        points[i][j] += g.white_score;
-        points[j][i] += 1 - g.white_score;
+        if (i != j) {
+            auto& pair = met[{std::min(i, j), std::max(i, j)}];
+            pair.first += 1;
+            pair.second += i < j ? g.white_score : 1 - g.white_score;
+        }
         entries[i].games++, entries[j].games++;
         entries[i].points += g.white_score;
         entries[j].points += 1 - g.white_score;
@@ -65,20 +68,21 @@ RatingList rate(const GameDb& db, const NamedAnchor& anchor, int min_games, Acce
 
     // Engines without a game are not rated at all.
     std::vector<uint32_t> present;
-    for (uint32_t i = 0; i < n; ++i) {
-        if (entries[i].games > 0) present.push_back(i);
-    }
-    std::vector<std::vector<double>> g2(present.size(), std::vector<double>(present.size())), p2 = g2;
+    std::vector<std::size_t> position(n);
     std::optional<std::pair<int, double>> fixed;
-    for (std::size_t a = 0; a < present.size(); ++a) {
-        for (std::size_t b = 0; b < present.size(); ++b) {
-            g2[a][b] = games[present[a]][present[b]];
-            p2[a][b] = points[present[a]][present[b]];
-        }
-        if (anchor && db.engines[present[a]] == anchor->first)
-            fixed = std::make_pair(static_cast<int>(a), anchor->second);
+    for (uint32_t i = 0; i < n; ++i) {
+        if (entries[i].games == 0) continue;
+        position[i] = present.size();
+        if (anchor && db.engines[i] == anchor->first)
+            fixed = std::make_pair(static_cast<int>(present.size()), anchor->second);
+        present.push_back(i);
     }
-    const auto ratings = maximumLikelihood(g2, p2, fixed);
+    std::vector<PairGames> pairs;
+    pairs.reserve(met.size());
+    for (const auto& [ids, record] : met) {
+        pairs.push_back({position[ids.first], position[ids.second], record.first, record.second});
+    }
+    const auto ratings = maximumLikelihood(present.size(), pairs, fixed);
     for (std::size_t a = 0; a < present.size(); ++a) {
         auto& e       = entries[present[a]];
         e.name        = db.engines[present[a]];
