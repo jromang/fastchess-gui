@@ -889,6 +889,15 @@ TEST_CASE("checking an engine in a folder that cannot be searched says so, it do
 TEST_CASE("names that cannot be file names are made fit for one") {
     CHECK(cleanName("Hiarcs \xDC 15/x:y") == "Hiarcs___15_x_y");
     CHECK(cleanName("Stockfish-17.1_dev") == "Stockfish-17.1_dev");
+
+    // A template's name keeps what Windows allows.
+    CHECK(fileNameOf("Blitz 3+2 été") == "Blitz 3+2 été");
+    CHECK(fileNameOf("a<b>c:d\"e/f\\g|h?i*j\tk") == "a_b_c_d_e_f_g_h_i_j_k");
+    CHECK(fileNameOf("gauntlet. ") == "gauntlet__");
+    CHECK(fileNameOf("con") == "_con");
+    CHECK(fileNameOf("COM1.json") == "_COM1.json");
+    CHECK(fileNameOf("COM10") == "COM10");
+    CHECK(fileNameOf("Console") == "Console");
 }
 
 TEST_CASE("search statistics are read back from the move comments, without replaying the moves") {

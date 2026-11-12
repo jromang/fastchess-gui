@@ -478,6 +478,10 @@ class App {
     int standings_view_  = -1;                            // 0 table, 1 crosstable, -1 as suits the tournament
     std::optional<std::pair<int, int>> crosstable_cell_;  // participant ids (row, column)
     std::string template_name_;
+    std::vector<std::string> template_names_;  // the templates folder, listed now and then rather than every frame
+    std::chrono::steady_clock::time_point templates_listed_{};
+    std::string template_message_;  // why the last save or load failed
+    std::string template_replace_;  // the file name of a template to replace, once confirmed
 
     // Schedule tab and edits.
     int edit_kind_ = 0;        // tour::Edit::Kind
