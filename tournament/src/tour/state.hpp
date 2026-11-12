@@ -318,6 +318,16 @@ class TournamentState {
     std::string out_error_;
     bool out_writing_ = false;  // a thread is writing there, without the lock
     bool out_again_   = false;  // games may have become ready meanwhile
+    // A write there journaled as begun that failed (a disk full) and may have left part of its text: the next one
+    // completes it, rather than write the text again after a game cut off.
+    struct OutCut {
+        std::vector<std::size_t> games;  // indexes in results_
+        nlohmann::json offsets;          // their games.pgn offsets, as journaled
+        std::string file;                // spec_.pgn_out then
+        uint64_t at = 0;                 // where it went
+        std::string text;
+    };
+    std::optional<OutCut> out_cut_;
 
     std::optional<UndoPoint> undo_;
     uint64_t claims_ = 0;  // games claimed since the tournament was opened

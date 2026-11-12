@@ -599,6 +599,43 @@ TEST_CASE("state: the PGN file of the user's gets what is left when the tourname
     CHECK(readAll(out) == readAll(dir / "games-chessbase.pgn"));
 }
 
+TEST_CASE("state: a write to the PGN file of the user's that fails partway is completed, not written again") {
+    for (const std::size_t cut : {std::size_t{0}, std::size_t{30}}) {
+        CAPTURE(cut);
+        const auto dir = freshDir("pgn-out-cut");
+        const auto out = dir / "all.pgn";
+        auto spec      = matchSpec(4);
+        spec.pgn_out   = out.string();
+
+        {
+            auto state = TournamentState::create(dir, spec);
+
+            // The first write stops after `cut` bytes (a disk full).
+            appendSharedCut = [cut](std::size_t) { return cut; };
+            auto first      = state->claimNext();
+            state->complete(*first, gameData(*first, "1-0"));
+            appendSharedCut = nullptr;
+            CHECK_FALSE(state->pgnOutError().empty());
+            CHECK(fs::file_size(out) == cut);
+
+            // The next write completes what the first left, then writes the game that ended meanwhile: no game cut
+            // off before another.
+            auto second = state->claimNext();
+            state->complete(*second, gameData(*second, "0-1"));
+            CHECK(state->pgnOutError().empty());
+            CHECK(gamesOf(out).size() == 2);
+            CHECK(readAll(out) == readAll(dir / "games.pgn"));
+        }
+
+        // Nothing is left to settle when the tournament is opened again.
+        auto state = TournamentState::open(dir);
+        CHECK(readAll(out) == readAll(dir / "games.pgn"));
+        while (auto task = state->claimNext()) state->complete(*task, gameData(*task, "1/2-1/2"));
+        CHECK(gamesOf(out).size() == 4);
+        CHECK(readAll(out) == readAll(dir / "games.pgn"));
+    }
+}
+
 TEST_CASE("state: a replayed game goes to the PGN file of the user's when it ends, without holding the others") {
     const auto dir = freshDir("pgn-out-replay");
     auto spec      = matchSpec(6);

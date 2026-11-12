@@ -63,6 +63,10 @@ class PgnFile {
 void appendShared(const std::filesystem::path& file, const std::string& text,
                   const std::function<void(uint64_t at)>& before = {});
 
+// For the tests: when set, appendShared() writes only as many bytes of its text as this returns for its size, and
+// fails (a disk full).
+inline std::function<std::size_t(std::size_t size)> appendSharedCut;
+
 // Is `text` in `file`, where an appendShared() that a crash may have interrupted was writing it (`at`, the size
 // before() was given)? It is when the bytes at `at` are the text, or a little further on (another program wrote
 // meanwhile). A start of it left at the end of the file (a power cut in the middle of the write) is completed with
