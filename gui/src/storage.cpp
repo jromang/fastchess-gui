@@ -148,6 +148,18 @@ void Storage::setLichessToken(const std::string& token) const {
     fs::permissions(file, fs::perms::owner_read | fs::perms::owner_write, fs::perm_options::replace, ec);
 }
 
+std::pair<std::string, std::string> Storage::ccrlTester() const {
+    const auto s = settings();
+    return {setting(s, "ccrl_tester", std::string{}), setting(s, "ccrl_site", std::string{})};
+}
+
+void Storage::setCcrlTester(const std::string& name, const std::string& site) const {
+    auto settings           = this->settings();
+    settings["ccrl_tester"] = name;
+    settings["ccrl_site"]   = site;
+    save(root_ / "settings.json", settings);
+}
+
 std::vector<BookEntry> Storage::loadBooks() const {
     return readProfileFile<std::vector<BookEntry>>(root_ / "books.json").value_or(std::vector<BookEntry>{});
 }

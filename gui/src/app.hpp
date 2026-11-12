@@ -34,6 +34,7 @@
 
 #include <tour/book_scan.hpp>
 #include <tour/by_opening.hpp>
+#include <tour/ccrl.hpp>
 #include <tour/game_db.hpp>
 #include <tour/ratinglist.hpp>
 #include <tour/standings.hpp>
@@ -355,6 +356,10 @@ class App {
     [[nodiscard]] bool gamesFiltered() const;  // some games of the Games tab are hidden
     void selectGame(int index);
     void exportGames(const std::string& path, bool all);
+    // Export for CCRL: the dialog, then the files once their place is chosen (view_ccrl.cpp).
+    void openCcrlExport();
+    void drawCcrlExport();
+    void writeCcrlExport(const std::string& path);
 
     void handleDialogs();
     void saveSetupSoon() { setup_dirty_ = true; }
@@ -528,6 +533,11 @@ class App {
     int standings_view_  = -1;                            // 0 table, 1 crosstable, -1 as suits the tournament
     std::optional<std::pair<int, int>> crosstable_cell_;  // participant ids (row, column)
     std::optional<int> standings_engine_;  // participant id whose opponents are listed under the table
+    struct CcrlDialog {  // Export for CCRL, from the Games tab
+        bool open = false;
+        bool zip  = true;
+        tour::CcrlExport e;
+    } ccrl_;
     std::string template_name_;
     std::vector<std::string> template_names_;  // the templates folder, listed now and then rather than every frame
     std::chrono::steady_clock::time_point templates_listed_{};

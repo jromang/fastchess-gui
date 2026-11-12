@@ -162,7 +162,11 @@ void App::frame() {
             page_ = Page::Home;
         else if (w == "suites")
             page_ = Page::Suites;
-        else if (w.rfind("games-", 0) == 0 || w.rfind("live-", 0) == 0) {
+        else if (w == "ccrl-export") {  // the Export for CCRL dialog of the Games tab
+            page_        = Page::Tournament;
+            tab_request_ = Tab::Games;
+            openCcrlExport();
+        } else if (w.rfind("games-", 0) == 0 || w.rfind("live-", 0) == 0) {
             // The tab with a chart under the game: games-time, live-agreement...
             const auto chart                     = w.substr(w.find('-') + 1);
             const auto kind                      = chart == "time"        ? MoveChart::Time
@@ -707,6 +711,9 @@ void App::handleDialogs() {
                 break;
             case Dialogs::Purpose::ExportAll:
                 exportGames(path, true);
+                break;
+            case Dialogs::Purpose::ExportCcrl:
+                writeCcrlExport(path);
                 break;
         }
     }

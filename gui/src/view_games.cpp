@@ -319,6 +319,16 @@ void App::drawGames() {
     ImGui::SameLine();
     if (ImGui::Button(TR("Folder"))) ui::openPath(run_.info().dir);
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", run_.info().dir.string().c_str());
+    // On the same line when it fits.
+    const char* ccrl = TR("Export for CCRL…");
+    ImGui::SameLine();
+    if (ImGui::GetContentRegionAvail().x < ImGui::CalcTextSize(ccrl).x + 2 * ImGui::GetStyle().FramePadding.x) {
+        ImGui::NewLine();
+    }
+    ImGui::BeginDisabled(!run_.tournament() || games_.empty());
+    if (ImGui::Button(ccrl)) openCcrlExport();
+    ImGui::EndDisabled();
+    drawCcrlExport();
 
     const ImVec2 avail = ImGui::GetContentRegionAvail();
     const bool replay  = selected_game_ >= 0;
