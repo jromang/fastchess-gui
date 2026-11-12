@@ -615,6 +615,7 @@ class App {
     } ccrl_;
     tour::CcrlFacts ccrl_facts_;  // of the checklist, for the tournament at this version()
     uint64_t ccrl_facts_for_ = ~uint64_t(0);
+    int ccrl_tb_pieces_      = 0;  // the pieces of the first engine's SyzygyPath, read with ccrl_facts_
     std::string template_name_;
     std::vector<std::string> template_names_;  // the templates folder, listed now and then rather than every frame
     std::chrono::steady_clock::time_point templates_listed_{};
