@@ -302,8 +302,9 @@ void App::resumeRun() {
     resetRunView();
     // The games that count, as games_ holds: voided games are not shown.
     if (const auto* t = run_.tournament()) {
-        games_at_start_ = static_cast<std::size_t>(
-            std::count_if(t->results().begin(), t->results().end(), [](const auto& r) { return !r.voided; }));
+        const auto results = t->results();
+        games_at_start_    = static_cast<std::size_t>(
+            std::count_if(results.begin(), results.end(), [](const auto& r) { return !r.voided; }));
     }
     const auto& info = run_.info();
     Console::instance().add(
