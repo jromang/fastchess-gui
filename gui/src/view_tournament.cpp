@@ -95,8 +95,14 @@ bool App::isMatch() const {
 void App::refreshTable() {
     const auto* t = run_.tournament();
     if (!t || isMatch() || table_for_ == games_.size()) return;
-    table_     = tour::computeTable(t->spec(), t->results(), anchor_, t->byes());
-    table_for_ = games_.size();
+    // Hundreds of engines and their games take a while: then the table waits ten times that before the next games
+    // count, so that fast games do not hold the window. Asked for (a new anchor, an edit), it is computed now.
+    const auto now = std::chrono::steady_clock::now();
+    if (table_for_ != ~std::size_t(0) && now < table_next_) return;
+    table_      = tour::computeTable(t->spec(), t->results(), anchor_, t->byes());
+    table_for_  = games_.size();
+    table_next_ = now + std::min<std::chrono::steady_clock::duration>(10 * (std::chrono::steady_clock::now() - now),
+                                                                      std::chrono::seconds(5));
 }
 
 void App::drawStandingsTable(bool compact) {

@@ -477,6 +477,7 @@ class App {
     // Standings of a round robin or gauntlet, recomputed when games arrive.
     tour::Table table_;
     std::size_t table_for_ = ~std::size_t(0);
+    std::chrono::steady_clock::time_point table_next_{};  // a big table waits a while before it is computed again
     std::optional<tour::Anchor> anchor_;
     int crosstable_mode_ = 0;                             // 0 score, 1 wins/draws/losses, 2 Elo difference
     int standings_view_  = -1;                            // 0 table, 1 crosstable, -1 as suits the tournament
