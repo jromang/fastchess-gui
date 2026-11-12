@@ -290,6 +290,7 @@ void App::pollProbe() {
     if (probe_.valid() && probe_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) applyProbe();
 
     // A start put off until the reads and checks in flight end.
+    if (start_after_reads_ && (quit_ || quit_pending_)) start_after_reads_ = {};
     if (start_after_reads_ && g_probes_in_flight == 0 && !probe_.valid() && !check_.valid()) {
         const auto start = std::exchange(start_after_reads_, {});
         start();
@@ -706,10 +707,26 @@ void App::drawEngines() {
 
     ui::label(TR("Name"), label);
     {
-        auto name = e.name;
-        if (editText("##name", name)) {
-            renameEngine(selected_engine_, name);
+        // Renamed when the edit ends, so that the names on the way never take the place of another engine's in
+        // the setup or the queue. A name being typed when another engine is clicked still applies.
+        if (name_draft_of_ != e.name) {
+            const auto before = std::find_if(engines_.begin(), engines_.end(),
+                                             [&](const EngineEntry& o) { return o.name == name_draft_of_; });
+            if (before != engines_.end() && !name_draft_.empty() && name_draft_ != name_draft_of_) {
+                renameEngine(static_cast<int>(before - engines_.begin()), name_draft_);
+                changed = true;
+            }
+            name_draft_of_ = e.name;
+            name_draft_    = e.name;
+        }
+        editText("##name", name_draft_);
+        if (ImGui::IsItemDeactivatedAfterEdit() && !name_draft_.empty()) {
+            renameEngine(selected_engine_, name_draft_);
             changed = true;
+        }
+        if (!ImGui::IsItemActive()) {
+            name_draft_of_ = e.name;
+            name_draft_    = e.name;
         }
     }
 

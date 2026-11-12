@@ -530,6 +530,8 @@ class App {
     // Schedule tab and edits.
     int edit_kind_ = 0;        // tour::Edit::Kind
     std::string edit_engine_;  // engine list entry to add or bring in
+    std::string name_draft_of_;  // engine whose Name field is being edited, and the name typed so far
+    std::string name_draft_;
     bool edit_catch_up_     = true;
     int edit_participant_   = -1;  // participant id
     bool edit_void_played_  = false;

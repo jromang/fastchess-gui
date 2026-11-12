@@ -75,7 +75,8 @@ void App::requestQuit() {
     if (run_.running()) {
         open_quit_modal_ = true;
     } else {
-        quit_ = true;
+        quit_              = true;
+        start_after_reads_ = {};  // a start put off must not begin on the way out
     }
 }
 
@@ -310,7 +311,12 @@ void App::startRun() {
 
 void App::resumeRun() {
     if (!unfinished_) return;
-    if (startAfterReads([this] { resumeRun(); })) return;
+    // Put off: still the same tournament when the reads end, not one opened meanwhile.
+    if (startAfterReads([this, dir = unfinished_->dir] {
+            if (unfinished_ && unfinished_->dir == dir) resumeRun();
+        })) {
+        return;
+    }
 
     start_error_ = run_.resume(unfinished_->dir);
     if (!start_error_.empty()) {
@@ -453,6 +459,7 @@ void App::onRunFinished() {
                               current_.valid ? formatElo(current_.elo, current_.elo_err) : std::string("—"), duration);
         if (info.sprt) finish_message_ += fmt::format(" · LLR {:.2f}", current_.llr);
     } else {
+        table_for_ = ~std::size_t(0);  // with the last games, whatever a big table's pace
         refreshTable();
         auto leader = table_.rows.empty() ? std::string("—") : table_.rows.front().name;
         // A knockout is won in its final, not on points.
