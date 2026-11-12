@@ -266,7 +266,8 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     std::unordered_map<std::string, uint16_t> reason_index_;
     std::vector<OpeningName> openings_{1};
     std::unordered_map<std::string, uint16_t> opening_index_;  // "eco|name" -> index
-    std::unordered_map<uint64_t, GameExtras> extras_;          // by the game's PGN offset
+    // By the game's PGN offset. A game there is counted in totals_, once: by the loader or when it was recorded.
+    std::unordered_map<uint64_t, GameExtras> extras_;
     std::vector<EngineTotals> totals_;
 
     // While the games already played are read, the games recorded meanwhile wait here to come after them.

@@ -1301,3 +1301,50 @@ TEST_CASE("live: an edit while a resumed tournament's games are read leaves the 
     CHECK(expected.size() == 1500 - 3 + 1);
     CHECK(shown == expected);
 }
+
+TEST_CASE("live: a game recorded while the lists start over is counted once in the search totals") {
+    const auto dir = tempDir("totals-once");
+    tour::TournamentSpec spec;
+    spec.name      = "totals";
+    spec.format    = tour::Format::Match;
+    spec.max_games = 100;
+    for (int i = 0; i < 2; ++i) {
+        tour::Participant p;
+        p.id          = i;
+        p.engine.name = i == 0 ? "A" : "B";
+        spec.participants.push_back(p);
+    }
+    const auto game = sampleGame(false);  // 7 moves
+    {
+        auto state = tour::TournamentState::create(dir / "t", spec);
+        for (int i = 0; i < 10; ++i) state->complete(*state->claimNext(), game);
+    }
+
+    auto state = tour::TournamentState::open(dir / "t");
+    GuiObserver obs(1, *state);
+    const auto loaded = [&] {
+        for (int i = 0; i < 1000 && obs.loading(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        return !obs.loading();
+    };
+    const auto moves = [&] {
+        const auto totals = obs.totals();
+        return totals[0].moves + totals[1].moves;
+    };
+    REQUIRE(loaded());
+    CHECK(moves() == 7 * 10);
+
+    // A game is recorded, and the lists start over (an edit) before the observer is told: the reader counts it
+    // from its PGN, then the observer is told about it.
+    const auto recorded = state->complete(*state->claimNext(), game);
+    auto games          = obs.records(state->results());
+    REQUIRE(loaded());
+    obs.onRecorded(recorded.result, game, recorded.pair);
+    CHECK(moves() == 7 * 11);
+
+    // The other way round: told first, then the lists start over.
+    const auto next = state->complete(*state->claimNext(), game);
+    obs.onRecorded(next.result, game, next.pair);
+    games = obs.records(state->results());
+    REQUIRE(loaded());
+    CHECK(moves() == 7 * 12);
+}

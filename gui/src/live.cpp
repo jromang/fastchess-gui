@@ -531,22 +531,27 @@ void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::Ma
                              const std::optional<fastchess::Stats>& pair) {
     std::lock_guard<std::mutex> lock(data_mutex_);
 
-    const auto record = makeRecord(result);
-    countLoss(result);
+    // The game is in the tournament's results before the observer is told: when the lists started over meanwhile
+    // (records(), after an edit), the loader may have read and counted it already. A game known is not counted again.
+    const bool counted = extras_.count(result.pgn.offset) > 0;
+    const auto record  = makeRecord(result);
+    if (!counted) {
+        countLoss(result);
 
-    // Per engine search statistics, from the moves each side actually played.
-    chess::Board board;
-    board.set960(data.variant == fastchess::VariantType::FRC);
-    board.setFen(data.fen);
-    const bool white_first = board.sideToMove() == chess::Color::WHITE;
+        // Per engine search statistics, from the moves each side actually played.
+        chess::Board board;
+        board.set960(data.variant == fastchess::VariantType::FRC);
+        board.setFen(data.fen);
+        const bool white_first = board.sideToMove() == chess::Color::WHITE;
 
-    for (std::size_t i = 0; i < data.moves.size(); ++i) {
-        const auto& mv = data.moves[i];
-        if (mv.book || !mv.legal) continue;
+        for (std::size_t i = 0; i < data.moves.size(); ++i) {
+            const auto& mv = data.moves[i];
+            if (mv.book || !mv.legal) continue;
 
-        const bool white_moved = (i % 2 == 0) == white_first;
-        addMove(totals_[white_moved ? record.white : record.black], mv.depth, mv.elapsed_millis,
-                static_cast<int64_t>(mv.nps), mv.decision_millis);
+            const bool white_moved = (i % 2 == 0) == white_first;
+            addMove(totals_[white_moved ? record.white : record.black], mv.depth, mv.elapsed_millis,
+                    static_cast<int64_t>(mv.nps), mv.decision_millis);
+        }
     }
 
     // After the games already played, while they are still being read.
