@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <deque>
 #include <filesystem>
 #include <sstream>
 
@@ -230,6 +231,42 @@ std::string detectProtocol(const EngineEntry& entry) {
     return protocol.empty() ? "uci" : protocol;
 }
 
+namespace {
+
+// The last lines an engine wrote on its output, kept as they come: the engine keeps only those of its last read, and
+// not those of isready.
+class Transcript {
+   public:
+    explicit Transcript(fastchess::engine::UciEngine& engine) : engine_(engine) {
+        engine.setLineCallback([this](const std::string& line) {
+            lines_.push_back(line);
+            if (lines_.size() > LINES) lines_.pop_front();
+        });
+    }
+    ~Transcript() { engine_.setLineCallback({}); }
+    Transcript(const Transcript&)            = delete;
+    Transcript& operator=(const Transcript&) = delete;
+
+    // For a report, then what the engine wrote last on its error output; empty when it wrote nothing.
+    [[nodiscard]] std::string report() const {
+        std::string report;
+        if (!lines_.empty()) report += std::string(TR("The engine wrote:")) + "\n";
+        for (const auto& line : lines_) report += "    " + toUtf8(line) + "\n";
+        const auto errors = engine_.getStderrLines();
+        if (!errors.empty()) report += std::string(TR("On its error output:")) + "\n";
+        for (std::size_t i = errors.size() > LINES ? errors.size() - LINES : 0; i < errors.size(); ++i)
+            report += "    " + toUtf8(errors[i]->line) + "\n";
+        return report;
+    }
+
+   private:
+    static constexpr std::size_t LINES = 40;
+    fastchess::engine::UciEngine& engine_;
+    std::deque<std::string> lines_;
+};
+
+}  // namespace
+
 ProbeResult probeEngine(const EngineEntry& entry) {
     ProbeResult result;
 
@@ -251,9 +288,11 @@ ProbeResult probeEngine(const EngineEntry& entry) {
 
     try {
         fastchess::engine::UciEngine engine(config, false);
+        const Transcript transcript(engine);
 
         if (auto started = engine.start(std::nullopt); !started) {
-            result.error = toUtf8(started.error());
+            result.error  = toUtf8(started.error());
+            result.output = transcript.report();
             // The usual reason: a WinBoard engine taken for a UCI one.
             if (result.error.find("uciok") != std::string::npos && result.protocol != "xboard") {
                 result.error += TR(" — not a UCI engine? For a WinBoard engine, choose the WinBoard protocol.");
@@ -297,11 +336,15 @@ struct Compliance {
 // fastchess' compliance steps on a new process of the engine, up to the first that fails, one line each; then what the
 // engine wrote last.
 Compliance compliance(const fastchess::EngineConfiguration& config) {
-    constexpr std::size_t OUTPUT_LINES = 40;
     fastchess::engine::UciEngine engine(config, false);
+    const Transcript transcript(engine);
+    auto steps = fastchess::engine::complianceSteps(engine);
+    // Its options, sent as a game sends them, once it started.
+    if (!config.options.empty())
+        steps.insert(steps.begin() + 1, {TR("Send its options"), [&engine] { return engine.refreshUci(); }});
     Compliance result;
     auto& report = result.report;
-    for (const auto& [description, action] : fastchess::engine::complianceSteps(engine)) {
+    for (const auto& [description, action] : steps) {
         if (action()) {
             report += fmt::format("✓ {}\n", description);
             result.steps++;
@@ -309,17 +352,7 @@ Compliance compliance(const fastchess::EngineConfiguration& config) {
         }
         result.passed = false;
         report += fmt::format("✗ {}\n", description);
-        for (const auto standard :
-             {fastchess::engine::process::Standard::OUTPUT, fastchess::engine::process::Standard::ERR}) {
-            const auto lines = standard == fastchess::engine::process::Standard::OUTPUT ? engine.getStdoutLines()
-                                                                                        : engine.getStderrLines();
-            if (lines.empty()) continue;
-            report += standard == fastchess::engine::process::Standard::OUTPUT ? TR("The engine wrote:")
-                                                                               : TR("On its error output:");
-            report += "\n";
-            for (std::size_t i = lines.size() > OUTPUT_LINES ? lines.size() - OUTPUT_LINES : 0; i < lines.size(); ++i)
-                report += "    " + toUtf8(lines[i]->line) + "\n";
-        }
+        report += transcript.report();
         break;
     }
     engine.quit();
@@ -348,41 +381,51 @@ CheckResult checkEngine(const EngineEntry& entry) {
 
     try {
         fastchess::engine::UciEngine engine(config, false);
+        const Transcript transcript(engine);
+        // A failure comes with what the engine wrote last.
+        const auto fail = [&](std::string message) {
+            result.message = std::move(message);
+            result.report  = transcript.report();
+            return result;
+        };
 
         const auto t0 = steady_clock::now();
-        if (auto started = engine.start(std::nullopt); !started) {
-            result.message = toUtf8(started.error());
-            return result;
-        }
+        if (auto started = engine.start(std::nullopt); !started) return fail(toUtf8(started.error()));
         const auto start_ms = duration_cast<milliseconds>(steady_clock::now() - t0).count();
 
-        const auto t1 = steady_clock::now();
-        if (engine.isready().code != fastchess::engine::process::Status::OK) {
-            result.message = TR("The engine does not answer isready.");
-            return result;
+        // Its options, as games send them: fastchess only warns, then plays without, about an option the engine does
+        // not have or a value it refuses. A wrong path (EvalFile, SyzygyPath) often makes it stop.
+        std::string refused;
+        for (const auto& [name, value] : config.options) {
+            const auto option = engine.uciOptions().getOption(name);
+            if (!option) {
+                refused += (refused.empty() ? "" : "; ") + trf("{}: unknown to the engine", name);
+            } else if (!(*option)->isValid(value)) {
+                refused += (refused.empty() ? "" : "; ") + trf("{} = {}: a value it refuses", name, value);
+            }
         }
+        if (!refused.empty()) return fail(trf("Options not sent: {}", refused));
+        if (!config.options.empty() && !engine.refreshUci())
+            return fail(TR("The engine stopped answering once its options were sent."));
+
+        const auto t1 = steady_clock::now();
+        if (engine.isready().code != fastchess::engine::process::Status::OK)
+            return fail(TR("The engine does not answer isready."));
         const auto ready_ms = duration_cast<microseconds>(steady_clock::now() - t1).count() / 1000.0;
 
         // A short search from the initial position: the move must be legal.
         chess::Board board;
         (void)engine.ucinewgame();
-        if (!engine.position({}, std::string(chess::constants::STARTPOS)) || !engine.writeEngine("go movetime 300")) {
-            result.message = TR("The engine stopped while it was asked to think.");
-            return result;
-        }
+        if (!engine.position({}, std::string(chess::constants::STARTPOS)) || !engine.writeEngine("go movetime 300"))
+            return fail(TR("The engine stopped while it was asked to think."));
         engine.readEngine("bestmove", seconds(10));
         const auto best = engine.bestmove(false);
-        if (!best) {
-            result.message = TR("No move after 10 seconds of a 0.3 s search.");
-            return result;
-        }
+        if (!best) return fail(TR("No move after 10 seconds of a 0.3 s search."));
         chess::Movelist legal;
         chess::movegen::legalmoves(legal, board);
         const auto move = chess::uci::uciToMove(board, *best);
-        if (std::find(legal.begin(), legal.end(), move) == legal.end()) {
-            result.message = trf("Illegal move from the initial position: {}", *best);
-            return result;
-        }
+        if (std::find(legal.begin(), legal.end(), move) == legal.end())
+            return fail(trf("Illegal move from the initial position: {}", *best));
 
         engine.quit();
         result.ok      = true;

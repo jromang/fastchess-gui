@@ -317,6 +317,55 @@ TEST_CASE("the check takes a move from the engine's own book, without a search l
     CHECK_MESSAGE(checked.ok, checked.message << "\n" << checked.report);
     fs::remove_all(dir);
 }
+
+TEST_CASE("the check sends the engine's options, and a failed read or check shows what the engine wrote") {
+    if (!fastchess::config::TournamentConfig)
+        fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
+    const auto dir = fs::temp_directory_path() / "fcg-check-options";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+    // Like Stockfish with a wrong EvalFile: it stops once the network it was given cannot be loaded.
+    const auto script = dir / "evalfile.sh";
+    std::ofstream(script)
+        << "#!/bin/sh\n"
+           "eval=nn.bin\n"
+           "while read line; do case \"$line\" in\n"
+           "uci) echo 'id name Evalfile'; echo 'id author Test';\n"
+           "     echo 'option name EvalFile type string default nn.bin'; echo uciok;;\n"
+           "'setoption name EvalFile value '*) eval=${line#setoption name EvalFile value };;\n"
+           "isready) if [ \"$eval\" != nn.bin ]; then echo \"info string ERROR: cannot load $eval\";\n"
+           "         exit 1; fi; echo readyok;;\n"
+           "go*) echo 'info depth 1 score cp 0 pv e2e4'; echo 'bestmove e2e4';;\n"
+           "quit) exit 0;;\n"
+           "esac; done\n";
+    fs::permissions(script, fs::perms::owner_all);
+
+    EngineEntry entry;
+    entry.name     = "Evalfile";
+    entry.cmd      = script.string();
+    entry.protocol = "uci";
+    CHECK_MESSAGE(checkEngine(entry).ok, checkEngine(entry).message);
+
+    entry.options    = {{"EvalFile", "missing.bin"}};
+    const auto wrong = checkEngine(entry);
+    CHECK_FALSE(wrong.ok);
+    CHECK(wrong.report.find("ERROR: cannot load missing.bin") != std::string::npos);
+
+    entry.options      = {{"Threads", "4"}};
+    const auto unknown = checkEngine(entry);
+    CHECK_FALSE(unknown.ok);
+    CHECK(unknown.message.find("Threads") != std::string::npos);
+
+    // An engine that cannot start: the read fails with its last words.
+    const auto broken = dir / "broken.sh";
+    std::ofstream(broken) << "#!/bin/sh\necho 'cannot find MSVCR100.dll'\nexit 1\n";
+    fs::permissions(broken, fs::perms::owner_all);
+    entry.cmd        = broken.string();
+    const auto probe = probeEngine(entry);
+    CHECK_FALSE(probe.ok);
+    CHECK(probe.output.find("cannot find MSVCR100.dll") != std::string::npos);
+    fs::remove_all(dir);
+}
 #endif
 
 TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly its games") {
