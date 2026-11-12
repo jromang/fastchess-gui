@@ -1183,6 +1183,11 @@ std::set<std::string> TournamentState::enginesLeft() const {
             if (done(encounter, game) || dropped_.count(n)) continue;
             if (const auto e = schedule_.at(encounter)) add(*e);
         }
+        // The games being played too: one just claimed by a runner thread has not taken its engines yet, and a game
+        // ending on another thread meanwhile would have their idle processes ended, to be started again.
+        for (const auto n : running_) {
+            if (const auto e = schedule_.at(static_cast<uint32_t>(n / 2))) add(*e);
+        }
         for (auto i = next_encounter_; left.size() < active.size(); ++i) {
             const auto e = schedule_.at(i);
             if (!e) break;
