@@ -126,6 +126,23 @@ TEST_CASE("table: points, crosstable, Sonneborn-Berger, tiebreaks and health") {
     const auto html = tableHtml(table, "Test <1>");
     CHECK(html.find("Test &lt;1&gt;") != std::string::npos);
     CHECK(html.find("prefers-color-scheme") != std::string::npos);
+
+    // The losses on time (TF) are written as in the view: B lost two games on time, right-aligned under "TF".
+    std::vector<std::string> lines;
+    for (std::size_t from = 0, to; (to = text.find('\n', from)) != std::string::npos; from = to + 1) {
+        lines.push_back(text.substr(from, to - from));
+    }
+    REQUIRE(lines.size() == 2 + 1 + table.rows.size());
+    const auto tf = lines[2].find("TF");
+    REQUIRE(tf != std::string::npos);
+    const auto b_line =
+        std::find_if(lines.begin() + 3, lines.end(), [](const std::string& l) { return l.find("  B  ") == 3; });
+    REQUIRE(b_line != lines.end());
+    CHECK(b_line->substr(tf, 2) == " 2");
+    const auto b_row = html.find("<td class=\"l\">B</td>");
+    REQUIRE(b_row != std::string::npos);
+    CHECK(html.find("<td>2</td><td>0</td><td>4</td><td>2</td>", b_row) != std::string::npos);  // + = − TF
+    CHECK(html.find(">TF</th>") != std::string::npos);
 }
 
 TEST_CASE("bbcode: title in bold, details, the text in a code block") {
