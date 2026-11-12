@@ -616,6 +616,8 @@ void App::drawWorkspaceHeader() {
         ImGui::SameLine();
         if (ui::iconButton("folder", ui::Icon::Folder, TR("Folder"))) openFolder(t->dir());
     }
+    ImGui::SameLine();
+    drawLayoutMenu();
 }
 
 void App::drawWorkspace() {

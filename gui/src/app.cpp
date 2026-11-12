@@ -52,6 +52,7 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
 
     unfinished_ = unfinishedMatch(storage_.runsDir());
     queue_      = storage_.loadQueue();
+    layouts_    = storage_.loadLayouts();
     if (ImGui::GetCurrentContext()) registerPanelSettings();
 }
 
@@ -189,6 +190,23 @@ void App::frame() {
         else if (w.rfind("palette", 0) == 0) {  // palette=TEXT: the command palette, TEXT typed in it
             palette_request_ = true;
             if (const auto eq = w.find('='); eq != std::string::npos) palette_query_ = w.substr(eq + 1);
+        } else if (w == "layout-menu" || w == "layout-save") {  // the Layout menu, or its Save the layout as…
+            page_ = Page::Tournament;
+            if (w == "layout-menu")
+                open_layout_menu_ = true;
+            else
+                open_save_layout_ = true;
+        } else if (w.rfind("show=", 0) == 0) {  // show=PANEL: as the palette's Show <panel> (live_board...)
+            page_ = Page::Tournament;
+            showPanel(w.substr(5));
+        } else if (w.rfind("detach=", 0) == 0) {  // detach=N: the board of game slot N (from 1) detached
+            page_ = Page::Tournament;
+            showPanel(layout::detachedPanel(std::max(0, std::atoi(w.c_str() + 7) - 1)));
+        } else if (w.rfind("layout-save=", 0) == 0) {  // layout-save=NAME: the layout shown, saved as NAME
+            saveLayoutAs(w.substr(12));
+        } else if (w.rfind("layout=", 0) == 0) {  // layout=KEY|NAME: a ready-made layout (tabs, follow...) or one saved
+            if (!applyLayout(w.substr(7)))
+                Console::instance().add(fmt::format("No layout named {}.", w.substr(7)), true);
         } else if (w == "submission-export") {  // the Export for a rating list dialog of the Games tab
             page_        = Page::Tournament;
             tab_request_ = Tab::Games;
@@ -223,7 +241,6 @@ void App::frame() {
 
     drawShell();
     drawPanels();
-    drawDetached();
     drawSprtCalculator();
     drawQuitModal();
     drawImportPreview();
@@ -465,7 +482,10 @@ std::string App::runMarkerDir() const { return fs::absolute(run_.info().dir).lex
 void App::resetRunView() {
     page_ = Page::Tournament;
     select_game_id_.reset();
-    if (panelOpen(layout::panel::OVERVIEW)) tab_request_ = Tab::Overview;
+    // On its overview, when the panels are tabs of one node; side by side, they stay as they are.
+    if (const auto* root = ImGui::DockBuilderGetNode(workspaceDock());
+        panelOpen(layout::panel::OVERVIEW) && (!root || !root->IsSplitNode()))
+        tab_request_ = Tab::Overview;
     tournaments_dirty_ = true;
     unfinished_.reset();
     games_.clear();
@@ -494,7 +514,15 @@ void App::resetRunView() {
     selected_game_ = -1;
     replay_.reset();
     slot_views_.clear();
-    detached_.clear();
+    // The detached boards were those of the games of the tournament before.
+    for (auto it = panels_open_.begin(); it != panels_open_.end();) {
+        if (layout::detachedSlot(*it)) {
+            it = panels_open_.erase(it);
+            panelsChanged();
+        } else {
+            ++it;
+        }
+    }
     finish_message_.clear();
 
     const auto& info = run_.info();

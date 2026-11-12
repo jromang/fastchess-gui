@@ -1,4 +1,5 @@
-// The "Direct" window: one tab per concurrent game.
+// The live view: the mosaic of the games being played, and the parts of the game followed (board, players, searches,
+// moves, chart), beside it or each in a panel of its own; detached boards.
 
 #include <cmath>
 
@@ -11,6 +12,7 @@
 
 #include "app.hpp"
 #include "i18n.hpp"
+#include "layout.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -399,6 +401,9 @@ void App::drawLive() {
     live_slot_      = std::clamp(live_slot_, 0, slots - 1);
     for (int i = 0; i < slots; ++i) refreshSlot(i);
 
+    // The parts of the followed game that have no panel of their own open are shown here, beside the mosaic.
+    const unsigned parts = livePartsHere();
+
     // Mosaic of every game with the chosen one beside it, or one game with tabs.
     const bool mosaic = live_mosaic_ && slots > 1;
     if (slots > 1) {
@@ -438,12 +443,18 @@ void App::drawLive() {
             }
             ImGui::EndTabBar();
         }
-        drawLiveGame(slot_views_[static_cast<std::size_t>(live_slot_)], "##focus", true, live_slot_);
+        if (parts != 0) drawLiveGame(slot_views_[static_cast<std::size_t>(live_slot_)], "##focus", parts, live_slot_);
     } else {
         ImGui::NewLine();
         const ImVec2 avail = ImGui::GetContentRegionAvail();
         const float gap    = ImGui::GetStyle().ItemSpacing.x;
-        if (avail.x < px(700)) {
+        if (parts == 0) {
+            // The followed game in panels of its own: the mosaic takes the whole room.
+            const auto grid = mosaicGrid(slots, avail, setup_.tile_info);
+            ImGui::BeginChild("##mosaic", ImVec2(0, 0));
+            drawMosaic(grid.cols, grid.card);
+            ImGui::EndChild();
+        } else if (avail.x < px(700)) {
             // Narrow: the mosaic above, the followed game under it.
             const ImVec2 strip(avail.x, std::floor(avail.y * 0.4f));
             const auto grid = mosaicGrid(slots, strip, setup_.tile_info);
@@ -452,18 +463,25 @@ void App::drawLive() {
             ImGui::EndChild();
         } else {
             // The followed game gets the width its board needs at full height, beside its panel, within 40 to 70 % of
-            // the width; the mosaic the rest, less what its cards leave unused.
-            const float board = avail.y - ImGui::GetTextLineHeightWithSpacing();
-            const float focus = std::clamp(board + gap + sidePanel(), avail.x * 0.4f, avail.x * 0.7f);
+            // the width; the mosaic the rest, less what its cards leave unused. Without its board, the width of the
+            // panel beside it.
+            const bool board = parts & LiveBoard;
+            const bool side  = parts & ~LiveBoard;
+            const float want = (board ? avail.y - ImGui::GetTextLineHeightWithSpacing() : 0.0f) +
+                               (board && side ? gap : 0.0f) + (side ? sidePanel() : 0.0f);
+            const float focus =
+                board ? std::clamp(want, avail.x * 0.4f, avail.x * 0.7f) : std::min(want, avail.x * 0.5f);
             const auto grid   = mosaicGrid(slots, ImVec2(avail.x - focus - gap, avail.y), setup_.tile_info);
             ImGui::BeginChild("##mosaic", ImVec2(std::min(grid.width(), avail.x - focus - gap), 0));
             drawMosaic(grid.cols, grid.card);
             ImGui::EndChild();
             ImGui::SameLine();
         }
-        ImGui::BeginChild("##focus_panel", ImVec2(0, 0));
-        drawLiveGame(slot_views_[static_cast<std::size_t>(live_slot_)], "##focus", true, live_slot_);
-        ImGui::EndChild();
+        if (parts != 0) {
+            ImGui::BeginChild("##focus_panel", ImVec2(0, 0));
+            drawLiveGame(slot_views_[static_cast<std::size_t>(live_slot_)], "##focus", parts, live_slot_);
+            ImGui::EndChild();
+        }
     }
 
     ui::endPanel();
@@ -556,190 +574,148 @@ void App::drawMosaic(int cols, float card) {
     }
 }
 
-void App::drawDetached() {
-    if (detached_.empty() || !run_.observer()) return;
-
-    for (auto it = detached_.begin(); it != detached_.end();) {
-        const int slot = *it;
-        refreshSlot(slot);
-        bool open = true;
-        ImGui::SetNextWindowSize(ImVec2(px(720), px(480)), ImGuiCond_FirstUseEver);
-        const auto title = trf("Game #{}", slot + 1) + fmt::format("###detached{}", slot);
-        if (ImGui::Begin(title.c_str(), &open, ImGuiWindowFlags_NoDocking) &&
-            slot < static_cast<int>(slot_views_.size())) {
-            drawLiveGame(slot_views_[static_cast<std::size_t>(slot)], "##detached", false, slot);
-        }
-        ImGui::End();
-        it = open ? std::next(it) : detached_.erase(it);
-    }
-}
-
-void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int slot) {
-    auto* obs      = run_.observer();
+// The board as large as `size`, with the 50-move counter and the material under it.
+void App::drawLiveBoard(SlotView& view, float size) {
     const auto& st = view.state;
-    ImGui::PushID(id);
-
-    if (!st.has_game) {
-        ImGui::TextDisabled("%s", TR("No game in this slot yet."));
-        ImGui::PopID();
-        return;
-    }
-
-    // The board as large as the panel allows, with the players, moves and charts beside it; under it when that
-    // gives a much larger board (a narrow, tall panel).
-    const ImVec2 avail     = ImGui::GetContentRegionAvail();
-    const float info_h     = ImGui::GetTextLineHeightWithSpacing();
-    const float beside     = std::min(avail.y - 4.0f - info_h, avail.x - sidePanel() - ImGui::GetStyle().ItemSpacing.x);
-    const float under      = std::min(avail.x, (avail.y - info_h) * 0.6f);
-    const bool stacked     = beside < under * 0.75f;
-    const float board_size = std::floor(std::max(px(160), stacked ? under : beside));
-
-    if (stacked) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (avail.x - board_size) * 0.5f));
     ImGui::BeginGroup();
     BoardDecor decor;
     decor.flipped    = view.flip;
     decor.eval_white = evalBar(st);
     if (!st.moves.empty()) decor.last_move = st.moves.back().move;
     if (setup_.live_arrows) decor.arrows = pvArrows(st, view.board);
-    drawBoard(atlas_, view.board, board_size, decor);
-    drawBoardInfo(atlas_, view.board, board_size, tbPieces());
+    drawBoard(atlas_, view.board, size, decor);
+    drawBoardInfo(atlas_, view.board, size, tbPieces());
     ImGui::EndGroup();
+}
 
-    float side_h = std::max(avail.y, board_size + info_h);
-    if (stacked) {
-        side_h = std::max(px(260), ImGui::GetContentRegionAvail().y);
+// The board alone, as large as the room allows, in the middle of it.
+void App::drawLiveBoardFitted(SlotView& view) {
+    const ImVec2 avail = ImGui::GetContentRegionAvail();
+    const float info_h = ImGui::GetTextLineHeightWithSpacing();
+    const float size   = std::floor(std::max(px(120), std::min(avail.x, avail.y - info_h - 4.0f)));
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (avail.x - size) * 0.5f));
+    drawLiveBoard(view, size);
+}
+
+// A player: the name and the clock, and with `search` what its engine is searching (else what its last move
+// reported).
+void App::drawLivePlayer(SlotView& view, chess::Color color, bool search) {
+    auto* obs          = run_.observer();
+    const auto& st     = view.state;
+    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - st.think_start).count();
+    const bool white   = color == chess::Color::WHITE;
+    const auto& name   = white ? st.white : st.black;
+    const bool to_move = st.active && st.stm == color;
+    const bool thinks  = to_move && st.thinking;
+
+    // A small disc in the side's colour.
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const float r  = ImGui::GetTextLineHeight() * 0.32f;
+    const ImVec2 c(p.x + r, p.y + ImGui::GetTextLineHeight() * 0.5f);
+    dl->AddCircleFilled(c, r, white ? IM_COL32(236, 236, 236, 255) : IM_COL32(25, 25, 25, 255), 16);
+    dl->AddCircle(c, r, IM_COL32(130, 130, 130, 255), 16);
+    ImGui::Dummy(ImVec2(r * 2, ImGui::GetTextLineHeight()));
+    ImGui::SameLine();
+
+    if (to_move) ImGui::PushStyleColor(ImGuiCol_Text, ui::ACCENT);
+    if (isMatch() && obs) {
+        ImGui::Text("%s  (%s)", name.c_str(), name == obs->engineA() ? "A" : "B");
     } else {
-        ImGui::SameLine();
+        ImGui::TextUnformatted(name.c_str());
     }
-    ImGui::BeginChild("##live_side", ImVec2(0, side_h), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
+    if (to_move) ImGui::PopStyleColor();
 
-    // Players, top of the board first.
-    const auto now     = Clock::now();
-    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - st.think_start).count();
-    const bool match   = isMatch();
+    // Clock on the right.
+    const auto clock = clockText(st, color, elapsed);
+    if (!clock.empty()) {
+        ImGui::SameLine(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(clock.c_str()).x);
+        if (thinks) ImGui::PushStyleColor(ImGuiCol_Text, ui::ACCENT);
+        ImGui::TextUnformatted(clock.c_str());
+        if (thinks) ImGui::PopStyleColor();
+    }
+    if (!search) return;
 
-    auto player = [&](chess::Color color) {
-        const bool white   = color == chess::Color::WHITE;
-        const auto& name   = white ? st.white : st.black;
-        const bool to_move = st.active && st.stm == color;
-        const bool thinks  = to_move && st.thinking;
-
-        // A small disc in the side's colour.
-        ImDrawList* dl = ImGui::GetWindowDrawList();
-        const ImVec2 p = ImGui::GetCursorScreenPos();
-        const float r  = ImGui::GetTextLineHeight() * 0.32f;
-        const ImVec2 c(p.x + r, p.y + ImGui::GetTextLineHeight() * 0.5f);
-        dl->AddCircleFilled(c, r, white ? IM_COL32(236, 236, 236, 255) : IM_COL32(25, 25, 25, 255), 16);
-        dl->AddCircle(c, r, IM_COL32(130, 130, 130, 255), 16);
-        ImGui::Dummy(ImVec2(r * 2, ImGui::GetTextLineHeight()));
-        ImGui::SameLine();
-
-        if (to_move) ImGui::PushStyleColor(ImGuiCol_Text, ui::ACCENT);
-        if (match) {
-            ImGui::Text("%s  (%s)", name.c_str(), name == obs->engineA() ? "A" : "B");
-        } else {
-            ImGui::TextUnformatted(name.c_str());
-        }
-        if (to_move) ImGui::PopStyleColor();
-
-        // Clock on the right.
-        const auto clock = clockText(st, color, elapsed);
-        if (!clock.empty()) {
-            ImGui::SameLine(ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(clock.c_str()).x);
-            if (thinks) ImGui::PushStyleColor(ImGuiCol_Text, ui::ACCENT);
-            ImGui::TextUnformatted(clock.c_str());
-            if (thinks) ImGui::PopStyleColor();
-        }
-
-        // Search info: the running search for the side to move, else what its last move reported. Wrapped in a
-        // narrow panel.
-        ImGui::PushTextWrapPos(0);
-        const auto& line = st.info[white ? 0 : 1];
-        if (thinks && !line.empty()) {
-            const auto info  = fastchess::engine::UciEngine::parseInfo(line);
-            const auto score = info.score ? std::optional<fastchess::Score>(*info.score) : std::nullopt;
-            ImGui::TextColored(
-                ui::MUTED4, "d%lld/%lld  %s  %s n  %s n/s", static_cast<long long>(info.depth.value_or(0)),
-                static_cast<long long>(info.seldepth.value_or(0)), ui::formatScore(score).c_str(),
-                ui::formatCount(info.nodes.value_or(0)).c_str(), ui::formatCount(info.nps.value_or(0)).c_str());
-            if (info.wdl) wdlLine(*info.wdl);
-            const auto pv = pvToSan(view.board, info.pv, 12);
-            ImGui::TextUnformatted(pv.empty() ? " " : pv.c_str());
-        } else {
-            const LiveMove* last = nullptr;
-            for (auto it = st.moves.rbegin(); it != st.moves.rend(); ++it) {
-                if (it->mover == color && !it->book) {
-                    last = &*it;
-                    break;
-                }
+    // Search info: the running search for the side to move, else what its last move reported. Wrapped in a
+    // narrow panel.
+    ImGui::PushTextWrapPos(0);
+    const auto& line = st.info[white ? 0 : 1];
+    if (thinks && !line.empty()) {
+        const auto info  = fastchess::engine::UciEngine::parseInfo(line);
+        const auto score = info.score ? std::optional<fastchess::Score>(*info.score) : std::nullopt;
+        ImGui::TextColored(ui::MUTED4, "d%lld/%lld  %s  %s n  %s n/s", static_cast<long long>(info.depth.value_or(0)),
+                           static_cast<long long>(info.seldepth.value_or(0)), ui::formatScore(score).c_str(),
+                           ui::formatCount(info.nodes.value_or(0)).c_str(),
+                           ui::formatCount(info.nps.value_or(0)).c_str());
+        if (info.wdl) wdlLine(*info.wdl);
+        const auto pv = pvToSan(view.board, info.pv, 12);
+        ImGui::TextUnformatted(pv.empty() ? " " : pv.c_str());
+    } else {
+        const LiveMove* last = nullptr;
+        for (auto it = st.moves.rbegin(); it != st.moves.rend(); ++it) {
+            if (it->mover == color && !it->book) {
+                last = &*it;
+                break;
             }
-            if (last) {
-                const auto decision =
-                    last->decision_ms ? trf(" (decided at {})", ui::formatClock(*last->decision_ms)) : std::string();
-                ImGui::TextColored(ui::MUTED4, "d%lld/%lld  %s  %s n  %s n/s  %s%s",
-                                   static_cast<long long>(last->depth), static_cast<long long>(last->seldepth),
-                                   ui::formatScore(last->score).c_str(), ui::formatCount(last->nodes).c_str(),
-                                   ui::formatCount(last->nps).c_str(), ui::formatClock(last->time_ms).c_str(),
-                                   decision.c_str());
-                if (last->wdl) wdlLine(*last->wdl);
-            } else {
-                ImGui::TextDisabled("—");
-            }
-            ImGui::TextUnformatted(" ");
         }
-        ImGui::PopTextWrapPos();
-    };
+        if (last) {
+            const auto decision =
+                last->decision_ms ? trf(" (decided at {})", ui::formatClock(*last->decision_ms)) : std::string();
+            ImGui::TextColored(ui::MUTED4, "d%lld/%lld  %s  %s n  %s n/s  %s%s", static_cast<long long>(last->depth),
+                               static_cast<long long>(last->seldepth), ui::formatScore(last->score).c_str(),
+                               ui::formatCount(last->nodes).c_str(), ui::formatCount(last->nps).c_str(),
+                               ui::formatClock(last->time_ms).c_str(), decision.c_str());
+            if (last->wdl) wdlLine(*last->wdl);
+        } else {
+            ImGui::TextDisabled("—");
+        }
+        ImGui::TextUnformatted(" ");
+    }
+    ImGui::PopTextWrapPos();
+}
 
-    player(view.flip ? chess::Color::WHITE : chess::Color::BLACK);
-    ImGui::Separator();
-    player(view.flip ? chess::Color::BLACK : chess::Color::WHITE);
-
-    ImGui::Separator();
+// The game and round, the result once over, and the board's buttons: Detach (not in a detached board), Arrows, Flip.
+void App::drawLiveGameLine(SlotView& view, int slot, bool allow_detach) {
+    const auto& st = view.state;
     ImGui::Text(TR("Game %zu · round %zu"), st.game_id, st.round_id + 1);
     if (!st.active && !st.result.empty()) {
         ImGui::SameLine();
         ImGui::TextColored(ImVec4(0.95f, 0.75f, 0.3f, 1), "%s  %s", st.result.c_str(), TR(st.reason));
     }
-    {
-        const auto check_w = [](const char* label) {
-            return ImGui::CalcTextSize(label).x + ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x;
-        };
-        const float flip_w   = check_w(TR("Flip"));
-        const float arrows_w = check_w(TR("Arrows")) + ImGui::GetStyle().ItemSpacing.x;
-        const float detach_w =
-            allow_detach ? ImGui::CalcTextSize(TR("Detach")).x + ImGui::GetStyle().FramePadding.x * 2 + px(8) : 0;
-        ImGui::SameLine();
-        if (ImGui::GetContentRegionAvail().x < flip_w + arrows_w + detach_w) {
-            ImGui::NewLine();  // on a line of their own in a narrow panel
-        } else {
-            ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - flip_w - arrows_w -
-                                 detach_w);
-        }
-        if (allow_detach) {
-            if (ImGui::SmallButton(TR("Detach"))) detached_.insert(slot);
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("%s", TR("Show this game in its own window, which can be moved to another screen."));
-            }
-            ImGui::SameLine();
-        }
-        if (ImGui::Checkbox(TR("Arrows"), &setup_.live_arrows)) saveSetupSoon();
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("%s", TR("The move the side to move is thinking of, and the reply it expects, in the "
-                                       "colours of the engines that would play them."));
-        }
-        ImGui::SameLine();
-        ImGui::Checkbox(TR("Flip"), &view.flip);
+    const auto check_w = [](const char* label) {
+        return ImGui::CalcTextSize(label).x + ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x;
+    };
+    const float flip_w   = check_w(TR("Flip"));
+    const float arrows_w = check_w(TR("Arrows")) + ImGui::GetStyle().ItemSpacing.x;
+    const float detach_w =
+        allow_detach ? ImGui::CalcTextSize(TR("Detach")).x + ImGui::GetStyle().FramePadding.x * 2 + px(8) : 0;
+    ImGui::SameLine();
+    if (ImGui::GetContentRegionAvail().x < flip_w + arrows_w + detach_w) {
+        ImGui::NewLine();  // on a line of their own in a narrow panel
+    } else {
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - flip_w - arrows_w - detach_w);
     }
+    if (allow_detach) {
+        if (ImGui::SmallButton(TR("Detach"))) showPanel(layout::detachedPanel(slot));
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("Show this game in a panel of its own, which can be docked beside the others "
+                                       "or moved to another screen."));
+        }
+        ImGui::SameLine();
+    }
+    if (ImGui::Checkbox(TR("Arrows"), &setup_.live_arrows)) saveSetupSoon();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("The move the side to move is thinking of, and the reply it expects, in the "
+                                   "colours of the engines that would play them."));
+    }
+    ImGui::SameLine();
+    ImGui::Checkbox(TR("Flip"), &view.flip);
+}
 
-    // Moves, then the evaluation curve.
-    const float plot_h = std::max(px(110), ImGui::GetContentRegionAvail().y * 0.30f) +
-                         ImGui::GetFrameHeightWithSpacing();  // and its menu
-    // Too low for both (a small window): the moves only.
-    const float left    = ImGui::GetContentRegionAvail().y;
-    const bool chart    = left - plot_h >= ImGui::GetFrameHeightWithSpacing() * 4;
-    const float moves_h = chart ? left - plot_h - ImGui::GetStyle().ItemSpacing.y : left;
-
-    ImGui::BeginChild("##moves", ImVec2(0, moves_h), ImGuiChildFlags_Borders);
+// The moves played, kept scrolled to the last one while the list is at its end.
+void App::drawLiveMoves(SlotView& view, float height) {
+    const auto& st = view.state;
+    ImGui::BeginChild("##moves", ImVec2(0, height), ImGuiChildFlags_Borders);
     if (ImGui::BeginTable("##movetable", 3, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg)) {
         ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed, ImGui::CalcTextSize("000.").x);
         ImGui::TableSetupColumn(TR("White"), ImGuiTableColumnFlags_WidthStretch);
@@ -798,12 +774,11 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
         view.follow_frames--;
     }
     ImGui::EndChild();
-    if (!chart) {
-        ImGui::EndChild();
-        ImGui::PopID();
-        return;
-    }
+}
 
+// The chart chosen under its menu, filling the room left.
+void App::drawLiveChart(SlotView& view) {
+    const auto& st = view.state;
     std::vector<float> evals;
     evals.reserve(st.moves.size());
     float previous = 0.0f;
@@ -826,9 +801,138 @@ void App::drawLiveGame(SlotView& view, const char* id, bool allow_detach, int sl
                     std::max(30.0f, height - eval_h - ImGui::GetStyle().ItemSpacing.y - 1.0f));
         }
     }
+}
 
+// The parts beside the board, one under the other: the players with their searches, the game, the moves, the chart.
+void App::drawLiveSide(SlotView& view, unsigned parts, int slot, bool allow_detach) {
+    const bool players = parts & LivePlayers, searches = parts & LiveSearches;
+    if (players || searches) {
+        drawLivePlayer(view, view.flip ? chess::Color::WHITE : chess::Color::BLACK, searches);
+        ImGui::Separator();
+        drawLivePlayer(view, view.flip ? chess::Color::BLACK : chess::Color::WHITE, searches);
+        ImGui::Separator();
+    }
+    if (players) drawLiveGameLine(view, slot, allow_detach);
+
+    const bool moves = parts & LiveMoves;
+    if (!(parts & LiveChart)) {
+        if (moves) drawLiveMoves(view, std::max(ImGui::GetFrameHeight(), ImGui::GetContentRegionAvail().y));
+        return;
+    }
+    if (!moves) {
+        drawLiveChart(view);
+        return;
+    }
+    // Moves, then the evaluation curve.
+    const float plot_h = std::max(px(110), ImGui::GetContentRegionAvail().y * 0.30f) +
+                         ImGui::GetFrameHeightWithSpacing();  // and its menu
+    // Too low for both (a small window): the moves only.
+    const float left    = ImGui::GetContentRegionAvail().y;
+    const bool chart    = left - plot_h >= ImGui::GetFrameHeightWithSpacing() * 4;
+    const float moves_h = chart ? left - plot_h - ImGui::GetStyle().ItemSpacing.y : left;
+    drawLiveMoves(view, std::max(ImGui::GetFrameHeight(), moves_h));
+    if (chart) drawLiveChart(view);
+}
+
+void App::drawLiveGame(SlotView& view, const char* id, unsigned parts, int slot, bool allow_detach) {
+    const auto& st = view.state;
+    ImGui::PushID(id);
+
+    if (!st.has_game) {
+        ImGui::TextDisabled("%s", TR("No game in this slot yet."));
+        ImGui::PopID();
+        return;
+    }
+
+    // Without the board, the other parts fill the room; the board alone is as large as the room allows.
+    const unsigned side = parts & ~LiveBoard;
+    if (!(parts & LiveBoard) || side == 0) {
+        if (parts & LiveBoard) {
+            drawLiveBoardFitted(view);
+        } else {
+            ImGui::BeginChild("##live_side", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
+            drawLiveSide(view, side, slot, allow_detach);
+            ImGui::EndChild();
+        }
+        ImGui::PopID();
+        return;
+    }
+
+    // The board as large as the panel allows, with the players, moves and charts beside it; under it when that
+    // gives a much larger board (a narrow, tall panel).
+    const ImVec2 avail     = ImGui::GetContentRegionAvail();
+    const float info_h     = ImGui::GetTextLineHeightWithSpacing();
+    const float beside     = std::min(avail.y - 4.0f - info_h, avail.x - sidePanel() - ImGui::GetStyle().ItemSpacing.x);
+    const float under      = std::min(avail.x, (avail.y - info_h) * 0.6f);
+    const bool stacked     = beside < under * 0.75f;
+    const float board_size = std::floor(std::max(px(160), stacked ? under : beside));
+
+    if (stacked) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (avail.x - board_size) * 0.5f));
+    drawLiveBoard(view, board_size);
+
+    float side_h = std::max(avail.y, board_size + info_h);
+    if (stacked) {
+        side_h = std::max(px(260), ImGui::GetContentRegionAvail().y);
+    } else {
+        ImGui::SameLine();
+    }
+    ImGui::BeginChild("##live_side", ImVec2(0, side_h), ImGuiChildFlags_None, ImGuiWindowFlags_NoScrollbar);
+    drawLiveSide(view, side, slot, allow_detach);
     ImGui::EndChild();
     ImGui::PopID();
+}
+
+unsigned App::livePartsHere() const {
+    unsigned parts = 0;
+    for (const auto& [part, panel] : LIVE_PARTS) {
+        if (!panels_open_.count(panel)) parts |= part;
+    }
+    return parts;
+}
+
+// A part of the followed game in its own panel.
+void App::drawLivePart(unsigned part) {
+    if (!run_.observer() || slot_views_.empty()) {
+        ImGui::TextDisabled("%s", TR("No game is being played."));
+        return;
+    }
+    live_slot_ = std::clamp(live_slot_, 0, static_cast<int>(slot_views_.size()) - 1);
+    auto& view = slot_views_[static_cast<std::size_t>(live_slot_)];
+    if (!view.state.has_game) {
+        ImGui::TextDisabled("%s", TR("No game in this slot yet."));
+        return;
+    }
+    ImGui::PushID(static_cast<int>(part));
+    switch (part) {
+        case LiveBoard:
+            drawLiveBoardFitted(view);
+            break;
+        case LivePlayers:
+        case LiveSearches:
+            drawLiveSide(view, part, live_slot_, true);
+            break;
+        case LiveMoves:
+            drawLiveMoves(view, std::max(ImGui::GetFrameHeight(), ImGui::GetContentRegionAvail().y));
+            break;
+        case LiveChart:
+            drawLiveChart(view);
+            break;
+        default:
+            break;
+    }
+    ImGui::PopID();
+}
+
+// A detached board: every part of its game.
+void App::drawDetachedBoard(int slot) {
+    auto* obs = run_.observer();
+    if (!obs || slot >= obs->slotCount()) {
+        ImGui::TextDisabled("%s", TR("No game is being played."));
+        return;
+    }
+    refreshSlot(slot);
+    if (slot < static_cast<int>(slot_views_.size()))
+        drawLiveGame(slot_views_[static_cast<std::size_t>(slot)], "##detached", LiveAll, slot, false);
 }
 
 }  // namespace fcg

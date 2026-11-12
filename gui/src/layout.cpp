@@ -166,6 +166,11 @@ const std::vector<PanelInfo>& allPanels() {
         {panel::LIVE, N_("Live###tab_live")},
         {panel::GAMES, N_("Games###tab_games")},
         {panel::OPENINGS, N_("Openings###tab_openings")},
+        {panel::BOARD, N_("Board###live_board")},
+        {panel::PLAYERS, N_("Players###live_players")},
+        {panel::SEARCHES, N_("Searches###live_searches")},
+        {panel::MOVES, N_("Moves###live_moves")},
+        {panel::CHART, N_("Chart###live_chart")},
     };
     return list;
 }
@@ -254,8 +259,8 @@ Layout preset(Preset which) {
             auto board    = Node::leaf({BOARD});
             board.central = true;
             auto right    = Node::split2(
-                S::Vertical, 0.2f, Node::leaf({PLAYERS}),
-                Node::split2(S::Vertical, 0.45f, Node::leaf({SEARCHES}), Node::leaf({CHART, MOVES}, CHART)));
+                S::Vertical, 0.3f, Node::leaf({PLAYERS}),
+                Node::split2(S::Vertical, 0.5f, Node::leaf({SEARCHES}), Node::leaf({CHART, MOVES}, CHART)));
             l.workspace = Node::split2(
                 S::Vertical, 0.68f, Node::split2(S::Horizontal, 0.5f, std::move(board), std::move(right)),
                 Node::leaf({STANDINGS, OVERVIEW, LIVE, SCHEDULE, BRACKET, GAMES, OPENINGS, BROADCAST}, STANDINGS));
@@ -279,8 +284,8 @@ Layout preset(Preset which) {
             board.central = true;
             l.workspace =
                 Node::split2(S::Horizontal, 0.6f, std::move(board),
-                             Node::split2(S::Vertical, 0.18f, Node::leaf({PLAYERS}),
-                                          Node::split2(S::Vertical, 0.42f, Node::leaf({SEARCHES}),
+                             Node::split2(S::Vertical, 0.22f, Node::leaf({PLAYERS}),
+                                          Node::split2(S::Vertical, 0.4f, Node::leaf({SEARCHES}),
                                                        Node::leaf({STANDINGS, MOVES, CHART, OVERVIEW, LIVE, SCHEDULE,
                                                                    BRACKET, GAMES, OPENINGS, BROADCAST},
                                                                   STANDINGS))));
@@ -321,6 +326,17 @@ std::optional<Preset> presetByKey(std::string_view key) {
         if (key == presetKey(static_cast<Preset>(i))) return static_cast<Preset>(i);
     }
     return std::nullopt;
+}
+
+std::vector<Command> commands(const std::vector<std::string>& panels, const std::vector<std::string>& saved) {
+    std::vector<Command> out;
+    for (const auto& p : panels) out.push_back({Command::Kind::Show, trf("Show {}", panelName(p)), p});
+    for (int i = 0; i < static_cast<int>(Preset::Count); ++i) {
+        const auto which = static_cast<Preset>(i);
+        out.push_back({Command::Kind::Preset, TR(presetLabel(which)), presetKey(which)});
+    }
+    for (const auto& name : saved) out.push_back({Command::Kind::Saved, name, name});
+    return out;
 }
 
 // ---------------------------------------------------------------------------

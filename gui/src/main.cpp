@@ -329,8 +329,9 @@ int main(int argc, char** argv) {
     // Scripted screenshots must not show hover effects from wherever the real mouse happens to be.
     if (!args.shots.empty()) io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
 
-    // A detached board can be dragged out of the main window, onto a second screen. The SDL backend does not
-    // support it on Wayland: there, detached boards stay floating windows inside the main one.
+    // A panel of the tournament workspace (a detached board, the standings...) can be dragged out of the main window,
+    // onto a second screen. The SDL backend does not support it on Wayland (ImGui then turns the flag off): there,
+    // panels float inside the main window.
     if (args.shots.empty()) io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     fcg::ui::applyTheme(fcg::ui::Theme::Light, scale);  // the app applies the chosen theme on its first frame

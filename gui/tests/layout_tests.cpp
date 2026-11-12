@@ -258,3 +258,53 @@ TEST_CASE("layouts: a panel shown again goes to the node with the most panels") 
     CHECK(standings);
     CHECK(layout::fallbackNode(0x1234) == 0);
 }
+
+TEST_CASE("layouts: the command palette lists every panel and every layout") {
+    // The panels of a round robin, as the workspace lists them, and a detached board.
+    std::vector<std::string> panels;
+    for (const auto& p : layout::allPanels()) {
+        if (layout::available(p.id, false, false)) panels.emplace_back(p.id);
+    }
+    CHECK(std::find(panels.begin(), panels.end(), "tab_bracket") == panels.end());  // a knockout's only
+    panels.push_back(layout::detachedPanel(2));
+
+    const auto commands = layout::commands(panels, {"Mine", "Club night"});
+    const auto has      = [&](layout::Command::Kind kind, const std::string& label, const std::string& target) {
+        return std::any_of(commands.begin(), commands.end(), [&](const layout::Command& c) {
+            return c.kind == kind && c.label == label && c.target == target;
+        });
+    };
+    using K = layout::Command::Kind;
+    for (const auto& [id, name] : std::vector<std::pair<std::string, std::string>>{{"tab_overview", "Overview"},
+                                                                                   {"tab_standings", "Standings"},
+                                                                                   {"tab_schedule", "Schedule"},
+                                                                                   {"tab_broadcast", "Broadcast"},
+                                                                                   {"tab_live", "Live"},
+                                                                                   {"tab_games", "Games"},
+                                                                                   {"tab_openings", "Openings"},
+                                                                                   {"live_board", "Board"},
+                                                                                   {"live_players", "Players"},
+                                                                                   {"live_searches", "Searches"},
+                                                                                   {"live_moves", "Moves"},
+                                                                                   {"live_chart", "Chart"},
+                                                                                   {"detached2", "Game #3"}}) {
+        CAPTURE(id);
+        CHECK(has(K::Show, "Show " + name, id));
+    }
+    CHECK(has(K::Preset, "Tabs", "tabs"));
+    CHECK(has(K::Preset, "Follow a game", "follow"));
+    CHECK(has(K::Preset, "Large tournament", "large"));
+    CHECK(has(K::Preset, "Broadcast", "broadcast"));
+    CHECK(has(K::Saved, "Mine", "Mine"));
+    CHECK(has(K::Saved, "Club night", "Club night"));
+    CHECK(commands.size() == panels.size() + static_cast<std::size_t>(layout::Preset::Count) + 2);
+
+    // Every panel a layout names is one of the workspace.
+    for (int i = 0; i < static_cast<int>(layout::Preset::Count); ++i) {
+        for (const auto& panel : layout::preset(static_cast<layout::Preset>(i)).panels()) {
+            CAPTURE(panel);
+            CHECK(std::any_of(layout::allPanels().begin(), layout::allPanels().end(),
+                              [&](const layout::PanelInfo& p) { return panel == p.id; }));
+        }
+    }
+}

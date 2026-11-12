@@ -289,6 +289,9 @@ msgstr ""
 msgid "Arguments"
 msgstr ""
 
+msgid "Arrange the panels: a ready-made layout, or one of yours. A panel dragged by its tab docks beside another, or floats."
+msgstr ""
+
 msgid "Arrows"
 msgstr ""
 
@@ -356,6 +359,9 @@ msgid "Black ×2"
 msgstr ""
 
 msgid "Black's connection stalls"
+msgstr ""
+
+msgid "Board"
 msgstr ""
 
 msgid "Book"
@@ -434,6 +440,9 @@ msgid "Change the tournament"
 msgstr ""
 
 msgid "Change…"
+msgstr ""
+
+msgid "Chart"
 msgstr ""
 
 msgid "Charts"
@@ -578,6 +587,12 @@ msgid "Decision"
 msgstr ""
 
 msgid "Default"
+msgstr ""
+
+msgid "Default layout"
+msgstr ""
+
+msgid "Delete"
 msgstr ""
 
 msgid "Depth"
@@ -1119,6 +1134,12 @@ msgstr ""
 msgid "Latest results"
 msgstr ""
 
+msgid "Layout"
+msgstr ""
+
+msgid "Layout saved: {}"
+msgstr ""
+
 msgid "Leave out the games lost by a crash or a stall"
 msgstr ""
 
@@ -1258,6 +1279,9 @@ msgid "No game finished yet."
 msgstr ""
 
 msgid "No game in this slot yet."
+msgstr ""
+
+msgid "No game is being played."
 msgstr ""
 
 msgid "No game yet."
@@ -1482,6 +1506,9 @@ msgstr ""
 msgid "Pairs: those scoring 1 for each engine, a win and a loss or two draws."
 msgstr ""
 
+msgid "Panels"
+msgstr ""
+
 msgid "Part of a FEN, or moves of a PGN book (e4 e5 Nf3)."
 msgstr ""
 
@@ -1521,6 +1548,9 @@ msgid "Play this game again"
 msgstr ""
 
 msgid "Played in pairs: each opening is played twice, with colours reversed."
+msgstr ""
+
+msgid "Players"
 msgstr ""
 
 msgid "Players in the PGN"
@@ -1666,6 +1696,9 @@ msgstr[1] ""
 msgid "Ready · {} cores, {} threads"
 msgstr ""
 
+msgid "Ready-made"
+msgstr ""
+
 msgid "Reference Elo"
 msgstr ""
 
@@ -1717,6 +1750,9 @@ msgid "Replace the template {}?"
 msgstr ""
 
 msgid "Replaced by"
+msgstr ""
+
+msgid "Replaces your layout of that name."
 msgstr ""
 
 msgid "Resign"
@@ -1800,6 +1836,12 @@ msgstr ""
 msgid "Save a cleaned copy…"
 msgstr ""
 
+msgid "Save the layout"
+msgstr ""
+
+msgid "Save the layout as…"
+msgstr ""
+
 msgid "Schedule"
 msgstr ""
 
@@ -1819,6 +1861,9 @@ msgid "Search per engine"
 msgstr ""
 
 msgid "Search: name, program, author, notes"
+msgstr ""
+
+msgid "Searches"
 msgstr ""
 
 msgid "Searches at a time"
@@ -1868,7 +1913,7 @@ msgstr ""
 msgid "Share of drawn games."
 msgstr ""
 
-msgid "Show this game in its own window, which can be moved to another screen."
+msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr ""
 
 msgid "Show {}"
@@ -2133,6 +2178,9 @@ msgid "The opening book must be an .epd, .pgn or .bin (Polyglot) file."
 msgstr ""
 
 msgid "The openings appear here once their games are played."
+msgstr ""
+
+msgid "The panels and where they are, under a name of yours."
 msgstr ""
 
 msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
@@ -2403,6 +2451,9 @@ msgid "Written at {} in {}"
 msgstr ""
 
 msgid "Wrong PVs"
+msgstr ""
+
+msgid "Yours"
 msgstr ""
 
 msgid "Zip written to {}"

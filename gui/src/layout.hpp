@@ -91,6 +91,17 @@ struct Layout {
     bool operator==(const Layout&) const = default;
 };
 
+// What the command palette offers for the workspace: "Show <panel>" for each of `panels` (those of the tournament
+// open), then every layout, ready-made then `saved`.
+struct Command {
+    enum class Kind { Show, Preset, Saved };
+    Kind kind;
+    std::string label;   // translated
+    std::string target;  // the panel, the ready-made layout's key, the saved layout's name
+};
+[[nodiscard]] std::vector<Command> commands(const std::vector<std::string>& panels,
+                                            const std::vector<std::string>& saved);
+
 // The ready-made layouts.
 enum class Preset { Tabs, FollowGame, LargeTournament, Broadcast, Count };
 [[nodiscard]] Layout preset(Preset which);

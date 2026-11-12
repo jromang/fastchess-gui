@@ -130,14 +130,32 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     add(TR("Tournaments"), "", page(Page::Home));
     add(TR("New tournament"), "", page(Page::NewMatch));
     if (t) {
-        // Every panel of the workspace: shown (docked again if it was closed) and brought to the front.
-        for (const auto& info : layout::allPanels()) {
-            if (!panelAvailable(info.id)) continue;
-            add(trf("Show {}", layout::panelName(info.id)), name, [this, panel = std::string(info.id)] {
-                page_ = Page::Tournament;
-                showPanel(panel);
-            });
+        // Every panel of the workspace: shown (docked again if it was closed) and brought to the front. Then the
+        // layouts, ready-made and saved.
+        std::vector<std::string> saved;
+        for (const auto& l : layouts_) saved.push_back(l.name);
+        for (const auto& c : layout::commands(panelsAvailable(), saved)) {
+            if (c.kind == layout::Command::Kind::Show) {
+                add(c.label, name, [this, panel = c.target] {
+                    page_ = Page::Tournament;
+                    showPanel(panel);
+                });
+            } else if (c.kind == layout::Command::Kind::Preset) {
+                add(c.label, TR("Layout"), [this, key = c.target] { applyLayout(key); });
+            } else {
+                // A layout of the user's, even if named as the key of a ready-made one.
+                add(c.label, TR("Layout"), [this, name = c.target] {
+                    for (const auto& l : layouts_)
+                        if (l.name == name) applyLayout(l);
+                });
+            }
         }
+        add(TR("Save the layout as…"), TR("Layout"), [this] {
+            page_ = Page::Tournament;
+            layout_name_.clear();
+            open_save_layout_ = true;
+        });
+        add(TR("Default layout"), TR("Layout"), [this] { applyLayout(layout::preset(layout::Preset::Tabs)); });
     }
     add(TR("Engines"), "", page(Page::Engines));
     add(TR("Books"), "", page(Page::Books));

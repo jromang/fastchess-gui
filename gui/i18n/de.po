@@ -289,6 +289,9 @@ msgstr "Anwenden"
 msgid "Arguments"
 msgstr "Argumente"
 
+msgid "Arrange the panels: a ready-made layout, or one of yours. A panel dragged by its tab docks beside another, or floats."
+msgstr "Die Bereiche anordnen: ein fertiges Layout oder eines deiner eigenen. Ein an seinem Reiter gezogener Bereich dockt neben einem anderen an oder schwebt frei."
+
 msgid "Arrows"
 msgstr "Pfeile"
 
@@ -357,6 +360,9 @@ msgstr "Schwarz ×2"
 
 msgid "Black's connection stalls"
 msgstr "Die Verbindung von Schwarz hängt"
+
+msgid "Board"
+msgstr "Brett"
 
 msgid "Book"
 msgstr "Buch"
@@ -435,6 +441,9 @@ msgstr "Turnier ändern"
 
 msgid "Change…"
 msgstr "Ändern…"
+
+msgid "Chart"
+msgstr "Diagramm"
 
 msgid "Charts"
 msgstr "Diagramme"
@@ -579,6 +588,12 @@ msgstr "Entscheidung"
 
 msgid "Default"
 msgstr "Standard"
+
+msgid "Default layout"
+msgstr "Standard-Layout"
+
+msgid "Delete"
+msgstr "Löschen"
 
 msgid "Depth"
 msgstr "Tiefe"
@@ -1119,6 +1134,12 @@ msgstr "Letzte 24 Stunden:"
 msgid "Latest results"
 msgstr "Letzte Ergebnisse"
 
+msgid "Layout"
+msgstr "Layout"
+
+msgid "Layout saved: {}"
+msgstr "Layout gespeichert: {}"
+
 msgid "Leave out the games lost by a crash or a stall"
 msgstr "Durch Absturz oder Hänger verlorene Partien weglassen"
 
@@ -1259,6 +1280,9 @@ msgstr "Noch keine Partie beendet."
 
 msgid "No game in this slot yet."
 msgstr "Noch keine Partie in diesem Platz."
+
+msgid "No game is being played."
+msgstr "Es läuft gerade keine Partie."
 
 msgid "No game yet."
 msgstr "Noch keine Partie."
@@ -1482,6 +1506,9 @@ msgstr "Gewonnene / verlorene Paare"
 msgid "Pairs: those scoring 1 for each engine, a win and a loss or two draws."
 msgstr "Paare: die, die jeder Engine 1 Punkt bringen, ein Sieg und eine Niederlage oder zwei Remis."
 
+msgid "Panels"
+msgstr "Bereiche"
+
 msgid "Part of a FEN, or moves of a PGN book (e4 e5 Nf3)."
 msgstr "Ein Teil einer FEN oder Züge eines PGN-Buches (e4 e5 Nf3)."
 
@@ -1522,6 +1549,9 @@ msgstr "Diese Partie neu spielen"
 
 msgid "Played in pairs: each opening is played twice, with colours reversed."
 msgstr "In Paaren gespielt: jede Eröffnung wird zweimal gespielt, mit vertauschten Farben."
+
+msgid "Players"
+msgstr "Spieler"
 
 msgid "Players in the PGN"
 msgstr "Spieler im PGN"
@@ -1666,6 +1696,9 @@ msgstr[1] "Lese… {} Eröffnungen"
 msgid "Ready · {} cores, {} threads"
 msgstr "Bereit · {} Kerne, {} Threads"
 
+msgid "Ready-made"
+msgstr "Fertig"
+
 msgid "Reference Elo"
 msgstr "Referenz-Elo"
 
@@ -1718,6 +1751,9 @@ msgstr "Die Vorlage {} ersetzen?"
 
 msgid "Replaced by"
 msgstr "Ersetzt durch"
+
+msgid "Replaces your layout of that name."
+msgstr "Ersetzt dein Layout mit diesem Namen."
 
 msgid "Resign"
 msgstr "Aufgabe"
@@ -1800,6 +1836,12 @@ msgstr "Speichern"
 msgid "Save a cleaned copy…"
 msgstr "Bereinigte Kopie speichern…"
 
+msgid "Save the layout"
+msgstr "Layout speichern"
+
+msgid "Save the layout as…"
+msgstr "Layout speichern unter…"
+
 msgid "Schedule"
 msgstr "Spielplan"
 
@@ -1820,6 +1862,9 @@ msgstr "Suche pro Engine"
 
 msgid "Search: name, program, author, notes"
 msgstr "Suche: Name, Programm, Autor, Notizen"
+
+msgid "Searches"
+msgstr "Suchen"
 
 msgid "Searches at a time"
 msgstr "Gleichzeitige Suchen"
@@ -1868,8 +1913,8 @@ msgstr "Setup"
 msgid "Share of drawn games."
 msgstr "Anteil der Remispartien."
 
-msgid "Show this game in its own window, which can be moved to another screen."
-msgstr "Diese Partie in einem eigenen Fenster zeigen, das auf einen anderen Bildschirm verschoben werden kann."
+msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
+msgstr "Diese Partie in einem eigenen Bereich zeigen, der neben den anderen angedockt oder auf einen anderen Bildschirm verschoben werden kann."
 
 msgid "Show {}"
 msgstr "{} anzeigen"
@@ -2134,6 +2179,9 @@ msgstr "Das Eröffnungsbuch muss eine .epd-, .pgn- oder .bin-Datei (Polyglot) se
 
 msgid "The openings appear here once their games are played."
 msgstr "Die Eröffnungen erscheinen hier, sobald ihre Partien gespielt sind."
+
+msgid "The panels and where they are, under a name of yours."
+msgstr "Die Bereiche und ihre Anordnung, unter einem Namen deiner Wahl."
 
 msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
 msgstr "Die Spieler der PGN-Dateien, die anhand ihres Namens (von Groß-/Kleinschreibung und Leerzeichen abgesehen) als Engines der Bibliothek erkannt wurden: Ihre Partien sind die der Engine, und deren Einstellungen gelten (ihre Wertung auf einer Liste als Anker)."
@@ -2404,6 +2452,9 @@ msgstr "Geschrieben um {} in {}"
 
 msgid "Wrong PVs"
 msgstr "Falsche PVs"
+
+msgid "Yours"
+msgstr "Deine"
 
 msgid "Zip written to {}"
 msgstr "Zip geschrieben nach {}"

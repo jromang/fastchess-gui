@@ -285,6 +285,9 @@ msgstr "应用"
 msgid "Arguments"
 msgstr "参数"
 
+msgid "Arrange the panels: a ready-made layout, or one of yours. A panel dragged by its tab docks beside another, or floats."
+msgstr "排列面板：现成的布局，或你自己的布局。按住标签拖动面板，可停靠在其他面板旁，或浮动显示。"
+
 msgid "Arrows"
 msgstr "箭头"
 
@@ -353,6 +356,9 @@ msgstr "黑方 ×2"
 
 msgid "Black's connection stalls"
 msgstr "黑方连接无响应"
+
+msgid "Board"
+msgstr "棋盘"
 
 msgid "Book"
 msgstr "开局库"
@@ -431,6 +437,9 @@ msgstr "修改锦标赛"
 
 msgid "Change…"
 msgstr "更改…"
+
+msgid "Chart"
+msgstr "图表"
 
 msgid "Charts"
 msgstr "图表"
@@ -575,6 +584,12 @@ msgstr "裁决"
 
 msgid "Default"
 msgstr "默认"
+
+msgid "Default layout"
+msgstr "默认布局"
+
+msgid "Delete"
+msgstr "删除"
 
 msgid "Depth"
 msgstr "深度"
@@ -1114,6 +1129,12 @@ msgstr "最近 24 小时："
 msgid "Latest results"
 msgstr "最近成绩"
 
+msgid "Layout"
+msgstr "布局"
+
+msgid "Layout saved: {}"
+msgstr "布局已保存：{}"
+
 msgid "Leave out the games lost by a crash or a stall"
 msgstr "排除因崩溃或无响应而输掉的对局"
 
@@ -1254,6 +1275,9 @@ msgstr "还没有已结束的对局。"
 
 msgid "No game in this slot yet."
 msgstr "此位置还没有对局。"
+
+msgid "No game is being played."
+msgstr "当前没有正在进行的对局。"
 
 msgid "No game yet."
 msgstr "还没有对局。"
@@ -1477,6 +1501,9 @@ msgstr "胜 / 负对局对"
 msgid "Pairs: those scoring 1 for each engine, a win and a loss or two draws."
 msgstr "对局对：每个引擎各得 1 分的，即一胜一负或两局和棋。"
 
+msgid "Panels"
+msgstr "面板"
+
 msgid "Part of a FEN, or moves of a PGN book (e4 e5 Nf3)."
 msgstr "FEN 的一部分，或 PGN 开局库中的着法（e4 e5 Nf3）。"
 
@@ -1516,6 +1543,9 @@ msgstr "重下这局对局"
 
 msgid "Played in pairs: each opening is played twice, with colours reversed."
 msgstr "成对进行：每个开局下两次，交换颜色。"
+
+msgid "Players"
+msgstr "棋手"
 
 msgid "Players in the PGN"
 msgstr "PGN 中的棋手"
@@ -1659,6 +1689,9 @@ msgstr[0] "正在读取… {} 个开局"
 msgid "Ready · {} cores, {} threads"
 msgstr "就绪 · {} 个核心，{} 个线程"
 
+msgid "Ready-made"
+msgstr "预设"
+
 msgid "Reference Elo"
 msgstr "参考 Elo"
 
@@ -1710,6 +1743,9 @@ msgstr "替换模板 {}？"
 
 msgid "Replaced by"
 msgstr "替换为"
+
+msgid "Replaces your layout of that name."
+msgstr "将替换你同名的布局。"
 
 msgid "Resign"
 msgstr "认输"
@@ -1792,6 +1828,12 @@ msgstr "保存"
 msgid "Save a cleaned copy…"
 msgstr "保存清理后的副本…"
 
+msgid "Save the layout"
+msgstr "保存布局"
+
+msgid "Save the layout as…"
+msgstr "将布局另存为…"
+
 msgid "Schedule"
 msgstr "赛程"
 
@@ -1812,6 +1854,9 @@ msgstr "各引擎的搜索"
 
 msgid "Search: name, program, author, notes"
 msgstr "搜索：名称、程序、作者、备注"
+
+msgid "Searches"
+msgstr "搜索"
 
 msgid "Searches at a time"
 msgstr "同时进行的搜索数"
@@ -1859,8 +1904,8 @@ msgstr "配置"
 msgid "Share of drawn games."
 msgstr "和棋所占比例。"
 
-msgid "Show this game in its own window, which can be moved to another screen."
-msgstr "在单独的窗口中显示这局对局，该窗口可移到另一块屏幕。"
+msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
+msgstr "在单独的面板中显示这局对局，该面板可停靠在其他面板旁，或移到另一块屏幕。"
 
 msgid "Show {}"
 msgstr "显示：{}"
@@ -2125,6 +2170,9 @@ msgstr "开局库必须是 .epd、.pgn 或 .bin (Polyglot) 文件。"
 
 msgid "The openings appear here once their games are played."
 msgstr "开局的对局下完后，开局会显示在这里。"
+
+msgid "The panels and where they are, under a name of yours."
+msgstr "以你选择的名称保存面板及其位置。"
 
 msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
 msgstr "按名称（忽略大小写和空格）被识别为库中引擎的 PGN 文件棋手：其对局计为该引擎的对局，并应用该引擎的设置（其在某列表上的等级分，作为锚点）。"
@@ -2395,6 +2443,9 @@ msgstr "于 {} 写入 {}"
 
 msgid "Wrong PVs"
 msgstr "错误 PV"
+
+msgid "Yours"
+msgstr "你的布局"
 
 msgid "Zip written to {}"
 msgstr "Zip 已写入 {}"
