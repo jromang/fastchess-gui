@@ -11,9 +11,11 @@
 // Both are written in the order games end, and the journal finds every game by its place in them. The PGN file of
 // the user's (spec.pgn_out) gets them in schedule order instead: see writeOut().
 //
-// A finished game is written to both PGN files first, then to the journal, each synced to disk. When a tournament
-// is opened, PGN text past the last journaled game is cut, and games that were running are simply played again,
-// with the opening their encounter started with. Resuming is therefore exact at any concurrency.
+// A finished game is written to both PGN files first, then to the journal, each synced to disk. The PGN files are
+// written without the state's lock, so the journal may list games out of their order there; it points to each by
+// its place, and text no journal line points to (a crash before the line) is never read. When a tournament is
+// opened, PGN text past the last journaled game is cut, and games that were running are simply played again, with
+// the opening their encounter started with. Resuming is therefore exact at any concurrency.
 //
 // One TournamentState of one program at a time has a folder open for writing (tournament.lock, see files.hpp);
 // others can open it read-only.
@@ -255,8 +257,9 @@ class TournamentState {
     // Appends to spec_.pgn_out the finished games every game before which, in the schedule, is written there or
     // will not be played: the two games of an encounter side by side, rounds in order. A replayed game is written
     // when it ends; at the end of the tournament, everything left. Journaled ("pgn_out"), so a resume carries on.
-    // A failure is kept for pgnOutError() and tried again next time. mutex_ held.
-    void writeOut();
+    // A failure is kept for pgnOutError() and tried again next time. `lock` holds mutex_, and is released while
+    // the games are written.
+    void writeOut(std::unique_lock<std::mutex>& lock);
 
     // What the last edit changed, to undo it (see canUndo()).
     struct UndoPoint {
@@ -303,6 +306,8 @@ class TournamentState {
     std::set<uint64_t> out_written_;     // numbers of the games written there
     uint64_t out_floor_ = 0;             // every game number below is written there, done or dropped
     std::string out_error_;
+    bool out_writing_ = false;  // a thread is writing there, without the lock
+    bool out_again_   = false;  // games may have become ready meanwhile
 
     std::optional<UndoPoint> undo_;
     uint64_t claims_ = 0;  // games claimed since the tournament was opened

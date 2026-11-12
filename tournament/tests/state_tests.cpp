@@ -4,6 +4,7 @@
 #include <fstream>
 #include <map>
 #include <set>
+#include <thread>
 
 #ifndef _WIN32
 #    include <sys/wait.h>
@@ -623,6 +624,65 @@ TEST_CASE("state: a replayed game goes to the PGN file of the user's when it end
 
     const std::vector<std::pair<std::string, std::string>> expected = {{"1", "A"}, {"1", "B"}, {"2", "A"}, {"1", "A"}};
     CHECK(gamesOf(dir / "all.pgn") == expected);
+}
+
+TEST_CASE("state: games recorded by many threads at once resume exactly, each game where the journal says") {
+    const auto dir = freshDir("concurrent");
+    auto spec      = matchSpec(100);
+    spec.pgn_out   = (dir / "all.pgn").string();
+
+    std::vector<GameResult> before;
+    {
+        auto state = TournamentState::create(dir, spec);
+        std::vector<std::thread> threads;
+        for (int t = 0; t < 8; ++t) {
+            threads.emplace_back([&state, t] {
+                // Stopped abruptly past 60 games: the games claimed then are never recorded.
+                for (int i = 0; state->results().size() < 60; ++i) {
+                    const auto task = state->claimNext();
+                    if (!task) break;
+                    state->complete(*task, gameData(*task, (i + t) % 3 == 0 ? "1-0" : "1/2-1/2"));
+                }
+            });
+        }
+        for (auto& thread : threads) thread.join();
+        before = state->results();
+        CHECK(state->pgnOutError().empty());
+    }
+    REQUIRE(before.size() >= 60);
+
+    const auto roundOf = [](const std::string& game) {
+        const auto at = game.find("[Round \"");
+        return game.substr(at + 8, game.find('"', at + 8) - at - 8);
+    };
+    auto state       = TournamentState::open(dir);
+    const auto after = state->results();
+    REQUIRE(after.size() == before.size());
+    for (std::size_t i = 0; i < after.size(); ++i) {
+        CHECK(after[i].number() == before[i].number());
+        CHECK(after[i].pgn.offset == before[i].pgn.offset);
+        CHECK(after[i].pgn_chessbase.offset == before[i].pgn_chessbase.offset);
+        const auto game    = readSpan(state->pgnPath(), after[i].pgn);
+        const auto game_cb = readSpan(state->chessbasePgnPath(), after[i].pgn_chessbase);
+        REQUIRE(game);
+        REQUIRE(game_cb);
+        CHECK(roundOf(*game) == std::to_string(after[i].encounter + 1));
+        CHECK(roundOf(*game_cb) == std::to_string(after[i].encounter + 1));
+    }
+
+    std::set<uint64_t> numbers;
+    for (const auto& r : after) CHECK(numbers.insert(r.number()).second);
+    while (auto task = state->claimNext()) {
+        CHECK(numbers.insert(task->number()).second);
+        state->complete(*task, gameData(*task, "0-1"));
+    }
+    CHECK(state->finished());
+    CHECK(numbers.size() == 100);
+
+    // The PGN file of the user's: every game once, in schedule order.
+    const auto out = gamesOf(dir / "all.pgn");
+    REQUIRE(out.size() == 100);
+    for (std::size_t i = 0; i < out.size(); ++i) CHECK(out[i].first == std::to_string(i / 2 + 1));
 }
 
 TEST_CASE("engine options: as a Windows engine reads them, ASCII and the spec untouched") {

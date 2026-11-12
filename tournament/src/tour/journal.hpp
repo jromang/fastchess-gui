@@ -5,6 +5,7 @@
 
 #include <cstdio>
 #include <filesystem>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -29,12 +30,13 @@ class Journal {
     Journal& operator=(const Journal&) = delete;
 
     // Writes one line and syncs it to disk. Throws when the write fails, and from then on: what was written of
-    // that line is not known. Not thread safe.
+    // that line is not known. Thread safe.
     void append(const nlohmann::json& event);
 
    private:
     std::FILE* file_ = nullptr;
     bool failed_     = false;
+    std::mutex mutex_;
 };
 
 }  // namespace fcg::tour

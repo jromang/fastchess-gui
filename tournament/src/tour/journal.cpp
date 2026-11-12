@@ -75,8 +75,9 @@ Journal::~Journal() {
 }
 
 void Journal::append(const nlohmann::json& event) {
-    if (failed_) throw std::runtime_error("cannot write the tournament journal");
     const auto line = event.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + '\n';
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (failed_) throw std::runtime_error("cannot write the tournament journal");
     if (std::fwrite(line.data(), 1, line.size(), file_) != line.size() || !syncFile(file_)) {
         failed_ = true;
         throw std::runtime_error("cannot write the tournament journal (is the disk full?)");
