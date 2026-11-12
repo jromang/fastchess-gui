@@ -188,7 +188,9 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     // New participants (added or replacing one) get a name and counters; existing indexes do not change.
     void updateParticipants(const tour::TournamentSpec& spec);
 
-    // The records of the games that count, for the views to start over after an edit.
+    // The records of the games that count, for the views to start over after an edit. The games whose PGN was not
+    // read yet (a resumed tournament still loading) are left out and come through drain() once read, in their
+    // order: the lists end up as a fresh open of the tournament would show them.
     [[nodiscard]] std::vector<GameRecord> records(const std::vector<tour::GameResult>& results);
 
     // Participant names, by index.
@@ -230,7 +232,16 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
                         std::optional<int64_t> decision_ms);
     GameRecord makeRecord(const tour::GameResult& result, std::string_view pgn = {});  // data_mutex_ held
     void countLoss(const tour::GameResult& result);                                    // data_mutex_ held
-    void loadPlayed(std::vector<tour::GameResult> results);  // the games a resumed tournament holds; loader_
+    // Reads the games of to_load_, on loader_.
+    void loadPlayed();
+    // What the loader read of a game's PGN.
+    struct LoadedGame {
+        OpeningName opening;
+        EvalFacts facts;
+        std::array<EngineTotals, 2> side;  // White's moves, Black's
+    };
+    // The record of a game the loader read, counted in the totals the first time; data_mutex_ held.
+    GameRecord addLoaded(const tour::GameResult& result, LoadedGame& game);
 
     std::string engine_a_;
     std::string engine_b_;
@@ -261,6 +272,10 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     // While the games already played are read, the games recorded meanwhile wait here to come after them.
     bool loading_ = false;
     std::vector<GameRecord> arrived_;
+    // The games for the loader to read, and their generation: records() hands it new ones, and it drops what it
+    // read of the older ones (games an edit voided may be among them).
+    std::vector<tour::GameResult> to_load_;
+    uint64_t generation_ = 0;
     std::atomic<bool> stop_loading_{false};
     std::thread loader_;  // last: started once everything else is there
 };

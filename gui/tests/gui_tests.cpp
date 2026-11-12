@@ -1177,3 +1177,50 @@ TEST_CASE("move charts: each side's values at its plies, and how far the PVs agr
     CHECK(moveSeries(moves, MoveChart::TbHits).empty());
     CHECK(moveSeries(moves, MoveChart::Eval).empty());
 }
+
+TEST_CASE("live: an edit while a resumed tournament's games are read leaves the lists as a fresh open shows them") {
+    const auto dir = tempDir("records-loading");
+    tour::TournamentSpec spec;
+    spec.name      = "records";
+    spec.format    = tour::Format::Match;
+    spec.max_games = 1600;
+    for (int i = 0; i < 2; ++i) {
+        tour::Participant p;
+        p.id          = i;
+        p.engine.name = i == 0 ? "A" : "B";
+        spec.participants.push_back(p);
+    }
+    const auto game = sampleGame(false);
+    {
+        auto state = tour::TournamentState::create(dir / "t", spec);
+        for (int i = 0; i < 1500; ++i) state->complete(*state->claimNext(), game);
+    }
+
+    // Opened again: its games are read on the observer's thread while games are voided, one of them played again.
+    auto state = tour::TournamentState::open(dir / "t");
+    GuiObserver obs(1, *state);
+    tour::Edit edit;
+    edit.kind  = tour::Edit::Kind::VoidGames;
+    edit.games = {{0, 0}, {300, 1}, {700, 0}};
+    state->applyEdit(edit);
+    auto games = obs.records(state->results());
+
+    const auto replay = state->claimNext();
+    REQUIRE(replay);
+    CHECK(replay->number() == 0);
+    const auto recorded = state->complete(*replay, game);
+    obs.onRecorded(recorded.result, game, recorded.pair);
+
+    std::vector<fastchess::Stats> stats;
+    for (int i = 0; i < 1000 && obs.loading(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    REQUIRE_FALSE(obs.loading());
+    obs.drain(games, stats);
+
+    std::vector<std::pair<uint64_t, uint64_t>> shown, expected;  // (game id, PGN offset)
+    for (const auto& g : games) shown.emplace_back(g.game_id, g.fastchess_span.offset);
+    for (const auto& r : state->results()) {
+        if (!r.voided) expected.emplace_back(r.number() + 1, r.pgn.offset);
+    }
+    CHECK(expected.size() == 1500 - 3 + 1);
+    CHECK(shown == expected);
+}

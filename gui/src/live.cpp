@@ -48,7 +48,8 @@ GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
     if (match_) pending_stats_ = state.pairHistory(id_a_, id_b_);
     if (!played.empty()) {
         loading_ = true;
-        loader_  = std::thread([this, played = std::move(played)]() mutable { loadPlayed(std::move(played)); });
+        to_load_ = std::move(played);
+        loader_  = std::thread([this] { loadPlayed(); });
     }
 }
 
@@ -57,19 +58,35 @@ GuiObserver::~GuiObserver() {
     if (loader_.joinable()) loader_.join();
 }
 
-void GuiObserver::loadPlayed(std::vector<tour::GameResult> results) {
+void GuiObserver::loadPlayed() {
     // What each game's PGN tells, read and parsed without the lock, then handed over by batches: the games show up
     // as they are read, and the tournament threads never wait long for the lock.
-    struct Parsed {
-        OpeningName opening;
-        EvalFacts facts;
-        std::array<EngineTotals, 2> side;  // White's moves, Black's
-    };
     constexpr std::size_t BATCH = 256;
+    std::vector<tour::GameResult> results;
+    uint64_t generation = 0;
+    const auto takeWork = [&] {  // data_mutex_ held
+        results.swap(to_load_);
+        to_load_.clear();
+        generation = generation_;
+    };
+    {
+        std::lock_guard<std::mutex> lock(data_mutex_);
+        takeWork();
+    }
+
     std::ifstream pgn(pgn_fastchess_, std::ios::binary);
     std::string text;
-    std::vector<Parsed> parsed;
-    for (std::size_t first = 0; first < results.size() && !stop_loading_; first += BATCH) {
+    std::vector<LoadedGame> parsed;
+    for (std::size_t first = 0; !stop_loading_;) {
+        if (first == results.size()) {
+            std::lock_guard<std::mutex> lock(data_mutex_);
+            if (generation_ != generation) {
+                takeWork();
+                first = 0;
+                continue;
+            }
+            break;
+        }
         const auto last = std::min(results.size(), first + BATCH);
         parsed.assign(last - first, {});
         for (std::size_t i = first; i < last; ++i) {
@@ -89,47 +106,57 @@ void GuiObserver::loadPlayed(std::vector<tour::GameResult> results) {
         }
 
         std::lock_guard<std::mutex> lock(data_mutex_);
-        for (std::size_t i = first; i < last; ++i) {
-            const auto& result = results[i];
-            auto& p            = parsed[i - first];
-            if (!extras_.count(result.pgn.offset)) {
-                GameExtras extras;
-                if (!p.opening.eco.empty() || !p.opening.name.empty()) {
-                    const auto key = p.opening.eco + "|" + p.opening.name;
-                    if (const auto it = opening_index_.find(key); it != opening_index_.end()) {
-                        extras.opening = it->second;
-                    } else if (openings_.size() < 65535) {
-                        extras.opening = static_cast<uint16_t>(openings_.size());
-                        openings_.push_back(std::move(p.opening));
-                        opening_index_.emplace(key, extras.opening);
-                    }
-                }
-                extras.facts = p.facts;
-                extras_.emplace(result.pgn.offset, extras);
-            }
-            const auto record = makeRecord(result);
-            pending_games_.push_back(record);
-            countLoss(result);
-            for (int side = 0; side < 2; ++side) {
-                const auto index = side == 0 ? record.white : record.black;
-                if (index >= totals_.size()) continue;
-                auto& t         = totals_[index];
-                const auto& add = p.side[static_cast<std::size_t>(side)];
-                t.moves += add.moves;
-                t.depth_sum += add.depth_sum;
-                t.nps_sum += add.nps_sum;
-                t.nps_samples += add.nps_samples;
-                t.time_ms += add.time_ms;
-                t.decision_ms += add.decision_ms;
-                t.decision_samples += add.decision_samples;
-            }
+        // records() started over meanwhile: what was read is dropped, and the loader goes on with its games.
+        if (generation_ != generation) {
+            takeWork();
+            first = 0;
+            continue;
         }
+        for (std::size_t i = first; i < last; ++i) pending_games_.push_back(addLoaded(results[i], parsed[i - first]));
+        first = last;
     }
 
     std::lock_guard<std::mutex> lock(data_mutex_);
     pending_games_.insert(pending_games_.end(), arrived_.begin(), arrived_.end());
     arrived_.clear();
     loading_ = false;
+}
+
+GameRecord GuiObserver::addLoaded(const tour::GameResult& result, LoadedGame& p) {
+    // A game read for the first time is counted; one already known (recorded meanwhile, or read before an edit)
+    // was counted then.
+    if (!extras_.count(result.pgn.offset)) {
+        GameExtras extras;
+        if (!p.opening.eco.empty() || !p.opening.name.empty()) {
+            const auto key = p.opening.eco + "|" + p.opening.name;
+            if (const auto it = opening_index_.find(key); it != opening_index_.end()) {
+                extras.opening = it->second;
+            } else if (openings_.size() < 65535) {
+                extras.opening = static_cast<uint16_t>(openings_.size());
+                openings_.push_back(std::move(p.opening));
+                opening_index_.emplace(key, extras.opening);
+            }
+        }
+        extras.facts = p.facts;
+        extras_.emplace(result.pgn.offset, extras);
+        countLoss(result);
+        const auto record = makeRecord(result);
+        for (int side = 0; side < 2; ++side) {
+            const auto index = side == 0 ? record.white : record.black;
+            if (index >= totals_.size()) continue;
+            auto& t         = totals_[index];
+            const auto& add = p.side[static_cast<std::size_t>(side)];
+            t.moves += add.moves;
+            t.depth_sum += add.depth_sum;
+            t.nps_sum += add.nps_sum;
+            t.nps_samples += add.nps_samples;
+            t.time_ms += add.time_ms;
+            t.decision_ms += add.decision_ms;
+            t.decision_samples += add.decision_samples;
+        }
+        return record;
+    }
+    return makeRecord(result);
 }
 
 void GuiObserver::updateParticipants(const tour::TournamentSpec& spec) {
@@ -149,12 +176,39 @@ void GuiObserver::updateParticipants(const tour::TournamentSpec& spec) {
 
 std::vector<GameRecord> GuiObserver::records(const std::vector<tour::GameResult>& results) {
     std::lock_guard<std::mutex> lock(data_mutex_);
+
+    // The games of `results` not drained yet are handed out below, as they are now (voided or not); those recorded
+    // since `results` was taken stay to come through drain().
+    std::unordered_set<uint64_t> known;  // by PGN offset
+    for (const auto& r : results) known.insert(r.pgn.offset);
+    const auto inResults = [&](const GameRecord& g) { return known.count(g.fastchess_span.offset) > 0; };
+    pending_games_.erase(std::remove_if(pending_games_.begin(), pending_games_.end(), inResults), pending_games_.end());
+    arrived_.erase(std::remove_if(arrived_.begin(), arrived_.end(), inResults), arrived_.end());
+
+    // The games read already, up to the first one that is not: the PGN of the others is read by the loader rather
+    // than here on the GUI thread, and they follow in their order.
     std::vector<GameRecord> out;
+    std::vector<tour::GameResult> rest;
     shown_.clear();
     for (const auto& r : results) {
         if (r.voided) continue;
+        if (!rest.empty() || !extras_.count(r.pgn.offset)) {
+            rest.push_back(r);
+            continue;
+        }
         out.push_back(makeRecord(r));
         shown_.insert(out.back().game_id);
+    }
+
+    // A loader still at work drops what it read and takes the new list, possibly empty.
+    if (loading_ || !rest.empty()) {
+        to_load_ = std::move(rest);
+        ++generation_;
+        if (!loading_) {
+            if (loader_.joinable()) loader_.join();  // done: loading_ was cleared as its last step
+            loading_ = true;
+            loader_  = std::thread([this] { loadPlayed(); });
+        }
     }
     return out;
 }
