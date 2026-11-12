@@ -193,7 +193,7 @@ class RunController {
     std::string error_;
 };
 
-// Number of engine probes in flight; a run never starts while one is, since both read the
+// Number of engine reads and checks in flight; a run never starts while one is, since both read the
 // global fastchess configuration.
 inline std::atomic_int g_probes_in_flight{0};
 

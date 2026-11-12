@@ -4,6 +4,7 @@
 #include <atomic>
 #include <chrono>
 #include <deque>
+#include <functional>
 #include <future>
 #include <map>
 #include <memory>
@@ -302,6 +303,12 @@ class App {
     // This engine's options are being read, or waiting to be.
     [[nodiscard]] bool probing(const std::string& name) const;
     void pollProbe();
+    void applyProbe();  // the result of the read that ended
+    // An engine of the setup: its read comes first.
+    [[nodiscard]] bool inSetup(const std::string& name) const;
+    // A start (of a run, a resume, a quick test) waits for the reads and checks in flight, which read fastchess'
+    // configuration that it replaces; meanwhile no other read or check starts. True when `start` was put off.
+    bool startAfterReads(std::function<void()> start);
     void startCheck(int index);
     void startQuickTest(int index);
     void finishQuickTest();
@@ -435,6 +442,9 @@ class App {
     int selected_engine_ = -1;
     std::future<ProbeResult> probe_;
     int probe_index_ = -1;
+    EngineEntry probe_entry_;   // the engine being read, as it was then: changed since, its result is stale
+    bool probe_again_ = false;  // asked for again while it was read: its result is dropped, it is read again
+    std::function<void()> start_after_reads_;  // see startAfterReads
     std::vector<std::string> probe_queue_;  // engine names waiting for a probe
     std::string probe_message_;
     std::string option_filter_;

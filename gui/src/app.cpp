@@ -52,6 +52,15 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
 }
 
 App::~App() {
+    // A read or a check may be waiting on a hung engine, up to a minute or two: its engine is ended, so that its
+    // thread ends at once, and the window goes away first rather than freeze while it does.
+    if (probe_.valid() || check_.valid()) {
+        if (window_) SDL_HideWindow(window_);
+        fastchess::atomic::stop = true;  // fastchess' Windows reads give up
+        fastchess::stopProcesses();
+        if (probe_.valid()) probe_.wait();
+        if (check_.valid()) check_.wait();
+    }
     cancelBookScan();
     for (auto& f : abandoned_scans_) f.wait();
     storage_.saveSetup(setup_);
@@ -277,6 +286,7 @@ void App::drawQuitModal() {
 
 void App::startRun() {
     storage_.saveSetup(setup_);
+    if (startAfterReads([this] { startRun(); })) return;
 
     start_error_ = run_.start(setup_, engines_, topology_, storage_.runsDir());
     if (!start_error_.empty()) {
@@ -292,6 +302,7 @@ void App::startRun() {
 
 void App::resumeRun() {
     if (!unfinished_) return;
+    if (startAfterReads([this] { resumeRun(); })) return;
 
     start_error_ = run_.resume(unfinished_->dir);
     if (!start_error_.empty()) {

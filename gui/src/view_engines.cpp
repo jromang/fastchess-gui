@@ -54,6 +54,22 @@ bool lessCaseInsensitive(const std::string& a, const std::string& b) {
     });
 }
 
+// Counts a read or a check in g_probes_in_flight until its thread is done with fastchess' configuration.
+struct InFlight {
+    InFlight()                           = default;
+    InFlight(const InFlight&)            = delete;
+    InFlight& operator=(const InFlight&) = delete;
+    ~InFlight() { g_probes_in_flight--; }
+};
+
+// The date and time of a check, a read or a test, as the engine list shows it.
+std::string nowText() {
+    char when[32];
+    const auto now = std::time(nullptr);
+    std::strftime(when, sizeof(when), "%Y-%m-%d %H:%M", std::localtime(&now));
+    return when;
+}
+
 bool containsCaseInsensitive(const std::string& text, const std::string& needle) {
     if (needle.empty()) return true;
     auto lower = [](std::string s) {
@@ -98,33 +114,43 @@ void App::refreshPrograms() {
     for (auto& e : engines_) {
         save |= refreshProgram(e);
         // A rebuilt engine has its options read again, so that the option table matches the new build.
-        if (e.program_state == ProgramState::Changed &&
-            std::find(probe_queue_.begin(), probe_queue_.end(), e.name) == probe_queue_.end()) {
-            probe_queue_.push_back(e.name);
-        }
+        if (e.program_state == ProgramState::Changed && !probing(e.name)) probe_queue_.push_back(e.name);
     }
     if (save) storage_.saveEngines(engines_);
 }
 
+bool App::inSetup(const std::string& name) const {
+    if (setup_.format == TournamentFormat::Match) return name == setup_.engine_a || name == setup_.engine_b;
+    return std::any_of(setup_.participants.begin(), setup_.participants.end(),
+                       [&](const auto& p) { return p.name == name; });
+}
+
 void App::startProbe(int index) {
     if (index < 0 || index >= static_cast<int>(engines_.size())) return;
-    if (probe_.valid()) {
-        // Asked for by name (a button, a new protocol, a check): first in the queue, not dropped.
-        const auto& name = engines_[index].name;
-        if (index == probe_index_) return;
+    const auto name = engines_[index].name;
+    // Asked for again while it is read (a new protocol, a new program): that read is dropped when it ends, and the
+    // engine read again.
+    if (probe_.valid() && index == probe_index_) {
+        probe_again_ = true;
+        return;
+    }
+    // Asked for by name (a button, a new protocol, a check): first in the queue, not dropped.
+    if (probe_.valid() || start_after_reads_) {
         std::erase(probe_queue_, name);
         probe_queue_.insert(probe_queue_.begin(), name);
         return;
     }
 
+    std::erase(probe_queue_, name);
     probe_index_   = index;
+    probe_entry_   = engines_[index];
+    probe_again_   = false;
     probe_message_ = TR("Reading the engine…");
     g_probes_in_flight++;
 
     probe_ = std::async(std::launch::async, [entry = engines_[index]] {
-        auto result = probeEngine(entry);
-        g_probes_in_flight--;
-        return result;
+        const InFlight in_flight;
+        return probeEngine(entry);
     });
 }
 
@@ -136,11 +162,22 @@ bool App::probing(const std::string& name) const {
     return std::find(probe_queue_.begin(), probe_queue_.end(), name) != probe_queue_.end();
 }
 
+bool App::startAfterReads(std::function<void()> start) {
+    if (g_probes_in_flight == 0 && !probe_.valid() && !check_.valid()) return false;
+    if (!start_after_reads_) Console::instance().add(TR("Starts once the engine being read or checked is done…"));
+    start_after_reads_ = std::move(start);
+    start_error_.clear();
+    return true;
+}
+
 void App::pollProbe() {
-    // Start the next queued probe when idle, but never while a run is being set up.
-    if (!probe_.valid() && !probe_queue_.empty() && !run_.running()) {
-        const auto name = probe_queue_.front();
-        probe_queue_.erase(probe_queue_.begin());
+    // Start the next queued probe when idle, but never while a run is being set up, or waits for the reads to end.
+    // The engines of the setup first: its Start waits for them.
+    if (!probe_.valid() && !probe_queue_.empty() && !run_.running() && !start_after_reads_) {
+        auto next = std::find_if(probe_queue_.begin(), probe_queue_.end(), [&](const auto& n) { return inSetup(n); });
+        if (next == probe_queue_.end()) next = probe_queue_.begin();
+        const auto name = *next;
+        probe_queue_.erase(next);
         for (int i = 0; i < static_cast<int>(engines_.size()); ++i) {
             if (engines_[i].name == name) {
                 startProbe(i);
@@ -149,26 +186,51 @@ void App::pollProbe() {
         }
     }
 
-    if (!probe_.valid()) return;
-    if (probe_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
+    if (probe_.valid() && probe_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) applyProbe();
 
+    // A start put off until the reads and checks in flight end.
+    if (start_after_reads_ && g_probes_in_flight == 0 && !probe_.valid() && !check_.valid()) {
+        const auto start = std::exchange(start_after_reads_, {});
+        start();
+    }
+}
+
+void App::applyProbe() {
     ProbeResult result;
     try {
         result = probe_.get();
     } catch (const std::exception& e) {
         result.error = e.what();
     }
-    const int index = probe_index_;
-    probe_index_    = -1;
+    const int index  = probe_index_;
+    const bool again = std::exchange(probe_again_, false);
+    probe_index_     = -1;
 
     if (index < 0 || index >= static_cast<int>(engines_.size())) return;
-    auto& e   = engines_[index];
+    auto& e = engines_[index];
+
+    // Asked for again, or given another program, arguments, folder or protocol while it was read: the result is the
+    // old engine's. It is read again, first.
+    if (again || e.cmd != probe_entry_.cmd || e.args != probe_entry_.args || e.dir != probe_entry_.dir ||
+        e.protocol != probe_entry_.protocol) {
+        std::erase(probe_queue_, e.name);
+        probe_queue_.insert(probe_queue_.begin(), e.name);
+        probe_message_.clear();
+        return;
+    }
     e.read_by = FCG_VERSION;
 
     if (!result.ok) {
-        probe_message_  = trf("Failed: {}", result.error);
+        probe_message_ = trf("Failed: {}", result.error);
+        // The program as it is now: a rebuilt engine that cannot be read is not read again at every focus change.
+        if (result.program.size > 0) {
+            e.program = result.program;
+            refreshProgram(e);
+        }
         e.check_ok      = 0;
         e.check_message = result.error;
+        e.check_report  = result.output;
+        e.check_when    = nowText();
         storage_.saveEngines(engines_);
         return;
     }
@@ -356,8 +418,11 @@ void App::drawEngines() {
         }
         if (ImGui::BeginPopupContextItem()) {
             selected_engine_ = i;
-            if (ImGui::MenuItem(TR("Check"), nullptr, false, !check_.valid())) startCheck(i);
-            if (ImGui::MenuItem(TR("Read the UCI options again"), nullptr, false, !probing(e.name))) startProbe(i);
+            if (ImGui::MenuItem(TR("Check"), nullptr, false, !check_.valid() && !start_after_reads_)) startCheck(i);
+            const bool being_read = probe_.valid() && probe_index_ == i;
+            if (ImGui::MenuItem(probing(e.name) && !being_read ? TR("Read it next") : TR("Read the UCI options again"),
+                                nullptr, false, !being_read))
+                startProbe(i);
             if (ImGui::MenuItem(TR("Duplicate"))) duplicate_asked = true;
             if (ImGui::MenuItem(TR("Remove…"))) remove_asked = true;
             ImGui::EndPopup();
@@ -442,7 +507,7 @@ void App::drawEngines() {
         } else if (e.program_state == ProgramState::MissingDir) {
             if (ImGui::Button(TR("Choose…"))) dialogs_.openFolder(Dialogs::Purpose::EngineDir, e.dir);
         } else {
-            ImGui::BeginDisabled(probing(e.name));
+            ImGui::BeginDisabled(probe_.valid() && probe_index_ == selected_engine_);
             if (ImGui::Button(TR("Read it again"))) startProbe(selected_engine_);
             ImGui::EndDisabled();
         }
@@ -501,7 +566,7 @@ void App::drawEngines() {
 
     // Health check.
     ImGui::Spacing();
-    ImGui::BeginDisabled(check_.valid() || in_use);
+    ImGui::BeginDisabled(check_.valid() || start_after_reads_ || in_use);
     if (ImGui::Button(check_.valid() && check_index_ == selected_engine_ ? TR("Checking…") : TR("Check"))) {
         startCheck(selected_engine_);
     }
@@ -586,11 +651,13 @@ void App::drawEngines() {
         }
     }
 
+    // Waiting in the queue, it can be read next; being read, asking again would only read it again.
     const bool reading = probe_.valid() && probe_index_ == selected_engine_;
-    ImGui::BeginDisabled(probing(e.name));
-    if (ImGui::Button(reading           ? TR("Reading…")
-                      : probing(e.name) ? TR("Waiting to be read…")
-                                        : TR("Read the UCI options again"))) {
+    const bool queued  = !reading && probing(e.name);
+    ImGui::BeginDisabled(reading);
+    if (ImGui::Button(reading  ? TR("Reading…")
+                      : queued ? TR("Waiting to be read · read it next")
+                               : TR("Read the UCI options again"))) {
         startProbe(selected_engine_);
     }
     ImGui::EndDisabled();
@@ -802,14 +869,26 @@ bool App::engineInUse(const std::string& name) const {
 }
 
 void App::startCheck(int index) {
-    if (check_.valid() || index < 0 || index >= static_cast<int>(engines_.size())) return;
+    if (check_.valid() || start_after_reads_ || index < 0 || index >= static_cast<int>(engines_.size())) return;
     check_index_     = index;
     const auto entry = engines_[index];
-    check_           = std::async(std::launch::async, [entry] { return checkEngine(entry); });
+    // Counted like a read: a run must not replace fastchess' configuration while the check reads its timeouts.
+    g_probes_in_flight++;
+    check_ = std::async(std::launch::async, [entry] {
+        const InFlight in_flight;
+        return checkEngine(entry);
+    });
 }
 
 void App::startQuickTest(int index) {
     if (index < 0 || index >= static_cast<int>(engines_.size()) || run_.running()) return;
+    if (startAfterReads([this, name = engines_[index].name] {
+            const auto it =
+                std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == name; });
+            if (it != engines_.end()) startQuickTest(static_cast<int>(it - engines_.begin()));
+        })) {
+        return;
+    }
     // Only the last quick test is kept: its result stays with the engine.
     const auto dir = storage_.root() / "tests";
     std::error_code ec;
@@ -849,10 +928,7 @@ void App::finishQuickTest() {
     }
     it->test_ok      = report.ok ? 1 : 0;
     it->test_message = report.message;
-    char when[32];
-    const auto now = std::time(nullptr);
-    std::strftime(when, sizeof(when), "%Y-%m-%d %H:%M", std::localtime(&now));
-    it->test_when = when;
+    it->test_when    = nowText();
     storage_.saveEngines(engines_);
 
     finish_message_ = trf("{}: {}", name, report.message);
@@ -875,10 +951,7 @@ void App::pollCheck() {
     e.check_ok      = result.ok ? 1 : 0;
     e.check_message = result.message;
     e.check_report  = result.report;
-    char when[32];
-    const auto now = std::time(nullptr);
-    std::strftime(when, sizeof(when), "%Y-%m-%d %H:%M", std::localtime(&now));
-    e.check_when = when;
+    e.check_when    = nowText();
     storage_.saveEngines(engines_);
     Console::instance().add(fmt::format("{}: {}", e.name, result.message), !result.ok);
 

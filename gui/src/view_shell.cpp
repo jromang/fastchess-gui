@@ -404,7 +404,8 @@ void App::drawNewMatch() {
     ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
     ImGui::PushStyleColor(ImGuiCol_Text,
                           ui::currentTheme() == ui::Theme::Dark ? ImVec4(0.04f, 0.07f, 0.13f, 1) : ImVec4(1, 1, 1, 1));
-    if (ui::iconButton("start", ui::Icon::Play, TR("Start"), ready && !probing && !locked)) startRun();
+    if (ui::iconButton("start", ui::Icon::Play, TR("Start"), ready && !probing && !locked && !start_after_reads_))
+        startRun();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
         if (locked)
             ImGui::SetTooltip("%s", TR("A match is already running."));
@@ -425,6 +426,13 @@ void App::drawNewMatch() {
         ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
         ImGui::TextWrapped("%s", start_error_.c_str());
         ImGui::PopStyleColor();
+    }
+    if (start_after_reads_) {
+        ImGui::SameLine();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("%s", TR("Starts once the engine being read or checked is done…"));
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Cancel##start_after_reads"))) start_after_reads_ = {};
     }
     ImGui::Spacing();
 
