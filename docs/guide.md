@@ -218,7 +218,7 @@ A running or opened tournament has a workspace with a header (name, progress, *P
 | Broadcast | Live files, the TLCS server and the web page (see below) |
 | Live | The games in progress, as a mosaic of boards or one game in focus with the clocks, the running search of each engine (depth, score, nodes, nps, PV in SAN), the move list and the evaluation curve (or, chosen above it, each engine's time per move with its decision time, depth with seldepth, nodes, speed, tablebase hits, or how many plies its PV repeats of what the other engine's PV predicted), with the win/draw/loss shares (`UCI_ShowWDL`, switched on for the engines that have it when they are added) after each search line and as bands under the curve, White's wins at the bottom. Under the board: the 50-move counter (plies since the last capture or pawn move, out of 100), the material difference with the pieces one side has more of, and the pieces left, marked *TB* when the tablebase adjudication can end the game; *Details under the boards* adds them to the mosaic. *Detach* opens a board in its own window |
 | Games | The finished games with their opening (ECO code and name), filterable by result (wins, draws, losses, losses on time, crashes and illegal moves, adjudications, wrong PVs), by what the evaluations tell (the engines disagree by N pawns for 3 moves each in a row, an engine's evaluation swings by N pawns from one of its moves to the next, the loser thought it was N pawns better; the game opens at that moment) and by opening (an ECO code or its beginning, a range such as `B20-B99`, or words of the name), with a replay board (← → Home End, or click a move or the curve; the same details under it and the same charts as in *Live*, from the fields the PGN was written with; with the win, draw and loss shares of the engines that report them under the
-evaluation curve) and the export of one, all or the filtered games. *Engine log* opens the log of a game that has one (see *Files*) |
+evaluation curve) and the export of one, all or the filtered games (*Export all* proposes `<name>.pgn` next to the tournament's folder; the tournament's own PGN files are refused as a target). *Engine log* opens the log of a game that has one (see *Files*) |
 | Openings | Results by starting position: its game pairs, White's score, the draws, and how many pairs White won twice, Black won twice (the opening favours a colour) or one engine won twice (it tells the engines apart), with the average length. Sorted by any column, filtered to the unbalanced, the drawn or the decisive ones; *Export as EPD…* writes the positions shown, to keep them or to clean a book. A click shows the position and its games |
 
 **Processor use**: while games are played, the processor time of every engine's processes (the engine behind a
@@ -363,11 +363,15 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
     the tournament's games;
   - `tournament.lock`: held by the program playing the tournament; another program opening the folder only
     shows it;
-  - `games.pgn`: move comments in the cutechess / fastchess style, `{+0.35/18 1.234s}`, with the score from the
+  - `<name>.pgn`: move comments in the cutechess / fastchess style, `{+0.35/18 1.234s}`, with the score from the
     point of view of the side that moved; games in the order they ended (the journal finds each one by its place
     in the file; *Export all* in the *Games* tab, and the file of *Also append every game to*, follow the schedule);
-  - `games-chessbase.pgn`: `{[%eval 0.35,18] [%clk 0:00:59.200] [%emt 0:00:01.234]}`, with the evaluation from
+  - `<name>-chessbase.pgn`: `{[%eval 0.35,18] [%clk 0:00:59.200] [%emt 0:00:01.234]}`, with the evaluation from
     White's point of view, as read by ChessBase / Fritz and Lichess;
+  - `<name>` is the tournament's name when it was created (renaming it later keeps the files), with the characters
+    Windows does not allow replaced by `_` and cut to 64 bytes; `tournament.json` records both names. A tournament
+    without a name, one created before 0.4.13, or a match imported from 0.2.x has `games.pgn` and
+    `games-chessbase.pgn`;
   - `lichess.json`: the lichess broadcast and round its games went to (no token);
   - `processor.tsv`: the processor time each game's engines used, for the *Processor use* of a resumed tournament;
   - `logs/game-N.log`: every line exchanged with both engines during game N (the number shown in the *Games*

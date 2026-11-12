@@ -2348,6 +2348,9 @@ msgstr "{} 局，{} 个锦标赛"
 msgid "{} h {:02} min"
 msgstr "{} 小时 {:02} 分"
 
+msgid "{} holds the games of the tournament: choose another file"
+msgstr "{} 保存着锦标赛的对局：请选择其他文件"
+
 msgid "{} illegal move"
 msgid_plural "{} illegal moves"
 msgstr[0] "{} 次非法着法"

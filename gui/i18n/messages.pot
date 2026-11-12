@@ -2366,6 +2366,9 @@ msgstr ""
 msgid "{} h {:02} min"
 msgstr ""
 
+msgid "{} holds the games of the tournament: choose another file"
+msgstr ""
+
 msgid "{} illegal move"
 msgid_plural "{} illegal moves"
 msgstr[0] ""

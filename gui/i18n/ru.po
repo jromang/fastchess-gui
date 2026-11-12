@@ -2384,6 +2384,9 @@ msgstr "партий: {}, турниров: {}"
 msgid "{} h {:02} min"
 msgstr "{} ч {:02} мин"
 
+msgid "{} holds the games of the tournament: choose another file"
+msgstr "{} содержит партии турнира: выберите другой файл"
+
 msgid "{} illegal move"
 msgid_plural "{} illegal moves"
 msgstr[0] "{} нелегальный ход"
