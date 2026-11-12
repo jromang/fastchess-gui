@@ -183,6 +183,9 @@ class TournamentState {
     // files cannot be written.
     Recorded complete(const GameTask& task, const fastchess::MatchData& data);
 
+    // Is the claimed game still to be played as it was claimed: not dropped, nor its encounter changed by an edit?
+    [[nodiscard]] bool wanted(const GameTask& task) const;
+
     // Is there anything left to claim?
     [[nodiscard]] bool hasWork() const;
 

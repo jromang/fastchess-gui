@@ -253,6 +253,49 @@ TEST_CASE("runner: an engine that fails to start once is tried again, and the to
     CHECK(state->finished());
     CHECK(state->results().size() == 2u);
 }
+
+TEST_CASE("runner: a game whose engine fails to start is given up quietly once its participant is withdrawn") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-withdrawn";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    // Never starts; tells that it was tried.
+    const auto started = dir / "started";
+    const auto script  = dir / "broken.sh";
+    {
+        std::ofstream out(script);
+        out << "#!/bin/sh\ntouch \"" << started.string() << "\"\nexit 1\n";
+    }
+    fs::permissions(script, fs::perms::owner_all);
+
+    auto s                       = spec(Format::RoundRobin, 3, 1);
+    s.conditions.concurrency     = 1;
+    s.participants[2].engine.cmd = script.string();
+    auto state                   = TournamentState::create(dir / "t", s);
+
+    // Withdrawn during the pause before its engine is tried again.
+    std::thread withdraw([&] {
+        while (!fs::exists(started)) std::this_thread::sleep_for(10ms);
+        Edit edit;
+        edit.kind        = Edit::Kind::Withdraw;
+        edit.participant = 2;
+        state->applyEdit(edit);
+    });
+    const auto begun = std::chrono::steady_clock::now();
+    const auto error = play(*state);
+    withdraw.join();
+
+    CHECK(error.empty());
+    CHECK_FALSE(fastchess::atomic::abnormal_termination);
+    CHECK(state->finished());
+    CHECK(state->results().size() == 2u);  // the games of 0 and 1
+    CHECK(std::chrono::steady_clock::now() - begun < fastchess::BaseTournament::ENGINE_START_RETRY_PAUSE);
+}
 #endif
 
 TEST_CASE("runner: engine logs, of every game when asked, with both directions of both engines") {

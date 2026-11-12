@@ -56,6 +56,11 @@ class BaseTournament {
     // Gets called after a game has finished
     virtual void startNext() = 0;
 
+    // Asked on the thread of game `game_id` while an engine of it fails to start: false gives the game up without
+    // scoring it, rather than trying again and then stopping the tournament (a front end whose participant was
+    // withdrawn meanwhile, or that is pausing).
+    [[nodiscard]] virtual bool gameWanted(std::size_t /*game_id*/) const { return true; }
+
     // creates the matches
     void create();
 

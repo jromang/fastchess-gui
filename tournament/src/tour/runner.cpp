@@ -70,6 +70,11 @@ void Runner::startNext() {
     }
 }
 
+bool Runner::gameWanted(std::size_t /*game_id*/) const {
+    if (fastchess::observer::PauseGate::instance().paused()) return false;
+    return !t_task || state_.wanted(*t_task);
+}
+
 void Runner::play(const GameTask& task) {
     t_task     = &task;
     t_recorded = false;

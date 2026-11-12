@@ -973,6 +973,13 @@ void TournamentState::checkSprt() {
     journal_->append({{"t", "finished"}, {"why", finish_reason_}});
 }
 
+bool TournamentState::wanted(const GameTask& task) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (done(task.encounter.index, task.game) || dropped_.count(task.number())) return false;
+    const auto now = schedule_.at(task.encounter.index);
+    return now && now->first == task.encounter.first && now->second == task.encounter.second;
+}
+
 bool TournamentState::hasWork() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return hasWorkLocked();
