@@ -50,6 +50,13 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   is kept, in `tests/` in the profile (with the engine logs of its games that ended badly).
 - **Groups**: free labels separated by commas (`pool A`, `CCRL 40/15`…). The list can be filtered by group or
   searched, and a group can be added to a tournament in one click.
+- **A large library**: the search finds a name, a program path or an author; the state filter shows the engines
+  that work, failed or changed, were never checked, have lost their program, or speak WinBoard. Ctrl or Shift click
+  selects several engines: *Check* (one after the other, never while a tournament plays), *Add to a group…*,
+  *Remove…*. *More…* checks those never checked and removes the missing programs. A string option holding a file
+  or a folder (`EvalFile`, `SyzygyPath`…) has a *…* button.
+- **Reading the options** never blocks a start: *Start*, *Resume* and the queue wait for the engine being read,
+  the tournament's engines are read first, and a queued engine can be read next from its menu.
 - **Reference Elo**: the engine's rating on a list you trust. A tournament or the rating list can be anchored on it,
   and the games of a tournament carry it in their `WhiteElo` and `BlackElo` tags (copied when the engine joins).
 - *Restart the engine for every game* starts a new process for each game instead of reusing it.
@@ -60,8 +67,9 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
 
 **Import…** reads the engine list of another program: ChessGUI (`ChsGUI_Eng.TXT`, with the options of
 `ChsGUI_Cfg.ini` next to it), cutechess and Banksia (`engines.json`), Arena and other INI style lists, or every
-program found in a folder. Engines already in the library (same program, arguments and options) are skipped;
-the options of the others are read; WinBoard engines are imported too.
+program found in a folder. The engines found are listed first, to untick those to leave out; engines already in
+the library (same program and arguments) are skipped; the options of the others are read; WinBoard engines are
+imported too.
 
 **WinBoard engines** (xboard protocol, CECP) are played like the others. The *Protocol* of an engine is found
 out when it is added (*Automatic*), or chosen: UCI or WinBoard. fastchess only speaks UCI: a WinBoard engine is
@@ -199,7 +207,7 @@ A running or opened tournament has a workspace with a header (name, progress, *P
 | Tab | Contents |
 |---|---|
 | Overview | Match: Elo and nElo with their 95 % confidence interval, LOS, score, pentanomial counts, SPRT bounds and LLR; *Statistics* (folded) gives fishtest's numbers from the games and from the pairs: score, Elo, nElo and BayesElo with DrawElo, standard deviation per game, LLR of both, the variance ratio of pairs to single games, the RMS bias of the openings, the kinds of balanced pairs and the pairs won over lost, which *Copy* includes; and the charts (Elo and LLR over time, game lengths, how games ended, depth, NPS, time per move and decision time). Tournament: the standings (with *TF*, each engine's losses on time, in orange as soon as there is one; a *!* beside an engine that crashed or played an illegal move), progress by cycle or round, games per hour and time left, the latest results |
-| Standings | Points, games, losses on time (*TF*), wins/draws/losses, ratings with their confidence interval, Sonneborn-Berger (Buchholz for a Swiss), byes, and the crosstable. *Copy* as text, or as BBCode for a forum post (with a line giving the format, time control, games and book), *Export HTML…* |
+| Standings | Points, games, losses on time (*TF*), wins/draws/losses, ratings with their confidence interval, Sonneborn-Berger (Buchholz for a Swiss), byes. *Table* lists them one engine per row; *Crosstable* (round robins, up to 200 engines) shows every pairing. *Copy* as text, or as BBCode for a forum post (with a line giving the format, time control, games and book), *Export HTML…* |
 | Bracket | Knockout only: the bracket, round by round, with the score of every match |
 | Schedule | Every game pair by cycle or round, with its state and the opening it plays (once started, or once its round started when the round shares one); editing (see below) |
 | Broadcast | Live files, the TLCS server and the web page (see below) |
@@ -327,7 +335,7 @@ connect to the TLCS port.
 Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/` on Linux,
 `%APPDATA%\fastchess\fastchess-gui\` on Windows.
 
-- `engines.json`: the engine library;
+- `engines.json`: the engine library, and `engines.json.bak` its previous version, read if the first is lost;
 - `setup.json`: the last setup; `templates/*.json`: the saved templates; `queue.json`: the queue;
 - `layout.ini`: the window layout; `fastchess-gui.log`: the log of the last session;
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
@@ -336,7 +344,10 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
   folder), one folder each, which can be moved, copied, zipped and sent:
   - `tournament.json`: the format, the participants (engines copied with their options) and the conditions;
   - `journal.jsonl`: everything that happened since, one line per event (game pairs started, games finished,
-    changes, Swiss and knockout pairings); with the PGN files, it is what a resume reads;
+    changes, Swiss and knockout pairings); with the PGN files, it is what a resume reads. A game is on disk before
+    its line, so a power cut loses at most the games being played;
+  - `tournament.lock`: held by the program playing the tournament; another program opening the folder only
+    shows it;
   - `games.pgn`: move comments in the cutechess / fastchess style, `{+0.35/18 1.234s}`, with the score from the
     point of view of the side that moved; games in the order they ended (the journal finds each one by its place
     in the file; *Export all* in the *Games* tab, and the file of *Also append every game to*, follow the schedule);
