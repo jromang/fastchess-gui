@@ -68,6 +68,7 @@ enum class Icon {
     Folder,
     Back,
     Chart,
+    Layout,
     Quit
 };
 

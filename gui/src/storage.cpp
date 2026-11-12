@@ -29,6 +29,7 @@ template std::optional<MatchSetup> readJson(const fs::path&);
 template std::optional<std::vector<QueuedTournament>> readJson(const fs::path&);
 template std::optional<nlohmann::json> readJson(const fs::path&);
 template std::optional<RunningMarker> readJson(const fs::path&);
+template std::optional<std::vector<layout::Layout>> readJson(const fs::path&);
 
 bool writeJson(const fs::path& file, const nlohmann::json& value, std::string* error, bool backup) {
     try {
@@ -180,6 +181,12 @@ MatchSetup Storage::loadSetup() const {
 }
 
 void Storage::saveSetup(const MatchSetup& setup) const { save(root_ / "setup.json", setup); }
+
+std::vector<layout::Layout> Storage::loadLayouts() const {
+    return readProfileFile<std::vector<layout::Layout>>(root_ / "layouts.json").value_or(std::vector<layout::Layout>{});
+}
+
+void Storage::saveLayouts(const std::vector<layout::Layout>& layouts) const { save(root_ / "layouts.json", layouts); }
 
 std::vector<QueuedTournament> Storage::loadQueue() const {
     return readProfileFile<std::vector<QueuedTournament>>(root_ / "queue.json")

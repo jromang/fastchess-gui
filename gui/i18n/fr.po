@@ -289,6 +289,9 @@ msgstr "Appliquer"
 msgid "Arguments"
 msgstr "Arguments"
 
+msgid "Arrange the panels: a ready-made layout, or one of yours. A panel dragged by its tab docks beside another, or floats."
+msgstr "Disposer les panneaux : une disposition toute prête, ou l'une des tiennes. Un panneau tiré par son onglet s'ancre à côté d'un autre, ou flotte."
+
 msgid "Arrows"
 msgstr "Flèches"
 
@@ -357,6 +360,9 @@ msgstr "Noirs ×2"
 
 msgid "Black's connection stalls"
 msgstr "Les Noirs ne répondent plus"
+
+msgid "Board"
+msgstr "Échiquier"
 
 msgid "Book"
 msgstr "Livre"
@@ -435,6 +441,9 @@ msgstr "Modifier le tournoi"
 
 msgid "Change…"
 msgstr "Changer…"
+
+msgid "Chart"
+msgstr "Graphique"
 
 msgid "Charts"
 msgstr "Graphiques"
@@ -579,6 +588,12 @@ msgstr "Décision"
 
 msgid "Default"
 msgstr "Défaut"
+
+msgid "Default layout"
+msgstr "Disposition par défaut"
+
+msgid "Delete"
+msgstr "Supprimer"
 
 msgid "Depth"
 msgstr "Profondeur"
@@ -880,6 +895,9 @@ msgstr "Dossier (vide : « live » dans le dossier du tournoi)"
 msgid "Follow"
 msgstr "Suivre"
 
+msgid "Follow a game"
+msgstr "Suivre une partie"
+
 msgid "For TLCV, node-tlcv and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
 msgstr "Pour TLCV, node-tlcv et Livius : une partie à la fois, avec les recherches des moteurs, et la table croisée après chaque partie."
 
@@ -1107,11 +1125,20 @@ msgstr "KO, {} moteurs"
 msgid "Language"
 msgstr "Langue"
 
+msgid "Large tournament"
+msgstr "Grand tournoi"
+
 msgid "Last 24 hours:"
 msgstr "Dernières 24 heures :"
 
 msgid "Latest results"
 msgstr "Derniers résultats"
+
+msgid "Layout"
+msgstr "Disposition"
+
+msgid "Layout saved: {}"
+msgstr "Disposition enregistrée : {}"
 
 msgid "Leave out the games lost by a crash or a stall"
 msgstr "Écarter les parties perdues par un crash ou un blocage"
@@ -1253,6 +1280,9 @@ msgstr "Aucune partie terminée pour l'instant."
 
 msgid "No game in this slot yet."
 msgstr "Aucune partie dans ce slot pour l'instant."
+
+msgid "No game is being played."
+msgstr "Aucune partie en cours."
 
 msgid "No game yet."
 msgstr "Aucune partie pour l'instant."
@@ -1476,6 +1506,9 @@ msgstr "Paires gagnées / perdues"
 msgid "Pairs: those scoring 1 for each engine, a win and a loss or two draws."
 msgstr "Paires : celles qui rapportent 1 point à chaque moteur, une victoire et une défaite ou deux nulles."
 
+msgid "Panels"
+msgstr "Panneaux"
+
 msgid "Part of a FEN, or moves of a PGN book (e4 e5 Nf3)."
 msgstr "Une partie d'une FEN, ou des coups d'un livre PGN (e4 e5 Nf3)."
 
@@ -1516,6 +1549,9 @@ msgstr "Rejouer cette partie"
 
 msgid "Played in pairs: each opening is played twice, with colours reversed."
 msgstr "Joué par paires : chaque ouverture est jouée deux fois, couleurs inversées."
+
+msgid "Players"
+msgstr "Joueurs"
 
 msgid "Players in the PGN"
 msgstr "Joueurs dans le PGN"
@@ -1660,6 +1696,9 @@ msgstr[1] "Lecture… {} ouvertures"
 msgid "Ready · {} cores, {} threads"
 msgstr "Prêt · {} cœurs, {} threads"
 
+msgid "Ready-made"
+msgstr "Toutes prêtes"
+
 msgid "Reference Elo"
 msgstr "Elo de référence"
 
@@ -1712,6 +1751,9 @@ msgstr "Remplacer le modèle {} ?"
 
 msgid "Replaced by"
 msgstr "Remplacé par"
+
+msgid "Replaces your layout of that name."
+msgstr "Remplace ta disposition de ce nom."
 
 msgid "Resign"
 msgstr "Abandon"
@@ -1794,6 +1836,12 @@ msgstr "Enregistrer"
 msgid "Save a cleaned copy…"
 msgstr "Enregistrer une copie nettoyée…"
 
+msgid "Save the layout"
+msgstr "Enregistrer la disposition"
+
+msgid "Save the layout as…"
+msgstr "Enregistrer la disposition sous…"
+
 msgid "Schedule"
 msgstr "Calendrier"
 
@@ -1814,6 +1862,9 @@ msgstr "Recherche par moteur"
 
 msgid "Search: name, program, author, notes"
 msgstr "Rechercher : nom, programme, auteur, notes"
+
+msgid "Searches"
+msgstr "Recherches"
 
 msgid "Searches at a time"
 msgstr "Recherches simultanées"
@@ -1862,8 +1913,11 @@ msgstr "Configuration"
 msgid "Share of drawn games."
 msgstr "Part des parties nulles."
 
-msgid "Show this game in its own window, which can be moved to another screen."
-msgstr "Afficher cette partie dans sa propre fenêtre, que l'on peut déplacer sur un autre écran."
+msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
+msgstr "Afficher cette partie dans son propre panneau, que l'on peut ancrer à côté des autres ou déplacer sur un autre écran."
+
+msgid "Show {}"
+msgstr "Afficher : {}"
 
 msgid "Site"
 msgstr "Lieu"
@@ -2003,6 +2057,9 @@ msgstr "Tableau"
 msgid "Tablebases"
 msgstr "Tables de finales"
 
+msgid "Tabs"
+msgstr "Onglets"
+
 msgid "Template name"
 msgstr "Nom du modèle"
 
@@ -2122,6 +2179,9 @@ msgstr "Le livre d'ouvertures doit être un fichier .epd, .pgn ou .bin (Polyglot
 
 msgid "The openings appear here once their games are played."
 msgstr "Les ouvertures apparaissent ici dès que leurs parties sont jouées."
+
+msgid "The panels and where they are, under a name of yours."
+msgstr "Les panneaux et leur place, sous le nom de ton choix."
 
 msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
 msgstr "Les joueurs des fichiers PGN reconnus comme moteurs de la bibliothèque, par leur nom, à la casse et aux espaces près : leurs parties sont celles du moteur, et ses réglages s'appliquent (son classement sur une liste, comme ancre)."
@@ -2392,6 +2452,9 @@ msgstr "Écrits à {} dans {}"
 
 msgid "Wrong PVs"
 msgstr "PV fausses"
+
+msgid "Yours"
+msgstr "Les tiennes"
 
 msgid "Zip written to {}"
 msgstr "Zip écrit dans {}"

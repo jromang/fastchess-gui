@@ -5,12 +5,14 @@
 #include <string>
 #include <vector>
 
+#include "layout.hpp"
 #include "model.hpp"
 
 namespace fcg {
 
-// Where the GUI keeps its files: engines.json, books.json, setup.json, layout.ini, settings.json and the tournaments
-// (runs/ unless settings.json names another folder). Defaults to SDL_GetPrefPath(); --profile <dir> overrides it.
+// Where the GUI keeps its files: engines.json, books.json, setup.json, layout.ini, layouts.json, settings.json and the
+// tournaments (runs/ unless settings.json names another folder). Defaults to SDL_GetPrefPath(); --profile <dir>
+// overrides it.
 class Storage {
    public:
     explicit Storage(std::filesystem::path root);
@@ -49,6 +51,10 @@ class Storage {
 
     [[nodiscard]] MatchSetup loadSetup() const;
     void saveSetup(const MatchSetup& setup) const;
+
+    // The user's own layouts of the tournament workspace (layouts.json).
+    [[nodiscard]] std::vector<layout::Layout> loadLayouts() const;
+    void saveLayouts(const std::vector<layout::Layout>& layouts) const;
 
     // Tournaments waiting to be started one after the other (queue.json).
     [[nodiscard]] std::vector<QueuedTournament> loadQueue() const;

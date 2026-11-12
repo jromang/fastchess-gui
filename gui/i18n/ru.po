@@ -293,6 +293,9 @@ msgstr "Применить"
 msgid "Arguments"
 msgstr "Аргументы"
 
+msgid "Arrange the panels: a ready-made layout, or one of yours. A panel dragged by its tab docks beside another, or floats."
+msgstr "Расположить панели: готовая раскладка или одна из ваших. Панель, перетащенная за вкладку, встаёт рядом с другой или плавает."
+
 msgid "Arrows"
 msgstr "Стрелки"
 
@@ -361,6 +364,9 @@ msgstr "Чёрные ×2"
 
 msgid "Black's connection stalls"
 msgstr "Чёрные не отвечают"
+
+msgid "Board"
+msgstr "Доска"
 
 msgid "Book"
 msgstr "Книга"
@@ -439,6 +445,9 @@ msgstr "Изменить турнир"
 
 msgid "Change…"
 msgstr "Изменить…"
+
+msgid "Chart"
+msgstr "График"
 
 msgid "Charts"
 msgstr "Графики"
@@ -583,6 +592,12 @@ msgstr "Решение"
 
 msgid "Default"
 msgstr "По умолчанию"
+
+msgid "Default layout"
+msgstr "Раскладка по умолчанию"
+
+msgid "Delete"
+msgstr "Удалить"
 
 msgid "Depth"
 msgstr "Глубина"
@@ -884,6 +899,9 @@ msgstr "Папка (пусто: «live» в папке турнира)"
 msgid "Follow"
 msgstr "Следить"
 
+msgid "Follow a game"
+msgstr "Следить за партией"
+
 msgid "For TLCV, node-tlcv and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
 msgstr "Для TLCV, node-tlcv и Livius: по одной партии, с поиском движков и перекрёстной таблицей после каждой партии."
 
@@ -1112,11 +1130,20 @@ msgstr "На выбывание, движков: {}"
 msgid "Language"
 msgstr "Язык"
 
+msgid "Large tournament"
+msgstr "Большой турнир"
+
 msgid "Last 24 hours:"
 msgstr "За последние 24 часа:"
 
 msgid "Latest results"
 msgstr "Последние результаты"
+
+msgid "Layout"
+msgstr "Раскладка"
+
+msgid "Layout saved: {}"
+msgstr "Раскладка сохранена: {}"
 
 msgid "Leave out the games lost by a crash or a stall"
 msgstr "Исключить партии, проигранные из-за вылета или зависания"
@@ -1258,6 +1285,9 @@ msgstr "Ещё ни одна партия не завершена."
 
 msgid "No game in this slot yet."
 msgstr "В этом слоте пока нет партии."
+
+msgid "No game is being played."
+msgstr "Сейчас партии не играются."
 
 msgid "No game yet."
 msgstr "Партий пока нет."
@@ -1481,6 +1511,9 @@ msgstr "Выигранные / проигранные пары"
 msgid "Pairs: those scoring 1 for each engine, a win and a loss or two draws."
 msgstr "Пары: те, что дают по 1 очку каждому движку — победа и поражение или две ничьи."
 
+msgid "Panels"
+msgstr "Панели"
+
 msgid "Part of a FEN, or moves of a PGN book (e4 e5 Nf3)."
 msgstr "Часть FEN или ходы книги PGN (e4 e5 Nf3)."
 
@@ -1522,6 +1555,9 @@ msgstr "Переиграть эту партию"
 
 msgid "Played in pairs: each opening is played twice, with colours reversed."
 msgstr "Игра парами: каждый дебют играется дважды, с переменой цветов."
+
+msgid "Players"
+msgstr "Игроки"
 
 msgid "Players in the PGN"
 msgstr "Игроки в PGN"
@@ -1667,6 +1703,9 @@ msgstr[2] "Чтение… {} дебютов"
 msgid "Ready · {} cores, {} threads"
 msgstr "Готово · ядер: {}, потоков: {}"
 
+msgid "Ready-made"
+msgstr "Готовые"
+
 msgid "Reference Elo"
 msgstr "Опорный рейтинг Elo"
 
@@ -1720,6 +1759,9 @@ msgstr "Заменить шаблон {}?"
 
 msgid "Replaced by"
 msgstr "Заменён на"
+
+msgid "Replaces your layout of that name."
+msgstr "Заменит вашу раскладку с этим именем."
 
 msgid "Resign"
 msgstr "Сдача"
@@ -1802,6 +1844,12 @@ msgstr "Сохранить"
 msgid "Save a cleaned copy…"
 msgstr "Сохранить очищенную копию…"
 
+msgid "Save the layout"
+msgstr "Сохранить раскладку"
+
+msgid "Save the layout as…"
+msgstr "Сохранить раскладку как…"
+
 msgid "Schedule"
 msgstr "Расписание"
 
@@ -1822,6 +1870,9 @@ msgstr "Поиск у каждого движка"
 
 msgid "Search: name, program, author, notes"
 msgstr "Поиск: имя, программа, автор, заметки"
+
+msgid "Searches"
+msgstr "Поиск"
 
 msgid "Searches at a time"
 msgstr "Одновременных поисков"
@@ -1871,8 +1922,11 @@ msgstr "Настройка"
 msgid "Share of drawn games."
 msgstr "Доля ничейных партий."
 
-msgid "Show this game in its own window, which can be moved to another screen."
-msgstr "Показать эту партию в отдельном окне, которое можно перенести на другой экран."
+msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
+msgstr "Показать эту партию в отдельной панели, которую можно закрепить рядом с другими или перенести на другой экран."
+
+msgid "Show {}"
+msgstr "Показать: {}"
 
 msgid "Site"
 msgstr "Место"
@@ -2012,6 +2066,9 @@ msgstr "Таблица"
 msgid "Tablebases"
 msgstr "Таблицы эндшпиля"
 
+msgid "Tabs"
+msgstr "Вкладки"
+
 msgid "Template name"
 msgstr "Название шаблона"
 
@@ -2131,6 +2188,9 @@ msgstr "Дебютная книга должна быть файлом .epd, .pg
 
 msgid "The openings appear here once their games are played."
 msgstr "Дебюты появляются здесь, как только сыграны их партии."
+
+msgid "The panels and where they are, under a name of yours."
+msgstr "Панели и их расположение под выбранным вами именем."
 
 msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
 msgstr "Игроки из PGN-файлов, опознанные как движки библиотеки по имени (без учёта регистра и пробелов): их партии считаются партиями движка, и применяются его настройки (рейтинг из списка как опорный)."
@@ -2401,6 +2461,9 @@ msgstr "Записано в {} в папку {}"
 
 msgid "Wrong PVs"
 msgstr "Неверные PV"
+
+msgid "Yours"
+msgstr "Ваши"
 
 msgid "Zip written to {}"
 msgstr "Zip записан в {}"

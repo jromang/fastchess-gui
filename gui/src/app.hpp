@@ -22,6 +22,7 @@
 #include "dialogs.hpp"
 #include "engine_import.hpp"
 #include "engines.hpp"
+#include "layout.hpp"
 #include "live.hpp"
 #include "model.hpp"
 #include "pgn_store.hpp"
@@ -215,6 +216,30 @@ class App {
     [[nodiscard]] bool setupProbing() const;
     void drawWorkspace();
     void drawWorkspaceHeader();
+
+    // The panels of the workspace (its views, docked in its dock space) and their layouts, see view_panels.cpp.
+    [[nodiscard]] static ImGuiID workspaceDock();
+    static void registerPanelSettings();  // what layout.ini keeps of them: which are open
+    void loadPanels();                    // from layout.ini, once
+    void drawWorkspaceDock();             // the dock space, under the header; the default layout if it has none
+    void drawPanels();                    // every panel open, after the shell
+    void drawPanelContent(const std::string& panel);
+    void placeIfAsked(const std::string& panel);  // a panel floating alone in a layout built
+    void drawLiveBadge();  // the number of games being played, on the tab (or the title) of the live view
+    [[nodiscard]] bool panelAvailable(std::string_view panel) const;
+    [[nodiscard]] bool panelOpen(std::string_view panel) const { return panels_open_.count(std::string(panel)) > 0; }
+    void showPanel(const std::string& panel);  // opens it (docked again if it was closed) and brings it to the front
+    void closePanel(const std::string& panel);
+    void panelsChanged();  // panels_open_ changed: layout.ini saves it
+    [[nodiscard]] std::vector<std::string> panelsAvailable() const;  // in the order of the menu and the palette
+    void applyLayout(const layout::Layout& l);                       // on the next frame of the workspace
+    bool applyLayout(const std::string& name);  // ready-made (by its key) or saved (by its name); false if none
+    [[nodiscard]] layout::Layout currentLayout() const;
+    void saveLayoutAs(const std::string& name);
+    void deleteLayout(const std::string& name);
+    void drawLayoutMenu();  // the Layout button of the tournament header
+    void drawSaveLayout();  // Save the layout as…: its name
+
     void drawSettings();
     void drawRatings();
     void drawRatingFilters();
@@ -237,9 +262,34 @@ class App {
     void drawSetup(bool two_columns, bool with_summary);
     void drawLive();
     void refreshSlot(int slot);
-    void drawLiveGame(SlotView& view, const char* id, bool allow_detach, int slot);
+    // The parts of the game followed, each also a panel of its own: shown beside the mosaic when their panel is
+    // closed, in a detached board all together.
+    enum LivePart : unsigned {
+        LiveBoard    = 1,
+        LivePlayers  = 2,
+        LiveSearches = 4,
+        LiveMoves    = 8,
+        LiveChart    = 16,
+        LiveAll      = 31
+    };
+    static constexpr std::array<std::pair<unsigned, const char*>, 5> LIVE_PARTS{
+        {{LiveBoard, layout::panel::BOARD},
+         {LivePlayers, layout::panel::PLAYERS},
+         {LiveSearches, layout::panel::SEARCHES},
+         {LiveMoves, layout::panel::MOVES},
+         {LiveChart, layout::panel::CHART}}};
+    void drawLiveGame(SlotView& view, const char* id, unsigned parts, int slot, bool allow_detach = true);
+    void drawLiveBoard(SlotView& view, float size);
+    void drawLiveBoardFitted(SlotView& view);
+    void drawLivePlayer(SlotView& view, chess::Color color, bool search);
+    void drawLiveGameLine(SlotView& view, int slot, bool allow_detach);
+    void drawLiveMoves(SlotView& view, float height);
+    void drawLiveChart(SlotView& view);
+    void drawLiveSide(SlotView& view, unsigned parts, int slot, bool allow_detach);
+    [[nodiscard]] unsigned livePartsHere() const;  // the parts whose panel is closed
+    void drawLivePart(unsigned part);              // in its own panel
+    void drawDetachedBoard(int slot);
     void drawMosaic(int cols, float card);
-    void drawDetached();
     void drawGames();
     void drawOpenings();
     void refreshOpenings();
@@ -459,7 +509,6 @@ class App {
     // Live view.
     int live_slot_ = 0;
     std::vector<SlotView> slot_views_;
-    std::set<int> detached_;  // slots shown in their own window
     bool live_mosaic_       = true;
     MoveChart live_chart_   = MoveChart::Eval;
     MoveChart replay_chart_ = MoveChart::Eval;
@@ -701,7 +750,22 @@ class App {
     // Shell.
     Page page_ = Page::Home;
     std::optional<Tab> tab_request_;  // tab to select on the next frame
-    Tab shown_tab_ = Tab::Overview;   // the tab of the last frame, for the guide
+    Tab shown_tab_ = Tab::Overview;   // the tab of the panel focused last, for the guide
+    // The panels of the workspace (view_panels.cpp).
+    std::set<std::string> panels_open_;
+    bool panels_loaded_  = false;
+    bool layout_checked_ = false;                   // the dock space was found usable, or got the default layout
+    std::optional<layout::Layout> layout_request_;  // built on the next frame of the workspace
+    std::set<std::string> redock_;                  // shown again after being closed: docked in the workspace
+    std::optional<std::string> panel_request_;      // focused and brought to the front once shown
+    std::set<std::string> fronts_;                  // to bring to the front of their dock node (a layout built)
+    std::vector<layout::Placement> placements_;     // panels floating alone, placed at their next frame
+    std::string panel_focused_;                     // the panel last focused, for the guide
+    std::vector<layout::Layout> layouts_;           // the user's own, kept in layouts.json
+    bool open_save_layout_ = false;
+    bool open_layout_menu_ = false;  // --focus layout-menu
+    std::string layout_name_;        // being typed in Save the layout as…
+
     std::vector<tour::Summary> tournaments_;
     bool tournaments_dirty_  = true;
     std::size_t legacy_runs_ = 0;
