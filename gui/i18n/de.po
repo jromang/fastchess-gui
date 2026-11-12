@@ -880,6 +880,9 @@ msgstr "Ordner (leer: \"live\" im Turnierordner)"
 msgid "Follow"
 msgstr "Folgen"
 
+msgid "Follow a game"
+msgstr "Eine Partie verfolgen"
+
 msgid "For TLCV, node-tlcv and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
 msgstr "Für TLCV, node-tlcv und Livius: eine Partie nach der anderen, mit den Suchen der Engines und der Kreuztabelle nach jeder Partie."
 
@@ -1106,6 +1109,9 @@ msgstr "K.-o.-System, {} Engines"
 
 msgid "Language"
 msgstr "Sprache"
+
+msgid "Large tournament"
+msgstr "Großes Turnier"
 
 msgid "Last 24 hours:"
 msgstr "Letzte 24 Stunden:"
@@ -1865,6 +1871,9 @@ msgstr "Anteil der Remispartien."
 msgid "Show this game in its own window, which can be moved to another screen."
 msgstr "Diese Partie in einem eigenen Fenster zeigen, das auf einen anderen Bildschirm verschoben werden kann."
 
+msgid "Show {}"
+msgstr "{} anzeigen"
+
 msgid "Site"
 msgstr "Ort"
 
@@ -2002,6 +2011,9 @@ msgstr "Tabelle"
 
 msgid "Tablebases"
 msgstr "Tablebases"
+
+msgid "Tabs"
+msgstr "Reiter"
 
 msgid "Template name"
 msgstr "Name der Vorlage"

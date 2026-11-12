@@ -876,6 +876,9 @@ msgstr "文件夹（留空：锦标赛文件夹中的 \"live\"）"
 msgid "Follow"
 msgstr "自动滚动"
 
+msgid "Follow a game"
+msgstr "关注一局对局"
+
 msgid "For TLCV, node-tlcv and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
 msgstr "用于 TLCV、node-tlcv和 Livius：一次一局，附带引擎的搜索信息，每局后附交叉表。"
 
@@ -1101,6 +1104,9 @@ msgstr "淘汰赛，{} 个引擎"
 
 msgid "Language"
 msgstr "语言"
+
+msgid "Large tournament"
+msgstr "大型锦标赛"
 
 msgid "Last 24 hours:"
 msgstr "最近 24 小时："
@@ -1856,6 +1862,9 @@ msgstr "和棋所占比例。"
 msgid "Show this game in its own window, which can be moved to another screen."
 msgstr "在单独的窗口中显示这局对局，该窗口可移到另一块屏幕。"
 
+msgid "Show {}"
+msgstr "显示：{}"
+
 msgid "Site"
 msgstr "地点"
 
@@ -1993,6 +2002,9 @@ msgstr "表格"
 
 msgid "Tablebases"
 msgstr "残局库"
+
+msgid "Tabs"
+msgstr "标签页"
 
 msgid "Template name"
 msgstr "模板名称"

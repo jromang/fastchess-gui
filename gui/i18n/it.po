@@ -880,6 +880,9 @@ msgstr "Cartella (vuota: \"live\" nella cartella del torneo)"
 msgid "Follow"
 msgstr "Segui"
 
+msgid "Follow a game"
+msgstr "Segui una partita"
+
 msgid "For TLCV, node-tlcv and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
 msgstr "Per TLCV, node-tlcv e Livius: una partita alla volta, con le ricerche dei motori e la tabella incrociata dopo ogni partita."
 
@@ -1106,6 +1109,9 @@ msgstr "Eliminazione diretta, {} motori"
 
 msgid "Language"
 msgstr "Lingua"
+
+msgid "Large tournament"
+msgstr "Torneo grande"
 
 msgid "Last 24 hours:"
 msgstr "Ultime 24 ore:"
@@ -1865,6 +1871,9 @@ msgstr "Percentuale di partite patte."
 msgid "Show this game in its own window, which can be moved to another screen."
 msgstr "Mostra questa partita in una finestra propria, che si può spostare su un altro schermo."
 
+msgid "Show {}"
+msgstr "Mostra: {}"
+
 msgid "Site"
 msgstr "Luogo"
 
@@ -2002,6 +2011,9 @@ msgstr "Tabella"
 
 msgid "Tablebases"
 msgstr "Tablebase"
+
+msgid "Tabs"
+msgstr "Schede"
 
 msgid "Template name"
 msgstr "Nome del modello"

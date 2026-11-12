@@ -880,6 +880,9 @@ msgstr ""
 msgid "Follow"
 msgstr ""
 
+msgid "Follow a game"
+msgstr ""
+
 msgid "For TLCV, node-tlcv and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
 msgstr ""
 
@@ -1105,6 +1108,9 @@ msgid "Knockout, {} engines"
 msgstr ""
 
 msgid "Language"
+msgstr ""
+
+msgid "Large tournament"
 msgstr ""
 
 msgid "Last 24 hours:"
@@ -1865,6 +1871,9 @@ msgstr ""
 msgid "Show this game in its own window, which can be moved to another screen."
 msgstr ""
 
+msgid "Show {}"
+msgstr ""
+
 msgid "Site"
 msgstr ""
 
@@ -2001,6 +2010,9 @@ msgid "Table"
 msgstr ""
 
 msgid "Tablebases"
+msgstr ""
+
+msgid "Tabs"
 msgstr ""
 
 msgid "Template name"

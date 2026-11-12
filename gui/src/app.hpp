@@ -22,6 +22,7 @@
 #include "dialogs.hpp"
 #include "engine_import.hpp"
 #include "engines.hpp"
+#include "layout.hpp"
 #include "live.hpp"
 #include "model.hpp"
 #include "pgn_store.hpp"
@@ -215,6 +216,22 @@ class App {
     [[nodiscard]] bool setupProbing() const;
     void drawWorkspace();
     void drawWorkspaceHeader();
+
+    // The panels of the workspace (its views, docked in its dock space) and their layouts, see view_panels.cpp.
+    [[nodiscard]] static ImGuiID workspaceDock();
+    static void registerPanelSettings();  // what layout.ini keeps of them: which are open
+    void loadPanels();                    // from layout.ini, once
+    void drawWorkspaceDock();             // the dock space, under the header; the default layout if it has none
+    void drawPanels();                    // every panel open, after the shell
+    void drawPanelContent(const std::string& panel);
+    void placeIfAsked(const std::string& panel);  // a panel floating alone in a layout built
+    void drawLiveBadge();  // the number of games being played, on the tab (or the title) of the live view
+    [[nodiscard]] bool panelAvailable(std::string_view panel) const;
+    [[nodiscard]] bool panelOpen(std::string_view panel) const { return panels_open_.count(std::string(panel)) > 0; }
+    void showPanel(const std::string& panel);  // opens it (docked again if it was closed) and brings it to the front
+    void closePanel(const std::string& panel);
+    void panelsChanged();  // panels_open_ changed: layout.ini saves it
+
     void drawSettings();
     void drawRatings();
     void drawRatingFilters();
@@ -701,7 +718,18 @@ class App {
     // Shell.
     Page page_ = Page::Home;
     std::optional<Tab> tab_request_;  // tab to select on the next frame
-    Tab shown_tab_ = Tab::Overview;   // the tab of the last frame, for the guide
+    Tab shown_tab_ = Tab::Overview;   // the tab of the panel focused last, for the guide
+    // The panels of the workspace (view_panels.cpp).
+    std::set<std::string> panels_open_;
+    bool panels_loaded_  = false;
+    bool layout_checked_ = false;                   // the dock space was found usable, or got the default layout
+    std::optional<layout::Layout> layout_request_;  // built on the next frame of the workspace
+    std::set<std::string> redock_;                  // shown again after being closed: docked in the workspace
+    std::optional<std::string> panel_request_;      // focused and brought to the front once shown
+    std::set<std::string> fronts_;                  // to bring to the front of their dock node (a layout built)
+    std::vector<layout::Placement> placements_;     // panels floating alone, placed at their next frame
+    std::string panel_focused_;                     // the panel last focused, for the guide
+
     std::vector<tour::Summary> tournaments_;
     bool tournaments_dirty_  = true;
     std::size_t legacy_runs_ = 0;

@@ -52,6 +52,7 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
 
     unfinished_ = unfinishedMatch(storage_.runsDir());
     queue_      = storage_.loadQueue();
+    if (ImGui::GetCurrentContext()) registerPanelSettings();
 }
 
 App::~App() {
@@ -221,6 +222,7 @@ void App::frame() {
     }
 
     drawShell();
+    drawPanels();
     drawDetached();
     drawSprtCalculator();
     drawQuitModal();
@@ -463,7 +465,7 @@ std::string App::runMarkerDir() const { return fs::absolute(run_.info().dir).lex
 void App::resetRunView() {
     page_ = Page::Tournament;
     select_game_id_.reset();
-    tab_request_       = Tab::Overview;
+    if (panelOpen(layout::panel::OVERVIEW)) tab_request_ = Tab::Overview;
     tournaments_dirty_ = true;
     unfinished_.reset();
     games_.clear();

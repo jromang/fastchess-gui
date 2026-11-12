@@ -1,4 +1,4 @@
-// The command palette (Ctrl+K): a page, a tab, an engine, a book, a tournament or an action, found by typing a few of
+// The command palette (Ctrl+K): a page, a panel, an engine, a book, a tournament or an action, found by typing a few of
 // its letters. And F1: the guide at the section of the page shown, as the `?` beside the page titles.
 
 #include <algorithm>
@@ -10,6 +10,7 @@
 
 #include "app.hpp"
 #include "i18n.hpp"
+#include "layout.hpp"
 #include "palette.hpp"
 #include "ui.hpp"
 
@@ -53,7 +54,8 @@ guide::Section App::guideSection() const {
     return guide::Section::Window;
 }
 
-// The actions possible now first, then the pages and their tabs, the tournaments, the engines and the books.
+// The actions possible now first, then the pages, the panels of the tournament and the tabs of the ratings, the
+// tournaments, the engines and the books.
 std::vector<App::PaletteEntry> App::paletteEntries() {
     std::vector<PaletteEntry> out;
     const auto add = [&](std::string label, std::string where, std::function<void()> run) {
@@ -117,7 +119,7 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             engines_page([this, unchecked] { queueChecks(unchecked); }));
     }
 
-    // Pages, and the tabs of the tournament open and of the ratings.
+    // Pages, the panels of the tournament open, and the tabs of the ratings.
     const auto page = [this](Page p) {
         return [this, p] {
             if (p == Page::Home) tournaments_dirty_ = true;
@@ -128,20 +130,14 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     add(TR("Tournaments"), "", page(Page::Home));
     add(TR("New tournament"), "", page(Page::NewMatch));
     if (t) {
-        const auto tab = [&](const char* label, Tab which) {
-            add(shown(label), name, [this, which] {
-                page_        = Page::Tournament;
-                tab_request_ = which;
+        // Every panel of the workspace: shown (docked again if it was closed) and brought to the front.
+        for (const auto& info : layout::allPanels()) {
+            if (!panelAvailable(info.id)) continue;
+            add(trf("Show {}", layout::panelName(info.id)), name, [this, panel = std::string(info.id)] {
+                page_ = Page::Tournament;
+                showPanel(panel);
             });
-        };
-        tab(TR("Overview###tab_overview"), Tab::Overview);
-        if (!isMatch()) tab(TR("Standings###tab_standings"), Tab::Standings);
-        if (t->spec().format == tour::Format::Knockout) tab(TR("Bracket###tab_bracket"), Tab::Bracket);
-        if (!isMatch()) tab(TR("Schedule###tab_schedule"), Tab::Schedule);
-        tab(TR("Broadcast###tab_broadcast"), Tab::Broadcast);
-        tab(TR("Live"), Tab::Live);
-        tab(TR("Games###tab_games"), Tab::Games);
-        tab(TR("Openings###tab_openings"), Tab::Openings);
+        }
     }
     add(TR("Engines"), "", page(Page::Engines));
     add(TR("Books"), "", page(Page::Books));

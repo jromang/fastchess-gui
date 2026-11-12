@@ -880,6 +880,9 @@ msgstr "Pasta (vazio: \"live\" na pasta do torneio)"
 msgid "Follow"
 msgstr "Seguir"
 
+msgid "Follow a game"
+msgstr "Acompanhar uma partida"
+
 msgid "For TLCV, node-tlcv and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
 msgstr "Para TLCV, node-tlcv e Livius: uma partida de cada vez, com as buscas dos engines e a tabela cruzada após cada partida."
 
@@ -1106,6 +1109,9 @@ msgstr "Mata-mata, {} engines"
 
 msgid "Language"
 msgstr "Idioma"
+
+msgid "Large tournament"
+msgstr "Torneio grande"
 
 msgid "Last 24 hours:"
 msgstr "Últimas 24 horas:"
@@ -1865,6 +1871,9 @@ msgstr "Fração de partidas empatadas."
 msgid "Show this game in its own window, which can be moved to another screen."
 msgstr "Mostrar esta partida em uma janela própria, que pode ser movida para outra tela."
 
+msgid "Show {}"
+msgstr "Mostrar: {}"
+
 msgid "Site"
 msgstr "Local"
 
@@ -2002,6 +2011,9 @@ msgstr "Tabela"
 
 msgid "Tablebases"
 msgstr "Tablebases"
+
+msgid "Tabs"
+msgstr "Abas"
 
 msgid "Template name"
 msgstr "Nome do modelo"

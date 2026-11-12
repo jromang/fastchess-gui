@@ -884,6 +884,9 @@ msgstr "Папка (пусто: «live» в папке турнира)"
 msgid "Follow"
 msgstr "Следить"
 
+msgid "Follow a game"
+msgstr "Следить за партией"
+
 msgid "For TLCV, node-tlcv and Livius: one game at a time, with the engines' searches, and the crosstable after every game."
 msgstr "Для TLCV, node-tlcv и Livius: по одной партии, с поиском движков и перекрёстной таблицей после каждой партии."
 
@@ -1111,6 +1114,9 @@ msgstr "На выбывание, движков: {}"
 
 msgid "Language"
 msgstr "Язык"
+
+msgid "Large tournament"
+msgstr "Большой турнир"
 
 msgid "Last 24 hours:"
 msgstr "За последние 24 часа:"
@@ -1874,6 +1880,9 @@ msgstr "Доля ничейных партий."
 msgid "Show this game in its own window, which can be moved to another screen."
 msgstr "Показать эту партию в отдельном окне, которое можно перенести на другой экран."
 
+msgid "Show {}"
+msgstr "Показать: {}"
+
 msgid "Site"
 msgstr "Место"
 
@@ -2011,6 +2020,9 @@ msgstr "Таблица"
 
 msgid "Tablebases"
 msgstr "Таблицы эндшпиля"
+
+msgid "Tabs"
+msgstr "Вкладки"
 
 msgid "Template name"
 msgstr "Название шаблона"

@@ -7,7 +7,8 @@
 // output, then at once N lines of 1000 characters on its error output ("crash report I/N"), and ends.
 //
 // With FCG_MOCK_SLOW_UCIOK=MS it waits MS milliseconds before its uciok, and with FCG_MOCK_SLOW_READY=MS before
-// each readyok: an engine slow to load its network or its hash table.
+// each readyok: an engine slow to load its network or its hash table. With FCG_MOCK_MOVE_MS=MS it thinks MS
+// milliseconds over each move, after its info line: games that last, for screenshots of the live view.
 
 #include <chrono>
 #include <cstdlib>
@@ -111,6 +112,8 @@ void uci_line(Board &board, const std::string &line) {
                       << std::endl;
         }
         std::cout << "info depth 1 score cp 0 pv " << uci::moveToUci(move) << std::endl;
+        if (const char *think = std::getenv("FCG_MOCK_MOVE_MS"))
+            std::this_thread::sleep_for(std::chrono::milliseconds(std::atoi(think)));
         std::cout << "bestmove " << uci::moveToUci(move) << std::endl;
     }
 }
