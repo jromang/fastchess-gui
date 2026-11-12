@@ -20,9 +20,10 @@ namespace fcg {
 // The PGN files are written by the tournament layer.
 using tour::PgnSpan;
 
-// Copies the given games, in order, into a new file. Returns an error message, empty on success.
+// Copies the given games, in order, into a new file. Returns an error message, empty on success. `target` may not
+// be `source` nor one of `own` (the tournament's other PGN file): writing it would destroy the games.
 std::string exportSpans(const std::filesystem::path& source, const std::vector<PgnSpan>& spans,
-                        const std::filesystem::path& target);
+                        const std::filesystem::path& target, const std::vector<std::filesystem::path>& own = {});
 
 // A game read back from a PGN written in the fastchess comment style.
 struct ReplayMove {

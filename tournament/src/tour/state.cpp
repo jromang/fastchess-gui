@@ -210,6 +210,7 @@ std::unique_ptr<TournamentState> TournamentState::create(const fs::path& dir, To
     fs::create_directories(dir, ec);
     if (ec) throw std::runtime_error("cannot create the folder " + dir.string());
 
+    if (spec.pgn_file.empty() || spec.pgn_chessbase_file.empty()) namePgnFiles(spec);
     spec.book = fingerprint(spec.conditions.opening.file);
     for (auto& p : spec.participants) p.program = fingerprint(p.engine.cmd);
     replaceFile(dir / SPEC_FILE,
@@ -278,10 +279,10 @@ void TournamentState::load() {
     std::vector<std::string> damaged;
     const auto events = withoutUndoneEdits(Journal::read(dir_ / JOURNAL_FILE, !read_only_, &damaged));
     for (const auto& d : damaged) warnings_.push_back(d + ": skipped");
-    std::set<uint64_t> written_out;           // games.pgn offsets of the games written to spec_.pgn_out
+    std::set<uint64_t> written_out;           // pgnPath() offsets of the games written to spec_.pgn_out
     std::optional<nlohmann::json> out_begun;  // a write to spec_.pgn_out begun, its end not journaled
     bool imported = false;                    // a match of fastchess-gui 0.2.x (see legacy.hpp)
-    // Every game a journal line points to, by its games.pgn offset: (games.pgn, games-chessbase.pgn). A game_finished
+    // Every game a journal line points to, by its pgnPath() offset: (pgnPath(), chessbasePgnPath()). A game_finished
     // line that a resume ignores (its game recorded already) points to its text all the same.
     std::map<uint64_t, std::pair<PgnSpan, PgnSpan>> journaled;
 
@@ -919,7 +920,7 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
         written = true;
         span_cb = pgn_chessbase_->append(text_cb);
     } catch (...) {
-        // The game will not be journaled: its text in games.pgn would show as a game in another PGN viewer.
+        // The game will not be journaled: its text in the PGN files would show as a game in another PGN viewer.
         if (written) (void)pgn_->blank(span);
         lock.lock();
         running_.erase(task.number());

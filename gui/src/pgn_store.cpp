@@ -12,7 +12,14 @@ namespace fcg {
 
 namespace fs = std::filesystem;
 
-std::string exportSpans(const fs::path& source, const std::vector<PgnSpan>& spans, const fs::path& target) {
+std::string exportSpans(const fs::path& source, const std::vector<PgnSpan>& spans, const fs::path& target,
+                        const std::vector<fs::path>& own) {
+    std::error_code ec;
+    if (fs::equivalent(source, target, ec) ||
+        std::any_of(own.begin(), own.end(), [&](const fs::path& file) { return fs::equivalent(file, target, ec); })) {
+        return trf("{} holds the games of the tournament: choose another file", target.string());
+    }
+
     std::ifstream in(source, std::ios::binary);
     if (!in) return trf("Cannot read {}", source.string());
 

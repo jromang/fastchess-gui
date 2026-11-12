@@ -489,7 +489,7 @@ TEST_CASE("wb2uci: a Chess960 tournament of WinBoard engines through the adapter
     }
 
     // The games are Chess960 games in the PGN, and castling happened in some of them.
-    std::ifstream pgn_file(run.tournament()->dir() / "games.pgn");
+    std::ifstream pgn_file(run.tournament()->pgnPath());
     const std::string pgn((std::istreambuf_iterator<char>(pgn_file)), std::istreambuf_iterator<char>());
     CHECK(pgn.find("[Variant \"Chess960\"]") != std::string::npos);
     CHECK(pgn.find("O-O") != std::string::npos);

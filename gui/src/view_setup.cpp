@@ -616,8 +616,12 @@ void App::setupPgn() {
     changed |= inputText("##event", setup_.pgn_event, -FLT_MIN);
 
     ImGui::TextDisabled("%s", TR("Every game is written to two files in the match folder:"));
-    ImGui::BulletText("games.pgn : {+0.35/18 1.234s} (cutechess, fastchess)");
-    ImGui::BulletText("games-chessbase.pgn : {[%%eval 0.35,18] [%%emt …]}");
+    // Named after the tournament, as TournamentState::create() names them.
+    tour::TournamentSpec files;
+    files.name = setup_.name.empty() ? defaultTournamentName(setup_) : setup_.name;
+    tour::namePgnFiles(files);
+    ImGui::BulletText("%s : {+0.35/18 1.234s} (cutechess, fastchess)", files.pgn_file.c_str());
+    ImGui::BulletText("%s : {[%%eval 0.35,18] [%%emt …]}", files.pgn_chessbase_file.c_str());
 
     ImGui::TextUnformatted(TR("Also append every game to:"));
     const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;

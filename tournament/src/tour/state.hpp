@@ -5,11 +5,13 @@
 //
 //   tournament.json      the settings and participants, written once at creation
 //   journal.jsonl        everything that happened since (see journal.hpp)
-//   games.pgn            move comments in the cutechess / fastchess style
-//   games-chessbase.pgn  [%eval] [%clk] [%emt] comments
+//   <name>.pgn            move comments in the cutechess / fastchess style
+//   <name>-chessbase.pgn  [%eval] [%clk] [%emt] comments
 //
-// Both are written in the order games end, and the journal finds every game by its place in them. The PGN file of
-// the user's (spec.pgn_out) gets them in schedule order instead: see writeOut().
+// The PGN files are named after the tournament when it is created (spec.pgn_file, spec.pgn_chessbase_file); those
+// of the tournaments of 0.4.12 and earlier are games.pgn and games-chessbase.pgn. Both are written in the order
+// games end, and the journal finds every game by its place in them. The PGN file of the user's (spec.pgn_out) gets
+// them in schedule order instead: see writeOut().
 //
 // A finished game is written to both PGN files first, then to the journal, each synced to disk. The PGN files are
 // written without the state's lock, so the journal may list games out of their order there; it points to each by
@@ -74,8 +76,8 @@ struct GameResult {
     std::string reason;
     uint32_t plies       = 0;
     uint32_t duration_ms = 0;
-    PgnSpan pgn;              // games.pgn
-    PgnSpan pgn_chessbase;    // games-chessbase.pgn
+    PgnSpan pgn;              // in the cutechess-style PGN file (spec.pgnFile())
+    PgnSpan pgn_chessbase;    // in the ChessBase one
     int64_t finished_at = 0;  // unix time, milliseconds
     // What fastchess' PV checks found (an illegal PV move, a mate PV that does not mate...): (ply, warning).
     std::vector<std::pair<uint32_t, std::string>> pv_warnings;
@@ -141,8 +143,8 @@ class TournamentState {
     [[nodiscard]] const std::filesystem::path& dir() const noexcept { return dir_; }
     [[nodiscard]] bool readOnly() const noexcept { return read_only_; }
     [[nodiscard]] const TournamentSpec& spec() const noexcept { return spec_; }
-    [[nodiscard]] std::filesystem::path pgnPath() const { return dir_ / "games.pgn"; }
-    [[nodiscard]] std::filesystem::path chessbasePgnPath() const { return dir_ / "games-chessbase.pgn"; }
+    [[nodiscard]] std::filesystem::path pgnPath() const { return dir_ / spec_.pgnFile(); }
+    [[nodiscard]] std::filesystem::path chessbasePgnPath() const { return dir_ / spec_.chessbasePgnFile(); }
 
     // Number of games the tournament plays, nullopt for a match without a game limit.
     [[nodiscard]] std::optional<uint64_t> totalGames() const;
@@ -268,7 +270,7 @@ class TournamentState {
     // When the tournament is opened: a write to spec_.pgn_out whose start the journal has but not its end (a crash
     // in between). True when its games are in the file (completed if the write was cut short), which is then
     // journaled; false when they are to be written again. `journaled`: the places of the games in the tournament's
-    // PGN files, by games.pgn offset.
+    // PGN files, by pgnPath() offset.
     bool settleOut(const nlohmann::json& begun, const std::map<uint64_t, std::pair<PgnSpan, PgnSpan>>& journaled);
 
     // What the last edit changed, to undo it (see canUndo()).
@@ -322,7 +324,7 @@ class TournamentState {
     // completes it, rather than write the text again after a game cut off.
     struct OutCut {
         std::vector<std::size_t> games;  // indexes in results_
-        nlohmann::json offsets;          // their games.pgn offsets, as journaled
+        nlohmann::json offsets;          // their pgnPath() offsets, as journaled
         std::string file;                // spec_.pgn_out then
         uint64_t at = 0;                 // where it went
         std::string text;

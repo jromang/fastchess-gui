@@ -195,7 +195,7 @@ void App::exportGames(const std::string& path, bool all) {
         spans.push_back(chessbase ? g.chessbase_span : g.fastchess_span);
     }
 
-    const auto error = exportSpans(file, spans, path);
+    const auto error = exportSpans(file, spans, path, {obs->fastchessPgn(), obs->chessbasePgn()});
     if (error.empty()) {
         Console::instance().add(spans.size() == 1 ? trf("1 game exported to {}", path)
                                                   : trn("{} game exported to {}", "{} games exported to {}",
@@ -309,7 +309,11 @@ void App::drawGames() {
     ImGui::SameLine();
     ImGui::BeginDisabled(shown == 0);
     if (ImGui::Button(all_games ? TR("Export all…") : TR("Export filtered…"))) {
-        dialogs_.saveFile(Dialogs::Purpose::ExportAll, {{"PGN", "pgn"}}, (run_.info().dir / "export.pgn").string());
+        // Named after the tournament, next to its folder: in it, <name>.pgn is the tournament's own file.
+        auto stem = tour::fileStemOf(run_.info().name);
+        if (stem.empty()) stem = "export";
+        dialogs_.saveFile(Dialogs::Purpose::ExportAll, {{"PGN", "pgn"}},
+                          (run_.info().dir.parent_path() / (stem + ".pgn")).string());
     }
     ImGui::EndDisabled();
     ImGui::SameLine();

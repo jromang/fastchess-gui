@@ -561,6 +561,13 @@ TEST_CASE("pgn file offsets read games back, and replay parses them") {
         std::ifstream in(out, std::ios::binary);
         const std::string exported((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
         CHECK(exported == second);
+
+        // Never onto the tournament's own files: the export would empty them.
+        const auto size = fs::file_size(file.path());
+        CHECK_FALSE(exportSpans(file.path(), {s1, s2}, file.path()).empty());
+        CHECK_FALSE(exportSpans(out, {s1}, dir / "." / "games.pgn", {file.path()}).empty());
+        CHECK(fs::file_size(file.path()) == size);
+        CHECK(fs::file_size(out) == second.size());
     }
 
     // Windows refuses to delete open files, hence the scope above.

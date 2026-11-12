@@ -4,6 +4,8 @@
 
 #include <core/crc32.hpp>
 
+#include "files.hpp"
+
 namespace fcg::tour {
 
 void to_json(nlohmann::json& j, const Participant& p) {
@@ -77,6 +79,8 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
         j["pgn_out"]           = s.pgn_out;
         j["pgn_out_chessbase"] = s.pgn_out_chessbase;
     }
+    if (!s.pgn_file.empty()) j["pgn_file"] = s.pgn_file;
+    if (!s.pgn_chessbase_file.empty()) j["pgn_chessbase_file"] = s.pgn_chessbase_file;
 }
 
 void from_json(const nlohmann::json& j, TournamentSpec& s) {
@@ -96,6 +100,36 @@ void from_json(const nlohmann::json& j, TournamentSpec& s) {
     s.opening_per_round = j.value("opening_per_round", false);
     s.pgn_out           = j.value("pgn_out", std::string{});
     s.pgn_out_chessbase = j.value("pgn_out_chessbase", false);
+
+    // A file of the folder, nothing else: the games are written to it.
+    s.pgn_file           = j.value("pgn_file", std::string{});
+    s.pgn_chessbase_file = j.value("pgn_chessbase_file", std::string{});
+    for (const auto& file : {s.pgn_file, s.pgn_chessbase_file}) {
+        if (!file.empty() && fileNameOf(file) != file)
+            throw std::runtime_error("invalid PGN file name \"" + file + "\"");
+    }
+}
+
+std::string fileStemOf(const std::string& name) {
+    const auto first = name.find_first_not_of(" \t");
+    if (first == std::string::npos) return {};
+    std::string stem = name.substr(first, name.find_last_not_of(" \t") + 1 - first);
+
+    // Cut at the first byte of a character, not inside one (UTF-8).
+    constexpr std::size_t MAX_BYTES = 64;
+    if (stem.size() > MAX_BYTES) {
+        std::size_t end = MAX_BYTES;
+        while (end > 0 && (static_cast<unsigned char>(stem[end]) & 0xC0) == 0x80) --end;
+        stem.resize(end);
+    }
+    return fileNameOf(stem);
+}
+
+void namePgnFiles(TournamentSpec& spec) {
+    auto stem = fileStemOf(spec.name);
+    if (stem.empty()) stem = "games";
+    spec.pgn_file           = stem + ".pgn";
+    spec.pgn_chessbase_file = stem + "-chessbase.pgn";
 }
 
 }  // namespace fcg::tour
