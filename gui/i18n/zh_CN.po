@@ -41,6 +41,9 @@ msgstr "%s  对  %s"
 msgid "%s: %d loss(es) on time, %d crash(es), %d illegal move(s)"
 msgstr "%s：%d 次超时判负，%d 次崩溃，%d 次非法着法"
 
+msgid "(already in the list)"
+msgstr "（已在列表中）"
+
 msgid "(choose)"
 msgstr "（选择）"
 
@@ -140,6 +143,9 @@ msgstr "约 {}，同时进行 {} 局"
 msgid "About {} {}"
 msgstr "约 {} {}"
 
+msgid "Add"
+msgstr "添加"
+
 msgid "Add a PGN file…"
 msgstr "添加 PGN 文件…"
 
@@ -158,8 +164,15 @@ msgstr "添加引擎…"
 msgid "Add engines in the Engines window."
 msgstr "请在“引擎”窗口中添加引擎。"
 
+msgid "Add to a group…"
+msgstr "添加到分组…"
+
 msgid "Add to the queue"
 msgstr "加入队列"
+
+msgid "Add {} engine"
+msgid_plural "Add {} engines"
+msgstr[0] "添加 {} 个引擎"
 
 msgid "Add…"
 msgstr "添加…"
@@ -335,11 +348,17 @@ msgstr "无法打开锦标赛：{}"
 msgid "Cannot read the game back from {}"
 msgstr "无法从 {} 读回对局"
 
+msgid "Cannot read the template {}."
+msgstr "无法读取模板 {}。"
+
 msgid "Cannot read {}"
 msgstr "无法读取 {}"
 
 msgid "Cannot resume the match: {}"
 msgstr "无法恢复比赛：{}"
+
+msgid "Cannot save {}: {}"
+msgstr "无法保存 {}：{}"
 
 msgid "Cannot start the match: {}"
 msgstr "无法开始比赛：{}"
@@ -370,6 +389,9 @@ msgstr "检查"
 
 msgid "Check the mate PVs"
 msgstr "检查将杀 PV"
+
+msgid "Check those not checked ({})"
+msgstr "检查尚未检查的（{}）"
 
 msgid "Checked: it works."
 msgstr "已检查：可以正常工作。"
@@ -440,6 +462,9 @@ msgstr "通用设置：{}"
 msgid "Compare with a saved run…"
 msgstr "与已保存的运行结果比较…"
 
+msgid "Computing…"
+msgstr "计算中…"
+
 msgid "Concurrency"
 msgstr "并发"
 
@@ -466,6 +491,9 @@ msgstr "崩溃 / 非法着法"
 
 msgid "Create a token on lichess…"
 msgstr "在 lichess 上创建令牌…"
+
+msgid "Crosstable"
+msgstr "交叉表"
 
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr "Ctrl + 鼠标滚轮，Ctrl + 和 Ctrl -，Ctrl 0"
@@ -665,6 +693,9 @@ msgstr "每步都搜索到此深度（go depth），无论耗时多久：不会�
 msgid "Every opening"
 msgstr "所有开局"
 
+msgid "Every state"
+msgstr "所有状态"
+
 msgid "Every time control"
 msgstr "所有时限"
 
@@ -700,6 +731,9 @@ msgstr "导出对局…"
 
 msgid "Extra fields in the comments:"
 msgstr "注释中的额外字段："
+
+msgid "Failed or changed"
+msgstr "失败或已更改"
 
 msgid "Failed: {}"
 msgstr "失败：{}"
@@ -815,6 +849,9 @@ msgstr "车轮战：{} 对 {} 个引擎"
 msgid "Give the Syzygy tablebase directory."
 msgstr "请指定 Syzygy 残局库目录。"
 
+msgid "Group"
+msgstr "分组"
+
 msgid "Groups"
 msgstr "分组"
 
@@ -832,6 +869,9 @@ msgstr "Hash"
 
 msgid "Hash (MB)"
 msgstr "Hash (MB)"
+
+msgid "Hash {} MB"
+msgstr "哈希 {} MB"
 
 msgid "Hash, Threads, Depth: 0 = the common value."
 msgstr "Hash、Threads、深度：0 = 通用值。"
@@ -868,6 +908,9 @@ msgstr "从初始局面走出非法着法：{}"
 
 msgid "Impact"
 msgstr "影响"
+
+msgid "Import engines"
+msgstr "导入引擎"
 
 msgid "Import them"
 msgstr "导入它们"
@@ -1016,6 +1059,9 @@ msgstr "最大步数"
 msgid "Model"
 msgstr "模型"
 
+msgid "More…"
+msgstr "更多…"
+
 msgid "Mosaic"
 msgstr "平铺"
 
@@ -1106,14 +1152,23 @@ msgstr "每个局面节点数"
 msgid "Non-regression [-5, 0]"
 msgstr "无退化 [-5, 0]"
 
+msgid "None"
+msgstr "无"
+
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "归一化 Elo（fishtest、OpenBench），及其 95 % 区间。"
+
+msgid "Not checked"
+msgstr "未检查"
 
 msgid "Not checked yet."
 msgstr "尚未检查。"
 
 msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
 msgstr "此对局的 PGN 中没有：请在配置的 PGN 选项中开启该字段。"
+
+msgid "Nothing found."
+msgstr "未找到。"
 
 msgid "Notify when a match ends"
 msgstr "比赛结束时通知"
@@ -1133,6 +1188,9 @@ msgstr "其错误输出中："
 msgid "Once it has played two tournaments."
 msgstr "一旦它下过两个锦标赛。"
 
+msgid "One after the other, not while a tournament plays."
+msgstr "逐个进行，锦标赛进行时不进行。"
+
 msgid "One game"
 msgstr "单局"
 
@@ -1151,6 +1209,12 @@ msgstr "打开文件夹"
 msgid "Open the tournament."
 msgstr "打开锦标赛。"
 
+msgid "OpenGL 3.2 is not available (SDL_GL_CreateContext)"
+msgstr "OpenGL 3.2 不可用（SDL_GL_CreateContext）"
+
+msgid "OpenGL functions are missing"
+msgstr "缺少 OpenGL 函数"
+
 msgid "Opening"
 msgstr "开局"
 
@@ -1168,6 +1232,9 @@ msgstr "选项"
 
 msgid "Option unknown to the engine: %s = %s"
 msgstr "引擎不认识的选项：%s = %s"
+
+msgid "Options not sent: {}"
+msgstr "未发送的选项：{}"
 
 msgid "Otherwise an engine that crashes or hangs stops the whole match."
 msgstr "否则一个崩溃或卡住的引擎会让整场比赛停止。"
@@ -1296,6 +1363,9 @@ msgstr "处理器占用"
 msgid "Program"
 msgstr "程序"
 
+msgid "Program missing"
+msgstr "程序缺失"
+
 msgid "Program not found: {}"
 msgstr "找不到程序：{}"
 
@@ -1359,6 +1429,9 @@ msgstr "局域网内可访问；如需进一步共享，请在路由器中开放
 msgid "Read it again"
 msgstr "重新读取"
 
+msgid "Read it next"
+msgstr "下一个读取"
+
 msgid "Read its search statistics"
 msgstr "读取其搜索统计"
 
@@ -1396,8 +1469,15 @@ msgstr "移除"
 msgid "Remove the engine?"
 msgstr "移除引擎？"
 
+msgid "Remove the missing programs ({})…"
+msgstr "移除缺失的程序（{}）…"
+
 msgid "Remove the saved runs from the grid"
 msgstr "从表格中移除已保存的运行结果"
+
+msgid "Remove {} engine from the list? The files are not deleted."
+msgid_plural "Remove {} engines from the list? The files are not deleted."
+msgstr[0] "从列表中移除 {} 个引擎？文件不会被删除。"
 
 msgid "Remove “%s” from the list? The file is not deleted."
 msgstr "从列表中移除“%s”？文件不会被删除。"
@@ -1408,8 +1488,14 @@ msgstr "从库中移除该开局库；文件保留在原处。"
 msgid "Remove…"
 msgstr "移除…"
 
+msgid "Replace"
+msgstr "替换"
+
 msgid "Replace an engine"
 msgstr "替换引擎"
+
+msgid "Replace the template {}?"
+msgstr "替换模板 {}？"
 
 msgid "Replaced by"
 msgstr "替换为"
@@ -1507,6 +1593,9 @@ msgstr "搜索"
 msgid "Search per engine"
 msgstr "各引擎的搜索"
 
+msgid "Search: name, program, author"
+msgstr "搜索：名称、程序、作者"
+
 msgid "Searches at a time"
 msgstr "同时进行的搜索数"
 
@@ -1518,6 +1607,9 @@ msgstr "每个局面秒数"
 
 msgid "Seed"
 msgstr "随机种子"
+
+msgid "Send its options"
+msgstr "发送其选项"
 
 msgid "Separated by commas, e.g. a pool or a rating list."
 msgstr "用逗号分隔，例如一个组或一个等级分榜。"
@@ -1581,6 +1673,9 @@ msgstr "当前锦标赛结束后自动开始。"
 
 msgid "Starts in {} ms · isready {:.1f} ms · first move {}"
 msgstr "启动 {} ms · isready {:.1f} ms · 第一步 {}"
+
+msgid "Starts once the engine being read or checked is done…"
+msgstr "正在读取或检查的引擎完成后即开始…"
 
 msgid "Starts the engine, measures how fast it answers, checks one move, then runs fastchess' UCI compliance steps."
 msgstr "启动引擎，测量其响应速度，检查一步着法，然后运行 fastchess 的 UCI 合规性测试步骤。"
@@ -1648,6 +1743,9 @@ msgstr "TCP 端口"
 msgid "TLCS server"
 msgstr "TLCS 服务器"
 
+msgid "Table"
+msgstr "表格"
+
 msgid "Template name"
 msgstr "模板名称"
 
@@ -1687,11 +1785,17 @@ msgstr "深度必须为正数。"
 msgid "The engine does not answer isready."
 msgstr "引擎没有响应 isready。"
 
+msgid "The engine stopped answering once its options were sent."
+msgstr "发送选项后引擎停止响应。"
+
 msgid "The engine stopped while it was asked to think."
 msgstr "要求引擎思考时，它停止了运行。"
 
 msgid "The engine wrote:"
 msgstr "引擎输出："
+
+msgid "The engines are those of {}, kept before the last change."
+msgstr "引擎来自 {}，即上次更改前保留的副本。"
 
 msgid "The engines disagree"
 msgstr "引擎意见分歧"
@@ -1807,6 +1911,9 @@ msgstr "有问题的开局"
 msgid "Threads"
 msgstr "线程"
 
+msgid "Threads {}"
+msgstr "线程 {}"
+
 msgid "Tick engines on the left."
 msgstr "在左侧勾选引擎。"
 
@@ -1864,6 +1971,9 @@ msgstr "未知引擎：{}"
 msgid "Unreadable PGN."
 msgstr "无法读取的 PGN。"
 
+msgid "Up to {} engines."
+msgstr "最多 {} 个引擎。"
+
 msgid "Use it for the next tournament"
 msgstr "用于下一个锦标赛"
 
@@ -1882,8 +1992,8 @@ msgstr "作废这局对局（不重下）"
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "胜 {:.0f} · 和 {:.0f} · 负 {:.0f} %"
 
-msgid "Waiting to be read…"
-msgstr "等待读取…"
+msgid "Waiting to be read · read it next"
+msgstr "等待读取 · 下一个读取"
 
 msgid "Web page"
 msgstr "网页"
@@ -1924,6 +2034,9 @@ msgstr "白方连接无响应"
 msgid "White's score over the games."
 msgstr "白方在各局中的得分。"
 
+msgid "WinBoard"
+msgstr "WinBoard"
+
 msgid "WinBoard engines (xboard protocol) are run through a translation to UCI built into fastchess-gui. Automatic: found out when the engine is read."
 msgstr "WinBoard 引擎（xboard 协议）通过 fastchess-gui 内置的 UCI 转换运行。自动：在读取引擎时检测。"
 
@@ -1959,6 +2072,9 @@ msgstr "工作目录"
 
 msgid "Working directory not found: {}"
 msgstr "找不到工作目录：{}"
+
+msgid "Works"
+msgstr "可用"
 
 msgid "Write error in {}"
 msgstr "写入 {} 时出错"
@@ -2141,6 +2257,9 @@ msgstr "{} / {} 局"
 msgid "{} / {} points"
 msgstr "{} / {} 分"
 
+msgid "{} = {}: a value it refuses"
+msgstr "{} = {}：引擎拒绝的值"
+
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} 要求每局都重新启动：已勾选“每局对局都重启引擎”。"
 
@@ -2168,9 +2287,17 @@ msgid "{} engine"
 msgid_plural "{} engines"
 msgstr[0] "{} 个引擎"
 
+msgid "{} engine found. Untick those to leave out."
+msgid_plural "{} engines found. Untick those to leave out."
+msgstr[0] "找到 {} 个引擎。取消勾选不需要的。"
+
 msgid "{} engine imported; its options are being read."
 msgid_plural "{} engines imported; their options are being read."
 msgstr[0] "已导入 {} 个引擎；正在读取其选项。"
+
+msgid "{} engine waiting to be checked"
+msgid_plural "{} engines waiting to be checked"
+msgstr[0] "{} 个引擎等待检查"
 
 msgid "{} engines · {} games"
 msgstr "{} 个引擎 · {} 局"
@@ -2208,12 +2335,18 @@ msgstr "{} 局 · {}"
 msgid "{} games, {} tournaments"
 msgstr "{} 局，{} 个锦标赛"
 
+msgid "{} h {:02} min"
+msgstr "{} 小时 {:02} 分"
+
 msgid "{} illegal move"
 msgid_plural "{} illegal moves"
 msgstr[0] "{} 次非法着法"
 
 msgid "{} illegal moves"
 msgstr "{} 次非法着法"
+
+msgid "{} is open in another program: it is only shown here, as it was when opened."
+msgstr "{} 已在另一个程序中打开：此处仅按打开时的状态显示。"
 
 msgid "{} is twice in the list of participants."
 msgstr "{} 在参赛者列表中出现了两次。"
@@ -2231,6 +2364,9 @@ msgstr[0] "{} 场旧版本的比赛尚未加入列表。"
 
 msgid "{} matches × {} pairs of games, plus tiebreaks"
 msgstr "{} 场比赛 × {} 对对局，另加加赛"
+
+msgid "{} min {:02} s"
+msgstr "{} 分 {:02} 秒"
 
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr "{} 步 · 深度 {:.1f} · 每步 {:.0f} ms{}"
@@ -2284,11 +2420,18 @@ msgstr[0] "已将 {} 个局面写入 {}"
 msgid "{} rounds × {} pairings × 2 games"
 msgstr "{} 轮 × {} 组配对 × 2 局"
 
+msgid "{} s"
+msgstr "{} 秒"
+
 msgid "{} s/move"
 msgstr "{} 秒/步"
 
 msgid "{} searches to depth {}"
 msgstr "{} 搜索到深度 {}"
+
+msgid "{} selected"
+msgid_plural "{} selected"
+msgstr[0] "已选 {} 个"
 
 msgid "{} shown"
 msgstr "显示 {} 个"
@@ -2326,6 +2469,9 @@ msgstr "{}：找不到程序（{}）"
 msgid "{}: seldepth"
 msgstr "{}：seldepth"
 
+msgid "{}: unknown to the engine"
+msgstr "{}：引擎不认识"
+
 msgid "{}: {}"
 msgstr "{}：{}"
 
@@ -2362,5 +2508,5 @@ msgstr "✓ 所测量的 {} 个引擎均符合预期"
 msgid "✓ No played game is lost: voided games stay in the PGN files and the journal."
 msgstr "✓ 已下的对局不会丢失：作废的对局仍保留在 PGN 文件和日志中。"
 
-msgid "✓ works · ! problem · ↔ WinBoard · right click: more"
-msgstr "✓ 正常 · ! 有问题 · ↔ WinBoard · 右键：更多"
+msgid "✓ works · ! problem · ↔ WinBoard · Ctrl or Shift click: several · right click: more"
+msgstr "✓ 可用 · ! 有问题 · ↔ WinBoard · 按住 Ctrl 或 Shift 点击：多选 · 右键：更多"

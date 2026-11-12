@@ -41,6 +41,9 @@ msgstr "%s  против  %s"
 msgid "%s: %d loss(es) on time, %d crash(es), %d illegal move(s)"
 msgstr "%s: поражений по времени: %d, вылетов: %d, нелегальных ходов: %d"
 
+msgid "(already in the list)"
+msgstr "(уже в списке)"
+
 msgid "(choose)"
 msgstr "(выбрать)"
 
@@ -140,6 +143,9 @@ msgstr "Около {}; одновременных партий: {}"
 msgid "About {} {}"
 msgstr "Примерно {} {}"
 
+msgid "Add"
+msgstr "Добавить"
+
 msgid "Add a PGN file…"
 msgstr "Добавить файл PGN…"
 
@@ -158,8 +164,17 @@ msgstr "Добавить движок…"
 msgid "Add engines in the Engines window."
 msgstr "Добавьте движки в окне «Движки»."
 
+msgid "Add to a group…"
+msgstr "Добавить в группу…"
+
 msgid "Add to the queue"
 msgstr "Добавить в очередь"
+
+msgid "Add {} engine"
+msgid_plural "Add {} engines"
+msgstr[0] "Добавить {} движок"
+msgstr[1] "Добавить {} движка"
+msgstr[2] "Добавить {} движков"
 
 msgid "Add…"
 msgstr "Добавить…"
@@ -335,11 +350,17 @@ msgstr "Не удалось открыть турнир: {}"
 msgid "Cannot read the game back from {}"
 msgstr "Не удалось заново прочитать партию из {}"
 
+msgid "Cannot read the template {}."
+msgstr "Не удаётся прочитать шаблон {}."
+
 msgid "Cannot read {}"
 msgstr "Не удалось прочитать {}"
 
 msgid "Cannot resume the match: {}"
 msgstr "Не удалось возобновить матч: {}"
+
+msgid "Cannot save {}: {}"
+msgstr "Не удаётся сохранить {}: {}"
 
 msgid "Cannot start the match: {}"
 msgstr "Не удалось запустить матч: {}"
@@ -370,6 +391,9 @@ msgstr "Проверить"
 
 msgid "Check the mate PVs"
 msgstr "Проверять PV матов"
+
+msgid "Check those not checked ({})"
+msgstr "Проверить непроверенные ({})"
 
 msgid "Checked: it works."
 msgstr "Проверено: работает."
@@ -440,6 +464,9 @@ msgstr "Общие настройки: {}"
 msgid "Compare with a saved run…"
 msgstr "Сравнить с сохранённым прогоном…"
 
+msgid "Computing…"
+msgstr "Вычисление…"
+
 msgid "Concurrency"
 msgstr "Параллельность"
 
@@ -466,6 +493,9 @@ msgstr "Вылет / нелегальный ход"
 
 msgid "Create a token on lichess…"
 msgstr "Создать токен на lichess…"
+
+msgid "Crosstable"
+msgstr "Перекрёстная таблица"
 
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr "Ctrl + колесо мыши, Ctrl + и Ctrl -, Ctrl 0"
@@ -665,6 +695,9 @@ msgstr "Каждый ход рассчитывается до этой глуб�
 msgid "Every opening"
 msgstr "Все дебюты"
 
+msgid "Every state"
+msgstr "Все состояния"
+
 msgid "Every time control"
 msgstr "Все контроли времени"
 
@@ -700,6 +733,9 @@ msgstr "Экспортировать партии…"
 
 msgid "Extra fields in the comments:"
 msgstr "Дополнительные поля в комментариях:"
+
+msgid "Failed or changed"
+msgstr "Сбой или изменён"
 
 msgid "Failed: {}"
 msgstr "Не удалось: {}"
@@ -815,6 +851,9 @@ msgstr "Гаунтлет, движков: {} против {}"
 msgid "Give the Syzygy tablebase directory."
 msgstr "Укажите папку таблиц Syzygy."
 
+msgid "Group"
+msgstr "Группа"
+
 msgid "Groups"
 msgstr "Группы"
 
@@ -832,6 +871,9 @@ msgstr "Hash"
 
 msgid "Hash (MB)"
 msgstr "Hash (МБ)"
+
+msgid "Hash {} MB"
+msgstr "Хеш {} МБ"
 
 msgid "Hash, Threads, Depth: 0 = the common value."
 msgstr "Hash, Threads, Глубина: 0 = общее значение."
@@ -868,6 +910,9 @@ msgstr "Нелегальный ход из начальной позиции: {}
 
 msgid "Impact"
 msgstr "Влияние"
+
+msgid "Import engines"
+msgstr "Импорт движков"
 
 msgid "Import them"
 msgstr "Импортировать их"
@@ -1016,6 +1061,9 @@ msgstr "Максимальное число ходов"
 msgid "Model"
 msgstr "Модель"
 
+msgid "More…"
+msgstr "Ещё…"
+
 msgid "Mosaic"
 msgstr "Мозаика"
 
@@ -1106,14 +1154,23 @@ msgstr "Узлов на позицию"
 msgid "Non-regression [-5, 0]"
 msgstr "Без регрессии [-5, 0]"
 
+msgid "None"
+msgstr "Нет"
+
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "Elo в нормализованной шкале (fishtest, OpenBench), с интервалом 95 %."
+
+msgid "Not checked"
+msgstr "Не проверен"
 
 msgid "Not checked yet."
 msgstr "Ещё не проверен."
 
 msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
 msgstr "Нет в PGN этой партии: включите это поле в параметрах PGN в настройке."
+
+msgid "Nothing found."
+msgstr "Ничего не найдено."
 
 msgid "Notify when a match ends"
 msgstr "Уведомлять об окончании матча"
@@ -1133,6 +1190,9 @@ msgstr "В его потоке ошибок:"
 msgid "Once it has played two tournaments."
 msgstr "Когда он сыграет два турнира."
 
+msgid "One after the other, not while a tournament plays."
+msgstr "По очереди и не во время турнира."
+
 msgid "One game"
 msgstr "Одна партия"
 
@@ -1151,6 +1211,12 @@ msgstr "Открыть папку"
 msgid "Open the tournament."
 msgstr "Открыть турнир."
 
+msgid "OpenGL 3.2 is not available (SDL_GL_CreateContext)"
+msgstr "OpenGL 3.2 недоступен (SDL_GL_CreateContext)"
+
+msgid "OpenGL functions are missing"
+msgstr "Отсутствуют функции OpenGL"
+
 msgid "Opening"
 msgstr "Дебют"
 
@@ -1168,6 +1234,9 @@ msgstr "Опция"
 
 msgid "Option unknown to the engine: %s = %s"
 msgstr "Опция неизвестна движку: %s = %s"
+
+msgid "Options not sent: {}"
+msgstr "Параметры не отправлены: {}"
 
 msgid "Otherwise an engine that crashes or hangs stops the whole match."
 msgstr "Иначе вылетевший или зависший движок остановит весь матч."
@@ -1298,6 +1367,9 @@ msgstr "Загрузка процессора"
 msgid "Program"
 msgstr "Программа"
 
+msgid "Program missing"
+msgstr "Программа отсутствует"
+
 msgid "Program not found: {}"
 msgstr "Программа не найдена: {}"
 
@@ -1361,6 +1433,9 @@ msgstr "Доступно из локальной сети; откройте по
 msgid "Read it again"
 msgstr "Перечитать"
 
+msgid "Read it next"
+msgstr "Прочитать следующим"
+
 msgid "Read its search statistics"
 msgstr "Прочитать статистику поиска"
 
@@ -1400,8 +1475,17 @@ msgstr "Удалить"
 msgid "Remove the engine?"
 msgstr "Удалить движок?"
 
+msgid "Remove the missing programs ({})…"
+msgstr "Удалить отсутствующие программы ({})…"
+
 msgid "Remove the saved runs from the grid"
 msgstr "Убрать сохранённые прогоны из сетки"
+
+msgid "Remove {} engine from the list? The files are not deleted."
+msgid_plural "Remove {} engines from the list? The files are not deleted."
+msgstr[0] "Удалить {} движок из списка? Файлы не удаляются."
+msgstr[1] "Удалить {} движка из списка? Файлы не удаляются."
+msgstr[2] "Удалить {} движков из списка? Файлы не удаляются."
 
 msgid "Remove “%s” from the list? The file is not deleted."
 msgstr "Удалить «%s» из списка? Файл не удаляется."
@@ -1412,8 +1496,14 @@ msgstr "Удаляет книгу из библиотеки; файл остаё
 msgid "Remove…"
 msgstr "Удалить…"
 
+msgid "Replace"
+msgstr "Заменить"
+
 msgid "Replace an engine"
 msgstr "Заменить движок"
+
+msgid "Replace the template {}?"
+msgstr "Заменить шаблон {}?"
 
 msgid "Replaced by"
 msgstr "Заменён на"
@@ -1511,6 +1601,9 @@ msgstr "Поиск"
 msgid "Search per engine"
 msgstr "Поиск у каждого движка"
 
+msgid "Search: name, program, author"
+msgstr "Поиск: имя, программа, автор"
+
 msgid "Searches at a time"
 msgstr "Одновременных поисков"
 
@@ -1522,6 +1615,9 @@ msgstr "Секунд на позицию"
 
 msgid "Seed"
 msgstr "Зерно"
+
+msgid "Send its options"
+msgstr "Отправка его параметров"
 
 msgid "Separated by commas, e.g. a pool or a rating list."
 msgstr "Через запятую, например пул или рейтинг-лист."
@@ -1585,6 +1681,9 @@ msgstr "Запустится сам, когда завершится текущ�
 
 msgid "Starts in {} ms · isready {:.1f} ms · first move {}"
 msgstr "Запуск за {} мс · isready {:.1f} мс · первый ход {}"
+
+msgid "Starts once the engine being read or checked is done…"
+msgstr "Начнётся, как только закончится чтение или проверка движка…"
 
 msgid "Starts the engine, measures how fast it answers, checks one move, then runs fastchess' UCI compliance steps."
 msgstr "Запускает движок, измеряет скорость его ответа, проверяет один ход, затем проходит этапы проверки соответствия UCI из fastchess."
@@ -1652,6 +1751,9 @@ msgstr "Порт TCP"
 msgid "TLCS server"
 msgstr "Сервер TLCS"
 
+msgid "Table"
+msgstr "Таблица"
+
 msgid "Template name"
 msgstr "Название шаблона"
 
@@ -1691,11 +1793,17 @@ msgstr "Глубина должна быть положительной."
 msgid "The engine does not answer isready."
 msgstr "Движок не отвечает на isready."
 
+msgid "The engine stopped answering once its options were sent."
+msgstr "Движок перестал отвечать после отправки параметров."
+
 msgid "The engine stopped while it was asked to think."
 msgstr "Движок остановился, когда его попросили думать."
 
 msgid "The engine wrote:"
 msgstr "Движок написал:"
+
+msgid "The engines are those of {}, kept before the last change."
+msgstr "Движки взяты из {}, сохранённого до последнего изменения."
 
 msgid "The engines disagree"
 msgstr "Движки расходятся в оценке"
@@ -1811,6 +1919,9 @@ msgstr "Проблемные"
 msgid "Threads"
 msgstr "Threads"
 
+msgid "Threads {}"
+msgstr "Потоки {}"
+
 msgid "Tick engines on the left."
 msgstr "Отметьте движки слева."
 
@@ -1868,6 +1979,9 @@ msgstr "Неизвестный движок: {}"
 msgid "Unreadable PGN."
 msgstr "Нечитаемый PGN."
 
+msgid "Up to {} engines."
+msgstr "До {} движков."
+
 msgid "Use it for the next tournament"
 msgstr "Использовать для следующего турнира"
 
@@ -1886,8 +2000,8 @@ msgstr "Аннулировать эту партию (без переигров�
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "В {:.0f} · Н {:.0f} · П {:.0f} %"
 
-msgid "Waiting to be read…"
-msgstr "Ожидает чтения…"
+msgid "Waiting to be read · read it next"
+msgstr "Ожидает чтения · прочитать следующим"
 
 msgid "Web page"
 msgstr "Веб-страница"
@@ -1928,6 +2042,9 @@ msgstr "Белые не отвечают"
 msgid "White's score over the games."
 msgstr "Результат белых по всем партиям."
 
+msgid "WinBoard"
+msgstr "WinBoard"
+
 msgid "WinBoard engines (xboard protocol) are run through a translation to UCI built into fastchess-gui. Automatic: found out when the engine is read."
 msgstr "Движки WinBoard (протокол xboard) работают через встроенный в fastchess-gui перевод в UCI. Автоматически: определяется при чтении движка."
 
@@ -1963,6 +2080,9 @@ msgstr "Рабочая папка"
 
 msgid "Working directory not found: {}"
 msgstr "Рабочая папка не найдена: {}"
+
+msgid "Works"
+msgstr "Работает"
 
 msgid "Write error in {}"
 msgstr "Ошибка записи в {}"
@@ -2147,6 +2267,9 @@ msgstr "партий: {} / {}"
 msgid "{} / {} points"
 msgstr "очков: {} / {}"
 
+msgid "{} = {}: a value it refuses"
+msgstr "{} = {}: недопустимое для него значение"
+
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} требует перезапуска для каждой партии: отмечено «Перезапускать движок для каждой партии»."
 
@@ -2180,11 +2303,23 @@ msgstr[0] "{} движок"
 msgstr[1] "{} движка"
 msgstr[2] "{} движков"
 
+msgid "{} engine found. Untick those to leave out."
+msgid_plural "{} engines found. Untick those to leave out."
+msgstr[0] "Найден {} движок. Снимите отметку с тех, что не нужны."
+msgstr[1] "Найдено {} движка. Снимите отметку с тех, что не нужны."
+msgstr[2] "Найдено {} движков. Снимите отметку с тех, что не нужны."
+
 msgid "{} engine imported; its options are being read."
 msgid_plural "{} engines imported; their options are being read."
 msgstr[0] "{} движок импортирован; его опции считываются."
 msgstr[1] "{} движка импортированы; их опции считываются."
 msgstr[2] "{} движков импортировано; их опции считываются."
+
+msgid "{} engine waiting to be checked"
+msgid_plural "{} engines waiting to be checked"
+msgstr[0] "{} движок ожидает проверки"
+msgstr[1] "{} движка ожидают проверки"
+msgstr[2] "{} движков ожидают проверки"
 
 msgid "{} engines · {} games"
 msgstr "движков: {} · партий: {}"
@@ -2234,6 +2369,9 @@ msgstr "партий: {} · {}"
 msgid "{} games, {} tournaments"
 msgstr "партий: {}, турниров: {}"
 
+msgid "{} h {:02} min"
+msgstr "{} ч {:02} мин"
+
 msgid "{} illegal move"
 msgid_plural "{} illegal moves"
 msgstr[0] "{} нелегальный ход"
@@ -2242,6 +2380,9 @@ msgstr[2] "{} нелегальных ходов"
 
 msgid "{} illegal moves"
 msgstr "нелегальных ходов: {}"
+
+msgid "{} is open in another program: it is only shown here, as it was when opened."
+msgstr "{} открыт в другой программе: здесь он только показан в том виде, в каком был при открытии."
 
 msgid "{} is twice in the list of participants."
 msgstr "{} дважды указан в списке участников."
@@ -2263,6 +2404,9 @@ msgstr[2] "{} матчей из прежней версии ещё не в сп�
 
 msgid "{} matches × {} pairs of games, plus tiebreaks"
 msgstr "матчи × пары партий: {} × {}, плюс тай-брейки"
+
+msgid "{} min {:02} s"
+msgstr "{} мин {:02} с"
 
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr "ходов: {} · глубина {:.1f} · {:.0f} мс на ход{}"
@@ -2330,11 +2474,20 @@ msgstr[2] "{} позиций записано в {}"
 msgid "{} rounds × {} pairings × 2 games"
 msgstr "туров: {} × пар: {} × 2 партии"
 
+msgid "{} s"
+msgstr "{} с"
+
 msgid "{} s/move"
 msgstr "{} с/ход"
 
 msgid "{} searches to depth {}"
 msgstr "{} считает до глубины {}"
+
+msgid "{} selected"
+msgid_plural "{} selected"
+msgstr[0] "Выбран {}"
+msgstr[1] "Выбрано {}"
+msgstr[2] "Выбрано {}"
 
 msgid "{} shown"
 msgstr "показано: {}"
@@ -2372,6 +2525,9 @@ msgstr "{}: программа не найдена ({})"
 msgid "{}: seldepth"
 msgstr "{}: seldepth"
 
+msgid "{}: unknown to the engine"
+msgstr "{}: неизвестен движку"
+
 msgid "{}: {}"
 msgstr "{}: {}"
 
@@ -2408,5 +2564,5 @@ msgstr "✓ В норме для измеренных движков: {}"
 msgid "✓ No played game is lost: voided games stay in the PGN files and the journal."
 msgstr "✓ Ни одна сыгранная партия не теряется: аннулированные партии остаются в файлах PGN и журнале."
 
-msgid "✓ works · ! problem · ↔ WinBoard · right click: more"
-msgstr "✓ работает · ! проблема · ↔ WinBoard · правый клик: ещё"
+msgid "✓ works · ! problem · ↔ WinBoard · Ctrl or Shift click: several · right click: more"
+msgstr "✓ работает · ! проблема · ↔ WinBoard · щелчок с Ctrl или Shift: несколько · правый щелчок: ещё"

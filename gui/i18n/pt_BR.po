@@ -41,6 +41,9 @@ msgstr "%s  x  %s"
 msgid "%s: %d loss(es) on time, %d crash(es), %d illegal move(s)"
 msgstr "%s: %d perda(s) por tempo, %d crash(es), %d lance(s) ilegal(is)"
 
+msgid "(already in the list)"
+msgstr "(já na lista)"
+
 msgid "(choose)"
 msgstr "(escolher)"
 
@@ -140,6 +143,9 @@ msgstr "Cerca de {} com {} partidas simultâneas"
 msgid "About {} {}"
 msgstr "Cerca de {} {}"
 
+msgid "Add"
+msgstr "Adicionar"
+
 msgid "Add a PGN file…"
 msgstr "Adicionar um arquivo PGN…"
 
@@ -158,8 +164,16 @@ msgstr "Adicionar um engine…"
 msgid "Add engines in the Engines window."
 msgstr "Adicione engines na janela Engines."
 
+msgid "Add to a group…"
+msgstr "Adicionar a um grupo…"
+
 msgid "Add to the queue"
 msgstr "Adicionar à fila"
+
+msgid "Add {} engine"
+msgid_plural "Add {} engines"
+msgstr[0] "Adicionar {} motor"
+msgstr[1] "Adicionar {} motores"
 
 msgid "Add…"
 msgstr "Adicionar…"
@@ -335,11 +349,17 @@ msgstr "Não foi possível abrir o torneio: {}"
 msgid "Cannot read the game back from {}"
 msgstr "Não foi possível reler a partida em {}"
 
+msgid "Cannot read the template {}."
+msgstr "Não foi possível ler o modelo {}."
+
 msgid "Cannot read {}"
 msgstr "Não foi possível ler {}"
 
 msgid "Cannot resume the match: {}"
 msgstr "Não foi possível retomar o match: {}"
+
+msgid "Cannot save {}: {}"
+msgstr "Não foi possível salvar {}: {}"
 
 msgid "Cannot start the match: {}"
 msgstr "Não foi possível iniciar o match: {}"
@@ -370,6 +390,9 @@ msgstr "Verificar"
 
 msgid "Check the mate PVs"
 msgstr "Verificar as PVs de mate"
+
+msgid "Check those not checked ({})"
+msgstr "Verificar os não verificados ({})"
 
 msgid "Checked: it works."
 msgstr "Verificado: funciona."
@@ -440,6 +463,9 @@ msgstr "Configurações comuns: {}"
 msgid "Compare with a saved run…"
 msgstr "Comparar com uma execução salva…"
 
+msgid "Computing…"
+msgstr "Calculando…"
+
 msgid "Concurrency"
 msgstr "Paralelismo"
 
@@ -466,6 +492,9 @@ msgstr "Crash / lance ilegal"
 
 msgid "Create a token on lichess…"
 msgstr "Criar um token no lichess…"
+
+msgid "Crosstable"
+msgstr "Tabela cruzada"
 
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr "Ctrl + roda do mouse, Ctrl + e Ctrl -, Ctrl 0"
@@ -665,6 +694,9 @@ msgstr "Cada lance é calculado até esta profundidade (go depth), leve o tempo 
 msgid "Every opening"
 msgstr "Todas as aberturas"
 
+msgid "Every state"
+msgstr "Todos os estados"
+
 msgid "Every time control"
 msgstr "Todos os controles de tempo"
 
@@ -700,6 +732,9 @@ msgstr "Exportar as partidas…"
 
 msgid "Extra fields in the comments:"
 msgstr "Campos extras nos comentários:"
+
+msgid "Failed or changed"
+msgstr "Com falha ou alterado"
 
 msgid "Failed: {}"
 msgstr "Falhou: {}"
@@ -815,6 +850,9 @@ msgstr "Gauntlet {} x {} engines"
 msgid "Give the Syzygy tablebase directory."
 msgstr "Informe a pasta das tablebases Syzygy."
 
+msgid "Group"
+msgstr "Grupo"
+
 msgid "Groups"
 msgstr "Grupos"
 
@@ -832,6 +870,9 @@ msgstr "Hash"
 
 msgid "Hash (MB)"
 msgstr "Hash (MB)"
+
+msgid "Hash {} MB"
+msgstr "Hash {} MB"
 
 msgid "Hash, Threads, Depth: 0 = the common value."
 msgstr "Hash, Threads, Profundidade: 0 = o valor comum."
@@ -868,6 +909,9 @@ msgstr "Lance ilegal a partir da posição inicial: {}"
 
 msgid "Impact"
 msgstr "Impacto"
+
+msgid "Import engines"
+msgstr "Importar motores"
 
 msgid "Import them"
 msgstr "Importá-los"
@@ -1016,6 +1060,9 @@ msgstr "Número máximo de lances"
 msgid "Model"
 msgstr "Modelo"
 
+msgid "More…"
+msgstr "Mais…"
+
 msgid "Mosaic"
 msgstr "Mosaico"
 
@@ -1106,14 +1153,23 @@ msgstr "Nós por posição"
 msgid "Non-regression [-5, 0]"
 msgstr "Não regressão [-5, 0]"
 
+msgid "None"
+msgstr "Nenhum"
+
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "Elo normalizado (fishtest, OpenBench), com seu intervalo de 95%."
+
+msgid "Not checked"
+msgstr "Não verificado"
 
 msgid "Not checked yet."
 msgstr "Ainda não verificado."
 
 msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
 msgstr "Ausente do PGN desta partida: ative o campo nas opções PGN da configuração."
+
+msgid "Nothing found."
+msgstr "Nada encontrado."
 
 msgid "Notify when a match ends"
 msgstr "Notificar quando um match terminar"
@@ -1133,6 +1189,9 @@ msgstr "Na saída de erro dele:"
 msgid "Once it has played two tournaments."
 msgstr "Quando ele tiver jogado dois torneios."
 
+msgid "One after the other, not while a tournament plays."
+msgstr "Um após o outro, não enquanto um torneio está em andamento."
+
 msgid "One game"
 msgstr "Uma partida"
 
@@ -1151,6 +1210,12 @@ msgstr "Abrir a pasta"
 msgid "Open the tournament."
 msgstr "Abrir o torneio."
 
+msgid "OpenGL 3.2 is not available (SDL_GL_CreateContext)"
+msgstr "OpenGL 3.2 não está disponível (SDL_GL_CreateContext)"
+
+msgid "OpenGL functions are missing"
+msgstr "Faltam funções do OpenGL"
+
 msgid "Opening"
 msgstr "Abertura"
 
@@ -1168,6 +1233,9 @@ msgstr "Opção"
 
 msgid "Option unknown to the engine: %s = %s"
 msgstr "Opção desconhecida pelo engine: %s = %s"
+
+msgid "Options not sent: {}"
+msgstr "Opções não enviadas: {}"
 
 msgid "Otherwise an engine that crashes or hangs stops the whole match."
 msgstr "Caso contrário, um engine que dá crash ou trava interrompe o match inteiro."
@@ -1297,6 +1365,9 @@ msgstr "Uso do processador"
 msgid "Program"
 msgstr "Programa"
 
+msgid "Program missing"
+msgstr "Programa ausente"
+
 msgid "Program not found: {}"
 msgstr "Programa não encontrado: {}"
 
@@ -1360,6 +1431,9 @@ msgstr "Acessível pela rede local; abra a porta no seu roteador para compartilh
 msgid "Read it again"
 msgstr "Ler de novo"
 
+msgid "Read it next"
+msgstr "Ler em seguida"
+
 msgid "Read its search statistics"
 msgstr "Ler as estatísticas de busca dele"
 
@@ -1398,8 +1472,16 @@ msgstr "Remover"
 msgid "Remove the engine?"
 msgstr "Remover o engine?"
 
+msgid "Remove the missing programs ({})…"
+msgstr "Remover os programas ausentes ({})…"
+
 msgid "Remove the saved runs from the grid"
 msgstr "Remover as execuções salvas da grade"
+
+msgid "Remove {} engine from the list? The files are not deleted."
+msgid_plural "Remove {} engines from the list? The files are not deleted."
+msgstr[0] "Remover {} motor da lista? Os arquivos não são apagados."
+msgstr[1] "Remover {} motores da lista? Os arquivos não são apagados."
 
 msgid "Remove “%s” from the list? The file is not deleted."
 msgstr "Remover “%s” da lista? O arquivo não é excluído."
@@ -1410,8 +1492,14 @@ msgstr "Remove o livro da biblioteca; o arquivo continua onde está."
 msgid "Remove…"
 msgstr "Remover…"
 
+msgid "Replace"
+msgstr "Substituir"
+
 msgid "Replace an engine"
 msgstr "Substituir um engine"
+
+msgid "Replace the template {}?"
+msgstr "Substituir o modelo {}?"
 
 msgid "Replaced by"
 msgstr "Substituído por"
@@ -1509,6 +1597,9 @@ msgstr "Buscar"
 msgid "Search per engine"
 msgstr "Busca por engine"
 
+msgid "Search: name, program, author"
+msgstr "Buscar: nome, programa, autor"
+
 msgid "Searches at a time"
 msgstr "Buscas simultâneas"
 
@@ -1520,6 +1611,9 @@ msgstr "Segundos por posição"
 
 msgid "Seed"
 msgstr "Semente"
+
+msgid "Send its options"
+msgstr "Enviar suas opções"
 
 msgid "Separated by commas, e.g. a pool or a rating list."
 msgstr "Separados por vírgulas, por exemplo um grupo ou uma lista de rating."
@@ -1583,6 +1677,9 @@ msgstr "Começa sozinho quando o torneio em andamento terminar."
 
 msgid "Starts in {} ms · isready {:.1f} ms · first move {}"
 msgstr "Inicia em {} ms · isready {:.1f} ms · primeiro lance {}"
+
+msgid "Starts once the engine being read or checked is done…"
+msgstr "Começa assim que o motor sendo lido ou verificado terminar…"
 
 msgid "Starts the engine, measures how fast it answers, checks one move, then runs fastchess' UCI compliance steps."
 msgstr "Inicia o engine, mede a rapidez das respostas, verifica um lance e depois executa as etapas de conformidade UCI do fastchess."
@@ -1650,6 +1747,9 @@ msgstr "Porta TCP"
 msgid "TLCS server"
 msgstr "Servidor TLCS"
 
+msgid "Table"
+msgstr "Tabela"
+
 msgid "Template name"
 msgstr "Nome do modelo"
 
@@ -1689,11 +1789,17 @@ msgstr "A profundidade deve ser positiva."
 msgid "The engine does not answer isready."
 msgstr "O engine não responde a isready."
 
+msgid "The engine stopped answering once its options were sent."
+msgstr "O motor parou de responder depois que suas opções foram enviadas."
+
 msgid "The engine stopped while it was asked to think."
 msgstr "O engine parou enquanto era solicitado a pensar."
 
 msgid "The engine wrote:"
 msgstr "O engine escreveu:"
+
+msgid "The engines are those of {}, kept before the last change."
+msgstr "Os motores são os de {}, guardado antes da última alteração."
 
 msgid "The engines disagree"
 msgstr "Os engines discordam"
@@ -1809,6 +1915,9 @@ msgstr "As que têm problema"
 msgid "Threads"
 msgstr "Threads"
 
+msgid "Threads {}"
+msgstr "Threads {}"
+
 msgid "Tick engines on the left."
 msgstr "Marque engines à esquerda."
 
@@ -1866,6 +1975,9 @@ msgstr "Engine desconhecido: {}"
 msgid "Unreadable PGN."
 msgstr "PGN ilegível."
 
+msgid "Up to {} engines."
+msgstr "Até {} motores."
+
 msgid "Use it for the next tournament"
 msgstr "Usar no próximo torneio"
 
@@ -1884,8 +1996,8 @@ msgstr "Anular esta partida (sem jogá-la de novo)"
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "V {:.0f} · E {:.0f} · D {:.0f}%"
 
-msgid "Waiting to be read…"
-msgstr "Aguardando leitura…"
+msgid "Waiting to be read · read it next"
+msgstr "Aguardando leitura · ler em seguida"
 
 msgid "Web page"
 msgstr "Página web"
@@ -1926,6 +2038,9 @@ msgstr "A conexão das Brancas trava"
 msgid "White's score over the games."
 msgstr "Pontuação das Brancas nas partidas."
 
+msgid "WinBoard"
+msgstr "WinBoard"
+
 msgid "WinBoard engines (xboard protocol) are run through a translation to UCI built into fastchess-gui. Automatic: found out when the engine is read."
 msgstr "Os engines WinBoard (protocolo xboard) rodam por meio de uma tradução para UCI embutida no fastchess-gui. Automático: detectado quando o engine é lido."
 
@@ -1961,6 +2076,9 @@ msgstr "Pasta de trabalho"
 
 msgid "Working directory not found: {}"
 msgstr "Pasta de trabalho não encontrada: {}"
+
+msgid "Works"
+msgstr "Funciona"
 
 msgid "Write error in {}"
 msgstr "Erro de gravação em {}"
@@ -2144,6 +2262,9 @@ msgstr "{} / {} partidas"
 msgid "{} / {} points"
 msgstr "{} / {} pontos"
 
+msgid "{} = {}: a value it refuses"
+msgstr "{} = {}: um valor que ele recusa"
+
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} pede para ser reiniciado a cada partida: “Reiniciar o engine a cada partida” está marcado."
 
@@ -2174,10 +2295,20 @@ msgid_plural "{} engines"
 msgstr[0] "{} engine"
 msgstr[1] "{} engines"
 
+msgid "{} engine found. Untick those to leave out."
+msgid_plural "{} engines found. Untick those to leave out."
+msgstr[0] "{} motor encontrado. Desmarque os que quiser deixar de fora."
+msgstr[1] "{} motores encontrados. Desmarque os que quiser deixar de fora."
+
 msgid "{} engine imported; its options are being read."
 msgid_plural "{} engines imported; their options are being read."
 msgstr[0] "{} engine importado; as opções dele estão sendo lidas."
 msgstr[1] "{} engines importados; as opções deles estão sendo lidas."
+
+msgid "{} engine waiting to be checked"
+msgid_plural "{} engines waiting to be checked"
+msgstr[0] "{} motor aguardando verificação"
+msgstr[1] "{} motores aguardando verificação"
 
 msgid "{} engines · {} games"
 msgstr "{} engines · {} partidas"
@@ -2221,6 +2352,9 @@ msgstr "{} partidas · {}"
 msgid "{} games, {} tournaments"
 msgstr "{} partidas, {} torneios"
 
+msgid "{} h {:02} min"
+msgstr "{} h {:02} min"
+
 msgid "{} illegal move"
 msgid_plural "{} illegal moves"
 msgstr[0] "{} lance ilegal"
@@ -2228,6 +2362,9 @@ msgstr[1] "{} lances ilegais"
 
 msgid "{} illegal moves"
 msgstr "{} lances ilegais"
+
+msgid "{} is open in another program: it is only shown here, as it was when opened."
+msgstr "{} está aberto em outro programa: aqui ele só é exibido, como estava ao ser aberto."
 
 msgid "{} is twice in the list of participants."
 msgstr "{} aparece duas vezes na lista de participantes."
@@ -2247,6 +2384,9 @@ msgstr[1] "{} matches de uma versão anterior ainda não estão na lista."
 
 msgid "{} matches × {} pairs of games, plus tiebreaks"
 msgstr "{} matches × {} pares de partidas, mais os desempates"
+
+msgid "{} min {:02} s"
+msgstr "{} min {:02} s"
 
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr "{} lances · profundidade {:.1f} · {:.0f} ms por lance{}"
@@ -2307,11 +2447,19 @@ msgstr[1] "{} posições gravadas em {}"
 msgid "{} rounds × {} pairings × 2 games"
 msgstr "{} rodadas × {} emparceiramentos × 2 partidas"
 
+msgid "{} s"
+msgstr "{} s"
+
 msgid "{} s/move"
 msgstr "{} s/lance"
 
 msgid "{} searches to depth {}"
 msgstr "{} busca até a profundidade {}"
+
+msgid "{} selected"
+msgid_plural "{} selected"
+msgstr[0] "{} selecionado"
+msgstr[1] "{} selecionados"
 
 msgid "{} shown"
 msgstr "{} mostradas"
@@ -2349,6 +2497,9 @@ msgstr "{}: programa não encontrado ({})"
 msgid "{}: seldepth"
 msgstr "{}: seldepth"
 
+msgid "{}: unknown to the engine"
+msgstr "{}: desconhecida pelo motor"
+
 msgid "{}: {}"
 msgstr "{}: {}"
 
@@ -2385,5 +2536,5 @@ msgstr "✓ Como esperado para os {} engines medidos"
 msgid "✓ No played game is lost: voided games stay in the PGN files and the journal."
 msgstr "✓ Nenhuma partida jogada é perdida: as partidas anuladas continuam nos arquivos PGN e no diário."
 
-msgid "✓ works · ! problem · ↔ WinBoard · right click: more"
-msgstr "✓ funciona · ! problema · ↔ WinBoard · botão direito: mais"
+msgid "✓ works · ! problem · ↔ WinBoard · Ctrl or Shift click: several · right click: more"
+msgstr "✓ funciona · ! problema · ↔ WinBoard · clique com Ctrl ou Shift: vários · clique direito: mais"
