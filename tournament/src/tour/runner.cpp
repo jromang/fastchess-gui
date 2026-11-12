@@ -5,6 +5,7 @@
 #include <thread>
 
 #include <core/globals/globals.hpp>
+#include <engine/process/iprocess.hpp>
 
 namespace fcg::tour {
 
@@ -22,7 +23,10 @@ Runner::Runner(TournamentState& state, fastchess::observer::GameObserver* downst
       state_(state),
       downstream_(downstream),
       listener_(listener),
-      log_every_game_(state.spec().log_every_game) {}
+      log_every_game_(state.spec().log_every_game) {
+    // What the engines write on their error output goes to their logs.
+    fastchess::engine::process::capture_stderr = true;
+}
 
 Runner::~Runner() {
     // Workers may still be inside a callback of ours: join them before our members go away.
@@ -165,12 +169,17 @@ void Runner::onThinking(int slot, chess::Color stm, int64_t time_left_ms) {
 }
 
 void Runner::onEngineLine(int slot, chess::Color side, std::string_view line) {
-    log(slot).add(side, false, line);
+    log(slot).add(side, EngineLog::Stream::Output, line);
     if (downstream_) downstream_->onEngineLine(slot, side, line);
 }
 
+void Runner::onEngineError(int slot, chess::Color side, std::string_view line) {
+    log(slot).add(side, EngineLog::Stream::Error, line);
+    if (downstream_) downstream_->onEngineError(slot, side, line);
+}
+
 void Runner::onEngineInput(int slot, chess::Color side, std::string_view line) {
-    log(slot).add(side, true, line);
+    log(slot).add(side, EngineLog::Stream::Input, line);
     if (downstream_) downstream_->onEngineInput(slot, side, line);
 }
 

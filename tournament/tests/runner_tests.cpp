@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -441,6 +442,51 @@ TEST_CASE("runner: engine logs, of every game when asked, with both directions o
     }
 }
 
+TEST_CASE("runner: engine logs keep the engines' error output, marked apart, even more than a pipe holds") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto set_env = [](const char* name, const char* value) {
+#ifdef _WIN32
+        SetEnvironmentVariableA(name, value);
+#else
+        if (value) {
+            setenv(name, value, 1);
+        } else {
+            unsetenv(name);
+        }
+#endif
+    };
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-stderr";
+    fs::remove_all(dir);
+    auto s           = spec(Format::Match, 2, 1, 2);
+    s.log_every_game = true;
+    auto state       = TournamentState::create(dir, s);
+
+    set_env("FCG_MOCK_STDERR", "on stderr:");
+    set_env("FCG_MOCK_STDERR_FLOOD", "1000");
+    const auto error = play(*state);
+    set_env("FCG_MOCK_STDERR", nullptr);
+    set_env("FCG_MOCK_STDERR_FLOOD", nullptr);
+
+    CHECK(error.empty());
+    REQUIRE(state->results().size() == 2u);
+
+    // Both engines started for the first game.
+    std::ifstream in(engineLogPath(dir, 1), std::ios::binary);
+    const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    CHECK(text.find("! read from its error output") != std::string::npos);
+    CHECK(text.find("W! flood ...") != std::string::npos);
+    CHECK(text.find("B! flood ...") != std::string::npos);
+    CHECK(text.find("W! on stderr: ") != std::string::npos);
+    CHECK(text.find("B! on stderr: ") != std::string::npos);
+    CHECK(text.find("< on stderr: ") == std::string::npos);
+    CHECK(text.find("W< bestmove ") != std::string::npos);
+}
+
 TEST_CASE("engine cache: the idle entries used the longest ago make room; retired ones go at once") {
     struct Engine {
         explicit Engine(int* alive) : alive_(alive) { ++*alive_; }
@@ -529,7 +575,10 @@ TEST_CASE("engine log: the first and the last lines of a long game; which ending
     EngineLog log;
     log.start();
     const auto total = EngineLog::HEAD_LINES + EngineLog::TAIL_LINES + 10;
-    for (std::size_t i = 0; i < total; ++i) log.add(chess::Color::WHITE, i % 2 == 0, fmt::format("line {}", i));
+    for (std::size_t i = 0; i < total; ++i) {
+        log.add(chess::Color::WHITE, i % 2 == 0 ? EngineLog::Stream::Input : EngineLog::Stream::Output,
+                fmt::format("line {}", i));
+    }
     fastchess::MatchData data("startpos");
     const auto text = log.text(7, data);
     CHECK(text.find("W> line 0\n") != std::string::npos);

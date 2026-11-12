@@ -59,6 +59,10 @@ class GameObserver {
     // Every stdout line of the engine playing `side` in `slot`, as soon as it has been read.
     virtual void onEngineLine(int /*slot*/, chess::Color /*side*/, std::string_view /*line*/) {}
 
+    // Every line of the error output of the engine playing `side` in `slot`, when it is read (see
+    // engine::process::capture_stderr): on the engine's next read of its output, or when it ends.
+    virtual void onEngineError(int /*slot*/, chess::Color /*side*/, std::string_view /*line*/) {}
+
     // Every line sent to the engine playing `side` in `slot`, from the preparation of the game (ucinewgame, options)
     // to its end.
     virtual void onEngineInput(int /*slot*/, chess::Color /*side*/, std::string_view /*line*/) {}

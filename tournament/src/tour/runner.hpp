@@ -69,6 +69,7 @@ class Runner final : public fastchess::BaseTournament, public fastchess::observe
     void onEngineProcesses(int slot, int64_t white_pid, int64_t black_pid) override;
     void onThinking(int slot, chess::Color stm, int64_t time_left_ms) override;
     void onEngineLine(int slot, chess::Color side, std::string_view line) override;
+    void onEngineError(int slot, chess::Color side, std::string_view line) override;
     void onEngineInput(int slot, chess::Color side, std::string_view line) override;
     void onMove(int slot, chess::Color mover, const fastchess::MoveData& move, const std::string& san,
                 int64_t white_time_left, int64_t black_time_left) override;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <filesystem>
 #include <functional>
@@ -10,6 +11,12 @@
 namespace fastchess::engine::process {
 
 enum class Standard { INPUT, OUTPUT, ERR };
+
+// fastchess-gui: the error output of the engines started from now on is read too (it always is when fastchess
+// logs): its lines come with the others, as Standard::ERR, and go to the error line callback. Otherwise the engines
+// write it where the program writes its own.
+inline std::atomic_bool capture_stderr{false};
+
 enum class Status { OK, ERR, TIMEOUT, NONE };
 
 struct Result {
@@ -52,6 +59,9 @@ class IProcess {
     // Called for every complete stdout line while reading, empty to disable.
     void setLineCallback(LineCallback callback) { line_callback_ = std::move(callback); }
 
+    // Called for every line of the error output while reading, when it is read (see capture_stderr).
+    void setErrorLineCallback(LineCallback callback) { err_line_callback_ = std::move(callback); }
+
     virtual void setupRead() = 0;
 
     // Initialize the process
@@ -83,6 +93,7 @@ class IProcess {
     bool realtime_logging_ = true;
 
     LineCallback line_callback_;
+    LineCallback err_line_callback_;
 };
 
 }  // namespace fastchess::engine::process

@@ -14,12 +14,12 @@ void EngineLog::start() {
     dropped_ = 0;
 }
 
-void EngineLog::add(chess::Color side, bool sent, std::string_view line) {
+void EngineLog::add(chess::Color side, Stream stream, std::string_view line) {
     const auto now = std::chrono::steady_clock::now();
     std::lock_guard<std::mutex> lock(mutex_);
     const double seconds = std::chrono::duration<double>(now - start_).count();
-    auto text =
-        fmt::format("{:9.3f} {}{} {}", seconds, side == chess::Color::WHITE ? 'W' : 'B', sent ? '>' : '<', line);
+    const char mark      = stream == Stream::Input ? '>' : stream == Stream::Output ? '<' : '!';
+    auto text            = fmt::format("{:9.3f} {}{} {}", seconds, side == chess::Color::WHITE ? 'W' : 'B', mark, line);
 
     if (head_.size() < HEAD_LINES) {
         head_.push_back(std::move(text));
@@ -44,7 +44,9 @@ std::string EngineLog::text(uint64_t game_number, const fastchess::MatchData& da
     out += fmt::format("Start: {}  Duration: {}\n", data.start_time, data.duration);
     out += fmt::format("Position: {}\n", data.fen);
     out += fmt::format("End: {} ({})\n", data.reason, fastchess::events::terminationName(data.termination));
-    out += "Seconds since the game started; W/B: White's or Black's engine; > sent to it, < read from it.\n\n";
+    out +=
+        "Seconds since the game started; W/B: White's or Black's engine; > sent to it, < read from its output, "
+        "! read from its error output.\n\n";
 
     std::lock_guard<std::mutex> lock(mutex_);
     for (const auto& line : head_) out += line + '\n';

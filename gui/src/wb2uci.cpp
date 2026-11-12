@@ -855,6 +855,17 @@ int run(const std::vector<std::string>& args) {
         trace("<eng", line);
         adapter.fromEngine(line, Clock::now());
     });
+#ifdef _WIN32
+    // Windows would mix the engine's error output with its output: it is read apart and passed on as ours, which
+    // the GUI keeps in the engine log. Elsewhere the engine writes it straight to ours.
+    fastchess::engine::process::capture_stderr = true;
+    process.setErrorLineCallback([&](const std::string& line) {
+        std::lock_guard<std::mutex> lock(mutex);
+        trace("!eng", line);
+        std::fputs((line + "\n").c_str(), stderr);
+        std::fflush(stderr);
+    });
+#endif
     // The engine runs in our working directory, which fastchess set to the engine's.
     if (auto started = process.init("", args[0], engine_args, "wb2uci"); !started) {
         to_gui("info string cannot start " + args[0] + ": " + started.message);
