@@ -127,9 +127,12 @@ BaseTournament::EngineCache& BaseTournament::getEngineCache() {
 }
 
 void BaseTournament::retireEngines(const std::function<bool(const std::string& name)>& retired) {
+    // Destroyed after the lock is released: an engine that hangs can take its kill timeout to quit, and every game
+    // thread takes this lock to find its cache.
+    EngineCache::Entries evicted;
     std::lock_guard<std::mutex> lock(cache_management_mutex_);
-    if (global_cache_) global_cache_->evictIdle(retired);
-    for (auto& [tid, cache] : thread_caches_) cache->evictIdle(retired);
+    if (global_cache_) evicted.splice(evicted.end(), global_cache_->evictIdle(retired));
+    for (auto& [tid, cache] : thread_caches_) evicted.splice(evicted.end(), cache->evictIdle(retired));
 }
 
 void BaseTournament::create() {
@@ -352,7 +355,8 @@ void BaseTournament::playGame(const GamePair<EngineConfiguration, EngineConfigur
 
     // An engine that does not start may only be slow to, or short of memory for a moment: in a run left alone for
     // days, it gets a few more tries with a new process before the tournament stops. The game has not begun, so
-    // it is the same game that is played.
+    // it is the same game that is played. A game no longer wanted meanwhile is given up quietly.
+    bool given_up = false;
     for (int attempt = 1;; ++attempt) {
         match.start(*white_engine->get(), *black_engine->get(), cpus);
         const auto& failure = match.startupFailure();
@@ -360,6 +364,10 @@ void BaseTournament::playGame(const GamePair<EngineConfiguration, EngineConfigur
 
         auto& engine    = failure->first == chess::Color::WHITE ? white_engine->get() : black_engine->get();
         const auto name = engine->getConfig().name;
+        if (!gameWanted(game_id)) {
+            given_up = true;
+            break;
+        }
         if (attempt > ENGINE_START_RETRIES) {
             atomic::stop                 = true;
             atomic::abnormal_termination = true;
@@ -371,8 +379,12 @@ void BaseTournament::playGame(const GamePair<EngineConfiguration, EngineConfigur
                                            failure->second, ENGINE_START_RETRY_PAUSE.count());
         restartEngine(engine);
         const auto until = std::chrono::steady_clock::now() + ENGINE_START_RETRY_PAUSE;
-        while (!atomic::stop.load() && std::chrono::steady_clock::now() < until) {
+        while (!atomic::stop.load() && std::chrono::steady_clock::now() < until && gameWanted(game_id)) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        if (!atomic::stop.load() && !gameWanted(game_id)) {
+            given_up = true;
+            break;
         }
     }
 
@@ -380,6 +392,12 @@ void BaseTournament::playGame(const GamePair<EngineConfiguration, EngineConfigur
     const auto notify_end = [&](bool scored) {
         if (obs) obs->onGameEnd(observer::slot(), game_id, round_id, match.get(), scored);
     };
+
+    if (given_up) {
+        notify_end(false);
+        emitGameEnd(match.get(), false, false);
+        return;
+    }
 
     LOG_TRACE_THREAD("Game {} between {} and {} finished", game_id, white_name, black_name);
 

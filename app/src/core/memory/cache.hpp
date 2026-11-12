@@ -41,12 +41,14 @@ class CachedEntry : public ScopeEntry {
 template <typename T, typename ID>
 class CachePool {
    public:
+    using Entries = std::list<CachedEntry<T, ID>>;
+
     explicit CachePool(std::size_t max_size = 0) : max_size_(max_size) {}
 
     template <typename... ARGS>
     [[nodiscard]] auto getEntry(const ID& identifier, ARGS&&... arg) {
         // Destroyed after the lock is released: an engine takes a moment to quit.
-        std::list<CachedEntry<T, ID>> evicted;
+        Entries evicted;
         std::lock_guard<std::mutex> lock(access_mutex_);
         ++uses_;
 
@@ -74,27 +76,32 @@ class CachePool {
         return std::prev(cache_.end());
     }
 
-    // Removes the entries not in use whose ID `retired` accepts (an engine withdrawn from the tournament...).
+    // Takes out the entries not in use whose ID `retired` accepts (an engine withdrawn from the tournament...) and
+    // hands them over: the caller destroys them once it holds no lock any more, as an engine that hangs can take
+    // its kill timeout to quit.
     template <typename Retired>
-    void evictIdle(Retired retired) {
-        std::list<CachedEntry<T, ID>> evicted;
+    [[nodiscard]] Entries evictIdle(Retired retired) {
+        Entries evicted;
         std::lock_guard<std::mutex> lock(access_mutex_);
         for (auto it = cache_.begin(); it != cache_.end();) {
             const auto next = std::next(it);
             if (it->available_ && retired(it->id)) evicted.splice(evicted.end(), cache_, it);
             it = next;
         }
+        return evicted;
     }
 
-    void deleteFromCache(const typename std::list<CachedEntry<T, ID>>::iterator& it) {
+    void deleteFromCache(const typename Entries::iterator& it) {
         assert(it != cache_.end());
         assert(!it->available_);
+        // Destroyed after the lock is released, as in getEntry().
+        Entries deleted;
         std::lock_guard<std::mutex> lock(access_mutex_);
-        cache_.erase(it);
+        deleted.splice(deleted.end(), cache_, it);
     }
 
    private:
-    std::list<CachedEntry<T, ID>> cache_;
+    Entries cache_;
     std::mutex access_mutex_;
     std::size_t max_size_ = 0;  // 0: no limit
     std::uint64_t uses_   = 0;

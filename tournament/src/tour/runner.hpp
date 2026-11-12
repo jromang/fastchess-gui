@@ -51,6 +51,9 @@ class Runner final : public fastchess::BaseTournament, public fastchess::observe
 
    protected:
     void startNext() override;
+    // While an engine fails to start: the game is still to be played, and the tournament is not pausing (a pause,
+    // or a stop once the running games are over). It is otherwise given up, to be played again later if needed.
+    [[nodiscard]] bool gameWanted(std::size_t game_id) const override;
 
    private:
     void play(const GameTask& task);

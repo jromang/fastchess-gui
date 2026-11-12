@@ -360,7 +360,8 @@ void TournamentState::load() {
     }
 
     // Games held when the tournament was stopped, which may now be written (the tournament is over...).
-    writeOut();
+    std::unique_lock<std::mutex> lock(mutex_);
+    writeOut(lock);
 }
 
 bool TournamentState::apply(const GameResult& result) {
@@ -669,7 +670,7 @@ void TournamentState::applyEdit(const Edit& edit) {
     const auto impact = preview(edit);
     if (!impact.error.empty()) throw std::runtime_error(impact.error);
 
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     int new_id = 0;
     for (const auto& p : spec_.participants) new_id = std::max(new_id, p.id + 1);
 
@@ -691,7 +692,7 @@ void TournamentState::applyEdit(const Edit& edit) {
     // The games of a withdrawn participant may have been the last ones to play. A Swiss or a knockout would pair
     // its next round first, which only a game's end does.
     if (!pairedAsItGoes(spec_.format)) finishIfComplete();
-    writeOut();  // games of a withdrawn participant no longer hold the others
+    writeOut(lock);  // games of a withdrawn participant no longer hold the others
 }
 
 bool TournamentState::canUndo() const {
@@ -702,7 +703,7 @@ bool TournamentState::canUndo() const {
 void TournamentState::undoEdit() {
     if (read_only_) throw std::runtime_error(READ_ONLY);
     const Bump bump{version_};
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     if (!undo_ || undo_->claims != claims_) {
         throw std::runtime_error("a game started since the last change, which can no longer be undone");
     }
@@ -735,7 +736,7 @@ void TournamentState::undoEdit() {
         finish_reason_ = "complete";
         journal_->append({{"t", "finished"}, {"why", finish_reason_}});
     }
-    writeOut();
+    writeOut(lock);
 }
 
 std::vector<ScheduleRow> TournamentState::scheduleRows() const {
@@ -857,30 +858,53 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
         for (const auto& w : data.moves[ply].pv_warnings) result.pv_warnings.emplace_back(ply, w);
     }
 
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(mutex_);
     const auto elo     = [&](int id) { return spec_.participant(id) ? spec_.participant(id)->elo : 0; };
     const auto text    = withElo(PgnBuilder(pgn_config, data, round, CommentStyle::Fastchess).get(), elo(result.white),
                                  elo(result.black));
     const auto text_cb = withElo(PgnBuilder(pgn_config, data, round, CommentStyle::ChessBase).get(), elo(result.white),
                                  elo(result.black));
-    running_.erase(task.number());
-    // Already played, or no longer to be played (its participant was withdrawn meanwhile). It may have been the
-    // last game the tournament was waiting for.
-    if (done(task.encounter.index, task.game) || dropped_.count(task.number())) {
-        pairIfReady();
-        finishIfComplete();
-        writeOut();
-        return {result, std::nullopt, false};
-    }
-    // One of its engines was replaced meanwhile: the game is played again, by the new engine.
-    const auto now = schedule_.at(task.encounter.index);
-    if (!now || now->first != task.encounter.first || now->second != task.encounter.second) {
-        open_.emplace_front(task.encounter.index, task.game);
-        return {result, std::nullopt, false};
-    }
+    const auto unwanted = [&]() -> std::optional<Recorded> {
+        // Already played, or no longer to be played (its participant was withdrawn meanwhile). It may have been the
+        // last game the tournament was waiting for.
+        if (done(task.encounter.index, task.game) || dropped_.count(task.number())) {
+            running_.erase(task.number());
+            pairIfReady();
+            finishIfComplete();
+            writeOut(lock);
+            return Recorded{result, std::nullopt, false};
+        }
+        // One of its engines was replaced meanwhile: the game is played again, by the new engine.
+        const auto now = schedule_.at(task.encounter.index);
+        if (!now || now->first != task.encounter.first || now->second != task.encounter.second) {
+            running_.erase(task.number());
+            open_.emplace_front(task.encounter.index, task.game);
+            return Recorded{result, std::nullopt, false};
+        }
+        return std::nullopt;
+    };
+    if (auto recorded = unwanted()) return *recorded;
 
-    result.pgn           = pgn_->append(text);
-    result.pgn_chessbase = pgn_chessbase_->append(text_cb);
+    // The PGN text goes to the disk without the lock, which the views and the other game threads need meanwhile;
+    // PgnFile keeps the places of concurrent games apart. The game stays running until it is journaled.
+    lock.unlock();
+    PgnSpan span, span_cb;
+    try {
+        span    = pgn_->append(text);
+        span_cb = pgn_chessbase_->append(text_cb);
+    } catch (...) {
+        lock.lock();
+        running_.erase(task.number());
+        throw;
+    }
+    lock.lock();
+    // An edit made meanwhile may have dropped the game: its text then belongs to no game, as when a crash comes
+    // before the journal line, and the journal never points to it.
+    if (auto recorded = unwanted()) return *recorded;
+
+    running_.erase(task.number());
+    result.pgn           = span;
+    result.pgn_chessbase = span_cb;
     journal_->append(toJson(result));
 
     Recorded recorded{result, std::nullopt};
@@ -891,7 +915,7 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     checkSprt();
     pairIfReady();
     finishIfComplete();
-    writeOut();
+    writeOut(lock);
 
     return recorded;
 }
@@ -903,52 +927,85 @@ void TournamentState::finishIfComplete() {
     journal_->append({{"t", "finished"}, {"why", finish_reason_}});
 }
 
-void TournamentState::writeOut() {
+void TournamentState::writeOut(std::unique_lock<std::mutex>& lock) {
     if (spec_.pgn_out.empty() || !journal_) return;
 
-    // The first game that holds the others: neither done, nor dropped, nor written once already (its replay).
-    uint64_t until = UINT64_MAX;
-    if (!finished_) {
-        while (done_.count(out_floor_) || dropped_.count(out_floor_) || out_written_.count(out_floor_)) ++out_floor_;
-        until = out_floor_;
-    }
-
-    std::vector<std::size_t> ready;
-    for (const auto i : out_held_) {
-        if (!results_[i].voided && results_[i].number() < until) ready.push_back(i);
-    }
-    if (ready.empty()) return;
-    std::stable_sort(ready.begin(), ready.end(),
-                     [&](std::size_t a, std::size_t b) { return results_[a].number() < results_[b].number(); });
-
-    const bool chessbase = spec_.pgn_out_chessbase;
-    std::string text;
-    nlohmann::json offsets = nlohmann::json::array();
-    for (const auto i : ready) {
-        const auto& r   = results_[i];
-        const auto game = readSpan(chessbase ? chessbasePgnPath() : pgnPath(), chessbase ? r.pgn_chessbase : r.pgn);
-        if (!game) {
-            out_error_ = "cannot read game " + std::to_string(r.number() + 1) + " back from the tournament folder";
-            return;
-        }
-        text += *game;
-        offsets.push_back(r.pgn.offset);
-    }
-
-    // Written, then journaled: a crash in between writes these games twice, rather than not at all.
-    try {
-        appendShared(spec_.pgn_out, text);
-    } catch (const std::exception& e) {
-        out_error_ = e.what();
+    // One thread writes at a time, without the lock (syncs to the disk take long); the games that become ready
+    // meanwhile are written by it right after.
+    if (out_writing_) {
+        out_again_ = true;
         return;
     }
-    out_error_.clear();
-    journal_->append({{"t", "pgn_out"}, {"pgn", offsets}});
+    out_writing_ = true;
+    do {
+        out_again_ = false;
 
-    for (const auto i : ready) out_written_.insert(results_[i].number());
-    const std::set<std::size_t> gone(ready.begin(), ready.end());
-    out_held_.erase(std::remove_if(out_held_.begin(), out_held_.end(), [&](std::size_t i) { return gone.count(i); }),
-                    out_held_.end());
+        // The first game that holds the others: neither done, nor dropped, nor written once already (its replay).
+        uint64_t until = UINT64_MAX;
+        if (!finished_) {
+            while (done_.count(out_floor_) || dropped_.count(out_floor_) || out_written_.count(out_floor_)) {
+                ++out_floor_;
+            }
+            until = out_floor_;
+        }
+
+        std::vector<std::size_t> ready;
+        for (const auto i : out_held_) {
+            if (!results_[i].voided && results_[i].number() < until) ready.push_back(i);
+        }
+        if (ready.empty()) break;
+        std::stable_sort(ready.begin(), ready.end(),
+                         [&](std::size_t a, std::size_t b) { return results_[a].number() < results_[b].number(); });
+
+        const bool chessbase = spec_.pgn_out_chessbase;
+        const auto from      = chessbase ? chessbasePgnPath() : pgnPath();
+        const auto out       = spec_.pgn_out;
+        std::vector<std::pair<uint64_t, PgnSpan>> games;  // (number, span)
+        nlohmann::json offsets = nlohmann::json::array();
+        for (const auto i : ready) {
+            const auto& r = results_[i];
+            games.emplace_back(r.number(), chessbase ? r.pgn_chessbase : r.pgn);
+            offsets.push_back(r.pgn.offset);
+        }
+
+        lock.unlock();
+        std::string text, error;
+        for (const auto& [number, span] : games) {
+            const auto game = readSpan(from, span);
+            if (!game) {
+                error = "cannot read game " + std::to_string(number + 1) + " back from the tournament folder";
+                break;
+            }
+            text += *game;
+        }
+        // Written, then journaled: a crash in between writes these games twice, rather than not at all.
+        if (error.empty()) {
+            try {
+                appendShared(out, text);
+            } catch (const std::exception& e) {
+                error = e.what();
+            }
+        }
+        if (error.empty()) {
+            try {
+                journal_->append({{"t", "pgn_out"}, {"pgn", offsets}});
+            } catch (...) {
+                lock.lock();
+                out_writing_ = false;
+                throw;
+            }
+        }
+        lock.lock();
+
+        out_error_ = error;
+        if (!error.empty()) break;
+        for (const auto i : ready) out_written_.insert(results_[i].number());
+        const std::set<std::size_t> gone(ready.begin(), ready.end());
+        out_held_.erase(
+            std::remove_if(out_held_.begin(), out_held_.end(), [&](std::size_t i) { return gone.count(i); }),
+            out_held_.end());
+    } while (out_again_);
+    out_writing_ = false;
 }
 
 std::string TournamentState::pgnOutError() const {
@@ -971,6 +1028,13 @@ void TournamentState::checkSprt() {
     finished_      = true;
     finish_reason_ = verdict == fastchess::SPRT_H1 ? "sprt_h1" : "sprt_h0";
     journal_->append({{"t", "finished"}, {"why", finish_reason_}});
+}
+
+bool TournamentState::wanted(const GameTask& task) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (done(task.encounter.index, task.game) || dropped_.count(task.number())) return false;
+    const auto now = schedule_.at(task.encounter.index);
+    return now && now->first == task.encounter.first && now->second == task.encounter.second;
 }
 
 bool TournamentState::hasWork() const {
