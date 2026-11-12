@@ -853,13 +853,15 @@ void App::drawEngines() {
     ImGui::TextUnformatted(TR("against"));
     ImGui::SameLine();
     ImGui::SetNextItemWidth(160.0f * ImGui::GetFontSize() / 16.0f);
-    if (ImGui::BeginCombo("##test_opponent",
-                          quick_test_opponent_.empty() ? TR("itself") : quick_test_opponent_.c_str())) {
-        if (ImGui::Selectable(TR("itself"), quick_test_opponent_.empty())) quick_test_opponent_.clear();
+    if (ImGui::BeginCombo("##test_opponent", quick_test_opponent_.empty() ? TR("itself") : quick_test_opponent_.c_str(),
+                          ImGuiComboFlags_HeightLargest)) {
+        std::vector<std::string> names{TR("itself")};  // first: the engine itself
         for (const auto& o : engines_) {
-            if (o.name != e.name && ImGui::Selectable(o.name.c_str(), o.name == quick_test_opponent_)) {
-                quick_test_opponent_ = o.name;
-            }
+            if (o.name != e.name) names.push_back(o.name);
+        }
+        if (const int i = ui::searchComboItems(names, quick_test_opponent_.empty() ? names[0] : quick_test_opponent_);
+            i >= 0) {
+            quick_test_opponent_ = i == 0 ? std::string() : names[i];
         }
         ImGui::EndCombo();
     }

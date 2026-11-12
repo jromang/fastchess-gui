@@ -58,17 +58,16 @@ bool inputText(const char* id, std::string& value, float width) {
     return false;
 }
 
-bool engineCombo(const char* id, std::string& value, const std::vector<EngineEntry>& engines) {
+// An engine of the list, `width` wide (-FLT_MIN: the width left), with a search field.
+bool engineCombo(const char* id, std::string& value, const std::vector<EngineEntry>& engines, float width = -FLT_MIN) {
     bool changed = false;
-    ImGui::SetNextItemWidth(-FLT_MIN);
-    if (ImGui::BeginCombo(id, value.empty() ? TR("(choose)") : value.c_str())) {
-        for (const auto& e : engines) {
-            const bool selected = e.name == value;
-            if (ImGui::Selectable(e.name.c_str(), selected)) {
-                value   = e.name;
-                changed = true;
-            }
-            if (selected) ImGui::SetItemDefaultFocus();
+    ImGui::SetNextItemWidth(width);
+    if (ImGui::BeginCombo(id, value.empty() ? TR("(choose)") : value.c_str(), ImGuiComboFlags_HeightLargest)) {
+        std::vector<std::string> names;
+        for (const auto& e : engines) names.push_back(e.name);
+        if (const int i = ui::searchComboItems(names, value); i >= 0) {
+            value   = names[i];
+            changed = true;
         }
         if (engines.empty()) ImGui::TextDisabled("%s", TR("Add engines in the Engines window."));
         ImGui::EndCombo();
@@ -132,22 +131,9 @@ void App::setupEngines() {
 
     ui::label(TR("B (baseline)"), labelWidth() * 0.75f);
     const float swap_w = ImGui::GetFrameHeight() * 1.6f;
-    ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - swap_w - ImGui::GetStyle().ItemSpacing.x);
-    {
-        bool changed = false;
-        if (ImGui::BeginCombo("##engine_b", setup_.engine_b.empty() ? TR("(choose)") : setup_.engine_b.c_str())) {
-            for (const auto& e : engines_) {
-                if (ImGui::Selectable(e.name.c_str(), e.name == setup_.engine_b)) {
-                    setup_.engine_b = e.name;
-                    changed         = true;
-                }
-            }
-            if (engines_.empty()) ImGui::TextDisabled("%s", TR("Add engines in the Engines window."));
-            ImGui::EndCombo();
-        }
-        if (changed) saveSetupSoon();
-    }
-    ImGui::PopItemWidth();
+    if (engineCombo("##engine_b", setup_.engine_b, engines_,
+                    ImGui::GetContentRegionAvail().x - swap_w - ImGui::GetStyle().ItemSpacing.x))
+        saveSetupSoon();
     ImGui::SameLine();
     if (ui::iconButton("swap", ui::Icon::Swap, "")) {
         std::swap(setup_.engine_a, setup_.engine_b);
@@ -858,14 +844,15 @@ void App::setupParticipants() {
 
     // Adding engines.
     ImGui::SetNextItemWidth(260.0f * ImGui::GetFontSize() / 16.0f);
-    if (ImGui::BeginCombo("##add_participant", TR("Add an engine…"))) {
+    if (ImGui::BeginCombo("##add_participant", TR("Add an engine…"), ImGuiComboFlags_HeightLargest)) {
+        std::vector<std::string> names;
         for (const auto& e : engines_) {
-            const bool in = std::any_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; });
-            if (in) continue;
-            if (ImGui::Selectable(e.name.c_str())) {
-                list.push_back({e.name});
-                changed = true;
-            }
+            if (std::none_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; }))
+                names.push_back(e.name);
+        }
+        if (const int i = ui::searchComboItems(names, ""); i >= 0) {
+            list.push_back({names[i]});
+            changed = true;
         }
         if (engines_.empty()) ImGui::TextDisabled("%s", TR("Add engines in the Engines window."));
         ImGui::EndCombo();

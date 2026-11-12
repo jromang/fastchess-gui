@@ -642,10 +642,10 @@ void App::drawRelaunch() {
 
     ImGui::TextUnformatted(TR("New engine A"));
     ImGui::SetNextItemWidth(px(260));
-    if (ImGui::BeginCombo("##relaunch_engine", relaunch_engine_.c_str())) {
-        for (const auto& e : engines_) {
-            if (ImGui::Selectable(e.name.c_str(), e.name == relaunch_engine_)) relaunch_engine_ = e.name;
-        }
+    if (ImGui::BeginCombo("##relaunch_engine", relaunch_engine_.c_str(), ImGuiComboFlags_HeightLargest)) {
+        std::vector<std::string> names;
+        for (const auto& e : engines_) names.push_back(e.name);
+        if (const int i = ui::searchComboItems(names, relaunch_engine_); i >= 0) relaunch_engine_ = names[i];
         ImGui::EndCombo();
     }
     ImGui::TextDisabled("%s", trf("against {}", run_.info().engine_b).c_str());
