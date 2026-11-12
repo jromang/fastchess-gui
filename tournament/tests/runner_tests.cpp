@@ -383,6 +383,38 @@ TEST_CASE("runner: \"stop when idle\" gives up at once a game whose engine waits
     CHECK(state->results().empty());
     CHECK(std::chrono::steady_clock::now() - begun < fastchess::BaseTournament::ENGINE_START_RETRY_PAUSE);
 }
+
+TEST_CASE("runner: a round robin of more engines than games at a time starts each engine once") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-starts";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    // The random mover, writing a line to `starts` each time it is started.
+    const auto starts = dir / "starts";
+    const auto script = dir / "counted.sh";
+    {
+        std::ofstream out(script);
+        out << "#!/bin/sh\necho started >> \"" << starts.string() << "\"\nexec \"" << randomMover() << "\"\n";
+    }
+    fs::permissions(script, fs::perms::owner_all);
+
+    auto s                   = spec(Format::RoundRobin, 7, 1);
+    s.conditions.concurrency = 1;
+    for (auto& p : s.participants) p.engine.cmd = script.string();
+    auto state = TournamentState::create(dir / "t", s);
+    CHECK(play(*state).empty());
+    CHECK(state->results().size() == 42u);
+
+    std::ifstream in(starts);
+    std::size_t lines = 0;
+    for (std::string line; std::getline(in, line);) ++lines;
+    CHECK(lines == 7u);
+}
 #endif
 
 TEST_CASE("runner: engine logs, of every game when asked, with both directions of both engines") {
@@ -450,6 +482,47 @@ TEST_CASE("engine cache: the idle entries used the longest ago make room; retire
     CHECK(alive == 4);
     retired.clear();
     CHECK(alive == 0);
+}
+
+TEST_CASE("engine cache: one idle process per engine left in moderate fields, a cap in big ones") {
+    using fastchess::BaseTournament;
+    constexpr auto cap = BaseTournament::MAX_IDLE_ENGINES;
+
+    // A round robin of 10 at concurrency 1: the two playing, and every engine kept for its next game.
+    CHECK(BaseTournament::engineCacheSize(10, 1, 1) == 12u);
+    // At concurrency 8, never fewer idle processes than in 0.4.11 (two per game).
+    CHECK(BaseTournament::engineCacheSize(10, 8, 1) == 32u);
+    // Hundreds of engines: the cap.
+    CHECK(BaseTournament::engineCacheSize(500, 1, 1) == 2 + cap);
+    CHECK(BaseTournament::engineCacheSize(500, 4, 1) == 8 + cap);
+    // With affinity, a cache per game thread shares the cap with the others.
+    CHECK(BaseTournament::engineCacheSize(10, 1, 4) == 2 + cap / 4);
+    CHECK(BaseTournament::engineCacheSize(500, 1, 64) == 4u);
+    CHECK(BaseTournament::engineCacheSize(0, 0, 0) == 4u);
+
+    // A new size applies from the next entry made.
+    struct Engine {
+        explicit Engine(int* alive) : alive_(alive) { ++*alive_; }
+        ~Engine() { --*alive_; }
+        int* alive_;
+    };
+    int alive = 0;
+    fastchess::util::CachePool<Engine, std::string> cache(2);
+    const auto use = [&](const std::string& name) {
+        auto it = cache.getEntry(name, &alive);
+        fastchess::util::ScopeGuard guard(&*it);
+    };
+    use("a");
+    use("b");
+    use("c");
+    CHECK(alive == 2);
+    cache.setMaxSize(3);
+    use("a");
+    CHECK(alive == 3);
+    cache.setMaxSize(1);
+    CHECK(alive == 3);
+    use("d");
+    CHECK(alive == 1);
 }
 
 TEST_CASE("engine log: the first and the last lines of a long game; which endings keep it") {

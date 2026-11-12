@@ -101,9 +101,11 @@ void Runner::play(const GameTask& task) {
     t_task = nullptr;
     closeSettledPairs();
 
-    // The processes kept for the next games of withdrawn or replaced participants are not needed any more.
-    const auto active = state_.activeEngines();
-    retireEngines([&](const std::string& name) { return !active.count(name); });
+    // The processes kept for engines with no game left (withdrawn or replaced participants, the opponents of a
+    // gauntlet once they played) are not needed any more; the idle processes kept are sized on the engines left.
+    const auto left = state_.enginesLeft();
+    retireEngines([&](const std::string& name) { return !left.count(name); });
+    setEnginesLeft(std::max<std::size_t>(1, left.size()));
 
     {
         std::lock_guard<std::mutex> lock(mutex_);

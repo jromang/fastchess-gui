@@ -206,6 +206,37 @@ TEST_CASE("edit: a game of a replaced participant still being played is not reco
     }
 }
 
+TEST_CASE("state: the engines left are those with a game to play, of active participants") {
+    auto spec   = roundRobin(4, 1);
+    spec.format = Format::Gauntlet;
+    spec.seeds  = 1;
+    auto state  = TournamentState::create(freshDir("engines-left"), spec);
+    CHECK(state->enginesLeft() == std::set<std::string>{"A", "B", "C", "D"});
+
+    // The first opponent's two games: it has none left.
+    const auto first = state->claimNext();
+    REQUIRE(first);
+    const int opponent = first->encounter.first == 0 ? first->encounter.second : first->encounter.first;
+    state->complete(*first, data(*first, "1-0"));
+    CHECK(state->enginesLeft().size() == 4u);  // the second game of the pair is still to play
+    CHECK(play(*state, 1) == 1);
+    auto left = state->enginesLeft();
+    CHECK(left.size() == 3u);
+    CHECK_FALSE(left.count(std::string(1, char('A' + opponent))));
+
+    Edit withdraw;
+    withdraw.kind        = Edit::Kind::Withdraw;
+    withdraw.participant = opponent == 3 ? 2 : 3;
+    state->applyEdit(withdraw);
+    left = state->enginesLeft();
+    CHECK(left.size() == 2u);
+    CHECK(left.count("A"));
+
+    play(*state, -1);
+    CHECK(state->finished());
+    CHECK(state->enginesLeft().empty());
+}
+
 TEST_CASE("edit: a game of a withdrawn participant still being played is not recorded") {
     auto state      = TournamentState::create(freshDir("withdraw-running"), roundRobin(4, 1));
     const auto task = state->claimNext();

@@ -194,8 +194,10 @@ class TournamentState {
     // No game of the encounter is left to start: both played, or no longer to be played.
     [[nodiscard]] bool settled(uint32_t encounter) const;
 
-    // The engine names of the participants still playing (not withdrawn, not replaced).
-    [[nodiscard]] std::set<std::string> activeEngines() const;
+    // The engine names of the participants still playing (not withdrawn, not replaced) that have a game left: of
+    // the schedule of a round robin or a gauntlet, or any of a match, Swiss or knockout, whose next rounds are not
+    // known yet.
+    [[nodiscard]] std::set<std::string> enginesLeft() const;
 
     // Every game played, or the SPRT decided.
     [[nodiscard]] bool finished() const;
