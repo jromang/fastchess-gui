@@ -268,10 +268,9 @@ class Process : public IProcess {
         is_initalized_ = false;
     }
 
-    void setupRead() override {
-        sg_out_.setup();
-        sg_err_.setup();
-    }
+    // fastchess-gui: the error output's line being read is kept: it is not an answer to what is read next, and a
+    // read often ends (on the line awaited) before the error output's line is complete.
+    void setupRead() override { sg_out_.setup(); }
 
     // Read stdout until the line matches searchword or timeout is reached
     // 0 means no timeout clears the lines vector

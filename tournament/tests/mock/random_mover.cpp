@@ -2,7 +2,7 @@
 // word is a move, so fastchess found no score and warned at every move of every test game.
 //
 // With FCG_MOCK_STDERR=TEXT it writes "TEXT <move>" on its error output at each move, and with
-// FCG_MOCK_STDERR_FLOOD=N, N long lines there before its uciok: more than a pipe holds.
+// FCG_MOCK_STDERR_FLOOD=N, N lines of 1000 characters there before its uciok: from 70 on, more than a pipe holds.
 
 #include <cstdlib>
 #include <random>
@@ -72,7 +72,7 @@ void uci_line(Board &board, const std::string &line) {
         }
     } else if (tokens[0] == "uci") {
         if (const char *flood = std::getenv("FCG_MOCK_STDERR_FLOOD")) {
-            for (int i = 0, n = std::atoi(flood); i < n; ++i) std::cerr << "flood " << std::string(100, '.') << '\n';
+            for (int i = 0, n = std::atoi(flood); i < n; ++i) std::cerr << "flood " << std::string(1000, '.') << '\n';
             std::cerr << std::flush;
         }
         std::cout << "id name random_move" << std::endl;

@@ -467,7 +467,10 @@ TEST_CASE("runner: engine logs keep the engines' error output, marked apart, eve
     auto state       = TournamentState::create(dir, s);
 
     set_env("FCG_MOCK_STDERR", "on stderr:");
-    set_env("FCG_MOCK_STDERR_FLOOD", "1000");
+    // About 100 KB on each engine's error output before it answers "uci", more than a pipe holds (64 KB on Linux,
+    // 4 KB on Windows), in few enough lines that both engines' fit in the first lines of the log: the middle of a
+    // long game's log is left out.
+    set_env("FCG_MOCK_STDERR_FLOOD", "100");
     const auto error = play(*state);
     set_env("FCG_MOCK_STDERR", nullptr);
     set_env("FCG_MOCK_STDERR_FLOOD", nullptr);
@@ -481,6 +484,14 @@ TEST_CASE("runner: engine logs keep the engines' error output, marked apart, eve
     CHECK(text.find("! read from its error output") != std::string::npos);
     CHECK(text.find("W! flood ...") != std::string::npos);
     CHECK(text.find("B! flood ...") != std::string::npos);
+    // None lost.
+    const auto count = [&](const std::string& what) {
+        std::size_t n = 0;
+        for (auto pos = text.find(what); pos != std::string::npos; pos = text.find(what, pos + 1)) ++n;
+        return n;
+    };
+    CHECK(count("W! flood ...") == 100u);
+    CHECK(count("B! flood ...") == 100u);
     CHECK(text.find("W! on stderr: ") != std::string::npos);
     CHECK(text.find("B! on stderr: ") != std::string::npos);
     CHECK(text.find("< on stderr: ") == std::string::npos);
