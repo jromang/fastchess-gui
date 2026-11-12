@@ -238,6 +238,7 @@ class App {
     void drawTournamentOverview();
     void drawStandings();
     void drawStandingsTable(bool compact);
+    void drawStandingsRow(std::size_t i, bool compact, bool swiss);
     void drawPgnOutError();  // when the PGN file of setup "Also append every game to" cannot be written
     void drawCrosstable();
     void drawSchedule();
@@ -474,6 +475,7 @@ class App {
     std::size_t table_for_ = ~std::size_t(0);
     std::optional<tour::Anchor> anchor_;
     int crosstable_mode_ = 0;                             // 0 score, 1 wins/draws/losses, 2 Elo difference
+    int standings_view_  = -1;                            // 0 table, 1 crosstable, -1 as suits the tournament
     std::optional<std::pair<int, int>> crosstable_cell_;  // participant ids (row, column)
     std::string template_name_;
 
