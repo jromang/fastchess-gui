@@ -54,9 +54,16 @@ TEST_CASE("a match folder of fastchess-gui 0.2 becomes a finished tournament") {
         const auto file = style == fastchess::pgn::CommentStyle::Fastchess ? "games.pgn" : "games-chessbase.pgn";
         std::ofstream out(dir / file, std::ios::binary);
         out << pgnGame("main", "dev", GameResult::DRAW, 1, style);
+        out << pgnGame("other", "engine", GameResult::WIN, 1, style);  // not imported, but not removed either
         out << pgnGame("dev", "main", GameResult::WIN, 1, style);
         out << pgnGame("dev", "main", GameResult::LOSE, 2, style);
     }
+
+    const auto pgn = [&] {
+        std::ifstream in(dir / "games.pgn", std::ios::binary);
+        return std::string(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+    };
+    const auto original = pgn();
 
     REQUIRE(legacyRuns(root).size() == 1);
     importLegacyRun(dir);
@@ -71,6 +78,7 @@ TEST_CASE("a match folder of fastchess-gui 0.2 becomes a finished tournament") {
     auto state         = TournamentState::open(dir);
     const auto results = state->results();
     REQUIRE(results.size() == 3);
+    CHECK(pgn() == original);
     CHECK(results[0].encounter == 0);
     CHECK(results[0].game == 1);  // main had White
     CHECK(results[1].game == 0);

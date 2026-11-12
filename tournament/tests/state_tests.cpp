@@ -1,8 +1,10 @@
 #include <doctest/doctest.hpp>
 
+#include <atomic>
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <mutex>
 #include <set>
 #include <thread>
 
@@ -683,6 +685,208 @@ TEST_CASE("state: games recorded by many threads at once resume exactly, each ga
     const auto out = gamesOf(dir / "all.pgn");
     REQUIRE(out.size() == 100);
     for (std::size_t i = 0; i < out.size(); ++i) CHECK(out[i].first == std::to_string(i / 2 + 1));
+}
+
+namespace {
+
+// The journal a crash leaves: only `events` of it reached the disk.
+void cutJournal(const fs::path& dir, const std::vector<nlohmann::json>& events) {
+    std::ofstream out(dir / "journal.jsonl", std::ios::binary | std::ios::trunc);
+    for (const auto& e : events) out << e.dump() << '\n';
+}
+
+// The games another PGN viewer sees in a file.
+std::size_t countGames(const fs::path& file) {
+    const auto text = readAll(file);
+    std::size_t n   = 0;
+    for (auto pos = text.find("[Event "); pos != std::string::npos; pos = text.find("[Event ", pos + 1)) ++n;
+    return n;
+}
+
+}  // namespace
+
+TEST_CASE("state: game text whose journal line a crash lost, in the middle of the PGN files, is blanked") {
+    const auto dir = freshDir("state-pgn-gap");
+    {
+        auto state = TournamentState::create(dir, matchSpec(6));
+        for (int i = 0; i < 3; ++i) {
+            const auto task = state->claimNext();
+            state->complete(*task, gameData(*task, "1-0"));
+        }
+    }
+    const auto size    = fs::file_size(dir / "games.pgn");
+    const auto size_cb = fs::file_size(dir / "games-chessbase.pgn");
+
+    // Games recorded at once by several threads: the line of a later game reached the disk, not that of game 1.
+    auto events = Journal::read(dir / "journal.jsonl");
+    PgnSpan lost, lost_cb;
+    for (auto it = events.begin(); it != events.end(); ++it) {
+        if (it->value("t", "") != "game_finished" || it->value("encounter", 9) != 0 || it->value("game", 9) != 1) {
+            continue;
+        }
+        lost    = {(*it)["pgn"][0].get<uint64_t>(), (*it)["pgn"][1].get<uint32_t>()};
+        lost_cb = {(*it)["cb"][0].get<uint64_t>(), (*it)["cb"][1].get<uint32_t>()};
+        events.erase(it);
+        break;
+    }
+    REQUIRE(lost.length > 0);
+    cutJournal(dir, events);
+
+    auto state = TournamentState::open(dir);
+    // The games after it keep their places; its text is now blank lines.
+    CHECK(fs::file_size(dir / "games.pgn") == size);
+    CHECK(fs::file_size(dir / "games-chessbase.pgn") == size_cb);
+    CHECK(countGames(dir / "games.pgn") == 2);
+    CHECK(countGames(dir / "games-chessbase.pgn") == 2);
+    CHECK(*readSpan(dir / "games.pgn", lost) == std::string(lost.length, '\n'));
+    CHECK(*readSpan(dir / "games-chessbase.pgn", lost_cb) == std::string(lost_cb.length, '\n'));
+    REQUIRE(state->results().size() == 2);
+    for (const auto& r : state->results()) {
+        CHECK(readSpan(dir / "games.pgn", r.pgn)->find("[Event ") == 0);
+        CHECK(readSpan(dir / "games-chessbase.pgn", r.pgn_chessbase)->find("[Event ") == 0);
+    }
+
+    // Game 1 is played again; at the end every game is there once.
+    while (auto task = state->claimNext()) state->complete(*task, gameData(*task, "1/2-1/2"));
+    CHECK(state->finished());
+    CHECK(countGames(dir / "games.pgn") == 6);
+    CHECK(countGames(dir / "games-chessbase.pgn") == 6);
+
+    // Nothing more to do on the next opening.
+    const auto text = readAll(dir / "games.pgn");
+    state.reset();
+    state = TournamentState::open(dir);
+    CHECK(readAll(dir / "games.pgn") == text);
+    CHECK(state->results().size() == 6);
+}
+
+TEST_CASE("state: games dropped by an edit while their text was written leave none in the PGN files") {
+    const auto dir      = freshDir("state-pgn-void");
+    std::size_t results = 0;
+    {
+        auto state = TournamentState::create(dir, matchSpec(200));
+        std::mutex mutex;
+        std::set<std::pair<uint32_t, int>> running;
+        std::atomic<bool> over{false};
+
+        std::vector<std::thread> threads;
+        for (int t = 0; t < 4; ++t) {
+            threads.emplace_back([&] {
+                while (auto task = state->claimNext()) {
+                    const std::pair<uint32_t, int> game{task->encounter.index, task->game};
+                    {
+                        std::lock_guard<std::mutex> lock(mutex);
+                        running.insert(game);
+                    }
+                    state->complete(*task, gameData(*task, "1-0"));
+                    std::lock_guard<std::mutex> lock(mutex);
+                    running.erase(game);
+                }
+                over = true;
+            });
+        }
+        // Games voided without replay while they are played, some of them while their text is being written: the
+        // journal never points to that text.
+        while (!over) {
+            Edit edit;
+            edit.kind   = Edit::Kind::VoidGames;
+            edit.replay = false;
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                if (!running.empty()) edit.games = {*running.begin()};
+            }
+            try {
+                if (!edit.games.empty()) state->applyEdit(edit);
+            } catch (const std::exception&) {
+                // The game was voided already.
+            }
+            std::this_thread::yield();
+        }
+        for (auto& thread : threads) thread.join();
+        CHECK(state->finished());
+        results = state->results().size();
+
+        CHECK(countGames(dir / "games.pgn") == results);
+        CHECK(countGames(dir / "games-chessbase.pgn") == results);
+    }
+
+    auto state = TournamentState::open(dir);
+    CHECK(state->results().size() == results);
+    CHECK(countGames(dir / "games.pgn") == results);
+    CHECK(countGames(dir / "games-chessbase.pgn") == results);
+}
+
+TEST_CASE("state: a crash in the middle of a write to the PGN file of the user's writes no game twice, loses none") {
+    const auto dir          = freshDir("pgn-out-crash");
+    const auto out          = dir.parent_path() / "fcg-tour-pgn-out-crash.pgn";
+    const std::string older = "[Event \"older\"]\n[Round \"9\"]\n[White \"X\"]\n\n1. e4 *\n\n";
+    {
+        std::ofstream file(out, std::ios::binary | std::ios::trunc);
+        file << older;
+    }
+    auto spec    = matchSpec(6);
+    spec.pgn_out = out.string();
+    {
+        auto state = TournamentState::create(dir, spec);
+        for (int i = 0; i < 2; ++i) {
+            const auto task = state->claimNext();
+            state->complete(*task, gameData(*task, "1-0"));
+        }
+    }
+    const auto full = readAll(out);
+    REQUIRE(gamesOf(out).size() == 3);
+
+    // The write of game 1 was journaled before, not after: the crash came in between.
+    auto events = Journal::read(dir / "journal.jsonl");
+    REQUIRE(!events.empty());
+    REQUIRE(events.back().value("t", "") == "pgn_out");
+    REQUIRE_FALSE(events.back().contains("begun"));
+    events.pop_back();
+    REQUIRE(events.back().contains("begun"));
+    const auto at  = events.back()["at"].get<uint64_t>();
+    const auto len = events.back()["len"].get<uint64_t>();
+    CHECK(at + len == full.size());
+    CHECK(events.back()["pgn"].empty());  // what older versions read: nothing written
+    cutJournal(dir, events);
+
+    std::string expected = full;
+    SUBCASE("the games reached the file: not written again") {}
+    SUBCASE("the crash came before the write: the games are written") { fs::resize_file(out, at); }
+    SUBCASE("the write was cut short: it is completed") { fs::resize_file(out, at + len / 2); }
+    SUBCASE("another program wrote there first: the games are found further on, nothing is cut") {
+        const std::string other = "[Event \"other\"]\n[Round \"7\"]\n[White \"Y\"]\n\n1. d4 *\n\n";
+        expected                = full.substr(0, at) + other + full.substr(at);
+        std::ofstream file(out, std::ios::binary | std::ios::trunc);
+        file << expected;
+    }
+    SUBCASE("the write was damaged: the games are written again after it, nothing is cut") {
+        auto damaged = full;
+        damaged.replace(at + 3, 5, "xxxxx");
+        expected = damaged + full.substr(at);
+        std::ofstream file(out, std::ios::binary | std::ios::trunc);
+        file << damaged;
+    }
+
+    auto state = TournamentState::open(dir);
+    CHECK(readAll(out) == expected);
+    CHECK(state->pgnOutError().empty());
+
+    // Settled in the journal: the next opening leaves the file alone.
+    state.reset();
+    state = TournamentState::open(dir);
+    CHECK(readAll(out) == expected);
+
+    // The rest of the games follow, each once.
+    while (auto task = state->claimNext()) state->complete(*task, gameData(*task, "1/2-1/2"));
+    CHECK(state->finished());
+    const auto text = readAll(out);
+    REQUIRE(text.size() > expected.size());
+    CHECK(text.compare(0, expected.size(), expected) == 0);
+    auto games = gamesOf(out);
+    REQUIRE(games.size() >= 4);
+    games.erase(games.begin(), games.end() - 4);
+    const std::vector<std::pair<std::string, std::string>> rest(IN_ORDER.begin() + 2, IN_ORDER.end());
+    CHECK(games == rest);
 }
 
 TEST_CASE("engine options: as a Windows engine reads them, ASCII and the spec untouched") {

@@ -13,9 +13,11 @@
 //
 // A finished game is written to both PGN files first, then to the journal, each synced to disk. The PGN files are
 // written without the state's lock, so the journal may list games out of their order there; it points to each by
-// its place, and text no journal line points to (a crash before the line) is never read. When a tournament is
-// opened, PGN text past the last journaled game is cut, and games that were running are simply played again, with
-// the opening their encounter started with. Resuming is therefore exact at any concurrency.
+// its place. Text no journal line points to is never read, and not left for other PGN viewers either: a game an
+// edit dropped while it was written is blanked (overwritten with blank lines, the other games keep their places),
+// and when a tournament is opened, the text a crash left before its journal line is cut past the last journaled
+// game and blanked between them. Games that were running are simply played again, with the opening their
+// encounter started with. Resuming is therefore exact at any concurrency.
 //
 // One TournamentState of one program at a time has a folder open for writing (tournament.lock, see files.hpp);
 // others can open it read-only.
@@ -256,10 +258,16 @@ class TournamentState {
     [[nodiscard]] bool openingPerRound() const noexcept;
     // Appends to spec_.pgn_out the finished games every game before which, in the schedule, is written there or
     // will not be played: the two games of an encounter side by side, rounds in order. A replayed game is written
-    // when it ends; at the end of the tournament, everything left. Journaled ("pgn_out"), so a resume carries on.
+    // when it ends; at the end of the tournament, everything left. Journaled ("pgn_out") before and after each
+    // write, so a resume carries on, and a crash in the middle neither writes games twice nor loses them.
     // A failure is kept for pgnOutError() and tried again next time. `lock` holds mutex_, and is released while
     // the games are written.
     void writeOut(std::unique_lock<std::mutex>& lock);
+    // When the tournament is opened: a write to spec_.pgn_out whose start the journal has but not its end (a crash
+    // in between). True when its games are in the file (completed if the write was cut short), which is then
+    // journaled; false when they are to be written again. `journaled`: the places of the games in the tournament's
+    // PGN files, by games.pgn offset.
+    bool settleOut(const nlohmann::json& begun, const std::map<uint64_t, std::pair<PgnSpan, PgnSpan>>& journaled);
 
     // What the last edit changed, to undo it (see canUndo()).
     struct UndoPoint {
