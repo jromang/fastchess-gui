@@ -54,6 +54,7 @@ class Process : public IProcess {
         log_name_ = log_name;
 
         current_line_.reserve(300);
+        err_line_.clear();
         pi_ = PROCESS_INFORMATION{};
 
         SECURITY_ATTRIBUTES saAttr;
@@ -197,10 +198,9 @@ class Process : public IProcess {
         is_initialized_ = false;
     }
 
-    void setupRead() override {
-        current_line_.clear();
-        err_line_.clear();
-    }
+    // fastchess-gui: the error output's line being read is kept: it is not an answer to what is read next, and a
+    // read often ends (on the line awaited) before the error output's line is complete.
+    void setupRead() override { current_line_.clear(); }
 
     // Read stdout until the line matches last_word or timeout is reached
     // 0 means no timeout
