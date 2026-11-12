@@ -384,26 +384,18 @@ void Match::start(engine::UciEngine& white, engine::UciEngine& black, std::optio
         black.setInputCallback([obs, slot](const std::string& line) { obs->onEngineInput(slot, Color::BLACK, line); });
     }
 
+    // An engine that cannot start is the caller's to deal with (BaseTournament::playGame tries again, then stops
+    // the tournament); nothing of the game has happened yet, so start() can be called again.
+    startup_failure_.reset();
     if (auto ret = white_player.engine.start(cpus); !ret) {
         if (atomic::stop.load()) return;
-
-        atomic::stop                 = true;
-        atomic::abnormal_termination = true;
-
-        Logger::print<Logger::Level::FATAL>("Fatal; {} engine startup failure: \"{}\"",
-                                            white_player.engine.getConfig().name, ret.error());
-
+        startup_failure_ = std::make_pair(Color::WHITE, ret.error());
         return;
     }
 
     if (auto ret = black_player.engine.start(cpus); !ret) {
         if (atomic::stop.load()) return;
-        atomic::stop                 = true;
-        atomic::abnormal_termination = true;
-
-        Logger::print<Logger::Level::FATAL>("Fatal; {} engine startup failure: \"{}\"",
-                                            black_player.engine.getConfig().name, ret.error());
-
+        startup_failure_ = std::make_pair(Color::BLACK, ret.error());
         return;
     }
 

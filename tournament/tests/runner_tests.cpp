@@ -223,6 +223,37 @@ TEST_CASE("runner: a game whose pair partner was played before leaves no pair op
     CHECK(fastchess::observer::PauseGate::instance().openPairs() == 0);
 }
 
+#ifndef _WIN32
+TEST_CASE("runner: an engine that fails to start once is tried again, and the tournament goes on") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-retry";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    // Exits at once the first time it is started, then is the random mover.
+    const auto script = dir / "flaky.sh";
+    {
+        std::ofstream out(script);
+        out << "#!/bin/sh\nif [ ! -e \"" << (dir / "started").string() << "\" ]; then touch \""
+            << (dir / "started").string() << "\"; exit 1; fi\nexec \"" << randomMover() << "\"\n";
+    }
+    fs::permissions(script, fs::perms::owner_all);
+
+    auto s                       = spec(Format::Match, 2, 1, 2);
+    s.conditions.concurrency     = 1;
+    s.participants[1].engine.cmd = script.string();
+    auto state                   = TournamentState::create(dir / "t", s);
+    CHECK(play(*state).empty());
+    CHECK_FALSE(fastchess::atomic::abnormal_termination);
+    CHECK(state->finished());
+    CHECK(state->results().size() == 2u);
+}
+#endif
+
 TEST_CASE("runner: engine logs, of every game when asked, with both directions of both engines") {
     if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available, skipped");

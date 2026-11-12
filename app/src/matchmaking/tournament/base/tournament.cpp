@@ -1,9 +1,11 @@
 #include <matchmaking/tournament/base/tournament.hpp>
 
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <optional>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -338,7 +340,31 @@ void BaseTournament::playGame(const GamePair<EngineConfiguration, EngineConfigur
         obs->onGameStart(info);
     }
 
-    match.start(*white_engine->get(), *black_engine->get(), cpus);
+    // An engine that does not start may only be slow to, or short of memory for a moment: in a run left alone for
+    // days, it gets a few more tries with a new process before the tournament stops. The game has not begun, so
+    // it is the same game that is played.
+    for (int attempt = 1;; ++attempt) {
+        match.start(*white_engine->get(), *black_engine->get(), cpus);
+        const auto& failure = match.startupFailure();
+        if (!failure || atomic::stop.load()) break;
+
+        auto& engine    = failure->first == chess::Color::WHITE ? white_engine->get() : black_engine->get();
+        const auto name = engine->getConfig().name;
+        if (attempt > ENGINE_START_RETRIES) {
+            atomic::stop                 = true;
+            atomic::abnormal_termination = true;
+            Logger::print<Logger::Level::FATAL>("Fatal; {} engine startup failure: \"{}\"", name, failure->second);
+            break;
+        }
+
+        Logger::print<Logger::Level::WARN>("Warning; {} engine startup failure: \"{}\", trying again in {} s", name,
+                                           failure->second, ENGINE_START_RETRY_PAUSE.count());
+        restartEngine(engine);
+        const auto until = std::chrono::steady_clock::now() + ENGINE_START_RETRY_PAUSE;
+        while (!atomic::stop.load() && std::chrono::steady_clock::now() < until) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
 
     // Tells the observer whether the game was scored, using the same decision as below.
     const auto notify_end = [&](bool scored) {

@@ -188,6 +188,11 @@ class Match {
 
     [[nodiscard]] bool isStallOrDisconnect() const noexcept { return stall_or_disconnect_; }
 
+    // The engine that could not be started, and why, when start() returned because of it.
+    [[nodiscard]] const std::optional<std::pair<chess::Color, std::string>>& startupFailure() const noexcept {
+        return startup_failure_;
+    }
+
    private:
     void gameLoop(Player& first, Player& second);
 
@@ -241,6 +246,7 @@ class Match {
     std::string start_position_;
 
     bool stall_or_disconnect_ = false;
+    std::optional<std::pair<chess::Color, std::string>> startup_failure_;
 
     friend std::string formatTimeoutReason(std::string_view color, int64_t overrun_ms);
 

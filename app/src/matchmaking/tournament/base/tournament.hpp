@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <string>
@@ -37,6 +38,10 @@ class BaseTournament {
 
     [[nodiscard]] std::uint64_t gamesPlayed() const noexcept { return match_count_; }
     [[nodiscard]] std::uint64_t totalGames() const noexcept { return final_matchcount_; }
+
+    // An engine that fails to start is tried again this many times, after a pause, before the tournament stops.
+    static constexpr int ENGINE_START_RETRIES = 3;
+    static constexpr std::chrono::seconds ENGINE_START_RETRY_PAUSE{10};
 
    protected:
     using start_fn  = std::function<void()>;
