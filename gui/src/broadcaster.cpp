@@ -164,17 +164,18 @@ Broadcaster::~Broadcaster() {
 
 std::vector<std::string> Broadcaster::configure(const BroadcastSettings& settings) {
     std::vector<std::string> errors;
-    const auto sync = [&](auto& server, bool wanted, int port, std::string& error) {
+    const auto sync = [&](auto& server, bool wanted, std::string& error, auto start) {
         if (wanted && !server.running() && error.empty()) {
-            error = server.start(static_cast<uint16_t>(port));
+            error = start();
             if (!error.empty()) errors.push_back(error);
         } else if (!wanted && server.running()) {
             server.stop();
         }
         if (!wanted) error.clear();
     };
-    sync(tlcs_, settings.tlcs, settings.tlcs_port, tlcs_error_);
-    sync(web_, settings.web, settings.web_port, web_error_);
+    sync(tlcs_, settings.tlcs, tlcs_error_,
+         [&] { return tlcs_.start(static_cast<uint16_t>(settings.tlcs_port), settings.tlcs_lanes); });
+    sync(web_, settings.web, web_error_, [&] { return web_.start(static_cast<uint16_t>(settings.web_port)); });
     // The thread takes the other settings with the next update, or at once when lichess' changed: the relay stops
     // there, its last push made on its own thread.
     const bool lichess_changed = !sameLichess(settings, settings_);

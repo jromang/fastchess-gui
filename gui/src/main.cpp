@@ -79,6 +79,7 @@ struct Args {
     int height        = 0;
     std::string run;               // --run: a tournament folder or a setup file, played without a window
     std::optional<int> tlcs_port;  // --run: broadcast options
+    bool tlcs_lanes = false;
     std::optional<int> web_port;
     std::optional<std::string> live_dir;  // empty = "live" in the tournament folder
     std::optional<std::string> lichess;   // a lichess round, or "new"
@@ -115,6 +116,8 @@ Args parseArgs(int argc, char** argv) {
             args.run = next();
         else if (a == "--tlcs")
             args.tlcs_port = std::atoi(next().c_str());
+        else if (a == "--tlcs-lanes")
+            args.tlcs_lanes = true;
         else if (a == "--web")
             args.web_port = std::atoi(next().c_str());
         else if (a == "--live-files")
@@ -129,7 +132,7 @@ Args parseArgs(int argc, char** argv) {
                 "              [--shot FILE.png[@WINDOW[@SECONDS]]]... [--select-game N] [--focus WINDOW]\n"
                 "              [--quit-after SECONDS]\n"
                 "fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json   (no window)\n"
-                "              [--tlcs UDP_PORT] [--web TCP_PORT] [--live-files [DIR]]\n"
+                "              [--tlcs UDP_PORT [--tlcs-lanes]] [--web TCP_PORT] [--live-files [DIR]]\n"
                 "              [--lichess ROUND_URL|ROUND_ID|new]   (token in FCG_LICHESS_TOKEN)\n");
             std::exit(0);
         }
@@ -231,10 +234,11 @@ int main(int argc, char** argv) {
         const char* pref = SDL_GetPrefPath("fastchess", "fastchess-gui");
         const fcg::Storage storage(args.profile.empty() ? fs::path(pref ? pref : ".") : fs::path(args.profile));
         fcg::HeadlessBroadcast broadcast;
-        broadcast.tlcs_port = args.tlcs_port;
-        broadcast.web_port  = args.web_port;
-        broadcast.live_dir  = args.live_dir;
-        broadcast.lichess   = args.lichess;
+        broadcast.tlcs_port  = args.tlcs_port;
+        broadcast.tlcs_lanes = args.tlcs_lanes;
+        broadcast.web_port   = args.web_port;
+        broadcast.live_dir   = args.live_dir;
+        broadcast.lichess    = args.lichess;
         return fcg::runHeadless(args.run, storage, fcg::detectTopology(), broadcast);
     }
 

@@ -25,10 +25,11 @@ namespace fcg {
 struct BroadcastSettings {
     bool files = false;
     std::filesystem::path dir;  // empty = "live" in the tournament folder
-    bool tlcs     = false;
-    int tlcs_port = 16001;
-    bool web      = false;
-    int web_port  = 8080;
+    bool tlcs       = false;
+    int tlcs_port   = 16001;
+    bool tlcs_lanes = false;  // a port per concurrent game, from tlcs_port on
+    bool web        = false;
+    int web_port    = 8080;
 
     bool lichess = false;
     std::string lichess_token;

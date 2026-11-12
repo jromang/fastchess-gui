@@ -81,28 +81,38 @@ struct BroadcastSnapshot {
 std::string writeBroadcastFiles(const BroadcastSnapshot& s, const std::filesystem::path& dir);
 
 // A TLCS compatible server: TLCV clients, node-tlcv (ccrl.live) and Livius log on over UDP and follow one game:
-// players, moves, clocks, the engines' searches, the result, and the crosstable.
+// players, moves, clocks, the engines' searches, the result, and the crosstable, sent again after every game.
 class TlcsServer {
    public:
     TlcsServer();
     ~TlcsServer();
 
-    // Returns an error message, empty on success.
-    std::string start(uint16_t port);
+    // Returns an error message, empty on success. With `lanes`, every concurrent game has a port of its own: the game
+    // of slot k on port + k, each port opened when its slot first has a game.
+    std::string start(uint16_t port, bool lanes = false);
     void stop();
     [[nodiscard]] bool running() const noexcept { return running_; }
 
-    // The game to follow is the one of `featured` (a slot), or the first game in progress.
+    // The game to follow is the one of `featured` (a slot), or the first game in progress; with lanes, each port's
+    // own slot.
     void publish(const BroadcastSnapshot& snapshot, int featured);
 
-    [[nodiscard]] int clients() const noexcept { return clients_; }
+    // Viewers on every port.
+    [[nodiscard]] int clients() const;
+    // The ports open, the first one first; why the next one could not be opened (lanes), empty if it could.
+    [[nodiscard]] std::vector<uint16_t> ports() const;
+    [[nodiscard]] std::string laneError() const;
 
    private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
-    std::thread thread_;
+    struct Impl;  // one port
+    std::string open(uint16_t port, int lane);
+
+    mutable std::mutex mutex_;  // what follows
+    std::vector<std::unique_ptr<Impl>> impls_;
+    uint16_t port_ = 0;
+    bool lanes_    = false;
+    std::string lane_error_;
     std::atomic_bool running_{false};
-    std::atomic_int clients_{0};
 };
 
 // A small web server: a page showing every game in progress, the standings and the crosstable, refreshed every

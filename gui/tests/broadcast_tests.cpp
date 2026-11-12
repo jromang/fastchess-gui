@@ -397,6 +397,123 @@ TEST_CASE("broadcast: TLCS logons are limited in rate") {
     server.stop();
 }
 
+TEST_CASE("broadcast: TLCS with lanes serves each concurrent game on its own port, the crosstable after every game") {
+    TlcsServer server;
+    const uint16_t port = 26031;
+    REQUIRE(server.start(port, true).empty());
+    CHECK(server.ports() == std::vector<uint16_t>{port});
+
+    // Two games at once: slot 0 on the first port, slot 1 on the next one, opened when its game comes.
+    auto s              = sample();
+    auto other          = s.games[0];
+    other.slot          = 1;
+    other.number        = 5;
+    other.white         = "Gamma";
+    other.black         = "Delta";
+    other.san           = {"d4"};
+    other.uci           = {"d2d4"};
+    other.white_to_move = false;
+    s.games.push_back(other);
+    server.publish(s, 1);  // a featured slot means nothing to lanes
+    std::this_thread::sleep_for(300ms);
+    CHECK(server.ports() == std::vector<uint16_t>{port, static_cast<uint16_t>(port + 1)});
+    CHECK(server.laneError().empty());
+
+    struct Viewer {
+        net::UdpSocket socket;
+        net::Endpoint to;
+        std::vector<std::string> received;
+        std::size_t raw = 0;  // datagrams, before any is acknowledged
+        bool acks       = true;
+        void listen(std::chrono::milliseconds how_long) {
+            const auto until = std::chrono::steady_clock::now() + how_long;
+            while (std::chrono::steady_clock::now() < until) {
+                net::Endpoint from;
+                const auto msg = socket.receive(from, 50);
+                if (!msg) continue;
+                raw++;
+                if (msg->front() == '<') {
+                    const auto close = msg->find('>');
+                    if (acks) socket.send(to, "ACK: " + msg->substr(1, close - 1));
+                    received.push_back(msg->substr(close + 1));
+                } else {
+                    received.push_back(*msg);
+                }
+            }
+        }
+        [[nodiscard]] bool has(const std::string& text) const {
+            return std::find(received.begin(), received.end(), text) != received.end();
+        }
+    };
+    Viewer first, second, silent;
+    REQUIRE(first.socket.bind(26033).empty());
+    REQUIRE(second.socket.bind(26034).empty());
+    REQUIRE(silent.socket.bind(26035).empty());
+    first.to  = {0x7F000001, port};
+    second.to = silent.to = {0x7F000001, static_cast<uint16_t>(port + 1)};
+    silent.acks           = false;
+    first.socket.send(first.to, "LOGONv15:first");
+    second.socket.send(second.to, "LOGONv15:second");
+    silent.socket.send(silent.to, "LOGONv15:silent");
+    for (int i = 0; i < 6; ++i) {
+        first.listen(100ms);
+        second.listen(100ms);
+        silent.listen(100ms);
+    }
+
+    CHECK(first.has("WPLAYER: Alpha"));
+    CHECK_FALSE(first.has("WPLAYER: Gamma"));
+    CHECK(second.has("WPLAYER: Gamma"));
+    CHECK(second.has("BPLAYER: Delta"));
+    CHECK(second.has("WMOVE: 1. d4"));
+    CHECK_FALSE(second.has("WPLAYER: Alpha"));
+    CHECK(first.has("CT: total games = 3"));
+    CHECK(second.has("CT: total games = 3"));
+    CHECK(server.clients() == 2);
+    // The next port keeps the handshake: a client that does not prove its address gets LOGON SUCCESSFUL and the
+    // first command (sent again for its ACK), nothing of the game.
+    CHECK(silent.has("LOGON SUCCESSFUL"));
+    CHECK_FALSE(silent.has("WPLAYER: Gamma"));
+    CHECK_FALSE(silent.has("CTRESET"));
+
+    // Game 5 ends: its port tells the result, and both send the crosstable again.
+    first.received.clear();
+    second.received.clear();
+    auto after            = s;
+    after.games[1].active = false;
+    after.games[1].result = "0-1";
+    after.played          = 4;
+    server.publish(after, -1);
+    for (int i = 0; i < 6; ++i) {
+        first.listen(100ms);
+        second.listen(100ms);
+    }
+    CHECK(second.has("result: 0-1"));
+    CHECK_FALSE(first.has("result: 0-1"));
+    CHECK(first.has("CTRESET"));
+    CHECK(second.has("CTRESET"));
+    CHECK(first.has("CT: total games = 4"));
+    CHECK(second.has("CT: total games = 4"));
+
+    server.stop();
+    CHECK(server.ports().empty());
+}
+
+TEST_CASE("broadcast: TLCS lanes say when the port of a game is in use") {
+    net::UdpSocket taken;
+    REQUIRE(taken.bind(26038).empty());
+    TlcsServer server;
+    REQUIRE(server.start(26037, true).empty());
+    auto s     = sample();
+    auto other = s.games[0];
+    other.slot = 1;
+    s.games.push_back(other);
+    server.publish(s, -1);
+    CHECK(server.ports() == std::vector<uint16_t>{26037});
+    CHECK(server.laneError().find("in use") != std::string::npos);
+    server.stop();
+}
+
 TEST_CASE("broadcast: a port in use is said to be") {
     net::UdpSocket a, b;
     REQUIRE(a.bind(26027).empty());
