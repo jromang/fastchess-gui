@@ -161,6 +161,124 @@ TEST_CASE("bbcode: title in bold, details, the text in a code block") {
     CHECK(forumDetails(spec, computeTable(spec, results)) == "Round robin, 3 engines, 10+0.1, 2 games, book UHO.epd");
 }
 
+TEST_CASE("gauntlet table: the seed, its opponents by their own points, and the line under it") {
+    auto spec   = players(4);
+    spec.format = Format::Gauntlet;
+    spec.seeds  = 1;
+    spec.name   = "Gauntlet A";
+    for (auto& p : spec.participants) {
+        p.engine.limit.tc.time      = 10000;
+        p.engine.limit.tc.increment = 100;
+    }
+    spec.conditions.opening.file = "/books/UHO.epd";
+    std::vector<GameResult> results;
+    add(results, 100, 101, 1.0, 2);  // A beats B
+    add(results, 100, 102, 0.5, 2);  // draws C
+    add(results, 100, 103, 0.0, 2);  // loses to D
+    const auto table = computeTable(spec, results);
+
+    // 50 % over six games: +0, and the 95 % margin of the spread of +2 =2 -2. A score of 0 or 100 % has no Elo.
+    CHECK(gauntletText(spec, table, "Gauntlet A", 6) ==
+          "Gauntlet A\n"
+          "\n"
+          "#  Name  Points      %      Elo     +/-  W-L-D\n"
+          "------------------------------------------------------\n"
+          "1  A      3.0/6   50.0     +0.0   312.2  +2-2=2\n"
+          "2  D      2.0/2  100.0        -       -  +2-0=0\n"
+          "3  C      1.0/2   50.0     +0.0     0.0  +0-0=2\n"
+          "4  B      0.0/2    0.0        -       -  +0-2=0\n"
+          "\n"
+          "6/6 games, 33% draws, time control:10+0.1, book:UHO.epd, event: Gauntlet A\n");
+
+    // Planned games unknown, no book, no name; a game still to play.
+    spec.conditions.opening.file.clear();
+    spec.name.clear();
+    CHECK(footerLine(spec, table, std::nullopt) == "6 games, 33% draws, time control:10+0.1");
+    CHECK(footerLine(spec, table, 8) == "6/8 games, 33% draws, time control:10+0.1");
+
+    const auto even = scoreElo(10, 0, 10);
+    REQUIRE(even.elo);
+    CHECK(*even.elo == 0);
+    CHECK(*even.error > 0);
+    const auto ahead = scoreElo(6, 0, 4);
+    CHECK(*ahead.elo == doctest::Approx(70.44).epsilon(0.002));
+    CHECK_FALSE(scoreElo(3, 0, 0).elo);
+    CHECK_FALSE(scoreElo(0, 0, 0).error);
+}
+
+TEST_CASE("table: by points, by score, in seed order, with a footer in the copies") {
+    auto spec = players(3);
+    spec.name = "Cup";
+    for (auto& p : spec.participants) p.engine.limit.tc.time = 60000;
+    std::vector<GameResult> results;
+    add(results, 100, 101, 1.0, 2);  // A beats B twice
+    add(results, 102, 100, 1.0, 1);  // C beats A, its only game so far
+    const auto table = computeTable(spec, results);
+
+    const auto names = [](const Table& t) {
+        std::string out;
+        for (const auto& r : t.rows) out += r.name;
+        return out;
+    };
+    CHECK(names(ordered(table, spec, Order::Points)) == "ACB");  // 2, 1, 0 points
+    CHECK(names(ordered(table, spec, Order::Score)) == "CAB");   // 100 %, 67 %, 0 %
+    CHECK(names(ordered(table, spec, Order::Seed)) == "ABC");
+    // The crosstable's columns follow the rows: in seed order, A's row reads -, B, C.
+    const auto seed_text = tableText(ordered(table, spec, Order::Seed), "");
+    CHECK(seed_text.find("  A  ") != std::string::npos);
+    CHECK(seed_text.find("     -     2     0\n") != std::string::npos);
+
+    const auto footer = footerLine(spec, table, 6);
+    CHECK(footer == "3/6 games, 0% draws, time control:60+0, event: Cup");
+    const auto text = tableText(table, "Cup", footer);
+    CHECK(text.size() > footer.size());
+    CHECK(text.substr(text.size() - footer.size() - 3) == "\n\n" + footer + "\n");
+    CHECK(tableText(table, "Cup").find("event") == std::string::npos);
+
+    const auto html = tableHtml(table, "Cup", "3 games & a book");
+    CHECK(html.find("<p class=\"foot\">3 games &amp; a book</p>") != std::string::npos);
+    CHECK(tableHtml(table, "Cup").find("<p class=\"foot\">") == std::string::npos);
+}
+
+TEST_CASE("table: the games of each colour against each opponent, and the pairs with one game only") {
+    auto spec   = players(4);
+    spec.format = Format::Gauntlet;
+    std::vector<GameResult> results;
+    const auto game = [&](uint32_t encounter, int white, int black, bool voided = false) {
+        GameResult r;
+        r.encounter = encounter;
+        r.game      = white == 100 ? 0 : 1;
+        r.white     = white;
+        r.black     = black;
+        r.result    = "1/2-1/2";
+        r.voided    = voided;
+        results.push_back(r);
+    };
+    game(0, 100, 101);  // A - B, both colours
+    game(0, 101, 100);
+    game(1, 100, 102);  // A - C, the second game not played yet
+    game(2, 100, 103);  // A - D, the second game voided (to be played again)
+    game(2, 103, 100, true);
+    game(3, 103, 100);  // and another pair, complete
+    game(3, 100, 103);
+    const auto table = computeTable(spec, results);
+
+    const auto ab = table.pair(100, 101);
+    CHECK(ab.games() == 2);
+    CHECK(ab.white == 1);
+    CHECK(ab.unpaired == 0);
+    const auto ac = table.pair(100, 102);
+    CHECK(ac.white == 1);
+    CHECK(ac.unpaired == 1);
+    CHECK(table.pair(102, 100).white == 0);
+    CHECK(table.pair(102, 100).unpaired == 1);
+    const auto ad = table.pair(100, 103);
+    CHECK(ad.games() == 3);
+    CHECK(ad.white == 2);
+    CHECK(ad.unpaired == 1);
+    CHECK(table.pair(103, 100).white == 1);
+}
+
 TEST_CASE("table: a head-to-head result breaks an otherwise complete tie") {
     const auto spec = players(2);
     std::vector<GameResult> results;

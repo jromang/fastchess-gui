@@ -184,7 +184,11 @@ void App::frame() {
             page_ = Page::Home;
         else if (w == "suites")
             page_ = Page::Suites;
-        else if (w.rfind("games-", 0) == 0 || w.rfind("live-", 0) == 0) {
+        else if (w == "ccrl-export") {  // the Export for CCRL dialog of the Games tab
+            page_        = Page::Tournament;
+            tab_request_ = Tab::Games;
+            openCcrlExport();
+        } else if (w.rfind("games-", 0) == 0 || w.rfind("live-", 0) == 0) {
             // The tab with a chart under the game: games-time, live-agreement...
             const auto chart                     = w.substr(w.find('-') + 1);
             const auto kind                      = chart == "time"        ? MoveChart::Time
@@ -422,9 +426,12 @@ void App::resetRunView() {
     selected_opening_ = -1;
     totals_.clear();
     table_     = {};
+    shown_     = {};
     table_for_ = ~std::size_t(0);
     anchor_.reset();
     crosstable_cell_.reset();
+    standings_engine_.reset();
+    ccrl_facts_for_ = ~uint64_t(0);
     standings_view_ = -1;
     games_subject_ = -1;
     filtered_.clear();
@@ -729,7 +736,8 @@ void App::handleDialogs() {
             case Dialogs::Purpose::ExportStandings:
                 if (const auto* t = run_.tournament()) {
                     std::ofstream out(path, std::ios::binary | std::ios::trunc);
-                    out << tour::tableHtml(table_, t->spec().name);
+                    out << tour::tableHtml(shown_, t->spec().name,
+                                           tour::footerLine(t->spec(), shown_, t->totalGames()));
                     Console::instance().add(out ? trf("Standings written to {}", path) : trf("Cannot write {}", path),
                                             !out);
                 }
@@ -779,6 +787,9 @@ void App::handleDialogs() {
                 break;
             case Dialogs::Purpose::ExportAll:
                 exportGames(path, true);
+                break;
+            case Dialogs::Purpose::ExportCcrl:
+                writeCcrlExport(path);
                 break;
         }
     }

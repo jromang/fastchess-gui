@@ -34,6 +34,7 @@
 
 #include <tour/book_scan.hpp>
 #include <tour/by_opening.hpp>
+#include <tour/ccrl.hpp>
 #include <tour/game_db.hpp>
 #include <tour/incidents.hpp>
 #include <tour/ratinglist.hpp>
@@ -250,6 +251,7 @@ class App {
     void drawStandingsRow(std::size_t i, bool compact, bool swiss);
     void drawPgnOutError();  // when the PGN file of setup "Also append every game to" cannot be written
     void drawCrosstable();
+    void drawOpponents(int id);  // the games of a participant against each opponent, under the standings table
     void drawSchedule();
     void drawBracket();
     void drawEditPanel();
@@ -389,6 +391,11 @@ class App {
     [[nodiscard]] bool gamesFiltered() const;  // some games of the Games tab are hidden
     void selectGame(int index);
     void exportGames(const std::string& path, bool all);
+    // Export for CCRL: the dialog, then the files once their place is chosen (view_ccrl.cpp).
+    void openCcrlExport();
+    void drawCcrlExport();
+    void writeCcrlExport(const std::string& path);
+    void drawCcrlChecklist();  // in the overview of a finished tournament
 
     void handleDialogs();
     void saveSetupSoon() { setup_dirty_ = true; }
@@ -568,12 +575,22 @@ class App {
 
     // Standings of a round robin or gauntlet, recomputed when games arrive.
     tour::Table table_;
-    std::size_t table_for_ = ~std::size_t(0);
+    tour::Table shown_;  // table_ in the order of the Standings tab, which its copies and export follow
+    tour::Order standings_order_ = tour::Order::Points;
+    std::size_t table_for_       = ~std::size_t(0);
     std::chrono::steady_clock::time_point table_next_{};  // a big table waits a while before it is computed again
     std::optional<tour::Anchor> anchor_;
     int crosstable_mode_ = 0;                             // 0 score, 1 wins/draws/losses, 2 Elo difference
     int standings_view_  = -1;                            // 0 table, 1 crosstable, -1 as suits the tournament
     std::optional<std::pair<int, int>> crosstable_cell_;  // participant ids (row, column)
+    std::optional<int> standings_engine_;  // participant id whose opponents are listed under the table
+    struct CcrlDialog {  // Export for CCRL, from the Games tab
+        bool open = false;
+        bool zip  = true;
+        tour::CcrlExport e;
+    } ccrl_;
+    tour::CcrlFacts ccrl_facts_;  // of the checklist, for the tournament at this version()
+    uint64_t ccrl_facts_for_ = ~uint64_t(0);
     std::string template_name_;
     std::vector<std::string> template_names_;  // the templates folder, listed now and then rather than every frame
     std::chrono::steady_clock::time_point templates_listed_{};

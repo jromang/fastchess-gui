@@ -100,6 +100,7 @@ void App::refreshTable() {
     const auto now = std::chrono::steady_clock::now();
     if (table_for_ != ~std::size_t(0) && now < table_next_) return;
     table_      = tour::computeTable(t->spec(), t->results(), anchor_, t->byes());
+    shown_      = tour::ordered(table_, t->spec(), standings_order_);
     table_for_  = games_.size();
     table_next_ = now + std::min<std::chrono::steady_clock::duration>(10 * (std::chrono::steady_clock::now() - now),
                                                                       std::chrono::seconds(5));
@@ -134,7 +135,7 @@ void App::drawStandingsTable(bool compact) {
 
     // Only the rows in sight: a Swiss or a gauntlet can have hundreds of engines.
     ImGuiListClipper clipper;
-    clipper.Begin(static_cast<int>(table_.rows.size()));
+    clipper.Begin(static_cast<int>((compact ? table_ : shown_).rows.size()));
     while (clipper.Step()) {
         for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row) {
             drawStandingsRow(static_cast<std::size_t>(row), compact, swiss);
@@ -144,12 +145,18 @@ void App::drawStandingsTable(bool compact) {
 }
 
 void App::drawStandingsRow(std::size_t i, bool compact, bool swiss) {
-    const auto& r = table_.rows[i];
+    const auto& r = (compact ? table_ : shown_).rows[i];
     ImGui::TableNextRow();
     ImGui::TableNextColumn();
     ImGui::TextDisabled("%d", static_cast<int>(i + 1));
     ImGui::TableNextColumn();
-    ImGui::TextUnformatted(r.name.c_str());
+    if (compact) {
+        ImGui::TextUnformatted(r.name.c_str());
+    } else if (ImGui::Selectable(fmt::format("{}##st{}", r.name, r.id).c_str(),
+                                 standings_engine_ && *standings_engine_ == r.id,
+                                 ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap)) {
+        standings_engine_ = r.id;  // its opponents under the table
+    }
     if (compact) {
         const auto h = health(r);
         if (!h.empty()) {
@@ -325,6 +332,7 @@ void App::drawTournamentOverview() {
         }
     }
     ui::endCard();
+    drawCcrlChecklist();  // once it is finished
 
     // Fair play: the processor time of every engine, measured while it thinks and while its opponents do.
     {
@@ -396,6 +404,8 @@ void App::drawStandings() {
     const bool fits    = engines <= CROSSTABLE_MAX;
     if (standings_view_ < 0) {
         standings_view_ = format == tour::Format::RoundRobin && engines <= CROSSTABLE_AUTO ? 1 : 0;
+        // A gauntlet opens with the opponents of its (first) seed under the table.
+        if (format == tour::Format::Gauntlet && engines > 0) standings_engine_ = t->spec().participants.front().id;
     }
     if (!fits) standings_view_ = 0;
     ImGui::RadioButton(TR("Table"), &standings_view_, 0);
@@ -417,6 +427,26 @@ void App::drawStandings() {
         ImGui::RadioButton("+ = −", &crosstable_mode_, 1);
         ImGui::SameLine();
         ImGui::RadioButton(TR("Elo difference"), &crosstable_mode_, 2);
+    }
+
+    // The order of the rows (and of the crosstable's columns), which the copies follow.
+    ImGui::SameLine(0, px(30));
+    ImGui::TextUnformatted(TR("Order:"));
+    ImGui::SameLine();
+    static constexpr const char* ORDERS[] = {N_("Points"), N_("Score %"), N_("Seed order")};
+    ImGui::SetNextItemWidth(px(130));
+    if (ImGui::BeginCombo("##order", TR(ORDERS[static_cast<int>(standings_order_)]))) {
+        for (int o = 0; o < 3; ++o) {
+            if (ImGui::Selectable(TR(ORDERS[o]), static_cast<int>(standings_order_) == o)) {
+                standings_order_ = static_cast<tour::Order>(o);
+                table_for_       = ~std::size_t(0);
+            }
+        }
+        ImGui::EndCombo();
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("Seed order: as the engines were entered, the seeds of a gauntlet first; the "
+                                   "columns of a gauntlet's crosstable stay in place."));
     }
 
     ImGui::SameLine(0, px(30));
@@ -449,11 +479,24 @@ void App::drawStandings() {
     }
 
     ImGui::SameLine(0, px(30));
-    if (const auto as = ui::copyButton("standings"); as != ui::CopyAs::None) {
-        const auto& spec = t->spec();
-        const auto text  = as == ui::CopyAs::Text
-                               ? tour::tableText(table_, spec.name)
-                               : tour::bbcode(spec.name, tour::forumDetails(spec, table_), tour::tableText(table_, ""));
+    if (const auto as = ui::copyButton("standings", false, format == tour::Format::Gauntlet); as != ui::CopyAs::None) {
+        // In the order shown, the line of the event, the games and the book under it.
+        const auto& spec  = t->spec();
+        const auto footer = tour::footerLine(spec, shown_, t->totalGames());
+        std::string text;
+        switch (as) {
+            case ui::CopyAs::Text:
+                text = tour::tableText(shown_, spec.name, footer);
+                break;
+            case ui::CopyAs::Bbcode:
+                text = tour::bbcode(spec.name, tour::forumDetails(spec, shown_), tour::tableText(shown_, "", footer));
+                break;
+            case ui::CopyAs::GauntletText:
+                text = tour::gauntletText(spec, table_, spec.name, t->totalGames());
+                break;
+            default:
+                text = tour::bbcode(spec.name, "", tour::gauntletText(spec, table_, "", t->totalGames()));
+        }
         ImGui::SetClipboardText(text.c_str());
         Console::instance().add(TR("Standings copied to the clipboard."));
     }
@@ -467,13 +510,112 @@ void App::drawStandings() {
     ImGui::Spacing();
     if (standings_view_ == 1) {
         drawCrosstable();
-    } else {
+    } else if (!standings_engine_) {
         drawStandingsTable(false);
+    } else {
+        const float list_h = std::max(px(160), ImGui::GetContentRegionAvail().y * 0.4f);
+        ImGui::BeginChild("##standings_top", ImVec2(0, -list_h));
+        drawStandingsTable(false);
+        ImGui::EndChild();
+        drawOpponents(*standings_engine_);
     }
 }
 
+void App::drawOpponents(int id) {
+    const auto* t = run_.tournament();
+    const auto* p = t ? t->spec().participant(id) : nullptr;
+    if (!p) {
+        standings_engine_.reset();
+        return;
+    }
+
+    // The opponents in the order of the table, with the games of each colour: an encounter is a game and the one
+    // with colours reversed, and a pair of which one game only counts so far is marked.
+    std::vector<std::pair<const tour::Standing*, tour::PairRecord>> rows;
+    int unpaired = 0;
+    for (const auto& r : shown_.rows) {
+        const auto record = shown_.pair(id, r.id);
+        if (r.id == id || record.games() == 0) continue;
+        rows.emplace_back(&r, record);
+        unpaired += record.unpaired;
+    }
+
+    ImGui::BeginChild("##opponents", ImVec2(0, 0));
+    ImGui::TextUnformatted(trf("{} against each opponent", p->engine.name).c_str());
+    ImGui::SameLine();
+    if (unpaired > 0) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+        ImGui::TextUnformatted(
+            trn("! {} pair with one game only", "! {} pairs with one game only", unpaired, unpaired).c_str());
+        ImGui::PopStyleColor();
+    } else if (!rows.empty()) {
+        ImGui::TextDisabled("%s", TR("every pair with both colours"));
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton(TR("Close"))) standings_engine_.reset();
+
+    constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit |
+                           ImGuiTableFlags_ScrollY | ImGuiTableFlags_PadOuterX;
+    if (ImGui::BeginTable("##opponent_list", 9, flags)) {
+        ImGui::TableSetupScrollFreeze(0, 1);
+        ImGui::TableSetupColumn(TR("Opponent"), ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn(TR("Games"));
+        ImGui::TableSetupColumn(TR("White"));
+        ImGui::TableSetupColumn(TR("Black"));
+        ImGui::TableSetupColumn("+");
+        ImGui::TableSetupColumn("=");
+        ImGui::TableSetupColumn("−");
+        ImGui::TableSetupColumn(TR("Points"));
+        ImGui::TableSetupColumn("%");
+        ImGui::TableHeadersRow();
+        for (const auto& [r, record] : rows) {
+            ImGui::TableNextRow();
+            const bool incomplete = record.unpaired > 0;
+            if (incomplete) ImGui::TableSetBgColor(ImGuiTableBgTarget_RowBg1, (ui::WARN & 0x00FFFFFF) | 0x38000000);
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(r->name.c_str());
+            if (incomplete) {
+                ImGui::SameLine();
+                ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+                ImGui::TextUnformatted("!");
+                ImGui::PopStyleColor();
+            }
+            if (incomplete && ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+                ImGui::SetTooltip("%s", trn("{} pair with one game only: the game with colours reversed is missing.",
+                                            "{} pairs with one game only: the games with colours reversed are "
+                                            "missing.",
+                                            record.unpaired, record.unpaired)
+                                            .c_str());
+            }
+            ImGui::TableNextColumn();
+            ImGui::TextDisabled("%d", record.games());
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", record.white);
+            ImGui::TableNextColumn();
+            ImGui::Text("%d", record.games() - record.white);
+            ImGui::TableNextColumn();
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::GOOD);
+            ImGui::Text("%d", record.wins);
+            ImGui::PopStyleColor();
+            ImGui::TableNextColumn();
+            ImGui::TextDisabled("%d", record.draws);
+            ImGui::TableNextColumn();
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+            ImGui::Text("%d", record.losses);
+            ImGui::PopStyleColor();
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(half(record.points()).c_str());
+            ImGui::TableNextColumn();
+            ImGui::TextDisabled("%.1f", 100.0 * record.points() / record.games());
+        }
+        ImGui::EndTable();
+    }
+    if (rows.empty()) ImGui::TextDisabled("%s", TR("No game finished yet."));
+    ImGui::EndChild();
+}
+
 void App::drawCrosstable() {
-    const auto& rows = table_.rows;
+    const auto& rows = shown_.rows;
     if (rows.size() > CROSSTABLE_MAX) return;
     const int n = static_cast<int>(rows.size());
 

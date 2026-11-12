@@ -40,6 +40,10 @@ class Storage {
     [[nodiscard]] std::string lichessToken() const;
     void setLichessToken(const std::string& token) const;
 
+    // The tester's name and site written in the CCRL exports, in settings.json.
+    [[nodiscard]] std::pair<std::string, std::string> ccrlTester() const;
+    void setCcrlTester(const std::string& name, const std::string& site) const;
+
     [[nodiscard]] std::vector<BookEntry> loadBooks() const;
     void saveBooks(const std::vector<BookEntry>& books) const;
 

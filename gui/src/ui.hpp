@@ -101,11 +101,11 @@ void pageTitle(const char* text);
 void beginCard(const char* id, ImVec2 size = ImVec2(0, 0));
 void endCard();
 
-enum class CopyAs { None, Text, Bbcode };
+enum class CopyAs { None, Text, Bbcode, GauntletText, GauntletBbcode };
 
-// A "Copy" button with a menu: as plain text, or as BBCode for a forum post. Returns the choice, None until one is
-// made.
-CopyAs copyButton(const char* id, bool small = false);
+// A "Copy" button with a menu: as plain text, or as BBCode for a forum post, and with `gauntlet` the gauntlet's
+// table in both forms too. Returns the choice, None until one is made.
+CopyAs copyButton(const char* id, bool small = false, bool gauntlet = false);
 
 // Opens a file or a folder with the program the system associates with it. When the system refuses, the path goes
 // to the clipboard and drawOpenPathError(), called once a frame, says so.
