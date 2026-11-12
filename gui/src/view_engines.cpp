@@ -850,7 +850,7 @@ void App::drawEngines() {
 
     ui::label(TR("Reference Elo"), label);
     ImGui::SetNextItemWidth(120.0f * ImGui::GetFontSize() / 16.0f);
-    if (ImGui::InputInt("##elo", &e.elo, 0, 0)) {
+    if (ui::inputInt("##elo", &e.elo)) {
         e.elo   = std::clamp(e.elo, 0, 5000);
         changed = true;
     }
@@ -1043,11 +1043,11 @@ void App::drawEngines() {
                         return fallback;
                     }
                 };
-                long long v  = number(value, 0);
-                long long lo = number(opt.min, LLONG_MIN);
-                long long hi = number(opt.max, LLONG_MAX);
+                int64_t v  = number(value, 0);
+                int64_t lo = number(opt.min, LLONG_MIN);
+                int64_t hi = number(opt.max, LLONG_MAX);
                 if (lo > hi) std::swap(lo, hi);
-                if (ImGui::InputScalar("##v", ImGuiDataType_S64, &v)) {
+                if (ui::inputInt64("##v", &v)) {
                     v      = std::clamp(v, lo, hi);
                     value  = std::to_string(v);
                     edited = true;

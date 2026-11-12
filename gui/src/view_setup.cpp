@@ -30,7 +30,7 @@ float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
 bool inputInt(const char* label, const char* id, int& value, int min, int max, float width = 110.0f) {
     ui::label(label, labelWidth());
     ImGui::SetNextItemWidth(width * ImGui::GetFontSize() / 16.0f);
-    const bool changed = ImGui::InputInt(id, &value, 0, 0);
+    const bool changed = ui::inputInt(id, &value);
     if (changed) value = std::clamp(value, min, max);
     return changed;
 }
@@ -39,7 +39,7 @@ bool inputDouble(const char* label, const char* id, double& value, double min, d
                  float width = 110.0f) {
     ui::label(label, labelWidth());
     ImGui::SetNextItemWidth(width * ImGui::GetFontSize() / 16.0f);
-    const bool changed = ImGui::InputDouble(id, &value, 0, 0, fmt);
+    const bool changed = ui::inputDouble(id, &value, fmt);
     if (changed) value = std::clamp(value, min, max);
     return changed;
 }
@@ -379,7 +379,7 @@ void App::setupLimit() {
             int64_t nodes = static_cast<int64_t>(setup_.nodes);
             ui::label(TR("Nodes per move"), labelWidth());
             ImGui::SetNextItemWidth(140.0f * ImGui::GetFontSize() / 16.0f);
-            if (ImGui::InputScalar("##nodes", ImGuiDataType_S64, &nodes)) {
+            if (ui::inputInt64("##nodes", &nodes)) {
                 setup_.nodes = static_cast<uint64_t>(std::max<int64_t>(1, nodes));
                 changed      = true;
             }
@@ -534,7 +534,7 @@ void App::setupOpenings() {
     int64_t seed = static_cast<int64_t>(setup_.seed);
     ui::label(TR("Seed"), labelWidth());
     ImGui::SetNextItemWidth(160.0f * ImGui::GetFontSize() / 16.0f);
-    if (ImGui::InputScalar("##seed", ImGuiDataType_S64, &seed)) {
+    if (ui::inputInt64("##seed", &seed)) {
         setup_.seed = static_cast<uint64_t>(std::max<int64_t>(0, seed));
         changed     = true;
     }
@@ -788,6 +788,7 @@ void App::setupParticipants() {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
             const bool seed = setup_.format == TournamentFormat::Gauntlet && static_cast<int>(i) < setup_.seeds;
+            ImGui::AlignTextToFramePadding();
             if (seed) {
                 ImGui::PushStyleColor(ImGuiCol_Text, ui::ACCENT);
                 ImGui::Text("%d", static_cast<int>(i + 1));
@@ -796,7 +797,10 @@ void App::setupParticipants() {
                 ImGui::TextDisabled("%d", static_cast<int>(i + 1));
             }
             ImGui::TableNextColumn();
-            ImGui::TextUnformatted(p.name.c_str());
+            ImGui::AlignTextToFramePadding();
+            if (ImGui::Selectable(p.name.c_str(), selected_participant_ == static_cast<int>(i), 0,
+                                  ImVec2(ImGui::CalcTextSize(p.name.c_str()).x, 0)))
+                selected_participant_ = selected_participant_ == static_cast<int>(i) ? -1 : static_cast<int>(i);
             if (std::none_of(engines_.begin(), engines_.end(),
                              [&](const EngineEntry& e) { return e.name == p.name; })) {
                 ImGui::SameLine();
@@ -806,13 +810,13 @@ void App::setupParticipants() {
             }
             ImGui::TableNextColumn();
             ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ImGui::InputInt("##hash", &p.hash, 0, 0)) {
+            if (ui::inputInt("##hash", &p.hash)) {
                 p.hash  = std::max(0, p.hash);
                 changed = true;
             }
             ImGui::TableNextColumn();
             ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ImGui::InputInt("##threads", &p.threads, 0, 0)) {
+            if (ui::inputInt("##threads", &p.threads)) {
                 p.threads = std::clamp(p.threads, 0, 1024);
                 changed   = true;
             }
@@ -820,16 +824,16 @@ void App::setupParticipants() {
             ImGui::SetNextItemWidth(-FLT_MIN);
             if (nodes) {
                 int value = static_cast<int>(std::min<uint64_t>(p.nodes, INT32_MAX));
-                if (ImGui::InputInt("##nodes", &value, 0, 0)) {
+                if (ui::inputInt("##nodes", &value)) {
                     p.nodes = static_cast<uint64_t>(std::max(0, value));
                     changed = true;
                 }
             } else if (depth) {
-                if (ImGui::InputInt("##depth", &p.depth, 0, 0)) {
+                if (ui::inputInt("##depth", &p.depth)) {
                     p.depth = std::clamp(p.depth, 0, 200);
                     changed = true;
                 }
-            } else if (ImGui::InputInt("##time", &p.time_percent, 0, 0)) {
+            } else if (ui::inputInt("##time", &p.time_percent)) {
                 p.time_percent = std::clamp(p.time_percent, 1, 1000);
                 changed        = true;
             }
@@ -846,15 +850,33 @@ void App::setupParticipants() {
                                   : depth ? TR("Hash, Threads, Depth: 0 = the common value.")
                                           : TR("Hash, Threads: 0 = the common value. Time %: time odds, 100 = the "
                                                "same clock as the others."));
+        ImGui::TextDisabled("%s", TR("Click an engine, then Ctrl+Up or Ctrl+Down: to the top or the bottom."));
+    }
+
+    // The engine clicked, to the top or the bottom of the list (the tested engine of a gauntlet, the first seed).
+    auto& selected = selected_participant_;
+    if (selected >= static_cast<int>(list.size())) selected = -1;
+    if (selected >= 0 && !ImGui::GetIO().WantTextInput) {
+        const bool top    = ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_UpArrow);
+        const bool bottom = !top && ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_DownArrow);
+        if (top || bottom) {
+            const auto moved = list[selected];
+            list.erase(list.begin() + selected);
+            list.insert(top ? list.begin() : list.end(), moved);
+            selected = top ? 0 : static_cast<int>(list.size()) - 1;
+            changed  = true;
+        }
     }
 
     if (remove >= 0) {
         list.erase(list.begin() + remove);
-        changed = true;
+        selected = selected == remove ? -1 : selected > remove ? selected - 1 : selected;
+        changed  = true;
     }
     if (up > 0) {
         std::swap(list[up], list[up - 1]);
-        changed = true;
+        selected = selected == up ? up - 1 : selected == up - 1 ? up : selected;
+        changed  = true;
     }
 
     // Adding engines.

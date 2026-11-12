@@ -198,6 +198,7 @@ class App {
     // shell
     void drawShell();
     void drawRail(float width);
+    [[nodiscard]] int gamesPlaying() const;  // games in progress, shown beside the live view in the navigation
     void drawHome();
     void drawNewMatch();
     void drawWorkspace();
@@ -278,6 +279,7 @@ class App {
         std::string message;  // what the last suggestion found
     } picker_;
     int open_picker_ = 0;  // --focus setup-picker: 1 the picker opens, 2 with opponents suggested
+    int selected_participant_ = -1;  // clicked in the list, for Ctrl+Up and Ctrl+Down
     void drawSetupSummary();
     void drawTemplates();
     void setupEngines();

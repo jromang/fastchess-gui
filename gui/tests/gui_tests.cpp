@@ -369,6 +369,74 @@ TEST_CASE("Ctrl and the mouse wheel zoom the interface, not the chart under the 
     ImGui::DestroyContext(context);
 }
 
+TEST_CASE("number fields take arithmetic: + - * / and parentheses") {
+    CHECK(ui::evaluate("40*60") == 2400);
+    CHECK(ui::evaluate("15+10") == 25);
+    CHECK(ui::evaluate(" 2 + 3 * 4 ") == 14);
+    CHECK(ui::evaluate("(2+3)*4") == 20);
+    CHECK(ui::evaluate("100-30-20") == 50);
+    CHECK(ui::evaluate("60/4/3") == 5);
+    CHECK(ui::evaluate("-5+-(3)") == -8);
+    CHECK(ui::evaluate("0,5*3") == 1.5);  // a decimal comma
+    CHECK(ui::evaluate(".25") == 0.25);
+    CHECK(ui::evaluate("1024") == 1024);
+    CHECK_FALSE(ui::evaluate(""));
+    CHECK_FALSE(ui::evaluate("1/0"));
+    CHECK_FALSE(ui::evaluate("2*"));
+    CHECK_FALSE(ui::evaluate("(1+2"));
+    CHECK_FALSE(ui::evaluate("1+2)"));
+    CHECK_FALSE(ui::evaluate("1.2.3"));
+    CHECK_FALSE(ui::evaluate("abc"));
+    CHECK_FALSE(ui::evaluate(std::string(200, '(') + "1" + std::string(200, ')')));
+
+    // Typed in a field, the value is applied by Enter, rounded for an integer; Escape puts it back.
+    auto* context = ImGui::CreateContext();
+    auto& io      = ImGui::GetIO();
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;
+    io.IniFilename   = nullptr;
+    io.DisplaySize   = ImVec2(800, 600);
+    io.DeltaTime     = 1.0f / 60.0f;
+    int value        = 10;
+    double seconds   = 1.5;
+    bool changed     = false;
+    const auto frame = [&](int focus) {
+        ImGui::NewFrame();
+        ImGui::Begin("fields");
+        if (focus == 1) ImGui::SetKeyboardFocusHere();
+        changed |= ui::inputInt("##int", &value);
+        if (focus == 2) ImGui::SetKeyboardFocusHere();
+        changed |= ui::inputDouble("##double", &seconds, "%.2f");
+        ImGui::End();
+        ImGui::Render();
+    };
+    const auto type = [&](int field, const char* text, ImGuiKey key) {
+        frame(field);
+        frame(0);
+        io.AddInputCharactersUTF8(text);
+        frame(0);
+        io.AddKeyEvent(key, true);
+        frame(0);
+        io.AddKeyEvent(key, false);
+        frame(0);
+        frame(0);
+    };
+    frame(0);
+    type(1, "40*60", ImGuiKey_Enter);
+    CHECK(value == 2400);
+    CHECK(changed);
+    type(1, "10/4", ImGuiKey_Enter);
+    CHECK(value == 3);  // 2.5 rounded away from zero
+    changed = false;
+    type(1, "7*7", ImGuiKey_Escape);
+    CHECK(value == 3);
+    CHECK_FALSE(changed);
+    type(1, "x9a", ImGuiKey_Enter);  // the letters are not taken
+    CHECK(value == 9);
+    type(2, "(15+10)/10", ImGuiKey_Enter);
+    CHECK(seconds == 2.5);
+    ImGui::DestroyContext(context);
+}
+
 TEST_CASE("ChessBase comments give White's point of view, clocks and move times") {
     fastchess::config::Pgn config;
     const auto data = sampleGame(true);

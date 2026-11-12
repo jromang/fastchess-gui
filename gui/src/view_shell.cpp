@@ -233,6 +233,14 @@ void App::drawShell() {
     ImGui::End();
 }
 
+int App::gamesPlaying() const {
+    const auto* obs = run_.observer();
+    if (!obs || !run_.running()) return 0;
+    int n = 0;
+    for (int i = 0; i < obs->slotCount(); ++i) n += obs->slotActive(i) ? 1 : 0;
+    return n;
+}
+
 void App::drawRail(float width) {
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(ui::RAIL_BG));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, px(14)));
@@ -252,9 +260,21 @@ void App::drawRail(float width) {
     }
 
     const bool in_tournaments = page_ == Page::Home || page_ == Page::NewMatch || page_ == Page::Tournament;
+    const int playing         = gamesPlaying();
     if (ui::railButton("rail_home", ui::Icon::Trophy, TR("Tournaments"), in_tournaments, width, button)) {
         page_              = Page::Home;
         tournaments_dirty_ = true;
+    }
+    if (playing > 0) {
+        // The games being played, at the icon's top right.
+        const auto min   = ImGui::GetItemRectMin();
+        const float font = ImGui::GetFontSize();
+        const auto count = std::to_string(playing);
+        ui::drawBadge(ImGui::GetWindowDrawList(),
+                      ImVec2(min.x + width * 0.5f + font * 0.75f, min.y + button * 0.36f - font * 0.5f), count.c_str());
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", trn("{} game being played", "{} games being played", playing, playing).c_str());
+        }
     }
     if (ui::railButton("rail_engines", ui::Icon::Engine, TR("Engines"), page_ == Page::Engines, width, button)) {
         page_ = Page::Engines;
@@ -601,7 +621,28 @@ void App::drawWorkspace() {
         drawBroadcast();
         ImGui::EndTabItem();
     }
-    if (tab(TR("Live###tab_live"), Tab::Live)) {
+    // The live view, with the number of games being played in a badge: room is made for it after the name.
+    const int playing = gamesPlaying();
+    std::string live  = TR("Live");
+    const auto count  = std::to_string(playing);
+    if (playing > 0) {
+        const float room = ui::badgeWidth(count.c_str()) + ImGui::GetStyle().ItemInnerSpacing.x;
+        while (ImGui::CalcTextSize((live + " ").c_str()).x - ImGui::CalcTextSize(TR("Live")).x < room) live += ' ';
+    }
+    const bool live_open = tab((live + "###tab_live").c_str(), Tab::Live);
+    if (playing > 0) {
+        const auto max  = ImGui::GetItemRectMax();
+        const auto min  = ImGui::GetItemRectMin();
+        const float pad = ImGui::GetStyle().FramePadding.x;
+        ImGui::GetWindowDrawList()->PushClipRectFullScreen();
+        ui::drawBadge(ImGui::GetWindowDrawList(),
+                      ImVec2(max.x - pad - ui::badgeWidth(count.c_str()) * 0.5f, (min.y + max.y) * 0.5f),
+                      count.c_str());
+        ImGui::GetWindowDrawList()->PopClipRect();
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", trn("{} game being played", "{} games being played", playing, playing).c_str());
+    }
+    if (live_open) {
         drawLive();
         ImGui::EndTabItem();
     }
