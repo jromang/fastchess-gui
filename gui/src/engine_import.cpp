@@ -204,15 +204,17 @@ ImportResult importEngineList(const fs::path& file) {
     }
 
     const auto first = text.find_first_not_of(" \t\r\n\xEF\xBB\xBF");
+    bool json        = false;
     if (first != std::string::npos && (text[first] == '{' || text[first] == '[') && text.compare(first, 2, "[E") != 0) {
         try {
             collectJson(nlohmann::json::parse(text.substr(first)), base, out);
-            return out;
+            json = true;
         } catch (const std::exception&) {
             // Not JSON after all: an INI file starting with a section.
+            out.engines.clear();
         }
     }
-    collectIni(text, base, out);
+    if (!json) collectIni(text, base, out);
 
     for (auto& e : out.engines) {
         std::error_code ec;

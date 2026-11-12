@@ -184,6 +184,7 @@ void App::frame() {
     drawDetached();
     drawSprtCalculator();
     drawQuitModal();
+    drawImportPreview();
 
     // The window title tells how the run is going, also when the window is in the background.
     {

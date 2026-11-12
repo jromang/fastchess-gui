@@ -313,10 +313,16 @@ class App {
     void startQuickTest(int index);
     void finishQuickTest();
     void pollCheck();
+    // Shows what an engine list or a folder holds, to choose the engines to add.
     void importEngines(const ImportResult& imported);
+    void drawImportPreview();
+    void addImported();  // the engines chosen
     [[nodiscard]] bool engineInUse(const std::string& name) const;
     void addEngine(const std::string& path);
     std::string uniqueEngineName(const std::string& base, int ignore_index) const;
+    // Renames the engine (made unique), and what refers to it by name follows: the setup and the queued tournaments,
+    // the read and check queues, the quick test, the relaunch, the schedule's edit and the test suite.
+    void renameEngine(int index, const std::string& name);
 
     // run lifecycle
     void startRun();
@@ -450,8 +456,16 @@ class App {
     std::string option_filter_;
     std::future<CheckResult> check_;
     int check_index_ = -1;
+    std::vector<std::string> check_queue_;  // engine names waiting for a check
     std::string engine_search_;
     std::string engine_group_;  // shown group, empty = all
+    struct ImportPreview {
+        ImportResult result;
+        std::vector<char> known;   // by engine: already in the list, not added again
+        std::vector<char> chosen;  // by engine: to add
+    };
+    std::optional<ImportPreview> import_preview_;
+    bool open_import_preview_ = false;
 
     // Console view.
     std::vector<Console::Line> console_lines_;

@@ -316,6 +316,17 @@ ProbeResult probeEngine(const EngineEntry& entry) {
     return result;
 }
 
+bool sameEngine(const EngineEntry& a, const EngineEntry& b) {
+#ifdef _WIN32
+    const bool same_program = std::equal(a.cmd.begin(), a.cmd.end(), b.cmd.begin(), b.cmd.end(), [](char x, char y) {
+        return std::tolower(static_cast<unsigned char>(x)) == std::tolower(static_cast<unsigned char>(y));
+    });
+#else
+    const bool same_program = a.cmd == b.cmd;
+#endif
+    return same_program && a.args == b.args;
+}
+
 bool isWinboard(const EngineEntry& entry) {
     if (entry.protocol == "xboard") return true;
     auto lower = [](std::string s) {

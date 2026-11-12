@@ -758,6 +758,9 @@ TEST_CASE("engine lists of ChessGUI, cutechess and Arena are imported") {
     CHECK(result.engines[0].options[0].second == "128");
     CHECK(result.engines[1].name == "Crafty");
     CHECK(result.engines[1].protocol == "xboard");
+    // The JSON lists too say which programs are not there.
+    REQUIRE(result.notes.size() == 1);
+    CHECK(result.notes[0].find("Crafty") != std::string::npos);
 
     // An INI list with Command= and Type= (Arena style).
     std::ofstream(dir / "arena.cfg")
@@ -769,6 +772,25 @@ TEST_CASE("engine lists of ChessGUI, cutechess and Arena are imported") {
     CHECK(result.engines[1].protocol == "xboard");
 
     fs::remove_all(dir);
+}
+
+TEST_CASE("an engine imported again is known by its program and arguments, not by its options") {
+    EngineEntry known;
+    known.cmd     = "/engines/sf/stockfish";
+    known.options = {{"UCI_ShowWDL", "true"}};  // what its first read added
+    EngineEntry again;
+    again.cmd     = "/engines/sf/stockfish";
+    again.options = {{"Hash", "16"}};
+    CHECK(sameEngine(known, again));
+    again.args = "--large-pages";
+    CHECK_FALSE(sameEngine(known, again));
+    again.args = "";
+    again.cmd  = "/engines/SF/Stockfish";
+#ifdef _WIN32
+    CHECK(sameEngine(known, again));
+#else
+    CHECK_FALSE(sameEngine(known, again));
+#endif
 }
 
 TEST_CASE("a folder is opened by a file URL that spaces, accents and # cannot break") {

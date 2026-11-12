@@ -97,6 +97,41 @@ std::string App::uniqueEngineName(const std::string& base, int ignore_index) con
     }
 }
 
+void App::renameEngine(int index, const std::string& name) {
+    if (index < 0 || index >= static_cast<int>(engines_.size())) return;
+    const auto old       = engines_[index].name;
+    const auto now       = uniqueEngineName(name, index);
+    engines_[index].name = now;
+    if (now == old) return;
+
+    // Everything that refers to it by name follows.
+    const auto follow = [&](std::string& ref) {
+        if (ref != old) return false;
+        ref = now;
+        return true;
+    };
+    const auto followSetup = [&](MatchSetup& s) {
+        bool changed = follow(s.engine_a);
+        changed |= follow(s.engine_b);
+        for (auto& p : s.participants) changed |= follow(p.name);
+        return changed;
+    };
+    if (followSetup(setup_)) saveSetupSoon();
+    bool queue = false;
+    for (auto& q : queue_) queue |= followSetup(q.setup);
+    if (queue) storage_.saveQueue(queue_);
+    for (auto& n : probe_queue_) follow(n);
+    for (auto& n : check_queue_) follow(n);
+    follow(quick_test_engine_);
+    follow(quick_test_opponent_);
+    follow(relaunch_engine_);
+    follow(edit_engine_);
+    loadSuiteSetup();  // before it is changed and written
+    bool suite = false;
+    for (auto& n : suite_setup_.engines) suite |= follow(n);
+    if (suite) writeJson(storage_.root() / "suite.json", suite_setup_);
+}
+
 void App::addEngine(const std::string& path) {
     EngineEntry entry;
     entry.cmd  = path;
@@ -254,12 +289,8 @@ void App::applyProbe() {
     }
 
     // A freshly added engine takes the name it reports.
-    if (first_probe && !e.id_name.empty() && e.name == uniqueEngineName(fs::path(e.cmd).stem().string(), index)) {
-        const auto old = e.name;
-        e.name         = uniqueEngineName(e.id_name, index);
-        if (setup_.engine_a == old) setup_.engine_a = e.name;
-        if (setup_.engine_b == old) setup_.engine_b = e.name;
-    }
+    if (first_probe && !e.id_name.empty() && e.name == uniqueEngineName(fs::path(e.cmd).stem().string(), index))
+        renameEngine(index, e.id_name);
 
     probe_message_ = trn("{} option read.", "{} options read.", e.uci_options.size(), e.uci_options.size());
     storage_.saveEngines(engines_);
@@ -470,12 +501,8 @@ void App::drawEngines() {
     {
         auto name = e.name;
         if (editText("##name", name)) {
-            const auto unique = uniqueEngineName(name, selected_engine_);
-            if (setup_.engine_a == e.name) setup_.engine_a = unique;
-            if (setup_.engine_b == e.name) setup_.engine_b = unique;
-            e.name  = unique;
+            renameEngine(selected_engine_, name);
             changed = true;
-            saveSetupSoon();
         }
     }
 
@@ -961,22 +988,27 @@ void App::pollCheck() {
 }
 
 void App::importEngines(const ImportResult& imported) {
-    // Windows file names ignore case: C:\Engines\SF.EXE is c:\engines\sf.exe.
-    const auto same_program = [](const std::string& a, const std::string& b) {
-#ifdef _WIN32
-        return std::equal(a.begin(), a.end(), b.begin(), b.end(),
-                          [](unsigned char x, unsigned char y) { return std::tolower(x) == std::tolower(y); });
-#else
-        return a == b;
-#endif
-    };
-    int added = 0;
-    for (auto e : imported.engines) {
-        // Already in the list with the same program and arguments: skipped.
-        const bool known = std::any_of(engines_.begin(), engines_.end(), [&](const EngineEntry& o) {
-            return same_program(o.cmd, e.cmd) && o.args == e.args && o.options == e.options;
-        });
-        if (known) continue;
+    // Shown first, to choose: a folder scan takes every program, the GUI it holds too (Arena.exe).
+    ImportPreview preview;
+    preview.result = imported;
+    for (const auto& e : imported.engines) {
+        // Already in the list: not added again.
+        const bool known =
+            std::any_of(engines_.begin(), engines_.end(), [&](const EngineEntry& o) { return sameEngine(o, e); });
+        preview.known.push_back(known);
+        preview.chosen.push_back(!known);
+    }
+    import_preview_      = std::move(preview);
+    open_import_preview_ = true;
+}
+
+void App::addImported() {
+    if (!import_preview_) return;
+    const auto& imported = import_preview_->result;
+    int added            = 0;
+    for (std::size_t i = 0; i < imported.engines.size(); ++i) {
+        if (!import_preview_->chosen[i] || import_preview_->known[i]) continue;
+        auto e = imported.engines[i];
         e.name = uniqueEngineName(e.name.empty() ? fs::path(e.cmd).stem().string() : e.name, -1);
         engines_.push_back(e);
         probe_queue_.push_back(e.name);
@@ -987,6 +1019,87 @@ void App::importEngines(const ImportResult& imported) {
                                 "{} engines imported; their options are being read.", added, added));
     if (added > 0) selected_engine_ = static_cast<int>(engines_.size()) - added;
     storage_.saveEngines(engines_);
+    import_preview_.reset();
+}
+
+void App::drawImportPreview() {
+    const char* title = TR("Import engines###import_preview");
+    if (open_import_preview_) {
+        ImGui::OpenPopup(title);
+        open_import_preview_ = false;
+    }
+    ImGui::SetNextWindowSize(ImVec2(px(760), 0), ImGuiCond_Appearing);
+    if (!ImGui::BeginPopupModal(title, nullptr)) return;
+    if (!import_preview_) {
+        ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+        return;
+    }
+    auto& p           = *import_preview_;
+    const auto& found = p.result.engines;
+
+    ImGui::TextUnformatted(trn("{} engine found. Untick those to leave out.",
+                               "{} engines found. Untick those to leave out.", found.size(), found.size())
+                               .c_str());
+    if (!p.result.notes.empty()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+        for (const auto& note : p.result.notes) ImGui::TextWrapped("%s", note.c_str());
+        ImGui::PopStyleColor();
+    }
+    if (ImGui::SmallButton(TR("All"))) std::fill(p.chosen.begin(), p.chosen.end(), true);
+    ImGui::SameLine();
+    if (ImGui::SmallButton(TR("None"))) std::fill(p.chosen.begin(), p.chosen.end(), false);
+
+    const float rows = std::min(16.0f, static_cast<float>(found.size()) + 1);
+    if (ImGui::BeginTable("##import_list", 3,
+                          ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp,
+                          ImVec2(0, ImGui::GetFrameHeightWithSpacing() * rows))) {
+        ImGui::TableSetupScrollFreeze(0, 1);
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, ImGui::GetFrameHeight());
+        ImGui::TableSetupColumn(TR("Name"), ImGuiTableColumnFlags_WidthStretch, 0.3f);
+        ImGui::TableSetupColumn(TR("Program"), ImGuiTableColumnFlags_WidthStretch, 0.7f);
+        ImGui::TableHeadersRow();
+        ImGuiListClipper clipper;
+        clipper.Begin(static_cast<int>(found.size()));
+        while (clipper.Step()) {
+            for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
+                const auto& e = found[i];
+                ImGui::TableNextRow();
+                ImGui::PushID(i);
+                ImGui::TableNextColumn();
+                bool chosen = p.chosen[i] && !p.known[i];
+                ImGui::BeginDisabled(p.known[i]);
+                if (ImGui::Checkbox("##chosen", &chosen)) p.chosen[i] = chosen;
+                ImGui::EndDisabled();
+                ImGui::TableNextColumn();
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(e.name.empty() ? fs::path(e.cmd).stem().string().c_str() : e.name.c_str());
+                ImGui::TableNextColumn();
+                const auto program = e.args.empty() ? e.cmd : e.cmd + " " + e.args;
+                if (p.known[i])
+                    ImGui::TextDisabled("%s  %s", program.c_str(), TR("(already in the list)"));
+                else
+                    ImGui::TextUnformatted(program.c_str());
+                ImGui::PopID();
+            }
+        }
+        ImGui::EndTable();
+    }
+
+    int count = 0;
+    for (std::size_t i = 0; i < found.size(); ++i) count += p.chosen[i] && !p.known[i];
+    ImGui::BeginDisabled(count == 0);
+    if (ImGui::Button(trn("Add {} engine", "Add {} engines", count, count).c_str())) {
+        addImported();
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (ImGui::Button(TR("Cancel"))) {
+        import_preview_.reset();
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
 }
 
 }  // namespace fcg

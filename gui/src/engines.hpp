@@ -52,6 +52,10 @@ struct CheckResult {
 // up to the startup timeout plus a few seconds. Failures come with what the engine wrote last, in the report.
 [[nodiscard]] CheckResult checkEngine(const EngineEntry& entry);
 
+// The same program, with the same arguments: the same engine, whatever its options (its first read changes them).
+// Windows file names ignore case: C:\Engines\SF.EXE is c:\engines\sf.exe.
+[[nodiscard]] bool sameEngine(const EngineEntry& a, const EngineEntry& b);
+
 // A WinBoard engine: its protocol is xboard, or it goes through an external adapter (wb2uci).
 [[nodiscard]] bool isWinboard(const EngineEntry& entry);
 
