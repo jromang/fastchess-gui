@@ -66,6 +66,8 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
 
     const auto name = [&](int id) { return spec.participant(id) ? spec.participant(id)->engine.name : "?"; };
     for (auto it = results.rbegin(); it != results.rend(); ++it) {
+        // The PGN file holds every game recorded, voided ones too: complete up to the end of the last one.
+        s.pgn_bytes = std::max(s.pgn_bytes, it->pgn.end());
         if (it->voided) continue;
         if (s.recent.size() < 20)
             s.recent.push_back(fmt::format("{} - {} {}", name(it->white), name(it->black), it->result));
@@ -73,6 +75,48 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
             s.played_games.push_back({it->number() + 1, name(it->white), name(it->black), it->result});
         }
         s.played++;
+
+        auto& st = s.stats;
+        st.games++;
+        st.white_wins += it->result == "1-0";
+        st.black_wins += it->result == "0-1";
+        st.draws += it->result == "1/2-1/2";
+        st.plies += it->plies;
+        st.duration_ms += it->duration_ms;
+        using fastchess::MatchTermination;
+        std::string kind;
+        switch (it->termination) {
+            case MatchTermination::ADJUDICATION:
+                st.adjudications++;
+                break;
+            case MatchTermination::TIMEOUT:
+                st.time_losses++;
+                kind = "time";
+                break;
+            case MatchTermination::DISCONNECT:
+                st.crashes++;
+                kind = "crash";
+                break;
+            case MatchTermination::STALL:
+                st.stalls++;
+                kind = "stall";
+                break;
+            case MatchTermination::ILLEGAL_MOVE:
+                st.illegal_moves++;
+                kind = "illegal";
+                break;
+            default:
+                break;
+        }
+        if (!kind.empty() && s.anomalies.size() < 100) {
+            const auto loser = it->result == "1-0" ? name(it->black) : it->result == "0-1" ? name(it->white) : "";
+            s.anomalies.push_back(
+                {it->number() + 1, name(it->white), name(it->black), it->result, kind, loser, it->reason});
+        }
+    }
+    if (s.pgn_bytes > 0) {
+        s.pgn_file = in.dir / spec.pgnFile();  // TournamentState::pgnPath()
+        s.pgn_name = spec.pgnFile();
     }
 
     const auto elo = [&](const std::string& engine) {
@@ -99,6 +143,15 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
         for (const auto& m : st.moves) {
             g.san.push_back(m.san);
             g.uci.push_back(chess::uci::moveToUci(m.move, frc));
+            LiveGame::Ply ply;
+            ply.book    = m.book;
+            ply.depth   = static_cast<int>(m.depth);
+            ply.time_ms = m.time_ms;
+            if (!m.book && m.score) {
+                const int cp = scoreCp(*m.score);
+                ply.score_cp = m.mover == chess::Color::WHITE ? cp : -cp;
+            }
+            g.plies.push_back(ply);
         }
 
         const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - st.think_start).count();

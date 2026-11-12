@@ -137,8 +137,11 @@ void App::drawBroadcast() {
     // Web page.
     ui::beginCard("bc_web");
     ui::pageTitle(TR("Web page"));
-    ImGui::TextDisabled("%s", TR("Every game in progress, the standings and the crosstable, read-only, refreshed "
-                                 "every second."));
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextDisabled("%s", TR("Every game in progress, the one followed with its evaluation bar, arrows and charts; "
+                                 "the standings, the crosstable, the statistics and anomalies, and the games' PGN "
+                                 "file to download. Read-only, refreshed every second."));
+    ImGui::PopTextWrapPos();
     toggle(TR("Serve the web page"), setup_.broadcast_web);
     ImGui::SetNextItemWidth(px(120));
     ImGui::BeginDisabled(broadcaster_.web().running());
