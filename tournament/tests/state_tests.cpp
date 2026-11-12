@@ -1009,6 +1009,8 @@ TEST_CASE("state: a new tournament writes its games to <name>.pgn, kept when it 
     auto json = nlohmann::json::parse(readAll(dir / "tournament.json"));
     CHECK(json["pgn_file"] == file + ".pgn");
     CHECK(json["pgn_chessbase_file"] == file + "-chessbase.pgn");
+    // Version 2, which versions before 0.4.13 refuse rather than writing a games.pgn of their own.
+    CHECK(json["version"] == 2);
     json["name"] = "Another name";
     std::ofstream(dir / "tournament.json", std::ios::binary | std::ios::trunc) << json.dump(2);
 
@@ -1028,9 +1030,18 @@ TEST_CASE("state: a new tournament writes its games to <name>.pgn, kept when it 
     state.reset();
 
     // A file name that is not one of the folder's is refused: the games would be written there.
-    json["pgn_file"] = "../elsewhere.pgn";
-    std::ofstream(dir / "tournament.json", std::ios::binary | std::ios::trunc) << json.dump(2);
-    CHECK_THROWS_AS((void)TournamentState::open(dir), std::runtime_error);
+    // So is a file of the folder that is not a PGN (the journal would be cut to the games' end), and the same
+    // file for both styles.
+    for (const auto& [plain, chessbase] : {std::pair<std::string, std::string>{"../elsewhere.pgn", "x.pgn"},
+                                           {"journal.jsonl", "x.pgn"},
+                                           {"tournament.json", "x.pgn"},
+                                           {"same.pgn", "SAME.pgn"}}) {
+        CAPTURE(plain);
+        json["pgn_file"]           = plain;
+        json["pgn_chessbase_file"] = chessbase;
+        std::ofstream(dir / "tournament.json", std::ios::binary | std::ios::trunc) << json.dump(2);
+        CHECK_THROWS_AS((void)TournamentState::open(dir), std::runtime_error);
+    }
 }
 
 namespace {
@@ -1040,6 +1051,7 @@ void makeOld(const fs::path& dir) {
     auto json = nlohmann::json::parse(readAll(dir / "tournament.json"));
     CHECK(json.erase("pgn_file") == 1);
     CHECK(json.erase("pgn_chessbase_file") == 1);
+    json["version"] = 1;
     std::ofstream(dir / "tournament.json", std::ios::binary | std::ios::trunc) << json.dump(2);
     fs::rename(dir / "test.pgn", dir / "games.pgn");
     fs::rename(dir / "test-chessbase.pgn", dir / "games-chessbase.pgn");
@@ -1074,7 +1086,9 @@ TEST_CASE("state: a tournament of an earlier version keeps games.pgn; the game d
     CHECK(countGames(old_dir / "games-chessbase.pgn") == 4);
     CHECK_FALSE(fs::exists(old_dir / "test.pgn"));
     // Still without the names: an earlier version opens it as before.
-    CHECK_FALSE(nlohmann::json::parse(readAll(old_dir / "tournament.json")).contains("pgn_file"));
+    const auto old_json = nlohmann::json::parse(readAll(old_dir / "tournament.json"));
+    CHECK_FALSE(old_json.contains("pgn_file"));
+    CHECK(old_json["version"] == 1);
 
     const auto db = readGameDb({old_dir, new_dir});
     REQUIRE(db.sources.size() == 2);

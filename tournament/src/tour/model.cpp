@@ -1,5 +1,6 @@
 #include "model.hpp"
 
+#include <algorithm>
 #include <filesystem>
 
 #include <core/crc32.hpp>
@@ -62,8 +63,24 @@ void from_json(const nlohmann::json& j, FileFingerprint& f) {
     f.mtime = j.value("mtime", int64_t{0});
 }
 
+namespace {
+
+// File names compared as Windows does, letter case aside (ASCII only, enough for ".pgn").
+std::string asciiLower(std::string s) {
+    for (auto& c : s) {
+        if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+    }
+    return s;
+}
+
+}  // namespace
+
 void to_json(nlohmann::json& j, const TournamentSpec& s) {
-    j = {{"version", s.version},
+    // Version 2: PGN files with other names than games.pgn. Versions before 0.4.13 would read and write a
+    // games.pgn of their own there (and append its blank games to the file of "Also append every game to"), so
+    // they refuse such a folder instead.
+    const bool named = s.pgnFile() != "games.pgn" || s.chessbasePgnFile() != "games-chessbase.pgn";
+    j = {{"version", std::max(s.version, named ? 2 : 1)},
          {"name", s.name},
          {"format", s.format},
          {"cycles", s.cycles},
@@ -85,7 +102,7 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
 
 void from_json(const nlohmann::json& j, TournamentSpec& s) {
     s.version = j.value("version", 1);
-    if (s.version > 1) throw std::runtime_error("this tournament was written by a newer version of fastchess-gui");
+    if (s.version > 2) throw std::runtime_error("this tournament was written by a newer version of fastchess-gui");
 
     s.name      = j.value("name", std::string{});
     s.format    = j.value("format", Format::Match);
@@ -104,10 +121,14 @@ void from_json(const nlohmann::json& j, TournamentSpec& s) {
     // A file of the folder, nothing else: the games are written to it.
     s.pgn_file           = j.value("pgn_file", std::string{});
     s.pgn_chessbase_file = j.value("pgn_chessbase_file", std::string{});
+    // A .pgn file, so that it can never be the journal or tournament.json, and two different files.
     for (const auto& file : {s.pgn_file, s.pgn_chessbase_file}) {
-        if (!file.empty() && fileNameOf(file) != file)
+        const bool pgn = file.size() > 4 && asciiLower(file.substr(file.size() - 4)) == ".pgn";
+        if (!file.empty() && (fileNameOf(file) != file || !pgn))
             throw std::runtime_error("invalid PGN file name \"" + file + "\"");
     }
+    if (asciiLower(s.pgnFile()) == asciiLower(s.chessbasePgnFile()))
+        throw std::runtime_error("the two PGN files have the same name \"" + s.pgnFile() + "\"");
 }
 
 std::string fileStemOf(const std::string& name) {
