@@ -649,7 +649,15 @@ std::string RunController::view(const fs::path& dir) {
 
     std::unique_ptr<tour::TournamentState> tournament;
     try {
-        tournament = tour::TournamentState::open(dir);
+        try {
+            tournament = tour::TournamentState::open(dir);
+        } catch (const tour::FolderBusy&) {
+            // Played by another program (a --run in a terminal...): shown as it stands, without touching it.
+            tournament = tour::TournamentState::open(dir, true);
+            Console::instance().add(
+                trf("{} is open in another program: it is only shown here, as it was when opened.", dir.string()),
+                true);
+        }
     } catch (const std::exception& e) {
         return trf("Cannot open the tournament: {}", e.what());
     }

@@ -21,6 +21,7 @@ namespace {
 
 constexpr const char* SPEC_FILE    = "tournament.json";
 constexpr const char* JOURNAL_FILE = "journal.jsonl";
+constexpr const char* READ_ONLY    = "this tournament is open in another program, and only shown here";
 
 // The events without the edits an "edit_undone" cancels, nor the end of tournament such an edit caused.
 std::vector<nlohmann::json> withoutUndoneEdits(const std::vector<nlohmann::json>& events) {
@@ -93,18 +94,6 @@ uint32_t parseDuration(const std::string& text) {
 int64_t nowMs() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
         .count();
-}
-
-void writeFileAtomically(const fs::path& file, const std::string& text) {
-    const auto tmp = fs::path(file).concat(".tmp");
-    {
-        std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
-        out << text;
-        if (!out) throw std::runtime_error("cannot write " + tmp.string());
-    }
-    std::error_code ec;
-    fs::rename(tmp, file, ec);
-    if (ec) throw std::runtime_error("cannot write " + file.string());
 }
 
 // The reference ratings after the Result tag, where rating lists and databases read them.
@@ -223,8 +212,8 @@ std::unique_ptr<TournamentState> TournamentState::create(const fs::path& dir, To
 
     spec.book = fingerprint(spec.conditions.opening.file);
     for (auto& p : spec.participants) p.program = fingerprint(p.engine.cmd);
-    writeFileAtomically(dir / SPEC_FILE,
-                        nlohmann::json(spec).dump(4, ' ', false, nlohmann::json::error_handler_t::replace) + "\n");
+    replaceFile(dir / SPEC_FILE,
+                nlohmann::json(spec).dump(4, ' ', false, nlohmann::json::error_handler_t::replace) + "\n");
 
     auto state = open(dir);
 
@@ -234,7 +223,7 @@ std::unique_ptr<TournamentState> TournamentState::create(const fs::path& dir, To
     return state;
 }
 
-std::unique_ptr<TournamentState> TournamentState::open(const fs::path& dir) {
+std::unique_ptr<TournamentState> TournamentState::open(const fs::path& dir, bool read_only) {
     std::ifstream in(dir / SPEC_FILE, std::ios::binary);
     if (!in) throw std::runtime_error("no tournament in " + dir.string());
 
@@ -246,6 +235,9 @@ std::unique_ptr<TournamentState> TournamentState::open(const fs::path& dir) {
     }
 
     std::unique_ptr<TournamentState> state(new TournamentState(dir, std::move(spec)));
+    state->read_only_ = read_only;
+    // Before anything is read: the journal of a tournament another program plays may grow meanwhile.
+    if (!read_only) state->lock_ = std::make_unique<FolderLock>(dir);
     state->load();
     return state;
 }
@@ -281,7 +273,11 @@ fastchess::book::Opening TournamentState::openingFor(const Encounter& encounter)
 }
 
 void TournamentState::load() {
-    const auto events = withoutUndoneEdits(Journal::read(dir_ / JOURNAL_FILE));
+    // A damaged line (a disk that lost part of a write) is skipped rather than making the tournament impossible to
+    // open; read-only, the file is not touched.
+    std::vector<std::string> damaged;
+    const auto events = withoutUndoneEdits(Journal::read(dir_ / JOURNAL_FILE, !read_only_, &damaged));
+    for (const auto& d : damaged) warnings_.push_back(d + ": skipped");
     std::set<uint64_t> written_out;  // games.pgn offsets of the games written to spec_.pgn_out
 
     for (std::size_t i = 0; i < events.size(); ++i) {
@@ -331,9 +327,16 @@ void TournamentState::load() {
         keep    = std::max(keep, r.pgn.end());
         keep_cb = std::max(keep_cb, r.pgn_chessbase.end());
     }
-    pgn_           = std::make_unique<PgnFile>(pgnPath(), keep);
-    pgn_chessbase_ = std::make_unique<PgnFile>(chessbasePgnPath(), keep_cb);
-    journal_       = std::make_unique<Journal>(dir_ / JOURNAL_FILE);
+    if (!read_only_) {
+        pgn_           = std::make_unique<PgnFile>(pgnPath(), keep);
+        pgn_chessbase_ = std::make_unique<PgnFile>(chessbasePgnPath(), keep_cb);
+        journal_       = std::make_unique<Journal>(dir_ / JOURNAL_FILE);
+        for (const auto* file : {pgn_.get(), pgn_chessbase_.get()}) {
+            if (file->missing() == 0) continue;
+            warnings_.push_back(file->path().string() + " lost its end (a power cut?): " +
+                                std::to_string(file->missing()) + " bytes of the last games are missing");
+        }
+    }
 
     // A round may have ended right before a stop, before the next one was paired.
     pairIfReady();
@@ -342,7 +345,7 @@ void TournamentState::load() {
     if (!finished_ && schedule_.size() && !gamesLeft()) {
         finished_      = true;
         finish_reason_ = "complete";
-        journal_->append({{"t", "finished"}, {"why", finish_reason_}});
+        if (journal_) journal_->append({{"t", "finished"}, {"why", finish_reason_}});
     }
 
     if (spec_.book.size > 0 && changedSince(spec_.conditions.opening.file, spec_.book)) {
@@ -661,6 +664,7 @@ Impact TournamentState::preview(const Edit& edit) const {
 }
 
 void TournamentState::applyEdit(const Edit& edit) {
+    if (read_only_) throw std::runtime_error(READ_ONLY);
     const auto impact = preview(edit);
     if (!impact.error.empty()) throw std::runtime_error(impact.error);
 
@@ -695,6 +699,7 @@ bool TournamentState::canUndo() const {
 }
 
 void TournamentState::undoEdit() {
+    if (read_only_) throw std::runtime_error(READ_ONLY);
     std::lock_guard<std::mutex> lock(mutex_);
     if (!undo_ || undo_->claims != claims_) {
         throw std::runtime_error("a game started since the last change, which can no longer be undone");
@@ -794,7 +799,7 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
 
 std::optional<GameTask> TournamentState::claimNext() {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (finished_) return std::nullopt;
+    if (finished_ || read_only_) return std::nullopt;
 
     while (!open_.empty()) {
         const auto [encounter, game] = open_.front();

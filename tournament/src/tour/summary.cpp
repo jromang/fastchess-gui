@@ -20,7 +20,9 @@ std::optional<Summary> summarize(const fs::path& dir) {
         s.dir  = dir;
         s.spec = nlohmann::json::parse(in).get<TournamentSpec>();
 
-        const auto replayed = TournamentState::replay(Journal::read(dir / "journal.jsonl", false), s.spec);
+        // A damaged line does not hide the tournament from the list; opening it reports the line.
+        std::vector<std::string> damaged;
+        const auto replayed = TournamentState::replay(Journal::read(dir / "journal.jsonl", false, &damaged), s.spec);
         s.played            = replayed.played;
         s.total             = replayed.total;
         s.finished          = replayed.finished;

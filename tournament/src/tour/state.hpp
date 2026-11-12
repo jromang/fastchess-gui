@@ -11,9 +11,12 @@
 // Both are written in the order games end, and the journal finds every game by its place in them. The PGN file of
 // the user's (spec.pgn_out) gets them in schedule order instead: see writeOut().
 //
-// A finished game is written to both PGN files first, then to the journal (synced to disk). When a tournament is
-// opened, PGN text past the last journaled game is cut, and games that were running are simply played again,
+// A finished game is written to both PGN files first, then to the journal, each synced to disk. When a tournament
+// is opened, PGN text past the last journaled game is cut, and games that were running are simply played again,
 // with the opening their encounter started with. Resuming is therefore exact at any concurrency.
+//
+// One TournamentState of one program at a time has a folder open for writing (tournament.lock, see files.hpp);
+// others can open it read-only.
 
 #include <cstdint>
 #include <deque>
@@ -34,6 +37,7 @@
 #include <types/match_data.hpp>
 
 #include "edits.hpp"
+#include "files.hpp"
 #include "journal.hpp"
 #include "model.hpp"
 #include "openings.hpp"
@@ -109,8 +113,9 @@ class TournamentState {
     static std::unique_ptr<TournamentState> create(const std::filesystem::path& dir, TournamentSpec spec);
 
     // Opens an existing tournament. Throws, with a readable message, when the folder is not a tournament or its
-    // files cannot be read.
-    static std::unique_ptr<TournamentState> open(const std::filesystem::path& dir);
+    // files cannot be read, and FolderBusy when another program (or TournamentState) has it open for writing.
+    // `read_only` writes nothing, takes no lock and makes no edit: to show a tournament another program plays.
+    static std::unique_ptr<TournamentState> open(const std::filesystem::path& dir, bool read_only = false);
 
     [[nodiscard]] static bool isTournament(const std::filesystem::path& dir);
 
@@ -129,6 +134,7 @@ class TournamentState {
     TournamentState& operator=(const TournamentState&) = delete;
 
     [[nodiscard]] const std::filesystem::path& dir() const noexcept { return dir_; }
+    [[nodiscard]] bool readOnly() const noexcept { return read_only_; }
     [[nodiscard]] const TournamentSpec& spec() const noexcept { return spec_; }
     [[nodiscard]] std::filesystem::path pgnPath() const { return dir_ / "games.pgn"; }
     [[nodiscard]] std::filesystem::path chessbasePgnPath() const { return dir_ / "games-chessbase.pgn"; }
@@ -255,6 +261,8 @@ class TournamentState {
     };
 
     std::filesystem::path dir_;
+    bool read_only_ = false;
+    std::unique_ptr<FolderLock> lock_;
     TournamentSpec spec_;
     Schedule schedule_;
     std::unique_ptr<OpeningSource> openings_;  // loaded when a new encounter first needs it

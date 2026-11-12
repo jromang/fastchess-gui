@@ -4,29 +4,13 @@
 #include <stdexcept>
 #include <string>
 
-#ifdef _WIN32
-#    include <io.h>
-#else
-#    include <unistd.h>
-#endif
+#include "files.hpp"
 
 namespace fcg::tour {
 
 namespace fs = std::filesystem;
 
-namespace {
-
-void syncToDisk(std::FILE* file) {
-#ifdef _WIN32
-    _commit(_fileno(file));
-#else
-    fsync(fileno(file));
-#endif
-}
-
-}  // namespace
-
-std::vector<nlohmann::json> Journal::read(const fs::path& file, bool repair) {
+std::vector<nlohmann::json> Journal::read(const fs::path& file, bool repair, std::vector<std::string>* damaged) {
     std::vector<nlohmann::json> events;
 
     std::ifstream in(file, std::ios::binary);
@@ -56,7 +40,9 @@ std::vector<nlohmann::json> Journal::read(const fs::path& file, bool repair) {
         try {
             events.push_back(nlohmann::json::parse(content));
         } catch (const nlohmann::json::exception&) {
-            throw std::runtime_error(file.string() + ", line " + std::to_string(line) + ": not a valid event");
+            const auto what = file.string() + ", line " + std::to_string(line) + ": not a valid event";
+            if (!damaged) throw std::runtime_error(what);
+            damaged->push_back(what);
         }
     }
 
@@ -64,12 +50,24 @@ std::vector<nlohmann::json> Journal::read(const fs::path& file, bool repair) {
 }
 
 Journal::Journal(const fs::path& file) {
-#ifdef _WIN32
-    file_ = _wfopen(file.c_str(), L"ab");
-#else
-    file_ = std::fopen(file.c_str(), "ab");
-#endif
+    // A partial last line that could not be cut (read() without repair, or the cut failed) becomes a line of its
+    // own, which read() reports, instead of spoiling the next one.
+    bool cut_short = false;
+    {
+        std::ifstream in(file, std::ios::binary | std::ios::ate);
+        if (in && in.tellg() > 0) {
+            in.seekg(-1, std::ios::end);
+            cut_short = in.get() != '\n';
+        }
+    }
+
+    file_ = openFile(file, "ab");
     if (!file_) throw std::runtime_error("cannot write " + file.string());
+    if (cut_short && (std::fputc('\n', file_) == EOF || !syncFile(file_))) {
+        std::fclose(file_);
+        file_ = nullptr;
+        throw std::runtime_error("cannot write " + file.string());
+    }
 }
 
 Journal::~Journal() {
@@ -77,11 +75,12 @@ Journal::~Journal() {
 }
 
 void Journal::append(const nlohmann::json& event) {
+    if (failed_) throw std::runtime_error("cannot write the tournament journal");
     const auto line = event.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + '\n';
-    if (std::fwrite(line.data(), 1, line.size(), file_) != line.size() || std::fflush(file_) != 0) {
-        throw std::runtime_error("cannot write the tournament journal");
+    if (std::fwrite(line.data(), 1, line.size(), file_) != line.size() || !syncFile(file_)) {
+        failed_ = true;
+        throw std::runtime_error("cannot write the tournament journal (is the disk full?)");
     }
-    syncToDisk(file_);
 }
 
 }  // namespace fcg::tour

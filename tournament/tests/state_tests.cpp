@@ -5,7 +5,13 @@
 #include <map>
 #include <set>
 
+#ifndef _WIN32
+#    include <sys/wait.h>
+#    include <unistd.h>
+#endif
+
 #include <tour/engine_text.hpp>
+#include <tour/files.hpp>
 #include <tour/journal.hpp>
 #include <tour/state.hpp>
 
@@ -224,6 +230,143 @@ TEST_CASE("state: a malformed journal is reported with its position") {
         out << R"({"t":"teleport"})" << "\n";
     }
     CHECK_THROWS_WITH_AS((void)TournamentState::open(dir), doctest::Contains("event 1"), std::runtime_error);
+}
+
+TEST_CASE("journal: a damaged line is skipped and reported; a partial line left in place gets its own line") {
+    const auto dir = freshDir("journal-damaged");
+    fs::create_directories(dir);
+    const auto file = dir / "journal.jsonl";
+    {
+        Journal journal(file);
+        journal.append({{"t", "a"}});
+    }
+    {
+        std::ofstream out(file, std::ios::binary | std::ios::app);
+        out << std::string(5, '\0') << "\n" << R"({"t":"b","cut)";
+    }
+    // Opened without a repair first: the next line must not be glued to the partial one.
+    {
+        Journal journal(file);
+        journal.append({{"t", "c"}});
+    }
+
+    std::vector<std::string> damaged;
+    const auto events = Journal::read(file, false, &damaged);
+    REQUIRE(events.size() == 2);
+    CHECK(events[0]["t"] == "a");
+    CHECK(events[1]["t"] == "c");
+    REQUIRE(damaged.size() == 2);
+    CHECK(damaged[0].find("line 2") != std::string::npos);
+    CHECK(damaged[1].find("line 3") != std::string::npos);
+}
+
+TEST_CASE("state: a damaged journal line is skipped with a warning, the tournament still opens") {
+    const auto dir = freshDir("state-damaged");
+    {
+        auto state      = TournamentState::create(dir, matchSpec(4));
+        const auto task = state->claimNext();
+        state->complete(*task, gameData(*task, "1-0"));
+    }
+    {
+        std::ofstream out(dir / "journal.jsonl", std::ios::binary | std::ios::app);
+        out << "{\"t\":\"game_fin\x01\x02\n";
+    }
+    auto state = TournamentState::open(dir);
+    CHECK(state->results().size() == 1);
+    REQUIRE(state->warnings().size() == 1);
+    CHECK(state->warnings()[0].find("skipped") != std::string::npos);
+}
+
+TEST_CASE("state: a PGN file that lost its end is filled up, new games do not land on journaled ones") {
+    const auto dir = freshDir("state-pgn-lost");
+    uint64_t end   = 0;
+    {
+        auto state = TournamentState::create(dir, matchSpec(4));
+        for (int i = 0; i < 2; ++i) {
+            const auto task = state->claimNext();
+            state->complete(*task, gameData(*task, "1-0"));
+        }
+        end = state->results().back().pgn.end();
+    }
+    // The disk kept the journal but not the end of the PGN (a power cut on a disk that reorders writes).
+    fs::resize_file(dir / "games.pgn", end - 10);
+
+    auto state = TournamentState::open(dir);
+    REQUIRE(state->warnings().size() == 1);
+    CHECK(state->warnings()[0].find("10 bytes") != std::string::npos);
+    const auto task = state->claimNext();
+    const auto rec  = state->complete(*task, gameData(*task, "1-0"));
+    CHECK(rec.result.pgn.offset == end);
+    CHECK(readSpan(dir / "games.pgn", rec.result.pgn)->find("[Event ") == 0);
+}
+
+TEST_CASE("state: one program at a time writes a tournament folder; others can read it") {
+    const auto dir = freshDir("state-lock");
+    auto state     = TournamentState::create(dir, matchSpec(4));
+    {
+        const auto task = state->claimNext();
+        state->complete(*task, gameData(*task, "1-0"));
+    }
+
+    // The same program may open it again (the window resumes the tournament it shows).
+    CHECK_NOTHROW((void)TournamentState::open(dir));
+
+    // Read-only: nothing to claim, no edit, the files untouched.
+    const auto journal = readAll(dir / "journal.jsonl");
+    auto shown         = TournamentState::open(dir, true);
+    CHECK(shown->readOnly());
+    CHECK(shown->results().size() == 1);
+    CHECK_FALSE(shown->claimNext());
+    Edit edit;
+    edit.kind  = Edit::Kind::VoidGames;
+    edit.games = {{0, 0}};
+    CHECK_THROWS_AS(shown->applyEdit(edit), std::runtime_error);
+    CHECK(readAll(dir / "journal.jsonl") == journal);
+
+#ifndef _WIN32
+    // Another program is refused while this one has it open.
+    const auto refused = [&] {
+        const pid_t child = fork();
+        if (child == 0) {
+            int code = 3;
+            try {
+                (void)TournamentState::open(dir);
+                code = 0;
+            } catch (const FolderBusy&) {
+                code = 1;
+            } catch (...) {
+                code = 2;
+            }
+            _exit(code);
+        }
+        int status = 0;
+        waitpid(child, &status, 0);
+        return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+    };
+    CHECK(refused() == 1);
+    shown.reset();
+    state.reset();
+    CHECK(refused() == 0);
+#endif
+}
+
+TEST_CASE("files: a replaced file keeps its permissions, and the old content as .bak when asked") {
+    const auto dir = freshDir("files");
+    fs::create_directories(dir);
+    const auto file = dir / "settings.json";
+    replaceFile(file, "one");
+    CHECK(readAll(file) == "one");
+    CHECK_FALSE(fs::exists(fs::path(file).concat(".bak")));
+#ifndef _WIN32
+    fs::permissions(file, fs::perms::owner_read | fs::perms::owner_write, fs::perm_options::replace);
+#endif
+    replaceFile(file, "two", true);
+    CHECK(readAll(file) == "two");
+    CHECK(readAll(fs::path(file).concat(".bak")) == "one");
+    CHECK_FALSE(fs::exists(fs::path(file).concat(".tmp")));
+#ifndef _WIN32
+    CHECK(fs::status(file).permissions() == (fs::perms::owner_read | fs::perms::owner_write));
+#endif
 }
 
 TEST_CASE("state: the PV warnings of a game are kept with its result, by ply") {
