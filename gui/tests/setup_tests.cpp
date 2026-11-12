@@ -127,10 +127,20 @@ TEST_CASE("the setup's Syzygy path and OwnBook off are given to the engines that
         return "-";
     };
 
+    // An engine added to the tournament later, with options of its own.
+    EngineEntry later = engines[0];
+    later.name        = "later";
+    later.options     = {{"SyzygyPath", "/own/tb"}, {"OwnBook", "false"}};
+
     // Off by default: nothing changes.
     auto run = buildRun(setup, engines, topology, dir);
     CHECK(option(run.engines[0], "SyzygyPath") == "-");
     CHECK(option(run.engines[0], "OwnBook") == "-");
+    CHECK(run.spec.forced_options.empty());
+    // An engine added later keeps its own options, not another participant's ("unread"'s OwnBook).
+    auto config = participantConfig(later, run.spec);
+    CHECK(option(config, "SyzygyPath") == "/own/tb");
+    CHECK(option(config, "OwnBook") == "false");
 
     setup.engine_syzygy      = true;
     setup.engine_ownbook_off = true;
@@ -141,12 +151,29 @@ TEST_CASE("the setup's Syzygy path and OwnBook off are given to the engines that
     CHECK(option(run.engines[1], "OwnBook") == "-");
     CHECK(option(run.engines[2], "OwnBook") == "true");
 
-    // An engine added to the tournament later gets them too.
-    EngineEntry later = engines[0];
-    later.name        = "later";
-    const auto config = participantConfig(later, run.spec);
+    // An engine added to the tournament later gets them too, also once the tournament is read back from its folder.
+    config = participantConfig(later, run.spec);
     CHECK(option(config, "SyzygyPath") == "/tb/wdl");
     CHECK(option(config, "OwnBook") == "false");
+    const auto stored = nlohmann::json(run.spec).get<tour::TournamentSpec>();
+    config            = participantConfig(later, stored);
+    CHECK(option(config, "SyzygyPath") == "/tb/wdl");
+    CHECK(option(config, "OwnBook") == "false");
+    // An engine that does not have them is left alone.
+    EngineEntry plain = engines[1];
+    plain.options     = {{"OwnBook", "true"}};
+    config            = participantConfig(plain, stored);
+    CHECK(option(config, "SyzygyPath") == "-");
+    CHECK(option(config, "OwnBook") == "true");
+
+    // Only what the setup forced: with the own books left alone, the engine added later keeps its own OwnBook.
+    setup.engine_ownbook_off = false;
+    run                      = buildRun(setup, engines, topology, dir);
+    later.options            = {{"OwnBook", "true"}};
+    config                   = participantConfig(later, run.spec);
+    CHECK(option(config, "SyzygyPath") == "/tb/wdl");
+    CHECK(option(config, "OwnBook") == "true");
+    setup.engine_ownbook_off = true;
 
     // Kept with the setup, as templates and the queue store it.
     const auto back = nlohmann::json(setup).get<MatchSetup>();
