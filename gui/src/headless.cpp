@@ -1,5 +1,6 @@
 #include "headless.hpp"
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <csignal>
@@ -114,14 +115,17 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
         return 0;
     }
 
+    // The games that count, as the total does: voided games are not.
+    const auto results = state->results();
+    const auto played  = static_cast<uint64_t>(
+        std::count_if(results.begin(), results.end(), [](const tour::GameResult& r) { return !r.voided; }));
     std::printf("%s: %s\nFolder: %s\nCtrl+C stops it; it resumes where it stopped with --run on the folder.\n\n",
                 state->spec().name.c_str(),
-                state->results().empty() ? "starting"
-                                         : fmt::format("resuming, {} games played", state->results().size()).c_str(),
+                results.empty() ? "starting" : fmt::format("resuming, {} games played", played).c_str(),
                 state->dir().string().c_str());
 
     ConsoleListener listener(*state);
-    listener.setAlready(state->results().size());
+    listener.setAlready(played);
 
     // The command line comes before the setup file.
     if (broadcast.tlcs_port) settings.tlcs = true, settings.tlcs_port = *broadcast.tlcs_port;

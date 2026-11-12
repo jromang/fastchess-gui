@@ -460,7 +460,7 @@ void App::onRunFinished() {
 
     // The queue goes on after a tournament that ended by itself, not after a stop or an error.
     const bool completed = error.empty() && !run_.stoppedByUser() && !fastchess::atomic::abnormal_termination;
-    if (completed && !queue_.empty() && !quit_pending_) startFromQueue();
+    if (completed && !queue_.empty() && !quit_pending_) startFromQueue(true);
 }
 
 void App::enqueue() {
@@ -472,17 +472,24 @@ void App::enqueue() {
     Console::instance().add(trf("Queued: {}", item.label));
 }
 
-void App::startFromQueue() {
-    if (queue_.empty() || run_.running()) return;
-    auto next = queue_.front().setup;
-    // The look of the program follows the settings, not the queued setup.
-    next.language = setup_.language;
-    next.theme    = setup_.theme;
-    next.notify   = setup_.notify;
-    setup_        = next;
-    queue_.erase(queue_.begin());
-    storage_.saveQueue(queue_);
-    startRun();
+void App::startFromQueue(bool go_on) {
+    if (run_.running()) return;
+    for (std::size_t i = 0; i < queue_.size(); ++i) {
+        auto next = queue_[i].setup;
+        // The look of the program follows the settings, not the queued setup.
+        next.language = setup_.language;
+        next.theme    = setup_.theme;
+        next.notify   = setup_.notify;
+        setup_        = next;
+        startRun();
+        // Taken off the queue once started: one that cannot start (an engine removed since...) is not lost.
+        if (run_.running()) {
+            queue_.erase(queue_.begin() + static_cast<std::ptrdiff_t>(i));
+            storage_.saveQueue(queue_);
+            return;
+        }
+        if (!go_on) return;
+    }
 }
 
 std::string App::summaryText() const {

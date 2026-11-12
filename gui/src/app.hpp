@@ -315,7 +315,9 @@ class App {
     void startRun();
     void resumeRun();
     void enqueue();         // the current setup, to start after the running tournament
-    void startFromQueue();  // the first queued tournament, if any
+    // The first queued tournament, if any; with `go_on`, the next ones when it cannot start. One that cannot
+    // start stays queued.
+    void startFromQueue(bool go_on = false);
     void drawQueue();
     void drawRelaunch();  // "Relaunch with…" of a finished match
     void resetRunView();  // forgets the games and statistics shown, before a run starts
