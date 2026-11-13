@@ -110,7 +110,9 @@ void collectJson(const nlohmann::json& node, const fs::path& base, ImportResult&
     for (const auto& [key, value] : node.items()) collectJson(value, base, out);
 }
 
-using Ini = std::vector<std::pair<std::string, std::map<std::string, std::string>>>;
+// The keys of a section in the order of the file, the order of the engines in Arena's list.
+using Keys = std::vector<std::pair<std::string, std::string>>;
+using Ini  = std::vector<std::pair<std::string, Keys>>;
 
 Ini parseIni(const std::string& text) {
     Ini ini;
@@ -120,17 +122,25 @@ Ini parseIni(const std::string& text) {
         line = trim(line);
         if (line.empty() || line[0] == ';' || line[0] == '#') continue;
         if (line.front() == '[' && line.back() == ']') {
-            ini.emplace_back(line.substr(1, line.size() - 2), std::map<std::string, std::string>{});
+            ini.emplace_back(line.substr(1, line.size() - 2), Keys{});
             continue;
         }
         const auto eq = line.find('=');
         if (eq == std::string::npos || ini.empty()) continue;
-        ini.back().second[trim(line.substr(0, eq))] = trim(line.substr(eq + 1));
+        auto key   = trim(line.substr(0, eq));
+        auto value = trim(line.substr(eq + 1));
+        // A key given twice keeps its last value.
+        auto& keys    = ini.back().second;
+        const auto it = std::find_if(keys.begin(), keys.end(), [&](const auto& kv) { return kv.first == key; });
+        if (it != keys.end())
+            it->second = std::move(value);
+        else
+            keys.emplace_back(std::move(key), std::move(value));
     }
     return ini;
 }
 
-const std::string* find(const std::map<std::string, std::string>& keys, std::initializer_list<const char*> names) {
+const std::string* find(const Keys& keys, std::initializer_list<const char*> names) {
     for (const char* n : names) {
         for (const auto& [k, v] : keys) {
             if (lower(k) == lower(n) && !v.empty()) return &v;
@@ -139,10 +149,66 @@ const std::string* find(const std::map<std::string, std::string>& keys, std::ini
     return nullptr;
 }
 
-// Sections with a program path: ChessGUI's ChsGUI_Eng.TXT (EngineFile), Arena and others (Command, Filename...).
-void collectIni(const std::string& text, const fs::path& base, ImportResult& out) {
-    const auto ini = parseIni(text);
+// Arena's %ArenaPath% (its folder, where ArenaENG.cfg is) and %ArenaDrive% (the drive of that folder), in any case.
+std::string arenaPath(std::string text, const fs::path& base) {
+    const std::pair<std::string, std::string> names[] = {{"%arenapath%", base.string()},
+                                                         {"%arenadrive%", base.root_name().string()}};
+    for (const auto& [name, value] : names) {
+        for (auto at = lower(text).find(name); at != std::string::npos; at = lower(text).find(name, at + value.size()))
+            text.replace(at, name.size(), value);
+    }
+    return text;
+}
 
+// Arena's ArenaENG.cfg: an [Engines] section with a line per engine, Name=program|arguments|number|author|type|
+// folder|country|..., the type 1 for UCI, 2 for WinBoard, 3 for the old WinBoard 1 and 0 when Arena finds out. The
+// section named after a UCI engine holds the values of its options, <empty> for an empty text. False when the list
+// is not Arena's.
+bool collectArena(const Ini& ini, const fs::path& base, ImportResult& out) {
+    const auto engines = std::find_if(ini.begin(), ini.end(), [](const auto& section) {
+        return lower(section.first) == "engines" &&
+               std::any_of(section.second.begin(), section.second.end(),
+                           [](const auto& kv) { return kv.second.find('|') != std::string::npos; });
+    });
+    if (engines == ini.end()) return false;
+
+    std::error_code ec;
+    const auto folder = fs::absolute(base, ec);
+    for (const auto& [name, line] : engines->second) {
+        std::vector<std::string> fields;
+        std::istringstream in(line);
+        for (std::string field; std::getline(in, field, '|');) fields.push_back(trim(field));
+        if (fields.empty() || fields[0].empty()) continue;
+        const auto field = [&](std::size_t i) { return i < fields.size() ? arenaPath(fields[i], folder) : ""; };
+
+        EngineEntry e;
+        e.name = name;
+        e.cmd  = resolve(folder, field(0)).lexically_normal().string();
+        e.args = field(1);
+        if (const auto type = field(4); type == "1")
+            e.protocol = "uci";
+        else if (type == "2" || type == "3")
+            e.protocol = "xboard";
+        // The folder Arena starts it in, when it is set and still there.
+        if (const auto dir = field(5); !dir.empty()) {
+            auto path = resolve(folder, dir).lexically_normal();
+            if (!path.has_filename() && path.has_relative_path()) path = path.parent_path();
+            if (fs::is_directory(path, ec)) e.dir = path.string();
+        }
+        // The section of a WinBoard engine holds Arena's settings for it, not options.
+        if (e.protocol == "uci") {
+            for (const auto& [section, keys] : ini) {
+                if (section != name) continue;
+                for (const auto& [k, v] : keys) e.options.emplace_back(k, v == "<empty>" ? "" : arenaPath(v, folder));
+            }
+        }
+        out.engines.push_back(std::move(e));
+    }
+    return true;
+}
+
+// Sections with a program path: ChessGUI's ChsGUI_Eng.TXT (EngineFile), and others (Command, Filename...).
+void collectIni(const Ini& ini, const fs::path& base, ImportResult& out) {
     // ChessGUI keeps the UCI options of its engines in ChsGUI_Cfg.ini, by engine name.
     std::map<std::string, std::vector<std::pair<std::string, std::string>>> chessgui_options;
     for (const auto& name : {"ChsGUI_Cfg.ini", "ChsGUI_Cfg.INI", "GUI_DATA/ChsGUI_Cfg.ini"}) {
@@ -214,12 +280,22 @@ ImportResult importEngineList(const fs::path& file) {
             out.engines.clear();
         }
     }
-    if (!json) collectIni(text, base, out);
-
-    for (auto& e : out.engines) {
-        std::error_code ec;
-        if (!fs::is_regular_file(e.cmd, ec)) out.notes.push_back(trf("{}: program not found ({})", e.name, e.cmd));
+    bool arena = false;
+    if (!json) {
+        const auto ini = parseIni(text);
+        arena          = collectArena(ini, base, out);
+        if (!arena) collectIni(ini, base, out);
     }
+
+    const auto missing = [](const EngineEntry& e) {
+        std::error_code ec;
+        return !fs::is_regular_file(e.cmd, ec);
+    };
+    for (const auto& e : out.engines) {
+        if (missing(e)) out.notes.push_back(trf("{}: program not found ({})", e.name, e.cmd));
+    }
+    // Arena's list keeps the engines deleted or moved since, its bundled ones too: those are left out.
+    if (arena) std::erase_if(out.engines, missing);
     return out;
 }
 

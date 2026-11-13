@@ -436,8 +436,9 @@ class App {
     void finishQuickTest();
     void pollCheck();
     // Shows what an engine list or a folder holds, to choose the engines to add. `refreshed`: the remembered folder
-    // looked in again, whose engines already in the library are left out.
-    void importEngines(const ImportResult& imported, const std::filesystem::path& refreshed = {});
+    // looked in again, whose engines already in the library are left out. `list`: the engine list read, if it is one.
+    void importEngines(const ImportResult& imported, const std::filesystem::path& refreshed = {},
+                       const std::filesystem::path& list = {});
     void refreshEngineFolder();  // the new engines of the remembered folder, see Storage::engineFolder
     [[nodiscard]] const std::filesystem::path& engineFolder();
     void setInactive(const std::vector<std::string>& names, bool inactive);
@@ -656,6 +657,7 @@ class App {
     struct ImportPreview {
         ImportResult result;
         std::string refreshed;     // the remembered folder, looked in again: only its new engines are shown
+        std::string list;          // the engine list read, empty for a folder
         std::vector<char> known;   // by engine: already in the list, not added again
         std::vector<char> chosen;  // by engine: to add
     };

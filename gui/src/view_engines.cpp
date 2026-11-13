@@ -1485,11 +1485,13 @@ void App::pollCheck() {
     if (e.uci_options.empty()) startProbe(index);
 }
 
-void App::importEngines(const ImportResult& imported, const std::filesystem::path& refreshed) {
+void App::importEngines(const ImportResult& imported, const std::filesystem::path& refreshed,
+                        const std::filesystem::path& list) {
     // Shown first, to choose: a folder scan takes every program, the GUI it holds too (Arena.exe).
     ImportPreview preview;
     preview.result.notes = imported.notes;
     preview.refreshed    = refreshed.string();
+    preview.list         = list.string();
     for (const auto& e : imported.engines) {
         // Already in the list: not added again, nor even shown when the remembered folder is looked in again.
         const bool known =
@@ -1563,11 +1565,21 @@ void App::drawImportPreview() {
     auto& p           = *import_preview_;
     const auto& found = p.result.engines;
 
-    if (!p.refreshed.empty()) {
-        ImGui::TextDisabled("%s", p.refreshed.c_str());
-        if (found.empty()) ImGui::TextUnformatted(TR("No new engine in the folder."));
+    // Engines that can be ticked: those not in the library yet.
+    const auto choosable = std::count(p.known.begin(), p.known.end(), 0);
+    bool open_folder     = false;
+    if (const auto& source = p.refreshed.empty() ? p.list : p.refreshed; !source.empty()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+        ImGui::TextWrapped("%s", source.c_str());
+        ImGui::PopStyleColor();
     }
-    if (!found.empty()) {
+    if (!p.refreshed.empty() && found.empty()) ImGui::TextUnformatted(TR("No new engine in the folder."));
+    if (found.empty() && p.refreshed.empty()) {
+        ImGui::TextUnformatted(p.list.empty() ? TR("No engine found in this folder.")
+                                              : TR("No engine found in this file."));
+    } else if (!found.empty() && choosable == 0) {
+        ImGui::TextUnformatted(TR("All these engines are already in the library."));
+    } else if (!found.empty()) {
         const auto text = p.refreshed.empty()
                               ? trn("{} engine found. Untick those to leave out.",
                                     "{} engines found. Untick those to leave out.", found.size(), found.size())
@@ -1580,12 +1592,27 @@ void App::drawImportPreview() {
         for (const auto& note : p.result.notes) ImGui::TextWrapped("%s", note.c_str());
         ImGui::PopStyleColor();
     }
-    if (ImGui::SmallButton(TR("All"))) std::fill(p.chosen.begin(), p.chosen.end(), true);
-    ImGui::SameLine();
-    if (ImGui::SmallButton(TR("None"))) std::fill(p.chosen.begin(), p.chosen.end(), false);
+    // Nothing read from the list: what it can read, and the folder scan instead.
+    if (found.empty() && !p.list.empty()) {
+        ImGui::Spacing();
+        if (p.result.notes.empty()) {
+            ImGui::TextWrapped("%s", TR("Engine lists read: cutechess and Banksia (engines.json), ChessGUI "
+                                        "(ChsGUI_Eng.TXT), Arena (ArenaENG.cfg), INI lists with Command or "
+                                        "Filename keys."));
+        }
+        ImGui::TextWrapped("%s", TR("The programs of a folder can be added instead:"));
+        open_folder = ImGui::Button(TR("Every engine of a folder…"));
+        ImGui::Spacing();
+    }
+    if (choosable > 0) {
+        if (ImGui::SmallButton(TR("All"))) std::fill(p.chosen.begin(), p.chosen.end(), true);
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("None"))) std::fill(p.chosen.begin(), p.chosen.end(), false);
+    }
 
     const float rows = std::min(16.0f, static_cast<float>(found.size()) + 1);
-    if (ImGui::BeginTable("##import_list", 3,
+    if (!found.empty() &&
+        ImGui::BeginTable("##import_list", 3,
                           ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp,
                           ImVec2(0, ImGui::GetFrameHeightWithSpacing() * rows))) {
         ImGui::TableSetupScrollFreeze(0, 1);
@@ -1622,14 +1649,22 @@ void App::drawImportPreview() {
 
     int count = 0;
     for (std::size_t i = 0; i < found.size(); ++i) count += p.chosen[i] && !p.known[i];
-    ImGui::BeginDisabled(count == 0);
-    if (ImGui::Button(trn("Add {} engine", "Add {} engines", count, count).c_str())) {
-        addImported();
-        ImGui::CloseCurrentPopup();
+    // Nothing to add: no Add button, the dialog is only closed.
+    if (choosable > 0) {
+        ImGui::BeginDisabled(count == 0);
+        if (ImGui::Button(trn("Add {} engine", "Add {} engines", count, count).c_str())) {
+            addImported();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndDisabled();
+        ImGui::SameLine();
     }
-    ImGui::EndDisabled();
-    ImGui::SameLine();
-    if (ImGui::Button(TR("Cancel"))) {
+    if (ImGui::Button(choosable > 0 ? TR("Cancel") : TR("Close"))) {
+        import_preview_.reset();
+        ImGui::CloseCurrentPopup();
+    } else if (open_folder) {
+        // The folder dialog opens on the list's folder, where the engines often are.
+        dialogs_.openFolder(Dialogs::Purpose::ImportEngineFolder, fs::path(p.list).parent_path().string());
         import_preview_.reset();
         ImGui::CloseCurrentPopup();
     }

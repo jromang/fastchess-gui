@@ -1020,6 +1020,86 @@ TEST_CASE("engine lists of ChessGUI, cutechess and Arena are imported") {
     fs::remove_all(dir);
 }
 
+TEST_CASE("Arena's ArenaENG.cfg is imported: program, arguments, type, folder and UCI options") {
+    const auto dir = tempDir("import-arena");
+    for (const char* program :
+         {"Engines/Stockfish/stockfish-windows-x86-64-avx2.exe", "Engines/Crafty 25.2/crafty-25.2-x64.exe",
+          "Engines/cray_blitz_49h_uci_ja/Data/CrayBlitz_49h_uci.exe", "Engines/Spike/Spike1.4.exe",
+          "Engines/H\xC3\xA9l\xC3\xA8ne/h\xC3\xA9l\xC3\xA8ne.exe"}) {
+        fs::create_directories((dir / program).parent_path());
+        std::ofstream(dir / program) << "x";
+    }
+
+    // As Arena writes it: Windows paths from its folder, CRLF, Windows-1252, a section per engine after the list.
+    std::ofstream(dir / "ArenaENG.cfg", std::ios::binary)
+        << "[Engines]\r\n"
+           "Stockfish 17=%ArenaPath%\\Engines\\Stockfish\\stockfish-windows-x86-64-avx2.exe||8|the Stockfish "
+           "developers|1||Norway||100|0|0|0|||||0|||\r\n"
+           "Crafty 25.2=%ArenaPath%\\Engines\\Crafty 25.2\\crafty-25.2-x64.exe|xboard|9|Robert Hyatt|2|%ArenaPath%"
+           "\\Engines\\Crafty 25.2\\|USA||100|0|0|0|||||0|||\r\n"
+           "CrayBlitz_49h_uci=%ArenaPath%\\Engines\\cray_blitz_49h_uci_ja\\Data\\CrayBlitz_49h_uci.exe||37||0||||100|"
+           "0|0|0|||||0|||\r\n"
+           "Spike 1.4=%arenapath%\\Engines\\Spike\\Spike1.4.exe||6|V. B\xF6hm & R. Sch\xE4"
+           "fer|1||Germany||100|0|0|0|||||0||Bundle,Arena Partner|\r\n"
+           "Rybka 2.3.2a 32 bit=%ArenaPath%\\Engines\\Rybka\\Rybkav2.3.2a.mp.w32.exe||0|Vasik Rajlich|1||USA||100|0|0|"
+           "0|||||0||Bundle|\r\n"
+           "Sunfish=%ArenaDrive%\\Users\\Jean\\sunfish\\sunfish.bat||15||3||||100|0|0|0|||||0|||\r\n"
+           "H\xE9l\xE8ne 1.0=%ArenaPath%\\Engines\\H\xE9l\xE8ne\\h\xE9l\xE8ne.exe||10||1||France||100|0|0|0|||||"
+           "0|2200||\r\n"
+           "\r\n"
+           "[Stockfish 17]\r\nDebug Log File=<empty>\r\nThreads=2\r\nHash=256\r\nSyzygyPath=%ArenaPath%\\TB\r\n\r\n"
+           "[Crafty 25.2]\r\nInitString=<empty>\r\nLevelType=1\r\nProtocol=2\r\n\r\n"
+           "[CrayBlitz_49h_uci]\r\nProgram=CrayBlitz.exe\r\nInitString=<empty>\r\nHash=2\r\nProtocol=2\r\n";
+
+    const auto result = importEngineList(dir / "ArenaENG.cfg");
+    REQUIRE(result.engines.size() == 5);
+    const auto& stockfish = result.engines[0];
+    CHECK(stockfish.name == "Stockfish 17");
+    CHECK(fs::path(stockfish.cmd) == dir / "Engines" / "Stockfish" / "stockfish-windows-x86-64-avx2.exe");
+    CHECK(stockfish.protocol == "uci");
+    CHECK(stockfish.args.empty());
+    CHECK(stockfish.dir.empty());
+    REQUIRE(stockfish.options.size() == 4);
+    CHECK(stockfish.options[0] == std::make_pair(std::string("Debug Log File"), std::string()));
+    CHECK(stockfish.options[2] == std::make_pair(std::string("Hash"), std::string("256")));
+    CHECK(stockfish.options[3].second == dir.string() + "\\TB");
+
+    // A WinBoard engine with arguments and a folder (spaces in both paths); its section is Arena's, not options.
+    const auto& crafty = result.engines[1];
+    CHECK(crafty.name == "Crafty 25.2");
+    CHECK(fs::path(crafty.cmd) == dir / "Engines" / "Crafty 25.2" / "crafty-25.2-x64.exe");
+    CHECK(crafty.args == "xboard");
+    CHECK(crafty.protocol == "xboard");
+    CHECK(fs::path(crafty.dir) == dir / "Engines" / "Crafty 25.2");
+    CHECK(crafty.options.empty());
+
+    // Type 0, Arena finds out: the probe after the import does.
+    CHECK(result.engines[2].name == "CrayBlitz_49h_uci");
+    CHECK(result.engines[2].protocol.empty());
+    CHECK(result.engines[2].options.empty());
+
+    CHECK(result.engines[3].name == "Spike 1.4");
+    CHECK(fs::path(result.engines[3].cmd) == dir / "Engines" / "Spike" / "Spike1.4.exe");
+
+    // Windows-1252 names and paths become UTF-8.
+    CHECK(result.engines[4].name == "H\xC3\xA9l\xC3\xA8ne 1.0");
+    CHECK(fs::path(result.engines[4].cmd) == dir / "Engines" / "H\xC3\xA9l\xC3\xA8ne" / "h\xC3\xA9l\xC3\xA8ne.exe");
+
+    // Programs that are not there are left out, and said.
+    REQUIRE(result.notes.size() == 2);
+    CHECK(result.notes[0].find("Rybka") != std::string::npos);
+    CHECK(result.notes[1].find("Sunfish") != std::string::npos);
+    CHECK(result.notes[1].find("sunfish.bat") != std::string::npos);
+
+    // A file with no engine in it gives none, and no note.
+    std::ofstream(dir / "empty.cfg") << "[Engines]\r\n\r\n[Options]\r\nHash=64\r\n";
+    const auto empty = importEngineList(dir / "empty.cfg");
+    CHECK(empty.engines.empty());
+    CHECK(empty.notes.empty());
+
+    fs::remove_all(dir);
+}
+
 TEST_CASE("string options that hold a file or a folder are told by their name") {
     const auto kind = [](const char* name, const char* type = "string") {
         UciOptionInfo o;

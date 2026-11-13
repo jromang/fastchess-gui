@@ -256,6 +256,9 @@ msgstr ""
 msgid "All openings"
 msgstr ""
 
+msgid "All these engines are already in the library."
+msgstr ""
+
 msgid "All to default"
 msgstr ""
 
@@ -725,6 +728,9 @@ msgid "Engine"
 msgstr ""
 
 msgid "Engine lists"
+msgstr ""
+
+msgid "Engine lists read: cutechess and Banksia (engines.json), ChessGUI (ChsGUI_Eng.TXT), Arena (ArenaENG.cfg), INI lists with Command or Filename keys."
 msgstr ""
 
 msgid "Engine log"
@@ -1282,6 +1288,12 @@ msgid "No duplicate games"
 msgstr ""
 
 msgid "No engine and rating found in this text."
+msgstr ""
+
+msgid "No engine found in this file."
+msgstr ""
+
+msgid "No engine found in this folder."
 msgstr ""
 
 msgid "No engine that works within that range. Engines that were never checked do not count: check them first (Engines, More…)."
@@ -2226,6 +2238,9 @@ msgid "The program of {} is not found."
 msgstr ""
 
 msgid "The program of {} is not found: {}"
+msgstr ""
+
+msgid "The programs of a folder can be added instead:"
 msgstr ""
 
 msgid "The queue ends about {} (in {})"
