@@ -108,19 +108,22 @@ TEST_CASE("PGN book: the games' moves become a Polyglot book, weighted by the ga
         if (raw[i - 1].key == raw[i].key) CHECK(raw[i - 1].weight >= raw[i].weight);
     }
 
-    // The book the adapter reads, legal moves as chess-library writes them.
-    PolyglotBook book(bin);
-    chess::Board board;
-    const auto moves = book.moves(board);
-    REQUIRE(moves.size() == 2);
-    CHECK(chess::uci::moveToUci(moves[0].move) == "e2e4");
-    CHECK(moves[0].weight == 3);
-    chess::Board promotion(PROMOTION);
-    REQUIRE(book.moves(promotion).size() == 1);
-    CHECK(chess::uci::moveToUci(book.moves(promotion)[0].move) == "a7a8q");
-    chess::Board castling(CASTLING);
-    REQUIRE(book.moves(castling).size() == 1);
-    CHECK(book.moves(castling)[0].move.typeOf() == chess::Move::CASTLING);
+    // The book the adapter reads, legal moves as chess-library writes them. (Closed before the file is written
+    // again: Windows does not replace a file that is open.)
+    {
+        PolyglotBook book(bin);
+        chess::Board board;
+        const auto moves = book.moves(board);
+        REQUIRE(moves.size() == 2);
+        CHECK(chess::uci::moveToUci(moves[0].move) == "e2e4");
+        CHECK(moves[0].weight == 3);
+        chess::Board promotion(PROMOTION);
+        REQUIRE(book.moves(promotion).size() == 1);
+        CHECK(chess::uci::moveToUci(book.moves(promotion)[0].move) == "a7a8q");
+        chess::Board castling(CASTLING);
+        REQUIRE(book.moves(castling).size() == 1);
+        CHECK(book.moves(castling)[0].move.typeOf() == chess::Move::CASTLING);
+    }
 
     // Two plies: the moves after 1. e4 e5 are not in the book. The game whose third move is illegal is read no
     // further than its first two, which count.

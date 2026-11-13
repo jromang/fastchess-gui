@@ -431,5 +431,7 @@ TEST_CASE("own book: a match with a PGN book of its own, prepared by the start w
 
     tour::book_adapter.clear();
     tour::book_cache_dir = previous;
-    fs::remove_all(root);
+    // The tournament is still open (its journal, on Windows, cannot be removed): what can be.
+    std::error_code ec;
+    fs::remove_all(root, ec);
 }

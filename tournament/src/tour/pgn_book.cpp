@@ -228,10 +228,10 @@ void writePolyglotBook(const fs::path& file, std::vector<PolyglotEntry> entries)
     }
     fs::rename(tmp, file, ec);
     if (ec) {
-        // Another program made the same book meanwhile (and may be reading it, which Windows does not let a rename
-        // replace): that one is as good.
+        // Windows does not replace a file being read.
+        const auto reason = ec.message();
         fs::remove(tmp, ec);
-        if (!fs::is_regular_file(file, ec)) throw std::runtime_error(fmt::format("cannot write {}", file.string()));
+        throw std::runtime_error(fmt::format("cannot write {}: {}", file.string(), reason));
     }
 }
 
@@ -347,7 +347,16 @@ PreparedBook preparePgnBook(const std::string& pgn, int depth, bool chess960, co
 
     PreparedBook book;
     book.file              = bin.string();
-    book.stats             = pgnToPolyglot(pgn, bin, pgnBookPlies(depth), chess960, progress);
+    try {
+        book.stats = pgnToPolyglot(pgn, bin, pgnBookPlies(depth), chess960, progress);
+    } catch (const BookCancelled&) {
+        throw;
+    } catch (const std::exception&) {
+        // Another program made the same book meanwhile, and reads it (Windows does not replace a file being read):
+        // that one is as good.
+        if (auto cached = cachedPgnBook(pgn, depth, chess960)) return *cached;
+        throw;
+    }
     const nlohmann::json j = {{"pgn", pgn},
                               {"plies", pgnBookPlies(depth)},
                               {"chess960", chess960},

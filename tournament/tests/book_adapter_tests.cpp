@@ -703,5 +703,7 @@ TEST_CASE("own book: a PGN book plays for its participant, turned into a Polyglo
     }
     CHECK(games == 4);
     book_cache_dir = previous_cache;
-    fs::remove_all(dir);
+    state.reset();  // its files closed, which Windows wants before they are removed
+    std::error_code ec;
+    fs::remove_all(dir, ec);
 }
