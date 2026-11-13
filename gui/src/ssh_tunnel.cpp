@@ -470,13 +470,14 @@ class TunnelConnection {
     void handle(const std::string& payload, uint32_t seq) {
         const auto type = static_cast<uint8_t>(payload[0]);
         Reader r(std::string_view(payload).substr(1));
-        // The strict exchange: the first packet is the server's KEXINIT, and only the exchange's messages follow
-        // until its NEWKEYS.
-        if (session_id_.empty() && kexinit_sent_) {
-            const bool kex = type == KEXINIT || type == KEX_ECDH_REPLY || type == NEWKEYS;
-            if (strict_ && !kex) return fail("the server broke the strict key exchange");
-            if (seq == 0 && type != KEXINIT && type != IGNORE_DATA && type != DEBUG_TEXT) {
-                return fail("the server did not start with the key exchange");
+        // The first key exchange: nothing but its messages until the server's NEWKEYS. With the strict exchange
+        // (OpenSSH's PROTOCOL, 1.9), not even IGNORE or DEBUG; its KEXINIT, the first packet, is checked there.
+        if (!initial_kex_done_) {
+            const bool kex     = type == KEXINIT || type == KEX_ECDH_REPLY || type == NEWKEYS;
+            const bool allowed = kex || type == DISCONNECT || (!strict_ && (type == IGNORE_DATA || type == DEBUG_TEXT));
+            if (!allowed) {
+                return fail(strict_ ? "the server broke the strict key exchange"
+                                    : "the server sent a message before the key exchange ended");
             }
         }
         switch (type) {
@@ -494,7 +495,7 @@ class TunnelConnection {
             case CHANNEL_FAILURE:
                 return;
             case KEXINIT:
-                return onKexInit(payload);
+                return onKexInit(payload, seq);
             case KEX_ECDH_REPLY:
                 return onEcdhReply(r);
             case NEWKEYS:
@@ -552,7 +553,7 @@ class TunnelConnection {
         send(i_c_);
     }
 
-    void onKexInit(const std::string& payload) {
+    void onKexInit(const std::string& payload, uint32_t seq) {
         if (!i_s_.empty()) return fail("the server started a key exchange twice");
         i_s_ = payload;
         if (!kexinit_sent_) startKex();
@@ -563,7 +564,11 @@ class TunnelConnection {
         r.boolean();
         r.u32();
         if (!r.ok()) return fail("the server's key exchange cannot be read");
-        if (session_id_.empty()) strict_ = hasName(lists[0], STRICT_HOST);
+        if (!initial_kex_done_) {
+            strict_ = hasName(lists[0], STRICT_HOST);
+            // Strict: the server's first packet, or a message slipped in before it could shift the sequence numbers.
+            if (strict_ && seq != 0) return fail("the server broke the strict key exchange");
+        }
 
         kex_      = choose(KEX_AGAIN, lists[0]);
         host_alg_ = choose(HOST_KEYS, lists[1]);
@@ -656,6 +661,7 @@ class TunnelConnection {
         }
         for (auto& key : next_rx_) key.assign(key.size(), '\0');
         if (strict_) seq_rx_ = 0;
+        initial_kex_done_ = true;
         kexinit_sent_ = false;
         newkeys_sent_ = false;
         i_c_.clear();
@@ -875,6 +881,7 @@ class TunnelConnection {
     bool kexinit_sent_ = false;
     bool newkeys_sent_ = false;
     bool strict_       = false;
+    bool initial_kex_done_ = false;  // the server's first NEWKEYS came
     std::string session_id_, host_key_;
     std::string known_print_;  // the host key trusted before, when the server shows another
     std::deque<std::string> held_;

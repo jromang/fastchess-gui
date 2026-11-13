@@ -531,6 +531,9 @@ class FakeServer {
         // Bytes sent after the version line instead of the key exchange; the server then waits for the client to go.
         std::string raw_first;
         bool bad_signature = false;  // the host key signs something else than the exchange hash
+        // Messages before the server's first KEXINIT, and between its first KEX_ECDH_REPLY and NEWKEYS.
+        std::vector<std::string> before_kexinit;
+        std::string in_kex;
         // Once the tunnel is on air, in place of the viewers: the scenario of a test.
         std::function<void(FakeServer&)> on_air;
     };
@@ -633,6 +636,9 @@ class FakeServer {
                 .boolean(false)
                 .u32(0)
                 .take();
+        if (first) {
+            for (const auto& m : script_.before_kexinit) send(m);
+        }
         send(lists);
         const auto i_c = nextOf(KEXINIT);
         const auto init = nextOf(KEX_ECDH_INIT);
@@ -659,6 +665,7 @@ class FakeServer {
                  .string(ecdh.publicKey())
                  .string(serverKey().sign(script_.bad_signature ? h + "x" : h))
                  .take());
+        if (first && !script_.in_kex.empty()) send(script_.in_kex);
         send(Writer().byte(NEWKEYS).take());
         const auto derive = [&](char letter, std::size_t size) { return deriveKey(k, h, letter, session_id_, size); };
         // One cipher offered: the one agreed.
@@ -909,6 +916,11 @@ TEST_CASE("Tunnel: a viewer's request relayed to the web server and back, throug
         script.rekey   = c.rekey;
         script.viewers = c.viewers;
         script.abandon = c.abandon;
+        // Without the strict exchange, IGNORE may come anywhere.
+        if (!c.strict) {
+            script.before_kexinit = {Writer().byte(IGNORE_DATA).string("before").take()};
+            script.in_kex         = Writer().byte(IGNORE_DATA).string("during").take();
+        }
         FakeServer server(SSH_PORT, script);
         SshTunnel tunnel;
         tunnel.start(loopback(fingerprint(serverKey().blob)));
@@ -1152,6 +1164,39 @@ TEST_CASE("Tunnel: a viewer's connection that hung up while the server's window 
     CHECK(waitFor([&] { return server.done.load(); }));
     CHECK_MESSAGE(server.error.empty(), server.error);
     CHECK(answer.rfind("HTTP/1.0 200 OK", 0) == 0);
+}
+
+TEST_CASE("Tunnel: the strict key exchange enforced until the server's first NEWKEYS") {
+    const auto ignore = Writer().byte(IGNORE_DATA).string("x").take();
+    struct Case {
+        bool strict;
+        std::vector<std::string> before;
+        std::string during;
+        const char* error;
+    };
+    for (const auto& c : {
+             // Strict: an IGNORE before the server's KEXINIT (its sequence number 1, not 0), or after its
+             // KEX_ECDH_REPLY (accepted before, as the session id was known then).
+             Case{true, {ignore}, "", "strict"},
+             Case{true, {}, ignore, "strict"},
+             // Not strict: IGNORE is allowed, but nothing of the later protocols before the keys.
+             Case{false, {}, Writer().byte(SERVICE_ACCEPT).string("ssh-userauth").take(), "before the key exchange"},
+             Case{false, {Writer().byte(GLOBAL_REQUEST).string("x").boolean(false).take()}, "",
+                  "before the key exchange"},
+         }) {
+        CAPTURE(c.strict);
+        CAPTURE(c.error);
+        FakeServer::Script script;
+        script.strict         = c.strict;
+        script.before_kexinit = c.before;
+        script.in_kex         = c.during;
+        FakeServer server(SSH_PORT, script);
+        SshTunnel tunnel;
+        tunnel.start(loopback(fingerprint(serverKey().blob)));
+        CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }));
+        CHECK_MESSAGE(tunnel.status().error.find(c.error) != std::string::npos, tunnel.status().error);
+        CHECK(waitFor([&] { return server.done.load(); }));
+    }
 }
 
 TEST_CASE("Tunnel: the public address is forgotten once the connection is lost") {
