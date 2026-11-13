@@ -850,10 +850,14 @@ int run(const std::vector<std::string>& args) {
         },
         std::filesystem::path(args[0]).stem().string());
 
+    // The lines read, which the reads collect besides passing each to the callbacks: emptied at each, so that they
+    // do not pile up for the life of the engine (see the reading below). Only the reading thread touches them.
+    std::vector<fastchess::engine::process::Line> lines;
     process.setLineCallback([&](const std::string& line) {
         std::lock_guard<std::mutex> lock(mutex);
         trace("<eng", line);
         adapter.fromEngine(line, Clock::now());
+        lines.clear();
     });
 #ifdef _WIN32
     // Windows would mix the engine's error output with its output: it is read apart and passed on as ours, which
@@ -864,6 +868,7 @@ int run(const std::vector<std::string>& args) {
         trace("!eng", line);
         std::fputs((line + "\n").c_str(), stderr);
         std::fflush(stderr);
+        lines.clear();
     });
 #endif
     // The engine runs in our working directory, which fastchess set to the engine's.
@@ -877,13 +882,14 @@ int run(const std::vector<std::string>& args) {
         adapter.start(Clock::now());
     }
 
-    // The engine's output; when it ends, so does the adapter, and the GUI sees the engine stop.
+    // The engine's output; when it ends, so does the adapter, and the GUI sees the engine stop. One read, without a
+    // word to stop at nor a time limit: it lasts until the output ends, each line passed on by the callback as it
+    // comes, in order. A read that stops at a word drops the rest of what it read at once: the lines an engine
+    // writes right after its move (a pong, a telluser) were lost.
     std::thread([&] {
-        std::vector<fastchess::engine::process::Line> lines;
         std::string r_message;
         while (true) {
-            // "move" only bounds how many lines accumulate; each line goes through the callback.
-            const auto r = process.readOutput(lines, "move", std::chrono::milliseconds(0));
+            const auto r = process.readOutput(lines, "", std::chrono::milliseconds(0));
             if (r.code == fastchess::engine::process::Status::ERR) {
                 r_message = r.message;
                 break;

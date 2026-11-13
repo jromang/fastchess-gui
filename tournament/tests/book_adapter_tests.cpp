@@ -76,6 +76,19 @@ struct Adapter {
 
 std::string randomMover() { return (self().parent_path() / FCG_RANDOM_MOVER).string(); }
 
+// Sets an environment variable of the processes started from now on; nullptr removes it.
+void setEnv(const char* name, const char* value) {
+#ifdef _WIN32
+    SetEnvironmentVariableA(name, value);
+#else
+    if (value) {
+        setenv(name, value, 1);
+    } else {
+        unsetenv(name);
+    }
+#endif
+}
+
 // A book of the twenty first moves, each as likely: a few games show whether they draw their own.
 fs::path wideBook() {
     const auto path = fs::temp_directory_path() / "fcg-own-book-wide.bin";
@@ -362,6 +375,31 @@ TEST_CASE("own book adapter: its processes draw their own book moves, from the s
         firsts.insert(lines.back());
     }
     CHECK(firsts.size() >= 3);
+}
+
+TEST_CASE("own book adapter: what the engine writes after its bestmove, in the same write, reaches the GUI in order") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+    // Its info line, its bestmove, an info string and a readyok in one write: they come in one read.
+    setEnv("FCG_MOCK_AFTER_BESTMOVE", "after the bestmove");
+    AdapterProcess adapter(wideBook());
+    setEnv("FCG_MOCK_AFTER_BESTMOVE", nullptr);
+    REQUIRE(adapter.started);
+    REQUIRE_FALSE(adapter.ask("uci\n", "uciok").empty());
+
+    // Out of the book: the engine's search.
+    auto lines = adapter.ask("ucinewgame\nposition startpos moves a2a3\ngo nodes 1\n", "readyok");
+    REQUIRE(lines.size() >= 4);
+    lines.erase(lines.begin(), lines.end() - 4);
+    CHECK(lines[0].rfind("info depth 1 ", 0) == 0);
+    CHECK(lines[1].rfind("bestmove ", 0) == 0);
+    CHECK(lines[2] == "info string after the bestmove");
+    CHECK(lines[3] == "readyok");
+
+    // And the engine still answers.
+    CHECK(adapter.ask("isready\n", "readyok") == std::vector<std::string>{"readyok"});
 }
 
 TEST_CASE("own book: the configuration through the adapter, a WinBoard engine behind the WinBoard adapter") {
