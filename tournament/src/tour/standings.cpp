@@ -182,6 +182,8 @@ std::string half(double points) {
     return fmt::format("{}{}", whole, h ? "½" : "");
 }
 
+}  // namespace
+
 std::string escapeHtml(const std::string& s) {
     std::string out;
     for (const char c : s) {
@@ -205,7 +207,28 @@ std::string escapeHtml(const std::string& s) {
     return out;
 }
 
-}  // namespace
+std::string htmlPageStart(const std::string& title) {
+    return R"(<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>)" + escapeHtml(title) +
+           R"(</title>
+<style>
+:root{--bg:#f4f5f7;--card:#fff;--text:#1b1e24;--muted:#626976;--line:#e0e3e8;--win:#1d7f4e;--loss:#c03b33}
+@media (prefers-color-scheme:dark){:root{--bg:#121418;--card:#1a1d23;--text:#e8eaee;--muted:#a3aab6;--line:#262a32;--win:#5fd39a;--loss:#ff8f87}}
+body{margin:0;padding:24px;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
+h1{font-size:20px;margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px;overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:500}td.l,th.l{text-align:left}
+td.x{color:var(--muted)}
+p.foot{color:var(--muted);margin:12px 4px 0}
+dl.head{display:grid;grid-template-columns:max-content 1fr;gap:2px 12px;margin:0 4px 16px}
+dl.head dt{color:var(--muted)}dl.head dd{margin:0}
+</style></head><body>
+<h1>)" + escapeHtml(title) +
+           "</h1>\n";
+}
 
 namespace {
 
@@ -549,25 +572,9 @@ std::string forumDetails(const TournamentSpec& spec, const Table& table) {
 }
 
 std::string tableHtml(const Table& table, const std::string& title, const std::string& footer) {
-    std::string out = R"(<!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>)" + escapeHtml(title) +
-                      R"(</title>
-<style>
-:root{--bg:#f4f5f7;--card:#fff;--text:#1b1e24;--muted:#626976;--line:#e0e3e8;--win:#1d7f4e;--loss:#c03b33}
-@media (prefers-color-scheme:dark){:root{--bg:#121418;--card:#1a1d23;--text:#e8eaee;--muted:#a3aab6;--line:#262a32;--win:#5fd39a;--loss:#ff8f87}}
-body{margin:0;padding:24px;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
-h1{font-size:20px;margin:0 0 16px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px;overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
-th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
-th{color:var(--muted);font-weight:500}td.l,th.l{text-align:left}
-td.x{color:var(--muted)}
-p.foot{color:var(--muted);margin:12px 4px 0}
-</style></head><body>
-<h1>)" + escapeHtml(title) +
-                      R"(</h1>
-<div class="card"><table><thead><tr><th>#</th><th class="l">Engine</th><th>Points</th><th>Games</th><th>%</th><th>Elo</th><th>&plusmn;</th><th>+</th><th>=</th><th>&minus;</th><th title="Losses on time">TF</th><th>SB</th>)";
+    std::string out =
+        htmlPageStart(title) +
+        R"(<div class="card"><table><thead><tr><th>#</th><th class="l">Engine</th><th>Points</th><th>Games</th><th>%</th><th>Elo</th><th>&plusmn;</th><th>+</th><th>=</th><th>&minus;</th><th title="Losses on time">TF</th><th>SB</th>)";
     for (std::size_t c = 0; c < table.rows.size(); ++c) out += fmt::format("<th>{}</th>", c + 1);
     out += "</tr></thead><tbody>\n";
 

@@ -143,6 +143,13 @@ enum class Order {
 // played, book. In English, like the table.
 [[nodiscard]] std::string forumDetails(const TournamentSpec& spec, const Table& table);
 
+// `s` with &, <, > and " as HTML entities.
+[[nodiscard]] std::string escapeHtml(const std::string& s);
+
+// The start of a self-contained HTML page, light or dark as the reader's system: its head and style, the body open
+// with `title` as its heading. The pages of the standings and of the rating list.
+[[nodiscard]] std::string htmlPageStart(const std::string& title);
+
 // A self-contained HTML page with the standings and the crosstable, and the footer under them when there is one.
 [[nodiscard]] std::string tableHtml(const Table& table, const std::string& title, const std::string& footer = "");
 

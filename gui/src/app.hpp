@@ -291,6 +291,7 @@ class App {
     void drawProgress();
     void refreshRatings();
     [[nodiscard]] tour::GameFilter ratingFilter() const;
+    [[nodiscard]] tour::RatingListInfo ratingInfo() const;  // rating_info_ with today's date and the version
     void showEngineCard(const std::string& name);
     void openGame(const tour::DbGame& game);  // opens its tournament on the Games tab, the game selected
     void applyThemeSetting();
@@ -810,6 +811,7 @@ class App {
         std::string anchor;  // the one used: the default when none was chosen
         double anchor_elo = 0;
         tour::RatingList list;
+        tour::RatingListInfo info;  // how `list` was made
         std::string card_engine;
         tour::EngineRecord card;
         std::vector<tour::RatingPoint> card_history;
@@ -838,6 +840,8 @@ class App {
     const std::vector<std::filesystem::path>& ratingPgns();
     void setRatingPgns(const std::vector<std::filesystem::path>& files);
     tour::RatingList rating_list_;
+    tour::RatingListInfo rating_info_;  // how it was made, for the header of its exports
+    bool rating_copy_header_ = false;   // the header on top of the copies too
     std::vector<int> rating_order_;  // the rows of the list as shown, sorted by a column
     bool rating_order_dirty_ = true;
     std::string rating_tc_;      // time control shown, empty = all

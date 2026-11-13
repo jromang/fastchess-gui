@@ -84,6 +84,15 @@ tour::GameFilter App::ratingFilter() const {
     return f;
 }
 
+tour::RatingListInfo App::ratingInfo() const {
+    auto info = rating_info_;
+    info.date =
+        date(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch())
+                 .count());
+    info.version = FCG_VERSION;
+    return info;
+}
+
 const std::vector<std::filesystem::path>& App::ratingPgns() {
     if (!rating_pgns_) rating_pgns_ = storage_.ratingPgns();
     return *rating_pgns_;
@@ -114,6 +123,7 @@ void App::refreshRatings() {
         auto r              = ratings_job_.get();
         game_db_            = std::move(r.db);
         rating_list_        = std::move(r.list);
+        rating_info_        = std::move(r.info);
         rating_order_dirty_ = true;
         // What was chosen meanwhile stays; the defaults fill what is still empty.
         if (rating_anchor_.empty()) rating_anchor_ = r.anchor, rating_anchor_elo_ = r.anchor_elo;
@@ -148,12 +158,17 @@ void App::refreshRatings() {
     }
     RatingsResult in;
     if (!game_db_dirty_) in.db = game_db_;
-    in.anchor           = rating_anchor_;
-    in.anchor_elo       = rating_anchor_elo_;
-    in.card_engine      = card_engine_;
-    in.h2h_a            = h2h_a_;
-    in.h2h_b            = h2h_b_;
-    in.progress_engines = progress_engines_;
+    in.info.time_control = rating_tc_;
+    in.info.group        = rating_group_;
+    in.info.period       = rating_period_ == 1 ? "the last 30 days" : rating_period_ == 2 ? "the last 365 days" : "";
+    in.info.external     = rating_external_;
+    in.info.min_games    = rating_min_games_;
+    in.anchor            = rating_anchor_;
+    in.anchor_elo        = rating_anchor_elo_;
+    in.card_engine       = card_engine_;
+    in.h2h_a             = h2h_a_;
+    in.h2h_b             = h2h_b_;
+    in.progress_engines  = progress_engines_;
     const auto dirs = game_db_dirty_ ? tour::tournamentDirs(storage_.runsDir()) : std::vector<std::filesystem::path>{};
     if (game_db_dirty_) {
         game_db_library_.clear();
@@ -183,6 +198,7 @@ void App::refreshRatings() {
         tour::NamedAnchor anchor;
         if (!in.anchor.empty()) anchor = std::make_pair(in.anchor, in.anchor_elo);
         in.list = tour::ratingList(db, filter, anchor, min_games);
+        if (in.list.anchored) in.info.anchor = in.anchor, in.info.anchor_elo = in.anchor_elo;
 
         // The card, the head to head and the progress start with the leaders of the list, the anchor (whose
         // rating does not move) last.
@@ -378,24 +394,50 @@ void App::drawRatingList() {
         ratings_dirty_    = true;
     }
     ImGui::SameLine(0, px(24));
-    if (const auto as = ui::copyButton("ratings"); as != ui::CopyAs::None) {
+    if (const auto as = ui::copyButton("ratings", false, false, &rating_copy_header_); as != ui::CopyAs::None) {
         const auto text = tour::ratingListText(rating_list_);
-        ImGui::SetClipboardText(
-            (as == ui::CopyAs::Text ? text : tour::bbcode("Rating list", rating_tc_, text)).c_str());
+        if (rating_copy_header_) {
+            // The header on top of the text; in a forum post, above the code block.
+            const auto header = tour::ratingListHeaderText(rating_list_, ratingInfo());
+            ImGui::SetClipboardText((as == ui::CopyAs::Text
+                                         ? "Rating list\n\n" + header + "\n" + text
+                                         : tour::bbcode("Rating list", header.substr(0, header.size() - 1), text))
+                                        .c_str());
+        } else {
+            ImGui::SetClipboardText(
+                (as == ui::CopyAs::Text ? text : tour::bbcode("Rating list", rating_tc_, text)).c_str());
+        }
     }
     ImGui::SameLine();
-    if (ImGui::Button(TR("Export CSV…"))) {
-        dialogs_.saveFile(Dialogs::Purpose::ExportRatings, {{"CSV", "csv"}},
-                          (storage_.root() / "ratings.csv").string());
+    // The files: the list as CSV, as an HTML page or Markdown with a header that tells how it was made, and the
+    // games for Ordo.
+    if (ImGui::Button(TR("Export…"))) ImGui::OpenPopup("##rating_export");
+    if (ImGui::BeginPopup("##rating_export")) {
+        const auto file = [&](const char* label, Dialogs::Purpose purpose, const char* type, const char* extension,
+                              const char* name) {
+            if (ImGui::MenuItem(label)) {
+                dialogs_.saveFile(purpose, {{type, extension}}, (storage_.root() / name).string());
+            }
+        };
+        file(TR("CSV…"), Dialogs::Purpose::ExportRatings, "CSV", "csv", "ratings.csv");
+        file(TR("HTML page…"), Dialogs::Purpose::ExportRatingHtml, "HTML", "html", "ratings.html");
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("A page that opens in any browser, light or dark, with a header that tells "
+                                       "how the list was made: sources, games, anchor and filters."));
+        }
+        file(TR("Markdown…"), Dialogs::Purpose::ExportRatingMarkdown, "Markdown", "md", "ratings.md");
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("A table that GitHub and forums show as one, with the same header as the "
+                                       "HTML page."));
+        }
+        ImGui::Separator();
+        file(TR("Games for Ordo…"), Dialogs::Purpose::ExportRatingPgn, "PGN", "pgn", "ratings.pgn");
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("The games counted, as a PGN of headers, which Ordo and BayesElo read: ordo -p "
+                                       "ratings.pgn -o ratings.txt"));
+        }
+        ImGui::EndPopup();
     }
-    ImGui::SameLine();
-    if (ImGui::Button(TR("Export for Ordo…"))) {
-        dialogs_.saveFile(Dialogs::Purpose::ExportRatingPgn, {{"PGN", "pgn"}},
-                          (storage_.root() / "ratings.pgn").string());
-    }
-    ui::help(
-        TR("The games counted, as a PGN of headers, which Ordo and BayesElo read: ordo -p ratings.pgn -o "
-           "ratings.txt"));
 
     ImGui::TextDisabled("%s", trf("{} games, {} tournaments", rating_list_.games, rating_list_.tournaments).c_str());
     drawLibraryMatches();

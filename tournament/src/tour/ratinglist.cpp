@@ -5,6 +5,7 @@
 #include <fstream>
 #include <map>
 #include <set>
+#include <string_view>
 
 #include <fmt/include/fmt/format.h>
 
@@ -71,6 +72,7 @@ RatingList rate(const GameDb& db, const NamedAnchor& anchor, int min_games, Acce
         sources[i].insert(g.source), sources[j].insert(g.source);
         counted.insert(g.source);
         list.games++;
+        (g.white_score > 0.75f ? list.white_wins : g.white_score < 0.25f ? list.black_wins : list.draws)++;
     }
 
     // Engines without a game are not rated at all.
@@ -120,8 +122,13 @@ RatingList rate(const GameDb& db, const NamedAnchor& anchor, int min_games, Acce
         list.entries.push_back(std::move(e));
     }
     list.exact_los = solution.exact;
+    list.anchored  = fixed.has_value();
 
-    list.tournaments   = static_cast<int>(counted.size());
+    list.tournaments = static_cast<int>(counted.size());
+    for (const auto source : counted) {
+        const auto& s = db.sources[source];
+        (s.external ? list.pgn_files : list.tournament_names).push_back(s.name);
+    }
     list.time_controls = {tcs.begin(), tcs.end()};
     return list;
 }
@@ -217,6 +224,36 @@ std::string ratingListText(const RatingList& list) {
     return out;
 }
 
+namespace {
+
+// The columns of the copies after the rank and the name, as text: Elo, error, games, score, wins, draws, losses, draw
+// rate, opponents, LOS and gap (empty for the last), tournaments.
+std::vector<std::string> cells(const RatingEntry& e) {
+    return {std::to_string(std::lround(e.rating.elo)),
+            fmt::format("{:.0f}", e.rating.error),
+            std::to_string(e.games),
+            fmt::format("{:.1f}%", 100.0 * e.score()),
+            std::to_string(e.wins),
+            std::to_string(e.draws),
+            std::to_string(e.losses),
+            fmt::format("{:.1f}%", 100.0 * e.drawRate()),
+            std::to_string(std::lround(e.opponents)),
+            e.los ? fmt::format("{:.1f}%", 100.0 * *e.los) : "",
+            e.gap ? fmt::format("{:.0f}", *e.gap) : "",
+            std::to_string(e.tournaments)};
+}
+
+const char* const HEADS[] = {"Elo", "+/-",   "Games", "Score", "+",   "=",
+                             "-",   "Draws", "Opp.",  "LOS",   "Gap", "Tournaments"};
+
+std::string joined(const std::vector<std::string>& items, const std::string& separator) {
+    std::string out;
+    for (const auto& item : items) out += (out.empty() ? "" : separator) + item;
+    return out;
+}
+
+}  // namespace
+
 std::string ratingListCsv(const RatingList& list) {
     std::string out = "rank,engine,elo,error,games,score,wins,draws,losses,draw_rate,opponents,los,gap,tournaments\n";
     for (std::size_t i = 0; i < list.entries.size(); ++i) {
@@ -231,6 +268,109 @@ std::string ratingListCsv(const RatingList& list) {
                            e.rating.error, e.games, e.score(), e.wins, e.draws, e.losses, e.drawRate(), e.opponents,
                            e.los ? fmt::format("{:.4f}", *e.los) : "", e.gap ? fmt::format("{:.1f}", *e.gap) : "",
                            e.tournaments);
+    }
+    return out;
+}
+
+std::vector<std::pair<std::string, std::string>> ratingListHeader(const RatingList& list, const RatingListInfo& info) {
+    std::vector<std::pair<std::string, std::string>> out;
+    const auto named = [](std::size_t n, const char* one, const char* many, const std::vector<std::string>& names) {
+        return fmt::format("{} {}: {}", n, n == 1 ? one : many, joined(names, ", "));
+    };
+    std::vector<std::string> sources;
+    if (!list.tournament_names.empty()) {
+        sources.push_back(named(list.tournament_names.size(), "tournament", "tournaments", list.tournament_names));
+    }
+    if (!list.pgn_files.empty())
+        sources.push_back(named(list.pgn_files.size(), "PGN file", "PGN files", list.pgn_files));
+    out.emplace_back("Sources", sources.empty() ? "none" : joined(sources, "; "));
+    out.emplace_back("Games",
+                     fmt::format("{}: White wins {}, Black wins {}, draws {}; White scores {:.1f}%", list.games,
+                                 list.white_wins, list.black_wins, list.draws, 100.0 * list.whiteScore()));
+    out.emplace_back("Anchor", info.anchor.empty() ? "none, the ratings average 0"
+                                                   : fmt::format("{} at {:.0f}", info.anchor, info.anchor_elo));
+    out.emplace_back(
+        "Filters",
+        fmt::format("{}, {}, {}, imported games {}",
+                    info.time_control.empty() ? "every time control" : "time control " + info.time_control,
+                    info.group.empty() ? "every engine" : "group " + info.group,
+                    info.period.empty() ? "every game" : info.period, info.external ? "counted" : "left out"));
+    out.emplace_back("Minimum games", std::to_string(info.min_games));
+    std::string made = info.date;
+    if (!info.version.empty()) made += (made.empty() ? "" : " ") + std::string("by fastchess-gui ") + info.version;
+    if (!made.empty()) out.emplace_back("Made", made);
+    return out;
+}
+
+std::string ratingListHeaderText(const RatingList& list, const RatingListInfo& info) {
+    std::string out;
+    for (const auto& [label, value] : ratingListHeader(list, info)) out += label + ": " + value + "\n";
+    return out;
+}
+
+std::string ratingListHtml(const RatingList& list, const RatingListInfo& info, const std::string& title) {
+    std::string out = htmlPageStart(title) + "<dl class=\"head\">";
+    for (const auto& [label, value] : ratingListHeader(list, info)) {
+        out += fmt::format("<dt>{}</dt><dd>{}</dd>", escapeHtml(label), escapeHtml(value));
+    }
+    out += "</dl>\n<div class=\"card\"><table><thead><tr><th>#</th><th class=\"l\">Engine</th>";
+    static const char* const TIPS[] = {"",
+                                       "Half-width of the 95 % interval",
+                                       "",
+                                       "Points per game",
+                                       "Wins",
+                                       "Draws",
+                                       "Losses",
+                                       "Share of drawn games",
+                                       "Average rating of the opponents, game by game",
+                                       "Likelihood of superiority over the next engine",
+                                       "Elo above the next engine",
+                                       "Tournaments and PGN files"};
+    for (std::size_t c = 0; c < std::size(HEADS); ++c) {
+        const std::string head = HEADS[c] == std::string("+/-") ? "&plusmn;"
+                                 : HEADS[c] == std::string("-") ? "&minus;"
+                                                                : HEADS[c];
+        out += *TIPS[c] ? fmt::format("<th title=\"{}\">{}</th>", TIPS[c], head) : fmt::format("<th>{}</th>", head);
+    }
+    out += "</tr></thead><tbody>\n";
+    for (std::size_t i = 0; i < list.entries.size(); ++i) {
+        const auto& e = list.entries[i];
+        out += fmt::format("<tr><td>{}</td><td class=\"l\">{}</td>", i + 1, escapeHtml(e.name));
+        for (const auto& cell : cells(e)) out += "<td>" + cell + "</td>";
+        out += "</tr>\n";
+    }
+    out += "</tbody></table></div>\n</body></html>\n";
+    return out;
+}
+
+std::string escapeMarkdown(const std::string& s) {
+    std::string out;
+    for (const char c : s) {
+        if (c == '\n' || c == '\r') {
+            out += ' ';
+            continue;
+        }
+        if (std::string_view("\\|<>*_`[]").find(c) != std::string_view::npos) out += '\\';
+        out += c;
+    }
+    return out;
+}
+
+std::string ratingListMarkdown(const RatingList& list, const RatingListInfo& info, const std::string& title) {
+    std::string out = "## " + escapeMarkdown(title) + "\n\n";
+    for (const auto& [label, value] : ratingListHeader(list, info)) {
+        out += "- " + escapeMarkdown(label) + ": " + escapeMarkdown(value) + "\n";
+    }
+    out += "\n| # | Engine |";
+    for (const auto* head : HEADS) out += fmt::format(" {} |", escapeMarkdown(head));
+    out += "\n|--:|:--|";
+    for (std::size_t c = 0; c < std::size(HEADS); ++c) out += "--:|";
+    out += "\n";
+    for (std::size_t i = 0; i < list.entries.size(); ++i) {
+        const auto& e = list.entries[i];
+        out += fmt::format("| {} | {} |", i + 1, escapeMarkdown(e.name));
+        for (const auto& cell : cells(e)) out += " " + cell + " |";
+        out += "\n";
     }
     return out;
 }

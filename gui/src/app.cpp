@@ -794,6 +794,16 @@ void App::handleDialogs() {
                                         !out);
                 break;
             }
+            case Dialogs::Purpose::ExportRatingHtml:
+            case Dialogs::Purpose::ExportRatingMarkdown: {
+                std::ofstream out(path, std::ios::binary | std::ios::trunc);
+                out << (answer->purpose == Dialogs::Purpose::ExportRatingHtml
+                            ? tour::ratingListHtml(rating_list_, ratingInfo())
+                            : tour::ratingListMarkdown(rating_list_, ratingInfo()));
+                Console::instance().add(out ? trf("Rating list written to {}", path) : trf("Cannot write {}", path),
+                                        !out);
+                break;
+            }
             case Dialogs::Purpose::ExportRatingPgn: {
                 std::ofstream out(path, std::ios::binary | std::ios::trunc);
                 out << tour::ratingPgn(*game_db_, ratingFilter());

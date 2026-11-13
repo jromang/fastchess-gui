@@ -771,3 +771,90 @@ TEST_CASE("ratings: the error of a difference, the likelihood of superiority") {
     CHECK(error > 0);
     CHECK(error <= big.ratings[10].error + big.ratings[11].error);
 }
+
+TEST_CASE("rating list: HTML and Markdown with a header of sources, results, anchor and filters, names escaped") {
+    HandGames games;
+    repeat(games, 0, 1, 1.0f, 3);  // in the tournament: 3 wins for White, 1 for Black, 2 draws
+    repeat(games, 1, 0, 1.0f, 1);
+    repeat(games, 0, 1, 0.5f, 2);
+    repeat(games, 2, 0, 0.0f, 2, 1);  // in the PGN file: 2 wins for Black
+    const auto db   = handDb({"A|B <x>", "C\\D", "E*F_G"},
+                             {{"t", {}, "Cup & <Co>", false}, {"list.pgn", {}, "list.pgn", true}}, games);
+    const auto list = ratingList(db, {}, std::make_pair(std::string("C\\D"), 3000.0), 2);
+    CHECK(list.white_wins == 4);
+    CHECK(list.black_wins == 2);
+    CHECK(list.draws == 2);
+    CHECK(list.whiteScore() == doctest::Approx(5.0 / 8));
+    CHECK(list.tournament_names == std::vector<std::string>{"Cup & <Co>"});
+    CHECK(list.pgn_files == std::vector<std::string>{"list.pgn"});
+
+    RatingListInfo info;
+    info.anchor       = "C\\D";
+    info.anchor_elo   = 3000;
+    info.time_control = "60+0.6";
+    info.period       = "the last 30 days";
+    info.external     = false;
+    info.min_games    = 2;
+    info.date         = "2026-11-13";
+    info.version      = "0.5.6";
+    const auto header = ratingListHeader(list, info);
+    using Line        = std::pair<std::string, std::string>;
+    CHECK(header == std::vector<Line>{
+                        {"Sources", "1 tournament: Cup & <Co>; 1 PGN file: list.pgn"},
+                        {"Games", "8: White wins 4, Black wins 2, draws 2; White scores 62.5%"},
+                        {"Anchor", "C\\D at 3000"},
+                        {"Filters", "time control 60+0.6, every engine, the last 30 days, imported games left out"},
+                        {"Minimum games", "2"},
+                        {"Made", "2026-11-13 by fastchess-gui 0.5.6"},
+                    });
+    const auto text = ratingListHeaderText(list, {});
+    CHECK(text.find("Anchor: none, the ratings average 0\n") != std::string::npos);
+    CHECK(text.find("Filters: every time control, every engine, every game, imported games counted\n") !=
+          std::string::npos);
+    CHECK(text.find("Made") == std::string::npos);
+
+    // HTML: the standings' page, light and dark; every name and header value escaped.
+    const auto html = ratingListHtml(list, info);
+    CHECK(html.rfind("<!doctype html>", 0) == 0);
+    CHECK(html.find("prefers-color-scheme:dark") != std::string::npos);
+    CHECK(html.find("<h1>Rating list</h1>") != std::string::npos);
+    CHECK(html.find("<td class=\"l\">A|B &lt;x&gt;</td>") != std::string::npos);
+    CHECK(html.find("<dd>1 tournament: Cup &amp; &lt;Co&gt;; 1 PGN file: list.pgn</dd>") != std::string::npos);
+    CHECK(html.find("<x>") == std::string::npos);
+    CHECK(html.find("<Co>") == std::string::npos);
+    CHECK(html.find("<th>LOS</th>") == std::string::npos);  // with its title
+    CHECK(html.find(">LOS</th>") != std::string::npos);
+    CHECK(html.find("</html>") != std::string::npos);
+    std::size_t rows = 0;
+    for (auto at = html.find("<tr><td>"); at != std::string::npos; at = html.find("<tr><td>", at + 1)) ++rows;
+    CHECK(rows == list.entries.size());
+
+    // Markdown: a table whose rows have as many cells as its head, the names' pipes and backslashes escaped.
+    CHECK(escapeMarkdown("A|B <x>") == "A\\|B \\<x\\>");
+    CHECK(escapeMarkdown("C\\D") == "C\\\\D");
+    CHECK(escapeMarkdown("E*F_G [1]\n`x`") == "E\\*F\\_G \\[1\\] \\`x\\`");
+    const auto md = ratingListMarkdown(list, info);
+    CHECK(md.rfind("## Rating list\n\n", 0) == 0);
+    CHECK(md.find("- Anchor: C\\\\D at 3000\n") != std::string::npos);
+    CHECK(md.find("- Sources: 1 tournament: Cup & \\<Co\\>; 1 PGN file: list.pgn\n") != std::string::npos);
+    CHECK(md.find("| A\\|B \\<x\\> |") != std::string::npos);
+    CHECK(md.find("| C\\\\D |") != std::string::npos);
+    const auto cells = [](const std::string& line) {
+        int n = 0;
+        for (std::size_t i = 0; i < line.size(); ++i) {
+            if (line[i] == '\\') {
+                ++i;
+            } else if (line[i] == '|') {
+                ++n;
+            }
+        }
+        return n - 1;
+    };
+    std::vector<std::string> table;
+    for (std::size_t at = md.find("\n|"); at != std::string::npos; at = md.find("\n|", at + 1)) {
+        table.push_back(md.substr(at + 1, md.find('\n', at + 1) - at - 1));
+    }
+    REQUIRE(table.size() == 2 + list.entries.size());
+    CHECK(cells(table[0]) == 14);
+    for (const auto& line : table) CHECK(cells(line) == cells(table[0]));
+}
