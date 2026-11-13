@@ -70,8 +70,12 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
 - **Inactive** (on the card, or from the right click for all the engines selected): the engine stays in the library,
   greyed, but is left out of the engine pickers (setup, suites, quick test, relaunch, adding an engine to a running
   tournament) and of *Check those not checked*. A tournament or a setup that has it already keeps it.
-- **Reading the options** never blocks a start: *Start*, *Resume* and the queue wait for the engine being read,
-  the tournament's engines are read first, and a queued engine can be read next from its menu.
+- **Reading the options** never blocks a start. *Resume* starts at once: a tournament plays the engines copied in
+  its folder. *Start*, the queue (one tournament at a time) and the quick test wait only for the read of an engine
+  they play, read first; any other read or check is interrupted and done again later. A start that waits says so on
+  its button (*Waiting for …*, with *Cancel*), and another start is refused meanwhile. A start also waits for a
+  running test suite, and a test suite does not start while a tournament runs or waits. A queued engine can be read
+  next from its menu.
 - **Reference Elo**: the engine's rating on a list you trust. A tournament or the rating list can be anchored on it,
   and the games of a tournament carry it in their `WhiteElo` and `BlackElo` tags (copied when the engine joins).
   *Import…* > *A rating list, for the reference Elo…* sets it for many engines at once (see below).
