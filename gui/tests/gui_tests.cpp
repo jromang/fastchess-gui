@@ -1613,6 +1613,16 @@ TEST_CASE("replay charts: the fields a PGN has are told apart from zeros, and fr
     CHECK(chartExtraField(MoveChart::Nodes) == 0);
     CHECK(std::string(pgnFieldOption(PGN_NPS)) == "nps");
     CHECK(std::string(pgnFieldOption(PGN_PV)) == "pv");
+    // A field missing with its option on (the decision time, which the engines' lines may not tell) does not
+    // blame the option.
+    fastchess::config::Pgn pgn;
+    pgn.track_decision = true;
+    CHECK(pgnFieldOn(pgn, PGN_DECISION));
+    CHECK_FALSE(pgnFieldOn(pgn, PGN_SELDEPTH));
+    CHECK(missingPgnFieldTip(PGN_DECISION, true).find("was on") != std::string::npos);
+    CHECK(missingPgnFieldTip(PGN_SELDEPTH, false) ==
+          "Written when \"seldepth\" is on in the PGN options of the setup.");
+    CHECK(missingPgnFieldTip(PGN_DECISION, std::nullopt).find("the engines give") != std::string::npos);
     CHECK_FALSE(moveSeries(game->moves, MoveChart::Nodes).empty());
     CHECK(moveSeries(game->moves, MoveChart::Agreement).empty());
 }

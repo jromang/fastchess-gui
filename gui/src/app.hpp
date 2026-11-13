@@ -168,6 +168,12 @@ constexpr uint8_t chartExtraField(MoveChart chart) {
 }
 // The name of the setup's PGN option that writes a PgnField.
 const char* pgnFieldOption(uint8_t field);
+// Whether a tournament's PGN options write a PgnField.
+bool pgnFieldOn(const fastchess::config::Pgn& pgn, uint8_t field);
+// Why a game's PGN lacks a PgnField: the option that writes it was off (`on` false), or it was on and the engines
+// did not give what it needs (the decision time is only written when their info lines tell it); nullopt when the
+// tournament's options are not known.
+std::string missingPgnFieldTip(uint8_t field, std::optional<bool> on);
 
 // The chart choice above the curve; true when it changed.
 bool moveChartChoice(const char* id, MoveChart& chart);

@@ -169,6 +169,39 @@ const char* pgnFieldOption(uint8_t field) {
     }
 }
 
+bool pgnFieldOn(const fastchess::config::Pgn& pgn, uint8_t field) {
+    switch (field) {
+        case PGN_NODES:
+            return pgn.track_nodes;
+        case PGN_SELDEPTH:
+            return pgn.track_seldepth;
+        case PGN_NPS:
+            return pgn.track_nps;
+        case PGN_TBHITS:
+            return pgn.track_tbhits;
+        case PGN_PV:
+            return pgn.track_pv;
+        case PGN_DECISION:
+            return pgn.track_decision;
+        default:
+            return false;
+    }
+}
+
+std::string missingPgnFieldTip(uint8_t field, std::optional<bool> on) {
+    if (!on) {
+        return trf("Written when \"{}\" is on in the PGN options of the setup and the engines give what it needs.",
+                   pgnFieldOption(field));
+    }
+    if (*on) {
+        return trf(
+            "\"{}\" was on in this tournament's PGN options: the engines did not give what it needs in this "
+            "game.",
+            pgnFieldOption(field));
+    }
+    return trf("Written when \"{}\" is on in the PGN options of the setup.", pgnFieldOption(field));
+}
+
 bool moveChartChoice(const char* id, MoveChart& chart) {
     const char* names[] = {TR("Evaluation"), TR("Time"),    TR("Depth"),       TR("Nodes"),
                            TR("Speed"),      TR("TB hits"), TR("PV agreement")};
