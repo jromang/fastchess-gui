@@ -465,26 +465,28 @@ TEST_CASE("the games of a new setup's tournament have in their PGN every field t
 
     const auto root = fs::temp_directory_path() / "fcg-run-tests-chart-fields";
     fs::remove_all(root);
-    Harness h;
-    REQUIRE(h.run.start(randomSetup(2), randomEngines(), topologyFromCores({{0, 0}, {0, 1}}), root).empty());
-    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }));
-    setEnv("FCG_MOCK_SEARCH", nullptr);
-    REQUIRE(h.games.size() == 2);
+    {  // The harness keeps the journal open: Windows removes the folder only once it is closed.
+        Harness h;
+        REQUIRE(h.run.start(randomSetup(2), randomEngines(), topologyFromCores({{0, 0}, {0, 1}}), root).empty());
+        REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }));
+        setEnv("FCG_MOCK_SEARCH", nullptr);
+        REQUIRE(h.games.size() == 2);
 
-    const auto text = tour::readSpan(h.run.observer()->fastchessPgn(), h.games[0].fastchess_span);
-    REQUIRE(text);
-    const auto game = parseReplay(*text);
-    REQUIRE(game);
-    CHECK(game->fields == (PGN_NODES | PGN_SELDEPTH | PGN_NPS | PGN_TBHITS | PGN_PV | PGN_DECISION));
-    for (const auto chart :
-         {MoveChart::Time, MoveChart::Depth, MoveChart::Nodes, MoveChart::Speed, MoveChart::Agreement}) {
-        CAPTURE(static_cast<int>(chart));
-        CHECK_FALSE(moveSeries(game->moves, chart).empty());
-    }
-    // The decision time beside the move time, the seldepth beside the depth.
-    for (const auto chart : {MoveChart::Time, MoveChart::Depth}) {
-        const auto series = moveSeries(game->moves, chart);
-        CHECK(std::any_of(series.extra[0].begin(), series.extra[0].end(), [](float v) { return std::isfinite(v); }));
+        const auto text = tour::readSpan(h.run.observer()->fastchessPgn(), h.games[0].fastchess_span);
+        REQUIRE(text);
+        const auto game = parseReplay(*text);
+        REQUIRE(game);
+        CHECK(game->fields == (PGN_NODES | PGN_SELDEPTH | PGN_NPS | PGN_TBHITS | PGN_PV | PGN_DECISION));
+        for (const auto chart :
+             {MoveChart::Time, MoveChart::Depth, MoveChart::Nodes, MoveChart::Speed, MoveChart::Agreement}) {
+            CAPTURE(static_cast<int>(chart));
+            CHECK_FALSE(moveSeries(game->moves, chart).empty());
+        }
+        // The decision time beside the move time, the seldepth beside the depth.
+        for (const auto chart : {MoveChart::Time, MoveChart::Depth}) {
+            const auto series = moveSeries(game->moves, chart);
+            CHECK(std::any_of(series.extra[0].begin(), series.extra[0].end(), [](float v) { return std::isfinite(v); }));
+        }
     }
     fs::remove_all(root);
 }
