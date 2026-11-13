@@ -193,6 +193,8 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
             settings.tlcs_lanes = setup->tlcs_lanes;
             settings.web        = setup->broadcast_web;
             settings.web_port   = setup->web_port;
+            settings.tunnel     = setup->broadcast_tunnel && (setup->tunnel_service == 0 || !setup->tunnel_host.empty());
+            settings.tunnel_to  = tunnelSettings(*setup, storage.root() / "known_hosts.json");
             const auto engines  = storage.loadEngines();
             const auto dir =
                 storage.runsDir() /
@@ -243,6 +245,19 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
             return 2;
         }
     }
+    if (broadcast.tunnel) {
+        std::string error;
+        auto to = parseTunnel(*broadcast.tunnel, error);
+        if (!to) {
+            std::fprintf(stderr, "error: %s\n", error.c_str());
+            return 2;
+        }
+        if (to->pinned.empty()) to->known_hosts = storage.root() / "known_hosts.json";
+        // The tunnel leads to the web page: served too, on its port.
+        settings.web       = true;
+        settings.tunnel    = true;
+        settings.tunnel_to = *to;
+    }
     const bool broadcasting = settings.files || settings.tlcs || settings.web || settings.lichess;
 
     // Broadcasting needs the games in progress: the observer the window uses, read by a thread of its own. It also
@@ -261,6 +276,9 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
         }
         if (broadcaster.web().running()) std::printf("Web page on http://localhost:%d/\n", settings.web_port);
         if (settings.lichess) std::printf("Pushing the games to lichess\n");
+        if (settings.tunnel && broadcaster.web().running()) {
+            std::printf("Tunnel to %s for the web page on the internet\n", settings.tunnel_to.host.c_str());
+        }
         if (settings.files) {
             std::printf("Live files in %s\n",
                         (settings.dir.empty() ? state->dir() / "live" : settings.dir).string().c_str());
@@ -285,9 +303,28 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
                     if (!s.error.empty()) std::fprintf(stderr, "warning: %s\n", s.error.c_str());
                 }
             };
+            // The tunnel: its address each time it changes, and every new error.
+            std::string tunnel_url, tunnel_error;
+            const auto tunnelStatus = [&] {
+                if (!settings.tunnel) return;
+                const auto s = broadcaster.tunnel();
+                if (!s.url.empty() && s.url != tunnel_url) {
+                    tunnel_url = s.url;
+                    std::printf("Web page on the internet: %s\n", s.url.c_str());
+                    std::fflush(stdout);
+                }
+                if (s.error != tunnel_error) {
+                    tunnel_error = s.error;
+                    if (!s.error.empty()) {
+                        std::fprintf(stderr, "warning: tunnel: %s%s\n", s.error.c_str(),
+                                     s.state == TunnelState::Failed ? "" : " (connecting again)");
+                    }
+                }
+            };
             while (playing) {
                 broadcaster.update(*state, *observer, std::nullopt, -1);
                 lichessStatus();
+                tunnelStatus();
                 observer->drain(games, stats);  // the window's lists, not needed here
                 games.clear();
                 stats.clear();

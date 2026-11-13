@@ -85,6 +85,39 @@ class TcpListener {
     bool open_ = false;
 };
 
+// A connected TCP socket that never waits, for a thread that serves several at once (the SSH tunnel): waitAny()
+// tells which can be read or written. Closed with the object.
+class Socket {
+   public:
+    explicit Socket(Handle fd);
+    ~Socket();
+    Socket(const Socket&)            = delete;
+    Socket& operator=(const Socket&) = delete;
+
+    [[nodiscard]] Handle handle() const noexcept { return fd_; }
+    // Appends what there is to read, `max` bytes at most: how many, 0 when nothing came yet, -1 once the other side
+    // closed the connection or it failed.
+    long receive(std::string& out, std::size_t max);
+    // Sends what can be sent at once: how many bytes (0 when it would have to wait), -1 on an error.
+    long send(std::string_view data);
+    // No more data from this side: the other one reads the end of the stream.
+    void shutdownWrite();
+
+   private:
+    Handle fd_;
+};
+
+// A socket to wait for, and what it is ready for once waitAny() returns.
+struct Wait {
+    Handle fd   = 0;
+    bool read   = false;
+    bool write  = false;
+    bool can_read  = false;  // or the connection ended: the read tells
+    bool can_write = false;
+};
+// Waits up to `timeout_ms` until one of `waits` can be read or written as asked.
+void waitAny(std::vector<Wait>& waits, int timeout_ms);
+
 // Connects to a TCP server (tests, mostly). nullopt when it cannot.
 [[nodiscard]] std::optional<Handle> connectTo(uint32_t ip, uint16_t port);
 

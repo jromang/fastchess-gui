@@ -14,6 +14,7 @@
 #    include <ifaddrs.h>
 #    include <netdb.h>
 #    include <netinet/in.h>
+#    include <poll.h>
 #    include <sys/select.h>
 #    include <sys/socket.h>
 #    include <unistd.h>
@@ -260,6 +261,62 @@ std::optional<Handle> TcpListener::accept(int timeout_ms) {
     if (fd == INVALID) return std::nullopt;
 #endif
     return fd;
+}
+
+Socket::Socket(Handle fd) : fd_(fd) { setBlocking(fd_, false); }
+
+Socket::~Socket() { closeHandle(fd_); }
+
+long Socket::receive(std::string& out, std::size_t max) {
+    char buffer[16384];
+    const auto n = recv(fd_, buffer, static_cast<int>(std::min(sizeof(buffer), max)), 0);
+    if (n > 0) {
+        out.append(buffer, static_cast<std::size_t>(n));
+        return static_cast<long>(n);
+    }
+    if (n < 0 && wouldBlock()) return 0;
+    return -1;
+}
+
+long Socket::send(std::string_view data) {
+    if (data.empty()) return 0;
+    const auto size = static_cast<int>(std::min<std::size_t>(data.size(), 1 << 20));
+    const auto n    = ::send(fd_, data.data(), size, SEND_FLAGS);
+    if (n > 0) return static_cast<long>(n);
+    if (n < 0 && wouldBlock()) return 0;
+    return -1;
+}
+
+void Socket::shutdownWrite() {
+#ifdef _WIN32
+    shutdown(static_cast<SOCKET>(fd_), SD_SEND);
+#else
+    shutdown(fd_, SHUT_WR);
+#endif
+}
+
+// poll rather than select: no limit on the number of sockets, nor on their values.
+void waitAny(std::vector<Wait>& waits, int timeout_ms) {
+    std::vector<pollfd> fds(waits.size());
+    for (std::size_t i = 0; i < waits.size(); ++i) {
+#ifdef _WIN32
+        fds[i].fd = static_cast<SOCKET>(waits[i].fd);
+#else
+        fds[i].fd = waits[i].fd;
+#endif
+        fds[i].events = static_cast<short>((waits[i].read ? POLLIN : 0) | (waits[i].write ? POLLOUT : 0));
+    }
+#ifdef _WIN32
+    const int n = WSAPoll(fds.data(), static_cast<ULONG>(fds.size()), timeout_ms);
+#else
+    const int n = poll(fds.data(), static_cast<nfds_t>(fds.size()), timeout_ms);
+#endif
+    for (std::size_t i = 0; i < waits.size(); ++i) {
+        const auto r        = n > 0 ? fds[i].revents : 0;
+        const bool ended    = (r & (POLLERR | POLLHUP | POLLNVAL)) != 0;
+        waits[i].can_read  = waits[i].read && ((r & POLLIN) != 0 || ended);
+        waits[i].can_write = waits[i].write && ((r & POLLOUT) != 0 || ended);
+    }
 }
 
 std::optional<Handle> connectTo(uint32_t ip, uint16_t port) {

@@ -19,6 +19,8 @@
 #include "broadcast.hpp"
 #include "lichess.hpp"
 #include "live.hpp"
+#include "model.hpp"
+#include "ssh_tunnel.hpp"
 
 namespace fcg {
 
@@ -35,7 +37,15 @@ struct BroadcastSettings {
     std::string lichess_token;
     std::string lichess_round;  // a round's URL or id; empty: a new broadcast
     bool lichess_listed = false;
+
+    // The web page on the internet through an SSH tunnel, while it is served; to the web server's port.
+    bool tunnel = false;
+    TunnelSettings tunnel_to;
 };
+
+// The tunnel `setup` asks for: localhost.run, or another SSH server whose host key is trusted on first use and kept
+// in `known_hosts`.
+[[nodiscard]] TunnelSettings tunnelSettings(const MatchSetup& setup, const std::filesystem::path& known_hosts);
 
 // A game of the schedule to be played, as broadcast.
 struct BroadcastNextGame {
@@ -107,6 +117,9 @@ class Broadcaster {
     // Where and when the files were last written, or why they could not be.
     [[nodiscard]] std::string filesStatus() const;
     [[nodiscard]] LichessRelay::Status lichess() const;
+    [[nodiscard]] TunnelStatus tunnel() const { return tunnel_.status(); }
+    // Trusts the host key the tunnel's server shows now, after it changed, and connects again.
+    void trustTunnelKey();
 
    private:
     // The thread's side.
@@ -122,6 +135,7 @@ class Broadcaster {
     BroadcastSettings settings_;
     TlcsServer tlcs_;
     WebServer web_;
+    SshTunnel tunnel_;
     std::string tlcs_error_;
     std::string web_error_;
     std::chrono::steady_clock::time_point last_snapshot_{};
