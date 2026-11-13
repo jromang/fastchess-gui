@@ -308,6 +308,9 @@ msgstr "Резкий скачок оценки"
 msgid "Anchor:"
 msgstr "Опорный движок:"
 
+msgid "Another SSH server"
+msgstr "Другой SSH-сервер"
+
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "Всё, что стоит о нём помнить; поиск движков находит этот текст."
 
@@ -550,6 +553,9 @@ msgstr "Щёлкните движок, затем Ctrl+Up или Ctrl+Down: в �
 
 msgid "Click for its card."
 msgstr "Нажмите, чтобы открыть его карточку."
+
+msgid "Click to enlarge"
+msgstr "Щёлкните, чтобы увеличить"
 
 msgid "Close"
 msgstr "Закрыть"
@@ -947,6 +953,9 @@ msgstr "Формат"
 msgid "Found for (plies)"
 msgstr "Удерживается (полуходы)"
 
+msgid "Free, without an account: its addresses change now and then, and its speed is limited."
+msgstr "Бесплатно, без учётной записи: адреса время от времени меняются, скорость ограничена."
+
 msgid "From move"
 msgstr "С хода"
 
@@ -1007,6 +1016,9 @@ msgstr "Гаунтлет, движков: {} против {}"
 msgid "Give the Syzygy tablebase directory."
 msgstr "Укажите папку таблиц Syzygy."
 
+msgid "Give the server's host."
+msgstr "Укажите хост сервера."
+
 msgid "Give the tester's name and the event."
 msgstr "Укажите имя тестера и соревнование."
 
@@ -1054,6 +1066,9 @@ msgstr "Личные встречи"
 
 msgid "Health"
 msgstr "Надёжность"
+
+msgid "Host"
+msgstr "Хост"
 
 msgid "How deep the lines of the book are followed; -1 = {}."
 msgstr "Насколько глубоко просматриваются варианты книги; -1 = {}."
@@ -1123,6 +1138,9 @@ msgstr "Она не может играть за движок: {}"
 
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "Он продолжится ровно с того места, где остановился: ни одна партия не потеряется и не будет сыграна дважды."
+
+msgid "It needs the web page served."
+msgstr "Для этого веб-страница должна обслуживаться."
 
 msgid "It starts once the book of {} is prepared."
 msgstr "Начнётся, как только книга {} будет подготовлена."
@@ -1697,6 +1715,9 @@ msgstr "Ponder включён у {}"
 msgid "Ponder off"
 msgstr "Ponder выключен"
 
+msgid "Port"
+msgstr "Порт"
+
 msgid "Position"
 msgstr "Позиция"
 
@@ -1741,6 +1762,9 @@ msgstr "Прогресс"
 
 msgid "Protocol"
 msgstr "Протокол"
+
+msgid "Publish on the internet"
+msgstr "Опубликовать в интернете"
 
 msgid "Push the games to lichess"
 msgstr "Отправлять партии на lichess"
@@ -1840,6 +1864,9 @@ msgstr "Обновить: новые движки из папки"
 
 msgid "Relaunch with…"
 msgstr "Перезапустить с…"
+
+msgid "Remote port"
+msgstr "Удалённый порт"
 
 msgid "Remove"
 msgstr "Удалить"
@@ -2027,6 +2054,9 @@ msgstr "Через запятую, например пул или рейтинг
 msgid "Serve the web page"
 msgstr "Раздавать веб-страницу"
 
+msgid "Service:"
+msgstr "Сервис:"
+
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
 msgstr[0] "Задать опорный рейтинг Elo: {}"
@@ -2104,6 +2134,9 @@ msgstr "Запуск за {} мс · isready {:.1f} мс · первый ход 
 
 msgid "Starts the engine, measures how fast it answers, checks one move, then runs fastchess' UCI compliance steps."
 msgstr "Запускает движок, измеряет скорость его ответа, проверяет один ход, затем проходит этапы проверки соответствия UCI из fastchess."
+
+msgid "Starts with the tournament."
+msgstr "Запускается вместе с турниром."
 
 msgid "State"
 msgstr "Состояние"
@@ -2306,6 +2339,12 @@ msgstr "Партии ждут {}: {}. Новая попытка после ка�
 msgid "The guide, at this page (F1)"
 msgstr "Руководство по этой странице (F1)"
 
+msgid "The host key of {} changed: {} now, {} before. Someone may be in the way; trust the new key only if the server's owner says it changed."
+msgstr "Ключ хоста {} изменился: сейчас {}, раньше {}. Возможно, кто-то вмешивается; доверяйте новому ключу, только если владелец сервера подтвердит смену."
+
+msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
+msgstr "Ключ хоста {} не совпадает с ожидаемым ({} вместо {}): возможно, кто-то вмешивается. Ничего не отправлено."
+
 msgid "The last 30 days"
 msgstr "Последние 30 дней"
 
@@ -2338,6 +2377,9 @@ msgstr "Игроки PGN-файлов, принятые за движки биб
 
 msgid "The players of the PGN files that are no library engine by their name, letter case and spaces aside. Say which library engine a player is, and its games are the engine's; the choice is kept for every PGN file that names the player. A name that two library engines have waits for your choice; a hint is a guess, never applied."
 msgstr "Игроки PGN-файлов, которые по имени (без учёта регистра и пробелов) не являются движками библиотеки. Укажите, каким движком библиотеки является игрок, и его партии будут партиями этого движка; выбор сохраняется для всех PGN-файлов с этим игроком. Имя, которое носят два движка библиотеки, ждёт вашего выбора; подсказка — лишь догадка и никогда не применяется сама."
+
+msgid "The port the server opens for the page, as ssh -R REMOTE_PORT:localhost:PORT user@host would ask (0: the server chooses). Authentication \"none\" only: a service that lets anyone in, or a server of one's own that lets the user in without a key. Its host key is trusted the first time and must stay the same."
+msgstr "Порт, который сервер открывает для страницы, как его запросил бы ssh -R REMOTE_PORT:localhost:PORT user@host (0: выбирает сервер). Только аутентификация «none»: сервис, пускающий всех, или собственный сервер, пускающий пользователя без ключа. Ключ хоста принимается при первом подключении и не должен меняться."
 
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
 msgstr "Процессорное время процессов каждого движка, пока он думает (не больше ядер, чем его потоков) и пока думает соперник (ноль без пондеринга). Измеряется во время партий, сыгранных в окне, и сохраняется вместе с ними для возобновления турнира."
@@ -2480,8 +2522,26 @@ msgstr "Турниры"
 msgid "Tournaments folder"
 msgstr "Папка турниров"
 
+msgid "Trust the new key"
+msgstr "Доверять новому ключу"
+
 msgid "Try again"
 msgstr "Повторить"
+
+msgid "Tunnel: connecting to {}"
+msgstr "Туннель: подключение к {}"
+
+msgid "Tunnel: the host key of {} is {}, trusted from now on"
+msgstr "Туннель: ключ хоста {} — {}, теперь он доверенный"
+
+msgid "Tunnel: the web page is on {}"
+msgstr "Туннель: веб-страница доступна по адресу {}"
+
+msgid "Tunnel: {}"
+msgstr "Туннель: {}"
+
+msgid "Tunnel: {}; connecting again in {} s"
+msgstr "Туннель: {}; повторное подключение через {} с"
 
 msgid "Two different engines chosen"
 msgstr "Выбраны два разных движка"
@@ -2519,6 +2579,9 @@ msgstr "Использовать для следующего турнира"
 msgid "Use these bounds"
 msgstr "Использовать эти границы"
 
+msgid "User"
+msgstr "Пользователь"
+
 msgid "Value"
 msgstr "Значение"
 
@@ -2554,6 +2617,9 @@ msgstr "Когда в среднем он останавливался на сы
 
 msgid "When the program ended while a tournament was running (a crash, a power cut, a reboot, or quitting while it ran), it resumes at the next launch, and the queue goes on after it. A tournament paused or stopped waits for you."
 msgstr "Если программа завершилась во время турнира (вылет, отключение питания, перезагрузка или выход во время игры), турнир продолжится при следующем запуске, а после него продолжится очередь. Турнир на паузе или остановленный ждёт вас."
+
+msgid "While a tournament runs, an SSH tunnel built into fastchess-gui gives the page a public https address, without opening a port in the router or installing anything. Only the page is reachable that way, read-only."
+msgstr "Пока идёт турнир, встроенный в fastchess-gui SSH-туннель даёт странице публичный https-адрес без открытия порта на роутере и без установки чего-либо. Так доступна только страница, только для чтения."
 
 msgid "White"
 msgstr "Белые"
@@ -2915,6 +2981,9 @@ msgstr "{} против каждого соперника"
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} требует перезапуска для каждой партии: отмечено «Перезапускать движок для каждой партии»."
 
+msgid "{} changed its host key while connected"
+msgstr "{} сменил ключ хоста во время соединения"
+
 msgid "{} changed: its options were read again."
 msgstr "{} изменился: его опции перечитаны."
 
@@ -2935,6 +3004,9 @@ msgstr[2] "{} вылетов или зависаний"
 
 msgid "{} crashes"
 msgstr "вылетов: {}"
+
+msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
+msgstr "{} не пускает пользователя «{}» без ключа или пароля (принимает: {})"
 
 msgid "{} does not play Chess960."
 msgstr "{} не поддерживает Chess960."
@@ -3061,6 +3133,9 @@ msgstr "партий: {}, турниров: {}"
 
 msgid "{} h {:02} min"
 msgstr "{} ч {:02} мин"
+
+msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
+msgstr "У {} нет общих алгоритмов с fastchess-gui (нужны curve25519-sha256, RSA-ключ хоста и AES)"
 
 msgid "{} holds the games of the tournament: choose another file"
 msgstr "{} содержит партии турнира: выберите другой файл"
@@ -3221,6 +3296,9 @@ msgstr[0] "Опорный рейтинг Elo задан из рейтинг-ли
 msgstr[1] "Опорный рейтинг Elo задан из рейтинг-листа: {}"
 msgstr[2] "Опорный рейтинг Elo задан из рейтинг-листа: {}"
 
+msgid "{} refused to forward its port {}"
+msgstr "{} отказался перенаправить свой порт {}"
+
 msgid "{} rounds × {} pairings × 2 games"
 msgstr "туров: {} × пар: {} × 2 партии"
 
@@ -3341,8 +3419,20 @@ msgstr "· пары [0-2]: %d  %d  %d  %d  %d"
 msgid "· {} lines left out"
 msgstr "· отброшено вариантов: {}"
 
+msgid "● Connecting again… ({})"
+msgstr "● Повторное подключение… ({})"
+
+msgid "● Connecting…"
+msgstr "● Подключение…"
+
 msgid "● On air"
 msgstr "● В эфире"
+
+msgid "● On air on the internet · {} connection"
+msgid_plural "● On air on the internet · {} connections"
+msgstr[0] "● В эфире в интернете · {} соединение"
+msgstr[1] "● В эфире в интернете · {} соединения"
+msgstr[2] "● В эфире в интернете · {} соединений"
 
 msgid "● On air · {} clients"
 msgstr "● В эфире · клиентов: {}"
@@ -3355,6 +3445,9 @@ msgstr "● В эфире · партий: {} · отправлено в {}"
 
 msgid "● On air · {} viewers"
 msgstr "● В эфире · зрителей: {}"
+
+msgid "● Reconnecting in a moment: {}"
+msgstr "● Скоро повторное подключение: {}"
 
 msgid "✓ As expected for the {} engines measured"
 msgstr "✓ В норме для измеренных движков: {}"

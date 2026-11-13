@@ -300,6 +300,9 @@ msgstr "评估出现大幅波动"
 msgid "Anchor:"
 msgstr "锚点："
 
+msgid "Another SSH server"
+msgstr "其他 SSH 服务器"
+
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "关于它需要记住的任何内容；搜索引擎时可以搜到。"
 
@@ -542,6 +545,9 @@ msgstr "点击一个引擎，然后按 Ctrl+Up 或 Ctrl+Down：移到最上或�
 
 msgid "Click for its card."
 msgstr "点击查看其信息卡。"
+
+msgid "Click to enlarge"
+msgstr "点击放大"
 
 msgid "Close"
 msgstr "关闭"
@@ -939,6 +945,9 @@ msgstr "格式"
 msgid "Found for (plies)"
 msgstr "已找到（半回合）"
 
+msgid "Free, without an account: its addresses change now and then, and its speed is limited."
+msgstr "免费，无需账户：其地址会不时变化，速度受限。"
+
 msgid "From move"
 msgstr "从第几步开始"
 
@@ -999,6 +1008,9 @@ msgstr "车轮战：{} 对 {} 个引擎"
 msgid "Give the Syzygy tablebase directory."
 msgstr "请指定 Syzygy 残局库目录。"
 
+msgid "Give the server's host."
+msgstr "请填写服务器的主机。"
+
 msgid "Give the tester's name and the event."
 msgstr "请填写测试者姓名和赛事。"
 
@@ -1044,6 +1056,9 @@ msgstr "交手记录"
 
 msgid "Health"
 msgstr "稳定性"
+
+msgid "Host"
+msgstr "主机"
 
 msgid "How deep the lines of the book are followed; -1 = {}."
 msgstr "沿开局库的变化走多深；-1 = {}。"
@@ -1113,6 +1128,9 @@ msgstr "它不能代替引擎走棋：{}"
 
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "它会从中断处准确继续：不会丢失对局，也不会重复下同一局。"
+
+msgid "It needs the web page served."
+msgstr "需要先提供网页。"
 
 msgid "It starts once the book of {} is prepared."
 msgstr "{} 的开局库准备好后即开始。"
@@ -1685,6 +1703,9 @@ msgstr "{} 开启了 Ponder"
 msgid "Ponder off"
 msgstr "Ponder 关闭"
 
+msgid "Port"
+msgstr "端口"
+
 msgid "Position"
 msgstr "局面"
 
@@ -1727,6 +1748,9 @@ msgstr "进度"
 
 msgid "Protocol"
 msgstr "协议"
+
+msgid "Publish on the internet"
+msgstr "发布到互联网"
 
 msgid "Push the games to lichess"
 msgstr "将对局推送到 lichess"
@@ -1824,6 +1848,9 @@ msgstr "刷新：文件夹中的新引擎"
 
 msgid "Relaunch with…"
 msgstr "重新开始，使用…"
+
+msgid "Remote port"
+msgstr "远程端口"
 
 msgid "Remove"
 msgstr "移除"
@@ -2009,6 +2036,9 @@ msgstr "用逗号分隔，例如一个组或一个等级分榜。"
 msgid "Serve the web page"
 msgstr "提供网页服务"
 
+msgid "Service:"
+msgstr "服务："
+
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
 msgstr[0] "设置 {} 个参考 Elo"
@@ -2084,6 +2114,9 @@ msgstr "启动 {} ms · isready {:.1f} ms · 第一步 {}"
 
 msgid "Starts the engine, measures how fast it answers, checks one move, then runs fastchess' UCI compliance steps."
 msgstr "启动引擎，测量其响应速度，检查一步着法，然后运行 fastchess 的 UCI 合规性测试步骤。"
+
+msgid "Starts with the tournament."
+msgstr "随锦标赛启动。"
 
 msgid "State"
 msgstr "状态"
@@ -2286,6 +2319,12 @@ msgstr "对局正在等待 {}：{}。每局结束后重试。"
 msgid "The guide, at this page (F1)"
 msgstr "本页的指南（F1）"
 
+msgid "The host key of {} changed: {} now, {} before. Someone may be in the way; trust the new key only if the server's owner says it changed."
+msgstr "{} 的主机密钥已改变：现在是 {}，之前是 {}。可能有人在中间拦截；只有在服务器所有者确认更换后才信任新密钥。"
+
+msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
+msgstr "{} 的主机密钥不是预期的（{}，而不是 {}）：可能有人在中间拦截。未发送任何内容。"
+
 msgid "The last 30 days"
 msgstr "最近 30 天"
 
@@ -2318,6 +2357,9 @@ msgstr "PGN 文件中按名称（不计大小写和空格）或按你的选择�
 
 msgid "The players of the PGN files that are no library engine by their name, letter case and spaces aside. Say which library engine a player is, and its games are the engine's; the choice is kept for every PGN file that names the player. A name that two library engines have waits for your choice; a hint is a guess, never applied."
 msgstr "PGN 文件中按名称（不计大小写和空格）不是库引擎的棋手。指定某位棋手是哪个库引擎，其对局即计为该引擎的对局；该选择对所有提到此棋手的 PGN 文件都有效。两个库引擎共有的名称需要你来选择；提示只是猜测，从不自动应用。"
+
+msgid "The port the server opens for the page, as ssh -R REMOTE_PORT:localhost:PORT user@host would ask (0: the server chooses). Authentication \"none\" only: a service that lets anyone in, or a server of one's own that lets the user in without a key. Its host key is trusted the first time and must stay the same."
+msgstr "服务器为页面打开的端口，与 ssh -R REMOTE_PORT:localhost:PORT user@host 所请求的相同（0：由服务器选择）。仅支持 \"none\" 认证：允许任何人进入的服务，或允许该用户无密钥进入的自有服务器。其主机密钥在首次连接时被信任，之后必须保持不变。"
 
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
 msgstr "每个引擎进程的处理器时间：思考时（核心数不超过其线程数）以及对手思考时（不开启后台思考则为零）。在窗口中进行的对局期间测量，并随对局保存，以便恢复锦标赛时使用。"
@@ -2460,8 +2502,26 @@ msgstr "锦标赛"
 msgid "Tournaments folder"
 msgstr "锦标赛文件夹"
 
+msgid "Trust the new key"
+msgstr "信任新密钥"
+
 msgid "Try again"
 msgstr "重试"
+
+msgid "Tunnel: connecting to {}"
+msgstr "隧道：正在连接 {}"
+
+msgid "Tunnel: the host key of {} is {}, trusted from now on"
+msgstr "隧道：{} 的主机密钥为 {}，今后将被信任"
+
+msgid "Tunnel: the web page is on {}"
+msgstr "隧道：网页位于 {}"
+
+msgid "Tunnel: {}"
+msgstr "隧道：{}"
+
+msgid "Tunnel: {}; connecting again in {} s"
+msgstr "隧道：{}；{} 秒后重新连接"
 
 msgid "Two different engines chosen"
 msgstr "已选择两个不同的引擎"
@@ -2499,6 +2559,9 @@ msgstr "用于下一个锦标赛"
 msgid "Use these bounds"
 msgstr "使用这些边界"
 
+msgid "User"
+msgstr "用户"
+
 msgid "Value"
 msgstr "值"
 
@@ -2534,6 +2597,9 @@ msgstr "它平均何时确定最终走出的着法：如果远早于所用时间
 
 msgid "When the program ended while a tournament was running (a crash, a power cut, a reboot, or quitting while it ran), it resumes at the next launch, and the queue goes on after it. A tournament paused or stopped waits for you."
 msgstr "如果程序在锦标赛进行时结束（崩溃、断电、重启，或在进行中退出），下次启动时会恢复该锦标赛，之后队列继续。已暂停或已停止的锦标赛会等待你操作。"
+
+msgid "While a tournament runs, an SSH tunnel built into fastchess-gui gives the page a public https address, without opening a port in the router or installing anything. Only the page is reachable that way, read-only."
+msgstr "锦标赛进行时，fastchess-gui 内置的 SSH 隧道为页面提供一个公共 https 地址，无需在路由器上开放端口，也无需安装任何东西。通过这种方式只能访问该页面，且为只读。"
 
 msgid "White"
 msgstr "白方"
@@ -2891,6 +2957,9 @@ msgstr "{} 对每个对手"
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} 要求每局都重新启动：已勾选“每局对局都重启引擎”。"
 
+msgid "{} changed its host key while connected"
+msgstr "{} 在连接期间更换了主机密钥"
+
 msgid "{} changed: its options were read again."
 msgstr "{} 已改变：已重新读取其选项。"
 
@@ -2907,6 +2976,9 @@ msgstr[0] "{} 次崩溃或无响应"
 
 msgid "{} crashes"
 msgstr "{} 次崩溃"
+
+msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
+msgstr "{} 不允许用户“{}”无密钥或密码登录（它接受：{}）"
 
 msgid "{} does not play Chess960."
 msgstr "{} 不支持 Chess960。"
@@ -2999,6 +3071,9 @@ msgstr "{} 局，{} 个锦标赛"
 
 msgid "{} h {:02} min"
 msgstr "{} 小时 {:02} 分"
+
+msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
+msgstr "{} 与 fastchess-gui 没有共同的算法（需要 curve25519-sha256、RSA 主机密钥和 AES）"
 
 msgid "{} holds the games of the tournament: choose another file"
 msgstr "{} 保存着锦标赛的对局：请选择其他文件"
@@ -3123,6 +3198,9 @@ msgid "{} reference Elo set from the rating list."
 msgid_plural "{} reference Elo set from the rating list."
 msgstr[0] "已从等级分榜设置 {} 个参考 Elo。"
 
+msgid "{} refused to forward its port {}"
+msgstr "{} 拒绝转发其端口 {}"
+
 msgid "{} rounds × {} pairings × 2 games"
 msgstr "{} 轮 × {} 组配对 × 2 局"
 
@@ -3235,8 +3313,18 @@ msgstr "· 对局对 [0-2]：%d  %d  %d  %d  %d"
 msgid "· {} lines left out"
 msgstr "· 省略了 {} 行"
 
+msgid "● Connecting again… ({})"
+msgstr "● 正在重新连接…（{}）"
+
+msgid "● Connecting…"
+msgstr "● 正在连接…"
+
 msgid "● On air"
 msgstr "● 直播中"
+
+msgid "● On air on the internet · {} connection"
+msgid_plural "● On air on the internet · {} connections"
+msgstr[0] "● 已在互联网上线 · {} 个连接"
 
 msgid "● On air · {} clients"
 msgstr "● 直播中 · {} 个客户端"
@@ -3249,6 +3337,9 @@ msgstr "● 直播中 · {} 局 · 推送于 {}"
 
 msgid "● On air · {} viewers"
 msgstr "● 直播中 · {} 名观众"
+
+msgid "● Reconnecting in a moment: {}"
+msgstr "● 稍后重新连接：{}"
 
 msgid "✓ As expected for the {} engines measured"
 msgstr "✓ 所测量的 {} 个引擎均符合预期"
