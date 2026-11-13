@@ -5,6 +5,7 @@
 #include <atomic>
 #include <cctype>
 #include <deque>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -96,25 +97,45 @@ TunnelSettings localhostRun(int local_port) {
     return s;
 }
 
-std::string knownHostKey(const std::filesystem::path& file, const std::string& host, int port) {
+namespace {
+
+// The known hosts: an empty object when there is no file yet, nullopt when it is there but cannot be read or is not
+// a JSON object. Read as empty, such a file would let any key in on first use, and be written over, every other host
+// forgotten.
+std::optional<nlohmann::json> readKnownHosts(const std::filesystem::path& file) {
+    std::error_code ec;
+    const auto status = std::filesystem::status(file, ec);
+    if (status.type() == std::filesystem::file_type::not_found) return nlohmann::json::object();
+    if (ec) return std::nullopt;
+    std::ifstream in(file, std::ios::binary);
+    if (!in) return std::nullopt;
+    auto known = nlohmann::json::parse(in, nullptr, false);
+    if (known.is_discarded() || !known.is_object()) return std::nullopt;
+    return known;
+}
+
+}  // namespace
+
+std::optional<std::string> knownHostKey(const std::filesystem::path& file, const std::string& host, int port) {
     std::lock_guard<std::mutex> lock(knownHostsMutex());
-    const auto known = readJson<nlohmann::json>(file);
-    if (!known || !known->is_object()) return {};
+    const auto known = readKnownHosts(file);
+    if (!known) return std::nullopt;
+    // A value that is not a string is no key.
     const auto it = known->find(hostPort(host, port));
     return it != known->end() && it->is_string() ? it->get<std::string>() : std::string();
 }
 
-void rememberHostKey(const std::filesystem::path& file, const std::string& host, int port,
+bool rememberHostKey(const std::filesystem::path& file, const std::string& host, int port,
                      const std::string& fingerprint) {
     std::lock_guard<std::mutex> lock(knownHostsMutex());
-    auto known = readJson<nlohmann::json>(file).value_or(nlohmann::json::object());
-    if (!known.is_object()) known = nlohmann::json::object();
+    auto known = readKnownHosts(file);
+    if (!known) return false;
     if (fingerprint.empty()) {
-        known.erase(hostPort(host, port));
+        known->erase(hostPort(host, port));
     } else {
-        known[hostPort(host, port)] = fingerprint;
+        (*known)[hostPort(host, port)] = fingerprint;
     }
-    writeJson(file, known);
+    return writeJson(file, *known);
 }
 
 std::optional<std::string> findPublicUrl(std::string_view output) {
@@ -563,9 +584,12 @@ class TunnelConnection {
         const std::string signature(r.string(4096));
         if (!r.ok()) return fail("the server's key exchange cannot be read");
 
+        // The host key, at the first exchange: compared with the one pinned or trusted before, then its signature
+        // checked, and only then trusted or offered to the user; at the next ones, the same as at the first.
+        auto trust = HostKey::Trusted;
         if (session_id_.empty()) {
-            if (!checkHostKey(key_blob)) return;
-            host_key_ = key_blob;
+            trust = checkHostKey(key_blob);
+            if (trust == HostKey::Refused) return;
         } else if (key_blob != host_key_) {
             return fail(trf("{} changed its host key while connected", cfg_.host), true);
         }
@@ -585,7 +609,19 @@ class TunnelConnection {
         if (const auto bad = verifyRsa(key_blob, signature, h, host_alg_); !bad.empty()) {
             return fail(trf("{}: {}", cfg_.host, bad), true);
         }
-        if (session_id_.empty()) session_id_ = h;
+        if (trust == HostKey::Changed) {
+            const auto print = fingerprint(key_blob);
+            end_.new_key     = print;
+            return fail(trf("The host key of {} changed: {} now, {} before. Someone may be in the way; trust the new "
+                            "key only if the server's owner says it changed.",
+                            cfg_.host, print, known_print_),
+                        true);
+        }
+        if (trust == HostKey::New) keepHostKey(key_blob);
+        if (session_id_.empty()) {
+            host_key_   = key_blob;
+            session_id_ = h;
+        }
         const auto derive = [&](char letter, std::size_t size) { return deriveKey(k, h, letter, session_id_, size); };
 
         send(Writer().byte(NEWKEYS).take());
@@ -624,31 +660,47 @@ class TunnelConnection {
         }
     }
 
-    // The pinned key, or the one trusted the first time.
-    bool checkHostKey(const std::string& blob) {
+    // The host key against the one pinned, or the one trusted the first time. Refused: the connection failed.
+    enum class HostKey { Trusted, New, Changed, Refused };
+    HostKey checkHostKey(const std::string& blob) {
         const auto print = fingerprint(blob);
         if (!cfg_.pinned.empty()) {
-            if (print == cfg_.pinned) return true;
+            if (print == cfg_.pinned) return HostKey::Trusted;
             fail(trf("The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. "
                      "Nothing was sent.",
                      cfg_.host, print, cfg_.pinned),
                  true);
-            return false;
+            return HostKey::Refused;
         }
-        if (cfg_.known_hosts.empty()) return true;
+        // Nowhere to keep it: not trusted blindly, every time.
+        if (cfg_.known_hosts.empty()) {
+            fail("the host key of " + cfg_.host + " cannot be checked: neither pinned nor kept", true);
+            return HostKey::Refused;
+        }
         const auto known = knownHostKey(cfg_.known_hosts, cfg_.host, cfg_.port);
-        if (known.empty()) {
-            rememberHostKey(cfg_.known_hosts, cfg_.host, cfg_.port, print);
-            Console::instance().add(trf("Tunnel: the host key of {} is {}, trusted from now on", cfg_.host, print));
-            return true;
+        if (!known) {
+            fail(trf("{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair "
+                     "the file, or delete it to trust the server's key again.",
+                     cfg_.known_hosts.string(), cfg_.host),
+                 true);
+            return HostKey::Refused;
         }
-        if (known == print) return true;
-        end_.new_key = print;
-        fail(trf("The host key of {} changed: {} now, {} before. Someone may be in the way; trust the new key only "
-                 "if the server's owner says it changed.",
-                 cfg_.host, print, known),
-             true);
-        return false;
+        if (known->empty()) return HostKey::New;
+        if (*known == print) return HostKey::Trusted;
+        known_print_ = *known;
+        return HostKey::Changed;
+    }
+
+    // A key seen for the first time, whose signature was checked: trusted from now on.
+    void keepHostKey(const std::string& blob) {
+        const auto print = fingerprint(blob);
+        if (!rememberHostKey(cfg_.known_hosts, cfg_.host, cfg_.port, print)) {
+            Console::instance().add(trf("Tunnel: the host key of {} ({}) could not be kept in {}", cfg_.host, print,
+                                        cfg_.known_hosts.string()),
+                                    true);
+            return;
+        }
+        Console::instance().add(trf("Tunnel: the host key of {} is {}, trusted from now on", cfg_.host, print));
     }
 
     // --- Connection protocol (RFC 4254) ---
@@ -815,6 +867,7 @@ class TunnelConnection {
     bool newkeys_sent_ = false;
     bool strict_       = false;
     std::string session_id_, host_key_;
+    std::string known_print_;  // the host key trusted before, when the server shows another
     std::deque<std::string> held_;
 
     // The channels.

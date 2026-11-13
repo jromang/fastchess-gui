@@ -25,7 +25,7 @@ struct TunnelSettings {
     // The host key's fingerprint ("SHA256:..."), when it is known in advance (localhost.run's). Otherwise the key
     // is trusted the first time, kept in `known_hosts`, and must be the same afterwards.
     std::string pinned;
-    std::filesystem::path known_hosts;  // empty: the key is not kept
+    std::filesystem::path known_hosts;  // needed when nothing is pinned
     // Timings, shortened by the tests.
     std::chrono::seconds keepalive{30};
     std::chrono::seconds rekey_after{3600};
@@ -86,9 +86,13 @@ class SshTunnel {
 // that tells of the tunnel ("tunneled", "forwarding"), else the first https:// address; none when there is none.
 [[nodiscard]] std::optional<std::string> findPublicUrl(std::string_view output);
 
-// The host keys trusted on first use, by "host:port", in `file` (JSON). An empty fingerprint forgets the host.
-[[nodiscard]] std::string knownHostKey(const std::filesystem::path& file, const std::string& host, int port);
-void rememberHostKey(const std::filesystem::path& file, const std::string& host, int port,
+// The host keys trusted on first use, by "host:port", in `file` (JSON). knownHostKey() gives the one kept for the
+// host, empty when there is none or no file yet, and nullopt when the file is there but cannot be read: the keys
+// trusted before are unknown then, and none may be trusted in their place. rememberHostKey() leaves such a file as
+// it is and returns false, as when it cannot write; an empty fingerprint forgets the host.
+[[nodiscard]] std::optional<std::string> knownHostKey(const std::filesystem::path& file, const std::string& host,
+                                                      int port);
+bool rememberHostKey(const std::filesystem::path& file, const std::string& host, int port,
                      const std::string& fingerprint);
 
 // Parses --tunnel's value: "localhost.run" (or empty), or "ssh://user@host[:port][/remote_port]". nullopt and

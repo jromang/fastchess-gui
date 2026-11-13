@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <iterator>
 #include <map>
 #include <vector>
 #include <string>
@@ -32,6 +33,11 @@ std::string unhex(std::string_view hex) {
         out += static_cast<char>(std::stoi(std::string(hex.substr(i, 2)), nullptr, 16));
     }
     return out;
+}
+
+std::string readText(const std::filesystem::path& file) {
+    std::ifstream in(file, std::ios::binary);
+    return std::string(std::istreambuf_iterator<char>(in), {});
 }
 
 bool netTests() {
@@ -418,17 +424,27 @@ TEST_CASE("Tunnel: host keys trusted on first use, kept by host and port, forgot
     std::filesystem::remove_all(dir);
     std::filesystem::create_directories(dir);
     const auto file = dir / "known_hosts.json";
-    CHECK(knownHostKey(file, "example.org", 22).empty());
-    rememberHostKey(file, "example.org", 22, "SHA256:aaa");
-    rememberHostKey(file, "example.org", 2222, "SHA256:bbb");
+    CHECK(knownHostKey(file, "example.org", 22) == "");
+    CHECK(rememberHostKey(file, "example.org", 22, "SHA256:aaa"));
+    CHECK(rememberHostKey(file, "example.org", 2222, "SHA256:bbb"));
     CHECK(knownHostKey(file, "example.org", 22) == "SHA256:aaa");
     CHECK(knownHostKey(file, "example.org", 2222) == "SHA256:bbb");
-    rememberHostKey(file, "example.org", 22, "");
-    CHECK(knownHostKey(file, "example.org", 22).empty());
+    CHECK(rememberHostKey(file, "example.org", 22, ""));
+    CHECK(knownHostKey(file, "example.org", 22) == "");
     CHECK(knownHostKey(file, "example.org", 2222) == "SHA256:bbb");
-    // A file that is not ours is read as empty.
-    std::ofstream(file) << "not json";
-    CHECK(knownHostKey(file, "example.org", 2222).empty());
+    // A value that is not a string is no key; the others still are.
+    std::ofstream(file) << R"({"example.org:22": 5, "example.org:2222": "SHA256:bbb"})";
+    CHECK(knownHostKey(file, "example.org", 22) == "");
+    CHECK(knownHostKey(file, "example.org", 2222) == "SHA256:bbb");
+    // A file that cannot be read, or is not an object, is not taken as empty, and is not written over: the keys
+    // trusted before would be gone, and any key trusted in their place.
+    for (const char* text : {"not json", "", R"(["example.org:2222", "SHA256:bbb"])", R"({"example.org:2222": )"}) {
+        CAPTURE(text);
+        std::ofstream(file) << text;
+        CHECK_FALSE(knownHostKey(file, "example.org", 2222).has_value());
+        CHECK_FALSE(rememberHostKey(file, "example.org", 22, "SHA256:ccc"));
+        CHECK(readText(file) == text);
+    }
     std::filesystem::remove_all(dir);
 }
 
@@ -507,6 +523,7 @@ class FakeServer {
         bool abandon        = false;  // first one the viewer leaves at once, before the answer
         // Bytes sent after the version line instead of the key exchange; the server then waits for the client to go.
         std::string raw_first;
+        bool bad_signature = false;  // the host key signs something else than the exchange hash
     };
 
     FakeServer(uint16_t port, Script script) : script_(std::move(script)) {
@@ -630,7 +647,7 @@ class FakeServer {
                  .byte(KEX_ECDH_REPLY)
                  .string(serverKey().blob)
                  .string(ecdh.publicKey())
-                 .string(serverKey().sign(h))
+                 .string(serverKey().sign(script_.bad_signature ? h + "x" : h))
                  .take());
         send(Writer().byte(NEWKEYS).take());
         const auto derive = [&](char letter, std::size_t size) { return deriveKey(k, h, letter, session_id_, size); };
@@ -903,6 +920,70 @@ TEST_CASE("Tunnel: a host key not the one pinned, or not the one trusted before,
         CHECK(tunnel.status().new_key == fingerprint(serverKey().blob));
         CHECK(tunnel.status().error.find("changed") != std::string::npos);
         CHECK(knownHostKey(known, "127.0.0.1", SSH_PORT) == "SHA256:anotherKey");
+    }
+    std::filesystem::remove_all(dir);
+}
+
+TEST_CASE("Tunnel: a host key is trusted, or offered to the user, only once it signed the exchange") {
+    const auto dir = std::filesystem::temp_directory_path() / "fcg-tunnel-signature-test";
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+    const auto known = dir / "known_hosts.json";
+    FakeServer::Script script;
+    script.bad_signature = true;
+    // First use: the key that did not sign is not kept (it was before its signature was checked).
+    {
+        FakeServer server(SSH_PORT, script);
+        auto settings        = loopback("");
+        settings.known_hosts = known;
+        SshTunnel tunnel;
+        tunnel.start(settings);
+        CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Failed; }));
+        CHECK(tunnel.status().error.find("signature is not valid") != std::string::npos);
+        CHECK(tunnel.status().new_key.empty());
+        CHECK(knownHostKey(known, "127.0.0.1", SSH_PORT) == "");
+    }
+    // Another key known: the one that did not sign is not offered to be trusted.
+    {
+        REQUIRE(rememberHostKey(known, "127.0.0.1", SSH_PORT, "SHA256:anotherKey"));
+        FakeServer server(SSH_PORT, script);
+        auto settings        = loopback("");
+        settings.known_hosts = known;
+        SshTunnel tunnel;
+        tunnel.start(settings);
+        CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Failed; }));
+        CHECK(tunnel.status().new_key.empty());
+        CHECK(knownHostKey(known, "127.0.0.1", SSH_PORT) == "SHA256:anotherKey");
+    }
+    std::filesystem::remove_all(dir);
+}
+
+TEST_CASE("Tunnel: known hosts that cannot be read, or none to keep keys in, stop it for good") {
+    const auto dir = std::filesystem::temp_directory_path() / "fcg-tunnel-known-test";
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+    const auto known = dir / "known_hosts.json";
+    // A file that is not JSON: no key trusted on first use, the file left as it was.
+    const std::string broken = R"({"example.org:22": "SHA256:aaa",)";
+    std::ofstream(known) << broken;
+    {
+        FakeServer server(SSH_PORT, {});
+        auto settings        = loopback("");
+        settings.known_hosts = known;
+        SshTunnel tunnel;
+        tunnel.start(settings);
+        CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Failed; }));
+        CHECK(tunnel.status().error.find("cannot be read") != std::string::npos);
+        CHECK(tunnel.status().new_key.empty());
+        CHECK(readText(known) == broken);
+    }
+    // Neither a key pinned nor a file to keep it in: refused, not trusted every time.
+    {
+        FakeServer server(SSH_PORT, {});
+        SshTunnel tunnel;
+        tunnel.start(loopback(""));
+        CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Failed; }));
+        CHECK(tunnel.status().error.find("cannot be checked") != std::string::npos);
     }
     std::filesystem::remove_all(dir);
 }
