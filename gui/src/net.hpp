@@ -118,13 +118,14 @@ struct Wait {
 // Waits up to `timeout_ms` until one of `waits` can be read or written as asked.
 void waitAny(std::vector<Wait>& waits, int timeout_ms);
 
-// Connects to a TCP server (tests, mostly). nullopt when it cannot.
-[[nodiscard]] std::optional<Handle> connectTo(uint32_t ip, uint16_t port);
+// Connects to a TCP server, giving up after `timeout_ms` when it is not negative. nullopt when it cannot.
+[[nodiscard]] std::optional<Handle> connectTo(uint32_t ip, uint16_t port, int timeout_ms = -1);
 
-// Connects to `host` (a name or an IPv4 address), giving up after `timeout_ms`. A blocking socket, which sends
-// give up on after `timeout_ms` too; nullopt and `error` when it cannot.
+// Connects to `host` (a name or an IPv4 address), giving up after `timeout_ms`, or as soon as `stopping` turns true
+// (finding the host's address excepted). A blocking socket, which sends give up on after `timeout_ms` too; nullopt
+// and `error` when it cannot.
 [[nodiscard]] std::optional<Handle> connectHost(const std::string& host, const std::string& port, int timeout_ms,
-                                                std::string& error);
+                                                std::string& error, const std::atomic_bool* stopping = nullptr);
 
 // The machine's IPv4 addresses other than loopback, to tell people where to connect.
 [[nodiscard]] std::vector<std::string> localAddresses();

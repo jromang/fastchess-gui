@@ -14,7 +14,14 @@
 
 #include <psa/crypto.h>
 
+#ifdef _WIN32
+#    include <windows.h>
+#else
+#    include <unistd.h>
+#endif
+
 #include "broadcast.hpp"
+#include "cpu_time.hpp"
 #include "broadcaster.hpp"
 #include "qr.hpp"
 #include "net.hpp"
@@ -524,6 +531,8 @@ class FakeServer {
         // Bytes sent after the version line instead of the key exchange; the server then waits for the client to go.
         std::string raw_first;
         bool bad_signature = false;  // the host key signs something else than the exchange hash
+        // Once the tunnel is on air, in place of the viewers: the scenario of a test.
+        std::function<void(FakeServer&)> on_air;
     };
 
     FakeServer(uint16_t port, Script script) : script_(std::move(script)) {
@@ -550,7 +559,7 @@ class FakeServer {
     int key_exchanges = 0;
     bool disconnected = false;  // the client said goodbye
 
-   private:
+    // For the scenarios.
     struct Failure : std::runtime_error {
         using std::runtime_error::runtime_error;
     };
@@ -604,6 +613,7 @@ class FakeServer {
         return payload;
     }
 
+   private:
     void kex(bool first) {
         const auto lists =
             Writer()
@@ -733,6 +743,11 @@ class FakeServer {
                  .take());
 
         if (script_.rekey) kex(false);
+        if (script_.on_air) {
+            script_.on_air(*this);
+            untilGone();
+            return;
+        }
 
         // Viewers at once: forwarded connections, their requests, the web server's answers through the tunnel. With
         // `abandon`, one more (300) whose viewer goes at once: closed by the server before the answer is relayed.
@@ -783,8 +798,10 @@ class FakeServer {
             if (recipient != 300) answered += text.rfind("HTTP/1.0 200 OK", 0) == 0 ? 1 : 0;
         }
         answer = answers[200];
+        untilGone();
+    }
 
-        // Until the client goes.
+    void untilGone() {
         while (!quit_) {
             std::string m;
             try {
@@ -813,6 +830,7 @@ class FakeServer {
 
 constexpr uint16_t SSH_PORT = 26411;
 constexpr uint16_t WEB_PORT = 26413;
+constexpr uint32_t LOCALHOST_IP = 0x7F000001;
 
 TunnelSettings loopback(const std::string& pinned) {
     TunnelSettings s;
@@ -823,6 +841,35 @@ TunnelSettings loopback(const std::string& pinned) {
     s.pinned      = pinned;
     s.first_retry = 30s;  // no second attempt within a test
     return s;
+}
+
+// A connection forwarded by the server (its channel `sender`), with `window` bytes the client may send at first: the
+// client's channel number.
+uint32_t forward(FakeServer& server, uint32_t sender, uint32_t window) {
+    server.send(Writer()
+                    .byte(CHANNEL_OPEN)
+                    .string("forwarded-tcpip")
+                    .u32(sender)
+                    .u32(window)
+                    .u32(32768)
+                    .string("localhost")
+                    .u32(80)
+                    .string("203.0.113.9")
+                    .u32(5555)
+                    .take());
+    const auto confirmation = server.nextOf(CHANNEL_OPEN_CONFIRMATION);
+    Reader r(std::string_view(confirmation).substr(1));
+    server.expect(r.u32() == sender, "recipient");
+    return r.u32();
+}
+
+// The processor time this process used so far, in milliseconds.
+int64_t ownCpuMs() {
+#ifdef _WIN32
+    return cpuTimeMs({static_cast<int64_t>(GetCurrentProcessId())});
+#else
+    return cpuTimeMs({static_cast<int64_t>(getpid())});
+#endif
 }
 
 template <typename Done>
@@ -1014,6 +1061,97 @@ TEST_CASE("Tunnel: a packet length that wrapped, or a KEXINIT too short for its 
                       error);
         CHECK(waitFor([&] { return server.done.load(); }));
     }
+}
+
+TEST_CASE("Sockets: a socket asked nothing, that hung up, does not end the wait at once") {
+    // A connection whose other side closed, and this side shut its writing: poll reports a hang-up for it even when
+    // asked nothing, and returned at once, again and again (a processor spent on the tunnel's loop).
+    net::TcpListener listener;
+    REQUIRE(listener.listen(WEB_PORT).empty());
+    const auto client_fd = net::connectTo(LOCALHOST_IP, WEB_PORT);
+    REQUIRE(client_fd);
+    net::Socket client(*client_fd);
+    const auto accepted = listener.accept(2000);
+    REQUIRE(accepted);
+    {
+        net::Socket other(*accepted);
+        CHECK(other.send("x") == 1);
+    }
+    std::this_thread::sleep_for(50ms);
+    client.shutdownWrite();
+    net::TcpListener idle_listener;
+    REQUIRE(idle_listener.listen(WEB_PORT + 1).empty());
+    const auto idle_fd = net::connectTo(LOCALHOST_IP, WEB_PORT + 1);
+    REQUIRE(idle_fd);
+    net::Socket idle(*idle_fd);
+    for (const bool alone : {true, false}) {
+        CAPTURE(alone);
+        std::vector<net::Wait> waits{{client.handle(), false, false}};
+        if (!alone) waits.push_back({idle.handle(), true, false});  // nothing comes on it
+        const auto start = std::chrono::steady_clock::now();
+        for (int i = 0; i < 3; ++i) net::waitAny(waits, 100);
+        CHECK(std::chrono::steady_clock::now() - start >= 250ms);
+        CHECK_FALSE(waits[0].can_read);
+        CHECK_FALSE(waits[0].can_write);
+    }
+    // Asked to read, it tells at once: the data, then the end.
+    std::vector<net::Wait> waits{{client.handle(), true, false}};
+    net::waitAny(waits, 1000);
+    CHECK(waits[0].can_read);
+}
+
+TEST_CASE("Sockets: a connection refused on this machine is told within the time given") {
+    // On Windows a refused connect takes two seconds or so unless bounded; elsewhere it is told at once.
+    const auto start = std::chrono::steady_clock::now();
+    CHECK_FALSE(net::connectTo(LOCALHOST_IP, WEB_PORT + 2, 200).has_value());
+    CHECK(std::chrono::steady_clock::now() - start < 1500ms);
+    net::TcpListener listener;
+    REQUIRE(listener.listen(WEB_PORT + 2).empty());
+    const auto fd = net::connectTo(LOCALHOST_IP, WEB_PORT + 2, 200);
+    REQUIRE(fd);
+    net::Socket socket(*fd);
+    CHECK(listener.accept(2000).has_value());
+}
+
+TEST_CASE("Tunnel: a viewer's connection that hung up while the server's window is shut costs no processor") {
+    // The forwarded connection's window is 0: the web server's answer waits in its socket, which hangs up once the
+    // server sent the end of the request. The tunnel must wait without spinning until the window opens.
+    WebServer web;
+    REQUIRE(web.start(WEB_PORT).empty());
+    std::atomic_bool holding{false}, release{false};
+    std::string answer;
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        const auto channel = forward(server, 200, 0);
+        server.send(Writer().byte(CHANNEL_DATA).u32(channel).string(script.request).take());
+        server.send(Writer().byte(CHANNEL_EOF).u32(channel).take());
+        std::this_thread::sleep_for(500ms);  // the web server answers and closes meanwhile
+        holding = true;
+        while (!release) std::this_thread::sleep_for(20ms);
+        server.send(Writer().byte(CHANNEL_WINDOW_ADJUST).u32(channel).u32(1 << 20).take());
+        while (true) {
+            const auto m = server.next();
+            Reader r(std::string_view(m).substr(1));
+            server.expect(r.u32() == 200, "recipient");
+            if (m[0] == CHANNEL_DATA) answer += r.string();
+            if (m[0] == CHANNEL_CLOSE) break;
+        }
+        server.send(Writer().byte(CHANNEL_CLOSE).u32(channel).take());
+    };
+    FakeServer server(SSH_PORT, script);
+    SshTunnel tunnel;
+    tunnel.start(loopback(fingerprint(serverKey().blob)));
+    REQUIRE(waitFor([&] { return holding.load() || server.done.load(); }));
+    const auto cpu_before = ownCpuMs();
+    std::this_thread::sleep_for(1000ms);
+    const auto cpu_used = ownCpuMs() - cpu_before;
+    release = true;
+    CHECK_MESSAGE(cpu_used < 300, cpu_used, " ms of processor time in one second");
+    CHECK(waitFor([&] { return tunnel.status().connections == 0 && !answer.empty(); }));
+    tunnel.stop();
+    CHECK(waitFor([&] { return server.done.load(); }));
+    CHECK_MESSAGE(server.error.empty(), server.error);
+    CHECK(answer.rfind("HTTP/1.0 200 OK", 0) == 0);
 }
 
 TEST_CASE("Tunnel: no server: reconnecting, with the reason") {

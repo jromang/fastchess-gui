@@ -52,6 +52,7 @@ constexpr std::size_t MAX_SESSION_TEXT = 64 * 1024;
 constexpr auto CONNECT_TIMEOUT   = std::chrono::seconds(15);
 constexpr auto HANDSHAKE_TIMEOUT = std::chrono::seconds(30);
 constexpr auto MAX_RETRY         = std::chrono::seconds(60);
+constexpr int LOCAL_CONNECT_TIMEOUT_MS = 200;
 
 constexpr uint32_t LOCALHOST = 0x7F000001;
 
@@ -246,8 +247,10 @@ class TunnelConnection {
             return end_;
         }
         std::string error;
+        // Given up on as soon as the tunnel stops: only finding the host's address cannot be cut short.
         const auto fd = net::connectHost(cfg_.host, std::to_string(cfg_.port),
-                                         static_cast<int>(std::chrono::milliseconds(CONNECT_TIMEOUT).count()), error);
+                                         static_cast<int>(std::chrono::milliseconds(CONNECT_TIMEOUT).count()), error,
+                                         &stopping_);
         if (!fd) {
             fail(error);
             return end_;
@@ -322,7 +325,8 @@ class TunnelConnection {
             const auto n = socket_->receive(in_, 65536);
             if (n < 0) return fail(phase_ == Phase::OnAir ? "the server closed the connection"
                                                           : "the server closed the connection before the tunnel opened");
-            if (n > 0) readPackets();
+            // Nothing more is handled once the tunnel stops (see stop()).
+            if (n > 0 && !stopping_) readPackets();
         }
         if (!end_.reason.empty()) return;
         if (waits[0].can_write && !out_.empty()) {
@@ -762,7 +766,8 @@ class TunnelConnection {
         };
         if (type != "forwarded-tcpip" || phase_ != Phase::OnAir) return refuse(1, "not accepted");
         if (static_cast<std::size_t>(relayed_count_) >= MAX_CHANNELS) return refuse(4, "too many connections");
-        const auto fd = net::connectTo(LOCALHOST, static_cast<uint16_t>(cfg_.local_port));
+        // Every channel waits meanwhile: a web server that does not answer at once is not there.
+        const auto fd = net::connectTo(LOCALHOST, static_cast<uint16_t>(cfg_.local_port), LOCAL_CONNECT_TIMEOUT_MS);
         if (!fd) return refuse(2, "the web page is not served");
         const auto id    = nextId();
         auto& ch         = channels_[id];
@@ -906,8 +911,9 @@ void SshTunnel::start(TunnelSettings settings) {
 void SshTunnel::stop() {
     if (!shared_) return;
     shared_->stopping = true;
-    // A connection under way gives up after its own timeout only (a name to find, a server that does not answer):
-    // not waited for.
+    // A connection under way gives up at once, unless it is still finding the server's address, which nothing cuts
+    // short: not waited for then. Once `stopping` is set, the thread touches nothing but `shared` (no Console, no
+    // translation, no known hosts), which it owns with us: it may outlive the program's static objects at its end.
     const auto until = Clock::now() + std::chrono::milliseconds(1500);
     while (!shared_->finished && Clock::now() < until) std::this_thread::sleep_for(std::chrono::milliseconds(10));
     if (shared_->finished) {
