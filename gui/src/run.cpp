@@ -7,10 +7,6 @@
 #include <fstream>
 #include <string_view>
 
-#ifndef _WIN64
-#    include <signal.h>
-#endif
-
 #include <cli/sanitize.hpp>
 #include <core/config/config.hpp>
 #include <core/globals/globals.hpp>
@@ -26,6 +22,7 @@
 #include "console.hpp"
 #include "engines.hpp"
 #include "i18n.hpp"
+#include "proc_tree.hpp"
 
 namespace fastchess {
 // The engine processes started (see core/globals/globals.cpp).
@@ -552,14 +549,19 @@ int engineProcesses() {
 }
 
 void interruptEngineProcesses() {
-    // Under the list's lock: a process still listed has not been reaped (or its handle closed) by its thread yet.
-    // Unlike fastchess::stopProcesses, the handles stay open: their threads close them.
+    // Under the list's lock, so that its processes are not closed meanwhile. Unlike fastchess::stopProcesses, the
+    // handles stay open: their threads close them. This may be called again and again while the reads end.
     fastchess::process_list.lock();
     for (const auto& process : fastchess::process_list) {
 #ifdef _WIN64  // as ProcessInformation
+        // What the engine started is ended with its job, when its thread closes it; the read ends with the engine.
         TerminateProcess(process.identifier, 1);
 #else
-        kill(process.identifier, SIGKILL);
+        // With what it started: the engine behind a wrapper script that does not exec, or behind the WinBoard
+        // adapter, would keep the read waiting, and be left running. A process still listed may have been reaped
+        // already (fastchess reaps an engine that ended when it next looks at it, and takes it off the list later):
+        // its pid may be another process's by now, so nothing is signalled unless it is still a child of ours.
+        (void)killProcessTree(process.identifier);
 #endif
     }
     fastchess::process_list.unlock();

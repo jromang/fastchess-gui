@@ -62,6 +62,7 @@ App::~App() {
     if (probe_.valid() || check_.valid()) {
         if (window_) SDL_HideWindow(window_);
         fastchess::atomic::stop = true;  // fastchess' Windows reads give up
+        interruptEngineProcesses();      // with what they started (a wrapper script's engine)
         fastchess::stopProcesses();
         if (probe_.valid()) probe_.wait();
         if (check_.valid()) check_.wait();
