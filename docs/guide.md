@@ -433,33 +433,43 @@ The *Broadcast* tab of a running tournament publishes it while it plays; the sna
 
 ### Putting the web page on the internet
 
-The web page can be followed from anywhere without opening a port in the router, through a tunnel: a small program
-on the same machine connects out to a service that gives the page a public address. With Cloudflare's, for example,
-switch on the web page (port 8080 here) and run:
+The web page can be followed from anywhere without opening a port in the router: tick *Publish on the internet*
+under *Web page* in the *Broadcast* tab. While a tournament runs, fastchess-gui opens an SSH tunnel of its own to a
+tunnel service, which gives the page a public https address; nothing needs to be installed.
 
-```
-cloudflared tunnel --url http://localhost:8080
-```
+- *localhost.run* (the default): free, without an account. Its addresses change now and then, and its speed is
+  limited; the page and its state are sent compressed, so this does not matter much. Its host key is known to
+  fastchess-gui: a connection to anything else is refused.
+- *Another SSH server*: its host, port and user, and the port it opens for the page (as
+  `ssh -R REMOTE_PORT:localhost:PORT user@host` would ask; 0 lets it choose). Only servers that let the user in
+  without a key or a password can be used (authentication "none"), and they need an RSA host key. The server's key is
+  trusted the first time and kept in the profile (`known_hosts.json`); if it changes, the tunnel stops and says so,
+  and *Trust the new key* is for when the server's owner confirms it changed.
 
-It prints an address such as `https://some-words.trycloudflare.com` to share; it changes each time unless a named
-tunnel is set up in a Cloudflare account. Other tunnels (ngrok, tailscale funnel, an SSH reverse tunnel to a server
-of yours) work the same way, and so does a reverse proxy such as nginx, under a path of its own as well
-(`location /live/ { proxy_pass http://localhost:8080/; }`).
+The tab shows the state (connecting, on air with the number of connections, reconnecting, or an error) and, once
+known, the public address with *Copy*, *Open* (to see the page as viewers do) and a QR code for a phone (click it to
+enlarge). The tunnel reconnects by itself after a failure, waiting a little longer each time, and shows the new
+address if it changed. It stops with the web page or with the tournament.
+
+Other tunnels work too, started separately: with Cloudflare's, for example, switch on the web page (port 8080 here)
+and run `cloudflared tunnel --url http://localhost:8080`; it prints an address such as
+`https://some-words.trycloudflare.com`. ngrok, tailscale funnel or a reverse proxy such as nginx, under a path of its
+own as well (`location /live/ { proxy_pass http://localhost:8080/; }`), work the same way.
 
 The page is read-only: it answers only GET requests for the page, its state and the PGN file, never a file a request
 names, and nothing in it changes the tournament. Each request is answered on its own, 32 at a time at most, and must
-arrive within a second and be answered within ten, so a slow or silent visitor holds no one else. Two downloads of
-the PGN file run at once, and the next is asked to come back a moment later. The answers are never cached, by the
-tunnel either, so viewers see the games as they go. The viewers shown in the *Broadcast* tab are counted from the
-requests the pages make, so the count is right behind a tunnel too, where every viewer seems to come from the
-machine itself.
+arrive within a second and be answered within ten, so a slow or silent visitor holds no one else; behind the tunnel
+each viewer's connection counts as one of those, and more than 48 at once are refused. Two downloads of the PGN file
+run at once, and the next is asked to come back a moment later. The state is never cached, by the tunnel either, so
+viewers see the games as they go; the page is kept by the browser and checked again at each load. The viewers shown
+in the *Broadcast* tab are counted from the requests the pages make, so the count is right behind a tunnel too.
 
 Viewers see the tournament's name, the engines' names, their ratings, searches and anomalies, the openings and the
 PGN file of the games played. The folders and the engines' files stay private. Headless:
 
 ```
-fastchess-gui --run FOLDER --web 8080 &
-cloudflared tunnel --url http://localhost:8080
+fastchess-gui --run FOLDER --tunnel                      # localhost.run, the address printed on the console
+fastchess-gui --run FOLDER --web 8080 --tunnel ssh://user@host[:port][/remote_port]
 ```
 
 ## Headless mode
@@ -479,6 +489,7 @@ The tournament can be broadcast at the same time, as from the *Broadcast* tab:
 fastchess-gui --run FOLDER --tlcs 16001             # a TLCS server on UDP port 16001
 fastchess-gui --run FOLDER --tlcs 16001 --tlcs-lanes  # one port per game: 16001, 16002…
 fastchess-gui --run FOLDER --web 8080               # the web page on http://<this machine>:8080/
+fastchess-gui --run FOLDER --tunnel                # the web page on the internet (serves it too, --web's port or 8080)
 fastchess-gui --run FOLDER --live-files [DIR]       # live.pgn, standings.html, tournament.json ("live" by default)
 fastchess-gui --run FOLDER --lichess new            # a new lichess broadcast; or --lichess ROUND_URL|ROUND_ID
 ```
@@ -540,7 +551,7 @@ fastchess-gui [--profile DIR] [--autostart] [--size WxH]
               [--shot FILE.png[@WINDOW[@SECONDS]]]... [--select-game N] [--focus WINDOW]
               [--quit-after SECONDS]
 fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_PORT [--tlcs-lanes]]
-              [--web TCP_PORT] [--live-files [DIR]] [--lichess ROUND_URL|ROUND_ID|new]
+              [--web TCP_PORT] [--tunnel [localhost.run|ssh://USER@HOST[:PORT][/REMOTE_PORT]]] [--live-files [DIR]] [--lichess ROUND_URL|ROUND_ID|new]
 ```
 
 - `--profile DIR` uses another profile folder;
