@@ -35,6 +35,13 @@ ClassifiedOpening classify(const fastchess::book::Opening& opening, bool chess96
     return out;
 }
 
+std::string openingLabel(const ClassifiedOpening& opening) {
+    if (!opening.eco.empty()) return opening.eco + " " + opening.name;
+    std::string label;
+    for (const auto& m : opening.moves) label += (label.empty() ? "" : " ") + m;
+    return label;
+}
+
 std::vector<OpeningStats> resultsByOpening(const std::vector<GameResult>& results,
                                            const std::map<uint32_t, fastchess::book::Opening>& openings,
                                            bool chess960) {

@@ -3,6 +3,7 @@
 #include <ctime>
 
 #include <engine/uci_engine.hpp>
+#include <tour/by_opening.hpp>
 
 #include <fmt/include/fmt/format.h>
 
@@ -13,6 +14,9 @@ namespace fcg {
 namespace {
 
 using Clock = std::chrono::steady_clock;
+
+// The games of the schedule a broadcast shows as coming next.
+constexpr std::size_t NEXT_GAMES = 6;
 
 bool sameLichess(const BroadcastSettings& a, const BroadcastSettings& b) {
     return a.lichess == b.lichess && a.lichess_token == b.lichess_token && a.lichess_round == b.lichess_round &&
@@ -26,6 +30,23 @@ int scoreCp(const fastchess::Score& s) {
 }
 
 }  // namespace
+
+std::vector<std::pair<std::size_t, int>> nextGames(const std::vector<tour::ScheduleRow>& rows, std::size_t count) {
+    // As TournamentState::claimNext() takes them.
+    std::vector<std::pair<std::size_t, int>> started, fresh;
+    for (std::size_t i = 0; i < rows.size() && started.size() < count; ++i) {
+        const auto* status = rows[i].status;
+        const bool begun   = status[0] != tour::GameStatus::Pending || status[1] != tour::GameStatus::Pending;
+        for (int g = 0; g < 2; ++g) {
+            if (status[g] != tour::GameStatus::Pending) continue;
+            auto& to = begun ? started : fresh;
+            if (to.size() < count) to.emplace_back(i, g);
+        }
+    }
+    started.insert(started.end(), fresh.begin(), fresh.end());
+    if (started.size() > count) started.resize(count);
+    return started;
+}
 
 BroadcastInput broadcastInput(const tour::TournamentState& state, const GuiObserver& observer,
                               const std::optional<tour::Anchor>& anchor) {
@@ -45,7 +66,31 @@ BroadcastInput broadcastInput(const tour::TournamentState& state, const GuiObser
         in.ended[static_cast<std::size_t>(slot)] = observer.endedGames(slot);
     }
     in.totals = observer.namedTotals();
-    in.taken  = Clock::now();
+
+    // The next games, with their opening when it is known: their encounter started, or with one opening per round,
+    // another encounter of their round.
+    const auto rows = state.scheduleRows();
+    if (const auto picked = nextGames(rows, NEXT_GAMES); !picked.empty()) {
+        const auto openings = state.encounterOpenings();
+        std::map<std::pair<uint32_t, uint32_t>, const fastchess::book::Opening*> rounds;
+        if (in.spec.opening_per_round) {
+            for (const auto& row : rows) {
+                const auto it = openings.find(row.encounter.index);
+                if (it == openings.end()) continue;
+                rounds.emplace(std::pair{row.encounter.cycle, row.encounter.round}, &it->second);
+            }
+        }
+        for (const auto& [i, game] : picked) {
+            BroadcastNextGame next{rows[i].encounter, game, std::nullopt};
+            if (const auto it = openings.find(next.encounter.index); it != openings.end()) {
+                next.opening = it->second;
+            } else if (const auto r = rounds.find({next.encounter.cycle, next.encounter.round}); r != rounds.end()) {
+                next.opening = *r->second;
+            }
+            in.next.push_back(std::move(next));
+        }
+    }
+    in.taken = Clock::now();
     return in;
 }
 
@@ -214,6 +259,21 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
         }
         return g;
     };
+
+    for (const auto& n : in.next) {
+        const auto& e = n.encounter;
+        BroadcastNext next;
+        next.number = uint64_t{e.index} * 2 + static_cast<uint64_t>(n.game) + 1;
+        next.round  = e.round;
+        next.cycle  = e.cycle;
+        next.white  = name(n.game == 0 ? e.first : e.second);
+        next.black  = name(n.game == 0 ? e.second : e.first);
+        if (n.opening) {
+            next.opening = tour::openingLabel(tour::classify(*n.opening, frc));
+            if (next.opening.empty()) next.opening = "initial position";
+        }
+        s.next.push_back(std::move(next));
+    }
 
     for (std::size_t i = 0; i < in.slots.size(); ++i) {
         const int slot = static_cast<int>(i);

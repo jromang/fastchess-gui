@@ -1,6 +1,6 @@
 // The broadcast web page: every game in progress, the standings and the crosstable, read-only; the followed game's
-// evaluation bar, arrows and charts; the statistics and anomalies of the games played, and each engine's search;
-// their PGN file to download.
+// evaluation bar, arrows and charts; the next games of the schedule; the statistics and anomalies of the games
+// played, and each engine's search; their PGN file to download.
 
 #include <algorithm>
 #include <cctype>
@@ -211,12 +211,13 @@ h1{margin:0;font-size:20px}h2{margin:0 0 8px;font-size:15px;font-weight:600}a{co
 .tomove{color:var(--accent)}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
 th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{color:var(--muted);font-weight:500}
 td.n,th.n{text-align:left}.scroll{overflow-x:auto}.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
-.bad{color:var(--loss);font-weight:600}
+.bad{color:var(--loss);font-weight:600}td.wrap{white-space:normal}#next table{width:auto}
 @media (max-width:700px){.focus{grid-template-columns:1fr}header,main{padding-left:16px;padding-right:16px}}
 </style></head><body>
 <header><div><h1 id="name">fastchess-gui</h1><div class="muted" id="progress"></div></div><div id="download"></div></header>
 <main><section class="card" id="focus" hidden></section>
 <section><div class="games" id="games"></div></section>
+<section class="card scroll" id="nextcard" hidden><h2>Next games</h2><div id="next"></div></section>
 <section class="card scroll"><table id="table"></table></section>
 <section class="card scroll"><h2>Search per engine</h2><div class="muted">On average per move searched, book moves left out.</div><div id="engines"></div></section>
 <section class="two"><div class="card"><h2>Statistics</h2><div id="stats"></div></div>
@@ -290,6 +291,12 @@ function engines(s){const e=s.engines||[],v=(x,f)=>x===null||x===undefined?'<spa
  return '<table><tr><th class="n">Engine</th><th>Depth</th><th>Time</th><th>Nodes</th><th>Speed</th><th class="n">Anomalies</th></tr>'+e.map(x=>{const b=bad(x);
   return `<tr><td class="n">${esc(x.name)}</td><td>${v(x.depth,d=>d.toFixed(1))}</td><td>${v(x.time_ms,t=>(t/1000).toFixed(2)+' s')}</td><td>${v(x.nodes,count)}</td>`+
    `<td>${v(x.nps,n=>count(n)+'/s')}</td><td class="n">${b?`<span class="bad">${b}</span>`:'<span class="muted">none</span>'}</td></tr>`}).join('')+'</table>'}
+// The next games of the schedule; a Swiss or a knockout pairs its rounds as it goes.
+function upcoming(s){const n=s.next||[],asItGoes=s.format==='swiss'||s.format==='knockout',cycles=!asItGoes&&n.some(x=>x.cycle>1);
+ let html=n.length?'<table>'+n.map(x=>`<tr><td>#${x.number}</td><td class="n">${cycles?'Cycle '+x.cycle+' · ':''}Round ${x.round}</td>`+
+  `<td class="n wrap">${player(x.white)} – ${player(x.black)}${x.opening?`<div class="muted">${esc(x.opening)}</div>`:''}</td></tr>`).join('')+'</table>':'';
+ if(asItGoes)html+=`<div class="muted">${n.length?'The later rounds are':'The next round is'} paired as the tournament goes, from the results: their games are not known in advance.</div>`;
+ return html}
 function render(s){last=s;
  document.getElementById('name').textContent=s.name||'fastchess-gui';document.title=s.name||'fastchess-gui';
  document.getElementById('progress').textContent=`${s.played}${s.total?' / '+s.total:''} games${s.finished?' · finished':''}`;
@@ -306,6 +313,7 @@ function render(s){last=s;
  rows.forEach(r=>{t+=`<tr><td>${r.rank}</td><td class="n">${esc(r.name)}</td><td>${r.games}</td><td>${half(r.points)}</td><td>${r.games?(r.elo>=0?'+':'')+Math.round(r.elo):''}</td><td class="muted">${r.games?Math.round(r.elo_error):''}</td><td>${r.wins}</td><td>${r.draws}</td><td>${r.losses}</td>`+
   r.crosstable.map(c=>c?`<td title="+${c.wins} =${c.draws} -${c.losses}">${c.wins+c.draws+c.losses?half(c.wins+c.draws/2):''}</td>`:'<td class="muted">–</td>').join('')+'</tr>'});
  document.getElementById('table').innerHTML=t;
+ const nx=document.getElementById('nextcard'),soon=upcoming(s);nx.hidden=s.finished||!soon;document.getElementById('next').innerHTML=soon;
  document.getElementById('engines').innerHTML=engines(s);
  document.getElementById('stats').innerHTML=stats(s);
  document.getElementById('anomalies').innerHTML=anomalies(s);

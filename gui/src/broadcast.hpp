@@ -99,6 +99,15 @@ struct BroadcastEngine {
     uint64_t illegal_moves = 0;
 };
 
+// A game of the schedule still to be played.
+struct BroadcastNext {
+    uint64_t number = 0;  // 1-based
+    uint32_t round  = 1;
+    uint32_t cycle  = 1;
+    std::string white, black;
+    std::string opening;  // when known (its encounter, or its round with one opening per round, started); else empty
+};
+
 struct BroadcastSnapshot {
     std::string name;
     std::string format;  // "match", "round_robin", "gauntlet"
@@ -117,6 +126,9 @@ struct BroadcastSnapshot {
     BroadcastStats stats;
     std::vector<BroadcastAnomaly> anomalies;  // the last 100, newest first
     std::vector<BroadcastEngine> engines;     // in the order of the standings
+    // The next games of the schedule, in the order they start. A Swiss or a knockout has only those of the rounds
+    // paired so far.
+    std::vector<BroadcastNext> next;
 
     // The tournament's PGN file (cutechess style), complete up to `pgn_bytes`: the games recorded, not one being
     // written. Empty when there is none yet.

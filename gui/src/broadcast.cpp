@@ -136,6 +136,15 @@ std::string snapshotJson(const BroadcastSnapshot& s) {
                            {"stalls", e.stalls},
                            {"illegal_moves", e.illegal_moves}});
     }
+    auto& next = j["next"] = nlohmann::json::array();
+    for (const auto& n : s.next) {
+        next.push_back({{"number", n.number},
+                        {"round", n.round},
+                        {"cycle", n.cycle},
+                        {"white", n.white},
+                        {"black", n.black},
+                        {"opening", n.opening.empty() ? nlohmann::json(nullptr) : nlohmann::json(n.opening)}});
+    }
     // The name of the PGN file the page offers, not where it is.
     j["pgn"] = s.pgn_file.empty() ? nlohmann::json(nullptr) : nlohmann::json(s.pgn_name);
 

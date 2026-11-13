@@ -37,6 +37,18 @@ struct BroadcastSettings {
     bool lichess_listed = false;
 };
 
+// A game of the schedule to be played, as broadcast.
+struct BroadcastNextGame {
+    tour::Encounter encounter;
+    int game = 0;  // 0: `first` has White
+    std::optional<fastchess::book::Opening> opening;
+};
+
+// The games of `rows` (the schedule) to be played next, in the order they are started: the second game of each
+// encounter started, then the encounters not started yet, both games each. At most `count`, as (row, game).
+[[nodiscard]] std::vector<std::pair<std::size_t, int>> nextGames(const std::vector<tour::ScheduleRow>& rows,
+                                                                 std::size_t count);
+
 // What a snapshot is made from: copies of the tournament's settings and results and of the games in progress,
 // taken quickly on the thread that runs the tournament's window, so that the rest can be done on another one.
 struct BroadcastInput {
@@ -51,6 +63,7 @@ struct BroadcastInput {
     std::vector<SlotState> slots;               // by slot
     std::vector<std::vector<SlotState>> ended;  // by slot
     std::vector<std::pair<std::string, EngineTotals>> totals;  // the observer's, by participant index
+    std::vector<BroadcastNextGame> next;                       // the next few games of the schedule
     std::chrono::steady_clock::time_point taken;
 };
 

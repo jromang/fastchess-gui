@@ -53,6 +53,10 @@ struct ClassifiedOpening {
 };
 [[nodiscard]] ClassifiedOpening classify(const fastchess::book::Opening& opening, bool chess960);
 
+// An opening in a few words: its ECO code and name ("B90 Sicilian, Najdorf"), else its moves (UCI); empty for the
+// initial position.
+[[nodiscard]] std::string openingLabel(const ClassifiedOpening& opening);
+
 // One entry per starting position, in the order they were first played. Voided games do not count.
 [[nodiscard]] std::vector<OpeningStats> resultsByOpening(const std::vector<GameResult>& results,
                                                          const std::map<uint32_t, fastchess::book::Opening>& openings,

@@ -729,6 +729,60 @@ TEST_CASE("broadcast: the statistics, the anomalies and each move's search, for 
     CHECK(nlohmann::json::parse(snapshotJson(empty))["pgn"].is_null());
 }
 
+TEST_CASE("broadcast: the next games of the schedule, in the order they start") {
+    using fcg::tour::GameStatus;
+    std::vector<fcg::tour::ScheduleRow> rows(5);
+    rows[0].status[0] = GameStatus::Done, rows[0].status[1] = GameStatus::Running;
+    rows[1].status[0] = GameStatus::Running;  // its second game comes next
+    rows[3].status[0] = GameStatus::Dropped;  // so does this one's
+    using Picked      = std::vector<std::pair<std::size_t, int>>;
+    CHECK(nextGames(rows, 6) == Picked{{1, 1}, {3, 1}, {2, 0}, {2, 1}, {4, 0}, {4, 1}});
+    CHECK(nextGames(rows, 3) == Picked{{1, 1}, {3, 1}, {2, 0}});
+    CHECK(nextGames({}, 3).empty());
+
+    // A round robin of four, one opening per round: the encounters of a round started have its opening.
+    const auto dir = std::filesystem::temp_directory_path() / "fcg-web-next";
+    std::filesystem::remove_all(dir);
+    fcg::tour::TournamentSpec spec;
+    spec.name              = "next";
+    spec.format            = fcg::tour::Format::RoundRobin;
+    spec.opening_per_round = true;
+    for (const auto* name : {"Alpha", "Beta", "Gamma", "Delta"}) {
+        fcg::tour::Participant p;
+        p.id          = static_cast<int>(spec.participants.size());
+        p.engine.name = name;
+        spec.participants.push_back(p);
+    }
+    auto state = fcg::tour::TournamentState::create(dir, spec);
+    GuiObserver observer(1, *state);
+    REQUIRE(state->claimNext());  // the first game of the first encounter
+    const auto schedule = state->scheduleRows();
+    REQUIRE(schedule.size() == 6);
+    const auto who = [&](std::size_t row, int side) {
+        const auto& e = schedule[row].encounter;
+        return spec.participants[static_cast<std::size_t>(side == 0 ? e.first : e.second)].engine.name;
+    };
+
+    const auto json  = nlohmann::json::parse(snapshotJson(makeSnapshot(*state, observer, std::nullopt)));
+    const auto& next = json["next"];
+    REQUIRE(next.size() == 6);
+    CHECK(next[0]["number"] == 2);  // the first encounter's second game: colours swapped
+    CHECK(next[0]["white"] == who(0, 1));
+    CHECK(next[0]["black"] == who(0, 0));
+    CHECK(next[0]["round"] == 1);
+    CHECK(next[0]["opening"] == "initial position");
+    CHECK(next[1]["number"] == 3);
+    CHECK(next[1]["white"] == who(1, 0));
+    CHECK(next[1]["opening"] == "initial position");  // same round
+    CHECK(next[3]["number"] == 5);
+    CHECK(next[3]["round"] == 2);
+    CHECK(next[3]["opening"].is_null());  // not known yet
+    CHECK(json["format"] == "round_robin");
+
+    state.reset();
+    std::filesystem::remove_all(dir);
+}
+
 TEST_CASE("broadcast: the web page offers the PGN file, the games recorded only, without holding the page") {
     const auto dir = std::filesystem::temp_directory_path() / "fcg-web-pgn";
     std::filesystem::remove_all(dir);
