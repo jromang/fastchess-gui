@@ -1,9 +1,9 @@
 #pragma once
 
-// The web page on the internet: an SSH client of our own (ssh.hpp) asks a tunnel service for a remote forward, as
-// `ssh -R 80:localhost:PORT nokey@localhost.run` would, and relays every connection the service forwards to the web
-// server on this machine. On a thread of its own, reconnecting after a failure; its state and the public address
-// are read from any thread.
+// The web page on the internet: an SSH client (libssh2, on the PSA cryptography of the Mbed TLS the program ships)
+// asks a tunnel service for a remote forward, as `ssh -R 80:localhost:PORT nokey@localhost.run` would, and relays
+// every connection the service forwards to the web server on this machine. On a thread of its own, reconnecting
+// after a failure; its state and the public address are read from any thread.
 
 #include <chrono>
 #include <cstddef>
@@ -29,13 +29,11 @@ struct TunnelSettings {
     std::filesystem::path known_hosts;  // needed when nothing is pinned
     // Timings, shortened by the tests.
     std::chrono::seconds keepalive{30};
-    std::chrono::seconds rekey_after{3600};
-    uint64_t rekey_bytes = uint64_t(1) << 30;
     std::chrono::seconds first_retry{2};
-    // Limits, lowered by the tests: the bytes waiting to go to the server (beyond, the connection ends: a server
-    // that takes nothing, or keeps a key exchange open while it asks for answers), and how long a channel closed on
-    // our side waits for the server's close before it is forgotten.
-    std::size_t max_pending = std::size_t(8) << 20;
+    // Limits, lowered by the tests: the memory libssh2 may hold for the connection (beyond, it ends: a server that
+    // sends what is never taken, messages nobody asked for), and how long a channel closed on our side counts among
+    // the connections while libssh2 waits for the server's close.
+    std::size_t max_memory = std::size_t(32) << 20;
     std::chrono::seconds close_timeout{30};
 
     bool operator==(const TunnelSettings&) const = default;
@@ -87,6 +85,9 @@ class SshTunnel {
     std::thread thread_;
     friend class TunnelConnection;
 };
+
+// "SHA256:..." as ssh-keygen -l shows it, of a host key's blob.
+[[nodiscard]] std::string fingerprint(std::string_view key_blob);
 
 // `text` from the server (a reason, a list of methods) made safe to show on a terminal or in the window: control
 // characters (C0, DEL, C1) and bytes that are not UTF-8 replaced, so it cannot move the cursor, change colours or

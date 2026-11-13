@@ -3,6 +3,7 @@
 #include <atomic>
 #include <chrono>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <functional>
@@ -12,6 +13,7 @@
 #include <string>
 #include <thread>
 
+#include <libssh2.h>  // before windows.h: it includes winsock2.h
 #include <psa/crypto.h>
 
 #ifdef _WIN32
@@ -23,10 +25,11 @@
 #include "broadcast.hpp"
 #include "cpu_time.hpp"
 #include "broadcaster.hpp"
+#include "libssh2_backend.hpp"
 #include "qr.hpp"
 #include "net.hpp"
-#include "ssh.hpp"
 #include "ssh_tunnel.hpp"
+#include "ssh_wire.hpp"
 
 using namespace fcg;
 using namespace fcg::ssh;
@@ -52,41 +55,12 @@ bool netTests() {
     return wanted && std::string(wanted) == "1";
 }
 
-// Known answers, computed with Python's hashlib, hmac and cryptography (an RSA key made for the tests only), and
-// localhost.run's public host key as ssh-keyscan fetched it.
-const std::string KAT_K = unhex(
-    "00000021008011111111111111111111111111111111111111111111111111111111111111");
+unsigned char* bytes(std::string& s) { return reinterpret_cast<unsigned char*>(s.data()); }
+const unsigned char* bytes(const std::string& s) { return reinterpret_cast<const unsigned char*>(s.data()); }
 
-const std::string KAT_H = unhex(
-    "7bde03b6174b06ac22d902ada587e02f46b15e82e96fcc34d951b86efe0642f8");
-
-const std::string KAT_SID = unhex(
-    "1cc1c70c03d3fa98125ac304150c6b2ab44b1a308f55aab9e46e6de9f92ae871");
-
-const std::string KAT_DERIVE_C = unhex(
-    "4abda8f388b2a9d7aabc69c8372f3088797169604fb3b9501f756243514edaa3ba282e36d89ad2cb095f98076d694ac0"
-    "764e4cd4cd740fb74f9052cf37004214");
-
-const std::string KAT_DERIVE_A = unhex(
-    "861f1a722c3916e7234823e1");
-
-const std::string KAT_CTR = unhex(
-    "227080461176627330130602d2df27fc15144438e3686d36d131b19aaf6af8bff47fab67a67e1397fe2c820a088d273d"
-    "357e8248b6c0581f8a06a40dbfd256dcaed4eedfb2d1b8df08eb721a1c757da6b1bd78adddf8c5700aea68f4c5a6c8f9"
-    "effaaf047aa78c48c1920b638d08b81f099f4625bd3b6a2859d8fbfc3e2669046e2504e98a3e4bc4575e1c5bad055269"
-    "dfd97c304ad2ca7a0d410573046322ab");
-
-const std::string KAT_ETM = unhex(
-    "000000402b2ee81f7844653a7c0b1c409cce3e927b712838e3686d36d131b19aaf6af8bff47fab67a67e1397fe2c820a"
-    "088d273d357e8248b6c058b520ac0e0dbfd256dc0c1d68e923c7639469fa432b59c31812125b584df66784de7f5e3282"
-    "ca9a7d4300000020fea4dc7d14969149828d0464c61dadd6c8509825bd3b6a2859d8fbfc3e2669045764841f0e130716"
-    "c6b7634de6ce4ec6848b55a7b867a9b857295adfef5d9aaa");
-
-const std::string KAT_GCM = unhex(
-    "000000403ddd7b5ee77e46cf712301aea3b525dd54b5b596045f2f2bcc1e3d16c55da015d6cf0de43b65cebfdb0bb981"
-    "ef0eeb9b46a96a35fcf0e1138fa6021f3858358aac38cb6f7e68af309b0630a24c46c8ca000000203f23bb6fab8608e1"
-    "14cbea18289afe0c3dc55955bf0e4dcc27b21f6843f065a19cdc41c263419fe461ae8791325eb90e");
-
+// Known answers: an RSA key made for the tests only (Python's cryptography), and localhost.run's host key as
+// ssh-keyscan fetched it, with two of its signatures of exchange hashes (one key exchange each, rsa-sha2-512 and
+// rsa-sha2-256, recorded in November 2026).
 const std::string KAT_RSA_BLOB = unhex(
     "000000077373682d727361000000030100010000010100946995e1263245680d8fccad0cc7b412801fe640665abfa8d9"
     "2076afe8ca9b23501a2874e4040365d6b9b62d6289640d4d7f508c36de4df88a931bf6599dc057cd8c1971d016081901"
@@ -124,87 +98,204 @@ const std::string LOCALHOST_RUN_BLOB = unhex(
     "6ba71e79fa43bcd0c427505d85b61f1a894174d03b7fe14d97491f696aeee026e5afce37c017b67243bfb0daa0780317"
     "3bfa87f924a0431517176020030f931a9df2088c98a0e3ef3a0bdc3ec4338892e60db52e4299c7");
 
+const std::string LOCALHOST_RUN_H512 = unhex(
+    "5f31cd8cf2ac91f43caf683c22251c77e2b0334ab8fb7a57e98325e4f1c68b32");
+
+const std::string LOCALHOST_RUN_SIG512 = unhex(
+    "0000000c7273612d736861322d353132000001002a68b082e43e062a5fc7fb57fc127b694c760363110c52061a7e47bc"
+    "c5ed2ef23b2c61d9d70d509291eaa90ef23c158a03bc78ab883b96a6ef8ba734492837a2586cf90915264ff1b0f43fff"
+    "914e64275b700e944497630ccdb38e5c8615d885c5397e8fe21949daeeec47b035771f635c3958c9da6b12da07ad091f"
+    "295420a6f93ae973e75d5ef81a3f54e1563598a418b41f44f8380c2a2d62eb31fd4698db820a341d8c8868824aaa6848"
+    "b2fac5ee957bb13ec516b39fd4199a87819f6a0a882b4f4cd26232d4c582185430d8651b6a665372d0b533626bdb1126"
+    "36ba609adb7b74b730d8fd2810836e0519c779627be7bdb2fd5eea273024450f45282942");
+
+const std::string LOCALHOST_RUN_H256 = unhex(
+    "30ce9432855dc291273849c29806fea275be7518223cab488da6b50dddbbf414");
+
+const std::string LOCALHOST_RUN_SIG256 = unhex(
+    "0000000c7273612d736861322d32353600000100914b2830bd6880a86c8e7e2ba1123be0d9d347f9f79602dae970476f"
+    "b586c5519a9d21511faca2e0d677595a1a5b931c6e820ac7e7c6d62cdfc8c7a311c75f85e55fb6a9e22c221a5be42916"
+    "6bd8418221c1728c42881946b9af12553d442286bcd87dffffe3c121855cd1216fa5d20bad605a0592f3f033299d12cc"
+    "319b903cb14ae82e6758d1caf1b502efd696c6d3a416774056fbc1a4f45b38853d278f2ff8e92f38a2b5208dfd858ffc"
+    "3ea624b31d1ad0bb22d0b155634c2021fbde5df329dc25ed64dfcfc4c76a427e83e4088ef175deb661fdd1fc01cb4634"
+    "6618f534b0432ba2da84a67b4c2714385965417bead4221b901cd3241fcd4293d8a26d98");
+
+// A libssh2 session for the backend's allocations, not connected.
+struct TestSession {
+    LIBSSH2_SESSION* s = nullptr;
+    TestSession() {
+        REQUIRE(libssh2_init(0) == 0);
+        s = libssh2_session_init();
+        REQUIRE(s != nullptr);
+    }
+    ~TestSession() { libssh2_session_free(s); }
+};
+
+// An RSA public key of the backend from an "ssh-rsa" blob: nullptr when it refuses it.
+ssh2_rsa_ctx* rsaKey(LIBSSH2_SESSION* session, const std::string& blob) {
+    Reader r(blob);
+    r.string();
+    const std::string e(r.string()), n(r.string());
+    ssh2_rsa_ctx* rsa = nullptr;
+    if (!r.ok() || ssh2_rsa_new(&rsa, session, bytes(e), e.size(), bytes(n), n.size(), nullptr, 0, nullptr, 0,
+                                nullptr, 0, nullptr, 0, nullptr, 0, nullptr, 0) != 0) {
+        return nullptr;
+    }
+    return rsa;
+}
+
+// Whether `signature` (the algorithm's name, then the signature) of `data` verifies with `hash_len`.
+bool rsaVerifies(LIBSSH2_SESSION* session, ssh2_rsa_ctx* rsa, std::size_t hash_len, const std::string& signature,
+                 const std::string& data) {
+    Reader r(signature);
+    r.string();
+    const std::string value(r.string());
+    return r.ok() && ssh2_rsa_sha2_verify(rsa, session, hash_len, bytes(value), value.size(), bytes(data),
+                                          data.size()) == 0;
+}
+
+// X25519 through the backend: the shared secret of `private_key` and `peer`, as the bytes of the number libssh2
+// carries; nullopt when it is refused.
+std::optional<std::string> x25519(std::string private_key, std::string peer) {
+    ssh2_bn* k = ssh2_bn_init();
+    std::optional<std::string> out;
+    if (ssh2_curve25519_gen_k(&k, bytes(private_key), bytes(peer)) == 0) {
+        std::string value((ssh2_bn_bits(k) + 7) / 8, '\0');
+        ssh2_bn_to_bin(k, bytes(value));
+        out = value;
+    }
+    ssh2_bn_free(k);
+    return out;
+}
+
+// The backend's cipher `algo` over `data`, given in calls of `step` bytes as libssh2's packet layer does.
+std::string cipher(int algo, std::string key, std::string iv, std::string data, std::size_t step, bool encrypt) {
+    ssh2_cipher_ctx ctx;
+    REQUIRE(ssh2_cipher_init(&ctx, algo, bytes(iv), bytes(key), encrypt ? 1 : 0) == 0);
+    for (std::size_t at = 0; at < data.size(); at += step) {
+        REQUIRE(ssh2_cipher_crypt(&ctx, algo, encrypt ? 1 : 0, bytes(data) + at, std::min(step, data.size() - at),
+                                  SSH2_MIDDLE_BLOCK) == 0);
+    }
+    ssh2_cipher_dtor(&ctx);
+    return data;
+}
+
+// One SSH packet through the backend's AES-GCM as libssh2's transport.c gives it: the length and 12 bytes first,
+// 16 at a time, and the last part with the tag (a block and less, at most). False when it is refused.
+bool gcmPacket(ssh2_cipher_ctx& ctx, int algo, bool encrypt, std::string& packet) {
+    const std::size_t end = packet.size();
+    std::size_t at        = 0;
+    while (at < end) {
+        std::size_t size = std::min<std::size_t>(16, end - at);
+        int firstlast    = at == 0 ? SSH2_FIRST_BLOCK : SSH2_MIDDLE_BLOCK;
+        if (at > 0 && end - at < 32) {
+            size      = end - at;
+            firstlast = SSH2_LAST_BLOCK;
+        }
+        if (ssh2_cipher_crypt(&ctx, algo, encrypt ? 1 : 0, bytes(packet) + at, size, firstlast) != 0) return false;
+        at += size;
+    }
+    return true;
+}
+
+const std::string PACKET_KEY = unhex("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
+// The GCM invocation counter about to carry.
+const std::string PACKET_IV12 = unhex("0a0b0c0d00000000ffffffff");
+const std::string PAYLOAD_1   = std::string("\x5ehello, tunnel") + std::string(40, '\0');
+const std::string PAYLOAD_2   = "\x5esecond packet";
+
+// Two packets of AES256-GCM made by another implementation (Python's cryptography), PACKET_KEY and PACKET_IV12.
+const std::string KAT_GCM = unhex(
+    "000000403ddd7b5ee77e46cf712301aea3b525dd54b5b596045f2f2bcc1e3d16c55da015d6cf0de43b65cebfdb0bb981"
+    "ef0eeb9b46a96a35fcf0e1138fa6021f3858358aac38cb6f7e68af309b0630a24c46c8ca000000203f23bb6fab8608e1"
+    "14cbea18289afe0c3dc55955bf0e4dcc27b21f6843f065a19cdc41c263419fe461ae8791325eb90e");
+
 }  // namespace
 
-TEST_CASE("SSH: the encodings, and reads past the end refused") {
-    const auto m = Writer().byte(7).u32(0x01020304).string("abc").boolean(true).take();
-    CHECK(m == std::string("\x07\x01\x02\x03\x04\x00\x00\x00\x03" "abc\x01", 13));
-    Reader r(m);
-    CHECK(r.byte() == 7);
-    CHECK(r.u32() == 0x01020304);
-    CHECK(r.string() == "abc");
-    CHECK(r.boolean());
-    CHECK(r.ok());
-    r.u32();
-    CHECK_FALSE(r.ok());
-
-    // A string longer than the message, or than its bound.
-    Reader longer(std::string("\x00\x00\x00\x09" "abc", 7));
-    CHECK(longer.string().empty());
-    CHECK_FALSE(longer.ok());
-    Reader bounded(Writer().string("abcdef").data());
-    bounded.string(5);
-    CHECK_FALSE(bounded.ok());
-
-    // mpint: no leading zeros, one before a high bit (RFC 4251, 5).
-    CHECK(Writer().mpint(std::string("\x00\x00\x12", 3)).data() == std::string("\x00\x00\x00\x01\x12", 5));
-    CHECK(Writer().mpint("\x80").data() == std::string("\x00\x00\x00\x02\x00\x80", 6));
-    CHECK(Writer().mpint(std::string(2, '\0')).data() == std::string(4, '\0'));
-}
-
-TEST_CASE("SSH: key derivation as RFC 4253 7.2 says, extended past one hash") {
-    CHECK(deriveKey(KAT_K, KAT_H, 'C', KAT_SID, 64) == KAT_DERIVE_C);
-    CHECK(deriveKey(KAT_K, KAT_H, 'A', KAT_SID, 12) == KAT_DERIVE_A);
-    CHECK(deriveKey(KAT_K, KAT_H, 'C', KAT_SID, 32) == KAT_DERIVE_C.substr(0, 32));
-}
-
-TEST_CASE("SSH: X25519 through PSA gives RFC 7748's shared secret, and refuses a small-order key") {
+TEST_CASE("libssh2 backend: X25519 gives RFC 7748's public keys and shared secret, and refuses a zero secret") {
+    TestSession session;
+    // RFC 7748, 6.1. The public key is X25519 with the base point, 9.
     const auto alice_private = unhex("77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a");
     const auto bob_private   = unhex("5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb");
-    X25519 alice(alice_private), bob(bob_private);
-    REQUIRE(alice.ok());
-    REQUIRE(bob.ok());
-    CHECK(alice.publicKey() == unhex("8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a"));
-    CHECK(bob.publicKey() == unhex("de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f"));
+    const auto alice_public  = unhex("8520f0098930a754748b7ddcb43ef75a0dbf3a0d26381af4eba4a98eaa9b4e6a");
+    const auto bob_public    = unhex("de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f");
+    const auto base          = std::string("\x09", 1) + std::string(31, '\0');
+    CHECK(x25519(alice_private, base) == alice_public);
+    CHECK(x25519(bob_private, base) == bob_public);
     const auto shared = unhex("4a5d9d5ba4ce2de1728e3bf480350f25e07e21c947d19e3376f09b3c1e161742");
-    CHECK(alice.agree(bob.publicKey()) == shared);
-    CHECK(bob.agree(alice.publicKey()) == shared);
-    // Zero is a point of small order: the secret would be zero.
-    CHECK_FALSE(alice.agree(std::string(32, '\0')).has_value());
-    CHECK_FALSE(alice.agree("short").has_value());
-    // Random keys agree too.
-    X25519 a, b;
-    REQUIRE(a.ok());
-    CHECK(a.agree(b.publicKey()) == b.agree(a.publicKey()));
+    CHECK(x25519(alice_private, bob_public) == shared);
+    CHECK(x25519(bob_private, alice_public) == shared);
+    // Points of small order give zero: refused (RFC 7748 6.1, RFC 8731 3). Zero, one, and a point of order 8.
+    CHECK_FALSE(x25519(alice_private, std::string(32, '\0')).has_value());
+    CHECK_FALSE(x25519(alice_private, std::string("\x01", 1) + std::string(31, '\0')).has_value());
+    CHECK_FALSE(
+        x25519(alice_private, unhex("e0eb7a7c3b41b8ae1656e3faf19fc46ada098deb9c32b1fd866205165f49b800")).has_value());
+    // Keys made by the backend: each pair agrees.
+    for (int i = 0; i < 8; ++i) {
+        uint8_t *a_pub = nullptr, *a_priv = nullptr, *b_pub = nullptr, *b_priv = nullptr;
+        REQUIRE(ssh2_curve25519_new(session.s, &a_pub, &a_priv) == 0);
+        REQUIRE(ssh2_curve25519_new(session.s, &b_pub, &b_priv) == 0);
+        const auto as = [](uint8_t* p) { return std::string(reinterpret_cast<char*>(p), 32); };
+        const auto ab = x25519(as(a_priv), as(b_pub));
+        REQUIRE(ab.has_value());
+        CHECK(ab == x25519(as(b_priv), as(a_pub)));
+        CHECK(as(a_pub) != as(b_pub));
+        for (auto* p : {a_pub, a_priv, b_pub, b_priv}) std::free(p);
+    }
 }
 
-TEST_CASE("SSH: RSA host key signatures, rsa-sha2-512 and rsa-sha2-256, and fingerprints") {
-    CHECK(verifyRsa(KAT_RSA_BLOB, KAT_RSA_SIG512, KAT_RSA_DATA).empty());
-    CHECK(verifyRsa(KAT_RSA_BLOB, KAT_RSA_SIG256, KAT_RSA_DATA, "rsa-sha2-256").empty());
-    // The algorithm agreed must be the one used.
-    CHECK_FALSE(verifyRsa(KAT_RSA_BLOB, KAT_RSA_SIG256, KAT_RSA_DATA, "rsa-sha2-512").empty());
-    // Other data, or a signature changed by a bit.
+TEST_CASE("libssh2 backend: RSA host keys, rsa-sha2-512 and rsa-sha2-256 signatures, sizes in bits") {
+    TestSession session;
+    auto* rsa = rsaKey(session.s, KAT_RSA_BLOB);
+    REQUIRE(rsa != nullptr);
+    CHECK(rsaVerifies(session.s, rsa, 64, KAT_RSA_SIG512, KAT_RSA_DATA));
+    CHECK(rsaVerifies(session.s, rsa, 32, KAT_RSA_SIG256, KAT_RSA_DATA));
+    // The hash agreed is the one checked.
+    CHECK_FALSE(rsaVerifies(session.s, rsa, 64, KAT_RSA_SIG256, KAT_RSA_DATA));
+    CHECK_FALSE(rsaVerifies(session.s, rsa, 20, KAT_RSA_SIG512, KAT_RSA_DATA));
+    // Other data, or a signature changed by a bit, or longer than the modulus.
     auto data = KAT_RSA_DATA;
     data[0] ^= 1;
-    CHECK_FALSE(verifyRsa(KAT_RSA_BLOB, KAT_RSA_SIG512, data).empty());
+    CHECK_FALSE(rsaVerifies(session.s, rsa, 64, KAT_RSA_SIG512, data));
     auto sig = KAT_RSA_SIG512;
     sig[sig.size() - 1] ^= 1;
-    CHECK_FALSE(verifyRsa(KAT_RSA_BLOB, sig, KAT_RSA_DATA).empty());
-    // Not an RSA key, or a truncated one.
-    CHECK_FALSE(verifyRsa(Writer().string("ssh-ed25519").string(std::string(32, 'x')).data(), KAT_RSA_SIG512,
-                          KAT_RSA_DATA)
-                    .empty());
-    CHECK_FALSE(verifyRsa(KAT_RSA_BLOB.substr(0, 40), KAT_RSA_SIG512, KAT_RSA_DATA).empty());
+    CHECK_FALSE(rsaVerifies(session.s, rsa, 64, sig, KAT_RSA_DATA));
+    // Its leading zero left out, as some servers do: padded again. One more byte than the modulus: refused.
+    Reader parts(KAT_RSA_SIG512);
+    parts.string();
+    const std::string value(parts.string());
+    REQUIRE(value.size() == 256);
+    REQUIRE(value[0] == '\0');
+    CHECK(rsaVerifies(session.s, rsa, 64, Writer().string("rsa-sha2-512").string(value.substr(1)).take(),
+                      KAT_RSA_DATA));
+    CHECK_FALSE(rsaVerifies(session.s, rsa, 64, Writer().string("rsa-sha2-512").string('\0' + value).take(),
+                            KAT_RSA_DATA));
+    ssh2_rsa_free(rsa, session.s);
 
-    // The size in bits: 2041 bits take 256 bytes, as 2048 do, and are refused; beyond PSA's 4096 too.
-    const auto rsa = [](const std::string& modulus) {
-        return Writer().string("ssh-rsa").mpint(std::string("\x01\x00\x01", 3)).mpint(modulus).take();
+    // localhost.run's key, and two of its own signatures.
+    rsa = rsaKey(session.s, LOCALHOST_RUN_BLOB);
+    REQUIRE(rsa != nullptr);
+    CHECK(rsaVerifies(session.s, rsa, 64, LOCALHOST_RUN_SIG512, LOCALHOST_RUN_H512));
+    CHECK(rsaVerifies(session.s, rsa, 32, LOCALHOST_RUN_SIG256, LOCALHOST_RUN_H256));
+    CHECK_FALSE(rsaVerifies(session.s, rsa, 64, LOCALHOST_RUN_SIG512, LOCALHOST_RUN_H256));
+    ssh2_rsa_free(rsa, session.s);
+
+    // The size in bits: 2041 bits take 256 bytes, as 2048 do, and are refused; beyond PSA's 4096 too. A negative
+    // number (its high bit set) is no modulus.
+    const auto blob = [](const std::string& modulus) {
+        return Writer().string("ssh-rsa").mpint(std::string("\x01\x00\x01", 3)).string(modulus).take();
     };
-    CHECK(verifyRsa(rsa("\x01" + std::string(255, '\xff')), KAT_RSA_SIG512, KAT_RSA_DATA).find("size") !=
-          std::string::npos);
-    CHECK(verifyRsa(rsa("\x01" + std::string(512, '\xff')), KAT_RSA_SIG512, KAT_RSA_DATA).find("4096 bits") !=
-          std::string::npos);
-    CHECK(verifyRsa(rsa(std::string(256, '\xff')), KAT_RSA_SIG512, KAT_RSA_DATA).find("size") == std::string::npos);
+    CHECK(rsaKey(session.s, blob("\x01" + std::string(255, '\xff'))) == nullptr);
+    CHECK(rsaKey(session.s, blob(std::string("\x00\x01", 2) + std::string(512, '\xff'))) == nullptr);
+    CHECK(rsaKey(session.s, blob(std::string(256, '\xff'))) == nullptr);
+    auto* big = rsaKey(session.s, blob(std::string("\x00", 1) + std::string(256, '\xff')));
+    CHECK(big != nullptr);
+    ssh2_rsa_free(big, session.s);
+    // Private keys are not taken.
+    const std::string one("\x01", 1);
+    ssh2_rsa_ctx* priv = nullptr;
+    CHECK(ssh2_rsa_new(&priv, session.s, bytes(one), 1, bytes(one), 1, bytes(one), 1, nullptr, 0, nullptr, 0,
+                       nullptr, 0, nullptr, 0, nullptr, 0) != 0);
 
     CHECK(fingerprint(KAT_RSA_BLOB) == KAT_RSA_FP);
     // As ssh-keygen -l shows localhost.run's key, and as pinned.
@@ -212,182 +303,133 @@ TEST_CASE("SSH: RSA host key signatures, rsa-sha2-512 and rsa-sha2-256, and fing
     CHECK(localhostRun(8080).pinned == fingerprint(LOCALHOST_RUN_BLOB));
 }
 
-namespace {
-
-const std::string PACKET_KEY     = unhex("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f");
-const std::string PACKET_MAC_KEY = unhex("202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f");
-// The low half of the counter about to carry, as is the GCM invocation counter.
-const std::string PACKET_IV16 = unhex("0001020304050607ffffffffffffffff");
-const std::string PACKET_IV12 = unhex("0a0b0c0d00000000ffffffff");
-const std::string PAYLOAD_1   = std::string("\x5ehello, tunnel") + std::string(40, '\0');
-const std::string PAYLOAD_2   = "\x5esecond packet";
-
-// Opens `wire`'s two packets, given in pieces of `step` bytes, sequence numbers 7 and 8.
-void openTwo(PacketCipher& rx, const std::string& wire, std::size_t step) {
-    std::string in, payload;
-    std::vector<std::string> got;
-    uint32_t seq = 7;
-    for (std::size_t at = 0; at < wire.size(); at += step) {
-        in += wire.substr(at, step);
-        while (true) {
-            const auto r = rx.open(in, seq, payload);
-            REQUIRE(r != PacketCipher::Open::Bad);
-            if (r == PacketCipher::Open::More) break;
-            got.push_back(payload);
-            ++seq;
-        }
-    }
-    REQUIRE(got.size() == 2);
-    CHECK(got[0] == PAYLOAD_1);
-    CHECK(got[1] == PAYLOAD_2);
-    CHECK(in.empty());
-}
-
-}  // namespace
-
-TEST_CASE("SSH: packets of another implementation opened, AES-CTR with HMAC (both orders) and AES-GCM") {
-    for (const std::size_t step : {std::size_t(1), std::size_t(5), std::size_t(1000)}) {
+TEST_CASE("libssh2 backend: AES-CTR as NIST SP 800-38A gives it, its counter carried from call to call") {
+    // F.5.1 and F.5.5: CTR-AES128 and CTR-AES256, encrypting; CTR deciphers the same way.
+    const auto counter = unhex("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
+    const auto plain   = unhex("6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e51"
+                               "30c81c46a35ce411e5fbc1191a0a52eff69f2445df4f9b17ad2b417be66c3710");
+    const auto key128  = unhex("2b7e151628aed2a6abf7158809cf4f3c");
+    const auto out128  = unhex("874d6191b620e3261bef6864990db6ce9806f66b7970fdff8617187bb9fffdff"
+                               "5ae4df3edbd5d35e5b4f09020db03eab1e031dda2fbe03d1792170a0f3009cee");
+    const auto key256  = unhex("603deb1015ca71be2b73aef0857d77811f352c073b6108d72d9810a30914dff4");
+    const auto out256  = unhex("601ec313775789a5b7a7f504bbf3d228f443e3ca4d62b59aca84e990cacaf5c5"
+                               "2b0930daa23de94ce87017ba2d84988ddfc9c58db67aada613c2dd08457941a6");
+    for (const std::size_t step : {std::size_t(16), std::size_t(32), std::size_t(64)}) {
         CAPTURE(step);
-        PacketCipher ctr, etm, gcm;
-        REQUIRE(ctr.start("aes256-ctr", "hmac-sha2-256", PACKET_KEY, PACKET_IV16, PACKET_MAC_KEY).empty());
-        openTwo(ctr, KAT_CTR, step);
-        REQUIRE(etm.start("aes256-ctr", "hmac-sha2-256-etm@openssh.com", PACKET_KEY, PACKET_IV16, PACKET_MAC_KEY)
-                    .empty());
-        openTwo(etm, KAT_ETM, step);
-        REQUIRE(gcm.start("aes256-gcm@openssh.com", "", PACKET_KEY, PACKET_IV12, "").empty());
-        openTwo(gcm, KAT_GCM, step);
+        CHECK(cipher(ssh2_cipher_aes128ctr, key128, counter, plain, step, true) == out128);
+        CHECK(cipher(ssh2_cipher_aes256ctr, key256, counter, plain, step, true) == out256);
+        CHECK(cipher(ssh2_cipher_aes256ctr, key256, counter, out256, step, false) == plain);
     }
+    // The whole 128-bit counter counts: its low half carries into the high one, as SSH wants (RFC 4344, 4).
+    const auto carry  = unhex("0001020304050607ffffffffffffffff");
+    const auto stream = cipher(ssh2_cipher_aes256ctr, key256, carry, std::string(32, '\0'), 16, true);
+    const auto next   = cipher(ssh2_cipher_aes256ctr, key256, unhex("00010203040506080000000000000000"),
+                               std::string(16, '\0'), 16, true);
+    CHECK(stream.substr(16) == next);
+    // A key of the wrong kind is refused.
+    ssh2_cipher_ctx ctx;
+    auto iv = counter;
+    CHECK(ssh2_cipher_init(&ctx, 99, bytes(iv), bytes(iv), 1) != 0);
 }
 
-TEST_CASE("SSH: packets sealed and opened again, a changed byte or sequence number refused, lengths bounded") {
-    struct Algorithms {
-        const char* cipher;
-        const char* mac;
+TEST_CASE("libssh2 backend: AES-GCM packets of another implementation opened, sealed again, tampering refused") {
+    // Each packet: the length (authenticated, not enciphered), then the padding length, the payload, the padding;
+    // the nonce's invocation counter goes from 00000000ffffffff to 0000000100000000 between them.
+    ssh2_cipher_ctx rx;
+    auto key = PACKET_KEY, iv = PACKET_IV12;
+    REQUIRE(ssh2_cipher_init(&rx, ssh2_cipher_aes256gcm, bytes(iv), bytes(key), 0) == 0);
+    std::string first = KAT_GCM.substr(0, 4 + 64 + 16), second = KAT_GCM.substr(4 + 64 + 16);
+    REQUIRE(second.size() == 4 + 32 + 16);
+    const auto sealed_first = first, sealed_second = second;
+    REQUIRE(gcmPacket(rx, ssh2_cipher_aes256gcm, false, first));
+    REQUIRE(gcmPacket(rx, ssh2_cipher_aes256gcm, false, second));
+    ssh2_cipher_dtor(&rx);
+    const auto payload = [](const std::string& packet) {
+        const auto length  = static_cast<std::size_t>(Reader(packet).u32());
+        const auto padding = static_cast<unsigned char>(packet[4]);
+        return packet.substr(5, length - 1 - padding);
     };
-    for (const auto& a : {Algorithms{"aes256-gcm@openssh.com", ""}, Algorithms{"aes128-gcm@openssh.com", ""},
-                          Algorithms{"aes256-ctr", "hmac-sha2-256"},
-                          Algorithms{"aes128-ctr", "hmac-sha2-256-etm@openssh.com"}}) {
-        CAPTURE(a.cipher);
-        CAPTURE(a.mac);
-        const auto key = randomBytes(PacketCipher::keySize(a.cipher));
-        const auto iv  = randomBytes(PacketCipher::ivSize(a.cipher));
-        const auto mk  = randomBytes(PacketCipher::macKeySize(a.mac));
-        PacketCipher tx, rx;
-        REQUIRE(tx.start(a.cipher, a.mac, key, iv, mk).empty());
-        REQUIRE(rx.start(a.cipher, a.mac, key, iv, mk).empty());
-        std::string wire;
-        for (uint32_t seq = 0; seq < 20; ++seq) wire += tx.seal(std::string(seq * 997 % 3000 + 1, char('a' + seq)), seq);
-        std::string payload;
-        for (uint32_t seq = 0; seq < 20; ++seq) {
-            REQUIRE(rx.open(wire, seq, payload) == PacketCipher::Open::Packet);
-            CHECK(payload == std::string(seq * 997 % 3000 + 1, char('a' + seq)));
-        }
-        CHECK(wire.empty());
+    CHECK(payload(first) == PAYLOAD_1);
+    CHECK(payload(second) == PAYLOAD_2);
 
-        // Tampered with: one bit of the last byte (the tag's), or of the ciphertext.
-        for (const int where : {-1, 6}) {
-            PacketCipher t2, r2;
-            REQUIRE(t2.start(a.cipher, a.mac, key, iv, mk).empty());
-            REQUIRE(r2.start(a.cipher, a.mac, key, iv, mk).empty());
-            auto bad = t2.seal("\x5esome data", 0);
-            bad[where < 0 ? bad.size() - 1 : static_cast<std::size_t>(where)] ^= 1;
-            CHECK(r2.open(bad, 0, payload) == PacketCipher::Open::Bad);
-        }
-        // Replayed as another sequence number: the MAC covers it (AES-GCM: the nonce counts the packets instead).
-        if (!PacketCipher::aead(a.cipher)) {
-            PacketCipher t3, r3;
-            REQUIRE(t3.start(a.cipher, a.mac, key, iv, mk).empty());
-            REQUIRE(r3.start(a.cipher, a.mac, key, iv, mk).empty());
-            auto p = t3.seal("\x5e" "data", 4);
-            CHECK(r3.open(p, 5, payload) == PacketCipher::Open::Bad);
-        }
+    // Sealed again with the same nonces: the same bytes, tags included.
+    ssh2_cipher_ctx tx;
+    REQUIRE(ssh2_cipher_init(&tx, ssh2_cipher_aes256gcm, bytes(iv), bytes(key), 1) == 0);
+    auto again_first = first.substr(0, first.size() - 16) + std::string(16, '\0');
+    auto again_second = second.substr(0, second.size() - 16) + std::string(16, '\0');
+    REQUIRE(gcmPacket(tx, ssh2_cipher_aes256gcm, true, again_first));
+    REQUIRE(gcmPacket(tx, ssh2_cipher_aes256gcm, true, again_second));
+    ssh2_cipher_dtor(&tx);
+    CHECK(again_first == sealed_first);
+    CHECK(again_second == sealed_second);
+
+    // A bit changed in the length, the ciphertext or the tag; or the packets in the other order.
+    for (const std::size_t where : {std::size_t(2), std::size_t(20), sealed_first.size() - 1}) {
+        CAPTURE(where);
+        ssh2_cipher_ctx bad;
+        REQUIRE(ssh2_cipher_init(&bad, ssh2_cipher_aes256gcm, bytes(iv), bytes(key), 0) == 0);
+        auto tampered = sealed_first;
+        tampered[where] ^= 1;
+        CHECK_FALSE(gcmPacket(bad, ssh2_cipher_aes256gcm, false, tampered));
+        ssh2_cipher_dtor(&bad);
     }
-    // In the clear (before the first keys): a length beyond 35000 bytes is refused before anything waits for it.
-    PacketCipher clear;
-    std::string huge = Writer().u32(40000).data() + std::string(16, '\0');
-    std::string payload;
-    CHECK(clear.open(huge, 0, payload) == PacketCipher::Open::Bad);
-    std::string tiny = Writer().u32(2).data() + std::string(16, '\0');
-    CHECK(clear.open(tiny, 0, payload) == PacketCipher::Open::Bad);
-    auto sealed = clear.seal("\x14kexinit", 0);
-    CHECK(sealed.size() % 8 == 0);
-    CHECK(sealed.size() >= 16);
-    CHECK(clear.open(sealed, 0, payload) == PacketCipher::Open::Packet);
-    CHECK(payload == "\x14kexinit");
-}
+    ssh2_cipher_ctx swapped;
+    REQUIRE(ssh2_cipher_init(&swapped, ssh2_cipher_aes256gcm, bytes(iv), bytes(key), 0) == 0);
+    auto out_of_order = sealed_second;
+    CHECK_FALSE(gcmPacket(swapped, ssh2_cipher_aes256gcm, false, out_of_order));
+    ssh2_cipher_dtor(&swapped);
 
-TEST_CASE("SSH: a length near 2^32 is refused in every mode, not wrapped to a small packet") {
-    // The length 0xFFFFFFFC: 4 more wrap to 0 in 32 bits, which passed the bound and threw out_of_range on the tunnel's
-    // thread before (std::terminate, before any authentication).
-    for (const uint32_t length : {0xFFFFFFFCu, 0xFFFFFFFFu, 0xFFFFFFF8u, 0x80000000u, uint32_t(MAX_PACKET - 3),
-                                  uint32_t(MAX_PACKET + 4)}) {
+    // AES128-GCM, sealed and opened, longer packets.
+    const auto key128 = PACKET_KEY.substr(0, 16);
+    for (const std::size_t length : {std::size_t(16), std::size_t(48), std::size_t(4096)}) {
         CAPTURE(length);
-        const auto prefix = Writer().u32(length).take();
-        // In the clear: the length alone, or with more bytes behind it.
-        for (const std::size_t more : {std::size_t(0), std::size_t(8), std::size_t(60)}) {
-            PacketCipher clear;
-            std::string in = prefix + std::string(more, 'A'), payload;
-            auto r         = PacketCipher::Open::More;
-            CHECK_NOTHROW(r = clear.open(in, 0, payload));
-            CHECK(r == PacketCipher::Open::Bad);
-        }
-        // With keys: AES-GCM and encrypt-then-MAC send the length in the clear; AES-CTR with HMAC enciphers it with
-        // the first block, so the keystream is found from a packet sealed with the same keys.
-        struct Algorithms {
-            const char* cipher;
-            const char* mac;
-        };
-        for (const auto& a : {Algorithms{"aes256-gcm@openssh.com", ""}, Algorithms{"aes256-ctr", "hmac-sha2-256"},
-                              Algorithms{"aes128-ctr", "hmac-sha2-256-etm@openssh.com"}}) {
-            CAPTURE(a.cipher);
-            CAPTURE(a.mac);
-            const auto key = randomBytes(PacketCipher::keySize(a.cipher));
-            const auto iv  = randomBytes(PacketCipher::ivSize(a.cipher));
-            const auto mk  = randomBytes(PacketCipher::macKeySize(a.mac));
-            std::string in;
-            if (std::string_view(a.mac) == "hmac-sha2-256") {
-                PacketCipher tx;
-                REQUIRE(tx.start(a.cipher, a.mac, key, iv, mk).empty());
-                const auto sealed = tx.seal("\x5e" "data", 0);
-                const auto real   = Writer().u32(static_cast<uint32_t>(sealed.size() - 4 - 32)).take();
-                in                = sealed.substr(0, 16);
-                for (int i = 0; i < 4; ++i) in[i] = static_cast<char>(sealed[i] ^ real[i] ^ prefix[i]);
-                in += std::string(64, 'A');
-            } else {
-                in = prefix + std::string(64, 'A');
-            }
-            PacketCipher rx;
-            REQUIRE(rx.start(a.cipher, a.mac, key, iv, mk).empty());
-            std::string payload;
-            auto r = PacketCipher::Open::More;
-            CHECK_NOTHROW(r = rx.open(in, 0, payload));
-            CHECK(r == PacketCipher::Open::Bad);
-        }
+        ssh2_cipher_ctx a, b;
+        auto k = key128, n = PACKET_IV12;
+        REQUIRE(ssh2_cipher_init(&a, ssh2_cipher_aes128gcm, bytes(n), bytes(k), 1) == 0);
+        REQUIRE(ssh2_cipher_init(&b, ssh2_cipher_aes128gcm, bytes(n), bytes(k), 0) == 0);
+        std::string plain = Writer().u32(static_cast<uint32_t>(length)).take() + std::string(length, 'x');
+        auto packet       = plain + std::string(16, '\0');
+        REQUIRE(gcmPacket(a, ssh2_cipher_aes128gcm, true, packet));
+        CHECK(packet.substr(4, length) != plain.substr(4));
+        REQUIRE(gcmPacket(b, ssh2_cipher_aes128gcm, false, packet));
+        CHECK(packet.substr(0, 4 + length) == plain);
+        ssh2_cipher_dtor(&a);
+        ssh2_cipher_dtor(&b);
     }
-    // The proof of concept as it was reported: the four bytes, then eight.
-    PacketCipher rx;
-    std::string in = std::string("\xFF\xFF\xFF\xFC", 4) + std::string(8, 'A'), payload;
-    CHECK(rx.open(in, 0, payload) == PacketCipher::Open::Bad);
-    // A short read: a packet's first byte, or none.
-    PacketCipher partial;
-    std::string one("\x00", 1), none;
-    CHECK(partial.open(one, 0, payload) == PacketCipher::Open::More);
-    CHECK(partial.open(none, 0, payload) == PacketCipher::Open::More);
 }
 
-TEST_CASE("SSH: a reader's raw bytes, bounded by what is left; secrets wiped") {
-    Reader r(std::string_view("abcdef"));
-    CHECK(r.raw(4) == "abcd");
-    CHECK(r.raw(2) == "ef");
-    CHECK(r.ok());
-    CHECK(r.raw(1).empty());
-    CHECK_FALSE(r.ok());
-    Reader big(std::string_view("ab"));
-    CHECK(big.raw(16).empty());
-    CHECK_FALSE(big.ok());
-    std::string secret = "key material";
-    wipe(secret);
-    CHECK(secret.empty());
+TEST_CASE("libssh2 backend: HMAC as RFC 2202 and RFC 4231 give it; what is not supported fails") {
+    const auto hmac = [](psa_algorithm_t alg, std::string key, const std::string& data, std::size_t size) {
+        ssh2_hmac_ctx ctx;
+        std::string out(size, '\0');
+        REQUIRE(ssh2_hmac_ctx_init(&ctx) == 1);
+        REQUIRE(ssh2_hmac_init(&ctx, alg, key.data(), key.size()) == 1);
+        REQUIRE(ssh2_hmac_update(&ctx, data.data(), data.size()));
+        REQUIRE(ssh2_hmac_final(&ctx, out.data(), out.size()) == 1);
+        ssh2_hmac_cleanup(&ctx);
+        return out;
+    };
+    const std::string data = "what do ya want for nothing?";
+    CHECK(hmac(PSA_ALG_SHA_1, "Jefe", data, 20) == unhex("effcdf6ae5eb2fa2d27416d5f184df9c259a7c79"));
+    CHECK(hmac(PSA_ALG_SHA_256, "Jefe", data, 32) ==
+          unhex("5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"));
+    CHECK(hmac(PSA_ALG_SHA_512, "Jefe", data, 64) ==
+          unhex("164b7a7bfcf819e2e395fbe73b56e0a387bd64222e831fd610270cd7ea250554"
+                "9758bf75c05a994a6d034f65f8f0e6fdcaeab1a34d4a6b4b636e070a38bce737"));
+    ssh2_hash_ctx hash;
+    std::string digest(32, '\0');
+    REQUIRE(ssh2_hash_init(&hash, PSA_ALG_SHA_256) == 1);
+    REQUIRE(ssh2_hash_update(&hash, "abc", 3));
+    REQUIRE(ssh2_hash_final(&hash, digest.data(), digest.size()) == 1);
+    CHECK(digest == unhex("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"));
+
+    // Ed25519 (which libssh2 compiles with curve25519) and the classic Diffie-Hellman groups fail cleanly.
+    TestSession session;
+    ssh2_ed25519_ctx ed{};
+    const std::string message = "m", signature(64, 's');
+    CHECK(ssh2_ed25519_verify(&ed, session.s, bytes(signature), signature.size(), bytes(message), 1) != 0);
+    ssh2_dh_ctx dh = nullptr;
+    CHECK(ssh2_dh_key_pair(&dh, nullptr, nullptr, nullptr, 256, nullptr) != 0);
 }
 
 TEST_CASE("Tunnel: the public address in a service's session text") {
@@ -486,7 +528,8 @@ TEST_CASE("Tunnel: host keys trusted on first use, kept by host and port, forgot
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// A scripted SSH server on this machine: the server's side of everything the tunnel does, checked step by step.
+// A scripted SSH server on this machine (ssh_wire.hpp): the server's side of everything the tunnel does through
+// libssh2, checked step by step.
 
 namespace {
 
@@ -555,6 +598,7 @@ class FakeServer {
         bool strict         = true;
         bool rekey          = false;  // a new key exchange, asked by the server, before the forwarded connection
         bool refuse_auth    = false;
+        bool answer_shell   = true;  // localhost.run does not
         std::string request = "GET /state.json HTTP/1.0\r\n\r\n";  // sent on the forwarded connection
         int viewers         = 1;                                     // connections forwarded at once
         bool abandon        = false;  // first one the viewer leaves at once, before the answer
@@ -624,6 +668,8 @@ class FakeServer {
             expect(r != PacketCipher::Open::Bad, "bad packet from the client");
             if (r == PacketCipher::Open::Packet) {
                 ++seq_rx_;
+                // libssh2 opens a channel's window as it reads: nothing a scenario waits for.
+                if (payload[0] == CHANNEL_WINDOW_ADJUST || payload[0] == IGNORE_DATA) continue;
                 if (payload[0] == GLOBAL_REQUEST) {
                     Reader g(std::string_view(payload).substr(1));
                     if (g.string() == "keepalive@openssh.com") {
@@ -773,6 +819,7 @@ class FakeServer {
         Reader shell(std::string_view(shell_message).substr(1));
         shell.u32();
         expect(shell.string() == "shell", "shell");
+        if (shell.boolean() && script_.answer_shell) send(Writer().byte(CHANNEL_SUCCESS).u32(session).take());
         send(Writer()
                  .byte(CHANNEL_DATA)
                  .u32(session)
@@ -1088,7 +1135,8 @@ TEST_CASE("Tunnel: a server that wants a key is an error trying again cannot men
 }
 
 TEST_CASE("Tunnel: a packet length that wrapped, or a KEXINIT too short for its cookie, fails the connection") {
-    // Both threw out_of_range on the tunnel's thread before, which ended the program before any authentication.
+    // Both threw out_of_range on the tunnel's thread in the client of our own fastchess-gui had before libssh2, which
+    // ended the program before any authentication.
     PacketCipher clear;
     for (const auto& raw : {std::string("\xFF\xFF\xFF\xFC", 4) + std::string(8, 'A'), clear.seal("\x14", 0),
                             clear.seal("\x14" "0123456789abcde", 0)}) {
@@ -1199,34 +1247,43 @@ TEST_CASE("Tunnel: a viewer's connection that hung up while the server's window 
 
 TEST_CASE("Tunnel: the strict key exchange enforced until the server's first NEWKEYS") {
     const auto ignore = Writer().byte(IGNORE_DATA).string("x").take();
-    struct Case {
-        bool strict;
-        std::vector<std::string> before;
-        std::string during;
-        const char* error;
-    };
-    for (const auto& c : {
-             // Strict: an IGNORE before the server's KEXINIT (its sequence number 1, not 0), or after its
-             // KEX_ECDH_REPLY (accepted before, as the session id was known then).
-             Case{true, {ignore}, "", "strict"},
-             Case{true, {}, ignore, "strict"},
-             // Not strict: IGNORE is allowed, but nothing of the later protocols before the keys.
-             Case{false, {}, Writer().byte(SERVICE_ACCEPT).string("ssh-userauth").take(), "before the key exchange"},
-             Case{false, {Writer().byte(GLOBAL_REQUEST).string("x").boolean(false).take()}, "",
-                  "before the key exchange"},
-         }) {
-        CAPTURE(c.strict);
-        CAPTURE(c.error);
+    // Strict: an IGNORE before the server's KEXINIT (its sequence number 1, not 0), or after its KEX_ECDH_REPLY.
+    for (const bool before : {true, false}) {
+        CAPTURE(before);
         FakeServer::Script script;
-        script.strict         = c.strict;
-        script.before_kexinit = c.before;
-        script.in_kex         = c.during;
+        script.strict = true;
+        if (before) {
+            script.before_kexinit = {ignore};
+        } else {
+            script.in_kex = ignore;
+        }
         FakeServer server(SSH_PORT, script);
         SshTunnel tunnel;
         tunnel.start(loopback(fingerprint(serverKey().blob)));
         CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }));
-        CHECK_MESSAGE(tunnel.status().error.find(c.error) != std::string::npos, tunnel.status().error);
+        CHECK_MESSAGE(tunnel.status().error.find("strict") != std::string::npos, tunnel.status().error);
         CHECK(waitFor([&] { return server.done.load(); }));
+    }
+    // Not strict: IGNORE is allowed anywhere, and libssh2 keeps a later protocol's message sent during the exchange
+    // for when it is asked (a SERVICE_ACCEPT before its time), or drops it (a GLOBAL_REQUEST that wants no answer).
+    for (const bool global : {true, false}) {
+        CAPTURE(global);
+        FakeServer::Script script;
+        script.strict = false;
+        if (global) {
+            script.before_kexinit = {ignore, Writer().byte(GLOBAL_REQUEST).string("x").boolean(false).take()};
+        } else {
+            script.in_kex = Writer().byte(SERVICE_ACCEPT).string("ssh-userauth").take();
+        }
+        script.on_air = [](FakeServer&) {};
+        FakeServer server(SSH_PORT, script);
+        SshTunnel tunnel;
+        tunnel.start(loopback(fingerprint(serverKey().blob)));
+        CHECK(waitFor([&] { return tunnel.status().url == "https://abc123.lhr.life"; }));
+        CHECK(tunnel.status().state == TunnelState::OnAir);
+        tunnel.stop();
+        CHECK(waitFor([&] { return server.done.load(); }));
+        CHECK_MESSAGE(server.error.empty(), server.error);
     }
 }
 
@@ -1245,8 +1302,28 @@ TEST_CASE("Tunnel: a server's DISCONNECT reason reaches the status without its e
     CHECK(error.find('\x1b') == std::string::npos);
 }
 
+TEST_CASE("Tunnel: a server that sends what is never taken makes the connection end, not memory grow") {
+    // Replies to requests never made: libssh2 keeps every message nobody asked for, until it is asked for. The
+    // memory the session takes is bounded.
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        try {
+            for (int i = 0; i < 100000; ++i) server.send(Writer().byte(REQUEST_SUCCESS).take());
+        } catch (const FakeServer::Failure&) {
+            // The client went before the end.
+        }
+    };
+    FakeServer server(SSH_PORT, script);
+    auto settings       = loopback(fingerprint(serverKey().blob));
+    settings.max_memory = 1 << 20;
+    SshTunnel tunnel;
+    tunnel.start(settings);
+    CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }, 30s));
+    CHECK_MESSAGE(tunnel.status().error.find("memory") != std::string::npos, tunnel.status().error);
+}
+
 TEST_CASE("Tunnel: a server that asks for answers while it keeps a key exchange open is left") {
-    // Its requests' answers wait for the end of the exchange: without a bound, they would take memory without end.
+    // libssh2 answers them as they come; the exchange that never ends is the server that stopped answering.
     FakeServer::Script script;
     script.on_air = [&](FakeServer& server) {
         server.send(Writer()
@@ -1276,70 +1353,119 @@ TEST_CASE("Tunnel: a server that asks for answers while it keeps a key exchange 
         }
     };
     FakeServer server(SSH_PORT, script);
-    auto settings        = loopback(fingerprint(serverKey().blob));
-    settings.max_pending = 16 * 1024;
+    auto settings       = loopback(fingerprint(serverKey().blob));
+    settings.max_memory = 1 << 20;
+    settings.keepalive  = 1s;
     SshTunnel tunnel;
     tunnel.start(settings);
-    CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }));
-    CHECK_MESSAGE(tunnel.status().error.find("does not take") != std::string::npos, tunnel.status().error);
+    CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }, 30s));
+    const auto error = tunnel.status().error;
+    const bool left  = error.find("stopped answering") != std::string::npos || error.find("memory") != std::string::npos;
+    CHECK_MESSAGE(left, error);
 }
 
-TEST_CASE("Tunnel: viewers' connections the server never closes count until they are forgotten") {
-    // Closed on our side, never by the server: they counted for nothing before, and were kept for ever.
+namespace {
+
+// A forwarded connection opened by the scenario's server, its channel `sender`.
+void openForwarded(FakeServer& server, uint32_t sender) {
+    server.send(Writer()
+                    .byte(CHANNEL_OPEN)
+                    .string("forwarded-tcpip")
+                    .u32(sender)
+                    .u32(1 << 20)
+                    .u32(32768)
+                    .string("localhost")
+                    .u32(80)
+                    .string("203.0.113.9")
+                    .u32(5555)
+                    .take());
+}
+
+}  // namespace
+
+TEST_CASE("Tunnel: 48 viewers' connections relayed at once, 48 more waiting, the next ones refused") {
+    // A web server that takes connections and never answers: the relayed ones stay.
+    net::TcpListener silent;
+    REQUIRE(silent.listen(WEB_PORT).empty());
+    constexpr uint32_t MAX_CHANNELS = 48;
+    std::atomic_bool relayed{false};
+    std::atomic_int confirmed{0}, refused{0};
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        for (uint32_t i = 0; i < MAX_CHANNELS; ++i) openForwarded(server, 1000 + i);
+        for (uint32_t i = 0; i < MAX_CHANNELS; ++i) {
+            const auto m = server.next();
+            confirmed += m[0] == CHANNEL_OPEN_CONFIRMATION ? 1 : 0;
+        }
+        while (!relayed) std::this_thread::sleep_for(20ms);
+        // As many more wait in libssh2's queue, confirmed; beyond, refused.
+        for (uint32_t i = 0; i < MAX_CHANNELS + 2; ++i) openForwarded(server, 2000 + i);
+        for (uint32_t i = 0; i < MAX_CHANNELS + 2; ++i) {
+            const auto m = server.next();
+            confirmed += m[0] == CHANNEL_OPEN_CONFIRMATION ? 1 : 0;
+            refused += m[0] == CHANNEL_OPEN_FAILURE ? 1 : 0;
+        }
+    };
+    FakeServer server(SSH_PORT, script);
+    SshTunnel tunnel;
+    tunnel.start(loopback(fingerprint(serverKey().blob)));
+    CHECK(waitFor([&] { return tunnel.status().connections == static_cast<int>(MAX_CHANNELS); }));
+    relayed = true;
+    CHECK(waitFor([&] { return server.done.load() || confirmed + refused == 2 * static_cast<int>(MAX_CHANNELS) + 2; }));
+    CHECK(confirmed == 2 * static_cast<int>(MAX_CHANNELS));
+    CHECK(refused == 2);
+    CHECK(tunnel.status().connections == static_cast<int>(MAX_CHANNELS));
+    tunnel.stop();
+    CHECK(waitFor([&] { return server.done.load(); }));
+    CHECK_MESSAGE(server.error.empty(), server.error);
+}
+
+TEST_CASE("Tunnel: viewers' connections the server never closes are forgotten, and do not keep the next out") {
+    // Closed on our side, never by the server: libssh2 lets them go once its wait reads something else (a late
+    // CLOSE would name a number it does not give again), and they count only while it waits, for a while at most
+    // (another call may read what comes instead). The next viewers are served.
     WebServer web;
     REQUIRE(web.start(WEB_PORT).empty());
     constexpr uint32_t MAX_CHANNELS = 48;
-    bool refused = false, accepted_again = false;
+    std::atomic_int answered_later{0};
     FakeServer::Script script;
     script.on_air = [&](FakeServer& server) {
-        const auto open = [&](uint32_t sender) {
-            server.send(Writer()
-                            .byte(CHANNEL_OPEN)
-                            .string("forwarded-tcpip")
-                            .u32(sender)
-                            .u32(1 << 20)
-                            .u32(32768)
-                            .string("localhost")
-                            .u32(80)
-                            .string("203.0.113.9")
-                            .u32(5555)
-                            .take());
-        };
-        for (uint32_t i = 0; i < MAX_CHANNELS; ++i) open(1000 + i);
-        // Each answered and closed by the client; never by the server.
-        uint32_t closed = 0;
-        while (closed < MAX_CHANNELS) {
-            const auto m = server.next();
-            if (m[0] == CHANNEL_OPEN_CONFIRMATION) {
+        // Each round answered and closed by the client; never by the server.
+        for (const uint32_t base : {1000u, 2000u, 3000u}) {
+            for (uint32_t i = 0; i < MAX_CHANNELS; ++i) openForwarded(server, base + i);
+            uint32_t closed = 0, answered = 0;
+            while (closed < MAX_CHANNELS) {
+                const auto m = server.next();
+                server.expect(m[0] != CHANNEL_OPEN_FAILURE, "a viewer refused");
                 Reader r(std::string_view(m).substr(1));
-                r.u32();
-                server.send(Writer().byte(CHANNEL_DATA).u32(r.u32()).string(script.request).take());
+                if (m[0] == CHANNEL_OPEN_CONFIRMATION) {
+                    r.u32();
+                    server.send(Writer().byte(CHANNEL_DATA).u32(r.u32()).string(script.request).take());
+                }
+                answered += m[0] == CHANNEL_DATA ? 1 : 0;
+                closed += m[0] == CHANNEL_CLOSE ? 1 : 0;
             }
-            closed += m[0] == CHANNEL_CLOSE ? 1 : 0;
+            if (base != 1000) answered_later += answered > 0 ? 1 : 0;
         }
-        open(2000);
-        refused = server.next()[0] == CHANNEL_OPEN_FAILURE;
-        std::this_thread::sleep_for(1500ms);  // past the close timeout
-        open(2001);
-        accepted_again = server.next()[0] == CHANNEL_OPEN_CONFIRMATION;
     };
     FakeServer server(SSH_PORT, script);
     auto settings          = loopback(fingerprint(serverKey().blob));
     settings.close_timeout = 1s;
     SshTunnel tunnel;
     tunnel.start(settings);
-    CHECK(waitFor([&] { return server.done.load() || (refused && accepted_again); }, 30s));
+    CHECK(waitFor([&] { return server.done.load() || answered_later == 2; }, 30s));
     tunnel.stop();
     CHECK(waitFor([&] { return server.done.load(); }));
     CHECK_MESSAGE(server.error.empty(), server.error);
-    CHECK(refused);
-    CHECK(accepted_again);
+    CHECK(answered_later == 2);
 }
 
 TEST_CASE("Tunnel: the public address is forgotten once the connection is lost") {
     // The service may give the address to someone else meanwhile: it must not stay on screen to copy, open or scan.
+    // Read though the shell request had no answer, as localhost.run gives none.
     std::atomic_bool release{false};
     FakeServer::Script script;
+    script.answer_shell = false;
     script.on_air = [&](FakeServer& server) {
         while (!release) std::this_thread::sleep_for(20ms);
         server.send(Writer().byte(DISCONNECT).u32(11).string("going away").string("").take());
@@ -1369,9 +1495,12 @@ TEST_CASE("Tunnel: localhost.run gives a public address (FCG_NET_TESTS=1 only)")
         MESSAGE("needs the internet: FCG_NET_TESTS=1, skipped");
         return;
     }
-    // Port 1: nothing listens there, so nothing is served while the tunnel is up, a few seconds at most.
+    // Port 1: nothing listens there, so nothing is served while the tunnel is up, 15 seconds or so. Keepalives
+    // every 2 seconds: the server must answer them, or the tunnel would end after 11 silent seconds.
+    auto settings      = localhostRun(1);
+    settings.keepalive = 2s;
     SshTunnel tunnel;
-    tunnel.start(localhostRun(1));
+    tunnel.start(settings);
     TunnelStatus status;
     waitFor(
         [&] {
@@ -1380,10 +1509,14 @@ TEST_CASE("Tunnel: localhost.run gives a public address (FCG_NET_TESTS=1 only)")
                    status.state == TunnelState::Reconnecting;
         },
         30s);
-    tunnel.stop();
     MESSAGE("state ", static_cast<int>(status.state), ", address ", status.url, ", error ", status.error);
     CHECK(status.state == TunnelState::OnAir);
     CHECK(status.url.rfind("https://", 0) == 0);
+    std::this_thread::sleep_for(15s);
+    status = tunnel.status();
+    tunnel.stop();
+    MESSAGE("15 s later: state ", static_cast<int>(status.state), ", error ", status.error);
+    CHECK(status.state == TunnelState::OnAir);
 }
 
 TEST_CASE("Tunnel: the broadcaster runs it with the web page only, and stops it with the broadcast") {

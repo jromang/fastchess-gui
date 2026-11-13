@@ -1,9 +1,8 @@
 #pragma once
 
-// The SSH protocol (RFC 4251 to 4254) as far as a remote forward needs it, on the PSA cryptography of the Mbed TLS
-// the program ships: the curve25519-sha256 key exchange, RSA host keys (rsa-sha2-512, rsa-sha2-256), AES-GCM or
-// AES-CTR with HMAC-SHA2-256 for the packets. The tunnel itself is ssh_tunnel.cpp; these are its pieces, testable on
-// their own.
+// The SSH protocol (RFC 4251 to 4254) as far as the tests' scripted server needs it, on PSA: the server's side of the
+// curve25519-sha256 key exchange, and the packets, sealed and opened with AES-GCM, or AES-CTR with HMAC-SHA2-256. The
+// tunnel itself speaks SSH through libssh2; this is only to play a server it can be tested against.
 
 #include <cstddef>
 #include <cstdint>
@@ -96,9 +95,6 @@ bool startCrypto();
 void wipe(std::string& secret);
 
 [[nodiscard]] std::string sha256(std::string_view data);
-[[nodiscard]] std::string base64(std::string_view data, bool padding = true);
-// "SHA256:..." as ssh-keygen -l shows it, of a host key's blob.
-[[nodiscard]] std::string fingerprint(std::string_view key_blob);
 // `size` bytes of cryptographically random data.
 [[nodiscard]] std::string randomBytes(std::size_t size);
 
@@ -125,12 +121,6 @@ class X25519 {
     uint32_t key_ = 0;  // psa_key_id_t
     std::string public_;
 };
-
-// Checks the signature an RSA host key made of `data` (the exchange hash): `key_blob` is "ssh-rsa" e n,
-// `signature` is the algorithm's name and the signature. Empty when it is good, else why it is not. `algorithm`,
-// when given, is the one the signature must be made with.
-[[nodiscard]] std::string verifyRsa(std::string_view key_blob, std::string_view signature, std::string_view data,
-                                    std::string_view algorithm = {});
 
 // One direction of the packet layer (RFC 4253, 6): the packets sealed or opened with the keys of the last exchange,
 // or in the clear before the first.
