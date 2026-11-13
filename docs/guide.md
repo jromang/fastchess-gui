@@ -81,7 +81,8 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   *Import…* > *A rating list, for the reference Elo…* sets it for many engines at once (see below).
 - *Restart the engine for every game* starts a new process for each game instead of reusing it. Otherwise a
   tournament keeps one waiting process per engine that still has games to play, up to 32 (plus two per game being
-  played), and closes an engine after its last game. *Start timeout (s)* (60 by default) is the time an engine is
+  played), and closes an engine after its last game: in a knockout as soon as its match is lost, in a Swiss once it
+  has no game left in the last round. *Start timeout (s)* (60 by default) is the time an engine is
   given to answer `uciok` when it starts and `isready` at the start of each game; a slow starter (a large network
   to load) needs more. An engine that fails to start is tried again three times, 10 s apart, with the same timeout;
   a pause holds the tries, without using them up. A tournament created afterwards copies the timeout into its
@@ -265,7 +266,8 @@ swap); above the memory installed the tournament does not start. `--run` says th
   games are appended never writes them twice: the resume checks the file and completes a write cut short, and
   never removes anything from it. Extra fields in the move comments (nodes, seldepth, nps, pv, tbhits, and the
   decision time `dt=`: when the engine settled on the move it played; `wdl=W/D/L` is always written for the
-  engines that report it), restarting engines
+  engines that report it), on by default since the charts of the *Games* tab read them (pv makes the PGN noticeably
+  larger), restarting engines
   that crash, keeping the engine log of every game (it is always kept for the games that end badly), and *Check the
   mate PVs*: a mate score's PV must have the right length and end in mate. Every PV is checked for illegal moves,
   moves after the end of the game and a best move that is not its first move; the moves with a wrong PV are marked
@@ -287,7 +289,7 @@ panels, shown by default as tabs:
 | Schedule | Every game pair by cycle or round, with its state and the opening it plays (once started, or once its round started when the round shares one); editing (see below) |
 | Broadcast | Live files, the TLCS server and the web page (see below) |
 | Live | The games in progress, as a mosaic of boards or one game in focus with the clocks, the running search of each engine (depth, score, nodes, nps, PV in SAN), the move list and the evaluation curve (or, chosen above it, each engine's time per move with its decision time, depth with seldepth, nodes, speed, tablebase hits, or how many plies its PV repeats of what the other engine's PV predicted), with the win/draw/loss shares (`UCI_ShowWDL`, switched on for the engines that have it when they are added) after each search line and as bands under the curve, White's wins at the bottom. Under the board: the 50-move counter (plies since the last capture or pawn move, out of 100), the material difference with the pieces one side has more of, and the pieces left, marked *TB* when the tablebase adjudication can end the game; *Details under the boards* adds them to the mosaic. *Arrows* (beside *Flip*, on by default) draws the move the side to move is thinking of in its engine's colour and the reply it expects, lighter, in the opponent's colour, on the board in focus and the detached ones (not the mosaic). In a gauntlet, *Seed at the bottom* (on by default) shows each new game from the seed's side; *Flip* still turns the board over until the next game. *Detach* opens a board in its own window |
-| Games | The finished games with their opening (ECO code and name), filterable by result (wins, draws, losses, losses on time, crashes and illegal moves, adjudications, wrong PVs), by what the evaluations tell (the engines disagree by N pawns for 3 moves each in a row, an engine's evaluation swings by N pawns from one of its moves to the next, the loser thought it was N pawns better; the game opens at that moment) and by opening (an ECO code or its beginning, a range such as `B20-B99`, or words of the name), with a replay board (← → Home End, or click a move or the curve; the same details under it and the same charts as in *Live*, from the fields the PGN was written with; with the win, draw and loss shares of the engines that report them under the evaluation curve) and the export of one, all or the filtered games (*Export all* proposes `<name>.pgn` next to the tournament's folder; the tournament's own PGN files are refused as a target). *Export for a rating list…* writes the games as rating list testers (e.g. CCRL) send them: `[Tester YYYY-MM-DD] Event (hash NMB) (book X) (egtb N-man).pgn`, a zip too if asked; the players named as the lists write them, `<engine> 64-bit 4CPU` (editable for each participant), the rounds numbered again, the `Event` and `Site` tags set, the voided games and the duplicates left out, and those lost by a crash or a stall too unless unticked; the `PlyCount` of a game lost by an illegal move counts only the moves written. The tester and the site are remembered. *Engine log* opens the log of a game that has one (see *Files*) |
+| Games | The finished games with their opening (ECO code and name), filterable by result (wins, draws, losses, losses on time, crashes and illegal moves, adjudications, wrong PVs), by what the evaluations tell (the engines disagree by N pawns for 3 moves each in a row, an engine's evaluation swings by N pawns from one of its moves to the next, the loser thought it was N pawns better; the game opens at that moment) and by opening (an ECO code or its beginning, a range such as `B20-B99`, or words of the name), with a replay board (← → Home End, or click a move or the curve; the same details under it and the same charts as in *Live*, from the fields the PGN was written with; a chart whose field the tournament did not write says so, with a button to the PGN options of the setup; with the win, draw and loss shares of the engines that report them under the evaluation curve) and the export of one, all or the filtered games (*Export all* proposes `<name>.pgn` next to the tournament's folder; the tournament's own PGN files are refused as a target). *Export for a rating list…* writes the games as rating list testers (e.g. CCRL) send them: `[Tester YYYY-MM-DD] Event (hash NMB) (book X) (egtb N-man).pgn`, a zip too if asked; the players named as the lists write them, `<engine> 64-bit 4CPU` (editable for each participant), the rounds numbered again, the `Event` and `Site` tags set, the voided games and the duplicates left out, and those lost by a crash or a stall too unless unticked; the `PlyCount` of a game lost by an illegal move counts only the moves written. The tester and the site are remembered. *Engine log* opens the log of a game that has one (see *Files*) |
 | Openings | Results by starting position: its game pairs, White's score, the draws, and how many pairs White won twice, Black won twice (the opening favours a colour) or one engine won twice (it tells the engines apart), with the average length. Sorted by any column, filtered to the unbalanced, the drawn or the decisive ones; *Export as EPD…* writes the positions shown, to keep them or to clean a book. A click shows the position and its games |
 
 **Panels and layouts**: every tab is a panel. Drag one by its tab to dock it on a side of another panel or as a tab
@@ -307,8 +309,9 @@ WinBoard adapter included) is measured at each `go` and each move. The Overview 
 keeps busy while it thinks and the share of a core it uses while its opponent thinks, and warns when an engine uses
 clearly more cores than its `Threads`, or thinks on its opponent's time (pondering it was not asked for, a background
 thread): what makes a game unfair to the opponent and to the other games running. It needs 20 s of each to tell, and
-counts every game played in the window: what each game's engines used is written to `processor.tsv` in the
-tournament folder, so a resume keeps it (games played headless, or before 0.4.12, have no measure). It only warns;
+counts every game played, in the window or headless (`--run`): what each game's engines used is written to
+`processor.tsv` in the tournament folder, so a resume keeps it (games played before 0.4.12, or headless before
+0.5.6, have no measure). It only warns;
 it never decides a game.
 
 **Pause** starts no new game pair. Games in progress play to the end, and so does the second game of a pair whose
@@ -361,8 +364,15 @@ by their name. The games counted can be narrowed at the top of the page, for eve
 - *Imported games*: the games of the PGN files listed under *PGN files…* (a rating list's download, the games of
   another program), read from their headers; their engines are known by the names the PGN gives them, and a name
   that is a library engine's, letter case and spaces aside ("stockfish  17" for "Stockfish 17"), is that engine:
-  its games count as the engine's and its reference Elo can anchor them. Nothing looser: "Stockfish 17 64-bit"
-  stays a separate engine. The rating list says how many library engines the PGN files hold, its tooltip which;
+  its games count as the engine's and its reference Elo can anchor them. Nothing looser is applied by itself:
+  "Stockfish 17 64-bit" stays a separate engine until you say which engine it is in *PGN players…* (beside the
+  count of library engines, or in *PGN files…*). That window lists the players that are no library engine by their
+  name, with a search: for each, *A separate engine* (the default) or a library engine. A name two library engines
+  share, letter case aside, is shown in the warning colour for you to choose; a likely engine (its name begins the
+  player's) is suggested as *Perhaps …?*, never applied. The window opens by itself after a PGN file is added when
+  there is something to decide. The choices, a separate engine included, are kept with the engine (they follow a
+  rename) and apply to every PGN file and to the rating lists imported for the reference Elo; the games are read
+  again with them when the window is closed. The rating list says how many library engines the PGN files hold, its tooltip which;
 - *Anchor*: the average at 0, or one engine at a fixed rating (by default the first engine with a reference Elo).
 
 Four tabs:
@@ -413,6 +423,37 @@ The *Broadcast* tab of a running tournament publishes it while it plays; the sna
   hosts of `NO_PROXY`; on Windows too the proxy comes from these variables, not from the system settings. SOCKS
   proxies are not supported.
 
+### Putting the web page on the internet
+
+The web page can be followed from anywhere without opening a port in the router, through a tunnel: a small program
+on the same machine connects out to a service that gives the page a public address. With Cloudflare's, for example,
+switch on the web page (port 8080 here) and run:
+
+```
+cloudflared tunnel --url http://localhost:8080
+```
+
+It prints an address such as `https://some-words.trycloudflare.com` to share; it changes each time unless a named
+tunnel is set up in a Cloudflare account. Other tunnels (ngrok, tailscale funnel, an SSH reverse tunnel to a server
+of yours) work the same way, and so does a reverse proxy such as nginx, under a path of its own as well
+(`location /live/ { proxy_pass http://localhost:8080/; }`).
+
+The page is read-only: it answers only GET requests for the page, its state and the PGN file, never a file a request
+names, and nothing in it changes the tournament. Each request is answered on its own, 32 at a time at most, and must
+arrive within a second and be answered within ten, so a slow or silent visitor holds no one else. Two downloads of
+the PGN file run at once, and the next is asked to come back a moment later. The answers are never cached, by the
+tunnel either, so viewers see the games as they go. The viewers shown in the *Broadcast* tab are counted from the
+requests the pages make, so the count is right behind a tunnel too, where every viewer seems to come from the
+machine itself.
+
+Viewers see the tournament's name, the engines' names, their ratings, searches and anomalies, the openings and the
+PGN file of the games played. The folders and the engines' files stay private. Headless:
+
+```
+fastchess-gui --run FOLDER --web 8080 &
+cloudflared tunnel --url http://localhost:8080
+```
+
 ## Headless mode
 
 ```
@@ -438,7 +479,7 @@ fastchess-gui --run FOLDER --lichess new            # a new lichess broadcast; o
 
 The options can be combined. A setup file saved with broadcasting switched on broadcasts the same way without
 them. For viewers outside the local network, open the ports in the router: TLCV and node-tlcv connect to
-the TLCS port.
+the TLCS port. For the web page, a tunnel avoids opening a port (see *Putting the web page on the internet*).
 
 ## Files
 
@@ -477,7 +518,7 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
   - `logs/game-N.log`: every line exchanged with both engines during game N (the number shown in the *Games*
     tab), with the time it was sent or read (`W>` sent to White's engine, `W<` read from its output, `W!` read
     from its error output: assertions, crash messages), for the games lost on time, by a crash, a stall or an illegal move
-    (or every game, if asked). The first 300 and the last 5000 lines of a game are kept. It is what an engine
+    (or every game, if asked). The first 300 lines of each engine and the last 5000 lines of the game are kept, in the order they came. It is what an engine
     author needs to reproduce a bug. For a WinBoard engine it shows the UCI side; `FCG_WB2UCI_LOG` gives the
     WinBoard side.
 
@@ -505,7 +546,7 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
 - `--focus WINDOW` opens that page or tab at launch, or: `engines-card` (the first engine's card),
   `engines-refresh` (*Refresh: the new engines of the folder*), `engines-ratings=FILE` (the preview of that rating
   list), `setup-picker` and `setup-suggest` (*Add an engine…*, with the suggestion made), `submission-export`
-  (*Export for a rating list…*), `palette[=TEXT]` (the command palette, with TEXT typed in it);
+  (*Export for a rating list…*), `ratings-players` (the *PGN players* window), `palette[=TEXT]` (the command palette, with TEXT typed in it);
 - `--select-game N` opens game N (in finishing order) in the *Games* tab as soon as it exists;
 - `--quit-after SECONDS` stops the tournament and quits;
 - `--run`: see *Headless mode*.
