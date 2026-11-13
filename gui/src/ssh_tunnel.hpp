@@ -5,11 +5,10 @@
 // server on this machine. On a thread of its own, reconnecting after a failure; its state and the public address
 // are read from any thread.
 
-#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
-#include <mutex>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -65,21 +64,20 @@ class SshTunnel {
 
     // Starts on a thread of its own; another start stops the previous one first.
     void start(TunnelSettings settings);
-    // Says goodbye to the server and waits for the thread (a second at most).
+    // Says goodbye to the server and waits for the thread, a second or two at most: a thread still connecting then
+    // ends on its own.
     void stop();
     [[nodiscard]] bool running() const noexcept { return thread_.joinable(); }
     [[nodiscard]] const TunnelSettings& settings() const noexcept { return settings_; }
     [[nodiscard]] TunnelStatus status() const;
 
    private:
-    void run();
-    void set(TunnelState state, const std::string& error = {});
+    struct Shared;  // with the thread, which can outlive the tunnel
+    static void run(const std::shared_ptr<Shared>& shared);
 
     TunnelSettings settings_;
+    std::shared_ptr<Shared> shared_;
     std::thread thread_;
-    std::atomic_bool stopping_{false};
-    mutable std::mutex mutex_;
-    TunnelStatus status_;
     friend class TunnelConnection;
 };
 

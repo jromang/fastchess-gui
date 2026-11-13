@@ -6,12 +6,16 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <map>
+#include <vector>
 #include <string>
 #include <thread>
 
 #include <psa/crypto.h>
 
 #include "broadcast.hpp"
+#include "broadcaster.hpp"
+#include "qr.hpp"
 #include "net.hpp"
 #include "ssh.hpp"
 #include "ssh_tunnel.hpp"
@@ -425,6 +429,8 @@ class FakeServer {
         bool rekey          = false;  // a new key exchange, asked by the server, before the forwarded connection
         bool refuse_auth    = false;
         std::string request = "GET /state.json HTTP/1.0\r\n\r\n";  // sent on the forwarded connection
+        int viewers         = 1;                                     // connections forwarded at once
+        bool abandon        = false;  // first one the viewer leaves at once, before the answer
     };
 
     FakeServer(uint16_t port, Script script) : script_(std::move(script)) {
@@ -446,7 +452,8 @@ class FakeServer {
     // What the scenario saw, read once `done`.
     std::atomic_bool done{false};
     std::string error;
-    std::string answer;  // the web server's, through the tunnel
+    std::string answer;  // the web server's, through the tunnel, to the first viewer
+    int answered = 0;    // viewers who had an answer
     int key_exchanges = 0;
     bool disconnected = false;  // the client said goodbye
 
@@ -628,38 +635,55 @@ class FakeServer {
 
         if (script_.rekey) kex(false);
 
-        // A viewer: a forwarded connection, its request, the web server's answer through the tunnel.
-        send(Writer()
-                 .byte(CHANNEL_OPEN)
-                 .string("forwarded-tcpip")
-                 .u32(200)
-                 .u32(1 << 20)
-                 .u32(32768)
-                 .string("localhost")
-                 .u32(80)
-                 .string("203.0.113.9")
-                 .u32(5555)
-                 .take());
-        const auto confirm_message = nextOf(CHANNEL_OPEN_CONFIRMATION);
-        Reader confirm(std::string_view(confirm_message).substr(1));
-        expect(confirm.u32() == 200, "recipient");
-        const auto channel = confirm.u32();
-        send(Writer().byte(CHANNEL_DATA).u32(channel).string(script_.request).take());
-        while (true) {
+        // Viewers at once: forwarded connections, their requests, the web server's answers through the tunnel. With
+        // `abandon`, one more (300) whose viewer goes at once: closed by the server before the answer is relayed.
+        std::vector<uint32_t> senders;
+        for (int i = 0; i < script_.viewers; ++i) senders.push_back(200 + static_cast<uint32_t>(i));
+        if (script_.abandon) senders.push_back(300);
+        for (const auto sender : senders) {
+            send(Writer()
+                     .byte(CHANNEL_OPEN)
+                     .string("forwarded-tcpip")
+                     .u32(sender)
+                     .u32(1 << 20)
+                     .u32(32768)
+                     .string("localhost")
+                     .u32(80)
+                     .string("203.0.113.9")
+                     .u32(5555)
+                     .take());
+        }
+        std::map<uint32_t, uint32_t> channels;  // ours, the client's
+        std::map<uint32_t, std::string> answers;
+        std::size_t closed = 0;
+        while (closed < senders.size()) {
             const auto m = next();
             Reader r(std::string_view(m).substr(1));
-            if (m[0] == CHANNEL_DATA) {
-                expect(r.u32() == 200, "data recipient");
-                answer += r.string();
-            } else if (m[0] == CHANNEL_EOF) {
+            const auto recipient = r.u32();
+            if (m[0] == CHANNEL_OPEN_CONFIRMATION) {
+                const auto channel  = r.u32();
+                channels[recipient] = channel;
+                send(Writer().byte(CHANNEL_DATA).u32(channel).string(script_.request).take());
+                if (recipient == 300) {
+                    send(Writer().byte(CHANNEL_EOF).u32(channel).take());
+                    send(Writer().byte(CHANNEL_CLOSE).u32(channel).take());
+                }
                 continue;
+            }
+            expect(channels.count(recipient) == 1, "unknown recipient");
+            if (m[0] == CHANNEL_DATA) {
+                answers[recipient] += r.string();
             } else if (m[0] == CHANNEL_CLOSE) {
-                break;
+                if (recipient != 300) send(Writer().byte(CHANNEL_CLOSE).u32(channels[recipient]).take());
+                ++closed;
             } else {
-                expect(false, "unexpected message " + std::to_string(uint8_t(m[0])));
+                expect(m[0] == CHANNEL_EOF, "unexpected message " + std::to_string(uint8_t(m[0])));
             }
         }
-        send(Writer().byte(CHANNEL_CLOSE).u32(channel).take());
+        for (const auto& [recipient, text] : answers) {
+            if (recipient != 300) answered += text.rfind("HTTP/1.0 200 OK", 0) == 0 ? 1 : 0;
+        }
+        answer = answers[200];
 
         // Until the client goes.
         while (!quit_) {
@@ -722,11 +746,13 @@ TEST_CASE("Tunnel: a viewer's request relayed to the web server and back, throug
         const char* macs;
         bool strict;
         bool rekey;
+        int viewers;
+        bool abandon;
     };
-    for (const auto& c : {Case{"aes256-gcm@openssh.com", "hmac-sha2-256", true, false},
-                          Case{"aes256-ctr", "hmac-sha2-256", true, true},
-                          Case{"aes128-ctr", "hmac-sha2-256-etm@openssh.com", false, true},
-                          Case{"aes128-gcm@openssh.com", "hmac-sha2-256", false, false}}) {
+    for (const auto& c : {Case{"aes256-gcm@openssh.com", "hmac-sha2-256", true, false, 5, true},
+                          Case{"aes256-ctr", "hmac-sha2-256", true, true, 1, false},
+                          Case{"aes128-ctr", "hmac-sha2-256-etm@openssh.com", false, true, 3, false},
+                          Case{"aes128-gcm@openssh.com", "hmac-sha2-256", false, false, 1, true}}) {
         CAPTURE(c.ciphers);
         CAPTURE(c.macs);
         CAPTURE(c.rekey);
@@ -735,6 +761,8 @@ TEST_CASE("Tunnel: a viewer's request relayed to the web server and back, throug
         script.macs    = c.macs;
         script.strict  = c.strict;
         script.rekey   = c.rekey;
+        script.viewers = c.viewers;
+        script.abandon = c.abandon;
         FakeServer server(SSH_PORT, script);
         SshTunnel tunnel;
         tunnel.start(loopback(fingerprint(serverKey().blob)));
@@ -747,6 +775,7 @@ TEST_CASE("Tunnel: a viewer's request relayed to the web server and back, throug
         CHECK_MESSAGE(server.error.empty(), server.error);
         CHECK(server.answer.rfind("HTTP/1.0 200 OK", 0) == 0);
         CHECK(server.answer.find("application/json") != std::string::npos);
+        CHECK(server.answered == c.viewers);
         CHECK(server.key_exchanges == (c.rekey ? 2 : 1));
         CHECK(server.disconnected);
         CHECK(tunnel.status().state == TunnelState::Off);
@@ -836,4 +865,89 @@ TEST_CASE("Tunnel: localhost.run gives a public address (FCG_NET_TESTS=1 only)")
     MESSAGE("state ", static_cast<int>(status.state), ", address ", status.url, ", error ", status.error);
     CHECK(status.state == TunnelState::OnAir);
     CHECK(status.url.rfind("https://", 0) == 0);
+}
+
+TEST_CASE("Tunnel: the broadcaster runs it with the web page only, and stops it with the broadcast") {
+    Broadcaster broadcaster;
+    BroadcastSettings settings;
+    settings.tunnel    = true;
+    settings.tunnel_to = loopback("");  // nothing listens there: it keeps trying
+    // Without the web page: no tunnel.
+    broadcaster.configure(settings);
+    CHECK(broadcaster.tunnel().state == TunnelState::Off);
+
+    settings.web      = true;
+    settings.web_port = WEB_PORT;
+    broadcaster.configure(settings);
+    CHECK(broadcaster.tunnel().state != TunnelState::Off);
+    CHECK(waitFor([&] { return broadcaster.tunnel().state == TunnelState::Reconnecting; }));
+
+    settings.tunnel = false;
+    broadcaster.configure(settings);
+    CHECK(broadcaster.tunnel().state == TunnelState::Off);
+    CHECK(broadcaster.web().running());
+
+    settings.tunnel = true;
+    broadcaster.configure(settings);
+    CHECK(broadcaster.tunnel().state != TunnelState::Off);
+    broadcaster.stop();
+    CHECK(broadcaster.tunnel().state == TunnelState::Off);
+}
+
+TEST_CASE("Tunnel: the setup's tunnel settings") {
+    MatchSetup setup;
+    setup.web_port   = 8123;
+    const auto known = std::filesystem::path("known_hosts.json");
+    const auto lr    = tunnelSettings(setup, known);
+    CHECK(lr.host == "localhost.run");
+    CHECK(lr.local_port == 8123);
+    CHECK_FALSE(lr.pinned.empty());
+    CHECK(lr.known_hosts.empty());
+
+    setup.tunnel_service     = 1;
+    setup.tunnel_host        = "example.org";
+    setup.tunnel_port        = 2222;
+    setup.tunnel_user        = "me";
+    setup.tunnel_remote_port = 0;
+    const auto own           = tunnelSettings(setup, known);
+    CHECK(own.host == "example.org");
+    CHECK(own.port == 2222);
+    CHECK(own.user == "me");
+    CHECK(own.remote_port == 0);
+    CHECK(own.pinned.empty());
+    CHECK(own.known_hosts == known);
+
+    // Saved and read back; a setup of an earlier version, without them, has the defaults.
+    const nlohmann::json json = setup;
+    const auto back           = json.get<MatchSetup>();
+    CHECK(back.tunnel_host == "example.org");
+    CHECK(back.tunnel_service == 1);
+    auto old = json;
+    for (const char* key : {"broadcast_tunnel", "tunnel_service", "tunnel_host", "tunnel_port", "tunnel_user",
+                            "tunnel_remote_port"}) {
+        old.erase(key);
+    }
+    const auto earlier = old.get<MatchSetup>();
+    CHECK_FALSE(earlier.broadcast_tunnel);
+    CHECK(earlier.tunnel_service == 0);
+    CHECK(earlier.tunnel_port == 22);
+    CHECK(earlier.tunnel_remote_port == 80);
+}
+
+TEST_CASE("QR code: a localhost.run address fits in version 3, its finder patterns in the corners") {
+    const auto qr = makeQr("https://20e15a40a90d7a.app.lhr.life");
+    REQUIRE(qr.size == 29);  // version 3: 17 + 4 * 3 modules
+    REQUIRE(qr.dark.size() == 29u * 29u);
+    // The three finder patterns: a dark ring, a light ring, a dark centre; the fourth corner has none.
+    for (const auto& [x0, y0] : {std::pair{0, 0}, std::pair{22, 0}, std::pair{0, 22}}) {
+        CHECK(qr.at(x0, y0));
+        CHECK(qr.at(x0 + 6, y0 + 6));
+        CHECK_FALSE(qr.at(x0 + 1, y0 + 1));
+        CHECK(qr.at(x0 + 3, y0 + 3));
+    }
+    // Another address, another code; a longer one, a larger code.
+    CHECK(makeQr("https://ffffffffffffff.app.lhr.life").dark != qr.dark);
+    CHECK(makeQr("https://" + std::string(100, 'a') + ".example.org").size > 29);
+    // Beyond what a QR code holds: none.
+    CHECK(makeQr(std::string(5000, 'x')).size == 0);
 }

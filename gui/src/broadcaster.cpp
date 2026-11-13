@@ -342,6 +342,7 @@ Broadcaster::~Broadcaster() {
     }
     wake_.notify_all();
     if (thread_.joinable()) thread_.join();
+    tunnel_.stop();
     tlcs_.stop();
     web_.stop();
     // The relay's last push gets a few seconds more in its own destructor.
@@ -362,6 +363,14 @@ std::vector<std::string> Broadcaster::configure(const BroadcastSettings& setting
     sync(tlcs_, settings.tlcs, tlcs_error_,
          [&] { return tlcs_.start(static_cast<uint16_t>(settings.tlcs_port), settings.tlcs_lanes); });
     sync(web_, settings.web, web_error_, [&] { return web_.start(static_cast<uint16_t>(settings.web_port)); });
+    // The tunnel, to the web server while it runs; started again when its settings change.
+    auto tunnel_to       = settings.tunnel_to;
+    tunnel_to.local_port = settings.web_port;
+    if (settings.tunnel && web_.running()) {
+        if (!tunnel_.running() || !(tunnel_.settings() == tunnel_to)) tunnel_.start(tunnel_to);
+    } else if (tunnel_.running()) {
+        tunnel_.stop();
+    }
     // The thread takes the other settings with the next update, or at once when lichess' changed: the relay stops
     // there, its last push made on its own thread.
     const bool lichess_changed = !sameLichess(settings, settings_);
@@ -402,6 +411,26 @@ std::string Broadcaster::filesStatus() const {
 LichessRelay::Status Broadcaster::lichess() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return lichess_.status();
+}
+
+void Broadcaster::trustTunnelKey() {
+    const auto status = tunnel_.status();
+    if (status.new_key.empty() || !tunnel_.running()) return;
+    const auto& to = tunnel_.settings();
+    rememberHostKey(to.known_hosts, to.host, to.port, status.new_key);
+    tunnel_.start(to);
+}
+
+TunnelSettings tunnelSettings(const MatchSetup& setup, const std::filesystem::path& known_hosts) {
+    if (setup.tunnel_service == 0) return localhostRun(setup.web_port);
+    TunnelSettings to;
+    to.host        = setup.tunnel_host;
+    to.port        = setup.tunnel_port;
+    to.user        = setup.tunnel_user;
+    to.remote_port = setup.tunnel_remote_port;
+    to.local_port  = setup.web_port;
+    to.known_hosts = known_hosts;
+    return to;
 }
 
 void Broadcaster::work() {
@@ -500,6 +529,7 @@ void Broadcaster::stop() {
     }
     wake_.notify_all();
     if (thread_.joinable()) thread_.join();
+    tunnel_.stop();
     tlcs_.stop();
     web_.stop();
     lichess_.stop();

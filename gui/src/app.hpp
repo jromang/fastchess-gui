@@ -28,6 +28,7 @@
 #include "live.hpp"
 #include "model.hpp"
 #include "pgn_store.hpp"
+#include "qr.hpp"
 #include "run.hpp"
 #include "stats.hpp"
 #include "storage.hpp"
@@ -375,6 +376,7 @@ class App {
     void updateBroadcast();
     void drawBroadcast();
     void drawLichess(bool& changed);
+    void drawTunnel(bool& changed);    // under the web page
     void lichessTokenField();          // in the Broadcast tab and in Settings
     void saveLichessToken();           // to the profile, when it changed
     std::string lichess_token_;        // as typed
@@ -798,6 +800,8 @@ class App {
     // Broadcast.
     Broadcaster broadcaster_;
     bool broadcast_editing_ = false;  // a folder, token or round field was being typed in at the last frame
+    QrCode tunnel_qr_;                // of the tunnel's public address
+    std::string tunnel_qr_text_;
 
     // Ratings page: every game of the profile, and what is computed from them, on a worker thread: a rating list
     // of thousands of engines takes a moment.

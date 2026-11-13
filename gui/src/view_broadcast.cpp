@@ -1,6 +1,7 @@
 // Broadcasting the open tournament: live files, the TLCS server and the web page.
 
 #include <algorithm>
+#include <cmath>
 
 #include <SDL3/SDL.h>
 #include <imgui.h>
@@ -12,6 +13,7 @@
 #include "console.hpp"
 #include "i18n.hpp"
 #include "net.hpp"
+#include "qr.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -19,6 +21,26 @@ namespace fcg {
 namespace {
 
 float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
+
+// A QR code `side` pixels wide, its quiet zone included: dark modules on white whatever the theme, as phones read
+// them best. True when clicked.
+bool drawQr(const QrCode& qr, float side) {
+    const auto at   = ImGui::GetCursorScreenPos();
+    const bool hit  = ImGui::InvisibleButton("##qr", ImVec2(side, side));
+    auto* draw      = ImGui::GetWindowDrawList();
+    const int cells = qr.size + 8;  // four modules of quiet zone each side
+    const float m   = std::floor(side / static_cast<float>(cells));
+    const float pad = std::floor((side - m * static_cast<float>(qr.size)) / 2);
+    draw->AddRectFilled(at, ImVec2(at.x + side, at.y + side), IM_COL32_WHITE);
+    for (int y = 0; y < qr.size; ++y) {
+        for (int x = 0; x < qr.size; ++x) {
+            if (!qr.at(x, y)) continue;
+            const ImVec2 a(at.x + pad + static_cast<float>(x) * m, at.y + pad + static_cast<float>(y) * m);
+            draw->AddRectFilled(a, ImVec2(a.x + m, a.y + m), IM_COL32_BLACK);
+        }
+    }
+    return hit;
+}
 
 }  // namespace
 
@@ -35,6 +57,10 @@ void App::updateBroadcast() {
     settings.lichess_token  = lichess_token_;
     settings.lichess_round  = setup_.lichess_round;
     settings.lichess_listed = setup_.lichess_listed;
+    // The tunnel stops with the tournament; another server needs a host.
+    settings.tunnel =
+        setup_.broadcast_tunnel && run_.running() && (setup_.tunnel_service == 0 || !setup_.tunnel_host.empty());
+    settings.tunnel_to = tunnelSettings(setup_, storage_.root() / "known_hosts.json");
     // What is being typed is taken once the field is left: not a folder per keystroke, nor a lichess broadcast for
     // each letter of a round.
     if (broadcast_editing_) {
@@ -42,6 +68,7 @@ void App::updateBroadcast() {
         settings.dir           = applied.dir;
         settings.lichess_token = applied.lichess_token;
         settings.lichess_round = applied.lichess_round;
+        settings.tunnel_to     = applied.tunnel_to;
     }
     // The token is saved at the same moment: settings.json is not rewritten for each character, and the profile and
     // the lichess session have the same token.
@@ -165,12 +192,127 @@ void App::drawBroadcast() {
         ImGui::TextDisabled("%s", TR("Reachable from the local network; open the port in your router to share it "
                                      "further."));
     }
+    drawTunnel(changed);
     ui::endCard();
 
     ImGui::Spacing();
     drawLichess(changed);
 
     if (changed) saveSetupSoon();
+}
+
+void App::drawTunnel(bool& changed) {
+    ImGui::Spacing();
+    changed |= ImGui::Checkbox(TR("Publish on the internet"), &setup_.broadcast_tunnel);
+    ui::help(TR("While a tournament runs, an SSH tunnel built into fastchess-gui gives the page a public https "
+                "address, without opening a port in the router or installing anything. Only the page is reachable "
+                "that way, read-only."));
+    // Changed only while it is not connected; after an error, to mend it (it starts again once a field is left).
+    const auto status = broadcaster_.tunnel();
+    const bool locked = status.state == TunnelState::Connecting || status.state == TunnelState::OnAir;
+
+    ImGui::BeginDisabled(locked);
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(TR("Service:"));
+    ImGui::SameLine();
+    changed |= ImGui::RadioButton("localhost.run", &setup_.tunnel_service, 0);
+    ImGui::SameLine();
+    changed |= ImGui::RadioButton(TR("Another SSH server"), &setup_.tunnel_service, 1);
+    if (setup_.tunnel_service == 1) {
+        const auto field = [&](const char* id, std::string& value, float width) {
+            char buffer[256];
+            const auto n = std::min(value.size(), sizeof(buffer) - 1);
+            std::copy_n(value.data(), n, buffer);
+            buffer[n] = 0;
+            ImGui::SetNextItemWidth(width);
+            if (ImGui::InputText(id, buffer, sizeof(buffer))) {
+                value   = buffer;
+                changed = true;
+            }
+            broadcast_editing_ |= ImGui::IsItemActive();
+        };
+        const auto port = [&](const char* label, int& value, int low) {
+            ImGui::SetNextItemWidth(px(110));
+            if (ui::inputInt(label, &value)) {
+                value   = std::clamp(value, low, 65535);
+                changed = true;
+            }
+            broadcast_editing_ |= ImGui::IsItemActive();
+        };
+        field(TR("Host##tunnel_host"), setup_.tunnel_host, px(260));
+        ImGui::SameLine(0, px(16));
+        port(TR("Port##tunnel_port"), setup_.tunnel_port, 1);
+        field(TR("User##tunnel_user"), setup_.tunnel_user, px(260));
+        ImGui::SameLine(0, px(16));
+        port(TR("Remote port##tunnel_remote"), setup_.tunnel_remote_port, 0);
+        ui::help(TR("The port the server opens for the page, as ssh -R REMOTE_PORT:localhost:PORT user@host would "
+                    "ask (0: the server chooses). Authentication \"none\" only: a service that lets anyone in, or a "
+                    "server of one's own that lets the user in without a key. Its host key is trusted the first time "
+                    "and must stay the same."));
+    }
+    ImGui::EndDisabled();
+    if (setup_.tunnel_service == 0) {
+        ImGui::TextDisabled("%s", TR("Free, without an account: its addresses change now and then, and its speed is "
+                                     "limited."));
+    }
+
+    if (!setup_.broadcast_tunnel) return;
+    const auto line = [](ImU32 colour, const std::string& text) {
+        ImGui::PushStyleColor(ImGuiCol_Text, colour);
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextUnformatted(text.c_str());
+        ImGui::PopTextWrapPos();
+        ImGui::PopStyleColor();
+    };
+    if (!setup_.broadcast_web) {
+        ImGui::TextDisabled("%s", TR("It needs the web page served."));
+        return;
+    }
+    if (setup_.tunnel_service == 1 && setup_.tunnel_host.empty()) {
+        ImGui::TextDisabled("%s", TR("Give the server's host."));
+        return;
+    }
+    switch (status.state) {
+        case TunnelState::Off:
+            ImGui::TextDisabled("%s", TR("Starts with the tournament."));
+            return;
+        case TunnelState::Connecting:
+            line(ui::MUTED, status.error.empty() ? std::string(TR("● Connecting…"))
+                                                 : trf("● Connecting again… ({})", status.error));
+            break;
+        case TunnelState::OnAir:
+            line(ui::GOOD, trn("● On air on the internet · {} connection", "● On air on the internet · {} connections",
+                               static_cast<uint64_t>(status.connections), status.connections));
+            break;
+        case TunnelState::Reconnecting:
+            line(ui::WARN, trf("● Reconnecting in a moment: {}", status.error));
+            break;
+        case TunnelState::Failed:
+            line(ui::BAD, status.error);
+            if (!status.new_key.empty() && ImGui::SmallButton(TR("Trust the new key"))) broadcaster_.trustTunnelKey();
+            return;
+    }
+    if (status.url.empty()) return;
+
+    // The address, to copy, to open, and as a QR code for a phone.
+    ImGui::TextUnformatted(status.url.c_str());
+    ImGui::SameLine();
+    if (ImGui::SmallButton(TR("Copy"))) ImGui::SetClipboardText(status.url.c_str());
+    ImGui::SameLine();
+    if (ImGui::SmallButton(TR("Open"))) SDL_OpenURL(status.url.c_str());
+    if (status.url != tunnel_qr_text_) {
+        tunnel_qr_text_ = status.url;
+        tunnel_qr_      = makeQr(status.url);
+    }
+    if (tunnel_qr_.size > 0) {
+        if (drawQr(tunnel_qr_, px(132))) ImGui::OpenPopup("##tunnel_qr");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Click to enlarge"));
+        if (ImGui::BeginPopup("##tunnel_qr")) {
+            drawQr(tunnel_qr_, px(360));
+            ImGui::TextDisabled("%s", status.url.c_str());
+            ImGui::EndPopup();
+        }
+    }
 }
 
 void App::saveLichessToken() {

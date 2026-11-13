@@ -286,6 +286,14 @@ struct MatchSetup {
     bool broadcast_lichess = false;
     std::string lichess_round;    // a round's URL or id; empty: a new broadcast named after the tournament
     bool lichess_listed = false;  // among lichess' community broadcasts, rather than for those with the link
+    // The web page on the internet, through an SSH tunnel while a tournament runs: 0 localhost.run, 1 another SSH
+    // server (host, port, user, port forwarded on the server).
+    bool broadcast_tunnel  = false;
+    int tunnel_service     = 0;
+    std::string tunnel_host;
+    int tunnel_port        = 22;
+    std::string tunnel_user;
+    int tunnel_remote_port = 80;
 };
 
 // Gives `next`, a setup loaded from a template or started from the queue, the settings of the program that
@@ -315,7 +323,8 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
         pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,     \
         log_every_game, check_mate_pvs, notify, language, theme, ui_zoom, tile_info, live_seed_side, live_arrows, \
         panes, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, tlcs_lanes, broadcast_web, web_port,    \
-        broadcast_follow, broadcast_lichess, lichess_round, lichess_listed, resume_at_launch
+        broadcast_follow, broadcast_lichess, lichess_round, lichess_listed, resume_at_launch, broadcast_tunnel,   \
+        tunnel_service, tunnel_host, tunnel_port, tunnel_user, tunnel_remote_port
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
 void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) {

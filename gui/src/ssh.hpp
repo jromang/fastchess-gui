@@ -17,11 +17,13 @@ namespace fcg::ssh {
 // The largest packet taken from the network (RFC 4253, 6.1): anything larger ends the connection.
 constexpr std::size_t MAX_PACKET = 35000;
 
+// SSH_MSG_IGNORE and SSH_MSG_DEBUG are IGNORE_DATA and DEBUG_TEXT here: Windows has an IGNORE macro, debug builds
+// often a DEBUG one.
 enum Message : uint8_t {
     DISCONNECT                = 1,
-    IGNORE                    = 2,
+    IGNORE_DATA               = 2,
     UNIMPLEMENTED             = 3,
-    DEBUG                     = 4,
+    DEBUG_TEXT                = 4,
     SERVICE_REQUEST           = 5,
     SERVICE_ACCEPT            = 6,
     EXT_INFO                  = 7,

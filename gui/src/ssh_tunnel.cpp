@@ -2,10 +2,12 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <cctype>
 #include <deque>
 #include <map>
 #include <memory>
+#include <mutex>
 
 
 #include "console.hpp"
@@ -34,16 +36,17 @@ constexpr const char* CIPHERS     = "aes256-gcm@openssh.com,aes128-gcm@openssh.c
 constexpr const char* MACS        = "hmac-sha2-256-etm@openssh.com,hmac-sha2-256";
 constexpr const char* STRICT_HOST = "kex-strict-s-v00@openssh.com";
 
-// A channel's flow: what the server may send before it waits for us (we take it as fast as the web server does),
-// and the largest data packet either way.
-constexpr uint32_t WINDOW   = 1 << 20;
+// A channel's flow: what the server may send before it waits for us (we take it as fast as the web server does;
+// requests are small), and the largest data packet either way.
+constexpr uint32_t WINDOW   = 256 * 1024;
 constexpr uint32_t MAX_DATA = 32768;
 // Connections relayed at once: the web server answers 32 at once and tells the next ones to come back; more than
 // that are refused here.
 constexpr std::size_t MAX_CHANNELS = 48;
 // Bytes waiting to go to the server: beyond, the web server's connections are not read until they went.
 constexpr std::size_t OUT_LIMIT = 4 << 20;
-// What the session's text is read for the address: its first 64 KiB.
+// The session's text kept to read the address in: its last 64 KiB at most (a new address, the domain rotated, comes
+// at the end).
 constexpr std::size_t MAX_SESSION_TEXT = 64 * 1024;
 constexpr auto CONNECT_TIMEOUT   = std::chrono::seconds(15);
 constexpr auto HANDSHAKE_TIMEOUT = std::chrono::seconds(30);
@@ -186,13 +189,28 @@ std::optional<TunnelSettings> parseTunnel(const std::string& text, std::string& 
     return s;
 }
 
+struct SshTunnel::Shared {
+    TunnelSettings settings;
+    std::atomic_bool stopping{false};
+    std::atomic_bool finished{false};
+    std::mutex mutex;  // what follows
+    TunnelStatus status;
+
+    void set(TunnelState state, const std::string& error = {}) {
+        std::lock_guard<std::mutex> lock(mutex);
+        status.state = state;
+        status.error = error;
+        if (state != TunnelState::OnAir) status.connections = 0;
+    }
+};
+
 // ---------------------------------------------------------------------------------------------------------------
 // One connection to the server, from the version exchange to its end.
 
 class TunnelConnection {
    public:
-    TunnelConnection(SshTunnel& tunnel, const TunnelSettings& settings)
-        : tunnel_(tunnel), cfg_(settings), stopping_(tunnel.stopping_) {}
+    TunnelConnection(SshTunnel::Shared& shared, const TunnelSettings& settings)
+        : tunnel_(shared), cfg_(settings), stopping_(shared.stopping) {}
 
     struct End {
         std::string reason;  // empty when stopped
@@ -257,7 +275,7 @@ class TunnelConnection {
     // KEXINIT and our NEWKEYS (RFC 4253, 7.1).
     void send(std::string payload) {
         const auto type = static_cast<uint8_t>(payload[0]);
-        const bool transport = type <= DEBUG || (type >= KEXINIT && type < USERAUTH_REQUEST);
+        const bool transport = type <= DEBUG_TEXT || (type >= KEXINIT && type < USERAUTH_REQUEST);
         if (kexinit_sent_ && !newkeys_sent_ && !transport) {
             held_.push_back(std::move(payload));
             return;
@@ -300,12 +318,13 @@ class TunnelConnection {
         for (const auto& [id, ch] : channels_) count += ch.socket ? 1 : 0;
         if (count != relayed_count_) {
             relayed_count_ = count;
-            std::lock_guard<std::mutex> lock(tunnel_.mutex_);
-            tunnel_.status_.connections = count;
+            std::lock_guard<std::mutex> lock(tunnel_.mutex);
+            tunnel_.status.connections = count;
         }
     }
 
     void relay(Channel& ch, const net::Wait& wait) {
+        if (!ch.socket) return;  // closed by the server meanwhile
         if (wait.can_write && !ch.to_local.empty()) {
             const auto n = ch.socket->send(ch.to_local);
             if (n < 0) return closeChannel(ch);
@@ -427,7 +446,7 @@ class TunnelConnection {
         if (session_id_.empty() && kexinit_sent_) {
             const bool kex = type == KEXINIT || type == KEX_ECDH_REPLY || type == NEWKEYS;
             if (strict_ && !kex) return fail("the server broke the strict key exchange");
-            if (seq == 0 && type != KEXINIT && type != IGNORE && type != DEBUG) {
+            if (seq == 0 && type != KEXINIT && type != IGNORE_DATA && type != DEBUG_TEXT) {
                 return fail("the server did not start with the key exchange");
             }
         }
@@ -437,8 +456,8 @@ class TunnelConnection {
                 const auto why = r.string(1024);
                 return fail("the server ended the connection: " + std::string(why));
             }
-            case IGNORE:
-            case DEBUG:
+            case IGNORE_DATA:
+            case DEBUG_TEXT:
             case UNIMPLEMENTED:
             case USERAUTH_BANNER:
             case EXT_INFO:
@@ -647,9 +666,9 @@ class TunnelConnection {
         last_keepalive_ = Clock::now();
         end_.was_on_air = true;
         {
-            std::lock_guard<std::mutex> lock(tunnel_.mutex_);
-            tunnel_.status_.state = TunnelState::OnAir;
-            tunnel_.status_.error.clear();
+            std::lock_guard<std::mutex> lock(tunnel_.mutex);
+            tunnel_.status.state = TunnelState::OnAir;
+            tunnel_.status.error.clear();
         }
         // The services print the address on a session: one, with a shell, as `ssh -R` would open.
         session_ = nextId();
@@ -664,9 +683,9 @@ class TunnelConnection {
     }
 
     void setUrl(const std::string& url) {
-        std::lock_guard<std::mutex> lock(tunnel_.mutex_);
-        if (tunnel_.status_.url == url) return;
-        tunnel_.status_.url = url;
+        std::lock_guard<std::mutex> lock(tunnel_.mutex);
+        if (tunnel_.status.url == url) return;
+        tunnel_.status.url = url;
         Console::instance().add(trf("Tunnel: the web page is on {}", url));
     }
 
@@ -736,10 +755,11 @@ class TunnelConnection {
                 if (ch.close_sent) return;
                 if (!ch.socket) {
                     // The session: read for the address, taken at once.
-                    if (session_text_.size() < MAX_SESSION_TEXT) {
-                        session_text_.append(data.substr(0, MAX_SESSION_TEXT - session_text_.size()));
-                        if (const auto url = findPublicUrl(session_text_)) setUrl(*url);
+                    session_text_ += data;
+                    if (session_text_.size() > MAX_SESSION_TEXT) {
+                        session_text_.erase(0, session_text_.size() - MAX_SESSION_TEXT / 2);
                     }
+                    if (const auto url = findPublicUrl(session_text_)) setUrl(*url);
                     consume(ch, static_cast<uint32_t>(data.size()));
                 } else if (type == CHANNEL_DATA) {
                     ch.to_local += data;
@@ -769,7 +789,7 @@ class TunnelConnection {
         }
     }
 
-    SshTunnel& tunnel_;
+    SshTunnel::Shared& tunnel_;
     const TunnelSettings& cfg_;
     const std::atomic_bool& stopping_;
     End end_;
@@ -812,60 +832,63 @@ SshTunnel::~SshTunnel() { stop(); }
 
 void SshTunnel::start(TunnelSettings settings) {
     stop();
-    settings_ = std::move(settings);
-    stopping_ = false;
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        status_       = {};
-        status_.state = TunnelState::Connecting;
-    }
-    thread_ = std::thread([this] { run(); });
+    settings_                = std::move(settings);
+    shared_                  = std::make_shared<Shared>();
+    shared_->settings        = settings_;
+    shared_->status.state    = TunnelState::Connecting;
+    thread_                  = std::thread([shared = shared_] {
+        run(shared);
+        shared->finished = true;
+    });
 }
 
 void SshTunnel::stop() {
-    stopping_ = true;
-    if (thread_.joinable()) thread_.join();
-    std::lock_guard<std::mutex> lock(mutex_);
-    status_ = {};
+    if (!shared_) return;
+    shared_->stopping = true;
+    // A connection under way gives up after its own timeout only (a name to find, a server that does not answer):
+    // not waited for.
+    const auto until = Clock::now() + std::chrono::milliseconds(1500);
+    while (!shared_->finished && Clock::now() < until) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    if (shared_->finished) {
+        thread_.join();
+    } else {
+        thread_.detach();
+    }
+    shared_.reset();
 }
 
 TunnelStatus SshTunnel::status() const {
-    std::lock_guard<std::mutex> lock(mutex_);
-    return status_;
+    if (!shared_) return {};
+    std::lock_guard<std::mutex> lock(shared_->mutex);
+    return shared_->status;
 }
 
-void SshTunnel::set(TunnelState state, const std::string& error) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    status_.state = state;
-    status_.error = error;
-    if (state != TunnelState::OnAir) status_.connections = 0;
-}
-
-void SshTunnel::run() {
-    auto retry = settings_.first_retry;
-    while (!stopping_) {
-        Console::instance().add(trf("Tunnel: connecting to {}", settings_.host));
+void SshTunnel::run(const std::shared_ptr<Shared>& shared) {
+    const auto& settings = shared->settings;
+    auto retry           = settings.first_retry;
+    while (!shared->stopping) {
+        Console::instance().add(trf("Tunnel: connecting to {}", settings.host));
         const auto start = Clock::now();
-        TunnelConnection connection(*this, settings_);
+        TunnelConnection connection(*shared, settings);
         const auto end = connection.run();
-        if (stopping_) break;
+        if (shared->stopping) break;
         if (end.permanent) {
             Console::instance().add(trf("Tunnel: {}", end.reason), true);
             {
-                std::lock_guard<std::mutex> lock(mutex_);
-                status_.new_key = end.new_key;
+                std::lock_guard<std::mutex> lock(shared->mutex);
+                shared->status.new_key = end.new_key;
             }
-            set(TunnelState::Failed, end.reason);
+            shared->set(TunnelState::Failed, end.reason);
             break;
         }
         // Again in a moment, longer after each failure; from the start after a connection that lasted.
-        if (end.was_on_air && Clock::now() - start > MAX_RETRY) retry = settings_.first_retry;
+        if (end.was_on_air && Clock::now() - start > MAX_RETRY) retry = settings.first_retry;
         Console::instance().add(trf("Tunnel: {}; connecting again in {} s", end.reason, retry.count()), true);
-        set(TunnelState::Reconnecting, end.reason);
+        shared->set(TunnelState::Reconnecting, end.reason);
         const auto until = Clock::now() + retry;
-        while (!stopping_ && Clock::now() < until) std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        while (!shared->stopping && Clock::now() < until) std::this_thread::sleep_for(std::chrono::milliseconds(100));
         retry = std::min(retry * 2, std::chrono::duration_cast<std::chrono::seconds>(MAX_RETRY));
-        if (!stopping_) set(TunnelState::Connecting, end.reason);
+        if (!shared->stopping) shared->set(TunnelState::Connecting, end.reason);
     }
 }
 
