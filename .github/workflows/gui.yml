@@ -157,12 +157,14 @@ jobs:
           cp artifacts/linux/fastchess-gui artifacts/linux/fastchess "dist/${linux}/"
           chmod +x "dist/${linux}/fastchess-gui" "dist/${linux}/fastchess"
           cp ${docs} "dist/${linux}/"
+          cp -r gui/assets/licenses "dist/${linux}/"
           tar -C dist -czf "dist/${linux}.tar.gz" "${linux}"
 
           windows="fastchess-gui-${version}-windows-x86_64"
           mkdir -p "dist/${windows}"
           cp artifacts/windows/fastchess-gui.exe artifacts/windows/fastchess.exe "dist/${windows}/"
           cp ${docs} "dist/${windows}/"
+          cp -r gui/assets/licenses "dist/${windows}/"
           (cd dist && zip -qr "${windows}.zip" "${windows}")
 
           (cd dist && sha256sum *.tar.gz *.zip > SHA256SUMS.txt)

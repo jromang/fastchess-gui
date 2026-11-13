@@ -3041,9 +3041,6 @@ msgstr ""
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr ""
 
-msgid "{} changed its host key while connected"
-msgstr ""
-
 msgid "{} changed: its options were read again."
 msgstr ""
 
@@ -3061,6 +3058,9 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "{} crashes"
+msgstr ""
+
+msgid "{} did not show an RSA host key"
 msgstr ""
 
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
@@ -3415,6 +3415,12 @@ msgid "{}: program not found ({})"
 msgstr ""
 
 msgid "{}: seldepth"
+msgstr ""
+
+msgid "{}: the host key cannot be used (RSA keys of 2048 to 4096 bits only)"
+msgstr ""
+
+msgid "{}: the host key's signature is not valid"
 msgstr ""
 
 msgid "{}: unknown to the engine"

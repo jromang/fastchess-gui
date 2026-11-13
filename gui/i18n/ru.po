@@ -3053,9 +3053,6 @@ msgstr "{} требует перезапуска для каждой парти�
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} не читается, поэтому ранее доверенные ключи хостов неизвестны: на {} ничего не отправлено. Исправьте файл или удалите его, чтобы снова принять ключ сервера."
 
-msgid "{} changed its host key while connected"
-msgstr "{} сменил ключ хоста во время соединения"
-
 msgid "{} changed: its options were read again."
 msgstr "{} изменился: его опции перечитаны."
 
@@ -3076,6 +3073,9 @@ msgstr[2] "{} вылетов или зависаний"
 
 msgid "{} crashes"
 msgstr "вылетов: {}"
+
+msgid "{} did not show an RSA host key"
+msgstr "{} не предъявил RSA-ключ хоста"
 
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} не пускает пользователя «{}» без ключа или пароля (принимает: {})"
@@ -3469,6 +3469,12 @@ msgstr "{}: программа не найдена ({})"
 
 msgid "{}: seldepth"
 msgstr "{}: seldepth"
+
+msgid "{}: the host key cannot be used (RSA keys of 2048 to 4096 bits only)"
+msgstr "{}: ключ хоста нельзя использовать (только RSA-ключи от 2048 до 4096 бит)"
+
+msgid "{}: the host key's signature is not valid"
+msgstr "{}: подпись ключа хоста недействительна"
 
 msgid "{}: unknown to the engine"
 msgstr "{}: неизвестен движку"

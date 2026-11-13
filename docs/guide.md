@@ -434,15 +434,16 @@ The *Broadcast* tab of a running tournament publishes it while it plays; the sna
 ### Putting the web page on the internet
 
 The web page can be followed from anywhere without opening a port in the router: tick *Publish on the internet*
-under *Web page* in the *Broadcast* tab. While a tournament runs, fastchess-gui opens an SSH tunnel of its own to a
-tunnel service, which gives the page a public https address; nothing needs to be installed.
+under *Web page* in the *Broadcast* tab. While a tournament runs, fastchess-gui opens an SSH tunnel (libssh2, built into the
+program) to a tunnel service, which gives the page a public https address; nothing needs to be installed.
 
 - *localhost.run* (the default): free, without an account. Its addresses change now and then, and its speed is
   limited; the page and its state are sent compressed, so this does not matter much. Its host key is known to
   fastchess-gui: a connection to anything else is refused.
 - *Another SSH server*: its host, port and user, and the port it opens for the page (as
   `ssh -R REMOTE_PORT:localhost:PORT user@host` would ask; 0 lets it choose). Only servers that let the user in
-  without a key or a password can be used (authentication "none"), and they need an RSA host key. The server's key is
+  without a key or a password can be used (authentication "none"), and they must offer curve25519-sha256, an RSA
+host key of 2048 to 4096 bits, and AES (GCM or CTR). The server's key is
   trusted the first time and kept in the profile (`known_hosts.json`); if it changes, the tunnel stops and says so,
   and *Trust the new key* is for when the server's owner confirms it changed.
 
@@ -459,7 +460,8 @@ own as well (`location /live/ { proxy_pass http://localhost:8080/; }`), work the
 The page is read-only: it answers only GET requests for the page, its state and the PGN file, never a file a request
 names, and nothing in it changes the tournament. Each request is answered on its own, 32 at a time at most, and must
 arrive within a second and be answered within ten, so a slow or silent visitor holds no one else; behind the tunnel
-each viewer's connection counts as one of those, and more than 48 at once are refused. Two downloads of the PGN file
+each viewer's connection counts as one of those: 48 are relayed at once, as many more wait their turn, and the
+next are refused. Two downloads of the PGN file
 run at once, and the next is asked to come back a moment later. The state is never cached, by the tunnel either, so
 viewers see the games as they go; the page is kept by the browser and checked again at each load. The viewers shown
 in the *Broadcast* tab are counted from the requests the pages make, so the count is right behind a tunnel too.

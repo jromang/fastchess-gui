@@ -3041,9 +3041,6 @@ msgstr "{} demande à être relancé à chaque partie : « Relancer le moteur à
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} est illisible, donc les clés d'hôte acceptées auparavant sont inconnues : rien n'a été envoyé à {}. Répare le fichier, ou supprime-le pour accepter à nouveau la clé du serveur."
 
-msgid "{} changed its host key while connected"
-msgstr "{} a changé de clé d'hôte pendant la connexion"
-
 msgid "{} changed: its options were read again."
 msgstr "{} a changé : ses options ont été relues."
 
@@ -3062,6 +3059,9 @@ msgstr[1] "{} crashs ou blocages"
 
 msgid "{} crashes"
 msgstr "{} crashs"
+
+msgid "{} did not show an RSA host key"
+msgstr "{} n'a pas présenté de clé d'hôte RSA"
 
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} ne laisse pas entrer l'utilisateur « {} » sans clé ni mot de passe (il accepte : {})"
@@ -3416,6 +3416,12 @@ msgstr "{} : programme introuvable ({})"
 
 msgid "{}: seldepth"
 msgstr "{} : seldepth"
+
+msgid "{}: the host key cannot be used (RSA keys of 2048 to 4096 bits only)"
+msgstr "{} : la clé d'hôte n'est pas utilisable (clés RSA de 2048 à 4096 bits seulement)"
+
+msgid "{}: the host key's signature is not valid"
+msgstr "{} : la signature de la clé d'hôte n'est pas valide"
 
 msgid "{}: unknown to the engine"
 msgstr "{} : inconnue du moteur"

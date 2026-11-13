@@ -3041,9 +3041,6 @@ msgstr "{} möchte für jede Partie neu gestartet werden: „Die Engine für jed
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} kann nicht gelesen werden, daher sind die zuvor vertrauten Host-Schlüssel unbekannt: An {} wurde nichts gesendet. Repariere die Datei oder lösche sie, um dem Schlüssel des Servers erneut zu vertrauen."
 
-msgid "{} changed its host key while connected"
-msgstr "{} hat seinen Host-Schlüssel während der Verbindung geändert"
-
 msgid "{} changed: its options were read again."
 msgstr "{} hat sich geändert: seine Optionen wurden neu eingelesen."
 
@@ -3062,6 +3059,9 @@ msgstr[1] "{} Abstürze oder Hänger"
 
 msgid "{} crashes"
 msgstr "{} Abstürze"
+
+msgid "{} did not show an RSA host key"
+msgstr "{} hat keinen RSA-Host-Schlüssel vorgelegt"
 
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} lässt den Benutzer „{}“ nicht ohne Schlüssel oder Passwort herein (akzeptiert: {})"
@@ -3416,6 +3416,12 @@ msgstr "{}: Programm nicht gefunden ({})"
 
 msgid "{}: seldepth"
 msgstr "{}: Seldepth"
+
+msgid "{}: the host key cannot be used (RSA keys of 2048 to 4096 bits only)"
+msgstr "{}: Der Host-Schlüssel ist nicht verwendbar (nur RSA-Schlüssel mit 2048 bis 4096 Bit)"
+
+msgid "{}: the host key's signature is not valid"
+msgstr "{}: Die Signatur des Host-Schlüssels ist ungültig"
 
 msgid "{}: unknown to the engine"
 msgstr "{}: der Engine unbekannt"

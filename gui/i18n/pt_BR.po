@@ -3041,9 +3041,6 @@ msgstr "{} pede para ser reiniciado a cada partida: “Reiniciar o engine a cada
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} não pode ser lido, então as chaves de host aceitas antes são desconhecidas: nada foi enviado a {}. Repare o arquivo, ou apague-o para aceitar de novo a chave do servidor."
 
-msgid "{} changed its host key while connected"
-msgstr "{} mudou sua chave de host durante a conexão"
-
 msgid "{} changed: its options were read again."
 msgstr "{} mudou: as opções dele foram relidas."
 
@@ -3062,6 +3059,9 @@ msgstr[1] "{} crashes ou travamentos"
 
 msgid "{} crashes"
 msgstr "{} crashes"
+
+msgid "{} did not show an RSA host key"
+msgstr "{} não apresentou uma chave de host RSA"
 
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} não deixa o usuário \"{}\" entrar sem chave nem senha (aceita: {})"
@@ -3416,6 +3416,12 @@ msgstr "{}: programa não encontrado ({})"
 
 msgid "{}: seldepth"
 msgstr "{}: seldepth"
+
+msgid "{}: the host key cannot be used (RSA keys of 2048 to 4096 bits only)"
+msgstr "{}: a chave de host não pode ser usada (apenas chaves RSA de 2048 a 4096 bits)"
+
+msgid "{}: the host key's signature is not valid"
+msgstr "{}: a assinatura da chave de host não é válida"
 
 msgid "{}: unknown to the engine"
 msgstr "{}: desconhecida pelo motor"

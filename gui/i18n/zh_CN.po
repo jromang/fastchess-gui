@@ -3029,9 +3029,6 @@ msgstr "{} 要求每局都重新启动：已勾选“每局对局都重启引擎
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "无法读取 {}，因此之前信任的主机密钥未知：未向 {} 发送任何内容。请修复该文件，或删除它以重新信任服务器的密钥。"
 
-msgid "{} changed its host key while connected"
-msgstr "{} 在连接期间更换了主机密钥"
-
 msgid "{} changed: its options were read again."
 msgstr "{} 已改变：已重新读取其选项。"
 
@@ -3048,6 +3045,9 @@ msgstr[0] "{} 次崩溃或无响应"
 
 msgid "{} crashes"
 msgstr "{} 次崩溃"
+
+msgid "{} did not show an RSA host key"
+msgstr "{} 未提供 RSA 主机密钥"
 
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} 不允许用户“{}”无密钥或密码登录（它接受：{}）"
@@ -3363,6 +3363,12 @@ msgstr "{}：找不到程序（{}）"
 
 msgid "{}: seldepth"
 msgstr "{}：seldepth"
+
+msgid "{}: the host key cannot be used (RSA keys of 2048 to 4096 bits only)"
+msgstr "{}：主机密钥不可用（仅支持 2048 至 4096 位的 RSA 密钥）"
+
+msgid "{}: the host key's signature is not valid"
+msgstr "{}：主机密钥的签名无效"
 
 msgid "{}: unknown to the engine"
 msgstr "{}：引擎不认识"
