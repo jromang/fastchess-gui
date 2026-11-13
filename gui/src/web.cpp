@@ -17,6 +17,12 @@ namespace {
 
 using Clock = std::chrono::steady_clock;
 
+// Requests served at once, downloads included: more are told to come back later. Each request is read within a
+// second and answered within ten, so that a client that sends or reads slowly holds a thread a moment only.
+constexpr std::size_t MAX_CONNECTIONS = 32;
+constexpr std::size_t MAX_REQUEST     = 8192;  // bytes of request line and headers
+constexpr int READ_MS                 = 1000;
+constexpr int REQUEST_MS              = 10000;
 // Downloads at once: more are told to come back later.
 constexpr int MAX_DOWNLOADS = 2;
 // A download sends 64 KiB at a time, each taken within 10 seconds (6.4 KB/s at least), for 30 minutes at most.
@@ -24,9 +30,21 @@ constexpr std::size_t CHUNK      = 64 * 1024;
 constexpr int CHUNK_MS           = 10000;
 constexpr auto MAX_DOWNLOAD_TIME = std::chrono::minutes(30);
 
-std::string response(const std::string& status, const std::string& type, const std::string& body) {
+// Every answer: never kept by a cache or a proxy (a tunnel), its type taken as given, no address sent on from the
+// page.
+constexpr const char* COMMON_HEADERS =
+    "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n"
+    "Connection: close\r\n";
+
+// The page loads nothing from elsewhere and sends nothing elsewhere: its own script and styles, and state.json.
+constexpr const char* PAGE_POLICY =
+    "Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; "
+    "connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'\r\n";
+
+std::string response(const std::string& status, const std::string& type, const std::string& body,
+                     const std::string& headers = "Access-Control-Allow-Origin: *\r\n") {
     return "HTTP/1.0 " + status + "\r\nContent-Type: " + type + "\r\nContent-Length: " + std::to_string(body.size()) +
-           "\r\nCache-Control: no-store\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n" + body;
+           "\r\n" + headers + COMMON_HEADERS + "\r\n" + body;
 }
 
 // The file name a browser saves the download as: plain ASCII for the old ones, UTF-8 for the others (RFC 6266).
@@ -62,11 +80,11 @@ std::string WebServer::start(uint16_t port) {
 void WebServer::stop() {
     running_ = false;
     if (thread_.joinable()) thread_.join();
-    // The downloads see running_ and end at once.
-    for (auto& d : downloads_) {
-        if (d.thread.joinable()) d.thread.join();
+    // The requests and downloads see running_ and end at once.
+    for (auto& w : workers_) {
+        if (w.thread.joinable()) w.thread.join();
     }
-    downloads_.clear();
+    workers_.clear();
     listener_.close();
     viewers_ = 0;
 }
@@ -82,11 +100,11 @@ void WebServer::publish(const BroadcastSnapshot& snapshot) {
 
 void WebServer::serve() {
     while (running_) {
-        // The downloads that ended.
-        for (auto it = downloads_.begin(); it != downloads_.end();) {
+        // The requests that ended.
+        for (auto it = workers_.begin(); it != workers_.end();) {
             if (*it->done) {
                 it->thread.join();
-                it = downloads_.erase(it);
+                it = workers_.erase(it);
             } else {
                 ++it;
             }
@@ -94,79 +112,112 @@ void WebServer::serve() {
 
         const auto fd = listener_.accept(200);
         if (!fd) continue;
+        auto connection = std::make_unique<net::TcpConnection>(*fd, &running_);
 
-        // One request at a time, each within a few seconds in all: a slow or silent client cannot hold the others,
-        // and a stop does not wait for it. A download goes on on a thread of its own.
-        constexpr int READ_MS = 1000, REQUEST_MS = 10000;
-        const auto start   = Clock::now();
-        auto connection    = std::make_unique<net::TcpConnection>(*fd, &running_);
-        const auto request = connection->readUntil("\r\n\r\n", 8192, READ_MS);
-        const auto left    = [&] {
-            return REQUEST_MS -
-                   static_cast<int>(
-                       std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start).count());
-        };
-        const auto end = request.find(' ', 4);
-        const auto path =
-            request.rfind("GET ", 0) == 0 && end != std::string::npos ? request.substr(4, end - 4) : std::string();
-        if (path == "/" || path == "/index.html") {
-            connection->sendAll(response("200 OK", "text/html; charset=utf-8", webPage()), left());
-        } else if (path.rfind("/state.json", 0) == 0) {
-            std::string body;
-            {
-                std::lock_guard<std::mutex> lock(mutex_);
-                body = state_json_;
-                // A viewer polls every second: the requests of the last few seconds count the viewers.
-                const auto now = Clock::now();
-                recent_.push_back(now);
-                std::erase_if(recent_, [&](const auto& t) { return now - t > std::chrono::seconds(3); });
-                viewers_ = static_cast<int>((recent_.size() + 2) / 3);
-            }
-            connection->sendAll(response("200 OK", "application/json", body), left());
-        } else if (path == "/games.pgn") {
-            std::filesystem::path file;
-            std::string name;
-            uint64_t bytes = 0;
-            {
-                std::lock_guard<std::mutex> lock(mutex_);
-                file  = pgn_file_;
-                name  = pgn_name_;
-                bytes = pgn_bytes_;
-            }
-            if (file.empty()) {
-                connection->sendAll(response("404 Not Found", "text/plain", "no game played yet"), left());
-            } else if (static_cast<int>(downloads_.size()) >= MAX_DOWNLOADS) {
-                connection->sendAll(response("503 Service Unavailable", "text/plain", "busy, try again in a moment"),
-                                    left());
-            } else {
-                auto done = std::make_shared<std::atomic_bool>(false);
-                std::thread thread([this, c = std::move(connection), file, name, bytes, done]() mutable {
-                    download(std::move(c), file, name, bytes);
-                    *done = true;
-                });
-                downloads_.push_back({std::move(thread), std::move(done)});
-            }
-        } else {
-            connection->sendAll(response("404 Not Found", "text/plain", "not found"), left());
+        // Each request on a thread of its own, so that a slow client holds no other; too many at once are told to
+        // come back, their request read first (a moment at most) so that they get the answer.
+        if (workers_.size() >= MAX_CONNECTIONS) {
+            (void)connection->readUntil("\r\n\r\n", MAX_REQUEST, 100);
+            connection->sendAll(response("503 Service Unavailable", "text/plain", "busy, try again in a moment"), 100);
+            continue;
         }
+        auto done = std::make_shared<std::atomic_bool>(false);
+        std::thread thread([this, c = std::move(connection), done]() mutable {
+            handle(std::move(c));
+            *done = true;
+        });
+        workers_.push_back({std::move(thread), std::move(done)});
     }
 }
 
-void WebServer::download(std::unique_ptr<net::TcpConnection> connection, const std::filesystem::path& file,
-                         const std::string& name, uint64_t bytes) {
+void WebServer::handle(std::unique_ptr<net::TcpConnection> connection) {
+    const auto start   = Clock::now();
+    const auto request = connection->readUntil("\r\n\r\n", MAX_REQUEST, READ_MS);
+    const auto left    = [&] {
+        return REQUEST_MS -
+               static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start).count());
+    };
+    const auto send = [&](const std::string& answer) { connection->sendAll(answer, std::max(0, left())); };
+
+    // The request line: a method, a path, the query left out. Only what the page needs is served, from memory or
+    // from the tournament's PGN file, never a file named by the request. Behind a proxy or a tunnel every client
+    // comes from the same address: nothing here depends on it.
+    const auto line   = std::string_view(request).substr(0, request.find_first_of("\r\n"));
+    const auto space  = line.find(' ');
+    const auto method = line.substr(0, space);
+    const auto target = space == std::string_view::npos ? std::string_view() : line.substr(space + 1);
+    const auto path   = target.substr(0, target.find_first_of(" ?#"));
+    // A request larger than any the page makes is not one of its.
+    if (request.size() >= MAX_REQUEST && request.find("\r\n\r\n") == std::string::npos) {
+        send(response("431 Request Header Fields Too Large", "text/plain", "request too large"));
+        return;
+    }
+    if (path.empty() || path[0] != '/') {
+        if (!request.empty()) send(response("400 Bad Request", "text/plain", "bad request"));
+        return;
+    }
+    if (method != "GET") {
+        send(response("405 Method Not Allowed", "text/plain", "only GET", "Allow: GET\r\n"));
+        return;
+    }
+
+    if (path == "/" || path == "/index.html") {
+        send(response("200 OK", "text/html; charset=utf-8", webPage(), PAGE_POLICY));
+    } else if (path == "/state.json") {
+        std::string body;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            body = state_json_;
+            // A viewer polls every second: the requests of the last few seconds count the viewers, whatever their
+            // address (all the same behind a tunnel).
+            const auto now = Clock::now();
+            recent_.push_back(now);
+            std::erase_if(recent_, [&](const auto& t) { return now - t > std::chrono::seconds(3); });
+            viewers_ = static_cast<int>((recent_.size() + 2) / 3);
+        }
+        send(response("200 OK", "application/json", body));
+    } else if (path == "/games.pgn") {
+        std::filesystem::path file;
+        std::string name;
+        uint64_t bytes = 0;
+        bool busy      = false;
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            file  = pgn_file_;
+            name  = pgn_name_;
+            bytes = pgn_bytes_;
+            busy  = downloads_ >= MAX_DOWNLOADS;
+            if (!file.empty() && !busy) ++downloads_;
+        }
+        if (file.empty()) {
+            send(response("404 Not Found", "text/plain", "no game played yet"));
+        } else if (busy) {
+            send(response("503 Service Unavailable", "text/plain", "busy, try again in a moment"));
+        } else {
+            download(*connection, file, name, bytes);
+            std::lock_guard<std::mutex> lock(mutex_);
+            --downloads_;
+        }
+    } else {
+        send(response("404 Not Found", "text/plain", "not found"));
+    }
+}
+
+void WebServer::download(net::TcpConnection& connection, const std::filesystem::path& file, const std::string& name,
+                         uint64_t bytes) {
     // The games recorded, read-only: up to the end of the last one, not into one being written.
     std::error_code ec;
     const auto size = std::filesystem::file_size(file, ec);
     std::ifstream in(file, std::ios::binary);
     if (ec || !in) {
-        connection->sendAll(response("404 Not Found", "text/plain", "no PGN file"), CHUNK_MS);
+        connection.sendAll(response("404 Not Found", "text/plain", "no PGN file"), CHUNK_MS);
         return;
     }
     bytes = std::min<uint64_t>(bytes, size);
     const auto head =
         "HTTP/1.0 200 OK\r\nContent-Type: application/x-chess-pgn\r\nContent-Length: " + std::to_string(bytes) +
-        "\r\nContent-Disposition: " + disposition(name) + "\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n";
-    if (!connection->sendAll(head, CHUNK_MS)) return;
+        "\r\nContent-Disposition: " + disposition(name) + "\r\n" + COMMON_HEADERS + "\r\n";
+    if (!connection.sendAll(head, CHUNK_MS)) return;
 
     const auto start = Clock::now();
     std::vector<char> buffer(CHUNK);
@@ -175,7 +226,7 @@ void WebServer::download(std::unique_ptr<net::TcpConnection> connection, const s
         const auto n = in.gcount();
         if (n <= 0) break;
         // A client that does not take a chunk in time is let go.
-        if (!connection->sendAll(std::string_view(buffer.data(), static_cast<std::size_t>(n)), CHUNK_MS)) break;
+        if (!connection.sendAll(std::string_view(buffer.data(), static_cast<std::size_t>(n)), CHUNK_MS)) break;
         bytes -= static_cast<uint64_t>(n);
     }
 }

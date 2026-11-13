@@ -188,7 +188,9 @@ class TlcsServer {
 };
 
 // A small web server: a page showing every game in progress, the standings and the crosstable, refreshed every
-// second from /state.json; the games played as one PGN file, from /games.pgn.
+// second from /state.json; the games played as one PGN file, from /games.pgn. Read-only and bounded, to be put on the
+// internet behind a tunnel: GET of those paths only, each request on a thread of its own (32 at most, each within
+// ten seconds), two downloads at once.
 class WebServer {
    public:
     ~WebServer();
@@ -203,9 +205,10 @@ class WebServer {
 
    private:
     void serve();
-    // Sends the PGN file on a thread of its own, so that a slow download holds no other request.
-    void download(std::unique_ptr<net::TcpConnection> connection, const std::filesystem::path& file,
-                  const std::string& name, uint64_t bytes);
+    // One request, on a thread of its own: a slow client holds no other.
+    void handle(std::unique_ptr<net::TcpConnection> connection);
+    void download(net::TcpConnection& connection, const std::filesystem::path& file, const std::string& name,
+                  uint64_t bytes);
 
     net::TcpListener listener_;
     std::thread thread_;
@@ -217,12 +220,13 @@ class WebServer {
     std::string pgn_name_;
     uint64_t pgn_bytes_ = 0;
     std::vector<std::chrono::steady_clock::time_point> recent_;  // state requests, to count viewers
+    int downloads_ = 0;                                          // under way
 
-    struct Download {
+    struct Worker {
         std::thread thread;
         std::shared_ptr<std::atomic_bool> done;
     };
-    std::vector<Download> downloads_;  // the serving thread's own
+    std::vector<Worker> workers_;  // the serving thread's own: the requests being answered
 };
 
 // The viewer page served at "/".

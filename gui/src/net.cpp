@@ -234,7 +234,10 @@ std::string TcpListener::listen(uint16_t port) {
     open_ = true;
     exclusive(fd_, true);
     const auto a = address(INADDR_ANY, port);
-    if (::bind(fd_, reinterpret_cast<const sockaddr*>(&a), sizeof(a)) != 0 || ::listen(fd_, 16) != 0) {
+    // Room for a burst of connections (many viewers, or a tunnel opening one per request): those the queue does not
+    // take wait a second or more for the system to try them again.
+    constexpr int BACKLOG = 128;
+    if (::bind(fd_, reinterpret_cast<const sockaddr*>(&a), sizeof(a)) != 0 || ::listen(fd_, BACKLOG) != 0) {
         close();
         return "TCP port " + std::to_string(port) + " is in use";
     }

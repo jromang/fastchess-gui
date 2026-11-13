@@ -578,6 +578,104 @@ TEST_CASE("broadcast: the web page and its state") {
     }
 }
 
+TEST_CASE("broadcast: the web server answers GET of its own paths only, and bounds what a client holds") {
+    WebServer server;
+    const uint16_t port = 26219;
+    REQUIRE(server.start(port).empty());
+    server.publish(sample());
+
+    const auto ask = [&](const std::string& request) {
+        const auto fd = net::connectTo(0x7F000001, port);
+        if (!fd) return std::string();
+        net::TcpConnection c(*fd);
+        c.sendAll(request);
+        return c.readUntil("\n\n\n\n", 1 << 20, 5000);
+    };
+    const auto get    = [&](const std::string& path) { return ask("GET " + path + " HTTP/1.1\r\nHost: x\r\n\r\n"); };
+    const auto status = [](const std::string& answer) { return answer.substr(0, answer.find("\r\n")); };
+
+    // Nothing but GET; nothing but the page, its state and the PGN file, whatever the path says.
+    CHECK(status(ask("POST /state.json HTTP/1.1\r\nContent-Length: 2\r\n\r\n{}")) == "HTTP/1.0 405 Method Not Allowed");
+    CHECK(ask("HEAD / HTTP/1.1\r\n\r\n").find("Allow: GET\r\n") != std::string::npos);
+    CHECK(status(ask("DELETE /games.pgn HTTP/1.1\r\n\r\n")) == "HTTP/1.0 405 Method Not Allowed");
+    CHECK(status(ask("garbage\r\n\r\n")) == "HTTP/1.0 400 Bad Request");
+    CHECK(status(get("http://host/")) == "HTTP/1.0 400 Bad Request");
+    for (const auto* path : {"/state.json/../../../etc/passwd", "/../games.pgn", "/%2e%2e/etc/passwd", "/etc/passwd",
+                             "//state.json", "/index.htm", "/games.pgn/x", "/live.pgn"}) {
+        CAPTURE(path);
+        CHECK(status(get(path)) == "HTTP/1.0 404 Not Found");
+    }
+    // A query (a cache buster) is left out.
+    CHECK(status(get("/state.json?t=123")) == "HTTP/1.0 200 OK");
+    CHECK(status(get("/?from=twitter")) == "HTTP/1.0 200 OK");
+
+    // The answers: never cached, their type as given; the page loads and sends nothing elsewhere.
+    const auto page = get("/");
+    const auto head = page.substr(0, page.find("\r\n\r\n"));
+    CHECK(head.find("Cache-Control: no-store") != std::string::npos);
+    CHECK(head.find("X-Content-Type-Options: nosniff") != std::string::npos);
+    CHECK(head.find("Content-Security-Policy: default-src 'none';") != std::string::npos);
+    CHECK(head.find("connect-src 'self'") != std::string::npos);
+    CHECK(get("/state.json").find("X-Content-Type-Options: nosniff") != std::string::npos);
+
+    // A request larger than any the page makes is refused, read no further: its client may not even get the
+    // answer (the connection closed on what it still sends), and the others are served.
+    const auto large = ask("GET / HTTP/1.1\r\nX: " + std::string(1 << 20, 'a') + "\r\n\r\n");
+    CHECK((large.empty() || status(large) == "HTTP/1.0 431 Request Header Fields Too Large"));
+    CHECK(status(get("/")) == "HTTP/1.0 200 OK");
+
+    // A client that never reads a large answer holds no other: each request is answered on a thread of its own.
+    auto big = sample();
+    big.name = std::string(16 << 20, 'x');
+    server.publish(big);
+    const auto reader = net::connectTo(0x7F000001, port);
+    REQUIRE(reader);
+    net::TcpConnection stuck(*reader);
+    stuck.sendAll("GET /state.json HTTP/1.0\r\n\r\n");
+    std::this_thread::sleep_for(300ms);
+    auto start = std::chrono::steady_clock::now();
+    CHECK(status(get("/")) == "HTTP/1.0 200 OK");
+    CHECK(std::chrono::steady_clock::now() - start < 1s);
+    server.publish(sample());
+
+    // Thirty-two clients that say nothing at once: the next is told to come back, and is served once they are let
+    // go, a second later.
+    std::vector<std::unique_ptr<net::TcpConnection>> silent;
+    for (int i = 0; i < 32; ++i) {
+        const auto fd = net::connectTo(0x7F000001, port);
+        REQUIRE(fd);
+        silent.push_back(std::make_unique<net::TcpConnection>(*fd));
+    }
+    std::this_thread::sleep_for(300ms);
+    CHECK(status(get("/")) == "HTTP/1.0 503 Service Unavailable");
+    std::this_thread::sleep_for(1500ms);
+    CHECK(status(get("/")) == "HTTP/1.0 200 OK");
+
+    start = std::chrono::steady_clock::now();
+    server.stop();
+    CHECK(std::chrono::steady_clock::now() - start < 2s);
+}
+
+TEST_CASE("broadcast: the viewers are counted from their requests, all from one address behind a tunnel") {
+    WebServer server;
+    const uint16_t port = 26319;
+    REQUIRE(server.start(port).empty());
+    server.publish(sample());
+    // Four viewers polling once a second, through one proxy: one address, as cloudflared's.
+    for (int second = 0; second < 3; ++second) {
+        for (int viewer = 0; viewer < 4; ++viewer) {
+            const auto fd = net::connectTo(0x7F000001, port);
+            REQUIRE(fd);
+            net::TcpConnection c(*fd);
+            c.sendAll("GET /state.json HTTP/1.1\r\nX-Forwarded-For: 203.0.113." + std::to_string(viewer) + "\r\n\r\n");
+            CHECK(c.readUntil("\n\n\n\n", 1 << 20, 5000).rfind("HTTP/1.0 200", 0) == 0);
+        }
+        std::this_thread::sleep_for(800ms);
+    }
+    CHECK(server.viewers() == 4);
+    server.stop();
+}
+
 TEST_CASE("broadcast: the statistics, the anomalies and each move's search, for the web page") {
     BroadcastInput in;
     in.dir           = "/tournaments/Big one";
