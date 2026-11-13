@@ -18,6 +18,7 @@
 #include <matchmaking/stats.hpp>
 
 #include "board_view.hpp"
+#include "book_jobs.hpp"
 #include "broadcaster.hpp"
 #include "console.hpp"
 #include "dialogs.hpp"
@@ -363,8 +364,14 @@ class App {
     // for the engine once more, with another book.
     bool ownBookButton(const char* id, OwnBook& book, float width, bool* again = nullptr, bool open = false);
     // Why a book cannot be a participant's own (ownBookProblem()), kept by path and read again when the file's size
-    // or time changes; empty when it can, or when it is not found.
+    // or time changes; empty when it can, or when it is not found. Polyglot books only: a PGN book's problems are
+    // those of its conversion (pgn_books_).
     const std::string& ownBookCheck(const std::string& path);
+    // The participants' PGN books turned into Polyglot books, in the background.
+    PgnBookJobs pgn_books_;
+    // At each frame: the PGN books of the setup are wanted (prepared as soon as chosen or loaded), the conversions
+    // move on, and those that ended say so in the console.
+    void pollOwnBooks();
     struct OwnBookCheck {
         uintmax_t size = 0;
         std::filesystem::file_time_type time{};
@@ -426,12 +433,13 @@ class App {
     [[nodiscard]] bool inSetup(const std::string& name) const;
     // A start (of a run, a resume, the queue, a quick test) must not replace fastchess' configuration while a read or
     // a check reads it: it waits for the read of an engine it plays (`needs`), and interrupts the others, which are
-    // done again later; it waits for a test suite to end (see startGate). Meanwhile no other read or check starts.
+    // done again later; it waits for a test suite to end, and for the PGN books it plays (`books`) to be turned into
+    // Polyglot books (see startGate). Meanwhile no other read or check starts.
     // `key` names what it starts: asked again while it waits, nothing changes; asked while another start waits, it
     // is refused (see startAsked). `failed`, if any, is called instead of `start` when the read of an engine it needs
-    // fails. True when `start` was put off (or refused).
-    bool startAfterReads(const std::string& key, std::vector<std::string> needs, std::function<void()> start,
-                         std::function<void()> failed = {});
+    // fails, or one of its books cannot be prepared. True when `start` was put off (or refused).
+    bool startAfterReads(const std::string& key, std::vector<std::string> needs, std::vector<OwnBookNeed> books,
+                         std::function<void()> start, std::function<void()> failed = {});
     // Moves a start put off on: true once it may start.
     bool advanceStart();
     void pollStart();
@@ -648,6 +656,7 @@ class App {
         std::function<void()> failed;  // instead, when the read of an engine it needs fails
         std::string waiting_for;       // the engine whose read it waits for; empty while reads are interrupted
         bool waiting_check = false;    // ... or whose check
+        bool waiting_book  = false;    // ... or the participant whose book is being prepared
         bool waiting_suite = false;    // ... or the test suite
     };
     std::optional<PendingStart> pending_start_;

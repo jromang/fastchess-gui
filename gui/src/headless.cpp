@@ -6,11 +6,13 @@
 #include <csignal>
 #include <cstdio>
 #include <mutex>
+#include <optional>
 #include <thread>
 
 #include <fmt/include/fmt/format.h>
 #include <core/globals/globals.hpp>
 #include <matchmaking/elo/elo_pentanomial.hpp>
+#include <tour/pgn_book.hpp>
 #include <tour/standings.hpp>
 
 #include "broadcaster.hpp"
@@ -22,6 +24,45 @@ namespace fcg {
 namespace {
 
 void onSignal(int) { fastchess::atomic::stop = true; }
+
+// The participants' PGN books turned into Polyglot books before the games (or found in the cache), their progress
+// shown. False when one cannot be.
+bool preparePgnBooks(const std::vector<OwnBookNeed>& needs) {
+    for (const auto& need : needs) {
+        const auto file                        = std::filesystem::path(need.path).filename().string();
+        std::optional<tour::PreparedBook> book = tour::cachedPgnBook(need.path, need.depth, need.chess960);
+        if (!book) {
+            std::printf("Preparing the book of %s from %s, %d plies of its games: ", need.participant.c_str(),
+                        file.c_str(), tour::pgnBookPlies(need.depth));
+            std::fflush(stdout);
+            int shown = 0;
+            try {
+                book = tour::preparePgnBook(need.path, need.depth, need.chess960, [&](double share) {
+                    for (; shown + 10 <= static_cast<int>(share * 100); std::fflush(stdout)) {
+                        shown += 10;
+                        std::printf("%d%% ", shown);
+                    }
+                    return true;
+                });
+            } catch (const std::exception& e) {
+                std::printf("\n");
+                std::fprintf(stderr, "error: the book of %s cannot be used: %s\n", need.participant.c_str(), e.what());
+                return false;
+            }
+            std::printf("done: %llu games, %llu positions.\n", static_cast<unsigned long long>(book->stats.games),
+                        static_cast<unsigned long long>(book->stats.positions));
+        }
+        if (book->stats.skipped > 0) {
+            std::fprintf(stderr, "warning: %llu games of %s could not be read and are left out of the book of %s\n",
+                         static_cast<unsigned long long>(book->stats.skipped), file.c_str(), need.participant.c_str());
+        }
+        if (!book->stats.stopped.empty()) {
+            std::fprintf(stderr, "warning: the reading of %s stopped before its end: %s\n", file.c_str(),
+                         book->stats.stopped.c_str());
+        }
+    }
+    return true;
+}
 
 // Prints each recorded game, and the standings (or the match statistics) now and then.
 class ConsoleListener final : public tour::RecordListener {
@@ -92,6 +133,8 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
         if (tour::TournamentState::isTournament(target)) {
             state = tour::TournamentState::open(target);
             if (!state->finished() && !memoryFits(state->spec(), storage.loadEngines())) return 2;
+            // Its PGN books, made again if their files changed since.
+            if (!state->finished() && !preparePgnBooks(pgnBookNeeds(state->spec()))) return 2;
         } else {
             // A setup or template file: a new tournament, with the engines of the profile.
             const auto setup = readJson<MatchSetup>(target);
@@ -112,6 +155,7 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
                 (setup->format == TournamentFormat::Match
                      ? makeRunDirName(setup->engine_a, setup->engine_b)
                      : makeTournamentDirName(setup->name.empty() ? defaultTournamentName(*setup) : setup->name));
+            if (!preparePgnBooks(pgnBookNeeds(*setup))) return 2;
             const auto run = buildRun(*setup, engines, topology, dir);
             if (!memoryFits(run.spec, engines)) return 2;
             state = tour::TournamentState::create(dir, run.spec);

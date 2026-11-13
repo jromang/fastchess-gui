@@ -17,6 +17,7 @@
 #include <fmt/include/fmt/format.h>
 
 #include <tour/book_adapter.hpp>
+#include <tour/pgn_book.hpp>
 #include <tour/runner.hpp>
 
 #include "polyglot_writer.hpp"
@@ -648,4 +649,61 @@ TEST_CASE("own book: with the engine restarted for every game, each game draws i
     CHECK(as_white == 6);
     // All six the same: about once in three million.
     CHECK(firsts.size() >= 2);
+}
+
+TEST_CASE("own book: a PGN book plays for its participant, turned into a Polyglot book first") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+    const auto previous_adapter = book_adapter;
+    const auto previous_cache   = book_cache_dir;
+    const auto dir              = fs::temp_directory_path() / "fcg-own-book-pgn";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+    book_adapter   = self().string();
+    book_cache_dir = dir / "cache";
+
+    // A game for each first move, each answered 1... Nh6: White's book plays any first move, Black's answers Nh6.
+    const auto pgn = dir / "answers.pgn";
+    {
+        std::ofstream out(pgn, std::ios::binary);
+        chess::Board board;
+        chess::Movelist firsts;
+        chess::movegen::legalmoves(firsts, board);
+        for (const auto& m : firsts) {
+            out << "[Event \"answer\"]\n[Result \"*\"]\n\n1. " << chess::uci::moveToSan(board, m) << " Nh6 *\n\n";
+        }
+    }
+    const auto prepared = preparePgnBook(pgn.string(), 2, false);
+    CHECK(prepared.stats.games == 20);
+
+    auto state = ownBookMatch("fcg-tour-own-book-pgn", 4, pgn, 2);
+    CHECK(play(*state).empty());
+    book_adapter = previous_adapter;
+
+    const auto results = state->results();
+    REQUIRE(results.size() == 4);
+    for (const auto& r : results) CHECK(r.reason.find("disconnect") == std::string::npos);
+
+    std::size_t games = 0;
+    for (const auto& game : pgnGames(*state)) {
+        ++games;
+        const auto moves = game.substr(game.find("\n\n") + 2);
+        INFO(game);
+        if (game.find("[White \"random (book)\"]") != std::string::npos) {
+            // Its first move from the book; its second beyond the depth.
+            CHECK(moves.find("{book}") < moves.find("1..."));
+            CHECK(moves.find("{book}", moves.find("{book}") + 1) > moves.find("2. "));
+        } else {
+            const auto first = moves.find('}');
+            CHECK(moves.substr(0, first).find("book") == std::string::npos);
+            CHECK(moves.find(" Nh6 {book}") != std::string::npos);
+        }
+    }
+    CHECK(games == 4);
+    book_cache_dir = previous_cache;
+    state.reset();  // its files closed, which Windows wants before they are removed
+    std::error_code ec;
+    fs::remove_all(dir, ec);
 }

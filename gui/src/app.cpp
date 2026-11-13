@@ -121,6 +121,7 @@ void App::frame() {
     pollProbe();
     pollCheck();
     pollStart();
+    pollOwnBooks();
     handleDialogs();
 
     if (engines_save_due_ && std::chrono::steady_clock::now() >= *engines_save_due_) {
@@ -376,7 +377,7 @@ void App::drawQuitModal() {
 
 void App::startRun() {
     storage_.saveSetup(setup_);
-    if (startAfterReads("start", enginesOfSetup(setup_), [this] { startRun(); })) return;
+    if (startAfterReads("start", enginesOfSetup(setup_), pgnBookNeeds(setup_), [this] { startRun(); })) return;
 
     // Hash tables larger than the memory installed cannot work; larger than the free memory, they swap.
     if (const auto memory = setupMemory(setup_, engines_, topology_); memory.aboveInstalled()) {
@@ -405,8 +406,10 @@ void App::startRun() {
 void App::resumeRun(bool at_launch) {
     if (!unfinished_) return;
     // It plays the engines copied in its folder, so no read of the library is waited for. Put off all the same (see
-    // startGate): still the same tournament when it starts, not one opened meanwhile.
-    if (startAfterReads(resumeKey(unfinished_->dir), {}, [this, at_launch, dir = unfinished_->dir] {
+    // startGate): still the same tournament when it starts, not one opened meanwhile. It waits for its PGN books,
+    // made again if their files changed since.
+    auto books = pgnBookNeeds(unfinished_->spec);
+    if (startAfterReads(resumeKey(unfinished_->dir), {}, std::move(books), [this, at_launch, dir = unfinished_->dir] {
             if (unfinished_ && unfinished_->dir == dir) resumeRun(at_launch);
         })) {
         return;
@@ -718,7 +721,8 @@ void App::startFromQueue(bool go_on, std::size_t from, const std::string& label)
         const auto here = queue_[i].label;
         const auto next = queueNextAfterFailure(i, queue_.size(), go_on);
         if (startAfterReads(
-                "queue", queueNeeds(queue_, i), [this, go_on, i, here] { startFromQueue(go_on, i, here); },
+                "queue", queueNeeds(queue_, i), pgnBookNeeds(queue_[i].setup),
+                [this, go_on, i, here] { startFromQueue(go_on, i, here); },
                 next ? std::function<void()>(
                            [this, n = *next, there = queue_[*next].label] { startFromQueue(true, n, there); })
                      : std::function<void()>())) {

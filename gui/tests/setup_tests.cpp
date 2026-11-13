@@ -363,6 +363,55 @@ TEST_CASE("a start waits for a test suite to end, and a test suite does not star
     CHECK_FALSE(suiteMayStart(false, true));  // a start waits: it would wait for the suite
 }
 
+TEST_CASE("a start waits for the PGN books it plays to be prepared, without interrupting reads for nothing") {
+    using A                              = StartGate::Action;
+    const std::vector<std::string> match = {"Alpha", "Beta"};
+    const std::vector<std::string> books = {"Alpha (Openings)"};
+
+    // Nothing else in flight: it waits for the book of that participant.
+    auto gate = startGate(match, "", "", {}, false, books);
+    CHECK(gate.action == A::Wait);
+    CHECK(gate.book);
+    CHECK(gate.engine == "Alpha (Openings)");
+    // Its own engine being read: that read first, then the book.
+    gate = startGate(match, "Beta", "", {}, false, books);
+    CHECK(gate.action == A::Wait);
+    CHECK_FALSE(gate.book);
+    CHECK(gate.engine == "Beta");
+    // Its own engine waiting to be read, nothing in flight: read meanwhile.
+    gate = startGate(match, "", "", {"Beta"}, false, books);
+    CHECK(gate.action == A::Read);
+    CHECK(gate.engine == "Beta");
+    // Another engine read, or checked: not interrupted while the book is prepared, which takes long enough for them
+    // to end.
+    gate = startGate(match, "Gamma", "Delta", {}, false, books);
+    CHECK(gate.action == A::Wait);
+    CHECK(gate.book);
+    CHECK_FALSE(gate.interrupt_read);
+    // The book ready: as without one.
+    CHECK(startGate(match, "Gamma", "", {}, false, {}).action == A::Interrupt);
+    CHECK(startGate(match, "", "", {}, false, {}).action == A::Start);
+    // A test suite comes first, as always.
+    CHECK(startGate(match, "", "", {}, true, books).suite);
+
+    // The PGN books a setup needs prepared: its participants', under the names they play under; Polyglot books are
+    // read as they are.
+    MatchSetup setup;
+    setup.engine_a     = "Alpha";
+    setup.engine_b     = "Alpha";
+    setup.book_a.path  = "/books/openings.pgn";
+    setup.book_a.name  = "Openings";
+    setup.book_a.depth = 12;
+    setup.book_b.path  = "/books/other.bin";
+    setup.chess960     = true;
+    const auto needs   = pgnBookNeeds(setup);
+    REQUIRE(needs.size() == 1);
+    CHECK(needs[0].participant == "Alpha (Openings)");
+    CHECK(needs[0].path == "/books/openings.pgn");
+    CHECK(needs[0].depth == 12);
+    CHECK(needs[0].chess960);
+}
+
 TEST_CASE("a start asked while another waits is refused, not put in its place") {
     CHECK(startAsked("", "start") == StartAsked::Go);
     // The same, pressed again or from another place: it goes on waiting.

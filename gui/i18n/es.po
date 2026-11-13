@@ -120,6 +120,9 @@ msgstr "= {:.2f} Elo logístico"
 msgid "A (tested)"
 msgstr "A (probado)"
 
+msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
+msgstr "Un libro PGN juega las jugadas de sus partidas, tan a menudo como estas las juegan; «todo» son sus primeras {} medias jugadas."
+
 msgid "A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves weighing less than a tenth of the best one; the positions reached are the openings."
 msgstr "Se sigue un libro Polyglot desde la posición inicial hasta esta profundidad (-1 = {}), dejando fuera las jugadas que pesan menos de una décima parte de la mejor; las posiciones alcanzadas son las aperturas."
 
@@ -279,6 +282,9 @@ msgstr "También en zip"
 
 msgid "An ECO code or its beginning (B9), a range (B20-B99), or words of the name (sicilian najdorf)."
 msgstr "Un código ECO o su comienzo (B9), un rango (B20-B99), o palabras del nombre, en inglés (sicilian najdorf)."
+
+msgid "An EPD book holds positions, not moves: it gives the tournament its openings, it cannot play for an engine."
+msgstr "Un libro EPD contiene posiciones, no jugadas: da al torneo sus aperturas, no puede jugar por un motor."
 
 msgid "An EPD book without the illegal positions, the duplicates and the games already over (and the positions with colours reversed of an earlier one, if ticked), added to the library."
 msgstr "Un libro EPD sin las posiciones ilegales, los duplicados ni las partidas ya terminadas (ni las posiciones con los colores invertidos de una anterior, si está marcado), añadido a la biblioteca."
@@ -1107,6 +1113,9 @@ msgstr "No puede jugar por un motor: {}"
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "Continúa exactamente donde se detuvo: ninguna partida se pierde ni se juega dos veces."
 
+msgid "It starts once the book of {} is prepared."
+msgstr "Empieza en cuanto el libro de {} esté preparado."
+
 msgid "It starts once the check of {} ends."
 msgstr "Empieza en cuanto termine la comprobación de {}."
 
@@ -1293,8 +1302,8 @@ msgstr "Ningún archivo PGN importado."
 msgid "No PVs: turn on pv in the PGN options of the setup."
 msgstr "Sin PV: activa pv en las opciones PGN de la configuración."
 
-msgid "No Polyglot book (.bin) in the library: add one in the Books window."
-msgstr "No hay ningún libro Polyglot (.bin) en la biblioteca: añade uno en la ventana Libros."
+msgid "No Polyglot (.bin) or PGN book in the library: add one in the Books window."
+msgstr "No hay ningún libro Polyglot (.bin) ni PGN en la biblioteca: añade uno en la ventana Libros."
 
 msgid "No book"
 msgstr "Sin libro"
@@ -1394,9 +1403,6 @@ msgstr "Ninguno de estos motores está en la biblioteca con el mismo nombre."
 
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "Elo normalizado (fishtest, OpenBench), con su intervalo del 95 %."
-
-msgid "Not a Polyglot book (.bin): it gives the tournament its openings, it cannot play for an engine."
-msgstr "No es un libro Polyglot (.bin): da al torneo sus aperturas, no puede jugar por un motor."
 
 msgid "Not checked"
 msgstr "No comprobado"
@@ -1645,6 +1651,14 @@ msgstr "Ponder desactivado"
 
 msgid "Position"
 msgstr "Posición"
+
+msgid "Prepared from {} game: {} positions."
+msgid_plural "Prepared from {} games: {} positions."
+msgstr[0] "Preparado a partir de {} partida: {} posiciones."
+msgstr[1] "Preparado a partir de {} partidas: {} posiciones."
+
+msgid "Preparing the book… {} %"
+msgstr "Preparando el libro… {} %"
 
 msgid "Presets:"
 msgstr "Preajustes:"
@@ -2159,8 +2173,8 @@ msgstr "El estándar PGN los convierte en comentarios. fastchess-gui 0.4.13 y an
 msgid "The book of {} cannot be used: {}"
 msgstr "El libro de {} no se puede usar: {}"
 
-msgid "The book of {} is not a Polyglot book (.bin): {}"
-msgstr "El libro de {} no es un libro Polyglot (.bin): {}"
+msgid "The book of {} is neither a Polyglot book (.bin) nor a PGN book: {}"
+msgstr "El libro de {} no es ni un libro Polyglot (.bin) ni un libro PGN: {}"
 
 msgid "The book of {} is not found: {}"
 msgstr "No se encuentra el libro de {}: {}"
@@ -2290,6 +2304,9 @@ msgstr "El rating de los motores elegidos tras cada torneo que jugaron: las vers
 
 msgid "The read of {} is interrupted for the start: it is done again later."
 msgstr "La lectura de {} se interrumpe para el inicio: se volverá a hacer más tarde."
+
+msgid "The reading stopped before the end of the file: {}"
+msgstr "La lectura se detuvo antes del final del archivo: {}"
 
 msgid "The same engine, with different books"
 msgstr "El mismo motor, con libros distintos"
@@ -2446,6 +2463,9 @@ msgstr "Anular esta partida (sin volver a jugarla)"
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "V {:.0f} · T {:.0f} · D {:.0f} %"
+
+msgid "Waiting for the book of {}…"
+msgstr "Esperando el libro de {}…"
 
 msgid "Waiting for the test suite…"
 msgstr "Esperando a la suite de tests…"
@@ -2721,6 +2741,9 @@ msgstr "repetición solicitada"
 msgid "send at startup"
 msgstr "enviar al arrancar"
 
+msgid "the file is not found"
+msgstr "no se encuentra el archivo"
+
 msgid "the new tournament"
 msgstr "el nuevo torneo"
 
@@ -2786,6 +2809,9 @@ msgstr "{:.1f} GB"
 
 msgid "{}  ({} openings)"
 msgstr "{}  ({} aperturas)"
+
+msgid "{} (preparing the book: {} %)"
+msgstr "{} (preparando el libro: {} %)"
 
 msgid "{} / {}"
 msgstr "{} / {}"
@@ -2893,6 +2919,11 @@ msgid "{} game could not be read."
 msgid_plural "{} games could not be read."
 msgstr[0] "{} partida no se pudo leer."
 msgstr[1] "{} partidas no se pudieron leer."
+
+msgid "{} game could not be read: it is left out."
+msgid_plural "{} games could not be read: they are left out."
+msgstr[0] "{} partida no se pudo leer: se deja fuera."
+msgstr[1] "{} partidas no se pudieron leer: se dejan fuera."
 
 msgid "{} game exported to {}"
 msgid_plural "{} games exported to {}"

@@ -10,8 +10,10 @@
 
 #include <engine/uci_engine.hpp>
 #include <tour/book_adapter.hpp>
+#include <tour/pgn_book.hpp>
 
 #include "../../tournament/tests/polyglot_writer.hpp"
+#include "book_jobs.hpp"
 #include "run.hpp"
 
 #ifdef _WIN32
@@ -282,4 +284,154 @@ TEST_CASE("own book: a round robin with the same engine twice and a WinBoard eng
 
     fastchess::engine::xboard_adapter.clear();
     tour::book_adapter.clear();
+}
+
+namespace {
+
+// A game for each first move, each answered 1... Nf6, and one game that cannot be read.
+fs::path writePgnBook(const fs::path& path) {
+    std::ofstream out(path, std::ios::binary);
+    chess::Board board;
+    chess::Movelist firsts;
+    chess::movegen::legalmoves(firsts, board);
+    for (const auto& m : firsts) {
+        out << "[Event \"answer\"]\n[Result \"*\"]\n\n1. " << chess::uci::moveToSan(board, m) << " Nf6 *\n\n";
+    }
+    out << "[Event \"broken\"]\n[Result \"*\"]\n\n1. e4 Ke7 *\n\n";
+    return path;
+}
+
+// Polls the conversions, as the frames do, until `pgn` at `depth` is no longer being prepared.
+PgnBookJobs::Status prepared(PgnBookJobs& jobs, const std::string& pgn, int depth) {
+    using State = PgnBookJobs::Status::State;
+    auto status = jobs.want(pgn, depth, false);
+    for (int i = 0; i < 1000 && (status.state == State::Queued || status.state == State::Preparing); ++i) {
+        (void)jobs.poll();
+        std::this_thread::sleep_for(5ms);
+        status = jobs.want(pgn, depth, false);
+    }
+    return status;
+}
+
+}  // namespace
+
+TEST_CASE("own book: a PGN book is prepared in the background while it is asked for, and found again after") {
+    using State         = PgnBookJobs::Status::State;
+    const auto root     = fs::temp_directory_path() / "fcg-own-book-pgn-jobs";
+    const auto previous = tour::book_cache_dir;
+    fs::remove_all(root);
+    fs::create_directories(root);
+    tour::book_cache_dir = root / "cache";
+    const auto pgn       = writePgnBook(root / "answers.pgn").string();
+
+    {
+        PgnBookJobs jobs;
+        CHECK(jobs.want(pgn, 4, false).state == State::Queued);
+        const auto status = prepared(jobs, pgn, 4);
+        REQUIRE(status.state == State::Ready);
+        CHECK(status.stats.games == 20);
+        CHECK(status.stats.skipped == 1);
+
+        // Another depth: prepared again, but only while somebody asks for it.
+        CHECK(jobs.want(pgn, 6, false).state == State::Queued);
+        (void)jobs.poll();
+        CHECK(jobs.busy());
+        // Not asked for at the next frame: cancelled, nothing kept.
+        for (int i = 0; i < 1000 && jobs.busy(); ++i) {
+            (void)jobs.poll();
+            std::this_thread::sleep_for(1ms);
+        }
+        CHECK_FALSE(jobs.busy());
+
+        // A file that is not there, or that gives no move: failed, with the reason.
+        CHECK(jobs.want((root / "none.pgn").string(), 4, false).state == State::Failed);
+        std::ofstream(root / "empty.pgn", std::ios::binary) << "[Event \"x\"]\n\n*\n";
+        const auto empty = prepared(jobs, (root / "empty.pgn").string(), 4);
+        CHECK(empty.state == State::Failed);
+        CHECK(empty.error.find("no game") != std::string::npos);
+    }
+    // Another session: found in the cache at once.
+    PgnBookJobs jobs;
+    const auto again = jobs.want(pgn, 4, false);
+    CHECK(again.state == State::Ready);
+    CHECK(again.stats.skipped == 1);
+
+    tour::book_cache_dir = previous;
+    fs::remove_all(root);
+}
+
+TEST_CASE("own book: a match with a PGN book of its own, prepared by the start when the window did not") {
+    const auto uci = (self().parent_path() / FCG_RANDOM_MOVER).string();
+    if (!fs::is_regular_file(uci)) {
+        MESSAGE("mock engine not available on this platform, skipped");
+        return;
+    }
+    tour::book_adapter  = self().string();
+    const auto previous = tour::book_cache_dir;
+    const auto root     = fs::temp_directory_path() / "fcg-own-book-pgn-match";
+    fs::remove_all(root);
+    fs::create_directories(root);
+    tour::book_cache_dir = root / "cache";
+    const auto pgn       = writePgnBook(root / "answers.pgn").string();
+
+    std::vector<EngineEntry> engines(1);
+    engines[0].name = "uci", engines[0].cmd = uci;
+    MatchSetup setup;
+    setup.engine_a         = "uci";
+    setup.engine_b         = "uci";
+    setup.book_b           = ownBook(pgn, "Answers", 2);
+    setup.mode             = MatchMode::Fixed;
+    setup.fixed_games      = 4;
+    setup.limit            = LimitKind::Nodes;
+    setup.nodes            = 1;
+    setup.concurrency_auto = false;
+    setup.concurrency      = 2;
+    setup.affinity         = false;
+    setup.notify           = false;
+    REQUIRE(pgnBookNeeds(setup).size() == 1);
+    CHECK_FALSE(tour::cachedPgnBook(pgn, 2, false));
+
+    RunController run;
+    std::vector<GameRecord> games;
+    std::vector<fastchess::Stats> stats;
+    REQUIRE(run.start(setup, engines, topologyFromCores({{0, 0}, {0, 1}}), root / "runs").empty());
+    CHECK(tour::cachedPgnBook(pgn, 2, false));
+    const auto end = std::chrono::steady_clock::now() + 60s;
+    while (run.state() != RunController::State::Finished && std::chrono::steady_clock::now() < end) {
+        run.update();
+        if (auto* obs = run.observer()) obs->drain(games, stats);
+        std::this_thread::sleep_for(10ms);
+    }
+    REQUIRE(run.state() == RunController::State::Finished);
+    CHECK(run.error().empty());
+    REQUIRE(run.tournament());
+    CHECK(run.tournament()->results().size() == 4);
+    // The tournament keeps the PGN book as the participant's book.
+    CHECK(run.tournament()->spec().participants[1].book == pgn);
+
+    // The book's side answers 1... Nf6 from its book; it never plays White's first move from it.
+    std::ifstream in(run.tournament()->dir() / run.tournament()->spec().pgnFile(), std::ios::binary);
+    const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    int checked = 0;
+    for (auto at = text.find("[Event "); at != std::string::npos;) {
+        const auto next  = text.find("[Event ", at + 1);
+        const auto game  = text.substr(at, next == std::string::npos ? std::string::npos : next - at);
+        const auto moves = game.substr(game.find("\n\n") + 2);
+        INFO(game);
+        if (game.find("[Black \"uci (Answers)\"]") != std::string::npos) {
+            CHECK(moves.substr(0, moves.find('}')).find("book") == std::string::npos);
+            CHECK(moves.find(" Nf6 {book}") != std::string::npos);
+        } else {
+            CHECK(moves.find("{book}") < moves.find("1..."));
+        }
+        ++checked;
+        at = next;
+    }
+    CHECK(checked == 4);
+
+    tour::book_adapter.clear();
+    tour::book_cache_dir = previous;
+    // The tournament is still open (its journal, on Windows, cannot be removed): what can be.
+    std::error_code ec;
+    fs::remove_all(root, ec);
 }

@@ -299,8 +299,8 @@ std::string startedByKey(const std::string& key) {
 
 }  // namespace
 
-bool App::startAfterReads(const std::string& key, std::vector<std::string> needs, std::function<void()> start,
-                          std::function<void()> failed) {
+bool App::startAfterReads(const std::string& key, std::vector<std::string> needs, std::vector<OwnBookNeed> books,
+                          std::function<void()> start, std::function<void()> failed) {
     // A tournament plays: the start says so itself, and nothing here may end its engines.
     if (run_.running()) return false;
     switch (startAsked(pending_start_ ? pending_start_->key : std::string(), key)) {
@@ -318,6 +318,7 @@ bool App::startAfterReads(const std::string& key, std::vector<std::string> needs
     pending_start_         = PendingStart{};
     pending_start_->key    = key;
     pending_start_->needs  = std::move(needs);
+    pending_start_->books  = std::move(books);
     pending_start_->start  = std::move(start);
     pending_start_->failed = std::move(failed);
     if (advanceStart()) {
@@ -347,11 +348,27 @@ bool App::advanceStart() {
         return false;
     }
 
+    // Its PGN books: asked for (prepared now if nobody asked before), waited for. One that cannot be prepared stops
+    // it, as a read that failed.
+    std::vector<std::string> books;
+    for (const auto& need : pending.books) {
+        const auto status = pgn_books_.want(need.path, need.depth, need.chess960);
+        if (status.state == PgnBookJobs::Status::State::Failed) {
+            start_error_ = trf("The book of {} cannot be used: {}", need.participant, status.error);
+            Console::instance().add(start_error_, true);
+            start_failed_ = std::move(pending.failed);
+            pending_start_.reset();
+            return false;
+        }
+        if (status.state != PgnBookJobs::Status::State::Ready) books.push_back(need.participant);
+    }
+
     const auto reading  = probe_.valid() ? engine_name(probe_index_) : std::string();
     const auto checking = check_.valid() ? engine_name(check_index_) : std::string();
-    const auto gate     = startGate(pending.needs, reading, checking, probe_queue_, suite_runner_.running());
+    const auto gate     = startGate(pending.needs, reading, checking, probe_queue_, suite_runner_.running(), books);
     pending.waiting_for.clear();
     pending.waiting_check = false;
+    pending.waiting_book  = false;
     pending.waiting_suite = false;
     switch (gate.action) {
         case StartGate::Action::Start:
@@ -359,6 +376,7 @@ bool App::advanceStart() {
         case StartGate::Action::Wait:
             pending.waiting_for   = gate.engine;
             pending.waiting_check = gate.check;
+            pending.waiting_book  = gate.book;
             pending.waiting_suite = gate.suite;
             return false;
         case StartGate::Action::Read:
@@ -410,6 +428,7 @@ bool App::drawStartWaiting(const char* id, const std::string& key, bool icon) {
     const auto& pending = *pending_start_;
     const auto label    = pending.waiting_suite         ? std::string(TR("Waiting for the test suite…"))
                           : pending.waiting_for.empty() ? std::string(TR("Starting…"))
+                          : pending.waiting_book        ? trf("Waiting for the book of {}…", pending.waiting_for)
                                                         : trf("Waiting for {}…", pending.waiting_for);
     if (icon) {
         (void)ui::iconButton(id, ui::Icon::Play, label.c_str(), false);
@@ -430,6 +449,7 @@ std::string App::startWaitingText(const std::string& key) const {
     if (pending_start_->waiting_suite) return TR("It starts once the test suite ends (or is stopped).");
     if (pending_start_->waiting_for.empty()) return {};
     const auto& name = pending_start_->waiting_for;
+    if (pending_start_->waiting_book) return trf("It starts once the book of {} is prepared.", name);
     return pending_start_->waiting_check ? trf("It starts once the check of {} ends.", name)
                                          : trf("It starts once the options of {} are read.", name);
 }
@@ -1394,7 +1414,7 @@ void App::startQuickTest(int index) {
     const auto name                = engines_[index].name;
     std::vector<std::string> needs = {name};
     if (!quick_test_opponent_.empty()) needs.push_back(quick_test_opponent_);
-    if (startAfterReads("test:" + name, std::move(needs), quickTestLater(name))) return;
+    if (startAfterReads("test:" + name, std::move(needs), {}, quickTestLater(name))) return;
     // Only the last quick test is kept: its result stays with the engine.
     const auto dir = storage_.root() / "tests";
     std::error_code ec;
