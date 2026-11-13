@@ -397,6 +397,21 @@ TEST_CASE("Tunnel: the public address in a service's session text") {
     CHECK_FALSE(findPublicUrl("").has_value());
 }
 
+TEST_CASE("Tunnel: server text made safe to show on a terminal") {
+    // Escape sequences (ESC, and CSI as a C1 control in UTF-8 or as a byte), other controls, DEL: replaced.
+    CHECK(printableText("bad\x1b]0;owned\x07title") == "bad?]0;owned?title");
+    CHECK(printableText("\xc2\x9b" "31m red \x9b" "0m \xc2\x85") == "?31m red ?0m ?");
+    CHECK(printableText(std::string("nul\0del\x7f", 8)) == "nul?del?");
+    CHECK(printableText("two\r\nlines\tand a tab") == "two  lines and a tab");
+    // UTF-8 kept; sequences cut short, too long, of surrogates or past U+10FFFF replaced byte by byte.
+    CHECK(printableText("caf\xc3\xa9 \xe2\x82\xac \xf0\x9f\x98\x80") == "caf\xc3\xa9 \xe2\x82\xac \xf0\x9f\x98\x80");
+    CHECK(printableText("\xc3") == "?");
+    CHECK(printableText("\xc0\xaf") == "??");
+    CHECK(printableText("\xed\xa0\x80") == "???");
+    CHECK(printableText("\xf4\x90\x80\x80") == "????");
+    CHECK(printableText("publickey,password") == "publickey,password");
+}
+
 TEST_CASE("Tunnel: --tunnel's value") {
     std::string error;
     const auto lr = parseTunnel("localhost.run", error);
@@ -1197,6 +1212,111 @@ TEST_CASE("Tunnel: the strict key exchange enforced until the server's first NEW
         CHECK_MESSAGE(tunnel.status().error.find(c.error) != std::string::npos, tunnel.status().error);
         CHECK(waitFor([&] { return server.done.load(); }));
     }
+}
+
+TEST_CASE("Tunnel: a server's DISCONNECT reason reaches the status without its escape sequences") {
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        server.send(Writer().byte(DISCONNECT).u32(11).string("bye\x1b[2J\x1b]0;pwned\x07\xc2\x9b" "0m").string("").take());
+    };
+    FakeServer server(SSH_PORT, script);
+    SshTunnel tunnel;
+    tunnel.start(loopback(fingerprint(serverKey().blob)));
+    CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }));
+    const auto error = tunnel.status().error;
+    CHECK(error.find("bye?[2J?]0;pwned??0m") != std::string::npos);
+    CHECK(error.find('\x1b') == std::string::npos);
+}
+
+TEST_CASE("Tunnel: a server that asks for answers while it keeps a key exchange open is left") {
+    // Its requests' answers wait for the end of the exchange: without a bound, they would take memory without end.
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        server.send(Writer()
+                        .byte(KEXINIT)
+                        .raw(randomBytes(16))
+                        .string("curve25519-sha256")
+                        .string("rsa-sha2-512")
+                        .string(script.ciphers)
+                        .string(script.ciphers)
+                        .string(script.macs)
+                        .string(script.macs)
+                        .string("none")
+                        .string("none")
+                        .string("")
+                        .string("")
+                        .boolean(false)
+                        .u32(0)
+                        .take());
+        server.nextOf(KEXINIT);
+        server.nextOf(KEX_ECDH_INIT);
+        try {
+            for (int i = 0; i < 2000; ++i) {
+                server.send(Writer().byte(GLOBAL_REQUEST).string("x").boolean(true).take());
+            }
+        } catch (const FakeServer::Failure&) {
+            // The client went before the end.
+        }
+    };
+    FakeServer server(SSH_PORT, script);
+    auto settings        = loopback(fingerprint(serverKey().blob));
+    settings.max_pending = 16 * 1024;
+    SshTunnel tunnel;
+    tunnel.start(settings);
+    CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }));
+    CHECK_MESSAGE(tunnel.status().error.find("does not take") != std::string::npos, tunnel.status().error);
+}
+
+TEST_CASE("Tunnel: viewers' connections the server never closes count until they are forgotten") {
+    // Closed on our side, never by the server: they counted for nothing before, and were kept for ever.
+    WebServer web;
+    REQUIRE(web.start(WEB_PORT).empty());
+    constexpr uint32_t MAX_CHANNELS = 48;
+    bool refused = false, accepted_again = false;
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        const auto open = [&](uint32_t sender) {
+            server.send(Writer()
+                            .byte(CHANNEL_OPEN)
+                            .string("forwarded-tcpip")
+                            .u32(sender)
+                            .u32(1 << 20)
+                            .u32(32768)
+                            .string("localhost")
+                            .u32(80)
+                            .string("203.0.113.9")
+                            .u32(5555)
+                            .take());
+        };
+        for (uint32_t i = 0; i < MAX_CHANNELS; ++i) open(1000 + i);
+        // Each answered and closed by the client; never by the server.
+        uint32_t closed = 0;
+        while (closed < MAX_CHANNELS) {
+            const auto m = server.next();
+            if (m[0] == CHANNEL_OPEN_CONFIRMATION) {
+                Reader r(std::string_view(m).substr(1));
+                r.u32();
+                server.send(Writer().byte(CHANNEL_DATA).u32(r.u32()).string(script.request).take());
+            }
+            closed += m[0] == CHANNEL_CLOSE ? 1 : 0;
+        }
+        open(2000);
+        refused = server.next()[0] == CHANNEL_OPEN_FAILURE;
+        std::this_thread::sleep_for(1500ms);  // past the close timeout
+        open(2001);
+        accepted_again = server.next()[0] == CHANNEL_OPEN_CONFIRMATION;
+    };
+    FakeServer server(SSH_PORT, script);
+    auto settings          = loopback(fingerprint(serverKey().blob));
+    settings.close_timeout = 1s;
+    SshTunnel tunnel;
+    tunnel.start(settings);
+    CHECK(waitFor([&] { return server.done.load() || (refused && accepted_again); }, 30s));
+    tunnel.stop();
+    CHECK(waitFor([&] { return server.done.load(); }));
+    CHECK_MESSAGE(server.error.empty(), server.error);
+    CHECK(refused);
+    CHECK(accepted_again);
 }
 
 TEST_CASE("Tunnel: the public address is forgotten once the connection is lost") {

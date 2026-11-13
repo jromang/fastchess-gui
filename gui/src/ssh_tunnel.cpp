@@ -46,6 +46,8 @@ constexpr uint32_t MAX_DATA = 32768;
 constexpr std::size_t MAX_CHANNELS = 48;
 // Bytes waiting to go to the server: beyond, the web server's connections are not read until they went.
 constexpr std::size_t OUT_LIMIT = 4 << 20;
+// What a message held during a key exchange takes besides its bytes (its string and its place in the queue), about.
+constexpr std::size_t HELD_OVERHEAD = 64;
 // The session's text kept to read the address in: its last 64 KiB at most (a new address, the domain rotated, comes
 // at the end).
 constexpr std::size_t MAX_SESSION_TEXT = 64 * 1024;
@@ -137,6 +139,42 @@ bool rememberHostKey(const std::filesystem::path& file, const std::string& host,
         (*known)[hostPort(host, port)] = fingerprint;
     }
     return writeJson(file, *known);
+}
+
+std::string printableText(std::string_view text) {
+    std::string out;
+    out.reserve(text.size());
+    for (std::size_t i = 0; i < text.size();) {
+        const auto c = static_cast<unsigned char>(text[i]);
+        if (c < 0x80) {
+            out += c == '\t' || c == '\n' || c == '\r' ? ' ' : c < 0x20 || c == 0x7F ? '?' : static_cast<char>(c);
+            ++i;
+            continue;
+        }
+        // A whole UTF-8 sequence, in its shortest form, of a character that is not a surrogate: kept, unless it is a
+        // C1 control (U+0080 to U+009F, CSI among them). Anything else, one byte at a time: replaced.
+        const std::size_t n = c >= 0xC2 && c <= 0xDF ? 2 : c >= 0xE0 && c <= 0xEF ? 3 : c >= 0xF0 && c <= 0xF4 ? 4 : 0;
+        uint32_t code = n == 2 ? c & 0x1F : n == 3 ? c & 0x0F : c & 0x07;
+        bool whole    = n != 0 && i + n <= text.size();
+        for (std::size_t k = 1; whole && k < n; ++k) {
+            const auto next = static_cast<unsigned char>(text[i + k]);
+            whole           = (next & 0xC0) == 0x80;
+            code            = code << 6 | (next & 0x3F);
+        }
+        constexpr uint32_t SHORTEST[] = {0, 0, 0x80, 0x800, 0x10000};
+        if (!whole || code < SHORTEST[n] || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
+            out += '?';
+            ++i;
+            continue;
+        }
+        if (code <= 0x9F) {
+            out += '?';
+        } else {
+            out.append(text.substr(i, n));
+        }
+        i += n;
+    }
+    return out;
 }
 
 std::optional<std::string> findPublicUrl(std::string_view output) {
@@ -288,6 +326,8 @@ class TunnelConnection {
         bool shut           = false;    // and the web server was told
         bool close_sent     = false;
         bool close_received = false;
+        bool forwarded      = false;  // a viewer's connection, not the session
+        Clock::time_point closed_at;  // when close_sent
     };
 
     enum class Phase { Version, Kex, Auth, Forward, OnAir };
@@ -295,7 +335,9 @@ class TunnelConnection {
 
     void fail(const std::string& reason, bool permanent = false) {
         if (!end_.reason.empty()) return;
-        end_.reason    = reason;
+        // Server text is in many reasons (DISCONNECT's, accepted before the keys; USERAUTH_FAILURE's methods): it
+        // goes to the window, the Console, and a headless run's terminal.
+        end_.reason    = printableText(reason);
         end_.permanent = permanent;
     }
 
@@ -305,11 +347,15 @@ class TunnelConnection {
         const auto type = static_cast<uint8_t>(payload[0]);
         const bool transport = type <= DEBUG_TEXT || (type >= KEXINIT && type < USERAUTH_REQUEST);
         if (kexinit_sent_ && !newkeys_sent_ && !transport) {
+            held_bytes_ += payload.size() + HELD_OVERHEAD;
             held_.push_back(std::move(payload));
-            return;
+        } else {
+            bytes_ += payload.size();
+            out_ += tx_.seal(payload, seq_tx_++);
         }
-        bytes_ += payload.size();
-        out_ += tx_.seal(payload, seq_tx_++);
+        // Our sends are bounded (the web server's connections are not read beyond OUT_LIMIT): more is a server that
+        // reads nothing, or asks for answers while it keeps a key exchange open.
+        if (out_.size() + held_bytes_ > cfg_.max_pending) fail("the server does not take what is sent to it");
     }
 
     // The socket: what came, what goes, every channel's connection.
@@ -390,12 +436,20 @@ class TunnelConnection {
         send(Writer().byte(CHANNEL_EOF).u32(ch.peer).take());
         send(Writer().byte(CHANNEL_CLOSE).u32(ch.peer).take());
         ch.close_sent = true;
+        ch.closed_at  = Clock::now();
         ch.to_local.clear();
         ch.socket.reset();
     }
 
     void timers() {
         const auto now = Clock::now();
+        // The channels we closed and the server did not: forgotten after a while (their numbers are not given again
+        // before 2^32 more).
+        for (auto it = channels_.begin(); it != channels_.end();) {
+            const auto& ch = it->second;
+            it = ch.close_sent && !ch.close_received && now - ch.closed_at > cfg_.close_timeout ? channels_.erase(it)
+                                                                                                : std::next(it);
+        }
         if (phase_ != Phase::OnAir) {
             if (now - started_ > HANDSHAKE_TIMEOUT) fail("no answer from the server in time");
             return;
@@ -650,6 +704,7 @@ class TunnelConnection {
         while (!held_.empty()) {
             auto payload = std::move(held_.front());
             held_.pop_front();
+            held_bytes_ -= std::min(held_bytes_, payload.size() + HELD_OVERHEAD);
             send(std::move(payload));
         }
     }
@@ -775,13 +830,17 @@ class TunnelConnection {
             send(Writer().byte(CHANNEL_OPEN_FAILURE).u32(sender).u32(code).string(why).string("").take());
         };
         if (type != "forwarded-tcpip" || phase_ != Phase::OnAir) return refuse(1, "not accepted");
-        if (static_cast<std::size_t>(relayed_count_) >= MAX_CHANNELS) return refuse(4, "too many connections");
+        // Those closed on our side that the server did not close yet count too: a server that never closes them
+        // must not have more and more.
+        const auto open = std::count_if(channels_.begin(), channels_.end(), [](const auto& c) { return c.second.forwarded; });
+        if (static_cast<std::size_t>(open) >= MAX_CHANNELS) return refuse(4, "too many connections");
         // Every channel waits meanwhile: a web server that does not answer at once is not there.
         const auto fd = net::connectTo(LOCALHOST, static_cast<uint16_t>(cfg_.local_port), LOCAL_CONNECT_TIMEOUT_MS);
         if (!fd) return refuse(2, "the web page is not served");
         const auto id    = nextId();
         auto& ch         = channels_[id];
         ch.peer          = sender;
+        ch.forwarded     = true;
         ch.socket        = std::make_unique<net::Socket>(*fd);
         ch.peer_window   = window;
         ch.peer_max      = std::clamp<uint32_t>(max, 1, MAX_DATA);
@@ -844,6 +903,7 @@ class TunnelConnection {
                 if (!ch.close_sent) {
                     send(Writer().byte(CHANNEL_CLOSE).u32(ch.peer).take());
                     ch.close_sent = true;
+                    ch.closed_at  = Clock::now();
                 }
                 ch.socket.reset();
                 return;
@@ -885,6 +945,7 @@ class TunnelConnection {
     std::string session_id_, host_key_;
     std::string known_print_;  // the host key trusted before, when the server shows another
     std::deque<std::string> held_;
+    std::size_t held_bytes_ = 0;  // what held_ takes, about
 
     // The channels.
     std::deque<Reply> replies_;

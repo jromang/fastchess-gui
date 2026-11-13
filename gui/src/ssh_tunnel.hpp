@@ -6,6 +6,7 @@
 // are read from any thread.
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -31,6 +32,11 @@ struct TunnelSettings {
     std::chrono::seconds rekey_after{3600};
     uint64_t rekey_bytes = uint64_t(1) << 30;
     std::chrono::seconds first_retry{2};
+    // Limits, lowered by the tests: the bytes waiting to go to the server (beyond, the connection ends: a server
+    // that takes nothing, or keeps a key exchange open while it asks for answers), and how long a channel closed on
+    // our side waits for the server's close before it is forgotten.
+    std::size_t max_pending = std::size_t(8) << 20;
+    std::chrono::seconds close_timeout{30};
 
     bool operator==(const TunnelSettings&) const = default;
 };
@@ -81,6 +87,11 @@ class SshTunnel {
     std::thread thread_;
     friend class TunnelConnection;
 };
+
+// `text` from the server (a reason, a list of methods) made safe to show on a terminal or in the window: control
+// characters (C0, DEL, C1) and bytes that are not UTF-8 replaced, so it cannot move the cursor, change colours or
+// set a terminal's title.
+[[nodiscard]] std::string printableText(std::string_view text);
 
 // The public address a tunnel service printed in `output` (the session's text): the last https:// address on a line
 // that tells of the tunnel ("tunneled", "forwarding"), else the first https:// address; none when there is none.
