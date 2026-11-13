@@ -356,6 +356,7 @@ TEST_CASE("ratings: thousands of engines, from the pairs that met") {
 #include <filesystem>
 
 #include <fstream>
+#include <tuple>
 
 #include <tour/game_db.hpp>
 #include <tour/ratinglist.hpp>
@@ -626,4 +627,234 @@ TEST_CASE("rating list: a PGN player is the library engine the user chose; two e
     REQUIRE(sf != list.entries.end());
     CHECK(sf->games == 1);
     fs::remove_all(root);
+}
+
+namespace {
+
+using HandGames = std::vector<std::tuple<uint32_t, uint32_t, uint32_t, float>>;  // source, white, black, White's score
+
+// A database of games, by hand.
+GameDb handDb(const std::vector<std::string>& engines, const std::vector<DbSource>& sources, const HandGames& games) {
+    GameDb db;
+    db.engines       = engines;
+    db.sources       = sources;
+    db.time_controls = {"10+0.1"};
+    for (const auto& [source, white, black, score] : games) {
+        DbGame g;
+        g.source      = source;
+        g.white       = white;
+        g.black       = black;
+        g.white_score = score;
+        db.games.push_back(g);
+    }
+    return db;
+}
+
+// `count` games of `white` against `black` scoring `score` for White.
+void repeat(HandGames& games, uint32_t white, uint32_t black, float score, int count, uint32_t source = 0) {
+    for (int i = 0; i < count; ++i) games.emplace_back(source, white, black, score);
+}
+
+}  // namespace
+
+TEST_CASE("rating list: wins, draws and losses, the opponents' average, the LOS and the gap to the next engine") {
+    HandGames games;
+    repeat(games, 0, 1, 1.0f, 3);  // A - B: +3 =2 -1 for A
+    repeat(games, 0, 1, 0.5f, 2);
+    repeat(games, 1, 0, 1.0f, 1);
+    repeat(games, 1, 2, 0.5f, 4);  // B - C: +2 =4 for B
+    repeat(games, 2, 1, 0.0f, 2);
+    repeat(games, 0, 2, 1.0f, 1);  // A - C: +2 for A
+    repeat(games, 2, 0, 0.0f, 1);
+    repeat(games, 3, 2, 0.5f, 2);  // D: two draws with C only
+    const auto db   = handDb({"A", "B", "C", "D"}, {{"t", {}, "Cup", false}}, games);
+    const auto list = ratingList(db, {}, std::nullopt);
+    REQUIRE(list.entries.size() == 4);
+
+    // Every game counted once for each side: the wins are the losses, the draws come in pairs.
+    int wins = 0, draws = 0, losses = 0, played = 0;
+    for (const auto& e : list.entries) {
+        CHECK(e.wins + e.draws + e.losses == e.games);
+        CHECK(e.points == doctest::Approx(e.wins + 0.5 * e.draws));
+        CHECK(e.drawRate() == doctest::Approx(static_cast<double>(e.draws) / e.games));
+        wins += e.wins, draws += e.draws, losses += e.losses, played += e.games;
+    }
+    CHECK(wins == losses);
+    CHECK(draws == 2 * 8);
+    CHECK(played == 2 * static_cast<int>(games.size()));
+    const auto find = [&](const std::string& name) {
+        return *std::find_if(list.entries.begin(), list.entries.end(), [&](const auto& e) { return e.name == name; });
+    };
+    const auto a = find("A"), b = find("B"), c = find("C"), d = find("D");
+    CHECK(a.wins == 5);
+    CHECK(a.draws == 2);
+    CHECK(a.losses == 1);
+    CHECK(b.wins == 3);  // one against A, two against C
+    CHECK(c.losses == 4);
+
+    // The opponents' average, each weighed by the games against it.
+    CHECK(a.opponents == doctest::Approx((6 * b.rating.elo + 2 * c.rating.elo) / 8));
+    CHECK(b.opponents == doctest::Approx((6 * a.rating.elo + 6 * c.rating.elo) / 12));
+    CHECK(d.opponents == doctest::Approx(c.rating.elo));
+
+    // Over the next engine of the list: the gap, and the LOS from the error of their difference, which is the error
+    // of the first one's rating with the second one as the anchor; nothing for the last.
+    for (std::size_t k = 0; k + 1 < list.entries.size(); ++k) {
+        const auto& e    = list.entries[k];
+        const auto& next = list.entries[k + 1];
+        REQUIRE(e.gap);
+        REQUIRE(e.los);
+        CHECK(*e.gap == doctest::Approx(e.rating.elo - next.rating.elo));
+        CHECK(*e.gap >= 0);
+        const auto anchored = ratingList(db, {}, std::make_pair(next.name, 0.0));
+        const auto it       = std::find_if(anchored.entries.begin(), anchored.entries.end(),
+                                           [&](const auto& x) { return x.name == e.name; });
+        REQUIRE(it != anchored.entries.end());
+        const double sigma = it->rating.error / 1.959963984540054;
+        CHECK(*e.los == doctest::Approx(0.5 * (1 + std::erf(*e.gap / sigma / std::sqrt(2.0)))));
+        CHECK(*e.los >= 0.5);
+    }
+    CHECK_FALSE(list.entries.back().gap);
+    CHECK_FALSE(list.entries.back().los);
+    CHECK(list.exact_los);
+
+    // With fewer engines listed, the next one is the next listed.
+    const auto most = ratingList(db, {}, std::nullopt, 8);
+    REQUIRE(most.entries.size() == 3);  // D has 2 games
+    for (std::size_t k = 0; k + 1 < most.entries.size(); ++k) {
+        CHECK(*most.entries[k].gap == doctest::Approx(most.entries[k].rating.elo - most.entries[k + 1].rating.elo));
+    }
+
+    // The same columns in the copies.
+    const auto text = ratingListText(list);
+    CHECK(text.find("Opp.") != std::string::npos);
+    CHECK(text.find("LOS") != std::string::npos);
+    CHECK(text.find("Gap") != std::string::npos);
+    const auto csv = ratingListCsv(list);
+    CHECK(csv.rfind("rank,engine,elo,error,games,score,wins,draws,losses,draw_rate,opponents,los,gap,tournaments\n",
+                    0) == 0);
+    CHECK(csv.find("1," + list.entries[0].name + ",") != std::string::npos);
+    CHECK(csv.find("," + std::to_string(a.wins) + "," + std::to_string(a.draws) + "," + std::to_string(a.losses) +
+                   ",") != std::string::npos);
+    // The last engine's LOS and gap are empty, and only they.
+    const auto last = csv.substr(csv.rfind('\n', csv.size() - 2) + 1);
+    CHECK(last.find(",,,") != std::string::npos);
+    CHECK(last.find(",,,,") == std::string::npos);
+}
+
+TEST_CASE("ratings: the error of a difference, the likelihood of superiority") {
+    CHECK(likelihoodOfSuperiority(0, 20) == doctest::Approx(0.5));
+    CHECK(likelihoodOfSuperiority(20, 20) == doctest::Approx(0.975));  // one 95 % half-width above 0
+    CHECK(likelihoodOfSuperiority(-20, 20) == doctest::Approx(0.025));
+    CHECK(likelihoodOfSuperiority(5, 0) == 1.0);
+    CHECK(likelihoodOfSuperiority(0, 0) == 0.5);
+
+    // The error of r_a - r_b is that of r_a with b as the anchor, whichever the anchor of the solution.
+    const std::vector<PairGames> pairs = {{0, 1, 10, 7}, {0, 2, 4, 1}, {1, 2, 6, 4}, {2, 3, 8, 4}};
+    for (const auto& anchor : {std::optional<std::pair<int, double>>{}, std::optional(std::make_pair(1, 2500.0))}) {
+        const auto solution = ratingSolution(4, pairs, anchor);
+        CHECK(solution.exact);
+        for (std::size_t a = 0; a < 4; ++a) {
+            const auto by_a = maximumLikelihood(4, pairs, std::make_pair(static_cast<int>(a), 0.0));
+            for (std::size_t b = 0; b < 4; ++b) CHECK(solution.differenceError(b, a) == doctest::Approx(by_a[b].error));
+        }
+    }
+
+    // Beyond 1000 players, approximated: still finite, and within the reach of the two errors.
+    std::vector<PairGames> ring;
+    constexpr std::size_t n = 1100;
+    for (std::size_t i = 0; i < n; ++i) ring.push_back({i, (i + 1) % n, 100, i % 3 == 0 ? 55.0 : 48.0});
+    const auto big = ratingSolution(n, ring, std::make_pair(0, 0.0));
+    CHECK_FALSE(big.exact);
+    const double error = big.differenceError(10, 11);
+    CHECK(std::isfinite(error));
+    CHECK(error > 0);
+    CHECK(error <= big.ratings[10].error + big.ratings[11].error);
+}
+
+TEST_CASE("rating list: HTML and Markdown with a header of sources, results, anchor and filters, names escaped") {
+    HandGames games;
+    repeat(games, 0, 1, 1.0f, 3);  // in the tournament: 3 wins for White, 1 for Black, 2 draws
+    repeat(games, 1, 0, 1.0f, 1);
+    repeat(games, 0, 1, 0.5f, 2);
+    repeat(games, 2, 0, 0.0f, 2, 1);  // in the PGN file: 2 wins for Black
+    const auto db   = handDb({"A|B <x>", "C\\D", "E*F_G"},
+                             {{"t", {}, "Cup & <Co>", false}, {"list.pgn", {}, "list.pgn", true}}, games);
+    const auto list = ratingList(db, {}, std::make_pair(std::string("C\\D"), 3000.0), 2);
+    CHECK(list.white_wins == 4);
+    CHECK(list.black_wins == 2);
+    CHECK(list.draws == 2);
+    CHECK(list.whiteScore() == doctest::Approx(5.0 / 8));
+    CHECK(list.tournament_names == std::vector<std::string>{"Cup & <Co>"});
+    CHECK(list.pgn_files == std::vector<std::string>{"list.pgn"});
+
+    RatingListInfo info;
+    info.anchor       = "C\\D";
+    info.anchor_elo   = 3000;
+    info.time_control = "60+0.6";
+    info.period       = "the last 30 days";
+    info.external     = false;
+    info.min_games    = 2;
+    info.date         = "2026-11-13";
+    info.version      = "0.5.6";
+    const auto header = ratingListHeader(list, info);
+    using Line        = std::pair<std::string, std::string>;
+    CHECK(header == std::vector<Line>{
+                        {"Sources", "1 tournament: Cup & <Co>; 1 PGN file: list.pgn"},
+                        {"Games", "8: White wins 4, Black wins 2, draws 2; White scores 62.5%"},
+                        {"Anchor", "C\\D at 3000"},
+                        {"Filters", "time control 60+0.6, every engine, the last 30 days, imported games left out"},
+                        {"Minimum games", "2"},
+                        {"Made", "2026-11-13 by fastchess-gui 0.5.6"},
+                    });
+    const auto text = ratingListHeaderText(list, {});
+    CHECK(text.find("Anchor: none, the ratings average 0\n") != std::string::npos);
+    CHECK(text.find("Filters: every time control, every engine, every game, imported games counted\n") !=
+          std::string::npos);
+    CHECK(text.find("Made") == std::string::npos);
+
+    // HTML: the standings' page, light and dark; every name and header value escaped.
+    const auto html = ratingListHtml(list, info);
+    CHECK(html.rfind("<!doctype html>", 0) == 0);
+    CHECK(html.find("prefers-color-scheme:dark") != std::string::npos);
+    CHECK(html.find("<h1>Rating list</h1>") != std::string::npos);
+    CHECK(html.find("<td class=\"l\">A|B &lt;x&gt;</td>") != std::string::npos);
+    CHECK(html.find("<dd>1 tournament: Cup &amp; &lt;Co&gt;; 1 PGN file: list.pgn</dd>") != std::string::npos);
+    CHECK(html.find("<x>") == std::string::npos);
+    CHECK(html.find("<Co>") == std::string::npos);
+    CHECK(html.find("<th>LOS</th>") == std::string::npos);  // with its title
+    CHECK(html.find(">LOS</th>") != std::string::npos);
+    CHECK(html.find("</html>") != std::string::npos);
+    std::size_t rows = 0;
+    for (auto at = html.find("<tr><td>"); at != std::string::npos; at = html.find("<tr><td>", at + 1)) ++rows;
+    CHECK(rows == list.entries.size());
+
+    // Markdown: a table whose rows have as many cells as its head, the names' pipes and backslashes escaped.
+    CHECK(escapeMarkdown("A|B <x>") == "A\\|B \\<x\\>");
+    CHECK(escapeMarkdown("C\\D") == "C\\\\D");
+    CHECK(escapeMarkdown("E*F_G [1]\n`x`") == "E\\*F\\_G \\[1\\] \\`x\\`");
+    const auto md = ratingListMarkdown(list, info);
+    CHECK(md.rfind("## Rating list\n\n", 0) == 0);
+    CHECK(md.find("- Anchor: C\\\\D at 3000\n") != std::string::npos);
+    CHECK(md.find("- Sources: 1 tournament: Cup & \\<Co\\>; 1 PGN file: list.pgn\n") != std::string::npos);
+    CHECK(md.find("| A\\|B \\<x\\> |") != std::string::npos);
+    CHECK(md.find("| C\\\\D |") != std::string::npos);
+    const auto cells = [](const std::string& line) {
+        int n = 0;
+        for (std::size_t i = 0; i < line.size(); ++i) {
+            if (line[i] == '\\') {
+                ++i;
+            } else if (line[i] == '|') {
+                ++n;
+            }
+        }
+        return n - 1;
+    };
+    std::vector<std::string> table;
+    for (std::size_t at = md.find("\n|"); at != std::string::npos; at = md.find("\n|", at + 1)) {
+        table.push_back(md.substr(at + 1, md.find('\n', at + 1) - at - 1));
+    }
+    REQUIRE(table.size() == 2 + list.entries.size());
+    CHECK(cells(table[0]) == 14);
+    for (const auto& line : table) CHECK(cells(line) == cells(table[0]));
 }

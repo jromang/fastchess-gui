@@ -716,7 +716,7 @@ void drawOpenPathError() {
     ImGui::EndPopup();
 }
 
-CopyAs copyButton(const char* id, bool small, bool gauntlet) {
+CopyAs copyButton(const char* id, bool small, bool gauntlet, bool* header) {
     // The label is followed by room for a small arrow, drawn rather than taken from the font.
     const float arrow   = ImGui::GetFontSize() * 0.6f;
     const auto label    = fmt::format("{}     ##{}", TR("Copy"), id);
@@ -738,6 +738,12 @@ CopyAs copyButton(const char* id, bool small, bool gauntlet) {
             ImGui::Separator();
             if (ImGui::MenuItem(TR("Gauntlet table as text"))) choice = CopyAs::GauntletText;
             if (ImGui::MenuItem(TR("Gauntlet table as BBCode, for a forum"))) choice = CopyAs::GauntletBbcode;
+        }
+        if (header) {
+            ImGui::Separator();
+            ImGui::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
+            ImGui::MenuItem(TR("With a header"), nullptr, header);
+            ImGui::PopItemFlag();
         }
         ImGui::EndPopup();
     }

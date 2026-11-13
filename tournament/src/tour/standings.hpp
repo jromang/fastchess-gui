@@ -2,6 +2,7 @@
 
 // Standings, crosstable and ratings of a tournament, computed from its results.
 
+#include <functional>
 #include <map>
 #include <optional>
 #include <string>
@@ -102,6 +103,24 @@ struct PairGames {
 [[nodiscard]] std::vector<Rating> maximumLikelihood(std::size_t n, const std::vector<PairGames>& pairs,
                                                     std::optional<std::pair<int, double>> anchor = std::nullopt);
 
+// The ratings of maximumLikelihood() for a rating list, with what the error of the difference between two of them
+// needs: their covariance, exact up to 1000 players, then approximated from each one's information and the games the
+// two played together (`exact` false).
+struct RatingSolution {
+    std::vector<Rating> ratings;
+    bool exact = true;
+    std::function<double(std::size_t, std::size_t)> difference_error;
+
+    // The half-width of the 95 % interval of ratings[a].elo - ratings[b].elo.
+    [[nodiscard]] double differenceError(std::size_t a, std::size_t b) const;
+};
+[[nodiscard]] RatingSolution ratingSolution(std::size_t n, const std::vector<PairGames>& pairs,
+                                            std::optional<std::pair<int, double>> anchor = std::nullopt);
+
+// The likelihood of superiority, 0 to 1, of a rating `difference` known within `error` (the half-width of its 95 %
+// interval): the probability that the difference is above 0 on the normal law, as fastchess' LOS of a match.
+[[nodiscard]] double likelihoodOfSuperiority(double difference, double error);
+
 // The orders a table can be shown in.
 enum class Order {
     Points,  // the ranking of computeTable()
@@ -123,6 +142,13 @@ enum class Order {
 // One line describing the tournament under its standings in a forum post: format, engines, time control, games
 // played, book. In English, like the table.
 [[nodiscard]] std::string forumDetails(const TournamentSpec& spec, const Table& table);
+
+// `s` with &, <, > and " as HTML entities.
+[[nodiscard]] std::string escapeHtml(const std::string& s);
+
+// The start of a self-contained HTML page, light or dark as the reader's system: its head and style, the body open
+// with `title` as its heading. The pages of the standings and of the rating list.
+[[nodiscard]] std::string htmlPageStart(const std::string& title);
 
 // A self-contained HTML page with the standings and the crosstable, and the footer under them when there is one.
 [[nodiscard]] std::string tableHtml(const Table& table, const std::string& title, const std::string& footer = "");

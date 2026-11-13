@@ -27,6 +27,8 @@ class Dialogs {
         ImportEngineFolder,
         ImportRatingList,
         ExportRatings,
+        ExportRatingHtml,
+        ExportRatingMarkdown,
         ExportRatingPgn,
         ImportRatingPgn,
         ExportHeadToHead,
