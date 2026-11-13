@@ -401,15 +401,31 @@ class App {
     void pollFingerprints();  // the CRCs refreshPrograms reads in the background
     // Reads the engine's options now, or first when another engine is being read.
     void startProbe(int index);
+    void launchProbe(int index);  // reads it now: nothing else is being read
     // This engine's options are being read, or waiting to be.
     [[nodiscard]] bool probing(const std::string& name) const;
     void pollProbe();
     void applyProbe();  // the result of the read that ended
     // An engine of the setup: its read comes first.
     [[nodiscard]] bool inSetup(const std::string& name) const;
-    // A start (of a run, a resume, a quick test) waits for the reads and checks in flight, which read fastchess'
-    // configuration that it replaces; meanwhile no other read or check starts. True when `start` was put off.
-    bool startAfterReads(std::function<void()> start);
+    // A start (of a run, a resume, the queue, a quick test) must not replace fastchess' configuration while a read or
+    // a check reads it: it waits for the read of an engine it plays (`needs`), and interrupts the others, which are
+    // done again later (see startGate). Meanwhile no other read or check starts. `key` names what it starts: asked
+    // again while it waits, nothing changes. True when `start` was put off.
+    bool startAfterReads(const std::string& key, std::vector<std::string> needs, std::function<void()> start);
+    // Moves a start put off on: true once it may start.
+    bool advanceStart();
+    void pollStart();
+    [[nodiscard]] static std::string resumeKey(const std::filesystem::path& dir) { return "resume:" + dir.string(); }
+    // The start put off under `key`, if any.
+    [[nodiscard]] bool startPending(const std::string& key) const {
+        return pending_start_ && pending_start_->key == key;
+    }
+    // Instead of the button that started it, the start put off under `key`: what it waits for, and Cancel. False when
+    // there is none.
+    bool drawStartWaiting(const char* id, const std::string& key, bool icon = true);
+    // What the card of the tournament put off under `key` says it waits for; empty when there is nothing to say.
+    [[nodiscard]] std::string startWaitingText(const std::string& key) const;
     void startCheck(int index);
     void startQuickTest(int index);
     void finishQuickTest();
@@ -603,7 +619,17 @@ class App {
     int probe_index_ = -1;
     EngineEntry probe_entry_;   // the engine being read, as it was then: changed since, its result is stale
     bool probe_again_ = false;  // asked for again while it was read: its result is dropped, it is read again
-    std::function<void()> start_after_reads_;  // see startAfterReads
+    // A start put off, see startAfterReads.
+    struct PendingStart {
+        std::string key;  // "start", "queue", "resume:" and the folder, "test:" and the engine
+        std::vector<std::string> needs;
+        std::function<void()> start;
+        std::string waiting_for;     // the engine whose read it waits for; empty while reads are interrupted
+        bool waiting_check = false;  // ... or whose check
+    };
+    std::optional<PendingStart> pending_start_;
+    // Set to interrupt the read or the check in flight (its engine process ended too): it is done again later.
+    std::shared_ptr<std::atomic_bool> probe_interrupted_, check_interrupted_;
     std::vector<std::string> probe_queue_;  // engine names waiting for a probe
     std::string probe_message_;
     std::string option_filter_;

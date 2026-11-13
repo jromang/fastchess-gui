@@ -140,6 +140,8 @@ void App::renameEngine(int index, const std::string& name) {
     if (queue) storage_.saveQueue(queue_);
     for (auto& n : probe_queue_) follow(n);
     for (auto& n : check_queue_) follow(n);
+    if (pending_start_)
+        for (auto& n : pending_start_->needs) follow(n);
     follow(quick_test_engine_);
     follow(quick_test_opponent_);
     follow(relaunch_engine_);
@@ -251,23 +253,28 @@ void App::startProbe(int index) {
         probe_again_ = true;
         return;
     }
-    // Asked for by name (a button, a new protocol, a check): first in the queue, not dropped.
-    if (probe_.valid() || start_after_reads_) {
+    // Asked for by name (a button, a new protocol, a check): first in the queue, not dropped. While a start waits, it
+    // reads what it needs first (see advanceStart).
+    if (probe_.valid() || pending_start_) {
         std::erase(probe_queue_, name);
         probe_queue_.insert(probe_queue_.begin(), name);
         return;
     }
+    launchProbe(index);
+}
 
-    std::erase(probe_queue_, name);
-    probe_index_   = index;
-    probe_entry_   = engines_[index];
-    probe_again_   = false;
-    probe_message_ = TR("Reading the engine…");
+void App::launchProbe(int index) {
+    std::erase(probe_queue_, engines_[index].name);
+    probe_index_       = index;
+    probe_entry_       = engines_[index];
+    probe_again_       = false;
+    probe_message_     = TR("Reading the engine…");
+    probe_interrupted_ = std::make_shared<std::atomic_bool>(false);
     g_probes_in_flight++;
 
-    probe_ = std::async(std::launch::async, [entry = engines_[index]] {
+    probe_ = std::async(std::launch::async, [entry = engines_[index], interrupted = probe_interrupted_] {
         const InFlight in_flight;
-        return probeEngine(entry);
+        return probeEngine(entry, interrupted.get());
     });
 }
 
@@ -279,20 +286,123 @@ bool App::probing(const std::string& name) const {
     return std::find(probe_queue_.begin(), probe_queue_.end(), name) != probe_queue_.end();
 }
 
-bool App::startAfterReads(std::function<void()> start) {
-    if (g_probes_in_flight == 0 && !probe_.valid() && !check_.valid()) return false;
-    if (!start_after_reads_) Console::instance().add(TR("Starts once the engine being read or checked is done…"));
-    start_after_reads_ = std::move(start);
+bool App::startAfterReads(const std::string& key, std::vector<std::string> needs, std::function<void()> start) {
+    // A tournament plays: the start says so itself, and nothing here may end its engines.
+    if (run_.running()) return false;
+    // Pressed again, or from another place, while it waits: it goes on waiting, as it was.
+    if (startPending(key)) return true;
     start_error_.clear();
+    pending_start_ = PendingStart{key, std::move(needs), std::move(start), {}, false};
+    if (advanceStart()) {
+        pending_start_.reset();
+        return false;
+    }
     return true;
+}
+
+bool App::advanceStart() {
+    // What ended meanwhile first: a read it needs is applied, and what ended is not interrupted for nothing.
+    if (probe_.valid() && probe_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) applyProbe();
+    if (check_.valid() && check_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) pollCheck();
+    if (!pending_start_) return false;  // a read it needed failed: it does not start
+
+    auto& pending     = *pending_start_;
+    const auto ending = [](const auto& job, const auto& interrupted) {
+        return job.valid() && interrupted && *interrupted;
+    };
+    const auto engine_name = [&](int index) {
+        return index >= 0 && index < static_cast<int>(engines_.size()) ? engines_[index].name : std::string("?");
+    };
+    // Interrupted reads and checks still ending: their engines again, one may have been starting meanwhile (not
+    // while a test suite runs, whose engines would end too).
+    if (ending(probe_, probe_interrupted_) || ending(check_, check_interrupted_)) {
+        if (!suite_runner_.running()) interruptEngineProcesses();
+        return false;
+    }
+
+    const auto reading  = probe_.valid() ? engine_name(probe_index_) : std::string();
+    const auto checking = check_.valid() ? engine_name(check_index_) : std::string();
+    const auto gate     = startGate(pending.needs, reading, checking, probe_queue_, !suite_runner_.running());
+    pending.waiting_for.clear();
+    pending.waiting_check = false;
+    switch (gate.action) {
+        case StartGate::Action::Start:
+            return true;
+        case StartGate::Action::Wait:
+            pending.waiting_for   = gate.engine;
+            pending.waiting_check = gate.check;
+            return false;
+        case StartGate::Action::Read:
+            pending.waiting_for = gate.engine;
+            for (int i = 0; i < static_cast<int>(engines_.size()); ++i) {
+                if (engines_[i].name == gate.engine) {
+                    launchProbe(i);
+                    return false;
+                }
+            }
+            std::erase(probe_queue_, gate.engine);  // gone from the library meanwhile
+            return false;
+        case StartGate::Action::Interrupt:
+            // The flags first: a thread whose engine ended gives up rather than start it again.
+            if (gate.interrupt_read) {
+                *probe_interrupted_ = true;
+                Console::instance().add(
+                    trf("The read of {} is interrupted for the start: it is done again later.", reading));
+            }
+            if (gate.interrupt_check) {
+                *check_interrupted_ = true;
+                Console::instance().add(
+                    trf("The check of {} is interrupted for the start: it is done again later.", checking));
+            }
+            interruptEngineProcesses();
+            return false;
+    }
+    return false;
+}
+
+void App::pollStart() {
+    if (!pending_start_) return;
+    if (quit_ || quit_pending_ || run_.running()) {
+        pending_start_.reset();
+        return;
+    }
+    if (!advanceStart()) return;
+    const auto start = std::exchange(pending_start_, std::nullopt)->start;
+    start();
+}
+
+bool App::drawStartWaiting(const char* id, const std::string& key, bool icon) {
+    if (!startPending(key)) return false;
+    const auto& pending = *pending_start_;
+    const auto label =
+        pending.waiting_for.empty() ? std::string(TR("Starting…")) : trf("Waiting for {}…", pending.waiting_for);
+    if (icon) {
+        (void)ui::iconButton(id, ui::Icon::Play, label.c_str(), false);
+    } else {
+        ImGui::BeginDisabled();
+        ImGui::Button(fmt::format("{}###{}", label, id).c_str());
+        ImGui::EndDisabled();
+    }
+    ImGui::SameLine();
+    ImGui::PushID(id);
+    if (ImGui::SmallButton(TR("Cancel"))) pending_start_.reset();
+    ImGui::PopID();
+    return true;
+}
+
+std::string App::startWaitingText(const std::string& key) const {
+    if (!startPending(key) || pending_start_->waiting_for.empty()) return {};
+    const auto& name = pending_start_->waiting_for;
+    return pending_start_->waiting_check ? trf("It starts once the check of {} ends.", name)
+                                         : trf("It starts once the options of {} are read.", name);
 }
 
 void App::pollProbe() {
     pollFingerprints();
 
-    // Start the next queued probe when idle, but never while a run is being set up, or waits for the reads to end.
-    // The engines of the setup first: its Start waits for them.
-    if (!probe_.valid() && !probe_queue_.empty() && !run_.running() && !start_after_reads_) {
+    // Start the next queued probe when idle, but never while a run is being set up, or a start waits: that start
+    // reads what it needs itself (see advanceStart). The engines of the setup first.
+    if (!probe_.valid() && !probe_queue_.empty() && !run_.running() && !pending_start_) {
         auto next = std::find_if(probe_queue_.begin(), probe_queue_.end(), [&](const auto& n) { return inSetup(n); });
         if (next == probe_queue_.end()) next = probe_queue_.begin();
         const auto name = *next;
@@ -306,13 +416,6 @@ void App::pollProbe() {
     }
 
     if (probe_.valid() && probe_.wait_for(std::chrono::seconds(0)) == std::future_status::ready) applyProbe();
-
-    // A start put off until the reads and checks in flight end.
-    if (start_after_reads_ && (quit_ || quit_pending_)) start_after_reads_ = {};
-    if (start_after_reads_ && g_probes_in_flight == 0 && !probe_.valid() && !check_.valid()) {
-        const auto start = std::exchange(start_after_reads_, {});
-        start();
-    }
 }
 
 void App::applyProbe() {
@@ -322,12 +425,21 @@ void App::applyProbe() {
     } catch (const std::exception& e) {
         result.error = e.what();
     }
-    const int index  = probe_index_;
-    const bool again = std::exchange(probe_again_, false);
-    probe_index_     = -1;
+    const int index        = probe_index_;
+    const bool again       = std::exchange(probe_again_, false);
+    const bool interrupted = probe_interrupted_ && *probe_interrupted_;
+    probe_index_           = -1;
 
     if (index < 0 || index >= static_cast<int>(engines_.size())) return;
     auto& e = engines_[index];
+
+    // Interrupted for a start: read again, first, once reads go on.
+    if (interrupted) {
+        std::erase(probe_queue_, e.name);
+        probe_queue_.insert(probe_queue_.begin(), e.name);
+        probe_message_.clear();
+        return;
+    }
 
     // Asked for again, or given another program, arguments, folder or protocol while it was read: the result is the
     // old engine's. It is read again, first.
@@ -342,6 +454,13 @@ void App::applyProbe() {
 
     if (!result.ok) {
         probe_message_ = trf("Failed: {}", result.error);
+        // A start waited for it: it would play an engine that cannot be read.
+        if (pending_start_ && std::find(pending_start_->needs.begin(), pending_start_->needs.end(), e.name) !=
+                                  pending_start_->needs.end()) {
+            pending_start_.reset();
+            start_error_ = trf("Not started: the options of {} cannot be read.", e.name);
+            Console::instance().add(start_error_, true);
+        }
         // The program as it is now: a rebuilt engine that cannot be read is not read again at every focus change.
         if (result.program.size > 0) {
             e.program = result.program;
@@ -687,7 +806,7 @@ void App::drawEngines() {
                     selected_engine_ = i;
                     engine_marked_.clear();
                 }
-                if (ImGui::MenuItem(TR("Check"), nullptr, false, !check_.valid() && !start_after_reads_)) startCheck(i);
+                if (ImGui::MenuItem(TR("Check"), nullptr, false, !check_.valid() && !pending_start_)) startCheck(i);
                 const bool being_read = probe_.valid() && probe_index_ == i;
                 if (ImGui::MenuItem(
                         probing(e.name) && !being_read ? TR("Read it next") : TR("Read the UCI options again"), nullptr,
@@ -896,7 +1015,7 @@ void App::drawEngines() {
 
     // Health check.
     ImGui::Spacing();
-    ImGui::BeginDisabled(check_.valid() || start_after_reads_ || in_use);
+    ImGui::BeginDisabled(check_.valid() || pending_start_ || in_use);
     if (ImGui::Button(check_.valid() && check_index_ == selected_engine_ ? TR("Checking…") : TR("Check"))) {
         startCheck(selected_engine_);
     }
@@ -935,11 +1054,12 @@ void App::drawEngines() {
     }
 
     // Quick test: a short match, through the tournament code.
+    const bool test_waits = drawStartWaiting("quick_test", "test:" + e.name, false);
     ImGui::BeginDisabled(run_.running());
-    if (ImGui::Button(quick_test_engine_ == e.name ? TR("Testing…") : TR("Quick test")))
+    if (!test_waits && ImGui::Button(quick_test_engine_ == e.name ? TR("Testing…") : TR("Quick test")))
         startQuickTest(selected_engine_);
     ImGui::EndDisabled();
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+    if (!test_waits && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
         ImGui::SetTooltip("%s", run_.running() ? TR("After the running match.")
                                                : TR("10 games at 10+0.1 from 5 positions, to see before a long "
                                                     "tournament whether it loses on time, crashes, plays an illegal "
@@ -1216,20 +1336,23 @@ bool App::engineInUse(const std::string& name) const {
 }
 
 void App::startCheck(int index) {
-    if (check_.valid() || start_after_reads_ || index < 0 || index >= static_cast<int>(engines_.size())) return;
-    check_index_     = index;
-    const auto entry = engines_[index];
+    if (check_.valid() || pending_start_ || index < 0 || index >= static_cast<int>(engines_.size())) return;
+    check_index_       = index;
+    const auto entry   = engines_[index];
+    check_interrupted_ = std::make_shared<std::atomic_bool>(false);
     // Counted like a read: a run must not replace fastchess' configuration while the check reads its timeouts.
     g_probes_in_flight++;
-    check_ = std::async(std::launch::async, [entry] {
+    check_ = std::async(std::launch::async, [entry, interrupted = check_interrupted_] {
         const InFlight in_flight;
-        return checkEngine(entry);
+        return checkEngine(entry, interrupted.get());
     });
 }
 
 void App::startQuickTest(int index) {
     if (index < 0 || index >= static_cast<int>(engines_.size()) || run_.running()) return;
-    if (startAfterReads([this, name = engines_[index].name] {
+    std::vector<std::string> needs = {engines_[index].name};
+    if (!quick_test_opponent_.empty()) needs.push_back(quick_test_opponent_);
+    if (startAfterReads("test:" + engines_[index].name, std::move(needs), [this, name = engines_[index].name] {
             const auto it =
                 std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == name; });
             if (it != engines_.end()) startQuickTest(static_cast<int>(it - engines_.begin()));
@@ -1284,7 +1407,7 @@ void App::finishQuickTest() {
 
 void App::pollCheck() {
     // The next queued check when idle: not while a run plays, whose games it would slow down, nor waits to start.
-    if (!check_.valid() && !check_queue_.empty() && !run_.running() && !start_after_reads_) {
+    if (!check_.valid() && !check_queue_.empty() && !run_.running() && !pending_start_) {
         const auto name = check_queue_.front();
         check_queue_.erase(check_queue_.begin());
         const auto it = std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == name; });
@@ -1301,6 +1424,12 @@ void App::pollCheck() {
     const int index = check_index_;
     check_index_    = -1;
     if (index < 0 || index >= static_cast<int>(engines_.size())) return;
+    // Interrupted for a start: checked again, first, once checks go on.
+    if (check_interrupted_ && *check_interrupted_) {
+        std::erase(check_queue_, engines_[index].name);
+        check_queue_.insert(check_queue_.begin(), engines_[index].name);
+        return;
+    }
 
     auto& e         = engines_[index];
     e.check_ok      = result.ok ? 1 : 0;

@@ -131,6 +131,11 @@ void writeChess960Book(const std::filesystem::path& path);
 // The engine processes running now: the games', the engine reads' and checks'.
 [[nodiscard]] int engineProcesses();
 
+// Ends every engine process running now, at once: the reads they answer fail as if the engines had stopped. For a
+// start that interrupts the reads and checks in flight, so only when no tournament, quick test or test suite runs.
+// The processes are left to the threads that started them, which close and reap them.
+void interruptEngineProcesses();
+
 // The tournament's name when the user gave none: "A vs B", "Round robin, 8 engines"...
 [[nodiscard]] std::string defaultTournamentName(const MatchSetup& setup);
 
@@ -209,7 +214,7 @@ class RunController {
 };
 
 // Number of engine reads and checks in flight; a run never starts while one is, since both read the
-// global fastchess configuration.
+// global fastchess configuration (its timeouts), which a start replaces. See startGate.
 inline std::atomic_int g_probes_in_flight{0};
 
 }  // namespace fcg

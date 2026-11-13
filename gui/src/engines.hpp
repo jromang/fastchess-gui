@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <optional>
 #include <string>
@@ -38,7 +39,9 @@ struct ProbeResult {
 
 // Finds out the protocol when the entry does not say it, then starts the engine, waits for uciok and quits it. Blocks
 // for up to the startup timeout, so call it from a background thread. Needs config::TournamentConfig to be set.
-[[nodiscard]] ProbeResult probeEngine(const EngineEntry& entry);
+// `interrupted`, once set (and the engine process ended, see interruptEngineProcesses), makes it give up rather than
+// start the engine again.
+[[nodiscard]] ProbeResult probeEngine(const EngineEntry& entry, const std::atomic_bool* interrupted = nullptr);
 
 struct CheckResult {
     bool ok = false;
@@ -50,7 +53,8 @@ struct CheckResult {
 // long it takes to answer uciok and isready, lets it think on the initial position and checks that its move is legal;
 // then runs fastchess' UCI compliance steps, its options sent too (not for an engine spoken to in xboard). Blocks for
 // up to the startup timeout plus a few seconds. Failures come with what the engine wrote last, in the report.
-[[nodiscard]] CheckResult checkEngine(const EngineEntry& entry);
+// `interrupted`: as for probeEngine.
+[[nodiscard]] CheckResult checkEngine(const EngineEntry& entry, const std::atomic_bool* interrupted = nullptr);
 
 // The same program, with the same arguments: the same engine, whatever its options (its first read changes them).
 // Windows file names ignore case: C:\Engines\SF.EXE is c:\engines\sf.exe.

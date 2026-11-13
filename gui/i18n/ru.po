@@ -1088,6 +1088,12 @@ msgstr "Прервано: движок вылетел или перестал о
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "Он продолжится ровно с того места, где остановился: ни одна партия не потеряется и не будет сыграна дважды."
 
+msgid "It starts once the check of {} ends."
+msgstr "Начнётся, как только закончится проверка {}."
+
+msgid "It starts once the options of {} are read."
+msgstr "Начнётся, как только будут прочитаны опции {}."
+
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr "Его карточка в «Рейтингах»: результаты, надёжность и рейтинг по всем турнирам."
 
@@ -1357,6 +1363,9 @@ msgstr "Ещё не проверен."
 
 msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
 msgstr "Нет в PGN этой партии: включите это поле в параметрах PGN в настройке."
+
+msgid "Not started: the options of {} cannot be read."
+msgstr "Не запущено: не удаётся прочитать опции {}."
 
 msgid "Notes"
 msgstr "Заметки"
@@ -1970,14 +1979,14 @@ msgstr "Запускаются один за другим, когда текущ
 msgid "Started: {}, {}, {} concurrent games{}. Folder: {}"
 msgstr "Запущено: {}, {}, одновременных партий: {}{}. Папка: {}"
 
+msgid "Starting…"
+msgstr "Запуск…"
+
 msgid "Starts by itself when the running tournament ends."
 msgstr "Запустится сам, когда завершится текущий турнир."
 
 msgid "Starts in {} ms · isready {:.1f} ms · first move {}"
 msgstr "Запуск за {} мс · isready {:.1f} мс · первый ход {}"
-
-msgid "Starts once the engine being read or checked is done…"
-msgstr "Начнётся, как только закончится чтение или проверка движка…"
 
 msgid "Starts the engine, measures how fast it answers, checks one move, then runs fastchess' UCI compliance steps."
 msgstr "Запускает движок, измеряет скорость его ответа, проверяет один ход, затем проходит этапы проверки соответствия UCI из fastchess."
@@ -2108,6 +2117,9 @@ msgstr "Изменение отменено."
 msgid "The charts appear with the first results."
 msgstr "Графики появятся с первыми результатами."
 
+msgid "The check of {} is interrupted for the start: it is done again later."
+msgstr "Проверка {} прервана для запуска: она будет повторена позже."
+
 msgid "The depth must be positive."
 msgstr "Глубина должна быть положительной."
 
@@ -2218,6 +2230,9 @@ msgstr "Очередь закончится около {} (через {})"
 
 msgid "The rating of the engines chosen after each tournament they played: the versions of an engine, side by side."
 msgstr "Рейтинг выбранных движков после каждого сыгранного ими турнира: версии движка рядом."
+
+msgid "The read of {} is interrupted for the start: it is done again later."
+msgstr "Чтение {} прервано для запуска: оно будет повторено позже."
 
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
 msgstr "Тот же матч с новым движком A, например следующей версией: все остальные настройки сохраняются."
@@ -2359,6 +2374,9 @@ msgstr "Аннулировать эту партию (без переигров�
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "В {:.0f} · Н {:.0f} · П {:.0f} %"
+
+msgid "Waiting for {}…"
+msgstr "Ожидание {}…"
 
 msgid "Waiting to be read · read it next"
 msgstr "Ожидает чтения · прочитать следующим"

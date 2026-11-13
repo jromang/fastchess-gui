@@ -294,7 +294,7 @@ class Transcript {
 
 }  // namespace
 
-ProbeResult probeEngine(const EngineEntry& entry) {
+ProbeResult probeEngine(const EngineEntry& entry, const std::atomic_bool* interrupted) {
     ProbeResult result;
 
     std::error_code ec;
@@ -305,6 +305,11 @@ ProbeResult probeEngine(const EngineEntry& entry) {
 
     result.program  = tour::fingerprint(entry.cmd);
     result.protocol = entry.protocol.empty() ? detectProtocol(entry) : entry.protocol;
+    // Interrupted while the protocol was found out: what it found is not the engine's.
+    if (interrupted && *interrupted) {
+        result.error = "interrupted";
+        return result;
+    }
 
     fastchess::EngineConfiguration config;
     config.name     = entry.name.empty() ? std::filesystem::path(entry.cmd).stem().string() : entry.name;
@@ -441,7 +446,7 @@ Compliance compliance(const fastchess::EngineConfiguration& config) {
 
 }  // namespace
 
-CheckResult checkEngine(const EngineEntry& entry) {
+CheckResult checkEngine(const EngineEntry& entry, const std::atomic_bool* interrupted) {
     using namespace std::chrono;
     CheckResult result;
 
@@ -513,6 +518,7 @@ CheckResult checkEngine(const EngineEntry& entry) {
         result.ok      = true;
         result.message = trf("Starts in {} ms · isready {:.1f} ms · first move {}", start_ms, ready_ms, *best);
 
+        if (interrupted && *interrupted) return fail("interrupted");
         if (config.protocol != "xboard") {
             const auto uci = compliance(config);
             result.report  = uci.report;
