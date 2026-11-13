@@ -316,7 +316,7 @@ button svg{width:14px;height:14px;fill:currentColor;vertical-align:-2px}#theme s
 .chart{width:100%;height:96px;display:block;background:var(--soft);border-radius:4px}.chart .axis{stroke:var(--muted);stroke-opacity:.5;stroke-width:1}
 .chart .now{stroke:var(--text);stroke-opacity:.35;stroke-width:1;stroke-dasharray:3 3}
 .key{display:inline-block;width:10px;height:3px;border-radius:2px;vertical-align:middle;margin:0 3px 0 8px}
-.tomove{color:var(--accent)}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13px}
+.xth{font-size:13px;font-weight:600;margin:14px 0 6px}.xt{overflow-x:auto}.xt th:nth-child(2),.xt td:nth-child(2){position:sticky;left:0;background:var(--card);max-width:9em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.wdl{white-space:nowrap;word-spacing:4px}.tomove{color:var(--accent)}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13px}
 th,td{padding:5px 7px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{color:var(--muted);font-weight:500}
 td.n,th.n{text-align:left}.bad{color:var(--loss);font-weight:600}td.wrap{white-space:normal}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}.toast.show{opacity:1}
@@ -356,7 +356,7 @@ function score(cp){if(cp===null||cp===undefined)return '–';if(Math.abs(cp)>=90
  return (cp>=0?'+':'')+(cp/100).toFixed(2)}
 function pawns(cp){return Math.max(-8,Math.min(8,Math.abs(cp)>=90000?Math.sign(cp)*8:cp/100))}
 function player(name,elo){return esc(name)+(elo?` <span class="muted">${elo}</span>`:'')}
-function half(x){return Number.isInteger(x)?String(x):Math.floor(x)+'½'}
+function half(x){return Number.isInteger(x)?String(x):(Math.floor(x)||'')+'½'}
 
 // The positions of a game, from its start position and its moves in UCI: enough to show them and to copy their
 // FEN, not a move generator (fastchess checked the moves). Squares from 0 (a8) to 63 (h1), as a FEN lists them.
@@ -476,10 +476,15 @@ function upcoming(s){const n=s.next||[],asItGoes=s.format==='swiss'||s.format===
  if(asItGoes)html+=`<div class="muted">${n.length?'The later rounds are':'The next round is'} paired as the tournament goes, from the results: their games are not known in advance.</div>`;
  return html||'<div class="muted">No game left to play.</div>'}
 function standings(s){const rows=s.standings;if(!rows.length)return '<div class="muted">No engine yet.</div>';
- let t='<table><tr><th>#</th><th class="n">Engine</th><th>Games</th><th>Points</th><th>Elo</th><th>±</th><th>+</th><th>=</th><th>−</th>'+rows.map((_,i)=>`<th>${i+1}</th>`).join('')+'</tr>';
- rows.forEach(r=>{t+=`<tr><td>${r.rank}</td><td class="n">${esc(r.name)}</td><td>${r.games}</td><td>${half(r.points)}</td><td>${r.games?(r.elo>=0?'+':'')+Math.round(r.elo):''}</td><td class="muted">${r.games?Math.round(r.elo_error):''}</td><td>${r.wins}</td><td>${r.draws}</td><td>${r.losses}</td>`+
+ let t='<table><tr><th>#</th><th class="n">Engine</th><th>Games</th><th>Points</th><th>Elo</th><th>±</th><th title="Wins, draws, losses">+ = −</th></tr>';
+ rows.forEach(r=>{t+=`<tr><td>${r.rank}</td><td class="n">${esc(r.name)}</td><td>${r.games}</td><td>${half(r.points)}</td><td>${r.games?(r.elo>=0?'+':'')+Math.round(r.elo):''}</td><td class="muted">${r.games?Math.round(r.elo_error):''}</td><td class="wdl">${r.wins} ${r.draws} ${r.losses}</td></tr>`});
+ t+='</table>';
+ // The crosstable has a column per engine: below the standings, scrolled sideways when it is wider, the names kept.
+ if(rows.length<2||!rows.some(r=>r.crosstable&&r.crosstable.length))return t;
+ t+='<h3 class="xth">Crosstable</h3><div class="xt"><table><tr><th>#</th><th class="n">Engine</th>'+rows.map((_,i)=>`<th>${i+1}</th>`).join('')+'</tr>';
+ rows.forEach(r=>{t+=`<tr><td>${r.rank}</td><td class="n">${esc(r.name)}</td>`+
   r.crosstable.map(c=>c?`<td title="+${c.wins} =${c.draws} -${c.losses}">${c.wins+c.draws+c.losses?half(c.wins+c.draws/2):''}</td>`:'<td class="muted">–</td>').join('')+'</tr>'});
- return t+'</table>'}
+ return t+'</table></div>'}
 const FORMATS={match:'Match',round_robin:'Round robin',gauntlet:'Gauntlet',swiss:'Swiss',knockout:'Knockout'};
 function eventInfo(s){const row=(a,b)=>`<tr><td class="n muted">${a}</td><td class="n wrap">${b}</td></tr>`;
  return '<table>'+row('Tournament',esc(s.name||'–'))+row('Format',FORMATS[s.format]||esc(s.format||'–'))+(s.time_control?row('Time control',esc(s.time_control)):'')+
