@@ -6,9 +6,11 @@
 // in it (within the depth): the engine never searches a book move. The tournament's opening is played first, as
 // for every engine; the book takes over from there.
 //
-// The book move is chosen at random in proportion to the book's weights, as Cute Chess does, by a generator drawn
-// from the seed, the game's number in the process and its starting position: with the tournament's seed, the
-// choices of an engine's process come back the same.
+// The book move is chosen at random in proportion to the book's weights, as Cute Chess does. Each game draws its
+// own choices: an adapter process mixes a random number of its own into the seed (the tournament's), so that the
+// processes of an engine (one per concurrent game, a new one after each restart, crash or resume, or for every game
+// when the engine is restarted for each) do not replay the same lines. The adapter cannot know a game's number in
+// the tournament, so the choices are not reproducible, even with the tournament's seed set.
 
 #include <cstdint>
 #include <functional>
@@ -45,7 +47,9 @@ class BookAdapter {
    public:
     using Sink = std::function<void(const std::string&)>;
 
-    // `chess960`: castling moves are written as the king taking its rook (also set by UCI_Chess960).
+    // `chess960`: castling moves are written as the king taking its rook (also set by UCI_Chess960). `seed` is used
+    // as given, so that the tests get the same choices from the same seed; runBookAdapter() mixes its random number
+    // into it first.
     BookAdapter(Sink to_gui, Sink to_engine, std::unique_ptr<PolyglotBook> book, int depth, uint64_t seed,
                 bool chess960 = false);
 

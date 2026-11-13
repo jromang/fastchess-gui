@@ -5,6 +5,7 @@
 #include <chrono>
 #include <csignal>
 #include <cstdio>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <mutex>
@@ -17,6 +18,11 @@
 #    include <engine/process/process_win.hpp>
 #else
 #    include <engine/process/process_posix.hpp>
+#endif
+#ifdef _WIN32
+#    include <windows.h>
+#else
+#    include <unistd.h>
 #endif
 
 namespace fcg::tour {
@@ -44,6 +50,27 @@ uint64_t mix(uint64_t x) {
     x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
     x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
     return x ^ (x >> 31);
+}
+
+// A random number of this process: the processes of an engine started with the same seed (concurrent games,
+// restarts) draw other book moves. std::random_device alone is not enough with some MinGW runtimes, where it is a
+// fixed sequence: the clock, the process and where the stack lies (address space randomisation) are mixed in.
+uint64_t processEntropy() {
+    uint64_t x = 0;
+    try {
+        std::random_device device;
+        x = (static_cast<uint64_t>(device()) << 32) ^ device();
+    } catch (const std::exception&) {
+    }
+    const int on_stack = 0;
+#ifdef _WIN32
+    const uint64_t pid = GetCurrentProcessId();
+#else
+    const uint64_t pid = static_cast<uint64_t>(getpid());
+#endif
+    x = mix(x ^ static_cast<uint64_t>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+    x = mix(x ^ pid ^ (static_cast<uint64_t>(reinterpret_cast<std::uintptr_t>(&on_stack)) << 16));
+    return x;
 }
 
 }  // namespace
@@ -137,8 +164,9 @@ void BookAdapter::position(const std::vector<std::string>& tokens) {
     board_.set960(chess960_);
     if (!board_.setFen(fen)) return;
 
-    // A new game: the choices it gets depend on the seed, on how many games came before it in this process and on
-    // where it starts, so that two games from the same opening get their own lines.
+    // A new game: the choices it gets depend on the seed (with the process' random number in it), on how many games
+    // came before it in this process and on where it starts, so that two games from the same opening get their own
+    // lines.
     if (reseed_) {
         rng_.seed(mix(seed_ ^ mix(games_ ^ mix(board_.hash()))));
         reseed_ = false;
@@ -229,7 +257,7 @@ int runBookAdapter(const std::vector<std::string>& args) {
     process.setRealtimeLogging(false);
     BookAdapter adapter(
         to_gui, [&](const std::string& line) { (void)process.writeInput(line + "\n"); }, std::move(polyglot), depth,
-        seed, chess960);
+        mix(seed) ^ processEntropy(), chess960);
 
     process.setLineCallback([&](const std::string& line) {
         std::lock_guard<std::mutex> lock(mutex);
