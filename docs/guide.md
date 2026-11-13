@@ -217,12 +217,16 @@ swap); above the memory installed the tournament does not start. `--run` says th
   test of a gauntlet) ticks the N active engines that work and whose reference Elo is closest to its own, 150 at
   most away by default.
 
-  *Book*: an opening book of the participant's own, like Cute Chess' `book=`/`bookdepth=`: a Polyglot book (`.bin`)
-  of the Books page and how deep it is followed, in plies from the start of the game, the tournament's opening
-  included (*all*: as long as the book has a move). While the position is in that book, the participant plays the
-  book's move at once, chosen by the book's weights; then its engine takes over. The tournament's openings, if any,
-  are played first, by every engine; EPD and PGN books only give those and are greyed in the list. To compare books
-  with one engine, click its *Book* cell, then *This engine once more, with another book*: each copy plays as
+  *Book*: an opening book of the participant's own, like Cute Chess' `book=`/`bookdepth=`: a Polyglot (`.bin`) or
+  PGN book of the Books page and how deep it is followed, in plies from the start of the game, the tournament's
+  opening included (*all*: as long as the book has a move; for a PGN book, its games' first 40 plies). A PGN book is
+  first turned into a Polyglot book: each game's moves up to that depth, each move weighted by the number of games
+  that play it; games with an illegal move are left out and counted. This runs in the background as soon as the
+  book is chosen (progress in the *Book* cell, its popup and the summary) and is kept in the profile's `book-cache`
+  folder until the file or the depth changes; a start that comes before the end waits for it. While the position
+  is in that book, the participant plays the book's move at once, chosen by the book's weights; then its engine
+  takes over. The tournament's openings, if any, are played first, by every engine; EPD books only give those and
+  are greyed in the list. To compare books with one engine, click its *Book* cell, then *This engine once more, with another book*: each copy plays as
   `<engine> (<book>)`, so its results and rating stay apart. In a match the *Book* buttons sit next to A and B, and
   an engine can play itself with two books. Book moves are marked `{book}` in the PGN; hovering a name in the
   standings shows its book. WinBoard engines can have one too.
@@ -441,6 +445,7 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
 
 - `engines.json`: the engine library, and `engines.json.bak` its previous version, read if the first is lost;
 - `setup.json`: the last setup; `templates/*.json`: the saved templates; `queue.json`: the queue;
+- `book-cache/`: the PGN books turned into Polyglot books for the participants' own books (removed after 30 days unused);
 - `layout.ini`: the window layout and the panels of the workspace; `layouts.json`: the layouts saved by name; `fastchess-gui.log`: the log of the last session;
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**, the folder of *Every engine
