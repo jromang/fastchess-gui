@@ -19,11 +19,20 @@ namespace fcg::tour {
 struct RatingEntry {
     std::string name;
     int games       = 0;
+    int wins        = 0;
+    int draws       = 0;
+    int losses      = 0;
     double points   = 0;
     int tournaments = 0;
     Rating rating;
+    double opponents = 0;  // the average rating of the opponents met, game by game, as the list rates them
+    // Over the next engine of the list, none for the last: the rating difference, and the likelihood of superiority
+    // (0 to 1) from the covariance of the two ratings.
+    std::optional<double> gap;
+    std::optional<double> los;
 
     [[nodiscard]] double score() const noexcept { return games ? points / games : 0.0; }
+    [[nodiscard]] double drawRate() const noexcept { return games ? static_cast<double>(draws) / games : 0.0; }
 };
 
 struct RatingList {
@@ -31,6 +40,8 @@ struct RatingList {
     std::vector<std::string> time_controls;  // every time control met, to filter by
     int tournaments = 0;                     // tournaments counted
     uint64_t games  = 0;
+    // The LOS from the exact covariance of the ratings; false beyond 1000 engines, where it is approximated.
+    bool exact_los = true;
 };
 
 // "10+0.1", "40/900+0", "5000 nodes": how a time control is shown and filtered.

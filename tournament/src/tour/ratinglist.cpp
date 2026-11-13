@@ -61,6 +61,13 @@ RatingList rate(const GameDb& db, const NamedAnchor& anchor, int min_games, Acce
         entries[i].games++, entries[j].games++;
         entries[i].points += g.white_score;
         entries[j].points += 1 - g.white_score;
+        if (g.white_score > 0.75f) {
+            entries[i].wins++, entries[j].losses++;
+        } else if (g.white_score < 0.25f) {
+            entries[i].losses++, entries[j].wins++;
+        } else {
+            entries[i].draws++, entries[j].draws++;
+        }
         sources[i].insert(g.source), sources[j].insert(g.source);
         counted.insert(g.source);
         list.games++;
@@ -82,16 +89,37 @@ RatingList rate(const GameDb& db, const NamedAnchor& anchor, int min_games, Acce
     for (const auto& [ids, record] : met) {
         pairs.push_back({position[ids.first], position[ids.second], record.first, record.second});
     }
-    const auto ratings = maximumLikelihood(present.size(), pairs, fixed);
+    const auto solution = ratingSolution(present.size(), pairs, fixed);
+    const auto& ratings = solution.ratings;
+
+    // The opponents' average, each opponent weighed by the games against it (games against itself aside).
+    std::vector<double> opponents(present.size(), 0.0), met_games(present.size(), 0.0);
+    for (const auto& p : pairs) {
+        opponents[p.a] += p.games * ratings[p.b].elo, met_games[p.a] += p.games;
+        opponents[p.b] += p.games * ratings[p.a].elo, met_games[p.b] += p.games;
+    }
+
+    std::vector<std::size_t> listed;  // positions in `present`, best first
     for (std::size_t a = 0; a < present.size(); ++a) {
         auto& e       = entries[present[a]];
         e.name        = db.engines[present[a]];
         e.rating      = ratings[a];
         e.tournaments = static_cast<int>(sources[present[a]].size());
-        if (e.games >= min_games) list.entries.push_back(e);
+        e.opponents   = met_games[a] > 0 ? opponents[a] / met_games[a] : 0.0;
+        if (e.games >= min_games) listed.push_back(a);
     }
-    std::sort(list.entries.begin(), list.entries.end(),
-              [](const RatingEntry& a, const RatingEntry& b) { return a.rating.elo > b.rating.elo; });
+    std::stable_sort(listed.begin(), listed.end(),
+                     [&](std::size_t a, std::size_t b) { return ratings[a].elo > ratings[b].elo; });
+    for (std::size_t k = 0; k < listed.size(); ++k) {
+        auto e = entries[present[listed[k]]];
+        if (k + 1 < listed.size()) {
+            const auto a = listed[k], b = listed[k + 1];
+            e.gap = ratings[a].elo - ratings[b].elo;
+            e.los = likelihoodOfSuperiority(*e.gap, solution.differenceError(a, b));
+        }
+        list.entries.push_back(std::move(e));
+    }
+    list.exact_los = solution.exact;
 
     list.tournaments   = static_cast<int>(counted.size());
     list.time_controls = {tcs.begin(), tcs.end()};
@@ -172,29 +200,37 @@ std::string ratingPgn(const GameDb& db, const GameFilter& filter) {
 std::string ratingListText(const RatingList& list) {
     std::size_t width = 6;
     for (const auto& e : list.entries) width = std::max(width, e.name.size());
-    std::string out = fmt::format("{:>4}  {:<{}}  {:>6}  {:>5}  {:>6}  {:>5}  {:>11}\n", "#", "Engine", width, "Elo",
-                                  "+/-", "Games", "Score", "Tournaments");
+    std::string out = fmt::format(
+        "{:>4}  {:<{}}  {:>6}  {:>5}  {:>6}  {:>6}  {:>6}  {:>6}  {:>6}  {:>6}  {:>6}  {:>6}  {:>6}  {:>11}\n", "#",
+        "Engine", width, "Elo", "+/-", "Games", "Score", "+", "=", "-", "Draws", "Opp.", "LOS", "Gap", "Tournaments");
     for (std::size_t i = 0; i < list.entries.size(); ++i) {
         const auto& e = list.entries[i];
-        out += fmt::format("{:>4}  {:<{}}  {:>6}  {:>5.0f}  {:>6}  {:>4.1f}%  {:>11}\n", i + 1, e.name, width,
-                           std::lround(e.rating.elo), e.rating.error, e.games, 100.0 * e.score(), e.tournaments);
+        out += fmt::format(
+            "{:>4}  {:<{}}  {:>6}  {:>5.0f}  {:>6}  {:>5.1f}%  {:>6}  {:>6}  {:>6}  {:>5.1f}%  {:>6}  {:>6}  {:>6}  "
+            "{:>11}\n",
+            i + 1, e.name, width, std::lround(e.rating.elo), e.rating.error, e.games, 100.0 * e.score(), e.wins,
+            e.draws, e.losses, 100.0 * e.drawRate(), std::lround(e.opponents),
+            e.los ? fmt::format("{:.1f}%", 100.0 * *e.los) : "", e.gap ? fmt::format("{:.0f}", *e.gap) : "",
+            e.tournaments);
     }
     out += fmt::format("\n{} games, {} tournaments\n", list.games, list.tournaments);
     return out;
 }
 
 std::string ratingListCsv(const RatingList& list) {
-    std::string out = "rank,engine,elo,error,games,score,tournaments\n";
+    std::string out = "rank,engine,elo,error,games,score,wins,draws,losses,draw_rate,opponents,los,gap,tournaments\n";
     for (std::size_t i = 0; i < list.entries.size(); ++i) {
         const auto& e = list.entries[i];
         auto name     = e.name;
-        if (name.find_first_of(",\"") != std::string::npos) {
+        if (name.find_first_of(",\"\n") != std::string::npos) {
             std::string quoted = "\"";
             for (const char c : name) quoted += c == '"' ? std::string("\"\"") : std::string(1, c);
             name = quoted + "\"";
         }
-        out += fmt::format("{},{},{:.1f},{:.1f},{},{:.4f},{}\n", i + 1, name, e.rating.elo, e.rating.error, e.games,
-                           e.score(), e.tournaments);
+        out += fmt::format("{},{},{:.1f},{:.1f},{},{:.4f},{},{},{},{:.4f},{:.1f},{},{},{}\n", i + 1, name, e.rating.elo,
+                           e.rating.error, e.games, e.score(), e.wins, e.draws, e.losses, e.drawRate(), e.opponents,
+                           e.los ? fmt::format("{:.4f}", *e.los) : "", e.gap ? fmt::format("{:.1f}", *e.gap) : "",
+                           e.tournaments);
     }
     return out;
 }

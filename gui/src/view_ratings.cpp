@@ -111,9 +111,10 @@ bool reviewPgnPlayers(const std::vector<tour::GameDb::Player>& players, const st
 void App::refreshRatings() {
     if (ratings_job_.valid()) {
         if (ratings_job_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
-        auto r       = ratings_job_.get();
-        game_db_     = std::move(r.db);
-        rating_list_ = std::move(r.list);
+        auto r              = ratings_job_.get();
+        game_db_            = std::move(r.db);
+        rating_list_        = std::move(r.list);
+        rating_order_dirty_ = true;
         // What was chosen meanwhile stays; the defaults fill what is still empty.
         if (rating_anchor_.empty()) rating_anchor_ = r.anchor, rating_anchor_elo_ = r.anchor_elo;
         if (card_engine_.empty()) card_engine_ = r.card_engine;
@@ -403,38 +404,163 @@ void App::drawRatingList() {
         return;
     }
 
-    constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_ScrollY |
-                           ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_PadOuterX;
-    if (!ImGui::BeginTable("##ratings", 7, flags)) return;
+    // Every column can be sorted by, and those after the engine hidden from the menu of a right click on the header;
+    // the rank stays the rating order.
+    enum Column { Rank, Engine, Elo, Error, Games, Score, Wins, Draws, Losses, DrawRate, Opponents, Los, Gap, Sources };
+    constexpr int COLUMNS = Sources + 1;
+    constexpr auto flags  = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_ScrollY |
+                            ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_PadOuterX | ImGuiTableFlags_Sortable |
+                            ImGuiTableFlags_Hideable;
+    if (!ImGui::BeginTable("##ratings", COLUMNS, flags)) return;
+    // Wide enough for the sample and for the header with its sort arrow.
+    const auto width = [](const char* header, const char* sample) {
+        return std::max(ImGui::CalcTextSize(sample).x, ImGui::CalcTextSize(header).x + ImGui::GetFontSize());
+    };
+    constexpr auto down = ImGuiTableColumnFlags_PreferSortDescending;  // the largest first
     ImGui::TableSetupScrollFreeze(0, 1);
-    ImGui::TableSetupColumn("#");
-    ImGui::TableSetupColumn(TR("Engine"), ImGuiTableColumnFlags_WidthStretch);
-    ImGui::TableSetupColumn("Elo");
-    ImGui::TableSetupColumn("±");
-    ImGui::TableSetupColumn(TR("Games"));
-    ImGui::TableSetupColumn("%");
-    ImGui::TableSetupColumn(TR("Tournaments"));
-    ImGui::TableHeadersRow();
-    for (std::size_t i = 0; i < rating_list_.entries.size(); ++i) {
-        const auto& e = rating_list_.entries[i];
-        ImGui::TableNextRow();
-        ImGui::TableNextColumn();
-        ImGui::TextDisabled("%d", static_cast<int>(i + 1));
-        ImGui::TableNextColumn();
-        if (ImGui::Selectable(fmt::format("{}##re{}", e.name, i).c_str(), false, ImGuiSelectableFlags_SpanAllColumns)) {
-            showEngineCard(e.name);
+    ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_NoHide, width("#", "0000"));
+    ImGui::TableSetupColumn(TR("Engine"), ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHide);
+    ImGui::TableSetupColumn("Elo", down, width("Elo", "-0000"));
+    ImGui::TableSetupColumn("±", down, width("±", "0000"));
+    ImGui::TableSetupColumn(TR("Games"), down, width(TR("Games"), "000000"));
+    ImGui::TableSetupColumn("%", down, width("%", "100.0"));
+    ImGui::TableSetupColumn("+", down, width("+", "00000"));
+    ImGui::TableSetupColumn("=", down, width("=", "00000"));
+    ImGui::TableSetupColumn("−", down, width("−", "00000"));
+    ImGui::TableSetupColumn(TR("Draws"), down, width(TR("Draws"), "100.0"));
+    ImGui::TableSetupColumn(TR("Opp."), down, width(TR("Opp."), "-0000"));
+    ImGui::TableSetupColumn("LOS", down, width("LOS", "100.0"));
+    ImGui::TableSetupColumn(TR("Gap"), down | ImGuiTableColumnFlags_DefaultHide, width(TR("Gap"), "0000"));
+    ImGui::TableSetupColumn(TR("Tournaments"), down, width(TR("Tournaments"), "0000"));
+
+    // Header tooltips: what each column counts.
+    ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
+    const std::string los_tip =
+        rating_list_.exact_los
+            ? TR("Likelihood of superiority over the next engine of the list: the probability that it is the "
+                 "stronger of the two, from their ratings and the covariance of the ratings.")
+            : TR("Likelihood of superiority over the next engine of the list: the probability that it is the "
+                 "stronger of the two. Approximate: with more than 1000 engines, the covariance of the ratings is "
+                 "approximated from each one's games and the games the two played together.");
+    const char* tips[COLUMNS] = {TR("The place in the list, by rating."),
+                                 nullptr,
+                                 nullptr,
+                                 TR("Half-width of the 95 % interval of the rating."),
+                                 nullptr,
+                                 TR("Score: points per game."),
+                                 TR("Wins."),
+                                 TR("Draws."),
+                                 TR("Losses."),
+                                 TR("Share of drawn games."),
+                                 TR("The average rating of the opponents met, game by game."),
+                                 los_tip.c_str(),
+                                 TR("Elo above the next engine of the list."),
+                                 TR("Tournaments and PGN files it played in.")};
+    for (int c = 0; c < COLUMNS; ++c) {
+        if (!ImGui::TableSetColumnIndex(c)) continue;
+        ImGui::TableHeader(ImGui::TableGetColumnName(c));
+        if (ImGui::IsItemHovered()) {
+            const std::string tip = fmt::format("{}{}{}", tips[c] ? tips[c] : "", tips[c] ? "\n\n" : "",
+                                                TR("Click to sort; right-click to choose the columns."));
+            ImGui::SetItemTooltip("%s", tip.c_str());
         }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Click for its card."));
-        ImGui::TableNextColumn();
-        ImGui::Text("%ld", std::lround(e.rating.elo));
-        ImGui::TableNextColumn();
-        ImGui::TextDisabled("%.0f", e.rating.error);
-        ImGui::TableNextColumn();
-        ImGui::Text("%d", e.games);
-        ImGui::TableNextColumn();
-        ImGui::TextDisabled("%.1f", 100.0 * e.score());
-        ImGui::TableNextColumn();
-        ImGui::TextDisabled("%d", e.tournaments);
+    }
+
+    auto* sort = ImGui::TableGetSortSpecs();
+    if (sort && sort->SpecsDirty) {
+        rating_order_dirty_ = true;
+        sort->SpecsDirty    = false;
+    }
+    const auto& entries = rating_list_.entries;
+    if (rating_order_dirty_ || rating_order_.size() != entries.size()) {
+        rating_order_.resize(entries.size());
+        for (int i = 0; i < static_cast<int>(entries.size()); ++i) rating_order_[i] = i;
+        if (sort && sort->SpecsCount > 0 && sort->Specs[0].ColumnIndex != Rank) {
+            const auto& spec = sort->Specs[0];
+            const bool up    = spec.SortDirection == ImGuiSortDirection_Ascending;
+            if (spec.ColumnIndex == Engine) {
+                std::stable_sort(rating_order_.begin(), rating_order_.end(), [&](int a, int b) {
+                    return up ? entries[a].name < entries[b].name : entries[a].name > entries[b].name;
+                });
+            } else {
+                // The last engine has neither LOS nor gap: last whatever the direction.
+                const auto key = [&](int i) -> std::optional<double> {
+                    const auto& e = entries[i];
+                    switch (spec.ColumnIndex) {
+                        case Error:
+                            return e.rating.error;
+                        case Games:
+                            return e.games;
+                        case Score:
+                            return e.score();
+                        case Wins:
+                            return e.wins;
+                        case Draws:
+                            return e.draws;
+                        case Losses:
+                            return e.losses;
+                        case DrawRate:
+                            return e.drawRate();
+                        case Opponents:
+                            return e.opponents;
+                        case Los:
+                            return e.los;
+                        case Gap:
+                            return e.gap;
+                        case Sources:
+                            return e.tournaments;
+                        default:
+                            return e.rating.elo;
+                    }
+                };
+                std::stable_sort(rating_order_.begin(), rating_order_.end(), [&](int a, int b) {
+                    const auto ka = key(a), kb = key(b);
+                    if (!ka || !kb) return ka.has_value() && !kb.has_value();
+                    return up ? *ka < *kb : *ka > *kb;
+                });
+            }
+        } else if (sort && sort->SpecsCount > 0 && sort->Specs[0].SortDirection == ImGuiSortDirection_Descending) {
+            std::reverse(rating_order_.begin(), rating_order_.end());
+        }
+        rating_order_dirty_ = false;
+    }
+
+    const char* los_note = rating_list_.exact_los ? nullptr : TR("Approximate.");
+    ImGuiListClipper clipper;
+    clipper.Begin(static_cast<int>(rating_order_.size()));
+    while (clipper.Step()) {
+        for (int row = clipper.DisplayStart; row < clipper.DisplayEnd; ++row) {
+            const int i   = rating_order_[row];
+            const auto& e = entries[i];
+            ImGui::TableNextRow();
+            if (ImGui::TableSetColumnIndex(Rank)) ImGui::TextDisabled("%d", i + 1);
+            if (ImGui::TableSetColumnIndex(Engine)) {
+                if (ImGui::Selectable(fmt::format("{}##re{}", e.name, i).c_str(), false,
+                                      ImGuiSelectableFlags_SpanAllColumns)) {
+                    showEngineCard(e.name);
+                }
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Click for its card."));
+            }
+            if (ImGui::TableSetColumnIndex(Elo)) ImGui::Text("%ld", std::lround(e.rating.elo));
+            if (ImGui::TableSetColumnIndex(Error)) ImGui::TextDisabled("%.0f", e.rating.error);
+            if (ImGui::TableSetColumnIndex(Games)) ImGui::Text("%d", e.games);
+            if (ImGui::TableSetColumnIndex(Score)) ImGui::TextDisabled("%.1f", 100.0 * e.score());
+            if (ImGui::TableSetColumnIndex(Wins)) ImGui::TextDisabled("%d", e.wins);
+            if (ImGui::TableSetColumnIndex(Draws)) ImGui::TextDisabled("%d", e.draws);
+            if (ImGui::TableSetColumnIndex(Losses)) ImGui::TextDisabled("%d", e.losses);
+            if (ImGui::TableSetColumnIndex(DrawRate)) ImGui::TextDisabled("%.1f", 100.0 * e.drawRate());
+            if (ImGui::TableSetColumnIndex(Opponents)) ImGui::TextDisabled("%ld", std::lround(e.opponents));
+            if (ImGui::TableSetColumnIndex(Los) && e.los) {
+                ImGui::TextDisabled("%.1f", 100.0 * *e.los);
+                if (ImGui::IsItemHovered()) {
+                    const auto tip =
+                        trf("{:.1f} % that {} is stronger than {}.", 100.0 * *e.los, e.name, entries[i + 1].name);
+                    ImGui::SetTooltip("%s", los_note ? fmt::format("{}\n{}", tip, los_note).c_str() : tip.c_str());
+                }
+            }
+            if (ImGui::TableSetColumnIndex(Gap) && e.gap) ImGui::TextDisabled("%.0f", *e.gap);
+            if (ImGui::TableSetColumnIndex(Sources)) ImGui::TextDisabled("%d", e.tournaments);
+        }
     }
     ImGui::EndTable();
 }

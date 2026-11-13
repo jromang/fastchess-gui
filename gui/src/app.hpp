@@ -838,6 +838,8 @@ class App {
     const std::vector<std::filesystem::path>& ratingPgns();
     void setRatingPgns(const std::vector<std::filesystem::path>& files);
     tour::RatingList rating_list_;
+    std::vector<int> rating_order_;  // the rows of the list as shown, sorted by a column
+    bool rating_order_dirty_ = true;
     std::string rating_tc_;      // time control shown, empty = all
     std::string rating_anchor_;  // engine whose rating is fixed, empty = average 0
     double rating_anchor_elo_ = 0;

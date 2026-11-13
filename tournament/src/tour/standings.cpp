@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <map>
 #include <tuple>
 
 #include <fmt/include/fmt/format.h>
@@ -112,12 +113,14 @@ std::vector<double> choleskySolve(const std::vector<double>& l, std::size_t n, s
     return b;
 }
 
-// What the errors need of the covariance of the ratings: its diagonal, its row sums and the anchor's row.
+// What the errors need of the covariance of the ratings: its diagonal, its row sums and the anchor's row; and, kept
+// when asked for the differences between two ratings, the columns of L⁻¹ (I = L Lᵀ), column i from row i at i n.
 struct Covariance {
-    std::vector<double> diagonal, row_sum, anchor_row;
+    std::vector<double> diagonal, row_sum, anchor_row, inverse;
 };
 
-Covariance covariance(const Information& info, const std::vector<PairGames>& pairs, std::optional<std::size_t> anchor) {
+Covariance covariance(const Information& info, const std::vector<PairGames>& pairs, std::optional<std::size_t> anchor,
+                      bool keep_inverse) {
     const auto n = info.diagonal.size();
     Covariance cov;
     if (n > EXACT_ERRORS) {
@@ -149,6 +152,7 @@ Covariance covariance(const Information& info, const std::vector<PairGames>& pai
     // The diagonal of (L Lᵀ)⁻¹ = L⁻ᵀ L⁻¹ holds the squared norms of the columns of L⁻¹, column i being zero above
     // row i: n³/6 steps instead of a whole inverse.
     cov.diagonal.assign(n, 0.0);
+    if (keep_inverse) cov.inverse.assign(n * n, 0.0);
     std::vector<double> column(n);
     for (std::size_t i = 0; i < n; ++i) {
         column[i] = 1.0 / l[i * n + i];
@@ -160,6 +164,7 @@ Covariance covariance(const Information& info, const std::vector<PairGames>& pai
             sq += column[r] * column[r];
         }
         cov.diagonal[i] = sq;
+        if (keep_inverse) std::copy(column.begin() + i, column.end(), cov.inverse.begin() + i * n + i);
     }
     cov.row_sum = choleskySolve(l, n, std::vector<double>(n, 1.0));
     if (anchor) {
@@ -202,10 +207,14 @@ std::string escapeHtml(const std::string& s) {
 
 }  // namespace
 
-std::vector<Rating> maximumLikelihood(std::size_t n, const std::vector<PairGames>& pairs,
-                                      std::optional<std::pair<int, double>> anchor) {
-    std::vector<Rating> out(n);
-    if (n == 0) return out;
+namespace {
+
+RatingSolution solveRatings(std::size_t n, const std::vector<PairGames>& pairs,
+                            std::optional<std::pair<int, double>> anchor, bool differences) {
+    RatingSolution solution;
+    auto& out = solution.ratings;
+    out.resize(n);
+    if (n == 0) return solution;
 
     std::vector<double> r(n, 0.0), g(n);
     Information info;
@@ -246,7 +255,34 @@ std::vector<Rating> maximumLikelihood(std::size_t n, const std::vector<PairGames
     if (anchor && anchor->first >= 0 && static_cast<std::size_t>(anchor->first) < n) {
         fixed = static_cast<std::size_t>(anchor->first);
     }
-    const auto cov = covariance(info, pairs, fixed);
+    auto cov = covariance(info, pairs, fixed, differences);
+
+    if (differences) {
+        // The variance of r_a - r_b is C_aa + C_bb - 2 C_ab, whatever the common level: exact from the columns of
+        // L⁻¹, C_ab being the dot product of columns a and b; else C_ab taken as the first term of the series, the
+        // weight of their games over their own information, and 0 for two engines that did not meet.
+        solution.exact = cov.inverse.size() == n * n;
+        std::map<std::pair<std::size_t, std::size_t>, double> met;
+        if (!solution.exact) {
+            for (std::size_t e = 0; e < pairs.size(); ++e) {
+                const auto a = std::min(pairs[e].a, pairs[e].b), b = std::max(pairs[e].a, pairs[e].b);
+                met[{a, b}] += info.weight[e] / (info.diagonal[a] * info.diagonal[b]);
+            }
+        }
+        solution.difference_error = [n, diagonal = cov.diagonal, inverse = std::move(cov.inverse),
+                                     met = std::move(met)](std::size_t a, std::size_t b) {
+            if (a == b || a >= n || b >= n) return 0.0;
+            double c = 0;
+            if (!inverse.empty()) {
+                const double* ca = &inverse[a * n];
+                const double* cb = &inverse[b * n];
+                for (std::size_t k = std::max(a, b); k < n; ++k) c += ca[k] * cb[k];
+            } else if (const auto it = met.find({std::min(a, b), std::max(a, b)}); it != met.end()) {
+                c = it->second;
+            }
+            return Z95 * std::sqrt(std::max(0.0, diagonal[a] + diagonal[b] - 2 * c));
+        };
+    }
 
     if (fixed) {
         const auto a = *fixed;
@@ -255,7 +291,7 @@ std::vector<Rating> maximumLikelihood(std::size_t n, const std::vector<PairGames
             const double var = cov.diagonal[i] + cov.diagonal[a] - 2 * cov.anchor_row[i];
             out[i].error     = i == a ? 0.0 : Z95 * std::sqrt(std::max(0.0, var));
         }
-        return out;
+        return solution;
     }
 
     double mean = 0;
@@ -271,7 +307,30 @@ std::vector<Rating> maximumLikelihood(std::size_t n, const std::vector<PairGames
         out[i].elo       = r[i] - mean;
         out[i].error     = Z95 * std::sqrt(std::max(0.0, var));
     }
-    return out;
+    return solution;
+}
+
+}  // namespace
+
+std::vector<Rating> maximumLikelihood(std::size_t n, const std::vector<PairGames>& pairs,
+                                      std::optional<std::pair<int, double>> anchor) {
+    return solveRatings(n, pairs, anchor, false).ratings;
+}
+
+RatingSolution ratingSolution(std::size_t n, const std::vector<PairGames>& pairs,
+                              std::optional<std::pair<int, double>> anchor) {
+    return solveRatings(n, pairs, anchor, true);
+}
+
+double RatingSolution::differenceError(std::size_t a, std::size_t b) const {
+    return difference_error ? difference_error(a, b) : 0.0;
+}
+
+double likelihoodOfSuperiority(double difference, double error) {
+    // The normal law of the difference, its standard deviation the error over the 97.5 % quantile: the formula of
+    // fastchess' LOS of a match (EloWDL::los), there of a score over 50 %, here of a rating difference.
+    if (!(error > 0)) return difference > 0 ? 1.0 : difference < 0 ? 0.0 : 0.5;
+    return (1 - std::erf(-difference / (error / Z95) / std::sqrt(2.0))) / 2;
 }
 
 std::vector<Rating> maximumLikelihood(const Matrix& games, const Matrix& points,
