@@ -92,7 +92,10 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   started with: resuming it with a program rebuilt or missing since is reported in the *Log*.
 
 **Import…** > *An engine list…* reads the engine list of another program: ChessGUI (`ChsGUI_Eng.TXT`, with the
-options of `ChsGUI_Cfg.ini` next to it), cutechess and Banksia (`engines.json`), Arena and other INI style lists;
+options of `ChsGUI_Cfg.ini` next to it), cutechess and Banksia (`engines.json`), Arena (`ArenaENG.cfg`, in Arena's
+folder: each engine's program, arguments, protocol and, for UCI engines, the option values set in Arena) and other
+INI style lists. A list that gives no engine says so, with the formats read and *Every engine of a folder…* to
+try instead;
 *Every engine of a folder…* takes every program found in a folder, and remembers the folder: *Refresh: the new
 engines of the folder* then offers only the engines added to it since. The engines found are listed first, to untick
 those to leave out; engines already in the library (same program and arguments) are skipped; the options of the
@@ -213,6 +216,16 @@ swap); above the memory installed the tournament does not start. `--run` says th
   added with *Add the N ticked*. *Suggest N opponents within ± … Elo of* the first participant (the engine under
   test of a gauntlet) ticks the N active engines that work and whose reference Elo is closest to its own, 150 at
   most away by default.
+
+  *Book*: an opening book of the participant's own, like Cute Chess' `book=`/`bookdepth=`: a Polyglot book (`.bin`)
+  of the Books page and how deep it is followed, in plies from the start of the game, the tournament's opening
+  included (*all*: as long as the book has a move). While the position is in that book, the participant plays the
+  book's move at once, chosen by the book's weights; then its engine takes over. The tournament's openings, if any,
+  are played first, by every engine; EPD and PGN books only give those and are greyed in the list. To compare books
+  with one engine, click its *Book* cell, then *This engine once more, with another book*: each copy plays as
+  `<engine> (<book>)`, so its results and rating stay apart. In a match the *Book* buttons sit next to A and B, and
+  an engine can play itself with two books. Book moves are marked `{book}` in the PGN; hovering a name in the
+  standings shows its book. WinBoard engines can have one too.
 - **Time control**: base time and increment in seconds, optional moves per period, and a margin before a game is
   lost on time; a fixed time per move (`go movetime`, with the same margin); a fixed number of nodes per move; or a
   fixed depth in plies (`go depth`), which no engine can lose on time.
