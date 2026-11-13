@@ -537,8 +537,8 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
   - `logs/game-N.log`: every line exchanged with both engines during game N (the number shown in the *Games*
     tab), with the time it was sent or read (`W>` sent to White's engine, `W<` read from its output, `W!` read
     from its error output: assertions, crash messages), for the games lost on time, by a crash, a stall or an illegal move
-    (or every game, if asked). The first 300 lines of each engine and the last 5000 lines of the game are kept, in the order they came. It is what an engine
-    author needs to reproduce a bug. For a WinBoard engine it shows the UCI side; `FCG_WB2UCI_LOG` gives the
+    (or every game, if asked). The first 300 lines of each engine and the last 5000 lines of the game are kept, in
+    the order they came. It is what an engine author needs to reproduce a bug. For a WinBoard engine it shows the UCI side; `FCG_WB2UCI_LOG` gives the
     WinBoard side.
 
 Matches played with an earlier version (0.2.x) appear on the home page: *Import them* turns them into finished
