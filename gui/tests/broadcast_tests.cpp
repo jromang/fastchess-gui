@@ -547,6 +547,17 @@ TEST_CASE("broadcast: the web page and its state") {
     const auto page = get("/");
     CHECK(page.rfind("HTTP/1.0 200", 0) == 0);
     CHECK(page.find("state.json") != std::string::npos);
+    // Its pieces and its dark colours are in its own styles; it loads nothing from elsewhere, and stays small.
+    CHECK(page.find(".pwK{--pc:url(\"data:image/svg+xml,%3Csvg ") != std::string::npos);
+    CHECK(page.find(".pbP{--pc:url(") != std::string::npos);
+    CHECK(page.find("/*DARK*/") == std::string::npos);
+    CHECK(page.find("/*PIECES*/") == std::string::npos);
+    CHECK(page.find(":root[data-theme=dark]{color-scheme:dark;") != std::string::npos);
+    for (const auto* outside : {" src=", "<link", "@import", "url(http", "url('http"}) {
+        CAPTURE(outside);
+        CHECK(page.find(outside) == std::string::npos);
+    }
+    CHECK(webPage().size() < 80000);
 
     const auto state = get("/state.json");
     CHECK(state.rfind("HTTP/1.0 200", 0) == 0);
@@ -832,6 +843,106 @@ TEST_CASE("broadcast: the statistics, the anomalies and each move's search, for 
     const auto empty = makeSnapshot(in);
     CHECK(empty.pgn_file.empty());
     CHECK(nlohmann::json::parse(snapshotJson(empty))["pgn"].is_null());
+}
+
+TEST_CASE("broadcast: the followed game's moves, its book moves and each side's search, for the web page") {
+    BroadcastInput in;
+    in.spec.format = fcg::tour::Format::Match;
+    for (const auto* name : {"Alpha", "Beta"}) {
+        fcg::tour::Participant p;
+        p.id                        = static_cast<int>(in.spec.participants.size());
+        p.engine.name               = name;
+        p.engine.limit.tc.time      = 10000;
+        p.engine.limit.tc.increment = 100;
+        in.spec.participants.push_back(p);
+    }
+
+    // Two book moves, then White's searched move, and Black thinking.
+    SlotState st;
+    st.has_game  = true;
+    st.active    = true;
+    st.game_id   = 3;
+    st.white     = "Alpha";
+    st.black     = "Beta";
+    st.start_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    chess::Board board;
+    for (const auto* uci : {"e2e4", "e7e5", "g1f3"}) {
+        LiveMove m;
+        m.move  = chess::uci::uciToMove(board, uci);
+        m.san   = chess::uci::moveToSan(board, m.move);
+        m.mover = board.sideToMove();
+        board.makeMove<true>(m.move);
+        st.moves.push_back(m);
+    }
+    st.moves[0].book = st.moves[1].book = true;
+    auto& searched                      = st.moves[2];
+    searched.score                      = fastchess::Score{fastchess::ScoreType::CP, 25};
+    searched.depth                      = 20;
+    searched.seldepth                   = 31;
+    searched.nodes                      = 4000000;
+    searched.nps                        = 2000000;
+    searched.tbhits                     = 12;
+    searched.time_ms                    = 2000;
+    searched.pv                         = "g1f3 b8c6 f1b5";
+    st.stm                              = chess::Color::BLACK;
+    st.thinking                         = true;
+    // The last line of White's search, for its hash; Black's current one.
+    st.info[0] = "info depth 20 seldepth 31 score cp 25 nodes 4000000 nps 2000000 hashfull 412 pv g1f3 b8c6";
+    st.info[1] =
+        "info depth 9 seldepth 14 score cp -20 nodes 5000 nps 125000 tbhits 3 hashfull 37 time 40 pv b8c6 f1b5";
+    in.slots = {st};
+    in.ended.resize(1);
+
+    auto json = nlohmann::json::parse(snapshotJson(makeSnapshot(in)));
+    CHECK(json["time_control"] == "10+0.1");
+    CHECK(json["chess960"] == false);
+    const auto& game = json["games"][0];
+    CHECK(game["uci"] == nlohmann::json::parse(R"(["e2e4", "e7e5", "g1f3"])"));
+    CHECK(game["book"] == nlohmann::json::parse("[true, true, false]"));
+
+    // Black's search under way, as told.
+    const auto& black = game["black_search"];
+    CHECK(black["current"] == true);
+    CHECK(black["depth"] == 9);
+    CHECK(black["seldepth"] == 14);
+    CHECK(black["nps"] == 125000);
+    CHECK(black["tbhits"] == 3);
+    CHECK(black["hashfull"] == 37);
+    CHECK(black["pv_san"] == "2...Nc6 3.Bb5");
+
+    // White's from its last move, its PV from the position it was played in, its hash from its last line.
+    const auto& white = game["white_search"];
+    CHECK(white["current"] == false);
+    CHECK(white["depth"] == 20);
+    CHECK(white["seldepth"] == 31);
+    CHECK(white["nodes"] == 4000000);
+    CHECK(white["nps"] == 2000000);
+    CHECK(white["tbhits"] == 12);
+    CHECK(white["hashfull"] == 412);
+    CHECK(white["pv"].empty());  // the arrows and TLCS show the current search's only
+    CHECK(white["pv_san"] == "2.Nf3 Nc6 3.Bb5");
+
+    // What an engine did not tell is null; a side that searched nothing yet has no tablebase hits either.
+    in.slots[0].info[0].clear();
+    in.slots[0].info[1]           = "info depth 5 score cp 0 pv b8c6";
+    in.slots[0].moves[2].seldepth = 0;
+    in.slots[0].moves[2].nps      = 0;
+    json                          = nlohmann::json::parse(snapshotJson(makeSnapshot(in)));
+    CHECK(json["games"][0]["white_search"]["hashfull"].is_null());
+    CHECK(json["games"][0]["white_search"]["seldepth"].is_null());
+    CHECK(json["games"][0]["white_search"]["nps"].is_null());
+    CHECK(json["games"][0]["black_search"]["hashfull"].is_null());
+    CHECK(json["games"][0]["black_search"]["tbhits"] == 0);
+    in.slots[0].moves[2].book = true;
+    in.slots[0].thinking      = false;
+    json                      = nlohmann::json::parse(snapshotJson(makeSnapshot(in)));
+    CHECK(json["games"][0]["white_search"]["depth"] == 0);
+    CHECK(json["games"][0]["white_search"]["tbhits"].is_null());
+    CHECK(json["games"][0]["white_search"]["pv_san"] == "");
+
+    // Participants with different time controls: none told.
+    in.spec.participants[1].engine.limit.tc.time = 20000;
+    CHECK(nlohmann::json::parse(snapshotJson(makeSnapshot(in)))["time_control"] == "");
 }
 
 TEST_CASE("broadcast: the next games of the schedule, in the order they start") {

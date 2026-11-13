@@ -45,8 +45,13 @@ struct LiveGame {
         int score_cp    = 0;  // the searching side's point of view; mate in N moves as +-(100000 - N)
         uint64_t nodes  = 0;
         int64_t time_ms = 0;
-        std::vector<std::string> pv;  // UCI
-        std::string pv_san;           // the current search's, with move numbers
+        std::vector<std::string> pv;  // UCI, the current search's
+        std::string pv_san;           // with move numbers: the current search's, else its last move's
+        int seldepth    = 0;          // 0 when not told, as nps
+        uint64_t nps    = 0;
+        uint64_t tbhits = 0;
+        int hashfull    = -1;     // permille, -1 when not told
+        bool current    = false;  // the search under way, not the one of its last move
     };
     Search search[2];  // [0] White's last or current search, [1] Black's
 
@@ -111,7 +116,9 @@ struct BroadcastNext {
 
 struct BroadcastSnapshot {
     std::string name;
-    std::string format;  // "match", "round_robin", "gauntlet"
+    std::string format;        // "match", "round_robin", "gauntlet", "swiss", "knockout"
+    std::string time_control;  // as the rating list shows it: "10+0.1", "5000 nodes"; empty when unknown
+    bool chess960   = false;
     uint64_t played = 0;
     uint64_t total  = 0;  // 0 = unbounded
     bool finished   = false;
@@ -230,6 +237,6 @@ class WebServer {
 };
 
 // The viewer page served at "/".
-[[nodiscard]] const char* webPage();
+[[nodiscard]] const std::string& webPage();
 
 }  // namespace fcg

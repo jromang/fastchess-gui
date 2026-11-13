@@ -1,9 +1,11 @@
 #include "broadcaster.hpp"
 
 #include <ctime>
+#include <sstream>
 
 #include <engine/uci_engine.hpp>
 #include <tour/by_opening.hpp>
+#include <tour/ratinglist.hpp>
 
 #include <fmt/include/fmt/format.h>
 
@@ -96,14 +98,25 @@ BroadcastInput broadcastInput(const tour::TournamentState& state, const GuiObser
 
 BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
     BroadcastSnapshot s;
-    const auto& spec   = in.spec;
-    const bool frc     = spec.conditions.variant == fastchess::VariantType::FRC;
-    s.name             = spec.name;
-    s.format           = spec.format == tour::Format::Match        ? "match"
-                         : spec.format == tour::Format::RoundRobin ? "round_robin"
-                         : spec.format == tour::Format::Gauntlet   ? "gauntlet"
-                         : spec.format == tour::Format::Swiss      ? "swiss"
-                                                                   : "knockout";
+    const auto& spec = in.spec;
+    const bool frc   = spec.conditions.variant == fastchess::VariantType::FRC;
+    s.name           = spec.name;
+    s.format         = spec.format == tour::Format::Match        ? "match"
+                       : spec.format == tour::Format::RoundRobin ? "round_robin"
+                       : spec.format == tour::Format::Gauntlet   ? "gauntlet"
+                       : spec.format == tour::Format::Swiss      ? "swiss"
+                                                                 : "knockout";
+    s.chess960       = frc;
+    // The time control when every participant has the same.
+    for (const auto& p : spec.participants) {
+        const auto tc = tour::timeControlText(p.engine.limit);
+        if (&p == &spec.participants.front()) {
+            s.time_control = tc;
+        } else if (tc != s.time_control) {
+            s.time_control.clear();
+            break;
+        }
+    }
 
     const auto& results = in.results;
     s.total             = in.total;
@@ -241,19 +254,30 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
             if (current) {
                 const auto info = fastchess::engine::UciEngine::parseInfo(line);
                 sr.depth        = static_cast<int>(info.depth.value_or(0));
+                sr.seldepth     = static_cast<int>(info.seldepth.value_or(0));
                 sr.nodes        = info.nodes.value_or(0);
+                sr.nps          = info.nps.value_or(0);
+                sr.tbhits       = info.tbhits.value_or(0);
+                sr.hashfull     = static_cast<int>(info.hashfull.value_or(-1));
                 sr.time_ms      = info.time.value_or(elapsed);
                 sr.pv           = info.pv;
+                sr.current      = true;
                 if (info.score) sr.score_cp = scoreCp(*info.score);
                 continue;
             }
-            // Its last move otherwise.
+            // Its last move otherwise; the hash, which a move does not keep, from the last line of its search.
             for (auto it = st.moves.rbegin(); it != st.moves.rend(); ++it) {
                 if (it->mover != color || it->book) continue;
-                sr.depth   = static_cast<int>(it->depth);
-                sr.nodes   = it->nodes;
-                sr.time_ms = it->time_ms;
+                sr.depth    = static_cast<int>(it->depth);
+                sr.seldepth = static_cast<int>(it->seldepth);
+                sr.nodes    = it->nodes;
+                sr.nps      = it->nps;
+                sr.tbhits   = it->tbhits;
+                sr.time_ms  = it->time_ms;
                 if (it->score) sr.score_cp = scoreCp(*it->score);
+                if (!line.empty()) {
+                    sr.hashfull = static_cast<int>(fastchess::engine::UciEngine::parseInfo(line).hashfull.value_or(-1));
+                }
                 break;
             }
         }
@@ -280,10 +304,26 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
         const auto& st = in.slots[i];
         if (st.has_game) {
             auto g = live(slot, st);
+            // The PV of each side's last move, unless it searches again, from the position it was played in.
+            std::size_t last[2] = {st.moves.size(), st.moves.size()};
+            for (std::size_t m = st.moves.size(); m-- > 0;) {
+                const int side = st.moves[m].mover == chess::Color::WHITE ? 0 : 1;
+                if (!st.moves[m].book && last[side] == st.moves.size()) last[side] = m;
+            }
             chess::Board board;
             board.set960(frc);
             board.setFen(st.start_fen);
-            for (const auto& m : st.moves) board.makeMove<true>(m.move);
+            for (std::size_t m = 0; m < st.moves.size(); ++m) {
+                const int side = st.moves[m].mover == chess::Color::WHITE ? 0 : 1;
+                auto& sr       = g.search[side];
+                if (m == last[side] && !sr.current && !st.moves[m].pv.empty()) {
+                    std::vector<std::string> pv;
+                    std::istringstream words(st.moves[m].pv);
+                    for (std::string word; words >> word;) pv.push_back(word);
+                    sr.pv_san = pvToSan(board, pv, 12);
+                }
+                board.makeMove<true>(st.moves[m].move);
+            }
             g.fen = board.getFen();
             // The PV of the side thinking, from the position.
             auto& thinking = g.search[g.white_to_move ? 0 : 1];
