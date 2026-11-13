@@ -48,7 +48,7 @@ enum class TunnelState {
 
 struct TunnelStatus {
     TunnelState state = TunnelState::Off;
-    std::string url;    // the public address, once known
+    std::string url;    // the public address, once known, while on air
     std::string error;  // the last one, while reconnecting or failed
     // When the host key is not the one trusted before: its new fingerprint, to be trusted only by the user.
     std::string new_key;

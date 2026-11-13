@@ -1154,6 +1154,24 @@ TEST_CASE("Tunnel: a viewer's connection that hung up while the server's window 
     CHECK(answer.rfind("HTTP/1.0 200 OK", 0) == 0);
 }
 
+TEST_CASE("Tunnel: the public address is forgotten once the connection is lost") {
+    // The service may give the address to someone else meanwhile: it must not stay on screen to copy, open or scan.
+    std::atomic_bool release{false};
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        while (!release) std::this_thread::sleep_for(20ms);
+        server.send(Writer().byte(DISCONNECT).u32(11).string("going away").string("").take());
+    };
+    FakeServer server(SSH_PORT, script);
+    SshTunnel tunnel;
+    tunnel.start(loopback(fingerprint(serverKey().blob)));
+    CHECK(waitFor([&] { return tunnel.status().url == "https://abc123.lhr.life"; }));
+    release = true;
+    CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }));
+    CHECK(tunnel.status().url.empty());
+    CHECK(tunnel.status().error.find("going away") != std::string::npos);
+}
+
 TEST_CASE("Tunnel: no server: reconnecting, with the reason") {
     // Nothing listens on this port.
     SshTunnel tunnel;

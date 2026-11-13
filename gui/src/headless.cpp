@@ -308,6 +308,8 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
             const auto tunnelStatus = [&] {
                 if (!settings.tunnel) return;
                 const auto s = broadcaster.tunnel();
+                // None while the connection is lost: told again once it is back, even the same.
+                if (s.url.empty()) tunnel_url.clear();
                 if (!s.url.empty() && s.url != tunnel_url) {
                     tunnel_url = s.url;
                     std::printf("Web page on the internet: %s\n", s.url.c_str());

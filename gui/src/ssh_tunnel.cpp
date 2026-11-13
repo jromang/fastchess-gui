@@ -222,7 +222,11 @@ struct SshTunnel::Shared {
         std::lock_guard<std::mutex> lock(mutex);
         status.state = state;
         status.error = error;
-        if (state != TunnelState::OnAir) status.connections = 0;
+        // Off the air, the address is no longer ours: a service may give it to someone else meanwhile.
+        if (state != TunnelState::OnAir) {
+            status.connections = 0;
+            status.url.clear();
+        }
     }
 };
 
