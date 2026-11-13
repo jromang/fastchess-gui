@@ -204,6 +204,15 @@ if(FCG_BUILD_GUI)
     set(LINK_WITH_PTHREAD ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(mbedtls)
 
+    # SSH for the web page's tunnel: libssh2 (BSD-3-Clause), compiled here with a cryptography backend of our own on
+    # Mbed TLS 4's PSA API (gui/libssh2-psa): its released versions do not build with Mbed TLS 4. A commit of its
+    # master branch, the latest when this was written.
+    FetchContent_Declare(libssh2
+        URL https://github.com/libssh2/libssh2/archive/e75fa9a539d21e82d4920c126662e36984e97d61.tar.gz
+        URL_HASH SHA256=3d4fd0016ec56945f911fd223a43d048622f80c4510cdf3e73de6e47a31c3b1b
+        SOURCE_SUBDIR fcg-no-cmake)
+    FetchContent_MakeAvailable(libssh2)
+
     # QR codes of the web page's public address: Nayuki's QR Code generator (MIT), its C++ version compiled in.
     FetchContent_Declare(qrcodegen
         URL https://github.com/nayuki/QR-Code-generator/archive/refs/tags/v1.8.0.tar.gz
@@ -240,6 +249,26 @@ if(FCG_BUILD_GUI)
     target_link_libraries(imgui_lib PUBLIC SDL3::SDL3-static)
     if(WIN32)
         target_link_libraries(imgui_lib PUBLIC opengl32)
+    endif()
+
+    # libssh2's sources, but its own cryptography backends: ours instead of its mbedtls.c (see libssh2_config.h).
+    # The other backends' files compile to nothing without their define.
+    set(FCG_LIBSSH2_SOURCES)
+    foreach(file agent bcrypt_pbkdf chacha channel cipher-chachapoly comp crypt global hostkey keepalive kex knownhost
+                 mac misc packet pem poly1305 publickey scp session sftp transport userauth userauth_kbd_packet version)
+        list(APPEND FCG_LIBSSH2_SOURCES ${libssh2_SOURCE_DIR}/src/${file}.c)
+    endforeach()
+    add_library(fcg_libssh2 STATIC ${FCG_LIBSSH2_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/mbedtls_psa.c)
+    target_include_directories(fcg_libssh2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa ${libssh2_SOURCE_DIR}/src)
+    target_include_directories(fcg_libssh2 SYSTEM PUBLIC ${libssh2_SOURCE_DIR}/include)
+    # LIBSSH2DEBUG for libssh2_trace(): the tunnel reads libssh2's errors as they come, the first one often the only
+    # one to tell why a call failed (a host key's signature, say). Nothing is traced but the errors.
+    target_compile_definitions(fcg_libssh2 PRIVATE HAVE_CONFIG_H LIBSSH2_MBEDTLS LIBSSH2_MBEDTLS_H LIBSSH2DEBUG)
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/mbedtls_psa.c PROPERTIES
+                                COMPILE_OPTIONS "-Wall;-Wextra")
+    target_link_libraries(fcg_libssh2 PRIVATE tfpsacrypto)
+    if(WIN32)
+        target_link_libraries(fcg_libssh2 PUBLIC ws2_32)
     endif()
 
     # Piece artwork, embedded as string literals.
@@ -299,7 +328,7 @@ if(FCG_BUILD_GUI)
     )
     target_compile_options(fcg_lib PRIVATE -Wall -Wextra)
     target_compile_definitions(fcg_lib PUBLIC FCG_VERSION="${PROJECT_VERSION}")
-    target_link_libraries(fcg_lib PUBLIC fcg_tournament imgui_lib PRIVATE mbedtls tinygettext)
+    target_link_libraries(fcg_lib PUBLIC fcg_tournament imgui_lib PRIVATE mbedtls fcg_libssh2 tinygettext)
     if(WIN32)
         target_link_libraries(fcg_lib PUBLIC ws2_32)
     endif()
@@ -319,8 +348,11 @@ if(FCG_BUILD_GUI)
     if(FCG_BUILD_TESTS)
         file(GLOB FCG_TEST_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gui/tests/*.cpp)
         add_executable(fastchess-gui-tests ${FCG_TEST_SOURCES})
-        # Mbed TLS too: the SSH tests play the server's part with its cryptography.
-        target_link_libraries(fastchess-gui-tests PRIVATE fcg_lib mbedtls)
+        # Mbed TLS too: the SSH tests play the server's part with its cryptography. And the libssh2 backend's
+        # functions, which they call directly.
+        target_link_libraries(fastchess-gui-tests PRIVATE fcg_lib mbedtls fcg_libssh2)
+        target_include_directories(fastchess-gui-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa)
+        target_include_directories(fastchess-gui-tests SYSTEM PRIVATE ${libssh2_SOURCE_DIR}/src)
         # A WinBoard engine for the tests of the adapter.
         add_executable(fcg_wb_mover ${CMAKE_CURRENT_SOURCE_DIR}/gui/tests/mock/wb_mover.cpp)
         set_target_properties(fcg_wb_mover PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
