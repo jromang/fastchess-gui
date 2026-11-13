@@ -1401,7 +1401,7 @@ void App::drawTemplates() {
     for (const auto& name : template_names_) {
         ImGui::PushID(name.c_str());
         if (ImGui::SmallButton(TR("Load"))) {
-            if (auto loaded = readJson<MatchSetup>(dir / (name + ".json"))) {
+            if (auto loaded = readSavedSetup(dir / (name + ".json"))) {
                 // The look of the program is not part of a template.
                 keepProgramSettings(*loaded, setup_);
                 setup_ = *loaded;

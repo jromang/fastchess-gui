@@ -24,7 +24,8 @@ class EngineLog {
    public:
     // The first lines of each engine (its start, options, the first position) and the last lines of the game are
     // kept; the middle of a very long game is dropped. Each engine has a head of its own, so that one with a very
-    // chatty start (on its error output, say) cannot push the other's out of the log.
+    // chatty start (on its error output, say) cannot push the other's out of the log. A quiet engine's head goes on
+    // filling during the game; those of its lines among the ones dropped are left out with them.
     static constexpr std::size_t HEAD_LINES = 300;  // per engine
     static constexpr std::size_t TAIL_LINES = 5000;
 
@@ -54,8 +55,10 @@ class EngineLog {
     mutable std::mutex mutex_;
     std::chrono::steady_clock::time_point start_ = std::chrono::steady_clock::now();
     std::array<std::vector<Line>, 2> heads_;  // White's engine's first lines, Black's
+    std::array<std::size_t, 2> starts_{};     // how many of a head's first lines are its engine's start
     std::deque<Line> tail_;                   // the last lines of both
-    uint64_t added_ = 0;                      // lines added since start()
+    uint64_t added_  = 0;                     // lines added since start()
+    uint64_t tailed_ = 0;                     // of which to the tail, those it dropped included
 };
 
 // Whether a game ending this way keeps its engine log.

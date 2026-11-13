@@ -85,6 +85,11 @@ struct CheckResult {
 // Takes `player` for the library engine `engine` from now on, or for none when `engine` is empty: the name is
 // dropped from the engine that had it. Returns true when an engine changed.
 bool setLibraryAlias(std::vector<EngineEntry>& engines, const std::string& player, const std::string& engine);
+// Whether the user said `player` is a separate engine, none of the library: it is in `separate`, letter case and
+// spaces aside. Such a player is neither warned about nor offered again when a PGN file is added.
+[[nodiscard]] bool isSeparatePlayer(const std::vector<std::string>& separate, const std::string& player);
+// Adds `player` to `separate`, or takes it out. Returns true when it changed.
+bool setSeparatePlayer(std::vector<std::string>& separate, const std::string& player, bool on);
 
 // A WinBoard engine: its protocol is xboard, or it goes through an external adapter (wb2uci).
 [[nodiscard]] bool isWinboard(const EngineEntry& entry);

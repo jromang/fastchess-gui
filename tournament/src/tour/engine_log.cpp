@@ -12,8 +12,10 @@ void EngineLog::start() {
     std::lock_guard<std::mutex> lock(mutex_);
     start_ = std::chrono::steady_clock::now();
     for (auto& head : heads_) head.clear();
+    starts_ = {};
     tail_.clear();
-    added_ = 0;
+    added_  = 0;
+    tailed_ = 0;
 }
 
 void EngineLog::add(chess::Color side, Stream stream, std::string_view line) {
@@ -24,12 +26,17 @@ void EngineLog::add(chess::Color side, Stream stream, std::string_view line) {
     auto text            = fmt::format("{:9.3f} {}{} {}", seconds, side == chess::Color::WHITE ? 'W' : 'B', mark, line);
 
     Line entry{added_++, std::move(text)};
-    auto& head = heads_[side == chess::Color::WHITE ? 0 : 1];
+    const int engine = side == chess::Color::WHITE ? 0 : 1;
+    auto& head       = heads_[engine];
     if (head.size() < HEAD_LINES) {
         head.push_back(std::move(entry));
+        // The engine's start: its lines before the tail has taken as many as a head holds, the other engine's
+        // flood at its own start, say.
+        if (tailed_ < HEAD_LINES) starts_[engine] = head.size();
         return;
     }
     tail_.push_back(std::move(entry));
+    ++tailed_;
     if (tail_.size() > TAIL_LINES) tail_.pop_front();
 }
 
@@ -51,11 +58,16 @@ std::string EngineLog::text(uint64_t game_number, const fastchess::MatchData& da
 
     std::lock_guard<std::mutex> lock(mutex_);
     // The two heads and the tail, each in the order of its lines, merged into the order of the game. The last line
-    // added is always kept, so the dropped lines are gaps between kept ones.
+    // added is always kept, so the dropped lines are gaps between kept ones. Past its engine's start, a line of a
+    // head among those the tail dropped is left out with them: a quiet engine's head fills deep into the game, and
+    // would be single lines between gaps.
+    const uint64_t kept_from = tailed_ > tail_.size() ? tail_.front().number : 0;
     std::vector<const Line*> lines;
     lines.reserve(heads_[0].size() + heads_[1].size() + tail_.size());
-    for (const auto& head : heads_) {
-        for (const auto& line : head) lines.push_back(&line);
+    for (std::size_t e = 0; e < heads_.size(); ++e) {
+        for (std::size_t i = 0; i < heads_[e].size(); ++i) {
+            if (i < starts_[e] || heads_[e][i].number >= kept_from) lines.push_back(&heads_[e][i]);
+        }
     }
     for (const auto& line : tail_) lines.push_back(&line);
     std::sort(lines.begin(), lines.end(), [](const Line* a, const Line* b) { return a->number < b->number; });

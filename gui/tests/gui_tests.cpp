@@ -1330,6 +1330,45 @@ TEST_CASE("the library engine chosen for a PGN player is kept with the engine, i
     fs::remove_all(root);
 }
 
+TEST_CASE("PGN players: one the user left a separate engine is neither warned about nor offered again") {
+    namespace fs    = std::filesystem;
+    const auto root = fs::temp_directory_path() / "fcg-separate-players";
+    fs::remove_all(root);
+    fs::create_directories(root);
+    // settings.json of an earlier version: none.
+    std::ofstream(root / "settings.json") << R"({"rating_pgns": ["/p/list.pgn"]})";
+    Storage storage(root);
+    auto separate = storage.separatePlayers();
+    CHECK(separate.empty());
+
+    // Letter case and spaces aside, as the aliases.
+    CHECK(setSeparatePlayer(separate, "Stockfish 17 64-bit", true));
+    CHECK_FALSE(setSeparatePlayer(separate, "stockfish 17  64-BIT", true));  // already so
+    CHECK(isSeparatePlayer(separate, "STOCKFISH 17 64-bit"));
+    CHECK_FALSE(isSeparatePlayer(separate, "Stockfish 17"));
+    CHECK(setSeparatePlayer(separate, "Komodo", true));
+    storage.setSeparatePlayers(separate);
+    CHECK(Storage(root).separatePlayers() == std::vector<std::string>{"Stockfish 17 64-bit", "Komodo"});
+    CHECK(Storage(root).ratingPgns().size() == 1);  // the other settings kept
+    // A library engine chosen for it afterwards: no longer separate.
+    CHECK(setSeparatePlayer(separate, "komodo", false));
+    CHECK_FALSE(setSeparatePlayer(separate, "komodo", false));
+    CHECK(separate == std::vector<std::string>{"Stockfish 17 64-bit"});
+
+    // After a PGN file is added: shown only for a player the library engines may be, undecided, and new.
+    using Player = tour::GameDb::Player;
+    const Player hinted{"Stockfish 17 64-bit", "", {"Stockfish 17"}, false};
+    const Player ambiguous{"Lc0", "", {"LC0", "lc0"}, true};
+    const Player chosen{"SF dev", "Stockfish 17", {}, false};
+    const Player unknown{"Rybka", "", {}, false};
+    CHECK_FALSE(reviewPgnPlayers({hinted}, {}, separate));  // said separate
+    CHECK(reviewPgnPlayers({hinted}, {}, {}));
+    CHECK(reviewPgnPlayers({ambiguous}, {}, separate));
+    CHECK_FALSE(reviewPgnPlayers({ambiguous}, {"lc0"}, separate));  // offered before the file was added
+    CHECK_FALSE(reviewPgnPlayers({chosen, unknown}, {}, {}));
+    fs::remove_all(root);
+}
+
 TEST_CASE("an engine list that cannot be read is set aside, not replaced by an empty one") {
     namespace fs    = std::filesystem;
     const auto root = fs::temp_directory_path() / "fcg-storage-unreadable";
@@ -1613,6 +1652,16 @@ TEST_CASE("replay charts: the fields a PGN has are told apart from zeros, and fr
     CHECK(chartExtraField(MoveChart::Nodes) == 0);
     CHECK(std::string(pgnFieldOption(PGN_NPS)) == "nps");
     CHECK(std::string(pgnFieldOption(PGN_PV)) == "pv");
+    // A field missing with its option on (the decision time, which the engines' lines may not tell) does not
+    // blame the option.
+    fastchess::config::Pgn pgn;
+    pgn.track_decision = true;
+    CHECK(pgnFieldOn(pgn, PGN_DECISION));
+    CHECK_FALSE(pgnFieldOn(pgn, PGN_SELDEPTH));
+    CHECK(missingPgnFieldTip(PGN_DECISION, true).find("was on") != std::string::npos);
+    CHECK(missingPgnFieldTip(PGN_SELDEPTH, false) ==
+          "Written when \"seldepth\" is on in the PGN options of the setup.");
+    CHECK(missingPgnFieldTip(PGN_DECISION, std::nullopt).find("the engines give") != std::string::npos);
     CHECK_FALSE(moveSeries(game->moves, MoveChart::Nodes).empty());
     CHECK(moveSeries(game->moves, MoveChart::Agreement).empty());
 }

@@ -443,6 +443,22 @@ bool setLibraryAlias(std::vector<EngineEntry>& engines, const std::string& playe
     return changed;
 }
 
+bool isSeparatePlayer(const std::vector<std::string>& separate, const std::string& player) {
+    const auto key = tour::foldedName(player);
+    return std::any_of(separate.begin(), separate.end(),
+                       [&](const std::string& s) { return tour::foldedName(s) == key; });
+}
+
+bool setSeparatePlayer(std::vector<std::string>& separate, const std::string& player, bool on) {
+    if (!on) {
+        const auto key = tour::foldedName(player);
+        return std::erase_if(separate, [&](const std::string& s) { return tour::foldedName(s) == key; }) > 0;
+    }
+    if (isSeparatePlayer(separate, player)) return false;
+    separate.push_back(player);
+    return true;
+}
+
 bool isWinboard(const EngineEntry& entry) {
     if (entry.protocol == "xboard") return true;
     auto lower = [](std::string s) {

@@ -12,16 +12,46 @@ namespace fcg {
 
 namespace fs = std::filesystem;
 
-template <typename T>
-std::optional<T> readJson(const fs::path& file) {
+namespace {
+
+// A JSON file made a T by `convert`, nullopt when it is missing or unreadable.
+template <typename T, typename Convert>
+std::optional<T> readJsonWith(const fs::path& file, Convert convert) {
     std::ifstream in(file, std::ios::binary);
     if (!in) return std::nullopt;
 
     try {
-        return nlohmann::json::parse(in).get<T>();
+        return convert(nlohmann::json::parse(in));
     } catch (const std::exception&) {
         return std::nullopt;
     }
+}
+
+template <typename T>
+T plain(const nlohmann::json& j) {
+    return j.get<T>();
+}
+
+// A setup the program saved in the profile, upgraded (see upgradeSavedSetup()).
+MatchSetup savedSetup(const nlohmann::json& j) {
+    auto setup = j.get<MatchSetup>();
+    upgradeSavedSetup(j, setup);
+    return setup;
+}
+
+std::vector<QueuedTournament> savedQueue(const nlohmann::json& j) {
+    auto queue = j.get<std::vector<QueuedTournament>>();
+    for (std::size_t i = 0; i < queue.size(); ++i) {
+        if (const auto& item = j[i]; item.contains("setup")) upgradeSavedSetup(item["setup"], queue[i].setup);
+    }
+    return queue;
+}
+
+}  // namespace
+
+template <typename T>
+std::optional<T> readJson(const fs::path& file) {
+    return readJsonWith<T>(file, plain<T>);
 }
 
 template std::optional<std::vector<EngineEntry>> readJson(const fs::path&);
@@ -30,6 +60,8 @@ template std::optional<std::vector<QueuedTournament>> readJson(const fs::path&);
 template std::optional<nlohmann::json> readJson(const fs::path&);
 template std::optional<RunningMarker> readJson(const fs::path&);
 template std::optional<std::vector<layout::Layout>> readJson(const fs::path&);
+
+std::optional<MatchSetup> readSavedSetup(const fs::path& file) { return readJsonWith<MatchSetup>(file, savedSetup); }
 
 bool writeJson(const fs::path& file, const nlohmann::json& value, std::string* error, bool backup) {
     try {
@@ -53,9 +85,9 @@ void save(const fs::path& file, const nlohmann::json& value, bool backup = false
 
 // A profile file that is there but cannot be read is set aside, so that the defaults saved in its place do not
 // replace it: a typo in a hand edit, or a file left empty by a power cut, must not cost the list of engines.
-template <typename T>
-std::optional<T> readProfileFile(const fs::path& file) {
-    auto value = readJson<T>(file);
+template <typename T, typename Convert = T (*)(const nlohmann::json&)>
+std::optional<T> readProfileFile(const fs::path& file, Convert convert = plain<T>) {
+    auto value = readJsonWith<T>(file, convert);
     std::error_code ec;
     if (value || !fs::exists(file, ec)) return value;
     for (int n = 1; n < 100; ++n) {
@@ -134,6 +166,16 @@ void Storage::setRatingPgns(const std::vector<fs::path>& files) const {
     save(root_ / "settings.json", settings);
 }
 
+std::vector<std::string> Storage::separatePlayers() const {
+    return setting(settings(), "separate_players", std::vector<std::string>{});
+}
+
+void Storage::setSeparatePlayers(const std::vector<std::string>& players) const {
+    auto settings                = this->settings();
+    settings["separate_players"] = players;
+    save(root_ / "settings.json", settings);
+}
+
 fs::path Storage::engineFolder() const { return fs::path(setting(settings(), "engine_folder", std::string{})); }
 
 void Storage::setEngineFolder(const fs::path& folder) const {
@@ -177,7 +219,7 @@ std::vector<BookEntry> Storage::loadBooks() const {
 void Storage::saveBooks(const std::vector<BookEntry>& books) const { save(root_ / "books.json", books); }
 
 MatchSetup Storage::loadSetup() const {
-    return readProfileFile<MatchSetup>(root_ / "setup.json").value_or(MatchSetup{});
+    return readProfileFile<MatchSetup>(root_ / "setup.json", savedSetup).value_or(MatchSetup{});
 }
 
 void Storage::saveSetup(const MatchSetup& setup) const { save(root_ / "setup.json", setup); }
@@ -189,7 +231,7 @@ std::vector<layout::Layout> Storage::loadLayouts() const {
 void Storage::saveLayouts(const std::vector<layout::Layout>& layouts) const { save(root_ / "layouts.json", layouts); }
 
 std::vector<QueuedTournament> Storage::loadQueue() const {
-    return readProfileFile<std::vector<QueuedTournament>>(root_ / "queue.json")
+    return readProfileFile<std::vector<QueuedTournament>>(root_ / "queue.json", savedQueue)
         .value_or(std::vector<QueuedTournament>{});
 }
 

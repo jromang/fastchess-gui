@@ -562,8 +562,10 @@ void App::drawGames() {
         ImGui::SameLine();
         ImGui::TextDisabled("%s", trf("No {} in this game's PGN", pgnFieldOption(extra)).c_str());
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip(
-                "%s", trf("Written when \"{}\" is on in the PGN options of the setup.", pgnFieldOption(extra)).c_str());
+            // With the option on, the decision time is still only written when the engines' lines tell it.
+            std::optional<bool> on;
+            if (const auto* t = run_.tournament()) on = pgnFieldOn(t->spec().conditions.pgn, extra);
+            ImGui::SetTooltip("%s", missingPgnFieldTip(extra, on).c_str());
         }
     }
     const float height = ImGui::GetContentRegionAvail().y;

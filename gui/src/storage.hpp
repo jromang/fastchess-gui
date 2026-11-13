@@ -32,6 +32,9 @@ class Storage {
     // PGN files whose games count in the ratings too (settings.json).
     [[nodiscard]] std::vector<std::filesystem::path> ratingPgns() const;
     void setRatingPgns(const std::vector<std::filesystem::path>& files) const;
+    // The players of those files the user said are no library engine (settings.json).
+    [[nodiscard]] std::vector<std::string> separatePlayers() const;
+    void setSeparatePlayers(const std::vector<std::string>& players) const;
 
     // The folder engines were last imported from, which Refresh looks in again for new ones (settings.json); empty
     // when none.
@@ -77,6 +80,9 @@ class Storage {
 // Reads a JSON file into T, nullopt when it is missing or unreadable.
 template <typename T>
 std::optional<T> readJson(const std::filesystem::path& file);
+// A setup the program saved in the profile (a template), as readJson() reads it, then upgradeSavedSetup(); a setup
+// file given to --run is read by readJson(), as it is.
+std::optional<MatchSetup> readSavedSetup(const std::filesystem::path& file);
 
 // Writes through a temporary file synced to the disk, so a crash or a power cut never leaves half a file behind
 // (see tour::replaceFile: the file keeps its permissions). False on failure, with the reason in `error`. With
