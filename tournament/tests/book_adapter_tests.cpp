@@ -707,3 +707,100 @@ TEST_CASE("own book: a PGN book plays for its participant, turned into a Polyglo
     std::error_code ec;
     fs::remove_all(dir, ec);
 }
+
+namespace {
+
+// The book file the adapter of `engine` is given, empty when it plays without one.
+std::string adapterBook(const fastchess::EngineConfiguration& engine) {
+    const auto at = engine.args.find("--book ");
+    if (at == std::string::npos) return {};
+    auto book = engine.args.substr(at + 7);
+    book      = book.substr(0, book.find(" --depth"));
+    if (!book.empty() && book.front() == '"') book = book.substr(1, book.size() - 2);
+    return book;
+}
+
+// A round robin of four, the last with the PGN book `pgn` of its own.
+TournamentSpec pgnBookRoundRobin(const fs::path& pgn) {
+    TournamentSpec s;
+    s.name   = "pgn book";
+    s.format = Format::RoundRobin;
+    s.cycles = 1;
+    for (int i = 0; i < 4; ++i) {
+        Participant p;
+        p.id                 = i;
+        p.engine.name        = fmt::format("random {}", i);
+        p.engine.cmd         = randomMover();
+        p.engine.limit.nodes = 1;
+        s.participants.push_back(p);
+    }
+    s.participants[3].book = pgn.string();
+    return s;
+}
+
+// The book files the adapters of every game are given, the games claimed in turn (none played).
+std::vector<std::string> claimedBooks(TournamentState& state) {
+    std::vector<std::string> books;
+    while (const auto task = state.claimNext()) {
+        for (const auto* engine : {&task->white, &task->black}) {
+            if (const auto book = adapterBook(*engine); !book.empty()) books.push_back(book);
+        }
+    }
+    return books;
+}
+
+}  // namespace
+
+TEST_CASE("own book: a tournament keeps the PGN book it was prepared with, the PGN file saved again or not") {
+    const auto previous_adapter = book_adapter;
+    const auto previous_cache   = book_cache_dir;
+    const auto dir              = fs::temp_directory_path() / "fcg-own-book-pgn-kept";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+    book_adapter   = self().string();
+    book_cache_dir = dir / "cache";
+    const auto pgn = dir / "book.pgn";
+    std::ofstream(pgn, std::ios::binary) << "[Event \"x\"]\n\n1. e4 e5 *\n\n";
+
+    SUBCASE("saved again after the preparation, before the participant's first game") {
+        const auto prepared = preparePgnBook(pgn.string(), 0, false);
+        auto state          = TournamentState::create(dir / "t", pgnBookRoundRobin(pgn));
+        fs::last_write_time(pgn, fs::last_write_time(pgn) + 5s);
+        CHECK_FALSE(cachedPgnBook(pgn.string(), 0, false));
+        const auto books = claimedBooks(*state);
+        CHECK(books.size() == 6);  // its three encounters, two games each
+        for (const auto& book : books) {
+            CHECK(book == prepared.file);
+            CHECK(fs::is_regular_file(book));
+        }
+    }
+
+    SUBCASE("opened before its preparation, as a resume does: the book is found once made") {
+        auto state          = TournamentState::create(dir / "t", pgnBookRoundRobin(pgn));
+        const auto prepared = preparePgnBook(pgn.string(), 0, false);
+        const auto books    = claimedBooks(*state);
+        CHECK(books.size() == 6);
+        for (const auto& book : books) CHECK(book == prepared.file);
+    }
+
+    SUBCASE("a tournament that plays for weeks keeps its book from the cache's pruning") {
+        const auto prepared  = preparePgnBook(pgn.string(), 0, false);
+        const auto side      = fs::path(prepared.file).replace_extension(".json");
+        const auto month_ago = fs::file_time_type::clock::now() - std::chrono::hours(24 * 31);
+        fs::last_write_time(side, month_ago);
+        auto state = TournamentState::create(dir / "t", pgnBookRoundRobin(pgn));
+        // Opened: used.
+        CHECK(fs::last_write_time(side) > month_ago + std::chrono::hours(24 * 30));
+        // Its games, a month later: used again.
+        fs::last_write_time(side, month_ago);
+        CHECK(claimedBooks(*state).size() == 6);
+        CHECK(fs::last_write_time(side) > month_ago + std::chrono::hours(24 * 30));
+        CHECK(pruneBookCache(30) == 0);
+        CHECK(fs::is_regular_file(prepared.file));
+    }
+
+    book_adapter   = previous_adapter;
+    book_cache_dir = previous_cache;
+    std::error_code ec;
+    fs::remove_all(dir, ec);
+}

@@ -91,9 +91,15 @@ PreparedBook preparePgnBook(const std::string& pgn, int depth, bool chess960, co
 
 // The Polyglot book a participant's own `book` plays from: the book itself when it is one; for a PGN book, the one
 // it was turned into, from the cache. Not made here: when the PGN book was not prepared, the place it would be (the
-// adapter then reports that it cannot read it). A tournament asks once per participant and keeps the answer while
-// it is open, so that a PGN file changed meanwhile does not change the book its games play from.
+// adapter then reports that it cannot read it). A tournament asks for its participants' books when it is opened,
+// right after their preparation, and keeps the answers while it is open, so that a PGN file changed meanwhile does
+// not change the book its games play from (nor makes them look for one never made).
 [[nodiscard]] std::string ownBookFile(const std::string& book, int depth, bool chess960);
+
+// Marks the cached Polyglot book `file` used, when it was last marked more than a day ago: kept by
+// pruneBookCache() for another while. A tournament does so at each game of a participant whose book it is, so that
+// a tournament that plays for weeks keeps its books whatever another program on the same profile prunes meanwhile.
+void keepCachedBook(const std::string& file);
 
 // Removes from the cache the books not used for `days` days (a book is used when it is found in the cache or made).
 // Returns how many files were removed.

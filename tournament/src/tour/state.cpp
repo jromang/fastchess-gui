@@ -243,6 +243,10 @@ std::unique_ptr<TournamentState> TournamentState::open(const fs::path& dir, bool
     // Before anything is read: the journal of a tournament another program plays may grow meanwhile.
     if (!read_only) state->lock_ = std::make_unique<FolderLock>(dir);
     state->load();
+    if (!read_only) {
+        std::lock_guard<std::mutex> lock(state->mutex_);
+        state->keepOwnBooks();
+    }
     return state;
 }
 
@@ -259,8 +263,27 @@ bool TournamentState::frc() const noexcept { return spec_.conditions.variant == 
 const std::string& TournamentState::ownBookFileOf(const Participant& p) {
     const auto key = std::pair{p.book, p.book_depth};
     auto it        = own_book_files_.find(key);
-    if (it == own_book_files_.end()) it = own_book_files_.emplace(key, ownBookFile(p.book, p.book_depth, frc())).first;
+    if (it == own_book_files_.end()) {
+        return own_book_files_.emplace(key, ownBookFile(p.book, p.book_depth, frc())).first->second;
+    }
+    if (isPgnBook(p.book)) {
+        std::error_code ec;
+        if (fs::is_regular_file(it->second, ec)) {
+            keepCachedBook(it->second);  // not pruned by another program while the tournament plays for weeks
+        } else {
+            // Not there when the tournament was opened (a resume prepares its books after opening it), or removed
+            // since: asked again.
+            it->second = ownBookFile(p.book, p.book_depth, frc());
+        }
+    }
     return it->second;
+}
+
+void TournamentState::keepOwnBooks() {
+    if (finished_) return;
+    for (const auto& p : spec_.participants) {
+        if (p.active && !p.book.empty()) (void)ownBookFileOf(p);
+    }
 }
 
 const OpeningSource& TournamentState::openings() {
@@ -724,6 +747,7 @@ void TournamentState::applyEdit(const Edit& edit) {
     undo_ = std::move(undo);
 
     applyEvent(event);
+    keepOwnBooks();  // the newcomer's, prepared before the change
     // The games of a withdrawn participant may have been the last ones to play. A Swiss or a knockout would pair
     // its next round first, which only a game's end does.
     if (!pairedAsItGoes(spec_.format)) finishIfComplete();
@@ -771,6 +795,7 @@ void TournamentState::undoEdit() {
         finish_reason_ = "complete";
         journal_->append({{"t", "finished"}, {"why", finish_reason_}});
     }
+    keepOwnBooks();
     writeOut(lock);
 }
 
