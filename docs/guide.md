@@ -400,12 +400,20 @@ The *Broadcast* tab of a running tournament publishes it while it plays; the sna
   #1 of the *Live* tab on the UDP port, #2 on the next one, and so on. Each port opens when its game starts, with
   its own limits on clients and logons, and gets the crosstable after every game; *Game shown* then does not
   apply.
-- **Web page** (TCP port): a page served by fastchess-gui itself, for any browser on the network: every game in
-  progress, the standings and the crosstable, and one game followed (the first in progress, or the one clicked)
-  with a large board, the evaluation bar, arrows, both engines' searches and charts of evaluation, depth and time.
-  Below, the statistics of the games played and their anomalies (losses on time, crashes, engines that stopped
-  answering, illegal moves), and *Download the games (PGN)*: the tournament's PGN file, up to the last game
-  recorded. `state.json`, which the page reads, holds all of it for scripts.
+- **Web page** (TCP port): a page served by fastchess-gui itself, for any browser on the network, read-only and
+  refreshed every second. The followed game (the first in progress, or the one clicked) is in the middle: the board
+  with the last move, a king in check, the coordinates and the arrows; each player's clock in large type; each
+  engine's evaluation in large type with who is thinking, its search as tiles (depth/selective depth, nodes, speed,
+  time, tablebase hits, hash) and its line of play; and the moves, with the book moves in italics. Step through the
+  moves with the arrows under the board or the ← → keys (▶ past the last move goes back to the game as it is
+  played), turn the board with ⇅ or F, and copy the game's PGN or the position's FEN. Beside the game, tabs show the
+  standings and crosstable, the charts of the followed game, each engine's search on average per move with its
+  anomalies, the next games of the schedule (a Swiss or a knockout pairs its later rounds as it goes), the
+  statistics and anomalies of the games played, and the event. Every game in progress is shown below, with a small
+  evaluation bar beside each player. *Moves* switches the moves between letters (Nf3) and figurines (♘f3), and the
+  theme follows the system or is set to light or dark; the browser remembers these choices. The page loads nothing
+  from elsewhere and works on phones. *Download the games (PGN)* gives the tournament's PGN file, up to the last
+  game recorded. `state.json`, which the page reads, holds all of it for scripts.
 - **lichess**: a lichess broadcast, with lichess' board, evaluation bar and chat, for anyone on the internet. It
   needs a personal API token with the `study:write` scope (*Create a token on lichess…*), kept in `settings.json`
   in the profile only, saved when its field is left. With no round given, a broadcast named after the tournament is made, unlisted unless
