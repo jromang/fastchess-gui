@@ -14,6 +14,11 @@ namespace fcg {
 [[nodiscard]] std::string zipArchive(const std::string& name, const std::string& data, uint16_t dos_time,
                                      uint16_t dos_date);
 
+// `data` as a gzip member (RFC 1952), deflated by the same compressor: what a web server sends with
+// "Content-Encoding: gzip". Empty when it cannot be compressed. A higher `quality` (stb's hash chain length) finds
+// longer matches, slower.
+[[nodiscard]] std::string gzipped(const std::string& data, int quality = 8);
+
 // Writes `zip`, the archive of one file `name` holding `data`, dated now. False with the reason in `error` when it
 // cannot be written.
 bool writeZip(const std::filesystem::path& zip, const std::string& name, const std::string& data,

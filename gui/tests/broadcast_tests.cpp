@@ -14,6 +14,8 @@
 
 #include <fmt/include/fmt/format.h>
 
+#include <stb_image.h>  // its inflater, compiled in zip_tests.cpp
+
 #include "broadcast.hpp"
 #include "broadcaster.hpp"
 #include "net.hpp"
@@ -620,14 +622,52 @@ TEST_CASE("broadcast: the web server answers GET of its own paths only, and boun
     CHECK(status(get("/state.json?t=123")) == "HTTP/1.0 200 OK");
     CHECK(status(get("/?from=twitter")) == "HTTP/1.0 200 OK");
 
-    // The answers: never cached, their type as given; the page loads and sends nothing elsewhere.
+    // The answers: never cached but the page, checked again by its tag; their type as given; the page loads and
+    // sends nothing elsewhere.
     const auto page = get("/");
     const auto head = page.substr(0, page.find("\r\n\r\n"));
-    CHECK(head.find("Cache-Control: no-store") != std::string::npos);
+    CHECK(head.find("Cache-Control: no-cache") != std::string::npos);
+    CHECK(head.find("Cache-Control: no-store") == std::string::npos);
+    CHECK(get("/state.json").find("Cache-Control: no-store") != std::string::npos);
     CHECK(head.find("X-Content-Type-Options: nosniff") != std::string::npos);
     CHECK(head.find("Content-Security-Policy: default-src 'none';") != std::string::npos);
     CHECK(head.find("connect-src 'self'") != std::string::npos);
     CHECK(get("/state.json").find("X-Content-Type-Options: nosniff") != std::string::npos);
+
+    // Compressed for the clients that take it (every browser), as is for the others; the page not sent again to a
+    // client that has it.
+    const auto body = [](const std::string& answer) { return answer.substr(answer.find("\r\n\r\n") + 4); };
+    const auto inflate = [](const std::string& gz) {
+        REQUIRE(gz.size() > 18);
+        int length = 0;
+        char* data = stbi_zlib_decode_noheader_malloc(gz.data() + 10, static_cast<int>(gz.size() - 18), &length);
+        REQUIRE(data);
+        std::string text(data, static_cast<std::size_t>(length));
+        std::free(data);
+        return text;
+    };
+    CHECK(head.find("Content-Encoding") == std::string::npos);
+    CHECK(body(page) == webPage());
+    const auto gzip = [&](const std::string& path, const std::string& accept) {
+        return ask("GET " + path + " HTTP/1.1\r\nHost: x\r\nAccept-Encoding: " + accept + "\r\n\r\n");
+    };
+    const auto zipped_page = gzip("/", "gzip, deflate, br, zstd");
+    CHECK(zipped_page.find("Content-Encoding: gzip\r\n") != std::string::npos);
+    CHECK(zipped_page.find("Vary: Accept-Encoding\r\n") != std::string::npos);
+    CHECK(inflate(body(zipped_page)) == webPage());
+    CHECK(body(zipped_page).size() < webPage().size() / 2);
+    const auto zipped_state = gzip("/state.json", "GZIP");
+    CHECK(zipped_state.find("Content-Encoding: gzip\r\n") != std::string::npos);
+    CHECK(inflate(body(zipped_state)) == body(get("/state.json")));
+    CHECK(gzip("/state.json", "gzip;q=0, identity").find("Content-Encoding") == std::string::npos);
+    CHECK(gzip("/state.json", "br").find("Content-Encoding") == std::string::npos);
+    const auto tag_at = head.find("ETag: ");
+    REQUIRE(tag_at != std::string::npos);
+    const auto tag = head.substr(tag_at + 6, head.find("\r\n", tag_at) - tag_at - 6);
+    const auto again = ask("GET / HTTP/1.1\r\nIf-None-Match: " + tag + "\r\nAccept-Encoding: gzip\r\n\r\n");
+    CHECK(status(again) == "HTTP/1.0 304 Not Modified");
+    CHECK(body(again).empty());
+    CHECK(status(ask("GET / HTTP/1.1\r\nIf-None-Match: \"old\"\r\n\r\n")) == "HTTP/1.0 200 OK");
 
     // A request larger than any the page makes is refused, read no further: its client may not even get the
     // answer (the connection closed on what it still sends), and the others are served.

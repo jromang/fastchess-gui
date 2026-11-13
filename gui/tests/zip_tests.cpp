@@ -88,3 +88,23 @@ TEST_CASE("zip: one file deflated, read back as written, with its central direct
     in.close();
     std::filesystem::remove(file);
 }
+
+TEST_CASE("gzip: a member any browser reads, with its CRC-32 and its length") {
+    std::string text;
+    for (int i = 0; i < 400; ++i) text += "{\"game\":" + std::to_string(i) + ",\"fen\":\"rnbqkbnr/pppppppp/8/8\"},";
+    const auto gz = fcg::gzipped(text);
+    REQUIRE(gz.size() > 18);
+    CHECK(gz.size() < text.size() / 3);
+    CHECK(static_cast<unsigned char>(gz[0]) == 0x1f);
+    CHECK(static_cast<unsigned char>(gz[1]) == 0x8b);
+    CHECK(gz[2] == 8);  // deflate
+    CHECK(gz[3] == 0);  // no name, no comment, no extra field
+    int length = 0;
+    char* data = stbi_zlib_decode_noheader_malloc(gz.data() + 10, static_cast<int>(gz.size() - 18), &length);
+    REQUIRE(data);
+    CHECK(std::string(data, static_cast<std::size_t>(length)) == text);
+    std::free(data);
+    CHECK(read32(gz, gz.size() - 4) == text.size());
+    CHECK(read32(fcg::gzipped("123456789"), fcg::gzipped("123456789").size() - 8) == 0xCBF43926);
+    CHECK(fcg::gzipped("").empty());
+}

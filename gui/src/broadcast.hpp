@@ -223,6 +223,7 @@ class WebServer {
     std::atomic_int viewers_{0};
     std::mutex mutex_;
     std::string state_json_ = "{}";
+    std::string state_gzip_;  // state_json_ compressed, empty when it could not be
     std::filesystem::path pgn_file_;
     std::string pgn_name_;
     uint64_t pgn_bytes_ = 0;

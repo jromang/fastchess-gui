@@ -26,6 +26,26 @@ void put32(std::string& out, uint32_t v) {
 
 }  // namespace
 
+std::string gzipped(const std::string& data, int quality) {
+    if (data.empty() || data.size() >= 0x7FFFFFFF) return {};
+    int length = 0;
+    auto* z    = stbi_zlib_compress(reinterpret_cast<unsigned char*>(const_cast<char*>(data.data())),
+                                    static_cast<int>(data.size()), &length, quality);
+    if (!z || length <= 6) {
+        std::free(z);
+        return {};
+    }
+    // The header: deflate, no name nor time, an unknown system; then the zlib stream without its two bytes of header
+    // and its four of checksum; then the CRC-32 and the length.
+    std::string out("\x1f\x8b\x08\x00\x00\x00\x00\x00\x00\xff", 10);
+    out.append(reinterpret_cast<const char*>(z) + 2, static_cast<std::size_t>(length - 6));
+    std::free(z);
+    put32(out, fastchess::crc::finalize_crc32(
+                   fastchess::crc::incremental_crc32(fastchess::crc::initial_crc32(), data)));
+    put32(out, static_cast<uint32_t>(data.size()));
+    return out;
+}
+
 std::string zipArchive(const std::string& name, const std::string& data, uint16_t dos_time, uint16_t dos_date) {
     const uint32_t crc =
         fastchess::crc::finalize_crc32(fastchess::crc::incremental_crc32(fastchess::crc::initial_crc32(), data));

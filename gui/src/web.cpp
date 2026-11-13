@@ -8,12 +8,16 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cstdio>
 #include <fstream>
 #include <memory>
 #include <string_view>
 #include <vector>
 
 #include "broadcast.hpp"
+#include "zip.hpp"
+
+#include <core/crc32.hpp>
 
 namespace fcg {
 
@@ -38,11 +42,10 @@ constexpr std::size_t CHUNK      = 64 * 1024;
 constexpr int CHUNK_MS           = 10000;
 constexpr auto MAX_DOWNLOAD_TIME = std::chrono::minutes(30);
 
-// Every answer: never kept by a cache or a proxy (a tunnel), its type taken as given, no address sent on from the
-// page.
+// Every answer: its type taken as given, no address sent on from the page; never kept by a cache or a proxy (a
+// tunnel) unless it says otherwise (the page, checked again at each load).
 constexpr const char* COMMON_HEADERS =
-    "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n"
-    "Connection: close\r\n";
+    "X-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\nConnection: close\r\n";
 
 // The page loads nothing from elsewhere and sends nothing elsewhere: its own script and styles, and state.json.
 constexpr const char* PAGE_POLICY =
@@ -51,8 +54,56 @@ constexpr const char* PAGE_POLICY =
 
 std::string response(const std::string& status, const std::string& type, const std::string& body,
                      const std::string& headers = "Access-Control-Allow-Origin: *\r\n") {
+    const auto cache = headers.find("Cache-Control:") == std::string::npos ? "Cache-Control: no-store\r\n" : "";
     return "HTTP/1.0 " + status + "\r\nContent-Type: " + type + "\r\nContent-Length: " + std::to_string(body.size()) +
-           "\r\n" + headers + COMMON_HEADERS + "\r\n" + body;
+           "\r\n" + headers + cache + COMMON_HEADERS + "\r\n" + body;
+}
+
+// The value of a header of the request (its name in lower case), empty when it has none.
+std::string_view headerValue(std::string_view request, std::string_view name) {
+    for (std::size_t at = request.find("\r\n"); at != std::string_view::npos;) {
+        const auto start = at + 2;
+        const auto end   = request.find("\r\n", start);
+        const auto line  = request.substr(start, end == std::string_view::npos ? std::string_view::npos : end - start);
+        if (line.size() > name.size() && line[name.size()] == ':' &&
+            std::equal(name.begin(), name.end(), line.begin(),
+                       [](char a, char b) { return a == std::tolower(static_cast<unsigned char>(b)); })) {
+            auto value = line.substr(name.size() + 1);
+            while (!value.empty() && (value.front() == ' ' || value.front() == '\t')) value.remove_prefix(1);
+            return value;
+        }
+        at = end;
+    }
+    return {};
+}
+
+// Whether the client takes gzip: every browser says so. A "gzip;q=0" refuses it.
+bool acceptsGzip(std::string_view request) {
+    std::string value(headerValue(request, "accept-encoding"));
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    std::erase(value, ' ');
+    const auto at = value.find("gzip");
+    return at != std::string::npos && value.compare(at + 4, 4, ";q=0") != 0 && value.compare(at + 4, 6, ";q=0.0") != 0;
+}
+
+// The page, the same until the program changes: sent compressed when the client takes it, and checked again at each
+// load by its tag, so that a reload costs a few bytes.
+struct Page {
+    std::string gzip;
+    std::string tag;
+};
+
+const Page& page() {
+    static const Page p = [] {
+        const auto& html = webPage();
+        char tag[16];
+        std::snprintf(tag, sizeof(tag), "\"%08x\"",
+                      static_cast<unsigned>(fastchess::crc::finalize_crc32(
+                          fastchess::crc::incremental_crc32(fastchess::crc::initial_crc32(), html))));
+        return Page{gzipped(html, 64), tag};  // once: the best stb finds
+    }();
+    return p;
 }
 
 // The file name a browser saves the download as: plain ASCII for the old ones, UTF-8 for the others (RFC 6266).
@@ -99,8 +150,11 @@ void WebServer::stop() {
 
 void WebServer::publish(const BroadcastSnapshot& snapshot) {
     auto json = snapshotJson(snapshot);
+    // Compressed once for every viewer: a fifth of its size, on a tunnel that limits its speed.
+    auto gzip = gzipped(json);
     std::lock_guard<std::mutex> lock(mutex_);
     state_json_ = std::move(json);
+    state_gzip_ = std::move(gzip);
     pgn_file_   = snapshot.pgn_file;
     pgn_name_   = snapshot.pgn_name;
     pgn_bytes_  = snapshot.pgn_bytes;
@@ -169,13 +223,25 @@ void WebServer::handle(std::unique_ptr<net::TcpConnection> connection) {
         return;
     }
 
+    const bool gzip = acceptsGzip(request);
     if (path == "/" || path == "/index.html") {
-        send(response("200 OK", "text/html; charset=utf-8", webPage(), PAGE_POLICY));
+        const auto& p     = page();
+        const auto headers = std::string(PAGE_POLICY) + "Cache-Control: no-cache\r\nETag: " + p.tag +
+                             "\r\nVary: Accept-Encoding\r\n";
+        if (headerValue(request, "if-none-match") == p.tag) {
+            send("HTTP/1.0 304 Not Modified\r\n" + headers + COMMON_HEADERS + "\r\n");
+        } else if (gzip && !p.gzip.empty()) {
+            send(response("200 OK", "text/html; charset=utf-8", p.gzip, headers + "Content-Encoding: gzip\r\n"));
+        } else {
+            send(response("200 OK", "text/html; charset=utf-8", webPage(), headers));
+        }
     } else if (path == "/state.json") {
         std::string body;
+        bool zipped = false;
         {
             std::lock_guard<std::mutex> lock(mutex_);
-            body = state_json_;
+            zipped = gzip && !state_gzip_.empty();
+            body   = zipped ? state_gzip_ : state_json_;
             // A viewer polls every second: the requests of the last few seconds count the viewers, whatever their
             // address (all the same behind a tunnel).
             const auto now = Clock::now();
@@ -183,7 +249,9 @@ void WebServer::handle(std::unique_ptr<net::TcpConnection> connection) {
             std::erase_if(recent_, [&](const auto& t) { return now - t > std::chrono::seconds(3); });
             viewers_ = static_cast<int>((recent_.size() + 2) / 3);
         }
-        send(response("200 OK", "application/json", body));
+        send(response("200 OK", "application/json", body,
+                      std::string("Access-Control-Allow-Origin: *\r\nVary: Accept-Encoding\r\n") +
+                          (zipped ? "Content-Encoding: gzip\r\n" : "")));
     } else if (path == "/games.pgn") {
         std::filesystem::path file;
         std::string name;
