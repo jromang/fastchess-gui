@@ -292,7 +292,8 @@ void App::drawTunnel(bool& changed) {
             if (!status.new_key.empty() && ImGui::SmallButton(TR("Trust the new key"))) broadcaster_.trustTunnelKey();
             return;
     }
-    if (status.url.empty()) return;
+    // The address only while on air: once the connection is lost, the service may give it to someone else.
+    if (status.state != TunnelState::OnAir || status.url.empty()) return;
 
     // The address, to copy, to open, and as a QR code for a phone.
     ImGui::TextUnformatted(status.url.c_str());

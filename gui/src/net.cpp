@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstring>
 #include <mutex>
+#include <thread>
 
 #ifdef _WIN32
 #    include <winsock2.h>
@@ -15,7 +16,6 @@
 #    include <netdb.h>
 #    include <netinet/in.h>
 #    include <poll.h>
-#    include <sys/select.h>
 #    include <sys/socket.h>
 #    include <unistd.h>
 
@@ -85,18 +85,22 @@ constexpr int SEND_FLAGS = 0;
 // True when `fd` has something to read (or room to write) within `timeout_ms`; an error counts, for the call that
 // follows to tell it (Windows reports a failed connect that way).
 bool ready(Handle fd, bool write, int timeout_ms) {
+#ifdef _WIN32
+    // select on Windows: its fd_set is a list of handles, of any value, and WSAPoll misses a failed connect on the
+    // Windows 10 versions before 2004.
     fd_set set, error;
     FD_ZERO(&set);
     FD_ZERO(&error);
-#ifdef _WIN32
     FD_SET(static_cast<SOCKET>(fd), &set);
     FD_SET(static_cast<SOCKET>(fd), &error);
-#else
-    FD_SET(fd, &set);
-    FD_SET(fd, &error);
-#endif
     timeval tv{timeout_ms / 1000, (timeout_ms % 1000) * 1000};
-    return select(static_cast<int>(fd) + 1, write ? nullptr : &set, write ? &set : nullptr, &error, &tv) > 0;
+    return select(0, write ? nullptr : &set, write ? &set : nullptr, &error, &tv) > 0;
+#else
+    // poll on POSIX: select's FD_SET writes past its set for a descriptor of FD_SETSIZE (1024) or more, which a
+    // program with many engines, logs and connections open can have.
+    pollfd p{fd, static_cast<short>(write ? POLLOUT : POLLIN), 0};
+    return poll(&p, 1, timeout_ms) > 0;
+#endif
 }
 
 bool readable(Handle fd, int timeout_ms) { return ready(fd, false, timeout_ms); }
@@ -106,14 +110,22 @@ int msLeft(Clock::time_point deadline) {
     return static_cast<int>(std::clamp<long long>(left, 0, 1 << 30));
 }
 
-// Waits in short steps, until `fd` is ready, the deadline passes, or `running` turns false.
-bool readyBefore(Handle fd, bool write, Clock::time_point deadline, const std::atomic_bool* running) {
-    while (!running || *running) {
+// Waits in short steps, until `fd` is ready, the deadline passes, or `running` turns false (`stopping` true).
+bool readyBefore(Handle fd, bool write, Clock::time_point deadline, const std::atomic_bool* running,
+                 const std::atomic_bool* stopping = nullptr) {
+    while ((!running || *running) && (!stopping || !*stopping)) {
         const int left = msLeft(deadline);
         if (left <= 0) return false;
         if (ready(fd, write, std::min(left, 100))) return true;
     }
     return false;
+}
+
+// A non-blocking connect that ended (its socket ready to write): whether it succeeded.
+bool connectSucceeded(Handle fd) {
+    int code    = 0;
+    SockLen len = sizeof(code);
+    return getsockopt(fd, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&code), &len) == 0 && code == 0;
 }
 
 sockaddr_in address(uint32_t ip, uint16_t port) {
@@ -295,44 +307,68 @@ void Socket::shutdownWrite() {
 #endif
 }
 
-// poll rather than select: no limit on the number of sockets, nor on their values.
+// poll rather than select: no limit on the number of sockets, nor on their values. Only the sockets waited for
+// are polled: poll reports a hang-up or an error even for one asked nothing, at once, again and again, and the
+// caller, which asked nothing of it, would wait no more.
 void waitAny(std::vector<Wait>& waits, int timeout_ms) {
-    std::vector<pollfd> fds(waits.size());
+    std::vector<pollfd> fds;
+    std::vector<std::size_t> of;  // the wait of each
     for (std::size_t i = 0; i < waits.size(); ++i) {
+        waits[i].can_read = waits[i].can_write = false;
+        if (!waits[i].read && !waits[i].write) continue;
+        pollfd p{};
 #ifdef _WIN32
-        fds[i].fd = static_cast<SOCKET>(waits[i].fd);
+        p.fd = static_cast<SOCKET>(waits[i].fd);
 #else
-        fds[i].fd = waits[i].fd;
+        p.fd = waits[i].fd;
 #endif
-        fds[i].events = static_cast<short>((waits[i].read ? POLLIN : 0) | (waits[i].write ? POLLOUT : 0));
+        p.events = static_cast<short>((waits[i].read ? POLLIN : 0) | (waits[i].write ? POLLOUT : 0));
+        fds.push_back(p);
+        of.push_back(i);
+    }
+    if (fds.empty()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(std::max(timeout_ms, 0)));
+        return;
     }
 #ifdef _WIN32
     const int n = WSAPoll(fds.data(), static_cast<ULONG>(fds.size()), timeout_ms);
 #else
     const int n = poll(fds.data(), static_cast<nfds_t>(fds.size()), timeout_ms);
 #endif
-    for (std::size_t i = 0; i < waits.size(); ++i) {
-        const auto r        = n > 0 ? fds[i].revents : 0;
-        const bool ended    = (r & (POLLERR | POLLHUP | POLLNVAL)) != 0;
-        waits[i].can_read  = waits[i].read && ((r & POLLIN) != 0 || ended);
-        waits[i].can_write = waits[i].write && ((r & POLLOUT) != 0 || ended);
+    if (n <= 0) return;
+    for (std::size_t k = 0; k < fds.size(); ++k) {
+        auto& wait       = waits[of[k]];
+        const auto r     = fds[k].revents;
+        const bool ended = (r & (POLLERR | POLLHUP | POLLNVAL)) != 0;
+        wait.can_read    = wait.read && ((r & POLLIN) != 0 || ended);
+        wait.can_write   = wait.write && ((r & POLLOUT) != 0 || ended);
     }
 }
 
-std::optional<Handle> connectTo(uint32_t ip, uint16_t port) {
+std::optional<Handle> connectTo(uint32_t ip, uint16_t port, int timeout_ms) {
     ensureStarted();
     const auto fd = openSocket(SOCK_STREAM);
     if (fd == INVALID) return std::nullopt;
     const auto a = address(ip, port);
-    if (::connect(fd, reinterpret_cast<const sockaddr*>(&a), sizeof(a)) != 0) {
+    bool ok      = false;
+    if (timeout_ms < 0) {
+        ok = ::connect(fd, reinterpret_cast<const sockaddr*>(&a), sizeof(a)) == 0;
+    } else {
+        // Bounded: on Windows, a connection refused, even on this machine, is told after two seconds or so.
+        setBlocking(fd, false);
+        ok = ::connect(fd, reinterpret_cast<const sockaddr*>(&a), sizeof(a)) == 0;
+        if (!ok && connecting()) ok = ready(fd, true, timeout_ms) && connectSucceeded(fd);
+        setBlocking(fd, true);
+    }
+    if (!ok) {
         closeHandle(fd);
         return std::nullopt;
     }
     return fd;
 }
 
-std::optional<Handle> connectHost(const std::string& host, const std::string& port, int timeout_ms,
-                                  std::string& error) {
+std::optional<Handle> connectHost(const std::string& host, const std::string& port, int timeout_ms, std::string& error,
+                                  const std::atomic_bool* stopping) {
     ensureStarted();
     addrinfo hints{}, *list = nullptr;
     hints.ai_family   = AF_UNSPEC;
@@ -352,13 +388,16 @@ std::optional<Handle> connectHost(const std::string& host, const std::string& po
         setBlocking(fd, false);
         bool ok = ::connect(fd, p->ai_addr, static_cast<SockLen>(p->ai_addrlen)) == 0;
         if (!ok && connecting()) {
-            if (ready(fd, true, msLeft(deadline))) {
-                int code    = 0;
-                SockLen len = sizeof(code);
-                ok = getsockopt(fd, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&code), &len) == 0 && code == 0;
-            } else {
+            if (readyBefore(fd, true, deadline, nullptr, stopping)) {
+                ok = connectSucceeded(fd);
+            } else if (!stopping || !*stopping) {
                 error = "no answer from " + host + " in time";
             }
+        }
+        if (stopping && *stopping) {
+            closeHandle(fd);
+            error = "stopped";
+            break;
         }
         if (!ok) {
             closeHandle(fd);

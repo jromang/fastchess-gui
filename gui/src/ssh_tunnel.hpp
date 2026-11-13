@@ -6,6 +6,7 @@
 // are read from any thread.
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -25,12 +26,17 @@ struct TunnelSettings {
     // The host key's fingerprint ("SHA256:..."), when it is known in advance (localhost.run's). Otherwise the key
     // is trusted the first time, kept in `known_hosts`, and must be the same afterwards.
     std::string pinned;
-    std::filesystem::path known_hosts;  // empty: the key is not kept
+    std::filesystem::path known_hosts;  // needed when nothing is pinned
     // Timings, shortened by the tests.
     std::chrono::seconds keepalive{30};
     std::chrono::seconds rekey_after{3600};
     uint64_t rekey_bytes = uint64_t(1) << 30;
     std::chrono::seconds first_retry{2};
+    // Limits, lowered by the tests: the bytes waiting to go to the server (beyond, the connection ends: a server
+    // that takes nothing, or keeps a key exchange open while it asks for answers), and how long a channel closed on
+    // our side waits for the server's close before it is forgotten.
+    std::size_t max_pending = std::size_t(8) << 20;
+    std::chrono::seconds close_timeout{30};
 
     bool operator==(const TunnelSettings&) const = default;
 };
@@ -48,7 +54,7 @@ enum class TunnelState {
 
 struct TunnelStatus {
     TunnelState state = TunnelState::Off;
-    std::string url;    // the public address, once known
+    std::string url;    // the public address, once known, while on air
     std::string error;  // the last one, while reconnecting or failed
     // When the host key is not the one trusted before: its new fingerprint, to be trusted only by the user.
     std::string new_key;
@@ -74,6 +80,7 @@ class SshTunnel {
    private:
     struct Shared;  // with the thread, which can outlive the tunnel
     static void run(const std::shared_ptr<Shared>& shared);
+    static void failed(Shared& shared, const char* what) noexcept;
 
     TunnelSettings settings_;
     std::shared_ptr<Shared> shared_;
@@ -81,13 +88,22 @@ class SshTunnel {
     friend class TunnelConnection;
 };
 
+// `text` from the server (a reason, a list of methods) made safe to show on a terminal or in the window: control
+// characters (C0, DEL, C1) and bytes that are not UTF-8 replaced, so it cannot move the cursor, change colours or
+// set a terminal's title.
+[[nodiscard]] std::string printableText(std::string_view text);
+
 // The public address a tunnel service printed in `output` (the session's text): the last https:// address on a line
 // that tells of the tunnel ("tunneled", "forwarding"), else the first https:// address; none when there is none.
 [[nodiscard]] std::optional<std::string> findPublicUrl(std::string_view output);
 
-// The host keys trusted on first use, by "host:port", in `file` (JSON). An empty fingerprint forgets the host.
-[[nodiscard]] std::string knownHostKey(const std::filesystem::path& file, const std::string& host, int port);
-void rememberHostKey(const std::filesystem::path& file, const std::string& host, int port,
+// The host keys trusted on first use, by "host:port", in `file` (JSON). knownHostKey() gives the one kept for the
+// host, empty when there is none or no file yet, and nullopt when the file is there but cannot be read: the keys
+// trusted before are unknown then, and none may be trusted in their place. rememberHostKey() leaves such a file as
+// it is and returns false, as when it cannot write; an empty fingerprint forgets the host.
+[[nodiscard]] std::optional<std::string> knownHostKey(const std::filesystem::path& file, const std::string& host,
+                                                      int port);
+bool rememberHostKey(const std::filesystem::path& file, const std::string& host, int port,
                      const std::string& fingerprint);
 
 // Parses --tunnel's value: "localhost.run" (or empty), or "ssh://user@host[:port][/remote_port]". nullopt and

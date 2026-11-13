@@ -5,6 +5,7 @@
 #include <atomic>
 #include <cctype>
 #include <deque>
+#include <fstream>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -45,12 +46,15 @@ constexpr uint32_t MAX_DATA = 32768;
 constexpr std::size_t MAX_CHANNELS = 48;
 // Bytes waiting to go to the server: beyond, the web server's connections are not read until they went.
 constexpr std::size_t OUT_LIMIT = 4 << 20;
+// What a message held during a key exchange takes besides its bytes (its string and its place in the queue), about.
+constexpr std::size_t HELD_OVERHEAD = 64;
 // The session's text kept to read the address in: its last 64 KiB at most (a new address, the domain rotated, comes
 // at the end).
 constexpr std::size_t MAX_SESSION_TEXT = 64 * 1024;
 constexpr auto CONNECT_TIMEOUT   = std::chrono::seconds(15);
 constexpr auto HANDSHAKE_TIMEOUT = std::chrono::seconds(30);
 constexpr auto MAX_RETRY         = std::chrono::seconds(60);
+constexpr int LOCAL_CONNECT_TIMEOUT_MS = 200;
 
 constexpr uint32_t LOCALHOST = 0x7F000001;
 
@@ -82,6 +86,18 @@ bool hasName(std::string_view list, std::string_view name) { return !choose(name
 
 std::string hostPort(const std::string& host, int port) { return host + ":" + std::to_string(port); }
 
+// Wipes a secret when it goes out of scope, however the function that holds it returns.
+class Wiped {
+   public:
+    explicit Wiped(std::string& secret) : secret_(secret) {}
+    ~Wiped() { wipe(secret_); }
+    Wiped(const Wiped&)            = delete;
+    Wiped& operator=(const Wiped&) = delete;
+
+   private:
+    std::string& secret_;
+};
+
 std::mutex& knownHostsMutex() {
     static std::mutex m;
     return m;
@@ -96,25 +112,81 @@ TunnelSettings localhostRun(int local_port) {
     return s;
 }
 
-std::string knownHostKey(const std::filesystem::path& file, const std::string& host, int port) {
+namespace {
+
+// The known hosts: an empty object when there is no file yet, nullopt when it is there but cannot be read or is not
+// a JSON object. Read as empty, such a file would let any key in on first use, and be written over, every other host
+// forgotten.
+std::optional<nlohmann::json> readKnownHosts(const std::filesystem::path& file) {
+    std::error_code ec;
+    const auto status = std::filesystem::status(file, ec);
+    if (status.type() == std::filesystem::file_type::not_found) return nlohmann::json::object();
+    if (ec) return std::nullopt;
+    std::ifstream in(file, std::ios::binary);
+    if (!in) return std::nullopt;
+    auto known = nlohmann::json::parse(in, nullptr, false);
+    if (known.is_discarded() || !known.is_object()) return std::nullopt;
+    return known;
+}
+
+}  // namespace
+
+std::optional<std::string> knownHostKey(const std::filesystem::path& file, const std::string& host, int port) {
     std::lock_guard<std::mutex> lock(knownHostsMutex());
-    const auto known = readJson<nlohmann::json>(file);
-    if (!known || !known->is_object()) return {};
+    const auto known = readKnownHosts(file);
+    if (!known) return std::nullopt;
+    // A value that is not a string is no key.
     const auto it = known->find(hostPort(host, port));
     return it != known->end() && it->is_string() ? it->get<std::string>() : std::string();
 }
 
-void rememberHostKey(const std::filesystem::path& file, const std::string& host, int port,
+bool rememberHostKey(const std::filesystem::path& file, const std::string& host, int port,
                      const std::string& fingerprint) {
     std::lock_guard<std::mutex> lock(knownHostsMutex());
-    auto known = readJson<nlohmann::json>(file).value_or(nlohmann::json::object());
-    if (!known.is_object()) known = nlohmann::json::object();
+    auto known = readKnownHosts(file);
+    if (!known) return false;
     if (fingerprint.empty()) {
-        known.erase(hostPort(host, port));
+        known->erase(hostPort(host, port));
     } else {
-        known[hostPort(host, port)] = fingerprint;
+        (*known)[hostPort(host, port)] = fingerprint;
     }
-    writeJson(file, known);
+    return writeJson(file, *known);
+}
+
+std::string printableText(std::string_view text) {
+    std::string out;
+    out.reserve(text.size());
+    for (std::size_t i = 0; i < text.size();) {
+        const auto c = static_cast<unsigned char>(text[i]);
+        if (c < 0x80) {
+            out += c == '\t' || c == '\n' || c == '\r' ? ' ' : c < 0x20 || c == 0x7F ? '?' : static_cast<char>(c);
+            ++i;
+            continue;
+        }
+        // A whole UTF-8 sequence, in its shortest form, of a character that is not a surrogate: kept, unless it is a
+        // C1 control (U+0080 to U+009F, CSI among them). Anything else, one byte at a time: replaced.
+        const std::size_t n = c >= 0xC2 && c <= 0xDF ? 2 : c >= 0xE0 && c <= 0xEF ? 3 : c >= 0xF0 && c <= 0xF4 ? 4 : 0;
+        uint32_t code       = n == 2 ? c & 0x1F : n == 3 ? c & 0x0F : c & 0x07;
+        bool whole          = n != 0 && i + n <= text.size();
+        for (std::size_t k = 1; whole && k < n; ++k) {
+            const auto next = static_cast<unsigned char>(text[i + k]);
+            whole           = (next & 0xC0) == 0x80;
+            code            = code << 6 | (next & 0x3F);
+        }
+        constexpr uint32_t SHORTEST[] = {0, 0, 0x80, 0x800, 0x10000};
+        if (!whole || code < SHORTEST[n] || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) {
+            out += '?';
+            ++i;
+            continue;
+        }
+        if (code <= 0x9F) {
+            out += '?';
+        } else {
+            out.append(text.substr(i, n));
+        }
+        i += n;
+    }
+    return out;
 }
 
 std::optional<std::string> findPublicUrl(std::string_view output) {
@@ -127,7 +199,7 @@ std::optional<std::string> findPublicUrl(std::string_view output) {
         const auto words = lower(line);
         const bool tells = words.find("tunneled") != std::string::npos || words.find("forwarding") != std::string::npos;
         for (auto at = words.find("https://"); at != std::string::npos; at = words.find("https://", at + 8)) {
-            // The host only: letters, digits, dots and dashes, nothing a page could be told to do with it.
+            // The host and its port only: letters, digits, dots and dashes, nothing a page could be told to do with it.
             std::size_t end = at + 8;
             while (end < line.size() &&
                    (std::isalnum(static_cast<unsigned char>(line[end])) || line[end] == '.' || line[end] == '-')) {
@@ -135,7 +207,20 @@ std::optional<std::string> findPublicUrl(std::string_view output) {
             }
             const auto host = line.substr(at + 8, end - at - 8);
             if (host.find('.') == std::string_view::npos || host.front() == '.' || host.back() == '.') continue;
-            const auto url = "https://" + lower(host);
+            auto url = "https://" + lower(host);
+            // A port, when there is one: 1 to 65535, digits only (an address with another is not taken).
+            if (end < line.size() && line[end] == ':') {
+                std::size_t digits = end + 1;
+                while (digits < line.size() && digits - end <= 6 &&
+                       std::isdigit(static_cast<unsigned char>(line[digits]))) {
+                    ++digits;
+                }
+                const auto port = line.substr(end + 1, digits - end - 1);
+                if (!port.empty()) {
+                    if (port.size() > 5 || port.front() == '0' || std::stoi(std::string(port)) > 65535) continue;
+                    url += ":" + std::string(port);
+                }
+            }
             if (!first) first = url;
             if (tells) told = url;
         }
@@ -200,7 +285,11 @@ struct SshTunnel::Shared {
         std::lock_guard<std::mutex> lock(mutex);
         status.state = state;
         status.error = error;
-        if (state != TunnelState::OnAir) status.connections = 0;
+        // Off the air, the address is no longer ours: a service may give it to someone else meanwhile.
+        if (state != TunnelState::OnAir) {
+            status.connections = 0;
+            status.url.clear();
+        }
     }
 };
 
@@ -211,6 +300,12 @@ class TunnelConnection {
    public:
     TunnelConnection(SshTunnel::Shared& shared, const TunnelSettings& settings)
         : tunnel_(shared), cfg_(settings), stopping_(shared.stopping) {}
+    ~TunnelConnection() {
+        for (auto& key : next_rx_) wipe(key);
+        wipe(session_id_);
+    }
+    TunnelConnection(const TunnelConnection&)            = delete;
+    TunnelConnection& operator=(const TunnelConnection&) = delete;
 
     struct End {
         std::string reason;  // empty when stopped
@@ -225,8 +320,10 @@ class TunnelConnection {
             return end_;
         }
         std::string error;
-        const auto fd = net::connectHost(cfg_.host, std::to_string(cfg_.port),
-                                         static_cast<int>(std::chrono::milliseconds(CONNECT_TIMEOUT).count()), error);
+        // Given up on as soon as the tunnel stops: only finding the host's address cannot be cut short.
+        const auto fd =
+            net::connectHost(cfg_.host, std::to_string(cfg_.port),
+                             static_cast<int>(std::chrono::milliseconds(CONNECT_TIMEOUT).count()), error, &stopping_);
         if (!fd) {
             fail(error);
             return end_;
@@ -260,6 +357,8 @@ class TunnelConnection {
         bool shut           = false;    // and the web server was told
         bool close_sent     = false;
         bool close_received = false;
+        bool forwarded      = false;  // a viewer's connection, not the session
+        Clock::time_point closed_at;  // when close_sent
     };
 
     enum class Phase { Version, Kex, Auth, Forward, OnAir };
@@ -267,7 +366,9 @@ class TunnelConnection {
 
     void fail(const std::string& reason, bool permanent = false) {
         if (!end_.reason.empty()) return;
-        end_.reason    = reason;
+        // Server text is in many reasons (DISCONNECT's, accepted before the keys; USERAUTH_FAILURE's methods): it
+        // goes to the window, the Console, and a headless run's terminal.
+        end_.reason    = printableText(reason);
         end_.permanent = permanent;
     }
 
@@ -277,11 +378,15 @@ class TunnelConnection {
         const auto type = static_cast<uint8_t>(payload[0]);
         const bool transport = type <= DEBUG_TEXT || (type >= KEXINIT && type < USERAUTH_REQUEST);
         if (kexinit_sent_ && !newkeys_sent_ && !transport) {
+            held_bytes_ += payload.size() + HELD_OVERHEAD;
             held_.push_back(std::move(payload));
-            return;
+        } else {
+            bytes_ += payload.size();
+            out_ += tx_.seal(payload, seq_tx_++);
         }
-        bytes_ += payload.size();
-        out_ += tx_.seal(payload, seq_tx_++);
+        // Our sends are bounded (the web server's connections are not read beyond OUT_LIMIT): more is a server that
+        // reads nothing, or asks for answers while it keeps a key exchange open.
+        if (out_.size() + held_bytes_ > cfg_.max_pending) fail("the server does not take what is sent to it");
     }
 
     // The socket: what came, what goes, every channel's connection.
@@ -301,7 +406,8 @@ class TunnelConnection {
             const auto n = socket_->receive(in_, 65536);
             if (n < 0) return fail(phase_ == Phase::OnAir ? "the server closed the connection"
                                                           : "the server closed the connection before the tunnel opened");
-            if (n > 0) readPackets();
+            // Nothing more is handled once the tunnel stops (see stop()).
+            if (n > 0 && !stopping_) readPackets();
         }
         if (!end_.reason.empty()) return;
         if (waits[0].can_write && !out_.empty()) {
@@ -361,12 +467,20 @@ class TunnelConnection {
         send(Writer().byte(CHANNEL_EOF).u32(ch.peer).take());
         send(Writer().byte(CHANNEL_CLOSE).u32(ch.peer).take());
         ch.close_sent = true;
+        ch.closed_at  = Clock::now();
         ch.to_local.clear();
         ch.socket.reset();
     }
 
     void timers() {
         const auto now = Clock::now();
+        // The channels we closed and the server did not: forgotten after a while (their numbers are not given again
+        // before 2^32 more).
+        for (auto it = channels_.begin(); it != channels_.end();) {
+            const auto& ch = it->second;
+            it = ch.close_sent && !ch.close_received && now - ch.closed_at > cfg_.close_timeout ? channels_.erase(it)
+                                                                                                : std::next(it);
+        }
         if (phase_ != Phase::OnAir) {
             if (now - started_ > HANDSHAKE_TIMEOUT) fail("no answer from the server in time");
             return;
@@ -441,13 +555,14 @@ class TunnelConnection {
     void handle(const std::string& payload, uint32_t seq) {
         const auto type = static_cast<uint8_t>(payload[0]);
         Reader r(std::string_view(payload).substr(1));
-        // The strict exchange: the first packet is the server's KEXINIT, and only the exchange's messages follow
-        // until its NEWKEYS.
-        if (session_id_.empty() && kexinit_sent_) {
-            const bool kex = type == KEXINIT || type == KEX_ECDH_REPLY || type == NEWKEYS;
-            if (strict_ && !kex) return fail("the server broke the strict key exchange");
-            if (seq == 0 && type != KEXINIT && type != IGNORE_DATA && type != DEBUG_TEXT) {
-                return fail("the server did not start with the key exchange");
+        // The first key exchange: nothing but its messages until the server's NEWKEYS. With the strict exchange
+        // (OpenSSH's PROTOCOL file), not even IGNORE or DEBUG; its KEXINIT, the first packet, is checked there.
+        if (!initial_kex_done_) {
+            const bool kex     = type == KEXINIT || type == KEX_ECDH_REPLY || type == NEWKEYS;
+            const bool allowed = kex || type == DISCONNECT || (!strict_ && (type == IGNORE_DATA || type == DEBUG_TEXT));
+            if (!allowed) {
+                return fail(strict_ ? "the server broke the strict key exchange"
+                                    : "the server sent a message before the key exchange ended");
             }
         }
         switch (type) {
@@ -465,7 +580,7 @@ class TunnelConnection {
             case CHANNEL_FAILURE:
                 return;
             case KEXINIT:
-                return onKexInit(payload);
+                return onKexInit(payload, seq);
             case KEX_ECDH_REPLY:
                 return onEcdhReply(r);
             case NEWKEYS:
@@ -523,17 +638,22 @@ class TunnelConnection {
         send(i_c_);
     }
 
-    void onKexInit(const std::string& payload) {
+    void onKexInit(const std::string& payload, uint32_t seq) {
         if (!i_s_.empty()) return fail("the server started a key exchange twice");
         i_s_ = payload;
         if (!kexinit_sent_) startKex();
-        Reader r(std::string_view(payload).substr(17));  // the type and the cookie
+        Reader r(std::string_view(payload).substr(1));
+        r.raw(16);  // the cookie
         std::string lists[10];
         for (auto& list : lists) list = std::string(r.string(8192));
         r.boolean();
         r.u32();
         if (!r.ok()) return fail("the server's key exchange cannot be read");
-        if (session_id_.empty()) strict_ = hasName(lists[0], STRICT_HOST);
+        if (!initial_kex_done_) {
+            strict_ = hasName(lists[0], STRICT_HOST);
+            // Strict: the server's first packet, or a message slipped in before it could shift the sequence numbers.
+            if (strict_ && seq != 0) return fail("the server broke the strict key exchange");
+        }
 
         kex_      = choose(KEX_AGAIN, lists[0]);
         host_alg_ = choose(HOST_KEYS, lists[1]);
@@ -562,35 +682,58 @@ class TunnelConnection {
         const std::string signature(r.string(4096));
         if (!r.ok()) return fail("the server's key exchange cannot be read");
 
+        // The host key, at the first exchange: compared with the one pinned or trusted before, then its signature
+        // checked, and only then trusted or offered to the user; at the next ones, the same as at the first.
+        auto trust = HostKey::Trusted;
         if (session_id_.empty()) {
-            if (!checkHostKey(key_blob)) return;
-            host_key_ = key_blob;
+            trust = checkHostKey(key_blob);
+            if (trust == HostKey::Refused) return;
         } else if (key_blob != host_key_) {
             return fail(trf("{} changed its host key while connected", cfg_.host), true);
         }
-        const auto secret = ecdh_->agree(q_s);
+        auto secret = ecdh_->agree(q_s);
         if (!secret) return fail("the server's key exchange is not valid");
-        const auto k = Writer().mpint(*secret).take();
-        const auto h = sha256(Writer()
-                                  .string(v_c_)
-                                  .string(v_s_)
-                                  .string(i_c_)
-                                  .string(i_s_)
-                                  .string(key_blob)
-                                  .string(ecdh_->publicKey())
-                                  .string(q_s)
-                                  .raw(k)
-                                  .data());
+        auto k = Writer().mpint(*secret).take();
+        wipe(*secret);
+        Writer exchange;
+        exchange.string(v_c_)
+            .string(v_s_)
+            .string(i_c_)
+            .string(i_s_)
+            .string(key_blob)
+            .string(ecdh_->publicKey())
+            .string(q_s)
+            .raw(k);
+        auto h      = sha256(exchange.data());
+        auto hashed = exchange.take();
+        wipe(hashed);
+        // K and H, and the keys made of them, are wiped however this ends; the first H stays, as the session id.
+        const Wiped wipe_k(k), wipe_h(h);
         if (const auto bad = verifyRsa(key_blob, signature, h, host_alg_); !bad.empty()) {
             return fail(trf("{}: {}", cfg_.host, bad), true);
         }
-        if (session_id_.empty()) session_id_ = h;
+        if (trust == HostKey::Changed) {
+            const auto print = fingerprint(key_blob);
+            end_.new_key     = print;
+            return fail(trf("The host key of {} changed: {} now, {} before. Someone may be in the way; trust the new "
+                            "key only if the server's owner says it changed.",
+                            cfg_.host, print, known_print_),
+                        true);
+        }
+        if (trust == HostKey::New) keepHostKey(key_blob);
+        if (session_id_.empty()) {
+            host_key_   = key_blob;
+            session_id_ = h;
+        }
         const auto derive = [&](char letter, std::size_t size) { return deriveKey(k, h, letter, session_id_, size); };
 
         send(Writer().byte(NEWKEYS).take());
-        const auto error = tx_.start(cipher_c_, mac_c_, derive('C', PacketCipher::keySize(cipher_c_)),
-                                     derive('A', PacketCipher::ivSize(cipher_c_)),
-                                     derive('E', PacketCipher::macKeySize(mac_c_)));
+        auto key = derive('C', PacketCipher::keySize(cipher_c_)), iv = derive('A', PacketCipher::ivSize(cipher_c_)),
+             mac_key     = derive('E', PacketCipher::macKeySize(mac_c_));
+        const auto error = tx_.start(cipher_c_, mac_c_, key, iv, mac_key);
+        wipe(key);
+        wipe(iv);
+        wipe(mac_key);
         if (!error.empty()) return fail(error);
         if (strict_) seq_tx_ = 0;
         next_rx_      = {derive('D', PacketCipher::keySize(cipher_s_)), derive('B', PacketCipher::ivSize(cipher_s_)),
@@ -600,6 +743,7 @@ class TunnelConnection {
         while (!held_.empty()) {
             auto payload = std::move(held_.front());
             held_.pop_front();
+            held_bytes_ -= std::min(held_bytes_, payload.size() + HELD_OVERHEAD);
             send(std::move(payload));
         }
     }
@@ -609,8 +753,9 @@ class TunnelConnection {
         if (const auto error = rx_.start(cipher_s_, mac_s_, next_rx_[0], next_rx_[1], next_rx_[2]); !error.empty()) {
             return fail(error);
         }
-        for (auto& key : next_rx_) key.assign(key.size(), '\0');
+        for (auto& key : next_rx_) wipe(key);
         if (strict_) seq_rx_ = 0;
+        initial_kex_done_ = true;
         kexinit_sent_ = false;
         newkeys_sent_ = false;
         i_c_.clear();
@@ -623,31 +768,47 @@ class TunnelConnection {
         }
     }
 
-    // The pinned key, or the one trusted the first time.
-    bool checkHostKey(const std::string& blob) {
+    // The host key against the one pinned, or the one trusted the first time. Refused: the connection failed.
+    enum class HostKey { Trusted, New, Changed, Refused };
+    HostKey checkHostKey(const std::string& blob) {
         const auto print = fingerprint(blob);
         if (!cfg_.pinned.empty()) {
-            if (print == cfg_.pinned) return true;
+            if (print == cfg_.pinned) return HostKey::Trusted;
             fail(trf("The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. "
                      "Nothing was sent.",
                      cfg_.host, print, cfg_.pinned),
                  true);
-            return false;
+            return HostKey::Refused;
         }
-        if (cfg_.known_hosts.empty()) return true;
+        // Nowhere to keep it: not trusted blindly, every time.
+        if (cfg_.known_hosts.empty()) {
+            fail("the host key of " + cfg_.host + " cannot be checked: neither pinned nor kept", true);
+            return HostKey::Refused;
+        }
         const auto known = knownHostKey(cfg_.known_hosts, cfg_.host, cfg_.port);
-        if (known.empty()) {
-            rememberHostKey(cfg_.known_hosts, cfg_.host, cfg_.port, print);
-            Console::instance().add(trf("Tunnel: the host key of {} is {}, trusted from now on", cfg_.host, print));
-            return true;
+        if (!known) {
+            fail(trf("{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair "
+                     "the file, or delete it to trust the server's key again.",
+                     cfg_.known_hosts.string(), cfg_.host),
+                 true);
+            return HostKey::Refused;
         }
-        if (known == print) return true;
-        end_.new_key = print;
-        fail(trf("The host key of {} changed: {} now, {} before. Someone may be in the way; trust the new key only "
-                 "if the server's owner says it changed.",
-                 cfg_.host, print, known),
-             true);
-        return false;
+        if (known->empty()) return HostKey::New;
+        if (*known == print) return HostKey::Trusted;
+        known_print_ = *known;
+        return HostKey::Changed;
+    }
+
+    // A key seen for the first time, whose signature was checked: trusted from now on.
+    void keepHostKey(const std::string& blob) {
+        const auto print = fingerprint(blob);
+        if (!rememberHostKey(cfg_.known_hosts, cfg_.host, cfg_.port, print)) {
+            Console::instance().add(trf("Tunnel: the host key of {} ({}) could not be kept in {}", cfg_.host, print,
+                                        cfg_.known_hosts.string()),
+                                    true);
+            return;
+        }
+        Console::instance().add(trf("Tunnel: the host key of {} is {}, trusted from now on", cfg_.host, print));
     }
 
     // --- Connection protocol (RFC 4254) ---
@@ -708,12 +869,18 @@ class TunnelConnection {
             send(Writer().byte(CHANNEL_OPEN_FAILURE).u32(sender).u32(code).string(why).string("").take());
         };
         if (type != "forwarded-tcpip" || phase_ != Phase::OnAir) return refuse(1, "not accepted");
-        if (static_cast<std::size_t>(relayed_count_) >= MAX_CHANNELS) return refuse(4, "too many connections");
-        const auto fd = net::connectTo(LOCALHOST, static_cast<uint16_t>(cfg_.local_port));
+        // Those closed on our side that the server did not close yet count too: a server that never closes them
+        // must not have more and more.
+        const auto open =
+            std::count_if(channels_.begin(), channels_.end(), [](const auto& c) { return c.second.forwarded; });
+        if (static_cast<std::size_t>(open) >= MAX_CHANNELS) return refuse(4, "too many connections");
+        // Every channel waits meanwhile: a web server that does not answer at once is not there.
+        const auto fd = net::connectTo(LOCALHOST, static_cast<uint16_t>(cfg_.local_port), LOCAL_CONNECT_TIMEOUT_MS);
         if (!fd) return refuse(2, "the web page is not served");
         const auto id    = nextId();
         auto& ch         = channels_[id];
         ch.peer          = sender;
+        ch.forwarded     = true;
         ch.socket        = std::make_unique<net::Socket>(*fd);
         ch.peer_window   = window;
         ch.peer_max      = std::clamp<uint32_t>(max, 1, MAX_DATA);
@@ -776,6 +943,7 @@ class TunnelConnection {
                 if (!ch.close_sent) {
                     send(Writer().byte(CHANNEL_CLOSE).u32(ch.peer).take());
                     ch.close_sent = true;
+                    ch.closed_at  = Clock::now();
                 }
                 ch.socket.reset();
                 return;
@@ -813,8 +981,11 @@ class TunnelConnection {
     bool kexinit_sent_ = false;
     bool newkeys_sent_ = false;
     bool strict_       = false;
+    bool initial_kex_done_ = false;  // the server's first NEWKEYS came
     std::string session_id_, host_key_;
+    std::string known_print_;  // the host key trusted before, when the server shows another
     std::deque<std::string> held_;
+    std::size_t held_bytes_ = 0;  // what held_ takes, about
 
     // The channels.
     std::deque<Reply> replies_;
@@ -837,7 +1008,14 @@ void SshTunnel::start(TunnelSettings settings) {
     shared_->settings        = settings_;
     shared_->status.state    = TunnelState::Connecting;
     thread_                  = std::thread([shared = shared_] {
-        run(shared);
+        // Nothing thrown on this thread may end the program: a failure, with its reason.
+        try {
+            run(shared);
+        } catch (const std::exception& e) {
+            failed(*shared, e.what());
+        } catch (...) {
+            failed(*shared, "unknown error");
+        }
         shared->finished = true;
     });
 }
@@ -845,8 +1023,9 @@ void SshTunnel::start(TunnelSettings settings) {
 void SshTunnel::stop() {
     if (!shared_) return;
     shared_->stopping = true;
-    // A connection under way gives up after its own timeout only (a name to find, a server that does not answer):
-    // not waited for.
+    // A connection under way gives up at once, unless it is still finding the server's address, which nothing cuts
+    // short: not waited for then. Once `stopping` is set, the thread touches nothing but `shared` (no Console, no
+    // translation, no known hosts), which it owns with us: it may outlive the program's static objects at its end.
     const auto until = Clock::now() + std::chrono::milliseconds(1500);
     while (!shared_->finished && Clock::now() < until) std::this_thread::sleep_for(std::chrono::milliseconds(10));
     if (shared_->finished) {
@@ -855,6 +1034,13 @@ void SshTunnel::stop() {
         thread_.detach();
     }
     shared_.reset();
+}
+
+void SshTunnel::failed(Shared& shared, const char* what) noexcept {
+    try {
+        shared.set(TunnelState::Failed, std::string("the tunnel stopped on an internal error: ") + what);
+    } catch (...) {
+    }
 }
 
 TunnelStatus SshTunnel::status() const {
@@ -869,8 +1055,17 @@ void SshTunnel::run(const std::shared_ptr<Shared>& shared) {
     while (!shared->stopping) {
         Console::instance().add(trf("Tunnel: connecting to {}", settings.host));
         const auto start = Clock::now();
-        TunnelConnection connection(*shared, settings);
-        const auto end = connection.run();
+        TunnelConnection::End end;
+        // What the server sends cannot end the program either (an exception escaping a thread would): the connection
+        // fails, and is tried again.
+        try {
+            TunnelConnection connection(*shared, settings);
+            end = connection.run();
+        } catch (const std::exception& e) {
+            end.reason = std::string("the connection ended on an internal error: ") + e.what();
+        } catch (...) {
+            end.reason = "the connection ended on an internal error";
+        }
         if (shared->stopping) break;
         if (end.permanent) {
             Console::instance().add(trf("Tunnel: {}", end.reason), true);

@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <fstream>
 #include <functional>
+#include <iterator>
 #include <map>
 #include <vector>
 #include <string>
@@ -13,7 +14,14 @@
 
 #include <psa/crypto.h>
 
+#ifdef _WIN32
+#    include <windows.h>
+#else
+#    include <unistd.h>
+#endif
+
 #include "broadcast.hpp"
+#include "cpu_time.hpp"
 #include "broadcaster.hpp"
 #include "qr.hpp"
 #include "net.hpp"
@@ -32,6 +40,11 @@ std::string unhex(std::string_view hex) {
         out += static_cast<char>(std::stoi(std::string(hex.substr(i, 2)), nullptr, 16));
     }
     return out;
+}
+
+std::string readText(const std::filesystem::path& file) {
+    std::ifstream in(file, std::ios::binary);
+    return std::string(std::istreambuf_iterator<char>(in), {});
 }
 
 bool netTests() {
@@ -183,6 +196,16 @@ TEST_CASE("SSH: RSA host key signatures, rsa-sha2-512 and rsa-sha2-256, and fing
                     .empty());
     CHECK_FALSE(verifyRsa(KAT_RSA_BLOB.substr(0, 40), KAT_RSA_SIG512, KAT_RSA_DATA).empty());
 
+    // The size in bits: 2041 bits take 256 bytes, as 2048 do, and are refused; beyond PSA's 4096 too.
+    const auto rsa = [](const std::string& modulus) {
+        return Writer().string("ssh-rsa").mpint(std::string("\x01\x00\x01", 3)).mpint(modulus).take();
+    };
+    CHECK(verifyRsa(rsa("\x01" + std::string(255, '\xff')), KAT_RSA_SIG512, KAT_RSA_DATA).find("size") !=
+          std::string::npos);
+    CHECK(verifyRsa(rsa("\x01" + std::string(512, '\xff')), KAT_RSA_SIG512, KAT_RSA_DATA).find("4096 bits") !=
+          std::string::npos);
+    CHECK(verifyRsa(rsa(std::string(256, '\xff')), KAT_RSA_SIG512, KAT_RSA_DATA).find("size") == std::string::npos);
+
     CHECK(fingerprint(KAT_RSA_BLOB) == KAT_RSA_FP);
     // As ssh-keygen -l shows localhost.run's key, and as pinned.
     CHECK(fingerprint(LOCALHOST_RUN_BLOB) == "SHA256:FV8IMJ4IYjYUTnd6on7PqbRjaZf4c1EhhEBgeUdE94I");
@@ -293,6 +316,80 @@ TEST_CASE("SSH: packets sealed and opened again, a changed byte or sequence numb
     CHECK(payload == "\x14kexinit");
 }
 
+TEST_CASE("SSH: a length near 2^32 is refused in every mode, not wrapped to a small packet") {
+    // The length 0xFFFFFFFC: 4 more wrap to 0 in 32 bits, which passed the bound and threw out_of_range on the tunnel's
+    // thread before (std::terminate, before any authentication).
+    for (const uint32_t length : {0xFFFFFFFCu, 0xFFFFFFFFu, 0xFFFFFFF8u, 0x80000000u, uint32_t(MAX_PACKET - 3),
+                                  uint32_t(MAX_PACKET + 4)}) {
+        CAPTURE(length);
+        const auto prefix = Writer().u32(length).take();
+        // In the clear: the length alone, or with more bytes behind it.
+        for (const std::size_t more : {std::size_t(0), std::size_t(8), std::size_t(60)}) {
+            PacketCipher clear;
+            std::string in = prefix + std::string(more, 'A'), payload;
+            auto r         = PacketCipher::Open::More;
+            CHECK_NOTHROW(r = clear.open(in, 0, payload));
+            CHECK(r == PacketCipher::Open::Bad);
+        }
+        // With keys: AES-GCM and encrypt-then-MAC send the length in the clear; AES-CTR with HMAC enciphers it with
+        // the first block, so the keystream is found from a packet sealed with the same keys.
+        struct Algorithms {
+            const char* cipher;
+            const char* mac;
+        };
+        for (const auto& a : {Algorithms{"aes256-gcm@openssh.com", ""}, Algorithms{"aes256-ctr", "hmac-sha2-256"},
+                              Algorithms{"aes128-ctr", "hmac-sha2-256-etm@openssh.com"}}) {
+            CAPTURE(a.cipher);
+            CAPTURE(a.mac);
+            const auto key = randomBytes(PacketCipher::keySize(a.cipher));
+            const auto iv  = randomBytes(PacketCipher::ivSize(a.cipher));
+            const auto mk  = randomBytes(PacketCipher::macKeySize(a.mac));
+            std::string in;
+            if (std::string_view(a.mac) == "hmac-sha2-256") {
+                PacketCipher tx;
+                REQUIRE(tx.start(a.cipher, a.mac, key, iv, mk).empty());
+                const auto sealed = tx.seal("\x5e" "data", 0);
+                const auto real   = Writer().u32(static_cast<uint32_t>(sealed.size() - 4 - 32)).take();
+                in                = sealed.substr(0, 16);
+                for (int i = 0; i < 4; ++i) in[i] = static_cast<char>(sealed[i] ^ real[i] ^ prefix[i]);
+                in += std::string(64, 'A');
+            } else {
+                in = prefix + std::string(64, 'A');
+            }
+            PacketCipher rx;
+            REQUIRE(rx.start(a.cipher, a.mac, key, iv, mk).empty());
+            std::string payload;
+            auto r = PacketCipher::Open::More;
+            CHECK_NOTHROW(r = rx.open(in, 0, payload));
+            CHECK(r == PacketCipher::Open::Bad);
+        }
+    }
+    // The proof of concept as it was reported: the four bytes, then eight.
+    PacketCipher rx;
+    std::string in = std::string("\xFF\xFF\xFF\xFC", 4) + std::string(8, 'A'), payload;
+    CHECK(rx.open(in, 0, payload) == PacketCipher::Open::Bad);
+    // A short read: a packet's first byte, or none.
+    PacketCipher partial;
+    std::string one("\x00", 1), none;
+    CHECK(partial.open(one, 0, payload) == PacketCipher::Open::More);
+    CHECK(partial.open(none, 0, payload) == PacketCipher::Open::More);
+}
+
+TEST_CASE("SSH: a reader's raw bytes, bounded by what is left; secrets wiped") {
+    Reader r(std::string_view("abcdef"));
+    CHECK(r.raw(4) == "abcd");
+    CHECK(r.raw(2) == "ef");
+    CHECK(r.ok());
+    CHECK(r.raw(1).empty());
+    CHECK_FALSE(r.ok());
+    Reader big(std::string_view("ab"));
+    CHECK(big.raw(16).empty());
+    CHECK_FALSE(big.ok());
+    std::string secret = "key material";
+    wipe(secret);
+    CHECK(secret.empty());
+}
+
 TEST_CASE("Tunnel: the public address in a service's session text") {
     // localhost.run, its QR code in escape sequences and an advertisement after.
     CHECK(findPublicUrl("\x1b[7m  \x1b[0m\r\nabc123def.app.lhr.life tunneled with tls termination, "
@@ -308,6 +405,26 @@ TEST_CASE("Tunnel: the public address in a service's session text") {
     CHECK(findPublicUrl("Hello\nhttps://x.example.org/<script>\n") == "https://x.example.org");
     CHECK_FALSE(findPublicUrl("no address here, https://localhost only").has_value());
     CHECK_FALSE(findPublicUrl("").has_value());
+    // A port is kept; one that is not a port leaves the address out.
+    CHECK(findPublicUrl("Forwarding https://tunnel.example.org:8443/x\n") == "https://tunnel.example.org:8443");
+    CHECK(findPublicUrl("https://tunnel.example.org: ready\n") == "https://tunnel.example.org");
+    CHECK_FALSE(findPublicUrl("https://tunnel.example.org:99999\n").has_value());
+    CHECK_FALSE(findPublicUrl("https://tunnel.example.org:0\n").has_value());
+}
+
+TEST_CASE("Tunnel: server text made safe to show on a terminal") {
+    // Escape sequences (ESC, and CSI as a C1 control in UTF-8 or as a byte), other controls, DEL: replaced.
+    CHECK(printableText("bad\x1b]0;owned\x07title") == "bad?]0;owned?title");
+    CHECK(printableText("\xc2\x9b" "31m red \x9b" "0m \xc2\x85") == "?31m red ?0m ?");
+    CHECK(printableText(std::string("nul\0del\x7f", 8)) == "nul?del?");
+    CHECK(printableText("two\r\nlines\tand a tab") == "two  lines and a tab");
+    // UTF-8 kept; sequences cut short, too long, of surrogates or past U+10FFFF replaced byte by byte.
+    CHECK(printableText("caf\xc3\xa9 \xe2\x82\xac \xf0\x9f\x98\x80") == "caf\xc3\xa9 \xe2\x82\xac \xf0\x9f\x98\x80");
+    CHECK(printableText("\xc3") == "?");
+    CHECK(printableText("\xc0\xaf") == "??");
+    CHECK(printableText("\xed\xa0\x80") == "???");
+    CHECK(printableText("\xf4\x90\x80\x80") == "????");
+    CHECK(printableText("publickey,password") == "publickey,password");
 }
 
 TEST_CASE("Tunnel: --tunnel's value") {
@@ -344,17 +461,27 @@ TEST_CASE("Tunnel: host keys trusted on first use, kept by host and port, forgot
     std::filesystem::remove_all(dir);
     std::filesystem::create_directories(dir);
     const auto file = dir / "known_hosts.json";
-    CHECK(knownHostKey(file, "example.org", 22).empty());
-    rememberHostKey(file, "example.org", 22, "SHA256:aaa");
-    rememberHostKey(file, "example.org", 2222, "SHA256:bbb");
+    CHECK(knownHostKey(file, "example.org", 22) == "");
+    CHECK(rememberHostKey(file, "example.org", 22, "SHA256:aaa"));
+    CHECK(rememberHostKey(file, "example.org", 2222, "SHA256:bbb"));
     CHECK(knownHostKey(file, "example.org", 22) == "SHA256:aaa");
     CHECK(knownHostKey(file, "example.org", 2222) == "SHA256:bbb");
-    rememberHostKey(file, "example.org", 22, "");
-    CHECK(knownHostKey(file, "example.org", 22).empty());
+    CHECK(rememberHostKey(file, "example.org", 22, ""));
+    CHECK(knownHostKey(file, "example.org", 22) == "");
     CHECK(knownHostKey(file, "example.org", 2222) == "SHA256:bbb");
-    // A file that is not ours is read as empty.
-    std::ofstream(file) << "not json";
-    CHECK(knownHostKey(file, "example.org", 2222).empty());
+    // A value that is not a string is no key; the others still are.
+    std::ofstream(file) << R"({"example.org:22": 5, "example.org:2222": "SHA256:bbb"})";
+    CHECK(knownHostKey(file, "example.org", 22) == "");
+    CHECK(knownHostKey(file, "example.org", 2222) == "SHA256:bbb");
+    // A file that cannot be read, or is not an object, is not taken as empty, and is not written over: the keys
+    // trusted before would be gone, and any key trusted in their place.
+    for (const char* text : {"not json", "", R"(["example.org:2222", "SHA256:bbb"])", R"({"example.org:2222": )"}) {
+        CAPTURE(text);
+        std::ofstream(file) << text;
+        CHECK_FALSE(knownHostKey(file, "example.org", 2222).has_value());
+        CHECK_FALSE(rememberHostKey(file, "example.org", 22, "SHA256:ccc"));
+        CHECK(readText(file) == text);
+    }
     std::filesystem::remove_all(dir);
 }
 
@@ -431,6 +558,14 @@ class FakeServer {
         std::string request = "GET /state.json HTTP/1.0\r\n\r\n";  // sent on the forwarded connection
         int viewers         = 1;                                     // connections forwarded at once
         bool abandon        = false;  // first one the viewer leaves at once, before the answer
+        // Bytes sent after the version line instead of the key exchange; the server then waits for the client to go.
+        std::string raw_first;
+        bool bad_signature = false;  // the host key signs something else than the exchange hash
+        // Messages before the server's first KEXINIT, and between its first KEX_ECDH_REPLY and NEWKEYS.
+        std::vector<std::string> before_kexinit;
+        std::string in_kex;
+        // Once the tunnel is on air, in place of the viewers: the scenario of a test.
+        std::function<void(FakeServer&)> on_air;
     };
 
     FakeServer(uint16_t port, Script script) : script_(std::move(script)) {
@@ -457,7 +592,7 @@ class FakeServer {
     int key_exchanges = 0;
     bool disconnected = false;  // the client said goodbye
 
-   private:
+    // For the scenarios.
     struct Failure : std::runtime_error {
         using std::runtime_error::runtime_error;
     };
@@ -511,6 +646,7 @@ class FakeServer {
         return payload;
     }
 
+   private:
     void kex(bool first) {
         const auto lists =
             Writer()
@@ -530,6 +666,9 @@ class FakeServer {
                 .boolean(false)
                 .u32(0)
                 .take();
+        if (first) {
+            for (const auto& m : script_.before_kexinit) send(m);
+        }
         send(lists);
         const auto i_c = nextOf(KEXINIT);
         const auto init = nextOf(KEX_ECDH_INIT);
@@ -554,8 +693,9 @@ class FakeServer {
                  .byte(KEX_ECDH_REPLY)
                  .string(serverKey().blob)
                  .string(ecdh.publicKey())
-                 .string(serverKey().sign(h))
+                 .string(serverKey().sign(script_.bad_signature ? h + "x" : h))
                  .take());
+        if (first && !script_.in_kex.empty()) send(script_.in_kex);
         send(Writer().byte(NEWKEYS).take());
         const auto derive = [&](char letter, std::size_t size) { return deriveKey(k, h, letter, session_id_, size); };
         // One cipher offered: the one agreed.
@@ -592,6 +732,12 @@ class FakeServer {
         v_c_ = in_.substr(0, in_.find("\r\n"));
         in_.erase(0, v_c_.size() + 2);
         expect(v_c_.rfind("SSH-2.0-", 0) == 0, "bad version " + v_c_);
+        if (!script_.raw_first.empty()) {
+            out_ += script_.raw_first;
+            flush();
+            next();  // the client goes, or tells
+            return;
+        }
 
         kex(true);
         const auto service_message = nextOf(SERVICE_REQUEST);
@@ -634,6 +780,11 @@ class FakeServer {
                  .take());
 
         if (script_.rekey) kex(false);
+        if (script_.on_air) {
+            script_.on_air(*this);
+            untilGone();
+            return;
+        }
 
         // Viewers at once: forwarded connections, their requests, the web server's answers through the tunnel. With
         // `abandon`, one more (300) whose viewer goes at once: closed by the server before the answer is relayed.
@@ -684,8 +835,10 @@ class FakeServer {
             if (recipient != 300) answered += text.rfind("HTTP/1.0 200 OK", 0) == 0 ? 1 : 0;
         }
         answer = answers[200];
+        untilGone();
+    }
 
-        // Until the client goes.
+    void untilGone() {
         while (!quit_) {
             std::string m;
             try {
@@ -714,6 +867,7 @@ class FakeServer {
 
 constexpr uint16_t SSH_PORT = 26411;
 constexpr uint16_t WEB_PORT = 26413;
+constexpr uint32_t LOCALHOST_IP = 0x7F000001;
 
 TunnelSettings loopback(const std::string& pinned) {
     TunnelSettings s;
@@ -724,6 +878,35 @@ TunnelSettings loopback(const std::string& pinned) {
     s.pinned      = pinned;
     s.first_retry = 30s;  // no second attempt within a test
     return s;
+}
+
+// A connection forwarded by the server (its channel `sender`), with `window` bytes the client may send at first: the
+// client's channel number.
+uint32_t forward(FakeServer& server, uint32_t sender, uint32_t window) {
+    server.send(Writer()
+                    .byte(CHANNEL_OPEN)
+                    .string("forwarded-tcpip")
+                    .u32(sender)
+                    .u32(window)
+                    .u32(32768)
+                    .string("localhost")
+                    .u32(80)
+                    .string("203.0.113.9")
+                    .u32(5555)
+                    .take());
+    const auto confirmation = server.nextOf(CHANNEL_OPEN_CONFIRMATION);
+    Reader r(std::string_view(confirmation).substr(1));
+    server.expect(r.u32() == sender, "recipient");
+    return r.u32();
+}
+
+// The processor time this process used so far, in milliseconds.
+int64_t ownCpuMs() {
+#ifdef _WIN32
+    return cpuTimeMs({static_cast<int64_t>(GetCurrentProcessId())});
+#else
+    return cpuTimeMs({static_cast<int64_t>(getpid())});
+#endif
 }
 
 template <typename Done>
@@ -763,6 +946,11 @@ TEST_CASE("Tunnel: a viewer's request relayed to the web server and back, throug
         script.rekey   = c.rekey;
         script.viewers = c.viewers;
         script.abandon = c.abandon;
+        // Without the strict exchange, IGNORE may come anywhere.
+        if (!c.strict) {
+            script.before_kexinit = {Writer().byte(IGNORE_DATA).string("before").take()};
+            script.in_kex         = Writer().byte(IGNORE_DATA).string("during").take();
+        }
         FakeServer server(SSH_PORT, script);
         SshTunnel tunnel;
         tunnel.start(loopback(fingerprint(serverKey().blob)));
@@ -825,6 +1013,70 @@ TEST_CASE("Tunnel: a host key not the one pinned, or not the one trusted before,
     std::filesystem::remove_all(dir);
 }
 
+TEST_CASE("Tunnel: a host key is trusted, or offered to the user, only once it signed the exchange") {
+    const auto dir = std::filesystem::temp_directory_path() / "fcg-tunnel-signature-test";
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+    const auto known = dir / "known_hosts.json";
+    FakeServer::Script script;
+    script.bad_signature = true;
+    // First use: the key that did not sign is not kept (it was before its signature was checked).
+    {
+        FakeServer server(SSH_PORT, script);
+        auto settings        = loopback("");
+        settings.known_hosts = known;
+        SshTunnel tunnel;
+        tunnel.start(settings);
+        CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Failed; }));
+        CHECK(tunnel.status().error.find("signature is not valid") != std::string::npos);
+        CHECK(tunnel.status().new_key.empty());
+        CHECK(knownHostKey(known, "127.0.0.1", SSH_PORT) == "");
+    }
+    // Another key known: the one that did not sign is not offered to be trusted.
+    {
+        REQUIRE(rememberHostKey(known, "127.0.0.1", SSH_PORT, "SHA256:anotherKey"));
+        FakeServer server(SSH_PORT, script);
+        auto settings        = loopback("");
+        settings.known_hosts = known;
+        SshTunnel tunnel;
+        tunnel.start(settings);
+        CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Failed; }));
+        CHECK(tunnel.status().new_key.empty());
+        CHECK(knownHostKey(known, "127.0.0.1", SSH_PORT) == "SHA256:anotherKey");
+    }
+    std::filesystem::remove_all(dir);
+}
+
+TEST_CASE("Tunnel: known hosts that cannot be read, or none to keep keys in, stop it for good") {
+    const auto dir = std::filesystem::temp_directory_path() / "fcg-tunnel-known-test";
+    std::filesystem::remove_all(dir);
+    std::filesystem::create_directories(dir);
+    const auto known = dir / "known_hosts.json";
+    // A file that is not JSON: no key trusted on first use, the file left as it was.
+    const std::string broken = R"({"example.org:22": "SHA256:aaa",)";
+    std::ofstream(known) << broken;
+    {
+        FakeServer server(SSH_PORT, {});
+        auto settings        = loopback("");
+        settings.known_hosts = known;
+        SshTunnel tunnel;
+        tunnel.start(settings);
+        CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Failed; }));
+        CHECK(tunnel.status().error.find("cannot be read") != std::string::npos);
+        CHECK(tunnel.status().new_key.empty());
+        CHECK(readText(known) == broken);
+    }
+    // Neither a key pinned nor a file to keep it in: refused, not trusted every time.
+    {
+        FakeServer server(SSH_PORT, {});
+        SshTunnel tunnel;
+        tunnel.start(loopback(""));
+        CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Failed; }));
+        CHECK(tunnel.status().error.find("cannot be checked") != std::string::npos);
+    }
+    std::filesystem::remove_all(dir);
+}
+
 TEST_CASE("Tunnel: a server that wants a key is an error trying again cannot mend") {
     FakeServer::Script script;
     script.refuse_auth = true;
@@ -833,6 +1085,273 @@ TEST_CASE("Tunnel: a server that wants a key is an error trying again cannot men
     tunnel.start(loopback(fingerprint(serverKey().blob)));
     CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Failed; }));
     CHECK(tunnel.status().error.find("publickey") != std::string::npos);
+}
+
+TEST_CASE("Tunnel: a packet length that wrapped, or a KEXINIT too short for its cookie, fails the connection") {
+    // Both threw out_of_range on the tunnel's thread before, which ended the program before any authentication.
+    PacketCipher clear;
+    for (const auto& raw : {std::string("\xFF\xFF\xFF\xFC", 4) + std::string(8, 'A'), clear.seal("\x14", 0),
+                            clear.seal("\x14" "0123456789abcde", 0)}) {
+        FakeServer::Script script;
+        script.raw_first = raw;
+        FakeServer server(SSH_PORT, script);
+        SshTunnel tunnel;
+        tunnel.start(loopback(fingerprint(serverKey().blob)));
+        CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }));
+        const auto error = tunnel.status().error;
+        const bool told =
+            error.find("not valid") != std::string::npos || error.find("cannot be read") != std::string::npos;
+        CHECK_MESSAGE(told, error);
+        CHECK(waitFor([&] { return server.done.load(); }));
+    }
+}
+
+TEST_CASE("Sockets: a socket asked nothing, that hung up, does not end the wait at once") {
+    // A connection whose other side closed, and this side shut its writing: poll reports a hang-up for it even when
+    // asked nothing, and returned at once, again and again (a processor spent on the tunnel's loop).
+    net::TcpListener listener;
+    REQUIRE(listener.listen(WEB_PORT).empty());
+    const auto client_fd = net::connectTo(LOCALHOST_IP, WEB_PORT);
+    REQUIRE(client_fd);
+    net::Socket client(*client_fd);
+    const auto accepted = listener.accept(2000);
+    REQUIRE(accepted);
+    {
+        net::Socket other(*accepted);
+        CHECK(other.send("x") == 1);
+    }
+    std::this_thread::sleep_for(50ms);
+    client.shutdownWrite();
+    net::TcpListener idle_listener;
+    REQUIRE(idle_listener.listen(WEB_PORT + 1).empty());
+    const auto idle_fd = net::connectTo(LOCALHOST_IP, WEB_PORT + 1);
+    REQUIRE(idle_fd);
+    net::Socket idle(*idle_fd);
+    for (const bool alone : {true, false}) {
+        CAPTURE(alone);
+        std::vector<net::Wait> waits{{client.handle(), false, false}};
+        if (!alone) waits.push_back({idle.handle(), true, false});  // nothing comes on it
+        const auto start = std::chrono::steady_clock::now();
+        for (int i = 0; i < 3; ++i) net::waitAny(waits, 100);
+        CHECK(std::chrono::steady_clock::now() - start >= 250ms);
+        CHECK_FALSE(waits[0].can_read);
+        CHECK_FALSE(waits[0].can_write);
+    }
+    // Asked to read, it tells at once: the data, then the end.
+    std::vector<net::Wait> waits{{client.handle(), true, false}};
+    net::waitAny(waits, 1000);
+    CHECK(waits[0].can_read);
+}
+
+TEST_CASE("Sockets: a connection refused on this machine is told within the time given") {
+    // On Windows a refused connect takes two seconds or so unless bounded; elsewhere it is told at once.
+    const auto start = std::chrono::steady_clock::now();
+    CHECK_FALSE(net::connectTo(LOCALHOST_IP, WEB_PORT + 2, 200).has_value());
+    CHECK(std::chrono::steady_clock::now() - start < 1500ms);
+    net::TcpListener listener;
+    REQUIRE(listener.listen(WEB_PORT + 2).empty());
+    const auto fd = net::connectTo(LOCALHOST_IP, WEB_PORT + 2, 200);
+    REQUIRE(fd);
+    net::Socket socket(*fd);
+    CHECK(listener.accept(2000).has_value());
+}
+
+TEST_CASE("Tunnel: a viewer's connection that hung up while the server's window is shut costs no processor") {
+    // The forwarded connection's window is 0: the web server's answer waits in its socket, which hangs up once the
+    // server sent the end of the request. The tunnel must wait without spinning until the window opens.
+    WebServer web;
+    REQUIRE(web.start(WEB_PORT).empty());
+    std::atomic_bool holding{false}, release{false};
+    std::string answer;
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        const auto channel = forward(server, 200, 0);
+        server.send(Writer().byte(CHANNEL_DATA).u32(channel).string(script.request).take());
+        server.send(Writer().byte(CHANNEL_EOF).u32(channel).take());
+        std::this_thread::sleep_for(500ms);  // the web server answers and closes meanwhile
+        holding = true;
+        while (!release) std::this_thread::sleep_for(20ms);
+        server.send(Writer().byte(CHANNEL_WINDOW_ADJUST).u32(channel).u32(1 << 20).take());
+        while (true) {
+            const auto m = server.next();
+            Reader r(std::string_view(m).substr(1));
+            server.expect(r.u32() == 200, "recipient");
+            if (m[0] == CHANNEL_DATA) answer += r.string();
+            if (m[0] == CHANNEL_CLOSE) break;
+        }
+        server.send(Writer().byte(CHANNEL_CLOSE).u32(channel).take());
+    };
+    FakeServer server(SSH_PORT, script);
+    SshTunnel tunnel;
+    tunnel.start(loopback(fingerprint(serverKey().blob)));
+    REQUIRE(waitFor([&] { return holding.load() || server.done.load(); }));
+    const auto cpu_before = ownCpuMs();
+    std::this_thread::sleep_for(1000ms);
+    const auto cpu_used = ownCpuMs() - cpu_before;
+    release = true;
+    CHECK_MESSAGE(cpu_used < 300, cpu_used, " ms of processor time in one second");
+    CHECK(waitFor([&] { return tunnel.status().connections == 0 && !answer.empty(); }));
+    tunnel.stop();
+    CHECK(waitFor([&] { return server.done.load(); }));
+    CHECK_MESSAGE(server.error.empty(), server.error);
+    CHECK(answer.rfind("HTTP/1.0 200 OK", 0) == 0);
+}
+
+TEST_CASE("Tunnel: the strict key exchange enforced until the server's first NEWKEYS") {
+    const auto ignore = Writer().byte(IGNORE_DATA).string("x").take();
+    struct Case {
+        bool strict;
+        std::vector<std::string> before;
+        std::string during;
+        const char* error;
+    };
+    for (const auto& c : {
+             // Strict: an IGNORE before the server's KEXINIT (its sequence number 1, not 0), or after its
+             // KEX_ECDH_REPLY (accepted before, as the session id was known then).
+             Case{true, {ignore}, "", "strict"},
+             Case{true, {}, ignore, "strict"},
+             // Not strict: IGNORE is allowed, but nothing of the later protocols before the keys.
+             Case{false, {}, Writer().byte(SERVICE_ACCEPT).string("ssh-userauth").take(), "before the key exchange"},
+             Case{false, {Writer().byte(GLOBAL_REQUEST).string("x").boolean(false).take()}, "",
+                  "before the key exchange"},
+         }) {
+        CAPTURE(c.strict);
+        CAPTURE(c.error);
+        FakeServer::Script script;
+        script.strict         = c.strict;
+        script.before_kexinit = c.before;
+        script.in_kex         = c.during;
+        FakeServer server(SSH_PORT, script);
+        SshTunnel tunnel;
+        tunnel.start(loopback(fingerprint(serverKey().blob)));
+        CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }));
+        CHECK_MESSAGE(tunnel.status().error.find(c.error) != std::string::npos, tunnel.status().error);
+        CHECK(waitFor([&] { return server.done.load(); }));
+    }
+}
+
+TEST_CASE("Tunnel: a server's DISCONNECT reason reaches the status without its escape sequences") {
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        const std::string reason = "bye\x1b[2J\x1b]0;pwned\x07\xc2\x9b" "0m";
+        server.send(Writer().byte(DISCONNECT).u32(11).string(reason).string("").take());
+    };
+    FakeServer server(SSH_PORT, script);
+    SshTunnel tunnel;
+    tunnel.start(loopback(fingerprint(serverKey().blob)));
+    CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }));
+    const auto error = tunnel.status().error;
+    CHECK(error.find("bye?[2J?]0;pwned??0m") != std::string::npos);
+    CHECK(error.find('\x1b') == std::string::npos);
+}
+
+TEST_CASE("Tunnel: a server that asks for answers while it keeps a key exchange open is left") {
+    // Its requests' answers wait for the end of the exchange: without a bound, they would take memory without end.
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        server.send(Writer()
+                        .byte(KEXINIT)
+                        .raw(randomBytes(16))
+                        .string("curve25519-sha256")
+                        .string("rsa-sha2-512")
+                        .string(script.ciphers)
+                        .string(script.ciphers)
+                        .string(script.macs)
+                        .string(script.macs)
+                        .string("none")
+                        .string("none")
+                        .string("")
+                        .string("")
+                        .boolean(false)
+                        .u32(0)
+                        .take());
+        server.nextOf(KEXINIT);
+        server.nextOf(KEX_ECDH_INIT);
+        try {
+            for (int i = 0; i < 2000; ++i) {
+                server.send(Writer().byte(GLOBAL_REQUEST).string("x").boolean(true).take());
+            }
+        } catch (const FakeServer::Failure&) {
+            // The client went before the end.
+        }
+    };
+    FakeServer server(SSH_PORT, script);
+    auto settings        = loopback(fingerprint(serverKey().blob));
+    settings.max_pending = 16 * 1024;
+    SshTunnel tunnel;
+    tunnel.start(settings);
+    CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }));
+    CHECK_MESSAGE(tunnel.status().error.find("does not take") != std::string::npos, tunnel.status().error);
+}
+
+TEST_CASE("Tunnel: viewers' connections the server never closes count until they are forgotten") {
+    // Closed on our side, never by the server: they counted for nothing before, and were kept for ever.
+    WebServer web;
+    REQUIRE(web.start(WEB_PORT).empty());
+    constexpr uint32_t MAX_CHANNELS = 48;
+    bool refused = false, accepted_again = false;
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        const auto open = [&](uint32_t sender) {
+            server.send(Writer()
+                            .byte(CHANNEL_OPEN)
+                            .string("forwarded-tcpip")
+                            .u32(sender)
+                            .u32(1 << 20)
+                            .u32(32768)
+                            .string("localhost")
+                            .u32(80)
+                            .string("203.0.113.9")
+                            .u32(5555)
+                            .take());
+        };
+        for (uint32_t i = 0; i < MAX_CHANNELS; ++i) open(1000 + i);
+        // Each answered and closed by the client; never by the server.
+        uint32_t closed = 0;
+        while (closed < MAX_CHANNELS) {
+            const auto m = server.next();
+            if (m[0] == CHANNEL_OPEN_CONFIRMATION) {
+                Reader r(std::string_view(m).substr(1));
+                r.u32();
+                server.send(Writer().byte(CHANNEL_DATA).u32(r.u32()).string(script.request).take());
+            }
+            closed += m[0] == CHANNEL_CLOSE ? 1 : 0;
+        }
+        open(2000);
+        refused = server.next()[0] == CHANNEL_OPEN_FAILURE;
+        std::this_thread::sleep_for(1500ms);  // past the close timeout
+        open(2001);
+        accepted_again = server.next()[0] == CHANNEL_OPEN_CONFIRMATION;
+    };
+    FakeServer server(SSH_PORT, script);
+    auto settings          = loopback(fingerprint(serverKey().blob));
+    settings.close_timeout = 1s;
+    SshTunnel tunnel;
+    tunnel.start(settings);
+    CHECK(waitFor([&] { return server.done.load() || (refused && accepted_again); }, 30s));
+    tunnel.stop();
+    CHECK(waitFor([&] { return server.done.load(); }));
+    CHECK_MESSAGE(server.error.empty(), server.error);
+    CHECK(refused);
+    CHECK(accepted_again);
+}
+
+TEST_CASE("Tunnel: the public address is forgotten once the connection is lost") {
+    // The service may give the address to someone else meanwhile: it must not stay on screen to copy, open or scan.
+    std::atomic_bool release{false};
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        while (!release) std::this_thread::sleep_for(20ms);
+        server.send(Writer().byte(DISCONNECT).u32(11).string("going away").string("").take());
+    };
+    FakeServer server(SSH_PORT, script);
+    SshTunnel tunnel;
+    tunnel.start(loopback(fingerprint(serverKey().blob)));
+    CHECK(waitFor([&] { return tunnel.status().url == "https://abc123.lhr.life"; }));
+    release = true;
+    CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }));
+    CHECK(tunnel.status().url.empty());
+    CHECK(tunnel.status().error.find("going away") != std::string::npos);
 }
 
 TEST_CASE("Tunnel: no server: reconnecting, with the reason") {

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <type_traits>
 
+#include <mbedtls/platform_util.h>
 #include <psa/crypto.h>
 
 namespace fcg::ssh {
@@ -139,7 +140,22 @@ std::string_view Reader::string(std::size_t max) {
     return s;
 }
 
+std::string_view Reader::raw(std::size_t size) {
+    if (!ok_ || size > left()) {
+        ok_ = false;
+        return {};
+    }
+    const auto s = data_.substr(at_, size);
+    at_ += size;
+    return s;
+}
+
 bool startCrypto() { return psa_crypto_init() == PSA_SUCCESS; }
+
+void wipe(std::string& secret) {
+    if (!secret.empty()) mbedtls_platform_zeroize(secret.data(), secret.size());
+    secret.clear();
+}
 
 std::string sha256(std::string_view data) {
     std::string out(32, '\0');
@@ -185,9 +201,17 @@ std::string deriveKey(std::string_view k, std::string_view h, char letter, std::
                       std::size_t size) {
     std::string base(k);
     base += h;
-    auto out = sha256(base + letter + std::string(session_id));
+    std::string input = base + letter + std::string(session_id);
+    auto out          = sha256(input);
     // K1 = HASH(K || H || X || session_id), then Kn = HASH(K || H || K1 || ... || Kn-1).
-    while (out.size() < size) out += sha256(base + out);
+    while (out.size() < size) {
+        wipe(input);
+        input = base + out;
+        out += sha256(input);
+    }
+    wipe(input);
+    wipe(base);
+    if (out.size() > size) mbedtls_platform_zeroize(out.data() + size, out.size() - size);
     out.resize(size);
     return out;
 }
@@ -246,8 +270,15 @@ std::string verifyRsa(std::string_view key_blob, std::string_view signature, std
     }
     auto modulus = n;
     while (!modulus.empty() && modulus.front() == 0) modulus.remove_prefix(1);
-    const auto bits = modulus.size() * 8;
-    if (bits < 2048 || bits > 16384) return "the host key's size is not accepted (2048 to 16384 bits)";
+    // In bits, not bytes: a 2041-bit key takes 256 bytes too. PSA takes RSA keys up to its vendor maximum.
+    std::size_t bits = modulus.size() * 8;
+    for (auto top = static_cast<unsigned char>(modulus.empty() ? 0 : modulus.front()); top != 0 && top < 0x80;
+         top <<= 1) {
+        --bits;
+    }
+    if (bits < 2048 || bits > PSA_VENDOR_RSA_MAX_KEY_BITS) {
+        return "the host key's size is not accepted (2048 to " + std::to_string(PSA_VENDOR_RSA_MAX_KEY_BITS) + " bits)";
+    }
 
     Reader sig(signature);
     const auto name = sig.string(64);
@@ -452,7 +483,7 @@ PacketCipher::Open PacketCipher::open(std::string& in, uint32_t seq, std::string
     const auto tag   = s.tag();
 
     // The length: in the clear, or in the first block (CTR without encrypt-then-MAC).
-    uint32_t length = 0;
+    std::size_t length = 0;
     if (s.mode == Mode::Ctr) {
         if (s.first.empty()) {
             if (in.size() < block) return Open::More;
@@ -463,9 +494,11 @@ PacketCipher::Open PacketCipher::open(std::string& in, uint32_t seq, std::string
         if (in.size() < 4) return Open::More;
         length = getU32(in);
     }
-    // Bounded before anything waits for it, and whole blocks.
+    // Bounded before anything waits for it, and whole blocks. All in size_t: a length near 2^32 must not wrap to a
+    // small total.
     const bool length_apart = s.mode == Mode::Gcm || s.mode == Mode::CtrEtm;
-    if (length < 5 || length + 4 > MAX_PACKET || (length + (length_apart ? 0 : 4)) % block != 0) return Open::Bad;
+    if (length < 5 || length > MAX_PACKET - 4 || (length + (length_apart ? 0 : 4)) % block != 0) return Open::Bad;
+    if (s.mode == Mode::Ctr && 4 + length < block) return Open::Bad;
     const std::size_t total = 4 + length + tag;
     if (in.size() < total) return Open::More;
 
@@ -508,8 +541,9 @@ PacketCipher::Open PacketCipher::open(std::string& in, uint32_t seq, std::string
             break;
         }
     }
-    const auto padding = static_cast<unsigned char>(body[0]);
-    if (padding < 4 || padding + 1u > length) return Open::Bad;
+    if (body.size() != length) return Open::Bad;
+    const std::size_t padding = static_cast<unsigned char>(body[0]);
+    if (padding < 4 || padding + 1 > length) return Open::Bad;
     payload = body.substr(1, length - 1 - padding);
     in.erase(0, total);
     return Open::Packet;
