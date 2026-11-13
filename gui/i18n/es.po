@@ -2521,6 +2521,9 @@ msgstr "Reintentar"
 msgid "Tunnel: connecting to {}"
 msgstr "Túnel: conectando a {}"
 
+msgid "Tunnel: the host key of {} ({}) could not be kept in {}"
+msgstr "Túnel: la clave de host de {} ({}) no se pudo guardar en {}"
+
 msgid "Tunnel: the host key of {} is {}, trusted from now on"
 msgstr "Túnel: la clave de host de {} es {}, aceptada desde ahora"
 
@@ -2968,6 +2971,9 @@ msgstr "{} contra cada rival"
 
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} pide que se reinicie en cada partida: Reiniciar el motor en cada partida está marcado."
+
+msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
+msgstr "{} no se puede leer, así que las claves de host aceptadas antes son desconocidas: no se envió nada a {}. Repara el archivo, o bórralo para volver a aceptar la clave del servidor."
 
 msgid "{} changed its host key while connected"
 msgstr "{} cambió su clave de host durante la conexión"

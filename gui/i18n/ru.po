@@ -2531,6 +2531,9 @@ msgstr "Повторить"
 msgid "Tunnel: connecting to {}"
 msgstr "Туннель: подключение к {}"
 
+msgid "Tunnel: the host key of {} ({}) could not be kept in {}"
+msgstr "Туннель: не удалось сохранить ключ хоста {} ({}) в {}"
+
 msgid "Tunnel: the host key of {} is {}, trusted from now on"
 msgstr "Туннель: ключ хоста {} — {}, теперь он доверенный"
 
@@ -2980,6 +2983,9 @@ msgstr "{} против каждого соперника"
 
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} требует перезапуска для каждой партии: отмечено «Перезапускать движок для каждой партии»."
+
+msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
+msgstr "{} не читается, поэтому ранее доверенные ключи хостов неизвестны: на {} ничего не отправлено. Исправьте файл или удалите его, чтобы снова принять ключ сервера."
 
 msgid "{} changed its host key while connected"
 msgstr "{} сменил ключ хоста во время соединения"

@@ -2521,6 +2521,9 @@ msgstr ""
 msgid "Tunnel: connecting to {}"
 msgstr ""
 
+msgid "Tunnel: the host key of {} ({}) could not be kept in {}"
+msgstr ""
+
 msgid "Tunnel: the host key of {} is {}, trusted from now on"
 msgstr ""
 
@@ -2967,6 +2970,9 @@ msgid "{} against each opponent"
 msgstr ""
 
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
+msgstr ""
+
+msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr ""
 
 msgid "{} changed its host key while connected"

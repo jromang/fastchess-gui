@@ -2511,6 +2511,9 @@ msgstr "重试"
 msgid "Tunnel: connecting to {}"
 msgstr "隧道：正在连接 {}"
 
+msgid "Tunnel: the host key of {} ({}) could not be kept in {}"
+msgstr "隧道：无法将 {} 的主机密钥（{}）保存到 {}"
+
 msgid "Tunnel: the host key of {} is {}, trusted from now on"
 msgstr "隧道：{} 的主机密钥为 {}，今后将被信任"
 
@@ -2956,6 +2959,9 @@ msgstr "{} 对每个对手"
 
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} 要求每局都重新启动：已勾选“每局对局都重启引擎”。"
+
+msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
+msgstr "无法读取 {}，因此之前信任的主机密钥未知：未向 {} 发送任何内容。请修复该文件，或删除它以重新信任服务器的密钥。"
 
 msgid "{} changed its host key while connected"
 msgstr "{} 在连接期间更换了主机密钥"
