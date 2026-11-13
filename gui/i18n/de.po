@@ -256,6 +256,9 @@ msgstr "Alle Gruppen"
 msgid "All openings"
 msgstr "Alle Eröffnungen"
 
+msgid "All these engines are already in the library."
+msgstr "Alle diese Engines sind schon in der Bibliothek."
+
 msgid "All to default"
 msgstr "Alle auf Standard"
 
@@ -726,6 +729,9 @@ msgstr "Engine"
 
 msgid "Engine lists"
 msgstr "Engine-Listen"
+
+msgid "Engine lists read: cutechess and Banksia (engines.json), ChessGUI (ChsGUI_Eng.TXT), Arena (ArenaENG.cfg), INI lists with Command or Filename keys."
+msgstr "Gelesene Engine-Listen: cutechess und Banksia (engines.json), ChessGUI (ChsGUI_Eng.TXT), Arena (ArenaENG.cfg), INI-Listen mit den Schlüsseln Command oder Filename."
 
 msgid "Engine log"
 msgstr "Engine-Log"
@@ -1283,6 +1289,12 @@ msgstr "Keine doppelten Partien"
 
 msgid "No engine and rating found in this text."
 msgstr "In diesem Text wurden keine Engine und keine Wertung gefunden."
+
+msgid "No engine found in this file."
+msgstr "Keine Engine in dieser Datei gefunden."
+
+msgid "No engine found in this folder."
+msgstr "Keine Engine in diesem Ordner gefunden."
 
 msgid "No engine that works within that range. Engines that were never checked do not count: check them first (Engines, More…)."
 msgstr "Keine funktionierende Engine in diesem Bereich. Nie geprüfte Engines zählen nicht: Prüfe sie zuerst (Engines, Mehr…)."
@@ -2227,6 +2239,9 @@ msgstr "Das Programm von {} wurde nicht gefunden."
 
 msgid "The program of {} is not found: {}"
 msgstr "Das Programm von {} wurde nicht gefunden: {}"
+
+msgid "The programs of a folder can be added instead:"
+msgstr "Stattdessen können die Programme eines Ordners hinzugefügt werden:"
 
 msgid "The queue ends about {} (in {})"
 msgstr "Die Warteschlange endet gegen {} (in {})"

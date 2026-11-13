@@ -260,6 +260,9 @@ msgstr "Все группы"
 msgid "All openings"
 msgstr "Все дебюты"
 
+msgid "All these engines are already in the library."
+msgstr "Все эти движки уже есть в библиотеке."
+
 msgid "All to default"
 msgstr "Всё по умолчанию"
 
@@ -730,6 +733,9 @@ msgstr "Движок"
 
 msgid "Engine lists"
 msgstr "Списки движков"
+
+msgid "Engine lists read: cutechess and Banksia (engines.json), ChessGUI (ChsGUI_Eng.TXT), Arena (ArenaENG.cfg), INI lists with Command or Filename keys."
+msgstr "Читаемые списки движков: cutechess и Banksia (engines.json), ChessGUI (ChsGUI_Eng.TXT), Arena (ArenaENG.cfg), списки INI с ключами Command или Filename."
 
 msgid "Engine log"
 msgstr "Журнал движка"
@@ -1288,6 +1294,12 @@ msgstr "Нет повторяющихся партий"
 
 msgid "No engine and rating found in this text."
 msgstr "В этом тексте не найдено ни движков, ни рейтингов."
+
+msgid "No engine found in this file."
+msgstr "В этом файле не найдено ни одного движка."
+
+msgid "No engine found in this folder."
+msgstr "В этой папке не найдено ни одного движка."
 
 msgid "No engine that works within that range. Engines that were never checked do not count: check them first (Engines, More…)."
 msgstr "В этом диапазоне нет работающих движков. Ни разу не проверенные движки не учитываются: сначала проверьте их (Движки, Ещё…)."
@@ -2236,6 +2248,9 @@ msgstr "Программа движка {} не найдена."
 
 msgid "The program of {} is not found: {}"
 msgstr "Программа движка {} не найдена: {}"
+
+msgid "The programs of a folder can be added instead:"
+msgstr "Вместо этого можно добавить программы из папки:"
 
 msgid "The queue ends about {} (in {})"
 msgstr "Очередь закончится около {} (через {})"

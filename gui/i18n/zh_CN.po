@@ -252,6 +252,9 @@ msgstr "所有分组"
 msgid "All openings"
 msgstr "所有开局"
 
+msgid "All these engines are already in the library."
+msgstr "这些引擎都已在库中。"
+
 msgid "All to default"
 msgstr "全部恢复默认"
 
@@ -722,6 +725,9 @@ msgstr "引擎"
 
 msgid "Engine lists"
 msgstr "引擎列表"
+
+msgid "Engine lists read: cutechess and Banksia (engines.json), ChessGUI (ChsGUI_Eng.TXT), Arena (ArenaENG.cfg), INI lists with Command or Filename keys."
+msgstr "可读取的引擎列表：cutechess 和 Banksia（engines.json）、ChessGUI（ChsGUI_Eng.TXT）、Arena（ArenaENG.cfg），以及带有 Command 或 Filename 键的 INI 列表。"
 
 msgid "Engine log"
 msgstr "引擎日志"
@@ -1278,6 +1284,12 @@ msgstr "没有重复对局"
 
 msgid "No engine and rating found in this text."
 msgstr "此文本中未找到引擎和等级分。"
+
+msgid "No engine found in this file."
+msgstr "此文件中没有找到引擎。"
+
+msgid "No engine found in this folder."
+msgstr "此文件夹中没有找到引擎。"
 
 msgid "No engine that works within that range. Engines that were never checked do not count: check them first (Engines, More…)."
 msgstr "该范围内没有可用的引擎。从未检查过的引擎不计入：请先检查它们（引擎，更多…）。"
@@ -2218,6 +2230,9 @@ msgstr "找不到 {} 的程序。"
 
 msgid "The program of {} is not found: {}"
 msgstr "找不到 {} 的程序：{}"
+
+msgid "The programs of a folder can be added instead:"
+msgstr "也可以改为添加某个文件夹中的程序："
 
 msgid "The queue ends about {} (in {})"
 msgstr "队列预计 {} 结束（还需 {}）"

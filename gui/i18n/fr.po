@@ -256,6 +256,9 @@ msgstr "Tous les groupes"
 msgid "All openings"
 msgstr "Toutes les ouvertures"
 
+msgid "All these engines are already in the library."
+msgstr "Tous ces moteurs sont déjà dans la bibliothèque."
+
 msgid "All to default"
 msgstr "Tout par défaut"
 
@@ -726,6 +729,9 @@ msgstr "Moteur"
 
 msgid "Engine lists"
 msgstr "Listes de moteurs"
+
+msgid "Engine lists read: cutechess and Banksia (engines.json), ChessGUI (ChsGUI_Eng.TXT), Arena (ArenaENG.cfg), INI lists with Command or Filename keys."
+msgstr "Listes de moteurs lues : cutechess et Banksia (engines.json), ChessGUI (ChsGUI_Eng.TXT), Arena (ArenaENG.cfg), listes INI avec des clés Command ou Filename."
 
 msgid "Engine log"
 msgstr "Journal moteur"
@@ -1283,6 +1289,12 @@ msgstr "Pas de parties en double"
 
 msgid "No engine and rating found in this text."
 msgstr "Aucun moteur ni classement trouvé dans ce texte."
+
+msgid "No engine found in this file."
+msgstr "Aucun moteur trouvé dans ce fichier."
+
+msgid "No engine found in this folder."
+msgstr "Aucun moteur trouvé dans ce dossier."
 
 msgid "No engine that works within that range. Engines that were never checked do not count: check them first (Engines, More…)."
 msgstr "Aucun moteur qui fonctionne dans cet intervalle. Les moteurs jamais vérifiés ne comptent pas : vérifie-les d'abord (Moteurs, Plus…)."
@@ -2227,6 +2239,9 @@ msgstr "Le programme de {} est introuvable."
 
 msgid "The program of {} is not found: {}"
 msgstr "Le programme de {} est introuvable : {}"
+
+msgid "The programs of a folder can be added instead:"
+msgstr "Les programmes d'un dossier peuvent être ajoutés à la place :"
 
 msgid "The queue ends about {} (in {})"
 msgstr "La file d'attente se termine vers {} (dans {})"

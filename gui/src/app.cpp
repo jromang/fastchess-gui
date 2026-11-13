@@ -170,6 +170,9 @@ void App::frame() {
         } else if (w == "engines-refresh") {
             page_ = Page::Engines;
             refreshEngineFolder();
+        } else if (w.rfind("engines-import=", 0) == 0) {  // engines-import=FILE: the preview of that engine list
+            page_ = Page::Engines;
+            importEngines(importEngineList(w.substr(15)), {}, w.substr(15));
         } else if (w.rfind("engines-ratings", 0) == 0) {
             // engines-ratings=FILE: the preview of that rating list.
             page_ = Page::Engines;
@@ -850,7 +853,7 @@ void App::handleDialogs() {
                 }
                 break;
             case Dialogs::Purpose::ImportEngineList:
-                importEngines(importEngineList(path));
+                importEngines(importEngineList(path), {}, path);
                 break;
             case Dialogs::Purpose::ImportEngineFolder:
                 // Remembered, for Refresh to look in again.
