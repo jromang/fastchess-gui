@@ -46,6 +46,7 @@ struct LiveGame {
         uint64_t nodes  = 0;
         int64_t time_ms = 0;
         std::vector<std::string> pv;  // UCI
+        std::string pv_san;           // the current search's, with move numbers
     };
     Search search[2];  // [0] White's last or current search, [1] Black's
 
@@ -84,6 +85,30 @@ struct BroadcastAnomaly {
     std::string reason;  // fastchess' words
 };
 
+// One engine's search, on average per move it searched (book moves left out), as the Statistics tab shows it, and
+// the games it lost badly.
+struct BroadcastEngine {
+    std::string name;
+    uint64_t moves         = 0;  // searched
+    double depth           = 0;
+    int64_t time_ms        = 0;
+    uint64_t nodes         = 0;  // 0 when its moves did not tell
+    uint64_t nps           = 0;
+    uint64_t time_losses   = 0;
+    uint64_t crashes       = 0;
+    uint64_t stalls        = 0;
+    uint64_t illegal_moves = 0;
+};
+
+// A game of the schedule still to be played.
+struct BroadcastNext {
+    uint64_t number = 0;  // 1-based
+    uint32_t round  = 1;
+    uint32_t cycle  = 1;
+    std::string white, black;
+    std::string opening;  // when known (its encounter, or its round with one opening per round, started); else empty
+};
+
 struct BroadcastSnapshot {
     std::string name;
     std::string format;  // "match", "round_robin", "gauntlet"
@@ -101,6 +126,10 @@ struct BroadcastSnapshot {
     std::vector<Played> played_games;  // the last 300 games played, newest first (TLCS game list)
     BroadcastStats stats;
     std::vector<BroadcastAnomaly> anomalies;  // the last 100, newest first
+    std::vector<BroadcastEngine> engines;     // in the order of the standings
+    // The next games of the schedule, in the order they start. A Swiss or a knockout has only those of the rounds
+    // paired so far.
+    std::vector<BroadcastNext> next;
 
     // The tournament's PGN file (cutechess style), complete up to `pgn_bytes`: the games recorded, not one being
     // written. Empty when there is none yet.
@@ -159,7 +188,9 @@ class TlcsServer {
 };
 
 // A small web server: a page showing every game in progress, the standings and the crosstable, refreshed every
-// second from /state.json; the games played as one PGN file, from /games.pgn.
+// second from /state.json; the games played as one PGN file, from /games.pgn. Read-only and bounded, to be put on the
+// internet behind a tunnel: GET of those paths only, each request on a thread of its own (32 at most, each within
+// ten seconds), two downloads at once.
 class WebServer {
    public:
     ~WebServer();
@@ -174,9 +205,10 @@ class WebServer {
 
    private:
     void serve();
-    // Sends the PGN file on a thread of its own, so that a slow download holds no other request.
-    void download(std::unique_ptr<net::TcpConnection> connection, const std::filesystem::path& file,
-                  const std::string& name, uint64_t bytes);
+    // One request, on a thread of its own: a slow client holds no other.
+    void handle(std::unique_ptr<net::TcpConnection> connection);
+    void download(net::TcpConnection& connection, const std::filesystem::path& file, const std::string& name,
+                  uint64_t bytes);
 
     net::TcpListener listener_;
     std::thread thread_;
@@ -188,12 +220,13 @@ class WebServer {
     std::string pgn_name_;
     uint64_t pgn_bytes_ = 0;
     std::vector<std::chrono::steady_clock::time_point> recent_;  // state requests, to count viewers
+    int downloads_ = 0;                                          // under way
 
-    struct Download {
+    struct Worker {
         std::thread thread;
         std::shared_ptr<std::atomic_bool> done;
     };
-    std::vector<Download> downloads_;  // the serving thread's own
+    std::vector<Worker> workers_;  // the serving thread's own: the requests being answered
 };
 
 // The viewer page served at "/".

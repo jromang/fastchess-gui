@@ -120,6 +120,8 @@ struct EngineTotals {
     uint64_t depth_sum        = 0;
     double nps_sum            = 0;
     uint64_t nps_samples      = 0;
+    uint64_t nodes_sum        = 0;  // over the nodes_samples moves that told their nodes
+    uint64_t nodes_samples    = 0;
     uint64_t time_ms          = 0;
     uint64_t decision_ms      = 0;  // when it settled on its move, summed over decision_samples moves
     uint64_t decision_samples = 0;
@@ -147,6 +149,10 @@ struct CpuUse {
 // What looks unfair, empty when nothing does: more cores than its `threads` while it thinks, or thinking on its
 // opponent's time (pondering it was not asked for, a background thread).
 [[nodiscard]] std::string cpuProblem(const EngineTotals& totals, int threads);
+
+// A PV in UCI notation as SAN, with move numbers, played from `board`: at most `max_moves`, then "…". Stops at the
+// first move that is not legal.
+[[nodiscard]] std::string pvToSan(chess::Board board, const std::vector<std::string>& pv, std::size_t max_moves);
 
 // What the processes of the two engines of a game used, White's then Black's: the totals of one game.
 struct GameCpu {
@@ -253,6 +259,8 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     [[nodiscard]] std::vector<std::string> reasons() const;
     [[nodiscard]] std::vector<OpeningName> openings() const;  // [0] is "no opening"
     [[nodiscard]] std::vector<EngineTotals> totals() const;   // by participant index ([0] = A, [1] = B in a match)
+    // The same with each participant's name, taken together: from any thread.
+    [[nodiscard]] std::vector<std::pair<std::string, EngineTotals>> namedTotals() const;
 
     // New participants (added or replacing one) get a name and counters; existing indexes do not change.
     void updateParticipants(const tour::TournamentSpec& spec);
@@ -292,7 +300,7 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     };
     const GameExtras& extrasOf(const tour::GameResult& result, std::string_view pgn = {});
     // One move of an engine in its search statistics; data_mutex_ held.
-    static void addMove(EngineTotals& totals, int64_t depth, int64_t time_ms, int64_t nps,
+    static void addMove(EngineTotals& totals, int64_t depth, int64_t time_ms, int64_t nps, uint64_t nodes,
                         std::optional<int64_t> decision_ms);
     GameRecord makeRecord(const tour::GameResult& result, std::string_view pgn = {});  // data_mutex_ held
     void countLoss(const tour::GameResult& result);                                    // data_mutex_ held

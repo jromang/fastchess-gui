@@ -17,33 +17,6 @@
 
 namespace fcg {
 
-namespace {
-
-// PV in UCI notation to SAN, played from `board`. Stops at the first move that does not parse.
-std::string pvToSan(chess::Board board, const std::vector<std::string>& pv, std::size_t max_moves) {
-    std::string out;
-    for (std::size_t i = 0; i < pv.size() && i < max_moves; ++i) {
-        const auto move = chess::uci::uciToMove(board, pv[i]);
-
-        chess::Movelist legal;
-        chess::movegen::legalmoves(legal, board);
-        if (move == chess::Move::NO_MOVE || std::find(legal.begin(), legal.end(), move) == legal.end()) break;
-
-        if (!out.empty()) out += ' ';
-        if (board.sideToMove() == chess::Color::WHITE) {
-            out += fmt::format("{}.", board.fullMoveNumber());
-        } else if (i == 0) {
-            out += fmt::format("{}...", board.fullMoveNumber());
-        }
-        out += chess::uci::moveToSan(board, move);
-        board.makeMove<true>(move);
-    }
-    if (pv.size() > max_moves) out += " …";
-    return out;
-}
-
-}  // namespace
-
 int plotEval(const char* id, const std::vector<float>& evals, int marker_ply, float height) {
     int clicked = -1;
 

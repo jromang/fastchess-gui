@@ -106,11 +106,7 @@ void App::refreshSchedule() {
     const bool frc = spec.conditions.variant == fastchess::VariantType::FRC;
     for (const auto& [encounter, opening] : t->encounterOpenings()) {
         if (s.openings.count(encounter)) continue;
-        const auto c      = tour::classify(opening, frc);
-        std::string label = c.eco.empty() ? "" : c.eco + " " + c.name;
-        if (label.empty()) {
-            for (const auto& m : c.moves) label += (label.empty() ? "" : " ") + m;
-        }
+        const auto label      = tour::openingLabel(tour::classify(opening, frc));
         s.openings[encounter] = label.empty() ? TR("initial position") : label;
     }
     s.round_openings.clear();

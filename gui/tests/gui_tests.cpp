@@ -1793,6 +1793,46 @@ TEST_CASE("live: a game recorded while the lists start over is counted once in t
     CHECK(moves() == 7 * 12);
 }
 
+TEST_CASE("live: the nodes of each move count in the search totals, from a game recorded and from its PGN") {
+    const auto dir = tempDir("totals-nodes");
+    tour::TournamentSpec spec;
+    spec.name                       = "nodes";
+    spec.format                     = tour::Format::Match;
+    spec.max_games                  = 10;
+    spec.conditions.pgn.track_nodes = true;
+    for (int i = 0; i < 2; ++i) {
+        tour::Participant p;
+        p.id          = i;
+        p.engine.name = i == 0 ? "A" : "B";
+        spec.participants.push_back(p);
+    }
+    auto game = sampleGame(false);  // 7 moves: A has White, 4 of them
+    for (std::size_t i = 0; i < game.moves.size(); ++i) game.moves[i].nodes = 1000 * (i + 1);
+    game.moves[6].nodes = 0;  // a move that did not tell
+    const auto check    = [](const std::vector<std::pair<std::string, EngineTotals>>& totals) {
+        REQUIRE(totals.size() == 2);
+        CHECK(totals[0].first == "A");
+        CHECK(totals[0].second.nodes_samples == 3);
+        CHECK(totals[0].second.nodes_sum == 1000 + 3000 + 5000);
+        CHECK(totals[1].first == "B");
+        CHECK(totals[1].second.nodes_samples == 3);
+        CHECK(totals[1].second.nodes_sum == 2000 + 4000 + 6000);
+    };
+    {
+        auto state = tour::TournamentState::create(dir / "t", spec);
+        GuiObserver obs(1, *state);
+        const auto recorded = state->complete(*state->claimNext(), game);
+        obs.onRecorded(recorded.result, game, recorded.pair);
+        check(obs.namedTotals());
+    }
+
+    auto state = tour::TournamentState::open(dir / "t");
+    GuiObserver obs(1, *state);
+    for (int i = 0; i < 1000 && obs.loading(); ++i) std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    REQUIRE_FALSE(obs.loading());
+    check(obs.namedTotals());
+}
+
 TEST_CASE("processor use: a game voided while the games are read has its figures when the edit is undone") {
     const auto dir = tempDir("processor-undo");
     tour::TournamentSpec spec;

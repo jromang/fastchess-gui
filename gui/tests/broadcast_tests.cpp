@@ -578,6 +578,104 @@ TEST_CASE("broadcast: the web page and its state") {
     }
 }
 
+TEST_CASE("broadcast: the web server answers GET of its own paths only, and bounds what a client holds") {
+    WebServer server;
+    const uint16_t port = 26219;
+    REQUIRE(server.start(port).empty());
+    server.publish(sample());
+
+    const auto ask = [&](const std::string& request) {
+        const auto fd = net::connectTo(0x7F000001, port);
+        if (!fd) return std::string();
+        net::TcpConnection c(*fd);
+        c.sendAll(request);
+        return c.readUntil("\n\n\n\n", 1 << 20, 5000);
+    };
+    const auto get    = [&](const std::string& path) { return ask("GET " + path + " HTTP/1.1\r\nHost: x\r\n\r\n"); };
+    const auto status = [](const std::string& answer) { return answer.substr(0, answer.find("\r\n")); };
+
+    // Nothing but GET; nothing but the page, its state and the PGN file, whatever the path says.
+    CHECK(status(ask("POST /state.json HTTP/1.1\r\nContent-Length: 2\r\n\r\n{}")) == "HTTP/1.0 405 Method Not Allowed");
+    CHECK(ask("HEAD / HTTP/1.1\r\n\r\n").find("Allow: GET\r\n") != std::string::npos);
+    CHECK(status(ask("DELETE /games.pgn HTTP/1.1\r\n\r\n")) == "HTTP/1.0 405 Method Not Allowed");
+    CHECK(status(ask("garbage\r\n\r\n")) == "HTTP/1.0 400 Bad Request");
+    CHECK(status(get("http://host/")) == "HTTP/1.0 400 Bad Request");
+    for (const auto* path : {"/state.json/../../../etc/passwd", "/../games.pgn", "/%2e%2e/etc/passwd", "/etc/passwd",
+                             "//state.json", "/index.htm", "/games.pgn/x", "/live.pgn"}) {
+        CAPTURE(path);
+        CHECK(status(get(path)) == "HTTP/1.0 404 Not Found");
+    }
+    // A query (a cache buster) is left out.
+    CHECK(status(get("/state.json?t=123")) == "HTTP/1.0 200 OK");
+    CHECK(status(get("/?from=twitter")) == "HTTP/1.0 200 OK");
+
+    // The answers: never cached, their type as given; the page loads and sends nothing elsewhere.
+    const auto page = get("/");
+    const auto head = page.substr(0, page.find("\r\n\r\n"));
+    CHECK(head.find("Cache-Control: no-store") != std::string::npos);
+    CHECK(head.find("X-Content-Type-Options: nosniff") != std::string::npos);
+    CHECK(head.find("Content-Security-Policy: default-src 'none';") != std::string::npos);
+    CHECK(head.find("connect-src 'self'") != std::string::npos);
+    CHECK(get("/state.json").find("X-Content-Type-Options: nosniff") != std::string::npos);
+
+    // A request larger than any the page makes is refused, read no further: its client may not even get the
+    // answer (the connection closed on what it still sends), and the others are served.
+    const auto large = ask("GET / HTTP/1.1\r\nX: " + std::string(1 << 20, 'a') + "\r\n\r\n");
+    CHECK((large.empty() || status(large) == "HTTP/1.0 431 Request Header Fields Too Large"));
+    CHECK(status(get("/")) == "HTTP/1.0 200 OK");
+
+    // A client that never reads a large answer holds no other: each request is answered on a thread of its own.
+    auto big = sample();
+    big.name = std::string(16 << 20, 'x');
+    server.publish(big);
+    const auto reader = net::connectTo(0x7F000001, port);
+    REQUIRE(reader);
+    net::TcpConnection stuck(*reader);
+    stuck.sendAll("GET /state.json HTTP/1.0\r\n\r\n");
+    std::this_thread::sleep_for(300ms);
+    auto start = std::chrono::steady_clock::now();
+    CHECK(status(get("/")) == "HTTP/1.0 200 OK");
+    CHECK(std::chrono::steady_clock::now() - start < 1s);
+    server.publish(sample());
+
+    // Thirty-two clients that say nothing at once: the next is told to come back, and is served once they are let
+    // go, a second later.
+    std::vector<std::unique_ptr<net::TcpConnection>> silent;
+    for (int i = 0; i < 32; ++i) {
+        const auto fd = net::connectTo(0x7F000001, port);
+        REQUIRE(fd);
+        silent.push_back(std::make_unique<net::TcpConnection>(*fd));
+    }
+    std::this_thread::sleep_for(300ms);
+    CHECK(status(get("/")) == "HTTP/1.0 503 Service Unavailable");
+    std::this_thread::sleep_for(1500ms);
+    CHECK(status(get("/")) == "HTTP/1.0 200 OK");
+
+    start = std::chrono::steady_clock::now();
+    server.stop();
+    CHECK(std::chrono::steady_clock::now() - start < 2s);
+}
+
+TEST_CASE("broadcast: the viewers are counted from their requests, all from one address behind a tunnel") {
+    WebServer server;
+    const uint16_t port = 26319;
+    REQUIRE(server.start(port).empty());
+    server.publish(sample());
+    // Four viewers polling once a second, through one proxy: one address, as cloudflared's.
+    for (int second = 0; second < 3; ++second) {
+        for (int viewer = 0; viewer < 4; ++viewer) {
+            const auto fd = net::connectTo(0x7F000001, port);
+            REQUIRE(fd);
+            net::TcpConnection c(*fd);
+            c.sendAll("GET /state.json HTTP/1.1\r\nX-Forwarded-For: 203.0.113." + std::to_string(viewer) + "\r\n\r\n");
+            CHECK(c.readUntil("\n\n\n\n", 1 << 20, 5000).rfind("HTTP/1.0 200", 0) == 0);
+        }
+        std::this_thread::sleep_for(800ms);
+    }
+    CHECK(server.viewers() == 4);
+    server.stop();
+}
+
 TEST_CASE("broadcast: the statistics, the anomalies and each move's search, for the web page") {
     BroadcastInput in;
     in.dir           = "/tournaments/Big one";
@@ -637,7 +735,10 @@ TEST_CASE("broadcast: the statistics, the anomalies and each move's search, for 
     st.moves[2].depth   = 20;
     st.moves[2].time_ms = 1500;
     st.stm              = chess::Color::BLACK;
-    in.slots            = {st};
+    // Black thinks: its PV, in SAN for the web page's notation.
+    st.thinking = true;
+    st.info[1]  = "info depth 9 score cp 12 nodes 5000 time 40 pv b8c6 f1b5 a7a6 a1a8";
+    in.slots    = {st};
     in.ended.resize(1);
 
     const auto s = makeSnapshot(in);
@@ -669,16 +770,122 @@ TEST_CASE("broadcast: the statistics, the anomalies and each move's search, for 
     CHECK(json["anomalies"][2]["kind"] == "time");
     CHECK(json["anomalies"][2]["engine"] == "Beta");
 
+    // Each engine: its anomalies from the games, its search from the observer's totals, in the order of the standings.
+    REQUIRE(s.engines.size() == 3);
+    const auto engine = [&](const std::string& name) {
+        for (const auto& e : json["engines"]) {
+            if (e["name"] == name) return e;
+        }
+        return nlohmann::json();
+    };
+    CHECK(json["engines"][0]["name"] == s.table.rows[0].name);
+    CHECK(engine("Beta")["time_losses"] == 1);
+    CHECK(engine("Beta")["illegal_moves"] == 1);
+    CHECK(engine("Beta")["crashes"] == 0);
+    CHECK(engine("Alpha")["crashes"] == 1);
+    CHECK(engine("Gamma")["time_losses"] == 0);
+    CHECK(engine("Alpha")["moves"] == 0);  // no totals given
+    CHECK(engine("Alpha")["depth"].is_null());
+
+    EngineTotals alpha;
+    alpha.moves         = 4;
+    alpha.depth_sum     = 50;
+    alpha.time_ms       = 6000;
+    alpha.nps_sum       = 4e6;
+    alpha.nps_samples   = 4;
+    alpha.nodes_sum     = 3000000;
+    alpha.nodes_samples = 3;
+    EngineTotals gamma;
+    gamma.moves         = 2;
+    gamma.depth_sum     = 20;
+    gamma.time_ms       = 500;
+    in.totals           = {{"Alpha", alpha}, {"Beta", {}}, {"Gamma", gamma}};
+    const auto with     = nlohmann::json::parse(snapshotJson(makeSnapshot(in)));
+    const auto searched = [&](const std::string& name) {
+        for (const auto& e : with["engines"]) {
+            if (e["name"] == name) return e;
+        }
+        return nlohmann::json();
+    };
+    CHECK(searched("Alpha")["moves"] == 4);
+    CHECK(searched("Alpha")["depth"] == 12.5);
+    CHECK(searched("Alpha")["time_ms"] == 1500);
+    CHECK(searched("Alpha")["nodes"] == 1000000);
+    CHECK(searched("Alpha")["nps"] == 1000000);
+    CHECK(searched("Alpha")["crashes"] == 1);
+    CHECK(searched("Gamma")["depth"] == 10);
+    CHECK(searched("Gamma")["nodes"].is_null());  // its moves did not tell
+    CHECK(searched("Gamma")["nps"].is_null());
+    CHECK(searched("Beta")["time_ms"].is_null());
+
     const auto& game = json["games"][0];
     CHECK(game["evals"] == nlohmann::json::parse("[null, -30, 99997]"));  // White's point of view; mate in 3
     CHECK(game["depths"] == nlohmann::json::parse("[null, 14, 20]"));
     CHECK(game["times_ms"] == nlohmann::json::parse("[null, 900, 1500]"));
+    CHECK(game["black_search"]["depth"] == 9);
+    CHECK(game["black_search"]["pv"].size() == 4);
+    CHECK(game["black_search"]["pv_san"] == "2...Nc6 3.Bb5 a6");  // up to the move that is not legal
+    CHECK(game["white_search"]["pv_san"] == "");
 
     // No game recorded yet: nothing to download.
     in.results.clear();
     const auto empty = makeSnapshot(in);
     CHECK(empty.pgn_file.empty());
     CHECK(nlohmann::json::parse(snapshotJson(empty))["pgn"].is_null());
+}
+
+TEST_CASE("broadcast: the next games of the schedule, in the order they start") {
+    using fcg::tour::GameStatus;
+    std::vector<fcg::tour::ScheduleRow> rows(5);
+    rows[0].status[0] = GameStatus::Done, rows[0].status[1] = GameStatus::Running;
+    rows[1].status[0] = GameStatus::Running;  // its second game comes next
+    rows[3].status[0] = GameStatus::Dropped;  // so does this one's
+    using Picked      = std::vector<std::pair<std::size_t, int>>;
+    CHECK(nextGames(rows, 6) == Picked{{1, 1}, {3, 1}, {2, 0}, {2, 1}, {4, 0}, {4, 1}});
+    CHECK(nextGames(rows, 3) == Picked{{1, 1}, {3, 1}, {2, 0}});
+    CHECK(nextGames({}, 3).empty());
+
+    // A round robin of four, one opening per round: the encounters of a round started have its opening.
+    const auto dir = std::filesystem::temp_directory_path() / "fcg-web-next";
+    std::filesystem::remove_all(dir);
+    fcg::tour::TournamentSpec spec;
+    spec.name              = "next";
+    spec.format            = fcg::tour::Format::RoundRobin;
+    spec.opening_per_round = true;
+    for (const auto* name : {"Alpha", "Beta", "Gamma", "Delta"}) {
+        fcg::tour::Participant p;
+        p.id          = static_cast<int>(spec.participants.size());
+        p.engine.name = name;
+        spec.participants.push_back(p);
+    }
+    auto state = fcg::tour::TournamentState::create(dir, spec);
+    GuiObserver observer(1, *state);
+    REQUIRE(state->claimNext());  // the first game of the first encounter
+    const auto schedule = state->scheduleRows();
+    REQUIRE(schedule.size() == 6);
+    const auto who = [&](std::size_t row, int side) {
+        const auto& e = schedule[row].encounter;
+        return spec.participants[static_cast<std::size_t>(side == 0 ? e.first : e.second)].engine.name;
+    };
+
+    const auto json  = nlohmann::json::parse(snapshotJson(makeSnapshot(*state, observer, std::nullopt)));
+    const auto& next = json["next"];
+    REQUIRE(next.size() == 6);
+    CHECK(next[0]["number"] == 2);  // the first encounter's second game: colours swapped
+    CHECK(next[0]["white"] == who(0, 1));
+    CHECK(next[0]["black"] == who(0, 0));
+    CHECK(next[0]["round"] == 1);
+    CHECK(next[0]["opening"] == "initial position");
+    CHECK(next[1]["number"] == 3);
+    CHECK(next[1]["white"] == who(1, 0));
+    CHECK(next[1]["opening"] == "initial position");  // same round
+    CHECK(next[3]["number"] == 5);
+    CHECK(next[3]["round"] == 2);
+    CHECK(next[3]["opening"].is_null());  // not known yet
+    CHECK(json["format"] == "round_robin");
+
+    state.reset();
+    std::filesystem::remove_all(dir);
 }
 
 TEST_CASE("broadcast: the web page offers the PGN file, the games recorded only, without holding the page") {
