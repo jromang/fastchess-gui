@@ -159,6 +159,9 @@ msgstr "Testo o pagina web di una lista Elo, Ordo, CSV (name,elo)"
 msgid "A rating list, for the reference Elo…"
 msgstr "Una lista Elo, per l'Elo di riferimento…"
 
+msgid "A tournament waits to start."
+msgstr "Un torneo attende di partire."
+
 msgid "A: +%d  =%d  -%d"
 msgstr "A: +%d  =%d  -%d"
 
@@ -231,6 +234,9 @@ msgstr "Affinità ignorata: un motore usa %d thread."
 
 msgid "After the running match."
 msgstr "Dopo il match in corso."
+
+msgid "After the running tournament: its end ends every engine."
+msgstr "Dopo il torneo in corso: la sua fine chiude tutti i motori."
 
 msgid "All"
 msgstr "Tutte"
@@ -1089,6 +1095,9 @@ msgstr "Parte appena finisce la verifica di {}."
 msgid "It starts once the options of {} are read."
 msgstr "Parte appena le opzioni di {} sono state lette."
 
+msgid "It starts once the test suite ends (or is stopped)."
+msgstr "Parte appena la suite di test termina (o viene fermata)."
+
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr "La sua scheda in Classifiche: risultati, affidabilità e rating in tutti i tornei."
 
@@ -1358,6 +1367,9 @@ msgstr "Non ancora verificato."
 
 msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
 msgstr "Assente dal PGN di questa partita: attiva il campo nelle opzioni PGN della configurazione."
+
+msgid "Not started: another start is waiting ({}). Cancel it first."
+msgstr "Non avviato: un altro avvio è in attesa ({}). Annullalo prima."
 
 msgid "Not started: the options of {} cannot be read."
 msgstr "Non avviato: impossibile leggere le opzioni di {}."
@@ -2246,6 +2258,12 @@ msgstr "Le posizioni iniziali delle aperture mostrate, nell'ordine mostrato: un 
 msgid "The system could not open:"
 msgstr "Il sistema non è riuscito ad aprire:"
 
+msgid "The test suite is not started: a tournament is running."
+msgstr "La suite di test non viene avviata: è in corso un torneo."
+
+msgid "The test suite is not started: a tournament waits to start."
+msgstr "La suite di test non viene avviata: un torneo attende di partire."
+
 msgid "The time control needs a base time or an increment."
 msgstr "La cadenza richiede un tempo base o un incremento."
 
@@ -2365,6 +2383,9 @@ msgstr "Annulla questa partita (senza rigiocarla)"
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "V {:.0f} · P {:.0f} · S {:.0f} %"
+
+msgid "Waiting for the test suite…"
+msgstr "In attesa della suite di test…"
 
 msgid "Waiting for {}…"
 msgstr "In attesa di {}…"
@@ -2623,8 +2644,20 @@ msgstr "rigioco richiesto"
 msgid "send at startup"
 msgstr "invia all'avvio"
 
+msgid "the new tournament"
+msgstr "il nuovo torneo"
+
 msgid "the one chosen in the Live tab"
 msgstr "quella scelta nella scheda Diretta"
+
+msgid "the queue"
+msgstr "la coda"
+
+msgid "the quick test of {}"
+msgstr "il test rapido di {}"
+
+msgid "the resume of the interrupted tournament"
+msgstr "la ripresa del torneo interrotto"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "da menzionare nel post, o per testare di nuovo il motore:"
