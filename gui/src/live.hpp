@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <deque>
+#include <filesystem>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -162,6 +163,51 @@ struct GameCpuLine {
 [[nodiscard]] std::string gameCpuLine(const GameCpuLine& line);
 [[nodiscard]] std::optional<GameCpuLine> parseGameCpuLine(std::string_view line);
 
+// The processor time the engines of each concurrent game use, read when "go" is sent and when the move comes, and
+// appended to processor.tsv (in the tournament's folder) with each game recorded. The window's observer measures
+// with it, and so does the headless mode.
+class CpuMeter {
+   public:
+    CpuMeter(int slots, std::filesystem::path file);
+    ~CpuMeter();
+    CpuMeter(const CpuMeter&)            = delete;
+    CpuMeter& operator=(const CpuMeter&) = delete;
+
+    // What the engines used while one of them thought: the processor time of each, White's then Black's, and how
+    // long it lasted.
+    struct Used {
+        std::array<uint64_t, 2> cpu_ms{};
+        uint64_t wall_ms = 0;
+    };
+
+    // --- tournament threads, from the observer callbacks of the same names ---
+    void gameStart(int slot);
+    void engineProcesses(int slot, int64_t white_pid, int64_t black_pid);
+    void thinking(int slot);
+    // What the engines used since thinking(); nullopt when it could not be read.
+    std::optional<Used> moved(int slot, chess::Color mover);
+    void gameEnd(int slot, bool counted);
+    // Appends the line of a game to the file, synced; on the thread that ended it, after gameEnd(), as the runner
+    // calls them. Nothing for a game whose engines were not measured.
+    void recorded(const tour::GameResult& result);
+
+   private:
+    struct Slot {
+        std::mutex mutex;
+        std::array<std::vector<int64_t>, 2> processes;  // the engines' processes
+        std::array<int64_t, 2> cpu_at_go{-1, -1};       // the readings when "go" was sent
+        Clock::time_point go_at{};
+        GameCpu game;  // the game in progress
+    };
+    Slot* slot(int i) { return i >= 0 && i < static_cast<int>(slots_.size()) ? slots_[i].get() : nullptr; }
+
+    std::vector<std::unique_ptr<Slot>> slots_;
+    std::filesystem::path path_;
+    std::mutex file_mutex_;
+    std::FILE* file_ = nullptr;
+    bool failed_     = false;  // could not be opened: not tried again
+};
+
 class GuiObserver final : public fastchess::observer::GameObserver, public tour::RecordListener {
    public:
     // `state` is the match about to be played; the games it already holds (a resumed match) are queued as if
@@ -230,15 +276,9 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     struct Slot {
         mutable std::mutex mutex;
         SlotState state;
-        std::deque<SlotState> ended;  // the previous games, once they have a result; at most 8
-        chess::Board board;           // current position of the game in this slot
-
-        // Processor time: the engines' processes, their participant indexes, and the readings when "go" was sent.
-        std::array<std::vector<int64_t>, 2> processes;
-        std::array<int, 2> participant{-1, -1};
-        std::array<int64_t, 2> cpu_at_go{-1, -1};
-        Clock::time_point go_at{};
-        GameCpu game_cpu;  // of the game in progress
+        std::deque<SlotState> ended;             // the previous games, once they have a result; at most 8
+        chess::Board board;                      // current position of the game in this slot
+        std::array<int, 2> participant{-1, -1};  // the participant indexes of White and Black, for their totals
     };
 
     Slot* slot(int i) { return i >= 0 && i < static_cast<int>(slots_.size()) ? slots_[i].get() : nullptr; }
@@ -258,8 +298,6 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     void countLoss(const tour::GameResult& result);                                    // data_mutex_ held
     // Reads the games of to_load_, on loader_.
     void loadPlayed();
-    // Appends what a game's engines used to processor.tsv; tournament thread.
-    void writeGameCpu(const tour::GameResult& result, const GameCpu& cpu);
     // What the loader read of a game's PGN.
     struct LoadedGame {
         OpeningName opening;
@@ -283,12 +321,10 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     std::filesystem::path pgn_chessbase_;
 
     // processor.tsv: its size when the tournament was opened (the lines of the games played before, which the
-    // loader reads), and the file the games played now are appended to.
+    // loader reads), and what measures the games played now and appends them to it.
     std::filesystem::path cpu_path_;
     uint64_t cpu_known_ = 0;
-    std::mutex cpu_mutex_;
-    std::FILE* cpu_file_ = nullptr;
-    bool cpu_failed_     = false;  // could not be opened: not tried again
+    CpuMeter cpu_;
     // The lines of the games played before, by PGN offset, those of the games not counted yet once the first loader
     // is done; loader thread only (one loader at a time).
     bool cpu_read_ = false;

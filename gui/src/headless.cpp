@@ -115,6 +115,50 @@ class ConsoleListener final : public tour::RecordListener {
     std::string out_error_;  // the last pgnOutError() reported
 };
 
+// Without a broadcast there is no observer of the games: this one measures the processor use of their engines, kept in
+// processor.tsv for the window to show when it opens the tournament.
+class CpuObserver final : public fastchess::observer::GameObserver, public tour::RecordListener {
+   public:
+    explicit CpuObserver(const tour::TournamentState& state)
+        : meter_(state.spec().conditions.concurrency, state.dir() / "processor.tsv") {}
+
+    void onGameStart(const fastchess::observer::GameStart& info) override { meter_.gameStart(info.slot); }
+    void onEngineProcesses(int slot, int64_t white_pid, int64_t black_pid) override {
+        meter_.engineProcesses(slot, white_pid, black_pid);
+    }
+    void onThinking(int slot, chess::Color, int64_t) override { meter_.thinking(slot); }
+    void onMove(int slot, chess::Color mover, const fastchess::MoveData&, const std::string&, int64_t,
+                int64_t) override {
+        (void)meter_.moved(slot, mover);
+    }
+    void onGameEnd(int slot, std::size_t, std::size_t, const fastchess::MatchData&, bool counted) override {
+        meter_.gameEnd(slot, counted);
+    }
+    void onRecorded(const tour::GameResult& result, const fastchess::MatchData&,
+                    const std::optional<fastchess::Stats>&) override {
+        meter_.recorded(result);
+    }
+
+   private:
+    CpuMeter meter_;
+};
+
+// Each recorded game to two listeners, in turn.
+class BothListeners final : public tour::RecordListener {
+   public:
+    BothListeners(tour::RecordListener& first, tour::RecordListener& second) : first_(first), second_(second) {}
+
+    void onRecorded(const tour::GameResult& result, const fastchess::MatchData& data,
+                    const std::optional<fastchess::Stats>& pair) override {
+        first_.onRecorded(result, data, pair);
+        second_.onRecorded(result, data, pair);
+    }
+
+   private:
+    tour::RecordListener& first_;
+    tour::RecordListener& second_;
+};
+
 }  // namespace
 
 int runHeadless(const std::string& target, const Storage& storage, const CpuTopology& topology,
@@ -201,8 +245,10 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
     }
     const bool broadcasting = settings.files || settings.tlcs || settings.web || settings.lichess;
 
-    // Broadcasting needs the games in progress: the observer the window uses, read by a thread of its own.
+    // Broadcasting needs the games in progress: the observer the window uses, read by a thread of its own. It also
+    // measures the processor use of the engines; without it, a lighter observer does only that.
     std::unique_ptr<GuiObserver> observer;
+    std::unique_ptr<CpuObserver> cpu_observer;
     Broadcaster broadcaster;
     std::atomic_bool playing{true};
     std::thread broadcast_thread;
@@ -258,11 +304,20 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
         });
     }
 
+    fastchess::observer::GameObserver* games = observer.get();
+    tour::RecordListener* recorder           = observer.get();
+    if (!observer) {
+        cpu_observer = std::make_unique<CpuObserver>(*state);
+        games        = cpu_observer.get();
+        recorder     = cpu_observer.get();
+    }
+    BothListeners listeners(*recorder, listener);
+
     std::signal(SIGINT, onSignal);
     std::signal(SIGTERM, onSignal);
 
     configureFastchess(state->spec());
-    const auto error = playTournament(*state, observer.get(), &listener);
+    const auto error = playTournament(*state, games, &listeners);
     playing          = false;
     if (broadcast_thread.joinable()) broadcast_thread.join();
 
