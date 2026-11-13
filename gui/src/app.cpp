@@ -151,6 +151,10 @@ void App::frame() {
         else if (w == "setup-picker" || w == "setup-suggest") {
             page_        = Page::NewMatch;
             open_picker_ = w == "setup-picker" ? 1 : 2;
+        } else if (w == "setup-book" || w == "setup-book-list") {
+            page_               = Page::NewMatch;
+            open_own_book_      = 0;
+            open_own_book_list_ = w == "setup-book-list";
         } else if (w == "setup-pgn") {
             page_           = Page::NewMatch;
             open_pgn_setup_ = true;

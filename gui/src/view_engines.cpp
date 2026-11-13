@@ -1369,6 +1369,8 @@ bool App::engineInUse(const std::string& name) const {
     if (const auto* t = run_.tournament()) {
         for (const auto& p : t->spec().participants) {
             if (p.engine.name == name) return true;
+            // With a book of its own, it may play as "<engine> (<book>)".
+            if (!p.book.empty() && p.engine.name.rfind(name + " (", 0) == 0) return true;
         }
     }
     return false;

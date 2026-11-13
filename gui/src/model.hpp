@@ -141,6 +141,17 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BookEntry, name, path, descripti
 enum class MatchMode { Fixed = 0, Infinite = 1, Sprt = 2 };
 enum class TournamentFormat { Match = 0, RoundRobin = 1, Gauntlet = 2, Swiss = 3, Knockout = 4 };
 
+// A participant's own opening book: a Polyglot book of the library, which plays for the engine while the game is
+// in it (see tour/book_adapter.hpp). The tournament's openings, if any, come first.
+struct OwnBook {
+    std::string path;  // empty: none, the engine plays every move
+    std::string name;  // the library's name for it when it was chosen: the participant's name tells it apart
+    int depth = 0;     // plies from the start of the game, the opening's included; 0 = the whole book
+
+    [[nodiscard]] bool empty() const noexcept { return path.empty(); }
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(OwnBook, path, name, depth)
+
 // One engine of a round robin or gauntlet, with what it does differently from the others.
 struct ParticipantSetup {
     std::string name;        // engine list entry
@@ -149,8 +160,9 @@ struct ParticipantSetup {
     int time_percent = 100;  // time odds: share of the time control it gets
     uint64_t nodes   = 0;    // fixed nodes: 0 = the common value
     int depth        = 0;    // fixed depth: 0 = the common value
+    OwnBook book     = {};
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ParticipantSetup, name, hash, threads, time_percent, nodes, depth)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ParticipantSetup, name, hash, threads, time_percent, nodes, depth, book)
 enum class LimitKind { Time = 0, Nodes = 1, MoveTime = 2, Depth = 3 };
 // A node count or a depth: the same moves however fast the machine, so no clock to share fairly.
 inline bool clockFree(LimitKind limit) { return limit == LimitKind::Nodes || limit == LimitKind::Depth; }
@@ -162,6 +174,8 @@ struct MatchSetup {
 
     std::string engine_a;  // match: the engine under test, statistics are from its point of view
     std::string engine_b;  // match: the reference
+    OwnBook book_a = {};   // match: their own books
+    OwnBook book_b = {};
 
     std::vector<ParticipantSetup> participants;  // round robin and gauntlet, seeds first
     // Round robin, gauntlet: every pairing is played 2 x cycles times; Swiss: number of rounds; knockout: game
@@ -284,7 +298,7 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
         sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, sprt_draw_ratio, sprt_rms_bias,   \
         limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto, concurrency,   \
         affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out,           \
-        engine_syzygy, engine_ownbook_off
+        engine_syzygy, engine_ownbook_off, book_a, book_b
 #define FCG_MATCH_SETUP_FIELDS_2                                                                                  \
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,    \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,     \

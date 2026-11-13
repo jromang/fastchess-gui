@@ -280,11 +280,43 @@ std::string makeTournamentDirName(const std::string& name) {
     return fmt::format("{}_{}", timestamp(), cleanName(name));
 }
 
+std::vector<ParticipantSetup> setupParticipants(const MatchSetup& setup) {
+    if (setup.format != TournamentFormat::Match) return setup.participants;
+    ParticipantSetup a, b;
+    a.name = setup.engine_a;
+    a.book = setup.book_a;
+    b.name = setup.engine_b;
+    b.book = setup.book_b;
+    return {a, b};
+}
+
+std::string ownBookName(const OwnBook& book) {
+    if (book.empty()) return {};
+    return book.name.empty() ? fs::path(book.path).stem().string() : book.name;
+}
+
+std::string ownBookText(const std::string& name, int depth) {
+    return depth > 0 ? trn("own book {}, {} ply", "own book {}, {} plies", static_cast<uint64_t>(depth), name, depth)
+                     : trf("own book {}, all of it", name);
+}
+
+std::vector<std::string> participantNames(const MatchSetup& setup) {
+    const auto people = setupParticipants(setup);
+    std::vector<std::string> names;
+    for (const auto& p : people) {
+        const auto same = std::count_if(people.begin(), people.end(), [&](const auto& q) { return q.name == p.name; });
+        names.push_back(same > 1 && !p.book.empty() ? fmt::format("{} ({})", p.name, ownBookName(p.book)) : p.name);
+    }
+    return names;
+}
+
 std::string defaultTournamentName(const MatchSetup& setup) {
     const auto n = setup.participants.size();
     switch (setup.format) {
-        case TournamentFormat::Match:
-            return fmt::format("{} vs {}", setup.engine_a, setup.engine_b);
+        case TournamentFormat::Match: {
+            const auto names = participantNames(setup);
+            return fmt::format("{} vs {}", names[0], names[1]);
+        }
         case TournamentFormat::RoundRobin:
             return trf("Round robin, {} engines", n);
         case TournamentFormat::Gauntlet:
@@ -301,19 +333,26 @@ std::string defaultTournamentName(const MatchSetup& setup) {
 
 BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engines, const CpuTopology& topology,
                   const fs::path& run_dir) {
-    // The participants, in order, with their own settings.
+    // The participants, in order, with their own settings, and the names they play under: the same engine may
+    // play twice, with books of its own that tell it apart.
     std::vector<std::pair<const EngineEntry*, ParticipantSetup>> people;
+    const auto names = participantNames(setup);
     if (setup.format == TournamentFormat::Match) {
         const auto* a = findEngine(engines, setup.engine_a);
         const auto* b = findEngine(engines, setup.engine_b);
         if (!a || !b) throw fastchess_exception(TR("Choose two engines (A and B) from the engine list."));
-        people = {{a, {}}, {b, {}}};
+        if (names[0] == names[1])
+            throw fastchess_exception(TR("Choose two different engines, or give them books of their own."));
+        const auto both = setupParticipants(setup);
+        people          = {{a, both[0]}, {b, both[1]}};
     } else {
-        for (const auto& p : setup.participants) {
+        for (std::size_t i = 0; i < setup.participants.size(); ++i) {
+            const auto& p = setup.participants[i];
             const auto* e = findEngine(engines, p.name);
             if (!e) throw fastchess_exception(trf("Unknown engine: {}", p.name));
-            for (const auto& [other, _] : people) {
-                if (other == e) throw fastchess_exception(trf("{} is twice in the list of participants.", p.name));
+            if (std::find(names.begin(), names.begin() + static_cast<std::ptrdiff_t>(i), names[i]) !=
+                names.begin() + static_cast<std::ptrdiff_t>(i)) {
+                throw fastchess_exception(trf("{} is twice in the list of participants.", names[i]));
             }
             people.emplace_back(e, p);
         }
@@ -372,7 +411,8 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     t.concurrency = std::clamp(t.concurrency, 1, topology.logical);
 
     run.engines.clear();
-    for (const auto& [entry, participant] : people) {
+    for (std::size_t i = 0; i < people.size(); ++i) {
+        const auto& [entry, participant] = people[i];
         if (!fs::is_regular_file(entry->cmd)) {
             throw fastchess_exception(trf("The program of {} is not found: {}", entry->name, entry->cmd));
         }
@@ -381,7 +421,22 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         if (setup.chess960 && !entry->uci_options.empty() && !hasOption(*entry, "UCI_Chess960")) {
             throw fastchess_exception(trf("{} does not play Chess960.", entry->name));
         }
+        // Its own book, read now rather than by its first game.
+        if (const auto& book = participant.book; !book.empty()) {
+            if (!tour::isPolyglot(book.path)) {
+                throw fastchess_exception(trf("The book of {} is not a Polyglot book (.bin): {}", names[i], book.path));
+            }
+            if (!fs::is_regular_file(book.path)) {
+                throw fastchess_exception(trf("The book of {} is not found: {}", names[i], book.path));
+            }
+            try {
+                (void)tour::PolyglotBook(book.path);
+            } catch (const std::exception& e) {
+                throw fastchess_exception(e.what());
+            }
+        }
         run.engines.push_back(toConfig(*entry, setup, participant));
+        run.engines.back().name = names[i];
     }
     t.variant = setup.chess960 ? fastchess::VariantType::FRC : fastchess::VariantType::STANDARD;
 
@@ -498,8 +553,10 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     for (std::size_t i = 0; i < run.engines.size(); ++i) {
         tour::Participant p;
         p.id     = static_cast<int>(i);
-        p.engine = run.engines[i];
-        p.elo    = people[i].first->elo;
+        p.engine     = run.engines[i];
+        p.elo        = people[i].first->elo;
+        p.book       = people[i].second.book.path;
+        p.book_depth = std::max(0, people[i].second.book.depth);
         spec.participants.push_back(p);
     }
 

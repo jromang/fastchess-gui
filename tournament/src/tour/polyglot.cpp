@@ -76,6 +76,63 @@ bool isPolyglot(const std::filesystem::path& file) {
     return ext == ".bin";
 }
 
+PolyglotBook::PolyglotBook(const std::filesystem::path& file) : in_(file, std::ios::binary) {
+    if (!in_) throw std::runtime_error(fmt::format("cannot read the Polyglot book {}", file.string()));
+    in_.seekg(0, std::ios::end);
+    const auto size = static_cast<uint64_t>(std::max<std::streamoff>(0, in_.tellg()));
+    if (size < 16 || size % 16 != 0) throw std::runtime_error(fmt::format("{} is no Polyglot book", file.string()));
+    count_ = size / 16;
+}
+
+std::vector<PolyglotBook::Choice> PolyglotBook::moves(const chess::Board& board) {
+    const auto key = board.hash();
+    const auto at  = [&](uint64_t i) {
+        unsigned char raw[16];
+        in_.clear();
+        in_.seekg(static_cast<std::streamoff>(i * 16));
+        if (!in_.read(reinterpret_cast<char*>(raw), sizeof(raw))) return Entry{~uint64_t{0}};
+        return Entry{bigEndian(raw, 8), static_cast<uint16_t>(bigEndian(raw + 8, 2)),
+                     static_cast<uint16_t>(bigEndian(raw + 10, 2))};
+    };
+
+    // The first entry of the key.
+    uint64_t lo = 0, hi = count_;
+    while (lo < hi) {
+        const auto mid = lo + (hi - lo) / 2;
+        if (at(mid).key < key) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
+    }
+
+    std::vector<Choice> out;
+    for (auto i = lo; i < count_; ++i) {
+        const auto e = at(i);
+        if (e.key != key) break;
+        if (e.weight == 0) continue;
+        const auto move = decode(board, e.move);
+        if (move != chess::Move::NO_MOVE) out.push_back({move, e.weight});
+    }
+    return out;
+}
+
+chess::Move PolyglotBook::pick(const chess::Board& board, std::mt19937_64& rng) {
+    const auto choices = moves(board);
+    uint64_t total     = 0;
+    for (const auto& c : choices) total += c.weight;
+    if (total == 0) return chess::Move::NO_MOVE;
+
+    // Not std::uniform_int_distribution, which each standard library implements its own way: the same seed gives
+    // the same choices everywhere. The bias of the modulo is far below what a game could show.
+    auto n = rng() % total;
+    for (const auto& c : choices) {
+        if (n < c.weight) return c.move;
+        n -= c.weight;
+    }
+    return choices.back().move;
+}
+
 std::vector<std::string> polyglotPositions(const std::filesystem::path& file, const PolyglotWalk& walk) {
     const auto entries = readBook(file);
     if (entries.empty()) throw std::runtime_error(fmt::format("the Polyglot book {} is empty", file.string()));

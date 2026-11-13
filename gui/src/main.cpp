@@ -28,6 +28,7 @@
 #include <fmt/include/fmt/format.h>
 #include <core/config/config.hpp>
 #include <engine/uci_engine.hpp>
+#include <tour/book_adapter.hpp>
 
 #include "app.hpp"
 #include "console.hpp"
@@ -188,7 +189,7 @@ int fatal(const std::string& what) {
     return 1;
 }
 
-// This program's own path, to start it again as the WinBoard adapter.
+// This program's own path, to start it again as the WinBoard adapter or the book adapter.
 std::string selfPath(const char* argv0) {
 #ifdef _WIN32
     char buffer[MAX_PATH];
@@ -220,10 +221,15 @@ int main(int argc, char** argv) {
     if (argc >= 2 && std::string_view(argv[1]) == "--wb2uci") {
         return fcg::wb2uci::run(std::vector<std::string>(argv + 2, argv + argc));
     }
+    // An engine with a book of its own: the same, the book's moves answered by the adapter.
+    if (argc >= 2 && std::string_view(argv[1]) == "--book-adapter") {
+        return fcg::tour::runBookAdapter(std::vector<std::string>(argv + 2, argv + argc));
+    }
 
     const auto args = parseArgs(argc, argv);
     fcg::Console::instance().attach();
     fastchess::engine::xboard_adapter = selfPath(argc > 0 ? argv[0] : "");
+    fcg::tour::book_adapter           = fastchess::engine::xboard_adapter;
 
     // Engine probes read timeouts from the global configuration before any run exists.
     fastchess::config::TournamentConfig               = std::make_unique<fastchess::config::Tournament>();

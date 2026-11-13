@@ -165,7 +165,14 @@ std::vector<uint64_t> specHashes(const tour::TournamentSpec& spec, const std::ve
             if (k == "Hash") hash = number(v), given = true;
         }
         if (!given) {
-            if (const auto* entry = findEngine(engines, p.engine.name)) hash = ownHash(*entry);
+            // With a book of its own, it may play as "<engine> (<book>)".
+            const auto& name  = p.engine.name;
+            const auto* entry = findEngine(engines, name);
+            for (auto paren = name.find(" ("); !entry && !p.book.empty() && paren != std::string::npos;
+                 paren      = name.find(" (", paren + 1)) {
+                entry = findEngine(engines, name.substr(0, paren));
+            }
+            if (entry) hash = ownHash(*entry);
         }
         hashes.push_back(hash);
     }

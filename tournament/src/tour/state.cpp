@@ -5,11 +5,13 @@
 #include <cstdio>
 #include <fstream>
 #include <stdexcept>
+#include <tuple>
 
 #include <game/pgn/pgn_builder.hpp>
 
 #include <fmt/include/fmt/format.h>
 
+#include "book_adapter.hpp"
 #include "engine_text.hpp"
 #include "pairing.hpp"
 
@@ -822,6 +824,16 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
     // As the engines read them; the spec keeps the UTF-8.
     task.white.options = forEngine(std::move(task.white.options));
     task.black.options = forEngine(std::move(task.black.options));
+    // A book of its own: the engine plays through the book adapter, its seed drawn from the tournament's. The
+    // same for all its games, as fastchess keeps an engine's process (and the configuration it started with)
+    // from game to game.
+    const auto own_book = [&](fastchess::EngineConfiguration& config, const Participant& p) {
+        if (p.book.empty()) return;
+        const auto seed = spec_.conditions.seed ^ (0x9e3779b97f4a7c15ULL * static_cast<uint64_t>(p.id + 1));
+        config          = throughBookAdapter(std::move(config), p.book, p.book_depth, seed);
+    };
+    own_book(task.white, game == 0 ? *first : *second);
+    own_book(task.black, game == 0 ? *second : *first);
     return task;
 }
 
@@ -883,12 +895,35 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
         for (const auto& w : data.moves[ply].pv_warnings) result.pv_warnings.emplace_back(ply, w);
     }
 
+    // The moves the participants' own books played are book moves in the PGN, as those of the opening are. The
+    // books are read without the lock.
+    std::vector<std::tuple<chess::Color, std::string, int>> books;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        for (const auto& [id, side] :
+             {std::pair{result.white, chess::Color::WHITE}, std::pair{result.black, chess::Color::BLACK}}) {
+            const auto* p = spec_.participant(id);
+            if (p && !p->book.empty()) books.emplace_back(side, p->book, p->book_depth);
+        }
+    }
+    std::optional<fastchess::MatchData> marked;
+    for (const auto& [side, file, depth] : books) {
+        try {
+            PolyglotBook book(file);
+            if (!marked) marked = data;
+            markOwnBookMoves(*marked, side, book, depth, frc());
+        } catch (const std::exception&) {
+            // The book is gone: its moves keep the comments of moves the engine made.
+        }
+    }
+    const auto& game = marked ? *marked : data;
+
     std::unique_lock<std::mutex> lock(mutex_);
-    const auto elo     = [&](int id) { return spec_.participant(id) ? spec_.participant(id)->elo : 0; };
-    const auto text    = withElo(PgnBuilder(pgn_config, data, round, CommentStyle::Fastchess).get(), elo(result.white),
-                                 elo(result.black));
-    const auto text_cb = withElo(PgnBuilder(pgn_config, data, round, CommentStyle::ChessBase).get(), elo(result.white),
-                                 elo(result.black));
+    const auto elo      = [&](int id) { return spec_.participant(id) ? spec_.participant(id)->elo : 0; };
+    const auto text     = withElo(PgnBuilder(pgn_config, game, round, CommentStyle::Fastchess).get(), elo(result.white),
+                                  elo(result.black));
+    const auto text_cb  = withElo(PgnBuilder(pgn_config, game, round, CommentStyle::ChessBase).get(), elo(result.white),
+                                  elo(result.black));
     const auto unwanted = [&]() -> std::optional<Recorded> {
         // Already played, or no longer to be played (its participant was withdrawn meanwhile). It may have been the
         // last game the tournament was waiting for.

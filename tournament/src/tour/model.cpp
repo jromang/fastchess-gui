@@ -15,6 +15,10 @@ void to_json(nlohmann::json& j, const Participant& p) {
     if (p.replaced_by) j["replaced_by"] = *p.replaced_by;
     if (p.program.size > 0) j["program"] = p.program;
     if (p.elo > 0) j["elo"] = p.elo;
+    if (!p.book.empty()) {
+        j["book"] = p.book;
+        if (p.book_depth > 0) j["book_depth"] = p.book_depth;
+    }
 }
 
 void from_json(const nlohmann::json& j, Participant& p) {
@@ -23,7 +27,9 @@ void from_json(const nlohmann::json& j, Participant& p) {
     p.active = j.value("active", true);
     if (j.contains("replaced_by")) p.replaced_by = j.at("replaced_by").get<int>();
     if (j.contains("program")) j.at("program").get_to(p.program);
-    p.elo = j.value("elo", 0);
+    p.elo        = j.value("elo", 0);
+    p.book       = j.value("book", std::string());
+    p.book_depth = j.value("book_depth", 0);
 }
 
 FileFingerprint fingerprint(const std::string& file) {

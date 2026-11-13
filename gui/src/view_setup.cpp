@@ -1,6 +1,7 @@
 // The "Setup" window: everything a run is started with.
 
 #include <imgui.h>
+#include <imgui_internal.h>  // ImHashStr: a combo opened for a screenshot
 #include <implot.h>
 
 #include <fmt/include/fmt/format.h>
@@ -99,7 +100,98 @@ bool engineCombo(const char* id, std::string& value, const std::vector<EngineEnt
     return changed;
 }
 
+std::string ownBookText(const OwnBook& book) { return fcg::ownBookText(ownBookName(book), book.depth); }
+
 }  // namespace
+
+bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again, bool open) {
+    bool changed = false;
+    ImGui::PushID(id);
+
+    // A book icon, then the book's name and depth, cut to the button.
+    std::string label = book.empty() ? std::string("—") : ownBookName(book);
+    if (!book.empty() && book.depth > 0) label += fmt::format(" · {}", book.depth);
+    if (ImGui::Button("##own_book", ImVec2(width, 0)) || open) {
+        ImGui::OpenPopup("own_book_popup");
+    }
+    {
+        const auto& style   = ImGui::GetStyle();
+        const float h       = ImGui::GetFrameHeight();
+        const float icon_sz = h * 0.42f;
+        const ImVec2 p0     = ImGui::GetItemRectMin();
+        const ImVec2 p1     = ImGui::GetItemRectMax();
+        auto* dl            = ImGui::GetWindowDrawList();
+        const ImU32 col     = ImGui::GetColorU32(book.empty() ? ImGuiCol_TextDisabled : ImGuiCol_Text);
+        ui::drawIcon(dl, ui::Icon::Book, ImVec2(p0.x + style.FramePadding.x + icon_sz * 0.5f, p0.y + h * 0.5f), icon_sz,
+                     col);
+        const float text_x = p0.x + style.FramePadding.x + icon_sz + style.ItemInnerSpacing.x;
+        dl->PushClipRect(ImVec2(text_x, p0.y), ImVec2(p1.x - style.FramePadding.x, p1.y), true);
+        dl->AddText(ImVec2(text_x, p0.y + style.FramePadding.y), col, label.c_str());
+        dl->PopClipRect();
+    }
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+        ImGui::SetTooltip("%s", book.empty() ? TR("No book of its own: the engine plays every move. Click to give it "
+                                                  "one.")
+                                             : fmt::format("{}\n{}", ownBookText(book), book.path).c_str());
+    }
+
+    // Under the button, also when it was opened without a click.
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y), ImGuiCond_Appearing);
+    if (ImGui::BeginPopup("own_book_popup")) {
+        ImGui::TextDisabled("%s", TR("Its own opening book"));
+        if (std::exchange(open_own_book_list_, false)) {
+            ImGui::OpenPopup(ImHashStr("##ComboPopup", 0, ImGui::GetID("##own_book_combo")));
+        }
+        ImGui::SetNextItemWidth(px(260));
+        if (ImGui::BeginCombo("##own_book_combo", book.empty() ? TR("None") : ownBookName(book).c_str())) {
+            if (ImGui::Selectable(TR("None"), book.empty())) {
+                book    = {};
+                changed = true;
+            }
+            for (const auto& b : books_) {
+                // Only Polyglot books give a move for any position; the others are openings for the tournament.
+                const bool polyglot = tour::isPolyglot(b.path);
+                ImGui::BeginDisabled(!polyglot);
+                if (ImGui::Selectable(b.name.c_str(), b.path == book.path) && polyglot) {
+                    book.path = b.path;
+                    book.name = b.name;
+                    changed   = true;
+                }
+                ImGui::EndDisabled();
+                if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_AllowWhenDisabled)) {
+                    ImGui::SetTooltip("%s", polyglot ? (b.description.empty() ? b.path : b.description).c_str()
+                                                     : TR("Not a Polyglot book (.bin): it gives the tournament its "
+                                                          "openings, it cannot play for an engine."));
+                }
+            }
+            if (std::none_of(books_.begin(), books_.end(), [](const auto& b) { return tour::isPolyglot(b.path); })) {
+                ImGui::TextDisabled("%s", TR("No Polyglot book (.bin) in the library: add one in the Books window."));
+            }
+            ImGui::EndCombo();
+        }
+
+        ImGui::BeginDisabled(book.empty());
+        ImGui::SetNextItemWidth(px(260));
+        if (ImGui::SliderInt(TR("Depth"), &book.depth, 0, 60, book.depth > 0 ? TR("%d plies") : TR("all"),
+                             ImGuiSliderFlags_AlwaysClamp)) {
+            changed = true;
+        }
+        ImGui::EndDisabled();
+        ImGui::TextDisabled("%s", TR("Plies from the start of the game, the tournament's opening included."));
+        ImGui::TextDisabled("%s", TR("Its book moves are played at once, without a search."));
+
+        if (again) {
+            ImGui::Separator();
+            if (ImGui::Button(TR("This engine once more, with another book"))) {
+                *again = true;
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::EndPopup();
+    }
+    ImGui::PopID();
+    return changed;
+}
 
 void App::drawSetup(bool two_columns, bool with_summary) {
     if (!ui::beginPanel(TR("Setup###setup"))) {
@@ -150,17 +242,28 @@ void App::drawSetup(bool two_columns, bool with_summary) {
 void App::setupEngines() {
     if (!ImGui::CollapsingHeader(TR("Engines###sec_engines"), ImGuiTreeNodeFlags_DefaultOpen)) return;
 
+    // Each with its book, if it has one of its own: the same engine may then play both sides.
+    const float swap_w  = ImGui::GetFrameHeight() * 1.6f;
+    const float book_w  = px(150);
+    const float spacing = ImGui::GetStyle().ItemSpacing.x;
     ui::label(TR("A (tested)"), labelWidth() * 0.75f);
-    if (engineCombo("##engine_a", setup_.engine_a, engines_)) saveSetupSoon();
+    if (engineCombo("##engine_a", setup_.engine_a, engines_,
+                    ImGui::GetContentRegionAvail().x - book_w - swap_w - 2 * spacing))
+        saveSetupSoon();
+    ImGui::SameLine();
+    if (ownBookButton("book_a", setup_.book_a, book_w, nullptr, std::exchange(open_own_book_, -1) == 0))
+        saveSetupSoon();
 
     ui::label(TR("B (baseline)"), labelWidth() * 0.75f);
-    const float swap_w = ImGui::GetFrameHeight() * 1.6f;
     if (engineCombo("##engine_b", setup_.engine_b, engines_,
-                    ImGui::GetContentRegionAvail().x - swap_w - ImGui::GetStyle().ItemSpacing.x))
+                    ImGui::GetContentRegionAvail().x - book_w - swap_w - 2 * spacing))
         saveSetupSoon();
+    ImGui::SameLine();
+    if (ownBookButton("book_b", setup_.book_b, book_w)) saveSetupSoon();
     ImGui::SameLine();
     if (ui::iconButton("swap", ui::Icon::Swap, "")) {
         std::swap(setup_.engine_a, setup_.engine_b);
+        std::swap(setup_.book_a, setup_.book_b);
         saveSetupSoon();
     }
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Swap A and B"));
@@ -799,9 +902,11 @@ void App::setupParticipants() {
     const bool depth     = setup_.limit == LimitKind::Depth;
     constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit;
     const float small    = 70.0f * ImGui::GetFontSize() / 16.0f;
-    int remove = -1, up = -1;
+    int remove = -1, up = -1, again = -1;
+    const auto names   = participantNames(setup_);
+    const float book_w = small * 2.2f;
 
-    if (!list.empty() && ImGui::BeginTable("##participants", 7, flags)) {
+    if (!list.empty() && ImGui::BeginTable("##participants", 8, flags)) {
         ImGui::TableSetupColumn("#");
         ImGui::TableSetupColumn(TR("Engine"), ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn(TR("Hash"), ImGuiTableColumnFlags_WidthFixed, small);
@@ -810,6 +915,7 @@ void App::setupParticipants() {
                                 : depth ? TR("Depth")
                                         : TR("Time %"),
                                 ImGuiTableColumnFlags_WidthFixed, nodes ? small * 1.5f : small);
+        ImGui::TableSetupColumn(TR("Book"), ImGuiTableColumnFlags_WidthFixed, book_w);
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableHeadersRow();
@@ -830,14 +936,22 @@ void App::setupParticipants() {
             }
             ImGui::TableNextColumn();
             ImGui::AlignTextToFramePadding();
-            if (ImGui::Selectable(p.name.c_str(), selected_participant_ == static_cast<int>(i), 0,
-                                  ImVec2(ImGui::CalcTextSize(p.name.c_str()).x, 0)))
+            // The name it plays under: the engine's, with its book's when the engine plays more than once.
+            const auto& name = names[i];
+            if (ImGui::Selectable(name.c_str(), selected_participant_ == static_cast<int>(i), 0,
+                                  ImVec2(ImGui::CalcTextSize(name.c_str()).x, 0)))
                 selected_participant_ = selected_participant_ == static_cast<int>(i) ? -1 : static_cast<int>(i);
             if (std::none_of(engines_.begin(), engines_.end(),
                              [&](const EngineEntry& e) { return e.name == p.name; })) {
                 ImGui::SameLine();
                 ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
                 ImGui::TextUnformatted(TR("(not in the engine list)"));
+                ImGui::PopStyleColor();
+            } else if (std::find(names.begin(), names.begin() + static_cast<std::ptrdiff_t>(i), name) !=
+                       names.begin() + static_cast<std::ptrdiff_t>(i)) {
+                ImGui::SameLine();
+                ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+                ImGui::TextUnformatted(TR("(twice: give it another book)"));
                 ImGui::PopStyleColor();
             }
             ImGui::TableNextColumn();
@@ -870,6 +984,12 @@ void App::setupParticipants() {
                 changed        = true;
             }
             ImGui::TableNextColumn();
+            bool once_more       = false;
+            const bool open_book = open_own_book_ == static_cast<int>(i);
+            if (open_book) open_own_book_ = -1;
+            changed |= ownBookButton("book", p.book, -FLT_MIN, &once_more, open_book);
+            if (once_more) again = static_cast<int>(i);
+            ImGui::TableNextColumn();
             ImGui::BeginDisabled(i == 0);
             if (ImGui::SmallButton("^")) up = static_cast<int>(i);
             ImGui::EndDisabled();
@@ -898,6 +1018,16 @@ void App::setupParticipants() {
             selected = top ? 0 : static_cast<int>(list.size()) - 1;
             changed  = true;
         }
+    }
+
+    // The same engine below it, its settings without the book, whose popup opens for the other book.
+    if (again >= 0) {
+        auto copy = list[again];
+        copy.book = {};
+        list.insert(list.begin() + again + 1, copy);
+        selected       = selected > again ? selected + 1 : selected;
+        open_own_book_ = again + 1;
+        changed        = true;
     }
 
     if (remove >= 0) {
@@ -1027,9 +1157,13 @@ void App::drawSetupSummary() {
         ImGui::SameLine();
         ImGui::TextWrapped("%s", text.c_str());
     };
+    const auto names_played = participantNames(setup_);
     if (setup_.format == TournamentFormat::Match) {
-        check(!setup_.engine_a.empty() && !setup_.engine_b.empty() && setup_.engine_a != setup_.engine_b,
-              TR("Two different engines chosen"));
+        // The same engine on both sides is two participants when a book of its own tells one from the other.
+        const bool apart = names_played[0] != names_played[1];
+        check(!setup_.engine_a.empty() && !setup_.engine_b.empty() && apart,
+              setup_.engine_a == setup_.engine_b && apart ? std::string(TR("The same engine, with different books"))
+                                                          : std::string(TR("Two different engines chosen")));
     } else {
         check(n >= 2, trn("{} engine", "{} engines", n, n));
     }
@@ -1104,6 +1238,15 @@ void App::drawSetupSummary() {
         if (setup_.format != TournamentFormat::Match && setup_.limit == LimitKind::Depth && p.depth > 0) {
             check(true, trf("{} searches to depth {}", p.name, p.depth));
         }
+    }
+    // The participants with a book of their own: "Alpha: own book A, 12 plies".
+    const auto people = fcg::setupParticipants(setup_);
+    for (std::size_t i = 0; i < people.size(); ++i) {
+        const auto& book = people[i].book;
+        if (book.empty()) continue;
+        const bool found = std::filesystem::is_regular_file(book.path);
+        check(found, found ? fmt::format("{}: {}", names_played[i], ownBookText(book))
+                           : trf("{}: its book is not found: {}", names_played[i], book.path));
     }
     ui::endCard();
 }

@@ -41,6 +41,9 @@ msgstr "%.1f пешки"
 msgid "%d games × %d threads > %d available threads."
 msgstr "Партий × потоков: %d × %d > доступных потоков: %d."
 
+msgid "%d plies"
+msgstr "полуходов: %d"
+
 msgid "%s  vs  %s"
 msgstr "%s  против  %s"
 
@@ -61,6 +64,9 @@ msgstr "(нет в списке движков)"
 
 msgid "(the same)"
 msgstr "(без изменений)"
+
+msgid "(twice: give it another book)"
+msgstr "(дважды: дайте ему другую книгу)"
 
 msgid "(withdrawn)"
 msgstr "(снят)"
@@ -508,6 +514,9 @@ msgstr "Выберите хотя бы два движка."
 
 msgid "Choose engines A and B."
 msgstr "Выберите движки A и B."
+
+msgid "Choose two different engines, or give them books of their own."
+msgstr "Выберите два разных движка или дайте им собственные книги."
 
 msgid "Choose two engines (A and B) from the engine list."
 msgstr "Выберите два движка (A и B) из списка движков."
@@ -1103,6 +1112,9 @@ msgstr "Начнётся, как только будут прочитаны оп
 msgid "It starts once the test suite ends (or is stopped)."
 msgstr "Начнётся, как только тестовый набор завершится (или будет остановлен)."
 
+msgid "Its book moves are played at once, without a search."
+msgstr "Ходы из его книги делаются сразу, без поиска."
+
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr "Его карточка в «Рейтингах»: результаты, надёжность и рейтинг по всем турнирам."
 
@@ -1114,6 +1126,9 @@ msgstr "Его уже сыгранные партии перестают учи�
 
 msgid "Its games stop counting and are played again by the new engine."
 msgstr "Его партии перестают учитываться и переигрываются новым движком."
+
+msgid "Its own opening book"
+msgstr "Собственная дебютная книга"
 
 msgid "Its path is in the clipboard."
 msgstr "Его путь скопирован в буфер обмена."
@@ -1274,8 +1289,14 @@ msgstr "Файлы PGN не импортированы."
 msgid "No PVs: turn on pv in the PGN options of the setup."
 msgstr "Нет PV: включите pv в параметрах PGN в настройке."
 
+msgid "No Polyglot book (.bin) in the library: add one in the Books window."
+msgstr "В библиотеке нет книги Polyglot (.bin): добавьте её в окне «Книги»."
+
 msgid "No book"
 msgstr "Без книги"
+
+msgid "No book of its own: the engine plays every move. Click to give it one."
+msgstr "Нет собственной книги: движок делает все ходы сам. Нажмите, чтобы дать ему книгу."
 
 msgid "No book yet. Click Add."
 msgstr "Книг пока нет. Нажмите «Добавить»."
@@ -1363,6 +1384,9 @@ msgstr "Ни одного из этих движков нет в библиот�
 
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "Elo в нормализованной шкале (fishtest, OpenBench), с интервалом 95 %."
+
+msgid "Not a Polyglot book (.bin): it gives the tournament its openings, it cannot play for an engine."
+msgstr "Не книга Polyglot (.bin): она даёт турниру дебюты и не может играть за движок."
 
 msgid "Not checked"
 msgstr "Не проверен"
@@ -1591,6 +1615,9 @@ msgstr "Полуходы"
 
 msgid "Plies (PGN)"
 msgstr "Полуходы (PGN)"
+
+msgid "Plies from the start of the game, the tournament's opening included."
+msgstr "Полуходы от начала партии, включая дебют турнира."
 
 msgid "Plies since the last capture or pawn move; 100 is a draw."
 msgstr "Полуходы после последнего взятия или хода пешкой; 100 — ничья."
@@ -2123,6 +2150,12 @@ msgstr "Счётчик 50 ходов, материал и оставшиеся �
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "По стандарту PGN это комментарии. fastchess-gui 0.4.13 и более ранние версии читали их как ходы и могли играть некоторые дебюты этой книги из неверной позиции, часто из начальной."
 
+msgid "The book of {} is not a Polyglot book (.bin): {}"
+msgstr "Книга {} не является книгой Polyglot (.bin): {}"
+
+msgid "The book of {} is not found: {}"
+msgstr "Книга {} не найдена: {}"
+
 msgid "The change was undone."
 msgstr "Изменение отменено."
 
@@ -2246,6 +2279,9 @@ msgstr "Рейтинг выбранных движков после каждог
 msgid "The read of {} is interrupted for the start: it is done again later."
 msgstr "Чтение {} прервано для запуска: оно будет повторено позже."
 
+msgid "The same engine, with different books"
+msgstr "Один и тот же движок с разными книгами"
+
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
 msgstr "Тот же матч с новым движком A, например следующей версией: все остальные настройки сохраняются."
 
@@ -2302,6 +2338,9 @@ msgstr "Они не играли друг с другом."
 
 msgid "This draw ratio and this RMS bias are not compatible."
 msgstr "Эта доля ничьих и это RMS-смещение несовместимы."
+
+msgid "This engine once more, with another book"
+msgstr "Этот движок ещё раз, с другой книгой"
 
 msgid "This match is already finished."
 msgstr "Этот матч уже завершён."
@@ -2525,6 +2564,9 @@ msgstr "против"
 msgid "against {}"
 msgstr "против {}"
 
+msgid "all"
+msgstr "вся"
+
 msgid "and {} more"
 msgstr "и ещё {}"
 
@@ -2641,6 +2683,15 @@ msgstr "normalized: границы в nElo (fishtest, OpenBench). logistic: кл
 
 msgid "opponents within ±"
 msgstr "соперников в пределах ±"
+
+msgid "own book {}, all of it"
+msgstr "собственная книга {}, целиком"
+
+msgid "own book {}, {} ply"
+msgid_plural "own book {}, {} plies"
+msgstr[0] "собственная книга {}, {} полуход"
+msgstr[1] "собственная книга {}, {} полухода"
+msgstr[2] "собственная книга {}, {} полуходов"
 
 msgid "pairs"
 msgstr "пары"
@@ -3103,6 +3154,9 @@ msgstr "{}-фигурные таблицы Syzygy для {} из {} движко
 
 msgid "{}: decision"
 msgstr "{}: время решения"
+
+msgid "{}: its book is not found: {}"
+msgstr "{}: его книга не найдена: {}"
 
 msgid "{}: program not found ({})"
 msgstr "{}: программа не найдена ({})"

@@ -139,6 +139,21 @@ void interruptEngineProcesses();
 // The tournament's name when the user gave none: "A vs B", "Round robin, 8 engines"...
 [[nodiscard]] std::string defaultTournamentName(const MatchSetup& setup);
 
+// The participants of a setup in order, with their own settings: A and B of a match (with their books), the list
+// otherwise.
+[[nodiscard]] std::vector<ParticipantSetup> setupParticipants(const MatchSetup& setup);
+
+// A participant's own book as the setup shows it: the library's name for it, else its file's name; empty when none.
+[[nodiscard]] std::string ownBookName(const OwnBook& book);
+
+// "own book A, 12 plies" ("own book A, all of it" for depth 0), for the summary and the tooltips.
+[[nodiscard]] std::string ownBookText(const std::string& name, int depth);
+
+// The names the participants of `setup` play under, in the PGN files, the standings and the ratings: the engine's,
+// or, for one with a book of its own whose engine plays more than once, "<engine> (<book>)". Not necessarily
+// distinct: buildRun() refuses a setup whose names are not.
+[[nodiscard]] std::vector<std::string> participantNames(const MatchSetup& setup);
+
 // Owns the thread a tournament runs on, and the tournament's state. Only one run exists at a time, because
 // fastchess keeps its configuration and stop flag in globals.
 class RunController {

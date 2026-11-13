@@ -357,6 +357,12 @@ class App {
     } picker_;
     int open_picker_ = 0;  // --focus setup-picker: 1 the picker opens, 2 with opponents suggested
     int selected_participant_ = -1;  // clicked in the list, for Ctrl+Up and Ctrl+Down
+    // A participant's own book: a small button ("—", or the book's name) that opens the choice of the library's
+    // Polyglot books and of the depth. True when `book` changed; `again` (when given) is set when the user asked
+    // for the engine once more, with another book.
+    bool ownBookButton(const char* id, OwnBook& book, float width, bool* again = nullptr, bool open = false);
+    int open_own_book_       = -1;     // the participant whose book popup opens: --focus setup-book, a copy just added
+    bool open_own_book_list_ = false;  // --focus setup-book-list: with its list of books open
     void drawSetupSummary();
     void drawTemplates();
     void setupEngines();
