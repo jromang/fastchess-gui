@@ -121,9 +121,8 @@ bool readyBefore(Handle fd, bool write, Clock::time_point deadline, const std::a
     return false;
 }
 
-// A non-blocking connect under way: true once it succeeded, false when it failed, or did not end in time.
-bool connected(Handle fd, Clock::time_point deadline, const std::atomic_bool* stopping) {
-    if (!readyBefore(fd, true, deadline, nullptr, stopping)) return false;
+// A non-blocking connect that ended (its socket ready to write): whether it succeeded.
+bool connectSucceeded(Handle fd) {
     int code    = 0;
     SockLen len = sizeof(code);
     return getsockopt(fd, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>(&code), &len) == 0 && code == 0;
@@ -358,7 +357,7 @@ std::optional<Handle> connectTo(uint32_t ip, uint16_t port, int timeout_ms) {
         // Bounded: on Windows, a connection refused, even on this machine, is told after two seconds or so.
         setBlocking(fd, false);
         ok = ::connect(fd, reinterpret_cast<const sockaddr*>(&a), sizeof(a)) == 0;
-        if (!ok && connecting()) ok = connected(fd, Clock::now() + std::chrono::milliseconds(timeout_ms), nullptr);
+        if (!ok && connecting()) ok = ready(fd, true, timeout_ms) && connectSucceeded(fd);
         setBlocking(fd, true);
     }
     if (!ok) {
@@ -389,8 +388,11 @@ std::optional<Handle> connectHost(const std::string& host, const std::string& po
         setBlocking(fd, false);
         bool ok = ::connect(fd, p->ai_addr, static_cast<SockLen>(p->ai_addrlen)) == 0;
         if (!ok && connecting()) {
-            ok = connected(fd, deadline, stopping);
-            if (!ok && Clock::now() >= deadline) error = "no answer from " + host + " in time";
+            if (readyBefore(fd, true, deadline, nullptr, stopping)) {
+                ok = connectSucceeded(fd);
+            } else if (!stopping || !*stopping) {
+                error = "no answer from " + host + " in time";
+            }
         }
         if (stopping && *stopping) {
             closeHandle(fd);
