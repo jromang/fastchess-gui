@@ -572,6 +572,53 @@ double TournamentState::pairPoints(int a, int b, uint32_t round) const {
     return points;
 }
 
+namespace {
+
+bool between(const Encounter& e, int a, int b) {
+    return (e.first == a && e.second == b) || (e.first == b && e.second == a);
+}
+
+}  // namespace
+
+int TournamentState::tiebreaks(int a, int b) const {
+    int n           = 0;
+    const auto size = schedule_.size().value_or(0);
+    for (uint32_t e = 0; e < size; ++e) {
+        const auto enc = schedule_.at(e);
+        if (enc->round == round_ && between(*enc, a, b) &&
+            enc->cycle > static_cast<uint32_t>(std::max(1, spec_.cycles))) {
+            ++n;
+        }
+    }
+    return n;
+}
+
+bool TournamentState::placeOver(int a, int b) const {
+    const auto size = schedule_.size().value_or(0);
+    for (uint32_t e = 0; e < size; ++e) {
+        const auto enc = schedule_.at(e);
+        if (enc->round != round_ || !between(*enc, a, b)) continue;
+        for (int g = 0; g < 2; ++g) {
+            const auto n = uint64_t{e} * 2 + g;
+            if (!done_.count(n) && !dropped_.count(n)) return false;
+        }
+    }
+    return true;
+}
+
+std::optional<int> TournamentState::placeWinner(int a, int b) const {
+    const double sa = pairPoints(a, b, round_), sb = pairPoints(b, a, round_);
+    if (sa != sb) return sa > sb ? a : b;
+    if (tiebreaks(a, b) < 10) return std::nullopt;
+
+    // Ten tiebreaks without a winner: the higher seed goes through.
+    const auto seed = [&](int id) {
+        const auto& ps = spec_.participants;
+        return std::find_if(ps.begin(), ps.end(), [&](const Participant& p) { return p.id == id; }) - ps.begin();
+    };
+    return seed(a) <= seed(b) ? a : b;
+}
+
 void TournamentState::pairIfReady() {
     if (!pairedAsItGoes(spec_.format) || finished_ || !journal_) return;
 
@@ -625,10 +672,6 @@ void TournamentState::pairIfReady() {
         event["bracket"]   = pairing.bracket;
     } else {
         // Who won each place of the round; tied matches get another pair of games first, all at once.
-        const auto seed = [&](int id) {
-            const auto& ps = spec_.participants;
-            return std::find_if(ps.begin(), ps.end(), [&](const Participant& p) { return p.id == id; }) - ps.begin();
-        };
         std::vector<int> winners;
         bool tiebreak_added = false;
         for (const auto& place : brackets_[round_]) {
@@ -637,30 +680,15 @@ void TournamentState::pairIfReady() {
                 continue;
             }
             const int a = place[0], b = place[1];
-            const double sa = pairPoints(a, b, round_), sb = pairPoints(b, a, round_);
-            if (sa == sb) {
-                int tiebreaks = 0;
-                for (uint32_t e = 0; e < size; ++e) {
-                    const auto enc     = schedule_.at(e);
-                    const bool between = (enc->first == a && enc->second == b) || (enc->first == b && enc->second == a);
-                    if (enc->round == round_ && between &&
-                        enc->cycle > static_cast<uint32_t>(std::max(1, spec_.cycles))) {
-                        ++tiebreaks;
-                    }
-                }
-                // Ten tiebreaks without a winner: the higher seed goes through.
-                if (tiebreaks < 10) {
-                    const nlohmann::json tiebreak = {
-                        {"t", "tiebreak_added"}, {"round", round_}, {"pair", {a, b}}, {"index", tiebreaks + 1}};
-                    journal_->append(tiebreak);
-                    applyRoundEvent(tiebreak);
-                    tiebreak_added = true;
-                    continue;
-                }
-                winners.push_back(seed(a) <= seed(b) ? a : b);
+            if (const auto winner = placeWinner(a, b)) {
+                winners.push_back(*winner);
                 continue;
             }
-            winners.push_back(sa > sb ? a : b);
+            const nlohmann::json tiebreak = {
+                {"t", "tiebreak_added"}, {"round", round_}, {"pair", {a, b}}, {"index", tiebreaks(a, b) + 1}};
+            journal_->append(tiebreak);
+            applyRoundEvent(tiebreak);
+            tiebreak_added = true;
         }
         if (tiebreak_added) return;      // the round goes on
         if (winners.size() < 2) return;  // the final is over
@@ -1239,7 +1267,11 @@ std::set<std::string> TournamentState::enginesLeft() const {
         if (p.active) active.insert(p.id);
     }
 
-    if (!finished_ && schedule_.editable()) {
+    // The last round of a Swiss is paired: no encounter will be added, its schedule is known as a round robin's is.
+    const bool last_swiss_round =
+        spec_.format == Format::Swiss && round_ > 0 && round_ >= static_cast<uint32_t>(spec_.rounds);
+
+    if (!finished_ && (schedule_.editable() || last_swiss_round)) {
         // The games of started encounters, then the encounters never started, until every participant is seen:
         // after a round or two in a round robin, after the whole rest of the schedule in a gauntlet.
         std::set<int> left;
@@ -1261,6 +1293,24 @@ std::set<std::string> TournamentState::enginesLeft() const {
             const auto e = schedule_.at(i);
             if (!e) break;
             add(*e);
+        }
+        active = std::move(left);
+    } else if (!finished_ && spec_.format == Format::Knockout && brackets_.count(round_)) {
+        // A knockout: the players of the round being played, less those who lost their match of it already, while
+        // the other matches of the round go on. The next rounds are not known, but they are played among these.
+        std::set<int> in;
+        for (const auto& place : brackets_.at(round_)) {
+            if (place.size() == 2 && placeOver(place[0], place[1])) {
+                if (const auto winner = placeWinner(place[0], place[1])) {
+                    in.insert(*winner);
+                    continue;
+                }
+            }
+            in.insert(place.begin(), place.end());
+        }
+        std::set<int> left;
+        for (const int id : active) {
+            if (in.count(id)) left.insert(id);
         }
         active = std::move(left);
     } else if (finished_) {

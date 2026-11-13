@@ -197,3 +197,74 @@ TEST_CASE("Knockout: after ten tiebreaks the better seed goes through, wherever 
     CHECK(brackets.at(2)[0] == std::vector<int>{7, 3});
     CHECK(brackets.at(3)[0][0] == 3);
 }
+
+TEST_CASE("Knockout: a player knocked out has no game left at once, while the round goes on") {
+    auto spec   = field(Format::Knockout, 4);
+    spec.cycles = 1;
+    auto state  = TournamentState::create(freshDir("ko-left"), spec);
+    CHECK(state->enginesLeft() == std::set<std::string>{"P0", "P1", "P2", "P3"});
+
+    // Plays the two games of the next encounter; returns its players.
+    const auto playMatch = [&](bool draws) {
+        std::set<int> players;
+        for (int g = 0; g < 2; ++g) {
+            const auto task = state->claimNext();
+            REQUIRE(task);
+            players.insert({task->encounter.first, task->encounter.second});
+            state->complete(*task, data(*task, draws));
+        }
+        return players;
+    };
+
+    // The first match of round 1, won by the stronger: the weaker is out, the other match is still to play.
+    const auto first = playMatch(false);
+    REQUIRE(first.size() == 2u);
+    auto left = state->enginesLeft();
+    CHECK(left.size() == 3u);
+    CHECK_FALSE(left.count("P" + std::to_string(*first.rbegin())));
+
+    // The other match drawn: a tiebreak is due, both players stay.
+    const auto second = playMatch(true);
+    REQUIRE(second.size() == 2u);
+    CHECK(state->enginesLeft().size() == 3u);
+
+    // The tiebreak won by the stronger: the final remains, between the two winners.
+    playMatch(false);
+    CHECK(state->enginesLeft() ==
+          std::set<std::string>{"P" + std::to_string(*first.begin()), "P" + std::to_string(*second.begin())});
+
+    playMatch(false);
+    CHECK(state->finished());
+    CHECK(state->enginesLeft().empty());
+}
+
+TEST_CASE("Swiss: every player has games left until the last round, then those with a game of it to play") {
+    auto spec   = field(Format::Swiss, 5);
+    spec.rounds = 2;
+    auto state  = TournamentState::create(freshDir("swiss-left"), spec);
+    CHECK(state->enginesLeft().size() == 5u);
+
+    const auto playGames = [&](int n) {
+        for (int i = 0; i < n; ++i) {
+            const auto task = state->claimNext();
+            REQUIRE(task);
+            state->complete(*task, data(*task, false));
+        }
+    };
+
+    // A match of round 1 played: its players will be paired again in round 2.
+    playGames(2);
+    CHECK(state->enginesLeft().size() == 5u);
+
+    // Round 1 over, the last round is paired: the player with its bye has no game left.
+    playGames(2);
+    CHECK(state->enginesLeft().size() == 4u);
+
+    // A match of the last round played: only the players of the other one have a game left.
+    playGames(2);
+    CHECK(state->enginesLeft().size() == 2u);
+
+    playGames(2);
+    CHECK(state->finished());
+    CHECK(state->enginesLeft().empty());
+}
