@@ -281,11 +281,14 @@ Socket::~Socket() { closeHandle(fd_); }
 
 long Socket::receive(std::string& out, std::size_t max) {
     char buffer[16384];
-    const auto n = recv(fd_, buffer, static_cast<int>(std::min(sizeof(buffer), max)), 0);
-    if (n > 0) {
-        out.append(buffer, static_cast<std::size_t>(n));
-        return static_cast<long>(n);
-    }
+    const auto n = receive(buffer, std::min(sizeof(buffer), max));
+    if (n > 0) out.append(buffer, static_cast<std::size_t>(n));
+    return n;
+}
+
+long Socket::receive(char* buffer, std::size_t max) {
+    const auto n = recv(fd_, buffer, static_cast<int>(std::min<std::size_t>(max, 1 << 20)), 0);
+    if (n > 0) return static_cast<long>(n);
     if (n < 0 && wouldBlock()) return 0;
     return -1;
 }
@@ -304,6 +307,14 @@ void Socket::shutdownWrite() {
     shutdown(static_cast<SOCKET>(fd_), SD_SEND);
 #else
     shutdown(fd_, SHUT_WR);
+#endif
+}
+
+void Socket::shutdownBoth() {
+#ifdef _WIN32
+    shutdown(static_cast<SOCKET>(fd_), SD_BOTH);
+#else
+    shutdown(fd_, SHUT_RDWR);
 #endif
 }
 

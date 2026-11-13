@@ -1,20 +1,23 @@
 #include "ssh_tunnel.hpp"
 
 #include <algorithm>
-#include <array>
 #include <atomic>
 #include <cctype>
-#include <deque>
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
-#include <map>
 #include <memory>
 #include <mutex>
+#include <vector>
 
+#include <libssh2.h>
+#include <mbedtls/platform_util.h>
+#include <psa/crypto.h>
 
 #include "console.hpp"
 #include "i18n.hpp"
 #include "net.hpp"
-#include "ssh.hpp"
 #include "storage.hpp"
 
 namespace fcg {
@@ -22,39 +25,42 @@ namespace fcg {
 namespace {
 
 using Clock = std::chrono::steady_clock;
-using namespace ssh;
 
 // localhost.run's RSA host key (ssh-keyscan -t rsa localhost.run | ssh-keygen -lf -). Its Ed25519 key cannot be
 // checked with the cryptography at hand, so only RSA is asked for.
 constexpr const char* LOCALHOST_RUN_KEY = "SHA256:FV8IMJ4IYjYUTnd6on7PqbRjaZf4c1EhhEBgeUdE94I";
 
-// What is offered, best first. kex-strict-c-v00@openssh.com: the strict key exchange against the Terrapin attack
-// (sequence numbers restarted at each new key, nothing else allowed during the first exchange).
-constexpr const char* KEX_FIRST   = "curve25519-sha256,curve25519-sha256@libssh.org,kex-strict-c-v00@openssh.com";
-constexpr const char* KEX_AGAIN   = "curve25519-sha256,curve25519-sha256@libssh.org";
-constexpr const char* HOST_KEYS   = "rsa-sha2-512,rsa-sha2-256";
-constexpr const char* CIPHERS     = "aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes128-ctr";
-constexpr const char* MACS        = "hmac-sha2-256-etm@openssh.com,hmac-sha2-256";
-constexpr const char* STRICT_HOST = "kex-strict-s-v00@openssh.com";
+// What is offered, best first: all the cryptography our libssh2 backend has (gui/libssh2-psa). libssh2 adds the
+// strict key exchange against the Terrapin attack (kex-strict-c-v00@openssh.com) to the first list.
+constexpr const char* KEX       = "curve25519-sha256,curve25519-sha256@libssh.org";
+constexpr const char* HOST_KEYS = "rsa-sha2-512,rsa-sha2-256";
+constexpr const char* CIPHERS   = "aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes128-ctr";
+constexpr const char* MACS = "hmac-sha2-256-etm@openssh.com,hmac-sha2-256,hmac-sha2-512-etm@openssh.com,hmac-sha2-512";
 
-// A channel's flow: what the server may send before it waits for us (we take it as fast as the web server does;
-// requests are small), and the largest data packet either way.
-constexpr uint32_t WINDOW   = 256 * 1024;
-constexpr uint32_t MAX_DATA = 32768;
-// Connections relayed at once: the web server answers 32 at once and tells the next ones to come back; more than
-// that are refused here.
+// The session's flow: what the server may send before it waits for us, and the largest data packet. A forwarded
+// connection's are libssh2's (2 MiB, 32 KiB).
+constexpr unsigned SESSION_WINDOW   = 256 * 1024;
+constexpr unsigned SESSION_MAX_DATA = 32768;
+// Connections relayed at once, those closed on our side that the server did not close yet included: the web server
+// answers 32 at once and tells the next ones to come back. More wait in libssh2's queue, up to QUEUE; beyond, the
+// server is told they are refused. libssh2 takes all the connections that came at once before it gives the first,
+// so the queue holds as many as are relayed.
 constexpr std::size_t MAX_CHANNELS = 48;
-// Bytes waiting to go to the server: beyond, the web server's connections are not read until they went.
-constexpr std::size_t OUT_LIMIT = 4 << 20;
-// What a message held during a key exchange takes besides its bytes (its string and its place in the queue), about.
-constexpr std::size_t HELD_OVERHEAD = 64;
+constexpr int QUEUE                = static_cast<int>(MAX_CHANNELS);
+// Channels closed on our side that libssh2 still waits on for the server's close, counted no more after a while:
+// beyond this many, the connection ends.
+constexpr std::size_t MAX_CLOSING = 4 * MAX_CHANNELS;
+// What waits in each direction of a relayed connection: beyond, the side it comes from is not read meanwhile.
+constexpr std::size_t RELAY_BUFFER = 64 * 1024;
 // The session's text kept to read the address in: its last 64 KiB at most (a new address, the domain rotated, comes
 // at the end).
 constexpr std::size_t MAX_SESSION_TEXT = 64 * 1024;
-constexpr auto CONNECT_TIMEOUT   = std::chrono::seconds(15);
-constexpr auto HANDSHAKE_TIMEOUT = std::chrono::seconds(30);
-constexpr auto MAX_RETRY         = std::chrono::seconds(60);
+constexpr auto CONNECT_TIMEOUT         = std::chrono::seconds(15);
+constexpr auto HANDSHAKE_TIMEOUT       = std::chrono::seconds(30);
+constexpr auto MAX_RETRY               = std::chrono::seconds(60);
 constexpr int LOCAL_CONNECT_TIMEOUT_MS = 200;
+// How many times a pass over everything is repeated before waiting, as long as something moved.
+constexpr int MAX_PASSES = 16;
 
 constexpr uint32_t LOCALHOST = 0x7F000001;
 
@@ -64,39 +70,28 @@ std::string lower(std::string_view s) {
     return out;
 }
 
-// The first name of `client` that `server` has too (RFC 4253, 7.1).
-std::string choose(std::string_view client, std::string_view server) {
-    const auto names = [](std::string_view list) {
-        std::vector<std::string_view> out;
-        while (!list.empty()) {
-            const auto comma = list.find(',');
-            out.push_back(list.substr(0, comma));
-            list.remove_prefix(comma == std::string_view::npos ? list.size() : comma + 1);
-        }
-        return out;
-    };
-    const auto offered = names(server);
-    for (const auto name : names(client)) {
-        if (std::find(offered.begin(), offered.end(), name) != offered.end()) return std::string(name);
-    }
-    return {};
-}
-
-bool hasName(std::string_view list, std::string_view name) { return !choose(name, list).empty(); }
-
 std::string hostPort(const std::string& host, int port) { return host + ":" + std::to_string(port); }
 
-// Wipes a secret when it goes out of scope, however the function that holds it returns.
-class Wiped {
-   public:
-    explicit Wiped(std::string& secret) : secret_(secret) {}
-    ~Wiped() { wipe(secret_); }
-    Wiped(const Wiped&)            = delete;
-    Wiped& operator=(const Wiped&) = delete;
+std::string base64(std::string_view data) {
+    static constexpr char DIGITS[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    std::string out;
+    for (std::size_t i = 0; i < data.size(); i += 3) {
+        uint32_t n = static_cast<uint32_t>(static_cast<unsigned char>(data[i])) << 16;
+        if (i + 1 < data.size()) n |= static_cast<uint32_t>(static_cast<unsigned char>(data[i + 1])) << 8;
+        if (i + 2 < data.size()) n |= static_cast<unsigned char>(data[i + 2]);
+        out += DIGITS[(n >> 18) & 63];
+        out += DIGITS[(n >> 12) & 63];
+        if (i + 1 < data.size()) out += DIGITS[(n >> 6) & 63];
+        if (i + 2 < data.size()) out += DIGITS[n & 63];
+    }
+    return out;
+}
 
-   private:
-    std::string& secret_;
-};
+// PSA and libssh2, once for the program: libssh2_exit() is never called, as PSA serves the rest of the program too.
+bool startSsh() {
+    static const bool ok = psa_crypto_init() == PSA_SUCCESS && libssh2_init(0) == 0;
+    return ok;
+}
 
 std::mutex& knownHostsMutex() {
     static std::mutex m;
@@ -274,6 +269,17 @@ std::optional<TunnelSettings> parseTunnel(const std::string& text, std::string& 
     return s;
 }
 
+std::string fingerprint(std::string_view key_blob) {
+    uint8_t hash[32];
+    std::size_t n = 0;
+    if (psa_crypto_init() != PSA_SUCCESS ||
+        psa_hash_compute(PSA_ALG_SHA_256, reinterpret_cast<const uint8_t*>(key_blob.data()), key_blob.size(), hash,
+                         sizeof(hash), &n) != PSA_SUCCESS) {
+        return {};
+    }
+    return "SHA256:" + base64(std::string_view(reinterpret_cast<const char*>(hash), n));
+}
+
 struct SshTunnel::Shared {
     TunnelSettings settings;
     std::atomic_bool stopping{false};
@@ -294,16 +300,14 @@ struct SshTunnel::Shared {
 };
 
 // ---------------------------------------------------------------------------------------------------------------
-// One connection to the server, from the version exchange to its end.
+// One connection to the server, from the version exchange to its end. libssh2 speaks SSH, without blocking, on our
+// socket; this drives it, and relays what goes through the channels.
 
 class TunnelConnection {
    public:
     TunnelConnection(SshTunnel::Shared& shared, const TunnelSettings& settings)
         : tunnel_(shared), cfg_(settings), stopping_(shared.stopping) {}
-    ~TunnelConnection() {
-        for (auto& key : next_rx_) wipe(key);
-        wipe(session_id_);
-    }
+    ~TunnelConnection() { close(); }
     TunnelConnection(const TunnelConnection&)            = delete;
     TunnelConnection& operator=(const TunnelConnection&) = delete;
 
@@ -315,7 +319,7 @@ class TunnelConnection {
     };
 
     End run() {
-        if (!startCrypto()) {
+        if (!startSsh()) {
             fail("the cryptography cannot start", true);
             return end_;
         }
@@ -331,12 +335,15 @@ class TunnelConnection {
         socket_  = std::make_unique<net::Socket>(*fd);
         started_ = Clock::now();
         heard_   = started_;
-        v_c_     = std::string("SSH-2.0-fastchessgui_") + FCG_VERSION;
-        out_     = v_c_ + "\r\n";
-        startKex();
+        if (!startSession()) return end_;
 
         while (!stopping_ && end_.reason.empty()) {
-            step();
+            wait();
+            for (int pass = 0; pass < MAX_PASSES && !stopping_ && end_.reason.empty(); ++pass) {
+                const bool moved = advance();
+                checkConnection();
+                if (!moved) break;
+            }
             timers();
         }
         if (stopping_ && end_.reason.empty()) goodbye();
@@ -344,446 +351,362 @@ class TunnelConnection {
     }
 
    private:
-    struct Channel {
-        uint32_t peer = 0;
-        std::unique_ptr<net::Socket> socket;  // the web server's connection; none for the session
-        bool confirmed       = false;         // the session's, by the server
-        uint32_t peer_window = 0;             // what we may still send
-        uint32_t peer_max    = 0;
-        uint32_t window      = WINDOW;  // what the server may still send
-        uint32_t consumed    = 0;       // taken since the last adjustment
-        std::string to_local;           // for the web server
-        bool eof_in         = false;    // the server sends no more
-        bool shut           = false;    // and the web server was told
-        bool close_sent     = false;
-        bool close_received = false;
-        bool forwarded      = false;  // a viewer's connection, not the session
-        Clock::time_point closed_at;  // when close_sent
+    // A viewer's connection: a channel the server forwarded, and the web server's connection it is relayed to.
+    struct Viewer {
+        LIBSSH2_CHANNEL* channel = nullptr;
+        std::unique_ptr<net::Socket> socket;
+        std::string to_local;     // for the web server
+        std::string to_server;    // for the viewer
+        bool server_eof = false;  // the server sends no more
+        bool shut       = false;  // and the web server was told
+        bool local_done = false;  // the web server sends no more
+        // The last write to the channel could not go: the next one must start with the same bytes (libssh2 may have
+        // a packet of them under way), and the channel cannot be closed before.
+        bool write_blocked = false;
+    };
+    // A channel closed on our side, until libssh2 is done with it: the server closed it too, or something else came
+    // first (libssh2 then forgets it: a late close would name a number it does not give again).
+    struct Closing {
+        LIBSSH2_CHANNEL* channel = nullptr;
+        Clock::time_point since;
     };
 
-    enum class Phase { Version, Kex, Auth, Forward, OnAir };
-    enum class Reply { Forward, Keepalive };
+    enum class Phase { Handshake, Auth, Forward, OnAir };
+    enum class SessionChannel { Opening, Shell, Reading, Done };
 
     void fail(const std::string& reason, bool permanent = false) {
         if (!end_.reason.empty()) return;
-        // Server text is in many reasons (DISCONNECT's, accepted before the keys; USERAUTH_FAILURE's methods): it
-        // goes to the window, the Console, and a headless run's terminal.
+        // Server text is in many reasons (DISCONNECT's, the authentication methods, libssh2's errors about what it
+        // received): it goes to the window, the Console, and a headless run's terminal.
         end_.reason    = printableText(reason);
         end_.permanent = permanent;
     }
 
-    // Sends a message, or keeps it for after the key exchange: nothing but its own messages goes between our
-    // KEXINIT and our NEWKEYS (RFC 4253, 7.1).
-    void send(std::string payload) {
-        const auto type = static_cast<uint8_t>(payload[0]);
-        const bool transport = type <= DEBUG_TEXT || (type >= KEXINIT && type < USERAUTH_REQUEST);
-        if (kexinit_sent_ && !newkeys_sent_ && !transport) {
-            held_bytes_ += payload.size() + HELD_OVERHEAD;
-            held_.push_back(std::move(payload));
-        } else {
-            bytes_ += payload.size();
-            out_ += tx_.seal(payload, seq_tx_++);
+    // --- libssh2's callbacks: the session's memory, the socket, the server's DISCONNECT, libssh2's errors ---
+
+    static TunnelConnection& of(void** abstract) { return *static_cast<TunnelConnection*>(*abstract); }
+
+    // Everything libssh2 holds for the connection is counted, and bounded: the size is kept before each block. And
+    // wiped when given back: keys, shared secrets and the clear text of packets pass through libssh2's memory.
+    static constexpr std::size_t HEADER = alignof(std::max_align_t);
+
+    static LIBSSH2_ALLOC_FUNC(allocate) { return of(abstract).take(nullptr, count); }
+    static LIBSSH2_REALLOC_FUNC(reallocate) { return of(abstract).take(ptr, count); }
+    static LIBSSH2_FREE_FUNC(release) { of(abstract).give(ptr); }
+
+    void* take(void* old, std::size_t size) {
+        const auto before = old ? *reinterpret_cast<std::size_t*>(static_cast<char*>(old) - HEADER) : 0;
+        if (held_ - before + size > cfg_.max_memory) {
+            over_memory_ = true;
+            return nullptr;
         }
-        // Our sends are bounded (the web server's connections are not read beyond OUT_LIMIT): more is a server that
-        // reads nothing, or asks for answers while it keeps a key exchange open.
-        if (out_.size() + held_bytes_ > cfg_.max_pending) fail("the server does not take what is sent to it");
+        auto* block = static_cast<char*>(std::malloc(HEADER + size));
+        if (!block) return nullptr;
+        *reinterpret_cast<std::size_t*>(block) = size;
+        held_ += size;
+        if (old) {
+            std::memcpy(block + HEADER, old, std::min(before, size));
+            give(old);
+        }
+        return block + HEADER;
+    }
+    void give(void* ptr) {
+        if (!ptr) return;
+        auto* block     = static_cast<char*>(ptr) - HEADER;
+        const auto size = *reinterpret_cast<std::size_t*>(block);
+        held_ -= size;
+        mbedtls_platform_zeroize(block, HEADER + size);
+        std::free(block);
     }
 
-    // The socket: what came, what goes, every channel's connection.
-    void step() {
-        std::vector<net::Wait> waits;
-        waits.push_back({socket_->handle(), true, !out_.empty()});
-        std::vector<Channel*> relayed;
-        const bool can_read_local = !(kexinit_sent_ && !newkeys_sent_) && out_.size() < OUT_LIMIT;
-        for (auto& [id, ch] : channels_) {
-            if (!ch.socket || ch.close_sent) continue;
-            relayed.push_back(&ch);
-            waits.push_back({ch.socket->handle(), can_read_local && ch.peer_window > 0, !ch.to_local.empty()});
+    static LIBSSH2_RECV_FUNC(receive) {
+        (void)socket;
+        (void)flags;
+        auto& self   = of(abstract);
+        const auto n = self.socket_->receive(static_cast<char*>(buffer), length);
+        if (n > 0) {
+            self.heard_ = Clock::now();
+            return n;
         }
-        net::waitAny(waits, 100);
-
-        if (waits[0].can_read) {
-            const auto n = socket_->receive(in_, 65536);
-            if (n < 0) return fail(phase_ == Phase::OnAir ? "the server closed the connection"
-                                                          : "the server closed the connection before the tunnel opened");
-            // Nothing more is handled once the tunnel stops (see stop()).
-            if (n > 0 && !stopping_) readPackets();
-        }
-        if (!end_.reason.empty()) return;
-        if (waits[0].can_write && !out_.empty()) {
-            const auto n = socket_->send(out_);
-            if (n < 0) return fail("the connection to the server was lost");
-            out_.erase(0, static_cast<std::size_t>(n));
-        }
-        for (std::size_t i = 0; i < relayed.size(); ++i) relay(*relayed[i], waits[i + 1]);
-        // The channels closed both ways are gone; their numbers can serve again.
-        for (auto it = channels_.begin(); it != channels_.end();) {
-            it = it->second.close_sent && it->second.close_received ? channels_.erase(it) : std::next(it);
-        }
-        int count = 0;
-        for (const auto& [id, ch] : channels_) count += ch.socket ? 1 : 0;
-        if (count != relayed_count_) {
-            relayed_count_ = count;
-            std::lock_guard<std::mutex> lock(tunnel_.mutex);
-            tunnel_.status.connections = count;
-        }
+        if (n == 0) return -EAGAIN;
+        self.socket_closed_ = true;
+        return 0;  // the end of the connection, to libssh2
+    }
+    static LIBSSH2_SEND_FUNC(transmit) {
+        (void)socket;
+        (void)flags;
+        auto& self   = of(abstract);
+        const auto n = self.socket_->send(std::string_view(static_cast<const char*>(buffer), length));
+        if (n > 0) return n;
+        if (n == 0) return -EAGAIN;
+        self.socket_closed_ = true;
+        return -EPIPE;
     }
 
-    void relay(Channel& ch, const net::Wait& wait) {
-        if (!ch.socket) return;  // closed by the server meanwhile
-        if (wait.can_write && !ch.to_local.empty()) {
-            const auto n = ch.socket->send(ch.to_local);
-            if (n < 0) return closeChannel(ch);
-            ch.to_local.erase(0, static_cast<std::size_t>(n));
-            consume(ch, static_cast<uint32_t>(n));
+    static LIBSSH2_DISCONNECT_FUNC(disconnected) {
+        (void)session;
+        (void)reason;
+        (void)language;
+        (void)language_len;
+        auto& self = of(abstract);
+        try {
+            self.disconnect_reason_.assign(message ? message : "",
+                                           message && message_len > 0 ? std::min<std::size_t>(message_len, 1024) : 0);
+        } catch (...) {
         }
-        if (ch.eof_in && ch.to_local.empty() && !ch.shut) {
-            ch.socket->shutdownWrite();
-            ch.shut = true;
-        }
-        if (wait.can_read && ch.peer_window > 0) {
-            std::string data;
-            const auto n = ch.socket->receive(data, std::min(ch.peer_window, ch.peer_max));
-            if (n < 0) return closeChannel(ch);  // the web server answered, and closed
-            if (n > 0) {
-                ch.peer_window -= static_cast<uint32_t>(n);
-                send(Writer().byte(CHANNEL_DATA).u32(ch.peer).string(data).take());
+        self.disconnected_ = true;
+    }
+
+    // libssh2's errors as it meets them ("[libssh2] 0.000123 Failure Event: -11 - Unable to verify ..."): what fails
+    // a call is often told only by the error before the last, the last one saying what was being done. During the
+    // handshake, its packets too: whether the server's KEXINIT came, to tell algorithms not agreed on (nothing
+    // else says so) from a server that sent no key exchange at all.
+    static void traced(LIBSSH2_SESSION*, void* context, const char* data, std::size_t length) {
+        auto& self = *static_cast<TunnelConnection*>(context);
+        try {
+            const std::string_view line(data, length);
+            if (line.find("Packet type 20 received") != std::string_view::npos) self.kexinit_received_ = true;
+            const auto at = line.find("Failure Event: ");
+            if (at == std::string_view::npos) return;
+            const auto rest = line.substr(at + 15);
+            const auto dash = rest.find(" - ");
+            if (dash == std::string_view::npos) return;
+            const int code = std::atoi(std::string(rest.substr(0, dash)).c_str());
+            // A channel's errors do not end the connection: they are not why it failed.
+            if (self.first_error_ == 0 && code < 0 && connectionError(code)) {
+                self.first_error_      = code;
+                self.first_error_text_ = std::string(rest.substr(dash + 3, 256));
             }
+        } catch (...) {
         }
     }
 
-    // What was given on: the server may send as much again.
-    void consume(Channel& ch, uint32_t n) {
-        ch.consumed += n;
-        if (ch.consumed >= WINDOW / 2) {
-            send(Writer().byte(CHANNEL_WINDOW_ADJUST).u32(ch.peer).u32(ch.consumed).take());
-            ch.window += ch.consumed;
-            ch.consumed = 0;
+    // --- The session ---
+
+    bool startSession() {
+        session_ = libssh2_session_init_ex(&TunnelConnection::allocate, &TunnelConnection::release,
+                                           &TunnelConnection::reallocate, this);
+        if (!session_) {
+            fail("the SSH session cannot start");
+            return false;
+        }
+        libssh2_session_set_blocking(session_, 0);
+        libssh2_session_callback_set2(session_, LIBSSH2_CALLBACK_RECV,
+                                      reinterpret_cast<libssh2_cb_generic*>(&TunnelConnection::receive));
+        libssh2_session_callback_set2(session_, LIBSSH2_CALLBACK_SEND,
+                                      reinterpret_cast<libssh2_cb_generic*>(&TunnelConnection::transmit));
+        libssh2_session_callback_set2(session_, LIBSSH2_CALLBACK_DISCONNECT,
+                                      reinterpret_cast<libssh2_cb_generic*>(&TunnelConnection::disconnected));
+        libssh2_trace_sethandler(session_, this, &TunnelConnection::traced);
+        libssh2_trace(session_, LIBSSH2_TRACE_ERROR | LIBSSH2_TRACE_TRANS);
+        const auto banner = std::string("SSH-2.0-fastchessgui_") + FCG_VERSION;
+        if (libssh2_session_banner_set(session_, banner.c_str()) != 0 ||
+            libssh2_session_method_pref(session_, LIBSSH2_METHOD_KEX, KEX) != 0 ||
+            libssh2_session_method_pref(session_, LIBSSH2_METHOD_HOSTKEY, HOST_KEYS) != 0 ||
+            libssh2_session_method_pref(session_, LIBSSH2_METHOD_CRYPT_CS, CIPHERS) != 0 ||
+            libssh2_session_method_pref(session_, LIBSSH2_METHOD_CRYPT_SC, CIPHERS) != 0 ||
+            libssh2_session_method_pref(session_, LIBSSH2_METHOD_MAC_CS, MACS) != 0 ||
+            libssh2_session_method_pref(session_, LIBSSH2_METHOD_MAC_SC, MACS) != 0) {
+            fail("the SSH session cannot be set up", true);
+            return false;
+        }
+        return true;
+    }
+
+    std::string lastError() const {
+        char* message = nullptr;
+        int length    = 0;
+        libssh2_session_last_error(session_, &message, &length, 0);
+        return message ? std::string(message, static_cast<std::size_t>(std::max(length, 0))) : std::string();
+    }
+
+    // The connection failed in libssh2 (`rc`, what the call returned): why, as the user should read it.
+    void failSsh(int rc) {
+        if (!end_.reason.empty()) return;
+        if (over_memory_) return fail("the server sent more than the tunnel keeps in memory");
+        if (disconnected_) return fail("the server ended the connection: " + disconnect_reason_);
+        if (socket_closed_) {
+            return fail(phase_ == Phase::OnAir ? "the server closed the connection"
+                                               : "the server closed the connection before the tunnel opened");
+        }
+        const int code    = first_error_ ? first_error_ : rc;
+        const auto detail = first_error_ ? first_error_text_ : lastError();
+        switch (code) {
+            case LIBSSH2_ERROR_HOSTKEY_SIGN:
+                return fail(trf("{}: the host key's signature is not valid", cfg_.host), true);
+            case LIBSSH2_ERROR_HOSTKEY_INIT:
+                return fail(trf("{}: the host key cannot be used (RSA keys of 2048 to 4096 bits only)", cfg_.host),
+                            true);
+            case LIBSSH2_ERROR_KEX_FAILURE:
+                // Algorithms not agreed on have no error of their own: this one, and none before, after the server's
+                // KEXINIT. Without it, what the server sent was not a packet libssh2 could take.
+                if (detail == "Unable to exchange encryption keys") {
+                    if (!kexinit_received_) return fail("the server sent a packet that is not valid (" + detail + ")");
+                    return fail(trf("{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an "
+                                    "RSA host key and AES)",
+                                    cfg_.host),
+                                true);
+                }
+                break;
+            case LIBSSH2_ERROR_INVALID_MAC:
+            case LIBSSH2_ERROR_DECRYPT:
+            case LIBSSH2_ERROR_PROTO:
+            case LIBSSH2_ERROR_BUFFER_TOO_SMALL:
+            case LIBSSH2_ERROR_OUT_OF_BOUNDARY:
+                return fail("the server sent a packet that is not valid (" + detail + ")");
+            default:
+                break;
+        }
+        fail("the SSH connection failed (" + detail + ")");
+    }
+
+    // A failure of the whole connection, rather than of one channel's.
+    static bool connectionError(int rc) {
+        switch (rc) {
+            case LIBSSH2_ERROR_EAGAIN:
+            case LIBSSH2_ERROR_CHANNEL_OUTOFORDER:
+            case LIBSSH2_ERROR_CHANNEL_FAILURE:
+            case LIBSSH2_ERROR_CHANNEL_REQUEST_DENIED:
+            case LIBSSH2_ERROR_CHANNEL_UNKNOWN:
+            case LIBSSH2_ERROR_CHANNEL_WINDOW_EXCEEDED:
+            case LIBSSH2_ERROR_CHANNEL_PACKET_EXCEEDED:
+            case LIBSSH2_ERROR_CHANNEL_CLOSED:
+            case LIBSSH2_ERROR_CHANNEL_EOF_SENT:
+            case LIBSSH2_ERROR_CHANNEL_WINDOW_FULL:
+            case LIBSSH2_ERROR_BAD_USE:
+            case LIBSSH2_ERROR_INVAL:
+                return false;
+            default:
+                return true;
         }
     }
 
-    void closeChannel(Channel& ch) {
-        if (ch.close_sent) return;
-        send(Writer().byte(CHANNEL_EOF).u32(ch.peer).take());
-        send(Writer().byte(CHANNEL_CLOSE).u32(ch.peer).take());
-        ch.close_sent = true;
-        ch.closed_at  = Clock::now();
-        ch.to_local.clear();
-        ch.socket.reset();
+    // What libssh2 could not say through a call's result: the connection gone, or out of memory.
+    void checkConnection() {
+        if (over_memory_ || disconnected_ || socket_closed_) failSsh(LIBSSH2_ERROR_SOCKET_DISCONNECT);
+    }
+
+    // The sockets: until the server's socket or a web server's connection can go on, or 100 ms (none when there is
+    // something libssh2 already received and holds for a channel).
+    void wait() {
+        std::vector<net::Wait> waits;
+        const int directions = libssh2_session_block_directions(session_);
+        waits.push_back({socket_->handle(), true, (directions & LIBSSH2_SESSION_BLOCK_OUTBOUND) != 0});
+        bool ready = false;
+        for (const auto& v : viewers_) {
+            if (!v->socket) continue;
+            waits.push_back(
+                {v->socket->handle(), !v->local_done && v->to_server.size() < RELAY_BUFFER, !v->to_local.empty()});
+            ready = ready || (v->to_local.size() < RELAY_BUFFER && waiting(v->channel)) ||
+                    (!v->to_server.empty() && !v->write_blocked && libssh2_channel_window_write(v->channel) > 0);
+        }
+        ready = ready || ((session_state_ == SessionChannel::Shell || session_state_ == SessionChannel::Reading) &&
+                          waiting(session_channel_));
+        net::waitAny(waits, ready ? 0 : 100);
+    }
+
+    static bool waiting(LIBSSH2_CHANNEL* channel) {
+        unsigned long available = 0;
+        libssh2_channel_window_read_ex(channel, &available, nullptr);
+        return available > 0;
+    }
+
+    // One pass over everything; true when something moved.
+    bool advance() {
+        switch (phase_) {
+            case Phase::Handshake:
+                return handshake();
+            case Phase::Auth:
+                return authenticate();
+            case Phase::Forward:
+                return forward();
+            case Phase::OnAir:
+                return serve();
+        }
+        return false;
     }
 
     void timers() {
+        if (!end_.reason.empty()) return;
         const auto now = Clock::now();
-        // The channels we closed and the server did not: forgotten after a while (their numbers are not given again
-        // before 2^32 more).
-        for (auto it = channels_.begin(); it != channels_.end();) {
-            const auto& ch = it->second;
-            it = ch.close_sent && !ch.close_received && now - ch.closed_at > cfg_.close_timeout ? channels_.erase(it)
-                                                                                                : std::next(it);
-        }
         if (phase_ != Phase::OnAir) {
             if (now - started_ > HANDSHAKE_TIMEOUT) fail("no answer from the server in time");
             return;
         }
-        if (now - heard_ > cfg_.keepalive * 3 + std::chrono::seconds(5)) {
-            return fail("the server stopped answering");
+        if (now - heard_ > cfg_.keepalive * 3 + std::chrono::seconds(5)) return fail("the server stopped answering");
+        // A keepalive, only when the server said nothing for a while: its answer is then all that comes, and
+        // libssh2 keeps the answers (a few bytes each).
+        if (now - heard_ >= cfg_.keepalive) {
+            int next     = 0;
+            const int rc = libssh2_keepalive_send(session_, &next);
+            if (rc != 0 && rc != LIBSSH2_ERROR_EAGAIN) failSsh(rc);
         }
-        if (now - last_keepalive_ >= cfg_.keepalive) {
-            last_keepalive_ = now;
-            send(Writer().byte(GLOBAL_REQUEST).string("keepalive@openssh.com").boolean(true).take());
-            replies_.push_back(Reply::Keepalive);
-        }
-        // New keys from time to time, if the server does not ask first.
-        if (!kexinit_sent_ && (now - keyed_at_ >= cfg_.rekey_after || bytes_ >= cfg_.rekey_bytes)) startKex();
     }
 
     void goodbye() {
-        if (session_id_.empty() || !socket_) return;
-        send(Writer().byte(DISCONNECT).u32(11).string("bye").string("").take());
+        if (!session_ || phase_ == Phase::Handshake || socket_closed_) return;
         const auto until = Clock::now() + std::chrono::seconds(1);
-        while (!out_.empty() && Clock::now() < until) {
-            std::vector<net::Wait> waits{{socket_->handle(), false, true}};
+        while (Clock::now() < until) {
+            const int rc = libssh2_session_disconnect(session_, "bye");
+            if (rc != LIBSSH2_ERROR_EAGAIN) break;
+            std::vector<net::Wait> waits{{socket_->handle(), true, true}};
             net::waitAny(waits, 100);
-            if (!waits[0].can_write) continue;
-            const auto n = socket_->send(out_);
-            if (n < 0) break;
-            out_.erase(0, static_cast<std::size_t>(n));
         }
     }
 
-    void readPackets() {
-        if (phase_ == Phase::Version && !readVersion()) return;
-        while (end_.reason.empty()) {
-            std::string payload;
-            const auto r = rx_.open(in_, seq_rx_, payload);
-            if (r == PacketCipher::Open::More) return;
-            if (r == PacketCipher::Open::Bad || payload.empty()) return fail("the server sent a packet that is not valid");
-            const auto seq = seq_rx_++;
-            bytes_ += payload.size();
-            heard_ = Clock::now();
-            handle(payload, seq);
-        }
-    }
-
-    // The server's version line, after any other lines it sends first (RFC 4253, 4.2).
-    bool readVersion() {
-        while (true) {
-            const auto eol = in_.find('\n');
-            if (eol == std::string::npos) {
-                if (in_.size() > 255) fail("the server is not an SSH server");
-                return false;
+    // The session and all it holds, its channels included, then the socket. What libssh2 would still send or wait
+    // for fails at once: the socket is shut first.
+    void close() {
+        for (auto& v : viewers_) v->socket.reset();
+        if (session_) {
+            if (socket_) socket_->shutdownBoth();
+            for (int i = 0; i < 100 && libssh2_session_free(session_) == LIBSSH2_ERROR_EAGAIN; ++i) {
             }
-            auto line = in_.substr(0, eol);
-            in_.erase(0, eol + 1);
-            if (!line.empty() && line.back() == '\r') line.pop_back();
-            if (line.rfind("SSH-", 0) == 0) {
-                if (line.rfind("SSH-2.0-", 0) != 0 && line.rfind("SSH-1.99-", 0) != 0) {
-                    fail("the server does not speak SSH 2", true);
-                    return false;
-                }
-                v_s_   = line;
-                phase_ = Phase::Kex;
-                return true;
-            }
-            if (++lines_before_ > 50) {
-                fail("the server is not an SSH server");
-                return false;
-            }
+            session_ = nullptr;
         }
+        socket_.reset();
     }
 
-    void handle(const std::string& payload, uint32_t seq) {
-        const auto type = static_cast<uint8_t>(payload[0]);
-        Reader r(std::string_view(payload).substr(1));
-        // The first key exchange: nothing but its messages until the server's NEWKEYS. With the strict exchange
-        // (OpenSSH's PROTOCOL file), not even IGNORE or DEBUG; its KEXINIT, the first packet, is checked there.
-        if (!initial_kex_done_) {
-            const bool kex     = type == KEXINIT || type == KEX_ECDH_REPLY || type == NEWKEYS;
-            const bool allowed = kex || type == DISCONNECT || (!strict_ && (type == IGNORE_DATA || type == DEBUG_TEXT));
-            if (!allowed) {
-                return fail(strict_ ? "the server broke the strict key exchange"
-                                    : "the server sent a message before the key exchange ended");
-            }
+    // --- Before the tunnel ---
+
+    bool handshake() {
+        const int rc = libssh2_session_handshake(session_, socket_->handle());
+        if (rc == LIBSSH2_ERROR_EAGAIN) return false;
+        if (rc != 0) {
+            failSsh(rc);
+            return false;
         }
-        switch (type) {
-            case DISCONNECT: {
-                r.u32();
-                const auto why = r.string(1024);
-                return fail("the server ended the connection: " + std::string(why));
-            }
-            case IGNORE_DATA:
-            case DEBUG_TEXT:
-            case UNIMPLEMENTED:
-            case USERAUTH_BANNER:
-            case EXT_INFO:
-            case CHANNEL_SUCCESS:
-            case CHANNEL_FAILURE:
-                return;
-            case KEXINIT:
-                return onKexInit(payload, seq);
-            case KEX_ECDH_REPLY:
-                return onEcdhReply(r);
-            case NEWKEYS:
-                return onNewKeys();
-            case SERVICE_ACCEPT:
-                if (phase_ != Phase::Auth) return fail("the server sent an unexpected message");
-                send(Writer().byte(USERAUTH_REQUEST).string(cfg_.user).string("ssh-connection").string("none").take());
-                return;
-            case USERAUTH_SUCCESS:
-                if (phase_ != Phase::Auth) return fail("the server sent an unexpected message");
-                phase_ = Phase::Forward;
-                send(Writer()
-                         .byte(GLOBAL_REQUEST)
-                         .string("tcpip-forward")
-                         .boolean(true)
-                         .string("localhost")
-                         .u32(static_cast<uint32_t>(cfg_.remote_port))
-                         .take());
-                replies_.push_back(Reply::Forward);
-                return;
-            case USERAUTH_FAILURE: {
-                const auto methods = r.string(1024);
-                return fail(trf("{} does not let user \"{}\" in without a key or a password (it accepts: {})",
-                                cfg_.host, cfg_.user, std::string(methods)),
-                            true);
-            }
-            case REQUEST_SUCCESS:
-            case REQUEST_FAILURE:
-                return onReply(type == REQUEST_SUCCESS, r);
-            case GLOBAL_REQUEST: {
-                r.string(256);
-                if (r.boolean()) send(Writer().byte(REQUEST_FAILURE).take());
-                return;
-            }
-            case CHANNEL_OPEN:
-                return onChannelOpen(r);
-            default:
-                break;
+        // Its signature of the exchange was checked by libssh2: the key can be compared, and trusted.
+        std::size_t length = 0;
+        int type           = 0;
+        const char* key    = libssh2_session_hostkey(session_, &length, &type);
+        if (!key || type != LIBSSH2_HOSTKEY_TYPE_RSA) {
+            fail(trf("{} did not show an RSA host key", cfg_.host), true);
+            return false;
         }
-        if (type >= CHANNEL_OPEN_CONFIRMATION && type <= CHANNEL_FAILURE) return onChannel(type, r);
-        send(Writer().byte(UNIMPLEMENTED).u32(seq).take());
+        if (!checkHostKey(std::string(key, length))) return false;
+        first_error_ = 0;
+        libssh2_trace(session_, LIBSSH2_TRACE_ERROR);
+        phase_ = Phase::Auth;
+        return true;
     }
 
-    // --- Key exchange (RFC 4253, 7 and 8; RFC 8731) ---
-
-    void startKex() {
-        Writer w;
-        w.byte(KEXINIT).raw(randomBytes(16));
-        w.string(session_id_.empty() ? KEX_FIRST : KEX_AGAIN).string(HOST_KEYS);
-        w.string(CIPHERS).string(CIPHERS).string(MACS).string(MACS).string("none").string("none");
-        w.string("").string("").boolean(false).u32(0);
-        i_c_          = w.take();
-        kexinit_sent_ = true;
-        newkeys_sent_ = false;
-        send(i_c_);
-    }
-
-    void onKexInit(const std::string& payload, uint32_t seq) {
-        if (!i_s_.empty()) return fail("the server started a key exchange twice");
-        i_s_ = payload;
-        if (!kexinit_sent_) startKex();
-        Reader r(std::string_view(payload).substr(1));
-        r.raw(16);  // the cookie
-        std::string lists[10];
-        for (auto& list : lists) list = std::string(r.string(8192));
-        r.boolean();
-        r.u32();
-        if (!r.ok()) return fail("the server's key exchange cannot be read");
-        if (!initial_kex_done_) {
-            strict_ = hasName(lists[0], STRICT_HOST);
-            // Strict: the server's first packet, or a message slipped in before it could shift the sequence numbers.
-            if (strict_ && seq != 0) return fail("the server broke the strict key exchange");
-        }
-
-        kex_      = choose(KEX_AGAIN, lists[0]);
-        host_alg_ = choose(HOST_KEYS, lists[1]);
-        cipher_c_ = choose(CIPHERS, lists[2]);
-        cipher_s_ = choose(CIPHERS, lists[3]);
-        mac_c_    = PacketCipher::aead(cipher_c_) ? std::string() : choose(MACS, lists[4]);
-        mac_s_    = PacketCipher::aead(cipher_s_) ? std::string() : choose(MACS, lists[5]);
-        const bool macs = (PacketCipher::aead(cipher_c_) || !mac_c_.empty()) &&
-                          (PacketCipher::aead(cipher_s_) || !mac_s_.empty());
-        if (kex_.empty() || host_alg_.empty() || cipher_c_.empty() || cipher_s_.empty() || !macs ||
-            !hasName(lists[6], "none") || !hasName(lists[7], "none")) {
-            return fail(trf("{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA "
-                            "host key and AES)",
-                            cfg_.host),
-                        true);
-        }
-        ecdh_ = std::make_unique<X25519>();
-        if (!ecdh_->ok()) return fail("the cryptography cannot make a key");
-        send(Writer().byte(KEX_ECDH_INIT).string(ecdh_->publicKey()).take());
-    }
-
-    void onEcdhReply(Reader& r) {
-        if (!ecdh_ || i_s_.empty() || newkeys_sent_) return fail("the server sent an unexpected message");
-        const std::string key_blob(r.string(4096));
-        const std::string q_s(r.string(64));
-        const std::string signature(r.string(4096));
-        if (!r.ok()) return fail("the server's key exchange cannot be read");
-
-        // The host key, at the first exchange: compared with the one pinned or trusted before, then its signature
-        // checked, and only then trusted or offered to the user; at the next ones, the same as at the first.
-        auto trust = HostKey::Trusted;
-        if (session_id_.empty()) {
-            trust = checkHostKey(key_blob);
-            if (trust == HostKey::Refused) return;
-        } else if (key_blob != host_key_) {
-            return fail(trf("{} changed its host key while connected", cfg_.host), true);
-        }
-        auto secret = ecdh_->agree(q_s);
-        if (!secret) return fail("the server's key exchange is not valid");
-        auto k = Writer().mpint(*secret).take();
-        wipe(*secret);
-        Writer exchange;
-        exchange.string(v_c_)
-            .string(v_s_)
-            .string(i_c_)
-            .string(i_s_)
-            .string(key_blob)
-            .string(ecdh_->publicKey())
-            .string(q_s)
-            .raw(k);
-        auto h      = sha256(exchange.data());
-        auto hashed = exchange.take();
-        wipe(hashed);
-        // K and H, and the keys made of them, are wiped however this ends; the first H stays, as the session id.
-        const Wiped wipe_k(k), wipe_h(h);
-        if (const auto bad = verifyRsa(key_blob, signature, h, host_alg_); !bad.empty()) {
-            return fail(trf("{}: {}", cfg_.host, bad), true);
-        }
-        if (trust == HostKey::Changed) {
-            const auto print = fingerprint(key_blob);
-            end_.new_key     = print;
-            return fail(trf("The host key of {} changed: {} now, {} before. Someone may be in the way; trust the new "
-                            "key only if the server's owner says it changed.",
-                            cfg_.host, print, known_print_),
-                        true);
-        }
-        if (trust == HostKey::New) keepHostKey(key_blob);
-        if (session_id_.empty()) {
-            host_key_   = key_blob;
-            session_id_ = h;
-        }
-        const auto derive = [&](char letter, std::size_t size) { return deriveKey(k, h, letter, session_id_, size); };
-
-        send(Writer().byte(NEWKEYS).take());
-        auto key = derive('C', PacketCipher::keySize(cipher_c_)), iv = derive('A', PacketCipher::ivSize(cipher_c_)),
-             mac_key     = derive('E', PacketCipher::macKeySize(mac_c_));
-        const auto error = tx_.start(cipher_c_, mac_c_, key, iv, mac_key);
-        wipe(key);
-        wipe(iv);
-        wipe(mac_key);
-        if (!error.empty()) return fail(error);
-        if (strict_) seq_tx_ = 0;
-        next_rx_      = {derive('D', PacketCipher::keySize(cipher_s_)), derive('B', PacketCipher::ivSize(cipher_s_)),
-                         derive('F', PacketCipher::macKeySize(mac_s_))};
-        newkeys_sent_ = true;
-        ecdh_.reset();
-        while (!held_.empty()) {
-            auto payload = std::move(held_.front());
-            held_.pop_front();
-            held_bytes_ -= std::min(held_bytes_, payload.size() + HELD_OVERHEAD);
-            send(std::move(payload));
-        }
-    }
-
-    void onNewKeys() {
-        if (!newkeys_sent_) return fail("the server sent an unexpected message");
-        if (const auto error = rx_.start(cipher_s_, mac_s_, next_rx_[0], next_rx_[1], next_rx_[2]); !error.empty()) {
-            return fail(error);
-        }
-        for (auto& key : next_rx_) wipe(key);
-        if (strict_) seq_rx_ = 0;
-        initial_kex_done_ = true;
-        kexinit_sent_ = false;
-        newkeys_sent_ = false;
-        i_c_.clear();
-        i_s_.clear();
-        keyed_at_ = Clock::now();
-        bytes_    = 0;
-        if (phase_ == Phase::Kex) {
-            phase_ = Phase::Auth;
-            send(Writer().byte(SERVICE_REQUEST).string("ssh-userauth").take());
-        }
-    }
-
-    // The host key against the one pinned, or the one trusted the first time. Refused: the connection failed.
-    enum class HostKey { Trusted, New, Changed, Refused };
-    HostKey checkHostKey(const std::string& blob) {
+    // The host key against the one pinned, or the one trusted the first time, which is kept then. False when the
+    // connection failed.
+    bool checkHostKey(const std::string& blob) {
         const auto print = fingerprint(blob);
         if (!cfg_.pinned.empty()) {
-            if (print == cfg_.pinned) return HostKey::Trusted;
+            if (print == cfg_.pinned) return true;
             fail(trf("The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. "
                      "Nothing was sent.",
                      cfg_.host, print, cfg_.pinned),
                  true);
-            return HostKey::Refused;
+            return false;
         }
         // Nowhere to keep it: not trusted blindly, every time.
         if (cfg_.known_hosts.empty()) {
             fail("the host key of " + cfg_.host + " cannot be checked: neither pinned nor kept", true);
-            return HostKey::Refused;
+            return false;
         }
         const auto known = knownHostKey(cfg_.known_hosts, cfg_.host, cfg_.port);
         if (!known) {
@@ -791,56 +714,76 @@ class TunnelConnection {
                      "the file, or delete it to trust the server's key again.",
                      cfg_.known_hosts.string(), cfg_.host),
                  true);
-            return HostKey::Refused;
+            return false;
         }
-        if (known->empty()) return HostKey::New;
-        if (*known == print) return HostKey::Trusted;
-        known_print_ = *known;
-        return HostKey::Changed;
+        if (known->empty()) {
+            if (!rememberHostKey(cfg_.known_hosts, cfg_.host, cfg_.port, print)) {
+                Console::instance().add(trf("Tunnel: the host key of {} ({}) could not be kept in {}", cfg_.host, print,
+                                            cfg_.known_hosts.string()),
+                                        true);
+            } else {
+                Console::instance().add(trf("Tunnel: the host key of {} is {}, trusted from now on", cfg_.host, print));
+            }
+            return true;
+        }
+        if (*known == print) return true;
+        end_.new_key = print;
+        fail(trf("The host key of {} changed: {} now, {} before. Someone may be in the way; trust the new key only if "
+                 "the server's owner says it changed.",
+                 cfg_.host, print, *known),
+             true);
+        return false;
     }
 
-    // A key seen for the first time, whose signature was checked: trusted from now on.
-    void keepHostKey(const std::string& blob) {
-        const auto print = fingerprint(blob);
-        if (!rememberHostKey(cfg_.known_hosts, cfg_.host, cfg_.port, print)) {
-            Console::instance().add(trf("Tunnel: the host key of {} ({}) could not be kept in {}", cfg_.host, print,
-                                        cfg_.known_hosts.string()),
-                                    true);
-            return;
+    // The "none" method: the services let anyone in, as long as the user is the one they expect.
+    bool authenticate() {
+        const char* methods =
+            libssh2_userauth_list(session_, cfg_.user.c_str(), static_cast<unsigned>(cfg_.user.size()));
+        if (!methods) {
+            if (libssh2_userauth_authenticated(session_)) {
+                phase_ = Phase::Forward;
+                return true;
+            }
+            const int rc = libssh2_session_last_errno(session_);
+            if (rc == LIBSSH2_ERROR_EAGAIN) return false;
+            failSsh(rc);
+            return false;
         }
-        Console::instance().add(trf("Tunnel: the host key of {} is {}, trusted from now on", cfg_.host, print));
+        fail(trf("{} does not let user \"{}\" in without a key or a password (it accepts: {})", cfg_.host, cfg_.user,
+                 std::string(methods).substr(0, 1024)),
+             true);
+        return false;
     }
 
-    // --- Connection protocol (RFC 4254) ---
-
-    void onReply(bool success, Reader& r) {
-        if (replies_.empty()) return fail("the server sent an unexpected message");
-        const auto kind = replies_.front();
-        replies_.pop_front();
-        if (kind == Reply::Keepalive) return;
-        if (!success) {
-            return fail(trf("{} refused to forward its port {}", cfg_.host, cfg_.remote_port));
+    bool forward() {
+        int bound = 0;
+        listener_ = libssh2_channel_forward_listen_ex(session_, "localhost", cfg_.remote_port, &bound, QUEUE);
+        if (!listener_) {
+            const int rc = libssh2_session_last_errno(session_);
+            if (rc == LIBSSH2_ERROR_EAGAIN) return false;
+            if (connectionError(rc) && rc != LIBSSH2_ERROR_REQUEST_DENIED) {
+                failSsh(rc);
+            } else {
+                fail(trf("{} refused to forward its port {}", cfg_.host, cfg_.remote_port));
+            }
+            return false;
         }
-        bound_port_ = cfg_.remote_port;
-        if (cfg_.remote_port == 0 && r.left() >= 4) bound_port_ = static_cast<int>(r.u32());
+        bound_port_     = cfg_.remote_port != 0 ? cfg_.remote_port : bound;
         phase_          = Phase::OnAir;
-        last_keepalive_ = Clock::now();
         end_.was_on_air = true;
         {
             std::lock_guard<std::mutex> lock(tunnel_.mutex);
             tunnel_.status.state = TunnelState::OnAir;
             tunnel_.status.error.clear();
         }
-        // The services print the address on a session: one, with a shell, as `ssh -R` would open.
-        session_ = nextId();
-        auto& ch = channels_[session_];
-        (void)ch;
-        send(Writer().byte(CHANNEL_OPEN).string("session").u32(session_).u32(WINDOW).u32(MAX_DATA).take());
-        // Until it does, or for a server of one's own that prints nothing: the server and the port.
+        libssh2_keepalive_config(session_, 1, static_cast<unsigned>(std::max<int64_t>(cfg_.keepalive.count(), 2)));
+        // Until the services print the address on the session, or for a server of one's own that prints nothing:
+        // the server and the port.
         if (cfg_.pinned.empty()) {
             setUrl(bound_port_ == 80 ? "http://" + cfg_.host
                                      : "http://" + cfg_.host + ":" + std::to_string(bound_port_));
         }
+        return true;
     }
 
     void setUrl(const std::string& url) {
@@ -850,111 +793,241 @@ class TunnelConnection {
         Console::instance().add(trf("Tunnel: the web page is on {}", url));
     }
 
-    uint32_t nextId() {
-        while (channels_.count(next_id_)) ++next_id_;
-        return next_id_++;
-    }
+    // --- On the air ---
 
-    void onChannelOpen(Reader& r) {
-        const auto type   = r.string(64);
-        const auto sender = r.u32();
-        const auto window = r.u32();
-        const auto max    = r.u32();
-        r.string(256);  // the address connected to, and its port
-        r.u32();
-        r.string(256);  // where the connection comes from
-        r.u32();
-        if (!r.ok()) return fail("the server sent a message that is not valid");
-        const auto refuse = [&](uint32_t code, const char* why) {
-            send(Writer().byte(CHANNEL_OPEN_FAILURE).u32(sender).u32(code).string(why).string("").take());
-        };
-        if (type != "forwarded-tcpip" || phase_ != Phase::OnAir) return refuse(1, "not accepted");
-        // Those closed on our side that the server did not close yet count too: a server that never closes them
-        // must not have more and more.
-        const auto open =
-            std::count_if(channels_.begin(), channels_.end(), [](const auto& c) { return c.second.forwarded; });
-        if (static_cast<std::size_t>(open) >= MAX_CHANNELS) return refuse(4, "too many connections");
-        // Every channel waits meanwhile: a web server that does not answer at once is not there.
-        const auto fd = net::connectTo(LOCALHOST, static_cast<uint16_t>(cfg_.local_port), LOCAL_CONNECT_TIMEOUT_MS);
-        if (!fd) return refuse(2, "the web page is not served");
-        const auto id    = nextId();
-        auto& ch         = channels_[id];
-        ch.peer          = sender;
-        ch.forwarded     = true;
-        ch.socket        = std::make_unique<net::Socket>(*fd);
-        ch.peer_window   = window;
-        ch.peer_max      = std::clamp<uint32_t>(max, 1, MAX_DATA);
-        ++relayed_count_;
-        send(Writer().byte(CHANNEL_OPEN_CONFIRMATION).u32(sender).u32(id).u32(WINDOW).u32(MAX_DATA).take());
-    }
-
-    void onChannel(uint8_t type, Reader& r) {
-        const auto id = r.u32();
-        const auto it = channels_.find(id);
-        if (!r.ok()) return fail("the server sent a message that is not valid");
-        if (it == channels_.end()) return;  // closed meanwhile
-        auto& ch = it->second;
-        switch (type) {
-            case CHANNEL_OPEN_CONFIRMATION: {
-                ch.peer        = r.u32();
-                ch.peer_window = r.u32();
-                ch.peer_max    = std::clamp<uint32_t>(r.u32(), 1, MAX_DATA);
-                ch.confirmed   = true;
-                send(Writer().byte(CHANNEL_REQUEST).u32(ch.peer).string("shell").boolean(false).take());
-                return;
+    bool serve() {
+        // The closing channels first: their waiting reads what came for the others too, which are served next.
+        bool moved = closeChannels();
+        moved      = serveSession() || moved;
+        moved      = accept() || moved;
+        for (std::size_t i = 0; i < viewers_.size() && end_.reason.empty();) {
+            moved = relay(*viewers_[i]) || moved;
+            if (!viewers_[i]->channel) {
+                viewers_.erase(viewers_.begin() + static_cast<std::ptrdiff_t>(i));
+                moved = true;
+            } else {
+                ++i;
             }
-            case CHANNEL_OPEN_FAILURE:
-                // No session: no address printed, the tunnel works all the same.
-                ch.close_sent = ch.close_received = true;
-                return;
-            case CHANNEL_WINDOW_ADJUST: {
-                const auto more = r.u32();
-                ch.peer_window  = static_cast<uint32_t>(std::min<uint64_t>(uint64_t(ch.peer_window) + more, 0xFFFFFFFFu));
-                return;
-            }
-            case CHANNEL_DATA:
-            case CHANNEL_EXTENDED_DATA: {
-                if (type == CHANNEL_EXTENDED_DATA) r.u32();
-                const auto data = r.string(MAX_DATA);
-                if (!r.ok()) return fail("the server sent a message that is not valid");
-                if (data.size() > ch.window) return fail("the server sent more than the channel allows");
-                ch.window -= static_cast<uint32_t>(data.size());
-                if (ch.close_sent) return;
-                if (!ch.socket) {
-                    // The session: read for the address, taken at once.
-                    session_text_ += data;
-                    if (session_text_.size() > MAX_SESSION_TEXT) {
-                        session_text_.erase(0, session_text_.size() - MAX_SESSION_TEXT / 2);
-                    }
-                    if (const auto url = findPublicUrl(session_text_)) setUrl(*url);
-                    consume(ch, static_cast<uint32_t>(data.size()));
-                } else if (type == CHANNEL_DATA) {
-                    ch.to_local += data;
-                } else {
-                    consume(ch, static_cast<uint32_t>(data.size()));
-                }
-                return;
-            }
-            case CHANNEL_EOF:
-                ch.eof_in = true;
-                return;
-            case CHANNEL_CLOSE:
-                ch.close_received = true;
-                if (!ch.close_sent) {
-                    send(Writer().byte(CHANNEL_CLOSE).u32(ch.peer).take());
-                    ch.close_sent = true;
-                    ch.closed_at  = Clock::now();
-                }
-                ch.socket.reset();
-                return;
-            case CHANNEL_REQUEST: {
-                r.string(256);
-                if (r.boolean()) send(Writer().byte(CHANNEL_FAILURE).u32(ch.peer).take());
-                return;
-            }
-            default:
-                return;
         }
+        const int count = static_cast<int>(viewers_.size());
+        if (count != relayed_count_) {
+            relayed_count_ = count;
+            std::lock_guard<std::mutex> lock(tunnel_.mutex);
+            tunnel_.status.connections = count;
+        }
+        return moved && end_.reason.empty();
+    }
+
+    // The services print the address on a session: one, with a shell, as `ssh -R` would open. Without it, the
+    // tunnel works all the same.
+    bool serveSession() {
+        switch (session_state_) {
+            case SessionChannel::Opening: {
+                session_channel_ =
+                    libssh2_channel_open_ex(session_, "session", 7, SESSION_WINDOW, SESSION_MAX_DATA, nullptr, 0);
+                if (!session_channel_) {
+                    const int rc = libssh2_session_last_errno(session_);
+                    if (rc == LIBSSH2_ERROR_EAGAIN) return false;
+                    if (connectionError(rc)) failSsh(rc);
+                    session_state_ = SessionChannel::Done;
+                    return true;
+                }
+                libssh2_channel_handle_extended_data2(session_channel_, LIBSSH2_CHANNEL_EXTENDED_DATA_MERGE);
+                session_state_ = SessionChannel::Shell;
+                return true;
+            }
+            case SessionChannel::Shell: {
+                // localhost.run never answers the request, and prints all the same: what comes is read meanwhile.
+                const int rc = libssh2_channel_shell(session_channel_);
+                if (rc == LIBSSH2_ERROR_EAGAIN) return readSession();
+                // Refused, or no answer in time (libssh2's 60 seconds): the session is read all the same. An error of
+                // the connection's is told by the socket, or the next call.
+                if (rc != 0 && first_error_ == rc) first_error_ = 0;
+                session_state_ = SessionChannel::Reading;
+                readSession();
+                return true;
+            }
+            case SessionChannel::Reading:
+                return readSession();
+            case SessionChannel::Done:
+                return false;
+        }
+        return false;
+    }
+
+    // What the server prints on the session: the public address is in it.
+    bool readSession() {
+        bool moved = false;
+        char buffer[16384];
+        while (true) {
+            const auto n = libssh2_channel_read(session_channel_, buffer, sizeof(buffer));
+            if (n > 0) {
+                moved = true;
+                session_text_.append(buffer, static_cast<std::size_t>(n));
+                if (session_text_.size() > MAX_SESSION_TEXT) {
+                    session_text_.erase(0, session_text_.size() - MAX_SESSION_TEXT / 2);
+                }
+                continue;
+            }
+            if (n == LIBSSH2_ERROR_EAGAIN) break;
+            if (n < 0 && connectionError(static_cast<int>(n))) {
+                failSsh(static_cast<int>(n));
+                return false;
+            }
+            if (n < 0 || libssh2_channel_eof(session_channel_) == 1) {
+                startClosing(session_channel_);
+                session_channel_ = nullptr;
+                session_state_   = SessionChannel::Done;
+                return true;
+            }
+            break;
+        }
+        if (moved) {
+            if (const auto url = findPublicUrl(session_text_)) setUrl(*url);
+        }
+        return moved;
+    }
+
+    // The connections the server forwarded, as many as may be relayed: each to the web server on this machine.
+    bool accept() {
+        bool moved = false;
+        while (end_.reason.empty() && liveChannels() < MAX_CHANNELS) {
+            LIBSSH2_CHANNEL* channel = libssh2_channel_forward_accept(listener_);
+            if (!channel) {
+                const int rc = libssh2_session_last_errno(session_);
+                if (connectionError(rc)) failSsh(rc);
+                break;
+            }
+            moved = true;
+            libssh2_channel_handle_extended_data2(channel, LIBSSH2_CHANNEL_EXTENDED_DATA_IGNORE);
+            // Every channel waits meanwhile: a web server that does not answer at once is not there.
+            const auto fd = net::connectTo(LOCALHOST, static_cast<uint16_t>(cfg_.local_port), LOCAL_CONNECT_TIMEOUT_MS);
+            if (!fd) {
+                startClosing(channel);
+                continue;
+            }
+            auto viewer     = std::make_unique<Viewer>();
+            viewer->channel = channel;
+            viewer->socket  = std::make_unique<net::Socket>(*fd);
+            viewers_.push_back(std::move(viewer));
+        }
+        return moved;
+    }
+
+    // The channels relayed at the moment, and those closed on our side that the server did not close yet, for a
+    // while: a server that never closes them must not have more and more.
+    std::size_t liveChannels() const {
+        const auto now    = Clock::now();
+        std::size_t count = viewers_.size();
+        for (const auto& c : closing_) count += now - c.since < cfg_.close_timeout ? 1 : 0;
+        return count;
+    }
+
+    bool relay(Viewer& v) {
+        bool moved = false;
+        // From the viewer to the web server.
+        if (!v.server_eof && v.to_local.size() < RELAY_BUFFER) {
+            char buffer[16384];
+            const auto room = std::min(sizeof(buffer), RELAY_BUFFER - v.to_local.size());
+            const auto n    = libssh2_channel_read(v.channel, buffer, room);
+            if (n > 0) {
+                v.to_local.append(buffer, static_cast<std::size_t>(n));
+                moved = true;
+            } else if (n < 0 && n != LIBSSH2_ERROR_EAGAIN) {
+                if (connectionError(static_cast<int>(n))) {
+                    failSsh(static_cast<int>(n));
+                    return false;
+                }
+                v.server_eof = true;
+                moved        = true;
+            } else if (libssh2_channel_eof(v.channel) == 1) {
+                v.server_eof = true;
+                moved        = true;
+            }
+        }
+        if (v.socket && !v.to_local.empty()) {
+            const auto n = v.socket->send(v.to_local);
+            if (n < 0) {
+                v.socket.reset();  // the web server went: what it did not take is dropped
+                v.to_local.clear();
+                v.local_done = true;
+            } else if (n > 0) {
+                v.to_local.erase(0, static_cast<std::size_t>(n));
+                moved = true;
+            }
+        }
+        if (v.socket && v.server_eof && v.to_local.empty() && !v.shut) {
+            v.socket->shutdownWrite();
+            v.shut = true;
+        }
+        // The server closed the channel (not only its side of it): the viewer is gone, the answer goes nowhere.
+        if (v.server_eof && !v.local_done && libssh2_channel_wait_closed(v.channel) == 0) {
+            v.socket.reset();
+            v.to_local.clear();
+            if (!v.write_blocked) v.to_server.clear();
+            v.local_done = true;
+            moved        = true;
+        }
+
+        // From the web server to the viewer.
+        if (v.socket && !v.local_done && v.to_server.size() < RELAY_BUFFER) {
+            const auto n = v.socket->receive(v.to_server, RELAY_BUFFER - v.to_server.size());
+            if (n < 0) {
+                v.local_done = true;  // it answered, and closed
+                moved        = true;
+            } else if (n > 0) {
+                moved = true;
+            }
+        }
+        if (!v.to_server.empty()) {
+            const auto n = libssh2_channel_write(v.channel, v.to_server.data(), v.to_server.size());
+            // With no window left, nothing was under way.
+            v.write_blocked = n == LIBSSH2_ERROR_EAGAIN && libssh2_channel_window_write(v.channel) > 0;
+            if (n > 0) {
+                v.to_server.erase(0, static_cast<std::size_t>(n));
+                moved = true;
+            } else if (n < 0 && n != LIBSSH2_ERROR_EAGAIN) {
+                if (connectionError(static_cast<int>(n))) {
+                    failSsh(static_cast<int>(n));
+                    return false;
+                }
+                v.to_server.clear();
+                v.local_done = true;
+            }
+        }
+        // Done both ways, or the web server gone: the channel is closed (EOF, then CLOSE), unless a write of it is
+        // under way.
+        if (v.local_done && v.to_server.empty() && !v.write_blocked) {
+            v.socket.reset();
+            startClosing(v.channel);
+            v.channel = nullptr;
+            moved     = true;
+        }
+        return moved;
+    }
+
+    void startClosing(LIBSSH2_CHANNEL* channel) { closing_.push_back({channel, Clock::now()}); }
+
+    // The channels closed on our side: let go of once libssh2 is done with them. Too many it still waits on, and
+    // the connection ends.
+    bool closeChannels() {
+        bool moved = false;
+        for (auto it = closing_.begin(); it != closing_.end() && end_.reason.empty();) {
+            const int rc = libssh2_channel_close(it->channel);
+            if (rc == LIBSSH2_ERROR_EAGAIN) {
+                ++it;
+                continue;
+            }
+            if (rc != 0 && connectionError(rc)) {
+                failSsh(rc);
+                return false;
+            }
+            libssh2_channel_free(it->channel);
+            it    = closing_.erase(it);
+            moved = true;
+        }
+        if (closing_.size() > MAX_CLOSING) fail("the server does not close the connections it forwarded");
+        return moved;
     }
 
     SshTunnel::Shared& tunnel_;
@@ -963,38 +1036,29 @@ class TunnelConnection {
     End end_;
 
     std::unique_ptr<net::Socket> socket_;
-    std::string in_, out_;
-    Phase phase_ = Phase::Version;
-    int lines_before_ = 0;
-    Clock::time_point started_, heard_, last_keepalive_, keyed_at_;
+    LIBSSH2_SESSION* session_   = nullptr;
+    LIBSSH2_LISTENER* listener_ = nullptr;
+    Phase phase_                = Phase::Handshake;
+    Clock::time_point started_, heard_;
 
-    // The packets.
-    PacketCipher rx_, tx_;
-    uint32_t seq_rx_ = 0, seq_tx_ = 0;
-    uint64_t bytes_ = 0;  // since the last keys
-
-    // The key exchange.
-    std::string v_c_, v_s_, i_c_, i_s_;
-    std::string kex_, host_alg_, cipher_c_, cipher_s_, mac_c_, mac_s_;
-    std::unique_ptr<X25519> ecdh_;
-    std::array<std::string, 3> next_rx_;
-    bool kexinit_sent_ = false;
-    bool newkeys_sent_ = false;
-    bool strict_       = false;
-    bool initial_kex_done_ = false;  // the server's first NEWKEYS came
-    std::string session_id_, host_key_;
-    std::string known_print_;  // the host key trusted before, when the server shows another
-    std::deque<std::string> held_;
-    std::size_t held_bytes_ = 0;  // what held_ takes, about
+    // What libssh2 told, or holds.
+    std::size_t held_   = 0;
+    bool over_memory_   = false;
+    bool socket_closed_ = false;
+    bool disconnected_  = false;
+    std::string disconnect_reason_;
+    int first_error_ = 0;
+    std::string first_error_text_;
+    bool kexinit_received_ = false;
 
     // The channels.
-    std::deque<Reply> replies_;
-    std::map<uint32_t, Channel> channels_;
-    uint32_t next_id_  = 0;
-    uint32_t session_  = 0;
+    LIBSSH2_CHANNEL* session_channel_ = nullptr;
+    SessionChannel session_state_     = SessionChannel::Opening;
+    std::string session_text_;
+    std::vector<std::unique_ptr<Viewer>> viewers_;
+    std::vector<Closing> closing_;
     int relayed_count_ = 0;
     int bound_port_    = 0;
-    std::string session_text_;
 };
 
 // ---------------------------------------------------------------------------------------------------------------

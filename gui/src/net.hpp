@@ -98,10 +98,15 @@ class Socket {
     // Appends what there is to read, `max` bytes at most: how many, 0 when nothing came yet, -1 once the other side
     // closed the connection or it failed.
     long receive(std::string& out, std::size_t max);
+    // The same into `buffer`, `max` bytes at most.
+    long receive(char* buffer, std::size_t max);
     // Sends what can be sent at once: how many bytes (0 when it would have to wait), -1 on an error.
     long send(std::string_view data);
     // No more data from this side: the other one reads the end of the stream.
     void shutdownWrite();
+    // No more data either way: what reads or writes it from now on fails at once (the handle stays valid until the
+    // object goes, so it cannot be another socket's meanwhile).
+    void shutdownBoth();
 
    private:
     Handle fd_;
