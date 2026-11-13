@@ -1,17 +1,25 @@
-// The broadcast web page: every game in progress, an evaluation bar beside each player, the standings and the
-// crosstable, read-only; the followed game's evaluation bar, moves, arrows and charts; the moves in letters or
-// figurines; the next games of the schedule; the statistics and anomalies of the games played, and each engine's
-// search; their PGN file to download.
+// The broadcast web page, read-only. The followed game at its centre: the board with the last move, a king in check,
+// the coordinates and the arrows of the search; large clocks; each engine's evaluation in large type and its search
+// as tiles, with who is thinking; the moves, the book's told apart, to step through; the board turned, the game's PGN
+// and the position's FEN copied. Every game in progress beside it; the standings and the crosstable, the charts of
+// the followed game, each engine's search, the next games, the statistics and anomalies and the event in tabs. The
+// moves in letters or figurines, a light or dark theme, and the PGN file to download.
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <fstream>
 #include <memory>
+#include <string_view>
 #include <vector>
 
 #include "broadcast.hpp"
 
 namespace fcg {
+
+namespace assets {
+extern const std::array<std::string_view, 12> piece_svgs;
+}
 
 namespace {
 
@@ -231,118 +239,219 @@ void WebServer::download(net::TcpConnection& connection, const std::filesystem::
     }
 }
 
-const char* webPage() {
-    return R"HTML(<!doctype html>
+namespace {
+
+// The colours of the dark theme, chosen by the viewer's system or by the page's switch.
+constexpr const char* DARK_COLOURS =
+    "color-scheme:dark;--bg:#121418;--card:#1a1d23;--text:#e8eaee;--muted:#a3aab6;--line:#2a2f38;--soft:#23272f;"
+    "--accent:#5b9dff;--win:#5fd39a;--loss:#ff8f87;--book:#d9b85c";
+
+// The page: its styles (the dark colours and the pieces put in where marked), its script, nothing from elsewhere.
+constexpr const char* PAGE = R"HTML(<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>fastchess-gui live</title>
+<script>try{const t=localStorage.getItem('fcg-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}</script>
 <style>
-:root{--bg:#f4f5f7;--card:#fff;--text:#1b1e24;--muted:#626976;--line:#e0e3e8;--light:#dee3e6;--dark:#8ca2ad;--accent:#2f6fde;--win:#1d7f4e;--loss:#c03b33;--ew:#6ea8de;--eb:#ed994d}
-@media (prefers-color-scheme:dark){:root{--bg:#121418;--card:#1a1d23;--text:#e8eaee;--muted:#a3aab6;--line:#262a32;--accent:#5b9dff;--win:#5fd39a;--loss:#ff8f87}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
-header{padding:16px 24px;border-bottom:1px solid var(--line);background:var(--card);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-h1{margin:0;font-size:20px}h2{margin:0 0 8px;font-size:15px;font-weight:600}a{color:var(--accent)}
-.muted{color:var(--muted)}main{padding:20px 24px;display:flex;flex-direction:column;gap:20px}
-.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
-.games .card{cursor:pointer}.games .card.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
-.row{display:flex;justify-content:space-between;gap:8px;font-size:13px}.row b{font-weight:600}
-.board{position:relative;display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;border-radius:4px;overflow:hidden;margin:6px 0}
-.sq{display:flex;align-items:center;justify-content:center;font-size:min(4.2vw,22px);line-height:1;font-family:"Segoe UI Symbol","DejaVu Sans",sans-serif}
-.big .sq{font-size:min(8.5vw,44px)}
-.l{background:var(--light)}.d{background:var(--dark)}.w{color:#fff;text-shadow:0 0 1px #000,0 0 1px #000,0 0 2px #000}.b{color:#15171b}
+:root{color-scheme:light;--bg:#f4f5f7;--card:#fff;--text:#1b1e24;--muted:#626976;--line:#e0e3e8;--soft:#eef0f3;--light:#dee3e6;--dark:#8ca2ad;--accent:#2f6fde;--win:#1d7f4e;--loss:#c03b33;--ew:#6ea8de;--eb:#ed994d;--book:#8a6a12}
+:root[data-theme=dark]{/*DARK*/}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){/*DARK*/}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:10px 20px;border-bottom:1px solid var(--line);background:var(--card);display:flex;justify-content:space-between;align-items:center;gap:8px 16px;flex-wrap:wrap}
+h1{margin:0;font-size:18px;line-height:1.3}h2{margin:0 0 8px;font-size:15px;font-weight:600}h3{margin:14px 0 4px;font-size:13px;font-weight:600}a{color:var(--accent)}
+.muted{color:var(--muted)}.small{font-size:12px}main{padding:16px 20px;display:flex;flex-direction:column;gap:16px;max-width:1720px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.tools,.controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+button{font:inherit;font-size:13px;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer;min-width:34px}
+button:hover:not(:disabled){border-color:var(--accent)}button:disabled{opacity:.4;cursor:default}
+button svg{width:14px;height:14px;fill:currentColor;vertical-align:-2px}#theme svg{margin-right:5px}
+.stage{display:grid;gap:16px;grid-template-columns:minmax(0,1fr);align-items:start}.stage.none>.side{display:none}
+@media (min-width:800px){.stage{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}#tabs{grid-column:1/-1}}
+@media (min-width:1260px){.stage{grid-template-columns:minmax(380px,540px) minmax(400px,1fr) minmax(340px,1fr)}#tabs{grid-column:auto}.stage.none #tabs{grid-column:1/-1}}
+.player{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:5px 5px 5px 12px;min-height:46px}
+.player.tomove{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.pname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px solid var(--muted);flex:none}.dot.w{background:#fff}.dot.b{background:#15171b}
+.clock{font-size:24px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1.3;padding:1px 12px;border-radius:7px;background:var(--soft);min-width:92px;text-align:center}
+.clock.run{background:var(--accent);color:#fff}.clock.low{color:var(--loss)}.clock.run.low{background:var(--loss);color:#fff}
+.bwrap{display:flex;gap:6px;margin:8px 0}.bwrap .board{flex:1}
+.ebar{width:14px;border-radius:3px;background:#15171b;position:relative;overflow:hidden;border:1px solid var(--line);flex:none}
+.ebar>div{position:absolute;left:0;right:0;bottom:0;background:#e8eaee}.ebar.flip>div{top:0;bottom:auto}
+.board{position:relative;display:grid;grid-template-columns:repeat(8,1fr);aspect-ratio:1;border-radius:4px;overflow:hidden;user-select:none}
+.sq{position:relative;background-image:var(--pc,none),var(--ov,none);background-size:100% 100%;background-repeat:no-repeat}
+.l{background-color:var(--light)}.d{background-color:var(--dark)}.l.lm{background-color:#f3e27c}.d.lm{background-color:#cdbd52}
+.ck{--ov:radial-gradient(circle,rgba(235,30,30,.95) 0,rgba(235,30,30,.6) 32%,rgba(235,30,30,0) 72%)}
+.co{position:absolute;font-size:clamp(8px,1.5vw,11px);font-weight:700;line-height:1;pointer-events:none}.cr{top:3px;left:3px}.cf{bottom:3px;right:3px}
+.l .co{color:#6f8794}.d .co{color:#eef1f3}
 .arrows{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.side{display:flex;align-items:center;gap:6px;flex:none}
-.pbar{display:inline-block;width:40px;height:6px;border-radius:3px;background:#15171b;overflow:hidden;border:1px solid var(--line)}
+.where{margin-left:auto;font-size:12px;color:var(--muted);text-align:right}
+.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--loss);margin-right:5px;vertical-align:1px}
+.side{display:flex;flex-direction:column;gap:12px;min-width:0}
+.engines{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:12px}.engines .card{padding:10px}
+.eng{border-top:3px solid var(--line)}.eng.thinking{border-top-color:var(--accent)}
+.ehead{display:flex;align-items:center;gap:6px;font-size:13px;min-width:0}.ehead b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.state{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+.thinking .state{color:var(--accent)}.thinking .state::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:4px;vertical-align:1px;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.25}}@media (prefers-reduced-motion:reduce){.thinking .state::before{animation:none}}
+.eval{font-size:30px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1.15;margin:6px 0 8px}.eval small{font-size:12px;font-weight:400;color:var(--muted);margin-left:6px}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}.tile{background:var(--soft);border-radius:6px;padding:3px 5px;min-width:0}
+.tile span{display:block;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.tile b{display:block;font-weight:600;font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pv{font-size:13px;margin-top:8px;color:var(--muted);overflow-wrap:anywhere;line-height:1.5;min-height:1.5em}
+.chead{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13px;margin-bottom:6px}
+.moves{position:relative;max-height:17em;overflow-y:auto;line-height:1.85;overflow-wrap:anywhere}@media (min-width:1260px){.moves{max-height:26em}}
+.mn{color:var(--muted);margin:0 1px 0 5px;font-variant-numeric:tabular-nums;font-size:12px}
+.mv{padding:1px 4px;border-radius:4px;cursor:pointer;white-space:nowrap}.mv:hover{background:var(--soft)}
+.mv.bk{color:var(--book);font-style:italic}.mv.cur{background:var(--accent);color:#fff}
+.tabbar{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:-6px -4px 10px;overflow-x:auto;scrollbar-width:none}
+.tabbar button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:8px 7px;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;min-width:0;flex:none}
+.tabbar button[aria-selected=true]{color:var(--text);border-bottom-color:var(--accent)}#panel{overflow-x:auto;min-height:120px}
+.games{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px}
+.games .card{cursor:pointer;padding:10px}.games .card.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.games .board{margin:6px 0}
+.row{display:flex;justify-content:space-between;gap:8px;font-size:13px}.row b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.side2{display:flex;align-items:center;gap:6px;flex:none}
+.pbar{display:inline-block;width:40px;height:6px;border-radius:3px;background:#15171b;overflow:hidden;border:1px solid var(--line);flex:none}
 .pbar>span{display:block;height:100%;background:#e8eaee}.pbar.none{opacity:.3}
-.moves{max-height:7.6em;overflow-y:auto;font-size:13px;margin:4px 0 10px;overflow-wrap:anywhere}.mn{color:var(--muted);margin-right:3px}
-.tools{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-button{font:inherit;font-size:13px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:4px 10px;cursor:pointer}
-.focus{display:grid;grid-template-columns:minmax(240px,460px) minmax(0,1fr);gap:20px}
-.bwrap{display:flex;gap:8px;align-items:stretch}.bwrap .board{flex:1;margin:0}
-.ebar{width:16px;border-radius:3px;background:#15171b;position:relative;overflow:hidden;border:1px solid var(--line)}
-.ebar>div{position:absolute;left:0;right:0;bottom:0;background:#e8eaee}
-.search{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;margin:2px 0 8px}
-.charts{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:10px}
-.chart{width:100%;height:70px;display:block;background:var(--bg);border-radius:4px}.chart .axis{stroke:var(--muted);stroke-opacity:.5;stroke-width:1}
+.charts{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:8px}
+.chart{width:100%;height:96px;display:block;background:var(--soft);border-radius:4px}.chart .axis{stroke:var(--muted);stroke-opacity:.5;stroke-width:1}
+.chart .now{stroke:var(--text);stroke-opacity:.35;stroke-width:1;stroke-dasharray:3 3}
 .key{display:inline-block;width:10px;height:3px;border-radius:2px;vertical-align:middle;margin:0 3px 0 8px}
-.tomove{color:var(--accent)}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
-th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{color:var(--muted);font-weight:500}
-td.n,th.n{text-align:left}.scroll{overflow-x:auto}.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
-.bad{color:var(--loss);font-weight:600}td.wrap{white-space:normal}#next table{width:auto}
-@media (max-width:700px){.focus{grid-template-columns:1fr}header,main{padding-left:16px;padding-right:16px}}
+.tomove{color:var(--accent)}table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:13px}
+th,td{padding:5px 7px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{color:var(--muted);font-weight:500}
+td.n,th.n{text-align:left}.bad{color:var(--loss);font-weight:600}td.wrap{white-space:normal}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}.toast.show{opacity:1}
+dialog{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:10px;width:min(560px,92vw)}dialog textarea{width:100%;font:12px/1.4 ui-monospace,monospace;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px}
+@media (max-width:600px){header,main{padding-left:12px;padding-right:12px}main{padding-top:12px}.games{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}.clock{font-size:21px;min-width:80px}.eval{font-size:26px}}
+/*PIECES*/
 </style></head><body>
-<header><div><h1 id="name">fastchess-gui</h1><div class="muted" id="progress"></div></div><div class="tools"><button id="notation" type="button"></button><span id="download"></span></div></header>
-<main><section class="card" id="focus" hidden></section>
-<section><div class="games" id="games"></div></section>
-<section class="card scroll" id="nextcard" hidden><h2>Next games</h2><div id="next"></div></section>
-<section class="card scroll"><table id="table"></table></section>
-<section class="card scroll"><h2>Search per engine</h2><div class="muted">On average per move searched, book moves left out.</div><div id="engines"></div></section>
-<section class="two"><div class="card"><h2>Statistics</h2><div id="stats"></div></div>
-<div class="card"><h2>Anomalies</h2><div id="anomalies"></div></div></section>
-<section class="card"><div class="muted">Latest results</div><div id="recent"></div></section></main>
+<header><div><h1 id="name">fastchess-gui</h1><div class="muted small" id="progress"></div></div>
+<div class="tools"><button id="notation" type="button" title="Moves in letters or figurines"></button><button id="theme" type="button" title="Light or dark, or as the system says"></button><span id="download"></span></div></header>
+<main><div class="stage none" id="stage">
+<section class="side" id="boardcol"><div><div class="player" id="ptop"></div>
+<div class="bwrap"><div class="ebar" id="ebar"><div></div></div><div class="board" id="board"></div></div>
+<div class="player" id="pbottom"></div></div>
+<div class="controls"><button id="first" type="button" title="The start"><svg viewBox="0 0 16 16"><path d="M3 3h2v10H3zM13 3v10L6 8z"/></svg></button><button id="prev" type="button" title="The move before (←)"><svg viewBox="0 0 16 16"><path d="M11 3v10L4 8z"/></svg></button><button id="next" type="button" title="The move after (→)"><svg viewBox="0 0 16 16"><path d="M5 3v10l7-5z"/></svg></button><button id="live" type="button" title="Back to the game as it goes"><svg viewBox="0 0 16 16"><path d="M3 3v10l7-5zM11 3h2v10h-2z"/></svg></button>
+<button id="flip" type="button" title="Turn the board (F)"><svg viewBox="0 0 16 16"><path d="M5 1l3.5 4.5H6V15H4V5.5H1.5zM11 15l-3.5-4.5H10V1h2v9.5h2.5z"/></svg></button><button id="cpgn" type="button" title="Copy the game in PGN">PGN</button><button id="cfen" type="button" title="Copy the position in FEN">FEN</button><span class="where" id="where"></span></div></section>
+<section class="side"><div class="engines" id="engines"></div><div class="card"><div class="chead" id="mhead"></div><div class="moves" id="moves"></div></div></section>
+<section class="card" id="tabs"><nav class="tabbar" id="tabbar" role="tablist"></nav><div id="panel" role="tabpanel"></div></section></div>
+<section><h2 id="gameshead">Games in progress</h2><div class="games" id="games"></div></section></main>
+<div class="toast" id="toast"></div><dialog id="copybox"><div class="small muted">Copying is not allowed here: select the text and copy it.</div><textarea id="copytext" readonly></textarea><div style="text-align:right;margin-top:6px"><button id="copyclose" type="button">Close</button></div></dialog>
 <script>
-const P={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};let selected=null,last=null;
-// Moves in letters (Nf3) or figurines (♘f3), as the viewer last chose; the browser may keep nothing.
-const FIG={K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘'};let figurines=false;try{figurines=localStorage.getItem('fcg-figurines')==='1'}catch(e){}
+const PIECE={K:'wK',Q:'wQ',R:'wR',B:'wB',N:'wN',P:'wP',k:'bK',q:'bQ',r:'bR',b:'bB',n:'bN',p:'bP'};
+const START='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+let selected=null,last=null,lastText='',view=null,viewGame=null,toEnd=false,flipped=false,tab='standings',theme='auto';
+// What the viewer chose last (letters or figurines, the tab, the theme); the browser may keep nothing.
+const FIG={K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘'};let figurines=false;
+try{figurines=localStorage.getItem('fcg-figurines')==='1';tab=localStorage.getItem('fcg-tab')||tab;theme=localStorage.getItem('fcg-theme')||theme}catch(e){}
+function keep(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 function san(m){return esc(figurines?m.replace(/[KQRBN]/g,c=>FIG[c]+'\uFE0E'):m)}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function clock(ms){if(ms<0)ms=0;const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);
  return h?`${h}:${String(m%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:`${m}:${String(s%60).padStart(2,'0')}`}
 function count(n){return n>=1e9?(n/1e9).toFixed(1)+'G':n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'k':String(n)}
-function board(fen){let html='',r=0,f=0;for(const ch of fen.split(' ')[0]){if(ch==='/'){r++;f=0;continue}
- if(/\d/.test(ch)){for(let i=0;i<+ch;i++){html+=`<div class="sq ${(r+f)%2?'d':'l'}"></div>`;f++}continue}
- const white=ch===ch.toUpperCase();html+=`<div class="sq ${(r+f)%2?'d':'l'} ${white?'w':'b'}">${P[ch.toLowerCase()]||''}&#xFE0E;</div>`;f++}return html}
-// White's evaluation now: the side to move's search, else the last one.
-function whiteCp(g){const s=g.white_to_move?g.white_search:g.black_search;if(s&&s.depth)return g.white_to_move?s.score_cp:-s.score_cp;
- for(let i=g.evals.length-1;i>=0;i--)if(g.evals[i]!==null)return g.evals[i];return null}
-// White's share of a bar, from White's evaluation.
-function share(cp){if(cp===null)return 50;cp=Math.max(-1000,Math.min(1000,cp));return 50+50*(2/(1+Math.exp(-cp/250))-1)}
-function evalBar(g){return share(whiteCp(g))}
-// A player's own evaluation, from its last search, as a small bar of White's share.
-function pbar(g,white){const s=white?g.white_search:g.black_search;if(!s||!s.depth)return '<span class="pbar none" title="–"><span style="width:50%"></span></span>';
- const cp=white?s.score_cp:-s.score_cp;return `<span class="pbar" title="${score(cp)}"><span style="width:${share(cp)}%"></span></span>`}
-// The moves of a game, numbered from its start position.
-function moveList(g){const f=g.start_fen.split(' ');let white=(f[1]||'w')==='w',n=+f[5]||1,out='';
- g.moves.forEach((m,i)=>{if(white)out+=`<span class="mn">${n}.</span>`;else if(!i)out+=`<span class="mn">${n}…</span>`;out+=san(m)+' ';if(!white)n++;white=!white});
- return out||'<span class="muted">No move yet.</span>'}
+// A count in three figures at most, for the search tiles: 297k, 16M, 9.1M.
+function short(n){for(const [v,u] of [[1e9,'G'],[1e6,'M'],[1e3,'k']])if(n>=v){const x=n/v;return (x<10?x.toFixed(1):Math.round(x))+u}return String(n)}
+function secs(ms){return ms<60000?(ms/1000).toFixed(1)+' s':clock(ms)}
 function score(cp){if(cp===null||cp===undefined)return '–';if(Math.abs(cp)>=90000){const n=100000-Math.abs(cp);return (cp>0?'#':'-#')+n}
  return (cp>=0?'+':'')+(cp/100).toFixed(2)}
 function pawns(cp){return Math.max(-8,Math.min(8,Math.abs(cp)>=90000?Math.sign(cp)*8:cp/100))}
 function player(name,elo){return esc(name)+(elo?` <span class="muted">${elo}</span>`:'')}
 function half(x){return Number.isInteger(x)?String(x):Math.floor(x)+'½'}
-// Squares as board coordinates, a8 at the top left.
-function at(sq){return [sq.charCodeAt(0)-96.5,8.5-(+sq[1])]}
-function arrow(uci,side,opacity){if(!/^[a-h][1-8][a-h][1-8]/.test(uci))return '';const [x1,y1]=at(uci.slice(0,2)),[x2,y2]=at(uci.slice(2,4));
+
+// The positions of a game, from its start position and its moves in UCI: enough to show them and to copy their
+// FEN, not a move generator (fastchess checked the moves). Squares from 0 (a8) to 63 (h1), as a FEN lists them.
+const sqi=s=>(56-s.charCodeAt(1))*8+s.charCodeAt(0)-97,sqn=i=>String.fromCharCode(97+i%8)+(8-(i>>3));
+function parse(fen){const f=fen.split(' '),b=[];for(const c of f[0]){if(c==='/')continue;if(c>='1'&&c<='8')for(let i=0;i<+c;i++)b.push('');else b.push(c)}
+ // Each castling right as its rook's square: K and Q the outermost rooks, a file letter (Chess960) that file's.
+ const rights=[];for(const c of f[2]&&f[2]!=='-'?f[2]:''){const white=c<'a',row=white?56:0,rook=white?'R':'r',king=b.indexOf(white?'K':'k',row)-row;
+  let file=-1;if(c==='K'||c==='k'){for(let x=7;x>king&&file<0;x--)if(b[row+x]===rook)file=x}else if(c==='Q'||c==='q'){for(let x=0;x<king&&file<0;x++)if(b[row+x]===rook)file=x}
+  else file=c.toLowerCase().charCodeAt(0)-97;if(file>=0)rights.push({c,white,sq:row+file})}
+ return {b,w:(f[1]||'w')==='w',rights,ep:f[3]||'-',h:+f[4]||0,n:+f[5]||1}}
+function play(p,u){const b=p.b.slice(),from=sqi(u),to=sqi(u.slice(2)),pc=b[from]||'',white=pc!==''&&pc<'a',kind=pc.toLowerCase(),row=from&56,rook=white?'R':'r';
+ let reset=kind==='p'||b[to]!=='',ep='-';
+ if(kind==='k'&&(b[to]===rook||Math.abs(to-from)===2)){
+  // Castling: the king onto its own rook (Chess960), or two squares aside.
+  const r=b[to]===rook?to:to>from?row+7:row,short=r>from;b[from]='';b[r]='';b[row+(short?6:2)]=pc;b[row+(short?5:3)]=rook;reset=false}
+ else{if(kind==='p'&&(to-from)%8&&!b[to])b[to+(white?8:-8)]='';
+  b[to]=u.length>4?(white?u[4].toUpperCase():u[4]):pc;b[from]='';
+  if(kind==='p'&&Math.abs(to-from)===16){const x=to%8,them=white?'p':'P';if(x>0&&b[to-1]===them||x<7&&b[to+1]===them)ep=sqn((from+to)/2)}}
+ return {b,w:!p.w,rights:p.rights.filter(r=>r.sq!==from&&r.sq!==to&&!(kind==='k'&&r.white===white)),ep,h:reset?0:p.h+1,n:p.n+(p.w?0:1)}}
+function fenOf(p){let out='';for(let r=0;r<8;r++){let e=0;for(let f=0;f<8;f++){const c=p.b[r*8+f];if(!c){e++;continue}if(e)out+=e;e=0;out+=c}if(e)out+=e;if(r<7)out+='/'}
+ return `${out} ${p.w?'w':'b'} ${p.rights.map(r=>r.c).join('')||'-'} ${p.ep} ${p.h} ${p.n}`}
+let cache={key:'',list:[]};
+function positions(g){const uci=g.uci||[],key=g.number+' '+g.start_fen+' '+(uci[0]||'');if(cache.key!==key||cache.list.length>uci.length+1)cache={key,list:[parse(g.start_fen)]};
+ const list=cache.list;while(list.length<=uci.length)list.push(play(list[list.length-1],uci[list.length-1]));return list}
+
+function board(b,o){let html='';for(let k=0;k<64;k++){const i=o.flip?63-k:k,r=i>>3,f=i%8,pc=b[i];
+ let cls='sq '+((r+f)%2?'d':'l');if(pc)cls+=' p'+PIECE[pc];if(i===o.from||i===o.to)cls+=' lm';if(i===o.check)cls+=' ck';
+ let co='';if(o.coords){if(k%8===0)co+=`<span class="co cr">${8-r}</span>`;if(k>=56)co+=`<span class="co cf">${String.fromCharCode(97+f)}</span>`}
+ html+=`<div class="${cls}">${co}</div>`}return html}
+// The last move and a king in check, after `k` moves of a game; `p` the position.
+function marks(g,p,k){const o={};if(k>0&&g.uci&&g.uci[k-1]){o.from=sqi(g.uci[k-1]);o.to=sqi(g.uci[k-1].slice(2))}
+ if(k>0&&/[+#]$/.test(g.moves[k-1]||''))o.check=p.b.indexOf(p.w?'K':'k');return o}
+// White's evaluation now: the side to move's search, else the last one.
+function whiteCp(g){const s=g.white_to_move?g.white_search:g.black_search;if(s&&s.depth)return g.white_to_move?s.score_cp:-s.score_cp;return evalAt(g,g.evals.length)}
+// White's evaluation after `k` moves: the last one known.
+function evalAt(g,k){for(let i=Math.min(k,g.evals.length)-1;i>=0;i--)if(g.evals[i]!==null)return g.evals[i];return null}
+// White's share of a bar, from White's evaluation.
+function share(cp){if(cp===null)return 50;cp=Math.max(-1000,Math.min(1000,cp));return 50+50*(2/(1+Math.exp(-cp/250))-1)}
+// A player's own evaluation, from its last search, as a small bar of White's share.
+function pbar(g,white){const s=white?g.white_search:g.black_search;if(!s||!s.depth)return '<span class="pbar none" title="–"><span style="width:50%"></span></span>';
+ const cp=white?s.score_cp:-s.score_cp;return `<span class="pbar" title="${score(cp)}"><span style="width:${share(cp)}%"></span></span>`}
+// Squares as board coordinates, a8 at the top left (h1 when the board is turned).
+function at(sq,flip){const x=sq.charCodeAt(0)-96.5,y=8.5-(+sq[1]);return flip?[8-x,8-y]:[x,y]}
+function arrow(uci,side,opacity,flip){if(!/^[a-h][1-8][a-h][1-8]/.test(uci))return '';const [x1,y1]=at(uci.slice(0,2),flip),[x2,y2]=at(uci.slice(2,4),flip);
  const dx=x2-x1,dy=y2-y1,l=Math.hypot(dx,dy),k=(l-.35)/l;
  return `<g opacity="${opacity}"><line x1="${x1}" y1="${y1}" x2="${x1+dx*k}" y2="${y1+dy*k}" style="stroke:var(--e${side})" stroke-width=".17" marker-end="url(#h${side})"/></g>`}
 // The move the side to move thinks of, and the reply it expects, in the colours of the engines that would play them.
-function arrows(g){const s=g.white_to_move?g.white_search:g.black_search;if(!g.active||!s||!s.pv||!s.pv.length)return '';
- const me=g.white_to_move?'w':'b',other=g.white_to_move?'b':'w';return (s.pv.length>1?arrow(s.pv[1],other,.6):'')+arrow(s.pv[0],me,.85)}
+function arrows(g,flip){const s=g.white_to_move?g.white_search:g.black_search;if(!g.active||!s||!s.current||!s.pv||!s.pv.length)return '';
+ const me=g.white_to_move?'w':'b',other=g.white_to_move?'b':'w';return (s.pv.length>1?arrow(s.pv[1],other,.6,flip):'')+arrow(s.pv[0],me,.85,flip)}
 const MARKERS='<defs>'+['w','b'].map(c=>`<marker id="h${c}" viewBox="0 0 10 10" refX="4" refY="5" markerWidth="2.6" markerHeight="2.6" orient="auto"><path d="M0,0L10,5L0,10z" style="fill:var(--e${c})"/></marker>`).join('')+'</defs>';
-// A small line chart: series of [ply, value], plies on the x axis.
-function chart(title,series,n,min,max,zero,unit){const W=300,H=70,y=v=>H-2-(v-min)/(max-min||1)*(H-4),x=i=>i/Math.max(20,n)*W;
+
+// A small line chart: series of [ply, value], plies on the x axis; a dashed line at the move shown.
+function chart(title,series,n,min,max,zero,unit,now){const W=300,H=96,y=v=>H-2-(v-min)/(max-min||1)*(H-4),x=i=>i/Math.max(20,n)*W;
  let svg=`<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">`;
  if(zero)svg+=`<line class="axis" x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" vector-effect="non-scaling-stroke"/>`;
+ if(now!==null)svg+=`<line class="now" x1="${x(now)}" x2="${x(now)}" y1="0" y2="${H}" vector-effect="non-scaling-stroke"/>`;
  for(const s of series)if(s.pts.length)svg+=`<polyline fill="none" style="stroke:${s.color}" stroke-width="1.5" vector-effect="non-scaling-stroke" points="${s.pts.map(([i,v])=>x(i).toFixed(1)+','+y(v).toFixed(1)).join(' ')}"/>`;
- return `<div><div class="row muted"><span>${title}</span><span>${unit}</span></div>${svg}</svg></div>`}
-function charts(g){const wf=(g.start_fen.split(' ')[1]||'w')==='w',n=g.moves.length,white=i=>(i%2===0)===wf;
+ return `<div><div class="row muted small"><span>${title}</span><span>${unit}</span></div>${svg}</svg></div>`}
+function charts(g,now){const wf=(g.start_fen.split(' ')[1]||'w')==='w',n=g.moves.length,white=i=>(i%2===0)===wf;
  const ev=[],dw=[],db=[],tw=[],tb=[];
  g.evals.forEach((v,i)=>{if(v!==null)ev.push([i+1,pawns(v)])});
  g.depths.forEach((v,i)=>{if(v!==null)(white(i)?dw:db).push([i+1,v])});
  g.times_ms.forEach((v,i)=>{if(v!==null)(white(i)?tw:tb).push([i+1,v/1000])});
  const top=a=>Math.max(1,...a.map(p=>p[1]));
  const keys=`<span class="key" style="background:var(--ew)"></span>${esc(g.white)}<span class="key" style="background:var(--eb)"></span>${esc(g.black)}`;
- return `<div class="row muted" style="margin-top:10px"><span>Charts of the game</span><span>${keys}</span></div><div class="charts">`+
-  chart('Evaluation',[{pts:ev,color:'var(--accent)'}],n,-8.5,8.5,true,'±8 pawns, White')+
-  chart('Depth',[{pts:dw,color:'var(--ew)'},{pts:db,color:'var(--eb)'}],n,0,top(dw.concat(db)),false,'up to '+top(dw.concat(db)))+
-  chart('Time',[{pts:tw,color:'var(--ew)'},{pts:tb,color:'var(--eb)'}],n,0,top(tw.concat(tb)),false,'up to '+top(tw.concat(tb)).toFixed(1)+' s')+'</div>'}
-function search(g,white){const s=white?g.white_search:g.black_search;if(!s||!s.depth)return '<div class="search">–</div>';
- const cp=white?s.score_cp:-s.score_cp,thinks=g.active&&g.white_to_move===white;
- return `<div class="search">d${s.depth} · ${score(cp)} · ${count(s.nodes)} nodes · ${(s.time_ms/1000).toFixed(1)} s${thinks&&s.pv.length?'<br>'+(s.pv_san?san(s.pv_san):esc(s.pv.slice(0,12).join(' '))):''}</div>`}
-function focus(g){const side=(white)=>`<div class="row"><b class="${g.active&&g.white_to_move===white?'tomove':''}">${player(white?g.white:g.black,white?g.white_elo:g.black_elo)}</b><span class="side">${pbar(g,white)}<span>${g.clocks?clock(white?g.white_ms:g.black_ms):''}</span></span></div>${search(g,white)}`;
- return `<div class="focus"><div class="bwrap"><div class="ebar" title="${score(whiteCp(g))}"><div style="height:${evalBar(g)}%"></div></div>
-  <div class="board big">${board(g.fen)}<svg class="arrows" viewBox="0 0 8 8">${MARKERS}${arrows(g)}</svg></div></div>
-  <div>${side(false)}${side(true)}<div class="row"><span>Game #${g.number} · ${Math.ceil(g.moves.length/2)} moves · ${score(whiteCp(g))}</span><span>${g.active?'':esc(g.result)}</span></div><div class="moves" id="moves">${moveList(g)}</div>${charts(g)}</div></div>`}
+ return `<div class="row muted small"><span>Game #${g.number}</span><span>${keys}</span></div><div class="charts">`+
+  chart('Evaluation',[{pts:ev,color:'var(--accent)'}],n,-8.5,8.5,true,'±8 pawns, White',now)+
+  chart('Depth',[{pts:dw,color:'var(--ew)'},{pts:db,color:'var(--eb)'}],n,0,top(dw.concat(db)),false,'up to '+top(dw.concat(db)),now)+
+  chart('Time',[{pts:tw,color:'var(--ew)'},{pts:tb,color:'var(--eb)'}],n,0,top(tw.concat(tb)),false,'up to '+top(tw.concat(tb)).toFixed(1)+' s',now)+'</div>'}
+
+// A player beside the board: its colour, its name, its evaluation and its clock, running while it thinks.
+function playerBar(g,white){const ms=white?g.white_ms:g.black_ms,run=g.active&&g.white_to_move===white;
+ return `<span class="dot ${white?'w':'b'}"></span><span class="pname"><b>${esc(white?g.white:g.black)}</b>${(white?g.white_elo:g.black_elo)?` <span class="muted">${white?g.white_elo:g.black_elo}</span>`:''}</span>`+
+  pbar(g,white)+(g.clocks?`<span class="clock${run?' run':''}${ms<10000&&g.active?' low':''}">${clock(ms)}</span>`:'')}
+// An engine's search: its evaluation in large type, what it searched as tiles, and its PV; the current search
+// while it thinks, else its last move's.
+function engineCard(g,white){const s=white?g.white_search:g.black_search,has=s&&s.depth>0,thinks=g.active&&g.white_to_move===white;
+ const state=thinks?'Thinking':g.active?'Waiting':esc(g.result||'');
+ const cp=has?(white?s.score_cp:-s.score_cp):null,nps=has?(s.nps||(s.time_ms>0?Math.round(s.nodes*1000/s.time_ms):0)):0;
+ const tile=(name,value)=>`<div class="tile"><span>${name}</span><b>${value}</b></div>`;
+ const pv=has&&s.pv_san?san(s.pv_san):has&&s.current&&s.pv&&s.pv.length?esc(s.pv.join(' ')):'';
+ return `<div class="card eng${thinks?' thinking':''}"><div class="ehead"><span class="dot ${white?'w':'b'}"></span><b title="${esc(white?g.white:g.black)}">${esc(white?g.white:g.black)}</b><span class="state">${state}</span></div>`+
+  `<div class="eval" title="White's point of view">${score(cp)}${has&&!s.current?'<small>last move</small>':''}</div><div class="tiles">`+
+  tile('Depth',has?s.depth+(s.seldepth?'/'+s.seldepth:''):'–')+tile('Nodes',has&&s.nodes?short(s.nodes):'–')+tile('NPS',nps?short(nps):'–')+
+  tile('Time',has?secs(s.time_ms):'–')+tile('TB',has&&s.tbhits!==null&&s.tbhits!==undefined?short(s.tbhits):'–')+
+  tile('Hash',has&&s.hashfull!==null&&s.hashfull!==undefined?Math.round(s.hashfull/10)+'%':'–')+`</div><div class="pv">${pv}</div></div>`}
+// The moves of a game, numbered from its start position; the move shown marked, the book's told apart.
+function moveList(g,cur){const f=g.start_fen.split(' '),book=g.book||[];let white=(f[1]||'w')==='w',n=+f[5]||1,out='';
+ g.moves.forEach((m,i)=>{if(white)out+=`<span class="mn">${n}.</span>`;else if(!i)out+=`<span class="mn">${n}…</span>`;
+  out+=`<span class="mv${book[i]?' bk':''}${i+1===cur?' cur':''}" data-p="${i+1}"${book[i]?' title="From the opening book"':''}>${san(m)}</span> `;if(!white)n++;white=!white});
+ if(!g.active&&g.result)out+=` <b>${esc(g.result)}</b>`;
+ return out||'<span class="muted">No move yet.</span>'}
+// The move after `k` moves, as "12…Nf6".
+function moveName(g,k){const f=g.start_fen.split(' '),w0=(f[1]||'w')==='w',ply=k-1+(w0?0:1);return `${(+f[5]||1)+Math.floor(ply/2)}${ply%2?'…':'.'}${san(g.moves[k-1])}`}
+
 function stats(s){const t=s.stats;if(!t||!t.games)return '<div class="muted">No game played yet.</div>';
  const pc=x=>`${x} <span class="muted">(${Math.round(100*x/t.games)} %)</span>`,row=(a,b)=>`<tr><td class="n">${a}</td><td>${b}</td></tr>`;
  return '<table>'+row('Games',t.games)+row('White wins (1-0)',pc(t.white_wins))+row('Black wins (0-1)',pc(t.black_wins))+row('Draws',pc(t.draws))+
@@ -357,7 +466,7 @@ function engines(s){const e=s.engines||[],v=(x,f)=>x===null||x===undefined?'<spa
  if(!e.some(x=>x.moves))return '<div class="muted">No game played yet.</div>';
  const bad=x=>[[x.time_losses,'time loss','time losses'],[x.crashes,'crash','crashes'],[x.stalls,'no answer','no answer'],[x.illegal_moves,'illegal move','illegal moves']]
   .filter(a=>a[0]).map(a=>a[0]+' '+(a[0]>1?a[2]:a[1])).join(' · ');
- return '<table><tr><th class="n">Engine</th><th>Depth</th><th>Time</th><th>Nodes</th><th>Speed</th><th class="n">Anomalies</th></tr>'+e.map(x=>{const b=bad(x);
+ return '<div class="muted small">On average per move searched, book moves left out.</div><table><tr><th class="n">Engine</th><th>Depth</th><th>Time</th><th>Nodes</th><th>Speed</th><th class="n">Anomalies</th></tr>'+e.map(x=>{const b=bad(x);
   return `<tr><td class="n">${esc(x.name)}</td><td>${v(x.depth,d=>d.toFixed(1))}</td><td>${v(x.time_ms,t=>(t/1000).toFixed(2)+' s')}</td><td>${v(x.nodes,count)}</td>`+
    `<td>${v(x.nps,n=>count(n)+'/s')}</td><td class="n">${b?`<span class="bad">${b}</span>`:'<span class="muted">none</span>'}</td></tr>`}).join('')+'</table>'}
 // The next games of the schedule; a Swiss or a knockout pairs its rounds as it goes.
@@ -365,38 +474,155 @@ function upcoming(s){const n=s.next||[],asItGoes=s.format==='swiss'||s.format===
  let html=n.length?'<table>'+n.map(x=>`<tr><td>#${x.number}</td><td class="n">${cycles?'Cycle '+x.cycle+' · ':''}Round ${x.round}</td>`+
   `<td class="n wrap">${player(x.white)} – ${player(x.black)}${x.opening?`<div class="muted">${esc(x.opening)}</div>`:''}</td></tr>`).join('')+'</table>':'';
  if(asItGoes)html+=`<div class="muted">${n.length?'The later rounds are':'The next round is'} paired as the tournament goes, from the results: their games are not known in advance.</div>`;
- return html}
-function render(s){last=s;const notation=document.getElementById('notation');notation.textContent='Moves: '+(figurines?'♘\uFE0Ef3':'Nf3');
- // The move list stays where the viewer scrolled it, at its end while the game goes on.
- const before=document.getElementById('moves'),shown=before&&before.dataset.n,atEnd=!before||before.scrollTop+before.clientHeight>=before.scrollHeight-4,top=before?before.scrollTop:0;
- document.getElementById('name').textContent=s.name||'fastchess-gui';document.title=s.name||'fastchess-gui';
- document.getElementById('progress').textContent=`${s.played}${s.total?' / '+s.total:''} games${s.finished?' · finished':''}`;
- document.getElementById('download').innerHTML=s.pgn?`<a href="games.pgn" download="${esc(s.pgn)}">Download the games (PGN)</a>`:'';
- const g=s.games.find(x=>x.number===selected)||s.games.find(x=>x.active)||s.games[0];
- const f=document.getElementById('focus');f.hidden=!g;f.innerHTML=g?focus(g):'';
- const moves=document.getElementById('moves');if(moves){moves.dataset.n=g.number;moves.scrollTop=atEnd||shown!==String(g.number)?moves.scrollHeight:top}
- document.getElementById('games').innerHTML=s.games.map(x=>`<div class="card${g&&x.number===g.number?' sel':''}" data-n="${x.number}">
-  <div class="row"><b class="${!x.white_to_move&&x.active?'tomove':''}">${player(x.black,x.black_elo)}</b><span class="side">${pbar(x,false)}<span class="muted">${x.clocks?clock(x.black_ms):''}</span></span></div>
-  <div class="board">${board(x.fen)}</div>
-  <div class="row"><b class="${x.white_to_move&&x.active?'tomove':''}">${player(x.white,x.white_elo)}</b><span class="side">${pbar(x,true)}<span class="muted">${x.clocks?clock(x.white_ms):''}</span></span></div>
-  <div class="row muted"><span>#${x.number} · ${Math.ceil(x.moves.length/2)} moves</span><span>${x.active?'':esc(x.result)}</span></div></div>`).join('')||'<div class="muted">No game in progress.</div>';
- const rows=s.standings;let t='<tr><th>#</th><th class="n">Engine</th><th>Games</th><th>Points</th><th>Elo</th><th>±</th><th>+</th><th>=</th><th>−</th>'+rows.map((_,i)=>`<th>${i+1}</th>`).join('')+'</tr>';
+ return html||'<div class="muted">No game left to play.</div>'}
+function standings(s){const rows=s.standings;if(!rows.length)return '<div class="muted">No engine yet.</div>';
+ let t='<table><tr><th>#</th><th class="n">Engine</th><th>Games</th><th>Points</th><th>Elo</th><th>±</th><th>+</th><th>=</th><th>−</th>'+rows.map((_,i)=>`<th>${i+1}</th>`).join('')+'</tr>';
  rows.forEach(r=>{t+=`<tr><td>${r.rank}</td><td class="n">${esc(r.name)}</td><td>${r.games}</td><td>${half(r.points)}</td><td>${r.games?(r.elo>=0?'+':'')+Math.round(r.elo):''}</td><td class="muted">${r.games?Math.round(r.elo_error):''}</td><td>${r.wins}</td><td>${r.draws}</td><td>${r.losses}</td>`+
   r.crosstable.map(c=>c?`<td title="+${c.wins} =${c.draws} -${c.losses}">${c.wins+c.draws+c.losses?half(c.wins+c.draws/2):''}</td>`:'<td class="muted">–</td>').join('')+'</tr>'});
- document.getElementById('table').innerHTML=t;
- const nx=document.getElementById('nextcard'),soon=upcoming(s);nx.hidden=s.finished||!soon;document.getElementById('next').innerHTML=soon;
- document.getElementById('engines').innerHTML=engines(s);
- document.getElementById('stats').innerHTML=stats(s);
- document.getElementById('anomalies').innerHTML=anomalies(s);
- document.getElementById('recent').innerHTML=s.recent.slice(0,12).map(x=>`<div>${esc(x)}</div>`).join('')}
-document.getElementById('notation').addEventListener('click',()=>{figurines=!figurines;
- try{localStorage.setItem('fcg-figurines',figurines?'1':'0')}catch(e){}if(last)render(last)});
-document.getElementById('games').addEventListener('click',e=>{const c=e.target.closest('[data-n]');if(c){selected=+c.dataset.n;if(last)render(last)}});
-async function refresh(){try{render(await (await fetch('state.json',{cache:'no-store'})).json())}
+ return t+'</table>'}
+const FORMATS={match:'Match',round_robin:'Round robin',gauntlet:'Gauntlet',swiss:'Swiss',knockout:'Knockout'};
+function eventInfo(s){const row=(a,b)=>`<tr><td class="n muted">${a}</td><td class="n wrap">${b}</td></tr>`;
+ return '<table>'+row('Tournament',esc(s.name||'–'))+row('Format',FORMATS[s.format]||esc(s.format||'–'))+(s.time_control?row('Time control',esc(s.time_control)):'')+
+  row('Variant',s.chess960?'Chess960':'Standard chess')+row('Games',`${s.played}${s.total?' of '+s.total:''} played${s.finished?', finished':''}`)+
+  (s.pgn?row('Games file',`<a href="games.pgn" download="${esc(s.pgn)}">${esc(s.pgn)}</a>`):'')+'</table>'+
+  `<h3>Latest results</h3>${s.recent.slice(0,12).map(x=>`<div>${esc(x)}</div>`).join('')||'<div class="muted">No game played yet.</div>'}`}
+const TABS=[['standings','Standings'],['charts','Charts'],['engines','Engines'],['next','Next'],['stats','Statistics'],['event','Event']];
+if(!TABS.some(t=>t[0]===tab))tab='standings';
+
+function follow(s){return s.games.find(x=>x.number===selected)||s.games.find(x=>x.active)||s.games[0]}
+// The move shown in the followed game: its last one while the viewer follows the game as it goes.
+function shown(g){return view===null?g.moves.length:Math.min(view,g.moves.length)}
+function render(s){last=s;
+ document.getElementById('notation').textContent='Moves: '+(figurines?'♘\uFE0Ef3':'Nf3');
+ document.getElementById('name').textContent=s.name||'fastchess-gui';document.title=s.name||'fastchess-gui';
+ document.getElementById('progress').textContent=[`${s.played}${s.total?' / '+s.total:''} games${s.finished?' · finished':''}`,FORMATS[s.format],s.time_control].filter(x=>x).join(' · ');
+ document.getElementById('download').innerHTML=s.pgn?`<a href="games.pgn" download="${esc(s.pgn)}">Download the games (PGN)</a>`:'';
+ const g=follow(s);if(!g||g.number!==viewGame){view=null;viewGame=g?g.number:null}
+ document.getElementById('stage').classList.toggle('none',!g);
+ if(g)game(g);
+ document.getElementById('gameshead').textContent=s.games.length?'Games in progress':'';
+ document.getElementById('games').innerHTML=s.games.map(x=>{const p=parse(x.fen);return `<div class="card${g&&x.number===g.number?' sel':''}" data-n="${x.number}">
+  <div class="row"><b class="${!x.white_to_move&&x.active?'tomove':''}">${player(x.black,x.black_elo)}</b><span class="side2">${pbar(x,false)}<span class="muted">${x.clocks?clock(x.black_ms):''}</span></span></div>
+  <div class="board">${board(p.b,marks(x,p,x.moves.length))}</div>
+  <div class="row"><b class="${x.white_to_move&&x.active?'tomove':''}">${player(x.white,x.white_elo)}</b><span class="side2">${pbar(x,true)}<span class="muted">${x.clocks?clock(x.white_ms):''}</span></span></div>
+  <div class="row muted"><span>#${x.number} · ${Math.ceil(x.moves.length/2)} moves</span><span>${x.active?'':esc(x.result)}</span></div></div>`}).join('')||'<div class="muted">No game in progress.</div>';
+ panel(s,g)}
+// The followed game: the board at the move shown, the players and their clocks, the engines' searches, the moves.
+function game(g){const n=g.moves.length,list=positions(g),ok=list.length===n+1,k=ok?shown(g):n,live=k===n;
+ const p=live?parse(g.fen):list[k];
+ document.getElementById('board').innerHTML=board(p.b,Object.assign({flip:flipped,coords:true},marks(g,p,k)))+
+  `<svg class="arrows" viewBox="0 0 8 8">${MARKERS}${live?arrows(g,flipped):''}</svg>`;
+ const cp=live?whiteCp(g):evalAt(g,k),bar=document.getElementById('ebar');bar.classList.toggle('flip',flipped);
+ bar.title=score(cp);bar.firstChild.style.height=share(cp)+'%';
+ for(const [id,white] of [['ptop',flipped],['pbottom',!flipped]]){const e=document.getElementById(id);
+  e.className='player'+(g.active&&g.white_to_move===white?' tomove':'');e.innerHTML=playerBar(g,white)}
+ document.getElementById('engines').innerHTML=engineCard(g,true)+engineCard(g,false);
+ document.getElementById('first').disabled=document.getElementById('prev').disabled=!ok||k===0;
+ document.getElementById('next').disabled=document.getElementById('live').disabled=live;
+ document.getElementById('where').innerHTML=live?(g.active?'<span class="live">Live</span>':esc(g.result||'')):k?`After ${moveName(g,k)}`:'Start position';
+ document.getElementById('mhead').innerHTML=`<b>Game #${g.number} · ${Math.ceil(n/2)} moves</b>${(g.book||[]).some(x=>x)?'<span class="mv bk small">book moves</span>':''}`;
+ const moves=document.getElementById('moves'),atEnd=moves.dataset.n!==String(g.number)||moves.scrollTop+moves.clientHeight>=moves.scrollHeight-4;
+ moves.dataset.n=g.number;moves.innerHTML=moveList(g,k);
+ // The move list follows the game at its end, and the move shown elsewhere.
+ const cur=moves.querySelector('.cur');
+ if(live&&(atEnd||toEnd))moves.scrollTop=moves.scrollHeight;
+ else if(!live&&cur&&(cur.offsetTop<moves.scrollTop||cur.offsetTop+cur.offsetHeight>moves.scrollTop+moves.clientHeight))moves.scrollTop=cur.offsetTop-moves.clientHeight/2}
+function panel(s,g){document.getElementById('tabbar').innerHTML=TABS.map(([id,name])=>`<button type="button" role="tab" data-tab="${id}" aria-selected="${id===tab}">${name}</button>`).join('');
+ document.getElementById('panel').innerHTML=tab==='standings'?standings(s):tab==='charts'?(g?charts(g,view===null?null:shown(g)):'<div class="muted">No game in progress.</div>'):
+  tab==='engines'?engines(s):tab==='next'?upcoming(s):tab==='stats'?`<h3 style="margin-top:0">Results</h3>${stats(s)}<h3>Anomalies</h3>${anomalies(s)}`:eventInfo(s)}
+
+function redraw(){if(last)render(last)}
+// Stepping through the followed game's moves; past its last move, back to the game as it goes.
+function step(a){const g=last&&follow(last);if(!g)return;const n=g.moves.length;let k=shown(g);
+ k=a==='first'?0:a==='prev'?Math.max(0,k-1):a==='next'?k+1:n;view=k>=n?null:k;toEnd=view===null;redraw();toEnd=false}
+function toast(text){const t=document.getElementById('toast');t.textContent=text;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),1600)}
+// The clipboard, where the browser allows it (HTTPS or localhost), else the old way, else the text to copy by hand.
+async function copy(text,what){try{await navigator.clipboard.writeText(text);toast(what+' copied');return}catch(e){}
+ const t=document.createElement('textarea');t.value=text;t.setAttribute('readonly','');t.style.position='fixed';t.style.opacity='0';document.body.appendChild(t);t.select();
+ let ok=false;try{ok=document.execCommand('copy')}catch(e){}t.remove();if(ok){toast(what+' copied');return}
+ const box=document.getElementById('copybox');const area=document.getElementById('copytext');area.value=text;area.style.height=text.includes('\n')?'240px':'4em';box.showModal();area.select()}
+function pgn(s,g){const tag=(k,v)=>`[${k} "${String(v).replace(/[\\"]/g,c=>'\\'+c)}"]\n`,result=g.active?'*':g.result||'*';
+ let out=tag('Event',s.name||'')+tag('Round',g.number)+tag('White',g.white)+tag('Black',g.black)+tag('Result',result);
+ if(g.white_elo)out+=tag('WhiteElo',g.white_elo);if(g.black_elo)out+=tag('BlackElo',g.black_elo);
+ if(s.chess960)out+=tag('Variant','Chess960');if(s.chess960||g.start_fen!==START)out+=tag('SetUp','1')+tag('FEN',g.start_fen);
+ const f=g.start_fen.split(' ');let white=(f[1]||'w')==='w',n=+f[5]||1,line='',text='';
+ g.moves.forEach((m,i)=>{const t=white?`${n}. ${m}`:i?m:`${n}... ${m}`;if(!white)n++;white=!white;
+  if(line&&line.length+1+t.length>79){text+=line+'\n';line=''}line+=(line?' ':'')+t});
+ return out+'\n'+text+line+(line?' ':'')+result+'\n'}
+function applyTheme(){if(theme==='light'||theme==='dark')document.documentElement.dataset.theme=theme;else{theme='auto';delete document.documentElement.dataset.theme}
+ document.getElementById('theme').innerHTML='<svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1.5v11a5.5 5.5 0 0 1 0-11z"/></svg>'+{auto:'Auto',light:'Light',dark:'Dark'}[theme]}
+applyTheme();
+document.getElementById('theme').addEventListener('click',()=>{theme={auto:'light',light:'dark',dark:'auto'}[theme];keep('fcg-theme',theme);applyTheme()});
+document.getElementById('notation').addEventListener('click',()=>{figurines=!figurines;keep('fcg-figurines',figurines?'1':'0');redraw()});
+document.getElementById('games').addEventListener('click',e=>{const c=e.target.closest('[data-n]');if(c){selected=+c.dataset.n;view=null;redraw()}});
+document.getElementById('moves').addEventListener('click',e=>{const m=e.target.closest('[data-p]'),g=last&&follow(last);if(m&&g){const k=+m.dataset.p;view=k>=g.moves.length?null:k;redraw()}});
+document.getElementById('tabbar').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b){tab=b.dataset.tab;keep('fcg-tab',tab);redraw()}});
+for(const a of ['first','prev','next','live'])document.getElementById(a).addEventListener('click',()=>step(a));
+document.getElementById('flip').addEventListener('click',()=>{flipped=!flipped;redraw()});
+document.getElementById('cpgn').addEventListener('click',()=>{const g=last&&follow(last);if(g)copy(pgn(last,g),'PGN')});
+document.getElementById('cfen').addEventListener('click',()=>{const g=last&&follow(last);if(!g)return;const list=positions(g),k=shown(g);
+ copy(k===g.moves.length||list.length!==g.moves.length+1?g.fen:fenOf(list[k]),'FEN')});
+document.getElementById('copyclose').addEventListener('click',()=>document.getElementById('copybox').close());
+document.addEventListener('keydown',e=>{if(e.altKey||e.ctrlKey||e.metaKey||/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)||document.getElementById('copybox').open)return;
+ const a={ArrowLeft:'prev',ArrowRight:'next',f:'flip',F:'flip'}[e.key];if(!a)return;e.preventDefault();if(a==='flip'){flipped=!flipped;redraw()}else step(a)});
+async function refresh(){try{const text=await (await fetch('state.json',{cache:'no-store'})).text();if(text!==lastText){lastText=text;render(JSON.parse(text))}}
  catch(e){document.getElementById('progress').textContent='Waiting for fastchess-gui…'}}
 refresh();setInterval(refresh,1000);
 </script></body></html>
 )HTML";
+
+// The pieces, the GUI's own, as images in the page's styles: a class per piece ("pwK"), its picture in --pc.
+std::string pieceStyles() {
+    static constexpr const char* names[] = {"wK", "wQ", "wR", "wB", "wN", "wP", "bK", "bQ", "bR", "bB", "bN", "bP"};
+    std::string css;
+    for (std::size_t i = 0; i < assets::piece_svgs.size(); ++i) {
+        css += std::string(".p") + names[i] + "{--pc:url(\"data:image/svg+xml,";
+        for (const char c : assets::piece_svgs[i]) {
+            switch (c) {
+                case '"':
+                    css += '\'';
+                    break;
+                case '#':
+                    css += "%23";
+                    break;
+                case '%':
+                    css += "%25";
+                    break;
+                case '<':
+                    css += "%3C";
+                    break;
+                case '>':
+                    css += "%3E";
+                    break;
+                case '\r':
+                case '\n':
+                    css += ' ';
+                    break;
+                default:
+                    css += c;
+            }
+        }
+        css += "\")}\n";
+    }
+    return css;
+}
+
+void replaceAll(std::string& text, std::string_view mark, std::string_view by) {
+    for (auto at = text.find(mark); at != std::string::npos; at = text.find(mark, at + by.size())) {
+        text.replace(at, mark.size(), by);
+    }
+}
+
+}  // namespace
+
+const std::string& webPage() {
+    static const std::string page = [] {
+        std::string html = PAGE;
+        replaceAll(html, "/*DARK*/", DARK_COLOURS);
+        replaceAll(html, "/*PIECES*/", pieceStyles());
+        return html;
+    }();
+    return page;
 }
 
 }  // namespace fcg

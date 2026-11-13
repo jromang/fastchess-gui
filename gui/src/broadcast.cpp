@@ -56,11 +56,13 @@ bool writeAtomically(const fs::path& file, const std::string& text) {
 
 std::string snapshotJson(const BroadcastSnapshot& s) {
     nlohmann::json j;
-    j["name"]     = s.name;
-    j["format"]   = s.format;
-    j["played"]   = s.played;
-    j["total"]    = s.total;
-    j["finished"] = s.finished;
+    j["name"]         = s.name;
+    j["format"]       = s.format;
+    j["time_control"] = s.time_control;
+    j["chess960"]     = s.chess960;
+    j["played"]       = s.played;
+    j["total"]        = s.total;
+    j["finished"]     = s.finished;
 
     auto& games = j["games"] = nlohmann::json::array();
     for (const auto& g : s.games) {
@@ -73,6 +75,7 @@ std::string snapshotJson(const BroadcastSnapshot& s) {
                                {"fen", g.fen},
                                {"start_fen", g.start_fen},
                                {"moves", g.san},
+                               {"uci", g.uci},
                                {"white_to_move", g.white_to_move},
                                {"clocks", g.clocks},
                                {"white_ms", g.white_ms},
@@ -80,19 +83,33 @@ std::string snapshotJson(const BroadcastSnapshot& s) {
                                {"active", g.active},
                                {"result", g.result}};
         for (int side = 0; side < 2; ++side) {
-            const auto& sr                                    = g.search[side];
-            game[side == 0 ? "white_search" : "black_search"] = {{"depth", sr.depth}, {"score_cp", sr.score_cp},
-                                                                 {"nodes", sr.nodes}, {"time_ms", sr.time_ms},
-                                                                 {"pv", sr.pv},       {"pv_san", sr.pv_san}};
+            const auto& sr = g.search[side];
+            // What the engine did not tell is null.
+            const auto told = [](auto v) { return v > 0 ? nlohmann::json(v) : nlohmann::json(nullptr); };
+            game[side == 0 ? "white_search" : "black_search"] = {
+                {"depth", sr.depth},
+                {"score_cp", sr.score_cp},
+                {"nodes", sr.nodes},
+                {"time_ms", sr.time_ms},
+                {"pv", sr.pv},
+                {"pv_san", sr.pv_san},
+                {"seldepth", told(sr.seldepth)},
+                {"nps", told(sr.nps)},
+                {"tbhits", sr.depth ? nlohmann::json(sr.tbhits) : nlohmann::json(nullptr)},
+                {"hashfull", sr.hashfull >= 0 ? nlohmann::json(sr.hashfull) : nlohmann::json(nullptr)},
+                {"current", sr.current}};
         }
-        // By ply, for the charts: White's evaluation (null for a book move or none), depth and time.
+        // By ply, for the charts: White's evaluation (null for a book move or none), depth and time; and which moves
+        // came from the opening book.
         auto& evals = game["evals"] = nlohmann::json::array();
         auto& depths = game["depths"] = nlohmann::json::array();
         auto& times = game["times_ms"] = nlohmann::json::array();
+        auto& book = game["book"] = nlohmann::json::array();
         for (const auto& p : g.plies) {
             evals.push_back(p.score_cp ? nlohmann::json(*p.score_cp) : nlohmann::json(nullptr));
             depths.push_back(p.book ? nlohmann::json(nullptr) : nlohmann::json(p.depth));
             times.push_back(p.book ? nlohmann::json(nullptr) : nlohmann::json(p.time_ms));
+            book.push_back(p.book);
         }
         games.push_back(std::move(game));
     }
