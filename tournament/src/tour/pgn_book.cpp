@@ -375,6 +375,14 @@ std::string ownBookFile(const std::string& book, int depth, bool chess960) {
     return pgnBookCacheFile(book, depth, chess960).string();
 }
 
+void keepCachedBook(const std::string& file) {
+    const auto side = sidecar(file);
+    std::error_code ec;
+    const auto time = fs::last_write_time(side, ec);
+    const auto now  = fs::file_time_type::clock::now();
+    if (!ec && time < now - std::chrono::hours(24)) fs::last_write_time(side, now, ec);
+}
+
 std::size_t pruneBookCache(int days) {
     const auto dir = cacheDir();
     const auto old = fs::file_time_type::clock::now() - std::chrono::hours(24) * days;

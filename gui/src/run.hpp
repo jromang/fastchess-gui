@@ -159,7 +159,8 @@ void interruptEngineProcesses();
 [[nodiscard]] std::string pgnBookProblem(const std::string& path, int depth, bool chess960);
 
 // The PGN books of the participants of a setup, or of a tournament, which are turned into Polyglot books before
-// it starts.
+// it starts. Those of a tournament's active participants only: one withdrawn or replaced plays no more games, and
+// its book (deleted since, perhaps) does not hold the resume.
 [[nodiscard]] std::vector<OwnBookNeed> pgnBookNeeds(const MatchSetup& setup);
 [[nodiscard]] std::vector<OwnBookNeed> pgnBookNeeds(const tour::TournamentSpec& spec);
 

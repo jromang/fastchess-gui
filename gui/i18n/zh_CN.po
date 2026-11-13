@@ -2406,6 +2406,9 @@ msgstr "锦标赛"
 msgid "Tournaments folder"
 msgstr "锦标赛文件夹"
 
+msgid "Try again"
+msgstr "重试"
+
 msgid "Two different engines chosen"
 msgstr "已选择两个不同的引擎"
 

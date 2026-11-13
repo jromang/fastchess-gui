@@ -2416,6 +2416,9 @@ msgstr "Tournois"
 msgid "Tournaments folder"
 msgstr "Dossier des tournois"
 
+msgid "Try again"
+msgstr "Réessayer"
+
 msgid "Two different engines chosen"
 msgstr "Deux moteurs différents choisis"
 

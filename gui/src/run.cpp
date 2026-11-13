@@ -333,7 +333,7 @@ std::vector<OwnBookNeed> pgnBookNeeds(const MatchSetup& setup) {
 std::vector<OwnBookNeed> pgnBookNeeds(const tour::TournamentSpec& spec) {
     std::vector<OwnBookNeed> needs;
     for (const auto& p : spec.participants) {
-        if (!p.book.empty() && tour::isPgnBook(p.book)) {
+        if (p.active && !p.book.empty() && tour::isPgnBook(p.book)) {
             needs.push_back(
                 {p.engine.name, p.book, p.book_depth, spec.conditions.variant == fastchess::VariantType::FRC});
         }

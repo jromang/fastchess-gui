@@ -257,8 +257,12 @@ class TournamentState {
     [[nodiscard]] bool done(uint32_t encounter, int game) const;
     [[nodiscard]] bool frc() const noexcept;
     // The Polyglot book a participant's own book plays from (ownBookFile()), asked once while the tournament is
-    // open; mutex_ held.
+    // open (again only when that file is gone); mutex_ held.
     const std::string& ownBookFileOf(const Participant& p);
+    // Those of the active participants, asked when the tournament is opened and after a change, right after the
+    // books were prepared: a PGN file saved again before the participant's first game does not leave its games
+    // looking for a book never made. mutex_ held.
+    void keepOwnBooks();
     const OpeningSource& openings();  // loads the book on first use; mutex_ held
     // The opening a new encounter starts with: the next of the book, or its round's (spec_.opening_per_round).
     fastchess::book::Opening openingFor(const Encounter& encounter);

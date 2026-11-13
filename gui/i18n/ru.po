@@ -2426,6 +2426,9 @@ msgstr "Турниры"
 msgid "Tournaments folder"
 msgstr "Папка турниров"
 
+msgid "Try again"
+msgstr "Повторить"
+
 msgid "Two different engines chosen"
 msgstr "Выбраны два разных движка"
 

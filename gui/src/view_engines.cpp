@@ -315,6 +315,8 @@ bool App::startAfterReads(const std::string& key, std::vector<std::string> needs
             return true;
     }
     start_error_.clear();
+    // A book that could not be prepared is tried again by each start asked for: what made it fail may have passed.
+    for (const auto& need : books) pgn_books_.retry(need.path, need.depth, need.chess960);
     pending_start_         = PendingStart{};
     pending_start_->key    = key;
     pending_start_->needs  = std::move(needs);
