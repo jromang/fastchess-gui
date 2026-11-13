@@ -34,17 +34,19 @@ using namespace std::chrono_literals;
 
 namespace {
 
-// The mock engine is built next to the test binary.
-std::string randomMover() {
+// The test binary.
+fs::path self() {
 #ifdef _WIN32
     char buffer[MAX_PATH];
     const auto n = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-    const fs::path self(std::string(buffer, n));
+    return fs::path(std::string(buffer, n));
 #else
-    const fs::path self = fs::read_symlink("/proc/self/exe");
+    return fs::read_symlink("/proc/self/exe");
 #endif
-    return (self.parent_path() / FCG_RANDOM_MOVER).string();
 }
+
+// The mock engine is built next to the test binary.
+std::string randomMover() { return (self().parent_path() / FCG_RANDOM_MOVER).string(); }
 
 struct Harness {
     RunController run;
@@ -802,17 +804,17 @@ TEST_CASE("EPD suite runs: every engine on every position, the totals, CSV and s
 
 #ifdef _WIN32
 TEST_CASE("on Windows, what an engine starts is in the engine's job and ends with it") {
-    if (!fs::is_regular_file(randomMover())) {
-        MESSAGE("random mover not available, skipped");
-        return;
-    }
-    // A .bat that starts the engine: cmd.exe is the process started, the engine its child.
+    // A .bat that starts the engine: cmd.exe is the process started, the engine its child. The engine is this program
+    // (see main.cpp), which reads nothing, leaves its console and tells once it runs: the random mover, found as soon
+    // as cmd.exe created it, could still be starting when cmd.exe was killed, attached to the console cmd.exe owned
+    // and reading the input cmd.exe passed on, and once ended with it on GitHub's runners (#111).
     std::error_code ec;
     const auto dir = fs::temp_directory_path() / "fcg-job-tests";
     fs::remove_all(dir, ec);
     fs::create_directories(dir);
-    fs::copy_file(randomMover(), dir / "fcg-job-mover.exe");
-    std::ofstream(dir / "engine.bat") << "@\"" << (dir / "fcg-job-mover.exe").string() << "\"\r\n";
+    const auto pid_file = dir / "engine.pid";
+    std::ofstream(dir / "engine.bat") << "@\"" << self().string() << "\" --job-child \"" << pid_file.string()
+                                      << "\"\r\n";
 
     char system_dir[MAX_PATH];
     const auto n   = GetSystemDirectoryA(system_dir, MAX_PATH);
@@ -823,29 +825,40 @@ TEST_CASE("on Windows, what an engine starts is in the engine's job and ends wit
         fastchess::engine::process::Process process;
         process.setRealtimeLogging(false);
         REQUIRE(process.init(dir.string(), cmd, "/c \"" + (dir / "engine.bat").string() + "\"", "job"));
+        const HANDLE started = OpenProcess(SYNCHRONIZE, FALSE, static_cast<DWORD>(process.pid()));
+        REQUIRE(started);
 
-        // The engine, once cmd.exe started it.
-        for (int i = 0; i < 100 && !engine; ++i) {
-            const HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
-            PROCESSENTRY32 entry{};
-            entry.dwSize = sizeof(entry);
-            for (BOOL more = Process32First(snapshot, &entry); more; more = Process32Next(snapshot, &entry)) {
-                if (std::string(entry.szExeFile).find("fcg-job-mover") != std::string::npos &&
-                    static_cast<int64_t>(entry.th32ParentProcessID) == process.pid()) {
-                    engine = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, entry.th32ProcessID);
-                }
-            }
-            CloseHandle(snapshot);
-            if (!engine) std::this_thread::sleep_for(50ms);
+        // The engine, once it runs: it still does then, so its id is not another process'.
+        DWORD engine_pid = 0;
+        for (int i = 0; i < 300 && !engine_pid; ++i) {
+            std::ifstream(pid_file) >> engine_pid;
+            if (!engine_pid) std::this_thread::sleep_for(50ms);
         }
+        REQUIRE(engine_pid != 0);
+        engine = OpenProcess(SYNCHRONIZE | PROCESS_QUERY_INFORMATION, FALSE, engine_pid);
         REQUIRE(engine);
+
+        // Started by cmd.exe, and in the job.
+        DWORD parent          = 0;
+        const HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        PROCESSENTRY32 entry{};
+        entry.dwSize = sizeof(entry);
+        for (BOOL more = Process32First(snapshot, &entry); more; more = Process32Next(snapshot, &entry)) {
+            if (entry.th32ProcessID == engine_pid) parent = entry.th32ParentProcessID;
+        }
+        CloseHandle(snapshot);
+        CHECK(static_cast<int64_t>(parent) == process.pid());
         BOOL in_job = FALSE;
         CHECK_MESSAGE(IsProcessInJob(engine, nullptr, &in_job), GetLastError());
         CHECK(in_job);
 
         // cmd.exe ended abruptly: the engine it started still runs, until the process is ended.
         process.forceKill();
-        CHECK(WaitForSingleObject(engine, 300) == WAIT_TIMEOUT);
+        CHECK(WaitForSingleObject(started, 5000) == WAIT_OBJECT_0);
+        CloseHandle(started);
+        DWORD code = 0;
+        CHECK_MESSAGE(WaitForSingleObject(engine, 500) == WAIT_TIMEOUT,
+                      "engine exit code: " << (GetExitCodeProcess(engine, &code), code));
     }
     CHECK(WaitForSingleObject(engine, 5000) == WAIT_OBJECT_0);
     CloseHandle(engine);
