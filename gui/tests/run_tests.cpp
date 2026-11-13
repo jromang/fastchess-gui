@@ -51,6 +51,18 @@ fs::path self() {
 // The mock engine is built next to the test binary.
 std::string randomMover() { return (self().parent_path() / FCG_RANDOM_MOVER).string(); }
 
+// Sets (or, with nullptr, removes) a variable of the environment, which the mock engine reads.
+void setEnv(const char* name, const char* value) {
+#ifdef _WIN32
+    _putenv_s(name, value ? value : "");
+#else
+    if (value)
+        setenv(name, value, 1);
+    else
+        unsetenv(name);
+#endif
+}
+
 struct Harness {
     RunController run;
     std::vector<GameRecord> games;
@@ -602,6 +614,52 @@ TEST_CASE("headless: a setup file becomes a tournament played to the end; the qu
     CHECK(loaded[1].setup.fixed_games == 10);
 }
 
+TEST_CASE("headless: the processor use of each game is kept in processor.tsv, as the window keeps it") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+
+    // Each move takes a few milliseconds, so that the engines' thinking lasts long enough to be measured.
+    setEnv("FCG_MOCK_MOVE_MS", "3");
+    // Without a broadcast (no observer of the games but the one measuring), and with one (the window's observer).
+    for (const bool broadcasting : {false, true}) {
+        CAPTURE(broadcasting);
+        const auto profile = fs::temp_directory_path() / "fcg-run-tests-headless-cpu";
+        fs::remove_all(profile);
+        fs::create_directories(profile);
+        const Storage storage(profile);
+        storage.saveEngines(randomEngines());
+        REQUIRE(writeJson(profile / "setup-file.json", randomSetup(4)));
+        HeadlessBroadcast broadcast;
+        if (broadcasting) broadcast.live_dir = (profile / "live").string();
+        const auto code = runHeadless((profile / "setup-file.json").string(), storage,
+                                      topologyFromCores({{0, 0}, {0, 1}}), broadcast);
+        REQUIRE(code == 0);
+
+        const auto dirs = tour::tournamentDirs(storage.runsDir());
+        REQUIRE(dirs.size() == 1);
+        std::set<uint64_t> offsets;
+        for (const auto& result : tour::TournamentState::open(dirs[0])->results()) offsets.insert(result.pgn.offset);
+        REQUIRE(offsets.size() == 4);
+
+        // One line per game, by its PGN offset, with the time White's and Black's engines thought.
+        std::ifstream in(dirs[0] / "processor.tsv", std::ios::binary);
+        std::set<uint64_t> lines;
+        for (std::string text; std::getline(in, text);) {
+            const auto line = parseGameCpuLine(text);
+            REQUIRE(line);
+            CHECK(line->cpu.own_wall_ms[0] > 0);
+            CHECK(line->cpu.own_wall_ms[1] > 0);
+            lines.insert(line->offset);
+        }
+        CHECK(lines == offsets);
+        in.close();
+        fs::remove_all(profile);
+    }
+    setEnv("FCG_MOCK_MOVE_MS", nullptr);
+}
+
 TEST_CASE("a Swiss and a knockout are played to the end through the GUI's controller") {
     if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available on this platform, skipped");
@@ -790,16 +848,6 @@ TEST_CASE("a read or a check interrupted for a start ends at once instead of wai
     if (!fastchess::config::TournamentConfig)
         fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
     // The engine takes 20 s to answer uci, like one loading a large network.
-    const auto setEnv = [](const char* name, const char* value) {
-#ifdef _WIN32
-        _putenv_s(name, value ? value : "");
-#else
-        if (value)
-            setenv(name, value, 1);
-        else
-            unsetenv(name);
-#endif
-    };
     setEnv("FCG_MOCK_SLOW_UCIOK", "20000");
 
     EngineEntry entry;

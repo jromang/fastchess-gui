@@ -21,13 +21,20 @@ int8_t resultForA(const tour::GameResult& result, int id_a) {
     return score == 1.0 ? 1 : score == 0.0 ? -1 : 0;
 }
 
-// What the engines of the game that just ended on this tournament thread used: onGameEnd() keeps it for
-// onRecorded(), which the runner calls next on the same thread when it records the game.
+// What the engines of the game that just ended on this tournament thread used: gameEnd() keeps it for recorded(),
+// which the runner's callbacks call next on the same thread when it records the game.
 struct EndedCpu {
-    const void* observer = nullptr;
+    const void* meter = nullptr;
     GameCpu cpu;
 };
 thread_local std::optional<EndedCpu> t_ended_cpu;
+
+// The size of a file, 0 when there is none.
+uint64_t knownSize(const std::filesystem::path& file) {
+    std::error_code ec;
+    const auto size = std::filesystem::file_size(file, ec);
+    return ec ? 0 : size;
+}
 
 }  // namespace
 
@@ -83,6 +90,114 @@ std::optional<GameCpuLine> parseGameCpuLine(std::string_view line) {
     return out;
 }
 
+CpuMeter::CpuMeter(int slots, std::filesystem::path file) : path_(std::move(file)) {
+    slots_.reserve(static_cast<std::size_t>(std::max(1, slots)));
+    for (int i = 0; i < std::max(1, slots); ++i) slots_.push_back(std::make_unique<Slot>());
+}
+
+CpuMeter::~CpuMeter() {
+    if (file_) std::fclose(file_);
+}
+
+void CpuMeter::gameStart(int slot_index) {
+    auto* s = slot(slot_index);
+    if (!s) return;
+    std::lock_guard<std::mutex> lock(s->mutex);
+    s->processes = {};
+    s->cpu_at_go = {-1, -1};
+    s->game      = {};
+}
+
+void CpuMeter::engineProcesses(int slot_index, int64_t white_pid, int64_t black_pid) {
+    auto* s = slot(slot_index);
+    if (!s) return;
+    auto white = processTree(white_pid), black = processTree(black_pid);
+    std::lock_guard<std::mutex> lock(s->mutex);
+    s->processes = {std::move(white), std::move(black)};
+}
+
+void CpuMeter::thinking(int slot_index) {
+    auto* s = slot(slot_index);
+    if (!s) return;
+    std::array<std::vector<int64_t>, 2> processes;
+    {
+        std::lock_guard<std::mutex> lock(s->mutex);
+        processes = s->processes;
+    }
+    const std::array<int64_t, 2> cpu{cpuTimeMs(processes[0]), cpuTimeMs(processes[1])};
+
+    std::lock_guard<std::mutex> lock(s->mutex);
+    s->cpu_at_go = cpu;
+    s->go_at     = Clock::now();
+}
+
+std::optional<CpuMeter::Used> CpuMeter::moved(int slot_index, chess::Color mover) {
+    auto* s = slot(slot_index);
+    if (!s) return std::nullopt;
+    std::array<std::vector<int64_t>, 2> processes;
+    {
+        std::lock_guard<std::mutex> lock(s->mutex);
+        processes = s->processes;
+    }
+    const std::array<int64_t, 2> cpu{cpuTimeMs(processes[0]), cpuTimeMs(processes[1])};
+
+    std::lock_guard<std::mutex> lock(s->mutex);
+    const auto at_go = s->cpu_at_go;
+    s->cpu_at_go     = {-1, -1};
+    if (at_go[0] < 0 || at_go[1] < 0 || cpu[0] < 0 || cpu[1] < 0) return std::nullopt;
+
+    Used used;
+    used.wall_ms =
+        static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - s->go_at).count());
+    for (int side = 0; side < 2; ++side) {
+        used.cpu_ms[side] = static_cast<uint64_t>(std::max<int64_t>(0, cpu[side] - at_go[side]));
+        const bool own    = side == colorIndex(mover);
+        auto& g           = s->game;
+        (own ? g.own_cpu_ms : g.wait_cpu_ms)[side] += used.cpu_ms[side];
+        (own ? g.own_wall_ms : g.wait_wall_ms)[side] += used.wall_ms;
+    }
+    return used;
+}
+
+void CpuMeter::gameEnd(int slot_index, bool counted) {
+    auto* s = slot(slot_index);
+    if (!s || !counted) {
+        t_ended_cpu.reset();
+        return;
+    }
+    std::lock_guard<std::mutex> lock(s->mutex);
+    t_ended_cpu = EndedCpu{this, s->game};
+}
+
+void CpuMeter::recorded(const tour::GameResult& result) {
+    if (!t_ended_cpu || t_ended_cpu->meter != this) return;
+    const auto cpu = t_ended_cpu->cpu;
+    t_ended_cpu.reset();
+    if (cpu.own_wall_ms[0] + cpu.own_wall_ms[1] == 0) return;  // not measured
+
+    std::lock_guard<std::mutex> lock(file_mutex_);
+    if (!file_ && !failed_) {
+        // A last line cut short by a crash is ended first, so that the next one is not glued to it.
+        bool cut_short = false;
+        {
+            std::ifstream in(path_, std::ios::binary | std::ios::ate);
+            if (in && in.tellg() > 0) {
+                in.seekg(-1, std::ios::end);
+                cut_short = in.get() != '\n';
+            }
+        }
+        file_   = tour::openFile(path_, "ab");
+        failed_ = file_ == nullptr;
+        if (file_ && cut_short) std::fputc('\n', file_);
+    }
+    if (!file_) return;
+    // Written right after the game and synced, which costs little once per game: after a crash or a power cut, the
+    // games recorded have their processor use, but for a last one cut short.
+    const auto line = gameCpuLine({result.pgn.offset, result.finished_at, cpu});
+    std::fwrite(line.data(), 1, line.size(), file_);
+    (void)tour::syncFile(file_);
+}
+
 GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
     : engine_a_(state.spec().participants.at(0).engine.name),
       engine_b_(state.spec().participants.at(1).engine.name),
@@ -90,11 +205,10 @@ GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
       id_b_(state.spec().participants.at(1).id),
       pgn_fastchess_(state.pgnPath()),
       pgn_chessbase_(state.chessbasePgnPath()),
-      cpu_path_(state.dir() / "processor.tsv") {
+      cpu_path_(state.dir() / "processor.tsv"),
+      cpu_known_(knownSize(cpu_path_)),
+      cpu_(slots, cpu_path_) {
     const auto& spec = state.spec();
-    std::error_code ec;
-    cpu_known_ = std::filesystem::file_size(cpu_path_, ec);
-    if (ec) cpu_known_ = 0;
     match_           = spec.format == tour::Format::Match;
     for (const auto& p : spec.participants) {
         index_[p.id] = static_cast<uint16_t>(names_.size());
@@ -123,7 +237,6 @@ GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
 GuiObserver::~GuiObserver() {
     stop_loading_ = true;
     if (loader_.joinable()) loader_.join();
-    if (cpu_file_) std::fclose(cpu_file_);
 }
 
 void GuiObserver::loadPlayed() {
@@ -376,10 +489,8 @@ void GuiObserver::onGameStart(const fastchess::observer::GameStart& info) {
     st.think_start = Clock::now();
     st.version++;
 
-    s->processes   = {};
-    s->cpu_at_go   = {-1, -1};
     s->participant = {participantIndex(info.white), participantIndex(info.black)};
-    s->game_cpu    = {};
+    cpu_.gameStart(info.slot);
 }
 
 CpuUse cpuUse(const EngineTotals& t) {
@@ -411,28 +522,16 @@ int GuiObserver::participantIndex(const std::string& name) const {
 }
 
 void GuiObserver::onEngineProcesses(int slot_index, int64_t white_pid, int64_t black_pid) {
-    auto* s = slot(slot_index);
-    if (!s) return;
-    auto white = processTree(white_pid), black = processTree(black_pid);
-    std::lock_guard<std::mutex> lock(s->mutex);
-    s->processes = {std::move(white), std::move(black)};
+    cpu_.engineProcesses(slot_index, white_pid, black_pid);
 }
 
 void GuiObserver::onThinking(int slot_index, chess::Color stm, int64_t time_left_ms) {
     auto* s = slot(slot_index);
     if (!s) return;
-
-    std::array<std::vector<int64_t>, 2> processes;
-    {
-        std::lock_guard<std::mutex> lock(s->mutex);
-        processes = s->processes;
-    }
-    const std::array<int64_t, 2> cpu{cpuTimeMs(processes[0]), cpuTimeMs(processes[1])};
+    cpu_.thinking(slot_index);
 
     std::lock_guard<std::mutex> lock(s->mutex);
-    s->cpu_at_go = cpu;
-    s->go_at     = Clock::now();
-    auto& st     = s->state;
+    auto& st = s->state;
 
     st.stm                                                   = stm;
     st.thinking                                              = true;
@@ -477,36 +576,22 @@ void GuiObserver::onMove(int slot_index, chess::Color mover, const fastchess::Mo
     m.decision_ms = data.decision_millis;
 
     // What the engines used while the mover thought.
-    std::array<std::vector<int64_t>, 2> processes;
-    {
-        std::lock_guard<std::mutex> lock(s->mutex);
-        processes = s->processes;
-    }
-    const std::array<int64_t, 2> cpu{cpuTimeMs(processes[0]), cpuTimeMs(processes[1])};
+    const auto used = cpu_.moved(slot_index, mover);
 
     std::lock_guard<std::mutex> lock(s->mutex);
     auto& st = s->state;
 
-    if (s->cpu_at_go[0] >= 0 && s->cpu_at_go[1] >= 0 && cpu[0] >= 0 && cpu[1] >= 0) {
-        const auto wall = static_cast<uint64_t>(
-            std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - s->go_at).count());
-        const int me = colorIndex(mover), other = 1 - me;
+    if (used) {
         std::lock_guard<std::mutex> data_lock(data_mutex_);
-        const auto add = [&](int side, bool own) {
-            const auto used = static_cast<uint64_t>(std::max<int64_t>(0, cpu[side] - s->cpu_at_go[side]));
-            auto& g         = s->game_cpu;
-            (own ? g.own_cpu_ms : g.wait_cpu_ms)[side] += used;
-            (own ? g.own_wall_ms : g.wait_wall_ms)[side] += wall;
+        for (int side = 0; side < 2; ++side) {
             const int p = s->participant[side];
-            if (p < 0 || p >= static_cast<int>(totals_.size())) return;
-            auto& t = totals_[p];
-            (own ? t.own_cpu_ms : t.wait_cpu_ms) += used;
-            (own ? t.own_wall_ms : t.wait_wall_ms) += wall;
-        };
-        add(me, true);
-        add(other, false);
+            if (p < 0 || p >= static_cast<int>(totals_.size())) continue;
+            const bool own = side == colorIndex(mover);
+            auto& t        = totals_[p];
+            (own ? t.own_cpu_ms : t.wait_cpu_ms) += used->cpu_ms[side];
+            (own ? t.own_wall_ms : t.wait_wall_ms) += used->wall_ms;
+        }
     }
-    s->cpu_at_go = {-1, -1};
 
     m.move = chess::uci::uciToMove(s->board, data.move);
     s->board.makeMove<true>(m.move);
@@ -556,6 +641,7 @@ uint16_t GuiObserver::internReason(const std::string& reason) {
 }
 
 void GuiObserver::onGameEnd(int slot_index, std::size_t, std::size_t, const fastchess::MatchData& data, bool counted) {
+    cpu_.gameEnd(slot_index, counted);
     auto* s = slot(slot_index);
     if (!s) return;
 
@@ -566,12 +652,6 @@ void GuiObserver::onGameEnd(int slot_index, std::size_t, std::size_t, const fast
     st.result   = counted ? fastchess::pgn::PgnBuilder::getResultFromWhiteMatch(data.players.white) : "*";
     st.reason   = counted ? data.reason : N_("Game interrupted");
     st.version++;
-
-    if (counted) {
-        t_ended_cpu = EndedCpu{this, s->game_cpu};
-    } else {
-        t_ended_cpu.reset();
-    }
 }
 
 const GuiObserver::GameExtras& GuiObserver::extrasOf(const tour::GameResult& result, std::string_view pgn) {
@@ -645,35 +725,9 @@ void GuiObserver::countLoss(const tour::GameResult& result) {
     }
 }
 
-void GuiObserver::writeGameCpu(const tour::GameResult& result, const GameCpu& cpu) {
-    if (cpu.own_wall_ms[0] + cpu.own_wall_ms[1] == 0) return;  // not measured
-    std::lock_guard<std::mutex> lock(cpu_mutex_);
-    if (!cpu_file_ && !cpu_failed_) {
-        // A last line cut short by a crash is ended first, so that the next one is not glued to it.
-        bool cut_short = false;
-        {
-            std::ifstream in(cpu_path_, std::ios::binary | std::ios::ate);
-            if (in && in.tellg() > 0) {
-                in.seekg(-1, std::ios::end);
-                cut_short = in.get() != '\n';
-            }
-        }
-        cpu_file_   = tour::openFile(cpu_path_, "ab");
-        cpu_failed_ = cpu_file_ == nullptr;
-        if (cpu_file_ && cut_short) std::fputc('\n', cpu_file_);
-    }
-    if (!cpu_file_) return;
-    // Written right after the game, flushed but not synced: after a power cut, the last games may miss their
-    // processor use, nothing else.
-    const auto line = gameCpuLine({result.pgn.offset, result.finished_at, cpu});
-    std::fwrite(line.data(), 1, line.size(), cpu_file_);
-    std::fflush(cpu_file_);
-}
-
 void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::MatchData& data,
                              const std::optional<fastchess::Stats>& pair) {
-    if (t_ended_cpu && t_ended_cpu->observer == this) writeGameCpu(result, t_ended_cpu->cpu);
-    t_ended_cpu.reset();
+    cpu_.recorded(result);
 
     std::lock_guard<std::mutex> lock(data_mutex_);
 

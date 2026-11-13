@@ -4,6 +4,7 @@
 // tournament folder when the game ends badly (a crash, a loss on time, an illegal move, a stall), or for every
 // game when the tournament asks for it. It is what an engine author needs to reproduce a bug.
 
+#include <array>
 #include <chrono>
 #include <cstdint>
 #include <deque>
@@ -21,9 +22,10 @@ namespace fcg::tour {
 
 class EngineLog {
    public:
-    // The first lines (engine start, options, the first position) and the last ones are kept; the middle of a
-    // very long game is dropped.
-    static constexpr std::size_t HEAD_LINES = 300;
+    // The first lines of each engine (its start, options, the first position) and the last lines of the game are
+    // kept; the middle of a very long game is dropped. Each engine has a head of its own, so that one with a very
+    // chatty start (on its error output, say) cannot push the other's out of the log.
+    static constexpr std::size_t HEAD_LINES = 300;  // per engine
     static constexpr std::size_t TAIL_LINES = 5000;
 
     // Forgets the previous game.
@@ -37,15 +39,23 @@ class EngineLog {
 
     // The whole log: a header describing the game, then one line per exchange, as
     // "   12.345 W> go wtime 1000 ..." (sent to White's engine), "   12.346 B< bestmove e7e5" (read from Black's) or
-    // "   12.347 B! assertion failed" (read from the error output of Black's).
+    // "   12.347 B! assertion failed" (read from the error output of Black's), in the order they came. Where lines
+    // were dropped, a line tells how many.
     [[nodiscard]] std::string text(uint64_t game_number, const fastchess::MatchData& data) const;
 
    private:
+    // A line, numbered in the order the lines came: the heads and the tail are merged back in that order, and a gap
+    // in the numbers is lines dropped.
+    struct Line {
+        uint64_t number = 0;
+        std::string text;
+    };
+
     mutable std::mutex mutex_;
     std::chrono::steady_clock::time_point start_ = std::chrono::steady_clock::now();
-    std::vector<std::string> head_;
-    std::deque<std::string> tail_;
-    uint64_t dropped_ = 0;
+    std::array<std::vector<Line>, 2> heads_;  // White's engine's first lines, Black's
+    std::deque<Line> tail_;                   // the last lines of both
+    uint64_t added_ = 0;                      // lines added since start()
 };
 
 // Whether a game ending this way keeps its engine log.

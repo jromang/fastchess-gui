@@ -793,3 +793,40 @@ TEST_CASE("engine log: the first and the last lines of a long game; which ending
     CHECK_FALSE(endsBadly(fastchess::MatchTermination::NORMAL));
     CHECK_FALSE(endsBadly(fastchess::MatchTermination::ADJUDICATION));
 }
+
+TEST_CASE("engine log: each engine keeps its start, whatever the other prints first; merged in the order of the game") {
+    EngineLog log;
+    log.start();
+    // Black's engine floods its error output before White's has started; then the game is long enough to drop lines
+    // from the middle.
+    for (std::size_t i = 0; i < EngineLog::HEAD_LINES + 10; ++i) {
+        log.add(chess::Color::BLACK, EngineLog::Stream::Error, fmt::format("flood {}", i));
+    }
+    log.add(chess::Color::WHITE, EngineLog::Stream::Input, "uci");
+    log.add(chess::Color::WHITE, EngineLog::Stream::Output, "id name White");
+    log.add(chess::Color::WHITE, EngineLog::Stream::Input, "position startpos");
+    for (std::size_t i = 0; i < EngineLog::TAIL_LINES; ++i) {
+        log.add(chess::Color::BLACK, EngineLog::Stream::Output, fmt::format("late {}", i));
+    }
+    // White's head is not full: its lines go there, even after the tail started dropping lines.
+    log.add(chess::Color::WHITE, EngineLog::Stream::Output, "bestmove e2e4");
+    log.add(chess::Color::BLACK, EngineLog::Stream::Output, "the end");
+
+    fastchess::MatchData data("startpos");
+    const auto text = log.text(1, data);
+    const auto at   = [&](const std::string& s) { return text.find(s); };
+    // Black's start, the flood lines past its head left out, White's start, then the end of the game.
+    REQUIRE(at("B! flood 0\n") != std::string::npos);
+    CHECK(at(fmt::format("B! flood {}\n", EngineLog::HEAD_LINES - 1)) != std::string::npos);
+    CHECK(at(fmt::format("B! flood {}\n", EngineLog::HEAD_LINES)) == std::string::npos);
+    CHECK(at("B! flood 0\n") < at("... 10 lines left out ..."));
+    CHECK(at("... 10 lines left out ...") < at("W> uci\n"));
+    CHECK(at("W> uci\n") < at("W< id name White\n"));
+    CHECK(at("W< id name White\n") < at("W> position startpos\n"));
+    // The tail dropped Black's first late line to make room for its last line; White's went to its head.
+    CHECK(at("W> position startpos\n") < at("... 1 line left out ..."));
+    CHECK(at("B< late 0\n") == std::string::npos);
+    CHECK(at("... 1 line left out ...") < at("B< late 1\n"));
+    CHECK(at(fmt::format("B< late {}\n", EngineLog::TAIL_LINES - 1)) < at("W< bestmove e2e4\n"));
+    CHECK(at("W< bestmove e2e4\n") < at("B< the end\n"));
+}
