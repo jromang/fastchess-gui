@@ -4,6 +4,7 @@
 // (their text version, the web page copied and pasted, or the page itself), Ordo's output (text or CSV) and plain
 // CSV files (name,elo).
 
+#include <map>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -35,10 +36,10 @@ struct RatingMatches {
     std::vector<std::string> unmatched;  // the names of the list that are no library engine
 };
 
-// The library engines the list names, by the rule of libraryEngine() (game_db.hpp): the same name, or the only one
-// that is the same once letter case and spaces are set aside. Two names of the list for one engine: its own name
-// wins, else the first.
-[[nodiscard]] RatingMatches matchRatings(const std::vector<ListedRating>& list,
-                                         const std::vector<std::string>& library);
+// The library engines the list names, by the rule of libraryEngine() (game_db.hpp): the same name, the one the user
+// chose for a name in `aliases` (name -> library engine), or the only one that is the same once letter case and
+// spaces are set aside. Two names of the list for one engine: its own name wins, else the first.
+[[nodiscard]] RatingMatches matchRatings(const std::vector<ListedRating>& list, const std::vector<std::string>& library,
+                                         const std::map<std::string, std::string>& aliases = {});
 
 }  // namespace fcg::tour

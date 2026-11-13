@@ -2,11 +2,14 @@
 // engines head to head, and the progress of engines over time.
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <future>
+#include <optional>
+#include <set>
 
 #include <imgui.h>
 #include <implot.h>
@@ -108,11 +111,19 @@ void App::refreshRatings() {
         card_search_  = {};
         h2h_          = std::move(r.h2h);
         progress_     = std::move(r.progress);
+        // A PGN file just added: the players the user may want to say which engine they are.
+        if (review_pgn_players_ == 2) {
+            review_pgn_players_ = 0;
+            open_pgn_players_   = std::any_of(game_db_->players.begin(), game_db_->players.end(),
+                                              [](const auto& p) { return p.engine.empty() && !p.engines.empty(); });
+        }
     }
     // The players of the PGN files are matched to the library's engines when the games are read: again when the
-    // library's names change.
+    // library's names change, or the names the user gave them.
+    auto aliases = libraryAliases(engines_);
     if (!std::equal(engines_.begin(), engines_.end(), game_db_library_.begin(), game_db_library_.end(),
-                    [](const EngineEntry& e, const std::string& name) { return e.name == name; })) {
+                    [](const EngineEntry& e, const std::string& name) { return e.name == name; }) ||
+        aliases != game_db_aliases_) {
         game_db_dirty_ = true;
     }
     if (!game_db_dirty_ && !ratings_dirty_) return;
@@ -133,10 +144,12 @@ void App::refreshRatings() {
     if (game_db_dirty_) {
         game_db_library_.clear();
         for (const auto& e : engines_) game_db_library_.push_back(e.name);
+        game_db_aliases_ = std::move(aliases);
+        if (review_pgn_players_ == 1) review_pgn_players_ = 2;
     }
     auto work = [in = std::move(in), dirs, pgns = ratingPgns(), filter = ratingFilter(), library = std::move(library),
-                 names = game_db_library_, min_games = rating_min_games_]() mutable {
-        if (!in.db) in.db = std::make_shared<tour::GameDb>(tour::readGameDb(dirs, pgns, names));
+                 names = game_db_library_, aliases = game_db_aliases_, min_games = rating_min_games_]() mutable {
+        if (!in.db) in.db = std::make_shared<tour::GameDb>(tour::readGameDb(dirs, pgns, names, aliases));
         const auto& db = *in.db;
 
         // The default anchor: the first engine of the library with a reference rating.
@@ -275,7 +288,8 @@ void App::drawRatingFilters() {
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("%s", TR("Games of other programs or rating lists counted with the "
                                    "tournaments'. Engines are known by their name, as in the PGN; a player whose "
-                                   "name is a library engine's, letter case and spaces aside, is that engine."));
+                                   "name is a library engine's, letter case and spaces aside, is that engine, and "
+                                   "you can say which engine another player is."));
     }
     if (ImGui::BeginPopup("rating_pgns")) {
         int remove = -1;
@@ -290,6 +304,13 @@ void App::drawRatingFilters() {
         if (ImGui::Button(TR("Add a PGN file…"))) {
             dialogs_.openFile(Dialogs::Purpose::ImportRatingPgn, {{"PGN", "pgn"}, {TR("All files"), "*"}});
             ImGui::CloseCurrentPopup();
+        }
+        if (!game_db_->players.empty()) {
+            ImGui::SameLine();
+            if (ImGui::Button(TR("Players and library engines…"))) {
+                open_pgn_players_ = true;
+                ImGui::CloseCurrentPopup();
+            }
         }
         if (remove >= 0) {
             auto list = pgns;
@@ -405,34 +426,185 @@ void App::drawLibraryMatches() {
     // The players of the PGN files taken for library engines: their games are the engine's, and its rating on a
     // list can be the anchor.
     const auto& matched = game_db_->matched;
-    if (matched.empty() || !rating_external_) return;
-    std::set<std::string> engines;
-    for (const auto& m : matched) engines.insert(m.second);
-    ImGui::SameLine();
-    ImGui::TextDisabled("·");
-    ImGui::SameLine();
-    ImGui::TextDisabled(
-        "%s",
-        trn("{} engine of the library in the PGN files", "{} engines of the library in the PGN files", engines.size(),
-            engines.size())
-            .c_str());
-    if (!ImGui::BeginItemTooltip()) return;
-    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
-    ImGui::TextUnformatted(TR("The players of the PGN files taken for engines of the library, by their name, letter "
-                              "case and spaces aside: their games are the engine's, and its settings apply (its "
-                              "rating on a list, as the anchor)."));
-    ImGui::PopTextWrapPos();
-    constexpr std::size_t SHOWN = 30;
-    for (std::size_t i = 0; i < matched.size() && i < SHOWN; ++i) {
-        const auto& [player, engine] = matched[i];
-        if (player == engine) {
-            ImGui::BulletText("%s", engine.c_str());
-        } else {
-            ImGui::BulletText("%s → %s", player.c_str(), engine.c_str());
+    const auto& players = game_db_->players;
+    if (!rating_external_) return;
+    if (!matched.empty()) {
+        std::set<std::string> engines;
+        for (const auto& m : matched) engines.insert(m.second);
+        ImGui::SameLine();
+        ImGui::TextDisabled("·");
+        ImGui::SameLine();
+        ImGui::TextDisabled("%s", trn("{} engine of the library in the PGN files",
+                                      "{} engines of the library in the PGN files", engines.size(), engines.size())
+                                      .c_str());
+        if (ImGui::BeginItemTooltip()) {
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+            ImGui::TextUnformatted(
+                TR("The players of the PGN files taken for engines of the library, by their name, "
+                   "letter case and spaces aside, or by your choice: their games are the engine's, "
+                   "and its settings apply (its rating on a list, as the anchor)."));
+            ImGui::PopTextWrapPos();
+            constexpr std::size_t SHOWN = 30;
+            for (std::size_t i = 0; i < matched.size() && i < SHOWN; ++i) {
+                const auto& [player, engine] = matched[i];
+                if (player == engine) {
+                    ImGui::BulletText("%s", engine.c_str());
+                } else {
+                    ImGui::BulletText("%s → %s", player.c_str(), engine.c_str());
+                }
+            }
+            if (matched.size() > SHOWN) ImGui::TextDisabled("%s", trf("and {} more", matched.size() - SHOWN).c_str());
+            ImGui::EndTooltip();
         }
     }
-    if (matched.size() > SHOWN) ImGui::TextDisabled("%s", trf("and {} more", matched.size() - SHOWN).c_str());
-    ImGui::EndTooltip();
+
+    // The others, for the user to say which engine they are; in the warning colour when two library engines may be
+    // one of them.
+    if (players.empty()) return;
+    const auto ambiguous =
+        static_cast<int>(std::count_if(players.begin(), players.end(), [](const auto& p) { return p.ambiguous; }));
+    ImGui::SameLine();
+    if (ambiguous > 0) ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+    if (ImGui::SmallButton(TR("PGN players…"))) open_pgn_players_ = true;
+    if (ambiguous > 0) ImGui::PopStyleColor();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", ambiguous > 0 ? trn("{} player that two library engines may be: say which one.",
+                                                    "{} players that two library engines may be: say which one.",
+                                                    ambiguous, ambiguous)
+                                                    .c_str()
+                                              : TR("Say which library engine a player of the PGN files is."));
+    }
+}
+
+void App::drawPgnPlayers() {
+    const char* title = TR("PGN players and library engines###pgn_players");
+    if (open_pgn_players_) {
+        ImGui::OpenPopup(title);
+        open_pgn_players_ = false;
+    }
+    ImGui::SetNextWindowSize(ImVec2(px(820), 0), ImGuiCond_Appearing);
+    if (!ImGui::BeginPopupModal(title, nullptr)) return;
+    // Read again after each choice; the rows stay where they are meanwhile.
+    const auto& players = game_db_->players;
+
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextDisabled("%s", TR("The players of the PGN files that are no library engine by their name, letter case "
+                                 "and spaces aside. Say which library engine a player is, and its games are the "
+                                 "engine's; the choice is kept for every PGN file that names the player. A name that "
+                                 "two library engines have waits for your choice; a hint is a guess, never applied."));
+    ImGui::PopTextWrapPos();
+
+    char buffer[128];
+    const auto n = std::min(pgn_players_filter_.size(), sizeof(buffer) - 1);
+    std::copy_n(pgn_players_filter_.data(), n, buffer);
+    buffer[n] = 0;
+    ImGui::SetNextItemWidth(px(260));
+    if (ImGui::InputTextWithHint("##pgn_players_filter", TR("Search"), buffer, sizeof(buffer)))
+        pgn_players_filter_ = buffer;
+    const auto lower = [](std::string s) {
+        for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        return s;
+    };
+    const auto needle = lower(pgn_players_filter_);
+    std::vector<int> shown;
+    for (int i = 0; i < static_cast<int>(players.size()); ++i) {
+        if (needle.empty() || lower(players[i].name).find(needle) != std::string::npos) shown.push_back(i);
+    }
+
+    // The library's engines, in alphabetical order, for the combos.
+    std::vector<std::string> names;
+    for (const auto& e : engines_) names.push_back(e.name);
+    std::sort(names.begin(), names.end(), [&](const auto& a, const auto& b) { return lower(a) < lower(b); });
+
+    std::optional<std::pair<std::string, std::string>> choice;  // player, engine (empty: a separate engine)
+    // Of the same height whatever is shown: the window is sized once, when it opens, maybe before the games are read.
+    const ImVec2 size(0, ImGui::GetFrameHeightWithSpacing() * 12);
+    if (!shown.empty() &&
+        ImGui::BeginTable("##pgn_players", 3,
+                          ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY | ImGuiTableFlags_SizingStretchProp, size)) {
+        ImGui::TableSetupScrollFreeze(0, 1);
+        ImGui::TableSetupColumn(TR("Player"), ImGuiTableColumnFlags_WidthStretch, 0.35f);
+        ImGui::TableSetupColumn(TR("Library engine"), ImGuiTableColumnFlags_WidthStretch, 0.35f);
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthStretch, 0.3f);
+        ImGui::TableHeadersRow();
+        ImGuiListClipper clipper;
+        clipper.Begin(static_cast<int>(shown.size()));
+        while (clipper.Step()) {
+            for (int r = clipper.DisplayStart; r < clipper.DisplayEnd; ++r) {
+                const auto& p = players[shown[r]];
+                // The user's choice as it is now, while the games may still be read with the one before.
+                const auto engine = libraryAlias(engines_, p.name);
+                ImGui::TableNextRow();
+                ImGui::PushID(shown[r]);
+                ImGui::TableNextColumn();
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(p.name.c_str());
+                ImGui::TableNextColumn();
+                const bool waiting = engine.empty() && p.ambiguous;
+                if (waiting) ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+                ImGui::SetNextItemWidth(-FLT_MIN);
+                const char* preview = !engine.empty() ? engine.c_str()
+                                      : waiting       ? TR("Choose…")
+                                                      : TR("A separate engine");
+                const bool open     = ImGui::BeginCombo("##engine", preview, ImGuiComboFlags_HeightLarge);
+                if (waiting) ImGui::PopStyleColor();
+                if (open) {
+                    if (ImGui::Selectable(TR("A separate engine"), engine.empty())) choice.emplace(p.name, "");
+                    // The engines of its name, or that of the hint, first.
+                    for (const auto& e : p.engines) {
+                        if (ImGui::Selectable(e.c_str(), e == engine)) choice.emplace(p.name, e);
+                    }
+                    ImGui::Separator();
+                    if (const int i = ui::searchComboItems(names, engine); i >= 0) choice.emplace(p.name, names[i]);
+                    ImGui::EndCombo();
+                }
+                ImGui::TableNextColumn();
+                ImGui::AlignTextToFramePadding();
+                if (!engine.empty()) {
+                    ImGui::TextDisabled("%s", TR("your choice"));
+                } else if (p.ambiguous) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+                    ImGui::TextUnformatted(trn("{} library engine has this name", "{} library engines have this name",
+                                               p.engines.size(), p.engines.size())
+                                               .c_str());
+                    ImGui::PopStyleColor();
+                    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Letter case and spaces aside."));
+                } else if (!p.engines.empty()) {
+                    ImGui::TextDisabled("%s", trf("Perhaps {}?", p.engines.front()).c_str());
+                    if (ImGui::IsItemHovered()) {
+                        ImGui::SetTooltip("%s", TR("Its name begins with this library engine's: choose it if it is "
+                                                   "the same engine, version included."));
+                    }
+                }
+                ImGui::PopID();
+            }
+        }
+        ImGui::EndTable();
+    } else if (shown.empty()) {
+        ImGui::BeginChild("##pgn_players_none", size);
+        ImGui::TextDisabled("%s", !players.empty()       ? TR("Nothing found.")
+                                  : ratings_job_.valid() ? TR("Computing…")
+                                                         : TR("Every player of the PGN files is a library engine by "
+                                                              "its name: nothing to choose."));
+        ImGui::EndChild();
+    }
+    if (choice && setLibraryAlias(engines_, choice->first, choice->second)) {
+        storage_.saveEngines(engines_);  // refreshRatings() reads the games again with it
+    }
+
+    const auto ambiguous = std::count_if(players.begin(), players.end(), [](const auto& p) { return p.ambiguous; });
+    ImGui::TextDisabled("%s", trn("{} player", "{} players", players.size(), players.size()).c_str());
+    if (ambiguous > 0) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("· %s", trn("{} that two library engines may be", "{} that two library engines may be",
+                                        ambiguous, ambiguous)
+                                        .c_str());
+    }
+    if (ImGui::Button(TR("Close"))) {
+        pgn_players_filter_.clear();
+        ImGui::CloseCurrentPopup();
+    }
+    ImGui::EndPopup();
 }
 
 void App::drawEngineCard() {

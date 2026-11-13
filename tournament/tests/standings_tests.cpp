@@ -560,3 +560,70 @@ TEST_CASE("rating list: the players of imported PGN files are matched to the lib
     CHECK(alone.matched.empty());
     fs::remove_all(root);
 }
+
+TEST_CASE("rating list: a PGN player is the library engine the user chose; two engines of its name wait for a choice") {
+    const std::vector<std::string> library = {"Stockfish 17", "Stockfish", "Ethereal 14", "ETHEREAL 14", "Berserk 13"};
+    // The user's choices, by the players' names, letter case and spaces aside; an engine no longer in the library is
+    // passed over.
+    const LibraryAliases aliases = {
+        {"Stockfish 17 64-bit", "Stockfish 17"}, {"ethereal  14", "ETHEREAL 14"}, {"Old Engine", "Removed Engine"}};
+    CHECK(libraryEngine("Stockfish 17 64-bit", library, aliases) == "Stockfish 17");
+    CHECK(libraryEngine("STOCKFISH 17  64-BIT", library, aliases) == "Stockfish 17");
+    CHECK(libraryEngine("Ethereal 14", library, aliases) == "Ethereal 14");  // its own name first
+    CHECK(libraryEngine("ethereal 14", library, aliases) == "ETHEREAL 14");  // ambiguous no more
+    CHECK(libraryEngine("ethereal 14", library) == std::nullopt);
+    CHECK(libraryEngine("Old Engine", library, aliases) == std::nullopt);
+    // Never a guess: another version stays apart.
+    CHECK(libraryEngine("Stockfish 16", library, aliases) == std::nullopt);
+    CHECK(libraryEngine("Stockfish 17.1", library, aliases) == std::nullopt);
+
+    namespace fs    = std::filesystem;
+    const auto root = fs::temp_directory_path() / "fcg-tour-library-aliases";
+    fs::remove_all(root);
+    fs::create_directories(root);
+    std::ofstream(root / "list.pgn")
+        << "[White \"Stockfish 17 64-bit\"]\n[Black \"ethereal 14\"]\n[Result \"1-0\"]\n\n"
+           "[White \"Stockfish 17.1\"]\n[Black \"Berserk 13 avx2\"]\n[Result \"0-1\"]\n\n"
+           "[White \"Stockfish 16\"]\n[Black \"Stockfish 17 dev\"]\n[Result \"1/2-1/2\"]\n\n"
+           "[White \"Berserk 13\"]\n[Black \"Stockfish 170\"]\n[Result \"1-0\"]\n\n";
+
+    // Without a choice: "ethereal 14" is one of two library engines and waits for the user; the other players that
+    // are no library engine get those their name begins with as a hint, the longest first, never applied.
+    const auto before = readGameDb({}, {root / "list.pgn"}, library);
+    CHECK(std::find(before.engines.begin(), before.engines.end(), "Stockfish 17") == before.engines.end());
+    std::vector<std::string> names;
+    for (const auto& p : before.players) names.push_back(p.name);
+    CHECK(names == std::vector<std::string>{"ethereal 14", "Berserk 13 avx2", "Stockfish 16", "Stockfish 17 64-bit",
+                                            "Stockfish 17 dev", "Stockfish 17.1", "Stockfish 170"});
+    REQUIRE(before.players.size() == 7);
+    CHECK(before.players[0].ambiguous);
+    CHECK(before.players[0].engine.empty());
+    CHECK(before.players[0].engines == std::vector<std::string>{"Ethereal 14", "ETHEREAL 14"});
+    CHECK(before.players[1].engines == std::vector<std::string>{"Berserk 13"});
+    CHECK(before.players[2].engines == std::vector<std::string>{"Stockfish"});
+    CHECK(before.players[3].engines == std::vector<std::string>{"Stockfish 17", "Stockfish"});
+    CHECK_FALSE(before.players[3].ambiguous);
+    CHECK(before.players[5].engines == std::vector<std::string>{"Stockfish"});  // 17.1 is not 17
+    CHECK(before.players[6].engines == std::vector<std::string>{"Stockfish"});  // nor is 170
+
+    // With the choices: the games are the library engines', and the players chosen come first, for the choice to be
+    // undone.
+    const auto after = readGameDb({}, {root / "list.pgn"}, library, aliases);
+    using Match      = std::pair<std::string, std::string>;
+    CHECK(after.matched == std::vector<Match>{{"Berserk 13", "Berserk 13"},
+                                              {"ethereal 14", "ETHEREAL 14"},
+                                              {"Stockfish 17 64-bit", "Stockfish 17"}});
+    REQUIRE(after.players.size() == 7);
+    CHECK(after.players[0].name == "Stockfish 17 64-bit");
+    CHECK(after.players[0].engine == "Stockfish 17");
+    CHECK(after.players[1].name == "ethereal 14");
+    CHECK(after.players[1].engine == "ETHEREAL 14");
+    CHECK_FALSE(after.players[1].ambiguous);
+    CHECK(after.players[2].engine.empty());
+    const auto list = ratingList(after, {}, {});
+    const auto sf =
+        std::find_if(list.entries.begin(), list.entries.end(), [](const auto& e) { return e.name == "Stockfish 17"; });
+    REQUIRE(sf != list.entries.end());
+    CHECK(sf->games == 1);
+    fs::remove_all(root);
+}

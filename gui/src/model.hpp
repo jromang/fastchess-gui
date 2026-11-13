@@ -56,6 +56,9 @@ struct EngineEntry {
     std::vector<std::string> groups;  // e.g. a pool, a rating list
     int elo = 0;                      // reference rating, 0 = none
     std::string notes;                // free text of the user's, found by the engine searches
+    // The names the user said the PGN files of the ratings give this engine (a player "Stockfish 17 64-bit"): their
+    // games are the engine's. Saved only when there are some.
+    std::vector<std::string> aliases;
     // Kept in the library, but out of the engine pickers and of the checks of the whole library. A tournament that
     // has it already plays it as before.
     bool inactive = false;
@@ -112,6 +115,7 @@ template <typename BasicJsonType,
 void to_json(BasicJsonType& nlohmann_json_j, const EngineEntry& nlohmann_json_t) {
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_ENGINE_ENTRY_FIELDS))
     if (nlohmann_json_t.start_timeout > 0) nlohmann_json_j["start_timeout"] = nlohmann_json_t.start_timeout;
+    if (!nlohmann_json_t.aliases.empty()) nlohmann_json_j["aliases"] = nlohmann_json_t.aliases;
 }
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
@@ -119,6 +123,7 @@ void from_json(const BasicJsonType& nlohmann_json_j, EngineEntry& nlohmann_json_
     const EngineEntry nlohmann_json_default_obj{};
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_ENGINE_ENTRY_FIELDS))
     NLOHMANN_JSON_FROM_WITH_DEFAULT(start_timeout)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(aliases)
 }
 #undef FCG_ENGINE_ENTRY_FIELDS
 

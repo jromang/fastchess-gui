@@ -1284,6 +1284,52 @@ TEST_CASE("the engine folder is remembered in settings.json; an engine is active
     fs::remove_all(root);
 }
 
+TEST_CASE("the library engine chosen for a PGN player is kept with the engine, in engines.json") {
+    namespace fs    = std::filesystem;
+    const auto root = fs::temp_directory_path() / "fcg-storage-aliases";
+    fs::remove_all(root);
+    fs::create_directories(root);
+    Storage storage(root);
+
+    // engines.json of an earlier version: no "aliases".
+    std::ofstream(root / "engines.json")
+        << R"([{"name": "Stockfish 17", "cmd": "/e/sf"}, {"name": "Stockfish 16", "cmd": "/e/sf16"}])";
+    auto engines = storage.loadEngines();
+    REQUIRE(engines.size() == 2);
+    CHECK(engines[0].aliases.empty());
+    CHECK(libraryAliases(engines).empty());
+
+    // A choice, then another engine for the same player, letter case and spaces aside: it moves.
+    CHECK(setLibraryAlias(engines, "Stockfish 17 64-bit", "Stockfish 16"));
+    CHECK(setLibraryAlias(engines, "stockfish 17  64-BIT", "Stockfish 17"));
+    CHECK_FALSE(setLibraryAlias(engines, "Stockfish 17 64-bit", "Stockfish 17"));  // already so
+    CHECK(engines[1].aliases.empty());
+    CHECK(engines[0].aliases == std::vector<std::string>{"stockfish 17  64-BIT"});
+    CHECK(libraryAlias(engines, "Stockfish 17 64-bit") == "Stockfish 17");
+    CHECK(libraryAlias(engines, "Stockfish 17") == "");
+    CHECK(setLibraryAlias(engines, "SF 16", "Stockfish 16"));
+
+    // Kept in engines.json, and read back as the map the games are read with.
+    storage.saveEngines(engines);
+    const auto back = storage.loadEngines();
+    REQUIRE(back.size() == 2);
+    CHECK(back[0].aliases == engines[0].aliases);
+    CHECK(libraryAliases(back) ==
+          std::map<std::string, std::string>{{"stockfish 17  64-BIT", "Stockfish 17"}, {"SF 16", "Stockfish 16"}});
+    {
+        std::ifstream in(root / "engines.json");
+        const std::string text(std::istreambuf_iterator<char>(in), {});
+        CHECK(text.find("aliases") != std::string::npos);
+    }
+
+    // A separate engine again: the name is dropped, and an engine without names writes none.
+    auto edited = back;
+    CHECK(setLibraryAlias(edited, "Stockfish 17 64-bit", ""));
+    CHECK(edited[0].aliases.empty());
+    CHECK(nlohmann::json(edited[0]).count("aliases") == 0);
+    fs::remove_all(root);
+}
+
 TEST_CASE("an engine list that cannot be read is set aside, not replaced by an empty one") {
     namespace fs    = std::filesystem;
     const auto root = fs::temp_directory_path() / "fcg-storage-unreadable";

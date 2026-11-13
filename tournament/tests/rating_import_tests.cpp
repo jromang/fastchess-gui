@@ -171,4 +171,12 @@ TEST_CASE("rating list: the library engines it names, by the names, letter case 
     const auto own = matchRatings({{"FRUIT 2.1", 2600}, {"Fruit 2.1", 2690}}, library);
     REQUIRE(own.matched.size() == 1);
     CHECK(own.matched[0].elo == 2690);
+
+    // The names the user gave to library engines for the players of PGN files hold for the list too.
+    const auto chosen = matchRatings(list, library, {{"Crafty 25.2", "Crafty"}, {"ethereal 14", "Ethereal 14"}});
+    REQUIRE(chosen.matched.size() == 5);
+    CHECK(chosen.matched[3].engine == "Crafty");
+    CHECK(chosen.matched[3].elo == 2850);
+    CHECK(chosen.matched[4].engine == "Ethereal 14");
+    CHECK(chosen.unmatched.empty());
 }
