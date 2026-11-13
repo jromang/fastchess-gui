@@ -350,13 +350,23 @@ TEST_CASE("runner: a pause holds the next try of an engine that failed to start,
     auto state                   = TournamentState::create(dir / "t", s);
 
     // Paused while the engine waits for its next try: nothing is played during the pause, the try comes after it.
+    // The waiting game does not count as running meanwhile (a paused tournament shows no game finishing), and
+    // counts again once resumed.
     constexpr auto held = 3s;
+    std::atomic_int running_paused{-1}, running_resumed{-1};
     std::thread pauser([&] {
+        auto& gate             = fastchess::observer::PauseGate::instance();
+        const auto waitRunning = [&](int n) {
+            for (int i = 0; i < 200 && gate.running() != n; ++i) std::this_thread::sleep_for(10ms);
+            return gate.running();
+        };
         while (!fs::exists(started)) std::this_thread::sleep_for(10ms);
-        fastchess::observer::PauseGate::instance().setPaused(true);
+        gate.setPaused(true);
+        running_paused = waitRunning(0);
         std::this_thread::sleep_for(held);
         CHECK(state->results().empty());
-        fastchess::observer::PauseGate::instance().setPaused(false);
+        gate.setPaused(false);
+        running_resumed = waitRunning(1);
     });
     const auto begun = std::chrono::steady_clock::now();
     const auto error = play(*state);
@@ -367,6 +377,9 @@ TEST_CASE("runner: a pause holds the next try of an engine that failed to start,
     CHECK(state->finished());
     CHECK(state->results().size() == 2u);
     CHECK(std::chrono::steady_clock::now() - begun >= fastchess::BaseTournament::ENGINE_START_RETRY_PAUSE + held);
+    CHECK(running_paused.load() == 0);
+    CHECK(running_resumed.load() == 1);
+    CHECK(fastchess::observer::PauseGate::instance().running() == 0);
 }
 
 TEST_CASE("runner: \"stop when idle\" gives up at once a game whose engine waits for its next try") {
