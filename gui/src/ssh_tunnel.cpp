@@ -86,6 +86,18 @@ bool hasName(std::string_view list, std::string_view name) { return !choose(name
 
 std::string hostPort(const std::string& host, int port) { return host + ":" + std::to_string(port); }
 
+// Wipes a secret when it goes out of scope, however the function that holds it returns.
+class Wiped {
+   public:
+    explicit Wiped(std::string& secret) : secret_(secret) {}
+    ~Wiped() { wipe(secret_); }
+    Wiped(const Wiped&)            = delete;
+    Wiped& operator=(const Wiped&) = delete;
+
+   private:
+    std::string& secret_;
+};
+
 std::mutex& knownHostsMutex() {
     static std::mutex m;
     return m;
@@ -187,7 +199,7 @@ std::optional<std::string> findPublicUrl(std::string_view output) {
         const auto words = lower(line);
         const bool tells = words.find("tunneled") != std::string::npos || words.find("forwarding") != std::string::npos;
         for (auto at = words.find("https://"); at != std::string::npos; at = words.find("https://", at + 8)) {
-            // The host only: letters, digits, dots and dashes, nothing a page could be told to do with it.
+            // The host and its port only: letters, digits, dots and dashes, nothing a page could be told to do with it.
             std::size_t end = at + 8;
             while (end < line.size() &&
                    (std::isalnum(static_cast<unsigned char>(line[end])) || line[end] == '.' || line[end] == '-')) {
@@ -195,7 +207,19 @@ std::optional<std::string> findPublicUrl(std::string_view output) {
             }
             const auto host = line.substr(at + 8, end - at - 8);
             if (host.find('.') == std::string_view::npos || host.front() == '.' || host.back() == '.') continue;
-            const auto url = "https://" + lower(host);
+            auto url = "https://" + lower(host);
+            // A port, when there is one: 1 to 65535, digits only (an address with another is not taken).
+            if (end < line.size() && line[end] == ':') {
+                std::size_t digits = end + 1;
+                while (digits < line.size() && digits - end <= 6 && std::isdigit(static_cast<unsigned char>(line[digits]))) {
+                    ++digits;
+                }
+                const auto port = line.substr(end + 1, digits - end - 1);
+                if (!port.empty()) {
+                    if (port.size() > 5 || port.front() == '0' || std::stoi(std::string(port)) > 65535) continue;
+                    url += ":" + std::string(port);
+                }
+            }
             if (!first) first = url;
             if (tells) told = url;
         }
@@ -275,6 +299,12 @@ class TunnelConnection {
    public:
     TunnelConnection(SshTunnel::Shared& shared, const TunnelSettings& settings)
         : tunnel_(shared), cfg_(settings), stopping_(shared.stopping) {}
+    ~TunnelConnection() {
+        for (auto& key : next_rx_) wipe(key);
+        wipe(session_id_);
+    }
+    TunnelConnection(const TunnelConnection&)            = delete;
+    TunnelConnection& operator=(const TunnelConnection&) = delete;
 
     struct End {
         std::string reason;  // empty when stopped
@@ -660,19 +690,24 @@ class TunnelConnection {
         } else if (key_blob != host_key_) {
             return fail(trf("{} changed its host key while connected", cfg_.host), true);
         }
-        const auto secret = ecdh_->agree(q_s);
+        auto secret = ecdh_->agree(q_s);
         if (!secret) return fail("the server's key exchange is not valid");
-        const auto k = Writer().mpint(*secret).take();
-        const auto h = sha256(Writer()
-                                  .string(v_c_)
-                                  .string(v_s_)
-                                  .string(i_c_)
-                                  .string(i_s_)
-                                  .string(key_blob)
-                                  .string(ecdh_->publicKey())
-                                  .string(q_s)
-                                  .raw(k)
-                                  .data());
+        auto k = Writer().mpint(*secret).take();
+        wipe(*secret);
+        Writer exchange;
+        exchange.string(v_c_)
+            .string(v_s_)
+            .string(i_c_)
+            .string(i_s_)
+            .string(key_blob)
+            .string(ecdh_->publicKey())
+            .string(q_s)
+            .raw(k);
+        auto h = sha256(exchange.data());
+        auto hashed = exchange.take();
+        wipe(hashed);
+        // K and H, and the keys made of them, are wiped however this ends; the first H stays, as the session id.
+        const Wiped wipe_k(k), wipe_h(h);
         if (const auto bad = verifyRsa(key_blob, signature, h, host_alg_); !bad.empty()) {
             return fail(trf("{}: {}", cfg_.host, bad), true);
         }
@@ -692,9 +727,12 @@ class TunnelConnection {
         const auto derive = [&](char letter, std::size_t size) { return deriveKey(k, h, letter, session_id_, size); };
 
         send(Writer().byte(NEWKEYS).take());
-        const auto error = tx_.start(cipher_c_, mac_c_, derive('C', PacketCipher::keySize(cipher_c_)),
-                                     derive('A', PacketCipher::ivSize(cipher_c_)),
-                                     derive('E', PacketCipher::macKeySize(mac_c_)));
+        auto key = derive('C', PacketCipher::keySize(cipher_c_)), iv = derive('A', PacketCipher::ivSize(cipher_c_)),
+             mac_key = derive('E', PacketCipher::macKeySize(mac_c_));
+        const auto error = tx_.start(cipher_c_, mac_c_, key, iv, mac_key);
+        wipe(key);
+        wipe(iv);
+        wipe(mac_key);
         if (!error.empty()) return fail(error);
         if (strict_) seq_tx_ = 0;
         next_rx_      = {derive('D', PacketCipher::keySize(cipher_s_)), derive('B', PacketCipher::ivSize(cipher_s_)),
@@ -714,7 +752,7 @@ class TunnelConnection {
         if (const auto error = rx_.start(cipher_s_, mac_s_, next_rx_[0], next_rx_[1], next_rx_[2]); !error.empty()) {
             return fail(error);
         }
-        for (auto& key : next_rx_) key.assign(key.size(), '\0');
+        for (auto& key : next_rx_) wipe(key);
         if (strict_) seq_rx_ = 0;
         initial_kex_done_ = true;
         kexinit_sent_ = false;

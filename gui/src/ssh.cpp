@@ -270,8 +270,14 @@ std::string verifyRsa(std::string_view key_blob, std::string_view signature, std
     }
     auto modulus = n;
     while (!modulus.empty() && modulus.front() == 0) modulus.remove_prefix(1);
-    const auto bits = modulus.size() * 8;
-    if (bits < 2048 || bits > 16384) return "the host key's size is not accepted (2048 to 16384 bits)";
+    // In bits, not bytes: a 2041-bit key takes 256 bytes too. PSA takes RSA keys up to its vendor maximum.
+    std::size_t bits = modulus.size() * 8;
+    for (auto top = static_cast<unsigned char>(modulus.empty() ? 0 : modulus.front()); top != 0 && top < 0x80; top <<= 1) {
+        --bits;
+    }
+    if (bits < 2048 || bits > PSA_VENDOR_RSA_MAX_KEY_BITS) {
+        return "the host key's size is not accepted (2048 to " + std::to_string(PSA_VENDOR_RSA_MAX_KEY_BITS) + " bits)";
+    }
 
     Reader sig(signature);
     const auto name = sig.string(64);

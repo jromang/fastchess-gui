@@ -196,6 +196,16 @@ TEST_CASE("SSH: RSA host key signatures, rsa-sha2-512 and rsa-sha2-256, and fing
                     .empty());
     CHECK_FALSE(verifyRsa(KAT_RSA_BLOB.substr(0, 40), KAT_RSA_SIG512, KAT_RSA_DATA).empty());
 
+    // The size in bits: 2041 bits take 256 bytes, as 2048 do, and are refused; beyond PSA's 4096 too.
+    const auto rsa = [](const std::string& modulus) {
+        return Writer().string("ssh-rsa").mpint(std::string("\x01\x00\x01", 3)).mpint(modulus).take();
+    };
+    CHECK(verifyRsa(rsa("\x01" + std::string(255, '\xff')), KAT_RSA_SIG512, KAT_RSA_DATA).find("size") !=
+          std::string::npos);
+    CHECK(verifyRsa(rsa("\x01" + std::string(512, '\xff')), KAT_RSA_SIG512, KAT_RSA_DATA).find("4096 bits") !=
+          std::string::npos);
+    CHECK(verifyRsa(rsa(std::string(256, '\xff')), KAT_RSA_SIG512, KAT_RSA_DATA).find("size") == std::string::npos);
+
     CHECK(fingerprint(KAT_RSA_BLOB) == KAT_RSA_FP);
     // As ssh-keygen -l shows localhost.run's key, and as pinned.
     CHECK(fingerprint(LOCALHOST_RUN_BLOB) == "SHA256:FV8IMJ4IYjYUTnd6on7PqbRjaZf4c1EhhEBgeUdE94I");
@@ -395,6 +405,11 @@ TEST_CASE("Tunnel: the public address in a service's session text") {
     CHECK(findPublicUrl("Hello\nhttps://x.example.org/<script>\n") == "https://x.example.org");
     CHECK_FALSE(findPublicUrl("no address here, https://localhost only").has_value());
     CHECK_FALSE(findPublicUrl("").has_value());
+    // A port is kept; one that is not a port leaves the address out.
+    CHECK(findPublicUrl("Forwarding https://tunnel.example.org:8443/x\n") == "https://tunnel.example.org:8443");
+    CHECK(findPublicUrl("https://tunnel.example.org: ready\n") == "https://tunnel.example.org");
+    CHECK_FALSE(findPublicUrl("https://tunnel.example.org:99999\n").has_value());
+    CHECK_FALSE(findPublicUrl("https://tunnel.example.org:0\n").has_value());
 }
 
 TEST_CASE("Tunnel: server text made safe to show on a terminal") {
