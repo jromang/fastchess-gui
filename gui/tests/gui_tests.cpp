@@ -801,6 +801,13 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     const auto topology = topologyFromCores({{0, 0}, {0, 1}, {0, 0}, {0, 1}});
 
     auto run = buildRun(setup, engines, topology, dir);
+    // Every field the charts of the Games tab read back from the PGN, by default.
+    CHECK(run.tournament.pgn.track_nodes);
+    CHECK(run.tournament.pgn.track_seldepth);
+    CHECK(run.tournament.pgn.track_nps);
+    CHECK(run.tournament.pgn.track_pv);
+    CHECK(run.tournament.pgn.track_tbhits);
+    CHECK(run.tournament.pgn.track_decision);
     CHECK(run.tournament.rounds == 51);
     CHECK(run.tournament.games == 2);
     CHECK(run.tournament.startup_time == ENGINE_STARTUP_TIME);
@@ -1521,6 +1528,47 @@ TEST_CASE("decision time: when the first PV move last changed, from the lines of
     CHECK(m.pv == "d2d4 d7d5");
     CHECK(m.decision_ms == 20);
     CHECK(m.time_ms == 100);
+    CHECK(m.fields == (PGN_NODES | PGN_SELDEPTH | PGN_TBHITS | PGN_PV | PGN_DECISION));
+}
+
+TEST_CASE("replay charts: the fields a PGN has are told apart from zeros, and from those it was written without") {
+    // A zero written is a field the tournament had on: the engine reported none.
+    ReplayMove zeros;
+    parseFastchessComment("+0.17/4 0.100s, n=0, sd=0, nps=0, tbhits=0, pv=\"\"", zeros);
+    CHECK(zeros.fields == (PGN_NODES | PGN_SELDEPTH | PGN_NPS | PGN_TBHITS | PGN_PV));
+    ReplayMove plain;
+    parseFastchessComment("+0.17/4 0.100s", plain);
+    CHECK(plain.fields == 0);
+    ReplayMove book;
+    parseFastchessComment("book", book);
+    CHECK(book.fields == 0);
+
+    // The game has the fields of any of its moves.
+    const auto game = parseReplay(R"([White "A"]
+[Black "B"]
+[Result "*"]
+
+1. e4 {book} e5 {-0.20/12 0.500s} 2. Nf3 {+0.30/14 0.400s, n=5000, nps=10000} *
+)");
+    REQUIRE(game);
+    CHECK(game->fields == (PGN_NODES | PGN_NPS));
+    CHECK(game->moves[1].fields == 0);
+
+    // What each chart needs, and the setup's option that writes it.
+    CHECK(chartField(MoveChart::Nodes) == PGN_NODES);
+    CHECK(chartField(MoveChart::Speed) == PGN_NPS);
+    CHECK(chartField(MoveChart::TbHits) == PGN_TBHITS);
+    CHECK(chartField(MoveChart::Agreement) == PGN_PV);
+    CHECK(chartField(MoveChart::Time) == 0);  // always written
+    CHECK(chartField(MoveChart::Depth) == 0);
+    CHECK(chartField(MoveChart::Eval) == 0);
+    CHECK(chartExtraField(MoveChart::Time) == PGN_DECISION);
+    CHECK(chartExtraField(MoveChart::Depth) == PGN_SELDEPTH);
+    CHECK(chartExtraField(MoveChart::Nodes) == 0);
+    CHECK(std::string(pgnFieldOption(PGN_NPS)) == "nps");
+    CHECK(std::string(pgnFieldOption(PGN_PV)) == "pv");
+    CHECK_FALSE(moveSeries(game->moves, MoveChart::Nodes).empty());
+    CHECK(moveSeries(game->moves, MoveChart::Agreement).empty());
 }
 
 TEST_CASE("move charts: each side's values at its plies, and how far the PVs agree") {

@@ -25,6 +25,16 @@ using tour::PgnSpan;
 std::string exportSpans(const std::filesystem::path& source, const std::vector<PgnSpan>& spans,
                         const std::filesystem::path& target, const std::vector<std::filesystem::path>& own = {});
 
+// The optional fields of a move comment, as the PGN options of the setup turn them on: a set of these bits.
+enum PgnField : uint8_t {
+    PGN_NODES    = 1 << 0,  // n=
+    PGN_SELDEPTH = 1 << 1,  // sd=
+    PGN_NPS      = 1 << 2,  // nps=
+    PGN_TBHITS   = 1 << 3,  // tbhits=
+    PGN_PV       = 1 << 4,  // pv="..."
+    PGN_DECISION = 1 << 5,  // dt=
+};
+
 // A game read back from a PGN written in the fastchess comment style.
 struct ReplayMove {
     std::string san;
@@ -43,6 +53,7 @@ struct ReplayMove {
     uint64_t tbhits  = 0;
     std::string pv;  // UCI moves, from the move played
     std::optional<int64_t> decision_ms;
+    uint8_t fields = 0;  // the PgnField found in its comment, a zero told apart from a field not written
 };
 
 struct ReplayGame {
@@ -51,6 +62,7 @@ struct ReplayGame {
     std::vector<ReplayMove> moves;
     std::string result;
     std::string final_comment;
+    uint8_t fields = 0;  // the PgnField of any of its moves: those the tournament wrote
 
     [[nodiscard]] std::string header(const std::string& key) const;
 };

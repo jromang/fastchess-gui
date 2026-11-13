@@ -155,6 +155,7 @@ void parseFastchessComment(std::string_view comment, ReplayMove& move) {
     if (const auto at = rest.find("nps="); at != std::string_view::npos) {
         const auto value = rest.substr(at + 4);
         std::from_chars(value.data(), value.data() + value.size(), move.nps);
+        move.fields |= PGN_NPS;
     }
 
     // ", key=value" fields after the time.
@@ -164,13 +165,24 @@ void parseFastchessComment(std::string_view comment, ReplayMove& move) {
         }
         return std::nullopt;
     };
-    if (const auto v = field("n=")) std::from_chars(v->data(), v->data() + v->size(), move.nodes);
-    if (const auto v = field("sd=")) std::from_chars(v->data(), v->data() + v->size(), move.seldepth);
-    if (const auto v = field("tbhits=")) std::from_chars(v->data(), v->data() + v->size(), move.tbhits);
+    if (const auto v = field("n=")) {
+        std::from_chars(v->data(), v->data() + v->size(), move.nodes);
+        move.fields |= PGN_NODES;
+    }
+    if (const auto v = field("sd=")) {
+        std::from_chars(v->data(), v->data() + v->size(), move.seldepth);
+        move.fields |= PGN_SELDEPTH;
+    }
+    if (const auto v = field("tbhits=")) {
+        std::from_chars(v->data(), v->data() + v->size(), move.tbhits);
+        move.fields |= PGN_TBHITS;
+    }
     if (const auto v = field("pv=\""); v && v->find('"') != std::string_view::npos) {
         move.pv = std::string(v->substr(0, v->find('"')));
+        move.fields |= PGN_PV;
     }
     if (const auto v = field("dt=")) {
+        move.fields |= PGN_DECISION;
         try {
             move.decision_ms = static_cast<int64_t>(std::stod(std::string(v->substr(0, v->find('s')))) * 1000.0 + 0.5);
         } catch (...) {
@@ -305,6 +317,7 @@ class ReplayVisitor : public chess::pgn::Visitor {
         }
 
         parseFastchessComment(comment, move);
+        game_.fields |= move.fields;
 
         // The last move's comment ends with the termination reason, after the engine data.
         if (const auto comma = comment.rfind(", "); comma != std::string_view::npos) {

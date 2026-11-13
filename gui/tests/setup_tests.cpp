@@ -188,6 +188,34 @@ TEST_CASE("the setup's Syzygy path and OwnBook off are given to the engines that
     fs::remove_all(dir);
 }
 
+TEST_CASE("the PGN fields the charts read: on by default, and on for a setup saved with the old default") {
+    const auto fields = [](const MatchSetup& s) {
+        return std::vector<bool>{s.pgn_nodes, s.pgn_seldepth, s.pgn_nps, s.pgn_pv, s.pgn_tbhits, s.pgn_decision};
+    };
+    const std::vector<bool> on(6, true), off(6, false);
+    CHECK(fields(MatchSetup{}) == on);
+    CHECK(fields(nlohmann::json::object().get<MatchSetup>()) == on);
+
+    // Saved before the revision, with every field off as they were by default: read with them on.
+    MatchSetup old;
+    old.pgn_nodes = old.pgn_seldepth = old.pgn_nps = old.pgn_pv = old.pgn_tbhits = old.pgn_decision = false;
+    auto j = nlohmann::json(old);
+    CHECK(j.at("revision") == 1);
+    j.erase("revision");
+    CHECK(fields(j.get<MatchSetup>()) == on);
+    CHECK(j.get<MatchSetup>().revision == 1);
+
+    // One of them turned on then was a choice: kept as it was.
+    j["pgn_pv"]   = true;
+    const auto pv = j.get<MatchSetup>();
+    CHECK(pv.pgn_pv);
+    CHECK_FALSE(pv.pgn_nodes);
+    CHECK_FALSE(pv.pgn_decision);
+
+    // Turned off since the revision: kept off.
+    CHECK(fields(nlohmann::json(old).get<MatchSetup>()) == off);
+}
+
 TEST_CASE("at launch, the tournament running when the program ended resumes, then the queue") {
     const RunningMarker running{"/runs/t", false};
     const RunningMarker paused{"/runs/t", true};

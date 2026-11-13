@@ -149,6 +149,26 @@ int pvAgreement(const std::string& previous_pv, const std::string& pv) {
     return n;
 }
 
+const char* pgnFieldOption(uint8_t field) {
+    // As the checkboxes of the setup's PGN options name them.
+    switch (field) {
+        case PGN_NODES:
+            return TR("nodes");
+        case PGN_SELDEPTH:
+            return "seldepth";
+        case PGN_NPS:
+            return "nps";
+        case PGN_TBHITS:
+            return "tbhits";
+        case PGN_PV:
+            return "pv";
+        case PGN_DECISION:
+            return TR("decision time");
+        default:
+            return "";
+    }
+}
+
 bool moveChartChoice(const char* id, MoveChart& chart) {
     const char* names[] = {TR("Evaluation"), TR("Time"),    TR("Depth"),       TR("Nodes"),
                            TR("Speed"),      TR("TB hits"), TR("PV agreement")};
@@ -160,13 +180,12 @@ bool moveChartChoice(const char* id, MoveChart& chart) {
 }
 
 int plotMoves(const char* id, MoveChart chart, const MoveSeries& series, const std::array<std::string, 2>& names,
-              std::size_t plies, int marker_ply, float height) {
+              std::size_t plies, int marker_ply, float height, const char* empty) {
     int clicked = -1;
     if (series.empty()) {
-        ImGui::TextDisabled("%s",
-                            chart == MoveChart::Agreement
-                                ? TR("No PVs: turn on pv in the PGN options of the setup.")
-                                : TR("Not in this game's PGN: turn the field on in the PGN options of the setup."));
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+        ImGui::TextWrapped("%s", empty);
+        ImGui::PopStyleColor();
         return clicked;
     }
 
@@ -790,8 +809,10 @@ void App::drawLiveChart(SlotView& view) {
     moveChartChoice("##live_chart", live_chart_);
     const float height = std::max(60.0f, ImGui::GetContentRegionAvail().y);
     if (live_chart_ != MoveChart::Eval) {
+        // Read from the engines' output, whatever the PGN options: only what they did not report is missing.
         plotMoves("##live_moves", live_chart_, moveSeries(st.moves, live_chart_), {st.white, st.black}, evals.size(),
-                  -1, height);
+                  -1, height,
+                  live_chart_ == MoveChart::TbHits ? TR("No tablebase hits.") : TR("Nothing reported yet."));
     } else {
         const auto wdl     = wdlSeries(st.moves);
         const float eval_h = wdl.empty() ? height : std::max(60.0f, std::floor(height * 0.62f));
