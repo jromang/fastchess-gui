@@ -82,18 +82,63 @@ PolyglotBook::PolyglotBook(const std::filesystem::path& file) : in_(file, std::i
     const auto size = static_cast<uint64_t>(std::max<std::streamoff>(0, in_.tellg()));
     if (size < 16 || size % 16 != 0) throw std::runtime_error(fmt::format("{} is no Polyglot book", file.string()));
     count_ = size / 16;
+
+    if (sorted()) return;
+    if (count_ > SORT_MAX) {
+        throw UnsortedPolyglotBook(
+            fmt::format("the Polyglot book {} is not sorted by key, as the format wants, and too large to be sorted "
+                        "in memory",
+                        file.string()));
+    }
+    // Sorted in memory, the moves of a position kept in the book's order.
+    std::vector<Entry> entries;
+    entries.reserve(count_);
+    for (uint64_t i = 0; i < count_; ++i) entries.push_back(at(i));
+    std::stable_sort(entries.begin(), entries.end(), [](const Entry& a, const Entry& b) { return a.key < b.key; });
+    memory_ = std::move(entries);
+}
+
+PolyglotBook::Entry PolyglotBook::at(uint64_t i) {
+    if (!memory_.empty()) return memory_[i];
+    unsigned char raw[16];
+    in_.clear();
+    in_.seekg(static_cast<std::streamoff>(i * 16));
+    if (!in_.read(reinterpret_cast<char*>(raw), sizeof(raw))) return Entry{~uint64_t{0}};
+    return Entry{bigEndian(raw, 8), static_cast<uint16_t>(bigEndian(raw + 8, 2)),
+                 static_cast<uint16_t>(bigEndian(raw + 10, 2))};
+}
+
+bool PolyglotBook::sorted() {
+    // A book up to SORT_MAX entries: every key, read in one pass. A larger one: keys at evenly spread entries, which
+    // tells an unsorted book (one written in the order of its lines, or of its positions) at little cost.
+    uint64_t previous = 0;
+    if (count_ <= SORT_MAX) {
+        in_.clear();
+        in_.seekg(0);
+        std::vector<char> chunk(16 * 4096);
+        for (uint64_t done = 0; done < count_;) {
+            const auto n = std::min<uint64_t>(count_ - done, chunk.size() / 16);
+            if (!in_.read(chunk.data(), static_cast<std::streamsize>(n * 16))) return false;
+            for (uint64_t i = 0; i < n; ++i) {
+                const auto key = bigEndian(reinterpret_cast<const unsigned char*>(chunk.data()) + 16 * i, 8);
+                if (key < previous) return false;
+                previous = key;
+            }
+            done += n;
+        }
+        return true;
+    }
+    constexpr uint64_t SAMPLES = 4096;
+    for (uint64_t s = 0; s <= SAMPLES; ++s) {
+        const auto key = at(s * (count_ - 1) / SAMPLES).key;
+        if (key < previous) return false;
+        previous = key;
+    }
+    return true;
 }
 
 std::vector<PolyglotBook::Choice> PolyglotBook::moves(const chess::Board& board) {
     const auto key = board.hash();
-    const auto at  = [&](uint64_t i) {
-        unsigned char raw[16];
-        in_.clear();
-        in_.seekg(static_cast<std::streamoff>(i * 16));
-        if (!in_.read(reinterpret_cast<char*>(raw), sizeof(raw))) return Entry{~uint64_t{0}};
-        return Entry{bigEndian(raw, 8), static_cast<uint16_t>(bigEndian(raw + 8, 2)),
-                     static_cast<uint16_t>(bigEndian(raw + 10, 2))};
-    };
 
     // The first entry of the key.
     uint64_t lo = 0, hi = count_;
@@ -142,7 +187,10 @@ std::vector<std::string> polyglotPositions(const std::filesystem::path& file, co
     chess::Board board;
 
     const auto leaf = [&] {
-        out.push_back(board.getFen(false));
+        // An en passant square only when the capture is legal, as a FEN wants it (the key has it whenever a pawn
+        // stands beside, see playForBook()).
+        out.push_back(board.enpassantSq() == chess::Square::NO_SQ ? board.getFen(false)
+                                                                  : chess::Board(board.getFen()).getFen(false));
         if (out.size() > walk.max_positions) {
             throw std::runtime_error(
                 fmt::format("the Polyglot book {} gives more than {} positions at {} plies: choose fewer plies",
@@ -171,7 +219,7 @@ std::vector<std::string> polyglotPositions(const std::filesystem::path& file, co
             return;
         }
         for (const auto& move : moves) {
-            board.makeMove<true>(move);
+            playForBook(board, move);
             self(self, depth + 1);
             board.unmakeMove(move);
         }

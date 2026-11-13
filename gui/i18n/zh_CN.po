@@ -1096,6 +1096,9 @@ msgstr "已中断"
 msgid "Interrupted: an engine crashed or stopped responding (see Console)"
 msgstr "已中断：某个引擎崩溃或停止响应（见控制台）"
 
+msgid "It cannot play for an engine: {}"
+msgstr "它不能代替引擎走棋：{}"
+
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "它会从中断处准确继续：不会丢失对局，也不会重复下同一局。"
 
@@ -2144,6 +2147,9 @@ msgstr "50 步计数、子力以及剩余棋子，显示在平铺视图的每个
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "按 PGN 标准，这些是注释。fastchess-gui 0.4.13 及更早版本把它们当作着法读取，可能从错误的局面（常常是初始局面）开始下此开局库中的某些开局。"
 
+msgid "The book of {} cannot be used: {}"
+msgstr "{} 的开局库无法使用：{}"
+
 msgid "The book of {} is not a Polyglot book (.bin): {}"
 msgstr "{} 的开局库不是 Polyglot 开局库（.bin）：{}"
 
@@ -2332,6 +2338,9 @@ msgstr "主题"
 
 msgid "They have not played each other."
 msgstr "它们之间没有对弈过。"
+
+msgid "This book cannot play for an engine: {}"
+msgstr "此开局库不能代替引擎走棋：{}"
 
 msgid "This draw ratio and this RMS bias are not compatible."
 msgstr "此和棋率与此 RMS 偏差不相容。"
@@ -2639,6 +2648,9 @@ msgstr "初始局面"
 
 msgid "its default"
 msgstr "其默认值"
+
+msgid "its entries are not sorted by key, as those of a Polyglot book must be, and it is too large to be sorted in memory: have a Polyglot tool write it again"
+msgstr "其条目未按键排序（Polyglot 开局库必须如此），且文件过大，无法在内存中排序：请用 Polyglot 工具重新写出"
 
 msgid "itself"
 msgstr "自己"
@@ -3075,6 +3087,9 @@ msgstr "{} 子 Syzygy，用于 {} 个引擎（共 {} 个）"
 
 msgid "{}: decision"
 msgstr "{}：决定"
+
+msgid "{}: its book cannot be used: {}"
+msgstr "{}：其开局库无法使用：{}"
 
 msgid "{}: its book is not found: {}"
 msgstr "{}：找不到其开局库：{}"

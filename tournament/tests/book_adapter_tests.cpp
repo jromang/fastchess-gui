@@ -3,6 +3,7 @@
 #include <doctest/doctest.hpp>
 
 #include <atomic>
+#include <chrono>
 #include <filesystem>
 #include <fstream>
 #include <map>
@@ -11,6 +12,9 @@
 #include <core/config/config.hpp>
 #include <core/globals/globals.hpp>
 #include <core/observer.hpp>
+#include <engine/uci_engine.hpp>
+
+#include <fmt/include/fmt/format.h>
 
 #include <tour/book_adapter.hpp>
 #include <tour/runner.hpp>
@@ -25,6 +29,7 @@ using namespace fcg::tour;
 using fcg::test::polyglotKey;
 using fcg::test::writePolyglot;
 namespace fs = std::filesystem;
+using namespace std::chrono_literals;
 
 namespace {
 
@@ -70,6 +75,128 @@ struct Adapter {
     }
 };
 
+std::string randomMover() { return (self().parent_path() / FCG_RANDOM_MOVER).string(); }
+
+// Sets an environment variable of the processes started from now on; nullptr removes it.
+void setEnv(const char* name, const char* value) {
+#ifdef _WIN32
+    SetEnvironmentVariableA(name, value);
+#else
+    if (value) {
+        setenv(name, value, 1);
+    } else {
+        unsetenv(name);
+    }
+#endif
+}
+
+// A book of the twenty first moves, each as likely: a few games show whether they draw their own.
+fs::path wideBook() {
+    const auto path = fs::temp_directory_path() / "fcg-own-book-wide.bin";
+    std::vector<std::tuple<uint64_t, std::string, int>> entries;
+    chess::Movelist firsts;
+    chess::movegen::legalmoves(firsts, chess::Board());
+    for (const auto& m : firsts) entries.emplace_back(polyglotKey(""), chess::uci::moveToUci(m), 1);
+    writePolyglot(path, entries);
+    return path;
+}
+
+// The adapter as the tournament starts it, this program in its --book-adapter mode, with the random mover behind.
+struct AdapterProcess {
+    explicit AdapterProcess(const fs::path& book, uint64_t seed = 1) {
+        fastchess::atomic::stop = false;  // left set by the games played before
+        const auto args = fmt::format("--book-adapter --book \"{}\" --depth 0 --seed {} -- \"{}\"", book.string(), seed,
+                                      randomMover());
+        started = process.init(fs::path(randomMover()).parent_path().string(), self().string(), args, "adapter").code ==
+                  fastchess::engine::process::Status::OK;
+        process.setupRead();
+    }
+    ~AdapterProcess() {
+        if (started) (void)process.writeInput("quit\n");
+    }
+    AdapterProcess(const AdapterProcess&)            = delete;
+    AdapterProcess& operator=(const AdapterProcess&) = delete;
+
+    // Sends `commands`, then reads until a line starts with `until`: the lines read, the last that one; empty when
+    // it did not come within five seconds.
+    std::vector<std::string> ask(const std::string& commands, const std::string& until) {
+        (void)process.writeInput(commands);
+        std::vector<std::string> out;
+        std::vector<fastchess::engine::process::Line> lines;
+        const auto r = process.readOutput(lines, until, 5000ms);
+        for (const auto& l : lines) out.push_back(l.line);
+        if (r.code != fastchess::engine::process::Status::OK) out.clear();
+        return out;
+    }
+
+    fastchess::engine::process::Process process;
+    bool started = false;
+};
+
+// A match of the random mover with `book` of its own, up to `depth` plies, against itself without one; with
+// `restart`, both engines started again for every game.
+std::unique_ptr<TournamentState> ownBookMatch(const std::string& name, uint64_t games, const fs::path& book, int depth,
+                                              bool restart = false) {
+    const auto dir = fs::temp_directory_path() / name;
+    fs::remove_all(dir);
+    TournamentSpec s;
+    s.name                   = "own book";
+    s.format                 = Format::Match;
+    s.max_games              = games;
+    s.conditions.concurrency = 2;
+    s.conditions.seed        = 42;
+    for (int i = 0; i < 2; ++i) {
+        Participant p;
+        p.id                 = i;
+        p.engine.name        = i == 0 ? "random (book)" : "random";
+        p.engine.cmd         = randomMover();
+        p.engine.restart     = restart;
+        p.engine.limit.nodes = 1;
+        s.participants.push_back(p);
+    }
+    s.participants[0].book       = book.string();
+    s.participants[0].book_depth = depth;
+    return TournamentState::create(dir, s);
+}
+
+// Plays the tournament to its end: the runner's error, empty when none.
+std::string play(TournamentState& state) {
+    auto config         = state.spec().conditions;
+    config.games        = 2;
+    config.opening.file = "";
+    config.pgn.file     = "";
+    config.config_name  = "";
+    config.output       = fastchess::OutputType::NONE;
+    std::vector<fastchess::EngineConfiguration> engines;
+    for (const auto& p : state.spec().participants) engines.push_back(p.engine);
+    fastchess::atomic::stop                 = false;
+    fastchess::atomic::abnormal_termination = false;
+    fastchess::config::TournamentConfig     = std::make_unique<fastchess::config::Tournament>(config);
+    fastchess::config::EngineConfigs        = std::make_unique<std::vector<fastchess::EngineConfiguration>>(engines);
+    fastchess::observer::PauseGate::instance().reset();
+    std::string error;
+    {
+        Runner runner(state, nullptr, nullptr);
+        runner.start();
+        error = runner.error();
+    }
+    fastchess::stopProcesses();
+    return error;
+}
+
+// The games of the tournament's PGN file, each from its [Event] on.
+std::vector<std::string> pgnGames(const TournamentState& state) {
+    std::ifstream in(state.dir() / state.spec().pgnFile(), std::ios::binary);
+    const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    std::vector<std::string> games;
+    for (auto at = text.find("[Event "); at != std::string::npos;) {
+        const auto next = text.find("[Event ", at + 1);
+        games.push_back(text.substr(at, next == std::string::npos ? std::string::npos : next - at));
+        at = next;
+    }
+    return games;
+}
+
 }  // namespace
 
 TEST_CASE("own book: the moves of a position, weighted, legal ones only; castling as the king takes its rook") {
@@ -109,6 +236,33 @@ TEST_CASE("own book: a file that is no Polyglot book, or none, is refused with a
     std::ofstream(path, std::ios::binary) << "not a book";
     CHECK_THROWS_WITH_AS(PolyglotBook{path}, doctest::Contains("no Polyglot book"), std::runtime_error);
     CHECK_THROWS_AS(PolyglotBook{fs::temp_directory_path() / "fcg-no-such-book.bin"}, std::runtime_error);
+}
+
+TEST_CASE("own book: an unsorted book is sorted in memory, or refused when it is too large for that") {
+    // The entries in the order of the lines, not of the keys: a binary search in the file would find nothing.
+    const auto path = fs::temp_directory_path() / "fcg-own-book-unsorted.bin";
+    writePolyglot(path,
+                  {{polyglotKey("e2e4 e7e5"), "g1f3", 1},
+                   {polyglotKey(""), "e2e4", 3},
+                   {polyglotKey("d2d4"), "d7d5", 1},
+                   {polyglotKey(""), "d2d4", 1}},
+                  false);
+    PolyglotBook book(path);
+    chess::Board board;
+    const auto moves = book.moves(board);
+    REQUIRE(moves.size() == 2);
+    CHECK(chess::uci::moveToUci(moves[0].move) == "e2e4");  // the book's order kept
+    CHECK(chess::uci::moveToUci(moves[1].move) == "d2d4");
+    board.makeMove(chess::uci::uciToMove(board, "d2d4"));
+    REQUIRE(book.moves(board).size() == 1);
+
+    // Larger than PolyglotBook::SORT_MAX entries (16 MB): checked at entries spread over it.
+    const auto large = fs::temp_directory_path() / "fcg-own-book-large.bin";
+    fcg::test::writeLargePolyglot(large, PolyglotBook::SORT_MAX + 1000, true);
+    CHECK_NOTHROW(PolyglotBook{large});
+    fcg::test::writeLargePolyglot(large, PolyglotBook::SORT_MAX + 1000, false);
+    CHECK_THROWS_WITH_AS(PolyglotBook{large}, doctest::Contains("not sorted"), UnsortedPolyglotBook);
+    fs::remove(large);
 }
 
 TEST_CASE("own book adapter: a book move answers go at once, and the engine never sees that go") {
@@ -211,6 +365,28 @@ TEST_CASE("own book adapter: castling as UCI wants it, or as Chess960 does") {
     }
 }
 
+TEST_CASE("own book: a position after a double step beside a pinned pawn is found by the format's key") {
+    // After c7c5, White's b5 pawn stands beside it, pinned by the rook on h5: the format's key has the en passant
+    // file all the same.
+    const std::string fen = "8/2p5/8/KP5r/8/8/8/4k3 b - - 0 1";
+    const auto path       = fs::temp_directory_path() / "fcg-own-book-pinned.bin";
+    writePolyglot(path, {{polyglotKey("c7c5", fen), "a5a4", 1}});
+
+    Adapter a(path);
+    a.fromGui("ucinewgame");
+    a.fromGui("position fen " + fen + " moves c7c5");
+    a.fromGui("go movetime 100");
+    CHECK(a.gui == std::vector<std::string>{"bestmove a5a4"});
+    CHECK(a.enginesGo() == 0);
+
+    fastchess::MatchData data(fen);
+    for (const auto* m : {"c7c5", "a5a4"}) data.moves.emplace_back(m);
+    PolyglotBook book(path);
+    markOwnBookMoves(data, chess::Color::WHITE, book, 0, false);
+    CHECK_FALSE(data.moves[0].book);
+    CHECK(data.moves[1].book);
+}
+
 TEST_CASE("own book adapter: the same seed gives the same choices, game after game; another seed others") {
     const auto choices = [](uint64_t seed) {
         Adapter a(smallBook(), 0, seed);
@@ -229,6 +405,51 @@ TEST_CASE("own book adapter: the same seed gives the same choices, game after ga
     const auto c = choices(7);
     CHECK(c.find('e') != std::string::npos);
     CHECK(c.find('d') != std::string::npos);
+}
+
+TEST_CASE("own book adapter: its processes draw their own book moves, from the same seed and the same position") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+    // The first game of a process, as after every restart of the engine, and in each concurrent game: eight
+    // processes give one same move out of twenty about once in 10^10.
+    const auto book = wideBook();
+    std::set<std::string> firsts;
+    for (int i = 0; i < 8; ++i) {
+        AdapterProcess adapter(book, 42);
+        REQUIRE(adapter.started);
+        REQUIRE_FALSE(adapter.ask("uci\n", "uciok").empty());
+        const auto lines = adapter.ask("ucinewgame\nposition startpos\ngo nodes 1\n", "bestmove");
+        REQUIRE_FALSE(lines.empty());
+        firsts.insert(lines.back());
+    }
+    CHECK(firsts.size() >= 3);
+}
+
+TEST_CASE("own book adapter: what the engine writes after its bestmove, in the same write, reaches the GUI in order") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+    // Its info line, its bestmove, an info string and a readyok in one write: they come in one read.
+    setEnv("FCG_MOCK_AFTER_BESTMOVE", "after the bestmove");
+    AdapterProcess adapter(wideBook());
+    setEnv("FCG_MOCK_AFTER_BESTMOVE", nullptr);
+    REQUIRE(adapter.started);
+    REQUIRE_FALSE(adapter.ask("uci\n", "uciok").empty());
+
+    // Out of the book: the engine's search.
+    auto lines = adapter.ask("ucinewgame\nposition startpos moves a2a3\ngo nodes 1\n", "readyok");
+    REQUIRE(lines.size() >= 4);
+    lines.erase(lines.begin(), lines.end() - 4);
+    CHECK(lines[0].rfind("info depth 1 ", 0) == 0);
+    CHECK(lines[1].rfind("bestmove ", 0) == 0);
+    CHECK(lines[2] == "info string after the bestmove");
+    CHECK(lines[3] == "readyok");
+
+    // And the engine still answers.
+    CHECK(adapter.ask("isready\n", "readyok") == std::vector<std::string>{"readyok"});
 }
 
 TEST_CASE("own book: the configuration through the adapter, a WinBoard engine behind the WinBoard adapter") {
@@ -305,9 +526,48 @@ TEST_CASE("own book: tournament.json keeps a participant's book and depth, and n
     CHECK(j.get<Participant>().book.empty());
 }
 
+TEST_CASE("own book: a tournament with one is of version 3, which the versions before refuse; this one reads it") {
+    TournamentSpec s;
+    s.name = "versions";
+    for (int i = 0; i < 2; ++i) {
+        Participant p;
+        p.id          = i;
+        p.engine.name = i == 0 ? "random (A)" : "random";
+        p.engine.cmd  = "random";
+        s.participants.push_back(p);
+    }
+    CHECK(nlohmann::json(s).at("version") == 1);
+
+    // Versions up to 0.5.3 refuse versions above 2, rather than playing "random (A)" without its book.
+    s.participants[0].book = "/books/a.bin";
+    nlohmann::json j       = s;
+    CHECK(j.at("version") == 3);
+    const auto back = j.get<TournamentSpec>();
+    CHECK(back.version == 3);
+    CHECK(back.participants[0].book == "/books/a.bin");
+    // Once 3, it stays so (a participant with a book withdrawn and replaced, say).
+    auto again                 = back;
+    again.participants[0].book = "";
+    CHECK(nlohmann::json(again).at("version") == 3);
+
+    // A later version still is refused, as before.
+    j["version"] = 4;
+    CHECK_THROWS_WITH_AS((void)j.get<TournamentSpec>(), doctest::Contains("newer version"), std::runtime_error);
+
+    // The folder of a tournament with an own book.
+    const auto dir = fs::temp_directory_path() / "fcg-tour-own-book-version";
+    fs::remove_all(dir);
+    s.participants[0].book = smallBook().string();
+    (void)TournamentState::create(dir, s);
+    std::ifstream in(dir / "tournament.json", std::ios::binary);
+    CHECK(nlohmann::json::parse(in).at("version") == 3);
+    in.close();
+    CHECK(TournamentState::open(dir)->spec().participants[0].book == smallBook().string());
+    fs::remove_all(dir);
+}
+
 TEST_CASE("own book: in a tournament, its moves come from the book, its engine plays the rest") {
-    const auto mover = (self().parent_path() / FCG_RANDOM_MOVER).string();
-    if (!fs::is_regular_file(mover)) {
+    if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available, skipped");
         return;
     }
@@ -327,45 +587,8 @@ TEST_CASE("own book: in a tournament, its moves come from the book, its engine p
     }
     writePolyglot(path, entries);
 
-    const auto dir = fs::temp_directory_path() / "fcg-tour-own-book";
-    fs::remove_all(dir);
-    TournamentSpec s;
-    s.name                   = "own book";
-    s.format                 = Format::Match;
-    s.max_games              = 8;
-    s.conditions.concurrency = 2;
-    s.conditions.seed        = 42;
-    for (int i = 0; i < 2; ++i) {
-        Participant p;
-        p.id                 = i;
-        p.engine.name        = i == 0 ? "random (book)" : "random";
-        p.engine.cmd         = mover;
-        p.engine.limit.nodes = 1;
-        s.participants.push_back(p);
-    }
-    s.participants[0].book       = path.string();
-    s.participants[0].book_depth = 2;
-    auto state                   = TournamentState::create(dir, s);
-
-    auto config         = state->spec().conditions;
-    config.games        = 2;
-    config.opening.file = "";
-    config.pgn.file     = "";
-    config.config_name  = "";
-    config.output       = fastchess::OutputType::NONE;
-    std::vector<fastchess::EngineConfiguration> engines;
-    for (const auto& p : state->spec().participants) engines.push_back(p.engine);
-    fastchess::atomic::stop                 = false;
-    fastchess::atomic::abnormal_termination = false;
-    fastchess::config::TournamentConfig     = std::make_unique<fastchess::config::Tournament>(config);
-    fastchess::config::EngineConfigs        = std::make_unique<std::vector<fastchess::EngineConfiguration>>(engines);
-    fastchess::observer::PauseGate::instance().reset();
-    {
-        Runner runner(*state, nullptr, nullptr);
-        runner.start();
-        CHECK(runner.error().empty());
-    }
-    fastchess::stopProcesses();
+    auto state = ownBookMatch("fcg-tour-own-book", 8, path, 2);
+    CHECK(play(*state).empty());
     book_adapter = previous;
 
     const auto results = state->results();
@@ -373,12 +596,9 @@ TEST_CASE("own book: in a tournament, its moves come from the book, its engine p
     for (const auto& r : results) CHECK(r.reason.find("disconnect") == std::string::npos);
 
     // Every game in the PGN: the book side's first move is a book move; the engine's are not.
-    std::ifstream in(dir / state->spec().pgnFile(), std::ios::binary);
-    const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     std::size_t games = 0, as_white = 0, as_black = 0;
-    for (auto at = text.find("[Event "); at != std::string::npos; ++games) {
-        const auto next  = text.find("[Event ", at + 1);
-        const auto game  = text.substr(at, next == std::string::npos ? std::string::npos : next - at);
+    for (const auto& game : pgnGames(*state)) {
+        ++games;
         const auto moves = game.substr(game.find("\n\n") + 2);
         INFO(game);
         if (game.find("[White \"random (book)\"]") != std::string::npos) {
@@ -393,9 +613,39 @@ TEST_CASE("own book: in a tournament, its moves come from the book, its engine p
             CHECK(moves.find("{book}", first) != std::string::npos);
             CHECK((moves.find(" Nh6 {book}") != std::string::npos || moves.find(" Nc6 {book}") != std::string::npos));
         }
-        at = next;
     }
     CHECK(games == 8);
     CHECK(as_white == 4);
     CHECK(as_black == 4);
+}
+
+TEST_CASE("own book: with the engine restarted for every game, each game draws its own book line") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+    const auto previous = book_adapter;
+    book_adapter        = self().string();
+
+    // A new adapter process for every game, with the same seed and the same start: twelve games, six with the
+    // book's side as White, its first move one of twenty each time.
+    auto state = ownBookMatch("fcg-tour-own-book-restart", 12, wideBook(), 1, true);
+    CHECK(play(*state).empty());
+    book_adapter = previous;
+    REQUIRE(state->results().size() == 12);
+
+    std::set<std::string> firsts;
+    std::size_t as_white = 0;
+    for (const auto& game : pgnGames(*state)) {
+        if (game.find("[White \"random (book)\"]") == std::string::npos) continue;
+        ++as_white;
+        const auto moves = game.substr(game.find("\n\n") + 2);
+        INFO(game);
+        REQUIRE(moves.rfind("1. ", 0) == 0);
+        CHECK(moves.find("{book}") < moves.find("1..."));
+        firsts.insert(moves.substr(3, moves.find(' ', 3) - 3));
+    }
+    CHECK(as_white == 6);
+    // All six the same: about once in three million.
+    CHECK(firsts.size() >= 2);
 }

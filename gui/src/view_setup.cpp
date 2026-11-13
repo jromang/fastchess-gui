@@ -104,6 +104,19 @@ std::string ownBookText(const OwnBook& book) { return fcg::ownBookText(ownBookNa
 
 }  // namespace
 
+const std::string& App::ownBookCheck(const std::string& path) {
+    static const std::string none;
+    std::error_code ec;
+    const auto size = std::filesystem::file_size(path, ec);
+    if (ec) return none;
+    const auto time = std::filesystem::last_write_time(path, ec);
+    if (ec) return none;
+    auto [it, added] = own_book_checks_.try_emplace(path);
+    auto& check      = it->second;
+    if (added || check.size != size || check.time != time) check = {size, time, fcg::ownBookProblem(path)};
+    return check.problem;
+}
+
 bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again, bool open) {
     bool changed = false;
     ImGui::PushID(id);
@@ -151,23 +164,35 @@ bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again,
             for (const auto& b : books_) {
                 // Only Polyglot books give a move for any position; the others are openings for the tournament.
                 const bool polyglot = tour::isPolyglot(b.path);
-                ImGui::BeginDisabled(!polyglot);
-                if (ImGui::Selectable(b.name.c_str(), b.path == book.path) && polyglot) {
+                const auto& problem = polyglot ? ownBookCheck(b.path) : std::string();
+                const bool can_play = polyglot && problem.empty();
+                ImGui::BeginDisabled(!can_play);
+                if (ImGui::Selectable(b.name.c_str(), b.path == book.path) && can_play) {
                     book.path = b.path;
                     book.name = b.name;
                     changed   = true;
                 }
                 ImGui::EndDisabled();
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_AllowWhenDisabled)) {
-                    ImGui::SetTooltip("%s", polyglot ? (b.description.empty() ? b.path : b.description).c_str()
-                                                     : TR("Not a Polyglot book (.bin): it gives the tournament its "
-                                                          "openings, it cannot play for an engine."));
+                    ImGui::SetTooltip("%s", !polyglot ? TR("Not a Polyglot book (.bin): it gives the tournament its "
+                                                           "openings, it cannot play for an engine.")
+                                            : !problem.empty()
+                                                ? trf("It cannot play for an engine: {}", problem).c_str()
+                                                : (b.description.empty() ? b.path : b.description).c_str());
                 }
             }
             if (std::none_of(books_.begin(), books_.end(), [](const auto& b) { return tour::isPolyglot(b.path); })) {
                 ImGui::TextDisabled("%s", TR("No Polyglot book (.bin) in the library: add one in the Books window."));
             }
             ImGui::EndCombo();
+        }
+        // The book chosen before it changed, or one of a template.
+        if (const auto& problem = book.empty() ? std::string() : ownBookCheck(book.path); !problem.empty()) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+            ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + px(260));
+            ImGui::TextUnformatted(trf("This book cannot play for an engine: {}", problem).c_str());
+            ImGui::PopTextWrapPos();
+            ImGui::PopStyleColor();
         }
 
         ImGui::BeginDisabled(book.empty());
@@ -1244,9 +1269,12 @@ void App::drawSetupSummary() {
     for (std::size_t i = 0; i < people.size(); ++i) {
         const auto& book = people[i].book;
         if (book.empty()) continue;
-        const bool found = std::filesystem::is_regular_file(book.path);
-        check(found, found ? fmt::format("{}: {}", names_played[i], ownBookText(book))
-                           : trf("{}: its book is not found: {}", names_played[i], book.path));
+        const bool found    = std::filesystem::is_regular_file(book.path);
+        const auto& problem = found ? ownBookCheck(book.path) : std::string();
+        check(found && problem.empty(), !found ? trf("{}: its book is not found: {}", names_played[i], book.path)
+                                        : !problem.empty()
+                                            ? trf("{}: its book cannot be used: {}", names_played[i], problem)
+                                            : fmt::format("{}: {}", names_played[i], ownBookText(book)));
     }
     ui::endCard();
 }

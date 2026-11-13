@@ -826,7 +826,7 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
     task.black.options = forEngine(std::move(task.black.options));
     // A book of its own: the engine plays through the book adapter, its seed drawn from the tournament's. The
     // same for all its games, as fastchess keeps an engine's process (and the configuration it started with)
-    // from game to game.
+    // from game to game; each adapter process mixes a random number of its own into it (book_adapter.hpp).
     const auto own_book = [&](fastchess::EngineConfiguration& config, const Participant& p) {
         if (p.book.empty()) return;
         const auto seed = spec_.conditions.seed ^ (0x9e3779b97f4a7c15ULL * static_cast<uint64_t>(p.id + 1));

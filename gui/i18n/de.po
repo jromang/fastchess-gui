@@ -1101,6 +1101,9 @@ msgstr "Unterbrochen"
 msgid "Interrupted: an engine crashed or stopped responding (see Console)"
 msgstr "Unterbrochen: eine Engine ist abgestürzt oder antwortet nicht mehr (siehe Konsole)"
 
+msgid "It cannot play for an engine: {}"
+msgstr "Es kann nicht für eine Engine spielen: {}"
+
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "Es geht genau dort weiter, wo es aufgehört hat: keine Partie geht verloren oder wird doppelt gespielt."
 
@@ -2153,6 +2156,9 @@ msgstr "Der 50-Züge-Zähler, das Material und die verbleibenden Steine unter je
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "Der PGN-Standard macht sie zu Kommentaren. fastchess-gui 0.4.13 und älter las sie als Züge und konnte einige Eröffnungen dieses Buchs aus einer falschen Stellung spielen, oft aus der Grundstellung."
 
+msgid "The book of {} cannot be used: {}"
+msgstr "Das Buch von {} ist nicht verwendbar: {}"
+
 msgid "The book of {} is not a Polyglot book (.bin): {}"
 msgstr "Das Buch von {} ist kein Polyglot-Buch (.bin): {}"
 
@@ -2341,6 +2347,9 @@ msgstr "Design"
 
 msgid "They have not played each other."
 msgstr "Sie haben nicht gegeneinander gespielt."
+
+msgid "This book cannot play for an engine: {}"
+msgstr "Dieses Buch kann nicht für eine Engine spielen: {}"
 
 msgid "This draw ratio and this RMS bias are not compatible."
 msgstr "Diese Remisquote und dieser RMS-Bias passen nicht zusammen."
@@ -2649,6 +2658,9 @@ msgstr "Ausgangsstellung"
 
 msgid "its default"
 msgstr "ihr Standardwert"
+
+msgid "its entries are not sorted by key, as those of a Polyglot book must be, and it is too large to be sorted in memory: have a Polyglot tool write it again"
+msgstr "seine Einträge sind nicht nach Schlüssel sortiert, wie es bei einem Polyglot-Buch sein muss, und es ist zu groß, um im Speicher sortiert zu werden: Lass es von einem Polyglot-Werkzeug neu schreiben"
 
 msgid "itself"
 msgstr "sich selbst"
@@ -3122,6 +3134,9 @@ msgstr "{}-Steiner-Syzygy für {} von {} Engines"
 
 msgid "{}: decision"
 msgstr "{}: Entscheidung"
+
+msgid "{}: its book cannot be used: {}"
+msgstr "{}: ihr Buch ist nicht verwendbar: {}"
 
 msgid "{}: its book is not found: {}"
 msgstr "{}: ihr Buch wurde nicht gefunden: {}"

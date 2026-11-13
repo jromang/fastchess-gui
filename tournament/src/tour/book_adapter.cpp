@@ -4,6 +4,7 @@
 #include <cctype>
 #include <chrono>
 #include <csignal>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -17,6 +18,11 @@
 #    include <engine/process/process_win.hpp>
 #else
 #    include <engine/process/process_posix.hpp>
+#endif
+#ifdef _WIN32
+#    include <windows.h>
+#else
+#    include <unistd.h>
 #endif
 
 namespace fcg::tour {
@@ -44,6 +50,27 @@ uint64_t mix(uint64_t x) {
     x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9ULL;
     x = (x ^ (x >> 27)) * 0x94d049bb133111ebULL;
     return x ^ (x >> 31);
+}
+
+// A random number of this process: the processes of an engine started with the same seed (concurrent games,
+// restarts) draw other book moves. std::random_device alone is not enough with some MinGW runtimes, where it is a
+// fixed sequence: the clock, the process and where the stack lies (address space randomisation) are mixed in.
+uint64_t processEntropy() {
+    uint64_t x = 0;
+    try {
+        std::random_device device;
+        x = (static_cast<uint64_t>(device()) << 32) ^ device();
+    } catch (const std::exception&) {
+    }
+    const int on_stack = 0;
+#ifdef _WIN32
+    const uint64_t pid = GetCurrentProcessId();
+#else
+    const uint64_t pid = static_cast<uint64_t>(getpid());
+#endif
+    x = mix(x ^ static_cast<uint64_t>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
+    x = mix(x ^ pid ^ (static_cast<uint64_t>(reinterpret_cast<std::uintptr_t>(&on_stack)) << 16));
+    return x;
 }
 
 }  // namespace
@@ -75,7 +102,7 @@ void markOwnBookMoves(fastchess::MatchData& data, chess::Color side, PolyglotBoo
         if (board.sideToMove() == side && !move.book && withinBookDepth(ply, depth) && !book.moves(board).empty()) {
             move.book = true;
         }
-        board.makeMove<true>(m);
+        playForBook(board, m);
     }
 }
 
@@ -137,8 +164,9 @@ void BookAdapter::position(const std::vector<std::string>& tokens) {
     board_.set960(chess960_);
     if (!board_.setFen(fen)) return;
 
-    // A new game: the choices it gets depend on the seed, on how many games came before it in this process and on
-    // where it starts, so that two games from the same opening get their own lines.
+    // A new game: the choices it gets depend on the seed (with the process' random number in it), on how many games
+    // came before it in this process and on where it starts, so that two games from the same opening get their own
+    // lines.
     if (reseed_) {
         rng_.seed(mix(seed_ ^ mix(games_ ^ mix(board_.hash()))));
         reseed_ = false;
@@ -149,7 +177,7 @@ void BookAdapter::position(const std::vector<std::string>& tokens) {
         for (++i; i < tokens.size(); ++i, ++ply_) {
             const auto move = chess::uci::uciToMove(board_, tokens[i]);
             if (move == chess::Move::NO_MOVE) return;
-            board_.makeMove<true>(move);
+            playForBook(board_, move);
         }
     }
     known_ = true;
@@ -229,11 +257,15 @@ int runBookAdapter(const std::vector<std::string>& args) {
     process.setRealtimeLogging(false);
     BookAdapter adapter(
         to_gui, [&](const std::string& line) { (void)process.writeInput(line + "\n"); }, std::move(polyglot), depth,
-        seed, chess960);
+        mix(seed) ^ processEntropy(), chess960);
 
+    // The lines read, which the reads collect besides passing each to the callbacks: emptied at each, so that they
+    // do not pile up for the life of the engine (see the reading below). Only the reading thread touches them.
+    std::vector<fastchess::engine::process::Line> lines;
     process.setLineCallback([&](const std::string& line) {
         std::lock_guard<std::mutex> lock(mutex);
         adapter.fromEngine(line);
+        lines.clear();
     });
 #ifdef _WIN32
     // Windows would mix the engine's error output with its output: it is read apart and passed on as ours, which
@@ -243,6 +275,7 @@ int runBookAdapter(const std::vector<std::string>& args) {
         std::lock_guard<std::mutex> lock(mutex);
         std::fputs((line + "\n").c_str(), stderr);
         std::fflush(stderr);
+        lines.clear();
     });
 #endif
     // The engine runs in our working directory, which fastchess set to the engine's.
@@ -252,11 +285,13 @@ int runBookAdapter(const std::vector<std::string>& args) {
     }
 
     // The engine's output; when it ends, so does the adapter, and the GUI sees the engine stop.
+    // One read, without a word to stop at nor a time limit: it lasts until the output ends, each line passed on by
+    // the callback as it comes, in order. A read that stops at a word drops the rest of what it read at once: the
+    // lines an engine writes right after its bestmove (an info string, the readyok of an isready that came during
+    // its search) were lost.
     std::thread([&] {
-        std::vector<fastchess::engine::process::Line> lines;
         while (true) {
-            // "bestmove" only bounds how many lines accumulate; each line goes through the callback.
-            const auto r = process.readOutput(lines, "bestmove", std::chrono::milliseconds(0));
+            const auto r = process.readOutput(lines, "", std::chrono::milliseconds(0));
             if (r.code == fastchess::engine::process::Status::ERR) break;
         }
         bool quitting = false;

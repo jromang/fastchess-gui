@@ -366,6 +366,42 @@ TEST_CASE("wb2uci: tournaments of WinBoard engines (protocol 1 and 2) and a UCI 
     fastchess::engine::xboard_adapter.clear();
 }
 
+TEST_CASE("wb2uci: what the engine writes after its move, in the same write, reaches the GUI in order") {
+    const auto wb = (self().parent_path() / FCG_WB_MOVER).string();
+    if (!fs::is_regular_file(wb)) {
+        MESSAGE("mock engine not available on this platform, skipped");
+        return;
+    }
+    // The adapter as fastchess-gui starts it, this program in its --wb2uci mode, with an engine that answers a ping
+    // only with its next move: its thinking, its move, a telluser and its pong in one write.
+    using fastchess::engine::process::Status;
+    fastchess::atomic::stop = false;
+    fastchess::engine::process::Process process;
+    REQUIRE(
+        process.init(fs::path(wb).parent_path().string(), self().string(), "--wb2uci \"" + wb + "\" burst", "wb2uci")
+            .code == Status::OK);
+    process.setupRead();
+    std::vector<fastchess::engine::process::Line> lines;
+    (void)process.writeInput("uci\n");
+    REQUIRE(process.readOutput(lines, "uciok", 5000ms).code == Status::OK);
+
+    // The isready's ping is answered after the move.
+    (void)process.writeInput("isready\nucinewgame\nposition startpos\ngo wtime 10000 btime 10000\n");
+    REQUIRE(process.readOutput(lines, "readyok", 5000ms).code == Status::OK);
+    std::vector<std::string> out;
+    std::string read;
+    for (const auto& l : lines) out.push_back(l.line), read += l.line + " | ";
+    INFO(read);
+    const auto at = [&](const std::string& prefix) {
+        return std::find_if(out.begin(), out.end(), [&](const auto& l) { return l.rfind(prefix, 0) == 0; }) -
+               out.begin();
+    };
+    REQUIRE(at("bestmove ") < static_cast<long>(out.size()));
+    CHECK(at("bestmove ") < at("info string telluser after the move"));
+    CHECK(at("info string telluser after the move") < at("readyok"));
+    (void)process.writeInput("quit\n");
+}
+
 TEST_CASE("wb2uci: an engine added without a protocol is found out to be a WinBoard engine, and read") {
     const auto wb  = (self().parent_path() / FCG_WB_MOVER).string();
     const auto uci = (self().parent_path() / FCG_RANDOM_MOVER).string();

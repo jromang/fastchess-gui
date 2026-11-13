@@ -1101,6 +1101,9 @@ msgstr "Interrumpido"
 msgid "Interrupted: an engine crashed or stopped responding (see Console)"
 msgstr "Interrumpido: un motor se colgó o dejó de responder (ver Consola)"
 
+msgid "It cannot play for an engine: {}"
+msgstr "No puede jugar por un motor: {}"
+
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "Continúa exactamente donde se detuvo: ninguna partida se pierde ni se juega dos veces."
 
@@ -2153,6 +2156,9 @@ msgstr "El contador de las 50 jugadas, el material y las piezas que quedan, bajo
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "El estándar PGN los convierte en comentarios. fastchess-gui 0.4.13 y anteriores los leían como jugadas, y podían jugar algunas aperturas de este libro desde una posición equivocada, a menudo la inicial."
 
+msgid "The book of {} cannot be used: {}"
+msgstr "El libro de {} no se puede usar: {}"
+
 msgid "The book of {} is not a Polyglot book (.bin): {}"
 msgstr "El libro de {} no es un libro Polyglot (.bin): {}"
 
@@ -2341,6 +2347,9 @@ msgstr "Tema"
 
 msgid "They have not played each other."
 msgstr "No han jugado entre ellos."
+
+msgid "This book cannot play for an engine: {}"
+msgstr "Este libro no puede jugar por un motor: {}"
 
 msgid "This draw ratio and this RMS bias are not compatible."
 msgstr "Esta proporción de tablas y este sesgo RMS no son compatibles."
@@ -2649,6 +2658,9 @@ msgstr "posición inicial"
 
 msgid "its default"
 msgstr "su valor por defecto"
+
+msgid "its entries are not sorted by key, as those of a Polyglot book must be, and it is too large to be sorted in memory: have a Polyglot tool write it again"
+msgstr "sus entradas no están ordenadas por clave, como deben estarlo las de un libro Polyglot, y es demasiado grande para ordenarlo en memoria: haz que una herramienta Polyglot lo vuelva a escribir"
 
 msgid "itself"
 msgstr "sí mismo"
@@ -3122,6 +3134,9 @@ msgstr "Syzygy de {} piezas para {} de {} motores"
 
 msgid "{}: decision"
 msgstr "{}: decisión"
+
+msgid "{}: its book cannot be used: {}"
+msgstr "{}: su libro no se puede usar: {}"
 
 msgid "{}: its book is not found: {}"
 msgstr "{}: no se encuentra su libro: {}"

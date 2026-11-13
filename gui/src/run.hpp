@@ -149,6 +149,11 @@ void interruptEngineProcesses();
 // "own book A, 12 plies" ("own book A, all of it" for depth 0), for the summary and the tooltips.
 [[nodiscard]] std::string ownBookText(const std::string& name, int depth);
 
+// Why the Polyglot book `path` cannot be a participant's own, empty when it can: it cannot be read, is no Polyglot
+// book, or its entries are not sorted and it is too large to be sorted in memory. Reads the file (all of it up to
+// 16 MB, entries spread over it beyond).
+[[nodiscard]] std::string ownBookProblem(const std::string& path);
+
 // The names the participants of `setup` play under, in the PGN files, the standings and the ratings: the engine's,
 // or, for one with a book of its own whose engine plays more than once, "<engine> (<book>)". Not necessarily
 // distinct: buildRun() refuses a setup whose names are not.

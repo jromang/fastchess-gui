@@ -63,6 +63,48 @@ fs::path writeBook(const fs::path& path) {
 
 }  // namespace
 
+TEST_CASE("own book: a book that cannot play for an engine is told, and the tournament does not start") {
+    const auto dir = fs::temp_directory_path() / "fcg-own-book-problems";
+    fs::create_directories(dir);
+    // Unsorted but small: sorted in memory, it plays.
+    const auto small = dir / "small.bin";
+    fcg::test::writePolyglot(
+        small, {{fcg::test::polyglotKey("e2e4"), "e7e5", 1}, {fcg::test::polyglotKey(""), "e2e4", 1}}, false);
+    CHECK(ownBookProblem(small.string()).empty());
+
+    // Unsorted and too large to be sorted in memory; no Polyglot book at all.
+    const auto large = dir / "large.bin";
+    fcg::test::writeLargePolyglot(large, tour::PolyglotBook::SORT_MAX + 16, false);
+    CHECK(ownBookProblem(large.string()).find("not sorted") != std::string::npos);
+    const auto junk = dir / "junk.bin";
+    std::ofstream(junk, std::ios::binary) << "not a book";
+    CHECK_FALSE(ownBookProblem(junk.string()).empty());
+
+    // The start refuses it, naming the participant.
+    const auto mover = (self().parent_path() / FCG_RANDOM_MOVER).string();
+    if (fs::is_regular_file(mover)) {
+        std::vector<EngineEntry> engines(1);
+        engines[0].name = "random", engines[0].cmd = mover;
+        MatchSetup setup;
+        setup.engine_a         = "random";
+        setup.engine_b         = "random";
+        setup.book_a           = ownBook(large.string(), "Large");
+        setup.book_b           = ownBook(small.string(), "Small");
+        setup.fixed_games      = 2;
+        setup.limit            = LimitKind::Nodes;
+        setup.nodes            = 1;
+        setup.concurrency_auto = false;
+        setup.concurrency      = 1;
+        setup.notify           = false;
+        RunController run;
+        const auto error = run.start(setup, engines, topologyFromCores({{0, 0}}), dir / "runs");
+        INFO(error);
+        CHECK(error.find("random (Large)") != std::string::npos);
+        CHECK(error.find("not sorted") != std::string::npos);
+    }
+    fs::remove_all(dir);
+}
+
 TEST_CASE("own book: the same engine with books of its own plays under names that tell it apart") {
     MatchSetup setup;
     setup.format       = TournamentFormat::RoundRobin;

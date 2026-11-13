@@ -3,6 +3,8 @@
 // v2 (default): protocol 2 features (ping, setboard, usermove, san), moves and PVs in SAN.
 // v1: no features: positions through edit mode, moves in the old "1. ... e2e4" form, PVs in coordinates.
 // resign: resigns instead of its sixth move.
+// burst: answers a ping only with its next move, as an engine that reads it after its search: its thinking, its
+// move, a telluser and the pong in one write.
 // A move it cannot play is reported ("Illegal move") and ends the program, so that a test sees it.
 
 #include <cctype>
@@ -21,6 +23,8 @@ namespace {
 std::mt19937 gen(std::random_device{}());
 bool v1     = false;
 bool resign = false;
+bool burst  = false;
+std::string held_pong;  // burst: the ping to answer with the next move
 
 Board board;
 bool chess960   = false;
@@ -53,6 +57,14 @@ void think() {
     }
     const auto move = randomMove();
     const auto text = v1 ? uci::moveToUci(move) : uci::moveToSan(board, move);
+    if (burst && !v1) {
+        std::cout << "1 12 0 5 " << text << "\nmove " << text << "\ntelluser after the move\n"
+                  << (held_pong.empty() ? "" : "pong " + held_pong + "\n") << std::flush;
+        held_pong.clear();
+        board.makeMove(move);
+        ++own_moves;
+        return;
+    }
     std::cout << "1 12 0 5 " << text << std::endl;  // ply score time nodes pv
     if (v1) {
         std::cout << (board.fullMoveNumber()) << ". ... " << text << std::endl;
@@ -128,6 +140,7 @@ int main(int argc, char* argv[]) {
         const std::string a = argv[i];
         if (a == "v1") v1 = true;
         if (a == "resign") resign = true;
+        if (a == "burst") burst = true;
     }
 
     std::string line;
@@ -174,6 +187,10 @@ int main(int argc, char* argv[]) {
         } else if (cmd == "ping") {
             std::string n;
             in >> n;
+            if (burst) {
+                held_pong = n;
+                continue;
+            }
             std::cout << "pong " << n << std::endl;
         } else if (cmd == "setboard") {
             if (v1) {
