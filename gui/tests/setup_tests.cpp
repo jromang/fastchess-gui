@@ -192,6 +192,11 @@ TEST_CASE("the PGN fields the charts read: on by default, and on for a setup sav
     const auto fields = [](const MatchSetup& s) {
         return std::vector<bool>{s.pgn_nodes, s.pgn_seldepth, s.pgn_nps, s.pgn_pv, s.pgn_tbhits, s.pgn_decision};
     };
+    const auto saved = [](const nlohmann::json& j) {
+        auto s = j.get<MatchSetup>();
+        upgradeSavedSetup(j, s);
+        return s;
+    };
     const std::vector<bool> on(6, true), off(6, false);
     CHECK(fields(MatchSetup{}) == on);
     CHECK(fields(nlohmann::json::object().get<MatchSetup>()) == on);
@@ -202,18 +207,73 @@ TEST_CASE("the PGN fields the charts read: on by default, and on for a setup sav
     auto j = nlohmann::json(old);
     CHECK(j.at("revision") == 1);
     j.erase("revision");
-    CHECK(fields(j.get<MatchSetup>()) == on);
-    CHECK(j.get<MatchSetup>().revision == 1);
+    CHECK(fields(saved(j)) == on);
+    CHECK(saved(j).revision == 1);
+    // As it is, not upgraded: a setup file given to --run.
+    CHECK(fields(j.get<MatchSetup>()) == off);
 
-    // One of them turned on then was a choice: kept as it was.
+    // Saved by 0.4.0 or earlier, before tbhits and the decision time were PGN fields: the same.
+    auto older = j;
+    older.erase("pgn_tbhits");
+    older.erase("pgn_decision");
+    CHECK(fields(saved(older)) == on);
+
+    // One of them turned on then was a choice: kept as it was, the fields it did not have off.
     j["pgn_pv"]   = true;
-    const auto pv = j.get<MatchSetup>();
+    const auto pv = saved(j);
     CHECK(pv.pgn_pv);
     CHECK_FALSE(pv.pgn_nodes);
     CHECK_FALSE(pv.pgn_decision);
+    older["pgn_nodes"] = true;
+    const auto nodes   = saved(older);
+    CHECK(nodes.pgn_nodes);
+    CHECK_FALSE(nodes.pgn_pv);
+    CHECK(nodes.pgn_tbhits);  // not in the file: the default, as for any field added since
+    CHECK(nodes.pgn_decision);
 
     // Turned off since the revision: kept off.
-    CHECK(fields(nlohmann::json(old).get<MatchSetup>()) == off);
+    CHECK(fields(saved(nlohmann::json(old))) == off);
+}
+
+TEST_CASE("the PGN fields: the profile's setup, queue and templates are upgraded, a setup file for --run is not") {
+    const auto fields = [](const MatchSetup& s) {
+        return std::vector<bool>{s.pgn_nodes, s.pgn_seldepth, s.pgn_nps, s.pgn_pv, s.pgn_tbhits, s.pgn_decision};
+    };
+    const std::vector<bool> on(6, true), off(6, false);
+    const auto dir = fs::temp_directory_path() / "fcg-tests-pgn-fields";
+    fs::remove_all(dir);
+    fs::create_directories(dir / "templates");
+
+    // As 0.4.0 wrote them: no revision, nor tbhits and the decision time.
+    MatchSetup old;
+    old.pgn_nodes = old.pgn_seldepth = old.pgn_nps = old.pgn_pv = false;
+    auto j                                                      = nlohmann::json(old);
+    j.erase("revision");
+    j.erase("pgn_tbhits");
+    j.erase("pgn_decision");
+    auto queue = nlohmann::json::array({{{"label", "next"}, {"setup", j}}, {{"label", "empty"}}});
+    REQUIRE(writeJson(dir / "setup.json", j));
+    REQUIRE(writeJson(dir / "queue.json", queue));
+    REQUIRE(writeJson(dir / "templates" / "old.json", j));
+    // A hand-written setup file with every field off on purpose.
+    auto mine = nlohmann::json(old);
+    mine.erase("revision");
+    mine["pgn_tbhits"] = mine["pgn_decision"] = false;
+    REQUIRE(writeJson(dir / "mine.json", mine));
+
+    const Storage storage(dir);
+    CHECK(fields(storage.loadSetup()) == on);
+    const auto loaded = storage.loadQueue();
+    REQUIRE(loaded.size() == 2);
+    CHECK(fields(loaded[0].setup) == on);
+    CHECK(fields(loaded[1].setup) == on);
+    REQUIRE(readSavedSetup(dir / "templates" / "old.json"));
+    CHECK(fields(*readSavedSetup(dir / "templates" / "old.json")) == on);
+    // --run reads its file with readJson(): as written.
+    REQUIRE(readJson<MatchSetup>(dir / "mine.json"));
+    CHECK(fields(*readJson<MatchSetup>(dir / "mine.json")) == off);
+
+    fs::remove_all(dir);
 }
 
 TEST_CASE("at launch, the tournament running when the program ended resumes, then the queue") {

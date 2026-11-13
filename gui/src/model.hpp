@@ -328,16 +328,24 @@ void from_json(const BasicJsonType& nlohmann_json_j, MatchSetup& nlohmann_json_t
     const MatchSetup nlohmann_json_default_obj{};
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_MATCH_SETUP_FIELDS_1))
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_MATCH_SETUP_FIELDS_2))
-    // Saved before revision 1, when the PGN fields were off by default: with none of them on, they were most likely
-    // never chosen, and the charts of the games to come would stay empty. One turned on is a choice, kept.
-    auto& s = nlohmann_json_t;
-    if (!nlohmann_json_j.contains("revision") && !s.pgn_nodes && !s.pgn_seldepth && !s.pgn_nps && !s.pgn_pv &&
-        !s.pgn_tbhits && !s.pgn_decision) {
-        s.pgn_nodes = s.pgn_seldepth = s.pgn_nps = s.pgn_pv = s.pgn_tbhits = s.pgn_decision = true;
-    }
 }
 #undef FCG_MATCH_SETUP_FIELDS_1
 #undef FCG_MATCH_SETUP_FIELDS_2
+
+// `setup`, read from `saved`, a setup the program saved in the profile (setup.json, the queue, a template) before
+// revision 1, when the PGN fields the charts read were off by default: with none of them on, they were most likely
+// never chosen, and the charts of the games to come would stay empty, so they are turned on. One turned on is a
+// choice, kept. A field `saved` does not have was added since (tbhits, decision time) and was off then too. A setup
+// file the user wrote, given to --run, is taken as it is.
+inline void upgradeSavedSetup(const nlohmann::json& saved, MatchSetup& setup) {
+    if (!saved.is_object() || saved.contains("revision")) return;
+    const auto on = [&](const char* key, bool value) { return value && saved.contains(key); };
+    if (on("pgn_nodes", setup.pgn_nodes) || on("pgn_seldepth", setup.pgn_seldepth) || on("pgn_nps", setup.pgn_nps) ||
+        on("pgn_pv", setup.pgn_pv) || on("pgn_tbhits", setup.pgn_tbhits) || on("pgn_decision", setup.pgn_decision)) {
+        return;
+    }
+    setup.pgn_nodes = setup.pgn_seldepth = setup.pgn_nps = setup.pgn_pv = setup.pgn_tbhits = setup.pgn_decision = true;
+}
 
 // A tournament waiting to be started after the running one.
 struct QueuedTournament {
