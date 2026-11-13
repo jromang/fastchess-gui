@@ -17,6 +17,9 @@
 
 namespace fcg {
 
+// The memory libssh2 may hold for a tunnel's connection, unless lowered.
+inline constexpr std::size_t TUNNEL_MEMORY = std::size_t(32) << 20;
+
 struct TunnelSettings {
     std::string host = "localhost.run";
     int port         = 22;
@@ -33,8 +36,11 @@ struct TunnelSettings {
     // Limits, lowered by the tests: the memory libssh2 may hold for the connection (beyond, it ends: a server that
     // sends what is never taken, messages nobody asked for), and how long a channel closed on our side counts among
     // the connections while libssh2 waits for the server's close.
-    std::size_t max_memory = std::size_t(32) << 20;
+    std::size_t max_memory = TUNNEL_MEMORY;
     std::chrono::seconds close_timeout{30};
+    // The most one send to the server takes (0: what the socket takes), lowered by the tests: every packet then goes
+    // in several sends, each one when libssh2 is called again for it, as on a connection that is often full.
+    std::size_t send_limit = 0;
 
     bool operator==(const TunnelSettings&) const = default;
 };
@@ -106,6 +112,16 @@ class SshTunnel {
                                                       int port);
 bool rememberHostKey(const std::filesystem::path& file, const std::string& host, int port,
                      const std::string& fingerprint);
+
+// Why a host key whose fingerprint is `print` may not be trusted: `settings` pins another, or its known hosts kept
+// another (`new_key` then, to be trusted only by the user), or cannot be read, or there are none to keep it in, or
+// there is no fingerprint at all. nullopt when it may be trusted; trusted on first use, it is kept in the known hosts.
+struct HostKeyRefusal {
+    std::string reason;
+    bool permanent = true;  // trying again cannot mend it
+    std::string new_key;
+};
+[[nodiscard]] std::optional<HostKeyRefusal> checkHostKey(const TunnelSettings& settings, const std::string& print);
 
 // Parses --tunnel's value: "localhost.run" (or empty), or "ssh://user@host[:port][/remote_port]". nullopt and
 // `error` when it is neither.

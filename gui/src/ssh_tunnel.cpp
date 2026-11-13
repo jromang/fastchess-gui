@@ -38,20 +38,33 @@ constexpr const char* CIPHERS   = "aes256-gcm@openssh.com,aes128-gcm@openssh.com
 constexpr const char* MACS = "hmac-sha2-256-etm@openssh.com,hmac-sha2-256,hmac-sha2-512-etm@openssh.com,hmac-sha2-512";
 
 // The session's flow: what the server may send before it waits for us, and the largest data packet. A forwarded
-// connection's are libssh2's (2 MiB, 32 KiB).
+// connection's packets are libssh2's (32 KiB), its window ours: 256 KiB, libssh2 patched for it (its own, 2 MiB,
+// cannot be changed otherwise: cmake/patch_libssh2.cmake). Each read of RELAY_READ bytes may open it that much more.
 constexpr unsigned SESSION_WINDOW   = 256 * 1024;
 constexpr unsigned SESSION_MAX_DATA = 32768;
+constexpr std::size_t FORWARD_WINDOW = 256 * 1024;
+constexpr std::size_t RELAY_READ     = 16384;
 // Connections relayed at once, those closed on our side that the server did not close yet included: the web server
 // answers 32 at once and tells the next ones to come back. More wait in libssh2's queue, up to QUEUE; beyond, the
 // server is told they are refused. libssh2 takes all the connections that came at once before it gives the first,
 // so the queue holds as many as are relayed.
-constexpr std::size_t MAX_CHANNELS = 48;
+constexpr std::size_t MAX_CHANNELS = 40;
 constexpr int QUEUE                = static_cast<int>(MAX_CHANNELS);
+// Every connection relayed or waiting may have its window full in libssh2's memory: well within what it may hold.
+static_assert((MAX_CHANNELS + QUEUE) * (FORWARD_WINDOW + RELAY_READ) <= TUNNEL_MEMORY / 4 * 3);
 // Channels closed on our side that libssh2 still waits on for the server's close, counted no more after a while:
 // beyond this many, the connection ends.
 constexpr std::size_t MAX_CLOSING = 4 * MAX_CHANNELS;
 // What waits in each direction of a relayed connection: beyond, the side it comes from is not read meanwhile.
 constexpr std::size_t RELAY_BUFFER = 64 * 1024;
+// A relayed connection that is not read meanwhile (the web server takes nothing): let go, alone, once libssh2 holds
+// more than this for it. Half the window, so that it does not rest on the window alone; a request to the web page is
+// 8 KiB at most.
+constexpr std::size_t VIEWER_BUDGET = FORWARD_WINDOW / 2;
+// libssh2's interval between keepalives, in seconds: 1 (which it takes as 2), for the one that could not go at once
+// is sent on only after it. The tunnel's own interval, the server's silence, comes first.
+constexpr unsigned KEEPALIVE_RETRY = 1;
+constexpr auto KEEPALIVE_AGAIN     = std::chrono::seconds(2);
 // The session's text kept to read the address in: its last 64 KiB at most (a new address, the domain rotated, comes
 // at the end).
 constexpr std::size_t MAX_SESSION_TEXT = 64 * 1024;
@@ -146,6 +159,53 @@ bool rememberHostKey(const std::filesystem::path& file, const std::string& host,
         (*known)[hostPort(host, port)] = fingerprint;
     }
     return writeJson(file, *known);
+}
+
+std::optional<HostKeyRefusal> checkHostKey(const TunnelSettings& settings, const std::string& print) {
+    const auto refused = [](std::string reason) { return HostKeyRefusal{std::move(reason), true, {}}; };
+    // No fingerprint, as it could not be computed: nothing to compare, and nothing to keep (an empty one kept reads as
+    // no key, trusted again the next time). Tried again later.
+    if (print.empty()) {
+        auto refusal =
+            refused(trf("the host key of {} cannot be checked: its fingerprint could not be computed", settings.host));
+        refusal.permanent = false;
+        return refusal;
+    }
+    if (!settings.pinned.empty()) {
+        if (print == settings.pinned) return std::nullopt;
+        return refused(
+            trf("The host key of {} is not the one expected ({}, instead of {}): someone may be in the "
+                "way. Nothing was sent.",
+                settings.host, print, settings.pinned));
+    }
+    // Nowhere to keep it: not trusted blindly, every time.
+    if (settings.known_hosts.empty()) {
+        return refused("the host key of " + settings.host + " cannot be checked: neither pinned nor kept");
+    }
+    const auto known = knownHostKey(settings.known_hosts, settings.host, settings.port);
+    if (!known) {
+        return refused(
+            trf("{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. "
+                "Repair the file, or delete it to trust the server's key again.",
+                settings.known_hosts.string(), settings.host));
+    }
+    if (known->empty()) {
+        if (!rememberHostKey(settings.known_hosts, settings.host, settings.port, print)) {
+            Console::instance().add(trf("Tunnel: the host key of {} ({}) could not be kept in {}", settings.host, print,
+                                        settings.known_hosts.string()),
+                                    true);
+        } else {
+            Console::instance().add(trf("Tunnel: the host key of {} is {}, trusted from now on", settings.host, print));
+        }
+        return std::nullopt;
+    }
+    if (*known == print) return std::nullopt;
+    auto refusal =
+        refused(trf("The host key of {} changed: {} now, {} before. Someone may be in the way; trust the "
+                    "new key only if the server's owner says it changed.",
+                    settings.host, print, *known));
+    refusal.new_key = print;
+    return refusal;
 }
 
 std::string printableText(std::string_view text) {
@@ -341,6 +401,7 @@ class TunnelConnection {
             wait();
             for (int pass = 0; pass < MAX_PASSES && !stopping_ && end_.reason.empty(); ++pass) {
                 const bool moved = advance();
+                keepAlive();
                 checkConnection();
                 if (!moved) break;
             }
@@ -363,6 +424,10 @@ class TunnelConnection {
         // The last write to the channel could not go: the next one must start with the same bytes (libssh2 may have
         // a packet of them under way), and the channel cannot be closed before.
         bool write_blocked = false;
+        // The last read could not send the window's adjustment it starts with: the next one is the same read (of
+        // `read_room` bytes), and the channel cannot be closed before.
+        bool read_pending     = false;
+        std::size_t read_room = 0;
     };
     // A channel closed on our side, until libssh2 is done with it: the server closed it too, or something else came
     // first (libssh2 then forgets it: a late close would name a number it does not give again).
@@ -396,7 +461,8 @@ class TunnelConnection {
 
     void* take(void* old, std::size_t size) {
         const auto before = old ? *reinterpret_cast<std::size_t*>(static_cast<char*>(old) - HEADER) : 0;
-        if (held_ - before + size > cfg_.max_memory) {
+        // Compared so that nothing wraps around, whatever the size asked for (`before` is counted in `held_`).
+        if (size > cfg_.max_memory || held_ - before > cfg_.max_memory - size) {
             over_memory_ = true;
             return nullptr;
         }
@@ -435,7 +501,8 @@ class TunnelConnection {
     static LIBSSH2_SEND_FUNC(transmit) {
         (void)socket;
         (void)flags;
-        auto& self   = of(abstract);
+        auto& self = of(abstract);
+        if (self.cfg_.send_limit > 0) length = std::min(length, self.cfg_.send_limit);
         const auto n = self.socket_->send(std::string_view(static_cast<const char*>(buffer), length));
         if (n > 0) return n;
         if (n == 0) return -EAGAIN;
@@ -464,11 +531,26 @@ class TunnelConnection {
     static void traced(LIBSSH2_SESSION*, void* context, const char* data, std::size_t length) {
         auto& self = *static_cast<TunnelConnection*>(context);
         try {
-            const std::string_view line(data, length);
-            if (line.find("Packet type 20 received") != std::string_view::npos) self.kexinit_received_ = true;
-            const auto at = line.find("Failure Event: ");
-            if (at == std::string_view::npos) return;
-            const auto rest = line.substr(at + 15);
+            // What the line is comes right after libssh2's prefix ("[libssh2] 0.000123 "); what the server sent (its
+            // version line, a DEBUG message) only after that, where it cannot pass for it.
+            auto line                         = std::string_view(data, length);
+            constexpr std::string_view PREFIX = "[libssh2] ";
+            if (!line.starts_with(PREFIX)) return;
+            line.remove_prefix(PREFIX.size());
+            const auto digits = [&line] {
+                std::size_t n = 0;
+                while (n < line.size() && std::isdigit(static_cast<unsigned char>(line[n]))) ++n;
+                line.remove_prefix(n);
+                return n > 0;
+            };
+            if (!digits() || !line.starts_with('.')) return;
+            line.remove_prefix(1);
+            if (!digits() || !line.starts_with(' ')) return;
+            line.remove_prefix(1);
+            if (line.starts_with("Transport: Packet type 20 received")) self.kexinit_received_ = true;
+            constexpr std::string_view FAILURE = "Failure Event: ";
+            if (!line.starts_with(FAILURE)) return;
+            const auto rest = line.substr(FAILURE.size());
             const auto dash = rest.find(" - ");
             if (dash == std::string_view::npos) return;
             const int code = std::atoi(std::string(rest.substr(0, dash)).c_str());
@@ -520,8 +602,9 @@ class TunnelConnection {
         return message ? std::string(message, static_cast<std::size_t>(std::max(length, 0))) : std::string();
     }
 
-    // The connection failed in libssh2 (`rc`, what the call returned): why, as the user should read it.
-    void failSsh(int rc) {
+    // The connection failed in libssh2 (`rc`, what the call returned): why, as the user should read it. `instead`
+    // replaces libssh2's last error, when it says nothing true of why.
+    void failSsh(int rc, const std::string& instead = {}) {
         if (!end_.reason.empty()) return;
         if (over_memory_) return fail("the server sent more than the tunnel keeps in memory");
         if (disconnected_) return fail("the server ended the connection: " + disconnect_reason_);
@@ -530,7 +613,7 @@ class TunnelConnection {
                                                : "the server closed the connection before the tunnel opened");
         }
         const int code    = first_error_ ? first_error_ : rc;
-        const auto detail = first_error_ ? first_error_text_ : lastError();
+        const auto detail = first_error_ ? first_error_text_ : !instead.empty() ? instead : lastError();
         switch (code) {
             case LIBSSH2_ERROR_HOSTKEY_SIGN:
                 return fail(trf("{}: the host key's signature is not valid", cfg_.host), true);
@@ -587,28 +670,44 @@ class TunnelConnection {
     }
 
     // The sockets: until the server's socket or a web server's connection can go on, or 100 ms (none when there is
-    // something libssh2 already received and holds for a channel).
+    // something libssh2 already received and holds for a channel that can be read). A read waiting to send its
+    // window's adjustment waits for the server's socket, as a write does; a keepalive under way, for libssh2 to send
+    // it on.
     void wait() {
         std::vector<net::Wait> waits;
-        const int directions = libssh2_session_block_directions(session_);
-        waits.push_back({socket_->handle(), true, (directions & LIBSSH2_SESSION_BLOCK_OUTBOUND) != 0});
+        int timeout    = 100;
+        bool outbound  = outboundBlocked();
+        const auto now = Clock::now();
+        if (keepalive_pending_ && now < keepalive_again_) {
+            outbound = false;
+            timeout  = static_cast<int>(std::min<int64_t>(
+                timeout, std::chrono::duration_cast<std::chrono::milliseconds>(keepalive_again_ - now).count() + 1));
+        }
+        waits.push_back({socket_->handle(), true, outbound});
         bool ready = false;
         for (const auto& v : viewers_) {
             if (!v->socket) continue;
             waits.push_back(
                 {v->socket->handle(), !v->local_done && v->to_server.size() < RELAY_BUFFER, !v->to_local.empty()});
-            ready = ready || (v->to_local.size() < RELAY_BUFFER && waiting(v->channel)) ||
+            ready = ready || (!v->read_pending && v->to_local.size() < RELAY_BUFFER && waiting(v->channel) > 0) ||
                     (!v->to_server.empty() && !v->write_blocked && libssh2_channel_window_write(v->channel) > 0);
         }
         ready = ready || ((session_state_ == SessionChannel::Shell || session_state_ == SessionChannel::Reading) &&
-                          waiting(session_channel_));
-        net::waitAny(waits, ready ? 0 : 100);
+                          !session_read_pending_ && waiting(session_channel_) > 0);
+        net::waitAny(waits, ready ? 0 : timeout);
     }
 
-    static bool waiting(LIBSSH2_CHANNEL* channel) {
+    // What libssh2 received for `channel` and holds until it is read.
+    static std::size_t waiting(LIBSSH2_CHANNEL* channel) {
         unsigned long available = 0;
         libssh2_channel_window_read_ex(channel, &available, nullptr);
-        return available > 0;
+        return available;
+    }
+
+    // A packet libssh2 started to send is under way, the socket full: it sends nothing else until the call that
+    // started it is made again.
+    bool outboundBlocked() const {
+        return (libssh2_session_block_directions(session_) & LIBSSH2_SESSION_BLOCK_OUTBOUND) != 0;
     }
 
     // One pass over everything; true when something moved.
@@ -634,13 +733,21 @@ class TunnelConnection {
             return;
         }
         if (now - heard_ > cfg_.keepalive * 3 + std::chrono::seconds(5)) return fail("the server stopped answering");
-        // A keepalive, only when the server said nothing for a while: its answer is then all that comes, and
-        // libssh2 keeps the answers (a few bytes each).
-        if (now - heard_ >= cfg_.keepalive) {
-            int next     = 0;
-            const int rc = libssh2_keepalive_send(session_, &next);
-            if (rc != 0 && rc != LIBSSH2_ERROR_EAGAIN) failSsh(rc);
-        }
+    }
+
+    // A keepalive, only when the server said nothing for a while: its answer is then all that comes, and libssh2
+    // keeps the answers (a few bytes each). One that did not go whole holds back everything else: libssh2 sends the
+    // rest from the same call only, made again once its interval passed, so it is made on every pass until then,
+    // whatever the server says meanwhile. From here only: the packet's address must be the same each time.
+    void keepAlive() {
+        if (phase_ != Phase::OnAir || !end_.reason.empty()) return;
+        if (!keepalive_pending_ && Clock::now() - heard_ < cfg_.keepalive) return;
+        int next     = 0;
+        const int rc = libssh2_keepalive_send(session_, &next);
+        if (rc != 0 && rc != LIBSSH2_ERROR_EAGAIN) return failSsh(rc);
+        // Sent, or tried, in this call: the next try is a whole interval away.
+        if (next >= static_cast<int>(KEEPALIVE_AGAIN.count())) keepalive_again_ = Clock::now() + KEEPALIVE_AGAIN;
+        keepalive_pending_ = outboundBlocked();
     }
 
     void goodbye() {
@@ -694,44 +801,10 @@ class TunnelConnection {
     // The host key against the one pinned, or the one trusted the first time, which is kept then. False when the
     // connection failed.
     bool checkHostKey(const std::string& blob) {
-        const auto print = fingerprint(blob);
-        if (!cfg_.pinned.empty()) {
-            if (print == cfg_.pinned) return true;
-            fail(trf("The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. "
-                     "Nothing was sent.",
-                     cfg_.host, print, cfg_.pinned),
-                 true);
-            return false;
-        }
-        // Nowhere to keep it: not trusted blindly, every time.
-        if (cfg_.known_hosts.empty()) {
-            fail("the host key of " + cfg_.host + " cannot be checked: neither pinned nor kept", true);
-            return false;
-        }
-        const auto known = knownHostKey(cfg_.known_hosts, cfg_.host, cfg_.port);
-        if (!known) {
-            fail(trf("{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair "
-                     "the file, or delete it to trust the server's key again.",
-                     cfg_.known_hosts.string(), cfg_.host),
-                 true);
-            return false;
-        }
-        if (known->empty()) {
-            if (!rememberHostKey(cfg_.known_hosts, cfg_.host, cfg_.port, print)) {
-                Console::instance().add(trf("Tunnel: the host key of {} ({}) could not be kept in {}", cfg_.host, print,
-                                            cfg_.known_hosts.string()),
-                                        true);
-            } else {
-                Console::instance().add(trf("Tunnel: the host key of {} is {}, trusted from now on", cfg_.host, print));
-            }
-            return true;
-        }
-        if (*known == print) return true;
-        end_.new_key = print;
-        fail(trf("The host key of {} changed: {} now, {} before. Someone may be in the way; trust the new key only if "
-                 "the server's owner says it changed.",
-                 cfg_.host, print, *known),
-             true);
+        const auto refusal = fcg::checkHostKey(cfg_, fingerprint(blob));
+        if (!refusal) return true;
+        end_.new_key = refusal->new_key;
+        fail(refusal->reason, refusal->permanent);
         return false;
     }
 
@@ -776,7 +849,7 @@ class TunnelConnection {
             tunnel_.status.state = TunnelState::OnAir;
             tunnel_.status.error.clear();
         }
-        libssh2_keepalive_config(session_, 1, static_cast<unsigned>(std::max<int64_t>(cfg_.keepalive.count(), 2)));
+        libssh2_keepalive_config(session_, 1, KEEPALIVE_RETRY);
         // Until the services print the address on the session, or for a server of one's own that prints nothing:
         // the server and the port.
         if (cfg_.pinned.empty()) {
@@ -860,7 +933,9 @@ class TunnelConnection {
         bool moved = false;
         char buffer[16384];
         while (true) {
-            const auto n = libssh2_channel_read(session_channel_, buffer, sizeof(buffer));
+            // Called on every pass: a read that could not send its window's adjustment is made again.
+            const auto n          = libssh2_channel_read(session_channel_, buffer, sizeof(buffer));
+            session_read_pending_ = n == LIBSSH2_ERROR_EAGAIN && outboundBlocked();
             if (n > 0) {
                 moved = true;
                 session_text_.append(buffer, static_cast<std::size_t>(n));
@@ -894,8 +969,13 @@ class TunnelConnection {
         while (end_.reason.empty() && liveChannels() < MAX_CHANNELS) {
             LIBSSH2_CHANNEL* channel = libssh2_channel_forward_accept(listener_);
             if (!channel) {
+                // Anything but "nothing yet" is the connection's failure: libssh2 tells them all here as a channel not
+                // found, which says nothing of why.
                 const int rc = libssh2_session_last_errno(session_);
-                if (connectionError(rc)) failSsh(rc);
+                if (rc != LIBSSH2_ERROR_EAGAIN) {
+                    failSsh(rc, rc == LIBSSH2_ERROR_CHANNEL_UNKNOWN ? "what the server sent could not be read"
+                                                                    : std::string());
+                }
                 break;
             }
             moved = true;
@@ -925,25 +1005,35 @@ class TunnelConnection {
 
     bool relay(Viewer& v) {
         bool moved = false;
-        // From the viewer to the web server.
-        if (!v.server_eof && v.to_local.size() < RELAY_BUFFER) {
-            char buffer[16384];
-            const auto room = std::min(sizeof(buffer), RELAY_BUFFER - v.to_local.size());
-            const auto n    = libssh2_channel_read(v.channel, buffer, room);
+        // From the viewer to the web server. A read starts by adjusting the channel's window, when it runs low: when
+        // that could not go whole, libssh2 sends nothing else until the same read is made again, so it is, before
+        // anything else is made of the channel. The end of what the viewer sends: a read that gives nothing.
+        if (v.read_pending || (!v.server_eof && v.to_local.size() < RELAY_BUFFER)) {
+            char buffer[RELAY_READ];
+            if (!v.read_pending) v.read_room = std::min(sizeof(buffer), RELAY_BUFFER - v.to_local.size());
+            const auto n   = libssh2_channel_read(v.channel, buffer, v.read_room);
+            v.read_pending = n == LIBSSH2_ERROR_EAGAIN && outboundBlocked();
             if (n > 0) {
                 v.to_local.append(buffer, static_cast<std::size_t>(n));
                 moved = true;
-            } else if (n < 0 && n != LIBSSH2_ERROR_EAGAIN) {
+            } else if (n == 0) {
+                v.server_eof = true;
+                moved        = true;
+            } else if (n != LIBSSH2_ERROR_EAGAIN) {
                 if (connectionError(static_cast<int>(n))) {
                     failSsh(static_cast<int>(n));
                     return false;
                 }
                 v.server_eof = true;
                 moved        = true;
-            } else if (libssh2_channel_eof(v.channel) == 1) {
-                v.server_eof = true;
-                moved        = true;
             }
+        } else if (!v.server_eof && !v.local_done && waiting(v.channel) > VIEWER_BUDGET) {
+            // Not read, as the web server takes nothing: a viewer that sends on regardless is let go, alone.
+            v.socket.reset();
+            v.to_local.clear();
+            if (!v.write_blocked) v.to_server.clear();
+            v.local_done = true;
+            moved        = true;
         }
         if (v.socket && !v.to_local.empty()) {
             const auto n = v.socket->send(v.to_local);
@@ -995,9 +1085,9 @@ class TunnelConnection {
                 v.local_done = true;
             }
         }
-        // Done both ways, or the web server gone: the channel is closed (EOF, then CLOSE), unless a write of it is
-        // under way.
-        if (v.local_done && v.to_server.empty() && !v.write_blocked) {
+        // Done both ways, or the web server gone: the channel is closed (EOF, then CLOSE), unless a write or a read of
+        // it is under way.
+        if (v.local_done && v.to_server.empty() && !v.write_blocked && !v.read_pending) {
             v.socket.reset();
             startClosing(v.channel);
             v.channel = nullptr;
@@ -1050,6 +1140,10 @@ class TunnelConnection {
     int first_error_ = 0;
     std::string first_error_text_;
     bool kexinit_received_ = false;
+    // A keepalive under way (the socket full), sent on when libssh2's interval passed, at `keepalive_again_`.
+    bool keepalive_pending_ = false;
+    Clock::time_point keepalive_again_;
+    bool session_read_pending_ = false;  // as a viewer's read_pending, for the session channel
 
     // The channels.
     LIBSSH2_CHANNEL* session_channel_ = nullptr;
