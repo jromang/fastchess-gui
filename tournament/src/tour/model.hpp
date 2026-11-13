@@ -54,8 +54,8 @@ struct Participant {
     int elo = 0;              // reference rating from the engine list, 0 = none; written in the PGN headers
 
     // Its own opening book, a Polyglot file, played by the book adapter (book_adapter.hpp) while the game is in it,
-    // up to `book_depth` plies (0: the whole book). Empty: the engine plays every move. Older versions of the
-    // program ignore both and play the engine alone.
+    // up to `book_depth` plies (0: the whole book). Empty: the engine plays every move. A tournament with one is
+    // of version 3, which versions up to 0.5.3 (that would play the engine alone) refuse.
     std::string book;
     int book_depth = 0;
 };

@@ -85,8 +85,12 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
     // Version 2: PGN files with other names than games.pgn. Versions before 0.4.13 would read and write a
     // games.pgn of their own there (and append its blank games to the file of "Also append every game to"), so
     // they refuse such a folder instead.
+    // Version 3: a participant with an opening book of its own. Versions up to 0.5.3 would ignore the book and play
+    // the engine alone, "SF (A)" against "SF (B)" the same engine, so they refuse such a folder too.
     const bool named = s.pgnFile() != "games.pgn" || s.chessbasePgnFile() != "games-chessbase.pgn";
-    j = {{"version", std::max(s.version, named ? 2 : 1)},
+    const bool own_books =
+        std::any_of(s.participants.begin(), s.participants.end(), [](const Participant& p) { return !p.book.empty(); });
+    j = {{"version", std::max({s.version, named ? 2 : 1, own_books ? 3 : 1})},
          {"name", s.name},
          {"format", s.format},
          {"cycles", s.cycles},
@@ -112,7 +116,7 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
 
 void from_json(const nlohmann::json& j, TournamentSpec& s) {
     s.version = j.value("version", 1);
-    if (s.version > 2) throw std::runtime_error("this tournament was written by a newer version of fastchess-gui");
+    if (s.version > 3) throw std::runtime_error("this tournament was written by a newer version of fastchess-gui");
 
     s.name      = j.value("name", std::string{});
     s.format    = j.value("format", Format::Match);

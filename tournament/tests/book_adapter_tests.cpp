@@ -526,6 +526,46 @@ TEST_CASE("own book: tournament.json keeps a participant's book and depth, and n
     CHECK(j.get<Participant>().book.empty());
 }
 
+TEST_CASE("own book: a tournament with one is of version 3, which the versions before refuse; this one reads it") {
+    TournamentSpec s;
+    s.name = "versions";
+    for (int i = 0; i < 2; ++i) {
+        Participant p;
+        p.id          = i;
+        p.engine.name = i == 0 ? "random (A)" : "random";
+        p.engine.cmd  = "random";
+        s.participants.push_back(p);
+    }
+    CHECK(nlohmann::json(s).at("version") == 1);
+
+    // Versions up to 0.5.3 refuse versions above 2, rather than playing "random (A)" without its book.
+    s.participants[0].book = "/books/a.bin";
+    nlohmann::json j       = s;
+    CHECK(j.at("version") == 3);
+    const auto back = j.get<TournamentSpec>();
+    CHECK(back.version == 3);
+    CHECK(back.participants[0].book == "/books/a.bin");
+    // Once 3, it stays so (a participant with a book withdrawn and replaced, say).
+    auto again                 = back;
+    again.participants[0].book = "";
+    CHECK(nlohmann::json(again).at("version") == 3);
+
+    // A later version still is refused, as before.
+    j["version"] = 4;
+    CHECK_THROWS_WITH_AS((void)j.get<TournamentSpec>(), doctest::Contains("newer version"), std::runtime_error);
+
+    // The folder of a tournament with an own book.
+    const auto dir = fs::temp_directory_path() / "fcg-tour-own-book-version";
+    fs::remove_all(dir);
+    s.participants[0].book = smallBook().string();
+    (void)TournamentState::create(dir, s);
+    std::ifstream in(dir / "tournament.json", std::ios::binary);
+    CHECK(nlohmann::json::parse(in).at("version") == 3);
+    in.close();
+    CHECK(TournamentState::open(dir)->spec().participants[0].book == smallBook().string());
+    fs::remove_all(dir);
+}
+
 TEST_CASE("own book: in a tournament, its moves come from the book, its engine plays the rest") {
     if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available, skipped");
