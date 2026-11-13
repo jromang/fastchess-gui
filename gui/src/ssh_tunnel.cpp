@@ -166,8 +166,8 @@ std::string printableText(std::string_view text) {
         // A whole UTF-8 sequence, in its shortest form, of a character that is not a surrogate: kept, unless it is a
         // C1 control (U+0080 to U+009F, CSI among them). Anything else, one byte at a time: replaced.
         const std::size_t n = c >= 0xC2 && c <= 0xDF ? 2 : c >= 0xE0 && c <= 0xEF ? 3 : c >= 0xF0 && c <= 0xF4 ? 4 : 0;
-        uint32_t code = n == 2 ? c & 0x1F : n == 3 ? c & 0x0F : c & 0x07;
-        bool whole    = n != 0 && i + n <= text.size();
+        uint32_t code       = n == 2 ? c & 0x1F : n == 3 ? c & 0x0F : c & 0x07;
+        bool whole          = n != 0 && i + n <= text.size();
         for (std::size_t k = 1; whole && k < n; ++k) {
             const auto next = static_cast<unsigned char>(text[i + k]);
             whole           = (next & 0xC0) == 0x80;
@@ -211,7 +211,8 @@ std::optional<std::string> findPublicUrl(std::string_view output) {
             // A port, when there is one: 1 to 65535, digits only (an address with another is not taken).
             if (end < line.size() && line[end] == ':') {
                 std::size_t digits = end + 1;
-                while (digits < line.size() && digits - end <= 6 && std::isdigit(static_cast<unsigned char>(line[digits]))) {
+                while (digits < line.size() && digits - end <= 6 &&
+                       std::isdigit(static_cast<unsigned char>(line[digits]))) {
                     ++digits;
                 }
                 const auto port = line.substr(end + 1, digits - end - 1);
@@ -320,9 +321,9 @@ class TunnelConnection {
         }
         std::string error;
         // Given up on as soon as the tunnel stops: only finding the host's address cannot be cut short.
-        const auto fd = net::connectHost(cfg_.host, std::to_string(cfg_.port),
-                                         static_cast<int>(std::chrono::milliseconds(CONNECT_TIMEOUT).count()), error,
-                                         &stopping_);
+        const auto fd =
+            net::connectHost(cfg_.host, std::to_string(cfg_.port),
+                             static_cast<int>(std::chrono::milliseconds(CONNECT_TIMEOUT).count()), error, &stopping_);
         if (!fd) {
             fail(error);
             return end_;
@@ -555,7 +556,7 @@ class TunnelConnection {
         const auto type = static_cast<uint8_t>(payload[0]);
         Reader r(std::string_view(payload).substr(1));
         // The first key exchange: nothing but its messages until the server's NEWKEYS. With the strict exchange
-        // (OpenSSH's PROTOCOL, 1.9), not even IGNORE or DEBUG; its KEXINIT, the first packet, is checked there.
+        // (OpenSSH's PROTOCOL file), not even IGNORE or DEBUG; its KEXINIT, the first packet, is checked there.
         if (!initial_kex_done_) {
             const bool kex     = type == KEXINIT || type == KEX_ECDH_REPLY || type == NEWKEYS;
             const bool allowed = kex || type == DISCONNECT || (!strict_ && (type == IGNORE_DATA || type == DEBUG_TEXT));
@@ -703,7 +704,7 @@ class TunnelConnection {
             .string(ecdh_->publicKey())
             .string(q_s)
             .raw(k);
-        auto h = sha256(exchange.data());
+        auto h      = sha256(exchange.data());
         auto hashed = exchange.take();
         wipe(hashed);
         // K and H, and the keys made of them, are wiped however this ends; the first H stays, as the session id.
@@ -728,7 +729,7 @@ class TunnelConnection {
 
         send(Writer().byte(NEWKEYS).take());
         auto key = derive('C', PacketCipher::keySize(cipher_c_)), iv = derive('A', PacketCipher::ivSize(cipher_c_)),
-             mac_key = derive('E', PacketCipher::macKeySize(mac_c_));
+             mac_key     = derive('E', PacketCipher::macKeySize(mac_c_));
         const auto error = tx_.start(cipher_c_, mac_c_, key, iv, mac_key);
         wipe(key);
         wipe(iv);
@@ -870,7 +871,8 @@ class TunnelConnection {
         if (type != "forwarded-tcpip" || phase_ != Phase::OnAir) return refuse(1, "not accepted");
         // Those closed on our side that the server did not close yet count too: a server that never closes them
         // must not have more and more.
-        const auto open = std::count_if(channels_.begin(), channels_.end(), [](const auto& c) { return c.second.forwarded; });
+        const auto open =
+            std::count_if(channels_.begin(), channels_.end(), [](const auto& c) { return c.second.forwarded; });
         if (static_cast<std::size_t>(open) >= MAX_CHANNELS) return refuse(4, "too many connections");
         // Every channel waits meanwhile: a web server that does not answer at once is not there.
         const auto fd = net::connectTo(LOCALHOST, static_cast<uint16_t>(cfg_.local_port), LOCAL_CONNECT_TIMEOUT_MS);

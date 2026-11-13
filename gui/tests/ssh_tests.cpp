@@ -1099,8 +1099,9 @@ TEST_CASE("Tunnel: a packet length that wrapped, or a KEXINIT too short for its 
         tunnel.start(loopback(fingerprint(serverKey().blob)));
         CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }));
         const auto error = tunnel.status().error;
-        CHECK_MESSAGE((error.find("not valid") != std::string::npos || error.find("cannot be read") != std::string::npos),
-                      error);
+        const bool told =
+            error.find("not valid") != std::string::npos || error.find("cannot be read") != std::string::npos;
+        CHECK_MESSAGE(told, error);
         CHECK(waitFor([&] { return server.done.load(); }));
     }
 }
@@ -1232,7 +1233,8 @@ TEST_CASE("Tunnel: the strict key exchange enforced until the server's first NEW
 TEST_CASE("Tunnel: a server's DISCONNECT reason reaches the status without its escape sequences") {
     FakeServer::Script script;
     script.on_air = [&](FakeServer& server) {
-        server.send(Writer().byte(DISCONNECT).u32(11).string("bye\x1b[2J\x1b]0;pwned\x07\xc2\x9b" "0m").string("").take());
+        const std::string reason = "bye\x1b[2J\x1b]0;pwned\x07\xc2\x9b" "0m";
+        server.send(Writer().byte(DISCONNECT).u32(11).string(reason).string("").take());
     };
     FakeServer server(SSH_PORT, script);
     SshTunnel tunnel;

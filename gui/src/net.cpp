@@ -368,8 +368,8 @@ std::optional<Handle> connectTo(uint32_t ip, uint16_t port, int timeout_ms) {
     return fd;
 }
 
-std::optional<Handle> connectHost(const std::string& host, const std::string& port, int timeout_ms,
-                                  std::string& error, const std::atomic_bool* stopping) {
+std::optional<Handle> connectHost(const std::string& host, const std::string& port, int timeout_ms, std::string& error,
+                                  const std::atomic_bool* stopping) {
     ensureStarted();
     addrinfo hints{}, *list = nullptr;
     hints.ai_family   = AF_UNSPEC;
