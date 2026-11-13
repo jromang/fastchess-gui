@@ -5,6 +5,7 @@
 #include <fstream>
 #include <map>
 #include <set>
+#include <string_view>
 #include <tuple>
 
 #include "journal.hpp"
@@ -14,6 +15,21 @@
 namespace fcg::tour {
 
 namespace fs = std::filesystem;
+
+std::string foldedName(const std::string& name) {
+    std::string out;
+    bool space = false;
+    for (const char c : name) {
+        if (c == ' ' || c == '\t') {
+            space = !out.empty();
+            continue;
+        }
+        if (space) out += ' ';
+        space = false;
+        out += c >= 'A' && c <= 'Z' ? static_cast<char>(c - 'A' + 'a') : c;
+    }
+    return out;
+}
 
 namespace {
 
@@ -33,40 +49,27 @@ int64_t pgnDate(const std::string& date) {
     return days * 86'400'000;
 }
 
-// A name with its letter case and spaces set aside: ASCII letters in lower case, the spaces and tabs at the ends
-// dropped, those in between made one space.
-std::string folded(const std::string& name) {
-    std::string out;
-    bool space = false;
-    for (const char c : name) {
-        if (c == ' ' || c == '\t') {
-            space = !out.empty();
-            continue;
-        }
-        if (space) out += ' ';
-        space = false;
-        out += c >= 'A' && c <= 'Z' ? static_cast<char>(c - 'A' + 'a') : c;
-    }
-    return out;
-}
-
 // The players of the PGN files and the library engines they are, each player looked up once.
 class LibraryMatcher {
    public:
-    explicit LibraryMatcher(const std::vector<std::string>& library) {
+    LibraryMatcher(const std::vector<std::string>& library, const LibraryAliases& aliases) {
         for (const auto& name : library) {
-            exact_.insert(name);
-            // Two library engines of the same folded name: neither is guessed.
-            const auto [it, added] = folded_.emplace(folded(name), name);
-            if (!added && it->second != name) it->second.clear();
+            if (!exact_.insert(name).second) continue;
+            folded_[foldedName(name)].push_back(name);
+        }
+        for (const auto& [player, engine] : aliases) {
+            if (exact_.count(engine)) aliases_.emplace(foldedName(player), engine);
         }
     }
 
     [[nodiscard]] std::optional<std::string> find(const std::string& player) const {
         if (exact_.count(player)) return player;
-        const auto it = folded_.find(folded(player));
-        if (it == folded_.end() || it->second.empty()) return std::nullopt;
-        return it->second;
+        const auto key = foldedName(player);
+        if (const auto alias = aliases_.find(key); alias != aliases_.end()) return alias->second;
+        // Two library engines of the same folded name: neither is guessed.
+        const auto it = folded_.find(key);
+        if (it == folded_.end() || it->second.size() != 1) return std::nullopt;
+        return it->second.front();
     }
 
     // The name the games of `player` are counted under.
@@ -90,10 +93,54 @@ class LibraryMatcher {
         return out;
     }
 
+    // The players that are no library engine by their name: chosen by the user, two engines', hinted, the others.
+    [[nodiscard]] std::vector<GameDb::Player> players() const {
+        std::vector<std::pair<int, GameDb::Player>> out;
+        for (const auto& [player, engine] : seen_) {
+            if (player.empty() || exact_.count(player)) continue;
+            GameDb::Player p{player, {}, {}, false};
+            const auto key = foldedName(player);
+            if (aliases_.count(key)) {
+                p.engine = engine;
+            } else if (exact_.count(engine)) {
+                continue;  // its name, letter case and spaces aside
+            } else if (const auto it = folded_.find(key); it != folded_.end()) {
+                p.engines   = it->second;
+                p.ambiguous = true;
+            } else {
+                p.engines = hints(key);
+            }
+            const int part = !p.engine.empty() ? 0 : p.ambiguous ? 1 : !p.engines.empty() ? 2 : 3;
+            out.emplace_back(part, std::move(p));
+        }
+        // seen_ is by name already.
+        std::stable_sort(out.begin(), out.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+        std::vector<GameDb::Player> players;
+        players.reserve(out.size());
+        for (auto& [part, p] : out) players.push_back(std::move(p));
+        return players;
+    }
+
    private:
+    // The library engines whose folded name begins the folded `key` and ends at a break in it (a space, a dash...):
+    // "stockfish 17" for "stockfish 17 64-bit", not for "stockfish 17.1" nor "stockfish 170". The longest first.
+    [[nodiscard]] std::vector<std::string> hints(const std::string& key) const {
+        std::vector<std::pair<std::size_t, std::string>> found;
+        for (const auto& [name, engines] : folded_) {
+            if (name.empty() || name.size() >= key.size() || key.compare(0, name.size(), name) != 0) continue;
+            if (std::string_view(" -_([/,").find(key[name.size()]) == std::string_view::npos) continue;
+            for (const auto& e : engines) found.emplace_back(name.size(), e);
+        }
+        std::stable_sort(found.begin(), found.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+        std::vector<std::string> out;
+        for (auto& [size, e] : found) out.push_back(std::move(e));
+        return out;
+    }
+
     std::set<std::string> exact_;
-    std::map<std::string, std::string> folded_;  // folded name -> library name, empty when two have it
-    std::map<std::string, std::string> seen_;    // player -> the name its games are counted under
+    std::map<std::string, std::vector<std::string>> folded_;  // folded name -> the library engines that have it
+    std::map<std::string, std::string> aliases_;              // folded player name -> library engine
+    std::map<std::string, std::string> seen_;                 // player -> the name its games are counted under
 };
 
 class Builder {
@@ -218,13 +265,15 @@ std::optional<uint32_t> GameDb::engine(const std::string& name) const {
     return std::nullopt;
 }
 
-std::optional<std::string> libraryEngine(const std::string& player, const std::vector<std::string>& library) {
-    return LibraryMatcher(library).find(player);
+std::optional<std::string> libraryEngine(const std::string& player, const std::vector<std::string>& library,
+                                         const LibraryAliases& aliases) {
+    return LibraryMatcher(library, aliases).find(player);
 }
 
 std::vector<std::optional<std::string>> libraryEngines(const std::vector<std::string>& players,
-                                                       const std::vector<std::string>& library) {
-    const LibraryMatcher matcher(library);
+                                                       const std::vector<std::string>& library,
+                                                       const LibraryAliases& aliases) {
+    const LibraryMatcher matcher(library, aliases);
     std::vector<std::optional<std::string>> out;
     out.reserve(players.size());
     for (const auto& player : players) out.push_back(matcher.find(player));
@@ -232,13 +281,14 @@ std::vector<std::optional<std::string>> libraryEngines(const std::vector<std::st
 }
 
 GameDb readGameDb(const std::vector<fs::path>& dirs, const std::vector<fs::path>& pgns,
-                  const std::vector<std::string>& library) {
+                  const std::vector<std::string>& library, const LibraryAliases& aliases) {
     GameDb db;
     Builder builder(db);
-    LibraryMatcher matcher(library);
+    LibraryMatcher matcher(library, aliases);
     for (const auto& dir : dirs) readTournament(dir, db, builder);
     for (const auto& file : pgns) readPgn(file, db, builder, matcher);
     db.matched = matcher.matched();
+    db.players = matcher.players();
     return db;
 }
 

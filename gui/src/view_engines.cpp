@@ -611,6 +611,7 @@ void App::drawEngines() {
     const auto duplicate = [&] {
         auto copy = engines_[selected_engine_];
         copy.name = uniqueEngineName(copy.name, -1);
+        copy.aliases.clear();  // a PGN player is one engine
         engines_.push_back(copy);
         selected_engine_ = static_cast<int>(engines_.size()) - 1;
         engine_marked_.clear();
@@ -1718,7 +1719,7 @@ void App::readRatingImport() {
     const auto list = tour::parseRatingList(r.text);
     auto names      = std::vector<std::string>{};
     for (const auto& e : engines_) names.push_back(e.name);
-    const auto found = tour::matchRatings(list, names);
+    const auto found = tour::matchRatings(list, names, libraryAliases(engines_));
 
     r.listed    = list.size();
     r.unmatched = found.unmatched;

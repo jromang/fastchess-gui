@@ -192,6 +192,9 @@ void App::frame() {
         else if (w == "ratings" || w == "ratings-engine" || w == "ratings-h2h" || w == "ratings-progress") {
             page_                = Page::Ratings;
             ratings_tab_request_ = w == "ratings-engine" ? 1 : w == "ratings-h2h" ? 2 : w == "ratings-progress" ? 3 : 0;
+        } else if (w == "ratings-players") {  // the players of the PGN files and the library engines they are
+            page_             = Page::Ratings;
+            open_pgn_players_ = true;
         } else if (w == "books")
             page_ = Page::Books;
         else if (w == "home")
@@ -274,6 +277,7 @@ void App::frame() {
     drawQuitModal();
     drawImportPreview();
     drawRatingImport();
+    drawPgnPlayers();
     drawPalette();
 
     // The window title tells how the run is going, also when the window is in the background.
@@ -801,6 +805,7 @@ void App::handleDialogs() {
                 if (std::find(list.begin(), list.end(), std::filesystem::path(path)) == list.end())
                     list.emplace_back(path);
                 setRatingPgns(list);
+                review_pgn_players_ = 1;
                 break;
             }
             case Dialogs::Purpose::ExportHeadToHead: {

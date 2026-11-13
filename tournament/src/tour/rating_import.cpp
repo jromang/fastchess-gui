@@ -380,11 +380,12 @@ std::vector<ListedRating> parseRatingList(std::string_view input) {
     return out;
 }
 
-RatingMatches matchRatings(const std::vector<ListedRating>& list, const std::vector<std::string>& library) {
+RatingMatches matchRatings(const std::vector<ListedRating>& list, const std::vector<std::string>& library,
+                           const std::map<std::string, std::string>& aliases) {
     std::vector<std::string> names;
     names.reserve(list.size());
     for (const auto& r : list) names.push_back(r.name);
-    const auto engines = libraryEngines(names, library);
+    const auto engines = libraryEngines(names, library, aliases);
 
     RatingMatches out;
     std::map<std::string, std::size_t> index;  // library engine -> its place in out.matched

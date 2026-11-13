@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <optional>
 #include <set>
 #include <string>
@@ -51,24 +52,48 @@ struct GameDb {
     // The players of the PGN files taken for engines of the library: (name in the PGN, name in the library), by the
     // library's name, then the PGN's. Their games are the library engine's.
     std::vector<std::pair<std::string, std::string>> matched;
+    // The players of the PGN files that are no library engine by their name, for the user to say which one they are:
+    // those taken for one by the user's choice, then those two library engines may be, then those with a hint, then
+    // the others, each part by name.
+    struct Player {
+        std::string name;    // as the PGN files write it
+        std::string engine;  // the library engine the user chose for it, empty: none
+        // Not chosen: the library engines of its name, letter case and spaces aside, when two or more have it
+        // (`ambiguous`); else those whose name its own begins with ("Stockfish 17" for "Stockfish 17 64-bit"), the
+        // longest first: a hint, never applied.
+        std::vector<std::string> engines;
+        bool ambiguous = false;
+    };
+    std::vector<Player> players;
 
     [[nodiscard]] std::optional<uint32_t> engine(const std::string& name) const;
 };
 
-// The library engine a player of a PGN file is, nullopt when none: the one of the same name, else the only one whose
-// name is the same once letter case and spaces are set aside ("stockfish  17" is "Stockfish 17"). Nothing looser:
-// a wrong guess would give a player another engine's rating on a list, as an anchor, without a word.
+// A name with its letter case and spaces set aside: ASCII letters in lower case, the spaces and tabs at the ends
+// dropped, those in between made one space.
+[[nodiscard]] std::string foldedName(const std::string& name);
+
+// The library engines the user said some players of PGN files are: player -> library engine. A player is found by
+// its name, letter case and spaces aside; an engine that is not in the library is passed over.
+using LibraryAliases = std::map<std::string, std::string>;
+
+// The library engine a player of a PGN file is, nullopt when none: the one of the same name, else the one the user
+// chose for it in `aliases`, else the only one whose name is the same once letter case and spaces are set aside
+// ("stockfish  17" is "Stockfish 17"). Nothing looser: a wrong guess would give a player another engine's rating on
+// a list, as an anchor, without a word.
 [[nodiscard]] std::optional<std::string> libraryEngine(const std::string& player,
-                                                       const std::vector<std::string>& library);
+                                                       const std::vector<std::string>& library,
+                                                       const LibraryAliases& aliases = {});
 // libraryEngine() of each name of `players`, the library looked through once.
 [[nodiscard]] std::vector<std::optional<std::string>> libraryEngines(const std::vector<std::string>& players,
-                                                                     const std::vector<std::string>& library);
+                                                                     const std::vector<std::string>& library,
+                                                                     const LibraryAliases& aliases = {});
 
 // The tournaments in `dirs` (folders that are not tournaments are skipped) and the PGN files in `pgns`, whose
 // players are matched to the engines of `library` (their names) by libraryEngine().
 [[nodiscard]] GameDb readGameDb(const std::vector<std::filesystem::path>& dirs,
                                 const std::vector<std::filesystem::path>& pgns = {},
-                                const std::vector<std::string>& library        = {});
+                                const std::vector<std::string>& library = {}, const LibraryAliases& aliases = {});
 
 // Which games count.
 struct GameFilter {

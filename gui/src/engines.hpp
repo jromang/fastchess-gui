@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <map>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -75,6 +76,15 @@ struct CheckResult {
 // first; at the same distance, by name.
 [[nodiscard]] std::vector<std::string> suggestOpponents(const std::vector<EngineEntry>& engines, int elo, int range,
                                                         int count, const std::vector<std::string>& exclude);
+
+// The names the user gave to library engines for the players of PGN files (EngineEntry::aliases): player -> engine,
+// as tour::readGameDb() takes them. A name two engines claim is the first one's.
+[[nodiscard]] std::map<std::string, std::string> libraryAliases(const std::vector<EngineEntry>& engines);
+// The library engine the user chose for a player, letter case and spaces aside; empty when none.
+[[nodiscard]] std::string libraryAlias(const std::vector<EngineEntry>& engines, const std::string& player);
+// Takes `player` for the library engine `engine` from now on, or for none when `engine` is empty: the name is
+// dropped from the engine that had it. Returns true when an engine changed.
+bool setLibraryAlias(std::vector<EngineEntry>& engines, const std::string& player, const std::string& engine);
 
 // A WinBoard engine: its protocol is xboard, or it goes through an external adapter (wb2uci).
 [[nodiscard]] bool isWinboard(const EngineEntry& entry);

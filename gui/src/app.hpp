@@ -247,6 +247,7 @@ class App {
     void drawRatingFilters();
     void drawRatingList();
     void drawLibraryMatches();  // the players of the PGN files taken for library engines
+    void drawPgnPlayers();      // the window where the user says which library engine a PGN player is
     void drawEngineCard();
     void drawHeadToHead();
     void drawProgress();
@@ -780,6 +781,12 @@ class App {
     std::shared_ptr<const tour::GameDb> game_db_ = std::make_shared<tour::GameDb>();
     bool game_db_dirty_ = true;  // read the tournaments again
     std::vector<std::string> game_db_library_;  // the library's names the PGN files' players were matched to
+    tour::LibraryAliases game_db_aliases_;      // and the names the user gave to library engines
+    bool open_pgn_players_ = false;
+    // A PGN file added: 1, the games are to be read with it; 2, they are being read. Once read, the players that
+    // two library engines may be, or one by a hint, are shown for the user to choose.
+    int review_pgn_players_ = 0;
+    std::string pgn_players_filter_;
     bool ratings_dirty_ = true;  // compute again, with other filters
     std::optional<std::vector<std::filesystem::path>> rating_pgns_;  // settings.json's, read once
     const std::vector<std::filesystem::path>& ratingPgns();

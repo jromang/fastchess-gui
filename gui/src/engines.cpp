@@ -8,11 +8,13 @@
 #include <cstdlib>
 #include <deque>
 #include <filesystem>
+#include <set>
 #include <sstream>
 
 #include <engine/compliance.hpp>
 #include <engine/uci_engine.hpp>
 #include <tour/engine_text.hpp>
+#include <tour/game_db.hpp>
 
 namespace fcg {
 
@@ -399,6 +401,46 @@ std::vector<std::string> suggestOpponents(const std::vector<EngineEntry>& engine
         out.push_back(e->name);
     }
     return out;
+}
+
+std::map<std::string, std::string> libraryAliases(const std::vector<EngineEntry>& engines) {
+    std::map<std::string, std::string> out;
+    std::set<std::string> taken;  // folded
+    for (const auto& e : engines) {
+        for (const auto& alias : e.aliases) {
+            if (taken.insert(tour::foldedName(alias)).second) out.emplace(alias, e.name);
+        }
+    }
+    return out;
+}
+
+std::string libraryAlias(const std::vector<EngineEntry>& engines, const std::string& player) {
+    const auto key = tour::foldedName(player);
+    for (const auto& e : engines) {
+        for (const auto& alias : e.aliases) {
+            if (tour::foldedName(alias) == key) return e.name;
+        }
+    }
+    return {};
+}
+
+bool setLibraryAlias(std::vector<EngineEntry>& engines, const std::string& player, const std::string& engine) {
+    const auto key = tour::foldedName(player);
+    bool changed   = false;
+    for (auto& e : engines) {
+        if (e.name == engine) continue;
+        changed |= std::erase_if(e.aliases, [&](const std::string& a) { return tour::foldedName(a) == key; }) > 0;
+    }
+    for (auto& e : engines) {
+        if (e.name != engine) continue;
+        const bool has = std::any_of(e.aliases.begin(), e.aliases.end(),
+                                     [&](const std::string& a) { return tour::foldedName(a) == key; });
+        if (!has) {
+            e.aliases.push_back(player);
+            changed = true;
+        }
+    }
+    return changed;
 }
 
 bool isWinboard(const EngineEntry& entry) {
