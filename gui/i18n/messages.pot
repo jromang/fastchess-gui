@@ -2629,6 +2629,9 @@ msgstr ""
 msgid "Written at {} in {}"
 msgstr ""
 
+msgid "Written when \"{}\" is on in the PGN options of the setup and the engines give what it needs."
+msgstr ""
+
 msgid "Written when \"{}\" is on in the PGN options of the setup."
 msgstr ""
 
@@ -2639,6 +2642,9 @@ msgid "Yours"
 msgstr ""
 
 msgid "Zip written to {}"
+msgstr ""
+
+msgid "\"{}\" was on in this tournament's PGN options: the engines did not give what it needs in this game."
 msgstr ""
 
 msgid "about {} game"

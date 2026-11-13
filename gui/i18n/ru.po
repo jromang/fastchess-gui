@@ -2639,6 +2639,9 @@ msgstr "Записывать файлы трансляции"
 msgid "Written at {} in {}"
 msgstr "Записано в {} в папку {}"
 
+msgid "Written when \"{}\" is on in the PGN options of the setup and the engines give what it needs."
+msgstr "Записывается, когда «{}» включён в параметрах PGN настройки и движки сообщают нужные данные."
+
 msgid "Written when \"{}\" is on in the PGN options of the setup."
 msgstr "Записывается, когда «{}» включён в параметрах PGN настройки."
 
@@ -2650,6 +2653,9 @@ msgstr "Ваши"
 
 msgid "Zip written to {}"
 msgstr "Zip записан в {}"
+
+msgid "\"{}\" was on in this tournament's PGN options: the engines did not give what it needs in this game."
+msgstr "«{}» был включён в параметрах PGN этого турнира: движки не сообщили нужные данные в этой партии."
 
 msgid "about {} game"
 msgid_plural "about {} games"

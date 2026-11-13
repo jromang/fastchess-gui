@@ -2629,6 +2629,9 @@ msgstr "Escribir los archivos en directo"
 msgid "Written at {} in {}"
 msgstr "Escritos a las {} en {}"
 
+msgid "Written when \"{}\" is on in the PGN options of the setup and the engines give what it needs."
+msgstr "Se escribe cuando «{}» está activado en las opciones PGN de la configuración y los motores dan lo necesario."
+
 msgid "Written when \"{}\" is on in the PGN options of the setup."
 msgstr "Se escribe cuando «{}» está activado en las opciones PGN de la configuración."
 
@@ -2640,6 +2643,9 @@ msgstr "Las tuyas"
 
 msgid "Zip written to {}"
 msgstr "Zip escrito en {}"
+
+msgid "\"{}\" was on in this tournament's PGN options: the engines did not give what it needs in this game."
+msgstr "«{}» estaba activado en las opciones PGN de este torneo: los motores no dieron lo necesario en esta partida."
 
 msgid "about {} game"
 msgid_plural "about {} games"

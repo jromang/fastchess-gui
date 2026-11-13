@@ -2619,6 +2619,9 @@ msgstr "写入实时文件"
 msgid "Written at {} in {}"
 msgstr "于 {} 写入 {}"
 
+msgid "Written when \"{}\" is on in the PGN options of the setup and the engines give what it needs."
+msgstr "当设置的 PGN 选项中“{}”开启且引擎提供所需数据时写入。"
+
 msgid "Written when \"{}\" is on in the PGN options of the setup."
 msgstr "当设置的 PGN 选项中“{}”开启时写入。"
 
@@ -2630,6 +2633,9 @@ msgstr "你的布局"
 
 msgid "Zip written to {}"
 msgstr "Zip 已写入 {}"
+
+msgid "\"{}\" was on in this tournament's PGN options: the engines did not give what it needs in this game."
+msgstr "本锦标赛的 PGN 选项中“{}”是开启的：本局中引擎没有提供所需数据。"
 
 msgid "about {} game"
 msgid_plural "about {} games"
