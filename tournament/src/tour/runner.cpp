@@ -15,6 +15,8 @@ namespace {
 // the game on the thread that played it, right before it would score it.
 thread_local const GameTask* t_task = nullptr;
 thread_local bool t_recorded        = false;
+// Whether both engines of that game started (fastchess told their processes).
+thread_local bool t_started = false;
 
 }  // namespace
 
@@ -85,6 +87,7 @@ bool Runner::gameHeld(std::size_t /*game_id*/) const { return fastchess::observe
 void Runner::play(const GameTask& task) {
     t_task     = &task;
     t_recorded = false;
+    t_started  = false;
 
     try {
         // A paused tournament lets running games (and the other game of their pair) finish but starts no new pair.
@@ -99,6 +102,13 @@ void Runner::play(const GameTask& task) {
         playGame(configs, start, finish, task.opening, task.encounter.index, task.number() + 1);
     } catch (const std::exception& e) {
         fail(e.what());
+    }
+
+    // A game given up while an engine of it failed to start leaves that engine in fastchess' cache as if it had
+    // started (fastchess makes a new process only to try again), so the next game to take it would lose at once by
+    // disconnection. Its processes are ended: that game starts the engine anew.
+    if (!t_started) {
+        retireEngines([&](const std::string& name) { return name == task.white.name || name == task.black.name; });
     }
 
     if (!t_recorded) state_.release(task);
@@ -161,6 +171,7 @@ void Runner::onGameStart(const fastchess::observer::GameStart& info) {
 }
 
 void Runner::onEngineProcesses(int slot, int64_t white_pid, int64_t black_pid) {
+    t_started = true;
     if (downstream_) downstream_->onEngineProcesses(slot, white_pid, black_pid);
 }
 

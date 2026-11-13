@@ -411,6 +411,50 @@ TEST_CASE("runner: \"stop when idle\" gives up at once a game whose engine waits
     CHECK(std::chrono::steady_clock::now() - begun < fastchess::BaseTournament::ENGINE_START_RETRY_PAUSE);
 }
 
+TEST_CASE("runner: an engine whose game was given up while it failed to start is started anew for its next game") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-retry-anew";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    // Fails to start the first time, slowly enough for the game to be given up at its first failure; then is the
+    // random mover.
+    const auto started = dir / "started";
+    const auto script  = dir / "flaky.sh";
+    {
+        std::ofstream out(script);
+        out << "#!/bin/sh\nif [ ! -e \"" << started.string() << "\" ]; then touch \"" << started.string()
+            << "\"; sleep 1; exit 1; fi\nexec \"" << randomMover() << "\"\n";
+    }
+    fs::permissions(script, fs::perms::owner_all);
+
+    auto s                       = spec(Format::Match, 2, 1, 2);
+    s.conditions.concurrency     = 1;
+    s.participants[1].engine.cmd = script.string();
+    auto state                   = TournamentState::create(dir / "t", s);
+
+    // "Stop when idle" gives the game up; a resume then cancels it, and the games are played.
+    std::thread resumer([&] {
+        while (!fs::exists(started)) std::this_thread::sleep_for(10ms);
+        auto& gate = fastchess::observer::PauseGate::instance();
+        gate.stopWhenIdle();
+        std::this_thread::sleep_for(2s);
+        gate.setPaused(false);
+    });
+    const auto error = play(*state);
+    resumer.join();
+
+    CHECK(error.empty());
+    CHECK(state->finished());
+    REQUIRE(state->results().size() == 2u);
+    // Not lost at once by disconnection to the process that never started.
+    for (const auto& r : state->results()) CHECK(r.termination != fastchess::MatchTermination::DISCONNECT);
+}
+
 TEST_CASE("runner: a round robin of more engines than games at a time starts each engine once") {
     if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available, skipped");
