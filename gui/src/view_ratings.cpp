@@ -95,6 +95,19 @@ void App::setRatingPgns(const std::vector<std::filesystem::path>& files) {
     game_db_dirty_ = true;
 }
 
+std::vector<std::string>& App::separatePlayers() {
+    if (!separate_players_) separate_players_ = storage_.separatePlayers();
+    return *separate_players_;
+}
+
+bool reviewPgnPlayers(const std::vector<tour::GameDb::Player>& players, const std::set<std::string>& before,
+                      const std::vector<std::string>& separate) {
+    return std::any_of(players.begin(), players.end(), [&](const tour::GameDb::Player& p) {
+        return p.engine.empty() && !p.engines.empty() && !isSeparatePlayer(separate, p.name) &&
+               !before.count(tour::foldedName(p.name));
+    });
+}
+
 void App::refreshRatings() {
     if (ratings_job_.valid()) {
         if (ratings_job_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
@@ -114,16 +127,16 @@ void App::refreshRatings() {
         // A PGN file just added: the players the user may want to say which engine they are.
         if (review_pgn_players_ == 2) {
             review_pgn_players_ = 0;
-            open_pgn_players_   = std::any_of(game_db_->players.begin(), game_db_->players.end(),
-                                              [](const auto& p) { return p.engine.empty() && !p.engines.empty(); });
+            open_pgn_players_   = reviewPgnPlayers(game_db_->players, pgn_players_before_, separatePlayers());
         }
     }
     // The players of the PGN files are matched to the library's engines when the games are read: again when the
-    // library's names change, or the names the user gave them.
+    // library's names change, or the names the user gave them, those once the PGN players window is closed (reading
+    // a large PGN file again at each choice would keep the user waiting).
     auto aliases = libraryAliases(engines_);
     if (!std::equal(engines_.begin(), engines_.end(), game_db_library_.begin(), game_db_library_.end(),
                     [](const EngineEntry& e, const std::string& name) { return e.name == name; }) ||
-        aliases != game_db_aliases_) {
+        (aliases != game_db_aliases_ && !pgn_players_shown_)) {
         game_db_dirty_ = true;
     }
     if (!game_db_dirty_ && !ratings_dirty_) return;
@@ -145,7 +158,11 @@ void App::refreshRatings() {
         game_db_library_.clear();
         for (const auto& e : engines_) game_db_library_.push_back(e.name);
         game_db_aliases_ = std::move(aliases);
-        if (review_pgn_players_ == 1) review_pgn_players_ = 2;
+        if (review_pgn_players_ == 1) {
+            review_pgn_players_ = 2;
+            pgn_players_before_.clear();
+            for (const auto& p : game_db_->players) pgn_players_before_.insert(tour::foldedName(p.name));
+        }
     }
     auto work = [in = std::move(in), dirs, pgns = ratingPgns(), filter = ratingFilter(), library = std::move(library),
                  names = game_db_library_, aliases = game_db_aliases_, min_games = rating_min_games_]() mutable {
@@ -461,8 +478,10 @@ void App::drawLibraryMatches() {
     // The others, for the user to say which engine they are; in the warning colour when two library engines may be
     // one of them.
     if (players.empty()) return;
-    const auto ambiguous =
-        static_cast<int>(std::count_if(players.begin(), players.end(), [](const auto& p) { return p.ambiguous; }));
+    const auto& separate = separatePlayers();
+    const auto ambiguous = static_cast<int>(std::count_if(players.begin(), players.end(), [&](const auto& p) {
+        return p.ambiguous && !isSeparatePlayer(separate, p.name);
+    }));
     ImGui::SameLine();
     if (ambiguous > 0) ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
     if (ImGui::SmallButton(TR("PGN players…"))) open_pgn_players_ = true;
@@ -483,9 +502,11 @@ void App::drawPgnPlayers() {
         open_pgn_players_ = false;
     }
     ImGui::SetNextWindowSize(ImVec2(px(820), 0), ImGuiCond_Appearing);
-    if (!ImGui::BeginPopupModal(title, nullptr)) return;
-    // Read again after each choice; the rows stay where they are meanwhile.
+    pgn_players_shown_ = ImGui::BeginPopupModal(title, nullptr);
+    if (!pgn_players_shown_) return;
+    // The games are read again with the choices once the window is closed; the rows stay where they are meanwhile.
     const auto& players = game_db_->players;
+    auto& separate      = separatePlayers();
 
     ImGui::PushTextWrapPos(0);
     ImGui::TextDisabled("%s", TR("The players of the PGN files that are no library engine by their name, letter case "
@@ -534,13 +555,14 @@ void App::drawPgnPlayers() {
                 const auto& p = players[shown[r]];
                 // The user's choice as it is now, while the games may still be read with the one before.
                 const auto engine = libraryAlias(engines_, p.name);
+                const bool apart  = engine.empty() && isSeparatePlayer(separate, p.name);
                 ImGui::TableNextRow();
                 ImGui::PushID(shown[r]);
                 ImGui::TableNextColumn();
                 ImGui::AlignTextToFramePadding();
                 ImGui::TextUnformatted(p.name.c_str());
                 ImGui::TableNextColumn();
-                const bool waiting = engine.empty() && p.ambiguous;
+                const bool waiting = engine.empty() && !apart && p.ambiguous;
                 if (waiting) ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
                 ImGui::SetNextItemWidth(-FLT_MIN);
                 const char* preview = !engine.empty() ? engine.c_str()
@@ -560,7 +582,7 @@ void App::drawPgnPlayers() {
                 }
                 ImGui::TableNextColumn();
                 ImGui::AlignTextToFramePadding();
-                if (!engine.empty()) {
+                if (!engine.empty() || apart) {
                     ImGui::TextDisabled("%s", TR("your choice"));
                 } else if (p.ambiguous) {
                     ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
@@ -588,8 +610,11 @@ void App::drawPgnPlayers() {
                                                               "its name: nothing to choose."));
         ImGui::EndChild();
     }
-    if (choice && setLibraryAlias(engines_, choice->first, choice->second)) {
-        storage_.saveEngines(engines_);  // refreshRatings() reads the games again with it
+    if (choice) {
+        // refreshRatings() reads the games again with it once the window is closed.
+        if (setLibraryAlias(engines_, choice->first, choice->second)) storage_.saveEngines(engines_);
+        // A separate engine is a decision too: the player is no longer warned about nor offered again.
+        if (setSeparatePlayer(separate, choice->first, choice->second.empty())) storage_.setSeparatePlayers(separate);
     }
 
     const auto ambiguous = std::count_if(players.begin(), players.end(), [](const auto& p) { return p.ambiguous; });

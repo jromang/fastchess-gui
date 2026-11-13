@@ -32,6 +32,9 @@ class Storage {
     // PGN files whose games count in the ratings too (settings.json).
     [[nodiscard]] std::vector<std::filesystem::path> ratingPgns() const;
     void setRatingPgns(const std::vector<std::filesystem::path>& files) const;
+    // The players of those files the user said are no library engine (settings.json).
+    [[nodiscard]] std::vector<std::string> separatePlayers() const;
+    void setSeparatePlayers(const std::vector<std::string>& players) const;
 
     // The folder engines were last imported from, which Refresh looks in again for new ones (settings.json); empty
     // when none.

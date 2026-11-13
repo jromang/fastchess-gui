@@ -166,6 +166,16 @@ void Storage::setRatingPgns(const std::vector<fs::path>& files) const {
     save(root_ / "settings.json", settings);
 }
 
+std::vector<std::string> Storage::separatePlayers() const {
+    return setting(settings(), "separate_players", std::vector<std::string>{});
+}
+
+void Storage::setSeparatePlayers(const std::vector<std::string>& players) const {
+    auto settings                = this->settings();
+    settings["separate_players"] = players;
+    save(root_ / "settings.json", settings);
+}
+
 fs::path Storage::engineFolder() const { return fs::path(setting(settings(), "engine_folder", std::string{})); }
 
 void Storage::setEngineFolder(const fs::path& folder) const {

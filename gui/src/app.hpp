@@ -186,6 +186,13 @@ int plotMoves(const char* id, MoveChart chart, const MoveSeries& series, const s
 // "W 12 · D 80 · L 8 %" and a thin bar of the three, for a side's own win, draw, loss in permille.
 void wdlLine(const std::array<int64_t, 3>& wdl);
 
+// After a PGN file was added for the ratings: whether to show its players, for the user to say which library engine
+// they are. Those that library engines may be (two of the same name, or one by a hint), that the user has not decided
+// (an engine chosen, or a separate one) and that were not offered before the file was added: `before`, their names
+// folded (tour::foldedName()).
+[[nodiscard]] bool reviewPgnPlayers(const std::vector<tour::GameDb::Player>& players,
+                                    const std::set<std::string>& before, const std::vector<std::string>& separate);
+
 struct AppOptions {
     bool autostart = false;
     std::string focus_window;  // page or tab shown at startup (for screenshots)
@@ -813,9 +820,14 @@ class App {
     std::vector<std::string> game_db_library_;  // the library's names the PGN files' players were matched to
     tour::LibraryAliases game_db_aliases_;      // and the names the user gave to library engines
     bool open_pgn_players_ = false;
+    // Open: the choices made in it are read with the games once it closes, not at each one.
+    bool pgn_players_shown_ = false;
     // A PGN file added: 1, the games are to be read with it; 2, they are being read. Once read, the players that
-    // two library engines may be, or one by a hint, are shown for the user to choose.
+    // two library engines may be, or one by a hint, are shown for the user to choose (see reviewPgnPlayers()).
     int review_pgn_players_ = 0;
+    std::set<std::string> pgn_players_before_;  // the players offered before the file was added, folded
+    std::optional<std::vector<std::string>> separate_players_;  // settings.json's, read once
+    std::vector<std::string>& separatePlayers();
     std::string pgn_players_filter_;
     bool ratings_dirty_ = true;  // compute again, with other filters
     std::optional<std::vector<std::filesystem::path>> rating_pgns_;  // settings.json's, read once
