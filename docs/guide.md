@@ -226,8 +226,8 @@ swap); above the memory installed the tournament does not start. `--run` says th
   folder until the file or the depth changes; a start that comes before the end waits for it. While the position
   is in that book, the participant plays the book's move at once, chosen by the book's weights; then its engine
   takes over. The tournament's openings, if any, are played first, by every engine; EPD books only give those and
-  are greyed in the list. To compare books with one engine, click its *Book* cell, then *This engine once more, with another book*: each copy plays as
-  `<engine> (<book>)`, so its results and rating stay apart. In a match the *Book* buttons sit next to A and B, and
+  are greyed in the list. To compare books with one engine, click its *Book* cell, then *This engine once more,
+  with another book*: each copy plays as `<engine> (<book>)`, so its results and rating stay apart. In a match the *Book* buttons sit next to A and B, and
   an engine can play itself with two books. Book moves are marked `{book}` in the PGN; hovering a name in the
   standings shows its book. WinBoard engines can have one too.
 - **Time control**: base time and increment in seconds, optional moves per period, and a margin before a game is
