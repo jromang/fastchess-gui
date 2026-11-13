@@ -14,6 +14,7 @@
 #include "book_adapter.hpp"
 #include "engine_text.hpp"
 #include "pairing.hpp"
+#include "pgn_book.hpp"
 
 namespace fcg::tour {
 
@@ -254,6 +255,13 @@ TournamentState::TournamentState(fs::path dir, TournamentSpec spec)
 }
 
 bool TournamentState::frc() const noexcept { return spec_.conditions.variant == fastchess::VariantType::FRC; }
+
+const std::string& TournamentState::ownBookFileOf(const Participant& p) {
+    const auto key = std::pair{p.book, p.book_depth};
+    auto it        = own_book_files_.find(key);
+    if (it == own_book_files_.end()) it = own_book_files_.emplace(key, ownBookFile(p.book, p.book_depth, frc())).first;
+    return it->second;
+}
 
 const OpeningSource& TournamentState::openings() {
     if (!openings_) {
@@ -830,7 +838,7 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
     const auto own_book = [&](fastchess::EngineConfiguration& config, const Participant& p) {
         if (p.book.empty()) return;
         const auto seed = spec_.conditions.seed ^ (0x9e3779b97f4a7c15ULL * static_cast<uint64_t>(p.id + 1));
-        config          = throughBookAdapter(std::move(config), p.book, p.book_depth, seed);
+        config          = throughBookAdapter(std::move(config), ownBookFileOf(p), p.book_depth, seed);
     };
     own_book(task.white, game == 0 ? *first : *second);
     own_book(task.black, game == 0 ? *second : *first);
@@ -895,15 +903,15 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
         for (const auto& w : data.moves[ply].pv_warnings) result.pv_warnings.emplace_back(ply, w);
     }
 
-    // The moves the participants' own books played are book moves in the PGN, as those of the opening are. The
-    // books are read without the lock.
+    // The moves the participants' own books played are book moves in the PGN, as those of the opening are: those of
+    // the Polyglot books their adapters read (a PGN book's conversion). The books are read without the lock.
     std::vector<std::tuple<chess::Color, std::string, int>> books;
     {
         std::lock_guard<std::mutex> lock(mutex_);
         for (const auto& [id, side] :
              {std::pair{result.white, chess::Color::WHITE}, std::pair{result.black, chess::Color::BLACK}}) {
             const auto* p = spec_.participant(id);
-            if (p && !p->book.empty()) books.emplace_back(side, p->book, p->book_depth);
+            if (p && !p->book.empty()) books.emplace_back(side, ownBookFileOf(*p), p->book_depth);
         }
     }
     std::optional<fastchess::MatchData> marked;

@@ -154,6 +154,15 @@ void interruptEngineProcesses();
 // 16 MB, entries spread over it beyond).
 [[nodiscard]] std::string ownBookProblem(const std::string& path);
 
+// Why the PGN book `path` cannot be a participant's own for `depth`, empty when it can: turned into a Polyglot book
+// now, unless the cache has it (tour/pgn_book.hpp).
+[[nodiscard]] std::string pgnBookProblem(const std::string& path, int depth, bool chess960);
+
+// The PGN books of the participants of a setup, or of a tournament, which are turned into Polyglot books before
+// it starts.
+[[nodiscard]] std::vector<OwnBookNeed> pgnBookNeeds(const MatchSetup& setup);
+[[nodiscard]] std::vector<OwnBookNeed> pgnBookNeeds(const tour::TournamentSpec& spec);
+
 // The names the participants of `setup` play under, in the PGN files, the standings and the ratings: the engine's,
 // or, for one with a book of its own whose engine plays more than once, "<engine> (<book>)". Not necessarily
 // distinct: buildRun() refuses a setup whose names are not.

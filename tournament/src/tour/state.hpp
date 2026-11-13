@@ -256,6 +256,9 @@ class TournamentState {
     [[nodiscard]] GameTask makeTask(uint32_t encounter, int game);
     [[nodiscard]] bool done(uint32_t encounter, int game) const;
     [[nodiscard]] bool frc() const noexcept;
+    // The Polyglot book a participant's own book plays from (ownBookFile()), asked once while the tournament is
+    // open; mutex_ held.
+    const std::string& ownBookFileOf(const Participant& p);
     const OpeningSource& openings();  // loads the book on first use; mutex_ held
     // The opening a new encounter starts with: the next of the book, or its round's (spec_.opening_per_round).
     fastchess::book::Opening openingFor(const Encounter& encounter);
@@ -289,6 +292,7 @@ class TournamentState {
     TournamentSpec spec_;
     Schedule schedule_;
     std::unique_ptr<OpeningSource> openings_;  // loaded when a new encounter first needs it
+    std::map<std::pair<std::string, int>, std::string> own_book_files_;  // (book, depth) -> its Polyglot book
     std::vector<std::string> warnings_;
 
     mutable std::mutex mutex_;

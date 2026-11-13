@@ -6,6 +6,7 @@
 
 #include <fmt/include/fmt/format.h>
 
+#include <tour/pgn_book.hpp>
 #include <tour/polyglot.hpp>
 
 #include <algorithm>
@@ -102,7 +103,42 @@ bool engineCombo(const char* id, std::string& value, const std::vector<EngineEnt
 
 std::string ownBookText(const OwnBook& book) { return fcg::ownBookText(ownBookName(book), book.depth); }
 
+using BookState = PgnBookJobs::Status::State;
+
+int percent(double share) { return static_cast<int>(std::clamp(share, 0.0, 1.0) * 100); }
+
+// What a PGN book's conversion found: "Prepared from 1200 games: 5400 positions."
+std::string pgnBookStatsText(const tour::PgnBookStats& stats) {
+    return trn("Prepared from {} game: {} positions.", "Prepared from {} games: {} positions.", stats.games,
+               stats.games, stats.positions);
+}
+
+std::string skippedText(uint64_t skipped) {
+    return trn("{} game could not be read: it is left out.", "{} games could not be read: they are left out.", skipped,
+               skipped);
+}
+
 }  // namespace
+
+void App::pollOwnBooks() {
+    // The setup's PGN books, prepared as soon as they are chosen or loaded (a template, the queue).
+    for (const auto& need : pgnBookNeeds(setup_)) (void)pgn_books_.want(need.path, need.depth, need.chess960);
+    for (const auto& ended : pgn_books_.poll()) {
+        const auto name = std::filesystem::path(ended.pgn).filename().string();
+        if (ended.status.state == BookState::Failed) {
+            Console::instance().add(trf("This book cannot play for an engine: {}", ended.status.error), true);
+            continue;
+        }
+        const auto& stats = ended.status.stats;
+        Console::instance().add(fmt::format("{}: {}", name, pgnBookStatsText(stats)));
+        if (stats.skipped > 0) Console::instance().add(fmt::format("{}: {}", name, skippedText(stats.skipped)), true);
+        if (!stats.stopped.empty()) {
+            Console::instance().add(
+                fmt::format("{}: {}", name, trf("The reading stopped before the end of the file: {}", stats.stopped)),
+                true);
+        }
+    }
+}
 
 const std::string& App::ownBookCheck(const std::string& path) {
     static const std::string none;
@@ -121,9 +157,17 @@ bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again,
     bool changed = false;
     ImGui::PushID(id);
 
+    // A PGN book: where its conversion into a Polyglot book stands.
+    const bool pgn = !book.empty() && tour::isPgnBook(book.path);
+    PgnBookJobs::Status status;
+    status.state = BookState::Ready;
+    if (pgn) status = pgn_books_.want(book.path, book.depth, setup_.chess960);
+    const bool preparing = status.state == BookState::Preparing || status.state == BookState::Queued;
+
     // A book icon, then the book's name and depth, cut to the button.
     std::string label = book.empty() ? std::string("—") : ownBookName(book);
     if (!book.empty() && book.depth > 0) label += fmt::format(" · {}", book.depth);
+    if (preparing) label += fmt::format(" · {} %", percent(status.progress));
     if (ImGui::Button("##own_book", ImVec2(width, 0)) || open) {
         ImGui::OpenPopup("own_book_popup");
     }
@@ -134,18 +178,30 @@ bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again,
         const ImVec2 p0     = ImGui::GetItemRectMin();
         const ImVec2 p1     = ImGui::GetItemRectMax();
         auto* dl            = ImGui::GetWindowDrawList();
-        const ImU32 col     = ImGui::GetColorU32(book.empty() ? ImGuiCol_TextDisabled : ImGuiCol_Text);
+        const ImU32 col = status.state == BookState::Failed
+                              ? ImGui::GetColorU32(ui::WARN)
+                              : ImGui::GetColorU32(book.empty() || preparing ? ImGuiCol_TextDisabled : ImGuiCol_Text);
         ui::drawIcon(dl, ui::Icon::Book, ImVec2(p0.x + style.FramePadding.x + icon_sz * 0.5f, p0.y + h * 0.5f), icon_sz,
                      col);
         const float text_x = p0.x + style.FramePadding.x + icon_sz + style.ItemInnerSpacing.x;
         dl->PushClipRect(ImVec2(text_x, p0.y), ImVec2(p1.x - style.FramePadding.x, p1.y), true);
         dl->AddText(ImVec2(text_x, p0.y + style.FramePadding.y), col, label.c_str());
         dl->PopClipRect();
+        // The conversion's progress along the bottom, seen even when the label is cut.
+        if (preparing) {
+            const float y = p1.y - std::max(2.0f, h * 0.08f);
+            dl->AddRectFilled(ImVec2(p0.x, y), ImVec2(p0.x + (p1.x - p0.x) * static_cast<float>(status.progress), p1.y),
+                              ImGui::GetColorU32(ImGuiCol_PlotHistogram));
+        }
     }
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+        std::string state;
+        if (preparing) state = "\n" + trf("Preparing the book… {} %", percent(status.progress));
+        if (status.state == BookState::Failed)
+            state = "\n" + trf("This book cannot play for an engine: {}", status.error);
         ImGui::SetTooltip("%s", book.empty() ? TR("No book of its own: the engine plays every move. Click to give it "
                                                   "one.")
-                                             : fmt::format("{}\n{}", ownBookText(book), book.path).c_str());
+                                             : fmt::format("{}\n{}{}", ownBookText(book), book.path, state).c_str());
     }
 
     // Under the button, also when it was opened without a click.
@@ -162,10 +218,12 @@ bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again,
                 changed = true;
             }
             for (const auto& b : books_) {
-                // Only Polyglot books give a move for any position; the others are openings for the tournament.
+                // Polyglot books give moves, and PGN books too, once turned into Polyglot books; EPD books hold
+                // only positions, openings for the tournament.
                 const bool polyglot = tour::isPolyglot(b.path);
+                const bool moves    = polyglot || tour::isPgnBook(b.path);
                 const auto& problem = polyglot ? ownBookCheck(b.path) : std::string();
-                const bool can_play = polyglot && problem.empty();
+                const bool can_play = moves && problem.empty();
                 ImGui::BeginDisabled(!can_play);
                 if (ImGui::Selectable(b.name.c_str(), b.path == book.path) && can_play) {
                     book.path = b.path;
@@ -174,25 +232,48 @@ bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again,
                 }
                 ImGui::EndDisabled();
                 if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_AllowWhenDisabled)) {
-                    ImGui::SetTooltip("%s", !polyglot ? TR("Not a Polyglot book (.bin): it gives the tournament its "
-                                                           "openings, it cannot play for an engine.")
-                                            : !problem.empty()
-                                                ? trf("It cannot play for an engine: {}", problem).c_str()
-                                                : (b.description.empty() ? b.path : b.description).c_str());
+                    ImGui::SetTooltip("%s",
+                                      !moves ? TR("An EPD book holds positions, not moves: it gives the tournament "
+                                                  "its openings, it cannot play for an engine.")
+                                      : !problem.empty() ? trf("It cannot play for an engine: {}", problem).c_str()
+                                                         : (b.description.empty() ? b.path : b.description).c_str());
                 }
             }
-            if (std::none_of(books_.begin(), books_.end(), [](const auto& b) { return tour::isPolyglot(b.path); })) {
-                ImGui::TextDisabled("%s", TR("No Polyglot book (.bin) in the library: add one in the Books window."));
+            if (std::none_of(books_.begin(), books_.end(),
+                             [](const auto& b) { return tour::isPolyglot(b.path) || tour::isPgnBook(b.path); })) {
+                ImGui::TextDisabled("%s", TR("No Polyglot (.bin) or PGN book in the library: add one in the Books "
+                                             "window."));
             }
             ImGui::EndCombo();
         }
-        // The book chosen before it changed, or one of a template.
-        if (const auto& problem = book.empty() ? std::string() : ownBookCheck(book.path); !problem.empty()) {
+        // The book chosen before it changed, or one of a template; a PGN book that cannot be prepared.
+        const auto warn = [&](const std::string& text) {
             ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
             ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + px(260));
-            ImGui::TextUnformatted(trf("This book cannot play for an engine: {}", problem).c_str());
+            ImGui::TextUnformatted(text.c_str());
             ImGui::PopTextWrapPos();
             ImGui::PopStyleColor();
+        };
+        const auto& problem = book.empty() || pgn ? std::string() : ownBookCheck(book.path);
+        if (!problem.empty()) warn(trf("This book cannot play for an engine: {}", problem));
+        if (pgn) {
+            // The PGN book being turned into a Polyglot book, or what that found. Asked again: the depth may have
+            // changed above.
+            const auto now = pgn_books_.want(book.path, book.depth, setup_.chess960);
+            if (now.state == BookState::Preparing || now.state == BookState::Queued) {
+                ImGui::ProgressBar(static_cast<float>(now.progress), ImVec2(px(260), 0),
+                                   trf("Preparing the book… {} %", percent(now.progress)).c_str());
+            } else if (now.state == BookState::Failed) {
+                warn(trf("This book cannot play for an engine: {}", now.error));
+            } else {
+                ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + px(260));
+                ImGui::TextDisabled("%s", pgnBookStatsText(now.stats).c_str());
+                ImGui::PopTextWrapPos();
+                if (now.stats.skipped > 0) warn(skippedText(now.stats.skipped));
+                if (!now.stats.stopped.empty()) {
+                    warn(trf("The reading stopped before the end of the file: {}", now.stats.stopped));
+                }
+            }
         }
 
         ImGui::BeginDisabled(book.empty());
@@ -203,6 +284,12 @@ bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again,
         }
         ImGui::EndDisabled();
         ImGui::TextDisabled("%s", TR("Plies from the start of the game, the tournament's opening included."));
+        if (pgn) {
+            ImGui::TextDisabled("%s", trf("A PGN book plays the moves of its games, as often as they play them; "
+                                          "\"all\" is their first {} plies.",
+                                          tour::PGN_BOOK_ALL_PLIES)
+                                          .c_str());
+        }
         ImGui::TextDisabled("%s", TR("Its book moves are played at once, without a search."));
 
         if (again) {
@@ -1269,7 +1356,22 @@ void App::drawSetupSummary() {
     for (std::size_t i = 0; i < people.size(); ++i) {
         const auto& book = people[i].book;
         if (book.empty()) continue;
-        const bool found    = std::filesystem::is_regular_file(book.path);
+        const bool found = std::filesystem::is_regular_file(book.path);
+        if (found && tour::isPgnBook(book.path)) {
+            // A PGN book: being turned into a Polyglot book, or what that found.
+            const auto status = pgn_books_.want(book.path, book.depth, setup_.chess960);
+            const auto text   = fmt::format("{}: {}", names_played[i], ownBookText(book));
+            if (status.state == BookState::Failed) {
+                check(false, trf("{}: its book cannot be used: {}", names_played[i], status.error));
+            } else if (status.state != BookState::Ready) {
+                check(true, trf("{} (preparing the book: {} %)", text, percent(status.progress)));
+            } else {
+                check(status.stats.skipped == 0, status.stats.skipped == 0
+                                                     ? text
+                                                     : fmt::format("{} · {}", text, skippedText(status.stats.skipped)));
+            }
+            continue;
+        }
         const auto& problem = found ? ownBookCheck(book.path) : std::string();
         check(found && problem.empty(), !found ? trf("{}: its book is not found: {}", names_played[i], book.path)
                                         : !problem.empty()

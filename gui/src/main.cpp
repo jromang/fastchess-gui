@@ -29,6 +29,7 @@
 #include <core/config/config.hpp>
 #include <engine/uci_engine.hpp>
 #include <tour/book_adapter.hpp>
+#include <tour/pgn_book.hpp>
 
 #include "app.hpp"
 #include "console.hpp"
@@ -205,6 +206,12 @@ std::string selfPath(const char* argv0) {
     return base && !name.empty() ? (fs::path(base) / name).string() : std::string(argv0);
 }
 
+// The PGN books turned into Polyglot books are kept in the profile; those not used for a month are removed.
+void useBookCache(const fcg::Storage& storage) {
+    fcg::tour::book_cache_dir = storage.root() / "book-cache";
+    (void)fcg::tour::pruneBookCache(30);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -239,6 +246,7 @@ int main(int argc, char** argv) {
     if (!args.run.empty()) {
         const char* pref = SDL_GetPrefPath("fastchess", "fastchess-gui");
         const fcg::Storage storage(args.profile.empty() ? fs::path(pref ? pref : ".") : fs::path(args.profile));
+        useBookCache(storage);
         fcg::HeadlessBroadcast broadcast;
         broadcast.tlcs_port  = args.tlcs_port;
         broadcast.tlcs_lanes = args.tlcs_lanes;
@@ -321,6 +329,7 @@ int main(int argc, char** argv) {
 
     const char* pref = SDL_GetPrefPath("fastchess", "fastchess-gui");
     fcg::Storage storage(args.profile.empty() ? fs::path(pref ? pref : ".") : fs::path(args.profile));
+    useBookCache(storage);
     const auto ini_path = storage.iniFile().string();
     fcg::Console::instance().logTo((storage.root() / "fastchess-gui.log").string());
 

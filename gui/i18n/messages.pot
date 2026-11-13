@@ -120,6 +120,9 @@ msgstr ""
 msgid "A (tested)"
 msgstr ""
 
+msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
+msgstr ""
+
 msgid "A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves weighing less than a tenth of the best one; the positions reached are the openings."
 msgstr ""
 
@@ -278,6 +281,9 @@ msgid "Also as a zip"
 msgstr ""
 
 msgid "An ECO code or its beginning (B9), a range (B20-B99), or words of the name (sicilian najdorf)."
+msgstr ""
+
+msgid "An EPD book holds positions, not moves: it gives the tournament its openings, it cannot play for an engine."
 msgstr ""
 
 msgid "An EPD book without the illegal positions, the duplicates and the games already over (and the positions with colours reversed of an earlier one, if ticked), added to the library."
@@ -1107,6 +1113,9 @@ msgstr ""
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr ""
 
+msgid "It starts once the book of {} is prepared."
+msgstr ""
+
 msgid "It starts once the check of {} ends."
 msgstr ""
 
@@ -1293,7 +1302,7 @@ msgstr ""
 msgid "No PVs: turn on pv in the PGN options of the setup."
 msgstr ""
 
-msgid "No Polyglot book (.bin) in the library: add one in the Books window."
+msgid "No Polyglot (.bin) or PGN book in the library: add one in the Books window."
 msgstr ""
 
 msgid "No book"
@@ -1393,9 +1402,6 @@ msgid "None of these engines is in the library under the same name."
 msgstr ""
 
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
-msgstr ""
-
-msgid "Not a Polyglot book (.bin): it gives the tournament its openings, it cannot play for an engine."
 msgstr ""
 
 msgid "Not checked"
@@ -1644,6 +1650,14 @@ msgid "Ponder off"
 msgstr ""
 
 msgid "Position"
+msgstr ""
+
+msgid "Prepared from {} game: {} positions."
+msgid_plural "Prepared from {} games: {} positions."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Preparing the book… {} %"
 msgstr ""
 
 msgid "Presets:"
@@ -2159,7 +2173,7 @@ msgstr ""
 msgid "The book of {} cannot be used: {}"
 msgstr ""
 
-msgid "The book of {} is not a Polyglot book (.bin): {}"
+msgid "The book of {} is neither a Polyglot book (.bin) nor a PGN book: {}"
 msgstr ""
 
 msgid "The book of {} is not found: {}"
@@ -2289,6 +2303,9 @@ msgid "The rating of the engines chosen after each tournament they played: the v
 msgstr ""
 
 msgid "The read of {} is interrupted for the start: it is done again later."
+msgstr ""
+
+msgid "The reading stopped before the end of the file: {}"
 msgstr ""
 
 msgid "The same engine, with different books"
@@ -2445,6 +2462,9 @@ msgid "Void this game (no replay)"
 msgstr ""
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
+msgstr ""
+
+msgid "Waiting for the book of {}…"
 msgstr ""
 
 msgid "Waiting for the test suite…"
@@ -2721,6 +2741,9 @@ msgstr ""
 msgid "send at startup"
 msgstr ""
 
+msgid "the file is not found"
+msgstr ""
+
 msgid "the new tournament"
 msgstr ""
 
@@ -2785,6 +2808,9 @@ msgid "{:.1f} GB"
 msgstr ""
 
 msgid "{}  ({} openings)"
+msgstr ""
+
+msgid "{} (preparing the book: {} %)"
 msgstr ""
 
 msgid "{} / {}"
@@ -2891,6 +2917,11 @@ msgstr[1] ""
 
 msgid "{} game could not be read."
 msgid_plural "{} games could not be read."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} game could not be read: it is left out."
+msgid_plural "{} games could not be read: they are left out."
 msgstr[0] ""
 msgstr[1] ""
 

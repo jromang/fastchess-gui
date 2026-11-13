@@ -16,6 +16,7 @@
 #include <matchmaking/syzygy.hpp>
 #include <types/exception.hpp>
 
+#include <tour/pgn_book.hpp>
 #include <tour/polyglot.hpp>
 #include <tour/runner.hpp>
 
@@ -308,6 +309,38 @@ std::string ownBookProblem(const std::string& path) {
     return {};
 }
 
+std::string pgnBookProblem(const std::string& path, int depth, bool chess960) {
+    try {
+        (void)tour::preparePgnBook(path, depth, chess960);
+    } catch (const std::exception& e) {
+        return e.what();
+    }
+    return {};
+}
+
+std::vector<OwnBookNeed> pgnBookNeeds(const MatchSetup& setup) {
+    const auto people = setupParticipants(setup);
+    const auto names  = participantNames(setup);
+    std::vector<OwnBookNeed> needs;
+    for (std::size_t i = 0; i < people.size(); ++i) {
+        const auto& book = people[i].book;
+        if (!book.empty() && tour::isPgnBook(book.path))
+            needs.push_back({names[i], book.path, book.depth, setup.chess960});
+    }
+    return needs;
+}
+
+std::vector<OwnBookNeed> pgnBookNeeds(const tour::TournamentSpec& spec) {
+    std::vector<OwnBookNeed> needs;
+    for (const auto& p : spec.participants) {
+        if (!p.book.empty() && tour::isPgnBook(p.book)) {
+            needs.push_back(
+                {p.engine.name, p.book, p.book_depth, spec.conditions.variant == fastchess::VariantType::FRC});
+        }
+    }
+    return needs;
+}
+
 std::string ownBookText(const std::string& name, int depth) {
     return depth > 0 ? trn("own book {}, {} ply", "own book {}, {} plies", static_cast<uint64_t>(depth), name, depth)
                      : trf("own book {}, all of it", name);
@@ -436,13 +469,18 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         }
         // Its own book, read now rather than by its first game.
         if (const auto& book = participant.book; !book.empty()) {
-            if (!tour::isPolyglot(book.path)) {
-                throw fastchess_exception(trf("The book of {} is not a Polyglot book (.bin): {}", names[i], book.path));
+            const bool pgn = tour::isPgnBook(book.path);
+            if (!pgn && !tour::isPolyglot(book.path)) {
+                throw fastchess_exception(
+                    trf("The book of {} is neither a Polyglot book (.bin) nor a PGN book: {}", names[i], book.path));
             }
             if (!fs::is_regular_file(book.path)) {
                 throw fastchess_exception(trf("The book of {} is not found: {}", names[i], book.path));
             }
-            if (const auto problem = ownBookProblem(book.path); !problem.empty()) {
+            // A PGN book: turned into a Polyglot book, here when the window did not do it before (or a --run).
+            const auto problem =
+                pgn ? pgnBookProblem(book.path, book.depth, setup.chess960) : ownBookProblem(book.path);
+            if (!problem.empty()) {
                 throw fastchess_exception(trf("The book of {} cannot be used: {}", names[i], problem));
             }
         }
@@ -793,6 +831,13 @@ std::string RunController::resume(const fs::path& dir) {
         return trf("Cannot resume the match: {}", e.what());
     }
     if (tournament->finished()) return TR("This match is already finished.");
+    // Its PGN books in the cache again, made again if their files changed (the window has done it already).
+    for (const auto& need : pgnBookNeeds(tournament->spec())) {
+        if (const auto problem = pgnBookProblem(need.path, need.depth, need.chess960); !problem.empty()) {
+            return trf("Cannot resume the match: {}",
+                       trf("The book of {} cannot be used: {}", need.participant, problem));
+        }
+    }
 
     for (const auto& warning : tournament->warnings()) Console::instance().add(warning, true);
     return launch(std::move(tournament));

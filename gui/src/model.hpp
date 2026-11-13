@@ -375,17 +375,19 @@ enum class LaunchResume {
 // come from that read; a read still queued for one of them is done first. Any other read, and any check, is
 // interrupted and done again later. A resume needs nothing from the library: it plays the engines copied in its
 // folder. While a test suite runs, it waits for its end: the suite's searches read that configuration too, and the
-// end of a tournament ends every engine process, the suite's with them.
+// end of a tournament ends every engine process, the suite's with them. It also waits for the participants' PGN books
+// being turned into Polyglot books (book_jobs.hpp), which involve no engine.
 struct StartGate {
     enum class Action {
         Start,      // nothing to wait for
-        Wait,       // for the read (or the check) of `engine`, or for the test suite
+        Wait,       // for the read (or the check) of `engine`, for a book being prepared, or for the test suite
         Read,       // reads `engine` first, then waits for it
         Interrupt,  // ends the read and/or the check in flight, which are done again later
     };
     Action action = Action::Start;
     std::string engine;
     bool check           = false;  // Wait: `engine` is being checked, not read
+    bool book            = false;  // Wait: for the book of the participant `engine`, being prepared
     bool suite           = false;  // Wait: for the test suite
     bool interrupt_read  = false;
     bool interrupt_check = false;
@@ -399,10 +401,11 @@ struct StartGate {
     return names;
 }
 
-// `reading` and `checking`: the engines being read and checked, empty when none; `queued`: those waiting to be read.
+// `reading` and `checking`: the engines being read and checked, empty when none; `queued`: those waiting to be read;
+// `books`: the participants whose PGN books the start needs and that are still being turned into Polyglot books.
 [[nodiscard]] inline StartGate startGate(const std::vector<std::string>& needs, const std::string& reading,
                                          const std::string& checking, const std::vector<std::string>& queued,
-                                         bool suite_running) {
+                                         bool suite_running, const std::vector<std::string>& books = {}) {
     const auto needed = [&](const std::string& name) {
         return std::find(needs.begin(), needs.end(), name) != needs.end();
     };
@@ -418,25 +421,45 @@ struct StartGate {
         gate.engine = reading;
         return gate;
     }
+    // A read it needs, while nothing is read nor checked: started now, the books go on meanwhile.
+    if (reading.empty() && checking.empty()) {
+        if (const auto it = std::find_if(queued.begin(), queued.end(), needed); it != queued.end()) {
+            gate.action = StartGate::Action::Read;
+            gate.engine = *it;
+            return gate;
+        }
+    }
+    // A book being prepared: the reads and checks in flight may end meanwhile, rather than be interrupted for
+    // nothing.
+    if (!books.empty()) {
+        gate.action = StartGate::Action::Wait;
+        gate.engine = books.front();
+        gate.book   = true;
+        return gate;
+    }
     // Ended only when nothing it needs is in flight: an interruption ends every engine process of the reads and checks.
     if (!reading.empty() || !checking.empty()) {
         gate.action          = StartGate::Action::Interrupt;
         gate.interrupt_read  = !reading.empty();
         gate.interrupt_check = !checking.empty();
-        return gate;
-    }
-    if (const auto it = std::find_if(queued.begin(), queued.end(), needed); it != queued.end()) {
-        gate.action = StartGate::Action::Read;
-        gate.engine = *it;
     }
     return gate;
 }
 
+// A PGN book a start needs turned into a Polyglot book first (tour/pgn_book.hpp): a participant's own book.
+struct OwnBookNeed {
+    std::string participant;  // the name it plays under
+    std::string path;
+    int depth     = 0;
+    bool chess960 = false;
+};
+
 // A start put off (see startGate). `key` names what it starts: "start", "queue", "resume:" and the folder, "test:"
-// and the engine of a quick test; `needs`: the engines whose reads it waits for.
+// and the engine of a quick test; `needs`: the engines whose reads it waits for; `books`: the PGN books it waits for.
 struct StartRequest {
     std::string key;
     std::vector<std::string> needs;
+    std::vector<OwnBookNeed> books;
 
     // An engine renamed while it waits (the first read of an engine gives it its id name): what it needs follows, and
     // so does the quick test of that engine. True when the key changed: the start must then find the engine under

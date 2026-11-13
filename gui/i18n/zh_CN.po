@@ -118,6 +118,9 @@ msgstr "= {:.2f} 逻辑斯谛 Elo"
 msgid "A (tested)"
 msgstr "A（被测）"
 
+msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
+msgstr "PGN 开局库按其对局中出现的频率走出对局中的着法；“全部”即对局的前 {} 个半回合。"
+
 msgid "A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves weighing less than a tenth of the best one; the positions reached are the openings."
 msgstr "从初始局面沿 Polyglot 开局库走到此深度（-1 = {}），去掉权重不足最佳着法十分之一的着法；到达的局面即为开局。"
 
@@ -275,6 +278,9 @@ msgstr "同时生成 zip"
 
 msgid "An ECO code or its beginning (B9), a range (B20-B99), or words of the name (sicilian najdorf)."
 msgstr "ECO 代码或其开头（B9）、范围（B20-B99），或开局名称中的英文单词（sicilian najdorf）。"
+
+msgid "An EPD book holds positions, not moves: it gives the tournament its openings, it cannot play for an engine."
+msgstr "EPD 开局库只包含局面，不包含着法：它为比赛提供开局，不能代替引擎走棋。"
 
 msgid "An EPD book without the illegal positions, the duplicates and the games already over (and the positions with colours reversed of an earlier one, if ticked), added to the library."
 msgstr "一个 EPD 开局库，已去除非法局面、重复局面和已结束的对局（勾选时，也去除与之前某局面颜色互换的局面），并加入库中。"
@@ -1102,6 +1108,9 @@ msgstr "它不能代替引擎走棋：{}"
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "它会从中断处准确继续：不会丢失对局，也不会重复下同一局。"
 
+msgid "It starts once the book of {} is prepared."
+msgstr "{} 的开局库准备好后即开始。"
+
 msgid "It starts once the check of {} ends."
 msgstr "{} 的检查完成后即开始。"
 
@@ -1288,8 +1297,8 @@ msgstr "尚未导入 PGN 文件。"
 msgid "No PVs: turn on pv in the PGN options of the setup."
 msgstr "没有 PV：请在配置的 PGN 选项中开启 pv。"
 
-msgid "No Polyglot book (.bin) in the library: add one in the Books window."
-msgstr "库中没有 Polyglot 开局库（.bin）：请在“开局库”窗口中添加。"
+msgid "No Polyglot (.bin) or PGN book in the library: add one in the Books window."
+msgstr "库中没有 Polyglot（.bin）或 PGN 开局库：请在“开局库”窗口中添加。"
 
 msgid "No book"
 msgstr "无开局库"
@@ -1389,9 +1398,6 @@ msgstr "这些引擎都不以相同名称存在于库中。"
 
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "归一化 Elo（fishtest、OpenBench），及其 95 % 区间。"
-
-msgid "Not a Polyglot book (.bin): it gives the tournament its openings, it cannot play for an engine."
-msgstr "不是 Polyglot 开局库（.bin）：它为比赛提供开局，不能代替引擎走棋。"
 
 msgid "Not checked"
 msgstr "未检查"
@@ -1639,6 +1645,13 @@ msgstr "Ponder 关闭"
 
 msgid "Position"
 msgstr "局面"
+
+msgid "Prepared from {} game: {} positions."
+msgid_plural "Prepared from {} games: {} positions."
+msgstr[0] "由 {} 局对局准备而成：{} 个局面。"
+
+msgid "Preparing the book… {} %"
+msgstr "正在准备开局库… {} %"
 
 msgid "Presets:"
 msgstr "预设："
@@ -2150,8 +2163,8 @@ msgstr "按 PGN 标准，这些是注释。fastchess-gui 0.4.13 及更早版本�
 msgid "The book of {} cannot be used: {}"
 msgstr "{} 的开局库无法使用：{}"
 
-msgid "The book of {} is not a Polyglot book (.bin): {}"
-msgstr "{} 的开局库不是 Polyglot 开局库（.bin）：{}"
+msgid "The book of {} is neither a Polyglot book (.bin) nor a PGN book: {}"
+msgstr "{} 的开局库既不是 Polyglot 开局库（.bin），也不是 PGN 开局库：{}"
 
 msgid "The book of {} is not found: {}"
 msgstr "找不到 {} 的开局库：{}"
@@ -2281,6 +2294,9 @@ msgstr "所选引擎在其参加的每个锦标赛后的等级分：同一引擎
 
 msgid "The read of {} is interrupted for the start: it is done again later."
 msgstr "为了开始，{} 的读取已中断：稍后会重新进行。"
+
+msgid "The reading stopped before the end of the file: {}"
+msgstr "读取在文件结束前停止：{}"
 
 msgid "The same engine, with different books"
 msgstr "同一引擎，使用不同的开局库"
@@ -2437,6 +2453,9 @@ msgstr "作废这局对局（不重下）"
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "胜 {:.0f} · 和 {:.0f} · 负 {:.0f} %"
+
+msgid "Waiting for the book of {}…"
+msgstr "正在等待 {} 的开局库…"
 
 msgid "Waiting for the test suite…"
 msgstr "正在等待测试集…"
@@ -2710,6 +2729,9 @@ msgstr "已要求重下"
 msgid "send at startup"
 msgstr "启动时发送"
 
+msgid "the file is not found"
+msgstr "找不到文件"
+
 msgid "the new tournament"
 msgstr "新锦标赛"
 
@@ -2775,6 +2797,9 @@ msgstr "{:.1f} GB"
 
 msgid "{}  ({} openings)"
 msgstr "{}  （{} 个开局）"
+
+msgid "{} (preparing the book: {} %)"
+msgstr "{}（正在准备开局库：{} %）"
 
 msgid "{} / {}"
 msgstr "{} / {}"
@@ -2869,6 +2894,10 @@ msgstr[0] "{} 局对局正在进行"
 msgid "{} game could not be read."
 msgid_plural "{} games could not be read."
 msgstr[0] "{} 局对局无法读取。"
+
+msgid "{} game could not be read: it is left out."
+msgid_plural "{} games could not be read: they are left out."
+msgstr[0] "{} 局对局无法读取：已略过。"
 
 msgid "{} game exported to {}"
 msgid_plural "{} games exported to {}"
