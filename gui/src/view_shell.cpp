@@ -385,9 +385,14 @@ void App::drawHome() {
             ImGui::PopTextWrapPos();
             ImGui::PopStyleColor();
         }
-        if (ui::iconButton("resume_match", ui::Icon::Play, TR("Resume"))) resumeRun();
-        ImGui::SameLine();
-        ImGui::TextDisabled("%s", TR("It continues exactly where it stopped: no game is lost or played twice."));
+        // Pressed, it starts at once, or says what it waits for.
+        const auto key = resumeKey(u.dir);
+        if (!drawStartWaiting("resume_match", key)) {
+            if (ui::iconButton("resume_match", ui::Icon::Play, TR("Resume"))) resumeRun();
+            ImGui::SameLine();
+            ImGui::TextDisabled("%s", TR("It continues exactly where it stopped: no game is lost or played twice."));
+        }
+        if (const auto waiting = startWaitingText(key); !waiting.empty()) ImGui::TextDisabled("%s", waiting.c_str());
         ui::endCard();
     }
 
@@ -487,23 +492,25 @@ void App::drawNewMatch() {
     const bool bad_sprt = setupBadSprt();
     const bool ready    = chosen && !bad_sprt;
     const bool probing  = setupProbing();
-    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
-    ImGui::PushStyleColor(ImGuiCol_Text,
-                          ui::currentTheme() == ui::Theme::Dark ? ImVec4(0.04f, 0.07f, 0.13f, 1) : ImVec4(1, 1, 1, 1));
-    if (ui::iconButton("start", ui::Icon::Play, TR("Start"), ready && !probing && !locked && !start_after_reads_))
-        startRun();
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-        if (locked)
-            ImGui::SetTooltip("%s", TR("A match is already running."));
-        else if (!chosen)
-            ImGui::SetTooltip("%s", setup_.format == TournamentFormat::Match ? TR("Choose engines A and B.")
-                                                                             : TR("Choose at least two engines."));
-        else if (bad_sprt)
-            ImGui::SetTooltip("%s", TR("elo1 must be larger than elo0."));
-        else if (probing)
-            ImGui::SetTooltip("%s", TR("Reading the options of an engine…"));
+    // While an engine of the setup is read, Start waits for it (and says so), see startAfterReads.
+    if (!drawStartWaiting("start", "start")) {
+        ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
+        ImGui::PushStyleColor(
+            ImGuiCol_Text, ui::currentTheme() == ui::Theme::Dark ? ImVec4(0.04f, 0.07f, 0.13f, 1) : ImVec4(1, 1, 1, 1));
+        if (ui::iconButton("start", ui::Icon::Play, TR("Start"), ready && !locked)) startRun();
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+            if (locked)
+                ImGui::SetTooltip("%s", TR("A match is already running."));
+            else if (!chosen)
+                ImGui::SetTooltip("%s", setup_.format == TournamentFormat::Match ? TR("Choose engines A and B.")
+                                                                                 : TR("Choose at least two engines."));
+            else if (bad_sprt)
+                ImGui::SetTooltip("%s", TR("elo1 must be larger than elo0."));
+            else if (probing)
+                ImGui::SetTooltip("%s", TR("Reading the options of an engine…"));
+        }
+        ImGui::PopStyleColor(2);
     }
-    ImGui::PopStyleColor(2);
     ImGui::SameLine();
     if (ui::iconButton("enqueue", ui::Icon::Plus, TR("Add to the queue"), ready)) enqueue();
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
@@ -516,12 +523,10 @@ void App::drawNewMatch() {
         ImGui::TextWrapped("%s", start_error_.c_str());
         ImGui::PopStyleColor();
     }
-    if (start_after_reads_) {
+    if (const auto waiting = startWaitingText("start"); !waiting.empty()) {
         ImGui::SameLine();
         ImGui::AlignTextToFramePadding();
-        ImGui::TextDisabled("%s", TR("Starts once the engine being read or checked is done…"));
-        ImGui::SameLine();
-        if (ImGui::SmallButton(TR("Cancel##start_after_reads"))) start_after_reads_ = {};
+        ImGui::TextDisabled("%s", waiting.c_str());
     }
     ImGui::Spacing();
 
@@ -603,11 +608,13 @@ void App::drawWorkspaceHeader() {
         }
     } else if (t) {
         if (unfinished_ && unfinished_->dir == t->dir()) {
-            if (ui::iconButton("resume_match", ui::Icon::Play, TR("Resume"))) resumeRun();
+            if (!drawStartWaiting("resume_match", resumeKey(unfinished_->dir)) &&
+                ui::iconButton("resume_match", ui::Icon::Play, TR("Resume")))
+                resumeRun();
             ImGui::SameLine();
         }
         if (isMatch()) {
-            drawRelaunch();
+            if (!drawStartWaiting("relaunch", "start")) drawRelaunch();
             ImGui::SameLine();
         }
         if (ui::iconButton("folder", ui::Icon::Folder, TR("Folder"))) openFolder(t->dir());
@@ -683,7 +690,7 @@ void App::drawQueue() {
         if (ImGui::SmallButton(TR("Remove"))) remove = static_cast<int>(i);
         if (i == 0 && !run_.running()) {
             ImGui::SameLine();
-            if (ImGui::SmallButton(TR("Start now"))) {
+            if (!drawStartWaiting("queue_start", "queue", false) && ImGui::SmallButton(TR("Start now"))) {
                 ImGui::PopID();
                 startFromQueue();
                 ui::endCard();
@@ -692,6 +699,7 @@ void App::drawQueue() {
         }
         ImGui::PopID();
     }
+    if (const auto waiting = startWaitingText("queue"); !waiting.empty()) ImGui::TextDisabled("%s", waiting.c_str());
     ui::endCard();
 
     if (remove >= 0) queue_.erase(queue_.begin() + remove);

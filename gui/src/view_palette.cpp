@@ -80,7 +80,7 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         if (!queue_.empty()) add(TR("Start now"), queue_.front().label, [this] { startFromQueue(); });
     }
     const bool ready = setupChosen() && !setupBadSprt();
-    if (ready && !setupProbing() && !run_.running() && !start_after_reads_)
+    if (ready && !run_.running() && !startPending("start"))
         add(TR("Start"), TR("New tournament"), [this] { startRun(); });
     if (ready) add(TR("Add to the queue"), TR("New tournament"), [this] { enqueue(); });
     if (t && !games_.empty()) {

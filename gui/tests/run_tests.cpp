@@ -6,6 +6,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <future>
 #include <set>
 #include <thread>
 
@@ -734,6 +735,64 @@ TEST_CASE("quick test: ten games against the engine itself, then a report on its
     CHECK(report.ok);
     CHECK(report.message.find("10 games") != std::string::npos);
     CHECK(report.message.find("0 lost on time, 0 crashes, 0 illegal moves") != std::string::npos);
+}
+
+TEST_CASE("a read or a check interrupted for a start ends at once instead of waiting for a slow engine") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+    if (!fastchess::config::TournamentConfig)
+        fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
+    // The engine takes 20 s to answer uci, like one loading a large network.
+    const auto setEnv = [](const char* name, const char* value) {
+#ifdef _WIN32
+        _putenv_s(name, value ? value : "");
+#else
+        if (value)
+            setenv(name, value, 1);
+        else
+            unsetenv(name);
+#endif
+    };
+    setEnv("FCG_MOCK_SLOW_UCIOK", "20000");
+
+    EngineEntry entry;
+    entry.name = "slow";
+    entry.cmd  = randomMover();
+    // Interrupted once it waits for the engine: its result, and how long it took to end once its engine was ended.
+    const auto interrupt = [](auto job, std::atomic_bool& interrupted) {
+        auto running = std::async(std::launch::async, job);
+        CHECK(running.wait_for(1s) == std::future_status::timeout);  // it waits for the engine
+        const auto t0 = std::chrono::steady_clock::now();
+        interrupted   = true;
+        interruptEngineProcesses();
+        // Ended again until it is over, as the GUI does at every frame: it may have been starting one.
+        while (running.wait_for(50ms) != std::future_status::ready) interruptEngineProcesses();
+        const auto took = std::chrono::steady_clock::now() - t0;
+        return std::make_pair(running.get(), took);
+    };
+
+    // A read finding out the protocol: given up, rather than starting the engine again to read its options.
+    std::atomic_bool interrupted{false};
+    const auto [read, read_took] = interrupt([&] { return probeEngine(entry, &interrupted); }, interrupted);
+    CHECK_FALSE(read.ok);
+    CHECK(read.error == "interrupted");
+    CHECK(read_took < 5s);
+
+    // A read of an engine whose protocol is known, and a check: they fail as if the engine had stopped.
+    entry.protocol                 = "uci";
+    interrupted                    = false;
+    const auto [known, known_took] = interrupt([&] { return probeEngine(entry, &interrupted); }, interrupted);
+    CHECK_FALSE(known.ok);
+    CHECK(known_took < 5s);
+    interrupted                    = false;
+    const auto [check, check_took] = interrupt([&] { return checkEngine(entry, &interrupted); }, interrupted);
+    CHECK_FALSE(check.ok);
+    CHECK(check_took < 5s);
+    CHECK(engineProcesses() == 0);
+
+    setEnv("FCG_MOCK_SLOW_UCIOK", nullptr);
 }
 
 TEST_CASE("EPD suite runs: every engine on every position, the totals, CSV and saved runs") {

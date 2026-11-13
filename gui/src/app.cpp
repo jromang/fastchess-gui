@@ -81,8 +81,8 @@ void App::requestQuit() {
     if (run_.running()) {
         open_quit_modal_ = true;
     } else {
-        quit_              = true;
-        start_after_reads_ = {};  // a start put off must not begin on the way out
+        quit_ = true;
+        pending_start_.reset();  // a start put off must not begin on the way out
     }
 }
 
@@ -110,7 +110,8 @@ void App::forceQuit() {
 // Frame
 
 void App::frame() {
-    // Before the engines are read: a tournament put off until the reads end would wait for all of them.
+    // Before the engines are read: nothing is read yet, so a resume at launch starts at once, and the queue reads only
+    // the engines it plays first.
     if (!launch_checked_) {
         launch_checked_ = true;
         resumeAtLaunch();
@@ -118,6 +119,7 @@ void App::frame() {
     pollRun();
     pollProbe();
     pollCheck();
+    pollStart();
     handleDialogs();
 
     if (engines_save_due_ && std::chrono::steady_clock::now() >= *engines_save_due_) {
@@ -185,7 +187,14 @@ void App::frame() {
             page_ = Page::Books;
         else if (w == "home")
             page_ = Page::Home;
-        else if (w == "suites")
+        else if (w == "home-resume" || w == "setup-start") {
+            // Resume or Start pressed on the first frame, while the engines that need it are read.
+            page_ = w == "home-resume" ? Page::Home : Page::NewMatch;
+            if (w == "setup-start")
+                startRun();
+            else if (unfinished_)
+                resumeRun();
+        } else if (w == "suites")
             page_ = Page::Suites;
         else if (w.rfind("palette", 0) == 0) {  // palette=TEXT: the command palette, TEXT typed in it
             palette_request_ = true;
@@ -348,7 +357,7 @@ void App::drawQuitModal() {
 
 void App::startRun() {
     storage_.saveSetup(setup_);
-    if (startAfterReads([this] { startRun(); })) return;
+    if (startAfterReads("start", enginesOfSetup(setup_), [this] { startRun(); })) return;
 
     // Hash tables larger than the memory installed cannot work; larger than the free memory, they swap.
     if (const auto memory = setupMemory(setup_, engines_, topology_); memory.aboveInstalled()) {
@@ -376,8 +385,9 @@ void App::startRun() {
 
 void App::resumeRun(bool at_launch) {
     if (!unfinished_) return;
-    // Put off: still the same tournament when the reads end, not one opened meanwhile.
-    if (startAfterReads([this, at_launch, dir = unfinished_->dir] {
+    // It plays the engines copied in its folder, so no read of the library is waited for. Put off all the same (see
+    // startGate): still the same tournament when it starts, not one opened meanwhile.
+    if (startAfterReads(resumeKey(unfinished_->dir), {}, [this, at_launch, dir = unfinished_->dir] {
             if (unfinished_ && unfinished_->dir == dir) resumeRun(at_launch);
         })) {
         return;
@@ -680,8 +690,14 @@ void App::enqueue() {
 
 void App::startFromQueue(bool go_on) {
     if (run_.running()) return;
-    // Put off as a whole while an engine is read: a start put off is not one that failed.
-    if (startAfterReads([this, go_on] { startFromQueue(go_on); })) return;
+    // Put off as a whole while an engine it plays is read: a start put off is not one that failed. Going on, any of the
+    // queued tournaments may be the one that starts.
+    std::vector<std::string> needs;
+    for (const auto& q : queue_) {
+        for (auto& name : enginesOfSetup(q.setup)) needs.push_back(std::move(name));
+        if (!go_on) break;
+    }
+    if (startAfterReads("queue", std::move(needs), [this, go_on] { startFromQueue(go_on); })) return;
     for (std::size_t i = 0; i < queue_.size(); ++i) {
         auto next = queue_[i].setup;
         // The look of the program follows the settings, not the queued setup.

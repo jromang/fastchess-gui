@@ -7,6 +7,10 @@
 #include <fstream>
 #include <string_view>
 
+#ifndef _WIN64
+#    include <signal.h>
+#endif
+
 #include <cli/sanitize.hpp>
 #include <core/config/config.hpp>
 #include <core/globals/globals.hpp>
@@ -545,6 +549,20 @@ int engineProcesses() {
     const auto n = std::distance(fastchess::process_list.begin(), fastchess::process_list.end());
     fastchess::process_list.unlock();
     return static_cast<int>(n);
+}
+
+void interruptEngineProcesses() {
+    // Under the list's lock: a process still listed has not been reaped (or its handle closed) by its thread yet.
+    // Unlike fastchess::stopProcesses, the handles stay open: their threads close them.
+    fastchess::process_list.lock();
+    for (const auto& process : fastchess::process_list) {
+#ifdef _WIN64  // as ProcessInformation
+        TerminateProcess(process.identifier, 1);
+#else
+        kill(process.identifier, SIGKILL);
+#endif
+    }
+    fastchess::process_list.unlock();
 }
 
 RunController::~RunController() {

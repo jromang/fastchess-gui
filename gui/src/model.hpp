@@ -355,4 +355,65 @@ enum class LaunchResume {
 // launch. A stop the user asked for removes it, even if they quit before the engines stopped.
 [[nodiscard]] inline bool keepMarkerAtEnd(bool quitting, bool stopped_by_user) { return quitting && !stopped_by_user; }
 
+// What a start (of a tournament, a resume, the queue, a quick test) does about the engine read and the check in flight.
+// Both read fastchess' configuration, which the start replaces, so neither may go on while it starts. The start waits
+// only for what it needs: the read of an engine it plays from the library (`needs`), whose options, protocol and name
+// come from that read; a read still queued for one of them is done first. Any other read, and any check, is
+// interrupted and done again later. A resume needs nothing from the library: it plays the engines copied in its
+// folder. Without `can_interrupt` (another job runs engines that must not be ended), it waits for everything.
+struct StartGate {
+    enum class Action {
+        Start,      // nothing to wait for
+        Wait,       // for the read (or the check) of `engine`
+        Read,       // reads `engine` first, then waits for it
+        Interrupt,  // ends the read and/or the check in flight, which are done again later
+    };
+    Action action = Action::Start;
+    std::string engine;
+    bool check           = false;  // Wait: `engine` is being checked, not read
+    bool interrupt_read  = false;
+    bool interrupt_check = false;
+};
+
+// The library engines a setup plays: A and B of a match, the participants otherwise.
+[[nodiscard]] inline std::vector<std::string> enginesOfSetup(const MatchSetup& setup) {
+    if (setup.format == TournamentFormat::Match) return {setup.engine_a, setup.engine_b};
+    std::vector<std::string> names;
+    for (const auto& p : setup.participants) names.push_back(p.name);
+    return names;
+}
+
+// `reading` and `checking`: the engines being read and checked, empty when none; `queued`: those waiting to be read.
+[[nodiscard]] inline StartGate startGate(const std::vector<std::string>& needs, const std::string& reading,
+                                         const std::string& checking, const std::vector<std::string>& queued,
+                                         bool can_interrupt) {
+    const auto needed = [&](const std::string& name) {
+        return std::find(needs.begin(), needs.end(), name) != needs.end();
+    };
+    StartGate gate;
+    if (!reading.empty() && (needed(reading) || !can_interrupt)) {
+        gate.action = StartGate::Action::Wait;
+        gate.engine = reading;
+        return gate;
+    }
+    if (!checking.empty() && !can_interrupt) {
+        gate.action = StartGate::Action::Wait;
+        gate.engine = checking;
+        gate.check  = true;
+        return gate;
+    }
+    // Ended only when nothing it needs is in flight: an interruption ends every engine process of the reads and checks.
+    if (!reading.empty() || !checking.empty()) {
+        gate.action          = StartGate::Action::Interrupt;
+        gate.interrupt_read  = !reading.empty();
+        gate.interrupt_check = !checking.empty();
+        return gate;
+    }
+    if (const auto it = std::find_if(queued.begin(), queued.end(), needed); it != queued.end()) {
+        gate.action = StartGate::Action::Read;
+        gate.engine = *it;
+    }
+    return gate;
+}
+
 }  // namespace fcg

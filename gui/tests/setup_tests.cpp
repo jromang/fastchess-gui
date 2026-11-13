@@ -300,6 +300,54 @@ TEST_CASE("the games a setup plans, and about how long they last with a clock") 
     CHECK_FALSE(plannedSeconds(setup, topology));
 }
 
+TEST_CASE("a start waits only for the read of an engine it plays; other reads and checks are interrupted") {
+    using A                              = StartGate::Action;
+    const std::vector<std::string> match = {"Alpha", "Beta"};
+    const std::vector<std::string> none;
+
+    // Nothing in flight, nothing of its own queued: at once, whatever else waits to be read.
+    CHECK(startGate(match, "", "", {"Gamma", "Delta"}, true).action == A::Start);
+    // A resume plays the engines copied in its folder: a read of the library is interrupted, not waited for.
+    auto gate = startGate(none, "Gamma", "", {"Alpha"}, true);
+    CHECK(gate.action == A::Interrupt);
+    CHECK(gate.interrupt_read);
+    CHECK_FALSE(gate.interrupt_check);
+    CHECK(startGate(none, "", "", {"Alpha", "Beta"}, true).action == A::Start);
+
+    // The read of an engine it plays: waited for, and a check in flight meanwhile goes on (it is ended afterwards).
+    gate = startGate(match, "Beta", "Gamma", {}, true);
+    CHECK(gate.action == A::Wait);
+    CHECK(gate.engine == "Beta");
+    CHECK_FALSE(gate.check);
+    // The read of another engine, a check of any: interrupted together.
+    gate = startGate(match, "Gamma", "Alpha", {"Beta"}, true);
+    CHECK(gate.action == A::Interrupt);
+    CHECK(gate.interrupt_read);
+    CHECK(gate.interrupt_check);
+    // Then its own engine still waiting to be read: read first, the first of the queue that it plays.
+    gate = startGate(match, "", "", {"Gamma", "Beta", "Alpha"}, true);
+    CHECK(gate.action == A::Read);
+    CHECK(gate.engine == "Beta");
+
+    // Engines that must not be ended run (a test suite): it waits for the read or the check instead.
+    gate = startGate(none, "Gamma", "Delta", {}, false);
+    CHECK(gate.action == A::Wait);
+    CHECK(gate.engine == "Gamma");
+    gate = startGate(none, "", "Delta", {}, false);
+    CHECK(gate.action == A::Wait);
+    CHECK(gate.engine == "Delta");
+    CHECK(gate.check);
+
+    // The engines a setup plays.
+    MatchSetup setup;
+    setup.engine_a = "Alpha";
+    setup.engine_b = "Beta";
+    CHECK(enginesOfSetup(setup) == match);
+    setup.format       = TournamentFormat::RoundRobin;
+    setup.participants = {{.name = "Gamma"}, {.name = "Delta"}, {.name = "Alpha"}};
+    CHECK(enginesOfSetup(setup) == std::vector<std::string>{"Gamma", "Delta", "Alpha"});
+}
+
 TEST_CASE("a template or a queued setup keeps the program's settings: its look, the live boards, the notifications") {
     MatchSetup current;
     current.language         = "fr";

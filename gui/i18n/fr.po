@@ -1083,6 +1083,12 @@ msgstr "Interrompu : un moteur a planté ou ne répond plus (voir Console)"
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "Il reprend exactement où il s'est arrêté : aucune partie n'est perdue ni jouée deux fois."
 
+msgid "It starts once the check of {} ends."
+msgstr "Il démarre dès que la vérification de {} est finie."
+
+msgid "It starts once the options of {} are read."
+msgstr "Il démarre dès que les options de {} sont lues."
+
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr "Sa fiche dans Classements : résultats, fiabilité et classement sur tous les tournois."
 
@@ -1352,6 +1358,9 @@ msgstr "Pas encore vérifié."
 
 msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
 msgstr "Absent du PGN de cette partie : active ce champ dans les options PGN de la configuration."
+
+msgid "Not started: the options of {} cannot be read."
+msgstr "Non démarré : les options de {} ne peuvent pas être lues."
 
 msgid "Notes"
 msgstr "Notes"
@@ -1961,14 +1970,14 @@ msgstr "Lancés l'un après l'autre, quand le tournoi en cours se termine de lui
 msgid "Started: {}, {}, {} concurrent games{}. Folder: {}"
 msgstr "Lancé : {}, {}, {} parties simultanées{}. Dossier : {}"
 
+msgid "Starting…"
+msgstr "Démarrage…"
+
 msgid "Starts by itself when the running tournament ends."
 msgstr "Démarre tout seul à la fin du tournoi en cours."
 
 msgid "Starts in {} ms · isready {:.1f} ms · first move {}"
 msgstr "Démarre en {} ms · isready {:.1f} ms · premier coup {}"
-
-msgid "Starts once the engine being read or checked is done…"
-msgstr "Démarre dès que le moteur en cours de lecture ou de vérification a fini…"
 
 msgid "Starts the engine, measures how fast it answers, checks one move, then runs fastchess' UCI compliance steps."
 msgstr "Lance le moteur, mesure sa vitesse de réponse, vérifie un coup, puis passe les étapes de conformité UCI de fastchess."
@@ -2099,6 +2108,9 @@ msgstr "La modification a été annulée."
 msgid "The charts appear with the first results."
 msgstr "Les graphiques apparaissent avec les premiers résultats."
 
+msgid "The check of {} is interrupted for the start: it is done again later."
+msgstr "La vérification de {} est interrompue pour le démarrage : elle sera refaite plus tard."
+
 msgid "The depth must be positive."
 msgstr "La profondeur doit être positive."
 
@@ -2209,6 +2221,9 @@ msgstr "La file d'attente se termine vers {} (dans {})"
 
 msgid "The rating of the engines chosen after each tournament they played: the versions of an engine, side by side."
 msgstr "Le classement des moteurs choisis après chaque tournoi joué : les versions d'un moteur, côte à côte."
+
+msgid "The read of {} is interrupted for the start: it is done again later."
+msgstr "La lecture de {} est interrompue pour le démarrage : elle sera refaite plus tard."
 
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
 msgstr "Le même match avec un nouveau moteur A, par exemple la version suivante : tous les autres réglages restent."
@@ -2350,6 +2365,9 @@ msgstr "Annuler cette partie (sans la rejouer)"
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "G {:.0f} · N {:.0f} · P {:.0f} %"
+
+msgid "Waiting for {}…"
+msgstr "En attente de {}…"
 
 msgid "Waiting to be read · read it next"
 msgstr "En attente de lecture · le lire ensuite"

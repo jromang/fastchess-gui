@@ -1078,6 +1078,12 @@ msgstr "已中断：某个引擎崩溃或停止响应（见控制台）"
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "它会从中断处准确继续：不会丢失对局，也不会重复下同一局。"
 
+msgid "It starts once the check of {} ends."
+msgstr "{} 的检查完成后即开始。"
+
+msgid "It starts once the options of {} are read."
+msgstr "读取 {} 的选项后即开始。"
+
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr "它在“等级分”中的信息卡：所有锦标赛中的成绩、稳定性和等级分。"
 
@@ -1347,6 +1353,9 @@ msgstr "尚未检查。"
 
 msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
 msgstr "此对局的 PGN 中没有：请在配置的 PGN 选项中开启该字段。"
+
+msgid "Not started: the options of {} cannot be read."
+msgstr "未开始：无法读取 {} 的选项。"
 
 msgid "Notes"
 msgstr "备注"
@@ -1952,14 +1961,14 @@ msgstr "在当前锦标赛自行结束后依次开始。"
 msgid "Started: {}, {}, {} concurrent games{}. Folder: {}"
 msgstr "已开始：{}，{}，同时进行 {} 局{}。文件夹：{}"
 
+msgid "Starting…"
+msgstr "正在开始…"
+
 msgid "Starts by itself when the running tournament ends."
 msgstr "当前锦标赛结束后自动开始。"
 
 msgid "Starts in {} ms · isready {:.1f} ms · first move {}"
 msgstr "启动 {} ms · isready {:.1f} ms · 第一步 {}"
-
-msgid "Starts once the engine being read or checked is done…"
-msgstr "正在读取或检查的引擎完成后即开始…"
 
 msgid "Starts the engine, measures how fast it answers, checks one move, then runs fastchess' UCI compliance steps."
 msgstr "启动引擎，测量其响应速度，检查一步着法，然后运行 fastchess 的 UCI 合规性测试步骤。"
@@ -2090,6 +2099,9 @@ msgstr "修改已撤销。"
 msgid "The charts appear with the first results."
 msgstr "图表会随第一批结果出现。"
 
+msgid "The check of {} is interrupted for the start: it is done again later."
+msgstr "为了开始，{} 的检查已中断：稍后会重新进行。"
+
 msgid "The depth must be positive."
 msgstr "深度必须为正数。"
 
@@ -2200,6 +2212,9 @@ msgstr "队列预计 {} 结束（还需 {}）"
 
 msgid "The rating of the engines chosen after each tournament they played: the versions of an engine, side by side."
 msgstr "所选引擎在其参加的每个锦标赛后的等级分：同一引擎的各个版本并列显示。"
+
+msgid "The read of {} is interrupted for the start: it is done again later."
+msgstr "为了开始，{} 的读取已中断：稍后会重新进行。"
 
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
 msgstr "同样的比赛，换一个新引擎 A，例如下一版本：其他设置保持不变。"
@@ -2341,6 +2356,9 @@ msgstr "作废这局对局（不重下）"
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "胜 {:.0f} · 和 {:.0f} · 负 {:.0f} %"
+
+msgid "Waiting for {}…"
+msgstr "正在等待 {}…"
 
 msgid "Waiting to be read · read it next"
 msgstr "等待读取 · 下一个读取"

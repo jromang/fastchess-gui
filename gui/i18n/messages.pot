@@ -1083,6 +1083,12 @@ msgstr ""
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr ""
 
+msgid "It starts once the check of {} ends."
+msgstr ""
+
+msgid "It starts once the options of {} are read."
+msgstr ""
+
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr ""
 
@@ -1351,6 +1357,9 @@ msgid "Not checked yet."
 msgstr ""
 
 msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
+msgstr ""
+
+msgid "Not started: the options of {} cannot be read."
 msgstr ""
 
 msgid "Notes"
@@ -1961,13 +1970,13 @@ msgstr ""
 msgid "Started: {}, {}, {} concurrent games{}. Folder: {}"
 msgstr ""
 
+msgid "Starting…"
+msgstr ""
+
 msgid "Starts by itself when the running tournament ends."
 msgstr ""
 
 msgid "Starts in {} ms · isready {:.1f} ms · first move {}"
-msgstr ""
-
-msgid "Starts once the engine being read or checked is done…"
 msgstr ""
 
 msgid "Starts the engine, measures how fast it answers, checks one move, then runs fastchess' UCI compliance steps."
@@ -2099,6 +2108,9 @@ msgstr ""
 msgid "The charts appear with the first results."
 msgstr ""
 
+msgid "The check of {} is interrupted for the start: it is done again later."
+msgstr ""
+
 msgid "The depth must be positive."
 msgstr ""
 
@@ -2208,6 +2220,9 @@ msgid "The queue ends about {} (in {})"
 msgstr ""
 
 msgid "The rating of the engines chosen after each tournament they played: the versions of an engine, side by side."
+msgstr ""
+
+msgid "The read of {} is interrupted for the start: it is done again later."
 msgstr ""
 
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
@@ -2349,6 +2364,9 @@ msgid "Void this game (no replay)"
 msgstr ""
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
+msgstr ""
+
+msgid "Waiting for {}…"
 msgstr ""
 
 msgid "Waiting to be read · read it next"
