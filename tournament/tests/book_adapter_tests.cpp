@@ -13,6 +13,7 @@
 #include <core/globals/globals.hpp>
 #include <core/observer.hpp>
 #include <engine/uci_engine.hpp>
+
 #include <fmt/include/fmt/format.h>
 
 #include <tour/book_adapter.hpp>
@@ -104,8 +105,8 @@ fs::path wideBook() {
 struct AdapterProcess {
     explicit AdapterProcess(const fs::path& book, uint64_t seed = 1) {
         fastchess::atomic::stop = false;  // left set by the games played before
-        const auto args         = fmt::format("--book-adapter --book \"{}\" --depth 0 --seed {} -- \"{}\"",
-                                              book.string(), seed, randomMover());
+        const auto args = fmt::format("--book-adapter --book \"{}\" --depth 0 --seed {} -- \"{}\"", book.string(), seed,
+                                      randomMover());
         started = process.init(fs::path(randomMover()).parent_path().string(), self().string(), args, "adapter").code ==
                   fastchess::engine::process::Status::OK;
         process.setupRead();
@@ -235,6 +236,33 @@ TEST_CASE("own book: a file that is no Polyglot book, or none, is refused with a
     std::ofstream(path, std::ios::binary) << "not a book";
     CHECK_THROWS_WITH_AS(PolyglotBook{path}, doctest::Contains("no Polyglot book"), std::runtime_error);
     CHECK_THROWS_AS(PolyglotBook{fs::temp_directory_path() / "fcg-no-such-book.bin"}, std::runtime_error);
+}
+
+TEST_CASE("own book: an unsorted book is sorted in memory, or refused when it is too large for that") {
+    // The entries in the order of the lines, not of the keys: a binary search in the file would find nothing.
+    const auto path = fs::temp_directory_path() / "fcg-own-book-unsorted.bin";
+    writePolyglot(path,
+                  {{polyglotKey("e2e4 e7e5"), "g1f3", 1},
+                   {polyglotKey(""), "e2e4", 3},
+                   {polyglotKey("d2d4"), "d7d5", 1},
+                   {polyglotKey(""), "d2d4", 1}},
+                  false);
+    PolyglotBook book(path);
+    chess::Board board;
+    const auto moves = book.moves(board);
+    REQUIRE(moves.size() == 2);
+    CHECK(chess::uci::moveToUci(moves[0].move) == "e2e4");  // the book's order kept
+    CHECK(chess::uci::moveToUci(moves[1].move) == "d2d4");
+    board.makeMove(chess::uci::uciToMove(board, "d2d4"));
+    REQUIRE(book.moves(board).size() == 1);
+
+    // Larger than PolyglotBook::SORT_MAX entries (16 MB): checked at entries spread over it.
+    const auto large = fs::temp_directory_path() / "fcg-own-book-large.bin";
+    fcg::test::writeLargePolyglot(large, PolyglotBook::SORT_MAX + 1000, true);
+    CHECK_NOTHROW(PolyglotBook{large});
+    fcg::test::writeLargePolyglot(large, PolyglotBook::SORT_MAX + 1000, false);
+    CHECK_THROWS_WITH_AS(PolyglotBook{large}, doctest::Contains("not sorted"), UnsortedPolyglotBook);
+    fs::remove(large);
 }
 
 TEST_CASE("own book adapter: a book move answers go at once, and the engine never sees that go") {

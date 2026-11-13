@@ -1106,6 +1106,9 @@ msgstr "Прерван"
 msgid "Interrupted: an engine crashed or stopped responding (see Console)"
 msgstr "Прервано: движок вылетел или перестал отвечать (см. «Консоль»)"
 
+msgid "It cannot play for an engine: {}"
+msgstr "Она не может играть за движок: {}"
+
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "Он продолжится ровно с того места, где остановился: ни одна партия не потеряется и не будет сыграна дважды."
 
@@ -2162,6 +2165,9 @@ msgstr "Счётчик 50 ходов, материал и оставшиеся �
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "По стандарту PGN это комментарии. fastchess-gui 0.4.13 и более ранние версии читали их как ходы и могли играть некоторые дебюты этой книги из неверной позиции, часто из начальной."
 
+msgid "The book of {} cannot be used: {}"
+msgstr "Книгу {} нельзя использовать: {}"
+
 msgid "The book of {} is not a Polyglot book (.bin): {}"
 msgstr "Книга {} не является книгой Polyglot (.bin): {}"
 
@@ -2350,6 +2356,9 @@ msgstr "Тема"
 
 msgid "They have not played each other."
 msgstr "Они не играли друг с другом."
+
+msgid "This book cannot play for an engine: {}"
+msgstr "Эта книга не может играть за движок: {}"
 
 msgid "This draw ratio and this RMS bias are not compatible."
 msgstr "Эта доля ничьих и это RMS-смещение несовместимы."
@@ -2659,6 +2668,9 @@ msgstr "начальная позиция"
 
 msgid "its default"
 msgstr "по умолчанию"
+
+msgid "its entries are not sorted by key, as those of a Polyglot book must be, and it is too large to be sorted in memory: have a Polyglot tool write it again"
+msgstr "её записи не отсортированы по ключу, как положено в книге Polyglot, а сама она слишком велика, чтобы отсортировать её в памяти: перезапишите её программой для Polyglot"
 
 msgid "itself"
 msgstr "самого себя"
@@ -3169,6 +3181,9 @@ msgstr "{}-фигурные таблицы Syzygy для {} из {} движко
 
 msgid "{}: decision"
 msgstr "{}: время решения"
+
+msgid "{}: its book cannot be used: {}"
+msgstr "{}: его книгу нельзя использовать: {}"
 
 msgid "{}: its book is not found: {}"
 msgstr "{}: его книга не найдена: {}"

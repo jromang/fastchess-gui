@@ -377,9 +377,9 @@ TEST_CASE("wb2uci: what the engine writes after its move, in the same write, rea
     using fastchess::engine::process::Status;
     fastchess::atomic::stop = false;
     fastchess::engine::process::Process process;
-    REQUIRE(process.init(fs::path(wb).parent_path().string(), self().string(), "--wb2uci \"" + wb + "\" burst",
-                         "wb2uci")
-                .code == Status::OK);
+    REQUIRE(
+        process.init(fs::path(wb).parent_path().string(), self().string(), "--wb2uci \"" + wb + "\" burst", "wb2uci")
+            .code == Status::OK);
     process.setupRead();
     std::vector<fastchess::engine::process::Line> lines;
     (void)process.writeInput("uci\n");

@@ -4,8 +4,8 @@
 #include <cctype>
 #include <chrono>
 #include <csignal>
-#include <cstdio>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <mutex>

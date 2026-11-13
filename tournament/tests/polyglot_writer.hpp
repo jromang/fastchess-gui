@@ -3,8 +3,8 @@
 // Small Polyglot books written by the tests, sorted by key as the format wants them.
 
 #include <algorithm>
-#include <cstdlib>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -71,7 +71,7 @@ inline uint64_t polyglotKey(const std::string& line, const std::string& fen = st
     for (std::string uci; in >> uci;) {
         const auto move = chess::uci::uciToMove(board, uci);
         const bool pawn = board.at(move.from()).type() == chess::PieceType::PAWN;
-        stepped = pawn && std::abs(move.to().index() - move.from().index()) == 16 ? move.to().index() : -1;
+        stepped         = pawn && std::abs(move.to().index() - move.from().index()) == 16 ? move.to().index() : -1;
         board.makeMove(move);
     }
 
@@ -96,11 +96,14 @@ inline uint64_t polyglotKey(const std::string& line, const std::string& fen = st
     return key;
 }
 
-// Writes a book of (key, move, weight) entries, sorted by key, the moves of a key in the order given.
+// Writes a book of (key, move, weight) entries, sorted by key, the moves of a key in the order given; with
+// `sorted` false, in the order given, as some tools write them.
 inline void writePolyglot(const std::filesystem::path& path,
-                          std::vector<std::tuple<uint64_t, std::string, int>> entries) {
-    std::stable_sort(entries.begin(), entries.end(),
-                     [](const auto& a, const auto& b) { return std::get<0>(a) < std::get<0>(b); });
+                          std::vector<std::tuple<uint64_t, std::string, int>> entries, bool sorted = true) {
+    if (sorted) {
+        std::stable_sort(entries.begin(), entries.end(),
+                         [](const auto& a, const auto& b) { return std::get<0>(a) < std::get<0>(b); });
+    }
     std::ofstream out(path, std::ios::binary | std::ios::trunc);
     const auto put = [&](uint64_t v, int bytes) {
         for (int i = bytes - 1; i >= 0; --i) out.put(static_cast<char>((v >> (8 * i)) & 0xff));
@@ -110,6 +113,22 @@ inline void writePolyglot(const std::filesystem::path& path,
         put(polyglotMove(move), 2);
         put(static_cast<uint64_t>(weight), 2);
         put(0, 4);
+    }
+}
+
+// A book of `count` entries with made-up keys, ascending or descending, each with the move e2e4: a book too large
+// to be sorted in memory, sorted or not.
+inline void writeLargePolyglot(const std::filesystem::path& path, uint64_t count, bool ascending) {
+    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+    std::string entry(16, '\0');
+    for (uint64_t i = 0; i < count; ++i) {
+        const uint64_t key = (ascending ? i : count - i) * 0x10001ULL;
+        for (int b = 0; b < 8; ++b) entry[b] = static_cast<char>((key >> (8 * (7 - b))) & 0xff);
+        const auto move = polyglotMove("e2e4");
+        entry[8]        = static_cast<char>(move >> 8);
+        entry[9]        = static_cast<char>(move & 0xff);
+        entry[11]       = 1;  // weight
+        out.write(entry.data(), 16);
     }
 }
 

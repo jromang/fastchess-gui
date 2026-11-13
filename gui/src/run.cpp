@@ -295,6 +295,19 @@ std::string ownBookName(const OwnBook& book) {
     return book.name.empty() ? fs::path(book.path).stem().string() : book.name;
 }
 
+std::string ownBookProblem(const std::string& path) {
+    try {
+        (void)tour::PolyglotBook(path);
+    } catch (const tour::UnsortedPolyglotBook&) {
+        return TR(
+            "its entries are not sorted by key, as those of a Polyglot book must be, and it is too large to be "
+            "sorted in memory: have a Polyglot tool write it again");
+    } catch (const std::exception& e) {
+        return e.what();
+    }
+    return {};
+}
+
 std::string ownBookText(const std::string& name, int depth) {
     return depth > 0 ? trn("own book {}, {} ply", "own book {}, {} plies", static_cast<uint64_t>(depth), name, depth)
                      : trf("own book {}, all of it", name);
@@ -429,10 +442,8 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
             if (!fs::is_regular_file(book.path)) {
                 throw fastchess_exception(trf("The book of {} is not found: {}", names[i], book.path));
             }
-            try {
-                (void)tour::PolyglotBook(book.path);
-            } catch (const std::exception& e) {
-                throw fastchess_exception(e.what());
+            if (const auto problem = ownBookProblem(book.path); !problem.empty()) {
+                throw fastchess_exception(trf("The book of {} cannot be used: {}", names[i], problem));
             }
         }
         run.engines.push_back(toConfig(*entry, setup, participant));

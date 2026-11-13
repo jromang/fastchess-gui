@@ -4,6 +4,7 @@
 #include <atomic>
 #include <chrono>
 #include <deque>
+#include <filesystem>
 #include <functional>
 #include <future>
 #include <map>
@@ -361,6 +362,15 @@ class App {
     // Polyglot books and of the depth. True when `book` changed; `again` (when given) is set when the user asked
     // for the engine once more, with another book.
     bool ownBookButton(const char* id, OwnBook& book, float width, bool* again = nullptr, bool open = false);
+    // Why a book cannot be a participant's own (ownBookProblem()), kept by path and read again when the file's size
+    // or time changes; empty when it can, or when it is not found.
+    const std::string& ownBookCheck(const std::string& path);
+    struct OwnBookCheck {
+        uintmax_t size = 0;
+        std::filesystem::file_time_type time{};
+        std::string problem;
+    };
+    std::map<std::string, OwnBookCheck> own_book_checks_;
     int open_own_book_       = -1;     // the participant whose book popup opens: --focus setup-book, a copy just added
     bool open_own_book_list_ = false;  // --focus setup-book-list: with its list of books open
     void drawSetupSummary();
