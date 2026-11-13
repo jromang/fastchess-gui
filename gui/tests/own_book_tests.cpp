@@ -435,3 +435,104 @@ TEST_CASE("own book: a match with a PGN book of its own, prepared by the start w
     std::error_code ec;
     fs::remove_all(root, ec);
 }
+
+TEST_CASE("own book: a conversion that failed is done again when asked, never by itself") {
+    using State         = PgnBookJobs::Status::State;
+    const auto root     = fs::temp_directory_path() / "fcg-own-book-pgn-retry";
+    const auto previous = tour::book_cache_dir;
+    fs::remove_all(root);
+    fs::create_directories(root);
+    const auto pgn = writePgnBook(root / "answers.pgn").string();
+    // A file where the cache's folder would be: the book cannot be written, as on a full disk.
+    tour::book_cache_dir = root / "cache";
+    std::ofstream(tour::book_cache_dir, std::ios::binary) << "in the way";
+
+    PgnBookJobs jobs;
+    const auto failed = prepared(jobs, pgn, 4);
+    REQUIRE(failed.state == State::Failed);
+    CHECK_FALSE(failed.error.empty());
+
+    // The disk has room again: still failed, until a start or "Try again" asks for it once more.
+    fs::remove(tour::book_cache_dir);
+    for (int i = 0; i < 5; ++i) {
+        CHECK(jobs.want(pgn, 4, false).state == State::Failed);
+        (void)jobs.poll();
+        CHECK_FALSE(jobs.busy());
+    }
+    jobs.retry(pgn, 4, false);
+    const auto again = prepared(jobs, pgn, 4);
+    CHECK(again.state == State::Ready);
+    CHECK(again.stats.games == 20);
+    // A book that is ready is left as it is.
+    jobs.retry(pgn, 4, false);
+    CHECK(jobs.want(pgn, 4, false).state == State::Ready);
+
+    tour::book_cache_dir = previous;
+    fs::remove_all(root);
+}
+
+TEST_CASE("own book: a withdrawn participant's PGN book, deleted since, does not hold the resume") {
+    const auto uci = (self().parent_path() / FCG_RANDOM_MOVER).string();
+    if (!fs::is_regular_file(uci)) {
+        MESSAGE("mock engine not available on this platform, skipped");
+        return;
+    }
+    tour::book_adapter  = self().string();
+    const auto previous = tour::book_cache_dir;
+    const auto root     = fs::temp_directory_path() / "fcg-own-book-pgn-withdrawn";
+    fs::remove_all(root);
+    fs::create_directories(root);
+    tour::book_cache_dir = root / "cache";
+    const auto pgn       = writePgnBook(root / "answers.pgn").string();
+    const auto dir       = root / "t";
+
+    tour::TournamentSpec spec;
+    spec.name                   = "withdrawn";
+    spec.format                 = tour::Format::RoundRobin;
+    spec.cycles                 = 1;
+    spec.conditions.concurrency = 1;
+    for (int i = 0; i < 4; ++i) {
+        tour::Participant p;
+        p.id                 = i;
+        p.engine.name        = "random " + std::to_string(i);
+        p.engine.cmd         = uci;
+        p.engine.limit.nodes = 1;
+        spec.participants.push_back(p);
+    }
+    spec.participants[3].book = pgn;
+    REQUIRE(pgnBookNeeds(spec).size() == 1);
+    {
+        auto state = tour::TournamentState::create(dir, spec);
+        tour::Edit withdraw;
+        withdraw.kind        = tour::Edit::Kind::Withdraw;
+        withdraw.participant = 3;
+        state->applyEdit(withdraw);
+    }
+    fs::remove(pgn);
+
+    // What the window's resume waits for, from the tournament as listed.
+    const auto summary = tour::summarize(dir);
+    REQUIRE(summary);
+    CHECK(pgnBookNeeds(summary->spec).empty());
+
+    RunController run;
+    std::vector<GameRecord> games;
+    std::vector<fastchess::Stats> stats;
+    REQUIRE(run.resume(dir).empty());
+    const auto end = std::chrono::steady_clock::now() + 60s;
+    while (run.state() != RunController::State::Finished && std::chrono::steady_clock::now() < end) {
+        run.update();
+        if (auto* obs = run.observer()) obs->drain(games, stats);
+        std::this_thread::sleep_for(10ms);
+    }
+    REQUIRE(run.state() == RunController::State::Finished);
+    CHECK(run.error().empty());
+    REQUIRE(run.tournament());
+    CHECK(run.tournament()->results().size() == 6);  // the three others, once each way
+
+    tour::book_adapter.clear();
+    tour::book_cache_dir = previous;
+    // The tournament is still open (its journal, on Windows, cannot be removed): what can be.
+    std::error_code ec;
+    fs::remove_all(root, ec);
+}

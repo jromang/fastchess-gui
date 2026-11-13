@@ -265,6 +265,7 @@ bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again,
                                    trf("Preparing the book… {} %", percent(now.progress)).c_str());
             } else if (now.state == BookState::Failed) {
                 warn(trf("This book cannot play for an engine: {}", now.error));
+                if (ImGui::Button(TR("Try again"))) pgn_books_.retry(book.path, book.depth, setup_.chess960);
             } else {
                 ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + px(260));
                 ImGui::TextDisabled("%s", pgnBookStatsText(now.stats).c_str());

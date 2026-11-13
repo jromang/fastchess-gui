@@ -51,6 +51,11 @@ PgnBookJobs::Status PgnBookJobs::want(const std::string& pgn, int depth, bool ch
     return book.status;
 }
 
+void PgnBookJobs::retry(const std::string& pgn, int depth, bool chess960) {
+    const auto it = books_.find(Key{pgn, tour::pgnBookPlies(depth), chess960});
+    if (it != books_.end() && it->second.status.state == Status::State::Failed) it->second.known = false;
+}
+
 std::vector<PgnBookJobs::Ended> PgnBookJobs::poll() {
     std::vector<Ended> ended;
     if (job_ && job_->result.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {

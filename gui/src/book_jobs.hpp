@@ -48,6 +48,12 @@ class PgnBookJobs {
     // does a start waiting for it; the next poll() starts its conversion when nothing else is being converted.
     Status want(const std::string& pgn, int depth, bool chess960);
 
+    // A conversion that failed is done again when it is next asked for: the failure may have passed (a full disk,
+    // a cache folder that could not be written, a file another program held). For what the user asks: a start, "Try
+    // again"; never by itself, as what shows a book asks for it at each frame, and a PGN file that gives no move would
+    // be read again and again.
+    void retry(const std::string& pgn, int depth, bool chess960);
+
     // At each frame, after the frame's want(): collects the conversion that ended, cancels the one nobody asked
     // for since the last poll (a depth changed meanwhile, the book replaced), starts the next one asked for.
     std::vector<Ended> poll();
