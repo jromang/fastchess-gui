@@ -223,7 +223,9 @@ swap); above the memory installed the tournament does not start. `--run` says th
   first turned into a Polyglot book: each game's moves up to that depth, each move weighted by the number of games
   that play it; games with an illegal move are left out and counted. This runs in the background as soon as the
   book is chosen (progress in the *Book* cell, its popup and the summary) and is kept in the profile's `book-cache`
-  folder until the file or the depth changes; a start that comes before the end waits for it. While the position
+  folder until the file or the depth changes; a start that comes before the end waits for it. A book that cannot be
+  prepared shows why in its popup, with *Try again*; each start also tries again. A tournament plays from the book
+  prepared when it was started or resumed, even if the PGN file changes meanwhile. While the position
   is in that book, the participant plays the book's move at once, chosen by the book's weights; then its engine
   takes over. The tournament's openings, if any, are played first, by every engine; EPD books only give those and
   are greyed in the list. To compare books with one engine, click its *Book* cell, then *This engine once more,
