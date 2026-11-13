@@ -81,11 +81,9 @@ std::string snapshotJson(const BroadcastSnapshot& s) {
                                {"result", g.result}};
         for (int side = 0; side < 2; ++side) {
             const auto& sr                                    = g.search[side];
-            game[side == 0 ? "white_search" : "black_search"] = {{"depth", sr.depth},
-                                                                 {"score_cp", sr.score_cp},
-                                                                 {"nodes", sr.nodes},
-                                                                 {"time_ms", sr.time_ms},
-                                                                 {"pv", sr.pv}};
+            game[side == 0 ? "white_search" : "black_search"] = {{"depth", sr.depth}, {"score_cp", sr.score_cp},
+                                                                 {"nodes", sr.nodes}, {"time_ms", sr.time_ms},
+                                                                 {"pv", sr.pv},       {"pv_san", sr.pv_san}};
         }
         // By ply, for the charts: White's evaluation (null for a book move or none), depth and time.
         auto& evals = game["evals"] = nlohmann::json::array();

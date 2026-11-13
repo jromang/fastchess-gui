@@ -150,6 +150,10 @@ struct CpuUse {
 // opponent's time (pondering it was not asked for, a background thread).
 [[nodiscard]] std::string cpuProblem(const EngineTotals& totals, int threads);
 
+// A PV in UCI notation as SAN, with move numbers, played from `board`: at most `max_moves`, then "…". Stops at the
+// first move that is not legal.
+[[nodiscard]] std::string pvToSan(chess::Board board, const std::vector<std::string>& pv, std::size_t max_moves);
+
 // What the processes of the two engines of a game used, White's then Black's: the totals of one game.
 struct GameCpu {
     std::array<uint64_t, 2> own_cpu_ms{}, own_wall_ms{}, wait_cpu_ms{}, wait_wall_ms{};

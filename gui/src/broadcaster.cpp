@@ -285,6 +285,9 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
             board.setFen(st.start_fen);
             for (const auto& m : st.moves) board.makeMove<true>(m.move);
             g.fen = board.getFen();
+            // The PV of the side thinking, from the position.
+            auto& thinking = g.search[g.white_to_move ? 0 : 1];
+            if (g.active && !thinking.pv.empty()) thinking.pv_san = pvToSan(board, thinking.pv, 12);
             s.games.push_back(std::move(g));
         }
         for (const auto& ended : in.ended[i]) s.ended.push_back(live(slot, ended));

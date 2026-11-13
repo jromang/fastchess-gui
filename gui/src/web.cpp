@@ -1,6 +1,7 @@
-// The broadcast web page: every game in progress, the standings and the crosstable, read-only; the followed game's
-// evaluation bar, arrows and charts; the next games of the schedule; the statistics and anomalies of the games
-// played, and each engine's search; their PGN file to download.
+// The broadcast web page: every game in progress, an evaluation bar beside each player, the standings and the
+// crosstable, read-only; the followed game's evaluation bar, moves, arrows and charts; the moves in letters or
+// figurines; the next games of the schedule; the statistics and anomalies of the games played, and each engine's
+// search; their PGN file to download.
 
 #include <algorithm>
 #include <cctype>
@@ -199,7 +200,12 @@ h1{margin:0;font-size:20px}h2{margin:0 0 8px;font-size:15px;font-weight:600}a{co
 .big .sq{font-size:min(8.5vw,44px)}
 .l{background:var(--light)}.d{background:var(--dark)}.w{color:#fff;text-shadow:0 0 1px #000,0 0 1px #000,0 0 2px #000}.b{color:#15171b}
 .arrows{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.bar{height:4px;border-radius:2px;background:#15171b;overflow:hidden;margin-top:4px}.bar>div{height:100%;background:#e8eaee}
+.side{display:flex;align-items:center;gap:6px;flex:none}
+.pbar{display:inline-block;width:40px;height:6px;border-radius:3px;background:#15171b;overflow:hidden;border:1px solid var(--line)}
+.pbar>span{display:block;height:100%;background:#e8eaee}.pbar.none{opacity:.3}
+.moves{max-height:7.6em;overflow-y:auto;font-size:13px;margin:4px 0 10px;overflow-wrap:anywhere}.mn{color:var(--muted);margin-right:3px}
+.tools{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+button{font:inherit;font-size:13px;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:4px 10px;cursor:pointer}
 .focus{display:grid;grid-template-columns:minmax(240px,460px) minmax(0,1fr);gap:20px}
 .bwrap{display:flex;gap:8px;align-items:stretch}.bwrap .board{flex:1;margin:0}
 .ebar{width:16px;border-radius:3px;background:#15171b;position:relative;overflow:hidden;border:1px solid var(--line)}
@@ -214,7 +220,7 @@ td.n,th.n{text-align:left}.scroll{overflow-x:auto}.two{display:grid;grid-templat
 .bad{color:var(--loss);font-weight:600}td.wrap{white-space:normal}#next table{width:auto}
 @media (max-width:700px){.focus{grid-template-columns:1fr}header,main{padding-left:16px;padding-right:16px}}
 </style></head><body>
-<header><div><h1 id="name">fastchess-gui</h1><div class="muted" id="progress"></div></div><div id="download"></div></header>
+<header><div><h1 id="name">fastchess-gui</h1><div class="muted" id="progress"></div></div><div class="tools"><button id="notation" type="button"></button><span id="download"></span></div></header>
 <main><section class="card" id="focus" hidden></section>
 <section><div class="games" id="games"></div></section>
 <section class="card scroll" id="nextcard" hidden><h2>Next games</h2><div id="next"></div></section>
@@ -225,6 +231,9 @@ td.n,th.n{text-align:left}.scroll{overflow-x:auto}.two{display:grid;grid-templat
 <section class="card"><div class="muted">Latest results</div><div id="recent"></div></section></main>
 <script>
 const P={k:'♚',q:'♛',r:'♜',b:'♝',n:'♞',p:'♟'};let selected=null,last=null;
+// Moves in letters (Nf3) or figurines (♘f3), as the viewer last chose; the browser may keep nothing.
+const FIG={K:'♔',Q:'♕',R:'♖',B:'♗',N:'♘'};let figurines=false;try{figurines=localStorage.getItem('fcg-figurines')==='1'}catch(e){}
+function san(m){return esc(figurines?m.replace(/[KQRBN]/g,c=>FIG[c]+'\uFE0E'):m)}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function clock(ms){if(ms<0)ms=0;const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);
  return h?`${h}:${String(m%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`:`${m}:${String(s%60).padStart(2,'0')}`}
@@ -235,7 +244,16 @@ function board(fen){let html='',r=0,f=0;for(const ch of fen.split(' ')[0]){if(ch
 // White's evaluation now: the side to move's search, else the last one.
 function whiteCp(g){const s=g.white_to_move?g.white_search:g.black_search;if(s&&s.depth)return g.white_to_move?s.score_cp:-s.score_cp;
  for(let i=g.evals.length-1;i>=0;i--)if(g.evals[i]!==null)return g.evals[i];return null}
-function evalBar(g){let cp=whiteCp(g);if(cp===null)return 50;cp=Math.max(-1000,Math.min(1000,cp));return 50+50*(2/(1+Math.exp(-cp/250))-1)}
+// White's share of a bar, from White's evaluation.
+function share(cp){if(cp===null)return 50;cp=Math.max(-1000,Math.min(1000,cp));return 50+50*(2/(1+Math.exp(-cp/250))-1)}
+function evalBar(g){return share(whiteCp(g))}
+// A player's own evaluation, from its last search, as a small bar of White's share.
+function pbar(g,white){const s=white?g.white_search:g.black_search;if(!s||!s.depth)return '<span class="pbar none" title="–"><span style="width:50%"></span></span>';
+ const cp=white?s.score_cp:-s.score_cp;return `<span class="pbar" title="${score(cp)}"><span style="width:${share(cp)}%"></span></span>`}
+// The moves of a game, numbered from its start position.
+function moveList(g){const f=g.start_fen.split(' ');let white=(f[1]||'w')==='w',n=+f[5]||1,out='';
+ g.moves.forEach((m,i)=>{if(white)out+=`<span class="mn">${n}.</span>`;else if(!i)out+=`<span class="mn">${n}…</span>`;out+=san(m)+' ';if(!white)n++;white=!white});
+ return out||'<span class="muted">No move yet.</span>'}
 function score(cp){if(cp===null||cp===undefined)return '–';if(Math.abs(cp)>=90000){const n=100000-Math.abs(cp);return (cp>0?'#':'-#')+n}
  return (cp>=0?'+':'')+(cp/100).toFixed(2)}
 function pawns(cp){return Math.max(-8,Math.min(8,Math.abs(cp)>=90000?Math.sign(cp)*8:cp/100))}
@@ -269,11 +287,11 @@ function charts(g){const wf=(g.start_fen.split(' ')[1]||'w')==='w',n=g.moves.len
   chart('Time',[{pts:tw,color:'var(--ew)'},{pts:tb,color:'var(--eb)'}],n,0,top(tw.concat(tb)),false,'up to '+top(tw.concat(tb)).toFixed(1)+' s')+'</div>'}
 function search(g,white){const s=white?g.white_search:g.black_search;if(!s||!s.depth)return '<div class="search">–</div>';
  const cp=white?s.score_cp:-s.score_cp,thinks=g.active&&g.white_to_move===white;
- return `<div class="search">d${s.depth} · ${score(cp)} · ${count(s.nodes)} nodes · ${(s.time_ms/1000).toFixed(1)} s${thinks&&s.pv.length?'<br>'+esc(s.pv.slice(0,12).join(' ')):''}</div>`}
-function focus(g){const side=(white)=>`<div class="row"><b class="${g.active&&g.white_to_move===white?'tomove':''}">${player(white?g.white:g.black,white?g.white_elo:g.black_elo)}</b><span>${g.clocks?clock(white?g.white_ms:g.black_ms):''}</span></div>${search(g,white)}`;
+ return `<div class="search">d${s.depth} · ${score(cp)} · ${count(s.nodes)} nodes · ${(s.time_ms/1000).toFixed(1)} s${thinks&&s.pv.length?'<br>'+(s.pv_san?san(s.pv_san):esc(s.pv.slice(0,12).join(' '))):''}</div>`}
+function focus(g){const side=(white)=>`<div class="row"><b class="${g.active&&g.white_to_move===white?'tomove':''}">${player(white?g.white:g.black,white?g.white_elo:g.black_elo)}</b><span class="side">${pbar(g,white)}<span>${g.clocks?clock(white?g.white_ms:g.black_ms):''}</span></span></div>${search(g,white)}`;
  return `<div class="focus"><div class="bwrap"><div class="ebar" title="${score(whiteCp(g))}"><div style="height:${evalBar(g)}%"></div></div>
   <div class="board big">${board(g.fen)}<svg class="arrows" viewBox="0 0 8 8">${MARKERS}${arrows(g)}</svg></div></div>
-  <div>${side(false)}${side(true)}<div class="row"><span>Game #${g.number} · ${Math.ceil(g.moves.length/2)} moves · ${score(whiteCp(g))}</span><span>${g.active?'':esc(g.result)}</span></div>${charts(g)}</div></div>`}
+  <div>${side(false)}${side(true)}<div class="row"><span>Game #${g.number} · ${Math.ceil(g.moves.length/2)} moves · ${score(whiteCp(g))}</span><span>${g.active?'':esc(g.result)}</span></div><div class="moves" id="moves">${moveList(g)}</div>${charts(g)}</div></div>`}
 function stats(s){const t=s.stats;if(!t||!t.games)return '<div class="muted">No game played yet.</div>';
  const pc=x=>`${x} <span class="muted">(${Math.round(100*x/t.games)} %)</span>`,row=(a,b)=>`<tr><td class="n">${a}</td><td>${b}</td></tr>`;
  return '<table>'+row('Games',t.games)+row('White wins (1-0)',pc(t.white_wins))+row('Black wins (0-1)',pc(t.black_wins))+row('Draws',pc(t.draws))+
@@ -297,17 +315,19 @@ function upcoming(s){const n=s.next||[],asItGoes=s.format==='swiss'||s.format===
   `<td class="n wrap">${player(x.white)} – ${player(x.black)}${x.opening?`<div class="muted">${esc(x.opening)}</div>`:''}</td></tr>`).join('')+'</table>':'';
  if(asItGoes)html+=`<div class="muted">${n.length?'The later rounds are':'The next round is'} paired as the tournament goes, from the results: their games are not known in advance.</div>`;
  return html}
-function render(s){last=s;
+function render(s){last=s;const notation=document.getElementById('notation');notation.textContent='Moves: '+(figurines?'♘\uFE0Ef3':'Nf3');
+ // The move list stays where the viewer scrolled it, at its end while the game goes on.
+ const before=document.getElementById('moves'),shown=before&&before.dataset.n,atEnd=!before||before.scrollTop+before.clientHeight>=before.scrollHeight-4,top=before?before.scrollTop:0;
  document.getElementById('name').textContent=s.name||'fastchess-gui';document.title=s.name||'fastchess-gui';
  document.getElementById('progress').textContent=`${s.played}${s.total?' / '+s.total:''} games${s.finished?' · finished':''}`;
  document.getElementById('download').innerHTML=s.pgn?`<a href="games.pgn" download="${esc(s.pgn)}">Download the games (PGN)</a>`:'';
  const g=s.games.find(x=>x.number===selected)||s.games.find(x=>x.active)||s.games[0];
  const f=document.getElementById('focus');f.hidden=!g;f.innerHTML=g?focus(g):'';
+ const moves=document.getElementById('moves');if(moves){moves.dataset.n=g.number;moves.scrollTop=atEnd||shown!==String(g.number)?moves.scrollHeight:top}
  document.getElementById('games').innerHTML=s.games.map(x=>`<div class="card${g&&x.number===g.number?' sel':''}" data-n="${x.number}">
-  <div class="row"><b class="${!x.white_to_move&&x.active?'tomove':''}">${player(x.black,x.black_elo)}</b><span class="muted">${x.clocks?clock(x.black_ms):''}</span></div>
+  <div class="row"><b class="${!x.white_to_move&&x.active?'tomove':''}">${player(x.black,x.black_elo)}</b><span class="side">${pbar(x,false)}<span class="muted">${x.clocks?clock(x.black_ms):''}</span></span></div>
   <div class="board">${board(x.fen)}</div>
-  <div class="row"><b class="${x.white_to_move&&x.active?'tomove':''}">${player(x.white,x.white_elo)}</b><span class="muted">${x.clocks?clock(x.white_ms):''}</span></div>
-  <div class="bar"><div style="width:${evalBar(x)}%"></div></div>
+  <div class="row"><b class="${x.white_to_move&&x.active?'tomove':''}">${player(x.white,x.white_elo)}</b><span class="side">${pbar(x,true)}<span class="muted">${x.clocks?clock(x.white_ms):''}</span></span></div>
   <div class="row muted"><span>#${x.number} · ${Math.ceil(x.moves.length/2)} moves</span><span>${x.active?'':esc(x.result)}</span></div></div>`).join('')||'<div class="muted">No game in progress.</div>';
  const rows=s.standings;let t='<tr><th>#</th><th class="n">Engine</th><th>Games</th><th>Points</th><th>Elo</th><th>±</th><th>+</th><th>=</th><th>−</th>'+rows.map((_,i)=>`<th>${i+1}</th>`).join('')+'</tr>';
  rows.forEach(r=>{t+=`<tr><td>${r.rank}</td><td class="n">${esc(r.name)}</td><td>${r.games}</td><td>${half(r.points)}</td><td>${r.games?(r.elo>=0?'+':'')+Math.round(r.elo):''}</td><td class="muted">${r.games?Math.round(r.elo_error):''}</td><td>${r.wins}</td><td>${r.draws}</td><td>${r.losses}</td>`+
@@ -318,6 +338,8 @@ function render(s){last=s;
  document.getElementById('stats').innerHTML=stats(s);
  document.getElementById('anomalies').innerHTML=anomalies(s);
  document.getElementById('recent').innerHTML=s.recent.slice(0,12).map(x=>`<div>${esc(x)}</div>`).join('')}
+document.getElementById('notation').addEventListener('click',()=>{figurines=!figurines;
+ try{localStorage.setItem('fcg-figurines',figurines?'1':'0')}catch(e){}if(last)render(last)});
 document.getElementById('games').addEventListener('click',e=>{const c=e.target.closest('[data-n]');if(c){selected=+c.dataset.n;if(last)render(last)}});
 async function refresh(){try{render(await (await fetch('state.json',{cache:'no-store'})).json())}
  catch(e){document.getElementById('progress').textContent='Waiting for fastchess-gui…'}}

@@ -46,6 +46,7 @@ struct LiveGame {
         uint64_t nodes  = 0;
         int64_t time_ms = 0;
         std::vector<std::string> pv;  // UCI
+        std::string pv_san;           // the current search's, with move numbers
     };
     Search search[2];  // [0] White's last or current search, [1] Black's
 

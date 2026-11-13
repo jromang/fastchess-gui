@@ -637,7 +637,10 @@ TEST_CASE("broadcast: the statistics, the anomalies and each move's search, for 
     st.moves[2].depth   = 20;
     st.moves[2].time_ms = 1500;
     st.stm              = chess::Color::BLACK;
-    in.slots            = {st};
+    // Black thinks: its PV, in SAN for the web page's notation.
+    st.thinking = true;
+    st.info[1]  = "info depth 9 score cp 12 nodes 5000 time 40 pv b8c6 f1b5 a7a6 a1a8";
+    in.slots    = {st};
     in.ended.resize(1);
 
     const auto s = makeSnapshot(in);
@@ -721,6 +724,10 @@ TEST_CASE("broadcast: the statistics, the anomalies and each move's search, for 
     CHECK(game["evals"] == nlohmann::json::parse("[null, -30, 99997]"));  // White's point of view; mate in 3
     CHECK(game["depths"] == nlohmann::json::parse("[null, 14, 20]"));
     CHECK(game["times_ms"] == nlohmann::json::parse("[null, 900, 1500]"));
+    CHECK(game["black_search"]["depth"] == 9);
+    CHECK(game["black_search"]["pv"].size() == 4);
+    CHECK(game["black_search"]["pv_san"] == "2...Nc6 3.Bb5 a6");  // up to the move that is not legal
+    CHECK(game["white_search"]["pv_san"] == "");
 
     // No game recorded yet: nothing to download.
     in.results.clear();
