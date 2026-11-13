@@ -17,6 +17,7 @@
 #include "engines.hpp"
 #include "headless.hpp"
 #include "net.hpp"
+#include "proc_tree.hpp"
 #include "run.hpp"
 #include "storage.hpp"
 #include "suite_run.hpp"
@@ -792,8 +793,85 @@ TEST_CASE("a read or a check interrupted for a start ends at once instead of wai
     CHECK(check_took < 5s);
     CHECK(engineProcesses() == 0);
 
+#ifndef _WIN32
+    // An engine behind a wrapper script that does not exec: the script's own child keeps the engine's output open,
+    // and would go on running. Both are ended, at once.
+    const auto dir = fs::temp_directory_path() / "fcg-interrupt-wrapper";
+    fs::create_directories(dir);
+    const auto script = dir / "slow.sh";
+    const auto pidof  = dir / "pid";
+    fs::remove(pidof);
+    {
+        std::ofstream out(script);
+        out << "#!/bin/sh\necho $$ > '" << pidof.string() << "'\n'" << randomMover() << "' \"$@\"\n";
+    }
+    fs::permissions(script, fs::perms::owner_all);
+    entry.cmd    = script.string();
+    interrupted  = false;
+    auto wrapped = std::async(std::launch::async, [&] { return probeEngine(entry, &interrupted); });
+    CHECK(wrapped.wait_for(1s) == std::future_status::timeout);
+    int shell = 0;
+    std::ifstream(pidof) >> shell;
+    REQUIRE(shell > 0);
+    const auto engines = childProcesses(shell);
+    REQUIRE(engines.size() == 1);  // the engine the script started
+    const auto t0 = std::chrono::steady_clock::now();
+    interrupted   = true;
+    interruptEngineProcesses();
+    while (wrapped.wait_for(50ms) != std::future_status::ready) interruptEngineProcesses();
+    CHECK(std::chrono::steady_clock::now() - t0 < 5s);
+    CHECK_FALSE(wrapped.get().ok);
+    CHECK(engineProcesses() == 0);
+    // Given to init when the script was killed, and reaped by it.
+    bool gone = false;
+    for (int i = 0; i < 40 && !gone; ++i) {
+        gone = kill(engines[0], 0) == -1 && errno == ESRCH;
+        if (!gone) std::this_thread::sleep_for(50ms);
+    }
+    CHECK(gone);
+    fs::remove_all(dir);
+#endif
+
     setEnv("FCG_MOCK_SLOW_UCIOK", nullptr);
 }
+
+#ifndef _WIN32
+TEST_CASE("a process tree is ended only from a child of ours not reaped yet, never from a pid that may be reused") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+    // fastchess reaps an engine that ended when it next looks at it (alive()), and takes it off the process list
+    // only later: meanwhile its pid may be given to another process, which must not be signalled.
+    fastchess::engine::process::Process process;
+    REQUIRE(process.init("", randomMover(), "", "reaped"));
+    const auto pid = static_cast<int>(process.pid());
+    REQUIRE(pid > 0);
+    CHECK(process.writeInput("quit\n"));
+    bool ended = false;
+    for (int i = 0; i < 100 && !ended; ++i) {
+        ended = !process.alive();
+        if (!ended) std::this_thread::sleep_for(50ms);
+    }
+    REQUIRE(ended);
+    CHECK(engineProcesses() == 1);  // reaped, still listed
+    CHECK_FALSE(killProcessTree(pid));
+    CHECK_FALSE(killProcessTree(getppid()));  // never a child of ours
+    process.terminate();
+    CHECK(engineProcesses() == 0);
+
+    // A child of ours that runs: ended, with nothing it started left.
+    fastchess::engine::process::Process running;
+    REQUIRE(running.init("", randomMover(), "", "running"));
+    CHECK(killProcessTree(static_cast<int>(running.pid())));
+    ended = false;
+    for (int i = 0; i < 100 && !ended; ++i) {
+        ended = !running.alive();
+        if (!ended) std::this_thread::sleep_for(20ms);
+    }
+    CHECK(ended);
+}
+#endif
 
 TEST_CASE("EPD suite runs: every engine on every position, the totals, CSV and saved runs") {
     if (!fs::is_regular_file(randomMover())) {

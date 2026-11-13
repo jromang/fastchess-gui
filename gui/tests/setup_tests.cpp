@@ -306,37 +306,29 @@ TEST_CASE("a start waits only for the read of an engine it plays; other reads an
     const std::vector<std::string> none;
 
     // Nothing in flight, nothing of its own queued: at once, whatever else waits to be read.
-    CHECK(startGate(match, "", "", {"Gamma", "Delta"}, true).action == A::Start);
+    CHECK(startGate(match, "", "", {"Gamma", "Delta"}, false).action == A::Start);
     // A resume plays the engines copied in its folder: a read of the library is interrupted, not waited for.
-    auto gate = startGate(none, "Gamma", "", {"Alpha"}, true);
+    auto gate = startGate(none, "Gamma", "", {"Alpha"}, false);
     CHECK(gate.action == A::Interrupt);
     CHECK(gate.interrupt_read);
     CHECK_FALSE(gate.interrupt_check);
-    CHECK(startGate(none, "", "", {"Alpha", "Beta"}, true).action == A::Start);
+    CHECK(startGate(none, "", "", {"Alpha", "Beta"}, false).action == A::Start);
 
     // The read of an engine it plays: waited for, and a check in flight meanwhile goes on (it is ended afterwards).
-    gate = startGate(match, "Beta", "Gamma", {}, true);
+    gate = startGate(match, "Beta", "Gamma", {}, false);
     CHECK(gate.action == A::Wait);
     CHECK(gate.engine == "Beta");
     CHECK_FALSE(gate.check);
+    CHECK_FALSE(gate.suite);
     // The read of another engine, a check of any: interrupted together.
-    gate = startGate(match, "Gamma", "Alpha", {"Beta"}, true);
+    gate = startGate(match, "Gamma", "Alpha", {"Beta"}, false);
     CHECK(gate.action == A::Interrupt);
     CHECK(gate.interrupt_read);
     CHECK(gate.interrupt_check);
     // Then its own engine still waiting to be read: read first, the first of the queue that it plays.
-    gate = startGate(match, "", "", {"Gamma", "Beta", "Alpha"}, true);
+    gate = startGate(match, "", "", {"Gamma", "Beta", "Alpha"}, false);
     CHECK(gate.action == A::Read);
     CHECK(gate.engine == "Beta");
-
-    // Engines that must not be ended run (a test suite): it waits for the read or the check instead.
-    gate = startGate(none, "Gamma", "Delta", {}, false);
-    CHECK(gate.action == A::Wait);
-    CHECK(gate.engine == "Gamma");
-    gate = startGate(none, "", "Delta", {}, false);
-    CHECK(gate.action == A::Wait);
-    CHECK(gate.engine == "Delta");
-    CHECK(gate.check);
 
     // The engines a setup plays.
     MatchSetup setup;
@@ -346,6 +338,84 @@ TEST_CASE("a start waits only for the read of an engine it plays; other reads an
     setup.format       = TournamentFormat::RoundRobin;
     setup.participants = {{.name = "Gamma"}, {.name = "Delta"}, {.name = "Alpha"}};
     CHECK(enginesOfSetup(setup) == std::vector<std::string>{"Gamma", "Delta", "Alpha"});
+}
+
+TEST_CASE("a start waits for a test suite to end, and a test suite does not start while a tournament runs or waits") {
+    using A                              = StartGate::Action;
+    const std::vector<std::string> match = {"Alpha", "Beta"};
+
+    // Whatever is read or checked, and even with nothing in flight: it waits for the suite, and ends nothing (an
+    // interruption would end the suite's engines too).
+    const std::vector<std::pair<std::string, std::string>> in_flight = {
+        {"", ""}, {"Gamma", ""}, {"", "Delta"}, {"Alpha", "Delta"}};
+    for (const auto& [reading, checking] : in_flight) {
+        const auto gate = startGate(match, reading, checking, {"Beta"}, true);
+        CHECK(gate.action == A::Wait);
+        CHECK(gate.suite);
+        CHECK_FALSE(gate.interrupt_read);
+        CHECK_FALSE(gate.interrupt_check);
+    }
+    // A resume too: it replaces fastchess' configuration as any start.
+    CHECK(startGate({}, "", "", {}, true).action == A::Wait);
+
+    CHECK(suiteMayStart(false, false));
+    CHECK_FALSE(suiteMayStart(true, false));  // a tournament or a quick test runs: its end ends every engine
+    CHECK_FALSE(suiteMayStart(false, true));  // a start waits: it would wait for the suite
+}
+
+TEST_CASE("a start asked while another waits is refused, not put in its place") {
+    CHECK(startAsked("", "start") == StartAsked::Go);
+    // The same, pressed again or from another place: it goes on waiting.
+    CHECK(startAsked("queue", "queue") == StartAsked::Waiting);
+    CHECK(startAsked("test:Alpha", "test:Alpha") == StartAsked::Waiting);
+    // Another one: the queue going on by itself is not dropped for a quick test pressed meanwhile, nor the other way.
+    CHECK(startAsked("queue", "test:Alpha") == StartAsked::Refused);
+    CHECK(startAsked("test:Alpha", "start") == StartAsked::Refused);
+    CHECK(startAsked("test:Alpha", "test:Beta") == StartAsked::Refused);
+}
+
+TEST_CASE("a quick test pressed during the first read of an engine follows the engine to its id name") {
+    StartRequest test{"test:alpha_dev", {"alpha_dev", "Beta"}};
+    // The first read renames it: what it needs and its key follow, so that it starts once the read is over.
+    CHECK(test.rename("alpha_dev", "Alpha 2.1"));
+    CHECK(test.key == "test:Alpha 2.1");
+    CHECK(test.needs == std::vector<std::string>{"Alpha 2.1", "Beta"});
+    // Its opponent renamed: needed under its new name, the test is the same one.
+    CHECK_FALSE(test.rename("Beta", "Beta 3"));
+    CHECK(test.needs == std::vector<std::string>{"Alpha 2.1", "Beta 3"});
+    CHECK(test.key == "test:Alpha 2.1");
+
+    // Another start needing that engine: its needs follow, its key does not change.
+    StartRequest start{"start", {"alpha_dev", "Beta"}};
+    CHECK_FALSE(start.rename("alpha_dev", "Alpha 2.1"));
+    CHECK(start.key == "start");
+    CHECK(start.needs == std::vector<std::string>{"Alpha 2.1", "Beta"});
+    // An engine whose name begins like another's is not taken for it.
+    StartRequest other{"test:Alpha 2", {"Alpha 2"}};
+    CHECK_FALSE(other.rename("Alpha", "Omega"));
+    CHECK(other.key == "test:Alpha 2");
+}
+
+TEST_CASE("the queue starts its tournaments one by one: only the engines of the next one are waited for") {
+    std::vector<QueuedTournament> queue(3);
+    queue[0].setup.engine_a     = "A";
+    queue[0].setup.engine_b     = "B";
+    queue[1].setup.engine_a     = "C";
+    queue[1].setup.engine_b     = "D";  // cannot be read
+    queue[2].setup.format       = TournamentFormat::Gauntlet;
+    queue[2].setup.participants = {{.name = "A"}, {.name = "E"}};
+
+    // The first: its engines only, not D, whose read may fail, of the one after it.
+    CHECK(queueNeeds(queue, 0) == std::vector<std::string>{"A", "B"});
+    CHECK(queueNeeds(queue, 1) == std::vector<std::string>{"C", "D"});
+    CHECK(queueNeeds(queue, 2) == std::vector<std::string>{"A", "E"});
+    CHECK(queueNeeds(queue, 3).empty());
+
+    // The second could not start (D cannot be read): kept, and the queue going on by itself tries the third.
+    CHECK(queueNextAfterFailure(1, queue.size(), true) == std::optional<std::size_t>(2));
+    // Nothing after the last; "Start now" tries the first only.
+    CHECK_FALSE(queueNextAfterFailure(2, queue.size(), true));
+    CHECK_FALSE(queueNextAfterFailure(0, queue.size(), false));
 }
 
 TEST_CASE("a template or a queued setup keeps the program's settings: its look, the live boards, the notifications") {

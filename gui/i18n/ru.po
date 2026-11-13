@@ -161,6 +161,9 @@ msgstr "Текст или веб-страница рейтинг-листа, Ord
 msgid "A rating list, for the reference Elo…"
 msgstr "Рейтинг-лист для опорного рейтинга Elo…"
 
+msgid "A tournament waits to start."
+msgstr "Турнир ожидает запуска."
+
 msgid "A: +%d  =%d  -%d"
 msgstr "A: +%d  =%d  -%d"
 
@@ -235,6 +238,9 @@ msgstr "Привязка к CPU не применяется: движок исп
 
 msgid "After the running match."
 msgstr "После текущего матча."
+
+msgid "After the running tournament: its end ends every engine."
+msgstr "После текущего турнира: его завершение останавливает все движки."
 
 msgid "All"
 msgstr "Все"
@@ -1094,6 +1100,9 @@ msgstr "Начнётся, как только закончится провер�
 msgid "It starts once the options of {} are read."
 msgstr "Начнётся, как только будут прочитаны опции {}."
 
+msgid "It starts once the test suite ends (or is stopped)."
+msgstr "Начнётся, как только тестовый набор завершится (или будет остановлен)."
+
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr "Его карточка в «Рейтингах»: результаты, надёжность и рейтинг по всем турнирам."
 
@@ -1363,6 +1372,9 @@ msgstr "Ещё не проверен."
 
 msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
 msgstr "Нет в PGN этой партии: включите это поле в параметрах PGN в настройке."
+
+msgid "Not started: another start is waiting ({}). Cancel it first."
+msgstr "Не запущено: ожидает другой запуск ({}). Сначала отмените его."
 
 msgid "Not started: the options of {} cannot be read."
 msgstr "Не запущено: не удаётся прочитать опции {}."
@@ -2255,6 +2267,12 @@ msgstr "Начальные позиции показанных дебютов в
 msgid "The system could not open:"
 msgstr "Системе не удалось открыть:"
 
+msgid "The test suite is not started: a tournament is running."
+msgstr "Тестовый набор не запущен: идёт турнир."
+
+msgid "The test suite is not started: a tournament waits to start."
+msgstr "Тестовый набор не запущен: турнир ожидает запуска."
+
 msgid "The time control needs a base time or an increment."
 msgstr "Контролю времени нужно базовое время или добавление."
 
@@ -2374,6 +2392,9 @@ msgstr "Аннулировать эту партию (без переигров�
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "В {:.0f} · Н {:.0f} · П {:.0f} %"
+
+msgid "Waiting for the test suite…"
+msgstr "Ожидание тестового набора…"
 
 msgid "Waiting for {}…"
 msgstr "Ожидание {}…"
@@ -2633,8 +2654,20 @@ msgstr "переигровка по запросу"
 msgid "send at startup"
 msgstr "отправить при запуске"
 
+msgid "the new tournament"
+msgstr "новый турнир"
+
 msgid "the one chosen in the Live tab"
 msgstr "та, что выбрана на вкладке «Онлайн»"
+
+msgid "the queue"
+msgstr "очередь"
+
+msgid "the quick test of {}"
+msgstr "быстрый тест {}"
+
+msgid "the resume of the interrupted tournament"
+msgstr "возобновление прерванного турнира"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "упомянуть в сообщении или перепроверить движок:"

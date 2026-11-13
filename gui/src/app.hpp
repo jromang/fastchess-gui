@@ -410,9 +410,12 @@ class App {
     [[nodiscard]] bool inSetup(const std::string& name) const;
     // A start (of a run, a resume, the queue, a quick test) must not replace fastchess' configuration while a read or
     // a check reads it: it waits for the read of an engine it plays (`needs`), and interrupts the others, which are
-    // done again later (see startGate). Meanwhile no other read or check starts. `key` names what it starts: asked
-    // again while it waits, nothing changes. True when `start` was put off.
-    bool startAfterReads(const std::string& key, std::vector<std::string> needs, std::function<void()> start);
+    // done again later; it waits for a test suite to end (see startGate). Meanwhile no other read or check starts.
+    // `key` names what it starts: asked again while it waits, nothing changes; asked while another start waits, it
+    // is refused (see startAsked). `failed`, if any, is called instead of `start` when the read of an engine it needs
+    // fails. True when `start` was put off (or refused).
+    bool startAfterReads(const std::string& key, std::vector<std::string> needs, std::function<void()> start,
+                         std::function<void()> failed = {});
     // Moves a start put off on: true once it may start.
     bool advanceStart();
     void pollStart();
@@ -428,6 +431,8 @@ class App {
     [[nodiscard]] std::string startWaitingText(const std::string& key) const;
     void startCheck(int index);
     void startQuickTest(int index);
+    // The quick test of the engine named so, put off: started once the engine is read, under its name then.
+    std::function<void()> quickTestLater(const std::string& name);
     void finishQuickTest();
     void pollCheck();
     // Shows what an engine list or a folder holds, to choose the engines to add. `refreshed`: the remembered folder
@@ -465,8 +470,9 @@ class App {
     [[nodiscard]] std::string runMarkerDir() const;  // the running tournament's folder, as the marker names it
     void enqueue();         // the current setup, to start after the running tournament
     // The first queued tournament, if any; with `go_on`, the next ones when it cannot start. One that cannot
-    // start stays queued.
-    void startFromQueue(bool go_on = false);
+    // start stays queued. `from`: the tournament it goes on from, named `label` (put off while an engine of it was
+    // read, or the next after one that could not start); when the queue changed meanwhile, from the first.
+    void startFromQueue(bool go_on = false, std::size_t from = 0, const std::string& label = {});
     void drawQueue();
     void drawHealth();  // the home page's: incidents of the last 24 hours, memory, engine processes
     // About how long the running tournament has left at its pace; nullopt without a game count or a pace yet.
@@ -620,14 +626,15 @@ class App {
     EngineEntry probe_entry_;   // the engine being read, as it was then: changed since, its result is stale
     bool probe_again_ = false;  // asked for again while it was read: its result is dropped, it is read again
     // A start put off, see startAfterReads.
-    struct PendingStart {
-        std::string key;  // "start", "queue", "resume:" and the folder, "test:" and the engine
-        std::vector<std::string> needs;
+    struct PendingStart : StartRequest {
         std::function<void()> start;
-        std::string waiting_for;     // the engine whose read it waits for; empty while reads are interrupted
-        bool waiting_check = false;  // ... or whose check
+        std::function<void()> failed;  // instead, when the read of an engine it needs fails
+        std::string waiting_for;       // the engine whose read it waits for; empty while reads are interrupted
+        bool waiting_check = false;    // ... or whose check
+        bool waiting_suite = false;    // ... or the test suite
     };
     std::optional<PendingStart> pending_start_;
+    std::function<void()> start_failed_;  // the `failed` of a start whose read failed, called at the next frame
     // Set to interrupt the read or the check in flight (its engine process ended too): it is done again later.
     std::shared_ptr<std::atomic_bool> probe_interrupted_, check_interrupted_;
     std::vector<std::string> probe_queue_;  // engine names waiting for a probe

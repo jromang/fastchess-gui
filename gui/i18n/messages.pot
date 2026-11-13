@@ -159,6 +159,9 @@ msgstr ""
 msgid "A rating list, for the reference Elo…"
 msgstr ""
 
+msgid "A tournament waits to start."
+msgstr ""
+
 msgid "A: +%d  =%d  -%d"
 msgstr ""
 
@@ -230,6 +233,9 @@ msgid "Affinity ignored: an engine uses %d threads."
 msgstr ""
 
 msgid "After the running match."
+msgstr ""
+
+msgid "After the running tournament: its end ends every engine."
 msgstr ""
 
 msgid "All"
@@ -1089,6 +1095,9 @@ msgstr ""
 msgid "It starts once the options of {} are read."
 msgstr ""
 
+msgid "It starts once the test suite ends (or is stopped)."
+msgstr ""
+
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr ""
 
@@ -1357,6 +1366,9 @@ msgid "Not checked yet."
 msgstr ""
 
 msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
+msgstr ""
+
+msgid "Not started: another start is waiting ({}). Cancel it first."
 msgstr ""
 
 msgid "Not started: the options of {} cannot be read."
@@ -2246,6 +2258,12 @@ msgstr ""
 msgid "The system could not open:"
 msgstr ""
 
+msgid "The test suite is not started: a tournament is running."
+msgstr ""
+
+msgid "The test suite is not started: a tournament waits to start."
+msgstr ""
+
 msgid "The time control needs a base time or an increment."
 msgstr ""
 
@@ -2364,6 +2382,9 @@ msgid "Void this game (no replay)"
 msgstr ""
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
+msgstr ""
+
+msgid "Waiting for the test suite…"
 msgstr ""
 
 msgid "Waiting for {}…"
@@ -2623,7 +2644,19 @@ msgstr ""
 msgid "send at startup"
 msgstr ""
 
+msgid "the new tournament"
+msgstr ""
+
 msgid "the one chosen in the Live tab"
+msgstr ""
+
+msgid "the queue"
+msgstr ""
+
+msgid "the quick test of {}"
+msgstr ""
+
+msgid "the resume of the interrupted tournament"
 msgstr ""
 
 msgid "to mention in the post, or to test the engine again:"

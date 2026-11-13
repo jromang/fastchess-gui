@@ -360,17 +360,19 @@ enum class LaunchResume {
 // only for what it needs: the read of an engine it plays from the library (`needs`), whose options, protocol and name
 // come from that read; a read still queued for one of them is done first. Any other read, and any check, is
 // interrupted and done again later. A resume needs nothing from the library: it plays the engines copied in its
-// folder. Without `can_interrupt` (another job runs engines that must not be ended), it waits for everything.
+// folder. While a test suite runs, it waits for its end: the suite's searches read that configuration too, and the
+// end of a tournament ends every engine process, the suite's with them.
 struct StartGate {
     enum class Action {
         Start,      // nothing to wait for
-        Wait,       // for the read (or the check) of `engine`
+        Wait,       // for the read (or the check) of `engine`, or for the test suite
         Read,       // reads `engine` first, then waits for it
         Interrupt,  // ends the read and/or the check in flight, which are done again later
     };
     Action action = Action::Start;
     std::string engine;
     bool check           = false;  // Wait: `engine` is being checked, not read
+    bool suite           = false;  // Wait: for the test suite
     bool interrupt_read  = false;
     bool interrupt_check = false;
 };
@@ -386,20 +388,20 @@ struct StartGate {
 // `reading` and `checking`: the engines being read and checked, empty when none; `queued`: those waiting to be read.
 [[nodiscard]] inline StartGate startGate(const std::vector<std::string>& needs, const std::string& reading,
                                          const std::string& checking, const std::vector<std::string>& queued,
-                                         bool can_interrupt) {
+                                         bool suite_running) {
     const auto needed = [&](const std::string& name) {
         return std::find(needs.begin(), needs.end(), name) != needs.end();
     };
     StartGate gate;
-    if (!reading.empty() && (needed(reading) || !can_interrupt)) {
+    // Nothing is interrupted meanwhile: an interruption would end the suite's engines too.
+    if (suite_running) {
         gate.action = StartGate::Action::Wait;
-        gate.engine = reading;
+        gate.suite  = true;
         return gate;
     }
-    if (!checking.empty() && !can_interrupt) {
+    if (!reading.empty() && needed(reading)) {
         gate.action = StartGate::Action::Wait;
-        gate.engine = checking;
-        gate.check  = true;
+        gate.engine = reading;
         return gate;
     }
     // Ended only when nothing it needs is in flight: an interruption ends every engine process of the reads and checks.
@@ -414,6 +416,57 @@ struct StartGate {
         gate.engine = *it;
     }
     return gate;
+}
+
+// A start put off (see startGate). `key` names what it starts: "start", "queue", "resume:" and the folder, "test:"
+// and the engine of a quick test; `needs`: the engines whose reads it waits for.
+struct StartRequest {
+    std::string key;
+    std::vector<std::string> needs;
+
+    // An engine renamed while it waits (the first read of an engine gives it its id name): what it needs follows, and
+    // so does the quick test of that engine. True when the key changed: the start must then find the engine under
+    // its new name.
+    bool rename(const std::string& old, const std::string& now) {
+        for (auto& name : needs)
+            if (name == old) name = now;
+        if (key != "test:" + old) return false;
+        key = "test:" + now;
+        return true;
+    }
+};
+
+// What a start asked for does while another one waits (`waiting`, the key of the start put off, empty when none).
+enum class StartAsked {
+    Go,       // nothing waits: it starts, or waits for what it needs itself
+    Waiting,  // the same start, asked again: it goes on waiting, as it was
+    Refused,  // another start waits: it is not dropped for this one, which does not start (Cancel it first)
+};
+[[nodiscard]] inline StartAsked startAsked(const std::string& waiting, const std::string& key) {
+    if (waiting.empty()) return StartAsked::Go;
+    return waiting == key ? StartAsked::Waiting : StartAsked::Refused;
+}
+
+// A test suite starts only when no tournament (nor quick test) runs and no start waits: it would replace nothing,
+// but a tournament's end ends every engine process, the suite's too, and a start waiting for the suite would wait
+// for it.
+[[nodiscard]] inline bool suiteMayStart(bool tournament_running, bool start_waiting) {
+    return !tournament_running && !start_waiting;
+}
+
+// The queue starts its tournaments one by one, the first it can from `from` on. A start waits only for the reads of
+// the engines of the one it is about to start, never for those of the tournaments after it.
+[[nodiscard]] inline std::vector<std::string> queueNeeds(const std::vector<QueuedTournament>& queue,
+                                                         std::size_t index) {
+    return index < queue.size() ? enginesOfSetup(queue[index].setup) : std::vector<std::string>{};
+}
+
+// After the tournament at `index` could not start (the options of one of its engines cannot be read, or the start
+// refused it): it stays in the queue, and a queue going on by itself tries the next one; "Start now" tries only the
+// first. None when nothing is left to try.
+[[nodiscard]] inline std::optional<std::size_t> queueNextAfterFailure(std::size_t index, std::size_t size, bool go_on) {
+    if (!go_on || index + 1 >= size) return std::nullopt;
+    return index + 1;
 }
 
 }  // namespace fcg

@@ -140,8 +140,9 @@ void App::renameEngine(int index, const std::string& name) {
     if (queue) storage_.saveQueue(queue_);
     for (auto& n : probe_queue_) follow(n);
     for (auto& n : check_queue_) follow(n);
-    if (pending_start_)
-        for (auto& n : pending_start_->needs) follow(n);
+    // A start put off: a quick test of this engine, pressed while its first read gave it its id name, starts under
+    // that name.
+    if (pending_start_ && pending_start_->rename(old, now)) pending_start_->start = quickTestLater(now);
     follow(quick_test_engine_);
     follow(quick_test_opponent_);
     follow(relaunch_engine_);
@@ -286,13 +287,39 @@ bool App::probing(const std::string& name) const {
     return std::find(probe_queue_.begin(), probe_queue_.end(), name) != probe_queue_.end();
 }
 
-bool App::startAfterReads(const std::string& key, std::vector<std::string> needs, std::function<void()> start) {
+namespace {
+
+// What the start put off under `key` starts, for the message that refuses another one.
+std::string startedByKey(const std::string& key) {
+    if (key == "queue") return TR("the queue");
+    if (key.rfind("resume:", 0) == 0) return TR("the resume of the interrupted tournament");
+    if (key.rfind("test:", 0) == 0) return trf("the quick test of {}", key.substr(5));
+    return TR("the new tournament");
+}
+
+}  // namespace
+
+bool App::startAfterReads(const std::string& key, std::vector<std::string> needs, std::function<void()> start,
+                          std::function<void()> failed) {
     // A tournament plays: the start says so itself, and nothing here may end its engines.
     if (run_.running()) return false;
-    // Pressed again, or from another place, while it waits: it goes on waiting, as it was.
-    if (startPending(key)) return true;
+    switch (startAsked(pending_start_ ? pending_start_->key : std::string(), key)) {
+        case StartAsked::Go:
+            break;
+        case StartAsked::Waiting:  // pressed again, or from another place: it goes on waiting, as it was
+            return true;
+        case StartAsked::Refused:  // the one waiting (an automatic queue start, perhaps) is not dropped silently
+            start_error_ =
+                trf("Not started: another start is waiting ({}). Cancel it first.", startedByKey(pending_start_->key));
+            Console::instance().add(start_error_, true);
+            return true;
+    }
     start_error_.clear();
-    pending_start_ = PendingStart{key, std::move(needs), std::move(start), {}, false};
+    pending_start_         = PendingStart{};
+    pending_start_->key    = key;
+    pending_start_->needs  = std::move(needs);
+    pending_start_->start  = std::move(start);
+    pending_start_->failed = std::move(failed);
     if (advanceStart()) {
         pending_start_.reset();
         return false;
@@ -322,15 +349,17 @@ bool App::advanceStart() {
 
     const auto reading  = probe_.valid() ? engine_name(probe_index_) : std::string();
     const auto checking = check_.valid() ? engine_name(check_index_) : std::string();
-    const auto gate     = startGate(pending.needs, reading, checking, probe_queue_, !suite_runner_.running());
+    const auto gate     = startGate(pending.needs, reading, checking, probe_queue_, suite_runner_.running());
     pending.waiting_for.clear();
     pending.waiting_check = false;
+    pending.waiting_suite = false;
     switch (gate.action) {
         case StartGate::Action::Start:
             return true;
         case StartGate::Action::Wait:
             pending.waiting_for   = gate.engine;
             pending.waiting_check = gate.check;
+            pending.waiting_suite = gate.suite;
             return false;
         case StartGate::Action::Read:
             pending.waiting_for = gate.engine;
@@ -361,6 +390,11 @@ bool App::advanceStart() {
 }
 
 void App::pollStart() {
+    // A start whose read failed goes on as it said (the queue, with its next tournament).
+    if (start_failed_) {
+        const auto failed = std::exchange(start_failed_, {});
+        if (!quit_ && !quit_pending_ && !run_.running()) failed();
+    }
     if (!pending_start_) return;
     if (quit_ || quit_pending_ || run_.running()) {
         pending_start_.reset();
@@ -374,8 +408,9 @@ void App::pollStart() {
 bool App::drawStartWaiting(const char* id, const std::string& key, bool icon) {
     if (!startPending(key)) return false;
     const auto& pending = *pending_start_;
-    const auto label =
-        pending.waiting_for.empty() ? std::string(TR("Starting…")) : trf("Waiting for {}…", pending.waiting_for);
+    const auto label    = pending.waiting_suite         ? std::string(TR("Waiting for the test suite…"))
+                          : pending.waiting_for.empty() ? std::string(TR("Starting…"))
+                                                        : trf("Waiting for {}…", pending.waiting_for);
     if (icon) {
         (void)ui::iconButton(id, ui::Icon::Play, label.c_str(), false);
     } else {
@@ -391,7 +426,9 @@ bool App::drawStartWaiting(const char* id, const std::string& key, bool icon) {
 }
 
 std::string App::startWaitingText(const std::string& key) const {
-    if (!startPending(key) || pending_start_->waiting_for.empty()) return {};
+    if (!startPending(key)) return {};
+    if (pending_start_->waiting_suite) return TR("It starts once the test suite ends (or is stopped).");
+    if (pending_start_->waiting_for.empty()) return {};
     const auto& name = pending_start_->waiting_for;
     return pending_start_->waiting_check ? trf("It starts once the check of {} ends.", name)
                                          : trf("It starts once the options of {} are read.", name);
@@ -454,9 +491,11 @@ void App::applyProbe() {
 
     if (!result.ok) {
         probe_message_ = trf("Failed: {}", result.error);
-        // A start waited for it: it would play an engine that cannot be read.
+        // A start waited for it: it would play an engine that cannot be read. The queue goes on with its next
+        // tournament, at the next frame (this may be called while a start is asked for).
         if (pending_start_ && std::find(pending_start_->needs.begin(), pending_start_->needs.end(), e.name) !=
                                   pending_start_->needs.end()) {
+            start_failed_ = std::move(pending_start_->failed);
             pending_start_.reset();
             start_error_ = trf("Not started: the options of {} cannot be read.", e.name);
             Console::instance().add(start_error_, true);
@@ -1350,15 +1389,10 @@ void App::startCheck(int index) {
 
 void App::startQuickTest(int index) {
     if (index < 0 || index >= static_cast<int>(engines_.size()) || run_.running()) return;
-    std::vector<std::string> needs = {engines_[index].name};
+    const auto name                = engines_[index].name;
+    std::vector<std::string> needs = {name};
     if (!quick_test_opponent_.empty()) needs.push_back(quick_test_opponent_);
-    if (startAfterReads("test:" + engines_[index].name, std::move(needs), [this, name = engines_[index].name] {
-            const auto it =
-                std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == name; });
-            if (it != engines_.end()) startQuickTest(static_cast<int>(it - engines_.begin()));
-        })) {
-        return;
-    }
+    if (startAfterReads("test:" + name, std::move(needs), quickTestLater(name))) return;
     // Only the last quick test is kept: its result stays with the engine.
     const auto dir = storage_.root() / "tests";
     std::error_code ec;
@@ -1379,6 +1413,13 @@ void App::startQuickTest(int index) {
     quick_test_engine_ = engines_[index].name;
     tab_request_       = Tab::Live;
     Console::instance().add(trf("Quick test of {} started.", quick_test_engine_));
+}
+
+std::function<void()> App::quickTestLater(const std::string& name) {
+    return [this, name] {
+        const auto it = std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == name; });
+        if (it != engines_.end()) startQuickTest(static_cast<int>(it - engines_.begin()));
+    };
 }
 
 void App::finishQuickTest() {

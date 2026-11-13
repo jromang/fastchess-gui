@@ -157,6 +157,9 @@ msgstr "等级分列表的文本或网页、Ordo、CSV (name,elo)"
 msgid "A rating list, for the reference Elo…"
 msgstr "等级分榜，用于参考 Elo…"
 
+msgid "A tournament waits to start."
+msgstr "有一个锦标赛正在等待开始。"
+
 msgid "A: +%d  =%d  -%d"
 msgstr "A：+%d  =%d  -%d"
 
@@ -227,6 +230,9 @@ msgstr "已忽略亲和性：某个引擎使用 %d 个线程。"
 
 msgid "After the running match."
 msgstr "在当前比赛之后。"
+
+msgid "After the running tournament: its end ends every engine."
+msgstr "请在当前锦标赛结束后：它结束时会关闭所有引擎。"
 
 msgid "All"
 msgstr "全部"
@@ -1084,6 +1090,9 @@ msgstr "{} 的检查完成后即开始。"
 msgid "It starts once the options of {} are read."
 msgstr "读取 {} 的选项后即开始。"
 
+msgid "It starts once the test suite ends (or is stopped)."
+msgstr "测试集结束（或被停止）后即开始。"
+
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr "它在“等级分”中的信息卡：所有锦标赛中的成绩、稳定性和等级分。"
 
@@ -1353,6 +1362,9 @@ msgstr "尚未检查。"
 
 msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
 msgstr "此对局的 PGN 中没有：请在配置的 PGN 选项中开启该字段。"
+
+msgid "Not started: another start is waiting ({}). Cancel it first."
+msgstr "未开始：另一个启动正在等待（{}）。请先取消它。"
 
 msgid "Not started: the options of {} cannot be read."
 msgstr "未开始：无法读取 {} 的选项。"
@@ -2237,6 +2249,12 @@ msgstr "所显示开局的起始局面，按显示顺序排列：用它们生成
 msgid "The system could not open:"
 msgstr "系统无法打开："
 
+msgid "The test suite is not started: a tournament is running."
+msgstr "测试集未开始：有锦标赛正在进行。"
+
+msgid "The test suite is not started: a tournament waits to start."
+msgstr "测试集未开始：有锦标赛正在等待开始。"
+
 msgid "The time control needs a base time or an increment."
 msgstr "时限需要基本时间或加秒。"
 
@@ -2356,6 +2374,9 @@ msgstr "作废这局对局（不重下）"
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "胜 {:.0f} · 和 {:.0f} · 负 {:.0f} %"
+
+msgid "Waiting for the test suite…"
+msgstr "正在等待测试集…"
 
 msgid "Waiting for {}…"
 msgstr "正在等待 {}…"
@@ -2613,8 +2634,20 @@ msgstr "已要求重下"
 msgid "send at startup"
 msgstr "启动时发送"
 
+msgid "the new tournament"
+msgstr "新锦标赛"
+
 msgid "the one chosen in the Live tab"
 msgstr "在“实时”页中选择的那一局"
+
+msgid "the queue"
+msgstr "队列"
+
+msgid "the quick test of {}"
+msgstr "{} 的快速测试"
+
+msgid "the resume of the interrupted tournament"
+msgstr "恢复被中断的锦标赛"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "可在帖子中注明，或重新测试引擎："

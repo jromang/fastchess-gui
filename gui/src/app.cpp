@@ -62,6 +62,7 @@ App::~App() {
     if (probe_.valid() || check_.valid()) {
         if (window_) SDL_HideWindow(window_);
         fastchess::atomic::stop = true;  // fastchess' Windows reads give up
+        interruptEngineProcesses();      // with what they started (a wrapper script's engine)
         fastchess::stopProcesses();
         if (probe_.valid()) probe_.wait();
         if (check_.valid()) check_.wait();
@@ -194,6 +195,17 @@ void App::frame() {
                 startRun();
             else if (unfinished_)
                 resumeRun();
+        } else if (w == "engines-test") {
+            // The quick test of the first engine pressed on the first frame, while it is read.
+            page_            = Page::Engines;
+            selected_engine_ = engines_.empty() ? -1 : 0;
+            if (!engines_.empty()) startQuickTest(0);
+        } else if (w == "suite-then-start") {
+            // The test suite started, then Start of the setup pressed while it runs.
+            page_ = Page::NewMatch;
+            loadSuiteSetup();
+            startSuite();
+            startRun();
         } else if (w == "suites")
             page_ = Page::Suites;
         else if (w.rfind("palette", 0) == 0) {  // palette=TEXT: the command palette, TEXT typed in it
@@ -688,21 +700,27 @@ void App::enqueue() {
     Console::instance().add(trf("Queued: {}", item.label));
 }
 
-void App::startFromQueue(bool go_on) {
+void App::startFromQueue(bool go_on, std::size_t from, const std::string& label) {
     if (run_.running()) return;
-    // Put off as a whole while an engine it plays is read: a start put off is not one that failed. Going on, any of the
-    // queued tournaments may be the one that starts.
-    std::vector<std::string> needs;
-    for (const auto& q : queue_) {
-        for (auto& name : enginesOfSetup(q.setup)) needs.push_back(std::move(name));
-        if (!go_on) break;
-    }
-    if (startAfterReads("queue", std::move(needs), [this, go_on] { startFromQueue(go_on); })) return;
-    for (std::size_t i = 0; i < queue_.size(); ++i) {
-        auto next = queue_[i].setup;
+    // Going on from the tournament `label` (put off, or the next after one that could not start), unless the queue
+    // changed meanwhile.
+    if (!label.empty() && (from >= queue_.size() || queue_[from].label != label)) from = 0;
+    for (std::size_t i = from; i < queue_.size(); ++i) {
+        // Put off while an engine of this tournament is read, not one of the tournaments after it: a start put off
+        // is not one that failed. When that read fails, it stays queued, and the queue goes on with the next one.
+        const auto here = queue_[i].label;
+        const auto next = queueNextAfterFailure(i, queue_.size(), go_on);
+        if (startAfterReads(
+                "queue", queueNeeds(queue_, i), [this, go_on, i, here] { startFromQueue(go_on, i, here); },
+                next ? std::function<void()>(
+                           [this, n = *next, there = queue_[*next].label] { startFromQueue(true, n, there); })
+                     : std::function<void()>())) {
+            return;
+        }
+        auto setup = queue_[i].setup;
         // The look of the program follows the settings, not the queued setup.
-        keepProgramSettings(next, setup_);
-        setup_ = next;
+        keepProgramSettings(setup, setup_);
+        setup_ = setup;
         startRun();
         // Taken off the queue once started: one that cannot start (an engine removed since...) is not lost.
         if (run_.running()) {

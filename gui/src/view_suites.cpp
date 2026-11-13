@@ -73,6 +73,13 @@ void App::openSuite(const std::string& file) {
 
 void App::startSuite() {
     if (!suite_ || suite_->positions.empty() || suite_runner_.running()) return;
+    // A tournament's end would end the suite's engines, and a start waiting would wait for the suite.
+    if (!suiteMayStart(run_.running(), pending_start_.has_value())) {
+        Console::instance().add(run_.running() ? TR("The test suite is not started: a tournament is running.")
+                                               : TR("The test suite is not started: a tournament waits to start."),
+                                true);
+        return;
+    }
     std::vector<fastchess::EngineConfiguration> configs;
     int threads = 1;
     for (const auto& name : suite_setup_.engines) {
@@ -263,7 +270,12 @@ void App::drawSuites() {
         if (ui::iconButton("suite_stop", ui::Icon::Stop, TR("Stop"))) suite_runner_.stop();
     } else {
         const bool ready = suite_ && !suite_->positions.empty() && !suite_setup_.engines.empty();
-        if (ui::iconButton("suite_start", ui::Icon::Play, TR("Start"), ready)) startSuite();
+        const bool free  = suiteMayStart(run_.running(), pending_start_.has_value());
+        if (ui::iconButton("suite_start", ui::Icon::Play, TR("Start"), ready && free)) startSuite();
+        if (!free && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+            ImGui::SetTooltip("%s", run_.running() ? TR("After the running tournament: its end ends every engine.")
+                                                   : TR("A tournament waits to start."));
+        }
     }
     if (suite_runner_.total() > 0) {
         const float done = static_cast<float>(suite_runner_.answered()) / static_cast<float>(suite_runner_.total());
