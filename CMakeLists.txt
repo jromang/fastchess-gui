@@ -198,7 +198,18 @@ if(FCG_BUILD_GUI)
     set(MBEDTLS_FATAL_WARNINGS OFF CACHE BOOL "" FORCE)
     set(TF_PSA_CRYPTO_FATAL_WARNINGS OFF CACHE BOOL "" FORCE)
     set(DISABLE_PACKAGE_CONFIG_AND_INSTALL ON CACHE BOOL "" FORCE)
+    # Thread-safe: the lichess relay and the SSH tunnel use it at the same time.
+    set(TF_PSA_CRYPTO_USER_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/cmake/tf_psa_crypto_user_config.h
+        CACHE FILEPATH "" FORCE)
+    set(LINK_WITH_PTHREAD ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(mbedtls)
+
+    # QR codes of the web page's public address: Nayuki's QR Code generator (MIT), its C++ version compiled in.
+    FetchContent_Declare(qrcodegen
+        URL https://github.com/nayuki/QR-Code-generator/archive/refs/tags/v1.8.0.tar.gz
+        URL_HASH SHA256=2ec0a4d33d6f521c942eeaf473d42d5fe139abcfa57d2beffe10c5cf7d34ae60
+        SOURCE_SUBDIR fcg-no-cmake)
+    FetchContent_MakeAvailable(qrcodegen)
 
     # The translations: .po files read by tinygettext, UTF-8 only (no iconv).
     FetchContent_Declare(tinygettext
@@ -276,13 +287,15 @@ if(FCG_BUILD_GUI)
     list(REMOVE_ITEM FCG_GUI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/main.cpp)
 
     # Everything except main(), so the unit tests can link it too.
-    add_library(fcg_lib STATIC ${FCG_GUI_SOURCES} ${FCG_ASSET_CPP} ${FCG_FONT_CPPS} ${FCG_PO_CPP})
+    add_library(fcg_lib STATIC ${FCG_GUI_SOURCES} ${FCG_ASSET_CPP} ${FCG_FONT_CPPS} ${FCG_PO_CPP}
+                ${qrcodegen_SOURCE_DIR}/cpp/qrcodegen.cpp)
     target_compile_features(fcg_lib PUBLIC cxx_std_20)
     target_include_directories(fcg_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/gui/src)
     # Header-only libraries compiled in our files: their warnings are not ours to fix.
     target_include_directories(fcg_lib SYSTEM PUBLIC
         ${nanosvg_SOURCE_DIR}/src
         ${stb_SOURCE_DIR}
+        ${qrcodegen_SOURCE_DIR}/cpp
     )
     target_compile_options(fcg_lib PRIVATE -Wall -Wextra)
     target_compile_definitions(fcg_lib PUBLIC FCG_VERSION="${PROJECT_VERSION}")
@@ -306,7 +319,8 @@ if(FCG_BUILD_GUI)
     if(FCG_BUILD_TESTS)
         file(GLOB FCG_TEST_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gui/tests/*.cpp)
         add_executable(fastchess-gui-tests ${FCG_TEST_SOURCES})
-        target_link_libraries(fastchess-gui-tests PRIVATE fcg_lib)
+        # Mbed TLS too: the SSH tests play the server's part with its cryptography.
+        target_link_libraries(fastchess-gui-tests PRIVATE fcg_lib mbedtls)
         # A WinBoard engine for the tests of the adapter.
         add_executable(fcg_wb_mover ${CMAKE_CURRENT_SOURCE_DIR}/gui/tests/mock/wb_mover.cpp)
         set_target_properties(fcg_wb_mover PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
