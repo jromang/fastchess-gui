@@ -350,13 +350,23 @@ TEST_CASE("runner: a pause holds the next try of an engine that failed to start,
     auto state                   = TournamentState::create(dir / "t", s);
 
     // Paused while the engine waits for its next try: nothing is played during the pause, the try comes after it.
+    // The waiting game does not count as running meanwhile (a paused tournament shows no game finishing), and
+    // counts again once resumed.
     constexpr auto held = 3s;
+    std::atomic_int running_paused{-1}, running_resumed{-1};
     std::thread pauser([&] {
+        auto& gate             = fastchess::observer::PauseGate::instance();
+        const auto waitRunning = [&](int n) {
+            for (int i = 0; i < 200 && gate.running() != n; ++i) std::this_thread::sleep_for(10ms);
+            return gate.running();
+        };
         while (!fs::exists(started)) std::this_thread::sleep_for(10ms);
-        fastchess::observer::PauseGate::instance().setPaused(true);
+        gate.setPaused(true);
+        running_paused = waitRunning(0);
         std::this_thread::sleep_for(held);
         CHECK(state->results().empty());
-        fastchess::observer::PauseGate::instance().setPaused(false);
+        gate.setPaused(false);
+        running_resumed = waitRunning(1);
     });
     const auto begun = std::chrono::steady_clock::now();
     const auto error = play(*state);
@@ -367,6 +377,9 @@ TEST_CASE("runner: a pause holds the next try of an engine that failed to start,
     CHECK(state->finished());
     CHECK(state->results().size() == 2u);
     CHECK(std::chrono::steady_clock::now() - begun >= fastchess::BaseTournament::ENGINE_START_RETRY_PAUSE + held);
+    CHECK(running_paused.load() == 0);
+    CHECK(running_resumed.load() == 1);
+    CHECK(fastchess::observer::PauseGate::instance().running() == 0);
 }
 
 TEST_CASE("runner: \"stop when idle\" gives up at once a game whose engine waits for its next try") {
@@ -409,6 +422,50 @@ TEST_CASE("runner: \"stop when idle\" gives up at once a game whose engine waits
     CHECK_FALSE(fastchess::atomic::abnormal_termination);
     CHECK(state->results().empty());
     CHECK(std::chrono::steady_clock::now() - begun < fastchess::BaseTournament::ENGINE_START_RETRY_PAUSE);
+}
+
+TEST_CASE("runner: an engine whose game was given up while it failed to start is started anew for its next game") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-retry-anew";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    // Fails to start the first time, slowly enough for the game to be given up at its first failure; then is the
+    // random mover.
+    const auto started = dir / "started";
+    const auto script  = dir / "flaky.sh";
+    {
+        std::ofstream out(script);
+        out << "#!/bin/sh\nif [ ! -e \"" << started.string() << "\" ]; then touch \"" << started.string()
+            << "\"; sleep 1; exit 1; fi\nexec \"" << randomMover() << "\"\n";
+    }
+    fs::permissions(script, fs::perms::owner_all);
+
+    auto s                       = spec(Format::Match, 2, 1, 2);
+    s.conditions.concurrency     = 1;
+    s.participants[1].engine.cmd = script.string();
+    auto state                   = TournamentState::create(dir / "t", s);
+
+    // "Stop when idle" gives the game up; a resume then cancels it, and the games are played.
+    std::thread resumer([&] {
+        while (!fs::exists(started)) std::this_thread::sleep_for(10ms);
+        auto& gate = fastchess::observer::PauseGate::instance();
+        gate.stopWhenIdle();
+        std::this_thread::sleep_for(2s);
+        gate.setPaused(false);
+    });
+    const auto error = play(*state);
+    resumer.join();
+
+    CHECK(error.empty());
+    CHECK(state->finished());
+    REQUIRE(state->results().size() == 2u);
+    // Not lost at once by disconnection to the process that never started.
+    for (const auto& r : state->results()) CHECK(r.termination != fastchess::MatchTermination::DISCONNECT);
 }
 
 TEST_CASE("runner: a round robin of more engines than games at a time starts each engine once") {

@@ -199,8 +199,8 @@ class TournamentState {
     [[nodiscard]] bool settled(uint32_t encounter) const;
 
     // The engine names of the participants still playing (not withdrawn, not replaced) that have a game left: of
-    // the schedule of a round robin or a gauntlet, or any of a match, Swiss or knockout, whose next rounds are not
-    // known yet.
+    // the schedule of a round robin, a gauntlet or the last round of a Swiss; in a knockout, those not knocked out
+    // (a match lost ends a player's games at once); otherwise any, whose next rounds are not known yet.
     [[nodiscard]] std::set<std::string> enginesLeft() const;
 
     // Every game played, or the SPRT decided.
@@ -245,6 +245,12 @@ class TournamentState {
     void pairIfReady();                                 // Swiss, knockout: the next round when one is due
     void applyRoundEvent(const nlohmann::json& event);  // round_paired, tiebreak_added; mutex_ held
     [[nodiscard]] double pairPoints(int a, int b, uint32_t round) const;  // a's points against b in a round
+    // Knockout, the place of `a` and `b` in the round being played: the tiebreak pairs of games it was given, whether
+    // all its games are played (or dropped), and who goes through once they are (nullopt while level: another
+    // tiebreak is due). mutex_ held.
+    [[nodiscard]] int tiebreaks(int a, int b) const;
+    [[nodiscard]] bool placeOver(int a, int b) const;
+    [[nodiscard]] std::optional<int> placeWinner(int a, int b) const;
     static void roundEventTo(const nlohmann::json& event, const TournamentSpec& spec, Schedule& schedule);
     void rebuildOpen();
     [[nodiscard]] bool hasWorkLocked() const;

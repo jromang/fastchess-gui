@@ -15,6 +15,12 @@ namespace {
 // the game on the thread that played it, right before it would score it.
 thread_local const GameTask* t_task = nullptr;
 thread_local bool t_recorded        = false;
+// Whether both engines of that game started (fastchess told their processes).
+thread_local bool t_started = false;
+
+// What counts that game as running in the pause gate; empty while a pause holds the next start try of its engine.
+using Ticket                                   = fastchess::observer::PauseGate::Ticket;
+thread_local std::unique_ptr<Ticket>* t_ticket = nullptr;
 
 }  // namespace
 
@@ -80,16 +86,38 @@ bool Runner::gameWanted(std::size_t /*game_id*/) const {
     return !t_task || state_.wanted(*t_task);
 }
 
-bool Runner::gameHeld(std::size_t /*game_id*/) const { return fastchess::observer::PauseGate::instance().paused(); }
+bool Runner::gameHeld(std::size_t /*game_id*/) const {
+    auto& gate      = fastchess::observer::PauseGate::instance();
+    const bool held = gate.paused();
+
+    // Asked on the game's thread while it waits for the next try of an engine. Nothing is played during that wait,
+    // so a pause stops counting the game as running (the paused tournament would show it finishing until the
+    // resume), and the resume counts it again before the try. The pair it entered stays as it is. "Stop when idle"
+    // gives the game up instead (gameWanted()).
+    if (t_ticket && t_task) {
+        if (held && *t_ticket && !gate.stoppingWhenIdle()) {
+            t_ticket->reset();
+        } else if (!held && !*t_ticket) {
+            t_ticket->reset(new Ticket(gate.enter(t_task->encounter.index, 1)));
+        }
+    }
+    return held;
+}
 
 void Runner::play(const GameTask& task) {
     t_task     = &task;
     t_recorded = false;
+    t_started  = false;
 
     try {
         // A paused tournament lets running games (and the other game of their pair) finish but starts no new pair.
         // The pair is closed by closeSettledPairs() when its other game was played before, or will not be.
-        const auto ticket = fastchess::observer::PauseGate::instance().enter(task.encounter.index, 2);
+        std::unique_ptr<Ticket> ticket(
+            new Ticket(fastchess::observer::PauseGate::instance().enter(task.encounter.index, 2)));
+        t_ticket = &ticket;
+        struct Forget {
+            ~Forget() { t_ticket = nullptr; }
+        } forget;
 
         const fastchess::GamePair<fastchess::EngineConfiguration, fastchess::EngineConfiguration> configs{task.white,
                                                                                                           task.black};
@@ -99,6 +127,13 @@ void Runner::play(const GameTask& task) {
         playGame(configs, start, finish, task.opening, task.encounter.index, task.number() + 1);
     } catch (const std::exception& e) {
         fail(e.what());
+    }
+
+    // A game given up while an engine of it failed to start leaves that engine in fastchess' cache as if it had
+    // started (fastchess makes a new process only to try again), so the next game to take it would lose at once by
+    // disconnection. Its processes are ended: that game starts the engine anew.
+    if (!t_started) {
+        retireEngines([&](const std::string& name) { return name == task.white.name || name == task.black.name; });
     }
 
     if (!t_recorded) state_.release(task);
@@ -161,6 +196,7 @@ void Runner::onGameStart(const fastchess::observer::GameStart& info) {
 }
 
 void Runner::onEngineProcesses(int slot, int64_t white_pid, int64_t black_pid) {
+    t_started = true;
     if (downstream_) downstream_->onEngineProcesses(slot, white_pid, black_pid);
 }
 
