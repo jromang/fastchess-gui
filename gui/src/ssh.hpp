@@ -78,6 +78,8 @@ class Reader {
     uint32_t u32();
     // A string of `max` bytes at most.
     std::string_view string(std::size_t max = MAX_PACKET);
+    // The next `size` bytes, as they are.
+    std::string_view raw(std::size_t size);
     [[nodiscard]] bool ok() const noexcept { return ok_; }
     [[nodiscard]] std::size_t left() const noexcept { return data_.size() - at_; }
 
@@ -89,6 +91,9 @@ class Reader {
 
 // Starts the cryptography (once, any thread): false when it cannot.
 bool startCrypto();
+
+// Overwrites a secret (a shared secret, a key) with zeros, in a way the compiler cannot leave out, and empties it.
+void wipe(std::string& secret);
 
 [[nodiscard]] std::string sha256(std::string_view data);
 [[nodiscard]] std::string base64(std::string_view data, bool padding = true);

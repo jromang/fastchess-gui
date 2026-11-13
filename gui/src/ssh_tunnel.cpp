@@ -527,7 +527,8 @@ class TunnelConnection {
         if (!i_s_.empty()) return fail("the server started a key exchange twice");
         i_s_ = payload;
         if (!kexinit_sent_) startKex();
-        Reader r(std::string_view(payload).substr(17));  // the type and the cookie
+        Reader r(std::string_view(payload).substr(1));
+        r.raw(16);  // the cookie
         std::string lists[10];
         for (auto& list : lists) list = std::string(r.string(8192));
         r.boolean();
@@ -837,7 +838,14 @@ void SshTunnel::start(TunnelSettings settings) {
     shared_->settings        = settings_;
     shared_->status.state    = TunnelState::Connecting;
     thread_                  = std::thread([shared = shared_] {
-        run(shared);
+        // Nothing thrown on this thread may end the program: a failure, with its reason.
+        try {
+            run(shared);
+        } catch (const std::exception& e) {
+            failed(*shared, e.what());
+        } catch (...) {
+            failed(*shared, "unknown error");
+        }
         shared->finished = true;
     });
 }
@@ -857,6 +865,13 @@ void SshTunnel::stop() {
     shared_.reset();
 }
 
+void SshTunnel::failed(Shared& shared, const char* what) noexcept {
+    try {
+        shared.set(TunnelState::Failed, std::string("the tunnel stopped on an internal error: ") + what);
+    } catch (...) {
+    }
+}
+
 TunnelStatus SshTunnel::status() const {
     if (!shared_) return {};
     std::lock_guard<std::mutex> lock(shared_->mutex);
@@ -869,8 +884,17 @@ void SshTunnel::run(const std::shared_ptr<Shared>& shared) {
     while (!shared->stopping) {
         Console::instance().add(trf("Tunnel: connecting to {}", settings.host));
         const auto start = Clock::now();
-        TunnelConnection connection(*shared, settings);
-        const auto end = connection.run();
+        TunnelConnection::End end;
+        // What the server sends cannot end the program either (an exception escaping a thread would): the connection
+        // fails, and is tried again.
+        try {
+            TunnelConnection connection(*shared, settings);
+            end = connection.run();
+        } catch (const std::exception& e) {
+            end.reason = std::string("the connection ended on an internal error: ") + e.what();
+        } catch (...) {
+            end.reason = "the connection ended on an internal error";
+        }
         if (shared->stopping) break;
         if (end.permanent) {
             Console::instance().add(trf("Tunnel: {}", end.reason), true);

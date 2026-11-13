@@ -74,6 +74,7 @@ class SshTunnel {
    private:
     struct Shared;  // with the thread, which can outlive the tunnel
     static void run(const std::shared_ptr<Shared>& shared);
+    static void failed(Shared& shared, const char* what) noexcept;
 
     TunnelSettings settings_;
     std::shared_ptr<Shared> shared_;

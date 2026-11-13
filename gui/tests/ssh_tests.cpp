@@ -293,6 +293,80 @@ TEST_CASE("SSH: packets sealed and opened again, a changed byte or sequence numb
     CHECK(payload == "\x14kexinit");
 }
 
+TEST_CASE("SSH: a length near 2^32 is refused in every mode, not wrapped to a small packet") {
+    // The length 0xFFFFFFFC: 4 more wrap to 0 in 32 bits, which passed the bound and threw out_of_range on the tunnel's
+    // thread before (std::terminate, before any authentication).
+    for (const uint32_t length : {0xFFFFFFFCu, 0xFFFFFFFFu, 0xFFFFFFF8u, 0x80000000u, uint32_t(MAX_PACKET - 3),
+                                  uint32_t(MAX_PACKET + 4)}) {
+        CAPTURE(length);
+        const auto prefix = Writer().u32(length).take();
+        // In the clear: the length alone, or with more bytes behind it.
+        for (const std::size_t more : {std::size_t(0), std::size_t(8), std::size_t(60)}) {
+            PacketCipher clear;
+            std::string in = prefix + std::string(more, 'A'), payload;
+            auto r         = PacketCipher::Open::More;
+            CHECK_NOTHROW(r = clear.open(in, 0, payload));
+            CHECK(r == PacketCipher::Open::Bad);
+        }
+        // With keys: AES-GCM and encrypt-then-MAC send the length in the clear; AES-CTR with HMAC enciphers it with
+        // the first block, so the keystream is found from a packet sealed with the same keys.
+        struct Algorithms {
+            const char* cipher;
+            const char* mac;
+        };
+        for (const auto& a : {Algorithms{"aes256-gcm@openssh.com", ""}, Algorithms{"aes256-ctr", "hmac-sha2-256"},
+                              Algorithms{"aes128-ctr", "hmac-sha2-256-etm@openssh.com"}}) {
+            CAPTURE(a.cipher);
+            CAPTURE(a.mac);
+            const auto key = randomBytes(PacketCipher::keySize(a.cipher));
+            const auto iv  = randomBytes(PacketCipher::ivSize(a.cipher));
+            const auto mk  = randomBytes(PacketCipher::macKeySize(a.mac));
+            std::string in;
+            if (std::string_view(a.mac) == "hmac-sha2-256") {
+                PacketCipher tx;
+                REQUIRE(tx.start(a.cipher, a.mac, key, iv, mk).empty());
+                const auto sealed = tx.seal("\x5e" "data", 0);
+                const auto real   = Writer().u32(static_cast<uint32_t>(sealed.size() - 4 - 32)).take();
+                in                = sealed.substr(0, 16);
+                for (int i = 0; i < 4; ++i) in[i] = static_cast<char>(sealed[i] ^ real[i] ^ prefix[i]);
+                in += std::string(64, 'A');
+            } else {
+                in = prefix + std::string(64, 'A');
+            }
+            PacketCipher rx;
+            REQUIRE(rx.start(a.cipher, a.mac, key, iv, mk).empty());
+            std::string payload;
+            auto r = PacketCipher::Open::More;
+            CHECK_NOTHROW(r = rx.open(in, 0, payload));
+            CHECK(r == PacketCipher::Open::Bad);
+        }
+    }
+    // The proof of concept as it was reported: the four bytes, then eight.
+    PacketCipher rx;
+    std::string in = std::string("\xFF\xFF\xFF\xFC", 4) + std::string(8, 'A'), payload;
+    CHECK(rx.open(in, 0, payload) == PacketCipher::Open::Bad);
+    // A short read: a packet's first byte, or none.
+    PacketCipher partial;
+    std::string one("\x00", 1), none;
+    CHECK(partial.open(one, 0, payload) == PacketCipher::Open::More);
+    CHECK(partial.open(none, 0, payload) == PacketCipher::Open::More);
+}
+
+TEST_CASE("SSH: a reader's raw bytes, bounded by what is left; secrets wiped") {
+    Reader r(std::string_view("abcdef"));
+    CHECK(r.raw(4) == "abcd");
+    CHECK(r.raw(2) == "ef");
+    CHECK(r.ok());
+    CHECK(r.raw(1).empty());
+    CHECK_FALSE(r.ok());
+    Reader big(std::string_view("ab"));
+    CHECK(big.raw(16).empty());
+    CHECK_FALSE(big.ok());
+    std::string secret = "key material";
+    wipe(secret);
+    CHECK(secret.empty());
+}
+
 TEST_CASE("Tunnel: the public address in a service's session text") {
     // localhost.run, its QR code in escape sequences and an advertisement after.
     CHECK(findPublicUrl("\x1b[7m  \x1b[0m\r\nabc123def.app.lhr.life tunneled with tls termination, "
@@ -431,6 +505,8 @@ class FakeServer {
         std::string request = "GET /state.json HTTP/1.0\r\n\r\n";  // sent on the forwarded connection
         int viewers         = 1;                                     // connections forwarded at once
         bool abandon        = false;  // first one the viewer leaves at once, before the answer
+        // Bytes sent after the version line instead of the key exchange; the server then waits for the client to go.
+        std::string raw_first;
     };
 
     FakeServer(uint16_t port, Script script) : script_(std::move(script)) {
@@ -592,6 +668,12 @@ class FakeServer {
         v_c_ = in_.substr(0, in_.find("\r\n"));
         in_.erase(0, v_c_.size() + 2);
         expect(v_c_.rfind("SSH-2.0-", 0) == 0, "bad version " + v_c_);
+        if (!script_.raw_first.empty()) {
+            out_ += script_.raw_first;
+            flush();
+            next();  // the client goes, or tells
+            return;
+        }
 
         kex(true);
         const auto service_message = nextOf(SERVICE_REQUEST);
@@ -833,6 +915,24 @@ TEST_CASE("Tunnel: a server that wants a key is an error trying again cannot men
     tunnel.start(loopback(fingerprint(serverKey().blob)));
     CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Failed; }));
     CHECK(tunnel.status().error.find("publickey") != std::string::npos);
+}
+
+TEST_CASE("Tunnel: a packet length that wrapped, or a KEXINIT too short for its cookie, fails the connection") {
+    // Both threw out_of_range on the tunnel's thread before, which ended the program before any authentication.
+    PacketCipher clear;
+    for (const auto& raw : {std::string("\xFF\xFF\xFF\xFC", 4) + std::string(8, 'A'), clear.seal("\x14", 0),
+                            clear.seal("\x14" "0123456789abcde", 0)}) {
+        FakeServer::Script script;
+        script.raw_first = raw;
+        FakeServer server(SSH_PORT, script);
+        SshTunnel tunnel;
+        tunnel.start(loopback(fingerprint(serverKey().blob)));
+        CHECK(waitFor([&] { return tunnel.status().state == TunnelState::Reconnecting; }));
+        const auto error = tunnel.status().error;
+        CHECK_MESSAGE((error.find("not valid") != std::string::npos || error.find("cannot be read") != std::string::npos),
+                      error);
+        CHECK(waitFor([&] { return server.done.load(); }));
+    }
 }
 
 TEST_CASE("Tunnel: no server: reconnecting, with the reason") {
