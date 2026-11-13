@@ -557,11 +557,39 @@ void App::drawGames() {
         evals.push_back(previous);
     }
     moveChartChoice("##replay_chart", replay_chart_);
+    // The charts read the PGN: a field its tournament did not write is told, with the option that writes it.
+    if (const uint8_t extra = chartExtraField(replay_chart_); extra && !(game.fields & extra) && total > 0) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("%s", trf("No {} in this game's PGN", pgnFieldOption(extra)).c_str());
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip(
+                "%s", trf("Written when \"{}\" is on in the PGN options of the setup.", pgnFieldOption(extra)).c_str());
+        }
+    }
     const float height = ImGui::GetContentRegionAvail().y;
     int clicked        = -1;
     if (replay_chart_ != MoveChart::Eval) {
-        clicked = plotMoves("##replay_moves", replay_chart_, moveSeries(game.moves, replay_chart_),
-                            {game.header("White"), game.header("Black")}, evals.size(), replay_ply_, height);
+        const auto series = moveSeries(game.moves, replay_chart_);
+        if (const uint8_t field = chartField(replay_chart_); series.empty() && field && !(game.fields & field)) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+            ImGui::TextWrapped("%s", trf("Not in this game's PGN: its tournament was played with \"{}\" off in the "
+                                         "PGN options of the setup.",
+                                         pgnFieldOption(field))
+                                         .c_str());
+            ImGui::PopStyleColor();
+            if (ImGui::SmallButton(TR("PGN options"))) {
+                page_           = Page::NewMatch;
+                open_pgn_setup_ = true;
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", TR("The PGN options of the setup, for the tournaments to come."));
+            }
+        } else {
+            clicked = plotMoves("##replay_moves", replay_chart_, series, {game.header("White"), game.header("Black")},
+                                evals.size(), replay_ply_, height,
+                                replay_chart_ == MoveChart::TbHits ? TR("No tablebase hits in this game.")
+                                                                   : TR("The engines did not report it in this game."));
+        }
     } else {
         const auto wdl     = wdlSeries(game.moves);
         const float eval_h = std::floor(height * 0.62f);

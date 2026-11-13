@@ -12,6 +12,9 @@
 //
 // With FCG_MOCK_AFTER_BESTMOVE=TEXT it writes its info line, its bestmove, "info string TEXT" and a readyok (as for
 // an isready received during its search) in one write: what a reader that stops at the bestmove would lose.
+//
+// With FCG_MOCK_SEARCH=1 it writes two info lines as a search would, with a seldepth, nodes, nps, a time and a PV of
+// two moves, the first line on another move: every chart of the Games tab has something to draw.
 
 #include <chrono>
 #include <cstdlib>
@@ -120,7 +123,27 @@ void uci_line(Board &board, const std::string &line) {
                       << std::flush;
             return;
         }
-        std::cout << "info depth 1 score cp 0 pv " << uci::moveToUci(move) << std::endl;
+        if (std::getenv("FCG_MOCK_SEARCH")) {
+            const int depth   = random_number(6, 16);
+            const int ms      = random_number(5, 40);
+            const long nodes  = 3000L * depth * random_number(8, 12);
+            const auto before = random_move(board);
+            Board after       = board;
+            after.makeMove(move);
+            // A reply only while the game goes on: fastchess warns about a PV that continues after its end.
+            auto replies = Movelist();
+            if (after.isGameOver().second == GameResult::NONE) movegen::legalmoves(replies, after);
+            const std::string reply =
+                replies.empty() ? "" : " " + uci::moveToUci(replies[random_number(0, replies.size() - 1)]);
+            std::cout << "info depth " << depth - 1 << " seldepth " << depth + 2 << " score cp 10 nodes " << nodes / 3
+                      << " nps " << nodes / 3 * 1000 / (ms / 2 + 1) << " time " << ms / 2 << " pv "
+                      << uci::moveToUci(before) << "\n"
+                      << "info depth " << depth << " seldepth " << depth + random_number(2, 8) << " score cp 10 nodes "
+                      << nodes << " nps " << nodes * 1000 / ms << " time " << ms << " pv " << uci::moveToUci(move)
+                      << reply << std::endl;
+        } else {
+            std::cout << "info depth 1 score cp 0 pv " << uci::moveToUci(move) << std::endl;
+        }
         if (const char *think = std::getenv("FCG_MOCK_MOVE_MS"))
             std::this_thread::sleep_for(std::chrono::milliseconds(std::atoi(think)));
         std::cout << "bestmove " << uci::moveToUci(move) << std::endl;

@@ -146,12 +146,36 @@ MoveSeries moveSeries(const Moves& moves, MoveChart chart) {
     return s;
 }
 
+// The PgnField a chart reads from the move comments of a PGN: 0 for the evaluation, the time and the depth, which
+// are always written.
+constexpr uint8_t chartField(MoveChart chart) {
+    switch (chart) {
+        case MoveChart::Nodes:
+            return PGN_NODES;
+        case MoveChart::Speed:
+            return PGN_NPS;
+        case MoveChart::TbHits:
+            return PGN_TBHITS;
+        case MoveChart::Agreement:
+            return PGN_PV;
+        default:
+            return 0;
+    }
+}
+// The PgnField of its thinner line: the decision time beside the move time, the seldepth beside the depth.
+constexpr uint8_t chartExtraField(MoveChart chart) {
+    return chart == MoveChart::Time ? PGN_DECISION : chart == MoveChart::Depth ? PGN_SELDEPTH : 0;
+}
+// The name of the setup's PGN option that writes a PgnField.
+const char* pgnFieldOption(uint8_t field);
+
 // The chart choice above the curve; true when it changed.
 bool moveChartChoice(const char* id, MoveChart& chart);
 
-// The MoveSeries of both engines, named, over `plies` plies. Returns the ply clicked, or -1.
+// The MoveSeries of both engines, named, over `plies` plies; `empty` instead when it has no values. Returns the ply
+// clicked, or -1.
 int plotMoves(const char* id, MoveChart chart, const MoveSeries& series, const std::array<std::string, 2>& names,
-              std::size_t plies, int marker_ply, float height);
+              std::size_t plies, int marker_ply, float height, const char* empty);
 
 // "W 12 · D 80 · L 8 %" and a thin bar of the three, for a side's own win, draw, loss in permille.
 void wdlLine(const std::array<int64_t, 3>& wdl);
