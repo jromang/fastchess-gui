@@ -44,7 +44,8 @@ BroadcastInput broadcastInput(const tour::TournamentState& state, const GuiObser
         observer.copySlot(slot, in.slots[static_cast<std::size_t>(slot)]);
         in.ended[static_cast<std::size_t>(slot)] = observer.endedGames(slot);
     }
-    in.taken = Clock::now();
+    in.totals = observer.namedTotals();
+    in.taken  = Clock::now();
     return in;
 }
 
@@ -65,6 +66,7 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
     s.table             = tour::computeTable(spec, results, in.anchor, in.byes);
 
     const auto name = [&](int id) { return spec.participant(id) ? spec.participant(id)->engine.name : "?"; };
+    std::map<std::string, BroadcastEngine> lost;  // the anomalies of each engine, by name
     for (auto it = results.rbegin(); it != results.rend(); ++it) {
         // The PGN file holds every game recorded, voided ones too: complete up to the end of the last one.
         s.pgn_bytes = std::max(s.pgn_bytes, it->pgn.end());
@@ -108,11 +110,39 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
             default:
                 break;
         }
-        if (!kind.empty() && s.anomalies.size() < 100) {
-            const auto loser = it->result == "1-0" ? name(it->black) : it->result == "0-1" ? name(it->white) : "";
+        if (kind.empty()) continue;
+        const auto loser = it->result == "1-0" ? name(it->black) : it->result == "0-1" ? name(it->white) : "";
+        if (!loser.empty()) {
+            auto& e = lost[loser];
+            e.time_losses += kind == "time";
+            e.crashes += kind == "crash";
+            e.stalls += kind == "stall";
+            e.illegal_moves += kind == "illegal";
+        }
+        if (s.anomalies.size() < 100) {
             s.anomalies.push_back(
                 {it->number() + 1, name(it->white), name(it->black), it->result, kind, loser, it->reason});
         }
+    }
+
+    // Each engine's search, from the totals the Statistics tab shows, in the order of the standings. A name taken
+    // again (a participant replaced by an engine of the same name) has the counters of its latest participant.
+    for (const auto& row : s.table.rows) {
+        auto e = lost[row.name];
+        e.name = row.name;
+        for (auto t = in.totals.rbegin(); t != in.totals.rend(); ++t) {
+            if (t->first != row.name) continue;
+            const auto& n = t->second;
+            e.moves       = n.moves;
+            if (n.moves) {
+                e.depth   = static_cast<double>(n.depth_sum) / static_cast<double>(n.moves);
+                e.time_ms = static_cast<int64_t>(n.time_ms / n.moves);
+            }
+            if (n.nodes_samples) e.nodes = n.nodes_sum / n.nodes_samples;
+            if (n.nps_samples) e.nps = static_cast<uint64_t>(n.nps_sum / static_cast<double>(n.nps_samples));
+            break;
+        }
+        s.engines.push_back(std::move(e));
     }
     if (s.pgn_bytes > 0) {
         s.pgn_file = in.dir / spec.pgnFile();  // TournamentState::pgnPath()

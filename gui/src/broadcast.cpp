@@ -121,6 +121,21 @@ std::string snapshotJson(const BroadcastSnapshot& s) {
                              {"engine", a.engine},
                              {"reason", a.reason}});
     }
+    // Each engine's search on average per move, and its anomalies; null where its moves did not tell.
+    auto& engines = j["engines"] = nlohmann::json::array();
+    for (const auto& e : s.engines) {
+        const auto known = [&](auto v) { return e.moves && v ? nlohmann::json(v) : nlohmann::json(nullptr); };
+        engines.push_back({{"name", e.name},
+                           {"moves", e.moves},
+                           {"depth", e.moves ? nlohmann::json(std::round(e.depth * 10) / 10) : nlohmann::json(nullptr)},
+                           {"time_ms", e.moves ? nlohmann::json(e.time_ms) : nlohmann::json(nullptr)},
+                           {"nodes", known(e.nodes)},
+                           {"nps", known(e.nps)},
+                           {"time_losses", e.time_losses},
+                           {"crashes", e.crashes},
+                           {"stalls", e.stalls},
+                           {"illegal_moves", e.illegal_moves}});
+    }
     // The name of the PGN file the page offers, not where it is.
     j["pgn"] = s.pgn_file.empty() ? nlohmann::json(nullptr) : nlohmann::json(s.pgn_name);
 

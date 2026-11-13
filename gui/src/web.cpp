@@ -1,5 +1,6 @@
 // The broadcast web page: every game in progress, the standings and the crosstable, read-only; the followed game's
-// evaluation bar, arrows and charts; the statistics and anomalies of the games played; their PGN file to download.
+// evaluation bar, arrows and charts; the statistics and anomalies of the games played, and each engine's search;
+// their PGN file to download.
 
 #include <algorithm>
 #include <cctype>
@@ -217,6 +218,7 @@ td.n,th.n{text-align:left}.scroll{overflow-x:auto}.two{display:grid;grid-templat
 <main><section class="card" id="focus" hidden></section>
 <section><div class="games" id="games"></div></section>
 <section class="card scroll"><table id="table"></table></section>
+<section class="card scroll"><h2>Search per engine</h2><div class="muted">On average per move searched, book moves left out.</div><div id="engines"></div></section>
 <section class="two"><div class="card"><h2>Statistics</h2><div id="stats"></div></div>
 <div class="card"><h2>Anomalies</h2><div id="anomalies"></div></div></section>
 <section class="card"><div class="muted">Latest results</div><div id="recent"></div></section></main>
@@ -280,6 +282,14 @@ function anomalies(s){const t=s.stats||{},n=v=>v?`<span class="bad">${v}</span>`
  let html=`<div>Time losses ${n(t.time_losses)} · crashes ${n(t.crashes)} · no answer ${n(t.stalls)} · illegal moves ${n(t.illegal_moves)}</div>`;
  if(!s.anomalies.length)return html+'<div class="muted">None so far.</div>';
  return html+'<table>'+s.anomalies.slice(0,15).map(a=>`<tr title="${esc(a.reason)}"><td>#${a.number}</td><td class="n">${esc(a.white)} – ${esc(a.black)}</td><td>${esc(a.result)}</td><td class="n">${KINDS[a.kind]||esc(a.kind)}${a.engine?' · '+esc(a.engine):''}</td></tr>`).join('')+'</table>'}
+// Each engine's search per move and the games it lost badly, as the Statistics tab shows them.
+function engines(s){const e=s.engines||[],v=(x,f)=>x===null||x===undefined?'<span class="muted">–</span>':f(x);
+ if(!e.some(x=>x.moves))return '<div class="muted">No game played yet.</div>';
+ const bad=x=>[[x.time_losses,'time loss','time losses'],[x.crashes,'crash','crashes'],[x.stalls,'no answer','no answer'],[x.illegal_moves,'illegal move','illegal moves']]
+  .filter(a=>a[0]).map(a=>a[0]+' '+(a[0]>1?a[2]:a[1])).join(' · ');
+ return '<table><tr><th class="n">Engine</th><th>Depth</th><th>Time</th><th>Nodes</th><th>Speed</th><th class="n">Anomalies</th></tr>'+e.map(x=>{const b=bad(x);
+  return `<tr><td class="n">${esc(x.name)}</td><td>${v(x.depth,d=>d.toFixed(1))}</td><td>${v(x.time_ms,t=>(t/1000).toFixed(2)+' s')}</td><td>${v(x.nodes,count)}</td>`+
+   `<td>${v(x.nps,n=>count(n)+'/s')}</td><td class="n">${b?`<span class="bad">${b}</span>`:'<span class="muted">none</span>'}</td></tr>`}).join('')+'</table>'}
 function render(s){last=s;
  document.getElementById('name').textContent=s.name||'fastchess-gui';document.title=s.name||'fastchess-gui';
  document.getElementById('progress').textContent=`${s.played}${s.total?' / '+s.total:''} games${s.finished?' · finished':''}`;
@@ -296,6 +306,7 @@ function render(s){last=s;
  rows.forEach(r=>{t+=`<tr><td>${r.rank}</td><td class="n">${esc(r.name)}</td><td>${r.games}</td><td>${half(r.points)}</td><td>${r.games?(r.elo>=0?'+':'')+Math.round(r.elo):''}</td><td class="muted">${r.games?Math.round(r.elo_error):''}</td><td>${r.wins}</td><td>${r.draws}</td><td>${r.losses}</td>`+
   r.crosstable.map(c=>c?`<td title="+${c.wins} =${c.draws} -${c.losses}">${c.wins+c.draws+c.losses?half(c.wins+c.draws/2):''}</td>`:'<td class="muted">–</td>').join('')+'</tr>'});
  document.getElementById('table').innerHTML=t;
+ document.getElementById('engines').innerHTML=engines(s);
  document.getElementById('stats').innerHTML=stats(s);
  document.getElementById('anomalies').innerHTML=anomalies(s);
  document.getElementById('recent').innerHTML=s.recent.slice(0,12).map(x=>`<div>${esc(x)}</div>`).join('')}

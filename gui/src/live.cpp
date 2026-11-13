@@ -304,7 +304,9 @@ void GuiObserver::loadPlayed() {
             p.opening = {pgnTag(text, "ECO"), pgnTag(text, "Opening")};
             p.facts   = evalFacts(text, resultForA(result, result.white));
             forEachMoveComment(text, [&](bool white, const ReplayMove& move) {
-                if (!move.book) addMove(p.side[white ? 0 : 1], move.depth, move.time_ms, move.nps, move.decision_ms);
+                if (!move.book) {
+                    addMove(p.side[white ? 0 : 1], move.depth, move.time_ms, move.nps, move.nodes, move.decision_ms);
+                }
             });
             if (const auto* cpu = cpuOf(result)) {
                 for (std::size_t side = 0; side < 2; ++side) {
@@ -367,6 +369,8 @@ GameRecord GuiObserver::addLoaded(const tour::GameResult& result, LoadedGame& p)
             t.depth_sum += add.depth_sum;
             t.nps_sum += add.nps_sum;
             t.nps_samples += add.nps_samples;
+            t.nodes_sum += add.nodes_sum;
+            t.nodes_samples += add.nodes_samples;
             t.time_ms += add.time_ms;
             t.decision_ms += add.decision_ms;
             t.decision_samples += add.decision_samples;
@@ -750,7 +754,7 @@ void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::Ma
 
             const bool white_moved = (i % 2 == 0) == white_first;
             addMove(totals_[white_moved ? record.white : record.black], mv.depth, mv.elapsed_millis,
-                    static_cast<int64_t>(mv.nps), mv.decision_millis);
+                    static_cast<int64_t>(mv.nps), mv.nodes, mv.decision_millis);
         }
     }
 
@@ -761,7 +765,7 @@ void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::Ma
     if (pair && match_) pending_stats_.push_back(id_a_ < id_b_ ? *pair : ~*pair);
 }
 
-void GuiObserver::addMove(EngineTotals& t, int64_t depth, int64_t time_ms, int64_t nps,
+void GuiObserver::addMove(EngineTotals& t, int64_t depth, int64_t time_ms, int64_t nps, uint64_t nodes,
                           std::optional<int64_t> decision_ms) {
     t.moves++;
     if (decision_ms) {
@@ -773,6 +777,10 @@ void GuiObserver::addMove(EngineTotals& t, int64_t depth, int64_t time_ms, int64
     if (nps > 0) {
         t.nps_sum += static_cast<double>(nps);
         t.nps_samples++;
+    }
+    if (nodes > 0) {
+        t.nodes_sum += nodes;
+        t.nodes_samples++;
     }
 }
 
@@ -827,6 +835,13 @@ std::vector<OpeningName> GuiObserver::openings() const {
 std::vector<EngineTotals> GuiObserver::totals() const {
     std::lock_guard<std::mutex> lock(data_mutex_);
     return totals_;
+}
+
+std::vector<std::pair<std::string, EngineTotals>> GuiObserver::namedTotals() const {
+    std::lock_guard<std::mutex> lock(data_mutex_);
+    std::vector<std::pair<std::string, EngineTotals>> out;
+    for (std::size_t i = 0; i < names_.size() && i < totals_.size(); ++i) out.emplace_back(names_[i], totals_[i]);
+    return out;
 }
 
 }  // namespace fcg

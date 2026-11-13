@@ -84,6 +84,21 @@ struct BroadcastAnomaly {
     std::string reason;  // fastchess' words
 };
 
+// One engine's search, on average per move it searched (book moves left out), as the Statistics tab shows it, and
+// the games it lost badly.
+struct BroadcastEngine {
+    std::string name;
+    uint64_t moves         = 0;  // searched
+    double depth           = 0;
+    int64_t time_ms        = 0;
+    uint64_t nodes         = 0;  // 0 when its moves did not tell
+    uint64_t nps           = 0;
+    uint64_t time_losses   = 0;
+    uint64_t crashes       = 0;
+    uint64_t stalls        = 0;
+    uint64_t illegal_moves = 0;
+};
+
 struct BroadcastSnapshot {
     std::string name;
     std::string format;  // "match", "round_robin", "gauntlet"
@@ -101,6 +116,7 @@ struct BroadcastSnapshot {
     std::vector<Played> played_games;  // the last 300 games played, newest first (TLCS game list)
     BroadcastStats stats;
     std::vector<BroadcastAnomaly> anomalies;  // the last 100, newest first
+    std::vector<BroadcastEngine> engines;     // in the order of the standings
 
     // The tournament's PGN file (cutechess style), complete up to `pgn_bytes`: the games recorded, not one being
     // written. Empty when there is none yet.

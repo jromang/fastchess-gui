@@ -669,6 +669,54 @@ TEST_CASE("broadcast: the statistics, the anomalies and each move's search, for 
     CHECK(json["anomalies"][2]["kind"] == "time");
     CHECK(json["anomalies"][2]["engine"] == "Beta");
 
+    // Each engine: its anomalies from the games, its search from the observer's totals, in the order of the standings.
+    REQUIRE(s.engines.size() == 3);
+    const auto engine = [&](const std::string& name) {
+        for (const auto& e : json["engines"]) {
+            if (e["name"] == name) return e;
+        }
+        return nlohmann::json();
+    };
+    CHECK(json["engines"][0]["name"] == s.table.rows[0].name);
+    CHECK(engine("Beta")["time_losses"] == 1);
+    CHECK(engine("Beta")["illegal_moves"] == 1);
+    CHECK(engine("Beta")["crashes"] == 0);
+    CHECK(engine("Alpha")["crashes"] == 1);
+    CHECK(engine("Gamma")["time_losses"] == 0);
+    CHECK(engine("Alpha")["moves"] == 0);  // no totals given
+    CHECK(engine("Alpha")["depth"].is_null());
+
+    EngineTotals alpha;
+    alpha.moves         = 4;
+    alpha.depth_sum     = 50;
+    alpha.time_ms       = 6000;
+    alpha.nps_sum       = 4e6;
+    alpha.nps_samples   = 4;
+    alpha.nodes_sum     = 3000000;
+    alpha.nodes_samples = 3;
+    EngineTotals gamma;
+    gamma.moves         = 2;
+    gamma.depth_sum     = 20;
+    gamma.time_ms       = 500;
+    in.totals           = {{"Alpha", alpha}, {"Beta", {}}, {"Gamma", gamma}};
+    const auto with     = nlohmann::json::parse(snapshotJson(makeSnapshot(in)));
+    const auto searched = [&](const std::string& name) {
+        for (const auto& e : with["engines"]) {
+            if (e["name"] == name) return e;
+        }
+        return nlohmann::json();
+    };
+    CHECK(searched("Alpha")["moves"] == 4);
+    CHECK(searched("Alpha")["depth"] == 12.5);
+    CHECK(searched("Alpha")["time_ms"] == 1500);
+    CHECK(searched("Alpha")["nodes"] == 1000000);
+    CHECK(searched("Alpha")["nps"] == 1000000);
+    CHECK(searched("Alpha")["crashes"] == 1);
+    CHECK(searched("Gamma")["depth"] == 10);
+    CHECK(searched("Gamma")["nodes"].is_null());  // its moves did not tell
+    CHECK(searched("Gamma")["nps"].is_null());
+    CHECK(searched("Beta")["time_ms"].is_null());
+
     const auto& game = json["games"][0];
     CHECK(game["evals"] == nlohmann::json::parse("[null, -30, 99997]"));  // White's point of view; mate in 3
     CHECK(game["depths"] == nlohmann::json::parse("[null, 14, 20]"));

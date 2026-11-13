@@ -50,6 +50,7 @@ struct BroadcastInput {
     std::optional<tour::Anchor> anchor;
     std::vector<SlotState> slots;               // by slot
     std::vector<std::vector<SlotState>> ended;  // by slot
+    std::vector<std::pair<std::string, EngineTotals>> totals;  // the observer's, by participant index
     std::chrono::steady_clock::time_point taken;
 };
 
