@@ -159,6 +159,9 @@ msgstr ""
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr ""
 
+msgid "A page that opens in any browser, light or dark, with a header that tells how the list was made: sources, games, anchor and filters."
+msgstr ""
+
 msgid "A page, an engine, a tournament, an action…"
 msgstr ""
 
@@ -169,6 +172,9 @@ msgid "A rating list, for the reference Elo…"
 msgstr ""
 
 msgid "A separate engine"
+msgstr ""
+
+msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
 msgstr ""
 
 msgid "A tournament waits to start."
@@ -313,6 +319,9 @@ msgstr ""
 msgid "Apply"
 msgstr ""
 
+msgid "Approximate."
+msgstr ""
+
 msgid "Arguments"
 msgstr ""
 
@@ -413,6 +422,9 @@ msgid "By time control"
 msgstr ""
 
 msgid "CPU affinity"
+msgstr ""
+
+msgid "CSV…"
 msgstr ""
 
 msgid "Calculator…"
@@ -553,6 +565,9 @@ msgstr ""
 msgid "Click to enlarge"
 msgstr ""
 
+msgid "Click to sort; right-click to choose the columns."
+msgstr ""
+
 msgid "Close"
 msgstr ""
 
@@ -685,6 +700,9 @@ msgstr ""
 msgid "Draws"
 msgstr ""
 
+msgid "Draws."
+msgstr ""
+
 msgid "Duplicate"
 msgstr ""
 
@@ -713,6 +731,9 @@ msgid "Elo"
 msgstr ""
 
 msgid "Elo (95% CI)"
+msgstr ""
+
+msgid "Elo above the next engine of the list."
 msgstr ""
 
 msgid "Elo difference"
@@ -862,9 +883,6 @@ msgstr ""
 msgid "Export filtered…"
 msgstr ""
 
-msgid "Export for Ordo…"
-msgstr ""
-
 msgid "Export for a rating list"
 msgstr ""
 
@@ -988,6 +1006,9 @@ msgstr ""
 msgid "Games also appended to {}"
 msgstr ""
 
+msgid "Games for Ordo…"
+msgstr ""
+
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr ""
 
@@ -995,6 +1016,9 @@ msgid "Games of other programs or rating lists counted with the tournaments'. En
 msgstr ""
 
 msgid "Games written to {}"
+msgstr ""
+
+msgid "Gap"
 msgstr ""
 
 msgid "Gauntlet"
@@ -1031,6 +1055,12 @@ msgid "H0 accepted"
 msgstr ""
 
 msgid "H1 accepted"
+msgstr ""
+
+msgid "HTML page…"
+msgstr ""
+
+msgid "Half-width of the 95 % interval of the rating."
 msgstr ""
 
 msgid "Hash"
@@ -1230,6 +1260,12 @@ msgstr ""
 msgid "Like cutechess' -pgnout: the games of every tournament go on after those already in the file, which is never overwritten, in the order of the schedule: the two games of an opening side by side. Empty: none."
 msgstr ""
 
+msgid "Likelihood of superiority over the next engine of the list: the probability that it is the stronger of the two, from their ratings and the covariance of the ratings."
+msgstr ""
+
+msgid "Likelihood of superiority over the next engine of the list: the probability that it is the stronger of the two. Approximate: with more than 1000 engines, the covariance of the ratings is approximated from each one's games and the games the two played together."
+msgstr ""
+
 msgid "Listed among lichess' broadcasts"
 msgstr ""
 
@@ -1266,6 +1302,9 @@ msgstr ""
 msgid "Losses on time and crashes"
 msgstr ""
 
+msgid "Losses."
+msgstr ""
+
 msgid "Lost after a winning score"
 msgstr ""
 
@@ -1273,6 +1312,9 @@ msgid "Machine: %d physical cores, %d threads"
 msgstr ""
 
 msgid "Margin (ms)"
+msgstr ""
+
+msgid "Markdown…"
 msgstr ""
 
 msgid "Match"
@@ -1540,6 +1582,9 @@ msgid "Openings"
 msgstr ""
 
 msgid "Openings: {}"
+msgstr ""
+
+msgid "Opp."
 msgstr ""
 
 msgid "Opponent"
@@ -2003,6 +2048,9 @@ msgstr ""
 msgid "Score (cp)"
 msgstr ""
 
+msgid "Score: points per game."
+msgstr ""
+
 msgid "Search"
 msgstr ""
 
@@ -2251,6 +2299,9 @@ msgstr ""
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr ""
 
+msgid "The average rating of the opponents met, game by game."
+msgstr ""
+
 msgid "The book of {} cannot be used: {}"
 msgstr ""
 
@@ -2360,6 +2411,9 @@ msgid "The openings appear here once their games are played."
 msgstr ""
 
 msgid "The panels and where they are, under a name of yours."
+msgstr ""
+
+msgid "The place in the list, by rating."
 msgstr ""
 
 msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside, or by your choice: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
@@ -2507,6 +2561,9 @@ msgid "Tournament"
 msgstr ""
 
 msgid "Tournaments"
+msgstr ""
+
+msgid "Tournaments and PGN files it played in."
 msgstr ""
 
 msgid "Tournaments folder"
@@ -2659,7 +2716,13 @@ msgstr ""
 msgid "Wins of A"
 msgstr ""
 
+msgid "Wins."
+msgstr ""
+
 msgid "With a clock, %d games × %d threads exceed the %d physical cores."
+msgstr ""
+
+msgid "With a header"
 msgstr ""
 
 msgid "With a time: physical cores − 1, divided by the engines' threads; with nodes or a depth, every hardware thread."
@@ -2940,6 +3003,9 @@ msgid "{:+} games ({} → {})"
 msgstr ""
 
 msgid "{:.0f} games/h · about {} left"
+msgstr ""
+
+msgid "{:.1f} % that {} is stronger than {}."
 msgstr ""
 
 msgid "{:.1f} GB"

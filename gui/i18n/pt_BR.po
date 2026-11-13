@@ -159,6 +159,9 @@ msgstr "Um match está em andamento: espere o fim dele para abrir outro."
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "A PV de uma avaliação de mate deve ter o comprimento certo e terminar em mate. As PVs sempre são verificadas quanto a lances ilegais; os lances cuja PV está errada são marcados na aba Partidas."
 
+msgid "A page that opens in any browser, light or dark, with a header that tells how the list was made: sources, games, anchor and filters."
+msgstr "Uma página que abre em qualquer navegador, clara ou escura, com um cabeçalho que diz como a lista foi feita: fontes, partidas, âncora e filtros."
+
 msgid "A page, an engine, a tournament, an action…"
 msgstr "Uma página, uma engine, um torneio, uma ação…"
 
@@ -170,6 +173,9 @@ msgstr "Uma lista de rating, para o Elo de referência…"
 
 msgid "A separate engine"
 msgstr "Uma engine à parte"
+
+msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
+msgstr "Uma tabela que o GitHub e os fóruns mostram como tal, com o mesmo cabeçalho da página HTML."
 
 msgid "A tournament waits to start."
 msgstr "Um torneio aguarda para começar."
@@ -313,6 +319,9 @@ msgstr "Qualquer coisa a lembrar sobre ele; as buscas de engines encontram isso.
 msgid "Apply"
 msgstr "Aplicar"
 
+msgid "Approximate."
+msgstr "Aproximado."
+
 msgid "Arguments"
 msgstr "Argumentos"
 
@@ -414,6 +423,9 @@ msgstr "Por controle de tempo"
 
 msgid "CPU affinity"
 msgstr "Afinidade de CPU"
+
+msgid "CSV…"
+msgstr "CSV…"
 
 msgid "Calculator…"
 msgstr "Calculadora…"
@@ -553,6 +565,9 @@ msgstr "Clique para ver a ficha."
 msgid "Click to enlarge"
 msgstr "Clique para ampliar"
 
+msgid "Click to sort; right-click to choose the columns."
+msgstr "Clique para ordenar; clique com o botão direito para escolher as colunas."
+
 msgid "Close"
 msgstr "Fechar"
 
@@ -685,6 +700,9 @@ msgstr "Empatado duas vezes"
 msgid "Draws"
 msgstr "Empates"
 
+msgid "Draws."
+msgstr "Empates."
+
 msgid "Duplicate"
 msgstr "Duplicar"
 
@@ -714,6 +732,9 @@ msgstr "Elo"
 
 msgid "Elo (95% CI)"
 msgstr "Elo (IC 95%)"
+
+msgid "Elo above the next engine of the list."
+msgstr "Elo acima da próxima engine da lista."
 
 msgid "Elo difference"
 msgstr "Diferença de Elo"
@@ -862,9 +883,6 @@ msgstr "Exportar como EPD…"
 msgid "Export filtered…"
 msgstr "Exportar filtradas…"
 
-msgid "Export for Ordo…"
-msgstr "Exportar para Ordo…"
-
 msgid "Export for a rating list"
 msgstr "Exportar para uma lista de rating"
 
@@ -988,6 +1006,9 @@ msgstr "Partidas"
 msgid "Games also appended to {}"
 msgstr "Partidas também adicionadas a {}"
 
+msgid "Games for Ordo…"
+msgstr "Partidas para Ordo…"
+
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr "Partidas perdidas por tempo, por crash ou lance ilegal"
 
@@ -996,6 +1017,9 @@ msgstr "Partidas de outros programas ou listas de rating, contadas com as dos to
 
 msgid "Games written to {}"
 msgstr "Partidas gravadas em {}"
+
+msgid "Gap"
+msgstr "Diferença"
 
 msgid "Gauntlet"
 msgstr "Gauntlet"
@@ -1032,6 +1056,12 @@ msgstr "H0 aceita"
 
 msgid "H1 accepted"
 msgstr "H1 aceita"
+
+msgid "HTML page…"
+msgstr "Página HTML…"
+
+msgid "Half-width of the 95 % interval of the rating."
+msgstr "Meia largura do intervalo de 95 % do rating."
 
 msgid "Hash"
 msgstr "Hash"
@@ -1230,6 +1260,12 @@ msgstr "Claro"
 msgid "Like cutechess' -pgnout: the games of every tournament go on after those already in the file, which is never overwritten, in the order of the schedule: the two games of an opening side by side. Empty: none."
 msgstr "Como o -pgnout do cutechess: as partidas de cada torneio vêm depois das que já estão no arquivo, que nunca é sobrescrito, na ordem do calendário: as duas partidas de uma abertura lado a lado. Vazio: nenhum."
 
+msgid "Likelihood of superiority over the next engine of the list: the probability that it is the stronger of the two, from their ratings and the covariance of the ratings."
+msgstr "Probabilidade de superioridade sobre a próxima engine da lista: a probabilidade de ser a mais forte das duas, a partir dos ratings e da covariância dos ratings."
+
+msgid "Likelihood of superiority over the next engine of the list: the probability that it is the stronger of the two. Approximate: with more than 1000 engines, the covariance of the ratings is approximated from each one's games and the games the two played together."
+msgstr "Probabilidade de superioridade sobre a próxima engine da lista: a probabilidade de ser a mais forte das duas. Aproximada: com mais de 1000 engines, a covariância dos ratings é estimada a partir das partidas de cada uma e das que jogaram entre si."
+
 msgid "Listed among lichess' broadcasts"
 msgstr "Listada entre as transmissões do lichess"
 
@@ -1266,6 +1302,9 @@ msgstr "Perdas por tempo"
 msgid "Losses on time and crashes"
 msgstr "Perdas por tempo e crashes"
 
+msgid "Losses."
+msgstr "Derrotas."
+
 msgid "Lost after a winning score"
 msgstr "Perdida após uma avaliação vencedora"
 
@@ -1274,6 +1313,9 @@ msgstr "Máquina: %d núcleos físicos, %d threads"
 
 msgid "Margin (ms)"
 msgstr "Margem (ms)"
+
+msgid "Markdown…"
+msgstr "Markdown…"
 
 msgid "Match"
 msgstr "Match"
@@ -1541,6 +1583,9 @@ msgstr "Aberturas"
 
 msgid "Openings: {}"
 msgstr "Aberturas: {}"
+
+msgid "Opp."
+msgstr "Adv."
 
 msgid "Opponent"
 msgstr "Adversário"
@@ -2003,6 +2048,9 @@ msgstr "Pontuação %"
 msgid "Score (cp)"
 msgstr "Avaliação (cp)"
 
+msgid "Score: points per game."
+msgstr "Pontuação: pontos por partida."
+
 msgid "Search"
 msgstr "Buscar"
 
@@ -2251,6 +2299,9 @@ msgstr "As opções PGN da configuração, para os próximos torneios."
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "O padrão PGN os torna comentários. O fastchess-gui 0.4.13 e anteriores os liam como lances, e podiam jogar algumas aberturas deste livro a partir de uma posição errada, muitas vezes a inicial."
 
+msgid "The average rating of the opponents met, game by game."
+msgstr "O rating médio dos adversários enfrentados, partida a partida."
+
 msgid "The book of {} cannot be used: {}"
 msgstr "O livro de {} não pode ser usado: {}"
 
@@ -2361,6 +2412,9 @@ msgstr "As aberturas aparecem aqui assim que suas partidas forem jogadas."
 
 msgid "The panels and where they are, under a name of yours."
 msgstr "Os painéis e onde estão, com um nome à sua escolha."
+
+msgid "The place in the list, by rating."
+msgstr "A posição na lista, por rating."
 
 msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside, or by your choice: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
 msgstr "Os jogadores dos arquivos PGN tomados por engines da biblioteca, pelo nome, sem contar maiúsculas e espaços, ou pela sua escolha: suas partidas são as da engine, e as configurações dela se aplicam (seu rating em uma lista, como âncora)."
@@ -2508,6 +2562,9 @@ msgstr "Torneio"
 
 msgid "Tournaments"
 msgstr "Torneios"
+
+msgid "Tournaments and PGN files it played in."
+msgstr "Torneios e arquivos PGN em que jogou."
 
 msgid "Tournaments folder"
 msgstr "Pasta dos torneios"
@@ -2659,8 +2716,14 @@ msgstr "Vitórias"
 msgid "Wins of A"
 msgstr "Vitórias de A"
 
+msgid "Wins."
+msgstr "Vitórias."
+
 msgid "With a clock, %d games × %d threads exceed the %d physical cores."
 msgstr "Com relógio, %d partidas × %d threads excedem os %d núcleos físicos."
+
+msgid "With a header"
+msgstr "Com cabeçalho"
 
 msgid "With a time: physical cores − 1, divided by the engines' threads; with nodes or a depth, every hardware thread."
 msgstr "Com tempo: núcleos físicos − 1, divididos pelas threads dos engines; com nós ou profundidade, todas as threads de hardware."
@@ -2941,6 +3004,9 @@ msgstr "{:+} partidas ({} → {})"
 
 msgid "{:.0f} games/h · about {} left"
 msgstr "{:.0f} partidas/h · faltam cerca de {}"
+
+msgid "{:.1f} % that {} is stronger than {}."
+msgstr "{:.1f} % de que {} seja mais forte que {}."
 
 msgid "{:.1f} GB"
 msgstr "{:.1f} GB"

@@ -161,6 +161,9 @@ msgstr "Идёт матч: дождитесь его окончания, что�
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "PV матовой оценки должен иметь правильную длину и заканчиваться матом. PV всегда проверяются на нелегальные ходы; ходы с неверным PV отмечаются на вкладке «Партии»."
 
+msgid "A page that opens in any browser, light or dark, with a header that tells how the list was made: sources, games, anchor and filters."
+msgstr "Страница, которая открывается в любом браузере, светлая или тёмная, с заголовком о том, как составлен список: источники, партии, опора и фильтры."
+
 msgid "A page, an engine, a tournament, an action…"
 msgstr "Страница, движок, турнир, действие…"
 
@@ -172,6 +175,9 @@ msgstr "Рейтинг-лист для опорного рейтинга Elo…"
 
 msgid "A separate engine"
 msgstr "Отдельный движок"
+
+msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
+msgstr "Таблица, которую GitHub и форумы показывают как таблицу, с тем же заголовком, что и HTML-страница."
 
 msgid "A tournament waits to start."
 msgstr "Турнир ожидает запуска."
@@ -317,6 +323,9 @@ msgstr "Всё, что стоит о нём помнить; поиск движ�
 msgid "Apply"
 msgstr "Применить"
 
+msgid "Approximate."
+msgstr "Приблизительно."
+
 msgid "Arguments"
 msgstr "Аргументы"
 
@@ -418,6 +427,9 @@ msgstr "По контролю времени"
 
 msgid "CPU affinity"
 msgstr "Привязка к CPU"
+
+msgid "CSV…"
+msgstr "CSV…"
 
 msgid "Calculator…"
 msgstr "Калькулятор…"
@@ -557,6 +569,9 @@ msgstr "Нажмите, чтобы открыть его карточку."
 msgid "Click to enlarge"
 msgstr "Щёлкните, чтобы увеличить"
 
+msgid "Click to sort; right-click to choose the columns."
+msgstr "Щелчок — сортировка; правый щелчок — выбор столбцов."
+
 msgid "Close"
 msgstr "Закрыть"
 
@@ -689,6 +704,9 @@ msgstr "Две ничьи"
 msgid "Draws"
 msgstr "Ничьи"
 
+msgid "Draws."
+msgstr "Ничьи."
+
 msgid "Duplicate"
 msgstr "Дублировать"
 
@@ -718,6 +736,9 @@ msgstr "Elo"
 
 msgid "Elo (95% CI)"
 msgstr "Elo (ДИ 95%)"
+
+msgid "Elo above the next engine of the list."
+msgstr "Эло выше следующего движка списка."
 
 msgid "Elo difference"
 msgstr "Разница Elo"
@@ -866,9 +887,6 @@ msgstr "Экспорт в EPD…"
 msgid "Export filtered…"
 msgstr "Экспортировать отфильтрованные…"
 
-msgid "Export for Ordo…"
-msgstr "Экспорт для Ordo…"
-
 msgid "Export for a rating list"
 msgstr "Экспорт для рейтинг-листа"
 
@@ -992,6 +1010,9 @@ msgstr "Партии"
 msgid "Games also appended to {}"
 msgstr "Партии также дописаны в {}"
 
+msgid "Games for Ordo…"
+msgstr "Партии для Ordo…"
+
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr "Партии, проигранные по времени, из-за вылета или нелегального хода"
 
@@ -1000,6 +1021,9 @@ msgstr "Партии других программ или рейтинг-лис�
 
 msgid "Games written to {}"
 msgstr "Партии записаны в {}"
+
+msgid "Gap"
+msgstr "Разрыв"
 
 msgid "Gauntlet"
 msgstr "Гаунтлет"
@@ -1036,6 +1060,12 @@ msgstr "H0 принята"
 
 msgid "H1 accepted"
 msgstr "H1 принята"
+
+msgid "HTML page…"
+msgstr "HTML-страница…"
+
+msgid "Half-width of the 95 % interval of the rating."
+msgstr "Полуширина 95-процентного интервала рейтинга."
 
 msgid "Hash"
 msgstr "Hash"
@@ -1235,6 +1265,12 @@ msgstr "Светлая"
 msgid "Like cutechess' -pgnout: the games of every tournament go on after those already in the file, which is never overwritten, in the order of the schedule: the two games of an opening side by side. Empty: none."
 msgstr "Как -pgnout в cutechess: партии каждого турнира дописываются после уже имеющихся в файле, который никогда не перезаписывается, в порядке расписания: две партии одного дебюта рядом. Пусто: не дописывать."
 
+msgid "Likelihood of superiority over the next engine of the list: the probability that it is the stronger of the two, from their ratings and the covariance of the ratings."
+msgstr "Вероятность превосходства над следующим движком списка: вероятность того, что он сильнее из двух, по их рейтингам и ковариации рейтингов."
+
+msgid "Likelihood of superiority over the next engine of the list: the probability that it is the stronger of the two. Approximate: with more than 1000 engines, the covariance of the ratings is approximated from each one's games and the games the two played together."
+msgstr "Вероятность превосходства над следующим движком списка: вероятность того, что он сильнее из двух. Приблизительно: при более чем 1000 движков ковариация рейтингов оценивается по партиям каждого и по их партиям друг с другом."
+
 msgid "Listed among lichess' broadcasts"
 msgstr "В списке трансляций lichess"
 
@@ -1271,6 +1307,9 @@ msgstr "Поражения по времени"
 msgid "Losses on time and crashes"
 msgstr "Поражения по времени и вылеты"
 
+msgid "Losses."
+msgstr "Поражения."
+
 msgid "Lost after a winning score"
 msgstr "Проигрыш после выигрышной оценки"
 
@@ -1279,6 +1318,9 @@ msgstr "Компьютер: физических ядер — %d, потоков
 
 msgid "Margin (ms)"
 msgstr "Запас (мс)"
+
+msgid "Markdown…"
+msgstr "Markdown…"
 
 msgid "Match"
 msgstr "Матч"
@@ -1546,6 +1588,9 @@ msgstr "Дебюты"
 
 msgid "Openings: {}"
 msgstr "Дебюты: {}"
+
+msgid "Opp."
+msgstr "Соп."
 
 msgid "Opponent"
 msgstr "Соперник"
@@ -2012,6 +2057,9 @@ msgstr "% очков"
 msgid "Score (cp)"
 msgstr "Оценка (cp)"
 
+msgid "Score: points per game."
+msgstr "Результат: очки за партию."
+
 msgid "Search"
 msgstr "Поиск"
 
@@ -2261,6 +2309,9 @@ msgstr "Параметры PGN настройки, для будущих тур�
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "По стандарту PGN это комментарии. fastchess-gui 0.4.13 и более ранние версии читали их как ходы и могли играть некоторые дебюты этой книги из неверной позиции, часто из начальной."
 
+msgid "The average rating of the opponents met, game by game."
+msgstr "Средний рейтинг соперников, партия за партией."
+
 msgid "The book of {} cannot be used: {}"
 msgstr "Книгу {} нельзя использовать: {}"
 
@@ -2371,6 +2422,9 @@ msgstr "Дебюты появляются здесь, как только сыг
 
 msgid "The panels and where they are, under a name of yours."
 msgstr "Панели и их расположение под выбранным вами именем."
+
+msgid "The place in the list, by rating."
+msgstr "Место в списке по рейтингу."
 
 msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside, or by your choice: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
 msgstr "Игроки PGN-файлов, принятые за движки библиотеки по имени без учёта регистра и пробелов или по вашему выбору: их партии считаются партиями движка, и применяются его настройки (его рейтинг в листе как опора)."
@@ -2518,6 +2572,9 @@ msgstr "Турнир"
 
 msgid "Tournaments"
 msgstr "Турниры"
+
+msgid "Tournaments and PGN files it played in."
+msgstr "Турниры и PGN-файлы, в которых он играл."
 
 msgid "Tournaments folder"
 msgstr "Папка турниров"
@@ -2669,8 +2726,14 @@ msgstr "Победы"
 msgid "Wins of A"
 msgstr "Победы A"
 
+msgid "Wins."
+msgstr "Победы."
+
 msgid "With a clock, %d games × %d threads exceed the %d physical cores."
 msgstr "При игре с часами партии × потоки (%d × %d) превышают число физических ядер (%d)."
+
+msgid "With a header"
+msgstr "С заголовком"
 
 msgid "With a time: physical cores − 1, divided by the engines' threads; with nodes or a depth, every hardware thread."
 msgstr "С часами: физические ядра − 1, делённые на потоки движков; при узлах или глубине — все аппаратные потоки."
@@ -2953,6 +3016,9 @@ msgstr "партий: {:+} ({} → {})"
 
 msgid "{:.0f} games/h · about {} left"
 msgstr "{:.0f} партий/ч · осталось около {}"
+
+msgid "{:.1f} % that {} is stronger than {}."
+msgstr "{:.1f} % — {} сильнее, чем {}."
 
 msgid "{:.1f} GB"
 msgstr "{:.1f} ГБ"

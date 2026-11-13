@@ -157,6 +157,9 @@ msgstr "比赛正在进行：请等它结束后再打开另一场。"
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "将杀分数的 PV 必须长度正确并以将杀结束。PV 中的非法着法总是会被检查；PV 错误的着法会在“对局”页中标出。"
 
+msgid "A page that opens in any browser, light or dark, with a header that tells how the list was made: sources, games, anchor and filters."
+msgstr "可在任何浏览器中打开的页面（浅色或深色），带有说明列表如何生成的页眉：来源、对局、锚点和筛选条件。"
+
 msgid "A page, an engine, a tournament, an action…"
 msgstr "页面、引擎、锦标赛、操作…"
 
@@ -168,6 +171,9 @@ msgstr "等级分榜，用于参考 Elo…"
 
 msgid "A separate engine"
 msgstr "单独的引擎"
+
+msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
+msgstr "GitHub 和论坛会显示为表格，页眉与 HTML 页面相同。"
 
 msgid "A tournament waits to start."
 msgstr "有一个锦标赛正在等待开始。"
@@ -309,6 +315,9 @@ msgstr "关于它需要记住的任何内容；搜索引擎时可以搜到。"
 msgid "Apply"
 msgstr "应用"
 
+msgid "Approximate."
+msgstr "近似值。"
+
 msgid "Arguments"
 msgstr "参数"
 
@@ -410,6 +419,9 @@ msgstr "按时限"
 
 msgid "CPU affinity"
 msgstr "CPU 亲和性"
+
+msgid "CSV…"
+msgstr "CSV…"
 
 msgid "Calculator…"
 msgstr "计算器…"
@@ -549,6 +561,9 @@ msgstr "点击查看其信息卡。"
 msgid "Click to enlarge"
 msgstr "点击放大"
 
+msgid "Click to sort; right-click to choose the columns."
+msgstr "点击排序；右键选择列。"
+
 msgid "Close"
 msgstr "关闭"
 
@@ -681,6 +696,9 @@ msgstr "两局皆和"
 msgid "Draws"
 msgstr "和棋"
 
+msgid "Draws."
+msgstr "和棋。"
+
 msgid "Duplicate"
 msgstr "创建副本"
 
@@ -710,6 +728,9 @@ msgstr "Elo"
 
 msgid "Elo (95% CI)"
 msgstr "Elo（95% 置信区间）"
+
+msgid "Elo above the next engine of the list."
+msgstr "高于列表中下一个引擎的 Elo。"
 
 msgid "Elo difference"
 msgstr "Elo 差"
@@ -858,9 +879,6 @@ msgstr "导出为 EPD…"
 msgid "Export filtered…"
 msgstr "导出筛选结果…"
 
-msgid "Export for Ordo…"
-msgstr "导出给 Ordo…"
-
 msgid "Export for a rating list"
 msgstr "导出给等级分列表"
 
@@ -984,6 +1002,9 @@ msgstr "对局"
 msgid "Games also appended to {}"
 msgstr "对局也已追加到 {}"
 
+msgid "Games for Ordo…"
+msgstr "用于 Ordo 的对局…"
+
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr "超时判负、崩溃或非法着法而输掉的对局"
 
@@ -992,6 +1013,9 @@ msgstr "其他程序或等级分列表的对局，与锦标赛的对局一起计
 
 msgid "Games written to {}"
 msgstr "对局已写入 {}"
+
+msgid "Gap"
+msgstr "差距"
 
 msgid "Gauntlet"
 msgstr "车轮战"
@@ -1028,6 +1052,12 @@ msgstr "接受 H0"
 
 msgid "H1 accepted"
 msgstr "接受 H1"
+
+msgid "HTML page…"
+msgstr "HTML 页面…"
+
+msgid "Half-width of the 95 % interval of the rating."
+msgstr "等级分 95% 区间的半宽。"
 
 msgid "Hash"
 msgstr "Hash"
@@ -1225,6 +1255,12 @@ msgstr "浅色"
 msgid "Like cutechess' -pgnout: the games of every tournament go on after those already in the file, which is never overwritten, in the order of the schedule: the two games of an opening side by side. Empty: none."
 msgstr "与 cutechess 的 -pgnout 相同：每个锦标赛的对局追加在文件已有对局之后，文件绝不会被覆盖；按赛程顺序排列：同一开局的两局相邻。留空：不追加。"
 
+msgid "Likelihood of superiority over the next engine of the list: the probability that it is the stronger of the two, from their ratings and the covariance of the ratings."
+msgstr "相对于列表中下一个引擎的优势概率：根据二者的等级分及其协方差，它是两者中更强者的概率。"
+
+msgid "Likelihood of superiority over the next engine of the list: the probability that it is the stronger of the two. Approximate: with more than 1000 engines, the covariance of the ratings is approximated from each one's games and the games the two played together."
+msgstr "相对于列表中下一个引擎的优势概率：它是两者中更强者的概率。近似值：引擎超过 1000 个时，等级分协方差根据各自的对局以及二者之间的对局估算。"
+
 msgid "Listed among lichess' broadcasts"
 msgstr "列入 lichess 的直播列表"
 
@@ -1261,6 +1297,9 @@ msgstr "超时判负"
 msgid "Losses on time and crashes"
 msgstr "超时判负和崩溃"
 
+msgid "Losses."
+msgstr "负局。"
+
 msgid "Lost after a winning score"
 msgstr "领先后输掉"
 
@@ -1269,6 +1308,9 @@ msgstr "本机：%d 个物理核心，%d 个线程"
 
 msgid "Margin (ms)"
 msgstr "余量 (ms)"
+
+msgid "Markdown…"
+msgstr "Markdown…"
 
 msgid "Match"
 msgstr "比赛"
@@ -1536,6 +1578,9 @@ msgstr "开局"
 
 msgid "Openings: {}"
 msgstr "开局：{}"
+
+msgid "Opp."
+msgstr "对手"
 
 msgid "Opponent"
 msgstr "对手"
@@ -1994,6 +2039,9 @@ msgstr "得分率"
 msgid "Score (cp)"
 msgstr "分数 (cp)"
 
+msgid "Score: points per game."
+msgstr "得分：每局积分。"
+
 msgid "Search"
 msgstr "搜索"
 
@@ -2241,6 +2289,9 @@ msgstr "设置的 PGN 选项，用于以后的锦标赛。"
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "按 PGN 标准，这些是注释。fastchess-gui 0.4.13 及更早版本把它们当作着法读取，可能从错误的局面（常常是初始局面）开始下此开局库中的某些开局。"
 
+msgid "The average rating of the opponents met, game by game."
+msgstr "逐局计算的所遇对手平均等级分。"
+
 msgid "The book of {} cannot be used: {}"
 msgstr "{} 的开局库无法使用：{}"
 
@@ -2351,6 +2402,9 @@ msgstr "开局的对局下完后，开局会显示在这里。"
 
 msgid "The panels and where they are, under a name of yours."
 msgstr "以你选择的名称保存面板及其位置。"
+
+msgid "The place in the list, by rating."
+msgstr "按等级分在列表中的名次。"
 
 msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside, or by your choice: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
 msgstr "PGN 文件中按名称（不计大小写和空格）或按你的选择被视为库引擎的棋手：其对局计为该引擎的对局，并应用该引擎的设置（其在列表中的等级分作为锚点）。"
@@ -2498,6 +2552,9 @@ msgstr "锦标赛"
 
 msgid "Tournaments"
 msgstr "锦标赛"
+
+msgid "Tournaments and PGN files it played in."
+msgstr "它参加过的锦标赛和 PGN 文件。"
 
 msgid "Tournaments folder"
 msgstr "锦标赛文件夹"
@@ -2649,8 +2706,14 @@ msgstr "胜"
 msgid "Wins of A"
 msgstr "A 胜局"
 
+msgid "Wins."
+msgstr "胜局。"
+
 msgid "With a clock, %d games × %d threads exceed the %d physical cores."
 msgstr "有计时时，%d 局 × %d 线程超过了 %d 个物理核心。"
+
+msgid "With a header"
+msgstr "带页眉"
 
 msgid "With a time: physical cores − 1, divided by the engines' threads; with nodes or a depth, every hardware thread."
 msgstr "按时间：物理核心数 − 1，再除以引擎的线程数；按节点或深度：所有硬件线程。"
@@ -2929,6 +2992,9 @@ msgstr "{:+} 局（{} → {}）"
 
 msgid "{:.0f} games/h · about {} left"
 msgstr "{:.0f} 局/小时 · 约剩 {}"
+
+msgid "{:.1f} % that {} is stronger than {}."
+msgstr "有 {:.1f}% 的概率 {} 强于 {}。"
 
 msgid "{:.1f} GB"
 msgstr "{:.1f} GB"
