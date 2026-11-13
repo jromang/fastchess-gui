@@ -168,6 +168,9 @@ msgstr "Texto o página web de una lista de rating, Ordo, CSV (name,elo)"
 msgid "A rating list, for the reference Elo…"
 msgstr "Una lista de rating, para el Elo de referencia…"
 
+msgid "A separate engine"
+msgstr "Un motor aparte"
+
 msgid "A tournament waits to start."
 msgstr "Un torneo espera para empezar."
 
@@ -823,6 +826,9 @@ msgstr "Todas las aperturas"
 msgid "Every pair with both colours"
 msgstr "Cada par con ambos colores"
 
+msgid "Every player of the PGN files is a library engine by its name: nothing to choose."
+msgstr "Cada jugador de los archivos PGN es un motor de la biblioteca por su nombre: nada que elegir."
+
 msgid "Every state"
 msgstr "Todos los estados"
 
@@ -976,8 +982,8 @@ msgstr "Partidas añadidas también a {}"
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr "Partidas perdidas por tiempo, por un cuelgue o por una jugada ilegal"
 
-msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
-msgstr "Partidas de otros programas o listas de clasificación contadas con las de los torneos. Los motores se conocen por su nombre, como en el PGN; un jugador con el nombre de un motor de la biblioteca, salvo mayúsculas y espacios, es ese motor."
+msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine, and you can say which engine another player is."
+msgstr "Partidas de otros programas o listas de clasificación, contadas con las de los torneos. Los motores se reconocen por su nombre, como en el PGN; un jugador cuyo nombre es el de un motor de la biblioteca, sin contar mayúsculas ni espacios, es ese motor, y puedes indicar qué motor es otro jugador."
 
 msgid "Games written to {}"
 msgstr "Partidas escritas en {}"
@@ -1140,6 +1146,9 @@ msgstr "Sus partidas jugadas hasta ahora dejan de contar"
 msgid "Its games stop counting and are played again by the new engine."
 msgstr "Sus partidas dejan de contar y las vuelve a jugar el nuevo motor."
 
+msgid "Its name begins with this library engine's: choose it if it is the same engine, version included."
+msgstr "Su nombre empieza por el de este motor de la biblioteca: elígelo si es el mismo motor, versión incluida."
+
 msgid "Its own opening book"
 msgstr "Su propio libro de aperturas"
 
@@ -1190,6 +1199,12 @@ msgstr "Disposición guardada: {}"
 
 msgid "Leave out the games lost by a crash or a stall"
 msgstr "Excluir las partidas perdidas por un cuelgue o un bloqueo"
+
+msgid "Letter case and spaces aside."
+msgstr "Sin contar mayúsculas ni espacios."
+
+msgid "Library engine"
+msgstr "Motor de la biblioteca"
 
 msgid "Light"
 msgstr "Claro"
@@ -1299,9 +1314,6 @@ msgstr "Los torneos nuevos van ahí, y las listas muestran los torneos que hay a
 msgid "No PGN file imported."
 msgstr "Ningún archivo PGN importado."
 
-msgid "No PVs: turn on pv in the PGN options of the setup."
-msgstr "Sin PV: activa pv en las opciones PGN de la configuración."
-
 msgid "No Polyglot (.bin) or PGN book in the library: add one in the Books window."
 msgstr "No hay ningún libro Polyglot (.bin) ni PGN en la biblioteca: añade uno en la ventana Libros."
 
@@ -1374,6 +1386,12 @@ msgstr "Aún no hay resultados."
 msgid "No round yet."
 msgstr "Aún no hay rondas."
 
+msgid "No tablebase hits in this game."
+msgstr "Ningún acceso a tablas de finales en esta partida."
+
+msgid "No tablebase hits."
+msgstr "Ningún acceso a tablas de finales."
+
 msgid "No template yet."
 msgstr "Aún no hay plantillas."
 
@@ -1382,6 +1400,9 @@ msgstr "No hay ningún torneo abierto."
 
 msgid "No tournament yet. Start with a new tournament."
 msgstr "Aún no hay torneos. Empieza con un torneo nuevo."
+
+msgid "No {} in this game's PGN"
+msgstr "Sin {} en el PGN de esta partida"
 
 msgid "Nodes"
 msgstr "Nodos"
@@ -1410,8 +1431,8 @@ msgstr "No comprobado"
 msgid "Not checked yet."
 msgstr "Aún no comprobado."
 
-msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
-msgstr "No está en el PGN de esta partida: activa el campo en las opciones PGN de la configuración."
+msgid "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the setup."
+msgstr "No está en el PGN de esta partida: su torneo se jugó con «{}» desactivado en las opciones PGN de la configuración."
 
 msgid "Not started: another start is waiting ({}). Cancel it first."
 msgstr "No iniciado: otro inicio está en espera ({}). Cancélalo primero."
@@ -1427,6 +1448,9 @@ msgstr "No se encontró nada."
 
 msgid "Nothing matches."
 msgstr "Ninguna coincidencia."
+
+msgid "Nothing reported yet."
+msgstr "Nada informado todavía."
 
 msgid "Notify when a match ends"
 msgstr "Avisar cuando termine un match"
@@ -1539,6 +1563,15 @@ msgstr "PGN y otros"
 msgid "PGN files…"
 msgstr "Archivos PGN…"
 
+msgid "PGN options"
+msgstr "Opciones PGN"
+
+msgid "PGN players and library engines"
+msgstr "Jugadores PGN y motores de la biblioteca"
+
+msgid "PGN players…"
+msgstr "Jugadores PGN…"
+
 msgid "PV agreement"
 msgstr "Coincidencia de PV"
 
@@ -1601,6 +1634,9 @@ msgid_plural "Paused ({} games finishing)"
 msgstr[0] "En pausa ({} partida terminando)"
 msgstr[1] "En pausa ({} partidas terminando)"
 
+msgid "Perhaps {}?"
+msgstr "¿Quizá {}?"
+
 msgid "Pieces on the board, kings included."
 msgstr "Piezas en el tablero, reyes incluidos."
 
@@ -1616,8 +1652,14 @@ msgstr "Volver a jugar esta partida"
 msgid "Played in pairs: each opening is played twice, with colours reversed."
 msgstr "Jugado por pares: cada apertura se juega dos veces, con los colores invertidos."
 
+msgid "Player"
+msgstr "Jugador"
+
 msgid "Players"
 msgstr "Jugadores"
+
+msgid "Players and library engines…"
+msgstr "Jugadores y motores de la biblioteca…"
 
 msgid "Players in the PGN"
 msgstr "Jugadores en el PGN"
@@ -1919,6 +1961,9 @@ msgstr "Guardar la disposición"
 msgid "Save the layout as…"
 msgstr "Guardar la disposición como…"
 
+msgid "Say which library engine a player of the PGN files is."
+msgstr "Indica qué motor de la biblioteca es un jugador de los archivos PGN."
+
 msgid "Schedule"
 msgstr "Calendario"
 
@@ -2167,6 +2212,9 @@ msgstr "Probando…"
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "El contador de las 50 jugadas, el material y las piezas que quedan, bajo cada tablero del mosaico."
 
+msgid "The PGN options of the setup, for the tournaments to come."
+msgstr "Las opciones PGN de la configuración, para los próximos torneos."
+
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "El estándar PGN los convierte en comentarios. fastchess-gui 0.4.13 y anteriores los leían como jugadas, y podían jugar algunas aperturas de este libro desde una posición equivocada, a menudo la inicial."
 
@@ -2205,6 +2253,9 @@ msgstr "El motor escribió:"
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "Los motores son los de {}, guardado antes del último cambio."
+
+msgid "The engines did not report it in this game."
+msgstr "Los motores no lo informaron en esta partida."
 
 msgid "The engines disagree"
 msgstr "Los motores discrepan"
@@ -2272,8 +2323,11 @@ msgstr "Las aperturas aparecen aquí cuando se juegan sus partidas."
 msgid "The panels and where they are, under a name of yours."
 msgstr "Los paneles y dónde están, con el nombre que elijas."
 
-msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
-msgstr "Los jugadores de los archivos PGN tomados por motores de la biblioteca, por su nombre, salvo mayúsculas y espacios: sus partidas son las del motor y se aplican sus ajustes (su clasificación en una lista, como ancla)."
+msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside, or by your choice: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
+msgstr "Los jugadores de los archivos PGN tomados por motores de la biblioteca, por su nombre, sin contar mayúsculas ni espacios, o por tu elección: sus partidas son las del motor, y se aplican sus ajustes (su rating en una lista, como ancla)."
+
+msgid "The players of the PGN files that are no library engine by their name, letter case and spaces aside. Say which library engine a player is, and its games are the engine's; the choice is kept for every PGN file that names the player. A name that two library engines have waits for your choice; a hint is a guess, never applied."
+msgstr "Los jugadores de los archivos PGN que no son un motor de la biblioteca por su nombre, sin contar mayúsculas ni espacios. Indica qué motor de la biblioteca es un jugador, y sus partidas son las del motor; la elección se conserva para todo archivo PGN que nombre al jugador. Un nombre que tienen dos motores de la biblioteca espera tu elección; una sugerencia es una suposición, nunca se aplica."
 
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
 msgstr "El tiempo de procesador de los procesos de cada motor, mientras piensa (no más núcleos que sus hilos) y mientras piensa su rival (ninguno sin ponder). Medido durante las partidas jugadas en la ventana y guardado con ellas para cuando se reanude el torneo."
@@ -2575,6 +2629,9 @@ msgstr "Escribir los archivos en directo"
 msgid "Written at {} in {}"
 msgstr "Escritos a las {} en {}"
 
+msgid "Written when \"{}\" is on in the PGN options of the setup."
+msgstr "Se escribe cuando «{}» está activado en las opciones PGN de la configuración."
+
 msgid "Wrong PVs"
 msgstr "PV erróneas"
 
@@ -2798,6 +2855,9 @@ msgstr "victorias y derrotas"
 msgid "without mirrored positions"
 msgstr "sin posiciones reflejadas"
 
+msgid "your choice"
+msgstr "tu elección"
+
 msgid "{:+.2f}  (DrawElo {:.0f})"
 msgstr "{:+.2f}  (DrawElo {:.0f})"
 
@@ -2988,6 +3048,11 @@ msgstr "{} es el propio archivo PGN del torneo: elige otro."
 msgid "{} is twice in the list of participants."
 msgstr "{} aparece dos veces en la lista de participantes."
 
+msgid "{} library engine has this name"
+msgid_plural "{} library engines have this name"
+msgstr[0] "{} motor de la biblioteca tiene este nombre"
+msgstr[1] "{} motores de la biblioteca tienen este nombre"
+
 msgid "{} loss on time"
 msgid_plural "{} losses on time"
 msgstr[0] "{} pérdida por tiempo"
@@ -3073,6 +3138,16 @@ msgstr[1] "{} partidas jugadas dejan de contar"
 msgid "{} played · {} running · {} to play"
 msgstr "{} disputadas · {} en curso · {} por jugar"
 
+msgid "{} player"
+msgid_plural "{} players"
+msgstr[0] "{} jugador"
+msgstr[1] "{} jugadores"
+
+msgid "{} player that two library engines may be: say which one."
+msgid_plural "{} players that two library engines may be: say which one."
+msgstr[0] "{} jugador puede ser dos motores de la biblioteca: indica cuál."
+msgstr[1] "{} jugadores pueden ser dos motores de la biblioteca: indica cuál."
+
 msgid "{} plays with {} % of the time"
 msgstr "{} juega con el {} % del tiempo"
 
@@ -3110,6 +3185,11 @@ msgstr[1] "{} seleccionados"
 
 msgid "{} shown"
 msgstr "{} mostradas"
+
+msgid "{} that two library engines may be"
+msgid_plural "{} that two library engines may be"
+msgstr[0] "{} ambiguo"
+msgstr[1] "{} ambiguos"
 
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"

@@ -168,6 +168,9 @@ msgstr ""
 msgid "A rating list, for the reference Elo…"
 msgstr ""
 
+msgid "A separate engine"
+msgstr ""
+
 msgid "A tournament waits to start."
 msgstr ""
 
@@ -823,6 +826,9 @@ msgstr ""
 msgid "Every pair with both colours"
 msgstr ""
 
+msgid "Every player of the PGN files is a library engine by its name: nothing to choose."
+msgstr ""
+
 msgid "Every state"
 msgstr ""
 
@@ -976,7 +982,7 @@ msgstr ""
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr ""
 
-msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
+msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine, and you can say which engine another player is."
 msgstr ""
 
 msgid "Games written to {}"
@@ -1140,6 +1146,9 @@ msgstr ""
 msgid "Its games stop counting and are played again by the new engine."
 msgstr ""
 
+msgid "Its name begins with this library engine's: choose it if it is the same engine, version included."
+msgstr ""
+
 msgid "Its own opening book"
 msgstr ""
 
@@ -1189,6 +1198,12 @@ msgid "Layout saved: {}"
 msgstr ""
 
 msgid "Leave out the games lost by a crash or a stall"
+msgstr ""
+
+msgid "Letter case and spaces aside."
+msgstr ""
+
+msgid "Library engine"
 msgstr ""
 
 msgid "Light"
@@ -1299,9 +1314,6 @@ msgstr ""
 msgid "No PGN file imported."
 msgstr ""
 
-msgid "No PVs: turn on pv in the PGN options of the setup."
-msgstr ""
-
 msgid "No Polyglot (.bin) or PGN book in the library: add one in the Books window."
 msgstr ""
 
@@ -1374,6 +1386,12 @@ msgstr ""
 msgid "No round yet."
 msgstr ""
 
+msgid "No tablebase hits in this game."
+msgstr ""
+
+msgid "No tablebase hits."
+msgstr ""
+
 msgid "No template yet."
 msgstr ""
 
@@ -1381,6 +1399,9 @@ msgid "No tournament is open."
 msgstr ""
 
 msgid "No tournament yet. Start with a new tournament."
+msgstr ""
+
+msgid "No {} in this game's PGN"
 msgstr ""
 
 msgid "Nodes"
@@ -1410,7 +1431,7 @@ msgstr ""
 msgid "Not checked yet."
 msgstr ""
 
-msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
+msgid "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the setup."
 msgstr ""
 
 msgid "Not started: another start is waiting ({}). Cancel it first."
@@ -1426,6 +1447,9 @@ msgid "Nothing found."
 msgstr ""
 
 msgid "Nothing matches."
+msgstr ""
+
+msgid "Nothing reported yet."
 msgstr ""
 
 msgid "Notify when a match ends"
@@ -1539,6 +1563,15 @@ msgstr ""
 msgid "PGN files…"
 msgstr ""
 
+msgid "PGN options"
+msgstr ""
+
+msgid "PGN players and library engines"
+msgstr ""
+
+msgid "PGN players…"
+msgstr ""
+
 msgid "PV agreement"
 msgstr ""
 
@@ -1601,6 +1634,9 @@ msgid_plural "Paused ({} games finishing)"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "Perhaps {}?"
+msgstr ""
+
 msgid "Pieces on the board, kings included."
 msgstr ""
 
@@ -1616,7 +1652,13 @@ msgstr ""
 msgid "Played in pairs: each opening is played twice, with colours reversed."
 msgstr ""
 
+msgid "Player"
+msgstr ""
+
 msgid "Players"
+msgstr ""
+
+msgid "Players and library engines…"
 msgstr ""
 
 msgid "Players in the PGN"
@@ -1919,6 +1961,9 @@ msgstr ""
 msgid "Save the layout as…"
 msgstr ""
 
+msgid "Say which library engine a player of the PGN files is."
+msgstr ""
+
 msgid "Schedule"
 msgstr ""
 
@@ -2167,6 +2212,9 @@ msgstr ""
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr ""
 
+msgid "The PGN options of the setup, for the tournaments to come."
+msgstr ""
+
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr ""
 
@@ -2204,6 +2252,9 @@ msgid "The engine wrote:"
 msgstr ""
 
 msgid "The engines are those of {}, kept before the last change."
+msgstr ""
+
+msgid "The engines did not report it in this game."
 msgstr ""
 
 msgid "The engines disagree"
@@ -2272,7 +2323,10 @@ msgstr ""
 msgid "The panels and where they are, under a name of yours."
 msgstr ""
 
-msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
+msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside, or by your choice: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
+msgstr ""
+
+msgid "The players of the PGN files that are no library engine by their name, letter case and spaces aside. Say which library engine a player is, and its games are the engine's; the choice is kept for every PGN file that names the player. A name that two library engines have waits for your choice; a hint is a guess, never applied."
 msgstr ""
 
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
@@ -2575,6 +2629,9 @@ msgstr ""
 msgid "Written at {} in {}"
 msgstr ""
 
+msgid "Written when \"{}\" is on in the PGN options of the setup."
+msgstr ""
+
 msgid "Wrong PVs"
 msgstr ""
 
@@ -2798,6 +2855,9 @@ msgstr ""
 msgid "without mirrored positions"
 msgstr ""
 
+msgid "your choice"
+msgstr ""
+
 msgid "{:+.2f}  (DrawElo {:.0f})"
 msgstr ""
 
@@ -2988,6 +3048,11 @@ msgstr ""
 msgid "{} is twice in the list of participants."
 msgstr ""
 
+msgid "{} library engine has this name"
+msgid_plural "{} library engines have this name"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{} loss on time"
 msgid_plural "{} losses on time"
 msgstr[0] ""
@@ -3073,6 +3138,16 @@ msgstr[1] ""
 msgid "{} played · {} running · {} to play"
 msgstr ""
 
+msgid "{} player"
+msgid_plural "{} players"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} player that two library engines may be: say which one."
+msgid_plural "{} players that two library engines may be: say which one."
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{} plays with {} % of the time"
 msgstr ""
 
@@ -3110,6 +3185,11 @@ msgstr[1] ""
 
 msgid "{} shown"
 msgstr ""
+
+msgid "{} that two library engines may be"
+msgid_plural "{} that two library engines may be"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"

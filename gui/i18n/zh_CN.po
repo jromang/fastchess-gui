@@ -166,6 +166,9 @@ msgstr "等级分列表的文本或网页、Ordo、CSV (name,elo)"
 msgid "A rating list, for the reference Elo…"
 msgstr "等级分榜，用于参考 Elo…"
 
+msgid "A separate engine"
+msgstr "单独的引擎"
+
 msgid "A tournament waits to start."
 msgstr "有一个锦标赛正在等待开始。"
 
@@ -819,6 +822,9 @@ msgstr "所有开局"
 msgid "Every pair with both colours"
 msgstr "每一对都交换过颜色"
 
+msgid "Every player of the PGN files is a library engine by its name: nothing to choose."
+msgstr "PGN 文件中的每位棋手按名称都是库中的引擎：无需选择。"
+
 msgid "Every state"
 msgstr "所有状态"
 
@@ -972,8 +978,8 @@ msgstr "对局也已追加到 {}"
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr "超时判负、崩溃或非法着法而输掉的对局"
 
-msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
-msgstr "其他程序或等级分列表的对局，与锦标赛的对局一起计算。引擎按名称识别，与 PGN 中一致；名称与库中某引擎相同（忽略大小写和空格）的棋手即为该引擎。"
+msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine, and you can say which engine another player is."
+msgstr "其他程序或等级分列表的对局，与锦标赛的对局一起计入。引擎按名称识别，与 PGN 中相同；名称与库中某引擎相同（不计大小写和空格）的棋手即为该引擎，你也可以指定其他棋手是哪个引擎。"
 
 msgid "Games written to {}"
 msgstr "对局已写入 {}"
@@ -1135,6 +1141,9 @@ msgstr "它已下的对局不再计分"
 msgid "Its games stop counting and are played again by the new engine."
 msgstr "它的对局不再计分，由新引擎重新下。"
 
+msgid "Its name begins with this library engine's: choose it if it is the same engine, version included."
+msgstr "其名称以该库引擎的名称开头：如果是同一引擎（包括版本），请选择它。"
+
 msgid "Its own opening book"
 msgstr "它的专属开局库"
 
@@ -1185,6 +1194,12 @@ msgstr "布局已保存：{}"
 
 msgid "Leave out the games lost by a crash or a stall"
 msgstr "排除因崩溃或无响应而输掉的对局"
+
+msgid "Letter case and spaces aside."
+msgstr "不计大小写和空格。"
+
+msgid "Library engine"
+msgstr "库引擎"
 
 msgid "Light"
 msgstr "浅色"
@@ -1294,9 +1309,6 @@ msgstr "新锦标赛将建在这里，列表显示在这里找到的锦标赛。
 msgid "No PGN file imported."
 msgstr "尚未导入 PGN 文件。"
 
-msgid "No PVs: turn on pv in the PGN options of the setup."
-msgstr "没有 PV：请在配置的 PGN 选项中开启 pv。"
-
 msgid "No Polyglot (.bin) or PGN book in the library: add one in the Books window."
 msgstr "库中没有 Polyglot（.bin）或 PGN 开局库：请在“开局库”窗口中添加。"
 
@@ -1369,6 +1381,12 @@ msgstr "还没有成绩。"
 msgid "No round yet."
 msgstr "还没有轮次。"
 
+msgid "No tablebase hits in this game."
+msgstr "本局没有残局库命中。"
+
+msgid "No tablebase hits."
+msgstr "没有残局库命中。"
+
 msgid "No template yet."
 msgstr "还没有模板。"
 
@@ -1377,6 +1395,9 @@ msgstr "没有打开的锦标赛。"
 
 msgid "No tournament yet. Start with a new tournament."
 msgstr "还没有锦标赛。从新建锦标赛开始吧。"
+
+msgid "No {} in this game's PGN"
+msgstr "本局 PGN 中没有 {}"
 
 msgid "Nodes"
 msgstr "节点"
@@ -1405,8 +1426,8 @@ msgstr "未检查"
 msgid "Not checked yet."
 msgstr "尚未检查。"
 
-msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
-msgstr "此对局的 PGN 中没有：请在配置的 PGN 选项中开启该字段。"
+msgid "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the setup."
+msgstr "不在本局 PGN 中：其锦标赛进行时，设置的 PGN 选项中“{}”是关闭的。"
 
 msgid "Not started: another start is waiting ({}). Cancel it first."
 msgstr "未开始：另一个启动正在等待（{}）。请先取消它。"
@@ -1422,6 +1443,9 @@ msgstr "未找到。"
 
 msgid "Nothing matches."
 msgstr "没有匹配项。"
+
+msgid "Nothing reported yet."
+msgstr "尚无报告。"
 
 msgid "Notify when a match ends"
 msgstr "比赛结束时通知"
@@ -1534,6 +1558,15 @@ msgstr "PGN 及其他"
 msgid "PGN files…"
 msgstr "PGN 文件…"
 
+msgid "PGN options"
+msgstr "PGN 选项"
+
+msgid "PGN players and library engines"
+msgstr "PGN 棋手与库引擎"
+
+msgid "PGN players…"
+msgstr "PGN 棋手…"
+
 msgid "PV agreement"
 msgstr "PV 一致率"
 
@@ -1595,6 +1628,9 @@ msgid "Paused ({} game finishing)"
 msgid_plural "Paused ({} games finishing)"
 msgstr[0] "已暂停（{} 局正在结束）"
 
+msgid "Perhaps {}?"
+msgstr "也许是 {}？"
+
 msgid "Pieces on the board, kings included."
 msgstr "棋盘上的棋子数，包括王。"
 
@@ -1610,8 +1646,14 @@ msgstr "重下这局对局"
 msgid "Played in pairs: each opening is played twice, with colours reversed."
 msgstr "成对进行：每个开局下两次，交换颜色。"
 
+msgid "Player"
+msgstr "棋手"
+
 msgid "Players"
 msgstr "棋手"
+
+msgid "Players and library engines…"
+msgstr "棋手与库引擎…"
 
 msgid "Players in the PGN"
 msgstr "PGN 中的棋手"
@@ -1910,6 +1952,9 @@ msgstr "保存布局"
 msgid "Save the layout as…"
 msgstr "将布局另存为…"
 
+msgid "Say which library engine a player of the PGN files is."
+msgstr "指定 PGN 文件中的某位棋手是哪个库引擎。"
+
 msgid "Schedule"
 msgstr "赛程"
 
@@ -2157,6 +2202,9 @@ msgstr "正在测试…"
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "50 步计数、子力以及剩余棋子，显示在平铺视图的每个棋盘下方。"
 
+msgid "The PGN options of the setup, for the tournaments to come."
+msgstr "设置的 PGN 选项，用于以后的锦标赛。"
+
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "按 PGN 标准，这些是注释。fastchess-gui 0.4.13 及更早版本把它们当作着法读取，可能从错误的局面（常常是初始局面）开始下此开局库中的某些开局。"
 
@@ -2195,6 +2243,9 @@ msgstr "引擎输出："
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "引擎来自 {}，即上次更改前保留的副本。"
+
+msgid "The engines did not report it in this game."
+msgstr "本局中引擎没有报告此项。"
 
 msgid "The engines disagree"
 msgstr "引擎意见分歧"
@@ -2262,8 +2313,11 @@ msgstr "开局的对局下完后，开局会显示在这里。"
 msgid "The panels and where they are, under a name of yours."
 msgstr "以你选择的名称保存面板及其位置。"
 
-msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
-msgstr "按名称（忽略大小写和空格）被识别为库中引擎的 PGN 文件棋手：其对局计为该引擎的对局，并应用该引擎的设置（其在某列表上的等级分，作为锚点）。"
+msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside, or by your choice: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
+msgstr "PGN 文件中按名称（不计大小写和空格）或按你的选择被视为库引擎的棋手：其对局计为该引擎的对局，并应用该引擎的设置（其在列表中的等级分作为锚点）。"
+
+msgid "The players of the PGN files that are no library engine by their name, letter case and spaces aside. Say which library engine a player is, and its games are the engine's; the choice is kept for every PGN file that names the player. A name that two library engines have waits for your choice; a hint is a guess, never applied."
+msgstr "PGN 文件中按名称（不计大小写和空格）不是库引擎的棋手。指定某位棋手是哪个库引擎，其对局即计为该引擎的对局；该选择对所有提到此棋手的 PGN 文件都有效。两个库引擎共有的名称需要你来选择；提示只是猜测，从不自动应用。"
 
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
 msgstr "每个引擎进程的处理器时间：思考时（核心数不超过其线程数）以及对手思考时（不开启后台思考则为零）。在窗口中进行的对局期间测量，并随对局保存，以便恢复锦标赛时使用。"
@@ -2565,6 +2619,9 @@ msgstr "写入实时文件"
 msgid "Written at {} in {}"
 msgstr "于 {} 写入 {}"
 
+msgid "Written when \"{}\" is on in the PGN options of the setup."
+msgstr "当设置的 PGN 选项中“{}”开启时写入。"
+
 msgid "Wrong PVs"
 msgstr "错误 PV"
 
@@ -2786,6 +2843,9 @@ msgstr "胜和负"
 msgid "without mirrored positions"
 msgstr "不含镜像局面"
 
+msgid "your choice"
+msgstr "你的选择"
+
 msgid "{:+.2f}  (DrawElo {:.0f})"
 msgstr "{:+.2f}  (DrawElo {:.0f})"
 
@@ -2956,6 +3016,10 @@ msgstr "{} 是锦标赛自己的 PGN 文件：请另选一个。"
 msgid "{} is twice in the list of participants."
 msgstr "{} 在参赛者列表中出现了两次。"
 
+msgid "{} library engine has this name"
+msgid_plural "{} library engines have this name"
+msgstr[0] "{} 个库引擎使用此名称"
+
 msgid "{} loss on time"
 msgid_plural "{} losses on time"
 msgstr[0] "{} 次超时判负"
@@ -3030,6 +3094,14 @@ msgstr[0] "{} 局已下的对局不再计分"
 msgid "{} played · {} running · {} to play"
 msgstr "已下 {} · 进行中 {} · 待下 {}"
 
+msgid "{} player"
+msgid_plural "{} players"
+msgstr[0] "{} 位棋手"
+
+msgid "{} player that two library engines may be: say which one."
+msgid_plural "{} players that two library engines may be: say which one."
+msgstr[0] "{} 位棋手可能是两个库引擎之一：请指定。"
+
 msgid "{} plays with {} % of the time"
 msgstr "{} 使用 {} % 的时间"
 
@@ -3063,6 +3135,10 @@ msgstr[0] "已选 {} 个"
 
 msgid "{} shown"
 msgstr "显示 {} 个"
+
+msgid "{} that two library engines may be"
+msgid_plural "{} that two library engines may be"
+msgstr[0] "{} 个有歧义"
 
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"

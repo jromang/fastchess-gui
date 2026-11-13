@@ -170,6 +170,9 @@ msgstr "Текст или веб-страница рейтинг-листа, Ord
 msgid "A rating list, for the reference Elo…"
 msgstr "Рейтинг-лист для опорного рейтинга Elo…"
 
+msgid "A separate engine"
+msgstr "Отдельный движок"
+
 msgid "A tournament waits to start."
 msgstr "Турнир ожидает запуска."
 
@@ -827,6 +830,9 @@ msgstr "Все дебюты"
 msgid "Every pair with both colours"
 msgstr "Каждая пара с обоими цветами"
 
+msgid "Every player of the PGN files is a library engine by its name: nothing to choose."
+msgstr "Каждый игрок PGN-файлов по имени является движком библиотеки: выбирать нечего."
+
 msgid "Every state"
 msgstr "Все состояния"
 
@@ -980,8 +986,8 @@ msgstr "Партии также дописаны в {}"
 msgid "Games lost on time, by a crash or an illegal move"
 msgstr "Партии, проигранные по времени, из-за вылета или нелегального хода"
 
-msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine."
-msgstr "Партии других программ или рейтинг-листов, учитываемые вместе с турнирными. Движки различаются по имени, как в PGN; игрок с именем движка из библиотеки (без учёта регистра и пробелов) считается этим движком."
+msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine, and you can say which engine another player is."
+msgstr "Партии других программ или рейтинг-листов, учитываемые вместе с турнирными. Движки узнаются по имени, как в PGN; игрок, чьё имя совпадает с именем движка библиотеки без учёта регистра и пробелов, считается этим движком, а для другого игрока можно указать, какой это движок."
 
 msgid "Games written to {}"
 msgstr "Партии записаны в {}"
@@ -1145,6 +1151,9 @@ msgstr "Его уже сыгранные партии перестают учи�
 msgid "Its games stop counting and are played again by the new engine."
 msgstr "Его партии перестают учитываться и переигрываются новым движком."
 
+msgid "Its name begins with this library engine's: choose it if it is the same engine, version included."
+msgstr "Его имя начинается с имени этого движка библиотеки: выберите его, если это тот же движок, включая версию."
+
 msgid "Its own opening book"
 msgstr "Собственная дебютная книга"
 
@@ -1195,6 +1204,12 @@ msgstr "Раскладка сохранена: {}"
 
 msgid "Leave out the games lost by a crash or a stall"
 msgstr "Исключить партии, проигранные из-за вылета или зависания"
+
+msgid "Letter case and spaces aside."
+msgstr "Без учёта регистра и пробелов."
+
+msgid "Library engine"
+msgstr "Движок библиотеки"
 
 msgid "Light"
 msgstr "Светлая"
@@ -1304,9 +1319,6 @@ msgstr "Новые турниры создаются там, а списки п�
 msgid "No PGN file imported."
 msgstr "Файлы PGN не импортированы."
 
-msgid "No PVs: turn on pv in the PGN options of the setup."
-msgstr "Нет PV: включите pv в параметрах PGN в настройке."
-
 msgid "No Polyglot (.bin) or PGN book in the library: add one in the Books window."
 msgstr "В библиотеке нет книги Polyglot (.bin) или PGN: добавьте её в окне «Книги»."
 
@@ -1379,6 +1391,12 @@ msgstr "Результатов пока нет."
 msgid "No round yet."
 msgstr "Туров пока нет."
 
+msgid "No tablebase hits in this game."
+msgstr "В этой партии не было обращений к таблицам эндшпиля."
+
+msgid "No tablebase hits."
+msgstr "Обращений к таблицам эндшпиля нет."
+
 msgid "No template yet."
 msgstr "Шаблонов пока нет."
 
@@ -1387,6 +1405,9 @@ msgstr "Нет открытого турнира."
 
 msgid "No tournament yet. Start with a new tournament."
 msgstr "Турниров пока нет. Начните с нового турнира."
+
+msgid "No {} in this game's PGN"
+msgstr "Нет {} в PGN этой партии"
 
 msgid "Nodes"
 msgstr "Узлы"
@@ -1415,8 +1436,8 @@ msgstr "Не проверен"
 msgid "Not checked yet."
 msgstr "Ещё не проверен."
 
-msgid "Not in this game's PGN: turn the field on in the PGN options of the setup."
-msgstr "Нет в PGN этой партии: включите это поле в параметрах PGN в настройке."
+msgid "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the setup."
+msgstr "Нет в PGN этой партии: её турнир игрался с выключенным «{}» в параметрах PGN настройки."
 
 msgid "Not started: another start is waiting ({}). Cancel it first."
 msgstr "Не запущено: ожидает другой запуск ({}). Сначала отмените его."
@@ -1432,6 +1453,9 @@ msgstr "Ничего не найдено."
 
 msgid "Nothing matches."
 msgstr "Ничего не найдено."
+
+msgid "Nothing reported yet."
+msgstr "Пока ничего не сообщено."
 
 msgid "Notify when a match ends"
 msgstr "Уведомлять об окончании матча"
@@ -1544,6 +1568,15 @@ msgstr "PGN и прочее"
 msgid "PGN files…"
 msgstr "Файлы PGN…"
 
+msgid "PGN options"
+msgstr "Параметры PGN"
+
+msgid "PGN players and library engines"
+msgstr "Игроки PGN и движки библиотеки"
+
+msgid "PGN players…"
+msgstr "Игроки PGN…"
+
 msgid "PV agreement"
 msgstr "Совпадение PV"
 
@@ -1607,6 +1640,9 @@ msgstr[0] "На паузе (доигрывается {} партия)"
 msgstr[1] "На паузе (доигрываются {} партии)"
 msgstr[2] "На паузе (доигрываются {} партий)"
 
+msgid "Perhaps {}?"
+msgstr "Возможно, {}?"
+
 msgid "Pieces on the board, kings included."
 msgstr "Фигуры на доске, включая королей."
 
@@ -1622,8 +1658,14 @@ msgstr "Переиграть эту партию"
 msgid "Played in pairs: each opening is played twice, with colours reversed."
 msgstr "Игра парами: каждый дебют играется дважды, с переменой цветов."
 
+msgid "Player"
+msgstr "Игрок"
+
 msgid "Players"
 msgstr "Игроки"
+
+msgid "Players and library engines…"
+msgstr "Игроки и движки библиотеки…"
 
 msgid "Players in the PGN"
 msgstr "Игроки в PGN"
@@ -1928,6 +1970,9 @@ msgstr "Сохранить раскладку"
 msgid "Save the layout as…"
 msgstr "Сохранить раскладку как…"
 
+msgid "Say which library engine a player of the PGN files is."
+msgstr "Укажите, каким движком библиотеки является игрок PGN-файлов."
+
 msgid "Schedule"
 msgstr "Расписание"
 
@@ -2177,6 +2222,9 @@ msgstr "Тестирование…"
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Счётчик 50 ходов, материал и оставшиеся фигуры под каждой доской мозаики."
 
+msgid "The PGN options of the setup, for the tournaments to come."
+msgstr "Параметры PGN настройки, для будущих турниров."
+
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "По стандарту PGN это комментарии. fastchess-gui 0.4.13 и более ранние версии читали их как ходы и могли играть некоторые дебюты этой книги из неверной позиции, часто из начальной."
 
@@ -2215,6 +2263,9 @@ msgstr "Движок написал:"
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "Движки взяты из {}, сохранённого до последнего изменения."
+
+msgid "The engines did not report it in this game."
+msgstr "Движки не сообщали это в этой партии."
 
 msgid "The engines disagree"
 msgstr "Движки расходятся в оценке"
@@ -2282,8 +2333,11 @@ msgstr "Дебюты появляются здесь, как только сыг
 msgid "The panels and where they are, under a name of yours."
 msgstr "Панели и их расположение под выбранным вами именем."
 
-msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
-msgstr "Игроки из PGN-файлов, опознанные как движки библиотеки по имени (без учёта регистра и пробелов): их партии считаются партиями движка, и применяются его настройки (рейтинг из списка как опорный)."
+msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside, or by your choice: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
+msgstr "Игроки PGN-файлов, принятые за движки библиотеки по имени без учёта регистра и пробелов или по вашему выбору: их партии считаются партиями движка, и применяются его настройки (его рейтинг в листе как опора)."
+
+msgid "The players of the PGN files that are no library engine by their name, letter case and spaces aside. Say which library engine a player is, and its games are the engine's; the choice is kept for every PGN file that names the player. A name that two library engines have waits for your choice; a hint is a guess, never applied."
+msgstr "Игроки PGN-файлов, которые по имени (без учёта регистра и пробелов) не являются движками библиотеки. Укажите, каким движком библиотеки является игрок, и его партии будут партиями этого движка; выбор сохраняется для всех PGN-файлов с этим игроком. Имя, которое носят два движка библиотеки, ждёт вашего выбора; подсказка — лишь догадка и никогда не применяется сама."
 
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
 msgstr "Процессорное время процессов каждого движка, пока он думает (не больше ядер, чем его потоков) и пока думает соперник (ноль без пондеринга). Измеряется во время партий, сыгранных в окне, и сохраняется вместе с ними для возобновления турнира."
@@ -2585,6 +2639,9 @@ msgstr "Записывать файлы трансляции"
 msgid "Written at {} in {}"
 msgstr "Записано в {} в папку {}"
 
+msgid "Written when \"{}\" is on in the PGN options of the setup."
+msgstr "Записывается, когда «{}» включён в параметрах PGN настройки."
+
 msgid "Wrong PVs"
 msgstr "Неверные PV"
 
@@ -2810,6 +2867,9 @@ msgstr "победы и поражения"
 msgid "without mirrored positions"
 msgstr "без зеркальных позиций"
 
+msgid "your choice"
+msgstr "ваш выбор"
+
 msgid "{:+.2f}  (DrawElo {:.0f})"
 msgstr "{:+.2f}  (DrawElo {:.0f})"
 
@@ -3020,6 +3080,12 @@ msgstr "{} — собственный PGN-файл турнира: выбери�
 msgid "{} is twice in the list of participants."
 msgstr "{} дважды указан в списке участников."
 
+msgid "{} library engine has this name"
+msgid_plural "{} library engines have this name"
+msgstr[0] "{} движок библиотеки носит это имя"
+msgstr[1] "{} движка библиотеки носят это имя"
+msgstr[2] "{} движков библиотеки носят это имя"
+
 msgid "{} loss on time"
 msgid_plural "{} losses on time"
 msgstr[0] "{} поражение по времени"
@@ -3116,6 +3182,18 @@ msgstr[2] "{} сыгранных партий перестают учитыва�
 msgid "{} played · {} running · {} to play"
 msgstr "сыграно: {} · идёт: {} · осталось: {}"
 
+msgid "{} player"
+msgid_plural "{} players"
+msgstr[0] "{} игрок"
+msgstr[1] "{} игрока"
+msgstr[2] "{} игроков"
+
+msgid "{} player that two library engines may be: say which one."
+msgid_plural "{} players that two library engines may be: say which one."
+msgstr[0] "{} игрок может быть одним из двух движков библиотеки: укажите, каким."
+msgstr[1] "{} игрока могут быть одним из двух движков библиотеки: укажите, каким."
+msgstr[2] "{} игроков могут быть одним из двух движков библиотеки: укажите, каким."
+
 msgid "{} plays with {} % of the time"
 msgstr "{} играет с {} % времени"
 
@@ -3157,6 +3235,12 @@ msgstr[2] "Выбрано {}"
 
 msgid "{} shown"
 msgstr "показано: {}"
+
+msgid "{} that two library engines may be"
+msgid_plural "{} that two library engines may be"
+msgstr[0] "{} неоднозначный"
+msgstr[1] "{} неоднозначных"
+msgstr[2] "{} неоднозначных"
 
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"
