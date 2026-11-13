@@ -887,3 +887,30 @@ TEST_CASE("engine log: each engine keeps its start, whatever the other prints fi
     CHECK(at(fmt::format("B< late {}\n", EngineLog::TAIL_LINES - 1)) < at("W< bestmove e2e4\n"));
     CHECK(at("W< bestmove e2e4\n") < at("B< the end\n"));
 }
+
+TEST_CASE("engine log: a quiet engine's lines deep in the game are left out with the chatty one's around them") {
+    EngineLog log;
+    log.start();
+    log.add(chess::Color::BLACK, EngineLog::Stream::Input, "uci");
+    log.add(chess::Color::BLACK, EngineLog::Stream::Output, "uciok");
+    // White's engine is chatty, Black's says a line now and then: its head is far from full at the end.
+    const std::size_t total = EngineLog::TAIL_LINES * 3;
+    for (std::size_t i = 0; i < total; ++i) {
+        log.add(chess::Color::WHITE, EngineLog::Stream::Output, fmt::format("info {}", i));
+        if (i % 100 == 99) log.add(chess::Color::BLACK, EngineLog::Stream::Output, fmt::format("bestmove {}", i));
+    }
+
+    fastchess::MatchData data("startpos");
+    const auto text  = log.text(1, data);
+    std::size_t gaps = 0;
+    for (auto at = text.find("left out"); at != std::string::npos; at = text.find("left out", at + 1)) ++gaps;
+    // The heads up to White's head being full, Black's lines while the tail took its first lines (the start), then
+    // the end of the game: not a gap between every line of Black's.
+    CHECK(gaps <= 3);
+    CHECK(text.find("B> uci\n") < text.find("left out"));
+    CHECK(text.find("B< bestmove 299\n") < text.find("left out"));
+    CHECK(text.find("B< bestmove 999\n") == std::string::npos);
+    CHECK(text.find(fmt::format("B< bestmove {}\n", total / 2 - 1)) == std::string::npos);
+    CHECK(text.find(fmt::format("B< bestmove {}\n", total - 1)) != std::string::npos);
+    CHECK(text.find(fmt::format("W< info {}\n", total - 1)) != std::string::npos);
+}
