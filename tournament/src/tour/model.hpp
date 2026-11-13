@@ -52,6 +52,12 @@ struct Participant {
 
     FileFingerprint program;  // engine.cmd when the participant joined, to warn when it was rebuilt or moved
     int elo = 0;              // reference rating from the engine list, 0 = none; written in the PGN headers
+
+    // Its own opening book, a Polyglot file, played by the book adapter (book_adapter.hpp) while the game is in it,
+    // up to `book_depth` plies (0: the whole book). Empty: the engine plays every move. Older versions of the
+    // program ignore both and play the engine alone.
+    std::string book;
+    int book_depth = 0;
 };
 
 struct TournamentSpec {

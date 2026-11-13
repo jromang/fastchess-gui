@@ -39,6 +39,9 @@ msgstr "%.1f 兵"
 msgid "%d games × %d threads > %d available threads."
 msgstr "%d 局 × %d 线程 > %d 可用线程。"
 
+msgid "%d plies"
+msgstr "%d 个半回合"
+
 msgid "%s  vs  %s"
 msgstr "%s  对  %s"
 
@@ -59,6 +62,9 @@ msgstr "（不在引擎列表中）"
 
 msgid "(the same)"
 msgstr "（相同）"
+
+msgid "(twice: give it another book)"
+msgstr "（重复：请给它另一个开局库）"
 
 msgid "(withdrawn)"
 msgstr "（已退赛）"
@@ -503,6 +509,9 @@ msgstr "请至少选择两个引擎。"
 
 msgid "Choose engines A and B."
 msgstr "请选择引擎 A 和 B。"
+
+msgid "Choose two different engines, or give them books of their own."
+msgstr "请选择两个不同的引擎，或为它们各自指定专属开局库。"
 
 msgid "Choose two engines (A and B) from the engine list."
 msgstr "从引擎列表中选择两个引擎（A 和 B）。"
@@ -1099,6 +1108,9 @@ msgstr "读取 {} 的选项后即开始。"
 msgid "It starts once the test suite ends (or is stopped)."
 msgstr "测试集结束（或被停止）后即开始。"
 
+msgid "Its book moves are played at once, without a search."
+msgstr "其开局库着法会立即走出，不经搜索。"
+
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr "它在“等级分”中的信息卡：所有锦标赛中的成绩、稳定性和等级分。"
 
@@ -1110,6 +1122,9 @@ msgstr "它已下的对局不再计分"
 
 msgid "Its games stop counting and are played again by the new engine."
 msgstr "它的对局不再计分，由新引擎重新下。"
+
+msgid "Its own opening book"
+msgstr "它的专属开局库"
 
 msgid "Its path is in the clipboard."
 msgstr "其路径已复制到剪贴板。"
@@ -1270,8 +1285,14 @@ msgstr "尚未导入 PGN 文件。"
 msgid "No PVs: turn on pv in the PGN options of the setup."
 msgstr "没有 PV：请在配置的 PGN 选项中开启 pv。"
 
+msgid "No Polyglot book (.bin) in the library: add one in the Books window."
+msgstr "库中没有 Polyglot 开局库（.bin）：请在“开局库”窗口中添加。"
+
 msgid "No book"
 msgstr "无开局库"
+
+msgid "No book of its own: the engine plays every move. Click to give it one."
+msgstr "没有专属开局库：引擎自己走每一步。点击为它指定一个。"
 
 msgid "No book yet. Click Add."
 msgstr "还没有开局库。请点击“添加”。"
@@ -1365,6 +1386,9 @@ msgstr "这些引擎都不以相同名称存在于库中。"
 
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "归一化 Elo（fishtest、OpenBench），及其 95 % 区间。"
+
+msgid "Not a Polyglot book (.bin): it gives the tournament its openings, it cannot play for an engine."
+msgstr "不是 Polyglot 开局库（.bin）：它为比赛提供开局，不能代替引擎走棋。"
 
 msgid "Not checked"
 msgstr "未检查"
@@ -1591,6 +1615,9 @@ msgstr "半回合"
 
 msgid "Plies (PGN)"
 msgstr "半回合 (PGN)"
+
+msgid "Plies from the start of the game, the tournament's opening included."
+msgstr "从对局开始计算的半回合数，包括比赛的开局。"
 
 msgid "Plies since the last capture or pawn move; 100 is a draw."
 msgstr "自上次吃子或兵走动以来的半回合数；达到 100 即为和棋。"
@@ -2117,6 +2144,12 @@ msgstr "50 步计数、子力以及剩余棋子，显示在平铺视图的每个
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "按 PGN 标准，这些是注释。fastchess-gui 0.4.13 及更早版本把它们当作着法读取，可能从错误的局面（常常是初始局面）开始下此开局库中的某些开局。"
 
+msgid "The book of {} is not a Polyglot book (.bin): {}"
+msgstr "{} 的开局库不是 Polyglot 开局库（.bin）：{}"
+
+msgid "The book of {} is not found: {}"
+msgstr "找不到 {} 的开局库：{}"
+
 msgid "The change was undone."
 msgstr "修改已撤销。"
 
@@ -2243,6 +2276,9 @@ msgstr "所选引擎在其参加的每个锦标赛后的等级分：同一引擎
 msgid "The read of {} is interrupted for the start: it is done again later."
 msgstr "为了开始，{} 的读取已中断：稍后会重新进行。"
 
+msgid "The same engine, with different books"
+msgstr "同一引擎，使用不同的开局库"
+
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
 msgstr "同样的比赛，换一个新引擎 A，例如下一版本：其他设置保持不变。"
 
@@ -2299,6 +2335,9 @@ msgstr "它们之间没有对弈过。"
 
 msgid "This draw ratio and this RMS bias are not compatible."
 msgstr "此和棋率与此 RMS 偏差不相容。"
+
+msgid "This engine once more, with another book"
+msgstr "再加入一次此引擎，使用另一个开局库"
 
 msgid "This match is already finished."
 msgstr "这场比赛已经结束。"
@@ -2520,6 +2559,9 @@ msgstr "对阵"
 msgid "against {}"
 msgstr "对阵 {}"
 
+msgid "all"
+msgstr "全部"
+
 msgid "and {} more"
 msgstr "以及另外 {} 个"
 
@@ -2636,6 +2678,13 @@ msgstr "normalized：以 nElo 为边界（fishtest、OpenBench）。logistic：�
 
 msgid "opponents within ±"
 msgstr "个对手，范围 ±"
+
+msgid "own book {}, all of it"
+msgstr "专属开局库 {}，全部"
+
+msgid "own book {}, {} ply"
+msgid_plural "own book {}, {} plies"
+msgstr[0] "专属开局库 {}，{} 个半回合"
 
 msgid "pairs"
 msgstr "对局对"
@@ -3026,6 +3075,9 @@ msgstr "{} 子 Syzygy，用于 {} 个引擎（共 {} 个）"
 
 msgid "{}: decision"
 msgstr "{}：决定"
+
+msgid "{}: its book is not found: {}"
+msgstr "{}：找不到其开局库：{}"
 
 msgid "{}: program not found ({})"
 msgstr "{}：找不到程序（{}）"

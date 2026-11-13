@@ -13,6 +13,8 @@
 #    include <csignal>
 #endif
 
+#include <tour/book_adapter.hpp>
+
 #include "wb2uci.hpp"
 
 namespace fastchess {
@@ -28,6 +30,10 @@ int main(int argc, char** argv) {
     // The WinBoard adapter: the tests start their WinBoard engines through this program, as fastchess-gui does.
     if (argc >= 2 && std::string_view(argv[1]) == "--wb2uci") {
         return fcg::wb2uci::run(std::vector<std::string>(argv + 2, argv + argc));
+    }
+    // And the book adapter, for the engines with a book of their own.
+    if (argc >= 2 && std::string_view(argv[1]) == "--book-adapter") {
+        return fcg::tour::runBookAdapter(std::vector<std::string>(argv + 2, argv + argc));
     }
 #ifdef _WIN32
     // What an engine starts, for the test of the engine's job (run_tests.cpp): it reads nothing and leaves the console

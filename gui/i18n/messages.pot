@@ -40,6 +40,9 @@ msgstr ""
 msgid "%d games × %d threads > %d available threads."
 msgstr ""
 
+msgid "%d plies"
+msgstr ""
+
 msgid "%s  vs  %s"
 msgstr ""
 
@@ -59,6 +62,9 @@ msgid "(not in the engine list)"
 msgstr ""
 
 msgid "(the same)"
+msgstr ""
+
+msgid "(twice: give it another book)"
 msgstr ""
 
 msgid "(withdrawn)"
@@ -506,6 +512,9 @@ msgid "Choose at least two engines."
 msgstr ""
 
 msgid "Choose engines A and B."
+msgstr ""
+
+msgid "Choose two different engines, or give them books of their own."
 msgstr ""
 
 msgid "Choose two engines (A and B) from the engine list."
@@ -1104,6 +1113,9 @@ msgstr ""
 msgid "It starts once the test suite ends (or is stopped)."
 msgstr ""
 
+msgid "Its book moves are played at once, without a search."
+msgstr ""
+
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr ""
 
@@ -1114,6 +1126,9 @@ msgid "Its games played so far stop counting"
 msgstr ""
 
 msgid "Its games stop counting and are played again by the new engine."
+msgstr ""
+
+msgid "Its own opening book"
 msgstr ""
 
 msgid "Its path is in the clipboard."
@@ -1275,7 +1290,13 @@ msgstr ""
 msgid "No PVs: turn on pv in the PGN options of the setup."
 msgstr ""
 
+msgid "No Polyglot book (.bin) in the library: add one in the Books window."
+msgstr ""
+
 msgid "No book"
+msgstr ""
+
+msgid "No book of its own: the engine plays every move. Click to give it one."
 msgstr ""
 
 msgid "No book yet. Click Add."
@@ -1369,6 +1390,9 @@ msgid "None of these engines is in the library under the same name."
 msgstr ""
 
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
+msgstr ""
+
+msgid "Not a Polyglot book (.bin): it gives the tournament its openings, it cannot play for an engine."
 msgstr ""
 
 msgid "Not checked"
@@ -1596,6 +1620,9 @@ msgid "Plies"
 msgstr ""
 
 msgid "Plies (PGN)"
+msgstr ""
+
+msgid "Plies from the start of the game, the tournament's opening included."
 msgstr ""
 
 msgid "Plies since the last capture or pawn move; 100 is a draw."
@@ -2126,6 +2153,12 @@ msgstr ""
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr ""
 
+msgid "The book of {} is not a Polyglot book (.bin): {}"
+msgstr ""
+
+msgid "The book of {} is not found: {}"
+msgstr ""
+
 msgid "The change was undone."
 msgstr ""
 
@@ -2252,6 +2285,9 @@ msgstr ""
 msgid "The read of {} is interrupted for the start: it is done again later."
 msgstr ""
 
+msgid "The same engine, with different books"
+msgstr ""
+
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
 msgstr ""
 
@@ -2307,6 +2343,9 @@ msgid "They have not played each other."
 msgstr ""
 
 msgid "This draw ratio and this RMS bias are not compatible."
+msgstr ""
+
+msgid "This engine once more, with another book"
 msgstr ""
 
 msgid "This match is already finished."
@@ -2530,6 +2569,9 @@ msgstr ""
 msgid "against {}"
 msgstr ""
 
+msgid "all"
+msgstr ""
+
 msgid "and {} more"
 msgstr ""
 
@@ -2646,6 +2688,14 @@ msgstr ""
 
 msgid "opponents within ±"
 msgstr ""
+
+msgid "own book {}, all of it"
+msgstr ""
+
+msgid "own book {}, {} ply"
+msgid_plural "own book {}, {} plies"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "pairs"
 msgstr ""
@@ -3071,6 +3121,9 @@ msgid "{}-man Syzygy for {} of {} engines"
 msgstr ""
 
 msgid "{}: decision"
+msgstr ""
+
+msgid "{}: its book is not found: {}"
 msgstr ""
 
 msgid "{}: program not found ({})"

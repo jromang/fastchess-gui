@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <filesystem>
 
 #include <imgui.h>
 #include <implot.h>
@@ -156,6 +157,17 @@ void App::drawStandingsRow(std::size_t i, bool compact, bool swiss) {
                                  standings_engine_ && *standings_engine_ == r.id,
                                  ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap)) {
         standings_engine_ = r.id;  // its opponents under the table
+    }
+    // A book of its own: which, and how deep.
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
+        const auto* t = run_.tournament();
+        const auto* p = t ? t->spec().participant(r.id) : nullptr;
+        if (p && !p->book.empty()) {
+            ImGui::SetTooltip(
+                "%s", fmt::format("{}\n{}", ownBookText(std::filesystem::path(p->book).stem().string(), p->book_depth),
+                                  p->book)
+                          .c_str());
+        }
     }
     if (compact) {
         const auto h = health(r);
@@ -550,6 +562,10 @@ void App::drawOpponents(int id) {
 
     ImGui::BeginChild("##opponents", ImVec2(0, 0));
     ImGui::TextUnformatted(trf("{} against each opponent", p->engine.name).c_str());
+    if (!p->book.empty()) {
+        ImGui::SameLine();
+        ImGui::TextDisabled("(%s)", ownBookText(std::filesystem::path(p->book).stem().string(), p->book_depth).c_str());
+    }
     ImGui::SameLine();
     if (unpaired > 0) {
         ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);

@@ -40,6 +40,9 @@ msgstr "%.1f pedoni"
 msgid "%d games × %d threads > %d available threads."
 msgstr "%d partite × %d thread > %d thread disponibili."
 
+msgid "%d plies"
+msgstr "%d semimosse"
+
 msgid "%s  vs  %s"
 msgstr "%s  contro  %s"
 
@@ -60,6 +63,9 @@ msgstr "(non è nella lista dei motori)"
 
 msgid "(the same)"
 msgstr "(uguale)"
+
+msgid "(twice: give it another book)"
+msgstr "(due volte: dagli un altro libro)"
 
 msgid "(withdrawn)"
 msgstr "(ritirato)"
@@ -507,6 +513,9 @@ msgstr "Scegli almeno due motori."
 
 msgid "Choose engines A and B."
 msgstr "Scegli i motori A e B."
+
+msgid "Choose two different engines, or give them books of their own."
+msgstr "Scegli due motori diversi, o dai loro libri propri."
 
 msgid "Choose two engines (A and B) from the engine list."
 msgstr "Scegli due motori (A e B) dalla lista dei motori."
@@ -1104,6 +1113,9 @@ msgstr "Parte appena le opzioni di {} sono state lette."
 msgid "It starts once the test suite ends (or is stopped)."
 msgstr "Parte appena la suite di test termina (o viene fermata)."
 
+msgid "Its book moves are played at once, without a search."
+msgstr "Le sue mosse di libro sono giocate subito, senza ricerca."
+
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr "La sua scheda in Classifiche: risultati, affidabilità e rating in tutti i tornei."
 
@@ -1115,6 +1127,9 @@ msgstr "Le sue partite giocate finora non contano più"
 
 msgid "Its games stop counting and are played again by the new engine."
 msgstr "Le sue partite non contano più e vengono rigiocate dal nuovo motore."
+
+msgid "Its own opening book"
+msgstr "Il suo libro di aperture"
 
 msgid "Its path is in the clipboard."
 msgstr "Il suo percorso è negli appunti."
@@ -1275,8 +1290,14 @@ msgstr "Nessun file PGN importato."
 msgid "No PVs: turn on pv in the PGN options of the setup."
 msgstr "Nessuna PV: attiva pv nelle opzioni PGN della configurazione."
 
+msgid "No Polyglot book (.bin) in the library: add one in the Books window."
+msgstr "Nessun libro Polyglot (.bin) nella libreria: aggiungine uno nella finestra Libri."
+
 msgid "No book"
 msgstr "Nessun libro"
+
+msgid "No book of its own: the engine plays every move. Click to give it one."
+msgstr "Nessun libro proprio: il motore gioca ogni mossa. Clicca per dargliene uno."
 
 msgid "No book yet. Click Add."
 msgstr "Ancora nessun libro. Clicca su Aggiungi."
@@ -1370,6 +1391,9 @@ msgstr "Nessuno di questi motori è nella libreria con lo stesso nome."
 
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "Elo normalizzato (fishtest, OpenBench), con il suo intervallo al 95 %."
+
+msgid "Not a Polyglot book (.bin): it gives the tournament its openings, it cannot play for an engine."
+msgstr "Non è un libro Polyglot (.bin): fornisce le aperture del torneo, non può giocare per un motore."
 
 msgid "Not checked"
 msgstr "Non verificato"
@@ -1597,6 +1621,9 @@ msgstr "Semimosse"
 
 msgid "Plies (PGN)"
 msgstr "Semimosse (PGN)"
+
+msgid "Plies from the start of the game, the tournament's opening included."
+msgstr "Semimosse dall'inizio della partita, compresa l'apertura del torneo."
 
 msgid "Plies since the last capture or pawn move; 100 is a draw."
 msgstr "Semimosse dall'ultima cattura o mossa di pedone; a 100 è patta."
@@ -2126,6 +2153,12 @@ msgstr "Il contatore delle 50 mosse, il materiale e i pezzi rimasti, sotto ogni 
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "Lo standard PGN li rende commenti. fastchess-gui 0.4.13 e precedenti li leggevano come mosse, e potevano giocare alcune aperture di questo libro da una posizione sbagliata, spesso quella iniziale."
 
+msgid "The book of {} is not a Polyglot book (.bin): {}"
+msgstr "Il libro di {} non è un libro Polyglot (.bin): {}"
+
+msgid "The book of {} is not found: {}"
+msgstr "Il libro di {} non è stato trovato: {}"
+
 msgid "The change was undone."
 msgstr "La modifica è stata annullata."
 
@@ -2252,6 +2285,9 @@ msgstr "Il rating dei motori scelti dopo ogni torneo giocato: le versioni di un 
 msgid "The read of {} is interrupted for the start: it is done again later."
 msgstr "La lettura di {} è interrotta per l'avvio: sarà rifatta più tardi."
 
+msgid "The same engine, with different books"
+msgstr "Lo stesso motore, con libri diversi"
+
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
 msgstr "Lo stesso match con un nuovo motore A, per esempio la versione successiva: tutte le altre impostazioni restano."
 
@@ -2308,6 +2344,9 @@ msgstr "Non si sono mai affrontati."
 
 msgid "This draw ratio and this RMS bias are not compatible."
 msgstr "Questa percentuale di patte e questo bias RMS non sono compatibili."
+
+msgid "This engine once more, with another book"
+msgstr "Questo motore ancora una volta, con un altro libro"
 
 msgid "This match is already finished."
 msgstr "Questo match è già finito."
@@ -2530,6 +2569,9 @@ msgstr "contro"
 msgid "against {}"
 msgstr "contro {}"
 
+msgid "all"
+msgstr "tutto"
+
 msgid "and {} more"
 msgstr "e altri {}"
 
@@ -2646,6 +2688,14 @@ msgstr "normalized: limiti in nElo (fishtest, OpenBench). logistic: Elo classico
 
 msgid "opponents within ±"
 msgstr "avversari entro ±"
+
+msgid "own book {}, all of it"
+msgstr "libro proprio {}, completo"
+
+msgid "own book {}, {} ply"
+msgid_plural "own book {}, {} plies"
+msgstr[0] "libro proprio {}, {} semimossa"
+msgstr[1] "libro proprio {}, {} semimosse"
 
 msgid "pairs"
 msgstr "coppie"
@@ -3072,6 +3122,9 @@ msgstr "Syzygy a {} pezzi per {} motori su {}"
 
 msgid "{}: decision"
 msgstr "{}: decisione"
+
+msgid "{}: its book is not found: {}"
+msgstr "{}: il suo libro non è stato trovato: {}"
 
 msgid "{}: program not found ({})"
 msgstr "{}: programma non trovato ({})"
