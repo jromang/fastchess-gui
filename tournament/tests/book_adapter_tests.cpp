@@ -337,6 +337,28 @@ TEST_CASE("own book adapter: castling as UCI wants it, or as Chess960 does") {
     }
 }
 
+TEST_CASE("own book: a position after a double step beside a pinned pawn is found by the format's key") {
+    // After c7c5, White's b5 pawn stands beside it, pinned by the rook on h5: the format's key has the en passant
+    // file all the same.
+    const std::string fen = "8/2p5/8/KP5r/8/8/8/4k3 b - - 0 1";
+    const auto path       = fs::temp_directory_path() / "fcg-own-book-pinned.bin";
+    writePolyglot(path, {{polyglotKey("c7c5", fen), "a5a4", 1}});
+
+    Adapter a(path);
+    a.fromGui("ucinewgame");
+    a.fromGui("position fen " + fen + " moves c7c5");
+    a.fromGui("go movetime 100");
+    CHECK(a.gui == std::vector<std::string>{"bestmove a5a4"});
+    CHECK(a.enginesGo() == 0);
+
+    fastchess::MatchData data(fen);
+    for (const auto* m : {"c7c5", "a5a4"}) data.moves.emplace_back(m);
+    PolyglotBook book(path);
+    markOwnBookMoves(data, chess::Color::WHITE, book, 0, false);
+    CHECK_FALSE(data.moves[0].book);
+    CHECK(data.moves[1].book);
+}
+
 TEST_CASE("own book adapter: the same seed gives the same choices, game after game; another seed others") {
     const auto choices = [](uint64_t seed) {
         Adapter a(smallBook(), 0, seed);

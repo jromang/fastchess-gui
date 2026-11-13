@@ -8,6 +8,8 @@
 
 #include <tour/polyglot.hpp>
 
+#include "polyglot_writer.hpp"
+
 using namespace fcg::tour;
 namespace fs = std::filesystem;
 
@@ -45,16 +47,43 @@ fs::path writeBook(const std::string& name,
 
 }  // namespace
 
-TEST_CASE("polyglot: chess-library's hash is the Polyglot key (the reference values of the format)") {
-    chess::Board board;
-    CHECK(board.hash() == 0x463b96181691fc9cULL);
-    const std::pair<const char*, uint64_t> steps[] = {{"e2e4", 0x823c9b50fd114196ULL}, {"d7d5", 0x0756b94461c50fb0ULL},
-                                                      {"e4e5", 0x662fafb965db29d4ULL}, {"f7f5", 0x22a48b5a8e47ff78ULL},
-                                                      {"e1e2", 0x652a607ca3f242c1ULL}, {"e8f7", 0x00fdd303c946bdd9ULL}};
-    for (const auto& [uci, key] : steps) {
-        board.makeMove(chess::uci::uciToMove(board, uci));
+TEST_CASE("polyglot: the official test keys, from the program's boards and from the tests' own reckoning") {
+    const std::pair<const char*, uint64_t> keys[] = {
+        {"", 0x463b96181691fc9cULL},
+        {"e2e4", 0x823c9b50fd114196ULL},
+        {"e2e4 d7d5", 0x0756b94461c50fb0ULL},
+        {"e2e4 d7d5 e4e5", 0x662fafb965db29d4ULL},
+        {"e2e4 d7d5 e4e5 f7f5", 0x22a48b5a8e47ff78ULL},  // en passant: the e5 pawn may take on f6
+        {"e2e4 d7d5 e4e5 f7f5 e1e2", 0x652a607ca3f242c1ULL},
+        {"e2e4 d7d5 e4e5 f7f5 e1e2 e8f7", 0x00fdd303c946bdd9ULL},
+        {"a2a4 b7b5 h2h4 b5b4 c2c4", 0x3c8123ea7b067637ULL},  // en passant: b4 may take on c3
+        {"a2a4 b7b5 h2h4 b5b4 c2c4 b4c3 a1a3", 0x5c3f9b829b279560ULL},
+    };
+    for (const auto& [line, key] : keys) {
+        INFO(line);
+        chess::Board board;
+        std::istringstream in(line);
+        for (std::string uci; in >> uci;) playForBook(board, chess::uci::uciToMove(board, uci));
         CHECK(board.hash() == key);
+        CHECK(fcg::test::polyglotKey(line) == key);
     }
+}
+
+TEST_CASE("polyglot: en passant is in the key whenever a pawn stands beside, even pinned, as the format wants") {
+    // After c7c5, White's b5 pawn stands beside it but may not take: the black rook on h5 pins it to its king.
+    const std::string fen = "8/2p5/8/KP5r/8/8/8/4k3 b - - 0 1";
+    chess::Board board(fen);
+    playForBook(board, chess::uci::uciToMove(board, "c7c5"));
+    chess::Board legal_only(fen);
+    legal_only.makeMove<true>(chess::uci::uciToMove(legal_only, "c7c5"));
+    CHECK(board.hash() == fcg::test::polyglotKey("c7c5", fen));
+    CHECK(legal_only.hash() != board.hash());
+    // The same position without the double step (the pawn came from c6): no en passant in the key.
+    CHECK(fcg::test::polyglotKey("c6c5", "8/8/2p5/KP5r/8/8/8/4k3 b - - 0 1") == legal_only.hash());
+    // The capture is not generated all the same.
+    chess::Movelist moves;
+    chess::movegen::legalmoves(moves, board);
+    for (const auto& m : moves) CHECK(m.typeOf() != chess::Move::ENPASSANT);
 }
 
 TEST_CASE("polyglot: the lines are followed to the depth asked, rare moves left out, castling read") {

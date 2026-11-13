@@ -142,7 +142,10 @@ std::vector<std::string> polyglotPositions(const std::filesystem::path& file, co
     chess::Board board;
 
     const auto leaf = [&] {
-        out.push_back(board.getFen(false));
+        // An en passant square only when the capture is legal, as a FEN wants it (the key has it whenever a pawn
+        // stands beside, see playForBook()).
+        out.push_back(board.enpassantSq() == chess::Square::NO_SQ ? board.getFen(false)
+                                                                  : chess::Board(board.getFen()).getFen(false));
         if (out.size() > walk.max_positions) {
             throw std::runtime_error(
                 fmt::format("the Polyglot book {} gives more than {} positions at {} plies: choose fewer plies",
@@ -171,7 +174,7 @@ std::vector<std::string> polyglotPositions(const std::filesystem::path& file, co
             return;
         }
         for (const auto& move : moves) {
-            board.makeMove<true>(move);
+            playForBook(board, move);
             self(self, depth + 1);
             board.unmakeMove(move);
         }

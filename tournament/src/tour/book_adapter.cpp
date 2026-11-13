@@ -102,7 +102,7 @@ void markOwnBookMoves(fastchess::MatchData& data, chess::Color side, PolyglotBoo
         if (board.sideToMove() == side && !move.book && withinBookDepth(ply, depth) && !book.moves(board).empty()) {
             move.book = true;
         }
-        board.makeMove<true>(m);
+        playForBook(board, m);
     }
 }
 
@@ -177,7 +177,7 @@ void BookAdapter::position(const std::vector<std::string>& tokens) {
         for (++i; i < tokens.size(); ++i, ++ply_) {
             const auto move = chess::uci::uciToMove(board_, tokens[i]);
             if (move == chess::Move::NO_MOVE) return;
-            board_.makeMove<true>(move);
+            playForBook(board_, move);
         }
     }
     known_ = true;

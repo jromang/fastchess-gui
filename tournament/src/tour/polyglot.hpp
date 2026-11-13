@@ -17,6 +17,12 @@ namespace fcg::tour {
 
 [[nodiscard]] bool isPolyglot(const std::filesystem::path& file);
 
+// Plays `move` on a board whose positions are looked up in a Polyglot book. chess-library's numbers are those of the
+// format, so the board's hash() is the position's key, but for en passant: the format hashes the file whenever a pawn
+// of the side to move stands beside the pawn that just stepped two squares, which makeMove<false> does, whereas
+// makeMove<true> hashes it only when the capture is legal (not when the capturing pawn is pinned).
+inline void playForBook(chess::Board& board, chess::Move move) { board.makeMove<false>(move); }
+
 struct PolyglotWalk {
     int plies = 8;  // how deep the lines are followed
     // Moves weighing less than this share of the best move of their position are left out, as rarely played.
@@ -47,7 +53,9 @@ class PolyglotBook {
     // Throws std::runtime_error with a readable message when the file cannot be read or is no Polyglot book.
     explicit PolyglotBook(const std::filesystem::path& file);
 
-    // The legal moves the book gives `board`, in the book's order, those that weigh nothing left out.
+    // The legal moves the book gives `board`, in the book's order, those that weigh nothing left out. The moves that
+    // led to `board` are played with playForBook(). (A position set from a FEN keeps its en passant square only when
+    // the capture is legal: when it is not, the key differs from the format's, which rarely matters.)
     [[nodiscard]] std::vector<Choice> moves(const chess::Board& board);
 
     // One of them, at random in proportion to their weights, as Polyglot and Cute Chess choose; NO_MOVE when the
