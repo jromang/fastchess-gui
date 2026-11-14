@@ -353,6 +353,9 @@ msgstr "Его место занимает другой движок из спи
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "Всё, что стоит о нём помнить; поиск движков находит этот текст."
 
+msgid "Applies at the next launch."
+msgstr "Вступит в силу при следующем запуске."
+
 msgid "Apply"
 msgstr "Применить"
 
@@ -841,6 +844,9 @@ msgstr "Ничья, если у обоих движков |оценка| ≤ п�
 
 msgid "Drawn twice"
 msgstr "Две ничьи"
+
+msgid "Drawn with: {}"
+msgstr "Отрисовка: {}"
 
 msgid "Draws"
 msgstr "Ничьи"
@@ -1841,8 +1847,8 @@ msgstr "Открыть папку профиля"
 msgid "Open the tournament."
 msgstr "Открыть турнир."
 
-msgid "OpenGL 3.2 is not available (SDL_GL_CreateContext)"
-msgstr "OpenGL 3.2 недоступен (SDL_GL_CreateContext)"
+msgid "OpenGL 3.2 cannot be used ({}): the window is drawn by SDL's renderer."
+msgstr "OpenGL 3.2 недоступен ({}): окно отрисовывает рендерер SDL."
 
 msgid "OpenGL functions are missing"
 msgstr "Отсутствуют функции OpenGL"
@@ -2243,6 +2249,9 @@ msgstr "Удалить…"
 msgid "Rename it “{}”"
 msgstr "Переименовать в «{}»"
 
+msgid "Rendering"
+msgstr "Отрисовка"
+
 msgid "Replace"
 msgstr "Заменить"
 
@@ -2329,6 +2338,12 @@ msgstr "Идёт"
 
 msgid "R{}"
 msgstr "Т{}"
+
+msgid "SDL renderer"
+msgstr "Рендерер SDL"
+
+msgid "SDL renderer, {} driver"
+msgstr "Рендерер SDL, драйвер {}"
 
 msgid "SPRT calculator"
 msgstr "Калькулятор SPRT"
@@ -2452,6 +2467,9 @@ msgstr "Показать: {}"
 
 msgid "Site"
 msgstr "Место"
+
+msgid "Software rendering"
+msgstr "Программная отрисовка"
 
 msgid "Solution"
 msgstr "Решение"
@@ -2882,6 +2900,9 @@ msgstr "Поиск останавливается, когда решение о�
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "Ожидаемая доля ничьих между двумя движками при этом контроле времени."
 
+msgid "The software renderer cannot be used ({}): the window is drawn with OpenGL."
+msgstr "Программный рендерер недоступен ({}): окно отрисовывается через OpenGL."
+
 msgid "The spread of the advantage the openings give, in Elo: what playing each opening twice, colours reversed, cancels out."
 msgstr "Разброс преимущества, которое дают дебюты, в Elo: то, что компенсирует игра каждого дебюта дважды с переменой цветов."
 
@@ -2929,6 +2950,9 @@ msgstr "Дисперсия партии при подсчёте по парам,
 
 msgid "The version and the system, for a bug report."
 msgstr "Версия и система — для сообщения об ошибке."
+
+msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
+msgstr "Окно рисует процессор (программный рендерер SDL), а не видеокарта через OpenGL: для виртуальных машин, удалённых рабочих столов и неисправных графических драйверов. Медленнее, а панели, вынесенные из окна, остаются внутри него. --software в командной строке делает то же самое на один запуск."
 
 msgid "The working directory of {} is not found: {}"
 msgstr "Рабочая папка движка {} не найдена: {}"
@@ -3059,6 +3083,9 @@ msgstr "Соответствие UCI: этап {} не пройден, см. о�
 msgid "UDP port"
 msgstr "Порт UDP"
 
+msgid "Under Wayland the software renderer needs X11: start the program with the environment variable SDL_VIDEODRIVER=x11."
+msgstr "В Wayland программному рендереру нужен X11: запустите программу с переменной окружения SDL_VIDEODRIVER=x11."
+
 msgid "Undo the last change"
 msgstr "Отменить последнее изменение"
 
@@ -3073,6 +3100,9 @@ msgstr "До следующей версии."
 
 msgid "Up to {} engines."
 msgstr "До {} движков."
+
+msgid "Update the graphics driver, or turn on 3D acceleration in the virtual machine or the remote desktop's settings."
+msgstr "Обновите графический драйвер или включите 3D-ускорение в настройках виртуальной машины или удалённого рабочего стола."
 
 msgid "Use it for the next tournament"
 msgstr "Использовать для следующего турнира"
@@ -3344,6 +3374,9 @@ msgstr "пусто"
 msgid "every pair with both colours"
 msgstr "каждая пара с обоими цветами"
 
+msgid "fastchess-gui cannot draw its window."
+msgstr "fastchess-gui не может отрисовать своё окно."
+
 msgid "fastchess-gui {} is out (this is {})."
 msgstr "Вышел fastchess-gui {} (у вас {})."
 
@@ -3466,6 +3499,9 @@ msgstr "переигровка по запросу"
 
 msgid "send at startup"
 msgstr "отправить при запуске"
+
+msgid "the driver gives OpenGL {}"
+msgstr "драйвер предоставляет OpenGL {}"
 
 msgid "the file is not found"
 msgstr "файл не найден"

@@ -13,8 +13,8 @@
 #define NANOSVGRAST_IMPLEMENTATION
 #include <nanosvgrast.h>
 
-#include "gl.hpp"
 #include "i18n.hpp"
+#include "renderer.hpp"
 #include "ui.hpp"
 
 namespace fcg::assets {
@@ -52,16 +52,12 @@ chess::Square displayedTarget(const chess::Move& move) {
 
 }  // namespace
 
-PieceAtlas::~PieceAtlas() {
-    if (texture_ != 0 && gl::fn().DeleteTextures) gl::fn().DeleteTextures(1, &texture_);
-}
-
-bool PieceAtlas::create(int px) {
+std::vector<unsigned char> rasterizePieces(int px) {
     const int width = px * 12;
     std::vector<unsigned char> pixels(static_cast<std::size_t>(width) * px * 4, 0);
 
     NSVGrasterizer* rast = nsvgCreateRasterizer();
-    if (!rast) return false;
+    if (!rast) return {};
 
     std::vector<unsigned char> tile(static_cast<std::size_t>(px) * px * 4);
     bool ok = true;
@@ -87,22 +83,35 @@ bool PieceAtlas::create(int px) {
     }
 
     nsvgDeleteRasterizer(rast);
-    if (!ok) return false;
+    if (!ok) return {};
+    return pixels;
+}
 
-    const auto& f = gl::fn();
-    f.GenTextures(1, &texture_);
-    f.BindTexture(gl::TEXTURE_2D, texture_);
-    f.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR);
-    f.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR);
-    f.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE);
-    f.TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE);
-    f.PixelStorei(gl::UNPACK_ALIGNMENT, 1);
-    f.TexImage2D(gl::TEXTURE_2D, 0, static_cast<gl::GLint>(gl::RGBA), width, px, 0, gl::RGBA, gl::UNSIGNED_BYTE,
-                 pixels.data());
-    f.GenerateMipmap(gl::TEXTURE_2D);
-    f.BindTexture(gl::TEXTURE_2D, 0);
+PieceAtlas::~PieceAtlas() {
+    for (const auto& level : levels_) render::destroyTexture(level.texture);
+}
 
+bool PieceAtlas::create(int px) {
+    // OpenGL makes the smaller sizes itself (mipmaps). SDL's renderer has none: they are rasterized from the SVGs,
+    // sharper than shrunk.
+    const int smallest = render::mipmapped() ? px : std::max(1, px / 8);
+    for (int size = px; size >= smallest; size /= 2) {
+        const auto pixels = rasterizePieces(size);
+        if (pixels.empty()) return false;
+        const auto texture = render::createTexture(size * 12, size, pixels.data());
+        if (texture == ImTextureID_Invalid) return !levels_.empty();
+        levels_.push_back({size, texture});
+    }
     return true;
+}
+
+ImTextureID PieceAtlas::texture(float pixels) const noexcept {
+    // Linear filtering without mipmaps stays smooth down to half the image's size: the smallest image at least as
+    // large as drawn is between one and two times the size.
+    for (auto it = levels_.rbegin(); it != levels_.rend(); ++it) {
+        if (static_cast<float>(it->pixels) >= pixels) return it->texture;
+    }
+    return levels_.empty() ? ImTextureID_Invalid : levels_.front().texture;
 }
 
 void PieceAtlas::uv(chess::Piece piece, ImVec2& uv0, ImVec2& uv1) const {
@@ -180,7 +189,7 @@ void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, c
             if (piece != chess::Piece::NONE && atlas.ready()) {
                 ImVec2 uv0, uv1;
                 atlas.uv(piece, uv0, uv1);
-                dl->AddImage(atlas.texture(), p0, p1, uv0, uv1);
+                dl->AddImage(atlas.texture(sq * ImGui::GetIO().DisplayFramebufferScale.x), p0, p1, uv0, uv1);
             }
         }
     }
@@ -275,9 +284,10 @@ void drawBoardInfo(const PieceAtlas& atlas, const chess::Board& board, float wid
         if (n == 0) continue;
         ImVec2 uv0, uv1;
         atlas.uv(chess::Piece(types[i], n > 0 ? chess::Color::WHITE : chess::Color::BLACK), uv0, uv1);
+        const ImTextureID texture = atlas.texture(icon * ImGui::GetIO().DisplayFramebufferScale.x);
         for (int k = 0; k < std::min(std::abs(n), 8); ++k) {
-            ImGui::GetWindowDrawList()->AddImage(atlas.texture(), ImVec2(x, start.y), ImVec2(x + icon, start.y + icon),
-                                                 uv0, uv1);
+            ImGui::GetWindowDrawList()->AddImage(texture, ImVec2(x, start.y), ImVec2(x + icon, start.y + icon), uv0,
+                                                 uv1);
             x += icon * 0.6f;
         }
         x += icon * 0.5f;

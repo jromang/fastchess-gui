@@ -29,9 +29,9 @@ constexpr GLenum UNSIGNED_BYTE        = 0x1401;
 constexpr GLenum UNPACK_ALIGNMENT     = 0x0CF5;
 constexpr GLenum PACK_ALIGNMENT       = 0x0D05;
 constexpr GLbitfield COLOR_BUFFER_BIT = 0x00004000;
-constexpr GLenum STRING_VENDOR        = 0x1F00;  // glGetString's
-constexpr GLenum STRING_RENDERER      = 0x1F01;
-constexpr GLenum STRING_VERSION       = 0x1F02;
+constexpr GLenum VENDOR               = 0x1F00;
+constexpr GLenum RENDERER             = 0x1F01;
+constexpr GLenum VERSION              = 0x1F02;
 
 struct Functions {
     void (*GenTextures)(GLsizei, GLuint*)                                                          = nullptr;

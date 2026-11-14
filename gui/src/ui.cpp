@@ -19,6 +19,7 @@
 #include <fmt/include/fmt/format.h>
 
 #include "i18n.hpp"
+#include "renderer.hpp"
 
 namespace fcg::ui {
 
@@ -165,6 +166,18 @@ void applyTheme(Theme theme, float scale) {
     style.FramePadding      = ImVec2(8, 5);
     style.WindowPadding     = ImVec2(12, 10);
     style.CellPadding       = ImVec2(8, 5);
+    if (render::software()) {
+        // Square corners with SDL's software driver. A rounded rectangle is a fan of triangles across it, and the
+        // driver tests every pixel of the box around each triangle: a chart's rounded frame alone cost more than the
+        // rest of its page.
+        style.WindowRounding    = 0.0f;
+        style.ChildRounding     = 0.0f;
+        style.FrameRounding     = 0.0f;
+        style.PopupRounding     = 0.0f;
+        style.GrabRounding      = 0.0f;
+        style.TabRounding       = 0.0f;
+        style.ScrollbarRounding = 0.0f;
+    }
     style.ScaleAllSizes(scale);
 }
 

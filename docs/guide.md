@@ -14,7 +14,7 @@ A navigation rail on the left leads to six pages:
 | Suites | Test suites (STS, WAC, ERET…): engines against the positions of an EPD file |
 | Ratings | One rating list over every game of every tournament |
 | Log | fastchess' own output and the messages of the GUI, and *Report a problem…* |
-| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the profile folder and the portable mode, the tournaments folder, the lichess token, the version and new versions, *Report a problem…* |
+| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the profile folder and the portable mode, the tournaments folder, the lichess token, the version and new versions, what draws the window and software rendering, *Report a problem…* |
 
 The interface is in English, French, German, Spanish, Italian, Brazilian Portuguese, Russian or simplified Chinese.
 At startup it follows the first preferred language of the system (English when there is no translation for it); it
@@ -58,6 +58,17 @@ while a text field is being typed in. The *?* beside each page's title, or F1, o
 A badge on the *Live* tab and on the *Tournaments* button gives the number of games in progress. A number field
 takes arithmetic: `40*60`, `15+10`, with `+ - * /` and parentheses, worked out on Enter or when the field is left;
 Escape gives the field its value back.
+
+The window is drawn with OpenGL 3.2. Where there is none (a virtual machine without 3D acceleration, a remote
+desktop, an old server), the program draws it through SDL's own renderer instead: Direct3D 11 on Windows, OpenGL
+2.1, or the processor alone. The log says which, and why OpenGL was not used; **Settings** > Rendering shows it too,
+with the graphics card's name when OpenGL draws. *Software rendering* there (or `--software` on the command line, for
+one launch) has the processor draw the window from the next launch, for a graphics driver that fails or crashes. It
+uses more processor time, redraws only what changes (and what moves, such as clocks, 15 times a second rather than
+30 while the mouse and keys rest), draws square corners, and the panels of the workspace float inside the main window
+rather than onto another screen. Under Wayland (and on macOS) the processor's picture is still shown through the
+graphics driver; if there is none, start the program with `SDL_VIDEODRIVER=x11`. When no way of drawing works, a
+message says so before the program ends.
 
 ## Engines
 
@@ -381,7 +392,8 @@ panels, shown by default as tabs:
 | Openings | Results by starting position: its game pairs, White's score, the draws, and how many pairs White won twice, Black won twice (the opening favours a colour) or one engine won twice (it tells the engines apart), with the average length. Sorted by any column, filtered to the unbalanced, the drawn or the decisive ones; *Export as EPD…* writes the positions shown, to keep them or to clean a book. A click shows the position and its games |
 
 **Panels and layouts**: every tab is a panel. Drag one by its tab to dock it on a side of another panel or as a tab
-next to it, or drop it elsewhere to float it (also onto a second screen on Windows and Linux/X11, not on Wayland).
+next to it, or drop it elsewhere to float it (also onto a second screen on Windows and Linux/X11, not on Wayland nor
+with software rendering).
 The game followed in *Live* comes apart in *Board*, *Players*, *Searches*, *Moves* and *Chart* panels; the parts
 that have no panel open stay beside the mosaic in *Live*, and detached boards dock like the other panels. Close a
 panel with the x on its tab; bring it back from *Layout* > *Panels*, or with *Show …* in the command palette, and it
@@ -661,9 +673,10 @@ application from a temporary place, where the `portable` file is not.
 - `book-cache/`: the PGN books turned into Polyglot books for the participants' own books (removed after 30 days unused);
 - `layout.ini`: the window layout and the panels of the workspace; `layouts.json`: the layouts saved by name; `fastchess-gui.log`: the log of the last session;
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
-- `settings.json`: the tournaments folder, when another one was chosen in **Settings**, the folder of *Every engine
-  of a folder…*, the tester and site of *Export for a rating list…*, the lichess token, the window's size and place,
-  and the check for a new version (wanted or not, when it was last made, the release it found, the notice hidden);
+- `settings.json`: the tournaments folder, when another one was chosen in **Settings**, *Software rendering*, the
+  folder of *Every engine of a folder…*, the tester and site of *Export for a rating list…*, the lichess token, the
+  window's size and place, and the check for a new version (wanted or not, when it was last made, the release it
+  found, the notice hidden);
 - `running.json`: the tournament running now, removed when it stops; found at launch, it tells what to resume;
 - `runs/<date>_<A>_vs_<B>/` for a match, `runs/<date>_<name>/` for a tournament (in `runs/` or the chosen
   folder), one folder each, which can be moved, copied, zipped and sent:
@@ -705,7 +718,7 @@ tournaments.
 ## Command line
 
 ```
-fastchess-gui [--profile DIR] [--autostart] [--size WxH]
+fastchess-gui [--profile DIR] [--autostart] [--size WxH] [--software]
               [--shot FILE.png[@WINDOW[@SECONDS]]]... [--select-game N] [--focus WINDOW]
               [--quit-after SECONDS]
 fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_PORT [--tlcs-lanes]]
@@ -717,6 +730,8 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
   *Running a tournament*);
 - `--size WxH` opens the window at that size, centred, rather than as it was left, and leaves the size and place
   kept for the next launch alone;
+- `--software` has the processor draw the window (SDL's software renderer) rather than OpenGL, as *Software
+  rendering* in **Settings** does, for this launch (see *The window*);
 - `--shot` saves a screenshot of the window after the given number of seconds (default 5), with WINDOW brought to
   the front, and quits once every screenshot is taken. It can be repeated. WINDOW is a page (`home`, `setup`,
   `engines`, `books`, `ratings`, `ratings-engine`, `ratings-h2h`, `ratings-progress`, `console`, `settings`) or a

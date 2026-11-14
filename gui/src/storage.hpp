@@ -25,6 +25,9 @@ class Storage {
     [[nodiscard]] std::filesystem::path defaultRunsDir() const { return root_ / "runs"; }
     // Another folder for new tournaments and the lists, empty for the default; kept in settings.json.
     void setRunsDir(const std::filesystem::path& dir);
+    // The window drawn by SDL's software renderer rather than with OpenGL, from the next launch (settings.json).
+    [[nodiscard]] bool softwareRendering() const noexcept { return software_rendering_; }
+    void setSoftwareRendering(bool on);
     // Window layout. Named layout.ini since the windows got language independent ids;
     // the imgui.ini of earlier versions is removed at startup.
     [[nodiscard]] std::filesystem::path iniFile() const { return root_ / "layout.ini"; }
@@ -86,6 +89,7 @@ class Storage {
 
     std::filesystem::path root_;
     std::filesystem::path runs_dir_;
+    bool software_rendering_ = false;
 };
 
 // Reads a JSON file into T, nullopt when it is missing or unreadable.

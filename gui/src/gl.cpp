@@ -28,13 +28,14 @@ bool load() {
     ok &= resolve(g_functions.ClearColor, "glClearColor");
     ok &= resolve(g_functions.Clear, "glClear");
     ok &= resolve(g_functions.ReadPixels, "glReadPixels");
+    ok &= resolve(g_functions.GetString, "glGetString");
     // For the bug reports: which driver draws the window.
-    if (resolve(g_functions.GetString, "glGetString")) {
+    if (g_functions.GetString) {
         const auto text = [](GLenum name) {
             const auto* s = g_functions.GetString(name);
             return s ? std::string(reinterpret_cast<const char*>(s)) : std::string("?");
         };
-        g_driver = text(STRING_RENDERER) + " · OpenGL " + text(STRING_VERSION) + " · " + text(STRING_VENDOR);
+        g_driver = text(RENDERER) + " · OpenGL " + text(VERSION) + " · " + text(VENDOR);
     }
     return ok;
 }

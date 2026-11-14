@@ -11,23 +11,36 @@
 
 namespace fcg {
 
-// The twelve piece images, rasterized once into a mipmapped texture atlas.
+// The twelve piece images, rasterized once into a texture atlas: mipmapped with OpenGL; with SDL's renderer, which has
+// no mipmaps, also rasterized at half, a quarter and an eighth of the size, so that small boards stay smooth.
 class PieceAtlas {
    public:
+    PieceAtlas()                             = default;
+    PieceAtlas(const PieceAtlas&)            = delete;
+    PieceAtlas& operator=(const PieceAtlas&) = delete;
     ~PieceAtlas();
 
-    // Needs a current GL context. Returns false if the SVGs could not be rendered.
+    // Needs the window's renderer (render::open). Returns false if the SVGs could not be rendered.
     bool create(int pixels_per_piece);
 
-    [[nodiscard]] bool ready() const noexcept { return texture_ != 0; }
-    [[nodiscard]] ImTextureID texture() const noexcept { return static_cast<ImTextureID>(texture_); }
+    [[nodiscard]] bool ready() const noexcept { return !levels_.empty(); }
+    // The atlas for pieces drawn `pixels` wide on the screen: the smallest image at least that large.
+    [[nodiscard]] ImTextureID texture(float pixels) const noexcept;
 
     // UV rectangle of a piece in the atlas.
     void uv(chess::Piece piece, ImVec2& uv0, ImVec2& uv1) const;
 
    private:
-    unsigned int texture_ = 0;
+    struct Level {
+        int pixels = 0;  // per piece
+        ImTextureID texture{};
+    };
+    std::vector<Level> levels_;  // largest first
 };
+
+// The twelve pieces side by side, `pixels` x `pixels` each, RGBA rows from the top: the atlas' image. Empty if an SVG
+// could not be rendered.
+[[nodiscard]] std::vector<unsigned char> rasterizePieces(int pixels);
 
 // An arrow over the board, for a move (castling drawn to the king's square).
 struct BoardArrow {

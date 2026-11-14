@@ -348,6 +348,9 @@ msgstr "Un autre moteur de la liste prend sa place et joue ses parties, celles q
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "Tout ce qu'il faut retenir à son sujet ; les recherches de moteurs le trouvent."
 
+msgid "Applies at the next launch."
+msgstr "S'applique au prochain lancement."
+
 msgid "Apply"
 msgstr "Appliquer"
 
@@ -836,6 +839,9 @@ msgstr "Nulle quand les deux moteurs donnent |score| ≤ seuil pendant N coups c
 
 msgid "Drawn twice"
 msgstr "Nulle deux fois"
+
+msgid "Drawn with: {}"
+msgstr "Dessiné avec : {}"
 
 msgid "Draws"
 msgstr "Nulles"
@@ -1833,8 +1839,8 @@ msgstr "Ouvrir le dossier du profil"
 msgid "Open the tournament."
 msgstr "Ouvrir le tournoi."
 
-msgid "OpenGL 3.2 is not available (SDL_GL_CreateContext)"
-msgstr "OpenGL 3.2 n'est pas disponible (SDL_GL_CreateContext)"
+msgid "OpenGL 3.2 cannot be used ({}): the window is drawn by SDL's renderer."
+msgstr "OpenGL 3.2 ne peut pas être utilisé ({}) : la fenêtre est dessinée par le moteur de rendu de SDL."
 
 msgid "OpenGL functions are missing"
 msgstr "Des fonctions OpenGL manquent"
@@ -2231,6 +2237,9 @@ msgstr "Retirer…"
 msgid "Rename it “{}”"
 msgstr "Le renommer « {} »"
 
+msgid "Rendering"
+msgstr "Rendu"
+
 msgid "Replace"
 msgstr "Remplacer"
 
@@ -2317,6 +2326,12 @@ msgstr "En cours"
 
 msgid "R{}"
 msgstr "R{}"
+
+msgid "SDL renderer"
+msgstr "Moteur de rendu SDL"
+
+msgid "SDL renderer, {} driver"
+msgstr "Moteur de rendu SDL, pilote {}"
 
 msgid "SPRT calculator"
 msgstr "Calculateur SPRT"
@@ -2439,6 +2454,9 @@ msgstr "Afficher : {}"
 
 msgid "Site"
 msgstr "Lieu"
+
+msgid "Software rendering"
+msgstr "Rendu logiciel"
 
 msgid "Solution"
 msgstr "Solution"
@@ -2864,6 +2882,9 @@ msgstr "La recherche s'arrête quand une solution est restée le premier coup du
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "La part de parties nulles attendue entre les deux moteurs, à cette cadence."
 
+msgid "The software renderer cannot be used ({}): the window is drawn with OpenGL."
+msgstr "Le rendu logiciel ne peut pas être utilisé ({}) : la fenêtre est dessinée avec OpenGL."
+
 msgid "The spread of the advantage the openings give, in Elo: what playing each opening twice, colours reversed, cancels out."
 msgstr "La dispersion de l'avantage que donnent les ouvertures, en Elo : ce que jouer chaque ouverture deux fois, couleurs inversées, annule."
 
@@ -2911,6 +2932,9 @@ msgstr "La variance d'une partie quand les parties sont comptées par paires, ra
 
 msgid "The version and the system, for a bug report."
 msgstr "La version et le système, pour un rapport de bug."
+
+msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
+msgstr "La fenêtre dessinée par le processeur (le moteur de rendu logiciel de SDL) plutôt que par la carte graphique avec OpenGL : pour les machines virtuelles, les bureaux à distance et les pilotes graphiques défaillants. Plus lent, et les panneaux sortis de la fenêtre restent à l'intérieur. --software sur la ligne de commande fait de même pour un lancement."
 
 msgid "The working directory of {} is not found: {}"
 msgstr "Le dossier de travail de {} est introuvable : {}"
@@ -3041,6 +3065,9 @@ msgstr "Conformité UCI : l'étape {} a échoué, voir le rapport"
 msgid "UDP port"
 msgstr "Port UDP"
 
+msgid "Under Wayland the software renderer needs X11: start the program with the environment variable SDL_VIDEODRIVER=x11."
+msgstr "Sous Wayland, le rendu logiciel a besoin de X11 : lance le programme avec la variable d'environnement SDL_VIDEODRIVER=x11."
+
 msgid "Undo the last change"
 msgstr "Annuler la dernière modification"
 
@@ -3055,6 +3082,9 @@ msgstr "Jusqu'à la version suivante."
 
 msgid "Up to {} engines."
 msgstr "Jusqu'à {} moteurs."
+
+msgid "Update the graphics driver, or turn on 3D acceleration in the virtual machine or the remote desktop's settings."
+msgstr "Mets à jour le pilote graphique, ou active l'accélération 3D dans les réglages de la machine virtuelle ou du bureau à distance."
 
 msgid "Use it for the next tournament"
 msgstr "L'utiliser pour le prochain tournoi"
@@ -3325,6 +3355,9 @@ msgstr "vide"
 msgid "every pair with both colours"
 msgstr "chaque paire avec les deux couleurs"
 
+msgid "fastchess-gui cannot draw its window."
+msgstr "fastchess-gui ne peut pas dessiner sa fenêtre."
+
 msgid "fastchess-gui {} is out (this is {})."
 msgstr "fastchess-gui {} est disponible (tu as la {})."
 
@@ -3445,6 +3478,9 @@ msgstr "rejouée à la demande"
 
 msgid "send at startup"
 msgstr "envoyer au démarrage"
+
+msgid "the driver gives OpenGL {}"
+msgstr "le pilote fournit OpenGL {}"
 
 msgid "the file is not found"
 msgstr "le fichier est introuvable"
