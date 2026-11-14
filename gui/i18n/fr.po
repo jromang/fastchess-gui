@@ -1599,6 +1599,9 @@ msgstr "Ouvrir un dossier…"
 msgid "Open the folder"
 msgstr "Ouvrir le dossier"
 
+msgid "Open the profile folder"
+msgstr "Ouvrir le dossier du profil"
+
 msgid "Open the tournament."
 msgstr "Ouvrir le tournoi."
 
@@ -1799,6 +1802,12 @@ msgstr "Ponder désactivé"
 msgid "Port"
 msgstr "Port"
 
+msgid "Portable mode"
+msgstr "Mode portable"
+
+msgid "Portable mode: off"
+msgstr "Mode portable : désactivé"
+
 msgid "Position"
 msgstr "Position"
 
@@ -1824,6 +1833,9 @@ msgstr "Processeur"
 
 msgid "Processor use"
 msgstr "Utilisation du processeur"
+
+msgid "Profile"
+msgstr "Profil"
 
 msgid "Program"
 msgstr "Programme"
@@ -2404,6 +2416,9 @@ msgstr "Les moteurs qui ont une option SyzygyPath reçoivent ces dossiers, ceux 
 msgid "The engines' own books are off"
 msgstr "Les livres propres des moteurs sont désactivés"
 
+msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
+msgstr "Le fichier nommé « portable » à côté du programme garde tout dans ce dossier. Les chemins dans {} sont gardés relatifs à lui, pour que ce dossier puisse être déplacé ou copié sur une autre machine."
+
 msgid "The finished games of the match will appear here."
 msgstr "Les parties terminées du match apparaîtront ici."
 
@@ -2613,6 +2628,9 @@ msgstr "Cadence"
 
 msgid "Time per move"
 msgstr "Temps par coup"
+
+msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
+msgstr "Pour tout garder plutôt à côté du programme (une clé USB, un dossier copié d'une machine à l'autre), mets un fichier vide nommé « portable » à côté de lui : le profil est alors le dossier « data » à côté de lui. Copie les fichiers de ce dossier-ci là-bas pour les garder."
 
 msgid "Total"
 msgstr "Total"

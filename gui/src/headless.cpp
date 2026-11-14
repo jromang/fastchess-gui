@@ -17,6 +17,7 @@
 
 #include "broadcaster.hpp"
 #include "memory.hpp"
+#include "portable.hpp"
 #include "run.hpp"
 
 namespace fcg {
@@ -184,11 +185,13 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
             if (!state->finished() && !preparePgnBooks(pgnBookNeeds(state->spec()))) return 2;
         } else {
             // A setup or template file: a new tournament, with the engines of the profile.
-            const auto setup = readJson<MatchSetup>(target);
+            auto setup = readJson<MatchSetup>(target);
             if (!setup) {
                 std::fprintf(stderr, "%s is neither a tournament folder nor a setup file\n", target.c_str());
                 return 2;
             }
+            // A template of a portable profile names the files of the program's folder relative to it.
+            portable::resolve(*setup);
             settings.files      = setup->broadcast_files;
             settings.dir        = setup->broadcast_dir;
             settings.tlcs       = setup->broadcast_tlcs;

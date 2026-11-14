@@ -14,7 +14,7 @@ A navigation rail on the left leads to six pages:
 | Suites | Test suites (STS, WAC, ERET…): engines against the positions of an EPD file |
 | Ratings | One rating list over every game of every tournament |
 | Log | fastchess' own output and the messages of the GUI, and *Report a problem…* |
-| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the tournaments folder, the lichess token, the version and new versions, *Report a problem…* |
+| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the profile folder and the portable mode, the tournaments folder, the lichess token, the version and new versions, *Report a problem…* |
 
 The interface is in English, French, German, Spanish, Italian, Brazilian Portuguese, Russian or simplified Chinese.
 At startup it follows the first preferred language of the system (English when there is no translation for it); it
@@ -547,7 +547,19 @@ the TLCS port. For the web page, a tunnel avoids opening a port (see *Putting th
 Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/` on Linux,
 `%APPDATA%\fastchess\fastchess-gui\` on Windows, `~/Library/Application Support/fastchess/fastchess-gui/` on macOS.
 Files the program creates are not writable by other users, and `settings.json` is readable by its owner only once
-it holds a lichess token.
+it holds a lichess token. **Settings** shows the profile folder, with *Open the folder*.
+
+**Portable mode.** With a file named `portable` (empty, without extension) beside the program (beside
+`fastchess-gui.exe` or `fastchess-gui`, beside `fastchess-gui.app` on macOS), the profile is the folder `data`
+beside the program instead, and the default tournaments folder is `data/runs`: nothing is written elsewhere, but in
+the folders chosen for tournaments, exports and the like. The paths of what lies in the program's folder (engines,
+books, tablebases, test suites, the PGN files of the ratings and the setup, the folders chosen) are kept relative to
+it in the profile's files, so the whole folder can be moved, copied to another machine or run from a USB stick,
+whatever its drive letter, and its engines are found again. **Settings** says *Portable mode* beside the profile
+folder. To carry an existing profile over, copy its files into `data`. `--profile` still chooses another folder,
+outside the portable mode. A tournament keeps the engines' paths of when it was created: resume an unfinished one
+before moving the folder. On macOS, remove the quarantine first (see the README): otherwise macOS runs the
+application from a temporary place, where the `portable` file is not.
 
 - `engines.json`: the engine library, and `engines.json.bak` its previous version, read if the first is lost;
 - `setup.json`: the last setup; `templates/*.json`: the saved templates; `queue.json`: the queue;

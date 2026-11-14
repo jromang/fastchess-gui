@@ -156,7 +156,7 @@ void App::renameEngine(int index, const std::string& name) {
     loadSuiteSetup();  // before it is changed and written
     bool suite = false;
     for (auto& n : suite_setup_.engines) suite |= follow(n);
-    if (suite) writeJson(storage_.root() / "suite.json", suite_setup_);
+    if (suite) saveSuiteSetup();
     if (engine_marked_.erase(old)) engine_marked_.insert(now);
 }
 

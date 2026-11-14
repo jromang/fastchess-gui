@@ -28,6 +28,7 @@
 #include "live.hpp"
 #include "model.hpp"
 #include "pgn_store.hpp"
+#include "portable.hpp"
 #include "qr.hpp"
 #include "run.hpp"
 #include "stats.hpp"
@@ -439,6 +440,7 @@ class App {
     void drawSuites();
     void drawSuiteGrid();
     void loadSuiteSetup();  // suite.json and its suite, once
+    void saveSuiteSetup();  // to suite.json
     void loadSuite();
     void openSuite(const std::string& file);  // and shows the Suites page
     void startSuite();

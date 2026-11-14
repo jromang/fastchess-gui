@@ -1594,6 +1594,9 @@ msgstr "打开文件夹…"
 msgid "Open the folder"
 msgstr "打开文件夹"
 
+msgid "Open the profile folder"
+msgstr "打开配置文件夹"
+
 msgid "Open the tournament."
 msgstr "打开锦标赛。"
 
@@ -1793,6 +1796,12 @@ msgstr "Ponder 关闭"
 msgid "Port"
 msgstr "端口"
 
+msgid "Portable mode"
+msgstr "便携模式"
+
+msgid "Portable mode: off"
+msgstr "便携模式：关闭"
+
 msgid "Position"
 msgstr "局面"
 
@@ -1817,6 +1826,9 @@ msgstr "处理器"
 
 msgid "Processor use"
 msgstr "处理器占用"
+
+msgid "Profile"
+msgstr "配置文件夹"
 
 msgid "Program"
 msgstr "程序"
@@ -2394,6 +2406,9 @@ msgstr "具有 SyzygyPath 选项的引擎会获得这些目录（即裁定所用
 msgid "The engines' own books are off"
 msgstr "引擎自带开局库已关闭"
 
+msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
+msgstr "程序旁名为“portable”的文件让所有内容都保存在此文件夹中。{} 中的路径以相对于它的形式保存，因此该文件夹可以移动或复制到另一台机器。"
+
 msgid "The finished games of the match will appear here."
 msgstr "本场比赛已结束的对局会显示在这里。"
 
@@ -2603,6 +2618,9 @@ msgstr "时限"
 
 msgid "Time per move"
 msgstr "每步时间"
+
+msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
+msgstr "若要把所有内容放在程序旁边（U 盘、在多台机器间复制的文件夹），请在程序旁放一个名为“portable”的空文件：配置文件夹随即变为程序旁的“data”文件夹。将此文件夹中的文件复制过去即可保留它们。"
 
 msgid "Total"
 msgstr "合计"

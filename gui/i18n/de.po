@@ -1599,6 +1599,9 @@ msgstr "Ordner öffnen…"
 msgid "Open the folder"
 msgstr "Ordner öffnen"
 
+msgid "Open the profile folder"
+msgstr "Profilordner öffnen"
+
 msgid "Open the tournament."
 msgstr "Das Turnier öffnen."
 
@@ -1799,6 +1802,12 @@ msgstr "Ponder aus"
 msgid "Port"
 msgstr "Port"
 
+msgid "Portable mode"
+msgstr "Portabler Modus"
+
+msgid "Portable mode: off"
+msgstr "Portabler Modus: aus"
+
 msgid "Position"
 msgstr "Stellung"
 
@@ -1824,6 +1833,9 @@ msgstr "Prozessor"
 
 msgid "Processor use"
 msgstr "Prozessornutzung"
+
+msgid "Profile"
+msgstr "Profil"
 
 msgid "Program"
 msgstr "Programm"
@@ -2404,6 +2416,9 @@ msgstr "Die Engines mit einer Option SyzygyPath erhalten diese Verzeichnisse, di
 msgid "The engines' own books are off"
 msgstr "Die eigenen Bücher der Engines sind aus"
 
+msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
+msgstr "Die Datei namens „portable“ neben dem Programm hält alles in diesem Ordner. Die Pfade in {} werden relativ dazu gespeichert, sodass dieser Ordner verschoben oder auf einen anderen Rechner kopiert werden kann."
+
 msgid "The finished games of the match will appear here."
 msgstr "Die beendeten Partien des Matches erscheinen hier."
 
@@ -2613,6 +2628,9 @@ msgstr "Bedenkzeit"
 
 msgid "Time per move"
 msgstr "Zeit pro Zug"
+
+msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
+msgstr "Um stattdessen alles neben dem Programm zu behalten (ein USB-Stick, ein Ordner, der zwischen Rechnern kopiert wird), lege eine leere Datei namens „portable“ daneben: Das Profil ist dann der Ordner „data“ daneben. Kopiere die Dateien dieses Ordners dorthin, um sie zu behalten."
 
 msgid "Total"
 msgstr "Gesamt"

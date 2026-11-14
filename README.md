@@ -130,7 +130,10 @@ make -C app tests && ./app/fastchess-tests     # upstream fastchess tests, run f
 
 Everything is stored in the profile folder (`~/.local/share/fastchess/fastchess-gui/` on Linux,
 `%APPDATA%\fastchess\fastchess-gui\` on Windows): the engine library, the last setup, templates, the queue,
-and one folder per tournament under `runs/` with its description, its journal and both PGN files.
+and one folder per tournament under `runs/` with its description, its journal and both PGN files. For a portable
+installation (a USB stick, a folder copied between machines), put an empty file named `portable` beside the
+program: everything then goes into a `data` folder beside it, and the engines, books and tablebases of the
+program's folder are found again wherever the folder is moved.
 
 The [user guide](docs/guide.md) covers every setting, window and file in detail. Problems and ideas are welcome in
 the [issues](https://github.com/jromang/fastchess-gui/issues): *Report a problem…* (Settings, the Log page) opens a

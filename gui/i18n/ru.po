@@ -1604,6 +1604,9 @@ msgstr "Открыть папку…"
 msgid "Open the folder"
 msgstr "Открыть папку"
 
+msgid "Open the profile folder"
+msgstr "Открыть папку профиля"
+
 msgid "Open the tournament."
 msgstr "Открыть турнир."
 
@@ -1805,6 +1808,12 @@ msgstr "Ponder выключен"
 msgid "Port"
 msgstr "Порт"
 
+msgid "Portable mode"
+msgstr "Портативный режим"
+
+msgid "Portable mode: off"
+msgstr "Портативный режим: выключен"
+
 msgid "Position"
 msgstr "Позиция"
 
@@ -1831,6 +1840,9 @@ msgstr "Процессор"
 
 msgid "Processor use"
 msgstr "Загрузка процессора"
+
+msgid "Profile"
+msgstr "Профиль"
 
 msgid "Program"
 msgstr "Программа"
@@ -2414,6 +2426,9 @@ msgstr "Движки с опцией SyzygyPath получают эти папк
 msgid "The engines' own books are off"
 msgstr "Собственные книги движков выключены"
 
+msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
+msgstr "Файл с именем «portable» рядом с программой хранит всё в этой папке. Пути внутри {} сохраняются относительно неё, поэтому эту папку можно перемещать или копировать на другой компьютер."
+
 msgid "The finished games of the match will appear here."
 msgstr "Здесь появятся завершённые партии матча."
 
@@ -2623,6 +2638,9 @@ msgstr "Контроль времени"
 
 msgid "Time per move"
 msgstr "Время на ход"
+
+msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
+msgstr "Чтобы хранить всё рядом с программой (на USB-накопителе, в папке, которую копируют между компьютерами), положите рядом с ней пустой файл с именем «portable»: профилем станет папка «data» рядом с ней. Скопируйте туда файлы этой папки, чтобы сохранить их."
 
 msgid "Total"
 msgstr "Итого"

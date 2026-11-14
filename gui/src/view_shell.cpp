@@ -865,6 +865,34 @@ void App::drawSettings() {
            "while it ran), it resumes at the next launch, and the queue goes on after it. A tournament paused or "
            "stopped waits for you."));
 
+    // Where the program keeps its files, and whether that is beside the program (the portable mode).
+    ImGui::Spacing();
+    ImGui::Separator();
+    ui::label(TR("Profile"), label);
+    ImGui::TextUnformatted(storage_.root().string().c_str());
+    ImGui::SetCursorPosX(label);
+    if (ImGui::Button(TR("Open the folder##profile"))) openFolder(storage_.root());
+    ImGui::SameLine();
+    ImGui::AlignTextToFramePadding();
+    if (portable::active()) {
+        ImGui::TextUnformatted(TR("Portable mode"));
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", trf("The file named \"portable\" beside the program keeps everything in this "
+                                        "folder. The paths in {} are kept relative to it, so that folder can be moved "
+                                        "or copied to another machine.",
+                                        portable::base().string())
+                                        .c_str());
+        }
+    } else {
+        ImGui::TextDisabled("%s", TR("Portable mode: off"));
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("To keep everything beside the program instead (a USB stick, a folder copied "
+                                       "between machines), put an empty file named \"portable\" beside it: the "
+                                       "profile is then the folder \"data\" beside it. Copy this folder's files there "
+                                       "to keep them."));
+        }
+    }
+
     ImGui::Spacing();
     ImGui::Separator();
     ui::label(TR("Tournaments folder"), label);

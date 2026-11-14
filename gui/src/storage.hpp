@@ -13,8 +13,9 @@
 namespace fcg {
 
 // Where the GUI keeps its files: engines.json, books.json, setup.json, layout.ini, layouts.json, settings.json and the
-// tournaments (runs/ unless settings.json names another folder). Defaults to SDL_GetPrefPath(); --profile <dir>
-// overrides it.
+// tournaments (runs/ unless settings.json names another folder). Defaults to SDL_GetPrefPath(), or the folder data
+// beside the program in the portable mode (portable.hpp: the paths of the program's folder are then kept relative to
+// it in these files); --profile <dir> overrides it.
 class Storage {
    public:
     explicit Storage(std::filesystem::path root);

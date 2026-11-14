@@ -41,6 +41,7 @@
 #include "headless.hpp"
 #include "i18n.hpp"
 #include "logo.hpp"
+#include "portable.hpp"
 #include "report.hpp"
 #include "screenshot.hpp"
 #include "storage.hpp"
@@ -302,6 +303,21 @@ class WindowTracker {
     fcg::WindowPlace place_;
 };
 
+// The profile folder: --profile's; in the portable mode (a file named "portable" beside the program), "data" beside
+// the program, whose paths are then kept relative to its folder; otherwise the system's place for it. Not
+// SDL_GetPrefPath in the portable mode: it creates the folder, and that mode writes nothing outside its own.
+fs::path profileFolder(const Args& args, const std::string& executable) {
+    if (!args.profile.empty()) return fs::path(args.profile);
+    if (const auto folder = fcg::portable::detect(executable); !folder.empty()) {
+        fcg::portable::setBase(folder);
+        return folder / fcg::portable::DATA_FOLDER;
+    }
+    char* pref      = SDL_GetPrefPath("fastchess", "fastchess-gui");
+    const auto path = pref ? fs::path(pref) : fs::path(".");
+    SDL_free(pref);
+    return path;
+}
+
 // The PGN books turned into Polyglot books are kept in the profile; those not used for a month are removed.
 void useBookCache(const fcg::Storage& storage) {
     fcg::tour::book_cache_dir = storage.root() / "book-cache";
@@ -340,8 +356,7 @@ int main(int argc, char** argv) {
 
     // No window: play a tournament from the command line.
     if (!args.run.empty()) {
-        const char* pref = SDL_GetPrefPath("fastchess", "fastchess-gui");
-        const fcg::Storage storage(args.profile.empty() ? fs::path(pref ? pref : ".") : fs::path(args.profile));
+        const fcg::Storage storage(profileFolder(args, fastchess::engine::xboard_adapter));
         useBookCache(storage);
         fcg::HeadlessBroadcast broadcast;
         broadcast.tlcs_port  = args.tlcs_port;
@@ -377,8 +392,7 @@ int main(int argc, char** argv) {
 
     const float scale = std::max(1.0f, SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay()));
 
-    const char* pref = SDL_GetPrefPath("fastchess", "fastchess-gui");
-    fcg::Storage storage(args.profile.empty() ? fs::path(pref ? pref : ".") : fs::path(args.profile));
+    fcg::Storage storage(profileFolder(args, fastchess::engine::xboard_adapter));
     // A copy, for what main() keeps itself once the app has the profile: the window's place.
     const fcg::Storage profile = storage;
 
