@@ -497,7 +497,7 @@ std::string formatSummary(const MatchSetup& s) {
 std::string openingsSummary(const MatchSetup& s, const std::vector<BookEntry>& books) {
     if (s.book.empty()) {
         return s.chess960 ? std::string(TR("Chess960: the 960 starting positions"))
-                          : std::string(TR("no book: the initial position"));
+                          : std::string(TR("every game from the initial position"));
     }
     std::vector<std::string> parts{bookLabel(s.book, books)};
     if (s.book_plies > 0) parts.push_back(trn("{} ply", "{} plies", static_cast<uint64_t>(s.book_plies), s.book_plies));

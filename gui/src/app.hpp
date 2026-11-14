@@ -449,6 +449,12 @@ class App {
                   std::optional<SetupSection> section, void (App::*details)());
     // A section's row, its summary and its tooltip made from the setup.
     void sectionRow(SetupRow row, SetupSection section, void (App::*details)());
+    void drawSetupRows();
+    // The rule that chose the number of games played at once: one per hardware thread for a node count, physical
+    // cores − 1 for a clock, or the user's; `brief` for the row's summary.
+    [[nodiscard]] std::string concurrencyRule(bool brief) const;
+    [[nodiscard]] std::string concurrencySummary() const;  // "15 games at a time · physical cores − 1, for a clock"
+    [[nodiscard]] std::string pgnSummary() const;
     // The profile list of a section: a profile is applied when chosen; then Save as profile…, and Update, Revert and
     // Delete for the profile the section came from.
     void profileCombo(SetupSection section, float width);
@@ -806,7 +812,11 @@ class App {
     std::vector<std::string> template_names_;  // the templates folder, listed now and then rather than every frame
     std::chrono::steady_clock::time_point templates_listed_{};
     std::string template_message_;  // why the last save or load failed
-    std::string template_replace_;  // the file name of a template to replace, once confirmed
+    std::string template_loaded_;   // the template the setup came from, named in the menu; empty: none
+    // Templates loaded by name (the template menu, the command palette): the sections that played as their profile
+    // take its values of today. False, with template_message_, when it cannot be read.
+    bool loadTemplate(const std::string& name);
+    void listTemplates();  // template_names_, listed again every few seconds
 
     // Schedule tab and edits.
     int edit_kind_ = 0;        // tour::Edit::Kind

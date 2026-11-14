@@ -180,6 +180,9 @@ msgstr ""
 msgid "A page, an engine, a tournament, an action…"
 msgstr ""
 
+msgid "A participant's own, from its ⋯ menu, comes first."
+msgstr ""
+
 msgid "A preset of the program."
 msgstr ""
 
@@ -199,6 +202,9 @@ msgid "A separate engine"
 msgstr ""
 
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
+msgstr ""
+
+msgid "A template is the whole setup: a profile for each section, and what no profile holds (the name, the participants, the concurrency, the PGN files, the broadcast). A section that played as its profile takes the profile's values of the day."
 msgstr ""
 
 msgid "A tournament waits to start."
@@ -329,6 +335,9 @@ msgid "An engine list…"
 msgstr ""
 
 msgid "An evaluation swings"
+msgstr ""
+
+msgid "An opening book, or opening suite: EPD, PGN or Polyglot (.bin)."
 msgstr ""
 
 msgid "Anchor:"
@@ -820,6 +829,9 @@ msgstr ""
 msgid "Elo: {} = {:.0f}, 95 % interval"
 msgstr ""
 
+msgid "Empty: a name made from the engines."
+msgstr ""
+
 msgid "Empty: the program's directory."
 msgstr ""
 
@@ -1045,9 +1057,6 @@ msgstr ""
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr ""
 
-msgid "Gainer [0, 3]"
-msgstr ""
-
 msgid "Game #{}"
 msgstr ""
 
@@ -1182,7 +1191,7 @@ msgstr ""
 msgid "How long the engine may take to answer uciok when started and isready at the start of each game: more for an engine that loads a large network or hash table. Usually {} s."
 msgstr ""
 
-msgid "How many times every pairing is played; each time is two games, colours reversed."
+msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr ""
 
 msgid "How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."
@@ -1353,9 +1362,6 @@ msgstr ""
 msgid "Live PGN, standings and crosstable, to publish anywhere (FTP, rsync, a website)."
 msgstr ""
 
-msgid "Load"
-msgstr ""
-
 msgid "Locate…"
 msgstr ""
 
@@ -1386,7 +1392,7 @@ msgstr ""
 msgid "Lost after a winning score"
 msgstr ""
 
-msgid "Machine: %d physical cores, %d threads"
+msgid "Machine: {} physical cores, {} threads"
 msgstr ""
 
 msgid "Margin (ms)"
@@ -1563,9 +1569,6 @@ msgstr ""
 msgid "Nodes per position"
 msgstr ""
 
-msgid "Non-regression [-5, 0]"
-msgstr ""
-
 msgid "None"
 msgstr ""
 
@@ -1632,6 +1635,9 @@ msgstr ""
 msgid "One game"
 msgstr ""
 
+msgid "One game per hardware thread ({} on this machine): a node count or a depth plays the same moves however the cores are shared."
+msgstr ""
+
 msgid "One port per game"
 msgstr ""
 
@@ -1693,6 +1699,9 @@ msgid "Options not sent: {}"
 msgstr ""
 
 msgid "Order:"
+msgstr ""
+
+msgid "Other programs call it concurrency too: the games played at the same time (-concurrency)."
 msgstr ""
 
 msgid "Otherwise an engine that crashes or hangs stops the whole match."
@@ -1793,6 +1802,9 @@ msgstr[1] ""
 msgid "Perhaps {}?"
 msgstr ""
 
+msgid "Physical cores − 1 ({} physical cores on this machine): with a clock, two engines on the same core would slow each other down."
+msgstr ""
+
 msgid "Pieces on the board, kings included."
 msgstr ""
 
@@ -1859,9 +1871,6 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "Preparing the book… {} %"
-msgstr ""
-
-msgid "Presets:"
 msgstr ""
 
 msgid "Probability that H1 is accepted (%)"
@@ -2144,6 +2153,9 @@ msgstr ""
 msgid "Save the layout as…"
 msgstr ""
 
+msgid "Save the setup as a template…"
+msgstr ""
+
 msgid "Say which library engine a player of the PGN files is."
 msgstr ""
 
@@ -2201,10 +2213,16 @@ msgstr ""
 msgid "Separated by commas, e.g. a pool or a rating list."
 msgstr ""
 
+msgid "Sequential probability ratio test, as fishtest and OpenBench run it: plays until it can tell, with the error rates alpha and beta, whether A is worth elo1 more than B (H1 accepted) or only elo0."
+msgstr ""
+
 msgid "Serve the web page"
 msgstr ""
 
 msgid "Service:"
+msgstr ""
+
+msgid "Set by hand; the automatic choice would be {}."
 msgstr ""
 
 msgid "Set {} reference Elo"
@@ -2391,10 +2409,10 @@ msgstr ""
 msgid "Tabs"
 msgstr ""
 
-msgid "Template name"
+msgid "Template"
 msgstr ""
 
-msgid "Templates"
+msgid "Template name"
 msgstr ""
 
 msgid "Test suite finished; its results are kept in suites/ in the profile."
@@ -2490,7 +2508,7 @@ msgstr ""
 msgid "The first engines of the list (the tested ones) meet every other engine."
 msgstr ""
 
-msgid "The first engines of the list play every other engine, not each other."
+msgid "The first engines of the list play every other engine, not each other: the gauntlet's seeds (-seeds N)."
 msgstr ""
 
 msgid "The first participant, {}, has no reference Elo."
@@ -2539,6 +2557,9 @@ msgid "The opening book must be an .epd, .pgn or .bin (Polyglot) file."
 msgstr ""
 
 msgid "The openings appear here once their games are played."
+msgstr ""
+
+msgid "The openings in a random order (order=random), or one after the other from Start at (order=sequential)."
 msgstr ""
 
 msgid "The page shows Discord's widget of this server, in its light or dark theme: its name, the members online and a Join button, not the messages. The server's owner switches the widget on in Server Settings, Widget, which also shows the server ID. Discord then sees the visits of the page's viewers."
@@ -2928,6 +2949,9 @@ msgstr ""
 msgid "\"{}\" was on in this tournament's PGN options: the engines did not give what it needs in this game."
 msgstr ""
 
+msgid "a crash stops the tournament"
+msgstr ""
+
 msgid "about {} game"
 msgid_plural "about {} games"
 msgstr[0] ""
@@ -2946,6 +2970,9 @@ msgid "against {}"
 msgstr ""
 
 msgid "all"
+msgstr ""
+
+msgid "also to {}"
 msgstr ""
 
 msgid "and {} more"
@@ -3007,6 +3034,15 @@ msgid "each engine's own settings"
 msgstr ""
 
 msgid "elo1 must be larger than elo0."
+msgstr ""
+
+msgid "event {}"
+msgstr ""
+
+msgid "every game from the initial position"
+msgstr ""
+
+msgid "every game's engine log"
 msgstr ""
 
 msgid "every pair with both colours"
@@ -3072,13 +3108,13 @@ msgstr ""
 msgid "margin {} ms"
 msgstr ""
 
+msgid "mate PVs checked"
+msgstr ""
+
 msgid "moves"
 msgstr ""
 
 msgid "nElo of A (95% CI)"
-msgstr ""
-
-msgid "no book: the initial position"
 msgstr ""
 
 msgid "no engine has a SyzygyPath"
@@ -3102,6 +3138,9 @@ msgstr ""
 msgid "one opening per round"
 msgstr ""
 
+msgid "one per hardware thread, for a node count or a depth"
+msgstr ""
+
 msgid "opponents within ±"
 msgstr ""
 
@@ -3117,6 +3156,9 @@ msgid "own books off"
 msgstr ""
 
 msgid "pairs"
+msgstr ""
+
+msgid "physical cores − 1, for a clock"
 msgstr ""
 
 msgid "preset"
@@ -3141,6 +3183,9 @@ msgid "seed {}"
 msgstr ""
 
 msgid "send at startup"
+msgstr ""
+
+msgid "set by hand"
 msgstr ""
 
 msgid "the file is not found"
@@ -3338,6 +3383,11 @@ msgstr[1] ""
 
 msgid "{} game adjudicated"
 msgid_plural "{} games adjudicated"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} game at a time"
+msgid_plural "{} games at a time"
 msgstr[0] ""
 msgstr[1] ""
 

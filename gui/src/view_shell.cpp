@@ -380,8 +380,9 @@ void App::drawHome() {
         if (!resume_crashed_.empty() && fs::absolute(u.dir).lexically_normal() == resume_crashed_) {
             ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
             ImGui::PushTextWrapPos(0.0f);
-            ImGui::TextUnformatted(TR("The program ended while it resumed this tournament at the last launch: it is "
-                                      "not resumed automatically again."));
+            ImGui::TextUnformatted(
+                TR("The program ended while it resumed this tournament at the last launch: it is "
+                   "not resumed automatically again."));
             ImGui::PopTextWrapPos();
             ImGui::PopStyleColor();
         }
@@ -517,29 +518,49 @@ void App::drawNewMatch() {
         ImGui::SetTooltip("%s", bad_sprt ? TR("elo1 must be larger than elo0.")
                                          : TR("Starts by itself when the running tournament ends."));
     }
+    // What no profile holds, beside the buttons: the template the setup came from, the tournament's name.
+    ImGui::BeginDisabled(locked);
+    ui::sameLineOrWrap(px(200));
+    drawTemplates();
+    ui::sameLineOrWrap(px(380));
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(TR("Name"));
+    ImGui::SameLine();
+    {
+        char buffer[256];
+        const auto n = std::min(setup_.name.size(), sizeof(buffer) - 1);
+        std::copy_n(setup_.name.data(), n, buffer);
+        buffer[n] = 0;
+        ImGui::SetNextItemWidth(px(320));
+        if (ImGui::InputTextWithHint("##tname", defaultTournamentName(setup_).c_str(), buffer, sizeof(buffer))) {
+            setup_.name = buffer;
+            saveSetupSoon();
+        }
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip) && setup_.name.empty())
+            ImGui::SetTooltip("%s", TR("Empty: a name made from the engines."));
+    }
+    ImGui::EndDisabled();
     if (!start_error_.empty()) {
-        ImGui::SameLine();
         ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
         ImGui::TextWrapped("%s", start_error_.c_str());
         ImGui::PopStyleColor();
     }
     if (const auto waiting = startWaitingText("start"); !waiting.empty()) {
-        ImGui::SameLine();
         ImGui::AlignTextToFramePadding();
         ImGui::TextDisabled("%s", waiting.c_str());
     }
     ImGui::Spacing();
 
-    // The summary on the right, the form beside it: in two columns when both are wide enough to read, centred when
-    // even two columns leave room. A narrow window gets one column, under the summary, in the same scroll.
+    // The summary on the right, the form beside it, centred when it leaves room; the participants and the library
+    // side by side when both are wide enough to read. A narrow window gets the summary under the form, in the same
+    // scroll.
     const float avail   = ImGui::GetContentRegionAvail().x;
     const float gap     = px(20);
-    const float column  = px(760);
     const float summary = std::clamp(avail * 0.24f, px(300), px(400));
     const float rest    = avail - summary - gap;
     const bool side     = rest >= px(560);
-    const bool two      = side && rest >= 2 * px(480) + ImGui::GetStyle().ItemSpacing.x;
-    const float width   = side ? std::min(rest, two ? 2 * column + ImGui::GetStyle().ItemSpacing.x : column) : avail;
+    const float width   = side ? std::min(rest, px(1300)) : avail;
+    const bool two      = width >= px(700);
     if (side) ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::floor((rest - width) * 0.5f));
 
     ImGui::BeginChild("##new_match", ImVec2(width, 0));
@@ -550,8 +571,6 @@ void App::drawNewMatch() {
         ImGui::SameLine(0, gap);
         ImGui::BeginChild("##new_summary", ImVec2(summary, 0));
         drawSetupSummary();
-        ImGui::Spacing();
-        drawTemplates();
         ImGui::EndChild();
     }
 }

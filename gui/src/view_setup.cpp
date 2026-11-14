@@ -331,39 +331,85 @@ void App::drawSetup(bool two_columns, bool with_summary) {
         ImGui::Separator();
     }
 
-    // A narrow window: the summary and the templates scroll with the form, one scroll bar for the page.
-    if (with_summary) {
-        drawSetupSummary();
-        ImGui::Spacing();
-    }
-
     ImGui::BeginDisabled(locked);
 
-    // Side by side on a wide window: who plays and how long, then how the games are run.
-    const bool table = two_columns && ImGui::BeginTable("##setup_columns", 2, ImGuiTableFlags_SizingStretchSame);
-    if (table) ImGui::TableNextColumn();
-    setupFormat();
+    // How the games are played, one folded row per section; then who plays them.
+    ui::beginCard("settings_card");
+    drawSetupRows();
+    ui::endCard();
+    ImGui::Spacing();
+    (void)two_columns;
+    ui::beginCard("players_card");
     if (setup_.format == TournamentFormat::Match) {
         setupEngines();
-        setupMatch();
     } else {
         setupParticipants();
     }
-    sectionRow(RowTime, SetupSection::Time, &App::setupLimit);
-    if (table) ImGui::TableNextColumn();
-    setupConcurrency();
-    setupOpenings();
-    sectionRow(RowAdjudication, SetupSection::Adjudication, &App::setupAdjudication);
-    setupPgn();
-    if (table) ImGui::EndTable();
-    drawProfilePopups();
+    ui::endCard();
 
     ImGui::EndDisabled();
+    // A narrow window: the summary under the form, in the same scroll.
     if (with_summary) {
         ImGui::Spacing();
-        drawTemplates();
+        drawSetupSummary();
     }
     ui::endPanel();
+}
+
+void App::drawSetupRows() {
+    if (std::exchange(open_pgn_setup_, false)) setup_open_[RowPgn] = true;
+    sectionRow(RowFormat, SetupSection::Format, &App::setupFormat);
+    sectionRow(RowTime, SetupSection::Time, &App::setupLimit);
+    sectionRow(RowOpenings, SetupSection::Openings, &App::setupOpenings);
+    sectionRow(RowAdjudication, SetupSection::Adjudication, &App::setupAdjudication);
+    sectionRow(RowEngines, SetupSection::Engines, &App::setupEngineOptions);
+    // What no profile holds: this tournament's.
+    ImGui::Separator();
+    setupRow(RowConcurrency, TR("Concurrency"), concurrencySummary(),
+             TR("Other programs call it concurrency too: the games played at the same time (-concurrency)."),
+             std::nullopt, &App::setupConcurrency);
+    setupRow(RowPgn, TR("PGN and misc"), pgnSummary(), std::string(), std::nullopt, &App::setupPgn);
+    drawProfilePopups();
+}
+
+std::string App::concurrencyRule(bool brief) const {
+    const bool clock_free = clockFree(setup_.limit);
+    if (!setup_.concurrency_auto) {
+        return brief ? std::string(TR("set by hand"))
+                     : trf("Set by hand; the automatic choice would be {}.", topology_.defaultConcurrency(clock_free));
+    }
+    if (clock_free) {
+        return brief ? std::string(TR("one per hardware thread, for a node count or a depth"))
+                     : trf("One game per hardware thread ({} on this machine): a node count or a depth plays the "
+                           "same moves however the cores are shared.",
+                           topology_.logical);
+    }
+    return brief ? std::string(TR("physical cores − 1, for a clock"))
+                 : trf("Physical cores − 1 ({} physical cores on this machine): with a clock, two engines on the "
+                       "same core would slow each other down.",
+                       topology_.physical);
+}
+
+std::string App::concurrencySummary() const {
+    const int games  = setup_.concurrency_auto ? topology_.defaultConcurrency(clockFree(setup_.limit))
+                                               : std::clamp(setup_.concurrency, 1, topology_.logical);
+    std::string text = trn("{} game at a time", "{} games at a time", static_cast<uint64_t>(games), games) + " · " +
+                       concurrencyRule(true);
+    if (AFFINITY_SUPPORTED && setup_.affinity) text += " · " + std::string(TR("CPU affinity"));
+    return text;
+}
+
+std::string App::pgnSummary() const {
+    std::vector<std::string> parts;
+    if (!setup_.pgn_event.empty()) parts.push_back(trf("event {}", setup_.pgn_event));
+    if (!setup_.pgn_out.empty())
+        parts.push_back(trf("also to {}", std::filesystem::path(setup_.pgn_out).filename().string()));
+    if (setup_.log_every_game) parts.push_back(TR("every game's engine log"));
+    if (!setup_.recover) parts.push_back(TR("a crash stops the tournament"));
+    if (setup_.check_mate_pvs) parts.push_back(TR("mate PVs checked"));
+    std::string text;
+    for (const auto& p : parts) text += (text.empty() ? "" : " · ") + p;
+    return text;
 }
 
 void App::setupRow(SetupRow row, const char* title, const std::string& summary, const std::string& more,
@@ -417,7 +463,7 @@ void App::setupRow(SetupRow row, const char* title, const std::string& summary, 
         const ImVec2 p0 = ImGui::GetItemRectMin(), p1 = ImGui::GetItemRectMax();
         auto* dl = ImGui::GetWindowDrawList();
         dl->PushClipRect(p0, ImVec2(p1.x - style.FramePadding.x, p1.y), true);
-        dl->AddText(ImVec2(p0.x + style.FramePadding.x * 0.5f, p0.y + style.FramePadding.y),
+        dl->AddText(ImVec2(p0.x + style.FramePadding.x * 0.5f, start.y + style.FramePadding.y),
                     ImGui::GetColorU32(open ? ImGuiCol_TextDisabled : ImGuiCol_Text), summary.c_str());
         dl->PopClipRect();
     }
@@ -631,13 +677,14 @@ void App::drawProfilePopups() {
 }
 
 void App::setupEngines() {
-    if (!ImGui::CollapsingHeader(TR("Engines###sec_engines"), ImGuiTreeNodeFlags_DefaultOpen)) return;
+    ImGui::TextDisabled("%s", TR("Engines"));
 
     // Each with its book, if it has one of its own: the same engine may then play both sides.
     const float swap_w  = ImGui::GetFrameHeight() * 1.6f;
     const float book_w  = px(150);
     const float spacing = ImGui::GetStyle().ItemSpacing.x;
     ui::label(TR("A (tested)"), labelWidth() * 0.75f);
+    itemHelp(TR("Statistics are given from A's point of view."));
     if (engineCombo("##engine_a", setup_.engine_a, engines_,
                     ImGui::GetContentRegionAvail().x - book_w - swap_w - 2 * spacing))
         saveSetupSoon();
@@ -658,17 +705,16 @@ void App::setupEngines() {
         saveSetupSoon();
     }
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Swap A and B"));
-
-    ImGui::TextDisabled("%s", TR("Statistics are given from A's point of view."));
-    ImGui::Spacing();
-    setupEngineOptions();
 }
 
 void App::setupEngineOptions() {
     bool changed = false;
-    ImGui::TextDisabled("%s", TR("Common settings, forced on every engine (0 = each engine's own):"));
     changed |= inputInt(TR("Hash (MB)"), "##common_hash", setup_.common_hash, 0, 1 << 20);
+    itemHelp(TR("Common settings, forced on every engine (0 = each engine's own):") + std::string("\n") +
+             TR("A participant's own, from its ⋯ menu, comes first."));
     changed |= inputInt(TR("Threads"), "##common_threads", setup_.common_threads, 0, 1024);
+    itemHelp(TR("Common settings, forced on every engine (0 = each engine's own):") + std::string("\n") +
+             TR("A participant's own, from its ⋯ menu, comes first."));
 
     changed |= ImGui::Checkbox(TR("Syzygy tablebases for the engines"), &setup_.engine_syzygy);
     ui::help(
@@ -688,15 +734,17 @@ void App::setupEngineOptions() {
 }
 
 void App::setupMatch() {
-    if (!ImGui::CollapsingHeader(TR("Match###sec_match"), ImGuiTreeNodeFlags_DefaultOpen)) return;
-
     int mode     = static_cast<int>(setup_.mode);
     bool changed = false;
     changed |= ImGui::RadioButton(TR("Fixed games"), &mode, 0);
     ImGui::SameLine();
     changed |= ImGui::RadioButton(TR("Infinite"), &mode, 1);
+    itemHelp(TR("Plays until you stop the match."));
     ImGui::SameLine();
     changed |= ImGui::RadioButton("SPRT", &mode, 2);
+    itemHelp(
+        TR("Sequential probability ratio test, as fishtest and OpenBench run it: plays until it can tell, with "
+           "the error rates alpha and beta, whether A is worth elo1 more than B (H1 accepted) or only elo0."));
     setup_.mode = static_cast<MatchMode>(mode);
 
     switch (setup_.mode) {
@@ -705,7 +753,6 @@ void App::setupMatch() {
             ui::help(TR("Played in pairs: each opening is played twice, with colours reversed."));
             break;
         case MatchMode::Infinite:
-            ImGui::TextDisabled("%s", TR("Plays until you stop the match."));
             break;
         case MatchMode::Sprt: {
             changed |= inputDouble("elo0", "##elo0", setup_.sprt_elo0, -1000, 1000);
@@ -737,29 +784,17 @@ void App::setupMatch() {
             changed |= inputInt(TR("Max games"), "##sprt_max", setup_.sprt_max_games, 0, 100'000'000);
             ui::help(TR("0 = no limit."));
 
-            ImGui::TextDisabled("%s", TR("Presets:"));
-            ImGui::SameLine();
-            if (ImGui::SmallButton(TR("Gainer [0, 3]"))) {
-                setup_.sprt_elo0 = 0;
-                setup_.sprt_elo1 = 3;
-                changed          = true;
-            }
-            ImGui::SameLine();
-            if (ImGui::SmallButton(TR("Non-regression [-5, 0]"))) {
-                setup_.sprt_elo0 = -5;
-                setup_.sprt_elo1 = 0;
-                changed          = true;
-            }
-
-            // What these bounds are likely to cost, from the calculator's guesses.
+            // What these bounds are likely to cost, from the calculator's guesses. The usual bounds are profiles
+            // (SPRT gainer, non-regression).
             const auto plan = sprtPlan(setup_.sprt_alpha, setup_.sprt_beta, setup_.sprt_elo0, setup_.sprt_elo1,
                                        setup_.sprt_model, setup_.sprt_draw_ratio, setup_.sprt_rms_bias);
             if (plan.valid) {
+                ImGui::PushTextWrapPos(0);
                 ImGui::TextDisabled("%s", trf("About {} games if the change is worth elo0, {} if it is worth elo1.",
                                               ui::formatCount(static_cast<uint64_t>(plan.at(plan.elo0).games)),
                                               ui::formatCount(static_cast<uint64_t>(plan.at(plan.elo1).games)))
                                               .c_str());
-                ImGui::SameLine();
+                ImGui::PopTextWrapPos();
             }
             if (ImGui::SmallButton(TR("Calculator…"))) {
                 sprt_calc_      = setup_;
@@ -939,13 +974,9 @@ void App::setupLimit() {
 }
 
 void App::setupConcurrency() {
-    if (!ImGui::CollapsingHeader(TR("Concurrency###sec_concurrency"), ImGuiTreeNodeFlags_DefaultOpen)) return;
-
     bool changed           = false;
     const bool fixed_nodes = clockFree(setup_.limit);
     const int auto_value   = topology_.defaultConcurrency(fixed_nodes);
-
-    ImGui::TextDisabled(TR("Machine: %d physical cores, %d threads"), topology_.physical, topology_.logical);
 
     changed |= ImGui::Checkbox(TR("Automatic"), &setup_.concurrency_auto);
     ui::help(
@@ -962,6 +993,12 @@ void App::setupConcurrency() {
     }
     ImGui::EndDisabled();
     if (!setup_.concurrency_auto) setup_.concurrency = std::clamp(setup_.concurrency, 1, topology_.logical);
+    // The rule that chose the number, and the machine it measured: without it a number above the cores looks wrong.
+    ui::label("", labelWidth());
+    ImGui::PushTextWrapPos(0);
+    ImGui::TextDisabled("%s", concurrencyRule(false).c_str());
+    ImGui::PopTextWrapPos();
+    itemHelp(trf("Machine: {} physical cores, {} threads", topology_.physical, topology_.logical));
 
     // macOS cannot pin a process to a processor.
     if constexpr (AFFINITY_SUPPORTED) {
@@ -1007,8 +1044,6 @@ void App::setupConcurrency() {
 }
 
 void App::setupOpenings() {
-    if (!ImGui::CollapsingHeader(TR("Openings###sec_openings"), ImGuiTreeNodeFlags_DefaultOpen)) return;
-
     bool changed       = false;
     const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
 
@@ -1040,17 +1075,17 @@ void App::setupOpenings() {
         }
     }
 
-    changed |=
-        inputText("##book", setup_.book, ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x);
-    if (ImGui::IsItemHovered() && !setup_.book.empty()) ImGui::SetTooltip("%s", setup_.book.c_str());
+    // Without a book, the field says what is played instead.
+    const char* without = setup_.chess960 ? TR("Without a book, the 960 starting positions, in random order.")
+                                          : TR("Without a book, every game starts from the initial position.");
+    changed |= inputText("##book", setup_.book,
+                         ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x, without);
+    itemHelp(setup_.book.empty() ? std::string(TR("An opening book, or opening suite: EPD, PGN or Polyglot (.bin)."))
+                                 : setup_.book);
     ImGui::SameLine();
     if (ImGui::Button("…##book_browse")) {
         dialogs_.openFile(Dialogs::Purpose::Book,
                           {{TR("Books (EPD, PGN, Polyglot)"), "epd;pgn;bin"}, {TR("All files"), "*"}}, setup_.book);
-    }
-    if (setup_.book.empty()) {
-        ImGui::TextDisabled("%s", setup_.chess960 ? TR("Without a book, the 960 starting positions, in random order.")
-                                                  : TR("Without a book, every game starts from the initial position."));
     }
 
     changed |= ImGui::Checkbox(TR("Chess960"), &setup_.chess960);
@@ -1059,6 +1094,9 @@ void App::setupOpenings() {
            "variant of a WinBoard engine). A book of Chess960 positions, or none for all 960."));
 
     changed |= ImGui::Checkbox(TR("Random order"), &setup_.book_random);
+    itemHelp(
+        TR("The openings in a random order (order=random), or one after the other from Start at (order="
+           "sequential)."));
     if (tour::isPolyglot(setup_.book)) {
         changed |= inputInt(TR("Depth (plies)"), "##plies", setup_.book_plies, -1, 40);
         ui::help(trf("A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the "
@@ -1144,24 +1182,20 @@ void App::setupAdjudication() {
 }
 
 void App::setupPgn() {
-    if (open_pgn_setup_) {
-        ImGui::SetNextItemOpen(true);
-        open_pgn_setup_ = false;
-    }
-    if (!ImGui::CollapsingHeader(TR("PGN and misc###sec_misc"))) return;
-
     bool changed = false;
 
     ui::label(TR("Event"), labelWidth());
     changed |= inputText("##event", setup_.pgn_event, -FLT_MIN);
-
-    ImGui::TextDisabled("%s", TR("Every game is written to two files in the match folder:"));
-    // Named after the tournament, as TournamentState::create() names them.
-    tour::TournamentSpec files;
-    files.name = setup_.name.empty() ? defaultTournamentName(setup_) : setup_.name;
-    tour::namePgnFiles(files);
-    ImGui::BulletText("%s : {+0.35/18 1.234s} (cutechess, fastchess)", files.pgn_file.c_str());
-    ImGui::BulletText("%s : {[%%eval 0.35,18] [%%emt …]}", files.pgn_chessbase_file.c_str());
+    {
+        // The files every game is written to, named after the tournament as TournamentState::create() names them.
+        tour::TournamentSpec files;
+        files.name = setup_.name.empty() ? defaultTournamentName(setup_) : setup_.name;
+        tour::namePgnFiles(files);
+        itemHelp(fmt::format(
+            "{}\n• {} : {{+0.35/18 1.234s}} (cutechess, fastchess)\n• {} : {{[%eval 0.35,18] "
+            "[%emt …]}}",
+            TR("Every game is written to two files in the match folder:"), files.pgn_file, files.pgn_chessbase_file));
+    }
 
     ImGui::TextUnformatted(TR("Also append every game to:"));
     const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
@@ -1218,55 +1252,28 @@ void App::setupPgn() {
 }
 
 void App::setupFormat() {
-    if (!ImGui::CollapsingHeader(TR("Format###sec_format"), ImGuiTreeNodeFlags_DefaultOpen)) return;
-
     bool changed = false;
     int format   = static_cast<int>(setup_.format);
-    changed |= ImGui::RadioButton(TR("Match"), &format, 0);
+    // What each format is, at the cursor: a grey line under them was cut at the column's edge.
+    const auto radio = [&](const char* label, int value, const char* what) {
+        changed |= ImGui::RadioButton(label, &format, value);
+        itemHelp(what);
+    };
+    radio(TR("Match"), 0, TR("Two engines: is the new version stronger? Statistics from A's point of view."));
     ImGui::SameLine();
-    changed |= ImGui::RadioButton(TR("Round robin"), &format, 1);
+    radio(TR("Round robin"), 1,
+          TR("Every engine meets every other one, each time on two games with the same opening, colours reversed."));
     ImGui::SameLine();
-    changed |= ImGui::RadioButton(TR("Gauntlet"), &format, 2);
+    radio(TR("Gauntlet"), 2, TR("The first engines of the list (the tested ones) meet every other engine."));
     ImGui::SameLine();
-    changed |= ImGui::RadioButton(TR("Swiss"), &format, 3);
+    radio(TR("Swiss"), 3,
+          TR("Each round pairs engines with similar scores, never twice the same; for large fields. The list order is "
+             "the seeding."));
     ImGui::SameLine();
-    changed |= ImGui::RadioButton(TR("Knockout"), &format, 4);
+    radio(TR("Knockout"), 4,
+          TR("Matches in a bracket, the winner goes through; tiebreak pairs of games when a match is tied. The list "
+             "order is the seeding."));
     setup_.format = static_cast<TournamentFormat>(format);
-
-    switch (setup_.format) {
-        case TournamentFormat::Match:
-            ImGui::TextDisabled("%s",
-                                TR("Two engines: is the new version stronger? Statistics from A's point of view."));
-            break;
-        case TournamentFormat::RoundRobin:
-            ImGui::TextDisabled("%s", TR("Every engine meets every other one, each time on two games with the same "
-                                         "opening, colours reversed."));
-            break;
-        case TournamentFormat::Gauntlet:
-            ImGui::TextDisabled("%s", TR("The first engines of the list (the tested ones) meet every other engine."));
-            break;
-        case TournamentFormat::Swiss:
-            ImGui::TextDisabled("%s", TR("Each round pairs engines with similar scores, never twice the same; for "
-                                         "large fields. The list order is the seeding."));
-            break;
-        case TournamentFormat::Knockout:
-            ImGui::TextDisabled("%s", TR("Matches in a bracket, the winner goes through; tiebreak pairs of games when "
-                                         "a match is tied. The list order is the seeding."));
-            break;
-    }
-
-    ui::label(TR("Name"), labelWidth());
-    {
-        char buffer[256];
-        const auto n = std::min(setup_.name.size(), sizeof(buffer) - 1);
-        std::copy_n(setup_.name.data(), n, buffer);
-        buffer[n] = 0;
-        ImGui::SetNextItemWidth(-FLT_MIN);
-        if (ImGui::InputTextWithHint("##tname", defaultTournamentName(setup_).c_str(), buffer, sizeof(buffer))) {
-            setup_.name = buffer;
-            changed     = true;
-        }
-    }
 
     if (setup_.format == TournamentFormat::Swiss) {
         changed |= inputInt(TR("Rounds"), "##rounds", setup_.cycles, 1, 1000);
@@ -1276,25 +1283,31 @@ void App::setupFormat() {
         ui::help(TR("Each pair is two games on the same opening, colours reversed."));
     } else if (setup_.format != TournamentFormat::Match) {
         changed |= inputInt(TR("Cycles"), "##cycles", setup_.cycles, 1, 10000);
-        ui::help(TR("How many times every pairing is played; each time is two games, colours reversed."));
+        ui::help(
+            TR("How many times every pairing is played; each time is two games, colours reversed. Other programs "
+               "call a cycle a round, of 2 games per encounter (-rounds N -games 2)."));
         if (setup_.format == TournamentFormat::Gauntlet) {
             const int most = std::max(1, static_cast<int>(setup_.participants.size()) - 1);
             changed |= inputInt(TR("Tested engines"), "##seeds", setup_.seeds, 1, most);
-            ui::help(TR("The first engines of the list play every other engine, not each other."));
+            ui::help(
+                TR("The first engines of the list play every other engine, not each other: the gauntlet's seeds "
+                   "(-seeds N)."));
         }
     }
-
     if (changed) saveSetupSoon();
+
+    // A match: how long it lasts, the SPRT's bounds.
+    if (setup_.format == TournamentFormat::Match) {
+        ImGui::Spacing();
+        setupMatch();
+    }
 }
 
 void App::setupParticipants() {
-    if (!ImGui::CollapsingHeader(TR("Participants###sec_participants"), ImGuiTreeNodeFlags_DefaultOpen)) return;
+    ImGui::TextDisabled("%s", TR("Participants"));
 
     bool changed = false;
     auto& list   = setup_.participants;
-
-    // Settings forced on everyone unless an engine overrides them.
-    setupEngineOptions();
 
     const bool nodes     = setup_.limit == LimitKind::Nodes;
     const bool depth     = setup_.limit == LimitKind::Depth;
@@ -1667,88 +1680,114 @@ void App::drawSetupSummary() {
     ui::endCard();
 }
 
-void App::drawTemplates() {
-    ui::beginCard("templates_card");
-    ImGui::TextDisabled("%s", TR("Templates"));
-
+void App::listTemplates() {
     // Listed every few seconds rather than every frame; a template copied into the folder shows up soon enough.
+    const auto now = std::chrono::steady_clock::now();
+    if (now - templates_listed_ <= std::chrono::seconds(3)) return;
+    templates_listed_ = now;
+    template_names_.clear();
+    std::error_code ec;
+    const auto dir = storage_.root() / "templates";
+    for (std::filesystem::directory_iterator it(dir, ec), last; !ec && it != last; it.increment(ec)) {
+        if (it->path().extension() == ".json") template_names_.push_back(it->path().stem().string());
+    }
+    std::sort(template_names_.begin(), template_names_.end());
+}
+
+bool App::loadTemplate(const std::string& name) {
+    // The sections that followed their profile take its values of today; the look of the program is not part of a
+    // template.
+    auto loaded = readTemplate(storage_.root() / "templates" / (name + ".json"), profiles_);
+    if (!loaded) {
+        template_message_ = trf("Cannot read the template {}.", name);
+        return false;
+    }
+    keepProgramSettings(*loaded, setup_);
+    setup_           = std::move(*loaded);
+    template_loaded_ = name;
+    template_message_.clear();
+    saveSetupSoon();
+    return true;
+}
+
+void App::drawTemplates() {
+    listTemplates();
     const auto dir = storage_.root() / "templates";
     std::error_code ec;
-    if (const auto now = std::chrono::steady_clock::now(); now - templates_listed_ > std::chrono::seconds(3)) {
-        templates_listed_ = now;
-        template_names_.clear();
-        for (std::filesystem::directory_iterator it(dir, ec), last; !ec && it != last; it.increment(ec)) {
-            if (it->path().extension() == ".json") template_names_.push_back(it->path().stem().string());
-        }
-        std::sort(template_names_.begin(), template_names_.end());
-    }
 
-    for (const auto& name : template_names_) {
-        ImGui::PushID(name.c_str());
-        if (ImGui::SmallButton(TR("Load"))) {
-            if (auto loaded = readSavedSetup(dir / (name + ".json"))) {
-                // The look of the program is not part of a template.
-                keepProgramSettings(*loaded, setup_);
-                setup_ = *loaded;
-                template_message_.clear();
-                saveSetupSoon();
-            } else {
-                template_message_ = trf("Cannot read the template {}.", name);
-            }
-        }
-        ImGui::SameLine();
-        ImGui::TextUnformatted(name.c_str());
-        ImGui::PopID();
-    }
-    if (template_names_.empty()) ImGui::TextDisabled("%s", TR("No template yet."));
-
-    char buffer[128];
-    const auto n = std::min(template_name_.size(), sizeof(buffer) - 1);
-    std::copy_n(template_name_.data(), n, buffer);
-    buffer[n] = 0;
-    ImGui::SetNextItemWidth(-ImGui::CalcTextSize(TR("Save")).x - ImGui::GetStyle().FramePadding.x * 4);
-    if (ImGui::InputTextWithHint("##template_name", TR("Template name"), buffer, sizeof(buffer)))
-        template_name_ = buffer;
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(TR("Template"));
     ImGui::SameLine();
+    ImGui::SetNextItemWidth(px(200));
+    const auto preview = template_loaded_.empty() ? std::string(TR("None")) : template_loaded_;
+    bool open_save     = false;
+    if (ImGui::BeginCombo("##template", preview.c_str(), ImGuiComboFlags_HeightLarge)) {
+        for (const auto& name : template_names_) {
+            if (ImGui::Selectable(name.c_str(), name == template_loaded_)) loadTemplate(name);
+        }
+        if (template_names_.empty()) ImGui::TextDisabled("%s", TR("No template yet."));
+        ImGui::Separator();
+        if (ImGui::Selectable(TR("Save the setup as a template…"))) open_save = true;
+        ImGui::EndCombo();
+    } else {
+        itemHelp(
+            TR("A template is the whole setup: a profile for each section, and what no profile holds (the "
+               "name, the participants, the concurrency, the PGN files, the broadcast). A section that played "
+               "as its profile takes the profile's values of the day."));
+    }
+    if (open_save) {
+        template_name_ = template_loaded_;
+        ImGui::OpenPopup("save_template");
+    }
 
     const auto save = [&](const std::string& file) {
         std::filesystem::create_directories(dir, ec);
-        if (writeJson(dir / (file + ".json"), setup_)) {
-            template_name_.clear();
+        if (writeJson(dir / (file + ".json"), templateJson(setup_, profiles_))) {
+            template_loaded_ = file;
             template_message_.clear();
         } else {
             template_message_ = trf("Cannot write {}", (dir / (file + ".json")).string());
         }
         templates_listed_ = {};
     };
-    ImGui::BeginDisabled(template_name_.empty());
-    if (ImGui::Button(TR("Save"))) {
-        const auto file = fileNameOf(template_name_);
-        if (std::find(template_names_.begin(), template_names_.end(), file) != template_names_.end() ||
-            std::filesystem::exists(dir / (file + ".json"), ec)) {
-            template_replace_ = file;
-            ImGui::OpenPopup("replace_template");
-        } else {
-            save(file);
+    if (ImGui::BeginPopup("save_template")) {
+        ImGui::TextDisabled("%s", TR("Save the setup as a template…"));
+        char buffer[128];
+        const auto n = std::min(template_name_.size(), sizeof(buffer) - 1);
+        std::copy_n(template_name_.data(), n, buffer);
+        buffer[n] = 0;
+        if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
+        ImGui::SetNextItemWidth(px(260));
+        const bool enter = ImGui::InputTextWithHint("##template_name", TR("Template name"), buffer, sizeof(buffer),
+                                                    ImGuiInputTextFlags_EnterReturnsTrue);
+        template_name_   = buffer;
+        const auto file  = fileNameOf(template_name_);
+        const bool taken = !template_name_.empty() &&
+                           (std::find(template_names_.begin(), template_names_.end(), file) != template_names_.end() ||
+                            std::filesystem::exists(dir / (file + ".json"), ec));
+        if (taken) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+            ImGui::TextUnformatted(trf("Replace the template {}?", file).c_str());
+            ImGui::PopStyleColor();
         }
-    }
-    ImGui::EndDisabled();
-    if (ImGui::BeginPopup("replace_template")) {
-        ImGui::TextUnformatted(trf("Replace the template {}?", template_replace_).c_str());
-        if (ImGui::Button(TR("Replace"))) {
-            save(template_replace_);
+        ImGui::BeginDisabled(template_name_.empty());
+        if (ImGui::Button(taken ? TR("Replace") : TR("Save")) || (enter && !template_name_.empty())) {
+            save(file);
+            template_name_.clear();
             ImGui::CloseCurrentPopup();
         }
+        ImGui::EndDisabled();
         ImGui::SameLine();
         if (ImGui::Button(TR("Cancel"))) ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }
     if (!template_message_.empty()) {
+        ImGui::SameLine();
+        ImGui::AlignTextToFramePadding();
         ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
-        ImGui::TextWrapped("%s", template_message_.c_str());
+        ImGui::TextUnformatted(template_message_.c_str());
         ImGui::PopStyleColor();
     }
-    ui::endCard();
 }
 
 }  // namespace fcg
