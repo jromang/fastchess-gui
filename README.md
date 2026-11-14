@@ -82,6 +82,11 @@ Ready-made binaries are on the [releases page](https://github.com/jromang/fastch
 - **Windows**: 64-bit Windows 10 version 1903 (May 2019) or newer. No installer, nothing else to install. Older
   versions (7, 8.1, LTSC 2019) are not supported: they may work while no path has accents.
 - **Linux**: x86-64, glibc 2.35 or newer, X11 or Wayland and OpenGL 3.2.
+- **macOS**: macOS 13.3 (Ventura) or newer, Apple silicon and Intel (one universal application). It is not signed
+  by an Apple developer account, so macOS refuses it the first time: Control-click (right-click) it, Open, then Open
+  again; on macOS 15 and later, try to open it once, then System Settings, Privacy & Security, Open Anyway. Or run
+  `xattr -dr com.apple.quarantine` on the unzipped folder. Built and tested by CI only so far: reports from Mac
+  users are welcome.
 
 ## Building
 
@@ -93,6 +98,11 @@ stb_image_write and the Inter and Lucide fonts are downloaded by CMake at pinned
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ./build/fastchess-gui
+
+# macOS (Apple clang), a universal application
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+cmake --build build
+open build/fastchess-gui.app
 
 # Windows, cross-compiled from Linux with mingw-w64
 cmake -B build-win -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=cmake/mingw-w64.cmake

@@ -144,6 +144,11 @@ tournament plays), and checked:
   reversed, does not need both);
 - **games already over**: no legal move, or not enough material to mate.
 
+fastchess leaves the openings whose position cannot be played out of a tournament (a FEN or EPD line without a
+king or otherwise malformed, a king that could be taken, a PGN game whose FEN tag is invalid), with one warning per
+book; they are counted here as illegal positions. A PGN game whose moves stop parsing (a malformed or ambiguous
+move) keeps the moves before it.
+
 The lines of a PGN book that start with `%` (escape lines, which the PGN standard makes comments; the AVT books have
 some) are ignored, by the tournaments too, and the Books page counts them (*lines starting with %, ignored*):
 fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of such a book from a wrong
@@ -240,7 +245,7 @@ swap); above the memory installed the tournament does not start. `--run` says th
   - fixed nodes or depth: one game per hardware thread, since Hyper-Threading does not change the moves played;
   - with a clock: physical cores − 1, so that engines do not slow each other down.
 
-  *CPU affinity* (off by default) pins every game to one processor, shared by its two engines since they never
+  *CPU affinity* (off by default; not on macOS, which has none) pins every game to one processor, shared by its two engines since they never
   think at the same time. fastchess only supports it for single-threaded engines, so it is turned off
   automatically when an engine has `Threads` > 1. A warning appears when concurrency × threads exceeds the hardware
   threads (or, with a clock, the physical cores).
@@ -521,7 +526,9 @@ the TLCS port. For the web page, a tunnel avoids opening a port (see *Putting th
 ## Files
 
 Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/` on Linux,
-`%APPDATA%\fastchess\fastchess-gui\` on Windows.
+`%APPDATA%\fastchess\fastchess-gui\` on Windows, `~/Library/Application Support/fastchess/fastchess-gui/` on macOS.
+Files the program creates are not writable by other users, and `settings.json` is readable by its owner only once
+it holds a lichess token.
 
 - `engines.json`: the engine library, and `engines.json.bak` its previous version, read if the first is lost;
 - `setup.json`: the last setup; `templates/*.json`: the saved templates; `queue.json`: the queue;
@@ -541,6 +548,10 @@ Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/
     the tournament's games;
   - `tournament.lock`: held by the program playing the tournament; another program opening the folder only
     shows it;
+  - a folder received from someone else is safe to open: the file of *Also append every game to* must be a `.pgn`
+    file (another name is ignored, with a warning), and a folder whose journal, PGN files or lock file are
+    symbolic links is not opened for writing, so it cannot make the program write outside it. Resuming it runs
+    the engines its `tournament.json` names, as any tournament does;
   - `<name>.pgn`: move comments in the cutechess / fastchess style, `{+0.35/18 1.234s}`, with the score from the
     point of view of the side that moved; games in the order they ended (the journal finds each one by its place
     in the file; *Export all* in the *Games* tab, and the file of *Also append every game to*, follow the schedule);
