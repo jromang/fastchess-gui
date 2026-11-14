@@ -638,7 +638,7 @@ std::string footerLine(const TournamentSpec& spec, const Table& table, std::opti
 }
 
 std::string gauntletText(const TournamentSpec& spec, const Table& table, const std::string& title,
-                         std::optional<uint64_t> planned) {
+                         const std::string& footer) {
     struct Row {
         std::string name;
         int wins = 0, draws = 0, losses = 0;
@@ -677,7 +677,7 @@ std::string gauntletText(const TournamentSpec& spec, const Table& table, const s
         if (s > 0) out += "\n";
         const auto head = fmt::format("{:>{}}  {:<{}}  {:>{}}  {:>5}  {:>7}  {:>6}  W-L-D", "#", rank_w, "Name", name_w,
                                       "Points", points_w, "%", "Elo", "+/-");
-        out += head + "\n" + std::string(head.size() + 8, '-') + "\n";
+        out += head + "\n" + std::string(head.size() + 8, '=') + "\n";
         for (std::size_t i = 0; i < rows.size(); ++i) {
             const auto& r  = rows[i];
             const auto elo = scoreElo(r.wins, r.draws, r.losses);
@@ -687,7 +687,8 @@ std::string gauntletText(const TournamentSpec& spec, const Table& table, const s
                                elo.error ? fmt::format("{:.1f}", *elo.error) : "-", r.wins, r.losses, r.draws);
         }
     }
-    return out + "\n" + footerLine(spec, table, planned) + "\n";
+    if (!footer.empty()) out += "\n" + footer + "\n";
+    return out;
 }
 
 }  // namespace fcg::tour

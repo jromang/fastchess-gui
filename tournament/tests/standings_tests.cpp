@@ -178,17 +178,20 @@ TEST_CASE("gauntlet table: the seed, its opponents by their own points, and the 
     const auto table = computeTable(spec, results);
 
     // 50 % over six games: +0, and the 95 % margin of the spread of +2 =2 -2. A score of 0 or 100 % has no Elo.
-    CHECK(gauntletText(spec, table, "Gauntlet A", 6) ==
+    CHECK(gauntletText(spec, table, "Gauntlet A", footerLine(spec, table, 6)) ==
           "Gauntlet A\n"
           "\n"
           "#  Name  Points      %      Elo     +/-  W-L-D\n"
-          "------------------------------------------------------\n"
+          "======================================================\n"
           "1  A      3.0/6   50.0     +0.0   312.2  +2-2=2\n"
           "2  D      2.0/2  100.0        -       -  +2-0=0\n"
           "3  C      1.0/2   50.0     +0.0     0.0  +0-0=2\n"
           "4  B      0.0/2    0.0        -       -  +0-2=0\n"
           "\n"
           "6/6 games, 33% draws, time control:10+0.1, book:UHO.epd, event: Gauntlet A\n");
+
+    CHECK(gauntletText(spec, table, "").back() == '\n');
+    CHECK(gauntletText(spec, table, "").find("games") == std::string::npos);
 
     // Planned games unknown, no book, no name; a game still to play.
     spec.conditions.opening.file.clear();

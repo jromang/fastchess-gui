@@ -408,9 +408,10 @@ void App::copyStandings(ui::CopyAs as) {
     const auto* t = run_.tournament();
     if (!t || isMatch()) return;
     refreshTable();
-    // In the order shown, the line of the event, the games and the book under it.
+    // In the order shown, the line of the event, the games and the book under it, then the program's name, so that
+    // a table posted on a forum is told apart from those of other GUIs.
     const auto& spec  = t->spec();
-    const auto footer = tour::footerLine(spec, shown_, t->totalGames());
+    const auto footer = tour::footerLine(spec, shown_, t->totalGames()) + "\nfastchess-gui " FCG_VERSION;
     std::string text;
     switch (as) {
         case ui::CopyAs::None:
@@ -422,10 +423,10 @@ void App::copyStandings(ui::CopyAs as) {
             text = tour::bbcode(spec.name, tour::forumDetails(spec, shown_), tour::tableText(shown_, "", footer));
             break;
         case ui::CopyAs::GauntletText:
-            text = tour::gauntletText(spec, table_, spec.name, t->totalGames());
+            text = tour::gauntletText(spec, table_, spec.name, footer);
             break;
         case ui::CopyAs::GauntletBbcode:
-            text = tour::bbcode(spec.name, "", tour::gauntletText(spec, table_, "", t->totalGames()));
+            text = tour::bbcode(spec.name, "", tour::gauntletText(spec, table_, "", footer));
     }
     ImGui::SetClipboardText(text.c_str());
     Console::instance().add(TR("Standings copied to the clipboard."));

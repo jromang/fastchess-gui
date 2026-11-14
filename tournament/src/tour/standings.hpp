@@ -163,10 +163,11 @@ struct ScoreElo {
 
 // A gauntlet as Gabor Szots posts it on the forums (TorsGUI's layout, asked for by him): for each seed, the seed
 // with its whole score, then its opponents by their own points against it, each row from its own point of view:
-// Points, %, the Elo difference its score stands for with its 95 % margin, and W-L-D (written +W-L=D). Then the
-// line of footerLine(). The seeds are the first spec.seeds participants. An empty title is left out.
+// Points, %, the Elo difference its score stands for with its 95 % margin, and W-L-D (written +W-L=D), under a rule
+// of = (other GUIs draw it with -, Gabor asked that ours be told apart). Then the footer (footerLine()) after a
+// blank line. The seeds are the first spec.seeds participants. An empty title or footer is left out.
 [[nodiscard]] std::string gauntletText(const TournamentSpec& spec, const Table& table, const std::string& title,
-                                       std::optional<uint64_t> planned);
+                                       const std::string& footer = "");
 
 // The line under a table or a gauntlet's table, as Gabor Szots writes it: "480/480 games, 30% draws, time
 // control:90+1, book:UHO.epd, event: Cup", the games played of those planned (when known), the time control of the
