@@ -27,16 +27,17 @@ TEST_CASE("book scan: an EPD book's illegal, duplicate, mirrored and finished po
                             "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKKNR w KQkq -\n"            // two white kings
                             "rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq -\n"       // mate
                             "8/8/8/4k3/8/8/8/4K3 w - -\n");                                      // bare kings
+    // fastchess' reader leaves out the position with two white kings: it counts as illegal, not as an opening.
     const BookScan scan(book, -1);
     CHECK(scan.kind() == BookScan::Kind::Epd);
     CHECK_FALSE(scan.chess960());
-    REQUIRE(scan.size() == 6);
+    REQUIRE(scan.size() == 5);
     CHECK(scan.flags(0) == 0);
     CHECK(scan.flags(1) == BOOK_MIRRORED);
     CHECK(scan.flags(2) == BOOK_DUPLICATE);
-    CHECK(scan.flags(3) == BOOK_ILLEGAL);
+    CHECK(scan.flags(3) == BOOK_OVER);
     CHECK(scan.flags(4) == BOOK_OVER);
-    CHECK(scan.flags(5) == BOOK_OVER);
+    CHECK(scan.count(BOOK_ILLEGAL) == 1);
     CHECK(scan.count(BOOK_DUPLICATE | BOOK_MIRRORED) == 2);
     CHECK(scan.item(0).fen == "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq -");
 
@@ -108,18 +109,18 @@ TEST_CASE("book scan: a FEN the board reader would take off the board is not rea
     CHECK_FALSE(readableFen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBnbqkb b KQkq -"));  // no white king
     CHECK_FALSE(readableFen("rnbqKbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6"));   // no black king
 
-    // Found by fuzzing: such lines of an EPD book made the board reader compute squares off the board.
+    // Found by fuzzing: such lines of an EPD book made the board reader compute squares off the board. fastchess'
+    // reader now leaves out the first two; the third it reads, its castling right ignored, but it is flagged.
     const auto book = write("fcg-scan-squares.epd",
                             "rnbqkbnrr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -\n"
                             "8/8/8/8/8/8/8/8/8/4k3/4K3 w - -\n"
                             "1k1r4/pp1b1R2/3q2pp/4p3/2B5/4Q3/PPP2B2/2K5 b \xe8 -\n"
                             "8/8/8/4k3/8/8/8/4K3 w - -\n");
     const BookScan scan(book, -1);
-    REQUIRE(scan.size() == 4);
+    REQUIRE(scan.size() == 2);
     CHECK(scan.flags(0) == BOOK_ILLEGAL);
-    CHECK(scan.flags(1) == BOOK_ILLEGAL);
-    CHECK(scan.flags(2) == BOOK_ILLEGAL);
-    CHECK(scan.flags(3) == BOOK_OVER);
+    CHECK(scan.flags(1) == BOOK_OVER);
+    CHECK(scan.count(BOOK_ILLEGAL) == 3);
 }
 
 TEST_CASE("chess text: a SAN that starts as castling does must be castling") {
@@ -129,4 +130,12 @@ TEST_CASE("chess text: a SAN that starts as castling does must be castling") {
     for (const char* san : {"01k-", "O-", "O", "0-O", "O-O-", "O-O-0", "O-Ox", "0-0-0-0", "Ok"}) {
         CHECK_FALSE_MESSAGE(readableSan(san), san);
     }
+}
+
+TEST_CASE("chess text: a king in check by three pieces is not a legal position") {
+    chess::Board board;
+    REQUIRE(board.setFen("4k3/8/3N4/8/Q7/8/8/4R2K b - - 0 1"));
+    CHECK_FALSE(legalPosition(board));
+    REQUIRE(board.setFen("4k3/8/3N4/8/8/8/8/4R2K b - - 0 1"));  // two, a double check
+    CHECK(legalPosition(board));
 }

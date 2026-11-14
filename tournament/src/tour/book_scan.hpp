@@ -46,6 +46,8 @@ class BookScan {
     [[nodiscard]] bool chess960() const noexcept { return chess960_; }
     [[nodiscard]] std::size_t size() const noexcept { return flags_.size(); }
     [[nodiscard]] uint8_t flags(std::size_t i) const { return flags_.at(i); }
+    // How many openings have any of `flag`; the openings fastchess' readers leave out, their position invalid, count
+    // as BOOK_ILLEGAL (they are not among the openings, nor in size()).
     [[nodiscard]] std::size_t count(uint8_t flag) const;
 
     // The escape lines of a PGN book (a '%' in the first column): ignored, as the PGN standard says, but read as
@@ -64,6 +66,7 @@ class BookScan {
     Kind kind_                = Kind::Epd;
     bool chess960_            = false;
     std::size_t escape_lines_ = 0;
+    std::size_t left_out_     = 0;  // by fastchess' reader, the position invalid
     std::variant<fastchess::book::EpdReader, fastchess::book::PgnReader, std::vector<std::string>> book_;
     std::vector<uint8_t> flags_;
 };

@@ -17,7 +17,8 @@ namespace fcg::tour {
 [[nodiscard]] bool readableFen(std::string_view fen);
 
 // A position the move generator may be given: one king of each colour, no pawn on the first or last rank, the side
-// not to move not in check. Any other a FEN can describe makes it read outside its tables.
+// not to move not in check, the side to move in check by two pieces at most. Any other a FEN can describe makes it
+// read outside its tables, or give moves that leave a king to be taken.
 [[nodiscard]] bool legalPosition(const chess::Board& board);
 
 // Whether the SAN reader may be given `san`: one that starts as castling does (O or 0) must be castling, "O-O" or
