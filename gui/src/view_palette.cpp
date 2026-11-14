@@ -79,6 +79,25 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         if (unfinished_) add(TR("Resume"), unfinished_->spec.name, [this] { resumeRun(); });
         if (!queue_.empty()) add(TR("Start now"), queue_.front().label, [this] { startFromQueue(); });
     }
+    // The engines that cannot start, as their card offers.
+    if (t) {
+        const bool editable =
+            t->spec().format == tour::Format::RoundRobin || t->spec().format == tour::Format::Gauntlet;
+        for (const auto& e : t->startFailures().engines()) {
+            const auto* p = t->spec().participant(e.participant);
+            if (!p || !p->active) continue;
+            if (run_.running() && !run_.stopping() && !e.trying) {
+                add(trf("Try again to start {}", e.name), name,
+                    [this, id = e.participant] { run_.tryEngineAgain(id); });
+            }
+            if (editable) {
+                add(trf("Withdraw {}…", e.name), name,
+                    [this, id = e.participant] { openParticipantEdit(tour::Edit::Kind::Withdraw, id); });
+                add(trf("Replace {}…", e.name), name,
+                    [this, id = e.participant] { openParticipantEdit(tour::Edit::Kind::ReplaceParticipant, id); });
+            }
+        }
+    }
     const bool ready = setupChosen() && !setupBadSprt();
     if (ready && !run_.running() && !startPending("start"))
         add(TR("Start"), TR("New tournament"), [this] { startRun(); });

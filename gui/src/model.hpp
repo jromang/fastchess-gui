@@ -262,6 +262,8 @@ struct MatchSetup {
 
     bool recover        = true;
     bool log_every_game = false;  // the engine log of every game, not only of those that end badly
+    // An engine that cannot start stops the tournament, rather than have its games set aside while the others go on.
+    bool stop_on_start_failure = false;
     bool check_mate_pvs = false;  // fastchess' -check-mate-pvs: a mate score's PV must end in mate
     bool notify         = true;
     bool resume_at_launch = true;  // the tournament running when the program ended, then the queue
@@ -325,7 +327,8 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,    \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,     \
         pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,     \
-        log_every_game, check_mate_pvs, notify, language, theme, ui_zoom, tile_info, live_seed_side, live_arrows, \
+        log_every_game, stop_on_start_failure, check_mate_pvs, notify, language, theme, ui_zoom, tile_info,       \
+        live_seed_side, live_arrows,                                                                              \
         panes, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, tlcs_lanes, broadcast_web, web_port,    \
         broadcast_follow, broadcast_lichess, lichess_round, lichess_listed, resume_at_launch, broadcast_tunnel,   \
         tunnel_service, tunnel_host, tunnel_port, tunnel_user, tunnel_remote_port, web_chat_link, web_discord_id

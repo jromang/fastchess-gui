@@ -89,6 +89,50 @@ class ConsoleListener final : public tour::RecordListener {
         }
     }
 
+    // The engines that cannot start: each try, the engine set aside or back, and the stop for want of it.
+    void onStartFailure(const tour::StartFailureEvent& event) override {
+        if (event.engines.empty()) return;
+        std::lock_guard<std::mutex> lock(mutex_);
+        using Kind     = tour::StartFailureEvent::Kind;
+        const auto& e  = event.engines.front();
+        const auto log = e.log.empty() ? std::string() : fmt::format("\n  engine log: {}", e.log.string());
+        switch (event.kind) {
+            case Kind::Retry:
+                std::fprintf(stderr, "warning: %s did not start (try %d of %d): %s; tried again in %lld s\n",
+                             e.name.c_str(), e.tries, tour::StartFailures::TRIES, e.error.c_str(),
+                             static_cast<long long>(tour::StartFailures::RETRY_PAUSE.count()));
+                break;
+            case Kind::SetAside:
+                std::fprintf(stderr,
+                             "warning: %s cannot start: %s\n  Its games are set aside and the others go on; it is "
+                             "tried again every %lld minutes.%s\n",
+                             e.name.c_str(), e.error.c_str(),
+                             static_cast<long long>(tour::StartFailures::RETRY_EVERY.count()), log.c_str());
+                break;
+            case Kind::StillFailing:
+                std::fprintf(stderr, "warning: %s still cannot start: %s\n", e.name.c_str(), e.error.c_str());
+                break;
+            case Kind::Stopped:
+                std::fprintf(stderr, "%s cannot start after %d tries: the tournament stops.%s\n", e.name.c_str(),
+                             e.tries, log.c_str());
+                break;
+            case Kind::Started:
+                std::printf("%s started again: its games are played again.\n", e.name.c_str());
+                break;
+            case Kind::Stalled: {
+                std::string names;
+                for (const auto& f : event.engines) names += (names.empty() ? "" : ", ") + f.name;
+                std::fprintf(stderr,
+                             "No game is left to play without %s, which cannot start: the tournament stops. Fix it, "
+                             "or withdraw or replace it in the window, then resume.\n",
+                             names.c_str());
+                break;
+            }
+        }
+        std::fflush(stdout);
+        std::fflush(stderr);
+    }
+
     void setAlready(uint64_t n) { already_ = n; }
 
     void printStatus() const {
@@ -152,6 +196,10 @@ class BothListeners final : public tour::RecordListener {
                     const std::optional<fastchess::Stats>& pair) override {
         first_.onRecorded(result, data, pair);
         second_.onRecorded(result, data, pair);
+    }
+    void onStartFailure(const tour::StartFailureEvent& event) override {
+        first_.onStartFailure(event);
+        second_.onStartFailure(event);
     }
 
    private:

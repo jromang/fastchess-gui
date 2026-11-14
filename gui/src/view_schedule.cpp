@@ -56,6 +56,15 @@ void App::applyTournamentEdit(const tour::Edit& edit) {
     refreshAfterEdit();
 }
 
+void App::openParticipantEdit(tour::Edit::Kind kind, int participant) {
+    edit_kind_        = static_cast<int>(kind);
+    edit_participant_ = participant;
+    if (kind == tour::Edit::Kind::ReplaceParticipant) edit_engine_.clear();  // the user picks the new engine
+    edit_message_.clear();
+    page_        = Page::Tournament;
+    tab_request_ = Tab::Schedule;
+}
+
 void App::undoTournamentEdit() {
     const auto error = run_.undoEdit();
     edit_error_      = !error.empty();

@@ -598,6 +598,7 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     spec.pgn_out           = setup.pgn_out;
     spec.pgn_out_chessbase = setup.export_style == PgnStyle::ChessBase;
     spec.conditions        = t;
+    spec.stop_on_start_failure = setup.stop_on_start_failure;
     if (setup.engine_syzygy) spec.forced_options.emplace_back("SyzygyPath", setup.tb_paths);
     if (setup.engine_ownbook_off) spec.forced_options.emplace_back("OwnBook", "false");
     for (std::size_t i = 0; i < run.engines.size(); ++i) {
@@ -765,6 +766,8 @@ MatchSetup quickTestSetup(const EngineEntry& engine, const std::string& opponent
     s.maxmoves         = 150;
     s.notify           = false;
     s.pgn_event        = s.name;
+    // An engine that cannot start leaves nothing to test: said at once, rather than after the other engine's games.
+    s.stop_on_start_failure = true;
     return s;
 }
 
@@ -1004,6 +1007,11 @@ void RunController::setPaused(bool paused) {
 }
 
 bool RunController::paused() const { return fastchess::observer::PauseGate::instance().paused(); }
+
+bool RunController::tryEngineAgain(int participant) {
+    if (state_ != State::Running || stop_requested_ || !tournament_) return false;
+    return tournament_->startFailures().tryNow(participant, tour::StartFailures::Clock::now());
+}
 
 void RunController::stopNow() {
     if (state_ != State::Running) return;

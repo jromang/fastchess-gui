@@ -323,6 +323,9 @@ msgstr "Опорный движок:"
 msgid "Another SSH server"
 msgstr "Другой SSH-сервер"
 
+msgid "Another engine of the list takes its place and plays its games, those it played included."
+msgstr "Его место занимает другой движок из списка и играет его партии, включая уже сыгранные."
+
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "Всё, что стоит о нём помнить; поиск движков находит этот текст."
 
@@ -1205,6 +1208,12 @@ msgstr "Его карточка в «Рейтингах»: результаты,
 msgid "Its games"
 msgstr "Его партии"
 
+msgid "Its games are set aside, the others go on. Next try in {}."
+msgstr "Его партии отложены, остальные продолжаются. Следующая попытка через {}."
+
+msgid "Its games left are dropped."
+msgstr "Его оставшиеся партии отменяются."
+
 msgid "Its games played so far stop counting"
 msgstr "Его уже сыгранные партии перестают учитываться"
 
@@ -1379,6 +1388,9 @@ msgstr "Имя в списке"
 msgid "Names of the list that are no library engine"
 msgstr "Имена из списка, которых нет среди движков библиотеки"
 
+msgid "Needs action"
+msgstr "Требует внимания"
+
 msgid "New engine A"
 msgstr "Новый движок A"
 
@@ -1432,6 +1444,9 @@ msgstr "В этом слоте пока нет партии."
 
 msgid "No game is being played."
 msgstr "Сейчас партии не играются."
+
+msgid "No game is left to play without it: the tournament stopped. Resume tries it again."
+msgstr "Без него не осталось ни одной партии: турнир остановлен. «Продолжить» попробует снова."
 
 msgid "No game yet."
 msgstr "Партий пока нет."
@@ -1621,6 +1636,9 @@ msgstr "Параметры не отправлены: {}"
 
 msgid "Order:"
 msgstr "Порядок:"
+
+msgid "Otherwise an engine still not started after {} tries, {} s apart, has its games set aside while the others go on; it is tried again every {} minutes, and the tournament stops only when nothing else is left to play."
+msgstr "Иначе партии движка, который так и не запустился после {} попыток с интервалом {} с, откладываются, а остальные продолжаются; его пробуют снова каждые {} минут, и турнир останавливается, только когда играть больше нечего."
 
 msgid "Otherwise an engine that crashes or hangs stops the whole match."
 msgstr "Иначе вылетевший или зависший движок остановит весь матч."
@@ -1964,11 +1982,17 @@ msgstr "Заменить движок"
 msgid "Replace the template {}?"
 msgstr "Заменить шаблон {}?"
 
+msgid "Replace {}…"
+msgstr "Заменить {}…"
+
 msgid "Replaced by"
 msgstr "Заменён на"
 
 msgid "Replaces your layout of that name."
 msgstr "Заменит вашу раскладку с этим именем."
+
+msgid "Replace…"
+msgstr "Заменить…"
 
 msgid "Resign"
 msgstr "Сдача"
@@ -2219,11 +2243,17 @@ msgstr "Остановить и выйти"
 msgid "Stop now (running games are lost)"
 msgstr "Остановить сейчас (текущие партии будут потеряны)"
 
+msgid "Stop the tournament when an engine cannot start"
+msgstr "Останавливать турнир, если движок не запускается"
+
 msgid "Stopped"
 msgstr "Остановлен"
 
 msgid "Stopped before the end."
 msgstr "Остановлен до окончания."
+
+msgid "Stopped: no game is left to play without {}, which cannot start"
+msgstr "Остановлен: без {}, который не запускается, не осталось ни одной партии"
 
 msgid "Stopping after the running games ({})"
 msgstr "Остановка после текущих партий ({})"
@@ -2323,6 +2353,9 @@ msgstr "Параметры PGN настройки, для будущих тур�
 
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "По стандарту PGN это комментарии. fastchess-gui 0.4.13 и более ранние версии читали их как ходы и могли играть некоторые дебюты этой книги из неверной позиции, часто из начальной."
+
+msgid "The Schedule tab shows the impact before anything changes."
+msgstr "Вкладка «Расписание» показывает последствия до того, как что-либо изменится."
 
 msgid "The average rating of the opponents met, game by game."
 msgstr "Средний рейтинг соперников, партия за партией."
@@ -2525,6 +2558,9 @@ msgstr "Время на ход должно быть положительным.
 msgid "The tournament is not running: resume it to play the new games."
 msgstr "Турнир не запущен: возобновите его, чтобы сыграть новые партии."
 
+msgid "The tournament is stopped: Resume tries it again."
+msgstr "Турнир остановлен: «Продолжить» попробует снова."
+
 msgid "The tournament running when the program ended is over: the queue goes on."
 msgstr "Турнир, шедший при завершении программы, окончен: очередь продолжается."
 
@@ -2597,11 +2633,23 @@ msgstr "Турниры и PGN-файлы, в которых он играл."
 msgid "Tournaments folder"
 msgstr "Папка турниров"
 
+msgid "Tried again in {}."
+msgstr "Новая попытка через {}."
+
 msgid "Trust the new key"
 msgstr "Доверять новому ключу"
 
 msgid "Try again"
 msgstr "Повторить"
+
+msgid "Try again to start {}"
+msgstr "Снова попробовать запустить {}"
+
+msgid "Try to start it now, rather than at its next try: its games come back if it starts."
+msgstr "Попробуйте запустить его сейчас, а не при следующей попытке: если он запустится, его партии вернутся."
+
+msgid "Trying to start it now…"
+msgstr "Пробуем запустить…"
 
 msgid "Tunnel: connecting to {}"
 msgstr "Туннель: подключение к {}"
@@ -2690,6 +2738,9 @@ msgstr "Веб-страница"
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr "Что проверяет тестер перед отправкой партий в рейтинг-лист. «Экспорт для рейтинг-листа…» на вкладке «Партии» исключает аннулированные партии и дубликаты."
 
+msgid "What was sent to the engines of its last try and what they answered, their error output included:\n{}"
+msgstr "Что было отправлено движкам при последней попытке и что они ответили, включая вывод ошибок:\n{}"
+
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "Когда в среднем он останавливался на сыгранном ходе: решение задолго до конца затраченного времени говорит о том, что время использовалось неэффективно."
 
@@ -2758,6 +2809,12 @@ msgstr "С часами: физические ядра − 1, делённые �
 
 msgid "Withdraw an engine"
 msgstr "Снять движок"
+
+msgid "Withdraw {}…"
+msgstr "Снять {}…"
+
+msgid "Withdraw…"
+msgstr "Снять…"
 
 msgid "Without a book, every game starts from the initial position."
 msgstr "Без книги каждая партия начинается из начальной позиции."
@@ -3074,6 +3131,12 @@ msgstr "{} требует перезапуска для каждой парти�
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} не читается, поэтому ранее доверенные ключи хостов неизвестны: на {} ничего не отправлено. Исправьте файл или удалите его, чтобы снова принять ключ сервера."
 
+msgid "{} cannot start"
+msgstr "{} не запускается"
+
+msgid "{} cannot start: {}. Its games are set aside, the others go on."
+msgstr "{} не запускается: {}. Его партии отложены, остальные продолжаются."
+
 msgid "{} changed: its options were read again."
 msgstr "{} изменился: его опции перечитаны."
 
@@ -3097,6 +3160,9 @@ msgstr "вылетов: {}"
 
 msgid "{} did not show an RSA host key"
 msgstr "{} не предъявил RSA-ключ хоста"
+
+msgid "{} did not start (try {} of {})"
+msgstr "{} не запустился (попытка {} из {})"
 
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} не пускает пользователя «{}» без ключа или пароля (принимает: {})"
@@ -3413,6 +3479,9 @@ msgstr[2] "Выбрано {}"
 msgid "{} shown"
 msgstr "показано: {}"
 
+msgid "{} started again: its games are played again."
+msgstr "{} снова запускается: его партии снова играются."
+
 msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"
 msgstr[0] "{} неоднозначный"
@@ -3496,6 +3565,9 @@ msgstr "{}: ключ хоста нельзя использовать (толь�
 
 msgid "{}: the host key's signature is not valid"
 msgstr "{}: подпись ключа хоста недействительна"
+
+msgid "{}: trying to start it again."
+msgstr "{}: новая попытка запуска."
 
 msgid "{}: unknown to the engine"
 msgstr "{}: неизвестен движку"

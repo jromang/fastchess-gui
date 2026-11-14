@@ -371,6 +371,9 @@ class App {
     void drawEditPanel();
     void applyTournamentEdit(const tour::Edit& edit);
     void undoTournamentEdit();
+    // The Schedule tab's change panel, set to withdraw or replace `participant`: its impact shows before anything
+    // changes.
+    void openParticipantEdit(tour::Edit::Kind kind, int participant);
     void refreshAfterEdit();
 
     // broadcast
@@ -542,6 +545,13 @@ class App {
     void startFromQueue(bool go_on = false, std::size_t from = 0, const std::string& label = {});
     void drawQueue();
     void drawHealth();  // the home page's: incidents of the last 24 hours, memory, engine processes
+    // The engines of the open tournament that cannot start (tour::StartFailures): which one, the error, its engine
+    // log, and Try again, Withdraw…, Replace…. A card of its own, under `title` when given; nothing when every engine
+    // starts. The tournament header and the home page show it alike.
+    bool drawStartFailures(const char* title = nullptr);
+    // An engine set aside, back, or the tournament stopped for want of one: told once each, in the log, and on the
+    // desktop when an engine is set aside.
+    void watchStartFailures();
     // About how long the running tournament has left at its pace; nullopt without a game count or a pace yet.
     [[nodiscard]] std::optional<double> runSecondsLeft() const;
     void drawRelaunch();  // "Relaunch with…" of a finished match
@@ -794,6 +804,12 @@ class App {
         std::string key;  // tournament version and the whole edit
         tour::Impact impact;
     } edit_preview_;
+
+    // watchStartFailures(): the run it watches (by its start), the version of its StartFailures seen, and the
+    // participants told set aside.
+    Clock::time_point start_failures_run_{};
+    uint64_t start_failures_seen_ = ~uint64_t(0);
+    std::set<int> start_failures_told_;
 
     // Queue and relaunch.
     std::vector<QueuedTournament> queue_;

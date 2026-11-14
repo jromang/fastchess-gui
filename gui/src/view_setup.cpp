@@ -924,6 +924,13 @@ void App::setupPgn() {
     ImGui::Spacing();
     changed |= ImGui::Checkbox(TR("Restart an engine that crashes"), &setup_.recover);
     ui::help(TR("Otherwise an engine that crashes or hangs stops the whole match."));
+    changed |= ImGui::Checkbox(TR("Stop the tournament when an engine cannot start"), &setup_.stop_on_start_failure);
+    ui::help(trf("Otherwise an engine still not started after {} tries, {} s apart, has its games set aside while the "
+                 "others go on; it is tried again every {} minutes, and the tournament stops only when nothing else "
+                 "is left to play.",
+                 tour::StartFailures::TRIES, tour::StartFailures::RETRY_PAUSE.count(),
+                 tour::StartFailures::RETRY_EVERY.count())
+                 .c_str());
     changed |= ImGui::Checkbox(TR("Keep the engine log of every game"), &setup_.log_every_game);
     ui::help(
         TR("Every line exchanged with the engines, in logs/ in the tournament folder, opened from the Games tab. "

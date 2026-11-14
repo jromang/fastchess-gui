@@ -626,9 +626,44 @@ void App::pollRun() {
         }
     }
 
+    watchStartFailures();
     if (run_.takeFinishedEvent()) onRunFinished();
 
     if (quit_pending_ && !run_.running()) quit_ = true;
+}
+
+void App::watchStartFailures() {
+    const auto* t = run_.tournament();
+    if (!t || !quick_test_engine_.empty()) return;
+    if (run_.info().started != start_failures_run_) {
+        start_failures_run_  = run_.info().started;
+        start_failures_seen_ = ~uint64_t(0);
+        start_failures_told_.clear();
+    }
+    const auto& failures = t->startFailures();
+    if (failures.version() == start_failures_seen_) return;
+    start_failures_seen_ = failures.version();
+
+    std::set<int> failed, failing;
+    for (const auto& e : failures.engines()) {
+        const auto* p = t->spec().participant(e.participant);
+        if (!p || !p->active) continue;
+        failing.insert(e.participant);
+        if (!e.failed) continue;
+        failed.insert(e.participant);
+        if (start_failures_told_.count(e.participant)) continue;
+        // A tournament that stops for it says so at its end; otherwise the night goes on, and the tester is told.
+        if (t->spec().stop_on_start_failure) continue;
+        const auto text = trf("{} cannot start: {}. Its games are set aside, the others go on.", e.name, e.error);
+        Console::instance().add(text, true);
+        if (setup_.notify) notifyRunFinished(window_, t->spec().name, text);
+    }
+    for (const int id : start_failures_told_) {
+        const auto* p = t->spec().participant(id);
+        if (p && p->active && !failing.count(id))
+            Console::instance().add(trf("{} started again: its games are played again.", p->engine.name));
+    }
+    start_failures_told_ = std::move(failed);
 }
 
 void App::onRunFinished() {
@@ -652,10 +687,19 @@ void App::onRunFinished() {
     resume_guarded_ = false;
 
     std::string verdict;
+    const auto* stalled = run_.tournament();
+    if (stalled && !stalled->startFailures().stalled()) stalled = nullptr;
     if (!error.empty()) {
         verdict = trf("Error: {}", error);
     } else if (fastchess::atomic::abnormal_termination && !run_.stoppedByUser()) {
         verdict = TR("Interrupted: an engine crashed or stopped responding (see Console)");
+    } else if (stalled && !run_.stoppedByUser()) {
+        std::string names;
+        for (const auto& e : stalled->startFailures().engines()) {
+            const auto* p = stalled->spec().participant(e.participant);
+            if (p && p->active) names += (names.empty() ? "" : ", ") + e.name;
+        }
+        verdict = trf("Stopped: no game is left to play without {}, which cannot start", names);
     } else if (info.sprt && sprt_ && current_.llr >= sprt_->getUpperBound()) {
         verdict = trf("SPRT finished: H1 accepted, {} is stronger", info.engine_a);
     } else if (info.sprt && sprt_ && current_.llr <= sprt_->getLowerBound()) {

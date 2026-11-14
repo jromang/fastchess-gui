@@ -315,6 +315,9 @@ msgstr "锚点："
 msgid "Another SSH server"
 msgstr "其他 SSH 服务器"
 
+msgid "Another engine of the list takes its place and plays its games, those it played included."
+msgstr "由列表中的另一个引擎接替它，并下它的对局，包括它已下过的。"
+
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "关于它需要记住的任何内容；搜索引擎时可以搜到。"
 
@@ -1195,6 +1198,12 @@ msgstr "它在“等级分”中的信息卡：所有锦标赛中的成绩、稳
 msgid "Its games"
 msgstr "它的对局"
 
+msgid "Its games are set aside, the others go on. Next try in {}."
+msgstr "它的对局已搁置，其他对局继续。下次尝试在 {} 后。"
+
+msgid "Its games left are dropped."
+msgstr "它剩下的对局将被取消。"
+
 msgid "Its games played so far stop counting"
 msgstr "它已下的对局不再计分"
 
@@ -1369,6 +1378,9 @@ msgstr "列表中的名称"
 msgid "Names of the list that are no library engine"
 msgstr "列表中不属于库中引擎的名称"
 
+msgid "Needs action"
+msgstr "需要处理"
+
 msgid "New engine A"
 msgstr "新引擎 A"
 
@@ -1422,6 +1434,9 @@ msgstr "此位置还没有对局。"
 
 msgid "No game is being played."
 msgstr "当前没有正在进行的对局。"
+
+msgid "No game is left to play without it: the tournament stopped. Resume tries it again."
+msgstr "没有它就没有可下的对局了：锦标赛已停止。继续时会再次尝试。"
 
 msgid "No game yet."
 msgstr "还没有对局。"
@@ -1611,6 +1626,9 @@ msgstr "未发送的选项：{}"
 
 msgid "Order:"
 msgstr "排序："
+
+msgid "Otherwise an engine still not started after {} tries, {} s apart, has its games set aside while the others go on; it is tried again every {} minutes, and the tournament stops only when nothing else is left to play."
+msgstr "否则，一个引擎在 {} 次尝试（间隔 {} 秒）后仍未启动，它的对局会被搁置，其他对局继续；每 {} 分钟再尝试一次，只有在没有其他对局可下时锦标赛才会停止。"
 
 msgid "Otherwise an engine that crashes or hangs stops the whole match."
 msgstr "否则一个崩溃或卡住的引擎会让整场比赛停止。"
@@ -1946,11 +1964,17 @@ msgstr "替换引擎"
 msgid "Replace the template {}?"
 msgstr "替换模板 {}？"
 
+msgid "Replace {}…"
+msgstr "替换 {}…"
+
 msgid "Replaced by"
 msgstr "替换为"
 
 msgid "Replaces your layout of that name."
 msgstr "将替换你同名的布局。"
+
+msgid "Replace…"
+msgstr "替换…"
 
 msgid "Resign"
 msgstr "认输"
@@ -2199,11 +2223,17 @@ msgstr "停止并退出"
 msgid "Stop now (running games are lost)"
 msgstr "立即停止（进行中的对局将丢失）"
 
+msgid "Stop the tournament when an engine cannot start"
+msgstr "引擎无法启动时停止锦标赛"
+
 msgid "Stopped"
 msgstr "已停止"
 
 msgid "Stopped before the end."
 msgstr "在结束前停止。"
+
+msgid "Stopped: no game is left to play without {}, which cannot start"
+msgstr "已停止：没有无法启动的 {} 就没有可下的对局了"
 
 msgid "Stopping after the running games ({})"
 msgstr "下完进行中的对局后停止（{}）"
@@ -2303,6 +2333,9 @@ msgstr "设置的 PGN 选项，用于以后的锦标赛。"
 
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "按 PGN 标准，这些是注释。fastchess-gui 0.4.13 及更早版本把它们当作着法读取，可能从错误的局面（常常是初始局面）开始下此开局库中的某些开局。"
+
+msgid "The Schedule tab shows the impact before anything changes."
+msgstr "赛程标签页会在任何改动之前显示影响。"
 
 msgid "The average rating of the opponents met, game by game."
 msgstr "逐局计算的所遇对手平均等级分。"
@@ -2505,6 +2538,9 @@ msgstr "每步时间必须为正数。"
 msgid "The tournament is not running: resume it to play the new games."
 msgstr "锦标赛没有在进行：请恢复它以下新的对局。"
 
+msgid "The tournament is stopped: Resume tries it again."
+msgstr "锦标赛已停止：继续时会再次尝试。"
+
 msgid "The tournament running when the program ended is over: the queue goes on."
 msgstr "程序结束时正在进行的锦标赛已完成：队列继续。"
 
@@ -2577,11 +2613,23 @@ msgstr "它参加过的锦标赛和 PGN 文件。"
 msgid "Tournaments folder"
 msgstr "锦标赛文件夹"
 
+msgid "Tried again in {}."
+msgstr "{} 后再次尝试。"
+
 msgid "Trust the new key"
 msgstr "信任新密钥"
 
 msgid "Try again"
 msgstr "重试"
+
+msgid "Try again to start {}"
+msgstr "再次尝试启动 {}"
+
+msgid "Try to start it now, rather than at its next try: its games come back if it starts."
+msgstr "现在就尝试启动它，而不是等到下次尝试：如果它启动了，它的对局就会恢复。"
+
+msgid "Trying to start it now…"
+msgstr "正在尝试启动…"
 
 msgid "Tunnel: connecting to {}"
 msgstr "隧道：正在连接 {}"
@@ -2670,6 +2718,9 @@ msgstr "网页"
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr "测试者向等级分列表提交对局前检查的内容。“对局”页中的“导出给等级分列表…”会去除作废对局和重复对局。"
 
+msgid "What was sent to the engines of its last try and what they answered, their error output included:\n{}"
+msgstr "上次尝试时发送给引擎的内容以及它们的回复，包括错误输出：\n{}"
+
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "它平均何时确定最终走出的着法：如果远早于所用时间结束就已确定，说明时间没有用好。"
 
@@ -2738,6 +2789,12 @@ msgstr "按时间：物理核心数 − 1，再除以引擎的线程数；按节
 
 msgid "Withdraw an engine"
 msgstr "让一个引擎退赛"
+
+msgid "Withdraw {}…"
+msgstr "让 {} 退赛…"
+
+msgid "Withdraw…"
+msgstr "退赛…"
 
 msgid "Without a book, every game starts from the initial position."
 msgstr "没有开局库时，每局对局都从初始局面开始。"
@@ -3050,6 +3107,12 @@ msgstr "{} 要求每局都重新启动：已勾选“每局对局都重启引擎
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "无法读取 {}，因此之前信任的主机密钥未知：未向 {} 发送任何内容。请修复该文件，或删除它以重新信任服务器的密钥。"
 
+msgid "{} cannot start"
+msgstr "{} 无法启动"
+
+msgid "{} cannot start: {}. Its games are set aside, the others go on."
+msgstr "{} 无法启动：{}。它的对局已搁置，其他对局继续。"
+
 msgid "{} changed: its options were read again."
 msgstr "{} 已改变：已重新读取其选项。"
 
@@ -3069,6 +3132,9 @@ msgstr "{} 次崩溃"
 
 msgid "{} did not show an RSA host key"
 msgstr "{} 未提供 RSA 主机密钥"
+
+msgid "{} did not start (try {} of {})"
+msgstr "{} 未能启动（第 {} 次尝试，共 {} 次）"
 
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} 不允许用户“{}”无密钥或密码登录（它接受：{}）"
@@ -3313,6 +3379,9 @@ msgstr[0] "已选 {} 个"
 msgid "{} shown"
 msgstr "显示 {} 个"
 
+msgid "{} started again: its games are played again."
+msgstr "{} 已重新启动：它的对局重新开始。"
+
 msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"
 msgstr[0] "{} 个有歧义"
@@ -3390,6 +3459,9 @@ msgstr "{}：主机密钥不可用（仅支持 2048 至 4096 位的 RSA 密钥�
 
 msgid "{}: the host key's signature is not valid"
 msgstr "{}：主机密钥的签名无效"
+
+msgid "{}: trying to start it again."
+msgstr "{}：再次尝试启动。"
 
 msgid "{}: unknown to the engine"
 msgstr "{}：引擎不认识"

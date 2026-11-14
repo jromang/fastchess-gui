@@ -319,6 +319,9 @@ msgstr ""
 msgid "Another SSH server"
 msgstr ""
 
+msgid "Another engine of the list takes its place and plays its games, those it played included."
+msgstr ""
+
 msgid "Anything to remember about it; the engine searches find it."
 msgstr ""
 
@@ -1200,6 +1203,12 @@ msgstr ""
 msgid "Its games"
 msgstr ""
 
+msgid "Its games are set aside, the others go on. Next try in {}."
+msgstr ""
+
+msgid "Its games left are dropped."
+msgstr ""
+
 msgid "Its games played so far stop counting"
 msgstr ""
 
@@ -1374,6 +1383,9 @@ msgstr ""
 msgid "Names of the list that are no library engine"
 msgstr ""
 
+msgid "Needs action"
+msgstr ""
+
 msgid "New engine A"
 msgstr ""
 
@@ -1426,6 +1438,9 @@ msgid "No game in this slot yet."
 msgstr ""
 
 msgid "No game is being played."
+msgstr ""
+
+msgid "No game is left to play without it: the tournament stopped. Resume tries it again."
 msgstr ""
 
 msgid "No game yet."
@@ -1615,6 +1630,9 @@ msgid "Options not sent: {}"
 msgstr ""
 
 msgid "Order:"
+msgstr ""
+
+msgid "Otherwise an engine still not started after {} tries, {} s apart, has its games set aside while the others go on; it is tried again every {} minutes, and the tournament stops only when nothing else is left to play."
 msgstr ""
 
 msgid "Otherwise an engine that crashes or hangs stops the whole match."
@@ -1955,10 +1973,16 @@ msgstr ""
 msgid "Replace the template {}?"
 msgstr ""
 
+msgid "Replace {}…"
+msgstr ""
+
 msgid "Replaced by"
 msgstr ""
 
 msgid "Replaces your layout of that name."
+msgstr ""
+
+msgid "Replace…"
 msgstr ""
 
 msgid "Resign"
@@ -2209,10 +2233,16 @@ msgstr ""
 msgid "Stop now (running games are lost)"
 msgstr ""
 
+msgid "Stop the tournament when an engine cannot start"
+msgstr ""
+
 msgid "Stopped"
 msgstr ""
 
 msgid "Stopped before the end."
+msgstr ""
+
+msgid "Stopped: no game is left to play without {}, which cannot start"
 msgstr ""
 
 msgid "Stopping after the running games ({})"
@@ -2312,6 +2342,9 @@ msgid "The PGN options of the setup, for the tournaments to come."
 msgstr ""
 
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
+msgstr ""
+
+msgid "The Schedule tab shows the impact before anything changes."
 msgstr ""
 
 msgid "The average rating of the opponents met, game by game."
@@ -2515,6 +2548,9 @@ msgstr ""
 msgid "The tournament is not running: resume it to play the new games."
 msgstr ""
 
+msgid "The tournament is stopped: Resume tries it again."
+msgstr ""
+
 msgid "The tournament running when the program ended is over: the queue goes on."
 msgstr ""
 
@@ -2587,10 +2623,22 @@ msgstr ""
 msgid "Tournaments folder"
 msgstr ""
 
+msgid "Tried again in {}."
+msgstr ""
+
 msgid "Trust the new key"
 msgstr ""
 
 msgid "Try again"
+msgstr ""
+
+msgid "Try again to start {}"
+msgstr ""
+
+msgid "Try to start it now, rather than at its next try: its games come back if it starts."
+msgstr ""
+
+msgid "Trying to start it now…"
 msgstr ""
 
 msgid "Tunnel: connecting to {}"
@@ -2680,6 +2728,9 @@ msgstr ""
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr ""
 
+msgid "What was sent to the engines of its last try and what they answered, their error output included:\n{}"
+msgstr ""
+
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr ""
 
@@ -2747,6 +2798,12 @@ msgid "With a time: physical cores − 1, divided by the engines' threads; with 
 msgstr ""
 
 msgid "Withdraw an engine"
+msgstr ""
+
+msgid "Withdraw {}…"
+msgstr ""
+
+msgid "Withdraw…"
 msgstr ""
 
 msgid "Without a book, every game starts from the initial position."
@@ -3062,6 +3119,12 @@ msgstr ""
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr ""
 
+msgid "{} cannot start"
+msgstr ""
+
+msgid "{} cannot start: {}. Its games are set aside, the others go on."
+msgstr ""
+
 msgid "{} changed: its options were read again."
 msgstr ""
 
@@ -3082,6 +3145,9 @@ msgid "{} crashes"
 msgstr ""
 
 msgid "{} did not show an RSA host key"
+msgstr ""
+
+msgid "{} did not start (try {} of {})"
 msgstr ""
 
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
@@ -3363,6 +3429,9 @@ msgstr[1] ""
 msgid "{} shown"
 msgstr ""
 
+msgid "{} started again: its games are played again."
+msgstr ""
+
 msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"
 msgstr[0] ""
@@ -3442,6 +3511,9 @@ msgid "{}: the host key cannot be used (RSA keys of 2048 to 4096 bits only)"
 msgstr ""
 
 msgid "{}: the host key's signature is not valid"
+msgstr ""
+
+msgid "{}: trying to start it again."
 msgstr ""
 
 msgid "{}: unknown to the engine"
