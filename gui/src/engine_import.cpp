@@ -254,7 +254,8 @@ bool executable(const fs::directory_entry& entry) {
 #else
     const auto perms = entry.status(ec).permissions();
     const auto ext   = lower(entry.path().extension().string());
-    return (perms & fs::perms::owner_exec) != fs::perms::none && ext != ".sh" && ext != ".py" && ext != ".so";
+    return (perms & fs::perms::owner_exec) != fs::perms::none && ext != ".sh" && ext != ".py" && ext != ".so" &&
+           ext != ".dylib";
 #endif
 }
 

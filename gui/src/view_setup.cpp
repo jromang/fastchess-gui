@@ -679,11 +679,14 @@ void App::setupConcurrency() {
     ImGui::EndDisabled();
     if (!setup_.concurrency_auto) setup_.concurrency = std::clamp(setup_.concurrency, 1, topology_.logical);
 
-    changed |= ImGui::Checkbox(TR("CPU affinity"), &setup_.affinity);
-    ui::help(
-        TR("Pins every game to its own processor, shared by its two engines since they never think at the "
-           "same time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to "
-           "a node count."));
+    // macOS cannot pin a process to a processor.
+    if constexpr (AFFINITY_SUPPORTED) {
+        changed |= ImGui::Checkbox(TR("CPU affinity"), &setup_.affinity);
+        ui::help(
+            TR("Pins every game to its own processor, shared by its two engines since they never think at the "
+               "same time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to "
+               "a node count."));
+    }
 
     // Warn about oversubscription, which distorts timed games.
     int threads         = 1;
@@ -700,7 +703,7 @@ void App::setupConcurrency() {
         for (const auto& p : setup_.participants) consider(p.name, p.threads);
     }
 
-    if (setup_.affinity && threads > 1) {
+    if (AFFINITY_SUPPORTED && setup_.affinity && threads > 1) {
         ImGui::TextColored(ui::MUTED4, TR("Affinity ignored: an engine uses %d threads."), threads);
     }
     if (value * threads > topology_.logical) {

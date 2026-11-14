@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.24)
 
+# macOS 11 (Big Sur) and later, the first to run on Apple silicon. Before project(), where CMake reads it; nothing
+# elsewhere. A universal binary: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64".
+set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "The oldest macOS version the programs run on")
+
 project(fastchess_gui VERSION 0.5.8 LANGUAGES C CXX)
 
 option(FCG_BUILD_GUI "Build the fastchess-gui desktop application" ON)
@@ -12,14 +16,19 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-if(FCG_STATIC_RUNTIME AND NOT WIN32)
+if(FCG_STATIC_RUNTIME AND NOT WIN32 AND NOT APPLE)
     add_link_options(-static-libstdc++ -static-libgcc)
 endif()
 
 # Small release binaries: drop unused functions and strip symbols.
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-ffunction-sections -fdata-sections)
-    add_link_options(-Wl,--gc-sections -s)
+    if(APPLE)
+        # Apple's linker says it its own way: -dead_strip, and -S -x for the debug and local symbols.
+        add_link_options(-Wl,-dead_strip -Wl,-S -Wl,-x)
+    else()
+        add_link_options(-Wl,--gc-sections -s)
+    endif()
 endif()
 
 # ---------------------------------------------------------------------------
@@ -68,8 +77,10 @@ find_package(Threads REQUIRED)
 target_link_libraries(fastchess_core PUBLIC Threads::Threads)
 
 if(NOT WIN32)
-    # Same probes as app/configuration/spawn-check.mk
+    # Same probes as app/configuration/spawn-check.mk, with -Werror as there: on macOS a function newer than the
+    # oldest version supported is only a warning, and the program would not start on that version.
     include(CheckCXXSourceCompiles)
+    set(CMAKE_REQUIRED_FLAGS -Werror)
     check_cxx_source_compiles([[
         #include <spawn.h>
         int main() { posix_spawn_file_actions_t fa; posix_spawn_file_actions_init(&fa);
@@ -78,6 +89,7 @@ if(NOT WIN32)
         #include <spawn.h>
         int main() { posix_spawn_file_actions_t fa; posix_spawn_file_actions_init(&fa);
                      return posix_spawn_file_actions_addchdir_np(&fa, "/"); }]] FC_HAVE_ADDCHDIR_NP)
+    unset(CMAKE_REQUIRED_FLAGS)
     if(FC_HAVE_ADDCHDIR)
         target_compile_definitions(fastchess_core PUBLIC HAVE_POSIX_SPAWN_FILE_ACTIONS_ADDCHDIR)
     elseif(FC_HAVE_ADDCHDIR_NP)
@@ -335,16 +347,31 @@ if(FCG_BUILD_GUI)
         target_link_libraries(fcg_lib PUBLIC ws2_32)
     endif()
 
-    set(FCG_WIN_RESOURCES "")
+    set(FCG_PLATFORM_SOURCES "")
     if(WIN32)
         enable_language(RC)
-        set(FCG_WIN_RESOURCES ${CMAKE_CURRENT_SOURCE_DIR}/gui/win/fastchess-gui.rc)
+        set(FCG_PLATFORM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/gui/win/fastchess-gui.rc)
+    elseif(APPLE)
+        # The application's icon (written by the test "logo: the macOS icon is the logo drawn"), in the bundle.
+        set(FCG_PLATFORM_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/gui/mac/fastchess-gui.icns)
+        set_source_files_properties(${FCG_PLATFORM_SOURCES} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
     endif()
 
-    add_executable(fastchess-gui WIN32 ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/main.cpp ${FCG_WIN_RESOURCES})
+    # On macOS an application bundle, fastchess-gui.app.
+    add_executable(fastchess-gui WIN32 MACOSX_BUNDLE ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/main.cpp
+                   ${FCG_PLATFORM_SOURCES})
     target_link_libraries(fastchess-gui PRIVATE fcg_lib)
     if(WIN32)
         target_link_options(fastchess-gui PRIVATE -static -static-libgcc -static-libstdc++)
+    endif()
+    if(APPLE)
+        set_target_properties(fastchess-gui PROPERTIES
+            MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/gui/mac/Info.plist.in
+            MACOSX_BUNDLE_BUNDLE_NAME fastchess-gui
+            MACOSX_BUNDLE_GUI_IDENTIFIER io.github.jromang.fastchess-gui
+            MACOSX_BUNDLE_ICON_FILE fastchess-gui.icns
+            MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
+            MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION})
     endif()
 
     if(FCG_BUILD_TESTS)

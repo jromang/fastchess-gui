@@ -11,14 +11,11 @@
 #include <core/config/config.hpp>
 #include <engine/uci_engine.hpp>
 
+#include "../../tournament/tests/self_path.hpp"
 #include "engines.hpp"
 #include "run.hpp"
 #include "suite_run.hpp"
 #include "wb2uci.hpp"
-
-#ifdef _WIN32
-#    include <windows.h>
-#endif
 
 using namespace fcg;
 namespace fs = std::filesystem;
@@ -53,15 +50,7 @@ struct Wire {
     }
 };
 
-fs::path self() {
-#ifdef _WIN32
-    char buffer[MAX_PATH];
-    const auto n = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-    return fs::path(std::string(buffer, n));
-#else
-    return fs::read_symlink("/proc/self/exe");
-#endif
-}
+fs::path self() { return fcg::test::selfPath(); }
 
 }  // namespace
 

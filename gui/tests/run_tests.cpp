@@ -14,6 +14,7 @@
 #include <core/globals/globals.hpp>
 #include <engine/uci_engine.hpp>
 
+#include "../../tournament/tests/self_path.hpp"
 #include "app.hpp"
 #include "engines.hpp"
 #include "headless.hpp"
@@ -38,15 +39,7 @@ using namespace std::chrono_literals;
 namespace {
 
 // The test binary.
-fs::path self() {
-#ifdef _WIN32
-    char buffer[MAX_PATH];
-    const auto n = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-    return fs::path(std::string(buffer, n));
-#else
-    return fs::read_symlink("/proc/self/exe");
-#endif
-}
+fs::path self() { return fcg::test::selfPath(); }
 
 // The mock engine is built next to the test binary.
 std::string randomMover() { return (self().parent_path() / FCG_RANDOM_MOVER).string(); }

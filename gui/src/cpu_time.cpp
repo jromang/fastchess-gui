@@ -4,6 +4,13 @@
 #    include <windows.h>
 // windows.h first
 #    include <tlhelp32.h>
+#elif defined(__APPLE__)
+#    include <libproc.h>
+#    include <mach/kern_return.h>
+#    include <mach/mach_time.h>
+#    include <sys/proc_info.h>
+
+#    include "proc_tree.hpp"
 #else
 #    include <unistd.h>
 
@@ -57,6 +64,39 @@ int64_t cpuTimeMs(const std::vector<int64_t>& pids) {
         CloseHandle(process);
     }
     return any ? total : -1;
+}
+
+#elif defined(__APPLE__)
+
+std::vector<int64_t> processTree(int64_t pid) {
+    std::vector<int64_t> out;
+    if (pid <= 0) return out;
+    out.push_back(pid);
+    // Bounded, for a process that starts processes without end.
+    for (std::size_t i = 0; i < out.size() && out.size() < 4096; ++i) {
+        for (const int child : childProcesses(static_cast<int>(out[i]))) out.push_back(child);
+    }
+    return out;
+}
+
+int64_t cpuTimeMs(const std::vector<int64_t>& pids) {
+    // The times are in Mach absolute time units: nanoseconds on Intel, not on Apple silicon.
+    static const mach_timebase_info_data_t timebase = [] {
+        mach_timebase_info_data_t t{};
+        if (mach_timebase_info(&t) != KERN_SUCCESS || t.numer == 0 || t.denom == 0) t = {1, 1};
+        return t;
+    }();
+    uint64_t units = 0;
+    bool any       = false;
+    for (const auto pid : pids) {
+        proc_taskinfo info{};
+        if (proc_pidinfo(static_cast<int>(pid), PROC_PIDTASKINFO, 0, &info, sizeof(info)) !=
+            static_cast<int>(sizeof(info)))
+            continue;
+        units += info.pti_total_user + info.pti_total_system;
+        any = true;
+    }
+    return any ? static_cast<int64_t>(units * timebase.numer / timebase.denom / 1'000'000) : -1;
 }
 
 #else

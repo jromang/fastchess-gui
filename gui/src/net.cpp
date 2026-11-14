@@ -63,7 +63,20 @@ void ensureStarted() {}
 void closeHandle(Handle fd) { ::close(fd); }
 constexpr Handle INVALID = -1;
 // The engines started while a server runs must not inherit its socket (they would keep its port).
+#    ifdef __APPLE__
+// macOS has neither SOCK_CLOEXEC nor accept4: the flag is set just after. It has no MSG_NOSIGNAL either, but
+// SO_NOSIGPIPE: a client gone does not kill the program with SIGPIPE.
+Handle ownSocket(Handle fd) {
+    if (fd < 0) return fd;
+    fcntl(fd, F_SETFD, FD_CLOEXEC);
+    int yes = 1;
+    setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &yes, sizeof(yes));
+    return fd;
+}
+Handle openSocket(int type, int family = AF_INET) { return ownSocket(socket(family, type, 0)); }
+#    else
 Handle openSocket(int type, int family = AF_INET) { return socket(family, type | SOCK_CLOEXEC, 0); }
+#    endif
 void setBlocking(Handle fd, bool blocking) {
     const int flags = fcntl(fd, F_GETFL, 0);
     fcntl(fd, F_SETFL, blocking ? flags & ~O_NONBLOCK : flags | O_NONBLOCK);
@@ -268,6 +281,9 @@ std::optional<Handle> TcpListener::accept(int timeout_ms) {
     const auto fd = static_cast<Handle>(::accept(fd_, nullptr, nullptr));
     if (fd == INVALID) return std::nullopt;
     SetHandleInformation(reinterpret_cast<HANDLE>(fd), HANDLE_FLAG_INHERIT, 0);
+#elif defined(__APPLE__)
+    const auto fd = ownSocket(::accept(fd_, nullptr, nullptr));
+    if (fd == INVALID) return std::nullopt;
 #else
     const auto fd = ::accept4(fd_, nullptr, nullptr, SOCK_CLOEXEC);
     if (fd == INVALID) return std::nullopt;

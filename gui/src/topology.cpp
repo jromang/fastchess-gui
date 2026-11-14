@@ -6,6 +6,9 @@
 
 #ifdef _WIN32
 #    include <windows.h>
+#elif defined(__APPLE__)
+#    include <sys/sysctl.h>
+#    include <sys/types.h>
 #else
 #    include <sched.h>
 
@@ -67,6 +70,25 @@ CpuTopology detect() {
     }
 
     return topologyFromCores(package_core);
+}
+
+#elif defined(__APPLE__)
+
+int sysctlInt(const char* name) {
+    int value          = 0;
+    std::size_t length = sizeof(value);
+    return sysctlbyname(name, &value, &length, nullptr, 0) == 0 ? value : -1;
+}
+
+CpuTopology detect() {
+    // Apple silicon has one hardware thread per core, Intel Macs two.
+    const int logical  = sysctlInt("hw.logicalcpu");
+    const int physical = sysctlInt("hw.physicalcpu");
+    if (logical <= 0 || physical <= 0) return fallback();
+    CpuTopology topology;
+    topology.logical  = logical;
+    topology.physical = physical;
+    return topology;
 }
 
 #else

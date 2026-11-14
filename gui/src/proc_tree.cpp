@@ -56,7 +56,7 @@ State state(int pid) {
 
 State state(int pid) {
     proc_bsdinfo info{};
-    if (proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, PROC_PIDTBSDINFO_SIZE) != PROC_PIDTBSDINFO_SIZE)
+    if (proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, PROC_PIDTBSDINFO_SIZE) != static_cast<int>(PROC_PIDTBSDINFO_SIZE))
         return State::Ended;
     if (info.pbi_status == SZOMB) return State::Ended;
     return info.pbi_status == SSTOP ? State::Stopped : State::Running;

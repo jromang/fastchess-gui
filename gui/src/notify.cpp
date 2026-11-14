@@ -19,9 +19,23 @@ void notifyRunFinished(SDL_Window* window, [[maybe_unused]] const std::string& t
 #ifndef _WIN32
     // notify-send may be missing or slow (it talks to D-Bus): never block the GUI on it.
     std::thread([title, body] {
+#    ifdef __APPLE__
+        // osascript instead, the title and the text given as arguments, not written into the script.
+        const char* argv[] = {"osascript",
+                              "-e",
+                              "on run argv",
+                              "-e",
+                              "display notification (item 2 of argv) with title (item 1 of argv)",
+                              "-e",
+                              "end run",
+                              title.c_str(),
+                              body.c_str(),
+                              nullptr};
+#    else
         const char* argv[] = {"notify-send", "-a", "fastchess-gui", title.c_str(), body.c_str(), nullptr};
-        pid_t pid          = 0;
-        if (posix_spawnp(&pid, "notify-send", nullptr, nullptr, const_cast<char* const*>(argv), environ) == 0) {
+#    endif
+        pid_t pid = 0;
+        if (posix_spawnp(&pid, argv[0], nullptr, nullptr, const_cast<char* const*>(argv), environ) == 0) {
             int status = 0;
             waitpid(pid, &status, 0);
         }

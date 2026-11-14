@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <map>
 
 #include <stb_image_write.h>
 
@@ -53,6 +54,23 @@ bool inGlyph(float x, float y) {
 
 void append(std::vector<uint8_t>& out, uint32_t value, int bytes) {
     for (int i = 0; i < bytes; ++i) out.push_back(static_cast<uint8_t>(value >> (8 * i)));
+}
+
+// Big-endian, as in an .icns file.
+void appendBig(std::vector<uint8_t>& out, uint32_t value) {
+    for (int i = 3; i >= 0; --i) out.push_back(static_cast<uint8_t>(value >> (8 * i)));
+}
+
+// `size` x `size` RGBA pixels as a PNG file.
+std::vector<uint8_t> png(const std::vector<uint8_t>& pixels, int size) {
+    std::vector<uint8_t> out;
+    stbi_write_png_to_func(
+        [](void* context, void* data, int n) {
+            auto* to = static_cast<std::vector<uint8_t>*>(context);
+            to->insert(to->end(), static_cast<uint8_t*>(data), static_cast<uint8_t*>(data) + n);
+        },
+        &out, size, size, 4, pixels.data(), size * 4);
+    return out;
 }
 
 }  // namespace
@@ -111,17 +129,7 @@ std::vector<uint8_t> icoFile() {
     constexpr int SIZES[] = {16, 20, 24, 32, 40, 48, 64, 256};
     constexpr int COUNT   = static_cast<int>(sizeof(SIZES) / sizeof(SIZES[0]));
     std::vector<std::vector<uint8_t>> images;
-    for (const int size : SIZES) {
-        const auto pixels = icon(size);
-        std::vector<uint8_t> png;
-        stbi_write_png_to_func(
-            [](void* context, void* data, int n) {
-                auto* to = static_cast<std::vector<uint8_t>*>(context);
-                to->insert(to->end(), static_cast<uint8_t*>(data), static_cast<uint8_t*>(data) + n);
-            },
-            &png, size, size, 4, pixels.data(), size * 4);
-        images.push_back(std::move(png));
-    }
+    for (const int size : SIZES) images.push_back(png(icon(size), size));
 
     // ICONDIR, one ICONDIRENTRY per image, then the images.
     std::vector<uint8_t> out;
@@ -141,6 +149,43 @@ std::vector<uint8_t> icoFile() {
         at += static_cast<uint32_t>(images[i].size());
     }
     for (const auto& image : images) out.insert(out.end(), image.begin(), image.end());
+    return out;
+}
+
+std::vector<uint8_t> icnsFile() {
+    // Each image by its type: 16 to 512 points, at one and two pixels per point.
+    constexpr struct {
+        const char* type;
+        int size;
+    } IMAGES[] = {{"icp4", 16},  {"icp5", 32},  {"ic11", 32},  {"ic12", 64},  {"ic07", 128},
+                  {"ic13", 256}, {"ic08", 256}, {"ic14", 512}, {"ic09", 512}, {"ic10", 1024}};
+
+    std::map<int, std::vector<uint8_t>> pngs;  // by size, each drawn once
+    std::vector<uint8_t> body;
+    for (const auto& image : IMAGES) {
+        auto& encoded = pngs[image.size];
+        if (encoded.empty()) {
+            // The tile on macOS's icon grid: 824 of 1024 pixels, centred, as the system's own icons.
+            const int size   = image.size;
+            const int tile   = static_cast<int>(std::lround(size * 824.0 / 1024.0));
+            const int at     = (size - tile) / 2;
+            const auto drawn = icon(tile);
+            std::vector<uint8_t> pixels(static_cast<std::size_t>(size) * size * 4);
+            for (int y = 0; y < tile; ++y) {
+                std::copy_n(&drawn[static_cast<std::size_t>(y) * tile * 4], static_cast<std::size_t>(tile) * 4,
+                            &pixels[(static_cast<std::size_t>(y + at) * size + at) * 4]);
+            }
+            encoded = png(pixels, size);
+        }
+        body.insert(body.end(), image.type, image.type + 4);
+        appendBig(body, static_cast<uint32_t>(8 + encoded.size()));
+        body.insert(body.end(), encoded.begin(), encoded.end());
+    }
+
+    // "icns", the file's length, then the images.
+    std::vector<uint8_t> out = {'i', 'c', 'n', 's'};
+    appendBig(out, static_cast<uint32_t>(8 + body.size()));
+    out.insert(out.end(), body.begin(), body.end());
     return out;
 }
 

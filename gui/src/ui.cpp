@@ -295,6 +295,11 @@ void loadRequestedFonts(float size) {
     const Candidate candidates[] = {{"C:\\Windows\\Fonts\\msyh.ttc", 0},
                                     {"C:\\Windows\\Fonts\\msyh.ttf", 0},
                                     {"C:\\Windows\\Fonts\\simsun.ttc", 0}};
+#elif defined(__APPLE__)
+    const Candidate candidates[] = {{"/System/Library/Fonts/Hiragino Sans GB.ttc", 0},
+                                    {"/System/Library/Fonts/STHeiti Medium.ttc", 0},
+                                    {"/System/Library/Fonts/STHeiti Light.ttc", 0},
+                                    {"/System/Library/Fonts/Supplemental/Arial Unicode.ttf", 0}};
 #else
     const Candidate candidates[] = {{"/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc", 2},
                                     {"/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc", 2},
