@@ -18,6 +18,7 @@
 #include "console.hpp"
 #include "i18n.hpp"
 #include "net.hpp"
+#include "session_end.h"
 #include "storage.hpp"
 
 namespace fcg {
@@ -777,11 +778,13 @@ class TunnelConnection {
     }
 
     // The session and all it holds, its channels included, then the socket. What libssh2 would still send or wait
-    // for fails at once: the socket is shut first.
+    // for fails at once: the socket is shut first, and a packet left half sent is forgotten, which would otherwise
+    // hold back the channels' closing, and the session be left behind with its keys.
     void close() {
         for (auto& v : viewers_) v->socket.reset();
         if (session_) {
             if (socket_) socket_->shutdownBoth();
+            fcg_libssh2_drop_unsent(session_);
             for (int i = 0; i < 100 && libssh2_session_free(session_) == LIBSSH2_ERROR_EAGAIN; ++i) {
             }
             session_ = nullptr;
