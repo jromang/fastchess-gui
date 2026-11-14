@@ -3,8 +3,8 @@
 # packet of one byte. Before a read hands anything over, it sends the channel's window adjustment when the window runs
 # low, and while that cannot go (the connection to the server full), the server may still send up to the rest of the
 # window, 2 MiB: in one-byte packets from a viewer, 174 MiB, far past what the tunnel lets the session hold (32 MiB),
-# and the session ended. Patched (src/packet.c, src/libssh2_priv.h, include/libssh2.h), with the reasons in comments
-# there:
+# and the session ended. Patched (src/packet.c, src/session.c, src/libssh2_priv.h, include/libssh2.h), with the
+# reasons in comments there:
 #  - a data packet is appended to the last one queued for its channel when that one is of the same kind and both fit
 #    in 16 KiB, so that what libssh2 holds for a channel is about the bytes it received, however they were cut;
 #  - a connection the server forwards (forwarded-tcpip) is given a window of FCG_LIBSSH2_FORWARD_WINDOW, 128 KiB,
@@ -12,6 +12,13 @@
 #    it while its reads cannot send their adjustment. With 2 MiB, 24 viewers sending their window in large packets
 #    meanwhile ended the session; the tunnel checks at compile time that all it may hold fits (ssh_tunnel.cpp). A
 #    viewer sends a request of 8 KiB at most.
+#  - fcg_libssh2_session_end(), appended to src/session.c, for a session whose connection is over, before
+#    libssh2_session_free(): libssh2 sends nothing else while a packet it started is not finished (the socket full: a
+#    server that stopped reading), the channels' closing included, so that the session could never be freed. It sends
+#    and receives nothing more then, forgets the rest of that packet, and frees a forwarded connection's channel whose
+#    confirmation was held back. The code it relies on is checked to be the one it was written for (src/packet.c,
+#    src/transport.c, src/channel.c). And the channel of a forwarded connection whose confirmation failed is freed
+#    (libssh2 left it behind).
 #  - include/libssh2.h says so: FCG_LIBSSH2_PATCHLEVEL, which the tunnel requires, so that sources not patched (an
 #    override of FETCHCONTENT_SOURCE_DIR_LIBSSH2) or patched by an older version of this script fail to compile.
 # Otherwise the window accounting is libssh2's, unchanged.
@@ -19,7 +26,7 @@
 # FetchContent runs a patch again on the sources already there, when its command changes (the command has this
 # script's hash, CMakeLists.txt): each file is patched from the original kept beside it (.fcg-orig), never twice. The
 # configuration fails if libssh2's code is no longer the one expected.
-set(FILES src/packet.c src/libssh2_priv.h include/libssh2.h)
+set(FILES src/packet.c src/session.c src/libssh2_priv.h include/libssh2.h)
 foreach(file ${FILES})
     if(EXISTS ${file}.fcg-orig)
         configure_file(${file}.fcg-orig ${file} COPYONLY)
@@ -47,6 +54,16 @@ function(patch file original patched)
     file(WRITE ${file} "${text}")
 endfunction()
 
+# Fails unless `original` is in `file`, once: code that something patched here relies on, as it was written for.
+function(expect file original)
+    file(READ ${file} text)
+    string(FIND "${text}" "${original}" first)
+    string(FIND "${text}" "${original}" last REVERSE)
+    if(first EQUAL -1 OR NOT first EQUAL last)
+        message(FATAL_ERROR "patch_libssh2.cmake: the code relied on is not as expected in ${file}")
+    endif()
+endfunction()
+
 # What the tunnel checks, and the window it is given.
 patch(include/libssh2.h [=[
 #ifndef LIBSSH2_H
@@ -57,7 +74,7 @@ patch(include/libssh2.h [=[
 
 /* fastchess-gui: patched by its cmake/patch_libssh2.cmake, at this level,
    with this window for the connections a server forwards */
-#define FCG_LIBSSH2_PATCHLEVEL 2
+#define FCG_LIBSSH2_PATCHLEVEL 3
 #define FCG_LIBSSH2_FORWARD_WINDOW (128 * 1024)
 ]=])
 
@@ -208,4 +225,222 @@ patch(src/packet.c [=[
                     channel->remote.window_size_initial =
                         FCG_LIBSSH2_FORWARD_WINDOW;
                     channel->remote.window_size = FCG_LIBSSH2_FORWARD_WINDOW;
+]=])
+
+# The end of a session whose connection is over: declared, then appended to src/session.c, with what it relies on.
+patch(include/libssh2.h [=[
+LIBSSH2_API int libssh2_session_free(LIBSSH2_SESSION *session);
+]=] [=[
+LIBSSH2_API int libssh2_session_free(LIBSSH2_SESSION *session);
+/* fastchess-gui: for a session whose connection is over, before
+   libssh2_session_free(): see src/session.c */
+LIBSSH2_API void fcg_libssh2_session_end(LIBSSH2_SESSION *session);
+]=])
+
+# A forwarded connection's channel, until its confirmation went: made in packet_queue_listener() holding only its
+# channel_type, and in no list (state ssh2_NB_state_created). fcg_libssh2_session_end() frees it then. Where libssh2
+# freed it without forgetting it, it is forgotten; where it left it behind (the confirmation failed), it is freed.
+patch(src/packet.c [=[
+                    listen_state->channel = channel;
+
+                    channel->session = session;
+                    channel->channel_type_len = sizeof("forwarded-tcpip") - 1;
+                    channel->channel_type =
+                        SSH2_ALLOC(session, channel->channel_type_len + 1);
+                    if(!channel->channel_type) {
+                        ssh2_err(session, LIBSSH2_ERROR_ALLOC,
+                                 "Unable to allocate a channel for "
+                                 "new connection");
+                        SSH2_FREE(session, channel);
+                        failure_code = SSH_OPEN_RESOURCE_SHORTAGE;
+                        listen_state->state = ssh2_NB_state_sent;
+                        break;
+                    }
+                    memcpy(channel->channel_type, "forwarded-tcpip",
+                           channel->channel_type_len + 1);
+]=] [=[
+                    listen_state->channel = channel;
+
+                    channel->session = session;
+                    channel->channel_type_len = sizeof("forwarded-tcpip") - 1;
+                    channel->channel_type =
+                        SSH2_ALLOC(session, channel->channel_type_len + 1);
+                    if(!channel->channel_type) {
+                        ssh2_err(session, LIBSSH2_ERROR_ALLOC,
+                                 "Unable to allocate a channel for "
+                                 "new connection");
+                        SSH2_FREE(session, channel);
+                        /* fastchess-gui: freed, so forgotten */
+                        listen_state->channel = NULL;
+                        failure_code = SSH_OPEN_RESOURCE_SHORTAGE;
+                        listen_state->state = ssh2_NB_state_sent;
+                        break;
+                    }
+                    memcpy(channel->channel_type, "forwarded-tcpip",
+                           channel->channel_type_len + 1);
+]=])
+
+patch(src/packet.c [=[
+                    p = listen_state->packet;
+                    *(p++) = SSH_MSG_CHANNEL_OPEN_CONFIRMATION;
+                    ssh2_store_u32(&p, channel->remote.id);
+                    ssh2_store_u32(&p, channel->local.id);
+                    ssh2_store_u32(&p, channel->remote.window_size_initial);
+                    ssh2_store_u32(&p, channel->remote.packet_size);
+
+                    listen_state->state = ssh2_NB_state_created;
+                }
+
+                if(listen_state->state == ssh2_NB_state_created) {
+                    rc = ssh2_transport_send(session, listen_state->packet,
+                                             17, NULL, 0);
+                    if(rc == LIBSSH2_ERROR_EAGAIN)
+                        return rc;
+                    else if(rc) {
+                        listen_state->state = ssh2_NB_state_idle;
+                        return ssh2_err(session, rc,
+                                        "Unable to send channel "
+                                        "open confirmation");
+                    }
+
+                    /* Link the channel into the end of the queue list */
+                    if(listen_state->channel) {
+                        ssh2_list_add(&listn->queue,
+                                      &listen_state->channel->node);
+                        listn->queue_size++;
+                    }
+
+                    listen_state->state = ssh2_NB_state_idle;
+                    return 0;
+                }
+]=] [=[
+                    p = listen_state->packet;
+                    *(p++) = SSH_MSG_CHANNEL_OPEN_CONFIRMATION;
+                    ssh2_store_u32(&p, channel->remote.id);
+                    ssh2_store_u32(&p, channel->local.id);
+                    ssh2_store_u32(&p, channel->remote.window_size_initial);
+                    ssh2_store_u32(&p, channel->remote.packet_size);
+
+                    listen_state->state = ssh2_NB_state_created;
+                }
+
+                if(listen_state->state == ssh2_NB_state_created) {
+                    rc = ssh2_transport_send(session, listen_state->packet,
+                                             17, NULL, 0);
+                    if(rc == LIBSSH2_ERROR_EAGAIN)
+                        return rc;
+                    else if(rc) {
+                        /* fastchess-gui: the channel, in no list yet, freed:
+                           nothing else would */
+                        if(listen_state->channel) {
+                            SSH2_FREE(session,
+                                      listen_state->channel->channel_type);
+                            SSH2_FREE(session, listen_state->channel);
+                            listen_state->channel = NULL;
+                        }
+                        listen_state->state = ssh2_NB_state_idle;
+                        return ssh2_err(session, rc,
+                                        "Unable to send channel "
+                                        "open confirmation");
+                    }
+
+                    /* Link the channel into the end of the queue list */
+                    if(listen_state->channel) {
+                        ssh2_list_add(&listn->queue,
+                                      &listen_state->channel->node);
+                        listn->queue_size++;
+                    }
+
+                    listen_state->state = ssh2_NB_state_idle;
+                    return 0;
+                }
+]=])
+
+# What is left of the packet under way: what fcg_libssh2_session_end() forgets.
+expect(src/transport.c [=[
+            /* the whole packet could not be sent, save the rest */
+            session->socket_block_directions |= LIBSSH2_SESSION_BLOCK_OUTBOUND;
+            p->odata = orgdata;
+            p->olen = orgdata_len;
+            p->osent = ret <= 0 ? 0 : ret;
+            p->ototal_num = total_length;
+            return LIBSSH2_ERROR_EAGAIN;
+]=])
+# A channel is closed only while the connection is: fcg_libssh2_session_end() marks it disconnected.
+expect(src/channel.c [=[
+    /* Allow channel freeing even when the socket has lost its connection */
+    if(!channel->local.close &&
+       (session->socket_state == SSH2_SOCKET_CONNECTED)) {
+        rc = ssh2_channel_close(channel);
+]=])
+
+file(APPEND src/session.c [=[
+
+/*
+ * fastchess-gui: the end of a session whose connection is over, called before
+ * libssh2_session_free(). libssh2 sends nothing else while a packet it
+ * started is not finished (the socket full: a peer that stopped reading),
+ * only the rest of it, and only from the call that started it:
+ * libssh2_session_free() returned LIBSSH2_ERROR_EAGAIN for ever then, the
+ * channels' closing never going, and the session was left behind with its
+ * channels and keys. Here, whatever the caller did with its socket:
+ *  - the session sends and receives nothing more: its send and receive
+ *    callbacks fail at once (the stream could not go on after a packet cut
+ *    short anyway), and it is marked disconnected, so that its channels are
+ *    freed without their closing (ssh2_channel_free);
+ *  - what is left of the packet under way is forgotten (ssh2_transport_send
+ *    keeps it in session->packet);
+ *  - a connection the peer forwarded whose confirmation was held back, by
+ *    the packet under way or one before it (packet_queue_listener in
+ *    packet.c, in state ssh2_NB_state_created: its channel made, holding only
+ *    its channel_type, in no list until the confirmation went), has its
+ *    channel freed: nothing else would. Its state stays: were the
+ *    CHANNEL_OPEN taken up again (by the reads of a key re-exchange that
+ *    libssh2_session_free() resumes), its confirmation is sent for no channel
+ *    and fails, where from ssh2_NB_state_idle a new channel would be made,
+ *    and left behind too.
+ * cmake/patch_libssh2.cmake in fastchess-gui checks that the code this relies
+ * on is still the one it was written for.
+ */
+static LIBSSH2_SEND_FUNC(fcg_send_nothing)
+{
+    (void)socket;
+    (void)buffer;
+    (void)length;
+    (void)flags;
+    (void)abstract;
+    return -EPIPE;
+}
+
+static LIBSSH2_RECV_FUNC(fcg_receive_nothing)
+{
+    (void)socket;
+    (void)buffer;
+    (void)length;
+    (void)flags;
+    (void)abstract;
+    return -EPIPE;
+}
+
+LIBSSH2_API void fcg_libssh2_session_end(LIBSSH2_SESSION *session)
+{
+    struct transportpacket *p = &session->packet;
+    struct packet_queue_listener_state *l = &session->packAdd_Qlstn_state;
+
+    session->send_cb = fcg_send_nothing;
+    session->recv_cb = fcg_receive_nothing;
+    session->socket_state = SSH2_SOCKET_DISCONNECTED;
+
+    p->odata = NULL;
+    p->olen = 0;
+    p->osent = 0;
+    p->ototal_num = 0;
+    session->socket_block_directions &= ~LIBSSH2_SESSION_BLOCK_OUTBOUND;
+
+    if(l->state == ssh2_NB_state_created && l->channel) {
+        SSH2_FREE(session, l->channel->channel_type);
+        SSH2_FREE(session, l->channel);
+        l->channel = NULL;
+    }
+}
 ]=])

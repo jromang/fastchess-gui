@@ -230,7 +230,8 @@ if(FCG_BUILD_GUI)
     # master branch, the latest when this was written. Patched: a channel's data packets are appended to the one it
     # holds for the channel, so that what it keeps is about the bytes received, not a block of memory for each packet
     # however small; a forwarded connection's window, which bounds what each viewer makes it hold, is 128 KiB instead
-    # of 2 MiB (see cmake/patch_libssh2.cmake). The tunnel does not compile with libssh2's sources not patched so
+    # of 2 MiB; a session whose connection is over can be freed whole, though a packet was left half sent (see
+    # cmake/patch_libssh2.cmake). The tunnel does not compile with libssh2's sources not patched so
     # (FETCHCONTENT_SOURCE_DIR_LIBSSH2 included).
     FetchContent_Declare(libssh2
         URL https://github.com/libssh2/libssh2/archive/e75fa9a539d21e82d4920c126662e36984e97d61.tar.gz
@@ -284,15 +285,13 @@ if(FCG_BUILD_GUI)
                  mac misc packet pem poly1305 publickey scp session sftp transport userauth userauth_kbd_packet version)
         list(APPEND FCG_LIBSSH2_SOURCES ${libssh2_SOURCE_DIR}/src/${file}.c)
     endforeach()
-    add_library(fcg_libssh2 STATIC ${FCG_LIBSSH2_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/mbedtls_psa.c
-                ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/session_end.c)
+    add_library(fcg_libssh2 STATIC ${FCG_LIBSSH2_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/mbedtls_psa.c)
     target_include_directories(fcg_libssh2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa ${libssh2_SOURCE_DIR}/src)
     target_include_directories(fcg_libssh2 SYSTEM PUBLIC ${libssh2_SOURCE_DIR}/include)
     # LIBSSH2DEBUG for libssh2_trace(): the tunnel reads libssh2's errors as they come, the first one often the only
     # one to tell why a call failed (a host key's signature, say). Nothing is traced but the errors.
     target_compile_definitions(fcg_libssh2 PRIVATE HAVE_CONFIG_H LIBSSH2_MBEDTLS LIBSSH2_MBEDTLS_H LIBSSH2DEBUG)
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/mbedtls_psa.c
-                                ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/session_end.c PROPERTIES
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/mbedtls_psa.c PROPERTIES
                                 COMPILE_OPTIONS "-Wall;-Wextra")
     target_link_libraries(fcg_libssh2 PRIVATE tfpsacrypto)
     if(WIN32)
@@ -348,8 +347,6 @@ if(FCG_BUILD_GUI)
                 ${qrcodegen_SOURCE_DIR}/cpp/qrcodegen.cpp)
     target_compile_features(fcg_lib PUBLIC cxx_std_20)
     target_include_directories(fcg_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/gui/src)
-    # The tunnel's end of a libssh2 session (gui/libssh2-psa/session_end.h).
-    target_include_directories(fcg_lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa)
     # Header-only libraries compiled in our files: their warnings are not ours to fix.
     target_include_directories(fcg_lib SYSTEM PUBLIC
         ${nanosvg_SOURCE_DIR}/src

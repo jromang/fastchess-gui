@@ -2292,6 +2292,51 @@ TEST_CASE("Tunnel: a keepalive that went in part is sent on, though the server t
     CHECK(waitFor([&] { return server.done.load(); }));
 }
 
+namespace {
+
+// The tunnel stopped while libssh2 has a packet half sent: the web server's answer filled the connection to the
+// server, which reads nothing. Then, as asked, a request of the server's whose answer cannot go, and a viewer's
+// connection whose confirmation cannot go, for which libssh2 made a channel it holds in no list. libssh2 sent nothing
+// else until that packet was finished, its channels' closing included, and its session was never freed, with its
+// channels, keys and the viewer's channel. No DISCONNECT can go: the server is not waited for.
+void stopWhileHalfSent(bool request, bool viewer) {
+    const auto left_before = tunnelMemoryLeftBehind();
+    Sink web(std::string(std::size_t(16) << 20, 'a'), true);
+    std::atomic_bool holding{false}, stopped{false};
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        const auto channel = forward(server, 200, 0x7FFFFFFF);
+        server.send(channelData(channel, script.request));
+        std::this_thread::sleep_for(800ms);  // the answer fills the connection
+        if (request) server.send(Writer().byte(GLOBAL_REQUEST).string("keepalive@openssh.com").boolean(true).take());
+        if (viewer) openForwarded(server, 300);
+        std::this_thread::sleep_for(300ms);
+        holding = true;
+        while (!stopped) std::this_thread::sleep_for(20ms);
+    };
+    FakeServer server(SSH_PORT, script);
+    SshTunnel tunnel;
+    tunnel.start(loopback(fingerprint(serverKey().blob)));
+    REQUIRE(waitFor([&] { return holding.load() || server.done.load(); }, 30s));
+    CHECK(holding.load());
+    CHECK(tunnel.status().state == TunnelState::OnAir);
+    tunnel.stop();
+    stopped = true;
+    CHECK(tunnelMemoryLeftBehind() == left_before);
+}
+
+}  // namespace
+
+TEST_CASE("Tunnel: stopped with a packet half sent, the session is freed whole") { stopWhileHalfSent(false, false); }
+
+TEST_CASE("Tunnel: stopped with a packet half sent and a viewer's connection not confirmed, the session is freed whole") {
+    stopWhileHalfSent(false, true);
+}
+
+TEST_CASE("Tunnel: stopped with a packet half sent, a request not answered, a viewer's connection not confirmed") {
+    stopWhileHalfSent(true, true);
+}
+
 TEST_CASE("Tunnel: what cannot be read ends the connection, though the session channel is closed") {
     // Waiting for viewers' connections, libssh2 tells any failure as a channel not found, which the tunnel took for
     // nothing serious: it stayed on air, deaf, until the server was found silent.

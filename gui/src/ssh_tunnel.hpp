@@ -20,6 +20,10 @@ namespace fcg {
 // The memory libssh2 may hold for a tunnel's connection, unless lowered.
 inline constexpr std::size_t TUNNEL_MEMORY = std::size_t(32) << 20;
 
+// What libssh2 left behind of the tunnel's sessions since the program started, in bytes: a session it could not free,
+// or memory it lost track of. Nothing but for a bug: the tests check it.
+[[nodiscard]] std::size_t tunnelMemoryLeftBehind();
+
 struct TunnelSettings {
     std::string host = "localhost.run";
     int port         = 22;
