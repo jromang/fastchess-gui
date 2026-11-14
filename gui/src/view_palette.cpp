@@ -173,6 +173,22 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     }
     add(TR("Engines"), "", page(Page::Engines));
     add(TR("Books"), "", page(Page::Books));
+    for (const bool symmetrical : {false, true}) {
+        add(fmt::format("{}: {}", TR("Generate Chess324 book"),
+                        symmetrical ? TR("Only the 18 symmetrical ones…") : TR("All 324 positions…")),
+            TR("Books"), [this, symmetrical] {
+                page_ = Page::Books;
+                askChess324(symmetrical);
+            });
+    }
+    add(TR("Build a Polyglot book…"), TR("Books"), [this] {
+        page_ = Page::Books;
+        openBookBuild();
+    });
+    if (book_build_.busy()) {
+        add(TR("Cancel the Polyglot book being built"), std::filesystem::path(book_build_.bin()).filename().string(),
+            [this] { book_build_.cancel(); });
+    }
     add(TR("Test suites"), "", page(Page::Suites));
     add(TR("Ratings"), "", page(Page::Ratings));
     const auto ratings_tab = [&](const char* label, int index) {

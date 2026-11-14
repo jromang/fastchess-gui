@@ -252,3 +252,139 @@ TEST_CASE("PGN book: a game from a position the moves cannot be read in is left 
     CHECK(stats.skipped == 3);
     fs::remove_all(dir);
 }
+
+namespace {
+
+// Five games with results and ratings, (White, Black, result): 2500-2300 1-0, 2450-2600 0-1, 2200-2200 drawn,
+// 2700-2700 without a result, unrated 1-0; and one from a FEN with Black to move, 2000-2500 0-1.
+fs::path ratedPgn(const fs::path& dir) {
+    fs::create_directories(dir);
+    const auto path = dir / "rated.pgn";
+    std::ofstream(path, std::ios::binary)
+        << "[Result \"1-0\"]\n[WhiteElo \"2500\"]\n[BlackElo \"2300\"]\n\n1. e4 e5 2. Nf3 Nc6 1-0\n\n"
+           "[Result \"0-1\"]\n[WhiteElo \"2450\"]\n[BlackElo \"2600\"]\n\n1. e4 c5 2. Nf3 d6 0-1\n\n"
+           "[Result \"1/2-1/2\"]\n[WhiteElo \"2200\"]\n[BlackElo \"2200\"]\n\n1. d4 d5 2. c4 e6 1/2-1/2\n\n"
+           "[Result \"*\"]\n[WhiteElo \"2700\"]\n[BlackElo \"2700\"]\n\n1. e4 e5 2. Bc4 Nf6 *\n\n"
+           "[Result \"1-0\"]\n[WhiteElo \"-\"]\n\n1. e4 e5 2. Nf3 Nf6 1-0\n\n"
+           "[Result \"0-1\"]\n[WhiteElo \"2000\"]\n[BlackElo \"2500\"]\n[SetUp \"1\"]\n[FEN \""
+        << CASTLING << "\"]\n\n1... O-O-O 2. Kf2 0-1\n";
+    return path;
+}
+
+PgnBookOptions bookOptions(int plies, int min_games, PgnBookOptions::Weight weight, int min_elo) {
+    PgnBookOptions o;
+    o.plies     = plies;
+    o.min_games = min_games;
+    o.weight    = weight;
+    o.min_elo   = min_elo;
+    return o;
+}
+
+}  // namespace
+
+TEST_CASE("PGN book options: the depth and the minimum number of games per move") {
+    const auto dir = fs::temp_directory_path() / "fcg-pgn-book-options";
+    fs::remove_all(dir);
+    const auto pgn = ratedPgn(dir);
+    const auto bin = dir / "rated.bin";
+    using W        = PgnBookOptions::Weight;
+
+    // Every move, by count: the game without a result counts.
+    auto stats = pgnToPolyglot(pgn, bin, bookOptions(40, 1, W::Count, 0));
+    CHECK(stats.games == 6);
+    CHECK(stats.left_out == 0);
+    auto raw = readRaw(bin);
+    CHECK(weightOf(raw, polyglotKey(""), "e2e4") == 4);
+    CHECK(weightOf(raw, polyglotKey(""), "d2d4") == 1);
+    CHECK(weightOf(raw, polyglotKey("e2e4"), "e7e5") == 3);
+    CHECK(weightOf(raw, polyglotKey("e2e4 e7e5"), "g1f3") == 2);
+    CHECK(weightOf(raw, polyglotKey("e2e4 e7e5 g1f3"), "b8c6") == 1);
+
+    // One ply: only the first moves.
+    stats = pgnToPolyglot(pgn, bin, bookOptions(1, 1, W::Count, 0));
+    raw   = readRaw(bin);
+    CHECK(weightOf(raw, polyglotKey(""), "e2e4") == 4);
+    CHECK(entriesAt(raw, polyglotKey("e2e4")) == 0);
+    CHECK(weightOf(raw, polyglotKey("", CASTLING), "e8a8") == 1);
+    CHECK(entriesAt(raw, polyglotKey("e8c8", CASTLING)) == 0);
+    CHECK(stats.positions == 2);
+    CHECK(raw.size() == 3);
+
+    // Two games at least: the moves played once are left out, and the positions left without a move.
+    stats = pgnToPolyglot(pgn, bin, bookOptions(40, 2, W::Count, 0));
+    raw   = readRaw(bin);
+    CHECK(weightOf(raw, polyglotKey(""), "e2e4") == 4);
+    CHECK(weightOf(raw, polyglotKey(""), "d2d4") == -1);
+    CHECK(weightOf(raw, polyglotKey("e2e4"), "e7e5") == 3);
+    CHECK(weightOf(raw, polyglotKey("e2e4"), "c7c5") == -1);
+    CHECK(weightOf(raw, polyglotKey("e2e4 e7e5"), "g1f3") == 2);
+    CHECK(weightOf(raw, polyglotKey("e2e4 e7e5"), "f1c4") == -1);
+    CHECK(entriesAt(raw, polyglotKey("e2e4 e7e5 g1f3")) == 0);
+    CHECK(stats.positions == 3);
+    CHECK(stats.entries == 3);
+    CHECK(raw.size() == 3);
+
+    // More than any move: nothing is left, and the reason says so.
+    try {
+        (void)pgnToPolyglot(pgn, bin, bookOptions(40, 10, W::Count, 0));
+        FAIL("no exception");
+    } catch (const EmptyPgnBook& e) {
+        CHECK(std::string(e.what()).find("10 games or more") != std::string::npos);
+        CHECK(e.stats.games == 6);
+    }
+    fs::remove_all(dir);
+}
+
+TEST_CASE("PGN book options: weights by score for the side that moved, and the players' rating") {
+    const auto dir = fs::temp_directory_path() / "fcg-pgn-book-score";
+    fs::remove_all(dir);
+    const auto pgn = ratedPgn(dir);
+    const auto bin = dir / "rated.bin";
+    using W        = PgnBookOptions::Weight;
+
+    // A win 2, a draw 1, a loss 0, for the side that played the move; the game without a result left out.
+    auto stats = pgnToPolyglot(pgn, bin, bookOptions(40, 1, W::Score, 0));
+    CHECK(stats.games == 5);
+    CHECK(stats.left_out == 1);
+    auto raw = readRaw(bin);
+    for (std::size_t i = 1; i < raw.size(); ++i) {
+        CHECK(raw[i - 1].key <= raw[i].key);
+        if (raw[i - 1].key == raw[i].key) CHECK(raw[i - 1].weight >= raw[i].weight);
+    }
+    CHECK(weightOf(raw, polyglotKey(""), "e2e4") == 4);  // won, lost, won
+    CHECK(weightOf(raw, polyglotKey(""), "d2d4") == 1);  // drawn
+    CHECK(weightOf(raw, polyglotKey("e2e4"), "c7c5") == 2);
+    CHECK(weightOf(raw, polyglotKey("e2e4"), "e7e5") == -1);  // lost twice: weighs nothing, left out
+    CHECK(weightOf(raw, polyglotKey("e2e4 e7e5"), "g1f3") == 4);
+    CHECK(weightOf(raw, polyglotKey("e2e4 e7e5"), "f1c4") == -1);  // only in the game without a result
+    CHECK(entriesAt(raw, polyglotKey("e2e4 c7c5")) == 0);          // 2. Nf3 lost
+    CHECK(weightOf(raw, polyglotKey("", CASTLING), "e8a8") == 2);  // Black won
+    CHECK(weightOf(raw, polyglotKey("d2d4 d7d5"), "c2c4") == 1);
+
+    // Players rated 2400 or more, by count: the moves of each side by its own rating.
+    stats = pgnToPolyglot(pgn, bin, bookOptions(40, 1, W::Count, 2400));
+    CHECK(stats.games == 4);     // the first, the second, the one without a result, the one from a FEN
+    CHECK(stats.left_out == 2);  // 2200-2200, and the unrated one
+    raw = readRaw(bin);
+    CHECK(weightOf(raw, polyglotKey(""), "e2e4") == 3);
+    CHECK(weightOf(raw, polyglotKey(""), "d2d4") == -1);
+    CHECK(weightOf(raw, polyglotKey("e2e4"), "e7e5") == 1);  // not the 2300's of the first game
+    CHECK(weightOf(raw, polyglotKey("e2e4"), "c7c5") == 1);
+    CHECK(weightOf(raw, polyglotKey("e2e4 e7e5"), "g1f3") == 1);
+    CHECK(entriesAt(raw, polyglotKey("e2e4 e7e5 g1f3")) == 0);
+    CHECK(weightOf(raw, polyglotKey("", CASTLING), "e8a8") == 1);  // Black to move first, rated 2500
+    CHECK(entriesAt(raw, polyglotKey("e8c8", CASTLING)) == 0);     // White, 2000
+
+    // Both: by score, the rated players' moves of the games with a result.
+    stats = pgnToPolyglot(pgn, bin, bookOptions(40, 1, W::Score, 2400));
+    CHECK(stats.games == 3);
+    CHECK(stats.left_out == 3);
+    raw = readRaw(bin);
+    CHECK(weightOf(raw, polyglotKey(""), "e2e4") == 2);
+    CHECK(weightOf(raw, polyglotKey("e2e4"), "c7c5") == 2);
+    CHECK(entriesAt(raw, polyglotKey("e2e4")) == 1);
+
+    // Rated above every player: no game is left.
+    CHECK_THROWS_AS(pgnToPolyglot(pgn, bin, bookOptions(40, 1, W::Count, 3000)), EmptyPgnBook);
+    fs::remove_all(dir);
+}

@@ -2,11 +2,14 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <utility>
 
 #include <imgui.h>
 
 #include <fmt/include/fmt/format.h>
 
+#include <tour/chess324.hpp>
+#include <tour/pgn_book.hpp>
 #include <tour/polyglot.hpp>
 
 #include "app.hpp"
@@ -48,6 +51,29 @@ std::string problems(uint8_t flags) {
 
 constexpr uint8_t ANY_PROBLEM = tour::BOOK_ILLEGAL | tour::BOOK_DUPLICATE | tour::BOOK_MIRRORED | tour::BOOK_OVER;
 
+// A tooltip for the item just drawn, also when it is disabled, its lines wrapped.
+void tip(const char* text) {
+    if (!ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_AllowWhenDisabled)) return;
+    ImGui::BeginTooltip();
+    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+    ImGui::TextUnformatted(text);
+    ImGui::PopTextWrapPos();
+    ImGui::EndTooltip();
+}
+
+int percent(double share) { return static_cast<int>(std::clamp(share, 0.0, 1.0) * 100); }
+
+// The options of a Polyglot book built from a PGN file, in words: its description in the library.
+std::string buildSummary(const std::string& pgn, const tour::PgnBookOptions& o) {
+    std::string out = trn("{} ply", "{} plies", o.plies, o.plies);
+    if (o.min_games > 1)
+        out += ", " + trn("moves of {} game or more", "moves of {} games or more", o.min_games, o.min_games);
+    out += ", ";
+    out += o.weight == tour::PgnBookOptions::Weight::Score ? TR("weighted by score") : TR("weighted by count");
+    if (o.min_elo > 0) out += ", " + trf("players rated {} or more", o.min_elo);
+    return trf("From {}: {}", fs::path(pgn).filename().string(), out);
+}
+
 }  // namespace
 
 void App::addBook(const std::string& path) {
@@ -58,6 +84,246 @@ void App::addBook(const std::string& path) {
     selected_book_ = static_cast<int>(books_.size()) - 1;
     storage_.saveBooks(books_);
     startBookScan(selected_book_);
+}
+
+std::string App::newBookPath(const std::string& name) {
+    std::error_code ec;
+    const auto folder = [&](int i) {
+        if (i < 0 || i >= static_cast<int>(books_.size())) return fs::path();
+        const auto dir = fs::path(books_[i].path).parent_path();
+        return !dir.empty() && fs::is_directory(dir, ec) ? dir : fs::path();
+    };
+    auto dir = folder(selected_book_);
+    if (dir.empty()) dir = folder(static_cast<int>(books_.size()) - 1);
+    if (dir.empty()) {
+        dir = storage_.root() / "books";
+        fs::create_directories(dir, ec);
+    }
+    return (dir / name).string();
+}
+
+void App::addWrittenBook(const std::string& path, const std::string& description) {
+    for (int i = 0; i < static_cast<int>(books_.size()); ++i) {
+        std::error_code ec;
+        if (books_[i].path != path && !fs::equivalent(books_[i].path, path, ec)) continue;
+        selected_book_ = i;
+        book_item_     = -1;
+        if (books_[i].description.empty()) books_[i].description = description;
+        storage_.saveBooks(books_);
+        startBookScan(i);  // the file changed
+        return;
+    }
+    addBook(path);
+    books_.back().description = description;
+    storage_.saveBooks(books_);
+}
+
+void App::askChess324(bool symmetrical) {
+    dialogs_.saveFile(symmetrical ? Dialogs::Purpose::Chess324SymmetricalBook : Dialogs::Purpose::Chess324Book,
+                      {{"EPD", "epd"}}, newBookPath(symmetrical ? "chess324-symmetrical.epd" : "chess324.epd"));
+}
+
+void App::writeChess324Book(std::string path, bool symmetrical) {
+    // A book is read by its extension.
+    if (!fs::path(path).has_extension()) path += ".epd";
+    try {
+        const auto n = tour::writeChess324(path, symmetrical);
+        Console::instance().add(trn("{} position written to {}", "{} positions written to {}", n, n, path));
+        addWrittenBook(path, symmetrical ? TR("Chess324: the 18 symmetrical starting positions")
+                                         : TR("Chess324: the 324 starting positions"));
+    } catch (const std::exception& e) {
+        Console::instance().add(fmt::format("{} ({})", trf("Cannot write {}", path), e.what()), true);
+    }
+}
+
+void App::drawBookCreateMenu() {
+    if (!ImGui::BeginPopup("##book_create")) return;
+    if (ImGui::BeginMenu(TR("Generate Chess324 book"))) {
+        if (ImGui::MenuItem(TR("All 324 positions…"))) askChess324(false);
+        tip(
+            TR("Chess324: the kings and the rooks on their usual squares, so castling is the usual one; the "
+               "queen, the bishops and the knights of each side shuffled on the other squares of its back rank, the "
+               "bishops on opposite colours. 18 arrangements a side, White's and Black's chosen independently: 324 "
+               "starting positions, an EPD book any engine plays, added to the library."));
+        if (ImGui::MenuItem(TR("Only the 18 symmetrical ones…"))) askChess324(true);
+        tip(TR("Black's pieces on the same files as White's: 18 starting positions, added to the library."));
+        ImGui::EndMenu();
+    }
+    if (ImGui::MenuItem(TR("Build a Polyglot book…"))) openBookBuild();
+    tip(
+        TR("From the games of a PGN file: their moves up to a depth, those played by enough games, weighted by their "
+           "number or their score; written as a Polyglot book (.bin) and added to the library."));
+    ImGui::EndPopup();
+}
+
+tour::PgnBookOptions App::bookBuildOptions() const {
+    const auto& f = book_build_form_;
+    tour::PgnBookOptions o;
+    o.plies     = f.plies;
+    o.min_games = f.min_games;
+    o.weight    = f.by_score ? tour::PgnBookOptions::Weight::Score : tour::PgnBookOptions::Weight::Count;
+    o.min_elo   = f.rated ? f.min_elo : 0;
+    return o;
+}
+
+void App::openBookBuild() {
+    book_build_shown_ = true;
+    if (book_build_form_.pgn.empty() && selected_book_ >= 0 && selected_book_ < static_cast<int>(books_.size()) &&
+        tour::isPgnBook(books_[selected_book_].path)) {
+        book_build_form_.pgn = books_[selected_book_].path;
+    }
+}
+
+void App::startBookBuild(std::string bin) {
+    // Read as a Polyglot book by its extension; and never the PGN file itself.
+    if (!tour::isPolyglot(bin)) bin += ".bin";
+    book_build_error_.clear();
+    book_build_shown_ = true;
+    if (!book_build_.start(book_build_form_.pgn, bin, bookBuildOptions())) {
+        book_build_error_ = TR("A book is being built already: wait for it, or cancel it.");
+    }
+}
+
+void App::pollBookBuild() {
+    const auto ended = book_build_.poll();
+    if (!ended) return;
+    const auto name  = fs::path(ended->bin).filename().string();
+    const auto& read = ended->stats;
+    if (ended->cancelled) {
+        Console::instance().add(trf("{}: cancelled, nothing written.", name));
+        return;
+    }
+    if (!ended->error.empty()) {
+        const auto pgn = fs::path(ended->pgn).filename().string();
+        if (!ended->empty) {
+            book_build_error_ = trf("The book cannot be built: {}", ended->error);
+        } else if (read.games == 0 && read.left_out > 0) {
+            book_build_error_ =
+                trn("No move is left: {} game of {} is left out by the rating, or by its missing result with weights "
+                    "by score. Lower the rating, or weigh the moves by count.",
+                    "No move is left: {} games of {} are left out by the rating, or by their missing result with "
+                    "weights by score. Lower the rating, or weigh the moves by count.",
+                    read.left_out, read.left_out, pgn);
+        } else if (read.games == 0) {
+            book_build_error_ = trf("No game of {} gives a move: is it a PGN file?", pgn);
+        } else if (ended->options.min_games > 1) {
+            book_build_error_ =
+                trf("No move of {} is played by {} games or more: lower the minimum.", pgn, ended->options.min_games);
+        } else {
+            book_build_error_ = trf("No move of {} is left with these options.", pgn);
+        }
+        Console::instance().add(fmt::format("{}: {}", name, book_build_error_), true);
+        return;
+    }
+
+    book_build_error_.clear();
+    Console::instance().add(trn("{} written: {} positions, from {} game.", "{} written: {} positions, from {} games.",
+                                read.games, name, read.positions, read.games));
+    if (read.left_out > 0) {
+        Console::instance().add(
+            fmt::format("{}: {}", name,
+                        trn("{} game left out by the options (a rating below the minimum, or no result).",
+                            "{} games left out by the options (a rating below the minimum, or no result).",
+                            read.left_out, read.left_out)));
+    }
+    if (read.skipped > 0) {
+        Console::instance().add(
+            fmt::format("{}: {}", name,
+                        trn("{} game could not be read: it is left out.",
+                            "{} games could not be read: they are left out.", read.skipped, read.skipped)),
+            true);
+    }
+    if (!read.stopped.empty()) {
+        Console::instance().add(
+            fmt::format("{}: {}", name, trf("The reading stopped before the end of the file: {}", read.stopped)), true);
+    }
+    // The new book shown in place of the form.
+    book_build_shown_ = false;
+    addWrittenBook(ended->bin, buildSummary(ended->pgn, ended->options));
+}
+
+void App::drawBookBuild() {
+    auto& form         = book_build_form_;
+    const float label  = px(170);
+    const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
+    const bool busy    = book_build_.busy();
+
+    ImGui::SeparatorText(TR("Build a Polyglot book"));
+    ImGui::BeginDisabled(busy);
+    ui::label(TR("PGN file"), label);
+    editText("##build_pgn", form.pgn, ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x);
+    ImGui::SameLine();
+    if (ImGui::Button("…##build_pgn_file")) {
+        dialogs_.openFile(Dialogs::Purpose::BuildBookPgn, {{"PGN", "pgn"}, {TR("All files"), "*"}}, form.pgn);
+    }
+
+    ui::label(TR("Depth (plies)"), label);
+    ImGui::SetNextItemWidth(px(120));
+    if (ui::inputInt("##build_plies", &form.plies)) form.plies = std::clamp(form.plies, 1, 100);
+    tip(TR("How far each game goes into the book, in plies (a move of one side) from its start."));
+
+    ui::label(TR("Minimum games"), label);
+    ImGui::SetNextItemWidth(px(120));
+    if (ui::inputInt("##build_min_games", &form.min_games)) form.min_games = std::clamp(form.min_games, 1, 1000000);
+    tip(
+        TR("A move is kept when at least this many games play it in its position; the others are left out as "
+           "played too rarely (Polyglot's -min-game)."));
+
+    ui::label(TR("Weights"), label);
+    if (ImGui::RadioButton(TR("By score"), form.by_score)) form.by_score = true;
+    tip(
+        TR("A move weighs the points the side that played it made in its games: a win 2, a draw 1, a loss 0, as "
+           "Polyglot counts. The games without a result are left out, and so is a move whose games were all lost."));
+    ImGui::SameLine();
+    if (ImGui::RadioButton(TR("By count"), !form.by_score)) form.by_score = false;
+    tip(TR("A move weighs the number of games that play it, whatever their results."));
+
+    ui::label(TR("Rating"), label);
+    ImGui::Checkbox(TR("Only the moves of players rated at least"), &form.rated);
+    tip(
+        TR("A move counts when the player who made it is rated this or more, by the game's WhiteElo or BlackElo tag; "
+           "a player without a rating is left out."));
+    ImGui::SameLine();
+    ImGui::BeginDisabled(!form.rated);
+    ImGui::SetNextItemWidth(px(90));
+    if (ui::inputInt("##build_min_elo", &form.min_elo)) form.min_elo = std::clamp(form.min_elo, 1, 4000);
+    ImGui::EndDisabled();
+    ImGui::EndDisabled();
+
+    ImGui::Spacing();
+    if (busy) {
+        const auto share = book_build_.progress();
+        ImGui::ProgressBar(
+            static_cast<float>(share), ImVec2(px(320), 0),
+            book_build_.cancelling() ? TR("Cancelling…") : trf("Reading the games… {} %", percent(share)).c_str());
+        ImGui::SameLine();
+        ImGui::BeginDisabled(book_build_.cancelling());
+        if (ImGui::Button(TR("Cancel"))) book_build_.cancel();
+        ImGui::EndDisabled();
+        ImGui::TextDisabled("%s", trf("Writing {}", book_build_.bin()).c_str());
+    } else {
+        std::error_code ec;
+        const bool found = fs::is_regular_file(form.pgn, ec);
+        ImGui::BeginDisabled(!found);
+        if (ImGui::Button(TR("Build…"))) {
+            // Next to the PGN file.
+            const auto pgn  = fs::path(form.pgn);
+            const auto name = pgn.stem().string() + ".bin";
+            dialogs_.saveFile(Dialogs::Purpose::BuildBookBin, {{TR("Polyglot book"), "bin"}},
+                              pgn.has_parent_path() ? (pgn.parent_path() / name).string() : newBookPath(name));
+        }
+        ImGui::EndDisabled();
+        tip(found ? TR("Asks where to write the book, then reads the games in the background; the book is added to "
+                       "the library.")
+            : form.pgn.empty() ? TR("Choose a PGN file first.")
+                               : trf("File not found: {}", form.pgn).c_str());
+    }
+    if (!book_build_error_.empty()) {
+        ImGui::Spacing();
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+        ImGui::TextWrapped("%s", book_build_error_.c_str());
+        ImGui::PopStyleColor();
+    }
 }
 
 void App::cancelBookScan() {
@@ -130,8 +396,15 @@ void App::drawBooks() {
         dialogs_.openFile(Dialogs::Purpose::AddBook,
                           {{TR("Books (EPD, PGN, Polyglot)"), "epd;pgn;bin"}, {TR("All files"), "*"}});
     }
-    ImGui::SameLine();
-    ImGui::BeginDisabled(selected_book_ < 0);
+    ui::sameLineOrWrap(TR("Create…"));
+    const bool create = ImGui::Button(TR("Create…"));
+    const ImVec2 below(ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y);  // the menu drops down from it
+    tip(TR("Books the program writes, added to the library."));
+    if (create || std::exchange(open_book_create_, false)) ImGui::OpenPopup("##book_create");
+    ImGui::SetNextWindowPos(below, ImGuiCond_Appearing);
+    drawBookCreateMenu();
+    ui::sameLineOrWrap(TR("Remove"));
+    ImGui::BeginDisabled(selected_book_ < 0 || book_build_shown_);
     if (ImGui::Button(TR("Remove")) && selected_book_ >= 0) {
         if (book_scan_index_ == selected_book_) {
             cancelBookScan();
@@ -155,9 +428,11 @@ void App::drawBooks() {
         ImGui::TextUnformatted(missing || b.problems > 0 ? "!" : "·");
         ImGui::PopStyleColor();
         ImGui::SameLine();
-        if (ImGui::Selectable(fmt::format("{}##book{}", b.name, i).c_str(), selected_book_ == i)) {
-            selected_book_ = i;
-            book_item_     = -1;
+        if (ImGui::Selectable(fmt::format("{}##book{}", b.name, i).c_str(),
+                              selected_book_ == i && !book_build_shown_)) {
+            selected_book_    = i;
+            book_item_        = -1;
+            book_build_shown_ = false;
         }
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("%s", missing ? trf("File not found: {}", b.path).c_str() : b.path.c_str());
@@ -166,7 +441,19 @@ void App::drawBooks() {
             ImGui::TextDisabled("%s", ui::formatCount(b.positions).c_str());
         }
     }
-    if (books_.empty()) {
+    // The book being built, until it joins the library.
+    if (book_build_.busy()) {
+        ImGui::TextDisabled("…");
+        ImGui::SameLine();
+        if (ImGui::Selectable(fmt::format("{}##book_building", fs::path(book_build_.bin()).stem().string()).c_str(),
+                              book_build_shown_)) {
+            book_build_shown_ = true;
+        }
+        tip(trf("Being built from {}", book_build_.pgn()).c_str());
+        ImGui::SameLine();
+        ImGui::TextDisabled("%d %%", percent(book_build_.progress()));
+    }
+    if (books_.empty() && !book_build_.busy()) {
         ImGui::PushTextWrapPos(0);
         ImGui::TextDisabled("%s", TR("No book yet. Click Add."));
         ImGui::PopTextWrapPos();
@@ -175,7 +462,9 @@ void App::drawBooks() {
     if (ui::splitter("##book_split", setup_.panes["books"], page)) saveSetupSoon();
 
     ImGui::BeginChild("##book_detail");
-    if (selected_book_ < 0 || selected_book_ >= static_cast<int>(books_.size())) {
+    if (book_build_shown_) {
+        drawBookBuild();
+    } else if (selected_book_ < 0 || selected_book_ >= static_cast<int>(books_.size())) {
         ui::emptyState(TR("Choose a book in the list."));
     } else {
         drawBookDetail(books_[selected_book_]);
@@ -260,8 +549,9 @@ void App::drawBookDetail(BookEntry& book) {
             ImGui::PopStyleColor();
             ImGui::SameLine();
             ImGui::TextUnformatted(trf("{}: {}", TR("lines starting with %, ignored"), ui::formatCount(n)).c_str());
-            ui::help(TR("The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, "
-                        "and could play some openings of this book from a wrong position, often the starting one."));
+            ui::help(
+                TR("The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, "
+                   "and could play some openings of this book from a wrong position, often the starting one."));
         }
 
         ImGui::Spacing();

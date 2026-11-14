@@ -137,6 +137,9 @@ msgstr "Книга Polyglot просматривается от начально
 msgid "A WinBoard engine."
 msgstr "Движок WinBoard."
 
+msgid "A book is being built already: wait for it, or cancel it."
+msgstr "Книга уже строится: дождитесь её или отмените."
+
 msgid "A colour won both games of a pair"
 msgstr "Один цвет выиграл обе партии пары"
 
@@ -166,6 +169,18 @@ msgstr "Идёт матч: дождитесь его окончания, что�
 
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "PV матовой оценки должен иметь правильную длину и заканчиваться матом. PV всегда проверяются на нелегальные ходы; ходы с неверным PV отмечаются на вкладке «Партии»."
+
+msgid "A move counts when the player who made it is rated this or more, by the game's WhiteElo or BlackElo tag; a player without a rating is left out."
+msgstr "Ход учитывается, если у сделавшего его игрока рейтинг не ниже этого, по тегу WhiteElo или BlackElo партии; игрок без рейтинга не учитывается."
+
+msgid "A move is kept when at least this many games play it in its position; the others are left out as played too rarely (Polyglot's -min-game)."
+msgstr "Ход сохраняется, если в его позиции его играют не меньше этого числа партий; остальные отбрасываются как слишком редкие (-min-game в Polyglot)."
+
+msgid "A move weighs the number of games that play it, whatever their results."
+msgstr "Вес хода — число партий, в которых он сыгран, независимо от их результатов."
+
+msgid "A move weighs the points the side that played it made in its games: a win 2, a draw 1, a loss 0, as Polyglot counts. The games without a result are left out, and so is a move whose games were all lost."
+msgstr "Вес хода — очки, набранные в его партиях стороной, которая его сделала: победа 2, ничья 1, поражение 0, как считает Polyglot. Партии без результата отбрасываются, как и ход, все партии с которым проиграны."
 
 msgid "A page that opens in any browser, light or dark, with a header that tells how the list was made: sources, games, anchor and filters."
 msgstr "Страница, которая открывается в любом браузере, светлая или тёмная, с заголовком о том, как составлен список: источники, партии, опора и фильтры."
@@ -269,6 +284,9 @@ msgstr "После текущего турнира: его завершение 
 msgid "All"
 msgstr "Все"
 
+msgid "All 324 positions…"
+msgstr "Все 324 позиции…"
+
 msgid "All engines"
 msgstr "Все движки"
 
@@ -347,6 +365,9 @@ msgstr "В BBCode, для форума"
 msgid "As text"
 msgstr "Текстом"
 
+msgid "Asks where to write the book, then reads the games in the background; the book is added to the library."
+msgstr "Спрашивает, куда записать книгу, затем читает партии в фоне; книга добавляется в библиотеку."
+
 msgid "Author: {} → {}"
 msgstr "Автор: {} → {}"
 
@@ -386,6 +407,9 @@ msgstr "Базовое время (с)"
 msgid "Before"
 msgstr "Было"
 
+msgid "Being built from {}"
+msgstr "Строится из {}"
+
 msgid "Black"
 msgstr "Чёрные"
 
@@ -413,6 +437,9 @@ msgstr "Чёрные ×2"
 msgid "Black's connection stalls"
 msgstr "Чёрные не отвечают"
 
+msgid "Black's pieces on the same files as White's: 18 starting positions, added to the library."
+msgstr "Чёрные фигуры на тех же вертикалях, что и белые: 18 начальных позиций, добавленных в библиотеку."
+
 msgid "Board"
 msgstr "Доска"
 
@@ -425,6 +452,9 @@ msgstr "Книги"
 msgid "Books (EPD, PGN, Polyglot)"
 msgstr "Книги (EPD, PGN, Polyglot)"
 
+msgid "Books the program writes, added to the library."
+msgstr "Книги, которые пишет программа; они добавляются в библиотеку."
+
 msgid "Both engines must agree"
 msgstr "Оба движка должны согласиться"
 
@@ -433,6 +463,21 @@ msgstr "Сетка"
 
 msgid "Broadcast"
 msgstr "Трансляция"
+
+msgid "Build a Polyglot book"
+msgstr "Построить книгу Polyglot"
+
+msgid "Build a Polyglot book…"
+msgstr "Построить книгу Polyglot…"
+
+msgid "Build…"
+msgstr "Построить…"
+
+msgid "By count"
+msgstr "По числу"
+
+msgid "By score"
+msgstr "По очкам"
 
 msgid "By time control"
 msgstr "По контролю времени"
@@ -448,6 +493,12 @@ msgstr "Калькулятор…"
 
 msgid "Cancel"
 msgstr "Отмена"
+
+msgid "Cancel the Polyglot book being built"
+msgstr "Отменить построение книги Polyglot"
+
+msgid "Cancelling…"
+msgstr "Отмена…"
 
 msgid "Cannot draw the pieces."
 msgstr "Не удалось нарисовать фигуры."
@@ -521,6 +572,15 @@ msgstr "Проверено: работает."
 msgid "Checking…"
 msgstr "Проверка…"
 
+msgid "Chess324: the 18 symmetrical starting positions"
+msgstr "Chess324: 18 симметричных начальных позиций"
+
+msgid "Chess324: the 324 starting positions"
+msgstr "Chess324: 324 начальные позиции"
+
+msgid "Chess324: the kings and the rooks on their usual squares, so castling is the usual one; the queen, the bishops and the knights of each side shuffled on the other squares of its back rank, the bishops on opposite colours. 18 arrangements a side, White's and Black's chosen independently: 324 starting positions, an EPD book any engine plays, added to the library."
+msgstr "Chess324: короли и ладьи на своих обычных полях, поэтому рокировка обычная; ферзь, слоны и кони каждой стороны перемешаны на остальных полях её первой горизонтали, слоны на полях разного цвета. 18 расстановок для каждой стороны, у белых и у чёрных они выбираются независимо: 324 начальные позиции, книга EPD, которую играет любой движок, добавленная в библиотеку."
+
 msgid "Chess960"
 msgstr "Chess960"
 
@@ -535,6 +595,9 @@ msgstr "ChessBase / Lichess: {[%eval 0.35,18] [%emt 0:00:01.234]}, оценка 
 
 msgid "ChessGUI (ChsGUI_Eng.TXT), cutechess or Banksia (engines.json), Arena…"
 msgstr "ChessGUI (ChsGUI_Eng.TXT), cutechess или Banksia (engines.json), Arena…"
+
+msgid "Choose a PGN file first."
+msgstr "Сначала выберите файл PGN."
 
 msgid "Choose a book in the list."
 msgstr "Выберите книгу в списке."
@@ -637,6 +700,9 @@ msgstr "Вылет / нелегальный ход"
 
 msgid "Create a token on lichess…"
 msgstr "Создать токен на lichess…"
+
+msgid "Create…"
+msgstr "Создать…"
 
 msgid "Crosstable"
 msgstr "Перекрёстная таблица"
@@ -1019,8 +1085,14 @@ msgstr "Бесплатно, без учётной записи: адреса в�
 msgid "From move"
 msgstr "С хода"
 
+msgid "From the games of a PGN file: their moves up to a depth, those played by enough games, weighted by their number or their score; written as a Polyglot book (.bin) and added to the library."
+msgstr "Из партий файла PGN: их ходы до заданной глубины, сыгранные достаточным числом партий, с весом по числу или по очкам; записывается как книга Polyglot (.bin) и добавляется в библиотеку."
+
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr "Только по партиям, с соответствующим DrawElo."
+
+msgid "From {}: {}"
+msgstr "Из {}: {}"
 
 msgid "Gainer [0, 3]"
 msgstr "Улучшение [0, 3]"
@@ -1078,6 +1150,9 @@ msgstr "Таблица гаунтлета текстом"
 
 msgid "Gauntlet {} vs {} engines"
 msgstr "Гаунтлет, движков: {} против {}"
+
+msgid "Generate Chess324 book"
+msgstr "Создать книгу Chess324"
 
 msgid "Give the Syzygy tablebase directory."
 msgstr "Укажите папку таблиц Syzygy."
@@ -1144,6 +1219,9 @@ msgstr "Хост"
 
 msgid "How deep the lines of the book are followed; -1 = {}."
 msgstr "Насколько глубоко просматриваются варианты книги; -1 = {}."
+
+msgid "How far each game goes into the book, in plies (a move of one side) from its start."
+msgstr "Насколько глубоко каждая партия входит в книгу, в полуходах (ход одной стороны) от её начала."
 
 msgid "How games ended"
 msgstr "Как заканчивались партии"
@@ -1406,6 +1484,9 @@ msgstr "Макс. оценка (cp)"
 msgid "Maximum number of moves"
 msgstr "Максимальное число ходов"
 
+msgid "Minimum games"
+msgstr "Минимум партий"
+
 msgid "Model"
 msgstr "Модель"
 
@@ -1487,6 +1568,9 @@ msgstr "В этом слоте пока нет партии."
 msgid "No game is being played."
 msgstr "Сейчас партии не играются."
 
+msgid "No game of {} gives a move: is it a PGN file?"
+msgstr "Ни одна партия из {} не даёт хода: это файл PGN?"
+
 msgid "No game yet."
 msgstr "Партий пока нет."
 
@@ -1498,6 +1582,18 @@ msgstr "Матча пока нет. Выберите два движка и на
 
 msgid "No move after 10 seconds of a 0.3 s search."
 msgstr "Нет хода через 10 секунд при поиске на 0,3 с."
+
+msgid "No move is left: {} game of {} is left out by the rating, or by its missing result with weights by score. Lower the rating, or weigh the moves by count."
+msgid_plural "No move is left: {} games of {} are left out by the rating, or by their missing result with weights by score. Lower the rating, or weigh the moves by count."
+msgstr[0] "Не осталось ни одного хода: {} партия из {} отброшена из-за рейтинга или, при весе по очкам, из-за отсутствия результата. Понизьте рейтинг или задайте вес по числу."
+msgstr[1] "Не осталось ни одного хода: {} партии из {} отброшены из-за рейтинга или, при весе по очкам, из-за отсутствия результата. Понизьте рейтинг или задайте вес по числу."
+msgstr[2] "Не осталось ни одного хода: {} партий из {} отброшены из-за рейтинга или, при весе по очкам, из-за отсутствия результата. Понизьте рейтинг или задайте вес по числу."
+
+msgid "No move of {} is left with these options."
+msgstr "С этими параметрами не остаётся ни одного хода из {}."
+
+msgid "No move of {} is played by {} games or more: lower the minimum."
+msgstr "Ни один ход из {} не сыгран в {} или более партиях: понизьте минимум."
 
 msgid "No new engine in the folder."
 msgstr "В папке нет новых движков."
@@ -1625,8 +1721,14 @@ msgstr "Одна партия"
 msgid "One port per game"
 msgstr "Отдельный порт для каждой партии"
 
+msgid "Only the 18 symmetrical ones…"
+msgstr "Только 18 симметричных…"
+
 msgid "Only the games between engines of a group of the library."
 msgstr "Только партии между движками одной группы из библиотеки."
+
+msgid "Only the moves of players rated at least"
+msgstr "Только ходы игроков с рейтингом не ниже"
 
 msgid "Only those that work"
 msgstr "Только работающие"
@@ -1705,6 +1807,9 @@ msgstr "У движков с опцией OwnBook она устанавлива�
 
 msgid "PGN and misc"
 msgstr "PGN и прочее"
+
+msgid "PGN file"
+msgstr "Файл PGN"
 
 msgid "PGN files…"
 msgstr "Файлы PGN…"
@@ -1829,6 +1934,9 @@ msgstr "Полуходы после последнего взятия или х�
 msgid "Points"
 msgstr "Очки"
 
+msgid "Polyglot book"
+msgstr "Книга Polyglot"
+
 msgid "Polyglot book: its lines to {} plies, as positions"
 msgstr "Книга Polyglot: её варианты до глубины {} (в полуходах), в виде позиций"
 
@@ -1922,6 +2030,9 @@ msgstr "RMS-смещение (Elo)"
 msgid "Random order"
 msgstr "Случайный порядок"
 
+msgid "Rating"
+msgstr "Рейтинг"
+
 msgid "Rating after each tournament"
 msgstr "Рейтинг после каждого турнира"
 
@@ -1954,6 +2065,9 @@ msgstr "Перечитать опции UCI"
 
 msgid "Reading the engine…"
 msgstr "Чтение движка…"
+
+msgid "Reading the games… {} %"
+msgstr "Чтение партий… {} %"
 
 msgid "Reading the options of an engine…"
 msgstr "Чтение опций движка…"
@@ -2393,6 +2507,9 @@ msgstr "По стандарту PGN это комментарии. fastchess-gui
 msgid "The average rating of the opponents met, game by game."
 msgstr "Средний рейтинг соперников, партия за партией."
 
+msgid "The book cannot be built: {}"
+msgstr "Не удаётся построить книгу: {}"
+
 msgid "The book of {} cannot be used: {}"
 msgstr "Книгу {} нельзя использовать: {}"
 
@@ -2783,6 +2900,9 @@ msgstr "Ожидает чтения · прочитать следующим"
 msgid "Web page"
 msgstr "Веб-страница"
 
+msgid "Weights"
+msgstr "Вес"
+
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr "Что проверяет тестер перед отправкой партий в рейтинг-лист. «Экспорт для рейтинг-листа…» на вкладке «Партии» исключает аннулированные партии и дубликаты."
 
@@ -2887,6 +3007,9 @@ msgstr "Ошибка записи в {}"
 
 msgid "Write the live files"
 msgstr "Записывать файлы трансляции"
+
+msgid "Writing {}"
+msgstr "Запись {}"
 
 msgid "Written at {} in {}"
 msgstr "Записано в {} в папку {}"
@@ -3041,6 +3164,12 @@ msgstr "поражения"
 msgid "moves"
 msgstr "ходы"
 
+msgid "moves of {} game or more"
+msgid_plural "moves of {} games or more"
+msgstr[0] "ходы, сыгранные в {} партии и более"
+msgstr[1] "ходы, сыгранные в {} партиях и более"
+msgstr[2] "ходы, сыгранные в {} партиях и более"
+
 msgid "nElo of A (95% CI)"
 msgstr "nElo A (ДИ 95%)"
 
@@ -3076,6 +3205,9 @@ msgstr[2] "собственная книга {}, {} полуходов"
 
 msgid "pairs"
 msgstr "пары"
+
+msgid "players rated {} or more"
+msgstr "игроки с рейтингом от {}"
 
 msgid "reading the tournaments…"
 msgstr "чтение турниров…"
@@ -3133,6 +3265,12 @@ msgstr "использует {:.1f} ядра, пока думает; поток�
 
 msgid "voided"
 msgstr "аннулирована"
+
+msgid "weighted by count"
+msgstr "вес по числу"
+
+msgid "weighted by score"
+msgstr "вес по очкам"
 
 msgid "wins"
 msgstr "победы"
@@ -3313,6 +3451,12 @@ msgid_plural "{} games exported to {}"
 msgstr[0] "{} партия экспортирована в {}"
 msgstr[1] "{} партии экспортированы в {}"
 msgstr[2] "{} партий экспортировано в {}"
+
+msgid "{} game left out by the options (a rating below the minimum, or no result)."
+msgid_plural "{} games left out by the options (a rating below the minimum, or no result)."
+msgstr[0] "{} партия отброшена параметрами (рейтинг ниже минимума или нет результата)."
+msgstr[1] "{} партии отброшены параметрами (рейтинг ниже минимума или нет результата)."
+msgstr[2] "{} партий отброшено параметрами (рейтинг ниже минимума или нет результата)."
 
 msgid "{} game pair"
 msgid_plural "{} game pairs"
@@ -3500,6 +3644,12 @@ msgstr "{} играет с {} % времени"
 msgid "{} plays with {}."
 msgstr "{} играет с {}."
 
+msgid "{} ply"
+msgid_plural "{} plies"
+msgstr[0] "{} полуход"
+msgstr[1] "{} полухода"
+msgstr[2] "{} полуходов"
+
 msgid "{} position"
 msgid_plural "{} positions"
 msgstr[0] "{} позиция"
@@ -3566,6 +3716,12 @@ msgstr "{} станет книгой следующего турнира."
 msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
 msgstr "{} был бы одновременно PGN-файлом и его zip-архивом: выберите имя, оканчивающееся на .pgn."
 
+msgid "{} written: {} positions, from {} game."
+msgid_plural "{} written: {} positions, from {} games."
+msgstr[0] "Записано {}: позиций — {}, из {} партии."
+msgstr[1] "Записано {}: позиций — {}, из {} партий."
+msgstr[2] "Записано {}: позиций — {}, из {} партий."
+
 msgid "{} · depth {} · {}"
 msgstr "{} · глубина {} · {}"
 
@@ -3607,6 +3763,9 @@ msgstr "{}-фигурные таблицы Syzygy для каждого движ
 
 msgid "{}-man Syzygy for {} of {} engines"
 msgstr "{}-фигурные таблицы Syzygy для {} из {} движков"
+
+msgid "{}: cancelled, nothing written."
+msgstr "{}: отменено, ничего не записано."
 
 msgid "{}: decision"
 msgstr "{}: время решения"

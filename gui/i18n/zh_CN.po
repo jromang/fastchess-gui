@@ -133,6 +133,9 @@ msgstr "从初始局面沿 Polyglot 开局库走到此深度（-1 = {}），去�
 msgid "A WinBoard engine."
 msgstr "一个 WinBoard 引擎。"
 
+msgid "A book is being built already: wait for it, or cancel it."
+msgstr "已有一个开局库正在生成：请等待它完成，或取消它。"
+
 msgid "A colour won both games of a pair"
 msgstr "同一方赢下一对中的两局"
 
@@ -162,6 +165,18 @@ msgstr "比赛正在进行：请等它结束后再打开另一场。"
 
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "将杀分数的 PV 必须长度正确并以将杀结束。PV 中的非法着法总是会被检查；PV 错误的着法会在“对局”页中标出。"
+
+msgid "A move counts when the player who made it is rated this or more, by the game's WhiteElo or BlackElo tag; a player without a rating is left out."
+msgstr "仅当走出该着法的棋手等级分不低于此值时（依据对局的 WhiteElo 或 BlackElo 标签），该着法才计入；没有等级分的棋手被排除。"
+
+msgid "A move is kept when at least this many games play it in its position; the others are left out as played too rarely (Polyglot's -min-game)."
+msgstr "当至少有这么多局对局在该局面下走出某着法时，该着法才被保留；其余着法因走得太少而被排除（即 Polyglot 的 -min-game）。"
+
+msgid "A move weighs the number of games that play it, whatever their results."
+msgstr "着法的权重为走出它的对局数，不论结果如何。"
+
+msgid "A move weighs the points the side that played it made in its games: a win 2, a draw 1, a loss 0, as Polyglot counts. The games without a result are left out, and so is a move whose games were all lost."
+msgstr "着法的权重为走出它的一方在这些对局中的得分：胜 2、和 1、负 0，与 Polyglot 的算法相同。没有结果的对局被排除，所有对局都输掉的着法也被排除。"
 
 msgid "A page that opens in any browser, light or dark, with a header that tells how the list was made: sources, games, anchor and filters."
 msgstr "可在任何浏览器中打开的页面（浅色或深色），带有说明列表如何生成的页眉：来源、对局、锚点和筛选条件。"
@@ -261,6 +276,9 @@ msgstr "请在当前锦标赛结束后：它结束时会关闭所有引擎。"
 msgid "All"
 msgstr "全部"
 
+msgid "All 324 positions…"
+msgstr "全部 324 个局面…"
+
 msgid "All engines"
 msgstr "所有引擎"
 
@@ -339,6 +357,9 @@ msgstr "BBCode 格式，用于论坛"
 msgid "As text"
 msgstr "文本格式"
 
+msgid "Asks where to write the book, then reads the games in the background; the book is added to the library."
+msgstr "先询问开局库的保存位置，然后在后台读取对局；开局库会加入库中。"
+
 msgid "Author: {} → {}"
 msgstr "作者：{} → {}"
 
@@ -378,6 +399,9 @@ msgstr "基本时间 (s)"
 msgid "Before"
 msgstr "之前"
 
+msgid "Being built from {}"
+msgstr "正在由 {} 生成"
+
 msgid "Black"
 msgstr "黑方"
 
@@ -405,6 +429,9 @@ msgstr "黑方 ×2"
 msgid "Black's connection stalls"
 msgstr "黑方连接无响应"
 
+msgid "Black's pieces on the same files as White's: 18 starting positions, added to the library."
+msgstr "黑方棋子与白方位于相同的列：18 个初始局面，加入库中。"
+
 msgid "Board"
 msgstr "棋盘"
 
@@ -417,6 +444,9 @@ msgstr "开局库"
 msgid "Books (EPD, PGN, Polyglot)"
 msgstr "开局库（EPD、PGN、Polyglot）"
 
+msgid "Books the program writes, added to the library."
+msgstr "由程序生成的开局库，加入库中。"
+
 msgid "Both engines must agree"
 msgstr "双方引擎必须一致"
 
@@ -425,6 +455,21 @@ msgstr "对阵表"
 
 msgid "Broadcast"
 msgstr "直播"
+
+msgid "Build a Polyglot book"
+msgstr "生成 Polyglot 开局库"
+
+msgid "Build a Polyglot book…"
+msgstr "生成 Polyglot 开局库…"
+
+msgid "Build…"
+msgstr "生成…"
+
+msgid "By count"
+msgstr "按次数"
+
+msgid "By score"
+msgstr "按得分"
 
 msgid "By time control"
 msgstr "按时限"
@@ -440,6 +485,12 @@ msgstr "计算器…"
 
 msgid "Cancel"
 msgstr "取消"
+
+msgid "Cancel the Polyglot book being built"
+msgstr "取消正在生成的 Polyglot 开局库"
+
+msgid "Cancelling…"
+msgstr "正在取消…"
 
 msgid "Cannot draw the pieces."
 msgstr "无法绘制棋子。"
@@ -513,6 +564,15 @@ msgstr "已检查：可以正常工作。"
 msgid "Checking…"
 msgstr "正在检查…"
 
+msgid "Chess324: the 18 symmetrical starting positions"
+msgstr "Chess324：18 个对称的初始局面"
+
+msgid "Chess324: the 324 starting positions"
+msgstr "Chess324：324 个初始局面"
+
+msgid "Chess324: the kings and the rooks on their usual squares, so castling is the usual one; the queen, the bishops and the knights of each side shuffled on the other squares of its back rank, the bishops on opposite colours. 18 arrangements a side, White's and Black's chosen independently: 324 starting positions, an EPD book any engine plays, added to the library."
+msgstr "Chess324：王和车位于通常的格子上，因此王车易位与通常相同；每一方的后、象和马在其底线的其余格子上打乱排列，两象位于不同颜色的格子。每方 18 种排列，白方与黑方独立选择：共 324 个初始局面，任何引擎都能下的 EPD 开局库，加入库中。"
+
 msgid "Chess960"
 msgstr "Chess960"
 
@@ -527,6 +587,9 @@ msgstr "ChessBase / Lichess：{[%eval 0.35,18] [%emt 0:00:01.234]}，评估以�
 
 msgid "ChessGUI (ChsGUI_Eng.TXT), cutechess or Banksia (engines.json), Arena…"
 msgstr "ChessGUI (ChsGUI_Eng.TXT)、cutechess 或 Banksia (engines.json)、Arena…"
+
+msgid "Choose a PGN file first."
+msgstr "请先选择一个 PGN 文件。"
 
 msgid "Choose a book in the list."
 msgstr "请在列表中选择一个开局库。"
@@ -629,6 +692,9 @@ msgstr "崩溃 / 非法着法"
 
 msgid "Create a token on lichess…"
 msgstr "在 lichess 上创建令牌…"
+
+msgid "Create…"
+msgstr "创建…"
 
 msgid "Crosstable"
 msgstr "交叉表"
@@ -1011,8 +1077,14 @@ msgstr "免费，无需账户：其地址会不时变化，速度受限。"
 msgid "From move"
 msgstr "从第几步开始"
 
+msgid "From the games of a PGN file: their moves up to a depth, those played by enough games, weighted by their number or their score; written as a Polyglot book (.bin) and added to the library."
+msgstr "由 PGN 文件中的对局生成：取到一定深度的着法，保留由足够多对局走出的着法，按次数或得分加权；保存为 Polyglot 开局库（.bin）并加入库中。"
+
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr "仅根据对局计算，并附带对应的 DrawElo。"
+
+msgid "From {}: {}"
+msgstr "来自 {}：{}"
 
 msgid "Gainer [0, 3]"
 msgstr "增益 [0, 3]"
@@ -1070,6 +1142,9 @@ msgstr "车轮战表格（文本）"
 
 msgid "Gauntlet {} vs {} engines"
 msgstr "车轮战：{} 对 {} 个引擎"
+
+msgid "Generate Chess324 book"
+msgstr "生成 Chess324 开局库"
 
 msgid "Give the Syzygy tablebase directory."
 msgstr "请指定 Syzygy 残局库目录。"
@@ -1134,6 +1209,9 @@ msgstr "主机"
 
 msgid "How deep the lines of the book are followed; -1 = {}."
 msgstr "沿开局库的变化走多深；-1 = {}。"
+
+msgid "How far each game goes into the book, in plies (a move of one side) from its start."
+msgstr "每局对局从开始起进入开局库的深度，以半回合（一方走一步）计。"
 
 msgid "How games ended"
 msgstr "对局结束方式"
@@ -1396,6 +1474,9 @@ msgstr "最大分数 (cp)"
 msgid "Maximum number of moves"
 msgstr "最大步数"
 
+msgid "Minimum games"
+msgstr "最少对局数"
+
 msgid "Model"
 msgstr "模型"
 
@@ -1477,6 +1558,9 @@ msgstr "此位置还没有对局。"
 msgid "No game is being played."
 msgstr "当前没有正在进行的对局。"
 
+msgid "No game of {} gives a move: is it a PGN file?"
+msgstr "{} 中没有任何对局给出着法：这是 PGN 文件吗？"
+
 msgid "No game yet."
 msgstr "还没有对局。"
 
@@ -1488,6 +1572,16 @@ msgstr "还没有比赛。选择两个引擎，然后点击“开始”。"
 
 msgid "No move after 10 seconds of a 0.3 s search."
 msgstr "0.3 秒搜索 10 秒后仍未给出着法。"
+
+msgid "No move is left: {} game of {} is left out by the rating, or by its missing result with weights by score. Lower the rating, or weigh the moves by count."
+msgid_plural "No move is left: {} games of {} are left out by the rating, or by their missing result with weights by score. Lower the rating, or weigh the moves by count."
+msgstr[0] "没有剩下任何着法：{} 局对局（来自 {}）因等级分，或在按得分加权时因缺少结果而被排除。请降低等级分，或改为按次数加权。"
+
+msgid "No move of {} is left with these options."
+msgstr "使用这些选项后，{} 中没有剩下任何着法。"
+
+msgid "No move of {} is played by {} games or more: lower the minimum."
+msgstr "{} 中没有任何着法被 {} 局或更多对局走出：请降低最少对局数。"
 
 msgid "No new engine in the folder."
 msgstr "文件夹中没有新引擎。"
@@ -1615,8 +1709,14 @@ msgstr "单局"
 msgid "One port per game"
 msgstr "每局一个端口"
 
+msgid "Only the 18 symmetrical ones…"
+msgstr "仅 18 个对称局面…"
+
 msgid "Only the games between engines of a group of the library."
 msgstr "仅库中某个分组内引擎之间的对局。"
+
+msgid "Only the moves of players rated at least"
+msgstr "仅限等级分不低于此值的棋手的着法"
 
 msgid "Only those that work"
 msgstr "仅可用的"
@@ -1695,6 +1795,9 @@ msgstr "对具有 OwnBook 选项的引擎将其设为 false，使每局都从锦
 
 msgid "PGN and misc"
 msgstr "PGN 及其他"
+
+msgid "PGN file"
+msgstr "PGN 文件"
 
 msgid "PGN files…"
 msgstr "PGN 文件…"
@@ -1817,6 +1920,9 @@ msgstr "自上次吃子或兵走动以来的半回合数；达到 100 即为和�
 msgid "Points"
 msgstr "积分"
 
+msgid "Polyglot book"
+msgstr "Polyglot 开局库"
+
 msgid "Polyglot book: its lines to {} plies, as positions"
 msgstr "Polyglot 开局库：其变化走到 {} 个半回合，作为局面"
 
@@ -1908,6 +2014,9 @@ msgstr "RMS 偏差 (Elo)"
 msgid "Random order"
 msgstr "随机顺序"
 
+msgid "Rating"
+msgstr "等级分"
+
 msgid "Rating after each tournament"
 msgstr "每个锦标赛后的等级分"
 
@@ -1940,6 +2049,9 @@ msgstr "重新读取 UCI 选项"
 
 msgid "Reading the engine…"
 msgstr "正在读取引擎…"
+
+msgid "Reading the games… {} %"
+msgstr "正在读取对局… {} %"
 
 msgid "Reading the options of an engine…"
 msgstr "正在读取某个引擎的选项…"
@@ -2373,6 +2485,9 @@ msgstr "按 PGN 标准，这些是注释。fastchess-gui 0.4.13 及更早版本�
 msgid "The average rating of the opponents met, game by game."
 msgstr "逐局计算的所遇对手平均等级分。"
 
+msgid "The book cannot be built: {}"
+msgstr "无法生成开局库：{}"
+
 msgid "The book of {} cannot be used: {}"
 msgstr "{} 的开局库无法使用：{}"
 
@@ -2759,6 +2874,9 @@ msgstr "等待读取 · 下一个读取"
 msgid "Web page"
 msgstr "网页"
 
+msgid "Weights"
+msgstr "权重"
+
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr "测试者向等级分列表提交对局前检查的内容。“对局”页中的“导出给等级分列表…”会去除作废对局和重复对局。"
 
@@ -2863,6 +2981,9 @@ msgstr "写入 {} 时出错"
 
 msgid "Write the live files"
 msgstr "写入实时文件"
+
+msgid "Writing {}"
+msgstr "正在写入 {}"
 
 msgid "Written at {} in {}"
 msgstr "于 {} 写入 {}"
@@ -3015,6 +3136,10 @@ msgstr "负"
 msgid "moves"
 msgstr "步数"
 
+msgid "moves of {} game or more"
+msgid_plural "moves of {} games or more"
+msgstr[0] "至少 {} 局对局走出的着法"
+
 msgid "nElo of A (95% CI)"
 msgstr "A 的 nElo（95% 置信区间）"
 
@@ -3048,6 +3173,9 @@ msgstr[0] "专属开局库 {}，{} 个半回合"
 
 msgid "pairs"
 msgstr "对局对"
+
+msgid "players rated {} or more"
+msgstr "等级分 {} 及以上的棋手"
 
 msgid "reading the tournaments…"
 msgstr "正在读取锦标赛…"
@@ -3105,6 +3233,12 @@ msgstr "思考时占用 {:.1f} 个核心，使用 {} 个线程"
 
 msgid "voided"
 msgstr "已作废"
+
+msgid "weighted by count"
+msgstr "按次数加权"
+
+msgid "weighted by score"
+msgstr "按得分加权"
 
 msgid "wins"
 msgstr "胜"
@@ -3256,6 +3390,10 @@ msgid "{} game exported to {}"
 msgid_plural "{} games exported to {}"
 msgstr[0] "已导出 {} 局对局到 {}"
 
+msgid "{} game left out by the options (a rating below the minimum, or no result)."
+msgid_plural "{} games left out by the options (a rating below the minimum, or no result)."
+msgstr[0] "{} 局对局被选项排除（等级分低于最低值，或没有结果）。"
+
 msgid "{} game pair"
 msgid_plural "{} game pairs"
 msgstr[0] "{} 对对局"
@@ -3404,6 +3542,10 @@ msgstr "{} 使用 {} % 的时间"
 msgid "{} plays with {}."
 msgstr "{} 使用 {}。"
 
+msgid "{} ply"
+msgid_plural "{} plies"
+msgstr[0] "{} 个半回合"
+
 msgid "{} position"
 msgid_plural "{} positions"
 msgstr[0] "{} 个局面"
@@ -3458,6 +3600,10 @@ msgstr "{} 将成为下一个锦标赛的开局库。"
 msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
 msgstr "{} 将同时是 PGN 文件和它的 zip 文件：请选择以 .pgn 结尾的名称。"
 
+msgid "{} written: {} positions, from {} game."
+msgid_plural "{} written: {} positions, from {} games."
+msgstr[0] "已写入 {}：{} 个局面，来自 {} 局对局。"
+
 msgid "{} · depth {} · {}"
 msgstr "{} · 深度 {} · {}"
 
@@ -3497,6 +3643,9 @@ msgstr "每个引擎都有 {} 子 Syzygy"
 
 msgid "{}-man Syzygy for {} of {} engines"
 msgstr "{} 子 Syzygy，用于 {} 个引擎（共 {} 个）"
+
+msgid "{}: cancelled, nothing written."
+msgstr "{}：已取消，未写入任何内容。"
 
 msgid "{}: decision"
 msgstr "{}：决定"
