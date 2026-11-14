@@ -322,7 +322,8 @@ TEST_CASE("wb2uci: tournaments of WinBoard engines (protocol 1 and 2) and a UCI 
     setup.tc_inc_s         = 0.1;
     setup.book             = book.string();
     setup.concurrency_auto = false;
-    setup.concurrency      = 4;
+    // As many as the machine has, four at most: fastchess refuses a concurrency beyond its hardware threads.
+    setup.concurrency      = std::clamp(static_cast<int>(std::thread::hardware_concurrency()), 1, 4);
     setup.affinity         = false;
     setup.notify           = false;
 

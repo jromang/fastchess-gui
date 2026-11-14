@@ -303,6 +303,8 @@ TEST_CASE("Ctrl and the mouse wheel zoom the interface, not the chart under the 
     io.IniFilename = nullptr;
     io.DisplaySize = ImVec2(800, 600);
     io.DeltaTime   = 1.0f / 60.0f;
+    // On macOS Dear ImGui swaps Ctrl and Cmd by default: the Ctrl events below are meant as Ctrl.
+    io.ConfigMacOSXBehaviors = false;
 
     // A frame with a chart filling the window, the wheel taken first or not, as the window does; the x range shown.
     int step         = 0;
@@ -787,6 +789,11 @@ TEST_CASE("displayed statistics are fastchess' own") {
 }
 
 TEST_CASE("the setup becomes a sanitized fastchess configuration") {
+    // The topology below has four hardware threads, and fastchess refuses a concurrency beyond the machine's own.
+    if (std::thread::hardware_concurrency() < 4) {
+        MESSAGE("needs four hardware threads, skipped");
+        return;
+    }
     const auto dir = tempDir("run");
     // fastchess appends .exe to extension-less commands on Windows.
     const auto binary = dir / "engine.exe";
