@@ -169,6 +169,18 @@ it to the library. *Run as a test suite…* opens an EPD book in **Suites**.
   ones*, where Black's pieces stand on the same files as White's. They are ordinary positions, written to an EPD
   file (offered next to the books of the library, or in `books/` in the profile) and played by any engine, without
   Chess960.
+- *Build a Polyglot book…*: a Polyglot book (`.bin`) from the games of a PGN file, as Polyglot's `make-book` does,
+  with the conversion that turns the participants' PGN books into Polyglot books. Its form, in place of the book's
+  details, takes the PGN file (the PGN book chosen in the list, if any), the **depth** (the plies of each game that
+  go into the book), the **minimum games** a move needs in its position to be kept (Polyglot's `-min-game`; the
+  others are left out as played too rarely), the **weights**, *by score* (the points of the side that played the
+  move: a win 2, a draw 1, a loss 0, as Polyglot counts; games without a result are left out, and so is a move whose
+  games were all lost) or *by count* (the number of games that play it), and, if ticked, a **rating**: only the
+  moves of a player rated at least that much count, by the game's `WhiteElo` or `BlackElo` tag (a player without
+  one is left out). *Build…* asks where to write the book (next to the PGN file by default), then reads the games in
+  the background, with its progress and *Cancel*, beside the form and at the end of the list; the book, sorted by
+  key as the format wants, is then added to the library, its options in its description. The console says how many
+  games went into it, how many the options left out and how many could not be read.
 
 ## Test suites
 

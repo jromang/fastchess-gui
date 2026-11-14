@@ -471,6 +471,24 @@ class App {
     void askChess324(bool symmetrical);
     void writeChess324Book(std::string path, bool symmetrical);
     bool open_book_create_ = false;  // --focus books-create: the Create menu open
+    // Build a Polyglot book…: its form in the detail pane, the build in the background (tour/pgn_book.hpp).
+    struct BookBuildForm {
+        std::string pgn;
+        int plies     = 20;
+        int min_games = 3;
+        bool by_score = true;
+        bool rated    = false;
+        int min_elo   = 2400;
+    };
+    void openBookBuild();  // shows the form, with the PGN book chosen in the list if it is one
+    void drawBookBuild();
+    void startBookBuild(std::string bin);
+    void pollBookBuild();  // at each frame: the build that ended, added to the library
+    [[nodiscard]] tour::PgnBookOptions bookBuildOptions() const;
+    BookBuildForm book_build_form_;
+    bool book_build_shown_ = false;  // the detail pane shows the form rather than the book chosen
+    std::string book_build_error_;   // why the last build failed, shown in the form
+    PolyglotBuild book_build_;
 
     // engines
     void refreshPrograms();

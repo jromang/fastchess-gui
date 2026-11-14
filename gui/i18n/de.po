@@ -135,6 +135,9 @@ msgstr "Ein Polyglot-Buch wird von der Grundstellung bis zu dieser Tiefe verfolg
 msgid "A WinBoard engine."
 msgstr "Eine WinBoard-Engine."
 
+msgid "A book is being built already: wait for it, or cancel it."
+msgstr "Ein Buch wird bereits erstellt: warte darauf oder brich es ab."
+
 msgid "A colour won both games of a pair"
 msgstr "Eine Farbe gewann beide Partien eines Paares"
 
@@ -164,6 +167,18 @@ msgstr "Ein Match läuft: warte auf sein Ende, um ein anderes zu öffnen."
 
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "Die PV einer Mattbewertung muss die richtige Länge haben und im Matt enden. PVs werden immer auf illegale Züge geprüft; Züge mit falscher PV werden im Tab Partien markiert."
+
+msgid "A move counts when the player who made it is rated this or more, by the game's WhiteElo or BlackElo tag; a player without a rating is left out."
+msgstr "Ein Zug zählt, wenn der Spieler, der ihn gespielt hat, mindestens diese Wertung hat, laut dem WhiteElo- oder BlackElo-Tag der Partie; ein Spieler ohne Wertung wird ausgelassen."
+
+msgid "A move is kept when at least this many games play it in its position; the others are left out as played too rarely (Polyglot's -min-game)."
+msgstr "Ein Zug bleibt, wenn mindestens so viele Partien ihn in seiner Stellung spielen; die anderen werden als zu selten gespielt ausgelassen (-min-game von Polyglot)."
+
+msgid "A move weighs the number of games that play it, whatever their results."
+msgstr "Ein Zug wiegt die Anzahl der Partien, die ihn spielen, unabhängig von ihren Ergebnissen."
+
+msgid "A move weighs the points the side that played it made in its games: a win 2, a draw 1, a loss 0, as Polyglot counts. The games without a result are left out, and so is a move whose games were all lost."
+msgstr "Ein Zug wiegt die Punkte, die die Seite, die ihn gespielt hat, in ihren Partien geholt hat: ein Sieg 2, ein Remis 1, eine Niederlage 0, wie Polyglot zählt. Partien ohne Ergebnis werden ausgelassen, ebenso ein Zug, dessen Partien alle verloren wurden."
 
 msgid "A page that opens in any browser, light or dark, with a header that tells how the list was made: sources, games, anchor and filters."
 msgstr "Eine Seite, die sich in jedem Browser öffnet, hell oder dunkel, mit einem Kopf, der sagt, wie die Liste entstand: Quellen, Partien, Anker und Filter."
@@ -346,6 +361,9 @@ msgstr "Als BBCode, für ein Forum"
 msgid "As text"
 msgstr "Als Text"
 
+msgid "Asks where to write the book, then reads the games in the background; the book is added to the library."
+msgstr "Fragt, wohin das Buch geschrieben wird, und liest dann die Partien im Hintergrund; das Buch wird zur Bibliothek hinzugefügt."
+
 msgid "Automatic"
 msgstr "Automatisch"
 
@@ -378,6 +396,9 @@ msgstr "Zurück zum Standardwert"
 
 msgid "Base (s)"
 msgstr "Grundzeit (s)"
+
+msgid "Being built from {}"
+msgstr "Wird erstellt aus {}"
 
 msgid "Black"
 msgstr "Schwarz"
@@ -433,6 +454,21 @@ msgstr "Turnierbaum"
 msgid "Broadcast"
 msgstr "Übertragung"
 
+msgid "Build a Polyglot book"
+msgstr "Polyglot-Buch erstellen"
+
+msgid "Build a Polyglot book…"
+msgstr "Polyglot-Buch erstellen…"
+
+msgid "Build…"
+msgstr "Erzeugen…"
+
+msgid "By count"
+msgstr "Nach Anzahl"
+
+msgid "By score"
+msgstr "Nach Punkten"
+
 msgid "By time control"
 msgstr "Nach Bedenkzeit"
 
@@ -447,6 +483,12 @@ msgstr "Rechner…"
 
 msgid "Cancel"
 msgstr "Abbrechen"
+
+msgid "Cancel the Polyglot book being built"
+msgstr "Das Polyglot-Buch abbrechen, das gerade erstellt wird"
+
+msgid "Cancelling…"
+msgstr "Wird abgebrochen…"
 
 msgid "Cannot draw the pieces."
 msgstr "Die Figuren können nicht gezeichnet werden."
@@ -543,6 +585,9 @@ msgstr "ChessBase / Lichess: {[%eval 0.35,18] [%emt 0:00:01.234]}, Bewertung aus
 
 msgid "ChessGUI (ChsGUI_Eng.TXT), cutechess or Banksia (engines.json), Arena…"
 msgstr "ChessGUI (ChsGUI_Eng.TXT), cutechess oder Banksia (engines.json), Arena…"
+
+msgid "Choose a PGN file first."
+msgstr "Wähle zuerst eine PGN-Datei."
 
 msgid "Choose a book in the list."
 msgstr "Wähle ein Buch in der Liste."
@@ -1006,8 +1051,14 @@ msgstr "Kostenlos, ohne Konto: Seine Adressen ändern sich ab und zu, und seine 
 msgid "From move"
 msgstr "Ab Zug"
 
+msgid "From the games of a PGN file: their moves up to a depth, those played by enough games, weighted by their number or their score; written as a Polyglot book (.bin) and added to the library."
+msgstr "Aus den Partien einer PGN-Datei: ihre Züge bis zu einer Tiefe, die von genug Partien gespielten, gewichtet nach ihrer Anzahl oder ihren Punkten; als Polyglot-Buch (.bin) geschrieben und zur Bibliothek hinzugefügt."
+
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr "Nur aus den Partien, mit dem zugehörigen DrawElo."
+
+msgid "From {}: {}"
+msgstr "Aus {}: {}"
 
 msgid "Gainer [0, 3]"
 msgstr "Verbesserung [0, 3]"
@@ -1133,6 +1184,9 @@ msgstr "Host"
 
 msgid "How deep the lines of the book are followed; -1 = {}."
 msgstr "Wie tief die Linien des Buches verfolgt werden; -1 = {}."
+
+msgid "How far each game goes into the book, in plies (a move of one side) from its start."
+msgstr "Wie weit jede Partie ins Buch eingeht, in Halbzügen (ein Zug einer Seite) ab ihrem Beginn."
 
 msgid "How games ended"
 msgstr "Wie die Partien endeten"
@@ -1374,6 +1428,9 @@ msgstr "Max. Bewertung (cp)"
 msgid "Maximum number of moves"
 msgstr "Maximale Zugzahl"
 
+msgid "Minimum games"
+msgstr "Mindestzahl an Partien"
+
 msgid "Model"
 msgstr "Modell"
 
@@ -1452,6 +1509,9 @@ msgstr "Noch keine Partie in diesem Platz."
 msgid "No game is being played."
 msgstr "Es läuft gerade keine Partie."
 
+msgid "No game of {} gives a move: is it a PGN file?"
+msgstr "Keine Partie von {} ergibt einen Zug: ist es eine PGN-Datei?"
+
 msgid "No game yet."
 msgstr "Noch keine Partie."
 
@@ -1463,6 +1523,17 @@ msgstr "Noch kein Match. Wähle zwei Engines und klicke dann auf Start."
 
 msgid "No move after 10 seconds of a 0.3 s search."
 msgstr "Kein Zug nach 10 Sekunden einer Suche von 0,3 s."
+
+msgid "No move is left: {} game of {} is left out by the rating, or by its missing result with weights by score. Lower the rating, or weigh the moves by count."
+msgid_plural "No move is left: {} games of {} are left out by the rating, or by their missing result with weights by score. Lower the rating, or weigh the moves by count."
+msgstr[0] "Kein Zug bleibt: {} Partie von {} wird durch die Wertung ausgelassen oder, bei Gewichtung nach Punkten, durch ihr fehlendes Ergebnis. Senke die Wertung oder gewichte die Züge nach Anzahl."
+msgstr[1] "Kein Zug bleibt: {} Partien von {} werden durch die Wertung ausgelassen oder, bei Gewichtung nach Punkten, durch ihr fehlendes Ergebnis. Senke die Wertung oder gewichte die Züge nach Anzahl."
+
+msgid "No move of {} is left with these options."
+msgstr "Mit diesen Optionen bleibt kein Zug von {}."
+
+msgid "No move of {} is played by {} games or more: lower the minimum."
+msgstr "Kein Zug von {} wird von {} oder mehr Partien gespielt: senke das Minimum."
 
 msgid "No new engine in the folder."
 msgstr "Keine neue Engine im Ordner."
@@ -1587,6 +1658,9 @@ msgstr "Nur die 18 symmetrischen…"
 msgid "Only the games between engines of a group of the library."
 msgstr "Nur die Partien zwischen Engines einer Gruppe der Bibliothek."
 
+msgid "Only the moves of players rated at least"
+msgstr "Nur die Züge von Spielern mit einer Wertung von mindestens"
+
 msgid "Only those that work"
 msgstr "Nur funktionierende"
 
@@ -1664,6 +1738,9 @@ msgstr "OwnBook wird bei den Engines, die es haben, auf false gesetzt, damit jed
 
 msgid "PGN and misc"
 msgstr "PGN und Sonstiges"
+
+msgid "PGN file"
+msgstr "PGN-Datei"
 
 msgid "PGN files…"
 msgstr "PGN-Dateien…"
@@ -1787,6 +1864,9 @@ msgstr "Halbzüge seit dem letzten Schlagen oder Bauernzug; bei 100 ist die Part
 msgid "Points"
 msgstr "Punkte"
 
+msgid "Polyglot book"
+msgstr "Polyglot-Buch"
+
 msgid "Polyglot book: its lines to {} plies, as positions"
 msgstr "Polyglot-Buch: seine Linien bis {} Halbzüge, als Stellungen"
 
@@ -1879,6 +1959,9 @@ msgstr "RMS-Bias (Elo)"
 msgid "Random order"
 msgstr "Zufällige Reihenfolge"
 
+msgid "Rating"
+msgstr "Wertung"
+
 msgid "Rating after each tournament"
 msgstr "Wertung nach jedem Turnier"
 
@@ -1911,6 +1994,9 @@ msgstr "UCI-Optionen neu lesen"
 
 msgid "Reading the engine…"
 msgstr "Lese die Engine…"
+
+msgid "Reading the games… {} %"
+msgstr "Partien werden gelesen… {} %"
 
 msgid "Reading the options of an engine…"
 msgstr "Lese die Optionen einer Engine…"
@@ -2344,6 +2430,9 @@ msgstr "Der PGN-Standard macht sie zu Kommentaren. fastchess-gui 0.4.13 und ält
 msgid "The average rating of the opponents met, game by game."
 msgstr "Die durchschnittliche Wertung der Gegner, Partie für Partie."
 
+msgid "The book cannot be built: {}"
+msgstr "Das Buch kann nicht erstellt werden: {}"
+
 msgid "The book of {} cannot be used: {}"
 msgstr "Das Buch von {} ist nicht verwendbar: {}"
 
@@ -2704,6 +2793,9 @@ msgstr "Wartet aufs Lesen · als Nächstes lesen"
 msgid "Web page"
 msgstr "Webseite"
 
+msgid "Weights"
+msgstr "Gewichte"
+
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr "Was ein Tester prüft, bevor er die Partien an eine Rangliste schickt. „Für eine Rangliste exportieren…“ im Tab Partien lässt annullierte Partien und Duplikate weg."
 
@@ -2802,6 +2894,9 @@ msgstr "Schreibfehler in {}"
 
 msgid "Write the live files"
 msgstr "Die Live-Dateien schreiben"
+
+msgid "Writing {}"
+msgstr "Schreibe {}"
 
 msgid "Written at {} in {}"
 msgstr "Geschrieben um {} in {}"
@@ -2943,6 +3038,11 @@ msgstr "Niederlagen"
 msgid "moves"
 msgstr "Züge"
 
+msgid "moves of {} game or more"
+msgid_plural "moves of {} games or more"
+msgstr[0] "Züge von {} Partie oder mehr"
+msgstr[1] "Züge von {} Partien oder mehr"
+
 msgid "nElo of A (95% CI)"
 msgstr "nElo von A (95 % KI)"
 
@@ -2974,6 +3074,9 @@ msgstr[1] "eigenes Buch {}, {} Halbzüge"
 
 msgid "pairs"
 msgstr "Paare"
+
+msgid "players rated {} or more"
+msgstr "Spieler mit Wertung {} oder mehr"
 
 msgid "reading the tournaments…"
 msgstr "Turniere werden gelesen…"
@@ -3031,6 +3134,12 @@ msgstr "nutzt {:.1f} Kerne beim Rechnen, mit {} Thread(s)"
 
 msgid "voided"
 msgstr "annulliert"
+
+msgid "weighted by count"
+msgstr "nach Anzahl gewichtet"
+
+msgid "weighted by score"
+msgstr "nach Punkten gewichtet"
 
 msgid "wins"
 msgstr "Siege"
@@ -3190,6 +3299,11 @@ msgid "{} game exported to {}"
 msgid_plural "{} games exported to {}"
 msgstr[0] "{} Partie exportiert nach {}"
 msgstr[1] "{} Partien exportiert nach {}"
+
+msgid "{} game left out by the options (a rating below the minimum, or no result)."
+msgid_plural "{} games left out by the options (a rating below the minimum, or no result)."
+msgstr[0] "{} Partie durch die Optionen ausgelassen (eine Wertung unter dem Minimum oder kein Ergebnis)."
+msgstr[1] "{} Partien durch die Optionen ausgelassen (eine Wertung unter dem Minimum oder kein Ergebnis)."
 
 msgid "{} game pair"
 msgid_plural "{} game pairs"
@@ -3352,6 +3466,11 @@ msgstr[1] "{} Spieler können zwei Engines der Bibliothek sein: gib an, welche."
 msgid "{} plays with {} % of the time"
 msgstr "{} spielt mit {} % der Zeit"
 
+msgid "{} ply"
+msgid_plural "{} plies"
+msgstr[0] "{} Halbzug"
+msgstr[1] "{} Halbzüge"
+
 msgid "{} position"
 msgid_plural "{} positions"
 msgstr[0] "{} Stellung"
@@ -3409,6 +3528,11 @@ msgstr "{} wird das Buch des nächsten Turniers."
 msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
 msgstr "{} wäre zugleich die PGN-Datei und ihr Zip: Wähle einen Namen, der auf .pgn endet."
 
+msgid "{} written: {} positions, from {} game."
+msgid_plural "{} written: {} positions, from {} games."
+msgstr[0] "{} geschrieben: {} Stellungen, aus {} Partie."
+msgstr[1] "{} geschrieben: {} Stellungen, aus {} Partien."
+
 msgid "{} · depth {} · {}"
 msgstr "{} · Tiefe {} · {}"
 
@@ -3449,6 +3573,9 @@ msgstr "{}-Steiner-Syzygy für jede Engine"
 
 msgid "{}-man Syzygy for {} of {} engines"
 msgstr "{}-Steiner-Syzygy für {} von {} Engines"
+
+msgid "{}: cancelled, nothing written."
+msgstr "{}: abgebrochen, nichts geschrieben."
 
 msgid "{}: decision"
 msgstr "{}: Entscheidung"

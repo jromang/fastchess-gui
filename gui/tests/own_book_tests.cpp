@@ -6,11 +6,13 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <thread>
 
 #include <engine/uci_engine.hpp>
 #include <tour/book_adapter.hpp>
 #include <tour/pgn_book.hpp>
+#include <tour/polyglot.hpp>
 
 #include "../../tournament/tests/polyglot_writer.hpp"
 #include "../../tournament/tests/self_path.hpp"
@@ -457,6 +459,70 @@ TEST_CASE("own book: a conversion that failed is done again when asked, never by
     CHECK(jobs.want(pgn, 4, false).state == State::Ready);
 
     tour::book_cache_dir = previous;
+    fs::remove_all(root);
+}
+
+TEST_CASE("Polyglot build: a book built from a PGN file in the background with its options, failed, or cancelled") {
+    const auto root = fs::temp_directory_path() / "fcg-polyglot-build";
+    fs::remove_all(root);
+    fs::create_directories(root);
+    const auto pgn     = writePgnBook(root / "answers.pgn").string();
+    const auto waitEnd = [](PolyglotBuild& build) {
+        std::optional<PolyglotBuild::Ended> ended;
+        for (int i = 0; i < 4000 && !ended; ++i) {
+            ended = build.poll();
+            if (!ended) std::this_thread::sleep_for(5ms);
+        }
+        return ended;
+    };
+
+    // Two plies by count: the 20 first moves and the answer to each, written where asked, its folder made.
+    PolyglotBuild build;
+    tour::PgnBookOptions options;
+    options.plies  = 2;
+    const auto bin = (root / "out" / "answers.bin").string();
+    REQUIRE(build.start(pgn, bin, options));
+    CHECK(build.busy());
+    CHECK(build.bin() == bin);
+    CHECK_FALSE(build.start(pgn, bin, options));  // one at a time
+    auto ended = waitEnd(build);
+    REQUIRE(ended);
+    CHECK_FALSE(build.busy());
+    CHECK(ended->error.empty());
+    CHECK_FALSE(ended->cancelled);
+    CHECK(ended->stats.games == 20);
+    CHECK(ended->stats.skipped == 1);
+    CHECK(ended->stats.positions == 21);
+    CHECK(ended->stats.entries == 40);
+    CHECK(fs::file_size(bin) == 40 * 16);
+    {
+        tour::PolyglotBook book(bin);
+        CHECK(book.moves(chess::Board()).size() == 20);
+    }
+
+    // By score, the games without a result are left out: no move is left, and the build says why.
+    options.weight = tour::PgnBookOptions::Weight::Score;
+    REQUIRE(build.start(pgn, (root / "score.bin").string(), options));
+    ended = waitEnd(build);
+    REQUIRE(ended);
+    CHECK(ended->empty);
+    CHECK_FALSE(ended->error.empty());
+    CHECK(ended->stats.games == 0);
+    CHECK(ended->stats.left_out == 20);
+    CHECK_FALSE(fs::exists(root / "score.bin"));
+
+    // A large file, cancelled at once: nothing written.
+    {
+        std::ofstream out(root / "large.pgn", std::ios::binary);
+        for (int i = 0; i < 100000; ++i) out << "[Result \"1-0\"]\n\n1. e4 e5 2. Nf3 1-0\n\n";
+    }
+    REQUIRE(build.start((root / "large.pgn").string(), (root / "large.bin").string(), tour::PgnBookOptions{}));
+    build.cancel();
+    CHECK(build.cancelling());
+    ended = waitEnd(build);
+    REQUIRE(ended);
+    CHECK(ended->cancelled);
+    CHECK_FALSE(fs::exists(root / "large.bin"));
     fs::remove_all(root);
 }
 

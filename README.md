@@ -58,7 +58,8 @@ this repository still builds unchanged.
   default are sent. A health check, groups, a reference Elo, and the import of ChessGUI, cutechess, Banksia and
   Arena engine lists. WinBoard engines too, through a translation to UCI built in.
 - **Opening books**: EPD, PGN or Polyglot, in a library; each book checked for illegal, duplicate, mirrored and
-  finished positions, browsed on a board, and cleaned. A Chess324 book of start positions written by the program.
+  finished positions, browsed on a board, and cleaned. A Chess324 book of start positions written by the program,
+  and Polyglot books built from PGN files (depth, minimum games, weights by score or count, a rating filter).
   Results by opening after a tournament: the unbalanced, the drawish and the decisive ones, exported as EPD.
 - **Test suites** (STS, WAC, ERET…): several engines on the positions of an EPD file (`bm`, `am`, STS points),
   as a grid with the time to solution, the totals and the STS score, saved to compare versions, exported as CSV.

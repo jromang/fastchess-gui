@@ -135,6 +135,9 @@ msgstr ""
 msgid "A WinBoard engine."
 msgstr ""
 
+msgid "A book is being built already: wait for it, or cancel it."
+msgstr ""
+
 msgid "A colour won both games of a pair"
 msgstr ""
 
@@ -163,6 +166,18 @@ msgid "A match is running: wait for its end to open another one."
 msgstr ""
 
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
+msgstr ""
+
+msgid "A move counts when the player who made it is rated this or more, by the game's WhiteElo or BlackElo tag; a player without a rating is left out."
+msgstr ""
+
+msgid "A move is kept when at least this many games play it in its position; the others are left out as played too rarely (Polyglot's -min-game)."
+msgstr ""
+
+msgid "A move weighs the number of games that play it, whatever their results."
+msgstr ""
+
+msgid "A move weighs the points the side that played it made in its games: a win 2, a draw 1, a loss 0, as Polyglot counts. The games without a result are left out, and so is a move whose games were all lost."
 msgstr ""
 
 msgid "A page that opens in any browser, light or dark, with a header that tells how the list was made: sources, games, anchor and filters."
@@ -346,6 +361,9 @@ msgstr ""
 msgid "As text"
 msgstr ""
 
+msgid "Asks where to write the book, then reads the games in the background; the book is added to the library."
+msgstr ""
+
 msgid "Automatic"
 msgstr ""
 
@@ -377,6 +395,9 @@ msgid "Back to the default value"
 msgstr ""
 
 msgid "Base (s)"
+msgstr ""
+
+msgid "Being built from {}"
 msgstr ""
 
 msgid "Black"
@@ -433,6 +454,21 @@ msgstr ""
 msgid "Broadcast"
 msgstr ""
 
+msgid "Build a Polyglot book"
+msgstr ""
+
+msgid "Build a Polyglot book…"
+msgstr ""
+
+msgid "Build…"
+msgstr ""
+
+msgid "By count"
+msgstr ""
+
+msgid "By score"
+msgstr ""
+
 msgid "By time control"
 msgstr ""
 
@@ -446,6 +482,12 @@ msgid "Calculator…"
 msgstr ""
 
 msgid "Cancel"
+msgstr ""
+
+msgid "Cancel the Polyglot book being built"
+msgstr ""
+
+msgid "Cancelling…"
 msgstr ""
 
 msgid "Cannot draw the pieces."
@@ -542,6 +584,9 @@ msgid "ChessBase / Lichess: {[%eval 0.35,18] [%emt 0:00:01.234]}, eval from Whit
 msgstr ""
 
 msgid "ChessGUI (ChsGUI_Eng.TXT), cutechess or Banksia (engines.json), Arena…"
+msgstr ""
+
+msgid "Choose a PGN file first."
 msgstr ""
 
 msgid "Choose a book in the list."
@@ -1006,7 +1051,13 @@ msgstr ""
 msgid "From move"
 msgstr ""
 
+msgid "From the games of a PGN file: their moves up to a depth, those played by enough games, weighted by their number or their score; written as a Polyglot book (.bin) and added to the library."
+msgstr ""
+
 msgid "From the games only, with the DrawElo that goes with it."
+msgstr ""
+
+msgid "From {}: {}"
 msgstr ""
 
 msgid "Gainer [0, 3]"
@@ -1132,6 +1183,9 @@ msgid "Host"
 msgstr ""
 
 msgid "How deep the lines of the book are followed; -1 = {}."
+msgstr ""
+
+msgid "How far each game goes into the book, in plies (a move of one side) from its start."
 msgstr ""
 
 msgid "How games ended"
@@ -1374,6 +1428,9 @@ msgstr ""
 msgid "Maximum number of moves"
 msgstr ""
 
+msgid "Minimum games"
+msgstr ""
+
 msgid "Model"
 msgstr ""
 
@@ -1452,6 +1509,9 @@ msgstr ""
 msgid "No game is being played."
 msgstr ""
 
+msgid "No game of {} gives a move: is it a PGN file?"
+msgstr ""
+
 msgid "No game yet."
 msgstr ""
 
@@ -1462,6 +1522,17 @@ msgid "No match yet. Choose two engines, then click Start."
 msgstr ""
 
 msgid "No move after 10 seconds of a 0.3 s search."
+msgstr ""
+
+msgid "No move is left: {} game of {} is left out by the rating, or by its missing result with weights by score. Lower the rating, or weigh the moves by count."
+msgid_plural "No move is left: {} games of {} are left out by the rating, or by their missing result with weights by score. Lower the rating, or weigh the moves by count."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "No move of {} is left with these options."
+msgstr ""
+
+msgid "No move of {} is played by {} games or more: lower the minimum."
 msgstr ""
 
 msgid "No new engine in the folder."
@@ -1587,6 +1658,9 @@ msgstr ""
 msgid "Only the games between engines of a group of the library."
 msgstr ""
 
+msgid "Only the moves of players rated at least"
+msgstr ""
+
 msgid "Only those that work"
 msgstr ""
 
@@ -1663,6 +1737,9 @@ msgid "OwnBook is set to false on the engines that have it, so that every game i
 msgstr ""
 
 msgid "PGN and misc"
+msgstr ""
+
+msgid "PGN file"
 msgstr ""
 
 msgid "PGN files…"
@@ -1787,6 +1864,9 @@ msgstr ""
 msgid "Points"
 msgstr ""
 
+msgid "Polyglot book"
+msgstr ""
+
 msgid "Polyglot book: its lines to {} plies, as positions"
 msgstr ""
 
@@ -1879,6 +1959,9 @@ msgstr ""
 msgid "Random order"
 msgstr ""
 
+msgid "Rating"
+msgstr ""
+
 msgid "Rating after each tournament"
 msgstr ""
 
@@ -1910,6 +1993,9 @@ msgid "Read the UCI options again"
 msgstr ""
 
 msgid "Reading the engine…"
+msgstr ""
+
+msgid "Reading the games… {} %"
 msgstr ""
 
 msgid "Reading the options of an engine…"
@@ -2344,6 +2430,9 @@ msgstr ""
 msgid "The average rating of the opponents met, game by game."
 msgstr ""
 
+msgid "The book cannot be built: {}"
+msgstr ""
+
 msgid "The book of {} cannot be used: {}"
 msgstr ""
 
@@ -2704,6 +2793,9 @@ msgstr ""
 msgid "Web page"
 msgstr ""
 
+msgid "Weights"
+msgstr ""
+
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr ""
 
@@ -2801,6 +2893,9 @@ msgid "Write error in {}"
 msgstr ""
 
 msgid "Write the live files"
+msgstr ""
+
+msgid "Writing {}"
 msgstr ""
 
 msgid "Written at {} in {}"
@@ -2943,6 +3038,11 @@ msgstr ""
 msgid "moves"
 msgstr ""
 
+msgid "moves of {} game or more"
+msgid_plural "moves of {} games or more"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "nElo of A (95% CI)"
 msgstr ""
 
@@ -2973,6 +3073,9 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "pairs"
+msgstr ""
+
+msgid "players rated {} or more"
 msgstr ""
 
 msgid "reading the tournaments…"
@@ -3030,6 +3133,12 @@ msgid "uses {:.1f} cores while it thinks, with {} thread(s)"
 msgstr ""
 
 msgid "voided"
+msgstr ""
+
+msgid "weighted by count"
+msgstr ""
+
+msgid "weighted by score"
 msgstr ""
 
 msgid "wins"
@@ -3188,6 +3297,11 @@ msgstr[1] ""
 
 msgid "{} game exported to {}"
 msgid_plural "{} games exported to {}"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} game left out by the options (a rating below the minimum, or no result)."
+msgid_plural "{} games left out by the options (a rating below the minimum, or no result)."
 msgstr[0] ""
 msgstr[1] ""
 
@@ -3352,6 +3466,11 @@ msgstr[1] ""
 msgid "{} plays with {} % of the time"
 msgstr ""
 
+msgid "{} ply"
+msgid_plural "{} plies"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{} position"
 msgid_plural "{} positions"
 msgstr[0] ""
@@ -3409,6 +3528,11 @@ msgstr ""
 msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
 msgstr ""
 
+msgid "{} written: {} positions, from {} game."
+msgid_plural "{} written: {} positions, from {} games."
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{} · depth {} · {}"
 msgstr ""
 
@@ -3448,6 +3572,9 @@ msgid "{}-man Syzygy for every engine"
 msgstr ""
 
 msgid "{}-man Syzygy for {} of {} engines"
+msgstr ""
+
+msgid "{}: cancelled, nothing written."
 msgstr ""
 
 msgid "{}: decision"

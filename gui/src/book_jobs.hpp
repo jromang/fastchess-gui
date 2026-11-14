@@ -1,7 +1,8 @@
 #pragma once
 
 // The participants' PGN books turned into Polyglot books in the background (tour/pgn_book.hpp), one at a time, as
-// soon as a setup has one: a start seldom has to wait for it, and when it does, it says so (see startGate).
+// soon as a setup has one: a start seldom has to wait for it, and when it does, it says so (see startGate). And the
+// Polyglot books the user builds from a PGN file, on the Books page.
 
 #include <atomic>
 #include <cstdint>
@@ -87,6 +88,53 @@ class PgnBookJobs {
     std::map<Key, Book> books_;
     std::optional<Job> job_;
     uint64_t frame_ = 1;
+};
+
+// A Polyglot book built from a PGN file at the user's request (Books → Build a Polyglot book…), in the background,
+// one at a time: the same conversion as the participants' books, with the user's options, written where the user
+// chose rather than in the cache.
+class PolyglotBuild {
+   public:
+    struct Ended {
+        std::string pgn;
+        std::string bin;
+        tour::PgnBookOptions options;
+        tour::PgnBookStats stats;  // what was read: also when no move was left (`empty`)
+        std::string error;         // empty: the book is written
+        bool empty     = false;    // failed as no move was left for the book
+        bool cancelled = false;
+    };
+
+    PolyglotBuild() = default;
+    ~PolyglotBuild();  // a build in flight is cancelled, and waited for
+    PolyglotBuild(const PolyglotBuild&)            = delete;
+    PolyglotBuild& operator=(const PolyglotBuild&) = delete;
+
+    // Starts building `bin` from `pgn`; false when a build is in flight already.
+    bool start(const std::string& pgn, const std::string& bin, const tour::PgnBookOptions& options);
+    // Asks the build in flight to stop: it ends at its next progress report, and poll() gives it as cancelled.
+    void cancel();
+
+    [[nodiscard]] bool busy() const noexcept { return job_.has_value(); }
+    [[nodiscard]] bool cancelling() const noexcept { return job_ && *job_->cancel; }
+    // The share of the PGN file read, 0 to 1.
+    [[nodiscard]] double progress() const noexcept { return job_ ? job_->progress->load() : 0.0; }
+    [[nodiscard]] std::string bin() const { return job_ ? job_->bin : std::string(); }
+    [[nodiscard]] std::string pgn() const { return job_ ? job_->pgn : std::string(); }
+
+    // At each frame: the build that ended, once.
+    std::optional<Ended> poll();
+
+   private:
+    struct Job {
+        std::string pgn;
+        std::string bin;
+        tour::PgnBookOptions options;
+        std::shared_ptr<std::atomic<double>> progress;
+        std::shared_ptr<std::atomic_bool> cancel;
+        std::future<tour::PgnBookStats> result;
+    };
+    std::optional<Job> job_;
 };
 
 }  // namespace fcg

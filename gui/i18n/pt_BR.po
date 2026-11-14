@@ -135,6 +135,9 @@ msgstr "Um livro Polyglot é seguido a partir da posição inicial até esta pro
 msgid "A WinBoard engine."
 msgstr "Um engine WinBoard."
 
+msgid "A book is being built already: wait for it, or cancel it."
+msgstr "Um livro já está sendo construído: espere por ele ou cancele."
+
 msgid "A colour won both games of a pair"
 msgstr "Uma cor venceu as duas partidas de um par"
 
@@ -164,6 +167,18 @@ msgstr "Um match está em andamento: espere o fim dele para abrir outro."
 
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "A PV de uma avaliação de mate deve ter o comprimento certo e terminar em mate. As PVs sempre são verificadas quanto a lances ilegais; os lances cuja PV está errada são marcados na aba Partidas."
+
+msgid "A move counts when the player who made it is rated this or more, by the game's WhiteElo or BlackElo tag; a player without a rating is left out."
+msgstr "Um lance conta quando o jogador que o fez tem pelo menos esse Elo, pela tag WhiteElo ou BlackElo da partida; um jogador sem Elo fica de fora."
+
+msgid "A move is kept when at least this many games play it in its position; the others are left out as played too rarely (Polyglot's -min-game)."
+msgstr "Um lance é mantido quando pelo menos esse número de partidas o joga na sua posição; os outros ficam de fora por serem jogados raramente demais (-min-game do Polyglot)."
+
+msgid "A move weighs the number of games that play it, whatever their results."
+msgstr "Um lance pesa o número de partidas que o jogam, quaisquer que sejam os resultados."
+
+msgid "A move weighs the points the side that played it made in its games: a win 2, a draw 1, a loss 0, as Polyglot counts. The games without a result are left out, and so is a move whose games were all lost."
+msgstr "Um lance pesa os pontos que o lado que o jogou fez nas suas partidas: uma vitória 2, um empate 1, uma derrota 0, como o Polyglot conta. As partidas sem resultado ficam de fora, assim como um lance cujas partidas foram todas perdidas."
 
 msgid "A page that opens in any browser, light or dark, with a header that tells how the list was made: sources, games, anchor and filters."
 msgstr "Uma página que abre em qualquer navegador, clara ou escura, com um cabeçalho que diz como a lista foi feita: fontes, partidas, âncora e filtros."
@@ -346,6 +361,9 @@ msgstr "Em BBCode, para um fórum"
 msgid "As text"
 msgstr "Como texto"
 
+msgid "Asks where to write the book, then reads the games in the background; the book is added to the library."
+msgstr "Pergunta onde gravar o livro e depois lê as partidas em segundo plano; o livro é adicionado à biblioteca."
+
 msgid "Automatic"
 msgstr "Automático"
 
@@ -378,6 +396,9 @@ msgstr "Voltar ao valor padrão"
 
 msgid "Base (s)"
 msgstr "Tempo base (s)"
+
+msgid "Being built from {}"
+msgstr "Sendo construído a partir de {}"
 
 msgid "Black"
 msgstr "Pretas"
@@ -433,6 +454,21 @@ msgstr "Chave"
 msgid "Broadcast"
 msgstr "Transmissão"
 
+msgid "Build a Polyglot book"
+msgstr "Construir um livro Polyglot"
+
+msgid "Build a Polyglot book…"
+msgstr "Construir um livro Polyglot…"
+
+msgid "Build…"
+msgstr "Construir…"
+
+msgid "By count"
+msgstr "Por número"
+
+msgid "By score"
+msgstr "Por pontos"
+
 msgid "By time control"
 msgstr "Por controle de tempo"
 
@@ -447,6 +483,12 @@ msgstr "Calculadora…"
 
 msgid "Cancel"
 msgstr "Cancelar"
+
+msgid "Cancel the Polyglot book being built"
+msgstr "Cancelar o livro Polyglot em construção"
+
+msgid "Cancelling…"
+msgstr "Cancelando…"
 
 msgid "Cannot draw the pieces."
 msgstr "Não foi possível desenhar as peças."
@@ -543,6 +585,9 @@ msgstr "ChessBase / Lichess: {[%eval 0.35,18] [%emt 0:00:01.234]}, avaliação d
 
 msgid "ChessGUI (ChsGUI_Eng.TXT), cutechess or Banksia (engines.json), Arena…"
 msgstr "ChessGUI (ChsGUI_Eng.TXT), cutechess ou Banksia (engines.json), Arena…"
+
+msgid "Choose a PGN file first."
+msgstr "Escolha primeiro um arquivo PGN."
 
 msgid "Choose a book in the list."
 msgstr "Escolha um livro na lista."
@@ -1006,8 +1051,14 @@ msgstr "Gratuito, sem conta: seus endereços mudam de vez em quando e sua veloci
 msgid "From move"
 msgstr "A partir do lance"
 
+msgid "From the games of a PGN file: their moves up to a depth, those played by enough games, weighted by their number or their score; written as a Polyglot book (.bin) and added to the library."
+msgstr "A partir das partidas de um arquivo PGN: os lances até uma profundidade, os jogados por partidas suficientes, ponderados pelo número ou pelos pontos; gravado como livro Polyglot (.bin) e adicionado à biblioteca."
+
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr "Só a partir das partidas, com o DrawElo correspondente."
+
+msgid "From {}: {}"
+msgstr "De {}: {}"
 
 msgid "Gainer [0, 3]"
 msgstr "Ganho [0, 3]"
@@ -1133,6 +1184,9 @@ msgstr "Host"
 
 msgid "How deep the lines of the book are followed; -1 = {}."
 msgstr "Até que profundidade as linhas do livro são seguidas; -1 = {}."
+
+msgid "How far each game goes into the book, in plies (a move of one side) from its start."
+msgstr "Até onde cada partida entra no livro, em meios-lances (um lance de um lado) desde o início."
 
 msgid "How games ended"
 msgstr "Como as partidas terminaram"
@@ -1374,6 +1428,9 @@ msgstr "Avaliação máx. (cp)"
 msgid "Maximum number of moves"
 msgstr "Número máximo de lances"
 
+msgid "Minimum games"
+msgstr "Mínimo de partidas"
+
 msgid "Model"
 msgstr "Modelo"
 
@@ -1452,6 +1509,9 @@ msgstr "Nenhuma partida neste quadro ainda."
 msgid "No game is being played."
 msgstr "Nenhuma partida em andamento."
 
+msgid "No game of {} gives a move: is it a PGN file?"
+msgstr "Nenhuma partida de {} dá um lance: é um arquivo PGN?"
+
 msgid "No game yet."
 msgstr "Nenhuma partida ainda."
 
@@ -1463,6 +1523,17 @@ msgstr "Nenhum match ainda. Escolha dois engines e clique em Iniciar."
 
 msgid "No move after 10 seconds of a 0.3 s search."
 msgstr "Nenhum lance após 10 segundos de uma busca de 0,3 s."
+
+msgid "No move is left: {} game of {} is left out by the rating, or by its missing result with weights by score. Lower the rating, or weigh the moves by count."
+msgid_plural "No move is left: {} games of {} are left out by the rating, or by their missing result with weights by score. Lower the rating, or weigh the moves by count."
+msgstr[0] "Nenhum lance restou: {} partida de {} fica de fora pelo Elo, ou pela falta de resultado com pesos por pontos. Baixe o Elo, ou pondere os lances por número."
+msgstr[1] "Nenhum lance restou: {} partidas de {} ficam de fora pelo Elo, ou pela falta de resultado com pesos por pontos. Baixe o Elo, ou pondere os lances por número."
+
+msgid "No move of {} is left with these options."
+msgstr "Nenhum lance de {} resta com essas opções."
+
+msgid "No move of {} is played by {} games or more: lower the minimum."
+msgstr "Nenhum lance de {} é jogado por {} partidas ou mais: baixe o mínimo."
 
 msgid "No new engine in the folder."
 msgstr "Nenhum engine novo na pasta."
@@ -1587,6 +1658,9 @@ msgstr "Só as 18 simétricas…"
 msgid "Only the games between engines of a group of the library."
 msgstr "Só as partidas entre engines de um grupo da biblioteca."
 
+msgid "Only the moves of players rated at least"
+msgstr "Só os lances de jogadores com Elo de pelo menos"
+
 msgid "Only those that work"
 msgstr "Só os que funcionam"
 
@@ -1664,6 +1738,9 @@ msgstr "OwnBook é definido como false nos engines que o têm, para que cada par
 
 msgid "PGN and misc"
 msgstr "PGN e outros"
+
+msgid "PGN file"
+msgstr "Arquivo PGN"
 
 msgid "PGN files…"
 msgstr "Arquivos PGN…"
@@ -1787,6 +1864,9 @@ msgstr "Meios-lances desde a última captura ou lance de peão; 100 é empate."
 msgid "Points"
 msgstr "Pontos"
 
+msgid "Polyglot book"
+msgstr "Livro Polyglot"
+
 msgid "Polyglot book: its lines to {} plies, as positions"
 msgstr "Livro Polyglot: suas linhas até {} meios-lances, como posições"
 
@@ -1879,6 +1959,9 @@ msgstr "Viés RMS (Elo)"
 msgid "Random order"
 msgstr "Ordem aleatória"
 
+msgid "Rating"
+msgstr "Elo"
+
 msgid "Rating after each tournament"
 msgstr "Rating após cada torneio"
 
@@ -1911,6 +1994,9 @@ msgstr "Reler as opções UCI"
 
 msgid "Reading the engine…"
 msgstr "Lendo o engine…"
+
+msgid "Reading the games… {} %"
+msgstr "Lendo as partidas… {} %"
 
 msgid "Reading the options of an engine…"
 msgstr "Lendo as opções de um engine…"
@@ -2344,6 +2430,9 @@ msgstr "O padrão PGN os torna comentários. O fastchess-gui 0.4.13 e anteriores
 msgid "The average rating of the opponents met, game by game."
 msgstr "O rating médio dos adversários enfrentados, partida a partida."
 
+msgid "The book cannot be built: {}"
+msgstr "O livro não pode ser construído: {}"
+
 msgid "The book of {} cannot be used: {}"
 msgstr "O livro de {} não pode ser usado: {}"
 
@@ -2704,6 +2793,9 @@ msgstr "Aguardando leitura · ler em seguida"
 msgid "Web page"
 msgstr "Página web"
 
+msgid "Weights"
+msgstr "Pesos"
+
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr "O que um testador verifica antes de enviar as partidas a uma lista de rating. “Exportar para uma lista de rating…” na aba Partidas deixa de fora as partidas anuladas e as duplicadas."
 
@@ -2802,6 +2894,9 @@ msgstr "Erro de gravação em {}"
 
 msgid "Write the live files"
 msgstr "Gravar os arquivos ao vivo"
+
+msgid "Writing {}"
+msgstr "Gravando {}"
 
 msgid "Written at {} in {}"
 msgstr "Gravados às {} em {}"
@@ -2943,6 +3038,11 @@ msgstr "derrotas"
 msgid "moves"
 msgstr "lances"
 
+msgid "moves of {} game or more"
+msgid_plural "moves of {} games or more"
+msgstr[0] "lances de {} partida ou mais"
+msgstr[1] "lances de {} partidas ou mais"
+
 msgid "nElo of A (95% CI)"
 msgstr "nElo de A (IC 95%)"
 
@@ -2974,6 +3074,9 @@ msgstr[1] "livro próprio {}, {} meios-lances"
 
 msgid "pairs"
 msgstr "pares"
+
+msgid "players rated {} or more"
+msgstr "jogadores com Elo de {} ou mais"
 
 msgid "reading the tournaments…"
 msgstr "lendo os torneios…"
@@ -3031,6 +3134,12 @@ msgstr "usa {:.1f} núcleos quando pensa, com {} thread(s)"
 
 msgid "voided"
 msgstr "anulada"
+
+msgid "weighted by count"
+msgstr "ponderado pelo número"
+
+msgid "weighted by score"
+msgstr "ponderado pelos pontos"
 
 msgid "wins"
 msgstr "vitórias"
@@ -3190,6 +3299,11 @@ msgid "{} game exported to {}"
 msgid_plural "{} games exported to {}"
 msgstr[0] "{} partida exportada para {}"
 msgstr[1] "{} partidas exportadas para {}"
+
+msgid "{} game left out by the options (a rating below the minimum, or no result)."
+msgid_plural "{} games left out by the options (a rating below the minimum, or no result)."
+msgstr[0] "{} partida deixada de fora pelas opções (um Elo abaixo do mínimo, ou sem resultado)."
+msgstr[1] "{} partidas deixadas de fora pelas opções (um Elo abaixo do mínimo, ou sem resultado)."
 
 msgid "{} game pair"
 msgid_plural "{} game pairs"
@@ -3352,6 +3466,11 @@ msgstr[1] "{} jogadores podem ser duas engines da biblioteca: diga qual."
 msgid "{} plays with {} % of the time"
 msgstr "{} joga com {}% do tempo"
 
+msgid "{} ply"
+msgid_plural "{} plies"
+msgstr[0] "{} meio-lance"
+msgstr[1] "{} meios-lances"
+
 msgid "{} position"
 msgid_plural "{} positions"
 msgstr[0] "{} posição"
@@ -3409,6 +3528,11 @@ msgstr "{} será o livro do próximo torneio."
 msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
 msgstr "{} seria ao mesmo tempo o arquivo PGN e o seu zip: escolha um nome terminado em .pgn."
 
+msgid "{} written: {} positions, from {} game."
+msgid_plural "{} written: {} positions, from {} games."
+msgstr[0] "{} gravado: {} posições, a partir de {} partida."
+msgstr[1] "{} gravado: {} posições, a partir de {} partidas."
+
 msgid "{} · depth {} · {}"
 msgstr "{} · profundidade {} · {}"
 
@@ -3449,6 +3573,9 @@ msgstr "Syzygy de {} peças para cada engine"
 
 msgid "{}-man Syzygy for {} of {} engines"
 msgstr "Syzygy de {} peças para {} de {} engines"
+
+msgid "{}: cancelled, nothing written."
+msgstr "{}: cancelado, nada gravado."
 
 msgid "{}: decision"
 msgstr "{}: decisão"

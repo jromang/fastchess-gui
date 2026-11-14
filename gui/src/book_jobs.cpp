@@ -119,4 +119,54 @@ std::vector<PgnBookJobs::Ended> PgnBookJobs::poll() {
     return ended;
 }
 
+PolyglotBuild::~PolyglotBuild() {
+    if (job_) {
+        *job_->cancel = true;
+        job_->result.wait();
+    }
+}
+
+bool PolyglotBuild::start(const std::string& pgn, const std::string& bin, const tour::PgnBookOptions& options) {
+    if (job_) return false;
+    Job job;
+    job.pgn      = pgn;
+    job.bin      = bin;
+    job.options  = options;
+    job.progress = std::make_shared<std::atomic<double>>(0.0);
+    job.cancel   = std::make_shared<std::atomic_bool>(false);
+    job.result   = std::async(std::launch::async, [pgn, bin, options, progress = job.progress, cancel = job.cancel] {
+        return tour::pgnToPolyglot(pgn, bin, options, [&](double share) {
+            *progress = share;
+            return !*cancel;
+        });
+    });
+    job_         = std::move(job);
+    return true;
+}
+
+void PolyglotBuild::cancel() {
+    if (job_) *job_->cancel = true;
+}
+
+std::optional<PolyglotBuild::Ended> PolyglotBuild::poll() {
+    if (!job_ || job_->result.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return std::nullopt;
+    Ended ended;
+    ended.pgn     = job_->pgn;
+    ended.bin     = job_->bin;
+    ended.options = job_->options;
+    try {
+        ended.stats = job_->result.get();
+    } catch (const tour::BookCancelled&) {
+        ended.cancelled = true;
+    } catch (const tour::EmptyPgnBook& e) {
+        ended.empty = true;
+        ended.stats = e.stats;
+        ended.error = e.what();
+    } catch (const std::exception& e) {
+        ended.error = e.what();
+    }
+    job_.reset();
+    return ended;
+}
+
 }  // namespace fcg

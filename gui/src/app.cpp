@@ -122,6 +122,7 @@ void App::frame() {
     pollCheck();
     pollStart();
     pollOwnBooks();
+    pollBookBuild();
     handleDialogs();
 
     if (engines_save_due_ && std::chrono::steady_clock::now() >= *engines_save_due_) {
@@ -203,6 +204,16 @@ void App::frame() {
         } else if (w.rfind("books-chess324=", 0) == 0) {  // books-chess324=FILE: the Chess324 book written there
             page_ = Page::Books;
             writeChess324Book(w.substr(15), false);
+        } else if (w.rfind("books-build", 0) == 0) {
+            // books-build[=PGN[>BIN]]: the form of Build a Polyglot book, with that PGN file, building BIN.
+            page_ = Page::Books;
+            openBookBuild();
+            if (const auto eq = w.find('='); eq != std::string::npos) {
+                const auto arg       = w.substr(eq + 1);
+                const auto gt        = arg.find('>');
+                book_build_form_.pgn = arg.substr(0, gt);
+                if (gt != std::string::npos) startBookBuild(arg.substr(gt + 1));
+            }
         } else if (w == "home")
             page_ = Page::Home;
         else if (w == "home-resume" || w == "setup-start") {
@@ -864,6 +875,13 @@ void App::handleDialogs() {
             case Dialogs::Purpose::Chess324Book:
             case Dialogs::Purpose::Chess324SymmetricalBook:
                 writeChess324Book(path, answer->purpose == Dialogs::Purpose::Chess324SymmetricalBook);
+                break;
+            case Dialogs::Purpose::BuildBookPgn:
+                book_build_form_.pgn = path;
+                book_build_shown_    = true;
+                break;
+            case Dialogs::Purpose::BuildBookBin:
+                startBookBuild(path);
                 break;
             case Dialogs::Purpose::SuiteFile:
                 openSuite(path);

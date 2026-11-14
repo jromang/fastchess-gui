@@ -39,19 +39,20 @@ long processId() {
 #endif
 }
 
-// The (position, move) pairs met, with the number of games that played each. Appended one by one and, every time
-// they have doubled, sorted and merged: the memory stays within a few times that of the distinct pairs, however
-// many games there are.
+// The (position, move) pairs met, with the number of games that played each and their score for the side that
+// played it. Appended one by one and, every time they have doubled, sorted and merged: the memory stays within a few
+// times that of the distinct pairs, however many games there are.
 class MoveCounts {
    public:
     struct Count {
         uint64_t key   = 0;
-        uint16_t move  = 0;
         uint32_t count = 0;
+        uint32_t score = 0;  // 2 a win, 1 a draw, 0 a loss
+        uint16_t move  = 0;
     };
 
-    void add(uint64_t key, uint16_t move) {
-        counts_.push_back({key, move, 1});
+    void add(uint64_t key, uint16_t move, uint32_t score) {
+        counts_.push_back({key, 1, score, move});
         if (counts_.size() >= merge_at_) merge();
     }
 
@@ -68,8 +69,11 @@ class MoveCounts {
         std::size_t out = 0;
         for (std::size_t i = 0; i < counts_.size(); ++i) {
             if (out > 0 && counts_[out - 1].key == counts_[i].key && counts_[out - 1].move == counts_[i].move) {
-                const uint64_t sum     = uint64_t{counts_[out - 1].count} + counts_[i].count;
-                counts_[out - 1].count = static_cast<uint32_t>(std::min<uint64_t>(sum, UINT32_MAX));
+                const auto add = [](uint32_t& to, uint32_t more) {
+                    to = static_cast<uint32_t>(std::min<uint64_t>(uint64_t{to} + more, UINT32_MAX));
+                };
+                add(counts_[out - 1].count, counts_[i].count);
+                add(counts_[out - 1].score, counts_[i].score);
             } else {
                 counts_[out++] = counts_[i];
             }
@@ -82,18 +86,32 @@ class MoveCounts {
     std::size_t merge_at_ = std::size_t{1} << 20;
 };
 
-// Each game, played from its start up to `plies`: its pairs counted at its end, when all its moves were legal.
+// A rating tag's value; 0 when it is none ("", "-", "?").
+int rating(std::string_view value) {
+    int elo = 0;
+    for (const char c : value) {
+        if (c < '0' || c > '9') return 0;
+        elo = std::min(elo * 10 + (c - '0'), 100000);
+    }
+    return elo;
+}
+
+// Each game, played from its start up to its plies: its pairs counted at its end, when all its moves were legal and
+// the options keep it.
 class BookVisitor : public chess::pgn::Visitor {
    public:
-    BookVisitor(MoveCounts& counts, PgnBookStats& stats, int plies, bool chess960)
-        : counts_(counts), stats_(stats), plies_(plies), chess960_(chess960) {}
+    BookVisitor(MoveCounts& counts, PgnBookStats& stats, const PgnBookOptions& options)
+        : counts_(counts), stats_(stats), options_(options), plies_(std::max(1, options.plies)) {}
 
     void startPgn() override {
         fen_         = std::string(chess::constants::STARTPOS);
-        chess960_ok_ = chess960_;
+        chess960_ok_ = options_.chess960;
         ply_         = 0;
         set_         = false;
         bad_         = false;
+        result_      = -1;
+        white_elo_   = 0;
+        black_elo_   = 0;
         game_.clear();
     }
 
@@ -103,6 +121,12 @@ class BookVisitor : public chess::pgn::Visitor {
         } else if (key == "Variant") {
             const auto v = lower(std::string(value));
             if (v.find("960") != std::string::npos || v.find("fischer") != std::string::npos) chess960_ok_ = true;
+        } else if (key == "Result") {
+            result_ = value == "1-0" ? 2 : value == "1/2-1/2" ? 1 : value == "0-1" ? 0 : -1;
+        } else if (key == "WhiteElo") {
+            white_elo_ = rating(value);
+        } else if (key == "BlackElo") {
+            black_elo_ = rating(value);
         }
     }
 
@@ -128,7 +152,7 @@ class BookVisitor : public chess::pgn::Visitor {
             bad_ = true;
             return;
         }
-        game_.emplace_back(board_.hash(), polyglotMove(move));
+        game_.push_back({board_.hash(), polyglotMove(move), board_.sideToMove() == chess::Color::WHITE});
         playForBook(board_, move);
         ++ply_;
     }
@@ -138,15 +162,32 @@ class BookVisitor : public chess::pgn::Visitor {
             ++stats_.skipped;
             return;
         }
+        const bool by_score = options_.weight == PgnBookOptions::Weight::Score;
+        const bool white_ok = options_.min_elo <= 0 || white_elo_ >= options_.min_elo;
+        const bool black_ok = options_.min_elo <= 0 || black_elo_ >= options_.min_elo;
+        if ((by_score && result_ < 0) || (!white_ok && !black_ok)) {
+            ++stats_.left_out;
+            return;
+        }
         ++stats_.games;
-        for (const auto& [key, move] : game_) counts_.add(key, move);
+        // The score of the side that moved: White's is the result, Black's its reverse.
+        const auto white = static_cast<uint32_t>(std::max(0, result_));
+        for (const auto& m : game_) {
+            if (m.white ? white_ok : black_ok) counts_.add(m.key, m.move, m.white ? white : 2 - white);
+        }
     }
 
    private:
+    struct Played {
+        uint64_t key  = 0;
+        uint16_t move = 0;
+        bool white    = false;  // played by White
+    };
+
     MoveCounts& counts_;
     PgnBookStats& stats_;
+    const PgnBookOptions& options_;
     const int plies_;
-    const bool chess960_;
 
     chess::Board board_;
     chess::Movelist legal_;
@@ -155,7 +196,10 @@ class BookVisitor : public chess::pgn::Visitor {
     int ply_          = 0;
     bool set_         = false;  // its starting position is set
     bool bad_         = false;  // a move or its position could not be read: the game is left out
-    std::vector<std::pair<uint64_t, uint16_t>> game_;
+    int result_       = -1;     // White's score: 2 a win, 1 a draw, 0 a loss; -1 unknown
+    int white_elo_    = 0;      // 0 unknown
+    int black_elo_    = 0;
+    std::vector<Played> game_;
 };
 
 // Absolute: the adapter is given the book's path, and runs in its engine's folder.
@@ -237,7 +281,7 @@ void writePolyglotBook(const fs::path& file, std::vector<PolyglotEntry> entries)
     }
 }
 
-PgnBookStats pgnToPolyglot(const fs::path& pgn, const fs::path& bin, int plies, bool chess960,
+PgnBookStats pgnToPolyglot(const fs::path& pgn, const fs::path& bin, const PgnBookOptions& options,
                            const BookProgress& progress) {
     std::ifstream in(pgn, std::ios::binary);
     if (!in) throw std::runtime_error(fmt::format("cannot read {}", pgn.string()));
@@ -246,7 +290,7 @@ PgnBookStats pgnToPolyglot(const fs::path& pgn, const fs::path& bin, int plies, 
 
     PgnBookStats stats;
     MoveCounts counts;
-    BookVisitor visitor(counts, stats, std::max(1, plies), chess960);
+    BookVisitor visitor(counts, stats, options);
     chess::pgn::StreamParser parser(in);
     double read = 0;  // the share reported last
     for (uint64_t n = 1; parser.readNextGame(visitor); ++n) {
@@ -264,28 +308,38 @@ PgnBookStats pgnToPolyglot(const fs::path& pgn, const fs::path& bin, int plies, 
                             : error.message();
     }
 
-    // The weights: the counts, scaled per position when the most played move goes beyond 16 bits.
+    // The moves kept: played by enough games, and weighing something. Their weights: the counts or the scores,
+    // scaled per position when the heaviest move goes beyond 16 bits, their ratios kept.
+    const auto min_games = static_cast<uint32_t>(std::max(1, options.min_games));
+    const auto weightOf  = [&](const MoveCounts::Count& c) -> uint64_t {
+        if (c.count < min_games) return 0;
+        return options.weight == PgnBookOptions::Weight::Score ? c.score : c.count;
+    };
     auto& merged = counts.merged();
     std::vector<PolyglotEntry> entries;
     entries.reserve(merged.size());
     for (std::size_t i = 0; i < merged.size();) {
         std::size_t end = i;
-        uint32_t most   = 0;
-        for (; end < merged.size() && merged[end].key == merged[i].key; ++end) most = std::max(most, merged[end].count);
+        uint64_t most   = 0;
+        for (; end < merged.size() && merged[end].key == merged[i].key; ++end) {
+            most = std::max(most, weightOf(merged[end]));
+        }
         for (auto k = i; k < end; ++k) {
-            const uint64_t c = merged[k].count;
-            const auto weight =
-                most <= 65535 ? c : std::max<uint64_t>(1, (c * 65535 + most / 2) / static_cast<uint64_t>(most));
+            const auto w = weightOf(merged[k]);
+            if (w == 0) continue;
+            const auto weight = most <= 65535 ? w : std::max<uint64_t>(1, (w * 65535 + most / 2) / most);
             entries.push_back({merged[k].key, merged[k].move, static_cast<uint16_t>(weight)});
         }
-        ++stats.positions;
+        if (most > 0) ++stats.positions;
         i = end;
     }
     std::vector<MoveCounts::Count>().swap(merged);
     if (entries.empty()) {
-        throw std::runtime_error(stats.stopped.empty()
-                                     ? fmt::format("no game of {} gives a move", pgn.string())
-                                     : fmt::format("no game of {} gives a move ({})", pgn.string(), stats.stopped));
+        auto what = stats.games > 0 && min_games > 1
+                        ? fmt::format("no move of {} is played by {} games or more", pgn.string(), min_games)
+                        : fmt::format("no game of {} gives a move", pgn.string());
+        if (!stats.stopped.empty()) what += fmt::format(" ({})", stats.stopped);
+        throw EmptyPgnBook(what, stats);
     }
     stats.entries = entries.size();
     if (progress && !progress(1.0)) throw BookCancelled();
@@ -348,7 +402,7 @@ PreparedBook preparePgnBook(const std::string& pgn, int depth, bool chess960, co
     if (bin.empty()) throw std::runtime_error(fmt::format("file not found: {}", pgn));
 
     PreparedBook book;
-    book.file              = bin.string();
+    book.file = bin.string();
     try {
         book.stats = pgnToPolyglot(pgn, bin, pgnBookPlies(depth), chess960, progress);
     } catch (const BookCancelled&) {
