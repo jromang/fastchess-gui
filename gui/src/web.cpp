@@ -3,7 +3,8 @@
 // as tiles, with who is thinking; the moves, the book's told apart, to step through; the board turned, the game's PGN
 // and the position's FEN copied. Every game in progress beside it; the standings and the crosstable, the charts of
 // the followed game, each engine's search, the next games, the statistics and anomalies and the event in tabs. The
-// moves in letters or figurines, a light or dark theme, and the PGN file to download.
+// moves in letters or figurines, a light or dark theme, and the PGN file to download. Where the viewers talk, when
+// the setup says: a chat link and the lichess round in its header, Discord's widget beside the moves.
 
 #include <algorithm>
 #include <array>
@@ -51,6 +52,11 @@ constexpr const char* COMMON_HEADERS =
 constexpr const char* PAGE_POLICY =
     "Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; "
     "connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'\r\n";
+// The same with Discord's widget: a frame from discord.com, nothing else.
+constexpr const char* DISCORD_POLICY =
+    "Content-Security-Policy: default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; "
+    "connect-src 'self'; img-src 'self' data:; frame-src https://discord.com; base-uri 'none'; "
+    "form-action 'none'\r\n";
 
 std::string response(const std::string& status, const std::string& type, const std::string& body,
                      const std::string& headers = "Access-Control-Allow-Origin: *\r\n") {
@@ -88,22 +94,23 @@ bool acceptsGzip(std::string_view request) {
 }
 
 // The page, the same until the program changes: sent compressed when the client takes it, and checked again at each
-// load by its tag, so that a reload costs a few bytes.
+// load by its tag, so that a reload costs a few bytes. Two of them, the plain one and the one with the extras.
 struct Page {
     std::string gzip;
-    std::string tag;
+    std::string tag;  // its CRC, without the quotes
 };
 
-const Page& page() {
-    static const Page p = [] {
-        const auto& html = webPage();
+const Page& page(bool extras) {
+    static const auto make = [](bool with) {
+        const auto& html = webPage(with);
         char tag[16];
-        std::snprintf(tag, sizeof(tag), "\"%08x\"",
+        std::snprintf(tag, sizeof(tag), "%08x",
                       static_cast<unsigned>(fastchess::crc::finalize_crc32(
                           fastchess::crc::incremental_crc32(fastchess::crc::initial_crc32(), html))));
         return Page{gzipped(html, 64), tag};  // once: the best stb finds
-    }();
-    return p;
+    };
+    static const Page plain = make(false), with = make(true);
+    return extras ? with : plain;
 }
 
 // The file name a browser saves the download as: plain ASCII for the old ones, UTF-8 for the others (RFC 6266).
@@ -158,6 +165,11 @@ void WebServer::publish(const BroadcastSnapshot& snapshot) {
     pgn_file_   = snapshot.pgn_file;
     pgn_name_   = snapshot.pgn_name;
     pgn_bytes_  = snapshot.pgn_bytes;
+}
+
+void WebServer::setExtras(bool links, bool discord) {
+    links_   = links;
+    discord_ = discord;
 }
 
 void WebServer::serve() {
@@ -225,15 +237,20 @@ void WebServer::handle(std::unique_ptr<net::TcpConnection> connection) {
 
     const bool gzip = acceptsGzip(request);
     if (path == "/" || path == "/index.html") {
-        const auto& p     = page();
-        const auto headers = std::string(PAGE_POLICY) + "Cache-Control: no-cache\r\nETag: " + p.tag +
-                             "\r\nVary: Accept-Encoding\r\n";
-        if (headerValue(request, "if-none-match") == p.tag) {
+        // With Discord's widget the policy differs, and so does the tag: a browser that kept the page without it
+        // takes it again, with the policy that lets the widget in (and the other way round).
+        const bool discord = discord_;
+        const bool extras  = links_ || discord;
+        const auto& p      = page(extras);
+        const auto tag     = "\"" + p.tag + (discord ? "-d" : "") + "\"";
+        const auto headers = std::string(discord ? DISCORD_POLICY : PAGE_POLICY) +
+                             "Cache-Control: no-cache\r\nETag: " + tag + "\r\nVary: Accept-Encoding\r\n";
+        if (headerValue(request, "if-none-match") == tag) {
             send("HTTP/1.0 304 Not Modified\r\n" + headers + COMMON_HEADERS + "\r\n");
         } else if (gzip && !p.gzip.empty()) {
             send(response("200 OK", "text/html; charset=utf-8", p.gzip, headers + "Content-Encoding: gzip\r\n"));
         } else {
-            send(response("200 OK", "text/html; charset=utf-8", webPage(), headers));
+            send(response("200 OK", "text/html; charset=utf-8", webPage(extras), headers));
         }
     } else if (path == "/state.json") {
         std::string body;
@@ -390,17 +407,17 @@ td.n,th.n{text-align:left}.bad{color:var(--loss);font-weight:600}td.wrap{white-s
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none}.toast.show{opacity:1}
 dialog{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:10px;width:min(560px,92vw)}dialog textarea{width:100%;font:12px/1.4 ui-monospace,monospace;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px}
 @media (max-width:600px){header,main{padding-left:12px;padding-right:12px}main{padding-top:12px}.games{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}.clock{font-size:21px;min-width:80px}.eval{font-size:26px}}
-/*PIECES*/
+/*PIECES*//*EXTRA_STYLES*/
 </style></head><body>
 <header><div><h1 id="name">fastchess-gui</h1><div class="muted small" id="progress"></div></div>
-<div class="tools"><button id="notation" type="button" title="Moves in letters or figurines"></button><button id="theme" type="button" title="Light or dark, or as the system says"></button><span id="download"></span></div></header>
+<div class="tools"><!--LINKS--><button id="notation" type="button" title="Moves in letters or figurines"></button><button id="theme" type="button" title="Light or dark, or as the system says"></button><span id="download"></span></div></header>
 <main><div class="stage none" id="stage">
 <section class="side" id="boardcol"><div><div class="player" id="ptop"></div>
 <div class="bwrap"><div class="ebar" id="ebar"><div></div></div><div class="board" id="board"></div></div>
 <div class="player" id="pbottom"></div></div>
 <div class="controls"><button id="first" type="button" title="The start"><svg viewBox="0 0 16 16"><path d="M3 3h2v10H3zM13 3v10L6 8z"/></svg></button><button id="prev" type="button" title="The move before (←)"><svg viewBox="0 0 16 16"><path d="M11 3v10L4 8z"/></svg></button><button id="next" type="button" title="The move after (→)"><svg viewBox="0 0 16 16"><path d="M5 3v10l7-5z"/></svg></button><button id="live" type="button" title="Back to the game as it goes"><svg viewBox="0 0 16 16"><path d="M3 3v10l7-5zM11 3h2v10h-2z"/></svg></button>
 <button id="flip" type="button" title="Turn the board (F)"><svg viewBox="0 0 16 16"><path d="M5 1l3.5 4.5H6V15H4V5.5H1.5zM11 15l-3.5-4.5H10V1h2v9.5h2.5z"/></svg></button><button id="cpgn" type="button" title="Copy the game in PGN">PGN</button><button id="cfen" type="button" title="Copy the position in FEN">FEN</button><span class="where" id="where"></span></div></section>
-<section class="side"><div class="engines" id="engines"></div><div class="card"><div class="chead" id="mhead"></div><div class="moves" id="moves"></div></div></section>
+<section class="side"><div class="engines" id="engines"></div><div class="card"><div class="chead" id="mhead"></div><div class="moves" id="moves"></div></div><!--WIDGET--></section>
 <section class="card" id="tabs"><nav class="tabbar" id="tabbar" role="tablist"></nav><div id="panel" role="tabpanel"></div></section></div>
 <section><h2 id="gameshead">Games in progress</h2><div class="games" id="games"></div></section></main>
 <div class="toast" id="toast"></div><dialog id="copybox"><div class="small muted">Copying is not allowed here: select the text and copy it.</div><textarea id="copytext" readonly></textarea><div style="text-align:right;margin-top:6px"><button id="copyclose" type="button">Close</button></div></dialog>
@@ -579,7 +596,7 @@ function render(s){last=s;
   <div class="board">${board(p.b,marks(x,p,x.moves.length))}</div>
   <div class="row"><b class="${x.white_to_move&&x.active?'tomove':''}">${player(x.white,x.white_elo)}</b><span class="side2">${pbar(x,true)}<span class="muted">${x.clocks?clock(x.white_ms):''}</span></span></div>
   <div class="row muted"><span>#${x.number} · ${Math.ceil(x.moves.length/2)} moves</span><span>${x.active?'':esc(x.result)}</span></div></div>`}).join('')||'<div class="muted">No game in progress.</div>';
- panel(s,g)}
+ panel(s,g)/*RENDER*/}
 // The followed game: the board at the move shown, the players and their clocks, the engines' searches, the moves.
 function game(g){const n=g.moves.length,list=positions(g),ok=list.length===n+1,k=ok?shown(g):n,live=k===n;
  const p=live?parse(g.fen):list[k];
@@ -622,8 +639,8 @@ function pgn(s,g){const tag=(k,v)=>`[${k} "${String(v).replace(/[\\"]/g,c=>'\\'+
  g.moves.forEach((m,i)=>{const t=white?`${n}. ${m}`:i?m:`${n}... ${m}`;if(!white)n++;white=!white;
   if(line&&line.length+1+t.length>79){text+=line+'\n';line=''}line+=(line?' ':'')+t});
  return out+'\n'+text+line+(line?' ':'')+result+'\n'}
-function applyTheme(){if(theme==='light'||theme==='dark')document.documentElement.dataset.theme=theme;else{theme='auto';delete document.documentElement.dataset.theme}
- document.getElementById('theme').innerHTML='<svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1.5v11a5.5 5.5 0 0 1 0-11z"/></svg>'+{auto:'Auto',light:'Light',dark:'Dark'}[theme]}
+/*EXTRAS*/function applyTheme(){if(theme==='light'||theme==='dark')document.documentElement.dataset.theme=theme;else{theme='auto';delete document.documentElement.dataset.theme}
+ document.getElementById('theme').innerHTML='<svg viewBox="0 0 16 16"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1.5v11a5.5 5.5 0 0 1 0-11z"/></svg>'+{auto:'Auto',light:'Light',dark:'Dark'}[theme]/*RENDER*/}
 applyTheme();
 document.getElementById('theme').addEventListener('click',()=>{theme={auto:'light',light:'dark',dark:'auto'}[theme];keep('fcg-theme',theme);applyTheme()});
 document.getElementById('notation').addEventListener('click',()=>{figurines=!figurines;keep('fcg-figurines',figurines?'1':'0');redraw()});
@@ -686,16 +703,58 @@ void replaceAll(std::string& text, std::string_view mark, std::string_view by) {
     }
 }
 
+// The extras, put in where marked: links styled as the page's buttons, the chat's in the accent colour; the widget's
+// card, no taller than the side column needs.
+constexpr const char* EXTRA_STYLES =
+    ".btn{display:inline-block;font-size:13px;color:var(--text);background:var(--card);border:1px solid var(--line);"
+    "border-radius:8px;padding:5px 10px;text-decoration:none}.btn:hover{border-color:var(--accent)}"
+    ".btn[hidden]{display:none}.btn svg{width:14px;height:14px;fill:currentColor;vertical-align:-2px;margin-right:5px}"
+    "#chat{background:var(--accent);border-color:var(--accent);color:#fff}#discord{padding:0;overflow:hidden}"
+    "#discord iframe{display:block;width:100%;height:400px;border:0}"
+    "@media (max-width:600px){#discord iframe{height:340px}}";
+// The links open in a new tab, which learns nothing of the page (rel), their address set from state.json.
+constexpr const char* LINKS =
+    "<a class=\"btn\" id=\"chat\" hidden target=\"_blank\" rel=\"noopener noreferrer\" title=\"Where the "
+    "viewers talk, in a new tab\"><svg viewBox=\"0 0 16 16\"><path d=\"M2 2h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H6l-3 "
+    "3v-3H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z\"/></svg>Chat</a><a class=\"btn\" id=\"lichessround\" hidden "
+    "target=\"_blank\" rel=\"noopener noreferrer\" title=\"The games on lichess, with its chat, in a new "
+    "tab\">lichess</a>";
+// Discord's widget, with what it needs only: its scripts on its own origin, and the Join button opening Discord in a
+// new tab. Loaded once state.json gives the server, so that without one Discord is never asked.
+constexpr const char* WIDGET =
+    "<div class=\"card\" id=\"discord\" hidden><iframe id=\"discordframe\" title=\"Discord\" sandbox=\"allow-scripts "
+    "allow-same-origin allow-popups allow-popups-to-escape-sandbox\" referrerpolicy=\"no-referrer\" "
+    "loading=\"lazy\"></iframe></div>";
+// Where the viewers talk, from state.json, its values checked again here: links set as addresses, never as HTML;
+// Discord's widget in the page's theme, followed when the viewer or the system changes it.
+constexpr const char* EXTRAS = R"JS(let discordSrc='';
+function extras(){const s=last||{};
+ for(const [id,url] of [['chat',s.chat],['lichessround',s.lichess]]){const a=document.getElementById(id),ok=typeof url==='string'&&/^https:\/\/[^\s"'<>\\`]+$/i.test(url);
+  a.hidden=!ok;if(ok&&a.getAttribute('href')!==url)a.href=url}
+ const id=typeof s.discord==='string'&&/^[0-9]{17,20}$/.test(s.discord)?s.discord:'';document.getElementById('discord').hidden=!id;
+ let dark=theme==='dark';try{dark=dark||theme!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches}catch(e){}
+ const src=id?`https://discord.com/widget?id=${id}&theme=${dark?'dark':'light'}`:'';
+ if(src!==discordSrc){discordSrc=src;const f=document.getElementById('discordframe');if(src)f.src=src;else f.removeAttribute('src')}}
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',extras)}catch(e){}
+)JS";
+
 }  // namespace
 
-const std::string& webPage() {
-    static const std::string page = [] {
+const std::string& webPage(bool extras) {
+    static const auto make = [](bool with) {
         std::string html = PAGE;
         replaceAll(html, "/*DARK*/", DARK_COLOURS);
         replaceAll(html, "/*PIECES*/", pieceStyles());
+        // The plain page has nothing where the extras go: the page as it was before them.
+        replaceAll(html, "/*EXTRA_STYLES*/", with ? EXTRA_STYLES : "");
+        replaceAll(html, "<!--LINKS-->", with ? LINKS : "");
+        replaceAll(html, "<!--WIDGET-->", with ? WIDGET : "");
+        replaceAll(html, "/*EXTRAS*/", with ? EXTRAS : "");
+        replaceAll(html, "/*RENDER*/", with ? ";extras()" : "");
         return html;
-    }();
-    return page;
+    };
+    static const std::string plain = make(false), with = make(true);
+    return extras ? with : plain;
 }
 
 }  // namespace fcg

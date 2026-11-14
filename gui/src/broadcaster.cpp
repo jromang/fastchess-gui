@@ -363,6 +363,10 @@ std::vector<std::string> Broadcaster::configure(const BroadcastSettings& setting
     sync(tlcs_, settings.tlcs, tlcs_error_,
          [&] { return tlcs_.start(static_cast<uint16_t>(settings.tlcs_port), settings.tlcs_lanes); });
     sync(web_, settings.web, web_error_, [&] { return web_.start(static_cast<uint16_t>(settings.web_port)); });
+    // The page's links and Discord's widget, from what passes the checks only; the lichess round once it is known.
+    const auto chat    = webChatLink(settings.chat_link);
+    const auto discord = webDiscordId(settings.discord_id);
+    web_.setExtras(!chat.empty() || settings.lichess, !discord.empty());
     // The tunnel, to the web server while it runs; started again when its settings change.
     auto tunnel_to       = settings.tunnel_to;
     tunnel_to.local_port = settings.web_port;
@@ -375,9 +379,11 @@ std::vector<std::string> Broadcaster::configure(const BroadcastSettings& setting
     // there, its last push made on its own thread.
     const bool lichess_changed = !sameLichess(settings, settings_);
     settings_                  = settings;
+    settings_.chat_link        = chat;
+    settings_.discord_id       = discord;
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        next_settings_ = settings;
+        next_settings_ = settings_;
         if (lichess_changed && !thread_.joinable()) thread_ = std::thread([this] { work(); });
     }
     if (lichess_changed) wake_.notify_all();
@@ -457,7 +463,13 @@ void Broadcaster::work() {
 }
 
 void Broadcaster::publish(const Job& job, const BroadcastSettings& settings) {
-    const auto snapshot = makeSnapshot(job.input);
+    auto snapshot       = makeSnapshot(job.input);
+    snapshot.chat_link  = settings.chat_link;
+    snapshot.discord_id = settings.discord_id;
+    // The lichess round, with its own chat, while the games are pushed there.
+    if (settings.lichess) {
+        if (const auto status = lichess(); status.running) snapshot.lichess_url = status.url;
+    }
     if (tlcs_.running()) tlcs_.publish(snapshot, job.featured);
     if (web_.running()) web_.publish(snapshot);
     if (settings.lichess) updateLichess(job.input, snapshot, settings);

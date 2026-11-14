@@ -377,6 +377,7 @@ class App {
     void updateBroadcast();
     void drawBroadcast();
     void drawLichess(bool& changed);
+    void drawWebChat(bool& changed);   // under the web page: the chat link and the Discord widget
     void drawTunnel(bool& changed);    // under the web page
     void lichessTokenField();          // in the Broadcast tab and in Settings
     void saveLichessToken();           // to the profile, when it changed

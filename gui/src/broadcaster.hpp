@@ -32,6 +32,9 @@ struct BroadcastSettings {
     bool tlcs_lanes = false;  // a port per concurrent game, from tlcs_port on
     bool web        = false;
     int web_port    = 8080;
+    // Where the page's viewers talk, as the setup has them: taken only when they pass webChatLink and webDiscordId.
+    std::string chat_link;
+    std::string discord_id;
 
     bool lichess = false;
     std::string lichess_token;

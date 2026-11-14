@@ -12,6 +12,7 @@
 #include <mutex>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <vector>
 
@@ -143,7 +144,20 @@ struct BroadcastSnapshot {
     std::filesystem::path pgn_file;
     std::string pgn_name;  // its name, UTF-8
     uint64_t pgn_bytes = 0;
+
+    // Where the web page's viewers talk, empty for none: a chat (webChatLink), the lichess round while the games are
+    // pushed there, and the Discord server whose widget the page shows (webDiscordId). Checked again when written.
+    std::string chat_link;
+    std::string lichess_url;
+    std::string discord_id;
 };
+
+// `text` as a link the web page may offer, the spaces around it left out: an absolute https URL with a host and no
+// space, quote, angle bracket, backslash, backtick or control character in it. Empty when it is not one.
+[[nodiscard]] std::string webChatLink(std::string_view text);
+// `text` as a Discord server ID, the spaces around it left out: 17 to 20 digits (a snowflake). Empty when it is not
+// one.
+[[nodiscard]] std::string webDiscordId(std::string_view text);
 
 // The snapshot as JSON, for scripts and for the web page.
 [[nodiscard]] std::string snapshotJson(const BroadcastSnapshot& s);
@@ -208,6 +222,11 @@ class WebServer {
 
     void publish(const BroadcastSnapshot& snapshot);
 
+    // What the page offers beyond the tournament, their values in state.json: the links to a chat or to the lichess
+    // round (`links`), and Discord's widget, a frame from discord.com its Content-Security-Policy then allows. With
+    // neither, the page is the plain one.
+    void setExtras(bool links, bool discord);
+
     [[nodiscard]] int viewers() const noexcept { return viewers_; }
 
    private:
@@ -221,6 +240,8 @@ class WebServer {
     std::thread thread_;
     std::atomic_bool running_{false};
     std::atomic_int viewers_{0};
+    std::atomic_bool links_{false};
+    std::atomic_bool discord_{false};
     std::mutex mutex_;
     std::string state_json_ = "{}";
     std::string state_gzip_;  // state_json_ compressed, empty when it could not be
@@ -237,7 +258,8 @@ class WebServer {
     std::vector<Worker> workers_;  // the serving thread's own: the requests being answered
 };
 
-// The viewer page served at "/".
-[[nodiscard]] const std::string& webPage();
+// The viewer page served at "/"; with `extras`, the links to a chat and to the lichess round and Discord's widget
+// in it, shown when state.json has them.
+[[nodiscard]] const std::string& webPage(bool extras = false);
 
 }  // namespace fcg
