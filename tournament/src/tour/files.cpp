@@ -31,6 +31,11 @@ namespace {
 
 constexpr const char* LOCK_FILE = "tournament.lock";
 
+#ifndef _WIN32
+// The permissions of a file this program makes, less the umask: written by its owner only, read by anyone.
+constexpr mode_t NEW_FILE_MODE = 0644;
+#endif
+
 std::string lastError() {
 #ifdef _WIN32
     return std::system_category().message(static_cast<int>(GetLastError()));
@@ -68,7 +73,17 @@ std::FILE* openFile(const fs::path& file, const char* mode) {
 #ifdef _WIN32
     return _wfopen(file.c_str(), fs::path(mode).c_str());
 #else
-    return std::fopen(file.c_str(), mode);
+    // Reading: as fopen does. Writing: as fopen does too, but a file made is not writable by others whatever the
+    // umask (fopen makes it 0666 less the umask).
+    const std::string_view m(mode);
+    if (m.empty() || (m[0] != 'w' && m[0] != 'a')) return std::fopen(file.c_str(), mode);
+    const int flags = (m.find('+') != std::string_view::npos ? O_RDWR : O_WRONLY) | O_CREAT | O_CLOEXEC |
+                      (m[0] == 'w' ? O_TRUNC : O_APPEND);
+    const int fd    = ::open(file.c_str(), flags, NEW_FILE_MODE);
+    if (fd < 0) return nullptr;
+    std::FILE* out = ::fdopen(fd, mode);
+    if (!out) ::close(fd);
+    return out;
 #endif
 }
 
@@ -81,10 +96,11 @@ bool syncFile(std::FILE* file) {
 #endif
 }
 
-void replaceFile(const fs::path& file, std::string_view text, bool backup) {
+void replaceFile(const fs::path& file, std::string_view text, bool backup, bool owner_only) {
     std::error_code ec;
     if (file.has_parent_path()) fs::create_directories(file.parent_path(), ec);
-    if (backup && fs::is_regular_file(file, ec)) replaceFile(fs::path(file).concat(".bak"), readAll(file));
+    if (backup && fs::is_regular_file(file, ec))
+        replaceFile(fs::path(file).concat(".bak"), readAll(file), false, owner_only);
 
     const auto tmp  = fs::path(file).concat(".tmp");
     const auto fail = [&](const fs::path& which) {
@@ -94,20 +110,23 @@ void replaceFile(const fs::path& file, std::string_view text, bool backup) {
     };
 
 #ifdef _WIN32
+    (void)owner_only;  // the profile's folder, under %APPDATA%, is its owner's alone
     std::FILE* out = openFile(tmp, "wb");
     if (!out) fail(tmp);
     const bool written = std::fwrite(text.data(), 1, text.size(), out) == text.size() && syncFile(out);
     if (std::fclose(out) != 0 || !written) fail(tmp);
     if (!MoveFileExW(tmp.c_str(), file.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) fail(file);
 #else
-    // Made with the permissions of the file it replaces: settings.json holds a token only its owner may read.
+    // Made with the permissions of the file it replaces: settings.json holds a token only its owner may read. With
+    // `owner_only`, readable by its owner only from the start, not once the text is in it.
     struct stat old{};
     const bool had_file = ::stat(file.c_str(), &old) == 0;
-    const mode_t mode   = had_file ? (old.st_mode & 07777) : 0666;
+    mode_t mode         = had_file ? (old.st_mode & 07777) : NEW_FILE_MODE;
+    if (owner_only) mode &= S_IRWXU;
     ::unlink(tmp.c_str());
     const int fd = ::open(tmp.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, mode);
     if (fd < 0) fail(tmp);
-    bool written = !had_file || ::fchmod(fd, mode) == 0;
+    bool written = (!had_file && !owner_only) || ::fchmod(fd, mode) == 0;
     for (std::size_t done = 0; written && done < text.size();) {
         const auto n = ::write(fd, text.data() + done, text.size() - done);
         if (n < 0 && errno == EINTR) continue;
@@ -167,6 +186,9 @@ FolderLock::Held::Held(const fs::path& dir) {
         return FolderBusy("this tournament is open in another program" + (pid.empty() ? "" : " (process " + pid + ")") +
                           "; close it there first: " + dir.string());
     };
+    // Its pid is written over what it holds: a link (from an archive...) would have a file elsewhere emptied.
+    std::error_code ec;
+    if (fs::is_symlink(file, ec)) throw std::runtime_error("cannot write " + file.string() + ": a symbolic link");
 
 #ifdef _WIN32
     // Shared for reading only: a second program asking to write is refused until this one closes it.
@@ -193,7 +215,7 @@ FolderLock::Held::Held(const fs::path& dir) {
     SetEndOfFile(handle_);
     WriteFile(handle_, pid.data(), static_cast<DWORD>(pid.size()), &n, nullptr);
 #else
-    fd_ = ::open(file.c_str(), O_RDWR | O_CREAT | O_CLOEXEC, 0666);
+    fd_ = ::open(file.c_str(), O_RDWR | O_CREAT | O_CLOEXEC | O_NOFOLLOW, NEW_FILE_MODE);
     if (fd_ < 0) throw std::runtime_error("cannot write " + file.string() + ": " + lastError());
     if (::flock(fd_, LOCK_EX | LOCK_NB) != 0) {
         const bool held = errno == EWOULDBLOCK;

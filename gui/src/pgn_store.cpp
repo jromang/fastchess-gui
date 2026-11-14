@@ -120,17 +120,20 @@ void parseFastchessComment(std::string_view comment, ReplayMove& move) {
     if (score.size() >= 2 && (score[0] == '+' || score[0] == '-')) {
         const int sign = score[0] == '-' ? -1 : 1;
         if (score[1] == 'M') {
-            // fastchess prints mates in plies; UCI and Score use moves.
+            // fastchess prints mates in plies; UCI and Score use moves. Counted in 64 bits, as Score: a PGN file
+            // from elsewhere may hold any number there, and plies + 1 must not overflow.
             int plies = 0;
             std::from_chars(score.data() + 2, score.data() + score.size(), plies);
-            const int moves = sign > 0 ? (plies + 1) / 2 : plies / 2;
-            move.score      = fastchess::Score{fastchess::ScoreType::MATE, sign * moves};
+            const int64_t moves = sign > 0 ? (int64_t{plies} + 1) / 2 : plies / 2;
+            move.score          = fastchess::Score{fastchess::ScoreType::MATE, sign * moves};
         } else {
             double pawns = 0;
             try {
                 pawns = std::stod(std::string(score.substr(1)));
             } catch (...) {
             }
+            // Within what a 64-bit integer holds once in centipawns ("+1e300", "+inf" or "+nan" would not be).
+            pawns = std::isnan(pawns) ? 0 : std::clamp(pawns, -1e15, 1e15);
             move.score =
                 fastchess::Score{fastchess::ScoreType::CP, static_cast<int64_t>(sign * pawns * 100.0 + sign * 0.5)};
         }

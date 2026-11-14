@@ -12,6 +12,7 @@
 
 #include <fmt/include/fmt/format.h>
 #include <tour/chess_text.hpp>
+#include <tour/files.hpp>
 
 #ifdef _WIN64
 #    include <engine/process/process_win.hpp>
@@ -828,7 +829,7 @@ int run(const std::vector<std::string>& args) {
     const auto t0   = Clock::now();
     const auto name = fmt::format("{}#{}", std::filesystem::path(args[0]).stem().string(),
                                   std::chrono::steady_clock::now().time_since_epoch().count() % 100000);
-    if (const char* path = std::getenv("FCG_WB2UCI_LOG")) log = std::fopen(path, "a");
+    if (const char* path = std::getenv("FCG_WB2UCI_LOG")) log = tour::openFile(path, "a");  // not writable by others
     const auto trace = [&](const char* dir, const std::string& line) {
         if (!log) return;
         const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - t0).count();

@@ -501,6 +501,17 @@ TEST_CASE("fastchess comments parse back") {
     parseFastchessComment("-M4/30 0.1s", mated);
     CHECK(mated.score->value == -2);
 
+    // Numbers out of range, as a PGN file from elsewhere may hold: no overflow.
+    ReplayMove far_mate;
+    parseFastchessComment("+M2147483647/1 0.1s", far_mate);
+    CHECK(far_mate.score->value == 1073741824);
+    ReplayMove huge;
+    parseFastchessComment("+1e300/1 0.1s", huge);
+    CHECK(huge.score->value == 100000000000000000);
+    ReplayMove nan;
+    parseFastchessComment("-nan/1 0.1s", nan);
+    CHECK(nan.score->value == 0);
+
     ReplayMove zero;
     parseFastchessComment("0.00/12 0.5s", zero);
     CHECK(zero.score->value == 0);

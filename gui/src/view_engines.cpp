@@ -84,7 +84,13 @@ struct InFlight {
 std::string nowText() {
     char when[32];
     const auto now = std::time(nullptr);
-    std::strftime(when, sizeof(when), "%Y-%m-%d %H:%M", std::localtime(&now));
+    std::tm tm{};
+#ifdef _WIN32
+    localtime_s(&tm, &now);
+#else
+    localtime_r(&now, &tm);
+#endif
+    std::strftime(when, sizeof(when), "%Y-%m-%d %H:%M", &tm);
     return when;
 }
 

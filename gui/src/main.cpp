@@ -362,7 +362,7 @@ int main(int argc, char** argv) {
     fcg::Storage storage(args.profile.empty() ? fs::path(pref ? pref : ".") : fs::path(args.profile));
     useBookCache(storage);
     const auto ini_path = storage.iniFile().string();
-    fcg::Console::instance().logTo((storage.root() / "fastchess-gui.log").string());
+    fcg::Console::instance().logTo(storage.root() / "fastchess-gui.log");
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();

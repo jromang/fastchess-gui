@@ -1,6 +1,7 @@
 #include "console.hpp"
 
 #include <core/logger/logger.hpp>
+#include <tour/files.hpp>
 
 namespace fcg {
 
@@ -25,10 +26,10 @@ void Console::attach() {
     });
 }
 
-void Console::logTo(const std::string& path) {
+void Console::logTo(const std::filesystem::path& path) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (log_) std::fclose(log_);
-    log_ = std::fopen(path.c_str(), "w");
+    log_ = tour::openFile(path, "w");  // not writable by others, and the UTF-16 path on Windows
 }
 
 void Console::add(std::string line, bool warning) {

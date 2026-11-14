@@ -74,14 +74,17 @@ jobs:
           upload: never
           output: sarif-results
 
-      - name: Drop the dependencies' results
+      - name: Drop the dependencies' and the tests' results
         # What CodeQL still saw of them (libssh2, compiled with our backend, and the header-only libraries compiled
         # in our files) lives under build/_deps, as do the generated sources under build/generated: everything
-        # under build/ is left out. paths-ignore does not apply to a compiled language's manual build.
+        # under build/ is left out. paths-ignore does not apply to a compiled language's manual build. The tests
+        # and the fuzz targets are compiled (the code they test is analysed through them) but not shipped: what is
+        # in them is left out too, the vendored fastchess (app/) is not.
         run: |
           sarif=$(ls sarif-results/*.sarif)
           jq '.runs[].results |= map(select((.locations[0].physicalLocation.artifactLocation.uri // "")
-                                            | test("^(file://)?(\(env.GITHUB_WORKSPACE)/)?build/") | not))' \
+                                            | test("^(file://)?(\(env.GITHUB_WORKSPACE)/)?(build|gui/tests|tournament/tests|fuzz)/")
+                                            | not))' \
             "$sarif" > filtered.sarif
           echo "Results: $(jq '[.runs[].results[]] | length' "$sarif") found," \
                "$(jq '[.runs[].results[]] | length' filtered.sarif) kept"

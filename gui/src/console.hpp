@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <deque>
+#include <filesystem>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -18,7 +19,7 @@ class Console {
     void attach();
 
     // Also appends every line to this file (truncated first). A GUI program on Windows has no stderr.
-    void logTo(const std::string& path);
+    void logTo(const std::filesystem::path& path);
 
     void add(std::string line, bool warning = false);
 
