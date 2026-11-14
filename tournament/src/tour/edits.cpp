@@ -81,6 +81,36 @@ std::string uniqueName(const TournamentSpec& spec, const std::string& base) {
 
 }  // namespace
 
+void to_json(nlohmann::json& j, const Edit& e) {
+    j = {{"kind", static_cast<int>(e.kind)},
+         {"engine", e.engine},
+         {"elo", e.elo},
+         {"catch_up", e.catch_up},
+         {"participant", e.participant},
+         {"void_played", e.void_played},
+         {"cycles", e.cycles},
+         {"games", e.games},
+         {"replay", e.replay},
+         {"why", e.why},
+         {"result", e.result}};
+}
+
+void from_json(const nlohmann::json& j, Edit& e) {
+    const int kind = j.at("kind").get<int>();
+    if (kind < 0 || kind > static_cast<int>(Edit::Kind::SetResult)) throw std::runtime_error("unknown edit");
+    e.kind        = static_cast<Edit::Kind>(kind);
+    e.engine      = j.value("engine", fastchess::EngineConfiguration{});
+    e.elo         = j.value("elo", 0);
+    e.catch_up    = j.value("catch_up", true);
+    e.participant = j.value("participant", -1);
+    e.void_played = j.value("void_played", false);
+    e.cycles      = j.value("cycles", 0);
+    e.games       = j.value("games", std::vector<std::pair<uint32_t, int>>{});
+    e.replay      = j.value("replay", true);
+    e.why         = j.value("why", std::string{});
+    e.result      = j.value("result", std::string{});
+}
+
 bool isEditEvent(const std::string& type) {
     return type == "participant_added" || type == "participant_replaced" || type == "participant_withdrawn" ||
            type == "cycles_changed" || type == "games_voided" || type == "result_set";

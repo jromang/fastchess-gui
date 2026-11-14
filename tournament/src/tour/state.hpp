@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <deque>
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -118,6 +119,10 @@ struct GameResult {
 // hand gets that result, the Termination tag OPERATOR_TERMINATION and setResultComment() before the result; another
 // game comes back as it is. What the exports and the replay read, as voided games are left out of them.
 [[nodiscard]] std::string countedPgn(std::string text, const GameResult& r);
+
+// A game as its journal line keeps it ("game_finished"), and back; the latter throws on a line that is none.
+[[nodiscard]] nlohmann::json gameResultJson(const GameResult& result);
+[[nodiscard]] GameResult gameResultFromJson(const nlohmann::json& j);
 
 // The statistics of one complete encounter (its two games), from participant `pov`'s point of view, pentanomial
 // counts included.
@@ -211,7 +216,11 @@ class TournamentState {
     // after the first), then the next encounter of the schedule. The games of the participants startFailures() sets
     // aside are left for later: an encounter of theirs passed over counts as started, not played yet, so that edits
     // leave it in place and its games come first once their engine starts. nullopt when there is nothing to play now.
-    [[nodiscard]] std::optional<GameTask> claimNext();
+    // `admit`, when given, is asked about the game found (its encounter's two participants) before it is claimed:
+    // false holds it back and nothing is claimed (the runner's allowance, budget.hpp). Called with the state's lock
+    // held: it must not call the state.
+    using Admit = std::function<bool(const Participant& first, const Participant& second)>;
+    [[nodiscard]] std::optional<GameTask> claimNext(const Admit& admit = {});
 
     // A claimed game that will not be finished (interrupted): it is played again later.
     void release(const GameTask& task);
@@ -253,6 +262,30 @@ class TournamentState {
     // Every game played, or the SPRT decided.
     [[nodiscard]] bool finished() const;
     [[nodiscard]] std::string finishReason() const;
+
+    // --- the tournament process and the window ---
+
+    // The tournament process tells the window each line of the journal as it is written (Journal::setListener()).
+    void setJournalListener(Journal::Listener listener);
+
+    // Read-only: the bytes of the journal this copy holds, as read when opened, then as followed.
+    [[nodiscard]] uint64_t journalSize() const;
+
+    // Read-only: a journal line the program playing the tournament wrote since the copy was opened (or since the last
+    // one followed), ending at `end` in the file. False when the copy cannot follow it (an edit undone): it is to be
+    // opened again. Throws on an event it does not know.
+    bool follow(const nlohmann::json& event, uint64_t end);
+
+    // Read-only: what the program playing the tournament tells of it, which its journal does not: the games being
+    // played, whether its last change can be undone, why its games wait for spec().pgn_out. scheduleRows(),
+    // canUndo(), undoLasts() and pgnOutError() answer with them.
+    struct ReplicaStatus {
+        std::set<uint64_t> running;  // game numbers
+        bool can_undo   = false;
+        bool undo_lasts = false;
+        std::string pgn_out_error;
+    };
+    void setReplicaStatus(ReplicaStatus status);
 
     // --- any thread ---
 
@@ -399,6 +432,9 @@ class TournamentState {
 
     std::optional<UndoPoint> undo_;
     uint64_t claims_ = 0;  // games claimed since the tournament was opened
+
+    uint64_t journal_size_ = 0;  // read-only: see journalSize()
+    ReplicaStatus replica_;      // read-only: see setReplicaStatus()
 
     StartFailures start_failures_;
     std::map<uint64_t, std::pair<std::string, std::string>> end_requests_;  // requestEnd(): number -> (result, why)

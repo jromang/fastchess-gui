@@ -160,6 +160,16 @@ void StartFailures::setWaits(Clock::duration retry_pause, Clock::duration retry_
     retry_every_ = retry_every;
 }
 
+void StartFailures::assign(std::vector<Engine> engines, bool stalled) {
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        engines_.clear();
+        for (auto& e : engines) engines_[e.participant] = std::move(e);
+    }
+    stalled_ = stalled;
+    ++version_;
+}
+
 void StartFailures::setStalled(bool stalled) {
     stalled_ = stalled;
     ++version_;

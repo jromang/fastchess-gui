@@ -400,7 +400,8 @@ void TournamentState::load() {
     // A damaged line (a disk that lost part of a write) is skipped rather than making the tournament impossible to
     // open; read-only, the file is not touched.
     std::vector<std::string> damaged;
-    const auto events = withoutUndoneEdits(Journal::read(dir_ / JOURNAL_FILE, !read_only_, &damaged));
+    const auto events =
+        withoutUndoneEdits(Journal::read(dir_ / JOURNAL_FILE, !read_only_, &damaged, &journal_size_));
     for (const auto& d : damaged) warnings_.push_back(d + ": skipped");
     std::set<uint64_t> written_out;           // pgnPath() offsets of the games written to spec_.pgn_out
     std::optional<nlohmann::json> out_begun;  // a write to spec_.pgn_out begun, its end not journaled
@@ -920,11 +921,13 @@ void TournamentState::applyEdit(const Edit& edit) {
 
 bool TournamentState::canUndo() const {
     std::lock_guard<std::mutex> lock(mutex_);
+    if (read_only_) return replica_.can_undo;
     return undo_ && (undo_->results_only || undo_->claims == claims_);
 }
 
 bool TournamentState::undoLasts() const {
     std::lock_guard<std::mutex> lock(mutex_);
+    if (read_only_) return replica_.undo_lasts;
     return undo_ && undo_->results_only;
 }
 
@@ -983,10 +986,11 @@ std::vector<ScheduleRow> TournamentState::scheduleRows() const {
         row.encounter = *schedule_.at(e);
         for (int g = 0; g < 2; ++g) {
             const auto n  = uint64_t{e} * 2 + g;
-            row.status[g] = done_.count(n)      ? GameStatus::Done
-                            : dropped_.count(n) ? GameStatus::Dropped
-                            : running_.count(n) ? GameStatus::Running
-                                                : GameStatus::Pending;
+            const auto& running = read_only_ ? replica_.running : running_;
+            row.status[g]       = done_.count(n)      ? GameStatus::Done
+                                  : dropped_.count(n) ? GameStatus::Dropped
+                                  : running.count(n)  ? GameStatus::Running
+                                                      : GameStatus::Pending;
         }
         rows.push_back(row);
     }
@@ -1042,10 +1046,20 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
     return task;
 }
 
-std::optional<GameTask> TournamentState::claimNext() {
+std::optional<GameTask> TournamentState::claimNext(const Admit& admit) {
     const Bump bump{version_};
     std::lock_guard<std::mutex> lock(mutex_);
     if (finished_ || read_only_) return std::nullopt;
+
+    // The game is held back (nothing claimed) when the runner cannot start it now.
+    const auto admitted = [&](uint32_t encounter) {
+        if (!admit) return true;
+        const auto e = schedule_.at(encounter);
+        if (!e) return true;
+        const auto* first  = spec_.participant(e->first);
+        const auto* second = spec_.participant(e->second);
+        return !first || !second || admit(*first, *second);
+    };
 
     // The games of the participants whose engine cannot start wait for its next try.
     const auto aside_ids = start_failures_.setAside(StartFailures::Clock::now());
@@ -1072,6 +1086,7 @@ std::optional<GameTask> TournamentState::claimNext() {
         } else if (aside(encounter)) {
             ++it;
         } else {
+            if (!admitted(encounter)) return std::nullopt;
             open_.erase(it);
             return claim(encounter, game);
         }
@@ -1084,7 +1099,7 @@ std::optional<GameTask> TournamentState::claimNext() {
     for (; schedule_.at(next) && aside(next); ++next) {
         if (!schedule_.size() && next - next_encounter_ > 1000) return std::nullopt;
     }
-    if (!schedule_.at(next)) return std::nullopt;
+    if (!schedule_.at(next) || !admitted(next)) return std::nullopt;
     for (auto passed = next_encounter_; passed < next; ++passed) {
         open_.emplace_back(passed, 0);
         open_.emplace_back(passed, 1);
@@ -1416,6 +1431,7 @@ bool TournamentState::settleOut(const nlohmann::json& begun,
 
 std::string TournamentState::pgnOutError() const {
     std::lock_guard<std::mutex> lock(mutex_);
+    if (read_only_) return replica_.pgn_out_error;
     return out_error_;
 }
 
@@ -1530,6 +1546,60 @@ bool TournamentState::gamesLeft() const {
         if (!done(encounter, game) && !dropped_.count(n) && !running_.count(n)) return true;
     }
     return schedule_.at(next_encounter_).has_value();
+}
+
+nlohmann::json gameResultJson(const GameResult& result) { return toJson(result); }
+
+GameResult gameResultFromJson(const nlohmann::json& j) { return resultFromJson(j); }
+
+void TournamentState::setJournalListener(Journal::Listener listener) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (journal_) journal_->setListener(std::move(listener));
+}
+
+uint64_t TournamentState::journalSize() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return journal_size_;
+}
+
+bool TournamentState::follow(const nlohmann::json& e, uint64_t end) {
+    if (!read_only_) throw std::logic_error("only a read-only tournament follows another program's journal");
+    const Bump bump{version_};
+    std::lock_guard<std::mutex> lock(mutex_);
+    const auto type = e.at("t").get<std::string>();
+    // What the writer wrote: undoing an edit needs what it changed, which only a fresh open knows.
+    if (type == "edit_undone") return false;
+    if (type == "encounter_started") {
+        OpeningText text{e.at("fen").get<std::string>(), e.value("moves", std::vector<std::string>{})};
+        const auto encounter = e.at("encounter").get<uint32_t>();
+        started_[encounter]  = fromText(text, frc());
+        if (const auto enc = schedule_.at(encounter); enc && openingPerRound()) {
+            round_openings_.emplace(std::pair{enc->cycle, enc->round}, started_[encounter]);
+        }
+        next_encounter_ = std::max(next_encounter_, encounter + 1);
+    } else if (isEditEvent(type)) {
+        applyEvent(e);
+    } else if (type == "round_paired" || type == "tiebreak_added") {
+        applyRoundEvent(e);
+    } else if (type == "game_finished") {
+        const auto result = resultFromJson(e);
+        replica_.running.erase(result.number());
+        apply(result);
+    } else if (type == "finished") {
+        finished_      = true;
+        finish_reason_ = e.value("why", std::string{});
+    } else if (type != "pgn_out") {
+        throw std::runtime_error("unknown event \"" + type + "\"");
+    }
+    journal_size_ = std::max(journal_size_, end);
+    return true;
+}
+
+void TournamentState::setReplicaStatus(ReplicaStatus status) {
+    if (!read_only_) return;
+    const Bump bump{version_};
+    std::lock_guard<std::mutex> lock(mutex_);
+    replica_ = std::move(status);
 }
 
 bool TournamentState::finished() const {

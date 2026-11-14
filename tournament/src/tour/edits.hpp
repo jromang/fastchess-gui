@@ -37,6 +37,10 @@ struct Edit {
     std::string result;
 };
 
+// An edit as the window sends it to the tournament process, and back.
+void to_json(nlohmann::json& j, const Edit& edit);
+void from_json(const nlohmann::json& j, Edit& edit);
+
 // What an edit changes, computed before it is made.
 struct Impact {
     uint64_t games_before = 0;  // games of the whole tournament

@@ -58,6 +58,10 @@ struct Participant {
     // of version 3, which versions up to 0.5.3 (that would play the engine alone) refuse.
     std::string book;
     int book_depth = 0;
+
+    // Its engine uses a GPU (a network engine such as Lc0): no more such engines play at once than the machine has
+    // GPUs (budget.hpp). From the engine library; saved only when set.
+    bool gpu = false;
 };
 
 struct TournamentSpec {

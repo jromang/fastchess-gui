@@ -109,6 +109,9 @@ class StartFailures {
     // Changes at every change.
     [[nodiscard]] uint64_t version() const noexcept { return version_.load(); }
 
+    // The engines as another program has them (the tournament process tells the window): a read-only copy's.
+    void assign(std::vector<Engine> engines, bool stalled);
+
     // Other waits than RETRY_PAUSE and RETRY_EVERY, for the tests.
     void setWaits(Clock::duration retry_pause, Clock::duration retry_every);
 

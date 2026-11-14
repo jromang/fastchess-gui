@@ -19,6 +19,7 @@ void to_json(nlohmann::json& j, const Participant& p) {
         j["book"] = p.book;
         if (p.book_depth > 0) j["book_depth"] = p.book_depth;
     }
+    if (p.gpu) j["gpu"] = true;
 }
 
 void from_json(const nlohmann::json& j, Participant& p) {
@@ -30,6 +31,7 @@ void from_json(const nlohmann::json& j, Participant& p) {
     p.elo        = j.value("elo", 0);
     p.book       = j.value("book", std::string());
     p.book_depth = j.value("book_depth", 0);
+    p.gpu        = j.value("gpu", false);
 }
 
 FileFingerprint fingerprint(const std::string& file) {
