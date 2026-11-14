@@ -56,7 +56,9 @@ this repository still builds unchanged.
   bounds, Elo and LLR over time, game lengths, how games ended, average depth and NPS per engine.
 - **Engines**: UCI options are read from the engine and edited in a table; only values that differ from the
   default are sent. A health check, groups, a reference Elo, and the import of ChessGUI, cutechess, Banksia and
-  Arena engine lists. WinBoard engines too, through a translation to UCI built in.
+  Arena engine lists. A rebuilt program is noticed, with what its new build changed (name, option defaults,
+  options new and gone) and the choice to keep your values. WinBoard engines too, through a translation to UCI
+  built in.
 - **Opening books**: EPD, PGN or Polyglot, in a library; each book checked for illegal, duplicate, mirrored and
   finished positions, browsed on a board, and cleaned. Results by opening after a tournament: the unbalanced, the
   drawish and the decisive ones, exported as EPD.

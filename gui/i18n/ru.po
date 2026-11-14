@@ -347,6 +347,9 @@ msgstr "В BBCode, для форума"
 msgid "As text"
 msgstr "Текстом"
 
+msgid "Author: {} → {}"
+msgstr "Автор: {} → {}"
+
 msgid "Automatic"
 msgstr "Автоматически"
 
@@ -379,6 +382,9 @@ msgstr "Вернуть значение по умолчанию"
 
 msgid "Base (s)"
 msgstr "Базовое время (с)"
+
+msgid "Before"
+msgstr "Было"
 
 msgid "Black"
 msgstr "Чёрные"
@@ -584,6 +590,9 @@ msgstr "Щелчок — сортировка; правый щелчок — в�
 msgid "Close"
 msgstr "Закрыть"
 
+msgid "Closes this notice. The options keep the values they have now."
+msgstr "Закрывает это уведомление. Опции сохраняют свои текущие значения."
+
 msgid "Common settings, forced on every engine (0 = each engine's own):"
 msgstr "Общие настройки, обязательные для всех движков (0 = у каждого своя):"
 
@@ -607,6 +616,12 @@ msgstr "Ходов подряд"
 
 msgid "Console"
 msgstr "Консоль"
+
+msgid "Continue"
+msgstr "Продолжить"
+
+msgid "Continue with the changed programs"
+msgstr "Продолжить с изменёнными программами"
 
 msgid "Copy"
 msgstr "Копировать"
@@ -680,6 +695,12 @@ msgstr "Папки через ';' (достаточно файлов WDL)."
 msgid "Discord server ID"
 msgstr "ID сервера Discord"
 
+msgid "Dismiss"
+msgstr "Закрыть"
+
+msgid "Dismiss what changed: {}"
+msgstr "Закрыть уведомление об изменениях: {}"
+
 msgid "Done: the tournament goes on with the change."
 msgstr "Готово: турнир продолжается с изменением."
 
@@ -718,6 +739,9 @@ msgstr "Ничьи"
 
 msgid "Draws."
 msgstr "Ничьи."
+
+msgid "Dropped from the library with the option: the engine no longer has it. Set it again on the option that replaces it, if one does."
+msgstr "Удалено из библиотеки вместе с опцией: у движка её больше нет. Задайте его снова для опции, которая её заменяет, если такая есть."
 
 msgid "Duplicate"
 msgstr "Дублировать"
@@ -865,6 +889,12 @@ msgstr "Каждый ход рассчитывается до этой глуб�
 
 msgid "Every opening"
 msgstr "Все дебюты"
+
+msgid "Every option listed plays as before the new build: with your value, or the old default where you had none."
+msgstr "Каждая опция из списка играет как до новой версии: с вашим значением или со старым значением по умолчанию, где вы его не задавали."
+
+msgid "Every option listed plays with the default of the new build."
+msgstr "Каждая опция из списка играет со значением по умолчанию новой версии."
 
 msgid "Every pair with both colours"
 msgstr "Каждая пара с обоими цветами"
@@ -1202,6 +1232,9 @@ msgstr "Ходы из его книги делаются сразу, без по
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr "Его карточка в «Рейтингах»: результаты, надёжность и рейтинг по всем турнирам."
 
+msgid "Its card, with the options whose default changed, new or gone."
+msgstr "Его карточка с опциями, у которых изменилось значение по умолчанию, новыми или исчезнувшими."
+
 msgid "Its games"
 msgstr "Его партии"
 
@@ -1223,14 +1256,32 @@ msgstr "Его путь скопирован в буфер обмена."
 msgid "Its positions with a best move (bm), moves to avoid (am) or STS points, in the Suites page."
 msgstr "Его позиции с лучшим ходом (bm), ходами, которых следует избегать (am), или очками STS — на странице «Наборы»."
 
+msgid "Its program changed: its card shows what the new read found."
+msgstr "Его программа изменилась: его карточка показывает, что нашло новое чтение."
+
+msgid "Its program changed: what the new read found"
+msgstr "Его программа изменилась: что нашло новое чтение"
+
 msgid "Its rating on a list you trust, to anchor a tournament's ratings. 0 = none."
 msgstr "Его рейтинг в списке, которому вы доверяете, чтобы привязать к нему рейтинги турнира. 0 = нет."
 
 msgid "Its results…"
 msgstr "Его результаты…"
 
+msgid "Keep my value"
+msgstr "Оставить моё значение"
+
+msgid "Keep my values"
+msgstr "Оставить мои значения"
+
+msgid "Keep my values: {}"
+msgstr "Оставить мои значения: {}"
+
 msgid "Keep the engine log of every game"
 msgstr "Сохранять журнал движков для каждой партии"
+
+msgid "Keep the old default"
+msgstr "Оставить старое по умолчанию"
 
 msgid "Kept in the library, but out of the engine pickers (setup, suites, quick test, relaunch, adding to a tournament) and of Check those not checked. A tournament that has it already plays it as before."
 msgstr "Остаётся в библиотеке, но не предлагается при выборе движков (настройка, наборы, быстрый тест, перезапуск, добавление в турнир) и в «Проверить непроверенные». Турнир, в котором он уже участвует, продолжает с ним как прежде."
@@ -1376,6 +1427,9 @@ msgstr "Имя"
 msgid "Name on the list"
 msgstr "Имя в списке"
 
+msgid "Name: {} → {}"
+msgstr "Имя: {} → {}"
+
 msgid "Names of the list that are no library engine"
 msgstr "Имена из списка, которых нет среди движков библиотеки"
 
@@ -1448,6 +1502,9 @@ msgstr "Нет хода через 10 секунд при поиске на 0,3 
 msgid "No new engine in the folder."
 msgstr "В папке нет новых движков."
 
+msgid "No new game pair starts, so that the program it joined with can be put back; Resume goes on."
+msgstr "Новые пары партий не начинаются, чтобы можно было вернуть программу, с которой он вступил; «Продолжить» возобновляет."
+
 msgid "No opening book: every game starts from the initial position"
 msgstr "Без дебютной книги: каждая партия начинается из начальной позиции"
 
@@ -1502,6 +1559,9 @@ msgstr "Ни одного из этих движков нет в библиот�
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "Elo в нормализованной шкале (fishtest, OpenBench), с интервалом 95 %."
 
+msgid "Not a value the new build takes: fastchess would play without it."
+msgstr "Новая версия не принимает это значение: fastchess играл бы без него."
+
 msgid "Not an https link."
 msgstr "Это не https-ссылка."
 
@@ -1534,6 +1594,9 @@ msgstr "Пока ничего не сообщено."
 
 msgid "Notify when a match ends"
 msgstr "Уведомлять об окончании матча"
+
+msgid "Now"
+msgstr "Стало"
 
 msgid "Now {}. Only cycles not started can be removed."
 msgstr "Сейчас {}. Удалить можно только не начатые циклы."
@@ -1954,6 +2017,9 @@ msgstr "Удаляет книгу из библиотеки; файл остаё
 
 msgid "Remove…"
 msgstr "Удалить…"
+
+msgid "Rename it “{}”"
+msgstr "Переименовать в «{}»"
 
 msgid "Replace"
 msgstr "Заменить"
@@ -2423,6 +2489,9 @@ msgstr "Последнее изменение турнира отменено."
 msgid "The last check or reading failed."
 msgstr "Последняя проверка или чтение завершились неудачей."
 
+msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
+msgstr "Имя в библиотеке, которое ему дадут следующие турниры. Уже сыгранные турниры сохраняют старое, как и их партии и рейтинги."
+
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "Ход, который обдумывает сторона, чья очередь ходить, и ожидаемый ответ — цветами движков, которые их сделали бы."
 
@@ -2464,6 +2533,21 @@ msgstr "Программа завершилась, когда возобновл
 
 msgid "The program ended while it resumed {} at the last launch: it is not resumed automatically again. Resume it from the Tournaments page."
 msgstr "Программа завершилась, когда возобновляла {} при последнем запуске: он больше не возобновляется автоматически. Возобновите его на странице «Турниры»."
+
+msgid "The program of {} changed since it joined the tournament: its next games are played by the new build."
+msgid_plural "The programs of {} changed since they joined the tournament: their next games are played by the new builds."
+msgstr[0] "Программа движка {} изменилась после его вступления в турнир: его следующие партии играет новая версия."
+msgstr[1] "Программы движков {} изменились после их вступления в турнир: их следующие партии играют новые версии."
+msgstr[2] "Программы движков {} изменились после их вступления в турнир: их следующие партии играют новые версии."
+
+msgid "The program of {} changed since its last tournament, “{}”."
+msgstr "Программа движка {} изменилась после его последнего турнира, «{}»."
+
+msgid "The program of {} is missing: its games cannot start until it is back."
+msgid_plural "The programs of {} are missing: their games cannot start until they are back."
+msgstr[0] "Программа движка {} не найдена: его партии не могут начаться, пока она не вернётся."
+msgstr[1] "Программы движков {} не найдены: их партии не могут начаться, пока они не вернутся."
+msgstr[2] "Программы движков {} не найдены: их партии не могут начаться, пока они не вернутся."
 
 msgid "The program of {} is not found."
 msgstr "Программа движка {} не найдена."
@@ -2521,6 +2605,9 @@ msgstr "Контролю времени нужно базовое время и�
 
 msgid "The time per move must be positive."
 msgstr "Время на ход должно быть положительным."
+
+msgid "The tournament goes on with the programs as they are now; this notice closes."
+msgstr "Турнир продолжается с программами в их нынешнем виде; это уведомление закрывается."
 
 msgid "The tournament is not running: resume it to play the new games."
 msgstr "Турнир не запущен: возобновите его, чтобы сыграть новые партии."
@@ -2654,6 +2741,15 @@ msgstr "До {} движков."
 msgid "Use it for the next tournament"
 msgstr "Использовать для следующего турнира"
 
+msgid "Use the new default"
+msgstr "Взять новое по умолчанию"
+
+msgid "Use the new defaults"
+msgstr "Взять новые по умолчанию"
+
+msgid "Use the new defaults: {}"
+msgstr "Взять новые по умолчанию: {}"
+
 msgid "Use these bounds"
 msgstr "Использовать эти границы"
 
@@ -2689,6 +2785,12 @@ msgstr "Веб-страница"
 
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr "Что проверяет тестер перед отправкой партий в рейтинг-лист. «Экспорт для рейтинг-листа…» на вкладке «Партии» исключает аннулированные партии и дубликаты."
+
+msgid "What changed"
+msgstr "Что изменилось"
+
+msgid "What changed: {}"
+msgstr "Что изменилось: {}"
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "Когда в среднем он останавливался на сыгранном ходе: решение задолго до конца затраченного времени говорит о том, что время использовалось неэффективно."
@@ -2798,6 +2900,9 @@ msgstr "Записывается, когда «{}» включён в парам
 msgid "Wrong PVs"
 msgstr "Неверные PV"
 
+msgid "Your value"
+msgstr "Ваше значение"
+
 msgid "Yours"
 msgstr "Ваши"
 
@@ -2852,6 +2957,9 @@ msgstr "повтор более ранней с переменой цветов"
 msgid "decision time"
 msgstr "время решения"
 
+msgid "default"
+msgstr "по умолчанию"
+
 msgid "depth {}"
 msgstr "глубина {}"
 
@@ -2869,6 +2977,9 @@ msgstr "дубликаты"
 
 msgid "elo1 must be larger than elo0."
 msgstr "elo1 должен быть больше elo0."
+
+msgid "empty"
+msgstr "пусто"
 
 msgid "every pair with both colours"
 msgstr "каждая пара с обоими цветами"
@@ -2893,6 +3004,9 @@ msgstr "уже оконченные партии"
 
 msgid "games at least"
 msgstr "минимум партий"
+
+msgid "gone"
+msgstr "исчезла"
 
 msgid "illegal position"
 msgstr "нелегальная позиция"
@@ -2929,6 +3043,9 @@ msgstr "ходы"
 
 msgid "nElo of A (95% CI)"
 msgstr "nElo A (ДИ 95%)"
+
+msgid "new"
+msgstr "новая"
 
 msgid "no engine has a SyzygyPath"
 msgstr "ни у одного движка нет SyzygyPath"
@@ -3073,6 +3190,12 @@ msgstr "{} требует перезапуска для каждой парти�
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} не читается, поэтому ранее доверенные ключи хостов неизвестны: на {} ничего не отправлено. Исправьте файл или удалите его, чтобы снова принять ключ сервера."
+
+msgid "{} changed: its options were read again, and its card shows what changed."
+msgstr "{} изменился: его опции перечитаны, и его карточка показывает, что изменилось."
+
+msgid "{} changed: its options were read again, the same as before."
+msgstr "{} изменился: его опции перечитаны, они те же, что и раньше."
 
 msgid "{} changed: its options were read again."
 msgstr "{} изменился: его опции перечитаны."
@@ -3248,6 +3371,9 @@ msgstr "{} открыт в другой программе: здесь он то
 msgid "{} is playing in another window: it is not resumed here."
 msgstr "{} играется в другом окне: здесь он не возобновляется."
 
+msgid "{} is set to {}, its old default, as it played before."
+msgstr "{} получает значение {}, своё старое значение по умолчанию, как играл раньше."
+
 msgid "{} is the tournament's own PGN file: choose another one."
 msgstr "{} — собственный PGN-файл турнира: выберите другой."
 
@@ -3371,6 +3497,9 @@ msgstr[2] "{} игроков могут быть одним из двух дви
 msgid "{} plays with {} % of the time"
 msgstr "{} играет с {} % времени"
 
+msgid "{} plays with {}."
+msgstr "{} играет с {}."
+
 msgid "{} position"
 msgid_plural "{} positions"
 msgstr[0] "{} позиция"
@@ -3412,6 +3541,9 @@ msgstr[2] "Выбрано {}"
 
 msgid "{} shown"
 msgstr "показано: {}"
+
+msgid "{} stays at {}."
+msgstr "{} остаётся {}."
 
 msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"
@@ -3503,6 +3635,9 @@ msgstr "{}: неизвестен движку"
 msgid "{}: {}"
 msgstr "{}: {}"
 
+msgid "{}\nA new build, or another program: its results may not be those of the engine that played {}."
+msgstr "{}\nНовая версия или другая программа: его результаты могут не совпадать с результатами движка, игравшего в «{}»."
+
 msgid "· %s · %d in parallel%s"
 msgstr "· %s · параллельно: %d%s"
 
@@ -3554,5 +3689,11 @@ msgstr "✓ В норме для измеренных движков: {}"
 msgid "✓ No played game is lost: voided games stay in the PGN files and the journal."
 msgstr "✓ Ни одна сыгранная партия не теряется: аннулированные партии остаются в файлах PGN и журнале."
 
-msgid "✓ works · ! problem · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right click: more"
-msgstr "✓ работает · ! проблема · ↔ WinBoard · серый: неактивен · щелчок с Ctrl или Shift: несколько · правый щелчок: ещё"
+msgid "✓ kept"
+msgstr "✓ оставлено"
+
+msgid "✓ new default"
+msgstr "✓ новое по умолчанию"
+
+msgid "✓ works · ! problem · Δ program changed · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right click: more"
+msgstr "✓ работает · ! проблема · Δ программа изменилась · ↔ WinBoard · серый: неактивен · щелчок с Ctrl или Shift: несколько · правый щелчок: ещё"

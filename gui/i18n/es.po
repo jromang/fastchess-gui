@@ -343,6 +343,9 @@ msgstr "En BBCode, para un foro"
 msgid "As text"
 msgstr "Como texto"
 
+msgid "Author: {} → {}"
+msgstr "Autor: {} → {}"
+
 msgid "Automatic"
 msgstr "Automático"
 
@@ -375,6 +378,9 @@ msgstr "Volver al valor por defecto"
 
 msgid "Base (s)"
 msgstr "Tiempo base (s)"
+
+msgid "Before"
+msgstr "Antes"
 
 msgid "Black"
 msgstr "Negras"
@@ -580,6 +586,9 @@ msgstr "Haz clic para ordenar; clic derecho para elegir las columnas."
 msgid "Close"
 msgstr "Cerrar"
 
+msgid "Closes this notice. The options keep the values they have now."
+msgstr "Cierra este aviso. Las opciones conservan los valores que tienen ahora."
+
 msgid "Common settings, forced on every engine (0 = each engine's own):"
 msgstr "Ajustes comunes, impuestos a todos los motores (0 = el propio de cada motor):"
 
@@ -603,6 +612,12 @@ msgstr "Jugadas consecutivas"
 
 msgid "Console"
 msgstr "Consola"
+
+msgid "Continue"
+msgstr "Continuar"
+
+msgid "Continue with the changed programs"
+msgstr "Continuar con los programas modificados"
 
 msgid "Copy"
 msgstr "Copiar"
@@ -676,6 +691,12 @@ msgstr "Carpetas separadas por ';' (con los archivos WDL basta)."
 msgid "Discord server ID"
 msgstr "ID del servidor de Discord"
 
+msgid "Dismiss"
+msgstr "Cerrar"
+
+msgid "Dismiss what changed: {}"
+msgstr "Cerrar el aviso de cambios: {}"
+
 msgid "Done: the tournament goes on with the change."
 msgstr "Hecho: el torneo continúa con el cambio."
 
@@ -714,6 +735,9 @@ msgstr "Tablas"
 
 msgid "Draws."
 msgstr "Tablas."
+
+msgid "Dropped from the library with the option: the engine no longer has it. Set it again on the option that replaces it, if one does."
+msgstr "Quitado de la biblioteca con la opción: el motor ya no la tiene. Vuelve a ponerlo en la opción que la sustituye, si hay una."
 
 msgid "Duplicate"
 msgstr "Duplicar"
@@ -861,6 +885,12 @@ msgstr "Cada jugada se busca hasta esta profundidad (go depth), tarde lo que tar
 
 msgid "Every opening"
 msgstr "Todas las aperturas"
+
+msgid "Every option listed plays as before the new build: with your value, or the old default where you had none."
+msgstr "Cada opción de la lista juega como antes de la nueva versión: con tu valor, o el antiguo valor por defecto donde no tenías ninguno."
+
+msgid "Every option listed plays with the default of the new build."
+msgstr "Cada opción de la lista juega con el valor por defecto de la nueva versión."
 
 msgid "Every pair with both colours"
 msgstr "Cada par con ambos colores"
@@ -1197,6 +1227,9 @@ msgstr "Sus jugadas de libro se juegan al instante, sin búsqueda."
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr "Su ficha en Clasificaciones: resultados, fiabilidad y rating en todos los torneos."
 
+msgid "Its card, with the options whose default changed, new or gone."
+msgstr "Su ficha, con las opciones cuyo valor por defecto cambió, nuevas o desaparecidas."
+
 msgid "Its games"
 msgstr "Sus partidas"
 
@@ -1218,14 +1251,32 @@ msgstr "Su ruta está en el portapapeles."
 msgid "Its positions with a best move (bm), moves to avoid (am) or STS points, in the Suites page."
 msgstr "Sus posiciones con una mejor jugada (bm), jugadas que evitar (am) o puntos STS, en la página Suites."
 
+msgid "Its program changed: its card shows what the new read found."
+msgstr "Su programa cambió: su ficha muestra lo que encontró la nueva lectura."
+
+msgid "Its program changed: what the new read found"
+msgstr "Su programa cambió: lo que encontró la nueva lectura"
+
 msgid "Its rating on a list you trust, to anchor a tournament's ratings. 0 = none."
 msgstr "Su rating en una lista de confianza, para anclar los ratings de un torneo. 0 = ninguno."
 
 msgid "Its results…"
 msgstr "Sus resultados…"
 
+msgid "Keep my value"
+msgstr "Conservar mi valor"
+
+msgid "Keep my values"
+msgstr "Conservar mis valores"
+
+msgid "Keep my values: {}"
+msgstr "Conservar mis valores: {}"
+
 msgid "Keep the engine log of every game"
 msgstr "Guardar el registro del motor de cada partida"
+
+msgid "Keep the old default"
+msgstr "Conservar el antiguo por defecto"
 
 msgid "Kept in the library, but out of the engine pickers (setup, suites, quick test, relaunch, adding to a tournament) and of Check those not checked. A tournament that has it already plays it as before."
 msgstr "Se conserva en la biblioteca, pero fuera de los selectores de motores (configuración, suites, prueba rápida, relanzar, añadir a un torneo) y de «Comprobar los no comprobados». Un torneo que ya lo tiene lo sigue haciendo jugar como antes."
@@ -1371,6 +1422,9 @@ msgstr "Nombre"
 msgid "Name on the list"
 msgstr "Nombre en la lista"
 
+msgid "Name: {} → {}"
+msgstr "Nombre: {} → {}"
+
 msgid "Names of the list that are no library engine"
 msgstr "Nombres de la lista que no son motores de la biblioteca"
 
@@ -1443,6 +1497,9 @@ msgstr "Ninguna jugada tras 10 segundos de una búsqueda de 0,3 s."
 msgid "No new engine in the folder."
 msgstr "Ningún motor nuevo en la carpeta."
 
+msgid "No new game pair starts, so that the program it joined with can be put back; Resume goes on."
+msgstr "No empieza ningún par de partidas nuevo, para poder volver a poner el programa con el que entró; Reanudar continúa."
+
 msgid "No opening book: every game starts from the initial position"
 msgstr "Sin libro de aperturas: cada partida empieza desde la posición inicial"
 
@@ -1497,6 +1554,9 @@ msgstr "Ninguno de estos motores está en la biblioteca con el mismo nombre."
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "Elo normalizado (fishtest, OpenBench), con su intervalo del 95 %."
 
+msgid "Not a value the new build takes: fastchess would play without it."
+msgstr "No es un valor que acepte la nueva versión: fastchess jugaría sin él."
+
 msgid "Not an https link."
 msgstr "No es un enlace https."
 
@@ -1529,6 +1589,9 @@ msgstr "Nada informado todavía."
 
 msgid "Notify when a match ends"
 msgstr "Avisar cuando termine un match"
+
+msgid "Now"
+msgstr "Ahora"
 
 msgid "Now {}. Only cycles not started can be removed."
 msgstr "Ahora {}. Solo se pueden quitar los ciclos no empezados."
@@ -1945,6 +2008,9 @@ msgstr "Quita el libro de la biblioteca; el archivo se queda donde está."
 
 msgid "Remove…"
 msgstr "Quitar…"
+
+msgid "Rename it “{}”"
+msgstr "Renombrarlo «{}»"
 
 msgid "Replace"
 msgstr "Reemplazar"
@@ -2413,6 +2479,9 @@ msgstr "El último cambio del torneo se ha deshecho."
 msgid "The last check or reading failed."
 msgstr "La última comprobación o lectura falló."
 
+msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
+msgstr "El nombre en la biblioteca, el que le dan los próximos torneos. Los torneos ya jugados conservan el antiguo, igual que sus partidas y ratings."
+
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "La jugada que piensa el bando que mueve y la respuesta que espera, en los colores de los motores que las jugarían."
 
@@ -2454,6 +2523,19 @@ msgstr "El programa terminó mientras reanudaba este torneo en el último inicio
 
 msgid "The program ended while it resumed {} at the last launch: it is not resumed automatically again. Resume it from the Tournaments page."
 msgstr "El programa terminó mientras reanudaba {} en el último inicio: ya no se reanuda automáticamente. Reanúdalo desde la página Torneos."
+
+msgid "The program of {} changed since it joined the tournament: its next games are played by the new build."
+msgid_plural "The programs of {} changed since they joined the tournament: their next games are played by the new builds."
+msgstr[0] "El programa de {} cambió desde que entró en el torneo: sus próximas partidas las juega la nueva versión."
+msgstr[1] "Los programas de {} cambiaron desde que entraron en el torneo: sus próximas partidas las juegan las nuevas versiones."
+
+msgid "The program of {} changed since its last tournament, “{}”."
+msgstr "El programa de {} cambió desde su último torneo, «{}»."
+
+msgid "The program of {} is missing: its games cannot start until it is back."
+msgid_plural "The programs of {} are missing: their games cannot start until they are back."
+msgstr[0] "El programa de {} no se encuentra: sus partidas no pueden empezar hasta que vuelva."
+msgstr[1] "Los programas de {} no se encuentran: sus partidas no pueden empezar hasta que vuelvan."
 
 msgid "The program of {} is not found."
 msgstr "No se encuentra el programa de {}."
@@ -2511,6 +2593,9 @@ msgstr "El ritmo de juego necesita un tiempo base o un incremento."
 
 msgid "The time per move must be positive."
 msgstr "El tiempo por jugada debe ser positivo."
+
+msgid "The tournament goes on with the programs as they are now; this notice closes."
+msgstr "El torneo sigue con los programas tal como están ahora; este aviso se cierra."
 
 msgid "The tournament is not running: resume it to play the new games."
 msgstr "El torneo no está en marcha: reanúdalo para jugar las partidas nuevas."
@@ -2644,6 +2729,15 @@ msgstr "Hasta {} motores."
 msgid "Use it for the next tournament"
 msgstr "Usarlo en el próximo torneo"
 
+msgid "Use the new default"
+msgstr "Usar el nuevo por defecto"
+
+msgid "Use the new defaults"
+msgstr "Usar los nuevos por defecto"
+
+msgid "Use the new defaults: {}"
+msgstr "Usar los nuevos por defecto: {}"
+
 msgid "Use these bounds"
 msgstr "Usar estos límites"
 
@@ -2679,6 +2773,12 @@ msgstr "Página web"
 
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr "Lo que un tester comprueba antes de enviar las partidas a una lista de rating. «Exportar para una lista de rating…» en la pestaña Partidas deja fuera las partidas anuladas y los duplicados."
+
+msgid "What changed"
+msgstr "Qué cambió"
+
+msgid "What changed: {}"
+msgstr "Qué cambió: {}"
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "Cuándo se decidió por la jugada que hizo, de media: una decisión mucho antes del final del tiempo empleado indica que el tiempo no se aprovechó bien."
@@ -2788,6 +2888,9 @@ msgstr "Se escribe cuando «{}» está activado en las opciones PGN de la config
 msgid "Wrong PVs"
 msgstr "PV erróneas"
 
+msgid "Your value"
+msgstr "Tu valor"
+
 msgid "Yours"
 msgstr "Las tuyas"
 
@@ -2841,6 +2944,9 @@ msgstr "colores invertidos de una anterior"
 msgid "decision time"
 msgstr "tiempo de decisión"
 
+msgid "default"
+msgstr "por defecto"
+
 msgid "depth {}"
 msgstr "profundidad {}"
 
@@ -2858,6 +2964,9 @@ msgstr "duplicados"
 
 msgid "elo1 must be larger than elo0."
 msgstr "elo1 debe ser mayor que elo0."
+
+msgid "empty"
+msgstr "vacío"
 
 msgid "every pair with both colours"
 msgstr "cada par con ambos colores"
@@ -2882,6 +2991,9 @@ msgstr "partidas ya terminadas"
 
 msgid "games at least"
 msgstr "partidas como mínimo"
+
+msgid "gone"
+msgstr "desaparecida"
 
 msgid "illegal position"
 msgstr "posición ilegal"
@@ -2918,6 +3030,9 @@ msgstr "jugadas"
 
 msgid "nElo of A (95% CI)"
 msgstr "nElo de A (IC 95 %)"
+
+msgid "new"
+msgstr "nueva"
 
 msgid "no engine has a SyzygyPath"
 msgstr "ningún motor tiene SyzygyPath"
@@ -3061,6 +3176,12 @@ msgstr "{} pide que se reinicie en cada partida: Reiniciar el motor en cada part
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} no se puede leer, así que las claves de host aceptadas antes son desconocidas: no se envió nada a {}. Repara el archivo, o bórralo para volver a aceptar la clave del servidor."
+
+msgid "{} changed: its options were read again, and its card shows what changed."
+msgstr "{} ha cambiado: sus opciones se han vuelto a leer, y su ficha muestra lo que cambió."
+
+msgid "{} changed: its options were read again, the same as before."
+msgstr "{} ha cambiado: sus opciones se han vuelto a leer, las mismas que antes."
 
 msgid "{} changed: its options were read again."
 msgstr "{} ha cambiado: sus opciones se han vuelto a leer."
@@ -3216,6 +3337,9 @@ msgstr "{} está abierto en otro programa: aquí solo se muestra, tal como estab
 msgid "{} is playing in another window: it is not resumed here."
 msgstr "{} se está jugando en otra ventana: no se reanuda aquí."
 
+msgid "{} is set to {}, its old default, as it played before."
+msgstr "{} pasa a {}, su antiguo valor por defecto, como jugaba antes."
+
 msgid "{} is the tournament's own PGN file: choose another one."
 msgstr "{} es el propio archivo PGN del torneo: elige otro."
 
@@ -3325,6 +3449,9 @@ msgstr[1] "{} jugadores pueden ser dos motores de la biblioteca: indica cuál."
 msgid "{} plays with {} % of the time"
 msgstr "{} juega con el {} % del tiempo"
 
+msgid "{} plays with {}."
+msgstr "{} juega con {}."
+
 msgid "{} position"
 msgid_plural "{} positions"
 msgstr[0] "{} posición"
@@ -3362,6 +3489,9 @@ msgstr[1] "{} seleccionados"
 
 msgid "{} shown"
 msgstr "{} mostradas"
+
+msgid "{} stays at {}."
+msgstr "{} se queda en {}."
 
 msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"
@@ -3450,6 +3580,9 @@ msgstr "{}: desconocida para el motor"
 msgid "{}: {}"
 msgstr "{}: {}"
 
+msgid "{}\nA new build, or another program: its results may not be those of the engine that played {}."
+msgstr "{}\nUna nueva versión, u otro programa: sus resultados pueden no ser los del motor que jugó {}."
+
 msgid "· %s · %d in parallel%s"
 msgstr "· %s · %d en paralelo%s"
 
@@ -3500,5 +3633,11 @@ msgstr "✓ Según lo esperado para los {} motores medidos"
 msgid "✓ No played game is lost: voided games stay in the PGN files and the journal."
 msgstr "✓ No se pierde ninguna partida jugada: las partidas anuladas se quedan en los archivos PGN y en el diario."
 
-msgid "✓ works · ! problem · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right click: more"
-msgstr "✓ funciona · ! problema · ↔ WinBoard · gris: inactivo · clic con Ctrl o Mayús: varios · clic derecho: más"
+msgid "✓ kept"
+msgstr "✓ conservado"
+
+msgid "✓ new default"
+msgstr "✓ nuevo por defecto"
+
+msgid "✓ works · ! problem · Δ program changed · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right click: more"
+msgstr "✓ funciona · ! problema · Δ programa cambiado · ↔ WinBoard · gris: inactivo · clic con Ctrl o Mayús: varios · clic derecho: más"

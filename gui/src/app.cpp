@@ -438,6 +438,9 @@ void App::resumeRun(bool at_launch) {
         const auto results = t->results();
         games_at_start_    = static_cast<std::size_t>(
             std::count_if(results.begin(), results.end(), [](const auto& r) { return !r.voided; }));
+        // A program rebuilt or gone since its engine joined: said in the header, with Continue and Pause, not only
+        // in the Log. It does not stop by itself.
+        resumed_programs_ = changedPrograms(t->spec());
     }
     const auto& info = run_.info();
     storage_.setRunningMarker(RunningMarker{runMarkerDir(), false, at_launch});
@@ -524,6 +527,7 @@ void App::resetRunView() {
         tab_request_ = Tab::Overview;
     tournaments_dirty_ = true;
     unfinished_.reset();
+    resumed_programs_.clear();
     games_.clear();
     history_.clear();
     stats_   = {};

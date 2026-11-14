@@ -22,6 +22,7 @@
 #include "broadcaster.hpp"
 #include "console.hpp"
 #include "dialogs.hpp"
+#include "engine_changes.hpp"
 #include "engine_import.hpp"
 #include "engines.hpp"
 #include "layout.hpp"
@@ -527,6 +528,20 @@ class App {
     void queueChecks(const std::vector<std::string>& names);          // checked one after the other, see pollCheck
     [[nodiscard]] std::vector<std::string> uncheckedEngines() const;  // what "Check those not checked" checks
     void askEngineList();                                             // Import > An engine list…: the file dialog
+
+    // Programs rebuilt or replaced (view_changes.cpp).
+    void showEngineChanges(const std::string& name);  // the engine's card, with what changed
+    // The choice for every option of the engine's notice that waits for one; nullopt dismisses the notice. Saved.
+    void settleEngineChanges(const std::string& name, std::optional<ValueChoice> choice);
+    // What the new read of the engine's rebuilt program found, on its card, with the choices (disabled if `locked`).
+    void drawProgramChanges(int index, bool locked);
+    // The setup summary's warnings: the engines named whose program changed since their last tournament. A separate
+    // function, so that the summary's other lines can change around it.
+    void drawRebuiltSincePlayed(const std::vector<std::string>& names);
+    // The header's notice of a resumed tournament whose participants' programs changed since they joined it.
+    void drawResumedPrograms();
+    std::map<std::string, PlayedProgram> played_programs_;  // by programKey(), from tournaments_
+    std::vector<ParticipantProgram> resumed_programs_;      // of the tournament resumed, until Continue or Pause
 
     // run lifecycle
     void startRun();

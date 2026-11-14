@@ -343,6 +343,9 @@ msgstr ""
 msgid "As text"
 msgstr ""
 
+msgid "Author: {} → {}"
+msgstr ""
+
 msgid "Automatic"
 msgstr ""
 
@@ -374,6 +377,9 @@ msgid "Back to the default value"
 msgstr ""
 
 msgid "Base (s)"
+msgstr ""
+
+msgid "Before"
 msgstr ""
 
 msgid "Black"
@@ -580,6 +586,9 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
+msgid "Closes this notice. The options keep the values they have now."
+msgstr ""
+
 msgid "Common settings, forced on every engine (0 = each engine's own):"
 msgstr ""
 
@@ -602,6 +611,12 @@ msgid "Consecutive moves"
 msgstr ""
 
 msgid "Console"
+msgstr ""
+
+msgid "Continue"
+msgstr ""
+
+msgid "Continue with the changed programs"
 msgstr ""
 
 msgid "Copy"
@@ -676,6 +691,12 @@ msgstr ""
 msgid "Discord server ID"
 msgstr ""
 
+msgid "Dismiss"
+msgstr ""
+
+msgid "Dismiss what changed: {}"
+msgstr ""
+
 msgid "Done: the tournament goes on with the change."
 msgstr ""
 
@@ -713,6 +734,9 @@ msgid "Draws"
 msgstr ""
 
 msgid "Draws."
+msgstr ""
+
+msgid "Dropped from the library with the option: the engine no longer has it. Set it again on the option that replaces it, if one does."
 msgstr ""
 
 msgid "Duplicate"
@@ -860,6 +884,12 @@ msgid "Every move is searched to this depth (go depth), however long it takes: n
 msgstr ""
 
 msgid "Every opening"
+msgstr ""
+
+msgid "Every option listed plays as before the new build: with your value, or the old default where you had none."
+msgstr ""
+
+msgid "Every option listed plays with the default of the new build."
 msgstr ""
 
 msgid "Every pair with both colours"
@@ -1197,6 +1227,9 @@ msgstr ""
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr ""
 
+msgid "Its card, with the options whose default changed, new or gone."
+msgstr ""
+
 msgid "Its games"
 msgstr ""
 
@@ -1218,13 +1251,31 @@ msgstr ""
 msgid "Its positions with a best move (bm), moves to avoid (am) or STS points, in the Suites page."
 msgstr ""
 
+msgid "Its program changed: its card shows what the new read found."
+msgstr ""
+
+msgid "Its program changed: what the new read found"
+msgstr ""
+
 msgid "Its rating on a list you trust, to anchor a tournament's ratings. 0 = none."
 msgstr ""
 
 msgid "Its results…"
 msgstr ""
 
+msgid "Keep my value"
+msgstr ""
+
+msgid "Keep my values"
+msgstr ""
+
+msgid "Keep my values: {}"
+msgstr ""
+
 msgid "Keep the engine log of every game"
+msgstr ""
+
+msgid "Keep the old default"
 msgstr ""
 
 msgid "Kept in the library, but out of the engine pickers (setup, suites, quick test, relaunch, adding to a tournament) and of Check those not checked. A tournament that has it already plays it as before."
@@ -1371,6 +1422,9 @@ msgstr ""
 msgid "Name on the list"
 msgstr ""
 
+msgid "Name: {} → {}"
+msgstr ""
+
 msgid "Names of the list that are no library engine"
 msgstr ""
 
@@ -1443,6 +1497,9 @@ msgstr ""
 msgid "No new engine in the folder."
 msgstr ""
 
+msgid "No new game pair starts, so that the program it joined with can be put back; Resume goes on."
+msgstr ""
+
 msgid "No opening book: every game starts from the initial position"
 msgstr ""
 
@@ -1497,6 +1554,9 @@ msgstr ""
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr ""
 
+msgid "Not a value the new build takes: fastchess would play without it."
+msgstr ""
+
 msgid "Not an https link."
 msgstr ""
 
@@ -1528,6 +1588,9 @@ msgid "Nothing reported yet."
 msgstr ""
 
 msgid "Notify when a match ends"
+msgstr ""
+
+msgid "Now"
 msgstr ""
 
 msgid "Now {}. Only cycles not started can be removed."
@@ -1944,6 +2007,9 @@ msgid "Removes the book from the library; the file stays where it is."
 msgstr ""
 
 msgid "Remove…"
+msgstr ""
+
+msgid "Rename it “{}”"
 msgstr ""
 
 msgid "Replace"
@@ -2413,6 +2479,9 @@ msgstr ""
 msgid "The last check or reading failed."
 msgstr ""
 
+msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
+msgstr ""
+
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr ""
 
@@ -2454,6 +2523,19 @@ msgstr ""
 
 msgid "The program ended while it resumed {} at the last launch: it is not resumed automatically again. Resume it from the Tournaments page."
 msgstr ""
+
+msgid "The program of {} changed since it joined the tournament: its next games are played by the new build."
+msgid_plural "The programs of {} changed since they joined the tournament: their next games are played by the new builds."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "The program of {} changed since its last tournament, “{}”."
+msgstr ""
+
+msgid "The program of {} is missing: its games cannot start until it is back."
+msgid_plural "The programs of {} are missing: their games cannot start until they are back."
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "The program of {} is not found."
 msgstr ""
@@ -2510,6 +2592,9 @@ msgid "The time control needs a base time or an increment."
 msgstr ""
 
 msgid "The time per move must be positive."
+msgstr ""
+
+msgid "The tournament goes on with the programs as they are now; this notice closes."
 msgstr ""
 
 msgid "The tournament is not running: resume it to play the new games."
@@ -2644,6 +2729,15 @@ msgstr ""
 msgid "Use it for the next tournament"
 msgstr ""
 
+msgid "Use the new default"
+msgstr ""
+
+msgid "Use the new defaults"
+msgstr ""
+
+msgid "Use the new defaults: {}"
+msgstr ""
+
 msgid "Use these bounds"
 msgstr ""
 
@@ -2678,6 +2772,12 @@ msgid "Web page"
 msgstr ""
 
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
+msgstr ""
+
+msgid "What changed"
+msgstr ""
+
+msgid "What changed: {}"
 msgstr ""
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
@@ -2788,6 +2888,9 @@ msgstr ""
 msgid "Wrong PVs"
 msgstr ""
 
+msgid "Your value"
+msgstr ""
+
 msgid "Yours"
 msgstr ""
 
@@ -2841,6 +2944,9 @@ msgstr ""
 msgid "decision time"
 msgstr ""
 
+msgid "default"
+msgstr ""
+
 msgid "depth {}"
 msgstr ""
 
@@ -2857,6 +2963,9 @@ msgid "duplicates"
 msgstr ""
 
 msgid "elo1 must be larger than elo0."
+msgstr ""
+
+msgid "empty"
 msgstr ""
 
 msgid "every pair with both colours"
@@ -2881,6 +2990,9 @@ msgid "games already over"
 msgstr ""
 
 msgid "games at least"
+msgstr ""
+
+msgid "gone"
 msgstr ""
 
 msgid "illegal position"
@@ -2917,6 +3029,9 @@ msgid "moves"
 msgstr ""
 
 msgid "nElo of A (95% CI)"
+msgstr ""
+
+msgid "new"
 msgstr ""
 
 msgid "no engine has a SyzygyPath"
@@ -3060,6 +3175,12 @@ msgid "{} asks to be started again for every game: Restart the engine for every 
 msgstr ""
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
+msgstr ""
+
+msgid "{} changed: its options were read again, and its card shows what changed."
+msgstr ""
+
+msgid "{} changed: its options were read again, the same as before."
 msgstr ""
 
 msgid "{} changed: its options were read again."
@@ -3216,6 +3337,9 @@ msgstr ""
 msgid "{} is playing in another window: it is not resumed here."
 msgstr ""
 
+msgid "{} is set to {}, its old default, as it played before."
+msgstr ""
+
 msgid "{} is the tournament's own PGN file: choose another one."
 msgstr ""
 
@@ -3325,6 +3449,9 @@ msgstr[1] ""
 msgid "{} plays with {} % of the time"
 msgstr ""
 
+msgid "{} plays with {}."
+msgstr ""
+
 msgid "{} position"
 msgid_plural "{} positions"
 msgstr[0] ""
@@ -3361,6 +3488,9 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "{} shown"
+msgstr ""
+
+msgid "{} stays at {}."
 msgstr ""
 
 msgid "{} that two library engines may be"
@@ -3450,6 +3580,9 @@ msgstr ""
 msgid "{}: {}"
 msgstr ""
 
+msgid "{}\nA new build, or another program: its results may not be those of the engine that played {}."
+msgstr ""
+
 msgid "· %s · %d in parallel%s"
 msgstr ""
 
@@ -3500,5 +3633,11 @@ msgstr ""
 msgid "✓ No played game is lost: voided games stay in the PGN files and the journal."
 msgstr ""
 
-msgid "✓ works · ! problem · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right click: more"
+msgid "✓ kept"
+msgstr ""
+
+msgid "✓ new default"
+msgstr ""
+
+msgid "✓ works · ! problem · Δ program changed · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right click: more"
 msgstr ""

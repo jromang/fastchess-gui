@@ -30,6 +30,31 @@ struct UciOptionInfo {
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UciOptionInfo, name, type, default_value, min, max, vars)
 
+// One option whose description changed when the engine's program was rebuilt or replaced (see engine_changes.hpp).
+struct OptionChange {
+    std::string name;
+    UciOptionInfo before;  // as the read before found it; its name empty: the option is new
+    UciOptionInfo after;   // as the new read found it; its name empty: the option is gone
+    std::string value;     // the library's value of it when the new read came (has_value)
+    bool has_value = false;
+    int choice     = 0;  // 0: not decided, 1: the value played with kept, 2: the new default taken
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(OptionChange, name, before, after, value, has_value, choice)
+
+// What the new read of a rebuilt or replaced program found against the read before, until the user dismisses it.
+struct ProgramChanges {
+    std::string when;  // the date of the read that found them
+    std::string id_name_before, id_name_after;
+    std::string id_author_before, id_author_after;
+    std::vector<OptionChange> options;
+
+    [[nodiscard]] bool nameChanged() const { return id_name_before != id_name_after; }
+    [[nodiscard]] bool authorChanged() const { return id_author_before != id_author_after; }
+    [[nodiscard]] bool empty() const { return options.empty() && !nameChanged() && !authorChanged(); }
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ProgramChanges, when, id_name_before, id_name_after, id_author_before,
+                                                id_author_after, options)
+
 struct EngineEntry {
     std::string name;  // unique, also the name fastchess and the PGN use
     std::string cmd;   // absolute path to the binary
@@ -51,6 +76,13 @@ struct EngineEntry {
     std::string id_author;
     std::vector<UciOptionInfo> uci_options;
     std::string read_by;  // the fastchess-gui version that last read them: each version reads an empty list once
+    // The program id_name, id_author and uci_options were read from, when a read of a new program failed since
+    // (`program` is then the new one, so that it is not read again at every focus change); size 0 otherwise. The
+    // next read that works compares with them. Saved only when set.
+    tour::FileFingerprint read_from;
+    // What changed when the program was last rebuilt or replaced, shown on the engine card until dismissed. Saved
+    // only when there is a notice.
+    std::optional<ProgramChanges> changes;
 
     // Organisation.
     std::vector<std::string> groups;  // e.g. a pool, a rating list
@@ -116,6 +148,8 @@ void to_json(BasicJsonType& nlohmann_json_j, const EngineEntry& nlohmann_json_t)
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_ENGINE_ENTRY_FIELDS))
     if (nlohmann_json_t.start_timeout > 0) nlohmann_json_j["start_timeout"] = nlohmann_json_t.start_timeout;
     if (!nlohmann_json_t.aliases.empty()) nlohmann_json_j["aliases"] = nlohmann_json_t.aliases;
+    if (nlohmann_json_t.read_from.size > 0) nlohmann_json_j["read_from"] = nlohmann_json_t.read_from;
+    if (nlohmann_json_t.changes) nlohmann_json_j["changes"] = *nlohmann_json_t.changes;
 }
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
@@ -124,6 +158,9 @@ void from_json(const BasicJsonType& nlohmann_json_j, EngineEntry& nlohmann_json_
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_ENGINE_ENTRY_FIELDS))
     NLOHMANN_JSON_FROM_WITH_DEFAULT(start_timeout)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(aliases)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(read_from)
+    if (const auto it = nlohmann_json_j.find("changes"); it != nlohmann_json_j.end() && it->is_object())
+        nlohmann_json_t.changes = it->template get<ProgramChanges>();
 }
 #undef FCG_ENGINE_ENTRY_FIELDS
 
