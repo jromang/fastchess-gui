@@ -17,6 +17,7 @@
 #include <matchmaking/sprt/sprt.hpp>
 #include <matchmaking/stats.hpp>
 
+#include "board_page.hpp"
 #include "board_view.hpp"
 #include "book_jobs.hpp"
 #include "broadcaster.hpp"
@@ -228,6 +229,9 @@ class App {
     // The window came back to the front: an engine may have been rebuilt or moved meanwhile.
     void onFocusGained() { refreshPrograms(); }
 
+    // A file dropped on the window: a PGN file, or a FEN or EPD position, opens on the Board page.
+    void dropFile(const std::string& path);
+
     // The window moved to a screen of another scale (or the screen's changed): fonts and sizes follow it.
     void onDisplayScale(float scale);
 
@@ -250,7 +254,7 @@ class App {
         int follow_frames      = 0;
     };
 
-    enum class Page { Home, NewMatch, Tournament, Engines, Books, Suites, Ratings, Log, Settings };
+    enum class Page { Home, NewMatch, Tournament, Engines, Books, Board, Suites, Ratings, Log, Settings };
     enum class Tab { Overview, Standings, Bracket, Schedule, Live, Games, Openings, Broadcast };
 
     // shell
@@ -368,6 +372,59 @@ class App {
     void drawCharts();
     void drawEngines();
     void drawConsole();
+    // The engine console (view_engine_console.cpp), in the card of its engine.
+    void openEngineConsole(int index);
+    void closeEngineConsole();
+    void pollEngineConsole();  // every frame, shown or not
+    void drawEngineConsole(const EngineEntry& e);
+    void saveConsoleLog(const std::string& path);
+
+    // The Board page (view_board.cpp): a game or a position, and its analysis.
+    void drawBoardPage();
+    void drawBoardColumn(float size);  // the board, the buttons under it
+    void drawBoardAnalysis();
+    void drawBoardMoves();
+    void pollBoard();  // every frame: the analysis follows the board while the page is shown
+    void loadBoardSettings();
+    void saveBoardSettings();
+    // Opens `game` on the Board page after `ply` moves, the page and tab shown kept to go back to; `analyse` starts
+    // the analysis. `title` says what the game is.
+    void openOnBoard(ReplayGame game, int ply, bool chess960, std::string title, bool analyse);
+    void openPositionOnBoard(const std::string& fen, bool chess960, std::string title, bool analyse);
+    void setBoardAnalysis(bool on);
+    // Key A, pressed for a board now: once a frame, not while a text field or a popup has the keys.
+    [[nodiscard]] bool boardKey();
+    [[nodiscard]] std::string boardFen();  // the position of the Board page
+    void boardPlay(chess::Move move);
+    void boardClick(const chess::Board& board, chess::Square square);
+    // The threads the running tournament's games use now, about: its games times the larger thread count of its
+    // engines.
+    [[nodiscard]] int tournamentThreads() const;
+    // A, on the boards of the other pages: their position on the Board page, analysed.
+    void analyseLiveGame(int slot);
+    void analyseReplay();
+    // Games and positions from elsewhere: a PGN file read in the background, the clipboard, a text.
+    void openBoardPgn(const std::filesystem::path& file);
+    void pollBoardPgn();
+    void showPgnSource(PgnSource source);  // its first game on the board, its games listed
+    void loadPgnGame(int index);
+    void readOnBoard(const std::string& text, const std::string& name);  // a FEN, a PGN, moves
+    void pasteOnBoard();
+    void drawPgnGames();
+    void openPositionEditor();
+    void drawPositionEditor(float size);
+    // A game analysed move by move, in the background, by the analysis engine (one line).
+    [[nodiscard]] const EngineEntry* analysisEngine();  // the one chosen, or the first that works; null without any
+    void startGameReview();
+    void cancelGameReview();
+    void pollGameReview();
+    void drawGameReview();  // its button, its progress, what it found
+    [[nodiscard]] std::string judgementTip(int ply, const MoveReview& judged) const;
+    // Games between two engines of the library from the board's position, played apart from any tournament.
+    void startBoardGames();
+    void pollBoardGames();  // every frame: the board follows the game being played
+    void drawBoardPlay();   // their settings, then the games as they are played
+    [[nodiscard]] int engineThreads(const std::string& name) const;  // a library engine's Threads, 1 without
     void drawQuitModal();
 
     // The command palette (Ctrl+K) and the guide (F1, the `?` of the page titles), see view_palette.cpp.
@@ -909,6 +966,19 @@ class App {
     std::optional<RatingImport> rating_import_;
     bool open_rating_import_  = false;
     bool open_import_preview_ = false;
+
+    // The engine console, while one is open.
+    std::unique_ptr<EngineConsole> engine_console_;
+
+    // The Board page, and where it was opened from (Back).
+    BoardPage board_;
+    struct BoardBack {
+        Page page;
+        std::optional<Tab> tab;
+    };
+    std::optional<BoardBack> board_back_;
+    bool board_key_taken_  = false;  // key A served a board this frame
+    bool review_when_read_ = false;  // --focus board-review: the game analysed once its file is read
 
     // Console view.
     std::vector<Console::Line> console_lines_;

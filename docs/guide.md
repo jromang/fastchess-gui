@@ -4,13 +4,14 @@ The [README](../README.md) explains what fastchess-gui is and how to build it. T
 
 ## The window
 
-A navigation rail on the left leads to six pages:
+A navigation rail on the left leads to eight pages:
 
 | Page | Contents |
 |---|---|
 | Tournaments | The home page: the running tournament and when it ends, the queue and when it all ends, the *Health* card, every tournament of the profile (resume, open, relaunch), *New tournament* |
 | Engines | The engine library: options, health check, groups, reference Elo, import of other programs' lists |
 | Books | The opening book library, and the openings of each book with what is wrong with them |
+| Board | A game or a position from anywhere, analysed by an engine of the library |
 | Suites | Test suites (STS, WAC, ERET…): engines against the positions of an EPD file |
 | Ratings | One rating list over every game of every tournament |
 | Log | fastchess' own output and the messages of the GUI, and *Report a problem…* |
@@ -84,6 +85,15 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   each clock, info lines with an integer score…), up to the first that fails. The result (✓ or the error) stays
   next to the engine with its date, and *UCI compliance report* lists the steps, with what the engine wrote after
   a failed one. An engine spoken to in xboard only gets the first part.
+- **Console…** talks to the engine, outside any tournament: it is started with the library's program, arguments
+  and working directory, and a UCI engine gets `uci` and then the library's option values. Lines typed are sent as
+  they are (Enter; Up and Down bring the earlier ones back), and the log shows every line with its time, those sent
+  marked `>` and the error output `!`. Buttons send the usual commands (`isready`, `position startpos`,
+  `go depth 10`, `go infinite`, `stop`…; WinBoard's for a WinBoard engine, spoken to in its own protocol unless
+  *Through the adapter* is ticked) and the position of the Board page. *Copy* and *Save…* keep the log. The
+  console shows in place of the engine's settings (*Settings* goes back to them, the console staying open); *Close*
+  ends the engine. While a tournament runs, what the engine searches takes cores from its games: the console says
+  so. Its engine is not one of the tournament's processes: the end of a tournament does not end it.
 - **Quick test** plays a short match against the engine itself or another one: 10 games at 10+0.1 from 5 positions
   (one with an en passant capture), through the same code as a tournament, shown in its workspace while it plays.
   The result stays next to the engine: its score, its losses on time, crashes and illegal moves, and the share of
@@ -226,6 +236,68 @@ it to the library. *Run as a test suite…* opens an EPD book in **Suites**.
   the background, with its progress and *Cancel*, beside the form and at the end of the list; the book, sorted by
   key as the format wants, is then added to the library, its options in its description. The console says how many
   games went into it, how many the options left out and how many could not be read.
+
+## Board
+
+The Board page shows one game or one position, from anywhere: **A** on any board of the program (a game of the
+*Live* tab's mosaic or the one followed, the board of the *Games* tab, of the *Openings* tab, of an opening of a
+book) opens its position here and analyses it; on the Board page, A starts and stops the analysis. *Back to the
+tournament* (or *Back*) returns to the page it came from.
+
+- **Open a PGN…** reads any PGN file (a file can also be dropped on the window), in the background with a progress
+  bar: a file of millions of games takes a few seconds, and its games are listed in a tab beside the moves, filtered
+  by what is typed (every word found in the players, the event, the site, the date, the round, the opening, the
+  ECO code or the result). A click shows a game. The evaluations of its moves draw the curve under them: the
+  cutechess and fastchess comments (`{+0.35/18 1.2s}`) and the `[%eval 0.35]` of lichess and ChessBase (from
+  White's side, `#-3` for a mate) are read. A game whose FEN tag cannot be played is refused, and the moves of a
+  game stop at the first that cannot be read.
+- **Paste** (Ctrl+V on the page) reads the clipboard: a FEN, or the four fields of an EPD line; a PGN of one game or
+  more (listed like a file's); a list of moves from the initial position, in SAN with or without numbers
+  (`1. e4 e5 2. Nf3`) or in UCI (`e2e4 e7e5`). A position that cannot be played is refused with the reason (a king
+  missing, a pawn on the first rank, the side not to move in check). Castling rights whose king or rook is not on
+  its usual square, or written as files (`HAha`), make it a Chess960 position. A `.fen` or `.epd` file can be dropped
+  too.
+- **Edit the position** sets up a position on the board: a click puts the piece chosen (a second click takes it
+  away), a right click takes it away; the side to move, the move number, the castling rights (offered only when the
+  king and the rook are where they need to be), the en passant square (only behind a pawn that just moved two
+  squares) and Chess960. The FEN below follows the board, and a FEN typed there sets it. *Done* is offered once the
+  position can be played, and puts it on the board.
+- *Copy PGN* copies the game shown, with its tags and moves (the engines' scores as comments when it has them).
+- **The board**: the arrows and Left, Right, Home, End go through the moves; a click on a piece and on a square plays
+  a move (a pawn that promotes asks for its piece). A move other than the game's next one takes the place of the
+  moves after it, and *Back to the game* brings the game back as it came. *Copy FEN* copies the position.
+- **The analysis**: an engine of the library searches the position shown and follows the board: depth, nodes,
+  speed, the chances of a win, draw and loss when the engine gives them (`UCI_ShowWDL`), and several lines (MultiPV),
+  their first moves drawn as arrows, the best one darker. Scores are White's. A click on a line plays its first
+  move. Its engine, *Threads*, *Hash* (0: the engine's own) and *Lines* are the analysis's own settings: kept for
+  the next time, they change neither the engine of the library nor any tournament. The library's other option
+  values are sent as a game sends them. The analysis waits while another page is shown, and goes on when the Board
+  page comes back; *Stop the analysis* (or A) stops it, and a dot on the rail's *Board* button tells when it runs.
+- **Analyse the game** goes through every position of the game shown with the analysis engine (its threads and
+  hash, one line), for the time per move or the depth chosen beside the button, in the background: the progress
+  shows above the moves, *Cancel* stops it, and the analysis of the board waits meanwhile. Each move is judged by
+  the winning chances its mover lost, from the engine's scores before and after it (lichess' measure: 50 % at 0.00,
+  about 59 % at +1.00): 10 points lost is an inaccuracy (`?!`), 20 a mistake (`?`), 30 a blunder (`??`), marked
+  after the move in the list; the move the engine would have played is never marked. The tooltip of a marked move
+  gives what it lost and the engine's move. A line counts them for each player, and the analysis's curve (orange)
+  is drawn over the engines' own (blue). The analysis is kept with the game (in `analyses/` in the profile): the same
+  game, opened again from anywhere, shows it at once.
+- **Play a game…** plays a game from the position on the board between two engines of the library (*White* and
+  *Black*, `<->` swaps them with their clocks), with a clock for each (minutes and an increment in seconds; *The same
+  for both*, or one each for time odds), and, if ticked, a second game with the colours reversed. The engines are
+  started with the library's option values, a WinBoard engine through the adapter. The board follows the game as it
+  is played (going back in it stops following until its end is reached again), with the clocks, the side to move's
+  search and *Stop*, which ends the game without a result. A game ends by mate, stalemate, insufficient material,
+  the 50-move rule, a threefold repetition, an illegal move, an engine that stops, or a loss on time (the clock
+  given 0.1 s for the move to come through). Each game is appended, as it ends, to a PGN file in `games/` in the
+  profile (named after the date and the engines, with a `Termination` tag), which *Open the games* lists on the
+  board. The games are played by fastchess-gui's own engine client, apart from any tournament: they run while one
+  plays, without touching it. Their threads (the larger of the two engines', as they take turns) count in the core
+  budget; when the running tournament's games and the analysis already fill the machine, the card says so and offers
+  *Play anyway* instead of *Play*. The analysis stops when a game starts, as it would compete with its engines.
+- **Its cores**: the analysis's threads count in the core budget, shown under it with the machine's threads. While a
+  tournament runs, the analysis competes with its games: the page says so, with the threads the games use. Its
+  engine is not one of the tournament's processes: the end of a tournament does not end it.
 
 ## Test suites
 
@@ -749,6 +821,8 @@ application from a temporary place, where the `portable` file is not.
 - `book-cache/`: the PGN books turned into Polyglot books for the participants' own books (removed after 30 days unused);
 - `layout.ini`: the window layout and the panels of the workspace; `layouts.json`: the layouts saved by name; `fastchess-gui.log`: the log of the last session;
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
+- `board.json`: the settings of the Board page's analysis and games; `analyses/*.json`: the games analysed move
+  by move, one file each; `games/*.pgn`: the games played from the Board page;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**, *Software rendering*, the
   folder of *Every engine of a folder…*, the tester and site of *Export for a rating list…*, the lichess token, the
   window's size and place, and the check for a new version (wanted or not, when it was last made, the release it
@@ -810,7 +884,7 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
   rendering* in **Settings** does, for this launch (see *The window*);
 - `--shot` saves a screenshot of the window after the given number of seconds (default 5), with WINDOW brought to
   the front, and quits once every screenshot is taken. It can be repeated. WINDOW is a page (`home`, `setup`,
-  `engines`, `books`, `ratings`, `ratings-engine`, `ratings-h2h`, `ratings-progress`, `console`, `settings`) or a
+  `engines`, `books`, `board`, `ratings`, `ratings-engine`, `ratings-h2h`, `ratings-progress`, `console`, `settings`) or a
   tab (`live`, `games`, `openings`, `standings`, `schedule`, `bracket`, `broadcast`). The mouse is ignored in this
   mode and, on Linux, the window is rendered off screen (no window appears; set `SDL_VIDEODRIVER` to override);
   the window opens at the default size, or `--size`, and the size and place kept are left alone;
@@ -822,7 +896,12 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
   `submission-export`
   (*Export for a rating list…*), `ratings-players` (the *PGN players* window), `palette[=TEXT]` (the command palette, with TEXT typed in it),
   `game-menu=N` (the menu of game N in the *Games* tab, a result chosen), `end-menu=N` (*End with result* of the
-  game of slot N, from 1), `big-screen[=N]` (the big screen, of the game of slot N);
+  game of slot N, from 1), `big-screen[=N]` (the big screen, of the game of slot N),
+
+  `engines-console` (the first engine's console), `board-analyse` (the Board page, analysed), `board=FILE` (a PGN,
+  FEN or EPD file on the Board page; `board-analyse=FILE` analysed, `board-review=FILE` its first game analysed move
+  by move), `board-edit` (the position editor), `board-play` and `board-play-start` (a game between the first two
+  engines, started);
 - `--select-game N` opens game N (in finishing order) in the *Games* tab as soon as it exists;
 - `--quit-after SECONDS` stops the tournament and quits;
 - `--run`: see *Headless mode*.

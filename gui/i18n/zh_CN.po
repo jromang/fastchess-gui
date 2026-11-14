@@ -124,6 +124,9 @@ msgstr "20 万节点"
 msgid "50 moves {}/100"
 msgstr "50 步 {}/100"
 
+msgid "50-move rule"
+msgstr "50 回合规则"
+
 msgid "95 % interval"
 msgstr "95 % 区间"
 
@@ -138,6 +141,9 @@ msgstr "页面顶部的“聊天”按钮会在新标签页中打开此地址：
 
 msgid "A Discord server ID is 17 to 20 digits."
 msgstr "Discord 服务器 ID 为 17 至 20 位数字。"
+
+msgid "A FEN, a PGN or a list of moves (e4 e5 Nf3, or e2e4 e7e5) from the clipboard."
+msgstr "来自剪贴板的 FEN、PGN 或着法列表（e4 e5 Nf3，或 e2e4 e7e5）。"
 
 msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
 msgstr "PGN 开局库按其对局中出现的频率走出对局中的着法；“全部”即对局的前 {} 个半回合。"
@@ -157,11 +163,20 @@ msgstr "棋钟：基础时间加每步加时，也可以每 N 步重新给一次
 msgid "A colour won both games of a pair"
 msgstr "同一方赢下一对中的两局"
 
+msgid "A command for the engine"
+msgstr "发给引擎的命令"
+
 msgid "A file of your choice"
 msgstr "自选文件"
 
 msgid "A game has no port: {}"
 msgstr "有一局对局没有端口：{}"
+
+msgid "A game is being analysed move by move: wait for its end, or cancel it."
+msgstr "正在逐步分析一局对局：请等待结束，或取消。"
+
+msgid "A game, or two with the colours reversed, between two engines of the library from this position, with a clock for each."
+msgstr "从此局面在引擎库的两个引擎之间下一局（或交换颜色下两局），各有自己的棋钟。"
 
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr "车轮战除被测引擎外至少还需要一个引擎。"
@@ -211,6 +226,9 @@ msgstr "已是参赛者。"
 msgid "A participant's own, from its ⋯ menu, comes first."
 msgstr "参赛者在其 ⋯ 菜单中的设置优先。"
 
+msgid "A pawn is on the first or the last rank."
+msgstr "有兵位于第一行或最后一行。"
+
 msgid "A preset of the program."
 msgstr "程序自带的预设。"
 
@@ -226,6 +244,9 @@ msgstr "等级分列表的文本或网页、Ordo、CSV (name,elo)"
 msgid "A rating list, for the reference Elo…"
 msgstr "等级分榜，用于参考 Elo…"
 
+msgid "A second game, the colours reversed"
+msgstr "交换颜色再下第二局"
+
 msgid "A separate engine"
 msgstr "单独的引擎"
 
@@ -235,11 +256,23 @@ msgstr "GitHub 和论坛会显示为表格，页眉与 HTML 页面相同。"
 msgid "A template is the whole setup: a profile for each section, and what no profile holds (the name, the participants, the concurrency, the PGN files, the broadcast). A section that played as its profile takes the profile's values of the day."
 msgstr "模板是整个设置：每个部分一个配置，加上配置不包含的内容（名称、参赛者、并发、PGN 文件、直播）。与配置一致的部分会采用该配置当前的值。"
 
+msgid "A tournament is running: the analysis competes with its games ({} threads)."
+msgstr "有锦标赛正在进行：分析与其对局争用核心（{} 个线程）。"
+
+msgid "A tournament is running: what this engine searches takes cores from its games."
+msgstr "有锦标赛正在进行：此引擎的计算会占用其对局的核心。"
+
 msgid "A tournament waits to start."
 msgstr "有一个锦标赛正在等待开始。"
 
 msgid "A: +%d  =%d  -%d"
 msgstr "A：+%d  =%d  -%d"
+
+msgid "A: an engine of the library analyses the position."
+msgstr "A：由引擎库中的引擎分析该局面。"
+
+msgid "A: analyse it on the Board page"
+msgstr "A：在“棋盘”页面分析"
 
 msgid "API token (with the study:write scope)"
 msgstr "API 令牌（需要 study:write 权限）"
@@ -369,6 +402,30 @@ msgstr "评估出现大幅波动"
 msgid "An opening book, or opening suite: EPD, PGN or Polyglot (.bin)."
 msgstr "开局库或开局集：EPD、PGN 或 Polyglot (.bin)。"
 
+msgid "Analyse"
+msgstr "分析"
+
+msgid "Analyse the game"
+msgstr "分析对局"
+
+msgid "Analyse the game again"
+msgstr "重新分析对局"
+
+msgid "Analyse the game followed"
+msgstr "分析正在关注的对局"
+
+msgid "Analyse the game shown"
+msgstr "分析显示的对局"
+
+msgid "Analysing the game: {} of {} positions"
+msgstr "正在分析对局：{} / {} 个局面"
+
+msgid "Analysis"
+msgstr "分析"
+
+msgid "Analysis: {} · {}"
+msgstr "分析：{} · {}"
+
 msgid "Anchor:"
 msgstr "锚点："
 
@@ -377,6 +434,9 @@ msgstr "其他 SSH 服务器"
 
 msgid "Another engine of the list takes its place and plays its games, those it played included."
 msgstr "由列表中的另一个引擎接替它，并下它的对局，包括它已下过的。"
+
+msgid "Any PGN file: its games listed and filtered by their tags, each replayed here. A file can also be dropped on the window."
+msgstr "任意 PGN 文件：列出其对局并按标签筛选，每局都可在此回放。也可以把文件拖到窗口上。"
 
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "关于它需要记住的任何内容；搜索引擎时可以搜到。"
@@ -441,17 +501,29 @@ msgstr "平均深度"
 msgid "B (baseline)"
 msgstr "B（基准）"
 
+msgid "Back"
+msgstr "返回"
+
+msgid "Back to the books"
+msgstr "回到开局库"
+
 msgid "Back to the default"
 msgstr "恢复默认文件夹"
 
 msgid "Back to the default value"
 msgstr "恢复默认值"
 
+msgid "Back to the game"
+msgstr "回到对局"
+
 msgid "Back to the result as played ({})"
 msgstr "恢复实际下出的结果（{}）"
 
 msgid "Back to the settings of {}."
 msgstr "恢复为 {} 的设置。"
+
+msgid "Back to the tournament"
+msgstr "回到锦标赛"
 
 msgid "Base (s)"
 msgstr "基本时间 (s)"
@@ -461,6 +533,9 @@ msgstr "之前"
 
 msgid "Being built from {}"
 msgstr "正在由 {} 生成"
+
+msgid "Best: {} ({})"
+msgstr "最佳：{}（{}）"
 
 msgid "Big screen"
 msgstr "大屏幕"
@@ -477,6 +552,9 @@ msgstr "黑方走出非法着法"
 msgid "Black mates"
 msgstr "黑方将杀"
 
+msgid "Black needs one king, and only one."
+msgstr "黑方需要一个王，且只能有一个。"
+
 msgid "Black resigns"
 msgstr "黑方认输"
 
@@ -489,14 +567,23 @@ msgstr "黑方裁定获胜：Syzygy 残局库"
 msgid "Black ×2"
 msgstr "黑方 ×2"
 
+msgid "Black's clock"
+msgstr "黑方棋钟"
+
 msgid "Black's connection stalls"
 msgstr "黑方连接无响应"
 
 msgid "Black's pieces on the same files as White's: 18 starting positions, added to the library."
 msgstr "黑方棋子与白方位于相同的列：18 个初始局面，加入库中。"
 
+msgid "Blunder"
+msgstr "败着"
+
 msgid "Board"
 msgstr "棋盘"
+
+msgid "Board position"
+msgstr "棋盘局面"
 
 msgid "Board {} of {}"
 msgstr "棋盘 {} / {}"
@@ -540,6 +627,9 @@ msgstr "按得分"
 msgid "By time control"
 msgstr "按时限"
 
+msgid "By {}, {}. Losses of 10, 20 and 30 % of the winning chances are an inaccuracy (?!), a mistake (?) and a blunder (??)."
+msgstr "由 {} 分析，{}。失去 10、20 和 30 % 的获胜机会分别为缓着（?!）、错着（?）和败着（??）。"
+
 msgid "CPU affinity"
 msgstr "CPU 亲和性"
 
@@ -554,6 +644,9 @@ msgstr "取消"
 
 msgid "Cancel the Polyglot book being built"
 msgstr "取消正在生成的 Polyglot 开局库"
+
+msgid "Cancel the analysis of the game"
+msgstr "取消对局分析"
 
 msgid "Cancelling…"
 msgstr "正在取消…"
@@ -591,8 +684,20 @@ msgstr "无法开始比赛：{}"
 msgid "Cannot start the quick test: {}"
 msgstr "无法开始快速测试：{}"
 
+msgid "Cannot start {}: {}"
+msgstr "无法启动 {}：{}"
+
 msgid "Cannot write {}"
 msgstr "无法写入 {}"
+
+msgid "Cannot write {}: {}"
+msgstr "无法写入 {}：{}"
+
+msgid "Castling"
+msgstr "易位"
+
+msgid "Castling as in Chess960: with the rooks where they stand."
+msgstr "按 Chess960 规则易位：车在其所在位置。"
 
 msgid "Catch up the cycles already started"
 msgstr "补齐已经开始的循环"
@@ -675,6 +780,9 @@ msgstr "请在列表中选择一个开局库。"
 msgid "Choose an EPD file whose positions have their best move (bm), the moves to avoid (am), or STS points (c0)."
 msgstr "选择一个 EPD 文件，其局面带有最佳着法 (bm)、应避免的着法 (am) 或 STS 分数 (c0)。"
 
+msgid "Choose an engine"
+msgstr "选择引擎"
+
 msgid "Choose an engine in the list."
 msgstr "请在列表中选择一个引擎。"
 
@@ -698,6 +806,9 @@ msgstr "选择 {} 的程序"
 
 msgid "Choose the tablebase folder of this tournament (the adjudication's, and the engines' when it gives them its tablebases)"
 msgstr "选择本赛事的残局库文件夹（用于裁定；赛事把残局库提供给引擎时也用于引擎）"
+
+msgid "Choose the two engines of the game."
+msgstr "请选择对局的两个引擎。"
 
 msgid "Choose the working directory of {}"
 msgstr "选择 {} 的工作目录"
@@ -726,8 +837,23 @@ msgstr "点击放大"
 msgid "Click to sort; right-click to choose the columns."
 msgstr "点击排序；右键选择列。"
 
+msgid "Click: play its first move. Scores are White's."
+msgstr "点击：走出其第一步。评分为白方视角。"
+
+msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
+msgstr "点击：放置所选棋子（再次点击：移除）。右键：移除。"
+
+msgid "Clock"
+msgstr "棋钟"
+
 msgid "Close"
 msgstr "关闭"
+
+msgid "Close it"
+msgstr "关闭它"
+
+msgid "Close the console"
+msgstr "关闭控制台"
 
 msgid "Closes this notice. The options keep the values they have now."
 msgstr "关闭此提示。各选项保留当前的值。"
@@ -756,6 +882,15 @@ msgstr "连续步数"
 msgid "Console"
 msgstr "控制台"
 
+msgid "Console log written to {}"
+msgstr "控制台日志已写入 {}"
+
+msgid "Console · {}"
+msgstr "控制台 · {}"
+
+msgid "Console…"
+msgstr "控制台…"
+
 msgid "Continue"
 msgstr "继续"
 
@@ -764,6 +899,12 @@ msgstr "使用已更改的程序继续"
 
 msgid "Copy"
 msgstr "复制"
+
+msgid "Copy FEN"
+msgstr "复制 FEN"
+
+msgid "Copy PGN"
+msgstr "复制 PGN"
 
 msgid "Copy the version"
 msgstr "复制版本号"
@@ -779,6 +920,9 @@ msgstr "无法检查：{}"
 
 msgid "Count"
 msgstr "数量"
+
+msgid "Counts in the core budget · {} of {} threads"
+msgstr "计入核心预算 · {} / {} 个线程"
 
 msgid "Crash / illegal move"
 msgstr "崩溃 / 非法着法"
@@ -860,6 +1004,9 @@ msgstr "关闭"
 
 msgid "Dismiss what changed: {}"
 msgstr "关闭更改提示：{}"
+
+msgid "Done"
+msgstr "完成"
 
 msgid "Done: the tournament goes on with the change."
 msgstr "完成：锦标赛将带着此修改继续进行。"
@@ -951,6 +1098,9 @@ msgstr "每轮让得分相近的引擎配对，同一对手不会相遇两次；
 msgid "Edit in place"
 msgstr "就地编辑"
 
+msgid "Edit the position"
+msgstr "编辑局面"
+
 msgid "Elo"
 msgstr "Elo"
 
@@ -984,11 +1134,17 @@ msgstr "Elo {} ± {:.0f}"
 msgid "Elo: {} = {:.0f}, 95 % interval"
 msgstr "Elo：{} = {:.0f}，95 % 区间"
 
+msgid "Empty board"
+msgstr "空棋盘"
+
 msgid "Empty: a name made from the engines."
 msgstr "留空：用引擎名生成名称。"
 
 msgid "Empty: the program's directory."
 msgstr "留空：程序所在目录。"
+
+msgid "En passant"
+msgstr "吃过路兵"
 
 msgid "End"
 msgstr "结束"
@@ -1007,6 +1163,9 @@ msgstr "在对局进行中由操作员结束。"
 
 msgid "Ends about {} (in {})"
 msgstr "预计 {} 结束（还需 {}）"
+
+msgid "Ends the engine."
+msgstr "结束引擎。"
 
 msgid "Engine"
 msgstr "引擎"
@@ -1040,6 +1199,9 @@ msgstr "引擎"
 
 msgid "Engines' own books off"
 msgstr "关闭引擎自带开局库"
+
+msgid "Eraser"
+msgstr "橡皮擦"
 
 msgid "Error: {}"
 msgstr "错误：{}"
@@ -1185,6 +1347,9 @@ msgstr "文件"
 msgid "Filter: name, group, notes"
 msgstr "筛选：名称、分组、备注"
 
+msgid "Filter: players, event, opening, date…"
+msgstr "筛选：棋手、赛事、开局、日期…"
+
 msgid "Final"
 msgstr "决赛"
 
@@ -1248,11 +1413,17 @@ msgstr "免费，无需账户：其地址会不时变化，速度受限。"
 msgid "From move"
 msgstr "从第几步开始"
 
+msgid "From the clipboard"
+msgstr "来自剪贴板"
+
 msgid "From the games of a PGN file: their moves up to a depth, those played by enough games, weighted by their number or their score; written as a Polyglot book (.bin) and added to the library."
 msgstr "由 PGN 文件中的对局生成：取到一定深度的着法，保留由足够多对局走出的着法，按次数或得分加权；保存为 Polyglot 开局库（.bin）并加入库中。"
 
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr "仅根据对局计算，并附带对应的 DrawElo。"
+
+msgid "From the position on the board"
+msgstr "从棋盘上的局面开始"
 
 msgid "From {}: {}"
 msgstr "来自 {}：{}"
@@ -1281,6 +1452,9 @@ msgstr "显示的对局："
 msgid "Game {} counts as {}."
 msgstr "对局 {} 按 {} 计分。"
 
+msgid "Game {} of {}: {} – {}"
+msgstr "第 {} / {} 局：{} – {}"
+
 msgid "Game {} was ended by the operator: {}."
 msgstr "对局 {} 已由操作员结束：{}。"
 
@@ -1292,6 +1466,9 @@ msgstr "对局 {} · 第 {} 步：{} – {}"
 
 msgid "Game {} · round {} · move {}"
 msgstr "对局 {} · 第 {} 轮 · 第 {} 步"
+
+msgid "Game {}: {}"
+msgstr "第 {} 局：{}"
 
 msgid "Game {}: {} – {}  {}"
 msgstr "对局 {}：{} – {}  {}"
@@ -1411,6 +1588,9 @@ msgstr "对局结束方式"
 msgid "How long the engine may take to answer uciok when started and isready at the start of each game: more for an engine that loads a large network or hash table. Usually {} s."
 msgstr "引擎启动时回复 uciok、每局开始时回复 isready 所允许的时间：加载大型网络或哈希表的引擎需要更多时间。通常为 {} 秒。"
 
+msgid "How many best moves are shown (MultiPV)."
+msgstr "显示多少个最佳着法（MultiPV）。"
+
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "每个配对进行的次数；每次两局，交换先后手。其他程序把一个循环称为一轮，每次相遇 2 局（-rounds N -games 2）。"
 
@@ -1444,6 +1624,9 @@ msgstr "已导入的对局"
 msgid "Import…"
 msgstr "导入…"
 
+msgid "Inaccuracy"
+msgstr "缓着"
+
 msgid "Inactive"
 msgstr "停用"
 
@@ -1455,6 +1638,9 @@ msgstr "加秒 (s)"
 
 msgid "Infinite"
 msgstr "无限"
+
+msgid "Initial position"
+msgstr "初始局面"
 
 msgid "Interface size"
 msgstr "界面大小"
@@ -1630,6 +1816,9 @@ msgstr "相对于列表中下一个引擎的优势概率：根据二者的等级
 msgid "Likelihood of superiority over the next engine of the list: the probability that it is the stronger of the two. Approximate: with more than 1000 engines, the covariance of the ratings is approximated from each one's games and the games the two played together."
 msgstr "相对于列表中下一个引擎的优势概率：它是两者中更强者的概率。近似值：引擎超过 1000 个时，等级分协方差根据各自的对局以及二者之间的对局估算。"
 
+msgid "Lines"
+msgstr "变化"
+
 msgid "Listed among lichess' broadcasts"
 msgstr "列入 lichess 的直播列表"
 
@@ -1679,6 +1868,9 @@ msgid "Lower to {} piece"
 msgid_plural "Lower to {} pieces"
 msgstr[0] "降为 {} 子"
 
+msgid "MB; 0: the engine's own."
+msgstr "MB；0：使用引擎自己的设置。"
+
 msgid "Machine: {} physical cores, {} threads"
 msgstr "本机：{} 个物理核心，{} 个线程"
 
@@ -1715,6 +1907,12 @@ msgstr "最大步数"
 msgid "Minimum games"
 msgstr "最少对局数"
 
+msgid "Minutes for the game."
+msgstr "整局的分钟数。"
+
+msgid "Mistake"
+msgstr "错着"
+
 msgid "Model"
 msgstr "模型"
 
@@ -1723,6 +1921,9 @@ msgstr "更多…"
 
 msgid "Mosaic"
 msgstr "平铺"
+
+msgid "Move"
+msgstr "回合"
 
 msgid "Move down"
 msgstr "下移"
@@ -1756,6 +1957,9 @@ msgstr "需要处理"
 
 msgid "New engine A"
 msgstr "新引擎 A"
+
+msgid "New game"
+msgstr "新对局"
 
 msgid "New tournament"
 msgstr "新建锦标赛"
@@ -1796,6 +2000,9 @@ msgstr "此文件夹中没有找到引擎。"
 msgid "No engine that works within that range. Engines that were never checked do not count: check them first (Engines, More…)."
 msgstr "该范围内没有可用的引擎。从未检查过的引擎不计入：请先检查它们（引擎，更多…）。"
 
+msgid "No engine to analyse with: add one on the Engines page."
+msgstr "没有可用于分析的引擎：请在“引擎”页面添加一个。"
+
 msgid "No engine yet. Click Add."
 msgstr "还没有引擎。请点击“添加”。"
 
@@ -1805,8 +2012,14 @@ msgstr "还没有引擎：双击引擎库中的引擎，或把它们拖到这里
 msgid "No game finished yet."
 msgstr "还没有已结束的对局。"
 
+msgid "No game in it, or a start position (its FEN tag) that cannot be played."
+msgstr "其中没有对局，或起始局面（FEN 标签）无法下棋。"
+
 msgid "No game in this slot yet."
 msgstr "此位置还没有对局。"
+
+msgid "No game in {}."
+msgstr "{} 中没有对局。"
 
 msgid "No game is being played here."
 msgstr "这里没有正在进行的对局。"
@@ -1856,6 +2069,9 @@ msgstr "还没有选项：请点击“重新读取 UCI 选项”。"
 
 msgid "No position with bm, am or c0 in this file."
 msgstr "此文件中没有带 bm、am 或 c0 的局面。"
+
+msgid "No position, game or move found in the text."
+msgstr "文本中没有找到局面、对局或着法。"
 
 msgid "No profile"
 msgstr "无配置"
@@ -1908,6 +2124,15 @@ msgstr "这些引擎都不以相同名称存在于库中。"
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "归一化 Elo（fishtest、OpenBench），及其 95 % 区间。"
 
+msgid "Not a legal position."
+msgstr "不是合法局面。"
+
+msgid "Not a position: a FEN gives eight ranks of eight squares, the side to move (w or b), the castling rights (KQkq or -), the en passant square (or -) and two move counters."
+msgstr "不是局面：FEN 应给出八行、每行八格，走棋方（w 或 b），易位权（KQkq 或 -），吃过路兵格（或 -）以及两个步数计数。"
+
+msgid "Not a position: a FEN gives eight ranks of eight squares, then the side to move."
+msgstr "不是局面：FEN 应给出八行、每行八格，然后是走棋方。"
+
 msgid "Not a value the new build takes: fastchess would play without it."
 msgstr "新版本不接受此值：fastchess 会不带它进行对局。"
 
@@ -1929,6 +2154,9 @@ msgstr "未开始：另一个启动正在等待（{}）。请先取消它。"
 msgid "Not started: the options of {} cannot be read."
 msgstr "未开始：无法读取 {} 的选项。"
 
+msgid "Not this position."
+msgstr "不是这个局面。"
+
 msgid "Notes"
 msgstr "备注"
 
@@ -1940,6 +2168,9 @@ msgstr "没有匹配项。"
 
 msgid "Nothing reported yet."
 msgstr "尚无报告。"
+
+msgid "Nothing to read: the text is empty."
+msgstr "没有可读取的内容：文本为空。"
 
 msgid "Notify when a match ends"
 msgstr "比赛结束时通知"
@@ -1964,6 +2195,9 @@ msgstr "列表中"
 
 msgid "Once it has played two tournaments."
 msgstr "一旦它下过两个锦标赛。"
+
+msgid "Once the game is over."
+msgstr "对局结束后。"
 
 msgid "One after the other, not while a tournament plays. Not the inactive ones."
 msgstr "逐个进行，锦标赛进行时不进行。不包括停用的。"
@@ -1992,6 +2226,9 @@ msgstr "仅限等级分不低于此值的棋手的着法"
 msgid "Open"
 msgstr "打开"
 
+msgid "Open a PGN…"
+msgstr "打开 PGN…"
+
 msgid "Open a file…"
 msgstr "打开文件…"
 
@@ -2003,6 +2240,9 @@ msgstr "打开引擎"
 
 msgid "Open the folder"
 msgstr "打开文件夹"
+
+msgid "Open the games"
+msgstr "打开这些对局"
 
 msgid "Open the log"
 msgstr "打开日志"
@@ -2027,6 +2267,9 @@ msgstr "开局库"
 
 msgid "Opening book not found: {}"
 msgstr "找不到开局库：{}"
+
+msgid "Opening · {}"
+msgstr "开局 · {}"
 
 msgid "Openings"
 msgstr "开局"
@@ -2173,8 +2416,26 @@ msgstr "棋盘上的棋子数，包括王。"
 msgid "Pins every game to its own processor, shared by its two engines since they never think at the same time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to a node count."
 msgstr "把每局对局固定在一个处理器上，由该局的两个引擎共用，因为它们不会同时思考：2 局对局占满 2 个核心，其余核心空闲。有计时时有用，对固定节点数无影响。"
 
+msgid "Play"
+msgstr "开始"
+
+msgid "Play a game"
+msgstr "下一局"
+
+msgid "Play a game…"
+msgstr "下一局…"
+
+msgid "Play a move on the board, or open a game."
+msgstr "在棋盘上走一步，或打开一局对局。"
+
+msgid "Play anyway"
+msgstr "仍然开始"
+
 msgid "Play games again"
 msgstr "重下对局"
+
+msgid "Play the two games"
+msgstr "下这两局"
 
 msgid "Play this game again"
 msgstr "重下这局对局"
@@ -2236,12 +2497,18 @@ msgstr "便携模式：关闭"
 msgid "Position"
 msgstr "局面"
 
+msgid "Position set up"
+msgstr "摆放的局面"
+
 msgid "Prepared from {} game: {} positions."
 msgid_plural "Prepared from {} games: {} positions."
 msgstr[0] "由 {} 局对局准备而成：{} 个局面。"
 
 msgid "Preparing the book… {} %"
 msgstr "正在准备开局库… {} %"
+
+msgid "Press A, or Analyse, for the engine's best moves here."
+msgstr "按 A 或“分析”，在此查看引擎的最佳着法。"
 
 msgid "Probability that H1 is accepted (%)"
 msgstr "接受 H1 的概率 (%)"
@@ -2357,6 +2624,9 @@ msgstr "正在读取对局… {} %"
 msgid "Reading the options of an engine…"
 msgstr "正在读取某个引擎的选项…"
 
+msgid "Reading {}…"
+msgstr "正在读取 {}…"
+
 msgid "Reading…"
 msgstr "正在读取…"
 
@@ -2445,6 +2715,9 @@ msgstr "报告问题…"
 
 msgid "Resign"
 msgstr "认输"
+
+msgid "Restart"
+msgstr "重新启动"
 
 msgid "Restart an engine that crashes"
 msgstr "重启崩溃的引擎"
@@ -2566,6 +2839,12 @@ msgstr "将布局另存为…"
 msgid "Save the setup as a template…"
 msgstr "将设置另存为模板…"
 
+msgid "Saved in {}"
+msgstr "已保存到 {}"
+
+msgid "Save…"
+msgstr "保存…"
+
 msgid "Say which library engine a player of the PGN files is."
 msgstr "指定 PGN 文件中的某位棋手是哪个库引擎。"
 
@@ -2599,6 +2878,9 @@ msgstr "搜索"
 msgid "Searches at a time"
 msgstr "同时进行的搜索数"
 
+msgid "Seconds added after each move."
+msgstr "每步后增加的秒数。"
+
 msgid "Seconds before the next game is chosen."
 msgstr "选择下一局对局前的秒数。"
 
@@ -2619,6 +2901,9 @@ msgstr "种子顺序"
 
 msgid "Seed order: as the engines were entered, the seeds of a gauntlet first; the columns of a gauntlet's crosstable stay in place."
 msgstr "种子顺序：按引擎录入的顺序，车轮战的被测引擎在前；车轮战交叉表的列保持不动。"
+
+msgid "Send"
+msgstr "发送"
 
 msgid "Send its options"
 msgstr "发送其选项"
@@ -2643,6 +2928,9 @@ msgstr "设定结果"
 
 msgid "Set the result of game {}…"
 msgstr "设定对局 {} 的结果…"
+
+msgid "Set up a position: pieces, side to move, castling, en passant, Chess960."
+msgstr "摆放局面：棋子、走棋方、易位、吃过路兵、Chess960。"
 
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
@@ -2669,11 +2957,17 @@ msgstr "配置"
 msgid "Share of drawn games."
 msgstr "和棋所占比例。"
 
+msgid "Show it"
+msgstr "显示它"
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "在单独的面板中显示这局对局，该面板可停靠在其他面板旁，或移到另一块屏幕。"
 
 msgid "Show {}"
 msgstr "显示：{}"
+
+msgid "Shown here as they are played, and saved as PGN in games/ in the profile."
+msgstr "对局进行时在此显示，并以 PGN 保存到配置目录的 games/ 中。"
 
 msgid "Site"
 msgstr "地点"
@@ -2686,6 +2980,9 @@ msgstr "答案"
 
 msgid "Some engines take every core by default. Games played at the same time then slow each other down, and the engines lose on time or play weaker than they are."
 msgstr "有些引擎默认占用所有核心。同时进行的对局会互相拖慢，引擎会超时判负或发挥失常。"
+
+msgid "Speak UCI to it through the translation a tournament uses, rather than its own protocol. The engine starts again."
+msgstr "通过锦标赛使用的转换以 UCI 与其通信，而不是用它自己的协议。引擎会重新启动。"
 
 msgid "Speed"
 msgstr "速度"
@@ -2726,8 +3023,14 @@ msgstr "启动超时（秒）"
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr "在当前锦标赛自行结束后依次开始。"
 
+msgid "Started with the library's program, arguments, working directory and option values (sent once it answers uciok)."
+msgstr "以引擎库中的程序、参数、工作目录和选项值启动（选项在它回复 uciok 后发送）。"
+
 msgid "Started: {}, {}, {} concurrent games{}. Folder: {}"
 msgstr "已开始：{}，{}，同时进行 {} 局{}。文件夹：{}"
+
+msgid "Starting {}…"
+msgstr "正在启动 {}…"
 
 msgid "Starting…"
 msgstr "正在开始…"
@@ -2761,6 +3064,12 @@ msgstr "停止并退出"
 
 msgid "Stop now (running games are lost)"
 msgstr "立即停止（进行中的对局将丢失）"
+
+msgid "Stop the analysis"
+msgstr "停止分析"
+
+msgid "Stop the game"
+msgstr "停止对局"
 
 msgid "Stop the tournament when an engine cannot start"
 msgstr "引擎无法启动时停止锦标赛"
@@ -2803,6 +3112,9 @@ msgstr "摘要"
 
 msgid "Swap A and B"
 msgstr "交换 A 和 B"
+
+msgid "Swap the engines and their clocks."
+msgstr "交换引擎及其棋钟。"
 
 msgid "Swiss"
 msgstr "瑞士制"
@@ -2874,6 +3186,9 @@ msgstr "残局库"
 msgid "Tabs"
 msgstr "标签页"
 
+msgid "Talk to the engine: type commands (an option, a position, a go with given limits, a stop) and read its answers."
+msgstr "与引擎对话：输入命令（选项、局面、带限制的 go、stop）并查看它的回答。"
+
 msgid "Tell me when a new version is out"
 msgstr "有新版本时通知我"
 
@@ -2904,6 +3219,9 @@ msgstr "测试者"
 msgid "Testing…"
 msgstr "正在测试…"
 
+msgid "Text"
+msgstr "文本"
+
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "50 步计数、子力以及剩余棋子，显示在平铺视图的每个棋盘下方。"
 
@@ -2918,6 +3236,21 @@ msgstr "按 PGN 标准，这些是注释。fastchess-gui 0.4.13 及更早版本�
 
 msgid "The Schedule tab shows the impact before anything changes."
 msgstr "赛程标签页会在任何改动之前显示影响。"
+
+msgid "The analysis"
+msgstr "分析"
+
+msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
+msgstr "分析引擎在后台逐个分析对局中的每个局面：每步一个评分，并标出缓着、错着和败着。"
+
+msgid "The analysis engine stopped."
+msgstr "分析引擎已停止。"
+
+msgid "The analysis engine waits."
+msgstr "分析引擎在等待。"
+
+msgid "The analysis is running."
+msgstr "分析正在进行。"
 
 msgid "The arrow keys too."
 msgstr "也可用方向键。"
@@ -2949,6 +3282,9 @@ msgstr "图表会随第一批结果出现。"
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "为了开始，{} 的检查已中断：稍后会重新进行。"
 
+msgid "The console of {} is open."
+msgstr "{} 的控制台已打开。"
+
 msgid "The depth must be positive."
 msgstr "深度必须为正数。"
 
@@ -2958,6 +3294,9 @@ msgstr "这些目录属于本机：没有配置包含它们。"
 msgid "The engine does not answer isready."
 msgstr "引擎没有响应 isready。"
 
+msgid "The engine ended."
+msgstr "引擎已结束。"
+
 msgid "The engine stopped answering once its options were sent."
 msgstr "发送选项后引擎停止响应。"
 
@@ -2966,6 +3305,15 @@ msgstr "要求引擎思考时，它停止了运行。"
 
 msgid "The engine wrote:"
 msgstr "引擎输出："
+
+msgid "The engine's own protocol (xboard), without the translation to UCI a tournament uses."
+msgstr "引擎自己的协议（xboard），不经过锦标赛使用的 UCI 转换。"
+
+msgid "The engine's settings; the console stays open."
+msgstr "引擎的设置；控制台保持打开。"
+
+msgid "The engines"
+msgstr "引擎"
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "引擎来自 {}，即上次更改前保留的副本。"
@@ -3006,11 +3354,20 @@ msgstr "第一个参赛者 {} 没有参考 Elo。"
 msgid "The folder {} is not there any more."
 msgstr "文件夹 {} 已不存在。"
 
+msgid "The game as it was, without the moves played over it."
+msgstr "恢复原来的对局，去掉在其上走的着法。"
+
+msgid "The game being played ends without a result."
+msgstr "正在进行的对局将无结果结束。"
+
 msgid "The game counts again as it was."
 msgstr "对局恢复按原结果计分。"
 
 msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
 msgstr "所关注的对局占满窗口，大字显示，用于电视、俱乐部或直播。F11：全屏，Esc：返回。"
+
+msgid "The game, with its tags and moves, as PGN."
+msgstr "以 PGN 格式复制对局及其标签和着法。"
 
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "按等级分列表测试者提交的方式整理对局：文件以你的名字命名，附日期和条件，棋手名称按列表的写法，轮次重新编号，去除作废对局和重复对局。"
@@ -3029,6 +3386,12 @@ msgstr "{} 的主机密钥已改变：现在是 {}，之前是 {}。可能有人
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "{} 的主机密钥不是预期的（{}，而不是 {}）：可能有人在中间拦截。未发送任何内容。"
+
+msgid "The king and the rook are not where it needs them."
+msgstr "王和车不在所需的位置。"
+
+msgid "The larger thread count of the two engines: they take turns. Their games are played apart from any tournament."
+msgstr "取两个引擎中较大的线程数：它们轮流思考。这些对局独立于任何锦标赛进行。"
 
 msgid "The largest Hash: {}, {} per process."
 msgstr "最大的 Hash：{}，每个进程 {}。"
@@ -3050,6 +3413,9 @@ msgstr "引擎库中的名称，之后的锦标赛会使用它。已进行的锦
 
 msgid "The list order is the seeding."
 msgstr "列表顺序即种子顺序。"
+
+msgid "The machine is full: the tournament's games and the analysis use {} of its {} threads, and this game needs {}. It would slow them down, and its own engines."
+msgstr "机器已满：锦标赛对局和分析使用了 {} 个线程（共 {} 个），这局还需要 {} 个。这会拖慢它们以及这局的引擎。"
 
 msgid "The most interesting"
 msgstr "最有看点的"
@@ -3143,6 +3509,9 @@ msgstr "读取在文件结束前停止：{}"
 msgid "The same engine, with different books"
 msgstr "同一引擎，使用不同的开局库"
 
+msgid "The same for both"
+msgstr "双方相同"
+
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
 msgstr "同样的比赛，换一个新引擎 A，例如下一版本：其他设置保持不变。"
 
@@ -3157,6 +3526,12 @@ msgstr "使用它的设置和模板会保留其值。"
 
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "在此时限下，两个引擎之间预期的和棋比例。"
+
+msgid "The side that is not to move is in check."
+msgstr "非走棋方正被将军。"
+
+msgid "The side to move is in check by more than two pieces."
+msgstr "走棋方被两个以上的棋子将军。"
 
 msgid "The size of the text, for the distance it is read from (+ and - too)."
 msgstr "文字大小，按观看距离调整（也可用 + 和 -）。"
@@ -3181,6 +3556,12 @@ msgstr "测试集未开始：有锦标赛正在进行。"
 
 msgid "The test suite is not started: a tournament waits to start."
 msgstr "测试集未开始：有锦标赛正在等待开始。"
+
+msgid "The threads of the analysis: they count in the core budget, with a tournament's games."
+msgstr "分析的线程：与锦标赛对局一起计入核心预算。"
+
+msgid "The threads the analysis and the games of this page use now, out of the machine's."
+msgstr "本页的分析和对局当前使用的线程数，以及本机的线程总数。"
 
 msgid "The time control needs a base time or an increment."
 msgstr "时限需要基本时间或加秒。"
@@ -3212,14 +3593,23 @@ msgstr "按对局对计算时单局的方差与单独计算时单局方差之比
 msgid "The version and the system, for a bug report."
 msgstr "版本和系统信息，用于错误报告。"
 
+msgid "The whole log, to the clipboard."
+msgstr "将整个日志复制到剪贴板。"
+
 msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
 msgstr "由处理器（SDL 的软件渲染器）而不是显卡通过 OpenGL 绘制窗口：适用于虚拟机、远程桌面和有故障的显卡驱动。速度较慢，拖出窗口的面板会留在窗口内。命令行参数 --software 对单次启动有同样效果。"
 
 msgid "The working directory of {} is not found: {}"
 msgstr "找不到 {} 的工作目录：{}"
 
+msgid "Their PGN file, its games listed beside the moves."
+msgstr "它们的 PGN 文件，对局列在着法旁边。"
+
 msgid "Theme"
 msgstr "主题"
+
+msgid "These settings are the analysis's: they change neither the engine in the library nor a tournament."
+msgstr "这些是分析自己的设置：既不改变引擎库中的引擎，也不影响锦标赛。"
 
 msgid "These settings under a name, to choose them again in other tournaments and templates."
 msgstr "为这些设置命名，以便在其他比赛和模板中再次选用。"
@@ -3272,6 +3662,9 @@ msgstr "线程 {}"
 msgid "Threads {} of the common settings: {} games × {} threads exceed the {}."
 msgstr "通用设置的 Threads {}：{} 局 × {} 线程超过了 {}。"
 
+msgid "Through the adapter"
+msgstr "通过适配器"
+
 msgid "Tick engines on the left."
 msgstr "在左侧勾选引擎。"
 
@@ -3295,6 +3688,9 @@ msgstr "每步时间"
 
 msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
 msgstr "若要把所有内容放在程序旁边（U 盘、在多台机器间复制的文件夹），请在程序旁放一个名为“portable”的空文件：配置文件夹随即变为程序旁的“data”文件夹。将此文件夹中的文件复制过去即可保留它们。"
+
+msgid "To move"
+msgstr "走棋方"
 
 msgid "Total"
 msgstr "合计"
@@ -3485,6 +3881,9 @@ msgstr "白方走出非法着法"
 msgid "White mates"
 msgstr "白方将杀"
 
+msgid "White needs one king, and only one."
+msgstr "白方需要一个王，且只能有一个。"
+
 msgid "White resigns"
 msgstr "白方认输"
 
@@ -3499,6 +3898,9 @@ msgstr "白方 {:.0f} % · 和棋 {:.0f} % · 黑方 {:.0f} %"
 
 msgid "White ×2"
 msgstr "白方 ×2"
+
+msgid "White's clock"
+msgstr "白方棋钟"
 
 msgid "White's connection stalls"
 msgstr "白方连接无响应"
@@ -3517,6 +3919,9 @@ msgstr "WinBoard"
 
 msgid "WinBoard engines (xboard protocol) are run through a translation to UCI built into fastchess-gui. Automatic: found out when the engine is read."
 msgstr "WinBoard 引擎（xboard 协议）通过 fastchess-gui 内置的 UCI 转换运行。自动：在读取引擎时检测。"
+
+msgid "WinBoard, its own protocol"
+msgstr "WinBoard，它自己的协议"
 
 msgid "Wins"
 msgstr "胜"
@@ -3627,6 +4032,9 @@ msgstr "全部"
 msgid "also to {}"
 msgstr "也写入 {}"
 
+msgid "an engine does not answer isready"
+msgstr "有引擎不回应 isready"
+
 msgid "and {} more"
 msgstr "以及另外 {} 个"
 
@@ -3651,6 +4059,9 @@ msgstr "作者 %s"
 
 msgid "bye"
 msgstr "轮空"
+
+msgid "checkmate"
+msgstr "将死"
 
 msgid "colours reversed of an earlier one"
 msgstr "与之前某局面颜色互换"
@@ -3725,6 +4136,12 @@ msgstr "从第 {} 个开局起"
 msgid "game already over"
 msgstr "对局已结束"
 
+msgid "game too long"
+msgstr "对局过长"
+
+msgid "game {}"
+msgstr "第 {} 局"
+
 msgid "games"
 msgstr "对局"
 
@@ -3736,6 +4153,9 @@ msgstr "最少对局数"
 
 msgid "gone"
 msgstr "已移除"
+
+msgid "illegal move {} by {}"
+msgstr "非法着法 {}（{}）"
 
 msgid "illegal position"
 msgstr "非法局面"
@@ -3751,6 +4171,12 @@ msgstr "按顺序"
 
 msgid "initial position"
 msgstr "初始局面"
+
+msgid "insufficient material"
+msgstr "子力不足"
+
+msgid "it cannot be read."
+msgstr "无法读取。"
 
 msgid "it takes true or false"
 msgstr "只接受 true 或 false"
@@ -3803,6 +4229,9 @@ msgstr "新增"
 
 msgid "no engine has a SyzygyPath"
 msgstr "没有引擎设置了 SyzygyPath"
+
+msgid "no mistake"
+msgstr "没有错误"
 
 msgid "nodes"
 msgstr "节点"
@@ -3865,6 +4294,9 @@ msgstr "认输 {}/{} cp"
 msgid "resign {}/{} cp, both engines"
 msgstr "认输 {}/{} cp，双方引擎"
 
+msgid "round {}"
+msgstr "第 {} 轮"
+
 msgid "s"
 msgstr "秒"
 
@@ -3876,6 +4308,12 @@ msgstr "启动时发送"
 
 msgid "set by hand"
 msgstr "手动设置"
+
+msgid "stalemate"
+msgstr "逼和"
+
+msgid "stopped"
+msgstr "已停止"
 
 msgid "the driver gives OpenGL {}"
 msgstr "驱动提供的是 OpenGL {}"
@@ -3904,11 +4342,17 @@ msgstr "{} 的快速测试"
 msgid "the resume of the interrupted tournament"
 msgstr "恢复被中断的锦标赛"
 
+msgid "this analysis only"
+msgstr "仅限本次分析"
+
 msgid "this game does not count: it was voided, or is not over"
 msgstr "该对局不计分：已作废，或尚未结束"
 
 msgid "this tournament"
 msgstr "本次比赛"
+
+msgid "threefold repetition"
+msgstr "三次重复"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "可在帖子中注明，或重新测试引擎："
@@ -3970,6 +4414,9 @@ msgstr "有 {:.1f}% 的概率 {} 强于 {}。"
 msgid "{:.1f} GB"
 msgstr "{:.1f} GB"
 
+msgid "{:g} s per move"
+msgstr "每步 {:g} 秒"
+
 msgid "{}  ({} openings)"
 msgstr "{}  （{} 个开局）"
 
@@ -4000,11 +4447,18 @@ msgstr "{} MB"
 msgid "{} against each opponent"
 msgstr "{} 对每个对手"
 
+msgid "{} analyses the game move by move."
+msgstr "{} 正在逐步分析对局。"
+
 msgid "{} and {}"
 msgstr "{} 和 {}"
 
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} 要求每局都重新启动：已勾选“每局对局都重启引擎”。"
+
+msgid "{} blunder"
+msgid_plural "{} blunders"
+msgstr[0] "{} 个败着"
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "无法读取 {}，因此之前信任的主机密钥未知：未向 {} 发送任何内容。请修复该文件，或删除它以重新信任服务器的密钥。"
@@ -4047,6 +4501,15 @@ msgstr "{} 未提供 RSA 主机密钥"
 
 msgid "{} did not start (try {} of {})"
 msgstr "{} 未能启动（第 {} 次尝试，共 {} 次）"
+
+msgid "{} does not answer isready."
+msgstr "{} 不回应 isready。"
+
+msgid "{} does not answer uci: is it a UCI engine?"
+msgstr "{} 不回应 uci：它是 UCI 引擎吗？"
+
+msgid "{} does not give its move when told to stop."
+msgstr "{} 收到停止指令后不给出着法。"
 
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} 不允许用户“{}”无密钥或密码登录（它接受：{}）"
@@ -4119,6 +4582,10 @@ msgid "{} game exported to {}"
 msgid_plural "{} games exported to {}"
 msgstr[0] "已导出 {} 局对局到 {}"
 
+msgid "{} game in {}"
+msgid_plural "{} games in {}"
+msgstr[0] "{} 局对局，来自 {}"
+
 msgid "{} game left out by the options (a rating below the minimum, or no result)."
 msgid_plural "{} games left out by the options (a rating below the minimum, or no result)."
 msgstr[0] "{} 局对局被选项排除（等级分低于最低值，或没有结果）。"
@@ -4178,6 +4645,13 @@ msgstr[0] "{} 次非法着法"
 msgid "{} illegal moves"
 msgstr "{} 次非法着法"
 
+msgid "{} inaccuracy"
+msgid_plural "{} inaccuracies"
+msgstr[0] "{} 个缓着"
+
+msgid "{} is not a legal move from the initial position."
+msgstr "{} 在初始局面中不是合法着法。"
+
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} 已在另一个程序中打开：此处仅按打开时的状态显示。"
 
@@ -4196,6 +4670,9 @@ msgstr "{} 在参赛者列表中出现了两次。"
 msgid "{} library engine has this name"
 msgid_plural "{} library engines have this name"
 msgstr[0] "{} 个库引擎使用此名称"
+
+msgid "{} loses on time"
+msgstr "{} 超时判负"
 
 msgid "{} loss on time"
 msgid_plural "{} losses on time"
@@ -4221,6 +4698,10 @@ msgstr "{} 分"
 msgid "{} min {:02} s"
 msgstr "{} 分 {:02} 秒"
 
+msgid "{} mistake"
+msgid_plural "{} mistakes"
+msgstr[0] "{} 个错着"
+
 msgid "{} moves in {}, repeated"
 msgstr "{} 步 {}，重复"
 
@@ -4243,6 +4724,9 @@ msgstr "{} 节点"
 
 msgid "{} of memory free of {}"
 msgstr "可用内存 {}，共 {}"
+
+msgid "{} of {}"
+msgstr "{} / {}"
 
 msgid "{} of {} openings"
 msgstr "{} 个，共 {} 个开局"
@@ -4393,6 +4877,9 @@ msgstr "{} 已重新启动：它的对局重新开始。"
 msgid "{} stays at {}."
 msgstr "{} 保持为 {}。"
 
+msgid "{} stopped."
+msgstr "{} 已停止。"
+
 msgid "{} takes these settings, for every tournament and template that uses it."
 msgstr "{} 采用这些设置，所有使用它的比赛和模板都会随之改变。"
 
@@ -4424,6 +4911,9 @@ msgstr[0] "已写入 {}：{} 个局面，来自 {} 局对局。"
 msgid "{} · depth {} · {}"
 msgstr "{} · 深度 {} · {}"
 
+msgid "{} · opening {}"
+msgstr "{} · 开局 {}"
+
 msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
 msgstr "{} · {} / {} 局 · {} 局进行中 · {:.0f} 局/小时 · {}"
 
@@ -4439,8 +4929,14 @@ msgstr "{} · {} 局 · 首个：{} · {}"
 msgid "{} – fastchess-gui"
 msgstr "{} – fastchess-gui"
 
+msgid "{} – {} · game {} of {}"
+msgstr "{} – {} · 第 {} / {} 局"
+
 msgid "{} – {} · {} games"
 msgstr "{} – {} · {} 局"
+
+msgid "{}'s engine stopped"
+msgstr "{} 的引擎已停止"
 
 msgid "{}, more than the {} of memory free: the system will swap."
 msgstr "{}，超过可用内存 {}：系统将使用交换空间。"
@@ -4476,6 +4972,9 @@ msgstr "{}：其开局库无法使用：{}"
 msgid "{}: its book is not found: {}"
 msgstr "{}：找不到其开局库：{}"
 
+msgid "{}: only PGN files, FEN and EPD positions can be dropped here."
+msgstr "{}：此处只能拖放 PGN 文件以及 FEN、EPD 局面。"
+
 msgid "{}: program not found ({})"
 msgstr "{}：找不到程序（{}）"
 
@@ -4496,6 +4995,9 @@ msgstr "{}：再次尝试启动。"
 
 msgid "{}: unknown to the engine"
 msgstr "{}：引擎不认识"
+
+msgid "{}: {:.0f} % of the winning chances lost."
+msgstr "{}：失去了 {:.0f} % 的获胜机会。"
 
 msgid "{}: {}"
 msgstr "{}：{}"

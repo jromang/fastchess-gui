@@ -10,6 +10,7 @@
 #include <fmt/include/fmt/format.h>
 
 #include "app.hpp"
+#include "board_text.hpp"
 #include "i18n.hpp"
 #include "layout.hpp"
 #include "palette.hpp"
@@ -45,6 +46,8 @@ guide::Section App::guideSection() const {
             return guide::Section::Engines;
         case Page::Books:
             return guide::Section::Books;
+        case Page::Board:
+            return guide::Section::Board;
         case Page::Suites:
             return guide::Section::TestSuites;
         case Page::Ratings:
@@ -201,6 +204,12 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     }
     if (!resumed_programs_.empty() && run_.running())
         add(TR("Continue with the changed programs"), name, [this] { resumed_programs_.clear(); });
+    // The console of the engine shown, or the one open.
+    if (page_ == Page::Engines && selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size())) {
+        add(TR("Console…"), engines_[static_cast<std::size_t>(selected_engine_)].name,
+            [this] { openEngineConsole(selected_engine_); });
+    }
+    if (engine_console_) add(TR("Close the console"), engine_console_->engine, [this] { closeEngineConsole(); });
 
     // Pages, the panels of the tournament open, and the tabs of the ratings.
     const auto page = [this](Page p) {
@@ -291,6 +300,47 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         add(TR("Cancel the Polyglot book being built"), std::filesystem::path(book_build_.bin()).filename().string(),
             [this] { book_build_.cancel(); });
     }
+    add(TR("Board"), "", page(Page::Board));
+    add(board_.analysing ? TR("Stop the analysis") : TR("Analyse"), TR("Board"), [this] {
+        page_ = Page::Board;
+        setBoardAnalysis(!board_.analysing);
+    });
+    add(TR("Copy FEN"), TR("Board"), [this] { ImGui::SetClipboardText(boardFen().c_str()); });
+    add(TR("Open a PGN…"), TR("Board"), [this] {
+        page_ = Page::Board;
+        dialogs_.openFile(Dialogs::Purpose::BoardPgn, {{"PGN", "pgn"}}, storage_.runsDir().string());
+    });
+    add(TR("Paste"), TR("Board"), [this] {
+        page_ = Page::Board;
+        pasteOnBoard();
+    });
+    add(TR("Edit the position"), TR("Board"), [this] {
+        page_ = Page::Board;
+        openPositionEditor();
+    });
+    if (board_.match && board_.match_state.running) {
+        add(TR("Stop the game"), TR("Board"), [this] { board_.match->stop(); });
+    } else {
+        add(TR("Play a game…"), TR("Board"), [this] {
+            page_            = Page::Board;
+            board_.play_open = true;
+        });
+    }
+    if (board_.review_job) {
+        add(TR("Cancel the analysis of the game"), TR("Board"), [this] { cancelGameReview(); });
+    } else if (!board_.game.moves.empty()) {
+        add(TR("Analyse the game"), TR("Board"), [this] {
+            page_ = Page::Board;
+            startGameReview();
+        });
+    }
+    add(TR("Copy PGN"), TR("Board"),
+        [this] { ImGui::SetClipboardText(gamePgn(board_.game, board_.chess960).c_str()); });
+    if (live_slot_ >= 0 && live_slot_ < static_cast<int>(slot_views_.size()) &&
+        slot_views_[static_cast<std::size_t>(live_slot_)].state.has_game) {
+        add(TR("Analyse the game followed"), name, [this] { analyseLiveGame(live_slot_); });
+    }
+    if (replay_) add(TR("Analyse the game shown"), name, [this] { analyseReplay(); });
     add(TR("Test suites"), "", page(Page::Suites));
     add(TR("Ratings"), "", page(Page::Ratings));
     const auto ratings_tab = [&](const char* label, int index) {

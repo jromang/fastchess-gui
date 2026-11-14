@@ -139,6 +139,8 @@ void App::frame() {
     pollOwnBooks();
     pollBookBuild();
     pollUpdateCheck();
+    pollEngineConsole();
+    pollBoard();
     handleDialogs();
 
     if (engines_save_due_ && std::chrono::steady_clock::now() >= *engines_save_due_) {
@@ -197,6 +199,35 @@ void App::frame() {
         else if (w == "engines-card") {
             page_            = Page::Engines;
             selected_engine_ = engines_.empty() ? -1 : 0;
+        } else if (w == "board" || w == "board-analyse") {  // the Board page; its analysis started
+            page_ = Page::Board;
+            if (w == "board-analyse") setBoardAnalysis(true);
+        } else if (w.rfind("board=", 0) == 0 || w.rfind("board-analyse=", 0) == 0 ||
+                   w.rfind("board-review=", 0) == 0) {
+            // board=FILE: a PGN file (or a FEN, EPD file) on the Board page; board-analyse=FILE, analysed;
+            // board-review=FILE: its first game analysed move by move, once read.
+            const auto eq = w.find('=');
+            dropFile(w.substr(eq + 1));
+            if (w.rfind("board-analyse=", 0) == 0) setBoardAnalysis(true);
+            if (w.rfind("board-review=", 0) == 0) review_when_read_ = true;
+        } else if (w == "board-edit") {  // the position editor
+            page_ = Page::Board;
+            openPositionEditor();
+        } else if (w == "board-play" || w == "board-play-start") {  // a game from the board: its settings; started
+            page_             = Page::Board;
+            board_.play_open  = true;
+            if (w == "board-play-start") {
+                loadBoardSettings();
+                if (engines_.size() > 1) {
+                    board_.settings.game_first  = engines_[0].name;
+                    board_.settings.game_second = engines_[1].name;
+                }
+                startBoardGames();
+            }
+        } else if (w == "engines-console") {  // the console of the first engine, which answered uci
+            page_            = Page::Engines;
+            selected_engine_ = engines_.empty() ? -1 : 0;
+            openEngineConsole(0);
         } else if (w == "engines-refresh") {
             page_ = Page::Engines;
             refreshEngineFolder();
@@ -1100,6 +1131,12 @@ void App::handleDialogs() {
                 break;
             case Dialogs::Purpose::ExportSubmission:
                 writeSubmissionExport(path);
+                break;
+            case Dialogs::Purpose::ConsoleLog:
+                saveConsoleLog(path);
+                break;
+            case Dialogs::Purpose::BoardPgn:
+                openBoardPgn(std::filesystem::path(path));
                 break;
         }
     }

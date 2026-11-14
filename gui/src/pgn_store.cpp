@@ -303,8 +303,15 @@ class ReplayVisitor : public chess::pgn::Visitor {
 
     void startMoves() override {
         board_.set960(chess960_);
-        board_.setFen(game_.start_fen.empty() ? std::string(chess::constants::STARTPOS) : game_.start_fen);
         if (game_.start_fen.empty()) game_.start_fen = std::string(chess::constants::STARTPOS);
+        // A file of someone else's may hold any FEN: one the board reader cannot take, or a position the move
+        // generator cannot, is no game.
+        if (!tour::readableFen(game_.start_fen)) {
+            failed_ = bad_fen_ = true;
+            return;
+        }
+        board_.setFen(game_.start_fen);
+        if (!tour::legalPosition(board_)) failed_ = bad_fen_ = true;
     }
 
     void move(std::string_view san, std::string_view comment) override {
@@ -328,6 +335,7 @@ class ReplayVisitor : public chess::pgn::Visitor {
         }
 
         parseFastchessComment(comment, move);
+        if (!move.score) parseEvalTag(comment, move);
         game_.fields |= move.fields;
 
         // The last move's comment ends with the termination reason, after the engine data.
@@ -341,23 +349,87 @@ class ReplayVisitor : public chess::pgn::Visitor {
 
     void endPgn() override {}
 
+    [[nodiscard]] bool badFen() const noexcept { return bad_fen_; }
+
    private:
     ReplayGame& game_;
     chess::Board board_;
     bool chess960_ = false;
     bool failed_   = false;
+    bool bad_fen_  = false;
 };
 
 }  // namespace
+
+void parseEvalTag(std::string_view comment, ReplayMove& move) {
+    const auto at = comment.find("[%eval ");
+    if (at == std::string_view::npos) return;
+    auto value = comment.substr(at + 7);
+    // ChessBase writes the depth after a comma: [%eval 0.35,18].
+    if (const auto comma = value.find(','); comma != std::string_view::npos && comma < value.find(']')) {
+        int depth = 0;
+        std::from_chars(value.data() + comma + 1, value.data() + value.size(), depth);
+        if (depth > 0 && depth < 1000) move.depth = depth;
+    }
+    value = value.substr(0, value.find_first_of(" ,]"));
+    if (value.empty()) return;
+    // White's point of view, in pawns, or #N for a mate in N moves (#-N for Black).
+    const int sign = move.mover == chess::Color::WHITE ? 1 : -1;
+    if (value.front() == '#') {
+        int64_t moves      = 0;
+        const auto [p, ec] = std::from_chars(value.data() + 1, value.data() + value.size(), moves);
+        if (ec != std::errc() || moves < -100000 || moves > 100000) return;
+        move.score = fastchess::Score{fastchess::ScoreType::MATE, sign * moves};
+        return;
+    }
+    double pawns = 0;
+    try {
+        pawns = std::stod(std::string(value));
+    } catch (...) {
+        return;
+    }
+    if (std::isnan(pawns)) return;
+    pawns      = std::clamp(pawns, -1e6, 1e6);
+    move.score = fastchess::Score{fastchess::ScoreType::CP, static_cast<int64_t>(std::lround(sign * pawns * 100.0))};
+}
+
+std::string flattenMovetext(const std::string& pgn) {
+    std::string out;
+    out.reserve(pgn.size());
+    bool moves     = false;  // past the tags
+    std::size_t at = 0;
+    while (at < pgn.size()) {
+        auto end = pgn.find('\n', at);
+        if (end == std::string::npos) end = pgn.size();
+        std::string_view line(pgn.data() + at, end - at);
+        at = end + 1;
+        while (!line.empty() && (line.back() == '\r' || line.back() == ' ' || line.back() == '\t'))
+            line.remove_suffix(1);
+        std::string_view text = line;
+        while (!text.empty() && (text.front() == ' ' || text.front() == '\t')) text.remove_prefix(1);
+        if (!moves && (text.empty() || text.front() == '[')) {
+            out.append(line);
+            out += '\n';
+            continue;
+        }
+        if (!text.empty() && text.front() == '%') continue;  // an escape line
+        moves = true;
+        for (const char c : text) out += c == '\t' ? ' ' : c;
+        out += ' ';
+    }
+    return out;
+}
 
 std::optional<ReplayGame> parseReplay(const std::string& pgn) {
     ReplayGame game;
     ReplayVisitor visitor(game);
 
-    std::istringstream stream(pgn);
+    // chess.hpp's reader loses a move's comment, and the moves after it, when an end of line comes between them.
+    std::istringstream stream(flattenMovetext(pgn));
     chess::pgn::StreamParser parser(stream);
     const auto error = parser.readGames(visitor);
 
+    if (visitor.badFen()) return std::nullopt;
     if (error.hasError() && game.moves.empty() && game.headers.empty()) return std::nullopt;
     return game;
 }

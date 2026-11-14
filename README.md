@@ -69,7 +69,12 @@ this repository still builds unchanged.
   default are sent. A health check, groups, a reference Elo, and the import of ChessGUI, cutechess, Banksia and
   Arena engine lists. A rebuilt program is noticed, with what its new build changed (name, option defaults,
   options new and gone) and the choice to keep your values. WinBoard engines too, through a translation to UCI
-  built in.
+  built in. A console to type commands to an engine and read its answers.
+- **Board**: any position analysed by an engine of the library, with several lines drawn as arrows; A on any board
+  (a live game, a finished one, an opening) opens it there. Any PGN file opened, its games filtered by their tags and
+  replayed with their evaluations (`%eval` or cutechess comments); a FEN, a PGN or a list of moves pasted; a
+  position editor. A finished game analysed move by move, its inaccuracies, mistakes and blunders marked. A game (or
+  a pair) between two engines from any position, with a clock for each, played beside a running tournament.
 - **Opening books**: EPD, PGN or Polyglot, in a library; each book checked for illegal, duplicate, mirrored and
   finished positions, browsed on a board, and cleaned. A Chess324 book of start positions written by the program,
   and Polyglot books built from PGN files (depth, minimum games, weights by score or count, a rating filter).

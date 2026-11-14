@@ -519,6 +519,8 @@ void App::drawLive() {
             ImGui::EndChild();
         }
     }
+    // A, the mouse over no board: the game followed.
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && boardKey()) analyseLiveGame(live_slot_);
 
     ui::endPanel();
 }
@@ -603,6 +605,8 @@ void App::drawMosaic(int cols, float card) {
         ImGui::PopStyleColor(2);
 
         if (ImGui::IsItemClicked()) live_slot_ = i;
+        // A: this game on the Board page, analysed.
+        if (ImGui::IsItemHovered() && st.has_game && boardKey()) analyseLiveGame(i);
         if (ImGui::IsItemHovered() && st.has_game) {
             ImGui::SetTooltip(
                 "%s – %s\n%s%s", st.white.c_str(), st.black.c_str(),
@@ -687,6 +691,10 @@ void App::drawLiveBoard(SlotView& view, float size) {
     if (!st.moves.empty()) decor.last_move = st.moves.back().move;
     if (setup_.live_arrows) decor.arrows = pvArrows(st, view.board);
     drawBoard(atlas_, view.board, size, decor);
+    // A: this game on the Board page, analysed.
+    if (ImGui::IsItemHovered() && st.has_game && boardKey()) {
+        analyseLiveGame(static_cast<int>(&view - slot_views_.data()));
+    }
     drawBoardInfo(atlas_, view.board, size, tbPieces());
     ImGui::EndGroup();
     // Right click on the board: the game ended with a result. Asked from the palette, once the panel is in front.
