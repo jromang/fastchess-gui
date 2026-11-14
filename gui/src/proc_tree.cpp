@@ -101,7 +101,9 @@ class Child {
         if (fd_ < 0 || (r == -1 && errno == EINVAL))  // no P_PIDFD before Linux 5.4
 #    endif
             r = waitid(P_PID, static_cast<id_t>(pid_), &info, WEXITED | WNOHANG | WNOWAIT);
-        ended = info.si_pid != 0;
+        // macOS also reports a child that stopped, though only WEXITED is asked: that one has not ended.
+        ended = info.si_pid != 0 &&
+                (info.si_code == CLD_EXITED || info.si_code == CLD_KILLED || info.si_code == CLD_DUMPED);
         return r == 0;
     }
     // Ours, and still running: what /proc said of its pid meanwhile was about it.

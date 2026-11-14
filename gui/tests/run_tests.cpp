@@ -1090,46 +1090,33 @@ TEST_CASE("on Windows, what an engine starts is in the engine's job and ends wit
 }
 #endif
 
-#ifdef __APPLE__
-#    include <libproc.h>
+#ifndef _WIN32
 #    include <signal.h>
 #    include <spawn.h>
-#    include <sys/proc.h>
-#    include <sys/proc_info.h>
 #    include <sys/wait.h>
-#    include <unistd.h>
 extern char** environ;
 
-TEST_CASE("macOS: what killProcessTree sees of a shell and the process it started") {
-    // Tells, on the CI's Mac, each step killProcessTree relies on, for a wrapper script whose engine is its child.
+TEST_CASE("killProcessTree ends a shell and the process it started, though the shell was stopped first") {
+    // macOS's waitid also reports a child that stopped: the shell, frozen first, was taken for ended, and what it
+    // started was left running.
     pid_t shell = 0;
     char sh[] = "/bin/sh", c[] = "-c", cmd[] = "sleep 30; true";
     char* argv[] = {sh, c, cmd, nullptr};
     REQUIRE(posix_spawn(&shell, sh, nullptr, nullptr, argv, environ) == 0);
-    std::this_thread::sleep_for(300ms);
-    siginfo_t info{};
-    errno       = 0;
-    const int r = waitid(P_PID, static_cast<id_t>(shell), &info, WEXITED | WNOHANG | WNOWAIT);
-    MESSAGE("waitid: ", r, " errno ", errno, " si_pid ", info.si_pid);
-    const auto children = childProcesses(shell);
-    MESSAGE("children before: ", children.size());
-    kill(shell, SIGSTOP);
-    std::this_thread::sleep_for(100ms);
-    proc_bsdinfo bsd{};
-    const int n = proc_pidinfo(shell, PROC_PIDTBSDINFO, 0, &bsd, sizeof bsd);
-    MESSAGE("pidinfo: ", n, " of ", sizeof bsd, ", status ", bsd.pbi_status, " (SSTOP ", SSTOP, ", SRUN ", SRUN, ")");
-    kill(shell, SIGCONT);
-    const bool killed = killProcessTree(shell);
-    std::this_thread::sleep_for(200ms);
-    MESSAGE("killProcessTree: ", killed, ", children after: ", childProcesses(shell).size());
-    int status = 0;
-    const pid_t reaped = waitpid(shell, &status, WNOHANG);
-    MESSAGE("reaped: ", reaped == shell, ", signalled ", WIFSIGNALED(status) ? WTERMSIG(status) : 0);
-    for (const int child : children) MESSAGE("child ", child, " still there: ", kill(child, 0) == 0);
-    if (reaped != shell) {
-        kill(shell, SIGKILL);
-        waitpid(shell, &status, 0);
+    std::vector<int> children;
+    for (int i = 0; i < 100 && children.empty(); ++i) {
+        std::this_thread::sleep_for(20ms);
+        children = childProcesses(shell);
     }
-    for (const int child : children) kill(child, SIGKILL);
+    REQUIRE(children.size() == 1);
+    CHECK(killProcessTree(shell));
+    int status = 0;
+    CHECK(waitpid(shell, &status, 0) == shell);
+    CHECK((WIFSIGNALED(status) && WTERMSIG(status) == SIGKILL));
+    // Given to init when the shell ended, and reaped by it.
+    const auto until = std::chrono::steady_clock::now() + 5s;
+    while (kill(children[0], 0) == 0 && std::chrono::steady_clock::now() < until) std::this_thread::sleep_for(20ms);
+    CHECK(kill(children[0], 0) != 0);
+    kill(children[0], SIGKILL);
 }
 #endif
