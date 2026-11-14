@@ -206,10 +206,13 @@ if(FCG_BUILD_GUI)
 
     # SSH for the web page's tunnel: libssh2 (BSD-3-Clause), compiled here with a cryptography backend of our own on
     # Mbed TLS 4's PSA API (gui/libssh2-psa): its released versions do not build with Mbed TLS 4. A commit of its
-    # master branch, the latest when this was written, compiled unmodified.
+    # master branch, the latest when this was written. Patched: a channel's data packets are appended to the one it
+    # holds for the channel, so that what it keeps is about the bytes received, not a block of memory for each packet
+    # however small; data for a channel closed on our side is dropped (see cmake/patch_libssh2.cmake).
     FetchContent_Declare(libssh2
         URL https://github.com/libssh2/libssh2/archive/e75fa9a539d21e82d4920c126662e36984e97d61.tar.gz
         URL_HASH SHA256=3d4fd0016ec56945f911fd223a43d048622f80c4510cdf3e73de6e47a31c3b1b
+        PATCH_COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/patch_libssh2.cmake
         SOURCE_SUBDIR fcg-no-cmake)
     FetchContent_MakeAvailable(libssh2)
 

@@ -40,10 +40,13 @@ constexpr const char* MACS = "hmac-sha2-256-etm@openssh.com,hmac-sha2-256,hmac-s
 // The session's flow: what the server may send before it waits for us, and the largest data packet. A forwarded
 // connection's flow is libssh2's (32 KiB packets, a window of 2 MiB that nothing lets a program change): it is read on
 // every pass, RELAY_READ bytes at a time, whatever the web server takes, so that libssh2 holds for it only what came
-// since the last pass, never a window of tiny packets (each of them a block of its memory, some 80 bytes for one).
+// since the last pass. While a read cannot send the window's adjustment it starts with, what comes waits in libssh2,
+// up to the rest of the window: patched, libssh2 appends a channel's packets to the one it holds for it, so that this
+// costs the bytes, not a block of its memory for each packet (some 116 bytes for one; cmake/patch_libssh2.cmake).
 constexpr unsigned SESSION_WINDOW   = 256 * 1024;
 constexpr unsigned SESSION_MAX_DATA = 32768;
 constexpr std::size_t RELAY_READ    = 16384;
+constexpr std::size_t SESSION_READ  = 16384;
 // Connections relayed at once, those closed on our side that the server did not close yet included: the web server
 // answers 32 at once and tells the next ones to come back. As many more wait their turn, read meanwhile; beyond,
 // they are closed at once (or refused by libssh2, when more than QUEUE come at once).
@@ -58,13 +61,15 @@ constexpr std::size_t RELAY_BUFFER = 64 * 1024;
 // more is let go, alone. A request to the web page is 8 KiB at most.
 constexpr std::size_t VIEWER_BUDGET = 128 * 1024;
 // What libssh2 may take from the server's socket in a pass, at most: however fast the server sends, what it holds for
-// the forwarded connections, read on every pass, is then what came in two passes at most (512 KiB, about 1 MiB of
-// memory in one-byte packets of 36 bytes), besides what comes for a connection closed on our side until the server
-// closes it: what was on its way then.
+// the forwarded connections, read on every pass, is then what came in two passes at most (512 KiB), besides what
+// waits for a read's window adjustment, and what comes for a connection closed on our side until our close is sent
+// (once it is, patched libssh2 drops it).
 constexpr std::size_t RECEIVE_PER_PASS = 256 * 1024;
 // The tunnel's own memory for its viewers: what each connection relayed or waiting may keep (its budget, and one read
-// more), and the web server's answers on their way. libssh2's is counted apart (TUNNEL_MEMORY).
-static_assert((MAX_CHANNELS + QUEUE) * (VIEWER_BUDGET + RELAY_READ) + MAX_CHANNELS * RELAY_BUFFER <= TUNNEL_MEMORY / 2);
+// more), and the web server's answers on their way, each buffer's room taken whole at once (see room()) so that it
+// never takes more. libssh2's is counted apart (TUNNEL_MEMORY).
+constexpr std::size_t LOCAL_ROOM = VIEWER_BUDGET + RELAY_READ;
+static_assert((MAX_CHANNELS + QUEUE) * LOCAL_ROOM + MAX_CHANNELS * RELAY_BUFFER <= TUNNEL_MEMORY / 2);
 // libssh2's interval between keepalives, in seconds: 1 (which it takes as 2), for the one that could not go at once
 // is sent on only after it. The tunnel's own interval, the server's silence, comes first.
 constexpr unsigned KEEPALIVE_RETRY = 1;
@@ -423,8 +428,8 @@ class TunnelConnection {
         LIBSSH2_CHANNEL* channel = nullptr;
         std::unique_ptr<net::Socket> socket;
         bool queued = true;       // waiting its turn: no connection to the web server yet
-        std::string to_local;     // for the web server
-        std::string to_server;    // for the viewer
+        std::string to_local;     // for the web server, LOCAL_ROOM bytes at most
+        std::string to_server;    // for the viewer, RELAY_BUFFER bytes at most
         bool server_eof = false;  // the server sends no more
         bool shut       = false;  // and the web server was told
         bool local_done = false;  // the web server sends no more
@@ -683,7 +688,9 @@ class TunnelConnection {
     // The sockets: until the server's socket or a web server's connection can go on, or 100 ms (none when there is
     // something libssh2 already received and holds for a channel, read on the next pass). A read waiting to send its
     // window's adjustment waits for the server's socket, as a write does; a keepalive under way, for libssh2 to send
-    // it on.
+    // it on. While the server's socket cannot take more, and the last pass read nothing from it though it could be
+    // read, libssh2 reads nothing more before it sent what it has to (its answer to a packet it received): waiting for
+    // the socket to be read would not wait at all, so it waits until it can be written.
     void wait() {
         std::vector<net::Wait> waits;
         int timeout    = 100;
@@ -694,11 +701,15 @@ class TunnelConnection {
             timeout  = static_cast<int>(std::min<int64_t>(
                 timeout, std::chrono::duration_cast<std::chrono::milliseconds>(keepalive_again_ - now).count() + 1));
         }
-        waits.push_back({socket_->handle(), true, outbound});
-        bool ready = false;
+        const bool inbound = !(outbound && socket_readable_ && received_ == 0);
+        waits.push_back({socket_->handle(), inbound, outbound});
+        // An adjustment that could not go goes as soon as it can, before new data.
+        const bool adjusting = adjustmentWaiting();
+        bool ready           = adjusting && !outboundBlocked();
         for (const auto& v : viewers_) {
             ready = ready || (!v->read_pending && !v->server_eof && waiting(v->channel) > 0) ||
-                    (!v->to_server.empty() && !v->write_blocked && libssh2_channel_window_write(v->channel) > 0);
+                    (!v->to_server.empty() && !v->write_blocked && !adjusting &&
+                     libssh2_channel_window_write(v->channel) > 0);
             if (!v->socket) continue;
             waits.push_back(
                 {v->socket->handle(), !v->local_done && v->to_server.size() < RELAY_BUFFER, !v->to_local.empty()});
@@ -706,6 +717,22 @@ class TunnelConnection {
         ready = ready || ((session_state_ == SessionChannel::Shell || session_state_ == SessionChannel::Reading) &&
                           !session_read_pending_ && waiting(session_channel_) > 0);
         net::waitAny(waits, ready ? 0 : timeout);
+        if (inbound) socket_readable_ = waits[0].can_read;
+    }
+
+    // A read of `size` bytes starts with the window's adjustment: libssh2's own test (ssh2_channel_read).
+    static bool adjusts(LIBSSH2_CHANNEL* channel, std::size_t size) {
+        unsigned long initial = 0;
+        const auto window     = libssh2_channel_window_read_ex(channel, nullptr, &initial);
+        return window < initial / 4 * 3 + size;
+    }
+
+    // A read that could not send its window's adjustment: it goes before any new data packet, as libssh2 holds what
+    // comes for the channel meanwhile.
+    bool adjustmentWaiting() const {
+        if (session_read_pending_ && session_channel_ && adjusts(session_channel_, SESSION_READ)) return true;
+        return std::any_of(viewers_.begin(), viewers_.end(),
+                           [](const auto& v) { return v->read_pending && adjusts(v->channel, v->read_room); });
     }
 
     // What libssh2 received for `channel` and holds until it is read.
@@ -959,7 +986,7 @@ class TunnelConnection {
     // What the server prints on the session: the public address is in it.
     bool readSession() {
         bool moved = false;
-        char buffer[16384];
+        char buffer[SESSION_READ];
         while (true) {
             // Called on every pass: a read that could not send its window's adjustment is made again.
             const auto n          = libssh2_channel_read(session_channel_, buffer, sizeof(buffer));
@@ -1040,7 +1067,7 @@ class TunnelConnection {
             if (fd) {
                 v->socket = std::make_unique<net::Socket>(*fd);
             } else {
-                v->to_local.clear();
+                release(v->to_local);
                 v->local_done = true;
             }
         }
@@ -1082,13 +1109,13 @@ class TunnelConnection {
             }
             // Let go, or the web server gone: what comes is dropped.
             if (!v.local_done || v.socket) {
-                v.to_local.append(buffer, static_cast<std::size_t>(n));
+                room(v.to_local, LOCAL_ROOM).append(buffer, static_cast<std::size_t>(n));
                 sendLocal(v);
                 if (v.to_local.size() > VIEWER_BUDGET) {
                     // More than the web server takes, or than a viewer waiting its turn may send: let go, alone.
                     v.socket.reset();
-                    v.to_local.clear();
-                    if (!v.write_blocked) v.to_server.clear();
+                    release(v.to_local);
+                    if (!v.write_blocked) release(v.to_server);
                     v.local_done = true;
                 }
             }
@@ -1103,35 +1130,37 @@ class TunnelConnection {
         // The server closed the channel (not only its side of it): the viewer is gone, the answer goes nowhere.
         if (v.server_eof && !v.local_done && libssh2_channel_wait_closed(v.channel) == 0) {
             v.socket.reset();
-            v.to_local.clear();
-            if (!v.write_blocked) v.to_server.clear();
+            release(v.to_local);
+            if (!v.write_blocked) release(v.to_server);
             v.local_done = true;
             moved        = true;
         }
 
         // From the web server to the viewer.
         if (v.socket && !v.local_done && v.to_server.size() < RELAY_BUFFER) {
-            const auto n = v.socket->receive(v.to_server, RELAY_BUFFER - v.to_server.size());
+            const auto n = v.socket->receive(buffer, std::min(sizeof(buffer), RELAY_BUFFER - v.to_server.size()));
             if (n < 0) {
                 v.local_done = true;  // it answered, and closed
                 moved        = true;
             } else if (n > 0) {
+                room(v.to_server, RELAY_BUFFER).append(buffer, static_cast<std::size_t>(n));
                 moved = true;
             }
         }
-        if (!v.to_server.empty()) {
+        // A packet under way is sent on; a new one waits for the window adjustments that could not go.
+        if (!v.to_server.empty() && (v.write_blocked || !adjustmentWaiting())) {
             const auto n = libssh2_channel_write(v.channel, v.to_server.data(), v.to_server.size());
             // With no window left, nothing was under way.
             v.write_blocked = n == LIBSSH2_ERROR_EAGAIN && libssh2_channel_window_write(v.channel) > 0;
             if (n > 0) {
-                v.to_server.erase(0, static_cast<std::size_t>(n));
+                consume(v.to_server, static_cast<std::size_t>(n));
                 moved = true;
             } else if (n < 0 && n != LIBSSH2_ERROR_EAGAIN) {
                 if (connectionError(static_cast<int>(n))) {
                     failSsh(static_cast<int>(n));
                     return false;
                 }
-                v.to_server.clear();
+                release(v.to_server);
                 v.local_done = true;
             }
         }
@@ -1152,13 +1181,26 @@ class TunnelConnection {
         const auto n = v.socket->send(v.to_local);
         if (n < 0) {
             v.socket.reset();  // the web server went: what it did not take is dropped
-            v.to_local.clear();
+            release(v.to_local);
             v.local_done = true;
             return true;
         }
-        v.to_local.erase(0, static_cast<std::size_t>(n));
+        consume(v.to_local, static_cast<std::size_t>(n));
         return n > 0;
     }
+
+    // A viewer's buffer, which never holds more than `size` bytes: its room taken whole when the first bytes come
+    // (reserved from none, it is exactly that: a string that grows takes up to twice what it holds), and given back
+    // once it is empty.
+    static std::string& room(std::string& buffer, std::size_t size) {
+        if (buffer.capacity() < size) buffer.reserve(size);
+        return buffer;
+    }
+    static void consume(std::string& buffer, std::size_t size) {
+        buffer.erase(0, size);
+        if (buffer.empty()) release(buffer);
+    }
+    static void release(std::string& buffer) { std::string().swap(buffer); }
 
     void startClosing(LIBSSH2_CHANNEL* channel, bool relayed) { closing_.push_back({channel, Clock::now(), relayed}); }
 
@@ -1206,7 +1248,8 @@ class TunnelConnection {
     // What libssh2 told, or holds.
     std::size_t held_     = 0;
     bool over_memory_     = false;
-    std::size_t received_ = 0;  // from the socket, in this pass
+    std::size_t received_ = 0;      // from the socket, in this pass
+    bool socket_readable_ = false;  // the socket could be read, when last asked
     bool socket_closed_   = false;
     bool disconnected_    = false;
     std::string disconnect_reason_;

@@ -49,7 +49,7 @@ A system font (DejaVu Sans or Segoe UI Symbol) is merged in when present, for th
 | ImPlot 1.0 | MIT |
 | nanosvg | zlib |
 | stb_image_write | MIT / public domain |
-| libssh2 (master, e75fa9a), with a cryptography backend for Mbed TLS 4 written for fastchess-gui | BSD-3-Clause, below |
+| libssh2 (master, e75fa9a), modified for the tunnel's memory (see cmake/patch_libssh2.cmake in the sources), with a cryptography backend for Mbed TLS 4 written for fastchess-gui | BSD-3-Clause, below |
 | Mbed TLS 4.1.1 (TLS for lichess, cryptography for the tunnel) | Apache-2.0: [licenses/Apache-2.0.txt](licenses/Apache-2.0.txt) |
 | QR Code generator 1.8.0 by Project Nayuki | MIT, below |
 | tinygettext | zlib, below |

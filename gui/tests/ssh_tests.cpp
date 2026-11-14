@@ -1924,6 +1924,87 @@ TEST_CASE("Tunnel: a viewer's upload while the server does not read costs no pro
     CHECK_MESSAGE(server.error.empty(), server.error);
 }
 
+TEST_CASE("Tunnel: one-byte packets while the server reads nothing: libssh2 holds their bytes, not a block for each") {
+    // Once a viewer's window runs low, its read starts with the window's adjustment, and libssh2 hands nothing over
+    // until that went. While the server reads nothing (the web server's answer fills the connection), a viewer could
+    // send one-byte packets within the rest of its 2 MiB window, which libssh2 kept as a block of memory each: some
+    // 116 bytes for one, 174 MiB, and the session ended. libssh2 now appends such a packet to the one it holds for the
+    // channel (cmake/patch_libssh2.cmake): what it keeps is the bytes, within the 4 MiB allowed here.
+    Sink web(std::string(std::size_t(16) << 20, 'a'), true);
+    std::atomic_bool finished{false};
+    std::atomic<std::size_t> sent{0};
+    std::atomic<uint64_t> unread{0}, adjusted{0};
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        uint32_t window    = 0;
+        const auto channel = forward(server, 200, 0x7FFFFFFF, &window);
+        std::this_thread::sleep_for(500ms);  // the answer fills the connection
+        for (; sent < window; ++sent) server.send(channelData(channel, "u"));
+        // What the web server did not have yet: libssh2 holds it, or the tunnel.
+        unread = sent - web.received;
+        // The server reads again, and the window's adjustment comes.
+        const auto until = std::chrono::steady_clock::now() + 20s;
+        while (std::chrono::steady_clock::now() < until && server.adjusted[200] == 0) server.poll(50ms);
+        adjusted = server.adjusted[200];
+        finished = true;
+    };
+    FakeServer server(SSH_PORT, script);
+    auto settings       = loopback(fingerprint(serverKey().blob));
+    settings.max_memory = 4 << 20;
+    SshTunnel tunnel;
+    tunnel.start(settings);
+    REQUIRE(waitFor([&] { return finished.load() || server.done.load(); }, 90s));
+    MESSAGE(sent.load(), " one-byte packets went, ", unread.load(), " of them held while the server read nothing");
+    const auto status = tunnel.status();
+    CHECK(status.state == TunnelState::OnAir);
+    CHECK_MESSAGE(status.error.empty(), status.error);
+    CHECK(sent == LIBSSH2_CHANNEL_WINDOW_DEFAULT);
+    CHECK(unread > 1000000);  // the adjustment could not go: most of the window waited
+    CHECK(adjusted > 0);
+    tunnel.stop();
+    CHECK(waitFor([&] { return server.done.load(); }));
+    CHECK_MESSAGE(server.error.empty(), server.error);
+}
+
+TEST_CASE("Tunnel: a request of the server's while it reads nothing costs no processor until the answer can go") {
+    // libssh2 reads nothing more until it sent its answer to a request of the server's. While the server read nothing
+    // (the web server's answer fills the connection), what it sent after the request kept the socket readable, and
+    // the tunnel woke at once to read it, again and again, all a processor's time.
+    Sink web(std::string(std::size_t(16) << 20, 'a'), true);
+    std::atomic_bool holding{false}, release{false}, finished{false}, answered{false};
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        const auto channel = forward(server, 200, 0x7FFFFFFF);
+        std::this_thread::sleep_for(500ms);  // the answer fills the connection
+        server.send(Writer().byte(GLOBAL_REQUEST).string("keepalive@openssh.com").boolean(true).take());
+        server.send(channelData(channel, "more"));
+        holding = true;
+        while (!release) std::this_thread::sleep_for(20ms);
+        const auto until = std::chrono::steady_clock::now() + 20s;
+        while (std::chrono::steady_clock::now() < until && !answered) {
+            const auto m = server.poll(50ms);
+            answered     = m && (*m)[0] == REQUEST_FAILURE;
+        }
+        finished = true;
+    };
+    FakeServer server(SSH_PORT, script);
+    SshTunnel tunnel;
+    tunnel.start(loopback(fingerprint(serverKey().blob)));
+    REQUIRE(waitFor([&] { return holding.load() || server.done.load(); }));
+    std::this_thread::sleep_for(100ms);
+    const auto cpu_before = ownCpuMs();
+    std::this_thread::sleep_for(1000ms);
+    const auto cpu_used = ownCpuMs() - cpu_before;
+    release             = true;
+    CHECK_MESSAGE(cpu_used < 300, cpu_used, " ms of processor time in one second");
+    CHECK(waitFor([&] { return finished.load() || server.done.load(); }, 30s));
+    CHECK(answered);
+    CHECK(tunnel.status().state == TunnelState::OnAir);
+    tunnel.stop();
+    CHECK(waitFor([&] { return server.done.load(); }));
+    CHECK_MESSAGE(server.error.empty(), server.error);
+}
+
 TEST_CASE("Tunnel: a keepalive that went in part is sent on, though the server talks again") {
     // libssh2 sends the rest of a keepalive only from the call that sends one, and nothing else meanwhile. The tunnel
     // made that call only while the server was silent: once it talked again, nothing went until it was silent for as
