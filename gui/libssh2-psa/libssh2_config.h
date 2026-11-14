@@ -1,5 +1,5 @@
-/* libssh2's build configuration (HAVE_CONFIG_H), for the two platforms fastchess-gui is built for: Linux with glibc,
- * and Windows with mingw-w64. Written by hand: libssh2 is compiled by our CMake, not by its own.
+/* libssh2's build configuration (HAVE_CONFIG_H), for the platforms fastchess-gui is built for: Linux with glibc,
+ * macOS, and Windows with mingw-w64. Written by hand: libssh2 is compiled by our CMake, not by its own.
  *
  * It also brings in the cryptography: libssh2 is built with LIBSSH2_MBEDTLS, its own mbedtls.h left out (its include
  * guard, LIBSSH2_MBEDTLS_H, is defined on the command line), and mbedtls_psa.h in its place, which needs Mbed TLS 4
@@ -23,7 +23,7 @@
 #  define HAVE_UNISTD_H
 #  define HAVE_INTTYPES_H
 /* Non-blocking sockets through ioctlsocket(), libssh2's default on Windows. */
-#else
+#else /* Linux and macOS */
 #  define HAVE_UNISTD_H
 #  define HAVE_INTTYPES_H
 #  define HAVE_SYS_SELECT_H

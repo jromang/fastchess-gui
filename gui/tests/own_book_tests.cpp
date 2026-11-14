@@ -13,12 +13,9 @@
 #include <tour/pgn_book.hpp>
 
 #include "../../tournament/tests/polyglot_writer.hpp"
+#include "../../tournament/tests/self_path.hpp"
 #include "book_jobs.hpp"
 #include "run.hpp"
-
-#ifdef _WIN32
-#    include <windows.h>
-#endif
 
 using namespace fcg;
 namespace fs = std::filesystem;
@@ -26,15 +23,7 @@ using namespace std::chrono_literals;
 
 namespace {
 
-fs::path self() {
-#ifdef _WIN32
-    char buffer[MAX_PATH];
-    const auto n = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-    return fs::path(std::string(buffer, n));
-#else
-    return fs::read_symlink("/proc/self/exe");
-#endif
-}
+fs::path self() { return fcg::test::selfPath(); }
 
 OwnBook ownBook(const std::string& path, const std::string& name, int depth = 0) {
     OwnBook book;

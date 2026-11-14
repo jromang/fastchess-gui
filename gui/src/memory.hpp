@@ -20,7 +20,8 @@ struct SystemMemory {
     uint64_t available_mb = 0;
 };
 
-// Asks the system (/proc/meminfo on Linux, GlobalMemoryStatusEx on Windows); nullopt when it cannot tell.
+// Asks the system (/proc/meminfo on Linux, GlobalMemoryStatusEx on Windows, sysctl and the Mach host statistics on
+// macOS); nullopt when it cannot tell.
 [[nodiscard]] std::optional<SystemMemory> systemMemory();
 
 // "512 MB", "1.5 GB".

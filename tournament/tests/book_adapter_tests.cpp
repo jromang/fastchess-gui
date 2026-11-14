@@ -21,6 +21,7 @@
 #include <tour/runner.hpp>
 
 #include "polyglot_writer.hpp"
+#include "self_path.hpp"
 
 #ifdef _WIN32
 #    include <windows.h>
@@ -34,15 +35,7 @@ using namespace std::chrono_literals;
 
 namespace {
 
-fs::path self() {
-#ifdef _WIN32
-    char buffer[MAX_PATH];
-    const auto n = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-    return fs::path(std::string(buffer, n));
-#else
-    return fs::read_symlink("/proc/self/exe");
-#endif
-}
+fs::path self() { return fcg::test::selfPath(); }
 
 // A book of a few lines: 1. e4 (3) or d4 (1); after 1. e4 e5, 2. Nf3; castling short after the Italian.
 fs::path smallBook() {

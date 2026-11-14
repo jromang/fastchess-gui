@@ -867,13 +867,13 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     setup.limit        = LimitKind::Time;
     setup.tc_margin_ms = 0;
 
-    // Affinity is off by default; a multi-threaded engine turns it off when asked.
+    // Affinity is off by default; a multi-threaded engine turns it off when asked. macOS has none.
     CHECK_FALSE(buildRun(setup, engines, topology, dir).tournament.affinity);
     setup.affinity     = true;
     engines[0].options = {{"Threads", "4"}};
     CHECK_FALSE(buildRun(setup, engines, topology, dir).tournament.affinity);
     engines[0].options.clear();
-    CHECK(buildRun(setup, engines, topology, dir).tournament.affinity);
+    CHECK(buildRun(setup, engines, topology, dir).tournament.affinity == AFFINITY_SUPPORTED);
 
     setup.engine_b = "missing";
     CHECK_THROWS((void)buildRun(setup, engines, topology, dir));

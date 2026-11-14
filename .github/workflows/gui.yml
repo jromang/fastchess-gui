@@ -201,10 +201,63 @@ jobs:
       - name: Tournament layer tests
         run: bin\fcg-tournament-tests.exe
 
+  macos:
+    name: macOS build and tests
+    # Apple silicon. The programs are universal (arm64 and x86_64), for macOS 11 and later.
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Ninja
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+        run: command -v ninja || brew install ninja
+
+      - name: Configure
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Universal binaries
+        run: |
+          for program in build/fastchess-gui.app/Contents/MacOS/fastchess-gui build/fastchess; do
+            echo "${program}: $(lipo -archs "${program}"), $(vtool -show-build "${program}" | grep -m1 minos)"
+            lipo "${program}" -verify_arch arm64 x86_64
+          done
+
+      - name: GUI tests
+        run: ./build/fastchess-gui-tests
+
+      - name: Tournament layer tests
+        run: ./build/fcg-tournament-tests
+
+      - name: Package
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then version="${GITHUB_REF_NAME}"; else version="${GITHUB_SHA::7}"; fi
+          macos="fastchess-gui-${version}-macos-universal"
+          mkdir -p "dist/${macos}"
+          cp -R build/fastchess-gui.app build/fastchess "dist/${macos}/"
+          cp README.md LICENSE docs/guide.md gui/assets/ATTRIBUTION.md "dist/${macos}/"
+          cp -R gui/assets/licenses "dist/${macos}/"
+          # Not signed by a developer (that needs an Apple Developer account): signed ad hoc, the whole bundle
+          # sealed, which Apple silicon requires. Gatekeeper still asks, at the first start, to allow it.
+          codesign --force --deep --sign - "dist/${macos}/fastchess-gui.app"
+          codesign --force --sign - "dist/${macos}/fastchess"
+          codesign --verify --deep --strict "dist/${macos}/fastchess-gui.app"
+          # ditto keeps the bundle as it is: permissions, signature, extended attributes.
+          ditto -c -k --keepParent "dist/${macos}" "dist/${macos}.zip"
+          ls -l dist
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: macos
+          path: dist/*.zip
+
   release:
     name: Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [linux, windows-build, windows-tests]
+    needs: [linux, windows-build, windows-tests, macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -234,6 +287,9 @@ jobs:
           cp ${docs} "dist/${windows}/"
           cp -r gui/assets/licenses "dist/${windows}/"
           (cd dist && zip -qr "${windows}.zip" "${windows}")
+
+          # Packaged on the Mac, the application bundle signed there.
+          cp "artifacts/macos/fastchess-gui-${version}-macos-universal.zip" dist/
 
           (cd dist && sha256sum *.tar.gz *.zip > SHA256SUMS.txt)
           ls -l dist

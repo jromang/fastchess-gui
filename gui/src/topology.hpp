@@ -18,6 +18,14 @@ struct CpuTopology {
     }
 };
 
+// Whether a game can be pinned to a processor (CPU affinity): not on macOS, which has no such thing, and where
+// fastchess ignores it. The setting is hidden there, and never given to a tournament.
+#ifdef __APPLE__
+inline constexpr bool AFFINITY_SUPPORTED = false;
+#else
+inline constexpr bool AFFINITY_SUPPORTED = true;
+#endif
+
 // Builds a topology from (package id, core id) pairs, one per logical processor.
 [[nodiscard]] CpuTopology topologyFromCores(const std::vector<std::pair<int, int>>& package_core);
 

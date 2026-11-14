@@ -20,6 +20,8 @@
 
 #include <tour/runner.hpp>
 
+#include "self_path.hpp"
+
 #ifdef _WIN32
 #    include <windows.h>
 #else
@@ -32,16 +34,7 @@ using namespace std::chrono_literals;
 
 namespace {
 
-std::string randomMover() {
-#ifdef _WIN32
-    char buffer[MAX_PATH];
-    const auto n = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
-    const fs::path self(std::string(buffer, n));
-#else
-    const fs::path self = fs::read_symlink("/proc/self/exe");
-#endif
-    return (self.parent_path() / FCG_RANDOM_MOVER).string();
-}
+std::string randomMover() { return (fcg::test::selfPath().parent_path() / FCG_RANDOM_MOVER).string(); }
 
 TournamentSpec spec(Format format, int players, int cycles, uint64_t max_games = 0) {
     TournamentSpec s;

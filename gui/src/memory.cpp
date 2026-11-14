@@ -6,6 +6,11 @@
 
 #ifdef _WIN32
 #    include <windows.h>
+#elif defined(__APPLE__)
+#    include <mach/mach.h>
+#    include <mach/vm_page_size.h>
+#    include <sys/sysctl.h>
+#    include <sys/types.h>
 #else
 #    include <fstream>
 #    include <sstream>
@@ -59,6 +64,20 @@ std::optional<SystemMemory> readSystemMemory() {
     status.dwLength = sizeof(status);
     if (!GlobalMemoryStatusEx(&status)) return std::nullopt;
     return SystemMemory{status.ullTotalPhys >> 20, status.ullAvailPhys >> 20};
+#elif defined(__APPLE__)
+    uint64_t total     = 0;
+    std::size_t length = sizeof(total);
+    if (sysctlbyname("hw.memsize", &total, &length, nullptr, 0) != 0 || total == 0) return std::nullopt;
+    // Available: the free pages, and those the system takes back at once (inactive, speculative), as the kernel
+    // counts them, in its own page size.
+    vm_statistics64_data_t vm{};
+    mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
+    const mach_port_t host       = mach_host_self();
+    const auto status = host_statistics64(host, HOST_VM_INFO64, reinterpret_cast<host_info64_t>(&vm), &count);
+    mach_port_deallocate(mach_task_self(), host);
+    if (status != KERN_SUCCESS) return std::nullopt;
+    const uint64_t pages = static_cast<uint64_t>(vm.free_count) + vm.inactive_count + vm.speculative_count;
+    return SystemMemory{total >> 20, std::min<uint64_t>(pages * vm_kernel_page_size, total) >> 20};
 #else
     std::ifstream in("/proc/meminfo");
     SystemMemory memory;
@@ -183,7 +202,7 @@ MemoryNeed setupMemory(const MatchSetup& setup, const std::vector<EngineEntry>& 
     const int concurrency =
         std::clamp(setup.concurrency_auto ? topology.defaultConcurrency(clockFree(setup.limit)) : setup.concurrency, 1,
                    std::max(1, topology.logical));
-    auto need   = hashMemory(setupHashes(setup, engines), concurrency, setup.affinity);
+    auto need   = hashMemory(setupHashes(setup, engines), concurrency, AFFINITY_SUPPORTED && setup.affinity);
     need.system = systemMemory();
     return need;
 }

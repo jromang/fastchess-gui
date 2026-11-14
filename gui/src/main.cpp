@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -14,6 +15,8 @@
 
 #ifdef _WIN32
 #    include <windows.h>
+#elif defined(__APPLE__)
+#    include <mach-o/dyld.h>
 #endif
 
 #include <imgui.h>
@@ -162,6 +165,10 @@ void loadFonts(float size) {
 
 #ifdef _WIN32
     const char* symbol_fonts[] = {"C:\\Windows\\Fonts\\seguisym.ttf", "C:\\Windows\\Fonts\\segoeui.ttf"};
+#elif defined(__APPLE__)
+    const char* symbol_fonts[] = {"/System/Library/Fonts/Apple Symbols.ttf",
+                                  "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+                                  "/Library/Fonts/Arial Unicode.ttf"};
 #else
     const char* symbol_fonts[] = {"/usr/share/fonts/TTF/DejaVuSans.ttf",
                                   "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
@@ -201,6 +208,17 @@ std::string selfPath(const char* argv0) {
     char buffer[MAX_PATH];
     const DWORD n = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
     if (n > 0 && n < MAX_PATH) return std::string(buffer, n);
+#elif defined(__APPLE__)
+    // Inside the application bundle: Contents/MacOS/fastchess-gui (SDL_GetBasePath() is Contents/Resources).
+    uint32_t size = 0;
+    _NSGetExecutablePath(nullptr, &size);
+    std::string buffer(size, '\0');
+    if (size > 0 && _NSGetExecutablePath(buffer.data(), &size) == 0) {
+        buffer.resize(std::strlen(buffer.c_str()));
+        std::error_code ec;
+        const auto exe = fs::canonical(buffer, ec);
+        return ec ? buffer : exe.string();
+    }
 #else
     std::error_code ec;
     const auto exe = fs::read_symlink("/proc/self/exe", ec);
@@ -262,16 +280,21 @@ int main(int argc, char** argv) {
         return fcg::runHeadless(args.run, storage, fcg::detectTopology(), broadcast);
     }
 
-#ifndef _WIN32
+#if !defined(_WIN32) && !defined(__APPLE__)
     // Scripted screenshots render off screen (EGL), so no window shows up on the desktop. SDL_VIDEODRIVER still
-    // overrides it.
+    // overrides it. macOS has no EGL: its screenshots are taken in a window.
     if (!args.shots.empty() && !std::getenv("SDL_VIDEODRIVER")) SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "offscreen");
 #endif
     if (!SDL_Init(SDL_INIT_VIDEO)) return fatal("SDL_Init");
     // Until the setup's language is known (App reads it), startup failures speak the system's.
     fcg::i18n::setLanguage(fcg::i18n::systemLanguage());
 
+#ifdef __APPLE__
+    // macOS gives a 3.2 core context (up to 4.1) only to a program that asks for a forward-compatible one.
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+#else
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+#endif
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
@@ -305,6 +328,7 @@ int main(int argc, char** argv) {
         SDL_CreateWindow("fastchess-gui", width, height,
                          SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!window) return fatal("SDL_CreateWindow");
+#ifndef __APPLE__  // macOS shows the bundle's (gui/mac/fastchess-gui.icns), with the margin of the system's icons
     {
         // The window's icon, with a larger image for high densities and the task switcher.
         auto small = fcg::logo::icon(64), large = fcg::logo::icon(256);
@@ -315,6 +339,7 @@ int main(int argc, char** argv) {
         SDL_DestroySurface(hd);
         SDL_DestroySurface(icon);
     }
+#endif
 
     SDL_GLContext gl_context = SDL_GL_CreateContext(window);
     if (!gl_context) return fatal(TR("OpenGL 3.2 is not available (SDL_GL_CreateContext)"));
