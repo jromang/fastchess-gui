@@ -3,28 +3,41 @@
 # packet of one byte. Before a read hands anything over, it sends the channel's window adjustment when the window runs
 # low, and while that cannot go (the connection to the server full), the server may still send up to the rest of the
 # window, 2 MiB: in one-byte packets from a viewer, 174 MiB, far past what the tunnel lets the session hold (32 MiB),
-# and the session ended. Patched (src/packet.c, src/libssh2_priv.h), with the reasons in comments there:
+# and the session ended. Patched (src/packet.c, src/libssh2_priv.h, include/libssh2.h), with the reasons in comments
+# there:
 #  - a data packet is appended to the last one queued for its channel when that one is of the same kind and both fit
 #    in 16 KiB, so that what libssh2 holds for a channel is about the bytes it received, however they were cut;
-#  - data that comes for a channel after its CLOSE was sent is dropped: nothing reads it any more, and libssh2 kept it
-#    until the channel was freed;
-#  - a connection the server forwards (forwarded-tcpip) is given a window of 128 KiB instead of
-#    LIBSSH2_CHANNEL_WINDOW_DEFAULT (2 MiB, which nothing lets a program change): what libssh2 may hold for it while
-#    its reads cannot send their adjustment. With 2 MiB, 24 viewers sending their window in large packets meanwhile
-#    ended the session. With 128 KiB, a connection costs 180 KiB of libssh2's memory at most (144 KiB of data, a
-#    read's adjustment included, 13 % more for its packets, and a packet read in part), so that the 80 the tunnel
-#    keeps (40 relayed, 40 waiting) and 80 more being closed fit in the session's 32 MiB. A viewer sends a request of
-#    8 KiB at most.
-# Otherwise the window accounting is libssh2's, unchanged. The patch can run again (on sources patched already, it
-# changes nothing), and fails the configuration if libssh2's code is no longer the one expected.
+#  - a connection the server forwards (forwarded-tcpip) is given a window of FCG_LIBSSH2_FORWARD_WINDOW, 128 KiB,
+#    instead of LIBSSH2_CHANNEL_WINDOW_DEFAULT (2 MiB, which nothing lets a program change): what libssh2 may hold for
+#    it while its reads cannot send their adjustment. With 2 MiB, 24 viewers sending their window in large packets
+#    meanwhile ended the session; the tunnel checks at compile time that all it may hold fits (ssh_tunnel.cpp). A
+#    viewer sends a request of 8 KiB at most.
+#  - include/libssh2.h says so: FCG_LIBSSH2_PATCHLEVEL, which the tunnel requires, so that sources not patched (an
+#    override of FETCHCONTENT_SOURCE_DIR_LIBSSH2) or patched by an older version of this script fail to compile.
+# Otherwise the window accounting is libssh2's, unchanged.
+#
+# FetchContent runs a patch again on the sources already there, when its command changes (the command has this
+# script's hash, CMakeLists.txt): each file is patched from the original kept beside it (.fcg-orig), never twice. The
+# configuration fails if libssh2's code is no longer the one expected.
+set(FILES src/packet.c src/libssh2_priv.h include/libssh2.h)
+foreach(file ${FILES})
+    if(EXISTS ${file}.fcg-orig)
+        configure_file(${file}.fcg-orig ${file} COPYONLY)
+    else()
+        file(READ ${file} text)
+        string(FIND "${text}" "fastchess-gui" patched)
+        if(NOT patched EQUAL -1)
+            message(FATAL_ERROR "patch_libssh2.cmake: ${CMAKE_CURRENT_SOURCE_DIR}/${file} was patched by an older "
+                                "version of this script, which did not keep the original: delete the libssh2 "
+                                "directories in the build tree's _deps and configure again")
+        endif()
+        configure_file(${file} ${file}.fcg-orig COPYONLY)
+    endif()
+endforeach()
 
-# Replaces `original` by `patched` in `file`, once; nothing when `patched` is there already.
+# Replaces `original` by `patched` in `file`; `original` must be there, once.
 function(patch file original patched)
     file(READ ${file} text)
-    string(FIND "${text}" "${patched}" done)
-    if(NOT done EQUAL -1)
-        return()
-    endif()
     string(FIND "${text}" "${original}" first)
     string(FIND "${text}" "${original}" last REVERSE)
     if(first EQUAL -1 OR NOT first EQUAL last)
@@ -33,6 +46,20 @@ function(patch file original patched)
     string(REPLACE "${original}" "${patched}" text "${text}")
     file(WRITE ${file} "${text}")
 endfunction()
+
+# What the tunnel checks, and the window it is given.
+patch(include/libssh2.h [=[
+#ifndef LIBSSH2_H
+#define LIBSSH2_H 1
+]=] [=[
+#ifndef LIBSSH2_H
+#define LIBSSH2_H 1
+
+/* fastchess-gui: patched by its cmake/patch_libssh2.cmake, at this level,
+   with this window for the connections a server forwards */
+#define FCG_LIBSSH2_PATCHLEVEL 2
+#define FCG_LIBSSH2_FORWARD_WINDOW (128 * 1024)
+]=])
 
 # The size of a queued packet's allocation, which a merge may leave larger than its data.
 patch(src/libssh2_priv.h [=[
@@ -129,36 +156,6 @@ static int fcg_merge_data(LIBSSH2_SESSION *session, LIBSSH2_CHANNEL *channelp,
 ]=])
 
 patch(src/packet.c [=[
-            if(!channelp) {
-                ssh2_err(session, LIBSSH2_ERROR_CHANNEL_UNKNOWN,
-                         "Packet received for unknown channel");
-                SSH2_FREE(session, data);
-                session->packAdd_state = ssh2_NB_state_idle;
-                return 0;
-            }
-#ifdef LIBSSH2DEBUG
-]=] [=[
-            if(!channelp) {
-                ssh2_err(session, LIBSSH2_ERROR_CHANNEL_UNKNOWN,
-                         "Packet received for unknown channel");
-                SSH2_FREE(session, data);
-                session->packAdd_state = ssh2_NB_state_idle;
-                return 0;
-            }
-            /* fastchess-gui: dropped, for a channel whose CLOSE was sent:
-               nothing reads it any more (a program closes a channel it is done
-               with), and it was kept until the channel was freed. Nor is the
-               window adjusted for it below (ignored extended data). */
-            if(channelp->local.close ||
-               channelp->close_state == ssh2_NB_state_sent) {
-                SSH2_FREE(session, data);
-                session->packAdd_state = ssh2_NB_state_idle;
-                return 0;
-            }
-#ifdef LIBSSH2DEBUG
-]=])
-
-patch(src/packet.c [=[
             ssh2_deb((session, LIBSSH2_TRACE_CONN,
                       "increasing read_avail by %ld bytes to %ld/%u",
                       (long)(datalen - data_head),
@@ -202,11 +199,13 @@ patch(src/packet.c [=[
                         LIBSSH2_CHANNEL_WINDOW_DEFAULT;
 ]=] [=[
                     channel->remote.id = listen_state->sender_channel;
-                    /* fastchess-gui: 128 KiB, not LIBSSH2_CHANNEL_WINDOW_DEFAULT
-                       (2 MiB), for what the server may send on a forwarded
-                       connection before it is read: what libssh2 holds for it
-                       while a read cannot send its window adjustment, for
-                       each of the many a public web page has */
-                    channel->remote.window_size_initial = 128 * 1024;
-                    channel->remote.window_size = 128 * 1024;
+                    /* fastchess-gui: FCG_LIBSSH2_FORWARD_WINDOW (128 KiB), not
+                       LIBSSH2_CHANNEL_WINDOW_DEFAULT (2 MiB), for what the
+                       server may send on a forwarded connection before it is
+                       read: what libssh2 holds for it while a read cannot send
+                       its window adjustment, for each of the many a public web
+                       page has */
+                    channel->remote.window_size_initial =
+                        FCG_LIBSSH2_FORWARD_WINDOW;
+                    channel->remote.window_size = FCG_LIBSSH2_FORWARD_WINDOW;
 ]=])

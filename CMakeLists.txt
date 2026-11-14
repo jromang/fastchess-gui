@@ -188,11 +188,21 @@ if(FCG_BUILD_GUI)
     # so MakeAvailable only downloads them.
     FetchContent_MakeAvailable(sdl3 imgui implot nanosvg stb inter lucide)
 
+    # The patches below are run by FetchContent once after the download, and again on the same sources whenever their
+    # command changes, never otherwise: the command has the script's hash, so that a script changed is run again, and
+    # the configuration runs again when one changes. Each script can run on sources it patched already.
+    foreach(patch mbedtls libssh2)
+        set(script ${CMAKE_CURRENT_SOURCE_DIR}/cmake/patch_${patch}.cmake)
+        file(SHA256 ${script} hash)
+        set(FCG_PATCH_${patch} ${CMAKE_COMMAND} -DFCG_PATCH_SHA256=${hash} -P ${script})
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${script})
+    endforeach()
+
     # TLS for the lichess broadcasts: Mbed TLS (long term support branch), static, its libraries only.
     FetchContent_Declare(mbedtls
         URL https://github.com/Mbed-TLS/mbedtls/releases/download/mbedtls-4.1.1/mbedtls-4.1.1.tar.bz2
         URL_HASH SHA256=3359a349e23db3d5536fcee032ae7b2ecbfc08972fab643089b5cbf2a375c98c
-        PATCH_COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/patch_mbedtls.cmake)
+        PATCH_COMMAND ${FCG_PATCH_mbedtls})
     set(ENABLE_PROGRAMS OFF CACHE BOOL "" FORCE)
     set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
     set(MBEDTLS_FATAL_WARNINGS OFF CACHE BOOL "" FORCE)
@@ -208,12 +218,13 @@ if(FCG_BUILD_GUI)
     # Mbed TLS 4's PSA API (gui/libssh2-psa): its released versions do not build with Mbed TLS 4. A commit of its
     # master branch, the latest when this was written. Patched: a channel's data packets are appended to the one it
     # holds for the channel, so that what it keeps is about the bytes received, not a block of memory for each packet
-    # however small; data for a channel closed on our side is dropped; a forwarded connection's window, which bounds
-    # what each viewer makes it hold, is 128 KiB instead of 2 MiB (see cmake/patch_libssh2.cmake).
+    # however small; a forwarded connection's window, which bounds what each viewer makes it hold, is 128 KiB instead
+    # of 2 MiB (see cmake/patch_libssh2.cmake). The tunnel does not compile with libssh2's sources not patched so
+    # (FETCHCONTENT_SOURCE_DIR_LIBSSH2 included).
     FetchContent_Declare(libssh2
         URL https://github.com/libssh2/libssh2/archive/e75fa9a539d21e82d4920c126662e36984e97d61.tar.gz
         URL_HASH SHA256=3d4fd0016ec56945f911fd223a43d048622f80c4510cdf3e73de6e47a31c3b1b
-        PATCH_COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/patch_libssh2.cmake
+        PATCH_COMMAND ${FCG_PATCH_libssh2}
         SOURCE_SUBDIR fcg-no-cmake)
     FetchContent_MakeAvailable(libssh2)
 
