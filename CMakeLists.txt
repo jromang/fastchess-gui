@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.24)
 # project(), where CMake reads it; nothing elsewhere. A universal binary: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64".
 set(CMAKE_OSX_DEPLOYMENT_TARGET "13.3" CACHE STRING "The oldest macOS version the programs run on")
 
-project(fastchess_gui VERSION 0.5.8 LANGUAGES C CXX)
+project(fastchess_gui VERSION 0.5.9 LANGUAGES C CXX)
 
 option(FCG_BUILD_GUI "Build the fastchess-gui desktop application" ON)
 option(FCG_BUILD_TESTS "Build the fastchess-gui unit tests" ON)
