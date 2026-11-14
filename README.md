@@ -30,8 +30,10 @@ this repository still builds unchanged.
   void them, with the impact shown first. No played game is lost.
 - **Broadcast**: live PGN, HTML standings and JSON files, a TLCS server for TLCV and other viewers, a built-in
   web page, and lichess broadcasts (pushed through the API with a personal token).
-- **Workflow**: a queue of tournaments, *Relaunch with…* a new engine version, templates, and a headless mode
-  (`fastchess-gui --run`) for servers, which can broadcast too.
+- **Workflow**: named profiles for each part of the setup (time control, openings, adjudication, format, engine
+  settings) with presets for the usual rating list and fishtest conditions, templates made of them, the engine
+  library beside the participants (double-click, drag, groups), a queue of tournaments, *Relaunch with…* a new
+  engine version, and a headless mode (`fastchess-gui --run`) for servers, which can broadcast too.
 - **Ratings** over every tournament played (and imported PGN files), by time control, group or period, anchored on a
   reference Elo; an engine's card (results, health, rating over time), head to head records, the progress of an
   engine's versions, an export for Ordo and BayesElo.
@@ -123,13 +125,14 @@ make -C app tests && ./app/fastchess-tests     # upstream fastchess tests, run f
 
 1. **Engines**: *Add…* a UCI executable, or *Import…* the engine list of another program. Options are read
    automatically. *Duplicate* gives the same binary with other options (`Hash`, `Threads`, a skill level…).
-2. **Tournaments → New tournament**: the format (a two-engine match, round robin, gauntlet, Swiss, knockout), the
-   engines, the time control, concurrency, the opening book and adjudication. For a match, engine A is the one
+2. **Tournaments → New tournament**: a profile for the format (a two-engine match, round robin, gauntlet, Swiss,
+   knockout), the time control, the openings, the adjudication and the engine settings, each changed in place
+   with ✎; then the engines, double-clicked in the library beside the participants. For a match, engine A is the one
    being tested (statistics are from its point of view) and engine B the baseline.
 3. **Start**, or *Add to the queue*.
 
 Everything is stored in the profile folder (`~/.local/share/fastchess/fastchess-gui/` on Linux,
-`%APPDATA%\fastchess\fastchess-gui\` on Windows): the engine library, the last setup, templates, the queue,
+`%APPDATA%\fastchess\fastchess-gui\` on Windows): the engine library, the last setup, profiles, templates, the queue,
 and one folder per tournament under `runs/` with its description, its journal and both PGN files.
 
 The [user guide](docs/guide.md) covers every setting, window and file in detail.

@@ -387,21 +387,36 @@ class App {
 
     // setup sections
     void setupFormat();
+    // The participants, seeds first, each on a line wide enough for its name, with its reference Elo, what it plays
+    // differently from the common settings, and ⋯ for its own settings. Ctrl and Shift select several; a drag moves
+    // them; Delete removes them, Ctrl+Up and Ctrl+Down send them to the top or the bottom, Alt+Up and Alt+Down move
+    // them by one.
     void setupParticipants();
-    // "Add an engine…": the library's engines with their reference Elo, sorted and filtered by it, opponents
-    // suggested around the first participant's. True when engines were added to `list`.
-    bool participantPicker(std::vector<ParticipantSetup>& list);
-    struct ParticipantPicker {
+    ImGuiSelectionBasicStorage participants_selected_;  // by index
+    bool participants_focused_ = false;  // a participant had the keyboard at the last frame: the keys above apply
+    int participant_menu_      = -1;     // the participant whose ⋯ menu opens on the next frame
+    // A participant's own settings, its ⋯ menu: Hash, Threads, nodes or depth, time odds, its own book; then moves.
+    enum class ParticipantAction { None, Again, Top, Up, Down, Remove };
+    ParticipantAction participantMenu(ParticipantSetup& p, int index, bool open_book, bool& changed);
+    // The library beside the participants (or beside A and B of a match): searched by name, group and notes, a group
+    // chosen with its chip, sorted by name or reference Elo, the engines with a problem marked. Double-click or Enter
+    // adds the engines selected (Ctrl and Shift select several), a drag drops them at a place in the participants;
+    // opponents suggested around the first participant's rating. True when the setup changed.
+    bool participantPicker();
+    struct EngineLibrary {
         std::string search;
-        int elo_min = 0, elo_max = 0;  // reference Elo shown, 0: no bound
-        bool works_only = false;
-        std::set<std::string> ticked;
-        int suggest = 8;      // opponents to suggest
-        int range   = 150;    // Elo, around the first participant's
-        std::string message;  // what the last suggestion found
-    } picker_;
-    int open_picker_ = 0;  // --focus setup-picker: 1 the picker opens, 2 with opponents suggested
-    int selected_participant_ = -1;  // clicked in the list, for Ctrl+Up and Ctrl+Down
+        std::string group;                    // the group whose chip is on, empty: every engine
+        ImGuiSelectionBasicStorage selected;  // by ImHashStr of the engine's name
+        bool focused = false;                 // one of its engines had the keyboard at the last frame: Enter adds
+        int suggest  = 8;                     // opponents to suggest
+        int range    = 150;                   // Elo, around the first participant's
+        std::string message;                  // what the last suggestion found
+    } library_;
+    std::vector<std::string> library_drag_;  // the engines being dragged from the library to the participants
+    float players_list_h_ = 0;               // the height of the participants' and the library's lists
+    // Library engines added: A then B of a match, before participant `at` otherwise (-1: at the end).
+    bool addParticipants(const std::vector<std::string>& names, int at = -1);
+    int open_picker_ = 0;  // --focus setup-picker: 1 the library's search focused, 2 with opponents suggested
     // A participant's own book: a small button ("—", or the book's name) that opens the choice of the library's
     // Polyglot books and of the depth. True when `book` changed; `again` (when given) is set when the user asked
     // for the engine once more, with another book.

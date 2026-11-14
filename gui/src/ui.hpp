@@ -72,6 +72,7 @@ enum class Icon {
     Quit,
     Pencil,  // edit in place
     More,    // ⋯: a menu of what else can be done
+    Star,    // a seed
 };
 
 // Draws `icon` centred on `center`, `size` pixels wide, in `col`.

@@ -297,14 +297,17 @@ bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again,
             changed = true;
         }
         ImGui::EndDisabled();
-        ImGui::TextDisabled("%s", TR("Plies from the start of the game, the tournament's opening included."));
-        if (pgn) {
-            ImGui::TextDisabled("%s", trf("A PGN book plays the moves of its games, as often as they play them; "
-                                          "\"all\" is their first {} plies.",
-                                          tour::PGN_BOOK_ALL_PLIES)
-                                          .c_str());
+        // What the depth counts, at the cursor rather than in grey lines under it.
+        {
+            std::string depth_help = TR("Plies from the start of the game, the tournament's opening included.");
+            if (pgn) {
+                depth_help += "\n" + trf("A PGN book plays the moves of its games, as often as they play them; "
+                                         "\"all\" is their first {} plies.",
+                                         tour::PGN_BOOK_ALL_PLIES);
+            }
+            depth_help += "\n" + std::string(TR("Its book moves are played at once, without a search."));
+            itemHelp(depth_help);
         }
-        ImGui::TextDisabled("%s", TR("Its book moves are played at once, without a search."));
 
         if (again) {
             ImGui::Separator();
@@ -338,14 +341,40 @@ void App::drawSetup(bool two_columns, bool with_summary) {
     drawSetupRows();
     ui::endCard();
     ImGui::Spacing();
-    (void)two_columns;
-    ui::beginCard("players_card");
-    if (setup_.format == TournamentFormat::Match) {
-        setupEngines();
+
+    // Who plays, the library beside them on a wide window, under them otherwise. Both lists as tall as the
+    // participants need, within reason.
+    const bool match = setup_.format == TournamentFormat::Match;
+    const float row  = ImGui::GetFrameHeight();
+    players_list_h_ =
+        std::clamp((static_cast<float>(match ? 0 : setup_.participants.size()) + 1.5f) * row, px(240), px(480));
+    const auto players = [&] {
+        ui::beginCard("players_card");
+        if (match)
+            setupEngines();
+        else
+            setupParticipants();
+        ui::endCard();
+    };
+    const auto library = [&] {
+        ui::beginCard("library_card");
+        participantPicker();
+        ui::endCard();
+    };
+    if (two_columns && ImGui::BeginTable("##players", 2, ImGuiTableFlags_SizingStretchProp)) {
+        // The names need the room: the participants a little wider than the library.
+        ImGui::TableSetupColumn("players", ImGuiTableColumnFlags_WidthStretch, 1.15f);
+        ImGui::TableSetupColumn("library", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+        ImGui::TableNextColumn();
+        players();
+        ImGui::TableNextColumn();
+        library();
+        ImGui::EndTable();
     } else {
-        setupParticipants();
+        players();
+        ImGui::Spacing();
+        library();
     }
-    ui::endCard();
 
     ImGui::EndDisabled();
     // A narrow window: the summary under the form, in the same scroll.
@@ -683,11 +712,21 @@ void App::setupEngines() {
     const float swap_w  = ImGui::GetFrameHeight() * 1.6f;
     const float book_w  = px(150);
     const float spacing = ImGui::GetStyle().ItemSpacing.x;
+    // An engine of the library dropped on A or B takes its place.
+    const auto dropped = [&](std::string& slot) {
+        if (!ImGui::BeginDragDropTarget()) return;
+        if (ImGui::AcceptDragDropPayload("FCG_LIBRARY") && !library_drag_.empty()) {
+            slot = library_drag_.front();
+            saveSetupSoon();
+        }
+        ImGui::EndDragDropTarget();
+    };
     ui::label(TR("A (tested)"), labelWidth() * 0.75f);
     itemHelp(TR("Statistics are given from A's point of view."));
     if (engineCombo("##engine_a", setup_.engine_a, engines_,
                     ImGui::GetContentRegionAvail().x - book_w - swap_w - 2 * spacing))
         saveSetupSoon();
+    dropped(setup_.engine_a);
     ImGui::SameLine();
     if (ownBookButton("book_a", setup_.book_a, book_w, nullptr, std::exchange(open_own_book_, -1) == 0))
         saveSetupSoon();
@@ -696,6 +735,7 @@ void App::setupEngines() {
     if (engineCombo("##engine_b", setup_.engine_b, engines_,
                     ImGui::GetContentRegionAvail().x - book_w - swap_w - 2 * spacing))
         saveSetupSoon();
+    dropped(setup_.engine_b);
     ImGui::SameLine();
     if (ownBookButton("book_b", setup_.book_b, book_w)) saveSetupSoon();
     ImGui::SameLine();
@@ -1301,203 +1341,6 @@ void App::setupFormat() {
         ImGui::Spacing();
         setupMatch();
     }
-}
-
-void App::setupParticipants() {
-    ImGui::TextDisabled("%s", TR("Participants"));
-
-    bool changed = false;
-    auto& list   = setup_.participants;
-
-    const bool nodes     = setup_.limit == LimitKind::Nodes;
-    const bool depth     = setup_.limit == LimitKind::Depth;
-    constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit;
-    const float small    = 70.0f * ImGui::GetFontSize() / 16.0f;
-    int remove = -1, up = -1, again = -1;
-    const auto names   = participantNames(setup_);
-    const float book_w = small * 2.2f;
-
-    if (!list.empty() && ImGui::BeginTable("##participants", 8, flags)) {
-        ImGui::TableSetupColumn("#");
-        ImGui::TableSetupColumn(TR("Engine"), ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn(TR("Hash"), ImGuiTableColumnFlags_WidthFixed, small);
-        ImGui::TableSetupColumn(TR("Threads"), ImGuiTableColumnFlags_WidthFixed, small);
-        ImGui::TableSetupColumn(nodes   ? TR("Nodes")
-                                : depth ? TR("Depth")
-                                        : TR("Time %"),
-                                ImGuiTableColumnFlags_WidthFixed, nodes ? small * 1.5f : small);
-        ImGui::TableSetupColumn(TR("Book"), ImGuiTableColumnFlags_WidthFixed, book_w);
-        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
-        ImGui::TableHeadersRow();
-
-        for (std::size_t i = 0; i < list.size(); ++i) {
-            auto& p = list[i];
-            ImGui::PushID(static_cast<int>(i));
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            const bool seed = setup_.format == TournamentFormat::Gauntlet && static_cast<int>(i) < setup_.seeds;
-            ImGui::AlignTextToFramePadding();
-            if (seed) {
-                ImGui::PushStyleColor(ImGuiCol_Text, ui::ACCENT);
-                ImGui::Text("%d", static_cast<int>(i + 1));
-                ImGui::PopStyleColor();
-            } else {
-                ImGui::TextDisabled("%d", static_cast<int>(i + 1));
-            }
-            ImGui::TableNextColumn();
-            ImGui::AlignTextToFramePadding();
-            // The name it plays under: the engine's, with its book's when the engine plays more than once.
-            const auto& name = names[i];
-            if (ImGui::Selectable(name.c_str(), selected_participant_ == static_cast<int>(i), 0,
-                                  ImVec2(ImGui::CalcTextSize(name.c_str()).x, 0)))
-                selected_participant_ = selected_participant_ == static_cast<int>(i) ? -1 : static_cast<int>(i);
-            if (std::none_of(engines_.begin(), engines_.end(),
-                             [&](const EngineEntry& e) { return e.name == p.name; })) {
-                ImGui::SameLine();
-                ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
-                ImGui::TextUnformatted(TR("(not in the engine list)"));
-                ImGui::PopStyleColor();
-            } else if (std::find(names.begin(), names.begin() + static_cast<std::ptrdiff_t>(i), name) !=
-                       names.begin() + static_cast<std::ptrdiff_t>(i)) {
-                ImGui::SameLine();
-                ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
-                ImGui::TextUnformatted(TR("(twice: give it another book)"));
-                ImGui::PopStyleColor();
-            }
-            ImGui::TableNextColumn();
-            ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ui::inputInt("##hash", &p.hash)) {
-                p.hash  = std::max(0, p.hash);
-                changed = true;
-            }
-            ImGui::TableNextColumn();
-            ImGui::SetNextItemWidth(-FLT_MIN);
-            if (ui::inputInt("##threads", &p.threads)) {
-                p.threads = std::clamp(p.threads, 0, 1024);
-                changed   = true;
-            }
-            ImGui::TableNextColumn();
-            ImGui::SetNextItemWidth(-FLT_MIN);
-            if (nodes) {
-                int value = static_cast<int>(std::min<uint64_t>(p.nodes, INT32_MAX));
-                if (ui::inputInt("##nodes", &value)) {
-                    p.nodes = static_cast<uint64_t>(std::max(0, value));
-                    changed = true;
-                }
-            } else if (depth) {
-                if (ui::inputInt("##depth", &p.depth)) {
-                    p.depth = std::clamp(p.depth, 0, 200);
-                    changed = true;
-                }
-            } else if (ui::inputInt("##time", &p.time_percent)) {
-                p.time_percent = std::clamp(p.time_percent, 1, 1000);
-                changed        = true;
-            }
-            ImGui::TableNextColumn();
-            bool once_more       = false;
-            const bool open_book = open_own_book_ == static_cast<int>(i);
-            if (open_book) open_own_book_ = -1;
-            changed |= ownBookButton("book", p.book, -FLT_MIN, &once_more, open_book);
-            if (once_more) again = static_cast<int>(i);
-            ImGui::TableNextColumn();
-            ImGui::BeginDisabled(i == 0);
-            if (ImGui::SmallButton("^")) up = static_cast<int>(i);
-            ImGui::EndDisabled();
-            ImGui::TableNextColumn();
-            if (ImGui::SmallButton("x")) remove = static_cast<int>(i);
-            ImGui::PopID();
-        }
-        ImGui::EndTable();
-        ImGui::TextDisabled("%s", nodes   ? TR("Hash, Threads, Nodes: 0 = the common value.")
-                                  : depth ? TR("Hash, Threads, Depth: 0 = the common value.")
-                                          : TR("Hash, Threads: 0 = the common value. Time %: time odds, 100 = the "
-                                               "same clock as the others."));
-        ImGui::TextDisabled("%s", TR("Click an engine, then Ctrl+Up or Ctrl+Down: to the top or the bottom."));
-    }
-
-    // The engine clicked, to the top or the bottom of the list (the tested engine of a gauntlet, the first seed).
-    auto& selected = selected_participant_;
-    if (selected >= static_cast<int>(list.size())) selected = -1;
-    if (selected >= 0 && !ImGui::GetIO().WantTextInput) {
-        const bool top    = ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_UpArrow);
-        const bool bottom = !top && ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_DownArrow);
-        if (top || bottom) {
-            const auto moved = list[selected];
-            list.erase(list.begin() + selected);
-            list.insert(top ? list.begin() : list.end(), moved);
-            selected = top ? 0 : static_cast<int>(list.size()) - 1;
-            changed  = true;
-        }
-    }
-
-    // The same engine below it, its settings without the book, whose popup opens for the other book.
-    if (again >= 0) {
-        auto copy = list[again];
-        copy.book = {};
-        list.insert(list.begin() + again + 1, copy);
-        selected       = selected > again ? selected + 1 : selected;
-        open_own_book_ = again + 1;
-        changed        = true;
-    }
-
-    if (remove >= 0) {
-        list.erase(list.begin() + remove);
-        selected = selected == remove ? -1 : selected > remove ? selected - 1 : selected;
-        changed  = true;
-    }
-    if (up > 0) {
-        std::swap(list[up], list[up - 1]);
-        selected = selected == up ? up - 1 : selected == up - 1 ? up : selected;
-        changed  = true;
-    }
-
-    // Adding engines.
-    changed |= participantPicker(list);
-    ImGui::SameLine();
-    if (ImGui::Button(TR("Add all"))) {
-        for (const auto& e : engines_) {
-            if (!e.inactive &&
-                std::none_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; })) {
-                list.push_back({e.name});
-            }
-        }
-        changed = true;
-    }
-    // A whole group of engines, e.g. a pool.
-    std::vector<std::string> groups;
-    for (const auto& e : engines_) {
-        for (const auto& g : e.groups) {
-            if (std::find(groups.begin(), groups.end(), g) == groups.end()) groups.push_back(g);
-        }
-    }
-    if (!groups.empty()) {
-        ImGui::SameLine();
-        ImGui::SetNextItemWidth(200.0f * ImGui::GetFontSize() / 16.0f);
-        if (ImGui::BeginCombo("##add_group", TR("Add a group…"))) {
-            std::sort(groups.begin(), groups.end());
-            for (const auto& g : groups) {
-                if (!ImGui::Selectable(g.c_str())) continue;
-                for (const auto& e : engines_) {
-                    const bool member = std::find(e.groups.begin(), e.groups.end(), g) != e.groups.end();
-                    const bool in =
-                        std::any_of(list.begin(), list.end(), [&](const auto& p) { return p.name == e.name; });
-                    if (member && !in && !e.inactive) list.push_back({e.name});
-                }
-                changed = true;
-            }
-            ImGui::EndCombo();
-        }
-    }
-    if (!list.empty()) {
-        ImGui::SameLine();
-        if (ImGui::Button(TR("Clear"))) {
-            list.clear();
-            changed = true;
-        }
-    }
-
-    if (changed) saveSetupSoon();
 }
 
 void App::drawSetupSummary() {

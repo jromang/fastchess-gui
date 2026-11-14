@@ -266,6 +266,8 @@ const char* glyph(Icon icon) {
             return "\uE1F9";  // pencil
         case Icon::More:
             return "\uE0B6";  // ellipsis
+        case Icon::Star:
+            return "\uE176";  // star
     }
     return "";
 }
