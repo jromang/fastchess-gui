@@ -49,6 +49,8 @@ std::string formatLabel(tour::Format format) {
             return TR("Swiss");
         case tour::Format::Knockout:
             return TR("Knockout");
+        case tour::Format::TeamMatch:
+            return TR("Team match");
     }
     return "";
 }
@@ -808,7 +810,8 @@ bool App::drawStartFailures(const char* title) {
 
     if (title) sectionTitle(title);
     const bool running  = run_.running();
-    const bool editable = t->spec().format == tour::Format::RoundRobin || t->spec().format == tour::Format::Gauntlet;
+    const bool editable = t->spec().format == tour::Format::RoundRobin || t->spec().format == tour::Format::Gauntlet ||
+                          t->spec().format == tour::Format::TeamMatch;
     const auto now      = tour::StartFailures::Clock::now();
     const auto tip      = [](const std::string& text) {
         if (ImGui::BeginItemTooltip()) {

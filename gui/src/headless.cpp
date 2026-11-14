@@ -14,6 +14,7 @@
 #include <matchmaking/elo/elo_pentanomial.hpp>
 #include <tour/pgn_book.hpp>
 #include <tour/standings.hpp>
+#include <tour/teams.hpp>
 
 #include "broadcaster.hpp"
 #include "memory.hpp"
@@ -147,9 +148,14 @@ class ConsoleListener final : public tour::RecordListener {
                         elo.getElo().c_str());
             return;
         }
-        std::printf("\n%s\n",
-                    tour::tableText(tour::computeTable(spec, state_.results(), std::nullopt, state_.byes()), spec.name)
-                        .c_str());
+        const auto results = state_.results();
+        const auto table   = tour::computeTable(spec, results, std::nullopt, state_.byes());
+        // A team match: the teams' score and their engines against each other.
+        if (spec.format == tour::Format::TeamMatch) {
+            std::printf("\n%s\n", tour::teamText(tour::computeTeams(spec, results), table, spec.name).c_str());
+            return;
+        }
+        std::printf("\n%s\n", tour::tableText(table, spec.name).c_str());
     }
 
    private:

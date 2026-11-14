@@ -1042,8 +1042,10 @@ void App::handleDialogs() {
             case Dialogs::Purpose::ExportStandings:
                 if (const auto* t = run_.tournament()) {
                     std::ofstream out(path, std::ios::binary | std::ios::trunc);
-                    out << tour::tableHtml(shown_, t->spec().name,
-                                           tour::footerLine(t->spec(), shown_, t->totalGames()));
+                    const auto footer = tour::footerLine(t->spec(), shown_, t->totalGames());
+                    out << (t->spec().format == tour::Format::TeamMatch
+                                ? tour::teamHtml(teams_, table_, t->spec().name, footer)
+                                : tour::tableHtml(shown_, t->spec().name, footer));
                     Console::instance().add(out ? trf("Standings written to {}", path) : trf("Cannot write {}", path),
                                             !out);
                 }

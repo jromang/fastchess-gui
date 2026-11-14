@@ -16,6 +16,7 @@
 #include "app.hpp"
 #include "i18n.hpp"
 #include "memory.hpp"
+#include "participants.hpp"
 #include "run.hpp"
 #include "setup_checks.hpp"
 #include "stats.hpp"
@@ -1159,7 +1160,7 @@ void App::setupOpenings() {
     }
     changed |= inputInt(TR("Start at"), "##book_start", setup_.book_start, 1, 100'000'000);
     if (setup_.format == TournamentFormat::RoundRobin || setup_.format == TournamentFormat::Gauntlet ||
-        setup_.format == TournamentFormat::Swiss) {
+        setup_.format == TournamentFormat::Swiss || setup_.format == TournamentFormat::TeamMatch) {
         changed |= ImGui::Checkbox(TR("The same opening for every pair of a round"), &setup_.opening_per_round);
         ui::help(
             TR("Every game pair of a round plays the same opening, the next of the book for each round: no engine "
@@ -1330,6 +1331,10 @@ void App::setupFormat() {
     radio(TR("Knockout"), 4,
           TR("Matches in a bracket, the winner goes through; tiebreak pairs of games when a match is tied. The list "
              "order is the seeding."));
+    ImGui::SameLine();
+    radio(TR("Team match"), 5,
+          TR("Two teams of engines, one family or version against another: every engine of a team meets every "
+             "engine of the other, or board by board. The teams are scored as a whole, and each engine too."));
     setup_.format = static_cast<TournamentFormat>(format);
 
     if (setup_.format == TournamentFormat::Swiss) {
@@ -1350,6 +1355,7 @@ void App::setupFormat() {
                 TR("The first engines of the list play every other engine, not each other: the gauntlet's seeds "
                    "(-seeds N)."));
         }
+        if (setup_.format == TournamentFormat::TeamMatch) changed |= setupTeamOptions();
     }
     if (changed) saveSetupSoon();
 
@@ -1358,6 +1364,38 @@ void App::setupFormat() {
         ImGui::Spacing();
         setupMatch();
     }
+}
+
+bool App::setupTeamOptions() {
+    bool changed = false;
+    int boards   = setup_.team_boards ? 1 : 0;
+    ui::label(TR("Pairings"), labelWidth());
+    changed |= ImGui::RadioButton(TR("Everyone against everyone"), &boards, 0);
+    itemHelp(
+        TR("Every engine of a team meets every engine of the other team, one opponent per round (a Scheveningen "
+           "system); the teams may differ in size."));
+    ImGui::SameLine();
+    changed |= ImGui::RadioButton(TR("Board by board"), &boards, 1);
+    itemHelp(
+        TR("The first engine of each team against the first of the other, the second against the second, and so on: "
+           "two teams of the same size, in the order of the list."));
+    setup_.team_boards = boards == 1;
+
+    // The names, and how many engines each team has: the teams are made in the list of participants.
+    const auto [a, b]  = teamSizes(setup_);
+    const float name_w = px(200);
+    ui::label(TR("Team A"), labelWidth());
+    changed |= inputText("##team_a", setup_.team_a, name_w, TR("Team A"));
+    ImGui::SameLine();
+    ImGui::TextDisabled("%s", trn("{} engine", "{} engines", static_cast<uint64_t>(a), a).c_str());
+    ui::label(TR("Team B"), labelWidth());
+    changed |= inputText("##team_b", setup_.team_b, name_w, TR("Team B"));
+    ImGui::SameLine();
+    ImGui::TextDisabled("%s", trn("{} engine", "{} engines", static_cast<uint64_t>(b), b).c_str());
+    itemHelp(
+        TR("Without a choice, the upper half of the list plays the lower half. A participant's ⋯, or the Team A and "
+           "Team B buttons under the list, move engines from one team to the other."));
+    return changed;
 }
 
 void App::drawSetupSummary() {
@@ -1402,13 +1440,29 @@ void App::drawSetupSummary() {
             formula                = trf("{} matches × {} pairs of games, plus tiebreaks", matches, cycles);
             break;
         }
+        case TournamentFormat::TeamMatch: {
+            const auto [a, b] = teamSizes(setup_);
+            if (setup_.team_boards) {
+                formula    = trf("{} boards × 2 games × {} cycles", std::min(a, b), cycles);
+                per_engine = trn("{} game per engine", "{} games per engine", 2 * cycles, 2 * cycles);
+            } else {
+                formula    = trf("{} × {} pairings × 2 games × {} cycles", a, b, cycles);
+                per_engine = a == b
+                                 ? trn("{} game per engine", "{} games per engine", 2 * cycles * b, 2 * cycles * b)
+                                 : trf("{} games per engine of team A, {} of team B", 2 * cycles * b, 2 * cycles * a);
+            }
+            break;
+        }
     }
 
     ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.8f);
     ImGui::TextUnformatted(games ? trn("{} game", "{} games", games, games).c_str() : "∞");
     ImGui::PopFont();
-    ImGui::TextDisabled("%s", formula.c_str());
-    if (!per_engine.empty()) ImGui::TextDisabled("%s", per_engine.c_str());
+    // Wrapped: a team match's line is longer than the card is wide.
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    ImGui::TextWrapped("%s", formula.c_str());
+    if (!per_engine.empty()) ImGui::TextWrapped("%s", per_engine.c_str());
+    ImGui::PopStyleColor();
 
     // A rough duration, with a clock.
     const bool fixed_nodes = clockFree(setup_.limit);
@@ -1436,6 +1490,21 @@ void App::drawSetupSummary() {
         check(!setup_.engine_a.empty() && !setup_.engine_b.empty() && apart,
               setup_.engine_a == setup_.engine_b && apart ? std::string(TR("The same engine, with different books"))
                                                           : std::string(TR("Two different engines chosen")));
+    } else if (setup_.format == TournamentFormat::TeamMatch) {
+        // Each team needs an engine, and board by board the same number.
+        const auto [a, b] = teamSizes(setup_);
+        const auto name   = [&](const std::string& given, const char* fallback) {
+            return given.empty() ? std::string(fallback) : given;
+        };
+        if (a == 0 || b == 0) {
+            check(false, TR("A team match needs an engine in each team: put one in the other team (the participant's "
+                            "⋯)."));
+        } else if (setup_.team_boards && a != b) {
+            check(false, trf("Board by board needs two teams of the same size, not {} and {}.", a, b));
+        } else {
+            check(true, trf("{} ({}) against {} ({})", name(setup_.team_a, TR("Team A")), a,
+                            name(setup_.team_b, TR("Team B")), b));
+        }
     } else {
         check(n >= 2, trn("{} engine", "{} engines", n, n));
     }
@@ -1481,7 +1550,8 @@ void App::drawSetupSummary() {
         }
     }
     const bool per_round = setup_.format == TournamentFormat::RoundRobin ||
-                           setup_.format == TournamentFormat::Gauntlet || setup_.format == TournamentFormat::Swiss;
+                           setup_.format == TournamentFormat::Gauntlet || setup_.format == TournamentFormat::Swiss ||
+                           setup_.format == TournamentFormat::TeamMatch;
     if (per_round && setup_.opening_per_round) check(true, TR("The same opening for every pair of a round"));
     if (!setup_.pgn_out.empty()) {
         check(true, trf("Games also appended to {}", std::filesystem::path(setup_.pgn_out).filename().string()));

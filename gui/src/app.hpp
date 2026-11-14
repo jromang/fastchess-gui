@@ -43,11 +43,12 @@
 
 #include <tour/book_scan.hpp>
 #include <tour/by_opening.hpp>
-#include <tour/submission.hpp>
 #include <tour/game_db.hpp>
 #include <tour/incidents.hpp>
 #include <tour/ratinglist.hpp>
 #include <tour/standings.hpp>
+#include <tour/submission.hpp>
+#include <tour/teams.hpp>
 
 struct SDL_Window;
 
@@ -394,6 +395,8 @@ class App {
     void drawPgnOutError();  // when the PGN file of setup "Also append every game to" cannot be written
     void drawCrosstable();
     void drawOpponents(int id);  // the games of a participant against each opponent, under the standings table
+    void drawTeamScore();        // a team match: the teams' score, its Elo and LOS
+    void drawTeamStandings();    // a team match: the score, then each team's engines against the other team's
     void drawSchedule();
     void drawBracket();
     void drawEditPanel();
@@ -424,6 +427,7 @@ class App {
 
     // setup sections
     void setupFormat();
+    bool setupTeamOptions();  // a team match: the pairings and the teams' names; true when they changed
     // The participants, seeds first, each on a line wide enough for its name, with its reference Elo, what it plays
     // differently from the common settings, and ⋯ for its own settings. Ctrl and Shift select several; a drag moves
     // them; Delete removes them, Ctrl+Up and Ctrl+Down send them to the top or the bottom, Alt+Up and Alt+Down move
@@ -918,12 +922,13 @@ class App {
     // Standings of a round robin or gauntlet, recomputed when games arrive.
     tour::Table table_;
     tour::Table shown_;  // table_ in the order of the Standings tab, which its copies and export follow
+    tour::TeamTable teams_;  // a team match: the teams' scores, computed with table_
     tour::Order standings_order_ = tour::Order::Points;
     std::size_t table_for_       = ~std::size_t(0);
     std::chrono::steady_clock::time_point table_next_{};  // a big table waits a while before it is computed again
     std::optional<tour::Anchor> anchor_;
     int crosstable_mode_ = 0;                             // 0 score, 1 wins/draws/losses, 2 Elo difference
-    int standings_view_  = -1;                            // 0 table, 1 crosstable, -1 as suits the tournament
+    int standings_view_  = -1;  // 0 table, 1 crosstable, 2 teams (a team match), -1 as suits the tournament
     std::optional<std::pair<int, int>> crosstable_cell_;  // participant ids (row, column)
     std::optional<int> standings_engine_;  // participant id whose opponents are listed under the table
     struct SubmissionDialog {  // Export for a rating list, from the Games tab
@@ -951,6 +956,7 @@ class App {
     std::string name_draft_of_;  // engine whose Name field is being edited, and the name typed so far
     std::string name_draft_;
     bool edit_catch_up_     = true;
+    int edit_team_          = 0;   // a team match: the team a newcomer joins
     int edit_participant_   = -1;  // participant id
     bool edit_void_played_  = false;
     int edit_cycles_        = 0;

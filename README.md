@@ -9,8 +9,8 @@
 A desktop front end for [fastchess](https://github.com/Disservin/fastchess), the chess engine tournament
 manager. Two jobs: measuring whether a new version of an engine is stronger than the last one (pick two engines,
 start an SPRT, follow Elo and LLR as results come in), and running engine tournaments (round robin, gauntlet,
-Swiss, knockout) that resume exactly after any interruption, can be changed while they run and can be broadcast
-live.
+Swiss, knockout, team match) that resume exactly after any interruption, can be changed while they run and can
+be broadcast live.
 
 ![A round robin in progress](docs/screenshots/live.png)
 
@@ -21,7 +21,8 @@ this repository still builds unchanged.
 ## Features
 
 - **Tournaments**: round robin (Berger tables, any number of cycles), gauntlet, Swiss (paired as results come, no
-  rematch, byes) and knockout (seeded bracket, tiebreak pairs), with per engine Hash, Threads, nodes and time
+  rematch, byes), knockout (seeded bracket, tiebreak pairs) and team match (two teams of engines, everyone against
+  everyone or board by board, scored by team and by engine), with per engine Hash, Threads, nodes and time
   odds. Standings with ratings and confidence intervals, Sonneborn-Berger or Buchholz, a crosstable, export as
   text or HTML.
 - **Exact resume**: every tournament is a folder with an append-only journal; after a crash, a closed window or
@@ -139,9 +140,9 @@ make -C app tests && ./app/fastchess-tests     # upstream fastchess tests, run f
 1. **Engines**: *Add…* a UCI executable, or *Import…* the engine list of another program. Options are read
    automatically. *Duplicate* gives the same binary with other options (`Hash`, `Threads`, a skill level…).
 2. **Tournaments → New tournament**: a profile for the format (a two-engine match, round robin, gauntlet, Swiss,
-   knockout), the time control, the openings, the adjudication and the engine settings, each changed in place
-   with ✎; then the engines, double-clicked in the library beside the participants. For a match, engine A is the one
-   being tested (statistics are from its point of view) and engine B the baseline.
+   knockout, team match), the time control, the openings, the adjudication and the engine settings, each changed in
+   place with ✎; then the engines, double-clicked in the library beside the participants. For a match, engine A is
+   the one being tested (statistics are from its point of view) and engine B the baseline.
 3. **Start**, or *Add to the queue*.
 
 Everything is stored in the profile folder (`~/.local/share/fastchess/fastchess-gui/` on Linux,

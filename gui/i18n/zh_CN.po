@@ -232,11 +232,20 @@ msgstr "单独的引擎"
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
 msgstr "GitHub 和论坛会显示为表格，页眉与 HTML 页面相同。"
 
+msgid "A team match board by board takes no new engine: its board would have no opponent. Replace an engine of a team instead."
+msgstr "逐台对抗的团体赛不能加入新引擎：它的台次没有对手。请改为替换某队的一个引擎。"
+
+msgid "A team match needs an engine in each team: put one in the other team (the participant's ⋯)."
+msgstr "团体赛每队至少需要一个引擎：把一个引擎放到另一队（参赛者的 ⋯）。"
+
 msgid "A template is the whole setup: a profile for each section, and what no profile holds (the name, the participants, the concurrency, the PGN files, the broadcast). A section that played as its profile takes the profile's values of the day."
 msgstr "模板是整个设置：每个部分一个配置，加上配置不包含的内容（名称、参赛者、并发、PGN 文件、直播）。与配置一致的部分会采用该配置当前的值。"
 
 msgid "A tournament waits to start."
 msgstr "有一个锦标赛正在等待开始。"
+
+msgid "A1, A2… are team A, B1, B2… team B: the upper half of the list against the lower half, until engines are put in a team with their ⋯ or the Team A and Team B buttons under the list. Board by board, A1 plays B1, A2 plays B2, and so on."
+msgstr "A1、A2… 是 A 队，B1、B2… 是 B 队：列表上半部分对下半部分，直到用引擎的 ⋯ 或列表下方的“A 队”“B 队”按钮把引擎分到某队。逐台对抗时，A1 对 B1，A2 对 B2，依此类推。"
 
 msgid "A: +%d  =%d  -%d"
 msgstr "A：+%d  =%d  -%d"
@@ -497,6 +506,15 @@ msgstr "黑方棋子与白方位于相同的列：18 个初始局面，加入库
 
 msgid "Board"
 msgstr "棋盘"
+
+msgid "Board by board"
+msgstr "逐台对抗"
+
+msgid "Board by board needs two teams of the same size, not {} and {}."
+msgstr "逐台对抗需要两队人数相同，而不是 {} 和 {}。"
+
+msgid "Board by board needs two teams of the same size, not {} and {}: move an engine to the other team, or play every engine against every engine of the other team."
+msgstr "逐台对抗需要两队人数相同，而不是 {} 和 {}：把一个引擎移到另一队，或让每个引擎与另一队的每个引擎对局。"
 
 msgid "Board {} of {}"
 msgstr "棋盘 {} / {}"
@@ -975,6 +993,9 @@ msgstr "（以 {} 的 Elo {} 为准）"
 msgid "Elo relative to the average, 95 % interval"
 msgstr "相对平均值的 Elo，95 % 区间"
 
+msgid "Elo {:+.1f} ± {:.1f}"
+msgstr "Elo {:+.1f} ± {:.1f}"
+
 msgid "Elo {}  ·  LOS {:.1f} %"
 msgstr "Elo {}  ·  LOS {:.1f} %"
 
@@ -1062,6 +1083,9 @@ msgstr "每个引擎与其他所有引擎相遇，每次在同一开局上交换
 msgid "Every engine of a folder…"
 msgstr "某个文件夹中的所有引擎…"
 
+msgid "Every engine of a team meets every engine of the other team, one opponent per round (a Scheveningen system); the teams may differ in size."
+msgstr "一队的每个引擎与另一队的每个引擎各赛一次，每轮一个对手（舍维宁根制）；两队人数可以不同。"
+
 msgid "Every engine the filter and the group show: a whole group at once."
 msgstr "筛选和分组显示的所有引擎：一次添加整组。"
 
@@ -1127,6 +1151,9 @@ msgstr "所有时限"
 
 msgid "Every tournament is a folder: it resumes exactly where it stopped, even after a power cut."
 msgstr "每个锦标赛都是一个文件夹：即使断电，也能从中断处准确继续。"
+
+msgid "Everyone against everyone"
+msgstr "全员交叉对抗"
 
 msgid "Expected number of games"
 msgstr "预计对局数"
@@ -1365,6 +1392,9 @@ msgstr "HTML 页面…"
 msgid "Half-width of the 95 % interval of the rating."
 msgstr "等级分 95% 区间的半宽。"
 
+msgid "Halves"
+msgstr "按半分队"
+
 msgid "Hash"
 msgstr "Hash"
 
@@ -1480,6 +1510,9 @@ msgstr "它会从中断处准确继续：不会丢失对局，也不会重复下
 msgid "It needs the web page served."
 msgstr "需要先提供网页。"
 
+msgid "It plays every engine of the other team."
+msgstr "它与另一队的每个引擎对局。"
+
 msgid "It starts once the book of {} is prepared."
 msgstr "{} 的开局库准备好后即开始。"
 
@@ -1578,6 +1611,9 @@ msgstr "淘汰赛"
 
 msgid "Knockout, {} engines"
 msgstr "淘汰赛，{} 个引擎"
+
+msgid "LOS {:.1f} %"
+msgstr "LOS {:.1f} %"
 
 msgid "Language"
 msgstr "语言"
@@ -1822,6 +1858,9 @@ msgstr "{} 中没有任何对局给出着法：这是 PGN 文件吗？"
 
 msgid "No game yet."
 msgstr "还没有对局。"
+
+msgid "No longer playing: withdrawn or replaced. Its games that count still count for its team."
+msgstr "已不再参赛：退赛或被替换。它计分的对局仍计入所在队。"
 
 msgid "No match"
 msgstr "无比赛"
@@ -2106,6 +2145,9 @@ msgstr "PV 一致率"
 msgid "Pair kinds"
 msgstr "对局对类型"
 
+msgid "Pairings"
+msgstr "配对"
+
 msgid "Pairs"
 msgstr "对局对"
 
@@ -2284,6 +2326,12 @@ msgstr "发布到互联网"
 
 msgid "Push the games to lichess"
 msgstr "将对局推送到 lichess"
+
+msgid "Put the participants selected in team A."
+msgstr "把选中的参赛者放入 A 队。"
+
+msgid "Put the participants selected in team B."
+msgstr "把选中的参赛者放入 B 队。"
 
 msgid "Queue"
 msgstr "队列"
@@ -2874,6 +2922,21 @@ msgstr "残局库"
 msgid "Tabs"
 msgstr "标签页"
 
+msgid "Team"
+msgstr "所属队"
+
+msgid "Team A"
+msgstr "A 队"
+
+msgid "Team B"
+msgstr "B 队"
+
+msgid "Team match"
+msgstr "团体赛"
+
+msgid "Teams"
+msgstr "各队"
+
 msgid "Tell me when a new version is out"
 msgstr "有新版本时通知我"
 
@@ -2906,6 +2969,9 @@ msgstr "正在测试…"
 
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "50 步计数、子力以及剩余棋子，显示在平铺视图的每个棋盘下方。"
+
+msgid "The Elo difference {}'s score stands for, with its 95 % interval, counted on the pairs of games as in a match (pentanomial); LOS: the likelihood that it is the stronger team. +{} ={} −{}."
+msgstr "{} 的得分所对应的 Elo 差及其 95 % 区间，按对局对计算，与对抗赛相同（五项分布）；LOS：它是较强一队的概率。+{} ={} −{}。"
 
 msgid "The Log page: fastchess' output and the program's messages"
 msgstr "日志页面：fastchess 的输出和程序的消息"
@@ -2990,6 +3056,9 @@ msgstr "程序旁名为“portable”的文件让所有内容都保存在此文�
 
 msgid "The finished games of the match will appear here."
 msgstr "本场比赛已结束的对局会显示在这里。"
+
+msgid "The first engine of each team against the first of the other, the second against the second, and so on: two teams of the same size, in the order of the list."
+msgstr "每队第一个引擎对另一队第一个，第二个对第二个，依此类推：两队人数相同，按列表顺序。"
 
 msgid "The first engines of the list (the tested ones) meet every other engine."
 msgstr "列表中的前几个引擎（被测引擎）与其他所有引擎对弈。"
@@ -3176,6 +3245,9 @@ msgstr "系统无法打开："
 msgid "The tablebase adjudication's Max pieces, in this tournament's Adjudication section."
 msgstr "残局库裁定的最大棋子数，位于本赛事的裁定部分。"
 
+msgid "The teams made again from the list: its upper half against its lower half."
+msgstr "按列表重新分队：上半部分对下半部分。"
+
 msgid "The test suite is not started: a tournament is running."
 msgstr "测试集未开始：有锦标赛正在进行。"
 
@@ -3355,6 +3427,9 @@ msgstr "在得 1 分的对局对中：两局和棋，以及一胜一负。"
 
 msgid "Two engines: is the new version stronger? Statistics from A's point of view."
 msgstr "两个引擎：新版本是否更强？统计以 A 的角度给出。"
+
+msgid "Two teams of engines, one family or version against another: every engine of a team meets every engine of the other, or board by board. The teams are scored as a whole, and each engine too."
+msgstr "两队引擎，一个系列或版本对另一个：一队的每个引擎与另一队的每个引擎对局，或逐台对抗。既计算两队的总分，也计算每个引擎的得分。"
 
 msgid "UCI compliance report"
 msgstr "UCI 合规性报告"
@@ -3551,6 +3626,9 @@ msgstr "没有开局库时，每局对局都从初始局面开始。"
 msgid "Without a book, the 960 starting positions, in random order."
 msgstr "没有开局库时，使用 960 种初始局面，随机顺序。"
 
+msgid "Without a choice, the upper half of the list plays the lower half. A participant's ⋯, or the Team A and Team B buttons under the list, move engines from one team to the other."
+msgstr "未作选择时，列表上半部分对下半部分。参赛者的 ⋯ 或列表下方的“A 队”“B 队”按钮可以把引擎从一队移到另一队。"
+
 msgid "Without stopping it: running games go on, nothing played is lost."
 msgstr "无需停止：进行中的对局继续，已下的内容不会丢失。"
 
@@ -3605,6 +3683,9 @@ msgstr "崩溃会停止比赛"
 msgid "a result is 1-0, 0-1 or 1/2-1/2"
 msgstr "结果只能是 1-0、0-1 或 1/2-1/2"
 
+msgid "a team match board by board takes no new engine: replace one instead"
+msgstr "逐台对抗的团体赛不能加入新引擎：请改为替换一个"
+
 msgid "about {} game"
 msgid_plural "about {} games"
 msgstr[0] "约 {} 局"
@@ -3639,6 +3720,9 @@ msgstr "最多 {} 步"
 
 msgid "automatic"
 msgstr "自动"
+
+msgid "board by board"
+msgstr "逐台对抗"
 
 msgid "both"
 msgstr "两者"
@@ -3703,6 +3787,9 @@ msgstr "每局的引擎日志"
 
 msgid "every pair with both colours"
 msgstr "每一对都交换过颜色"
+
+msgid "everyone against everyone"
+msgstr "全员交叉对抗"
 
 msgid "fastchess-gui cannot draw its window."
 msgstr "fastchess-gui 无法绘制其窗口。"
@@ -3964,6 +4051,9 @@ msgstr "{:+} 局（{} → {}）"
 msgid "{:.0f} games/h · about {} left"
 msgstr "{:.0f} 局/小时 · 约剩 {}"
 
+msgid "{:.1f} % for {}"
+msgstr "{:.1f} %（{}）"
+
 msgid "{:.1f} % that {} is stronger than {}."
 msgstr "有 {:.1f}% 的概率 {} 强于 {}。"
 
@@ -3978,6 +4068,9 @@ msgstr "{} % 的时间"
 
 msgid "{} (preparing the book: {} %)"
 msgstr "{}（正在准备开局库：{} %）"
+
+msgid "{} ({}) against {} ({})"
+msgstr "{}（{}）对 {}（{}）"
 
 msgid "{} + {} per move"
 msgstr "{} + 每步 {}"
@@ -4005,6 +4098,9 @@ msgstr "{} 和 {}"
 
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} 要求每局都重新启动：已勾选“每局对局都重启引擎”。"
+
+msgid "{} boards × 2 games × {} cycles"
+msgstr "{} 台 × 2 局 × {} 个循环"
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "无法读取 {}，因此之前信任的主机密钥未知：未向 {} 发送任何内容。请修复该文件，或删除它以重新信任服务器的密钥。"
@@ -4145,6 +4241,9 @@ msgstr[0] "{} 局对局被记录了两次：导出时保留第一次"
 
 msgid "{} games +{} ={} -{} · {} lost on time, {} crashes, {} illegal moves · {:.0f} % of its clock used"
 msgstr "{} 局 +{} ={} -{} · {} 次超时判负，{} 次崩溃，{} 次非法着法 · 用掉其时钟的 {:.0f} %"
+
+msgid "{} games per engine of team A, {} of team B"
+msgstr "A 队每个引擎 {} 局，B 队每个 {} 局"
 
 msgid "{} games · {}"
 msgstr "{} 局 · {}"
@@ -4336,6 +4435,9 @@ msgid "{} ply"
 msgid_plural "{} plies"
 msgstr[0] "{} 个半回合"
 
+msgid "{} points of {} against {}"
+msgstr "{} 分（共 {} 局）对 {}"
+
 msgid "{} points to a folder with no tablebase files: {}"
 msgstr "{} 指向一个没有残局库文件的文件夹：{}"
 
@@ -4408,6 +4510,9 @@ msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"
 msgstr[0] "{} 局作废对局，已排除"
 
+msgid "{} vs {}"
+msgstr "{} 对 {}"
+
 msgid "{} was running when the program ended: it resumes."
 msgstr "程序结束时 {} 正在进行：现在恢复。"
 
@@ -4435,6 +4540,9 @@ msgstr "{} · {} 局 · Elo {} · {}"
 
 msgid "{} · {} games · first: {} · {}"
 msgstr "{} · {} 局 · 首个：{} · {}"
+
+msgid "{} × {} pairings × 2 games × {} cycles"
+msgstr "{} × {} 组配对 × 2 局 × {} 个循环"
 
 msgid "{} – fastchess-gui"
 msgstr "{} – fastchess-gui"

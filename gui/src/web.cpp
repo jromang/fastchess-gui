@@ -582,8 +582,13 @@ function upcoming(s){const n=s.next||[],asItGoes=s.format==='swiss'||s.format===
   `<td class="n wrap">${player(x.white)} – ${player(x.black)}${x.opening?`<div class="muted">${esc(x.opening)}</div>`:''}</td></tr>`).join('')+'</table>':'';
  if(asItGoes)html+=`<div class="muted">${n.length?'The later rounds are':'The next round is'} paired as the tournament goes, from the results: their games are not known in advance.</div>`;
  return html||'<div class="muted">No game left to play.</div>'}
+// A team match: the teams' score above the standings, team A's Elo over team B when it has an interval.
+function teamScore(s,html){const [a,b]=s.teams,e=html?esc:x=>x;return `${e(a.name)} ${half(a.points)} – ${half(b.points)} ${e(b.name)}`}
+function teams(s){if(!s.teams)return '';const a=s.teams[0],pct=a.games?' · '+(100*a.points/a.games).toFixed(1)+' %':'';
+ const elo=s.team_elo===null?'':` · Elo ${s.team_elo>=0?'+':''}${s.team_elo} ± ${s.team_elo_error}`,los=s.team_los===null?'':` · LOS ${(100*s.team_los).toFixed(1)} %`;
+ return `<div style="font-size:1.2em;margin:2px 0">${teamScore(s,true)}</div><div class="muted small" style="margin-bottom:10px">${a.games} games${pct}${elo}${los}</div>`}
 function standings(s){const rows=s.standings;if(!rows.length)return '<div class="muted">No engine yet.</div>';
- let t='<table><tr><th>#</th><th class="n">Engine</th><th>Games</th><th>Points</th><th>Elo</th><th>±</th><th title="Wins, draws, losses">+ = −</th></tr>';
+ let t=teams(s)+'<table><tr><th>#</th><th class="n">Engine</th><th>Games</th><th>Points</th><th>Elo</th><th>±</th><th title="Wins, draws, losses">+ = −</th></tr>';
  rows.forEach(r=>{t+=`<tr><td>${r.rank}</td><td class="n">${esc(r.name)}</td><td>${r.games}</td><td>${half(r.points)}</td><td>${r.games?(r.elo>=0?'+':'')+Math.round(r.elo):''}</td><td class="muted">${r.games?Math.round(r.elo_error):''}</td><td class="wdl">${r.wins} ${r.draws} ${r.losses}</td></tr>`});
  t+='</table>';
  // The crosstable has a column per engine: below the standings, scrolled sideways when it is wider, the names kept.
@@ -592,7 +597,7 @@ function standings(s){const rows=s.standings;if(!rows.length)return '<div class=
  rows.forEach(r=>{t+=`<tr><td>${r.rank}</td><td class="n">${esc(r.name)}</td>`+
   r.crosstable.map(c=>c?`<td title="+${c.wins} =${c.draws} -${c.losses}">${c.wins+c.draws+c.losses?half(c.wins+c.draws/2):''}</td>`:'<td class="muted">–</td>').join('')+'</tr>'});
  return t+'</table></div>'}
-const FORMATS={match:'Match',round_robin:'Round robin',gauntlet:'Gauntlet',swiss:'Swiss',knockout:'Knockout'};
+const FORMATS={match:'Match',round_robin:'Round robin',gauntlet:'Gauntlet',swiss:'Swiss',knockout:'Knockout',team_match:'Team match'};
 function eventInfo(s){const row=(a,b)=>`<tr><td class="n muted">${a}</td><td class="n wrap">${b}</td></tr>`;
  return '<table>'+row('Tournament',esc(s.name||'–'))+row('Format',FORMATS[s.format]||esc(s.format||'–'))+(s.time_control?row('Time control',esc(s.time_control)):'')+
   row('Variant',s.chess960?'Chess960':'Standard chess')+row('Games',`${s.played}${s.total?' of '+s.total:''} played${s.finished?', finished':''}`)+
@@ -607,7 +612,7 @@ function shown(g){return view===null?g.moves.length:Math.min(view,g.moves.length
 function render(s){last=s;
  document.getElementById('notation').textContent='Moves: '+(figurines?'♘\uFE0Ef3':'Nf3');
  document.getElementById('name').textContent=s.name||'fastchess-gui';document.title=s.name||'fastchess-gui';
- document.getElementById('progress').textContent=[`${s.played}${s.total?' / '+s.total:''} games${s.finished?' · finished':''}`,FORMATS[s.format],s.time_control].filter(x=>x).join(' · ');
+ document.getElementById('progress').textContent=[s.teams?teamScore(s,false):'',`${s.played}${s.total?' / '+s.total:''} games${s.finished?' · finished':''}`,FORMATS[s.format],s.time_control].filter(x=>x).join(' · ');
  document.getElementById('download').innerHTML=s.pgn?`<a href="games.pgn" download="${esc(s.pgn)}">Download the games (PGN)</a>`:'';
  const g=follow(s);if(!g||g.number!==viewGame){view=null;viewGame=g?g.number:null}
  document.getElementById('stage').classList.toggle('none',!g);

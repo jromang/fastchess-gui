@@ -234,10 +234,19 @@ msgstr ""
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
 msgstr ""
 
+msgid "A team match board by board takes no new engine: its board would have no opponent. Replace an engine of a team instead."
+msgstr ""
+
+msgid "A team match needs an engine in each team: put one in the other team (the participant's ⋯)."
+msgstr ""
+
 msgid "A template is the whole setup: a profile for each section, and what no profile holds (the name, the participants, the concurrency, the PGN files, the broadcast). A section that played as its profile takes the profile's values of the day."
 msgstr ""
 
 msgid "A tournament waits to start."
+msgstr ""
+
+msgid "A1, A2… are team A, B1, B2… team B: the upper half of the list against the lower half, until engines are put in a team with their ⋯ or the Team A and Team B buttons under the list. Board by board, A1 plays B1, A2 plays B2, and so on."
 msgstr ""
 
 msgid "A: +%d  =%d  -%d"
@@ -500,6 +509,15 @@ msgid "Black's pieces on the same files as White's: 18 starting positions, added
 msgstr ""
 
 msgid "Board"
+msgstr ""
+
+msgid "Board by board"
+msgstr ""
+
+msgid "Board by board needs two teams of the same size, not {} and {}."
+msgstr ""
+
+msgid "Board by board needs two teams of the same size, not {} and {}: move an engine to the other team, or play every engine against every engine of the other team."
 msgstr ""
 
 msgid "Board {} of {}"
@@ -979,6 +997,9 @@ msgstr ""
 msgid "Elo relative to the average, 95 % interval"
 msgstr ""
 
+msgid "Elo {:+.1f} ± {:.1f}"
+msgstr ""
+
 msgid "Elo {}  ·  LOS {:.1f} %"
 msgstr ""
 
@@ -1066,6 +1087,9 @@ msgstr ""
 msgid "Every engine of a folder…"
 msgstr ""
 
+msgid "Every engine of a team meets every engine of the other team, one opponent per round (a Scheveningen system); the teams may differ in size."
+msgstr ""
+
 msgid "Every engine the filter and the group show: a whole group at once."
 msgstr ""
 
@@ -1130,6 +1154,9 @@ msgid "Every time control"
 msgstr ""
 
 msgid "Every tournament is a folder: it resumes exactly where it stopped, even after a power cut."
+msgstr ""
+
+msgid "Everyone against everyone"
 msgstr ""
 
 msgid "Expected number of games"
@@ -1369,6 +1396,9 @@ msgstr ""
 msgid "Half-width of the 95 % interval of the rating."
 msgstr ""
 
+msgid "Halves"
+msgstr ""
+
 msgid "Hash"
 msgstr ""
 
@@ -1485,6 +1515,9 @@ msgstr ""
 msgid "It needs the web page served."
 msgstr ""
 
+msgid "It plays every engine of the other team."
+msgstr ""
+
 msgid "It starts once the book of {} is prepared."
 msgstr ""
 
@@ -1582,6 +1615,9 @@ msgid "Knockout"
 msgstr ""
 
 msgid "Knockout, {} engines"
+msgstr ""
+
+msgid "LOS {:.1f} %"
 msgstr ""
 
 msgid "Language"
@@ -1827,6 +1863,9 @@ msgid "No game of {} gives a move: is it a PGN file?"
 msgstr ""
 
 msgid "No game yet."
+msgstr ""
+
+msgid "No longer playing: withdrawn or replaced. Its games that count still count for its team."
 msgstr ""
 
 msgid "No match"
@@ -2113,6 +2152,9 @@ msgstr ""
 msgid "Pair kinds"
 msgstr ""
 
+msgid "Pairings"
+msgstr ""
+
 msgid "Pairs"
 msgstr ""
 
@@ -2292,6 +2334,12 @@ msgid "Publish on the internet"
 msgstr ""
 
 msgid "Push the games to lichess"
+msgstr ""
+
+msgid "Put the participants selected in team A."
+msgstr ""
+
+msgid "Put the participants selected in team B."
 msgstr ""
 
 msgid "Queue"
@@ -2890,6 +2938,21 @@ msgstr ""
 msgid "Tabs"
 msgstr ""
 
+msgid "Team"
+msgstr ""
+
+msgid "Team A"
+msgstr ""
+
+msgid "Team B"
+msgstr ""
+
+msgid "Team match"
+msgstr ""
+
+msgid "Teams"
+msgstr ""
+
 msgid "Tell me when a new version is out"
 msgstr ""
 
@@ -2921,6 +2984,9 @@ msgid "Testing…"
 msgstr ""
 
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
+msgstr ""
+
+msgid "The Elo difference {}'s score stands for, with its 95 % interval, counted on the pairs of games as in a match (pentanomial); LOS: the likelihood that it is the stronger team. +{} ={} −{}."
 msgstr ""
 
 msgid "The Log page: fastchess' output and the program's messages"
@@ -3005,6 +3071,9 @@ msgid "The file named \"portable\" beside the program keeps everything in this f
 msgstr ""
 
 msgid "The finished games of the match will appear here."
+msgstr ""
+
+msgid "The first engine of each team against the first of the other, the second against the second, and so on: two teams of the same size, in the order of the list."
 msgstr ""
 
 msgid "The first engines of the list (the tested ones) meet every other engine."
@@ -3194,6 +3263,9 @@ msgstr ""
 msgid "The tablebase adjudication's Max pieces, in this tournament's Adjudication section."
 msgstr ""
 
+msgid "The teams made again from the list: its upper half against its lower half."
+msgstr ""
+
 msgid "The test suite is not started: a tournament is running."
 msgstr ""
 
@@ -3372,6 +3444,9 @@ msgid "Two draws, and a win and a loss, among the pairs scoring 1."
 msgstr ""
 
 msgid "Two engines: is the new version stronger? Statistics from A's point of view."
+msgstr ""
+
+msgid "Two teams of engines, one family or version against another: every engine of a team meets every engine of the other, or board by board. The teams are scored as a whole, and each engine too."
 msgstr ""
 
 msgid "UCI compliance report"
@@ -3569,6 +3644,9 @@ msgstr ""
 msgid "Without a book, the 960 starting positions, in random order."
 msgstr ""
 
+msgid "Without a choice, the upper half of the list plays the lower half. A participant's ⋯, or the Team A and Team B buttons under the list, move engines from one team to the other."
+msgstr ""
+
 msgid "Without stopping it: running games go on, nothing played is lost."
 msgstr ""
 
@@ -3623,6 +3701,9 @@ msgstr ""
 msgid "a result is 1-0, 0-1 or 1/2-1/2"
 msgstr ""
 
+msgid "a team match board by board takes no new engine: replace one instead"
+msgstr ""
+
 msgid "about {} game"
 msgid_plural "about {} games"
 msgstr[0] ""
@@ -3658,6 +3739,9 @@ msgid "at most {} moves"
 msgstr ""
 
 msgid "automatic"
+msgstr ""
+
+msgid "board by board"
 msgstr ""
 
 msgid "both"
@@ -3723,6 +3807,9 @@ msgid "every game's engine log"
 msgstr ""
 
 msgid "every pair with both colours"
+msgstr ""
+
+msgid "everyone against everyone"
 msgstr ""
 
 msgid "fastchess-gui cannot draw its window."
@@ -3987,6 +4074,9 @@ msgstr ""
 msgid "{:.0f} games/h · about {} left"
 msgstr ""
 
+msgid "{:.1f} % for {}"
+msgstr ""
+
 msgid "{:.1f} % that {} is stronger than {}."
 msgstr ""
 
@@ -4000,6 +4090,9 @@ msgid "{} % of the time"
 msgstr ""
 
 msgid "{} (preparing the book: {} %)"
+msgstr ""
+
+msgid "{} ({}) against {} ({})"
 msgstr ""
 
 msgid "{} + {} per move"
@@ -4027,6 +4120,9 @@ msgid "{} and {}"
 msgstr ""
 
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
+msgstr ""
+
+msgid "{} boards × 2 games × {} cycles"
 msgstr ""
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
@@ -4190,6 +4286,9 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "{} games +{} ={} -{} · {} lost on time, {} crashes, {} illegal moves · {:.0f} % of its clock used"
+msgstr ""
+
+msgid "{} games per engine of team A, {} of team B"
 msgstr ""
 
 msgid "{} games · {}"
@@ -4404,6 +4503,9 @@ msgid_plural "{} plies"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "{} points of {} against {}"
+msgstr ""
+
 msgid "{} points to a folder with no tablebase files: {}"
 msgstr ""
 
@@ -4485,6 +4587,9 @@ msgid_plural "{} voided games, left out"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "{} vs {}"
+msgstr ""
+
 msgid "{} was running when the program ended: it resumes."
 msgstr ""
 
@@ -4512,6 +4617,9 @@ msgid "{} · {} games · Elo {} · {}"
 msgstr ""
 
 msgid "{} · {} games · first: {} · {}"
+msgstr ""
+
+msgid "{} × {} pairings × 2 games × {} cycles"
 msgstr ""
 
 msgid "{} – fastchess-gui"

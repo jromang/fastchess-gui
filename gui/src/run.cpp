@@ -23,6 +23,7 @@
 #include "console.hpp"
 #include "engines.hpp"
 #include "i18n.hpp"
+#include "participants.hpp"
 #include "proc_tree.hpp"
 #include "tablebases.hpp"
 
@@ -374,8 +375,17 @@ std::string defaultTournamentName(const MatchSetup& setup) {
             return trf("Swiss, {} engines", n);
         case TournamentFormat::Knockout:
             return trf("Knockout, {} engines", n);
+        case TournamentFormat::TeamMatch:
+            return trf("{} vs {}", setup.team_a.empty() ? std::string(TR("Team A")) : setup.team_a,
+                       setup.team_b.empty() ? std::string(TR("Team B")) : setup.team_b);
     }
     return {};
+}
+
+std::string teamLabel(const tour::TournamentSpec& spec, int team) {
+    const auto& name = spec.team_names[team == 1 ? 1 : 0];
+    if (!name.empty()) return name;
+    return team == 1 ? TR("Team B") : TR("Team A");
 }
 
 BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engines, const CpuTopology& topology,
@@ -406,6 +416,19 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         if (people.size() < 2) throw fastchess_exception(TR("Choose at least two engines."));
         if (setup.format == TournamentFormat::Gauntlet && setup.seeds >= static_cast<int>(people.size())) {
             throw fastchess_exception(TR("A gauntlet needs at least one engine besides the tested ones."));
+        }
+        if (setup.format == TournamentFormat::TeamMatch) {
+            const auto [a, b] = teamSizes(setup);
+            if (a == 0 || b == 0) {
+                throw fastchess_exception(
+                    TR("A team match needs an engine in each team: put one in the other team (the participant's ⋯)."));
+            }
+            if (setup.team_boards && a != b) {
+                throw fastchess_exception(
+                    trf("Board by board needs two teams of the same size, not {} and {}: move an engine to the other "
+                        "team, or play every engine against every engine of the other team.",
+                        a, b));
+            }
         }
     }
 
@@ -607,6 +630,12 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     spec.stop_on_start_failure = setup.stop_on_start_failure;
     if (setup.engine_syzygy) spec.forced_options.emplace_back("SyzygyPath", setup.tb_paths);
     if (setup.engine_ownbook_off) spec.forced_options.emplace_back("OwnBook", "false");
+    const bool teams = setup.format == TournamentFormat::TeamMatch;
+    if (teams) {
+        spec.team_boards = setup.team_boards;
+        spec.team_names  = {setup.team_a, setup.team_b};
+    }
+    const auto team_of = teams ? setupTeams(setup) : std::vector<int>();
     for (std::size_t i = 0; i < run.engines.size(); ++i) {
         tour::Participant p;
         p.id     = static_cast<int>(i);
@@ -614,6 +643,7 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         p.elo        = people[i].first->elo;
         p.book       = people[i].second.book.path;
         p.book_depth = std::max(0, people[i].second.book.depth);
+        if (teams && i < team_of.size()) p.team = team_of[i];
         spec.participants.push_back(p);
     }
 
@@ -641,6 +671,11 @@ uint64_t plannedGames(const MatchSetup& setup) {
             return n / 2 * 2 * cycles;
         case TournamentFormat::Knockout:
             return n >= 2 ? (n - 1) * 2 * cycles : 0;
+        case TournamentFormat::TeamMatch: {
+            const auto [a, b] = teamSizes(setup);
+            if (setup.team_boards) return a == b ? static_cast<uint64_t>(a) * 2 * cycles : 0;
+            return static_cast<uint64_t>(a) * static_cast<uint64_t>(b) * 2 * cycles;
+        }
     }
     return 0;
 }

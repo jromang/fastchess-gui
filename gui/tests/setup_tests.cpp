@@ -585,3 +585,48 @@ TEST_CASE("a template or a queued setup keeps the program's settings: its look, 
     CHECK(next.name == "stored");
     CHECK(next.cycles == 4);
 }
+
+TEST_CASE("a team match: its teams in the tournament, games planned, the teams that cannot play refused") {
+    const auto dir = fs::temp_directory_path() / "fcg-tests-team-match";
+    fs::create_directories(dir);
+    const auto binary = dir / "engine.exe";
+    std::ofstream(binary) << "x";
+    std::vector<EngineEntry> engines(5);
+    for (std::size_t i = 0; i < engines.size(); ++i) {
+        engines[i].name = std::string(1, static_cast<char>('A' + i));
+        engines[i].cmd  = binary.string();
+    }
+    const auto topology = topologyFromCores({{0, 0}, {0, 1}});
+
+    MatchSetup setup;
+    setup.format       = TournamentFormat::TeamMatch;
+    setup.participants = {{"A"}, {"B"}, {"C"}, {"D"}, {"E"}};
+    setup.limit        = LimitKind::Nodes;
+    setup.cycles       = 2;
+    setup.team_b       = "Others";
+    CHECK(plannedGames(setup) == 3u * 2u * 2u * 2u);
+    CHECK(defaultTournamentName(setup) == "Team A vs Others");
+
+    auto run = buildRun(setup, engines, topology, dir);
+    CHECK(run.spec.format == tour::Format::TeamMatch);
+    CHECK(run.spec.cycles == 2);
+    CHECK_FALSE(run.spec.team_boards);
+    CHECK(run.spec.teamName(0) == "Team A");
+    CHECK(run.spec.teamName(1) == "Others");
+    CHECK(run.spec.teamMembers(0) == std::vector<int>{0, 1, 2});
+    CHECK(run.spec.teamMembers(1) == std::vector<int>{3, 4});
+    CHECK(teamLabel(run.spec, 1) == "Others");
+
+    // Board by board needs teams of the same size.
+    setup.team_boards = true;
+    CHECK(plannedGames(setup) == 0u);
+    CHECK_THROWS_WITH((void)buildRun(setup, engines, topology, dir), doctest::Contains("same size"));
+    setup.participants.pop_back();
+    CHECK(plannedGames(setup) == 2u * 2u * 2u);
+    run = buildRun(setup, engines, topology, dir);
+    CHECK(run.spec.team_boards);
+
+    // A team without an engine.
+    for (auto& p : setup.participants) p.team = 1;
+    CHECK_THROWS_WITH((void)buildRun(setup, engines, topology, dir), doctest::Contains("each team"));
+}
