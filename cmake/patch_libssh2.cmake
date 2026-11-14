@@ -7,9 +7,16 @@
 #  - a data packet is appended to the last one queued for its channel when that one is of the same kind and both fit
 #    in 16 KiB, so that what libssh2 holds for a channel is about the bytes it received, however they were cut;
 #  - data that comes for a channel after its CLOSE was sent is dropped: nothing reads it any more, and libssh2 kept it
-#    until the channel was freed.
-# The window accounting is libssh2's, unchanged. The patch can run again (on sources patched already, it changes
-# nothing), and fails the configuration if libssh2's code is no longer the one expected.
+#    until the channel was freed;
+#  - a connection the server forwards (forwarded-tcpip) is given a window of 128 KiB instead of
+#    LIBSSH2_CHANNEL_WINDOW_DEFAULT (2 MiB, which nothing lets a program change): what libssh2 may hold for it while
+#    its reads cannot send their adjustment. With 2 MiB, 24 viewers sending their window in large packets meanwhile
+#    ended the session. With 128 KiB, a connection costs 180 KiB of libssh2's memory at most (144 KiB of data, a
+#    read's adjustment included, 13 % more for its packets, and a packet read in part), so that the 80 the tunnel
+#    keeps (40 relayed, 40 waiting) and 80 more being closed fit in the session's 32 MiB. A viewer sends a request of
+#    8 KiB at most.
+# Otherwise the window accounting is libssh2's, unchanged. The patch can run again (on sources patched already, it
+# changes nothing), and fails the configuration if libssh2's code is no longer the one expected.
 
 # Replaces `original` by `patched` in `file`, once; nothing when `patched` is there already.
 function(patch file original patched)
@@ -185,4 +192,21 @@ patch(src/packet.c [=[
         packetp->data_len = datalen;
         packetp->data_head = data_head;
         packetp->data_size = datalen; /* fastchess-gui: fcg_merge_data() */
+]=])
+
+patch(src/packet.c [=[
+                    channel->remote.id = listen_state->sender_channel;
+                    channel->remote.window_size_initial =
+                        LIBSSH2_CHANNEL_WINDOW_DEFAULT;
+                    channel->remote.window_size =
+                        LIBSSH2_CHANNEL_WINDOW_DEFAULT;
+]=] [=[
+                    channel->remote.id = listen_state->sender_channel;
+                    /* fastchess-gui: 128 KiB, not LIBSSH2_CHANNEL_WINDOW_DEFAULT
+                       (2 MiB), for what the server may send on a forwarded
+                       connection before it is read: what libssh2 holds for it
+                       while a read cannot send its window adjustment, for
+                       each of the many a public web page has */
+                    channel->remote.window_size_initial = 128 * 1024;
+                    channel->remote.window_size = 128 * 1024;
 ]=])

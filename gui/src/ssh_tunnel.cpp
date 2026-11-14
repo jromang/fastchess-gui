@@ -38,11 +38,12 @@ constexpr const char* CIPHERS   = "aes256-gcm@openssh.com,aes128-gcm@openssh.com
 constexpr const char* MACS = "hmac-sha2-256-etm@openssh.com,hmac-sha2-256,hmac-sha2-512-etm@openssh.com,hmac-sha2-512";
 
 // The session's flow: what the server may send before it waits for us, and the largest data packet. A forwarded
-// connection's flow is libssh2's (32 KiB packets, a window of 2 MiB that nothing lets a program change): it is read on
-// every pass, RELAY_READ bytes at a time, whatever the web server takes, so that libssh2 holds for it only what came
-// since the last pass. While a read cannot send the window's adjustment it starts with, what comes waits in libssh2,
-// up to the rest of the window: patched, libssh2 appends a channel's packets to the one it holds for it, so that this
-// costs the bytes, not a block of its memory for each packet (some 116 bytes for one; cmake/patch_libssh2.cmake).
+// connection's flow is libssh2's (32 KiB packets, and a window of 128 KiB, patched: 2 MiB as released, which nothing
+// lets a program change): it is read on every pass, RELAY_READ bytes at a time, whatever the web server takes, so that
+// libssh2 holds for it only what came since the last pass. While a read cannot send the window's adjustment it starts
+// with, what comes waits in libssh2, up to the rest of the window: patched again, libssh2 appends a channel's packets
+// to the one it holds for it, so that this costs the bytes, not a block of its memory for each packet (some 116 bytes
+// for one). See cmake/patch_libssh2.cmake.
 constexpr unsigned SESSION_WINDOW   = 256 * 1024;
 constexpr unsigned SESSION_MAX_DATA = 32768;
 constexpr std::size_t RELAY_READ    = 16384;
