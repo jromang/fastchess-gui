@@ -142,6 +142,7 @@ void App::frame() {
     }
 
     handleZoomKeys();
+    handleBigScreenKeys();
     applyThemeSetting();
     updateBroadcast();
 
@@ -244,6 +245,9 @@ void App::frame() {
             page_           = Page::Tournament;
             tab_request_    = Tab::Games;
             open_game_menu_ = std::strtoull(w.c_str() + 10, nullptr, 10);
+        } else if (w == "big-screen" || w.rfind("big-screen=", 0) == 0) {  // big-screen=N: the game of slot N (from 1)
+            page_ = Page::Tournament;
+            startBigScreen(w.size() > 11 ? std::max(0, std::atoi(w.c_str() + 11) - 1) : live_slot_);
         } else if (w.rfind("end-menu=", 0) == 0) {  // end-menu=N: "End with result" of the game of slot N (from 1)
             page_          = Page::Tournament;
             tab_request_   = Tab::Live;
@@ -281,7 +285,12 @@ void App::frame() {
         focus_done_ = true;
     }
 
-    drawShell();
+    // The big screen takes the main window's place: the panels taken out of it stay on screen.
+    if (big_.on) {
+        drawBigScreen();
+    } else {
+        drawShell();
+    }
     drawPanels();
     drawSprtCalculator();
     drawQuitModal();

@@ -160,7 +160,14 @@ void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, c
             const bool light = (file + rank) % 2 == 1;
 
             dl->AddRectFilled(p0, p1, light ? LIGHT : DARK);
-            if ((from && *from == square) || (to && *to == square)) dl->AddRectFilled(p0, p1, LAST_MOVE);
+            if ((from && *from == square) || (to && *to == square)) {
+                dl->AddRectFilled(p0, p1, LAST_MOVE);
+                if (decor.last_move_frame > 0) {
+                    const float inset = decor.last_move_frame / 2;
+                    dl->AddRect(ImVec2(p0.x + inset, p0.y + inset), ImVec2(p1.x - inset, p1.y - inset),
+                                decor.last_move_colour, 0.0f, 0, decor.last_move_frame);
+                }
+            }
             if (check && *check == square) {
                 dl->AddCircleFilled(ImVec2(p0.x + sq / 2, p0.y + sq / 2), sq * 0.48f, CHECK, 24);
             }

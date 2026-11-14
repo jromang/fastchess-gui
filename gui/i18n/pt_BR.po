@@ -382,6 +382,9 @@ msgstr "Voltar ao resultado jogado ({})"
 msgid "Base (s)"
 msgstr "Tempo base (s)"
 
+msgid "Big screen"
+msgstr "Tela grande"
+
 msgid "Black"
 msgstr "Pretas"
 
@@ -411,6 +414,9 @@ msgstr "A conexão das Pretas trava"
 
 msgid "Board"
 msgstr "Tabuleiro"
+
+msgid "Board {} of {}"
+msgstr "Tabuleiro {} de {}"
 
 msgid "Book"
 msgstr "Livro"
@@ -853,6 +859,12 @@ msgstr "Todas as partidas"
 msgid "Every game in progress, the one followed with its evaluation bar, arrows and charts; the standings, the crosstable, the statistics and anomalies, and the games' PGN file to download. Read-only, refreshed every second."
 msgstr "Todas as partidas em andamento, a acompanhada com sua barra de avaliação, setas e gráficos; a classificação, a tabela cruzada, as estatísticas e anomalias, e o arquivo PGN das partidas para baixar. Somente leitura, atualizado a cada segundo."
 
+msgid "Every game in turn"
+msgstr "Cada partida por vez"
+
+msgid "Every game in turn: the games in progress one after the other.\nThe most interesting: the game whose evaluation is closest to level, the longest of those as close; it stays while it is."
+msgstr "Cada partida por vez: as partidas em andamento uma após a outra.\nA mais interessante: a partida cuja avaliação está mais perto da igualdade, a mais longa entre as igualmente próximas; ela fica enquanto continuar assim."
+
 msgid "Every game is written to two files in the match folder:"
 msgstr "Cada partida é gravada em dois arquivos na pasta do match:"
 
@@ -1012,6 +1024,9 @@ msgstr "A partir do lance"
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr "Só a partir das partidas, com o DrawElo correspondente."
 
+msgid "Full screen (F11)"
+msgstr "Tela cheia (F11)"
+
 msgid "Gainer [0, 3]"
 msgstr "Ganho [0, 3]"
 
@@ -1044,6 +1059,9 @@ msgstr "Partida {} · lance {}"
 
 msgid "Game {} · move {}: {} – {}"
 msgstr "Partida {} · lance {}: {} – {}"
+
+msgid "Game {} · round {} · move {}"
+msgstr "Partida {} · rodada {} · lance {}"
 
 msgid "Game {}: {} – {}  {}"
 msgstr "Partida {}: {} – {}  {}"
@@ -1293,8 +1311,14 @@ msgstr "Layout"
 msgid "Layout saved: {}"
 msgstr "Layout salvo: {}"
 
+msgid "Leave (Esc)"
+msgstr "Sair (Esc)"
+
 msgid "Leave out the games lost by a crash or a stall"
 msgstr "Deixar de fora as partidas perdidas por crash ou travamento"
+
+msgid "Leave the big screen"
+msgstr "Sair da tela grande"
 
 msgid "Letter case and spaces aside."
 msgstr "Sem contar maiúsculas e espaços."
@@ -2132,6 +2156,9 @@ msgstr "Buscas"
 msgid "Searches at a time"
 msgstr "Buscas simultâneas"
 
+msgid "Seconds before the next game is chosen."
+msgstr "Segundos até a próxima partida ser escolhida."
+
 msgid "Seconds per move"
 msgstr "Segundos por lance"
 
@@ -2371,6 +2398,9 @@ msgstr "As opções PGN da configuração, para os próximos torneios."
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "O padrão PGN os torna comentários. O fastchess-gui 0.4.13 e anteriores os liam como lances, e podiam jogar algumas aberturas deste livro a partir de uma posição errada, muitas vezes a inicial."
 
+msgid "The arrow keys too."
+msgstr "As setas do teclado também."
+
 msgid "The average rating of the opponents met, game by game."
 msgstr "O rating médio dos adversários enfrentados, partida a partida."
 
@@ -2443,6 +2473,9 @@ msgstr "A pasta {} não existe mais."
 msgid "The game counts again as it was."
 msgstr "A partida volta a contar como antes."
 
+msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
+msgstr "A partida acompanhada ocupando a janela, em letras grandes, para uma TV, um clube ou uma transmissão. F11: tela cheia, Esc: voltar."
+
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "As partidas como os testadores das listas de rating as enviam: o arquivo com o seu nome, a data e as condições, os jogadores como as listas os escrevem, as rodadas renumeradas, sem as partidas anuladas e as duplicadas."
 
@@ -2472,6 +2505,9 @@ msgstr "A última alteração do torneio foi desfeita."
 
 msgid "The last check or reading failed."
 msgstr "A última verificação ou leitura falhou."
+
+msgid "The most interesting"
+msgstr "A mais interessante"
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "O lance em que o lado a jogar está pensando e a resposta que ele espera, nas cores dos engines que os jogariam."
@@ -2551,6 +2587,9 @@ msgstr "A busca para quando uma solução permaneceu como primeiro lance do engi
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "A fração de partidas empatadas esperada entre os dois engines, neste controle de tempo."
 
+msgid "The size of the text, for the distance it is read from (+ and - too)."
+msgstr "O tamanho do texto, conforme a distância de leitura (+ e - também)."
+
 msgid "The spread of the advantage the openings give, in Elo: what playing each opening twice, colours reversed, cancels out."
 msgstr "A dispersão da vantagem que as aberturas dão, em Elo: o que jogar cada abertura duas vezes, cores invertidas, anula."
 
@@ -2601,6 +2640,12 @@ msgstr "Esta taxa de empates e este viés RMS não são compatíveis."
 
 msgid "This engine once more, with another book"
 msgstr "Este engine mais uma vez, com outro livro"
+
+msgid "This game"
+msgstr "Esta partida"
+
+msgid "This game filling its window, in large type: on another screen (a television), the panel's window; docked here, the main window. F11: full screen, Esc: back."
+msgstr "Esta partida ocupando a janela, em letras grandes: em outra tela (uma TV), a janela do painel; encaixado aqui, a janela principal. F11: tela cheia, Esc: voltar."
 
 msgid "This game is not being played: it is over, or its engines are still starting."
 msgstr "Esta partida não está sendo jogada: ela terminou, ou os engines ainda estão iniciando."
@@ -2736,6 +2781,9 @@ msgstr "V {:.0f} · E {:.0f} · D {:.0f}%"
 
 msgid "Waiting for the book of {}…"
 msgstr "Aguardando o livro de {}…"
+
+msgid "Waiting for the next game…"
+msgstr "Aguardando a próxima partida…"
 
 msgid "Waiting for the test suite…"
 msgstr "Aguardando a suíte de testes…"
@@ -3038,6 +3086,9 @@ msgstr "lendo os torneios…"
 msgid "replay requested"
 msgstr "repetição solicitada"
 
+msgid "s"
+msgstr "s"
+
 msgid "send at startup"
 msgstr "enviar ao iniciar"
 
@@ -3338,6 +3389,9 @@ msgstr "{} min {:02} s"
 
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr "{} lances · profundidade {:.1f} · {:.0f} ms por lance{}"
+
+msgid "{} n/s"
+msgstr "{} n/s"
 
 msgid "{} new engine found. Untick those to leave out."
 msgid_plural "{} new engines found. Untick those to leave out."

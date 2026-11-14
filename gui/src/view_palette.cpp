@@ -90,6 +90,14 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             openSubmissionExport();
         });
     }
+    // The big screen: the game followed, filling the window.
+    if (t && run_.observer()) {
+        if (big_.on) {
+            add(TR("Leave the big screen"), TR("Live"), [this] { leaveBigScreen(); });
+        } else {
+            add(TR("Big screen"), TR("Live"), [this] { startBigScreen(live_slot_); });
+        }
+    }
     // The game shown in the Games tab, and the game followed in the Live tab: their result set by hand.
     if (t && selected_game_ >= 0 && selected_game_ < static_cast<int>(games_.size())) {
         const auto id = games_[static_cast<std::size_t>(selected_game_)].game_id;

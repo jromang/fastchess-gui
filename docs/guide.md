@@ -27,7 +27,8 @@ languages are welcome. They are plain `.po` files in `gui/i18n`, which Poedit an
 The pages use the whole window, whatever its size: the Live tab's boards grow with it, the new tournament form
 splits into two columns on a wide window, and the list of the Engines, Books and Ratings pages can be widened by
 dragging its right edge. Everything (text, buttons, boards) can also be made larger or smaller, from 80 to 250 %:
-**Settings** > Interface size, or Ctrl + mouse wheel, Ctrl + and Ctrl -, and Ctrl 0 to go back to 100 %.
+**Settings** > Interface size, or Ctrl + mouse wheel, Ctrl + and Ctrl -, and Ctrl 0 to go back to 100 %. F11 makes
+the window full screen, and back.
 
 **Ctrl+K** opens the command palette: the pages and tabs, the engines of the library (it opens the card), the books,
 the tournaments of the home page, and the actions possible now (*Pause*, *Resume*, *Stop*, *Start*, *Add to the
@@ -293,7 +294,7 @@ panels, shown by default as tabs:
 | Bracket | Knockout only: the bracket, round by round, with the score of every match |
 | Schedule | Every game pair by cycle or round, with its state and the opening it plays (once started, or once its round started when the round shares one); editing (see below) |
 | Broadcast | Live files, the TLCS server and the web page (see below) |
-| Live | The games in progress, as a mosaic of boards or one game in focus with the clocks, the running search of each engine (depth, score, nodes, nps, PV in SAN), the move list and the evaluation curve (or, chosen above it, each engine's time per move with its decision time, depth with seldepth, nodes, speed, tablebase hits, or how many plies its PV repeats of what the other engine's PV predicted), with the win/draw/loss shares (`UCI_ShowWDL`, switched on for the engines that have it when they are added) after each search line and as bands under the curve, White's wins at the bottom. Under the board: the 50-move counter (plies since the last capture or pawn move, out of 100), the material difference with the pieces one side has more of, and the pieces left, marked *TB* when the tablebase adjudication can end the game; *Details under the boards* adds them to the mosaic. *Arrows* (beside *Flip*, on by default) draws the move the side to move is thinking of in its engine's colour and the reply it expects, lighter, in the opponent's colour, on the board in focus and the detached ones (not the mosaic). In a gauntlet, *Seed at the bottom* (on by default) shows each new game from the seed's side; *Flip* still turns the board over until the next game. *Detach* opens a board in its own window. A right click on a board ends its game with a result (see *Changing a running tournament*) |
+| Live | The games in progress, as a mosaic of boards or one game in focus with the clocks, the running search of each engine (depth, score, nodes, nps, PV in SAN), the move list and the evaluation curve (or, chosen above it, each engine's time per move with its decision time, depth with seldepth, nodes, speed, tablebase hits, or how many plies its PV repeats of what the other engine's PV predicted), with the win/draw/loss shares (`UCI_ShowWDL`, switched on for the engines that have it when they are added) after each search line and as bands under the curve, White's wins at the bottom. Under the board: the 50-move counter (plies since the last capture or pawn move, out of 100), the material difference with the pieces one side has more of, and the pieces left, marked *TB* when the tablebase adjudication can end the game; *Details under the boards* adds them to the mosaic. *Arrows* (beside *Flip*, on by default) draws the move the side to move is thinking of in its engine's colour and the reply it expects, lighter, in the opponent's colour, on the board in focus and the detached ones (not the mosaic). In a gauntlet, *Seed at the bottom* (on by default) shows each new game from the seed's side; *Flip* still turns the board over until the next game. *Detach* opens a board in its own window. A right click on a board ends its game with a result (see *Changing a running tournament*). *Big screen* shows the game followed filling the window (see below) |
 | Games | The finished games with their opening (ECO code and name), filterable by result (wins, draws, losses, losses on time, crashes and illegal moves, adjudications, wrong PVs), by what the evaluations tell (the engines disagree by N pawns for 3 moves each in a row, an engine's evaluation swings by N pawns from one of its moves to the next, the loser thought it was N pawns better; the game opens at that moment) and by opening (an ECO code or its beginning, a range such as `B20-B99`, or words of the name), with a replay board (← → Home End, or click a move or the curve; the same details under it and the same charts as in *Live*, from the fields the PGN was written with; a chart whose field the tournament did not write says so, with a button to the PGN options of the setup; with the win, draw and loss shares of the engines that report them under the evaluation curve) and the export of one, all or the filtered games (*Export all* proposes `<name>.pgn` next to the tournament's folder; the tournament's own PGN files are refused as a target). *Export for a rating list…* writes the games as rating list testers (e.g. CCRL) send them: `[Tester YYYY-MM-DD] Event (hash NMB) (book X) (egtb N-man).pgn`, a zip too if asked; the players named as the lists write them, `<engine> 64-bit 4CPU` (editable for each participant), the rounds numbered again, the `Event` and `Site` tags set, the voided games and the duplicates left out, and those lost by a crash or a stall too unless unticked; the `PlyCount` of a game lost by an illegal move counts only the moves written. The tester and the site are remembered. *Engine log* opens the log of a game that has one (see *Files*). A right click on a game plays it again, voids it or sets its result (see *Changing a running tournament*) |
 | Openings | Results by starting position: its game pairs, White's score, the draws, and how many pairs White won twice, Black won twice (the opening favours a colour) or one engine won twice (it tells the engines apart), with the average length. Sorted by any column, filtered to the unbalanced, the drawn or the decisive ones; *Export as EPD…* writes the positions shown, to keep them or to clean a book. A click shows the position and its games |
 
@@ -308,6 +309,18 @@ the standings; *Broadcast*: a large board with the players, searches and standin
 own, by name, kept in `layouts.json` in the profile), *Delete* and *Default layout*. A panel taken out of the
 workspace stays on screen on the other pages; the arrangement is kept between sessions. F1 and the `?` open this
 guide at the panel last clicked.
+
+**Big screen**: for a television, a club or a stream, *Big screen* (in the *Live* tab, on a detached board, or in
+the command palette) shows one game filling the window, light on black: the players' names and clocks in large
+type (the side to move and its running clock in yellow, a clock under ten seconds in red), the evaluation bar, the
+evaluation, depth and speed of the search, the last move framed on the board and written large, and the moves in
+large type, the last one marked; the result over the board once the game is over. Its text follows the size of
+the window and has a size of its own (*A-* / *A+*, or the + and - keys). It shows the game followed, or switches
+between the games in progress every N seconds (*Every game in turn*), or follows *The most interesting* one: the
+closest to level, the longest of those as close, kept while it stays so. The controls show for three seconds when
+the mouse moves (the pointer hides with them); ← and → change the game, F11 makes the window full screen, Esc
+leaves. A detached board moved to another screen (the television) shows it in its own window, F11 making that
+window full screen while the main window goes on; docked in the main window, the main window shows it.
 
 **Processor use**: while games are played, the processor time of every engine's processes (the engine behind a
 WinBoard adapter included) is measured at each `go` and each move. The Overview shows, for each engine, the cores it
@@ -612,7 +625,7 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
   list), `setup-picker` and `setup-suggest` (*Add an engine…*, with the suggestion made), `submission-export`
   (*Export for a rating list…*), `ratings-players` (the *PGN players* window), `palette[=TEXT]` (the command palette, with TEXT typed in it),
   `game-menu=N` (the menu of game N in the *Games* tab, a result chosen), `end-menu=N` (*End with result* of the
-  game of slot N, from 1);
+  game of slot N, from 1), `big-screen[=N]` (the big screen, of the game of slot N);
 - `--select-game N` opens game N (in finishing order) in the *Games* tab as soon as it exists;
 - `--quit-after SECONDS` stops the tournament and quits;
 - `--run`: see *Headless mode*.

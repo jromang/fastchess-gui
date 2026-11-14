@@ -352,8 +352,8 @@ ImU32 engineColour(chess::Color color, int alpha) {
     return color == chess::Color::WHITE ? IM_COL32(110, 168, 222, alpha) : IM_COL32(237, 153, 77, alpha);
 }
 
-// The move the side to move thinks of and the reply it expects (the first two moves of its PV), each in the colour of
-// the engine that would play it, the reply lighter; none between searches.
+}  // namespace
+
 std::vector<BoardArrow> pvArrows(const SlotState& st, const chess::Board& board) {
     std::vector<BoardArrow> arrows;
     const auto& line = st.info[st.stm == chess::Color::WHITE ? 0 : 1];
@@ -364,6 +364,8 @@ std::vector<BoardArrow> pvArrows(const SlotState& st, const chess::Board& board)
     if (!moves.empty()) arrows.push_back({moves[0], engineColour(st.stm, 210)});
     return arrows;
 }
+
+namespace {
 
 std::string clockText(const SlotState& st, chess::Color color, int64_t elapsed) {
     const bool thinks = st.active && st.stm == color && st.thinking;
@@ -454,6 +456,14 @@ void App::drawLive() {
                "others. Flip still turns the board over."));
         ImGui::SameLine(0, px(24));
     }
+
+    // The game followed filling the window, for a television, a club or a stream.
+    if (ImGui::Button(TR("Big screen"))) startBigScreen(live_slot_);
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("The game followed filling the window, in large type, for a television, a club or a "
+                                   "stream. F11: full screen, Esc: back."));
+    }
+    if (mosaic) ImGui::SameLine(0, px(24));  // the line ends below; the tabs of one game go under it
 
     if (!mosaic) {
         if (ImGui::BeginTabBar("##slots", ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_TabListPopupButton)) {
@@ -790,8 +800,9 @@ void App::drawLiveGameLine(SlotView& view, int slot, bool allow_detach) {
     };
     const float flip_w   = check_w(TR("Flip"));
     const float arrows_w = check_w(TR("Arrows")) + ImGui::GetStyle().ItemSpacing.x;
-    const float detach_w =
-        allow_detach ? ImGui::CalcTextSize(TR("Detach")).x + ImGui::GetStyle().FramePadding.x * 2 + px(8) : 0;
+    // Detach, or in a detached board, Big screen.
+    const float detach_w = ImGui::CalcTextSize(allow_detach ? TR("Detach") : TR("Big screen")).x +
+                           ImGui::GetStyle().FramePadding.x * 2 + px(8);
     ImGui::SameLine();
     if (ImGui::GetContentRegionAvail().x < flip_w + arrows_w + detach_w) {
         ImGui::NewLine();  // on a line of their own in a narrow panel
@@ -803,6 +814,14 @@ void App::drawLiveGameLine(SlotView& view, int slot, bool allow_detach) {
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("%s", TR("Show this game in a panel of its own, which can be docked beside the others "
                                        "or moved to another screen."));
+        }
+        ImGui::SameLine();
+    } else {
+        if (ImGui::SmallButton(TR("Big screen"))) startBigBoard(slot);
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("This game filling its window, in large type: on another screen (a "
+                                       "television), the panel's window; docked here, the main window. F11: full "
+                                       "screen, Esc: back."));
         }
         ImGui::SameLine();
     }
@@ -1036,6 +1055,10 @@ void App::drawDetachedBoard(int slot) {
         return;
     }
     refreshSlot(slot);
+    if (const auto big = big_boards_.find(slot); big != big_boards_.end()) {
+        drawBigGame(big->second, false);
+        return;
+    }
     if (slot < static_cast<int>(slot_views_.size()))
         drawLiveGame(slot_views_[static_cast<std::size_t>(slot)], "##detached", LiveAll, slot, false);
 }

@@ -44,7 +44,9 @@ this repository still builds unchanged.
 - **Live view**: every game in progress as a mosaic, or one in focus, with the board, clocks, the running search of each engine
   (depth, score, nodes, nps, win/draw/loss shares, PV in SAN), the annotated move list and the evaluation and WDL
   curves; under the board, the
-  50-move counter, the material and the pieces left. Boards can be detached into their own windows.
+  50-move counter, the material and the pieces left. Boards can be detached into their own windows. A big screen
+  mode shows one game filling the window, in large type, for a television or a stream, switching between the games
+  in progress or following the most interesting one.
 - **Fair play**: the processor time of every engine, while it thinks and while its opponent does, with a warning
   when it uses more cores than its threads or thinks on its opponent's time.
 - **Pause / resume** without losing anything: no new game pair starts, running games (and the second game of
@@ -72,9 +74,9 @@ this repository still builds unchanged.
 |---|---|
 | ![Overview](docs/screenshots/overview.png) | ![Games](docs/screenshots/games.png) |
 
-| A two-engine SPRT match |
-|---|
-| ![Charts](docs/screenshots/charts.png) |
+| A two-engine SPRT match | The big screen, for a television or a stream |
+|---|---|
+| ![Charts](docs/screenshots/charts.png) | ![Big screen](docs/screenshots/big-screen.png) |
 
 ## Downloads
 

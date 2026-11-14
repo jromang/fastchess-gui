@@ -305,9 +305,15 @@ void App::drawPanels() {
         // Not focused as they appear: the focused window's tab is the one in front, so a layout built would show the
         // last panel of each node. The board fills its panel, without a scroll bar.
         auto flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoFocusOnAppearing;
-        if (panel == layout::panel::BOARD) flags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
-        bool open          = true;
+        if (panel == layout::panel::BOARD || (slot && big_boards_.count(*slot))) {
+            flags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+        }
+        bool open = true;
+        // A detached board shown as a big screen fills its window to the edges.
+        const bool big = slot && big_boards_.count(*slot);
+        if (big) ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
         const bool visible = ImGui::Begin(title.c_str(), &open, flags);
+        if (big) ImGui::PopStyleVar();
         if (panel == layout::panel::LIVE) drawLiveBadge();
         // A tab asked for is asked for until it is in front: a dock node's first frames can ignore it. Not for ever,
         // as it is focused meanwhile.

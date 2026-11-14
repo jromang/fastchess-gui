@@ -382,6 +382,9 @@ msgstr ""
 msgid "Base (s)"
 msgstr ""
 
+msgid "Big screen"
+msgstr ""
+
 msgid "Black"
 msgstr ""
 
@@ -410,6 +413,9 @@ msgid "Black's connection stalls"
 msgstr ""
 
 msgid "Board"
+msgstr ""
+
+msgid "Board {} of {}"
 msgstr ""
 
 msgid "Book"
@@ -853,6 +859,12 @@ msgstr ""
 msgid "Every game in progress, the one followed with its evaluation bar, arrows and charts; the standings, the crosstable, the statistics and anomalies, and the games' PGN file to download. Read-only, refreshed every second."
 msgstr ""
 
+msgid "Every game in turn"
+msgstr ""
+
+msgid "Every game in turn: the games in progress one after the other.\nThe most interesting: the game whose evaluation is closest to level, the longest of those as close; it stays while it is."
+msgstr ""
+
 msgid "Every game is written to two files in the match folder:"
 msgstr ""
 
@@ -1012,6 +1024,9 @@ msgstr ""
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr ""
 
+msgid "Full screen (F11)"
+msgstr ""
+
 msgid "Gainer [0, 3]"
 msgstr ""
 
@@ -1043,6 +1058,9 @@ msgid "Game {} · move {}"
 msgstr ""
 
 msgid "Game {} · move {}: {} – {}"
+msgstr ""
+
+msgid "Game {} · round {} · move {}"
 msgstr ""
 
 msgid "Game {}: {} – {}  {}"
@@ -1293,7 +1311,13 @@ msgstr ""
 msgid "Layout saved: {}"
 msgstr ""
 
+msgid "Leave (Esc)"
+msgstr ""
+
 msgid "Leave out the games lost by a crash or a stall"
+msgstr ""
+
+msgid "Leave the big screen"
 msgstr ""
 
 msgid "Letter case and spaces aside."
@@ -2132,6 +2156,9 @@ msgstr ""
 msgid "Searches at a time"
 msgstr ""
 
+msgid "Seconds before the next game is chosen."
+msgstr ""
+
 msgid "Seconds per move"
 msgstr ""
 
@@ -2371,6 +2398,9 @@ msgstr ""
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr ""
 
+msgid "The arrow keys too."
+msgstr ""
+
 msgid "The average rating of the opponents met, game by game."
 msgstr ""
 
@@ -2443,6 +2473,9 @@ msgstr ""
 msgid "The game counts again as it was."
 msgstr ""
 
+msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
+msgstr ""
+
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr ""
 
@@ -2471,6 +2504,9 @@ msgid "The last change of the tournament was undone."
 msgstr ""
 
 msgid "The last check or reading failed."
+msgstr ""
+
+msgid "The most interesting"
 msgstr ""
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
@@ -2551,6 +2587,9 @@ msgstr ""
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr ""
 
+msgid "The size of the text, for the distance it is read from (+ and - too)."
+msgstr ""
+
 msgid "The spread of the advantage the openings give, in Elo: what playing each opening twice, colours reversed, cancels out."
 msgstr ""
 
@@ -2600,6 +2639,12 @@ msgid "This draw ratio and this RMS bias are not compatible."
 msgstr ""
 
 msgid "This engine once more, with another book"
+msgstr ""
+
+msgid "This game"
+msgstr ""
+
+msgid "This game filling its window, in large type: on another screen (a television), the panel's window; docked here, the main window. F11: full screen, Esc: back."
 msgstr ""
 
 msgid "This game is not being played: it is over, or its engines are still starting."
@@ -2735,6 +2780,9 @@ msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr ""
 
 msgid "Waiting for the book of {}…"
+msgstr ""
+
+msgid "Waiting for the next game…"
 msgstr ""
 
 msgid "Waiting for the test suite…"
@@ -3038,6 +3086,9 @@ msgstr ""
 msgid "replay requested"
 msgstr ""
 
+msgid "s"
+msgstr ""
+
 msgid "send at startup"
 msgstr ""
 
@@ -3337,6 +3388,9 @@ msgid "{} min {:02} s"
 msgstr ""
 
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
+msgstr ""
+
+msgid "{} n/s"
 msgstr ""
 
 msgid "{} new engine found. Untick those to leave out."
