@@ -69,3 +69,47 @@ TEST_CASE("incidents: crashes, time losses and illegal moves of the recent games
 
     fs::remove_all(root);
 }
+
+TEST_CASE("incidents: by engine, the losers named, the losses on time in the first moves apart") {
+    const auto root = fs::temp_directory_path() / "fcg-tour-incidents-engines";
+    fs::remove_all(root);
+    const auto dir = root / "20261112-100000_rr";
+    fs::create_directories(dir);
+    const nlohmann::json spec = {
+        {"participants", {{{"id", 0}, {"engine", {{"name", "Alpha"}}}}, {{"id", 1}, {"engine", {{"name", "Beta"}}}}}}};
+    std::ofstream(dir / "tournament.json") << spec.dump();
+
+    const auto played = [&](int white, int black, const char* result, MatchTermination how, unsigned plies) {
+        const nlohmann::json event = {{"t", "game_finished"}, {"white", white}, {"black", black},
+                                      {"result", result},     {"plies", plies}, {"termination", static_cast<int>(how)},
+                                      {"reason", "x"},        {"at", 5000}};
+        std::ofstream(dir / "journal.jsonl", std::ios::app) << event.dump() << "\n";
+    };
+    played(0, 1, "0-1", MatchTermination::TIMEOUT, 12);   // Alpha, on time in the first moves
+    played(1, 0, "1-0", MatchTermination::TIMEOUT, 30);   // Alpha again
+    played(0, 1, "1-0", MatchTermination::TIMEOUT, 140);  // Beta, late
+    played(0, 1, "1-0", MatchTermination::DISCONNECT, 50);
+    played(0, 1, "1/2-1/2", MatchTermination::TIMEOUT, 90);  // a draw: no loser
+    // A participant added during the tournament.
+    const nlohmann::json added = {{"t", "participant_added"},
+                                  {"participant", {{"id", 2}, {"engine", {{"name", "Gamma"}}}}}};
+    std::ofstream(dir / "journal.jsonl", std::ios::app) << added.dump() << "\n";
+    played(2, 0, "0-1", MatchTermination::ILLEGAL_MOVE, 20);
+
+    const auto found = IncidentScanner().scan(root, 1000);
+    CHECK(found.time_losses == 4);
+    CHECK(found.crashes == 1);
+    CHECK(found.illegal_moves == 1);
+    REQUIRE(found.engines.size() == 3);
+    CHECK(found.engines[0].engine == "Alpha");  // 2, before Beta's 2 by name
+    CHECK(found.engines[0].time_losses == 2);
+    CHECK(found.engines[0].early_time_losses == 2);
+    CHECK(found.engines[0].dir == dir);
+    CHECK(found.engines[1].engine == "Beta");
+    CHECK(found.engines[1].time_losses == 1);
+    CHECK(found.engines[1].early_time_losses == 0);
+    CHECK(found.engines[1].crashes == 1);
+    CHECK(found.engines[2].engine == "Gamma");
+    CHECK(found.engines[2].illegal_moves == 1);
+    fs::remove_all(root);
+}
