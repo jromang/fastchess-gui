@@ -81,13 +81,13 @@ struct BroadcastInput {
 };
 
 // Safe to call while the tournament runs.
-[[nodiscard]] BroadcastInput broadcastInput(const tour::TournamentState& state, const GuiObserver& observer,
+[[nodiscard]] BroadcastInput broadcastInput(const tour::TournamentState& state, const LiveSource& observer,
                                             const std::optional<tour::Anchor>& anchor);
 
 // The tournament as broadcast: the games in progress (from the observer), the last game ended in each slot, the
 // standings and the latest results. Any thread.
 [[nodiscard]] BroadcastSnapshot makeSnapshot(const BroadcastInput& input);
-[[nodiscard]] inline BroadcastSnapshot makeSnapshot(const tour::TournamentState& state, const GuiObserver& observer,
+[[nodiscard]] inline BroadcastSnapshot makeSnapshot(const tour::TournamentState& state, const LiveSource& observer,
                                                     const std::optional<tour::Anchor>& anchor) {
     return makeSnapshot(broadcastInput(state, observer, anchor));
 }
@@ -106,7 +106,7 @@ class Broadcaster {
     // Publishes the tournament: at most twice a second, the files once a second. Only the copies of
     // broadcastInput() are made here; the snapshot, the files and lichess are done on a thread of the broadcaster.
     // `featured`: the slot whose game TLCS follows, -1 to let it choose.
-    void update(const tour::TournamentState& state, const GuiObserver& observer,
+    void update(const tour::TournamentState& state, const LiveSource& observer,
                 const std::optional<tour::Anchor>& anchor, int featured);
 
     // Stops everything, once the last update is published and the last push to lichess made (headless mode).

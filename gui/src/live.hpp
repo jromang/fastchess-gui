@@ -216,12 +216,55 @@ class CpuMeter {
     bool failed_     = false;  // could not be opened: not tried again
 };
 
-class GuiObserver final : public fastchess::observer::GameObserver, public tour::RecordListener {
+// What the views read of a tournament's games, on the GUI thread, wherever the tournament plays: GuiObserver, told by
+// the runner in this process, or by the tournament's process through the control channel (control.hpp). The Live,
+// Games and Overview tabs, the charts and the broadcast read only this.
+class LiveSource {
+   public:
+    virtual ~LiveSource() = default;
+
+    [[nodiscard]] virtual int slotCount() const noexcept = 0;
+    // Copies slot `i` into `out` if it changed since `out.version`. Returns true if it did.
+    virtual bool copySlot(int i, SlotState& out) const = 0;
+    // The last games that ended in slot `i`, oldest first, kept when the next ones start: the next game often starts
+    // before a broadcast saw the end of the previous one, and fast games (a few nodes per move) end several at a
+    // time between two snapshots.
+    [[nodiscard]] virtual std::vector<SlotState> endedGames(int i) const = 0;
+    // Is anything going on in slot `i` (cheap, for tab labels)?
+    [[nodiscard]] virtual bool slotActive(int i) const = 0;
+    // The games a resumed tournament already holds are still being read.
+    [[nodiscard]] virtual bool loading() const = 0;
+    // Moves the games and statistics that arrived since the last call into the given vectors.
+    virtual void drain(std::vector<GameRecord>& games, std::vector<fastchess::Stats>& stats) = 0;
+    [[nodiscard]] virtual std::vector<std::string> reasons() const                           = 0;
+    [[nodiscard]] virtual std::vector<OpeningName> openings() const = 0;  // [0] is "no opening"
+    [[nodiscard]] virtual std::vector<EngineTotals> totals() const  = 0;  // by participant index
+    // The same with each participant's name, taken together: from any thread.
+    [[nodiscard]] virtual std::vector<std::pair<std::string, EngineTotals>> namedTotals() const = 0;
+    // New participants (added or replacing one) get a name and counters; existing indexes do not change.
+    virtual void updateParticipants(const tour::TournamentSpec& spec) = 0;
+    // The records of the games that count, for the views to start over after an edit (see GuiObserver::records()).
+    [[nodiscard]] virtual std::vector<GameRecord> records(const std::vector<tour::GameResult>& results) = 0;
+    // Participant names, by index.
+    [[nodiscard]] virtual const std::vector<std::string>& names() const noexcept     = 0;
+    [[nodiscard]] virtual const std::string& name(std::size_t index) const           = 0;
+    [[nodiscard]] virtual const std::filesystem::path& fastchessPgn() const noexcept = 0;
+    [[nodiscard]] virtual const std::filesystem::path& chessbasePgn() const noexcept = 0;
+    [[nodiscard]] virtual const std::string& engineA() const noexcept                = 0;
+    [[nodiscard]] virtual const std::string& engineB() const noexcept                = 0;
+};
+
+// The search statistics of the moves White's engine and Black's engine played in a game (EngineTotals without the
+// processor use and the losses): what is added to their totals when the game is recorded.
+[[nodiscard]] std::array<EngineTotals, 2> sideTotals(const fastchess::MatchData& data);
+
+class GuiObserver final : public fastchess::observer::GameObserver, public tour::RecordListener, public LiveSource {
    public:
     // `state` is the match about to be played; the games it already holds (a resumed match) are queued as if
     // they had just been played, read from the PGN on a thread of their own (a big tournament takes seconds), before
-    // the games played meanwhile.
-    GuiObserver(int slots, const tour::TournamentState& state);
+    // the games played meanwhile. Without `measure`, the processor use of the engines is not measured here (nor kept
+    // in processor.tsv): the tournament's process measures it and tells it (addCpu()).
+    GuiObserver(int slots, const tour::TournamentState& state, bool measure = true);
     ~GuiObserver() override;
     GuiObserver(const GuiObserver&)            = delete;
     GuiObserver& operator=(const GuiObserver&) = delete;
@@ -238,53 +281,48 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     void onRecorded(const tour::GameResult& result, const fastchess::MatchData& data,
                     const std::optional<fastchess::Stats>& pair) override;
 
+    // --- what the tournament's process tells (control.hpp), any thread ---
+    // What the engines of slot `i` used while `mover` thought (CpuMeter::moved()), added to their totals.
+    void addCpu(int i, chess::Color mover, const CpuMeter::Used& used);
+    // The game of slot `i` ended: its result ("*" when it was not counted) and the reason.
+    void gameEnded(int i, bool counted, const std::string& result, const std::string& reason);
+    // A game recorded (in the tournament's results already), with the search statistics of each side's moves.
+    void recorded(const tour::GameResult& result, const std::array<EngineTotals, 2>& side,
+                  const std::optional<fastchess::Stats>& pair);
+    // Slot `i` as it stands, for a window that connects to a tournament already playing.
+    void restoreSlot(int i, const SlotState& state);
+
     // --- GUI thread ---
-    [[nodiscard]] int slotCount() const noexcept { return static_cast<int>(slots_.size()); }
-
-    // Copies slot `i` into `out` if it changed since `out.version`. Returns true if it did.
-    bool copySlot(int i, SlotState& out) const;
-
-    // The last games that ended in slot `i`, oldest first, kept when the next ones start: the next game often starts
-    // before a broadcast saw the end of the previous one, and fast games (a few nodes per move) end several at a
-    // time between two snapshots.
-    [[nodiscard]] std::vector<SlotState> endedGames(int i) const;
-
-    // Is anything going on in slot `i` (cheap, for tab labels)?
-    [[nodiscard]] bool slotActive(int i) const;
+    [[nodiscard]] int slotCount() const noexcept override { return static_cast<int>(slots_.size()); }
+    bool copySlot(int i, SlotState& out) const override;
+    [[nodiscard]] std::vector<SlotState> endedGames(int i) const override;
+    [[nodiscard]] bool slotActive(int i) const override;
 
     // Calls `stop` with the process of the engine on move in slot `i`, while it plays game `game_id`
     // (SlotState::game_id) and its engines are started; false otherwise. See RunController::endGame().
     bool stopEngineOnMove(int i, std::size_t game_id, const std::function<void(int64_t pid)>& stop);
 
-    // The games a resumed tournament already holds are still being read.
-    [[nodiscard]] bool loading() const;
+    [[nodiscard]] bool loading() const override;
+    void drain(std::vector<GameRecord>& games, std::vector<fastchess::Stats>& stats) override;
 
-    // Moves the games and statistics that arrived since the last call into the given vectors.
-    void drain(std::vector<GameRecord>& games, std::vector<fastchess::Stats>& stats);
+    [[nodiscard]] std::vector<std::string> reasons() const override;
+    [[nodiscard]] std::vector<OpeningName> openings() const override;
+    [[nodiscard]] std::vector<EngineTotals> totals() const override;  // [0] = A, [1] = B in a match
+    [[nodiscard]] std::vector<std::pair<std::string, EngineTotals>> namedTotals() const override;
+    void updateParticipants(const tour::TournamentSpec& spec) override;
 
-    [[nodiscard]] std::vector<std::string> reasons() const;
-    [[nodiscard]] std::vector<OpeningName> openings() const;  // [0] is "no opening"
-    [[nodiscard]] std::vector<EngineTotals> totals() const;   // by participant index ([0] = A, [1] = B in a match)
-    // The same with each participant's name, taken together: from any thread.
-    [[nodiscard]] std::vector<std::pair<std::string, EngineTotals>> namedTotals() const;
+    // The games whose PGN was not read yet (a resumed tournament still loading) are left out and come through drain()
+    // once read, in their order: the lists end up as a fresh open of the tournament would show them.
+    [[nodiscard]] std::vector<GameRecord> records(const std::vector<tour::GameResult>& results) override;
 
-    // New participants (added or replacing one) get a name and counters; existing indexes do not change.
-    void updateParticipants(const tour::TournamentSpec& spec);
+    [[nodiscard]] const std::vector<std::string>& names() const noexcept override { return names_; }
+    [[nodiscard]] const std::string& name(std::size_t index) const override;
 
-    // The records of the games that count, for the views to start over after an edit. The games whose PGN was not
-    // read yet (a resumed tournament still loading) are left out and come through drain() once read, in their
-    // order: the lists end up as a fresh open of the tournament would show them.
-    [[nodiscard]] std::vector<GameRecord> records(const std::vector<tour::GameResult>& results);
+    [[nodiscard]] const std::filesystem::path& fastchessPgn() const noexcept override { return pgn_fastchess_; }
+    [[nodiscard]] const std::filesystem::path& chessbasePgn() const noexcept override { return pgn_chessbase_; }
 
-    // Participant names, by index.
-    [[nodiscard]] const std::vector<std::string>& names() const noexcept { return names_; }
-    [[nodiscard]] const std::string& name(std::size_t index) const;
-
-    [[nodiscard]] const std::filesystem::path& fastchessPgn() const noexcept { return pgn_fastchess_; }
-    [[nodiscard]] const std::filesystem::path& chessbasePgn() const noexcept { return pgn_chessbase_; }
-
-    [[nodiscard]] const std::string& engineA() const noexcept { return engine_a_; }
-    [[nodiscard]] const std::string& engineB() const noexcept { return engine_b_; }
+    [[nodiscard]] const std::string& engineA() const noexcept override { return engine_a_; }
+    [[nodiscard]] const std::string& engineB() const noexcept override { return engine_b_; }
 
    private:
     struct Slot {
@@ -333,6 +371,7 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     int id_a_   = 0;  // participant ids
     int id_b_   = 1;
     bool match_ = true;
+    bool frc_   = false;  // Chess960: the castling moves read otherwise
     std::vector<std::string> names_;
     std::unordered_map<int, uint16_t> index_;  // participant id -> index
 
