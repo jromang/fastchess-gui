@@ -2,11 +2,13 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <utility>
 
 #include <imgui.h>
 
 #include <fmt/include/fmt/format.h>
 
+#include <tour/chess324.hpp>
 #include <tour/polyglot.hpp>
 
 #include "app.hpp"
@@ -48,6 +50,16 @@ std::string problems(uint8_t flags) {
 
 constexpr uint8_t ANY_PROBLEM = tour::BOOK_ILLEGAL | tour::BOOK_DUPLICATE | tour::BOOK_MIRRORED | tour::BOOK_OVER;
 
+// A tooltip for the item just drawn, also when it is disabled, its lines wrapped.
+void tip(const char* text) {
+    if (!ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_AllowWhenDisabled)) return;
+    ImGui::BeginTooltip();
+    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+    ImGui::TextUnformatted(text);
+    ImGui::PopTextWrapPos();
+    ImGui::EndTooltip();
+}
+
 }  // namespace
 
 void App::addBook(const std::string& path) {
@@ -58,6 +70,72 @@ void App::addBook(const std::string& path) {
     selected_book_ = static_cast<int>(books_.size()) - 1;
     storage_.saveBooks(books_);
     startBookScan(selected_book_);
+}
+
+std::string App::newBookPath(const std::string& name) {
+    std::error_code ec;
+    const auto folder = [&](int i) {
+        if (i < 0 || i >= static_cast<int>(books_.size())) return fs::path();
+        const auto dir = fs::path(books_[i].path).parent_path();
+        return !dir.empty() && fs::is_directory(dir, ec) ? dir : fs::path();
+    };
+    auto dir = folder(selected_book_);
+    if (dir.empty()) dir = folder(static_cast<int>(books_.size()) - 1);
+    if (dir.empty()) {
+        dir = storage_.root() / "books";
+        fs::create_directories(dir, ec);
+    }
+    return (dir / name).string();
+}
+
+void App::addWrittenBook(const std::string& path, const std::string& description) {
+    for (int i = 0; i < static_cast<int>(books_.size()); ++i) {
+        std::error_code ec;
+        if (books_[i].path != path && !fs::equivalent(books_[i].path, path, ec)) continue;
+        selected_book_ = i;
+        book_item_     = -1;
+        if (books_[i].description.empty()) books_[i].description = description;
+        storage_.saveBooks(books_);
+        startBookScan(i);  // the file changed
+        return;
+    }
+    addBook(path);
+    books_.back().description = description;
+    storage_.saveBooks(books_);
+}
+
+void App::askChess324(bool symmetrical) {
+    dialogs_.saveFile(symmetrical ? Dialogs::Purpose::Chess324SymmetricalBook : Dialogs::Purpose::Chess324Book,
+                      {{"EPD", "epd"}}, newBookPath(symmetrical ? "chess324-symmetrical.epd" : "chess324.epd"));
+}
+
+void App::writeChess324Book(std::string path, bool symmetrical) {
+    // A book is read by its extension.
+    if (!fs::path(path).has_extension()) path += ".epd";
+    try {
+        const auto n = tour::writeChess324(path, symmetrical);
+        Console::instance().add(trn("{} position written to {}", "{} positions written to {}", n, n, path));
+        addWrittenBook(path, symmetrical ? TR("Chess324: the 18 symmetrical starting positions")
+                                         : TR("Chess324: the 324 starting positions"));
+    } catch (const std::exception& e) {
+        Console::instance().add(fmt::format("{} ({})", trf("Cannot write {}", path), e.what()), true);
+    }
+}
+
+void App::drawBookCreateMenu() {
+    if (!ImGui::BeginPopup("##book_create")) return;
+    if (ImGui::BeginMenu(TR("Generate Chess324 book"))) {
+        if (ImGui::MenuItem(TR("All 324 positions…"))) askChess324(false);
+        tip(
+            TR("Chess324: the kings and the rooks on their usual squares, so castling is the usual one; the "
+               "queen, the bishops and the knights of each side shuffled on the other squares of its back rank, the "
+               "bishops on opposite colours. 18 arrangements a side, White's and Black's chosen independently: 324 "
+               "starting positions, an EPD book any engine plays, added to the library."));
+        if (ImGui::MenuItem(TR("Only the 18 symmetrical ones…"))) askChess324(true);
+        tip(TR("Black's pieces on the same files as White's: 18 starting positions, added to the library."));
+        ImGui::EndMenu();
+    }
+    ImGui::EndPopup();
 }
 
 void App::cancelBookScan() {
@@ -130,7 +208,13 @@ void App::drawBooks() {
         dialogs_.openFile(Dialogs::Purpose::AddBook,
                           {{TR("Books (EPD, PGN, Polyglot)"), "epd;pgn;bin"}, {TR("All files"), "*"}});
     }
-    ImGui::SameLine();
+    ui::sameLineOrWrap(TR("Create…"));
+    if (ImGui::Button(TR("Create…")) || std::exchange(open_book_create_, false)) ImGui::OpenPopup("##book_create");
+    tip(TR("Books the program writes, added to the library."));
+    // Under the button, as a list that drops down.
+    ImGui::SetNextWindowPos(ImVec2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y), ImGuiCond_Appearing);
+    drawBookCreateMenu();
+    ui::sameLineOrWrap(TR("Remove"));
     ImGui::BeginDisabled(selected_book_ < 0);
     if (ImGui::Button(TR("Remove")) && selected_book_ >= 0) {
         if (book_scan_index_ == selected_book_) {
@@ -260,8 +344,9 @@ void App::drawBookDetail(BookEntry& book) {
             ImGui::PopStyleColor();
             ImGui::SameLine();
             ImGui::TextUnformatted(trf("{}: {}", TR("lines starting with %, ignored"), ui::formatCount(n)).c_str());
-            ui::help(TR("The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, "
-                        "and could play some openings of this book from a wrong position, often the starting one."));
+            ui::help(
+                TR("The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, "
+                   "and could play some openings of this book from a wrong position, often the starting one."));
         }
 
         ImGui::Spacing();

@@ -269,6 +269,9 @@ msgstr "После текущего турнира: его завершение 
 msgid "All"
 msgstr "Все"
 
+msgid "All 324 positions…"
+msgstr "Все 324 позиции…"
+
 msgid "All engines"
 msgstr "Все движки"
 
@@ -407,6 +410,9 @@ msgstr "Чёрные ×2"
 msgid "Black's connection stalls"
 msgstr "Чёрные не отвечают"
 
+msgid "Black's pieces on the same files as White's: 18 starting positions, added to the library."
+msgstr "Чёрные фигуры на тех же вертикалях, что и белые: 18 начальных позиций, добавленных в библиотеку."
+
 msgid "Board"
 msgstr "Доска"
 
@@ -418,6 +424,9 @@ msgstr "Книги"
 
 msgid "Books (EPD, PGN, Polyglot)"
 msgstr "Книги (EPD, PGN, Polyglot)"
+
+msgid "Books the program writes, added to the library."
+msgstr "Книги, которые пишет программа; они добавляются в библиотеку."
 
 msgid "Both engines must agree"
 msgstr "Оба движка должны согласиться"
@@ -514,6 +523,15 @@ msgstr "Проверено: работает."
 
 msgid "Checking…"
 msgstr "Проверка…"
+
+msgid "Chess324: the 18 symmetrical starting positions"
+msgstr "Chess324: 18 симметричных начальных позиций"
+
+msgid "Chess324: the 324 starting positions"
+msgstr "Chess324: 324 начальные позиции"
+
+msgid "Chess324: the kings and the rooks on their usual squares, so castling is the usual one; the queen, the bishops and the knights of each side shuffled on the other squares of its back rank, the bishops on opposite colours. 18 arrangements a side, White's and Black's chosen independently: 324 starting positions, an EPD book any engine plays, added to the library."
+msgstr "Chess324: короли и ладьи на своих обычных полях, поэтому рокировка обычная; ферзь, слоны и кони каждой стороны перемешаны на остальных полях её первой горизонтали, слоны на полях разного цвета. 18 расстановок для каждой стороны, у белых и у чёрных они выбираются независимо: 324 начальные позиции, книга EPD, которую играет любой движок, добавленная в библиотеку."
 
 msgid "Chess960"
 msgstr "Chess960"
@@ -622,6 +640,9 @@ msgstr "Вылет / нелегальный ход"
 
 msgid "Create a token on lichess…"
 msgstr "Создать токен на lichess…"
+
+msgid "Create…"
+msgstr "Создать…"
 
 msgid "Crosstable"
 msgstr "Перекрёстная таблица"
@@ -1048,6 +1069,9 @@ msgstr "Таблица гаунтлета текстом"
 
 msgid "Gauntlet {} vs {} engines"
 msgstr "Гаунтлет, движков: {} против {}"
+
+msgid "Generate Chess324 book"
+msgstr "Создать книгу Chess324"
 
 msgid "Give the Syzygy tablebase directory."
 msgstr "Укажите папку таблиц Syzygy."
@@ -1561,6 +1585,9 @@ msgstr "Одна партия"
 
 msgid "One port per game"
 msgstr "Отдельный порт для каждой партии"
+
+msgid "Only the 18 symmetrical ones…"
+msgstr "Только 18 симметричных…"
 
 msgid "Only the games between engines of a group of the library."
 msgstr "Только партии между движками одной группы из библиотеки."

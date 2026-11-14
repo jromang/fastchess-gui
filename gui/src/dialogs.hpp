@@ -36,6 +36,8 @@ class Dialogs {
         AddBook,
         BookFile,
         SaveCleanBook,
+        Chess324Book,
+        Chess324SymmetricalBook,
         SuiteFile,
         ExportSuiteCsv,
         TournamentsFolder,

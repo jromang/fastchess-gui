@@ -265,6 +265,9 @@ msgstr "Nach dem laufenden Turnier: Sein Ende beendet alle Engines."
 msgid "All"
 msgstr "Alle"
 
+msgid "All 324 positions…"
+msgstr "Alle 324 Stellungen…"
+
 msgid "All engines"
 msgstr "Alle Engines"
 
@@ -403,6 +406,9 @@ msgstr "Schwarz ×2"
 msgid "Black's connection stalls"
 msgstr "Die Verbindung von Schwarz hängt"
 
+msgid "Black's pieces on the same files as White's: 18 starting positions, added to the library."
+msgstr "Die schwarzen Figuren auf denselben Linien wie die weißen: 18 Startstellungen, zur Bibliothek hinzugefügt."
+
 msgid "Board"
 msgstr "Brett"
 
@@ -414,6 +420,9 @@ msgstr "Bücher"
 
 msgid "Books (EPD, PGN, Polyglot)"
 msgstr "Bücher (EPD, PGN, Polyglot)"
+
+msgid "Books the program writes, added to the library."
+msgstr "Bücher, die das Programm schreibt, zur Bibliothek hinzugefügt."
 
 msgid "Both engines must agree"
 msgstr "Beide Engines müssen zustimmen"
@@ -510,6 +519,15 @@ msgstr "Geprüft: es funktioniert."
 
 msgid "Checking…"
 msgstr "Prüfe…"
+
+msgid "Chess324: the 18 symmetrical starting positions"
+msgstr "Chess324: die 18 symmetrischen Startstellungen"
+
+msgid "Chess324: the 324 starting positions"
+msgstr "Chess324: die 324 Startstellungen"
+
+msgid "Chess324: the kings and the rooks on their usual squares, so castling is the usual one; the queen, the bishops and the knights of each side shuffled on the other squares of its back rank, the bishops on opposite colours. 18 arrangements a side, White's and Black's chosen independently: 324 starting positions, an EPD book any engine plays, added to the library."
+msgstr "Chess324: Könige und Türme auf ihren üblichen Feldern, die Rochade ist also die übliche; Dame, Läufer und Springer jeder Seite auf den übrigen Feldern ihrer Grundreihe gemischt, die Läufer auf verschiedenfarbigen Feldern. 18 Aufstellungen je Seite, die von Weiß und die von Schwarz unabhängig gewählt: 324 Startstellungen, ein EPD-Buch, das jede Engine spielt, zur Bibliothek hinzugefügt."
 
 msgid "Chess960"
 msgstr "Chess960"
@@ -618,6 +636,9 @@ msgstr "Absturz / illegaler Zug"
 
 msgid "Create a token on lichess…"
 msgstr "Token auf lichess erstellen…"
+
+msgid "Create…"
+msgstr "Erstellen…"
 
 msgid "Crosstable"
 msgstr "Kreuztabelle"
@@ -1044,6 +1065,9 @@ msgstr "Gauntlet-Tabelle als Text"
 
 msgid "Gauntlet {} vs {} engines"
 msgstr "Gauntlet {} gegen {} Engines"
+
+msgid "Generate Chess324 book"
+msgstr "Chess324-Buch erzeugen"
 
 msgid "Give the Syzygy tablebase directory."
 msgstr "Gib das Verzeichnis der Syzygy-Tablebases an."
@@ -1556,6 +1580,9 @@ msgstr "Eine Partie"
 
 msgid "One port per game"
 msgstr "Ein Port pro Partie"
+
+msgid "Only the 18 symmetrical ones…"
+msgstr "Nur die 18 symmetrischen…"
 
 msgid "Only the games between engines of a group of the library."
 msgstr "Nur die Partien zwischen Engines einer Gruppe der Bibliothek."

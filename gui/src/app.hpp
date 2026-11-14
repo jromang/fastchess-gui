@@ -460,6 +460,17 @@ class App {
     void startBookScan(int index);
     void pollBookScan();
     void cancelBookScan();
+    // The Create menu of the list: books the program writes.
+    void drawBookCreateMenu();
+    // Where a book the program writes is offered to go, named `name`: next to the book chosen in the list, else the
+    // last one of the library, else in <profile>/books (made now, for the dialog to open in).
+    std::string newBookPath(const std::string& name);
+    // A book the program wrote: added to the library and chosen, or read again when the library has it already.
+    void addWrittenBook(const std::string& path, const std::string& description);
+    // Asks where to write a Chess324 book, every position or the symmetrical ones (tour/chess324.hpp).
+    void askChess324(bool symmetrical);
+    void writeChess324Book(std::string path, bool symmetrical);
+    bool open_book_create_ = false;  // --focus books-create: the Create menu open
 
     // engines
     void refreshPrograms();

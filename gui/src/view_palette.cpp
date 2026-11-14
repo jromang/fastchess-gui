@@ -159,6 +159,14 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     }
     add(TR("Engines"), "", page(Page::Engines));
     add(TR("Books"), "", page(Page::Books));
+    for (const bool symmetrical : {false, true}) {
+        add(fmt::format("{}: {}", TR("Generate Chess324 book"),
+                        symmetrical ? TR("Only the 18 symmetrical ones…") : TR("All 324 positions…")),
+            TR("Books"), [this, symmetrical] {
+                page_ = Page::Books;
+                askChess324(symmetrical);
+            });
+    }
     add(TR("Test suites"), "", page(Page::Suites));
     add(TR("Ratings"), "", page(Page::Ratings));
     const auto ratings_tab = [&](const char* label, int index) {

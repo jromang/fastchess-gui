@@ -197,7 +197,13 @@ void App::frame() {
             open_pgn_players_ = true;
         } else if (w == "books")
             page_ = Page::Books;
-        else if (w == "home")
+        else if (w == "books-create") {
+            page_             = Page::Books;
+            open_book_create_ = true;
+        } else if (w.rfind("books-chess324=", 0) == 0) {  // books-chess324=FILE: the Chess324 book written there
+            page_ = Page::Books;
+            writeChess324Book(w.substr(15), false);
+        } else if (w == "home")
             page_ = Page::Home;
         else if (w == "home-resume" || w == "setup-start") {
             // Resume or Start pressed on the first frame, while the engines that need it are read.
@@ -854,6 +860,10 @@ void App::handleDialogs() {
                     storage_.saveBooks(books_);
                     startBookScan(selected_book_);
                 }
+                break;
+            case Dialogs::Purpose::Chess324Book:
+            case Dialogs::Purpose::Chess324SymmetricalBook:
+                writeChess324Book(path, answer->purpose == Dialogs::Purpose::Chess324SymmetricalBook);
                 break;
             case Dialogs::Purpose::SuiteFile:
                 openSuite(path);

@@ -265,6 +265,9 @@ msgstr ""
 msgid "All"
 msgstr ""
 
+msgid "All 324 positions…"
+msgstr ""
+
 msgid "All engines"
 msgstr ""
 
@@ -403,6 +406,9 @@ msgstr ""
 msgid "Black's connection stalls"
 msgstr ""
 
+msgid "Black's pieces on the same files as White's: 18 starting positions, added to the library."
+msgstr ""
+
 msgid "Board"
 msgstr ""
 
@@ -413,6 +419,9 @@ msgid "Books"
 msgstr ""
 
 msgid "Books (EPD, PGN, Polyglot)"
+msgstr ""
+
+msgid "Books the program writes, added to the library."
 msgstr ""
 
 msgid "Both engines must agree"
@@ -509,6 +518,15 @@ msgid "Checked: it works."
 msgstr ""
 
 msgid "Checking…"
+msgstr ""
+
+msgid "Chess324: the 18 symmetrical starting positions"
+msgstr ""
+
+msgid "Chess324: the 324 starting positions"
+msgstr ""
+
+msgid "Chess324: the kings and the rooks on their usual squares, so castling is the usual one; the queen, the bishops and the knights of each side shuffled on the other squares of its back rank, the bishops on opposite colours. 18 arrangements a side, White's and Black's chosen independently: 324 starting positions, an EPD book any engine plays, added to the library."
 msgstr ""
 
 msgid "Chess960"
@@ -617,6 +635,9 @@ msgid "Crash / illegal move"
 msgstr ""
 
 msgid "Create a token on lichess…"
+msgstr ""
+
+msgid "Create…"
 msgstr ""
 
 msgid "Crosstable"
@@ -1043,6 +1064,9 @@ msgid "Gauntlet table as text"
 msgstr ""
 
 msgid "Gauntlet {} vs {} engines"
+msgstr ""
+
+msgid "Generate Chess324 book"
 msgstr ""
 
 msgid "Give the Syzygy tablebase directory."
@@ -1555,6 +1579,9 @@ msgid "One game"
 msgstr ""
 
 msgid "One port per game"
+msgstr ""
+
+msgid "Only the 18 symmetrical ones…"
 msgstr ""
 
 msgid "Only the games between engines of a group of the library."

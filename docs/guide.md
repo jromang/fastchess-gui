@@ -160,6 +160,16 @@ in the setup (with Chess960 for a Chess960 book). *Save a cleaned copy…* write
 positions, the duplicates and the finished games (and, if ticked, the positions with colours reversed), and adds
 it to the library. *Run as a test suite…* opens an EPD book in **Suites**.
 
+**Create…** writes books for the library (also in the command palette):
+
+- *Generate Chess324 book*: Larry Kaufman's Chess324. The kings and the rooks stay on their usual squares, so
+  castling is the usual one; the queen, the bishops and the knights of each side are shuffled on the other squares
+  of its back rank (the b, c, d, f and g files), the bishops on squares of opposite colours. That makes 18
+  arrangements a side, White's and Black's chosen independently: *All 324 positions*, or *Only the 18 symmetrical
+  ones*, where Black's pieces stand on the same files as White's. They are ordinary positions, written to an EPD
+  file (offered next to the books of the library, or in `books/` in the profile) and played by any engine, without
+  Chess960.
+
 ## Test suites
 
 The **Suites** page runs an EPD test suite: positions with their best move (`bm`), the moves to avoid (`am`), or,

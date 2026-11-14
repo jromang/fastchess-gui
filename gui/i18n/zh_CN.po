@@ -261,6 +261,9 @@ msgstr "请在当前锦标赛结束后：它结束时会关闭所有引擎。"
 msgid "All"
 msgstr "全部"
 
+msgid "All 324 positions…"
+msgstr "全部 324 个局面…"
+
 msgid "All engines"
 msgstr "所有引擎"
 
@@ -399,6 +402,9 @@ msgstr "黑方 ×2"
 msgid "Black's connection stalls"
 msgstr "黑方连接无响应"
 
+msgid "Black's pieces on the same files as White's: 18 starting positions, added to the library."
+msgstr "黑方棋子与白方位于相同的列：18 个初始局面，加入库中。"
+
 msgid "Board"
 msgstr "棋盘"
 
@@ -410,6 +416,9 @@ msgstr "开局库"
 
 msgid "Books (EPD, PGN, Polyglot)"
 msgstr "开局库（EPD、PGN、Polyglot）"
+
+msgid "Books the program writes, added to the library."
+msgstr "由程序生成的开局库，加入库中。"
 
 msgid "Both engines must agree"
 msgstr "双方引擎必须一致"
@@ -506,6 +515,15 @@ msgstr "已检查：可以正常工作。"
 
 msgid "Checking…"
 msgstr "正在检查…"
+
+msgid "Chess324: the 18 symmetrical starting positions"
+msgstr "Chess324：18 个对称的初始局面"
+
+msgid "Chess324: the 324 starting positions"
+msgstr "Chess324：324 个初始局面"
+
+msgid "Chess324: the kings and the rooks on their usual squares, so castling is the usual one; the queen, the bishops and the knights of each side shuffled on the other squares of its back rank, the bishops on opposite colours. 18 arrangements a side, White's and Black's chosen independently: 324 starting positions, an EPD book any engine plays, added to the library."
+msgstr "Chess324：王和车位于通常的格子上，因此王车易位与通常相同；每一方的后、象和马在其底线的其余格子上打乱排列，两象位于不同颜色的格子。每方 18 种排列，白方与黑方独立选择：共 324 个初始局面，任何引擎都能下的 EPD 开局库，加入库中。"
 
 msgid "Chess960"
 msgstr "Chess960"
@@ -614,6 +632,9 @@ msgstr "崩溃 / 非法着法"
 
 msgid "Create a token on lichess…"
 msgstr "在 lichess 上创建令牌…"
+
+msgid "Create…"
+msgstr "创建…"
 
 msgid "Crosstable"
 msgstr "交叉表"
@@ -1040,6 +1061,9 @@ msgstr "车轮战表格（文本）"
 
 msgid "Gauntlet {} vs {} engines"
 msgstr "车轮战：{} 对 {} 个引擎"
+
+msgid "Generate Chess324 book"
+msgstr "生成 Chess324 开局库"
 
 msgid "Give the Syzygy tablebase directory."
 msgstr "请指定 Syzygy 残局库目录。"
@@ -1551,6 +1575,9 @@ msgstr "单局"
 
 msgid "One port per game"
 msgstr "每局一个端口"
+
+msgid "Only the 18 symmetrical ones…"
+msgstr "仅 18 个对称局面…"
 
 msgid "Only the games between engines of a group of the library."
 msgstr "仅库中某个分组内引擎之间的对局。"
