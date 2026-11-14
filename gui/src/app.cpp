@@ -37,6 +37,9 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
     lichess_token_saved_ = lichess_token_;
     if (!books_.empty()) selected_book_ = 0;
     setup_ = storage_.loadSetup();
+    profiles_.fromJson(storage_.loadProfiles());
+    // A setup saved before there were profiles: its sections get those they play like.
+    recognizeProfiles(setup_, profiles_);
     i18n::setLanguage(i18n::resolve(setup_.language));
 
     if (!setup_.concurrency_auto) setup_.concurrency = std::clamp(setup_.concurrency, 1, topology_.logical);
@@ -174,6 +177,13 @@ void App::frame() {
         } else if (w == "setup-pgn") {
             page_           = Page::NewMatch;
             open_pgn_setup_ = true;
+        } else if (w.rfind("setup-open=", 0) == 0 || w.rfind("setup-profiles=", 0) == 0) {
+            // setup-open=ROW: that row of the setup opened (format, time, openings, adjudication, engines,
+            // concurrency, pgn); setup-profiles=ROW: its profile list.
+            page_          = Page::NewMatch;
+            const auto row = setupRowOf(w.substr(w.find('=') + 1));
+            if (row && w[6] == 'o') setup_open_[*row] = true;
+            if (row && w[6] == 'p') open_profile_list_ = *row;
         } else if (w == "statistics") {
             page_            = Page::Tournament;
             tab_request_     = Tab::Overview;

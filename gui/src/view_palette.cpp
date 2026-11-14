@@ -212,6 +212,39 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     };
     add(TR("Tournaments"), "", page(Page::Home));
     add(TR("New tournament"), "", page(Page::NewMatch));
+    // The profiles of each section, applied to the setup, and the templates, loaded: not while the setup is locked.
+    if (!run_.running()) {
+        for (const auto section : SETUP_SECTIONS) {
+            for (const auto& p : profiles_.list(section)) {
+                add(p.label(), fmt::format("{} · {}", TR("Profile"), sectionTitle(section)),
+                    [this, section, name = p.name] {
+                        page_ = Page::NewMatch;
+                        if (const auto* profile = profiles_.find(section, name)) applySetupProfile(section, *profile);
+                    });
+            }
+        }
+        // Each row of the setup, opened in place.
+        const auto row = [&](const char* title, SetupRow r) {
+            add(title, TR("New tournament"), [this, r] {
+                page_          = Page::NewMatch;
+                setup_open_[r] = true;
+            });
+        };
+        for (const auto section : SETUP_SECTIONS) row(sectionTitle(section), static_cast<SetupRow>(section));
+        row(TR("Concurrency"), RowConcurrency);
+        row(TR("PGN and misc"), RowPgn);
+        add(TR("Save the setup as a template…"), TR("New tournament"), [this] {
+            page_               = Page::NewMatch;
+            open_save_template_ = true;
+        });
+        listTemplates();
+        for (const auto& name : template_names_) {
+            add(name, TR("Template"), [this, name] {
+                page_ = Page::NewMatch;
+                loadTemplate(name);
+            });
+        }
+    }
     if (t) {
         // Every panel of the workspace: shown (docked again if it was closed) and brought to the front. Then the
         // layouts, ready-made and saved.

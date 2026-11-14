@@ -294,6 +294,13 @@ MatchSetup Storage::loadSetup() const {
 
 void Storage::saveSetup(const MatchSetup& setup) const { save(root_ / "setup.json", portable::stored(setup)); }
 
+nlohmann::json Storage::loadProfiles() const {
+    auto profiles = readProfileFile<nlohmann::json>(root_ / "profiles.json");
+    return profiles && profiles->is_object() ? *profiles : nlohmann::json::object();
+}
+
+void Storage::saveProfiles(const nlohmann::json& profiles) const { save(root_ / "profiles.json", profiles); }
+
 std::vector<layout::Layout> Storage::loadLayouts() const {
     return readProfileFile<std::vector<layout::Layout>>(root_ / "layouts.json").value_or(std::vector<layout::Layout>{});
 }

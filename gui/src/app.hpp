@@ -31,6 +31,7 @@
 #include "notice.hpp"
 #include "pgn_store.hpp"
 #include "portable.hpp"
+#include "profiles.hpp"
 #include "qr.hpp"
 #include "run.hpp"
 #include "stats.hpp"
@@ -423,21 +424,36 @@ class App {
 
     // setup sections
     void setupFormat();
+    // The participants, seeds first, each on a line wide enough for its name, with its reference Elo, what it plays
+    // differently from the common settings, and ⋯ for its own settings. Ctrl and Shift select several; a drag moves
+    // them; Delete removes them, Ctrl+Up and Ctrl+Down send them to the top or the bottom, Alt+Up and Alt+Down move
+    // them by one.
     void setupParticipants();
-    // "Add an engine…": the library's engines with their reference Elo, sorted and filtered by it, opponents
-    // suggested around the first participant's. True when engines were added to `list`.
-    bool participantPicker(std::vector<ParticipantSetup>& list);
-    struct ParticipantPicker {
+    ImGuiSelectionBasicStorage participants_selected_;  // by index
+    bool participants_focused_ = false;  // a participant had the keyboard at the last frame: the keys above apply
+    int participant_menu_      = -1;     // the participant whose ⋯ menu opens on the next frame
+    // A participant's own settings, its ⋯ menu: Hash, Threads, nodes or depth, time odds, its own book; then moves.
+    enum class ParticipantAction { None, Again, Top, Up, Down, Remove };
+    ParticipantAction participantMenu(ParticipantSetup& p, int index, bool open_book, bool& changed);
+    // The library beside the participants (or beside A and B of a match): searched by name, group and notes, a group
+    // chosen with its chip, sorted by name or reference Elo, the engines with a problem marked. Double-click or Enter
+    // adds the engines selected (Ctrl and Shift select several), a drag drops them at a place in the participants;
+    // opponents suggested around the first participant's rating. True when the setup changed.
+    bool participantPicker();
+    struct EngineLibrary {
         std::string search;
-        int elo_min = 0, elo_max = 0;  // reference Elo shown, 0: no bound
-        bool works_only = false;
-        std::set<std::string> ticked;
-        int suggest = 8;      // opponents to suggest
-        int range   = 150;    // Elo, around the first participant's
-        std::string message;  // what the last suggestion found
-    } picker_;
-    int open_picker_ = 0;  // --focus setup-picker: 1 the picker opens, 2 with opponents suggested
-    int selected_participant_ = -1;  // clicked in the list, for Ctrl+Up and Ctrl+Down
+        std::string group;                    // the group whose chip is on, empty: every engine
+        ImGuiSelectionBasicStorage selected;  // by ImHashStr of the engine's name
+        bool focused = false;                 // one of its engines had the keyboard at the last frame: Enter adds
+        int suggest  = 8;                     // opponents to suggest
+        int range    = 150;                   // Elo, around the first participant's
+        std::string message;                  // what the last suggestion found
+    } library_;
+    std::vector<std::string> library_drag_;  // the engines being dragged from the library to the participants
+    float players_list_h_ = 0;               // the height of the participants' and the library's lists
+    // Library engines added: A then B of a match, before participant `at` otherwise (-1: at the end).
+    bool addParticipants(const std::vector<std::string>& names, int at = -1);
+    int open_picker_ = 0;  // --focus setup-picker: 1 the library's search focused, 2 with opponents suggested
     // A participant's own book: a small button ("—", or the book's name) that opens the choice of the library's
     // Polyglot books and of the depth. True when `book` changed; `again` (when given) is set when the user asked
     // for the engine once more, with another book.
@@ -477,6 +493,43 @@ class App {
     void setupOpenings();
     void setupAdjudication();
     void setupPgn();
+
+    // The rows of the setup's settings, each folded to a line: its profile, its summary, and ✎ that opens its
+    // details in place. The five sections with a profile, then the concurrency and the PGN files of this tournament.
+    enum SetupRow { RowFormat, RowTime, RowOpenings, RowAdjudication, RowEngines, RowConcurrency, RowPgn, ROW_COUNT };
+    std::array<bool, ROW_COUNT> setup_open_{};         // the rows whose details are open
+    std::array<float, ROW_COUNT> setup_details_h_{};  // their height at the last frame, for their background
+    float setup_title_w_ = 0;                          // the column of their titles
+    // The row of a name: "format", "time", "openings", "adjudication", "engines", "concurrency", "pgn".
+    [[nodiscard]] static std::optional<SetupRow> setupRowOf(const std::string& key);
+    int open_profile_list_ = -1;  // --focus setup-profiles=ROW: the row whose profile list opens
+    // One row, then its details drawn by `details` under it when it is open. `section`: the profile's, none for the
+    // rows without one; `more`: what the summary's tooltip adds to it.
+    void setupRow(SetupRow row, const char* title, const std::string& summary, const std::string& more,
+                  std::optional<SetupSection> section, void (App::*details)());
+    // A section's row, its summary and its tooltip made from the setup.
+    void sectionRow(SetupRow row, SetupSection section, void (App::*details)());
+    void drawSetupRows();
+    // The rule that chose the number of games played at once: one per hardware thread for a node count, physical
+    // cores − 1 for a clock, or the user's; `brief` for the row's summary.
+    [[nodiscard]] std::string concurrencyRule(bool brief) const;
+    [[nodiscard]] std::string concurrencySummary() const;  // "15 games at a time · physical cores − 1, for a clock"
+    [[nodiscard]] std::string pgnSummary() const;
+    // The profile list of a section: a profile is applied when chosen; then Save as profile…, and Update, Revert and
+    // Delete for the profile the section came from.
+    void profileCombo(SetupSection section, float width);
+    // Under the details of a section: Save as profile…, and Update the profile and Revert when it was changed for this
+    // tournament only.
+    void profileActions(SetupSection section);
+    // The popups of Save as profile… (its name) and of Delete (the confirmation), once per frame.
+    void drawProfilePopups();
+    void applySetupProfile(SetupSection section, const SetupProfile& profile);  // to the setup, saved soon
+    void saveSetupProfile(SetupSection section, const std::string& name);       // the section as profile `name`
+    void saveProfiles() { storage_.saveProfiles(profiles_.toJson()); }
+    std::string profile_name_;                        // Save as profile…: the name typed
+    SetupSection profile_section_ = SetupSection::Format;  // the section it saves, or Delete removes from
+    bool open_save_profile_       = false;                 // its popup opens on the next frame
+    std::string profile_delete_;                           // the profile Delete asks to confirm, opened next frame
 
     // test suites
     void drawSuites();
@@ -670,6 +723,8 @@ class App {
 
     std::vector<EngineEntry> engines_;
     MatchSetup setup_;
+    // The profiles of the setup's sections (profiles.json), with the program's presets.
+    ProfileStore profiles_;
     bool setup_dirty_ = false;
     std::chrono::steady_clock::time_point last_setup_save_{};
 
@@ -883,7 +938,12 @@ class App {
     std::vector<std::string> template_names_;  // the templates folder, listed now and then rather than every frame
     std::chrono::steady_clock::time_point templates_listed_{};
     std::string template_message_;  // why the last save or load failed
-    std::string template_replace_;  // the file name of a template to replace, once confirmed
+    std::string template_loaded_;   // the template the setup came from, named in the menu; empty: none
+    bool open_save_template_ = false;  // Save the setup as a template… asked from the command palette
+    // Templates loaded by name (the template menu, the command palette): the sections that played as their profile
+    // take its values of today. False, with template_message_, when it cannot be read.
+    bool loadTemplate(const std::string& name);
+    void listTemplates();  // template_names_, listed again every few seconds
 
     // Schedule tab and edits.
     int edit_kind_ = 0;        // tour::Edit::Kind

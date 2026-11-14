@@ -250,8 +250,10 @@ versions of an engine. *Export CSV…* writes the grid.
 
 ## New tournament
 
-**Tournaments → New tournament** opens the setup, with a live summary on the right (number of games, games per
-engine, estimated duration, openings, common settings, time odds). The setup of the last tournament is kept.
+**Tournaments → New tournament** opens the setup: a card of folded rows saying how the games are played, the
+participants with the engine library beside them, and a live summary on the right (number of games, games per
+engine, estimated duration, openings, common settings, time odds). The setup of the last tournament is kept, so
+testing two versions of one engine again is: choose A and B, **Start**.
 
 The summary also gives the memory the hash tables can take: two engine processes per game played at the same time,
 and the engines waiting for their next game, each with its `Hash`. Above the free memory it warns (the system will
@@ -284,54 +286,97 @@ lists the same fixes):
 
 A start refused names the same problems, with their fixes and *Open the log*.
 
-- **Format**:
+**Profiles.** The first five rows, *Format*, *Time control*, *Openings*, *Adjudication* and *Engine settings*, are
+each a named profile: its list chooses one, the line beside it says what it plays ("40 moves in 15 min, repeated",
+"draw 40/8/10 cp · TB 6 pieces"; its tooltip gives the same as cutechess and fastchess write it, `tc=40/900`,
+`-draw movenumber=40 movecount=8 score=10`), and ✎, or a click on that line, opens the details in place under it.
+A change made for this tournament only puts a dot beside the profile, and its list and its details offer *Update*
+(the profile takes the change, for every tournament and template that uses it), *Revert* and *Save as profile…*
+(under a new name). The program comes with presets:
+
+- time controls: 10+0.1 and 60+0.6 (fishtest's short and long tests), 2+1, 40/4, 40/15 and 40/20 (40 moves in 4,
+  15 or 20 minutes, repeated, as rating lists play them), and 200k nodes per move;
+- formats: SPRT gainer [0, 3] and non-regression [-5, 0], a match of 1000 games, a round robin, a gauntlet, a Swiss
+  of 9 rounds and a knockout;
+- adjudications: none, a standard one (a draw from move 40 after 8 moves within 10 cp, a loss after 3 moves at
+  600 cp) and the same with the tablebases up to 6 pieces;
+- engine settings: each engine's own, or Hash 16, 64 or 256 MB with 1 thread and the engines' own books off;
+- openings: no book, or Chess960's 960 positions.
+
+A profile of yours saved under a preset's name takes its place; deleting it (from its list, after a confirmation)
+brings the preset back, and the setups and templates that used it keep its values. Profiles are kept in
+`profiles.json` in the profile folder, and the command palette (Ctrl+K) lists them: choosing one applies it to the
+setup. The palette also opens each row of the setup by its title, and loads or saves templates. The Syzygy directories are in no profile: they belong to this computer, and the adjudication and the engines
+share them. The *Concurrency* and *PGN and misc* rows hold what is this tournament's only.
+
+**Template** and **Name**, beside *Start*: a template is the whole setup, a profile for each section plus what no
+profile holds (the name, the participants, the concurrency, the PGN files, the broadcast). The menu loads one or
+saves the setup as one (*Save the setup as a template…*, which asks before replacing a template of the same
+name), and the command palette loads them too. A section that played as its profile when the template was saved
+follows that profile, so updating a profile updates every template that uses it; a section changed for that
+tournament keeps its own values. Templates saved by earlier versions load as they were, and their sections get the
+profiles they play like. An empty name is made from the engines.
+
+- **Format**: the tooltip of each format says what it is.
   - *Match*: two engines, A (the engine under test; every statistic is from its point of view) and B (the
     baseline). A fixed number of games, until you stop it, or an SPRT: elo0, elo1, alpha, beta, model
     (`normalized` uses nElo bounds like fishtest and OpenBench, `logistic` classic Elo, `bayesian` BayesElo) and an
-    optional maximum number of games. The *Gainer [0, 3]* and *Non-regression [-5, 0]* presets fill in the bounds,
-    and the line under them tells how many games the test is likely to last. *Calculator…* draws, as fishtest's
+    optional maximum number of games. The SPRT gainer and non-regression profiles give the usual bounds, and the
+    line under the bounds tells how many games the test is likely to last. *Calculator…* draws, as fishtest's
     SPRT calculator does, the probability that H1 is accepted and the expected number of games against the true
     Elo difference, from an expected draw ratio and the RMS bias of the openings; *Use these bounds* copies the
     bounds it was given back to the setup.
     This is the quickest way to compare two versions of an engine, and nothing else is needed.
-  - *Round robin*: every engine plays every other one, *Cycles* times, each time two games with colours reversed.
-    The rounds follow Berger tables, so every engine plays once per round.
-  - *Gauntlet*: the first *Seed* engines play every other one, the others do not play each other.
+  - *Round robin*: every engine plays every other one, *Cycles* times, each time two games with colours reversed
+    (what cutechess calls rounds, of 2 games per encounter). The rounds follow Berger tables, so every engine plays
+    once per round.
+  - *Gauntlet*: the first *Tested engines* (the seeds) play every other one, the others do not play each other.
   - *Swiss*: a number of *Rounds*. Each round is two games, colours reversed, against an engine with a similar
     score; nobody meets the same opponent twice when it can be avoided. With an odd number of engines, the lowest
     ranked engine without a bye yet gets one, worth a point.
   - *Knockout*: engines are seeded in their list order, the top seeds get the byes when the field is not a power of
     two, and the first two seeds can only meet in the final. A match is *Game pairs per match* pairs of games; a
     tied match gets one more pair at a time, up to ten, after which the higher seed goes through.
-- **Participants**: engines from the library, in seed order (click an engine, then Ctrl+Up or Ctrl+Down sends it
-  to the top or the bottom). Each one can have its own `Hash`, `Threads`, fixed nodes or depth, and time odds (a
-  percentage of the time control). *Common settings*, for a match too, force `Hash` and `Threads` on every engine
-  (0 = each engine's own); *Syzygy tablebases for the engines* gives the tablebase directories (the same as the
-  adjudication's) to every engine with a `SyzygyPath` option, and *Engines' own books off* sets `OwnBook` to false
-  where it exists, so that every game is played from the tournament's openings. Both are off by default, and kept
-  in templates and the queue.
+- **Participants**, with the **Library** beside them (under them in a narrow window). Each participant is a line:
+  its place (a star for the seeds of a gauntlet), its name, its reference Elo, what it plays differently from the
+  common settings ("Hash 512 MB · 80 % of the time") and ⋯, highlighted when it has settings of its own. ⋯, a right
+  click, or the Menu key opens them: its own `Hash`, `Threads`, fixed nodes or depth, time odds (a percentage of the
+  time control, for a clock), its own *Book*, *This engine once more, with another book*, the moves and *Remove*.
+  The list order is the seeding: drag participants to reorder them (seeds first), or press Ctrl+Up or Ctrl+Down to
+  send them to the top or the bottom, Alt+Up or Alt+Down to move them by one. Ctrl or Shift click selects several;
+  Delete (or *Remove*) removes them.
 
-  *Add an engine…* lists the library with each engine's reference Elo and whether it works, sorted by name or Elo,
-  filtered by a search, an Elo range or *Only those that work*. A click adds one engine; several can be ticked and
-  added with *Add the N ticked*. *Suggest N opponents within ± … Elo of* the first participant (the engine under
-  test of a gauntlet) ticks the N active engines that work and whose reference Elo is closest to its own, 150 at
-  most away by default.
+  The library lists the active engines with their reference Elo, sorted by name or by Elo (click the column), a `!`
+  on those with a problem (program missing or rebuilt, last check failed: the tooltip says which) and a ✓ on those
+  that play already. The filter searches the names, the names the engines report, their authors, programs, notes
+  and groups (Ctrl+F gives it the keyboard; Enter in it adds the engines selected, or the first one shown); a chip
+  per group shows only that group, and *Add all shown* adds the whole group. Double-click an engine, or select
+  several with Ctrl or Shift (Ctrl+A: all those shown) and press Enter, to add them; or drag them to a place among
+  the participants. *Suggest…* selects the N active engines that work and whose reference Elo is closest to the
+  first participant's (the engine under test of a gauntlet), 150 at most away by default; Enter adds them. For a
+  match, the library fills A, then B (B is replaced when both are chosen), and an engine dragged onto A or B takes
+  its place.
 
   *Book*: an opening book of the participant's own, like Cute Chess' `book=`/`bookdepth=`: a Polyglot (`.bin`) or
   PGN book of the Books page and how deep it is followed, in plies from the start of the game, the tournament's
   opening included (*all*: as long as the book has a move; for a PGN book, its games' first 40 plies). A PGN book is
   first turned into a Polyglot book: each game's moves up to that depth, each move weighted by the number of games
   that play it; games with an illegal move are left out and counted. This runs in the background as soon as the
-  book is chosen (progress in the *Book* cell, its popup and the summary) and is kept in the profile's `book-cache`
-  folder until the file or the depth changes; a start that comes before the end waits for it. A book that cannot be
-  prepared shows why in its popup, with *Try again*; each start also tries again. A tournament plays from the book
-  prepared when it was started or resumed, even if the PGN file changes meanwhile. While the position
+  book is chosen (progress on the *Book* button, in its popup and in the summary) and is kept in the profile's
+  `book-cache` folder until the file or the depth changes; a start that comes before the end waits for it. A book
+  that cannot be prepared shows why in its popup, with *Try again*; each start also tries again. A tournament plays
+  from the book prepared when it was started or resumed, even if the PGN file changes meanwhile. While the position
   is in that book, the participant plays the book's move at once, chosen by the book's weights; then its engine
   takes over. The tournament's openings, if any, are played first, by every engine; EPD books only give those and
-  are greyed in the list. To compare books with one engine, click its *Book* cell, then *This engine once more,
-  with another book*: each copy plays as `<engine> (<book>)`, so its results and rating stay apart. In a match the *Book* buttons sit next to A and B, and
-  an engine can play itself with two books. Book moves are marked `{book}` in the PGN; hovering a name in the
-  standings shows its book. WinBoard engines can have one too.
+  are greyed in the list. To compare books with one engine, choose *This engine once more, with another book* in
+  its ⋯ menu: each copy plays as `<engine> (<book>)`, so its results and rating stay apart. In a match the *Book*
+  buttons sit next to A and B, and an engine can play itself with two books. Book moves are marked `{book}` in the
+  PGN; hovering a name in the standings shows its book. WinBoard engines can have one too.
+- **Engine settings**: *Hash* and *Threads* forced on every engine, for a match too (0 = each engine's own; a
+  participant's own, from its ⋯ menu, comes first); *Syzygy tablebases for the engines* gives the tablebase
+  directories (the same as the adjudication's) to every engine with a `SyzygyPath` option, and *Engines' own books
+  off* sets `OwnBook` to false where it exists, so that every game is played from the tournament's openings. Both
+  are off by default.
 - **Time control**: base time and increment in seconds, optional moves per period, and a margin before a game is
   lost on time; a fixed time per move (`go movetime`, with the same margin); a fixed number of nodes per move; or a
   fixed depth in plies (`go depth`), which no engine can lose on time.
@@ -339,42 +384,43 @@ A start refused names the same problems, with their fixes and *Open the log*.
   - fixed nodes or depth: one game per hardware thread, since Hyper-Threading does not change the moves played;
   - with a clock: physical cores − 1, so that engines do not slow each other down.
 
-  *CPU affinity* (off by default; not on macOS, which has none) pins every game to one processor, shared by its two engines since they never
-  think at the same time. fastchess only supports it for single-threaded engines, so it is turned off
-  automatically when an engine has `Threads` > 1. A warning appears when concurrency × threads exceeds the hardware
-  threads (or, with a clock, the physical cores).
-- **Openings**: an EPD, PGN or Polyglot (`.bin`) book, random or sequential order, the number of plies kept from a
-  PGN book, the starting index and the random seed (0 = a new order for every tournament). Every opening is played
-  twice, with colours reversed. A Polyglot book is followed from the initial position to a depth (8 plies unless
-  set), leaving out the moves that weigh less than a tenth of the best one of their position; the positions
-  reached are written once to `<book>-<N>plies.epd` in the tournament folder and played like an EPD book.
+  The row and the line under the field say which rule chose the number. *CPU affinity* (off by default; not on
+  macOS, which has none) pins every game to one processor, shared by its two engines since they never think at the
+  same time. fastchess only supports it for single-threaded engines, so it is turned off automatically when an
+  engine has `Threads` > 1. A warning appears when concurrency × threads exceeds the hardware threads (or, with a
+  clock, the physical cores).
+- **Openings**: an EPD, PGN or Polyglot (`.bin`) book (an opening suite), random or sequential order, the number of
+  plies kept from a PGN book, the starting index and the random seed (0 = a new order for every tournament). Every
+  opening is played twice, with colours reversed. A Polyglot book is followed from the initial position to a depth
+  (8 plies unless set), leaving out the moves that weigh less than a tenth of the best one of their position; the
+  positions reached are written once to `<book>-<N>plies.epd` in the tournament folder and played like an EPD book.
   In a round robin, a gauntlet or a Swiss, *The same opening for every pair of a round* gives every game pair of a
   round the same opening, the next of the book for each round, so that no engine gets easier openings than the
   others of its round (an engine added later catches up in rounds of its own, each with its opening).
-- **Chess960** (Fischer random): without a book, the 960 starting positions in random order (written once to
-  `chess960.epd` in the tournaments folder); with a book, its positions. Every engine must play Chess960: UCI
-  engines with the `UCI_Chess960` option, WinBoard engines with the `fischerandom` variant. The summary names those
-  that do not, and such a tournament does not start.
+- **Chess960** (Fischer random), in the openings: without a book, the 960 starting positions in random order
+  (written once to `chess960.epd` in the tournaments folder); with a book, its positions. Every engine must play
+  Chess960: UCI engines with the `UCI_Chess960` option, WinBoard engines with the `fischerandom` variant. The summary
+  names those that do not, and such a tournament does not start.
 - **Adjudication**: draw (from a move number, for N consecutive moves, under a score), resign (N consecutive moves
   above a score, optionally both engines agreeing), a maximum number of moves, and Syzygy tablebases.
-- **PGN and misc**: event name, *Also append every game to*: a PGN file of yours that every tournament adds its
-  games to, like cutechess' `-pgnout` (never overwritten, in the ChessBase / Lichess or cutechess comment style),
-  in schedule order: the two games of an opening side by side, rounds in order, whatever order they end in. A game
-  waits there until those before it are written; a resume carries on; when the file cannot be written (locked,
-  moved), the games wait and the tournament goes on, with a warning in the overview. A crash or a power cut while
-  games are appended never writes them twice: the resume checks the file and completes a write cut short, and
-  never removes anything from it. Extra fields in the move comments (nodes, seldepth, nps, pv, tbhits, and the
-  decision time `dt=`: when the engine settled on the move it played; `wdl=W/D/L` is always written for the
-  engines that report it), on by default since the charts of the *Games* tab read them (pv makes the PGN noticeably
-  larger), restarting engines
-  that crash, *Stop the tournament when an engine cannot start* (off by default: see *An engine that cannot
-  start*), keeping the engine log of every game (it is always kept for the games that end badly), and *Check the
-  mate PVs*: a mate score's PV must have the right length and end in mate. Every PV is checked for illegal moves,
-  moves after the end of the game and a best move that is not its first move; the moves with a wrong PV are marked
-  in the Games tab and written in the log.
+- **PGN and misc**: event name (its tooltip names the two PGN files every game is written to), *Also append every
+  game to*: a PGN file of yours that every tournament adds its games to, like cutechess' `-pgnout` (never
+  overwritten, in the ChessBase / Lichess or cutechess comment style), in schedule order: the two games of an
+  opening side by side, rounds in order, whatever order they end in. A game waits there until those before it are
+  written; a resume carries on; when the file cannot be written (locked, moved), the games wait and the tournament
+  goes on, with a warning in the overview. A crash or a power cut while games are appended never writes them twice:
+  the resume checks the file and completes a write cut short, and never removes anything from it. Extra fields in
+  the move comments (nodes, seldepth, nps, pv, tbhits, and the decision time `dt=`: when the engine settled on the
+  move it played; `wdl=W/D/L` is always written for the engines that report it), on by default since the charts of
+  the *Games* tab read them (pv makes the PGN noticeably larger), restarting engines that crash, *Stop the tournament when an engine cannot start* (off by default: see *An
+  engine that cannot start*), keeping the engine log of every game (it is always kept for the games that end badly), and *Check the mate PVs*: a mate score's PV
+  must have the right length and end in mate. Every PV is checked for illegal moves, moves after the end of the game
+  and a best move that is not its first move; the moves with a wrong PV are marked in the Games tab and written in
+  the log.
 
-**Templates** save the current setup under a name and load it back later. **Start** creates the tournament and
-plays it; **Add to the queue** keeps it for later (see *Queue*).
+Everything on the page can be done from the keyboard: Tab and the arrows move between the rows, the lists and the
+buttons, Enter or Space opens a row or a list, and the keys above work in the participants and the library.
+**Start** creates the tournament and plays it; **Add to the queue** keeps it for later (see *Queue*).
 
 ## Running a tournament
 
@@ -698,7 +744,8 @@ before moving the folder. On macOS, remove the quarantine first (see the README)
 application from a temporary place, where the `portable` file is not.
 
 - `engines.json`: the engine library, and `engines.json.bak` its previous version, read if the first is lost;
-- `setup.json`: the last setup; `templates/*.json`: the saved templates; `queue.json`: the queue;
+- `setup.json`: the last setup; `profiles.json`: your profiles of the setup's sections; `templates/*.json`: the
+  saved templates; `queue.json`: the queue;
 - `book-cache/`: the PGN books turned into Polyglot books for the participants' own books (removed after 30 days unused);
 - `layout.ini`: the window layout and the panels of the workspace; `layouts.json`: the layouts saved by name; `fastchess-gui.log`: the log of the last session;
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
@@ -769,7 +816,10 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
   the window opens at the default size, or `--size`, and the size and place kept are left alone;
 - `--focus WINDOW` opens that page or tab at launch, or: `engines-card` (the first engine's card),
   `engines-refresh` (*Refresh: the new engines of the folder*), `engines-ratings=FILE` (the preview of that rating
-  list), `setup-picker` and `setup-suggest` (*Add an engine…*, with the suggestion made), `submission-export`
+  list), `setup-picker` and `setup-suggest` (the library's filter focused, or the suggested opponents selected),
+  `setup-open=ROW` and `setup-profiles=ROW` (a row of the setup opened, or its profile list: `format`, `time`,
+  `openings`, `adjudication`, `engines`, `concurrency`, `pgn`), `setup-book` (the first participant's own book),
+  `submission-export`
   (*Export for a rating list…*), `ratings-players` (the *PGN players* window), `palette[=TEXT]` (the command palette, with TEXT typed in it),
   `game-menu=N` (the menu of game N in the *Games* tab, a result chosen), `end-menu=N` (*End with result* of the
   game of slot N, from 1), `big-screen[=N]` (the big screen, of the game of slot N);

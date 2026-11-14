@@ -12,10 +12,10 @@
 
 namespace fcg {
 
-// Where the GUI keeps its files: engines.json, books.json, setup.json, layout.ini, layouts.json, settings.json and the
-// tournaments (runs/ unless settings.json names another folder). Defaults to SDL_GetPrefPath(), or the folder data
-// beside the program in the portable mode (portable.hpp: the paths of the program's folder are then kept relative to
-// it in these files); --profile <dir> overrides it.
+// Where the GUI keeps its files: engines.json, books.json, setup.json, profiles.json, layout.ini, layouts.json,
+// settings.json and the tournaments (runs/ unless settings.json names another folder). Defaults to SDL_GetPrefPath(),
+// or the folder data beside the program in the portable mode (portable.hpp: the paths of the program's folder are then
+// kept relative to it in these files); --profile <dir> overrides it.
 class Storage {
    public:
     explicit Storage(std::filesystem::path root);
@@ -68,6 +68,11 @@ class Storage {
 
     [[nodiscard]] MatchSetup loadSetup() const;
     void saveSetup(const MatchSetup& setup) const;
+
+    // The user's profiles of the setup's sections (profiles.json, see ProfileStore::toJson); an empty object when
+    // there are none.
+    [[nodiscard]] nlohmann::json loadProfiles() const;
+    void saveProfiles(const nlohmann::json& profiles) const;
 
     // The user's own layouts of the tournament workspace (layouts.json).
     [[nodiscard]] std::vector<layout::Layout> loadLayouts() const;
