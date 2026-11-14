@@ -41,6 +41,7 @@
 #include "headless.hpp"
 #include "i18n.hpp"
 #include "logo.hpp"
+#include "report.hpp"
 #include "screenshot.hpp"
 #include "storage.hpp"
 #include "topology.hpp"
@@ -195,11 +196,28 @@ void loadFonts(float size) {
     fcg::ui::setFonts(text, titles, icons);
 }
 
-// Startup failures are reported in a message box too: a Windows GUI program has no console.
+// Startup failures are reported in a message box too: a Windows GUI program has no console. It offers to report the
+// problem, as a new GitHub issue filled with the message (see report.hpp).
 int fatal(const std::string& what) {
     const auto message = what + ": " + SDL_GetError();
     std::fprintf(stderr, "%s\n", message.c_str());
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "fastchess-gui", message.c_str(), nullptr);
+
+    const std::string report_label           = TR("Report a problem…");
+    const SDL_MessageBoxButtonData buttons[] = {
+        {SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT | SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "OK"},
+        {0, 1, report_label.c_str()},
+    };
+    const SDL_MessageBoxData box = {
+        SDL_MESSAGEBOX_ERROR, nullptr, "fastchess-gui", message.c_str(), 2, buttons, nullptr};
+    int pressed = 0;
+    if (SDL_ShowMessageBox(&box, &pressed) && pressed == 1) {
+        fcg::report::Facts facts;
+        facts.version     = "fastchess-gui " FCG_VERSION;
+        const char* video = SDL_GetCurrentVideoDriver();
+        facts.system      = "System: " + fcg::report::systemName() + "\nDisplay: " + (video ? video : "?");
+        facts.seen        = "At startup: " + message;
+        SDL_OpenURL(fcg::report::issueUrl(facts).c_str());
+    }
     return 1;
 }
 

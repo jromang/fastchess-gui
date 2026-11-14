@@ -175,6 +175,7 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     add(TR("Log"), "", page(Page::Log));
     add(TR("Settings"), "", page(Page::Settings));
     add(TR("Copy the version"), TR("Settings"), [this] { copyVersion(); });
+    add(TR("Report a problem…"), TR("Settings"), [this] { reportProblem(); });
     if (const auto* release = update::notice(updates_, FCG_VERSION)) {
         add(trf("Download page of fastchess-gui {}", release->version), TR("Settings"),
             [url = release->url] { SDL_OpenURL(url.c_str()); });

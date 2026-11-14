@@ -1618,6 +1618,9 @@ msgstr "开局"
 msgid "Openings: {}"
 msgstr "开局：{}"
 
+msgid "Opens a new issue on GitHub in the browser, filled with the version, the system, the graphics driver and the last lines of the log. Read it and complete it before sending it: the program sends nothing itself."
+msgstr "在浏览器中打开 GitHub 上的新问题，并填入版本、系统、显卡驱动和日志的最后几行。发送前请阅读并补充：程序本身不会发送任何内容。"
+
 msgid "Opp."
 msgstr "对手"
 
@@ -1975,6 +1978,9 @@ msgstr "替换为"
 
 msgid "Replaces your layout of that name."
 msgstr "将替换你同名的布局。"
+
+msgid "Report a problem…"
+msgstr "报告问题…"
 
 msgid "Resign"
 msgstr "认输"
@@ -2342,6 +2348,9 @@ msgstr "{} 的开局库既不是 Polyglot 开局库（.bin），也不是 PGN �
 
 msgid "The book of {} is not found: {}"
 msgstr "找不到 {} 的开局库：{}"
+
+msgid "The browser could not be opened: the address of the new issue is on the clipboard."
+msgstr "无法打开浏览器：新问题的地址已复制到剪贴板。"
 
 msgid "The change was undone."
 msgstr "修改已撤销。"

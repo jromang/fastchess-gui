@@ -1623,6 +1623,9 @@ msgstr "Aperturas"
 msgid "Openings: {}"
 msgstr "Aperturas: {}"
 
+msgid "Opens a new issue on GitHub in the browser, filled with the version, the system, the graphics driver and the last lines of the log. Read it and complete it before sending it: the program sends nothing itself."
+msgstr "Abre una nueva incidencia en GitHub en el navegador, rellenada con la versión, el sistema, el controlador gráfico y las últimas líneas del registro. Léela y complétala antes de enviarla: el programa no envía nada por sí mismo."
+
 msgid "Opp."
 msgstr "Rivales"
 
@@ -1984,6 +1987,9 @@ msgstr "Sustituido por"
 
 msgid "Replaces your layout of that name."
 msgstr "Sustituye tu disposición con ese nombre."
+
+msgid "Report a problem…"
+msgstr "Informar de un problema…"
 
 msgid "Resign"
 msgstr "Abandono"
@@ -2352,6 +2358,9 @@ msgstr "El libro de {} no es ni un libro Polyglot (.bin) ni un libro PGN: {}"
 
 msgid "The book of {} is not found: {}"
 msgstr "No se encuentra el libro de {}: {}"
+
+msgid "The browser could not be opened: the address of the new issue is on the clipboard."
+msgstr "No se pudo abrir el navegador: la dirección de la nueva incidencia está en el portapapeles."
 
 msgid "The change was undone."
 msgstr "El cambio se ha deshecho."

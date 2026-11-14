@@ -6,6 +6,7 @@ namespace fcg::gl {
 
 namespace {
 Functions g_functions;
+std::string g_driver;
 
 template <typename F>
 bool resolve(F& target, const char* name) {
@@ -27,8 +28,18 @@ bool load() {
     ok &= resolve(g_functions.ClearColor, "glClearColor");
     ok &= resolve(g_functions.Clear, "glClear");
     ok &= resolve(g_functions.ReadPixels, "glReadPixels");
+    // For the bug reports: which driver draws the window.
+    if (resolve(g_functions.GetString, "glGetString")) {
+        const auto text = [](GLenum name) {
+            const auto* s = g_functions.GetString(name);
+            return s ? std::string(reinterpret_cast<const char*>(s)) : std::string("?");
+        };
+        g_driver = text(STRING_RENDERER) + " · OpenGL " + text(STRING_VERSION) + " · " + text(STRING_VENDOR);
+    }
     return ok;
 }
+
+const std::string& driver() { return g_driver; }
 
 const Functions& fn() { return g_functions; }
 

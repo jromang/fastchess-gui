@@ -12,9 +12,11 @@
 
 #include "app.hpp"
 #include "console.hpp"
+#include "gl.hpp"
 #include "i18n.hpp"
 #include "logo.hpp"
 #include "memory.hpp"
+#include "report.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -385,6 +387,8 @@ void App::drawHome() {
                                       "not resumed automatically again."));
             ImGui::PopTextWrapPos();
             ImGui::PopStyleColor();
+            reportButton("report_resume", true,
+                         "The program ended while it resumed a tournament at launch (" + u.spec.name + ").");
         }
         // Pressed, it starts at once, or says what it waits for.
         const auto key = resumeKey(u.dir);
@@ -942,6 +946,8 @@ void App::drawVersionSettings() {
     ImGui::SameLine();
     if (ImGui::Button(TR("Copy##version"))) copyVersion();
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The version and the system, for a bug report."));
+    ImGui::SameLine();
+    reportButton("report_settings");
 
     if (ImGui::Checkbox(TR("Tell me when a new version is out"), &updates_.enabled)) {
         storage_.setUpdateSettings(updates_);
@@ -968,6 +974,49 @@ void App::drawVersionSettings() {
     } else if (updates_.latest) {
         ImGui::TextDisabled("%s", TR("This is the latest version."));
     }
+}
+
+// ---------------------------------------------------------------------------
+// Report a problem
+
+std::string App::systemReport() const {
+    // For the maintainers, in English.
+    const char* video = SDL_GetCurrentVideoDriver();
+    std::string out   = "System: " + report::systemName();
+    out += fmt::format("\nDisplay: {}, scale {:.2f}, interface {} %", video ? video : "?", options_.ui_scale,
+                       setup_.ui_zoom);
+    out += fmt::format("\nProcessor: {} physical cores, {} threads", topology_.physical, topology_.logical);
+    if (const auto memory = systemMemory()) out += "\nMemory: " + formatMemory(memory->total_mb);
+    out += "\nGraphics: " + (gl::driver().empty() ? std::string("?") : gl::driver());
+    out += fmt::format("\nLanguage: {}", i18n::info(i18n::language()).code);
+    return out;
+}
+
+void App::reportProblem(const std::string& seen) {
+    report::Facts facts;
+    facts.version  = "fastchess-gui " FCG_VERSION;
+    facts.system   = systemReport();
+    facts.log      = report::lastLines(storage_.root() / "fastchess-gui.log", 80);
+    facts.seen     = seen;
+    const auto url = report::issueUrl(facts);
+    if (!SDL_OpenURL(url.c_str())) {
+        ImGui::SetClipboardText(url.c_str());
+        Console::instance().add(
+            TR("The browser could not be opened: the address of the new issue is on the clipboard."), true);
+    }
+}
+
+bool App::reportButton(const char* id, bool small, const std::string& seen) {
+    ImGui::PushID(id);
+    const bool pressed = small ? ImGui::SmallButton(TR("Report a problem…")) : ImGui::Button(TR("Report a problem…"));
+    ImGui::PopID();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("Opens a new issue on GitHub in the browser, filled with the version, the system, "
+                                   "the graphics driver and the last lines of the log. Read it and complete it before "
+                                   "sending it: the program sends nothing itself."));
+    }
+    if (pressed) reportProblem(seen);
+    return pressed;
 }
 
 // On the home page, while a newer version than this one is out and the user did not close its notice.

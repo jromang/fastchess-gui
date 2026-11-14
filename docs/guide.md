@@ -13,8 +13,8 @@ A navigation rail on the left leads to six pages:
 | Books | The opening book library, and the openings of each book with what is wrong with them |
 | Suites | Test suites (STS, WAC, ERET…): engines against the positions of an EPD file |
 | Ratings | One rating list over every game of every tournament |
-| Log | fastchess' own output and the messages of the GUI |
-| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the tournaments folder, the lichess token, the version and new versions |
+| Log | fastchess' own output and the messages of the GUI, and *Report a problem…* |
+| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the tournaments folder, the lichess token, the version and new versions, *Report a problem…* |
 
 The interface is in English, French, German, Spanish, Italian, Brazilian Portuguese, Russian or simplified Chinese.
 At startup it follows the first preferred language of the system (English when there is no translation for it); it
@@ -30,6 +30,12 @@ most once a day and in the background; when it is newer, the home page says so, 
 page on GitHub, in the browser), *What's new* (its notes) and *Hide* (until the next version). Nothing is downloaded
 or installed by the program, and a failure (no network, GitHub unreachable) is only written in the log.
 
+*Report a problem…* (in **Settings**, on the **Log** page, in the command palette, and in the message of a failure
+at startup) opens a new issue on GitHub in the browser, from the bug report form, already filled with the version,
+the system (operating system, processor, memory, graphics card and driver) and the last lines of the log. Read it
+before sending it, remove what you do not want to show (paths, engine names) and say what you did, what you
+expected and what happened. The program sends nothing itself. Ideas go to the same place: *New issue*, *Idea*.
+
 The window opens as it was left: its size, its place on the screens, maximized or not. When the screen it was on is
 gone (a monitor unplugged), it opens in the middle of the main one; when its size no longer fits the screen (a lower
 resolution), at the default size. The panels dragged out of it, such as a detached board, come back where they were
@@ -44,7 +50,7 @@ dragging its right edge. Everything (text, buttons, boards) can also be made lar
 **Ctrl+K** opens the command palette: the pages and tabs, the engines of the library (it opens the card), the books,
 the tournaments of the home page, and the actions possible now (*Pause*, *Resume*, *Stop*, *Start*, *Add to the
 queue*, the entries of *Import…*, *Check those not checked*, *Export for a rating list…*, *Copy* the standings,
-*Copy the version*…).
+*Copy the version*, *Report a problem…*…).
 Letter case does not matter and the letters typed need not be adjacent ("rl" finds *Rating list*); names that start
 with them, or with a word that does, come first. Up and Down choose, Enter runs, Escape closes; Ctrl+K is left alone
 while a text field is being typed in. The *?* beside each page's title, or F1, opens this guide at the page's section.

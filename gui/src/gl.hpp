@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 namespace fcg::gl {
 
@@ -28,6 +29,9 @@ constexpr GLenum UNSIGNED_BYTE        = 0x1401;
 constexpr GLenum UNPACK_ALIGNMENT     = 0x0CF5;
 constexpr GLenum PACK_ALIGNMENT       = 0x0D05;
 constexpr GLbitfield COLOR_BUFFER_BIT = 0x00004000;
+constexpr GLenum STRING_VENDOR        = 0x1F00;  // glGetString's
+constexpr GLenum STRING_RENDERER      = 0x1F01;
+constexpr GLenum STRING_VERSION       = 0x1F02;
 
 struct Functions {
     void (*GenTextures)(GLsizei, GLuint*)                                                          = nullptr;
@@ -41,11 +45,15 @@ struct Functions {
     void (*ClearColor)(GLfloat, GLfloat, GLfloat, GLfloat)                                         = nullptr;
     void (*Clear)(GLbitfield)                                                                      = nullptr;
     void (*ReadPixels)(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void*)                      = nullptr;
+    const unsigned char* (*GetString)(GLenum)                                                      = nullptr;
 };
 
 // Resolves every function. Needs a current context. Returns false if one is missing.
 bool load();
 
 const Functions& fn();
+
+// The graphics driver, as load() read it: "<renderer> · OpenGL <version> · <vendor>"; empty before load().
+[[nodiscard]] const std::string& driver();
 
 }  // namespace fcg::gl

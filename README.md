@@ -132,7 +132,9 @@ Everything is stored in the profile folder (`~/.local/share/fastchess/fastchess-
 `%APPDATA%\fastchess\fastchess-gui\` on Windows): the engine library, the last setup, templates, the queue,
 and one folder per tournament under `runs/` with its description, its journal and both PGN files.
 
-The [user guide](docs/guide.md) covers every setting, window and file in detail.
+The [user guide](docs/guide.md) covers every setting, window and file in detail. Problems and ideas are welcome in
+the [issues](https://github.com/jromang/fastchess-gui/issues): *Report a problem…* (Settings, the Log page) opens a
+new one filled with the version, the system and the end of the log, to read and complete before sending.
 
 ## Relationship with fastchess
 

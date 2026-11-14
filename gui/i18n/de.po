@@ -1623,6 +1623,9 @@ msgstr "Eröffnungen"
 msgid "Openings: {}"
 msgstr "Eröffnungen: {}"
 
+msgid "Opens a new issue on GitHub in the browser, filled with the version, the system, the graphics driver and the last lines of the log. Read it and complete it before sending it: the program sends nothing itself."
+msgstr "Öffnet ein neues Issue auf GitHub im Browser, ausgefüllt mit der Version, dem System, dem Grafiktreiber und den letzten Zeilen des Protokolls. Lies und ergänze es, bevor du es abschickst: Das Programm selbst sendet nichts."
+
 msgid "Opp."
 msgstr "Geg."
 
@@ -1984,6 +1987,9 @@ msgstr "Ersetzt durch"
 
 msgid "Replaces your layout of that name."
 msgstr "Ersetzt dein Layout mit diesem Namen."
+
+msgid "Report a problem…"
+msgstr "Problem melden…"
 
 msgid "Resign"
 msgstr "Aufgabe"
@@ -2352,6 +2358,9 @@ msgstr "Das Buch von {} ist weder ein Polyglot-Buch (.bin) noch ein PGN-Buch: {}
 
 msgid "The book of {} is not found: {}"
 msgstr "Das Buch von {} wurde nicht gefunden: {}"
+
+msgid "The browser could not be opened: the address of the new issue is on the clipboard."
+msgstr "Der Browser konnte nicht geöffnet werden: Die Adresse des neuen Issues ist in der Zwischenablage."
 
 msgid "The change was undone."
 msgstr "Die Änderung wurde rückgängig gemacht."

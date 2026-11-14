@@ -934,6 +934,12 @@ class App {
     bool update_asked_ = false;  // the check running was asked from Settings
     std::string update_status_;  // what the check asked from Settings found
     bool update_notes_open_ = false;
+
+    // "Report a problem…" (report.hpp): a new GitHub issue in the browser, filled with the version, the system and
+    // the log; `seen`, when given, fills what went wrong.
+    void reportProblem(const std::string& seen = {});
+    bool reportButton(const char* id, bool small = false, const std::string& seen = {});  // the button, its tooltip
+    [[nodiscard]] std::string systemReport() const;
 };
 
 }  // namespace fcg

@@ -1375,6 +1375,8 @@ void App::drawConsole() {
     }
     ImGui::SameLine();
     ImGui::Checkbox(TR("Follow"), &console_follow_);
+    ImGui::SameLine();
+    reportButton("report_log", true);
 
     ImGui::BeginChild("##console", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
     ImGuiListClipper clipper;
