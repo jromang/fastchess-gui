@@ -69,7 +69,9 @@ enum class Icon {
     Back,
     Chart,
     Layout,
-    Quit
+    Quit,
+    Pencil,  // edit in place
+    More,    // ⋯: a menu of what else can be done
 };
 
 // Draws `icon` centred on `center`, `size` pixels wide, in `col`.

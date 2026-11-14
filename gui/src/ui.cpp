@@ -262,6 +262,10 @@ const char* glyph(Icon icon) {
             return "\uE1C1";  // layout-dashboard
         case Icon::Quit:
             return "\uE10E";  // log-out
+        case Icon::Pencil:
+            return "\uE1F9";  // pencil
+        case Icon::More:
+            return "\uE0B6";  // ellipsis
     }
     return "";
 }

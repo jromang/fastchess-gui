@@ -47,35 +47,48 @@ bool inputDouble(const char* label, const char* id, double& value, double min, d
     return changed;
 }
 
-bool inputText(const char* id, std::string& value, float width) {
+bool inputText(const char* id, std::string& value, float width, const char* hint = nullptr) {
     char buffer[2048];
     const auto n = std::min(value.size(), sizeof(buffer) - 1);
     std::copy_n(value.data(), n, buffer);
     buffer[n] = 0;
 
     ImGui::SetNextItemWidth(width);
-    if (ImGui::InputText(id, buffer, sizeof(buffer))) {
+    if (hint ? ImGui::InputTextWithHint(id, hint, buffer, sizeof(buffer))
+             : ImGui::InputText(id, buffer, sizeof(buffer))) {
         value = buffer;
         return true;
     }
     return false;
 }
 
-// The Syzygy directories of the setup, typed or added with the folder dialog.
+// A tooltip at the cursor for the item just drawn, wrapped: the help that used to be a grey line under it.
+void itemHelp(const std::string& text) {
+    if (text.empty() || !ImGui::BeginItemTooltip()) return;
+    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+    ImGui::TextUnformatted(text.c_str());
+    ImGui::PopTextWrapPos();
+    ImGui::EndTooltip();
+}
+
+// The Syzygy directories of the setup, typed or added with the folder dialog. This machine's: in no profile, the same
+// for the adjudication and for the engines.
 bool tablebaseDirs(const char* id, std::string& paths, Dialogs& dialogs) {
     const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
+#ifdef _WIN32
+    const char* how = TR("Directories separated by ';' (WDL files are enough).");
+#else
+    const char* how = TR("Directories separated by ':' (WDL files are enough).");
+#endif
     const bool changed =
-        inputText(id, paths, ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x);
-    if (ImGui::IsItemHovered() && !paths.empty()) ImGui::SetTooltip("%s", paths.c_str());
+        inputText(id, paths, ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x, how);
+    itemHelp(paths.empty() ? std::string(how)
+                           : fmt::format("{}\n\n{}\n{}", paths, how,
+                                         TR("The directories are this computer's: no profile holds them.")));
     ImGui::SameLine();
     ImGui::PushID(id);
     if (ImGui::Button("…")) dialogs.openFolder(Dialogs::Purpose::Tablebases);
     ImGui::PopID();
-#ifdef _WIN32
-    ImGui::TextDisabled("%s", TR("Directories separated by ';' (WDL files are enough)."));
-#else
-    ImGui::TextDisabled("%s", TR("Directories separated by ':' (WDL files are enough)."));
-#endif
     return changed;
 }
 
@@ -336,13 +349,14 @@ void App::drawSetup(bool two_columns, bool with_summary) {
     } else {
         setupParticipants();
     }
-    setupLimit();
+    sectionRow(RowTime, SetupSection::Time, &App::setupLimit);
     if (table) ImGui::TableNextColumn();
     setupConcurrency();
     setupOpenings();
-    setupAdjudication();
+    sectionRow(RowAdjudication, SetupSection::Adjudication, &App::setupAdjudication);
     setupPgn();
     if (table) ImGui::EndTable();
+    drawProfilePopups();
 
     ImGui::EndDisabled();
     if (with_summary) {
@@ -350,6 +364,270 @@ void App::drawSetup(bool two_columns, bool with_summary) {
         drawTemplates();
     }
     ui::endPanel();
+}
+
+void App::setupRow(SetupRow row, const char* title, const std::string& summary, const std::string& more,
+                   std::optional<SetupSection> section, void (App::*details)()) {
+    ImGui::PushID(static_cast<int>(row));
+    const auto& style     = ImGui::GetStyle();
+    const ImVec2 start    = ImGui::GetCursorScreenPos();
+    const float width     = ImGui::GetContentRegionAvail().x;
+    const float frame     = ImGui::GetFrameHeight();
+    const float title_w   = std::min(px(120), width * 0.22f);
+    const float profile_w = std::min(px(190), width * 0.3f);
+    const float dot_w     = px(16);
+    const float edit_w    = frame;
+    bool& open            = setup_open_[row];
+
+    // The title, then the profile (or the scope, for the rows without one).
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(title);
+    ImGui::SetCursorScreenPos(ImVec2(start.x + title_w, start.y));
+    const auto state = section ? profileState(setup_, *section, profiles_) : ProfileState::None;
+    if (section) {
+        profileCombo(*section, profile_w);
+    } else {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("%s", TR("this tournament"));
+        itemHelp(TR("No profile holds this: it is saved with the setup and in templates."));
+    }
+
+    // A dot when the section was changed for this tournament only.
+    if (state == ProfileState::Changed || state == ProfileState::Missing) {
+        ImGui::SetCursorScreenPos(ImVec2(start.x + title_w + profile_w, start.y));
+        ImGui::InvisibleButton("##changed", ImVec2(dot_w, frame));
+        const ImVec2 c((ImGui::GetItemRectMin().x + ImGui::GetItemRectMax().x) * 0.5f,
+                       (ImGui::GetItemRectMin().y + ImGui::GetItemRectMax().y) * 0.5f);
+        ImGui::GetWindowDrawList()->AddCircleFilled(c, px(3.5f),
+                                                    state == ProfileState::Changed ? ui::ACCENT : ui::WARN);
+        itemHelp(state == ProfileState::Changed
+                     ? TR("Changed for this tournament only. Its list, or ✎, saves it as a profile, updates the "
+                          "profile or reverts to it.")
+                     : trf("The profile {} is not there any more: these are the values it had. Save them as a profile "
+                           "to use them again.",
+                           sectionProfile(setup_, *section)));
+    }
+
+    // The summary, which opens the details as ✎ does.
+    const float summary_x = start.x + title_w + profile_w + dot_w;
+    const float summary_w = std::max(px(40), start.x + width - edit_w - style.ItemSpacing.x - summary_x);
+    ImGui::SetCursorScreenPos(ImVec2(summary_x, start.y));
+    if (ImGui::Selectable("##summary", false, ImGuiSelectableFlags_None, ImVec2(summary_w, frame))) open = !open;
+    {
+        const ImVec2 p0 = ImGui::GetItemRectMin(), p1 = ImGui::GetItemRectMax();
+        auto* dl = ImGui::GetWindowDrawList();
+        dl->PushClipRect(p0, ImVec2(p1.x - style.FramePadding.x, p1.y), true);
+        dl->AddText(ImVec2(p0.x + style.FramePadding.x * 0.5f, p0.y + style.FramePadding.y),
+                    ImGui::GetColorU32(open ? ImGuiCol_TextDisabled : ImGuiCol_Text), summary.c_str());
+        dl->PopClipRect();
+    }
+    itemHelp(more.empty() ? summary : summary + "\n\n" + more);
+
+    // ✎, at the right end.
+    ImGui::SetCursorScreenPos(ImVec2(start.x + width - edit_w, start.y));
+    if (open) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+    if (ImGui::Button("##edit", ImVec2(edit_w, frame))) open = !open;
+    ui::drawIcon(ImGui::GetWindowDrawList(), ui::Icon::Pencil,
+                 ImVec2((ImGui::GetItemRectMin().x + ImGui::GetItemRectMax().x) * 0.5f,
+                        (ImGui::GetItemRectMin().y + ImGui::GetItemRectMax().y) * 0.5f),
+                 frame * 0.45f, ImGui::GetColorU32(ImGuiCol_Text));
+    if (open) ImGui::PopStyleColor();
+    itemHelp(open ? TR("Fold the details") : TR("Edit in place"));
+
+    // The details, under the row, on a background of their own.
+    if (open) {
+        auto* dl         = ImGui::GetWindowDrawList();
+        const ImVec2 top = ImGui::GetCursorScreenPos();
+        if (setup_details_h_[row] > 0) {
+            dl->AddRectFilled(ImVec2(start.x, top.y - style.ItemSpacing.y * 0.5f),
+                              ImVec2(start.x + width, top.y + setup_details_h_[row]),
+                              ImGui::GetColorU32(ImGuiCol_FrameBg, 0.45f), style.FrameRounding);
+        }
+        ImGui::Indent(px(10));
+        ImGui::BeginGroup();
+        (this->*details)();
+        if (section) profileActions(*section);
+        ImGui::EndGroup();
+        ImGui::Unindent(px(10));
+        setup_details_h_[row] = ImGui::GetItemRectMax().y - top.y + style.ItemSpacing.y * 0.5f;
+        ImGui::Spacing();
+    }
+    ImGui::PopID();
+}
+
+std::optional<App::SetupRow> App::setupRowOf(const std::string& key) {
+    static constexpr std::array<const char*, ROW_COUNT> keys{"format",  "time",        "openings", "adjudication",
+                                                             "engines", "concurrency", "pgn"};
+    for (int i = 0; i < ROW_COUNT; ++i) {
+        if (key == keys[i]) return static_cast<SetupRow>(i);
+    }
+    return std::nullopt;
+}
+
+void App::sectionRow(SetupRow row, SetupSection section, void (App::*details)()) {
+    const auto line = sectionCommandLine(setup_, section);
+    setupRow(row, sectionTitle(section), sectionSummary(setup_, section, books_),
+             line.empty() ? std::string() : trf("As cutechess and fastchess write it: {}", line), section, details);
+}
+
+void App::applySetupProfile(SetupSection section, const SetupProfile& profile) {
+    applyProfile(setup_, section, profile);
+    saveSetupSoon();
+}
+
+void App::saveSetupProfile(SetupSection section, const std::string& name) {
+    profiles_.save(section, name, setup_);
+    setup_.profiles[sectionKey(section)] = name;
+    saveProfiles();
+    saveSetupSoon();
+}
+
+void App::profileCombo(SetupSection section, float width) {
+    const auto name     = sectionProfile(setup_, section);
+    const auto* current = profiles_.find(section, name);
+    const auto state    = profileState(setup_, section, profiles_);
+    const auto preview  = current ? current->label() : name.empty() ? std::string(TR("No profile")) : name;
+
+    // Opened for a screenshot: the popup of the combo, as BeginCombo names it. The rows of the sections come first, in
+    // their order.
+    if (open_profile_list_ == static_cast<int>(section)) {
+        open_profile_list_ = -1;
+        ImGui::OpenPopup(ImHashStr("##ComboPopup", 0, ImGui::GetID("##profile")));
+    }
+    ImGui::SetNextItemWidth(width);
+    if (state == ProfileState::None || state == ProfileState::Missing)
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    const bool opened = ImGui::BeginCombo("##profile", preview.c_str(), ImGuiComboFlags_HeightLarge);
+    if (state == ProfileState::None || state == ProfileState::Missing) ImGui::PopStyleColor();
+    if (!opened) {
+        itemHelp(state == ProfileState::None ? TR("No profile: these settings are this tournament's. Choose a profile, "
+                                                  "or save these as one.")
+                                             : TR("The profile these settings come from: choose another one, or save, "
+                                                  "update or revert them."));
+        return;
+    }
+    const auto& list = profiles_.list(section);
+    for (std::size_t i = 0; i < list.size(); ++i) {
+        const auto& p = list[i];
+        ImGui::PushID(static_cast<int>(i));
+        // The user's profiles, then the program's presets, marked.
+        if (i > 0 && p.preset && !list[i - 1].preset) ImGui::Separator();
+        if (ImGui::Selectable(p.label().c_str(), p.name == name)) applySetupProfile(section, p);
+        if (p.name == name && ImGui::IsWindowAppearing()) ImGui::SetItemDefaultFocus();
+        itemHelp(sectionSummary(p.setup, section, books_) +
+                 (p.preset ? std::string("\n") + TR("A preset of the program.") : std::string()));
+        if (p.preset) {
+            ImGui::SameLine(ImGui::GetContentRegionMax().x - ImGui::CalcTextSize(TR("preset")).x);
+            ImGui::TextDisabled("%s", TR("preset"));
+        }
+        ImGui::PopID();
+    }
+    ImGui::Separator();
+    if (ImGui::Selectable(TR("Save as profile…"))) {
+        profile_section_   = section;
+        profile_name_      = state == ProfileState::Missing ? name : std::string();
+        open_save_profile_ = true;
+    }
+    if (current && state == ProfileState::Changed) {
+        if (ImGui::Selectable(trf("Update {}", current->label()).c_str())) saveSetupProfile(section, name);
+        itemHelp(trf("{} takes these settings, for every tournament and template that uses it.", current->label()));
+        if (ImGui::Selectable(trf("Revert to {}", current->label()).c_str())) applySetupProfile(section, *current);
+    }
+    if (current && profiles_.isUsers(section, name)) {
+        if (ImGui::Selectable(trf("Delete {}…", current->label()).c_str())) {
+            profile_section_ = section;
+            profile_delete_  = name;
+        }
+    }
+    ImGui::EndCombo();
+}
+
+void App::profileActions(SetupSection section) {
+    const auto name     = sectionProfile(setup_, section);
+    const auto* current = profiles_.find(section, name);
+    const auto state    = profileState(setup_, section, profiles_);
+    ImGui::Spacing();
+    if (state == ProfileState::Changed && current) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::ACCENT);
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("•");
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        ImGui::TextUnformatted(TR("Changed for this tournament only."));
+        ImGui::SameLine();
+    }
+    if (ImGui::Button(TR("Save as profile…"))) {
+        profile_section_   = section;
+        profile_name_      = state == ProfileState::Missing ? name : std::string();
+        open_save_profile_ = true;
+    }
+    itemHelp(TR("These settings under a name, to choose them again in other tournaments and templates."));
+    if (state == ProfileState::Changed && current) {
+        ImGui::SameLine();
+        if (ImGui::Button(trf("Update {}", current->label()).c_str())) saveSetupProfile(section, name);
+        itemHelp(trf("{} takes these settings, for every tournament and template that uses it.", current->label()));
+        ImGui::SameLine();
+        if (ImGui::Button(TR("Revert"))) applySetupProfile(section, *current);
+        itemHelp(trf("Back to the settings of {}.", current->label()));
+    }
+}
+
+void App::drawProfilePopups() {
+    if (std::exchange(open_save_profile_, false)) ImGui::OpenPopup("save_profile");
+    if (ImGui::BeginPopup("save_profile")) {
+        const auto section = profile_section_;
+        ImGui::TextDisabled("%s", trf("{}: save as profile", sectionTitle(section)).c_str());
+        char buffer[128];
+        const auto n = std::min(profile_name_.size(), sizeof(buffer) - 1);
+        std::copy_n(profile_name_.data(), n, buffer);
+        buffer[n] = 0;
+        if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
+        ImGui::SetNextItemWidth(px(260));
+        const bool enter = ImGui::InputTextWithHint("##profile_name", TR("Profile name"), buffer, sizeof(buffer),
+                                                    ImGuiInputTextFlags_EnterReturnsTrue);
+        profile_name_    = buffer;
+        // A name is trimmed of its spaces; one already taken is replaced, once said.
+        auto name = profile_name_;
+        name.erase(0, name.find_first_not_of(' '));
+        name.erase(name.find_last_not_of(' ') + 1);
+        const auto* taken = profiles_.find(section, name);
+        if (taken) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+            ImGui::TextUnformatted(taken->preset ? TR("A preset of this name: your profile takes its place.")
+                                                 : TR("A profile of this name: it is replaced."));
+            ImGui::PopStyleColor();
+        }
+        ImGui::BeginDisabled(name.empty());
+        if (ImGui::Button(taken ? TR("Replace") : TR("Save")) || (enter && !name.empty())) {
+            saveSetupProfile(section, name);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (ImGui::Button(TR("Cancel"))) ImGui::CloseCurrentPopup();
+        ImGui::EndPopup();
+    }
+
+    if (!profile_delete_.empty() && !ImGui::IsPopupOpen("delete_profile")) ImGui::OpenPopup("delete_profile");
+    if (ImGui::BeginPopup("delete_profile")) {
+        const auto section = profile_section_;
+        ImGui::TextUnformatted(trf("Delete the profile {}?", profile_delete_).c_str());
+        ImGui::TextDisabled("%s", TR("The setup and the templates that use it keep its values."));
+        if (ImGui::Button(TR("Delete"))) {
+            profiles_.remove(section, profile_delete_);
+            saveProfiles();
+            profile_delete_.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(TR("Cancel"))) {
+            profile_delete_.clear();
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    } else {
+        profile_delete_.clear();  // closed by a click elsewhere or Escape
+    }
 }
 
 void App::setupEngines() {
@@ -605,17 +883,23 @@ void App::drawSprtCalculator() {
 }
 
 void App::setupLimit() {
-    if (!ImGui::CollapsingHeader(TR("Time control###sec_limit"), ImGuiTreeNodeFlags_DefaultOpen)) return;
-
     int limit    = static_cast<int>(setup_.limit);
     bool changed = false;
     changed |= ImGui::RadioButton(TR("Time"), &limit, static_cast<int>(LimitKind::Time));
+    itemHelp(
+        TR("A clock: a base time and an increment, the base given again every N moves if you like (tc=40/900, "
+           "tc=10+0.1)."));
     ImGui::SameLine();
     changed |= ImGui::RadioButton(TR("Time per move"), &limit, static_cast<int>(LimitKind::MoveTime));
+    itemHelp(TR("Every move gets this time, whatever was used before (go movetime)."));
     ImGui::SameLine();
     changed |= ImGui::RadioButton(TR("Fixed nodes"), &limit, static_cast<int>(LimitKind::Nodes));
+    itemHelp(
+        TR("Every move searches this many nodes: the same moves however fast the machine, and as many games at "
+           "once as it has hardware threads."));
     ImGui::SameLine();
     changed |= ImGui::RadioButton(TR("Depth"), &limit, static_cast<int>(LimitKind::Depth));
+    itemHelp(TR("Every move is searched to this depth (go depth), however long it takes: no time loss."));
     setup_.limit = static_cast<LimitKind>(limit);
 
     const auto margin = [&] {
@@ -807,8 +1091,6 @@ void App::setupOpenings() {
 }
 
 void App::setupAdjudication() {
-    if (!ImGui::CollapsingHeader(TR("Adjudication###sec_adjudication"))) return;
-
     bool changed = false;
 
     changed |= ImGui::Checkbox(TR("Draw"), &setup_.draw_enabled);

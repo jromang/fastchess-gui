@@ -139,6 +139,9 @@ msgstr "从初始局面沿 Polyglot 开局库走到此深度（-1 = {}），去�
 msgid "A WinBoard engine."
 msgstr "一个 WinBoard 引擎。"
 
+msgid "A clock: a base time and an increment, the base given again every N moves if you like (tc=40/900, tc=10+0.1)."
+msgstr "棋钟：基础时间加每步加时，也可以每 N 步重新给一次基础时间（tc=40/900、tc=10+0.1）。"
+
 msgid "A colour won both games of a pair"
 msgstr "同一方赢下一对中的两局"
 
@@ -174,6 +177,15 @@ msgstr "可在任何浏览器中打开的页面（浅色或深色），带有说
 
 msgid "A page, an engine, a tournament, an action…"
 msgstr "页面、引擎、锦标赛、操作…"
+
+msgid "A preset of the program."
+msgstr "程序自带的预设。"
+
+msgid "A preset of this name: your profile takes its place."
+msgstr "已有同名预设：你的配置将取而代之。"
+
+msgid "A profile of this name: it is replaced."
+msgstr "已有同名配置：它将被替换。"
 
 msgid "A rating list's text or web page, Ordo, CSV (name,elo)"
 msgstr "等级分列表的文本或网页、Ordo、CSV (name,elo)"
@@ -342,6 +354,9 @@ msgstr "箭头"
 msgid "As BBCode, for a forum"
 msgstr "BBCode 格式，用于论坛"
 
+msgid "As cutechess and fastchess write it: {}"
+msgstr "cutechess 和 fastchess 的写法：{}"
+
 msgid "As text"
 msgstr "文本格式"
 
@@ -374,6 +389,9 @@ msgstr "恢复默认文件夹"
 
 msgid "Back to the default value"
 msgstr "恢复默认值"
+
+msgid "Back to the settings of {}."
+msgstr "恢复为 {} 的设置。"
 
 msgid "Base (s)"
 msgstr "基本时间 (s)"
@@ -485,6 +503,12 @@ msgstr "格子："
 
 msgid "Change the tournament"
 msgstr "修改锦标赛"
+
+msgid "Changed for this tournament only."
+msgstr "仅为本次比赛修改。"
+
+msgid "Changed for this tournament only. Its list, or ✎, saves it as a profile, updates the profile or reverts to it."
+msgstr "仅为本次比赛修改。在其列表或 ✎ 中可另存为配置、更新配置或恢复。"
 
 msgid "Change…"
 msgstr "更改…"
@@ -660,6 +684,12 @@ msgstr "默认布局"
 msgid "Delete"
 msgstr "删除"
 
+msgid "Delete the profile {}?"
+msgstr "删除配置 {}？"
+
+msgid "Delete {}…"
+msgstr "删除 {}…"
+
 msgid "Depth"
 msgstr "深度"
 
@@ -749,6 +779,9 @@ msgstr "每轮是与得分相近的引擎交换颜色下的两局对局。"
 
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
 msgstr "每轮让得分相近的引擎配对，同一对手不会相遇两次；适用于参赛者较多的情况。列表顺序即为种子排序。"
+
+msgid "Edit in place"
+msgstr "就地编辑"
 
 msgid "Elo"
 msgstr "Elo"
@@ -873,6 +906,9 @@ msgstr "每步都给予这么多时间，不管之前用了多少（go movetime�
 msgid "Every move is searched to this depth (go depth), however long it takes: no time loss."
 msgstr "每步都搜索到此深度（go depth），无论耗时多久：不会超时判负。"
 
+msgid "Every move searches this many nodes: the same moves however fast the machine, and as many games at once as it has hardware threads."
+msgstr "每步搜索这么多节点：无论机器快慢走法都相同，同时进行的对局数等于硬件线程数。"
+
 msgid "Every opening"
 msgstr "所有开局"
 
@@ -968,6 +1004,9 @@ msgstr "固定节点数或深度：每个硬件线程一局（超线程不会改
 
 msgid "Flip"
 msgstr "翻转"
+
+msgid "Fold the details"
+msgstr "收起详情"
 
 msgid "Folder"
 msgstr "文件夹"
@@ -1477,6 +1516,15 @@ msgstr "还没有选项：请点击“重新读取 UCI 选项”。"
 msgid "No position with bm, am or c0 in this file."
 msgstr "此文件中没有带 bm、am 或 c0 的局面。"
 
+msgid "No profile"
+msgstr "无配置"
+
+msgid "No profile holds this: it is saved with the setup and in templates."
+msgstr "没有配置包含此项：它随设置和模板一起保存。"
+
+msgid "No profile: these settings are this tournament's. Choose a profile, or save these as one."
+msgstr "无配置：这些是本次比赛的设置。选择一个配置，或将其另存为配置。"
+
 msgid "No results yet."
 msgstr "还没有成绩。"
 
@@ -1821,6 +1869,9 @@ msgstr "处理器"
 msgid "Processor use"
 msgstr "处理器占用"
 
+msgid "Profile name"
+msgstr "配置名称"
+
 msgid "Program"
 msgstr "程序"
 
@@ -2009,6 +2060,12 @@ msgstr "启动时恢复之前正在进行的锦标赛"
 msgid "Resumed: {}, {} games already played. Folder: {}"
 msgstr "已恢复：{}，已下 {} 局。文件夹：{}"
 
+msgid "Revert"
+msgstr "恢复"
+
+msgid "Revert to {}"
+msgstr "恢复为 {}"
+
 msgid "Right click: play again or void this game."
 msgstr "右键：重下或作废这局对局。"
 
@@ -2068,6 +2125,9 @@ msgstr "保存"
 
 msgid "Save a cleaned copy…"
 msgstr "保存清理后的副本…"
+
+msgid "Save as profile…"
+msgstr "另存为配置…"
 
 msgid "Save the layout"
 msgstr "保存布局"
@@ -2380,6 +2440,9 @@ msgstr "为了开始，{} 的检查已中断：稍后会重新进行。"
 msgid "The depth must be positive."
 msgstr "深度必须为正数。"
 
+msgid "The directories are this computer's: no profile holds them."
+msgstr "这些目录属于本机：没有配置包含它们。"
+
 msgid "The engine does not answer isready."
 msgstr "引擎没有响应 isready。"
 
@@ -2488,6 +2551,12 @@ msgstr "服务器为页面打开的端口，与 ssh -R REMOTE_PORT:localhost:POR
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
 msgstr "每个引擎进程的处理器时间：思考时（核心数不超过其线程数）以及对手思考时（不开启后台思考则为零）。在窗口中进行的对局期间测量，并随对局保存，以便恢复锦标赛时使用。"
 
+msgid "The profile these settings come from: choose another one, or save, update or revert them."
+msgstr "这些设置所来自的配置：选择另一个，或保存、更新、恢复。"
+
+msgid "The profile {} is not there any more: these are the values it had. Save them as a profile to use them again."
+msgstr "配置 {} 已不存在：这是它原来的值。另存为配置即可再次使用。"
+
 msgid "The program changed since it was last read (rebuilt or replaced)."
 msgstr "自上次读取以来程序已改变（重新编译或被替换）。"
 
@@ -2530,6 +2599,9 @@ msgstr "同一轮中所有对局对使用同一开局"
 msgid "The search stops once a solution has stayed the engine's first move for this many more plies of depth. 0: every search takes its whole time."
 msgstr "当某个解答作为引擎首选着法又保持了这么多半回合深度后，搜索停止。0：每次搜索都用满全部时间。"
 
+msgid "The setup and the templates that use it keep its values."
+msgstr "使用它的设置和模板会保留其值。"
+
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "在此时限下，两个引擎之间预期的和棋比例。"
 
@@ -2571,6 +2643,9 @@ msgstr "找不到 {} 的工作目录。"
 
 msgid "Theme"
 msgstr "主题"
+
+msgid "These settings under a name, to choose them again in other tournaments and templates."
+msgstr "为这些设置命名，以便在其他比赛和模板中再次选用。"
 
 msgid "They have not played each other."
 msgstr "它们之间没有对弈过。"
@@ -2682,6 +2757,9 @@ msgstr "无法读取的 PGN。"
 
 msgid "Up to {} engines."
 msgstr "最多 {} 个引擎。"
+
+msgid "Update {}"
+msgstr "更新 {}"
 
 msgid "Use it for the next tournament"
 msgstr "用于下一个锦标赛"
@@ -3026,6 +3104,9 @@ msgstr "关闭自带开局库"
 msgid "pairs"
 msgstr "对局对"
 
+msgid "preset"
+msgstr "预设"
+
 msgid "random"
 msgstr "随机"
 
@@ -3067,6 +3148,9 @@ msgstr "{} 的快速测试"
 
 msgid "the resume of the interrupted tournament"
 msgstr "恢复被中断的锦标赛"
+
+msgid "this tournament"
+msgstr "本次比赛"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "可在帖子中注明，或重新测试引擎："
@@ -3457,6 +3541,9 @@ msgstr[0] "已选 {} 个"
 msgid "{} shown"
 msgstr "显示 {} 个"
 
+msgid "{} takes these settings, for every tournament and template that uses it."
+msgstr "{} 采用这些设置，所有使用它的比赛和模板都会随之改变。"
+
 msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"
 msgstr[0] "{} 个有歧义"
@@ -3529,6 +3616,9 @@ msgstr "{}：找不到其开局库：{}"
 
 msgid "{}: program not found ({})"
 msgstr "{}：找不到程序（{}）"
+
+msgid "{}: save as profile"
+msgstr "{}：另存为配置"
 
 msgid "{}: seldepth"
 msgstr "{}：seldepth"

@@ -141,6 +141,9 @@ msgstr ""
 msgid "A WinBoard engine."
 msgstr ""
 
+msgid "A clock: a base time and an increment, the base given again every N moves if you like (tc=40/900, tc=10+0.1)."
+msgstr ""
+
 msgid "A colour won both games of a pair"
 msgstr ""
 
@@ -175,6 +178,15 @@ msgid "A page that opens in any browser, light or dark, with a header that tells
 msgstr ""
 
 msgid "A page, an engine, a tournament, an action…"
+msgstr ""
+
+msgid "A preset of the program."
+msgstr ""
+
+msgid "A preset of this name: your profile takes its place."
+msgstr ""
+
+msgid "A profile of this name: it is replaced."
 msgstr ""
 
 msgid "A rating list's text or web page, Ordo, CSV (name,elo)"
@@ -346,6 +358,9 @@ msgstr ""
 msgid "As BBCode, for a forum"
 msgstr ""
 
+msgid "As cutechess and fastchess write it: {}"
+msgstr ""
+
 msgid "As text"
 msgstr ""
 
@@ -377,6 +392,9 @@ msgid "Back to the default"
 msgstr ""
 
 msgid "Back to the default value"
+msgstr ""
+
+msgid "Back to the settings of {}."
 msgstr ""
 
 msgid "Base (s)"
@@ -488,6 +506,12 @@ msgid "Cells:"
 msgstr ""
 
 msgid "Change the tournament"
+msgstr ""
+
+msgid "Changed for this tournament only."
+msgstr ""
+
+msgid "Changed for this tournament only. Its list, or ✎, saves it as a profile, updates the profile or reverts to it."
 msgstr ""
 
 msgid "Change…"
@@ -664,6 +688,12 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
+msgid "Delete the profile {}?"
+msgstr ""
+
+msgid "Delete {}…"
+msgstr ""
+
 msgid "Depth"
 msgstr ""
 
@@ -752,6 +782,9 @@ msgid "Each round is two games, colours reversed, against an engine with a simil
 msgstr ""
 
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
+msgstr ""
+
+msgid "Edit in place"
 msgstr ""
 
 msgid "Elo"
@@ -877,6 +910,9 @@ msgstr ""
 msgid "Every move is searched to this depth (go depth), however long it takes: no time loss."
 msgstr ""
 
+msgid "Every move searches this many nodes: the same moves however fast the machine, and as many games at once as it has hardware threads."
+msgstr ""
+
 msgid "Every opening"
 msgstr ""
 
@@ -971,6 +1007,9 @@ msgid "Fixed nodes or depth: one game per hardware thread (Hyper-Threading does 
 msgstr ""
 
 msgid "Flip"
+msgstr ""
+
+msgid "Fold the details"
 msgstr ""
 
 msgid "Folder"
@@ -1482,6 +1521,15 @@ msgstr ""
 msgid "No position with bm, am or c0 in this file."
 msgstr ""
 
+msgid "No profile"
+msgstr ""
+
+msgid "No profile holds this: it is saved with the setup and in templates."
+msgstr ""
+
+msgid "No profile: these settings are this tournament's. Choose a profile, or save these as one."
+msgstr ""
+
 msgid "No results yet."
 msgstr ""
 
@@ -1828,6 +1876,9 @@ msgstr ""
 msgid "Processor use"
 msgstr ""
 
+msgid "Profile name"
+msgstr ""
+
 msgid "Program"
 msgstr ""
 
@@ -2018,6 +2069,12 @@ msgstr ""
 msgid "Resumed: {}, {} games already played. Folder: {}"
 msgstr ""
 
+msgid "Revert"
+msgstr ""
+
+msgid "Revert to {}"
+msgstr ""
+
 msgid "Right click: play again or void this game."
 msgstr ""
 
@@ -2076,6 +2133,9 @@ msgid "Save"
 msgstr ""
 
 msgid "Save a cleaned copy…"
+msgstr ""
+
+msgid "Save as profile…"
 msgstr ""
 
 msgid "Save the layout"
@@ -2391,6 +2451,9 @@ msgstr ""
 msgid "The depth must be positive."
 msgstr ""
 
+msgid "The directories are this computer's: no profile holds them."
+msgstr ""
+
 msgid "The engine does not answer isready."
 msgstr ""
 
@@ -2499,6 +2562,12 @@ msgstr ""
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
 msgstr ""
 
+msgid "The profile these settings come from: choose another one, or save, update or revert them."
+msgstr ""
+
+msgid "The profile {} is not there any more: these are the values it had. Save them as a profile to use them again."
+msgstr ""
+
 msgid "The program changed since it was last read (rebuilt or replaced)."
 msgstr ""
 
@@ -2541,6 +2610,9 @@ msgstr ""
 msgid "The search stops once a solution has stayed the engine's first move for this many more plies of depth. 0: every search takes its whole time."
 msgstr ""
 
+msgid "The setup and the templates that use it keep its values."
+msgstr ""
+
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr ""
 
@@ -2581,6 +2653,9 @@ msgid "The working directory of {} is not found."
 msgstr ""
 
 msgid "Theme"
+msgstr ""
+
+msgid "These settings under a name, to choose them again in other tournaments and templates."
 msgstr ""
 
 msgid "They have not played each other."
@@ -2692,6 +2767,9 @@ msgid "Unreadable PGN."
 msgstr ""
 
 msgid "Up to {} engines."
+msgstr ""
+
+msgid "Update {}"
 msgstr ""
 
 msgid "Use it for the next tournament"
@@ -3041,6 +3119,9 @@ msgstr ""
 msgid "pairs"
 msgstr ""
 
+msgid "preset"
+msgstr ""
+
 msgid "random"
 msgstr ""
 
@@ -3081,6 +3162,9 @@ msgid "the quick test of {}"
 msgstr ""
 
 msgid "the resume of the interrupted tournament"
+msgstr ""
+
+msgid "this tournament"
 msgstr ""
 
 msgid "to mention in the post, or to test the engine again:"
@@ -3516,6 +3600,9 @@ msgstr[1] ""
 msgid "{} shown"
 msgstr ""
 
+msgid "{} takes these settings, for every tournament and template that uses it."
+msgstr ""
+
 msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"
 msgstr[0] ""
@@ -3591,6 +3678,9 @@ msgid "{}: its book is not found: {}"
 msgstr ""
 
 msgid "{}: program not found ({})"
+msgstr ""
+
+msgid "{}: save as profile"
 msgstr ""
 
 msgid "{}: seldepth"

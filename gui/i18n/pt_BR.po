@@ -141,6 +141,9 @@ msgstr "Um livro Polyglot é seguido a partir da posição inicial até esta pro
 msgid "A WinBoard engine."
 msgstr "Um engine WinBoard."
 
+msgid "A clock: a base time and an increment, the base given again every N moves if you like (tc=40/900, tc=10+0.1)."
+msgstr "Um relógio: um tempo base e um incremento, a base dada de novo a cada N lances se você quiser (tc=40/900, tc=10+0.1)."
+
 msgid "A colour won both games of a pair"
 msgstr "Uma cor venceu as duas partidas de um par"
 
@@ -176,6 +179,15 @@ msgstr "Uma página que abre em qualquer navegador, clara ou escura, com um cabe
 
 msgid "A page, an engine, a tournament, an action…"
 msgstr "Uma página, uma engine, um torneio, uma ação…"
+
+msgid "A preset of the program."
+msgstr "Um perfil que vem com o programa."
+
+msgid "A preset of this name: your profile takes its place."
+msgstr "Um perfil do programa tem este nome: o seu toma o lugar dele."
+
+msgid "A profile of this name: it is replaced."
+msgstr "Um perfil tem este nome: ele é substituído."
 
 msgid "A rating list's text or web page, Ordo, CSV (name,elo)"
 msgstr "Texto ou página web de uma lista de rating, Ordo, CSV (name,elo)"
@@ -346,6 +358,9 @@ msgstr "Setas"
 msgid "As BBCode, for a forum"
 msgstr "Em BBCode, para um fórum"
 
+msgid "As cutechess and fastchess write it: {}"
+msgstr "Como cutechess e fastchess escrevem: {}"
+
 msgid "As text"
 msgstr "Como texto"
 
@@ -378,6 +393,9 @@ msgstr "Voltar ao padrão"
 
 msgid "Back to the default value"
 msgstr "Voltar ao valor padrão"
+
+msgid "Back to the settings of {}."
+msgstr "Voltar às configurações de {}."
 
 msgid "Base (s)"
 msgstr "Tempo base (s)"
@@ -489,6 +507,12 @@ msgstr "Células:"
 
 msgid "Change the tournament"
 msgstr "Alterar o torneio"
+
+msgid "Changed for this tournament only."
+msgstr "Alterado só para este torneio."
+
+msgid "Changed for this tournament only. Its list, or ✎, saves it as a profile, updates the profile or reverts to it."
+msgstr "Alterado só para este torneio. A lista, ou ✎, salva como perfil, atualiza o perfil ou volta a ele."
 
 msgid "Change…"
 msgstr "Alterar…"
@@ -664,6 +688,12 @@ msgstr "Layout padrão"
 msgid "Delete"
 msgstr "Excluir"
 
+msgid "Delete the profile {}?"
+msgstr "Excluir o perfil {}?"
+
+msgid "Delete {}…"
+msgstr "Excluir {}…"
+
 msgid "Depth"
 msgstr "Profundidade"
 
@@ -753,6 +783,9 @@ msgstr "Cada rodada são duas partidas, cores invertidas, contra um engine com p
 
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
 msgstr "Cada rodada emparceira engines com pontuações parecidas, nunca duas vezes os mesmos; para muitos participantes. A ordem da lista define os cabeças de chave."
+
+msgid "Edit in place"
+msgstr "Editar aqui"
 
 msgid "Elo"
 msgstr "Elo"
@@ -877,6 +910,9 @@ msgstr "Cada lance recebe este tempo, não importa quanto foi usado antes (go mo
 msgid "Every move is searched to this depth (go depth), however long it takes: no time loss."
 msgstr "Cada lance é calculado até esta profundidade (go depth), leve o tempo que levar: sem perda por tempo."
 
+msgid "Every move searches this many nodes: the same moves however fast the machine, and as many games at once as it has hardware threads."
+msgstr "Cada lance busca este número de nós: os mesmos lances seja qual for a velocidade da máquina, e tantas partidas ao mesmo tempo quantos threads de hardware ela tiver."
+
 msgid "Every opening"
 msgstr "Todas as aberturas"
 
@@ -972,6 +1008,9 @@ msgstr "Nós ou profundidade fixos: uma partida por thread de hardware (o Hyper-
 
 msgid "Flip"
 msgstr "Girar"
+
+msgid "Fold the details"
+msgstr "Recolher os detalhes"
 
 msgid "Folder"
 msgstr "Pasta"
@@ -1482,6 +1521,15 @@ msgstr "Nenhuma opção ainda: clique em Reler as opções UCI."
 msgid "No position with bm, am or c0 in this file."
 msgstr "Nenhuma posição com bm, am ou c0 neste arquivo."
 
+msgid "No profile"
+msgstr "Sem perfil"
+
+msgid "No profile holds this: it is saved with the setup and in templates."
+msgstr "Nenhum perfil contém isto: é salvo com a configuração e nos modelos."
+
+msgid "No profile: these settings are this tournament's. Choose a profile, or save these as one."
+msgstr "Sem perfil: estas configurações são deste torneio. Escolha um perfil, ou salve-as como um."
+
 msgid "No results yet."
 msgstr "Nenhum resultado ainda."
 
@@ -1828,6 +1876,9 @@ msgstr "Processador"
 msgid "Processor use"
 msgstr "Uso do processador"
 
+msgid "Profile name"
+msgstr "Nome do perfil"
+
 msgid "Program"
 msgstr "Programa"
 
@@ -2018,6 +2069,12 @@ msgstr "Retomar ao iniciar o torneio que estava em andamento"
 msgid "Resumed: {}, {} games already played. Folder: {}"
 msgstr "Retomado: {}, {} partidas já jogadas. Pasta: {}"
 
+msgid "Revert"
+msgstr "Reverter"
+
+msgid "Revert to {}"
+msgstr "Voltar a {}"
+
 msgid "Right click: play again or void this game."
 msgstr "Botão direito: jogar de novo ou anular esta partida."
 
@@ -2077,6 +2134,9 @@ msgstr "Salvar"
 
 msgid "Save a cleaned copy…"
 msgstr "Salvar uma cópia limpa…"
+
+msgid "Save as profile…"
+msgstr "Salvar como perfil…"
 
 msgid "Save the layout"
 msgstr "Salvar o layout"
@@ -2391,6 +2451,9 @@ msgstr "A verificação de {} foi interrompida para o início: será refeita mai
 msgid "The depth must be positive."
 msgstr "A profundidade deve ser positiva."
 
+msgid "The directories are this computer's: no profile holds them."
+msgstr "As pastas são deste computador: nenhum perfil as contém."
+
 msgid "The engine does not answer isready."
 msgstr "O engine não responde a isready."
 
@@ -2499,6 +2562,12 @@ msgstr "A porta que o servidor abre para a página, como ssh -R REMOTE_PORT:loca
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
 msgstr "O tempo de processador dos processos de cada motor, enquanto pensa (não mais núcleos que suas threads) e enquanto o adversário pensa (nenhum sem ponder). Medido durante as partidas jogadas na janela e guardado com elas para quando o torneio for retomado."
 
+msgid "The profile these settings come from: choose another one, or save, update or revert them."
+msgstr "O perfil de onde vêm estas configurações: escolha outro, ou salve, atualize ou reverta."
+
+msgid "The profile {} is not there any more: these are the values it had. Save them as a profile to use them again."
+msgstr "O perfil {} não existe mais: estes são os valores que ele tinha. Salve-os como perfil para usá-los de novo."
+
 msgid "The program changed since it was last read (rebuilt or replaced)."
 msgstr "O programa mudou desde a última leitura (recompilado ou substituído)."
 
@@ -2541,6 +2610,9 @@ msgstr "A mesma abertura para todos os pares de uma rodada"
 msgid "The search stops once a solution has stayed the engine's first move for this many more plies of depth. 0: every search takes its whole time."
 msgstr "A busca para quando uma solução permaneceu como primeiro lance do engine por mais esse número de meios-lances de profundidade. 0: cada busca usa todo o seu tempo."
 
+msgid "The setup and the templates that use it keep its values."
+msgstr "A configuração e os modelos que o usam mantêm os valores dele."
+
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "A fração de partidas empatadas esperada entre os dois engines, neste controle de tempo."
 
@@ -2582,6 +2654,9 @@ msgstr "A pasta de trabalho de {} não foi encontrada."
 
 msgid "Theme"
 msgstr "Tema"
+
+msgid "These settings under a name, to choose them again in other tournaments and templates."
+msgstr "Estas configurações com um nome, para escolhê-las de novo em outros torneios e modelos."
 
 msgid "They have not played each other."
 msgstr "Eles não se enfrentaram."
@@ -2693,6 +2768,9 @@ msgstr "PGN ilegível."
 
 msgid "Up to {} engines."
 msgstr "Até {} motores."
+
+msgid "Update {}"
+msgstr "Atualizar {}"
 
 msgid "Use it for the next tournament"
 msgstr "Usar no próximo torneio"
@@ -3041,6 +3119,9 @@ msgstr "livros próprios desligados"
 msgid "pairs"
 msgstr "pares"
 
+msgid "preset"
+msgstr "do programa"
+
 msgid "random"
 msgstr "aleatória"
 
@@ -3082,6 +3163,9 @@ msgstr "o teste rápido de {}"
 
 msgid "the resume of the interrupted tournament"
 msgstr "a retomada do torneio interrompido"
+
+msgid "this tournament"
+msgstr "este torneio"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "para mencionar na postagem, ou para testar o engine de novo:"
@@ -3516,6 +3600,9 @@ msgstr[1] "{} selecionados"
 msgid "{} shown"
 msgstr "{} mostradas"
 
+msgid "{} takes these settings, for every tournament and template that uses it."
+msgstr "{} recebe estas configurações, para cada torneio e modelo que o usa."
+
 msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"
 msgstr[0] "{} ambíguo"
@@ -3592,6 +3679,9 @@ msgstr "{}: o livro dele não foi encontrado: {}"
 
 msgid "{}: program not found ({})"
 msgstr "{}: programa não encontrado ({})"
+
+msgid "{}: save as profile"
+msgstr "{}: salvar como perfil"
 
 msgid "{}: seldepth"
 msgstr "{}: seldepth"

@@ -435,6 +435,36 @@ class App {
     void setupAdjudication();
     void setupPgn();
 
+    // The rows of the setup's settings, each folded to a line: its profile, its summary, and ✎ that opens its
+    // details in place. The five sections with a profile, then the concurrency and the PGN files of this tournament.
+    enum SetupRow { RowFormat, RowTime, RowOpenings, RowAdjudication, RowEngines, RowConcurrency, RowPgn, ROW_COUNT };
+    std::array<bool, ROW_COUNT> setup_open_{};         // the rows whose details are open
+    std::array<float, ROW_COUNT> setup_details_h_{};  // their height at the last frame, for their background
+    // The row of a name: "format", "time", "openings", "adjudication", "engines", "concurrency", "pgn".
+    [[nodiscard]] static std::optional<SetupRow> setupRowOf(const std::string& key);
+    int open_profile_list_ = -1;  // --focus setup-profiles=ROW: the row whose profile list opens
+    // One row, then its details drawn by `details` under it when it is open. `section`: the profile's, none for the
+    // rows without one; `more`: what the summary's tooltip adds to it.
+    void setupRow(SetupRow row, const char* title, const std::string& summary, const std::string& more,
+                  std::optional<SetupSection> section, void (App::*details)());
+    // A section's row, its summary and its tooltip made from the setup.
+    void sectionRow(SetupRow row, SetupSection section, void (App::*details)());
+    // The profile list of a section: a profile is applied when chosen; then Save as profile…, and Update, Revert and
+    // Delete for the profile the section came from.
+    void profileCombo(SetupSection section, float width);
+    // Under the details of a section: Save as profile…, and Update the profile and Revert when it was changed for this
+    // tournament only.
+    void profileActions(SetupSection section);
+    // The popups of Save as profile… (its name) and of Delete (the confirmation), once per frame.
+    void drawProfilePopups();
+    void applySetupProfile(SetupSection section, const SetupProfile& profile);  // to the setup, saved soon
+    void saveSetupProfile(SetupSection section, const std::string& name);       // the section as profile `name`
+    void saveProfiles() { storage_.saveProfiles(profiles_.toJson()); }
+    std::string profile_name_;                        // Save as profile…: the name typed
+    SetupSection profile_section_ = SetupSection::Format;  // the section it saves, or Delete removes from
+    bool open_save_profile_       = false;                 // its popup opens on the next frame
+    std::string profile_delete_;                           // the profile Delete asks to confirm, opened next frame
+
     // test suites
     void drawSuites();
     void drawSuiteGrid();
