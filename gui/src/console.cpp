@@ -1,5 +1,7 @@
 #include "console.hpp"
 
+#include <algorithm>
+
 #include <core/logger/logger.hpp>
 #include <tour/files.hpp>
 
@@ -41,6 +43,21 @@ void Console::add(std::string line, bool warning) {
     lines_.push_back({std::move(line), warning});
     while (lines_.size() > MAX_LINES) lines_.pop_front();
     version_++;
+    added_++;
+}
+
+uint64_t Console::added() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return added_;
+}
+
+std::vector<std::string> Console::since(uint64_t added) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::vector<std::string> out;
+    // The last lines added are the last ones kept (a Clear may have dropped some).
+    const auto count = static_cast<std::size_t>(std::min<uint64_t>(added_ - std::min(added, added_), lines_.size()));
+    for (auto it = lines_.end() - static_cast<std::ptrdiff_t>(count); it != lines_.end(); ++it) out.push_back(it->text);
+    return out;
 }
 
 bool Console::copy(std::vector<Line>& out, uint64_t& version) const {

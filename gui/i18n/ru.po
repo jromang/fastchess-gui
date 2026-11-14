@@ -269,6 +269,12 @@ msgstr "Присуждать"
 msgid "Adjudication"
 msgstr "Присуждение результата"
 
+msgid "Adjudication up to {} piece, but only {}-piece files found in {}."
+msgid_plural "Adjudication up to {} pieces, but only {}-piece files found in {}."
+msgstr[0] "Присуждение до {} фигуры, но найдены только {}-фигурные файлы, в {}."
+msgstr[1] "Присуждение до {} фигур, но найдены только {}-фигурные файлы, в {}."
+msgstr[2] "Присуждение до {} фигур, но найдены только {}-фигурные файлы, в {}."
+
 msgid "Adjudications"
 msgstr "Присуждения"
 
@@ -626,6 +632,18 @@ msgstr "Выберите хотя бы два движка."
 msgid "Choose engines A and B."
 msgstr "Выберите движки A и B."
 
+msgid "Choose the opening book"
+msgstr "Выбрать дебютную книгу"
+
+msgid "Choose the program of {}"
+msgstr "Выбрать программу движка {}"
+
+msgid "Choose the tablebase folder of this tournament (the adjudication's, and the engines' when it gives them its tablebases)"
+msgstr "Выбрать папку таблиц этого турнира (для присуждения и для движков, если турнир передаёт им свои таблицы)"
+
+msgid "Choose the working directory of {}"
+msgstr "Выбрать рабочую папку движка {}"
+
 msgid "Choose two different engines, or give them books of their own."
 msgstr "Выберите два разных движка или дайте им собственные книги."
 
@@ -724,6 +742,9 @@ msgstr "Перекрёстная таблица"
 
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr "Ctrl + колесо мыши, Ctrl + и Ctrl -, Ctrl 0"
+
+msgid "Cut short, by a download that did not end for example. Engines leave such a file out, and some stop at once when they meet it."
+msgstr "Обрезан, например незавершённой загрузкой. Движки пропускают такой файл, а некоторые сразу завершаются, встретив его."
 
 msgid "Cycle {} / {}"
 msgstr "Цикл {} / {}"
@@ -1304,8 +1325,14 @@ msgstr "Размер интерфейса"
 msgid "Interrupted"
 msgstr "Прерван"
 
-msgid "Interrupted: an engine crashed or stopped responding (see Console)"
-msgstr "Прервано: движок вылетел или перестал отвечать (см. «Консоль»)"
+msgid "Interrupted: an engine crashed or stopped responding (see the Log)"
+msgstr "Прервано: движок вылетел или перестал отвечать (см. Журнал)"
+
+msgid "Interrupted: {} could not start: {}"
+msgstr "Прервано: {} не удалось запустить: {}"
+
+msgid "Interrupted: {} crashed or stopped responding (game {})"
+msgstr "Прервано: {} вылетел или перестал отвечать (партия {})"
 
 msgid "It cannot play for an engine: {}"
 msgstr "Она не может играть за движок: {}"
@@ -1352,8 +1379,14 @@ msgstr "Его уже сыгранные партии перестают учи�
 msgid "Its games stop counting and are played again by the new engine."
 msgstr "Его партии перестают учитываться и переигрываются новым движком."
 
+msgid "Its logs folder keeps the engine log of every game that ended badly."
+msgstr "Его папка logs хранит журнал движка каждой партии, закончившейся неудачно."
+
 msgid "Its name begins with this library engine's: choose it if it is the same engine, version included."
 msgstr "Его имя начинается с имени этого движка библиотеки: выберите его, если это тот же движок, включая версию."
+
+msgid "Its options have no UCI_Chess960 (a WinBoard engine: no fischerandom variant)."
+msgstr "В его опциях нет UCI_Chess960 (движок WinBoard: нет варианта fischerandom)."
 
 msgid "Its own opening book"
 msgstr "Собственная дебютная книга"
@@ -1486,6 +1519,18 @@ msgstr "Поражения."
 
 msgid "Lost after a winning score"
 msgstr "Проигрыш после выигрышной оценки"
+
+msgid "Lost on time before move {}: more often an engine set up wrong (too many threads, a hash too large to allocate in time, a network loaded at every game, a slow start) than its time management."
+msgstr "Поражение по времени до {}-го хода: чаще неверно настроенный движок (слишком много потоков, хеш, слишком большой, чтобы успеть его выделить, сеть, загружаемая в каждой партии, медленный запуск), чем его контроль времени."
+
+msgid "Lower Threads to {}"
+msgstr "Снизить Threads до {}"
+
+msgid "Lower to {} piece"
+msgid_plural "Lower to {} pieces"
+msgstr[0] "Снизить до {} фигуры"
+msgstr[1] "Снизить до {} фигур"
+msgstr[2] "Снизить до {} фигур"
 
 msgid "Machine: %d physical cores, %d threads"
 msgstr "Компьютер: физических ядер — %d, потоков — %d"
@@ -1781,8 +1826,14 @@ msgstr "Открыть файл…"
 msgid "Open a folder…"
 msgstr "Открыть папку…"
 
+msgid "Open the engine"
+msgstr "Открыть движок"
+
 msgid "Open the folder"
 msgstr "Открыть папку"
+
+msgid "Open the log"
+msgstr "Открыть журнал"
 
 msgid "Open the profile folder"
 msgstr "Открыть папку профиля"
@@ -2372,6 +2423,15 @@ msgstr[0] "Задать опорный рейтинг Elo: {}"
 msgstr[1] "Задать опорный рейтинг Elo: {}"
 msgstr[2] "Задать опорный рейтинг Elo: {}"
 
+msgid "Sets the Threads of this tournament's common settings to {}."
+msgstr "Устанавливает Threads в общих настройках этого турнира на {}."
+
+msgid "Sets the Threads of {} to {} in this tournament's participants."
+msgstr "Устанавливает Threads движка {} на {} среди участников этого турнира."
+
+msgid "Sets the Threads option of {} to {} in the engine library: every tournament plays it so, unless its setup gives other Threads."
+msgstr "Устанавливает опцию Threads движка {} на {} в библиотеке движков: так он играет в каждом турнире, если настройки турнира не задают другие Threads."
+
 msgid "Settings"
 msgstr "Параметры"
 
@@ -2395,6 +2455,9 @@ msgstr "Место"
 
 msgid "Solution"
 msgstr "Решение"
+
+msgid "Some engines take every core by default. Games played at the same time then slow each other down, and the engines lose on time or play weaker than they are."
+msgstr "Некоторые движки по умолчанию занимают все ядра. Тогда одновременные партии замедляют друг друга, и движки проигрывают по времени или играют слабее, чем могут."
 
 msgid "Speed"
 msgstr "Скорость"
@@ -2522,6 +2585,21 @@ msgstr "Таблицы Syzygy для движков: папка не указа�
 msgid "Syzygy tablebases for the engines: {}"
 msgstr "Таблицы Syzygy для движков: {}"
 
+msgid "Syzygy {} pieces: {} file missing in {} ({})."
+msgid_plural "Syzygy {} pieces: {} files missing in {} ({})."
+msgstr[0] "Syzygy, фигур: {}: не хватает {} файла в {} ({})."
+msgstr[1] "Syzygy, фигур: {}: не хватает {} файлов в {} ({})."
+msgstr[2] "Syzygy, фигур: {}: не хватает {} файлов в {} ({})."
+
+msgid "Syzygy: {} damaged file in {} ({}): its size is not a tablebase file's."
+msgid_plural "Syzygy: {} damaged files in {} ({}): their size is not a tablebase file's."
+msgstr[0] "Syzygy: {} повреждённый файл в {} ({}): его размер не соответствует файлу таблиц."
+msgstr[1] "Syzygy: {} повреждённых файла в {} ({}): их размер не соответствует файлу таблиц."
+msgstr[2] "Syzygy: {} повреждённых файлов в {} ({}): их размер не соответствует файлу таблиц."
+
+msgid "SyzygyPath of {}"
+msgstr "SyzygyPath движка {}"
+
 msgid "TB hits"
 msgstr "Обращения к таблицам"
 
@@ -2533,6 +2611,21 @@ msgstr "Сервер TLCS"
 
 msgid "Table"
 msgstr "Таблица"
+
+msgid "Tablebase adjudication"
+msgstr "Присуждение по таблицам"
+
+msgid "Tablebase adjudication and SyzygyPath of {}"
+msgstr "Присуждение по таблицам и SyzygyPath движка {}"
+
+msgid "Tablebase adjudication up to {} piece: every file there"
+msgid_plural "Tablebase adjudication up to {} pieces: every file there"
+msgstr[0] "Присуждение по таблицам до {} фигуры: все файлы на месте"
+msgstr[1] "Присуждение по таблицам до {} фигур: все файлы на месте"
+msgstr[2] "Присуждение по таблицам до {} фигур: все файлы на месте"
+
+msgid "Tablebase adjudication: no folder given. The tournament cannot start without one."
+msgstr "Присуждение по таблицам: папка не указана. Без неё турнир не может начаться."
 
 msgid "Tablebases"
 msgstr "Таблицы эндшпиля"
@@ -2572,6 +2665,9 @@ msgstr "Тестирование…"
 
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Счётчик 50 ходов, материал и оставшиеся фигуры под каждой доской мозаики."
+
+msgid "The Log page: fastchess' output and the program's messages"
+msgstr "Страница «Журнал»: вывод fastchess и сообщения программы"
 
 msgid "The PGN options of the setup, for the tournaments to come."
 msgstr "Параметры PGN настройки, для будущих турниров."
@@ -2678,6 +2774,9 @@ msgstr "Ключ хоста {} изменился: сейчас {}, раньше
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "Ключ хоста {} не совпадает с ожидаемым ({} вместо {}): возможно, кто-то вмешивается. Ничего не отправлено."
 
+msgid "The largest Hash: {}, {} per process."
+msgstr "Наибольший Hash: {}, {} на процесс."
+
 msgid "The last 30 days"
 msgstr "Последние 30 дней"
 
@@ -2750,9 +2849,6 @@ msgstr[0] "Программа движка {} не найдена: его пар
 msgstr[1] "Программы движков {} не найдены: их партии не могут начаться, пока они не вернутся."
 msgstr[2] "Программы движков {} не найдены: их партии не могут начаться, пока они не вернутся."
 
-msgid "The program of {} is not found."
-msgstr "Программа движка {} не найдена."
-
 msgid "The program of {} is not found: {}"
 msgstr "Программа движка {} не найдена: {}"
 
@@ -2795,6 +2891,9 @@ msgstr "Начальные позиции показанных дебютов в
 msgid "The system could not open:"
 msgstr "Системе не удалось открыть:"
 
+msgid "The tablebase adjudication's Max pieces, in this tournament's Adjudication section."
+msgstr "«Макс. фигур» присуждения по таблицам, в разделе «Присуждение результата» этого турнира."
+
 msgid "The test suite is not started: a tournament is running."
 msgstr "Тестовый набор не запущен: идёт турнир."
 
@@ -2806,6 +2905,9 @@ msgstr "Контролю времени нужно базовое время и�
 
 msgid "The time per move must be positive."
 msgstr "Время на ход должно быть положительным."
+
+msgid "The tournament cannot start with this adjudication."
+msgstr "С таким присуждением турнир не может начаться."
 
 msgid "The tournament goes on with the programs as they are now; this notice closes."
 msgstr "Турнир продолжается с программами в их нынешнем виде; это уведомление закрывается."
@@ -2828,8 +2930,8 @@ msgstr "Дисперсия партии при подсчёте по парам,
 msgid "The version and the system, for a bug report."
 msgstr "Версия и система — для сообщения об ошибке."
 
-msgid "The working directory of {} is not found."
-msgstr "Рабочая папка движка {} не найдена."
+msgid "The working directory of {} is not found: {}"
+msgstr "Рабочая папка движка {} не найдена: {}"
 
 msgid "Theme"
 msgstr "Тема"
@@ -2858,8 +2960,14 @@ msgstr "Проблемные"
 msgid "Threads"
 msgstr "Threads"
 
+msgid "Threads of {} set to {} in the engine library."
+msgstr "Threads движка {} установлен на {} в библиотеке движков."
+
 msgid "Threads {}"
 msgstr "Потоки {}"
+
+msgid "Threads {} of the common settings: {} games × {} threads exceed the {}."
+msgstr "Threads {} из общих настроек: {} партий × {} потоков превышают доступное: {}."
 
 msgid "Tick engines on the left."
 msgstr "Отметьте движки слева."
@@ -3272,11 +3380,20 @@ msgstr "нелегальные позиции"
 msgid "initial position"
 msgstr "начальная позиция"
 
+msgid "it takes true or false"
+msgstr "допустимо true или false"
+
+msgid "its choices are {}"
+msgstr "допустимые значения: {}"
+
 msgid "its default"
 msgstr "по умолчанию"
 
 msgid "its entries are not sorted by key, as those of a Polyglot book must be, and it is too large to be sorted in memory: have a Polyglot tool write it again"
 msgstr "её записи не отсортированы по ключу, как положено в книге Polyglot, а сама она слишком велика, чтобы отсортировать её в памяти: перезапишите её программой для Polyglot"
+
+msgid "its range is {} to {}"
+msgstr "диапазон от {} до {}"
 
 msgid "itself"
 msgstr "самого себя"
@@ -3454,6 +3571,9 @@ msgstr "{} МБ"
 
 msgid "{} against each opponent"
 msgstr "{} против каждого соперника"
+
+msgid "{} and {}"
+msgstr "{} и {}"
 
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} требует перезапуска для каждой партии: отмечено «Перезапускать движок для каждой партии»."
@@ -3635,8 +3755,17 @@ msgstr "партий: {}, турниров: {}"
 msgid "{} h {:02} min"
 msgstr "{} ч {:02} мин"
 
+msgid "{} hardware thread"
+msgid_plural "{} hardware threads"
+msgstr[0] "{} аппаратный поток"
+msgstr[1] "{} аппаратных потока"
+msgstr[2] "{} аппаратных потоков"
+
 msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
 msgstr "У {} нет общих алгоритмов с fastchess-gui (нужны curve25519-sha256, RSA-ключ хоста и AES)"
+
+msgid "{} has no option {} (any more): its value {} is not sent."
+msgstr "У {} нет (больше) опции {}: её значение {} не отправляется."
 
 msgid "{} holds the games of the tournament: choose another file"
 msgstr "{} содержит партии турнира: выберите другой файл"
@@ -3677,6 +3806,12 @@ msgstr[0] "{} поражение по времени"
 msgstr[1] "{} поражения по времени"
 msgstr[2] "{} поражений по времени"
 
+msgid "{} loss on time in the first moves"
+msgid_plural "{} losses on time in the first moves"
+msgstr[0] "{} поражение по времени в первых ходах"
+msgstr[1] "{} поражения по времени в первых ходах"
+msgstr[2] "{} поражений по времени в первых ходах"
+
 msgid "{} losses on time"
 msgstr "поражений по времени: {}"
 
@@ -3709,6 +3844,9 @@ msgstr "свободно {} памяти из {}"
 
 msgid "{} of {} openings"
 msgstr "дебютов: {} из {}"
+
+msgid "{} on the Engines page: its program and options"
+msgstr "{} на странице «Движки»: его программа и опции"
 
 msgid "{} opening"
 msgid_plural "{} openings"
@@ -3749,6 +3887,12 @@ msgstr[2] "{} пар без партии с переменой цветов: {}"
 msgid "{} pairings × 2 games × {} cycles"
 msgstr "пар: {} × 2 партии × циклов: {}"
 
+msgid "{} physical core"
+msgid_plural "{} physical cores"
+msgstr[0] "{} физическое ядро"
+msgstr[1] "{} физических ядра"
+msgstr[2] "{} физических ядер"
+
 msgid "{} pieces"
 msgstr "фигур: {}"
 
@@ -3782,6 +3926,18 @@ msgstr[2] "{} игроков могут быть одним из двух дви
 msgid "{} plays with {} % of the time"
 msgstr "{} играет с {} % времени"
 
+msgid "{} plays with {} threads (given by this tournament): {} games × {} threads exceed the {}."
+msgstr "{} играет с {} потоками (задано этим турниром): {} партий × {} потоков превышают доступное: {}."
+
+msgid "{} plays with {} threads (its Threads option), more than half of the {} hardware threads."
+msgstr "{} играет с {} потоками (его опция Threads) — больше половины из {} аппаратных потоков."
+
+msgid "{} plays with {} threads (its Threads option): with {} games at a time, this machine has {} thread for each game."
+msgid_plural "{} plays with {} threads (its Threads option): with {} games at a time, this machine has {} threads for each game."
+msgstr[0] "{} играет с {} потоками (его опция Threads): при {} одновременных партиях на каждую партию у этого компьютера {} поток."
+msgstr[1] "{} играет с {} потоками (его опция Threads): при {} одновременных партиях на каждую партию у этого компьютера {} потока."
+msgstr[2] "{} играет с {} потоками (его опция Threads): при {} одновременных партиях на каждую партию у этого компьютера {} потоков."
+
 msgid "{} plays with {}."
 msgstr "{} играет с {}."
 
@@ -3790,6 +3946,9 @@ msgid_plural "{} plies"
 msgstr[0] "{} полуход"
 msgstr[1] "{} полухода"
 msgstr[2] "{} полуходов"
+
+msgid "{} points to a folder with no tablebase files: {}"
+msgstr "{} указывает на папку без файлов таблиц: {}"
 
 msgid "{} position"
 msgid_plural "{} positions"
@@ -3811,6 +3970,12 @@ msgstr[2] "Опорный рейтинг Elo задан из рейтинг-ли
 
 msgid "{} refused to forward its port {}"
 msgstr "{} отказался перенаправить свой порт {}"
+
+msgid "{} refuses its option {} = {}: {}. It is not sent: the engine plays with its default."
+msgstr "{} не принимает свою опцию {} = {}: {}. Она не отправляется: движок играет со значением по умолчанию."
+
+msgid "{} refuses {} = {}, given by this tournament: {}. It is not sent: the engine plays with its default."
+msgstr "{} не принимает {} = {}, заданное этим турниром: {}. Оно не отправляется: движок играет со значением по умолчанию."
 
 msgid "{} rounds × {} pairings × 2 games"
 msgstr "туров: {} × пар: {} × 2 партии"
@@ -3913,6 +4078,9 @@ msgstr "{}: отменено, ничего не записано."
 
 msgid "{}: decision"
 msgstr "{}: время решения"
+
+msgid "{}: folder not found: {}"
+msgstr "{}: папка не найдена: {}"
 
 msgid "{}: its book cannot be used: {}"
 msgstr "{}: его книгу нельзя использовать: {}"

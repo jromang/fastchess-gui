@@ -243,9 +243,34 @@ engine, estimated duration, openings, common settings, time odds). The setup of 
 
 The summary also gives the memory the hash tables can take: two engine processes per game played at the same time,
 and the engines waiting for their next game, each with its `Hash`. Above the free memory it warns (the system will
-swap); above the memory installed the tournament does not start. `--run` says the same. It also names the engines
-whose program changed since their last tournament (a new build), with *What changed* when the engine's card lists
-new defaults or options (see *Engines*).
+swap), naming the engine with the largest `Hash`; above the memory installed the tournament does not start. `--run`
+says the same. It also names the engines whose program changed since their last tournament (a new build), with
+*What changed* when the engine's card lists new defaults or options (see *Engines*).
+
+What would go wrong is said with the engine, the resource and the fix, a button under the line (the command palette
+lists the same fixes):
+
+- a program or a working directory not found: *Open the engine* (its card on the Engines page), *Locate…*; an
+  opening book not found: *Locate…*;
+- an engine whose own `Threads` (its setting, else its default: some engines take every core) is above half the
+  hardware threads, or above the threads each game has with the games played at once (the physical cores with a
+  clock): *Lower Threads to N* sets the engine's option in the library, *Open the engine*. `Threads` given by the
+  setup beyond the machine get *Lower Threads* where they are given (the participant's cell, the common settings).
+  The participants list marks such an engine with a *!*, the match's engines are flagged under them;
+- an option value an engine refuses (out of its range, not one of its choices, an option it no longer has):
+  fastchess does not send it, and the engine plays with its default;
+- the Syzygy tablebases the tournament uses: the adjudication's folders and what each engine's `SyzygyPath` points
+  to (several folders separated by `;` on Windows, `:` elsewhere). For the pieces used (the adjudication's *Max
+  pieces*, else the largest tables found), every WDL file (`.rtbw`) must be there, and no file cut short (a Syzygy
+  file is 16 bytes more than a multiple of 64 long; engines leave out a file of another size, and some stop when they
+  meet it): *Syzygy 6 pieces: 14 files missing in D:\TB (KRPPvKR.rtbw…)*, *Adjudication up to 6 pieces, but only
+  5-piece files found*, *SyzygyPath of Alpha points to a folder with no tablebase files*, with *Open the folder* and
+  *Lower to 5 pieces*; the tooltip lists the files. These are warnings: the adjudication and the engines do without
+  the missing files. Only an adjudication without a folder, or whose folders hold no table, stops the tournament at
+  its start (fastchess refuses it): *Locate…* chooses another folder. The folders are read in the background, and
+  again every few seconds while the summary is shown.
+
+A start refused names the same problems, with their fixes and *Open the log*.
 
 - **Format**:
   - *Match*: two engines, A (the engine under test; every statistic is from its point of view) and B (the
@@ -381,6 +406,10 @@ it never decides a game.
 first game has started, so a pause never throws a result away. **Resume** continues. **Stop** either finishes
 the running games first, or stops now (the interrupted games are not counted and will be played again).
 
+A tournament stopped by an engine says which one in its header: *Interrupted: Alpha could not start: …* (after its
+last try), or *Alpha crashed or stopped responding (game 12)* (without *Restart an engine that crashes*), with *Open
+the engine* and *Open the log*.
+
 **Every tournament resumes exactly where it stopped**, after a stop, a closed window, a crash or a power cut: no
 game is lost and none is played twice, and a half-played game pair is completed with the same opening and
 colours. *Resume* on the home page continues it, with the statistics of the games already played: results,
@@ -433,7 +462,11 @@ The **Queue** on the home page holds tournaments to play one after the other: wh
 can be reordered or removed. The home page tells when the running tournament ends (*Ends about HH:MM (in …)*) and
 when the whole queue does; the tournaments whose length cannot be known (an SPRT without a maximum, nodes or depth
 per move) are counted apart. Its *Health* card gives the crashes or hangs, losses on time and illegal moves of the
-last 24 hours, the memory free and installed, and the engine processes running.
+last 24 hours, the memory free and installed, and the engine processes running; then the engines that lost those
+games, the three with the most, with *Open the engine* and *Open the folder* (the tournament's `logs` folder keeps
+the engine log of every game that ended badly). A loss on time before move 20 is told apart: it is more often an
+engine set up wrong (too many threads, a hash too large to allocate in time, a network loaded at every game, a slow
+start) than its time management.
 
 **Relaunch with…** on a finished tournament opens its setup again, to play it once more or with an engine replaced
 by another (typically the next version).

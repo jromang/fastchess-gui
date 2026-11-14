@@ -19,6 +19,7 @@ class Dialogs {
         EngineDir,
         Book,
         Tablebases,
+        TablebasesFolder,  // the setup's tablebase folder replaced, from a notice of the summary
         ExportGames,
         ExportAll,
         OpenTournament,

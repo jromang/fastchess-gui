@@ -43,6 +43,9 @@ this repository still builds unchanged.
   nodes or fixed depth.
 - **Concurrency** detected at startup: one game per hardware thread at fixed nodes or depth, physical cores − 1
   with a clock. Optional CPU affinity.
+- **Checks before the start**, each naming the engine, the resource and the fix, one click away: a program not
+  found, an engine that takes too many threads (some take every core by default), an option value an engine refuses,
+  the memory of the hash tables, missing or damaged Syzygy files for the pieces adjudicated.
 - **Live view**: every game in progress as a mosaic, or one in focus, with the board, clocks, the running search of each engine
   (depth, score, nodes, nps, win/draw/loss shares, PV in SAN), the annotated move list and the evaluation and WDL
   curves; under the board, the

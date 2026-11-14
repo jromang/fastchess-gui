@@ -265,6 +265,11 @@ msgstr ""
 msgid "Adjudication"
 msgstr ""
 
+msgid "Adjudication up to {} piece, but only {}-piece files found in {}."
+msgid_plural "Adjudication up to {} pieces, but only {}-piece files found in {}."
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "Adjudications"
 msgstr ""
 
@@ -622,6 +627,18 @@ msgstr ""
 msgid "Choose engines A and B."
 msgstr ""
 
+msgid "Choose the opening book"
+msgstr ""
+
+msgid "Choose the program of {}"
+msgstr ""
+
+msgid "Choose the tablebase folder of this tournament (the adjudication's, and the engines' when it gives them its tablebases)"
+msgstr ""
+
+msgid "Choose the working directory of {}"
+msgstr ""
+
 msgid "Choose two different engines, or give them books of their own."
 msgstr ""
 
@@ -719,6 +736,9 @@ msgid "Crosstable"
 msgstr ""
 
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
+msgstr ""
+
+msgid "Cut short, by a download that did not end for example. Engines leave such a file out, and some stop at once when they meet it."
 msgstr ""
 
 msgid "Cycle {} / {}"
@@ -1299,7 +1319,13 @@ msgstr ""
 msgid "Interrupted"
 msgstr ""
 
-msgid "Interrupted: an engine crashed or stopped responding (see Console)"
+msgid "Interrupted: an engine crashed or stopped responding (see the Log)"
+msgstr ""
+
+msgid "Interrupted: {} could not start: {}"
+msgstr ""
+
+msgid "Interrupted: {} crashed or stopped responding (game {})"
 msgstr ""
 
 msgid "It cannot play for an engine: {}"
@@ -1347,7 +1373,13 @@ msgstr ""
 msgid "Its games stop counting and are played again by the new engine."
 msgstr ""
 
+msgid "Its logs folder keeps the engine log of every game that ended badly."
+msgstr ""
+
 msgid "Its name begins with this library engine's: choose it if it is the same engine, version included."
+msgstr ""
+
+msgid "Its options have no UCI_Chess960 (a WinBoard engine: no fischerandom variant)."
 msgstr ""
 
 msgid "Its own opening book"
@@ -1481,6 +1513,17 @@ msgstr ""
 
 msgid "Lost after a winning score"
 msgstr ""
+
+msgid "Lost on time before move {}: more often an engine set up wrong (too many threads, a hash too large to allocate in time, a network loaded at every game, a slow start) than its time management."
+msgstr ""
+
+msgid "Lower Threads to {}"
+msgstr ""
+
+msgid "Lower to {} piece"
+msgid_plural "Lower to {} pieces"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "Machine: %d physical cores, %d threads"
 msgstr ""
@@ -1775,7 +1818,13 @@ msgstr ""
 msgid "Open a folder…"
 msgstr ""
 
+msgid "Open the engine"
+msgstr ""
+
 msgid "Open the folder"
+msgstr ""
+
+msgid "Open the log"
 msgstr ""
 
 msgid "Open the profile folder"
@@ -2361,6 +2410,15 @@ msgid_plural "Set {} reference Elo"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "Sets the Threads of this tournament's common settings to {}."
+msgstr ""
+
+msgid "Sets the Threads of {} to {} in this tournament's participants."
+msgstr ""
+
+msgid "Sets the Threads option of {} to {} in the engine library: every tournament plays it so, unless its setup gives other Threads."
+msgstr ""
+
 msgid "Settings"
 msgstr ""
 
@@ -2383,6 +2441,9 @@ msgid "Site"
 msgstr ""
 
 msgid "Solution"
+msgstr ""
+
+msgid "Some engines take every core by default. Games played at the same time then slow each other down, and the engines lose on time or play weaker than they are."
 msgstr ""
 
 msgid "Speed"
@@ -2511,6 +2572,19 @@ msgstr ""
 msgid "Syzygy tablebases for the engines: {}"
 msgstr ""
 
+msgid "Syzygy {} pieces: {} file missing in {} ({})."
+msgid_plural "Syzygy {} pieces: {} files missing in {} ({})."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Syzygy: {} damaged file in {} ({}): its size is not a tablebase file's."
+msgid_plural "Syzygy: {} damaged files in {} ({}): their size is not a tablebase file's."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "SyzygyPath of {}"
+msgstr ""
+
 msgid "TB hits"
 msgstr ""
 
@@ -2521,6 +2595,20 @@ msgid "TLCS server"
 msgstr ""
 
 msgid "Table"
+msgstr ""
+
+msgid "Tablebase adjudication"
+msgstr ""
+
+msgid "Tablebase adjudication and SyzygyPath of {}"
+msgstr ""
+
+msgid "Tablebase adjudication up to {} piece: every file there"
+msgid_plural "Tablebase adjudication up to {} pieces: every file there"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Tablebase adjudication: no folder given. The tournament cannot start without one."
 msgstr ""
 
 msgid "Tablebases"
@@ -2560,6 +2648,9 @@ msgid "Testing…"
 msgstr ""
 
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
+msgstr ""
+
+msgid "The Log page: fastchess' output and the program's messages"
 msgstr ""
 
 msgid "The PGN options of the setup, for the tournaments to come."
@@ -2667,6 +2758,9 @@ msgstr ""
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr ""
 
+msgid "The largest Hash: {}, {} per process."
+msgstr ""
+
 msgid "The last 30 days"
 msgstr ""
 
@@ -2737,9 +2831,6 @@ msgid_plural "The programs of {} are missing: their games cannot start until the
 msgstr[0] ""
 msgstr[1] ""
 
-msgid "The program of {} is not found."
-msgstr ""
-
 msgid "The program of {} is not found: {}"
 msgstr ""
 
@@ -2782,6 +2873,9 @@ msgstr ""
 msgid "The system could not open:"
 msgstr ""
 
+msgid "The tablebase adjudication's Max pieces, in this tournament's Adjudication section."
+msgstr ""
+
 msgid "The test suite is not started: a tournament is running."
 msgstr ""
 
@@ -2792,6 +2886,9 @@ msgid "The time control needs a base time or an increment."
 msgstr ""
 
 msgid "The time per move must be positive."
+msgstr ""
+
+msgid "The tournament cannot start with this adjudication."
 msgstr ""
 
 msgid "The tournament goes on with the programs as they are now; this notice closes."
@@ -2815,7 +2912,7 @@ msgstr ""
 msgid "The version and the system, for a bug report."
 msgstr ""
 
-msgid "The working directory of {} is not found."
+msgid "The working directory of {} is not found: {}"
 msgstr ""
 
 msgid "Theme"
@@ -2845,7 +2942,13 @@ msgstr ""
 msgid "Threads"
 msgstr ""
 
+msgid "Threads of {} set to {} in the engine library."
+msgstr ""
+
 msgid "Threads {}"
+msgstr ""
+
+msgid "Threads {} of the common settings: {} games × {} threads exceed the {}."
 msgstr ""
 
 msgid "Tick engines on the left."
@@ -3258,10 +3361,19 @@ msgstr ""
 msgid "initial position"
 msgstr ""
 
+msgid "it takes true or false"
+msgstr ""
+
+msgid "its choices are {}"
+msgstr ""
+
 msgid "its default"
 msgstr ""
 
 msgid "its entries are not sorted by key, as those of a Polyglot book must be, and it is too large to be sorted in memory: have a Polyglot tool write it again"
+msgstr ""
+
+msgid "its range is {} to {}"
 msgstr ""
 
 msgid "itself"
@@ -3439,6 +3551,9 @@ msgstr ""
 msgid "{} against each opponent"
 msgstr ""
 
+msgid "{} and {}"
+msgstr ""
+
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr ""
 
@@ -3599,7 +3714,15 @@ msgstr ""
 msgid "{} h {:02} min"
 msgstr ""
 
+msgid "{} hardware thread"
+msgid_plural "{} hardware threads"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
+msgstr ""
+
+msgid "{} has no option {} (any more): its value {} is not sent."
 msgstr ""
 
 msgid "{} holds the games of the tournament: choose another file"
@@ -3638,6 +3761,11 @@ msgid_plural "{} losses on time"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "{} loss on time in the first moves"
+msgid_plural "{} losses on time in the first moves"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{} losses on time"
 msgstr ""
 
@@ -3667,6 +3795,9 @@ msgid "{} of memory free of {}"
 msgstr ""
 
 msgid "{} of {} openings"
+msgstr ""
+
+msgid "{} on the Engines page: its program and options"
 msgstr ""
 
 msgid "{} opening"
@@ -3702,6 +3833,11 @@ msgstr[1] ""
 msgid "{} pairings × 2 games × {} cycles"
 msgstr ""
 
+msgid "{} physical core"
+msgid_plural "{} physical cores"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{} pieces"
 msgstr ""
 
@@ -3731,6 +3867,17 @@ msgstr[1] ""
 msgid "{} plays with {} % of the time"
 msgstr ""
 
+msgid "{} plays with {} threads (given by this tournament): {} games × {} threads exceed the {}."
+msgstr ""
+
+msgid "{} plays with {} threads (its Threads option), more than half of the {} hardware threads."
+msgstr ""
+
+msgid "{} plays with {} threads (its Threads option): with {} games at a time, this machine has {} thread for each game."
+msgid_plural "{} plays with {} threads (its Threads option): with {} games at a time, this machine has {} threads for each game."
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{} plays with {}."
 msgstr ""
 
@@ -3738,6 +3885,9 @@ msgid "{} ply"
 msgid_plural "{} plies"
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "{} points to a folder with no tablebase files: {}"
+msgstr ""
 
 msgid "{} position"
 msgid_plural "{} positions"
@@ -3755,6 +3905,12 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "{} refused to forward its port {}"
+msgstr ""
+
+msgid "{} refuses its option {} = {}: {}. It is not sent: the engine plays with its default."
+msgstr ""
+
+msgid "{} refuses {} = {}, given by this tournament: {}. It is not sent: the engine plays with its default."
 msgstr ""
 
 msgid "{} rounds × {} pairings × 2 games"
@@ -3852,6 +4008,9 @@ msgid "{}: cancelled, nothing written."
 msgstr ""
 
 msgid "{}: decision"
+msgstr ""
+
+msgid "{}: folder not found: {}"
 msgstr ""
 
 msgid "{}: its book cannot be used: {}"

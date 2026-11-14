@@ -265,6 +265,11 @@ msgstr "Adjuger"
 msgid "Adjudication"
 msgstr "Adjudication"
 
+msgid "Adjudication up to {} piece, but only {}-piece files found in {}."
+msgid_plural "Adjudication up to {} pieces, but only {}-piece files found in {}."
+msgstr[0] "Adjudication jusqu'à {} pièce, mais seulement des fichiers de {} pièces dans {}."
+msgstr[1] "Adjudication jusqu'à {} pièces, mais seulement des fichiers de {} pièces dans {}."
+
 msgid "Adjudications"
 msgstr "Adjudications"
 
@@ -622,6 +627,18 @@ msgstr "Choisis au moins deux moteurs."
 msgid "Choose engines A and B."
 msgstr "Choisis les moteurs A et B."
 
+msgid "Choose the opening book"
+msgstr "Choisir le livre d'ouvertures"
+
+msgid "Choose the program of {}"
+msgstr "Choisir le programme de {}"
+
+msgid "Choose the tablebase folder of this tournament (the adjudication's, and the engines' when it gives them its tablebases)"
+msgstr "Choisir le dossier des tables de ce tournoi (celui de l'adjudication, et des moteurs quand il leur donne ses tables)"
+
+msgid "Choose the working directory of {}"
+msgstr "Choisir le dossier de travail de {}"
+
 msgid "Choose two different engines, or give them books of their own."
 msgstr "Choisis deux moteurs différents, ou donne-leur des livres bien à eux."
 
@@ -720,6 +737,9 @@ msgstr "Tableau croisé"
 
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr "Ctrl + molette, Ctrl + et Ctrl -, Ctrl 0"
+
+msgid "Cut short, by a download that did not end for example. Engines leave such a file out, and some stop at once when they meet it."
+msgstr "Tronqué, par un téléchargement inachevé par exemple. Les moteurs ignorent un tel fichier, et certains s'arrêtent net en le rencontrant."
 
 msgid "Cycle {} / {}"
 msgstr "Cycle {} / {}"
@@ -1299,8 +1319,14 @@ msgstr "Taille de l'interface"
 msgid "Interrupted"
 msgstr "Interrompu"
 
-msgid "Interrupted: an engine crashed or stopped responding (see Console)"
-msgstr "Interrompu : un moteur a planté ou ne répond plus (voir Console)"
+msgid "Interrupted: an engine crashed or stopped responding (see the Log)"
+msgstr "Interrompu : un moteur a planté ou ne répond plus (voir le Journal)"
+
+msgid "Interrupted: {} could not start: {}"
+msgstr "Interrompu : {} n'a pas pu démarrer : {}"
+
+msgid "Interrupted: {} crashed or stopped responding (game {})"
+msgstr "Interrompu : {} a planté ou ne répond plus (partie {})"
 
 msgid "It cannot play for an engine: {}"
 msgstr "Il ne peut pas jouer pour un moteur : {}"
@@ -1347,8 +1373,14 @@ msgstr "Ses parties déjà jouées ne comptent plus"
 msgid "Its games stop counting and are played again by the new engine."
 msgstr "Ses parties ne comptent plus et sont rejouées par le nouveau moteur."
 
+msgid "Its logs folder keeps the engine log of every game that ended badly."
+msgstr "Son dossier logs garde le journal moteur de chaque partie qui a mal fini."
+
 msgid "Its name begins with this library engine's: choose it if it is the same engine, version included."
 msgstr "Son nom commence par celui de ce moteur de la bibliothèque : choisis-le si c'est le même moteur, version comprise."
+
+msgid "Its options have no UCI_Chess960 (a WinBoard engine: no fischerandom variant)."
+msgstr "Ses options n'ont pas UCI_Chess960 (un moteur WinBoard : pas de variante fischerandom)."
 
 msgid "Its own opening book"
 msgstr "Son propre livre d'ouvertures"
@@ -1481,6 +1513,17 @@ msgstr "Défaites."
 
 msgid "Lost after a winning score"
 msgstr "Perdue après un score gagnant"
+
+msgid "Lost on time before move {}: more often an engine set up wrong (too many threads, a hash too large to allocate in time, a network loaded at every game, a slow start) than its time management."
+msgstr "Perdu au temps avant le coup {} : plus souvent un moteur mal réglé (trop de threads, un hash trop grand pour être alloué à temps, un réseau chargé à chaque partie, un démarrage lent) que sa gestion du temps."
+
+msgid "Lower Threads to {}"
+msgstr "Ramener Threads à {}"
+
+msgid "Lower to {} piece"
+msgid_plural "Lower to {} pieces"
+msgstr[0] "Descendre à {} pièce"
+msgstr[1] "Descendre à {} pièces"
 
 msgid "Machine: %d physical cores, %d threads"
 msgstr "Machine : %d cœurs physiques, %d threads"
@@ -1775,8 +1818,14 @@ msgstr "Ouvrir un fichier…"
 msgid "Open a folder…"
 msgstr "Ouvrir un dossier…"
 
+msgid "Open the engine"
+msgstr "Ouvrir le moteur"
+
 msgid "Open the folder"
 msgstr "Ouvrir le dossier"
+
+msgid "Open the log"
+msgstr "Ouvrir le journal"
 
 msgid "Open the profile folder"
 msgstr "Ouvrir le dossier du profil"
@@ -2361,6 +2410,15 @@ msgid_plural "Set {} reference Elo"
 msgstr[0] "Fixer {} Elo de référence"
 msgstr[1] "Fixer {} Elo de référence"
 
+msgid "Sets the Threads of this tournament's common settings to {}."
+msgstr "Règle les Threads des réglages communs de ce tournoi à {}."
+
+msgid "Sets the Threads of {} to {} in this tournament's participants."
+msgstr "Règle les Threads de {} à {} dans les participants de ce tournoi."
+
+msgid "Sets the Threads option of {} to {} in the engine library: every tournament plays it so, unless its setup gives other Threads."
+msgstr "Règle l'option Threads de {} à {} dans la bibliothèque de moteurs : chaque tournoi le joue ainsi, sauf si sa configuration donne d'autres Threads."
+
 msgid "Settings"
 msgstr "Réglages"
 
@@ -2384,6 +2442,9 @@ msgstr "Lieu"
 
 msgid "Solution"
 msgstr "Solution"
+
+msgid "Some engines take every core by default. Games played at the same time then slow each other down, and the engines lose on time or play weaker than they are."
+msgstr "Certains moteurs prennent tous les cœurs par défaut. Les parties jouées en même temps se ralentissent alors, et les moteurs perdent au temps ou jouent plus faiblement qu'ils ne sont."
 
 msgid "Speed"
 msgstr "Vitesse"
@@ -2511,6 +2572,19 @@ msgstr "Tables Syzygy pour les moteurs : aucun dossier indiqué"
 msgid "Syzygy tablebases for the engines: {}"
 msgstr "Tables Syzygy pour les moteurs : {}"
 
+msgid "Syzygy {} pieces: {} file missing in {} ({})."
+msgid_plural "Syzygy {} pieces: {} files missing in {} ({})."
+msgstr[0] "Syzygy {} pièces : {} fichier manquant dans {} ({})."
+msgstr[1] "Syzygy {} pièces : {} fichiers manquants dans {} ({})."
+
+msgid "Syzygy: {} damaged file in {} ({}): its size is not a tablebase file's."
+msgid_plural "Syzygy: {} damaged files in {} ({}): their size is not a tablebase file's."
+msgstr[0] "Syzygy : {} fichier abîmé dans {} ({}) : sa taille n'est pas celle d'un fichier de tables."
+msgstr[1] "Syzygy : {} fichiers abîmés dans {} ({}) : leur taille n'est pas celle d'un fichier de tables."
+
+msgid "SyzygyPath of {}"
+msgstr "SyzygyPath de {}"
+
 msgid "TB hits"
 msgstr "Accès aux tables"
 
@@ -2522,6 +2596,20 @@ msgstr "Serveur TLCS"
 
 msgid "Table"
 msgstr "Tableau"
+
+msgid "Tablebase adjudication"
+msgstr "Adjudication par les tables"
+
+msgid "Tablebase adjudication and SyzygyPath of {}"
+msgstr "Adjudication par les tables et SyzygyPath de {}"
+
+msgid "Tablebase adjudication up to {} piece: every file there"
+msgid_plural "Tablebase adjudication up to {} pieces: every file there"
+msgstr[0] "Adjudication par les tables jusqu'à {} pièce : tous les fichiers sont là"
+msgstr[1] "Adjudication par les tables jusqu'à {} pièces : tous les fichiers sont là"
+
+msgid "Tablebase adjudication: no folder given. The tournament cannot start without one."
+msgstr "Adjudication par les tables : aucun dossier donné. Le tournoi ne peut pas démarrer sans."
 
 msgid "Tablebases"
 msgstr "Tables de finales"
@@ -2561,6 +2649,9 @@ msgstr "Test en cours…"
 
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Le compteur des 50 coups, le matériel et les pièces restantes, sous chaque échiquier de la mosaïque."
+
+msgid "The Log page: fastchess' output and the program's messages"
+msgstr "La page Journal : la sortie de fastchess et les messages du programme"
 
 msgid "The PGN options of the setup, for the tournaments to come."
 msgstr "Les options PGN du setup, pour les prochains tournois."
@@ -2667,6 +2758,9 @@ msgstr "La clé d'hôte de {} a changé : {} maintenant, {} avant. Quelqu'un est
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "La clé d'hôte de {} n'est pas celle attendue ({} au lieu de {}) : quelqu'un est peut-être au milieu. Rien n'a été envoyé."
 
+msgid "The largest Hash: {}, {} per process."
+msgstr "Le plus grand Hash : {}, {} par processus."
+
 msgid "The last 30 days"
 msgstr "Les 30 derniers jours"
 
@@ -2737,9 +2831,6 @@ msgid_plural "The programs of {} are missing: their games cannot start until the
 msgstr[0] "Le programme de {} est introuvable : ses parties ne peuvent pas commencer tant qu'il n'est pas revenu."
 msgstr[1] "Les programmes de {} sont introuvables : leurs parties ne peuvent pas commencer tant qu'ils ne sont pas revenus."
 
-msgid "The program of {} is not found."
-msgstr "Le programme de {} est introuvable."
-
 msgid "The program of {} is not found: {}"
 msgstr "Le programme de {} est introuvable : {}"
 
@@ -2782,6 +2873,9 @@ msgstr "Les positions de départ des ouvertures affichées, dans l'ordre affich�
 msgid "The system could not open:"
 msgstr "Le système n'a pas pu ouvrir :"
 
+msgid "The tablebase adjudication's Max pieces, in this tournament's Adjudication section."
+msgstr "Les Pièces max de l'adjudication par les tables, dans la section Adjudication de ce tournoi."
+
 msgid "The test suite is not started: a tournament is running."
 msgstr "La suite de tests n'est pas démarrée : un tournoi est en cours."
 
@@ -2793,6 +2887,9 @@ msgstr "La cadence doit avoir un temps de base ou un incrément."
 
 msgid "The time per move must be positive."
 msgstr "Le temps par coup doit être positif."
+
+msgid "The tournament cannot start with this adjudication."
+msgstr "Le tournoi ne peut pas démarrer avec cette adjudication."
 
 msgid "The tournament goes on with the programs as they are now; this notice closes."
 msgstr "Le tournoi continue avec les programmes tels qu'ils sont maintenant ; cet avis se ferme."
@@ -2815,8 +2912,8 @@ msgstr "La variance d'une partie quand les parties sont comptées par paires, ra
 msgid "The version and the system, for a bug report."
 msgstr "La version et le système, pour un rapport de bug."
 
-msgid "The working directory of {} is not found."
-msgstr "Le dossier de travail de {} est introuvable."
+msgid "The working directory of {} is not found: {}"
+msgstr "Le dossier de travail de {} est introuvable : {}"
 
 msgid "Theme"
 msgstr "Thème"
@@ -2845,8 +2942,14 @@ msgstr "Celles qui posent problème"
 msgid "Threads"
 msgstr "Threads"
 
+msgid "Threads of {} set to {} in the engine library."
+msgstr "Threads de {} réglé à {} dans la bibliothèque de moteurs."
+
 msgid "Threads {}"
 msgstr "Threads {}"
+
+msgid "Threads {} of the common settings: {} games × {} threads exceed the {}."
+msgstr "Threads {} des réglages communs : {} parties × {} threads dépassent les {}."
 
 msgid "Tick engines on the left."
 msgstr "Coche des moteurs à gauche."
@@ -3258,11 +3361,20 @@ msgstr "positions illégales"
 msgid "initial position"
 msgstr "position initiale"
 
+msgid "it takes true or false"
+msgstr "elle prend true ou false"
+
+msgid "its choices are {}"
+msgstr "ses choix sont {}"
+
 msgid "its default"
 msgstr "sa valeur par défaut"
 
 msgid "its entries are not sorted by key, as those of a Polyglot book must be, and it is too large to be sorted in memory: have a Polyglot tool write it again"
 msgstr "ses entrées ne sont pas triées par clé, comme doivent l'être celles d'un livre Polyglot, et il est trop gros pour être trié en mémoire : fais-le réécrire par un outil Polyglot"
+
+msgid "its range is {} to {}"
+msgstr "sa plage va de {} à {}"
 
 msgid "itself"
 msgstr "lui-même"
@@ -3439,6 +3551,9 @@ msgstr "{} Mo"
 msgid "{} against each opponent"
 msgstr "{} contre chaque adversaire"
 
+msgid "{} and {}"
+msgstr "{} et {}"
+
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} demande à être relancé à chaque partie : « Relancer le moteur à chaque partie » est coché."
 
@@ -3599,8 +3714,16 @@ msgstr "{} parties, {} tournois"
 msgid "{} h {:02} min"
 msgstr "{} h {:02} min"
 
+msgid "{} hardware thread"
+msgid_plural "{} hardware threads"
+msgstr[0] "{} thread matériel"
+msgstr[1] "{} threads matériels"
+
 msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
 msgstr "{} n'a aucun algorithme en commun avec fastchess-gui (il faut curve25519-sha256, une clé d'hôte RSA et AES)"
+
+msgid "{} has no option {} (any more): its value {} is not sent."
+msgstr "{} n'a pas (ou plus) d'option {} : sa valeur {} n'est pas envoyée."
 
 msgid "{} holds the games of the tournament: choose another file"
 msgstr "{} contient les parties du tournoi : choisissez un autre fichier"
@@ -3638,6 +3761,11 @@ msgid_plural "{} losses on time"
 msgstr[0] "{} perte au temps"
 msgstr[1] "{} pertes au temps"
 
+msgid "{} loss on time in the first moves"
+msgid_plural "{} losses on time in the first moves"
+msgstr[0] "{} perte au temps dans les premiers coups"
+msgstr[1] "{} pertes au temps dans les premiers coups"
+
 msgid "{} losses on time"
 msgstr "{} pertes au temps"
 
@@ -3668,6 +3796,9 @@ msgstr "{} de mémoire libre sur {}"
 
 msgid "{} of {} openings"
 msgstr "{} ouvertures sur {}"
+
+msgid "{} on the Engines page: its program and options"
+msgstr "{} sur la page Moteurs : son programme et ses options"
 
 msgid "{} opening"
 msgid_plural "{} openings"
@@ -3702,6 +3833,11 @@ msgstr[1] "{} paires sans leur partie aux couleurs inversées : {}"
 msgid "{} pairings × 2 games × {} cycles"
 msgstr "{} appariements × 2 parties × {} cycles"
 
+msgid "{} physical core"
+msgid_plural "{} physical cores"
+msgstr[0] "{} cœur physique"
+msgstr[1] "{} cœurs physiques"
+
 msgid "{} pieces"
 msgstr "{} pièces"
 
@@ -3731,6 +3867,17 @@ msgstr[1] "{} joueurs correspondent à deux moteurs de la bibliothèque : dis le
 msgid "{} plays with {} % of the time"
 msgstr "{} joue avec {} % du temps"
 
+msgid "{} plays with {} threads (given by this tournament): {} games × {} threads exceed the {}."
+msgstr "{} joue avec {} threads (donnés par ce tournoi) : {} parties × {} threads dépassent les {}."
+
+msgid "{} plays with {} threads (its Threads option), more than half of the {} hardware threads."
+msgstr "{} joue avec {} threads (son option Threads), plus de la moitié des {} threads matériels."
+
+msgid "{} plays with {} threads (its Threads option): with {} games at a time, this machine has {} thread for each game."
+msgid_plural "{} plays with {} threads (its Threads option): with {} games at a time, this machine has {} threads for each game."
+msgstr[0] "{} joue avec {} threads (son option Threads) : avec {} parties à la fois, cette machine a {} thread par partie."
+msgstr[1] "{} joue avec {} threads (son option Threads) : avec {} parties à la fois, cette machine a {} threads par partie."
+
 msgid "{} plays with {}."
 msgstr "{} joue avec {}."
 
@@ -3738,6 +3885,9 @@ msgid "{} ply"
 msgid_plural "{} plies"
 msgstr[0] "{} demi-coup"
 msgstr[1] "{} demi-coups"
+
+msgid "{} points to a folder with no tablebase files: {}"
+msgstr "{} désigne un dossier sans fichier de tables : {}"
 
 msgid "{} position"
 msgid_plural "{} positions"
@@ -3756,6 +3906,12 @@ msgstr[1] "{} Elo de référence fixés depuis la liste de classement."
 
 msgid "{} refused to forward its port {}"
 msgstr "{} a refusé de rediriger son port {}"
+
+msgid "{} refuses its option {} = {}: {}. It is not sent: the engine plays with its default."
+msgstr "{} refuse son option {} = {} : {}. Elle n'est pas envoyée : le moteur joue avec sa valeur par défaut."
+
+msgid "{} refuses {} = {}, given by this tournament: {}. It is not sent: the engine plays with its default."
+msgstr "{} refuse {} = {}, donné par ce tournoi : {}. Ce n'est pas envoyé : le moteur joue avec sa valeur par défaut."
 
 msgid "{} rounds × {} pairings × 2 games"
 msgstr "{} rondes × {} appariements × 2 parties"
@@ -3853,6 +4009,9 @@ msgstr "{} : annulé, rien n'est écrit."
 
 msgid "{}: decision"
 msgstr "{} : décision"
+
+msgid "{}: folder not found: {}"
+msgstr "{} : dossier introuvable : {}"
 
 msgid "{}: its book cannot be used: {}"
 msgstr "{} : son livre est inutilisable : {}"

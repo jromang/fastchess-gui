@@ -16,6 +16,7 @@
 #include "i18n.hpp"
 #include "memory.hpp"
 #include "notify.hpp"
+#include "setup_checks.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -412,16 +413,18 @@ void App::startRun() {
 
     // Hash tables larger than the memory installed cannot work; larger than the free memory, they swap.
     if (const auto memory = setupMemory(setup_, engines_, topology_); memory.aboveInstalled()) {
-        start_error_ = memory.text();
+        start_error_ = memoryNotice(setup_, engines_, memory).text;
         Console::instance().add(trf("Cannot start the match: {}", start_error_), true);
+        setStartFixes();
         return;
     } else if (memory.aboveAvailable()) {
-        Console::instance().add(memory.text(), true);
+        Console::instance().add(memoryNotice(setup_, engines_, memory).text, true);
     }
 
     start_error_ = run_.start(setup_, engines_, topology_, storage_.runsDir());
     if (!start_error_.empty()) {
         Console::instance().add(trf("Cannot start the match: {}", start_error_), true);
+        setStartFixes();
         return;
     }
 
@@ -591,6 +594,7 @@ void App::resetRunView() {
         }
     }
     finish_message_.clear();
+    console_mark_ = Console::instance().added();  // what fastchess says from now on is this tournament's
 
     const auto& info = run_.info();
     sprt_.reset();
@@ -717,13 +721,36 @@ void App::onRunFinished() {
     }
     resume_guarded_ = false;
 
+    // The engine that stopped it: one that could not start (fastchess said so in the log), or that crashed.
+    stopped_by_.clear();
+    std::string why;
+    if (error.empty() && fastchess::atomic::abnormal_termination && !run_.stoppedByUser()) {
+        if (const auto failed = startupFailure(Console::instance().since(console_mark_))) {
+            stopped_by_ = failed->engine;
+            why         = trf("Interrupted: {} could not start: {}", failed->engine, failed->reason);
+        } else if (const auto* t = run_.tournament()) {
+            const auto results = t->results();
+            for (auto r = results.rbegin(); r != results.rend(); ++r) {
+                using T = fastchess::MatchTermination;
+                if (r->voided || (r->termination != T::DISCONNECT && r->termination != T::STALL)) continue;
+                const int loser = r->scoreOf(r->white) == 0 ? r->white : r->black;
+                if (const auto* p = t->spec().participant(loser)) stopped_by_ = p->engine.name;
+                if (!stopped_by_.empty())
+                    why = trf("Interrupted: {} crashed or stopped responding (game {})", stopped_by_, r->number() + 1);
+                break;
+            }
+        }
+    }
+
     std::string verdict;
     const auto* stalled = run_.tournament();
     if (stalled && !stalled->startFailures().stalled()) stalled = nullptr;
     if (!error.empty()) {
         verdict = trf("Error: {}", error);
+    } else if (!why.empty()) {
+        verdict = why;
     } else if (fastchess::atomic::abnormal_termination && !run_.stoppedByUser()) {
-        verdict = TR("Interrupted: an engine crashed or stopped responding (see Console)");
+        verdict = TR("Interrupted: an engine crashed or stopped responding (see the Log)");
     } else if (stalled && !run_.stoppedByUser()) {
         std::string names;
         for (const auto& e : stalled->startFailures().engines()) {
@@ -765,7 +792,8 @@ void App::onRunFinished() {
         finish_message_ = trf("{} · {} games · first: {} · {}", verdict, games_.size(), leader, duration);
     }
 
-    Console::instance().add(finish_message_, !error.empty());
+    Console::instance().add(finish_message_, !error.empty() || !why.empty());
+    if (!error.empty() || fastchess::atomic::abnormal_termination) setFinishFixes();
 
     // A stopped or interrupted match can be continued later.
     unfinished_        = unfinishedMatch(storage_.runsDir());
@@ -1025,6 +1053,10 @@ void App::handleDialogs() {
                 saveSetupSoon();
                 break;
             }
+            case Dialogs::Purpose::TablebasesFolder:
+                setup_.tb_paths = path;
+                saveSetupSoon();
+                break;
             case Dialogs::Purpose::ExportGames:
                 exportGames(path, false);
                 break;
