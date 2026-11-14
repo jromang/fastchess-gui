@@ -339,6 +339,9 @@ msgstr "BBCode 格式，用于论坛"
 msgid "As text"
 msgstr "文本格式"
 
+msgid "Author: {} → {}"
+msgstr "作者：{} → {}"
+
 msgid "Automatic"
 msgstr "自动"
 
@@ -371,6 +374,9 @@ msgstr "恢复默认值"
 
 msgid "Base (s)"
 msgstr "基本时间 (s)"
+
+msgid "Before"
+msgstr "之前"
 
 msgid "Black"
 msgstr "黑方"
@@ -576,6 +582,9 @@ msgstr "点击排序；右键选择列。"
 msgid "Close"
 msgstr "关闭"
 
+msgid "Closes this notice. The options keep the values they have now."
+msgstr "关闭此提示。各选项保留当前的值。"
+
 msgid "Common settings, forced on every engine (0 = each engine's own):"
 msgstr "通用设置，强制用于所有引擎（0 = 各引擎自己的设置）："
 
@@ -599,6 +608,12 @@ msgstr "连续步数"
 
 msgid "Console"
 msgstr "控制台"
+
+msgid "Continue"
+msgstr "继续"
+
+msgid "Continue with the changed programs"
+msgstr "使用已更改的程序继续"
 
 msgid "Copy"
 msgstr "复制"
@@ -672,6 +687,12 @@ msgstr "目录之间用 ';' 分隔（只需 WDL 文件）。"
 msgid "Discord server ID"
 msgstr "Discord 服务器 ID"
 
+msgid "Dismiss"
+msgstr "关闭"
+
+msgid "Dismiss what changed: {}"
+msgstr "关闭更改提示：{}"
+
 msgid "Done: the tournament goes on with the change."
 msgstr "完成：锦标赛将带着此修改继续进行。"
 
@@ -710,6 +731,9 @@ msgstr "和棋"
 
 msgid "Draws."
 msgstr "和棋。"
+
+msgid "Dropped from the library with the option: the engine no longer has it. Set it again on the option that replaces it, if one does."
+msgstr "已随该选项从引擎库中移除：引擎已不再有此选项。如有替代它的选项，请在那里重新设置。"
 
 msgid "Duplicate"
 msgstr "创建副本"
@@ -857,6 +881,12 @@ msgstr "每步都搜索到此深度（go depth），无论耗时多久：不会�
 
 msgid "Every opening"
 msgstr "所有开局"
+
+msgid "Every option listed plays as before the new build: with your value, or the old default where you had none."
+msgstr "列出的每个选项都按新版本之前的方式运行：使用你的值，或在你未设置处使用旧的默认值。"
+
+msgid "Every option listed plays with the default of the new build."
+msgstr "列出的每个选项都使用新版本的默认值。"
 
 msgid "Every pair with both colours"
 msgstr "每一对都交换过颜色"
@@ -1192,6 +1222,9 @@ msgstr "其开局库着法会立即走出，不经搜索。"
 msgid "Its card in Ratings: results, health and rating over every tournament."
 msgstr "它在“等级分”中的信息卡：所有锦标赛中的成绩、稳定性和等级分。"
 
+msgid "Its card, with the options whose default changed, new or gone."
+msgstr "它的信息卡：默认值已更改、新增或移除的选项。"
+
 msgid "Its games"
 msgstr "它的对局"
 
@@ -1213,14 +1246,32 @@ msgstr "其路径已复制到剪贴板。"
 msgid "Its positions with a best move (bm), moves to avoid (am) or STS points, in the Suites page."
 msgstr "其中带最佳着法 (bm)、应避免的着法 (am) 或 STS 分数的局面，位于“测试集”页。"
 
+msgid "Its program changed: its card shows what the new read found."
+msgstr "它的程序已改变：信息卡显示了重新读取的结果。"
+
+msgid "Its program changed: what the new read found"
+msgstr "它的程序已改变：重新读取发现的内容"
+
 msgid "Its rating on a list you trust, to anchor a tournament's ratings. 0 = none."
 msgstr "它在某个可信等级分榜上的等级分，用于锚定锦标赛的等级分。0 = 无。"
 
 msgid "Its results…"
 msgstr "它的成绩…"
 
+msgid "Keep my value"
+msgstr "保留我的值"
+
+msgid "Keep my values"
+msgstr "保留我的所有值"
+
+msgid "Keep my values: {}"
+msgstr "保留我的所有值：{}"
+
 msgid "Keep the engine log of every game"
 msgstr "保存每局对局的引擎日志"
+
+msgid "Keep the old default"
+msgstr "保留旧的默认值"
 
 msgid "Kept in the library, but out of the engine pickers (setup, suites, quick test, relaunch, adding to a tournament) and of Check those not checked. A tournament that has it already plays it as before."
 msgstr "保留在库中，但不出现在引擎选择列表（配置、测试集、快速测试、重新开始、加入锦标赛）和“检查尚未检查的”中。已包含它的锦标赛照常让它参赛。"
@@ -1366,6 +1417,9 @@ msgstr "名称"
 msgid "Name on the list"
 msgstr "列表中的名称"
 
+msgid "Name: {} → {}"
+msgstr "名称：{} → {}"
+
 msgid "Names of the list that are no library engine"
 msgstr "列表中不属于库中引擎的名称"
 
@@ -1438,6 +1492,9 @@ msgstr "0.3 秒搜索 10 秒后仍未给出着法。"
 msgid "No new engine in the folder."
 msgstr "文件夹中没有新引擎。"
 
+msgid "No new game pair starts, so that the program it joined with can be put back; Resume goes on."
+msgstr "不再开始新的对局对，以便放回它加入时的程序；“继续”可恢复。"
+
 msgid "No opening book: every game starts from the initial position"
 msgstr "无开局库：每局对局都从初始局面开始"
 
@@ -1492,6 +1549,9 @@ msgstr "这些引擎都不以相同名称存在于库中。"
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "归一化 Elo（fishtest、OpenBench），及其 95 % 区间。"
 
+msgid "Not a value the new build takes: fastchess would play without it."
+msgstr "新版本不接受此值：fastchess 会不带它进行对局。"
+
 msgid "Not an https link."
 msgstr "不是 https 链接。"
 
@@ -1524,6 +1584,9 @@ msgstr "尚无报告。"
 
 msgid "Notify when a match ends"
 msgstr "比赛结束时通知"
+
+msgid "Now"
+msgstr "现在"
 
 msgid "Now {}. Only cycles not started can be removed."
 msgstr "当前为 {}。只能移除尚未开始的循环。"
@@ -1936,6 +1999,9 @@ msgstr "从库中移除该开局库；文件保留在原处。"
 
 msgid "Remove…"
 msgstr "移除…"
+
+msgid "Rename it “{}”"
+msgstr "重命名为“{}”"
 
 msgid "Replace"
 msgstr "替换"
@@ -2403,6 +2469,9 @@ msgstr "锦标赛的上一次修改已撤销。"
 msgid "The last check or reading failed."
 msgstr "上一次检查或读取失败。"
 
+msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
+msgstr "引擎库中的名称，之后的锦标赛会使用它。已进行的锦标赛保留旧名称，其对局和等级分也一样。"
+
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "轮到走棋的一方正在考虑的着法及其预期的应着，以将走这些着法的引擎的颜色显示。"
 
@@ -2444,6 +2513,17 @@ msgstr "程序在上次启动恢复此锦标赛时终止：它不会再自动恢
 
 msgid "The program ended while it resumed {} at the last launch: it is not resumed automatically again. Resume it from the Tournaments page."
 msgstr "程序在上次启动恢复 {} 时终止：它不会再自动恢复。请在“锦标赛”页面上恢复它。"
+
+msgid "The program of {} changed since it joined the tournament: its next games are played by the new build."
+msgid_plural "The programs of {} changed since they joined the tournament: their next games are played by the new builds."
+msgstr[0] "{} 的程序自加入锦标赛以来已改变：其后续对局将由新版本进行。"
+
+msgid "The program of {} changed since its last tournament, “{}”."
+msgstr "{} 的程序自其上次锦标赛“{}”以来已改变。"
+
+msgid "The program of {} is missing: its games cannot start until it is back."
+msgid_plural "The programs of {} are missing: their games cannot start until they are back."
+msgstr[0] "{} 的程序不见了：在它恢复之前，其对局无法开始。"
 
 msgid "The program of {} is not found."
 msgstr "找不到 {} 的程序。"
@@ -2501,6 +2581,9 @@ msgstr "时限需要基本时间或加秒。"
 
 msgid "The time per move must be positive."
 msgstr "每步时间必须为正数。"
+
+msgid "The tournament goes on with the programs as they are now; this notice closes."
+msgstr "锦标赛使用当前的程序继续进行；此提示关闭。"
 
 msgid "The tournament is not running: resume it to play the new games."
 msgstr "锦标赛没有在进行：请恢复它以下新的对局。"
@@ -2634,6 +2717,15 @@ msgstr "最多 {} 个引擎。"
 msgid "Use it for the next tournament"
 msgstr "用于下一个锦标赛"
 
+msgid "Use the new default"
+msgstr "使用新的默认值"
+
+msgid "Use the new defaults"
+msgstr "全部使用新的默认值"
+
+msgid "Use the new defaults: {}"
+msgstr "全部使用新的默认值：{}"
+
 msgid "Use these bounds"
 msgstr "使用这些边界"
 
@@ -2669,6 +2761,12 @@ msgstr "网页"
 
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr "测试者向等级分列表提交对局前检查的内容。“对局”页中的“导出给等级分列表…”会去除作废对局和重复对局。"
+
+msgid "What changed"
+msgstr "更改内容"
+
+msgid "What changed: {}"
+msgstr "更改内容：{}"
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "它平均何时确定最终走出的着法：如果远早于所用时间结束就已确定，说明时间没有用好。"
@@ -2778,6 +2876,9 @@ msgstr "当设置的 PGN 选项中“{}”开启时写入。"
 msgid "Wrong PVs"
 msgstr "错误 PV"
 
+msgid "Your value"
+msgstr "你的值"
+
 msgid "Yours"
 msgstr "你的布局"
 
@@ -2830,6 +2931,9 @@ msgstr "与之前某局面颜色互换"
 msgid "decision time"
 msgstr "决定时间"
 
+msgid "default"
+msgstr "默认"
+
 msgid "depth {}"
 msgstr "深度 {}"
 
@@ -2847,6 +2951,9 @@ msgstr "重复"
 
 msgid "elo1 must be larger than elo0."
 msgstr "elo1 必须大于 elo0。"
+
+msgid "empty"
+msgstr "空"
 
 msgid "every pair with both colours"
 msgstr "每一对都交换过颜色"
@@ -2871,6 +2978,9 @@ msgstr "对局已结束"
 
 msgid "games at least"
 msgstr "最少对局数"
+
+msgid "gone"
+msgstr "已移除"
 
 msgid "illegal position"
 msgstr "非法局面"
@@ -2907,6 +3017,9 @@ msgstr "步数"
 
 msgid "nElo of A (95% CI)"
 msgstr "A 的 nElo（95% 置信区间）"
+
+msgid "new"
+msgstr "新增"
 
 msgid "no engine has a SyzygyPath"
 msgstr "没有引擎设置了 SyzygyPath"
@@ -3050,6 +3163,12 @@ msgstr "{} 要求每局都重新启动：已勾选“每局对局都重启引擎
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "无法读取 {}，因此之前信任的主机密钥未知：未向 {} 发送任何内容。请修复该文件，或删除它以重新信任服务器的密钥。"
 
+msgid "{} changed: its options were read again, and its card shows what changed."
+msgstr "{} 已改变：已重新读取其选项，其信息卡显示了更改内容。"
+
+msgid "{} changed: its options were read again, the same as before."
+msgstr "{} 已改变：已重新读取其选项，与之前相同。"
+
 msgid "{} changed: its options were read again."
 msgstr "{} 已改变：已重新读取其选项。"
 
@@ -3184,6 +3303,9 @@ msgstr "{} 已在另一个程序中打开：此处仅按打开时的状态显示
 msgid "{} is playing in another window: it is not resumed here."
 msgstr "{} 正在另一个窗口中进行：此处不恢复。"
 
+msgid "{} is set to {}, its old default, as it played before."
+msgstr "{} 设为 {}，即其旧的默认值，与之前一样。"
+
 msgid "{} is the tournament's own PGN file: choose another one."
 msgstr "{} 是锦标赛自己的 PGN 文件：请另选一个。"
 
@@ -3279,6 +3401,9 @@ msgstr[0] "{} 位棋手可能是两个库引擎之一：请指定。"
 msgid "{} plays with {} % of the time"
 msgstr "{} 使用 {} % 的时间"
 
+msgid "{} plays with {}."
+msgstr "{} 使用 {}。"
+
 msgid "{} position"
 msgid_plural "{} positions"
 msgstr[0] "{} 个局面"
@@ -3312,6 +3437,9 @@ msgstr[0] "已选 {} 个"
 
 msgid "{} shown"
 msgstr "显示 {} 个"
+
+msgid "{} stays at {}."
+msgstr "{} 保持为 {}。"
 
 msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"
@@ -3397,6 +3525,9 @@ msgstr "{}：引擎不认识"
 msgid "{}: {}"
 msgstr "{}：{}"
 
+msgid "{}\nA new build, or another program: its results may not be those of the engine that played {}."
+msgstr "{}\n新版本或另一个程序：其成绩可能与参加“{}”的引擎不同。"
+
 msgid "· %s · %d in parallel%s"
 msgstr "· %s · %d 个并行%s"
 
@@ -3446,5 +3577,11 @@ msgstr "✓ 所测量的 {} 个引擎均符合预期"
 msgid "✓ No played game is lost: voided games stay in the PGN files and the journal."
 msgstr "✓ 已下的对局不会丢失：作废的对局仍保留在 PGN 文件和日志中。"
 
-msgid "✓ works · ! problem · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right click: more"
-msgstr "✓ 可用 · ! 有问题 · ↔ WinBoard · 灰色：停用 · 按住 Ctrl 或 Shift 点击：多选 · 右键：更多"
+msgid "✓ kept"
+msgstr "✓ 已保留"
+
+msgid "✓ new default"
+msgstr "✓ 新默认值"
+
+msgid "✓ works · ! problem · Δ program changed · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right click: more"
+msgstr "✓ 可用 · ! 有问题 · Δ 程序已改变 · ↔ WinBoard · 灰色：停用 · 按住 Ctrl 或 Shift 点击：多选 · 右键：更多"

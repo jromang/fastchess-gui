@@ -118,6 +118,20 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         add(trf("Check those not checked ({})", unchecked.size()), TR("Engines"),
             engines_page([this, unchecked] { queueChecks(unchecked); }));
     }
+    // The engines whose rebuilt program's new read found changes: their card, the choices for all, the dismissal.
+    for (const auto& e : engines_) {
+        if (!e.changes) continue;
+        const auto& n = e.name;
+        add(trf("What changed: {}", n), TR("Engines"), [this, n] { showEngineChanges(n); });
+        if (choicesLeft(*e.changes) > 0) {
+            add(trf("Keep my values: {}", n), TR("Engines"), [this, n] { settleEngineChanges(n, ValueChoice::Keep); });
+            add(trf("Use the new defaults: {}", n), TR("Engines"),
+                [this, n] { settleEngineChanges(n, ValueChoice::NewDefault); });
+        }
+        add(trf("Dismiss what changed: {}", n), TR("Engines"), [this, n] { settleEngineChanges(n, std::nullopt); });
+    }
+    if (!resumed_programs_.empty() && run_.running())
+        add(TR("Continue with the changed programs"), name, [this] { resumed_programs_.clear(); });
 
     // Pages, the panels of the tournament open, and the tabs of the ratings.
     const auto page = [this](Page p) {

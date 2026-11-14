@@ -1299,6 +1299,7 @@ void App::drawSetupSummary() {
             check(false, trf("The working directory of {} is not found.", e.name));
         }
     }
+    drawRebuiltSincePlayed(names);
     if (setup_.chess960) {
         check(true, setup_.book.empty() ? std::string(TR("Chess960: the 960 starting positions, in random order"))
                                         : trf("Chess960: {}", std::filesystem::path(setup_.book).filename().string()));

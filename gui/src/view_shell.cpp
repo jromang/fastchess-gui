@@ -145,6 +145,7 @@ void App::refreshTournaments() {
         tournaments_      = std::move(list.summaries);
         legacy_runs_      = list.legacy_runs;
         tournaments_read_ = true;
+        played_programs_  = lastPlayedPrograms(tournaments_);
     }
     if (!tournaments_dirty_) return;
 
@@ -584,6 +585,7 @@ void App::drawWorkspaceHeader() {
         ImGui::ProgressBar(std::min(1.0f, static_cast<float>(games_.size()) / static_cast<float>(info.total_games)),
                            ImVec2(-FLT_MIN, px(6)), "");
     }
+    drawResumedPrograms();
 
     if (run_.running()) {
         const bool paused = run_.paused();

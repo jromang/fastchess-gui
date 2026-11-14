@@ -13,6 +13,7 @@
 #include <tour/rating_import.hpp>
 
 #include "app.hpp"
+#include "engine_changes.hpp"
 #include "i18n.hpp"
 #include "ui.hpp"
 
@@ -529,7 +530,10 @@ void App::applyProbe() {
             Console::instance().add(start_error_, true);
         }
         // The program as it is now: a rebuilt engine that cannot be read is not read again at every focus change.
+        // The program its last read came from is kept, for the next read that works to compare with.
         if (result.program.size > 0) {
+            if (e.read_from.size == 0 && !e.uci_options.empty() && otherProgram(e.program, result.program))
+                e.read_from = e.program;
             e.program = result.program;
             refreshProgram(e);
         }
@@ -542,11 +546,25 @@ void App::applyProbe() {
     }
 
     const bool first_probe = e.id_name.empty();
-    const bool rebuilt     = e.program_state == ProgramState::Changed;
-    e.protocol             = result.protocol;
-    e.program              = result.program;
+    // Another program than the one the last read came from: rebuilt or replaced, in its place or under another path.
+    // Not when the protocol changed: the user chose another way to speak to it, whose options are others.
+    const auto read_from   = e.read_from.size > 0 ? e.read_from : e.program;
+    const bool rebuilt     = e.program_state == ProgramState::Changed || otherProgram(read_from, result.program);
+    const bool same_way    = e.protocol.empty() || e.protocol == result.protocol;
+    const bool read_before = !e.uci_options.empty() || !e.id_name.empty();
+    if (rebuilt && same_way && read_before) {
+        const bool news = noteChanges(e, {result.id_name, result.id_author, result.options}, nowText());
+        Console::instance().add(news ? trf("{} changed: its options were read again, and its card shows what "
+                                           "changed.",
+                                           e.name)
+                                     : trf("{} changed: its options were read again, the same as before.", e.name));
+    } else if (rebuilt) {
+        Console::instance().add(trf("{} changed: its options were read again.", e.name));
+    }
+    e.read_from = {};
+    e.protocol  = result.protocol;
+    e.program   = result.program;
     refreshProgram(e);
-    if (rebuilt) Console::instance().add(trf("{} changed: its options were read again.", e.name));
 
     e.id_name     = result.id_name;
     e.id_author   = result.id_author;
@@ -779,13 +797,15 @@ void App::drawEngines() {
             continue;
         if (!engineMatches(e, engine_search_)) continue;
         const bool gone = e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
-        const bool keep = engine_status_ == 1   ? engineWorks(e)
-                          : engine_status_ == 2 ? !gone && (e.check_ok == 0 || e.program_state == ProgramState::Changed)
-                          : engine_status_ == 3 ? !gone && e.check_ok < 0
-                          : engine_status_ == 4 ? gone
-                          : engine_status_ == 5 ? isWinboard(e)
-                          : engine_status_ == 6 ? e.inactive
-                                                : true;
+        const bool keep =
+            engine_status_ == 1 ? engineWorks(e)
+            : engine_status_ == 2
+                ? !gone && (e.check_ok == 0 || e.program_state == ProgramState::Changed || e.changes.has_value())
+            : engine_status_ == 3 ? !gone && e.check_ok < 0
+            : engine_status_ == 4 ? gone
+            : engine_status_ == 5 ? isWinboard(e)
+            : engine_status_ == 6 ? e.inactive
+                                  : true;
         if (keep) shown.push_back(i);
     }
     std::stable_sort(shown.begin(), shown.end(),
@@ -794,8 +814,9 @@ void App::drawEngines() {
     int inactive_asked = -1;  // from the right click's menu: 1 inactive, 0 active again
 
     // Only the engines scroll: the buttons above and the legend below stay in sight.
-    const char* legend =
-        TR("✓ works · ! problem · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right click: more");
+    const char* legend = TR(
+        "✓ works · ! problem · Δ program changed · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right "
+        "click: more");
     const float legend_h = engines_.empty()
                                ? 0.0f
                                : ImGui::CalcTextSize(legend, nullptr, false, ImGui::GetContentRegionAvail().x).y +
@@ -811,9 +832,12 @@ void App::drawEngines() {
             if (e.name == setup_.engine_a) tag = "  [A]";
             if (e.name == setup_.engine_b) tag += "  [B]";
 
-            // A mark for the health: program missing or changed, checked, failed, or a WinBoard engine.
+            // A mark for the health: program missing or changed, what a rebuilt program's new read found, checked,
+            // failed, or a WinBoard engine.
             const auto problem = programProblem(e);
+            const bool news    = e.changes.has_value();
             const char* mark   = !problem.empty()  ? "!"
+                                 : news            ? "Δ"
                                  : e.check_ok == 1 ? "✓"
                                  : e.check_ok == 0 ? "!"
                                  : isWinboard(e)   ? "↔"
@@ -822,6 +846,7 @@ void App::drawEngines() {
                 e.program_state == ProgramState::Missing || e.program_state == ProgramState::MissingDir;
             ImGui::PushStyleColor(ImGuiCol_Text, missing            ? ui::BAD
                                                  : !problem.empty() ? ui::WARN
+                                                 : news             ? ui::WARN
                                                  : e.check_ok == 1  ? ui::GOOD
                                                  : e.check_ok == 0  ? ui::WARN
                                                                     : ui::MUTED);
@@ -859,6 +884,8 @@ void App::drawEngines() {
             if (ImGui::IsItemHovered()) {
                 // What the mark means, then what was found.
                 const std::string meaning = !problem.empty()  ? problem
+                                            : news            ? std::string(TR("Its program changed: its card shows "
+                                                                               "what the new read found."))
                                             : e.check_ok == 1 ? std::string(TR("Checked: it works."))
                                             : e.check_ok == 0 ? std::string(TR("The last check or reading failed."))
                                             : isWinboard(e)   ? std::string(TR("A WinBoard engine."))
@@ -933,6 +960,12 @@ void App::drawEngines() {
         ImGui::EndChild();
         ui::endPanel();
         return;
+    }
+
+    // What a new read of its rebuilt program found, first: it may be renamed, its values changed or dismissed.
+    if (engines_[selected_engine_].changes) {
+        drawProgramChanges(selected_engine_, engineInUse(engines_[selected_engine_].name));
+        ImGui::Spacing();
     }
 
     auto& e            = engines_[selected_engine_];
