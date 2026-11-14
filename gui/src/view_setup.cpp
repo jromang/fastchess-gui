@@ -387,6 +387,13 @@ void App::drawSetup(bool two_columns, bool with_summary) {
 
 void App::drawSetupRows() {
     if (std::exchange(open_pgn_setup_, false)) setup_open_[RowPgn] = true;
+    // The titles' column as wide as the longest, in this language.
+    setup_title_w_ = px(110);
+    for (const auto s : SETUP_SECTIONS)
+        setup_title_w_ = std::max(setup_title_w_, ImGui::CalcTextSize(sectionTitle(s)).x);
+    for (const char* t : {TR("Concurrency"), TR("PGN and misc")})
+        setup_title_w_ = std::max(setup_title_w_, ImGui::CalcTextSize(t).x);
+    setup_title_w_ += ImGui::GetStyle().ItemSpacing.x * 2;
     sectionRow(RowFormat, SetupSection::Format, &App::setupFormat);
     sectionRow(RowTime, SetupSection::Time, &App::setupLimit);
     sectionRow(RowOpenings, SetupSection::Openings, &App::setupOpenings);
@@ -448,7 +455,7 @@ void App::setupRow(SetupRow row, const char* title, const std::string& summary, 
     const ImVec2 start    = ImGui::GetCursorScreenPos();
     const float width     = ImGui::GetContentRegionAvail().x;
     const float frame     = ImGui::GetFrameHeight();
-    const float title_w   = std::min(px(120), width * 0.22f);
+    const float title_w   = std::min(setup_title_w_, width * 0.3f);
     const float profile_w = std::min(px(190), width * 0.3f);
     const float dot_w     = px(16);
     const float edit_w    = frame;
@@ -1398,8 +1405,9 @@ void App::drawSetupSummary() {
     const int concurrency  = setup_.concurrency_auto ? topology_.defaultConcurrency(fixed_nodes) : setup_.concurrency;
     if (const auto seconds = plannedSeconds(setup_, topology_)) {
         ImGui::Spacing();
-        ImGui::TextUnformatted(
-            trf("About {} with {} games at a time", ui::formatDuration(*seconds), concurrency).c_str());
+        ImGui::TextWrapped("%s",
+                           trf("About {} with {} games at a time", ui::formatDuration(*seconds), concurrency).c_str());
+        itemHelp(concurrencyRule(false));
     }
 
     // What could go wrong.

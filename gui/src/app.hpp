@@ -455,6 +455,7 @@ class App {
     enum SetupRow { RowFormat, RowTime, RowOpenings, RowAdjudication, RowEngines, RowConcurrency, RowPgn, ROW_COUNT };
     std::array<bool, ROW_COUNT> setup_open_{};         // the rows whose details are open
     std::array<float, ROW_COUNT> setup_details_h_{};  // their height at the last frame, for their background
+    float setup_title_w_ = 0;                          // the column of their titles
     // The row of a name: "format", "time", "openings", "adjudication", "engines", "concurrency", "pgn".
     [[nodiscard]] static std::optional<SetupRow> setupRowOf(const std::string& key);
     int open_profile_list_ = -1;  // --focus setup-profiles=ROW: the row whose profile list opens

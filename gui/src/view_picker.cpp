@@ -147,7 +147,7 @@ void App::setupParticipants() {
 
     const auto names = participantNames(setup_);
     const int count  = static_cast<int>(list.size());
-    int again = -1, drop_at = -1, drop_from = -1, library_at = -1;
+    int drop_at = -1, drop_from = -1, library_at = -1;
     ParticipantAction action = ParticipantAction::None;
     int action_on            = -1;
     bool focused_now         = false;
