@@ -46,6 +46,7 @@
 #include "topology.hpp"
 #include "ui.hpp"
 #include "wb2uci.hpp"
+#include "window_place.hpp"
 
 namespace fastchess {
 const char* version = "alpha 1.8.3 gui ";
@@ -229,6 +230,60 @@ std::string selfPath(const char* argv0) {
     return base && !name.empty() ? (fs::path(base) / name).string() : std::string(argv0);
 }
 
+// The usable area of every screen (without its task bar), the primary one first.
+std::vector<fcg::ScreenRect> usableScreens() {
+    std::vector<fcg::ScreenRect> out;
+    const auto add = [&](SDL_DisplayID id) {
+        SDL_Rect r;
+        if (SDL_GetDisplayUsableBounds(id, &r) && r.w > 0 && r.h > 0) out.push_back({r.x, r.y, r.w, r.h});
+    };
+    const SDL_DisplayID primary = SDL_GetPrimaryDisplay();
+    if (primary) add(primary);
+    int count               = 0;
+    SDL_DisplayID* displays = SDL_GetDisplays(&count);
+    for (int i = 0; displays && i < count; ++i) {
+        if (displays[i] != primary) add(displays[i]);
+    }
+    SDL_free(displays);
+    return out;
+}
+
+// The main window's size and place while it is neither maximized nor minimized, and whether it is maximized: what
+// the next launch opens it as. Read at each frame rather than on its events: some systems tell a maximized
+// window's new size before its new state.
+class WindowTracker {
+   public:
+    explicit WindowTracker(SDL_Window* window) : window_(window) {
+        const char* driver = SDL_GetCurrentVideoDriver();
+        knows_place_       = !driver || std::string_view(driver) != "wayland";
+        update();
+    }
+
+    void update() {
+        const auto flags = SDL_GetWindowFlags(window_);
+        if (flags & (SDL_WINDOW_MINIMIZED | SDL_WINDOW_HIDDEN)) return;
+        place_.maximized = (flags & SDL_WINDOW_MAXIMIZED) != 0;
+        if (flags & (SDL_WINDOW_MAXIMIZED | SDL_WINDOW_FULLSCREEN)) return;
+        int w = 0, h = 0;
+        if (SDL_GetWindowSize(window_, &w, &h) && w > 0 && h > 0) {
+            place_.w = w;
+            place_.h = h;
+        }
+        int x = 0, y = 0;
+        if (knows_place_ && SDL_GetWindowPosition(window_, &x, &y)) {
+            place_.x = x;
+            place_.y = y;
+        }
+    }
+
+    [[nodiscard]] const fcg::WindowPlace& place() const noexcept { return place_; }
+
+   private:
+    SDL_Window* window_;
+    bool knows_place_ = true;  // Wayland neither tells a window its place nor lets it choose one
+    fcg::WindowPlace place_;
+};
+
 // The PGN books turned into Polyglot books are kept in the profile; those not used for a month are removed.
 void useBookCache(const fcg::Storage& storage) {
     fcg::tour::book_cache_dir = storage.root() / "book-cache";
@@ -303,29 +358,25 @@ int main(int argc, char** argv) {
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
     const float scale = std::max(1.0f, SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay()));
-    int width         = args.width > 0 ? args.width : static_cast<int>(1440 * scale);
-    int height        = args.height > 0 ? args.height : static_cast<int>(900 * scale);
 
-    // The window must fit the screen with its title bar: centred, a window taller than the screen has its title bar
-    // (and its close button) above the top edge. When the default size does not fit, it opens maximized.
-    std::optional<SDL_Rect> usable;
-    bool maximize = false;
-    if (args.width <= 0 && args.height <= 0) {
-        SDL_Rect bounds;
-        if (SDL_GetDisplayUsableBounds(SDL_GetPrimaryDisplay(), &bounds) && bounds.w > 0 && bounds.h > 0) {
-            const int margin_x = static_cast<int>(32 * scale);
-            const int margin_y = static_cast<int>(96 * scale);  // title bar above, some room below
-            if (width > bounds.w - margin_x || height > bounds.h - margin_y) {
-                width    = std::max(640, std::min(width, bounds.w - margin_x));
-                height   = std::max(480, std::min(height, bounds.h - margin_y));
-                maximize = true;
-            }
-            usable = bounds;
-        }
+    const char* pref = SDL_GetPrefPath("fastchess", "fastchess-gui");
+    fcg::Storage storage(args.profile.empty() ? fs::path(pref ? pref : ".") : fs::path(args.profile));
+    // A copy, for what main() keeps itself once the app has the profile: the window's place.
+    const fcg::Storage profile = storage;
+
+    // The window opens as it was left, on a screen still there (see window_place.hpp). Not for scripted screenshots
+    // nor a size asked on the command line: those neither use nor change it.
+    const bool remember_place = args.width <= 0 && args.height <= 0 && args.shots.empty();
+    fcg::WindowOpening opening;
+    if (args.width > 0 || args.height > 0) {
+        opening.w = args.width > 0 ? args.width : static_cast<int>(1440 * scale);
+        opening.h = args.height > 0 ? args.height : static_cast<int>(900 * scale);
+    } else {
+        opening = fcg::openingPlace(remember_place ? profile.windowPlace() : std::nullopt, usableScreens(), scale);
     }
 
     SDL_Window* window =
-        SDL_CreateWindow("fastchess-gui", width, height,
+        SDL_CreateWindow("fastchess-gui", opening.w, opening.h,
                          SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!window) return fatal("SDL_CreateWindow");
 #ifndef __APPLE__  // macOS shows the bundle's (gui/mac/fastchess-gui.icns), with the margin of the system's icons
@@ -346,20 +397,18 @@ int main(int argc, char** argv) {
     SDL_GL_MakeCurrent(window, gl_context);
     // No vsync: on Wayland a hidden window would block in SwapWindow. The loop paces itself.
     SDL_GL_SetSwapInterval(0);
-    if (usable) {
-        // Centred in the usable area (not the whole screen, which SDL falls back to), below the title bar.
-        SDL_SetWindowPosition(window, usable->x + (usable->w - width) / 2,
-                              usable->y + std::max(static_cast<int>(48 * scale), (usable->h - height) / 2));
+    if (opening.x && opening.y) {
+        // In the usable area of a screen (not the whole screen, which SDL centres in), below the title bar.
+        SDL_SetWindowPosition(window, *opening.x, *opening.y);
     } else {
         SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
     }
     SDL_ShowWindow(window);
-    if (maximize) SDL_MaximizeWindow(window);
+    if (opening.maximize) SDL_MaximizeWindow(window);
+    WindowTracker tracker(window);
 
     if (!fcg::gl::load()) return fatal(TR("OpenGL functions are missing"));
 
-    const char* pref = SDL_GetPrefPath("fastchess", "fastchess-gui");
-    fcg::Storage storage(args.profile.empty() ? fs::path(pref ? pref : ".") : fs::path(args.profile));
     useBookCache(storage);
     const auto ini_path = storage.iniFile().string();
     fcg::Console::instance().logTo(storage.root() / "fastchess-gui.log");
@@ -426,6 +475,7 @@ int main(int argc, char** argv) {
                 }
             }
 
+            tracker.update();
             fcg::ui::loadRequestedFonts(16.0f);  // between frames: the size loadFonts() used
             if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -489,6 +539,8 @@ int main(int argc, char** argv) {
             if (spent < target) std::this_thread::sleep_for(target - spent);
         }
     }
+
+    if (remember_place) profile.setWindowPlace(tracker.place());
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL3_Shutdown();

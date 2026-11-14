@@ -210,6 +210,22 @@ void Storage::setSubmissionTester(const std::string& name, const std::string& si
     save(root_ / "settings.json", settings);
 }
 
+std::optional<WindowPlace> Storage::windowPlace() const {
+    const auto s = settings();
+    if (!s.contains("window") || !s["window"].is_object()) return std::nullopt;
+    try {
+        return s["window"].get<WindowPlace>();
+    } catch (const nlohmann::json::exception&) {
+        return std::nullopt;
+    }
+}
+
+void Storage::setWindowPlace(const WindowPlace& place) const {
+    auto settings      = this->settings();
+    settings["window"] = place;
+    save(root_ / "settings.json", settings);
+}
+
 std::vector<BookEntry> Storage::loadBooks() const {
     return readProfileFile<std::vector<BookEntry>>(root_ / "books.json").value_or(std::vector<BookEntry>{});
 }

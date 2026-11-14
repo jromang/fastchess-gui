@@ -7,6 +7,7 @@
 
 #include "layout.hpp"
 #include "model.hpp"
+#include "window_place.hpp"
 
 namespace fcg {
 
@@ -48,6 +49,10 @@ class Storage {
     // The tester's name and site written in the exports for a rating list, in settings.json.
     [[nodiscard]] std::pair<std::string, std::string> submissionTester() const;
     void setSubmissionTester(const std::string& name, const std::string& site) const;
+
+    // The main window as it was left (settings.json); nullopt when none was kept.
+    [[nodiscard]] std::optional<WindowPlace> windowPlace() const;
+    void setWindowPlace(const WindowPlace& place) const;
 
     [[nodiscard]] std::vector<BookEntry> loadBooks() const;
     void saveBooks(const std::vector<BookEntry>& books) const;

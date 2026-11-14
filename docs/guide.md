@@ -24,6 +24,12 @@ WenQuanYi on Linux. The theme is light unless dark, or the system's choice, is p
 The Spanish, Italian, Portuguese, Russian and Chinese translations are new: corrections from players of those
 languages are welcome. They are plain `.po` files in `gui/i18n`, which Poedit and the like open.
 
+The window opens as it was left: its size, its place on the screens, maximized or not. When the screen it was on is
+gone (a monitor unplugged), it opens in the middle of the main one; when its size no longer fits the screen (a lower
+resolution), at the default size. The panels dragged out of it, such as a detached board, come back where they were
+too (`layout.ini`), and into the window when their screen is gone. Wayland does not let a program choose its
+window's place: there, only the size and the maximized state come back.
+
 The pages use the whole window, whatever its size: the Live tab's boards grow with it, the new tournament form
 splits into two columns on a wide window, and the list of the Engines, Books and Ratings pages can be widened by
 dragging its right edge. Everything (text, buttons, boards) can also be made larger or smaller, from 80 to 250 %:
@@ -536,7 +542,8 @@ it holds a lichess token.
 - `layout.ini`: the window layout and the panels of the workspace; `layouts.json`: the layouts saved by name; `fastchess-gui.log`: the log of the last session;
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**, the folder of *Every engine
-  of a folder…*, the tester and site of *Export for a rating list…*, and the lichess token;
+  of a folder…*, the tester and site of *Export for a rating list…*, the lichess token, and the window's size and
+  place;
 - `running.json`: the tournament running now, removed when it stops; found at launch, it tells what to resume;
 - `runs/<date>_<A>_vs_<B>/` for a match, `runs/<date>_<name>/` for a tournament (in `runs/` or the chosen
   folder), one folder each, which can be moved, copied, zipped and sent:
@@ -586,11 +593,14 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
 - `--profile DIR` uses another profile folder;
 - `--autostart` starts the saved setup at launch (rather than resuming the tournament that was running, see
   *Running a tournament*);
+- `--size WxH` opens the window at that size, centred, rather than as it was left, and leaves the size and place
+  kept for the next launch alone;
 - `--shot` saves a screenshot of the window after the given number of seconds (default 5), with WINDOW brought to
   the front, and quits once every screenshot is taken. It can be repeated. WINDOW is a page (`home`, `setup`,
   `engines`, `books`, `ratings`, `ratings-engine`, `ratings-h2h`, `ratings-progress`, `console`, `settings`) or a
   tab (`live`, `games`, `openings`, `standings`, `schedule`, `bracket`, `broadcast`). The mouse is ignored in this
   mode and, on Linux, the window is rendered off screen (no window appears; set `SDL_VIDEODRIVER` to override);
+  the window opens at the default size, or `--size`, and the size and place kept are left alone;
 - `--focus WINDOW` opens that page or tab at launch, or: `engines-card` (the first engine's card),
   `engines-refresh` (*Refresh: the new engines of the folder*), `engines-ratings=FILE` (the preview of that rating
   list), `setup-picker` and `setup-suggest` (*Add an engine…*, with the suggestion made), `submission-export`
