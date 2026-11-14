@@ -1,0 +1,6 @@
+# Vulnerabilities OSV-Scanner reports that do not touch fastchess-gui, each with why. Look at them again when the
+# dependency's pin changes.
+
+[[IgnoredVulns]]
+id = "CVE-2026-102804"
+reason = "stb: an integer overflow in stb_hexwave.h's hexwave_init. Only stb_image.h and stb_image_write.h are compiled in."

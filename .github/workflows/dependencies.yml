@@ -1,0 +1,41 @@
+name: Dependencies
+
+on:
+  push:
+    branches: ["gui"]
+  pull_request:
+    branches: ["gui"]
+  schedule:
+    # Weekly: new vulnerabilities are published for unchanged pins too.
+    - cron: "41 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  osv:
+    name: SBOM and known vulnerabilities
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: SBOM up to date
+        # Every FetchContent pin of CMakeLists.txt and every app/third_party version must be the SBOM's.
+        run: python3 sbom/check.py
+
+      - name: The dependencies' commits
+        # OSV knows most C and C++ vulnerabilities by commit, which an SBOM cannot carry: a repository at each
+        # component's commit (the commit object alone) for the scanner to read.
+        run: python3 sbom/check.py checkouts osv-checkouts
+
+      - uses: google/osv-scanner-action/osv-scanner-action@v2.7.1
+        with:
+          scan-args: |-
+            --config=sbom/osv-scanner.toml
+            -L
+            sbom/fastchess-gui.cdx.json
+            --recursive
+            --no-ignore
+            --include-git-root
+            osv-checkouts
