@@ -184,6 +184,8 @@ std::string half(double points) {
 
 }  // namespace
 
+std::string pointsText(double points) { return half(points); }
+
 std::string escapeHtml(const std::string& s) {
     std::string out;
     for (const char c : s) {
@@ -555,7 +557,7 @@ std::string bbcode(const std::string& title, const std::string& details, const s
 }
 
 std::string forumDetails(const TournamentSpec& spec, const Table& table) {
-    static constexpr const char* FORMATS[] = {"Match", "Round robin", "Gauntlet", "Swiss", "Knockout"};
+    static constexpr const char* FORMATS[] = {"Match", "Round robin", "Gauntlet", "Swiss", "Knockout", "Team match"};
     int games                              = 0;
     for (const auto& r : table.rows) games += r.games;
     games /= 2;
