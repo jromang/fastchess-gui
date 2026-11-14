@@ -193,6 +193,15 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
             settings.tlcs_lanes = setup->tlcs_lanes;
             settings.web        = setup->broadcast_web;
             settings.web_port   = setup->web_port;
+            settings.chat_link  = setup->web_chat_link;
+            settings.discord_id = setup->web_discord_id;
+            if (!setup->web_chat_link.empty() && webChatLink(setup->web_chat_link).empty()) {
+                std::fprintf(stderr, "warning: web_chat_link is not an https link, left out\n");
+            }
+            if (!setup->web_discord_id.empty() && webDiscordId(setup->web_discord_id).empty()) {
+                std::fprintf(stderr,
+                             "warning: web_discord_id is not a Discord server ID (17 to 20 digits), left out\n");
+            }
             settings.tunnel     = setup->broadcast_tunnel && (setup->tunnel_service == 0 || !setup->tunnel_host.empty());
             settings.tunnel_to  = tunnelSettings(*setup, storage.root() / "known_hosts.json");
             const auto engines  = storage.loadEngines();

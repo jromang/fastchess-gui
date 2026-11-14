@@ -1,5 +1,7 @@
 #include "broadcast.hpp"
 
+#include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cmath>
 #include <fstream>
@@ -52,7 +54,42 @@ bool writeAtomically(const fs::path& file, const std::string& text) {
     return ok;
 }
 
+std::string_view trimmed(std::string_view text) {
+    const auto space = [](char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n'; };
+    while (!text.empty() && space(text.front())) text.remove_prefix(1);
+    while (!text.empty() && space(text.back())) text.remove_suffix(1);
+    return text;
+}
+
+// The text, null when empty: what the page shows nothing for.
+nlohmann::json orNull(const std::string& text) { return text.empty() ? nlohmann::json(nullptr) : nlohmann::json(text); }
+
 }  // namespace
+
+std::string webChatLink(std::string_view text) {
+    constexpr std::string_view scheme = "https://";
+
+    text = trimmed(text);
+    if (text.size() <= scheme.size() || text.size() > 2048) return {};
+    for (std::size_t i = 0; i < scheme.size(); ++i) {
+        if (std::tolower(static_cast<unsigned char>(text[i])) != scheme[i]) return {};
+    }
+    // Printable ASCII only, and nothing that could end an attribute, a string or a tag where it is put.
+    for (const char c : text) {
+        const auto u = static_cast<unsigned char>(c);
+        if (u <= 0x20 || u >= 0x7F || c == '"' || c == '\'' || c == '<' || c == '>' || c == '\\' || c == '`') return {};
+    }
+    // A host: the scheme's slashes followed by something else than a path, a query or a fragment.
+    if (const char c = text[scheme.size()]; c == '/' || c == '?' || c == '#') return {};
+    return std::string("https://") + std::string(text.substr(scheme.size()));
+}
+
+std::string webDiscordId(std::string_view text) {
+    text = trimmed(text);
+    if (text.size() < 17 || text.size() > 20) return {};
+    if (!std::all_of(text.begin(), text.end(), [](char c) { return c >= '0' && c <= '9'; })) return {};
+    return std::string(text);
+}
 
 std::string snapshotJson(const BroadcastSnapshot& s) {
     nlohmann::json j;
@@ -183,6 +220,10 @@ std::string snapshotJson(const BroadcastSnapshot& s) {
         rows.push_back(std::move(row));
     }
     j["recent"] = s.recent;
+    // Where the viewers talk; only what passes the checks, whoever filled the snapshot.
+    j["chat"]    = orNull(webChatLink(s.chat_link));
+    j["lichess"] = orNull(webChatLink(s.lichess_url));
+    j["discord"] = orNull(webDiscordId(s.discord_id));
     return j.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
 }
 

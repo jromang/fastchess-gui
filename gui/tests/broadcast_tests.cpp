@@ -1150,3 +1150,225 @@ TEST_CASE("broadcast: the live files, no temporary file left") {
 #endif
     std::filesystem::remove_all(dir);
 }
+
+TEST_CASE("broadcast: the web page's chat link and Discord server ID are checked") {
+    // An https address, the spaces around it left out.
+    CHECK(webChatLink("https://discord.gg/abc123") == "https://discord.gg/abc123");
+    CHECK(webChatLink("  https://www.twitch.tv/somechannel \n") == "https://www.twitch.tv/somechannel");
+    CHECK(webChatLink("HTTPS://forum.example.org/t/42?page=2#post-7") ==
+          "https://forum.example.org/t/42?page=2#post-7");
+    CHECK(webChatLink("https://lichess.org/broadcast/-/-/AbCd1234") == "https://lichess.org/broadcast/-/-/AbCd1234");
+    // Nothing else: another scheme, no host, or what could end an attribute, a string or a tag where it is put.
+    for (const auto* hostile :
+         {"", "   ", "javascript:alert(1)", "JavaScript://%0aalert(1)", "data:text/html,<script>alert(1)</script>",
+          "http://discord.gg/abc", "//discord.gg/abc", "discord.gg/abc", "https://", "https:///path", "https://?x",
+          "https://#x", "https://a.org/\"onmouseover=\"alert(1)", "https://a.org/'x", "https://a.org/<b>",
+          "https://a.org/</script><script>alert(1)</script>", "https://a.org/x y", "https://a.org/\tx",
+          "https://a.org/\x01", "https://a.org/\x7f", "https://a.org/\\x", "https://a.org/`x`",
+          "https://a.org/\xc3\xa9", " javascript:https://a.org", "vbscript:https://a.org"}) {
+        CAPTURE(hostile);
+        CHECK(webChatLink(hostile).empty());
+    }
+    CHECK(webChatLink("https://a.org/" + std::string(3000, 'x')).empty());
+
+    // A Discord snowflake: 17 to 20 digits.
+    CHECK(webDiscordId("81384788765712384") == "81384788765712384");
+    CHECK(webDiscordId(" 1234567890123456789 ") == "1234567890123456789");
+    CHECK(webDiscordId("12345678901234567890") == "12345678901234567890");
+    for (const auto* wrong : {"", "1234567890123456", "123456789012345678901", "12345678901234567a",
+                              "-1234567890123456789", "1234567890123456789&theme=x", "1234567890123456789\"",
+                              "123456789012345678</script>", "1 234567890123456789", "０１２３４５６７８９０１２３４５６７"}) {
+        CAPTURE(wrong);
+        CHECK(webDiscordId(wrong).empty());
+    }
+}
+
+TEST_CASE("broadcast: state.json carries the chat link, the lichess round and the Discord server ID, checked") {
+    auto s     = sample();
+    auto state = nlohmann::json::parse(snapshotJson(s));
+    CHECK(state.at("chat").is_null());
+    CHECK(state.at("lichess").is_null());
+    CHECK(state.at("discord").is_null());
+
+    s.chat_link   = " https://discord.gg/abc123 ";
+    s.lichess_url = "https://lichess.org/broadcast/test/round-1/AbCd1234";
+    s.discord_id  = "81384788765712384";
+    state         = nlohmann::json::parse(snapshotJson(s));
+    CHECK(state.at("chat") == "https://discord.gg/abc123");
+    CHECK(state.at("lichess") == "https://lichess.org/broadcast/test/round-1/AbCd1234");
+    CHECK(state.at("discord") == "81384788765712384");
+
+    // Whoever filled the snapshot, what does not pass the checks is left out.
+    s.chat_link   = "javascript:alert(document.cookie)";
+    s.lichess_url = "https://lichess.org/\"></a><script>alert(1)</script>";
+    s.discord_id  = "1234567890123456789</script><script>alert(1)</script>";
+    const auto text = snapshotJson(s);
+    state           = nlohmann::json::parse(text);
+    CHECK(state.at("chat").is_null());
+    CHECK(state.at("lichess").is_null());
+    CHECK(state.at("discord").is_null());
+    CHECK(text.find("javascript:") == std::string::npos);
+    CHECK(text.find("<script>") == std::string::npos);
+}
+
+TEST_CASE("broadcast: the web page's extras, and its policy allowing Discord's frame only with a server") {
+    // The plain page has none of them: the page as it was before them.
+    const auto& plain = webPage();
+    const auto& extra = webPage(true);
+    CHECK(&plain == &webPage(false));
+    for (const auto* mark : {"/*EXTRA_STYLES*/", "<!--LINKS-->", "<!--WIDGET-->", "/*EXTRAS*/", "/*RENDER*/"}) {
+        CAPTURE(mark);
+        CHECK(plain.find(mark) == std::string::npos);
+        CHECK(extra.find(mark) == std::string::npos);
+    }
+    for (const auto* word : {"discord", "Discord", "id=\"chat\"", "lichessround", "extras(", "<iframe"}) {
+        CAPTURE(word);
+        CHECK(plain.find(word) == std::string::npos);
+        CHECK(extra.find(word) != std::string::npos);
+    }
+    // The links open in a new tab that learns nothing of the page; the widget's frame has what it needs only, and
+    // no address until state.json gives one.
+    CHECK(extra.find("target=\"_blank\" rel=\"noopener noreferrer\"") != std::string::npos);
+    CHECK(extra.find("sandbox=\"allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox\"") !=
+          std::string::npos);
+    const auto frame = extra.substr(extra.find("<iframe"), extra.find("</iframe>") - extra.find("<iframe"));
+    CHECK(frame.find("src") == std::string::npos);
+    CHECK(extra.find("allow-top-navigation") == std::string::npos);
+    CHECK(extra.find("allow-forms") == std::string::npos);
+    // The values are set as addresses from state.json, checked again by the page; never written as HTML.
+    CHECK(extra.find(".href=url") != std::string::npos);
+    CHECK(extra.find("/^[0-9]{17,20}$/") != std::string::npos);
+    CHECK(extra.find("https://discord.com/widget?id=${id}&theme=${dark?'dark':'light'}") != std::string::npos);
+    CHECK(extra.size() < plain.size() + 4000);
+
+    WebServer server;
+    const uint16_t port = 26127;
+    REQUIRE(server.start(port).empty());
+    server.publish(sample());
+    const auto ask = [&](const std::string& request) {
+        const auto fd = net::connectTo(0x7F000001, port);
+        if (!fd) return std::string();
+        net::TcpConnection c(*fd);
+        c.sendAll(request);
+        return c.readUntil("\n\n\n\n", 1 << 20, 5000);
+    };
+    const auto get    = [&](const std::string& headers) { return ask("GET / HTTP/1.1\r\n" + headers + "\r\n"); };
+    const auto head   = [](const std::string& answer) { return answer.substr(0, answer.find("\r\n\r\n")); };
+    const auto body   = [](const std::string& answer) { return answer.substr(answer.find("\r\n\r\n") + 4); };
+    const auto status = [](const std::string& answer) { return answer.substr(0, answer.find("\r\n")); };
+    const auto header = [&](const std::string& answer, const std::string& name) {
+        const auto h  = head(answer);
+        const auto at = h.find("\r\n" + name + ": ");
+        if (at == std::string::npos) return std::string();
+        const auto from = at + name.size() + 4;
+        return h.substr(from, h.find("\r\n", from) - from);
+    };
+    const std::string policy =
+        "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src "
+        "'self' data:; base-uri 'none'; form-action 'none'";
+
+    // Without them: the plain page, its policy as before.
+    const auto before = get("");
+    CHECK(status(before) == "HTTP/1.0 200 OK");
+    CHECK(body(before) == plain);
+    CHECK(header(before, "Content-Security-Policy") == policy);
+    const auto plain_tag = header(before, "ETag");
+    REQUIRE(plain_tag.size() == 10);  // "%08x"
+
+    // The links only: the page with its extras, another tag, the same policy (no frame).
+    server.setExtras(true, false);
+    const auto links = get("");
+    CHECK(body(links) == extra);
+    CHECK(header(links, "Content-Security-Policy") == policy);
+    const auto links_tag = header(links, "ETag");
+    CHECK(links_tag != plain_tag);
+    // A browser that kept the plain page takes the new one.
+    CHECK(status(get("If-None-Match: " + plain_tag + "\r\n")) == "HTTP/1.0 200 OK");
+    CHECK(status(get("If-None-Match: " + links_tag + "\r\n")) == "HTTP/1.0 304 Not Modified");
+
+    // Discord's widget: a frame from discord.com, nothing else; another tag, so that the policy is taken again.
+    server.setExtras(true, true);
+    const auto discord = get("Accept-Encoding: gzip\r\n");
+    CHECK(header(discord, "Content-Security-Policy") ==
+          "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src "
+          "'self' data:; frame-src https://discord.com; base-uri 'none'; form-action 'none'");
+    CHECK(header(discord, "Content-Encoding") == "gzip");
+    const auto discord_tag = header(discord, "ETag");
+    CHECK(discord_tag != links_tag);
+    CHECK(discord_tag != plain_tag);
+    CHECK(status(get("If-None-Match: " + links_tag + "\r\n")) == "HTTP/1.0 200 OK");
+    const auto kept = get("If-None-Match: " + discord_tag + "\r\n");
+    CHECK(status(kept) == "HTTP/1.0 304 Not Modified");
+    CHECK(header(kept, "Content-Security-Policy").find("frame-src https://discord.com") != std::string::npos);
+    CHECK(body(get("")) == extra);
+    // The widget alone has the extras too.
+    server.setExtras(false, true);
+    CHECK(body(get("")) == extra);
+    CHECK(header(get(""), "ETag") == discord_tag);
+
+    // Without them again: byte for byte the answers of before, the page kept by a browser good again.
+    server.setExtras(false, false);
+    CHECK(get("") == before);
+    CHECK(status(get("If-None-Match: " + discord_tag + "\r\n")) == "HTTP/1.0 200 OK");
+    CHECK(status(get("If-None-Match: " + plain_tag + "\r\n")) == "HTTP/1.0 304 Not Modified");
+    server.stop();
+}
+
+TEST_CASE("broadcast: the broadcaster takes the chat link and the Discord server ID only when they pass the checks") {
+    const uint16_t port = 26128;
+    const auto page     = [&] {
+        const auto fd = net::connectTo(0x7F000001, port);
+        if (!fd) return std::string();
+        net::TcpConnection c(*fd);
+        c.sendAll("GET / HTTP/1.1\r\n\r\n");
+        return c.readUntil("\n\n\n\n", 1 << 20, 5000);
+    };
+    const auto body = [](const std::string& answer) { return answer.substr(answer.find("\r\n\r\n") + 4); };
+
+    Broadcaster broadcaster;
+    BroadcastSettings settings;
+    settings.web        = true;
+    settings.web_port   = port;
+    settings.chat_link  = "javascript:alert(1)";
+    settings.discord_id = "1234567890123456789\"><script>alert(1)</script>";
+    REQUIRE(broadcaster.configure(settings).empty());
+    CHECK(broadcaster.settings().chat_link.empty());
+    CHECK(broadcaster.settings().discord_id.empty());
+    auto answer = page();
+    CHECK(body(answer) == webPage());
+    CHECK(answer.find("frame-src") == std::string::npos);
+
+    settings.chat_link  = " https://discord.gg/abc123";
+    settings.discord_id = "81384788765712384 ";
+    CHECK(broadcaster.configure(settings).empty());
+    CHECK(broadcaster.settings().chat_link == "https://discord.gg/abc123");
+    CHECK(broadcaster.settings().discord_id == "81384788765712384");
+    answer = page();
+    CHECK(body(answer) == webPage(true));
+    CHECK(answer.find("frame-src https://discord.com;") != std::string::npos);
+
+    // The lichess broadcast alone: the page has the extras for the link to its round, and no frame.
+    settings.chat_link.clear();
+    settings.discord_id.clear();
+    settings.lichess = true;
+    CHECK(broadcaster.configure(settings).empty());
+    answer = page();
+    CHECK(body(answer) == webPage(true));
+    CHECK(answer.find("frame-src") == std::string::npos);
+}
+
+TEST_CASE("broadcast: the setup keeps the chat link and the Discord server ID, empty in an earlier setup") {
+    MatchSetup setup;
+    setup.web_chat_link       = "https://discord.gg/abc123";
+    setup.web_discord_id      = "81384788765712384";
+    const nlohmann::json json = setup;
+    const auto back           = json.get<MatchSetup>();
+    CHECK(back.web_chat_link == "https://discord.gg/abc123");
+    CHECK(back.web_discord_id == "81384788765712384");
+    auto old = json;
+    old.erase("web_chat_link");
+    old.erase("web_discord_id");
+    const auto earlier = old.get<MatchSetup>();
+    CHECK(earlier.web_chat_link.empty());
+    CHECK(earlier.web_discord_id.empty());
+}

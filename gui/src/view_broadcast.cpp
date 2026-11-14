@@ -53,6 +53,8 @@ void App::updateBroadcast() {
     settings.tlcs_lanes     = setup_.tlcs_lanes;
     settings.web            = setup_.broadcast_web;
     settings.web_port       = setup_.web_port;
+    settings.chat_link      = setup_.web_chat_link;
+    settings.discord_id     = setup_.web_discord_id;
     settings.lichess        = setup_.broadcast_lichess;
     settings.lichess_token  = lichess_token_;
     settings.lichess_round  = setup_.lichess_round;
@@ -192,6 +194,7 @@ void App::drawBroadcast() {
         ImGui::TextDisabled("%s", TR("Reachable from the local network; open the port in your router to share it "
                                      "further."));
     }
+    drawWebChat(changed);
     drawTunnel(changed);
     ui::endCard();
 
@@ -199,6 +202,44 @@ void App::drawBroadcast() {
     drawLichess(changed);
 
     if (changed) saveSetupSoon();
+}
+
+void App::drawWebChat(bool& changed) {
+    ImGui::Spacing();
+    // A field, its label on the right. True while it is being typed in.
+    const auto field = [&](const char* label, std::string& value, float width) {
+        char buffer[2100];
+        const auto n = std::min(value.size(), sizeof(buffer) - 1);
+        std::copy_n(value.data(), n, buffer);
+        buffer[n] = 0;
+        ImGui::SetNextItemWidth(width);
+        if (ImGui::InputText(label, buffer, sizeof(buffer))) {
+            value   = buffer;
+            changed = true;
+        }
+        return ImGui::IsItemActive();
+    };
+    // What a field holds told wrong once it is left, not at each keystroke; the page leaves it out.
+    const auto wrong = [](const std::string& value, bool typing, bool valid, const char* text) {
+        if (typing || valid || value.find_first_not_of(" \t") == std::string::npos) return;
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+        ImGui::TextUnformatted(text);
+        ImGui::PopStyleColor();
+    };
+
+    bool typing = field(TR("Chat link##web_chat"), setup_.web_chat_link, px(360));
+    ui::help(TR("A Chat button in the page's header opens this address in a new tab: a Discord invite, a Twitch "
+                "channel, a forum thread. An https link only. While the games are pushed to lichess, the page also "
+                "links to the lichess round, which has its own chat."));
+    wrong(setup_.web_chat_link, typing, !webChatLink(setup_.web_chat_link).empty(), TR("Not an https link."));
+
+    typing = field(TR("Discord server ID##web_discord"), setup_.web_discord_id, px(220));
+    ui::help(TR("The page shows Discord's widget of this server, in its light or dark theme: its name, the members "
+                "online and a Join button, not the messages. The server's owner switches the widget on in Server "
+                "Settings, Widget, which also shows the server ID. Discord then sees the visits of the page's "
+                "viewers."));
+    wrong(setup_.web_discord_id, typing, !webDiscordId(setup_.web_discord_id).empty(),
+          TR("A Discord server ID is 17 to 20 digits."));
 }
 
 void App::drawTunnel(bool& changed) {

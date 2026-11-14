@@ -282,6 +282,10 @@ struct MatchSetup {
     bool tlcs_lanes        = false;  // a port per concurrent game, from tlcs_port on
     bool broadcast_web     = false;
     int web_port           = 8080;
+    // Where the web page's viewers talk: a chat's https link (a Discord invite, a Twitch channel, a forum thread),
+    // and the Discord server whose widget the page shows; empty for none.
+    std::string web_chat_link;
+    std::string web_discord_id;
     int broadcast_follow   = 0;  // TLCS game: 0 automatic, 1 the game shown in the Live tab
     bool broadcast_lichess = false;
     std::string lichess_round;    // a round's URL or id; empty: a new broadcast named after the tournament
@@ -324,7 +328,7 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
         log_every_game, check_mate_pvs, notify, language, theme, ui_zoom, tile_info, live_seed_side, live_arrows, \
         panes, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, tlcs_lanes, broadcast_web, web_port,    \
         broadcast_follow, broadcast_lichess, lichess_round, lichess_listed, resume_at_launch, broadcast_tunnel,   \
-        tunnel_service, tunnel_host, tunnel_port, tunnel_user, tunnel_remote_port
+        tunnel_service, tunnel_host, tunnel_port, tunnel_user, tunnel_remote_port, web_chat_link, web_discord_id
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
 void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) {
