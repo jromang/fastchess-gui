@@ -81,7 +81,8 @@ Ready-made binaries are on the [releases page](https://github.com/jromang/fastch
 
 - **Windows**: 64-bit Windows 10 version 1903 (May 2019) or newer. No installer, nothing else to install. Older
   versions (7, 8.1, LTSC 2019) are not supported: they may work while no path has accents.
-- **Linux**: x86-64, glibc 2.35 or newer, X11 or Wayland and OpenGL 3.2.
+- **Linux**: x86-64, glibc 2.35 or newer, X11 or Wayland. OpenGL 3.2 draws the window; without it (a virtual
+  machine, a remote desktop), SDL's own renderer does, the processor alone if need be.
 - **macOS**: macOS 13.3 (Ventura) or newer, Apple silicon and Intel (one universal application). It is not signed
   by an Apple developer account, so macOS refuses it the first time: Control-click (right-click) it, Open, then Open
   again; on macOS 15 and later, try to open it once, then System Settings, Privacy & Security, Open Anyway. Or run
