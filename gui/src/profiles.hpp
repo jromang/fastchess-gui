@@ -55,6 +55,9 @@ struct SetupProfile {
 // node count does not, nor the score of a draw adjudication that is off, nor the SPRT calculator's guesses.
 [[nodiscard]] bool sameSection(const MatchSetup& a, const MatchSetup& b, SetupSection section);
 
+// Copies the section's fields (those of sectionFields(), which the tests check it covers) from `from` to `to`.
+void copySection(MatchSetup& to, const MatchSetup& from, SetupSection section);
+
 // Gives the section of `setup` the profile's values, and names it as the section's profile.
 void applyProfile(MatchSetup& setup, SetupSection section, const SetupProfile& profile);
 

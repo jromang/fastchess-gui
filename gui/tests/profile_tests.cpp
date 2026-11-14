@@ -29,6 +29,33 @@ TEST_CASE("profiles: every field of a section is a field of the setup, and no fi
     CHECK(!sectionOfKey("tournament"));
 }
 
+TEST_CASE("profiles: copying a section copies every field it lists, and nothing of the others") {
+    for (const auto s : SETUP_SECTIONS) {
+        // Every field of the section given another value than the default.
+        nlohmann::json j = MatchSetup{};
+        for (const auto& key : sectionFields(s)) {
+            auto& v = j[key];
+            if (v.is_boolean())
+                v = !v.get<bool>();
+            else if (v.is_number_unsigned())
+                v = v.get<uint64_t>() + 1;
+            else if (v.is_number_integer())
+                v = v.get<int64_t>() + 1;
+            else if (v.is_number_float())
+                v = v.get<double>() + 0.5;
+            else if (v.is_string())
+                v = v.get<std::string>() + "x";
+        }
+        const auto from = j.get<MatchSetup>();
+        MatchSetup to;
+        copySection(to, from, s);
+        CHECK_MESSAGE(sectionValues(to, s) == sectionValues(from, s), sectionKey(s));
+        for (const auto other : SETUP_SECTIONS) {
+            if (other != s) CHECK(sectionValues(to, other) == sectionValues(MatchSetup{}, other));
+        }
+    }
+}
+
 TEST_CASE("profiles: a setup goes through JSON unchanged, so that applying a profile changes nothing else") {
     MatchSetup setup;
     setup.format               = TournamentFormat::Gauntlet;

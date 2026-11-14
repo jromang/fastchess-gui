@@ -261,12 +261,70 @@ bool sameSection(const MatchSetup& a, const MatchSetup& b, SetupSection section)
            a.engine_syzygy == b.engine_syzygy && a.engine_ownbook_off == b.engine_ownbook_off;
 }
 
-void applyProfile(MatchSetup& setup, SetupSection section, const SetupProfile& profile) {
-    nlohmann::json all = setup;
-    for (const auto& key : sectionFields(section)) {
-        if (profile.values.contains(key)) all[key] = profile.values[key];
+void copySection(MatchSetup& to, const MatchSetup& from, SetupSection section) {
+    switch (section) {
+        case SetupSection::Format:
+            to.format          = from.format;
+            to.cycles          = from.cycles;
+            to.seeds           = from.seeds;
+            to.mode            = from.mode;
+            to.fixed_games     = from.fixed_games;
+            to.sprt_elo0       = from.sprt_elo0;
+            to.sprt_elo1       = from.sprt_elo1;
+            to.sprt_alpha      = from.sprt_alpha;
+            to.sprt_beta       = from.sprt_beta;
+            to.sprt_model      = from.sprt_model;
+            to.sprt_max_games  = from.sprt_max_games;
+            to.sprt_draw_ratio = from.sprt_draw_ratio;
+            to.sprt_rms_bias   = from.sprt_rms_bias;
+            return;
+        case SetupSection::Time:
+            to.limit        = from.limit;
+            to.tc_base_s    = from.tc_base_s;
+            to.tc_inc_s     = from.tc_inc_s;
+            to.tc_moves     = from.tc_moves;
+            to.tc_margin_ms = from.tc_margin_ms;
+            to.nodes        = from.nodes;
+            to.move_s       = from.move_s;
+            to.depth        = from.depth;
+            return;
+        case SetupSection::Openings:
+            to.book              = from.book;
+            to.book_random       = from.book_random;
+            to.book_plies        = from.book_plies;
+            to.book_start        = from.book_start;
+            to.chess960          = from.chess960;
+            to.opening_per_round = from.opening_per_round;
+            to.seed              = from.seed;
+            return;
+        case SetupSection::Adjudication:
+            to.draw_enabled     = from.draw_enabled;
+            to.draw_movenumber  = from.draw_movenumber;
+            to.draw_movecount   = from.draw_movecount;
+            to.draw_score       = from.draw_score;
+            to.resign_enabled   = from.resign_enabled;
+            to.resign_movecount = from.resign_movecount;
+            to.resign_score     = from.resign_score;
+            to.resign_twosided  = from.resign_twosided;
+            to.maxmoves_enabled = from.maxmoves_enabled;
+            to.maxmoves         = from.maxmoves;
+            to.tb_enabled       = from.tb_enabled;
+            to.tb_pieces        = from.tb_pieces;
+            to.tb_ignore50      = from.tb_ignore50;
+            to.tb_result        = from.tb_result;
+            return;
+        case SetupSection::Engines:
+            to.common_hash        = from.common_hash;
+            to.common_threads     = from.common_threads;
+            to.engine_syzygy      = from.engine_syzygy;
+            to.engine_ownbook_off = from.engine_ownbook_off;
+            return;
     }
-    setup                               = all.get<MatchSetup>();
+}
+
+void applyProfile(MatchSetup& setup, SetupSection section, const SetupProfile& profile) {
+    // Field by field: the rest of the setup is left exactly as it is.
+    copySection(setup, profile.setup, section);
     setup.profiles[sectionKey(section)] = profile.name;
 }
 
