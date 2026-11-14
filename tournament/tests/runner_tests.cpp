@@ -8,7 +8,9 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <functional>
 #include <map>
+#include <mutex>
 #include <set>
 #include <thread>
 
@@ -57,7 +59,7 @@ TournamentSpec spec(Format format, int players, int cycles, uint64_t max_games =
 
 // Plays `state` on this thread, as the GUI's run thread does. With `stop_after`, stops abruptly once that many
 // games are recorded, without waiting for the running ones.
-std::string play(TournamentState& state, std::size_t stop_after = 0) {
+std::string play(TournamentState& state, std::size_t stop_after = 0, RecordListener* listener = nullptr) {
     auto config         = state.spec().conditions;
     config.games        = 2;
     config.opening.file = "";
@@ -85,7 +87,7 @@ std::string play(TournamentState& state, std::size_t stop_after = 0) {
 
     std::string error;
     {
-        Runner runner(state, nullptr, nullptr);
+        Runner runner(state, nullptr, listener);
         runner.start();
         error = runner.error();
     }
@@ -118,6 +120,26 @@ std::size_t countOf(const std::string& text, const std::string& what) {
     for (auto pos = text.find(what); pos != std::string::npos; pos = text.find(what, pos + 1)) ++n;
     return n;
 }
+
+// What the runner told about the engines that cannot start; `hook` is called with each event, on the runner's thread.
+struct StartEvents final : RecordListener {
+    void onRecorded(const GameResult&, const fastchess::MatchData&, const std::optional<fastchess::Stats>&) override {}
+    void onStartFailure(const StartFailureEvent& event) override {
+        {
+            std::lock_guard<std::mutex> lock(mutex);
+            kinds.push_back(event.kind);
+        }
+        if (hook) hook(event);
+    }
+    [[nodiscard]] std::size_t count(StartFailureEvent::Kind kind) {
+        std::lock_guard<std::mutex> lock(mutex);
+        return static_cast<std::size_t>(std::count(kinds.begin(), kinds.end(), kind));
+    }
+
+    std::mutex mutex;
+    std::vector<StartFailureEvent::Kind> kinds;
+    std::function<void(const StartFailureEvent&)> hook;
+};
 
 std::size_t countGames(const fs::path& pgn) {
     std::ifstream in(pgn, std::ios::binary);
@@ -343,23 +365,24 @@ TEST_CASE("runner: a pause holds the next try of an engine that failed to start,
     auto state                   = TournamentState::create(dir / "t", s);
 
     // Paused while the engine waits for its next try: nothing is played during the pause, the try comes after it.
-    // The waiting game does not count as running meanwhile (a paused tournament shows no game finishing), and
-    // counts again once resumed.
+    // The game waiting for the try is set aside, so it does not count as running meanwhile (a paused tournament
+    // shows no game finishing); claimed again for the try, once resumed, it counts again.
     constexpr auto held = 3s;
     std::atomic_int running_paused{-1}, running_resumed{-1};
     std::thread pauser([&] {
         auto& gate             = fastchess::observer::PauseGate::instance();
-        const auto waitRunning = [&](int n) {
-            for (int i = 0; i < 200 && gate.running() != n; ++i) std::this_thread::sleep_for(10ms);
+        const auto waitRunning = [&](int n, std::chrono::milliseconds within) {
+            for (auto waited = 0ms; waited < within && gate.running() != n; waited += 10ms)
+                std::this_thread::sleep_for(10ms);
             return gate.running();
         };
         while (!fs::exists(started)) std::this_thread::sleep_for(10ms);
         gate.setPaused(true);
-        running_paused = waitRunning(0);
+        running_paused = waitRunning(0, 2s);
         std::this_thread::sleep_for(held);
         CHECK(state->results().empty());
         gate.setPaused(false);
-        running_resumed = waitRunning(1);
+        running_resumed = waitRunning(1, StartFailures::RETRY_PAUSE + 5s);
     });
     const auto begun = std::chrono::steady_clock::now();
     const auto error = play(*state);
@@ -491,6 +514,142 @@ TEST_CASE("runner: a round robin of more engines than games at a time starts eac
     std::size_t lines = 0;
     for (std::string line; std::getline(in, line);) ++lines;
     CHECK(lines == 7u);
+}
+
+TEST_CASE("runner: an engine that cannot start has its games set aside; the tournament stops once only they are left") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-set-aside";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    auto s                       = spec(Format::RoundRobin, 3, 1);
+    s.conditions.concurrency     = 2;
+    s.participants[2].engine.cmd = (dir / "no-such-engine").string();
+    auto state                   = TournamentState::create(dir / "t", s);
+    state->startFailures().setWaits(200ms, 1h);
+
+    StartEvents events;
+    const auto begun = std::chrono::steady_clock::now();
+    const auto error = play(*state, 0, &events);
+
+    CHECK(error.empty());
+    CHECK_FALSE(fastchess::atomic::abnormal_termination);
+    CHECK_FALSE(state->finished());
+    CHECK(state->startFailures().stalled());
+    // The games of the two others are played, those of the third set aside.
+    REQUIRE(state->results().size() == 2u);
+    for (const auto& r : state->results()) CHECK((r.white != 2 && r.black != 2));
+    // Its tries, then one last try once nothing else was left: an hour was not waited.
+    CHECK(std::chrono::steady_clock::now() - begun < 30s);
+    const auto engines = state->startFailures().engines();
+    REQUIRE(engines.size() == 1u);
+    CHECK(engines[0].participant == 2);
+    CHECK(engines[0].name == "random2");
+    CHECK(engines[0].failed);
+    CHECK(engines[0].tries == StartFailures::TRIES + 1);
+    CHECK_FALSE(engines[0].error.empty());
+    // Its engine log names the program and the error.
+    REQUIRE(fs::is_regular_file(engines[0].log));
+    const auto log = readFile(engines[0].log);
+    CHECK(log.find("start of random2") != std::string::npos);
+    CHECK(log.find("no-such-engine") != std::string::npos);
+    CHECK(log.find("Error: " + engines[0].error) != std::string::npos);
+
+    using Kind = StartFailureEvent::Kind;
+    CHECK(events.count(Kind::Retry) == StartFailures::TRIES - 1);
+    CHECK(events.count(Kind::SetAside) == 1u);
+    CHECK(events.count(Kind::StillFailing) == 1u);
+    CHECK(events.count(Kind::Stalled) == 1u);
+    CHECK(events.kinds.back() == Kind::Stalled);
+    // No pair waits for a game of it: "stop when idle" would not wait for them.
+    CHECK(fastchess::observer::PauseGate::instance().openPairs() == 0u);
+
+    // A resume tries it anew.
+    state.reset();
+    state = TournamentState::open(dir / "t");
+    CHECK(state->startFailures().empty());
+}
+
+TEST_CASE("runner: an engine set aside is tried again when asked, and its games are played once it starts") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-back";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    // Exits at once while `broken` exists, then is the random mover.
+    const auto broken = dir / "broken";
+    const auto script = dir / "flaky.sh";
+    {
+        std::ofstream out(script);
+        out << "#!/bin/sh\nif [ -e \"" << broken.string() << "\" ]; then exit 1; fi\nexec \"" << randomMover()
+            << "\"\n";
+    }
+    fs::permissions(script, fs::perms::owner_all);
+    std::ofstream(broken).put('x');
+
+    auto s                       = spec(Format::RoundRobin, 3, 1);
+    s.conditions.concurrency     = 2;
+    s.participants[2].engine.cmd = script.string();
+    auto state                   = TournamentState::create(dir / "t", s);
+    state->startFailures().setWaits(100ms, 1h);
+
+    // Repaired as soon as it is set aside, then tried again at once, as with Try again.
+    StartEvents events;
+    events.hook = [&](const StartFailureEvent& event) {
+        if (event.kind != StartFailureEvent::Kind::SetAside) return;
+        fs::remove(broken);
+        CHECK(state->startFailures().tryNow(2, StartFailures::Clock::now()));
+    };
+    const auto error = play(*state, 0, &events);
+
+    CHECK(error.empty());
+    CHECK(state->finished());
+    CHECK(state->results().size() == 6u);
+    CHECK(state->startFailures().empty());
+    CHECK_FALSE(state->startFailures().stalled());
+    CHECK(events.count(StartFailureEvent::Kind::SetAside) == 1u);
+    CHECK(events.count(StartFailureEvent::Kind::Started) == 1u);
+}
+
+TEST_CASE("runner: set to, an engine that cannot start stops the tournament once its tries are used up") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-stop-at-once";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    auto s                       = spec(Format::RoundRobin, 3, 1);
+    s.conditions.concurrency     = 1;
+    s.stop_on_start_failure      = true;
+    s.participants[2].engine.cmd = (dir / "no-such-engine").string();
+    auto state                   = TournamentState::create(dir / "t", s);
+    state->startFailures().setWaits(100ms, 1h);
+
+    StartEvents events;
+    const auto error = play(*state, 0, &events);
+
+    CHECK(error.find("random2 cannot start: ") == 0);
+    CHECK(fastchess::atomic::abnormal_termination);
+    CHECK_FALSE(state->finished());
+    CHECK_FALSE(state->startFailures().stalled());
+    CHECK(events.count(StartFailureEvent::Kind::Retry) == StartFailures::TRIES - 1);
+    CHECK(events.count(StartFailureEvent::Kind::Stopped) == 1u);
+    CHECK(events.count(StartFailureEvent::Kind::SetAside) == 0u);
+
+    // Kept in tournament.json.
+    state.reset();
+    CHECK(TournamentState::open(dir / "t")->spec().stop_on_start_failure);
 }
 #endif
 

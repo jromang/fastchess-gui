@@ -16,6 +16,7 @@
 
 #include <chess.hpp>
 
+#include <types/engine_config.hpp>
 #include <types/match_data.hpp>
 
 namespace fcg::tour {
@@ -44,7 +45,14 @@ class EngineLog {
     // were dropped, a line tells how many.
     [[nodiscard]] std::string text(uint64_t game_number, const fastchess::MatchData& data) const;
 
+    // The log of a try to start `engine` that failed with `error`: a header naming the engine, its program and the
+    // error, then the lines exchanged with the engines of the game until then (what the engine wrote on its error
+    // output before it ended, often the reason).
+    [[nodiscard]] std::string startText(const fastchess::EngineConfiguration& engine, const std::string& error) const;
+
    private:
+    [[nodiscard]] std::string lines() const;  // the lines, after the header
+
     // A line, numbered in the order the lines came: the heads and the tail are merged back in that order, and a gap
     // in the numbers is lines dropped.
     struct Line {
@@ -66,5 +74,10 @@ class EngineLog {
 
 // logs/game-N.log in the tournament folder, N being the game number shown to the user (1-based).
 [[nodiscard]] std::filesystem::path engineLogPath(const std::filesystem::path& tournament_dir, uint64_t game_number);
+
+// logs/start-<engine>.log in the tournament folder: the log of the last failed try to start a participant's engine
+// (`name`, made fit for a file name).
+[[nodiscard]] std::filesystem::path engineStartLogPath(const std::filesystem::path& tournament_dir,
+                                                       const std::string& name);
 
 }  // namespace fcg::tour

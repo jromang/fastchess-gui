@@ -10,6 +10,10 @@
 // the engine log of the games that end badly (see engine_log.hpp), then forwards each callback to `downstream`
 // (the GUI), which may be null.
 //
+// An engine that fails to start does not stop the tournament (unless spec().stop_on_start_failure): its game is given
+// up at once, and the runner tries the engine again itself while its other games are set aside (start_failures.hpp).
+// It learns which engine failed, and why, from the line fastchess logs about it, on the game's thread.
+//
 // The caller sets fastchess' global configuration first (config::TournamentConfig with an empty opening file,
 // pgn file and config name; config::EngineConfigs with the participants), as for any fastchess tournament.
 
@@ -27,6 +31,21 @@
 
 namespace fcg::tour {
 
+// What the runner tells about the engines that cannot start.
+struct StartFailureEvent {
+    enum class Kind {
+        Retry,         // a try failed; the engine is tried again in StartFailures::RETRY_PAUSE
+        SetAside,      // its tries are used up: its games are set aside, the others go on
+        StillFailing,  // another try of an engine set aside failed
+        Stopped,       // its tries are used up and the tournament stops (spec().stop_on_start_failure)
+        Started,       // it started after failing: its games are played again
+        Stalled,       // no game is left to play without the engines set aside: the tournament stops
+    };
+    Kind kind = Kind::Retry;
+    // The engine, as StartFailures had it after the event (Started: before); Stalled: every engine set aside.
+    std::vector<StartFailures::Engine> engines;
+};
+
 // Told about every game the runner records, on the tournament thread that played it.
 class RecordListener {
    public:
@@ -36,6 +55,10 @@ class RecordListener {
     // point of view of the lower id, after this encounter.
     virtual void onRecorded(const GameResult& result, const fastchess::MatchData& data,
                             const std::optional<fastchess::Stats>& pair) = 0;
+
+    // An engine failed to start, or started again (on a tournament thread), or the tournament stops for want of
+    // engines that start (on the thread running Runner::start()).
+    virtual void onStartFailure(const StartFailureEvent& /*event*/) {}
 };
 
 class Runner final : public fastchess::BaseTournament, public fastchess::observer::GameObserver {
@@ -43,16 +66,19 @@ class Runner final : public fastchess::BaseTournament, public fastchess::observe
     Runner(TournamentState& state, fastchess::observer::GameObserver* downstream, RecordListener* listener);
     ~Runner() override;
 
-    // Plays until the tournament is finished or fastchess::atomic::stop is set, and returns once every game
-    // thread has ended. Errors stop the tournament and are reported by error().
+    // Plays until the tournament is finished or fastchess::atomic::stop is set, or until no game is left to play
+    // without the engines that cannot start (stalled()), and returns once every game thread has ended. Errors stop
+    // the tournament and are reported by error().
     void start() override;
 
     [[nodiscard]] std::string error() const;
+    [[nodiscard]] bool stalled() const noexcept { return state_.startFailures().stalled(); }
 
    protected:
     void startNext() override;
     // While an engine fails to start: the game is still to be played, and the tournament is not stopping once the
-    // running games are over. It is otherwise given up, to be played again later if needed.
+    // running games are over. It is otherwise given up, to be played again later if needed. Once fastchess said which
+    // engine failed, it is given up too: the runner tries the engine again itself (startFailed()).
     [[nodiscard]] bool gameWanted(std::size_t game_id) const override;
     // While the tournament is paused: the next try of the engine waits for the resume.
     [[nodiscard]] bool gameHeld(std::size_t game_id) const override;
@@ -60,6 +86,13 @@ class Runner final : public fastchess::BaseTournament, public fastchess::observe
    private:
     void play(const GameTask& task);
     void fail(const std::string& message);
+    // An engine of `task` failed to start (fastchess logged `failure`): counted, its engine log written, reported.
+    void startFailed(const GameTask& task, const StartFailureLine& failure);
+    // Nothing is running and nothing can be claimed but games of engines that cannot start, whose tries are over (a
+    // last one first): the tournament stops.
+    bool stall();
+    void report(StartFailureEvent::Kind kind, std::vector<StartFailures::Engine> engines);
+    void report(StartFailureEvent::Kind kind, const std::optional<StartFailures::Engine>& engine);
     void closeSettledPairs();  // forgets the pause gate's pairs with no game left to start
     EngineLog& log(int slot);
     void writeLog(int slot, uint64_t game_number, const fastchess::MatchData& data);

@@ -101,6 +101,7 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
          {"participants", s.participants},
          {"book", s.book}};
     if (s.log_every_game) j["log_every_game"] = true;
+    if (s.stop_on_start_failure) j["stop_on_start_failure"] = true;
     if (s.opening_per_round) j["opening_per_round"] = true;
     if (!s.pgn_out.empty()) {
         j["pgn_out"]           = s.pgn_out;
@@ -127,10 +128,11 @@ void from_json(const nlohmann::json& j, TournamentSpec& s) {
     j.at("conditions").get_to(s.conditions);
     j.at("participants").get_to(s.participants);
     if (j.contains("book")) j.at("book").get_to(s.book);
-    s.log_every_game    = j.value("log_every_game", false);
-    s.opening_per_round = j.value("opening_per_round", false);
-    s.pgn_out           = j.value("pgn_out", std::string{});
-    s.pgn_out_chessbase = j.value("pgn_out_chessbase", false);
+    s.log_every_game        = j.value("log_every_game", false);
+    s.stop_on_start_failure = j.value("stop_on_start_failure", false);
+    s.opening_per_round     = j.value("opening_per_round", false);
+    s.pgn_out               = j.value("pgn_out", std::string{});
+    s.pgn_out_chessbase     = j.value("pgn_out_chessbase", false);
     s.forced_options.clear();
     if (const auto it = j.find("forced_options"); it != j.end() && it->is_object()) {
         for (const auto& [name, value] : it->items()) s.forced_options.emplace_back(name, value.get<std::string>());

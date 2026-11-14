@@ -804,6 +804,10 @@ void TournamentState::applyEdit(const Edit& edit) {
 
     applyEvent(event);
     keepOwnBooks();  // the newcomer's, prepared before the change
+    // A participant withdrawn or replaced is no longer waited for, whether its engine starts or not.
+    for (const auto& p : spec_.participants) {
+        if (!p.active) start_failures_.forget(p.id);
+    }
     // The games of a withdrawn participant may have been the last ones to play. A Swiss or a knockout would pair
     // its next round first, which only a game's end does.
     if (!pairedAsItGoes(spec_.format)) finishIfComplete();
@@ -931,25 +935,52 @@ std::optional<GameTask> TournamentState::claimNext() {
     std::lock_guard<std::mutex> lock(mutex_);
     if (finished_ || read_only_) return std::nullopt;
 
-    while (!open_.empty()) {
-        const auto [encounter, game] = open_.front();
-        open_.pop_front();
-        const auto n = uint64_t{encounter} * 2 + game;
-        if (done(encounter, game) || dropped_.count(n) || running_.count(n)) continue;
+    // The games of the participants whose engine cannot start wait for its next try.
+    const auto aside_ids = start_failures_.setAside(StartFailures::Clock::now());
+    const auto aside     = [&](uint32_t encounter) {
+        if (aside_ids.empty()) return false;
+        const auto e = schedule_.at(encounter);
+        return e && (aside_ids.count(e->first) || aside_ids.count(e->second));
+    };
+    const auto claim = [&](uint32_t encounter, int game) {
         auto task = makeTask(encounter, game);
-        running_.insert(n);
+        running_.insert(task.number());
         ++claims_;
+        // An engine due for its next try gets it with this game.
+        start_failures_.claimed(task.encounter.first, task.number());
+        start_failures_.claimed(task.encounter.second, task.number());
         return task;
+    };
+
+    for (auto it = open_.begin(); it != open_.end();) {
+        const auto [encounter, game] = *it;
+        const auto n                 = uint64_t{encounter} * 2 + game;
+        if (done(encounter, game) || dropped_.count(n) || running_.count(n)) {
+            it = open_.erase(it);
+        } else if (aside(encounter)) {
+            ++it;
+        } else {
+            open_.erase(it);
+            return claim(encounter, game);
+        }
     }
 
-    if (!schedule_.at(next_encounter_)) return std::nullopt;
+    // The next encounter of the schedule whose participants can play. Those passed over count as started: an edit
+    // leaves them in place (it only changes encounters never started), and their games come first once they can be
+    // played. A match without a game limit plays the same pair forever: it is not looked through to its end.
+    auto next = next_encounter_;
+    for (; schedule_.at(next) && aside(next); ++next) {
+        if (!schedule_.size() && next - next_encounter_ > 1000) return std::nullopt;
+    }
+    if (!schedule_.at(next)) return std::nullopt;
+    for (auto passed = next_encounter_; passed < next; ++passed) {
+        open_.emplace_back(passed, 0);
+        open_.emplace_back(passed, 1);
+    }
 
-    const auto encounter = next_encounter_++;
-    open_.emplace_front(encounter, 1);  // its second game comes next
-    auto task = makeTask(encounter, 0);
-    running_.insert(task.number());
-    ++claims_;
-    return task;
+    next_encounter_ = next + 1;
+    open_.emplace_front(next, 1);  // its second game comes next
+    return claim(next, 0);
 }
 
 void TournamentState::release(const GameTask& task) {
@@ -959,6 +990,16 @@ void TournamentState::release(const GameTask& task) {
     if (!done(task.encounter.index, task.game) && !dropped_.count(task.number())) {
         open_.emplace_front(task.encounter.index, task.game);
     }
+    start_failures_.released(task.number());
+}
+
+bool TournamentState::begun(uint32_t encounter) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (int g = 0; g < 2; ++g) {
+        const auto n = uint64_t{encounter} * 2 + g;
+        if (done_.count(n) || running_.count(n)) return true;
+    }
+    return false;
 }
 
 Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchData& data) {
