@@ -33,6 +33,9 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
     lichess_token_saved_ = lichess_token_;
     if (!books_.empty()) selected_book_ = 0;
     setup_ = storage_.loadSetup();
+    profiles_.fromJson(storage_.loadProfiles());
+    // A setup saved before there were profiles: its sections get those they play like.
+    recognizeProfiles(setup_, profiles_);
     i18n::setLanguage(i18n::resolve(setup_.language));
 
     if (!setup_.concurrency_auto) setup_.concurrency = std::clamp(setup_.concurrency, 1, topology_.logical);

@@ -180,6 +180,9 @@ struct MatchSetup {
 
     TournamentFormat format = TournamentFormat::Match;
     std::string name;  // tournament name, empty = made from the engines
+    // The profile each section came from (profiles.hpp), by section key ("time"...); a section changed since plays
+    // its own values. Saved only when there are some.
+    std::map<std::string, std::string> profiles;
 
     std::string engine_a;  // match: the engine under test, statistics are from its point of view
     std::string engine_b;  // match: the reference
@@ -334,6 +337,7 @@ template <typename BasicJsonType,
 void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) {
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_MATCH_SETUP_FIELDS_1))
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_MATCH_SETUP_FIELDS_2))
+    if (!nlohmann_json_t.profiles.empty()) nlohmann_json_j["profiles"] = nlohmann_json_t.profiles;
 }
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
@@ -341,6 +345,7 @@ void from_json(const BasicJsonType& nlohmann_json_j, MatchSetup& nlohmann_json_t
     const MatchSetup nlohmann_json_default_obj{};
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_MATCH_SETUP_FIELDS_1))
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_MATCH_SETUP_FIELDS_2))
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(profiles)
 }
 #undef FCG_MATCH_SETUP_FIELDS_1
 #undef FCG_MATCH_SETUP_FIELDS_2

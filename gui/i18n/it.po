@@ -70,6 +70,9 @@ msgstr "(due volte: dagli un altro libro)"
 msgid "(withdrawn)"
 msgstr "(ritirato)"
 
+msgid "+ {} per move"
+msgstr "+ {} per mossa"
+
 msgid ", CPU affinity"
 msgstr ", affinità CPU"
 
@@ -107,6 +110,9 @@ msgstr "1 sconfitta per tempo"
 
 msgid "10 games at 10+0.1 from 5 positions, to see before a long tournament whether it loses on time, crashes, plays an illegal move or uses its clock badly."
 msgstr "10 partite a 10+0.1 da 5 posizioni, per vedere prima di un lungo torneo se perde per tempo, va in crash, gioca una mossa illegale o gestisce male l'orologio."
+
+msgid "200k nodes"
+msgstr "200k nodi"
 
 msgid "50 moves {}/100"
 msgstr "50 mosse {}/100"
@@ -514,6 +520,12 @@ msgstr "Verifica in corso…"
 msgid "Chess960"
 msgstr "Chess960"
 
+msgid "Chess960, the 960 positions"
+msgstr "Chess960, le 960 posizioni"
+
+msgid "Chess960: the 960 starting positions"
+msgstr "Chess960: le 960 posizioni iniziali"
+
 msgid "Chess960: the 960 starting positions, in random order"
 msgstr "Chess960: le 960 posizioni iniziali, in ordine casuale"
 
@@ -727,6 +739,9 @@ msgstr "Pezzi EGTB"
 msgid "EPD suites"
 msgstr "Suite EPD"
 
+msgid "Each engine's own"
+msgstr "Quelle di ogni motore"
+
 msgid "Each new game of the gauntlet is shown from the side of its seed, the engine that meets all the others. Flip still turns the board over."
 msgstr "Ogni nuova partita del gauntlet è mostrata dal lato del suo motore testato, quello che affronta tutti gli altri. Ruota capovolge comunque la scacchiera."
 
@@ -792,6 +807,9 @@ msgstr "Liste di motori lette: cutechess e Banksia (engines.json), ChessGUI (Chs
 
 msgid "Engine log"
 msgstr "Log del motore"
+
+msgid "Engine settings"
+msgstr "Impostazioni dei motori"
 
 msgid "Engine to add"
 msgstr "Motore da aggiungere"
@@ -1081,6 +1099,15 @@ msgstr "Hash"
 msgid "Hash (MB)"
 msgstr "Hash (MB)"
 
+msgid "Hash 16 MB, 1 thread"
+msgstr "Hash 16 MB, 1 thread"
+
+msgid "Hash 256 MB, 1 thread"
+msgstr "Hash 256 MB, 1 thread"
+
+msgid "Hash 64 MB, 1 thread"
+msgstr "Hash 64 MB, 1 thread"
+
 msgid "Hash tables: up to {} in {} engine process"
 msgid_plural "Hash tables: up to {} in {} engine processes"
 msgstr[0] "Tabelle hash: fino a {} in {} processo motore"
@@ -1331,6 +1358,9 @@ msgstr "Markdown…"
 
 msgid "Match"
 msgstr "Match"
+
+msgid "Match, 1000 games"
+msgstr "Match, 1000 partite"
 
 msgid "Matches in a bracket, the winner goes through; tiebreak pairs of games when a match is tied. The list order is the seeding."
 msgstr "Match in un tabellone, il vincitore passa il turno; coppie di spareggio quando un match finisce in parità. L'ordine della lista definisce le teste di serie."
@@ -2033,6 +2063,12 @@ msgstr "SPRT finito: H0 accettata, {} non è più forte"
 msgid "SPRT finished: H1 accepted, {} is stronger"
 msgstr "SPRT finito: H1 accettata, {} è più forte"
 
+msgid "SPRT gainer [0, 3]"
+msgstr "SPRT miglioramento [0, 3]"
+
+msgid "SPRT non-regression [-5, 0]"
+msgstr "SPRT non regressione [-5, 0]"
+
 msgid "Same number of games"
 msgstr "Stesso numero di partite"
 
@@ -2143,8 +2179,14 @@ msgstr "Soluzione"
 msgid "Speed"
 msgstr "Velocità"
 
+msgid "Standard"
+msgstr "Standard"
+
 msgid "Standard deviation"
 msgstr "Deviazione standard"
+
+msgid "Standard with tablebases"
+msgstr "Standard con tablebase"
 
 msgid "Standings"
 msgstr "Classifica"
@@ -2245,6 +2287,9 @@ msgstr "Scambia A e B"
 msgid "Swiss"
 msgstr "Sistema svizzero"
 
+msgid "Swiss, 9 rounds"
+msgstr "Sistema svizzero, 9 turni"
+
 msgid "Swiss, {} engines"
 msgstr "Sistema svizzero, {} motori"
 
@@ -2260,8 +2305,16 @@ msgstr "Tablebase Syzygy per i motori: nessuna cartella indicata"
 msgid "Syzygy tablebases for the engines: {}"
 msgstr "Tablebase Syzygy per i motori: {}"
 
+msgid "TB"
+msgstr "TB"
+
 msgid "TB hits"
 msgstr "Accessi alle tablebase"
+
+msgid "TB {} piece"
+msgid_plural "TB {} pieces"
+msgstr[0] "TB {} pezzo"
+msgstr[1] "TB {} pezzi"
 
 msgid "TCP port"
 msgstr "Porta TCP"
@@ -2820,6 +2873,14 @@ msgstr "tutto"
 msgid "and {} more"
 msgstr "e altri {}"
 
+msgid "at most {} game"
+msgid_plural "at most {} games"
+msgstr[0] "al massimo {} partita"
+msgstr[1] "al massimo {} partite"
+
+msgid "at most {} moves"
+msgstr "al massimo {} mosse"
+
 msgid "automatic"
 msgstr "automatico"
 
@@ -2844,6 +2905,14 @@ msgstr "tempo di decisione"
 msgid "depth {}"
 msgstr "profondità {}"
 
+msgid "depth {} ply"
+msgid_plural "depth {} plies"
+msgstr[0] "profondità {} semimossa"
+msgstr[1] "profondità {} semimosse"
+
+msgid "draw {}/{}/{} cp"
+msgstr "patta {}/{}/{} cp"
+
 msgid "draws"
 msgstr "patte"
 
@@ -2855,6 +2924,9 @@ msgstr "duplicato"
 
 msgid "duplicates"
 msgstr "duplicati"
+
+msgid "each engine's own settings"
+msgstr "le impostazioni di ogni motore"
 
 msgid "elo1 must be larger than elo0."
 msgstr "elo1 deve essere maggiore di elo0."
@@ -2870,6 +2942,9 @@ msgstr "filtra"
 
 msgid "from a Polyglot book"
 msgstr "da un libro Polyglot"
+
+msgid "from opening {}"
+msgstr "dall'apertura {}"
 
 msgid "game already over"
 msgstr "partita già finita"
@@ -2888,6 +2963,9 @@ msgstr "posizione illegale"
 
 msgid "illegal positions"
 msgstr "posizioni illegali"
+
+msgid "in order"
+msgstr "in ordine"
 
 msgid "initial position"
 msgstr "posizione iniziale"
@@ -2913,11 +2991,17 @@ msgstr "sconfitta per tempo o crash"
 msgid "losses"
 msgstr "sconfitte"
 
+msgid "margin {} ms"
+msgstr "margine {} ms"
+
 msgid "moves"
 msgstr "mosse"
 
 msgid "nElo of A (95% CI)"
 msgstr "nElo di A (IC 95%)"
+
+msgid "no book: the initial position"
+msgstr "senza libro: la posizione iniziale"
 
 msgid "no engine has a SyzygyPath"
 msgstr "nessun motore ha un SyzygyPath"
@@ -2928,11 +3012,17 @@ msgstr "nodi"
 msgid "none"
 msgstr "nessuno"
 
+msgid "none: every game is played to its end"
+msgstr "nessuna: ogni partita è giocata fino alla fine"
+
 msgid "none: every game starts from the initial position"
 msgstr "nessuno: ogni partita parte dalla posizione iniziale"
 
 msgid "normalized: bounds in nElo (fishtest, OpenBench). logistic: classic Elo. bayesian: BayesElo, without pentanomial."
 msgstr "normalized: limiti in nElo (fishtest, OpenBench). logistic: Elo classico. bayesian: BayesElo, senza pentanomiale."
+
+msgid "one opening per round"
+msgstr "un'apertura per turno"
 
 msgid "opponents within ±"
 msgstr "avversari entro ±"
@@ -2945,14 +3035,29 @@ msgid_plural "own book {}, {} plies"
 msgstr[0] "libro proprio {}, {} semimossa"
 msgstr[1] "libro proprio {}, {} semimosse"
 
+msgid "own books off"
+msgstr "libri propri disattivati"
+
 msgid "pairs"
 msgstr "coppie"
+
+msgid "random"
+msgstr "casuale"
 
 msgid "reading the tournaments…"
 msgstr "lettura dei tornei…"
 
 msgid "replay requested"
 msgstr "rigioco richiesto"
+
+msgid "resign {}/{} cp"
+msgstr "abbandono {}/{} cp"
+
+msgid "resign {}/{} cp, both engines"
+msgstr "abbandono {}/{} cp, entrambi i motori"
+
+msgid "seed {}"
+msgstr "seme {}"
 
 msgid "send at startup"
 msgstr "invia all'avvio"
@@ -3038,6 +3143,9 @@ msgstr "{}  ({} aperture)"
 msgid "{} (preparing the book: {} %)"
 msgstr "{} (preparazione del libro: {} %)"
 
+msgid "{} + {} per move"
+msgstr "{} + {} per mossa"
+
 msgid "{} / {}"
 msgstr "{} / {}"
 
@@ -3080,6 +3188,11 @@ msgstr[1] "{} crash o blocchi"
 
 msgid "{} crashes"
 msgstr "{} crash"
+
+msgid "{} cycle of 2 games"
+msgid_plural "{} cycles of 2 games"
+msgstr[0] "{} ciclo di 2 partite"
+msgstr[1] "{} cicli di 2 partite"
 
 msgid "{} did not show an RSA host key"
 msgstr "{} non ha presentato una chiave host RSA"
@@ -3169,6 +3282,11 @@ msgid_plural "{} game pairs"
 msgstr[0] "{} coppia di partite"
 msgstr[1] "{} coppie di partite"
 
+msgid "{} game pair per match"
+msgid_plural "{} game pairs per match"
+msgstr[0] "{} coppia di partite per match"
+msgstr[1] "{} coppie di partite per match"
+
 msgid "{} game per engine"
 msgid_plural "{} games per engine"
 msgstr[0] "{} partita per motore"
@@ -3192,6 +3310,9 @@ msgstr "{} partite · {}"
 
 msgid "{} games, {} tournaments"
 msgstr "{} partite, {} tornei"
+
+msgid "{} h"
+msgstr "{} h"
 
 msgid "{} h {:02} min"
 msgstr "{} h {:02} min"
@@ -3243,8 +3364,14 @@ msgstr[1] "{} match di una versione precedente non sono ancora nella lista."
 msgid "{} matches × {} pairs of games, plus tiebreaks"
 msgstr "{} match × {} coppie di partite, più gli spareggi"
 
+msgid "{} min"
+msgstr "{} min"
+
 msgid "{} min {:02} s"
 msgstr "{} min {:02} s"
+
+msgid "{} moves in {}, repeated"
+msgstr "{} mosse in {}, ripetuta"
 
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr "{} mosse · profondità {:.1f} · {:.0f} ms per mossa{}"
@@ -3253,6 +3380,11 @@ msgid "{} new engine found. Untick those to leave out."
 msgid_plural "{} new engines found. Untick those to leave out."
 msgstr[0] "{} nuovo motore trovato. Togli la spunta a quelli da escludere."
 msgstr[1] "{} nuovi motori trovati. Togli la spunta a quelli da escludere."
+
+msgid "{} node per move"
+msgid_plural "{} nodes per move"
+msgstr[0] "{} nodo per mossa"
+msgstr[1] "{} nodi per mossa"
 
 msgid "{} nodes"
 msgstr "{} nodi"
@@ -3296,6 +3428,12 @@ msgstr[1] "{} coppie senza la loro partita a colori invertiti: {}"
 msgid "{} pairings × 2 games × {} cycles"
 msgstr "{} abbinamenti × 2 partite × {} cicli"
 
+msgid "{} per game"
+msgstr "{} per partita"
+
+msgid "{} per move"
+msgstr "{} per mossa"
+
 msgid "{} pieces"
 msgstr "{} pezzi"
 
@@ -3325,6 +3463,11 @@ msgstr[1] "{} giocatori possono essere due motori della libreria: indica quale."
 msgid "{} plays with {} % of the time"
 msgstr "{} gioca con il {} % del tempo"
 
+msgid "{} ply"
+msgid_plural "{} plies"
+msgstr[0] "{} semimossa"
+msgstr[1] "{} semimosse"
+
 msgid "{} position"
 msgid_plural "{} positions"
 msgstr[0] "{} posizione"
@@ -3343,6 +3486,11 @@ msgstr[1] "{} Elo di riferimento impostati dalla lista Elo."
 msgid "{} refused to forward its port {}"
 msgstr "{} ha rifiutato di inoltrare la sua porta {}"
 
+msgid "{} round"
+msgid_plural "{} rounds"
+msgstr[0] "{} turno"
+msgstr[1] "{} turni"
+
 msgid "{} rounds × {} pairings × 2 games"
 msgstr "{} turni × {} abbinamenti × 2 partite"
 
@@ -3354,6 +3502,11 @@ msgstr "{} s/mossa"
 
 msgid "{} searches to depth {}"
 msgstr "{} cerca fino alla profondità {}"
+
+msgid "{} seed"
+msgid_plural "{} seeds"
+msgstr[0] "{} testa di serie"
+msgstr[1] "{} teste di serie"
 
 msgid "{} selected"
 msgid_plural "{} selected"
@@ -3367,6 +3520,11 @@ msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"
 msgstr[0] "{} ambiguo"
 msgstr[1] "{} ambigui"
+
+msgid "{} thread"
+msgid_plural "{} threads"
+msgstr[0] "{} thread"
+msgstr[1] "{} thread"
 
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"

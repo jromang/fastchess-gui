@@ -71,6 +71,9 @@ msgstr "(дважды: дайте ему другую книгу)"
 msgid "(withdrawn)"
 msgstr "(снят)"
 
+msgid "+ {} per move"
+msgstr "+ {} на ход"
+
 msgid ", CPU affinity"
 msgstr ", привязка к CPU"
 
@@ -109,6 +112,9 @@ msgstr "1 поражение по времени"
 
 msgid "10 games at 10+0.1 from 5 positions, to see before a long tournament whether it loses on time, crashes, plays an illegal move or uses its clock badly."
 msgstr "10 партий с контролем 10+0.1 из 5 позиций, чтобы перед долгим турниром проверить, не проигрывает ли движок по времени, не вылетает ли, не делает ли нелегальных ходов и хорошо ли распоряжается временем."
+
+msgid "200k nodes"
+msgstr "200k узлов"
 
 msgid "50 moves {}/100"
 msgstr "50 ходов {}/100"
@@ -518,6 +524,12 @@ msgstr "Проверка…"
 msgid "Chess960"
 msgstr "Chess960"
 
+msgid "Chess960, the 960 positions"
+msgstr "Шахматы-960, все 960 позиций"
+
+msgid "Chess960: the 960 starting positions"
+msgstr "Шахматы-960: 960 начальных позиций"
+
 msgid "Chess960: the 960 starting positions, in random order"
 msgstr "Chess960: 960 начальных позиций в случайном порядке"
 
@@ -731,6 +743,9 @@ msgstr "Фигур в EGTB"
 msgid "EPD suites"
 msgstr "Наборы EPD"
 
+msgid "Each engine's own"
+msgstr "Свои у каждого движка"
+
 msgid "Each new game of the gauntlet is shown from the side of its seed, the engine that meets all the others. Flip still turns the board over."
 msgstr "Каждая новая партия гаунтлета показывается со стороны тестируемого движка, который играет со всеми остальными. «Перевернуть» по-прежнему переворачивает доску."
 
@@ -796,6 +811,9 @@ msgstr "Читаемые списки движков: cutechess и Banksia (engi
 
 msgid "Engine log"
 msgstr "Журнал движка"
+
+msgid "Engine settings"
+msgstr "Настройки движков"
 
 msgid "Engine to add"
 msgstr "Добавляемый движок"
@@ -1085,6 +1103,15 @@ msgstr "Hash"
 msgid "Hash (MB)"
 msgstr "Hash (МБ)"
 
+msgid "Hash 16 MB, 1 thread"
+msgstr "Хеш 16 МБ, 1 поток"
+
+msgid "Hash 256 MB, 1 thread"
+msgstr "Хеш 256 МБ, 1 поток"
+
+msgid "Hash 64 MB, 1 thread"
+msgstr "Хеш 64 МБ, 1 поток"
+
 msgid "Hash tables: up to {} in {} engine process"
 msgid_plural "Hash tables: up to {} in {} engine processes"
 msgstr[0] "Хеш-таблицы: до {} в {} процессе движка"
@@ -1336,6 +1363,9 @@ msgstr "Markdown…"
 
 msgid "Match"
 msgstr "Матч"
+
+msgid "Match, 1000 games"
+msgstr "Матч, 1000 партий"
 
 msgid "Matches in a bracket, the winner goes through; tiebreak pairs of games when a match is tied. The list order is the seeding."
 msgstr "Матчи по сетке, победитель проходит дальше; при равном счёте — тай-брейк из пар партий. Порядок списка задаёт посев."
@@ -2042,6 +2072,12 @@ msgstr "SPRT завершён: H0 принята, {} не сильнее"
 msgid "SPRT finished: H1 accepted, {} is stronger"
 msgstr "SPRT завершён: H1 принята, {} сильнее"
 
+msgid "SPRT gainer [0, 3]"
+msgstr "SPRT улучшение [0, 3]"
+
+msgid "SPRT non-regression [-5, 0]"
+msgstr "SPRT без регрессии [-5, 0]"
+
 msgid "Same number of games"
 msgstr "Число партий не меняется"
 
@@ -2153,8 +2189,14 @@ msgstr "Решение"
 msgid "Speed"
 msgstr "Скорость"
 
+msgid "Standard"
+msgstr "Стандартное"
+
 msgid "Standard deviation"
 msgstr "Стандартное отклонение"
+
+msgid "Standard with tablebases"
+msgstr "Стандартное с таблицами"
 
 msgid "Standings"
 msgstr "Турнирная таблица"
@@ -2255,6 +2297,9 @@ msgstr "Поменять местами A и B"
 msgid "Swiss"
 msgstr "Швейцарская система"
 
+msgid "Swiss, 9 rounds"
+msgstr "Швейцарская система, 9 туров"
+
 msgid "Swiss, {} engines"
 msgstr "Швейцарская система, движков: {}"
 
@@ -2270,8 +2315,17 @@ msgstr "Таблицы Syzygy для движков: папка не указа�
 msgid "Syzygy tablebases for the engines: {}"
 msgstr "Таблицы Syzygy для движков: {}"
 
+msgid "TB"
+msgstr "TB"
+
 msgid "TB hits"
 msgstr "Обращения к таблицам"
+
+msgid "TB {} piece"
+msgid_plural "TB {} pieces"
+msgstr[0] "TB {} фигура"
+msgstr[1] "TB {} фигуры"
+msgstr[2] "TB {} фигур"
 
 msgid "TCP port"
 msgstr "Порт TCP"
@@ -2831,6 +2885,15 @@ msgstr "вся"
 msgid "and {} more"
 msgstr "и ещё {}"
 
+msgid "at most {} game"
+msgid_plural "at most {} games"
+msgstr[0] "не более {} партии"
+msgstr[1] "не более {} партий"
+msgstr[2] "не более {} партий"
+
+msgid "at most {} moves"
+msgstr "не более {} ходов"
+
 msgid "automatic"
 msgstr "автоматически"
 
@@ -2855,6 +2918,15 @@ msgstr "время решения"
 msgid "depth {}"
 msgstr "глубина {}"
 
+msgid "depth {} ply"
+msgid_plural "depth {} plies"
+msgstr[0] "глубина {} полуход"
+msgstr[1] "глубина {} полухода"
+msgstr[2] "глубина {} полуходов"
+
+msgid "draw {}/{}/{} cp"
+msgstr "ничья {}/{}/{} cp"
+
 msgid "draws"
 msgstr "ничьи"
 
@@ -2866,6 +2938,9 @@ msgstr "дубликат"
 
 msgid "duplicates"
 msgstr "дубликаты"
+
+msgid "each engine's own settings"
+msgstr "собственные настройки каждого движка"
 
 msgid "elo1 must be larger than elo0."
 msgstr "elo1 должен быть больше elo0."
@@ -2881,6 +2956,9 @@ msgstr "фильтр"
 
 msgid "from a Polyglot book"
 msgstr "из книги Polyglot"
+
+msgid "from opening {}"
+msgstr "с дебюта {}"
 
 msgid "game already over"
 msgstr "партия уже окончена"
@@ -2899,6 +2977,9 @@ msgstr "нелегальная позиция"
 
 msgid "illegal positions"
 msgstr "нелегальные позиции"
+
+msgid "in order"
+msgstr "по порядку"
 
 msgid "initial position"
 msgstr "начальная позиция"
@@ -2924,11 +3005,17 @@ msgstr "поражение по времени или вылет"
 msgid "losses"
 msgstr "поражения"
 
+msgid "margin {} ms"
+msgstr "запас {} мс"
+
 msgid "moves"
 msgstr "ходы"
 
 msgid "nElo of A (95% CI)"
 msgstr "nElo A (ДИ 95%)"
+
+msgid "no book: the initial position"
+msgstr "без книги: начальная позиция"
 
 msgid "no engine has a SyzygyPath"
 msgstr "ни у одного движка нет SyzygyPath"
@@ -2939,11 +3026,17 @@ msgstr "узлы"
 msgid "none"
 msgstr "нет"
 
+msgid "none: every game is played to its end"
+msgstr "нет: каждая партия доигрывается до конца"
+
 msgid "none: every game starts from the initial position"
 msgstr "нет: каждая партия начинается с начальной позиции"
 
 msgid "normalized: bounds in nElo (fishtest, OpenBench). logistic: classic Elo. bayesian: BayesElo, without pentanomial."
 msgstr "normalized: границы в nElo (fishtest, OpenBench). logistic: классическая шкала Elo. bayesian: BayesElo, без пентаномиальной модели."
+
+msgid "one opening per round"
+msgstr "один дебют на тур"
 
 msgid "opponents within ±"
 msgstr "соперников в пределах ±"
@@ -2957,14 +3050,29 @@ msgstr[0] "собственная книга {}, {} полуход"
 msgstr[1] "собственная книга {}, {} полухода"
 msgstr[2] "собственная книга {}, {} полуходов"
 
+msgid "own books off"
+msgstr "собственные книги выключены"
+
 msgid "pairs"
 msgstr "пары"
+
+msgid "random"
+msgstr "случайно"
 
 msgid "reading the tournaments…"
 msgstr "чтение турниров…"
 
 msgid "replay requested"
 msgstr "переигровка по запросу"
+
+msgid "resign {}/{} cp"
+msgstr "сдача {}/{} cp"
+
+msgid "resign {}/{} cp, both engines"
+msgstr "сдача {}/{} cp, оба движка"
+
+msgid "seed {}"
+msgstr "зерно {}"
 
 msgid "send at startup"
 msgstr "отправить при запуске"
@@ -3050,6 +3158,9 @@ msgstr "{}  (дебютов: {})"
 msgid "{} (preparing the book: {} %)"
 msgstr "{} (подготовка книги: {} %)"
 
+msgid "{} + {} per move"
+msgstr "{} + {} на ход"
+
 msgid "{} / {}"
 msgstr "{} / {}"
 
@@ -3094,6 +3205,12 @@ msgstr[2] "{} вылетов или зависаний"
 
 msgid "{} crashes"
 msgstr "вылетов: {}"
+
+msgid "{} cycle of 2 games"
+msgid_plural "{} cycles of 2 games"
+msgstr[0] "{} цикл из 2 партий"
+msgstr[1] "{} цикла из 2 партий"
+msgstr[2] "{} циклов из 2 партий"
 
 msgid "{} did not show an RSA host key"
 msgstr "{} не предъявил RSA-ключ хоста"
@@ -3197,6 +3314,12 @@ msgstr[0] "{} пара партий"
 msgstr[1] "{} пары партий"
 msgstr[2] "{} пар партий"
 
+msgid "{} game pair per match"
+msgid_plural "{} game pairs per match"
+msgstr[0] "{} пара партий на матч"
+msgstr[1] "{} пары партий на матч"
+msgstr[2] "{} пар партий на матч"
+
 msgid "{} game per engine"
 msgid_plural "{} games per engine"
 msgstr[0] "{} партия на движок"
@@ -3223,6 +3346,9 @@ msgstr "партий: {} · {}"
 
 msgid "{} games, {} tournaments"
 msgstr "партий: {}, турниров: {}"
+
+msgid "{} h"
+msgstr "{} ч"
 
 msgid "{} h {:02} min"
 msgstr "{} ч {:02} мин"
@@ -3278,8 +3404,14 @@ msgstr[2] "{} матчей из прежней версии ещё не в сп�
 msgid "{} matches × {} pairs of games, plus tiebreaks"
 msgstr "матчи × пары партий: {} × {}, плюс тай-брейки"
 
+msgid "{} min"
+msgstr "{} мин"
+
 msgid "{} min {:02} s"
 msgstr "{} мин {:02} с"
+
+msgid "{} moves in {}, repeated"
+msgstr "{} ходов за {}, с повтором"
 
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr "ходов: {} · глубина {:.1f} · {:.0f} мс на ход{}"
@@ -3289,6 +3421,12 @@ msgid_plural "{} new engines found. Untick those to leave out."
 msgstr[0] "Найден {} новый движок. Снимите отметку с тех, что не нужны."
 msgstr[1] "Найдено {} новых движка. Снимите отметку с тех, что не нужны."
 msgstr[2] "Найдено {} новых движков. Снимите отметку с тех, что не нужны."
+
+msgid "{} node per move"
+msgid_plural "{} nodes per move"
+msgstr[0] "{} узел на ход"
+msgstr[1] "{} узла на ход"
+msgstr[2] "{} узлов на ход"
 
 msgid "{} nodes"
 msgstr "узлов: {}"
@@ -3338,6 +3476,12 @@ msgstr[2] "{} пар без партии с переменой цветов: {}"
 msgid "{} pairings × 2 games × {} cycles"
 msgstr "пар: {} × 2 партии × циклов: {}"
 
+msgid "{} per game"
+msgstr "{} на партию"
+
+msgid "{} per move"
+msgstr "{} на ход"
+
 msgid "{} pieces"
 msgstr "фигур: {}"
 
@@ -3371,6 +3515,12 @@ msgstr[2] "{} игроков могут быть одним из двух дви
 msgid "{} plays with {} % of the time"
 msgstr "{} играет с {} % времени"
 
+msgid "{} ply"
+msgid_plural "{} plies"
+msgstr[0] "{} полуход"
+msgstr[1] "{} полухода"
+msgstr[2] "{} полуходов"
+
 msgid "{} position"
 msgid_plural "{} positions"
 msgstr[0] "{} позиция"
@@ -3392,6 +3542,12 @@ msgstr[2] "Опорный рейтинг Elo задан из рейтинг-ли
 msgid "{} refused to forward its port {}"
 msgstr "{} отказался перенаправить свой порт {}"
 
+msgid "{} round"
+msgid_plural "{} rounds"
+msgstr[0] "{} тур"
+msgstr[1] "{} тура"
+msgstr[2] "{} туров"
+
 msgid "{} rounds × {} pairings × 2 games"
 msgstr "туров: {} × пар: {} × 2 партии"
 
@@ -3403,6 +3559,12 @@ msgstr "{} с/ход"
 
 msgid "{} searches to depth {}"
 msgstr "{} считает до глубины {}"
+
+msgid "{} seed"
+msgid_plural "{} seeds"
+msgstr[0] "{} сеяный"
+msgstr[1] "{} сеяных"
+msgstr[2] "{} сеяных"
 
 msgid "{} selected"
 msgid_plural "{} selected"
@@ -3418,6 +3580,12 @@ msgid_plural "{} that two library engines may be"
 msgstr[0] "{} неоднозначный"
 msgstr[1] "{} неоднозначных"
 msgstr[2] "{} неоднозначных"
+
+msgid "{} thread"
+msgid_plural "{} threads"
+msgstr[0] "{} поток"
+msgstr[1] "{} потока"
+msgstr[2] "{} потоков"
 
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"

@@ -28,6 +28,7 @@
 #include "live.hpp"
 #include "model.hpp"
 #include "pgn_store.hpp"
+#include "profiles.hpp"
 #include "qr.hpp"
 #include "run.hpp"
 #include "stats.hpp"
@@ -572,6 +573,8 @@ class App {
 
     std::vector<EngineEntry> engines_;
     MatchSetup setup_;
+    // The profiles of the setup's sections (profiles.json), with the program's presets.
+    ProfileStore profiles_;
     bool setup_dirty_ = false;
     std::chrono::steady_clock::time_point last_setup_save_{};
 

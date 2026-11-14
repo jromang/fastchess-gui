@@ -69,6 +69,9 @@ msgstr "（重复：请给它另一个开局库）"
 msgid "(withdrawn)"
 msgstr "（已退赛）"
 
+msgid "+ {} per move"
+msgstr "+ 每步 {}"
+
 msgid ", CPU affinity"
 msgstr "，CPU 亲和性"
 
@@ -105,6 +108,9 @@ msgstr "1 次超时判负"
 
 msgid "10 games at 10+0.1 from 5 positions, to see before a long tournament whether it loses on time, crashes, plays an illegal move or uses its clock badly."
 msgstr "以 10+0.1 从 5 个局面下 10 局，在长时间锦标赛之前检查它是否会超时判负、崩溃、走出非法着法或用时不当。"
+
+msgid "200k nodes"
+msgstr "20 万节点"
 
 msgid "50 moves {}/100"
 msgstr "50 步 {}/100"
@@ -510,6 +516,12 @@ msgstr "正在检查…"
 msgid "Chess960"
 msgstr "Chess960"
 
+msgid "Chess960, the 960 positions"
+msgstr "Chess960，全部 960 个局面"
+
+msgid "Chess960: the 960 starting positions"
+msgstr "Chess960：960 个起始局面"
+
 msgid "Chess960: the 960 starting positions, in random order"
 msgstr "Chess960：960 种初始局面，随机顺序"
 
@@ -723,6 +735,9 @@ msgstr "EGTB 子数"
 msgid "EPD suites"
 msgstr "EPD 测试集"
 
+msgid "Each engine's own"
+msgstr "各引擎自己的设置"
+
 msgid "Each new game of the gauntlet is shown from the side of its seed, the engine that meets all the others. Flip still turns the board over."
 msgstr "车轮战的每局新对局都从其被测引擎（与其他所有引擎对战的那个）一方显示。“翻转”仍可翻转棋盘。"
 
@@ -788,6 +803,9 @@ msgstr "可读取的引擎列表：cutechess 和 Banksia（engines.json）、Che
 
 msgid "Engine log"
 msgstr "引擎日志"
+
+msgid "Engine settings"
+msgstr "引擎设置"
 
 msgid "Engine to add"
 msgstr "要加入的引擎"
@@ -1077,6 +1095,15 @@ msgstr "Hash"
 msgid "Hash (MB)"
 msgstr "Hash (MB)"
 
+msgid "Hash 16 MB, 1 thread"
+msgstr "哈希 16 MB，1 线程"
+
+msgid "Hash 256 MB, 1 thread"
+msgstr "哈希 256 MB，1 线程"
+
+msgid "Hash 64 MB, 1 thread"
+msgstr "哈希 64 MB，1 线程"
+
 msgid "Hash tables: up to {} in {} engine process"
 msgid_plural "Hash tables: up to {} in {} engine processes"
 msgstr[0] "哈希表：最多 {}，分布在 {} 个引擎进程中"
@@ -1326,6 +1353,9 @@ msgstr "Markdown…"
 
 msgid "Match"
 msgstr "比赛"
+
+msgid "Match, 1000 games"
+msgstr "比赛，1000 局"
 
 msgid "Matches in a bracket, the winner goes through; tiebreak pairs of games when a match is tied. The list order is the seeding."
 msgstr "对阵表中的比赛，胜者晋级；比赛打平时加赛成对的对局。列表顺序即为种子排序。"
@@ -2024,6 +2054,12 @@ msgstr "SPRT 结束：接受 H0，{} 没有更强"
 msgid "SPRT finished: H1 accepted, {} is stronger"
 msgstr "SPRT 结束：接受 H1，{} 更强"
 
+msgid "SPRT gainer [0, 3]"
+msgstr "SPRT 提升 [0, 3]"
+
+msgid "SPRT non-regression [-5, 0]"
+msgstr "SPRT 无退步 [-5, 0]"
+
 msgid "Same number of games"
 msgstr "对局数不变"
 
@@ -2133,8 +2169,14 @@ msgstr "答案"
 msgid "Speed"
 msgstr "速度"
 
+msgid "Standard"
+msgstr "标准"
+
 msgid "Standard deviation"
 msgstr "标准差"
+
+msgid "Standard with tablebases"
+msgstr "标准，含残局库"
 
 msgid "Standings"
 msgstr "排名"
@@ -2235,6 +2277,9 @@ msgstr "交换 A 和 B"
 msgid "Swiss"
 msgstr "瑞士制"
 
+msgid "Swiss, 9 rounds"
+msgstr "瑞士制，9 轮"
+
 msgid "Swiss, {} engines"
 msgstr "瑞士制，{} 个引擎"
 
@@ -2250,8 +2295,15 @@ msgstr "为引擎提供 Syzygy 残局库：未指定目录"
 msgid "Syzygy tablebases for the engines: {}"
 msgstr "为引擎提供 Syzygy 残局库：{}"
 
+msgid "TB"
+msgstr "TB"
+
 msgid "TB hits"
 msgstr "残局库命中"
+
+msgid "TB {} piece"
+msgid_plural "TB {} pieces"
+msgstr[0] "TB {} 子"
 
 msgid "TCP port"
 msgstr "TCP 端口"
@@ -2809,6 +2861,13 @@ msgstr "全部"
 msgid "and {} more"
 msgstr "以及另外 {} 个"
 
+msgid "at most {} game"
+msgid_plural "at most {} games"
+msgstr[0] "最多 {} 局"
+
+msgid "at most {} moves"
+msgstr "最多 {} 步"
+
 msgid "automatic"
 msgstr "自动"
 
@@ -2833,6 +2892,13 @@ msgstr "决定时间"
 msgid "depth {}"
 msgstr "深度 {}"
 
+msgid "depth {} ply"
+msgid_plural "depth {} plies"
+msgstr[0] "深度 {} 半步"
+
+msgid "draw {}/{}/{} cp"
+msgstr "和棋 {}/{}/{} cp"
+
 msgid "draws"
 msgstr "和棋"
 
@@ -2844,6 +2910,9 @@ msgstr "重复"
 
 msgid "duplicates"
 msgstr "重复"
+
+msgid "each engine's own settings"
+msgstr "各引擎自己的设置"
 
 msgid "elo1 must be larger than elo0."
 msgstr "elo1 必须大于 elo0。"
@@ -2859,6 +2928,9 @@ msgstr "筛选"
 
 msgid "from a Polyglot book"
 msgstr "来自 Polyglot 开局库"
+
+msgid "from opening {}"
+msgstr "从第 {} 个开局起"
 
 msgid "game already over"
 msgstr "对局已结束"
@@ -2877,6 +2949,9 @@ msgstr "非法局面"
 
 msgid "illegal positions"
 msgstr "非法局面"
+
+msgid "in order"
+msgstr "按顺序"
 
 msgid "initial position"
 msgstr "初始局面"
@@ -2902,11 +2977,17 @@ msgstr "超时判负或崩溃"
 msgid "losses"
 msgstr "负"
 
+msgid "margin {} ms"
+msgstr "余量 {} ms"
+
 msgid "moves"
 msgstr "步数"
 
 msgid "nElo of A (95% CI)"
 msgstr "A 的 nElo（95% 置信区间）"
+
+msgid "no book: the initial position"
+msgstr "无开局库：初始局面"
 
 msgid "no engine has a SyzygyPath"
 msgstr "没有引擎设置了 SyzygyPath"
@@ -2917,11 +2998,17 @@ msgstr "节点"
 msgid "none"
 msgstr "无"
 
+msgid "none: every game is played to its end"
+msgstr "无：每局都下到结束"
+
 msgid "none: every game starts from the initial position"
 msgstr "无：每局都从初始局面开始"
 
 msgid "normalized: bounds in nElo (fishtest, OpenBench). logistic: classic Elo. bayesian: BayesElo, without pentanomial."
 msgstr "normalized：以 nElo 为边界（fishtest、OpenBench）。logistic：经典 Elo。bayesian：BayesElo，不使用五项分布。"
+
+msgid "one opening per round"
+msgstr "每轮一个开局"
 
 msgid "opponents within ±"
 msgstr "个对手，范围 ±"
@@ -2933,14 +3020,29 @@ msgid "own book {}, {} ply"
 msgid_plural "own book {}, {} plies"
 msgstr[0] "专属开局库 {}，{} 个半回合"
 
+msgid "own books off"
+msgstr "关闭自带开局库"
+
 msgid "pairs"
 msgstr "对局对"
+
+msgid "random"
+msgstr "随机"
 
 msgid "reading the tournaments…"
 msgstr "正在读取锦标赛…"
 
 msgid "replay requested"
 msgstr "已要求重下"
+
+msgid "resign {}/{} cp"
+msgstr "认输 {}/{} cp"
+
+msgid "resign {}/{} cp, both engines"
+msgstr "认输 {}/{} cp，双方引擎"
+
+msgid "seed {}"
+msgstr "种子 {}"
 
 msgid "send at startup"
 msgstr "启动时发送"
@@ -3026,6 +3128,9 @@ msgstr "{}  （{} 个开局）"
 msgid "{} (preparing the book: {} %)"
 msgstr "{}（正在准备开局库：{} %）"
 
+msgid "{} + {} per move"
+msgstr "{} + 每步 {}"
+
 msgid "{} / {}"
 msgstr "{} / {}"
 
@@ -3066,6 +3171,10 @@ msgstr[0] "{} 次崩溃或无响应"
 
 msgid "{} crashes"
 msgstr "{} 次崩溃"
+
+msgid "{} cycle of 2 games"
+msgid_plural "{} cycles of 2 games"
+msgstr[0] "{} 个循环，每次 2 局"
 
 msgid "{} did not show an RSA host key"
 msgstr "{} 未提供 RSA 主机密钥"
@@ -3141,6 +3250,10 @@ msgid "{} game pair"
 msgid_plural "{} game pairs"
 msgstr[0] "{} 对对局"
 
+msgid "{} game pair per match"
+msgid_plural "{} game pairs per match"
+msgstr[0] "每场比赛 {} 对对局"
+
 msgid "{} game per engine"
 msgid_plural "{} games per engine"
 msgstr[0] "每个引擎 {} 局"
@@ -3161,6 +3274,9 @@ msgstr "{} 局 · {}"
 
 msgid "{} games, {} tournaments"
 msgstr "{} 局，{} 个锦标赛"
+
+msgid "{} h"
+msgstr "{} 小时"
 
 msgid "{} h {:02} min"
 msgstr "{} 小时 {:02} 分"
@@ -3208,8 +3324,14 @@ msgstr[0] "{} 场旧版本的比赛尚未加入列表。"
 msgid "{} matches × {} pairs of games, plus tiebreaks"
 msgstr "{} 场比赛 × {} 对对局，另加加赛"
 
+msgid "{} min"
+msgstr "{} 分"
+
 msgid "{} min {:02} s"
 msgstr "{} 分 {:02} 秒"
+
+msgid "{} moves in {}, repeated"
+msgstr "{} 步 {}，重复"
 
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr "{} 步 · 深度 {:.1f} · 每步 {:.0f} ms{}"
@@ -3217,6 +3339,10 @@ msgstr "{} 步 · 深度 {:.1f} · 每步 {:.0f} ms{}"
 msgid "{} new engine found. Untick those to leave out."
 msgid_plural "{} new engines found. Untick those to leave out."
 msgstr[0] "找到 {} 个新引擎。取消勾选不需要的。"
+
+msgid "{} node per move"
+msgid_plural "{} nodes per move"
+msgstr[0] "每步 {} 节点"
 
 msgid "{} nodes"
 msgstr "{} 节点"
@@ -3254,6 +3380,12 @@ msgstr[0] "{} 对缺少交换颜色的对局：{}"
 msgid "{} pairings × 2 games × {} cycles"
 msgstr "{} 组配对 × 2 局 × {} 个循环"
 
+msgid "{} per game"
+msgstr "每局 {}"
+
+msgid "{} per move"
+msgstr "每步 {}"
+
 msgid "{} pieces"
 msgstr "{} 个棋子"
 
@@ -3279,6 +3411,10 @@ msgstr[0] "{} 位棋手可能是两个库引擎之一：请指定。"
 msgid "{} plays with {} % of the time"
 msgstr "{} 使用 {} % 的时间"
 
+msgid "{} ply"
+msgid_plural "{} plies"
+msgstr[0] "{} 半步"
+
 msgid "{} position"
 msgid_plural "{} positions"
 msgstr[0] "{} 个局面"
@@ -3294,6 +3430,10 @@ msgstr[0] "已从等级分榜设置 {} 个参考 Elo。"
 msgid "{} refused to forward its port {}"
 msgstr "{} 拒绝转发其端口 {}"
 
+msgid "{} round"
+msgid_plural "{} rounds"
+msgstr[0] "{} 轮"
+
 msgid "{} rounds × {} pairings × 2 games"
 msgstr "{} 轮 × {} 组配对 × 2 局"
 
@@ -3306,6 +3446,10 @@ msgstr "{} 秒/步"
 msgid "{} searches to depth {}"
 msgstr "{} 搜索到深度 {}"
 
+msgid "{} seed"
+msgid_plural "{} seeds"
+msgstr[0] "{} 名种子"
+
 msgid "{} selected"
 msgid_plural "{} selected"
 msgstr[0] "已选 {} 个"
@@ -3316,6 +3460,10 @@ msgstr "显示 {} 个"
 msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"
 msgstr[0] "{} 个有歧义"
+
+msgid "{} thread"
+msgid_plural "{} threads"
+msgstr[0] "{} 线程"
 
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"
