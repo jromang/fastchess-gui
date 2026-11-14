@@ -19,7 +19,8 @@
 // With FCG_MOCK_ANALYSIS=1 it also has the options Threads, MultiPV and UCI_ShowWDL, and searches as an analysis
 // engine does: "go infinite" writes info lines for depths 1 to 8, one per MultiPV line (the first legal moves in
 // order, the best first), with a WDL when asked, and gives its move only at "stop"; "go movetime" and "go depth" do
-// the same, then give it at once.
+// the same, then give it at once. Its score is the material of the side to move, minus its opponent's, and half
+// of the best piece it can take.
 
 #include <chrono>
 #include <cstdlib>
@@ -135,6 +136,23 @@ void uci_line(Board &board, const std::string &line) {
             return;
         }
         const int lines = std::min<int>(multipv, moves.size());
+        // The material of the side to move, minus its opponent's, in centipawns: a game's captures swing it.
+        int material = 0;
+        for (const auto [type, value] : {std::pair{PieceType::PAWN, 100}, std::pair{PieceType::KNIGHT, 300},
+                                         std::pair{PieceType::BISHOP, 300}, std::pair{PieceType::ROOK, 500},
+                                         std::pair{PieceType::QUEEN, 900}}) {
+            material += value * (board.pieces(type, board.sideToMove()).count() -
+                                 board.pieces(type, ~board.sideToMove()).count());
+        }
+        // And half of the best piece it can take: a piece left hanging shows.
+        int best_take = 0;
+        for (const auto &m : moves) {
+            const auto victim = board.at(m.to());
+            if (victim == Piece::NONE || victim.color() == board.sideToMove()) continue;
+            static const int values[] = {100, 300, 300, 500, 900, 0};
+            best_take = std::max(best_take, values[static_cast<int>(victim.type())]);
+        }
+        material += best_take / 2;
         for (int depth = 1; depth <= 8; ++depth) {
             for (int i = 0; i < lines; ++i) {
                 Board after = board;
@@ -142,7 +160,7 @@ void uci_line(Board &board, const std::string &line) {
                 auto replies = Movelist();
                 movegen::legalmoves(replies, after);
                 std::cout << "info depth " << depth << " seldepth " << depth + 2 << " multipv " << i + 1
-                          << " score cp " << 40 - 15 * i + depth;
+                          << " score cp " << material + 40 - 15 * i + depth;
                 if (show_wdl) std::cout << " wdl " << 300 - 20 * i << " 600 " << 100 + 20 * i;
                 std::cout << " nodes " << 1000 * depth << " nps 500000 time " << 2 * depth << " pv "
                           << uci::moveToUci(moves[i]);

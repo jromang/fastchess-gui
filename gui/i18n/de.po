@@ -150,6 +150,9 @@ msgstr "Eine Datei deiner Wahl"
 msgid "A game has no port: {}"
 msgstr "Eine Partie hat keinen Port: {}"
 
+msgid "A game is being analysed move by move: wait for its end, or cancel it."
+msgstr "Eine Partie wird Zug für Zug analysiert: Warte auf das Ende oder brich sie ab."
+
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr "Ein Gauntlet braucht mindestens eine Engine außer den getesteten."
 
@@ -337,14 +340,26 @@ msgstr "Eine Bewertung kippt"
 msgid "Analyse"
 msgstr "Analysieren"
 
+msgid "Analyse the game"
+msgstr "Partie analysieren"
+
+msgid "Analyse the game again"
+msgstr "Partie erneut analysieren"
+
 msgid "Analyse the game followed"
 msgstr "Die verfolgte Partie analysieren"
 
 msgid "Analyse the game shown"
 msgstr "Die gezeigte Partie analysieren"
 
+msgid "Analysing the game: {} of {} positions"
+msgstr "Analyse der Partie: {} von {} Stellungen"
+
 msgid "Analysis"
 msgstr "Analyse"
+
+msgid "Analysis: {} · {}"
+msgstr "Analyse: {} · {}"
 
 msgid "Anchor:"
 msgstr "Anker:"
@@ -424,6 +439,9 @@ msgstr "Zurück zum Turnier"
 msgid "Base (s)"
 msgstr "Grundzeit (s)"
 
+msgid "Best: {} ({})"
+msgstr "Bester Zug: {} ({})"
+
 msgid "Black"
 msgstr "Schwarz"
 
@@ -454,6 +472,9 @@ msgstr "Schwarz ×2"
 msgid "Black's connection stalls"
 msgstr "Die Verbindung von Schwarz hängt"
 
+msgid "Blunder"
+msgstr "Grober Fehler"
+
 msgid "Board"
 msgstr "Brett"
 
@@ -481,6 +502,9 @@ msgstr "Übertragung"
 msgid "By time control"
 msgstr "Nach Bedenkzeit"
 
+msgid "By {}, {}. Losses of 10, 20 and 30 % of the winning chances are an inaccuracy (?!), a mistake (?) and a blunder (??)."
+msgstr "Von {}, {}. Verluste von 10, 20 und 30 % der Gewinnchancen sind eine Ungenauigkeit (?!), ein Fehler (?) und ein grober Fehler (??)."
+
 msgid "CPU affinity"
 msgstr "CPU-Affinität"
 
@@ -492,6 +516,9 @@ msgstr "Rechner…"
 
 msgid "Cancel"
 msgstr "Abbrechen"
+
+msgid "Cancel the analysis of the game"
+msgstr "Analyse der Partie abbrechen"
 
 msgid "Cannot draw the pieces."
 msgstr "Die Figuren können nicht gezeichnet werden."
@@ -1275,6 +1302,9 @@ msgstr "Importierte Partien"
 msgid "Import…"
 msgstr "Importieren…"
 
+msgid "Inaccuracy"
+msgstr "Ungenauigkeit"
+
 msgid "Inactive"
 msgstr "Inaktiv"
 
@@ -1484,6 +1514,9 @@ msgstr "Max. Bewertung (cp)"
 
 msgid "Maximum number of moves"
 msgstr "Maximale Zugzahl"
+
+msgid "Mistake"
+msgstr "Fehler"
 
 msgid "Model"
 msgstr "Modell"
@@ -2530,6 +2563,15 @@ msgstr "Die PGN-Optionen der Einrichtung, für kommende Turniere."
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "Der PGN-Standard macht sie zu Kommentaren. fastchess-gui 0.4.13 und älter las sie als Züge und konnte einige Eröffnungen dieses Buchs aus einer falschen Stellung spielen, oft aus der Grundstellung."
 
+msgid "The analysis"
+msgstr "Die Analyse"
+
+msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
+msgstr "Die Analyse-Engine geht im Hintergrund alle Stellungen der Partie durch: eine Bewertung pro Zug, Ungenauigkeiten, Fehler und grobe Fehler markiert."
+
+msgid "The analysis engine stopped."
+msgstr "Die Analyse-Engine hat sich beendet."
+
 msgid "The analysis engine waits."
 msgstr "Die Analyse-Engine wartet."
 
@@ -2583,6 +2625,9 @@ msgstr "Das eigene Protokoll der Engine (xboard), ohne die Übersetzung nach UCI
 
 msgid "The engine's settings; the console stays open."
 msgstr "Die Einstellungen der Engine; die Konsole bleibt offen."
+
+msgid "The engines"
+msgstr "Die Engines"
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "Die Engines sind die aus {}, vor der letzten Änderung aufbewahrt."
@@ -3201,6 +3246,9 @@ msgstr "nElo von A (95 % KI)"
 msgid "no engine has a SyzygyPath"
 msgstr "keine Engine hat einen SyzygyPath"
 
+msgid "no mistake"
+msgstr "kein Fehler"
+
 msgid "nodes"
 msgstr "Knoten"
 
@@ -3320,6 +3368,9 @@ msgstr "{:.1f} %, dass {} stärker ist als {}."
 msgid "{:.1f} GB"
 msgstr "{:.1f} GB"
 
+msgid "{:g} s per move"
+msgstr "{:g} s pro Zug"
+
 msgid "{}  ({} openings)"
 msgstr "{}  ({} Eröffnungen)"
 
@@ -3344,8 +3395,16 @@ msgstr "{} MB"
 msgid "{} against each opponent"
 msgstr "{} gegen jeden Gegner"
 
+msgid "{} analyses the game move by move."
+msgstr "{} analysiert die Partie Zug für Zug."
+
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} möchte für jede Partie neu gestartet werden: „Die Engine für jede Partie neu starten“ ist angehakt."
+
+msgid "{} blunder"
+msgid_plural "{} blunders"
+msgstr[0] "{} grober Fehler"
+msgstr[1] "{} grobe Fehler"
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} kann nicht gelesen werden, daher sind die zuvor vertrauten Host-Schlüssel unbekannt: An {} wurde nichts gesendet. Repariere die Datei oder lösche sie, um dem Schlüssel des Servers erneut zu vertrauen."
@@ -3512,6 +3571,11 @@ msgstr[1] "{} illegale Züge"
 msgid "{} illegal moves"
 msgstr "{} illegale Züge"
 
+msgid "{} inaccuracy"
+msgid_plural "{} inaccuracies"
+msgstr[0] "{} Ungenauigkeit"
+msgstr[1] "{} Ungenauigkeiten"
+
 msgid "{} is not a legal move from the initial position."
 msgstr "{} ist von der Ausgangsstellung aus kein legaler Zug."
 
@@ -3550,6 +3614,11 @@ msgstr "{} Matches × {} Partiepaare, plus Stichkämpfe"
 
 msgid "{} min {:02} s"
 msgstr "{} min {:02} s"
+
+msgid "{} mistake"
+msgid_plural "{} mistakes"
+msgstr[0] "{} Fehler"
+msgstr[1] "{} Fehler"
 
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr "{} Züge · Tiefe {:.1f} · {:.0f} ms pro Zug{}"
@@ -3768,6 +3837,9 @@ msgstr "{}: Die Signatur des Host-Schlüssels ist ungültig"
 
 msgid "{}: unknown to the engine"
 msgstr "{}: der Engine unbekannt"
+
+msgid "{}: {:.0f} % of the winning chances lost."
+msgstr "{}: {:.0f} % der Gewinnchancen verloren."
 
 msgid "{}: {}"
 msgstr "{}: {}"

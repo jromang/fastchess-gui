@@ -9,6 +9,7 @@
 #include <SDL3/SDL.h>
 
 #include <imgui.h>
+#include <implot.h>
 
 #include <fmt/include/fmt/format.h>
 
@@ -49,6 +50,79 @@ float barFraction(const fastchess::Score& score, chess::Color stm) {
     const auto white = whiteScore(score, stm);
     if (white.type == fastchess::ScoreType::MATE) return evalBarFraction(0, true, white.value >= 0 ? 1 : -1);
     return evalBarFraction(static_cast<int>(white.value), false, 0);
+}
+
+// White's evaluation in pawns, from a score of the side to move, within the chart's +-8; mated (mate 0) the lowest.
+float reviewPawns(const fastchess::Score& score, chess::Color stm) {
+    const float sign = stm == chess::Color::WHITE ? 1.0f : -1.0f;
+    if (score.type == fastchess::ScoreType::MATE) return score.value > 0 ? sign * 8.0f : -sign * 8.0f;
+    return std::clamp(sign * static_cast<float>(score.value) / 100.0f, -8.0f, 8.0f);
+}
+
+ImU32 judgementColour(Judgement judgement) {
+    switch (judgement) {
+        case Judgement::Inaccuracy:
+            return IM_COL32(200, 160, 0, 255);
+        case Judgement::Mistake:
+            return ui::WARN;
+        default:
+            return ui::BAD;
+    }
+}
+
+// The engines' own evaluation (when the game has it) and the analysis's, White's, in pawns, one value per ply.
+// Returns the ply clicked, or -1.
+int plotReview(const char* id, const std::vector<float>& engines, const std::vector<float>& analysis, int marker_ply,
+               float height) {
+    int clicked = -1;
+    constexpr ImPlotFlags flags =
+        ImPlotFlags_NoTitle | ImPlotFlags_NoMenus | ImPlotFlags_NoBoxSelect | ImPlotFlags_NoMouseText;
+    if (ImPlot::BeginPlot(id, ImVec2(-1, height), flags)) {
+        const double n = std::max<double>(20, static_cast<double>(std::max(engines.size(), analysis.size())));
+        ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_NoGridLines,
+                          ImPlotAxisFlags_NoGridLines);
+        ImPlot::SetupAxisLimits(ImAxis_X1, 0, n, ImPlotCond_Always);
+        ImPlot::SetupAxisLimits(ImAxis_Y1, -8.5, 8.5, ImPlotCond_Always);
+        ImPlot::SetupAxisTicks(ImAxis_Y1, -8, 8, 5);
+        ImPlot::SetupLegend(ImPlotLocation_NorthWest);
+        const auto xs = [](std::size_t size) {
+            std::vector<float> x(size);
+            for (std::size_t i = 0; i < size; ++i) x[i] = static_cast<float>(i + 1);
+            return x;
+        };
+        if (!engines.empty()) {
+            const auto x = xs(engines.size());
+            ImPlotSpec area;
+            area.FillColor = ImVec4(0.85f, 0.85f, 0.85f, 0.25f);
+            ImPlot::PlotShaded("##engines_area", x.data(), engines.data(), static_cast<int>(engines.size()), 0.0, area);
+            ImPlotSpec line;
+            line.LineColor  = ImVec4(0.43f, 0.66f, 0.87f, 1.0f);
+            line.LineWeight = 1.5f;
+            ImPlot::PlotLine(TR("The engines"), x.data(), engines.data(), static_cast<int>(engines.size()), line);
+        }
+        if (!analysis.empty()) {
+            const auto x = xs(analysis.size());
+            ImPlotSpec line;
+            line.LineColor  = ImVec4(0.93f, 0.55f, 0.2f, 1.0f);
+            line.LineWeight = 1.5f;
+            ImPlot::PlotLine(TR("The analysis"), x.data(), analysis.data(), static_cast<int>(analysis.size()), line);
+        }
+        const double zero = 0;
+        ImPlotSpec zero_spec;
+        zero_spec.LineColor = ImVec4(0.5f, 0.5f, 0.5f, 0.6f);
+        zero_spec.Flags     = ImPlotInfLinesFlags_Horizontal;
+        ImPlot::PlotInfLines("##zero", &zero, 1, zero_spec);
+        if (marker_ply > 0) {
+            const double x = marker_ply;
+            ImPlotSpec marker;
+            marker.LineColor = ImVec4(0.95f, 0.75f, 0.3f, 0.8f);
+            ImPlot::PlotInfLines("##marker", &x, 1, marker);
+        }
+        if (ImPlot::IsPlotHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+            clicked = static_cast<int>(std::lround(ImPlot::GetPlotMousePos().x));
+        ImPlot::EndPlot();
+    }
+    return clicked;
 }
 
 }  // namespace
@@ -162,7 +236,12 @@ void App::setBoardAnalysis(bool on) {
     loadBoardSettings();
     if (!on) {
         board_.analysing = false;
-        board_.analyser.halt();
+        if (!board_.review_job) board_.analyser.halt();
+        return;
+    }
+    if (board_.review_job) {
+        board_.message       = TR("A game is being analysed move by move: wait for its end, or cancel it.");
+        board_.message_error = true;
         return;
     }
     auto& s = board_.settings.analysis;
@@ -201,6 +280,11 @@ void App::pollBoard() {
     board_.analyser.poll();
     pollBoardPgn();
     if (board_.analysing && board_.analyser.state() == Analyser::State::Failed) board_.analysing = false;
+    // A game analysed move by move has the engine to itself, in the background.
+    if (board_.review_job) {
+        pollGameReview();
+        return;
+    }
     // The analysis follows the board while the page is shown, and waits meanwhile.
     if (board_.analysing && page_ == Page::Board && !board_.editor) {
         board_.analyser.analyse(analysisPosition(board_.game, board_.chess960, board_.ply), {}, board_.new_game);
@@ -208,6 +292,120 @@ void App::pollBoard() {
     } else if (board_.analyser.state() == Analyser::State::Searching) {
         board_.analyser.halt();
     }
+}
+
+// ---------------------------------------------------------------------------
+// A game analysed move by move
+
+const EngineEntry* App::analysisEngine() {
+    loadBoardSettings();
+    auto& s = board_.settings.analysis;
+    for (const auto& e : engines_) {
+        if (e.name == s.engine) return &e;
+    }
+    for (const auto& e : engines_) {
+        if (!e.inactive && engineWorks(e)) {
+            s.engine = e.name;
+            saveBoardSettings();
+            return &e;
+        }
+    }
+    if (!engines_.empty()) {
+        s.engine = engines_.front().name;
+        saveBoardSettings();
+        return &engines_.front();
+    }
+    return nullptr;
+}
+
+void App::startGameReview() {
+    auto& b = board_;
+    if (b.review_job || b.game.moves.empty()) return;
+    const auto* engine = analysisEngine();
+    if (!engine) {
+        b.message       = TR("No engine to analyse with: add one on the Engines page.");
+        b.message_error = true;
+        return;
+    }
+    // The analysis of the board gives way to it; the engine is the same, with one line.
+    b.analysing = false;
+    if (!b.analyser.active() || b.analyser.engine() != engine->name) b.analyser.start(*engine, b.settings.analysis);
+    b.analyser.halt();
+    auto one    = b.settings.analysis;
+    one.multipv = 1;
+    b.analyser.update(one);
+
+    ReviewJob job;
+    job.game     = b.game;
+    job.chess960 = b.chess960;
+    for (int i = 0; i <= static_cast<int>(b.game.moves.size()); ++i)
+        job.positions.push_back(analysisPosition(b.game, b.chess960, i));
+    job.limit              = b.settings.review_depth > 0 ? SearchLimit{0, b.settings.review_depth}
+                                                         : SearchLimit{std::max(50, b.settings.review_ms), 0};
+    job.review.engine      = engine->name;
+    job.review.movetime_ms = job.limit.movetime_ms;
+    job.review.depth       = job.limit.depth;
+    b.review_job           = std::move(job);
+    b.message.clear();
+}
+
+void App::cancelGameReview() {
+    auto& b = board_;
+    if (!b.review_job) return;
+    b.review_job.reset();
+    b.analyser.halt();
+    b.analyser.update(b.settings.analysis);
+}
+
+void App::pollGameReview() {
+    auto& b = board_;
+    if (!b.review_job) return;
+    auto& job = *b.review_job;
+    auto& a   = b.analyser;
+    if (a.state() == Analyser::State::Failed || a.state() == Analyser::State::Off) {
+        b.message       = a.error().empty() ? std::string(TR("The analysis engine stopped.")) : a.error();
+        b.message_error = true;
+        b.review_job.reset();
+        return;
+    }
+    auto& found = job.review.positions;
+    // The positions the game ended in need no engine.
+    while (!job.asked && found.size() < job.positions.size()) {
+        const auto end = endScore(boardAt(job.game, job.chess960, static_cast<int>(found.size())));
+        if (!end) break;
+        found.push_back({end, "", 0});
+    }
+    if (found.size() < job.positions.size()) {
+        const auto i = found.size();
+        if (job.asked && a.finished() && a.position() == job.positions[i]) {
+            PositionEval e;
+            if (!a.lines().empty()) {
+                e.score = a.lines().front().score;
+                e.depth = static_cast<int>(a.lines().front().depth);
+            }
+            e.best = a.bestmove();
+            found.push_back(std::move(e));
+            job.asked = false;
+            pollGameReview();  // the next one asked at once
+            return;
+        }
+        if (!job.asked) {
+            a.analyse(job.positions[i], job.limit, i == 0);
+            job.asked = true;
+        }
+        return;
+    }
+    // Done: kept with the game, and shown if it is the game on the board.
+    (void)saveReview(storage_.root() / "analyses", job.game, job.review);
+    if (reviewKey(b.game) == reviewKey(job.game)) {
+        b.review     = job.review;
+        b.review_key = reviewKey(b.game);
+        b.judged     = reviewMoves(b.game, b.chess960, *b.review);
+    } else {
+        b.review_key.clear();  // read again from its file when that game comes back
+    }
+    b.review_job.reset();
+    a.update(b.settings.analysis);
 }
 
 void App::boardPlay(chess::Move move) {
@@ -390,6 +588,11 @@ void App::pollBoardPgn() {
     source.file  = file;
     source.index = std::make_shared<const tour::PgnIndex>(std::move(index));
     showPgnSource(std::move(source));
+    if (review_when_read_) {
+        review_when_read_ = false;
+        board_.open_tab   = 0;
+        startGameReview();
+    }
 }
 
 void App::showPgnSource(PgnSource source) {
@@ -919,6 +1122,8 @@ void App::drawBoardAnalysis() {
         ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
         ImGui::TextWrapped("%s", a.error().c_str());
         ImGui::PopStyleColor();
+    } else if (b.review_job) {
+        ImGui::TextDisabled("%s", trf("{} analyses the game move by move.", a.engine()).c_str());
     } else if (!a.active()) {
         ImGui::TextDisabled("%s", TR("Press A, or Analyse, for the engine's best moves here."));
     } else if (a.state() == Analyser::State::Starting) {
@@ -1030,8 +1235,16 @@ void App::drawBoardMoves() {
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The game, with its tags and moves, as PGN."));
     }
 
-    // The evaluation the engines gave of their moves, when the game has them.
-    std::vector<float> evals;
+    // Its analysis move by move: kept with the game, read again when another game comes.
+    if (const auto key = reviewKey(b.game); key != b.review_key) {
+        b.review_key = key;
+        b.review     = total > 0 ? loadReview(storage_.root() / "analyses", b.game) : std::nullopt;
+        b.judged     = b.review ? reviewMoves(b.game, b.chess960, *b.review) : std::vector<MoveReview>{};
+    }
+    drawGameReview();
+
+    // The evaluation the engines gave of their moves, when the game has them, and the analysis's.
+    std::vector<float> evals, analysis;
     bool scored = false;
     {
         float previous = 0.0f;
@@ -1043,8 +1256,17 @@ void App::drawBoardMoves() {
             }
             evals.push_back(previous);
         }
+        if (!scored) evals.clear();
+        if (b.review) {
+            for (std::size_t i = 0; i < b.game.moves.size() && i + 1 < b.review->positions.size(); ++i) {
+                const auto& score = b.review->positions[i + 1].score;
+                analysis.push_back(score ? reviewPawns(*score, ~b.game.moves[i].mover)
+                                         : (analysis.empty() ? 0.0f : analysis.back()));
+            }
+        }
     }
-    const float chart  = scored ? std::max(px(70), ImGui::GetContentRegionAvail().y * 0.3f) : 0.0f;
+    const bool curve   = scored || !analysis.empty();
+    const float chart  = curve ? std::max(px(70), ImGui::GetContentRegionAvail().y * 0.3f) : 0.0f;
     const float height = std::max(px(60), ImGui::GetContentRegionAvail().y - chart);
 
     ImGui::BeginChild("##board_moves", ImVec2(0, height), ImGuiChildFlags_Borders);
@@ -1070,9 +1292,22 @@ void App::drawBoardMoves() {
                 b.ply = i + 1;
             if (m.book) ImGui::PopStyleColor();
             if (current && (ImGui::IsWindowAppearing() || (follow && !ImGui::IsItemVisible()))) ImGui::SetScrollHereY();
-            if (ImGui::IsItemHovered() && m.score && !m.book) {
-                ImGui::SetTooltip("%s/%d  %s", ui::formatScore(m.score).c_str(), m.depth,
-                                  m.time_ms >= 0 ? ui::formatClock(m.time_ms).c_str() : "");
+            const auto judged =
+                static_cast<std::size_t>(i) < b.judged.size() ? b.judged[static_cast<std::size_t>(i)] : MoveReview{};
+            if (ImGui::IsItemHovered()) {
+                std::string tip;
+                if (m.score && !m.book) {
+                    tip = fmt::format("{}/{}  {}", ui::formatScore(m.score), m.depth,
+                                      m.time_ms >= 0 ? ui::formatClock(m.time_ms) : "");
+                }
+                if (judged.judgement != Judgement::None) tip += (tip.empty() ? "" : "\n") + judgementTip(i, judged);
+                if (!tip.empty()) ImGui::SetTooltip("%s", tip.c_str());
+            }
+            // Its judgement, after it.
+            if (judged.judgement != Judgement::None) {
+                ImGui::SameLine(0, 0);
+                ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(judgementColour(judged.judgement)), "%s",
+                                   judgementMark(judged.judgement));
             }
             ImGui::SameLine();
         }
@@ -1081,11 +1316,105 @@ void App::drawBoardMoves() {
     b.followed = b.ply;
     ImGui::EndChild();
 
-    if (scored) {
-        if (const int clicked = plotEval("##board_eval", evals, b.ply, ImGui::GetContentRegionAvail().y); clicked >= 0)
+    if (curve) {
+        if (const int clicked = plotReview("##board_eval", evals, analysis, b.ply, ImGui::GetContentRegionAvail().y);
+            clicked >= 0)
             b.ply = std::clamp(clicked, 0, total);
     }
     ui::endCard();
+}
+
+std::string App::judgementTip(int ply, const MoveReview& judged) const {
+    const auto& b    = board_;
+    const char* what = judged.judgement == Judgement::Blunder   ? TR("Blunder")
+                       : judged.judgement == Judgement::Mistake ? TR("Mistake")
+                                                                : TR("Inaccuracy");
+    auto tip         = trf("{}: {:.0f} % of the winning chances lost.", what, judged.loss);
+    // What the engine would have played.
+    if (b.review && static_cast<std::size_t>(ply) < b.review->positions.size()) {
+        const auto& before = b.review->positions[static_cast<std::size_t>(ply)];
+        const auto board   = boardAt(b.game, b.chess960, ply);
+        const auto best    = legalPrefix(board, {before.best}, 1);
+        if (!best.empty() && before.score) {
+            tip += "\n" + trf("Best: {} ({})", chess::uci::moveToSan(board, best.front()),
+                              ui::formatScore(whiteScore(*before.score, board.sideToMove())));
+        }
+    }
+    return tip;
+}
+
+void App::drawGameReview() {
+    auto& b         = board_;
+    const int total = static_cast<int>(b.game.moves.size());
+    if (total == 0 && !b.review_job) return;
+
+    if (b.review_job) {
+        // Its progress, wherever the board is.
+        const auto done = b.review_job->review.positions.size(), all = b.review_job->positions.size();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("%s", trf("Analysing the game: {} of {} positions", done, all).c_str());
+        ImGui::SameLine();
+        ImGui::ProgressBar(static_cast<float>(done) / static_cast<float>(std::max<std::size_t>(1, all)),
+                           ImVec2(px(120), 0), "");
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Cancel##review"))) cancelGameReview();
+        return;
+    }
+
+    // Start it: the time (or the depth) of each position.
+    struct Choice {
+        int ms, depth;
+    };
+    static constexpr Choice choices[] = {{200, 0},   {500, 0}, {1000, 0}, {2000, 0}, {5000, 0},
+                                         {10000, 0}, {0, 12},  {0, 16},   {0, 20},   {0, 24}};
+    const auto label                  = [](const Choice& c) {
+        return c.depth > 0 ? trf("depth {}", c.depth) : trf("{:g} s per move", c.ms / 1000.0);
+    };
+    auto& s = b.settings;
+    if (ImGui::SmallButton(b.review ? TR("Analyse the game again") : TR("Analyse the game"))) startGameReview();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("The analysis engine goes through every position of the game, in the background: "
+                                   "a score per move, and its inaccuracies, mistakes and blunders marked."));
+    }
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(px(130));
+    const Choice current{s.review_depth > 0 ? 0 : s.review_ms, s.review_depth};
+    if (ImGui::BeginCombo("##review_limit", label(current).c_str())) {
+        for (const auto& c : choices) {
+            if (ImGui::Selectable(label(c).c_str(), c.ms == current.ms && c.depth == current.depth)) {
+                s.review_ms    = c.ms > 0 ? c.ms : s.review_ms;
+                s.review_depth = c.depth;
+                saveBoardSettings();
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    // What it found, by side.
+    if (b.review && b.review->complete(b.game.moves.size())) {
+        const auto counts = judgementCounts(b.game, b.judged);
+        const auto side   = [&](int colour) {
+            const auto& c = counts[static_cast<std::size_t>(colour)];
+            std::string parts;
+            const auto add = [&](std::string part) { parts += (parts.empty() ? "" : ", ") + part; };
+            if (c[2]) add(trn("{} blunder", "{} blunders", c[2], c[2]));
+            if (c[1]) add(trn("{} mistake", "{} mistakes", c[1], c[1]));
+            if (c[0]) add(trn("{} inaccuracy", "{} inaccuracies", c[0], c[0]));
+            if (parts.empty()) parts = TR("no mistake");
+            auto name = b.game.header(colour == 0 ? "White" : "Black");
+            if (name.empty() || name == "?") name = colour == 0 ? TR("White") : TR("Black");
+            return fmt::format("{}: {}", name, parts);
+        };
+        ImGui::TextWrapped("%s", trf("Analysis: {} · {}", side(0), side(1)).c_str());
+        if (ImGui::IsItemHovered()) {
+            const auto how = b.review->depth > 0 ? trf("depth {}", b.review->depth)
+                                                 : trf("{:g} s per move", b.review->movetime_ms / 1000.0);
+            ImGui::SetTooltip("%s", trf("By {}, {}. Losses of 10, 20 and 30 % of the winning chances are an "
+                                        "inaccuracy (?!), a mistake (?) and a blunder (??).",
+                                        b.review->engine, how)
+                                        .c_str());
+        }
+    }
 }
 
 }  // namespace fcg

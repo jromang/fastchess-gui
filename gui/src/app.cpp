@@ -177,11 +177,14 @@ void App::frame() {
         } else if (w == "board" || w == "board-analyse") {  // the Board page; its analysis started
             page_ = Page::Board;
             if (w == "board-analyse") setBoardAnalysis(true);
-        } else if (w.rfind("board=", 0) == 0 || w.rfind("board-analyse=", 0) == 0) {
-            // board=FILE: a PGN file (or a FEN, EPD file) on the Board page; board-analyse=FILE, analysed.
+        } else if (w.rfind("board=", 0) == 0 || w.rfind("board-analyse=", 0) == 0 ||
+                   w.rfind("board-review=", 0) == 0) {
+            // board=FILE: a PGN file (or a FEN, EPD file) on the Board page; board-analyse=FILE, analysed;
+            // board-review=FILE: its first game analysed move by move, once read.
             const auto eq = w.find('=');
             dropFile(w.substr(eq + 1));
             if (w.rfind("board-analyse=", 0) == 0) setBoardAnalysis(true);
+            if (w.rfind("board-review=", 0) == 0) review_when_read_ = true;
         } else if (w == "board-edit") {  // the position editor
             page_ = Page::Board;
             openPositionEditor();

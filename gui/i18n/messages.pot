@@ -150,6 +150,9 @@ msgstr ""
 msgid "A game has no port: {}"
 msgstr ""
 
+msgid "A game is being analysed move by move: wait for its end, or cancel it."
+msgstr ""
+
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr ""
 
@@ -337,13 +340,25 @@ msgstr ""
 msgid "Analyse"
 msgstr ""
 
+msgid "Analyse the game"
+msgstr ""
+
+msgid "Analyse the game again"
+msgstr ""
+
 msgid "Analyse the game followed"
 msgstr ""
 
 msgid "Analyse the game shown"
 msgstr ""
 
+msgid "Analysing the game: {} of {} positions"
+msgstr ""
+
 msgid "Analysis"
+msgstr ""
+
+msgid "Analysis: {} · {}"
 msgstr ""
 
 msgid "Anchor:"
@@ -424,6 +439,9 @@ msgstr ""
 msgid "Base (s)"
 msgstr ""
 
+msgid "Best: {} ({})"
+msgstr ""
+
 msgid "Black"
 msgstr ""
 
@@ -454,6 +472,9 @@ msgstr ""
 msgid "Black's connection stalls"
 msgstr ""
 
+msgid "Blunder"
+msgstr ""
+
 msgid "Board"
 msgstr ""
 
@@ -481,6 +502,9 @@ msgstr ""
 msgid "By time control"
 msgstr ""
 
+msgid "By {}, {}. Losses of 10, 20 and 30 % of the winning chances are an inaccuracy (?!), a mistake (?) and a blunder (??)."
+msgstr ""
+
 msgid "CPU affinity"
 msgstr ""
 
@@ -491,6 +515,9 @@ msgid "Calculator…"
 msgstr ""
 
 msgid "Cancel"
+msgstr ""
+
+msgid "Cancel the analysis of the game"
 msgstr ""
 
 msgid "Cannot draw the pieces."
@@ -1275,6 +1302,9 @@ msgstr ""
 msgid "Import…"
 msgstr ""
 
+msgid "Inaccuracy"
+msgstr ""
+
 msgid "Inactive"
 msgstr ""
 
@@ -1483,6 +1513,9 @@ msgid "Max score (cp)"
 msgstr ""
 
 msgid "Maximum number of moves"
+msgstr ""
+
+msgid "Mistake"
 msgstr ""
 
 msgid "Model"
@@ -2530,6 +2563,15 @@ msgstr ""
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr ""
 
+msgid "The analysis"
+msgstr ""
+
+msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
+msgstr ""
+
+msgid "The analysis engine stopped."
+msgstr ""
+
 msgid "The analysis engine waits."
 msgstr ""
 
@@ -2582,6 +2624,9 @@ msgid "The engine's own protocol (xboard), without the translation to UCI a tour
 msgstr ""
 
 msgid "The engine's settings; the console stays open."
+msgstr ""
+
+msgid "The engines"
 msgstr ""
 
 msgid "The engines are those of {}, kept before the last change."
@@ -3201,6 +3246,9 @@ msgstr ""
 msgid "no engine has a SyzygyPath"
 msgstr ""
 
+msgid "no mistake"
+msgstr ""
+
 msgid "nodes"
 msgstr ""
 
@@ -3320,6 +3368,9 @@ msgstr ""
 msgid "{:.1f} GB"
 msgstr ""
 
+msgid "{:g} s per move"
+msgstr ""
+
 msgid "{}  ({} openings)"
 msgstr ""
 
@@ -3344,8 +3395,16 @@ msgstr ""
 msgid "{} against each opponent"
 msgstr ""
 
+msgid "{} analyses the game move by move."
+msgstr ""
+
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr ""
+
+msgid "{} blunder"
+msgid_plural "{} blunders"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr ""
@@ -3512,6 +3571,11 @@ msgstr[1] ""
 msgid "{} illegal moves"
 msgstr ""
 
+msgid "{} inaccuracy"
+msgid_plural "{} inaccuracies"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{} is not a legal move from the initial position."
 msgstr ""
 
@@ -3550,6 +3614,11 @@ msgstr ""
 
 msgid "{} min {:02} s"
 msgstr ""
+
+msgid "{} mistake"
+msgid_plural "{} mistakes"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr ""
@@ -3767,6 +3836,9 @@ msgid "{}: the host key's signature is not valid"
 msgstr ""
 
 msgid "{}: unknown to the engine"
+msgstr ""
+
+msgid "{}: {:.0f} % of the winning chances lost."
 msgstr ""
 
 msgid "{}: {}"

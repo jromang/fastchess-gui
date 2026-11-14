@@ -385,6 +385,13 @@ class App {
     void drawPgnGames();
     void openPositionEditor();
     void drawPositionEditor(float size);
+    // A game analysed move by move, in the background, by the analysis engine (one line).
+    [[nodiscard]] const EngineEntry* analysisEngine();  // the one chosen, or the first that works; null without any
+    void startGameReview();
+    void cancelGameReview();
+    void pollGameReview();
+    void drawGameReview();  // its button, its progress, what it found
+    [[nodiscard]] std::string judgementTip(int ply, const MoveReview& judged) const;
     void drawQuitModal();
 
     // The command palette (Ctrl+K) and the guide (F1, the `?` of the page titles), see view_palette.cpp.
@@ -800,7 +807,8 @@ class App {
         std::optional<Tab> tab;
     };
     std::optional<BoardBack> board_back_;
-    bool board_key_taken_ = false;  // key A served a board this frame
+    bool board_key_taken_  = false;  // key A served a board this frame
+    bool review_when_read_ = false;  // --focus board-review: the game analysed once its file is read
 
     // Console view.
     std::vector<Console::Line> console_lines_;

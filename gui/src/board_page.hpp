@@ -20,6 +20,7 @@
 
 #include "analysis.hpp"
 #include "engine_client.hpp"
+#include "game_analysis.hpp"
 #include "pgn_store.hpp"
 
 namespace fcg {
@@ -48,8 +49,21 @@ struct EngineConsole {
 struct BoardSettings {
     AnalysisSettings analysis;
     bool arrows = true;  // the first move of each line drawn on the board
+    // The analysis of a whole game: the time of each position, or its depth when set.
+    int review_ms    = 1000;
+    int review_depth = 0;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BoardSettings, analysis, arrows)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BoardSettings, analysis, arrows, review_ms, review_depth)
+
+// A game being analysed move by move, in the background: its positions searched one after the other.
+struct ReviewJob {
+    ReplayGame game;
+    bool chess960 = false;
+    std::vector<AnalysisPosition> positions;  // from the start, one per ply and the last
+    GameReview review;                        // filled as they are searched
+    SearchLimit limit;
+    bool asked = false;  // the search of the next position was asked
+};
 
 // The position after the first `ply` moves of `game` (its start position for 0). The moves were checked when the game
 // was read or played.
@@ -142,6 +156,11 @@ struct BoardPage {
     std::optional<PositionEditor> editor;  // the position being set up
     int game_tab = 0;                      // the game card: 0 its moves, 1 the games of the file
     int open_tab = -1;                     // a tab to select on the next frame
+
+    std::optional<ReviewJob> review_job;  // a game analysed move by move
+    std::optional<GameReview> review;     // the analysis of the game shown, when it has one
+    std::string review_key;               // the game it is of (reviewKey)
+    std::vector<MoveReview> judged;       // its moves judged, for the game shown
 };
 
 }  // namespace fcg

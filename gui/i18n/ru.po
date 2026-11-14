@@ -152,6 +152,9 @@ msgstr "Файл на ваш выбор"
 msgid "A game has no port: {}"
 msgstr "У партии нет порта: {}"
 
+msgid "A game is being analysed move by move: wait for its end, or cancel it."
+msgstr "Партия анализируется ход за ходом: дождитесь окончания или отмените."
+
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr "Для гаунтлета нужен хотя бы один движок помимо тестируемых."
 
@@ -341,14 +344,26 @@ msgstr "Резкий скачок оценки"
 msgid "Analyse"
 msgstr "Анализировать"
 
+msgid "Analyse the game"
+msgstr "Анализировать партию"
+
+msgid "Analyse the game again"
+msgstr "Снова анализировать партию"
+
 msgid "Analyse the game followed"
 msgstr "Анализировать отслеживаемую партию"
 
 msgid "Analyse the game shown"
 msgstr "Анализировать показанную партию"
 
+msgid "Analysing the game: {} of {} positions"
+msgstr "Анализ партии: {} из {} позиций"
+
 msgid "Analysis"
 msgstr "Анализ"
+
+msgid "Analysis: {} · {}"
+msgstr "Анализ: {} · {}"
 
 msgid "Anchor:"
 msgstr "Опорный движок:"
@@ -428,6 +443,9 @@ msgstr "Вернуться к турниру"
 msgid "Base (s)"
 msgstr "Базовое время (с)"
 
+msgid "Best: {} ({})"
+msgstr "Лучший: {} ({})"
+
 msgid "Black"
 msgstr "Чёрные"
 
@@ -458,6 +476,9 @@ msgstr "Чёрные ×2"
 msgid "Black's connection stalls"
 msgstr "Чёрные не отвечают"
 
+msgid "Blunder"
+msgstr "Грубая ошибка"
+
 msgid "Board"
 msgstr "Доска"
 
@@ -485,6 +506,9 @@ msgstr "Трансляция"
 msgid "By time control"
 msgstr "По контролю времени"
 
+msgid "By {}, {}. Losses of 10, 20 and 30 % of the winning chances are an inaccuracy (?!), a mistake (?) and a blunder (??)."
+msgstr "Движок {}, {}. Потеря 10, 20 и 30 % шансов на победу — неточность (?!), ошибка (?) и грубая ошибка (??)."
+
 msgid "CPU affinity"
 msgstr "Привязка к CPU"
 
@@ -496,6 +520,9 @@ msgstr "Калькулятор…"
 
 msgid "Cancel"
 msgstr "Отмена"
+
+msgid "Cancel the analysis of the game"
+msgstr "Отменить анализ партии"
 
 msgid "Cannot draw the pieces."
 msgstr "Не удалось нарисовать фигуры."
@@ -1280,6 +1307,9 @@ msgstr "Импортированные партии"
 msgid "Import…"
 msgstr "Импорт…"
 
+msgid "Inaccuracy"
+msgstr "Неточность"
+
 msgid "Inactive"
 msgstr "Неактивен"
 
@@ -1489,6 +1519,9 @@ msgstr "Макс. оценка (cp)"
 
 msgid "Maximum number of moves"
 msgstr "Максимальное число ходов"
+
+msgid "Mistake"
+msgstr "Ошибка"
 
 msgid "Model"
 msgstr "Модель"
@@ -2540,6 +2573,15 @@ msgstr "Параметры PGN настройки, для будущих тур�
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "По стандарту PGN это комментарии. fastchess-gui 0.4.13 и более ранние версии читали их как ходы и могли играть некоторые дебюты этой книги из неверной позиции, часто из начальной."
 
+msgid "The analysis"
+msgstr "Анализ"
+
+msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
+msgstr "Движок анализа проходит все позиции партии в фоне: оценка каждого хода, отмечены неточности, ошибки и грубые ошибки."
+
+msgid "The analysis engine stopped."
+msgstr "Движок анализа остановился."
+
 msgid "The analysis engine waits."
 msgstr "Движок анализа ждёт."
 
@@ -2593,6 +2635,9 @@ msgstr "Собственный протокол движка (xboard), без п
 
 msgid "The engine's settings; the console stays open."
 msgstr "Настройки движка; консоль остаётся открытой."
+
+msgid "The engines"
+msgstr "Движки"
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "Движки взяты из {}, сохранённого до последнего изменения."
@@ -3212,6 +3257,9 @@ msgstr "nElo A (ДИ 95%)"
 msgid "no engine has a SyzygyPath"
 msgstr "ни у одного движка нет SyzygyPath"
 
+msgid "no mistake"
+msgstr "без ошибок"
+
 msgid "nodes"
 msgstr "узлы"
 
@@ -3332,6 +3380,9 @@ msgstr "{:.1f} % — {} сильнее, чем {}."
 msgid "{:.1f} GB"
 msgstr "{:.1f} ГБ"
 
+msgid "{:g} s per move"
+msgstr "{:g} с на ход"
+
 msgid "{}  ({} openings)"
 msgstr "{}  (дебютов: {})"
 
@@ -3356,8 +3407,17 @@ msgstr "{} МБ"
 msgid "{} against each opponent"
 msgstr "{} против каждого соперника"
 
+msgid "{} analyses the game move by move."
+msgstr "{} анализирует партию ход за ходом."
+
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} требует перезапуска для каждой партии: отмечено «Перезапускать движок для каждой партии»."
+
+msgid "{} blunder"
+msgid_plural "{} blunders"
+msgstr[0] "{} грубая ошибка"
+msgstr[1] "{} грубые ошибки"
+msgstr[2] "{} грубых ошибок"
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} не читается, поэтому ранее доверенные ключи хостов неизвестны: на {} ничего не отправлено. Исправьте файл или удалите его, чтобы снова принять ключ сервера."
@@ -3545,6 +3605,12 @@ msgstr[2] "{} нелегальных ходов"
 msgid "{} illegal moves"
 msgstr "нелегальных ходов: {}"
 
+msgid "{} inaccuracy"
+msgid_plural "{} inaccuracies"
+msgstr[0] "{} неточность"
+msgstr[1] "{} неточности"
+msgstr[2] "{} неточностей"
+
 msgid "{} is not a legal move from the initial position."
 msgstr "{} — недопустимый ход из начальной позиции."
 
@@ -3586,6 +3652,12 @@ msgstr "матчи × пары партий: {} × {}, плюс тай-брей�
 
 msgid "{} min {:02} s"
 msgstr "{} мин {:02} с"
+
+msgid "{} mistake"
+msgid_plural "{} mistakes"
+msgstr[0] "{} ошибка"
+msgstr[1] "{} ошибки"
+msgstr[2] "{} ошибок"
 
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr "ходов: {} · глубина {:.1f} · {:.0f} мс на ход{}"
@@ -3823,6 +3895,9 @@ msgstr "{}: подпись ключа хоста недействительна"
 
 msgid "{}: unknown to the engine"
 msgstr "{}: неизвестен движку"
+
+msgid "{}: {:.0f} % of the winning chances lost."
+msgstr "{}: потеряно {:.0f} % шансов на победу."
 
 msgid "{}: {}"
 msgstr "{}: {}"

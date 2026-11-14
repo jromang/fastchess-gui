@@ -227,6 +227,33 @@ TEST_CASE("analysis: the mock engine analyses positions one after the other, wit
     CHECK(boardThreads() == before);
 }
 
+TEST_CASE("analysis: the positions of a game searched one after the other, as its analysis move by move does") {
+    if (!fs::is_regular_file(randomMover())) return;
+    ScopedEnv env("FCG_MOCK_ANALYSIS", "1");
+    ReplayGame game;
+    game.start_fen = std::string(chess::constants::STARTPOS);
+    chess::Board b;
+    int ply = 0;
+    for (const char* uci : {"e2e4", "e7e5", "g1f3", "d7d6", "d2d4", "c8g4", "d4e5", "g4f3", "d1f3", "d6e5", "f1c4",
+                            "g8f6", "f3b3", "d8e7", "b1c3", "c7c6"}) {
+        const auto move = chess::uci::uciToMove(b, uci);
+        ply             = playOnGame(game, false, ply, move);
+        b.makeMove(move);
+    }
+    Analyser a;
+    AnalysisSettings settings;
+    settings.multipv = 1;
+    a.start(mover(), settings);
+    for (int i = 0; i <= ply; ++i) {
+        CAPTURE(i);
+        const auto position = analysisPosition(game, false, i);
+        a.analyse(position, {100, 0}, i == 0);
+        REQUIRE(pollUntil(a, [&] { return a.finished() && a.position() == position; }));
+        CHECK(!a.lines().empty());
+        CHECK(!a.bestmove().empty());
+    }
+}
+
 TEST_CASE("analysis: an engine that cannot start, or stops, says so") {
     Analyser a;
     auto e = mover();

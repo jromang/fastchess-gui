@@ -186,6 +186,14 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         page_ = Page::Board;
         openPositionEditor();
     });
+    if (board_.review_job) {
+        add(TR("Cancel the analysis of the game"), TR("Board"), [this] { cancelGameReview(); });
+    } else if (!board_.game.moves.empty()) {
+        add(TR("Analyse the game"), TR("Board"), [this] {
+            page_ = Page::Board;
+            startGameReview();
+        });
+    }
     add(TR("Copy PGN"), TR("Board"),
         [this] { ImGui::SetClipboardText(gamePgn(board_.game, board_.chess960).c_str()); });
     if (live_slot_ >= 0 && live_slot_ < static_cast<int>(slot_views_.size()) &&

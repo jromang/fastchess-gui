@@ -206,6 +206,15 @@ tournament* (or *Back*) returns to the page it came from.
   the next time, they change neither the engine of the library nor any tournament. The library's other option
   values are sent as a game sends them. The analysis waits while another page is shown, and goes on when the Board
   page comes back; *Stop the analysis* (or A) stops it, and a dot on the rail's *Board* button tells when it runs.
+- **Analyse the game** goes through every position of the game shown with the analysis engine (its threads and
+  hash, one line), for the time per move or the depth chosen beside the button, in the background: the progress
+  shows above the moves, *Cancel* stops it, and the analysis of the board waits meanwhile. Each move is judged by
+  the winning chances its mover lost, from the engine's scores before and after it (lichess' measure: 50 % at 0.00,
+  about 59 % at +1.00): 10 points lost is an inaccuracy (`?!`), 20 a mistake (`?`), 30 a blunder (`??`), marked
+  after the move in the list; the move the engine would have played is never marked. The tooltip of a marked move
+  gives what it lost and the engine's move. A line counts them for each player, and the analysis's curve (orange)
+  is drawn over the engines' own (blue). The analysis is kept with the game (in `analyses/` in the profile): the same
+  game, opened again from anywhere, shows it at once.
 - **Its cores**: the analysis's threads count in the core budget, shown under it with the machine's threads. While a
   tournament runs, the analysis competes with its games: the page says so, with the threads the games use. Its
   engine is not one of the tournament's processes: the end of a tournament does not end it.
@@ -585,6 +594,8 @@ it holds a lichess token.
 - `book-cache/`: the PGN books turned into Polyglot books for the participants' own books (removed after 30 days unused);
 - `layout.ini`: the window layout and the panels of the workspace; `layouts.json`: the layouts saved by name; `fastchess-gui.log`: the log of the last session;
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
+- `board.json`: the settings of the Board page's analysis; `analyses/*.json`: the games analysed move by move, one
+  file each;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**, the folder of *Every engine
   of a folder…*, the tester and site of *Export for a rating list…*, and the lichess token;
 - `running.json`: the tournament running now, removed when it stops; found at launch, it tells what to resume;

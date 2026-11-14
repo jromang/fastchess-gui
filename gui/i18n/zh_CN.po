@@ -148,6 +148,9 @@ msgstr "自选文件"
 msgid "A game has no port: {}"
 msgstr "有一局对局没有端口：{}"
 
+msgid "A game is being analysed move by move: wait for its end, or cancel it."
+msgstr "正在逐步分析一局对局：请等待结束，或取消。"
+
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr "车轮战除被测引擎外至少还需要一个引擎。"
 
@@ -333,14 +336,26 @@ msgstr "评估出现大幅波动"
 msgid "Analyse"
 msgstr "分析"
 
+msgid "Analyse the game"
+msgstr "分析对局"
+
+msgid "Analyse the game again"
+msgstr "重新分析对局"
+
 msgid "Analyse the game followed"
 msgstr "分析正在关注的对局"
 
 msgid "Analyse the game shown"
 msgstr "分析显示的对局"
 
+msgid "Analysing the game: {} of {} positions"
+msgstr "正在分析对局：{} / {} 个局面"
+
 msgid "Analysis"
 msgstr "分析"
+
+msgid "Analysis: {} · {}"
+msgstr "分析：{} · {}"
 
 msgid "Anchor:"
 msgstr "锚点："
@@ -420,6 +435,9 @@ msgstr "回到锦标赛"
 msgid "Base (s)"
 msgstr "基本时间 (s)"
 
+msgid "Best: {} ({})"
+msgstr "最佳：{}（{}）"
+
 msgid "Black"
 msgstr "黑方"
 
@@ -450,6 +468,9 @@ msgstr "黑方 ×2"
 msgid "Black's connection stalls"
 msgstr "黑方连接无响应"
 
+msgid "Blunder"
+msgstr "败着"
+
 msgid "Board"
 msgstr "棋盘"
 
@@ -477,6 +498,9 @@ msgstr "直播"
 msgid "By time control"
 msgstr "按时限"
 
+msgid "By {}, {}. Losses of 10, 20 and 30 % of the winning chances are an inaccuracy (?!), a mistake (?) and a blunder (??)."
+msgstr "由 {} 分析，{}。失去 10、20 和 30 % 的获胜机会分别为缓着（?!）、错着（?）和败着（??）。"
+
 msgid "CPU affinity"
 msgstr "CPU 亲和性"
 
@@ -488,6 +512,9 @@ msgstr "计算器…"
 
 msgid "Cancel"
 msgstr "取消"
+
+msgid "Cancel the analysis of the game"
+msgstr "取消对局分析"
 
 msgid "Cannot draw the pieces."
 msgstr "无法绘制棋子。"
@@ -1270,6 +1297,9 @@ msgstr "已导入的对局"
 msgid "Import…"
 msgstr "导入…"
 
+msgid "Inaccuracy"
+msgstr "缓着"
+
 msgid "Inactive"
 msgstr "停用"
 
@@ -1479,6 +1509,9 @@ msgstr "最大分数 (cp)"
 
 msgid "Maximum number of moves"
 msgstr "最大步数"
+
+msgid "Mistake"
+msgstr "错着"
 
 msgid "Model"
 msgstr "模型"
@@ -2520,6 +2553,15 @@ msgstr "设置的 PGN 选项，用于以后的锦标赛。"
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "按 PGN 标准，这些是注释。fastchess-gui 0.4.13 及更早版本把它们当作着法读取，可能从错误的局面（常常是初始局面）开始下此开局库中的某些开局。"
 
+msgid "The analysis"
+msgstr "分析"
+
+msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
+msgstr "分析引擎在后台逐个分析对局中的每个局面：每步一个评分，并标出缓着、错着和败着。"
+
+msgid "The analysis engine stopped."
+msgstr "分析引擎已停止。"
+
 msgid "The analysis engine waits."
 msgstr "分析引擎在等待。"
 
@@ -2573,6 +2615,9 @@ msgstr "引擎自己的协议（xboard），不经过锦标赛使用的 UCI 转�
 
 msgid "The engine's settings; the console stays open."
 msgstr "引擎的设置；控制台保持打开。"
+
+msgid "The engines"
+msgstr "引擎"
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "引擎来自 {}，即上次更改前保留的副本。"
@@ -3190,6 +3235,9 @@ msgstr "A 的 nElo（95% 置信区间）"
 msgid "no engine has a SyzygyPath"
 msgstr "没有引擎设置了 SyzygyPath"
 
+msgid "no mistake"
+msgstr "没有错误"
+
 msgid "nodes"
 msgstr "节点"
 
@@ -3308,6 +3356,9 @@ msgstr "有 {:.1f}% 的概率 {} 强于 {}。"
 msgid "{:.1f} GB"
 msgstr "{:.1f} GB"
 
+msgid "{:g} s per move"
+msgstr "每步 {:g} 秒"
+
 msgid "{}  ({} openings)"
 msgstr "{}  （{} 个开局）"
 
@@ -3332,8 +3383,15 @@ msgstr "{} MB"
 msgid "{} against each opponent"
 msgstr "{} 对每个对手"
 
+msgid "{} analyses the game move by move."
+msgstr "{} 正在逐步分析对局。"
+
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} 要求每局都重新启动：已勾选“每局对局都重启引擎”。"
+
+msgid "{} blunder"
+msgid_plural "{} blunders"
+msgstr[0] "{} 个败着"
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "无法读取 {}，因此之前信任的主机密钥未知：未向 {} 发送任何内容。请修复该文件，或删除它以重新信任服务器的密钥。"
@@ -3479,6 +3537,10 @@ msgstr[0] "{} 次非法着法"
 msgid "{} illegal moves"
 msgstr "{} 次非法着法"
 
+msgid "{} inaccuracy"
+msgid_plural "{} inaccuracies"
+msgstr[0] "{} 个缓着"
+
 msgid "{} is not a legal move from the initial position."
 msgstr "{} 在初始局面中不是合法着法。"
 
@@ -3514,6 +3576,10 @@ msgstr "{} 场比赛 × {} 对对局，另加加赛"
 
 msgid "{} min {:02} s"
 msgstr "{} 分 {:02} 秒"
+
+msgid "{} mistake"
+msgid_plural "{} mistakes"
+msgstr[0] "{} 个错着"
 
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr "{} 步 · 深度 {:.1f} · 每步 {:.0f} ms{}"
@@ -3713,6 +3779,9 @@ msgstr "{}：主机密钥的签名无效"
 
 msgid "{}: unknown to the engine"
 msgstr "{}：引擎不认识"
+
+msgid "{}: {:.0f} % of the winning chances lost."
+msgstr "{}：失去了 {:.0f} % 的获胜机会。"
 
 msgid "{}: {}"
 msgstr "{}：{}"

@@ -150,6 +150,9 @@ msgstr "Um arquivo à sua escolha"
 msgid "A game has no port: {}"
 msgstr "Uma partida não tem porta: {}"
 
+msgid "A game is being analysed move by move: wait for its end, or cancel it."
+msgstr "Uma partida está sendo analisada lance a lance: espere o fim ou cancele."
+
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr "Um gauntlet precisa de pelo menos um engine além dos testados."
 
@@ -337,14 +340,26 @@ msgstr "Uma avaliação dá um salto"
 msgid "Analyse"
 msgstr "Analisar"
 
+msgid "Analyse the game"
+msgstr "Analisar a partida"
+
+msgid "Analyse the game again"
+msgstr "Analisar a partida de novo"
+
 msgid "Analyse the game followed"
 msgstr "Analisar a partida acompanhada"
 
 msgid "Analyse the game shown"
 msgstr "Analisar a partida mostrada"
 
+msgid "Analysing the game: {} of {} positions"
+msgstr "Analisando a partida: {} de {} posições"
+
 msgid "Analysis"
 msgstr "Análise"
+
+msgid "Analysis: {} · {}"
+msgstr "Análise: {} · {}"
 
 msgid "Anchor:"
 msgstr "Âncora:"
@@ -424,6 +439,9 @@ msgstr "Voltar ao torneio"
 msgid "Base (s)"
 msgstr "Tempo base (s)"
 
+msgid "Best: {} ({})"
+msgstr "Melhor: {} ({})"
+
 msgid "Black"
 msgstr "Pretas"
 
@@ -454,6 +472,9 @@ msgstr "Pretas ×2"
 msgid "Black's connection stalls"
 msgstr "A conexão das Pretas trava"
 
+msgid "Blunder"
+msgstr "Erro grave"
+
 msgid "Board"
 msgstr "Tabuleiro"
 
@@ -481,6 +502,9 @@ msgstr "Transmissão"
 msgid "By time control"
 msgstr "Por controle de tempo"
 
+msgid "By {}, {}. Losses of 10, 20 and 30 % of the winning chances are an inaccuracy (?!), a mistake (?) and a blunder (??)."
+msgstr "Por {}, {}. Perdas de 10, 20 e 30 % das chances de vitória são uma imprecisão (?!), um erro (?) e um erro grave (??)."
+
 msgid "CPU affinity"
 msgstr "Afinidade de CPU"
 
@@ -492,6 +516,9 @@ msgstr "Calculadora…"
 
 msgid "Cancel"
 msgstr "Cancelar"
+
+msgid "Cancel the analysis of the game"
+msgstr "Cancelar a análise da partida"
 
 msgid "Cannot draw the pieces."
 msgstr "Não foi possível desenhar as peças."
@@ -1275,6 +1302,9 @@ msgstr "Partidas importadas"
 msgid "Import…"
 msgstr "Importar…"
 
+msgid "Inaccuracy"
+msgstr "Imprecisão"
+
 msgid "Inactive"
 msgstr "Inativo"
 
@@ -1484,6 +1514,9 @@ msgstr "Avaliação máx. (cp)"
 
 msgid "Maximum number of moves"
 msgstr "Número máximo de lances"
+
+msgid "Mistake"
+msgstr "Erro"
 
 msgid "Model"
 msgstr "Modelo"
@@ -2530,6 +2563,15 @@ msgstr "As opções PGN da configuração, para os próximos torneios."
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "O padrão PGN os torna comentários. O fastchess-gui 0.4.13 e anteriores os liam como lances, e podiam jogar algumas aberturas deste livro a partir de uma posição errada, muitas vezes a inicial."
 
+msgid "The analysis"
+msgstr "A análise"
+
+msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
+msgstr "O motor de análise percorre todas as posições da partida, em segundo plano: uma avaliação por lance, e as imprecisões, erros e erros graves marcados."
+
+msgid "The analysis engine stopped."
+msgstr "O motor de análise parou."
+
 msgid "The analysis engine waits."
 msgstr "O motor de análise espera."
 
@@ -2583,6 +2625,9 @@ msgstr "O protocolo próprio do motor (xboard), sem a tradução para UCI que um
 
 msgid "The engine's settings; the console stays open."
 msgstr "As configurações do motor; o console continua aberto."
+
+msgid "The engines"
+msgstr "Os motores"
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "Os motores são os de {}, guardado antes da última alteração."
@@ -3201,6 +3246,9 @@ msgstr "nElo de A (IC 95%)"
 msgid "no engine has a SyzygyPath"
 msgstr "nenhum engine tem SyzygyPath"
 
+msgid "no mistake"
+msgstr "nenhum erro"
+
 msgid "nodes"
 msgstr "nós"
 
@@ -3320,6 +3368,9 @@ msgstr "{:.1f} % de que {} seja mais forte que {}."
 msgid "{:.1f} GB"
 msgstr "{:.1f} GB"
 
+msgid "{:g} s per move"
+msgstr "{:g} s por lance"
+
 msgid "{}  ({} openings)"
 msgstr "{}  ({} aberturas)"
 
@@ -3344,8 +3395,16 @@ msgstr "{} MB"
 msgid "{} against each opponent"
 msgstr "{} contra cada adversário"
 
+msgid "{} analyses the game move by move."
+msgstr "{} analisa a partida lance a lance."
+
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} pede para ser reiniciado a cada partida: “Reiniciar o engine a cada partida” está marcado."
+
+msgid "{} blunder"
+msgid_plural "{} blunders"
+msgstr[0] "{} erro grave"
+msgstr[1] "{} erros graves"
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} não pode ser lido, então as chaves de host aceitas antes são desconhecidas: nada foi enviado a {}. Repare o arquivo, ou apague-o para aceitar de novo a chave do servidor."
@@ -3512,6 +3571,11 @@ msgstr[1] "{} lances ilegais"
 msgid "{} illegal moves"
 msgstr "{} lances ilegais"
 
+msgid "{} inaccuracy"
+msgid_plural "{} inaccuracies"
+msgstr[0] "{} imprecisão"
+msgstr[1] "{} imprecisões"
+
 msgid "{} is not a legal move from the initial position."
 msgstr "{} não é um lance legal a partir da posição inicial."
 
@@ -3550,6 +3614,11 @@ msgstr "{} matches × {} pares de partidas, mais os desempates"
 
 msgid "{} min {:02} s"
 msgstr "{} min {:02} s"
+
+msgid "{} mistake"
+msgid_plural "{} mistakes"
+msgstr[0] "{} erro"
+msgstr[1] "{} erros"
 
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr "{} lances · profundidade {:.1f} · {:.0f} ms por lance{}"
@@ -3768,6 +3837,9 @@ msgstr "{}: a assinatura da chave de host não é válida"
 
 msgid "{}: unknown to the engine"
 msgstr "{}: desconhecida pelo motor"
+
+msgid "{}: {:.0f} % of the winning chances lost."
+msgstr "{}: {:.0f} % das chances de vitória perdidas."
 
 msgid "{}: {}"
 msgstr "{}: {}"
