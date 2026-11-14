@@ -118,6 +118,12 @@ msgstr "= {:.2f} 逻辑斯谛 Elo"
 msgid "A (tested)"
 msgstr "A（被测）"
 
+msgid "A Chat button in the page's header opens this address in a new tab: a Discord invite, a Twitch channel, a forum thread. An https link only. While the games are pushed to lichess, the page also links to the lichess round, which has its own chat."
+msgstr "页面顶部的“聊天”按钮会在新标签页中打开此地址：Discord 邀请、Twitch 频道或论坛帖子。仅限 https 链接。对局推送到 lichess 时，页面还会链接到 lichess 的轮次，那里有自己的聊天。"
+
+msgid "A Discord server ID is 17 to 20 digits."
+msgstr "Discord 服务器 ID 为 17 至 20 位数字。"
+
 msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
 msgstr "PGN 开局库按其对局中出现的频率走出对局中的着法；“全部”即对局的前 {} 个半回合。"
 
@@ -483,6 +489,9 @@ msgstr "图表"
 msgid "Charts"
 msgstr "图表"
 
+msgid "Chat link"
+msgstr "聊天链接"
+
 msgid "Check"
 msgstr "检查"
 
@@ -659,6 +668,9 @@ msgstr "目录之间用 ':' 分隔（只需 WDL 文件）。"
 
 msgid "Directories separated by ';' (WDL files are enough)."
 msgstr "目录之间用 ';' 分隔（只需 WDL 文件）。"
+
+msgid "Discord server ID"
+msgstr "Discord 服务器 ID"
 
 msgid "Done: the tournament goes on with the change."
 msgstr "完成：锦标赛将带着此修改继续进行。"
@@ -1479,6 +1491,9 @@ msgstr "这些引擎都不以相同名称存在于库中。"
 
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "归一化 Elo（fishtest、OpenBench），及其 95 % 区间。"
+
+msgid "Not an https link."
+msgstr "不是 https 链接。"
 
 msgid "Not checked"
 msgstr "未检查"
@@ -2399,6 +2414,9 @@ msgstr "开局库必须是 .epd、.pgn 或 .bin (Polyglot) 文件。"
 
 msgid "The openings appear here once their games are played."
 msgstr "开局的对局下完后，开局会显示在这里。"
+
+msgid "The page shows Discord's widget of this server, in its light or dark theme: its name, the members online and a Join button, not the messages. The server's owner switches the widget on in Server Settings, Widget, which also shows the server ID. Discord then sees the visits of the page's viewers."
+msgstr "页面以其浅色或深色主题显示该服务器的 Discord 小组件：服务器名称、在线成员和“加入”按钮，不显示消息。服务器所有者在“服务器设置”中的“小组件”里开启它，那里也显示服务器 ID。这样 Discord 会看到页面观众的访问。"
 
 msgid "The panels and where they are, under a name of yours."
 msgstr "以你选择的名称保存面板及其位置。"

@@ -120,6 +120,12 @@ msgstr ""
 msgid "A (tested)"
 msgstr ""
 
+msgid "A Chat button in the page's header opens this address in a new tab: a Discord invite, a Twitch channel, a forum thread. An https link only. While the games are pushed to lichess, the page also links to the lichess round, which has its own chat."
+msgstr ""
+
+msgid "A Discord server ID is 17 to 20 digits."
+msgstr ""
+
 msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
 msgstr ""
 
@@ -487,6 +493,9 @@ msgstr ""
 msgid "Charts"
 msgstr ""
 
+msgid "Chat link"
+msgstr ""
+
 msgid "Check"
 msgstr ""
 
@@ -662,6 +671,9 @@ msgid "Directories separated by ':' (WDL files are enough)."
 msgstr ""
 
 msgid "Directories separated by ';' (WDL files are enough)."
+msgstr ""
+
+msgid "Discord server ID"
 msgstr ""
 
 msgid "Done: the tournament goes on with the change."
@@ -1483,6 +1495,9 @@ msgid "None of these engines is in the library under the same name."
 msgstr ""
 
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
+msgstr ""
+
+msgid "Not an https link."
 msgstr ""
 
 msgid "Not checked"
@@ -2408,6 +2423,9 @@ msgid "The opening book must be an .epd, .pgn or .bin (Polyglot) file."
 msgstr ""
 
 msgid "The openings appear here once their games are played."
+msgstr ""
+
+msgid "The page shows Discord's widget of this server, in its light or dark theme: its name, the members online and a Join button, not the messages. The server's owner switches the widget on in Server Settings, Widget, which also shows the server ID. Discord then sees the visits of the page's viewers."
 msgstr ""
 
 msgid "The panels and where they are, under a name of yours."

@@ -120,6 +120,12 @@ msgstr "= {:.2f} Elo logístico"
 msgid "A (tested)"
 msgstr "A (probado)"
 
+msgid "A Chat button in the page's header opens this address in a new tab: a Discord invite, a Twitch channel, a forum thread. An https link only. While the games are pushed to lichess, the page also links to the lichess round, which has its own chat."
+msgstr "Un botón Chat en la cabecera de la página abre esta dirección en una pestaña nueva: una invitación de Discord, un canal de Twitch, un hilo de foro. Solo un enlace https. Mientras las partidas se envían a lichess, la página también enlaza a la ronda de lichess, que tiene su propio chat."
+
+msgid "A Discord server ID is 17 to 20 digits."
+msgstr "Un ID de servidor de Discord tiene de 17 a 20 dígitos."
+
 msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
 msgstr "Un libro PGN juega las jugadas de sus partidas, tan a menudo como estas las juegan; «todo» son sus primeras {} medias jugadas."
 
@@ -487,6 +493,9 @@ msgstr "Gráfico"
 msgid "Charts"
 msgstr "Gráficos"
 
+msgid "Chat link"
+msgstr "Enlace del chat"
+
 msgid "Check"
 msgstr "Comprobar"
 
@@ -663,6 +672,9 @@ msgstr "Carpetas separadas por ':' (con los archivos WDL basta)."
 
 msgid "Directories separated by ';' (WDL files are enough)."
 msgstr "Carpetas separadas por ';' (con los archivos WDL basta)."
+
+msgid "Discord server ID"
+msgstr "ID del servidor de Discord"
 
 msgid "Done: the tournament goes on with the change."
 msgstr "Hecho: el torneo continúa con el cambio."
@@ -1484,6 +1496,9 @@ msgstr "Ninguno de estos motores está en la biblioteca con el mismo nombre."
 
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "Elo normalizado (fishtest, OpenBench), con su intervalo del 95 %."
+
+msgid "Not an https link."
+msgstr "No es un enlace https."
 
 msgid "Not checked"
 msgstr "No comprobado"
@@ -2409,6 +2424,9 @@ msgstr "El libro de aperturas debe ser un archivo .epd, .pgn o .bin (Polyglot)."
 
 msgid "The openings appear here once their games are played."
 msgstr "Las aperturas aparecen aquí cuando se juegan sus partidas."
+
+msgid "The page shows Discord's widget of this server, in its light or dark theme: its name, the members online and a Join button, not the messages. The server's owner switches the widget on in Server Settings, Widget, which also shows the server ID. Discord then sees the visits of the page's viewers."
+msgstr "La página muestra el widget de Discord de este servidor, en su tema claro u oscuro: su nombre, los miembros conectados y un botón Unirse, no los mensajes. El propietario del servidor activa el widget en Ajustes del servidor, Widget, que también muestra el ID del servidor. Discord ve entonces las visitas de los espectadores de la página."
 
 msgid "The panels and where they are, under a name of yours."
 msgstr "Los paneles y dónde están, con el nombre que elijas."

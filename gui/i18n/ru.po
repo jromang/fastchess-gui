@@ -122,6 +122,12 @@ msgstr "= {:.2f} Elo по логистической шкале"
 msgid "A (tested)"
 msgstr "A (тестируемый)"
 
+msgid "A Chat button in the page's header opens this address in a new tab: a Discord invite, a Twitch channel, a forum thread. An https link only. While the games are pushed to lichess, the page also links to the lichess round, which has its own chat."
+msgstr "Кнопка «Чат» в шапке страницы открывает этот адрес в новой вкладке: приглашение в Discord, канал Twitch, тему форума. Только https-ссылка. Пока партии отправляются на lichess, страница также ведёт на тур lichess, где есть свой чат."
+
+msgid "A Discord server ID is 17 to 20 digits."
+msgstr "ID сервера Discord состоит из 17–20 цифр."
+
 msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
 msgstr "Книга PGN играет ходы своих партий так часто, как они в них встречаются; «вся» — это их первые {} полуходов."
 
@@ -491,6 +497,9 @@ msgstr "График"
 msgid "Charts"
 msgstr "Графики"
 
+msgid "Chat link"
+msgstr "Ссылка на чат"
+
 msgid "Check"
 msgstr "Проверить"
 
@@ -667,6 +676,9 @@ msgstr "Папки через ':' (достаточно файлов WDL)."
 
 msgid "Directories separated by ';' (WDL files are enough)."
 msgstr "Папки через ';' (достаточно файлов WDL)."
+
+msgid "Discord server ID"
+msgstr "ID сервера Discord"
 
 msgid "Done: the tournament goes on with the change."
 msgstr "Готово: турнир продолжается с изменением."
@@ -1489,6 +1501,9 @@ msgstr "Ни одного из этих движков нет в библиот�
 
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "Elo в нормализованной шкале (fishtest, OpenBench), с интервалом 95 %."
+
+msgid "Not an https link."
+msgstr "Это не https-ссылка."
 
 msgid "Not checked"
 msgstr "Не проверен"
@@ -2419,6 +2434,9 @@ msgstr "Дебютная книга должна быть файлом .epd, .pg
 
 msgid "The openings appear here once their games are played."
 msgstr "Дебюты появляются здесь, как только сыграны их партии."
+
+msgid "The page shows Discord's widget of this server, in its light or dark theme: its name, the members online and a Join button, not the messages. The server's owner switches the widget on in Server Settings, Widget, which also shows the server ID. Discord then sees the visits of the page's viewers."
+msgstr "Страница показывает виджет Discord этого сервера в своей светлой или тёмной теме: название, участников в сети и кнопку «Присоединиться», но не сообщения. Владелец сервера включает виджет в «Настройки сервера» → «Виджет», там же виден ID сервера. Discord при этом видит посещения зрителей страницы."
 
 msgid "The panels and where they are, under a name of yours."
 msgstr "Панели и их расположение под выбранным вами именем."
