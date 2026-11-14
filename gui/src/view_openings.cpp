@@ -217,6 +217,12 @@ void App::drawOpenings() {
     BoardDecor decor;
     decor.eval_white = -1;
     drawBoard(atlas_, board, std::min(ImGui::GetContentRegionAvail().x, px(320)), decor);
+    // A: the opening on the Board page, analysed.
+    if ((ImGui::IsItemHovered() || ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) && boardKey()) {
+        openPositionOnBoard(o.fen, chess960(*run_.tournament()), trf("Opening · {}", name(o)), true);
+    }
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+        ImGui::SetTooltip("%s", TR("A: analyse it on the Board page"));
     ImGui::TextDisabled("%s", o.fen.c_str());
 
     ImGui::Spacing();

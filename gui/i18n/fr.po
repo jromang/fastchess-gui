@@ -186,6 +186,9 @@ msgstr "Un moteur à part"
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
 msgstr "Un tableau que GitHub et les forums affichent comme tel, avec le même en-tête que la page HTML."
 
+msgid "A tournament is running: the analysis competes with its games ({} threads)."
+msgstr "Un tournoi est en cours : l'analyse est en concurrence avec ses parties ({} threads)."
+
 msgid "A tournament is running: what this engine searches takes cores from its games."
 msgstr "Un tournoi est en cours : ce que ce moteur calcule prend des cœurs à ses parties."
 
@@ -194,6 +197,12 @@ msgstr "Un tournoi attend de démarrer."
 
 msgid "A: +%d  =%d  -%d"
 msgstr "A : +%d  =%d  -%d"
+
+msgid "A: an engine of the library analyses the position."
+msgstr "A : un moteur de la bibliothèque analyse la position."
+
+msgid "A: analyse it on the Board page"
+msgstr "A : l'analyser dans la page Échiquier"
 
 msgid "API token (with the study:write scope)"
 msgstr "Jeton d'API (avec la permission study:write)"
@@ -319,6 +328,18 @@ msgstr "Une liste de moteurs…"
 msgid "An evaluation swings"
 msgstr "Une évaluation bascule"
 
+msgid "Analyse"
+msgstr "Analyser"
+
+msgid "Analyse the game followed"
+msgstr "Analyser la partie suivie"
+
+msgid "Analyse the game shown"
+msgstr "Analyser la partie affichée"
+
+msgid "Analysis"
+msgstr "Analyse"
+
 msgid "Anchor:"
 msgstr "Ancre :"
 
@@ -373,11 +394,23 @@ msgstr "Profondeur moy."
 msgid "B (baseline)"
 msgstr "B (référence)"
 
+msgid "Back"
+msgstr "Retour"
+
+msgid "Back to the books"
+msgstr "Revenir aux livres"
+
 msgid "Back to the default"
 msgstr "Revenir au dossier par défaut"
 
 msgid "Back to the default value"
 msgstr "Revenir à la valeur par défaut"
+
+msgid "Back to the game"
+msgstr "Revenir à la partie"
+
+msgid "Back to the tournament"
+msgstr "Revenir au tournoi"
 
 msgid "Base (s)"
 msgstr "Temps de base (s)"
@@ -411,6 +444,9 @@ msgstr "Les Noirs ne répondent plus"
 
 msgid "Board"
 msgstr "Échiquier"
+
+msgid "Board position"
+msgstr "Position de l'échiquier"
 
 msgid "Book"
 msgstr "Livre"
@@ -541,6 +577,9 @@ msgstr "Choisis un livre dans la liste."
 msgid "Choose an EPD file whose positions have their best move (bm), the moves to avoid (am), or STS points (c0)."
 msgstr "Choisis un fichier EPD dont les positions ont leur meilleur coup (bm), les coups à éviter (am) ou des points STS (c0)."
 
+msgid "Choose an engine"
+msgstr "Choisis un moteur"
+
 msgid "Choose an engine in the list."
 msgstr "Choisis un moteur dans la liste."
 
@@ -585,6 +624,9 @@ msgstr "Clique pour agrandir"
 
 msgid "Click to sort; right-click to choose the columns."
 msgstr "Clique pour trier ; clic droit pour choisir les colonnes."
+
+msgid "Click: play its first move. Scores are White's."
+msgstr "Clic : jouer son premier coup. Les scores sont ceux des Blancs."
 
 msgid "Close"
 msgstr "Fermer"
@@ -631,11 +673,17 @@ msgstr "Console…"
 msgid "Copy"
 msgstr "Copier"
 
+msgid "Copy FEN"
+msgstr "Copier le FEN"
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "Cœurs occupés pendant qu'il réfléchit · part d'un cœur utilisée pendant que l'adversaire réfléchit (0 % sans pondering). Mesuré après 20 s de chaque."
 
 msgid "Count"
 msgstr "Nombre"
+
+msgid "Counts in the core budget · {} of {} threads"
+msgstr "Compte dans le budget de cœurs · {} sur {} threads"
 
 msgid "Crash / illegal move"
 msgstr "Crash / coup illégal"
@@ -1143,6 +1191,9 @@ msgstr "Fins de partie"
 msgid "How long the engine may take to answer uciok when started and isready at the start of each game: more for an engine that loads a large network or hash table. Usually {} s."
 msgstr "Le temps que le moteur peut mettre à répondre à uciok au démarrage et à isready au début de chaque partie : plus pour un moteur qui charge un gros réseau ou une grosse table de hachage. Habituellement {} s."
 
+msgid "How many best moves are shown (MultiPV)."
+msgstr "Combien de meilleurs coups sont montrés (MultiPV)."
+
 msgid "How many times every pairing is played; each time is two games, colours reversed."
 msgstr "Combien de fois chaque appariement est joué ; à chaque fois deux parties, couleurs inversées."
 
@@ -1305,6 +1356,9 @@ msgstr "Probabilité de supériorité sur le moteur suivant de la liste : la pro
 msgid "Likelihood of superiority over the next engine of the list: the probability that it is the stronger of the two. Approximate: with more than 1000 engines, the covariance of the ratings is approximated from each one's games and the games the two played together."
 msgstr "Probabilité de supériorité sur le moteur suivant de la liste : la probabilité qu'il soit le plus fort des deux. Approchée : au-delà de 1000 moteurs, la covariance des classements est estimée d'après les parties de chacun et celles qu'ils ont jouées ensemble."
 
+msgid "Lines"
+msgstr "Lignes"
+
 msgid "Listed among lichess' broadcasts"
 msgstr "Listée parmi les diffusions de lichess"
 
@@ -1346,6 +1400,9 @@ msgstr "Défaites."
 
 msgid "Lost after a winning score"
 msgstr "Perdue après un score gagnant"
+
+msgid "MB; 0: the engine's own."
+msgstr "Mo ; 0 : celui du moteur."
 
 msgid "Machine: %d physical cores, %d threads"
 msgstr "Machine : %d cœurs physiques, %d threads"
@@ -1442,6 +1499,9 @@ msgstr "Aucun moteur trouvé dans ce dossier."
 
 msgid "No engine that works within that range. Engines that were never checked do not count: check them first (Engines, More…)."
 msgstr "Aucun moteur qui fonctionne dans cet intervalle. Les moteurs jamais vérifiés ne comptent pas : vérifie-les d'abord (Moteurs, Plus…)."
+
+msgid "No engine to analyse with: add one on the Engines page."
+msgstr "Aucun moteur pour analyser : ajoutes-en un dans la page Moteurs."
 
 msgid "No engine yet. Click Add."
 msgstr "Aucun moteur. Clique sur Ajouter."
@@ -1542,6 +1602,9 @@ msgstr "Non démarré : un autre démarrage est en attente ({}). Annule-le d'abo
 msgid "Not started: the options of {} cannot be read."
 msgstr "Non démarré : les options de {} ne peuvent pas être lues."
 
+msgid "Not this position."
+msgstr "Pas cette position."
+
 msgid "Notes"
 msgstr "Notes"
 
@@ -1619,6 +1682,9 @@ msgstr "Livre d'ouvertures"
 
 msgid "Opening book not found: {}"
 msgstr "Livre d'ouvertures introuvable : {}"
+
+msgid "Opening · {}"
+msgstr "Ouverture · {}"
 
 msgid "Openings"
 msgstr "Ouvertures"
@@ -1748,6 +1814,9 @@ msgstr "Pièces sur l'échiquier, rois compris."
 msgid "Pins every game to its own processor, shared by its two engines since they never think at the same time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to a node count."
 msgstr "Épingle chaque partie sur son propre processeur, partagé par ses deux moteurs puisqu'ils ne calculent jamais en même temps : 2 parties occupent 2 cœurs à fond et laissent les autres au repos. Utile au temps, sans effet sur un compte de nœuds."
 
+msgid "Play a move on the board, or open a game."
+msgstr "Joue un coup sur l'échiquier, ou ouvre une partie."
+
 msgid "Play games again"
 msgstr "Rejouer des parties"
 
@@ -1812,6 +1881,9 @@ msgstr "Préparation du livre… {} %"
 
 msgid "Presets:"
 msgstr "Préréglages :"
+
+msgid "Press A, or Analyse, for the engine's best moves here."
+msgstr "Appuie sur A, ou Analyser, pour les meilleurs coups du moteur ici."
 
 msgid "Probability that H1 is accepted (%)"
 msgstr "Probabilité qu'H1 soit acceptée (%)"
@@ -2221,6 +2293,9 @@ msgstr "Démarré avec le programme, les arguments, le dossier de travail et les
 msgid "Started: {}, {}, {} concurrent games{}. Folder: {}"
 msgstr "Lancé : {}, {}, {} parties simultanées{}. Dossier : {}"
 
+msgid "Starting {}…"
+msgstr "Démarrage de {}…"
+
 msgid "Starting…"
 msgstr "Démarrage…"
 
@@ -2253,6 +2328,9 @@ msgstr "Arrêter et quitter"
 
 msgid "Stop now (running games are lost)"
 msgstr "Arrêter maintenant (les parties en cours sont perdues)"
+
+msgid "Stop the analysis"
+msgstr "Arrêter l'analyse"
 
 msgid "Stopped"
 msgstr "Arrêté"
@@ -2365,6 +2443,12 @@ msgstr "Les options PGN du setup, pour les prochains tournois."
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "La norme PGN en fait des commentaires. fastchess-gui 0.4.13 et les versions antérieures les lisaient comme des coups, et pouvaient jouer certaines ouvertures de ce livre depuis une mauvaise position, souvent celle de départ."
 
+msgid "The analysis engine waits."
+msgstr "Le moteur d'analyse attend."
+
+msgid "The analysis is running."
+msgstr "L'analyse est en cours."
+
 msgid "The average rating of the opponents met, game by game."
 msgstr "Le classement moyen des adversaires rencontrés, partie par partie."
 
@@ -2445,6 +2529,9 @@ msgstr "Le premier participant, {}, n'a pas d'Elo de référence."
 
 msgid "The folder {} is not there any more."
 msgstr "Le dossier {} n'existe plus."
+
+msgid "The game as it was, without the moves played over it."
+msgstr "La partie telle qu'elle était, sans les coups joués par-dessus."
 
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "Les parties telles que les testeurs des listes de classement les envoient : le fichier à ton nom, la date et les conditions, les joueurs comme les listes les écrivent, les rondes renumérotées, les parties annulées et les doublons écartés."
@@ -2569,6 +2656,12 @@ msgstr "La suite de tests n'est pas démarrée : un tournoi est en cours."
 msgid "The test suite is not started: a tournament waits to start."
 msgstr "La suite de tests n'est pas démarrée : un tournoi attend de démarrer."
 
+msgid "The threads of the analysis: they count in the core budget, with a tournament's games."
+msgstr "Les threads de l'analyse : ils comptent dans le budget de cœurs, avec les parties d'un tournoi."
+
+msgid "The threads the analysis and the games of this page use now, out of the machine's."
+msgstr "Les threads qu'utilisent maintenant l'analyse et les parties de cette page, sur ceux de la machine."
+
 msgid "The time control needs a base time or an increment."
 msgstr "La cadence doit avoir un temps de base ou un incrément."
 
@@ -2595,6 +2688,9 @@ msgstr "Le dossier de travail de {} est introuvable."
 
 msgid "Theme"
 msgstr "Thème"
+
+msgid "These settings are the analysis's: they change neither the engine in the library nor a tournament."
+msgstr "Ces réglages sont ceux de l'analyse : ils ne changent ni le moteur de la bibliothèque ni un tournoi."
 
 msgid "They have not played each other."
 msgstr "Ils ne se sont pas rencontrés."
@@ -2946,6 +3042,9 @@ msgstr "d'un livre Polyglot"
 msgid "game already over"
 msgstr "partie déjà finie"
 
+msgid "game {}"
+msgstr "partie {}"
+
 msgid "games"
 msgstr "parties"
 
@@ -3029,6 +3128,9 @@ msgstr "rejouée à la demande"
 msgid "send at startup"
 msgstr "envoyer au démarrage"
 
+msgid "stopped"
+msgstr "arrêtée"
+
 msgid "the file is not found"
 msgstr "le fichier est introuvable"
 
@@ -3049,6 +3151,9 @@ msgstr "le test rapide de {}"
 
 msgid "the resume of the interrupted tournament"
 msgstr "la reprise du tournoi interrompu"
+
+msgid "this analysis only"
+msgstr "cette analyse seulement"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "à mentionner dans le message, ou pour retester le moteur :"
@@ -3452,6 +3557,11 @@ msgid_plural "{} that two library engines may be"
 msgstr[0] "{} ambigu"
 msgstr[1] "{} ambigus"
 
+msgid "{} thread"
+msgid_plural "{} threads"
+msgstr[0] "{} thread"
+msgstr[1] "{} threads"
+
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"
 msgstr[0] "{} partie annulée, écartée"
@@ -3468,6 +3578,9 @@ msgstr "{} serait à la fois le fichier PGN et son zip : choisis un nom qui fini
 
 msgid "{} · depth {} · {}"
 msgstr "{} · profondeur {} · {}"
+
+msgid "{} · opening {}"
+msgstr "{} · ouverture {}"
 
 msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
 msgstr "{} · {} / {} parties · {} en jeu · {:.0f} parties/h · {}"

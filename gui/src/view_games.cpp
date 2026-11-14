@@ -480,6 +480,15 @@ void App::drawGames() {
 
     ImGui::BeginGroup();
     drawBoard(atlas_, board, board_size, decor);
+    // A: the game on the Board page, at this move, analysed.
+    if ((ImGui::IsItemHovered() || ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) && boardKey()) {
+        analyseReplay();
+        ImGui::EndGroup();
+        ImGui::EndChild();
+        ui::endPanel();
+        return;
+    }
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", TR("A: analyse it on the Board page"));
     drawBoardInfo(atlas_, board, board_size, tbPieces());
     if (ImGui::Button("|<")) replay_ply_ = 0;
     ImGui::SameLine();

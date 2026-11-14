@@ -187,6 +187,16 @@ void App::drawEngineConsole(const EngineEntry& e) {
             c.follow = true;
         }
     }
+    // The position of the Board page.
+    {
+        const char* label = TR("Board position");
+        ui::sameLineOrWrap(label);
+        if (ImGui::SmallButton(label)) {
+            (void)c.process.send(c.raw ? "setboard " + boardFen() : "position fen " + boardFen());
+            c.follow = true;
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", boardFen().c_str());
+    }
     ImGui::EndDisabled();
 
     // The log, newest at the bottom.

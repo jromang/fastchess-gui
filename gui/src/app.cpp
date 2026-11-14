@@ -123,6 +123,7 @@ void App::frame() {
     pollStart();
     pollOwnBooks();
     pollEngineConsole();
+    pollBoard();
     handleDialogs();
 
     if (engines_save_due_ && std::chrono::steady_clock::now() >= *engines_save_due_) {
@@ -173,6 +174,9 @@ void App::frame() {
         else if (w == "engines-card") {
             page_            = Page::Engines;
             selected_engine_ = engines_.empty() ? -1 : 0;
+        } else if (w == "board" || w == "board-analyse") {  // the Board page; its analysis started
+            page_ = Page::Board;
+            if (w == "board-analyse") setBoardAnalysis(true);
         } else if (w == "engines-console") {  // the console of the first engine, which answered uci
             page_            = Page::Engines;
             selected_engine_ = engines_.empty() ? -1 : 0;

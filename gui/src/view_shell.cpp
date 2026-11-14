@@ -230,6 +230,9 @@ void App::drawShell() {
             ui::pageTitle(TR("Books"), guideSection());
             drawBooks();
             break;
+        case Page::Board:
+            drawBoardPage();
+            break;
         case Page::Suites:
             ui::pageTitle(TR("Test suites"), guideSection());
             drawSuites();
@@ -267,9 +270,9 @@ void App::drawRail(float width) {
     ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(ui::RAIL_BG));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, px(14)));
     ImGui::BeginChild("##rail", ImVec2(width, 0), ImGuiChildFlags_AlwaysUseWindowPadding, ImGuiWindowFlags_NoScrollbar);
-    // Eight buttons under the logo: lower ones in a low window, rather than a scroll bar.
+    // Nine buttons under the logo: lower ones in a low window, rather than a scroll bar.
     const float spacing = ImGui::GetStyle().ItemSpacing.y;
-    const float button  = std::clamp((ImGui::GetContentRegionAvail().y - px(48) - 8 * spacing) / 8,
+    const float button  = std::clamp((ImGui::GetContentRegionAvail().y - px(48) - 9 * spacing) / 9,
                                      ImGui::GetFontSize() * 2.3f, ui::railButtonHeight());
 
     // The logo, on the accent colour.
@@ -303,6 +306,18 @@ void App::drawRail(float width) {
     }
     if (ui::railButton("rail_books", ui::Icon::Book, TR("Books"), page_ == Page::Books, width, button))
         page_ = Page::Books;
+    if (ui::railButton("rail_board", ui::Icon::Board, TR("Board"), page_ == Page::Board, width, button))
+        page_ = Page::Board;
+    if (board_.analysing || board_.analyser.active()) {
+        // The analysis runs: a dot at the icon's top right.
+        const auto min = ImGui::GetItemRectMin();
+        ImGui::GetWindowDrawList()->AddCircleFilled(
+            ImVec2(min.x + width * 0.5f + ImGui::GetFontSize() * 0.75f, min.y + button * 0.3f),
+            ImGui::GetFontSize() * 0.22f, board_.analysing ? ui::GOOD : ui::MUTED);
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", board_.analysing ? TR("The analysis is running.") : TR("The analysis engine waits."));
+        }
+    }
     if (ui::railButton("rail_suites", ui::Icon::Suite, TR("Suites"), page_ == Page::Suites, width, button)) {
         page_ = Page::Suites;
     }

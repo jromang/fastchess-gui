@@ -69,7 +69,11 @@ enum class Icon {
     Back,
     Chart,
     Layout,
-    Quit
+    Quit,
+    Board,  // a knight: the Board page
+    Paste,
+    Edit,
+    Analyse
 };
 
 // Draws `icon` centred on `center`, `size` pixels wide, in `col`.

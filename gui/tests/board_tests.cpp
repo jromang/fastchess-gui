@@ -11,6 +11,7 @@
 
 #include "../../tournament/tests/self_path.hpp"
 #include "analysis.hpp"
+#include "board_page.hpp"
 #include "engine_client.hpp"
 #include "run.hpp"
 
@@ -232,4 +233,49 @@ TEST_CASE("analysis: an engine that cannot start, or stops, says so") {
     a.start(e, {});
     CHECK(a.state() == Analyser::State::Failed);
     CHECK(a.error().find("mover") != std::string::npos);
+}
+
+TEST_CASE("board: moves played over a game, the position for the analysis, scores from White's side") {
+    ReplayGame game;
+    game.start_fen = std::string(chess::constants::STARTPOS);
+    chess::Board b;
+    int ply = 0;
+    for (const char* uci : {"e2e4", "e7e5", "g1f3"}) {
+        const auto move = chess::uci::uciToMove(b, uci);
+        ply             = playOnGame(game, false, ply, move);
+        b.makeMove(move);
+    }
+    CHECK(ply == 3);
+    REQUIRE(game.moves.size() == 3);
+    CHECK(game.moves[2].san == "Nf3");
+    CHECK(game.moves[1].mover == chess::Color::BLACK);
+
+    // The game's own next move only goes on; another one takes the place of the rest.
+    game.result = "1-0";
+    auto board  = boardAt(game, false, 1);
+    CHECK(playOnGame(game, false, 1, chess::uci::uciToMove(board, "e7e5")) == 2);
+    CHECK(game.moves.size() == 3);
+    CHECK(game.result == "1-0");
+    CHECK(playOnGame(game, false, 1, chess::uci::uciToMove(board, "c7c5")) == 2);
+    CHECK(game.moves.size() == 2);
+    CHECK(game.moves[1].san == "c5");
+    CHECK(game.result.empty());
+
+    const auto position = analysisPosition(game, false, 2);
+    CHECK(position.fen == std::string(chess::constants::STARTPOS));
+    CHECK(position.moves == std::vector<std::string>{"e2e4", "c7c5"});
+    CHECK(analysisPosition(game, false, 0).moves.empty());
+    CHECK(boardAt(game, false, 99).getFen() == boardAt(game, false, 2).getFen());
+
+    CHECK(whiteScore({fastchess::ScoreType::CP, 35}, chess::Color::BLACK).value == -35);
+    CHECK(whiteScore({fastchess::ScoreType::MATE, 3}, chess::Color::WHITE).value == 3);
+
+    // The moves of a piece, castling shown on the king's square.
+    chess::Board castle("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1");
+    std::vector<std::string> targets;
+    for (const auto& m : movesFrom(castle, chess::Square::SQ_E1))
+        targets.push_back(static_cast<std::string>(shownTarget(m)));
+    CHECK(std::find(targets.begin(), targets.end(), "g1") != targets.end());
+    CHECK(std::find(targets.begin(), targets.end(), "c1") != targets.end());
+    CHECK(movesFrom(castle, chess::Square::SQ_E8).empty());  // not its move
 }

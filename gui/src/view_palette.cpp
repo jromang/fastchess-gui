@@ -43,6 +43,8 @@ guide::Section App::guideSection() const {
             return guide::Section::Engines;
         case Page::Books:
             return guide::Section::Books;
+        case Page::Board:
+            return guide::Section::Board;
         case Page::Suites:
             return guide::Section::TestSuites;
         case Page::Ratings:
@@ -165,6 +167,17 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     }
     add(TR("Engines"), "", page(Page::Engines));
     add(TR("Books"), "", page(Page::Books));
+    add(TR("Board"), "", page(Page::Board));
+    add(board_.analysing ? TR("Stop the analysis") : TR("Analyse"), TR("Board"), [this] {
+        page_ = Page::Board;
+        setBoardAnalysis(!board_.analysing);
+    });
+    add(TR("Copy FEN"), TR("Board"), [this] { ImGui::SetClipboardText(boardFen().c_str()); });
+    if (live_slot_ >= 0 && live_slot_ < static_cast<int>(slot_views_.size()) &&
+        slot_views_[static_cast<std::size_t>(live_slot_)].state.has_game) {
+        add(TR("Analyse the game followed"), name, [this] { analyseLiveGame(live_slot_); });
+    }
+    if (replay_) add(TR("Analyse the game shown"), name, [this] { analyseReplay(); });
     add(TR("Test suites"), "", page(Page::Suites));
     add(TR("Ratings"), "", page(Page::Ratings));
     const auto ratings_tab = [&](const char* label, int index) {

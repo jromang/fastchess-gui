@@ -4,13 +4,14 @@ The [README](../README.md) explains what fastchess-gui is and how to build it. T
 
 ## The window
 
-A navigation rail on the left leads to six pages:
+A navigation rail on the left leads to eight pages:
 
 | Page | Contents |
 |---|---|
 | Tournaments | The home page: the running tournament and when it ends, the queue and when it all ends, the *Health* card, every tournament of the profile (resume, open, relaunch), *New tournament* |
 | Engines | The engine library: options, health check, groups, reference Elo, import of other programs' lists |
 | Books | The opening book library, and the openings of each book with what is wrong with them |
+| Board | A game or a position from anywhere, analysed by an engine of the library |
 | Suites | Test suites (STS, WAC, ERET…): engines against the positions of an EPD file |
 | Ratings | One rating list over every game of every tournament |
 | Log | fastchess' own output and the messages of the GUI |
@@ -58,7 +59,7 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   they are (Enter; Up and Down bring the earlier ones back), and the log shows every line with its time, those sent
   marked `>` and the error output `!`. Buttons send the usual commands (`isready`, `position startpos`,
   `go depth 10`, `go infinite`, `stop`…; WinBoard's for a WinBoard engine, spoken to in its own protocol unless
-  *Through the adapter* is ticked). *Copy* and *Save…* keep the log. The
+  *Through the adapter* is ticked) and the position of the Board page. *Copy* and *Save…* keep the log. The
   console shows in place of the engine's settings (*Settings* goes back to them, the console staying open); *Close*
   ends the engine. While a tournament runs, what the engine searches takes cores from its games: the console says
   so. Its engine is not one of the tournament's processes: the end of a tournament does not end it.
@@ -168,6 +169,27 @@ PGN book shows its moves in SAN); a click shows the position on a board. *Use it
 in the setup (with Chess960 for a Chess960 book). *Save a cleaned copy…* writes an EPD book without the illegal
 positions, the duplicates and the finished games (and, if ticked, the positions with colours reversed), and adds
 it to the library. *Run as a test suite…* opens an EPD book in **Suites**.
+
+## Board
+
+The Board page shows one game or one position, from anywhere: **A** on any board of the program (a game of the
+*Live* tab's mosaic or the one followed, the board of the *Games* tab, of the *Openings* tab, of an opening of a
+book) opens its position here and analyses it; on the Board page, A starts and stops the analysis. *Back to the
+tournament* (or *Back*) returns to the page it came from.
+
+- **The board**: the arrows and Left, Right, Home, End go through the moves; a click on a piece and on a square plays
+  a move (a pawn that promotes asks for its piece). A move other than the game's next one takes the place of the
+  moves after it, and *Back to the game* brings the game back as it came. *Copy FEN* copies the position.
+- **The analysis**: an engine of the library searches the position shown and follows the board: depth, nodes,
+  speed, the chances of a win, draw and loss when the engine gives them (`UCI_ShowWDL`), and several lines (MultiPV),
+  their first moves drawn as arrows, the best one darker. Scores are White's. A click on a line plays its first
+  move. Its engine, *Threads*, *Hash* (0: the engine's own) and *Lines* are the analysis's own settings: kept for
+  the next time, they change neither the engine of the library nor any tournament. The library's other option
+  values are sent as a game sends them. The analysis waits while another page is shown, and goes on when the Board
+  page comes back; *Stop the analysis* (or A) stops it, and a dot on the rail's *Board* button tells when it runs.
+- **Its cores**: the analysis's threads count in the core budget, shown under it with the machine's threads. While a
+  tournament runs, the analysis competes with its games: the page says so, with the threads the games use. Its
+  engine is not one of the tournament's processes: the end of a tournament does not end it.
 
 ## Test suites
 

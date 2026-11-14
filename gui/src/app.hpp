@@ -241,7 +241,7 @@ class App {
         int follow_frames      = 0;
     };
 
-    enum class Page { Home, NewMatch, Tournament, Engines, Books, Suites, Ratings, Log, Settings };
+    enum class Page { Home, NewMatch, Tournament, Engines, Books, Board, Suites, Ratings, Log, Settings };
     enum class Tab { Overview, Standings, Bracket, Schedule, Live, Games, Openings, Broadcast };
 
     // shell
@@ -347,6 +347,31 @@ class App {
     void pollEngineConsole();  // every frame, shown or not
     void drawEngineConsole(const EngineEntry& e);
     void saveConsoleLog(const std::string& path);
+
+    // The Board page (view_board.cpp): a game or a position, and its analysis.
+    void drawBoardPage();
+    void drawBoardColumn(float size);  // the board, the buttons under it
+    void drawBoardAnalysis();
+    void drawBoardMoves();
+    void pollBoard();  // every frame: the analysis follows the board while the page is shown
+    void loadBoardSettings();
+    void saveBoardSettings();
+    // Opens `game` on the Board page after `ply` moves, the page and tab shown kept to go back to; `analyse` starts
+    // the analysis. `title` says what the game is.
+    void openOnBoard(ReplayGame game, int ply, bool chess960, std::string title, bool analyse);
+    void openPositionOnBoard(const std::string& fen, bool chess960, std::string title, bool analyse);
+    void setBoardAnalysis(bool on);
+    // Key A, pressed for a board now: once a frame, not while a text field or a popup has the keys.
+    [[nodiscard]] bool boardKey();
+    [[nodiscard]] std::string boardFen();  // the position of the Board page
+    void boardPlay(chess::Move move);
+    void boardClick(const chess::Board& board, chess::Square square);
+    // The threads the running tournament's games use now, about: its games times the larger thread count of its
+    // engines.
+    [[nodiscard]] int tournamentThreads() const;
+    // A, on the boards of the other pages: their position on the Board page, analysed.
+    void analyseLiveGame(int slot);
+    void analyseReplay();
     void drawQuitModal();
 
     // The command palette (Ctrl+K) and the guide (F1, the `?` of the page titles), see view_palette.cpp.
@@ -754,6 +779,15 @@ class App {
 
     // The engine console, while one is open.
     std::unique_ptr<EngineConsole> engine_console_;
+
+    // The Board page, and where it was opened from (Back).
+    BoardPage board_;
+    struct BoardBack {
+        Page page;
+        std::optional<Tab> tab;
+    };
+    std::optional<BoardBack> board_back_;
+    bool board_key_taken_ = false;  // key A served a board this frame
 
     // Console view.
     std::vector<Console::Line> console_lines_;

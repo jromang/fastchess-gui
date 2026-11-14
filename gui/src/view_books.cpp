@@ -7,6 +7,7 @@
 
 #include <fmt/include/fmt/format.h>
 
+#include <tour/chess_text.hpp>
 #include <tour/polyglot.hpp>
 
 #include "app.hpp"
@@ -389,6 +390,16 @@ void App::drawBookPositions() {
         try {
             position.setFen(item.fen);
             drawBoard(atlas_, position, board, decor);
+            // A: the opening on the Board page, analysed; not an illegal one.
+            const bool legal = tour::legalPosition(position);
+            if (legal && (ImGui::IsItemHovered() || ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) &&
+                boardKey()) {
+                const auto& book = books_[static_cast<std::size_t>(selected_book_)];
+                openPositionOnBoard(item.fen, scan.chess960(), trf("{} · opening {}", book.name, book_item_ + 1),
+                                    true);
+            }
+            if (legal && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+                ImGui::SetTooltip("%s", TR("A: analyse it on the Board page"));
         } catch (...) {
         }
         ImGui::TextWrapped("%s", item.fen.c_str());

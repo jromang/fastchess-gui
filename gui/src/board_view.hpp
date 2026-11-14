@@ -38,12 +38,18 @@ struct BoardArrow {
 struct BoardDecor {
     bool flipped = false;
     std::optional<chess::Move> last_move;
-    float eval_white = 0.5f;         // fraction of the eval bar that is white, < 0 hides the bar
-    std::vector<BoardArrow> arrows;  // drawn in order, over the pieces
+    float eval_white = 0.5f;                // fraction of the eval bar that is white, < 0 hides the bar
+    std::vector<BoardArrow> arrows;         // drawn in order, over the pieces
+    std::optional<chess::Square> selected;  // a piece picked up, to move it
+    std::vector<chess::Square> targets;     // where it may go, a dot on each
 };
 
 // Draws the position at the cursor and reserves `size` x `size` (plus the eval bar if shown).
 void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, const BoardDecor& decor);
+
+// The square under `point` of a board drawBoard() drew with its top left corner (its eval bar's, if shown) at `top`;
+// nullopt off the squares.
+[[nodiscard]] std::optional<chess::Square> boardSquareAt(ImVec2 point, ImVec2 top, float size, const BoardDecor& decor);
 
 // The centre of `square` on a board whose a8 corner (h1 when flipped) is at `origin`, `size` wide.
 [[nodiscard]] ImVec2 squareCentre(chess::Square square, ImVec2 origin, float size, bool flipped);

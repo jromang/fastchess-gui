@@ -26,6 +26,8 @@ const char* anchor(Section section) {
             return "ratings";
         case Section::Broadcast:
             return "broadcast";
+        case Section::Board:
+            return "board";
         case Section::Count:
             break;
     }
