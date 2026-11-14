@@ -1428,8 +1428,9 @@ TEST_CASE("Tunnel: 40 viewers' connections relayed at once, 40 more waiting, the
     net::TcpListener silent;
     REQUIRE(silent.listen(WEB_PORT).empty());
     constexpr uint32_t MAX_CHANNELS = 40;
-    std::atomic_bool relayed{false};
-    std::atomic_int confirmed{0}, refused{0};
+    std::atomic_bool relayed{false}, finished{false};
+    std::atomic_int confirmed{0};
+    std::set<uint32_t> waiting, refused, closed;
     FakeServer::Script script;
     script.on_air = [&](FakeServer& server) {
         for (uint32_t i = 0; i < MAX_CHANNELS; ++i) openForwarded(server, 1000 + i);
@@ -1438,22 +1439,47 @@ TEST_CASE("Tunnel: 40 viewers' connections relayed at once, 40 more waiting, the
             confirmed += m[0] == CHANNEL_OPEN_CONFIRMATION ? 1 : 0;
         }
         while (!relayed) std::this_thread::sleep_for(20ms);
-        // As many more wait in libssh2's queue, confirmed; beyond, refused.
+        // As many more wait their turn, confirmed. Beyond: refused, by libssh2 when they came at once, or confirmed
+        // and closed at once by the tunnel.
         for (uint32_t i = 0; i < MAX_CHANNELS + 2; ++i) openForwarded(server, 2000 + i);
-        for (uint32_t i = 0; i < MAX_CHANNELS + 2; ++i) {
-            const auto m = server.next();
-            confirmed += m[0] == CHANNEL_OPEN_CONFIRMATION ? 1 : 0;
-            refused += m[0] == CHANNEL_OPEN_FAILURE ? 1 : 0;
+        std::map<uint32_t, uint32_t> channel;
+        const auto until = std::chrono::steady_clock::now() + 2s;
+        while (std::chrono::steady_clock::now() < until) {
+            const auto m = server.poll(50ms);
+            if (!m) continue;
+            Reader r(std::string_view(*m).substr(1));
+            const auto recipient = r.u32();
+            if ((*m)[0] == CHANNEL_OPEN_CONFIRMATION) {
+                channel[recipient] = r.u32();
+                waiting.insert(recipient);
+            } else if ((*m)[0] == CHANNEL_OPEN_FAILURE) {
+                refused.insert(recipient);
+            } else if ((*m)[0] == CHANNEL_CLOSE) {
+                closed.insert(recipient);
+                server.send(Writer().byte(CHANNEL_CLOSE).u32(channel[recipient]).take());
+            } else {
+                server.expect((*m)[0] == CHANNEL_EOF, "unexpected message " + std::to_string(uint8_t((*m)[0])));
+            }
         }
+        finished = true;
     };
     FakeServer server(SSH_PORT, script);
     SshTunnel tunnel;
     tunnel.start(loopback(fingerprint(serverKey().blob)));
     CHECK(waitFor([&] { return tunnel.status().connections == static_cast<int>(MAX_CHANNELS); }));
     relayed = true;
-    CHECK(waitFor([&] { return server.done.load() || confirmed + refused == 2 * static_cast<int>(MAX_CHANNELS) + 2; }));
-    CHECK(confirmed == 2 * static_cast<int>(MAX_CHANNELS));
-    CHECK(refused == 2);
+    REQUIRE(waitFor([&] { return finished.load() || server.done.load(); }));
+    CHECK(confirmed == static_cast<int>(MAX_CHANNELS));
+    // The first 40 wait; the last two are turned away, one way or the other.
+    for (uint32_t i = 0; i < MAX_CHANNELS + 2; ++i) {
+        CAPTURE(i);
+        const auto sender = 2000 + i;
+        if (i < MAX_CHANNELS) {
+            CHECK((waiting.count(sender) == 1 && closed.count(sender) == 0));
+        } else {
+            CHECK((refused.count(sender) == 1 || (waiting.count(sender) == 1 && closed.count(sender) == 1)));
+        }
+    }
     CHECK(tunnel.status().connections == static_cast<int>(MAX_CHANNELS));
     tunnel.stop();
     CHECK(waitFor([&] { return server.done.load(); }));
@@ -1575,10 +1601,11 @@ class Sink {
 }  // namespace
 
 TEST_CASE("Tunnel: viewers who send more than the web server takes are let go, each alone, and the tunnel stays") {
-    // libssh2 gave every forwarded connection a 2 MiB window, which the server may fill before it is read: 40 relayed
+    // libssh2 gives every forwarded connection a 2 MiB window, which the server may fill before it is read: 40 relayed
     // and 40 waiting, 160 MiB. 16 uploads waiting their turn behind viewers of a web server that does not read went
-    // past the session's memory, and the connection ended, again and again. The window is 256 KiB now (libssh2
-    // patched), and a relayed viewer the web server does not read is let go once more than half of it waits.
+    // past the session's memory, and the connection ended, again and again. Every connection is read now, whether the
+    // web server takes what it sends or not, and let go once the tunnel keeps more than its budget for it: libssh2's
+    // memory stays far below the 4 MiB allowed here, though each upload's window is libssh2's own.
     net::TcpListener silent;  // takes the connections, never reads them
     REQUIRE(silent.listen(WEB_PORT).empty());
     constexpr uint32_t RELAYED = 40, WAITING = 40, UPLOADERS = 4;
@@ -1641,8 +1668,10 @@ TEST_CASE("Tunnel: viewers who send more than the web server takes are let go, e
         finished = true;
     };
     FakeServer server(SSH_PORT, script);
+    auto settings       = loopback(fingerprint(serverKey().blob));
+    settings.max_memory = 4 << 20;
     SshTunnel tunnel;
-    tunnel.start(loopback(fingerprint(serverKey().blob)));
+    tunnel.start(settings);
     CHECK(waitFor([&] { return tunnel.status().connections == static_cast<int>(RELAYED); }));
     relayed = true;
     REQUIRE(waitFor([&] { return finished.load() || server.done.load(); }, 60s));
@@ -1650,14 +1679,149 @@ TEST_CASE("Tunnel: viewers who send more than the web server takes are let go, e
     CHECK(status.state == TunnelState::OnAir);
     CHECK_MESSAGE(status.error.empty(), status.error);
     CHECK(status.connections == static_cast<int>(RELAYED - UPLOADERS));
-    // Every forwarded connection's window: 256 KiB.
+    // Every forwarded connection's window: libssh2's own, as released.
     CHECK(windows.size() == RELAYED + WAITING);
-    CHECK(std::all_of(windows.begin(), windows.end(), [](uint32_t w) { return w == 256 * 1024; }));
+    CHECK(std::all_of(windows.begin(), windows.end(),
+                      [](uint32_t w) { return w == LIBSSH2_CHANNEL_WINDOW_DEFAULT; }));
     // Let go: the uploaders, and only them.
     std::set<uint32_t> uploaders;
     for (uint32_t i = 0; i < UPLOADERS; ++i) uploaders.insert(1000 + i);
     for (uint32_t i = 0; i < WAITING; ++i) uploaders.insert(2000 + i);
     CHECK(closed == uploaders);
+    tunnel.stop();
+    CHECK(waitFor([&] { return server.done.load(); }));
+    CHECK_MESSAGE(server.error.empty(), server.error);
+}
+
+namespace {
+
+// What a viewer uploads on the forwarded connection `sender` (the client's `channel`, which opened with `window`, and
+// on which `before` bytes went already): packets of `size` bytes within its window, until the client closes it or
+// `count` bytes went; the close is answered. Packets of one byte go 256 at a time; larger ones one at a time, a few
+// milliseconds apart, so that little is on its way when the client closes. `sent`: the bytes that went, counted as
+// they go.
+void upload(FakeServer& server, uint32_t sender, uint32_t channel, uint64_t window, uint64_t before, std::size_t size,
+            std::size_t count, std::set<uint32_t>& closed, std::atomic<std::size_t>& sent) {
+    const std::string chunk(size, 'u');
+    const auto until = std::chrono::steady_clock::now() + 60s;
+    while (sent < count && closed.count(sender) == 0 && std::chrono::steady_clock::now() < until) {
+        const auto room = window + server.adjusted[sender] - before - sent;
+        if (size == 1) {
+            for (std::size_t i = 0; i < std::min<uint64_t>(room, 256) && sent < count; ++i, ++sent) {
+                server.send(channelData(channel, chunk));
+            }
+        } else if (room > 0) {
+            const auto n = std::min<uint64_t>({room, size, count - sent});
+            server.send(channelData(channel, std::string_view(chunk).substr(0, n)));
+            sent += n;
+        }
+        auto wait = room == 0 ? 50ms : size == 1 ? 0ms : 2ms;
+        while (const auto m = server.poll(wait)) {
+            Reader r(std::string_view(*m).substr(1));
+            const auto recipient = r.u32();
+            if ((*m)[0] == CHANNEL_CLOSE) {
+                closed.insert(recipient);
+                if (recipient == sender) server.send(Writer().byte(CHANNEL_CLOSE).u32(channel).take());
+            } else {
+                server.expect((*m)[0] == CHANNEL_EOF, "unexpected message " + std::to_string(uint8_t((*m)[0])));
+            }
+            wait = 0ms;
+        }
+    }
+}
+
+// Anything else the client closes, for a second.
+void closedMeanwhile(FakeServer& server, std::set<uint32_t>& closed) {
+    const auto until = std::chrono::steady_clock::now() + 1s;
+    while (std::chrono::steady_clock::now() < until) {
+        const auto m = server.poll(50ms);
+        if (m && (*m)[0] == CHANNEL_CLOSE) closed.insert(Reader(std::string_view(*m).substr(1)).u32());
+    }
+}
+
+constexpr std::size_t BUDGET = 128 * 1024;  // the tunnel's VIEWER_BUDGET
+
+}  // namespace
+
+TEST_CASE("Tunnel: one-byte packets on a connection waiting its turn: the viewer is let go, alone, the tunnel stays") {
+    // libssh2 keeps each packet it received apart until it is read (some 80 bytes of memory for one byte), and a
+    // connection waiting its turn was not read at all: 53,000 one-byte packets, well within its window, ended a
+    // session of 4 MiB. Each is read into the tunnel's own buffers now, a byte for a byte, until its budget.
+    net::TcpListener silent;  // takes the connections, never reads them: the relayed ones stay
+    REQUIRE(silent.listen(WEB_PORT).empty());
+    constexpr uint32_t RELAYED = 40;
+    std::atomic_bool relayed{false}, finished{false};
+    std::atomic<std::size_t> sent{0};
+    std::set<uint32_t> closed;
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        for (uint32_t i = 0; i < RELAYED; ++i) forward(server, 1000 + i, 1 << 20);
+        while (!relayed) std::this_thread::sleep_for(20ms);
+        // Two wait their turn: a viewer's request, and one-byte packets.
+        const auto viewer = forward(server, 2000, 1 << 20);
+        server.send(channelData(viewer, script.request));
+        uint32_t window     = 0;
+        const auto offender = forward(server, 2001, 1 << 20, &window);
+        upload(server, 2001, offender, window, 0, 1, 1000000, closed, sent);
+        closedMeanwhile(server, closed);
+        finished = true;
+    };
+    FakeServer server(SSH_PORT, script);
+    auto settings       = loopback(fingerprint(serverKey().blob));
+    settings.max_memory = 4 << 20;
+    SshTunnel tunnel;
+    tunnel.start(settings);
+    CHECK(waitFor([&] { return tunnel.status().connections == static_cast<int>(RELAYED); }));
+    relayed = true;
+    REQUIRE(waitFor([&] { return finished.load() || server.done.load(); }, 90s));
+    MESSAGE(sent.load(), " one-byte packets went");
+    const auto status = tunnel.status();
+    CHECK(status.state == TunnelState::OnAir);
+    CHECK_MESSAGE(status.error.empty(), status.error);
+    CHECK(status.connections == static_cast<int>(RELAYED));
+    CHECK(closed == std::set<uint32_t>{2001});
+    CHECK(sent > BUDGET);
+    tunnel.stop();
+    CHECK(waitFor([&] { return server.done.load(); }));
+    CHECK_MESSAGE(server.error.empty(), server.error);
+}
+
+TEST_CASE("Tunnel: one-byte packets on a relayed connection the web server does not read: let go, the tunnel stays") {
+    // Once the sockets between the tunnel and the web server were full, the relayed connection was read no more, and
+    // libssh2 kept its one-byte packets until it held more than the budget for it: 10 MiB of memory, past what the
+    // session may hold. The sockets are filled first, in large packets: as much as a first viewer's upload took
+    // before it was let go, its budget and a little more left out.
+    net::TcpListener silent;  // takes the connections, never reads them
+    REQUIRE(silent.listen(WEB_PORT).empty());
+    std::atomic_bool finished{false};
+    std::atomic<std::size_t> first{0}, filled{0}, sent{0};
+    std::set<uint32_t> closed;
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        uint32_t window     = 0;
+        const auto measured = forward(server, 200, 1 << 20, &window);
+        upload(server, 200, measured, window, 0, 32768, std::size_t(64) << 20, closed, first);
+        const auto offender = forward(server, 201, 1 << 20, &window);
+        const auto fill     = first > BUDGET + (64 << 10) ? first - BUDGET - (64 << 10) : 0;
+        upload(server, 201, offender, window, 0, 32768, fill, closed, filled);
+        upload(server, 201, offender, window, filled, 1, 3000000, closed, sent);
+        closedMeanwhile(server, closed);
+        finished = true;
+    };
+    FakeServer server(SSH_PORT, script);
+    auto settings       = loopback(fingerprint(serverKey().blob));
+    settings.max_memory = 4 << 20;
+    SshTunnel tunnel;
+    tunnel.start(settings);
+    REQUIRE(waitFor([&] { return finished.load() || server.done.load(); }, 120s));
+    MESSAGE(first.load(), " bytes on the first connection; ", filled.load(), " bytes, then ", sent.load(),
+            " one-byte packets on the second");
+    const auto status = tunnel.status();
+    CHECK(status.state == TunnelState::OnAir);
+    CHECK_MESSAGE(status.error.empty(), status.error);
+    CHECK(status.connections == 0);
+    CHECK(closed == std::set<uint32_t>{200, 201});
+    CHECK(sent > 0);  // let go for its one-byte packets, not before
     tunnel.stop();
     CHECK(waitFor([&] { return server.done.load(); }));
     CHECK_MESSAGE(server.error.empty(), server.error);
