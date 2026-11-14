@@ -19,6 +19,9 @@
 #    confirmation was held back. The code it relies on is checked to be the one it was written for (src/packet.c,
 #    src/transport.c, src/channel.c). And the channel of a forwarded connection whose confirmation failed is freed
 #    (libssh2 left it behind).
+#  - fcg_libssh2_send_unsent(), appended to src/session.c too, for the tunnel's goodbye: the rest of a packet libssh2
+#    could not finish (the socket full), which only the call that started it sends otherwise, and which holds back the
+#    DISCONNECT. The code it relies on is checked too (src/transport.c).
 #  - include/libssh2.h says so: FCG_LIBSSH2_PATCHLEVEL, which the tunnel requires, so that sources not patched (an
 #    override of FETCHCONTENT_SOURCE_DIR_LIBSSH2) or patched by an older version of this script fail to compile.
 # Otherwise the window accounting is libssh2's, unchanged.
@@ -74,7 +77,7 @@ patch(include/libssh2.h [=[
 
 /* fastchess-gui: patched by its cmake/patch_libssh2.cmake, at this level,
    with this window for the connections a server forwards */
-#define FCG_LIBSSH2_PATCHLEVEL 3
+#define FCG_LIBSSH2_PATCHLEVEL 4
 #define FCG_LIBSSH2_FORWARD_WINDOW (128 * 1024)
 ]=])
 
@@ -235,6 +238,9 @@ LIBSSH2_API int libssh2_session_free(LIBSSH2_SESSION *session);
 /* fastchess-gui: for a session whose connection is over, before
    libssh2_session_free(): see src/session.c */
 LIBSSH2_API void fcg_libssh2_session_end(LIBSSH2_SESSION *session);
+/* fastchess-gui: sends the rest of the packet under way, before a
+   DISCONNECT: see src/session.c */
+LIBSSH2_API int fcg_libssh2_send_unsent(LIBSSH2_SESSION *session);
 ]=])
 
 # A forwarded connection's channel, until its confirmation went: made in packet_queue_listener() holding only its
@@ -366,6 +372,23 @@ expect(src/transport.c [=[
             p->ototal_num = total_length;
             return LIBSSH2_ERROR_EAGAIN;
 ]=])
+# The rest of the packet under way, sent from the call that started it only: what fcg_libssh2_send_unsent() sends.
+expect(src/transport.c [=[
+    if(data != p->odata || data_len != p->olen) {
+        /* When we are about to complete the sending of a packet, it is vital
+           that the caller does not try to send a new/different packet since
+           we do not add this one up until the previous one has been sent. To
+           make the caller really notice his/hers flaw, we return error for
+           this case */
+        ssh2_deb((session, LIBSSH2_TRACE_SOCKET,
+                  "Address is different, returning EAGAIN"));
+        return LIBSSH2_ERROR_EAGAIN;
+    }
+]=])
+expect(src/transport.c [=[
+    rc = SSH2_SEND(session, &p->outbuf[p->osent], length,
+                   SSH2_SOCKET_SEND_FLAGS(session));
+]=])
 # A channel is closed only while the connection is: fcg_libssh2_session_end() marks it disconnected.
 expect(src/channel.c [=[
     /* Allow channel freeing even when the socket has lost its connection */
@@ -442,5 +465,48 @@ LIBSSH2_API void fcg_libssh2_session_end(LIBSSH2_SESSION *session)
         SSH2_FREE(session, l->channel);
         l->channel = NULL;
     }
+}
+
+/*
+ * fastchess-gui: sends the rest of the packet under way, before a DISCONNECT.
+ * A packet libssh2 started to send and could not finish (the socket full)
+ * holds back every other: ssh2_transport_send() returns LIBSSH2_ERROR_EAGAIN
+ * for any but the one it started, whose rest only the same call sends, made
+ * again with the same arguments (transport_send_existing in transport.c).
+ * A program that stops makes none of those calls again (a channel's write, a
+ * window adjustment, a keepalive), and libssh2_session_disconnect() returned
+ * LIBSSH2_ERROR_EAGAIN until it gave up: the peer saw the connection end with
+ * no goodbye. The rest of the packet goes from here, as that call would send
+ * it; the call itself must not be made again then, or its packet would go
+ * twice. Returns 0 once nothing is left to send, LIBSSH2_ERROR_EAGAIN while
+ * some is (the socket full), LIBSSH2_ERROR_SOCKET_SEND if it cannot go.
+ */
+LIBSSH2_API int fcg_libssh2_send_unsent(LIBSSH2_SESSION *session)
+{
+    struct transportpacket *p = &session->packet;
+    ssize_t rc;
+
+    if(!p->olen)
+        return 0;
+    rc = SSH2_SEND(session, &p->outbuf[p->osent],
+                   (size_t)(p->ototal_num - (ssize_t)p->osent),
+                   SSH2_SOCKET_SEND_FLAGS(session));
+    if(rc < 0) {
+        if(rc != -EAGAIN)
+            return LIBSSH2_ERROR_SOCKET_SEND;
+        session->socket_block_directions |= LIBSSH2_SESSION_BLOCK_OUTBOUND;
+        return LIBSSH2_ERROR_EAGAIN;
+    }
+    p->osent += (size_t)rc;
+    if((ssize_t)p->osent < p->ototal_num) {
+        session->socket_block_directions |= LIBSSH2_SESSION_BLOCK_OUTBOUND;
+        return LIBSSH2_ERROR_EAGAIN;
+    }
+    p->odata = NULL;
+    p->olen = 0;
+    p->osent = 0;
+    p->ototal_num = 0;
+    session->socket_block_directions &= ~LIBSSH2_SESSION_BLOCK_OUTBOUND;
+    return 0;
 }
 ]=])
