@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include <tour/book_scan.hpp>
+#include <tour/chess_text.hpp>
 
 using namespace fcg::tour;
 namespace fs = std::filesystem;
@@ -87,4 +88,45 @@ TEST_CASE("book scan: Chess960 positions are recognised; unreadable books are re
 
     CHECK_THROWS((void)BookScan(fs::temp_directory_path() / "fcg-no-such-book.epd", -1));
     CHECK_THROWS_WITH((void)BookScan(write("fcg-scan-empty.epd", ""), -1), doctest::Contains("empty"));
+}
+
+TEST_CASE("book scan: a FEN the board reader would take off the board is not read") {
+    CHECK(readableFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+    CHECK(readableFen("  8/8/8/4k3/8/8/8/4K3 w - -"));
+    CHECK(readableFen("4k3/8/8/8/8/8/8/4K3"));
+    CHECK(readableFen("bqnb1rkr/pp3ppp/3ppn2/2p5/5P2/P2P4/NPP1P1PP/BQ1BNRKR w HFhf - 2 9"));
+    CHECK_FALSE(readableFen("rnbqkbnrr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"));  // nine squares
+    CHECK_FALSE(readableFen("rnbqkbn/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -"));    // seven
+    CHECK_FALSE(readableFen("8/8/8/8/8/8/8/8/8 w - -"));                                // nine ranks
+    CHECK_FALSE(readableFen("8/8/8/8/8/8/8 w - -"));                                    // seven
+    CHECK_FALSE(readableFen("9/8/8/8/8/8/8/8 w - -"));
+    CHECK_FALSE(readableFen("x7/8/8/8/8/8/8/8 w - -"));
+    CHECK_FALSE(readableFen(""));
+    CHECK_FALSE(readableFen("4k3/8/8/8/8/8/8/4K3 b \xe8 -"));            // a castling right in another byte
+    CHECK_FALSE(readableFen("4k3/8/8/8/8/8/8/4K3 b KQkqK -"));           // five of them
+    CHECK_FALSE(readableFen("4k3/8/8/8/8/8/8/4K3 w - - 0 2000000000"));  // a move number doubled past an int
+    CHECK_FALSE(readableFen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBnbqkb b KQkq -"));  // no white king
+    CHECK_FALSE(readableFen("rnbqKbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6"));   // no black king
+
+    // Found by fuzzing: such lines of an EPD book made the board reader compute squares off the board.
+    const auto book = write("fcg-scan-squares.epd",
+                            "rnbqkbnrr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -\n"
+                            "8/8/8/8/8/8/8/8/8/4k3/4K3 w - -\n"
+                            "1k1r4/pp1b1R2/3q2pp/4p3/2B5/4Q3/PPP2B2/2K5 b \xe8 -\n"
+                            "8/8/8/4k3/8/8/8/4K3 w - -\n");
+    const BookScan scan(book, -1);
+    REQUIRE(scan.size() == 4);
+    CHECK(scan.flags(0) == BOOK_ILLEGAL);
+    CHECK(scan.flags(1) == BOOK_ILLEGAL);
+    CHECK(scan.flags(2) == BOOK_ILLEGAL);
+    CHECK(scan.flags(3) == BOOK_OVER);
+}
+
+TEST_CASE("chess text: a SAN that starts as castling does must be castling") {
+    for (const char* san : {"e4", "Nf3", "exd5", "O-O", "O-O-O", "0-0", "0-0-0+", "O-O#", "O-O-O!?", ""}) {
+        CHECK_MESSAGE(readableSan(san), san);
+    }
+    for (const char* san : {"01k-", "O-", "O", "0-O", "O-O-", "O-O-0", "O-Ox", "0-0-0-0", "Ok"}) {
+        CHECK_FALSE_MESSAGE(readableSan(san), san);
+    }
 }

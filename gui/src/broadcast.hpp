@@ -173,6 +173,17 @@ struct BroadcastSnapshot {
 // uploading them never reads half a file. Returns an error message, empty on success.
 std::string writeBroadcastFiles(const BroadcastSnapshot& s, const std::filesystem::path& dir);
 
+// A datagram from a TLCS client, as the server reads it: what it is, its number when the client numbered it
+// ("<id>PING"), the viewer's name of a logon and the number an ACK acknowledges.
+struct TlcsMessage {
+    enum class Kind { Other, Logon, Ack, Ping, Logoff, ResultTable };
+    Kind kind            = Kind::Other;
+    unsigned long number = 0;  // 0: not numbered
+    std::string name;          // Logon
+    uint32_t ack = 0;          // Ack
+};
+[[nodiscard]] TlcsMessage readTlcsMessage(const std::string& datagram);
+
 // A TLCS compatible server: TLCV clients, node-tlcv and Livius log on over UDP and follow one game:
 // players, moves, clocks, the engines' searches, the result, and the crosstable, sent again after every game.
 class TlcsServer {
@@ -261,5 +272,24 @@ class WebServer {
 // The viewer page served at "/"; with `extras`, the links to a chat and to the lichess round and Discord's widget
 // in it, shown when state.json has them.
 [[nodiscard]] const std::string& webPage(bool extras = false);
+
+// What a request to the web server asks for, read from its text (the request line and the headers, as the
+// connection gave them): what it is answered depends on nothing else. Its views are into `request`.
+struct WebRequest {
+    enum class Route {
+        None,      // nothing came: no answer
+        TooLarge,  // larger than any request of the page's
+        Bad,       // no path
+        NotGet,    // another method than GET
+        Page,
+        State,
+        Games,
+        NotFound,
+    };
+    Route route = Route::None;
+    bool gzip   = false;             // the client takes gzip
+    std::string_view if_none_match;  // the page's tag the client kept, quotes included
+};
+[[nodiscard]] WebRequest readWebRequest(std::string_view request);
 
 }  // namespace fcg

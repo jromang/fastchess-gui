@@ -1,0 +1,114 @@
+name: Coverity Scan
+
+on:
+  schedule:
+    # Weekly, well within Scan's build quota.
+    - cron: "23 5 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Coverity Scan's secrets
+    runs-on: ubuntu-latest
+    outputs:
+      present: ${{ steps.check.outputs.present }}
+    steps:
+      - id: check
+        # A fork, or a repository without them, skips the scan rather than failing.
+        env:
+          TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+          EMAIL: ${{ secrets.COVERITY_SCAN_EMAIL }}
+        run: |
+          if [ -n "$TOKEN" ] && [ -n "$EMAIL" ]; then echo "present=true"; else echo "present=false"; fi >> "$GITHUB_OUTPUT"
+
+  scan:
+    name: Build and submit
+    needs: secrets
+    if: needs.secrets.outputs.present == 'true'
+    runs-on: ubuntu-22.04
+    env:
+      PROJECT: jromang/fastchess-gui
+      COVERITY_SCAN_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+      COVERITY_SCAN_EMAIL: ${{ secrets.COVERITY_SCAN_EMAIL }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # the tags, for git describe
+
+      - name: Use the main Ubuntu archive
+        # The runners' Azure mirror can stay unresolvable for hours; the main archive does not depend on it.
+        run: |
+          sudo sed -i -e 's#mirror+file:/etc/apt/apt-mirrors.txt#http://archive.ubuntu.com/ubuntu/#' \
+            -e 's#http://azure.archive.ubuntu.com/ubuntu/*#http://archive.ubuntu.com/ubuntu/#' \
+            /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+          echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80-retries
+          # The runner's resolver can fail on Ubuntu's hosts alone: public resolvers then.
+          if ! getent hosts archive.ubuntu.com > /dev/null; then
+            sudo mkdir -p /etc/systemd/resolved.conf.d
+            printf '[Resolve]\nDNS=1.1.1.1 8.8.8.8\n' | sudo tee /etc/systemd/resolved.conf.d/fallback.conf
+            sudo systemctl restart systemd-resolved
+            getent hosts archive.ubuntu.com || true
+          fi
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build g++-12 \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+            libxkbcommon-dev libwayland-dev wayland-protocols libdecor-0-dev libegl1-mesa-dev libgl1-mesa-dev \
+            libdrm-dev libgbm-dev libdbus-1-dev libudev-dev
+
+      - name: The build tool's version
+        # Its MD5, as Scan gives it: the cache's key, so that a new release is downloaded once.
+        id: tool
+        run: |
+          md5=$(curl -fsS --retry 3 https://scan.coverity.com/download/linux64 \
+                  --data-urlencode "token=${COVERITY_SCAN_TOKEN}" --data-urlencode "project=${PROJECT}" -d md5=1)
+          echo "md5=${md5}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v6
+        id: cache
+        with:
+          path: ${{ runner.temp }}/cov-analysis
+          key: coverity-linux64-${{ steps.tool.outputs.md5 }}
+
+      - name: Download the build tool
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          curl -fsS --retry 3 -o cov-analysis-linux64.tar.gz https://scan.coverity.com/download/linux64 \
+            --data-urlencode "token=${COVERITY_SCAN_TOKEN}" --data-urlencode "project=${PROJECT}"
+          echo "${{ steps.tool.outputs.md5 }}  cov-analysis-linux64.tar.gz" | md5sum -c
+          mkdir "${RUNNER_TEMP}/cov-analysis"
+          tar -xzf cov-analysis-linux64.tar.gz -C "${RUNNER_TEMP}/cov-analysis" --strip-components=1
+          rm cov-analysis-linux64.tar.gz
+
+      - name: Configure
+        env:
+          CC: gcc-12
+          CXX: g++-12
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build the dependencies
+        # Before cov-build watches the compiler: the FetchContent libraries are not analysed, only the program, its
+        # tests, the tournament layer and the vendored fastchess.
+        run: cmake --build build --target SDL3-static imgui_lib mbedtls tinygettext
+
+      - name: Build under cov-build
+        run: |
+          "${RUNNER_TEMP}/cov-analysis/bin/cov-build" --dir cov-int cmake --build build
+          tail -n 5 cov-int/build-log.txt
+
+      - name: Submit
+        # Scan's build submission form, the project's name URL-encoded in the address.
+        run: |
+          tar -czf cov-int.tgz cov-int
+          version=$(git describe --tags --always)
+          curl -fsS --retry 3 -o response.txt \
+            --form-string "token=${COVERITY_SCAN_TOKEN}" --form-string "email=${COVERITY_SCAN_EMAIL}" \
+            --form file=@cov-int.tgz --form-string "version=${version}" --form-string "description=${GITHUB_SHA}" \
+            "https://scan.coverity.com/builds?project=${PROJECT//\//%2F}"
+          cat response.txt
+          echo "Submitted ${version}"

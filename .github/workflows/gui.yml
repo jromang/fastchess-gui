@@ -69,6 +69,74 @@ jobs:
             build/fastchess-gui
             build/fastchess
 
+  sanitizers:
+    name: Linux tests with AddressSanitizer and UBSan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Use the main Ubuntu archive
+        # The runners' Azure mirror can stay unresolvable for hours; the main archive does not depend on it.
+        run: |
+          sudo sed -i -e 's#mirror+file:/etc/apt/apt-mirrors.txt#http://archive.ubuntu.com/ubuntu/#' \
+            -e 's#http://azure.archive.ubuntu.com/ubuntu/*#http://archive.ubuntu.com/ubuntu/#' \
+            /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+          echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80-retries
+          # The runner's resolver can fail on Ubuntu's hosts alone: public resolvers then.
+          if ! getent hosts archive.ubuntu.com > /dev/null; then
+            sudo mkdir -p /etc/systemd/resolved.conf.d
+            printf '[Resolve]\nDNS=1.1.1.1 8.8.8.8\n' | sudo tee /etc/systemd/resolved.conf.d/fallback.conf
+            sudo systemctl restart systemd-resolved
+            getent hosts archive.ubuntu.com || true
+          fi
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build g++-14 \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+            libxkbcommon-dev libwayland-dev wayland-protocols libdecor-0-dev libegl1-mesa-dev libgl1-mesa-dev \
+            libdrm-dev libgbm-dev libdbus-1-dev libudev-dev
+
+      - name: Address space randomisation AddressSanitizer works with
+        # The runner's kernel randomises more address bits than the sanitizers' shadow memory allows.
+        run: sudo sysctl -w vm.mmap_rnd_bits=28
+
+      - name: Configure
+        # Everything instrumented, the dependencies too; the test engines the tests start as well.
+        env:
+          CC: gcc-14
+          CXX: g++-14
+        run: >
+          cmake -B build-asan -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          "-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined"
+
+      - name: Build
+        run: cmake --build build-asan --target fastchess-gui-tests fcg-tournament-tests
+
+      - name: Tests
+        # Every report to a file of its process's own: the test programs' and those of the engines they start, whose
+        # output the tests read. A report fails the test program; any report fails the next step. Each call's locals
+        # on the stack, not in AddressSanitizer's heap for use after return: libssh2 sends the rest of a keepalive
+        # only from a buffer at the same address as the first time, a local of its keepalive function.
+        env:
+          ASAN_OPTIONS: detect_leaks=1:detect_stack_use_after_return=0:log_path=${{ runner.temp }}/sanitizers/report
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1:log_path=${{ runner.temp }}/sanitizers/report
+        run: |
+          mkdir -p "${RUNNER_TEMP}/sanitizers"
+          ./build-asan/fastchess-gui-tests
+          ./build-asan/fcg-tournament-tests
+
+      - name: Sanitizer reports
+        if: always()
+        run: |
+          shopt -s nullglob
+          reports=("${RUNNER_TEMP}"/sanitizers/*)
+          for report in "${reports[@]}"; do echo "== ${report}"; cat "${report}"; done
+          [ ${#reports[@]} -eq 0 ]
+
   windows-build:
     name: Windows cross-build
     runs-on: ubuntu-24.04

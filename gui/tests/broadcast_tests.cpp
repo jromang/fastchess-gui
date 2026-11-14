@@ -362,6 +362,30 @@ TEST_CASE("broadcast: TLCS answers a logon with a few bytes until the client pro
     server.stop();
 }
 
+TEST_CASE("broadcast: TLCS reads a datagram, numbered or not") {
+    auto m = readTlcsMessage("  LOGONv15: Viewer one \r\n");
+    CHECK(m.kind == TlcsMessage::Kind::Logon);
+    CHECK(m.name == "Viewer one");
+    CHECK(m.number == 0);
+    CHECK(readTlcsMessage("LOGON").name == "viewer");
+
+    m = readTlcsMessage("<12> PING");
+    CHECK(m.kind == TlcsMessage::Kind::Ping);
+    CHECK(m.number == 12);
+    m = readTlcsMessage("ACK: 4711");
+    CHECK(m.kind == TlcsMessage::Kind::Ack);
+    CHECK(m.ack == 4711);
+    CHECK(readTlcsMessage("ACK 5").ack == 0);
+    CHECK(readTlcsMessage("LOGOFF").kind == TlcsMessage::Kind::Logoff);
+    CHECK(readTlcsMessage("RESULTTABLE").kind == TlcsMessage::Kind::ResultTable);
+    // Anything else, a chat among them, is read and left unanswered; a number too large is the largest one.
+    m = readTlcsMessage("<99999999999999999999999>CHAT: hello");
+    CHECK(m.kind == TlcsMessage::Kind::Other);
+    CHECK(m.number > 0);
+    CHECK(readTlcsMessage("").kind == TlcsMessage::Kind::Other);
+    CHECK(readTlcsMessage("<").kind == TlcsMessage::Kind::Other);
+}
+
 TEST_CASE("broadcast: TLCS logons are limited in rate") {
     TlcsServer server;
     const uint16_t port = 26025;
@@ -705,6 +729,28 @@ TEST_CASE("broadcast: the web server answers GET of its own paths only, and boun
     start = std::chrono::steady_clock::now();
     server.stop();
     CHECK(std::chrono::steady_clock::now() - start < 2s);
+}
+
+TEST_CASE("broadcast: the web server reads a request's line and headers") {
+    using Route = WebRequest::Route;
+    auto r      = readWebRequest("GET /state.json?t=1 HTTP/1.1\r\nHost: x\r\nAccept-Encoding: gzip, br\r\n\r\n");
+    CHECK(r.route == Route::State);
+    CHECK(r.gzip);
+    r = readWebRequest("GET / HTTP/1.1\r\nACCEPT-ENCODING: gzip;q=0\r\nIf-None-Match:  \"0a1b2c3d\"\r\n\r\n");
+    CHECK(r.route == Route::Page);
+    CHECK_FALSE(r.gzip);
+    CHECK(r.if_none_match == "\"0a1b2c3d\"");
+    CHECK(readWebRequest("GET /index.html#x HTTP/1.0\r\n\r\n").route == Route::Page);
+    CHECK(readWebRequest("GET /games.pgn HTTP/1.0\r\n\r\n").route == Route::Games);
+    CHECK(readWebRequest("GET /../etc/passwd HTTP/1.0\r\n\r\n").route == Route::NotFound);
+    CHECK(readWebRequest("HEAD / HTTP/1.0\r\n\r\n").route == Route::NotGet);
+    CHECK(readWebRequest("GET\r\n\r\n").route == Route::Bad);
+    CHECK(readWebRequest("GET x HTTP/1.0\r\n\r\n").route == Route::Bad);
+    CHECK(readWebRequest("").route == Route::None);
+    // The connection gives 8192 bytes at most: that many without the end of the headers is too large.
+    CHECK(readWebRequest("GET / HTTP/1.0\r\nX: " + std::string(8192, 'a')).route == Route::TooLarge);
+    // A header's name is the whole name: "If-None-Match-X" is not "If-None-Match".
+    CHECK(readWebRequest("GET / HTTP/1.0\r\nIf-None-Match-X: \"a\"\r\n\r\n").if_none_match.empty());
 }
 
 TEST_CASE("broadcast: the viewers are counted from their requests, all from one address behind a tunnel") {

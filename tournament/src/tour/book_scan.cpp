@@ -9,6 +9,7 @@
 #include <fmt/include/fmt/format.h>
 #include <chess.hpp>
 
+#include "chess_text.hpp"
 #include "polyglot.hpp"
 
 namespace fcg::tour {
@@ -74,16 +75,6 @@ std::size_t countEscapeLines(const fs::path& file) {
         }
     }
     return lines;
-}
-
-bool legal(const chess::Board& board) {
-    using namespace chess;
-    if (board.pieces(PieceType::KING, Color::WHITE).count() != 1) return false;
-    if (board.pieces(PieceType::KING, Color::BLACK).count() != 1) return false;
-    if ((board.pieces(PieceType::PAWN) & (Bitboard(Rank::RANK_1) | Bitboard(Rank::RANK_8))) != 0) return false;
-    // The side that just moved cannot be in check.
-    const auto them = ~board.sideToMove();
-    return !board.isAttacked(board.kingSq(them), board.sideToMove());
 }
 
 bool over(const chess::Board& board) {
@@ -198,7 +189,7 @@ BookScan::BookScan(const fs::path& file, int plies, const std::atomic<bool>* can
         board.set960(chess960_);
         const auto fen = position(i);
         try {
-            if (!board.setFen(fen) || !legal(board)) {
+            if (!readableFen(fen) || !board.setFen(fen) || !legalPosition(board)) {
                 flags_[i] |= BOOK_ILLEGAL;
                 continue;
             }

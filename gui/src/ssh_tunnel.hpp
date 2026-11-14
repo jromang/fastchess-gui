@@ -104,6 +104,16 @@ class SshTunnel {
 // that tells of the tunnel ("tunneled", "forwarding"), else the first https:// address; none when there is none.
 [[nodiscard]] std::optional<std::string> findPublicUrl(std::string_view output);
 
+// A line of libssh2's trace ("[libssh2] 0.000123 Failure Event: -11 - Unable to verify ..."), as the tunnel reads it:
+// whether it tells of the server's KEXINIT, and the error it tells of with its text (0 and empty when none). What the
+// server sent in it, after the prefix, cannot pass for either.
+struct TraceLine {
+    bool kexinit = false;
+    int error    = 0;
+    std::string text;  // 256 bytes at most
+};
+[[nodiscard]] TraceLine readTrace(std::string_view line);
+
 // The host keys trusted on first use, by "host:port", in `file` (JSON). knownHostKey() gives the one kept for the
 // host, empty when there is none or no file yet, and nullopt when the file is there but cannot be read: the keys
 // trusted before are unknown then, and none may be trusted in their place. rememberHostKey() leaves such a file as

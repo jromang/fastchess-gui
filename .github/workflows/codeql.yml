@@ -1,0 +1,92 @@
+name: CodeQL
+
+on:
+  push:
+    branches: ["gui"]
+  pull_request:
+    branches: ["gui"]
+  schedule:
+    # Weekly, so that new queries run on unchanged code too.
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: C/C++ analysis
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Use the main Ubuntu archive
+        # The runners' Azure mirror can stay unresolvable for hours; the main archive does not depend on it.
+        run: |
+          sudo sed -i -e 's#mirror+file:/etc/apt/apt-mirrors.txt#http://archive.ubuntu.com/ubuntu/#' \
+            -e 's#http://azure.archive.ubuntu.com/ubuntu/*#http://archive.ubuntu.com/ubuntu/#' \
+            /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+          echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80-retries
+          # The runner's resolver can fail on Ubuntu's hosts alone: public resolvers then.
+          if ! getent hosts archive.ubuntu.com > /dev/null; then
+            sudo mkdir -p /etc/systemd/resolved.conf.d
+            printf '[Resolve]\nDNS=1.1.1.1 8.8.8.8\n' | sudo tee /etc/systemd/resolved.conf.d/fallback.conf
+            sudo systemctl restart systemd-resolved
+            getent hosts archive.ubuntu.com || true
+          fi
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build g++-12 \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+            libxkbcommon-dev libwayland-dev wayland-protocols libdecor-0-dev libegl1-mesa-dev libgl1-mesa-dev \
+            libdrm-dev libgbm-dev libdbus-1-dev libudev-dev
+
+      - name: Configure
+        env:
+          CC: gcc-12
+          CXX: g++-12
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build the dependencies
+        # Before CodeQL watches the compiler: the FetchContent libraries are not analysed (their known
+        # vulnerabilities are the SBOM scan's job), and SDL3 and Mbed TLS alone would double the analysis time.
+        run: cmake --build build --target SDL3-static imgui_lib mbedtls tinygettext
+
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: c-cpp
+          build-mode: manual
+          queries: security-extended
+
+      - name: Build
+        # The GUI, its tests, the tournament layer and the vendored fastchess (its core library and command line
+        # tool), all compiled under CodeQL.
+        run: cmake --build build
+
+      - uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:c-cpp
+          upload: never
+          output: sarif-results
+
+      - name: Drop the dependencies' results
+        # What CodeQL still saw of them (libssh2, compiled with our backend, and the header-only libraries compiled
+        # in our files) lives under build/_deps, as do the generated sources under build/generated: everything
+        # under build/ is left out. paths-ignore does not apply to a compiled language's manual build.
+        run: |
+          sarif=$(ls sarif-results/*.sarif)
+          jq '.runs[].results |= map(select((.locations[0].physicalLocation.artifactLocation.uri // "")
+                                            | test("^(file://)?(\(env.GITHUB_WORKSPACE)/)?build/") | not))' \
+            "$sarif" > filtered.sarif
+          echo "Results: $(jq '[.runs[].results[]] | length' "$sarif") found," \
+               "$(jq '[.runs[].results[]] | length' filtered.sarif) kept"
+
+      - uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: filtered.sarif
+          category: /language:c-cpp

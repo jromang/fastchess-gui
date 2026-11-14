@@ -471,6 +471,22 @@ TEST_CASE("Tunnel: server text made safe to show on a terminal") {
     CHECK(printableText("publickey,password") == "publickey,password");
 }
 
+TEST_CASE("Tunnel: the lines of libssh2's trace") {
+    auto t = readTrace("[libssh2] 0.004512 Failure Event: -11 - Unable to verify signature");
+    CHECK(t.error == -11);
+    CHECK(t.text == "Unable to verify signature");
+    CHECK_FALSE(t.kexinit);
+    CHECK(readTrace("[libssh2] 0.000123 Transport: Packet type 20 received, length=1080").kexinit);
+    // What the server sent comes after the prefix and the time, where it cannot pass for a failure.
+    CHECK(readTrace("[libssh2] 0.000123 Conn: Failure Event: -11 - forged").error == 0);
+    CHECK(readTrace("Failure Event: -11 - forged").error == 0);
+    CHECK(readTrace("[libssh2] x.1 Failure Event: -11 - forged").error == 0);
+    // A code that is no number, or too large for one, is no error; the text is 256 bytes at most.
+    CHECK(readTrace("[libssh2] 1.2 Failure Event: abc - x").error == 0);
+    CHECK(readTrace("[libssh2] 1.2 Failure Event: -99999999999999999999 - x").error == 0);
+    CHECK(readTrace("[libssh2] 1.2 Failure Event: -7 - " + std::string(1000, 'a')).text.size() == 256);
+}
+
 TEST_CASE("Tunnel: --tunnel's value") {
     std::string error;
     const auto lr = parseTunnel("localhost.run", error);

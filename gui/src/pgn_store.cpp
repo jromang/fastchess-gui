@@ -8,6 +8,8 @@
 #include <limits>
 #include <sstream>
 
+#include <tour/chess_text.hpp>
+
 namespace fcg {
 
 namespace fs = std::filesystem;
@@ -304,7 +306,7 @@ class ReplayVisitor : public chess::pgn::Visitor {
         move.mover = board_.sideToMove();
 
         try {
-            move.move = chess::uci::parseSan(board_, san);
+            move.move = tour::readableSan(san) ? chess::uci::parseSan(board_, san) : chess::Move::NO_MOVE;
         } catch (...) {
             failed_             = true;
             game_.final_comment = std::string(comment);

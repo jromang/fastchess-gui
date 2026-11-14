@@ -11,6 +11,7 @@
 #include <thread>
 
 #include <fmt/include/fmt/format.h>
+#include <tour/chess_text.hpp>
 
 #ifdef _WIN64
 #    include <engine/process/process_win.hpp>
@@ -91,7 +92,8 @@ std::optional<chess::Move> parseMove(const chess::Board& board, std::string text
     std::string san = text;
     if (startsWith(san, "0-0")) std::replace(san.begin(), san.end(), '0', 'O');
     try {
-        const auto m = chess::uci::parseSan(board, san);
+        // An engine's text: what the SAN reader cannot read is not given to it.
+        const auto m = tour::readableSan(san) ? chess::uci::parseSan(board, san) : chess::Move::NO_MOVE;
         if (m != chess::Move::NO_MOVE && isLegal(m)) return m;
     } catch (...) {
     }

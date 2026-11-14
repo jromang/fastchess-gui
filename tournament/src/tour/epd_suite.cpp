@@ -7,6 +7,8 @@
 
 #include <engine/uci_engine.hpp>
 
+#include "chess_text.hpp"
+
 namespace fcg::tour {
 
 namespace {
@@ -41,7 +43,7 @@ std::map<std::string, std::string> operations(std::string_view text) {
 // A SAN move of the position, annotations left out; NO_MOVE when it is none.
 chess::Move san(const chess::Board& board, std::string text) {
     while (!text.empty() && (text.back() == '!' || text.back() == '?')) text.pop_back();
-    if (text.empty()) return chess::Move::NO_MOVE;
+    if (text.empty() || !readableSan(text)) return chess::Move::NO_MOVE;
     try {
         return chess::uci::parseSan(board, text);
     } catch (...) {
@@ -113,9 +115,11 @@ bool parseSuiteLine(std::string_view line, SuitePosition& out) {
     out     = {};
     out.fen = std::string(board_part) + " " + counter("hmvc", "0") + " " + counter("fmvn", "1");
 
+    // A position the moves can be read in: with too many squares the board reader writes past the board, and without
+    // a king the move generator reads outside its tables.
     chess::Board board;
     try {
-        if (!board.setFen(out.fen)) return false;
+        if (!readableFen(out.fen) || !board.setFen(out.fen) || !legalPosition(board)) return false;
     } catch (...) {
         return false;
     }
