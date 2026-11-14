@@ -85,8 +85,8 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   has no game left in the last round. *Start timeout (s)* (60 by default) is the time an engine is
   given to answer `uciok` when it starts and `isready` at the start of each game; a slow starter (a large network
   to load) needs more. An engine that fails to start is tried again three times, 10 s apart, with the same timeout;
-  a pause holds the tries, without using them up. A tournament created afterwards copies the timeout into its
-  participants.
+  a pause holds the tries, without using them up. Then its games are set aside and the others go on (see *An
+  engine that cannot start*). A tournament created afterwards copies the timeout into its participants.
 - **Moved or rebuilt programs**: the library remembers each program (size, date, CRC32). A program that is no
   longer there is marked **!** with *Locate…*, and a tournament does not start with it. A program that changed
   (a new build) has its options read again automatically. Each tournament also records the programs it was
@@ -273,7 +273,8 @@ swap); above the memory installed the tournament does not start. `--run` says th
   decision time `dt=`: when the engine settled on the move it played; `wdl=W/D/L` is always written for the
   engines that report it), on by default since the charts of the *Games* tab read them (pv makes the PGN noticeably
   larger), restarting engines
-  that crash, keeping the engine log of every game (it is always kept for the games that end badly), and *Check the
+  that crash, *Stop the tournament when an engine cannot start* (off by default: see *An engine that cannot
+  start*), keeping the engine log of every game (it is always kept for the games that end badly), and *Check the
   mate PVs*: a mate score's PV must have the right length and end in mate. Every PV is checked for illegal moves,
   moves after the end of the game and a best move that is not its first move; the moves with a wrong PV are marked
   in the Games tab and written in the log.
@@ -331,6 +332,25 @@ it, *nps* in *PGN and misc*). When the program ended while a tournament was runn
 reboot, or quitting while it ran), the next launch resumes it by itself, and the queue goes on after it: *Resume at
 launch the tournament that was running*, in **Settings**, on by default. A tournament paused or stopped waits for
 you, and `--autostart` starts the saved setup instead.
+
+### An engine that cannot start
+
+A night left alone does not stop on one engine. An engine that does not start (a program moved or rebuilt, a
+network file missing, a drive gone) is tried again three times, 10 s apart; then its games are set aside and the
+other games go on. It is tried again every 5 minutes, one game at a time, and its games come back as soon as it
+starts. The tournament header and the home page (under *Needs action*) say which engine, the error, and offer:
+
+- **Try again**: at once, rather than at the next try (after fixing the program, say).
+- **Withdraw…** and **Replace…** (round robins and gauntlets): the Schedule tab's change panel, set for that engine,
+  with the impact shown before anything changes.
+- **Engine log**: `logs/start-<engine>.log` in the tournament folder, what was sent to the engines of its last try
+  and what they answered, their error output included (often the reason: a library or a network file not found).
+
+The log and the desktop notification say when an engine is set aside. The tournament stops only when nothing is
+left to play without the engines set aside, after one last try of each; its status and the notification at the end
+say so (*Stopped: no game is left to play without …*), and the queue goes on with the next tournament. *Resume*
+tries every engine anew. A pause holds the tries. *Stop the tournament when an engine cannot start*, in the
+setup's *PGN and misc*, stops it at once instead, once the tries are used up.
 
 ### Changing a running tournament
 
@@ -502,9 +522,11 @@ fastchess-gui --run TOURNAMENT_FOLDER     # resume a tournament
 fastchess-gui --run SETUP.json            # create one from a setup or template file, with the profile's engines
 ```
 
-No window is opened; progress is printed on the console. **Ctrl+C** stops after the running games and the
+No window is opened; progress is printed on the console, with the tries of an engine that cannot start, the engine
+set aside (with its engine log) or back, as in the window. **Ctrl+C** stops after the running games and the
 tournament can be resumed later, from the command line or the GUI. Exit codes: 0 finished, 1 error while
-playing, 2 nothing to run, 3 stopped before the end.
+playing, 2 nothing to run, 3 stopped before the end (by Ctrl+C, or with nothing left to play without an engine that
+cannot start).
 
 The tournament can be broadcast at the same time, as from the *Broadcast* tab:
 
@@ -569,6 +591,8 @@ it holds a lichess token.
     (or every game, if asked). The first 300 lines of each engine and the last 5000 lines of the game are kept, in
     the order they came. It is what an engine author needs to reproduce a bug. For a WinBoard engine it shows the UCI side; `FCG_WB2UCI_LOG` gives the
     WinBoard side.
+  - `logs/start-<engine>.log`: the last failed try to start an engine that cannot start: its program, the error,
+    and the lines exchanged with the engines of that game until then (see *An engine that cannot start*).
 
 Matches played with an earlier version (0.2.x) appear on the home page: *Import them* turns them into finished
 tournaments.

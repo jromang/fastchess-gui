@@ -26,6 +26,9 @@ this repository still builds unchanged.
   text or HTML.
 - **Exact resume**: every tournament is a folder with an append-only journal; after a crash, a closed window or
   a power cut it continues with no game lost or played twice.
+- **Unattended nights**: an engine that cannot start has its games set aside while the others go on; it is tried
+  again every 5 minutes and its games come back once it starts. The home page says which engine and why, with its
+  engine log, *Try again*, *Withdraw…* and *Replace…*.
 - **Changes while running**: add, withdraw or replace an engine, change the number of cycles, play games again or
   void them, with the impact shown first. No played game is lost.
 - **Broadcast**: live PGN, HTML standings and JSON files, a TLCS server for TLCV and other viewers, a built-in
