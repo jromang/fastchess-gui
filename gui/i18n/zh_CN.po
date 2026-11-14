@@ -708,6 +708,9 @@ msgstr "格子："
 msgid "Change the tournament"
 msgstr "修改锦标赛"
 
+msgid "Change the tournaments folder…"
+msgstr "更改锦标赛文件夹…"
+
 msgid "Changed for this tournament only."
 msgstr "仅为本次比赛修改。"
 
@@ -908,6 +911,9 @@ msgstr "复制 PGN"
 
 msgid "Copy the version"
 msgstr "复制版本号"
+
+msgid "Cores"
+msgstr "核心"
 
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "思考时占用的核心数 · 对手思考时占用一个核心的比例（不后台思考时为 0 %）。各测量 20 秒后得出。"
@@ -1149,6 +1155,9 @@ msgstr "吃过路兵"
 msgid "End"
 msgstr "结束"
 
+msgid "End estimated after the first games"
+msgstr "前几局结束后估算结束时间"
+
 msgid "End game {} with a result…"
 msgstr "以指定结果结束对局 {}…"
 
@@ -1290,6 +1299,12 @@ msgstr "所有时限"
 msgid "Every tournament is a folder: it resumes exactly where it stopped, even after a power cut."
 msgstr "每个锦标赛都是一个文件夹：即使断电，也能从中断处准确继续。"
 
+msgid "Everything paused: no new game pair starts, and the queue waits for Resume all."
+msgstr "已全部暂停：不再开始新的对局对，队列等待“全部继续”。"
+
+msgid "Everything resumed."
+msgstr "已全部继续。"
+
 msgid "Expected number of games"
 msgstr "预计对局数"
 
@@ -1358,6 +1373,9 @@ msgstr "下完进行中的对局，然后停止"
 
 msgid "Finished"
 msgstr "已结束"
+
+msgid "First: {} {}/{}"
+msgstr "第一：{} {}/{}"
 
 msgid "Fischer random chess. The engines must play it (the UCI_Chess960 option, or the fischerandom variant of a WinBoard engine). A book of Chess960 positions, or none for all 960."
 msgstr "菲舍尔任意制象棋。引擎必须支持（UCI_Chess960 选项，或 WinBoard 引擎的 fischerandom 变体）。使用 Chess960 局面的开局库，不选则使用全部 960 种。"
@@ -1570,6 +1588,9 @@ msgstr "交手记录"
 msgid "Health"
 msgstr "稳定性"
 
+msgid "Held by Pause all: no tournament starts until Resume all."
+msgstr "已被“全部暂停”挂起：在“全部继续”之前不会开始任何锦标赛。"
+
 msgid "Hide"
 msgstr "隐藏"
 
@@ -1738,6 +1759,9 @@ msgstr "它在某个可信等级分榜上的等级分，用于锚定锦标赛的
 msgid "Its results…"
 msgstr "它的成绩…"
 
+msgid "Its workspace: standings, live games, schedule"
+msgstr "它的工作区：排名、实时对局、赛程"
+
 msgid "Keep my value"
 msgstr "保留我的值"
 
@@ -1774,6 +1798,9 @@ msgstr "大型锦标赛"
 msgid "Last 24 hours:"
 msgstr "最近 24 小时："
 
+msgid "Last finished"
+msgstr "最近完成"
+
 msgid "Latest results"
 msgstr "最近成绩"
 
@@ -1785,6 +1812,12 @@ msgstr "布局"
 
 msgid "Layout saved: {}"
 msgstr "布局已保存：{}"
+
+msgid "Leader: {}"
+msgstr "领先：{}"
+
+msgid "Leader: {} {}"
+msgstr "领先：{} {}"
 
 msgid "Leave (Esc)"
 msgstr "退出（Esc）"
@@ -2009,6 +2042,9 @@ msgstr "还没有引擎。请点击“添加”。"
 msgid "No engine yet: double-click engines of the library, or drag them here."
 msgstr "还没有引擎：双击引擎库中的引擎，或把它们拖到这里。"
 
+msgid "No game finished yet"
+msgstr "尚无已结束的对局"
+
 msgid "No game finished yet."
 msgstr "还没有已结束的对局。"
 
@@ -2032,6 +2068,9 @@ msgstr "没有它就没有可下的对局了：锦标赛已停止。继续时会
 
 msgid "No game of {} gives a move: is it a PGN file?"
 msgstr "{} 中没有任何对局给出着法：这是 PGN 文件吗？"
+
+msgid "No game played"
+msgstr "未下任何对局"
 
 msgid "No game yet."
 msgstr "还没有对局。"
@@ -2223,6 +2262,9 @@ msgstr "仅库中某个分组内引擎之间的对局。"
 msgid "Only the moves of players rated at least"
 msgstr "仅限等级分不低于此值的棋手的着法"
 
+msgid "Only {} free of {} on the drive of {}: a tournament stops when its games cannot be written."
+msgstr "仅剩 {} 可用（共 {}），位于 {} 所在的磁盘：对局无法写入时锦标赛会停止。"
+
 msgid "Open"
 msgstr "打开"
 
@@ -2252,6 +2294,9 @@ msgstr "打开配置文件夹"
 
 msgid "Open the tournament."
 msgstr "打开锦标赛。"
+
+msgid "Open the tournaments folder"
+msgstr "打开锦标赛文件夹"
 
 msgid "OpenGL 3.2 cannot be used ({}): the window is drawn by SDL's renderer."
 msgstr "无法使用 OpenGL 3.2（{}）：窗口改由 SDL 渲染器绘制。"
@@ -2393,6 +2438,9 @@ msgstr "粘贴等级分榜，或打开其文件：等级分榜的文本版本或
 
 msgid "Pause"
 msgstr "暂停"
+
+msgid "Pause all"
+msgstr "全部暂停"
 
 msgid "Pause: no new pair starts. Running games, and the second game of their pair,\nplay to the end (pair statistics stay complete)."
 msgstr "暂停：不再开始新的对局对。进行中的对局及其对局对中的第二局\n会下完（对局对统计保持完整）。"
@@ -2552,8 +2600,9 @@ msgstr "发布到互联网"
 msgid "Push the games to lichess"
 msgstr "将对局推送到 lichess"
 
-msgid "Queue"
-msgstr "队列"
+msgid "Queue · {} tournament"
+msgid_plural "Queue · {} tournaments"
+msgstr[0] "队列 · {} 个锦标赛"
 
 msgid "Queued: {}"
 msgstr "已加入队列：{}"
@@ -2652,6 +2701,9 @@ msgstr "刷新：文件夹中的新引擎"
 msgid "Relaunch with…"
 msgstr "重新开始，使用…"
 
+msgid "Relaunch {} with…"
+msgstr "重新开始 {}，使用…"
+
 msgid "Remote port"
 msgstr "远程端口"
 
@@ -2742,6 +2794,9 @@ msgstr "每对对局（同一开局，交换颜色）的结果，以 A 的得分
 
 msgid "Resume"
 msgstr "继续"
+
+msgid "Resume all"
+msgstr "全部继续"
 
 msgid "Resume at launch the tournament that was running"
 msgstr "启动时恢复之前正在进行的锦标赛"
@@ -3082,6 +3137,9 @@ msgstr "在结束前停止。"
 
 msgid "Stopped: no game is left to play without {}, which cannot start"
 msgstr "已停止：没有无法启动的 {} 就没有可下的对局了"
+
+msgid "Stopping after the running games"
+msgstr "当前对局结束后停止"
 
 msgid "Stopping after the running games ({})"
 msgstr "下完进行中的对局后停止（{}）"
@@ -3438,6 +3496,9 @@ msgstr "开局随机排序（order=random），或从“起始位置”起依次
 msgid "The order is the one of the pairings' table."
 msgstr "顺序即配对表的顺序。"
 
+msgid "The other settings: those of the New tournament page."
+msgstr "其他设置：取自“新建锦标赛”页面。"
+
 msgid "The page shows Discord's widget of this server, in its light or dark theme: its name, the members online and a Join button, not the messages. The server's owner switches the widget on in Server Settings, Widget, which also shows the server ID. Discord then sees the visits of the page's viewers."
 msgstr "页面以其浅色或深色主题显示该服务器的 Discord 小组件：服务器名称、在线成员和“加入”按钮，不显示消息。服务器所有者在“服务器设置”中的“小组件”里开启它，那里也显示服务器 ID。这样 Discord 会看到页面观众的访问。"
 
@@ -3446,6 +3507,9 @@ msgstr "以你选择的名称保存面板及其位置。"
 
 msgid "The participants selected (Delete)."
 msgstr "选中的参赛者（Delete）。"
+
+msgid "The paused tournament goes on, and the queue starts its next tournament when the running one ends."
+msgstr "暂停的锦标赛继续进行，当前锦标赛结束后队列开始下一个锦标赛。"
 
 msgid "The place in the list, by rating."
 msgstr "按等级分在列表中的名次。"
@@ -3497,6 +3561,9 @@ msgstr "也可以改为添加某个文件夹中的程序："
 msgid "The queue ends about {} (in {})"
 msgstr "队列预计 {} 结束（还需 {}）"
 
+msgid "The queue waits for Resume all."
+msgstr "队列等待“全部继续”。"
+
 msgid "The rating of the engines chosen after each tournament they played: the versions of an engine, side by side."
 msgstr "所选引擎在其参加的每个锦标赛后的等级分：同一引擎的各个版本并列显示。"
 
@@ -3506,14 +3573,17 @@ msgstr "为了开始，{} 的读取已中断：稍后会重新进行。"
 msgid "The reading stopped before the end of the file: {}"
 msgstr "读取在文件结束前停止：{}"
 
+msgid "The running tournament starts no new game pair (the games in progress play to the end), and the queue starts no tournament until Resume all."
+msgstr "当前锦标赛不再开始新的对局对（进行中的对局会下完），在“全部继续”之前队列不会开始任何锦标赛。"
+
 msgid "The same engine, with different books"
 msgstr "同一引擎，使用不同的开局库"
 
 msgid "The same for both"
 msgstr "双方相同"
 
-msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
-msgstr "同样的比赛，换一个新引擎 A，例如下一版本：其他设置保持不变。"
+msgid "The same match with a new engine A in place of {}, e.g. its next version."
+msgstr "同样的比赛，用新引擎 A 替换 {}，例如它的下一版本。"
 
 msgid "The same opening for every pair of a round"
 msgstr "同一轮中所有对局对使用同一开局"
@@ -3583,6 +3653,9 @@ msgstr "锦标赛已停止：继续时会再次尝试。"
 
 msgid "The tournament running when the program ended is over: the queue goes on."
 msgstr "程序结束时正在进行的锦标赛已完成：队列继续。"
+
+msgid "The tournament stays in the list, to resume or open later."
+msgstr "锦标赛仍在列表中，可稍后继续或打开。"
 
 msgid "The tournament was changed."
 msgstr "锦标赛已修改。"
@@ -3776,6 +3849,12 @@ msgstr "未知引擎：{}"
 msgid "Unreadable PGN."
 msgstr "无法读取的 PGN。"
 
+msgid "Until stopped"
+msgstr "直到停止"
+
+msgid "Until the SPRT decides"
+msgstr "直到 SPRT 作出判定"
+
 msgid "Until the next version."
 msgstr "直到下一个版本。"
 
@@ -3866,6 +3945,12 @@ msgstr "它平均何时确定最终走出的着法：如果远早于所用时间
 msgid "When the program ended while a tournament was running (a crash, a power cut, a reboot, or quitting while it ran), it resumes at the next launch, and the queue goes on after it. A tournament paused or stopped waits for you."
 msgstr "如果程序在锦标赛进行时结束（崩溃、断电、重启，或在进行中退出），下次启动时会恢复该锦标赛，之后队列继续。已暂停或已停止的锦标赛会等待你操作。"
 
+msgid "When the queue ends is not known: an SPRT without a game limit, or nodes or depth per move, has no length to tell."
+msgstr "无法得知队列何时结束：没有对局上限的 SPRT，或按节点数、深度每步计算的锦标赛，无法估算时长。"
+
+msgid "Where new tournaments are written, as in Settings. Those played so far stay where they are: Open a folder… opens them."
+msgstr "新锦标赛的写入位置，与设置中相同。已下过的锦标赛留在原处：“打开文件夹…”可打开它们。"
+
 msgid "While a tournament runs, an SSH tunnel built into fastchess-gui gives the page a public https address, without opening a port in the router or installing anything. Only the page is reachable that way, read-only."
 msgstr "锦标赛进行时，fastchess-gui 内置的 SSH 隧道为页面提供一个公共 https 地址，无需在路由器上开放端口，也无需安装任何东西。通过这种方式只能访问该页面，且为只读。"
 
@@ -3922,6 +4007,9 @@ msgstr "WinBoard 引擎（xboard 协议）通过 fastchess-gui 内置的 UCI 转
 
 msgid "WinBoard, its own protocol"
 msgstr "WinBoard，它自己的协议"
+
+msgid "Winner: {}"
+msgstr "冠军：{}"
 
 msgid "Wins"
 msgstr "胜"
@@ -4009,6 +4097,9 @@ msgstr "崩溃会停止比赛"
 
 msgid "a result is 1-0, 0-1 or 1/2-1/2"
 msgstr "结果只能是 1-0、0-1 或 1/2-1/2"
+
+msgid "about {}"
+msgstr "约 {}"
 
 msgid "about {} game"
 msgid_plural "about {} games"
@@ -4196,6 +4287,9 @@ msgstr "范围为 {} 到 {}"
 msgid "itself"
 msgstr "自己"
 
+msgid "length unknown"
+msgstr "时长未知"
+
 msgid "lines starting with %, ignored"
 msgstr "以 % 开头的行，已忽略"
 
@@ -4312,6 +4406,9 @@ msgstr "手动设置"
 msgid "stalemate"
 msgstr "逼和"
 
+msgid "starts about {}"
+msgstr "预计 {} 开始"
+
 msgid "stopped"
 msgstr "已停止"
 
@@ -4380,6 +4477,9 @@ msgstr "思考时占用 {:.1f} 个核心，使用 {} 个线程"
 
 msgid "voided"
 msgstr "已作废"
+
+msgid "weight {}"
+msgstr "权重 {}"
 
 msgid "weighted by count"
 msgstr "按次数加权"
@@ -4554,6 +4654,9 @@ msgstr "{} 个引擎 · {} 局"
 msgid "{} for every engine"
 msgstr "每个引擎：{}"
 
+msgid "{} free"
+msgstr "{} 空闲"
+
 msgid "{} game"
 msgid_plural "{} games"
 msgstr[0] "{} 局"
@@ -4628,6 +4731,9 @@ msgstr "{} 小时 {:02} 分"
 msgid "{} hardware thread"
 msgid_plural "{} hardware threads"
 msgstr[0] "{} 个硬件线程"
+
+msgid "{} hardware threads on {} cores. A game takes the Threads of its engine that has the most: the two engines think in turn."
+msgstr "{} 个硬件线程，{} 个核心。一局对局占用其两个引擎中 Threads 较多者的线程数：两个引擎轮流思考。"
 
 msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
 msgstr "{} 与 fastchess-gui 没有共同的算法（需要 curve25519-sha256、RSA 主机密钥和 AES）"
@@ -4728,6 +4834,9 @@ msgstr "可用内存 {}，共 {}"
 msgid "{} of {}"
 msgstr "{} / {}"
 
+msgid "{} of {} in use"
+msgstr "已用 {} / {}"
+
 msgid "{} of {} openings"
 msgstr "{} 个，共 {} 个开局"
 
@@ -4793,6 +4902,10 @@ msgid "{} player"
 msgid_plural "{} players"
 msgstr[0] "{} 位棋手"
 
+msgid "{} player left"
+msgid_plural "{} players left"
+msgstr[0] "剩余 {} 名选手"
+
 msgid "{} player that two library engines may be: say which one."
 msgid_plural "{} players that two library engines may be: say which one."
 msgstr[0] "{} 位棋手可能是两个库引擎之一：请指定。"
@@ -4819,6 +4932,9 @@ msgstr "{} 使用 {}。"
 msgid "{} ply"
 msgid_plural "{} plies"
 msgstr[0] "{} 个半回合"
+
+msgid "{} points of {} games"
+msgstr "{} 分（共 {} 局）"
 
 msgid "{} points to a folder with no tablebase files: {}"
 msgstr "{} 指向一个没有残局库文件的文件夹：{}"
@@ -5001,6 +5117,10 @@ msgstr "{}：失去了 {:.0f} % 的获胜机会。"
 
 msgid "{}: {}"
 msgstr "{}：{}"
+
+msgid "{}: {} core in use"
+msgid_plural "{}: {} cores in use"
+msgstr[0] "{}：已用 {} 个核心"
 
 msgid "{}: {} → {} points"
 msgstr "{}：{} → {} 分"

@@ -5,11 +5,46 @@
 
 #include "journal.hpp"
 #include "schedule.hpp"
+#include "standings.hpp"
 #include "state.hpp"
 
 namespace fcg::tour {
 
 namespace fs = std::filesystem;
+
+namespace {
+
+std::vector<Summary::Score> scoresOf(const TournamentSpec& spec, const TournamentState::Replayed& replayed) {
+    std::vector<Summary::Score> out;
+    if (spec.format == Format::Match) {
+        for (const auto& p : spec.participants) {
+            Summary::Score score{p.engine.name, 0, 0};
+            for (const auto& r : replayed.results) {
+                if (r.white != p.id && r.black != p.id) continue;
+                score.points += r.scoreOf(p.id);
+                score.games++;
+            }
+            out.push_back(std::move(score));
+        }
+        return out;
+    }
+
+    const auto table = computeTable(spec, replayed.results, std::nullopt, replayed.byes);
+    for (const auto& row : table.rows) out.push_back({row.name, row.points, row.games});
+    // A knockout is won in its final, not on points: its winner comes first.
+    const auto& last = replayed.last_bracket;
+    if (spec.format == Format::Knockout && replayed.finished && last.size() == 1 && last[0].size() == 2) {
+        const auto pair  = table.pair(last[0][0], last[0][1]);
+        const int winner = pair.points() * 2 > pair.games() ? last[0][0] : last[0][1];
+        const auto* p    = spec.participant(winner);
+        const auto it    = std::find_if(out.begin(), out.end(),
+                                        [&](const Summary::Score& s) { return p && s.name == p->engine.name; });
+        if (it != out.end()) std::rotate(out.begin(), it, it + 1);
+    }
+    return out;
+}
+
+}  // namespace
 
 std::optional<Summary> summarize(const fs::path& dir) {
     try {
@@ -27,6 +62,7 @@ std::optional<Summary> summarize(const fs::path& dir) {
         s.total             = replayed.total;
         s.finished          = replayed.finished;
         s.finish_reason     = replayed.finish_reason;
+        s.scores            = scoresOf(s.spec, replayed);
         return s;
     } catch (const std::exception&) {
         return std::nullopt;

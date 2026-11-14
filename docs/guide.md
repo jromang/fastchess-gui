@@ -8,7 +8,7 @@ A navigation rail on the left leads to eight pages:
 
 | Page | Contents |
 |---|---|
-| Tournaments | The home page: the running tournament and when it ends, the queue and when it all ends, the *Health* card, every tournament of the profile (resume, open, relaunch), *New tournament* |
+| Tournaments | The home page: what runs and the cores it takes, what needs action, the queue and when it all ends, the last tournaments finished with their result, the *Health* card, every tournament of the profile (resume, open, relaunch), *Pause all*, *New tournament* |
 | Engines | The engine library: options, health check, groups, reference Elo, import of other programs' lists |
 | Books | The opening book library, and the openings of each book with what is wrong with them |
 | Board | A game or a position from anywhere, analysed by an engine of the library |
@@ -50,8 +50,8 @@ dragging its right edge. Everything (text, buttons, boards) can also be made lar
 the window full screen, and back.
 
 **Ctrl+K** opens the command palette: the pages and tabs, the engines of the library (it opens the card), the books,
-the tournaments of the home page, and the actions possible now (*Pause*, *Resume*, *Stop*, *Start*, *Add to the
-queue*, the entries of *Import…*, *Check those not checked*, *Export for a rating list…*, *Copy* the standings,
+the tournaments of the home page, and the actions possible now (*Pause*, *Resume*, *Pause all*, *Stop*, *Start*, *Add to
+the queue*, *Relaunch … with…*, the entries of *Import…*, *Check those not checked*, *Export for a rating list…*, *Copy* the standings,
 *Copy the version*, *Report a problem…*…).
 Letter case does not matter and the letters typed need not be adjacent ("rl" finds *Rating list*); names that start
 with them, or with a word that does, come first. Up and Down choose, Enter runs, Escape closes; Ctrl+K is left alone
@@ -71,6 +71,45 @@ uses more processor time, redraws only what changes (and what moves, such as clo
 rather than onto another screen. Under Wayland (and on macOS) the processor's picture is still shown through the
 graphics driver; if there is none, start the program with `SDL_VIDEODRIVER=x11`. When no way of drawing works, a
 message says so before the program ends.
+
+## The home page
+
+The **Tournaments** page is a control room: what runs and what needs you come first, then the rest.
+
+- **Pause all**, beside *Open a folder…* and *New tournament*, pauses the running tournament (no new game pair
+  starts, the games in progress play to the end) and holds the queue: no queued tournament starts until **Resume
+  all**, which resumes the tournament and lets the queue go on, at once if a tournament ended meanwhile.
+- **Cores**: the machine's hardware threads, and those the games being played take, the rest free. A game takes
+  the `Threads` of its engine that has the most, since the two engines think in turn; the bar shows the tournament's
+  name and its count, the cursor the details.
+- **Needs action**, when something does, each with its fix in place: an engine that cannot start (see *An engine
+  that cannot start*: *Try again*, *Withdraw…*, *Replace…*, *Engine log*); the tournament an error or an engine
+  stopped, with what stopped it, *Open the engine*, *Open the log*, *Resume*, *Open* and *Hide*; a drive too full
+  for a night of games (under 1 GB free, or under 2 % of a drive under 500 GB), the tournaments folder's or the
+  running tournament's, looked at every minute, with *Open the folder* and *Change the tournaments folder…* (where
+  new tournaments go, as in **Settings**).
+- **Running**: the card of the running tournament: its name, format, time control and state, a progress bar with
+  the games played of those planned and the games being played, when it ends, and who leads: the first of the
+  standings with its rating against the field and its points (a knockout: the players left), the engine ahead in a
+  match with its Elo and the score, or the LLR of an SPRT with its bounds, then the Elo and the score. *Open* goes
+  to its workspace, *Pause* pauses it. A tournament that can be resumed shows instead under *Interrupted*, with
+  *Resume*.
+- **Queue**: the tournaments waiting, each with its length and when it starts, and when everything ends (see
+  *Queue and relaunch*).
+- **Last finished**: the last five tournaments finished, with their result: a match's score, the SPRT's decision,
+  a knockout's winner (of its final), or the first of the standings with its points of its games. *Relaunch with…*
+  for a match, and *Open*.
+- **Health**: the crashes or hangs, losses on time and illegal moves of the last 24 hours, the memory free and
+  installed, and the engine processes running; then the engines that lost those games, the three with the most,
+  with *Open the engine* and *Open the folder* (the tournament's `logs` folder keeps the engine log of every game
+  that ended badly). A loss on time before move 20 is told apart: it is more often an engine set up wrong (too many
+  threads, a hash too large to allocate in time, a network loaded at every game, a slow start) than its time
+  management.
+- **All tournaments**: every tournament of the profile, newest first, with *Open* and *Folder*; its title folds
+  it. The result of a finished one shows at the cursor, over its state.
+
+The command palette has these actions too: *Pause all*, *Resume all*, *Relaunch … with…* for the last matches
+finished, *Open the tournaments folder* and *Change the tournaments folder…*.
 
 ## Engines
 
@@ -549,9 +588,9 @@ it never decides a game.
 first game has started, so a pause never throws a result away. **Resume** continues. **Stop** either finishes
 the running games first, or stops now (the interrupted games are not counted and will be played again).
 
-A tournament stopped by an engine says which one in its header: *Interrupted: Alpha could not start: …* (after its
-last try), or *Alpha crashed or stopped responding (game 12)* (without *Restart an engine that crashes*), with *Open
-the engine* and *Open the log*.
+A tournament stopped by an engine says which one in its header and on the home page, under *Needs action*:
+*Interrupted: Alpha could not start: …* (after its last try), or *Alpha crashed or stopped responding (game 12)*
+(without *Restart an engine that crashes*), with *Open the engine* and *Open the log*.
 
 **Every tournament resumes exactly where it stopped**, after a stop, a closed window, a crash or a power cut: no
 game is lost and none is played twice, and a half-played game pair is completed with the same opening and
@@ -617,18 +656,16 @@ made are kept). A result set by hand can be undone as long as it is the last cha
 
 ### Queue and relaunch
 
-The **Queue** on the home page holds tournaments to play one after the other: when one ends, the next starts. They
-can be reordered or removed. The home page tells when the running tournament ends (*Ends about HH:MM (in …)*) and
-when the whole queue does; the tournaments whose length cannot be known (an SPRT without a maximum, nodes or depth
-per move) are counted apart. Its *Health* card gives the crashes or hangs, losses on time and illegal moves of the
-last 24 hours, the memory free and installed, and the engine processes running; then the engines that lost those
-games, the three with the most, with *Open the engine* and *Open the folder* (the tournament's `logs` folder keeps
-the engine log of every game that ended badly). A loss on time before move 20 is told apart: it is more often an
-engine set up wrong (too many threads, a hash too large to allocate in time, a network loaded at every game, a slow
-start) than its time management.
+The **Queue** on the home page holds tournaments to play one after the other: when one ends by itself, the next
+starts (not after a stop or an error, nor while *Pause all* holds the queue). They can be reordered or removed, and
+the first started now when nothing runs. The home page tells when the running tournament ends (*Ends about HH:MM
+(in …)*) and when the whole queue does, each queued tournament with its length and, while the lengths before it are
+known, when it starts; the tournaments whose length cannot be known (an SPRT without a maximum, nodes or depth per
+move) are counted apart.
 
-**Relaunch with…** on a finished tournament opens its setup again, to play it once more or with an engine replaced
-by another (typically the next version).
+**Relaunch with…** on a finished match (in its header, or under *Last finished* on the home page) plays it again
+with another engine A, typically the next version, against the same engine B; the other settings are those of the
+*New tournament* page.
 
 ## Ratings
 

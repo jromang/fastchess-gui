@@ -22,6 +22,7 @@ struct Fix {
         LowerTablebasePieces,     // the tablebase adjudication up to `value` pieces
         OpenLog,                  // the Log page
         OpenFolder,               // `path` in the file manager of the system
+        ChangeTournamentsFolder,  // the folder dialog for where new tournaments are written
     };
     Kind kind;
     std::string label;    // the button's
@@ -46,6 +47,7 @@ struct Fix {
 [[nodiscard]] Fix lowerTablebasePiecesFix(int pieces);
 [[nodiscard]] Fix openLogFix();
 [[nodiscard]] Fix openFolderFix(const std::string& path);
+[[nodiscard]] Fix changeTournamentsFolderFix();
 
 struct Notice {
     enum class Level { Ok, Warning, Error };

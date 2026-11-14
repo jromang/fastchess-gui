@@ -246,6 +246,10 @@ TournamentState::Replayed TournamentState::replay(const std::vector<nlohmann::js
             if (out.finished && out.finish_reason == "complete") out.finished = false;
         } else if (type == "round_paired" || type == "tiebreak_added") {
             roundEventTo(e, spec, schedule);
+            if (type == "round_paired") {
+                for (const auto& id : e.value("byes", std::vector<int>{})) out.byes[id]++;
+                if (e.contains("bracket")) out.last_bracket = e.at("bracket").get<std::vector<std::vector<int>>>();
+            }
         } else if (type == "finished") {
             out.finished      = true;
             out.finish_reason = e.value("why", std::string{});

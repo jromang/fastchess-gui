@@ -866,7 +866,15 @@ void App::onRunFinished() {
 
     // The queue goes on after a tournament that ended by itself, not after a stop or an error.
     const bool completed = error.empty() && !run_.stoppedByUser() && !fastchess::atomic::abnormal_termination;
-    if (completed && !queue_.empty() && !quit_pending_) startFromQueue(true);
+    if (completed && !queue_.empty() && !quit_pending_) {
+        // Held by Pause all: Resume all starts it.
+        if (queue_held_) {
+            queue_blocked_ = true;
+            Console::instance().add(TR("The queue waits for Resume all."));
+        } else {
+            startFromQueue(true);
+        }
+    }
 }
 
 void App::enqueue() {

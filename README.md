@@ -29,6 +29,9 @@ this repository still builds unchanged.
 - **Unattended nights**: an engine that cannot start has its games set aside while the others go on; it is tried
   again every 5 minutes and its games come back once it starts. The home page says which engine and why, with its
   engine log, *Try again*, *Withdraw…* and *Replace…*.
+- **A control room**: the home page shows what runs first (the cores in use, the running tournament's progress, end
+  and leader or LLR), what needs action with its fix (an engine that cannot start, a tournament an error stopped, a
+  drive too full), the queue and when it all ends, the last results with *Relaunch with…*, and *Pause all*.
 - **Changes while running**: add, withdraw or replace an engine, change the number of cycles, play games again,
   void them or set their result by hand (a game in progress too), with the impact shown first and an undo. No
   played game is lost.

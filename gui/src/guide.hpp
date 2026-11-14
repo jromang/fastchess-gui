@@ -11,6 +11,7 @@ namespace fcg::guide {
 // The sections the pages and tabs lead to.
 enum class Section {
     Window,         // The window: the navigation, Log and Settings
+    Home,           // The home page: what runs, what needs action, the queue, the last tournaments finished
     Engines,        // Engines
     Books,          // Books
     TestSuites,     // Test suites

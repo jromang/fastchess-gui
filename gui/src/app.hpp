@@ -26,6 +26,7 @@
 #include "engine_changes.hpp"
 #include "engine_import.hpp"
 #include "engines.hpp"
+#include "home.hpp"
 #include "layout.hpp"
 #include "live.hpp"
 #include "model.hpp"
@@ -261,7 +262,36 @@ class App {
     void drawShell();
     void drawRail(float width);
     [[nodiscard]] int gamesPlaying() const;  // games in progress, shown beside the live view in the navigation
+
+    // The home page as a control room (view_home.cpp): Pause all, the cores in use, what needs action first, the card
+    // of the running tournament, the queue and when it all ends, the last tournaments finished with their result,
+    // the health of the last 24 hours, then every tournament.
     void drawHome();
+    void drawHomeHeader();  // the title, Pause all (or Resume all), Open a folder… and New tournament
+    // The machine's resources and who uses them: the cores of the running games against the hardware threads. The
+    // memory and the GPUs join them once tournaments have a budget of them.
+    [[nodiscard]] std::vector<home::ResourceBar> resourceBars();
+    // The cores of the games being played: for each, the Threads of its engine that has the most (the two engines
+    // think in turn).
+    [[nodiscard]] int coresInUse();
+    // The card of the running tournament, made from the run: one per tournament once several run at once.
+    [[nodiscard]] home::RunCard runCard();
+    void drawRunCards();
+    // An engine that cannot start, the tournament an error stopped (with the fixes of its message, and Resume), a
+    // drive too full: each with its fix. True when anything was shown.
+    bool drawNeedsAction();
+    // The last run ended by an error or an engine that stopped it, and the card saying so was not hidden.
+    [[nodiscard]] bool stoppedByError() const;
+    // The card of the tournament that can be resumed, with the error that stopped it when `error`.
+    void drawInterrupted(bool error);
+    void drawLastFinished();    // the last tournaments finished, their result, Relaunch with… and Open
+    void drawAllTournaments();  // the table of every tournament, folded
+    void pollDiskSpace();       // the free space of the tournaments' drives, asked on a worker thread now and then
+    // Pause all: the running tournament paused and the queue held (it starts no tournament until Resume all).
+    [[nodiscard]] bool canPauseAll() const;
+    [[nodiscard]] bool allPaused() const;
+    void pauseAll();
+    void resumeAll();
     void drawNewMatch();
     // The setup of the new tournament page: its engines chosen, its SPRT bounds the wrong way round, an engine of it
     // being read. Start and Add to the queue follow them.
@@ -751,7 +781,10 @@ class App {
     [[nodiscard]] std::vector<Notice> engineIncidentNotices(const tour::Incidents& incidents) const;
     // About how long the running tournament has left at its pace; nullopt without a game count or a pace yet.
     [[nodiscard]] std::optional<double> runSecondsLeft() const;
-    void drawRelaunch();  // "Relaunch with…" of a finished match
+    // "Relaunch with…" of a finished match between `engine_a` and `engine_b`, played from the folder `from`: the
+    // same match with another engine A. `open`: its popup opens now (the command palette).
+    void drawRelaunch(const std::string& engine_a, const std::string& engine_b, const std::filesystem::path& from,
+                      bool open = false);
     void resetRunView();  // forgets the games and statistics shown, before a run starts
     void pollRun();
     void onRunFinished();
@@ -1068,7 +1101,28 @@ class App {
 
     // Queue and relaunch.
     std::vector<QueuedTournament> queue_;
+    bool queue_held_    = false;  // Pause all: the queue starts no tournament until Resume all
+    bool queue_blocked_ = false;  // a tournament ended while it was held: Resume all starts the next one
     std::string relaunch_engine_;
+    std::filesystem::path relaunch_from_;     // the folder of the match whose Relaunch with… started last
+    std::filesystem::path relaunch_request_;  // its popup opens on the home page (the command palette)
+
+    // The home page's control room, computed again only when what it shows changed.
+    struct CoresCache {
+        const tour::TournamentState* of = nullptr;
+        uint64_t version                = ~uint64_t(0);
+        std::size_t names               = 0;
+        std::vector<int> threads;  // by the observer's participant index
+    } cores_cache_;
+    struct LeaderCache {
+        std::size_t games = ~std::size_t(0);
+        Clock::time_point started{};
+        std::string leader, detail;
+    } leader_cache_;
+    std::string finish_hidden_;  // the finish message whose card under Needs action was hidden
+    std::future<std::vector<home::DiskSpace>> disk_job_;
+    std::vector<home::DiskSpace> disks_;
+    std::chrono::steady_clock::time_point disk_asked_{};
 
     // Broadcast.
     Broadcaster broadcaster_;
