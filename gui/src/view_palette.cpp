@@ -33,7 +33,7 @@ std::string shown(const char* label) {
 guide::Section App::guideSection() const {
     switch (page_) {
         case Page::Home:
-            return guide::Section::Running;
+            return guide::Section::Home;
         case Page::NewMatch:
             return guide::Section::NewTournament;
         case Page::Tournament:
@@ -80,6 +80,23 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     } else {
         if (unfinished_) add(TR("Resume"), unfinished_->spec.name, [this] { resumeRun(); });
         if (!queue_.empty()) add(TR("Start now"), queue_.front().label, [this] { startFromQueue(); });
+    }
+    // Pause all and Resume all, as the home page offers them.
+    if (allPaused()) {
+        add(TR("Resume all"), TR("Tournaments"), [this] { resumeAll(); });
+    } else if (canPauseAll()) {
+        add(TR("Pause all"), TR("Tournaments"), [this] { pauseAll(); });
+    }
+    // The last matches finished, relaunched with another engine A from their row of the home page.
+    {
+        const auto busy = run_.running() && t ? t->dir() : std::filesystem::path();
+        for (const auto* s : home::lastFinished(tournaments_, home::LAST_FINISHED, busy)) {
+            if (s->spec.format != tour::Format::Match || s->spec.participants.size() < 2) continue;
+            add(trf("Relaunch {} with…", s->spec.name), TR("Last finished"), [this, dir = s->dir] {
+                page_             = Page::Home;
+                relaunch_request_ = dir;
+            });
+        }
     }
     // The engines that cannot start, as their card offers.
     if (t) {
@@ -308,6 +325,8 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     add(TR("Copy the version"), TR("Settings"), [this] { copyVersion(); });
     add(TR("Report a problem…"), TR("Settings"), [this] { reportProblem(); });
     add(TR("Open the profile folder"), TR("Settings"), [this] { ui::openPath(storage_.root()); });
+    add(TR("Open the tournaments folder"), TR("Settings"), [this] { ui::openPath(storage_.runsDir()); });
+    add(TR("Change the tournaments folder…"), TR("Settings"), [this] { applyFix(changeTournamentsFolderFix()); });
     if (const auto* release = update::notice(updates_, FCG_VERSION)) {
         add(trf("Download page of fastchess-gui {}", release->version), TR("Settings"),
             [url = release->url] { SDL_OpenURL(url.c_str()); });

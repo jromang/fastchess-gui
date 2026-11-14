@@ -607,6 +607,9 @@ msgstr "Zellen:"
 msgid "Change the tournament"
 msgstr "Turnier ändern"
 
+msgid "Change the tournaments folder…"
+msgstr "Turnierordner ändern…"
+
 msgid "Changed for this tournament only."
 msgstr "Nur für dieses Turnier geändert."
 
@@ -771,6 +774,9 @@ msgstr "Kopieren"
 
 msgid "Copy the version"
 msgstr "Version kopieren"
+
+msgid "Cores"
+msgstr "Kerne"
 
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "Ausgelastete Kerne, während sie rechnet · Anteil eines Kerns, während der Gegner rechnet (0 % ohne Pondern). Gemessen nach 20 s von beidem."
@@ -997,6 +1003,9 @@ msgstr "Leer: das Verzeichnis des Programms."
 msgid "End"
 msgstr "Ende"
 
+msgid "End estimated after the first games"
+msgstr "Ende wird nach den ersten Partien geschätzt"
+
 msgid "End game {} with a result…"
 msgstr "Partie {} mit einem Ergebnis beenden…"
 
@@ -1132,6 +1141,12 @@ msgstr "Alle Bedenkzeiten"
 msgid "Every tournament is a folder: it resumes exactly where it stopped, even after a power cut."
 msgstr "Jedes Turnier ist ein Ordner: es wird genau dort fortgesetzt, wo es aufgehört hat, selbst nach einem Stromausfall."
 
+msgid "Everything paused: no new game pair starts, and the queue waits for Resume all."
+msgstr "Alles pausiert: kein neues Partiepaar beginnt, und die Warteschlange wartet auf Alles fortsetzen."
+
+msgid "Everything resumed."
+msgstr "Alles fortgesetzt."
+
 msgid "Expected number of games"
 msgstr "Erwartete Anzahl Partien"
 
@@ -1197,6 +1212,9 @@ msgstr "Laufende Partien beenden, dann stoppen"
 
 msgid "Finished"
 msgstr "Beendet"
+
+msgid "First: {} {}/{}"
+msgstr "Erster: {} {}/{}"
 
 msgid "Fischer random chess. The engines must play it (the UCI_Chess960 option, or the fischerandom variant of a WinBoard engine). A book of Chess960 positions, or none for all 960."
 msgstr "Fischer-Random-Schach. Die Engines müssen es spielen (die Option UCI_Chess960 oder die Variante fischerandom einer WinBoard-Engine). Ein Buch mit Chess960-Stellungen, oder keines für alle 960."
@@ -1398,6 +1416,9 @@ msgstr "Direkter Vergleich"
 msgid "Health"
 msgstr "Zustand"
 
+msgid "Held by Pause all: no tournament starts until Resume all."
+msgstr "Angehalten durch Alles pausieren: kein Turnier startet vor Alles fortsetzen."
+
 msgid "Hide"
 msgstr "Ausblenden"
 
@@ -1557,6 +1578,9 @@ msgstr "Ihre Wertung auf einer Liste, der du vertraust, um die Elo eines Turnier
 msgid "Its results…"
 msgstr "Ihre Ergebnisse…"
 
+msgid "Its workspace: standings, live games, schedule"
+msgstr "Sein Arbeitsbereich: Tabelle, laufende Partien, Spielplan"
+
 msgid "Keep my value"
 msgstr "Meinen Wert behalten"
 
@@ -1593,6 +1617,9 @@ msgstr "Großes Turnier"
 msgid "Last 24 hours:"
 msgstr "Letzte 24 Stunden:"
 
+msgid "Last finished"
+msgstr "Zuletzt beendet"
+
 msgid "Latest results"
 msgstr "Letzte Ergebnisse"
 
@@ -1604,6 +1631,12 @@ msgstr "Layout"
 
 msgid "Layout saved: {}"
 msgstr "Layout gespeichert: {}"
+
+msgid "Leader: {}"
+msgstr "Führend: {}"
+
+msgid "Leader: {} {}"
+msgstr "Führend: {} {}"
 
 msgid "Leave (Esc)"
 msgstr "Verlassen (Esc)"
@@ -1808,6 +1841,9 @@ msgstr "Noch keine Engine. Klicke auf Hinzufügen."
 msgid "No engine yet: double-click engines of the library, or drag them here."
 msgstr "Noch keine Engine: doppelklicke Engines der Bibliothek oder ziehe sie hierher."
 
+msgid "No game finished yet"
+msgstr "Noch keine Partie beendet"
+
 msgid "No game finished yet."
 msgstr "Noch keine Partie beendet."
 
@@ -1825,6 +1861,9 @@ msgstr "Ohne sie ist keine Partie mehr zu spielen: das Turnier wurde angehalten.
 
 msgid "No game of {} gives a move: is it a PGN file?"
 msgstr "Keine Partie von {} ergibt einen Zug: ist es eine PGN-Datei?"
+
+msgid "No game played"
+msgstr "Keine Partie gespielt"
 
 msgid "No game yet."
 msgstr "Noch keine Partie."
@@ -1996,6 +2035,9 @@ msgstr "Nur die Partien zwischen Engines einer Gruppe der Bibliothek."
 msgid "Only the moves of players rated at least"
 msgstr "Nur die Züge von Spielern mit einer Wertung von mindestens"
 
+msgid "Only {} free of {} on the drive of {}: a tournament stops when its games cannot be written."
+msgstr "Nur {} von {} frei auf dem Laufwerk von {}: ein Turnier stoppt, wenn seine Partien nicht mehr geschrieben werden können."
+
 msgid "Open"
 msgstr "Öffnen"
 
@@ -2019,6 +2061,9 @@ msgstr "Profilordner öffnen"
 
 msgid "Open the tournament."
 msgstr "Das Turnier öffnen."
+
+msgid "Open the tournaments folder"
+msgstr "Turnierordner öffnen"
 
 msgid "OpenGL 3.2 cannot be used ({}): the window is drawn by SDL's renderer."
 msgstr "OpenGL 3.2 kann nicht verwendet werden ({}): Das Fenster wird vom Renderer von SDL gezeichnet."
@@ -2158,6 +2203,9 @@ msgstr "Füge eine Rangliste ein oder öffne ihre Datei: die Textversion einer R
 msgid "Pause"
 msgstr "Pause"
 
+msgid "Pause all"
+msgstr "Alles pausieren"
+
 msgid "Pause: no new pair starts. Running games, and the second game of their pair,\nplay to the end (pair statistics stay complete)."
 msgstr "Pause: kein neues Paar beginnt. Laufende Partien und die zweite Partie ihres Paares\nwerden zu Ende gespielt (die Paarstatistik bleibt vollständig)."
 
@@ -2294,8 +2342,10 @@ msgstr "Im Internet veröffentlichen"
 msgid "Push the games to lichess"
 msgstr "Die Partien an lichess senden"
 
-msgid "Queue"
-msgstr "Warteschlange"
+msgid "Queue · {} tournament"
+msgid_plural "Queue · {} tournaments"
+msgstr[0] "Warteschlange · {} Turnier"
+msgstr[1] "Warteschlange · {} Turniere"
 
 msgid "Queued: {}"
 msgstr "In der Warteschlange: {}"
@@ -2392,6 +2442,9 @@ msgstr "Aktualisieren: die neuen Engines des Ordners"
 msgid "Relaunch with…"
 msgstr "Neu starten mit…"
 
+msgid "Relaunch {} with…"
+msgstr "{} neu starten mit…"
+
 msgid "Remote port"
 msgstr "Entfernter Port"
 
@@ -2480,6 +2533,9 @@ msgstr "Ergebnisse pro Partiepaar (gleiche Eröffnung, vertauschte Farben), in P
 
 msgid "Resume"
 msgstr "Fortsetzen"
+
+msgid "Resume all"
+msgstr "Alles fortsetzen"
 
 msgid "Resume at launch the tournament that was running"
 msgstr "Beim Start das Turnier fortsetzen, das lief"
@@ -2786,6 +2842,9 @@ msgstr "Vor dem Ende gestoppt."
 msgid "Stopped: no game is left to play without {}, which cannot start"
 msgstr "Angehalten: ohne {}, die nicht startet, ist keine Partie mehr zu spielen"
 
+msgid "Stopping after the running games"
+msgstr "Stoppt nach den laufenden Partien"
+
 msgid "Stopping after the running games ({})"
 msgstr "Stoppe nach den laufenden Partien ({})"
 
@@ -3088,6 +3147,9 @@ msgstr "Die Eröffnungen in zufälliger Reihenfolge (order=random) oder nacheina
 msgid "The order is the one of the pairings' table."
 msgstr "Die Reihenfolge ist die der Paarungstabelle."
 
+msgid "The other settings: those of the New tournament page."
+msgstr "Die übrigen Einstellungen: die der Seite Neues Turnier."
+
 msgid "The page shows Discord's widget of this server, in its light or dark theme: its name, the members online and a Join button, not the messages. The server's owner switches the widget on in Server Settings, Widget, which also shows the server ID. Discord then sees the visits of the page's viewers."
 msgstr "Die Seite zeigt das Discord-Widget dieses Servers in ihrem hellen oder dunklen Design: seinen Namen, die Mitglieder online und einen Beitreten-Knopf, nicht die Nachrichten. Der Besitzer des Servers schaltet das Widget unter Servereinstellungen, Widget ein, wo auch die Server-ID steht. Discord sieht dann die Besuche der Zuschauer der Seite."
 
@@ -3096,6 +3158,9 @@ msgstr "Die Bereiche und ihre Anordnung, unter einem Namen deiner Wahl."
 
 msgid "The participants selected (Delete)."
 msgstr "Die ausgewählten Teilnehmer (Entf)."
+
+msgid "The paused tournament goes on, and the queue starts its next tournament when the running one ends."
+msgstr "Das pausierte Turnier läuft weiter, und die Warteschlange startet ihr nächstes Turnier, wenn das laufende endet."
 
 msgid "The place in the list, by rating."
 msgstr "Der Platz in der Liste, nach Wertung."
@@ -3149,6 +3214,9 @@ msgstr "Stattdessen können die Programme eines Ordners hinzugefügt werden:"
 msgid "The queue ends about {} (in {})"
 msgstr "Die Warteschlange endet gegen {} (in {})"
 
+msgid "The queue waits for Resume all."
+msgstr "Die Warteschlange wartet auf Alles fortsetzen."
+
 msgid "The rating of the engines chosen after each tournament they played: the versions of an engine, side by side."
 msgstr "Die Wertung der gewählten Engines nach jedem gespielten Turnier: die Versionen einer Engine nebeneinander."
 
@@ -3158,11 +3226,14 @@ msgstr "Das Lesen von {} wird für den Start unterbrochen: Es wird später wiede
 msgid "The reading stopped before the end of the file: {}"
 msgstr "Das Lesen endete vor dem Ende der Datei: {}"
 
+msgid "The running tournament starts no new game pair (the games in progress play to the end), and the queue starts no tournament until Resume all."
+msgstr "Das laufende Turnier beginnt kein neues Partiepaar (die laufenden Partien werden zu Ende gespielt), und die Warteschlange startet kein Turnier vor Alles fortsetzen."
+
 msgid "The same engine, with different books"
 msgstr "Dieselbe Engine, mit verschiedenen Büchern"
 
-msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
-msgstr "Dasselbe Match mit einer neuen Engine A, z. B. der nächsten Version: alle anderen Einstellungen bleiben."
+msgid "The same match with a new engine A in place of {}, e.g. its next version."
+msgstr "Dasselbe Match mit einer neuen Engine A anstelle von {}, z. B. ihrer nächsten Version."
 
 msgid "The same opening for every pair of a round"
 msgstr "Dieselbe Eröffnung für alle Paare einer Runde"
@@ -3220,6 +3291,9 @@ msgstr "Das Turnier ist angehalten: Fortsetzen versucht es erneut."
 
 msgid "The tournament running when the program ended is over: the queue goes on."
 msgstr "Das beim Beenden des Programms laufende Turnier ist vorbei: Die Warteschlange geht weiter."
+
+msgid "The tournament stays in the list, to resume or open later."
+msgstr "Das Turnier bleibt in der Liste, um es später fortzusetzen oder zu öffnen."
 
 msgid "The tournament was changed."
 msgstr "Das Turnier wurde geändert."
@@ -3398,6 +3472,12 @@ msgstr "Unbekannte Engine: {}"
 msgid "Unreadable PGN."
 msgstr "Unlesbares PGN."
 
+msgid "Until stopped"
+msgstr "Bis zum Stoppen"
+
+msgid "Until the SPRT decides"
+msgstr "Bis der SPRT entscheidet"
+
 msgid "Until the next version."
 msgstr "Bis zur nächsten Version."
 
@@ -3488,6 +3568,12 @@ msgstr "Wann sie sich im Schnitt auf den gespielten Zug festgelegt hat: Eine Ent
 msgid "When the program ended while a tournament was running (a crash, a power cut, a reboot, or quitting while it ran), it resumes at the next launch, and the queue goes on after it. A tournament paused or stopped waits for you."
 msgstr "Wurde das Programm beendet, während ein Turnier lief (ein Absturz, ein Stromausfall, ein Neustart oder Beenden während des Turniers), wird es beim nächsten Start fortgesetzt, und die Warteschlange geht danach weiter. Ein pausiertes oder gestopptes Turnier wartet auf dich."
 
+msgid "When the queue ends is not known: an SPRT without a game limit, or nodes or depth per move, has no length to tell."
+msgstr "Wann die Warteschlange endet, ist nicht bekannt: ein SPRT ohne Partienlimit oder Knoten bzw. Tiefe pro Zug hat keine absehbare Dauer."
+
+msgid "Where new tournaments are written, as in Settings. Those played so far stay where they are: Open a folder… opens them."
+msgstr "Wohin neue Turniere geschrieben werden, wie in den Einstellungen. Die bisher gespielten bleiben, wo sie sind: Ordner öffnen… öffnet sie."
+
 msgid "While a tournament runs, an SSH tunnel built into fastchess-gui gives the page a public https address, without opening a port in the router or installing anything. Only the page is reachable that way, read-only."
 msgstr "Während ein Turnier läuft, gibt ein in fastchess-gui eingebauter SSH-Tunnel der Seite eine öffentliche https-Adresse, ohne einen Port im Router zu öffnen oder etwas zu installieren. Nur die Seite ist so erreichbar, schreibgeschützt."
 
@@ -3535,6 +3621,9 @@ msgstr "WinBoard"
 
 msgid "WinBoard engines (xboard protocol) are run through a translation to UCI built into fastchess-gui. Automatic: found out when the engine is read."
 msgstr "WinBoard-Engines (xboard-Protokoll) laufen über eine in fastchess-gui eingebaute Übersetzung nach UCI. Automatisch: wird beim Einlesen der Engine erkannt."
+
+msgid "Winner: {}"
+msgstr "Sieger: {}"
 
 msgid "Wins"
 msgstr "Siege"
@@ -3622,6 +3711,9 @@ msgstr "ein Absturz stoppt das Turnier"
 
 msgid "a result is 1-0, 0-1 or 1/2-1/2"
 msgstr "ein Ergebnis ist 1-0, 0-1 oder 1/2-1/2"
+
+msgid "about {}"
+msgstr "etwa {}"
 
 msgid "about {} game"
 msgid_plural "about {} games"
@@ -3791,6 +3883,9 @@ msgstr "ihr Bereich ist {} bis {}"
 msgid "itself"
 msgstr "sich selbst"
 
+msgid "length unknown"
+msgstr "Dauer unbekannt"
+
 msgid "lines starting with %, ignored"
 msgstr "Zeilen, die mit % beginnen, ignoriert"
 
@@ -3900,6 +3995,9 @@ msgstr "beim Start senden"
 msgid "set by hand"
 msgstr "von Hand gesetzt"
 
+msgid "starts about {}"
+msgstr "startet gegen {}"
+
 msgid "the driver gives OpenGL {}"
 msgstr "der Treiber bietet OpenGL {}"
 
@@ -3959,6 +4057,9 @@ msgstr "nutzt {:.1f} Kerne beim Rechnen, mit {} Thread(s)"
 
 msgid "voided"
 msgstr "annulliert"
+
+msgid "weight {}"
+msgstr "Gewicht {}"
 
 msgid "weighted by count"
 msgstr "nach Anzahl gewichtet"
@@ -4124,6 +4225,9 @@ msgstr "{} Engines · {} Partien"
 msgid "{} for every engine"
 msgstr "{} für jede Engine"
 
+msgid "{} free"
+msgstr "{} frei"
+
 msgid "{} game"
 msgid_plural "{} games"
 msgstr[0] "{} Partie"
@@ -4208,6 +4312,9 @@ msgid "{} hardware thread"
 msgid_plural "{} hardware threads"
 msgstr[0] "{} Hardware-Thread"
 msgstr[1] "{} Hardware-Threads"
+
+msgid "{} hardware threads on {} cores. A game takes the Threads of its engine that has the most: the two engines think in turn."
+msgstr "{} Hardware-Threads auf {} Kernen. Eine Partie belegt die Threads derjenigen ihrer Engines, die die meisten hat: die beiden Engines denken abwechselnd."
 
 msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
 msgstr "{} hat keinen Algorithmus mit fastchess-gui gemeinsam (nötig sind curve25519-sha256, ein RSA-Host-Schlüssel und AES)"
@@ -4298,6 +4405,9 @@ msgstr "{} Knoten"
 msgid "{} of memory free of {}"
 msgstr "{} Speicher frei von {}"
 
+msgid "{} of {} in use"
+msgstr "{} von {} belegt"
+
 msgid "{} of {} openings"
 msgstr "{} von {} Eröffnungen"
 
@@ -4374,6 +4484,11 @@ msgid_plural "{} players"
 msgstr[0] "{} Spieler"
 msgstr[1] "{} Spieler"
 
+msgid "{} player left"
+msgid_plural "{} players left"
+msgstr[0] "{} Spieler übrig"
+msgstr[1] "{} Spieler übrig"
+
 msgid "{} player that two library engines may be: say which one."
 msgid_plural "{} players that two library engines may be: say which one."
 msgstr[0] "{} Spieler kann zwei Engines der Bibliothek sein: gib an, welche."
@@ -4403,6 +4518,9 @@ msgid "{} ply"
 msgid_plural "{} plies"
 msgstr[0] "{} Halbzug"
 msgstr[1] "{} Halbzüge"
+
+msgid "{} points of {} games"
+msgstr "{} Punkte aus {} Partien"
 
 msgid "{} points to a folder with no tablebase files: {}"
 msgstr "{} zeigt auf einen Ordner ohne Tablebase-Dateien: {}"
@@ -4578,6 +4696,11 @@ msgstr "{}: der Engine unbekannt"
 
 msgid "{}: {}"
 msgstr "{}: {}"
+
+msgid "{}: {} core in use"
+msgid_plural "{}: {} cores in use"
+msgstr[0] "{}: {} Kern belegt"
+msgstr[1] "{}: {} Kerne belegt"
 
 msgid "{}: {} → {} points"
 msgstr "{}: {} → {} Punkte"

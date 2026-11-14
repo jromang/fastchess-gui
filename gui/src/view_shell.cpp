@@ -14,6 +14,7 @@
 #include "app.hpp"
 #include "console.hpp"
 #include "gl.hpp"
+#include "home.hpp"
 #include "i18n.hpp"
 #include "logo.hpp"
 #include "memory.hpp"
@@ -37,60 +38,16 @@ namespace {
 
 float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
 
-std::string formatLabel(tour::Format format) {
-    switch (format) {
-        case tour::Format::Match:
-            return TR("Match");
-        case tour::Format::RoundRobin:
-            return TR("Round robin");
-        case tour::Format::Gauntlet:
-            return TR("Gauntlet");
-        case tour::Format::Swiss:
-            return TR("Swiss");
-        case tour::Format::Knockout:
-            return TR("Knockout");
-    }
-    return "";
-}
-
-std::string statusLabel(const tour::Summary& s, bool running) {
-    if (running) return TR("Running");
-    if (!s.finished) return TR("Interrupted");
-    if (s.finish_reason == "sprt_h1") return TR("H1 accepted");
-    if (s.finish_reason == "sprt_h0") return TR("H0 accepted");
-    if (s.finish_reason == "imported") return TR("Imported");
-    return TR("Finished");
-}
+using home::formatLabel;
+using home::statusLabel;
 
 void openFolder(const fs::path& dir) { ui::openPath(dir); }
 
 // The interface sizes offered, in percent.
 constexpr std::array<int, 9> ZOOMS = {80, 90, 100, 110, 125, 150, 175, 200, 250};
 
-// When something `seconds` from now ends, in local time: "18:40" today, "2026-11-14 03:10" another day.
-std::string endTime(double seconds) {
-    const auto now = std::time(nullptr);
-    const auto end = now + static_cast<std::time_t>(seconds);
-    std::tm today{}, then{};
-#ifdef _WIN32
-    localtime_s(&today, &now);
-    localtime_s(&then, &end);
-#else
-    localtime_r(&now, &today);
-    localtime_r(&end, &then);
-#endif
-    char text[32];
-    const bool same_day = today.tm_year == then.tm_year && today.tm_yday == then.tm_yday;
-    std::strftime(text, sizeof(text), same_day ? "%H:%M" : "%Y-%m-%d %H:%M", &then);
-    return text;
-}
-
-void sectionTitle(const char* text) {
-    ImGui::Spacing();
-    ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.1f);
-    ImGui::TextUnformatted(text);
-    ImGui::PopFont();
-}
+using home::endTime;
+using home::sectionTitle;
 
 }  // namespace
 
@@ -331,144 +288,6 @@ void App::drawRail(float width) {
 }
 
 // ---------------------------------------------------------------------------
-// Home
-
-void App::drawHome() {
-    refreshTournaments();
-
-    const float buttons = px(330);
-    ui::pageTitle(TR("Tournaments"), guideSection());
-    ImGui::SameLine(std::max(ImGui::GetCursorPosX() + px(20), ImGui::GetContentRegionMax().x - buttons));
-    if (ui::iconButton("open_folder", ui::Icon::Folder, TR("Open a folder…"))) {
-        dialogs_.openFolder(Dialogs::Purpose::OpenTournament, storage_.runsDir().string());
-    }
-    ImGui::SameLine();
-    ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
-    ImGui::PushStyleColor(ImGuiCol_Text,
-                          ui::currentTheme() == ui::Theme::Dark ? ImVec4(0.04f, 0.07f, 0.13f, 1) : ImVec4(1, 1, 1, 1));
-    if (ui::iconButton("new_match", ui::Icon::Plus, TR("New tournament"))) page_ = Page::NewMatch;
-    ImGui::PopStyleColor(2);
-
-    ImGui::TextDisabled(
-        "%s", TR("Every tournament is a folder: it resumes exactly where it stopped, even after a power cut."));
-
-    if (!start_error_.empty()) drawMessage(start_error_, start_fixes_, start_fixes_for_, true, "start_error");
-    drawUpdateNotice();
-
-    // What is going on now.
-    if (run_.running()) {
-        sectionTitle(TR("Running"));
-        ui::beginCard("running_card");
-        const auto* t = run_.tournament();
-        ImGui::TextUnformatted(t ? t->spec().name.c_str() : "");
-        const auto& info = run_.info();
-        if (info.total_games > 0) {
-            ImGui::ProgressBar(static_cast<float>(games_.size()) / static_cast<float>(info.total_games),
-                               ImVec2(-FLT_MIN, px(8)), "");
-        }
-        ImGui::TextDisabled("%s", runStatusText().c_str());
-        if (const auto left = runSecondsLeft()) {
-            ImGui::TextDisabled("%s", trf("Ends about {} (in {})", endTime(*left), ui::formatDuration(*left)).c_str());
-        }
-        if (ImGui::Button(TR("Open"))) page_ = Page::Tournament;
-        ui::endCard();
-    } else if (unfinished_) {
-        sectionTitle(TR("Interrupted"));
-        ui::beginCard("unfinished_card");
-        const auto& u = *unfinished_;
-        ImGui::TextUnformatted(u.spec.name.c_str());
-        ImGui::TextDisabled(
-            "%s", (u.total ? trf("{} / {} games", u.played, *u.total) : trn("{} game", "{} games", u.played, u.played))
-                      .c_str());
-        if (!resume_crashed_.empty() && fs::absolute(u.dir).lexically_normal() == resume_crashed_) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
-            ImGui::PushTextWrapPos(0.0f);
-            ImGui::TextUnformatted(
-                TR("The program ended while it resumed this tournament at the last launch: it is "
-                   "not resumed automatically again."));
-            ImGui::PopTextWrapPos();
-            ImGui::PopStyleColor();
-            reportButton("report_resume", true,
-                         "The program ended while it resumed a tournament at launch (" + u.spec.name + ").");
-        }
-        // Pressed, it starts at once, or says what it waits for.
-        const auto key = resumeKey(u.dir);
-        if (!drawStartWaiting("resume_match", key)) {
-            if (ui::iconButton("resume_match", ui::Icon::Play, TR("Resume"))) resumeRun();
-            ImGui::SameLine();
-            ImGui::TextDisabled("%s", TR("It continues exactly where it stopped: no game is lost or played twice."));
-        }
-        if (const auto waiting = startWaitingText(key); !waiting.empty()) ImGui::TextDisabled("%s", waiting.c_str());
-        ui::endCard();
-    }
-
-    drawStartFailures(TR("Needs action"));
-    drawQueue();
-    drawHealth();
-
-    if (legacy_runs_ > 0) {
-        ImGui::Spacing();
-        ui::beginCard("legacy_card");
-        ImGui::TextUnformatted(trn("{} match of an earlier version is not in the list yet.",
-                                   "{} matches of an earlier version are not in the list yet.", legacy_runs_,
-                                   legacy_runs_)
-                                   .c_str());
-        ImGui::SameLine();
-        if (ImGui::SmallButton(TR("Import them"))) importLegacyRuns();
-        ui::endCard();
-    }
-
-    sectionTitle(TR("All tournaments"));
-    if (tournaments_.empty()) {
-        if (tournaments_read_) ImGui::TextDisabled("%s", TR("No tournament yet. Start with a new tournament."));
-        return;
-    }
-
-    constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_ScrollY |
-                           ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_PadOuterX;
-    if (!ImGui::BeginTable("tournaments", 6, flags)) return;
-    ImGui::TableSetupScrollFreeze(0, 1);
-    ImGui::TableSetupColumn(TR("Tournament"), ImGuiTableColumnFlags_WidthStretch, 3.0f);
-    ImGui::TableSetupColumn(TR("Format"), ImGuiTableColumnFlags_WidthStretch, 1.0f);
-    ImGui::TableSetupColumn(TR("Games"), ImGuiTableColumnFlags_WidthStretch, 1.0f);
-    ImGui::TableSetupColumn(TR("State"), ImGuiTableColumnFlags_WidthStretch, 1.2f);
-    ImGui::TableSetupColumn(TR("Date"), ImGuiTableColumnFlags_WidthStretch, 1.3f);
-    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, px(180));
-    ImGui::TableHeadersRow();
-
-    const auto* running = run_.running() ? run_.tournament() : nullptr;
-    for (std::size_t i = 0; i < tournaments_.size(); ++i) {
-        const auto& s         = tournaments_[i];
-        const bool is_running = running && running->dir() == s.dir;
-        ImGui::PushID(static_cast<int>(i));
-        ImGui::TableNextRow();
-
-        ImGui::TableNextColumn();
-        ImGui::TextUnformatted(s.spec.name.c_str());
-        ImGui::TableNextColumn();
-        ImGui::TextUnformatted(formatLabel(s.spec.format).c_str());
-        ImGui::TableNextColumn();
-        ImGui::TextUnformatted(
-            (s.total ? fmt::format("{} / {}", s.played, *s.total) : fmt::format("{}", s.played)).c_str());
-        ImGui::TableNextColumn();
-        const auto status = statusLabel(s, is_running);
-        const ImU32 col   = is_running ? ui::ACCENT : !s.finished ? ui::WARN : ui::MUTED;
-        ImGui::PushStyleColor(ImGuiCol_Text, col);
-        ImGui::TextUnformatted(status.c_str());
-        ImGui::PopStyleColor();
-        ImGui::TableNextColumn();
-        ImGui::TextDisabled("%s", folderDate(s.dir).c_str());
-        ImGui::TableNextColumn();
-        if (ImGui::SmallButton(TR("Open"))) openTournament(s.dir);
-        ImGui::SameLine();
-        if (ImGui::SmallButton(TR("Folder"))) openFolder(s.dir);
-
-        ImGui::PopID();
-    }
-    ImGui::EndTable();
-}
-
-// ---------------------------------------------------------------------------
 // New match
 
 bool App::setupChosen() const {
@@ -643,7 +462,7 @@ void App::drawWorkspaceHeader() {
             ImGui::SameLine();
         }
         if (isMatch()) {
-            if (!drawStartWaiting("relaunch", "start")) drawRelaunch();
+            if (!drawStartWaiting("relaunch", "start")) drawRelaunch(info.engine_a, info.engine_b, t->dir());
             ImGui::SameLine();
         }
         if (ui::iconButton("folder", ui::Icon::Folder, TR("Folder"))) openFolder(t->dir());
@@ -668,129 +487,6 @@ void App::drawWorkspace() {
     ImGui::Spacing();
 
     drawWorkspaceDock();
-}
-
-void App::drawQueue() {
-    if (queue_.empty()) return;
-
-    sectionTitle(TR("Queue"));
-    ui::beginCard("queue_card");
-    ImGui::TextDisabled("%s", TR("Started one after the other, when the running tournament ends by itself."));
-
-    // When it is all over: the running tournament at its pace, the queued ones from their games and time control.
-    double seconds = 0;
-    int unknown    = 0;
-    if (run_.running()) {
-        if (const auto left = runSecondsLeft())
-            seconds += *left;
-        else
-            ++unknown;
-    }
-    for (const auto& q : queue_) {
-        if (const auto s = plannedSeconds(q.setup, topology_))
-            seconds += *s;
-        else
-            ++unknown;
-    }
-    const bool everything = unknown == static_cast<int>(queue_.size()) + (run_.running() ? 1 : 0);
-    if (!everything) {
-        auto text = trf("The queue ends about {} (in {})", endTime(seconds), ui::formatDuration(seconds));
-        if (unknown > 0) {
-            text += trn(", and {} tournament of unknown length", ", and {} tournaments of unknown length", unknown,
-                        unknown);
-        }
-        ImGui::TextUnformatted(text.c_str());
-    }
-
-    int remove = -1, up = -1;
-    for (std::size_t i = 0; i < queue_.size(); ++i) {
-        ImGui::PushID(static_cast<int>(i));
-        ImGui::TextDisabled("%d", static_cast<int>(i + 1));
-        ImGui::SameLine();
-        ImGui::TextUnformatted(queue_[i].label.c_str());
-        ImGui::SameLine();
-        ImGui::TextDisabled("%s", formatLabel(static_cast<tour::Format>(queue_[i].setup.format)).c_str());
-        ImGui::SameLine(std::max(ImGui::GetCursorPosX() + px(10),
-                                 ImGui::GetContentRegionAvail().x + ImGui::GetCursorPosX() - px(200)));
-        ImGui::BeginDisabled(i == 0);
-        if (ImGui::SmallButton("^")) up = static_cast<int>(i);
-        ImGui::EndDisabled();
-        ImGui::SameLine();
-        if (ImGui::SmallButton(TR("Remove"))) remove = static_cast<int>(i);
-        if (i == 0 && !run_.running()) {
-            ImGui::SameLine();
-            if (!drawStartWaiting("queue_start", "queue", false) && ImGui::SmallButton(TR("Start now"))) {
-                ImGui::PopID();
-                startFromQueue();
-                ui::endCard();
-                return;
-            }
-        }
-        ImGui::PopID();
-    }
-    if (const auto waiting = startWaitingText("queue"); !waiting.empty()) ImGui::TextDisabled("%s", waiting.c_str());
-    ui::endCard();
-
-    if (remove >= 0) queue_.erase(queue_.begin() + remove);
-    if (up > 0) std::swap(queue_[up], queue_[up - 1]);
-    if (remove >= 0 || up > 0) storage_.saveQueue(queue_);
-}
-
-std::optional<double> App::runSecondsLeft() const {
-    const auto total = run_.info().total_games;
-    if (!run_.running() || total == 0 || games_per_hour_ <= 0) return std::nullopt;
-    const auto played = static_cast<uint64_t>(games_.size());
-    return played >= total ? 0.0 : static_cast<double>(total - played) / games_per_hour_ * 3600.0;
-}
-
-void App::drawHealth() {
-    // The journals of the last 24 hours, read again every 30 seconds on a worker thread: only what they gained.
-    const auto now = std::chrono::steady_clock::now();
-    if (incidents_job_.valid() && incidents_job_.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-        incidents_ = incidents_job_.get();
-    if (!incidents_job_.valid() && now - incidents_asked_ > std::chrono::seconds(30)) {
-        incidents_asked_ = now;
-        const auto since = std::chrono::duration_cast<std::chrono::milliseconds>(
-                               (std::chrono::system_clock::now() - std::chrono::hours(24)).time_since_epoch())
-                               .count();
-        incidents_job_   = std::async(std::launch::async, [scanner = incident_scanner_, root = storage_.runsDir(),
-                                                           since] { return scanner->scan(root, since); });
-    }
-
-    sectionTitle(TR("Health"));
-    ui::beginCard("health_card");
-    const auto item = [&](bool warn, const std::string& text, bool first = false) {
-        if (!first) {
-            ImGui::SameLine();
-            ImGui::TextDisabled("·");
-            ImGui::SameLine();
-        }
-        ImGui::PushStyleColor(ImGuiCol_Text, warn ? ui::WARN : ImGui::GetColorU32(ImGuiCol_Text));
-        ImGui::TextUnformatted(text.c_str());
-        ImGui::PopStyleColor();
-    };
-
-    ImGui::TextDisabled("%s", TR("Last 24 hours:"));
-    ImGui::SameLine();
-    if (incidents_) {
-        const auto& i = *incidents_;
-        item(i.crashes > 0, trn("{} crash or hang", "{} crashes or hangs", i.crashes, i.crashes), true);
-        item(i.time_losses > 0, trn("{} loss on time", "{} losses on time", i.time_losses, i.time_losses));
-        item(i.illegal_moves > 0, trn("{} illegal move", "{} illegal moves", i.illegal_moves, i.illegal_moves));
-    } else {
-        ImGui::TextDisabled("%s", TR("reading the tournaments…"));
-    }
-
-    // Free memory below a tenth of the installed is worth a look.
-    if (const auto memory = systemMemory()) {
-        item(memory->available_mb * 10 < memory->total_mb,
-             trf("{} of memory free of {}", formatMemory(memory->available_mb), formatMemory(memory->total_mb)), true);
-    }
-    const int processes = engineProcesses();
-    item(false, trn("{} engine process running", "{} engine processes running", processes, processes),
-         !systemMemory().has_value());
-    if (incidents_) drawSetupNotices(engineIncidentNotices(*incidents_), "incidents");
-    ui::endCard();
 }
 
 bool App::drawStartFailures(const char* title) {
@@ -935,14 +631,14 @@ std::vector<Notice> App::engineIncidentNotices(const tour::Incidents& incidents)
     return out;
 }
 
-void App::drawRelaunch() {
-    if (ui::iconButton("relaunch", ui::Icon::Play, TR("Relaunch with…"))) {
-        relaunch_engine_ = run_.info().engine_a;
+void App::drawRelaunch(const std::string& engine_a, const std::string& engine_b, const fs::path& from, bool open) {
+    if (ui::iconButton("relaunch", ui::Icon::Play, TR("Relaunch with…")) || open) {
+        relaunch_engine_ = engine_a;
         ImGui::OpenPopup("relaunch_popup");
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", TR("The same match with a new engine A, e.g. the next version: every other setting "
-                                   "stays."));
+        ImGui::SetTooltip(
+            "%s", trf("The same match with a new engine A in place of {}, e.g. its next version.", engine_a).c_str());
     }
     if (!ImGui::BeginPopup("relaunch_popup")) return;
 
@@ -958,15 +654,17 @@ void App::drawRelaunch() {
         if (const int i = ui::searchComboItems(names, relaunch_engine_, &more); i >= 0) relaunch_engine_ = names[i];
         ImGui::EndCombo();
     }
-    ImGui::TextDisabled("%s", trf("against {}", run_.info().engine_b).c_str());
+    ImGui::TextDisabled("%s", trf("against {}", engine_b).c_str());
+    ImGui::TextDisabled("%s", TR("The other settings: those of the New tournament page."));
     const bool known =
         std::any_of(engines_.begin(), engines_.end(), [&](const EngineEntry& e) { return e.name == relaunch_engine_; });
     ImGui::BeginDisabled(!known || run_.running());
     if (ImGui::Button(TR("Start"))) {
         setup_.format   = TournamentFormat::Match;
         setup_.engine_a = relaunch_engine_;
-        setup_.engine_b = run_.info().engine_b;
+        setup_.engine_b = engine_b;
         setup_.name.clear();
+        relaunch_from_ = from;
         ImGui::CloseCurrentPopup();
         startRun();
     }
