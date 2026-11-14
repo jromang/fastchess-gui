@@ -388,10 +388,19 @@ TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly 
     fs::remove_all(root);
     const auto topology = topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}});
 
+    // Two random movers play some 330 plies a game on average, until a mate, a repetition, the 50-move rule or bare
+    // kings end it, and every ply is a few exchanges with the engines, each a wait for the other process. Those
+    // waits make the test as slow as the machine is busy: under Wine every one is dozens of requests to its
+    // single-threaded server, and with the other processor cores busy 40 such games took from 2 to 24 s. The test
+    // is about the resume, not the length of the games: they end, as draws, after 30 moves.
+    auto setup             = randomSetup(40);
+    setup.maxmoves_enabled = true;
+    setup.maxmoves         = 30;
+
     std::vector<EngineTotals> totals;
     {
         Harness h;
-        REQUIRE(h.run.start(randomSetup(40), randomEngines(), topology, root).empty());
+        REQUIRE(h.run.start(setup, randomEngines(), topology, root).empty());
         REQUIRE(h.waitFor([&] { return h.games.size() >= 8; }));
         h.run.stopNow();  // running games are lost, as when the program is killed
         REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }));
@@ -421,8 +430,16 @@ TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly 
     }
 
     Harness h;
+    const auto resumed_at = std::chrono::steady_clock::now();
     REQUIRE(h.run.resume(unfinished->dir).empty());
-    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
+    // The rest of the match takes under half a second on Linux, about one under Wine; a few seconds when the
+    // processor cores are all busy with other work, but up to 30 s when they are shared by four times as many busy
+    // processes (Wine's server then waits its turn at every request): the limit only tells a match that does not end.
+    const bool finished  = h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 120s);
+    const auto resumed_s = std::chrono::duration<double>(std::chrono::steady_clock::now() - resumed_at).count();
+    MESSAGE("the rest of the match took " << resumed_s << " s");
+    REQUIRE_MESSAGE(finished, "after " << resumed_s << " s, " << h.games.size() << " of 40 games, "
+                                       << h.run.runningGames() << " running");
     CHECK(h.run.error().empty());
     CHECK_FALSE(h.run.stoppedByUser());
 
@@ -432,7 +449,10 @@ TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly 
     CHECK(h.stats.back().sum() == 40);
 
     std::set<uint64_t> ids;
-    for (const auto& g : h.games) ids.insert(g.game_id);
+    for (const auto& g : h.games) {
+        ids.insert(g.game_id);
+        CHECK(g.plies <= 60);  // the games stay short, the test quick
+    }
     CHECK(ids.size() == 40);
 
     CHECK_FALSE(unfinishedMatch(root));
