@@ -933,6 +933,8 @@ class FakeServer {
             }
             if (m[0] == DISCONNECT) {
                 disconnected = true;
+                // As a server does: the client reads the end of the stream, and stops waiting for it.
+                if (socket_) socket_->shutdownWrite();
                 return;
             }
         }

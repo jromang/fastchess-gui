@@ -752,11 +752,26 @@ class TunnelConnection {
 
     void goodbye() {
         if (!session_ || phase_ == Phase::Handshake || socket_closed_) return;
-        const auto until = Clock::now() + std::chrono::seconds(1);
+        auto until = Clock::now() + std::chrono::seconds(1);
+        int rc     = LIBSSH2_ERROR_EAGAIN;
         while (Clock::now() < until) {
-            const int rc = libssh2_session_disconnect(session_, "bye");
+            rc = libssh2_session_disconnect(session_, "bye");
             if (rc != LIBSSH2_ERROR_EAGAIN) break;
             std::vector<net::Wait> waits{{socket_->handle(), true, true}};
+            net::waitAny(waits, 100);
+        }
+        if (rc != 0) return;
+        // A socket closed with data it has not read resets the connection, and on Windows the server then loses what
+        // it had not read yet, the DISCONNECT included. So the end of the stream goes after it, and what the server
+        // still sends is read until it closes too, a second at most.
+        socket_->shutdownWrite();
+        until = Clock::now() + std::chrono::seconds(1);
+        char discard[4096];
+        while (Clock::now() < until) {
+            const long n = socket_->receive(discard, sizeof discard);
+            if (n < 0) break;
+            if (n > 0) continue;
+            std::vector<net::Wait> waits{{socket_->handle(), true, false}};
             net::waitAny(waits, 100);
         }
     }
