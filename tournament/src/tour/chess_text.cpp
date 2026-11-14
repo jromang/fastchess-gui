@@ -51,9 +51,11 @@ bool legalPosition(const chess::Board& board) {
     if (board.pieces(PieceType::KING, Color::WHITE).count() != 1) return false;
     if (board.pieces(PieceType::KING, Color::BLACK).count() != 1) return false;
     if ((board.pieces(PieceType::PAWN) & (Bitboard(Rank::RANK_1) | Bitboard(Rank::RANK_8))) != 0) return false;
-    // The side that just moved cannot be in check.
+    // The side that just moved cannot be in check, the side to move by more than two pieces: the move generator
+    // gives moves that leave the king in check then.
     const auto them = ~board.sideToMove();
-    return !board.isAttacked(board.kingSq(them), board.sideToMove());
+    if (board.isAttacked(board.kingSq(them), board.sideToMove())) return false;
+    return board.checkers().count() <= 2;
 }
 
 bool readableSan(std::string_view san) {

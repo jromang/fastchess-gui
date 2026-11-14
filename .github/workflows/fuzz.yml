@@ -66,8 +66,8 @@ jobs:
 
       - name: Fuzz
         # Each target a minute, from its seeds and what earlier runs found; any undefined behaviour stops it as a crash
-        # does. A crash of the program's own code fails the job; one of fastchess' readers (app/, fixed upstream) is
-        # a warning, its known crashes not holding back every change. The inputs that crash are kept.
+        # does. A crash fails the job, in the program's own code as in fastchess' readers (app/). The inputs that crash
+        # are kept.
         env:
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
@@ -77,10 +77,7 @@ jobs:
             echo "::group::${target}"
             if ! "./build-fuzz/fuzz_${target}" -max_total_time=60 -max_len=65536 -timeout=10 -rss_limit_mb=4096 \
                    -artifact_prefix="fuzz-crashes/${target}/" "fuzz-corpus/${target}" "fuzz/corpus/${target}"; then
-              case "${target}" in
-                app_pgn|engine_info) echo "::warning::fastchess crashed in fuzz_${target}" ;;
-                *) failed+=("${target}") ;;
-              esac
+              failed+=("${target}")
             fi
             echo "::endgroup::"
           done

@@ -50,6 +50,7 @@ SRC_FILES        := \
 	$(THIRDPARTYDIR)/fmt/src/format.cc
 
 SRC_FILES_TEST   := \
+	$(TESTDIR)/chess_library_test.cpp \
 	$(TESTDIR)/cli_test.cpp \
 	$(TESTDIR)/config_test.cpp \
 	$(TESTDIR)/elo_test.cpp \

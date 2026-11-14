@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <utility>
 
 #include <fmt/include/fmt/format.h>
 #include <chess.hpp>
@@ -146,14 +147,18 @@ BookScan::BookScan(const fs::path& file, int plies, const std::atomic<bool>* can
         std::string head(1 << 16, '\0');
         in.read(head.data(), static_cast<std::streamsize>(head.size()));
         head.resize(static_cast<std::size_t>(in.gcount()));
-        const auto h  = lower(head);
-        chess960_     = h.find("[variant \"chess960\"]") != std::string::npos ||
-                        h.find("[variant \"fischerandom\"]") != std::string::npos;
-        book_         = fastchess::book::PgnReader(file.string(), plies, chess960_);
+        const auto h = lower(head);
+        chess960_    = h.find("[variant \"chess960\"]") != std::string::npos ||
+                       h.find("[variant \"fischerandom\"]") != std::string::npos;
+        fastchess::book::PgnReader reader(file.string(), plies, chess960_);
+        left_out_     = reader.skipped();
+        book_         = std::move(reader);
         escape_lines_ = countEscapeLines(file);
     } else if (ext == ".epd") {
         kind_ = Kind::Epd;
-        book_ = fastchess::book::EpdReader(file.string());
+        fastchess::book::EpdReader reader(file.string());
+        left_out_ = reader.skipped();
+        book_     = std::move(reader);
     } else {
         throw std::runtime_error("not an opening book (.epd, .pgn or .bin): " + file.string());
     }
@@ -216,7 +221,8 @@ BookScan::BookScan(const fs::path& file, int plies, const std::atomic<bool>* can
 }
 
 std::size_t BookScan::count(uint8_t flag) const {
-    return static_cast<std::size_t>(std::count_if(flags_.begin(), flags_.end(), [&](uint8_t f) { return f & flag; }));
+    const auto flagged = std::count_if(flags_.begin(), flags_.end(), [&](uint8_t f) { return f & flag; });
+    return static_cast<std::size_t>(flagged) + ((flag & BOOK_ILLEGAL) ? left_out_ : 0);
 }
 
 std::string BookScan::position(std::size_t i) const {
