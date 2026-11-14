@@ -53,6 +53,15 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   each clock, info lines with an integer score…), up to the first that fails. The result (✓ or the error) stays
   next to the engine with its date, and *UCI compliance report* lists the steps, with what the engine wrote after
   a failed one. An engine spoken to in xboard only gets the first part.
+- **Console…** talks to the engine, outside any tournament: it is started with the library's program, arguments
+  and working directory, and a UCI engine gets `uci` and then the library's option values. Lines typed are sent as
+  they are (Enter; Up and Down bring the earlier ones back), and the log shows every line with its time, those sent
+  marked `>` and the error output `!`. Buttons send the usual commands (`isready`, `position startpos`,
+  `go depth 10`, `go infinite`, `stop`…; WinBoard's for a WinBoard engine, spoken to in its own protocol unless
+  *Through the adapter* is ticked). *Copy* and *Save…* keep the log. The
+  console shows in place of the engine's settings (*Settings* goes back to them, the console staying open); *Close*
+  ends the engine. While a tournament runs, what the engine searches takes cores from its games: the console says
+  so. Its engine is not one of the tournament's processes: the end of a tournament does not end it.
 - **Quick test** plays a short match against the engine itself or another one: 10 games at 10+0.1 from 5 positions
   (one with an en passant capture), through the same code as a tournament, shown in its workspace while it plays.
   The result stays next to the engine: its score, its losses on time, crashes and illegal moves, and the share of

@@ -140,6 +140,9 @@ msgstr "Движок WinBoard."
 msgid "A colour won both games of a pair"
 msgstr "Один цвет выиграл обе партии пары"
 
+msgid "A command for the engine"
+msgstr "Команда для движка"
+
 msgid "A file of your choice"
 msgstr "Файл на ваш выбор"
 
@@ -184,6 +187,9 @@ msgstr "Отдельный движок"
 
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
 msgstr "Таблица, которую GitHub и форумы показывают как таблицу, с тем же заголовком, что и HTML-страница."
+
+msgid "A tournament is running: what this engine searches takes cores from its games."
+msgstr "Идёт турнир: расчёты этого движка отнимают ядра у его партий."
 
 msgid "A tournament waits to start."
 msgstr "Турнир ожидает запуска."
@@ -476,6 +482,9 @@ msgstr "Не удалось запустить матч: {}"
 msgid "Cannot start the quick test: {}"
 msgstr "Не удалось запустить быстрый тест: {}"
 
+msgid "Cannot start {}: {}"
+msgstr "Не удаётся запустить {}: {}"
+
 msgid "Cannot write {}"
 msgstr "Не удалось записать {}"
 
@@ -584,6 +593,12 @@ msgstr "Щелчок — сортировка; правый щелчок — в�
 msgid "Close"
 msgstr "Закрыть"
 
+msgid "Close it"
+msgstr "Закрыть её"
+
+msgid "Close the console"
+msgstr "Закрыть консоль"
+
 msgid "Common settings, forced on every engine (0 = each engine's own):"
 msgstr "Общие настройки, обязательные для всех движков (0 = у каждого своя):"
 
@@ -607,6 +622,15 @@ msgstr "Ходов подряд"
 
 msgid "Console"
 msgstr "Консоль"
+
+msgid "Console log written to {}"
+msgstr "Журнал консоли записан в {}"
+
+msgid "Console · {}"
+msgstr "Консоль · {}"
+
+msgid "Console…"
+msgstr "Консоль…"
 
 msgid "Copy"
 msgstr "Копировать"
@@ -784,6 +808,9 @@ msgstr "Окончание"
 
 msgid "Ends about {} (in {})"
 msgstr "Окончание около {} (через {})"
+
+msgid "Ends the engine."
+msgstr "Завершает движок."
 
 msgid "Engine"
 msgstr "Движок"
@@ -1973,6 +2000,9 @@ msgstr "Заменит вашу раскладку с этим именем."
 msgid "Resign"
 msgstr "Сдача"
 
+msgid "Restart"
+msgstr "Перезапустить"
+
 msgid "Restart an engine that crashes"
 msgstr "Перезапускать вылетевший движок"
 
@@ -2057,6 +2087,9 @@ msgstr "Сохранить раскладку"
 msgid "Save the layout as…"
 msgstr "Сохранить раскладку как…"
 
+msgid "Save…"
+msgstr "Сохранить…"
+
 msgid "Say which library engine a player of the PGN files is."
 msgstr "Укажите, каким движком библиотеки является игрок PGN-файлов."
 
@@ -2108,6 +2141,9 @@ msgstr "Порядок посева"
 msgid "Seed order: as the engines were entered, the seeds of a gauntlet first; the columns of a gauntlet's crosstable stay in place."
 msgstr "Порядок посева: как движки были введены, тестируемые движки гаунтлета первыми; столбцы перекрёстной таблицы гаунтлета остаются на месте."
 
+msgid "Send"
+msgstr "Отправить"
+
 msgid "Send its options"
 msgstr "Отправка его параметров"
 
@@ -2138,6 +2174,9 @@ msgstr "Настройка"
 msgid "Share of drawn games."
 msgstr "Доля ничейных партий."
 
+msgid "Show it"
+msgstr "Показать её"
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "Показать эту партию в отдельной панели, которую можно закрепить рядом с другими или перенести на другой экран."
 
@@ -2149,6 +2188,9 @@ msgstr "Место"
 
 msgid "Solution"
 msgstr "Решение"
+
+msgid "Speak UCI to it through the translation a tournament uses, rather than its own protocol. The engine starts again."
+msgstr "Говорить с ним по UCI через перевод, который использует турнир, а не на его собственном протоколе. Движок перезапускается."
 
 msgid "Speed"
 msgstr "Скорость"
@@ -2182,6 +2224,9 @@ msgstr "Тайм-аут запуска (с)"
 
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr "Запускаются один за другим, когда текущий турнир завершается сам."
+
+msgid "Started with the library's program, arguments, working directory and option values (sent once it answers uciok)."
+msgstr "Запущен с программой, аргументами, рабочей папкой и значениями параметров из библиотеки (отправляются, как только он ответит uciok)."
 
 msgid "Started: {}, {}, {} concurrent games{}. Folder: {}"
 msgstr "Запущено: {}, {}, одновременных партий: {}{}. Папка: {}"
@@ -2288,6 +2333,9 @@ msgstr "Таблицы эндшпиля"
 msgid "Tabs"
 msgstr "Вкладки"
 
+msgid "Talk to the engine: type commands (an option, a position, a go with given limits, a stop) and read its answers."
+msgstr "Поговорить с движком: вводить команды (параметр, позицию, go с заданными ограничениями, stop) и читать его ответы."
+
 msgid "Template name"
 msgstr "Название шаблона"
 
@@ -2314,6 +2362,9 @@ msgstr "Тестер"
 
 msgid "Testing…"
 msgstr "Тестирование…"
+
+msgid "Text"
+msgstr "Текст"
 
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Счётчик 50 ходов, материал и оставшиеся фигуры под каждой доской мозаики."
@@ -2345,11 +2396,17 @@ msgstr "Графики появятся с первыми результатам
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "Проверка {} прервана для запуска: она будет повторена позже."
 
+msgid "The console of {} is open."
+msgstr "Консоль {} открыта."
+
 msgid "The depth must be positive."
 msgstr "Глубина должна быть положительной."
 
 msgid "The engine does not answer isready."
 msgstr "Движок не отвечает на isready."
+
+msgid "The engine ended."
+msgstr "Движок завершился."
 
 msgid "The engine stopped answering once its options were sent."
 msgstr "Движок перестал отвечать после отправки параметров."
@@ -2359,6 +2416,12 @@ msgstr "Движок остановился, когда его попросил�
 
 msgid "The engine wrote:"
 msgstr "Движок написал:"
+
+msgid "The engine's own protocol (xboard), without the translation to UCI a tournament uses."
+msgstr "Собственный протокол движка (xboard), без перевода в UCI, который использует турнир."
+
+msgid "The engine's settings; the console stays open."
+msgstr "Настройки движка; консоль остаётся открытой."
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "Движки взяты из {}, сохранённого до последнего изменения."
@@ -2534,6 +2597,9 @@ msgstr "Турнир изменён."
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "Дисперсия партии при подсчёте по парам, делённая на дисперсию отдельных партий: если она меньше 1, парам нужно во столько же раз меньше партий для той же точности."
 
+msgid "The whole log, to the clipboard."
+msgstr "Весь журнал — в буфер обмена."
+
 msgid "The working directory of {} is not found."
 msgstr "Рабочая папка движка {} не найдена."
 
@@ -2563,6 +2629,9 @@ msgstr "Threads"
 
 msgid "Threads {}"
 msgstr "Потоки {}"
+
+msgid "Through the adapter"
+msgstr "Через адаптер"
 
 msgid "Tick engines on the left."
 msgstr "Отметьте движки слева."
@@ -2737,6 +2806,9 @@ msgstr "WinBoard"
 
 msgid "WinBoard engines (xboard protocol) are run through a translation to UCI built into fastchess-gui. Automatic: found out when the engine is read."
 msgstr "Движки WinBoard (протокол xboard) работают через встроенный в fastchess-gui перевод в UCI. Автоматически: определяется при чтении движка."
+
+msgid "WinBoard, its own protocol"
+msgstr "WinBoard, его собственный протокол"
 
 msgid "Wins"
 msgstr "Победы"
@@ -3098,6 +3170,15 @@ msgstr "вылетов: {}"
 msgid "{} did not show an RSA host key"
 msgstr "{} не предъявил RSA-ключ хоста"
 
+msgid "{} does not answer isready."
+msgstr "{} не отвечает на isready."
+
+msgid "{} does not answer uci: is it a UCI engine?"
+msgstr "{} не отвечает на uci: это UCI-движок?"
+
+msgid "{} does not give its move when told to stop."
+msgstr "{} не даёт свой ход по команде stop."
+
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} не пускает пользователя «{}» без ключа или пароля (принимает: {})"
 
@@ -3412,6 +3493,9 @@ msgstr[2] "Выбрано {}"
 
 msgid "{} shown"
 msgstr "показано: {}"
+
+msgid "{} stopped."
+msgstr "{} остановился."
 
 msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"

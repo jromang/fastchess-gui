@@ -136,6 +136,9 @@ msgstr "一个 WinBoard 引擎。"
 msgid "A colour won both games of a pair"
 msgstr "同一方赢下一对中的两局"
 
+msgid "A command for the engine"
+msgstr "发给引擎的命令"
+
 msgid "A file of your choice"
 msgstr "自选文件"
 
@@ -180,6 +183,9 @@ msgstr "单独的引擎"
 
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
 msgstr "GitHub 和论坛会显示为表格，页眉与 HTML 页面相同。"
+
+msgid "A tournament is running: what this engine searches takes cores from its games."
+msgstr "有锦标赛正在进行：此引擎的计算会占用其对局的核心。"
 
 msgid "A tournament waits to start."
 msgstr "有一个锦标赛正在等待开始。"
@@ -468,6 +474,9 @@ msgstr "无法开始比赛：{}"
 msgid "Cannot start the quick test: {}"
 msgstr "无法开始快速测试：{}"
 
+msgid "Cannot start {}: {}"
+msgstr "无法启动 {}：{}"
+
 msgid "Cannot write {}"
 msgstr "无法写入 {}"
 
@@ -576,6 +585,12 @@ msgstr "点击排序；右键选择列。"
 msgid "Close"
 msgstr "关闭"
 
+msgid "Close it"
+msgstr "关闭它"
+
+msgid "Close the console"
+msgstr "关闭控制台"
+
 msgid "Common settings, forced on every engine (0 = each engine's own):"
 msgstr "通用设置，强制用于所有引擎（0 = 各引擎自己的设置）："
 
@@ -599,6 +614,15 @@ msgstr "连续步数"
 
 msgid "Console"
 msgstr "控制台"
+
+msgid "Console log written to {}"
+msgstr "控制台日志已写入 {}"
+
+msgid "Console · {}"
+msgstr "控制台 · {}"
+
+msgid "Console…"
+msgstr "控制台…"
 
 msgid "Copy"
 msgstr "复制"
@@ -776,6 +800,9 @@ msgstr "结束"
 
 msgid "Ends about {} (in {})"
 msgstr "预计 {} 结束（还需 {}）"
+
+msgid "Ends the engine."
+msgstr "结束引擎。"
 
 msgid "Engine"
 msgstr "引擎"
@@ -1955,6 +1982,9 @@ msgstr "将替换你同名的布局。"
 msgid "Resign"
 msgstr "认输"
 
+msgid "Restart"
+msgstr "重新启动"
+
 msgid "Restart an engine that crashes"
 msgstr "重启崩溃的引擎"
 
@@ -2039,6 +2069,9 @@ msgstr "保存布局"
 msgid "Save the layout as…"
 msgstr "将布局另存为…"
 
+msgid "Save…"
+msgstr "保存…"
+
 msgid "Say which library engine a player of the PGN files is."
 msgstr "指定 PGN 文件中的某位棋手是哪个库引擎。"
 
@@ -2090,6 +2123,9 @@ msgstr "种子顺序"
 msgid "Seed order: as the engines were entered, the seeds of a gauntlet first; the columns of a gauntlet's crosstable stay in place."
 msgstr "种子顺序：按引擎录入的顺序，车轮战的被测引擎在前；车轮战交叉表的列保持不动。"
 
+msgid "Send"
+msgstr "发送"
+
 msgid "Send its options"
 msgstr "发送其选项"
 
@@ -2118,6 +2154,9 @@ msgstr "配置"
 msgid "Share of drawn games."
 msgstr "和棋所占比例。"
 
+msgid "Show it"
+msgstr "显示它"
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "在单独的面板中显示这局对局，该面板可停靠在其他面板旁，或移到另一块屏幕。"
 
@@ -2129,6 +2168,9 @@ msgstr "地点"
 
 msgid "Solution"
 msgstr "答案"
+
+msgid "Speak UCI to it through the translation a tournament uses, rather than its own protocol. The engine starts again."
+msgstr "通过锦标赛使用的转换以 UCI 与其通信，而不是用它自己的协议。引擎会重新启动。"
 
 msgid "Speed"
 msgstr "速度"
@@ -2162,6 +2204,9 @@ msgstr "启动超时（秒）"
 
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr "在当前锦标赛自行结束后依次开始。"
+
+msgid "Started with the library's program, arguments, working directory and option values (sent once it answers uciok)."
+msgstr "以引擎库中的程序、参数、工作目录和选项值启动（选项在它回复 uciok 后发送）。"
 
 msgid "Started: {}, {}, {} concurrent games{}. Folder: {}"
 msgstr "已开始：{}，{}，同时进行 {} 局{}。文件夹：{}"
@@ -2268,6 +2313,9 @@ msgstr "残局库"
 msgid "Tabs"
 msgstr "标签页"
 
+msgid "Talk to the engine: type commands (an option, a position, a go with given limits, a stop) and read its answers."
+msgstr "与引擎对话：输入命令（选项、局面、带限制的 go、stop）并查看它的回答。"
+
 msgid "Template name"
 msgstr "模板名称"
 
@@ -2294,6 +2342,9 @@ msgstr "测试者"
 
 msgid "Testing…"
 msgstr "正在测试…"
+
+msgid "Text"
+msgstr "文本"
 
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "50 步计数、子力以及剩余棋子，显示在平铺视图的每个棋盘下方。"
@@ -2325,11 +2376,17 @@ msgstr "图表会随第一批结果出现。"
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "为了开始，{} 的检查已中断：稍后会重新进行。"
 
+msgid "The console of {} is open."
+msgstr "{} 的控制台已打开。"
+
 msgid "The depth must be positive."
 msgstr "深度必须为正数。"
 
 msgid "The engine does not answer isready."
 msgstr "引擎没有响应 isready。"
+
+msgid "The engine ended."
+msgstr "引擎已结束。"
 
 msgid "The engine stopped answering once its options were sent."
 msgstr "发送选项后引擎停止响应。"
@@ -2339,6 +2396,12 @@ msgstr "要求引擎思考时，它停止了运行。"
 
 msgid "The engine wrote:"
 msgstr "引擎输出："
+
+msgid "The engine's own protocol (xboard), without the translation to UCI a tournament uses."
+msgstr "引擎自己的协议（xboard），不经过锦标赛使用的 UCI 转换。"
+
+msgid "The engine's settings; the console stays open."
+msgstr "引擎的设置；控制台保持打开。"
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "引擎来自 {}，即上次更改前保留的副本。"
@@ -2514,6 +2577,9 @@ msgstr "锦标赛已修改。"
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "按对局对计算时单局的方差与单独计算时单局方差之比：低于 1 时，成对对局只需相应更少的对局即可达到同样精度。"
 
+msgid "The whole log, to the clipboard."
+msgstr "将整个日志复制到剪贴板。"
+
 msgid "The working directory of {} is not found."
 msgstr "找不到 {} 的工作目录。"
 
@@ -2543,6 +2609,9 @@ msgstr "线程"
 
 msgid "Threads {}"
 msgstr "线程 {}"
+
+msgid "Through the adapter"
+msgstr "通过适配器"
 
 msgid "Tick engines on the left."
 msgstr "在左侧勾选引擎。"
@@ -2717,6 +2786,9 @@ msgstr "WinBoard"
 
 msgid "WinBoard engines (xboard protocol) are run through a translation to UCI built into fastchess-gui. Automatic: found out when the engine is read."
 msgstr "WinBoard 引擎（xboard 协议）通过 fastchess-gui 内置的 UCI 转换运行。自动：在读取引擎时检测。"
+
+msgid "WinBoard, its own protocol"
+msgstr "WinBoard，它自己的协议"
 
 msgid "Wins"
 msgstr "胜"
@@ -3070,6 +3142,15 @@ msgstr "{} 次崩溃"
 msgid "{} did not show an RSA host key"
 msgstr "{} 未提供 RSA 主机密钥"
 
+msgid "{} does not answer isready."
+msgstr "{} 不回应 isready。"
+
+msgid "{} does not answer uci: is it a UCI engine?"
+msgstr "{} 不回应 uci：它是 UCI 引擎吗？"
+
+msgid "{} does not give its move when told to stop."
+msgstr "{} 收到停止指令后不给出着法。"
+
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} 不允许用户“{}”无密钥或密码登录（它接受：{}）"
 
@@ -3312,6 +3393,9 @@ msgstr[0] "已选 {} 个"
 
 msgid "{} shown"
 msgstr "显示 {} 个"
+
+msgid "{} stopped."
+msgstr "{} 已停止。"
 
 msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"

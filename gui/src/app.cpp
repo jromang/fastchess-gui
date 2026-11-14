@@ -122,6 +122,7 @@ void App::frame() {
     pollCheck();
     pollStart();
     pollOwnBooks();
+    pollEngineConsole();
     handleDialogs();
 
     if (engines_save_due_ && std::chrono::steady_clock::now() >= *engines_save_due_) {
@@ -172,6 +173,10 @@ void App::frame() {
         else if (w == "engines-card") {
             page_            = Page::Engines;
             selected_engine_ = engines_.empty() ? -1 : 0;
+        } else if (w == "engines-console") {  // the console of the first engine, which answered uci
+            page_            = Page::Engines;
+            selected_engine_ = engines_.empty() ? -1 : 0;
+            openEngineConsole(0);
         } else if (w == "engines-refresh") {
             page_ = Page::Engines;
             refreshEngineFolder();
@@ -947,6 +952,9 @@ void App::handleDialogs() {
                 break;
             case Dialogs::Purpose::ExportSubmission:
                 writeSubmissionExport(path);
+                break;
+            case Dialogs::Purpose::ConsoleLog:
+                saveConsoleLog(path);
                 break;
         }
     }

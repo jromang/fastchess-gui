@@ -138,6 +138,9 @@ msgstr "Eine WinBoard-Engine."
 msgid "A colour won both games of a pair"
 msgstr "Eine Farbe gewann beide Partien eines Paares"
 
+msgid "A command for the engine"
+msgstr "Ein Befehl für die Engine"
+
 msgid "A file of your choice"
 msgstr "Eine Datei deiner Wahl"
 
@@ -182,6 +185,9 @@ msgstr "Eine eigene Engine"
 
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
 msgstr "Eine Tabelle, die GitHub und Foren als solche anzeigen, mit demselben Kopf wie die HTML-Seite."
+
+msgid "A tournament is running: what this engine searches takes cores from its games."
+msgstr "Ein Turnier läuft: Was diese Engine rechnet, nimmt seinen Partien Kerne weg."
 
 msgid "A tournament waits to start."
 msgstr "Ein Turnier wartet auf seinen Start."
@@ -472,6 +478,9 @@ msgstr "Das Match kann nicht gestartet werden: {}"
 msgid "Cannot start the quick test: {}"
 msgstr "Der Schnelltest kann nicht gestartet werden: {}"
 
+msgid "Cannot start {}: {}"
+msgstr "{} kann nicht gestartet werden: {}"
+
 msgid "Cannot write {}"
 msgstr "{} kann nicht geschrieben werden"
 
@@ -580,6 +589,12 @@ msgstr "Klicken zum Sortieren; Rechtsklick zur Auswahl der Spalten."
 msgid "Close"
 msgstr "Schließen"
 
+msgid "Close it"
+msgstr "Schließen"
+
+msgid "Close the console"
+msgstr "Konsole schließen"
+
 msgid "Common settings, forced on every engine (0 = each engine's own):"
 msgstr "Gemeinsame Einstellungen, für jede Engine erzwungen (0 = die eigene der Engine):"
 
@@ -603,6 +618,15 @@ msgstr "Aufeinanderfolgende Züge"
 
 msgid "Console"
 msgstr "Konsole"
+
+msgid "Console log written to {}"
+msgstr "Konsolenprotokoll gespeichert in {}"
+
+msgid "Console · {}"
+msgstr "Konsole · {}"
+
+msgid "Console…"
+msgstr "Konsole…"
 
 msgid "Copy"
 msgstr "Kopieren"
@@ -780,6 +804,9 @@ msgstr "Ende"
 
 msgid "Ends about {} (in {})"
 msgstr "Endet gegen {} (in {})"
+
+msgid "Ends the engine."
+msgstr "Beendet die Engine."
 
 msgid "Engine"
 msgstr "Engine"
@@ -1964,6 +1991,9 @@ msgstr "Ersetzt dein Layout mit diesem Namen."
 msgid "Resign"
 msgstr "Aufgabe"
 
+msgid "Restart"
+msgstr "Neu starten"
+
 msgid "Restart an engine that crashes"
 msgstr "Eine abgestürzte Engine neu starten"
 
@@ -2048,6 +2078,9 @@ msgstr "Layout speichern"
 msgid "Save the layout as…"
 msgstr "Layout speichern unter…"
 
+msgid "Save…"
+msgstr "Speichern…"
+
 msgid "Say which library engine a player of the PGN files is."
 msgstr "Gib an, welche Engine der Bibliothek ein Spieler der PGN-Dateien ist."
 
@@ -2099,6 +2132,9 @@ msgstr "Setzliste"
 msgid "Seed order: as the engines were entered, the seeds of a gauntlet first; the columns of a gauntlet's crosstable stay in place."
 msgstr "Setzliste: wie die Engines eingetragen wurden, die getesteten Engines eines Gauntlets zuerst; die Spalten der Kreuztabelle eines Gauntlets bleiben an ihrem Platz."
 
+msgid "Send"
+msgstr "Senden"
+
 msgid "Send its options"
 msgstr "Seine Optionen senden"
 
@@ -2128,6 +2164,9 @@ msgstr "Setup"
 msgid "Share of drawn games."
 msgstr "Anteil der Remispartien."
 
+msgid "Show it"
+msgstr "Anzeigen"
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "Diese Partie in einem eigenen Bereich zeigen, der neben den anderen angedockt oder auf einen anderen Bildschirm verschoben werden kann."
 
@@ -2139,6 +2178,9 @@ msgstr "Ort"
 
 msgid "Solution"
 msgstr "Lösung"
+
+msgid "Speak UCI to it through the translation a tournament uses, rather than its own protocol. The engine starts again."
+msgstr "Mit ihr UCI sprechen, über die Übersetzung, die ein Turnier verwendet, statt ihres eigenen Protokolls. Die Engine startet neu."
 
 msgid "Speed"
 msgstr "Geschwindigkeit"
@@ -2172,6 +2214,9 @@ msgstr "Start-Timeout (s)"
 
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr "Nacheinander gestartet, wenn das laufende Turnier von selbst endet."
+
+msgid "Started with the library's program, arguments, working directory and option values (sent once it answers uciok)."
+msgstr "Gestartet mit Programm, Argumenten, Arbeitsverzeichnis und Optionswerten aus der Bibliothek (gesendet, sobald sie uciok antwortet)."
 
 msgid "Started: {}, {}, {} concurrent games{}. Folder: {}"
 msgstr "Gestartet: {}, {}, {} gleichzeitige Partien{}. Ordner: {}"
@@ -2278,6 +2323,9 @@ msgstr "Tablebases"
 msgid "Tabs"
 msgstr "Reiter"
 
+msgid "Talk to the engine: type commands (an option, a position, a go with given limits, a stop) and read its answers."
+msgstr "Mit der Engine sprechen: Befehle eingeben (eine Option, eine Stellung, ein go mit bestimmten Grenzen, ein stop) und ihre Antworten lesen."
+
 msgid "Template name"
 msgstr "Name der Vorlage"
 
@@ -2304,6 +2352,9 @@ msgstr "Tester"
 
 msgid "Testing…"
 msgstr "Teste…"
+
+msgid "Text"
+msgstr "Text"
 
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Der 50-Züge-Zähler, das Material und die verbleibenden Steine unter jedem Brett der Mosaikansicht."
@@ -2335,11 +2386,17 @@ msgstr "Die Diagramme erscheinen mit den ersten Ergebnissen."
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "Die Prüfung von {} wird für den Start unterbrochen: Sie wird später wiederholt."
 
+msgid "The console of {} is open."
+msgstr "Die Konsole von {} ist offen."
+
 msgid "The depth must be positive."
 msgstr "Die Tiefe muss positiv sein."
 
 msgid "The engine does not answer isready."
 msgstr "Die Engine antwortet nicht auf isready."
+
+msgid "The engine ended."
+msgstr "Die Engine hat sich beendet."
 
 msgid "The engine stopped answering once its options were sent."
 msgstr "Die Engine antwortet nicht mehr, seit ihre Optionen gesendet wurden."
@@ -2349,6 +2406,12 @@ msgstr "Die Engine hat sich beendet, während sie rechnen sollte."
 
 msgid "The engine wrote:"
 msgstr "Die Engine schrieb:"
+
+msgid "The engine's own protocol (xboard), without the translation to UCI a tournament uses."
+msgstr "Das eigene Protokoll der Engine (xboard), ohne die Übersetzung nach UCI, die ein Turnier verwendet."
+
+msgid "The engine's settings; the console stays open."
+msgstr "Die Einstellungen der Engine; die Konsole bleibt offen."
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "Die Engines sind die aus {}, vor der letzten Änderung aufbewahrt."
@@ -2524,6 +2587,9 @@ msgstr "Das Turnier wurde geändert."
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "Die Varianz einer Partie, wenn die Partien paarweise gezählt werden, geteilt durch die Varianz einzelner Partien: unter 1 brauchen die Paare entsprechend weniger Partien für dieselbe Genauigkeit."
 
+msgid "The whole log, to the clipboard."
+msgstr "Das ganze Protokoll in die Zwischenablage."
+
 msgid "The working directory of {} is not found."
 msgstr "Das Arbeitsverzeichnis von {} wurde nicht gefunden."
 
@@ -2553,6 +2619,9 @@ msgstr "Threads"
 
 msgid "Threads {}"
 msgstr "Threads {}"
+
+msgid "Through the adapter"
+msgstr "Über den Adapter"
 
 msgid "Tick engines on the left."
 msgstr "Hake links Engines an."
@@ -2727,6 +2796,9 @@ msgstr "WinBoard"
 
 msgid "WinBoard engines (xboard protocol) are run through a translation to UCI built into fastchess-gui. Automatic: found out when the engine is read."
 msgstr "WinBoard-Engines (xboard-Protokoll) laufen über eine in fastchess-gui eingebaute Übersetzung nach UCI. Automatisch: wird beim Einlesen der Engine erkannt."
+
+msgid "WinBoard, its own protocol"
+msgstr "WinBoard, ihr eigenes Protokoll"
 
 msgid "Wins"
 msgstr "Siege"
@@ -3084,6 +3156,15 @@ msgstr "{} Abstürze"
 msgid "{} did not show an RSA host key"
 msgstr "{} hat keinen RSA-Host-Schlüssel vorgelegt"
 
+msgid "{} does not answer isready."
+msgstr "{} antwortet nicht auf isready."
+
+msgid "{} does not answer uci: is it a UCI engine?"
+msgstr "{} antwortet nicht auf uci: Ist es eine UCI-Engine?"
+
+msgid "{} does not give its move when told to stop."
+msgstr "{} gibt ihren Zug nicht, wenn sie anhalten soll."
+
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} lässt den Benutzer „{}“ nicht ohne Schlüssel oder Passwort herein (akzeptiert: {})"
 
@@ -3362,6 +3443,9 @@ msgstr[1] "{} ausgewählt"
 
 msgid "{} shown"
 msgstr "{} angezeigt"
+
+msgid "{} stopped."
+msgstr "{} hat sich beendet."
 
 msgid "{} that two library engines may be"
 msgid_plural "{} that two library engines may be"

@@ -138,6 +138,9 @@ msgstr ""
 msgid "A colour won both games of a pair"
 msgstr ""
 
+msgid "A command for the engine"
+msgstr ""
+
 msgid "A file of your choice"
 msgstr ""
 
@@ -181,6 +184,9 @@ msgid "A separate engine"
 msgstr ""
 
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
+msgstr ""
+
+msgid "A tournament is running: what this engine searches takes cores from its games."
 msgstr ""
 
 msgid "A tournament waits to start."
@@ -472,6 +478,9 @@ msgstr ""
 msgid "Cannot start the quick test: {}"
 msgstr ""
 
+msgid "Cannot start {}: {}"
+msgstr ""
+
 msgid "Cannot write {}"
 msgstr ""
 
@@ -580,6 +589,12 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
+msgid "Close it"
+msgstr ""
+
+msgid "Close the console"
+msgstr ""
+
 msgid "Common settings, forced on every engine (0 = each engine's own):"
 msgstr ""
 
@@ -602,6 +617,15 @@ msgid "Consecutive moves"
 msgstr ""
 
 msgid "Console"
+msgstr ""
+
+msgid "Console log written to {}"
+msgstr ""
+
+msgid "Console · {}"
+msgstr ""
+
+msgid "Console…"
 msgstr ""
 
 msgid "Copy"
@@ -779,6 +803,9 @@ msgid "End"
 msgstr ""
 
 msgid "Ends about {} (in {})"
+msgstr ""
+
+msgid "Ends the engine."
 msgstr ""
 
 msgid "Engine"
@@ -1964,6 +1991,9 @@ msgstr ""
 msgid "Resign"
 msgstr ""
 
+msgid "Restart"
+msgstr ""
+
 msgid "Restart an engine that crashes"
 msgstr ""
 
@@ -2048,6 +2078,9 @@ msgstr ""
 msgid "Save the layout as…"
 msgstr ""
 
+msgid "Save…"
+msgstr ""
+
 msgid "Say which library engine a player of the PGN files is."
 msgstr ""
 
@@ -2099,6 +2132,9 @@ msgstr ""
 msgid "Seed order: as the engines were entered, the seeds of a gauntlet first; the columns of a gauntlet's crosstable stay in place."
 msgstr ""
 
+msgid "Send"
+msgstr ""
+
 msgid "Send its options"
 msgstr ""
 
@@ -2128,6 +2164,9 @@ msgstr ""
 msgid "Share of drawn games."
 msgstr ""
 
+msgid "Show it"
+msgstr ""
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr ""
 
@@ -2138,6 +2177,9 @@ msgid "Site"
 msgstr ""
 
 msgid "Solution"
+msgstr ""
+
+msgid "Speak UCI to it through the translation a tournament uses, rather than its own protocol. The engine starts again."
 msgstr ""
 
 msgid "Speed"
@@ -2171,6 +2213,9 @@ msgid "Start timeout (s)"
 msgstr ""
 
 msgid "Started one after the other, when the running tournament ends by itself."
+msgstr ""
+
+msgid "Started with the library's program, arguments, working directory and option values (sent once it answers uciok)."
 msgstr ""
 
 msgid "Started: {}, {}, {} concurrent games{}. Folder: {}"
@@ -2278,6 +2323,9 @@ msgstr ""
 msgid "Tabs"
 msgstr ""
 
+msgid "Talk to the engine: type commands (an option, a position, a go with given limits, a stop) and read its answers."
+msgstr ""
+
 msgid "Template name"
 msgstr ""
 
@@ -2303,6 +2351,9 @@ msgid "Tester"
 msgstr ""
 
 msgid "Testing…"
+msgstr ""
+
+msgid "Text"
 msgstr ""
 
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
@@ -2335,10 +2386,16 @@ msgstr ""
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr ""
 
+msgid "The console of {} is open."
+msgstr ""
+
 msgid "The depth must be positive."
 msgstr ""
 
 msgid "The engine does not answer isready."
+msgstr ""
+
+msgid "The engine ended."
 msgstr ""
 
 msgid "The engine stopped answering once its options were sent."
@@ -2348,6 +2405,12 @@ msgid "The engine stopped while it was asked to think."
 msgstr ""
 
 msgid "The engine wrote:"
+msgstr ""
+
+msgid "The engine's own protocol (xboard), without the translation to UCI a tournament uses."
+msgstr ""
+
+msgid "The engine's settings; the console stays open."
 msgstr ""
 
 msgid "The engines are those of {}, kept before the last change."
@@ -2524,6 +2587,9 @@ msgstr ""
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr ""
 
+msgid "The whole log, to the clipboard."
+msgstr ""
+
 msgid "The working directory of {} is not found."
 msgstr ""
 
@@ -2552,6 +2618,9 @@ msgid "Threads"
 msgstr ""
 
 msgid "Threads {}"
+msgstr ""
+
+msgid "Through the adapter"
 msgstr ""
 
 msgid "Tick engines on the left."
@@ -2726,6 +2795,9 @@ msgid "WinBoard"
 msgstr ""
 
 msgid "WinBoard engines (xboard protocol) are run through a translation to UCI built into fastchess-gui. Automatic: found out when the engine is read."
+msgstr ""
+
+msgid "WinBoard, its own protocol"
 msgstr ""
 
 msgid "Wins"
@@ -3084,6 +3156,15 @@ msgstr ""
 msgid "{} did not show an RSA host key"
 msgstr ""
 
+msgid "{} does not answer isready."
+msgstr ""
+
+msgid "{} does not answer uci: is it a UCI engine?"
+msgstr ""
+
+msgid "{} does not give its move when told to stop."
+msgstr ""
+
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr ""
 
@@ -3361,6 +3442,9 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "{} shown"
+msgstr ""
+
+msgid "{} stopped."
 msgstr ""
 
 msgid "{} that two library engines may be"

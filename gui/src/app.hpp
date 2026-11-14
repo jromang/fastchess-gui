@@ -17,6 +17,7 @@
 #include <matchmaking/sprt/sprt.hpp>
 #include <matchmaking/stats.hpp>
 
+#include "board_page.hpp"
 #include "board_view.hpp"
 #include "book_jobs.hpp"
 #include "broadcaster.hpp"
@@ -340,6 +341,12 @@ class App {
     void drawCharts();
     void drawEngines();
     void drawConsole();
+    // The engine console (view_engine_console.cpp), in the card of its engine.
+    void openEngineConsole(int index);
+    void closeEngineConsole();
+    void pollEngineConsole();  // every frame, shown or not
+    void drawEngineConsole(const EngineEntry& e);
+    void saveConsoleLog(const std::string& path);
     void drawQuitModal();
 
     // The command palette (Ctrl+K) and the guide (F1, the `?` of the page titles), see view_palette.cpp.
@@ -744,6 +751,9 @@ class App {
     std::optional<RatingImport> rating_import_;
     bool open_rating_import_  = false;
     bool open_import_preview_ = false;
+
+    // The engine console, while one is open.
+    std::unique_ptr<EngineConsole> engine_console_;
 
     // Console view.
     std::vector<Console::Line> console_lines_;

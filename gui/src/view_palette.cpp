@@ -118,6 +118,12 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         add(trf("Check those not checked ({})", unchecked.size()), TR("Engines"),
             engines_page([this, unchecked] { queueChecks(unchecked); }));
     }
+    // The console of the engine shown, or the one open.
+    if (page_ == Page::Engines && selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size())) {
+        add(TR("Console…"), engines_[static_cast<std::size_t>(selected_engine_)].name,
+            [this] { openEngineConsole(selected_engine_); });
+    }
+    if (engine_console_) add(TR("Close the console"), engine_console_->engine, [this] { closeEngineConsole(); });
 
     // Pages, the panels of the tournament open, and the tabs of the ratings.
     const auto page = [this](Page p) {
