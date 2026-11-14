@@ -322,6 +322,9 @@ msgstr ""
 msgid "Anything to remember about it; the engine searches find it."
 msgstr ""
 
+msgid "Applies at the next launch."
+msgstr ""
+
 msgid "Apply"
 msgstr ""
 
@@ -707,6 +710,9 @@ msgid "Draw when both engines report |score| ≤ threshold for N consecutive mov
 msgstr ""
 
 msgid "Drawn twice"
+msgstr ""
+
+msgid "Drawn with: {}"
 msgstr ""
 
 msgid "Draws"
@@ -1578,7 +1584,7 @@ msgstr ""
 msgid "Open the tournament."
 msgstr ""
 
-msgid "OpenGL 3.2 is not available (SDL_GL_CreateContext)"
+msgid "OpenGL 3.2 cannot be used ({}): the window is drawn by SDL's renderer."
 msgstr ""
 
 msgid "OpenGL functions are missing"
@@ -1946,6 +1952,9 @@ msgstr ""
 msgid "Remove…"
 msgstr ""
 
+msgid "Rendering"
+msgstr ""
+
 msgid "Replace"
 msgstr ""
 
@@ -2022,6 +2031,12 @@ msgid "Running"
 msgstr ""
 
 msgid "R{}"
+msgstr ""
+
+msgid "SDL renderer"
+msgstr ""
+
+msgid "SDL renderer, {} driver"
 msgstr ""
 
 msgid "SPRT calculator"
@@ -2135,6 +2150,9 @@ msgid "Show {}"
 msgstr ""
 
 msgid "Site"
+msgstr ""
+
+msgid "Software rendering"
 msgstr ""
 
 msgid "Solution"
@@ -2491,6 +2509,9 @@ msgstr ""
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr ""
 
+msgid "The software renderer cannot be used ({}): the window is drawn with OpenGL."
+msgstr ""
+
 msgid "The spread of the advantage the openings give, in Elo: what playing each opening twice, colours reversed, cancels out."
 msgstr ""
 
@@ -2522,6 +2543,9 @@ msgid "The tournament was changed."
 msgstr ""
 
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
+msgstr ""
+
+msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
 msgstr ""
 
 msgid "The working directory of {} is not found."
@@ -2629,6 +2653,9 @@ msgstr ""
 msgid "UDP port"
 msgstr ""
 
+msgid "Under Wayland the software renderer needs X11: start the program with the environment variable SDL_VIDEODRIVER=x11."
+msgstr ""
+
 msgid "Undo the last change"
 msgstr ""
 
@@ -2639,6 +2666,9 @@ msgid "Unreadable PGN."
 msgstr ""
 
 msgid "Up to {} engines."
+msgstr ""
+
+msgid "Update the graphics driver, or turn on 3D acceleration in the virtual machine or the remote desktop's settings."
 msgstr ""
 
 msgid "Use it for the next tournament"
@@ -2862,6 +2892,9 @@ msgstr ""
 msgid "every pair with both colours"
 msgstr ""
 
+msgid "fastchess-gui cannot draw its window."
+msgstr ""
+
 msgid "fastchess-gui {} — {} physical cores, {} threads"
 msgstr ""
 
@@ -2955,6 +2988,9 @@ msgid "replay requested"
 msgstr ""
 
 msgid "send at startup"
+msgstr ""
+
+msgid "the driver gives OpenGL {}"
 msgstr ""
 
 msgid "the file is not found"

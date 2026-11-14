@@ -15,6 +15,7 @@
 #include "i18n.hpp"
 #include "logo.hpp"
 #include "memory.hpp"
+#include "renderer.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -894,6 +895,30 @@ void App::drawSettings() {
     lichessTokenField();
     ImGui::PopItemWidth();
     ImGui::EndGroup();
+
+    // What draws the window, and the software renderer for the machines where OpenGL fails.
+    ImGui::Spacing();
+    ImGui::Separator();
+    ui::label(TR("Rendering"), label);
+    ImGui::TextUnformatted(render::description().c_str());
+    if (!render::fallbackReason().empty()) {
+        ImGui::SetCursorPosX(label);
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ColorConvertU32ToFloat4(ui::WARN));
+        ImGui::TextWrapped("%s", render::fallbackReason().c_str());
+        ImGui::PopStyleColor();
+    }
+    ImGui::SetCursorPosX(label);
+    bool software = storage_.softwareRendering();
+    if (ImGui::Checkbox(TR("Software rendering"), &software)) storage_.setSoftwareRendering(software);
+    ImGui::SetItemTooltip(
+        "%s", TR("The window drawn by the processor (SDL's software renderer) rather than by the graphics card with "
+                 "OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels "
+                 "dragged out of the window stay inside it. --software on the command line does the same for one "
+                 "launch."));
+    if (software != software_at_launch_) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ui::WARN), "%s", TR("Applies at the next launch."));
+    }
 
     if (changed) saveSetupSoon();
 }

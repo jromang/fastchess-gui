@@ -569,6 +569,7 @@ class App {
     Storage storage_;
     CpuTopology topology_;
     AppOptions options_;
+    bool software_at_launch_ = false;  // the Settings page says that a change applies at the next launch
 
     std::vector<EngineEntry> engines_;
     MatchSetup setup_;

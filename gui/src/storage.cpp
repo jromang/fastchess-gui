@@ -123,13 +123,22 @@ Storage::Storage(fs::path root) : root_(std::move(root)) {
     fs::create_directories(root_, ec);
     fs::remove(root_ / "imgui.ini", ec);
 
-    runs_dir_ = fs::path(setting(settings(), "tournaments_dir", std::string{}));
+    const auto settings = this->settings();
+    runs_dir_           = fs::path(setting(settings, "tournaments_dir", std::string{}));
+    software_rendering_ = setting(settings, "software_rendering", false);
 }
 
 void Storage::setRunsDir(const fs::path& dir) {
     runs_dir_                   = dir == defaultRunsDir() ? fs::path{} : dir;
     auto settings               = this->settings();
     settings["tournaments_dir"] = runs_dir_.string();
+    save(root_ / "settings.json", settings);
+}
+
+void Storage::setSoftwareRendering(bool on) {
+    software_rendering_            = on;
+    auto settings                  = this->settings();
+    settings["software_rendering"] = on;
     save(root_ / "settings.json", settings);
 }
 

@@ -20,7 +20,6 @@
 #endif
 
 #include <imgui.h>
-#include <imgui_impl_opengl3.h>
 #include <imgui_impl_sdl3.h>
 #include <implot.h>
 
@@ -37,11 +36,10 @@
 #include "app.hpp"
 #include "console.hpp"
 #include "engines.hpp"
-#include "gl.hpp"
 #include "headless.hpp"
 #include "i18n.hpp"
 #include "logo.hpp"
-#include "screenshot.hpp"
+#include "renderer.hpp"
 #include "storage.hpp"
 #include "topology.hpp"
 #include "ui.hpp"
@@ -82,6 +80,7 @@ struct Args {
     double quit_after = 0;
     int width         = 0;
     int height        = 0;
+    bool software     = false;     // SDL's software renderer rather than OpenGL
     std::string run;               // --run: a tournament folder or a setup file, played without a window
     std::optional<int> tlcs_port;  // --run: broadcast options
     bool tlcs_lanes = false;
@@ -134,9 +133,11 @@ Args parseArgs(int argc, char** argv) {
             args.tunnel = i + 1 < argc && argv[i + 1][0] != '-' ? next() : std::string("localhost.run");
         else if (a == "--size")
             std::sscanf(next().c_str(), "%dx%d", &args.width, &args.height);
+        else if (a == "--software")
+            args.software = true;
         else if (a == "--help" || a == "-h") {
             std::printf(
-                "fastchess-gui [--profile DIR] [--autostart] [--size WxH]\n"
+                "fastchess-gui [--profile DIR] [--autostart] [--size WxH] [--software]\n"
                 "              [--shot FILE.png[@WINDOW[@SECONDS]]]... [--select-game N] [--focus WINDOW]\n"
                 "              [--quit-after SECONDS]\n"
                 "fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json   (no window)\n"
@@ -194,9 +195,10 @@ void loadFonts(float size) {
     fcg::ui::setFonts(text, titles, icons);
 }
 
-// Startup failures are reported in a message box too: a Windows GUI program has no console.
-int fatal(const std::string& what) {
-    const auto message = what + ": " + SDL_GetError();
+// Startup failures are reported in a message box too: a Windows GUI program has no console. `what` is followed by
+// SDL's error unless `sdl_error` is false.
+int fatal(const std::string& what, bool sdl_error = true) {
+    const auto message = sdl_error ? what + ": " + SDL_GetError() : what;
     std::fprintf(stderr, "%s\n", message.c_str());
     SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "fastchess-gui", message.c_str(), nullptr);
     return 1;
@@ -289,18 +291,9 @@ int main(int argc, char** argv) {
     // Until the setup's language is known (App reads it), startup failures speak the system's.
     fcg::i18n::setLanguage(fcg::i18n::systemLanguage());
 
-#ifdef __APPLE__
-    // macOS gives a 3.2 core context (up to 4.1) only to a program that asks for a forward-compatible one.
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-#else
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-#endif
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 0);
-    SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+    // The profile before the window: its settings say whether the window is drawn by SDL's software renderer.
+    const char* pref = SDL_GetPrefPath("fastchess", "fastchess-gui");
+    fcg::Storage storage(args.profile.empty() ? fs::path(pref ? pref : ".") : fs::path(args.profile));
 
     const float scale = std::max(1.0f, SDL_GetDisplayContentScale(SDL_GetPrimaryDisplay()));
     int width         = args.width > 0 ? args.width : static_cast<int>(1440 * scale);
@@ -324,10 +317,11 @@ int main(int argc, char** argv) {
         }
     }
 
-    SDL_Window* window =
-        SDL_CreateWindow("fastchess-gui", width, height,
-                         SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY);
-    if (!window) return fatal("SDL_CreateWindow");
+    // Drawn with OpenGL 3.2, or by SDL's renderer where it is missing or when software rendering is asked for.
+    SDL_Window* window = fcg::render::open("fastchess-gui", width, height,
+                                           SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY,
+                                           args.software || storage.softwareRendering());
+    if (!window) return fatal(fcg::render::failure(), false);
 #ifndef __APPLE__  // macOS shows the bundle's (gui/mac/fastchess-gui.icns), with the margin of the system's icons
     {
         // The window's icon, with a larger image for high densities and the task switcher.
@@ -341,11 +335,6 @@ int main(int argc, char** argv) {
     }
 #endif
 
-    SDL_GLContext gl_context = SDL_GL_CreateContext(window);
-    if (!gl_context) return fatal(TR("OpenGL 3.2 is not available (SDL_GL_CreateContext)"));
-    SDL_GL_MakeCurrent(window, gl_context);
-    // No vsync: on Wayland a hidden window would block in SwapWindow. The loop paces itself.
-    SDL_GL_SetSwapInterval(0);
     if (usable) {
         // Centred in the usable area (not the whole screen, which SDL falls back to), below the title bar.
         SDL_SetWindowPosition(window, usable->x + (usable->w - width) / 2,
@@ -356,13 +345,10 @@ int main(int argc, char** argv) {
     SDL_ShowWindow(window);
     if (maximize) SDL_MaximizeWindow(window);
 
-    if (!fcg::gl::load()) return fatal(TR("OpenGL functions are missing"));
-
-    const char* pref = SDL_GetPrefPath("fastchess", "fastchess-gui");
-    fcg::Storage storage(args.profile.empty() ? fs::path(pref ? pref : ".") : fs::path(args.profile));
     useBookCache(storage);
     const auto ini_path = storage.iniFile().string();
     fcg::Console::instance().logTo(storage.root() / "fastchess-gui.log");
+    fcg::render::logPath();
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -376,9 +362,9 @@ int main(int argc, char** argv) {
     if (!args.shots.empty()) io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
 
     // A panel of the tournament workspace (a detached board, the standings...) can be dragged out of the main window,
-    // onto a second screen. The SDL backend does not support it on Wayland (ImGui then turns the flag off): there,
-    // panels float inside the main window.
-    if (args.shots.empty()) io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    // onto a second screen. The SDL backend does not support it on Wayland (ImGui then turns the flag off), nor SDL's
+    // renderer, which draws one window: there, panels float inside the main window.
+    if (args.shots.empty() && fcg::render::viewports()) io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     fcg::ui::applyTheme(fcg::ui::Theme::Light, scale);  // the app applies the chosen theme on its first frame
     ImGui::GetStyle().FontScaleDpi = scale;
@@ -386,8 +372,7 @@ int main(int argc, char** argv) {
 
     ImPlot::GetStyle().PlotPadding = ImVec2(6, 6);
 
-    ImGui_ImplSDL3_InitForOpenGL(window, gl_context);
-    ImGui_ImplOpenGL3_Init("#version 150");
+    fcg::render::initBackends();
 
     fcg::AppOptions options;
     options.autostart    = args.autostart;
@@ -429,16 +414,14 @@ int main(int argc, char** argv) {
             fcg::ui::loadRequestedFonts(16.0f);  // between frames: the size loadFonts() used
             if (SDL_GetWindowFlags(window) & SDL_WINDOW_MINIMIZED) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
-                ImGui_ImplOpenGL3_NewFrame();
-                ImGui_ImplSDL3_NewFrame();
+                fcg::render::newFrame();
                 ImGui::NewFrame();
                 app.frame();
                 ImGui::EndFrame();
                 continue;
             }
 
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplSDL3_NewFrame();
+            fcg::render::newFrame();
             ImGui::NewFrame();
 
             app.frame();
@@ -446,10 +429,7 @@ int main(int argc, char** argv) {
             ImGui::Render();
             int fb_w = 0, fb_h = 0;
             SDL_GetWindowSizeInPixels(window, &fb_w, &fb_h);
-            fcg::gl::fn().Viewport(0, 0, fb_w, fb_h);
-            fcg::gl::fn().ClearColor(0.08f, 0.09f, 0.10f, 1.0f);
-            fcg::gl::fn().Clear(fcg::gl::COLOR_BUFFER_BIT);
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            fcg::render::draw(fb_w, fb_h);
 
             const double elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
 
@@ -463,7 +443,7 @@ int main(int argc, char** argv) {
                 }
                 if (!shot.taken && elapsed >= shot.at) {
                     shot.taken    = true;
-                    const bool ok = fcg::saveScreenshot(shot.file, fb_w, fb_h);
+                    const bool ok = fcg::render::screenshot(shot.file, fb_w, fb_h);
                     fcg::Console::instance().add(
                         fmt::format("Screenshot {} ({}x{}): {}", shot.file, fb_w, fb_h, ok ? "ok" : "failed"), !ok);
                 }
@@ -472,16 +452,8 @@ int main(int argc, char** argv) {
             if (all_taken && args.quit_after <= 0) app.forceQuit();
             if (args.quit_after > 0 && elapsed >= args.quit_after) app.forceQuit();
 
-            // Windows dragged out of the main one.
-            if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-                SDL_Window* current_window    = SDL_GL_GetCurrentWindow();
-                SDL_GLContext current_context = SDL_GL_GetCurrentContext();
-                ImGui::UpdatePlatformWindows();
-                ImGui::RenderPlatformWindowsDefault();
-                SDL_GL_MakeCurrent(current_window, current_context);
-            }
-
-            SDL_GL_SwapWindow(window);
+            fcg::render::drawViewports();  // windows dragged out of the main one
+            fcg::render::present();
 
             // About 30 frames per second is plenty, and leaves the CPU to the engines.
             const auto target = std::chrono::milliseconds(33);
@@ -490,13 +462,9 @@ int main(int argc, char** argv) {
         }
     }
 
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL3_Shutdown();
+    fcg::render::shutdown();
     ImPlot::DestroyContext();
     ImGui::DestroyContext();
-
-    SDL_GL_DestroyContext(gl_context);
-    SDL_DestroyWindow(window);
     SDL_Quit();
 
     return 0;

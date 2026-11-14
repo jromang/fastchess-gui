@@ -169,10 +169,14 @@ if(FCG_BUILD_GUI)
     set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(SDL_TESTS OFF CACHE BOOL "" FORCE)
     set(SDL_INSTALL OFF CACHE BOOL "" FORCE)
-    # Only windows, OpenGL, events and dialogs are used.
-    foreach(sdl_off SDL_AUDIO SDL_GPU SDL_RENDER SDL_CAMERA SDL_HAPTIC SDL_SENSOR SDL_POWER SDL_VULKAN SDL_HIDAPI)
+    # Only windows, OpenGL, events, dialogs and the 2D renderer are used. The renderer draws the window where OpenGL 3.2
+    # is missing (virtual machines, remote desktops): its software driver, its OpenGL 2.1 and ES 2 ones, and Direct3D
+    # 11 on Windows, the one a remote desktop session has.
+    foreach(sdl_off SDL_AUDIO SDL_GPU SDL_CAMERA SDL_HAPTIC SDL_SENSOR SDL_POWER SDL_VULKAN SDL_HIDAPI
+                    SDL_RENDER_D3D SDL_RENDER_D3D12 SDL_RENDER_METAL)
         set(${sdl_off} OFF CACHE BOOL "" FORCE)
     endforeach()
+    set(SDL_RENDER ON CACHE BOOL "" FORCE)
 
     FetchContent_Declare(sdl3
         GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
@@ -274,6 +278,7 @@ if(FCG_BUILD_GUI)
         ${imgui_SOURCE_DIR}/imgui_widgets.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_sdl3.cpp
         ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+        ${imgui_SOURCE_DIR}/backends/imgui_impl_sdlrenderer3.cpp
         ${implot_SOURCE_DIR}/implot.cpp
         ${implot_SOURCE_DIR}/implot_items.cpp
     )

@@ -27,6 +27,7 @@ bool load() {
     ok &= resolve(g_functions.ClearColor, "glClearColor");
     ok &= resolve(g_functions.Clear, "glClear");
     ok &= resolve(g_functions.ReadPixels, "glReadPixels");
+    ok &= resolve(g_functions.GetString, "glGetString");
     return ok;
 }
 

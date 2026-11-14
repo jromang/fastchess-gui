@@ -173,6 +173,7 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     ratings_tab(TR("Progress###rt_progress"), 3);
     add(TR("Log"), "", page(Page::Log));
     add(TR("Settings"), "", page(Page::Settings));
+    add(TR("Software rendering"), TR("Settings"), page(Page::Settings));  // the checkbox and what draws the window
 
     // The tournaments of the home page: one opens as its Open button does.
     for (const auto& s : tournaments_) {

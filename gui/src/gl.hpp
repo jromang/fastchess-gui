@@ -28,6 +28,9 @@ constexpr GLenum UNSIGNED_BYTE        = 0x1401;
 constexpr GLenum UNPACK_ALIGNMENT     = 0x0CF5;
 constexpr GLenum PACK_ALIGNMENT       = 0x0D05;
 constexpr GLbitfield COLOR_BUFFER_BIT = 0x00004000;
+constexpr GLenum VENDOR               = 0x1F00;
+constexpr GLenum RENDERER             = 0x1F01;
+constexpr GLenum VERSION              = 0x1F02;
 
 struct Functions {
     void (*GenTextures)(GLsizei, GLuint*)                                                          = nullptr;
@@ -41,6 +44,7 @@ struct Functions {
     void (*ClearColor)(GLfloat, GLfloat, GLfloat, GLfloat)                                         = nullptr;
     void (*Clear)(GLbitfield)                                                                      = nullptr;
     void (*ReadPixels)(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void*)                      = nullptr;
+    const unsigned char* (*GetString)(GLenum)                                                      = nullptr;
 };
 
 // Resolves every function. Needs a current context. Returns false if one is missing.

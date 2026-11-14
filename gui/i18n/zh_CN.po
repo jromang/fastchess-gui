@@ -318,6 +318,9 @@ msgstr "其他 SSH 服务器"
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "关于它需要记住的任何内容；搜索引擎时可以搜到。"
 
+msgid "Applies at the next launch."
+msgstr "下次启动时生效。"
+
 msgid "Apply"
 msgstr "应用"
 
@@ -704,6 +707,9 @@ msgstr "在指定步数之后，若双方引擎连续 N 步都报告 |分数| �
 
 msgid "Drawn twice"
 msgstr "两局皆和"
+
+msgid "Drawn with: {}"
+msgstr "绘制方式：{}"
 
 msgid "Draws"
 msgstr "和棋"
@@ -1573,8 +1579,8 @@ msgstr "打开文件夹"
 msgid "Open the tournament."
 msgstr "打开锦标赛。"
 
-msgid "OpenGL 3.2 is not available (SDL_GL_CreateContext)"
-msgstr "OpenGL 3.2 不可用（SDL_GL_CreateContext）"
+msgid "OpenGL 3.2 cannot be used ({}): the window is drawn by SDL's renderer."
+msgstr "无法使用 OpenGL 3.2（{}）：窗口改由 SDL 渲染器绘制。"
 
 msgid "OpenGL functions are missing"
 msgstr "缺少 OpenGL 函数"
@@ -1937,6 +1943,9 @@ msgstr "从库中移除该开局库；文件保留在原处。"
 msgid "Remove…"
 msgstr "移除…"
 
+msgid "Rendering"
+msgstr "渲染"
+
 msgid "Replace"
 msgstr "替换"
 
@@ -2014,6 +2023,12 @@ msgstr "进行中"
 
 msgid "R{}"
 msgstr "第{}轮"
+
+msgid "SDL renderer"
+msgstr "SDL 渲染器"
+
+msgid "SDL renderer, {} driver"
+msgstr "SDL 渲染器，{} 驱动"
 
 msgid "SPRT calculator"
 msgstr "SPRT 计算器"
@@ -2126,6 +2141,9 @@ msgstr "显示：{}"
 
 msgid "Site"
 msgstr "地点"
+
+msgid "Software rendering"
+msgstr "软件渲染"
 
 msgid "Solution"
 msgstr "答案"
@@ -2481,6 +2499,9 @@ msgstr "当某个解答作为引擎首选着法又保持了这么多半回合深
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "在此时限下，两个引擎之间预期的和棋比例。"
 
+msgid "The software renderer cannot be used ({}): the window is drawn with OpenGL."
+msgstr "无法使用软件渲染器（{}）：窗口改用 OpenGL 绘制。"
+
 msgid "The spread of the advantage the openings give, in Elo: what playing each opening twice, colours reversed, cancels out."
 msgstr "开局带来的优势的离散度，以 Elo 计：即每个开局交换颜色下两次所抵消的部分。"
 
@@ -2513,6 +2534,9 @@ msgstr "锦标赛已修改。"
 
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "按对局对计算时单局的方差与单独计算时单局方差之比：低于 1 时，成对对局只需相应更少的对局即可达到同样精度。"
+
+msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
+msgstr "由处理器（SDL 的软件渲染器）而不是显卡通过 OpenGL 绘制窗口：适用于虚拟机、远程桌面和有故障的显卡驱动。速度较慢，拖出窗口的面板会留在窗口内。命令行参数 --software 对单次启动有同样效果。"
 
 msgid "The working directory of {} is not found."
 msgstr "找不到 {} 的工作目录。"
@@ -2619,6 +2643,9 @@ msgstr "UCI 合规性：第 {} 步失败，请查看报告"
 msgid "UDP port"
 msgstr "UDP 端口"
 
+msgid "Under Wayland the software renderer needs X11: start the program with the environment variable SDL_VIDEODRIVER=x11."
+msgstr "在 Wayland 下，软件渲染器需要 X11：请使用环境变量 SDL_VIDEODRIVER=x11 启动程序。"
+
 msgid "Undo the last change"
 msgstr "撤销上一次修改"
 
@@ -2630,6 +2657,9 @@ msgstr "无法读取的 PGN。"
 
 msgid "Up to {} engines."
 msgstr "最多 {} 个引擎。"
+
+msgid "Update the graphics driver, or turn on 3D acceleration in the virtual machine or the remote desktop's settings."
+msgstr "请更新显卡驱动，或在虚拟机或远程桌面的设置中开启 3D 加速。"
 
 msgid "Use it for the next tournament"
 msgstr "用于下一个锦标赛"
@@ -2851,6 +2881,9 @@ msgstr "elo1 必须大于 elo0。"
 msgid "every pair with both colours"
 msgstr "每一对都交换过颜色"
 
+msgid "fastchess-gui cannot draw its window."
+msgstr "fastchess-gui 无法绘制其窗口。"
+
 msgid "fastchess-gui {} — {} physical cores, {} threads"
 msgstr "fastchess-gui {} — {} 个物理核心，{} 个线程"
 
@@ -2944,6 +2977,9 @@ msgstr "已要求重下"
 
 msgid "send at startup"
 msgstr "启动时发送"
+
+msgid "the driver gives OpenGL {}"
+msgstr "驱动提供的是 OpenGL {}"
 
 msgid "the file is not found"
 msgstr "找不到文件"

@@ -27,6 +27,7 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
       topology_(topology),
       options_(std::move(options)),
       dialogs_(window) {
+    software_at_launch_  = storage_.softwareRendering();
     engines_             = storage_.loadEngines();
     books_               = storage_.loadBooks();
     lichess_token_       = storage_.lichessToken();
