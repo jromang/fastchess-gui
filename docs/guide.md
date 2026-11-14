@@ -481,14 +481,14 @@ invite, a Twitch channel, a forum thread; https only, anything else is refused w
 *Chat* button in the page's header that opens it in a new tab. While the games are pushed to lichess, the page also
 links to the lichess round, which has its own chat.
 
-A *Discord server ID* shows Discord's own server widget at the end of the page, in the page's light or dark theme: the
-server's name, the members online, its voice channels and a *Join* button, not the messages. The server's owner
-switches it on in Server Settings, Widget ("Enable Server Widget"), which also shows the server ID to copy (17 to 20
-digits); with Developer Mode on, right-clicking the server's icon gives *Copy Server ID* as well. With an ID set,
-every viewer's browser loads the widget from discord.com, so Discord sees the viewers' visits (their address, their
-browser, their Discord login if they have one); without one, the page contacts nobody but fastchess-gui. The chat and
-lichess links send nothing until a viewer clicks them, and then no referrer. A setup file run headless (`--run
-SETUP.json`) takes both from `web_chat_link` and `web_discord_id`.
+A *Discord server ID* adds a *Discord* tab beside *Event*, with Discord's own server widget in the page's light or
+dark theme: the server's name, the members online, its voice channels and a *Join* button, not the messages. The
+server's owner switches it on in Server Settings, Widget ("Enable Server Widget"), which also shows the server ID to
+copy (17 to 20 digits); with Developer Mode on, right-clicking the server's icon gives *Copy Server ID* as well. The
+widget is loaded from discord.com only once a viewer opens the tab, and Discord then sees that viewer's visit (their
+address, their browser, their Discord login if they have one); without an ID, the page contacts nobody but
+fastchess-gui. The chat and lichess links send nothing until a viewer clicks them, and then no referrer. A setup file
+run headless (`--run SETUP.json`) takes both from `web_chat_link` and `web_discord_id`.
 
 ## Headless mode
 

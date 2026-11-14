@@ -4,7 +4,7 @@
 // and the position's FEN copied. Every game in progress beside it; the standings and the crosstable, the charts of
 // the followed game, each engine's search, the next games, the statistics and anomalies and the event in tabs. The
 // moves in letters or figurines, a light or dark theme, and the PGN file to download. Where the viewers talk, when
-// the setup says: a chat link and the lichess round in its header, Discord's widget at the end of the page.
+// the setup says: a chat link and the lichess round in its header, Discord's widget in a tab of its own.
 
 #include <algorithm>
 #include <array>
@@ -418,8 +418,8 @@ dialog{background:var(--card);color:var(--text);border:1px solid var(--line);bor
 <div class="controls"><button id="first" type="button" title="The start"><svg viewBox="0 0 16 16"><path d="M3 3h2v10H3zM13 3v10L6 8z"/></svg></button><button id="prev" type="button" title="The move before (←)"><svg viewBox="0 0 16 16"><path d="M11 3v10L4 8z"/></svg></button><button id="next" type="button" title="The move after (→)"><svg viewBox="0 0 16 16"><path d="M5 3v10l7-5z"/></svg></button><button id="live" type="button" title="Back to the game as it goes"><svg viewBox="0 0 16 16"><path d="M3 3v10l7-5zM11 3h2v10h-2z"/></svg></button>
 <button id="flip" type="button" title="Turn the board (F)"><svg viewBox="0 0 16 16"><path d="M5 1l3.5 4.5H6V15H4V5.5H1.5zM11 15l-3.5-4.5H10V1h2v9.5h2.5z"/></svg></button><button id="cpgn" type="button" title="Copy the game in PGN">PGN</button><button id="cfen" type="button" title="Copy the position in FEN">FEN</button><span class="where" id="where"></span></div></section>
 <section class="side"><div class="engines" id="engines"></div><div class="card"><div class="chead" id="mhead"></div><div class="moves" id="moves"></div></div></section>
-<section class="card" id="tabs"><nav class="tabbar" id="tabbar" role="tablist"></nav><div id="panel" role="tabpanel"></div></section></div>
-<section><h2 id="gameshead">Games in progress</h2><div class="games" id="games"></div></section><!--WIDGET--></main>
+<section class="card" id="tabs"><nav class="tabbar" id="tabbar" role="tablist"></nav><div id="panel" role="tabpanel"></div><!--WIDGET--></section></div>
+<section><h2 id="gameshead">Games in progress</h2><div class="games" id="games"></div></section></main>
 <div class="toast" id="toast"></div><dialog id="copybox"><div class="small muted">Copying is not allowed here: select the text and copy it.</div><textarea id="copytext" readonly></textarea><div style="text-align:right;margin-top:6px"><button id="copyclose" type="button">Close</button></div></dialog>
 <script>
 const PIECE={K:'wK',Q:'wQ',R:'wR',B:'wB',N:'wN',P:'wP',k:'bK',q:'bQ',r:'bR',b:'bB',n:'bN',p:'bP'};
@@ -703,16 +703,14 @@ void replaceAll(std::string& text, std::string_view mark, std::string_view by) {
     }
 }
 
-// The extras, put in where marked: links styled as the page's buttons, the chat's in the accent colour; the widget's
-// card last on the page, under the games in progress, tall enough for its members and its Join button.
+// The extras, put in where marked: links styled as the page's buttons, the chat's in the accent colour; the widget
+// filling its tab.
 constexpr const char* EXTRA_STYLES =
     ".btn{display:inline-block;font-size:13px;color:var(--text);background:var(--card);border:1px solid var(--line);"
     "border-radius:8px;padding:5px 10px;text-decoration:none}.btn:hover{border-color:var(--accent)}"
     ".btn[hidden]{display:none}.btn svg{width:14px;height:14px;fill:currentColor;vertical-align:-2px;margin-right:5px}"
     "#chat{background:var(--accent);border-color:var(--accent);color:#fff}"
-    "#discord{padding:0;overflow:hidden;width:100%;max-width:640px}"
-    "#discord iframe{display:block;width:100%;height:540px;border:0}"
-    "@media (max-width:600px){#discord iframe{height:460px}}";
+    "#discord iframe{display:block;width:100%;height:440px;border:0;border-radius:8px}";
 // The links open in a new tab, which learns nothing of the page (rel), their address set from state.json.
 constexpr const char* LINKS =
     "<a class=\"btn\" id=\"chat\" hidden target=\"_blank\" rel=\"noopener noreferrer\" title=\"Where the "
@@ -720,21 +718,26 @@ constexpr const char* LINKS =
     "3v-3H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z\"/></svg>Chat</a><a class=\"btn\" id=\"lichessround\" hidden "
     "target=\"_blank\" rel=\"noopener noreferrer\" title=\"The games on lichess, with its chat, in a new "
     "tab\">lichess</a>";
-// Discord's widget, with what it needs only: its scripts on its own origin, and the Join button opening Discord in a
-// new tab. Loaded once state.json gives the server, so that without one Discord is never asked.
+// Discord's widget in a tab of its own, with what it needs only: its scripts on its own origin, and the Join button
+// opening Discord in a new tab. Beside the panel the other tabs redraw, so that it is not loaded again each second.
 constexpr const char* WIDGET =
-    "<div class=\"card\" id=\"discord\" hidden><iframe id=\"discordframe\" title=\"Discord\" sandbox=\"allow-scripts "
+    "<div id=\"discord\" hidden><iframe id=\"discordframe\" title=\"Discord\" sandbox=\"allow-scripts "
     "allow-same-origin allow-popups allow-popups-to-escape-sandbox\" referrerpolicy=\"no-referrer\" "
     "loading=\"lazy\"></iframe></div>";
 // Where the viewers talk, from state.json, its values checked again here: links set as addresses, never as HTML;
-// Discord's widget in the page's theme, followed when the viewer or the system changes it.
-constexpr const char* EXTRAS = R"JS(let discordSrc='';
+// Discord's widget in a last tab, loaded once the viewer opens it (Discord learns of no one who does not), in the
+// page's theme, followed when the viewer or the system changes it.
+constexpr const char* EXTRAS = R"JS(let discordSrc='',discordOpened=false;
 function extras(){const s=last||{};
  for(const [id,url] of [['chat',s.chat],['lichessround',s.lichess]]){const a=document.getElementById(id),ok=typeof url==='string'&&/^https:\/\/[^\s"'<>\\`]+$/i.test(url);
   a.hidden=!ok;if(ok&&a.getAttribute('href')!==url)a.href=url}
- const id=typeof s.discord==='string'&&/^[0-9]{17,20}$/.test(s.discord)?s.discord:'';document.getElementById('discord').hidden=!id;
+ const id=typeof s.discord==='string'&&/^[0-9]{17,20}$/.test(s.discord)?s.discord:'';
+ if(!id&&tab==='discord'){tab='standings';panel(s,follow(s))}
+ if(id)document.getElementById('tabbar').insertAdjacentHTML('beforeend',`<button type="button" role="tab" data-tab="discord" aria-selected="${tab==='discord'}">Discord</button>`);
+ const open=!!id&&tab==='discord';discordOpened=discordOpened||open;
+ document.getElementById('discord').hidden=!open;document.getElementById('panel').hidden=open;
  let dark=theme==='dark';try{dark=dark||theme!=='light'&&matchMedia('(prefers-color-scheme: dark)').matches}catch(e){}
- const src=id?`https://discord.com/widget?id=${id}&theme=${dark?'dark':'light'}`:'';
+ const src=id&&discordOpened?`https://discord.com/widget?id=${id}&theme=${dark?'dark':'light'}`:'';
  if(src!==discordSrc){discordSrc=src;const f=document.getElementById('discordframe');if(src)f.src=src;else f.removeAttribute('src')}}
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',extras)}catch(e){}
 )JS";
