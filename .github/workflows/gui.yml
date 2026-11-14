@@ -203,7 +203,7 @@ jobs:
 
   macos:
     name: macOS build and tests
-    # Apple silicon. The programs are universal (arm64 and x86_64), for macOS 11 and later.
+    # Apple silicon. The programs are universal (arm64 and x86_64), for macOS 13.3 and later.
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7

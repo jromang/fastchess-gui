@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 
-# macOS 11 (Big Sur) and later, the first to run on Apple silicon. Before project(), where CMake reads it; nothing
-# elsewhere. A universal binary: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64".
-set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "The oldest macOS version the programs run on")
+# macOS 13.3 (Ventura) and later, the first whose C++ library formats floating-point numbers (std::format). Before
+# project(), where CMake reads it; nothing elsewhere. A universal binary: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64".
+set(CMAKE_OSX_DEPLOYMENT_TARGET "13.3" CACHE STRING "The oldest macOS version the programs run on")
 
 project(fastchess_gui VERSION 0.5.8 LANGUAGES C CXX)
 
