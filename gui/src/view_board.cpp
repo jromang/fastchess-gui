@@ -19,6 +19,7 @@
 #include "board_text.hpp"
 #include "console.hpp"
 #include "i18n.hpp"
+#include "run.hpp"
 #include "storage.hpp"
 #include "ui.hpp"
 
@@ -176,6 +177,7 @@ void App::openOnBoard(ReplayGame game, int ply, bool chess960, std::string title
     board_.promotion.reset();
     board_.message.clear();
     board_.new_game = true;
+    board_.watching = false;
     page_           = Page::Board;
     if (analyse) setBoardAnalysis(true);
 }
@@ -279,6 +281,7 @@ void App::pollBoard() {
     board_key_taken_ = false;
     board_.analyser.poll();
     pollBoardPgn();
+    pollBoardGames();
     if (board_.analysing && board_.analyser.state() == Analyser::State::Failed) board_.analysing = false;
     // A game analysed move by move has the engine to itself, in the background.
     if (board_.review_job) {
@@ -320,7 +323,7 @@ const EngineEntry* App::analysisEngine() {
 
 void App::startGameReview() {
     auto& b = board_;
-    if (b.review_job || b.game.moves.empty()) return;
+    if (b.review_job || b.game.moves.empty() || (b.watching && b.match && b.match_state.running)) return;
     const auto* engine = analysisEngine();
     if (!engine) {
         b.message       = TR("No engine to analyse with: add one on the Engines page.");
@@ -454,9 +457,10 @@ void App::drawBoardPage() {
         const char* open    = TR("Open a PGN…");
         const char* paste   = TR("Paste");
         const char* edit    = TR("Edit the position");
+        const char* play    = TR("Play a game…");
         const char* analyse = b.analysing ? TR("Stop the analysis") : TR("Analyse");
         float width         = 0;
-        for (const char* label : {open, paste, edit, analyse}) width += ImGui::CalcTextSize(label).x + px(44);
+        for (const char* label : {open, paste, edit, play, analyse}) width += ImGui::CalcTextSize(label).x + px(44);
         width += ImGui::CalcTextSize("Ctrl+V").x + ImGui::CalcTextSize("A").x + px(16);
         ImGui::SameLine(std::max(ImGui::GetCursorPosX() + px(20), ImGui::GetContentRegionMax().x - width));
         ImGui::BeginDisabled(b.editor.has_value());
@@ -479,6 +483,12 @@ void App::drawBoardPage() {
         if (ui::iconButton("board_edit", ui::Icon::Edit, edit)) openPositionEditor();
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("%s", TR("Set up a position: pieces, side to move, castling, en passant, Chess960."));
+        }
+        ImGui::SameLine();
+        if (ui::iconButton("board_play", ui::Icon::Play, play)) b.play_open = !b.play_open;
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("A game, or two with the colours reversed, between two engines of the library "
+                                       "from this position, with a clock for each."));
         }
         ImGui::EndDisabled();
         ImGui::SameLine();
@@ -534,6 +544,7 @@ void App::drawBoardPage() {
     ImGui::EndGroup();
     ImGui::SameLine();
     ImGui::BeginChild("##board_side", ImVec2(0, 0));
+    if (b.play_open || (b.match && b.match_state.running)) drawBoardPlay();
     drawBoardAnalysis();
     drawBoardMoves();
     ImGui::EndChild();
@@ -679,8 +690,8 @@ void App::pasteOnBoard() {
 }
 
 void App::dropFile(const std::string& path) {
-    const std::filesystem::path file = std::filesystem::u8path(path);
-    auto ext                         = file.extension().string();
+    const std::filesystem::path file(path);
+    auto ext = file.extension().string();
     for (auto& c : ext) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
     if (ext == ".pgn") {
         openBoardPgn(file);
@@ -1370,11 +1381,16 @@ void App::drawGameReview() {
     const auto label                  = [](const Choice& c) {
         return c.depth > 0 ? trf("depth {}", c.depth) : trf("{:g} s per move", c.ms / 1000.0);
     };
-    auto& s = b.settings;
+    auto& s         = b.settings;
+    const bool live = b.watching && b.match && b.match_state.running;  // not before its end
+    ImGui::BeginDisabled(live);
     if (ImGui::SmallButton(b.review ? TR("Analyse the game again") : TR("Analyse the game"))) startGameReview();
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", TR("The analysis engine goes through every position of the game, in the background: "
-                                   "a score per move, and its inaccuracies, mistakes and blunders marked."));
+    ImGui::EndDisabled();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("%s", live ? TR("Once the game is over.")
+                                     : TR("The analysis engine goes through every position of the game, in the "
+                                          "background: a score per move, and its inaccuracies, mistakes and blunders "
+                                          "marked."));
     }
     ImGui::SameLine();
     ImGui::SetNextItemWidth(px(130));
@@ -1415,6 +1431,272 @@ void App::drawGameReview() {
                                         .c_str());
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// Games played from the board's position
+
+int App::engineThreads(const std::string& name) const {
+    for (const auto& e : engines_) {
+        if (e.name == name) return e.threads();
+    }
+    return 1;
+}
+
+void App::startBoardGames() {
+    auto& b                  = board_;
+    auto& s                  = b.settings;
+    const EngineEntry *first = nullptr, *second = nullptr;
+    for (const auto& e : engines_) {
+        if (e.name == s.game_first) first = &e;
+        if (e.name == s.game_second) second = &e;
+    }
+    if (!first || !second) {
+        b.message       = TR("Choose the two engines of the game.");
+        b.message_error = true;
+        return;
+    }
+    BoardMatchSetup setup;
+    setup.first        = first->name;
+    setup.second       = second->name;
+    setup.first_clock  = s.first_clock;
+    setup.second_clock = s.same_clock ? s.first_clock : s.second_clock;
+    setup.pair         = s.game_pair;
+    setup.fen          = boardFen();
+    setup.chess960     = b.chess960;
+    // The analysis would compete with the engines of the game.
+    if (b.analysing) setBoardAnalysis(false);
+    std::error_code ec;
+    const auto dir = storage_.root() / "games";
+    std::filesystem::create_directories(dir, ec);
+    const auto pgn = dir / (makeRunDirName(first->name, second->name) + ".pgn");
+    if (!b.match) b.match = std::make_unique<BoardMatch>();
+    std::string error;
+    if (!b.match->start(*first, *second, setup, pgn, error)) {
+        b.message       = error;
+        b.message_error = true;
+        return;
+    }
+    b.match_version = 0;
+    b.match_state   = {};
+    b.watching      = true;
+    b.play_anyway   = false;
+    b.chess960      = setup.chess960;
+    b.title         = fmt::format("{} – {} · {}", first->name, second->name, clockText(setup.first_clock));
+    b.message.clear();
+}
+
+void App::pollBoardGames() {
+    auto& b = board_;
+    if (!b.match) return;
+    const bool changed = b.match->state(b.match_state, b.match_version);
+    if (!b.match_state.running) b.match->reap();
+    if (!changed || !b.watching) return;
+    // The board follows the game being played, unless the user went back in it.
+    const auto& st  = b.match_state;
+    const bool last = b.ply >= static_cast<int>(b.game.moves.size());
+    b.game          = st.current;
+    b.original.reset();
+    if (last) b.ply = static_cast<int>(b.game.moves.size());
+    b.ply = std::min(b.ply, static_cast<int>(b.game.moves.size()));
+    b.selected.reset();
+    if (st.games > 1) {
+        b.title = trf("{} – {} · game {} of {}", st.current.header("White"), st.current.header("Black"), st.game + 1,
+                      st.games);
+    }
+}
+
+void App::drawBoardPlay() {
+    auto& b             = board_;
+    auto& s             = b.settings;
+    const bool running  = b.match && b.match_state.running;
+    const bool finished = b.match && !running && !b.match_state.finished.empty();
+    bool changed        = false;
+
+    ui::beginCard("board_play");
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(TR("Play a game"));
+    if (!running) {
+        const char* close = TR("Close");
+        ImGui::SameLine(std::max(ImGui::GetCursorPosX() + px(8),
+                                 ImGui::GetContentRegionMax().x - ImGui::CalcTextSize(close).x - px(12)));
+        if (ImGui::SmallButton(close)) {
+            b.play_open = false;
+            if (finished) b.match.reset();
+        }
+    }
+
+    if (running || finished) {
+        const auto& st = b.match_state;
+        if (running) {
+            const auto& g = st.current;
+            ImGui::TextUnformatted(
+                trf("Game {} of {}: {} – {}", st.game + 1, st.games, g.header("White"), g.header("Black")).c_str());
+            ImGui::SameLine();
+            if (ImGui::SmallButton(TR("Stop##games"))) b.match->stop();
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The game being played ends without a result."));
+            // The clocks, the one running counting down.
+            const auto now = std::chrono::steady_clock::now();
+            for (int side = 0; side < 2; ++side) {
+                const auto colour = side == 0 ? chess::Color::WHITE : chess::Color::BLACK;
+                auto ms           = st.clock_ms[static_cast<std::size_t>(side)];
+                const bool thinks = st.thinking == colour;
+                if (thinks) ms -= std::chrono::duration_cast<std::chrono::milliseconds>(now - st.think_start).count();
+                if (side == 1) ImGui::SameLine(0, px(24));
+                const auto text = fmt::format("{} {}", g.header(side == 0 ? "White" : "Black"),
+                                              ui::formatClock(std::max<int64_t>(0, ms)));
+                if (thinks)
+                    ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ui::ACCENT), "%s", text.c_str());
+                else
+                    ImGui::TextDisabled("%s", text.c_str());
+            }
+            // What the side to move searches.
+            if (st.thinking && !st.info.empty()) {
+                const auto info  = fastchess::engine::UciEngine::parseInfo(st.info);
+                const auto board = boardAt(st.current, b.chess960, static_cast<int>(st.current.moves.size()));
+                std::string score;
+                if (info.score) score = ui::formatScore(whiteScore(*info.score, board.sideToMove()));
+                ImGui::TextDisabled("%s  d%lld  %s", score.c_str(), static_cast<long long>(info.depth.value_or(0)),
+                                    pvToSan(board, info.pv, 8).c_str());
+            }
+        }
+        for (std::size_t i = 0; i < st.finished.size(); ++i) {
+            const auto& g = st.finished[i];
+            ImGui::TextUnformatted(
+                trf("Game {}: {} – {}  {}", i + 1, g.header("White"), g.header("Black"), g.result).c_str());
+            if (!g.final_comment.empty()) {
+                ImGui::SameLine();
+                ImGui::TextDisabled("(%s)", g.final_comment.c_str());
+            }
+        }
+        if (!st.error.empty()) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+            ImGui::TextWrapped("%s", st.error.c_str());
+            ImGui::PopStyleColor();
+        }
+        if (!st.finished.empty() || finished) {
+            ImGui::TextDisabled("%s", trf("Saved in {}", st.pgn.filename().string()).c_str());
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", st.pgn.string().c_str());
+        }
+        if (finished) {
+            if (ImGui::Button(TR("Open the games"))) {
+                const auto file = st.pgn;
+                b.match.reset();
+                b.play_open = false;
+                openBoardPgn(file);
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("%s", TR("Their PGN file, its games listed beside the moves."));
+            ImGui::SameLine();
+            if (ImGui::Button(TR("Folder##games"))) ui::openPath(st.pgn.parent_path());
+            ImGui::SameLine();
+            if (ImGui::Button(TR("New game"))) b.match.reset();
+        }
+        ui::endCard();
+        return;
+    }
+
+    // The engines: the first has White in the first game.
+    const auto engineCombo = [&](const char* id, std::string& name) {
+        ImGui::SetNextItemWidth(px(150));
+        if (ImGui::BeginCombo(id, name.empty() ? TR("Choose an engine") : name.c_str(),
+                              ImGuiComboFlags_HeightLargest)) {
+            std::vector<std::string> names, more;
+            for (const auto& e : engines_) {
+                if (e.inactive && e.name != name) continue;
+                names.push_back(e.name);
+                more.push_back(engineSearchText(e));
+            }
+            if (const int i = ui::searchComboItems(names, name, &more); i >= 0) {
+                name    = names[static_cast<std::size_t>(i)];
+                changed = true;
+            }
+            ImGui::EndCombo();
+        }
+    };
+    if (s.game_first.empty() && !engines_.empty()) s.game_first = engines_.front().name;
+    if (s.game_second.empty() && engines_.size() > 1) s.game_second = engines_[1].name;
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextDisabled("%s", TR("White"));
+    ImGui::SameLine();
+    engineCombo("##game_first", s.game_first);
+    ImGui::SameLine();
+    if (ImGui::SmallButton("<->")) {
+        std::swap(s.game_first, s.game_second);
+        std::swap(s.first_clock, s.second_clock);
+        changed = true;
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Swap the engines and their clocks."));
+    ImGui::SameLine();
+    ImGui::TextDisabled("%s", TR("Black"));
+    ImGui::SameLine();
+    engineCombo("##game_second", s.game_second);
+
+    // The clocks: minutes and an increment in seconds.
+    const auto clockFields = [&](const char* id, const char* label, GameClock& clock) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("%s", label);
+        ImGui::SameLine();
+        double minutes = clock.base_s / 60.0;
+        ImGui::SetNextItemWidth(px(60));
+        if (ui::inputDouble(fmt::format("##{}_base", id).c_str(), &minutes, "%g")) {
+            clock.base_s = std::clamp(minutes, 0.01, 600.0) * 60.0;
+            changed      = true;
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Minutes for the game."));
+        ImGui::SameLine(0, px(4));
+        ImGui::TextUnformatted("+");
+        ImGui::SameLine(0, px(4));
+        ImGui::SetNextItemWidth(px(52));
+        if (ui::inputDouble(fmt::format("##{}_inc", id).c_str(), &clock.inc_s, "%g")) {
+            clock.inc_s = std::clamp(clock.inc_s, 0.0, 600.0);
+            changed     = true;
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Seconds added after each move."));
+    };
+    clockFields("game_first", s.same_clock ? TR("Clock") : TR("White's clock"), s.first_clock);
+    ImGui::SameLine(0, px(16));
+    if (ImGui::Checkbox(TR("The same for both"), &s.same_clock)) changed = true;
+    if (!s.same_clock) clockFields("game_second", TR("Black's clock"), s.second_clock);
+    if (ImGui::Checkbox(TR("A second game, the colours reversed"), &s.game_pair)) changed = true;
+    if (changed) saveBoardSettings();
+
+    // From the position on the board.
+    const auto fen = boardFen();
+    ImGui::TextDisabled("%s", TR("From the position on the board"));
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", fen.c_str());
+
+    // Its place among the cores: refused, or played anyway, when the machine is full.
+    const int need  = std::max(engineThreads(s.game_first), engineThreads(s.game_second));
+    const int busy  = tournamentThreads() + boardThreads();
+    const bool full = busy + need > topology_.logical;
+    ImGui::TextDisabled("%s", trf("Counts in the core budget · {} of {} threads", need, topology_.logical).c_str());
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("The larger thread count of the two engines: they take turns. Their games are "
+                                   "played apart from any tournament."));
+    }
+    if (full) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+        ImGui::TextWrapped("%s", trf("The machine is full: the tournament's games and the analysis use {} of its {} "
+                                     "threads, and this game needs {}. It would slow them down, and its own engines.",
+                                     busy, topology_.logical, need)
+                                     .c_str());
+        ImGui::PopStyleColor();
+    }
+    const bool ready = !s.game_first.empty() && !s.game_second.empty() && positionProblem(fen, b.chess960).empty();
+    ImGui::BeginDisabled(!ready);
+    if (!full || b.play_anyway) {
+        if (ui::iconButton("board_play_start", ui::Icon::Play, s.game_pair ? TR("Play the two games") : TR("Play")))
+            startBoardGames();
+    } else if (ImGui::Button(TR("Play anyway"))) {
+        b.play_anyway = true;
+        startBoardGames();
+    }
+    ImGui::EndDisabled();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("Shown here as they are played, and saved as PGN in games/ in the profile."));
+    }
+    ui::endCard();
 }
 
 }  // namespace fcg

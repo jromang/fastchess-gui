@@ -186,6 +186,14 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         page_ = Page::Board;
         openPositionEditor();
     });
+    if (board_.match && board_.match_state.running) {
+        add(TR("Stop the game"), TR("Board"), [this] { board_.match->stop(); });
+    } else {
+        add(TR("Play a game…"), TR("Board"), [this] {
+            page_            = Page::Board;
+            board_.play_open = true;
+        });
+    }
     if (board_.review_job) {
         add(TR("Cancel the analysis of the game"), TR("Board"), [this] { cancelGameReview(); });
     } else if (!board_.game.moves.empty()) {

@@ -113,6 +113,9 @@ msgstr "10 партий с контролем 10+0.1 из 5 позиций, чт
 msgid "50 moves {}/100"
 msgstr "50 ходов {}/100"
 
+msgid "50-move rule"
+msgstr "правило 50 ходов"
+
 msgid "95 % interval"
 msgstr "Интервал 95 %"
 
@@ -155,6 +158,9 @@ msgstr "У партии нет порта: {}"
 msgid "A game is being analysed move by move: wait for its end, or cancel it."
 msgstr "Партия анализируется ход за ходом: дождитесь окончания или отмените."
 
+msgid "A game, or two with the colours reversed, between two engines of the library from this position, with a clock for each."
+msgstr "Партия или две со сменой цвета между двумя движками библиотеки из этой позиции, у каждого свои часы."
+
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr "Для гаунтлета нужен хотя бы один движок помимо тестируемых."
 
@@ -190,6 +196,9 @@ msgstr "Текст или веб-страница рейтинг-листа, Ord
 
 msgid "A rating list, for the reference Elo…"
 msgstr "Рейтинг-лист для опорного рейтинга Elo…"
+
+msgid "A second game, the colours reversed"
+msgstr "Вторая партия со сменой цвета"
 
 msgid "A separate engine"
 msgstr "Отдельный движок"
@@ -473,6 +482,9 @@ msgstr "Победа чёрных по присуждению: Syzygy"
 msgid "Black ×2"
 msgstr "Чёрные ×2"
 
+msgid "Black's clock"
+msgstr "Часы чёрных"
+
 msgid "Black's connection stalls"
 msgstr "Чёрные не отвечают"
 
@@ -563,6 +575,9 @@ msgstr "Не удаётся запустить {}: {}"
 msgid "Cannot write {}"
 msgstr "Не удалось записать {}"
 
+msgid "Cannot write {}: {}"
+msgstr "Не удаётся записать {}: {}"
+
 msgid "Castling"
 msgstr "Рокировка"
 
@@ -644,6 +659,9 @@ msgstr "Выберите хотя бы два движка."
 msgid "Choose engines A and B."
 msgstr "Выберите движки A и B."
 
+msgid "Choose the two engines of the game."
+msgstr "Выберите два движка для партии."
+
 msgid "Choose two different engines, or give them books of their own."
 msgstr "Выберите два разных движка или дайте им собственные книги."
 
@@ -679,6 +697,9 @@ msgstr "Щелчок — сыграть её первый ход. Оценки �
 
 msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
 msgstr "Щелчок — поставить выбранную фигуру (повторно — убрать). Правый щелчок — убрать."
+
+msgid "Clock"
+msgstr "Часы"
 
 msgid "Close"
 msgstr "Закрыть"
@@ -1139,6 +1160,9 @@ msgstr "Из буфера обмена"
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr "Только по партиям, с соответствующим DrawElo."
 
+msgid "From the position on the board"
+msgstr "Из позиции на доске"
+
 msgid "Gainer [0, 3]"
 msgstr "Улучшение [0, 3]"
 
@@ -1160,11 +1184,17 @@ msgstr "Пар партий на матч"
 msgid "Game shown:"
 msgstr "Показываемая партия:"
 
+msgid "Game {} of {}: {} – {}"
+msgstr "Партия {} из {}: {} – {}"
+
 msgid "Game {} · move {}"
 msgstr "Партия {} · ход {}"
 
 msgid "Game {}: {}"
 msgstr "Партия {}: {}"
+
+msgid "Game {}: {} – {}  {}"
+msgstr "Партия {}: {} – {}  {}"
 
 msgid "Games"
 msgstr "Партии"
@@ -1520,6 +1550,9 @@ msgstr "Макс. оценка (cp)"
 msgid "Maximum number of moves"
 msgstr "Максимальное число ходов"
 
+msgid "Minutes for the game."
+msgstr "Минуты на партию."
+
 msgid "Mistake"
 msgstr "Ошибка"
 
@@ -1552,6 +1585,9 @@ msgstr "Имена из списка, которых нет среди движ�
 
 msgid "New engine A"
 msgstr "Новый движок A"
+
+msgid "New game"
+msgstr "Новая партия"
 
 msgid "New tournament"
 msgstr "Новый турнир"
@@ -1751,6 +1787,9 @@ msgstr "В списке"
 msgid "Once it has played two tournaments."
 msgstr "Когда он сыграет два турнира."
 
+msgid "Once the game is over."
+msgstr "Когда партия закончится."
+
 msgid "One after the other, not while a tournament plays. Not the inactive ones."
 msgstr "По очереди и не во время турнира. Кроме неактивных."
 
@@ -1780,6 +1819,9 @@ msgstr "Открыть папку…"
 
 msgid "Open the folder"
 msgstr "Открыть папку"
+
+msgid "Open the games"
+msgstr "Открыть партии"
 
 msgid "Open the tournament."
 msgstr "Открыть турнир."
@@ -1931,11 +1973,26 @@ msgstr "Фигуры на доске, включая королей."
 msgid "Pins every game to its own processor, shared by its two engines since they never think at the same time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to a node count."
 msgstr "Закрепляет каждую партию за своим процессором, общим для обоих её движков, поскольку они никогда не думают одновременно: 2 партии загружают 2 ядра, а остальные простаивают. Полезно при игре с часами, бесполезно при фиксированном числе узлов."
 
+msgid "Play"
+msgstr "Играть"
+
+msgid "Play a game"
+msgstr "Сыграть партию"
+
+msgid "Play a game…"
+msgstr "Сыграть партию…"
+
 msgid "Play a move on the board, or open a game."
 msgstr "Сделайте ход на доске или откройте партию."
 
+msgid "Play anyway"
+msgstr "Всё равно играть"
+
 msgid "Play games again"
 msgstr "Переиграть партии"
+
+msgid "Play the two games"
+msgstr "Сыграть две партии"
 
 msgid "Play this game again"
 msgstr "Переиграть эту партию"
@@ -2276,6 +2333,9 @@ msgstr "Сохранить раскладку"
 msgid "Save the layout as…"
 msgstr "Сохранить раскладку как…"
 
+msgid "Saved in {}"
+msgstr "Сохранено в {}"
+
 msgid "Save…"
 msgstr "Сохранить…"
 
@@ -2311,6 +2371,9 @@ msgstr "Поиск"
 
 msgid "Searches at a time"
 msgstr "Одновременных поисков"
+
+msgid "Seconds added after each move."
+msgstr "Секунды, добавляемые после каждого хода."
 
 msgid "Seconds per move"
 msgstr "Секунд на ход"
@@ -2374,6 +2437,9 @@ msgstr "Показать эту партию в отдельной панели,
 
 msgid "Show {}"
 msgstr "Показать: {}"
+
+msgid "Shown here as they are played, and saved as PGN in games/ in the profile."
+msgstr "Показываются здесь по ходу игры и сохраняются в PGN в папке games/ профиля."
 
 msgid "Site"
 msgstr "Место"
@@ -2462,6 +2528,9 @@ msgstr "Остановить сейчас (текущие партии буду�
 msgid "Stop the analysis"
 msgstr "Остановить анализ"
 
+msgid "Stop the game"
+msgstr "Остановить партию"
+
 msgid "Stopped"
 msgstr "Остановлен"
 
@@ -2494,6 +2563,9 @@ msgstr "Сводка"
 
 msgid "Swap A and B"
 msgstr "Поменять местами A и B"
+
+msgid "Swap the engines and their clocks."
+msgstr "Поменять движки и их часы местами."
 
 msgid "Swiss"
 msgstr "Швейцарская система"
@@ -2675,6 +2747,9 @@ msgstr "Папки {} больше нет."
 msgid "The game as it was, without the moves played over it."
 msgstr "Партия, какой она была, без сыгранных поверх ходов."
 
+msgid "The game being played ends without a result."
+msgstr "Текущая партия заканчивается без результата."
+
 msgid "The game, with its tags and moves, as PGN."
 msgstr "Партия с тегами и ходами в формате PGN."
 
@@ -2699,6 +2774,9 @@ msgstr "Ключ хоста {} не совпадает с ожидаемым ({}
 msgid "The king and the rook are not where it needs them."
 msgstr "Король и ладья стоят не там, где нужно."
 
+msgid "The larger thread count of the two engines: they take turns. Their games are played apart from any tournament."
+msgstr "Большее число потоков из двух движков: они ходят по очереди. Их партии играются отдельно от любого турнира."
+
 msgid "The last 30 days"
 msgstr "Последние 30 дней"
 
@@ -2710,6 +2788,9 @@ msgstr "Последнее изменение турнира отменено."
 
 msgid "The last check or reading failed."
 msgstr "Последняя проверка или чтение завершились неудачей."
+
+msgid "The machine is full: the tournament's games and the analysis use {} of its {} threads, and this game needs {}. It would slow them down, and its own engines."
+msgstr "Машина загружена: партии турнира и анализ используют {} из {} её потоков, а этой партии нужно {}. Она замедлила бы их и свои собственные движки."
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "Ход, который обдумывает сторона, чья очередь ходить, и ожидаемый ответ — цветами движков, которые их сделали бы."
@@ -2777,6 +2858,9 @@ msgstr "Чтение остановилось до конца файла: {}"
 msgid "The same engine, with different books"
 msgstr "Один и тот же движок с разными книгами"
 
+msgid "The same for both"
+msgstr "Одинаковые для обоих"
+
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
 msgstr "Тот же матч с новым движком A, например следующей версией: все остальные настройки сохраняются."
 
@@ -2839,6 +2923,9 @@ msgstr "Весь журнал — в буфер обмена."
 
 msgid "The working directory of {} is not found."
 msgstr "Рабочая папка движка {} не найдена."
+
+msgid "Their PGN file, its games listed beside the moves."
+msgstr "Их PGN-файл, партии перечислены рядом с ходами."
 
 msgid "Theme"
 msgstr "Тема"
@@ -3041,6 +3128,9 @@ msgstr "Белые {:.0f} % · ничья {:.0f} % · чёрные {:.0f} %"
 msgid "White ×2"
 msgstr "Белые ×2"
 
+msgid "White's clock"
+msgstr "Часы белых"
+
 msgid "White's connection stalls"
 msgstr "Белые не отвечают"
 
@@ -3146,6 +3236,9 @@ msgstr "против {}"
 msgid "all"
 msgstr "вся"
 
+msgid "an engine does not answer isready"
+msgstr "движок не отвечает на isready"
+
 msgid "and {} more"
 msgstr "и ещё {}"
 
@@ -3163,6 +3256,9 @@ msgstr "автор: %s"
 
 msgid "bye"
 msgstr "без пары"
+
+msgid "checkmate"
+msgstr "мат"
 
 msgid "colours reversed of an earlier one"
 msgstr "повтор более ранней с переменой цветов"
@@ -3203,6 +3299,9 @@ msgstr "из книги Polyglot"
 msgid "game already over"
 msgstr "партия уже окончена"
 
+msgid "game too long"
+msgstr "слишком длинная партия"
+
 msgid "game {}"
 msgstr "партия {}"
 
@@ -3215,6 +3314,9 @@ msgstr "уже оконченные партии"
 msgid "games at least"
 msgstr "минимум партий"
 
+msgid "illegal move {} by {}"
+msgstr "недопустимый ход {} от {}"
+
 msgid "illegal position"
 msgstr "нелегальная позиция"
 
@@ -3223,6 +3325,9 @@ msgstr "нелегальные позиции"
 
 msgid "initial position"
 msgstr "начальная позиция"
+
+msgid "insufficient material"
+msgstr "недостаточно материала"
 
 msgid "it cannot be read."
 msgstr "её нельзя прочитать."
@@ -3299,6 +3404,9 @@ msgstr "тур {}"
 msgid "send at startup"
 msgstr "отправить при запуске"
 
+msgid "stalemate"
+msgstr "пат"
+
 msgid "stopped"
 msgstr "остановлен"
 
@@ -3325,6 +3433,9 @@ msgstr "возобновление прерванного турнира"
 
 msgid "this analysis only"
 msgstr "только этот анализ"
+
+msgid "threefold repetition"
+msgstr "троекратное повторение"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "упомянуть в сообщении или перепроверить движок:"
@@ -3632,6 +3743,9 @@ msgstr[0] "{} движок библиотеки носит это имя"
 msgstr[1] "{} движка библиотеки носят это имя"
 msgstr[2] "{} движков библиотеки носят это имя"
 
+msgid "{} loses on time"
+msgstr "{} проигрывает по времени"
+
 msgid "{} loss on time"
 msgid_plural "{} losses on time"
 msgstr[0] "{} поражение по времени"
@@ -3845,8 +3959,14 @@ msgstr "{} · партий: {} · первый: {} · {}"
 msgid "{} – fastchess-gui"
 msgstr "{} – fastchess-gui"
 
+msgid "{} – {} · game {} of {}"
+msgstr "{} – {} · партия {} из {}"
+
 msgid "{} – {} · {} games"
 msgstr "{} – {} · партий: {}"
+
+msgid "{}'s engine stopped"
+msgstr "движок {} остановился"
 
 msgid "{}, more than the {} of memory free: the system will swap."
 msgstr "{}, больше свободной памяти ({}): система начнёт использовать подкачку."

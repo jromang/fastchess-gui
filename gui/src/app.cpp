@@ -188,6 +188,17 @@ void App::frame() {
         } else if (w == "board-edit") {  // the position editor
             page_ = Page::Board;
             openPositionEditor();
+        } else if (w == "board-play" || w == "board-play-start") {  // a game from the board: its settings; started
+            page_             = Page::Board;
+            board_.play_open  = true;
+            if (w == "board-play-start") {
+                loadBoardSettings();
+                if (engines_.size() > 1) {
+                    board_.settings.game_first  = engines_[0].name;
+                    board_.settings.game_second = engines_[1].name;
+                }
+                startBoardGames();
+            }
         } else if (w == "engines-console") {  // the console of the first engine, which answered uci
             page_            = Page::Engines;
             selected_engine_ = engines_.empty() ? -1 : 0;
@@ -972,7 +983,7 @@ void App::handleDialogs() {
                 saveConsoleLog(path);
                 break;
             case Dialogs::Purpose::BoardPgn:
-                openBoardPgn(std::filesystem::u8path(path));
+                openBoardPgn(std::filesystem::path(path));
                 break;
         }
     }

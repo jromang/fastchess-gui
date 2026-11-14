@@ -392,6 +392,11 @@ class App {
     void pollGameReview();
     void drawGameReview();  // its button, its progress, what it found
     [[nodiscard]] std::string judgementTip(int ply, const MoveReview& judged) const;
+    // Games between two engines of the library from the board's position, played apart from any tournament.
+    void startBoardGames();
+    void pollBoardGames();  // every frame: the board follows the game being played
+    void drawBoardPlay();   // their settings, then the games as they are played
+    [[nodiscard]] int engineThreads(const std::string& name) const;  // a library engine's Threads, 1 without
     void drawQuitModal();
 
     // The command palette (Ctrl+K) and the guide (F1, the `?` of the page titles), see view_palette.cpp.

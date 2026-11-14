@@ -372,6 +372,14 @@ TEST_CASE("board text: lichess evaluations, a FEN that cannot be played, a game 
     CHECK(game->moves[0].score->value == -12);
     CHECK(game->moves[0].depth == 21);
     // A cutechess or fastchess comment still wins.
+    // A comment that starts a line, after a line cut.
+    game = readPgnGame(
+        "[Event \"x\"]\n[SetUp \"1\"]\n[FEN \"r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 "
+        "3\"]\n\n3. Bb5 {0.00/1 0.001s} b6 {0.00/1 0.000s} 4. g4 {0.00/1 0.000s} Be7\n{0.00/1 0.000s} 5. a3 "
+        "{0.00/1 0.000s} Bf8 {0.00/1 0.000s} 6. d3 {0.00/1 0.000s}\nQe7 {0.00/1 0.000s} *",
+        error);
+    REQUIRE(game);
+    CHECK(game->moves.size() == 8);
     game = readPgnGame("[Event \"x\"]\n\n1. e4 {+0.25/12 0.5s} *", error);
     REQUIRE(game);
     CHECK(game->moves[0].score->value == 25);

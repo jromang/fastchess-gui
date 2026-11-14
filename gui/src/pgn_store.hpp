@@ -69,6 +69,11 @@ struct ReplayGame {
 
 [[nodiscard]] std::optional<ReplayGame> parseReplay(const std::string& pgn);
 
+// One game's PGN with its moves on one line (its tags as they are, its escape lines left out): chess.hpp's reader
+// loses a move's comment, and every move after it, when an end of line comes between the move and the comment, as
+// in the PGN files of programs that cut their lines anywhere.
+[[nodiscard]] std::string flattenMovetext(const std::string& pgn);
+
 // What the evaluations of a game (fastchess comment style) tell, in pawns from the engines' own scores, a mate
 // counting as 10: how far the two engines disagreed for 3 moves each in a row, the largest change of one engine's
 // evaluation between two of its moves, and the best evaluation the loser had, from its own point of view. Each

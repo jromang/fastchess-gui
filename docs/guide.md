@@ -215,6 +215,19 @@ tournament* (or *Back*) returns to the page it came from.
   gives what it lost and the engine's move. A line counts them for each player, and the analysis's curve (orange)
   is drawn over the engines' own (blue). The analysis is kept with the game (in `analyses/` in the profile): the same
   game, opened again from anywhere, shows it at once.
+- **Play a game…** plays a game from the position on the board between two engines of the library (*White* and
+  *Black*, `<->` swaps them with their clocks), with a clock for each (minutes and an increment in seconds; *The same
+  for both*, or one each for time odds), and, if ticked, a second game with the colours reversed. The engines are
+  started with the library's option values, a WinBoard engine through the adapter. The board follows the game as it
+  is played (going back in it stops following until its end is reached again), with the clocks, the side to move's
+  search and *Stop*, which ends the game without a result. A game ends by mate, stalemate, insufficient material,
+  the 50-move rule, a threefold repetition, an illegal move, an engine that stops, or a loss on time (the clock
+  given 0.1 s for the move to come through). Each game is appended, as it ends, to a PGN file in `games/` in the
+  profile (named after the date and the engines, with a `Termination` tag), which *Open the games* lists on the
+  board. The games are played by fastchess-gui's own engine client, apart from any tournament: they run while one
+  plays, without touching it. Their threads (the larger of the two engines', as they take turns) count in the core
+  budget; when the running tournament's games and the analysis already fill the machine, the card says so and offers
+  *Play anyway* instead of *Play*. The analysis stops when a game starts, as it would compete with its engines.
 - **Its cores**: the analysis's threads count in the core budget, shown under it with the machine's threads. While a
   tournament runs, the analysis competes with its games: the page says so, with the threads the games use. Its
   engine is not one of the tournament's processes: the end of a tournament does not end it.
@@ -594,8 +607,8 @@ it holds a lichess token.
 - `book-cache/`: the PGN books turned into Polyglot books for the participants' own books (removed after 30 days unused);
 - `layout.ini`: the window layout and the panels of the workspace; `layouts.json`: the layouts saved by name; `fastchess-gui.log`: the log of the last session;
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
-- `board.json`: the settings of the Board page's analysis; `analyses/*.json`: the games analysed move by move, one
-  file each;
+- `board.json`: the settings of the Board page's analysis and games; `analyses/*.json`: the games analysed move
+  by move, one file each; `games/*.pgn`: the games played from the Board page;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**, the folder of *Every engine
   of a folder…*, the tester and site of *Export for a rating list…*, and the lichess token;
 - `running.json`: the tournament running now, removed when it stops; found at launch, it tells what to resume;
@@ -649,13 +662,17 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
   *Running a tournament*);
 - `--shot` saves a screenshot of the window after the given number of seconds (default 5), with WINDOW brought to
   the front, and quits once every screenshot is taken. It can be repeated. WINDOW is a page (`home`, `setup`,
-  `engines`, `books`, `ratings`, `ratings-engine`, `ratings-h2h`, `ratings-progress`, `console`, `settings`) or a
+  `engines`, `books`, `board`, `ratings`, `ratings-engine`, `ratings-h2h`, `ratings-progress`, `console`, `settings`) or a
   tab (`live`, `games`, `openings`, `standings`, `schedule`, `bracket`, `broadcast`). The mouse is ignored in this
   mode and, on Linux, the window is rendered off screen (no window appears; set `SDL_VIDEODRIVER` to override);
 - `--focus WINDOW` opens that page or tab at launch, or: `engines-card` (the first engine's card),
   `engines-refresh` (*Refresh: the new engines of the folder*), `engines-ratings=FILE` (the preview of that rating
   list), `setup-picker` and `setup-suggest` (*Add an engine…*, with the suggestion made), `submission-export`
-  (*Export for a rating list…*), `ratings-players` (the *PGN players* window), `palette[=TEXT]` (the command palette, with TEXT typed in it);
+  (*Export for a rating list…*), `ratings-players` (the *PGN players* window), `palette[=TEXT]` (the command palette, with TEXT typed in it),
+  `engines-console` (the first engine's console), `board-analyse` (the Board page, analysed), `board=FILE` (a PGN,
+  FEN or EPD file on the Board page; `board-analyse=FILE` analysed, `board-review=FILE` its first game analysed move
+  by move), `board-edit` (the position editor), `board-play` and `board-play-start` (a game between the first two
+  engines, started);
 - `--select-game N` opens game N (in finishing order) in the *Games* tab as soon as it exists;
 - `--quit-after SECONDS` stops the tournament and quits;
 - `--run`: see *Headless mode*.

@@ -302,14 +302,16 @@ std::string gamePgn(const ReplayGame& game, bool chess960) {
             put(fmt::format("{}.", board.fullMoveNumber()));
         else if (i == 0)
             put(fmt::format("{}...", board.fullMoveNumber()));
-        put(chess::uci::moveToSan(board, m.move));
+        // A move and its comment on the same line, as other readers expect them.
+        auto move = chess::uci::moveToSan(board, m.move);
         if (m.book) {
-            put("{book}");
+            move += " {book}";
         } else if (m.score) {
-            auto comment = "{" + commentScore(*m.score) + "/" + std::to_string(m.depth);
-            if (m.time_ms >= 0) comment += fmt::format(" {:.3f}s", static_cast<double>(m.time_ms) / 1000.0);
-            put(comment + "}");
+            move += " {" + commentScore(*m.score) + "/" + std::to_string(m.depth);
+            if (m.time_ms >= 0) move += fmt::format(" {:.3f}s", static_cast<double>(m.time_ms) / 1000.0);
+            move += "}";
         }
+        put(move);
         board.makeMove<true>(m.move);
     }
     put(result);

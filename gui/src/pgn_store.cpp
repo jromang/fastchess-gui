@@ -387,11 +387,39 @@ void parseEvalTag(std::string_view comment, ReplayMove& move) {
     move.score = fastchess::Score{fastchess::ScoreType::CP, static_cast<int64_t>(std::lround(sign * pawns * 100.0))};
 }
 
+std::string flattenMovetext(const std::string& pgn) {
+    std::string out;
+    out.reserve(pgn.size());
+    bool moves     = false;  // past the tags
+    std::size_t at = 0;
+    while (at < pgn.size()) {
+        auto end = pgn.find('\n', at);
+        if (end == std::string::npos) end = pgn.size();
+        std::string_view line(pgn.data() + at, end - at);
+        at = end + 1;
+        while (!line.empty() && (line.back() == '\r' || line.back() == ' ' || line.back() == '\t'))
+            line.remove_suffix(1);
+        std::string_view text = line;
+        while (!text.empty() && (text.front() == ' ' || text.front() == '\t')) text.remove_prefix(1);
+        if (!moves && (text.empty() || text.front() == '[')) {
+            out.append(line);
+            out += '\n';
+            continue;
+        }
+        if (!text.empty() && text.front() == '%') continue;  // an escape line
+        moves = true;
+        for (const char c : text) out += c == '\t' ? ' ' : c;
+        out += ' ';
+    }
+    return out;
+}
+
 std::optional<ReplayGame> parseReplay(const std::string& pgn) {
     ReplayGame game;
     ReplayVisitor visitor(game);
 
-    std::istringstream stream(pgn);
+    // chess.hpp's reader loses a move's comment, and the moves after it, when an end of line comes between them.
+    std::istringstream stream(flattenMovetext(pgn));
     chess::pgn::StreamParser parser(stream);
     const auto error = parser.readGames(visitor);
 

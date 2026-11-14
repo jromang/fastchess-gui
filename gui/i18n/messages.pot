@@ -111,6 +111,9 @@ msgstr ""
 msgid "50 moves {}/100"
 msgstr ""
 
+msgid "50-move rule"
+msgstr ""
+
 msgid "95 % interval"
 msgstr ""
 
@@ -153,6 +156,9 @@ msgstr ""
 msgid "A game is being analysed move by move: wait for its end, or cancel it."
 msgstr ""
 
+msgid "A game, or two with the colours reversed, between two engines of the library from this position, with a clock for each."
+msgstr ""
+
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr ""
 
@@ -187,6 +193,9 @@ msgid "A rating list's text or web page, Ordo, CSV (name,elo)"
 msgstr ""
 
 msgid "A rating list, for the reference Elo…"
+msgstr ""
+
+msgid "A second game, the colours reversed"
 msgstr ""
 
 msgid "A separate engine"
@@ -469,6 +478,9 @@ msgstr ""
 msgid "Black ×2"
 msgstr ""
 
+msgid "Black's clock"
+msgstr ""
+
 msgid "Black's connection stalls"
 msgstr ""
 
@@ -559,6 +571,9 @@ msgstr ""
 msgid "Cannot write {}"
 msgstr ""
 
+msgid "Cannot write {}: {}"
+msgstr ""
+
 msgid "Castling"
 msgstr ""
 
@@ -640,6 +655,9 @@ msgstr ""
 msgid "Choose engines A and B."
 msgstr ""
 
+msgid "Choose the two engines of the game."
+msgstr ""
+
 msgid "Choose two different engines, or give them books of their own."
 msgstr ""
 
@@ -674,6 +692,9 @@ msgid "Click: play its first move. Scores are White's."
 msgstr ""
 
 msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
+msgstr ""
+
+msgid "Clock"
 msgstr ""
 
 msgid "Close"
@@ -1135,6 +1156,9 @@ msgstr ""
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr ""
 
+msgid "From the position on the board"
+msgstr ""
+
 msgid "Gainer [0, 3]"
 msgstr ""
 
@@ -1156,10 +1180,16 @@ msgstr ""
 msgid "Game shown:"
 msgstr ""
 
+msgid "Game {} of {}: {} – {}"
+msgstr ""
+
 msgid "Game {} · move {}"
 msgstr ""
 
 msgid "Game {}: {}"
+msgstr ""
+
+msgid "Game {}: {} – {}  {}"
 msgstr ""
 
 msgid "Games"
@@ -1515,6 +1545,9 @@ msgstr ""
 msgid "Maximum number of moves"
 msgstr ""
 
+msgid "Minutes for the game."
+msgstr ""
+
 msgid "Mistake"
 msgstr ""
 
@@ -1546,6 +1579,9 @@ msgid "Names of the list that are no library engine"
 msgstr ""
 
 msgid "New engine A"
+msgstr ""
+
+msgid "New game"
 msgstr ""
 
 msgid "New tournament"
@@ -1746,6 +1782,9 @@ msgstr ""
 msgid "Once it has played two tournaments."
 msgstr ""
 
+msgid "Once the game is over."
+msgstr ""
+
 msgid "One after the other, not while a tournament plays. Not the inactive ones."
 msgstr ""
 
@@ -1774,6 +1813,9 @@ msgid "Open a folder…"
 msgstr ""
 
 msgid "Open the folder"
+msgstr ""
+
+msgid "Open the games"
 msgstr ""
 
 msgid "Open the tournament."
@@ -1925,10 +1967,25 @@ msgstr ""
 msgid "Pins every game to its own processor, shared by its two engines since they never think at the same time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to a node count."
 msgstr ""
 
+msgid "Play"
+msgstr ""
+
+msgid "Play a game"
+msgstr ""
+
+msgid "Play a game…"
+msgstr ""
+
 msgid "Play a move on the board, or open a game."
 msgstr ""
 
+msgid "Play anyway"
+msgstr ""
+
 msgid "Play games again"
+msgstr ""
+
+msgid "Play the two games"
 msgstr ""
 
 msgid "Play this game again"
@@ -2267,6 +2324,9 @@ msgstr ""
 msgid "Save the layout as…"
 msgstr ""
 
+msgid "Saved in {}"
+msgstr ""
+
 msgid "Save…"
 msgstr ""
 
@@ -2301,6 +2361,9 @@ msgid "Searches"
 msgstr ""
 
 msgid "Searches at a time"
+msgstr ""
+
+msgid "Seconds added after each move."
 msgstr ""
 
 msgid "Seconds per move"
@@ -2363,6 +2426,9 @@ msgid "Show this game in a panel of its own, which can be docked beside the othe
 msgstr ""
 
 msgid "Show {}"
+msgstr ""
+
+msgid "Shown here as they are played, and saved as PGN in games/ in the profile."
 msgstr ""
 
 msgid "Site"
@@ -2452,6 +2518,9 @@ msgstr ""
 msgid "Stop the analysis"
 msgstr ""
 
+msgid "Stop the game"
+msgstr ""
+
 msgid "Stopped"
 msgstr ""
 
@@ -2483,6 +2552,9 @@ msgid "Summary"
 msgstr ""
 
 msgid "Swap A and B"
+msgstr ""
+
+msgid "Swap the engines and their clocks."
 msgstr ""
 
 msgid "Swiss"
@@ -2665,6 +2737,9 @@ msgstr ""
 msgid "The game as it was, without the moves played over it."
 msgstr ""
 
+msgid "The game being played ends without a result."
+msgstr ""
+
 msgid "The game, with its tags and moves, as PGN."
 msgstr ""
 
@@ -2689,6 +2764,9 @@ msgstr ""
 msgid "The king and the rook are not where it needs them."
 msgstr ""
 
+msgid "The larger thread count of the two engines: they take turns. Their games are played apart from any tournament."
+msgstr ""
+
 msgid "The last 30 days"
 msgstr ""
 
@@ -2699,6 +2777,9 @@ msgid "The last change of the tournament was undone."
 msgstr ""
 
 msgid "The last check or reading failed."
+msgstr ""
+
+msgid "The machine is full: the tournament's games and the analysis use {} of its {} threads, and this game needs {}. It would slow them down, and its own engines."
 msgstr ""
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
@@ -2767,6 +2848,9 @@ msgstr ""
 msgid "The same engine, with different books"
 msgstr ""
 
+msgid "The same for both"
+msgstr ""
+
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
 msgstr ""
 
@@ -2828,6 +2912,9 @@ msgid "The whole log, to the clipboard."
 msgstr ""
 
 msgid "The working directory of {} is not found."
+msgstr ""
+
+msgid "Their PGN file, its games listed beside the moves."
 msgstr ""
 
 msgid "Theme"
@@ -3031,6 +3118,9 @@ msgstr ""
 msgid "White ×2"
 msgstr ""
 
+msgid "White's clock"
+msgstr ""
+
 msgid "White's connection stalls"
 msgstr ""
 
@@ -3135,6 +3225,9 @@ msgstr ""
 msgid "all"
 msgstr ""
 
+msgid "an engine does not answer isready"
+msgstr ""
+
 msgid "and {} more"
 msgstr ""
 
@@ -3151,6 +3244,9 @@ msgid "by %s"
 msgstr ""
 
 msgid "bye"
+msgstr ""
+
+msgid "checkmate"
 msgstr ""
 
 msgid "colours reversed of an earlier one"
@@ -3192,6 +3288,9 @@ msgstr ""
 msgid "game already over"
 msgstr ""
 
+msgid "game too long"
+msgstr ""
+
 msgid "game {}"
 msgstr ""
 
@@ -3204,6 +3303,9 @@ msgstr ""
 msgid "games at least"
 msgstr ""
 
+msgid "illegal move {} by {}"
+msgstr ""
+
 msgid "illegal position"
 msgstr ""
 
@@ -3211,6 +3313,9 @@ msgid "illegal positions"
 msgstr ""
 
 msgid "initial position"
+msgstr ""
+
+msgid "insufficient material"
 msgstr ""
 
 msgid "it cannot be read."
@@ -3287,6 +3392,9 @@ msgstr ""
 msgid "send at startup"
 msgstr ""
 
+msgid "stalemate"
+msgstr ""
+
 msgid "stopped"
 msgstr ""
 
@@ -3312,6 +3420,9 @@ msgid "the resume of the interrupted tournament"
 msgstr ""
 
 msgid "this analysis only"
+msgstr ""
+
+msgid "threefold repetition"
 msgstr ""
 
 msgid "to mention in the post, or to test the engine again:"
@@ -3596,6 +3707,9 @@ msgid_plural "{} library engines have this name"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "{} loses on time"
+msgstr ""
+
 msgid "{} loss on time"
 msgid_plural "{} losses on time"
 msgstr[0] ""
@@ -3788,7 +3902,13 @@ msgstr ""
 msgid "{} – fastchess-gui"
 msgstr ""
 
+msgid "{} – {} · game {} of {}"
+msgstr ""
+
 msgid "{} – {} · {} games"
+msgstr ""
+
+msgid "{}'s engine stopped"
 msgstr ""
 
 msgid "{}, more than the {} of memory free: the system will swap."

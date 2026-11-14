@@ -61,7 +61,8 @@ this repository still builds unchanged.
 - **Board**: any position analysed by an engine of the library, with several lines drawn as arrows; A on any board
   (a live game, a finished one, an opening) opens it there. Any PGN file opened, its games filtered by their tags and
   replayed with their evaluations (`%eval` or cutechess comments); a FEN, a PGN or a list of moves pasted; a
-  position editor.
+  position editor. A finished game analysed move by move, its inaccuracies, mistakes and blunders marked. A game (or
+  a pair) between two engines from any position, with a clock for each, played beside a running tournament.
 - **Opening books**: EPD, PGN or Polyglot, in a library; each book checked for illegal, duplicate, mirrored and
   finished positions, browsed on a board, and cleaned. Results by opening after a tournament: the unbalanced, the
   drawish and the decisive ones, exported as EPD.

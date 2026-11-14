@@ -19,6 +19,7 @@
 #include <tour/pgn_index.hpp>
 
 #include "analysis.hpp"
+#include "board_game.hpp"
 #include "engine_client.hpp"
 #include "game_analysis.hpp"
 #include "pgn_store.hpp"
@@ -52,8 +53,14 @@ struct BoardSettings {
     // The analysis of a whole game: the time of each position, or its depth when set.
     int review_ms    = 1000;
     int review_depth = 0;
+    // A game played from the board: the two engines, their clocks, and a second game with the colours reversed.
+    std::string game_first, game_second;
+    GameClock first_clock, second_clock;
+    bool same_clock = true;
+    bool game_pair  = false;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BoardSettings, analysis, arrows, review_ms, review_depth)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BoardSettings, analysis, arrows, review_ms, review_depth, game_first,
+                                                game_second, first_clock, second_clock, same_clock, game_pair)
 
 // A game being analysed move by move, in the background: its positions searched one after the other.
 struct ReviewJob {
@@ -161,6 +168,14 @@ struct BoardPage {
     std::optional<GameReview> review;     // the analysis of the game shown, when it has one
     std::string review_key;               // the game it is of (reviewKey)
     std::vector<MoveReview> judged;       // its moves judged, for the game shown
+
+    // Games played from the board's position between two engines.
+    bool play_open   = false;  // their settings shown
+    bool play_anyway = false;  // asked to play on a machine the tournament and the analysis fill
+    std::unique_ptr<BoardMatch> match;
+    BoardMatch::State match_state;
+    uint64_t match_version = 0;
+    bool watching          = false;  // the board shows the game being played
 };
 
 }  // namespace fcg
