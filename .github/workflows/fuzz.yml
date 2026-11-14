@@ -35,9 +35,12 @@ jobs:
           fi
 
       - name: Install dependencies
+        # clang 23 from LLVM's own archive (Ubuntu 24.04 ships 18), the version the fuzzers are written against.
         run: |
+          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc > /dev/null
+          echo "deb https://apt.llvm.org/noble/ llvm-toolchain-noble-23 main" | sudo tee /etc/apt/sources.list.d/llvm-23.list
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ninja-build clang-18 libclang-rt-18-dev \
+          sudo apt-get install -y --no-install-recommends ninja-build clang-23 libclang-rt-23-dev \
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
             libxkbcommon-dev libwayland-dev wayland-protocols libdecor-0-dev libegl1-mesa-dev libgl1-mesa-dev \
             libdrm-dev libgbm-dev libdbus-1-dev libudev-dev
@@ -48,8 +51,8 @@ jobs:
 
       - name: Configure
         env:
-          CC: clang-18
-          CXX: clang++-18
+          CC: clang-23
+          CXX: clang++-23
         run: cmake -B build-fuzz -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DFCG_FUZZ=ON -DFCG_BUILD_TESTS=OFF
 
       - name: Build
