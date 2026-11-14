@@ -54,6 +54,17 @@ jobs:
       - name: GUI tests
         run: ./build/fastchess-gui-tests
 
+      - name: The window drawn without OpenGL
+        # SDL's software renderer, what a machine without OpenGL 3.2 gets: the program starts, draws its Settings page
+        # off screen (the offscreen driver --shot picks) and saves it.
+        run: |
+          ./build/fastchess-gui --software --profile "${RUNNER_TEMP}/software" --size 1280x800 \
+            --shot "${RUNNER_TEMP}/software.png@settings@3"
+          cat "${RUNNER_TEMP}/software/fastchess-gui.log"
+          grep -q "software driver" "${RUNNER_TEMP}/software/fastchess-gui.log"
+          test -s "${RUNNER_TEMP}/software.png"
+          ls -l "${RUNNER_TEMP}/software.png"
+
       - name: Tournament layer tests
         run: ./build/fcg-tournament-tests
 
