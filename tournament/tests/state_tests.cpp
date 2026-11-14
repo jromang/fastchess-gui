@@ -1,5 +1,6 @@
 #include <doctest/doctest.hpp>
 
+#include <algorithm>
 #include <atomic>
 #include <filesystem>
 #include <fstream>
@@ -9,6 +10,7 @@
 #include <thread>
 
 #ifndef _WIN32
+#    include <sys/stat.h>
 #    include <sys/wait.h>
 #    include <unistd.h>
 #endif
@@ -402,6 +404,84 @@ TEST_CASE("files: a replaced file keeps its permissions, and the old content as 
 #endif
 }
 
+#ifndef _WIN32
+TEST_CASE("files: a file made is writable by its owner only whatever the umask, a secret's readable by them only") {
+    const auto dir = freshDir("files-modes");
+    fs::create_directories(dir);
+    const auto mode   = [](const fs::path& file) { return fs::status(file).permissions() & fs::perms::mask; };
+    const auto shared = fs::perms::owner_read | fs::perms::owner_write | fs::perms::group_read | fs::perms::others_read;
+    const auto owner_only = fs::perms::owner_read | fs::perms::owner_write;
+
+    const auto umask_was = ::umask(0);
+    replaceFile(dir / "a.json", "{}");
+    std::FILE* log = openFile(dir / "a.log", "a");
+    REQUIRE(log);
+    std::fclose(log);
+    {
+        FolderLock lock(dir);
+    }
+    replaceFile(dir / "token.json", "secret", false, true);
+    replaceFile(dir / "a.json", "secret", true, true);  // made owner-only, its .bak too
+    ::umask(umask_was);
+
+    CHECK(mode(dir / "a.log") == shared);
+    CHECK(mode(dir / "tournament.lock") == shared);
+    CHECK(mode(dir / "token.json") == owner_only);
+    CHECK(mode(dir / "a.json") == owner_only);
+    CHECK(mode(dir / "a.json.bak") == owner_only);
+    CHECK(readAll(dir / "a.json.bak") == "{}");
+}
+#endif
+
+TEST_CASE("state: a tournament folder from elsewhere cannot make the program write outside it") {
+    const auto dir    = freshDir("foreign");
+    const auto victim = dir.parent_path() / "fcg-tour-foreign-victim.sh";
+    std::ofstream(victim, std::ios::binary | std::ios::trunc) << "echo hello\n";
+
+    // The games are appended to a .pgn file only.
+    auto spec    = matchSpec(2);
+    spec.pgn_out = victim.string();
+    CHECK_THROWS_WITH(TournamentState::create(dir, spec), doctest::Contains("only be appended to a .pgn file"));
+    CHECK_FALSE(TournamentState::isTournament(dir));
+
+    // A finished tournament whose games wait for its PGN file: tournament.json changed to point elsewhere.
+    {
+        auto state = TournamentState::create(dir, matchSpec(2));
+        while (auto task = state->claimNext()) state->complete(*task, gameData(*task, "1-0"));
+        REQUIRE(state->finished());
+    }
+    auto json       = nlohmann::json::parse(readAll(dir / "tournament.json"));
+    json["pgn_out"] = victim.string();
+    std::ofstream(dir / "tournament.json", std::ios::binary | std::ios::trunc) << json.dump(2);
+    {
+        const auto state = TournamentState::open(dir);
+        CHECK(state->spec().pgn_out.empty());
+        const auto& warnings = state->warnings();
+        CHECK(std::any_of(warnings.begin(), warnings.end(),
+                          [](const std::string& w) { return w.find("not a .pgn file") != std::string::npos; }));
+    }
+    CHECK(readAll(victim) == "echo hello\n");
+
+#ifndef _WIN32
+    // Its files linked to a file elsewhere, which opening it would cut or write over.
+    const auto pgn = readAll(dir / "test.pgn");
+    for (const auto* name : {"test.pgn", "journal.jsonl", "tournament.lock"}) {
+        const auto file = dir / name;
+        const auto kept = fs::path(file).concat(".kept");
+        if (fs::exists(file)) fs::rename(file, kept);
+        fs::create_symlink(victim, file);
+        CHECK_THROWS_WITH(TournamentState::open(dir), doctest::Contains("symbolic link"));
+        CHECK(readAll(victim) == "echo hello\n");
+        fs::remove(file);
+        if (fs::exists(kept)) fs::rename(kept, file);
+    }
+    // Opened as before once the links are gone.
+    CHECK(TournamentState::open(dir)->results().size() == 2);
+    CHECK(readAll(dir / "test.pgn") == pgn);
+#endif
+    fs::remove(victim);
+}
+
 TEST_CASE("state: the PV warnings of a game are kept with its result, by ply") {
     const auto dir = freshDir("state-pv");
     {
@@ -565,7 +645,7 @@ TEST_CASE("state: the PGN file of the user's gets the games in schedule order, a
 
 TEST_CASE("state: the PGN file of the user's gets what is left when the tournament ends, and waits out failures") {
     const auto dir = freshDir("pgn-out-sprt");
-    const auto out = dir / "missing-folder";  // a folder for now: it cannot be written
+    const auto out = dir / "missing-folder.pgn";  // a folder for now: it cannot be written
     fs::create_directories(out);
 
     auto spec                    = matchSpec();

@@ -12,7 +12,8 @@
 
 namespace fcg::tour {
 
-// fopen, with the UTF-16 path on Windows. nullptr when it fails.
+// fopen, with the UTF-16 path on Windows. A file it makes is 0644 less the umask on POSIX, never writable by
+// others. nullptr when it fails.
 [[nodiscard]] std::FILE* openFile(const std::filesystem::path& file, const char* mode);
 
 // Flushes `file` and asks the system to put its data on the disk. False when that fails.
@@ -20,9 +21,11 @@ namespace fcg::tour {
 
 // Replaces `file` with `text`: written to a temporary file next to it, synced, then renamed over it, and the
 // rename synced. After a crash the file is the old one or the new one, never a mix or empty. The new file keeps
-// the permissions of the old one (POSIX). With `backup`, the old content is first kept as <file>.bak the same way.
-// Throws std::runtime_error with the reason.
-void replaceFile(const std::filesystem::path& file, std::string_view text, bool backup = false);
+// the permissions of the old one, 0644 less the umask when there was none (POSIX); with `owner_only`, it is
+// readable and writable by its owner only, from the moment it is made (a file that holds a secret). With `backup`,
+// the old content is first kept as <file>.bak the same way. Throws std::runtime_error with the reason.
+void replaceFile(const std::filesystem::path& file, std::string_view text, bool backup = false,
+                 bool owner_only = false);
 
 // A name the user typed, as a file name on any system: the characters Windows forbids (<>:"/\|?* and control
 // characters) become '_', as do a trailing dot or space and the names Windows keeps (CON, NUL, COM1…). Other

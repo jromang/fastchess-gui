@@ -1,6 +1,7 @@
 #include "state.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cstdio>
 #include <fstream>
@@ -25,6 +26,15 @@ namespace {
 constexpr const char* SPEC_FILE    = "tournament.json";
 constexpr const char* JOURNAL_FILE = "journal.jsonl";
 constexpr const char* READ_ONLY    = "this tournament is open in another program, and only shown here";
+
+// The file every game is also appended to (TournamentSpec::pgn_out) is a .pgn file: a tournament folder from
+// elsewhere must not make the program append its text to any file at all (a shell's startup file...).
+bool pgnOutAllowed(const std::string& file) {
+    if (file.size() <= 4) return false;
+    auto extension = file.substr(file.size() - 4);
+    for (auto& c : extension) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return extension == ".pgn";
+}
 
 // The events without the edits an "edit_undone" cancels, nor the end of tournament such an edit caused.
 std::vector<nlohmann::json> withoutUndoneEdits(const std::vector<nlohmann::json>& events) {
@@ -208,6 +218,8 @@ std::unique_ptr<TournamentState> TournamentState::create(const fs::path& dir, To
 
     // Validates the participants against the format before anything is written.
     (void)Schedule(spec);
+    if (!spec.pgn_out.empty() && !pgnOutAllowed(spec.pgn_out))
+        throw std::runtime_error("the games can only be appended to a .pgn file, not to " + spec.pgn_out);
 
     std::error_code ec;
     fs::create_directories(dir, ec);
@@ -238,8 +250,24 @@ std::unique_ptr<TournamentState> TournamentState::open(const fs::path& dir, bool
         throw std::runtime_error((dir / SPEC_FILE).string() + ": " + e.what());
     }
 
+    // A tournament folder may come from someone else (an archive...): what it holds must not make the program write
+    // outside it. The files written in it are no symbolic links (opening it cuts the PGN files past their last game,
+    // and FolderLock refuses its own), and the games are appended to no other file than a .pgn one.
+    if (!read_only) {
+        for (const auto& name : {std::string(JOURNAL_FILE), spec.pgnFile(), spec.chessbasePgnFile()}) {
+            std::error_code ec;
+            if (fs::is_symlink(dir / name, ec))
+                throw std::runtime_error((dir / name).string() +
+                                         " is a symbolic link: a tournament's files must be in its folder");
+        }
+    }
+    std::string ignored_out;
+    if (!spec.pgn_out.empty() && !pgnOutAllowed(spec.pgn_out)) std::swap(ignored_out, spec.pgn_out);
+
     std::unique_ptr<TournamentState> state(new TournamentState(dir, std::move(spec)));
     state->read_only_ = read_only;
+    if (!ignored_out.empty())
+        state->warnings_.push_back("the games are not appended to " + ignored_out + ": not a .pgn file");
     // Before anything is read: the journal of a tournament another program plays may grow meanwhile.
     if (!read_only) state->lock_ = std::make_unique<FolderLock>(dir);
     state->load();

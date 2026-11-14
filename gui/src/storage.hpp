@@ -86,8 +86,9 @@ std::optional<MatchSetup> readSavedSetup(const std::filesystem::path& file);
 
 // Writes through a temporary file synced to the disk, so a crash or a power cut never leaves half a file behind
 // (see tour::replaceFile: the file keeps its permissions). False on failure, with the reason in `error`. With
-// `backup`, the previous content is kept as <file>.bak.
+// `backup`, the previous content is kept as <file>.bak. With `owner_only`, the file is readable by its owner only
+// (POSIX) before anything is written to it.
 bool writeJson(const std::filesystem::path& file, const nlohmann::json& value, std::string* error = nullptr,
-               bool backup = false);
+               bool backup = false, bool owner_only = false);
 
 }  // namespace fcg

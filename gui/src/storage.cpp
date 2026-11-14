@@ -63,10 +63,11 @@ template std::optional<std::vector<layout::Layout>> readJson(const fs::path&);
 
 std::optional<MatchSetup> readSavedSetup(const fs::path& file) { return readJsonWith<MatchSetup>(file, savedSetup); }
 
-bool writeJson(const fs::path& file, const nlohmann::json& value, std::string* error, bool backup) {
+bool writeJson(const fs::path& file, const nlohmann::json& value, std::string* error, bool backup, bool owner_only) {
     try {
         // Text that is not UTF-8 (an engine's output...) is written with U+FFFD rather than failing.
-        tour::replaceFile(file, value.dump(2, ' ', false, nlohmann::json::error_handler_t::replace) + '\n', backup);
+        tour::replaceFile(file, value.dump(2, ' ', false, nlohmann::json::error_handler_t::replace) + '\n', backup,
+                          owner_only);
         return true;
     } catch (const std::exception& e) {
         if (error) *error = e.what();
@@ -77,9 +78,9 @@ bool writeJson(const fs::path& file, const nlohmann::json& value, std::string* e
 namespace {
 
 // A profile file written, or the reason it could not be on the Console.
-void save(const fs::path& file, const nlohmann::json& value, bool backup = false) {
+void save(const fs::path& file, const nlohmann::json& value, bool backup = false, bool owner_only = false) {
     std::string error;
-    if (!writeJson(file, value, &error, backup))
+    if (!writeJson(file, value, &error, backup, owner_only))
         Console::instance().add(trf("Cannot save {}: {}", file.string(), error), true);
 }
 
@@ -193,11 +194,8 @@ void Storage::setLichessToken(const std::string& token) const {
     } else {
         settings["lichess_token"] = token;
     }
-    const auto file = root_ / "settings.json";
-    save(file, settings);
-    // Readable by its owner only, as it holds a token; later rewrites keep that.
-    std::error_code ec;
-    fs::permissions(file, fs::perms::owner_read | fs::perms::owner_write, fs::perm_options::replace, ec);
+    // Readable by its owner only, as it holds a token, from before the token is in it; later rewrites keep that.
+    save(root_ / "settings.json", settings, false, true);
 }
 
 std::pair<std::string, std::string> Storage::submissionTester() const {
