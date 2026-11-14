@@ -78,6 +78,15 @@ struct TournamentSpec {
     std::vector<Participant> participants;
     FileFingerprint book;
 
+    // A Polyglot book the openings were drawn from (conditions.opening.file is then the positions its lines lead to,
+    // written to the tournament's folder): its file, and the depth its lines were followed to. Empty for another
+    // book, and in the tournaments of 0.5.9 and earlier.
+    std::string polyglot_book;
+    int polyglot_plies = 0;
+    // How the moves of a Polyglot book are chosen, the tournament's and the participants' own: from -100, the best
+    // move only, through 0, by their weights, to 100, every move alike (choiceWeights() in polyglot.hpp).
+    int book_randomness = 0;
+
     bool log_every_game = false;  // keep the engine log of every game, not only of those that end badly
     // An engine that cannot start stops the tournament once its tries are used up, rather than have its games set
     // aside while the others go on (start_failures.hpp).

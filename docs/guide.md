@@ -366,12 +366,13 @@ profiles they play like. An empty name is made from the engines.
   `book-cache` folder until the file or the depth changes; a start that comes before the end waits for it. A book
   that cannot be prepared shows why in its popup, with *Try again*; each start also tries again. A tournament plays
   from the book prepared when it was started or resumed, even if the PGN file changes meanwhile. While the position
-  is in that book, the participant plays the book's move at once, chosen by the book's weights; then its engine
-  takes over. The tournament's openings, if any, are played first, by every engine; EPD books only give those and
-  are greyed in the list. To compare books with one engine, choose *This engine once more, with another book* in
-  its ⋯ menu: each copy plays as `<engine> (<book>)`, so its results and rating stay apart. In a match the *Book*
-  buttons sit next to A and B, and an engine can play itself with two books. Book moves are marked `{book}` in the
-  PGN; hovering a name in the standings shows its book. WinBoard engines can have one too.
+  is in that book, the participant plays the book's move at once, chosen by the book's weights as the *Randomness*
+  of the openings makes them (also in the *Book* popup, the same for every book of the tournament: see *Openings*);
+  then its engine takes over. The tournament's openings, if any, are played first, by every engine; EPD books only
+  give those and are greyed in the list. To compare books with one engine, choose *This engine once more, with
+  another book* in its ⋯ menu: each copy plays as `<engine> (<book>)`, so its results and rating stay apart. In a
+  match the *Book* buttons sit next to A and B, and an engine can play itself with two books. Book moves are marked
+  `{book}` in the PGN; hovering a name in the standings shows its book. WinBoard engines can have one too.
 - **Engine settings**: *Hash* and *Threads* forced on every engine, for a match too (0 = each engine's own; a
   participant's own, from its ⋯ menu, comes first); *Syzygy tablebases for the engines* gives the tablebase
   directories (the same as the adjudication's) to every engine with a `SyzygyPath` option, and *Engines' own books
@@ -394,6 +395,15 @@ profiles they play like. An empty name is made from the engines.
   opening is played twice, with colours reversed. A Polyglot book is followed from the initial position to a depth
   (8 plies unless set), leaving out the moves that weigh less than a tenth of the best one of their position; the
   positions reached are written once to `<book>-<N>plies.epd` in the tournament folder and played like an EPD book.
+  In random order they are written in the order they are drawn, each once: a line comes the sooner the likelier it
+  is, by the weights of its moves, so that a tournament that plays only part of the book plays its main lines
+  first; the seed draws the same order again. In sequential order they keep the order of the book. *Randomness*
+  (−100 to 100, 0 by default) says how the weights count, as Polyglot and Cute Chess choose a book move: 0 the
+  weights as they are, −100 the best move of each position only (one line, unless several share the best weight),
+  100 every move alike (the rare moves come back); in between, −50 squares the weights and 50 takes their square
+  roots. It chooses the moves of the participants' own books too, and is shown for them even with an EPD or PGN
+  book; the summary says it, and the line under the standings copies gives the book with its depth and, for a
+  Polyglot book, this randomness.
   In a round robin, a gauntlet or a Swiss, *The same opening for every pair of a round* gives every game pair of a
   round the same opening, the next of the book for each round, so that no engine gets easier openings than the
   others of its round (an engine added later catches up in rounds of its own, each with its opening).
@@ -430,7 +440,7 @@ panels, shown by default as tabs:
 | Tab | Contents |
 |---|---|
 | Overview | Match: Elo and nElo with their 95 % confidence interval, LOS, score, pentanomial counts, SPRT bounds and LLR; *Statistics* (folded) gives fishtest's numbers from the games and from the pairs: score, Elo, nElo and BayesElo with DrawElo, standard deviation per game, LLR of both, the variance ratio of pairs to single games, the RMS bias of the openings, the kinds of balanced pairs and the pairs won over lost, which *Copy* includes; and the charts (Elo and LLR over time, game lengths, how games ended, depth, NPS, time per move and decision time). Tournament: the standings (with *TF*, each engine's losses on time, in orange as soon as there is one; a *!* beside an engine that crashed or played an illegal move), progress by cycle or round, games per hour and time left, the latest results. A finished tournament adds a *Submission checklist*: all games played, every pair with both colours, no duplicate games, no crashes, time losses or illegal moves (with buttons that open those games), the hash of each engine (shown, not judged), ponder off, the opening book, the tablebases |
-| Standings | Points, games, losses on time (*TF*), wins/draws/losses, ratings with their confidence interval, Sonneborn-Berger (Buchholz for a Swiss), byes. *Table* lists them one engine per row; *Crosstable* (round robins, up to 200 engines) shows every pairing. *Order:* by points, score % or seed order (which keeps the columns of a gauntlet's crosstable in place). A click on an engine lists its opponents below: games, with White, with Black, + = −, points and %, with the pairs of which only one game was played marked; a gauntlet opens with its seed selected. *Copy* as text, or as BBCode for a forum post (with a line giving the format, time control, games and book), and in a gauntlet *Gauntlet table as text* or *as BBCode, for a forum* (the seed, then its opponents by their own points, each with points, %, Elo ±, W-L-D); *Export HTML…*; all with *TF* like the headless mode's standings, in the order chosen, and ending with a line giving the games played of those planned, the draw rate, time control, book and event; the copies then sign with *fastchess-gui* and its version, and the gauntlet table is ruled with = rather than -, so that a table posted on a forum is told apart from those of other GUIs |
+| Standings | Points, games, losses on time (*TF*), wins/draws/losses, ratings with their confidence interval, Sonneborn-Berger (Buchholz for a Swiss), byes. *Table* lists them one engine per row; *Crosstable* (round robins, up to 200 engines) shows every pairing. *Order:* by points, score % or seed order (which keeps the columns of a gauntlet's crosstable in place). A click on an engine lists its opponents below: games, with White, with Black, + = −, points and %, with the pairs of which only one game was played marked; a gauntlet opens with its seed selected. *Copy* as text, or as BBCode for a forum post (with a line giving the format, time control, games and book), and in a gauntlet *Gauntlet table as text* or *as BBCode, for a forum* (the seed, then its opponents by their own points, each with points, %, Elo ±, W-L-D); *Export HTML…*; all with *TF* like the headless mode's standings, in the order chosen, and ending with a line giving the games played of those planned, the draw rate, time control, book (with the plies kept of a PGN book; for a Polyglot book its depth and how its moves were chosen, e.g. `book:Perfect2023.bin (8 plies, moves by weight)`) and event; the copies then sign with *fastchess-gui* and its version, and the gauntlet table is ruled with = rather than -, so that a table posted on a forum is told apart from those of other GUIs |
 | Bracket | Knockout only: the bracket, round by round, with the score of every match |
 | Schedule | Every game pair by cycle or round, with its state and the opening it plays (once started, or once its round started when the round shares one); editing (see below) |
 | Broadcast | Live files, the TLCS server and the web page (see below) |
@@ -702,7 +712,9 @@ fastchess-gui --run SETUP.json            # create one from a setup or template 
 ```
 
 No window is opened; the version, then the progress, are printed on the console, with the tries of an engine that
-cannot start, the engine set aside (with its engine log) or back, as in the window. **Ctrl+C** stops after the
+cannot start, the engine set aside (with its engine log) or back, as in the window. Every 20 games, and at the end,
+a tournament prints its standings, ending with the line of the standings copies (games, draws, time control, book
+and event). **Ctrl+C** stops after the
 running games and the tournament can be resumed later, from the command line or the GUI. Exit codes: 0 finished,
 1 error while playing, 2 nothing to run, 3 stopped before the end (by Ctrl+C, or with nothing left to play without
 an engine that cannot start).

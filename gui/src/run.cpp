@@ -510,22 +510,31 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         book_random = true;
     }
 
-    // A Polyglot book becomes the positions its lines lead to, kept in the tournament folder.
-    auto book_plies = setup.book_plies;
+    // A Polyglot book becomes the positions its lines lead to, kept in the tournament folder. In random order, they
+    // are written in the order they are drawn, the likelier lines (by their moves' weights, as the randomness makes
+    // them) the sooner, from the tournament's seed: then played in that order.
+    auto book_plies      = setup.book_plies;
+    const int randomness = std::clamp(setup.book_randomness, -tour::RANDOMNESS_LIMIT, tour::RANDOMNESS_LIMIT);
+    std::string polyglot = {};
+    int polyglot_plies   = 0;
     if (!book.empty() && tour::isPolyglot(book)) {
         if (!fs::is_regular_file(book)) throw fastchess_exception(trf("Opening book not found: {}", book));
         tour::PolyglotWalk walk;
-        walk.plies = book_plies > 0 ? book_plies : POLYGLOT_PLIES;
+        walk.plies      = book_plies > 0 ? book_plies : POLYGLOT_PLIES;
+        walk.randomness = randomness;
         std::error_code ec;
         fs::create_directories(run_dir, ec);
         const auto epd = run_dir / fmt::format("{}-{}plies.epd", fs::path(book).stem().string(), walk.plies);
         try {
-            (void)tour::polyglotToEpd(book, epd, walk);
+            (void)tour::polyglotToEpd(book, epd, walk, book_random ? std::optional<uint64_t>(t.seed) : std::nullopt);
         } catch (const std::exception& e) {
             throw fastchess_exception(e.what());
         }
-        book       = epd.string();
-        book_plies = -1;
+        polyglot       = book;
+        polyglot_plies = walk.plies;
+        book           = epd.string();
+        book_plies     = -1;
+        book_random    = false;  // drawn in order already
     }
 
     if (!book.empty()) {
@@ -604,6 +613,9 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     spec.pgn_out           = setup.pgn_out;
     spec.pgn_out_chessbase = setup.export_style == PgnStyle::ChessBase;
     spec.conditions        = t;
+    spec.polyglot_book         = polyglot;
+    spec.polyglot_plies        = polyglot_plies;
+    spec.book_randomness       = randomness;
     spec.stop_on_start_failure = setup.stop_on_start_failure;
     if (setup.engine_syzygy) spec.forced_options.emplace_back("SyzygyPath", setup.tb_paths);
     if (setup.engine_ownbook_off) spec.forced_options.emplace_back("OwnBook", "false");

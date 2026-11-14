@@ -968,6 +968,27 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
         int lines = 0;
         for (std::string line; std::getline(epd, line);) ++lines;
         CHECK(lines == 2);
+        // In random order, drawn in order already from the seed: played in that order. The book, its depth and the
+        // randomness are kept for the line under the standings.
+        CHECK(run.tournament.opening.order == fastchess::OrderType::SEQUENTIAL);
+        CHECK(run.spec.polyglot_book == bin.string());
+        CHECK(run.spec.polyglot_plies == 1);
+        CHECK(run.spec.book_randomness == 0);
+        // The best move only: one line (both moves weigh the same here, so both stay); clamped beyond the limits.
+        setup.book_randomness = -300;
+        run                   = buildRun(setup, engines, topology, dir / "polyglot-best");
+        CHECK(run.spec.book_randomness == -100);
+        // The same seed draws the same order.
+        setup.seed            = 12;
+        setup.book_randomness = 0;
+        const auto first      = buildRun(setup, engines, topology, dir / "polyglot-a");
+        const auto second     = buildRun(setup, engines, topology, dir / "polyglot-b");
+        const auto read       = [](const std::string& path) {
+            std::ifstream in(path);
+            return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+        };
+        CHECK(read(first.tournament.opening.file) == read(second.tournament.opening.file));
+        setup.seed = 0;
         setup.book.clear();
         setup.book_plies = -1;
     }

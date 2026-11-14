@@ -44,6 +44,21 @@ msgstr "Партий × потоков: %d × %d > доступных поток
 msgid "%d plies"
 msgstr "полуходов: %d"
 
+msgid "%d · every move alike"
+msgstr "%d · все ходы поровну"
+
+msgid "%d · moves by their weights"
+msgstr "%d · ходы по их весу"
+
+msgid "%d · the best moves only"
+msgstr "%d · только лучшие ходы"
+
+msgid "%d · toward every move alike"
+msgstr "%d · ближе к равным шансам для всех ходов"
+
+msgid "%d · toward the best moves"
+msgstr "%d · ближе к лучшим ходам"
+
 msgid "%s  vs  %s"
 msgstr "%s  против  %s"
 
@@ -803,6 +818,9 @@ msgstr "Перекрёстная таблица"
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr "Ctrl + колесо мыши, Ctrl + и Ctrl -, Ctrl 0"
 
+msgid "Ctrl+click to type a value."
+msgstr "Ctrl+щелчок — ввести значение."
+
 msgid "Cut short, by a download that did not end for example. Engines leave such a file out, and some stop at once when they meet it."
 msgstr "Обрезан, например незавершённой загрузкой. Движки пропускают такой файл, а некоторые сразу завершаются, встретив его."
 
@@ -1423,6 +1441,9 @@ msgstr "Сколько времени движок может отвечать �
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "Сколько раз играется каждая пара; каждый раз две партии со сменой цвета. Другие программы называют цикл раундом из 2 партий на встречу (-rounds N -games 2)."
+
+msgid "How the moves of a Polyglot book are chosen, for the tournament's openings and for the participants' own books: -100 the best move only, 0 in proportion to their weights, as Polyglot and Cute Chess choose, 100 every move alike. In between, -50 squares the weights and 50 takes their square roots."
+msgstr "Как выбираются ходы книги Polyglot — для дебютов турнира и для собственных книг участников: -100 только лучший ход, 0 пропорционально их весу, как выбирают Polyglot и Cute Chess, 100 все ходы поровну. В промежутке -50 возводит веса в квадрат, а 50 извлекает из них квадратный корень."
 
 msgid "How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."
 msgstr "Насколько несбалансированы дебюты: разброс даваемого ими преимущества в Elo. Пары партий одним дебютом его компенсируют, поэтому чем больше смещение, тем короче тест. Книга fishtest: около 191."
@@ -2093,6 +2114,9 @@ msgstr "Допустимое превышение времени, прежде �
 msgid "Overview"
 msgstr "Обзор"
 
+msgid "Own books: {}"
+msgstr "Собственные книги: {}"
+
 msgid "OwnBook is set to false on the engines that have it, so that every game is played from the openings of the tournament."
 msgstr "У движков с опцией OwnBook она устанавливается в false, чтобы каждая партия игралась из дебютов турнира."
 
@@ -2231,8 +2255,8 @@ msgstr "Очки"
 msgid "Polyglot book"
 msgstr "Книга Polyglot"
 
-msgid "Polyglot book: its lines to {} plies, as positions"
-msgstr "Книга Polyglot: её варианты до глубины {} (в полуходах), в виде позиций"
+msgid "Polyglot book: its lines to {} plies, as positions; {}"
+msgstr "Книга Polyglot: её варианты до глубины {} (в полуходах), в виде позиций; {}"
 
 msgid "Ponder is on for {}"
 msgstr "Ponder включён у {}"
@@ -2332,6 +2356,9 @@ msgstr "RMS-смещение (Elo)"
 
 msgid "Random order"
 msgstr "Случайный порядок"
+
+msgid "Randomness"
+msgstr "Случайность"
 
 msgid "Rating"
 msgstr "Рейтинг"
@@ -3125,6 +3152,9 @@ msgstr "Игроки PGN-файлов, которые по имени (без у
 msgid "The port the server opens for the page, as ssh -R REMOTE_PORT:localhost:PORT user@host would ask (0: the server chooses). Authentication \"none\" only: a service that lets anyone in, or a server of one's own that lets the user in without a key. Its host key is trusted the first time and must stay the same."
 msgstr "Порт, который сервер открывает для страницы, как его запросил бы ssh -R REMOTE_PORT:localhost:PORT user@host (0: выбирает сервер). Только аутентификация «none»: сервис, пускающий всех, или собственный сервер, пускающий пользователя без ключа. Ключ хоста принимается при первом подключении и не должен меняться."
 
+msgid "The positions of the Polyglot book in the order they are drawn, each once, the likelier lines (by the weights of their moves, as the randomness makes them) the sooner; or in the order of the book, from Start at."
+msgstr "Позиции книги Polyglot в порядке розыгрыша, каждая один раз, более вероятные варианты (по весу их ходов с учётом случайности) раньше; или в порядке книги, начиная с «Начать с»."
+
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
 msgstr "Процессорное время процессов каждого движка, пока он думает (не больше ядер, чем его потоков) и пока думает соперник (ноль без пондеринга). Измеряется во время партий, сыгранных в окне, и сохраняется вместе с ними для возобновления турнира."
 
@@ -3178,6 +3208,9 @@ msgstr "Чтение остановилось до конца файла: {}"
 
 msgid "The same engine, with different books"
 msgstr "Один и тот же движок с разными книгами"
+
+msgid "The same for every book of the tournament: also in the Openings section."
+msgstr "Одна для всех книг турнира: также в разделе «Дебюты»."
 
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
 msgstr "Тот же матч с новым движком A, например следующей версией: все остальные настройки сохраняются."
@@ -3743,6 +3776,9 @@ msgstr "каждая партия из начальной позиции"
 msgid "every game's engine log"
 msgstr "журнал движков каждой партии"
 
+msgid "every move alike"
+msgstr "все ходы поровну"
+
 msgid "every pair with both colours"
 msgstr "каждая пара с обоими цветами"
 
@@ -3833,6 +3869,9 @@ msgstr "PV матов проверяются"
 msgid "moves"
 msgstr "ходы"
 
+msgid "moves by their weights"
+msgstr "ходы по их весу"
+
 msgid "moves of {} game or more"
 msgid_plural "moves of {} games or more"
 msgstr[0] "ходы, сыгранные в {} партии и более"
@@ -3884,6 +3923,9 @@ msgstr[2] "собственная книга {}, {} полуходов"
 msgid "own books off"
 msgstr "собственные книги выключены"
 
+msgid "own books: {}"
+msgstr "собственные книги: {}"
+
 msgid "pairs"
 msgstr "пары"
 
@@ -3898,6 +3940,9 @@ msgstr "готовый"
 
 msgid "random"
 msgstr "случайно"
+
+msgid "randomness {}"
+msgstr "случайность {}"
 
 msgid "reading the tournaments…"
 msgstr "чтение турниров…"
@@ -3922,6 +3967,9 @@ msgstr "отправить при запуске"
 
 msgid "set by hand"
 msgstr "задано вручную"
+
+msgid "the best moves only"
+msgstr "только лучшие ходы"
 
 msgid "the driver gives OpenGL {}"
 msgstr "драйвер предоставляет OpenGL {}"

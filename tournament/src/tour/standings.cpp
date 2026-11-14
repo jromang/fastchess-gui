@@ -8,6 +8,7 @@
 
 #include <fmt/include/fmt/format.h>
 
+#include "polyglot.hpp"
 #include "ratinglist.hpp"
 
 namespace fcg::tour {
@@ -564,9 +565,7 @@ std::string forumDetails(const TournamentSpec& spec, const Table& table) {
     if (spec.format != Format::Match) out += fmt::format(", {} engines", table.rows.size());
     if (!spec.participants.empty()) out += ", " + timeControlText(spec.participants.front().engine.limit);
     out += fmt::format(", {} game{}", games, games == 1 ? "" : "s");
-    if (!spec.conditions.opening.file.empty()) {
-        out += ", book " + std::filesystem::path(spec.conditions.opening.file).filename().string();
-    }
+    if (const auto book = bookText(spec); !book.empty()) out += ", book " + book;
     if (spec.conditions.variant == fastchess::VariantType::FRC) out += ", Chess960";
     return out;
 }
@@ -630,11 +629,23 @@ std::string footerLine(const TournamentSpec& spec, const Table& table, std::opti
     if (!spec.participants.empty()) {
         out += ", time control:" + timeControlText(spec.participants.front().engine.limit);
     }
-    if (!spec.conditions.opening.file.empty()) {
-        out += ", book:" + std::filesystem::path(spec.conditions.opening.file).filename().string();
-    }
+    if (const auto book = bookText(spec); !book.empty()) out += ", book:" + book;
     if (!spec.name.empty()) out += ", event: " + spec.name;
     return out;
+}
+
+std::string bookText(const TournamentSpec& spec) {
+    const auto& opening = spec.conditions.opening;
+    if (!spec.polyglot_book.empty()) {
+        return fmt::format("{} ({} plies, {})", std::filesystem::path(spec.polyglot_book).filename().string(),
+                           spec.polyglot_plies, randomnessLabel(spec.book_randomness));
+    }
+    if (opening.file.empty()) return {};
+    auto text = std::filesystem::path(opening.file).filename().string();
+    if (opening.format == fastchess::FormatType::PGN && opening.plies > 0) {
+        text += fmt::format(" ({} plies)", opening.plies);
+    }
+    return text;
 }
 
 std::string gauntletText(const TournamentSpec& spec, const Table& table, const std::string& title,

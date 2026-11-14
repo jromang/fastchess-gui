@@ -347,6 +347,27 @@ TEST_CASE("profiles: each section said on one line, and as cutechess and fastche
     s.seed = 7;
     CHECK(sectionSummary(s, SetupSection::Openings, books) == "UHO 2024 · random · seed 7");
     CHECK(sectionCommandLine(s, SetupSection::Openings) == "-openings file=uho.epd format=epd order=random -srand 7");
+    // The randomness only chooses the moves of a Polyglot book: said for the tournament's, and for the participants'
+    // own books when it is not the weights as they are.
+    s.book_randomness = -40;
+    CHECK(sectionSummary(s, SetupSection::Openings, books) == "UHO 2024 · random · seed 7");
+    s.participants              = {{"Alpha"}, {"Beta"}};  // a gauntlet
+    s.participants[1].book.path = "/books/a.bin";
+    CHECK(sectionSummary(s, SetupSection::Openings, books) == "UHO 2024 · random · seed 7 · own books: randomness -40");
+    s.participants.clear();
+    s.book = "/books/Perfect2023.bin";
+    s.seed = 0;
+    CHECK(sectionSummary(s, SetupSection::Openings, books) == "Perfect2023.bin · 8 plies · random · randomness -40");
+    s.book_randomness = 0;
+    s.book_plies      = 12;
+    CHECK(sectionSummary(s, SetupSection::Openings, books) ==
+          "Perfect2023.bin · 12 plies · random · moves by their "
+          "weights");
+    CHECK(randomnessText(-100) == "the best moves only");
+    CHECK(randomnessText(100) == "every move alike");
+    CHECK(randomnessText(25) == "randomness +25");
+    s.book       = "/books/uho.epd";
+    s.book_plies = -1;
 
     s.common_hash    = 256;
     s.common_threads = 1;

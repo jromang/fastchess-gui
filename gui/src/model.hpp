@@ -275,6 +275,9 @@ struct MatchSetup {
     bool chess960          = false;  // Fischer random; without a book, the 960 starting positions
     bool opening_per_round = false;  // round robin, gauntlet, Swiss: one opening for every pair of a round
     uint64_t seed          = 0;      // 0 = new seed for every run
+    // How the moves of the Polyglot books are chosen, the tournament's and the participants' own: -100 the best move
+    // only, 0 by their weights, 100 every move alike (tour::choiceWeights()).
+    int book_randomness = 0;
 
     bool draw_enabled   = false;
     int draw_movenumber = 40;
@@ -376,7 +379,7 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
         fixed_games, sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, sprt_draw_ratio,        \
         sprt_rms_bias, limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto,    \
         concurrency, affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out, \
-        engine_syzygy, engine_ownbook_off, book_a, book_b, big_scale, big_follow, big_seconds
+        engine_syzygy, engine_ownbook_off, book_a, book_b, big_scale, big_follow, big_seconds, book_randomness
 #define FCG_MATCH_SETUP_FIELDS_2                                                                                  \
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,    \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,     \

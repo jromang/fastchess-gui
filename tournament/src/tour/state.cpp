@@ -1035,7 +1035,7 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
     const auto own_book = [&](fastchess::EngineConfiguration& config, const Participant& p) {
         if (p.book.empty()) return;
         const auto seed = spec_.conditions.seed ^ (0x9e3779b97f4a7c15ULL * static_cast<uint64_t>(p.id + 1));
-        config          = throughBookAdapter(std::move(config), ownBookFileOf(p), p.book_depth, seed);
+        config = throughBookAdapter(std::move(config), ownBookFileOf(p), p.book_depth, seed, spec_.book_randomness);
     };
     own_book(task.white, game == 0 ? *first : *second);
     own_book(task.black, game == 0 ? *second : *first);

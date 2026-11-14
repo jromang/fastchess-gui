@@ -72,6 +72,27 @@ void itemHelp(const std::string& text) {
     ImGui::EndTooltip();
 }
 
+// How the moves of the Polyglot books are chosen, from -100 to 100, its meaning beside the number.
+bool randomnessSlider(const char* id, int& value, float width) {
+    const int v        = value;
+    const char* format = v == -tour::RANDOMNESS_LIMIT ? TR("%d · the best moves only")
+                         : v < 0                      ? TR("%d · toward the best moves")
+                         : v == 0                     ? TR("%d · moves by their weights")
+                         : v < tour::RANDOMNESS_LIMIT ? TR("%d · toward every move alike")
+                                                      : TR("%d · every move alike");
+    ImGui::SetNextItemWidth(width);
+    return ImGui::SliderInt(id, &value, -tour::RANDOMNESS_LIMIT, tour::RANDOMNESS_LIMIT, format,
+                            ImGuiSliderFlags_AlwaysClamp);
+}
+
+std::string randomnessHelp() {
+    return std::string(TR("How the moves of a Polyglot book are chosen, for the tournament's openings and for the "
+                          "participants' own books: -100 the best move only, 0 in proportion to their weights, as "
+                          "Polyglot and Cute Chess choose, 100 every move alike. In between, -50 squares the weights "
+                          "and 50 takes their square roots.")) +
+           "\n" + TR("Ctrl+click to type a value.");
+}
+
 // The Syzygy directories of the setup, typed or added with the folder dialog. This machine's: in no profile, the same
 // for the adjudication and for the engines.
 bool tablebaseDirs(const char* id, std::string& paths, Dialogs& dialogs) {
@@ -309,6 +330,13 @@ bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again,
             depth_help += "\n" + std::string(TR("Its book moves are played at once, without a search."));
             itemHelp(depth_help);
         }
+        // The setting of every book of the tournament (Openings), here too since it chooses this book's moves.
+        ImGui::BeginDisabled(book.empty());
+        const auto randomness_label = fmt::format("{}##own_randomness", TR("Randomness"));
+        if (randomnessSlider(randomness_label.c_str(), setup_.book_randomness, px(260))) changed = true;
+        ImGui::EndDisabled();
+        itemHelp(randomnessHelp() + "\n" +
+                 TR("The same for every book of the tournament: also in the Openings section."));
 
         if (again) {
             ImGui::Separator();
@@ -1143,17 +1171,29 @@ void App::setupOpenings() {
         TR("Fischer random chess. The engines must play it (the UCI_Chess960 option, or the fischerandom "
            "variant of a WinBoard engine). A book of Chess960 positions, or none for all 960."));
 
+    const bool polyglot = tour::isPolyglot(setup_.book);
     changed |= ImGui::Checkbox(TR("Random order"), &setup_.book_random);
-    itemHelp(
-        TR("The openings in a random order (order=random), or one after the other from Start at (order="
-           "sequential)."));
-    if (tour::isPolyglot(setup_.book)) {
+    itemHelp(polyglot ? TR("The positions of the Polyglot book in the order they are drawn, each once, the likelier "
+                           "lines (by the weights of their moves, as the randomness makes them) the sooner; or in the "
+                           "order of the book, from Start at.")
+                      : TR("The openings in a random order (order=random), or one after the other from Start at "
+                           "(order=sequential)."));
+    if (polyglot) {
         changed |= inputInt(TR("Depth (plies)"), "##plies", setup_.book_plies, -1, 40);
         ui::help(trf("A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the "
                      "moves weighing less than a tenth of the best one; the positions reached are the openings.",
                      POLYGLOT_PLIES)
                      .c_str());
-    } else {
+    }
+    // The participants' own books choose their moves with it too: shown for them, the book being of another kind.
+    const auto people   = fcg::setupParticipants(setup_);
+    const bool own_book = std::any_of(people.begin(), people.end(), [](const auto& p) { return !p.book.empty(); });
+    if (polyglot || own_book) {
+        ui::label(TR("Randomness"), labelWidth());
+        changed |= randomnessSlider("##book_randomness", setup_.book_randomness, px(260));
+        itemHelp(randomnessHelp());
+    }
+    if (!polyglot) {
         changed |= inputInt(TR("Plies (PGN)"), "##plies", setup_.book_plies, -1, 1000);
         ui::help(TR("For a PGN book: number of plies kept. -1 = all."));
     }
@@ -1472,12 +1512,18 @@ void App::drawSetupSummary() {
             }
         }
     } else if (!book_missing) {
-        check(!setup_.book.empty(),
-              setup_.book.empty() ? std::string(TR("No opening book: every game starts from the initial position"))
-                                  : trf("Openings: {}", std::filesystem::path(setup_.book).filename().string()));
+        // The book's name, the plies kept of a PGN book, and how a Polyglot book's lines are followed.
+        auto text = setup_.book.empty()
+                        ? std::string(TR("No opening book: every game starts from the initial position"))
+                        : trf("Openings: {}", std::filesystem::path(setup_.book).filename().string());
+        if (tour::isPgnBook(setup_.book) && setup_.book_plies > 0) {
+            text += ", " + trn("{} ply", "{} plies", static_cast<uint64_t>(setup_.book_plies), setup_.book_plies);
+        }
+        check(!setup_.book.empty(), text);
         if (tour::isPolyglot(setup_.book)) {
-            check(true, trf("Polyglot book: its lines to {} plies, as positions",
-                            setup_.book_plies > 0 ? setup_.book_plies : POLYGLOT_PLIES));
+            check(true, trf("Polyglot book: its lines to {} plies, as positions; {}",
+                            setup_.book_plies > 0 ? setup_.book_plies : POLYGLOT_PLIES,
+                            randomnessText(setup_.book_randomness)));
         }
     }
     const bool per_round = setup_.format == TournamentFormat::RoundRobin ||
@@ -1512,8 +1558,12 @@ void App::drawSetupSummary() {
             check(true, trf("{} searches to depth {}", p.name, p.depth));
         }
     }
-    // The participants with a book of their own: "Alpha: own book A, 12 plies".
+    // The participants with a book of their own: "Alpha: own book A, 12 plies", and how their moves are chosen.
     const auto people = fcg::setupParticipants(setup_);
+    if (setup_.book_randomness != 0 &&
+        std::any_of(people.begin(), people.end(), [](const auto& p) { return !p.book.empty(); })) {
+        check(true, trf("Own books: {}", randomnessText(setup_.book_randomness)));
+    }
     for (std::size_t i = 0; i < people.size(); ++i) {
         const auto& book = people[i].book;
         if (book.empty()) continue;

@@ -147,9 +147,11 @@ class ConsoleListener final : public tour::RecordListener {
                         elo.getElo().c_str());
             return;
         }
+        // Under the table, the line of the copies: the games, the draws, the time control, the book and how its
+        // openings were chosen.
+        const auto table = tour::computeTable(spec, state_.results(), std::nullopt, state_.byes());
         std::printf("\n%s\n",
-                    tour::tableText(tour::computeTable(spec, state_.results(), std::nullopt, state_.byes()), spec.name)
-                        .c_str());
+                    tour::tableText(table, spec.name, tour::footerLine(spec, table, state_.totalGames())).c_str());
     }
 
    private:

@@ -123,4 +123,8 @@ void recognizeProfiles(MatchSetup& setup, const ProfileStore& store);
 // A time in seconds as the summaries say it: "15 min", "1 min 30 s", "0.1 s".
 [[nodiscard]] std::string durationText(double seconds);
 
+// How the moves of the Polyglot books are chosen (MatchSetup::book_randomness), as the summaries say it: "moves by
+// their weights", "the best moves only", "every move alike", "randomness -40".
+[[nodiscard]] std::string randomnessText(int randomness);
+
 }  // namespace fcg

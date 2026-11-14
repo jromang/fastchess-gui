@@ -43,6 +43,21 @@ msgstr "%d partidas × %d hilos > %d hilos disponibles."
 msgid "%d plies"
 msgstr "%d medias jugadas"
 
+msgid "%d · every move alike"
+msgstr "%d · todas las jugadas por igual"
+
+msgid "%d · moves by their weights"
+msgstr "%d · jugadas según su peso"
+
+msgid "%d · the best moves only"
+msgstr "%d · solo las mejores jugadas"
+
+msgid "%d · toward every move alike"
+msgstr "%d · hacia todas las jugadas por igual"
+
+msgid "%d · toward the best moves"
+msgstr "%d · hacia las mejores jugadas"
+
 msgid "%s  vs  %s"
 msgstr "%s  contra  %s"
 
@@ -799,6 +814,9 @@ msgstr "Tabla cruzada"
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr "Ctrl + rueda del ratón, Ctrl + y Ctrl -, Ctrl 0"
 
+msgid "Ctrl+click to type a value."
+msgstr "Ctrl+clic para escribir un valor."
+
 msgid "Cut short, by a download that did not end for example. Engines leave such a file out, and some stop at once when they meet it."
 msgstr "Cortado, por ejemplo por una descarga que no terminó. Los motores ignoran un archivo así, y algunos se detienen en cuanto lo encuentran."
 
@@ -1418,6 +1436,9 @@ msgstr "Cuánto puede tardar el motor en responder a uciok al arrancar y a isrea
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "Cuántas veces se juega cada emparejamiento; cada vez dos partidas, con los colores invertidos. Otros programas llaman a un ciclo ronda, de 2 partidas por encuentro (-rounds N -games 2)."
+
+msgid "How the moves of a Polyglot book are chosen, for the tournament's openings and for the participants' own books: -100 the best move only, 0 in proportion to their weights, as Polyglot and Cute Chess choose, 100 every move alike. In between, -50 squares the weights and 50 takes their square roots."
+msgstr "Cómo se eligen las jugadas de un libro Polyglot, para las aperturas del torneo y para los libros propios de los participantes: -100 solo la mejor jugada, 0 en proporción a sus pesos, como eligen Polyglot y Cute Chess, 100 todas las jugadas por igual. Entre medias, -50 eleva los pesos al cuadrado y 50 toma su raíz cuadrada."
 
 msgid "How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."
 msgstr "Lo desequilibradas que son las aperturas: la dispersión de la ventaja que dan, en Elo. Los pares de partidas con la misma apertura la anulan, así que un sesgo mayor acorta el test. El libro de fishtest: unos 191."
@@ -2086,6 +2107,9 @@ msgstr "Exceso de tiempo tolerado antes de perder una partida por tiempo."
 msgid "Overview"
 msgstr "Vista general"
 
+msgid "Own books: {}"
+msgstr "Libros propios: {}"
+
 msgid "OwnBook is set to false on the engines that have it, so that every game is played from the openings of the tournament."
 msgstr "OwnBook se pone a false en los motores que lo tienen, para que cada partida se juegue desde las aperturas del torneo."
 
@@ -2223,8 +2247,8 @@ msgstr "Puntos"
 msgid "Polyglot book"
 msgstr "Libro Polyglot"
 
-msgid "Polyglot book: its lines to {} plies, as positions"
-msgstr "Libro Polyglot: sus líneas hasta {} medias jugadas, como posiciones"
+msgid "Polyglot book: its lines to {} plies, as positions; {}"
+msgstr "Libro Polyglot: sus líneas hasta {} medias jugadas, como posiciones; {}"
 
 msgid "Ponder is on for {}"
 msgstr "Ponder activado para {}"
@@ -2323,6 +2347,9 @@ msgstr "Sesgo RMS (Elo)"
 
 msgid "Random order"
 msgstr "Orden aleatorio"
+
+msgid "Randomness"
+msgstr "Aleatoriedad"
 
 msgid "Rating"
 msgstr "Elo"
@@ -3109,6 +3136,9 @@ msgstr "Los jugadores de los archivos PGN que no son un motor de la biblioteca p
 msgid "The port the server opens for the page, as ssh -R REMOTE_PORT:localhost:PORT user@host would ask (0: the server chooses). Authentication \"none\" only: a service that lets anyone in, or a server of one's own that lets the user in without a key. Its host key is trusted the first time and must stay the same."
 msgstr "El puerto que el servidor abre para la página, como lo pediría ssh -R REMOTE_PORT:localhost:PORT user@host (0: el servidor elige). Solo autenticación «none»: un servicio que deja entrar a cualquiera, o un servidor propio que deja entrar al usuario sin clave. Su clave de host se acepta la primera vez y debe seguir igual."
 
+msgid "The positions of the Polyglot book in the order they are drawn, each once, the likelier lines (by the weights of their moves, as the randomness makes them) the sooner; or in the order of the book, from Start at."
+msgstr "Las posiciones del libro Polyglot en el orden en que se sortean, cada una una vez, las líneas más probables (según el peso de sus jugadas, tal como lo deja la aleatoriedad) antes; o en el orden del libro, desde Empezar en."
+
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
 msgstr "El tiempo de procesador de los procesos de cada motor, mientras piensa (no más núcleos que sus hilos) y mientras piensa su rival (ninguno sin ponder). Medido durante las partidas jugadas en la ventana y guardado con ellas para cuando se reanude el torneo."
 
@@ -3160,6 +3190,9 @@ msgstr "La lectura se detuvo antes del final del archivo: {}"
 
 msgid "The same engine, with different books"
 msgstr "El mismo motor, con libros distintos"
+
+msgid "The same for every book of the tournament: also in the Openings section."
+msgstr "La misma para todos los libros del torneo: también en la sección Aperturas."
 
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
 msgstr "El mismo match con un nuevo motor A, p. ej. la siguiente versión: todos los demás ajustes se mantienen."
@@ -3722,6 +3755,9 @@ msgstr "cada partida desde la posición inicial"
 msgid "every game's engine log"
 msgstr "el registro del motor de cada partida"
 
+msgid "every move alike"
+msgstr "todas las jugadas por igual"
+
 msgid "every pair with both colours"
 msgstr "cada par con ambos colores"
 
@@ -3812,6 +3848,9 @@ msgstr "PV de mate comprobadas"
 msgid "moves"
 msgstr "jugadas"
 
+msgid "moves by their weights"
+msgstr "jugadas según su peso"
+
 msgid "moves of {} game or more"
 msgid_plural "moves of {} games or more"
 msgstr[0] "jugadas de {} partida o más"
@@ -3861,6 +3900,9 @@ msgstr[1] "libro propio {}, {} medias jugadas"
 msgid "own books off"
 msgstr "libros propios desactivados"
 
+msgid "own books: {}"
+msgstr "libros propios: {}"
+
 msgid "pairs"
 msgstr "pares"
 
@@ -3875,6 +3917,9 @@ msgstr "incluido"
 
 msgid "random"
 msgstr "aleatorio"
+
+msgid "randomness {}"
+msgstr "aleatoriedad {}"
 
 msgid "reading the tournaments…"
 msgstr "leyendo los torneos…"
@@ -3899,6 +3944,9 @@ msgstr "enviar al arrancar"
 
 msgid "set by hand"
 msgstr "puesto a mano"
+
+msgid "the best moves only"
+msgstr "solo las mejores jugadas"
 
 msgid "the driver gives OpenGL {}"
 msgstr "el controlador ofrece OpenGL {}"

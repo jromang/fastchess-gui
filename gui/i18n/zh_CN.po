@@ -42,6 +42,21 @@ msgstr "%d 局 × %d 线程 > %d 可用线程。"
 msgid "%d plies"
 msgstr "%d 个半回合"
 
+msgid "%d · every move alike"
+msgstr "%d · 每步棋机会均等"
+
+msgid "%d · moves by their weights"
+msgstr "%d · 按权重选着"
+
+msgid "%d · the best moves only"
+msgstr "%d · 只选最佳着法"
+
+msgid "%d · toward every move alike"
+msgstr "%d · 偏向每步棋机会均等"
+
+msgid "%d · toward the best moves"
+msgstr "%d · 偏向最佳着法"
+
 msgid "%s  vs  %s"
 msgstr "%s  对  %s"
 
@@ -795,6 +810,9 @@ msgstr "交叉表"
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr "Ctrl + 鼠标滚轮，Ctrl + 和 Ctrl -，Ctrl 0"
 
+msgid "Ctrl+click to type a value."
+msgstr "Ctrl+单击可直接输入数值。"
+
 msgid "Cut short, by a download that did not end for example. Engines leave such a file out, and some stop at once when they meet it."
 msgstr "文件不完整，例如下载未完成。引擎会跳过这样的文件，有些引擎遇到时会立即退出。"
 
@@ -1413,6 +1431,9 @@ msgstr "引擎启动时回复 uciok、每局开始时回复 isready 所允许的
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "每个配对进行的次数；每次两局，交换先后手。其他程序把一个循环称为一轮，每次相遇 2 局（-rounds N -games 2）。"
+
+msgid "How the moves of a Polyglot book are chosen, for the tournament's openings and for the participants' own books: -100 the best move only, 0 in proportion to their weights, as Polyglot and Cute Chess choose, 100 every move alike. In between, -50 squares the weights and 50 takes their square roots."
+msgstr "Polyglot 开局库如何选着，适用于比赛的开局和参赛者的专属开局库：-100 只选最佳着法，0 按权重比例选择（与 Polyglot 和 Cute Chess 相同），100 每步棋机会均等。介于其间时，-50 将权重平方，50 取其平方根。"
 
 msgid "How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."
 msgstr "开局的不平衡程度：它们带来的优势的离散度，以 Elo 计。同一开局上的成对对局会将其抵消，因此偏差越大，测试越短。fishtest 的开局库：约 191。"
@@ -2079,6 +2100,9 @@ msgstr "超时判负前允许的超时量。"
 msgid "Overview"
 msgstr "概览"
 
+msgid "Own books: {}"
+msgstr "专属开局库：{}"
+
 msgid "OwnBook is set to false on the engines that have it, so that every game is played from the openings of the tournament."
 msgstr "对具有 OwnBook 选项的引擎将其设为 false，使每局都从锦标赛的开局开始。"
 
@@ -2215,8 +2239,8 @@ msgstr "积分"
 msgid "Polyglot book"
 msgstr "Polyglot 开局库"
 
-msgid "Polyglot book: its lines to {} plies, as positions"
-msgstr "Polyglot 开局库：其变化走到 {} 个半回合，作为局面"
+msgid "Polyglot book: its lines to {} plies, as positions; {}"
+msgstr "Polyglot 开局库：其变化走到 {} 个半回合，作为局面；{}"
 
 msgid "Ponder is on for {}"
 msgstr "{} 开启了 Ponder"
@@ -2314,6 +2338,9 @@ msgstr "RMS 偏差 (Elo)"
 
 msgid "Random order"
 msgstr "随机顺序"
+
+msgid "Randomness"
+msgstr "随机度"
 
 msgid "Rating"
 msgstr "等级分"
@@ -3093,6 +3120,9 @@ msgstr "PGN 文件中按名称（不计大小写和空格）不是库引擎的�
 msgid "The port the server opens for the page, as ssh -R REMOTE_PORT:localhost:PORT user@host would ask (0: the server chooses). Authentication \"none\" only: a service that lets anyone in, or a server of one's own that lets the user in without a key. Its host key is trusted the first time and must stay the same."
 msgstr "服务器为页面打开的端口，与 ssh -R REMOTE_PORT:localhost:PORT user@host 所请求的相同（0：由服务器选择）。仅支持 \"none\" 认证：允许任何人进入的服务，或允许该用户无密钥进入的自有服务器。其主机密钥在首次连接时被信任，之后必须保持不变。"
 
+msgid "The positions of the Polyglot book in the order they are drawn, each once, the likelier lines (by the weights of their moves, as the randomness makes them) the sooner; or in the order of the book, from Start at."
+msgstr "Polyglot 开局库的局面按抽取顺序排列，每个局面一次，可能性越大的变化（按其着法的权重，经随机度调整）越靠前；或者按开局库的顺序，从“开始时间”处开始。"
+
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
 msgstr "每个引擎进程的处理器时间：思考时（核心数不超过其线程数）以及对手思考时（不开启后台思考则为零）。在窗口中进行的对局期间测量，并随对局保存，以便恢复锦标赛时使用。"
 
@@ -3142,6 +3172,9 @@ msgstr "读取在文件结束前停止：{}"
 
 msgid "The same engine, with different books"
 msgstr "同一引擎，使用不同的开局库"
+
+msgid "The same for every book of the tournament: also in the Openings section."
+msgstr "比赛中所有开局库共用此设置：也可在“开局”部分修改。"
 
 msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
 msgstr "同样的比赛，换一个新引擎 A，例如下一版本：其他设置保持不变。"
@@ -3701,6 +3734,9 @@ msgstr "每局从初始局面开始"
 msgid "every game's engine log"
 msgstr "每局的引擎日志"
 
+msgid "every move alike"
+msgstr "每步棋机会均等"
+
 msgid "every pair with both colours"
 msgstr "每一对都交换过颜色"
 
@@ -3791,6 +3827,9 @@ msgstr "检查将杀 PV"
 msgid "moves"
 msgstr "步数"
 
+msgid "moves by their weights"
+msgstr "按权重选着"
+
 msgid "moves of {} game or more"
 msgid_plural "moves of {} games or more"
 msgstr[0] "至少 {} 局对局走出的着法"
@@ -3838,6 +3877,9 @@ msgstr[0] "专属开局库 {}，{} 个半回合"
 msgid "own books off"
 msgstr "关闭自带开局库"
 
+msgid "own books: {}"
+msgstr "专属开局库：{}"
+
 msgid "pairs"
 msgstr "对局对"
 
@@ -3852,6 +3894,9 @@ msgstr "预设"
 
 msgid "random"
 msgstr "随机"
+
+msgid "randomness {}"
+msgstr "随机度 {}"
 
 msgid "reading the tournaments…"
 msgstr "正在读取锦标赛…"
@@ -3876,6 +3921,9 @@ msgstr "启动时发送"
 
 msgid "set by hand"
 msgstr "手动设置"
+
+msgid "the best moves only"
+msgstr "只选最佳着法"
 
 msgid "the driver gives OpenGL {}"
 msgstr "驱动提供的是 OpenGL {}"

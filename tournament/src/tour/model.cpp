@@ -100,6 +100,11 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
          {"conditions", s.conditions},
          {"participants", s.participants},
          {"book", s.book}};
+    if (!s.polyglot_book.empty()) {
+        j["polyglot_book"]  = s.polyglot_book;
+        j["polyglot_plies"] = s.polyglot_plies;
+    }
+    if (s.book_randomness != 0) j["book_randomness"] = s.book_randomness;
     if (s.log_every_game) j["log_every_game"] = true;
     if (s.stop_on_start_failure) j["stop_on_start_failure"] = true;
     if (s.opening_per_round) j["opening_per_round"] = true;
@@ -128,6 +133,9 @@ void from_json(const nlohmann::json& j, TournamentSpec& s) {
     j.at("conditions").get_to(s.conditions);
     j.at("participants").get_to(s.participants);
     if (j.contains("book")) j.at("book").get_to(s.book);
+    s.polyglot_book         = j.value("polyglot_book", std::string{});
+    s.polyglot_plies        = j.value("polyglot_plies", 0);
+    s.book_randomness       = std::clamp(j.value("book_randomness", 0), -100, 100);
     s.log_every_game        = j.value("log_every_game", false);
     s.stop_on_start_failure = j.value("stop_on_start_failure", false);
     s.opening_per_round     = j.value("opening_per_round", false);
