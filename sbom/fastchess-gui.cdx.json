@@ -1,0 +1,282 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "application",
+      "bom-ref": "fastchess-gui",
+      "name": "fastchess-gui",
+      "purl": "pkg:github/jromang/fastchess-gui",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/jromang/fastchess-gui" }]
+    },
+    "properties": [
+      { "name": "fastchess-gui:note", "value": "Hand-maintained with CMakeLists.txt's FetchContent pins and app/third_party; sbom/check.py checks it against both." }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "fetchcontent:sdl3",
+      "name": "SDL",
+      "version": "3.4.18",
+      "purl": "pkg:github/libsdl-org/sdl@release-3.4.18",
+      "licenses": [{ "license": { "id": "Zlib" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/libsdl-org/SDL.git" }],
+      "properties": [
+        { "name": "fastchess-gui:pin", "value": "release-3.4.18" },
+        { "name": "fastchess-gui:commit", "value": "829a65d769d935c4852f8159e964312c0957260a" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "fetchcontent:imgui",
+      "name": "Dear ImGui",
+      "version": "1.92.9-docking",
+      "purl": "pkg:github/ocornut/imgui@v1.92.9-docking",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/ocornut/imgui.git" }],
+      "properties": [
+        { "name": "fastchess-gui:pin", "value": "v1.92.9-docking" },
+        { "name": "fastchess-gui:commit", "value": "9b4eb24cee2071e61dc1f9ef3e5228097cdde720" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "fetchcontent:implot",
+      "name": "ImPlot",
+      "version": "1.0",
+      "purl": "pkg:github/epezent/implot@v1.0",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/epezent/implot.git" }],
+      "properties": [
+        { "name": "fastchess-gui:pin", "value": "v1.0" },
+        { "name": "fastchess-gui:commit", "value": "524f9fcd48d76c13fdf94c5ffbba8787a1ff7e39" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "fetchcontent:nanosvg",
+      "name": "nanosvg",
+      "version": "239e102ec2c691f2902e20ace2ed36ee4a35cfe6",
+      "purl": "pkg:github/memononen/nanosvg@239e102ec2c691f2902e20ace2ed36ee4a35cfe6",
+      "licenses": [{ "license": { "id": "Zlib" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/memononen/nanosvg.git" }],
+      "properties": [
+        { "name": "fastchess-gui:pin", "value": "239e102ec2c691f2902e20ace2ed36ee4a35cfe6" },
+        { "name": "fastchess-gui:commit", "value": "239e102ec2c691f2902e20ace2ed36ee4a35cfe6" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "fetchcontent:stb",
+      "name": "stb",
+      "version": "2c980bb59875b0d32144a71867fbdebb2f77cd20",
+      "description": "stb_image.h (its inflater) and stb_image_write.h only.",
+      "purl": "pkg:github/nothings/stb@2c980bb59875b0d32144a71867fbdebb2f77cd20",
+      "licenses": [{ "expression": "MIT OR Unlicense" }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/nothings/stb.git" }],
+      "properties": [
+        { "name": "fastchess-gui:pin", "value": "2c980bb59875b0d32144a71867fbdebb2f77cd20" },
+        { "name": "fastchess-gui:commit", "value": "2c980bb59875b0d32144a71867fbdebb2f77cd20" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "fetchcontent:inter",
+      "name": "Inter",
+      "version": "4.1",
+      "description": "Font, embedded.",
+      "purl": "pkg:github/rsms/inter@v4.1",
+      "licenses": [{ "license": { "id": "OFL-1.1" } }],
+      "hashes": [{ "alg": "SHA-256", "content": "9883fdd4a49d4fb66bd8177ba6625ef9a64aa45899767dde3d36aa425756b11e" }],
+      "externalReferences": [
+        { "type": "distribution", "url": "https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip" },
+        { "type": "vcs", "url": "https://github.com/rsms/inter.git" }
+      ],
+      "properties": [
+        { "name": "fastchess-gui:pin", "value": "https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip" },
+        { "name": "fastchess-gui:commit", "value": "e3a3d4c57d5ecc01453a575621882a384c1995a3" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "fetchcontent:lucide",
+      "name": "lucide-static",
+      "version": "1.59.0",
+      "description": "Icon font, embedded.",
+      "purl": "pkg:npm/lucide-static@1.59.0",
+      "licenses": [{ "license": { "id": "ISC" } }],
+      "hashes": [{ "alg": "SHA-256", "content": "39e2f835692c193233ac7bcdf34eb0cc2da0f839fd9f3674c34d2751bccf37f0" }],
+      "externalReferences": [
+        { "type": "distribution", "url": "https://registry.npmjs.org/lucide-static/-/lucide-static-1.59.0.tgz" },
+        { "type": "vcs", "url": "https://github.com/lucide-icons/lucide.git" }
+      ],
+      "properties": [
+        { "name": "fastchess-gui:pin", "value": "https://registry.npmjs.org/lucide-static/-/lucide-static-1.59.0.tgz" },
+        { "name": "fastchess-gui:commit", "value": "1ef60af944de207e0d5176905a0759ba12e6ee8d" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "fetchcontent:mbedtls",
+      "name": "Mbed TLS",
+      "version": "4.1.1",
+      "purl": "pkg:github/mbed-tls/mbedtls@mbedtls-4.1.1",
+      "licenses": [{ "expression": "Apache-2.0 OR GPL-2.0-or-later" }],
+      "hashes": [{ "alg": "SHA-256", "content": "3359a349e23db3d5536fcee032ae7b2ecbfc08972fab643089b5cbf2a375c98c" }],
+      "externalReferences": [
+        { "type": "distribution", "url": "https://github.com/Mbed-TLS/mbedtls/releases/download/mbedtls-4.1.1/mbedtls-4.1.1.tar.bz2" },
+        { "type": "vcs", "url": "https://github.com/Mbed-TLS/mbedtls.git" }
+      ],
+      "properties": [
+        { "name": "fastchess-gui:pin", "value": "https://github.com/Mbed-TLS/mbedtls/releases/download/mbedtls-4.1.1/mbedtls-4.1.1.tar.bz2" },
+        { "name": "fastchess-gui:commit", "value": "0a8fda272a5a0abef3b47c91bed37185d5a726b1" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "mbedtls:tf-psa-crypto",
+      "name": "TF-PSA-Crypto",
+      "version": "1.1.1",
+      "description": "Mbed TLS's cryptography, in its release archive.",
+      "purl": "pkg:github/mbed-tls/tf-psa-crypto@v1.1.1",
+      "licenses": [{ "expression": "Apache-2.0 OR GPL-2.0-or-later" }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/Mbed-TLS/TF-PSA-Crypto.git" }],
+      "properties": [
+        { "name": "fastchess-gui:commit", "value": "a0632be94d883daa0295ac1eabf70359ad94f91b" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "fetchcontent:libssh2",
+      "name": "libssh2",
+      "version": "1.11.2_DEV",
+      "description": "A commit of the master branch, patched (cmake/patch_libssh2.cmake), with a cryptography backend of fastchess-gui's own (gui/libssh2-psa).",
+      "purl": "pkg:github/libssh2/libssh2@e75fa9a539d21e82d4920c126662e36984e97d61",
+      "licenses": [{ "license": { "id": "BSD-3-Clause" } }],
+      "hashes": [{ "alg": "SHA-256", "content": "3d4fd0016ec56945f911fd223a43d048622f80c4510cdf3e73de6e47a31c3b1b" }],
+      "externalReferences": [
+        { "type": "distribution", "url": "https://github.com/libssh2/libssh2/archive/e75fa9a539d21e82d4920c126662e36984e97d61.tar.gz" },
+        { "type": "vcs", "url": "https://github.com/libssh2/libssh2.git" }
+      ],
+      "properties": [
+        { "name": "fastchess-gui:pin", "value": "https://github.com/libssh2/libssh2/archive/e75fa9a539d21e82d4920c126662e36984e97d61.tar.gz" },
+        { "name": "fastchess-gui:commit", "value": "e75fa9a539d21e82d4920c126662e36984e97d61" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "fetchcontent:qrcodegen",
+      "name": "QR Code generator",
+      "version": "1.8.0",
+      "purl": "pkg:github/nayuki/qr-code-generator@v1.8.0",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "hashes": [{ "alg": "SHA-256", "content": "2ec0a4d33d6f521c942eeaf473d42d5fe139abcfa57d2beffe10c5cf7d34ae60" }],
+      "externalReferences": [
+        { "type": "distribution", "url": "https://github.com/nayuki/QR-Code-generator/archive/refs/tags/v1.8.0.tar.gz" },
+        { "type": "vcs", "url": "https://github.com/nayuki/QR-Code-generator.git" }
+      ],
+      "properties": [
+        { "name": "fastchess-gui:pin", "value": "https://github.com/nayuki/QR-Code-generator/archive/refs/tags/v1.8.0.tar.gz" },
+        { "name": "fastchess-gui:commit", "value": "720f62bddb7226106071d4728c292cb1df519ceb" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "fetchcontent:tinygettext",
+      "name": "tinygettext",
+      "version": "0ebef71ef7aa07ec6d026164fbe9472e6f82a583",
+      "purl": "pkg:github/tinygettext/tinygettext@0ebef71ef7aa07ec6d026164fbe9472e6f82a583",
+      "licenses": [{ "license": { "id": "Zlib" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/tinygettext/tinygettext.git" }],
+      "properties": [
+        { "name": "fastchess-gui:pin", "value": "0ebef71ef7aa07ec6d026164fbe9472e6f82a583" },
+        { "name": "fastchess-gui:commit", "value": "0ebef71ef7aa07ec6d026164fbe9472e6f82a583" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "app:json",
+      "name": "JSON for Modern C++",
+      "version": "3.11.3",
+      "description": "app/third_party/json.hpp",
+      "purl": "pkg:github/nlohmann/json@v3.11.3",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/nlohmann/json.git" }],
+      "properties": [
+        { "name": "fastchess-gui:commit", "value": "9cca280a4d0ccf0c08f47a99aa71d1b0e52f8d03" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "app:fmt",
+      "name": "fmt",
+      "version": "12.2.1-dev",
+      "description": "app/third_party/fmt: a snapshot of the master branch after 12.2.0 (FMT_VERSION 120201); the commit is 12.2.0's, the closest release.",
+      "purl": "pkg:github/fmtlib/fmt@12.2.0",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/fmtlib/fmt.git" }],
+      "properties": [
+        { "name": "fastchess-gui:commit", "value": "1be298e1bd68957e4cd352e1f676f00e07dcfb57" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "app:doctest",
+      "name": "doctest",
+      "version": "2.5.0",
+      "description": "app/third_party/doctest, the test framework (in the tests only).",
+      "purl": "pkg:github/doctest/doctest@v2.5.0",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/doctest/doctest.git" }],
+      "properties": [
+        { "name": "fastchess-gui:commit", "value": "d44d4f6e66232d716af82f00a063759e9d0e50d6" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "app:chess-library",
+      "name": "chess-library",
+      "version": "0.9.11",
+      "description": "app/third_party/chess.hpp; the project tags no release.",
+      "purl": "pkg:github/disservin/chess-library@0.9.11",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/Disservin/chess-library.git" }]
+    },
+    {
+      "type": "library",
+      "bom-ref": "app:expected",
+      "name": "expected",
+      "version": "1.1.0",
+      "description": "app/third_party/expected.hpp",
+      "purl": "pkg:github/tartanllama/expected@v1.1.0",
+      "licenses": [{ "license": { "id": "CC0-1.0" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/TartanLlama/expected.git" }],
+      "properties": [
+        { "name": "fastchess-gui:commit", "value": "292eff8bd8ee230a7df1d6a1c00c4ea0eb2f0362" }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "app:pyrrhic",
+      "name": "Pyrrhic",
+      "version": "unversioned",
+      "description": "app/third_party/pyrrhic, Syzygy tablebase probing (from Fathom); the project tags no release.",
+      "purl": "pkg:github/andygrant/pyrrhic",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/AndyGrant/Pyrrhic.git" }]
+    },
+    {
+      "type": "library",
+      "bom-ref": "app:argv_split",
+      "name": "argv_split",
+      "version": "unversioned",
+      "description": "app/third_party/argv_split.hpp; its repository states no license.",
+      "purl": "pkg:github/bitmeal/argv_split",
+      "licenses": [{ "license": { "name": "NOASSERTION" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/bitmeal/argv_split.git" }]
+    }
+  ]
+}

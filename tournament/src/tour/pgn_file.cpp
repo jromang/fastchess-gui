@@ -67,7 +67,7 @@ PgnFile::PgnFile(fs::path path, std::optional<std::vector<PgnSpan>> kept, bool b
             uint64_t from = 0;
             for (const auto& span : *kept) {
                 if (from >= size) break;
-                if (span.offset > from && !blankRange(file, from, std::min(span.offset, size), wrote)) break;
+                if (span.offset > from && !blankRange(file, from, std::min<uint64_t>(span.offset, size), wrote)) break;
                 from = std::max(from, span.end());
             }
             if (wrote) (void)syncFile(file);

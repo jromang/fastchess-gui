@@ -1697,7 +1697,7 @@ void App::drawImportPreview() {
 }
 
 void App::openRatingImport(const std::string& text) {
-    rating_import_.emplace();
+    rating_import_ = RatingImport{};
     rating_import_->text = text;
     readRatingImport();
     open_rating_import_ = true;

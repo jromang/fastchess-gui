@@ -61,6 +61,7 @@ random_mover
 
 # Config files
 *.json
+!sbom/*.cdx.json
 
 # Scripts
 *.bat
