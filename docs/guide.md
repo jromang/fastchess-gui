@@ -89,8 +89,22 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   participants.
 - **Moved or rebuilt programs**: the library remembers each program (size, date, CRC32). A program that is no
   longer there is marked **!** with *Locate…*, and a tournament does not start with it. A program that changed
-  (a new build) has its options read again automatically. Each tournament also records the programs it was
-  started with: resuming it with a program rebuilt or missing since is reported in the *Log*.
+  (a new build, or another file under the same path) has its options read again automatically.
+- **What a new build changed**: when the new read differs from the one before, the engine is marked **Δ** and its
+  card lists the differences until *Dismiss*: its new `id name` (with *Rename it* when the engine was named after
+  the old one) and author, each option whose default, bounds or choices changed (before and now), the options new
+  and gone, and your value of each (the value of a gone option is dropped; one the new build no longer accepts is in
+  orange). For an option whose default changed, or whose value no longer fits, choose *Keep my value* (or *Keep the
+  old default* where you had none: it plays as before) or *Use the new default*; *Keep my values* and *Use the new
+  defaults* choose for all. The notice goes once every choice is made, unless it has more to tell. Several builds
+  before it is dismissed make one notice, against the read before the first. *Failed or changed* in the state
+  filter shows these engines too, and the command palette has *What changed*, *Keep my values*, *Use the new
+  defaults* and *Dismiss what changed* for each.
+- **The programs of the tournaments**: each tournament records the programs it was started with. The setup's
+  summary warns of an engine whose program changed since its last tournament (the newest one of the tournaments
+  folder that played this program), with *What changed* when its card has a notice. Resuming a tournament with a
+  program rebuilt or missing since says so in its header, with *Continue* (the notice closes) and *Pause*; the
+  tournament does not stop by itself.
 
 **Import…** > *An engine list…* reads the engine list of another program: ChessGUI (`ChsGUI_Eng.TXT`, with the
 options of `ChsGUI_Cfg.ini` next to it), cutechess and Banksia (`engines.json`), Arena (`ArenaENG.cfg`, in Arena's
@@ -188,7 +202,9 @@ engine, estimated duration, openings, common settings, time odds). The setup of 
 
 The summary also gives the memory the hash tables can take: two engine processes per game played at the same time,
 and the engines waiting for their next game, each with its `Hash`. Above the free memory it warns (the system will
-swap); above the memory installed the tournament does not start. `--run` says the same.
+swap); above the memory installed the tournament does not start. `--run` says the same. It also names the engines
+whose program changed since their last tournament (a new build), with *What changed* when the engine's card lists
+new defaults or options (see *Engines*).
 
 - **Format**:
   - *Match*: two engines, A (the engine under test; every statistic is from its point of view) and B (the
@@ -330,7 +346,9 @@ and the engines' depth, time per move and NPS read back from the move comments (
 it, *nps* in *PGN and misc*). When the program ended while a tournament was running (a crash, a power cut, a
 reboot, or quitting while it ran), the next launch resumes it by itself, and the queue goes on after it: *Resume at
 launch the tournament that was running*, in **Settings**, on by default. A tournament paused or stopped waits for
-you, and `--autostart` starts the saved setup instead.
+you, and `--autostart` starts the saved setup instead. A participant whose program was rebuilt or went missing
+since it joined is named in the header of the resumed tournament, with *Continue* and *Pause*: its next games are
+played by the program as it is now, with the options the tournament gave it.
 
 ### Changing a running tournament
 
