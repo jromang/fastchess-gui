@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <ctime>
 
 #include <SDL3/SDL.h>
@@ -397,6 +398,7 @@ void App::drawHome() {
         ui::endCard();
     }
 
+    drawStartFailures(TR("Needs action"));
     drawQueue();
     drawHealth();
 
@@ -572,9 +574,10 @@ void App::drawWorkspaceHeader() {
     ImGui::TextDisabled("%s", fmt::format("{} · {} · {}", formatLabel(info.format), info.limit_text, detail).c_str());
     ui::pageTitle(t ? t->spec().name.c_str() : TR("No match"), guideSection());
 
-    const auto status = runStatusText();
-    if (run_.state() == RunController::State::Finished && !run_.error().empty()) {
-        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+    const auto status   = runStatusText();
+    const bool finished = run_.state() == RunController::State::Finished;
+    if (finished && (!run_.error().empty() || (t && t->startFailures().stalled()))) {
+        ImGui::PushStyleColor(ImGuiCol_Text, run_.error().empty() ? ui::WARN : ui::BAD);
         ImGui::TextWrapped("%s", status.c_str());
         ImGui::PopStyleColor();
     } else {
@@ -585,6 +588,7 @@ void App::drawWorkspaceHeader() {
         ImGui::ProgressBar(std::min(1.0f, static_cast<float>(games_.size()) / static_cast<float>(info.total_games)),
                            ImVec2(-FLT_MIN, px(6)), "");
     }
+    if (drawStartFailures()) ImGui::Spacing();
     drawResumedPrograms();
 
     if (run_.running()) {
@@ -763,6 +767,109 @@ void App::drawHealth() {
     item(false, trn("{} engine process running", "{} engine processes running", processes, processes),
          !systemMemory().has_value());
     ui::endCard();
+}
+
+bool App::drawStartFailures(const char* title) {
+    const auto* t = run_.tournament();
+    if (!t) return false;
+    const auto& failures = t->startFailures();
+    if (failures.empty()) return false;
+
+    // The participants still playing: one withdrawn or replaced meanwhile is no longer waited for.
+    std::vector<tour::StartFailures::Engine> shown;
+    for (auto& e : failures.engines()) {
+        if (const auto* p = t->spec().participant(e.participant); p && p->active) shown.push_back(std::move(e));
+    }
+    if (shown.empty()) return false;
+
+    if (title) sectionTitle(title);
+    const bool running  = run_.running();
+    const bool editable = t->spec().format == tour::Format::RoundRobin || t->spec().format == tour::Format::Gauntlet;
+    const auto now      = tour::StartFailures::Clock::now();
+    const auto tip      = [](const std::string& text) {
+        if (ImGui::BeginItemTooltip()) {
+            ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+            ImGui::TextUnformatted(text.c_str());
+            ImGui::PopTextWrapPos();
+            ImGui::EndTooltip();
+        }
+    };
+
+    ui::beginCard("start_failures_card");
+    for (std::size_t i = 0; i < shown.size(); ++i) {
+        const auto& e = shown[i];
+        ImGui::PushID(e.participant);
+        if (i > 0) ImGui::Separator();
+
+        auto heading = trf("{} cannot start", e.name);
+        if (!e.failed) heading = trf("{} did not start (try {} of {})", e.name, e.tries, tour::StartFailures::TRIES);
+        ImGui::PushStyleColor(ImGuiCol_Text, e.failed ? ui::BAD : ui::WARN);
+        ImGui::TextUnformatted(heading.c_str());
+        ImGui::PopStyleColor();
+        // fastchess' words, as the log has them.
+        ImGui::PushTextWrapPos(0.0f);
+        ImGui::TextUnformatted(e.error.c_str());
+        ImGui::PopTextWrapPos();
+
+        std::string state;
+        if (!running && failures.stalled()) {
+            state = TR("No game is left to play without it: the tournament stopped. Resume tries it again.");
+        } else if (!running) {
+            state = TR("The tournament is stopped: Resume tries it again.");
+        } else if (e.trying) {
+            state = TR("Trying to start it now…");
+        } else {
+            const double seconds = std::chrono::duration<double>(e.next_try - now).count();
+            const auto wait      = ui::formatDuration(std::ceil(std::max(0.0, seconds)));
+            if (e.failed) {
+                state = trf("Its games are set aside, the others go on. Next try in {}.", wait);
+            } else {
+                state = trf("Tried again in {}.", wait);
+            }
+        }
+        ImGui::TextDisabled("%s", state.c_str());
+
+        // On one line, each saying what it does at the cursor.
+        bool first        = true;
+        const auto button = [&](const char* label, const std::string& tooltip) {
+            if (!first) ImGui::SameLine();
+            first          = false;
+            const bool hit = ImGui::Button(label);
+            tip(tooltip);
+            return hit;
+        };
+        if (running) {
+            ImGui::BeginDisabled(e.trying || run_.stopping());
+            const char* try_tip =
+                TR("Try to start it now, rather than at its next try: its games come back if it starts.");
+            if (button(TR("Try again"), try_tip) && run_.tryEngineAgain(e.participant)) {
+                Console::instance().add(trf("{}: trying to start it again.", e.name));
+            }
+            ImGui::EndDisabled();
+        }
+        if (editable) {
+            const std::string impact   = TR("The Schedule tab shows the impact before anything changes.");
+            const std::string withdraw = TR("Its games left are dropped.");
+            const std::string replace =
+                TR("Another engine of the list takes its place and plays its games, those it played included.");
+            if (button(TR("Withdraw…"), withdraw + " " + impact)) {
+                openParticipantEdit(tour::Edit::Kind::Withdraw, e.participant);
+            }
+            if (button(TR("Replace…"), replace + " " + impact)) {
+                openParticipantEdit(tour::Edit::Kind::ReplaceParticipant, e.participant);
+            }
+        }
+        // Set once written.
+        if (!e.log.empty()) {
+            const auto log_tip = trf(
+                "What was sent to the engines of its last try and what they answered, their error output included:\n{}",
+                e.log.string());
+            if (button(TR("Engine log"), log_tip)) ui::openPath(e.log);
+        }
+        ImGui::PopID();
+    }
+    ui::endCard();
+    return true;
 }
 
 void App::drawRelaunch() {

@@ -4,7 +4,10 @@
 
 #include <fmt/include/fmt/format.h>
 
+#include <core/time/time.hpp>
 #include <matchmaking/game_events.hpp>
+
+#include "model.hpp"
 
 namespace fcg::tour {
 
@@ -55,7 +58,23 @@ std::string EngineLog::text(uint64_t game_number, const fastchess::MatchData& da
     out +=
         "Seconds since the game started; W/B: White's or Black's engine; > sent to it, < read from its output, "
         "! read from its error output.\n\n";
+    return out + lines();
+}
 
+std::string EngineLog::startText(const fastchess::EngineConfiguration& engine, const std::string& error) const {
+    std::string out = fmt::format("fastchess-gui engine log, start of {}\n", engine.name);
+    out += fmt::format("Program: {}{}{}\n", engine.cmd, engine.args.empty() ? "" : " ", engine.args);
+    if (!engine.dir.empty() && engine.dir != ".") out += fmt::format("Folder: {}\n", engine.dir);
+    out += fmt::format("Error: {}\n", error);
+    out += fmt::format("When: {}\n", fastchess::time::datetime_iso());
+    out +=
+        "Seconds since the game was to start; W/B: White's or Black's engine; > sent to it, < read from its output, "
+        "! read from its error output.\n\n";
+    return out + lines();
+}
+
+std::string EngineLog::lines() const {
+    std::string out;
     std::lock_guard<std::mutex> lock(mutex_);
     // The two heads and the tail, each in the order of its lines, merged into the order of the game. The last line
     // added is always kept, so the dropped lines are gaps between kept ones. Past its engine's start, a line of a
@@ -92,6 +111,11 @@ bool endsBadly(fastchess::MatchTermination termination) noexcept {
 
 std::filesystem::path engineLogPath(const std::filesystem::path& tournament_dir, uint64_t game_number) {
     return tournament_dir / "logs" / fmt::format("game-{}.log", game_number);
+}
+
+std::filesystem::path engineStartLogPath(const std::filesystem::path& tournament_dir, const std::string& name) {
+    const auto stem = fileStemOf(name);
+    return tournament_dir / "logs" / ("start-" + (stem.empty() ? std::string("engine") : stem) + ".log");
 }
 
 }  // namespace fcg::tour

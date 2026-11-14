@@ -337,6 +337,9 @@ msgstr "Ancla:"
 msgid "Another SSH server"
 msgstr "Otro servidor SSH"
 
+msgid "Another engine of the list takes its place and plays its games, those it played included."
+msgstr "Otro motor de la lista ocupa su lugar y juega sus partidas, incluidas las que ya jugó."
+
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "Cualquier cosa que recordar sobre él; las búsquedas de motores lo encuentran."
 
@@ -1311,6 +1314,12 @@ msgstr "Su ficha, con las opciones cuyo valor por defecto cambió, nuevas o desa
 msgid "Its games"
 msgstr "Sus partidas"
 
+msgid "Its games are set aside, the others go on. Next try in {}."
+msgstr "Sus partidas quedan apartadas y las demás siguen. Próximo intento en {}."
+
+msgid "Its games left are dropped."
+msgstr "Sus partidas restantes se descartan."
+
 msgid "Its games played so far stop counting"
 msgstr "Sus partidas jugadas hasta ahora dejan de contar"
 
@@ -1509,6 +1518,9 @@ msgstr "Nombre: {} → {}"
 msgid "Names of the list that are no library engine"
 msgstr "Nombres de la lista que no son motores de la biblioteca"
 
+msgid "Needs action"
+msgstr "Requiere atención"
+
 msgid "New engine A"
 msgstr "Nuevo motor A"
 
@@ -1562,6 +1574,9 @@ msgstr "Aún no hay ninguna partida en este hueco."
 
 msgid "No game is being played."
 msgstr "No se está jugando ninguna partida."
+
+msgid "No game is left to play without it: the tournament stopped. Resume tries it again."
+msgstr "No queda ninguna partida por jugar sin él: el torneo se ha detenido. Reanudar lo vuelve a intentar."
 
 msgid "No game of {} gives a move: is it a PGN file?"
 msgstr "Ninguna partida de {} da una jugada: ¿es un archivo PGN?"
@@ -1780,6 +1795,9 @@ msgstr "Opciones no enviadas: {}"
 
 msgid "Order:"
 msgstr "Orden:"
+
+msgid "Otherwise an engine still not started after {} tries, {} s apart, has its games set aside while the others go on; it is tried again every {} minutes, and the tournament stops only when nothing else is left to play."
+msgstr "Si no, un motor que sigue sin arrancar tras {} intentos, con {} s entre ellos, queda con sus partidas apartadas mientras las demás siguen; se vuelve a intentar cada {} minutos, y el torneo solo se detiene cuando no queda nada más por jugar."
 
 msgid "Otherwise an engine that crashes or hangs stops the whole match."
 msgstr "Si no, un motor que se cuelga o deja de responder detiene todo el match."
@@ -2134,11 +2152,17 @@ msgstr "Sustituir un motor"
 msgid "Replace the template {}?"
 msgstr "¿Reemplazar la plantilla {}?"
 
+msgid "Replace {}…"
+msgstr "Reemplazar {}…"
+
 msgid "Replaced by"
 msgstr "Sustituido por"
 
 msgid "Replaces your layout of that name."
 msgstr "Sustituye tu disposición con ese nombre."
+
+msgid "Replace…"
+msgstr "Reemplazar…"
 
 msgid "Resign"
 msgstr "Abandono"
@@ -2388,11 +2412,17 @@ msgstr "Detener y salir"
 msgid "Stop now (running games are lost)"
 msgstr "Detener ahora (las partidas en curso se pierden)"
 
+msgid "Stop the tournament when an engine cannot start"
+msgstr "Detener el torneo cuando un motor no arranca"
+
 msgid "Stopped"
 msgstr "Detenido"
 
 msgid "Stopped before the end."
 msgstr "Detenido antes del final."
+
+msgid "Stopped: no game is left to play without {}, which cannot start"
+msgstr "Detenido: no queda ninguna partida por jugar sin {}, que no arranca"
 
 msgid "Stopping after the running games ({})"
 msgstr "Deteniendo tras las partidas en curso ({})"
@@ -2492,6 +2522,9 @@ msgstr "Las opciones PGN de la configuración, para los próximos torneos."
 
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "El estándar PGN los convierte en comentarios. fastchess-gui 0.4.13 y anteriores los leían como jugadas, y podían jugar algunas aperturas de este libro desde una posición equivocada, a menudo la inicial."
+
+msgid "The Schedule tab shows the impact before anything changes."
+msgstr "La pestaña Calendario muestra el impacto antes de que nada cambie."
 
 msgid "The average rating of the opponents met, game by game."
 msgstr "El rating medio de los rivales, partida a partida."
@@ -2716,6 +2749,9 @@ msgstr "El torneo sigue con los programas tal como están ahora; este aviso se c
 msgid "The tournament is not running: resume it to play the new games."
 msgstr "El torneo no está en marcha: reanúdalo para jugar las partidas nuevas."
 
+msgid "The tournament is stopped: Resume tries it again."
+msgstr "El torneo está detenido: Reanudar lo vuelve a intentar."
+
 msgid "The tournament running when the program ended is over: the queue goes on."
 msgstr "El torneo en curso cuando se cerró el programa ha terminado: la cola continúa."
 
@@ -2788,11 +2824,23 @@ msgstr "Torneos y archivos PGN en los que jugó."
 msgid "Tournaments folder"
 msgstr "Carpeta de torneos"
 
+msgid "Tried again in {}."
+msgstr "Nuevo intento en {}."
+
 msgid "Trust the new key"
 msgstr "Confiar en la nueva clave"
 
 msgid "Try again"
 msgstr "Reintentar"
+
+msgid "Try again to start {}"
+msgstr "Volver a intentar arrancar {}"
+
+msgid "Try to start it now, rather than at its next try: its games come back if it starts."
+msgstr "Intenta arrancarlo ahora en vez de en su próximo intento: sus partidas vuelven si arranca."
+
+msgid "Trying to start it now…"
+msgstr "Intentando arrancarlo…"
 
 msgid "Tunnel: connecting to {}"
 msgstr "Túnel: conectando a {}"
@@ -2899,6 +2947,9 @@ msgstr "Qué cambió"
 msgid "What changed: {}"
 msgstr "Qué cambió: {}"
 
+msgid "What was sent to the engines of its last try and what they answered, their error output included:\n{}"
+msgstr "Lo que se envió a los motores de su último intento y lo que respondieron, incluida su salida de error:\n{}"
+
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "Cuándo se decidió por la jugada que hizo, de media: una decisión mucho antes del final del tiempo empleado indica que el tiempo no se aprovechó bien."
 
@@ -2967,6 +3018,12 @@ msgstr "Con tiempo: núcleos físicos − 1, divididos entre los hilos de los mo
 
 msgid "Withdraw an engine"
 msgstr "Retirar un motor"
+
+msgid "Withdraw {}…"
+msgstr "Retirar {}…"
+
+msgid "Withdraw…"
+msgstr "Retirar…"
 
 msgid "Without a book, every game starts from the initial position."
 msgstr "Sin libro, todas las partidas empiezan desde la posición inicial."
@@ -3313,6 +3370,12 @@ msgstr "{} pide que se reinicie en cada partida: Reiniciar el motor en cada part
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} no se puede leer, así que las claves de host aceptadas antes son desconocidas: no se envió nada a {}. Repara el archivo, o bórralo para volver a aceptar la clave del servidor."
 
+msgid "{} cannot start"
+msgstr "{} no arranca"
+
+msgid "{} cannot start: {}. Its games are set aside, the others go on."
+msgstr "{} no arranca: {}. Sus partidas quedan apartadas y las demás siguen."
+
 msgid "{} changed: its options were read again, and its card shows what changed."
 msgstr "{} ha cambiado: sus opciones se han vuelto a leer, y su ficha muestra lo que cambió."
 
@@ -3340,6 +3403,9 @@ msgstr "{} cuelgues"
 
 msgid "{} did not show an RSA host key"
 msgstr "{} no presentó una clave de host RSA"
+
+msgid "{} did not start (try {} of {})"
+msgstr "{} no arrancó (intento {} de {})"
 
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} no deja entrar al usuario «{}» sin clave ni contraseña (acepta: {})"
@@ -3636,6 +3702,9 @@ msgstr[1] "{} seleccionados"
 msgid "{} shown"
 msgstr "{} mostradas"
 
+msgid "{} started again: its games are played again."
+msgstr "{} vuelve a arrancar: sus partidas se juegan de nuevo."
+
 msgid "{} stays at {}."
 msgstr "{} se queda en {}."
 
@@ -3727,6 +3796,9 @@ msgstr "{}: la clave de host no se puede usar (solo claves RSA de 2048 a 4096 bi
 
 msgid "{}: the host key's signature is not valid"
 msgstr "{}: la firma de la clave de host no es válida"
+
+msgid "{}: trying to start it again."
+msgstr "{}: nuevo intento de arranque."
 
 msgid "{}: unknown to the engine"
 msgstr "{}: desconocida para el motor"

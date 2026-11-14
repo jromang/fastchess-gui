@@ -549,6 +549,84 @@ TEST_CASE("a round robin of three engines plays every pairing and shows every na
     CHECK_FALSE(fastchess::atomic::stop.load());
 }
 
+#ifndef _WIN32
+TEST_CASE("an engine that cannot start: the other games go on through the controller, Try again brings it back") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+
+    const auto root = fs::temp_directory_path() / "fcg-run-tests-cannot-start";
+    fs::remove_all(root);
+    fs::create_directories(root);
+
+    // Exits while `broken` exists (after a moment: the test shortens the waits between the tries meanwhile), then is
+    // the random mover.
+    const auto broken = root / "broken";
+    const auto script = root / "flaky.sh";
+    {
+        std::ofstream out(script);
+        out << "#!/bin/sh\nif [ -e \"" << broken.string() << "\" ]; then sleep 0.3; exit 1; fi\nexec \""
+            << randomMover() << "\"\n";
+    }
+    fs::permissions(script, fs::perms::owner_all);
+    std::ofstream(broken).put('x');
+
+    auto engines = randomEngines();
+    engines.push_back(engines[0]);
+    engines[2].name = "random-c";
+    engines[2].cmd  = script.string();
+
+    MatchSetup setup   = randomSetup(0);
+    setup.format       = TournamentFormat::RoundRobin;
+    setup.cycles       = 40;
+    setup.participants = {{"random-a"}, {"random-b"}, {"random-c"}};
+    setup.name         = "One cannot start";
+
+    Harness h;
+    REQUIRE(h.run.start(setup, engines, topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}}), root).empty());
+    const auto* t = h.run.tournament();
+    REQUIRE(t);
+    CHECK_FALSE(t->spec().stop_on_start_failure);  // the setup's default: keep playing
+    const_cast<tour::TournamentState*>(t)->startFailures().setWaits(100ms, 1h);
+    const int c = t->spec().participants.at(2).id;
+
+    // Set aside once its tries are used up, while the games of the two others go on.
+    REQUIRE(h.waitFor(
+        [&] {
+            const auto e = t->startFailures().engine(c);
+            return e && e->failed;
+        },
+        60s));
+    CHECK(h.run.running());
+    CHECK_FALSE(h.run.tryEngineAgain(t->spec().participants.at(0).id));  // it starts: nothing to try
+
+    // Repaired, then tried again at once: its games are played, and the tournament ends complete.
+    fs::remove(broken);
+    CHECK(h.run.tryEngineAgain(c));
+    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 60s));
+    CHECK(h.run.error().empty());
+    CHECK(h.games.size() == 3u * 2 * 40);
+    CHECK(t->finished());
+    CHECK(t->startFailures().empty());
+    CHECK_FALSE(t->startFailures().stalled());
+}
+#endif
+
+TEST_CASE("stopping at once for an engine that cannot start: the setup's choice reaches the tournament") {
+    const auto root = fs::temp_directory_path() / "fcg-run-tests-stop-on-start-failure";
+    fs::remove_all(root);
+    const auto engines = randomEngines();
+    auto setup         = randomSetup(2);
+    CHECK_FALSE(buildRun(setup, engines, topologyFromCores({{0, 0}, {0, 1}}), root).spec.stop_on_start_failure);
+    setup.stop_on_start_failure = true;
+    CHECK(buildRun(setup, engines, topologyFromCores({{0, 0}, {0, 1}}), root).spec.stop_on_start_failure);
+
+    // A quick test has nothing to test without its engine: it says so at once.
+    auto library = engines;
+    CHECK(quickTestSetup(engines[0], "", root / "quick-test.epd", library).stop_on_start_failure);
+}
+
 TEST_CASE("a finished round robin extended by a cycle resumes to play exactly the new games") {
     if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available on this platform, skipped");

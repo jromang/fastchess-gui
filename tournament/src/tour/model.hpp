@@ -79,6 +79,9 @@ struct TournamentSpec {
     FileFingerprint book;
 
     bool log_every_game = false;  // keep the engine log of every game, not only of those that end badly
+    // An engine that cannot start stops the tournament once its tries are used up, rather than have its games set
+    // aside while the others go on (start_failures.hpp).
+    bool stop_on_start_failure = false;
     // Round robin, gauntlet, Swiss: every encounter of a round (in a cycle) plays the same opening, the next one of
     // the book for each new round, so that no engine gets easier openings than the others of its round.
     bool opening_per_round = false;

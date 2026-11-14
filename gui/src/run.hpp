@@ -196,6 +196,10 @@ class RunController {
     void setPaused(bool paused);
     [[nodiscard]] bool paused() const;
 
+    // The engine of `participant`, which cannot start, is tried again as soon as a game of it can be played, rather
+    // than at its next try (tour::StartFailures). False when the run is not playing, or that engine is not failing.
+    bool tryEngineAgain(int participant);
+
     // Interrupts the running games (they are not scored) and ends the run.
     void stopNow();
     // Pauses, waits for the running games to finish, then ends the run.

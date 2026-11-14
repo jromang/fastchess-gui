@@ -50,6 +50,7 @@
 #include "openings.hpp"
 #include "pgn_file.hpp"
 #include "schedule.hpp"
+#include "start_failures.hpp"
 
 namespace fcg::tour {
 
@@ -179,11 +180,20 @@ class TournamentState {
     // --- tournament threads ---
 
     // The next game to play: games of encounters already started first (the second game of a pair comes right
-    // after the first), then the next encounter of the schedule. nullopt when there is nothing to play now.
+    // after the first), then the next encounter of the schedule. The games of the participants startFailures() sets
+    // aside are left for later: an encounter of theirs passed over counts as started, not played yet, so that edits
+    // leave it in place and its games come first once their engine starts. nullopt when there is nothing to play now.
     [[nodiscard]] std::optional<GameTask> claimNext();
 
     // A claimed game that will not be finished (interrupted): it is played again later.
     void release(const GameTask& task);
+
+    // A game of the encounter was played or is being played.
+    [[nodiscard]] bool begun(uint32_t encounter) const;
+
+    // The participants whose engine cannot start, and when they are tried again (start_failures.hpp). Thread safe.
+    [[nodiscard]] StartFailures& startFailures() noexcept { return start_failures_; }
+    [[nodiscard]] const StartFailures& startFailures() const noexcept { return start_failures_; }
 
     // Records a finished game: PGN files, then the journal. Updates the statistics and the SPRT. Throws when the
     // files cannot be written.
@@ -347,6 +357,8 @@ class TournamentState {
 
     std::optional<UndoPoint> undo_;
     uint64_t claims_ = 0;  // games claimed since the tournament was opened
+
+    StartFailures start_failures_;
 
     // version(): bumped when a change is over, the mutex released (declared before the lock_guard).
     std::atomic<uint64_t> version_{0};

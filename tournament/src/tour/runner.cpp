@@ -4,7 +4,10 @@
 #include <fstream>
 #include <thread>
 
+#include <fmt/include/fmt/format.h>
+
 #include <core/globals/globals.hpp>
+#include <core/logger/logger.hpp>
 #include <engine/process/iprocess.hpp>
 
 namespace fcg::tour {
@@ -22,6 +25,24 @@ thread_local bool t_started = false;
 using Ticket                                   = fastchess::observer::PauseGate::Ticket;
 thread_local std::unique_ptr<Ticket>* t_ticket = nullptr;
 
+// What fastchess logged about an engine of that game that failed to start, if one did.
+thread_local std::optional<StartFailureLine> t_failure;
+
+// fastchess' log on its way to the sink that was there before the runner's (the GUI's console): which engine of the
+// game played on this thread failed to start, and why. fastchess logs it on that thread, right after it asked
+// gameWanted() and before it asks again.
+std::atomic<fastchess::Logger::PrintSink> g_next_sink{nullptr};
+
+void watchLog(fastchess::Logger::Level level, std::string_view message) {
+    if (t_task && level >= fastchess::Logger::Level::WARN) {
+        if (auto failure = parseStartFailure(message);
+            failure && (failure->engine == t_task->white.name || failure->engine == t_task->black.name)) {
+            t_failure = std::move(failure);
+        }
+    }
+    if (const auto next = g_next_sink.load()) next(level, message);
+}
+
 }  // namespace
 
 Runner::Runner(TournamentState& state, fastchess::observer::GameObserver* downstream, RecordListener* listener)
@@ -38,28 +59,69 @@ Runner::~Runner() {
     // Workers may still be inside a callback of ours: join them before our members go away.
     pool_.kill();
     if (fastchess::observer::get() == this) fastchess::observer::set(previous_);
+    if (fastchess::Logger::print_sink_.load() == &watchLog) fastchess::Logger::setPrintSink(g_next_sink.load());
 }
 
 void Runner::start() {
     previous_ = fastchess::observer::get();
     fastchess::observer::set(this);
+    g_next_sink = fastchess::Logger::print_sink_.load();
+    fastchess::Logger::setPrintSink(&watchLog);
+
+    auto& failures = state_.startFailures();
+    failures.setStalled(false);
 
     startNext();
 
     using namespace std::chrono_literals;
+    auto last              = StartFailures::Clock::now();
+    uint64_t failures_seen = failures.version();
     while (!fastchess::atomic::stop) {
+        // A pause holds the next tries of the engines that failed to start: the time it lasts does not count.
+        const auto now = StartFailures::Clock::now();
+        if (fastchess::observer::PauseGate::instance().paused()) failures.postpone(now - last);
+        last = now;
+
         {
             std::lock_guard<std::mutex> lock(mutex_);
             if (in_flight_ == 0 && !state_.hasWork()) break;
         }
         // A withdrawal may have dropped the game a pair was waiting for.
         closeSettledPairs();
+
+        // While engines cannot start, the games set aside come back as their engines are due for a try or start
+        // again, on the threads left free meanwhile.
+        if (!failures.empty() || failures.version() != failures_seen) {
+            failures_seen = failures.version();
+            startNext();
+            if (stall()) break;
+        }
         std::this_thread::sleep_for(20ms);
     }
 
     // Interrupted games end quickly once stop is set; nothing is called back after this.
     pool_.kill();
+    fastchess::Logger::setPrintSink(g_next_sink.load());
     fastchess::observer::set(previous_);
+}
+
+bool Runner::stall() {
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (in_flight_ > 0) return false;
+    }
+    // A paused tournament waits for its resume, a tournament stopping once idle for its stop.
+    auto& failures = state_.startFailures();
+    if (fastchess::observer::PauseGate::instance().paused() || failures.empty() || failures.deciding() ||
+        !state_.hasWork()) {
+        return false;
+    }
+    // Each engine gets one more try before the tournament stops for it (claimed at the next round of the loop).
+    if (failures.lastChance(StartFailures::Clock::now())) return false;
+
+    failures.setStalled(true);
+    report(StartFailureEvent::Kind::Stalled, failures.engines());
+    return true;
 }
 
 void Runner::startNext() {
@@ -83,6 +145,9 @@ void Runner::startNext() {
 bool Runner::gameWanted(std::size_t /*game_id*/) const {
     // A game waiting for a resume that will not come would keep "stop when idle" waiting forever.
     if (fastchess::observer::PauseGate::instance().stoppingWhenIdle()) return false;
+    // fastchess said which engine failed to start: the runner tries it again itself (play()), its other games set
+    // aside meanwhile, rather than let this thread wait for the tries and then stop the tournament.
+    if (t_failure) return false;
     return !t_task || state_.wanted(*t_task);
 }
 
@@ -108,6 +173,7 @@ void Runner::play(const GameTask& task) {
     t_task     = &task;
     t_recorded = false;
     t_started  = false;
+    t_failure.reset();
 
     try {
         // A paused tournament lets running games (and the other game of their pair) finish but starts no new pair.
@@ -129,16 +195,30 @@ void Runner::play(const GameTask& task) {
         fail(e.what());
     }
 
+    const auto failure = std::move(t_failure);
+    t_failure.reset();
+    if (failure && !t_started) startFailed(task, *failure);
+
     // A game given up while an engine of it failed to start leaves that engine in fastchess' cache as if it had
     // started (fastchess makes a new process only to try again), so the next game to take it would lose at once by
-    // disconnection. Its processes are ended: that game starts the engine anew.
+    // disconnection. Its processes are ended: that game starts the engine anew. Once fastchess said which engine it
+    // was, the other one, started or never tried, is kept.
     if (!t_started) {
-        retireEngines([&](const std::string& name) { return name == task.white.name || name == task.black.name; });
+        retireEngines([&](const std::string& name) {
+            return failure ? name == failure->engine : name == task.white.name || name == task.black.name;
+        });
     }
 
     if (!t_recorded) state_.release(task);
     t_task = nullptr;
     closeSettledPairs();
+    // Nor did that game begin its pair: with no other game of it played or being played, the pair is closed, so that
+    // a pause holds it back again and "stop when idle" does not wait for it while its engine is set aside.
+    if (failure && !t_started) {
+        fastchess::observer::PauseGate::instance().closeSettled([&](std::uint64_t encounter) {
+            return encounter == task.encounter.index && !state_.begun(task.encounter.index);
+        });
+    }
 
     // The processes kept for engines with no game left (withdrawn or replaced participants, the opponents of a
     // gauntlet once they played) are not needed any more; the idle processes kept are sized on the engines left.
@@ -158,6 +238,50 @@ void Runner::closeSettledPairs() {
     // withdrawal would stay open, and "stop when idle" would wait for it forever.
     fastchess::observer::PauseGate::instance().closeSettled(
         [this](std::uint64_t encounter) { return state_.settled(static_cast<uint32_t>(encounter)); });
+}
+
+void Runner::startFailed(const GameTask& task, const StartFailureLine& failure) {
+    const bool white   = failure.engine == task.white.name;
+    const int id       = (task.game == 0) == white ? task.encounter.first : task.encounter.second;
+    const auto& engine = white ? task.white : task.black;
+
+    // What the engines of the game exchanged until then, the engine's error output first: what its author needs. A
+    // log that cannot be written must not stop the tournament.
+    const auto path = engineStartLogPath(state_.dir(), failure.engine);
+    std::error_code ec;
+    std::filesystem::create_directories(path.parent_path(), ec);
+    std::ofstream out(path, std::ios::binary | std::ios::trunc);
+    out << log(fastchess::observer::slot()).startText(engine, failure.error);
+    out.close();
+
+    auto& failures     = state_.startFailures();
+    const auto outcome = failures.failed(id, task.number(), failure.engine, failure.error, StartFailures::Clock::now(),
+                                         out ? path : std::filesystem::path());
+    if (outcome == StartFailures::Outcome::Same) return;
+
+    using Kind            = StartFailureEvent::Kind;
+    const auto engine_now = failures.engine(id);
+    if (outcome == StartFailures::Outcome::Failed && state_.spec().stop_on_start_failure) {
+        report(Kind::Stopped, engine_now);
+        fail(fmt::format("{} cannot start: {}", failure.engine, failure.error));
+        return;
+    }
+    report(outcome == StartFailures::Outcome::Retry    ? Kind::Retry
+           : outcome == StartFailures::Outcome::Failed ? Kind::SetAside
+                                                       : Kind::StillFailing,
+           engine_now);
+}
+
+void Runner::report(StartFailureEvent::Kind kind, const std::optional<StartFailures::Engine>& engine) {
+    if (engine) report(kind, std::vector<StartFailures::Engine>{*engine});
+}
+
+void Runner::report(StartFailureEvent::Kind kind, std::vector<StartFailures::Engine> engines) {
+    if (!listener_ || engines.empty()) return;
+    StartFailureEvent event;
+    event.kind    = kind;
+    event.engines = std::move(engines);
+    listener_->onStartFailure(event);
 }
 
 void Runner::fail(const std::string& message) {
@@ -197,6 +321,13 @@ void Runner::onGameStart(const fastchess::observer::GameStart& info) {
 
 void Runner::onEngineProcesses(int slot, int64_t white_pid, int64_t black_pid) {
     t_started = true;
+    // An engine that failed to start before is back: its games are played again.
+    if (auto& failures = state_.startFailures(); t_task && !failures.empty()) {
+        for (const int id : {t_task->encounter.first, t_task->encounter.second}) {
+            const auto before = failures.engine(id);
+            if (failures.started(id)) report(StartFailureEvent::Kind::Started, before);
+        }
+    }
     if (downstream_) downstream_->onEngineProcesses(slot, white_pid, black_pid);
 }
 
