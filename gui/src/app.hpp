@@ -198,6 +198,10 @@ void wdlLine(const std::array<int64_t, 3>& wdl);
 [[nodiscard]] bool reviewPgnPlayers(const std::vector<tour::GameDb::Player>& players,
                                     const std::set<std::string>& before, const std::vector<std::string>& separate);
 
+// The move the side to move in a live game thinks of and the reply it expects (the first two moves of its PV), each
+// in the colour of the engine that would play it, the reply lighter; none between searches. `board`: the position.
+[[nodiscard]] std::vector<BoardArrow> pvArrows(const SlotState& st, const chess::Board& board);
+
 struct AppOptions {
     bool autostart = false;
     std::string focus_window;  // page or tab shown at startup (for screenshots)
@@ -337,6 +341,24 @@ class App {
     void drawLivePart(unsigned part);              // in its own panel
     void drawDetachedBoard(int slot);
     void drawMosaic(int cols, float card);
+
+    // Big screen (view_big_screen.cpp): one game filling the main window, or a detached board's window.
+    struct BigView {
+        int slot  = 0;                                   // the game shown
+        int panel = -1;                                  // a detached board's: its slot; -1 in the main window
+        std::chrono::steady_clock::time_point turned{};  // when it last turned to a game, to follow them
+        bool controls_hovered = false;
+    };
+    void startBigScreen(int slot);  // in the main window
+    void leaveBigScreen();
+    // A detached board shown as a big screen in its own window, or, docked in the main one, the main window's.
+    void startBigBoard(int slot);
+    void leaveBigBoard(int slot);
+    void toggleFullscreen(SDL_Window* window);
+    void handleBigScreenKeys();  // F11, Esc, the arrows, + and -; the mouse moving shows the controls
+    void drawBigScreen();        // the main window's, instead of the pages
+    void drawBigGame(BigView& big, bool main_window);
+    void drawBigControls(BigView& big, bool main_window, ImVec2 origin, ImVec2 size, int slots);
     void drawGames();
     void drawOpenings();
     void refreshOpenings();
@@ -380,6 +402,13 @@ class App {
     // changes.
     void openParticipantEdit(tour::Edit::Kind kind, int participant);
     void refreshAfterEdit();
+    // The context menu of a finished game (Games and Schedule tabs): play it again, void it, set its result.
+    void drawGameMenu(uint32_t encounter, int game);
+    // The context menu of a game being played (Live tab, detached boards): end it with a result.
+    void drawEndGameMenu(int slot);
+    // The result that counts of game `number` (its number()), nullptr when none does; asked of the tournament once
+    // per change of it.
+    [[nodiscard]] const tour::GameResult* gameResult(uint64_t number);
 
     // broadcast
     void updateBroadcast();
@@ -671,6 +700,18 @@ class App {
     MoveChart live_chart_   = MoveChart::Eval;
     MoveChart replay_chart_ = MoveChart::Eval;
 
+    // Big screen.
+    struct {
+        bool on = false;  // in the main window
+        BigView view;
+        std::chrono::steady_clock::time_point moved{};  // the mouse moved: the controls show for a few seconds
+        bool made_full = false;  // the main window went full screen with it, and leaves full screen with it
+    } big_;
+    std::map<int, BigView> big_boards_;             // the detached boards shown as a big screen, by their slot
+    std::map<int, SDL_Window*> big_board_windows_;  // the window each is in (the main one when it is docked there)
+    int big_board_focused_       = -1;              // the one focused last, which F11 and Esc are for while it is
+    int big_board_focused_frame_ = -1;              // the frame it was seen focused
+
     // Schedule tab: its rows and what is shown with them, computed again when the tournament changes (its
     // version), not every frame.
     struct ScheduleGroup {
@@ -863,6 +904,31 @@ class App {
         std::string key;  // tournament version and the whole edit
         tour::Impact impact;
     } edit_preview_;
+    // The game menu's "Set the result": the game it is open for (number()), the result chosen ("1-0", "1/2-1/2",
+    // "0-1"), the reason typed, and the impact of the change, computed again when the choice or the tournament
+    // changes.
+    struct ResultMenu {
+        uint64_t game = ~uint64_t{0};
+        std::string result;
+        std::string why;
+        std::string key;
+        tour::Impact impact;
+    } result_menu_;
+    // The live game menu's "End with result": the game it is open for (game_id), the result chosen, the reason, and
+    // why the last try failed.
+    struct EndMenu {
+        std::size_t game = 0;
+        std::string result;
+        std::string why;
+        std::string error;
+    } end_menu_;
+    uint64_t result_set_game_ = ~uint64_t{0};  // the game whose result was set last, while that can be undone
+    uint64_t open_game_menu_  = 0;  // the game (game_id) whose menu opens in the Games tab (palette, --focus)
+    int open_end_menu_        = 0;  // the slot + 1 whose board opens its "End with result" menu (palette)
+    // The results of games asked for by the views (gameResult()), by number(); dropped when the tournament changes.
+    std::map<uint64_t, std::optional<tour::GameResult>> result_cache_;
+    uint64_t result_cache_version_ = ~uint64_t{0};
+    const void* result_cache_of_   = nullptr;
 
     // watchStartFailures(): the run it watches (by its start), the version of its StartFailures seen, and the
     // participants told set aside.

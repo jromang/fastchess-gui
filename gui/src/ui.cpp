@@ -281,6 +281,8 @@ const char* glyph(Icon icon) {
 
 }  // namespace
 
+ImFont* titleFont() { return g_title_font; }
+
 void setFonts(ImFont* text, ImFont* titles, ImFont* icons) {
     ImGui::GetIO().FontDefault = text;
     g_title_font               = titles;

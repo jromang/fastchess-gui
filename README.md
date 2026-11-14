@@ -29,8 +29,9 @@ this repository still builds unchanged.
 - **Unattended nights**: an engine that cannot start has its games set aside while the others go on; it is tried
   again every 5 minutes and its games come back once it starts. The home page says which engine and why, with its
   engine log, *Try again*, *Withdraw…* and *Replace…*.
-- **Changes while running**: add, withdraw or replace an engine, change the number of cycles, play games again or
-  void them, with the impact shown first. No played game is lost.
+- **Changes while running**: add, withdraw or replace an engine, change the number of cycles, play games again,
+  void them or set their result by hand (a game in progress too), with the impact shown first and an undo. No
+  played game is lost.
 - **Broadcast**: live PGN, HTML standings and JSON files, a TLCS server for TLCV and other viewers, a built-in
   web page, and lichess broadcasts (pushed through the API with a personal token).
 - **Workflow**: a queue of tournaments, *Relaunch with…* a new engine version, templates, and a headless mode
@@ -49,7 +50,9 @@ this repository still builds unchanged.
 - **Live view**: every game in progress as a mosaic, or one in focus, with the board, clocks, the running search of each engine
   (depth, score, nodes, nps, win/draw/loss shares, PV in SAN), the annotated move list and the evaluation and WDL
   curves; under the board, the
-  50-move counter, the material and the pieces left. Boards can be detached into their own windows.
+  50-move counter, the material and the pieces left. Boards can be detached into their own windows. A big screen
+  mode shows one game filling the window, in large type, for a television or a stream, switching between the games
+  in progress or following the most interesting one.
 - **Fair play**: the processor time of every engine, while it thinks and while its opponent does, with a warning
   when it uses more cores than its threads or thinks on its opponent's time.
 - **Pause / resume** without losing anything: no new game pair starts, running games (and the second game of
@@ -80,9 +83,9 @@ this repository still builds unchanged.
 |---|---|
 | ![Overview](docs/screenshots/overview.png) | ![Games](docs/screenshots/games.png) |
 
-| A two-engine SPRT match |
-|---|
-| ![Charts](docs/screenshots/charts.png) |
+| A two-engine SPRT match | The big screen, for a television or a stream |
+|---|---|
+| ![Charts](docs/screenshots/charts.png) | ![Big screen](docs/screenshots/big-screen.png) |
 
 ## Downloads
 

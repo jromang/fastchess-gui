@@ -1,6 +1,7 @@
 #include "app.hpp"
 
 #include <algorithm>
+#include <cstdlib>
 #include <ctime>
 #include <fstream>
 
@@ -154,6 +155,7 @@ void App::frame() {
     }
 
     handleZoomKeys();
+    handleBigScreenKeys();
     applyThemeSetting();
     updateBroadcast();
 
@@ -268,6 +270,18 @@ void App::frame() {
         } else if (w.rfind("layout=", 0) == 0) {  // layout=KEY|NAME: a ready-made layout (tabs, follow...) or one saved
             if (!applyLayout(w.substr(7)))
                 Console::instance().add(fmt::format("No layout named {}.", w.substr(7)), true);
+        } else if (w.rfind("game-menu=", 0) == 0) {  // game-menu=N: the menu of game N in the Games tab
+            page_           = Page::Tournament;
+            tab_request_    = Tab::Games;
+            open_game_menu_ = std::strtoull(w.c_str() + 10, nullptr, 10);
+        } else if (w == "big-screen" || w.rfind("big-screen=", 0) == 0) {  // big-screen=N: the game of slot N (from 1)
+            page_ = Page::Tournament;
+            startBigScreen(w.size() > 11 ? std::max(0, std::atoi(w.c_str() + 11) - 1) : live_slot_);
+        } else if (w.rfind("end-menu=", 0) == 0) {  // end-menu=N: "End with result" of the game of slot N (from 1)
+            page_          = Page::Tournament;
+            tab_request_   = Tab::Live;
+            live_slot_     = std::max(0, std::atoi(w.c_str() + 9) - 1);
+            open_end_menu_ = live_slot_ + 1;
         } else if (w == "submission-export") {  // the Export for a rating list dialog of the Games tab
             page_        = Page::Tournament;
             tab_request_ = Tab::Games;
@@ -300,7 +314,12 @@ void App::frame() {
         focus_done_ = true;
     }
 
-    drawShell();
+    // The big screen takes the main window's place: the panels taken out of it stay on screen.
+    if (big_.on) {
+        drawBigScreen();
+    } else {
+        drawShell();
+    }
     drawPanels();
     drawSprtCalculator();
     drawQuitModal();
@@ -930,7 +949,12 @@ void App::handleDialogs() {
                     const auto& src = game_db_->sources[g.source];
                     if (src.external) continue;
                     if (const auto text = tour::readSpan(src.pgn, g.pgn)) {
-                        out << *text;
+                        // A result set by hand, as it counts.
+                        const auto set = game_db_->set_results.find(i);
+                        out << (set == game_db_->set_results.end()
+                                    ? *text
+                                    : tour::withResult(*text, set->second.first, tour::OPERATOR_TERMINATION,
+                                                       set->second.second));
                         ++n;
                     }
                 }

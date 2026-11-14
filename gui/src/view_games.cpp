@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <map>
 
 #include <imgui.h>
 
@@ -106,6 +107,21 @@ const char* resultText(const GameRecord& g) {
     return g.white_result > 0 ? "1-0" : "0-1";
 }
 
+// What the tooltip of a result set by hand tells: how the game ended as played, and why.
+std::string resultSetTip(const tour::ResultSet& set) {
+    std::string tip;
+    if (set.played_result == "*") {
+        tip = TR("Ended by the operator while it was played.");
+    } else {
+        const auto played = set.played_result == "1/2-1/2" ? std::string("½-½") : set.played_result;
+        tip               = set.played_reason.empty()
+                                ? trf("Result set by hand. As played: {}", played)
+                                : trf("Result set by hand. As played: {} ({})", played, TR(set.played_reason.c_str()));
+    }
+    if (!set.why.empty()) tip += "\n" + trf("Why: {}", set.why);
+    return tip + "\n" + TR("Right click: change it, or take it back.");
+}
+
 }  // namespace
 
 bool App::gamesFiltered() const {
@@ -164,6 +180,11 @@ void App::selectGame(int index) {
         replay_error_ = TR("Unreadable PGN.");
         return;
     }
+    // A result set by hand, as it counts: the PGN file has the game as played.
+    if (const auto* r = games_[index].result_set ? gameResult(games_[index].game_id - 1) : nullptr; r && r->set) {
+        replay_->result        = r->result;
+        replay_->final_comment = tour::OPERATOR_REASON;
+    }
     replay_ply_ = static_cast<int>(replay_->moves.size());
     // Filtered on what the evaluations tell: the board shows the moment it happens.
     if (const int ply = pliesOfInterest(games_[index], games_filter_); ply >= 0) {
@@ -179,6 +200,11 @@ void App::exportGames(const std::string& path, bool all) {
     const auto& file     = chessbase ? obs->chessbasePgn() : obs->fastchessPgn();
 
     std::vector<PgnSpan> spans;
+    std::map<std::size_t, tour::GameResult> set;  // the games whose result was set by hand, by place in `spans`
+    const auto add = [&](const GameRecord& g) {
+        if (const auto* r = g.result_set ? gameResult(g.game_id - 1) : nullptr; r && r->set) set[spans.size()] = *r;
+        spans.push_back(chessbase ? g.chessbase_span : g.fastchess_span);
+    };
     if (all) {
         // In schedule order, not in the order they ended: the two games of an opening side by side.
         std::vector<std::size_t> order;
@@ -189,13 +215,17 @@ void App::exportGames(const std::string& path, bool all) {
         }
         std::stable_sort(order.begin(), order.end(),
                          [&](std::size_t a, std::size_t b) { return games_[a].game_id < games_[b].game_id; });
-        for (auto i : order) spans.push_back(chessbase ? games_[i].chessbase_span : games_[i].fastchess_span);
+        for (auto i : order) add(games_[i]);
     } else if (selected_game_ >= 0 && selected_game_ < static_cast<int>(games_.size())) {
-        const auto& g = games_[selected_game_];
-        spans.push_back(chessbase ? g.chessbase_span : g.fastchess_span);
+        add(games_[selected_game_]);
     }
 
-    const auto error = exportSpans(file, spans, path, {obs->fastchessPgn(), obs->chessbasePgn()});
+    // The games as they count: a result set by hand is in the export, not in the tournament's PGN files.
+    const auto counted = [&](std::size_t i, std::string text) {
+        const auto it = set.find(i);
+        return it == set.end() ? text : tour::countedPgn(std::move(text), it->second);
+    };
+    const auto error = exportSpans(file, spans, path, {obs->fastchessPgn(), obs->chessbasePgn()}, counted);
     if (error.empty()) {
         Console::instance().add(spans.size() == 1 ? trf("1 game exported to {}", path)
                                                   : trn("{} game exported to {}", "{} games exported to {}",
@@ -369,6 +399,18 @@ void App::drawGames() {
                 if (ImGui::Selectable(id.c_str(), selected_game_ == index, ImGuiSelectableFlags_SpanAllColumns)) {
                     selectGame(index);
                 }
+                // Once the tab is in front: bringing it there would close the menu.
+                if (open_game_menu_ == g.game_id && run_.tournament() && !panel_request_) {
+                    open_game_menu_     = 0;
+                    result_menu_        = {};
+                    result_menu_.game   = g.game_id - 1;
+                    result_menu_.result = g.white_result == 0 ? "1-0" : "1/2-1/2";
+                    ImGui::OpenPopup(ImGui::GetItemID());
+                }
+                if (run_.tournament() && ImGui::BeginPopupContextItem()) {
+                    drawGameMenu(g.round_id - 1, static_cast<int>((g.game_id - 1) % 2));
+                    ImGui::EndPopup();
+                }
 
                 ImGui::TableNextColumn();
                 ImGui::TextUnformatted(obs->name(g.white).c_str());
@@ -378,8 +420,16 @@ void App::drawGames() {
                 // Coloured from A's point of view in a match, from the chosen engine's (or White's) otherwise.
                 const int r = resultFor(g, games_subject_, match);
                 ImGui::PushStyleColor(ImGuiCol_Text, r > 0 ? ui::GOOD : r < 0 ? ui::BAD : ui::MUTED);
-                ImGui::TextUnformatted(resultText(g));
+                ImGui::TextUnformatted(g.result_set ? fmt::format("{} *", resultText(g)).c_str() : resultText(g));
                 ImGui::PopStyleColor();
+                if (ImGui::IsItemHovered()) {
+                    const auto* set = g.result_set ? gameResult(g.game_id - 1) : nullptr;
+                    if (set && set->set) {
+                        ImGui::SetTooltip("%s", resultSetTip(*set->set).c_str());
+                    } else {
+                        ImGui::SetTooltip("%s", TR("Right click: play this game again, void it or set its result."));
+                    }
+                }
                 ImGui::TableNextColumn();
                 if (g.opening != 0 && g.opening < openings_.size()) {
                     const auto& o = openings_[g.opening];
@@ -432,6 +482,16 @@ void App::drawGames() {
     if (!game.final_comment.empty()) {
         ImGui::SameLine();
         ImGui::TextDisabled("%s", TR(game.final_comment));
+    }
+    if (const auto& g = games_[selected_game_]; g.result_set) {
+        const auto* r = gameResult(g.game_id - 1);
+        if (r && r->set && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", resultSetTip(*r->set).c_str());
+        // Set from here a moment ago: taken back from here too.
+        if (const auto* t = run_.tournament(); t && result_set_game_ == g.game_id - 1 && t->canUndo()) {
+            ImGui::SameLine();
+            if (ImGui::SmallButton(TR("Undo"))) undoTournamentEdit();
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The game counts again as it was."));
+        }
     }
     if (!replay_log_.empty()) {
         ImGui::SameLine();

@@ -1,6 +1,7 @@
 // The schedule of a round robin or a gauntlet, and the changes that can be made while it runs.
 
 #include <algorithm>
+#include <cmath>
 #include <map>
 
 #include <imgui.h>
@@ -42,17 +43,43 @@ ImU32 statusColor(tour::GameStatus status) {
     }
 }
 
+// Why a result cannot be set, as the tournament library says it, translated where it is shown: TR(impact.error).
+[[maybe_unused]] const char* const SET_RESULT_ERRORS[] = {
+    N_("a result is 1-0, 0-1 or 1/2-1/2"),
+    N_("this game does not count: it was voided, or is not over"),
+    N_("the game already has this result"),
+    N_("in a knockout, only the games of the round being played can have their result set"),
+};
+
+std::string resultLabel(const std::string& result) { return result == "1/2-1/2" ? "½-½" : result; }
+
+std::string half(double points) {
+    const auto whole = static_cast<long>(std::floor(points + 1e-9));
+    const bool h     = points - whole > 0.25;
+    if (whole == 0 && h) return "½";
+    return fmt::format("{}{}", whole, h ? "½" : "");
+}
+
 }  // namespace
 
 void App::applyTournamentEdit(const tour::Edit& edit) {
     const auto error = run_.applyEdit(edit);
     edit_error_      = !error.empty();
     if (edit_error_) {
-        edit_message_ = error;
+        edit_message_ = TR(error.c_str());
+        Console::instance().add(edit_message_, true);
         return;
     }
-    edit_message_ = TR("Done: the tournament goes on with the change.");
-    Console::instance().add(TR("The tournament was changed."));
+    result_set_game_ = ~uint64_t{0};
+    if (edit.kind == tour::Edit::Kind::SetResult && edit.games.size() == 1) {
+        const auto number = uint64_t{edit.games[0].first} * 2 + edit.games[0].second;
+        result_set_game_  = number;
+        edit_message_     = trf("Game {} counts as {}.", number + 1, resultLabel(edit.result));
+        Console::instance().add(edit_message_);
+    } else {
+        edit_message_ = TR("Done: the tournament goes on with the change.");
+        Console::instance().add(TR("The tournament was changed."));
+    }
     refreshAfterEdit();
 }
 
@@ -70,22 +97,147 @@ void App::undoTournamentEdit() {
     edit_error_      = !error.empty();
     edit_message_    = edit_error_ ? error : TR("The change was undone.");
     if (edit_error_) return;
+    result_set_game_ = ~uint64_t{0};
     Console::instance().add(TR("The last change of the tournament was undone."));
     refreshAfterEdit();
 }
 
-void App::refreshAfterEdit() {
-    // Voided games leave the views; everything is shown again from the tournament's results.
+const tour::GameResult* App::gameResult(uint64_t number) {
     const auto* t = run_.tournament();
+    if (!t) return nullptr;
+    if (result_cache_of_ != t || result_cache_version_ != t->version()) {
+        result_cache_.clear();
+        result_cache_of_      = t;
+        result_cache_version_ = t->version();
+    }
+    auto it = result_cache_.find(number);
+    if (it == result_cache_.end()) it = result_cache_.emplace(number, t->resultOf(number)).first;
+    return it->second ? &*it->second : nullptr;
+}
+
+void App::drawGameMenu(uint32_t encounter, int game) {
+    const auto* t = run_.tournament();
+    if (!t) return;
+    const uint64_t number = uint64_t{encounter} * 2 + game;
+    const auto* r         = gameResult(number);
+    const auto& spec      = t->spec();
+    const auto name       = [&](int id) {
+        const auto* p = spec.participant(id);
+        return p ? p->engine.name : std::string("?");
+    };
+    if (r) {
+        ImGui::TextDisabled(
+            "%s",
+            trf("Game {}: {} – {}  {}", number + 1, name(r->white), name(r->black), resultLabel(r->result)).c_str());
+    }
+
+    // The journal keeps the reason in English, whatever the language of the interface.
+    if (ImGui::MenuItem(TR("Play this game again"))) {
+        tour::Edit e;
+        e.kind  = tour::Edit::Kind::VoidGames;
+        e.games = {{encounter, game}};
+        e.why   = N_("replay requested");
+        applyTournamentEdit(e);
+    }
+    if (ImGui::MenuItem(TR("Void this game (no replay)"))) {
+        tour::Edit e;
+        e.kind   = tour::Edit::Kind::VoidGames;
+        e.games  = {{encounter, game}};
+        e.replay = false;
+        e.why    = N_("voided");
+        applyTournamentEdit(e);
+    }
+    if (!r) return;
+
+    // Set the result: chosen, with a reason, and what it changes shown before it is applied.
+    ImGui::Separator();
+    if (result_menu_.game != number) {
+        result_menu_      = {};
+        result_menu_.game = number;
+    }
+    ImGui::TextUnformatted(TR("Set the result"));
+    ui::help(
+        TR("For a game the program could not decide well: a hang it did not catch, a won ending the engines keep "
+           "shuffling, a game that ended for a wrong reason.\nThe standings, the ratings and the submission checklist "
+           "count the new result. The PGN files keep the game as played; the exports give the new result, with "
+           "Termination \"adjudicated by the operator\" and the reason in a comment.\nUndo the last change (Schedule "
+           "tab) takes it back."));
+    static constexpr const char* RESULTS[] = {"1-0", "1/2-1/2", "0-1"};
+    for (const char* result : RESULTS) {
+        if (result != RESULTS[0]) ImGui::SameLine();
+        ImGui::BeginDisabled(r->result == result);
+        if (ImGui::RadioButton(resultLabel(result).c_str(), result_menu_.result == result)) {
+            result_menu_.result = result;
+        }
+        ImGui::EndDisabled();
+    }
+    {
+        char buffer[160];
+        const auto n = std::min(result_menu_.why.size(), sizeof(buffer) - 1);
+        std::copy_n(result_menu_.why.data(), n, buffer);
+        buffer[n] = 0;
+        ImGui::SetNextItemWidth(px(300));
+        if (ImGui::InputTextWithHint("##set_why", TR("Why (kept with the game)"), buffer, sizeof(buffer))) {
+            result_menu_.why = buffer;
+        }
+    }
+    if (!result_menu_.result.empty()) {
+        tour::Edit e;
+        e.kind         = tour::Edit::Kind::SetResult;
+        e.games        = {{encounter, game}};
+        e.result       = result_menu_.result;
+        e.why          = result_menu_.why;
+        const auto key = fmt::format("{}:{}:{}", static_cast<const void*>(t), t->version(), e.result);
+        if (result_menu_.key != key) {
+            result_menu_.key    = key;
+            result_menu_.impact = t->preview(e);
+        }
+        const auto& impact = result_menu_.impact;
+        if (!impact.error.empty()) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+            ImGui::TextUnformatted(TR(impact.error.c_str()));
+            ImGui::PopStyleColor();
+        } else {
+            for (const auto& [id, points] : impact.points) {
+                ImGui::TextUnformatted(
+                    trf("{}: {} → {} points", name(id), half(points.first), half(points.second)).c_str());
+            }
+            if (ImGui::Button(TR("Set the result"))) {
+                applyTournamentEdit(e);
+                ImGui::CloseCurrentPopup();
+            }
+        }
+    }
+    if (r->set && r->set->played_result != "*" && r->set->played_result != r->result) {
+        if (ImGui::MenuItem(trf("Back to the result as played ({})", resultLabel(r->set->played_result)).c_str())) {
+            tour::Edit e;
+            e.kind   = tour::Edit::Kind::SetResult;
+            e.games  = {{encounter, game}};
+            e.result = r->set->played_result;
+            applyTournamentEdit(e);
+        }
+    }
+}
+
+void App::refreshAfterEdit() {
+    // Voided games leave the views; everything is shown again from the tournament's results. The game shown in the
+    // Games tab stays, if it still counts (its result was set, another game was voided).
+    const auto* t       = run_.tournament();
+    const auto selected = selected_game_ >= 0 && selected_game_ < static_cast<int>(games_.size())
+                              ? games_[static_cast<std::size_t>(selected_game_)].game_id
+                              : 0;
+    selected_game_      = -1;
     if (auto* obs = run_.observer(); obs && t) {
         games_    = obs->records(t->results());
         reasons_  = obs->reasons();
         openings_ = obs->openings();
+        for (std::size_t i = 0; selected != 0 && i < games_.size(); ++i) {
+            if (games_[i].game_id == selected) selectGame(static_cast<int>(i));
+        }
     }
     filtered_for_      = ~std::size_t(0);
     table_for_         = ~std::size_t(0);
     by_opening_for_    = ~std::size_t(0);
-    selected_game_     = -1;
     tournaments_dirty_ = true;
     if (!run_.running() && t) {
         const auto summary = tour::summarize(t->dir());
@@ -213,26 +365,11 @@ void App::drawSchedule() {
                     ImGui::PopStyleColor();
                     if (row.status[g] == tour::GameStatus::Done &&
                         ImGui::BeginPopupContextItem(fmt::format("g{}", g).c_str())) {
-                        // The journal keeps the reason in English, whatever the language of the interface.
-                        if (ImGui::MenuItem(TR("Play this game again"))) {
-                            tour::Edit e;
-                            e.kind  = tour::Edit::Kind::VoidGames;
-                            e.games = {{row.encounter.index, g}};
-                            e.why   = N_("replay requested");
-                            applyTournamentEdit(e);
-                        }
-                        if (ImGui::MenuItem(TR("Void this game (no replay)"))) {
-                            tour::Edit e;
-                            e.kind   = tour::Edit::Kind::VoidGames;
-                            e.games  = {{row.encounter.index, g}};
-                            e.replay = false;
-                            e.why    = N_("voided");
-                            applyTournamentEdit(e);
-                        }
+                        drawGameMenu(row.encounter.index, g);
                         ImGui::EndPopup();
                     }
                     if (row.status[g] == tour::GameStatus::Done && ImGui::IsItemHovered()) {
-                        ImGui::SetTooltip("%s", TR("Right click: play again or void this game."));
+                        ImGui::SetTooltip("%s", TR("Right click: play this game again, void it or set its result."));
                     }
                 }
                 const std::string* opening = nullptr;
@@ -439,8 +576,10 @@ void App::drawEditPanel() {
     }
     if (t->canUndo()) {
         if (ImGui::Button(TR("Undo the last change"))) undoTournamentEdit();
-        ImGui::SameLine();
-        ImGui::TextDisabled("%s", TR("until the next game starts"));
+        if (!t->undoLasts()) {
+            ImGui::SameLine();
+            ImGui::TextDisabled("%s", TR("until the next game starts"));
+        }
     }
     if (!run_.running()) {
         ImGui::TextDisabled("%s", TR("The tournament is not running: resume it to play the new games."));

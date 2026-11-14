@@ -8,7 +8,8 @@
 //
 // While it runs, the runner is also fastchess' game observer: it records every scored game in the state, keeps
 // the engine log of the games that end badly (see engine_log.hpp), then forwards each callback to `downstream`
-// (the GUI), which may be null.
+// (the GUI), which may be null. A game the operator ends while it is played (TournamentState::requestEnd()) is
+// recorded, and forwarded, with their result.
 //
 // An engine that fails to start does not stop the tournament (unless spec().stop_on_start_failure): its game is given
 // up at once, and the runner tries the engine again itself while its other games are set aside (start_failures.hpp).

@@ -318,6 +318,11 @@ struct MatchSetup {
     bool live_seed_side  = true;         // live boards of a gauntlet turned to the seed's side
     bool live_arrows     = true;         // live board: the PV move of the side to move and the reply it expects
     std::map<std::string, float> panes;  // the list's share of the width on list + detail pages, by page
+    // Big screen: the size of its text (on top of what the window gives), what it follows (BigFollow: this game,
+    // every game in turn, the most interesting) and how many seconds a game stays before the next one is chosen.
+    float big_scale = 1.0f;
+    int big_follow  = 0;
+    int big_seconds = 20;
 
     // Broadcast.
     bool broadcast_files = false;  // live.pgn, standings.html, tournament.json
@@ -345,8 +350,8 @@ struct MatchSetup {
     int tunnel_remote_port = 80;
 };
 
-// Gives `next`, a setup loaded from a template or started from the queue, the settings of the program that
-// `current` has: its look (language, theme, size, panes, live boards), the notifications and the resume at launch.
+// Gives `next`, a setup loaded from a template or started from the queue, the settings of the program that `current`
+// has: its look (language, theme, size, panes, live boards, big screen), the notifications and the resume at launch.
 // These follow the settings, not a stored setup.
 inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
     next.language         = current.language;
@@ -355,6 +360,9 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
     next.tile_info        = current.tile_info;
     next.live_seed_side   = current.live_seed_side;
     next.live_arrows      = current.live_arrows;
+    next.big_scale        = current.big_scale;
+    next.big_follow       = current.big_follow;
+    next.big_seconds      = current.big_seconds;
     next.panes            = current.panes;
     next.notify           = current.notify;
     next.resume_at_launch = current.resume_at_launch;
@@ -365,7 +373,7 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
         fixed_games, sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, sprt_draw_ratio,        \
         sprt_rms_bias, limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto,    \
         concurrency, affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out, \
-        engine_syzygy, engine_ownbook_off, book_a, book_b
+        engine_syzygy, engine_ownbook_off, book_a, book_b, big_scale, big_follow, big_seconds
 #define FCG_MATCH_SETUP_FIELDS_2                                                                                  \
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,    \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,     \

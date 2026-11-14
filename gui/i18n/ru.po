@@ -266,6 +266,9 @@ msgstr "Добавить…"
 msgid "Adjudicate"
 msgstr "Присуждать"
 
+msgid "Adjudicated by the operator"
+msgstr "Присуждено оператором"
+
 msgid "Adjudication"
 msgstr "Присуждение результата"
 
@@ -416,6 +419,9 @@ msgstr "Вернуть по умолчанию"
 msgid "Back to the default value"
 msgstr "Вернуть значение по умолчанию"
 
+msgid "Back to the result as played ({})"
+msgstr "Вернуть сыгранный результат ({})"
+
 msgid "Base (s)"
 msgstr "Базовое время (с)"
 
@@ -424,6 +430,9 @@ msgstr "Было"
 
 msgid "Being built from {}"
 msgstr "Строится из {}"
+
+msgid "Big screen"
+msgstr "Большой экран"
 
 msgid "Black"
 msgstr "Чёрные"
@@ -457,6 +466,9 @@ msgstr "Чёрные фигуры на тех же вертикалях, что 
 
 msgid "Board"
 msgstr "Доска"
+
+msgid "Board {} of {}"
+msgstr "Доска {} из {}"
 
 msgid "Book"
 msgstr "Книга"
@@ -920,6 +932,18 @@ msgstr "Пусто: папка программы."
 msgid "End"
 msgstr "Окончание"
 
+msgid "End game {} with a result…"
+msgstr "Завершить партию {} с результатом…"
+
+msgid "End the game"
+msgstr "Завершить партию"
+
+msgid "End with result"
+msgstr "Завершить с результатом"
+
+msgid "Ended by the operator while it was played."
+msgstr "Завершена оператором во время игры."
+
 msgid "Ends about {} (in {})"
 msgstr "Окончание около {} (через {})"
 
@@ -976,6 +1000,12 @@ msgstr "Все партии"
 
 msgid "Every game in progress, the one followed with its evaluation bar, arrows and charts; the standings, the crosstable, the statistics and anomalies, and the games' PGN file to download. Read-only, refreshed every second."
 msgstr "Все текущие партии, отслеживаемая — со шкалой оценки, стрелками и графиками; турнирная таблица, перекрёстная таблица, статистика и аномалии, а также PGN-файл партий для скачивания. Только для чтения, обновляется каждую секунду."
+
+msgid "Every game in turn"
+msgstr "Все партии по очереди"
+
+msgid "Every game in turn: the games in progress one after the other.\nThe most interesting: the game whose evaluation is closest to level, the longest of those as close; it stays while it is."
+msgstr "Все партии по очереди: идущие партии одна за другой.\nСамая интересная: партия с оценкой, ближайшей к равенству, самая длинная из столь же близких; она остаётся, пока такой является."
 
 msgid "Every game is written to two files in the match folder:"
 msgstr "Каждая партия записывается в два файла в папке матча:"
@@ -1121,6 +1151,12 @@ msgstr "Для TLCV, node-tlcv и Livius: по одной партии, с по�
 msgid "For a PGN book: number of plies kept. -1 = all."
 msgstr "Для книги PGN: число сохраняемых полуходов. -1 = все."
 
+msgid "For a game the program could not decide well: a hang it did not catch, a won ending the engines keep shuffling, a game that ended for a wrong reason.\nThe standings, the ratings and the submission checklist count the new result. The PGN files keep the game as played; the exports give the new result, with Termination \"adjudicated by the operator\" and the reason in a comment.\nUndo the last change (Schedule tab) takes it back."
+msgstr "Для партии, которую программа не смогла решить правильно: зависание, которое она не заметила, выигранный эндшпиль, в котором движки ходят по кругу, партия, завершившаяся по неверной причине.\nТаблица, рейтинги и чек-лист перед отправкой учитывают новый результат. PGN-файлы хранят партию в сыгранном виде; экспорт даёт новый результат с Termination \"adjudicated by the operator\" и причиной в комментарии.\nОтменить последнее изменение (вкладка «Расписание») возвращает всё назад."
+
+msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
+msgstr "Для партии, которую программа не завершила бы правильно: зависание, которое она не замечает, выигранный эндшпиль, в котором движки ходят по кругу.\nДвижок, чей ход, останавливается (он запустится заново к своей следующей партии), и партия засчитывается с этим результатом: Termination \"adjudicated by the operator\" при экспорте, причина в комментарии.\nРезультат можно потом изменить на вкладке «Партии»."
+
 msgid "Format"
 msgstr "Формат"
 
@@ -1141,6 +1177,9 @@ msgstr "Только по партиям, с соответствующим Draw
 
 msgid "From {}: {}"
 msgstr "Из {}: {}"
+
+msgid "Full screen (F11)"
+msgstr "Во весь экран (F11)"
 
 msgid "Gainer [0, 3]"
 msgstr "Улучшение [0, 3]"
@@ -1163,8 +1202,23 @@ msgstr "Пар партий на матч"
 msgid "Game shown:"
 msgstr "Показываемая партия:"
 
+msgid "Game {} counts as {}."
+msgstr "Партия {} засчитана как {}."
+
+msgid "Game {} was ended by the operator: {}."
+msgstr "Партия {} завершена оператором: {}."
+
 msgid "Game {} · move {}"
 msgstr "Партия {} · ход {}"
+
+msgid "Game {} · move {}: {} – {}"
+msgstr "Партия {} · ход {}: {} – {}"
+
+msgid "Game {} · round {} · move {}"
+msgstr "Партия {} · тур {} · ход {}"
+
+msgid "Game {}: {} – {}  {}"
+msgstr "Партия {}: {} – {}  {}"
 
 msgid "Games"
 msgstr "Партии"
@@ -1463,8 +1517,14 @@ msgstr "Раскладка"
 msgid "Layout saved: {}"
 msgstr "Раскладка сохранена: {}"
 
+msgid "Leave (Esc)"
+msgstr "Выйти (Esc)"
+
 msgid "Leave out the games lost by a crash or a stall"
 msgstr "Исключить партии, проигранные из-за вылета или зависания"
+
+msgid "Leave the big screen"
+msgstr "Выйти из большого экрана"
 
 msgid "Letter case and spaces aside."
 msgstr "Без учёта регистра и пробелов."
@@ -1651,6 +1711,9 @@ msgstr "Ещё ни одна партия не завершена."
 
 msgid "No game in this slot yet."
 msgstr "В этом слоте пока нет партии."
+
+msgid "No game is being played here."
+msgstr "Здесь не играется ни одной партии."
 
 msgid "No game is being played."
 msgstr "Сейчас партии не играются."
@@ -2288,6 +2351,12 @@ msgstr "Перезапускать движок для каждой партии
 msgid "Result"
 msgstr "Результат"
 
+msgid "Result set by hand. As played: {}"
+msgstr "Результат задан вручную. Сыграно: {}"
+
+msgid "Result set by hand. As played: {} ({})"
+msgstr "Результат задан вручную. Сыграно: {} ({})"
+
 msgid "Results of A"
 msgstr "Результаты A"
 
@@ -2303,8 +2372,14 @@ msgstr "При запуске продолжать турнир, который 
 msgid "Resumed: {}, {} games already played. Folder: {}"
 msgstr "Возобновлено: {}, уже сыграно партий: {}. Папка: {}"
 
-msgid "Right click: play again or void this game."
-msgstr "Правый клик: переиграть или аннулировать эту партию."
+msgid "Right click: change it, or take it back."
+msgstr "Правый щелчок: изменить или вернуть."
+
+msgid "Right click: end this game with a result."
+msgstr "Правый щелчок: завершить эту партию с результатом."
+
+msgid "Right click: play this game again, void it or set its result."
+msgstr "Правый щелчок: переиграть эту партию, аннулировать её или задать результат."
 
 msgid "Round (its URL or id; empty: a new broadcast named after the tournament)"
 msgstr "Тур (его URL или id; пусто — новая трансляция с названием турнира)"
@@ -2402,6 +2477,9 @@ msgstr "Поиск"
 msgid "Searches at a time"
 msgstr "Одновременных поисков"
 
+msgid "Seconds before the next game is chosen."
+msgstr "Секунд до выбора следующей партии."
+
 msgid "Seconds per move"
 msgstr "Секунд на ход"
 
@@ -2431,6 +2509,12 @@ msgstr "Раздавать веб-страницу"
 
 msgid "Service:"
 msgstr "Сервис:"
+
+msgid "Set the result"
+msgstr "Задать результат"
+
+msgid "Set the result of game {}…"
+msgstr "Задать результат партии {}…"
 
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
@@ -2696,6 +2780,9 @@ msgstr "По стандарту PGN это комментарии. fastchess-gui
 msgid "The Schedule tab shows the impact before anything changes."
 msgstr "Вкладка «Расписание» показывает последствия до того, как что-либо изменится."
 
+msgid "The arrow keys too."
+msgstr "Также клавиши со стрелками."
+
 msgid "The average rating of the opponents met, game by game."
 msgstr "Средний рейтинг соперников, партия за партией."
 
@@ -2774,6 +2861,12 @@ msgstr "У первого участника, {}, нет опорного рей
 msgid "The folder {} is not there any more."
 msgstr "Папки {} больше нет."
 
+msgid "The game counts again as it was."
+msgstr "Партия снова засчитывается как прежде."
+
+msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
+msgstr "Отслеживаемая партия на всё окно крупным шрифтом — для телевизора, клуба или трансляции. F11: во весь экран, Esc: назад."
+
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "Партии в том виде, в каком их присылают тестеры рейтинг-листов: файл назван вашим именем, дата и условия, игроки записаны так, как в списках, туры перенумерованы, аннулированные партии и дубликаты исключены."
 
@@ -2809,6 +2902,9 @@ msgstr "Последняя проверка или чтение завершил
 
 msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
 msgstr "Имя в библиотеке, которое ему дадут следующие турниры. Уже сыгранные турниры сохраняют старое, как и их партии и рейтинги."
+
+msgid "The most interesting"
+msgstr "Самая интересная"
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "Ход, который обдумывает сторона, чья очередь ходить, и ожидаемый ответ — цветами движков, которые их сделали бы."
@@ -2900,6 +2996,9 @@ msgstr "Поиск останавливается, когда решение о�
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "Ожидаемая доля ничьих между двумя движками при этом контроле времени."
 
+msgid "The size of the text, for the distance it is read from (+ and - too)."
+msgstr "Размер текста — по расстоянию, с которого его читают (также + и -)."
+
 msgid "The software renderer cannot be used ({}): the window is drawn with OpenGL."
 msgstr "Программный рендерер недоступен ({}): окно отрисовывается через OpenGL."
 
@@ -2972,11 +3071,26 @@ msgstr "Эта доля ничьих и это RMS-смещение несовм
 msgid "This engine once more, with another book"
 msgstr "Этот движок ещё раз, с другой книгой"
 
+msgid "This game"
+msgstr "Эта партия"
+
+msgid "This game filling its window, in large type: on another screen (a television), the panel's window; docked here, the main window. F11: full screen, Esc: back."
+msgstr "Эта партия на всё окно крупным шрифтом: на другом экране (телевизоре) — окно панели; если панель закреплена здесь — главное окно. F11: во весь экран, Esc: назад."
+
+msgid "This game is not being played: it is over, or its engines are still starting."
+msgstr "Эта партия не играется: она окончена, или её движки ещё запускаются."
+
+msgid "This game is over already."
+msgstr "Эта партия уже окончена."
+
 msgid "This is the latest version."
 msgstr "Это последняя версия."
 
 msgid "This match is already finished."
 msgstr "Этот матч уже завершён."
+
+msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
+msgstr "Этот турнир запущен без «Перезапускать вылетевший движок» (настройка, PGN и прочее): завершение партии останавливает движок, чей ход, а это остановило бы турнир. Задайте результат, когда партия закончится, на вкладке «Партии»."
 
 msgid "Those with a problem"
 msgstr "Проблемные"
@@ -3086,6 +3200,9 @@ msgstr "Порт UDP"
 msgid "Under Wayland the software renderer needs X11: start the program with the environment variable SDL_VIDEODRIVER=x11."
 msgstr "В Wayland программному рендереру нужен X11: запустите программу с переменной окружения SDL_VIDEODRIVER=x11."
 
+msgid "Undo"
+msgstr "Отменить"
+
 msgid "Undo the last change"
 msgstr "Отменить последнее изменение"
 
@@ -3142,6 +3259,9 @@ msgstr "В {:.0f} · Н {:.0f} · П {:.0f} %"
 
 msgid "Waiting for the book of {}…"
 msgstr "Ожидание книги {}…"
+
+msgid "Waiting for the next game…"
+msgstr "Ожидание следующей партии…"
 
 msgid "Waiting for the test suite…"
 msgstr "Ожидание тестового набора…"
@@ -3214,6 +3334,12 @@ msgstr "Белые не отвечают"
 
 msgid "White's score over the games."
 msgstr "Результат белых по всем партиям."
+
+msgid "Why (kept with the game)"
+msgstr "Почему (сохраняется с партией)"
+
+msgid "Why: {}"
+msgstr "Почему: {}"
 
 msgid "WinBoard"
 msgstr "WinBoard"
@@ -3301,6 +3427,9 @@ msgstr "Zip записан в {}"
 
 msgid "\"{}\" was on in this tournament's PGN options: the engines did not give what it needs in this game."
 msgstr "«{}» был включён в параметрах PGN этого турнира: движки не сообщили нужные данные в этой партии."
+
+msgid "a result is 1-0, 0-1 or 1/2-1/2"
+msgstr "результат — это 1-0, 0-1 или 1/2-1/2"
 
 msgid "about {} game"
 msgid_plural "about {} games"
@@ -3410,6 +3539,9 @@ msgstr "нелегальная позиция"
 msgid "illegal positions"
 msgstr "нелегальные позиции"
 
+msgid "in a knockout, only the games of the round being played can have their result set"
+msgstr "в турнире на выбывание результат можно задать только партиям текущего тура"
+
 msgid "initial position"
 msgstr "начальная позиция"
 
@@ -3497,6 +3629,9 @@ msgstr "чтение турниров…"
 msgid "replay requested"
 msgstr "переигровка по запросу"
 
+msgid "s"
+msgstr "с"
+
 msgid "send at startup"
 msgstr "отправить при запуске"
 
@@ -3505,6 +3640,9 @@ msgstr "драйвер предоставляет OpenGL {}"
 
 msgid "the file is not found"
 msgstr "файл не найден"
+
+msgid "the game already has this result"
+msgstr "у партии уже этот результат"
 
 msgid "the host key of {} cannot be checked: its fingerprint could not be computed"
 msgstr "ключ хоста {} нельзя проверить: не удалось вычислить его отпечаток"
@@ -3523,6 +3661,9 @@ msgstr "быстрый тест {}"
 
 msgid "the resume of the interrupted tournament"
 msgstr "возобновление прерванного турнира"
+
+msgid "this game does not count: it was voided, or is not over"
+msgstr "эта партия не засчитывается: она аннулирована или не окончена"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "упомянуть в сообщении или перепроверить движок:"
@@ -3866,6 +4007,9 @@ msgstr "{} мин {:02} с"
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr "ходов: {} · глубина {:.1f} · {:.0f} мс на ход{}"
 
+msgid "{} n/s"
+msgstr "{} узл/с"
+
 msgid "{} new engine found. Untick those to leave out."
 msgid_plural "{} new engines found. Untick those to leave out."
 msgstr[0] "Найден {} новый движок. Снимите отметку с тех, что не нужны."
@@ -4144,6 +4288,9 @@ msgstr "{}: неизвестен движку"
 
 msgid "{}: {}"
 msgstr "{}: {}"
+
+msgid "{}: {} → {} points"
+msgstr "{}: {} → {} очк."
 
 msgid "{}\nA new build, or another program: its results may not be those of the engine that played {}."
 msgstr "{}\nНовая версия или другая программа: его результаты могут не совпадать с результатами движка, игравшего в «{}»."

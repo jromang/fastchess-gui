@@ -51,7 +51,11 @@ struct BoardArrow {
 struct BoardDecor {
     bool flipped = false;
     std::optional<chess::Move> last_move;
-    float eval_white = 0.5f;         // fraction of the eval bar that is white, < 0 hides the bar
+    // A frame this many pixels thick around the two squares of the last move, in last_move_colour (the big screen,
+    // read from afar); 0: none.
+    float last_move_frame  = 0.0f;
+    ImU32 last_move_colour = IM_COL32(255, 210, 70, 255);
+    float eval_white       = 0.5f;   // fraction of the eval bar that is white, < 0 hides the bar
     std::vector<BoardArrow> arrows;  // drawn in order, over the pieces
 };
 

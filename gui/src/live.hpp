@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <deque>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -97,9 +98,10 @@ struct GameRecord {
     bool a_white        = true;  // a match: did A (participant 0) have White, and how did it do
     int8_t a_result     = 0;     // +1 A won, 0 draw, -1 A lost
     uint8_t termination = 0;
-    uint16_t reason     = 0;  // index into GuiObserver::reasons()
-    uint16_t opening    = 0;  // index into GuiObserver::openings(); 0: none (Chess960, or an older PGN)
-    EvalFacts facts;          // what its evaluations tell, for the "interesting games" filters
+    bool result_set     = false;  // the result was set by hand (tour::GameResult::set)
+    uint16_t reason     = 0;      // index into GuiObserver::reasons()
+    uint16_t opening    = 0;      // index into GuiObserver::openings(); 0: none (Chess960, or an older PGN)
+    EvalFacts facts;              // what its evaluations tell, for the "interesting games" filters
     uint16_t plies       = 0;
     uint16_t pv_warnings = 0;   // what fastchess' PV checks found
     int16_t pv_ply       = -1;  // the first move they were about
@@ -250,6 +252,10 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     // Is anything going on in slot `i` (cheap, for tab labels)?
     [[nodiscard]] bool slotActive(int i) const;
 
+    // Calls `stop` with the process of the engine on move in slot `i`, while it plays game `game_id`
+    // (SlotState::game_id) and its engines are started; false otherwise. See RunController::endGame().
+    bool stopEngineOnMove(int i, std::size_t game_id, const std::function<void(int64_t pid)>& stop);
+
     // The games a resumed tournament already holds are still being read.
     [[nodiscard]] bool loading() const;
 
@@ -287,6 +293,7 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
         std::deque<SlotState> ended;             // the previous games, once they have a result; at most 8
         chess::Board board;                      // current position of the game in this slot
         std::array<int, 2> participant{-1, -1};  // the participant indexes of White and Black, for their totals
+        std::array<int64_t, 2> pids{};           // the processes of White's and Black's engines, 0 until started
     };
 
     Slot* slot(int i) { return i >= 0 && i < static_cast<int>(slots_.size()) ? slots_[i].get() : nullptr; }
@@ -297,13 +304,19 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     struct GameExtras {
         uint16_t opening = 0;
         EvalFacts facts;
+        // The loss counted in totals_ for it (1 on time, 2 by a crash or a stall, 3 by an illegal move, 0 none), and
+        // the loser's index: an edit (a result set by hand, a game voided) changes it.
+        uint8_t loss   = 0;
+        uint16_t loser = 0;
     };
     const GameExtras& extrasOf(const tour::GameResult& result, std::string_view pgn = {});
     // One move of an engine in its search statistics; data_mutex_ held.
     static void addMove(EngineTotals& totals, int64_t depth, int64_t time_ms, int64_t nps, uint64_t nodes,
                         std::optional<int64_t> decision_ms);
     GameRecord makeRecord(const tour::GameResult& result, std::string_view pgn = {});  // data_mutex_ held
-    void countLoss(const tour::GameResult& result);                                    // data_mutex_ held
+    // Counts in totals_ the loss the game is now (none when it is voided), instead of what extras.loss counted;
+    // data_mutex_ held.
+    void countLoss(const tour::GameResult& result, GameExtras& extras);
     // Reads the games of to_load_, on loader_.
     void loadPlayed();
     // What the loader read of a game's PGN.

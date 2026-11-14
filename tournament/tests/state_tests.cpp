@@ -643,6 +643,70 @@ TEST_CASE("state: the PGN file of the user's gets the games in schedule order, a
     CHECK(gamesOf(dir / "test.pgn").size() == 6);
 }
 
+TEST_CASE("state: the PGN file of the user's gets a game held there with the result set by hand meanwhile") {
+    const auto dir = freshDir("pgn-out-set");
+    const auto out = dir.parent_path() / "fcg-tour-pgn-out-set.pgn";
+    fs::remove(out);
+    auto spec    = matchSpec(4);
+    spec.pgn_out = out.string();
+
+    {
+        auto state        = TournamentState::create(dir, spec);
+        const auto first  = *state->claimNext();
+        const auto second = *state->claimNext();
+        state->complete(second, gameData(second, "1-0"));  // held: game 0 is not over
+
+        Edit set;
+        set.kind   = Edit::Kind::SetResult;
+        set.games  = {{second.encounter.index, second.game}};
+        set.result = "0-1";
+        set.why    = "an illegal move the GUI missed";
+        state->applyEdit(set);
+        state->complete(first, gameData(first, "1/2-1/2"));
+    }
+    const auto text = readAll(out);
+    CHECK(gamesOf(out).size() == 2);
+    CHECK(text.find("[Result \"0-1\"]") != std::string::npos);
+    CHECK(text.find("[Result \"1-0\"]") == std::string::npos);
+    CHECK(text.find("[Termination \"adjudicated by the operator\"]") != std::string::npos);
+    CHECK(text.find("{Adjudicated by the operator: an illegal move the GUI missed") != std::string::npos);
+
+    // The tournament's own PGN file keeps the game as played; a reopen writes nothing twice.
+    CHECK(readAll(dir / "test.pgn").find("[Result \"1-0\"]") != std::string::npos);
+    TournamentState::open(dir);
+    CHECK(gamesOf(out).size() == 2);
+}
+
+TEST_CASE("state: a write to the user's PGN file cut by a crash is completed with the results set by hand then") {
+    const auto dir = freshDir("pgn-out-set-cut");
+    const auto out = dir.parent_path() / "fcg-tour-pgn-out-set-cut.pgn";
+    fs::remove(out);
+    auto spec    = matchSpec(4);
+    spec.pgn_out = out.string();
+
+    {
+        auto state        = TournamentState::create(dir, spec);
+        const auto first  = *state->claimNext();
+        const auto second = *state->claimNext();
+        state->complete(second, gameData(second, "1-0"));
+        Edit set;
+        set.kind   = Edit::Kind::SetResult;
+        set.games  = {{second.encounter.index, second.game}};
+        set.result = "1/2-1/2";
+        state->applyEdit(set);
+        // The write stops after 100 bytes, as a power cut would leave it.
+        appendSharedCut = [](std::size_t) -> std::size_t { return 100; };
+        state->complete(first, gameData(first, "0-1"));
+        appendSharedCut = nullptr;
+        CHECK_FALSE(state->pgnOutError().empty());
+    }
+    // Opened again: the rest of the same text, the result set included, not the games again.
+    TournamentState::open(dir);
+    const auto text = readAll(out);
+    CHECK(gamesOf(out).size() == 2);
+    CHECK(text.find("[Termination \"adjudicated by the operator\"]") != std::string::npos);
+}
+
 TEST_CASE("state: the PGN file of the user's gets what is left when the tournament ends, and waits out failures") {
     const auto dir = freshDir("pgn-out-sprt");
     const auto out = dir / "missing-folder.pgn";  // a folder for now: it cannot be written

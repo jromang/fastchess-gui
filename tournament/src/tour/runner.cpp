@@ -20,6 +20,8 @@ thread_local const GameTask* t_task = nullptr;
 thread_local bool t_recorded        = false;
 // Whether both engines of that game started (fastchess told their processes).
 thread_local bool t_started = false;
+// Whether the operator ended that game (TournamentState::requestEnd()).
+thread_local bool t_ended = false;
 
 // What counts that game as running in the pause gate; empty while a pause holds the next start try of its engine.
 using Ticket                                   = fastchess::observer::PauseGate::Ticket;
@@ -41,6 +43,21 @@ void watchLog(fastchess::Logger::Level level, std::string_view message) {
         }
     }
     if (const auto next = g_next_sink.load()) next(level, message);
+}
+
+// The game as the operator ended it (TournamentState::requestEnd()): their result, an adjudication. fastchess ended
+// it when the GUI stopped the engine on move (a disconnection), or on its own just before.
+fastchess::MatchData endedByOperator(fastchess::MatchData data, const std::string& result) {
+    using chess::GameResult;
+    data.players.white.result = result == "1-0"   ? GameResult::WIN
+                                : result == "0-1" ? GameResult::LOSE
+                                                  : GameResult::DRAW;
+    data.players.black.result = result == "1-0"   ? GameResult::LOSE
+                                : result == "0-1" ? GameResult::WIN
+                                                  : GameResult::DRAW;
+    data.termination          = fastchess::MatchTermination::ADJUDICATION;
+    data.reason               = OPERATOR_REASON;
+    return data;
 }
 
 }  // namespace
@@ -174,6 +191,7 @@ void Runner::play(const GameTask& task) {
     t_recorded = false;
     t_started  = false;
     t_failure.reset();
+    t_ended    = false;
 
     try {
         // A paused tournament lets running games (and the other game of their pair) finish but starts no new pair.
@@ -218,6 +236,13 @@ void Runner::play(const GameTask& task) {
         fastchess::observer::PauseGate::instance().closeSettled([&](std::uint64_t encounter) {
             return encounter == task.encounter.index && !state_.begun(task.encounter.index);
         });
+    }
+
+    // A game the operator ended: the GUI stopped the process of an engine, which may have ended the game a moment
+    // after fastchess did, and stay in its cache for the next game. Both engines of the game start anew. A request
+    // the end of the game came too early to take is dropped.
+    if (state_.takeEnd(task.number()) || t_ended) {
+        retireEngines([&](const std::string& name) { return name == task.white.name || name == task.black.name; });
     }
 
     // The processes kept for engines with no game left (withdrawn or replaced participants, the opponents of a
@@ -355,15 +380,28 @@ void Runner::onMove(int slot, chess::Color mover, const fastchess::MoveData& mov
     if (downstream_) downstream_->onMove(slot, mover, move, san, white_time_left, black_time_left);
 }
 
-void Runner::onGameEnd(int slot, std::size_t game_id, std::size_t round_id, const fastchess::MatchData& data,
+void Runner::onGameEnd(int slot, std::size_t game_id, std::size_t round_id, const fastchess::MatchData& played,
                        bool counted) {
+    // Ended by the operator: recorded with their result, whatever ended it. Not when the tournament is stopping (the
+    // game is played again): the request is dropped then.
+    std::optional<fastchess::MatchData> ended;
+    std::optional<ResultSet> set;
+    if (counted && t_task && t_started) {
+        if (const auto end = state_.takeEnd(t_task->number())) {
+            t_ended = true;
+            ended   = endedByOperator(played, end->first);
+            set     = ResultSet{end->second, "*", fastchess::MatchTermination::INTERRUPT, ""};
+        }
+    }
+    const auto& data = ended ? *ended : played;
+
     if (downstream_) downstream_->onGameEnd(slot, game_id, round_id, data, counted);
     if (!counted || !t_task) return;
 
     if (log_every_game_ || endsBadly(data.termination)) writeLog(slot, t_task->number() + 1, data);
 
     try {
-        const auto recorded = state_.complete(*t_task, data);
+        const auto recorded = state_.complete(*t_task, data, set);
         t_recorded          = true;
         if (listener_ && recorded.kept) listener_->onRecorded(recorded.result, data, recorded.pair);
     } catch (const std::exception& e) {

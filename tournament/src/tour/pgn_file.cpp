@@ -1,6 +1,7 @@
 #include "pgn_file.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <fstream>
 #include <stdexcept>
 
@@ -191,6 +192,69 @@ std::string pgnTagValue(std::string_view value) {
         out += c;
     }
     return out;
+}
+
+std::pair<std::size_t, std::size_t> pgnTagLine(std::string_view game, std::string_view tag) {
+    const auto prefix = "[" + std::string(tag) + " \"";
+    for (std::size_t at = 0; at < game.size();) {
+        auto end = game.find('\n', at);
+        if (end == std::string_view::npos) end = game.size();
+        auto line = game.substr(at, end - at);
+        if (!line.empty() && line.back() == '\r') line.remove_suffix(1);
+        if (line.empty() && at > 0) break;  // the end of the tags
+        if (!line.empty() && line.front() != '[') break;
+        if (line.rfind(prefix, 0) == 0) return {at, at + line.size()};
+        at = end + 1;
+    }
+    return {std::string_view::npos, std::string_view::npos};
+}
+
+void setPgnTag(std::string& game, std::string_view tag, const std::string& value, bool add) {
+    const auto line         = "[" + std::string(tag) + " \"" + pgnTagValue(value) + "\"]";
+    const auto [begin, end] = pgnTagLine(game, tag);
+    if (begin != std::string_view::npos) {
+        game.replace(begin, end - begin, line);
+        return;
+    }
+    if (!add) return;
+    // After the last tag line: the tags end at the first line that is not one.
+    std::size_t at = 0;
+    while (at < game.size() && game[at] == '[') {
+        const auto next = game.find('\n', at);
+        if (next == std::string::npos) {
+            game += '\n';
+            at = game.size();
+            break;
+        }
+        at = next + 1;
+    }
+    game.insert(at, line + "\n");
+}
+
+std::string withResult(std::string game, const std::string& result, const std::string& termination,
+                       const std::string& comment) {
+    setPgnTag(game, "Result", result);
+    setPgnTag(game, "Termination", termination, true);
+
+    // The result that ends the moves: the last word of the text.
+    auto end = game.size();
+    while (end > 0 && std::isspace(static_cast<unsigned char>(game[end - 1]))) --end;
+    auto begin = end;
+    while (begin > 0 && !std::isspace(static_cast<unsigned char>(game[begin - 1])) && game[begin - 1] != '}') --begin;
+    const auto last = std::string_view(game).substr(begin, end - begin);
+    if (last != "1-0" && last != "0-1" && last != "1/2-1/2" && last != "*") begin = end;  // none: it is added
+
+    std::string tail;
+    if (!comment.empty()) {
+        std::string text;
+        for (const char c : comment) text += c == '{' ? '(' : c == '}' ? ')' : c == '\n' || c == '\r' ? ' ' : c;
+        tail = "{" + text + "} ";
+    }
+    tail += result;
+    // A space between the moves and what follows, unless a line ends there.
+    const bool spaced = begin == 0 || std::isspace(static_cast<unsigned char>(game[begin - 1]));
+    game.replace(begin, end - begin, (spaced ? "" : " ") + tail);
+    return game;
 }
 
 }  // namespace fcg::tour

@@ -262,6 +262,9 @@ msgstr ""
 msgid "Adjudicate"
 msgstr ""
 
+msgid "Adjudicated by the operator"
+msgstr ""
+
 msgid "Adjudication"
 msgstr ""
 
@@ -411,6 +414,9 @@ msgstr ""
 msgid "Back to the default value"
 msgstr ""
 
+msgid "Back to the result as played ({})"
+msgstr ""
+
 msgid "Base (s)"
 msgstr ""
 
@@ -418,6 +424,9 @@ msgid "Before"
 msgstr ""
 
 msgid "Being built from {}"
+msgstr ""
+
+msgid "Big screen"
 msgstr ""
 
 msgid "Black"
@@ -451,6 +460,9 @@ msgid "Black's pieces on the same files as White's: 18 starting positions, added
 msgstr ""
 
 msgid "Board"
+msgstr ""
+
+msgid "Board {} of {}"
 msgstr ""
 
 msgid "Book"
@@ -915,6 +927,18 @@ msgstr ""
 msgid "End"
 msgstr ""
 
+msgid "End game {} with a result…"
+msgstr ""
+
+msgid "End the game"
+msgstr ""
+
+msgid "End with result"
+msgstr ""
+
+msgid "Ended by the operator while it was played."
+msgstr ""
+
 msgid "Ends about {} (in {})"
 msgstr ""
 
@@ -970,6 +994,12 @@ msgid "Every game"
 msgstr ""
 
 msgid "Every game in progress, the one followed with its evaluation bar, arrows and charts; the standings, the crosstable, the statistics and anomalies, and the games' PGN file to download. Read-only, refreshed every second."
+msgstr ""
+
+msgid "Every game in turn"
+msgstr ""
+
+msgid "Every game in turn: the games in progress one after the other.\nThe most interesting: the game whose evaluation is closest to level, the longest of those as close; it stays while it is."
 msgstr ""
 
 msgid "Every game is written to two files in the match folder:"
@@ -1116,6 +1146,12 @@ msgstr ""
 msgid "For a PGN book: number of plies kept. -1 = all."
 msgstr ""
 
+msgid "For a game the program could not decide well: a hang it did not catch, a won ending the engines keep shuffling, a game that ended for a wrong reason.\nThe standings, the ratings and the submission checklist count the new result. The PGN files keep the game as played; the exports give the new result, with Termination \"adjudicated by the operator\" and the reason in a comment.\nUndo the last change (Schedule tab) takes it back."
+msgstr ""
+
+msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
+msgstr ""
+
 msgid "Format"
 msgstr ""
 
@@ -1135,6 +1171,9 @@ msgid "From the games only, with the DrawElo that goes with it."
 msgstr ""
 
 msgid "From {}: {}"
+msgstr ""
+
+msgid "Full screen (F11)"
 msgstr ""
 
 msgid "Gainer [0, 3]"
@@ -1158,7 +1197,22 @@ msgstr ""
 msgid "Game shown:"
 msgstr ""
 
+msgid "Game {} counts as {}."
+msgstr ""
+
+msgid "Game {} was ended by the operator: {}."
+msgstr ""
+
 msgid "Game {} · move {}"
+msgstr ""
+
+msgid "Game {} · move {}: {} – {}"
+msgstr ""
+
+msgid "Game {} · round {} · move {}"
+msgstr ""
+
+msgid "Game {}: {} – {}  {}"
 msgstr ""
 
 msgid "Games"
@@ -1457,7 +1511,13 @@ msgstr ""
 msgid "Layout saved: {}"
 msgstr ""
 
+msgid "Leave (Esc)"
+msgstr ""
+
 msgid "Leave out the games lost by a crash or a stall"
+msgstr ""
+
+msgid "Leave the big screen"
 msgstr ""
 
 msgid "Letter case and spaces aside."
@@ -1643,6 +1703,9 @@ msgid "No game finished yet."
 msgstr ""
 
 msgid "No game in this slot yet."
+msgstr ""
+
+msgid "No game is being played here."
 msgstr ""
 
 msgid "No game is being played."
@@ -2276,6 +2339,12 @@ msgstr ""
 msgid "Result"
 msgstr ""
 
+msgid "Result set by hand. As played: {}"
+msgstr ""
+
+msgid "Result set by hand. As played: {} ({})"
+msgstr ""
+
 msgid "Results of A"
 msgstr ""
 
@@ -2291,7 +2360,13 @@ msgstr ""
 msgid "Resumed: {}, {} games already played. Folder: {}"
 msgstr ""
 
-msgid "Right click: play again or void this game."
+msgid "Right click: change it, or take it back."
+msgstr ""
+
+msgid "Right click: end this game with a result."
+msgstr ""
+
+msgid "Right click: play this game again, void it or set its result."
 msgstr ""
 
 msgid "Round (its URL or id; empty: a new broadcast named after the tournament)"
@@ -2390,6 +2465,9 @@ msgstr ""
 msgid "Searches at a time"
 msgstr ""
 
+msgid "Seconds before the next game is chosen."
+msgstr ""
+
 msgid "Seconds per move"
 msgstr ""
 
@@ -2418,6 +2496,12 @@ msgid "Serve the web page"
 msgstr ""
 
 msgid "Service:"
+msgstr ""
+
+msgid "Set the result"
+msgstr ""
+
+msgid "Set the result of game {}…"
 msgstr ""
 
 msgid "Set {} reference Elo"
@@ -2680,6 +2764,9 @@ msgstr ""
 msgid "The Schedule tab shows the impact before anything changes."
 msgstr ""
 
+msgid "The arrow keys too."
+msgstr ""
+
 msgid "The average rating of the opponents met, game by game."
 msgstr ""
 
@@ -2758,6 +2845,12 @@ msgstr ""
 msgid "The folder {} is not there any more."
 msgstr ""
 
+msgid "The game counts again as it was."
+msgstr ""
+
+msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
+msgstr ""
+
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr ""
 
@@ -2792,6 +2885,9 @@ msgid "The last check or reading failed."
 msgstr ""
 
 msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
+msgstr ""
+
+msgid "The most interesting"
 msgstr ""
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
@@ -2882,6 +2978,9 @@ msgstr ""
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr ""
 
+msgid "The size of the text, for the distance it is read from (+ and - too)."
+msgstr ""
+
 msgid "The software renderer cannot be used ({}): the window is drawn with OpenGL."
 msgstr ""
 
@@ -2954,10 +3053,25 @@ msgstr ""
 msgid "This engine once more, with another book"
 msgstr ""
 
+msgid "This game"
+msgstr ""
+
+msgid "This game filling its window, in large type: on another screen (a television), the panel's window; docked here, the main window. F11: full screen, Esc: back."
+msgstr ""
+
+msgid "This game is not being played: it is over, or its engines are still starting."
+msgstr ""
+
+msgid "This game is over already."
+msgstr ""
+
 msgid "This is the latest version."
 msgstr ""
 
 msgid "This match is already finished."
+msgstr ""
+
+msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr ""
 
 msgid "Those with a problem"
@@ -3068,6 +3182,9 @@ msgstr ""
 msgid "Under Wayland the software renderer needs X11: start the program with the environment variable SDL_VIDEODRIVER=x11."
 msgstr ""
 
+msgid "Undo"
+msgstr ""
+
 msgid "Undo the last change"
 msgstr ""
 
@@ -3123,6 +3240,9 @@ msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr ""
 
 msgid "Waiting for the book of {}…"
+msgstr ""
+
+msgid "Waiting for the next game…"
 msgstr ""
 
 msgid "Waiting for the test suite…"
@@ -3195,6 +3315,12 @@ msgid "White's connection stalls"
 msgstr ""
 
 msgid "White's score over the games."
+msgstr ""
+
+msgid "Why (kept with the game)"
+msgstr ""
+
+msgid "Why: {}"
 msgstr ""
 
 msgid "WinBoard"
@@ -3282,6 +3408,9 @@ msgid "Zip written to {}"
 msgstr ""
 
 msgid "\"{}\" was on in this tournament's PGN options: the engines did not give what it needs in this game."
+msgstr ""
+
+msgid "a result is 1-0, 0-1 or 1/2-1/2"
 msgstr ""
 
 msgid "about {} game"
@@ -3391,6 +3520,9 @@ msgstr ""
 msgid "illegal positions"
 msgstr ""
 
+msgid "in a knockout, only the games of the round being played can have their result set"
+msgstr ""
+
 msgid "initial position"
 msgstr ""
 
@@ -3476,6 +3608,9 @@ msgstr ""
 msgid "replay requested"
 msgstr ""
 
+msgid "s"
+msgstr ""
+
 msgid "send at startup"
 msgstr ""
 
@@ -3483,6 +3618,9 @@ msgid "the driver gives OpenGL {}"
 msgstr ""
 
 msgid "the file is not found"
+msgstr ""
+
+msgid "the game already has this result"
 msgstr ""
 
 msgid "the host key of {} cannot be checked: its fingerprint could not be computed"
@@ -3501,6 +3639,9 @@ msgid "the quick test of {}"
 msgstr ""
 
 msgid "the resume of the interrupted tournament"
+msgstr ""
+
+msgid "this game does not count: it was voided, or is not over"
 msgstr ""
 
 msgid "to mention in the post, or to test the engine again:"
@@ -3819,6 +3960,9 @@ msgstr ""
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr ""
 
+msgid "{} n/s"
+msgstr ""
+
 msgid "{} new engine found. Untick those to leave out."
 msgid_plural "{} new engines found. Untick those to leave out."
 msgstr[0] ""
@@ -4074,6 +4218,9 @@ msgid "{}: unknown to the engine"
 msgstr ""
 
 msgid "{}: {}"
+msgstr ""
+
+msgid "{}: {} → {} points"
 msgstr ""
 
 msgid "{}\nA new build, or another program: its results may not be those of the engine that played {}."

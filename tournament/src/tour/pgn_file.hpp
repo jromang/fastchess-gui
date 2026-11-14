@@ -8,6 +8,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace fcg::tour {
@@ -79,5 +80,17 @@ inline std::function<std::size_t(std::size_t size)> appendSharedCut;
 
 // A tag value as PGN writes it between the quotes: its quotes and backslashes escaped.
 [[nodiscard]] std::string pgnTagValue(std::string_view value);
+
+// The line of a tag in the tags of one game's PGN text: [begin, end) without its line ending; npos when it has none.
+[[nodiscard]] std::pair<std::size_t, std::size_t> pgnTagLine(std::string_view game, std::string_view tag);
+
+// Gives a tag of one game's PGN text `value`; a tag it does not have is added after the last one when `add`.
+void setPgnTag(std::string& game, std::string_view tag, const std::string& value, bool add = false);
+
+// One game's PGN text with another result: its Result tag and the result that ends its moves, its Termination tag
+// (added when it has none), and `comment` (none when empty) as a comment before the result. A brace or a line end
+// in the comment becomes a parenthesis or a space.
+[[nodiscard]] std::string withResult(std::string game, const std::string& result, const std::string& termination,
+                                     const std::string& comment);
 
 }  // namespace fcg::tour

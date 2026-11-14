@@ -890,6 +890,43 @@ std::string RunController::undoEdit() {
     return {};
 }
 
+namespace {
+
+// Ends the engine process `pid` of a game being played, with what it started (the engine behind a WinBoard adapter
+// or a book adapter), as interruptEngineProcesses() ends them all.
+void stopEngineProcess(int64_t pid) {
+    fastchess::process_list.lock();
+    for (const auto& process : fastchess::process_list) {
+#ifdef _WIN64  // as ProcessInformation
+        if (static_cast<int64_t>(GetProcessId(process.identifier)) == pid) TerminateProcess(process.identifier, 1);
+#else
+        if (process.identifier == pid) (void)killProcessTree(process.identifier);
+#endif
+    }
+    fastchess::process_list.unlock();
+}
+
+}  // namespace
+
+std::string RunController::endGame(int slot, uint64_t number, const std::string& result, const std::string& why) {
+    if (!running() || !tournament_ || !observer_) return TR("No game is being played.");
+    // Without it, fastchess stops the tournament when an engine disconnects.
+    if (!tournament_->spec().conditions.recover) {
+        return TR(
+            "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): "
+            "ending a game stops the engine on move, which would stop the tournament. Set the result once the "
+            "game is over, in the Games tab.");
+    }
+    if (!tournament_->requestEnd(number, result, why)) return TR("This game is over already.");
+    if (!observer_->stopEngineOnMove(slot, static_cast<std::size_t>(number + 1), stopEngineProcess)) {
+        // Over meanwhile, or its engines not started yet. A request the runner took already applies.
+        if (tournament_->takeEnd(number)) {
+            return TR("This game is not being played: it is over, or its engines are still starting.");
+        }
+    }
+    return {};
+}
+
 void RunController::afterEdit() {
     // The views know the participants by index: new ones get a name and counters.
     if (observer_) observer_->updateParticipants(tournament_->spec());

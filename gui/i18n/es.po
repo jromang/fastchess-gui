@@ -262,6 +262,9 @@ msgstr "Añadir…"
 msgid "Adjudicate"
 msgstr "Adjudicar"
 
+msgid "Adjudicated by the operator"
+msgstr "Adjudicada por el operador"
+
 msgid "Adjudication"
 msgstr "Adjudicación"
 
@@ -411,6 +414,9 @@ msgstr "Volver a la carpeta por defecto"
 msgid "Back to the default value"
 msgstr "Volver al valor por defecto"
 
+msgid "Back to the result as played ({})"
+msgstr "Volver al resultado jugado ({})"
+
 msgid "Base (s)"
 msgstr "Tiempo base (s)"
 
@@ -419,6 +425,9 @@ msgstr "Antes"
 
 msgid "Being built from {}"
 msgstr "En construcción a partir de {}"
+
+msgid "Big screen"
+msgstr "Pantalla grande"
 
 msgid "Black"
 msgstr "Negras"
@@ -452,6 +461,9 @@ msgstr "Las piezas negras en las mismas columnas que las blancas: 18 posiciones 
 
 msgid "Board"
 msgstr "Tablero"
+
+msgid "Board {} of {}"
+msgstr "Tablero {} de {}"
 
 msgid "Book"
 msgstr "Libro"
@@ -915,6 +927,18 @@ msgstr "Vacío: la carpeta del programa."
 msgid "End"
 msgstr "Fin"
 
+msgid "End game {} with a result…"
+msgstr "Terminar la partida {} con un resultado…"
+
+msgid "End the game"
+msgstr "Terminar la partida"
+
+msgid "End with result"
+msgstr "Terminar con un resultado"
+
+msgid "Ended by the operator while it was played."
+msgstr "Terminada por el operador mientras se jugaba."
+
 msgid "Ends about {} (in {})"
 msgstr "Termina hacia {} (en {})"
 
@@ -971,6 +995,12 @@ msgstr "Todas las partidas"
 
 msgid "Every game in progress, the one followed with its evaluation bar, arrows and charts; the standings, the crosstable, the statistics and anomalies, and the games' PGN file to download. Read-only, refreshed every second."
 msgstr "Todas las partidas en curso, la seguida con su barra de evaluación, flechas y gráficos; la clasificación, la tabla cruzada, las estadísticas y anomalías, y el archivo PGN de las partidas para descargar. Solo lectura, actualizado cada segundo."
+
+msgid "Every game in turn"
+msgstr "Cada partida por turnos"
+
+msgid "Every game in turn: the games in progress one after the other.\nThe most interesting: the game whose evaluation is closest to level, the longest of those as close; it stays while it is."
+msgstr "Cada partida por turnos: las partidas en curso una tras otra.\nLa más interesante: la partida cuya evaluación está más cerca de la igualdad, la más larga de las igual de cercanas; se queda mientras lo siga siendo."
 
 msgid "Every game is written to two files in the match folder:"
 msgstr "Cada partida se escribe en dos archivos de la carpeta del match:"
@@ -1116,6 +1146,12 @@ msgstr "Para TLCV, node-tlcv y Livius: una partida a la vez, con las búsquedas 
 msgid "For a PGN book: number of plies kept. -1 = all."
 msgstr "Para un libro PGN: número de medias jugadas que se conservan. -1 = todas."
 
+msgid "For a game the program could not decide well: a hang it did not catch, a won ending the engines keep shuffling, a game that ended for a wrong reason.\nThe standings, the ratings and the submission checklist count the new result. The PGN files keep the game as played; the exports give the new result, with Termination \"adjudicated by the operator\" and the reason in a comment.\nUndo the last change (Schedule tab) takes it back."
+msgstr "Para una partida que el programa no supo decidir bien: un bloqueo que no detectó, un final ganado en el que los motores dan vueltas, una partida que terminó por un motivo equivocado.\nLa clasificación, los ratings y la lista de comprobación del envío cuentan el nuevo resultado. Los archivos PGN conservan la partida tal como se jugó; las exportaciones dan el nuevo resultado, con Termination \"adjudicated by the operator\" y el motivo en un comentario.\nDeshacer el último cambio (pestaña Calendario) lo revierte."
+
+msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
+msgstr "Para una partida que el programa no terminaría bien: un bloqueo que no detecta, un final ganado en el que los motores dan vueltas.\nEl motor que mueve se detiene (vuelve a arrancar para su siguiente partida), y la partida cuenta con este resultado: Termination \"adjudicated by the operator\" en las exportaciones, el motivo en un comentario.\nSu resultado se puede cambiar después en la pestaña Partidas."
+
 msgid "Format"
 msgstr "Formato"
 
@@ -1136,6 +1172,9 @@ msgstr "Solo a partir de las partidas, con el DrawElo correspondiente."
 
 msgid "From {}: {}"
 msgstr "De {}: {}"
+
+msgid "Full screen (F11)"
+msgstr "Pantalla completa (F11)"
 
 msgid "Gainer [0, 3]"
 msgstr "Mejora [0, 3]"
@@ -1158,8 +1197,23 @@ msgstr "Pares de partidas por match"
 msgid "Game shown:"
 msgstr "Partida mostrada:"
 
+msgid "Game {} counts as {}."
+msgstr "La partida {} cuenta como {}."
+
+msgid "Game {} was ended by the operator: {}."
+msgstr "La partida {} ha sido terminada por el operador: {}."
+
 msgid "Game {} · move {}"
 msgstr "Partida {} · jugada {}"
+
+msgid "Game {} · move {}: {} – {}"
+msgstr "Partida {} · jugada {}: {} – {}"
+
+msgid "Game {} · round {} · move {}"
+msgstr "Partida {} · ronda {} · jugada {}"
+
+msgid "Game {}: {} – {}  {}"
+msgstr "Partida {}: {} – {}  {}"
 
 msgid "Games"
 msgstr "Partidas"
@@ -1457,8 +1511,14 @@ msgstr "Disposición"
 msgid "Layout saved: {}"
 msgstr "Disposición guardada: {}"
 
+msgid "Leave (Esc)"
+msgstr "Salir (Esc)"
+
 msgid "Leave out the games lost by a crash or a stall"
 msgstr "Excluir las partidas perdidas por un cuelgue o un bloqueo"
+
+msgid "Leave the big screen"
+msgstr "Salir de la pantalla grande"
 
 msgid "Letter case and spaces aside."
 msgstr "Sin contar mayúsculas ni espacios."
@@ -1644,6 +1704,9 @@ msgstr "Aún no ha terminado ninguna partida."
 
 msgid "No game in this slot yet."
 msgstr "Aún no hay ninguna partida en este hueco."
+
+msgid "No game is being played here."
+msgstr "Aquí no se juega ninguna partida."
 
 msgid "No game is being played."
 msgstr "No se está jugando ninguna partida."
@@ -2276,6 +2339,12 @@ msgstr "Reiniciar el motor en cada partida"
 msgid "Result"
 msgstr "Resultado"
 
+msgid "Result set by hand. As played: {}"
+msgstr "Resultado fijado a mano. Jugado: {}"
+
+msgid "Result set by hand. As played: {} ({})"
+msgstr "Resultado fijado a mano. Jugado: {} ({})"
+
 msgid "Results of A"
 msgstr "Resultados de A"
 
@@ -2291,8 +2360,14 @@ msgstr "Reanudar al iniciar el torneo que estaba en curso"
 msgid "Resumed: {}, {} games already played. Folder: {}"
 msgstr "Reanudado: {}, {} partidas ya jugadas. Carpeta: {}"
 
-msgid "Right click: play again or void this game."
-msgstr "Clic derecho: volver a jugar o anular esta partida."
+msgid "Right click: change it, or take it back."
+msgstr "Clic derecho: cambiarlo, o revertirlo."
+
+msgid "Right click: end this game with a result."
+msgstr "Clic derecho: terminar esta partida con un resultado."
+
+msgid "Right click: play this game again, void it or set its result."
+msgstr "Clic derecho: volver a jugar esta partida, anularla o fijar su resultado."
 
 msgid "Round (its URL or id; empty: a new broadcast named after the tournament)"
 msgstr "Ronda (su URL o id; vacío: una retransmisión nueva con el nombre del torneo)"
@@ -2390,6 +2465,9 @@ msgstr "Búsquedas"
 msgid "Searches at a time"
 msgstr "Búsquedas a la vez"
 
+msgid "Seconds before the next game is chosen."
+msgstr "Segundos antes de que se elija la siguiente partida."
+
 msgid "Seconds per move"
 msgstr "Segundos por jugada"
 
@@ -2419,6 +2497,12 @@ msgstr "Servir la página web"
 
 msgid "Service:"
 msgstr "Servicio:"
+
+msgid "Set the result"
+msgstr "Fijar el resultado"
+
+msgid "Set the result of game {}…"
+msgstr "Fijar el resultado de la partida {}…"
 
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
@@ -2680,6 +2764,9 @@ msgstr "El estándar PGN los convierte en comentarios. fastchess-gui 0.4.13 y an
 msgid "The Schedule tab shows the impact before anything changes."
 msgstr "La pestaña Calendario muestra el impacto antes de que nada cambie."
 
+msgid "The arrow keys too."
+msgstr "También con las flechas del teclado."
+
 msgid "The average rating of the opponents met, game by game."
 msgstr "El rating medio de los rivales, partida a partida."
 
@@ -2758,6 +2845,12 @@ msgstr "El primer participante, {}, no tiene Elo de referencia."
 msgid "The folder {} is not there any more."
 msgstr "La carpeta {} ya no existe."
 
+msgid "The game counts again as it was."
+msgstr "La partida vuelve a contar como antes."
+
+msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
+msgstr "La partida seguida llenando la ventana, en letra grande, para una televisión, un club o un stream. F11: pantalla completa, Esc: volver."
+
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "Las partidas tal como las envían los testers de las listas de rating: el archivo con tu nombre, la fecha y las condiciones, los jugadores como los escriben las listas, las rondas renumeradas, sin las partidas anuladas ni los duplicados."
 
@@ -2793,6 +2886,9 @@ msgstr "La última comprobación o lectura falló."
 
 msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
 msgstr "El nombre en la biblioteca, el que le dan los próximos torneos. Los torneos ya jugados conservan el antiguo, igual que sus partidas y ratings."
+
+msgid "The most interesting"
+msgstr "La más interesante"
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "La jugada que piensa el bando que mueve y la respuesta que espera, en los colores de los motores que las jugarían."
@@ -2882,6 +2978,9 @@ msgstr "La búsqueda se detiene cuando una solución ha seguido siendo la primer
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "La proporción de tablas esperada entre los dos motores, a este ritmo de juego."
 
+msgid "The size of the text, for the distance it is read from (+ and - too)."
+msgstr "El tamaño del texto, según la distancia desde la que se lee (también + y -)."
+
 msgid "The software renderer cannot be used ({}): the window is drawn with OpenGL."
 msgstr "No se puede usar el renderizador por software ({}): la ventana se dibuja con OpenGL."
 
@@ -2954,11 +3053,26 @@ msgstr "Esta proporción de tablas y este sesgo RMS no son compatibles."
 msgid "This engine once more, with another book"
 msgstr "Este motor otra vez, con otro libro"
 
+msgid "This game"
+msgstr "Esta partida"
+
+msgid "This game filling its window, in large type: on another screen (a television), the panel's window; docked here, the main window. F11: full screen, Esc: back."
+msgstr "Esta partida llenando su ventana, en letra grande: en otra pantalla (una televisión), la ventana del panel; acoplado aquí, la ventana principal. F11: pantalla completa, Esc: volver."
+
+msgid "This game is not being played: it is over, or its engines are still starting."
+msgstr "Esta partida no se está jugando: ha terminado, o sus motores todavía están arrancando."
+
+msgid "This game is over already."
+msgstr "Esta partida ya ha terminado."
+
 msgid "This is the latest version."
 msgstr "Esta es la última versión."
 
 msgid "This match is already finished."
 msgstr "Este match ya ha terminado."
+
+msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
+msgstr "Este torneo se inició sin «Reiniciar un motor que se cuelga» (preparación, PGN y otros): terminar una partida detiene el motor que mueve, lo que detendría el torneo. Fija el resultado cuando la partida haya terminado, en la pestaña Partidas."
 
 msgid "Those with a problem"
 msgstr "Las que tienen algún problema"
@@ -3068,6 +3182,9 @@ msgstr "Puerto UDP"
 msgid "Under Wayland the software renderer needs X11: start the program with the environment variable SDL_VIDEODRIVER=x11."
 msgstr "En Wayland el renderizador por software necesita X11: inicia el programa con la variable de entorno SDL_VIDEODRIVER=x11."
 
+msgid "Undo"
+msgstr "Deshacer"
+
 msgid "Undo the last change"
 msgstr "Deshacer el último cambio"
 
@@ -3124,6 +3241,9 @@ msgstr "V {:.0f} · T {:.0f} · D {:.0f} %"
 
 msgid "Waiting for the book of {}…"
 msgstr "Esperando el libro de {}…"
+
+msgid "Waiting for the next game…"
+msgstr "Esperando la siguiente partida…"
 
 msgid "Waiting for the test suite…"
 msgstr "Esperando a la suite de tests…"
@@ -3196,6 +3316,12 @@ msgstr "Las blancas dejan de responder"
 
 msgid "White's score over the games."
 msgstr "Puntuación de las blancas en las partidas."
+
+msgid "Why (kept with the game)"
+msgstr "Por qué (se guarda con la partida)"
+
+msgid "Why: {}"
+msgstr "Por qué: {}"
 
 msgid "WinBoard"
 msgstr "WinBoard"
@@ -3283,6 +3409,9 @@ msgstr "Zip escrito en {}"
 
 msgid "\"{}\" was on in this tournament's PGN options: the engines did not give what it needs in this game."
 msgstr "«{}» estaba activado en las opciones PGN de este torneo: los motores no dieron lo necesario en esta partida."
+
+msgid "a result is 1-0, 0-1 or 1/2-1/2"
+msgstr "un resultado es 1-0, 0-1 o 1/2-1/2"
 
 msgid "about {} game"
 msgid_plural "about {} games"
@@ -3391,6 +3520,9 @@ msgstr "posición ilegal"
 msgid "illegal positions"
 msgstr "posiciones ilegales"
 
+msgid "in a knockout, only the games of the round being played can have their result set"
+msgstr "en una eliminatoria, solo las partidas de la ronda en juego pueden tener su resultado fijado"
+
 msgid "initial position"
 msgstr "posición inicial"
 
@@ -3476,6 +3608,9 @@ msgstr "leyendo los torneos…"
 msgid "replay requested"
 msgstr "repetición solicitada"
 
+msgid "s"
+msgstr "s"
+
 msgid "send at startup"
 msgstr "enviar al arrancar"
 
@@ -3484,6 +3619,9 @@ msgstr "el controlador ofrece OpenGL {}"
 
 msgid "the file is not found"
 msgstr "no se encuentra el archivo"
+
+msgid "the game already has this result"
+msgstr "la partida ya tiene este resultado"
 
 msgid "the host key of {} cannot be checked: its fingerprint could not be computed"
 msgstr "la clave de host de {} no se puede comprobar: no se pudo calcular su huella"
@@ -3502,6 +3640,9 @@ msgstr "la prueba rápida de {}"
 
 msgid "the resume of the interrupted tournament"
 msgstr "la reanudación del torneo interrumpido"
+
+msgid "this game does not count: it was voided, or is not over"
+msgstr "esta partida no cuenta: fue anulada, o no ha terminado"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "para mencionar en el mensaje, o para volver a probar el motor:"
@@ -3819,6 +3960,9 @@ msgstr "{} min {:02} s"
 msgid "{} moves · depth {:.1f} · {:.0f} ms per move{}"
 msgstr "{} jugadas · profundidad {:.1f} · {:.0f} ms por jugada{}"
 
+msgid "{} n/s"
+msgstr "{} n/s"
+
 msgid "{} new engine found. Untick those to leave out."
 msgid_plural "{} new engines found. Untick those to leave out."
 msgstr[0] "{} motor nuevo encontrado. Desmarca los que quieras dejar fuera."
@@ -4075,6 +4219,9 @@ msgstr "{}: desconocida para el motor"
 
 msgid "{}: {}"
 msgstr "{}: {}"
+
+msgid "{}: {} → {} points"
+msgstr "{}: {} → {} puntos"
 
 msgid "{}\nA new build, or another program: its results may not be those of the engine that played {}."
 msgstr "{}\nUna nueva versión, u otro programa: sus resultados pueden no ser los del motor que jugó {}."

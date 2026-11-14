@@ -357,8 +357,7 @@ GameRecord GuiObserver::addLoaded(const tour::GameResult& result, LoadedGame& p)
             }
         }
         extras.facts = p.facts;
-        extras_.emplace(result.pgn.offset, extras);
-        countLoss(result);
+        countLoss(result, extras_.emplace(result.pgn.offset, extras).first->second);
         const auto record = makeRecord(result);
         for (int side = 0; side < 2; ++side) {
             const auto index = side == 0 ? record.white : record.black;
@@ -381,6 +380,7 @@ GameRecord GuiObserver::addLoaded(const tour::GameResult& result, LoadedGame& p)
         }
         return record;
     }
+    countLoss(result, extras_.at(result.pgn.offset));
     return makeRecord(result);
 }
 
@@ -416,6 +416,8 @@ std::vector<GameRecord> GuiObserver::records(const std::vector<tour::GameResult>
     std::vector<tour::GameResult> rest;
     shown_.clear();
     for (const auto& r : results) {
+        // The losses counted follow the edit: a game voided, or whose result was set by hand.
+        if (const auto it = extras_.find(r.pgn.offset); it != extras_.end()) countLoss(r, it->second);
         if (r.voided) continue;
         if (!rest.empty() || !extras_.count(r.pgn.offset)) {
             rest.push_back(r);
@@ -473,6 +475,7 @@ void GuiObserver::onGameStart(const fastchess::observer::GameStart& info) {
     }
 
     s->board = board;
+    s->pids  = {0, 0};  // told once the engines are started
 
     st.active    = true;
     st.has_game  = true;
@@ -549,6 +552,23 @@ int GuiObserver::participantIndex(const std::string& name) const {
 
 void GuiObserver::onEngineProcesses(int slot_index, int64_t white_pid, int64_t black_pid) {
     cpu_.engineProcesses(slot_index, white_pid, black_pid);
+    if (auto* s = slot(slot_index)) {
+        std::lock_guard<std::mutex> lock(s->mutex);
+        s->pids = {white_pid, black_pid};
+    }
+}
+
+bool GuiObserver::stopEngineOnMove(int slot_index, std::size_t game_id, const std::function<void(int64_t)>& stop) {
+    auto* s = slot(slot_index);
+    if (!s) return false;
+    // Under the slot's lock: the end of the game, which the runner tells after it took the request, waits for it.
+    std::lock_guard<std::mutex> lock(s->mutex);
+    const auto& st = s->state;
+    if (!st.active || !st.has_game || st.game_id != game_id) return false;
+    const auto pid = s->pids[st.stm == chess::Color::WHITE ? 0 : 1];
+    if (pid <= 0) return false;
+    stop(pid);
+    return true;
 }
 
 void GuiObserver::onThinking(int slot_index, chess::Color stm, int64_t time_left_ms) {
@@ -654,6 +674,7 @@ void GuiObserver::onMove(int slot_index, chess::Color mover, const fastchess::Mo
     N_("Draw by fifty moves rule"),
     N_("Draw by insufficient mating material"),
     N_("Draw by stalemate"),
+    N_("Adjudicated by the operator"),  // tour::OPERATOR_REASON
 };
 
 uint16_t GuiObserver::internReason(const std::string& reason) {
@@ -714,6 +735,7 @@ GameRecord GuiObserver::makeRecord(const tour::GameResult& result, std::string_v
     record.a_white      = result.white == id_a_;
     record.a_result     = resultForA(result, id_a_);
     record.termination  = static_cast<uint8_t>(result.termination);
+    record.result_set   = result.set.has_value();
     record.reason       = internReason(result.reason);
     const auto& extras  = extrasOf(result, pgn);
     record.opening      = extras.opening;
@@ -728,27 +750,40 @@ GameRecord GuiObserver::makeRecord(const tour::GameResult& result, std::string_v
     return record;
 }
 
-void GuiObserver::countLoss(const tour::GameResult& result) {
-    if (result.result == "1/2-1/2") return;
-    const int loser = result.result == "1-0" ? result.black : result.white;
-    const auto it   = index_.find(loser);
-    if (it == index_.end()) return;
-    auto& t = totals_[it->second];
-
-    switch (result.termination) {
-        case fastchess::MatchTermination::TIMEOUT:
-            t.timeouts++;
-            break;
-        case fastchess::MatchTermination::DISCONNECT:
-        case fastchess::MatchTermination::STALL:
-            t.crashes++;
-            break;
-        case fastchess::MatchTermination::ILLEGAL_MOVE:
-            t.illegal++;
-            break;
-        default:
-            break;
+void GuiObserver::countLoss(const tour::GameResult& result, GameExtras& extras) {
+    uint8_t loss   = 0;
+    uint16_t loser = 0;
+    if (!result.voided && result.result != "1/2-1/2") {
+        switch (result.termination) {
+            case fastchess::MatchTermination::TIMEOUT:
+                loss = 1;
+                break;
+            case fastchess::MatchTermination::DISCONNECT:
+            case fastchess::MatchTermination::STALL:
+                loss = 2;
+                break;
+            case fastchess::MatchTermination::ILLEGAL_MOVE:
+                loss = 3;
+                break;
+            default:
+                break;
+        }
+        const auto it = index_.find(result.result == "1-0" ? result.black : result.white);
+        if (it == index_.end()) loss = 0;
+        if (loss) loser = it->second;
     }
+    if (loss == extras.loss && loser == extras.loser) return;
+
+    const auto counter = [&](uint8_t kind, uint16_t index) -> int* {
+        if (index >= totals_.size()) return nullptr;
+        auto& t = totals_[index];
+        return kind == 1 ? &t.timeouts : kind == 2 ? &t.crashes : kind == 3 ? &t.illegal : nullptr;
+    };
+    // A counter emptied since (a participant's totals start over) does not go below zero.
+    if (int* c = counter(extras.loss, extras.loser); c && *c > 0) --*c;
+    if (int* c = counter(loss, loser)) ++*c;
+    extras.loss  = loss;
+    extras.loser = loser;
 }
 
 void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::MatchData& data,
@@ -762,7 +797,7 @@ void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::Ma
     const bool counted = extras_.count(result.pgn.offset) > 0;
     const auto record  = makeRecord(result);
     if (!counted) {
-        countLoss(result);
+        countLoss(result, extras_.at(result.pgn.offset));  // made by makeRecord()
 
         // Per engine search statistics, from the moves each side actually played.
         chess::Board board;

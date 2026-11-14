@@ -1,6 +1,7 @@
 // The live view: the mosaic of the games being played, and the parts of the game followed (board, players, searches,
 // moves, chart), beside it or each in a panel of its own; detached boards.
 
+#include <algorithm>
 #include <cmath>
 
 #include <imgui.h>
@@ -351,8 +352,8 @@ ImU32 engineColour(chess::Color color, int alpha) {
     return color == chess::Color::WHITE ? IM_COL32(110, 168, 222, alpha) : IM_COL32(237, 153, 77, alpha);
 }
 
-// The move the side to move thinks of and the reply it expects (the first two moves of its PV), each in the colour of
-// the engine that would play it, the reply lighter; none between searches.
+}  // namespace
+
 std::vector<BoardArrow> pvArrows(const SlotState& st, const chess::Board& board) {
     std::vector<BoardArrow> arrows;
     const auto& line = st.info[st.stm == chess::Color::WHITE ? 0 : 1];
@@ -363,6 +364,8 @@ std::vector<BoardArrow> pvArrows(const SlotState& st, const chess::Board& board)
     if (!moves.empty()) arrows.push_back({moves[0], engineColour(st.stm, 210)});
     return arrows;
 }
+
+namespace {
 
 std::string clockText(const SlotState& st, chess::Color color, int64_t elapsed) {
     const bool thinks = st.active && st.stm == color && st.thinking;
@@ -453,6 +456,14 @@ void App::drawLive() {
                "others. Flip still turns the board over."));
         ImGui::SameLine(0, px(24));
     }
+
+    // The game followed filling the window, for a television, a club or a stream.
+    if (ImGui::Button(TR("Big screen"))) startBigScreen(live_slot_);
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("The game followed filling the window, in large type, for a television, a club or a "
+                                   "stream. F11: full screen, Esc: back."));
+    }
+    if (mosaic) ImGui::SameLine(0, px(24));  // the line ends below; the tabs of one game go under it
 
     if (!mosaic) {
         if (ImGui::BeginTabBar("##slots", ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_TabListPopupButton)) {
@@ -593,9 +604,76 @@ void App::drawMosaic(int cols, float card) {
 
         if (ImGui::IsItemClicked()) live_slot_ = i;
         if (ImGui::IsItemHovered() && st.has_game) {
-            ImGui::SetTooltip("%s – %s\n%s", st.white.c_str(), st.black.c_str(),
-                              trf("Game {} · move {}", st.game_id, (st.moves.size() + 1) / 2).c_str());
+            ImGui::SetTooltip(
+                "%s – %s\n%s%s", st.white.c_str(), st.black.c_str(),
+                trf("Game {} · move {}", st.game_id, (st.moves.size() + 1) / 2).c_str(),
+                st.active ? (std::string("\n") + TR("Right click: end this game with a result.")).c_str() : "");
         }
+        if (st.active && ImGui::BeginPopupContextItem(fmt::format("##end_game{}", i).c_str())) {
+            drawEndGameMenu(i);
+            ImGui::EndPopup();
+        }
+    }
+}
+
+void App::drawEndGameMenu(int slot) {
+    if (slot < 0 || slot >= static_cast<int>(slot_views_.size())) return;
+    const auto& st = slot_views_[static_cast<std::size_t>(slot)].state;
+    if (!st.active || !st.has_game) {
+        ImGui::TextDisabled("%s", TR("No game is being played here."));
+        return;
+    }
+    if (end_menu_.game != st.game_id) {
+        end_menu_      = {};
+        end_menu_.game = st.game_id;
+    }
+    ImGui::TextDisabled(
+        "%s", trf("Game {} · move {}: {} – {}", st.game_id, (st.moves.size() + 2) / 2, st.white, st.black).c_str());
+    ImGui::TextUnformatted(TR("End with result"));
+    ui::help(
+        TR("For a game the program would not end well: a hang it does not catch, a won ending the engines keep "
+           "shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with "
+           "this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts "
+           "result can be changed afterwards in the Games tab."));
+    static constexpr const char* RESULTS[] = {"1-0", "1/2-1/2", "0-1"};
+    for (const char* result : RESULTS) {
+        if (result != RESULTS[0]) ImGui::SameLine();
+        if (ImGui::RadioButton(result == RESULTS[1] ? "½-½" : result, end_menu_.result == result)) {
+            end_menu_.result = result;
+        }
+    }
+    {
+        char buffer[160];
+        const auto n = std::min(end_menu_.why.size(), sizeof(buffer) - 1);
+        std::copy_n(end_menu_.why.data(), n, buffer);
+        buffer[n] = 0;
+        ImGui::SetNextItemWidth(px(300));
+        if (ImGui::InputTextWithHint("##end_why", TR("Why (kept with the game)"), buffer, sizeof(buffer))) {
+            end_menu_.why = buffer;
+        }
+    }
+    if (!end_menu_.result.empty()) {
+        // What it changes: the points each player gets from the game.
+        const double white = end_menu_.result == "1-0" ? 1.0 : end_menu_.result == "0-1" ? 0.0 : 0.5;
+        const auto points  = [](double p) { return p == 0.5 ? std::string("+½") : fmt::format("+{}", p); };
+        ImGui::TextUnformatted(
+            fmt::format("{} {} · {} {}", st.white, points(white), st.black, points(1.0 - white)).c_str());
+        if (ImGui::Button(TR("End the game"))) {
+            end_menu_.error = run_.endGame(slot, st.game_id - 1, end_menu_.result, end_menu_.why);
+            if (end_menu_.error.empty()) {
+                Console::instance().add(trf("Game {} was ended by the operator: {}.", st.game_id,
+                                            end_menu_.result == "1/2-1/2" ? "½-½" : end_menu_.result));
+                end_menu_ = {};
+                ImGui::CloseCurrentPopup();
+            }
+        }
+    }
+    if (!end_menu_.error.empty()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + px(320));
+        ImGui::TextUnformatted(end_menu_.error.c_str());
+        ImGui::PopTextWrapPos();
+        ImGui::PopStyleColor();
     }
 }
 
@@ -611,6 +689,16 @@ void App::drawLiveBoard(SlotView& view, float size) {
     drawBoard(atlas_, view.board, size, decor);
     drawBoardInfo(atlas_, view.board, size, tbPieces());
     ImGui::EndGroup();
+    // Right click on the board: the game ended with a result. Asked from the palette, once the panel is in front.
+    const int slot = static_cast<int>(&view - slot_views_.data());
+    if (open_end_menu_ == slot + 1 && !panel_request_ && !tab_request_) {
+        open_end_menu_ = 0;
+        ImGui::OpenPopup("##end_game");
+    }
+    if (st.active && ImGui::BeginPopupContextItem("##end_game")) {
+        drawEndGameMenu(slot);
+        ImGui::EndPopup();
+    }
 }
 
 // The board alone, as large as the room allows, in the middle of it.
@@ -712,8 +800,9 @@ void App::drawLiveGameLine(SlotView& view, int slot, bool allow_detach) {
     };
     const float flip_w   = check_w(TR("Flip"));
     const float arrows_w = check_w(TR("Arrows")) + ImGui::GetStyle().ItemSpacing.x;
-    const float detach_w =
-        allow_detach ? ImGui::CalcTextSize(TR("Detach")).x + ImGui::GetStyle().FramePadding.x * 2 + px(8) : 0;
+    // Detach, or in a detached board, Big screen.
+    const float detach_w = ImGui::CalcTextSize(allow_detach ? TR("Detach") : TR("Big screen")).x +
+                           ImGui::GetStyle().FramePadding.x * 2 + px(8);
     ImGui::SameLine();
     if (ImGui::GetContentRegionAvail().x < flip_w + arrows_w + detach_w) {
         ImGui::NewLine();  // on a line of their own in a narrow panel
@@ -725,6 +814,14 @@ void App::drawLiveGameLine(SlotView& view, int slot, bool allow_detach) {
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("%s", TR("Show this game in a panel of its own, which can be docked beside the others "
                                        "or moved to another screen."));
+        }
+        ImGui::SameLine();
+    } else {
+        if (ImGui::SmallButton(TR("Big screen"))) startBigBoard(slot);
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("This game filling its window, in large type: on another screen (a "
+                                       "television), the panel's window; docked here, the main window. F11: full "
+                                       "screen, Esc: back."));
         }
         ImGui::SameLine();
     }
@@ -958,6 +1055,10 @@ void App::drawDetachedBoard(int slot) {
         return;
     }
     refreshSlot(slot);
+    if (const auto big = big_boards_.find(slot); big != big_boards_.end()) {
+        drawBigGame(big->second, false);
+        return;
+    }
     if (slot < static_cast<int>(slot_views_.size()))
         drawLiveGame(slot_views_[static_cast<std::size_t>(slot)], "##detached", LiveAll, slot, false);
 }

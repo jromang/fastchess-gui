@@ -193,6 +193,13 @@ class RunController {
     // Undoes the last change while no game started since (TournamentState::canUndo()).
     std::string undoEdit();
 
+    // Ends game `number` (tour::GameTask::number()), played in slot `slot`, with the operator's `result` for `why`;
+    // returns an error message, empty on success. fastchess cannot be told to end one game, so the process of the
+    // engine on move is stopped: fastchess ends the game at once (a disconnection, its engine started again for its
+    // next game, as "Restart an engine that crashes" does, which this needs), and the runner records it with the
+    // result asked for (tour::TournamentState::requestEnd()).
+    std::string endGame(int slot, uint64_t number, const std::string& result, const std::string& why);
+
     void setPaused(bool paused);
     [[nodiscard]] bool paused() const;
 
