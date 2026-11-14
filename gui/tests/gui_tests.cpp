@@ -625,9 +625,11 @@ TEST_CASE("tablebase adjudication: its own limit, or the largest tables in its f
     fs::remove_all(dir);
     fs::create_directories(dir / "a");
     fs::create_directories(dir / "b");
+    // Syzygy files are 16 bytes more than a multiple of 64 long: one of another size is left out.
     for (const auto* f : {"a/KQvK.rtbw", "a/KQvK.rtbz", "b/KRPvKR.rtbw", "b/KRPPvKRP.rtbz", "b/readme.txt"}) {
-        std::ofstream(dir / f) << "x";
+        std::ofstream(dir / f) << std::string(16, 'x');
     }
+    std::ofstream(dir / "b/KRPPvKR.rtbw") << "x";
     fastchess::config::TbAdjudication tb;
     tb.syzygy_dirs = (dir / "a").string();
     CHECK(tablebasePieces(tb) == 0);  // off
@@ -638,7 +640,7 @@ TEST_CASE("tablebase adjudication: its own limit, or the largest tables in its f
 #else
     tb.syzygy_dirs += ":" + (dir / "b").string();
 #endif
-    CHECK(tablebasePieces(tb) == 5);  // the WDL tables decide, not the larger DTZ one
+    CHECK(tablebasePieces(tb) == 5);  // the WDL tables decide, not the larger DTZ one nor the damaged WDL one
     tb.max_pieces = 4;
     CHECK(tablebasePieces(tb) == 4);
     fs::remove_all(dir);

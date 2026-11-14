@@ -24,6 +24,7 @@
 #include "engines.hpp"
 #include "i18n.hpp"
 #include "proc_tree.hpp"
+#include "tablebases.hpp"
 
 namespace fastchess {
 // The engine processes started (see core/globals/globals.cpp).
@@ -697,28 +698,8 @@ int configThreads(const fastchess::EngineConfiguration& config) {
 int tablebasePieces(const fastchess::config::TbAdjudication& tb) {
     if (!tb.enabled) return 0;
     if (tb.max_pieces > 0) return tb.max_pieces;
-
-    // Syzygy files are named after their pieces, KQvKR.rtbw: as many pieces as letters besides the "v".
-#ifdef _WIN32
-    constexpr char separator = ';';
-#else
-    constexpr char separator = ':';
-#endif
-    int largest       = 0;
-    std::size_t begin = 0;
-    while (begin <= tb.syzygy_dirs.size()) {
-        auto end = tb.syzygy_dirs.find(separator, begin);
-        if (end == std::string::npos) end = tb.syzygy_dirs.size();
-        std::error_code ec;
-        for (fs::directory_iterator it(tb.syzygy_dirs.substr(begin, end - begin), ec), last; !ec && it != last;
-             it.increment(ec)) {
-            if (it->path().extension() != ".rtbw") continue;
-            const auto stem = it->path().stem().string();
-            largest         = std::max(largest, static_cast<int>(stem.size()) - 1);
-        }
-        begin = end + 1;
-    }
-    return largest;
+    // The largest WDL tables found, as fastchess finds them: a file of the wrong size is left out.
+    return checkTablebases(tb.syzygy_dirs).largest;
 }
 
 MatchSetup quickTestSetup(const EngineEntry& engine, const std::string& opponent, const fs::path& book,
