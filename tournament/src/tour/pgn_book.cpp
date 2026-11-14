@@ -10,6 +10,7 @@
 #include <fmt/include/fmt/format.h>
 #include <json.hpp>
 
+#include "chess_text.hpp"
 #include "files.hpp"
 #include "polyglot.hpp"
 
@@ -112,14 +113,15 @@ class BookVisitor : public chess::pgn::Visitor {
         if (!set_) {
             set_ = true;
             board_.set960(chess960_ok_);
-            if (!board_.setFen(fen_)) {
+            // A position the moves can be read in (see legalPosition()).
+            if (!readableFen(fen_) || !board_.setFen(fen_) || !legalPosition(board_)) {
                 bad_ = true;
                 return;
             }
         }
         chess::Move move = chess::Move::NO_MOVE;
         try {
-            move = chess::uci::parseSan(board_, san, legal_);
+            if (readableSan(san)) move = chess::uci::parseSan(board_, san, legal_);
         } catch (const std::exception&) {
         }
         if (move == chess::Move::NO_MOVE || move == chess::Move::NULL_MOVE) {

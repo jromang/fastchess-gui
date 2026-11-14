@@ -1,0 +1,3 @@
+# The seeds are PGN and EPD files, which the repository's .gitignore leaves out elsewhere.
+!*.pgn
+!*.epd

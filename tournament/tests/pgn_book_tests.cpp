@@ -235,3 +235,20 @@ TEST_CASE("PGN book: the cache keeps the conversion while the file and the depth
     book_cache_dir = previous;
     fs::remove_all(dir);
 }
+
+TEST_CASE("PGN book: a game from a position the moves cannot be read in is left out") {
+    // Found by fuzzing: a FEN tag without a king, or with too many squares, made the move generator read outside its
+    // tables (and the board reader write past the board).
+    const auto dir = fs::temp_directory_path() / "fcg-pgn-book-bad-fen";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+    std::ofstream(dir / "bad.pgn", std::ios::binary)
+        << "[FEN \"8/8/8/8/8/8/4P3/8 w - - 0 1\"]\n\n1. e4 *\n\n"
+           "[FEN \"rnbqkbnrr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\"]\n\n1. e4 *\n\n"
+           "[FEN \"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/8 w KQkq - 0 1\"]\n\n1. e4 *\n\n"
+           "[Event \"good\"]\n\n1. e4 e5 *\n";
+    const auto stats = pgnToPolyglot(dir / "bad.pgn", dir / "bad.bin", 8, false);
+    CHECK(stats.games == 1);
+    CHECK(stats.skipped == 3);
+    fs::remove_all(dir);
+}

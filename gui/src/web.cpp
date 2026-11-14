@@ -133,6 +133,34 @@ std::string disposition(const std::string& name) {
 
 }  // namespace
 
+WebRequest readWebRequest(std::string_view request) {
+    // The request line: a method, a path, the query left out. Only what the page needs is served, from memory or
+    // from the tournament's PGN file, never a file named by the request. Behind a proxy or a tunnel every client
+    // comes from the same address: nothing here depends on it.
+    WebRequest r;
+    const auto line   = request.substr(0, request.find_first_of("\r\n"));
+    const auto space  = line.find(' ');
+    const auto method = line.substr(0, space);
+    const auto target = space == std::string_view::npos ? std::string_view() : line.substr(space + 1);
+    const auto path   = target.substr(0, target.find_first_of(" ?#"));
+    // A request larger than any the page makes is not one of its.
+    if (request.size() >= MAX_REQUEST && request.find("\r\n\r\n") == std::string_view::npos) {
+        r.route = WebRequest::Route::TooLarge;
+    } else if (path.empty() || path[0] != '/') {
+        r.route = request.empty() ? WebRequest::Route::None : WebRequest::Route::Bad;
+    } else if (method != "GET") {
+        r.route = WebRequest::Route::NotGet;
+    } else {
+        r.route         = path == "/" || path == "/index.html" ? WebRequest::Route::Page
+                          : path == "/state.json"              ? WebRequest::Route::State
+                          : path == "/games.pgn"               ? WebRequest::Route::Games
+                                                               : WebRequest::Route::NotFound;
+        r.gzip          = acceptsGzip(request);
+        r.if_none_match = headerValue(request, "if-none-match");
+    }
+    return r;
+}
+
 WebServer::~WebServer() { stop(); }
 
 std::string WebServer::start(uint16_t port) {
@@ -213,30 +241,24 @@ void WebServer::handle(std::unique_ptr<net::TcpConnection> connection) {
     };
     const auto send = [&](const std::string& answer) { connection->sendAll(answer, std::max(0, left())); };
 
-    // The request line: a method, a path, the query left out. Only what the page needs is served, from memory or
-    // from the tournament's PGN file, never a file named by the request. Behind a proxy or a tunnel every client
-    // comes from the same address: nothing here depends on it.
-    const auto line   = std::string_view(request).substr(0, request.find_first_of("\r\n"));
-    const auto space  = line.find(' ');
-    const auto method = line.substr(0, space);
-    const auto target = space == std::string_view::npos ? std::string_view() : line.substr(space + 1);
-    const auto path   = target.substr(0, target.find_first_of(" ?#"));
-    // A request larger than any the page makes is not one of its.
-    if (request.size() >= MAX_REQUEST && request.find("\r\n\r\n") == std::string::npos) {
+    using Route    = WebRequest::Route;
+    const auto req = readWebRequest(request);
+    if (req.route == Route::None) return;
+    if (req.route == Route::TooLarge) {
         send(response("431 Request Header Fields Too Large", "text/plain", "request too large"));
         return;
     }
-    if (path.empty() || path[0] != '/') {
-        if (!request.empty()) send(response("400 Bad Request", "text/plain", "bad request"));
+    if (req.route == Route::Bad) {
+        send(response("400 Bad Request", "text/plain", "bad request"));
         return;
     }
-    if (method != "GET") {
+    if (req.route == Route::NotGet) {
         send(response("405 Method Not Allowed", "text/plain", "only GET", "Allow: GET\r\n"));
         return;
     }
 
-    const bool gzip = acceptsGzip(request);
-    if (path == "/" || path == "/index.html") {
+    const bool gzip = req.gzip;
+    if (req.route == Route::Page) {
         // With Discord's widget the policy differs, and so does the tag: a browser that kept the page without it
         // takes it again, with the policy that lets the widget in (and the other way round).
         const bool discord = discord_;
@@ -245,14 +267,14 @@ void WebServer::handle(std::unique_ptr<net::TcpConnection> connection) {
         const auto tag     = "\"" + p.tag + (discord ? "-d" : "") + "\"";
         const auto headers = std::string(discord ? DISCORD_POLICY : PAGE_POLICY) +
                              "Cache-Control: no-cache\r\nETag: " + tag + "\r\nVary: Accept-Encoding\r\n";
-        if (headerValue(request, "if-none-match") == tag) {
+        if (req.if_none_match == tag) {
             send("HTTP/1.0 304 Not Modified\r\n" + headers + COMMON_HEADERS + "\r\n");
         } else if (gzip && !p.gzip.empty()) {
             send(response("200 OK", "text/html; charset=utf-8", p.gzip, headers + "Content-Encoding: gzip\r\n"));
         } else {
             send(response("200 OK", "text/html; charset=utf-8", webPage(extras), headers));
         }
-    } else if (path == "/state.json") {
+    } else if (req.route == Route::State) {
         std::string body;
         bool zipped = false;
         {
@@ -269,7 +291,7 @@ void WebServer::handle(std::unique_ptr<net::TcpConnection> connection) {
         send(response("200 OK", "application/json", body,
                       std::string("Access-Control-Allow-Origin: *\r\nVary: Accept-Encoding\r\n") +
                           (zipped ? "Content-Encoding: gzip\r\n" : "")));
-    } else if (path == "/games.pgn") {
+    } else if (req.route == Route::Games) {
         std::filesystem::path file;
         std::string name;
         uint64_t bytes = 0;

@@ -5,6 +5,7 @@ project(fastchess_gui VERSION 0.5.8 LANGUAGES C CXX)
 option(FCG_BUILD_GUI "Build the fastchess-gui desktop application" ON)
 option(FCG_BUILD_TESTS "Build the fastchess-gui unit tests" ON)
 option(FCG_STATIC_RUNTIME "Link libstdc++ and libgcc statically on Linux (release binaries)" OFF)
+option(FCG_FUZZ "Build the libFuzzer targets in fuzz/ (clang), everything with AddressSanitizer and UBSan" OFF)
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
@@ -14,6 +15,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(FCG_STATIC_RUNTIME AND NOT WIN32)
     add_link_options(-static-libstdc++ -static-libgcc)
+endif()
+
+# Fuzzing: every library instrumented for libFuzzer's coverage and the sanitizers, the fuzz targets (at the end)
+# linked with libFuzzer's main.
+if(FCG_FUZZ)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "FCG_FUZZ needs clang (libFuzzer)")
+    endif()
+    add_compile_options(-fsanitize=fuzzer-no-link,address,undefined -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address,undefined)
 endif()
 
 # Small release binaries: drop unused functions and strip symbols.
@@ -373,5 +384,17 @@ if(FCG_BUILD_GUI)
         if(WIN32)
             target_link_options(fastchess-gui-tests PRIVATE -static -static-libgcc -static-libstdc++)
         endif()
+    endif()
+
+    if(FCG_FUZZ)
+        # What others send the program: a web request, the tunnel server's text, a TLCS datagram, a PGN book (to
+        # Polyglot), an EPD book or suite; and what fastchess' own readers take of them through the program: a PGN
+        # book, an engine's info line. Each target fuzz_<name> from fuzz/<name>.cpp, its seeds in fuzz/corpus/<name>.
+        foreach(name web_request tunnel_text tlcs_message pgn_book epd_book app_pgn engine_info)
+            add_executable(fuzz_${name} ${CMAKE_CURRENT_SOURCE_DIR}/fuzz/${name}.cpp
+                                        ${CMAKE_CURRENT_SOURCE_DIR}/fuzz/version.cpp)
+            target_link_libraries(fuzz_${name} PRIVATE fcg_lib)
+            target_link_options(fuzz_${name} PRIVATE -fsanitize=fuzzer)
+        endforeach()
     endif()
 endif()

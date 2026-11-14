@@ -4,6 +4,7 @@
 #include <atomic>
 #include <cctype>
 #include <cerrno>
+#include <charconv>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -285,6 +286,36 @@ std::optional<std::string> findPublicUrl(std::string_view output) {
     return told ? told : first;
 }
 
+TraceLine readTrace(std::string_view line) {
+    // What the line is comes right after libssh2's prefix ("[libssh2] 0.000123 "); what the server sent (its version
+    // line, a DEBUG message) only after that, where it cannot pass for it.
+    TraceLine trace;
+    constexpr std::string_view PREFIX = "[libssh2] ";
+    if (!line.starts_with(PREFIX)) return trace;
+    line.remove_prefix(PREFIX.size());
+    const auto digits = [&line] {
+        std::size_t n = 0;
+        while (n < line.size() && std::isdigit(static_cast<unsigned char>(line[n]))) ++n;
+        line.remove_prefix(n);
+        return n > 0;
+    };
+    if (!digits() || !line.starts_with('.')) return trace;
+    line.remove_prefix(1);
+    if (!digits() || !line.starts_with(' ')) return trace;
+    line.remove_prefix(1);
+    trace.kexinit                      = line.starts_with("Transport: Packet type 20 received");
+    constexpr std::string_view FAILURE = "Failure Event: ";
+    if (!line.starts_with(FAILURE)) return trace;
+    const auto rest = line.substr(FAILURE.size());
+    const auto dash = rest.find(" - ");
+    if (dash == std::string_view::npos) return trace;
+    // The code, a negative number; anything else (one too large for an int among them) is no error.
+    const auto code = rest.substr(0, dash);
+    if (std::from_chars(code.data(), code.data() + code.size(), trace.error).ec != std::errc()) trace.error = 0;
+    trace.text = std::string(rest.substr(dash + 3, 256));
+    return trace;
+}
+
 std::optional<TunnelSettings> parseTunnel(const std::string& text, std::string& error) {
     if (text.empty() || text == "localhost.run") return localhostRun(0);
     if (text.rfind("ssh://", 0) != 0) {
@@ -532,33 +563,12 @@ class TunnelConnection {
     static void traced(LIBSSH2_SESSION*, void* context, const char* data, std::size_t length) {
         auto& self = *static_cast<TunnelConnection*>(context);
         try {
-            // What the line is comes right after libssh2's prefix ("[libssh2] 0.000123 "); what the server sent (its
-            // version line, a DEBUG message) only after that, where it cannot pass for it.
-            auto line                         = std::string_view(data, length);
-            constexpr std::string_view PREFIX = "[libssh2] ";
-            if (!line.starts_with(PREFIX)) return;
-            line.remove_prefix(PREFIX.size());
-            const auto digits = [&line] {
-                std::size_t n = 0;
-                while (n < line.size() && std::isdigit(static_cast<unsigned char>(line[n]))) ++n;
-                line.remove_prefix(n);
-                return n > 0;
-            };
-            if (!digits() || !line.starts_with('.')) return;
-            line.remove_prefix(1);
-            if (!digits() || !line.starts_with(' ')) return;
-            line.remove_prefix(1);
-            if (line.starts_with("Transport: Packet type 20 received")) self.kexinit_received_ = true;
-            constexpr std::string_view FAILURE = "Failure Event: ";
-            if (!line.starts_with(FAILURE)) return;
-            const auto rest = line.substr(FAILURE.size());
-            const auto dash = rest.find(" - ");
-            if (dash == std::string_view::npos) return;
-            const int code = std::atoi(std::string(rest.substr(0, dash)).c_str());
+            const auto trace = readTrace(std::string_view(data, length));
+            if (trace.kexinit) self.kexinit_received_ = true;
             // A channel's errors do not end the connection: they are not why it failed.
-            if (self.first_error_ == 0 && code < 0 && connectionError(code)) {
-                self.first_error_      = code;
-                self.first_error_text_ = std::string(rest.substr(dash + 3, 256));
+            if (self.first_error_ == 0 && trace.error < 0 && connectionError(trace.error)) {
+                self.first_error_      = trace.error;
+                self.first_error_text_ = trace.text;
             }
         } catch (...) {
         }

@@ -1,0 +1,96 @@
+name: Fuzzing
+
+on:
+  push:
+    branches: ["gui"]
+  pull_request:
+    branches: ["gui"]
+  schedule:
+    - cron: "11 4 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fuzz:
+    name: libFuzzer, a minute per target
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Use the main Ubuntu archive
+        # The runners' Azure mirror can stay unresolvable for hours; the main archive does not depend on it.
+        run: |
+          sudo sed -i -e 's#mirror+file:/etc/apt/apt-mirrors.txt#http://archive.ubuntu.com/ubuntu/#' \
+            -e 's#http://azure.archive.ubuntu.com/ubuntu/*#http://archive.ubuntu.com/ubuntu/#' \
+            /etc/apt/sources.list /etc/apt/sources.list.d/*.sources 2>/dev/null || true
+          echo 'Acquire::Retries "5";' | sudo tee /etc/apt/apt.conf.d/80-retries
+          # The runner's resolver can fail on Ubuntu's hosts alone: public resolvers then.
+          if ! getent hosts archive.ubuntu.com > /dev/null; then
+            sudo mkdir -p /etc/systemd/resolved.conf.d
+            printf '[Resolve]\nDNS=1.1.1.1 8.8.8.8\n' | sudo tee /etc/systemd/resolved.conf.d/fallback.conf
+            sudo systemctl restart systemd-resolved
+            getent hosts archive.ubuntu.com || true
+          fi
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ninja-build clang-18 libclang-rt-18-dev \
+            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+            libxkbcommon-dev libwayland-dev wayland-protocols libdecor-0-dev libegl1-mesa-dev libgl1-mesa-dev \
+            libdrm-dev libgbm-dev libdbus-1-dev libudev-dev
+
+      - name: Address space randomisation AddressSanitizer works with
+        # The runner's kernel randomises more address bits than the sanitizers' shadow memory allows.
+        run: sudo sysctl -w vm.mmap_rnd_bits=28
+
+      - name: Configure
+        env:
+          CC: clang-18
+          CXX: clang++-18
+        run: cmake -B build-fuzz -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DFCG_FUZZ=ON -DFCG_BUILD_TESTS=OFF
+
+      - name: Build
+        run: >
+          cmake --build build-fuzz --target fuzz_web_request fuzz_tunnel_text fuzz_tlcs_message fuzz_pgn_book
+          fuzz_epd_book fuzz_app_pgn fuzz_engine_info
+
+      - name: The corpora of earlier runs
+        uses: actions/cache@v6
+        with:
+          path: fuzz-corpus
+          key: fuzz-corpus-${{ github.run_id }}
+          restore-keys: fuzz-corpus-
+
+      - name: Fuzz
+        # Each target a minute, from its seeds and what earlier runs found; any undefined behaviour stops it as a crash
+        # does. A crash of the program's own code fails the job; one of fastchess' readers (app/, fixed upstream) is
+        # a warning, its known crashes not holding back every change. The inputs that crash are kept.
+        env:
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          failed=()
+          for target in web_request tunnel_text tlcs_message pgn_book epd_book app_pgn engine_info; do
+            mkdir -p "fuzz-corpus/${target}" "fuzz-crashes/${target}"
+            echo "::group::${target}"
+            if ! "./build-fuzz/fuzz_${target}" -max_total_time=60 -max_len=65536 -timeout=10 -rss_limit_mb=4096 \
+                   -artifact_prefix="fuzz-crashes/${target}/" "fuzz-corpus/${target}" "fuzz/corpus/${target}"; then
+              case "${target}" in
+                app_pgn|engine_info) echo "::warning::fastchess crashed in fuzz_${target}" ;;
+                *) failed+=("${target}") ;;
+              esac
+            fi
+            echo "::endgroup::"
+          done
+          if [ ${#failed[@]} -gt 0 ]; then
+            echo "::error::crashed: ${failed[*]}"
+            exit 1
+          fi
+
+      - uses: actions/upload-artifact@v7
+        if: always() && hashFiles('fuzz-crashes/**') != ''
+        with:
+          name: fuzz-crashes
+          path: fuzz-crashes

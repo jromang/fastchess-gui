@@ -39,6 +39,27 @@ TEST_CASE("EPD suite: bm, am, id, STS points and the move counters") {
     CHECK_FALSE(parseSuiteLine("# comment", p));
 }
 
+TEST_CASE("EPD suite: a position the move generator cannot be given is skipped, its moves unread") {
+    // Found by fuzzing: without a king (and with too few ranks, which the FEN reader takes), reading "Qd2" made the
+    // move generator read outside its tables.
+    SuitePosition p;
+    CHECK_FALSE(parseSuiteLine("r1b26/3QP3/1BN1B3/PP2B2/2K2 b - - bm am Qd2; id \"x\";", p));
+    CHECK_FALSE(parseSuiteLine("8/8/8/8/8/8/8/K7 w - - bm Kb1;", p));
+    CHECK_FALSE(parseSuiteLine("k7/8/8/8/8/8/8/K6P w - - bm Kb1;", p));  // a pawn on the first rank
+    CHECK_FALSE(parseSuiteLine("k6R/8/8/8/8/8/8/K7 w - - bm Kb1;", p));  // black in check, white to move
+    CHECK(parseSuiteLine("k6R/8/8/8/8/8/8/K7 b - - bm Kb7;", p));
+}
+
+TEST_CASE("EPD suite: a move the SAN reader cannot read is not given to it") {
+    // Found by fuzzing: "01k-" starts as castling does, and the SAN reader took it for a king's move to no square.
+    SuitePosition p;
+    CHECK_FALSE(parseSuiteLine("3r1k2/4npp1/1ppr3p/p6P/P2PPPP1/1NR5/5K2/2R5 w - - bm 01k-", p));
+    CHECK_FALSE(parseSuiteLine("3r1k2/4npp1/1ppr3p/p6P/P2PPPP1/1NR5/5K2/2R5 w - - bm O-", p));
+    REQUIRE(parseSuiteLine("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - bm O-O+; am 0-0-0!?", p));
+    CHECK(p.best.size() == 1);
+    CHECK(p.avoid.size() == 1);
+}
+
 TEST_CASE("EPD suite: a file, and its STS score") {
     const auto file = std::filesystem::temp_directory_path() / "fcg-tour-suite.epd";
     {

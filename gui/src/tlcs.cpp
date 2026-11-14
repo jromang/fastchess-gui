@@ -67,6 +67,32 @@ std::string shortFen(const std::string& fen) {
 
 }  // namespace
 
+TlcsMessage readTlcsMessage(const std::string& datagram) {
+    TlcsMessage m;
+    auto msg = trim(datagram);
+    // A numbered message: acknowledged, then read like the others (TLCV numbers its PING and CHAT).
+    if (const auto close = msg.find('>'); !msg.empty() && msg.front() == '<' && close != std::string::npos) {
+        m.number = std::strtoul(msg.c_str() + 1, nullptr, 10);
+        msg      = trim(msg.substr(close + 1));
+    }
+    const auto colon = msg.find(':');
+    if (msg.starts_with("LOGON")) {
+        m.kind = TlcsMessage::Kind::Logon;
+        m.name = colon == std::string::npos ? std::string("viewer") : trim(msg.substr(colon + 1));
+    } else if (msg.starts_with("ACK")) {
+        m.kind = TlcsMessage::Kind::Ack;
+        m.ack =
+            colon == std::string::npos ? 0 : static_cast<uint32_t>(std::strtoul(msg.c_str() + colon + 1, nullptr, 10));
+    } else if (msg == "PING") {
+        m.kind = TlcsMessage::Kind::Ping;
+    } else if (msg == "LOGOFF") {
+        m.kind = TlcsMessage::Kind::Logoff;
+    } else if (msg == "RESULTTABLE") {
+        m.kind = TlcsMessage::Kind::ResultTable;
+    }
+    return m;
+}
+
 struct TlcsServer::Impl {
     struct Pending {
         uint32_t id = 0;
@@ -235,29 +261,20 @@ struct TlcsServer::Impl {
     }
 
     void handle(const net::Endpoint& from, const std::string& raw) {
-        auto msg = trim(raw);
-        // A numbered message: acknowledged, then read like the others (TLCV numbers its PING and CHAT).
-        unsigned long number = 0;
-        if (const auto close = msg.find('>'); !msg.empty() && msg.front() == '<' && close != std::string::npos) {
-            number = std::strtoul(msg.c_str() + 1, nullptr, 10);
-            msg    = trim(msg.substr(close + 1));
-        }
-        if (msg.rfind("LOGON", 0) == 0) {
-            const auto colon = msg.find(':');
-            logon(from, colon == std::string::npos ? std::string("viewer") : trim(msg.substr(colon + 1)));
-        }
+        using Kind     = TlcsMessage::Kind;
+        const auto msg = readTlcsMessage(raw);
+        if (msg.kind == Kind::Logon) logon(from, msg.name);
         // Clients only: anyone else gets no answer at all.
         const auto it = clients.find(from);
         if (it == clients.end()) return;
-        if (number > 0) socket.send(from, fmt::format("ACK: {}", number));
-        if (msg.rfind("LOGON", 0) == 0) return;
+        if (msg.number > 0) socket.send(from, fmt::format("ACK: {}", msg.number));
+        if (msg.kind == Kind::Logon) return;
         auto& c     = it->second;
         c.last_seen = Clock::now();
 
-        if (msg.rfind("ACK", 0) == 0) {
-            const auto colon = msg.find(':');
-            const auto id    = static_cast<uint32_t>(std::strtoul(msg.c_str() + (colon + 1), nullptr, 10));
-            auto& q          = c.unacked;
+        if (msg.kind == Kind::Ack) {
+            const auto id = msg.ack;
+            auto& q       = c.unacked;
             for (auto p = q.begin(); p != q.end(); ++p) {
                 if (p->id == id) {
                     q.erase(p);
@@ -269,11 +286,11 @@ struct TlcsServer::Impl {
                 welcome(from, c);
             }
             pump(from, c);
-        } else if (msg == "PING") {
+        } else if (msg.kind == Kind::Ping) {
             socket.send(from, "PONG");
-        } else if (msg == "LOGOFF") {
+        } else if (msg.kind == Kind::Logoff) {
             clients.erase(it);
-        } else if (msg == "RESULTTABLE" && c.verified) {
+        } else if (msg.kind == Kind::ResultTable && c.verified) {
             socket.send(from, "CTRESET");
             for (const auto& line : table_lines) socket.send(from, "CT: " + line);
         }
