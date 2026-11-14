@@ -15,6 +15,7 @@
 #include "i18n.hpp"
 #include "logo.hpp"
 #include "memory.hpp"
+#include "setup_checks.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -346,11 +347,7 @@ void App::drawHome() {
     ImGui::TextDisabled(
         "%s", TR("Every tournament is a folder: it resumes exactly where it stopped, even after a power cut."));
 
-    if (!start_error_.empty()) {
-        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
-        ImGui::TextWrapped("%s", start_error_.c_str());
-        ImGui::PopStyleColor();
-    }
+    if (!start_error_.empty()) drawMessage(start_error_, start_fixes_, start_fixes_for_, true, "start_error");
 
     // What is going on now.
     if (run_.running()) {
@@ -519,9 +516,7 @@ void App::drawNewMatch() {
     }
     if (!start_error_.empty()) {
         ImGui::SameLine();
-        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
-        ImGui::TextWrapped("%s", start_error_.c_str());
-        ImGui::PopStyleColor();
+        drawMessage(start_error_, start_fixes_, start_fixes_for_, true, "start_error");
     }
     if (const auto waiting = startWaitingText("start"); !waiting.empty()) {
         ImGui::SameLine();
@@ -572,10 +567,9 @@ void App::drawWorkspaceHeader() {
     ui::pageTitle(t ? t->spec().name.c_str() : TR("No match"), guideSection());
 
     const auto status = runStatusText();
-    if (run_.state() == RunController::State::Finished && !run_.error().empty()) {
-        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
-        ImGui::TextWrapped("%s", status.c_str());
-        ImGui::PopStyleColor();
+    // Ended by an error or an engine that failed: which engine, with Open the engine and Open the log.
+    if (run_.state() == RunController::State::Finished && (!run_.error().empty() || finish_fixes_for_ == status)) {
+        drawMessage(status, finish_fixes_, finish_fixes_for_, true, "finish");
     } else {
         ImGui::TextUnformatted(status.c_str());
     }
@@ -760,7 +754,47 @@ void App::drawHealth() {
     const int processes = engineProcesses();
     item(false, trn("{} engine process running", "{} engine processes running", processes, processes),
          !systemMemory().has_value());
+    if (incidents_) drawSetupNotices(engineIncidentNotices(*incidents_), "incidents");
     ui::endCard();
+}
+
+std::vector<Notice> App::engineIncidentNotices(const tour::Incidents& incidents) const {
+    // The engines that lost those games, the most first: which engine, what, and its card and engine logs.
+    constexpr std::size_t SHOWN = 3;
+    std::vector<Notice> out;
+    for (const auto& e : incidents.engines) {
+        if (out.size() == SHOWN) break;
+        std::vector<std::string> parts;
+        if (e.crashes > 0) parts.push_back(trn("{} crash or hang", "{} crashes or hangs", e.crashes, e.crashes));
+        if (e.early_time_losses > 0) {
+            parts.push_back(trn("{} loss on time in the first moves", "{} losses on time in the first moves",
+                                e.early_time_losses, e.early_time_losses));
+        }
+        if (const int late = e.time_losses - e.early_time_losses; late > 0)
+            parts.push_back(trn("{} loss on time", "{} losses on time", late, late));
+        if (e.illegal_moves > 0)
+            parts.push_back(trn("{} illegal move", "{} illegal moves", e.illegal_moves, e.illegal_moves));
+        std::string text;
+        for (const auto& p : parts) text += (text.empty() ? "" : ", ") + p;
+
+        Notice n{Notice::Level::Warning, trf("{}: {}", e.engine, text), {}, {}};
+        if (e.early_time_losses > 0) {
+            n.detail =
+                trf("Lost on time before move {}: more often an engine set up wrong (too many threads, a hash "
+                    "too large to allocate in time, a network loaded at every game, a slow start) than its "
+                    "time management.",
+                    tour::EARLY_TIME_LOSS_PLIES / 2);
+        }
+        if (const auto engine = libraryEngine(engines_, e.engine); !engine.empty())
+            n.fixes.push_back(openEngineFix(engine));
+        auto folder    = openFolderFix(e.dir.string());
+        folder.tooltip = fmt::format("{}\n{}", e.dir.string(),
+                                     TR("Its logs folder keeps the engine log of every game "
+                                        "that ended badly."));
+        n.fixes.push_back(std::move(folder));
+        out.push_back(std::move(n));
+    }
+    return out;
 }
 
 void App::drawRelaunch() {

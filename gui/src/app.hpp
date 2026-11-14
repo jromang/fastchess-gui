@@ -27,12 +27,14 @@
 #include "layout.hpp"
 #include "live.hpp"
 #include "model.hpp"
+#include "notice.hpp"
 #include "pgn_store.hpp"
 #include "qr.hpp"
 #include "run.hpp"
 #include "stats.hpp"
 #include "storage.hpp"
 #include "suite_run.hpp"
+#include "tablebases.hpp"
 #include "topology.hpp"
 #include "ui.hpp"
 
@@ -423,6 +425,13 @@ class App {
     int open_own_book_       = -1;     // the participant whose book popup opens: --focus setup-book, a copy just added
     bool open_own_book_list_ = false;  // --focus setup-book-list: with its list of books open
     void drawSetupSummary();
+    // The actionable messages of the setup and their fixes, see view_notices.cpp: the summary's checks of the
+    // threads, the option values, the opening book and the tablebases (read off the UI thread, tb_checks_).
+    [[nodiscard]] std::vector<Notice> setupNotices();
+    void drawSetupNotices(std::vector<Notice> notices, const char* id);  // with the fixes possible now
+    void applyFix(const Fix& fix);
+    void selectEngine(const std::string& name);  // on the Engines page, as the palette opens an engine
+    TablebaseChecks tb_checks_;
     void drawTemplates();
     void setupEngines();
     void setupEngineOptions();  // the settings forced on every engine
@@ -542,6 +551,8 @@ class App {
     void startFromQueue(bool go_on = false, std::size_t from = 0, const std::string& label = {});
     void drawQueue();
     void drawHealth();  // the home page's: incidents of the last 24 hours, memory, engine processes
+    // Those incidents by engine, the most first: what happened to it, with Open the engine and its tournament's folder.
+    [[nodiscard]] std::vector<Notice> engineIncidentNotices(const tour::Incidents& incidents) const;
     // About how long the running tournament has left at its pace; nullopt without a game count or a pace yet.
     [[nodiscard]] std::optional<double> runSecondsLeft() const;
     void drawRelaunch();  // "Relaunch with…" of a finished match
@@ -911,6 +922,17 @@ class App {
     // Messages and state.
     std::string start_error_;
     std::string finish_message_;
+    // What fixes them (an engine to open, a program to locate…), while they are the messages they were found for;
+    // Open the log for any other start error. See drawMessage().
+    std::vector<Fix> start_fixes_, finish_fixes_;
+    std::string start_fixes_for_, finish_fixes_for_;
+    // A start or end message as a notice (red when `error`), with its fixes when `fixes_for` is still `text`.
+    void drawMessage(const std::string& text, const std::vector<Fix>& fixes, const std::string& fixes_for, bool error,
+                     const char* id);
+    void setStartFixes();        // the fixes of the setup's errors, after a start that failed
+    void setFinishFixes();       // the engine that stopped the tournament, at its end
+    std::string stopped_by_;     // that engine, as the tournament names it; empty when none did
+    uint64_t console_mark_ = 0;  // the log's lines before the tournament started (Console::added())
     std::string window_title_;
     bool quit_            = false;
     bool quit_pending_    = false;

@@ -12,6 +12,7 @@
 #include "i18n.hpp"
 #include "layout.hpp"
 #include "palette.hpp"
+#include "setup_checks.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -83,6 +84,28 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     if (ready && !run_.running() && !startPending("start"))
         add(TR("Start"), TR("New tournament"), [this] { startRun(); });
     if (ready) add(TR("Add to the queue"), TR("New tournament"), [this] { enqueue(); });
+    // The fixes the setup summary offers (Lower Threads, Lower to N pieces, Locate…), named after their engine. The
+    // engines open from their own entries, below.
+    {
+        std::vector<Notice> notices = programNotices(setup_, engines_);
+        if (auto book = bookNotice(setup_)) notices.push_back(std::move(*book));
+        for (auto& n : setupNotices()) notices.push_back(std::move(n));
+        std::vector<Fix> seen;
+        for (const auto& n : notices) {
+            for (const auto& f : n.fixes) {
+                const bool generic =
+                    f.kind == Fix::Kind::OpenEngine || f.kind == Fix::Kind::OpenLog || f.kind == Fix::Kind::OpenFolder;
+                const bool setup = f.kind != Fix::Kind::LocateProgram && f.kind != Fix::Kind::LocateDir &&
+                                   f.kind != Fix::Kind::LowerEngineThreads;
+                if (generic || (setup && run_.running()) || (!setup && engineInUse(f.engine)) ||
+                    std::find(seen.begin(), seen.end(), f) != seen.end())
+                    continue;
+                seen.push_back(f);
+                add(f.engine.empty() ? f.label : fmt::format("{}: {}", f.engine, f.label), TR("New tournament"),
+                    [this, f] { applyFix(f); });
+            }
+        }
+    }
     if (t && !games_.empty()) {
         add(TR("Export for a rating list…"), name, [this] {
             page_        = Page::Tournament;

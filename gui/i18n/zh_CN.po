@@ -246,6 +246,10 @@ msgstr "裁定"
 msgid "Adjudication"
 msgstr "裁定"
 
+msgid "Adjudication up to {} piece, but only {}-piece files found in {}."
+msgid_plural "Adjudication up to {} pieces, but only {}-piece files found in {}."
+msgstr[0] "裁定最多 {} 子，但只找到 {} 子的文件，位于 {}。"
+
 msgid "Adjudications"
 msgstr "裁定"
 
@@ -543,6 +547,18 @@ msgstr "请至少选择两个引擎。"
 msgid "Choose engines A and B."
 msgstr "请选择引擎 A 和 B。"
 
+msgid "Choose the opening book"
+msgstr "选择开局库"
+
+msgid "Choose the program of {}"
+msgstr "选择 {} 的程序"
+
+msgid "Choose the tablebase folder of this tournament (the adjudication's, and the engines' when it gives them its tablebases)"
+msgstr "选择本赛事的残局库文件夹（用于裁定；赛事把残局库提供给引擎时也用于引擎）"
+
+msgid "Choose the working directory of {}"
+msgstr "选择 {} 的工作目录"
+
 msgid "Choose two different engines, or give them books of their own."
 msgstr "请选择两个不同的引擎，或为它们各自指定专属开局库。"
 
@@ -620,6 +636,9 @@ msgstr "交叉表"
 
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr "Ctrl + 鼠标滚轮，Ctrl + 和 Ctrl -，Ctrl 0"
+
+msgid "Cut short, by a download that did not end for example. Engines leave such a file out, and some stop at once when they meet it."
+msgstr "文件不完整，例如下载未完成。引擎会跳过这样的文件，有些引擎遇到时会立即退出。"
 
 msgid "Cycle {} / {}"
 msgstr "循环 {} / {}"
@@ -1162,8 +1181,14 @@ msgstr "界面大小"
 msgid "Interrupted"
 msgstr "已中断"
 
-msgid "Interrupted: an engine crashed or stopped responding (see Console)"
-msgstr "已中断：某个引擎崩溃或停止响应（见控制台）"
+msgid "Interrupted: an engine crashed or stopped responding (see the Log)"
+msgstr "已中断：有引擎崩溃或无响应（见日志）"
+
+msgid "Interrupted: {} could not start: {}"
+msgstr "已中断：{} 无法启动：{}"
+
+msgid "Interrupted: {} crashed or stopped responding (game {})"
+msgstr "已中断：{} 崩溃或无响应（第 {} 局）"
 
 msgid "It cannot play for an engine: {}"
 msgstr "它不能代替引擎走棋：{}"
@@ -1201,8 +1226,14 @@ msgstr "它已下的对局不再计分"
 msgid "Its games stop counting and are played again by the new engine."
 msgstr "它的对局不再计分，由新引擎重新下。"
 
+msgid "Its logs folder keeps the engine log of every game that ended badly."
+msgstr "其 logs 文件夹保存了每局异常结束对局的引擎日志。"
+
 msgid "Its name begins with this library engine's: choose it if it is the same engine, version included."
 msgstr "其名称以该库引擎的名称开头：如果是同一引擎（包括版本），请选择它。"
+
+msgid "Its options have no UCI_Chess960 (a WinBoard engine: no fischerandom variant)."
+msgstr "它的选项中没有 UCI_Chess960（WinBoard 引擎：没有 fischerandom 变体）。"
 
 msgid "Its own opening book"
 msgstr "它的专属开局库"
@@ -1314,6 +1345,16 @@ msgstr "负局。"
 
 msgid "Lost after a winning score"
 msgstr "领先后输掉"
+
+msgid "Lost on time before move {}: more often an engine set up wrong (too many threads, a hash too large to allocate in time, a network loaded at every game, a slow start) than its time management."
+msgstr "在第 {} 步之前超时判负：这更常见于引擎设置不当（线程过多、哈希太大无法及时分配、每局都加载网络、启动缓慢），而非其时间管理。"
+
+msgid "Lower Threads to {}"
+msgstr "将 Threads 降为 {}"
+
+msgid "Lower to {} piece"
+msgid_plural "Lower to {} pieces"
+msgstr[0] "降为 {} 子"
 
 msgid "Machine: %d physical cores, %d threads"
 msgstr "本机：%d 个物理核心，%d 个线程"
@@ -1567,8 +1608,14 @@ msgstr "打开文件…"
 msgid "Open a folder…"
 msgstr "打开文件夹…"
 
+msgid "Open the engine"
+msgstr "打开引擎"
+
 msgid "Open the folder"
 msgstr "打开文件夹"
+
+msgid "Open the log"
+msgstr "打开日志"
 
 msgid "Open the tournament."
 msgstr "打开锦标赛。"
@@ -2106,6 +2153,15 @@ msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
 msgstr[0] "设置 {} 个参考 Elo"
 
+msgid "Sets the Threads of this tournament's common settings to {}."
+msgstr "将本赛事通用设置中的 Threads 设为 {}。"
+
+msgid "Sets the Threads of {} to {} in this tournament's participants."
+msgstr "在本赛事的参赛者中将 {} 的 Threads 设为 {}。"
+
+msgid "Sets the Threads option of {} to {} in the engine library: every tournament plays it so, unless its setup gives other Threads."
+msgstr "在引擎库中将 {} 的 Threads 选项设为 {}：每个赛事都如此使用，除非赛事设置给出其他 Threads。"
+
 msgid "Settings"
 msgstr "设置"
 
@@ -2129,6 +2185,9 @@ msgstr "地点"
 
 msgid "Solution"
 msgstr "答案"
+
+msgid "Some engines take every core by default. Games played at the same time then slow each other down, and the engines lose on time or play weaker than they are."
+msgstr "有些引擎默认占用所有核心。同时进行的对局会互相拖慢，引擎会超时判负或发挥失常。"
 
 msgid "Speed"
 msgstr "速度"
@@ -2250,6 +2309,17 @@ msgstr "为引擎提供 Syzygy 残局库：未指定目录"
 msgid "Syzygy tablebases for the engines: {}"
 msgstr "为引擎提供 Syzygy 残局库：{}"
 
+msgid "Syzygy {} pieces: {} file missing in {} ({})."
+msgid_plural "Syzygy {} pieces: {} files missing in {} ({})."
+msgstr[0] "Syzygy {} 子：{} 个文件缺失，位于 {}（{}）。"
+
+msgid "Syzygy: {} damaged file in {} ({}): its size is not a tablebase file's."
+msgid_plural "Syzygy: {} damaged files in {} ({}): their size is not a tablebase file's."
+msgstr[0] "Syzygy：{} 个损坏文件，位于 {}（{}）：其大小不是残局库文件应有的大小。"
+
+msgid "SyzygyPath of {}"
+msgstr "{} 的 SyzygyPath"
+
 msgid "TB hits"
 msgstr "残局库命中"
 
@@ -2261,6 +2331,19 @@ msgstr "TLCS 服务器"
 
 msgid "Table"
 msgstr "表格"
+
+msgid "Tablebase adjudication"
+msgstr "残局库裁定"
+
+msgid "Tablebase adjudication and SyzygyPath of {}"
+msgstr "残局库裁定和 {} 的 SyzygyPath"
+
+msgid "Tablebase adjudication up to {} piece: every file there"
+msgid_plural "Tablebase adjudication up to {} pieces: every file there"
+msgstr[0] "残局库裁定最多 {} 子：文件齐全"
+
+msgid "Tablebase adjudication: no folder given. The tournament cannot start without one."
+msgstr "残局库裁定：未指定文件夹。没有文件夹，赛事无法开始。"
 
 msgid "Tablebases"
 msgstr "残局库"
@@ -2297,6 +2380,9 @@ msgstr "正在测试…"
 
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "50 步计数、子力以及剩余棋子，显示在平铺视图的每个棋盘下方。"
+
+msgid "The Log page: fastchess' output and the program's messages"
+msgstr "日志页面：fastchess 的输出和程序的消息"
 
 msgid "The PGN options of the setup, for the tournaments to come."
 msgstr "设置的 PGN 选项，用于以后的锦标赛。"
@@ -2391,6 +2477,9 @@ msgstr "{} 的主机密钥已改变：现在是 {}，之前是 {}。可能有人
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "{} 的主机密钥不是预期的（{}，而不是 {}）：可能有人在中间拦截。未发送任何内容。"
 
+msgid "The largest Hash: {}, {} per process."
+msgstr "最大的 Hash：{}，每个进程 {}。"
+
 msgid "The last 30 days"
 msgstr "最近 30 天"
 
@@ -2445,9 +2534,6 @@ msgstr "程序在上次启动恢复此锦标赛时终止：它不会再自动恢
 msgid "The program ended while it resumed {} at the last launch: it is not resumed automatically again. Resume it from the Tournaments page."
 msgstr "程序在上次启动恢复 {} 时终止：它不会再自动恢复。请在“锦标赛”页面上恢复它。"
 
-msgid "The program of {} is not found."
-msgstr "找不到 {} 的程序。"
-
 msgid "The program of {} is not found: {}"
 msgstr "找不到 {} 的程序：{}"
 
@@ -2490,6 +2576,9 @@ msgstr "所显示开局的起始局面，按显示顺序排列：用它们生成
 msgid "The system could not open:"
 msgstr "系统无法打开："
 
+msgid "The tablebase adjudication's Max pieces, in this tournament's Adjudication section."
+msgstr "残局库裁定的最大棋子数，位于本赛事的裁定部分。"
+
 msgid "The test suite is not started: a tournament is running."
 msgstr "测试集未开始：有锦标赛正在进行。"
 
@@ -2501,6 +2590,9 @@ msgstr "时限需要基本时间或加秒。"
 
 msgid "The time per move must be positive."
 msgstr "每步时间必须为正数。"
+
+msgid "The tournament cannot start with this adjudication."
+msgstr "使用此裁定设置，赛事无法开始。"
 
 msgid "The tournament is not running: resume it to play the new games."
 msgstr "锦标赛没有在进行：请恢复它以下新的对局。"
@@ -2514,8 +2606,8 @@ msgstr "锦标赛已修改。"
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "按对局对计算时单局的方差与单独计算时单局方差之比：低于 1 时，成对对局只需相应更少的对局即可达到同样精度。"
 
-msgid "The working directory of {} is not found."
-msgstr "找不到 {} 的工作目录。"
+msgid "The working directory of {} is not found: {}"
+msgstr "找不到 {} 的工作目录：{}"
 
 msgid "Theme"
 msgstr "主题"
@@ -2541,8 +2633,14 @@ msgstr "有问题的开局"
 msgid "Threads"
 msgstr "线程"
 
+msgid "Threads of {} set to {} in the engine library."
+msgstr "已在引擎库中将 {} 的 Threads 设为 {}。"
+
 msgid "Threads {}"
 msgstr "线程 {}"
+
+msgid "Threads {} of the common settings: {} games × {} threads exceed the {}."
+msgstr "通用设置的 Threads {}：{} 局 × {} 线程超过了 {}。"
 
 msgid "Tick engines on the left."
 msgstr "在左侧勾选引擎。"
@@ -2881,11 +2979,20 @@ msgstr "非法局面"
 msgid "initial position"
 msgstr "初始局面"
 
+msgid "it takes true or false"
+msgstr "只接受 true 或 false"
+
+msgid "its choices are {}"
+msgstr "可选值为 {}"
+
 msgid "its default"
 msgstr "其默认值"
 
 msgid "its entries are not sorted by key, as those of a Polyglot book must be, and it is too large to be sorted in memory: have a Polyglot tool write it again"
 msgstr "其条目未按键排序（Polyglot 开局库必须如此），且文件过大，无法在内存中排序：请用 Polyglot 工具重新写出"
+
+msgid "its range is {} to {}"
+msgstr "范围为 {} 到 {}"
 
 msgid "itself"
 msgstr "自己"
@@ -3044,6 +3151,9 @@ msgstr "{} MB"
 msgid "{} against each opponent"
 msgstr "{} 对每个对手"
 
+msgid "{} and {}"
+msgstr "{} 和 {}"
+
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} 要求每局都重新启动：已勾选“每局对局都重启引擎”。"
 
@@ -3165,8 +3275,15 @@ msgstr "{} 局，{} 个锦标赛"
 msgid "{} h {:02} min"
 msgstr "{} 小时 {:02} 分"
 
+msgid "{} hardware thread"
+msgid_plural "{} hardware threads"
+msgstr[0] "{} 个硬件线程"
+
 msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
 msgstr "{} 与 fastchess-gui 没有共同的算法（需要 curve25519-sha256、RSA 主机密钥和 AES）"
+
+msgid "{} has no option {} (any more): its value {} is not sent."
+msgstr "{} 没有（或不再有）选项 {}：其值 {} 不会发送。"
 
 msgid "{} holds the games of the tournament: choose another file"
 msgstr "{} 保存着锦标赛的对局：请选择其他文件"
@@ -3198,6 +3315,10 @@ msgid "{} loss on time"
 msgid_plural "{} losses on time"
 msgstr[0] "{} 次超时判负"
 
+msgid "{} loss on time in the first moves"
+msgid_plural "{} losses on time in the first moves"
+msgstr[0] "开局阶段 {} 次超时判负"
+
 msgid "{} losses on time"
 msgstr "{} 次超时判负"
 
@@ -3227,6 +3348,9 @@ msgstr "可用内存 {}，共 {}"
 msgid "{} of {} openings"
 msgstr "{} 个，共 {} 个开局"
 
+msgid "{} on the Engines page: its program and options"
+msgstr "引擎页面中的 {}：其程序和选项"
+
 msgid "{} opening"
 msgid_plural "{} openings"
 msgstr[0] "{} 个开局"
@@ -3254,6 +3378,10 @@ msgstr[0] "{} 对缺少交换颜色的对局：{}"
 msgid "{} pairings × 2 games × {} cycles"
 msgstr "{} 组配对 × 2 局 × {} 个循环"
 
+msgid "{} physical core"
+msgid_plural "{} physical cores"
+msgstr[0] "{} 个物理核心"
+
 msgid "{} pieces"
 msgstr "{} 个棋子"
 
@@ -3279,6 +3407,19 @@ msgstr[0] "{} 位棋手可能是两个库引擎之一：请指定。"
 msgid "{} plays with {} % of the time"
 msgstr "{} 使用 {} % 的时间"
 
+msgid "{} plays with {} threads (given by this tournament): {} games × {} threads exceed the {}."
+msgstr "{} 使用 {} 个线程（由本赛事设定）：{} 局 × {} 线程超过了 {}。"
+
+msgid "{} plays with {} threads (its Threads option), more than half of the {} hardware threads."
+msgstr "{} 使用 {} 个线程（其 Threads 选项），超过 {} 个硬件线程的一半。"
+
+msgid "{} plays with {} threads (its Threads option): with {} games at a time, this machine has {} thread for each game."
+msgid_plural "{} plays with {} threads (its Threads option): with {} games at a time, this machine has {} threads for each game."
+msgstr[0] "{} 使用 {} 个线程（其 Threads 选项）：同时进行 {} 局时，本机每局只有 {} 个线程。"
+
+msgid "{} points to a folder with no tablebase files: {}"
+msgstr "{} 指向一个没有残局库文件的文件夹：{}"
+
 msgid "{} position"
 msgid_plural "{} positions"
 msgstr[0] "{} 个局面"
@@ -3293,6 +3434,12 @@ msgstr[0] "已从等级分榜设置 {} 个参考 Elo。"
 
 msgid "{} refused to forward its port {}"
 msgstr "{} 拒绝转发其端口 {}"
+
+msgid "{} refuses its option {} = {}: {}. It is not sent: the engine plays with its default."
+msgstr "{} 不接受其选项 {} = {}：{}。该值不会发送：引擎使用其默认值。"
+
+msgid "{} refuses {} = {}, given by this tournament: {}. It is not sent: the engine plays with its default."
+msgstr "{} 不接受本赛事设定的 {} = {}：{}。该值不会发送：引擎使用其默认值。"
 
 msgid "{} rounds × {} pairings × 2 games"
 msgstr "{} 轮 × {} 组配对 × 2 局"
@@ -3372,6 +3519,9 @@ msgstr "{} 子 Syzygy，用于 {} 个引擎（共 {} 个）"
 
 msgid "{}: decision"
 msgstr "{}：决定"
+
+msgid "{}: folder not found: {}"
+msgstr "{}：找不到文件夹：{}"
 
 msgid "{}: its book cannot be used: {}"
 msgstr "{}：其开局库无法使用：{}"

@@ -17,6 +17,7 @@
 #include "i18n.hpp"
 #include "memory.hpp"
 #include "run.hpp"
+#include "setup_checks.hpp"
 #include "stats.hpp"
 #include "storage.hpp"
 #include "ui.hpp"
@@ -381,6 +382,14 @@ void App::setupEngines() {
     }
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Swap A and B"));
 
+    // An engine chosen with too many threads (its own default perhaps), flagged here too.
+    std::vector<Notice> threads;
+    for (std::size_t i = 0; i < 2; ++i) {
+        if (auto n = threadNotice(setup_, i, engines_, topology_)) threads.push_back(std::move(*n));
+    }
+    if (threads.size() == 2 && threads[0].text == threads[1].text) threads.pop_back();
+    drawSetupNotices(threads, "engine_threads");
+
     ImGui::TextDisabled("%s", TR("Statistics are given from A's point of view."));
     ImGui::Spacing();
     setupEngineOptions();
@@ -688,19 +697,12 @@ void App::setupConcurrency() {
                "a node count."));
     }
 
-    // Warn about oversubscription, which distorts timed games.
-    int threads         = 1;
-    const auto consider = [&](const std::string& name, int own) {
-        const int forced = own > 0 ? own : setup_.common_threads;
+    // Warn about oversubscription, which distorts timed games. The summary names the engine, with Lower Threads.
+    int threads = 1;
+    for (const auto& p : fcg::setupParticipants(setup_)) {
         for (const auto& e : engines_) {
-            if (e.name == name) threads = std::max(threads, forced > 0 ? forced : e.threads());
+            if (e.name == p.name) threads = std::max(threads, participantThreads(setup_, p, e).threads);
         }
-    };
-    if (setup_.format == TournamentFormat::Match) {
-        consider(setup_.engine_a, 0);
-        consider(setup_.engine_b, 0);
-    } else {
-        for (const auto& p : setup_.participants) consider(p.name, p.threads);
     }
 
     if (AFFINITY_SUPPORTED && setup_.affinity && threads > 1) {
@@ -1069,6 +1071,13 @@ void App::setupParticipants() {
                 ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
                 ImGui::TextUnformatted(TR("(twice: give it another book)"));
                 ImGui::PopStyleColor();
+            } else if (const auto threads = threadNotice(setup_, i, engines_, topology_)) {
+                // Too many threads, its own default perhaps: the summary offers to lower them.
+                ImGui::SameLine();
+                ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+                ImGui::TextUnformatted("!");
+                ImGui::PopStyleColor();
+                ImGui::SetItemTooltip("%s", threads->text.c_str());
             }
             ImGui::TableNextColumn();
             ImGui::SetNextItemWidth(-FLT_MIN);
@@ -1292,23 +1301,29 @@ void App::drawSetupSummary() {
     const auto chosen = [&](const EngineEntry& e) {
         return std::find(names.begin(), names.end(), e.name) != names.end();
     };
-    for (const auto& e : engines_) {
-        if (!chosen(e)) continue;
-        if (e.program_state == ProgramState::Missing) check(false, trf("The program of {} is not found.", e.name));
-        if (e.program_state == ProgramState::MissingDir) {
-            check(false, trf("The working directory of {} is not found.", e.name));
-        }
-    }
+    // A program or a working directory not found, with Open the engine and Locate…; the opening book not found.
+    drawSetupNotices(programNotices(setup_, engines_), "programs");
+    const auto book_missing = bookNotice(setup_);
+    if (book_missing) drawSetupNotices({*book_missing}, "book");
     if (setup_.chess960) {
-        check(true, setup_.book.empty() ? std::string(TR("Chess960: the 960 starting positions, in random order"))
-                                        : trf("Chess960: {}", std::filesystem::path(setup_.book).filename().string()));
+        if (!book_missing) {
+            check(true, setup_.book.empty()
+                            ? std::string(TR("Chess960: the 960 starting positions, in random order"))
+                            : trf("Chess960: {}", std::filesystem::path(setup_.book).filename().string()));
+        }
         for (const auto& e : engines_) {
             const bool plays =
                 e.uci_options.empty() || std::any_of(e.uci_options.begin(), e.uci_options.end(),
                                                      [](const auto& o) { return o.name == "UCI_Chess960"; });
-            if (chosen(e) && !plays) check(false, trf("{} does not play Chess960.", e.name));
+            if (chosen(e) && !plays) {
+                drawSetupNotices({{Notice::Level::Warning,
+                                   trf("{} does not play Chess960.", e.name),
+                                   TR("Its options have no UCI_Chess960 (a WinBoard engine: no fischerandom variant)."),
+                                   {openEngineFix(e.name)}}},
+                                 e.name.c_str());
+            }
         }
-    } else {
+    } else if (!book_missing) {
         check(!setup_.book.empty(),
               setup_.book.empty() ? std::string(TR("No opening book: every game starts from the initial position"))
                                   : trf("Openings: {}", std::filesystem::path(setup_.book).filename().string()));
@@ -1337,16 +1352,10 @@ void App::drawSetupSummary() {
     if (setup_.engine_ownbook_off) check(true, TR("The engines' own books are off"));
     // The hash tables against the memory: a warning above the free memory, an error above the installed one.
     if (const auto memory = setupMemory(setup_, engines_, topology_); memory.hash_mb > 0) {
-        if (memory.aboveInstalled()) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
-            ImGui::TextUnformatted("!");
-            ImGui::SameLine();
-            ImGui::TextWrapped("%s", memory.text().c_str());
-            ImGui::PopStyleColor();
-        } else {
-            check(!memory.aboveAvailable(), memory.text());
-        }
+        drawSetupNotices({memoryNotice(setup_, engines_, memory)}, "memory");
     }
+    // The threads, the option values the engines refuse, the tablebases.
+    drawSetupNotices(setupNotices(), "checks");
     for (const auto& p : setup_.participants) {
         if (setup_.format != TournamentFormat::Match && !fixed_nodes && p.time_percent != 100) {
             check(true, trf("{} plays with {} % of the time", p.name, p.time_percent));

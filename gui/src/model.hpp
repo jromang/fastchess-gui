@@ -97,10 +97,16 @@ struct EngineEntry {
         std::erase_if(options, [&](const auto& kv) { return kv.first == key; });
     }
 
+    // The Threads it plays with when a tournament does not give them: its setting, else its default (some engines
+    // take every core), else 1.
     [[nodiscard]] int threads() const {
-        if (const auto* v = option("Threads")) {
+        const std::string* value = option("Threads");
+        for (const auto& o : uci_options) {
+            if (!value && o.name == "Threads") value = &o.default_value;
+        }
+        if (value) {
             try {
-                return std::max(1, std::stoi(*v));
+                return std::max(1, std::stoi(*value));
             } catch (...) {
             }
         }

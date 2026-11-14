@@ -31,6 +31,11 @@ class Console {
     // Copies the lines if they changed since `version`.
     bool copy(std::vector<Line>& out, uint64_t& version) const;
 
+    // How many lines were added so far, and the lines kept of those added after the first `added`: what fastchess
+    // said during a tournament, for one.
+    [[nodiscard]] uint64_t added() const;
+    [[nodiscard]] std::vector<std::string> since(uint64_t added) const;
+
     void clear();
 
    private:
@@ -42,6 +47,7 @@ class Console {
     std::deque<Line> lines_;
     std::FILE* log_   = nullptr;
     uint64_t version_ = 1;
+    uint64_t added_   = 0;
 };
 
 }  // namespace fcg

@@ -491,10 +491,15 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     t.variant = setup.chess960 ? fastchess::VariantType::FRC : fastchess::VariantType::STANDARD;
 
     // fastchess pins each game, both engines included, to one CPU, which only makes sense for single threaded
-    // engines (and not at all on macOS).
-    t.affinity =
-        AFFINITY_SUPPORTED && setup.affinity &&
-        std::all_of(run.engines.begin(), run.engines.end(), [](const auto& c) { return configThreads(c) == 1; });
+    // engines (and not at all on macOS). An engine not given Threads plays with its own, its default perhaps.
+    bool single = true;
+    for (std::size_t i = 0; i < run.engines.size(); ++i) {
+        const auto& options = run.engines[i].options;
+        const bool given =
+            std::any_of(options.begin(), options.end(), [](const auto& o) { return o.first == "Threads"; });
+        single &= (given ? configThreads(run.engines[i]) : people[i].first->threads()) == 1;
+    }
+    t.affinity = AFFINITY_SUPPORTED && setup.affinity && single;
 
     // Chess960 without a book: every starting position, in random order.
     auto book        = setup.book;
