@@ -1,6 +1,7 @@
 // The live view: the mosaic of the games being played, and the parts of the game followed (board, players, searches,
 // moves, chart), beside it or each in a panel of its own; detached boards.
 
+#include <algorithm>
 #include <cmath>
 
 #include <imgui.h>
@@ -593,9 +594,76 @@ void App::drawMosaic(int cols, float card) {
 
         if (ImGui::IsItemClicked()) live_slot_ = i;
         if (ImGui::IsItemHovered() && st.has_game) {
-            ImGui::SetTooltip("%s – %s\n%s", st.white.c_str(), st.black.c_str(),
-                              trf("Game {} · move {}", st.game_id, (st.moves.size() + 1) / 2).c_str());
+            ImGui::SetTooltip(
+                "%s – %s\n%s%s", st.white.c_str(), st.black.c_str(),
+                trf("Game {} · move {}", st.game_id, (st.moves.size() + 1) / 2).c_str(),
+                st.active ? (std::string("\n") + TR("Right click: end this game with a result.")).c_str() : "");
         }
+        if (st.active && ImGui::BeginPopupContextItem(fmt::format("##end_game{}", i).c_str())) {
+            drawEndGameMenu(i);
+            ImGui::EndPopup();
+        }
+    }
+}
+
+void App::drawEndGameMenu(int slot) {
+    if (slot < 0 || slot >= static_cast<int>(slot_views_.size())) return;
+    const auto& st = slot_views_[static_cast<std::size_t>(slot)].state;
+    if (!st.active || !st.has_game) {
+        ImGui::TextDisabled("%s", TR("No game is being played here."));
+        return;
+    }
+    if (end_menu_.game != st.game_id) {
+        end_menu_      = {};
+        end_menu_.game = st.game_id;
+    }
+    ImGui::TextDisabled(
+        "%s", trf("Game {} · move {}: {} – {}", st.game_id, (st.moves.size() + 2) / 2, st.white, st.black).c_str());
+    ImGui::TextUnformatted(TR("End with result"));
+    ui::help(
+        TR("For a game the program would not end well: a hang it does not catch, a won ending the engines keep "
+           "shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with "
+           "this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts "
+           "result can be changed afterwards in the Games tab."));
+    static constexpr const char* RESULTS[] = {"1-0", "1/2-1/2", "0-1"};
+    for (const char* result : RESULTS) {
+        if (result != RESULTS[0]) ImGui::SameLine();
+        if (ImGui::RadioButton(result == RESULTS[1] ? "½-½" : result, end_menu_.result == result)) {
+            end_menu_.result = result;
+        }
+    }
+    {
+        char buffer[160];
+        const auto n = std::min(end_menu_.why.size(), sizeof(buffer) - 1);
+        std::copy_n(end_menu_.why.data(), n, buffer);
+        buffer[n] = 0;
+        ImGui::SetNextItemWidth(px(300));
+        if (ImGui::InputTextWithHint("##end_why", TR("Why (kept with the game)"), buffer, sizeof(buffer))) {
+            end_menu_.why = buffer;
+        }
+    }
+    if (!end_menu_.result.empty()) {
+        // What it changes: the points each player gets from the game.
+        const double white = end_menu_.result == "1-0" ? 1.0 : end_menu_.result == "0-1" ? 0.0 : 0.5;
+        const auto points  = [](double p) { return p == 0.5 ? std::string("+½") : fmt::format("+{}", p); };
+        ImGui::TextUnformatted(
+            fmt::format("{} {} · {} {}", st.white, points(white), st.black, points(1.0 - white)).c_str());
+        if (ImGui::Button(TR("End the game"))) {
+            end_menu_.error = run_.endGame(slot, st.game_id - 1, end_menu_.result, end_menu_.why);
+            if (end_menu_.error.empty()) {
+                Console::instance().add(trf("Game {} was ended by the operator: {}.", st.game_id,
+                                            end_menu_.result == "1/2-1/2" ? "½-½" : end_menu_.result));
+                end_menu_ = {};
+                ImGui::CloseCurrentPopup();
+            }
+        }
+    }
+    if (!end_menu_.error.empty()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + px(320));
+        ImGui::TextUnformatted(end_menu_.error.c_str());
+        ImGui::PopTextWrapPos();
+        ImGui::PopStyleColor();
     }
 }
 
@@ -611,6 +679,16 @@ void App::drawLiveBoard(SlotView& view, float size) {
     drawBoard(atlas_, view.board, size, decor);
     drawBoardInfo(atlas_, view.board, size, tbPieces());
     ImGui::EndGroup();
+    // Right click on the board: the game ended with a result. Asked from the palette, once the panel is in front.
+    const int slot = static_cast<int>(&view - slot_views_.data());
+    if (open_end_menu_ == slot + 1 && !panel_request_ && !tab_request_) {
+        open_end_menu_ = 0;
+        ImGui::OpenPopup("##end_game");
+    }
+    if (st.active && ImGui::BeginPopupContextItem("##end_game")) {
+        drawEndGameMenu(slot);
+        ImGui::EndPopup();
+    }
 }
 
 // The board alone, as large as the room allows, in the middle of it.

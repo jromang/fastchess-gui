@@ -66,8 +66,8 @@ struct SubmissionGames {
 // The games of a tournament for a rating list, from its cutechess-style PGN file (`pgn`, where results point): each
 // game that counts once, in the order they ended, with its Event, Site, Round (1 to N), White and Black tags
 // rewritten, and the PlyCount of a game lost by an illegal move giving the moves played (fastchess counts the
-// illegal one, which is not in the movetext, and the testers' scripts take such a game for a broken one). Every other
-// tag stays as played.
+// illegal one, which is not in the movetext, and the testers' scripts take such a game for a broken one). A game whose
+// result was set by hand has it (countedPgn()). Every other tag stays as played.
 [[nodiscard]] SubmissionGames submissionGames(const std::filesystem::path& pgn, const std::vector<GameResult>& results,
                                               const TournamentSpec& spec, const SubmissionExport& e);
 

@@ -21,9 +21,11 @@ namespace fcg {
 using tour::PgnSpan;
 
 // Copies the given games, in order, into a new file. Returns an error message, empty on success. `target` may not
-// be `source` nor one of `own` (the tournament's other PGN file): writing it would destroy the games.
+// be `source` nor one of `own` (the tournament's other PGN file): writing it would destroy the games. `counted`, when
+// given, makes the text of game i what is written (a result set by hand, see tour::countedPgn()).
 std::string exportSpans(const std::filesystem::path& source, const std::vector<PgnSpan>& spans,
-                        const std::filesystem::path& target, const std::vector<std::filesystem::path>& own = {});
+                        const std::filesystem::path& target, const std::vector<std::filesystem::path>& own = {},
+                        const std::function<std::string(std::size_t i, std::string text)>& counted = {});
 
 // The optional fields of a move comment, as the PGN options of the setup turn them on: a set of these bits.
 enum PgnField : uint8_t {

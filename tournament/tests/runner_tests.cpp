@@ -25,6 +25,7 @@
 #ifdef _WIN32
 #    include <windows.h>
 #else
+#    include <signal.h>
 #    include <unistd.h>
 #endif
 
@@ -56,8 +57,9 @@ TournamentSpec spec(Format format, int players, int cycles, uint64_t max_games =
 }
 
 // Plays `state` on this thread, as the GUI's run thread does. With `stop_after`, stops abruptly once that many
-// games are recorded, without waiting for the running ones.
-std::string play(TournamentState& state, std::size_t stop_after = 0) {
+// games are recorded, without waiting for the running ones. `downstream` is told what the runner is told.
+std::string play(TournamentState& state, std::size_t stop_after = 0,
+                 fastchess::observer::GameObserver* downstream = nullptr) {
     auto config         = state.spec().conditions;
     config.games        = 2;
     config.opening.file = "";
@@ -85,7 +87,7 @@ std::string play(TournamentState& state, std::size_t stop_after = 0) {
 
     std::string error;
     {
-        Runner runner(state, nullptr, nullptr);
+        Runner runner(state, downstream, nullptr);
         runner.start();
         error = runner.error();
     }
@@ -907,3 +909,96 @@ TEST_CASE("engine log: a quiet engine's lines deep in the game are left out with
     CHECK(text.find(fmt::format("B< bestmove {}\n", total - 1)) != std::string::npos);
     CHECK(text.find(fmt::format("W< info {}\n", total - 1)) != std::string::npos);
 }
+
+#ifndef _WIN32
+TEST_CASE("runner: a game the operator ends while it is played counts with their result; the next game plays") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available, skipped");
+        return;
+    }
+
+    const auto dir = fs::temp_directory_path() / "fcg-tour-runner-end";
+    fs::remove_all(dir);
+    auto s                   = spec(Format::Match, 2, 1, 2);
+    s.conditions.concurrency = 1;
+    auto state               = TournamentState::create(dir, s);
+
+    // The processes of the game being played, and who is to move, as the GUI's observer knows them.
+    struct Watch : fastchess::observer::GameObserver {
+        std::mutex mutex;
+        std::size_t game = 0;
+        int64_t pids[2]  = {0, 0};
+        int moves        = 0;
+        chess::Color stm = chess::Color::WHITE;
+        void onGameStart(const fastchess::observer::GameStart& info) override {
+            std::lock_guard<std::mutex> lock(mutex);
+            game  = info.game_id;
+            moves = 0;
+        }
+        void onEngineProcesses(int, int64_t white, int64_t black) override {
+            std::lock_guard<std::mutex> lock(mutex);
+            pids[0] = white;
+            pids[1] = black;
+        }
+        void onMove(int, chess::Color mover, const fastchess::MoveData&, const std::string&, int64_t,
+                    int64_t) override {
+            std::lock_guard<std::mutex> lock(mutex);
+            ++moves;
+            stm = ~mover;
+        }
+    } watch;
+
+    // A few moves into the first game: a draw, asked for, and the engine on move stopped as the GUI does.
+    setEnv("FCG_MOCK_MOVE_MS", "20");
+    bool asked = false;
+    std::thread ender([&] {
+        for (int i = 0; i < 2000; ++i) {
+            {
+                std::lock_guard<std::mutex> lock(watch.mutex);
+                if (watch.game == 1 && watch.moves >= 6) {
+                    asked = state->requestEnd(0, "1/2-1/2", "a test");
+                    if (asked)
+                        ::kill(static_cast<pid_t>(watch.pids[watch.stm == chess::Color::WHITE ? 0 : 1]), SIGKILL);
+                    return;
+                }
+            }
+            std::this_thread::sleep_for(5ms);
+        }
+    });
+    const auto error = play(*state, 0, &watch);
+    ender.join();
+    setEnv("FCG_MOCK_MOVE_MS", nullptr);
+
+    CHECK(error.empty());
+    REQUIRE(asked);
+    const auto results = state->results();
+    REQUIRE(results.size() == 2);
+    const auto first = state->resultOf(0);
+    REQUIRE(first);
+    CHECK(first->result == "1/2-1/2");
+    CHECK(first->termination == fastchess::MatchTermination::ADJUDICATION);
+    REQUIRE(first->set);
+    CHECK(first->set->played_result == "*");
+    CHECK(first->set->why == "a test");
+    // The other game, played by the engine started anew, ends as games do.
+    const auto second = state->resultOf(1);
+    REQUIRE(second);
+    CHECK_FALSE(second->set);
+    CHECK(second->termination != fastchess::MatchTermination::DISCONNECT);
+
+    // Its text: the result in the PGN file; as it counts, with the operator's termination and reason.
+    const auto text = readSpan(state->pgnPath(), first->pgn);
+    REQUIRE(text);
+    CHECK(text->find("[Result \"1/2-1/2\"]") != std::string::npos);
+    const auto counted = countedPgn(*text, *first);
+    CHECK(counted.find("[Termination \"adjudicated by the operator\"]") != std::string::npos);
+    CHECK(counted.find("{Adjudicated by the operator during the game: a test} 1/2-1/2") != std::string::npos);
+
+    // After a reopen too.
+    state.reset();
+    state = TournamentState::open(dir);
+    REQUIRE(state->resultOf(0));
+    REQUIRE(state->resultOf(0)->set);
+    CHECK(state->resultOf(0)->set->played_result == "*");
+}
+#endif

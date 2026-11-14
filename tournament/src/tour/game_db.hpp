@@ -49,6 +49,9 @@ struct GameDb {
     std::vector<std::string> engines;
     std::vector<std::string> time_controls;
     std::vector<DbGame> games;  // sources in order, then each source's games in order
+    // The games whose result was set by hand, by index into `games`: (result, comment), to export them as they count
+    // (withResult() with OPERATOR_TERMINATION; their text in the tournament's PGN file is as played).
+    std::map<std::size_t, std::pair<std::string, std::string>> set_results;
     // The players of the PGN files taken for engines of the library: (name in the PGN, name in the library), by the
     // library's name, then the PGN's. Their games are the library engine's.
     std::vector<std::pair<std::string, std::string>> matched;

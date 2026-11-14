@@ -90,6 +90,24 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             openSubmissionExport();
         });
     }
+    // The game shown in the Games tab, and the game followed in the Live tab: their result set by hand.
+    if (t && selected_game_ >= 0 && selected_game_ < static_cast<int>(games_.size())) {
+        const auto id = games_[static_cast<std::size_t>(selected_game_)].game_id;
+        add(trf("Set the result of game {}…", id), TR("Games"), [this, id] {
+            page_           = Page::Tournament;
+            tab_request_    = Tab::Games;
+            open_game_menu_ = id;
+        });
+    }
+    if (t && run_.running() && live_slot_ >= 0 && live_slot_ < static_cast<int>(slot_views_.size()) &&
+        slot_views_[static_cast<std::size_t>(live_slot_)].state.active) {
+        const auto& st = slot_views_[static_cast<std::size_t>(live_slot_)].state;
+        add(trf("End game {} with a result…", st.game_id), TR("Live"), [this, slot = live_slot_] {
+            page_          = Page::Tournament;
+            tab_request_   = Tab::Live;
+            open_end_menu_ = slot + 1;
+        });
+    }
     if (t && !isMatch()) {
         const auto copy = [&](const char* how, ui::CopyAs as) {
             add(fmt::format("{}: {}", TR("Copy"), how), TR("Standings"), [this, as] { copyStandings(as); });

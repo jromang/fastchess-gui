@@ -65,6 +65,18 @@ struct GameTask {
     [[nodiscard]] uint64_t number() const noexcept { return uint64_t{encounter.index} * 2 + game; }
 };
 
+// The Termination tag of a game whose result the operator set, and the reason the views give for its end.
+inline constexpr const char* OPERATOR_TERMINATION = "adjudicated by the operator";
+inline constexpr const char* OPERATOR_REASON      = "Adjudicated by the operator";
+
+// A result set by hand (a "result_set" edit, see Edit::Kind::SetResult): why, and how the game ended as played.
+struct ResultSet {
+    std::string why;
+    std::string played_result;  // "*": the operator ended the game while it was played
+    fastchess::MatchTermination played_termination = fastchess::MatchTermination::NORMAL;
+    std::string played_reason;
+};
+
 // A finished, scored game, as kept in the journal.
 struct GameResult {
     uint32_t encounter = 0;
@@ -86,11 +98,25 @@ struct GameResult {
     bool voided = false;
     std::string void_reason;
 
+    // Set when the operator set the result by hand: result, termination (ADJUDICATION) and reason (OPERATOR_REASON)
+    // are then theirs, and this keeps how the game ended as played. The PGN files keep the game as played:
+    // countedPgn() gives its text as it counts.
+    std::optional<ResultSet> set;
+
     [[nodiscard]] uint64_t number() const noexcept { return uint64_t{encounter} * 2 + game; }
 
     // Score of participant `id` in this game: 1, 0.5 or 0.
     [[nodiscard]] double scoreOf(int id) const noexcept;
 };
+
+// The comment a game whose result was set by hand gets before its result (see countedPgn()): the reason, and how it
+// ended as played. Empty for another game.
+[[nodiscard]] std::string setResultComment(const GameResult& r);
+
+// The PGN text of a game as it counts, from its text in the tournament's PGN files: a game whose result was set by
+// hand gets that result, the Termination tag OPERATOR_TERMINATION and setResultComment() before the result; another
+// game comes back as it is. What the exports and the replay read, as voided games are left out of them.
+[[nodiscard]] std::string countedPgn(std::string text, const GameResult& r);
 
 // The statistics of one complete encounter (its two games), from participant `pov`'s point of view, pentanomial
 // counts included.
@@ -160,8 +186,10 @@ class TournamentState {
 
     // The last edit can be undone until the next game starts: nothing has been played under it yet. Games that
     // were running when it was made and finished since are kept. Journaled, so it holds after a resume. Throws
-    // when it is too late.
+    // when it is too late. A result set by hand (but in a knockout, whose next rounds follow from the results) can
+    // be undone as long as it is the last edit: undoLasts().
     [[nodiscard]] bool canUndo() const;
+    [[nodiscard]] bool undoLasts() const;
     void undoEdit();
 
     // The whole schedule with the status of each game (empty for a match).
@@ -186,8 +214,17 @@ class TournamentState {
     void release(const GameTask& task);
 
     // Records a finished game: PGN files, then the journal. Updates the statistics and the SPRT. Throws when the
-    // files cannot be written.
-    Recorded complete(const GameTask& task, const fastchess::MatchData& data);
+    // files cannot be written. `set`: the operator ended the game with data's result (see requestEnd()).
+    Recorded complete(const GameTask& task, const fastchess::MatchData& data,
+                      const std::optional<ResultSet>& set = std::nullopt);
+
+    // The operator ends game `number` (GameTask::number()) while it is played, with `result` ("1-0", "0-1" or
+    // "1/2-1/2") for `why`: asked here, then the GUI stops the engine on move, and the runner takes the request when
+    // fastchess ends the game, to record it with that result (takeEnd()). False when the game is not being played,
+    // or the result is no result.
+    bool requestEnd(uint64_t number, const std::string& result, const std::string& why);
+    // The request for game `number`, taken: (result, why), nullopt when there is none.
+    std::optional<std::pair<std::string, std::string>> takeEnd(uint64_t number);
 
     // Is the claimed game still to be played as it was claimed: not dropped, nor its encounter changed by an edit?
     [[nodiscard]] bool wanted(const GameTask& task) const;
@@ -211,6 +248,9 @@ class TournamentState {
 
     // Scored games, in the order they finished, voided ones included (flagged).
     [[nodiscard]] std::vector<GameResult> results() const;
+
+    // The result that counts of game `number` (GameTask::number()), nullopt when none does. Copies only that one.
+    [[nodiscard]] std::optional<GameResult> resultOf(uint64_t number) const;
 
     // Changes each time a game is claimed, released or recorded and at each edit, once the change is made: what the
     // views compute from the schedule and the results is computed again only when it moved.
@@ -290,10 +330,12 @@ class TournamentState {
     struct UndoPoint {
         TournamentSpec spec;
         Schedule schedule;
-        std::vector<std::pair<bool, std::string>> voided;  // voided and void_reason of each result then
+        std::vector<GameResult> results;  // the results then (an edit changes whether they count, and how)
         std::set<uint64_t> done;
         std::set<uint64_t> dropped;
         uint64_t claims = 0;
+        // A result set by hand changes nothing else: it is undone exactly however many games were played since.
+        bool results_only = false;
     };
 
     std::filesystem::path dir_;
@@ -347,6 +389,8 @@ class TournamentState {
 
     std::optional<UndoPoint> undo_;
     uint64_t claims_ = 0;  // games claimed since the tournament was opened
+
+    std::map<uint64_t, std::pair<std::string, std::string>> end_requests_;  // requestEnd(): number -> (result, why)
 
     // version(): bumped when a change is over, the mutex released (declared before the lock_guard).
     std::atomic<uint64_t> version_{0};

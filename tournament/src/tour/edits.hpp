@@ -2,9 +2,11 @@
 
 // Changes to a round robin or a gauntlet while it runs. Each one is a journal event, applied the same way when
 // the journal is replayed. An edit only ever changes encounters from position `at` on, the first encounter not
-// started when it was made: what was played, and the openings of started encounters, never move.
+// started when it was made: what was played, and the openings of started encounters, never move. Voiding games and
+// setting a result by hand change results only, in any format.
 
 #include <cstdint>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -19,7 +21,7 @@
 namespace fcg::tour {
 
 struct Edit {
-    enum class Kind { AddParticipant, ReplaceParticipant, Withdraw, SetCycles, VoidGames };
+    enum class Kind { AddParticipant, ReplaceParticipant, Withdraw, SetCycles, VoidGames, SetResult };
     Kind kind = Kind::AddParticipant;
 
     fastchess::EngineConfiguration engine;        // add, replace: the new engine (its name is made unique if needed)
@@ -28,9 +30,11 @@ struct Edit {
     int participant  = -1;                        // replace, withdraw: the participant's id
     bool void_played = false;                     // withdraw: its played games stop counting
     int cycles       = 0;                         // set cycles: the new number
-    std::vector<std::pair<uint32_t, int>> games;  // void: (encounter, game)
+    std::vector<std::pair<uint32_t, int>> games;  // void: (encounter, game); set result: the one game
     bool replay = true;                           // void: play these games again
-    std::string why;                              // void: shown with the voided games
+    std::string why;                              // void: shown with the voided games; set result: the reason
+    // Set result: "1-0", "0-1" or "1/2-1/2". The result the game was played to takes the game back as played.
+    std::string result;
 };
 
 // What an edit changes, computed before it is made.
@@ -39,7 +43,9 @@ struct Impact {
     uint64_t games_after  = 0;
     uint64_t replayed     = 0;  // played games voided and played again
     uint64_t voided       = 0;  // played games that stop counting, without replay
-    std::string error;          // why the edit cannot be made; empty when it can
+    // The points of the participants it changes, by id: (before, after), of the games that count.
+    std::map<int, std::pair<double, double>> points;
+    std::string error;  // why the edit cannot be made; empty when it can
 };
 
 // The event for `edit`, made at position `at`; `new_id` is the id a new participant gets.

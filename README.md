@@ -26,8 +26,9 @@ this repository still builds unchanged.
   text or HTML.
 - **Exact resume**: every tournament is a folder with an append-only journal; after a crash, a closed window or
   a power cut it continues with no game lost or played twice.
-- **Changes while running**: add, withdraw or replace an engine, change the number of cycles, play games again or
-  void them, with the impact shown first. No played game is lost.
+- **Changes while running**: add, withdraw or replace an engine, change the number of cycles, play games again,
+  void them or set their result by hand (a game in progress too), with the impact shown first and an undo. No
+  played game is lost.
 - **Broadcast**: live PGN, HTML standings and JSON files, a TLCS server for TLCV and other viewers, a built-in
   web page, and lichess broadcasts (pushed through the API with a personal token).
 - **Workflow**: a queue of tournaments, *Relaunch with…* a new engine version, templates, and a headless mode

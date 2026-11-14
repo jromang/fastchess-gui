@@ -6,8 +6,10 @@
 #include <map>
 #include <set>
 
+#include <tour/journal.hpp>
 #include <tour/standings.hpp>
 #include <tour/state.hpp>
+#include <tour/submission.hpp>
 #include <tour/summary.hpp>
 
 using namespace fcg::tour;
@@ -510,4 +512,174 @@ TEST_CASE("programs: rebuilt, missing and new programs are noticed when the tour
     REQUIRE(warnings.size() == 2);
     CHECK(warnings[0].find("program of A changed") != std::string::npos);
     CHECK(warnings[1].find("program of B is missing") != std::string::npos);
+}
+
+namespace {
+
+Edit setResult(uint32_t encounter, int game, const std::string& result, const std::string& why = "") {
+    Edit e;
+    e.kind   = Edit::Kind::SetResult;
+    e.games  = {{encounter, game}};
+    e.result = result;
+    e.why    = why;
+    return e;
+}
+
+GameResult resultOf(const std::vector<GameResult>& results, uint64_t number) {
+    const auto it = std::find_if(results.begin(), results.end(),
+                                 [&](const GameResult& r) { return !r.voided && r.number() == number; });
+    return it == results.end() ? GameResult{} : *it;
+}
+
+double pointsOf(const Table& table, int id) {
+    for (const auto& row : table.rows) {
+        if (row.id == id) return row.points;
+    }
+    return -1;
+}
+
+}  // namespace
+
+TEST_CASE("edit: a result set by hand counts everywhere, the PGN file keeping the game as played") {
+    const auto dir = freshDir("set-result");
+    auto state     = TournamentState::create(dir, roundRobin(3, 1));
+    play(*state, -1);  // every game a White win
+    REQUIRE(state->finished());
+    const auto game = resultOf(state->results(), 0);  // encounter 0, game 0
+    const int white = game.white, black = game.black;
+    const auto before = computeTable(state->spec(), state->results());
+
+    // The impact: the points of the two players.
+    const auto edit   = setResult(0, 0, "1/2-1/2", "a hang the program did not catch");
+    const auto impact = state->preview(edit);
+    CHECK(impact.error.empty());
+    CHECK(impact.games_after == impact.games_before);
+    CHECK(impact.replayed == 0);
+    CHECK(impact.voided == 0);
+    REQUIRE(impact.points.size() == 2);
+    CHECK(impact.points.at(white) == std::pair{pointsOf(before, white), pointsOf(before, white) - 0.5});
+    CHECK(impact.points.at(black) == std::pair{pointsOf(before, black), pointsOf(before, black) + 0.5});
+
+    state->applyEdit(edit);
+    CHECK(state->finished());  // nothing to play
+    const auto set = resultOf(state->results(), 0);
+    CHECK(set.result == "1/2-1/2");
+    CHECK(set.termination == fastchess::MatchTermination::ADJUDICATION);
+    CHECK(set.reason == OPERATOR_REASON);
+    REQUIRE(set.set);
+    CHECK(set.set->played_result == "1-0");
+    CHECK(set.set->why == "a hang the program did not catch");
+
+    // The standings follow; the statistics of the pair too.
+    const auto after = computeTable(state->spec(), state->results());
+    CHECK(pointsOf(after, white) == pointsOf(before, white) - 0.5);
+    CHECK(pointsOf(after, black) == pointsOf(before, black) + 0.5);
+    CHECK(state->pairStats(white, black).draws == 1);
+
+    // The PGN file keeps the game as played; its text as it counts has the operator's result.
+    const auto text = readSpan(state->pgnPath(), set.pgn);
+    REQUIRE(text);
+    CHECK(text->find("[Result \"1-0\"]") != std::string::npos);
+    const auto counted = countedPgn(*text, set);
+    CHECK(counted.find("[Result \"1/2-1/2\"]") != std::string::npos);
+    CHECK(counted.find("[Result \"1-0\"]") == std::string::npos);
+    CHECK(counted.find("[Termination \"adjudicated by the operator\"]") != std::string::npos);
+    CHECK(counted.find("{Adjudicated by the operator: a hang the program did not catch (as played: 1-0") !=
+          std::string::npos);
+    const auto end = counted.find_last_not_of(" \n");
+    REQUIRE(end != std::string::npos);
+    REQUIRE(end >= 6);
+    CHECK(counted.substr(end - 6, 7) == "1/2-1/2");
+
+    // After a reopen, and for the rating list (a replay of the journal).
+    state.reset();
+    state = TournamentState::open(dir);
+    CHECK(resultOf(state->results(), 0).result == "1/2-1/2");
+    CHECK(pointsOf(computeTable(state->spec(), state->results()), white) == pointsOf(before, white) - 0.5);
+    auto spec           = state->spec();
+    const auto replayed = TournamentState::replay(Journal::read(dir / "journal.jsonl", false), spec);
+    CHECK(resultOf(replayed.results, 0).result == "1/2-1/2");
+}
+
+TEST_CASE("edit: a result set by hand is undone, also after games were played; the played result takes it back") {
+    const auto dir = freshDir("set-result-undo");
+    auto state     = TournamentState::create(dir, roundRobin(4, 1));
+    play(*state, 3);
+
+    state->applyEdit(setResult(1, 0, "0-1"));
+    CHECK(resultOf(state->results(), 2).result == "0-1");
+    CHECK(state->undoLasts());
+    play(*state, 2);  // a result set changes nothing the games depend on: undone exactly all the same
+    CHECK(state->canUndo());
+    state->undoEdit();
+    CHECK_FALSE(state->canUndo());
+    CHECK(resultOf(state->results(), 2).result == "1-0");
+    CHECK_FALSE(resultOf(state->results(), 2).set);
+    CHECK(state->results().size() == 5);
+
+    state.reset();
+    state = TournamentState::open(dir);
+    CHECK(resultOf(state->results(), 2).result == "1-0");
+    CHECK(state->results().size() == 5);
+
+    // Set twice: the second reason replaces the first, the result played is kept; the played result takes it back.
+    state->applyEdit(setResult(1, 0, "1/2-1/2", "first"));
+    state->applyEdit(setResult(1, 0, "0-1", "second"));
+    const auto twice = resultOf(state->results(), 2);
+    CHECK(twice.result == "0-1");
+    REQUIRE(twice.set);
+    CHECK(twice.set->why == "second");
+    CHECK(twice.set->played_result == "1-0");
+    state->applyEdit(setResult(1, 0, "1-0"));
+    CHECK_FALSE(resultOf(state->results(), 2).set);
+    CHECK(resultOf(state->results(), 2).termination == fastchess::MatchTermination::NORMAL);
+}
+
+TEST_CASE("edit: a result is set on a game that counts, to another result") {
+    auto state = TournamentState::create(freshDir("set-result-errors"), roundRobin(3, 1));
+    play(*state, 2);
+    CHECK_FALSE(state->preview(setResult(0, 0, "1-0")).error.empty());  // already its result
+    CHECK_FALSE(state->preview(setResult(0, 0, "2-0")).error.empty());  // no result
+    CHECK_FALSE(state->preview(setResult(2, 0, "0-1")).error.empty());  // not played
+    CHECK_THROWS(state->applyEdit(setResult(2, 0, "0-1")));
+
+    Edit voided;
+    voided.kind  = Edit::Kind::VoidGames;
+    voided.games = {{0, 1}};
+    state->applyEdit(voided);
+    CHECK_FALSE(state->preview(setResult(0, 1, "0-1")).error.empty());  // voided
+
+    // A match takes it too.
+    TournamentSpec spec;
+    spec.format       = Format::Match;
+    spec.max_games    = 4;
+    spec.participants = {{0, engine("A")}, {1, engine("B")}};
+    auto match        = TournamentState::create(freshDir("set-result-match"), spec);
+    play(*match, 2);
+    CHECK(match->preview(setResult(0, 1, "0-1")).error.empty());
+    match->applyEdit(setResult(0, 1, "0-1"));
+    CHECK(match->pairStats(0, 1).wins == 2);  // A has Black in game 1
+}
+
+TEST_CASE("edit: the export for a rating list gives the result set by hand") {
+    const auto dir = freshDir("set-result-export");
+    auto state     = TournamentState::create(dir, roundRobin(3, 1));
+    play(*state, -1);
+    state->applyEdit(setResult(0, 1, "1/2-1/2", "shuffling"));
+
+    SubmissionExport e;
+    e.tester       = "T";
+    e.event        = "E";
+    e.date         = "2026-11-14";
+    const auto out = submissionGames(state->pgnPath(), state->results(), state->spec(), e);
+    CHECK(out.games == 6);
+    CHECK(out.pgn.find("[Termination \"adjudicated by the operator\"]") != std::string::npos);
+    CHECK(out.pgn.find("{Adjudicated by the operator: shuffling") != std::string::npos);
+    std::size_t draws = 0;
+    for (auto at = out.pgn.find("[Result \"1/2-1/2\"]"); at != std::string::npos;
+         at      = out.pgn.find("[Result \"1/2-1/2\"]", at + 1)) {
+        ++draws;
+    }
+    CHECK(draws == 1);
+    CHECK(submissionFacts(state->spec(), state->results(), state->totalGames()).played == 6);
 }

@@ -247,6 +247,9 @@ msgstr ""
 msgid "Adjudicate"
 msgstr ""
 
+msgid "Adjudicated by the operator"
+msgstr ""
+
 msgid "Adjudication"
 msgstr ""
 
@@ -371,6 +374,9 @@ msgid "Back to the default"
 msgstr ""
 
 msgid "Back to the default value"
+msgstr ""
+
+msgid "Back to the result as played ({})"
 msgstr ""
 
 msgid "Base (s)"
@@ -778,6 +784,18 @@ msgstr ""
 msgid "End"
 msgstr ""
 
+msgid "End game {} with a result…"
+msgstr ""
+
+msgid "End the game"
+msgstr ""
+
+msgid "End with result"
+msgstr ""
+
+msgid "Ended by the operator while it was played."
+msgstr ""
+
 msgid "Ends about {} (in {})"
 msgstr ""
 
@@ -973,6 +991,12 @@ msgstr ""
 msgid "For a PGN book: number of plies kept. -1 = all."
 msgstr ""
 
+msgid "For a game the program could not decide well: a hang it did not catch, a won ending the engines keep shuffling, a game that ended for a wrong reason.\nThe standings, the ratings and the submission checklist count the new result. The PGN files keep the game as played; the exports give the new result, with Termination \"adjudicated by the operator\" and the reason in a comment.\nUndo the last change (Schedule tab) takes it back."
+msgstr ""
+
+msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
+msgstr ""
+
 msgid "Format"
 msgstr ""
 
@@ -1009,7 +1033,19 @@ msgstr ""
 msgid "Game shown:"
 msgstr ""
 
+msgid "Game {} counts as {}."
+msgstr ""
+
+msgid "Game {} was ended by the operator: {}."
+msgstr ""
+
 msgid "Game {} · move {}"
+msgstr ""
+
+msgid "Game {} · move {}: {} – {}"
+msgstr ""
+
+msgid "Game {}: {} – {}  {}"
 msgstr ""
 
 msgid "Games"
@@ -1423,6 +1459,9 @@ msgid "No game finished yet."
 msgstr ""
 
 msgid "No game in this slot yet."
+msgstr ""
+
+msgid "No game is being played here."
 msgstr ""
 
 msgid "No game is being played."
@@ -1973,6 +2012,12 @@ msgstr ""
 msgid "Result"
 msgstr ""
 
+msgid "Result set by hand. As played: {}"
+msgstr ""
+
+msgid "Result set by hand. As played: {} ({})"
+msgstr ""
+
 msgid "Results of A"
 msgstr ""
 
@@ -1988,7 +2033,13 @@ msgstr ""
 msgid "Resumed: {}, {} games already played. Folder: {}"
 msgstr ""
 
-msgid "Right click: play again or void this game."
+msgid "Right click: change it, or take it back."
+msgstr ""
+
+msgid "Right click: end this game with a result."
+msgstr ""
+
+msgid "Right click: play this game again, void it or set its result."
 msgstr ""
 
 msgid "Round (its URL or id; empty: a new broadcast named after the tournament)"
@@ -2109,6 +2160,12 @@ msgid "Serve the web page"
 msgstr ""
 
 msgid "Service:"
+msgstr ""
+
+msgid "Set the result"
+msgstr ""
+
+msgid "Set the result of game {}…"
 msgstr ""
 
 msgid "Set {} reference Elo"
@@ -2383,6 +2440,9 @@ msgstr ""
 msgid "The folder {} is not there any more."
 msgstr ""
 
+msgid "The game counts again as it was."
+msgstr ""
+
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr ""
 
@@ -2542,7 +2602,16 @@ msgstr ""
 msgid "This engine once more, with another book"
 msgstr ""
 
+msgid "This game is not being played: it is over, or its engines are still starting."
+msgstr ""
+
+msgid "This game is over already."
+msgstr ""
+
 msgid "This match is already finished."
+msgstr ""
+
+msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr ""
 
 msgid "Those with a problem"
@@ -2627,6 +2696,9 @@ msgid "UCI compliance: step {} failed, see the report"
 msgstr ""
 
 msgid "UDP port"
+msgstr ""
+
+msgid "Undo"
 msgstr ""
 
 msgid "Undo the last change"
@@ -2722,6 +2794,12 @@ msgstr ""
 msgid "White's score over the games."
 msgstr ""
 
+msgid "Why (kept with the game)"
+msgstr ""
+
+msgid "Why: {}"
+msgstr ""
+
 msgid "WinBoard"
 msgstr ""
 
@@ -2795,6 +2873,9 @@ msgid "Zip written to {}"
 msgstr ""
 
 msgid "\"{}\" was on in this tournament's PGN options: the engines did not give what it needs in this game."
+msgstr ""
+
+msgid "a result is 1-0, 0-1 or 1/2-1/2"
 msgstr ""
 
 msgid "about {} game"
@@ -2889,6 +2970,9 @@ msgstr ""
 msgid "illegal positions"
 msgstr ""
 
+msgid "in a knockout, only the games of the round being played can have their result set"
+msgstr ""
+
 msgid "initial position"
 msgstr ""
 
@@ -2960,6 +3044,9 @@ msgstr ""
 msgid "the file is not found"
 msgstr ""
 
+msgid "the game already has this result"
+msgstr ""
+
 msgid "the host key of {} cannot be checked: its fingerprint could not be computed"
 msgstr ""
 
@@ -2976,6 +3063,9 @@ msgid "the quick test of {}"
 msgstr ""
 
 msgid "the resume of the interrupted tournament"
+msgstr ""
+
+msgid "this game does not count: it was voided, or is not over"
 msgstr ""
 
 msgid "to mention in the post, or to test the engine again:"
@@ -3448,6 +3538,9 @@ msgid "{}: unknown to the engine"
 msgstr ""
 
 msgid "{}: {}"
+msgstr ""
+
+msgid "{}: {} → {} points"
 msgstr ""
 
 msgid "· %s · %d in parallel%s"

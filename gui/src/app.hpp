@@ -372,6 +372,13 @@ class App {
     void applyTournamentEdit(const tour::Edit& edit);
     void undoTournamentEdit();
     void refreshAfterEdit();
+    // The context menu of a finished game (Games and Schedule tabs): play it again, void it, set its result.
+    void drawGameMenu(uint32_t encounter, int game);
+    // The context menu of a game being played (Live tab, detached boards): end it with a result.
+    void drawEndGameMenu(int slot);
+    // The result that counts of game `number` (its number()), nullptr when none does; asked of the tournament once
+    // per change of it.
+    [[nodiscard]] const tour::GameResult* gameResult(uint64_t number);
 
     // broadcast
     void updateBroadcast();
@@ -794,6 +801,31 @@ class App {
         std::string key;  // tournament version and the whole edit
         tour::Impact impact;
     } edit_preview_;
+    // The game menu's "Set the result": the game it is open for (number()), the result chosen ("1-0", "1/2-1/2",
+    // "0-1"), the reason typed, and the impact of the change, computed again when the choice or the tournament
+    // changes.
+    struct ResultMenu {
+        uint64_t game = ~uint64_t{0};
+        std::string result;
+        std::string why;
+        std::string key;
+        tour::Impact impact;
+    } result_menu_;
+    // The live game menu's "End with result": the game it is open for (game_id), the result chosen, the reason, and
+    // why the last try failed.
+    struct EndMenu {
+        std::size_t game = 0;
+        std::string result;
+        std::string why;
+        std::string error;
+    } end_menu_;
+    uint64_t result_set_game_ = ~uint64_t{0};  // the game whose result was set last, while that can be undone
+    uint64_t open_game_menu_  = 0;  // the game (game_id) whose menu opens in the Games tab (palette, --focus)
+    int open_end_menu_        = 0;  // the slot + 1 whose board opens its "End with result" menu (palette)
+    // The results of games asked for by the views (gameResult()), by number(); dropped when the tournament changes.
+    std::map<uint64_t, std::optional<tour::GameResult>> result_cache_;
+    uint64_t result_cache_version_ = ~uint64_t{0};
+    const void* result_cache_of_   = nullptr;
 
     // Queue and relaunch.
     std::vector<QueuedTournament> queue_;

@@ -749,6 +749,56 @@ TEST_CASE("the engines' search output reaches the live view while they think") {
     REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
 }
 
+TEST_CASE("a game ended by the operator while it is played counts with their result, and the match goes on") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+
+    const auto root = fs::temp_directory_path() / "fcg-run-tests-end-game";
+    fs::remove_all(root);
+
+    // Games that last: the engines think 20 ms over each move.
+    setEnv("FCG_MOCK_MOVE_MS", "20");
+    auto setup        = randomSetup(4);
+    setup.concurrency = 1;
+    Harness h;
+    REQUIRE(h.run.start(setup, randomEngines(), topologyFromCores({{0, 0}, {0, 1}}), root).empty());
+
+    // A few moves into the first game, its engine on move is stopped and the game counts as a draw.
+    SlotState slot;
+    REQUIRE(h.waitFor([&] {
+        auto* obs = h.run.observer();
+        if (obs) obs->copySlot(0, slot);
+        return slot.active && slot.game_id == 1 && slot.moves.size() >= 8;
+    }));
+    std::string error;
+    for (int i = 0; i < 100; ++i) {  // its engines may still be starting for a moment
+        error = h.run.endGame(0, 0, "1/2-1/2", "a test");
+        if (error.empty()) break;
+        std::this_thread::sleep_for(10ms);
+    }
+    CHECK(error.empty());
+    CHECK_FALSE(h.run.endGame(0, 3, "1-0", "").empty());  // not being played
+
+    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 60s));
+    setEnv("FCG_MOCK_MOVE_MS", nullptr);
+    CHECK(h.run.error().empty());
+    const auto* t = h.run.tournament();
+    REQUIRE(t);
+    CHECK(t->results().size() == 4);
+    const auto first = t->resultOf(0);
+    REQUIRE(first);
+    CHECK(first->result == "1/2-1/2");
+    REQUIRE(first->set);
+    CHECK(first->set->why == "a test");
+    for (uint64_t n = 1; n < 4; ++n) {
+        const auto r = t->resultOf(n);
+        REQUIRE(r);
+        CHECK(r->termination != fastchess::MatchTermination::DISCONNECT);
+    }
+}
+
 TEST_CASE("headless: the tournament is broadcast over TLCS and as live files") {
     if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available on this platform, skipped");

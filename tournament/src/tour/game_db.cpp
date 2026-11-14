@@ -204,6 +204,7 @@ void readTournament(const fs::path& dir, GameDb& db, Builder& builder) {
         g.number       = r.number() + 1;
         g.encounter    = r.encounter;
         g.pgn          = r.pgn;
+        if (r.set) db.set_results[db.games.size()] = {r.result, setResultComment(r)};
         db.games.push_back(g);
     }
 }

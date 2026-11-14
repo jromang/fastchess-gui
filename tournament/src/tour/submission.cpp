@@ -71,28 +71,6 @@ std::string trim(std::string_view s) {
     return std::string(s);
 }
 
-// The line of a tag in the tags of a game: [begin, end) without its line ending; npos when it has none.
-std::pair<std::size_t, std::size_t> tagLine(std::string_view game, std::string_view tag) {
-    const auto prefix = "[" + std::string(tag) + " \"";
-    for (std::size_t at = 0; at < game.size();) {
-        auto end = game.find('\n', at);
-        if (end == std::string_view::npos) end = game.size();
-        auto line = game.substr(at, end - at);
-        if (!line.empty() && line.back() == '\r') line.remove_suffix(1);
-        if (line.empty() && at > 0) break;  // the end of the tags
-        if (!line.empty() && line.front() != '[') break;
-        if (line.rfind(prefix, 0) == 0) return {at, at + line.size()};
-        at = end + 1;
-    }
-    return {std::string_view::npos, std::string_view::npos};
-}
-
-void setTag(std::string& game, std::string_view tag, const std::string& value) {
-    const auto [begin, end] = tagLine(game, tag);
-    if (begin == std::string_view::npos) return;
-    game.replace(begin, end - begin, fmt::format("[{} \"{}\"]", tag, pgnTagValue(value)));
-}
-
 }  // namespace
 
 std::string listName(const std::string& name, int threads) {
@@ -166,7 +144,7 @@ std::string submissionEvent(const std::string& seed, int64_t first_game_ms) {
 }
 
 std::string pgnTag(std::string_view game, std::string_view tag) {
-    const auto [begin, end] = tagLine(game, tag);
+    const auto [begin, end] = pgnTagLine(game, tag);
     if (begin == std::string_view::npos) return {};
     const auto line = game.substr(begin, end - begin);
     const auto open = line.find('"');
@@ -221,17 +199,18 @@ SubmissionGames submissionGames(const std::filesystem::path& pgn, const std::vec
             out.unreadable++;
             continue;
         }
+        text = countedPgn(std::move(text), *r);
         while (!text.empty() && std::isspace(static_cast<unsigned char>(text.back()))) text.pop_back();
 
-        setTag(text, "Event", e.event);
-        if (!trim(e.site).empty()) setTag(text, "Site", trim(e.site));
-        setTag(text, "Round", fmt::format("{}", games.size() + 1));
-        setTag(text, "White", name(r->white));
-        setTag(text, "Black", name(r->black));
+        setPgnTag(text, "Event", e.event);
+        if (!trim(e.site).empty()) setPgnTag(text, "Site", trim(e.site));
+        setPgnTag(text, "Round", fmt::format("{}", games.size() + 1));
+        setPgnTag(text, "White", name(r->white));
+        setPgnTag(text, "Black", name(r->black));
         // fastchess-gui 0.4.13 and earlier counted the illegal move that ends a game, which is not in the movetext: the
         // count of the moves written, whichever version wrote the game.
         if (r->termination == fastchess::MatchTermination::ILLEGAL_MOVE && !pgnTag(text, "PlyCount").empty()) {
-            setTag(text, "PlyCount", fmt::format("{}", movetextPlies(text)));
+            setPgnTag(text, "PlyCount", fmt::format("{}", movetextPlies(text)));
         }
         games.push_back(std::move(text));
     }

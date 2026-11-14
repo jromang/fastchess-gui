@@ -74,6 +74,12 @@ nlohmann::json toJson(const GameResult& r) {
                         {"cb", {r.pgn_chessbase.offset, r.pgn_chessbase.length}},
                         {"at", r.finished_at}};
     if (!r.pv_warnings.empty()) j["pv"] = r.pv_warnings;
+    if (r.set) {
+        j["set"] = {{"why", r.set->why},
+                    {"played", r.set->played_result},
+                    {"termination", static_cast<int>(r.set->played_termination)},
+                    {"reason", r.set->played_reason}};
+    }
     return j;
 }
 
@@ -92,8 +98,45 @@ GameResult resultFromJson(const nlohmann::json& j) {
     r.pgn_chessbase = {j.at("cb").at(0).get<uint64_t>(), j.at("cb").at(1).get<uint32_t>()};
     r.finished_at   = j.value("at", int64_t{0});
     if (j.contains("pv")) j.at("pv").get_to(r.pv_warnings);
+    if (const auto it = j.find("set"); it != j.end() && it->is_object()) {
+        ResultSet set;
+        set.why                = it->value("why", std::string{});
+        set.played_result      = it->value("played", std::string{"*"});
+        set.played_termination = static_cast<fastchess::MatchTermination>(it->value("termination", 0));
+        set.played_reason      = it->value("reason", std::string{});
+        r.set                  = set;
+    }
     if (r.game != 0 && r.game != 1) throw std::runtime_error("bad game number");
     return r;
+}
+
+bool validResult(const std::string& result) { return result == "1-0" || result == "0-1" || result == "1/2-1/2"; }
+
+// The result `r` counts with, set by hand; the result it was played to takes it back as played.
+void setResult(GameResult& r, const std::string& result, const std::string& why) {
+    if (!r.set) r.set = ResultSet{why, r.result, r.termination, r.reason};
+    if (result == r.set->played_result) {
+        r.result      = r.set->played_result;
+        r.termination = r.set->played_termination;
+        r.reason      = r.set->played_reason;
+        r.set.reset();
+        return;
+    }
+    r.set->why    = why;
+    r.result      = result;
+    r.termination = fastchess::MatchTermination::ADJUDICATION;
+    r.reason      = OPERATOR_REASON;
+}
+
+// The points of each participant in the games that count.
+std::map<int, double> pointsOf(const std::vector<GameResult>& results) {
+    std::map<int, double> points;
+    for (const auto& r : results) {
+        if (r.voided) continue;
+        points[r.white] += r.scoreOf(r.white);
+        points[r.black] += r.scoreOf(r.black);
+    }
+    return points;
 }
 
 // fastchess gives the duration as "HH:MM:SS".
@@ -158,6 +201,25 @@ fastchess::Stats encounterStats(const GameResult& a, const GameResult& b, int po
     stats.penta_LD = l == 1 && d == 1;
     stats.penta_LL = l == 2;
     return stats;
+}
+
+std::string setResultComment(const GameResult& r) {
+    if (!r.set) return {};
+    std::string out    = OPERATOR_REASON;
+    const bool stopped = r.set->played_result == "*";
+    if (stopped) out += " during the game";
+    if (!r.set->why.empty()) out += ": " + r.set->why;
+    if (!stopped) {
+        out += " (as played: " + r.set->played_result;
+        if (!r.set->played_reason.empty()) out += ", " + r.set->played_reason;
+        out += ")";
+    }
+    return out;
+}
+
+std::string countedPgn(std::string text, const GameResult& r) {
+    if (!r.set) return text;
+    return withResult(std::move(text), r.result, OPERATOR_TERMINATION, setResultComment(r));
 }
 
 double GameResult::scoreOf(int id) const noexcept {
@@ -537,6 +599,16 @@ void TournamentState::effects(const nlohmann::json& event, TournamentSpec& spec,
             voidWhere([&](const GameResult& r) { return r.number() == n; }, replay, why);
             if (!replay && !done.count(n)) dropped.insert(n);
         }
+    } else if (type == "result_set") {
+        const auto result = event.at("result").get<std::string>();
+        if (!validResult(result)) throw std::runtime_error("a result is 1-0, 0-1 or 1/2-1/2");
+        const auto why = event.value("why", std::string{});
+        for (const auto& g : event.at("games")) {
+            const auto n = g.at(0).get<uint64_t>() * 2 + g.at(1).get<uint64_t>();
+            for (auto& r : results) {
+                if (!r.voided && r.number() == n) setResult(r, result, why);
+            }
+        }
     }
 }
 
@@ -750,9 +822,35 @@ Impact TournamentState::preview(const Edit& edit) const {
 
     Impact impact;
     impact.games_before = totalLocked();
-    if (edit.kind != Edit::Kind::VoidGames && !schedule_.editable()) {
+    if (edit.kind != Edit::Kind::VoidGames && edit.kind != Edit::Kind::SetResult && !schedule_.editable()) {
         impact.error = "a match cannot be edited this way";
         return impact;
+    }
+    if (edit.kind == Edit::Kind::SetResult) {
+        // The messages are those of the GUI's list of edit errors, translated there.
+        if (!validResult(edit.result)) {
+            impact.error = "a result is 1-0, 0-1 or 1/2-1/2";
+            return impact;
+        }
+        for (const auto& [encounter, game] : edit.games) {
+            const auto n  = uint64_t{encounter} * 2 + game;
+            const auto it = std::find_if(results_.begin(), results_.end(),
+                                         [&](const GameResult& r) { return !r.voided && r.number() == n; });
+            if (it == results_.end()) {
+                impact.error = "this game does not count: it was voided, or is not over";
+                return impact;
+            }
+            if (it->result == edit.result) {
+                impact.error = "the game already has this result";
+                return impact;
+            }
+            // The rounds after it were paired from the results: a game of theirs is the last one a result can change.
+            const auto enc = schedule_.at(encounter);
+            if (spec_.format == Format::Knockout && (!enc || enc->round != round_)) {
+                impact.error = "in a knockout, only the games of the round being played can have their result set";
+                return impact;
+            }
+        }
     }
 
     int new_id = 0;
@@ -774,6 +872,14 @@ Impact TournamentState::preview(const Edit& edit) const {
     for (std::size_t i = 0; i < results.size(); ++i) {
         if (!results[i].voided || results_[i].voided) continue;
         (dropped.count(results[i].number()) ? impact.voided : impact.replayed)++;
+    }
+    auto before = pointsOf(results_);
+    auto after  = pointsOf(results);
+    for (const auto& [id, points] : after) before.emplace(id, 0.0);
+    for (const auto& [id, points] : before) {
+        const auto it  = after.find(id);
+        const double a = it == after.end() ? 0.0 : it->second;
+        if (a != points) impact.points[id] = {points, a};
     }
     return impact;
 }
@@ -797,10 +903,8 @@ void TournamentState::applyEdit(const Edit& edit) {
     }
     journal_->append(event);
 
-    UndoPoint undo{spec_, schedule_, {}, done_, dropped_, claims_};
-    undo.voided.reserve(results_.size());
-    for (const auto& r : results_) undo.voided.emplace_back(r.voided, r.void_reason);
-    undo_ = std::move(undo);
+    undo_               = UndoPoint{spec_, schedule_, results_, done_, dropped_, claims_};
+    undo_->results_only = edit.kind == Edit::Kind::SetResult && spec_.format != Format::Knockout;
 
     applyEvent(event);
     keepOwnBooks();  // the newcomer's, prepared before the change
@@ -812,30 +916,38 @@ void TournamentState::applyEdit(const Edit& edit) {
 
 bool TournamentState::canUndo() const {
     std::lock_guard<std::mutex> lock(mutex_);
-    return undo_ && undo_->claims == claims_;
+    return undo_ && (undo_->results_only || undo_->claims == claims_);
+}
+
+bool TournamentState::undoLasts() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return undo_ && undo_->results_only;
 }
 
 void TournamentState::undoEdit() {
     if (read_only_) throw std::runtime_error(READ_ONLY);
     const Bump bump{version_};
     std::unique_lock<std::mutex> lock(mutex_);
-    if (!undo_ || undo_->claims != claims_) {
+    if (!undo_ || (!undo_->results_only && undo_->claims != claims_)) {
         throw std::runtime_error("a game started since the last change, which can no longer be undone");
     }
     journal_->append({{"t", "edit_undone"}});
 
-    auto& u   = *undo_;
+    auto& u = *undo_;
+    // The results then; those recorded since come after them and are kept.
+    for (std::size_t i = 0; i < results_.size() && i < u.results.size(); ++i) results_[i] = std::move(u.results[i]);
+    if (u.results_only) {
+        undo_.reset();
+        rebuildStats();
+        writeOut(lock);
+        return;
+    }
     spec_     = std::move(u.spec);
     schedule_ = std::move(u.schedule);
     done_     = std::move(u.done);
     dropped_  = std::move(u.dropped);
-    for (std::size_t i = 0; i < results_.size(); ++i) {
-        if (i < u.voided.size()) {
-            results_[i].voided      = u.voided[i].first;
-            results_[i].void_reason = u.voided[i].second;
-        } else {
-            done_.insert(results_[i].number());  // running when the edit was made, finished since
-        }
+    for (std::size_t i = u.results.size(); i < results_.size(); ++i) {
+        done_.insert(results_[i].number());  // running when the edit was made, finished since
     }
     undo_.reset();
 
@@ -961,7 +1073,8 @@ void TournamentState::release(const GameTask& task) {
     }
 }
 
-Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchData& data) {
+Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchData& data,
+                                   const std::optional<ResultSet>& set) {
     const Bump bump{version_};
     using fastchess::pgn::CommentStyle;
     using fastchess::pgn::PgnBuilder;
@@ -980,6 +1093,7 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     result.plies       = static_cast<uint32_t>(data.moves.size());
     result.duration_ms = parseDuration(data.duration);
     result.finished_at = nowMs();
+    result.set         = set;
     for (std::size_t ply = 0; ply < data.moves.size(); ++ply) {
         for (const auto& w : data.moves[ply].pv_warnings) result.pv_warnings.emplace_back(ply, w);
     }
@@ -1156,10 +1270,17 @@ void TournamentState::writeOut(std::unique_lock<std::mutex>& lock) {
         const auto out       = spec_.pgn_out;
         std::vector<std::pair<uint64_t, PgnSpan>> games;  // (number, span)
         nlohmann::json offsets = nlohmann::json::array();
+        // The games whose result was set by hand, as they are written: [offset, result, comment] (see settleOut()).
+        nlohmann::json set = nlohmann::json::array();
+        std::map<uint64_t, std::pair<std::string, std::string>> set_of;  // by number: (result, comment)
         for (const auto i : ready) {
             const auto& r = results_[i];
             games.emplace_back(r.number(), chessbase ? r.pgn_chessbase : r.pgn);
             offsets.push_back(r.pgn.offset);
+            if (r.set) {
+                set_of[r.number()] = {r.result, setResultComment(r)};
+                set.push_back({r.pgn.offset, r.result, set_of[r.number()].second});
+            }
         }
 
         lock.unlock();
@@ -1170,7 +1291,9 @@ void TournamentState::writeOut(std::unique_lock<std::mutex>& lock) {
                 error = "cannot read game " + std::to_string(number + 1) + " back from the tournament folder";
                 break;
             }
-            text += *game;
+            const auto it = set_of.find(number);
+            text += it == set_of.end() ? *game
+                                       : withResult(*game, it->second.first, OPERATOR_TERMINATION, it->second.second);
         }
         // Journaled before, with the place it goes to, and after: a crash in between is settled by settleOut() when
         // the tournament is opened again, which looks for the text there. No game is written twice, nor lost.
@@ -1187,12 +1310,11 @@ void TournamentState::writeOut(std::unique_lock<std::mutex>& lock) {
         try {
             if (error.empty()) {
                 appendShared(out, text, [&](uint64_t at) {
-                    journal({{"t", "pgn_out"},
-                             {"pgn", nlohmann::json::array()},
-                             {"begun", offsets},
-                             {"at", at},
-                             {"len", text.size()},
-                             {"cb", chessbase}});
+                    nlohmann::json begun = {{"t", "pgn_out"},     {"pgn", nlohmann::json::array()},
+                                            {"begun", offsets},   {"at", at},
+                                            {"len", text.size()}, {"cb", chessbase}};
+                    if (!set.empty()) begun["set"] = set;
+                    journal(begun);
                     begun_at = at;
                 });
                 journal({{"t", "pgn_out"}, {"pgn", offsets}});
@@ -1221,16 +1343,23 @@ bool TournamentState::settleOut(const nlohmann::json& begun,
                                 const std::map<uint64_t, std::pair<PgnSpan, PgnSpan>>& journaled) {
     if (spec_.pgn_out.empty() || !journal_) return false;
 
-    // The text of the write, read back as writeOut() did. Games it cannot read back are written again, or fail to.
+    // The text of the write, read back as writeOut() did, with the results set by hand then. Games it cannot read
+    // back are written again, or fail to.
     const bool chessbase = begun.value("cb", spec_.pgn_out_chessbase);
     const auto from      = chessbase ? chessbasePgnPath() : pgnPath();
+    std::map<uint64_t, std::pair<std::string, std::string>> set;  // by offset: (result, comment)
+    if (const auto it = begun.find("set"); it != begun.end() && it->is_array()) {
+        for (const auto& s : *it)
+            set[s.at(0).get<uint64_t>()] = {s.at(1).get<std::string>(), s.at(2).get<std::string>()};
+    }
     std::string text;
     for (const auto& offset : begun.at("begun")) {
         const auto it = journaled.find(offset.get<uint64_t>());
         if (it == journaled.end()) return false;
         const auto game = readSpan(from, chessbase ? it->second.second : it->second.first);
         if (!game) return false;
-        text += *game;
+        const auto s = set.find(offset.get<uint64_t>());
+        text += s == set.end() ? *game : withResult(*game, s->second.first, OPERATOR_TERMINATION, s->second.second);
     }
     if (text.size() != begun.value("len", uint64_t{0})) return false;
 
@@ -1375,6 +1504,31 @@ std::string TournamentState::finishReason() const {
 std::vector<GameResult> TournamentState::results() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return results_;
+}
+
+bool TournamentState::requestEnd(uint64_t number, const std::string& result, const std::string& why) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (read_only_ || !running_.count(number) || !validResult(result)) return false;
+    end_requests_[number] = {result, why};
+    return true;
+}
+
+std::optional<std::pair<std::string, std::string>> TournamentState::takeEnd(uint64_t number) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    const auto it = end_requests_.find(number);
+    if (it == end_requests_.end()) return std::nullopt;
+    auto request = std::move(it->second);
+    end_requests_.erase(it);
+    return request;
+}
+
+std::optional<GameResult> TournamentState::resultOf(uint64_t number) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (!done_.count(number)) return std::nullopt;
+    for (auto it = results_.rbegin(); it != results_.rend(); ++it) {
+        if (!it->voided && it->number() == number) return *it;
+    }
+    return std::nullopt;
 }
 
 std::map<uint32_t, fastchess::book::Opening> TournamentState::encounterOpenings() const {

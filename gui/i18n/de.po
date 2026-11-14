@@ -247,6 +247,9 @@ msgstr "Hinzufügen…"
 msgid "Adjudicate"
 msgstr "Abschätzen"
 
+msgid "Adjudicated by the operator"
+msgstr "Vom Turnierleiter entschieden"
+
 msgid "Adjudication"
 msgstr "Abschätzung"
 
@@ -372,6 +375,9 @@ msgstr "Zurück zum Standardordner"
 
 msgid "Back to the default value"
 msgstr "Zurück zum Standardwert"
+
+msgid "Back to the result as played ({})"
+msgstr "Zurück zum gespielten Ergebnis ({})"
 
 msgid "Base (s)"
 msgstr "Grundzeit (s)"
@@ -778,6 +784,18 @@ msgstr "Leer: das Verzeichnis des Programms."
 msgid "End"
 msgstr "Ende"
 
+msgid "End game {} with a result…"
+msgstr "Partie {} mit einem Ergebnis beenden…"
+
+msgid "End the game"
+msgstr "Partie beenden"
+
+msgid "End with result"
+msgstr "Mit einem Ergebnis beenden"
+
+msgid "Ended by the operator while it was played."
+msgstr "Vom Turnierleiter während der Partie beendet."
+
 msgid "Ends about {} (in {})"
 msgstr "Endet gegen {} (in {})"
 
@@ -973,6 +991,12 @@ msgstr "Für TLCV, node-tlcv und Livius: eine Partie nach der anderen, mit den S
 msgid "For a PGN book: number of plies kept. -1 = all."
 msgstr "Bei einem PGN-Buch: Anzahl der übernommenen Halbzüge. -1 = alle."
 
+msgid "For a game the program could not decide well: a hang it did not catch, a won ending the engines keep shuffling, a game that ended for a wrong reason.\nThe standings, the ratings and the submission checklist count the new result. The PGN files keep the game as played; the exports give the new result, with Termination \"adjudicated by the operator\" and the reason in a comment.\nUndo the last change (Schedule tab) takes it back."
+msgstr "Für eine Partie, die das Programm nicht richtig entscheiden konnte: ein Hänger, den es nicht erkannt hat, ein gewonnenes Endspiel, in dem die Engines hin und her ziehen, eine Partie, die aus einem falschen Grund endete.\nDie Tabelle, die Ratings und die Checkliste vor dem Einsenden zählen das neue Ergebnis. Die PGN-Dateien behalten die Partie wie gespielt; die Exporte geben das neue Ergebnis mit Termination \"adjudicated by the operator\" und dem Grund in einem Kommentar.\nLetzte Änderung rückgängig machen (Reiter Spielplan) nimmt es zurück."
+
+msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
+msgstr "Für eine Partie, die das Programm nicht richtig beenden würde: ein Hänger, den es nicht erkennt, ein gewonnenes Endspiel, in dem die Engines hin und her ziehen.\nDie Engine am Zug wird gestoppt (sie startet für ihre nächste Partie neu), und die Partie zählt mit diesem Ergebnis: Termination \"adjudicated by the operator\" in den Exporten, der Grund in einem Kommentar.\nIhr Ergebnis lässt sich danach im Reiter Partien ändern."
+
 msgid "Format"
 msgstr "Format"
 
@@ -1009,8 +1033,20 @@ msgstr "Partiepaare pro Match"
 msgid "Game shown:"
 msgstr "Gezeigte Partie:"
 
+msgid "Game {} counts as {}."
+msgstr "Partie {} zählt als {}."
+
+msgid "Game {} was ended by the operator: {}."
+msgstr "Partie {} wurde vom Turnierleiter beendet: {}."
+
 msgid "Game {} · move {}"
 msgstr "Partie {} · Zug {}"
+
+msgid "Game {} · move {}: {} – {}"
+msgstr "Partie {} · Zug {}: {} – {}"
+
+msgid "Game {}: {} – {}  {}"
+msgstr "Partie {}: {} – {}  {}"
 
 msgid "Games"
 msgstr "Partien"
@@ -1424,6 +1460,9 @@ msgstr "Noch keine Partie beendet."
 
 msgid "No game in this slot yet."
 msgstr "Noch keine Partie in diesem Platz."
+
+msgid "No game is being played here."
+msgstr "Hier wird keine Partie gespielt."
 
 msgid "No game is being played."
 msgstr "Es läuft gerade keine Partie."
@@ -1973,6 +2012,12 @@ msgstr "Die Engine für jede Partie neu starten"
 msgid "Result"
 msgstr "Ergebnis"
 
+msgid "Result set by hand. As played: {}"
+msgstr "Ergebnis von Hand gesetzt. Gespielt: {}"
+
+msgid "Result set by hand. As played: {} ({})"
+msgstr "Ergebnis von Hand gesetzt. Gespielt: {} ({})"
+
 msgid "Results of A"
 msgstr "Ergebnisse von A"
 
@@ -1988,8 +2033,14 @@ msgstr "Beim Start das Turnier fortsetzen, das lief"
 msgid "Resumed: {}, {} games already played. Folder: {}"
 msgstr "Fortgesetzt: {}, {} Partien bereits gespielt. Ordner: {}"
 
-msgid "Right click: play again or void this game."
-msgstr "Rechtsklick: diese Partie neu spielen oder annullieren."
+msgid "Right click: change it, or take it back."
+msgstr "Rechtsklick: ändern oder zurücknehmen."
+
+msgid "Right click: end this game with a result."
+msgstr "Rechtsklick: diese Partie mit einem Ergebnis beenden."
+
+msgid "Right click: play this game again, void it or set its result."
+msgstr "Rechtsklick: diese Partie neu spielen, annullieren oder ihr Ergebnis setzen."
 
 msgid "Round (its URL or id; empty: a new broadcast named after the tournament)"
 msgstr "Runde (ihre URL oder ID; leer: eine neue Übertragung mit dem Namen des Turniers)"
@@ -2110,6 +2161,12 @@ msgstr "Die Webseite bereitstellen"
 
 msgid "Service:"
 msgstr "Dienst:"
+
+msgid "Set the result"
+msgstr "Ergebnis setzen"
+
+msgid "Set the result of game {}…"
+msgstr "Ergebnis von Partie {} setzen…"
 
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
@@ -2383,6 +2440,9 @@ msgstr "Der erste Teilnehmer, {}, hat keine Referenz-Elo."
 msgid "The folder {} is not there any more."
 msgstr "Der Ordner {} ist nicht mehr da."
 
+msgid "The game counts again as it was."
+msgstr "Die Partie zählt wieder wie zuvor."
+
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "Die Partien so, wie Ranglisten-Tester sie einsenden: die Datei nach dir benannt, Datum und Bedingungen, die Spieler so, wie die Listen sie schreiben, die Runden neu nummeriert, annullierte Partien und Duplikate weggelassen."
 
@@ -2542,8 +2602,17 @@ msgstr "Diese Remisquote und dieser RMS-Bias passen nicht zusammen."
 msgid "This engine once more, with another book"
 msgstr "Diese Engine noch einmal, mit einem anderen Buch"
 
+msgid "This game is not being played: it is over, or its engines are still starting."
+msgstr "Diese Partie wird nicht gespielt: Sie ist vorbei, oder ihre Engines starten noch."
+
+msgid "This game is over already."
+msgstr "Diese Partie ist schon vorbei."
+
 msgid "This match is already finished."
 msgstr "Dieses Match ist bereits beendet."
+
+msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
+msgstr "Dieses Turnier wurde ohne „Eine abgestürzte Engine neu starten“ gestartet (Einstellungen, PGN und Sonstiges): Das Beenden einer Partie stoppt die Engine am Zug, was das Turnier stoppen würde. Setze das Ergebnis, sobald die Partie vorbei ist, im Reiter Partien."
 
 msgid "Those with a problem"
 msgstr "Die mit einem Problem"
@@ -2628,6 +2697,9 @@ msgstr "UCI-Konformität: Schritt {} fehlgeschlagen, siehe Bericht"
 
 msgid "UDP port"
 msgstr "UDP-Port"
+
+msgid "Undo"
+msgstr "Rückgängig"
 
 msgid "Undo the last change"
 msgstr "Letzte Änderung rückgängig machen"
@@ -2722,6 +2794,12 @@ msgstr "Die Verbindung von Weiß hängt"
 msgid "White's score over the games."
 msgstr "Ergebnis von Weiß über die Partien."
 
+msgid "Why (kept with the game)"
+msgstr "Warum (wird mit der Partie gespeichert)"
+
+msgid "Why: {}"
+msgstr "Warum: {}"
+
 msgid "WinBoard"
 msgstr "WinBoard"
 
@@ -2796,6 +2874,9 @@ msgstr "Zip geschrieben nach {}"
 
 msgid "\"{}\" was on in this tournament's PGN options: the engines did not give what it needs in this game."
 msgstr "„{}“ war in den PGN-Optionen dieses Turniers eingeschaltet: Die Engines haben in dieser Partie nicht das Nötige geliefert."
+
+msgid "a result is 1-0, 0-1 or 1/2-1/2"
+msgstr "ein Ergebnis ist 1-0, 0-1 oder 1/2-1/2"
 
 msgid "about {} game"
 msgid_plural "about {} games"
@@ -2889,6 +2970,9 @@ msgstr "illegale Stellung"
 msgid "illegal positions"
 msgstr "illegale Stellungen"
 
+msgid "in a knockout, only the games of the round being played can have their result set"
+msgstr "in einem K.-o.-Turnier lässt sich nur das Ergebnis der Partien der laufenden Runde setzen"
+
 msgid "initial position"
 msgstr "Ausgangsstellung"
 
@@ -2960,6 +3044,9 @@ msgstr "beim Start senden"
 msgid "the file is not found"
 msgstr "die Datei wurde nicht gefunden"
 
+msgid "the game already has this result"
+msgstr "die Partie hat schon dieses Ergebnis"
+
 msgid "the host key of {} cannot be checked: its fingerprint could not be computed"
 msgstr "der Host-Schlüssel von {} kann nicht geprüft werden: sein Fingerabdruck konnte nicht berechnet werden"
 
@@ -2977,6 +3064,9 @@ msgstr "der Schnelltest von {}"
 
 msgid "the resume of the interrupted tournament"
 msgstr "die Fortsetzung des unterbrochenen Turniers"
+
+msgid "this game does not count: it was voided, or is not over"
+msgstr "diese Partie zählt nicht: Sie wurde annulliert oder ist nicht vorbei"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "im Beitrag zu erwähnen oder um die Engine erneut zu testen:"
@@ -3449,6 +3539,9 @@ msgstr "{}: der Engine unbekannt"
 
 msgid "{}: {}"
 msgstr "{}: {}"
+
+msgid "{}: {} → {} points"
+msgstr "{}: {} → {} Punkte"
 
 msgid "· %s · %d in parallel%s"
 msgstr "· %s · %d parallel%s"

@@ -83,7 +83,7 @@ std::string uniqueName(const TournamentSpec& spec, const std::string& base) {
 
 bool isEditEvent(const std::string& type) {
     return type == "participant_added" || type == "participant_replaced" || type == "participant_withdrawn" ||
-           type == "cycles_changed" || type == "games_voided";
+           type == "cycles_changed" || type == "games_voided" || type == "result_set";
 }
 
 nlohmann::json editEvent(const Edit& edit, uint32_t at, int new_id, const TournamentSpec& spec) {
@@ -116,13 +116,18 @@ nlohmann::json editEvent(const Edit& edit, uint32_t at, int new_id, const Tourna
             for (const auto& [e, g] : edit.games) games.push_back({e, g});
             return {{"t", "games_voided"}, {"games", games}, {"replay", edit.replay}, {"why", edit.why}};
         }
+        case Edit::Kind::SetResult: {
+            nlohmann::json games = nlohmann::json::array();
+            for (const auto& [e, g] : edit.games) games.push_back({e, g});
+            return {{"t", "result_set"}, {"games", games}, {"result", edit.result}, {"why", edit.why}};
+        }
     }
     return {};
 }
 
 void applyEditEvent(const nlohmann::json& event, TournamentSpec& spec, Schedule& schedule) {
     const auto type = event.at("t").get<std::string>();
-    if (type == "games_voided") return;  // results only
+    if (type == "games_voided" || type == "result_set") return;  // results only
     if (!schedule.editable()) throw std::runtime_error("a match cannot be edited this way");
 
     const auto size = schedule.size().value_or(0);

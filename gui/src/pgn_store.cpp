@@ -15,7 +15,8 @@ namespace fcg {
 namespace fs = std::filesystem;
 
 std::string exportSpans(const fs::path& source, const std::vector<PgnSpan>& spans, const fs::path& target,
-                        const std::vector<fs::path>& own) {
+                        const std::vector<fs::path>& own,
+                        const std::function<std::string(std::size_t i, std::string text)>& counted) {
     std::error_code ec;
     if (fs::equivalent(source, target, ec) ||
         std::any_of(own.begin(), own.end(), [&](const fs::path& file) { return fs::equivalent(file, target, ec); })) {
@@ -29,11 +30,16 @@ std::string exportSpans(const fs::path& source, const std::vector<PgnSpan>& span
     if (!out) return trf("Cannot write {}", target.string());
 
     std::string buffer;
-    for (const auto& span : spans) {
+    for (std::size_t i = 0; i < spans.size(); ++i) {
+        const auto& span = spans[i];
         buffer.resize(span.length);
+        in.clear();
         in.seekg(static_cast<std::streamoff>(span.offset));
         in.read(buffer.data(), span.length);
-        out.write(buffer.data(), in.gcount());
+        buffer.resize(static_cast<std::size_t>(std::max<std::streamsize>(0, in.gcount())));
+        if (buffer.empty()) continue;
+        if (counted) buffer = counted(i, std::move(buffer));
+        out.write(buffer.data(), static_cast<std::streamsize>(buffer.size()));
     }
 
     return out ? "" : trf("Write error in {}", target.string());

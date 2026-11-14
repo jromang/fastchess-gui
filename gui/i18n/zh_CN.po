@@ -243,6 +243,9 @@ msgstr "添加…"
 msgid "Adjudicate"
 msgstr "裁定"
 
+msgid "Adjudicated by the operator"
+msgstr "由操作员裁定"
+
 msgid "Adjudication"
 msgstr "裁定"
 
@@ -368,6 +371,9 @@ msgstr "恢复默认文件夹"
 
 msgid "Back to the default value"
 msgstr "恢复默认值"
+
+msgid "Back to the result as played ({})"
+msgstr "恢复实际下出的结果（{}）"
 
 msgid "Base (s)"
 msgstr "基本时间 (s)"
@@ -774,6 +780,18 @@ msgstr "留空：程序所在目录。"
 msgid "End"
 msgstr "结束"
 
+msgid "End game {} with a result…"
+msgstr "以指定结果结束对局 {}…"
+
+msgid "End the game"
+msgstr "结束对局"
+
+msgid "End with result"
+msgstr "以指定结果结束"
+
+msgid "Ended by the operator while it was played."
+msgstr "在对局进行中由操作员结束。"
+
 msgid "Ends about {} (in {})"
 msgstr "预计 {} 结束（还需 {}）"
 
@@ -969,6 +987,12 @@ msgstr "用于 TLCV、node-tlcv和 Livius：一次一局，附带引擎的搜索
 msgid "For a PGN book: number of plies kept. -1 = all."
 msgstr "对于 PGN 开局库：保留的半回合数。-1 = 全部。"
 
+msgid "For a game the program could not decide well: a hang it did not catch, a won ending the engines keep shuffling, a game that ended for a wrong reason.\nThe standings, the ratings and the submission checklist count the new result. The PGN files keep the game as played; the exports give the new result, with Termination \"adjudicated by the operator\" and the reason in a comment.\nUndo the last change (Schedule tab) takes it back."
+msgstr "用于程序未能正确判定的对局：未被发现的卡死、引擎在必胜残局中来回走子、因错误原因结束的对局。\n积分榜、等级分和提交检查清单计入新结果。PGN 文件保留实际下出的对局；导出时给出新结果，带有 Termination \"adjudicated by the operator\"，原因写在注释中。\n“撤销上一次修改”（赛程标签页）可以撤回。"
+
+msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
+msgstr "用于程序无法正确结束的对局：未被发现的卡死、引擎在必胜残局中来回走子。\n轮到走子的引擎会被停止（下一局时重新启动），对局按此结果计分：导出时为 Termination \"adjudicated by the operator\"，原因写在注释中。\n之后可在“对局”标签页修改其结果。"
+
 msgid "Format"
 msgstr "格式"
 
@@ -1005,8 +1029,20 @@ msgstr "每场比赛的对局对数"
 msgid "Game shown:"
 msgstr "显示的对局："
 
+msgid "Game {} counts as {}."
+msgstr "对局 {} 按 {} 计分。"
+
+msgid "Game {} was ended by the operator: {}."
+msgstr "对局 {} 已由操作员结束：{}。"
+
 msgid "Game {} · move {}"
 msgstr "第 {} 局 · 第 {} 步"
+
+msgid "Game {} · move {}: {} – {}"
+msgstr "对局 {} · 第 {} 步：{} – {}"
+
+msgid "Game {}: {} – {}  {}"
+msgstr "对局 {}：{} – {}  {}"
 
 msgid "Games"
 msgstr "对局"
@@ -1419,6 +1455,9 @@ msgstr "还没有已结束的对局。"
 
 msgid "No game in this slot yet."
 msgstr "此位置还没有对局。"
+
+msgid "No game is being played here."
+msgstr "这里没有正在进行的对局。"
 
 msgid "No game is being played."
 msgstr "当前没有正在进行的对局。"
@@ -1964,6 +2003,12 @@ msgstr "每局对局都重启引擎"
 msgid "Result"
 msgstr "结果"
 
+msgid "Result set by hand. As played: {}"
+msgstr "结果为手动设定。实际下出：{}"
+
+msgid "Result set by hand. As played: {} ({})"
+msgstr "结果为手动设定。实际下出：{}（{}）"
+
 msgid "Results of A"
 msgstr "A 的成绩"
 
@@ -1979,8 +2024,14 @@ msgstr "启动时恢复之前正在进行的锦标赛"
 msgid "Resumed: {}, {} games already played. Folder: {}"
 msgstr "已恢复：{}，已下 {} 局。文件夹：{}"
 
-msgid "Right click: play again or void this game."
-msgstr "右键：重下或作废这局对局。"
+msgid "Right click: change it, or take it back."
+msgstr "右键：修改或撤回。"
+
+msgid "Right click: end this game with a result."
+msgstr "右键：以指定结果结束这局对局。"
+
+msgid "Right click: play this game again, void it or set its result."
+msgstr "右键：重下这局对局、作废它或设定其结果。"
 
 msgid "Round (its URL or id; empty: a new broadcast named after the tournament)"
 msgstr "轮次（其 URL 或 id；留空：以锦标赛名称新建直播）"
@@ -2101,6 +2152,12 @@ msgstr "提供网页服务"
 
 msgid "Service:"
 msgstr "服务："
+
+msgid "Set the result"
+msgstr "设定结果"
+
+msgid "Set the result of game {}…"
+msgstr "设定对局 {} 的结果…"
 
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
@@ -2373,6 +2430,9 @@ msgstr "第一个参赛者 {} 没有参考 Elo。"
 msgid "The folder {} is not there any more."
 msgstr "文件夹 {} 已不存在。"
 
+msgid "The game counts again as it was."
+msgstr "对局恢复按原结果计分。"
+
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "按等级分列表测试者提交的方式整理对局：文件以你的名字命名，附日期和条件，棋手名称按列表的写法，轮次重新编号，去除作废对局和重复对局。"
 
@@ -2532,8 +2592,17 @@ msgstr "此和棋率与此 RMS 偏差不相容。"
 msgid "This engine once more, with another book"
 msgstr "再加入一次此引擎，使用另一个开局库"
 
+msgid "This game is not being played: it is over, or its engines are still starting."
+msgstr "这局对局未在进行：它已结束，或其引擎仍在启动。"
+
+msgid "This game is over already."
+msgstr "这局对局已经结束。"
+
 msgid "This match is already finished."
 msgstr "这场比赛已经结束。"
+
+msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
+msgstr "此赛事启动时未开启“重启崩溃的引擎”（设置，PGN 及其他）：结束对局会停止轮到走子的引擎，这会使赛事停止。请在对局结束后，在“对局”标签页设定结果。"
 
 msgid "Those with a problem"
 msgstr "有问题的开局"
@@ -2618,6 +2687,9 @@ msgstr "UCI 合规性：第 {} 步失败，请查看报告"
 
 msgid "UDP port"
 msgstr "UDP 端口"
+
+msgid "Undo"
+msgstr "撤销"
 
 msgid "Undo the last change"
 msgstr "撤销上一次修改"
@@ -2712,6 +2784,12 @@ msgstr "白方连接无响应"
 msgid "White's score over the games."
 msgstr "白方在各局中的得分。"
 
+msgid "Why (kept with the game)"
+msgstr "原因（随对局保存）"
+
+msgid "Why: {}"
+msgstr "原因：{}"
+
 msgid "WinBoard"
 msgstr "WinBoard"
 
@@ -2786,6 +2864,9 @@ msgstr "Zip 已写入 {}"
 
 msgid "\"{}\" was on in this tournament's PGN options: the engines did not give what it needs in this game."
 msgstr "本锦标赛的 PGN 选项中“{}”是开启的：本局中引擎没有提供所需数据。"
+
+msgid "a result is 1-0, 0-1 or 1/2-1/2"
+msgstr "结果只能是 1-0、0-1 或 1/2-1/2"
 
 msgid "about {} game"
 msgid_plural "about {} games"
@@ -2878,6 +2959,9 @@ msgstr "非法局面"
 msgid "illegal positions"
 msgstr "非法局面"
 
+msgid "in a knockout, only the games of the round being played can have their result set"
+msgstr "淘汰赛中只能设定正在进行的轮次中对局的结果"
+
 msgid "initial position"
 msgstr "初始局面"
 
@@ -2948,6 +3032,9 @@ msgstr "启动时发送"
 msgid "the file is not found"
 msgstr "找不到文件"
 
+msgid "the game already has this result"
+msgstr "该对局已是这个结果"
+
 msgid "the host key of {} cannot be checked: its fingerprint could not be computed"
 msgstr "无法检查 {} 的主机密钥：无法计算其指纹"
 
@@ -2965,6 +3052,9 @@ msgstr "{} 的快速测试"
 
 msgid "the resume of the interrupted tournament"
 msgstr "恢复被中断的锦标赛"
+
+msgid "this game does not count: it was voided, or is not over"
+msgstr "该对局不计分：已作废，或尚未结束"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "可在帖子中注明，或重新测试引擎："
@@ -3396,6 +3486,9 @@ msgstr "{}：引擎不认识"
 
 msgid "{}: {}"
 msgstr "{}：{}"
+
+msgid "{}: {} → {} points"
+msgstr "{}：{} → {} 分"
 
 msgid "· %s · %d in parallel%s"
 msgstr "· %s · %d 个并行%s"
