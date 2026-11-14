@@ -481,7 +481,7 @@ invite, a Twitch channel, a forum thread; https only, anything else is refused w
 *Chat* button in the page's header that opens it in a new tab. While the games are pushed to lichess, the page also
 links to the lichess round, which has its own chat.
 
-A *Discord server ID* shows Discord's own server widget beside the moves, in the page's light or dark theme: the
+A *Discord server ID* shows Discord's own server widget at the end of the page, in the page's light or dark theme: the
 server's name, the members online, its voice channels and a *Join* button, not the messages. The server's owner
 switches it on in Server Settings, Widget ("Enable Server Widget"), which also shows the server ID to copy (17 to 20
 digits); with Developer Mode on, right-clicking the server's icon gives *Copy Server ID* as well. With an ID set,

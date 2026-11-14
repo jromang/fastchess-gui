@@ -4,7 +4,7 @@
 // and the position's FEN copied. Every game in progress beside it; the standings and the crosstable, the charts of
 // the followed game, each engine's search, the next games, the statistics and anomalies and the event in tabs. The
 // moves in letters or figurines, a light or dark theme, and the PGN file to download. Where the viewers talk, when
-// the setup says: a chat link and the lichess round in its header, Discord's widget beside the moves.
+// the setup says: a chat link and the lichess round in its header, Discord's widget at the end of the page.
 
 #include <algorithm>
 #include <array>
@@ -417,9 +417,9 @@ dialog{background:var(--card);color:var(--text);border:1px solid var(--line);bor
 <div class="player" id="pbottom"></div></div>
 <div class="controls"><button id="first" type="button" title="The start"><svg viewBox="0 0 16 16"><path d="M3 3h2v10H3zM13 3v10L6 8z"/></svg></button><button id="prev" type="button" title="The move before (←)"><svg viewBox="0 0 16 16"><path d="M11 3v10L4 8z"/></svg></button><button id="next" type="button" title="The move after (→)"><svg viewBox="0 0 16 16"><path d="M5 3v10l7-5z"/></svg></button><button id="live" type="button" title="Back to the game as it goes"><svg viewBox="0 0 16 16"><path d="M3 3v10l7-5zM11 3h2v10h-2z"/></svg></button>
 <button id="flip" type="button" title="Turn the board (F)"><svg viewBox="0 0 16 16"><path d="M5 1l3.5 4.5H6V15H4V5.5H1.5zM11 15l-3.5-4.5H10V1h2v9.5h2.5z"/></svg></button><button id="cpgn" type="button" title="Copy the game in PGN">PGN</button><button id="cfen" type="button" title="Copy the position in FEN">FEN</button><span class="where" id="where"></span></div></section>
-<section class="side"><div class="engines" id="engines"></div><div class="card"><div class="chead" id="mhead"></div><div class="moves" id="moves"></div></div><!--WIDGET--></section>
+<section class="side"><div class="engines" id="engines"></div><div class="card"><div class="chead" id="mhead"></div><div class="moves" id="moves"></div></div></section>
 <section class="card" id="tabs"><nav class="tabbar" id="tabbar" role="tablist"></nav><div id="panel" role="tabpanel"></div></section></div>
-<section><h2 id="gameshead">Games in progress</h2><div class="games" id="games"></div></section></main>
+<section><h2 id="gameshead">Games in progress</h2><div class="games" id="games"></div></section><!--WIDGET--></main>
 <div class="toast" id="toast"></div><dialog id="copybox"><div class="small muted">Copying is not allowed here: select the text and copy it.</div><textarea id="copytext" readonly></textarea><div style="text-align:right;margin-top:6px"><button id="copyclose" type="button">Close</button></div></dialog>
 <script>
 const PIECE={K:'wK',Q:'wQ',R:'wR',B:'wB',N:'wN',P:'wP',k:'bK',q:'bQ',r:'bR',b:'bB',n:'bN',p:'bP'};
@@ -704,14 +704,15 @@ void replaceAll(std::string& text, std::string_view mark, std::string_view by) {
 }
 
 // The extras, put in where marked: links styled as the page's buttons, the chat's in the accent colour; the widget's
-// card, no taller than the side column needs.
+// card last on the page, under the games in progress, tall enough for its members and its Join button.
 constexpr const char* EXTRA_STYLES =
     ".btn{display:inline-block;font-size:13px;color:var(--text);background:var(--card);border:1px solid var(--line);"
     "border-radius:8px;padding:5px 10px;text-decoration:none}.btn:hover{border-color:var(--accent)}"
     ".btn[hidden]{display:none}.btn svg{width:14px;height:14px;fill:currentColor;vertical-align:-2px;margin-right:5px}"
-    "#chat{background:var(--accent);border-color:var(--accent);color:#fff}#discord{padding:0;overflow:hidden}"
-    "#discord iframe{display:block;width:100%;height:400px;border:0}"
-    "@media (max-width:600px){#discord iframe{height:340px}}";
+    "#chat{background:var(--accent);border-color:var(--accent);color:#fff}"
+    "#discord{padding:0;overflow:hidden;width:100%;max-width:640px}"
+    "#discord iframe{display:block;width:100%;height:540px;border:0}"
+    "@media (max-width:600px){#discord iframe{height:460px}}";
 // The links open in a new tab, which learns nothing of the page (rel), their address set from state.json.
 constexpr const char* LINKS =
     "<a class=\"btn\" id=\"chat\" hidden target=\"_blank\" rel=\"noopener noreferrer\" title=\"Where the "
