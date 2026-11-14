@@ -240,11 +240,13 @@ bool openSdl(const char* title, int width, int height, SDL_WindowFlags flags, bo
         if (!drivers.empty()) renderer = SDL_CreateRenderer(window, drivers.c_str());
     }
     if (!renderer) {
-        // The software driver draws into the window's own pixels (X11 shared memory, GDI on Windows), unless SDL
-        // shows them through a graphics card texture, which is what failed or was turned off. Wayland has no such
-        // pixels: there SDL needs the graphics card anyway.
-        const char* video = SDL_GetCurrentVideoDriver();
-        if (!video || std::string_view(video) != "wayland") SDL_SetHint(SDL_HINT_FRAMEBUFFER_ACCELERATION, "0");
+        // The software driver's picture goes into the window's own pixels where the system gives some (X11 shared
+        // memory, GDI on Windows, the offscreen driver), rather than through a graphics card texture, which is what
+        // failed or was turned off. Wayland and macOS give none: there SDL needs the graphics card to show it.
+        const std::string_view video = SDL_GetCurrentVideoDriver() ? SDL_GetCurrentVideoDriver() : "";
+        if (video == "x11" || video == "windows" || video == "offscreen" || video == "dummy") {
+            SDL_SetHint(SDL_HINT_FRAMEBUFFER_ACCELERATION, "0");
+        }
         renderer = SDL_CreateRenderer(window, SDL_SOFTWARE_RENDERER);
     }
     if (!renderer) {

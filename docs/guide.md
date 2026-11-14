@@ -47,8 +47,9 @@ with the graphics card's name when OpenGL draws. *Software rendering* there (or 
 one launch) has the processor draw the window from the next launch, for a graphics driver that fails or crashes. It
 uses more processor time, redraws only what changes (and what moves, such as clocks, 15 times a second rather than
 30 while the mouse and keys rest), draws square corners, and the panels of the workspace float inside the main window
-rather than onto another screen. Under Wayland it needs a working graphics driver anyway; if there is none, start the
-program with `SDL_VIDEODRIVER=x11`. When no way of drawing works, a message says so before the program ends.
+rather than onto another screen. Under Wayland (and on macOS) the processor's picture is still shown through the
+graphics driver; if there is none, start the program with `SDL_VIDEODRIVER=x11`. When no way of drawing works, a
+message says so before the program ends.
 
 ## Engines
 
