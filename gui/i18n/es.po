@@ -367,6 +367,9 @@ msgstr "Como texto"
 msgid "Asks where to write the book, then reads the games in the background; the book is added to the library."
 msgstr "Pregunta dónde escribir el libro y luego lee las partidas en segundo plano; el libro se añade a la biblioteca."
 
+msgid "At launch, at most once a day, the program asks GitHub for its latest release; the home page tells when there is a newer one, with its notes and a link to its page. Nothing is downloaded nor installed."
+msgstr "Al iniciar, como mucho una vez al día, el programa pregunta a GitHub por su última versión publicada; la página de inicio te avisa cuando hay una más reciente, con sus notas y un enlace a su página. No se descarga ni se instala nada."
+
 msgid "Author: {} → {}"
 msgstr "Autor: {} → {}"
 
@@ -688,8 +691,17 @@ msgstr "Continuar con los programas modificados"
 msgid "Copy"
 msgstr "Copiar"
 
+msgid "Copy the version"
+msgstr "Copiar la versión"
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "Núcleos ocupados mientras piensa · parte de un núcleo usada mientras piensa su rival (0 % sin pondering). Medido tras 20 s de cada uno."
+
+msgid "Could not check for a new version: {}"
+msgstr "No se pudo comprobar si hay una versión nueva: {}"
+
+msgid "Could not check: {}"
+msgstr "No se pudo comprobar: {}"
 
 msgid "Count"
 msgstr "Número"
@@ -768,6 +780,12 @@ msgstr "Cerrar el aviso de cambios: {}"
 
 msgid "Done: the tournament goes on with the change."
 msgstr "Hecho: el torneo continúa con el cambio."
+
+msgid "Download page"
+msgstr "Página de descarga"
+
+msgid "Download page of fastchess-gui {}"
+msgstr "Página de descarga de fastchess-gui {}"
 
 msgid "Draw"
 msgstr "Tablas"
@@ -1212,6 +1230,9 @@ msgstr "Cara a cara"
 msgid "Health"
 msgstr "Fiabilidad"
 
+msgid "Hide"
+msgstr "Ocultar"
+
 msgid "Host"
 msgstr "Host"
 
@@ -1388,6 +1409,9 @@ msgstr "Últimas 24 horas:"
 
 msgid "Latest results"
 msgstr "Últimos resultados"
+
+msgid "Latest version on GitHub: {} (this is {})"
+msgstr "Última versión en GitHub: {} (versión actual: {})"
 
 msgid "Layout"
 msgstr "Disposición"
@@ -1754,6 +1778,9 @@ msgstr "Abrir una carpeta…"
 msgid "Open the folder"
 msgstr "Abrir la carpeta"
 
+msgid "Open the profile folder"
+msgstr "Abrir la carpeta del perfil"
+
 msgid "Open the tournament."
 msgstr "Abrir el torneo."
 
@@ -1777,6 +1804,9 @@ msgstr "Aperturas"
 
 msgid "Openings: {}"
 msgstr "Aperturas: {}"
+
+msgid "Opens a new issue on GitHub in the browser, filled with the version, the system, the graphics driver and the last lines of the log. Read it and complete it before sending it: the program sends nothing itself."
+msgstr "Abre una nueva incidencia en GitHub en el navegador, rellenada con la versión, el sistema, el controlador gráfico y las últimas líneas del registro. Léela y complétala antes de enviarla: el programa no envía nada por sí mismo."
 
 msgid "Opp."
 msgstr "Rivales"
@@ -1960,6 +1990,12 @@ msgstr "Ponder desactivado"
 msgid "Port"
 msgstr "Puerto"
 
+msgid "Portable mode"
+msgstr "Modo portátil"
+
+msgid "Portable mode: off"
+msgstr "Modo portátil: desactivado"
+
 msgid "Position"
 msgstr "Posición"
 
@@ -1985,6 +2021,9 @@ msgstr "Procesador"
 
 msgid "Processor use"
 msgstr "Uso del procesador"
+
+msgid "Profile"
+msgstr "Perfil"
 
 msgid "Program"
 msgstr "Programa"
@@ -2163,6 +2202,9 @@ msgstr "Sustituye tu disposición con ese nombre."
 
 msgid "Replace…"
 msgstr "Reemplazar…"
+
+msgid "Report a problem…"
+msgstr "Informar de un problema…"
 
 msgid "Resign"
 msgstr "Abandono"
@@ -2487,6 +2529,9 @@ msgstr "Tablas de finales"
 msgid "Tabs"
 msgstr "Pestañas"
 
+msgid "Tell me when a new version is out"
+msgstr "Avisarme cuando salga una versión nueva"
+
 msgid "Template name"
 msgstr "Nombre de la plantilla"
 
@@ -2541,6 +2586,9 @@ msgstr "El libro de {} no es ni un libro Polyglot (.bin) ni un libro PGN: {}"
 msgid "The book of {} is not found: {}"
 msgstr "No se encuentra el libro de {}: {}"
 
+msgid "The browser could not be opened: the address of the new issue is on the clipboard."
+msgstr "No se pudo abrir el navegador: la dirección de la nueva incidencia está en el portapapeles."
+
 msgid "The change was undone."
 msgstr "El cambio se ha deshecho."
 
@@ -2582,6 +2630,9 @@ msgstr "Los motores que tienen una opción SyzygyPath reciben estas carpetas, la
 
 msgid "The engines' own books are off"
 msgstr "Los libros propios de los motores están desactivados"
+
+msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
+msgstr "El archivo llamado «portable» junto al programa guarda todo en esta carpeta. Las rutas dentro de {} se guardan relativas a ella, para que esa carpeta pueda moverse o copiarse a otra máquina."
 
 msgid "The finished games of the match will appear here."
 msgstr "Las partidas terminadas del match aparecerán aquí."
@@ -2761,6 +2812,9 @@ msgstr "El torneo se ha modificado."
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "La varianza de una partida cuando las partidas se cuentan por pares, frente a la varianza de las partidas sueltas: por debajo de 1, los pares necesitan proporcionalmente menos partidas para la misma precisión."
 
+msgid "The version and the system, for a bug report."
+msgstr "La versión y el sistema, para un informe de error."
+
 msgid "The working directory of {} is not found."
 msgstr "No se encuentra la carpeta de trabajo de {}."
 
@@ -2778,6 +2832,9 @@ msgstr "Esta proporción de tablas y este sesgo RMS no son compatibles."
 
 msgid "This engine once more, with another book"
 msgstr "Este motor otra vez, con otro libro"
+
+msgid "This is the latest version."
+msgstr "Esta es la última versión."
 
 msgid "This match is already finished."
 msgstr "Este match ya ha terminado."
@@ -2808,6 +2865,9 @@ msgstr "Ritmo de juego"
 
 msgid "Time per move"
 msgstr "Tiempo por jugada"
+
+msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
+msgstr "Para guardarlo todo junto al programa (una memoria USB, una carpeta copiada entre máquinas), pon un archivo vacío llamado «portable» junto a él: el perfil pasa a ser la carpeta «data» junto a él. Copia allí los archivos de esta carpeta para conservarlos."
 
 msgid "Total"
 msgstr "Total"
@@ -2887,6 +2947,9 @@ msgstr "Motor desconocido: {}"
 msgid "Unreadable PGN."
 msgstr "PGN ilegible."
 
+msgid "Until the next version."
+msgstr "Hasta la próxima versión."
+
 msgid "Up to {} engines."
 msgstr "Hasta {} motores."
 
@@ -2913,6 +2976,12 @@ msgstr "Valor"
 
 msgid "Variance ratio"
 msgstr "Razón de varianzas"
+
+msgid "Version"
+msgstr "Versión"
+
+msgid "Version {} is out."
+msgstr "Ha salido la versión {}."
 
 msgid "Void this game (no replay)"
 msgstr "Anular esta partida (sin volver a jugarla)"
@@ -2949,6 +3018,9 @@ msgstr "Qué cambió: {}"
 
 msgid "What was sent to the engines of its last try and what they answered, their error output included:\n{}"
 msgstr "Lo que se envió a los motores de su último intento y lo que respondieron, incluida su salida de error:\n{}"
+
+msgid "What's new"
+msgstr "Novedades"
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "Cuándo se decidió por la jugada que hizo, de media: una decisión mucho antes del final del tiempo empleado indica que el tiempo no se aprovechó bien."
@@ -3149,6 +3221,9 @@ msgstr "vacío"
 
 msgid "every pair with both colours"
 msgstr "cada par con ambos colores"
+
+msgid "fastchess-gui {} is out (this is {})."
+msgstr "Ha salido fastchess-gui {} (tienes la {})."
 
 msgid "fastchess-gui {} — {} physical cores, {} threads"
 msgstr "fastchess-gui {} — {} núcleos físicos, {} hilos"

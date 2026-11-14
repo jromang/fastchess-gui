@@ -7,12 +7,15 @@
 
 #include "layout.hpp"
 #include "model.hpp"
+#include "update_check.hpp"
+#include "window_place.hpp"
 
 namespace fcg {
 
 // Where the GUI keeps its files: engines.json, books.json, setup.json, layout.ini, layouts.json, settings.json and the
-// tournaments (runs/ unless settings.json names another folder). Defaults to SDL_GetPrefPath(); --profile <dir>
-// overrides it.
+// tournaments (runs/ unless settings.json names another folder). Defaults to SDL_GetPrefPath(), or the folder data
+// beside the program in the portable mode (portable.hpp: the paths of the program's folder are then kept relative to
+// it in these files); --profile <dir> overrides it.
 class Storage {
    public:
     explicit Storage(std::filesystem::path root);
@@ -48,6 +51,14 @@ class Storage {
     // The tester's name and site written in the exports for a rating list, in settings.json.
     [[nodiscard]] std::pair<std::string, std::string> submissionTester() const;
     void setSubmissionTester(const std::string& name, const std::string& site) const;
+
+    // The main window as it was left (settings.json); nullopt when none was kept.
+    [[nodiscard]] std::optional<WindowPlace> windowPlace() const;
+    void setWindowPlace(const WindowPlace& place) const;
+
+    // The check for a new version (settings.json): whether it is wanted, when it was last made and what it found.
+    [[nodiscard]] update::Settings updateSettings() const;
+    void setUpdateSettings(const update::Settings& updates) const;
 
     [[nodiscard]] std::vector<BookEntry> loadBooks() const;
     void saveBooks(const std::vector<BookEntry>& books) const;

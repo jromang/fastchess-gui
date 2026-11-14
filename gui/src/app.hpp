@@ -29,6 +29,7 @@
 #include "live.hpp"
 #include "model.hpp"
 #include "pgn_store.hpp"
+#include "portable.hpp"
 #include "qr.hpp"
 #include "run.hpp"
 #include "stats.hpp"
@@ -199,6 +200,7 @@ struct AppOptions {
     bool autostart = false;
     std::string focus_window;  // page or tab shown at startup (for screenshots)
     float ui_scale = 1.0f;     // DPI scale, to rebuild the style when the theme changes
+    bool scripted  = false;    // scripted screenshots: nothing is asked from the internet
 };
 
 class App {
@@ -442,6 +444,7 @@ class App {
     void drawSuites();
     void drawSuiteGrid();
     void loadSuiteSetup();  // suite.json and its suite, once
+    void saveSuiteSetup();  // to suite.json
     void loadSuite();
     void openSuite(const std::string& file);  // and shows the Suites page
     void startSuite();
@@ -981,6 +984,24 @@ class App {
     bool user_stop_       = false;  // the user stopped the running tournament (not by quitting)
     bool resume_guarded_  = false;  // resumed at launch, the marker says so until it has played a while
     std::filesystem::path resume_crashed_;  // the tournament whose resume at launch ended the program
+
+    // New versions (update_check.hpp): the check at launch, a notice on the home page, the version in Settings.
+    void startUpdateCheck(bool asked);  // `asked`: from Settings, its result shown there
+    void pollUpdateCheck();
+    void drawUpdateNotice();
+    void drawVersionSettings();
+    void copyVersion();
+    update::Settings updates_;
+    update::Checker update_checker_;
+    bool update_asked_ = false;  // the check running was asked from Settings
+    std::string update_status_;  // what the check asked from Settings found
+    bool update_notes_open_ = false;
+
+    // "Report a problem…" (report.hpp): a new GitHub issue in the browser, filled with the version, the system and
+    // the log; `seen`, when given, fills what went wrong.
+    void reportProblem(const std::string& seen = {});
+    bool reportButton(const char* id, bool small = false, const std::string& seen = {});  // the button, its tooltip
+    [[nodiscard]] std::string systemReport() const;
 };
 
 }  // namespace fcg

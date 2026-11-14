@@ -13,9 +13,11 @@
 
 #include "app.hpp"
 #include "console.hpp"
+#include "gl.hpp"
 #include "i18n.hpp"
 #include "logo.hpp"
 #include "memory.hpp"
+#include "report.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -353,6 +355,7 @@ void App::drawHome() {
         ImGui::TextWrapped("%s", start_error_.c_str());
         ImGui::PopStyleColor();
     }
+    drawUpdateNotice();
 
     // What is going on now.
     if (run_.running()) {
@@ -386,6 +389,8 @@ void App::drawHome() {
                                       "not resumed automatically again."));
             ImGui::PopTextWrapPos();
             ImGui::PopStyleColor();
+            reportButton("report_resume", true,
+                         "The program ended while it resumed a tournament at launch (" + u.spec.name + ").");
         }
         // Pressed, it starts at once, or says what it waits for.
         const auto key = resumeKey(u.dir);
@@ -969,6 +974,34 @@ void App::drawSettings() {
            "while it ran), it resumes at the next launch, and the queue goes on after it. A tournament paused or "
            "stopped waits for you."));
 
+    // Where the program keeps its files, and whether that is beside the program (the portable mode).
+    ImGui::Spacing();
+    ImGui::Separator();
+    ui::label(TR("Profile"), label);
+    ImGui::TextUnformatted(storage_.root().string().c_str());
+    ImGui::SetCursorPosX(label);
+    if (ImGui::Button(TR("Open the folder##profile"))) openFolder(storage_.root());
+    ImGui::SameLine();
+    ImGui::AlignTextToFramePadding();
+    if (portable::active()) {
+        ImGui::TextUnformatted(TR("Portable mode"));
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", trf("The file named \"portable\" beside the program keeps everything in this "
+                                        "folder. The paths in {} are kept relative to it, so that folder can be moved "
+                                        "or copied to another machine.",
+                                        portable::base().string())
+                                        .c_str());
+        }
+    } else {
+        ImGui::TextDisabled("%s", TR("Portable mode: off"));
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("To keep everything beside the program instead (a USB stick, a folder copied "
+                                       "between machines), put an empty file named \"portable\" beside it: the "
+                                       "profile is then the folder \"data\" beside it. Copy this folder's files there "
+                                       "to keep them."));
+        }
+    }
+
     ImGui::Spacing();
     ImGui::Separator();
     ui::label(TR("Tournaments folder"), label);
@@ -1004,7 +1037,156 @@ void App::drawSettings() {
     ImGui::PopItemWidth();
     ImGui::EndGroup();
 
+    ImGui::Spacing();
+    ImGui::Separator();
+    ui::label(TR("Version"), label);
+    ImGui::BeginGroup();
+    drawVersionSettings();
+    ImGui::EndGroup();
+
     if (changed) saveSetupSoon();
+}
+
+// ---------------------------------------------------------------------------
+// Version, and the new ones
+
+void App::copyVersion() {
+    ImGui::SetClipboardText(fmt::format("fastchess-gui {} ({})", FCG_VERSION, SDL_GetPlatform()).c_str());
+}
+
+void App::startUpdateCheck(bool asked) {
+    if (update_checker_.running()) return;
+    update_asked_ = asked;
+    update_status_.clear();
+    update_checker_.start();
+}
+
+void App::pollUpdateCheck() {
+    const auto answer = update_checker_.poll();
+    if (!answer) return;
+    // Silent unless asked from Settings: the log tells what happened.
+    updates_.checked = std::time(nullptr);
+    if (answer->release) {
+        updates_.latest = answer->release;
+        Console::instance().add(
+            trf("Latest version on GitHub: {} (this is {})", answer->release->version, FCG_VERSION));
+    } else {
+        Console::instance().add(trf("Could not check for a new version: {}", answer->error));
+        if (update_asked_) update_status_ = trf("Could not check: {}", answer->error);
+    }
+    storage_.setUpdateSettings(updates_);
+}
+
+void App::drawVersionSettings() {
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted("fastchess-gui " FCG_VERSION);
+    ImGui::SameLine();
+    if (ImGui::Button(TR("Copy##version"))) copyVersion();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The version and the system, for a bug report."));
+    ImGui::SameLine();
+    reportButton("report_settings");
+
+    if (ImGui::Checkbox(TR("Tell me when a new version is out"), &updates_.enabled)) {
+        storage_.setUpdateSettings(updates_);
+        if (updates_.enabled && update::checkDue(updates_.checked, std::time(nullptr))) startUpdateCheck(true);
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("At launch, at most once a day, the program asks GitHub for its latest release; the "
+                                   "home page tells when there is a newer one, with its notes and a link to its page. "
+                                   "Nothing is downloaded nor installed."));
+    }
+    if (!updates_.enabled) return;
+
+    if (update_checker_.running()) {
+        ImGui::TextDisabled("%s", TR("Checking…"));
+    } else if (!update_status_.empty()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+        ImGui::TextWrapped("%s", update_status_.c_str());
+        ImGui::PopStyleColor();
+    } else if (updates_.latest && update::compareVersions(updates_.latest->version, FCG_VERSION) > 0) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(trf("Version {} is out.", updates_.latest->version).c_str());
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Download page"))) SDL_OpenURL(updates_.latest->url.c_str());
+    } else if (updates_.latest) {
+        ImGui::TextDisabled("%s", TR("This is the latest version."));
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Report a problem
+
+std::string App::systemReport() const {
+    // For the maintainers, in English.
+    const char* video = SDL_GetCurrentVideoDriver();
+    std::string out   = "System: " + report::systemName();
+    out += fmt::format("\nDisplay: {}, scale {:.2f}, interface {} %", video ? video : "?", options_.ui_scale,
+                       setup_.ui_zoom);
+    out += fmt::format("\nProcessor: {} physical cores, {} threads", topology_.physical, topology_.logical);
+    if (const auto memory = systemMemory()) out += "\nMemory: " + formatMemory(memory->total_mb);
+    out += "\nGraphics: " + (gl::driver().empty() ? std::string("?") : gl::driver());
+    out += fmt::format("\nLanguage: {}", i18n::info(i18n::language()).code);
+    return out;
+}
+
+void App::reportProblem(const std::string& seen) {
+    report::Facts facts;
+    facts.version  = "fastchess-gui " FCG_VERSION;
+    facts.system   = systemReport();
+    facts.log      = report::lastLines(storage_.root() / "fastchess-gui.log", 80);
+    facts.seen     = seen;
+    const auto url = report::issueUrl(facts);
+    if (!SDL_OpenURL(url.c_str())) {
+        ImGui::SetClipboardText(url.c_str());
+        Console::instance().add(
+            TR("The browser could not be opened: the address of the new issue is on the clipboard."), true);
+    }
+}
+
+bool App::reportButton(const char* id, bool small, const std::string& seen) {
+    ImGui::PushID(id);
+    const bool pressed = small ? ImGui::SmallButton(TR("Report a problem…")) : ImGui::Button(TR("Report a problem…"));
+    ImGui::PopID();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("Opens a new issue on GitHub in the browser, filled with the version, the system, "
+                                   "the graphics driver and the last lines of the log. Read it and complete it before "
+                                   "sending it: the program sends nothing itself."));
+    }
+    if (pressed) reportProblem(seen);
+    return pressed;
+}
+
+// On the home page, while a newer version than this one is out and the user did not close its notice.
+void App::drawUpdateNotice() {
+    const auto* release = update::notice(updates_, FCG_VERSION);
+    if (!release) return;
+    ui::beginCard("update_notice");
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(trf("fastchess-gui {} is out (this is {}).", release->version, FCG_VERSION).c_str());
+    ImGui::SameLine();
+    if (ImGui::SmallButton(TR("Download page"))) SDL_OpenURL(release->url.c_str());
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", release->url.c_str());
+    if (!release->notes.empty()) {
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("What's new"))) update_notes_open_ = !update_notes_open_;
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton(TR("Hide##update"))) {
+        updates_.dismissed = release->version;
+        storage_.setUpdateSettings(updates_);
+        ui::endCard();
+        return;
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Until the next version."));
+    if (update_notes_open_ && !release->notes.empty()) {
+        // The notes as written (Markdown), in a box of their own.
+        ImGui::BeginChild("##update_notes", ImVec2(0, px(220)), ImGuiChildFlags_Borders);
+        ImGui::PushTextWrapPos(0.0f);
+        ImGui::TextUnformatted(release->notes.c_str());
+        ImGui::PopTextWrapPos();
+        ImGui::EndChild();
+    }
+    ui::endCard();
 }
 
 }  // namespace fcg

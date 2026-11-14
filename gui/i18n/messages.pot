@@ -367,6 +367,9 @@ msgstr ""
 msgid "Asks where to write the book, then reads the games in the background; the book is added to the library."
 msgstr ""
 
+msgid "At launch, at most once a day, the program asks GitHub for its latest release; the home page tells when there is a newer one, with its notes and a link to its page. Nothing is downloaded nor installed."
+msgstr ""
+
 msgid "Author: {} → {}"
 msgstr ""
 
@@ -688,7 +691,16 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
+msgid "Copy the version"
+msgstr ""
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
+msgstr ""
+
+msgid "Could not check for a new version: {}"
+msgstr ""
+
+msgid "Could not check: {}"
 msgstr ""
 
 msgid "Count"
@@ -767,6 +779,12 @@ msgid "Dismiss what changed: {}"
 msgstr ""
 
 msgid "Done: the tournament goes on with the change."
+msgstr ""
+
+msgid "Download page"
+msgstr ""
+
+msgid "Download page of fastchess-gui {}"
 msgstr ""
 
 msgid "Draw"
@@ -1212,6 +1230,9 @@ msgstr ""
 msgid "Health"
 msgstr ""
 
+msgid "Hide"
+msgstr ""
+
 msgid "Host"
 msgstr ""
 
@@ -1387,6 +1408,9 @@ msgid "Last 24 hours:"
 msgstr ""
 
 msgid "Latest results"
+msgstr ""
+
+msgid "Latest version on GitHub: {} (this is {})"
 msgstr ""
 
 msgid "Layout"
@@ -1754,6 +1778,9 @@ msgstr ""
 msgid "Open the folder"
 msgstr ""
 
+msgid "Open the profile folder"
+msgstr ""
+
 msgid "Open the tournament."
 msgstr ""
 
@@ -1776,6 +1803,9 @@ msgid "Openings"
 msgstr ""
 
 msgid "Openings: {}"
+msgstr ""
+
+msgid "Opens a new issue on GitHub in the browser, filled with the version, the system, the graphics driver and the last lines of the log. Read it and complete it before sending it: the program sends nothing itself."
 msgstr ""
 
 msgid "Opp."
@@ -1960,6 +1990,12 @@ msgstr ""
 msgid "Port"
 msgstr ""
 
+msgid "Portable mode"
+msgstr ""
+
+msgid "Portable mode: off"
+msgstr ""
+
 msgid "Position"
 msgstr ""
 
@@ -1984,6 +2020,9 @@ msgid "Processor"
 msgstr ""
 
 msgid "Processor use"
+msgstr ""
+
+msgid "Profile"
 msgstr ""
 
 msgid "Program"
@@ -2162,6 +2201,9 @@ msgid "Replaces your layout of that name."
 msgstr ""
 
 msgid "Replace…"
+msgstr ""
+
+msgid "Report a problem…"
 msgstr ""
 
 msgid "Resign"
@@ -2487,6 +2529,9 @@ msgstr ""
 msgid "Tabs"
 msgstr ""
 
+msgid "Tell me when a new version is out"
+msgstr ""
+
 msgid "Template name"
 msgstr ""
 
@@ -2541,6 +2586,9 @@ msgstr ""
 msgid "The book of {} is not found: {}"
 msgstr ""
 
+msgid "The browser could not be opened: the address of the new issue is on the clipboard."
+msgstr ""
+
 msgid "The change was undone."
 msgstr ""
 
@@ -2581,6 +2629,9 @@ msgid "The engines that have a SyzygyPath option get these directories, those of
 msgstr ""
 
 msgid "The engines' own books are off"
+msgstr ""
+
+msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
 msgstr ""
 
 msgid "The finished games of the match will appear here."
@@ -2761,6 +2812,9 @@ msgstr ""
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr ""
 
+msgid "The version and the system, for a bug report."
+msgstr ""
+
 msgid "The working directory of {} is not found."
 msgstr ""
 
@@ -2777,6 +2831,9 @@ msgid "This draw ratio and this RMS bias are not compatible."
 msgstr ""
 
 msgid "This engine once more, with another book"
+msgstr ""
+
+msgid "This is the latest version."
 msgstr ""
 
 msgid "This match is already finished."
@@ -2807,6 +2864,9 @@ msgid "Time control"
 msgstr ""
 
 msgid "Time per move"
+msgstr ""
+
+msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
 msgstr ""
 
 msgid "Total"
@@ -2887,6 +2947,9 @@ msgstr ""
 msgid "Unreadable PGN."
 msgstr ""
 
+msgid "Until the next version."
+msgstr ""
+
 msgid "Up to {} engines."
 msgstr ""
 
@@ -2912,6 +2975,12 @@ msgid "Value"
 msgstr ""
 
 msgid "Variance ratio"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "Version {} is out."
 msgstr ""
 
 msgid "Void this game (no replay)"
@@ -2948,6 +3017,9 @@ msgid "What changed: {}"
 msgstr ""
 
 msgid "What was sent to the engines of its last try and what they answered, their error output included:\n{}"
+msgstr ""
+
+msgid "What's new"
 msgstr ""
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
@@ -3148,6 +3220,9 @@ msgid "empty"
 msgstr ""
 
 msgid "every pair with both colours"
+msgstr ""
+
+msgid "fastchess-gui {} is out (this is {})."
 msgstr ""
 
 msgid "fastchess-gui {} — {} physical cores, {} threads"

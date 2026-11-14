@@ -371,6 +371,9 @@ msgstr "Текстом"
 msgid "Asks where to write the book, then reads the games in the background; the book is added to the library."
 msgstr "Спрашивает, куда записать книгу, затем читает партии в фоне; книга добавляется в библиотеку."
 
+msgid "At launch, at most once a day, the program asks GitHub for its latest release; the home page tells when there is a newer one, with its notes and a link to its page. Nothing is downloaded nor installed."
+msgstr "При запуске, не чаще раза в день, программа запрашивает у GitHub свой последний выпуск; главная страница сообщит вам о более новой версии, покажет её описание и ссылку на её страницу. Ничего не скачивается и не устанавливается."
+
 msgid "Author: {} → {}"
 msgstr "Автор: {} → {}"
 
@@ -692,8 +695,17 @@ msgstr "Продолжить с изменёнными программами"
 msgid "Copy"
 msgstr "Копировать"
 
+msgid "Copy the version"
+msgstr "Скопировать версию"
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "Ядра, занятые, пока он думает · доля ядра, используемая, пока думает соперник (0 % без ponder). Измеряется после 20 с каждого режима."
+
+msgid "Could not check for a new version: {}"
+msgstr "Не удалось проверить наличие новой версии: {}"
+
+msgid "Could not check: {}"
+msgstr "Не удалось проверить: {}"
 
 msgid "Count"
 msgstr "Количество"
@@ -772,6 +784,12 @@ msgstr "Закрыть уведомление об изменениях: {}"
 
 msgid "Done: the tournament goes on with the change."
 msgstr "Готово: турнир продолжается с изменением."
+
+msgid "Download page"
+msgstr "Страница загрузки"
+
+msgid "Download page of fastchess-gui {}"
+msgstr "Страница загрузки fastchess-gui {}"
 
 msgid "Draw"
 msgstr "Ничья"
@@ -1217,6 +1235,9 @@ msgstr "Личные встречи"
 msgid "Health"
 msgstr "Надёжность"
 
+msgid "Hide"
+msgstr "Скрыть"
+
 msgid "Host"
 msgstr "Хост"
 
@@ -1393,6 +1414,9 @@ msgstr "За последние 24 часа:"
 
 msgid "Latest results"
 msgstr "Последние результаты"
+
+msgid "Latest version on GitHub: {} (this is {})"
+msgstr "Последняя версия на GitHub: {} (текущая: {})"
 
 msgid "Layout"
 msgstr "Раскладка"
@@ -1760,6 +1784,9 @@ msgstr "Открыть папку…"
 msgid "Open the folder"
 msgstr "Открыть папку"
 
+msgid "Open the profile folder"
+msgstr "Открыть папку профиля"
+
 msgid "Open the tournament."
 msgstr "Открыть турнир."
 
@@ -1783,6 +1810,9 @@ msgstr "Дебюты"
 
 msgid "Openings: {}"
 msgstr "Дебюты: {}"
+
+msgid "Opens a new issue on GitHub in the browser, filled with the version, the system, the graphics driver and the last lines of the log. Read it and complete it before sending it: the program sends nothing itself."
+msgstr "Открывает в браузере новое сообщение об ошибке на GitHub, заполненное версией, сведениями о системе, графическом драйвере и последними строками журнала. Прочитайте и дополните его перед отправкой: сама программа ничего не отправляет."
 
 msgid "Opp."
 msgstr "Соп."
@@ -1967,6 +1997,12 @@ msgstr "Ponder выключен"
 msgid "Port"
 msgstr "Порт"
 
+msgid "Portable mode"
+msgstr "Портативный режим"
+
+msgid "Portable mode: off"
+msgstr "Портативный режим: выключен"
+
 msgid "Position"
 msgstr "Позиция"
 
@@ -1993,6 +2029,9 @@ msgstr "Процессор"
 
 msgid "Processor use"
 msgstr "Загрузка процессора"
+
+msgid "Profile"
+msgstr "Профиль"
 
 msgid "Program"
 msgstr "Программа"
@@ -2173,6 +2212,9 @@ msgstr "Заменит вашу раскладку с этим именем."
 
 msgid "Replace…"
 msgstr "Заменить…"
+
+msgid "Report a problem…"
+msgstr "Сообщить о проблеме…"
 
 msgid "Resign"
 msgstr "Сдача"
@@ -2498,6 +2540,9 @@ msgstr "Таблицы эндшпиля"
 msgid "Tabs"
 msgstr "Вкладки"
 
+msgid "Tell me when a new version is out"
+msgstr "Сообщать о выходе новой версии"
+
 msgid "Template name"
 msgstr "Название шаблона"
 
@@ -2552,6 +2597,9 @@ msgstr "Книга {} не является ни книгой Polyglot (.bin), �
 msgid "The book of {} is not found: {}"
 msgstr "Книга {} не найдена: {}"
 
+msgid "The browser could not be opened: the address of the new issue is on the clipboard."
+msgstr "Не удалось открыть браузер: адрес нового сообщения скопирован в буфер обмена."
+
 msgid "The change was undone."
 msgstr "Изменение отменено."
 
@@ -2593,6 +2641,9 @@ msgstr "Движки с опцией SyzygyPath получают эти папк
 
 msgid "The engines' own books are off"
 msgstr "Собственные книги движков выключены"
+
+msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
+msgstr "Файл с именем «portable» рядом с программой хранит всё в этой папке. Пути внутри {} сохраняются относительно неё, поэтому эту папку можно перемещать или копировать на другой компьютер."
 
 msgid "The finished games of the match will appear here."
 msgstr "Здесь появятся завершённые партии матча."
@@ -2774,6 +2825,9 @@ msgstr "Турнир изменён."
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "Дисперсия партии при подсчёте по парам, делённая на дисперсию отдельных партий: если она меньше 1, парам нужно во столько же раз меньше партий для той же точности."
 
+msgid "The version and the system, for a bug report."
+msgstr "Версия и система — для сообщения об ошибке."
+
 msgid "The working directory of {} is not found."
 msgstr "Рабочая папка движка {} не найдена."
 
@@ -2791,6 +2845,9 @@ msgstr "Эта доля ничьих и это RMS-смещение несовм
 
 msgid "This engine once more, with another book"
 msgstr "Этот движок ещё раз, с другой книгой"
+
+msgid "This is the latest version."
+msgstr "Это последняя версия."
 
 msgid "This match is already finished."
 msgstr "Этот матч уже завершён."
@@ -2821,6 +2878,9 @@ msgstr "Контроль времени"
 
 msgid "Time per move"
 msgstr "Время на ход"
+
+msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
+msgstr "Чтобы хранить всё рядом с программой (на USB-накопителе, в папке, которую копируют между компьютерами), положите рядом с ней пустой файл с именем «portable»: профилем станет папка «data» рядом с ней. Скопируйте туда файлы этой папки, чтобы сохранить их."
 
 msgid "Total"
 msgstr "Итого"
@@ -2900,6 +2960,9 @@ msgstr "Неизвестный движок: {}"
 msgid "Unreadable PGN."
 msgstr "Нечитаемый PGN."
 
+msgid "Until the next version."
+msgstr "До следующей версии."
+
 msgid "Up to {} engines."
 msgstr "До {} движков."
 
@@ -2926,6 +2989,12 @@ msgstr "Значение"
 
 msgid "Variance ratio"
 msgstr "Отношение дисперсий"
+
+msgid "Version"
+msgstr "Версия"
+
+msgid "Version {} is out."
+msgstr "Вышла версия {}."
 
 msgid "Void this game (no replay)"
 msgstr "Аннулировать эту партию (без переигровки)"
@@ -2962,6 +3031,9 @@ msgstr "Что изменилось: {}"
 
 msgid "What was sent to the engines of its last try and what they answered, their error output included:\n{}"
 msgstr "Что было отправлено движкам при последней попытке и что они ответили, включая вывод ошибок:\n{}"
+
+msgid "What's new"
+msgstr "Что нового"
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "Когда в среднем он останавливался на сыгранном ходе: решение задолго до конца затраченного времени говорит о том, что время использовалось неэффективно."
@@ -3163,6 +3235,9 @@ msgstr "пусто"
 
 msgid "every pair with both colours"
 msgstr "каждая пара с обоими цветами"
+
+msgid "fastchess-gui {} is out (this is {})."
+msgstr "Вышел fastchess-gui {} (у вас {})."
 
 msgid "fastchess-gui {} — {} physical cores, {} threads"
 msgstr "fastchess-gui {} — физических ядер: {}, потоков: {}"

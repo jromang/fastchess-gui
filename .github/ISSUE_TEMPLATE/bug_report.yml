@@ -1,0 +1,64 @@
+# The program's "Report a problem…" opens this form with the version, system and log fields filled: their ids are
+# the query parameters it sends (gui/src/report.cpp). Keep them in step.
+name: Bug report
+description: Something in fastchess-gui does not work as it should.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. **Report a problem…** in the program (Settings, the Log page, or Ctrl+K) opens
+        this form with the version, the system and the log filled in. Read them before sending: remove what you do
+        not want to show (paths, engine names).
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What you did, from the start. The page, the engines, the settings that matter.
+      placeholder: |
+        1. New tournament, a gauntlet of 4 engines at 10+0.1
+        2. Start
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: seen
+    attributes:
+      label: What happened instead
+      description: The message shown, word for word. A screenshot helps (drag it here).
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Settings > Version, or the window title.
+      placeholder: fastchess-gui 0.5.9
+    validations:
+      required: true
+  - type: textarea
+    id: system
+    attributes:
+      label: System
+      description: The operating system, the processor, the graphics card and its driver.
+      render: text
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: The last lines of the Log page (fastchess-gui.log in the profile folder).
+      render: text
+  - type: textarea
+    id: engine_log
+    attributes:
+      label: Engine log
+      description: >-
+        For a problem with an engine: its name and version, and the log of the game (Engine log in the Games tab,
+        or logs/game-N.log in the tournament's folder).
+      render: text

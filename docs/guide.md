@@ -13,8 +13,8 @@ A navigation rail on the left leads to six pages:
 | Books | The opening book library, and the openings of each book with what is wrong with them |
 | Suites | Test suites (STS, WAC, ERET…): engines against the positions of an EPD file |
 | Ratings | One rating list over every game of every tournament |
-| Log | fastchess' own output and the messages of the GUI |
-| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the tournaments folder |
+| Log | fastchess' own output and the messages of the GUI, and *Report a problem…* |
+| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the profile folder and the portable mode, the tournaments folder, the lichess token, the version and new versions, *Report a problem…* |
 
 The interface is in English, French, German, Spanish, Italian, Brazilian Portuguese, Russian or simplified Chinese.
 At startup it follows the first preferred language of the system (English when there is no translation for it); it
@@ -24,6 +24,24 @@ WenQuanYi on Linux. The theme is light unless dark, or the system's choice, is p
 The Spanish, Italian, Portuguese, Russian and Chinese translations are new: corrections from players of those
 languages are welcome. They are plain `.po` files in `gui/i18n`, which Poedit and the like open.
 
+The version is in the window title and in **Settings**, whose *Copy* puts it on the clipboard with the system, for
+a bug report. *Tell me when a new version is out* (off by default) asks GitHub for the latest release at launch, at
+most once a day and in the background; when it is newer, the home page says so, with *Download page* (the release's
+page on GitHub, in the browser), *What's new* (its notes) and *Hide* (until the next version). Nothing is downloaded
+or installed by the program, and a failure (no network, GitHub unreachable) is only written in the log.
+
+*Report a problem…* (in **Settings**, on the **Log** page, in the command palette, and in the message of a failure
+at startup) opens a new issue on GitHub in the browser, from the bug report form, already filled with the version,
+the system (operating system, processor, memory, graphics card and driver) and the last lines of the log. Read it
+before sending it, remove what you do not want to show (paths, engine names) and say what you did, what you
+expected and what happened. The program sends nothing itself. Ideas go to the same place: *New issue*, *Idea*.
+
+The window opens as it was left: its size, its place on the screens, maximized or not. When the screen it was on is
+gone (a monitor unplugged), it opens in the middle of the main one; when its size no longer fits the screen (a lower
+resolution), at the default size. The panels dragged out of it, such as a detached board, come back where they were
+too (`layout.ini`), and into the window when their screen is gone. Wayland does not let a program choose its
+window's place: there, only the size and the maximized state come back.
+
 The pages use the whole window, whatever its size: the Live tab's boards grow with it, the new tournament form
 splits into two columns on a wide window, and the list of the Engines, Books and Ratings pages can be widened by
 dragging its right edge. Everything (text, buttons, boards) can also be made larger or smaller, from 80 to 250 %:
@@ -31,7 +49,8 @@ dragging its right edge. Everything (text, buttons, boards) can also be made lar
 
 **Ctrl+K** opens the command palette: the pages and tabs, the engines of the library (it opens the card), the books,
 the tournaments of the home page, and the actions possible now (*Pause*, *Resume*, *Stop*, *Start*, *Add to the
-queue*, the entries of *Import…*, *Check those not checked*, *Export for a rating list…*, *Copy* the standings…).
+queue*, the entries of *Import…*, *Check those not checked*, *Export for a rating list…*, *Copy* the standings,
+*Copy the version*, *Report a problem…*…).
 Letter case does not matter and the letters typed need not be adjacent ("rl" finds *Rating list*); names that start
 with them, or with a word that does, come first. Up and Down choose, Enter runs, Escape closes; Ctrl+K is left alone
 while a text field is being typed in. The *?* beside each page's title, or F1, opens this guide at the page's section.
@@ -562,11 +581,11 @@ fastchess-gui --run TOURNAMENT_FOLDER     # resume a tournament
 fastchess-gui --run SETUP.json            # create one from a setup or template file, with the profile's engines
 ```
 
-No window is opened; progress is printed on the console, with the tries of an engine that cannot start, the engine
-set aside (with its engine log) or back, as in the window. **Ctrl+C** stops after the running games and the
-tournament can be resumed later, from the command line or the GUI. Exit codes: 0 finished, 1 error while
-playing, 2 nothing to run, 3 stopped before the end (by Ctrl+C, or with nothing left to play without an engine that
-cannot start).
+No window is opened; the version, then the progress, are printed on the console, with the tries of an engine that
+cannot start, the engine set aside (with its engine log) or back, as in the window. **Ctrl+C** stops after the
+running games and the tournament can be resumed later, from the command line or the GUI. Exit codes: 0 finished,
+1 error while playing, 2 nothing to run, 3 stopped before the end (by Ctrl+C, or with nothing left to play without
+an engine that cannot start).
 
 The tournament can be broadcast at the same time, as from the *Broadcast* tab:
 
@@ -590,7 +609,19 @@ the TLCS port. For the web page, a tunnel avoids opening a port (see *Putting th
 Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/` on Linux,
 `%APPDATA%\fastchess\fastchess-gui\` on Windows, `~/Library/Application Support/fastchess/fastchess-gui/` on macOS.
 Files the program creates are not writable by other users, and `settings.json` is readable by its owner only once
-it holds a lichess token.
+it holds a lichess token. **Settings** shows the profile folder, with *Open the folder*.
+
+**Portable mode.** With a file named `portable` (empty, without extension) beside the program (beside
+`fastchess-gui.exe` or `fastchess-gui`, beside `fastchess-gui.app` on macOS), the profile is the folder `data`
+beside the program instead, and the default tournaments folder is `data/runs`: nothing is written elsewhere, but in
+the folders chosen for tournaments, exports and the like. The paths of what lies in the program's folder (engines,
+books, tablebases, test suites, the PGN files of the ratings and the setup, the folders chosen) are kept relative to
+it in the profile's files, so the whole folder can be moved, copied to another machine or run from a USB stick,
+whatever its drive letter, and its engines are found again. **Settings** says *Portable mode* beside the profile
+folder. To carry an existing profile over, copy its files into `data`. `--profile` still chooses another folder,
+outside the portable mode. A tournament keeps the engines' paths of when it was created: resume an unfinished one
+before moving the folder. On macOS, remove the quarantine first (see the README): otherwise macOS runs the
+application from a temporary place, where the `portable` file is not.
 
 - `engines.json`: the engine library, and `engines.json.bak` its previous version, read if the first is lost;
 - `setup.json`: the last setup; `templates/*.json`: the saved templates; `queue.json`: the queue;
@@ -598,7 +629,8 @@ it holds a lichess token.
 - `layout.ini`: the window layout and the panels of the workspace; `layouts.json`: the layouts saved by name; `fastchess-gui.log`: the log of the last session;
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**, the folder of *Every engine
-  of a folder…*, the tester and site of *Export for a rating list…*, and the lichess token;
+  of a folder…*, the tester and site of *Export for a rating list…*, the lichess token, the window's size and place,
+  and the check for a new version (wanted or not, when it was last made, the release it found, the notice hidden);
 - `running.json`: the tournament running now, removed when it stops; found at launch, it tells what to resume;
 - `runs/<date>_<A>_vs_<B>/` for a match, `runs/<date>_<name>/` for a tournament (in `runs/` or the chosen
   folder), one folder each, which can be moved, copied, zipped and sent:
@@ -650,11 +682,14 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
 - `--profile DIR` uses another profile folder;
 - `--autostart` starts the saved setup at launch (rather than resuming the tournament that was running, see
   *Running a tournament*);
+- `--size WxH` opens the window at that size, centred, rather than as it was left, and leaves the size and place
+  kept for the next launch alone;
 - `--shot` saves a screenshot of the window after the given number of seconds (default 5), with WINDOW brought to
   the front, and quits once every screenshot is taken. It can be repeated. WINDOW is a page (`home`, `setup`,
   `engines`, `books`, `ratings`, `ratings-engine`, `ratings-h2h`, `ratings-progress`, `console`, `settings`) or a
   tab (`live`, `games`, `openings`, `standings`, `schedule`, `bracket`, `broadcast`). The mouse is ignored in this
   mode and, on Linux, the window is rendered off screen (no window appears; set `SDL_VIDEODRIVER` to override);
+  the window opens at the default size, or `--size`, and the size and place kept are left alone;
 - `--focus WINDOW` opens that page or tab at launch, or: `engines-card` (the first engine's card),
   `engines-refresh` (*Refresh: the new engines of the folder*), `engines-ratings=FILE` (the preview of that rating
   list), `setup-picker` and `setup-suggest` (*Add an engine…*, with the suggestion made), `submission-export`

@@ -1439,7 +1439,7 @@ void App::drawTemplates() {
 
     const auto save = [&](const std::string& file) {
         std::filesystem::create_directories(dir, ec);
-        if (writeJson(dir / (file + ".json"), setup_)) {
+        if (writeJson(dir / (file + ".json"), portable::stored(setup_))) {
             template_name_.clear();
             template_message_.clear();
         } else {

@@ -17,6 +17,7 @@
 
 #include "broadcaster.hpp"
 #include "memory.hpp"
+#include "portable.hpp"
 #include "run.hpp"
 
 namespace fcg {
@@ -211,6 +212,9 @@ class BothListeners final : public tour::RecordListener {
 
 int runHeadless(const std::string& target, const Storage& storage, const CpuTopology& topology,
                 const HeadlessBroadcast& broadcast) {
+    // The version first: what a log of the run, sent with a bug report, must tell.
+    std::printf("fastchess-gui %s\n", FCG_VERSION);
+    std::fflush(stdout);
     std::unique_ptr<tour::TournamentState> state;
     BroadcastSettings settings;
     // Hash tables larger than the memory installed cannot work; larger than the free memory, they swap.
@@ -229,11 +233,13 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
             if (!state->finished() && !preparePgnBooks(pgnBookNeeds(state->spec()))) return 2;
         } else {
             // A setup or template file: a new tournament, with the engines of the profile.
-            const auto setup = readJson<MatchSetup>(target);
+            auto setup = readJson<MatchSetup>(target);
             if (!setup) {
                 std::fprintf(stderr, "%s is neither a tournament folder nor a setup file\n", target.c_str());
                 return 2;
             }
+            // A template of a portable profile names the files of the program's folder relative to it.
+            portable::resolve(*setup);
             settings.files      = setup->broadcast_files;
             settings.dir        = setup->broadcast_dir;
             settings.tlcs       = setup->broadcast_tlcs;
@@ -250,9 +256,9 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
                 std::fprintf(stderr,
                              "warning: web_discord_id is not a Discord server ID (17 to 20 digits), left out\n");
             }
-            settings.tunnel     = setup->broadcast_tunnel && (setup->tunnel_service == 0 || !setup->tunnel_host.empty());
-            settings.tunnel_to  = tunnelSettings(*setup, storage.root() / "known_hosts.json");
-            const auto engines  = storage.loadEngines();
+            settings.tunnel    = setup->broadcast_tunnel && (setup->tunnel_service == 0 || !setup->tunnel_host.empty());
+            settings.tunnel_to = tunnelSettings(*setup, storage.root() / "known_hosts.json");
+            const auto engines = storage.loadEngines();
             const auto dir =
                 storage.runsDir() /
                 (setup->format == TournamentFormat::Match

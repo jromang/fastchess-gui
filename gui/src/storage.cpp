@@ -7,6 +7,7 @@
 
 #include "console.hpp"
 #include "i18n.hpp"
+#include "portable.hpp"
 
 namespace fcg {
 
@@ -32,10 +33,12 @@ T plain(const nlohmann::json& j) {
     return j.get<T>();
 }
 
-// A setup the program saved in the profile, upgraded (see upgradeSavedSetup()).
+// A setup the program saved in the profile, upgraded (see upgradeSavedSetup()), its paths made absolute again (in the
+// portable mode, those in the program's folder are kept relative to it).
 MatchSetup savedSetup(const nlohmann::json& j) {
     auto setup = j.get<MatchSetup>();
     upgradeSavedSetup(j, setup);
+    portable::resolve(setup);
     return setup;
 }
 
@@ -43,8 +46,17 @@ std::vector<QueuedTournament> savedQueue(const nlohmann::json& j) {
     auto queue = j.get<std::vector<QueuedTournament>>();
     for (std::size_t i = 0; i < queue.size(); ++i) {
         if (const auto& item = j[i]; item.contains("setup")) upgradeSavedSetup(item["setup"], queue[i].setup);
+        portable::resolve(queue[i].setup);
     }
     return queue;
+}
+
+// The engines and books of the profile, their paths made absolute again.
+template <typename T>
+std::vector<T> resolvedList(const nlohmann::json& j) {
+    auto items = j.get<std::vector<T>>();
+    portable::resolve(items);
+    return items;
 }
 
 }  // namespace
@@ -123,25 +135,26 @@ Storage::Storage(fs::path root) : root_(std::move(root)) {
     fs::create_directories(root_, ec);
     fs::remove(root_ / "imgui.ini", ec);
 
-    runs_dir_ = fs::path(setting(settings(), "tournaments_dir", std::string{}));
+    runs_dir_ = fs::path(portable::resolved(setting(settings(), "tournaments_dir", std::string{})));
 }
 
 void Storage::setRunsDir(const fs::path& dir) {
     runs_dir_                   = dir == defaultRunsDir() ? fs::path{} : dir;
     auto settings               = this->settings();
-    settings["tournaments_dir"] = runs_dir_.string();
+    settings["tournaments_dir"] = portable::stored(runs_dir_.string());
     save(root_ / "settings.json", settings);
 }
 
 std::vector<EngineEntry> Storage::loadEngines() const {
     const auto file = root_ / "engines.json";
-    if (auto engines = readProfileFile<std::vector<EngineEntry>>(file)) return *engines;
+    if (auto engines = readProfileFile<std::vector<EngineEntry>>(file, resolvedList<EngineEntry>)) return *engines;
 
     // The list as it was before its last change, when the file is gone or could not be read.
     const auto backup = fs::path(file).concat(".bak");
     if (auto engines = readJson<std::vector<EngineEntry>>(backup)) {
         Console::instance().add(trf("The engines are those of {}, kept before the last change.", backup.string()),
                                 true);
+        portable::resolve(*engines);
         return *engines;
     }
     return {};
@@ -150,19 +163,20 @@ std::vector<EngineEntry> Storage::loadEngines() const {
 void Storage::saveEngines(const std::vector<EngineEntry>& engines) const {
     // With the list before this change as engines.json.bak: hundreds of engines and their settings are not lost
     // to one bad write.
-    save(root_ / "engines.json", engines, true);
+    save(root_ / "engines.json", portable::stored(engines), true);
 }
 
 std::vector<fs::path> Storage::ratingPgns() const {
     std::vector<fs::path> out;
-    for (const auto& f : setting(settings(), "rating_pgns", std::vector<std::string>{})) out.emplace_back(f);
+    for (const auto& f : setting(settings(), "rating_pgns", std::vector<std::string>{}))
+        out.emplace_back(portable::resolved(f));
     return out;
 }
 
 void Storage::setRatingPgns(const std::vector<fs::path>& files) const {
     auto settings = this->settings();
     std::vector<std::string> list;
-    for (const auto& f : files) list.push_back(f.string());
+    for (const auto& f : files) list.push_back(portable::stored(f.string()));
     settings["rating_pgns"] = list;
     save(root_ / "settings.json", settings);
 }
@@ -177,11 +191,13 @@ void Storage::setSeparatePlayers(const std::vector<std::string>& players) const 
     save(root_ / "settings.json", settings);
 }
 
-fs::path Storage::engineFolder() const { return fs::path(setting(settings(), "engine_folder", std::string{})); }
+fs::path Storage::engineFolder() const {
+    return fs::path(portable::resolved(setting(settings(), "engine_folder", std::string{})));
+}
 
 void Storage::setEngineFolder(const fs::path& folder) const {
     auto settings             = this->settings();
-    settings["engine_folder"] = folder.string();
+    settings["engine_folder"] = portable::stored(folder.string());
     save(root_ / "settings.json", settings);
 }
 
@@ -210,17 +226,64 @@ void Storage::setSubmissionTester(const std::string& name, const std::string& si
     save(root_ / "settings.json", settings);
 }
 
-std::vector<BookEntry> Storage::loadBooks() const {
-    return readProfileFile<std::vector<BookEntry>>(root_ / "books.json").value_or(std::vector<BookEntry>{});
+std::optional<WindowPlace> Storage::windowPlace() const {
+    const auto s = settings();
+    if (!s.contains("window") || !s["window"].is_object()) return std::nullopt;
+    try {
+        return s["window"].get<WindowPlace>();
+    } catch (const nlohmann::json::exception&) {
+        return std::nullopt;
+    }
 }
 
-void Storage::saveBooks(const std::vector<BookEntry>& books) const { save(root_ / "books.json", books); }
+void Storage::setWindowPlace(const WindowPlace& place) const {
+    auto settings      = this->settings();
+    settings["window"] = place;
+    save(root_ / "settings.json", settings);
+}
+
+update::Settings Storage::updateSettings() const {
+    const auto s = settings();
+    update::Settings out;
+    out.enabled   = setting(s, "check_new_version", false);
+    out.checked   = setting(s, "new_version_checked", int64_t{0});
+    out.dismissed = setting(s, "new_version_dismissed", std::string{});
+    if (s.contains("latest_release") && s["latest_release"].is_object()) {
+        try {
+            out.latest = s["latest_release"].get<update::Release>();
+        } catch (const nlohmann::json::exception&) {
+        }
+    }
+    return out;
+}
+
+void Storage::setUpdateSettings(const update::Settings& updates) const {
+    auto settings                     = this->settings();
+    settings["check_new_version"]     = updates.enabled;
+    settings["new_version_checked"]   = updates.checked;
+    settings["new_version_dismissed"] = updates.dismissed;
+    if (updates.latest) {
+        settings["latest_release"] = *updates.latest;
+    } else {
+        settings.erase("latest_release");
+    }
+    save(root_ / "settings.json", settings);
+}
+
+std::vector<BookEntry> Storage::loadBooks() const {
+    return readProfileFile<std::vector<BookEntry>>(root_ / "books.json", resolvedList<BookEntry>)
+        .value_or(std::vector<BookEntry>{});
+}
+
+void Storage::saveBooks(const std::vector<BookEntry>& books) const {
+    save(root_ / "books.json", portable::stored(books));
+}
 
 MatchSetup Storage::loadSetup() const {
     return readProfileFile<MatchSetup>(root_ / "setup.json", savedSetup).value_or(MatchSetup{});
 }
 
-void Storage::saveSetup(const MatchSetup& setup) const { save(root_ / "setup.json", setup); }
+void Storage::saveSetup(const MatchSetup& setup) const { save(root_ / "setup.json", portable::stored(setup)); }
 
 std::vector<layout::Layout> Storage::loadLayouts() const {
     return readProfileFile<std::vector<layout::Layout>>(root_ / "layouts.json").value_or(std::vector<layout::Layout>{});
@@ -233,7 +296,11 @@ std::vector<QueuedTournament> Storage::loadQueue() const {
         .value_or(std::vector<QueuedTournament>{});
 }
 
-void Storage::saveQueue(const std::vector<QueuedTournament>& queue) const { save(root_ / "queue.json", queue); }
+void Storage::saveQueue(const std::vector<QueuedTournament>& queue) const {
+    auto kept = queue;
+    for (auto& item : kept) item.setup = portable::stored(std::move(item.setup));
+    save(root_ / "queue.json", kept);
+}
 
 std::optional<RunningMarker> Storage::runningMarker() const { return readJson<RunningMarker>(root_ / "running.json"); }
 

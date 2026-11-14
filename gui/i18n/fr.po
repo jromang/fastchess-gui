@@ -367,6 +367,9 @@ msgstr "En texte"
 msgid "Asks where to write the book, then reads the games in the background; the book is added to the library."
 msgstr "Demande où écrire le livre, puis lit les parties en arrière-plan ; le livre est ajouté à la bibliothèque."
 
+msgid "At launch, at most once a day, the program asks GitHub for its latest release; the home page tells when there is a newer one, with its notes and a link to its page. Nothing is downloaded nor installed."
+msgstr "Au lancement, au plus une fois par jour, le programme demande à GitHub sa dernière version publiée ; la page d'accueil te dit quand il y en a une plus récente, avec ses notes et un lien vers sa page. Rien n'est téléchargé ni installé."
+
 msgid "Author: {} → {}"
 msgstr "Auteur : {} → {}"
 
@@ -688,8 +691,17 @@ msgstr "Continuer avec les programmes modifiés"
 msgid "Copy"
 msgstr "Copier"
 
+msgid "Copy the version"
+msgstr "Copier la version"
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "Cœurs occupés pendant qu'il réfléchit · part d'un cœur utilisée pendant que l'adversaire réfléchit (0 % sans pondering). Mesuré après 20 s de chaque."
+
+msgid "Could not check for a new version: {}"
+msgstr "Impossible de vérifier s'il y a une nouvelle version : {}"
+
+msgid "Could not check: {}"
+msgstr "Vérification impossible : {}"
 
 msgid "Count"
 msgstr "Nombre"
@@ -768,6 +780,12 @@ msgstr "Fermer l'avis des changements : {}"
 
 msgid "Done: the tournament goes on with the change."
 msgstr "Fait : le tournoi continue avec la modification."
+
+msgid "Download page"
+msgstr "Page de téléchargement"
+
+msgid "Download page of fastchess-gui {}"
+msgstr "Page de téléchargement de fastchess-gui {}"
 
 msgid "Draw"
 msgstr "Nulle"
@@ -1212,6 +1230,9 @@ msgstr "Face-à-face"
 msgid "Health"
 msgstr "Santé"
 
+msgid "Hide"
+msgstr "Masquer"
+
 msgid "Host"
 msgstr "Hôte"
 
@@ -1388,6 +1409,9 @@ msgstr "Dernières 24 heures :"
 
 msgid "Latest results"
 msgstr "Derniers résultats"
+
+msgid "Latest version on GitHub: {} (this is {})"
+msgstr "Dernière version sur GitHub : {} (version actuelle : {})"
 
 msgid "Layout"
 msgstr "Disposition"
@@ -1754,6 +1778,9 @@ msgstr "Ouvrir un dossier…"
 msgid "Open the folder"
 msgstr "Ouvrir le dossier"
 
+msgid "Open the profile folder"
+msgstr "Ouvrir le dossier du profil"
+
 msgid "Open the tournament."
 msgstr "Ouvrir le tournoi."
 
@@ -1777,6 +1804,9 @@ msgstr "Ouvertures"
 
 msgid "Openings: {}"
 msgstr "Ouvertures : {}"
+
+msgid "Opens a new issue on GitHub in the browser, filled with the version, the system, the graphics driver and the last lines of the log. Read it and complete it before sending it: the program sends nothing itself."
+msgstr "Ouvre un nouveau ticket sur GitHub dans le navigateur, rempli avec la version, le système, le pilote graphique et les dernières lignes du journal. Relis-le et complète-le avant de l'envoyer : le programme n'envoie rien lui-même."
 
 msgid "Opp."
 msgstr "Adv."
@@ -1960,6 +1990,12 @@ msgstr "Ponder désactivé"
 msgid "Port"
 msgstr "Port"
 
+msgid "Portable mode"
+msgstr "Mode portable"
+
+msgid "Portable mode: off"
+msgstr "Mode portable : désactivé"
+
 msgid "Position"
 msgstr "Position"
 
@@ -1985,6 +2021,9 @@ msgstr "Processeur"
 
 msgid "Processor use"
 msgstr "Utilisation du processeur"
+
+msgid "Profile"
+msgstr "Profil"
 
 msgid "Program"
 msgstr "Programme"
@@ -2163,6 +2202,9 @@ msgstr "Remplace ta disposition de ce nom."
 
 msgid "Replace…"
 msgstr "Remplacer…"
+
+msgid "Report a problem…"
+msgstr "Signaler un problème…"
 
 msgid "Resign"
 msgstr "Abandon"
@@ -2487,6 +2529,9 @@ msgstr "Tables de finales"
 msgid "Tabs"
 msgstr "Onglets"
 
+msgid "Tell me when a new version is out"
+msgstr "Me prévenir quand une nouvelle version sort"
+
 msgid "Template name"
 msgstr "Nom du modèle"
 
@@ -2541,6 +2586,9 @@ msgstr "Le livre de {} n'est ni un livre Polyglot (.bin) ni un livre PGN : {}"
 msgid "The book of {} is not found: {}"
 msgstr "Le livre de {} est introuvable : {}"
 
+msgid "The browser could not be opened: the address of the new issue is on the clipboard."
+msgstr "Le navigateur n'a pas pu être ouvert : l'adresse du nouveau ticket est dans le presse-papiers."
+
 msgid "The change was undone."
 msgstr "La modification a été annulée."
 
@@ -2582,6 +2630,9 @@ msgstr "Les moteurs qui ont une option SyzygyPath reçoivent ces dossiers, ceux 
 
 msgid "The engines' own books are off"
 msgstr "Les livres propres des moteurs sont désactivés"
+
+msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
+msgstr "Le fichier nommé « portable » à côté du programme garde tout dans ce dossier. Les chemins dans {} sont gardés relatifs à lui, pour que ce dossier puisse être déplacé ou copié sur une autre machine."
 
 msgid "The finished games of the match will appear here."
 msgstr "Les parties terminées du match apparaîtront ici."
@@ -2761,6 +2812,9 @@ msgstr "Le tournoi a été modifié."
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "La variance d'une partie quand les parties sont comptées par paires, rapportée à celle des parties seules : sous 1, les paires demandent d'autant moins de parties pour la même précision."
 
+msgid "The version and the system, for a bug report."
+msgstr "La version et le système, pour un rapport de bug."
+
 msgid "The working directory of {} is not found."
 msgstr "Le dossier de travail de {} est introuvable."
 
@@ -2778,6 +2832,9 @@ msgstr "Ce taux de nulles et ce biais RMS ne sont pas compatibles."
 
 msgid "This engine once more, with another book"
 msgstr "Ce moteur une fois de plus, avec un autre livre"
+
+msgid "This is the latest version."
+msgstr "C'est la dernière version."
 
 msgid "This match is already finished."
 msgstr "Ce match est déjà terminé."
@@ -2808,6 +2865,9 @@ msgstr "Cadence"
 
 msgid "Time per move"
 msgstr "Temps par coup"
+
+msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
+msgstr "Pour tout garder plutôt à côté du programme (une clé USB, un dossier copié d'une machine à l'autre), mets un fichier vide nommé « portable » à côté de lui : le profil est alors le dossier « data » à côté de lui. Copie les fichiers de ce dossier-ci là-bas pour les garder."
 
 msgid "Total"
 msgstr "Total"
@@ -2887,6 +2947,9 @@ msgstr "Moteur inconnu : {}"
 msgid "Unreadable PGN."
 msgstr "PGN illisible."
 
+msgid "Until the next version."
+msgstr "Jusqu'à la version suivante."
+
 msgid "Up to {} engines."
 msgstr "Jusqu'à {} moteurs."
 
@@ -2913,6 +2976,12 @@ msgstr "Valeur"
 
 msgid "Variance ratio"
 msgstr "Rapport des variances"
+
+msgid "Version"
+msgstr "Version"
+
+msgid "Version {} is out."
+msgstr "La version {} est sortie."
 
 msgid "Void this game (no replay)"
 msgstr "Annuler cette partie (sans la rejouer)"
@@ -2949,6 +3018,9 @@ msgstr "Ce qui a changé : {}"
 
 msgid "What was sent to the engines of its last try and what they answered, their error output included:\n{}"
 msgstr "Ce qui a été envoyé aux moteurs de son dernier essai et ce qu'ils ont répondu, leur sortie d'erreur comprise :\n{}"
+
+msgid "What's new"
+msgstr "Nouveautés"
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "Quand il s'est fixé sur le coup joué, en moyenne : une décision bien avant la fin du temps passé dit que le temps a été mal employé."
@@ -3149,6 +3221,9 @@ msgstr "vide"
 
 msgid "every pair with both colours"
 msgstr "chaque paire avec les deux couleurs"
+
+msgid "fastchess-gui {} is out (this is {})."
+msgstr "fastchess-gui {} est disponible (tu as la {})."
 
 msgid "fastchess-gui {} — {} physical cores, {} threads"
 msgstr "fastchess-gui {} — {} cœurs physiques, {} threads"

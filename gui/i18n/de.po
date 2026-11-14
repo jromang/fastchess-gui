@@ -367,6 +367,9 @@ msgstr "Als Text"
 msgid "Asks where to write the book, then reads the games in the background; the book is added to the library."
 msgstr "Fragt, wohin das Buch geschrieben wird, und liest dann die Partien im Hintergrund; das Buch wird zur Bibliothek hinzugefügt."
 
+msgid "At launch, at most once a day, the program asks GitHub for its latest release; the home page tells when there is a newer one, with its notes and a link to its page. Nothing is downloaded nor installed."
+msgstr "Beim Start, höchstens einmal am Tag, fragt das Programm GitHub nach seiner neuesten Version; die Startseite sagt dir, wenn es eine neuere gibt, mit ihren Hinweisen und einem Link zu ihrer Seite. Nichts wird heruntergeladen oder installiert."
+
 msgid "Author: {} → {}"
 msgstr "Autor: {} → {}"
 
@@ -688,8 +691,17 @@ msgstr "Mit den geänderten Programmen weiter"
 msgid "Copy"
 msgstr "Kopieren"
 
+msgid "Copy the version"
+msgstr "Version kopieren"
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "Ausgelastete Kerne, während sie rechnet · Anteil eines Kerns, während der Gegner rechnet (0 % ohne Pondern). Gemessen nach 20 s von beidem."
+
+msgid "Could not check for a new version: {}"
+msgstr "Konnte nicht nach einer neuen Version suchen: {}"
+
+msgid "Could not check: {}"
+msgstr "Prüfung nicht möglich: {}"
 
 msgid "Count"
 msgstr "Anzahl"
@@ -768,6 +780,12 @@ msgstr "Hinweis zu den Änderungen schließen: {}"
 
 msgid "Done: the tournament goes on with the change."
 msgstr "Erledigt: das Turnier läuft mit der Änderung weiter."
+
+msgid "Download page"
+msgstr "Download-Seite"
+
+msgid "Download page of fastchess-gui {}"
+msgstr "Download-Seite von fastchess-gui {}"
 
 msgid "Draw"
 msgstr "Remis"
@@ -1212,6 +1230,9 @@ msgstr "Direkter Vergleich"
 msgid "Health"
 msgstr "Zustand"
 
+msgid "Hide"
+msgstr "Ausblenden"
+
 msgid "Host"
 msgstr "Host"
 
@@ -1388,6 +1409,9 @@ msgstr "Letzte 24 Stunden:"
 
 msgid "Latest results"
 msgstr "Letzte Ergebnisse"
+
+msgid "Latest version on GitHub: {} (this is {})"
+msgstr "Neueste Version auf GitHub: {} (installiert: {})"
 
 msgid "Layout"
 msgstr "Layout"
@@ -1754,6 +1778,9 @@ msgstr "Ordner öffnen…"
 msgid "Open the folder"
 msgstr "Ordner öffnen"
 
+msgid "Open the profile folder"
+msgstr "Profilordner öffnen"
+
 msgid "Open the tournament."
 msgstr "Das Turnier öffnen."
 
@@ -1777,6 +1804,9 @@ msgstr "Eröffnungen"
 
 msgid "Openings: {}"
 msgstr "Eröffnungen: {}"
+
+msgid "Opens a new issue on GitHub in the browser, filled with the version, the system, the graphics driver and the last lines of the log. Read it and complete it before sending it: the program sends nothing itself."
+msgstr "Öffnet ein neues Issue auf GitHub im Browser, ausgefüllt mit der Version, dem System, dem Grafiktreiber und den letzten Zeilen des Protokolls. Lies und ergänze es, bevor du es abschickst: Das Programm selbst sendet nichts."
 
 msgid "Opp."
 msgstr "Geg."
@@ -1960,6 +1990,12 @@ msgstr "Ponder aus"
 msgid "Port"
 msgstr "Port"
 
+msgid "Portable mode"
+msgstr "Portabler Modus"
+
+msgid "Portable mode: off"
+msgstr "Portabler Modus: aus"
+
 msgid "Position"
 msgstr "Stellung"
 
@@ -1985,6 +2021,9 @@ msgstr "Prozessor"
 
 msgid "Processor use"
 msgstr "Prozessornutzung"
+
+msgid "Profile"
+msgstr "Profil"
 
 msgid "Program"
 msgstr "Programm"
@@ -2163,6 +2202,9 @@ msgstr "Ersetzt dein Layout mit diesem Namen."
 
 msgid "Replace…"
 msgstr "Ersetzen…"
+
+msgid "Report a problem…"
+msgstr "Problem melden…"
 
 msgid "Resign"
 msgstr "Aufgabe"
@@ -2487,6 +2529,9 @@ msgstr "Tablebases"
 msgid "Tabs"
 msgstr "Reiter"
 
+msgid "Tell me when a new version is out"
+msgstr "Mir sagen, wenn eine neue Version erscheint"
+
 msgid "Template name"
 msgstr "Name der Vorlage"
 
@@ -2541,6 +2586,9 @@ msgstr "Das Buch von {} ist weder ein Polyglot-Buch (.bin) noch ein PGN-Buch: {}
 msgid "The book of {} is not found: {}"
 msgstr "Das Buch von {} wurde nicht gefunden: {}"
 
+msgid "The browser could not be opened: the address of the new issue is on the clipboard."
+msgstr "Der Browser konnte nicht geöffnet werden: Die Adresse des neuen Issues ist in der Zwischenablage."
+
 msgid "The change was undone."
 msgstr "Die Änderung wurde rückgängig gemacht."
 
@@ -2582,6 +2630,9 @@ msgstr "Die Engines mit einer Option SyzygyPath erhalten diese Verzeichnisse, di
 
 msgid "The engines' own books are off"
 msgstr "Die eigenen Bücher der Engines sind aus"
+
+msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
+msgstr "Die Datei namens „portable“ neben dem Programm hält alles in diesem Ordner. Die Pfade in {} werden relativ dazu gespeichert, sodass dieser Ordner verschoben oder auf einen anderen Rechner kopiert werden kann."
 
 msgid "The finished games of the match will appear here."
 msgstr "Die beendeten Partien des Matches erscheinen hier."
@@ -2761,6 +2812,9 @@ msgstr "Das Turnier wurde geändert."
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "Die Varianz einer Partie, wenn die Partien paarweise gezählt werden, geteilt durch die Varianz einzelner Partien: unter 1 brauchen die Paare entsprechend weniger Partien für dieselbe Genauigkeit."
 
+msgid "The version and the system, for a bug report."
+msgstr "Die Version und das System, für einen Fehlerbericht."
+
 msgid "The working directory of {} is not found."
 msgstr "Das Arbeitsverzeichnis von {} wurde nicht gefunden."
 
@@ -2778,6 +2832,9 @@ msgstr "Diese Remisquote und dieser RMS-Bias passen nicht zusammen."
 
 msgid "This engine once more, with another book"
 msgstr "Diese Engine noch einmal, mit einem anderen Buch"
+
+msgid "This is the latest version."
+msgstr "Dies ist die neueste Version."
 
 msgid "This match is already finished."
 msgstr "Dieses Match ist bereits beendet."
@@ -2808,6 +2865,9 @@ msgstr "Bedenkzeit"
 
 msgid "Time per move"
 msgstr "Zeit pro Zug"
+
+msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
+msgstr "Um stattdessen alles neben dem Programm zu behalten (ein USB-Stick, ein Ordner, der zwischen Rechnern kopiert wird), lege eine leere Datei namens „portable“ daneben: Das Profil ist dann der Ordner „data“ daneben. Kopiere die Dateien dieses Ordners dorthin, um sie zu behalten."
 
 msgid "Total"
 msgstr "Gesamt"
@@ -2887,6 +2947,9 @@ msgstr "Unbekannte Engine: {}"
 msgid "Unreadable PGN."
 msgstr "Unlesbares PGN."
 
+msgid "Until the next version."
+msgstr "Bis zur nächsten Version."
+
 msgid "Up to {} engines."
 msgstr "Bis zu {} Engines."
 
@@ -2913,6 +2976,12 @@ msgstr "Wert"
 
 msgid "Variance ratio"
 msgstr "Varianzverhältnis"
+
+msgid "Version"
+msgstr "Version"
+
+msgid "Version {} is out."
+msgstr "Version {} ist erschienen."
 
 msgid "Void this game (no replay)"
 msgstr "Diese Partie annullieren (nicht neu spielen)"
@@ -2949,6 +3018,9 @@ msgstr "Was sich geändert hat: {}"
 
 msgid "What was sent to the engines of its last try and what they answered, their error output included:\n{}"
 msgstr "Was an die Engines ihres letzten Versuchs gesendet wurde und was sie antworteten, samt ihrer Fehlerausgabe:\n{}"
+
+msgid "What's new"
+msgstr "Neuerungen"
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "Wann sie sich im Schnitt auf den gespielten Zug festgelegt hat: Eine Entscheidung lange vor dem Ende der verbrauchten Zeit zeigt, dass die Zeit schlecht genutzt wurde."
@@ -3149,6 +3221,9 @@ msgstr "leer"
 
 msgid "every pair with both colours"
 msgstr "jedes Paar mit beiden Farben"
+
+msgid "fastchess-gui {} is out (this is {})."
+msgstr "fastchess-gui {} ist erschienen (du hast {})."
 
 msgid "fastchess-gui {} — {} physical cores, {} threads"
 msgstr "fastchess-gui {} — {} physische Kerne, {} Threads"

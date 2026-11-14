@@ -1,8 +1,8 @@
 #pragma once
 
-// HTTP and HTTPS POST requests, for the lichess broadcasts: Mbed TLS, linked in, trusting only the root
-// certificates of tls_roots.cpp, and a client of the little HTTP/1.1 they need. HTTPS goes through the proxy the
-// environment names, if any.
+// HTTP and HTTPS requests, for the lichess broadcasts and the check for a new version: Mbed TLS, linked in, trusting
+// only the root certificates of tls_roots.cpp, and a client of the little HTTP/1.1 they need. HTTPS goes through
+// the proxy the environment names, if any.
 
 #include <functional>
 #include <optional>
@@ -24,9 +24,14 @@ struct HttpRequest {
     std::string token;         // sent as "Authorization: Bearer <token>" when not empty
     std::string content_type;  // of the body
     std::string body;
-    int timeout_s = 20;
+    int timeout_s      = 20;
+    std::string method = "POST";
+    std::vector<std::pair<std::string, std::string>> headers;  // more of them: (name, value)
 };
 
+// The request, sent with the User-Agent "fastchess-gui/<version>".
+[[nodiscard]] HttpResult httpRequest(const HttpRequest& request);
+// The same, as a POST.
 [[nodiscard]] HttpResult httpPost(const HttpRequest& request);
 
 // application/x-www-form-urlencoded, from (name, value) pairs.

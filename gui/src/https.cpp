@@ -48,6 +48,9 @@ std::optional<Url> parseUrl(std::string_view url) {
     return u;
 }
 
+// GitHub's API refuses a request without one.
+constexpr const char* USER_AGENT = "fastchess-gui/" FCG_VERSION;
+
 // A server that answers at all connects in far less.
 constexpr int CONNECT_TIMEOUT_MS = 10000;
 
@@ -253,7 +256,7 @@ class Connection {
     std::string tunnel(const Url& url, const Proxy& proxy) {
         const auto target =
             fmt::format("{}:{}", url.host.find(':') != std::string::npos ? "[" + url.host + "]" : url.host, url.port);
-        auto request = fmt::format("CONNECT {0} HTTP/1.1\r\nHost: {0}\r\nUser-Agent: fastchess-gui\r\n", target);
+        auto request = fmt::format("CONNECT {0} HTTP/1.1\r\nHost: {0}\r\nUser-Agent: {1}\r\n", target, USER_AGENT);
         if (!proxy.authorization.empty()) request += "Proxy-Authorization: " + proxy.authorization + "\r\n";
         request += "\r\n";
         if (!send(request)) return "the request could not be sent to the proxy " + proxy.host;
@@ -384,6 +387,12 @@ std::optional<Proxy> proxyFor(std::string_view host, const Environment& environm
 std::optional<Proxy> proxyFor(std::string_view host) { return proxyFor(host, environmentVariable); }
 
 HttpResult httpPost(const HttpRequest& request) {
+    auto post   = request;
+    post.method = "POST";
+    return httpRequest(post);
+}
+
+HttpResult httpRequest(const HttpRequest& request) {
     HttpResult result;
     const auto url = parseUrl(request.url);
     if (!url) {
@@ -402,11 +411,15 @@ HttpResult httpPost(const HttpRequest& request) {
         result.error = std::move(error);
         return result;
     }
-    std::string head =
-        fmt::format("POST {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: fastchess-gui\r\n", url->path, url->host);
+    std::string head = fmt::format("{} {} HTTP/1.1\r\nHost: {}\r\nUser-Agent: {}\r\n", request.method, url->path,
+                                   url->host, USER_AGENT);
     if (!request.token.empty()) head += "Authorization: Bearer " + request.token + "\r\n";
     if (!request.content_type.empty()) head += "Content-Type: " + request.content_type + "\r\n";
-    head += fmt::format("Content-Length: {}\r\nConnection: close\r\n\r\n", request.body.size());
+    for (const auto& [name, value] : request.headers) head += name + ": " + value + "\r\n";
+    if (request.method != "GET" || !request.body.empty()) {
+        head += fmt::format("Content-Length: {}\r\n", request.body.size());
+    }
+    head += "Connection: close\r\n\r\n";
     if (!connection.send(head) || !connection.send(request.body)) {
         result.error = "the request could not be sent to " + url->host;
         return result;

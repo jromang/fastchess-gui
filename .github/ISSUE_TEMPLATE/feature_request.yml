@@ -1,0 +1,24 @@
+name: Idea
+description: Something fastchess-gui could do, or do better.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What you would like the program to do.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: What it is for
+      description: >-
+        The testing you do that needs it, and how you do it today (by hand, with another program: cutechess, a
+        script).
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Settings > Version, or the window title.
+      placeholder: fastchess-gui 0.5.9

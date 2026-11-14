@@ -157,7 +157,7 @@ void App::renameEngine(int index, const std::string& name) {
     loadSuiteSetup();  // before it is changed and written
     bool suite = false;
     for (auto& n : suite_setup_.engines) suite |= follow(n);
-    if (suite) writeJson(storage_.root() / "suite.json", suite_setup_);
+    if (suite) saveSuiteSetup();
     if (engine_marked_.erase(old)) engine_marked_.insert(now);
 }
 
@@ -1408,6 +1408,8 @@ void App::drawConsole() {
     }
     ImGui::SameLine();
     ImGui::Checkbox(TR("Follow"), &console_follow_);
+    ImGui::SameLine();
+    reportButton("report_log", true);
 
     ImGui::BeginChild("##console", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
     ImGuiListClipper clipper;

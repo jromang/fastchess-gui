@@ -66,7 +66,7 @@ void App::loadSuite() {
 
 void App::openSuite(const std::string& file) {
     suite_setup_.file = file;
-    writeJson(storage_.root() / "suite.json", suite_setup_);
+    saveSuiteSetup();
     loadSuite();
     page_ = Page::Suites;
 }
@@ -104,11 +104,18 @@ void App::loadSuiteSetup() {
     suite_loaded_ = true;
     if (auto s = readJson<nlohmann::json>(storage_.root() / "suite.json")) {
         try {
-            suite_setup_ = s->get<SuiteSetup>();
+            suite_setup_      = s->get<SuiteSetup>();
+            suite_setup_.file = portable::resolved(suite_setup_.file);
         } catch (...) {
         }
     }
     loadSuite();
+}
+
+void App::saveSuiteSetup() {
+    auto kept = suite_setup_;
+    kept.file = portable::stored(kept.file);
+    writeJson(storage_.root() / "suite.json", kept);
 }
 
 void App::drawSuites() {
@@ -300,7 +307,7 @@ void App::drawSuites() {
         }
     }
     ImGui::EndChild();
-    if (changed) writeJson(storage_.root() / "suite.json", suite_setup_);
+    if (changed) saveSuiteSetup();
 
     ImGui::SameLine(0, px(16));
     ImGui::BeginChild("##suite_grid");
