@@ -1,5 +1,14 @@
 # fastchess-gui
 
+[![Build](https://github.com/jromang/fastchess-gui/actions/workflows/gui.yml/badge.svg?branch=gui)](https://github.com/jromang/fastchess-gui/actions/workflows/gui.yml)
+[![CodeQL](https://github.com/jromang/fastchess-gui/actions/workflows/codeql.yml/badge.svg?branch=gui)](https://github.com/jromang/fastchess-gui/actions/workflows/codeql.yml)
+[![Coverity Scan](https://scan.coverity.com/projects/jromang-fastchess-gui/badge.svg)](https://scan.coverity.com/projects/jromang-fastchess-gui)
+[![Fuzzing](https://github.com/jromang/fastchess-gui/actions/workflows/fuzz.yml/badge.svg?branch=gui)](https://github.com/jromang/fastchess-gui/actions/workflows/fuzz.yml)
+[![Dependencies](https://github.com/jromang/fastchess-gui/actions/workflows/dependencies.yml/badge.svg?branch=gui)](https://github.com/jromang/fastchess-gui/actions/workflows/dependencies.yml)
+[![Latest release](https://img.shields.io/github/v/release/jromang/fastchess-gui)](https://github.com/jromang/fastchess-gui/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/jromang/fastchess-gui/total)](https://github.com/jromang/fastchess-gui/releases)
+![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows-blue)
+
 A desktop front end for [fastchess](https://github.com/Disservin/fastchess), the chess engine tournament
 manager. Two jobs: measuring whether a new version of an engine is stronger than the last one (pick two engines,
 start an SPRT, follow Elo and LLR as results come in), and running engine tournaments (round robin, gauntlet,
