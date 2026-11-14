@@ -1094,6 +1094,7 @@ TEST_CASE("on Windows, what an engine starts is in the engine's job and ends wit
 #    include <libproc.h>
 #    include <signal.h>
 #    include <spawn.h>
+#    include <sys/proc.h>
 #    include <sys/proc_info.h>
 #    include <sys/wait.h>
 #    include <unistd.h>
