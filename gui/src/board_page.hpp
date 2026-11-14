@@ -3,6 +3,11 @@
 // The state of the Board page (view_board.cpp) and of the engine console of the Engines page
 // (view_engine_console.cpp): what they show, apart from the App that draws them.
 
+#include <array>
+#include <atomic>
+#include <filesystem>
+#include <future>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -10,6 +15,8 @@
 #include <chess.hpp>
 #include <json.hpp>
 #include <types/score.hpp>
+
+#include <tour/pgn_index.hpp>
 
 #include "analysis.hpp"
 #include "engine_client.hpp"
@@ -64,6 +71,52 @@ int playOnGame(ReplayGame& game, bool chess960, int ply, chess::Move move);
 // The square a move goes to on the board: castling, stored as the king taking its rook, goes to the king's square.
 [[nodiscard]] chess::Square shownTarget(const chess::Move& move);
 
+// A PGN of several games, opened or pasted: its games listed, filtered by their tags, one shown at a time.
+struct PgnSource {
+    std::string name;                         // the file's, or "clipboard"
+    std::filesystem::path file;               // empty for a pasted text
+    std::shared_ptr<const std::string> text;  // the pasted text
+    std::shared_ptr<const tour::PgnIndex> index;
+    std::string filter;
+    std::vector<uint32_t> shown;  // the games the filter keeps
+    bool filter_dirty = true;
+    int selected      = -1;  // the game on the board
+};
+
+// The text of one game of a source.
+[[nodiscard]] std::optional<std::string> pgnSourceGame(const PgnSource& source, std::size_t game);
+
+// A PGN file being read in the background.
+struct PgnReading {
+    std::filesystem::path file;
+    uint64_t size = 0;
+    std::future<tour::PgnIndex> result;
+    std::shared_ptr<std::atomic<bool>> cancel;
+    std::shared_ptr<std::atomic<uint64_t>> done;
+};
+
+// The position editor: a placement of pieces, any while it is edited, and the rest of a FEN.
+struct PositionEditor {
+    std::array<chess::Piece, 64> squares{};  // a1 = 0 ... h8 = 63
+    chess::Color stm   = chess::Color::WHITE;
+    bool castle[4]     = {true, true, true, true};  // K Q k q
+    int ep_file        = -1;                        // the en passant square's file, -1 none
+    int fullmove       = 1;
+    bool chess960      = false;
+    chess::Piece brush = chess::Piece(chess::PieceType::QUEEN, chess::Color::WHITE);
+    bool erase         = false;
+    std::string fen_text;  // as typed in its field
+};
+
+// The editor's position as a FEN: the castling rights its kings and rooks allow, the en passant square only when a
+// pawn just moved two squares there.
+[[nodiscard]] std::string editorFen(const PositionEditor& editor);
+// The editor set to a FEN's position; false (unchanged) when the board cannot read it.
+bool editorLoad(PositionEditor& editor, const std::string& fen);
+// Whether the castling right (0 K, 1 Q, 2 k, 3 q) is possible: the king, and a rook on that side, on their first
+// rank (where they start in Chess960; on e1 and h1 or a1 otherwise).
+[[nodiscard]] bool editorCanCastle(const PositionEditor& editor, int right);
+
 // The game and the position of the Board page, and its analysis.
 struct BoardPage {
     ReplayGame game;
@@ -75,7 +128,7 @@ struct BoardPage {
     bool flip    = false;
     std::optional<chess::Square> selected;  // a piece picked up
     std::optional<chess::Move> promotion;   // a pawn's move waiting for the piece it becomes
-    std::string message;                    // what the last action says (no engine to analyse with)
+    std::string message;                    // what the last paste or file gave, or why it gave nothing
     bool message_error = false;
 
     BoardSettings settings;
@@ -83,6 +136,12 @@ struct BoardPage {
     Analyser analyser;
     bool analysing = false;  // asked for: the analysis follows the board while the page is shown
     bool new_game  = true;   // another game came: the engine gets ucinewgame
+
+    std::optional<PgnSource> pgn;          // the games of a file or a paste
+    std::optional<PgnReading> reading;     // a file being read
+    std::optional<PositionEditor> editor;  // the position being set up
+    int game_tab = 0;                      // the game card: 0 its moves, 1 the games of the file
+    int open_tab = -1;                     // a tab to select on the next frame
 };
 
 }  // namespace fcg

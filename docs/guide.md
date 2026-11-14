@@ -177,6 +177,25 @@ The Board page shows one game or one position, from anywhere: **A** on any board
 book) opens its position here and analyses it; on the Board page, A starts and stops the analysis. *Back to the
 tournament* (or *Back*) returns to the page it came from.
 
+- **Open a PGN…** reads any PGN file (a file can also be dropped on the window), in the background with a progress
+  bar: a file of millions of games takes a few seconds, and its games are listed in a tab beside the moves, filtered
+  by what is typed (every word found in the players, the event, the site, the date, the round, the opening, the
+  ECO code or the result). A click shows a game. The evaluations of its moves draw the curve under them: the
+  cutechess and fastchess comments (`{+0.35/18 1.2s}`) and the `[%eval 0.35]` of lichess and ChessBase (from
+  White's side, `#-3` for a mate) are read. A game whose FEN tag cannot be played is refused, and the moves of a
+  game stop at the first that cannot be read.
+- **Paste** (Ctrl+V on the page) reads the clipboard: a FEN, or the four fields of an EPD line; a PGN of one game or
+  more (listed like a file's); a list of moves from the initial position, in SAN with or without numbers
+  (`1. e4 e5 2. Nf3`) or in UCI (`e2e4 e7e5`). A position that cannot be played is refused with the reason (a king
+  missing, a pawn on the first rank, the side not to move in check). Castling rights whose king or rook is not on
+  its usual square, or written as files (`HAha`), make it a Chess960 position. A `.fen` or `.epd` file can be dropped
+  too.
+- **Edit the position** sets up a position on the board: a click puts the piece chosen (a second click takes it
+  away), a right click takes it away; the side to move, the move number, the castling rights (offered only when the
+  king and the rook are where they need to be), the en passant square (only behind a pawn that just moved two
+  squares) and Chess960. The FEN below follows the board, and a FEN typed there sets it. *Done* is offered once the
+  position can be played, and puts it on the board.
+- *Copy PGN* copies the game shown, with its tags and moves (the engines' scores as comments when it has them).
 - **The board**: the arrows and Left, Right, Home, End go through the moves; a click on a piece and on a square plays
   a move (a pawn that promotes asks for its piece). A move other than the game's next one takes the place of the
   moves after it, and *Back to the game* brings the game back as it came. *Copy FEN* copies the position.

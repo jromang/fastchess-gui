@@ -12,6 +12,7 @@
 #include "../../tournament/tests/self_path.hpp"
 #include "analysis.hpp"
 #include "board_page.hpp"
+#include "board_text.hpp"
 #include "engine_client.hpp"
 #include "run.hpp"
 
@@ -278,4 +279,137 @@ TEST_CASE("board: moves played over a game, the position for the analysis, score
     CHECK(std::find(targets.begin(), targets.end(), "g1") != targets.end());
     CHECK(std::find(targets.begin(), targets.end(), "c1") != targets.end());
     CHECK(movesFrom(castle, chess::Square::SQ_E8).empty());  // not its move
+}
+
+TEST_CASE("board text: a FEN, an EPD line, a PGN, moves in SAN or UCI, or nothing") {
+    // A FEN, its move counters kept; an EPD line's four fields, with counters added.
+    auto t = readBoardText("  r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3\n");
+    REQUIRE(t.kind == BoardText::Kind::Position);
+    CHECK(t.fen == "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3");
+    CHECK_FALSE(t.chess960);
+    t = readBoardText("4k3/8/8/8/8/8/4P3/4K3 b - - bm Kd7; id \"test\";");
+    REQUIRE(t.kind == BoardText::Kind::Position);
+    CHECK(t.fen == "4k3/8/8/8/8/8/4P3/4K3 b - - 0 1");
+    // Castling rights whose rooks are not in the corners: Chess960.
+    t = readBoardText("bqnbrkrn/pppppppp/8/8/8/8/PPPPPPPP/BQNBRKRN w KQkq - 0 1");
+    REQUIRE(t.kind == BoardText::Kind::Position);
+    CHECK(t.chess960);
+    CHECK(needsChess960("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w HAha - 0 1"));
+    CHECK_FALSE(needsChess960(std::string(chess::constants::STARTPOS)));
+
+    // Positions no game can be played from.
+    t = readBoardText("8/8/8/8/8/8/8/K7 w - - 0 1");
+    CHECK(t.kind == BoardText::Kind::Nothing);
+    CHECK(t.error.find("Black") != std::string::npos);
+    CHECK(readBoardText("4k3/8/8/8/8/8/8/P3K3 w - - 0 1").kind == BoardText::Kind::Nothing);  // a pawn on rank 1
+    CHECK_FALSE(positionProblem("4k3/8/8/8/8/8/8/4K2r b - - 0 1", false).empty());  // White, not to move, in check
+    CHECK(positionProblem("4k3/8/8/8/8/8/8/4K2r w - - 0 1", false).empty());
+    CHECK_FALSE(positionProblem("4k3/9/8/8/8/8/8/4K3 w - - 0 1", false).empty());
+
+    // A PGN as it is; moves in SAN, numbered or not; in UCI, made SAN.
+    t = readBoardText("[Event \"x\"]\n[White \"A\"]\n\n1. e4 e5 *\n");
+    REQUIRE(t.kind == BoardText::Kind::Games);
+    CHECK(t.pgn.find("[White \"A\"]") != std::string::npos);
+    t = readBoardText("1. e4 e5 2. Nf3 Nc6 3.Bb5");
+    REQUIRE(t.kind == BoardText::Kind::Games);
+    std::string error;
+    auto game = readPgnGame(t.pgn, error);
+    REQUIRE(game);
+    CHECK(game->moves.size() == 5);
+    CHECK(game->moves[4].san == "Bb5");
+    t = readBoardText("e2e4 e7e5 g1f3 b8c6 e1e8");  // the last one is not legal: the moves before it
+    REQUIRE(t.kind == BoardText::Kind::Games);
+    game = readPgnGame(t.pgn, error);
+    REQUIRE(game);
+    REQUIRE(game->moves.size() == 4);
+    CHECK(game->moves[3].san == "Nc6");
+    CHECK(readBoardText("e2e5").kind == BoardText::Kind::Nothing);
+    CHECK(readBoardText("").kind == BoardText::Kind::Nothing);
+    CHECK(readBoardText("hello world").kind == BoardText::Kind::Nothing);
+}
+
+TEST_CASE("board text: lichess evaluations, a FEN that cannot be played, a game written back") {
+    // [%eval] is White's, in pawns or moves to mate; the move's score is its mover's.
+    std::string error;
+    auto game = readPgnGame(
+        "[Event \"x\"]\n\n1. e4 {[%eval 0.3] [%clk 0:03:00]} e5 {[%eval 0.42]} 2. Qh5 {[%eval #-3]} *", error);
+    REQUIRE(game);
+    REQUIRE(game->moves.size() == 3);
+    CHECK(game->moves[0].score->value == 30);
+    CHECK(game->moves[1].score->value == -42);
+    CHECK(game->moves[2].score->type == fastchess::ScoreType::MATE);
+    CHECK(game->moves[2].score->value == -3);  // White moved, and Black mates in 3
+    // ChessBase's, with the depth after a comma.
+    game = readPgnGame("[Event \"x\"]\n\n1. d4 {[%eval -0.12,21] [%emt 0:00:02]} *", error);
+    REQUIRE(game);
+    CHECK(game->moves[0].score->value == -12);
+    CHECK(game->moves[0].depth == 21);
+    // A cutechess or fastchess comment still wins.
+    game = readPgnGame("[Event \"x\"]\n\n1. e4 {+0.25/12 0.5s} *", error);
+    REQUIRE(game);
+    CHECK(game->moves[0].score->value == 25);
+    CHECK(game->moves[0].depth == 12);
+
+    // A FEN tag the board cannot read, or an illegal position: no game.
+    CHECK_FALSE(readPgnGame("[FEN \"8/8/8/8/8/8/8/K7 w - - 0 1\"]\n\n1. Kb1 *", error));
+    CHECK_FALSE(readPgnGame("[FEN \"4k3/8/8/8/8/8/8/4K2r b - - 0 1\"]\n\n*", error));
+
+    // Written back and read again: the same moves, tags and scores.
+    game = readPgnGame(
+        "[Event \"Test\"]\n[White \"A\"]\n[Black \"B\"]\n[Result \"1-0\"]\n[FEN "
+        "\"4k3/8/8/8/8/8/4P3/4K3 w - - 0 1\"]\n\n1. e4 {+1.50/20 1.250s} Kd7 {-M4/18 0.5s} 1-0",
+        error);
+    REQUIRE(game);
+    const auto pgn = gamePgn(*game, false);
+    CHECK(pgn.find("[SetUp \"1\"]") != std::string::npos);
+    CHECK(pgn.find("[FEN \"4k3/8/8/8/8/8/4P3/4K3 w - - 0 1\"]") != std::string::npos);
+    CHECK(pgn.find("[PlyCount \"2\"]") != std::string::npos);
+    CHECK(pgn.find("1. e4 {+1.50/20 1.250s} Kd7 {-M4/18 0.500s} 1-0") != std::string::npos);
+    const auto again = readPgnGame(pgn, error);
+    REQUIRE(again);
+    CHECK(again->header("White") == "A");
+    CHECK(again->result == "1-0");
+    REQUIRE(again->moves.size() == 2);
+    CHECK(again->moves[1].score->type == fastchess::ScoreType::MATE);
+    CHECK(again->moves[1].score->value == game->moves[1].score->value);
+    CHECK(again->moves[0].time_ms == 1250);
+}
+
+TEST_CASE("board: the position editor's FEN, castling and en passant") {
+    PositionEditor e;
+    REQUIRE(editorLoad(e, std::string(chess::constants::STARTPOS)));
+    CHECK(editorFen(e) == std::string(chess::constants::STARTPOS));
+    // The king moved: no castling for White; a rook gone: none on its side.
+    e.squares[4]  = chess::Piece::NONE;                                         // e1
+    e.squares[5]  = chess::Piece(chess::PieceType::KING, chess::Color::WHITE);  // f1
+    e.squares[63] = chess::Piece::NONE;                                         // h8
+    CHECK_FALSE(editorCanCastle(e, 0));
+    CHECK_FALSE(editorCanCastle(e, 2));
+    CHECK(editorCanCastle(e, 3));
+    CHECK(editorFen(e) == "rnbqkbn1/pppppppp/8/8/8/8/PPPPPPPP/RNBQ1KNR w q - 0 1");
+    // Chess960: the king between its rooks.
+    e.chess960 = true;
+    CHECK(editorCanCastle(e, 0));
+    CHECK(editorCanCastle(e, 1));
+
+    // En passant only behind a pawn that just moved two squares.
+    REQUIRE(editorLoad(e, "4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 12"));
+    CHECK(e.ep_file == 3);
+    CHECK(e.fullmove == 12);
+    CHECK(editorFen(e) == "4k3/8/8/3pP3/8/8/8/4K3 w - d6 0 12");
+    e.ep_file = 2;
+    CHECK(editorFen(e) == "4k3/8/8/3pP3/8/8/8/4K3 w - - 0 12");
+
+    // A placement without kings is kept while it is edited; a broken one is refused.
+    REQUIRE(editorLoad(e, "8/8/8/8/8/8/8/8 w - - 0 1"));
+    CHECK(editorFen(e) == "8/8/8/8/8/8/8/8 w - - 0 1");
+    CHECK_FALSE(editorLoad(e, "8/8/8/8/8/8/8 w - - 0 1"));
+    CHECK_FALSE(editorLoad(e, "9/8/8/8/8/8/8/8 w - - 0 1"));
+    CHECK_FALSE(editorLoad(e, "8/8/8/8/8/8/8/7x w - - 0 1"));
+    // Shredder-FEN rights.
+    REQUIRE(editorLoad(e, "rk5r/8/8/8/8/8/8/RK5R w HAha - 0 1"));
+    CHECK(e.castle[0]);
+    CHECK(e.castle[1]);
+    CHECK(e.castle[2]);
+    CHECK(e.castle[3]);
 }

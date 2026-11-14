@@ -94,6 +94,11 @@ struct EvalFacts {
 // "{+0.35/18 1.234s, ...}" (the body without braces) into score, depth, time and nps.
 void parseFastchessComment(std::string_view comment, ReplayMove& move);
 
+// The "[%eval 0.17]" or "[%eval #-3]" of a comment (lichess, ChessBase: White's point of view, in pawns or a mate
+// in moves) into the move's score, from its mover's point of view; nothing when the comment has none. The mover must
+// be set.
+void parseEvalTag(std::string_view comment, ReplayMove& move);
+
 // Calls f(white_moved, move) for every move of a game in the fastchess comment style, from the comments alone:
 // the moves are not replayed, so it is fast enough for every game of a big tournament.
 void forEachMoveComment(std::string_view pgn, const std::function<void(bool, const ReplayMove&)>& f);

@@ -126,6 +126,9 @@ msgstr "Un botón Chat en la cabecera de la página abre esta dirección en una 
 msgid "A Discord server ID is 17 to 20 digits."
 msgstr "Un ID de servidor de Discord tiene de 17 a 20 dígitos."
 
+msgid "A FEN, a PGN or a list of moves (e4 e5 Nf3, or e2e4 e7e5) from the clipboard."
+msgstr "Un FEN, un PGN o una lista de jugadas (e4 e5 Nf3, o e2e4 e7e5) desde el portapapeles."
+
 msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
 msgstr "Un libro PGN juega las jugadas de sus partidas, tan a menudo como estas las juegan; «todo» son sus primeras {} medias jugadas."
 
@@ -173,6 +176,9 @@ msgstr "Una página que se abre en cualquier navegador, clara u oscura, con una 
 
 msgid "A page, an engine, a tournament, an action…"
 msgstr "Una página, un motor, un torneo, una acción…"
+
+msgid "A pawn is on the first or the last rank."
+msgstr "Hay un peón en la primera o la última fila."
 
 msgid "A rating list's text or web page, Ordo, CSV (name,elo)"
 msgstr "Texto o página web de una lista de rating, Ordo, CSV (name,elo)"
@@ -346,6 +352,9 @@ msgstr "Ancla:"
 msgid "Another SSH server"
 msgstr "Otro servidor SSH"
 
+msgid "Any PGN file: its games listed and filtered by their tags, each replayed here. A file can also be dropped on the window."
+msgstr "Cualquier archivo PGN: sus partidas listadas y filtradas por sus etiquetas, cada una reproducida aquí. También se puede soltar un archivo sobre la ventana."
+
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "Cualquier cosa que recordar sobre él; las búsquedas de motores lo encuentran."
 
@@ -426,6 +435,9 @@ msgstr "Las negras hacen una jugada ilegal"
 
 msgid "Black mates"
 msgstr "Las negras dan mate"
+
+msgid "Black needs one king, and only one."
+msgstr "Las negras necesitan un rey, y solo uno."
 
 msgid "Black resigns"
 msgstr "Las negras abandonan"
@@ -519,6 +531,12 @@ msgstr "No se puede iniciar {}: {}"
 
 msgid "Cannot write {}"
 msgstr "No se puede escribir {}"
+
+msgid "Castling"
+msgstr "Enroque"
+
+msgid "Castling as in Chess960: with the rooks where they stand."
+msgstr "Enroque como en Chess960: con las torres donde estén."
 
 msgid "Catch up the cycles already started"
 msgstr "Recuperar los ciclos ya empezados"
@@ -628,6 +646,9 @@ msgstr "Haz clic para ordenar; clic derecho para elegir las columnas."
 msgid "Click: play its first move. Scores are White's."
 msgstr "Clic: jugar su primera jugada. Las evaluaciones son de las blancas."
 
+msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
+msgstr "Clic: poner la pieza elegida (otra vez: quitarla). Clic derecho: quitarla."
+
 msgid "Close"
 msgstr "Cerrar"
 
@@ -675,6 +696,9 @@ msgstr "Copiar"
 
 msgid "Copy FEN"
 msgstr "Copiar FEN"
+
+msgid "Copy PGN"
+msgstr "Copiar PGN"
 
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "Núcleos ocupados mientras piensa · parte de un núcleo usada mientras piensa su rival (0 % sin pondering). Medido tras 20 s de cada uno."
@@ -748,6 +772,9 @@ msgstr "Carpetas separadas por ';' (con los archivos WDL basta)."
 msgid "Discord server ID"
 msgstr "ID del servidor de Discord"
 
+msgid "Done"
+msgstr "Listo"
+
 msgid "Done: the tournament goes on with the change."
 msgstr "Hecho: el torneo continúa con el cambio."
 
@@ -811,6 +838,9 @@ msgstr "Cada ronda son dos partidas, con los colores invertidos, contra un motor
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
 msgstr "Cada ronda empareja motores con puntuaciones similares, nunca dos veces los mismos; para torneos con muchos participantes. El orden de la lista define los cabezas de serie."
 
+msgid "Edit the position"
+msgstr "Editar la posición"
+
 msgid "Elo"
 msgstr "Elo"
 
@@ -844,8 +874,14 @@ msgstr "Elo {} ± {:.0f}"
 msgid "Elo: {} = {:.0f}, 95 % interval"
 msgstr "Elo: {} = {:.0f}, intervalo del 95 %"
 
+msgid "Empty board"
+msgstr "Tablero vacío"
+
 msgid "Empty: the program's directory."
 msgstr "Vacío: la carpeta del programa."
+
+msgid "En passant"
+msgstr "Al paso"
 
 msgid "End"
 msgstr "Fin"
@@ -885,6 +921,9 @@ msgstr "Motores"
 
 msgid "Engines' own books off"
 msgstr "Libros propios de los motores desactivados"
+
+msgid "Eraser"
+msgstr "Borrador"
 
 msgid "Error: {}"
 msgstr "Error: {}"
@@ -1006,6 +1045,9 @@ msgstr "Archivo no encontrado: {}"
 msgid "Files"
 msgstr "Archivos"
 
+msgid "Filter: players, event, opening, date…"
+msgstr "Filtro: jugadores, evento, apertura, fecha…"
+
 msgid "Final"
 msgstr "Final"
 
@@ -1060,6 +1102,9 @@ msgstr "Gratis, sin cuenta: sus direcciones cambian de vez en cuando y su veloci
 msgid "From move"
 msgstr "Desde la jugada"
 
+msgid "From the clipboard"
+msgstr "Desde el portapapeles"
+
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr "Solo a partir de las partidas, con el DrawElo correspondiente."
 
@@ -1086,6 +1131,9 @@ msgstr "Partida mostrada:"
 
 msgid "Game {} · move {}"
 msgstr "Partida {} · jugada {}"
+
+msgid "Game {}: {}"
+msgstr "Partida {}: {}"
 
 msgid "Games"
 msgstr "Partidas"
@@ -1238,6 +1286,9 @@ msgstr "Incremento (s)"
 
 msgid "Infinite"
 msgstr "Infinito"
+
+msgid "Initial position"
+msgstr "Posición inicial"
 
 msgid "Interface size"
 msgstr "Tamaño de la interfaz"
@@ -1443,6 +1494,9 @@ msgstr "Más…"
 msgid "Mosaic"
 msgstr "Mosaico"
 
+msgid "Move"
+msgstr "Jugada"
+
 msgid "Moves"
 msgstr "Jugadas"
 
@@ -1509,8 +1563,14 @@ msgstr "Aún no hay ningún motor. Haz clic en Añadir."
 msgid "No game finished yet."
 msgstr "Aún no ha terminado ninguna partida."
 
+msgid "No game in it, or a start position (its FEN tag) that cannot be played."
+msgstr "No contiene ninguna partida, o una posición inicial (su etiqueta FEN) que no se puede jugar."
+
 msgid "No game in this slot yet."
 msgstr "Aún no hay ninguna partida en este hueco."
+
+msgid "No game in {}."
+msgstr "Ninguna partida en {}."
 
 msgid "No game is being played."
 msgstr "No se está jugando ninguna partida."
@@ -1538,6 +1598,9 @@ msgstr "Aún no hay opciones: haz clic en Volver a leer las opciones UCI."
 
 msgid "No position with bm, am or c0 in this file."
 msgstr "Ninguna posición con bm, am o c0 en este archivo."
+
+msgid "No position, game or move found in the text."
+msgstr "No se encontró ninguna posición, partida ni jugada en el texto."
 
 msgid "No results yet."
 msgstr "Aún no hay resultados."
@@ -1584,6 +1647,15 @@ msgstr "Ninguno de estos motores está en la biblioteca con el mismo nombre."
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "Elo normalizado (fishtest, OpenBench), con su intervalo del 95 %."
 
+msgid "Not a legal position."
+msgstr "No es una posición legal."
+
+msgid "Not a position: a FEN gives eight ranks of eight squares, the side to move (w or b), the castling rights (KQkq or -), the en passant square (or -) and two move counters."
+msgstr "No es una posición: un FEN da ocho filas de ocho casillas, el turno (w o b), los derechos de enroque (KQkq o -), la casilla al paso (o -) y dos contadores de jugadas."
+
+msgid "Not a position: a FEN gives eight ranks of eight squares, then the side to move."
+msgstr "No es una posición: un FEN da ocho filas de ocho casillas y luego el turno."
+
 msgid "Not an https link."
 msgstr "No es un enlace https."
 
@@ -1616,6 +1688,9 @@ msgstr "Ninguna coincidencia."
 
 msgid "Nothing reported yet."
 msgstr "Nada informado todavía."
+
+msgid "Nothing to read: the text is empty."
+msgstr "Nada que leer: el texto está vacío."
 
 msgid "Notify when a match ends"
 msgstr "Avisar cuando termine un match"
@@ -1655,6 +1730,9 @@ msgstr "Solo los que funcionan"
 
 msgid "Open"
 msgstr "Abrir"
+
+msgid "Open a PGN…"
+msgstr "Abrir un PGN…"
 
 msgid "Open a file…"
 msgstr "Abrir un archivo…"
@@ -1871,6 +1949,9 @@ msgstr "Puerto"
 msgid "Position"
 msgstr "Posición"
 
+msgid "Position set up"
+msgstr "Posición preparada"
+
 msgid "Prepared from {} game: {} positions."
 msgid_plural "Prepared from {} games: {} positions."
 msgstr[0] "Preparado a partir de {} partida: {} posiciones."
@@ -1986,6 +2067,9 @@ msgstr "Leyendo el motor…"
 
 msgid "Reading the options of an engine…"
 msgstr "Leyendo las opciones de un motor…"
+
+msgid "Reading {}…"
+msgstr "Leyendo {}…"
 
 msgid "Reading…"
 msgstr "Leyendo…"
@@ -2218,6 +2302,9 @@ msgstr "Servir la página web"
 
 msgid "Service:"
 msgstr "Servicio:"
+
+msgid "Set up a position: pieces, side to move, castling, en passant, Chess960."
+msgstr "Preparar una posición: piezas, turno, enroque, al paso, Chess960."
 
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
@@ -2533,6 +2620,9 @@ msgstr "La carpeta {} ya no existe."
 msgid "The game as it was, without the moves played over it."
 msgstr "La partida tal como era, sin las jugadas hechas encima."
 
+msgid "The game, with its tags and moves, as PGN."
+msgstr "La partida, con sus etiquetas y jugadas, en PGN."
+
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "Las partidas tal como las envían los testers de las listas de rating: el archivo con tu nombre, la fecha y las condiciones, los jugadores como los escriben las listas, las rondas renumeradas, sin las partidas anuladas ni los duplicados."
 
@@ -2550,6 +2640,9 @@ msgstr "La clave de host de {} cambió: {} ahora, {} antes. Puede que alguien es
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "La clave de host de {} no es la esperada ({} en lugar de {}): puede que alguien esté en medio. No se envió nada."
+
+msgid "The king and the rook are not where it needs them."
+msgstr "El rey y la torre no están donde hace falta."
 
 msgid "The last 30 days"
 msgstr "Los últimos 30 días"
@@ -2640,6 +2733,12 @@ msgstr "La búsqueda se detiene cuando una solución ha seguido siendo la primer
 
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "La proporción de tablas esperada entre los dos motores, a este ritmo de juego."
+
+msgid "The side that is not to move is in check."
+msgstr "El bando que no tiene el turno está en jaque."
+
+msgid "The side to move is in check by more than two pieces."
+msgstr "El bando con el turno recibe jaque de más de dos piezas."
 
 msgid "The spread of the advantage the openings give, in Elo: what playing each opening twice, colours reversed, cancels out."
 msgstr "La dispersión de la ventaja que dan las aperturas, en Elo: lo que anula jugar cada apertura dos veces, con los colores invertidos."
@@ -2736,6 +2835,9 @@ msgstr "Ritmo de juego"
 
 msgid "Time per move"
 msgstr "Tiempo por jugada"
+
+msgid "To move"
+msgstr "Turno"
 
 msgid "Total"
 msgstr "Total"
@@ -2865,6 +2967,9 @@ msgstr "Las blancas hacen una jugada ilegal"
 
 msgid "White mates"
 msgstr "Las blancas dan mate"
+
+msgid "White needs one king, and only one."
+msgstr "Las blancas necesitan un rey, y solo uno."
 
 msgid "White resigns"
 msgstr "Las blancas abandonan"
@@ -3063,6 +3168,9 @@ msgstr "posiciones ilegales"
 msgid "initial position"
 msgstr "posición inicial"
 
+msgid "it cannot be read."
+msgstr "no se puede leer."
+
 msgid "its default"
 msgstr "su valor por defecto"
 
@@ -3124,6 +3232,9 @@ msgstr "leyendo los torneos…"
 
 msgid "replay requested"
 msgstr "repetición solicitada"
+
+msgid "round {}"
+msgstr "ronda {}"
 
 msgid "send at startup"
 msgstr "enviar al arrancar"
@@ -3350,6 +3461,11 @@ msgid_plural "{} games exported to {}"
 msgstr[0] "{} partida exportada a {}"
 msgstr[1] "{} partidas exportadas a {}"
 
+msgid "{} game in {}"
+msgid_plural "{} games in {}"
+msgstr[0] "{} partida en {}"
+msgstr[1] "{} partidas en {}"
+
 msgid "{} game pair"
 msgid_plural "{} game pairs"
 msgstr[0] "{} par de partidas"
@@ -3395,6 +3511,9 @@ msgstr[1] "{} jugadas ilegales"
 
 msgid "{} illegal moves"
 msgstr "{} jugadas ilegales"
+
+msgid "{} is not a legal move from the initial position."
+msgstr "{} no es una jugada legal desde la posición inicial."
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} está abierto en otro programa: aquí solo se muestra, tal como estaba al abrirlo."
@@ -3445,6 +3564,9 @@ msgstr "{} nodos"
 
 msgid "{} of memory free of {}"
 msgstr "{} de memoria libre de {}"
+
+msgid "{} of {}"
+msgstr "{} de {}"
 
 msgid "{} of {} openings"
 msgstr "{} de {} aperturas"
@@ -3628,6 +3750,9 @@ msgstr "{}: su libro no se puede usar: {}"
 
 msgid "{}: its book is not found: {}"
 msgstr "{}: no se encuentra su libro: {}"
+
+msgid "{}: only PGN files, FEN and EPD positions can be dropped here."
+msgstr "{}: aquí solo se pueden soltar archivos PGN y posiciones FEN o EPD."
 
 msgid "{}: program not found ({})"
 msgstr "{}: programa no encontrado ({})"

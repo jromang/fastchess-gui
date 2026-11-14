@@ -142,6 +142,15 @@ std::optional<chess::Square> boardSquareAt(ImVec2 point, ImVec2 top, float size,
 }
 
 void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, const BoardDecor& decor) {
+    std::array<chess::Piece, 64> pieces;
+    for (int i = 0; i < 64; ++i) pieces[static_cast<std::size_t>(i)] = board.at(chess::Square(i));
+    std::optional<chess::Square> check;
+    if (board.inCheck()) check = board.kingSq(board.sideToMove());
+    drawBoard(atlas, pieces, size, decor, check);
+}
+
+void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& pieces, float size,
+               const BoardDecor& decor, std::optional<chess::Square> check) {
     ImDrawList* dl   = ImGui::GetWindowDrawList();
     const ImVec2 top = ImGui::GetCursorScreenPos();
 
@@ -162,12 +171,11 @@ void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, c
         dl->AddRectFilled(ImVec2(top.x, split), ImVec2(top.x + bar_w, split), BAR_WHITE);
     }
 
-    std::optional<chess::Square> from, to, check;
+    std::optional<chess::Square> from, to;
     if (decor.last_move) {
         from = decor.last_move->from();
         to   = displayedTarget(*decor.last_move);
     }
-    if (board.inCheck()) check = board.kingSq(board.sideToMove());
 
     const float font_size = std::max(9.0f, sq * 0.2f);
     ImFont* font          = ImGui::GetFont();
@@ -201,7 +209,7 @@ void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, c
                 dl->AddText(font, font_size, ImVec2(p0.x + 2.0f, p0.y + 1.0f), coord, label);
             }
 
-            const auto piece = board.at(square);
+            const auto piece = pieces[static_cast<std::size_t>(square.index())];
             if (piece != chess::Piece::NONE && atlas.ready()) {
                 ImVec2 uv0, uv1;
                 atlas.uv(piece, uv0, uv1);

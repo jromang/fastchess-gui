@@ -124,6 +124,9 @@ msgstr "页面顶部的“聊天”按钮会在新标签页中打开此地址：
 msgid "A Discord server ID is 17 to 20 digits."
 msgstr "Discord 服务器 ID 为 17 至 20 位数字。"
 
+msgid "A FEN, a PGN or a list of moves (e4 e5 Nf3, or e2e4 e7e5) from the clipboard."
+msgstr "来自剪贴板的 FEN、PGN 或着法列表（e4 e5 Nf3，或 e2e4 e7e5）。"
+
 msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
 msgstr "PGN 开局库按其对局中出现的频率走出对局中的着法；“全部”即对局的前 {} 个半回合。"
 
@@ -171,6 +174,9 @@ msgstr "可在任何浏览器中打开的页面（浅色或深色），带有说
 
 msgid "A page, an engine, a tournament, an action…"
 msgstr "页面、引擎、锦标赛、操作…"
+
+msgid "A pawn is on the first or the last rank."
+msgstr "有兵位于第一行或最后一行。"
 
 msgid "A rating list's text or web page, Ordo, CSV (name,elo)"
 msgstr "等级分列表的文本或网页、Ordo、CSV (name,elo)"
@@ -342,6 +348,9 @@ msgstr "锚点："
 msgid "Another SSH server"
 msgstr "其他 SSH 服务器"
 
+msgid "Any PGN file: its games listed and filtered by their tags, each replayed here. A file can also be dropped on the window."
+msgstr "任意 PGN 文件：列出其对局并按标签筛选，每局都可在此回放。也可以把文件拖到窗口上。"
+
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "关于它需要记住的任何内容；搜索引擎时可以搜到。"
 
@@ -422,6 +431,9 @@ msgstr "黑方走出非法着法"
 
 msgid "Black mates"
 msgstr "黑方将杀"
+
+msgid "Black needs one king, and only one."
+msgstr "黑方需要一个王，且只能有一个。"
 
 msgid "Black resigns"
 msgstr "黑方认输"
@@ -515,6 +527,12 @@ msgstr "无法启动 {}：{}"
 
 msgid "Cannot write {}"
 msgstr "无法写入 {}"
+
+msgid "Castling"
+msgstr "易位"
+
+msgid "Castling as in Chess960: with the rooks where they stand."
+msgstr "按 Chess960 规则易位：车在其所在位置。"
 
 msgid "Catch up the cycles already started"
 msgstr "补齐已经开始的循环"
@@ -624,6 +642,9 @@ msgstr "点击排序；右键选择列。"
 msgid "Click: play its first move. Scores are White's."
 msgstr "点击：走出其第一步。评分为白方视角。"
 
+msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
+msgstr "点击：放置所选棋子（再次点击：移除）。右键：移除。"
+
 msgid "Close"
 msgstr "关闭"
 
@@ -671,6 +692,9 @@ msgstr "复制"
 
 msgid "Copy FEN"
 msgstr "复制 FEN"
+
+msgid "Copy PGN"
+msgstr "复制 PGN"
 
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "思考时占用的核心数 · 对手思考时占用一个核心的比例（不后台思考时为 0 %）。各测量 20 秒后得出。"
@@ -744,6 +768,9 @@ msgstr "目录之间用 ';' 分隔（只需 WDL 文件）。"
 msgid "Discord server ID"
 msgstr "Discord 服务器 ID"
 
+msgid "Done"
+msgstr "完成"
+
 msgid "Done: the tournament goes on with the change."
 msgstr "完成：锦标赛将带着此修改继续进行。"
 
@@ -807,6 +834,9 @@ msgstr "每轮是与得分相近的引擎交换颜色下的两局对局。"
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
 msgstr "每轮让得分相近的引擎配对，同一对手不会相遇两次；适用于参赛者较多的情况。列表顺序即为种子排序。"
 
+msgid "Edit the position"
+msgstr "编辑局面"
+
 msgid "Elo"
 msgstr "Elo"
 
@@ -840,8 +870,14 @@ msgstr "Elo {} ± {:.0f}"
 msgid "Elo: {} = {:.0f}, 95 % interval"
 msgstr "Elo：{} = {:.0f}，95 % 区间"
 
+msgid "Empty board"
+msgstr "空棋盘"
+
 msgid "Empty: the program's directory."
 msgstr "留空：程序所在目录。"
+
+msgid "En passant"
+msgstr "吃过路兵"
 
 msgid "End"
 msgstr "结束"
@@ -881,6 +917,9 @@ msgstr "引擎"
 
 msgid "Engines' own books off"
 msgstr "关闭引擎自带开局库"
+
+msgid "Eraser"
+msgstr "橡皮擦"
 
 msgid "Error: {}"
 msgstr "错误：{}"
@@ -1002,6 +1041,9 @@ msgstr "找不到文件：{}"
 msgid "Files"
 msgstr "文件"
 
+msgid "Filter: players, event, opening, date…"
+msgstr "筛选：棋手、赛事、开局、日期…"
+
 msgid "Final"
 msgstr "决赛"
 
@@ -1056,6 +1098,9 @@ msgstr "免费，无需账户：其地址会不时变化，速度受限。"
 msgid "From move"
 msgstr "从第几步开始"
 
+msgid "From the clipboard"
+msgstr "来自剪贴板"
+
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr "仅根据对局计算，并附带对应的 DrawElo。"
 
@@ -1082,6 +1127,9 @@ msgstr "显示的对局："
 
 msgid "Game {} · move {}"
 msgstr "第 {} 局 · 第 {} 步"
+
+msgid "Game {}: {}"
+msgstr "第 {} 局：{}"
 
 msgid "Games"
 msgstr "对局"
@@ -1233,6 +1281,9 @@ msgstr "加秒 (s)"
 
 msgid "Infinite"
 msgstr "无限"
+
+msgid "Initial position"
+msgstr "初始局面"
 
 msgid "Interface size"
 msgstr "界面大小"
@@ -1438,6 +1489,9 @@ msgstr "更多…"
 msgid "Mosaic"
 msgstr "平铺"
 
+msgid "Move"
+msgstr "回合"
+
 msgid "Moves"
 msgstr "着法"
 
@@ -1504,8 +1558,14 @@ msgstr "还没有引擎。请点击“添加”。"
 msgid "No game finished yet."
 msgstr "还没有已结束的对局。"
 
+msgid "No game in it, or a start position (its FEN tag) that cannot be played."
+msgstr "其中没有对局，或起始局面（FEN 标签）无法下棋。"
+
 msgid "No game in this slot yet."
 msgstr "此位置还没有对局。"
+
+msgid "No game in {}."
+msgstr "{} 中没有对局。"
 
 msgid "No game is being played."
 msgstr "当前没有正在进行的对局。"
@@ -1533,6 +1593,9 @@ msgstr "还没有选项：请点击“重新读取 UCI 选项”。"
 
 msgid "No position with bm, am or c0 in this file."
 msgstr "此文件中没有带 bm、am 或 c0 的局面。"
+
+msgid "No position, game or move found in the text."
+msgstr "文本中没有找到局面、对局或着法。"
 
 msgid "No results yet."
 msgstr "还没有成绩。"
@@ -1579,6 +1642,15 @@ msgstr "这些引擎都不以相同名称存在于库中。"
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "归一化 Elo（fishtest、OpenBench），及其 95 % 区间。"
 
+msgid "Not a legal position."
+msgstr "不是合法局面。"
+
+msgid "Not a position: a FEN gives eight ranks of eight squares, the side to move (w or b), the castling rights (KQkq or -), the en passant square (or -) and two move counters."
+msgstr "不是局面：FEN 应给出八行、每行八格，走棋方（w 或 b），易位权（KQkq 或 -），吃过路兵格（或 -）以及两个步数计数。"
+
+msgid "Not a position: a FEN gives eight ranks of eight squares, then the side to move."
+msgstr "不是局面：FEN 应给出八行、每行八格，然后是走棋方。"
+
 msgid "Not an https link."
 msgstr "不是 https 链接。"
 
@@ -1611,6 +1683,9 @@ msgstr "没有匹配项。"
 
 msgid "Nothing reported yet."
 msgstr "尚无报告。"
+
+msgid "Nothing to read: the text is empty."
+msgstr "没有可读取的内容：文本为空。"
 
 msgid "Notify when a match ends"
 msgstr "比赛结束时通知"
@@ -1650,6 +1725,9 @@ msgstr "仅可用的"
 
 msgid "Open"
 msgstr "打开"
+
+msgid "Open a PGN…"
+msgstr "打开 PGN…"
 
 msgid "Open a file…"
 msgstr "打开文件…"
@@ -1865,6 +1943,9 @@ msgstr "端口"
 msgid "Position"
 msgstr "局面"
 
+msgid "Position set up"
+msgstr "摆放的局面"
+
 msgid "Prepared from {} game: {} positions."
 msgid_plural "Prepared from {} games: {} positions."
 msgstr[0] "由 {} 局对局准备而成：{} 个局面。"
@@ -1979,6 +2060,9 @@ msgstr "正在读取引擎…"
 
 msgid "Reading the options of an engine…"
 msgstr "正在读取某个引擎的选项…"
+
+msgid "Reading {}…"
+msgstr "正在读取 {}…"
 
 msgid "Reading…"
 msgstr "正在读取…"
@@ -2209,6 +2293,9 @@ msgstr "提供网页服务"
 
 msgid "Service:"
 msgstr "服务："
+
+msgid "Set up a position: pieces, side to move, castling, en passant, Chess960."
+msgstr "摆放局面：棋子、走棋方、易位、吃过路兵、Chess960。"
 
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
@@ -2523,6 +2610,9 @@ msgstr "文件夹 {} 已不存在。"
 msgid "The game as it was, without the moves played over it."
 msgstr "恢复原来的对局，去掉在其上走的着法。"
 
+msgid "The game, with its tags and moves, as PGN."
+msgstr "以 PGN 格式复制对局及其标签和着法。"
+
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "按等级分列表测试者提交的方式整理对局：文件以你的名字命名，附日期和条件，棋手名称按列表的写法，轮次重新编号，去除作废对局和重复对局。"
 
@@ -2540,6 +2630,9 @@ msgstr "{} 的主机密钥已改变：现在是 {}，之前是 {}。可能有人
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "{} 的主机密钥不是预期的（{}，而不是 {}）：可能有人在中间拦截。未发送任何内容。"
+
+msgid "The king and the rook are not where it needs them."
+msgstr "王和车不在所需的位置。"
 
 msgid "The last 30 days"
 msgstr "最近 30 天"
@@ -2630,6 +2723,12 @@ msgstr "当某个解答作为引擎首选着法又保持了这么多半回合深
 
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "在此时限下，两个引擎之间预期的和棋比例。"
+
+msgid "The side that is not to move is in check."
+msgstr "非走棋方正被将军。"
+
+msgid "The side to move is in check by more than two pieces."
+msgstr "走棋方被两个以上的棋子将军。"
 
 msgid "The spread of the advantage the openings give, in Elo: what playing each opening twice, colours reversed, cancels out."
 msgstr "开局带来的优势的离散度，以 Elo 计：即每个开局交换颜色下两次所抵消的部分。"
@@ -2726,6 +2825,9 @@ msgstr "时限"
 
 msgid "Time per move"
 msgstr "每步时间"
+
+msgid "To move"
+msgstr "走棋方"
 
 msgid "Total"
 msgstr "合计"
@@ -2855,6 +2957,9 @@ msgstr "白方走出非法着法"
 
 msgid "White mates"
 msgstr "白方将杀"
+
+msgid "White needs one king, and only one."
+msgstr "白方需要一个王，且只能有一个。"
 
 msgid "White resigns"
 msgstr "白方认输"
@@ -3052,6 +3157,9 @@ msgstr "非法局面"
 msgid "initial position"
 msgstr "初始局面"
 
+msgid "it cannot be read."
+msgstr "无法读取。"
+
 msgid "its default"
 msgstr "其默认值"
 
@@ -3112,6 +3220,9 @@ msgstr "正在读取锦标赛…"
 
 msgid "replay requested"
 msgstr "已要求重下"
+
+msgid "round {}"
+msgstr "第 {} 轮"
 
 msgid "send at startup"
 msgstr "启动时发送"
@@ -3323,6 +3434,10 @@ msgid "{} game exported to {}"
 msgid_plural "{} games exported to {}"
 msgstr[0] "已导出 {} 局对局到 {}"
 
+msgid "{} game in {}"
+msgid_plural "{} games in {}"
+msgstr[0] "{} 局对局，来自 {}"
+
 msgid "{} game pair"
 msgid_plural "{} game pairs"
 msgstr[0] "{} 对对局"
@@ -3363,6 +3478,9 @@ msgstr[0] "{} 次非法着法"
 
 msgid "{} illegal moves"
 msgstr "{} 次非法着法"
+
+msgid "{} is not a legal move from the initial position."
+msgstr "{} 在初始局面中不是合法着法。"
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} 已在另一个程序中打开：此处仅按打开时的状态显示。"
@@ -3409,6 +3527,9 @@ msgstr "{} 节点"
 
 msgid "{} of memory free of {}"
 msgstr "可用内存 {}，共 {}"
+
+msgid "{} of {}"
+msgstr "{} / {}"
 
 msgid "{} of {} openings"
 msgstr "{} 个，共 {} 个开局"
@@ -3574,6 +3695,9 @@ msgstr "{}：其开局库无法使用：{}"
 
 msgid "{}: its book is not found: {}"
 msgstr "{}：找不到其开局库：{}"
+
+msgid "{}: only PGN files, FEN and EPD positions can be dropped here."
+msgstr "{}：此处只能拖放 PGN 文件以及 FEN、EPD 局面。"
 
 msgid "{}: program not found ({})"
 msgstr "{}：找不到程序（{}）"

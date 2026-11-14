@@ -9,6 +9,7 @@
 #include <fmt/include/fmt/format.h>
 
 #include "app.hpp"
+#include "board_text.hpp"
 #include "i18n.hpp"
 #include "layout.hpp"
 #include "palette.hpp"
@@ -173,6 +174,20 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         setBoardAnalysis(!board_.analysing);
     });
     add(TR("Copy FEN"), TR("Board"), [this] { ImGui::SetClipboardText(boardFen().c_str()); });
+    add(TR("Open a PGN…"), TR("Board"), [this] {
+        page_ = Page::Board;
+        dialogs_.openFile(Dialogs::Purpose::BoardPgn, {{"PGN", "pgn"}}, storage_.runsDir().string());
+    });
+    add(TR("Paste"), TR("Board"), [this] {
+        page_ = Page::Board;
+        pasteOnBoard();
+    });
+    add(TR("Edit the position"), TR("Board"), [this] {
+        page_ = Page::Board;
+        openPositionEditor();
+    });
+    add(TR("Copy PGN"), TR("Board"),
+        [this] { ImGui::SetClipboardText(gamePgn(board_.game, board_.chess960).c_str()); });
     if (live_slot_ >= 0 && live_slot_ < static_cast<int>(slot_views_.size()) &&
         slot_views_[static_cast<std::size_t>(live_slot_)].state.has_game) {
         add(TR("Analyse the game followed"), name, [this] { analyseLiveGame(live_slot_); });

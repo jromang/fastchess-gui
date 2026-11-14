@@ -177,6 +177,14 @@ void App::frame() {
         } else if (w == "board" || w == "board-analyse") {  // the Board page; its analysis started
             page_ = Page::Board;
             if (w == "board-analyse") setBoardAnalysis(true);
+        } else if (w.rfind("board=", 0) == 0 || w.rfind("board-analyse=", 0) == 0) {
+            // board=FILE: a PGN file (or a FEN, EPD file) on the Board page; board-analyse=FILE, analysed.
+            const auto eq = w.find('=');
+            dropFile(w.substr(eq + 1));
+            if (w.rfind("board-analyse=", 0) == 0) setBoardAnalysis(true);
+        } else if (w == "board-edit") {  // the position editor
+            page_ = Page::Board;
+            openPositionEditor();
         } else if (w == "engines-console") {  // the console of the first engine, which answered uci
             page_            = Page::Engines;
             selected_engine_ = engines_.empty() ? -1 : 0;
@@ -959,6 +967,9 @@ void App::handleDialogs() {
                 break;
             case Dialogs::Purpose::ConsoleLog:
                 saveConsoleLog(path);
+                break;
+            case Dialogs::Purpose::BoardPgn:
+                openBoardPgn(std::filesystem::u8path(path));
                 break;
         }
     }

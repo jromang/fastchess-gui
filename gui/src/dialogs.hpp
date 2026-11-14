@@ -42,7 +42,8 @@ class Dialogs {
         PgnOut,
         ExportSubmission,
         EngineOption,  // a file or a folder for a UCI option (EvalFile, SyzygyPath)
-        ConsoleLog     // the engine console's log
+        ConsoleLog,    // the engine console's log
+        BoardPgn       // a PGN file for the Board page
     };
 
     struct Answer {

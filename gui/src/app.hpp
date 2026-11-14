@@ -219,6 +219,9 @@ class App {
     // The window came back to the front: an engine may have been rebuilt or moved meanwhile.
     void onFocusGained() { refreshPrograms(); }
 
+    // A file dropped on the window: a PGN file, or a FEN or EPD position, opens on the Board page.
+    void dropFile(const std::string& path);
+
     // The window moved to a screen of another scale (or the screen's changed): fonts and sizes follow it.
     void onDisplayScale(float scale);
 
@@ -372,6 +375,16 @@ class App {
     // A, on the boards of the other pages: their position on the Board page, analysed.
     void analyseLiveGame(int slot);
     void analyseReplay();
+    // Games and positions from elsewhere: a PGN file read in the background, the clipboard, a text.
+    void openBoardPgn(const std::filesystem::path& file);
+    void pollBoardPgn();
+    void showPgnSource(PgnSource source);  // its first game on the board, its games listed
+    void loadPgnGame(int index);
+    void readOnBoard(const std::string& text, const std::string& name);  // a FEN, a PGN, moves
+    void pasteOnBoard();
+    void drawPgnGames();
+    void openPositionEditor();
+    void drawPositionEditor(float size);
     void drawQuitModal();
 
     // The command palette (Ctrl+K) and the guide (F1, the `?` of the page titles), see view_palette.cpp.

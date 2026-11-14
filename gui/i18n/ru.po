@@ -128,6 +128,9 @@ msgstr "Кнопка «Чат» в шапке страницы открывае�
 msgid "A Discord server ID is 17 to 20 digits."
 msgstr "ID сервера Discord состоит из 17–20 цифр."
 
+msgid "A FEN, a PGN or a list of moves (e4 e5 Nf3, or e2e4 e7e5) from the clipboard."
+msgstr "FEN, PGN или список ходов (e4 e5 Nf3 или e2e4 e7e5) из буфера обмена."
+
 msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
 msgstr "Книга PGN играет ходы своих партий так часто, как они в них встречаются; «вся» — это их первые {} полуходов."
 
@@ -175,6 +178,9 @@ msgstr "Страница, которая открывается в любом б
 
 msgid "A page, an engine, a tournament, an action…"
 msgstr "Страница, движок, турнир, действие…"
+
+msgid "A pawn is on the first or the last rank."
+msgstr "Пешка стоит на первой или последней горизонтали."
 
 msgid "A rating list's text or web page, Ordo, CSV (name,elo)"
 msgstr "Текст или веб-страница рейтинг-листа, Ordo, CSV (name,elo)"
@@ -350,6 +356,9 @@ msgstr "Опорный движок:"
 msgid "Another SSH server"
 msgstr "Другой SSH-сервер"
 
+msgid "Any PGN file: its games listed and filtered by their tags, each replayed here. A file can also be dropped on the window."
+msgstr "Любой PGN-файл: его партии перечислены и фильтруются по тегам, каждая воспроизводится здесь. Файл можно также перетащить на окно."
+
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "Всё, что стоит о нём помнить; поиск движков находит этот текст."
 
@@ -430,6 +439,9 @@ msgstr "Чёрные сделали нелегальный ход"
 
 msgid "Black mates"
 msgstr "Чёрные ставят мат"
+
+msgid "Black needs one king, and only one."
+msgstr "У чёрных должен быть один король, и только один."
 
 msgid "Black resigns"
 msgstr "Чёрные сдаются"
@@ -523,6 +535,12 @@ msgstr "Не удаётся запустить {}: {}"
 
 msgid "Cannot write {}"
 msgstr "Не удалось записать {}"
+
+msgid "Castling"
+msgstr "Рокировка"
+
+msgid "Castling as in Chess960: with the rooks where they stand."
+msgstr "Рокировка как в Chess960: с ладьями там, где они стоят."
 
 msgid "Catch up the cycles already started"
 msgstr "Догнать уже начатые циклы"
@@ -632,6 +650,9 @@ msgstr "Щелчок — сортировка; правый щелчок — в�
 msgid "Click: play its first move. Scores are White's."
 msgstr "Щелчок — сыграть её первый ход. Оценки — с точки зрения белых."
 
+msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
+msgstr "Щелчок — поставить выбранную фигуру (повторно — убрать). Правый щелчок — убрать."
+
 msgid "Close"
 msgstr "Закрыть"
 
@@ -679,6 +700,9 @@ msgstr "Копировать"
 
 msgid "Copy FEN"
 msgstr "Копировать FEN"
+
+msgid "Copy PGN"
+msgstr "Копировать PGN"
 
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "Ядра, занятые, пока он думает · доля ядра, используемая, пока думает соперник (0 % без ponder). Измеряется после 20 с каждого режима."
@@ -752,6 +776,9 @@ msgstr "Папки через ';' (достаточно файлов WDL)."
 msgid "Discord server ID"
 msgstr "ID сервера Discord"
 
+msgid "Done"
+msgstr "Готово"
+
 msgid "Done: the tournament goes on with the change."
 msgstr "Готово: турнир продолжается с изменением."
 
@@ -815,6 +842,9 @@ msgstr "Каждый тур — две партии с переменой цве
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
 msgstr "В каждом туре встречаются движки с близкими результатами, никогда дважды одни и те же; для больших составов. Порядок списка задаёт посев."
 
+msgid "Edit the position"
+msgstr "Изменить позицию"
+
 msgid "Elo"
 msgstr "Elo"
 
@@ -848,8 +878,14 @@ msgstr "Elo {} ± {:.0f}"
 msgid "Elo: {} = {:.0f}, 95 % interval"
 msgstr "Elo: {} = {:.0f}, интервал 95 %"
 
+msgid "Empty board"
+msgstr "Пустая доска"
+
 msgid "Empty: the program's directory."
 msgstr "Пусто: папка программы."
+
+msgid "En passant"
+msgstr "Взятие на проходе"
 
 msgid "End"
 msgstr "Окончание"
@@ -889,6 +925,9 @@ msgstr "Движки"
 
 msgid "Engines' own books off"
 msgstr "Собственные книги движков выключены"
+
+msgid "Eraser"
+msgstr "Ластик"
 
 msgid "Error: {}"
 msgstr "Ошибка: {}"
@@ -1010,6 +1049,9 @@ msgstr "Файл не найден: {}"
 msgid "Files"
 msgstr "Файлы"
 
+msgid "Filter: players, event, opening, date…"
+msgstr "Фильтр: игроки, турнир, дебют, дата…"
+
 msgid "Final"
 msgstr "Финал"
 
@@ -1064,6 +1106,9 @@ msgstr "Бесплатно, без учётной записи: адреса в�
 msgid "From move"
 msgstr "С хода"
 
+msgid "From the clipboard"
+msgstr "Из буфера обмена"
+
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr "Только по партиям, с соответствующим DrawElo."
 
@@ -1090,6 +1135,9 @@ msgstr "Показываемая партия:"
 
 msgid "Game {} · move {}"
 msgstr "Партия {} · ход {}"
+
+msgid "Game {}: {}"
+msgstr "Партия {}: {}"
 
 msgid "Games"
 msgstr "Партии"
@@ -1243,6 +1291,9 @@ msgstr "Добавление (с)"
 
 msgid "Infinite"
 msgstr "Бесконечно"
+
+msgid "Initial position"
+msgstr "Начальная позиция"
 
 msgid "Interface size"
 msgstr "Размер интерфейса"
@@ -1448,6 +1499,9 @@ msgstr "Ещё…"
 msgid "Mosaic"
 msgstr "Мозаика"
 
+msgid "Move"
+msgstr "Ход №"
+
 msgid "Moves"
 msgstr "Ходы"
 
@@ -1514,8 +1568,14 @@ msgstr "Движков пока нет. Нажмите «Добавить»."
 msgid "No game finished yet."
 msgstr "Ещё ни одна партия не завершена."
 
+msgid "No game in it, or a start position (its FEN tag) that cannot be played."
+msgstr "Партии нет, или начальную позицию (тег FEN) нельзя играть."
+
 msgid "No game in this slot yet."
 msgstr "В этом слоте пока нет партии."
+
+msgid "No game in {}."
+msgstr "В {} нет партий."
 
 msgid "No game is being played."
 msgstr "Сейчас партии не играются."
@@ -1543,6 +1603,9 @@ msgstr "Опций пока нет: нажмите «Перечитать опц
 
 msgid "No position with bm, am or c0 in this file."
 msgstr "В этом файле нет позиций с bm, am или c0."
+
+msgid "No position, game or move found in the text."
+msgstr "В тексте не найдено ни позиции, ни партии, ни ходов."
 
 msgid "No results yet."
 msgstr "Результатов пока нет."
@@ -1589,6 +1652,15 @@ msgstr "Ни одного из этих движков нет в библиот�
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "Elo в нормализованной шкале (fishtest, OpenBench), с интервалом 95 %."
 
+msgid "Not a legal position."
+msgstr "Недопустимая позиция."
+
+msgid "Not a position: a FEN gives eight ranks of eight squares, the side to move (w or b), the castling rights (KQkq or -), the en passant square (or -) and two move counters."
+msgstr "Это не позиция: FEN задаёт восемь горизонталей по восемь полей, очередь хода (w или b), права на рокировку (KQkq или -), поле взятия на проходе (или -) и два счётчика ходов."
+
+msgid "Not a position: a FEN gives eight ranks of eight squares, then the side to move."
+msgstr "Это не позиция: FEN задаёт восемь горизонталей по восемь полей, затем очередь хода."
+
 msgid "Not an https link."
 msgstr "Это не https-ссылка."
 
@@ -1621,6 +1693,9 @@ msgstr "Ничего не найдено."
 
 msgid "Nothing reported yet."
 msgstr "Пока ничего не сообщено."
+
+msgid "Nothing to read: the text is empty."
+msgstr "Нечего читать: текст пуст."
 
 msgid "Notify when a match ends"
 msgstr "Уведомлять об окончании матча"
@@ -1660,6 +1735,9 @@ msgstr "Только работающие"
 
 msgid "Open"
 msgstr "Открыть"
+
+msgid "Open a PGN…"
+msgstr "Открыть PGN…"
 
 msgid "Open a file…"
 msgstr "Открыть файл…"
@@ -1877,6 +1955,9 @@ msgstr "Порт"
 msgid "Position"
 msgstr "Позиция"
 
+msgid "Position set up"
+msgstr "Расставленная позиция"
+
 msgid "Prepared from {} game: {} positions."
 msgid_plural "Prepared from {} games: {} positions."
 msgstr[0] "Подготовлено из {} партии: позиций — {}."
@@ -1993,6 +2074,9 @@ msgstr "Чтение движка…"
 
 msgid "Reading the options of an engine…"
 msgstr "Чтение опций движка…"
+
+msgid "Reading {}…"
+msgstr "Чтение {}…"
 
 msgid "Reading…"
 msgstr "Чтение…"
@@ -2227,6 +2311,9 @@ msgstr "Раздавать веб-страницу"
 
 msgid "Service:"
 msgstr "Сервис:"
+
+msgid "Set up a position: pieces, side to move, castling, en passant, Chess960."
+msgstr "Расставить позицию: фигуры, очередь хода, рокировка, взятие на проходе, Chess960."
 
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
@@ -2543,6 +2630,9 @@ msgstr "Папки {} больше нет."
 msgid "The game as it was, without the moves played over it."
 msgstr "Партия, какой она была, без сыгранных поверх ходов."
 
+msgid "The game, with its tags and moves, as PGN."
+msgstr "Партия с тегами и ходами в формате PGN."
+
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "Партии в том виде, в каком их присылают тестеры рейтинг-листов: файл назван вашим именем, дата и условия, игроки записаны так, как в списках, туры перенумерованы, аннулированные партии и дубликаты исключены."
 
@@ -2560,6 +2650,9 @@ msgstr "Ключ хоста {} изменился: сейчас {}, раньше
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "Ключ хоста {} не совпадает с ожидаемым ({} вместо {}): возможно, кто-то вмешивается. Ничего не отправлено."
+
+msgid "The king and the rook are not where it needs them."
+msgstr "Король и ладья стоят не там, где нужно."
 
 msgid "The last 30 days"
 msgstr "Последние 30 дней"
@@ -2650,6 +2743,12 @@ msgstr "Поиск останавливается, когда решение о�
 
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "Ожидаемая доля ничьих между двумя движками при этом контроле времени."
+
+msgid "The side that is not to move is in check."
+msgstr "Сторона, не имеющая хода, под шахом."
+
+msgid "The side to move is in check by more than two pieces."
+msgstr "Сторона, имеющая ход, под шахом более чем от двух фигур."
 
 msgid "The spread of the advantage the openings give, in Elo: what playing each opening twice, colours reversed, cancels out."
 msgstr "Разброс преимущества, которое дают дебюты, в Elo: то, что компенсирует игра каждого дебюта дважды с переменой цветов."
@@ -2746,6 +2845,9 @@ msgstr "Контроль времени"
 
 msgid "Time per move"
 msgstr "Время на ход"
+
+msgid "To move"
+msgstr "Ход"
 
 msgid "Total"
 msgstr "Итого"
@@ -2875,6 +2977,9 @@ msgstr "Белые сделали нелегальный ход"
 
 msgid "White mates"
 msgstr "Белые ставят мат"
+
+msgid "White needs one king, and only one."
+msgstr "У белых должен быть один король, и только один."
 
 msgid "White resigns"
 msgstr "Белые сдаются"
@@ -3074,6 +3179,9 @@ msgstr "нелегальные позиции"
 msgid "initial position"
 msgstr "начальная позиция"
 
+msgid "it cannot be read."
+msgstr "её нельзя прочитать."
+
 msgid "its default"
 msgstr "по умолчанию"
 
@@ -3136,6 +3244,9 @@ msgstr "чтение турниров…"
 
 msgid "replay requested"
 msgstr "переигровка по запросу"
+
+msgid "round {}"
+msgstr "тур {}"
 
 msgid "send at startup"
 msgstr "отправить при запуске"
@@ -3377,6 +3488,12 @@ msgstr[0] "{} партия экспортирована в {}"
 msgstr[1] "{} партии экспортированы в {}"
 msgstr[2] "{} партий экспортировано в {}"
 
+msgid "{} game in {}"
+msgid_plural "{} games in {}"
+msgstr[0] "{} партия в {}"
+msgstr[1] "{} партии в {}"
+msgstr[2] "{} партий в {}"
+
 msgid "{} game pair"
 msgid_plural "{} game pairs"
 msgstr[0] "{} пара партий"
@@ -3427,6 +3544,9 @@ msgstr[2] "{} нелегальных ходов"
 
 msgid "{} illegal moves"
 msgstr "нелегальных ходов: {}"
+
+msgid "{} is not a legal move from the initial position."
+msgstr "{} — недопустимый ход из начальной позиции."
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} открыт в другой программе: здесь он только показан в том виде, в каком был при открытии."
@@ -3481,6 +3601,9 @@ msgstr "узлов: {}"
 
 msgid "{} of memory free of {}"
 msgstr "свободно {} памяти из {}"
+
+msgid "{} of {}"
+msgstr "{} из {}"
 
 msgid "{} of {} openings"
 msgstr "дебютов: {} из {}"
@@ -3682,6 +3805,9 @@ msgstr "{}: его книгу нельзя использовать: {}"
 
 msgid "{}: its book is not found: {}"
 msgstr "{}: его книга не найдена: {}"
+
+msgid "{}: only PGN files, FEN and EPD positions can be dropped here."
+msgstr "{}: сюда можно перетаскивать только PGN-файлы и позиции FEN или EPD."
 
 msgid "{}: program not found ({})"
 msgstr "{}: программа не найдена ({})"
