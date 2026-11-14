@@ -14,7 +14,7 @@ A navigation rail on the left leads to six pages:
 | Suites | Test suites (STS, WAC, ERET…): engines against the positions of an EPD file |
 | Ratings | One rating list over every game of every tournament |
 | Log | fastchess' own output and the messages of the GUI |
-| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the tournaments folder |
+| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the tournaments folder, the lichess token, the version and new versions |
 
 The interface is in English, French, German, Spanish, Italian, Brazilian Portuguese, Russian or simplified Chinese.
 At startup it follows the first preferred language of the system (English when there is no translation for it); it
@@ -23,6 +23,12 @@ WenQuanYi on Linux. The theme is light unless dark, or the system's choice, is p
 
 The Spanish, Italian, Portuguese, Russian and Chinese translations are new: corrections from players of those
 languages are welcome. They are plain `.po` files in `gui/i18n`, which Poedit and the like open.
+
+The version is in the window title and in **Settings**, whose *Copy* puts it on the clipboard with the system, for
+a bug report. *Tell me when a new version is out* (off by default) asks GitHub for the latest release at launch, at
+most once a day and in the background; when it is newer, the home page says so, with *Download page* (the release's
+page on GitHub, in the browser), *What's new* (its notes) and *Hide* (until the next version). Nothing is downloaded
+or installed by the program, and a failure (no network, GitHub unreachable) is only written in the log.
 
 The window opens as it was left: its size, its place on the screens, maximized or not. When the screen it was on is
 gone (a monitor unplugged), it opens in the middle of the main one; when its size no longer fits the screen (a lower
@@ -37,7 +43,8 @@ dragging its right edge. Everything (text, buttons, boards) can also be made lar
 
 **Ctrl+K** opens the command palette: the pages and tabs, the engines of the library (it opens the card), the books,
 the tournaments of the home page, and the actions possible now (*Pause*, *Resume*, *Stop*, *Start*, *Add to the
-queue*, the entries of *Import…*, *Check those not checked*, *Export for a rating list…*, *Copy* the standings…).
+queue*, the entries of *Import…*, *Check those not checked*, *Export for a rating list…*, *Copy* the standings,
+*Copy the version*…).
 Letter case does not matter and the letters typed need not be adjacent ("rl" finds *Rating list*); names that start
 with them, or with a word that does, come first. Up and Down choose, Enter runs, Escape closes; Ctrl+K is left alone
 while a text field is being typed in. The *?* beside each page's title, or F1, opens this guide at the page's section.
@@ -508,9 +515,9 @@ fastchess-gui --run TOURNAMENT_FOLDER     # resume a tournament
 fastchess-gui --run SETUP.json            # create one from a setup or template file, with the profile's engines
 ```
 
-No window is opened; progress is printed on the console. **Ctrl+C** stops after the running games and the
-tournament can be resumed later, from the command line or the GUI. Exit codes: 0 finished, 1 error while
-playing, 2 nothing to run, 3 stopped before the end.
+No window is opened; the version, then the progress, are printed on the console. **Ctrl+C** stops after the
+running games and the tournament can be resumed later, from the command line or the GUI. Exit codes: 0 finished,
+1 error while playing, 2 nothing to run, 3 stopped before the end.
 
 The tournament can be broadcast at the same time, as from the *Broadcast* tab:
 
@@ -542,8 +549,8 @@ it holds a lichess token.
 - `layout.ini`: the window layout and the panels of the workspace; `layouts.json`: the layouts saved by name; `fastchess-gui.log`: the log of the last session;
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**, the folder of *Every engine
-  of a folder…*, the tester and site of *Export for a rating list…*, the lichess token, and the window's size and
-  place;
+  of a folder…*, the tester and site of *Export for a rating list…*, the lichess token, the window's size and place,
+  and the check for a new version (wanted or not, when it was last made, the release it found, the notice hidden);
 - `running.json`: the tournament running now, removed when it stops; found at launch, it tells what to resume;
 - `runs/<date>_<A>_vs_<B>/` for a match, `runs/<date>_<name>/` for a tournament (in `runs/` or the chosen
   folder), one folder each, which can be moved, copied, zipped and sent:

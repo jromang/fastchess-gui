@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string_view>
 
+#include <SDL3/SDL.h>
 #include <imgui.h>
 
 #include <fmt/include/fmt/format.h>
@@ -173,6 +174,11 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     ratings_tab(TR("Progress###rt_progress"), 3);
     add(TR("Log"), "", page(Page::Log));
     add(TR("Settings"), "", page(Page::Settings));
+    add(TR("Copy the version"), TR("Settings"), [this] { copyVersion(); });
+    if (const auto* release = update::notice(updates_, FCG_VERSION)) {
+        add(trf("Download page of fastchess-gui {}", release->version), TR("Settings"),
+            [url = release->url] { SDL_OpenURL(url.c_str()); });
+    }
 
     // The tournaments of the home page: one opens as its Open button does.
     for (const auto& s : tournaments_) {

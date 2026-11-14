@@ -1,6 +1,7 @@
 #include "app.hpp"
 
 #include <algorithm>
+#include <ctime>
 #include <fstream>
 
 #include <SDL3/SDL.h>
@@ -54,6 +55,12 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
     queue_      = storage_.loadQueue();
     layouts_    = layout::named(storage_.loadLayouts());
     if (ImGui::GetCurrentContext()) registerPanelSettings();
+
+    // A new version, asked for at most once a day when the user wants it; the release found last time meanwhile.
+    updates_ = storage_.updateSettings();
+    if (updates_.enabled && !options_.scripted && update::checkDue(updates_.checked, std::time(nullptr))) {
+        startUpdateCheck(false);
+    }
 }
 
 App::~App() {
@@ -67,6 +74,8 @@ App::~App() {
         if (probe_.valid()) probe_.wait();
         if (check_.valid()) check_.wait();
     }
+    // The question to GitHub gives up within its timeout: the window goes away meanwhile.
+    if (update_checker_.running() && window_) SDL_HideWindow(window_);
     fingerprints_cancel_ = true;
     if (fingerprints_.valid()) fingerprints_.wait();
     cancelBookScan();
@@ -122,6 +131,7 @@ void App::frame() {
     pollCheck();
     pollStart();
     pollOwnBooks();
+    pollUpdateCheck();
     handleDialogs();
 
     if (engines_save_due_ && std::chrono::steady_clock::now() >= *engines_save_due_) {
@@ -282,13 +292,13 @@ void App::frame() {
 
     // The window title tells how the run is going, also when the window is in the background.
     {
-        std::string title = "fastchess-gui";
+        std::string title = "fastchess-gui " FCG_VERSION;
         if (run_.running()) {
             const auto& info = run_.info();
             title = trf("{} – {} · {} games", run_.paused() ? TR("Paused") : TR("Running"), info.name, games_.size());
             if (info.sprt) title += fmt::format(" · LLR {:.2f}", current_.llr);
         } else if (run_.state() == RunController::State::Finished) {
-            title = trf("{} – fastchess-gui", TR("Finished"));
+            title = trf("{} – fastchess-gui", TR("Finished")) + " " FCG_VERSION;
         }
         if (title != window_title_) {
             SDL_SetWindowTitle(window_, title.c_str());

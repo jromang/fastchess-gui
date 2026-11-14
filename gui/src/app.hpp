@@ -198,6 +198,7 @@ struct AppOptions {
     bool autostart = false;
     std::string focus_window;  // page or tab shown at startup (for screenshots)
     float ui_scale = 1.0f;     // DPI scale, to rebuild the style when the theme changes
+    bool scripted  = false;    // scripted screenshots: nothing is asked from the internet
 };
 
 class App {
@@ -921,6 +922,18 @@ class App {
     bool user_stop_       = false;  // the user stopped the running tournament (not by quitting)
     bool resume_guarded_  = false;  // resumed at launch, the marker says so until it has played a while
     std::filesystem::path resume_crashed_;  // the tournament whose resume at launch ended the program
+
+    // New versions (update_check.hpp): the check at launch, a notice on the home page, the version in Settings.
+    void startUpdateCheck(bool asked);  // `asked`: from Settings, its result shown there
+    void pollUpdateCheck();
+    void drawUpdateNotice();
+    void drawVersionSettings();
+    void copyVersion();
+    update::Settings updates_;
+    update::Checker update_checker_;
+    bool update_asked_ = false;  // the check running was asked from Settings
+    std::string update_status_;  // what the check asked from Settings found
+    bool update_notes_open_ = false;
 };
 
 }  // namespace fcg

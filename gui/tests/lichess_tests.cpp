@@ -297,7 +297,7 @@ TEST_CASE("HTTPS: lichess.org trusted, a site of another authority refused (FCG_
     const auto lichess = httpPost({"https://lichess.org/api/broadcast/round/abcdefgh/push", "", "text/plain", "x"});
     CHECK_MESSAGE(lichess.status == 401, lichess.error);
 
-    // example.com is not signed by Google Trust Services nor Let's Encrypt: no connection.
+    // example.com is signed by none of the authorities of tls_roots.cpp: no connection.
     const auto other = httpPost({"https://example.com/", "", "text/plain", "x"});
     CHECK(other.status == 0);
     CHECK_MESSAGE(other.error.find("not trusted") != std::string::npos, other.error);

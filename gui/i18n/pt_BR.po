@@ -343,6 +343,9 @@ msgstr "Em BBCode, para um fórum"
 msgid "As text"
 msgstr "Como texto"
 
+msgid "At launch, at most once a day, the program asks GitHub for its latest release; the home page tells when there is a newer one, with its notes and a link to its page. Nothing is downloaded nor installed."
+msgstr "Ao iniciar, no máximo uma vez por dia, o programa pergunta ao GitHub qual é a sua última versão publicada; a página inicial avisa você quando há uma mais recente, com as notas e um link para a página dela. Nada é baixado nem instalado."
+
 msgid "Automatic"
 msgstr "Automático"
 
@@ -607,8 +610,17 @@ msgstr "Console"
 msgid "Copy"
 msgstr "Copiar"
 
+msgid "Copy the version"
+msgstr "Copiar a versão"
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "Núcleos ocupados enquanto ele pensa · fração de um núcleo usada enquanto o adversário pensa (0% sem ponder). Medido após 20 s de cada."
+
+msgid "Could not check for a new version: {}"
+msgstr "Não foi possível verificar se há uma nova versão: {}"
+
+msgid "Could not check: {}"
+msgstr "Não foi possível verificar: {}"
 
 msgid "Count"
 msgstr "Quantidade"
@@ -678,6 +690,12 @@ msgstr "ID do servidor do Discord"
 
 msgid "Done: the tournament goes on with the change."
 msgstr "Feito: o torneio continua com a alteração."
+
+msgid "Download page"
+msgstr "Página de download"
+
+msgid "Download page of fastchess-gui {}"
+msgstr "Página de download do fastchess-gui {}"
 
 msgid "Draw"
 msgstr "Empate"
@@ -1104,6 +1122,9 @@ msgstr "Confronto direto"
 msgid "Health"
 msgstr "Saúde"
 
+msgid "Hide"
+msgstr "Ocultar"
+
 msgid "Host"
 msgstr "Host"
 
@@ -1250,6 +1271,9 @@ msgstr "Últimas 24 horas:"
 
 msgid "Latest results"
 msgstr "Últimos resultados"
+
+msgid "Latest version on GitHub: {} (this is {})"
+msgstr "Última versão no GitHub: {} (versão atual: {})"
 
 msgid "Layout"
 msgstr "Layout"
@@ -2278,6 +2302,9 @@ msgstr "Tablebases"
 msgid "Tabs"
 msgstr "Abas"
 
+msgid "Tell me when a new version is out"
+msgstr "Avisar quando sair uma nova versão"
+
 msgid "Template name"
 msgstr "Nome do modelo"
 
@@ -2524,6 +2551,9 @@ msgstr "O torneio foi alterado."
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "A variância de uma partida quando as partidas são contadas em pares, dividida pela variância das partidas isoladas: abaixo de 1, os pares precisam de proporcionalmente menos partidas para a mesma precisão."
 
+msgid "The version and the system, for a bug report."
+msgstr "A versão e o sistema, para um relatório de bug."
+
 msgid "The working directory of {} is not found."
 msgstr "A pasta de trabalho de {} não foi encontrada."
 
@@ -2541,6 +2571,9 @@ msgstr "Esta taxa de empates e este viés RMS não são compatíveis."
 
 msgid "This engine once more, with another book"
 msgstr "Este engine mais uma vez, com outro livro"
+
+msgid "This is the latest version."
+msgstr "Esta é a versão mais recente."
 
 msgid "This match is already finished."
 msgstr "Este match já terminou."
@@ -2638,6 +2671,9 @@ msgstr "Engine desconhecido: {}"
 msgid "Unreadable PGN."
 msgstr "PGN ilegível."
 
+msgid "Until the next version."
+msgstr "Até a próxima versão."
+
 msgid "Up to {} engines."
 msgstr "Até {} motores."
 
@@ -2655,6 +2691,12 @@ msgstr "Valor"
 
 msgid "Variance ratio"
 msgstr "Razão de variâncias"
+
+msgid "Version"
+msgstr "Versão"
+
+msgid "Version {} is out."
+msgstr "A versão {} foi lançada."
 
 msgid "Void this game (no replay)"
 msgstr "Anular esta partida (sem jogá-la de novo)"
@@ -2679,6 +2721,9 @@ msgstr "Página web"
 
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr "O que um testador verifica antes de enviar as partidas a uma lista de rating. “Exportar para uma lista de rating…” na aba Partidas deixa de fora as partidas anuladas e as duplicadas."
+
+msgid "What's new"
+msgstr "Novidades"
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "Quando ele se fixou no lance jogado, em média: uma decisão muito antes do fim do tempo gasto indica que o tempo não foi bem usado."
@@ -2861,6 +2906,9 @@ msgstr "elo1 deve ser maior que elo0."
 
 msgid "every pair with both colours"
 msgstr "cada par com as duas cores"
+
+msgid "fastchess-gui {} is out (this is {})."
+msgstr "O fastchess-gui {} foi lançado (você tem a {})."
 
 msgid "fastchess-gui {} — {} physical cores, {} threads"
 msgstr "fastchess-gui {} — {} núcleos físicos, {} threads"

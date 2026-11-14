@@ -226,6 +226,34 @@ void Storage::setWindowPlace(const WindowPlace& place) const {
     save(root_ / "settings.json", settings);
 }
 
+update::Settings Storage::updateSettings() const {
+    const auto s = settings();
+    update::Settings out;
+    out.enabled   = setting(s, "check_new_version", false);
+    out.checked   = setting(s, "new_version_checked", int64_t{0});
+    out.dismissed = setting(s, "new_version_dismissed", std::string{});
+    if (s.contains("latest_release") && s["latest_release"].is_object()) {
+        try {
+            out.latest = s["latest_release"].get<update::Release>();
+        } catch (const nlohmann::json::exception&) {
+        }
+    }
+    return out;
+}
+
+void Storage::setUpdateSettings(const update::Settings& updates) const {
+    auto settings                     = this->settings();
+    settings["check_new_version"]     = updates.enabled;
+    settings["new_version_checked"]   = updates.checked;
+    settings["new_version_dismissed"] = updates.dismissed;
+    if (updates.latest) {
+        settings["latest_release"] = *updates.latest;
+    } else {
+        settings.erase("latest_release");
+    }
+    save(root_ / "settings.json", settings);
+}
+
 std::vector<BookEntry> Storage::loadBooks() const {
     return readProfileFile<std::vector<BookEntry>>(root_ / "books.json").value_or(std::vector<BookEntry>{});
 }

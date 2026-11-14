@@ -7,6 +7,7 @@
 
 #include "layout.hpp"
 #include "model.hpp"
+#include "update_check.hpp"
 #include "window_place.hpp"
 
 namespace fcg {
@@ -53,6 +54,10 @@ class Storage {
     // The main window as it was left (settings.json); nullopt when none was kept.
     [[nodiscard]] std::optional<WindowPlace> windowPlace() const;
     void setWindowPlace(const WindowPlace& place) const;
+
+    // The check for a new version (settings.json): whether it is wanted, when it was last made and what it found.
+    [[nodiscard]] update::Settings updateSettings() const;
+    void setUpdateSettings(const update::Settings& updates) const;
 
     [[nodiscard]] std::vector<BookEntry> loadBooks() const;
     void saveBooks(const std::vector<BookEntry>& books) const;

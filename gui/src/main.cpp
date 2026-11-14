@@ -376,7 +376,7 @@ int main(int argc, char** argv) {
     }
 
     SDL_Window* window =
-        SDL_CreateWindow("fastchess-gui", opening.w, opening.h,
+        SDL_CreateWindow("fastchess-gui " FCG_VERSION, opening.w, opening.h,
                          SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!window) return fatal("SDL_CreateWindow");
 #ifndef __APPLE__  // macOS shows the bundle's (gui/mac/fastchess-gui.icns), with the margin of the system's icons
@@ -442,6 +442,7 @@ int main(int argc, char** argv) {
     options.autostart    = args.autostart;
     options.focus_window = args.focus;
     options.ui_scale     = scale;
+    options.scripted     = !args.shots.empty();
 
     // The app lives in its own scope so its destructor (which joins the run thread) runs before teardown.
     {

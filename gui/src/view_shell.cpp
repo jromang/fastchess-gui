@@ -351,6 +351,7 @@ void App::drawHome() {
         ImGui::TextWrapped("%s", start_error_.c_str());
         ImGui::PopStyleColor();
     }
+    drawUpdateNotice();
 
     // What is going on now.
     if (run_.running()) {
@@ -895,7 +896,111 @@ void App::drawSettings() {
     ImGui::PopItemWidth();
     ImGui::EndGroup();
 
+    ImGui::Spacing();
+    ImGui::Separator();
+    ui::label(TR("Version"), label);
+    ImGui::BeginGroup();
+    drawVersionSettings();
+    ImGui::EndGroup();
+
     if (changed) saveSetupSoon();
+}
+
+// ---------------------------------------------------------------------------
+// Version, and the new ones
+
+void App::copyVersion() {
+    ImGui::SetClipboardText(fmt::format("fastchess-gui {} ({})", FCG_VERSION, SDL_GetPlatform()).c_str());
+}
+
+void App::startUpdateCheck(bool asked) {
+    if (update_checker_.running()) return;
+    update_asked_ = asked;
+    update_status_.clear();
+    update_checker_.start();
+}
+
+void App::pollUpdateCheck() {
+    const auto answer = update_checker_.poll();
+    if (!answer) return;
+    // Silent unless asked from Settings: the log tells what happened.
+    updates_.checked = std::time(nullptr);
+    if (answer->release) {
+        updates_.latest = answer->release;
+        Console::instance().add(
+            trf("Latest version on GitHub: {} (this is {})", answer->release->version, FCG_VERSION));
+    } else {
+        Console::instance().add(trf("Could not check for a new version: {}", answer->error));
+        if (update_asked_) update_status_ = trf("Could not check: {}", answer->error);
+    }
+    storage_.setUpdateSettings(updates_);
+}
+
+void App::drawVersionSettings() {
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted("fastchess-gui " FCG_VERSION);
+    ImGui::SameLine();
+    if (ImGui::Button(TR("Copy##version"))) copyVersion();
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The version and the system, for a bug report."));
+
+    if (ImGui::Checkbox(TR("Tell me when a new version is out"), &updates_.enabled)) {
+        storage_.setUpdateSettings(updates_);
+        if (updates_.enabled && update::checkDue(updates_.checked, std::time(nullptr))) startUpdateCheck(true);
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("At launch, at most once a day, the program asks GitHub for its latest release; the "
+                                   "home page tells when there is a newer one, with its notes and a link to its page. "
+                                   "Nothing is downloaded nor installed."));
+    }
+    if (!updates_.enabled) return;
+
+    if (update_checker_.running()) {
+        ImGui::TextDisabled("%s", TR("Checking…"));
+    } else if (!update_status_.empty()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+        ImGui::TextWrapped("%s", update_status_.c_str());
+        ImGui::PopStyleColor();
+    } else if (updates_.latest && update::compareVersions(updates_.latest->version, FCG_VERSION) > 0) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(trf("Version {} is out.", updates_.latest->version).c_str());
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Download page"))) SDL_OpenURL(updates_.latest->url.c_str());
+    } else if (updates_.latest) {
+        ImGui::TextDisabled("%s", TR("This is the latest version."));
+    }
+}
+
+// On the home page, while a newer version than this one is out and the user did not close its notice.
+void App::drawUpdateNotice() {
+    const auto* release = update::notice(updates_, FCG_VERSION);
+    if (!release) return;
+    ui::beginCard("update_notice");
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(trf("fastchess-gui {} is out (this is {}).", release->version, FCG_VERSION).c_str());
+    ImGui::SameLine();
+    if (ImGui::SmallButton(TR("Download page"))) SDL_OpenURL(release->url.c_str());
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", release->url.c_str());
+    if (!release->notes.empty()) {
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("What's new"))) update_notes_open_ = !update_notes_open_;
+    }
+    ImGui::SameLine();
+    if (ImGui::SmallButton(TR("Hide##update"))) {
+        updates_.dismissed = release->version;
+        storage_.setUpdateSettings(updates_);
+        ui::endCard();
+        return;
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Until the next version."));
+    if (update_notes_open_ && !release->notes.empty()) {
+        // The notes as written (Markdown), in a box of their own.
+        ImGui::BeginChild("##update_notes", ImVec2(0, px(220)), ImGuiChildFlags_Borders);
+        ImGui::PushTextWrapPos(0.0f);
+        ImGui::TextUnformatted(release->notes.c_str());
+        ImGui::PopTextWrapPos();
+        ImGui::EndChild();
+    }
+    ui::endCard();
 }
 
 }  // namespace fcg

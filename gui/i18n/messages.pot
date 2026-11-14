@@ -343,6 +343,9 @@ msgstr ""
 msgid "As text"
 msgstr ""
 
+msgid "At launch, at most once a day, the program asks GitHub for its latest release; the home page tells when there is a newer one, with its notes and a link to its page. Nothing is downloaded nor installed."
+msgstr ""
+
 msgid "Automatic"
 msgstr ""
 
@@ -607,7 +610,16 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
+msgid "Copy the version"
+msgstr ""
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
+msgstr ""
+
+msgid "Could not check for a new version: {}"
+msgstr ""
+
+msgid "Could not check: {}"
 msgstr ""
 
 msgid "Count"
@@ -677,6 +689,12 @@ msgid "Discord server ID"
 msgstr ""
 
 msgid "Done: the tournament goes on with the change."
+msgstr ""
+
+msgid "Download page"
+msgstr ""
+
+msgid "Download page of fastchess-gui {}"
 msgstr ""
 
 msgid "Draw"
@@ -1104,6 +1122,9 @@ msgstr ""
 msgid "Health"
 msgstr ""
 
+msgid "Hide"
+msgstr ""
+
 msgid "Host"
 msgstr ""
 
@@ -1249,6 +1270,9 @@ msgid "Last 24 hours:"
 msgstr ""
 
 msgid "Latest results"
+msgstr ""
+
+msgid "Latest version on GitHub: {} (this is {})"
 msgstr ""
 
 msgid "Layout"
@@ -2278,6 +2302,9 @@ msgstr ""
 msgid "Tabs"
 msgstr ""
 
+msgid "Tell me when a new version is out"
+msgstr ""
+
 msgid "Template name"
 msgstr ""
 
@@ -2524,6 +2551,9 @@ msgstr ""
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr ""
 
+msgid "The version and the system, for a bug report."
+msgstr ""
+
 msgid "The working directory of {} is not found."
 msgstr ""
 
@@ -2540,6 +2570,9 @@ msgid "This draw ratio and this RMS bias are not compatible."
 msgstr ""
 
 msgid "This engine once more, with another book"
+msgstr ""
+
+msgid "This is the latest version."
 msgstr ""
 
 msgid "This match is already finished."
@@ -2638,6 +2671,9 @@ msgstr ""
 msgid "Unreadable PGN."
 msgstr ""
 
+msgid "Until the next version."
+msgstr ""
+
 msgid "Up to {} engines."
 msgstr ""
 
@@ -2654,6 +2690,12 @@ msgid "Value"
 msgstr ""
 
 msgid "Variance ratio"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "Version {} is out."
 msgstr ""
 
 msgid "Void this game (no replay)"
@@ -2678,6 +2720,9 @@ msgid "Web page"
 msgstr ""
 
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
+msgstr ""
+
+msgid "What's new"
 msgstr ""
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
@@ -2860,6 +2905,9 @@ msgid "elo1 must be larger than elo0."
 msgstr ""
 
 msgid "every pair with both colours"
+msgstr ""
+
+msgid "fastchess-gui {} is out (this is {})."
 msgstr ""
 
 msgid "fastchess-gui {} — {} physical cores, {} threads"

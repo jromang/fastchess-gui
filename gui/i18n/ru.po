@@ -347,6 +347,9 @@ msgstr "В BBCode, для форума"
 msgid "As text"
 msgstr "Текстом"
 
+msgid "At launch, at most once a day, the program asks GitHub for its latest release; the home page tells when there is a newer one, with its notes and a link to its page. Nothing is downloaded nor installed."
+msgstr "При запуске, не чаще раза в день, программа запрашивает у GitHub свой последний выпуск; главная страница сообщит вам о более новой версии, покажет её описание и ссылку на её страницу. Ничего не скачивается и не устанавливается."
+
 msgid "Automatic"
 msgstr "Автоматически"
 
@@ -611,8 +614,17 @@ msgstr "Консоль"
 msgid "Copy"
 msgstr "Копировать"
 
+msgid "Copy the version"
+msgstr "Скопировать версию"
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "Ядра, занятые, пока он думает · доля ядра, используемая, пока думает соперник (0 % без ponder). Измеряется после 20 с каждого режима."
+
+msgid "Could not check for a new version: {}"
+msgstr "Не удалось проверить наличие новой версии: {}"
+
+msgid "Could not check: {}"
+msgstr "Не удалось проверить: {}"
 
 msgid "Count"
 msgstr "Количество"
@@ -682,6 +694,12 @@ msgstr "ID сервера Discord"
 
 msgid "Done: the tournament goes on with the change."
 msgstr "Готово: турнир продолжается с изменением."
+
+msgid "Download page"
+msgstr "Страница загрузки"
+
+msgid "Download page of fastchess-gui {}"
+msgstr "Страница загрузки fastchess-gui {}"
 
 msgid "Draw"
 msgstr "Ничья"
@@ -1109,6 +1127,9 @@ msgstr "Личные встречи"
 msgid "Health"
 msgstr "Надёжность"
 
+msgid "Hide"
+msgstr "Скрыть"
+
 msgid "Host"
 msgstr "Хост"
 
@@ -1255,6 +1276,9 @@ msgstr "За последние 24 часа:"
 
 msgid "Latest results"
 msgstr "Последние результаты"
+
+msgid "Latest version on GitHub: {} (this is {})"
+msgstr "Последняя версия на GitHub: {} (текущая: {})"
 
 msgid "Layout"
 msgstr "Раскладка"
@@ -2288,6 +2312,9 @@ msgstr "Таблицы эндшпиля"
 msgid "Tabs"
 msgstr "Вкладки"
 
+msgid "Tell me when a new version is out"
+msgstr "Сообщать о выходе новой версии"
+
 msgid "Template name"
 msgstr "Название шаблона"
 
@@ -2534,6 +2561,9 @@ msgstr "Турнир изменён."
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "Дисперсия партии при подсчёте по парам, делённая на дисперсию отдельных партий: если она меньше 1, парам нужно во столько же раз меньше партий для той же точности."
 
+msgid "The version and the system, for a bug report."
+msgstr "Версия и система — для сообщения об ошибке."
+
 msgid "The working directory of {} is not found."
 msgstr "Рабочая папка движка {} не найдена."
 
@@ -2551,6 +2581,9 @@ msgstr "Эта доля ничьих и это RMS-смещение несовм
 
 msgid "This engine once more, with another book"
 msgstr "Этот движок ещё раз, с другой книгой"
+
+msgid "This is the latest version."
+msgstr "Это последняя версия."
 
 msgid "This match is already finished."
 msgstr "Этот матч уже завершён."
@@ -2648,6 +2681,9 @@ msgstr "Неизвестный движок: {}"
 msgid "Unreadable PGN."
 msgstr "Нечитаемый PGN."
 
+msgid "Until the next version."
+msgstr "До следующей версии."
+
 msgid "Up to {} engines."
 msgstr "До {} движков."
 
@@ -2665,6 +2701,12 @@ msgstr "Значение"
 
 msgid "Variance ratio"
 msgstr "Отношение дисперсий"
+
+msgid "Version"
+msgstr "Версия"
+
+msgid "Version {} is out."
+msgstr "Вышла версия {}."
 
 msgid "Void this game (no replay)"
 msgstr "Аннулировать эту партию (без переигровки)"
@@ -2689,6 +2731,9 @@ msgstr "Веб-страница"
 
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr "Что проверяет тестер перед отправкой партий в рейтинг-лист. «Экспорт для рейтинг-листа…» на вкладке «Партии» исключает аннулированные партии и дубликаты."
+
+msgid "What's new"
+msgstr "Что нового"
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "Когда в среднем он останавливался на сыгранном ходе: решение задолго до конца затраченного времени говорит о том, что время использовалось неэффективно."
@@ -2872,6 +2917,9 @@ msgstr "elo1 должен быть больше elo0."
 
 msgid "every pair with both colours"
 msgstr "каждая пара с обоими цветами"
+
+msgid "fastchess-gui {} is out (this is {})."
+msgstr "Вышел fastchess-gui {} (у вас {})."
 
 msgid "fastchess-gui {} — {} physical cores, {} threads"
 msgstr "fastchess-gui {} — физических ядер: {}, потоков: {}"

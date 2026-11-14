@@ -339,6 +339,9 @@ msgstr "BBCode 格式，用于论坛"
 msgid "As text"
 msgstr "文本格式"
 
+msgid "At launch, at most once a day, the program asks GitHub for its latest release; the home page tells when there is a newer one, with its notes and a link to its page. Nothing is downloaded nor installed."
+msgstr "启动时（每天最多一次），程序向 GitHub 查询其最新发布版本；有更新的版本时，主页会提示，并显示其说明和页面链接。不会下载或安装任何东西。"
+
 msgid "Automatic"
 msgstr "自动"
 
@@ -603,8 +606,17 @@ msgstr "控制台"
 msgid "Copy"
 msgstr "复制"
 
+msgid "Copy the version"
+msgstr "复制版本号"
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "思考时占用的核心数 · 对手思考时占用一个核心的比例（不后台思考时为 0 %）。各测量 20 秒后得出。"
+
+msgid "Could not check for a new version: {}"
+msgstr "无法检查新版本：{}"
+
+msgid "Could not check: {}"
+msgstr "无法检查：{}"
 
 msgid "Count"
 msgstr "数量"
@@ -674,6 +686,12 @@ msgstr "Discord 服务器 ID"
 
 msgid "Done: the tournament goes on with the change."
 msgstr "完成：锦标赛将带着此修改继续进行。"
+
+msgid "Download page"
+msgstr "下载页面"
+
+msgid "Download page of fastchess-gui {}"
+msgstr "fastchess-gui {} 的下载页面"
 
 msgid "Draw"
 msgstr "和棋"
@@ -1099,6 +1117,9 @@ msgstr "交手记录"
 msgid "Health"
 msgstr "稳定性"
 
+msgid "Hide"
+msgstr "隐藏"
+
 msgid "Host"
 msgstr "主机"
 
@@ -1245,6 +1266,9 @@ msgstr "最近 24 小时："
 
 msgid "Latest results"
 msgstr "最近成绩"
+
+msgid "Latest version on GitHub: {} (this is {})"
+msgstr "GitHub 上的最新版本：{}（当前为 {}）"
 
 msgid "Layout"
 msgstr "布局"
@@ -2268,6 +2292,9 @@ msgstr "残局库"
 msgid "Tabs"
 msgstr "标签页"
 
+msgid "Tell me when a new version is out"
+msgstr "有新版本时通知我"
+
 msgid "Template name"
 msgstr "模板名称"
 
@@ -2514,6 +2541,9 @@ msgstr "锦标赛已修改。"
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "按对局对计算时单局的方差与单独计算时单局方差之比：低于 1 时，成对对局只需相应更少的对局即可达到同样精度。"
 
+msgid "The version and the system, for a bug report."
+msgstr "版本和系统信息，用于错误报告。"
+
 msgid "The working directory of {} is not found."
 msgstr "找不到 {} 的工作目录。"
 
@@ -2531,6 +2561,9 @@ msgstr "此和棋率与此 RMS 偏差不相容。"
 
 msgid "This engine once more, with another book"
 msgstr "再加入一次此引擎，使用另一个开局库"
+
+msgid "This is the latest version."
+msgstr "这是最新版本。"
 
 msgid "This match is already finished."
 msgstr "这场比赛已经结束。"
@@ -2628,6 +2661,9 @@ msgstr "未知引擎：{}"
 msgid "Unreadable PGN."
 msgstr "无法读取的 PGN。"
 
+msgid "Until the next version."
+msgstr "直到下一个版本。"
+
 msgid "Up to {} engines."
 msgstr "最多 {} 个引擎。"
 
@@ -2645,6 +2681,12 @@ msgstr "值"
 
 msgid "Variance ratio"
 msgstr "方差比"
+
+msgid "Version"
+msgstr "版本"
+
+msgid "Version {} is out."
+msgstr "版本 {} 已发布。"
 
 msgid "Void this game (no replay)"
 msgstr "作废这局对局（不重下）"
@@ -2669,6 +2711,9 @@ msgstr "网页"
 
 msgid "What a tester checks before sending the games to a rating list. Export for a rating list… in the Games tab leaves the voided games and the duplicates out."
 msgstr "测试者向等级分列表提交对局前检查的内容。“对局”页中的“导出给等级分列表…”会去除作废对局和重复对局。"
+
+msgid "What's new"
+msgstr "新功能"
 
 msgid "When it settled on the move it played, on average: a decision long before the end of the time spent says the time was not used well."
 msgstr "它平均何时确定最终走出的着法：如果远早于所用时间结束就已确定，说明时间没有用好。"
@@ -2850,6 +2895,9 @@ msgstr "elo1 必须大于 elo0。"
 
 msgid "every pair with both colours"
 msgstr "每一对都交换过颜色"
+
+msgid "fastchess-gui {} is out (this is {})."
+msgstr "fastchess-gui {} 已发布（当前为 {}）。"
 
 msgid "fastchess-gui {} — {} physical cores, {} threads"
 msgstr "fastchess-gui {} — {} 个物理核心，{} 个线程"
