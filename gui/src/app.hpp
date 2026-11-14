@@ -829,6 +829,7 @@ class App {
     std::chrono::steady_clock::time_point templates_listed_{};
     std::string template_message_;  // why the last save or load failed
     std::string template_loaded_;   // the template the setup came from, named in the menu; empty: none
+    bool open_save_template_ = false;  // Save the setup as a template… asked from the command palette
     // Templates loaded by name (the template menu, the command palette): the sections that played as their profile
     // take its values of today. False, with template_message_, when it cannot be read.
     bool loadTemplate(const std::string& name);

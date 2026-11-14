@@ -1571,7 +1571,7 @@ void App::drawTemplates() {
     ImGui::SameLine();
     ImGui::SetNextItemWidth(px(200));
     const auto preview = template_loaded_.empty() ? std::string(TR("None")) : template_loaded_;
-    bool open_save     = false;
+    bool open_save     = std::exchange(open_save_template_, false);  // or from the command palette
     if (ImGui::BeginCombo("##template", preview.c_str(), ImGuiComboFlags_HeightLarge)) {
         for (const auto& name : template_names_) {
             if (ImGui::Selectable(name.c_str(), name == template_loaded_)) loadTemplate(name);

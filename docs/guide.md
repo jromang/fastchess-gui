@@ -212,7 +212,7 @@ A change made for this tournament only puts a dot beside the profile, and its li
 A profile of yours saved under a preset's name takes its place; deleting it (from its list, after a confirmation)
 brings the preset back, and the setups and templates that used it keep its values. Profiles are kept in
 `profiles.json` in the profile folder, and the command palette (Ctrl+K) lists them: choosing one applies it to the
-setup. The Syzygy directories are in no profile: they belong to this computer, and the adjudication and the engines
+setup. The palette also opens each row of the setup by its title, and loads or saves templates. The Syzygy directories are in no profile: they belong to this computer, and the adjudication and the engines
 share them. The *Concurrency* and *PGN and misc* rows hold what is this tournament's only.
 
 **Template** and **Name**, beside *Start*: a template is the whole setup, a profile for each section plus what no

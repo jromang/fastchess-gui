@@ -140,6 +140,20 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
                     });
             }
         }
+        // Each row of the setup, opened in place.
+        const auto row = [&](const char* title, SetupRow r) {
+            add(title, TR("New tournament"), [this, r] {
+                page_          = Page::NewMatch;
+                setup_open_[r] = true;
+            });
+        };
+        for (const auto section : SETUP_SECTIONS) row(sectionTitle(section), static_cast<SetupRow>(section));
+        row(TR("Concurrency"), RowConcurrency);
+        row(TR("PGN and misc"), RowPgn);
+        add(TR("Save the setup as a template…"), TR("New tournament"), [this] {
+            page_               = Page::NewMatch;
+            open_save_template_ = true;
+        });
         listTemplates();
         for (const auto& name : template_names_) {
             add(name, TR("Template"), [this, name] {
