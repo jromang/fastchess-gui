@@ -2942,6 +2942,9 @@ msgstr "envoyer au démarrage"
 msgid "the file is not found"
 msgstr "le fichier est introuvable"
 
+msgid "the host key of {} cannot be checked: its fingerprint could not be computed"
+msgstr "la clé d'hôte de {} ne peut pas être vérifiée : son empreinte n'a pas pu être calculée"
+
 msgid "the new tournament"
 msgstr "le nouveau tournoi"
 

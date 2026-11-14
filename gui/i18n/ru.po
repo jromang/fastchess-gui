@@ -2954,6 +2954,9 @@ msgstr "отправить при запуске"
 msgid "the file is not found"
 msgstr "файл не найден"
 
+msgid "the host key of {} cannot be checked: its fingerprint could not be computed"
+msgstr "ключ хоста {} нельзя проверить: не удалось вычислить его отпечаток"
+
 msgid "the new tournament"
 msgstr "новый турнир"
 

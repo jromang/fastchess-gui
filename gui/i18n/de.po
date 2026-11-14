@@ -2942,6 +2942,9 @@ msgstr "beim Start senden"
 msgid "the file is not found"
 msgstr "die Datei wurde nicht gefunden"
 
+msgid "the host key of {} cannot be checked: its fingerprint could not be computed"
+msgstr "der Host-Schlüssel von {} kann nicht geprüft werden: sein Fingerabdruck konnte nicht berechnet werden"
+
 msgid "the new tournament"
 msgstr "das neue Turnier"
 

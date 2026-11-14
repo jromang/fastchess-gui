@@ -460,8 +460,8 @@ own as well (`location /live/ { proxy_pass http://localhost:8080/; }`), work the
 The page is read-only: it answers only GET requests for the page, its state and the PGN file, never a file a request
 names, and nothing in it changes the tournament. Each request is answered on its own, 32 at a time at most, and must
 arrive within a second and be answered within ten, so a slow or silent visitor holds no one else; behind the tunnel
-each viewer's connection counts as one of those: 48 are relayed at once, as many more wait their turn, and the
-next are refused. Two downloads of the PGN file
+each viewer's connection counts as one of those: 40 are relayed at once, as many more wait their turn, and the
+next are refused; a viewer who sends more than the page takes is let go alone. Two downloads of the PGN file
 run at once, and the next is asked to come back a moment later. The state is never cached, by the tunnel either, so
 viewers see the games as they go; the page is kept by the browser and checked again at each load. The viewers shown
 in the *Broadcast* tab are counted from the requests the pages make, so the count is right behind a tunnel too.

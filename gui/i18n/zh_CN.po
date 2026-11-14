@@ -2930,6 +2930,9 @@ msgstr "启动时发送"
 msgid "the file is not found"
 msgstr "找不到文件"
 
+msgid "the host key of {} cannot be checked: its fingerprint could not be computed"
+msgstr "无法检查 {} 的主机密钥：无法计算其指纹"
+
 msgid "the new tournament"
 msgstr "新锦标赛"
 

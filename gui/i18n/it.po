@@ -2942,6 +2942,9 @@ msgstr "invia all'avvio"
 msgid "the file is not found"
 msgstr "il file non è stato trovato"
 
+msgid "the host key of {} cannot be checked: its fingerprint could not be computed"
+msgstr "la chiave host di {} non può essere verificata: non è stato possibile calcolarne l'impronta"
+
 msgid "the new tournament"
 msgstr "il nuovo torneo"
 

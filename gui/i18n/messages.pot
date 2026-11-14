@@ -2942,6 +2942,9 @@ msgstr ""
 msgid "the file is not found"
 msgstr ""
 
+msgid "the host key of {} cannot be checked: its fingerprint could not be computed"
+msgstr ""
+
 msgid "the new tournament"
 msgstr ""
 
