@@ -2005,7 +2005,7 @@ TEST_CASE("Tunnel: a viewer's bytes, merged by libssh2 as they wait, reach the w
 TEST_CASE("Tunnel: the session's text and error text, come together, are read in the order they came") {
     // libssh2 appends a packet only to the last one it holds for the channel, and only of the same stream: the
     // session's text and error text, read as one, keep their order, and so does the address in them.
-    std::atomic_bool finished{false};
+    std::atomic_bool seen{false}, finished{false};
     FakeServer::Script script;
     script.on_air = [&](FakeServer& server) {
         const auto text = [&](std::string_view s) {
@@ -2016,14 +2016,18 @@ TEST_CASE("Tunnel: the session's text and error text, come together, are read in
         };
         server.sendAll({text("in.lhr.life tunneled, https://"), error("in"), error("ter"), text("le"), text("av"),
                         error("ed"), error(".lh"), text("r.life\r\n")});
-        while (!finished) server.poll(50ms);
+        // Read until the address was seen, and no longer: the client's DISCONNECT, once the tunnel stops, is for the
+        // server to see (untilGone), not for this loop to take and drop.
+        while (!seen) server.poll(50ms);
+        finished = true;
     };
     FakeServer server(SSH_PORT, script);
     SshTunnel tunnel;
     tunnel.start(loopback(fingerprint(serverKey().blob)));
     CHECK(waitFor([&] { return tunnel.status().url == "https://interleaved.lhr.life"; }));
     CHECK_MESSAGE(tunnel.status().url == "https://interleaved.lhr.life", tunnel.status().url);
-    finished = true;
+    seen = true;
+    REQUIRE(waitFor([&] { return finished.load() || server.done.load(); }));
     tunnel.stop();
     CHECK(waitFor([&] { return server.done.load(); }));
     CHECK_MESSAGE(server.error.empty(), server.error);
@@ -2341,6 +2345,37 @@ TEST_CASE("Tunnel: stopped with a packet half sent and a viewer's connection not
 
 TEST_CASE("Tunnel: stopped with a packet half sent, a request not answered, a viewer's connection not confirmed") {
     stopWhileHalfSent(true, true);
+}
+
+TEST_CASE("Tunnel: stopped with a packet half sent, the goodbye still goes once the server reads") {
+    // libssh2 sends nothing else while a packet it could not finish is under way, and only the call that started it
+    // sends the rest: the tunnel, stopping, made none, and its DISCONNECT never went though the server read again
+    // meanwhile. The server saw the connection end with no goodbye. Here the web server's answer fills the connection
+    // to the server, which reads nothing until the tunnel is stopping, then reads all. (Windows' loopback buffers may
+    // take the whole answer: nothing is half sent there, and the goodbye goes as always.)
+    Sink web(std::string(std::size_t(16) << 20, 'a'), true);
+    std::atomic_bool holding{false}, reading{false};
+    FakeServer::Script script;
+    script.on_air = [&](FakeServer& server) {
+        const auto channel = forward(server, 200, 0x7FFFFFFF);
+        server.send(channelData(channel, script.request));
+        std::this_thread::sleep_for(800ms);  // the answer fills the connection
+        holding = true;
+        while (!reading) std::this_thread::sleep_for(20ms);
+        // Then the server reads all that comes, until the DISCONNECT (untilGone).
+    };
+    FakeServer server(SSH_PORT, script);
+    SshTunnel tunnel;
+    tunnel.start(loopback(fingerprint(serverKey().blob)));
+    REQUIRE(waitFor([&] { return holding.load() || server.done.load(); }, 30s));
+    CHECK(tunnel.status().state == TunnelState::OnAir);
+    std::thread stopping([&] { tunnel.stop(); });
+    std::this_thread::sleep_for(200ms);  // the goodbye under way, the socket full
+    reading = true;
+    stopping.join();
+    CHECK(waitFor([&] { return server.done.load(); }));
+    CHECK(server.disconnected);
+    CHECK_MESSAGE(server.error.empty(), server.error);
 }
 
 TEST_CASE("Tunnel: what cannot be read ends the connection, though the session channel is closed") {

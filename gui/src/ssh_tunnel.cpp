@@ -18,9 +18,10 @@
 
 // libssh2 as cmake/patch_libssh2.cmake patches it: without its packets merged and its forwarded connections' window,
 // what a viewer makes the tunnel hold is not bounded; without fcg_libssh2_session_end(), a session whose connection
-// ended with a packet half sent cannot be freed.
-#if !defined(FCG_LIBSSH2_PATCHLEVEL) || FCG_LIBSSH2_PATCHLEVEL < 3
-#error "libssh2 is not patched by cmake/patch_libssh2.cmake (level 3): delete the libssh2 directories in the build \
+// ended with a packet half sent cannot be freed; without fcg_libssh2_send_unsent(), such a packet holds back the
+// goodbye.
+#if !defined(FCG_LIBSSH2_PATCHLEVEL) || FCG_LIBSSH2_PATCHLEVEL < 4
+#error "libssh2 is not patched by cmake/patch_libssh2.cmake (level 4): delete the libssh2 directories in the build \
 tree's _deps and configure again, or run the script in the sources FETCHCONTENT_SOURCE_DIR_LIBSSH2 names"
 #endif
 
@@ -829,12 +830,19 @@ class TunnelConnection {
 
     void goodbye() {
         if (!session_ || phase_ == Phase::Handshake || socket_closed_) return;
+        // A packet libssh2 could not finish (the socket full: a viewer's download, say) holds back the DISCONNECT, and
+        // only the call that started it would send its rest, which is not made again now: the rest goes first, then
+        // the DISCONNECT, within the same second, waiting for the socket in the direction libssh2 waits for.
         auto until = Clock::now() + std::chrono::seconds(1);
         int rc     = LIBSSH2_ERROR_EAGAIN;
         while (Clock::now() < until) {
-            rc = libssh2_session_disconnect(session_, "bye");
+            rc = fcg_libssh2_send_unsent(session_);
+            if (rc == 0) rc = libssh2_session_disconnect(session_, "bye");
             if (rc != LIBSSH2_ERROR_EAGAIN) break;
-            std::vector<net::Wait> waits{{socket_->handle(), true, true}};
+            const int directions = libssh2_session_block_directions(session_);
+            const bool in        = (directions & LIBSSH2_SESSION_BLOCK_INBOUND) != 0;
+            const bool out       = (directions & LIBSSH2_SESSION_BLOCK_OUTBOUND) != 0;
+            std::vector<net::Wait> waits{{socket_->handle(), in || !out, out || !in}};
             net::waitAny(waits, 100);
         }
         if (rc != 0) return;
