@@ -17,16 +17,16 @@
 #include <psa/crypto.h>
 
 // libssh2 as cmake/patch_libssh2.cmake patches it: without its packets merged and its forwarded connections' window,
-// what a viewer makes the tunnel hold is not bounded.
-#if !defined(FCG_LIBSSH2_PATCHLEVEL) || FCG_LIBSSH2_PATCHLEVEL < 2
-#error "libssh2 is not patched by cmake/patch_libssh2.cmake (level 2): delete the libssh2 directories in the build \
+// what a viewer makes the tunnel hold is not bounded; without fcg_libssh2_session_end(), a session whose connection
+// ended with a packet half sent cannot be freed.
+#if !defined(FCG_LIBSSH2_PATCHLEVEL) || FCG_LIBSSH2_PATCHLEVEL < 3
+#error "libssh2 is not patched by cmake/patch_libssh2.cmake (level 3): delete the libssh2 directories in the build \
 tree's _deps and configure again, or run the script in the sources FETCHCONTENT_SOURCE_DIR_LIBSSH2 names"
 #endif
 
 #include "console.hpp"
 #include "i18n.hpp"
 #include "net.hpp"
-#include "session_end.h"
 #include "storage.hpp"
 
 namespace fcg {
@@ -139,7 +139,13 @@ std::mutex& knownHostsMutex() {
     return m;
 }
 
+// What libssh2 left behind of the sessions (tunnelMemoryLeftBehind()). Of a trivial type: a thread that outlived the
+// tunnel may count in it after the program's static objects were destroyed.
+std::atomic<std::size_t> memory_left_behind{0};
+
 }  // namespace
+
+std::size_t tunnelMemoryLeftBehind() { return memory_left_behind.load(); }
 
 TunnelSettings localhostRun(int local_port) {
     TunnelSettings s;
@@ -847,17 +853,25 @@ class TunnelConnection {
         }
     }
 
-    // The session and all it holds, its channels included, then the socket. What libssh2 would still send or wait
-    // for fails at once: the socket is shut first, and a packet left half sent is forgotten, which would otherwise
-    // hold back the channels' closing, and the session be left behind with its keys.
+    // The session and all it holds, its channels included, then the socket. libssh2 sends and receives nothing more
+    // once the session is ended (patched: fcg_libssh2_session_end()): what it would still send or wait for fails at
+    // once, and a packet left half sent, which would hold back the channels' closing, is forgotten. What libssh2 did
+    // not give back is never silent: counted, and told in the Console unless the tunnel is stopping (the thread
+    // touches nothing but `shared` then).
     void close() {
         for (auto& v : viewers_) v->socket.reset();
         if (session_) {
-            if (socket_) socket_->shutdownBoth();
-            fcg_libssh2_drop_unsent(session_);
-            for (int i = 0; i < 100 && libssh2_session_free(session_) == LIBSSH2_ERROR_EAGAIN; ++i) {
-            }
+            fcg_libssh2_session_end(session_);
+            int rc = LIBSSH2_ERROR_EAGAIN;
+            for (int i = 0; i < 100 && rc == LIBSSH2_ERROR_EAGAIN; ++i) rc = libssh2_session_free(session_);
             session_ = nullptr;
+            if (rc != 0 || held_ != 0) {
+                memory_left_behind += held_;
+                if (!stopping_)
+                    Console::instance().add(trf("Tunnel: {}", "the SSH session was not freed whole: " +
+                                                                  std::to_string(held_) + " bytes left behind"),
+                                            true);
+            }
         }
         socket_.reset();
     }
