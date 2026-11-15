@@ -18,6 +18,7 @@
 #include <libssh2.h>  // before windows.h: it includes winsock2.h
 
 #include "ed25519.h"
+#include "free_ports.hpp"
 #include "libssh2_backend.hpp"
 #include "machine_jobs.hpp"
 #include "machine_run.hpp"
@@ -36,7 +37,11 @@ namespace fs = std::filesystem;
 
 namespace {
 
-constexpr uint16_t MACHINE_PORT = 26451;
+// The mock SSH server's port, free when the process first asks (each test case may run in a process of its own).
+uint16_t machinePort() {
+    static const uint16_t port = fcg::test::freePort();
+    return port;
+}
 
 // Throwaway keys made for these tests by ssh-keygen: an Ed25519 key and an RSA key in OpenSSH's format, encrypted
 // with the passphrase "chess" (bcrypt and aes256-ctr), an RSA key in PKCS #1's PEM, and an ECDSA key, which the
@@ -184,7 +189,7 @@ SshTarget loopbackTarget(const fs::path& dir) {
     SshTarget t;
     t.name        = "test-box";
     t.host        = "127.0.0.1";
-    t.port        = MACHINE_PORT;
+    t.port        = machinePort();
     t.user        = "tester";
     t.auth        = SshAuth::KeyFile;
     t.known_hosts = dir / "known_hosts.json";
@@ -698,7 +703,7 @@ TEST_CASE("SSH client: logs in with an Ed25519 or RSA key file, a passphrase mis
     ssh::MockServer::Options options;
     options.keys = {ssh::publicKeyBlob(ED25519_PUB), ssh::publicKeyBlob(RSA_PUB)};
     options.root = dir;
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
 
     auto target       = loopbackTarget(dir);
     target.key_file   = dir / "ed";
@@ -744,7 +749,7 @@ TEST_CASE("SSH client: a host key that changed refused, the new one offered to t
     const auto dir = freshDir("hostkey");
     ssh::MockServer::Options options;
     options.root = dir;
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
     auto target = loopbackTarget(dir);
     REQUIRE(rememberHostKey(target.known_hosts, target.host, target.port, "SHA256:another"));
     SshClient client;
@@ -782,7 +787,7 @@ TEST_CASE("SSH client: commands with their output, error output and exit code; a
         }
         return reply;
     };
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
     SshClient client;
     REQUIRE(client.connect(loopbackTarget(dir)));
     const auto hello = client.run("hello", 5s);
@@ -823,7 +828,7 @@ TEST_CASE("SSH client: SFTP folders, files, renames over a file, a copy each way
     fs::create_directories(root);
     ssh::MockServer::Options options;
     options.root = root;
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
     SshClient client;
     REQUIRE(client.connect(loopbackTarget(dir)));
 
@@ -881,7 +886,7 @@ TEST_CASE("SSH client: a copy cut by the network resumes where it stopped") {
         ssh::MockServer::Options options;
         options.root      = root;
         options.cut_after = 1024 * 1024;  // a third of the way
-        ssh::MockServer server(MACHINE_PORT, options);
+        ssh::MockServer server(machinePort(), options);
         SshClient client;
         REQUIRE(client.connect(loopbackTarget(dir)));
         CHECK_FALSE(client.upload(dir / "KRPvKR.rtbw", "KRPvKR.rtbw"));
@@ -892,7 +897,7 @@ TEST_CASE("SSH client: a copy cut by the network resumes where it stopped") {
     CHECK(left < content.size());
     ssh::MockServer::Options options;
     options.root = root;
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
     SshClient client;
     REQUIRE(client.connect(loopbackTarget(dir)));
     uint64_t first = 0;
@@ -916,12 +921,12 @@ TEST_CASE("Machine jobs: the test finds the system, Install copies the program a
     ssh::MockServer::Options options;
     options.root = root;
     options.exec = [root](const std::string& command) { return linuxBox(root, command); };
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
 
     Machine m;
     m.name = "test-box";
     m.host = "127.0.0.1";
-    m.port = MACHINE_PORT;
+    m.port = machinePort();
     m.user = "tester";
     {
         MachineJob job(MachineJob::Kind::Test, targetOf(m, dir, ""),
@@ -976,11 +981,11 @@ TEST_CASE("Machine jobs: a Windows machine's cmd told, its probe and engines' co
         }
         return reply;
     };
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
     Machine m;
     m.name = "win-box";
     m.host = "127.0.0.1";
-    m.port = MACHINE_PORT;
+    m.port = machinePort();
     m.user = "tester";
     SshClient client;
     REQUIRE(client.connect(targetOf(m, dir, "")));
@@ -1011,11 +1016,11 @@ TEST_CASE("Machine jobs: engines' paths checked there: missing, a folder, mute, 
     ssh::MockServer::Options options;
     options.root = root;
     options.exec = [root](const std::string& command) { return linuxBox(root, command); };
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
     Machine m;
     m.name         = "test-box";
     m.host         = "127.0.0.1";
-    m.port         = MACHINE_PORT;
+    m.port         = machinePort();
     m.user         = "tester";
     m.system.shell = RemoteShell::Posix;
     m.engines      = {{"Mock", "/engines/mock", -1, "", ""},
@@ -1062,11 +1067,11 @@ TEST_CASE("Machine jobs: books and tablebases compared, the missing ones pushed,
     ssh::MockServer::Options options;
     options.root = root;
     options.exec = [root](const std::string& command) { return linuxBox(root, command); };
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
     Machine m;
     m.name         = "test-box";
     m.host         = "127.0.0.1";
-    m.port         = MACHINE_PORT;
+    m.port         = machinePort();
     m.user         = "tester";
     m.system.shell = RemoteShell::Posix;
     FilesRequest request;
@@ -1136,7 +1141,7 @@ Machine linuxMachine() {
     m.id             = "m1";
     m.name           = "test-box";
     m.host           = "127.0.0.1";
-    m.port           = MACHINE_PORT;
+    m.port           = machinePort();
     m.user           = "tester";
     m.folder         = "fcg";
     m.system.shell   = RemoteShell::Posix;
@@ -1256,7 +1261,7 @@ TEST_CASE("Machine runs: prepared and started there, refused without fastchess-g
         }
         return linuxBox(root, command);
     };
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
     auto m = linuxMachine();
 
     tour::TournamentSpec spec;
@@ -1305,7 +1310,7 @@ TEST_CASE("Machine runs: the tournament's files copied back as they grow, writte
     writeFile(local / "tournament.json", "{\"local\":true}");
     ssh::MockServer::Options options;
     options.root = root;
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
     SshClient client;
     REQUIRE(client.connect(loopbackTarget(dir)));
     std::string error;
@@ -1351,7 +1356,7 @@ TEST_CASE("Machine runs: the control channel through SSH, and a process that is 
         }
         return reply;
     };
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
     auto target = loopbackTarget(dir);
     auto status = std::make_shared<LinkStatus>();
     {
@@ -1667,7 +1672,7 @@ TEST_CASE("Machine jobs: an engine copied with its folder, each file's hash chec
         }
         return linuxBox(root, command);
     };
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
 
     EngineEntry alpha;
     alpha.name    = "Alpha";
@@ -1813,7 +1818,7 @@ TEST_CASE("Machine jobs: an engine's copy cut by the network resumes; a Windows 
         }
         return linuxBox(root, command);
     };
-    ssh::MockServer server(MACHINE_PORT, options);
+    ssh::MockServer server(machinePort(), options);
     EngineEntry alpha;
     alpha.name = "Alpha";
     alpha.cmd  = (here / "alpha/alpha").string();
