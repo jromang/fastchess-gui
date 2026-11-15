@@ -22,6 +22,9 @@ class Link {
     virtual bool write(const std::string& data)       = 0;
     // Ends the connection: a read() waiting returns.
     virtual void close() = 0;
+    // Ends it once the other side has what was written (it may wait for the other side to read it, or to go): a
+    // connection let go at once can lose its last lines.
+    virtual void finish() { close(); }
 };
 
 namespace local {

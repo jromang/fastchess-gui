@@ -82,6 +82,11 @@ class PipeConnection final : public Link {
         CancelIoEx(pipe_, nullptr);
         DisconnectNamedPipe(pipe_);
     }
+    // DisconnectNamedPipe() drops what the client has not read yet: it waits for it to be read first.
+    void finish() override {
+        if (!closed_) FlushFileBuffers(pipe_);
+        close();
+    }
 
    private:
     HANDLE pipe_;
@@ -135,6 +140,18 @@ class SocketConnection final : public Link {
         return true;
     }
     void close() override { ::shutdown(fd_, SHUT_RDWR); }
+    // What it sent is read to its end before the socket goes: closed with data still unread, it would be reset, and
+    // the other side could lose the last line.
+    void finish() override {
+        ::shutdown(fd_, SHUT_WR);
+        char buffer[512];
+        for (;;) {
+            const auto n = ::recv(fd_, buffer, sizeof buffer, 0);
+            if (n > 0 || (n < 0 && errno == EINTR)) continue;
+            break;
+        }
+        close();
+    }
 
    private:
     int fd_;

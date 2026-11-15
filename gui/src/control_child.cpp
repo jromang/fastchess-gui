@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <future>
 #include <fstream>
 
 #include <fcntl.h>
@@ -212,9 +213,21 @@ SocketChannel::~SocketChannel() {
     // control.json first: a window that sees the connection end finds nothing to connect to again.
     local::removeControlFile(dir_);
     server_.close();
+    std::shared_ptr<Link> client;
     {
         std::lock_guard<std::mutex> lock(write_mutex_);
-        if (client_) client_->close();
+        client = client_;
+    }
+    if (client) {
+        // Its last lines (the tournament's end) read before the connection goes, two seconds at most: a named pipe let
+        // go at once drops what its window has not read yet, and a window that reads no more must not keep the process.
+        auto done     = std::make_shared<std::promise<void>>();
+        auto finished = done->get_future();
+        std::thread([client, done] {
+            client->finish();
+            done->set_value();
+        }).detach();
+        if (finished.wait_for(std::chrono::seconds(2)) != std::future_status::ready) client->close();
     }
     if (accept_thread_.joinable()) accept_thread_.join();
 }
@@ -268,7 +281,8 @@ void SocketChannel::acceptLoop() {
             std::lock_guard<std::mutex> lock(write_mutex_);
             if (client_) {
                 (void)client->write("{\"busy\":true}\n");
-                client->close();
+                // Let go once it has the line, on a thread of its own: it may take as long as that window reads.
+                std::thread([client] { client->finish(); }).detach();
                 continue;
             }
             client_ = client;  // taken, though its hello is still to come: no event goes to it before
