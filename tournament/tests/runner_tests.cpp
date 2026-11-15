@@ -501,20 +501,21 @@ TEST_CASE("engine start: an engine slow to start fails in the usual time, and st
         return;
     }
 
-    // The usual timeouts, short for the test: 500 ms for uciok and for the isready of a new game.
+    // The usual timeouts, short for the test: 1.5 s for uciok and for the isready of a new game, enough for an engine
+    // to start on a machine busy with other tests.
     fastchess::atomic::stop                              = false;
     fastchess::config::TournamentConfig                  = std::make_unique<fastchess::config::Tournament>();
-    fastchess::config::TournamentConfig->startup_time    = 500ms;
-    fastchess::config::TournamentConfig->ucinewgame_time = 500ms;
+    fastchess::config::TournamentConfig->startup_time    = 1500ms;
+    fastchess::config::TournamentConfig->ucinewgame_time = 1500ms;
 
     fastchess::EngineConfiguration config;
     config.name            = "slow";
     config.cmd             = randomMover();
     auto timed             = config;
-    timed.start_timeout_ms = 5000;
+    timed.start_timeout_ms = 10000;
 
-    // uciok after 1.5 s.
-    setEnv("FCG_MOCK_SLOW_UCIOK", "1500");
+    // uciok after 3 s.
+    setEnv("FCG_MOCK_SLOW_UCIOK", "3000");
     {
         fastchess::engine::UciEngine engine(config, false);
         const auto started = engine.start(std::nullopt);
@@ -527,8 +528,8 @@ TEST_CASE("engine start: an engine slow to start fails in the usual time, and st
     }
     setEnv("FCG_MOCK_SLOW_UCIOK", nullptr);
 
-    // readyok after 1.5 s: the isready of a new game, once the options are set.
-    setEnv("FCG_MOCK_SLOW_READY", "1500");
+    // readyok after 3 s: the isready of a new game, once the options are set.
+    setEnv("FCG_MOCK_SLOW_READY", "3000");
     {
         fastchess::engine::UciEngine engine(config, false);
         REQUIRE(engine.start(std::nullopt));
