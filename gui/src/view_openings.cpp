@@ -95,11 +95,12 @@ void App::drawOpenings() {
     ImGui::SameLine();
     ImGui::TextDisabled("%s", trf("{} of {} openings", opening_order_.size(), by_opening_.size()).c_str());
     // The openings flagged unbalanced as their games ended, and those replaced by others (the tournament's rule).
-    const auto& spec    = run_.tournament()->spec();
-    const auto flagged  = std::count_if(by_opening_.begin(), by_opening_.end(),
-                                        [](const tour::OpeningStats& o) { return o.unbalancedGames() > 0; });
-    const auto replaced = run_.tournament()->openingsReplaced();
-    if (spec.unbalanced_cp > 0) {
+    const auto* open_tournament = run_.tournament();
+    const auto flagged          = std::count_if(by_opening_.begin(), by_opening_.end(),
+                                                [](const tour::OpeningStats& o) { return o.unbalancedGames() > 0; });
+    const auto replaced         = open_tournament ? open_tournament->openingsReplaced() : 0;
+    if (open_tournament && open_tournament->spec().unbalanced_cp > 0) {
+        const auto& spec = open_tournament->spec();
         ImGui::SameLine();
         ImGui::PushStyleColor(ImGuiCol_Text, flagged > 0 ? ui::WARN : ImGui::GetColorU32(ImGuiCol_TextDisabled));
         ImGui::TextUnformatted(
