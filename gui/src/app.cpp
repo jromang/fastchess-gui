@@ -156,10 +156,19 @@ void App::keepRunningAndQuit() {
 }
 
 void App::forceQuit() {
-    if (runsPlaying() > 0) {
-        for (auto& r : runs_) {
-            if (r.run->running()) r.run->stopNow();
+    // What this window started stops, as a script that started a tournament (--autostart) expects; the tournaments it
+    // found playing at launch play on, as Keep them running and quit lets them.
+    bool waiting = false;
+    for (auto& r : runs_) {
+        if (!r.run->running()) continue;
+        if (auto* remote = dynamic_cast<RemoteRun*>(r.run.get()); remote && r.found) {
+            remote->disconnect();
+            continue;
         }
+        r.run->stopNow();
+        waiting = true;
+    }
+    if (waiting) {
         quit_pending_ = true;
     } else {
         quit_ = true;

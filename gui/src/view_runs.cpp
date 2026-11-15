@@ -190,6 +190,7 @@ bool App::attachTournament(const fs::path& dir, double weight) {
     OpenRun open;
     open.run    = std::move(remote);
     open.weight = weight;
+    open.found  = true;
     addRun(std::move(open));
     Console::instance().add(trf("{} played on without the window: shown again.", run_->info().name));
     return true;

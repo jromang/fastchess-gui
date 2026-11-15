@@ -234,7 +234,8 @@ class App {
     void requestQuit();
     [[nodiscard]] bool shouldQuit() const noexcept { return quit_; }
 
-    // Stops a running match without asking (used by --quit-after).
+    // Quits without asking (--shot, --quit-after): what this window started stops, the tournaments found playing at
+    // launch play on.
     void forceQuit();
     // Quits, the tournaments playing on in their own processes (the quick test stops).
     void keepRunningAndQuit();
@@ -259,6 +260,8 @@ class App {
         std::unique_ptr<Run> run;
         double weight   = 1;  // its share of the machine against the other tournaments' (budget.hpp)
         bool quick_test = false;
+        // Found playing at launch (it played before this window): forceQuit() lets it play on.
+        bool found = false;
         std::string finish_message;
         std::vector<Fix> finish_fixes;
         std::string finish_fixes_for, stopped_by;

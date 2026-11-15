@@ -167,6 +167,7 @@ bool App::attachOnMachine(const fs::path& dir, double weight) {
         Console::instance().add(error, true);
         return false;
     }
+    if (const int i = findRun(dir); i >= 0) runs_[static_cast<std::size_t>(i)].found = true;
     Console::instance().add(trf("{} plays on {}: shown again.", run_->info().name, place->name));
     return true;
 }
