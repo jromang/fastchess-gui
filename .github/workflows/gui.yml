@@ -253,23 +253,35 @@ jobs:
     name: macOS build and tests
     # Apple silicon. The programs are universal (arm64 and x86_64), for macOS 13.3 and later.
     runs-on: macos-latest
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 500M
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Ninja
+      - name: Install Ninja and ccache
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
-        run: command -v ninja || brew install ninja
+        run: |
+          command -v ninja || brew install ninja
+          command -v ccache || brew install ccache
+
+      - name: Compiler cache
+        # What the last runs compiled (the dependencies above all): only what changed is compiled again.
+        uses: actions/cache@v6
+        with:
+          path: .ccache
+          key: ccache-macos-${{ github.run_id }}
+          restore-keys: ccache-macos-
 
       - name: Configure
-        # Without ccache: through it, the universal build took 7 minutes instead of 3, though most files were in its
-        # cache.
-        run: >
-          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
-          -DFCG_CCACHE=OFF
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
 
       - name: Build
-        run: cmake --build build
+        run: |
+          ccache -z
+          cmake --build build
+          ccache -s
 
       - name: Universal binaries
         run: |
