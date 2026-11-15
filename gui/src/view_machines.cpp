@@ -337,6 +337,8 @@ void App::drawMachineCard(std::size_t index, float label) {
         ImGui::BeginDisabled(busy);
         if (ImGui::SmallButton(TR("Test"))) startMachineJob(m.id, MachineJob::Kind::Test);
         ImGui::EndDisabled();
+        ImGui::SetItemTooltip("%s", TR("Logs in, then tells the machine's system, threads, memory and free space, and "
+                                       "whether fastchess-gui is installed in its folder."));
         ImGui::PopID();
         return;
     }
@@ -363,6 +365,7 @@ void App::drawMachineCard(std::size_t index, float label) {
     ImGui::SetNextItemWidth(px(70));
     if (ImGui::InputInt("##port", &m.port, 0)) m.port = std::clamp(m.port, 1, 65535);
     save |= ImGui::IsItemDeactivatedAfterEdit();
+    ImGui::SetItemTooltip("%s", TR("The port of the machine's SSH server: 22 unless it listens on another."));
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(TR("User"));
     ImGui::SameLine(px(110));
@@ -407,6 +410,8 @@ void App::drawMachineCard(std::size_t index, float label) {
     ImGui::SetNextItemWidth(px(70));
     if (ImGui::InputInt("##cores", &m.cores, 0)) m.cores = std::max(0, m.cores);
     save |= ImGui::IsItemDeactivatedAfterEdit();
+    ImGui::SetItemTooltip("%s", TR("What the tournaments on this machine may use at once. 0 takes what the test "
+                                   "found: every thread but one, and 80 % of the memory."));
     ImGui::SameLine();
     ImGui::TextUnformatted(trf("cores (now {})", m.coreBudget()).c_str());
     ImGui::SameLine();
@@ -677,6 +682,9 @@ void App::drawMachineEngines(Machine& m, MachineActivity& activity) {
         }
         ImGui::EndCombo();
     }
+    ImGui::SetItemTooltip("%s", TR("Puts an engine of the library on this machine's list: then give its path there, "
+                                   "or copy it there."));
+    ui::topic(guide::topics::Machines);
     ImGui::SameLine();
     ImGui::BeginDisabled(busy || m.engines.empty());
     if (ImGui::Button(TR("Check the engines"))) startMachineJob(m.id, MachineJob::Kind::Engines);

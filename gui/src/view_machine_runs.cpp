@@ -263,6 +263,8 @@ void App::drawRunOn(float label) {
             scroll_to_machines_ = true;
             addMachine();
         }
+        ImGui::SetItemTooltip("%s", TR("Opens Settings > Machines with a new machine to fill in."));
+        ui::topic(guide::topics::Machines);
     }
 }
 

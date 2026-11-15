@@ -165,6 +165,10 @@ void App::drawEngineConsole(const EngineEntry& e) {
         openEngineConsole(selected_engine_);
         return;
     }
+    if (alive && ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("Ends the engine and starts it again, with the library's program, arguments and "
+                                   "option values as they are now."));
+    }
     ImGui::SameLine();
     if (ImGui::Button(close)) {
         closeEngineConsole();
@@ -277,6 +281,7 @@ void App::drawEngineConsole(const EngineEntry& e) {
     if (ImGui::Button(TR("Clear"))) c.log.clear();
     ImGui::SameLine();
     ImGui::Checkbox(TR("Follow"), &c.follow);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Scrolls to each new line as it comes."));
 }
 
 void App::saveConsoleLog(const std::string& path) {

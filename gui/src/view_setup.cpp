@@ -283,6 +283,10 @@ bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again,
             }
             ImGui::EndCombo();
         }
+        itemHelp(
+            TR("Like Cute Chess' book=: while the position is in this book, the engine plays the book's move at "
+               "once, then searches. A PGN book is first turned into a Polyglot book, in the background."));
+        ui::topic(guide::topics::OwnBooks);
         // The book chosen before it changed, or one of a template; a PGN book that cannot be prepared.
         const auto warn = [&](const std::string& text) {
             ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
@@ -346,6 +350,10 @@ bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again,
                 *again = true;
                 ImGui::CloseCurrentPopup();
             }
+            itemHelp(
+                TR("A second participant with the same engine, to give it another book: each copy plays as "
+                   "engine (book), its results and rating apart."));
+            ui::topic(guide::topics::OwnBooks);
         }
         ImGui::EndPopup();
     }
@@ -911,6 +919,9 @@ void App::setupMatch() {
                 sprt_calc_open_ = true;
                 ImGui::SetWindowFocus(TR("SPRT calculator###sprt_calc"));
             }
+            itemHelp(
+                TR("As fishtest's SPRT calculator: the probability that H1 is accepted and the expected number of "
+                   "games against the true Elo difference, from a draw ratio and the openings' RMS bias."));
             break;
         }
     }
@@ -993,6 +1004,8 @@ void App::drawSprtCalculator() {
         setup_.sprt_rms_bias   = c.sprt_rms_bias;
         saveSetupSoon();
     }
+    itemHelp(TR("Makes the match an SPRT with these values: the bounds, the bias, alpha, beta and the model."));
+    ui::topic(guide::topics::Format);
     ImGui::EndChild();
 
     ImGui::SameLine();
@@ -1078,6 +1091,9 @@ void App::setupLimit() {
                 setup_.nodes = static_cast<uint64_t>(std::max<int64_t>(1, nodes));
                 changed      = true;
             }
+            itemHelp(
+                TR("Every move searches this many nodes: the same moves however fast the machine, and as many games "
+                   "at once as it has hardware threads."));
             break;
         }
         case LimitKind::Depth:
@@ -1111,6 +1127,7 @@ void App::setupConcurrency() {
         changed            = true;
     }
     ImGui::EndDisabled();
+    itemHelp(TR("Other programs call it concurrency too: the games played at the same time (-concurrency)."));
     if (!setup_.concurrency_auto) setup_.concurrency = std::clamp(setup_.concurrency, 1, topology_.logical);
     // The rule that chose the number, and the machine it measured: without it a number above the cores looks wrong.
     ui::label("", labelWidth());
@@ -1294,10 +1311,14 @@ void App::setupAdjudication() {
         changed |= inputInt(TR("Consecutive moves"), "##res_mc", setup_.resign_movecount, 1, 1000);
         changed |= inputInt(TR("Score (cp)"), "##res_sc", setup_.resign_score, 0, 100000);
         changed |= ImGui::Checkbox(TR("Both engines must agree"), &setup_.resign_twosided);
+        itemHelp(
+            TR("Both engines' scores must be beyond the threshold for those moves, the winner's as well as the "
+               "loser's (twosided=true for fastchess and cutechess)."));
         ImGui::Unindent();
     }
 
     changed |= ImGui::Checkbox(TR("Maximum number of moves"), &setup_.maxmoves_enabled);
+    itemHelp(TR("A game still going after this many moves is adjudicated a draw (-maxmoves)."));
     if (setup_.maxmoves_enabled) {
         ImGui::Indent();
         changed |= inputInt(TR("Moves"), "##maxmoves", setup_.maxmoves, 1, 100000);
@@ -1311,6 +1332,9 @@ void App::setupAdjudication() {
         changed |= inputInt(TR("Max pieces"), "##tb_pieces", setup_.tb_pieces, 0, 7);
         ui::help(TR("0 = everything the tables cover."));
         changed |= ImGui::Checkbox(TR("Ignore the 50-move rule"), &setup_.tb_ignore50);
+        itemHelp(
+            TR("A position the tablebases win only past the 50-move rule (a cursed win) is adjudicated a win "
+               "rather than a draw (-tbignore50)."));
 
         ui::label(TR("Adjudicate"), labelWidth());
         ImGui::SetNextItemWidth(160.0f * ImGui::GetFontSize() / 16.0f);
@@ -1320,6 +1344,7 @@ void App::setupAdjudication() {
             setup_.tb_result = mode + 1;
             changed          = true;
         }
+        itemHelp(TR("The results the tablebases decide; the games in other positions play on (-tbadjudicate)."));
         ImGui::Unindent();
     }
 
@@ -1353,9 +1378,14 @@ void App::setupPgn() {
     }
     if (!setup_.pgn_out.empty()) {
         int style          = setup_.export_style == PgnStyle::ChessBase ? 1 : 0;
+        const char* styles = TR(
+            "ChessBase / Lichess: {[%eval 0.35,18] [%emt 0:00:01.234]}, eval from White's point of view.\ncutechess: "
+            "{+0.35/18 1.234s}, score from the point of view of the side that moved.");
         bool style_changed = ImGui::RadioButton("ChessBase / Lichess##pgn_out", &style, 1);
+        itemHelp(styles);
         ImGui::SameLine();
         style_changed |= ImGui::RadioButton("cutechess##pgn_out", &style, 0);
+        itemHelp(styles);
         if (style_changed) {
             setup_.export_style = style == 1 ? PgnStyle::ChessBase : PgnStyle::Fastchess;
             changed             = true;

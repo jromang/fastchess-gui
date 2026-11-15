@@ -133,6 +133,9 @@ void App::drawBroadcast() {
         setup_.tlcs_port = std::clamp(setup_.tlcs_port, 1, 65535);
         changed          = true;
     }
+    ImGui::SetItemTooltip("%s", TR("The port TLCV and the other viewers connect to, 16001 by default. For viewers "
+                                   "outside the local network, open it in the router."));
+    ui::topic(guide::topics::Tlcs);
     ImGui::SameLine(0, px(24));
     toggle(TR("One port per game"), setup_.tlcs_lanes);
     ImGui::EndDisabled();
@@ -186,6 +189,10 @@ void App::drawBroadcast() {
         setup_.web_port = std::clamp(setup_.web_port, 1, 65535);
         changed         = true;
     }
+    ImGui::SetItemTooltip("%s", TR("The port browsers open the page on, after this machine's address. For viewers "
+                                   "outside the local network, open it in the router, or publish the page on the "
+                                   "internet below."));
+    ui::topic(guide::topics::WebPage);
     ImGui::EndDisabled();
     if (!broadcaster_.webError().empty()) {
         ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
@@ -266,8 +273,14 @@ void App::drawTunnel(bool& changed) {
     ImGui::TextUnformatted(TR("Service:"));
     ImGui::SameLine();
     changed |= ImGui::RadioButton("localhost.run", &setup_.tunnel_service, 0);
+    ImGui::SetItemTooltip("%s", TR("Free, without an account: its addresses change now and then, and its speed is "
+                                   "limited."));
+    ui::topic(guide::topics::Tunnel);
     ImGui::SameLine();
     changed |= ImGui::RadioButton(TR("Another SSH server"), &setup_.tunnel_service, 1);
+    ImGui::SetItemTooltip("%s", TR("A server that lets the user in without a key or a password (authentication "
+                                   "\"none\"): a service of that kind, or a server of yours."));
+    ui::topic(guide::topics::Tunnel);
     if (setup_.tunnel_service == 1) {
         const auto field = [&](const char* id, std::string& value, float width) {
             char buffer[256];
@@ -339,7 +352,11 @@ void App::drawTunnel(bool& changed) {
             break;
         case TunnelState::Failed:
             line(ui::BAD, status.error);
-            if (!status.new_key.empty() && ImGui::SmallButton(TR("Trust the new key"))) broadcaster_.trustTunnelKey();
+            if (!status.new_key.empty()) {
+                if (ImGui::SmallButton(TR("Trust the new key"))) broadcaster_.trustTunnelKey();
+                ImGui::SetItemTooltip("%s", TR("Only when the server's owner confirms its key changed: the new key is "
+                                               "trusted from then on, and the tunnel starts again."));
+            }
             return;
     }
     // The address only while on air: once the connection is lost, the service may give it to someone else.
@@ -387,6 +404,9 @@ void App::lichessTokenField() {
     if (ImGui::SmallButton(TR("Create a token on lichess…"))) {
         SDL_OpenURL("https://lichess.org/account/oauth/token/create?scopes[]=study:write&description=fastchess-gui");
     }
+    ImGui::SetItemTooltip("%s", TR("Opens lichess' page for a new personal API token, with the study:write scope it "
+                                   "needs: paste the token above."));
+    ui::topic(guide::topics::Lichess);
     ImGui::SameLine();
     ImGui::TextDisabled("%s", TR("Kept in the profile only, never in a tournament's files or the log."));
 }
@@ -424,6 +444,10 @@ void App::drawLichess(bool& changed) {
     ImGui::BeginDisabled(lichess_token_.empty());
     changed |= ImGui::Checkbox(TR("Push the games to lichess"), &setup_.broadcast_lichess);
     ImGui::EndDisabled();
+    ImGui::SetItemTooltip("%s", TR("While the tournament plays: the games in progress every 8 seconds with their "
+                                   "clocks, and each finished game once. Only the games finished after it is switched "
+                                   "on are pushed. It needs the token."));
+    ui::topic(guide::topics::Lichess);
 
     const auto status = broadcaster_.lichess();
     if (!status.error.empty()) {

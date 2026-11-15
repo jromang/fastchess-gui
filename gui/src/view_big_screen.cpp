@@ -491,6 +491,7 @@ void App::drawBigControls(BigView& big, bool main_window, ImVec2 origin, ImVec2 
         big.slot   = slots > 0 ? (big.slot + slots - 1) % slots : 0;
         big.turned = Clock::now();
     }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The arrow keys too."));
     ImGui::SameLine();
     ImGui::TextUnformatted(trf("Board {} of {}", big.slot + 1, std::max(1, slots)).c_str());
     ImGui::SameLine();
@@ -527,6 +528,8 @@ void App::drawBigControls(BigView& big, bool main_window, ImVec2 origin, ImVec2 
         setup_.big_scale = std::clamp(std::round((setup_.big_scale - 0.1f) * 10.0f) / 10.0f, 0.5f, 2.0f);
         saveSetupSoon();
     }
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s", TR("The size of the text, for the distance it is read from (+ and - too)."));
     ImGui::SameLine();
     ImGui::Text("%d %%", static_cast<int>(std::lround(setup_.big_scale * 100)));
     ImGui::SameLine();

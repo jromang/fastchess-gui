@@ -357,6 +357,11 @@ void App::drawRatingFilters() {
                 open_pgn_players_ = true;
                 ImGui::CloseCurrentPopup();
             }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", TR("Which library engine each player of the PGN files is, or a separate "
+                                           "engine: the choices apply to every PGN file and rating list imported."));
+            }
+            ui::topic(guide::topics::Ratings);
         }
         if (remove >= 0) {
             auto list = pgns;
@@ -384,6 +389,11 @@ void App::drawRatingFilters() {
         }
         ImGui::EndCombo();
     }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("The ratings' zero: their average at 0, or one engine at the rating given beside "
+                                   "it."));
+    }
+    ui::topic(guide::topics::Ratings);
     if (!rating_anchor_.empty()) {
         ImGui::SameLine();
         ImGui::SetNextItemWidth(px(90));
@@ -393,6 +403,8 @@ void App::drawRatingFilters() {
     if (ImGui::GetContentRegionAvail().x < ImGui::CalcTextSize(TR("Refresh")).x + ImGui::GetStyle().FramePadding.x * 2)
         ImGui::NewLine();
     if (ImGui::Button(TR("Refresh"))) game_db_dirty_ = true;
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s", TR("Reads the games again, those of the tournaments and of the PGN files."));
     if (ratings_job_.valid()) {
         ImGui::SameLine();
         ImGui::TextDisabled("%s", TR("Computing…"));
@@ -849,7 +861,12 @@ void App::drawEngineCard() {
 
     // Search statistics, read from the move comments of its games when asked: thousands of games take a moment.
     if (!card_search_.read) {
-        if (ImGui::SmallButton(TR("Read its search statistics"))) {
+        const bool read_search = ImGui::SmallButton(TR("Read its search statistics"));
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("Its average depth, time per move and NPS, read from the move comments of its "
+                                       "games: thousands of games take a moment."));
+        }
+        if (read_search) {
             const auto id = *game_db_->engine(card_engine_);
             SearchAverages avg;
             avg.read = true;

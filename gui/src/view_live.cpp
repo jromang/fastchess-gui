@@ -181,7 +181,13 @@ bool moveChartChoice(const char* id, MoveChart& chart) {
                            TR("Speed"),      TR("TB hits"), TR("PV agreement")};
     int choice          = static_cast<int>(chart);
     ImGui::SetNextItemWidth(ImGui::CalcTextSize(TR("PV agreement")).x + ImGui::GetFrameHeight() * 2);
-    if (!ImGui::Combo(id, &choice, names, IM_ARRAYSIZE(names))) return false;
+    const bool chosen = ImGui::Combo(id, &choice, names, IM_ARRAYSIZE(names));
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("What the chart shows, move by move. Time: with the decision time. Depth: with the "
+                                   "seldepth. PV agreement: how many plies of an engine's PV repeat what the other "
+                                   "engine's PV predicted."));
+    }
+    if (!chosen) return false;
     chart = static_cast<MoveChart>(choice);
     return true;
 }

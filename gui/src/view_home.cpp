@@ -95,6 +95,7 @@ void App::drawHome() {
                                    .c_str());
         ImGui::SameLine();
         if (ImGui::SmallButton(TR("Import them"))) importLegacyRuns();
+        tooltip(TR("Turns them into finished tournaments of the list."));
         ui::endCard();
     }
 
@@ -159,6 +160,7 @@ void App::drawGettingStarted() {
         settings.getting_started_hidden = true;
         storage_.setGuideSettings(settings);
     }
+    tooltip(TR("Puts this card away for good; the quick start stays in the guide."));
 
     struct Step {
         const char* title;
@@ -801,6 +803,7 @@ void App::drawQueue() {
         ImGui::BeginDisabled(i == 0);
         if (ImGui::SmallButton("^")) up = static_cast<int>(i);
         ImGui::EndDisabled();
+        tooltip(TR("One place up in the queue."));
         ImGui::SameLine();
         if (ImGui::SmallButton(TR("Remove"))) remove = static_cast<int>(i);
         if (i == 0 && !run_->running()) {

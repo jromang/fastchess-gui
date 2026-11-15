@@ -138,6 +138,9 @@ void App::drawAppearanceSettings(float label) {
         }
         ImGui::EndCombo();
     }
+    ImGui::SetItemTooltip("%s", TR("The colours of the squares on every board of the program, for the theme chosen "
+                                   "above. Changing a colour below makes them Custom."));
+    ui::topic(guide::topics::Appearance);
     // A colour changed makes the board a custom one, from the colours it had.
     const auto edit = [&](const char* name, ImU32 value, bool alpha, ImU32 appearance::BoardColours::* field) {
         ImVec4 c   = ImGui::ColorConvertU32ToFloat4(value);
@@ -333,6 +336,8 @@ void App::drawLogoRow(int index, float label) {
             removeEngineLogo(index);
             return;
         }
+        ImGui::SetItemTooltip("%s", TR("Takes the logo away from this engine, and its copy from the profile's folder "
+                                       "logos unless another engine has it."));
     }
     // Why it is not shown: the copy in the logos folder gone or damaged, or the picture chosen refused.
     std::string problem;

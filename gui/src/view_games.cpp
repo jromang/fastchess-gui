@@ -352,6 +352,10 @@ void App::drawGames() {
                           (run_->info().dir.parent_path() / (stem + ".pgn")).string());
     }
     ImGui::EndDisabled();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("A PGN file of the games shown, in the comment style chosen: the voided games left "
+                                   "out, the results set by hand applied."));
+    }
     ImGui::SameLine();
     if (ImGui::Button(TR("Folder"))) ui::openPath(run_->info().dir);
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", run_->info().dir.string().c_str());
@@ -364,6 +368,11 @@ void App::drawGames() {
     ImGui::BeginDisabled(!run_->tournament() || games_.empty());
     if (ImGui::Button(submit)) openSubmissionExport();
     ImGui::EndDisabled();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("The games as rating list testers send them: the file named after you, the date and "
+                                   "the conditions, the players as the lists write them, the rounds numbered again, "
+                                   "the voided games and the duplicates left out."));
+    }
     drawSubmissionExport();
 
     const ImVec2 avail = ImGui::GetContentRegionAvail();

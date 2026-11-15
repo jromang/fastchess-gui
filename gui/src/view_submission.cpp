@@ -140,18 +140,22 @@ void App::drawSubmissionExport() {
     editText("##submission_date", e.date, px(120));
     field(TR("Event"));
     editText("##submission_event", e.event);
+    const char* in_name = TR("Only for the file's name, shown below, as the testers name their files.");
     field(TR("Hash (MB)"));
     ImGui::SetNextItemWidth(px(120));
     ImGui::InputInt("##submission_hash", &e.hash_mb, 0);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", in_name);
     ImGui::SameLine();
     ImGui::TextUnformatted(TR("Book"));
     ImGui::SameLine();
     editText("##submission_book", e.book, px(220));
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", in_name);
     ImGui::SameLine();
     ImGui::TextUnformatted(TR("EGTB pieces"));
     ImGui::SameLine();
     ImGui::SetNextItemWidth(px(60));
     ImGui::InputInt("##submission_egtb", &e.egtb, 0);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", in_name);
     e.hash_mb = std::max(0, e.hash_mb);
     e.egtb    = std::clamp(e.egtb, 0, 7);
 
@@ -324,6 +328,7 @@ void App::drawSubmissionChecklist() {
                     tab_request_ = Tab::Games;
                 }
             }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Opens this game in the Games tab."));
         }
         if (numbers.size() > SHOWN) {
             ImGui::SameLine();

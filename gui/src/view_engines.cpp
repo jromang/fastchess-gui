@@ -451,6 +451,11 @@ bool App::drawStartWaiting(const char* id, const std::string& key, bool icon) {
         ImGui::Button(fmt::format("{}###{}", label, id).c_str());
         ImGui::EndDisabled();
     }
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("%s", TR("It starts by itself once what it waits for is done; another start is refused "
+                                   "meanwhile."));
+    }
+    ui::topic(guide::topics::StartingEngines);
     ImGui::SameLine();
     ImGui::PushID(id);
     if (ImGui::SmallButton(TR("Cancel"))) pending_start_.reset();
@@ -622,6 +627,11 @@ void App::drawEngines() {
         dialogs_.openFile(Dialogs::Purpose::AddEngine);
 #endif
     }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("An engine's program, UCI or WinBoard: it is started once to read its name, author "
+                                   "and options."));
+    }
+    ui::topic(guide::topics::EngineChecks);
     ui::sameLineOrWrap(TR("Import…"));
     if (ImGui::Button(TR("Import…"))) ImGui::OpenPopup("import_menu");
     ui::topic(guide::topics::Import);
@@ -665,11 +675,20 @@ void App::drawEngines() {
     ui::sameLineOrWrap(TR("Duplicate"));
     ImGui::BeginDisabled(selected_engine_ < 0);
     if (ImGui::Button(TR("Duplicate")) && selected_engine_ >= 0) duplicate();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("A second entry for the same program, to play it with other options: another Hash, "
+                                   "a skill level, another network."));
+    }
+    ui::topic(guide::topics::EngineChecks);
     ui::sameLineOrWrap(TR("Remove"));
     if (ImGui::Button(TR("Remove"))) askRemove(chosen);
     ImGui::EndDisabled();
     ui::sameLineOrWrap(TR("More…"));
     if (ImGui::Button(TR("More…"))) ImGui::OpenPopup("engines_more");
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("Check the engines never checked, or remove those whose program is missing."));
+    }
+    ui::topic(guide::topics::Library);
     if (ImGui::BeginPopup("engines_more")) {
         const auto unchecked = uncheckedEngines();
         std::vector<std::string> missing;
@@ -752,6 +771,8 @@ void App::drawEngines() {
         ImGui::TextUnformatted(trn("{} selected", "{} selected", chosen.size(), chosen.size()).c_str());
         ImGui::SameLine();
         if (ImGui::SmallButton(TR("Check##marked"))) queueChecks(chosen);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", TR("Checks them one after the other, not while a tournament plays."));
         ImGui::SameLine();
         if (ImGui::SmallButton(TR("Add to a group…"))) {
             group_to_add_.clear();
@@ -761,6 +782,7 @@ void App::drawEngines() {
         if (ImGui::SmallButton(TR("Remove…##marked"))) askRemove(chosen);
         ImGui::SameLine();
         if (ImGui::SmallButton(TR("Clear##marked"))) engine_marked_.clear();
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Ends the selection; no engine is removed."));
     }
     if (ImGui::BeginPopup("add_to_group")) {
         ImGui::TextUnformatted(TR("Group"));
@@ -793,6 +815,8 @@ void App::drawEngines() {
                                       .c_str());
         ImGui::SameLine();
         if (ImGui::SmallButton(TR("Stop##check_queue"))) check_queue_.clear();
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", TR("The engines waiting are not checked; the check under way goes on."));
     }
 
     ImGui::Separator();
@@ -1001,6 +1025,7 @@ void App::drawEngines() {
         }
         ImGui::SameLine();
         if (ImGui::SmallButton(TR("Close it"))) closeEngineConsole();
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Ends the engine."));
     }
 
     ImGui::BeginDisabled(in_use);
@@ -1061,6 +1086,9 @@ void App::drawEngines() {
             ImGui::BeginDisabled(probe_.valid() && probe_index_ == selected_engine_);
             if (ImGui::Button(TR("Read it again"))) startProbe(selected_engine_);
             ImGui::EndDisabled();
+            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                ImGui::SetTooltip("%s", TR("Starts the program once to read its name, author and options again."));
+            ui::topic(guide::topics::Rebuilt);
         }
     }
 
@@ -1279,6 +1307,9 @@ void App::drawEngines() {
         startProbe(selected_engine_);
     }
     ImGui::EndDisabled();
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip("%s", TR("Starts the program once to read its name, author and options again."));
+    ui::topic(guide::topics::EngineChecks);
     if (!probe_message_.empty()) {
         ImGui::SameLine();
         ImGui::TextDisabled("%s", probe_message_.c_str());
@@ -1297,6 +1328,11 @@ void App::drawEngines() {
             e.options.clear();
             changed = true;
         }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("Every option back to the engine's default: the library then sets none of "
+                                       "them with setoption."));
+        }
+        ui::topic(guide::topics::EngineChecks);
     }
 
     // Options: Threads and Hash first, then alphabetical.
@@ -1462,6 +1498,10 @@ void App::drawConsole() {
     bool changed = Console::instance().copy(console_lines_, console_version_);
 
     if (ImGui::SmallButton(TR("Clear"))) Console::instance().clear();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("Empties the page; the log file, fastchess-gui.log in the profile, keeps the "
+                                   "lines."));
+    }
     ImGui::SameLine();
     // The lines of one tournament (each plays in a process of its own, whose lines carry its name), or of the
     // window, or all.
@@ -1511,6 +1551,7 @@ void App::drawConsole() {
     }
     ImGui::SameLine();
     ImGui::Checkbox(TR("Follow"), &console_follow_);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Scrolls to each new line as it comes."));
     ImGui::SameLine();
     reportButton("report_log", true);
 

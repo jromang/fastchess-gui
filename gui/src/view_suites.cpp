@@ -151,6 +151,10 @@ void App::drawSuites() {
         }
         ImGui::EndCombo();
     }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("Choose an EPD file whose positions have their best move (bm), the moves to avoid "
+                                   "(am), or STS points (c0)."));
+    }
     ImGui::SameLine();
     if (ImGui::Button("…##suite_browse")) {
         dialogs_.openFile(Dialogs::Purpose::SuiteFile, {{TR("EPD suites"), "epd"}, {TR("All files"), "*"}},
@@ -253,6 +257,7 @@ void App::drawSuites() {
         suite_setup_.hash = std::clamp(suite_setup_.hash, 0, 1 << 20);
         changed           = true;
     }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("0 = each engine's own setting."));
     label(TR("Threads"));
     if (ui::inputInt("##suite_threads", &suite_setup_.threads)) {
         suite_setup_.threads = std::clamp(suite_setup_.threads, 0, 1024);
@@ -302,6 +307,11 @@ void App::drawSuites() {
             }
             ImGui::EndCombo();
         }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("Adds the columns of an earlier run of this suite to the grid, to compare "
+                                       "versions of an engine."));
+        }
+        ui::topic(guide::topics::Suites);
         if (!suite_saved_.empty() && ImGui::SmallButton(TR("Remove the saved runs from the grid"))) {
             suite_saved_.clear();
         }

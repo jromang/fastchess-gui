@@ -395,6 +395,7 @@ void App::setupParticipants() {
             selection.Clear();
             changed = true;
         }
+        itemHelp(TR("Removes every participant from the list."));
     }
     // A team match: the selected ones to a team, or the halves of the list again.
     if (teams && !list.empty()) {
@@ -770,6 +771,9 @@ bool App::participantPicker() {
                 ImGui::CloseCurrentPopup();
             }
             ImGui::EndDisabled();
+            itemHelp(
+                TR("Selects them in the library, the closest first, among the engines "
+                   "that work: Enter adds them."));
             ImGui::EndPopup();
         }
     }

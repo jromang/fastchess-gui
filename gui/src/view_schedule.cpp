@@ -498,6 +498,12 @@ void App::drawEditPanel() {
         case tour::Edit::Kind::Withdraw:
             participantChoice(TR("Engine to withdraw"));
             ImGui::Checkbox(TR("Its games played so far stop counting"), &edit_void_played_);
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s",
+                                  TR("Ticked, they are voided as well: they stay in the PGN files and the journal "
+                                     "but no longer count. Otherwise they count, and only its games left are "
+                                     "dropped."));
+            }
             edit.void_played = edit_void_played_;
             break;
         case tour::Edit::Kind::SetCycles:
@@ -597,6 +603,10 @@ void App::drawEditPanel() {
     }
     if (t->canUndo()) {
         if (ImGui::Button(TR("Undo the last change"))) undoTournamentEdit();
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("Takes the last change back exactly; the games that were already running when "
+                                       "it was made are kept."));
+        }
         if (!t->undoLasts()) {
             ImGui::SameLine();
             ImGui::TextDisabled("%s", TR("until the next game starts"));

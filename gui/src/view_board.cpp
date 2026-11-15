@@ -845,6 +845,10 @@ void App::drawPositionEditor(float size) {
     }
     if (e.erase) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
     if (ImGui::Button(TR("Eraser"), ImVec2(0, button + ImGui::GetStyle().FramePadding.y * 2))) e.erase = true;
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s", TR("A click on a square then empties it. A right click empties a square whatever is "
+                                   "chosen."));
+    ui::topic(guide::topics::BoardOpen);
     if (e.erase) ImGui::PopStyleColor();
 
     ImGui::Spacing();
@@ -862,6 +866,7 @@ void App::drawPositionEditor(float size) {
         e.fullmove = std::clamp(e.fullmove, 1, 9999);
         changed    = true;
     }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The number of the move to play, as the FEN gives it."));
 
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(TR("Castling"));
@@ -909,6 +914,11 @@ void App::drawPositionEditor(float size) {
             }
             ImGui::EndCombo();
         }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("The file of a pawn that just moved two squares, to be taken en passant: only "
+                                       "such files are offered."));
+        }
+        ui::topic(guide::topics::BoardOpen);
     }
     ImGui::SameLine(0, px(24));
     if (ImGui::Checkbox("Chess960", &e.chess960)) changed = true;
@@ -1110,6 +1120,11 @@ void App::drawBoardAnalysis() {
         }
         ImGui::EndCombo();
     }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("The engine of the library that searches the position shown. Its options other "
+                                   "than those beside are the library's, sent as a game sends them."));
+    }
+    ui::topic(guide::topics::Analysis);
     // Threads, hash and lines: the analysis's own.
     const auto number = [&](const char* id, const char* label, int& value, int lo, int hi, const char* tip) {
         ui::sameLineOrWrap(ImGui::CalcTextSize(label).x + px(56));
@@ -1416,6 +1431,10 @@ void App::drawGameReview() {
         }
         ImGui::EndCombo();
     }
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s",
+                          TR("The time, or the depth, of the search of each position when the game is analysed."));
+    ui::topic(guide::topics::GameAnalysis);
 
     // What it found, by side.
     if (b.review && b.review->complete(b.game.moves.size())) {
@@ -1602,6 +1621,8 @@ void App::drawBoardPlay() {
             if (ImGui::Button(TR("Folder##games"))) ui::openPath(st.pgn.parent_path());
             ImGui::SameLine();
             if (ImGui::Button(TR("New game"))) b.match.reset();
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("%s", TR("Back to the choice of the engines and the clocks, for another game."));
         }
         ui::endCard();
         return;
@@ -1668,6 +1689,9 @@ void App::drawBoardPlay() {
     clockFields("game_first", s.same_clock ? TR("Clock") : TR("White's clock"), s.first_clock);
     ImGui::SameLine(0, px(16));
     if (ImGui::Checkbox(TR("The same for both"), &s.same_clock)) changed = true;
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("%s", TR("One clock for both engines. Untick it to give each its own, for time odds."));
+    ui::topic(guide::topics::BoardPlay);
     if (!s.same_clock) clockFields("game_second", TR("Black's clock"), s.second_clock);
     if (ImGui::Checkbox(TR("A second game, the colours reversed"), &s.game_pair)) changed = true;
     if (changed) saveBoardSettings();

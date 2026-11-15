@@ -397,6 +397,10 @@ void App::drawBooks() {
         dialogs_.openFile(Dialogs::Purpose::AddBook,
                           {{TR("Books (EPD, PGN, Polyglot)"), "epd;pgn;bin"}, {TR("All files"), "*"}});
     }
+    tip(
+        TR("Adds an opening book of yours, EPD, PGN or Polyglot (.bin), to the library: the setup's Openings then "
+           "offer it by name. The file stays where it is."));
+    ui::topic(guide::topics::Books);
     ui::sameLineOrWrap(TR("Create…"));
     const bool create = ImGui::Button(TR("Create…"));
     const ImVec2 below(ImGui::GetItemRectMin().x, ImGui::GetItemRectMax().y);  // the menu drops down from it
@@ -563,6 +567,9 @@ void App::drawBookDetail(BookEntry& book) {
             saveSetupSoon();
             Console::instance().add(trf("{} will be the book of the next tournament.", book.name));
         }
+        tip(
+            TR("Puts it in the Openings of the New tournament page, with its plies, and Chess960 for a book of "
+               "Chess960 positions."));
         if (fs::path(book.path).extension() == ".epd") {
             ImGui::SameLine();
             if (ImGui::Button(TR("Run as a test suite…"))) openSuite(book.path);

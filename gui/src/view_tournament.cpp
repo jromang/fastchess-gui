@@ -445,6 +445,7 @@ void App::drawUnbalancedCount() {
     if (flagged > 0) {
         ImGui::SameLine();
         if (ImGui::SmallButton(TR("Show##unbalanced"))) showUnbalancedGames();
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The Games tab, filtered to those games."));
     }
 }
 
@@ -527,6 +528,10 @@ void App::drawStandings() {
         ImGui::RadioButton(TR("Score"), &crosstable_mode_, 0);
         ImGui::SameLine();
         ImGui::RadioButton("+ = −", &crosstable_mode_, 1);
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("Each cell: the wins, draws and losses of the row's engine against the "
+                                       "column's."));
+        }
         ImGui::SameLine();
         ImGui::RadioButton(TR("Elo difference"), &crosstable_mode_, 2);
     }
@@ -573,6 +578,10 @@ void App::drawStandings() {
             ImGui::PopID();
         }
         ImGui::EndCombo();
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("The ratings' zero: their average at 0, or one engine at the rating given beside "
+                                   "it."));
     }
     if (anchor_) {
         ImGui::SameLine();

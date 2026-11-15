@@ -488,6 +488,11 @@ void App::drawWorkspaceHeader() {
 
         ImGui::SameLine();
         if (ui::iconButton("stop", ui::Icon::Stop, TR("Stop"), !run_->stopping())) ImGui::OpenPopup("stop_menu");
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("Finishes the running games first, or stops now; either way the tournament can "
+                                       "be resumed where it stopped."));
+        }
+        ui::topic(guide::topics::PauseStop);
         if (ImGui::BeginPopup("stop_menu")) {
             if (ImGui::MenuItem(TR("Finish the running games, then stop"))) stopRun(false);
             if (ImGui::MenuItem(TR("Stop now (running games are lost)"))) stopRun(true);
@@ -829,6 +834,9 @@ void App::drawSettings() {
             game_db_dirty_     = true;
             unfinished_        = unfinishedMatch(storage_.runsDir());
         }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", trf("New tournaments go to {} again.", storage_.defaultRunsDir().string()).c_str());
+        }
     }
     ImGui::SetCursorPosX(label);
     ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
@@ -951,6 +959,7 @@ void App::drawVersionSettings() {
         ImGui::TextUnformatted(trf("Version {} is out.", updates_.latest->version).c_str());
         ImGui::SameLine();
         if (ImGui::SmallButton(TR("Download page"))) SDL_OpenURL(updates_.latest->url.c_str());
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", updates_.latest->url.c_str());
     } else if (updates_.latest) {
         ImGui::TextDisabled("%s", TR("This is the latest version."));
     }
