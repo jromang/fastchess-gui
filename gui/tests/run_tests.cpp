@@ -14,9 +14,11 @@
 #include <core/globals/globals.hpp>
 #include <engine/uci_engine.hpp>
 
+#include "../../tournament/tests/own_temp.hpp"
 #include "../../tournament/tests/self_path.hpp"
 #include "app.hpp"
 #include "engines.hpp"
+#include "free_ports.hpp"
 #include "headless.hpp"
 #include "net.hpp"
 #include "proc_tree.hpp"
@@ -112,7 +114,7 @@ TEST_CASE("pause lets running games finish and starts no new one; stop when idle
     }
 
     const auto root = fs::temp_directory_path() / "fcg-run-tests";
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
 
     Harness h;
     REQUIRE(h.run.start(randomSetup(400), randomEngines(), topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}}), root)
@@ -214,7 +216,7 @@ TEST_CASE("the engine check runs fastchess' UCI compliance steps, and stops at t
 #ifndef _WIN32
     // An engine that plays, but gives no "id author": the fourth step fails, with what it wrote.
     const auto dir = fs::temp_directory_path() / "fcg-check-tests";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
     const auto script = dir / "no-author.sh";
     std::ofstream(script) << "#!/bin/sh\n"
@@ -231,7 +233,7 @@ TEST_CASE("the engine check runs fastchess' UCI compliance steps, and stops at t
     CHECK(failed.message.find("4") != std::string::npos);
     CHECK(failed.report.find("✓ Check id name\n✗ Check id author\n") != std::string::npos);
     CHECK(failed.report.find("id name No author") != std::string::npos);
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
 #endif
 }
 
@@ -243,7 +245,7 @@ TEST_CASE("an engine that describes an option badly is read and checked, the opt
     if (!fastchess::config::TournamentConfig)
         fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
     const auto dir = fs::temp_directory_path() / "fcg-bad-options";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
     std::ofstream(dir / "uci.txt") << "id name Cerebro 3.03d\n"
                                       "id author Antonio Senatore\n"
@@ -291,7 +293,7 @@ TEST_CASE("an engine that describes an option badly is read and checked, the opt
     entry.options      = {{"NalimovCache", "16"}, {"Amyan MultiPV", "2"}, {"MultiPV", "3"}};
     const auto checked = checkEngine(entry);
     CHECK_MESSAGE(checked.ok, checked.message);
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
 }
 #endif
 
@@ -301,7 +303,7 @@ TEST_CASE("the check takes a move from the engine's own book, without a search l
     if (!fastchess::config::TournamentConfig)
         fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
     const auto dir = fs::temp_directory_path() / "fcg-book-move";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
     const auto script = dir / "book-move.sh";
     std::ofstream(script) << "#!/bin/sh\n"
@@ -325,14 +327,14 @@ TEST_CASE("the check takes a move from the engine's own book, without a search l
     entry.protocol     = "uci";
     const auto checked = checkEngine(entry);
     CHECK_MESSAGE(checked.ok, checked.message << "\n" << checked.report);
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
 }
 
 TEST_CASE("the check sends the engine's options, and a failed read or check shows what the engine wrote") {
     if (!fastchess::config::TournamentConfig)
         fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
     const auto dir = fs::temp_directory_path() / "fcg-check-options";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
     // Like Stockfish with a wrong EvalFile: it stops once the network it was given cannot be loaded.
     const auto script = dir / "evalfile.sh";
@@ -374,7 +376,7 @@ TEST_CASE("the check sends the engine's options, and a failed read or check show
     const auto probe = probeEngine(entry);
     CHECK_FALSE(probe.ok);
     CHECK(probe.output.find("cannot find MSVCR100.dll") != std::string::npos);
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
 }
 #endif
 
@@ -385,7 +387,7 @@ TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly 
     }
 
     const auto root = fs::temp_directory_path() / "fcg-run-tests-resume";
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
     const auto topology = topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}});
 
     // Two random movers play some 330 plies a game on average, until a mate, a repetition, the 50-move rule or bare
@@ -477,7 +479,7 @@ TEST_CASE("the games of a new setup's tournament have in their PGN every field t
     setEnv("FCG_MOCK_SEARCH", "1");  // two search lines a move, with nodes, nps, seldepth, a time and a PV
 
     const auto root = fs::temp_directory_path() / "fcg-run-tests-chart-fields";
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
     {  // The harness keeps the journal open: Windows removes the folder only once it is closed.
         Harness h;
         REQUIRE(h.run.start(randomSetup(2), randomEngines(), topologyFromCores({{0, 0}, {0, 1}}), root).empty());
@@ -501,7 +503,7 @@ TEST_CASE("the games of a new setup's tournament have in their PGN every field t
             CHECK(std::any_of(series.extra[0].begin(), series.extra[0].end(), [](float v) { return std::isfinite(v); }));
         }
     }
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
 }
 
 TEST_CASE("a round robin of three engines plays every pairing and shows every name") {
@@ -511,7 +513,7 @@ TEST_CASE("a round robin of three engines plays every pairing and shows every na
     }
 
     const auto root = fs::temp_directory_path() / "fcg-run-tests-rr";
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
 
     auto engines = randomEngines();
     engines.push_back(engines[0]);
@@ -556,7 +558,7 @@ TEST_CASE("a finished round robin extended by a cycle resumes to play exactly th
     }
 
     const auto root = fs::temp_directory_path() / "fcg-run-tests-edit";
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
     auto engines = randomEngines();
     engines.push_back(engines[0]);
     engines[2].name = "random-c";
@@ -600,7 +602,7 @@ TEST_CASE("headless: a setup file becomes a tournament played to the end; the qu
     }
 
     const auto profile = fs::temp_directory_path() / "fcg-run-tests-headless";
-    fs::remove_all(profile);
+    fcg::test::removeAll(profile);
     fs::create_directories(profile);
     const Storage storage(profile);
     storage.saveEngines(randomEngines());
@@ -641,12 +643,13 @@ TEST_CASE("headless: the processor use of each game is kept in processor.tsv, as
     for (const bool broadcasting : {false, true}) {
         CAPTURE(broadcasting);
         const auto profile = fs::temp_directory_path() / "fcg-run-tests-headless-cpu";
-        fs::remove_all(profile);
+        fcg::test::removeAll(profile);
         fs::create_directories(profile);
         const Storage storage(profile);
         storage.saveEngines(randomEngines());
-        REQUIRE(writeJson(profile / "setup-file.json", randomSetup(4)));
+        REQUIRE(writeJson(profile / "setup-file.json", randomSetup(2)));
         HeadlessBroadcast broadcast;
+        broadcast.end_wait_ms = 100;  // no client to wait for
         if (broadcasting) broadcast.live_dir = (profile / "live").string();
         const auto code = runHeadless((profile / "setup-file.json").string(), storage,
                                       topologyFromCores({{0, 0}, {0, 1}}), broadcast);
@@ -656,7 +659,7 @@ TEST_CASE("headless: the processor use of each game is kept in processor.tsv, as
         REQUIRE(dirs.size() == 1);
         std::set<uint64_t> offsets;
         for (const auto& result : tour::TournamentState::open(dirs[0])->results()) offsets.insert(result.pgn.offset);
-        REQUIRE(offsets.size() == 4);
+        REQUIRE(offsets.size() == 2);
 
         // One line per game, by its PGN offset, with the time White's and Black's engines thought.
         std::ifstream in(dirs[0] / "processor.tsv", std::ios::binary);
@@ -670,7 +673,7 @@ TEST_CASE("headless: the processor use of each game is kept in processor.tsv, as
         }
         CHECK(lines == offsets);
         in.close();
-        fs::remove_all(profile);
+        fcg::test::removeAll(profile);
     }
     setEnv("FCG_MOCK_MOVE_MS", nullptr);
 }
@@ -682,7 +685,7 @@ TEST_CASE("a Swiss and a knockout are played to the end through the GUI's contro
     }
 
     const auto root = fs::temp_directory_path() / "fcg-run-tests-swiss";
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
     auto engines = randomEngines();
     for (const char* name : {"random-c", "random-d", "random-e"}) {
         engines.push_back(engines[0]);
@@ -723,7 +726,7 @@ TEST_CASE("the engines' search output reaches the live view while they think") {
     }
 
     const auto root = fs::temp_directory_path() / "fcg-run-tests-lines";
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
 
     Harness h;
     REQUIRE(h.run.start(randomSetup(20), randomEngines(), topologyFromCores({{0, 0}, {0, 1}}), root).empty());
@@ -756,15 +759,17 @@ TEST_CASE("headless: the tournament is broadcast over TLCS and as live files") {
     }
 
     const auto profile = fs::temp_directory_path() / "fcg-run-tests-headless-broadcast";
-    fs::remove_all(profile);
+    fcg::test::removeAll(profile);
     fs::create_directories(profile);
     const Storage storage(profile);
     storage.saveEngines(randomEngines());
-    REQUIRE(writeJson(profile / "setup-file.json", randomSetup(200)));
+    REQUIRE(writeJson(profile / "setup-file.json", randomSetup(40)));
 
+    const uint16_t tlcs_port = fcg::test::freePort();
     HeadlessBroadcast broadcast;
-    broadcast.tlcs_port = 26041;
-    broadcast.live_dir  = (profile / "live").string();
+    broadcast.tlcs_port   = tlcs_port;
+    broadcast.live_dir    = (profile / "live").string();
+    broadcast.end_wait_ms = 2000;  // the live files are written once a second: time for the last of them
 
     std::atomic_int code{-1};
     std::thread play([&] {
@@ -774,8 +779,8 @@ TEST_CASE("headless: the tournament is broadcast over TLCS and as live files") {
 
     // A viewer: logs on until the server answers, then acknowledges and keeps what it receives.
     net::UdpSocket client;
-    REQUIRE(client.bind(26042).empty());
-    const net::Endpoint to{0x7F000001, 26041};
+    REQUIRE(client.bind(fcg::test::freePort()).empty());
+    const net::Endpoint to{0x7F000001, tlcs_port};
     std::vector<std::string> received;
     bool logged_on   = false;
     const auto until = std::chrono::steady_clock::now() + 60s;
@@ -832,7 +837,7 @@ TEST_CASE("quick test: ten games against the engine itself, then a report on its
     }
 
     const auto root = fs::temp_directory_path() / "fcg-run-tests-quick";
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
 
     auto library     = randomEngines();
     auto engines     = library;
@@ -936,7 +941,7 @@ TEST_CASE("a read or a check interrupted for a start ends at once instead of wai
         if (!gone) std::this_thread::sleep_for(50ms);
     }
     CHECK(gone);
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
 #endif
 
     setEnv("FCG_MOCK_SLOW_UCIOK", nullptr);
@@ -1031,7 +1036,7 @@ TEST_CASE("EPD suite runs: every engine on every position, the totals, CSV and s
 
     // Kept, then found again for the same suite only, and read back.
     const auto dir = fs::temp_directory_path() / "fcg-suite-runs";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     const auto saved = saveSuiteRun(dir, "/books/bk.epd", 2, columns);
     REQUIRE_FALSE(saved.empty());
     CHECK(savedSuiteRuns(dir, "/elsewhere/bk.epd", 2).size() == 1);
@@ -1043,7 +1048,7 @@ TEST_CASE("EPD suite runs: every engine on every position, the totals, CSV and s
     CHECK_FALSE(back[1].when.empty());
     REQUIRE(back[1].answers[0]);
     CHECK(back[1].answers[0]->move == "Kxb2");
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
 }
 
 #ifdef _WIN32

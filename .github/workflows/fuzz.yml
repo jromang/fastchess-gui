@@ -3,8 +3,11 @@ name: Fuzzing
 on:
   push:
     branches: ["gui"]
+    # Not for a change of the documentation alone.
+    paths: ["**", "!**.md", "!docs/**"]
   pull_request:
     branches: ["gui"]
+    paths: ["**", "!**.md", "!docs/**"]
   schedule:
     - cron: "11 4 * * 3"
   workflow_dispatch:
@@ -12,10 +15,18 @@ on:
 permissions:
   contents: read
 
+# A newer push to the branch or to the pull request makes the run still going useless: it is cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   fuzz:
-    name: libFuzzer, a minute per target
+    name: libFuzzer, every target at once
     runs-on: ubuntu-24.04
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 500M
     steps:
       - uses: actions/checkout@v7
 
@@ -40,7 +51,7 @@ jobs:
           curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc > /dev/null
           echo "deb https://apt.llvm.org/noble/ llvm-toolchain-noble-23 main" | sudo tee /etc/apt/sources.list.d/llvm-23.list
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ninja-build clang-23 libclang-rt-23-dev \
+          sudo apt-get install -y --no-install-recommends ninja-build ccache clang-23 libclang-rt-23-dev \
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
             libxkbcommon-dev libwayland-dev wayland-protocols libdecor-0-dev libegl1-mesa-dev libgl1-mesa-dev \
             libdrm-dev libgbm-dev libdbus-1-dev libudev-dev
@@ -49,6 +60,14 @@ jobs:
         # The runner's kernel randomises more address bits than the sanitizers' shadow memory allows.
         run: sudo sysctl -w vm.mmap_rnd_bits=28
 
+      - name: Compiler cache
+        # What the last runs compiled (the dependencies above all): only what changed is compiled again.
+        uses: actions/cache@v6
+        with:
+          path: .ccache
+          key: ccache-fuzz-${{ github.run_id }}
+          restore-keys: ccache-fuzz-
+
       - name: Configure
         env:
           CC: clang-23
@@ -56,9 +75,11 @@ jobs:
         run: cmake -B build-fuzz -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DFCG_FUZZ=ON -DFCG_BUILD_TESTS=OFF
 
       - name: Build
-        run: >
-          cmake --build build-fuzz --target fuzz_web_request fuzz_tunnel_text fuzz_tlcs_message fuzz_pgn_book
-          fuzz_epd_book fuzz_app_pgn fuzz_engine_info
+        run: |
+          ccache -z
+          cmake --build build-fuzz --target fuzz_web_request fuzz_tunnel_text fuzz_tlcs_message fuzz_pgn_book \
+            fuzz_epd_book fuzz_app_pgn fuzz_engine_info
+          ccache -s
 
       - name: The corpora of earlier runs
         uses: actions/cache@v6
@@ -68,20 +89,29 @@ jobs:
           restore-keys: fuzz-corpus-
 
       - name: Fuzz
-        # Each target a minute, from its seeds and what earlier runs found; any undefined behaviour stops it as a crash
-        # does. A crash fails the job, in the program's own code as in fastchess' readers (app/). The inputs that crash
-        # are kept.
+        # Every target at once, from its seeds and what earlier runs found: 15 seconds on every change, two minutes
+        # every week or when asked for. Any undefined behaviour stops a target as a crash does. A crash fails the job,
+        # in the program's own code as in fastchess' readers (app/). The inputs that crash are kept.
         env:
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+          FUZZ_SECONDS: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 120 || 15 }}
         run: |
-          failed=()
-          for target in web_request tunnel_text tlcs_message pgn_book epd_book app_pgn engine_info; do
+          targets=(web_request tunnel_text tlcs_message pgn_book epd_book app_pgn engine_info)
+          pids=()
+          for target in "${targets[@]}"; do
             mkdir -p "fuzz-corpus/${target}" "fuzz-crashes/${target}"
-            echo "::group::${target}"
-            if ! "./build-fuzz/fuzz_${target}" -max_total_time=60 -max_len=65536 -timeout=10 -rss_limit_mb=4096 \
-                   -artifact_prefix="fuzz-crashes/${target}/" "fuzz-corpus/${target}" "fuzz/corpus/${target}"; then
-              failed+=("${target}")
+            "./build-fuzz/fuzz_${target}" -max_total_time="${FUZZ_SECONDS}" -max_len=65536 -timeout=10 \
+              -rss_limit_mb=4096 -artifact_prefix="fuzz-crashes/${target}/" "fuzz-corpus/${target}" \
+              "fuzz/corpus/${target}" > "fuzz-${target}.log" 2>&1 &
+            pids+=($!)
+          done
+          failed=()
+          for i in "${!targets[@]}"; do
+            if ! wait "${pids[$i]}"; then
+              failed+=("${targets[$i]}")
             fi
+            echo "::group::${targets[$i]}"
+            cat "fuzz-${targets[$i]}.log"
             echo "::endgroup::"
           done
           if [ ${#failed[@]} -gt 0 ]; then

@@ -12,6 +12,7 @@
 #include <tour/book_adapter.hpp>
 #include <tour/pgn_book.hpp>
 
+#include "../../tournament/tests/own_temp.hpp"
 #include "../../tournament/tests/polyglot_writer.hpp"
 #include "../../tournament/tests/self_path.hpp"
 #include "book_jobs.hpp"
@@ -93,7 +94,7 @@ TEST_CASE("own book: a book that cannot play for an engine is told, and the tour
         CHECK(error.find("random (Large)") != std::string::npos);
         CHECK(error.find("not sorted") != std::string::npos);
     }
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
 }
 
 TEST_CASE("own book: the same engine with books of its own plays under names that tell it apart") {
@@ -128,7 +129,7 @@ TEST_CASE("own book: the same engine with books of its own plays under names tha
 
 TEST_CASE("own book: the setup, its templates and the tournament keep each participant's book and depth") {
     const auto dir = fs::temp_directory_path() / "fcg-tests-own-book-setup";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
     const auto binary = dir / "engine.exe";  // fastchess appends .exe to extension-less commands on Windows
     std::ofstream(binary) << "x";
@@ -191,7 +192,7 @@ TEST_CASE("own book: the setup, its templates and the tournament keep each parti
     CHECK(run.spec.participants[1].engine.name == "Alpha (A)");
     CHECK(run.spec.participants[1].book == book);
 
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
 }
 
 TEST_CASE("own book: a round robin with the same engine twice and a WinBoard engine, each with a book of its own") {
@@ -205,7 +206,7 @@ TEST_CASE("own book: a round robin with the same engine twice and a WinBoard eng
     tour::book_adapter                = self().string();
 
     const auto root = fs::temp_directory_path() / "fcg-own-book-tests";
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
     fs::create_directories(root);
     const auto book = writeBook(root / "first moves.bin").string();
 
@@ -308,7 +309,7 @@ TEST_CASE("own book: a PGN book is prepared in the background while it is asked 
     using State         = PgnBookJobs::Status::State;
     const auto root     = fs::temp_directory_path() / "fcg-own-book-pgn-jobs";
     const auto previous = tour::book_cache_dir;
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
     fs::create_directories(root);
     tour::book_cache_dir = root / "cache";
     const auto pgn       = writePgnBook(root / "answers.pgn").string();
@@ -346,7 +347,7 @@ TEST_CASE("own book: a PGN book is prepared in the background while it is asked 
     CHECK(again.stats.skipped == 1);
 
     tour::book_cache_dir = previous;
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
 }
 
 TEST_CASE("own book: a match with a PGN book of its own, prepared by the start when the window did not") {
@@ -358,7 +359,7 @@ TEST_CASE("own book: a match with a PGN book of its own, prepared by the start w
     tour::book_adapter  = self().string();
     const auto previous = tour::book_cache_dir;
     const auto root     = fs::temp_directory_path() / "fcg-own-book-pgn-match";
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
     fs::create_directories(root);
     tour::book_cache_dir = root / "cache";
     const auto pgn       = writePgnBook(root / "answers.pgn").string();
@@ -429,7 +430,7 @@ TEST_CASE("own book: a conversion that failed is done again when asked, never by
     using State         = PgnBookJobs::Status::State;
     const auto root     = fs::temp_directory_path() / "fcg-own-book-pgn-retry";
     const auto previous = tour::book_cache_dir;
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
     fs::create_directories(root);
     const auto pgn = writePgnBook(root / "answers.pgn").string();
     // A file where the cache's folder would be: the book cannot be written, as on a full disk.
@@ -457,7 +458,7 @@ TEST_CASE("own book: a conversion that failed is done again when asked, never by
     CHECK(jobs.want(pgn, 4, false).state == State::Ready);
 
     tour::book_cache_dir = previous;
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
 }
 
 TEST_CASE("own book: a withdrawn participant's PGN book, deleted since, does not hold the resume") {
@@ -469,7 +470,7 @@ TEST_CASE("own book: a withdrawn participant's PGN book, deleted since, does not
     tour::book_adapter  = self().string();
     const auto previous = tour::book_cache_dir;
     const auto root     = fs::temp_directory_path() / "fcg-own-book-pgn-withdrawn";
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
     fs::create_directories(root);
     tour::book_cache_dir = root / "cache";
     const auto pgn       = writePgnBook(root / "answers.pgn").string();

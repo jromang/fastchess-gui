@@ -10,12 +10,29 @@ option(FCG_BUILD_GUI "Build the fastchess-gui desktop application" ON)
 option(FCG_BUILD_TESTS "Build the fastchess-gui unit tests" ON)
 option(FCG_STATIC_RUNTIME "Link libstdc++ and libgcc statically on Linux (release binaries)" OFF)
 option(FCG_FUZZ "Build the libFuzzer targets in fuzz/ (clang), everything with AddressSanitizer and UBSan" OFF)
+option(FCG_CCACHE "Compile through ccache when it is installed" ON)
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# ccache, when installed: a file compiled once with the same flags, in this build folder or another, is not compiled
+# again. The paths below the sources are made relative to them (CCACHE_BASEDIR), so that the build folders of other
+# worktrees of the repository hit the same cache. Not for a build whose compilations must all be seen (CodeQL,
+# Coverity): -DFCG_CCACHE=OFF.
+if(FCG_CCACHE AND NOT CMAKE_CXX_COMPILER_LAUNCHER)
+    find_program(FCG_CCACHE_PROGRAM ccache)
+    if(FCG_CCACHE_PROGRAM)
+        set(CMAKE_C_COMPILER_LAUNCHER ${CMAKE_COMMAND} -E env CCACHE_BASEDIR=${CMAKE_CURRENT_SOURCE_DIR}
+                                      ${FCG_CCACHE_PROGRAM})
+        set(CMAKE_CXX_COMPILER_LAUNCHER ${CMAKE_C_COMPILER_LAUNCHER})
+        # SDL's precompiled header would make every one of its files uncacheable (gcc): none.
+        set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
+        message(STATUS "Compiling through ${FCG_CCACHE_PROGRAM}")
+    endif()
+endif()
 
 if(FCG_STATIC_RUNTIME AND NOT WIN32 AND NOT APPLE)
     add_link_options(-static-libstdc++ -static-libgcc)
@@ -433,5 +450,26 @@ if(FCG_BUILD_GUI)
             target_link_libraries(fuzz_${name} PRIVATE fcg_lib)
             target_link_options(fuzz_${name} PRIVATE -fsanitize=fuzzer)
         endforeach()
+    endif()
+endif()
+
+# cmake --build build --target check: the test programs built, then their test cases run side by side, each in a
+# process of its own (tools/run_tests.py; its options there for a part of them only).
+if(FCG_BUILD_TESTS AND NOT CMAKE_CROSSCOMPILING)
+    find_package(Python3 COMPONENTS Interpreter)
+    if(Python3_Interpreter_FOUND)
+        set(FCG_TEST_PROGRAMS fcg-tournament-tests)
+        if(FCG_BUILD_GUI)
+            list(PREPEND FCG_TEST_PROGRAMS fastchess-gui-tests)
+        endif()
+        set(FCG_TEST_FILES)
+        foreach(program IN LISTS FCG_TEST_PROGRAMS)
+            list(APPEND FCG_TEST_FILES $<TARGET_FILE:${program}>)
+        endforeach()
+        add_custom_target(check
+            COMMAND Python3::Interpreter ${CMAKE_CURRENT_SOURCE_DIR}/tools/run_tests.py ${FCG_TEST_FILES}
+            DEPENDS ${FCG_TEST_PROGRAMS}
+            USES_TERMINAL
+            COMMENT "Running the tests")
     endif()
 endif()

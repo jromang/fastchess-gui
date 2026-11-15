@@ -11,6 +11,7 @@
 #include <core/config/config.hpp>
 #include <engine/uci_engine.hpp>
 
+#include "../../tournament/tests/own_temp.hpp"
 #include "../../tournament/tests/self_path.hpp"
 #include "engines.hpp"
 #include "run.hpp"
@@ -297,7 +298,7 @@ TEST_CASE("wb2uci: tournaments of WinBoard engines (protocol 1 and 2) and a UCI 
     fastchess::engine::xboard_adapter = self().string();
 
     const auto root = fs::temp_directory_path() / "fcg-wb2uci-tests";
-    fs::remove_all(root);
+    fcg::test::removeAll(root);
     fs::create_directories(root);
 
     // Openings as positions, Black to move in some: setboard for one engine, edit mode for the other.
@@ -466,7 +467,7 @@ TEST_CASE("wb2uci: a Chess960 tournament of WinBoard engines through the adapter
     fastchess::engine::xboard_adapter = self().string();
 
     const auto root = fs::temp_directory_path() / "fcg-wb2uci-960" / "run";
-    fs::remove_all(root.parent_path());
+    fcg::test::removeAll(root.parent_path());
     fs::create_directories(root.parent_path());
 
     std::vector<EngineEntry> engines(3);

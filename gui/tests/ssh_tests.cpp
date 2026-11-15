@@ -25,11 +25,12 @@
 #endif
 
 #include "broadcast.hpp"
-#include "cpu_time.hpp"
 #include "broadcaster.hpp"
+#include "cpu_time.hpp"
+#include "free_ports.hpp"
 #include "libssh2_backend.hpp"
-#include "qr.hpp"
 #include "net.hpp"
+#include "qr.hpp"
 #include "ssh_tunnel.hpp"
 #include "ssh_wire.hpp"
 
@@ -321,6 +322,7 @@ TEST_CASE("libssh2 backend: RSA host keys, rsa-sha2-512 and rsa-sha2-256 signatu
 }
 
 TEST_CASE("libssh2 backend: AES-CTR as NIST SP 800-38A gives it, its counter carried from call to call") {
+    REQUIRE(psa_crypto_init() == PSA_SUCCESS);  // as libssh2_init() does, which this test does not need
     // F.5.1 and F.5.5: CTR-AES128 and CTR-AES256, encrypting; CTR deciphers the same way.
     const auto counter = unhex("f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
     const auto plain   = unhex("6bc1bee22e409f96e93d7e117393172aae2d8a571e03ac9c9eb76fac45af8e51"
@@ -350,6 +352,7 @@ TEST_CASE("libssh2 backend: AES-CTR as NIST SP 800-38A gives it, its counter car
 }
 
 TEST_CASE("libssh2 backend: AES-GCM packets of another implementation opened, sealed again, tampering refused") {
+    REQUIRE(psa_crypto_init() == PSA_SUCCESS);  // as libssh2_init() does, which this test does not need
     // Each packet: the length (authenticated, not enciphered), then the padding length, the payload, the padding;
     // the nonce's invocation counter goes from 00000000ffffffff to 0000000100000000 between them.
     ssh2_cipher_ctx rx;
@@ -416,6 +419,7 @@ TEST_CASE("libssh2 backend: AES-GCM packets of another implementation opened, se
 }
 
 TEST_CASE("libssh2 backend: HMAC as RFC 2202 and RFC 4231 give it; what is not supported fails") {
+    REQUIRE(psa_crypto_init() == PSA_SUCCESS);  // as libssh2_init() does, which this test does not need
     const auto hmac = [](psa_algorithm_t alg, std::string key, const std::string& data, std::size_t size) {
         ssh2_hmac_ctx ctx;
         std::string out(size, '\0');
@@ -986,10 +990,10 @@ class FakeServer {
     uint32_t seq_rx_ = 0, seq_tx_ = 0;
 };
 
-constexpr uint16_t SSH_PORT = 26411;
+const uint16_t SSH_PORT = fcg::test::freePort();
 // The window the client gives a connection the server forwards (patched libssh2, cmake/patch_libssh2.cmake).
 constexpr uint32_t FORWARDED_WINDOW = FCG_LIBSSH2_FORWARD_WINDOW;
-constexpr uint16_t WEB_PORT = 26413;
+const uint16_t WEB_PORT             = fcg::test::freePorts(3);  // and the next two
 constexpr uint32_t LOCALHOST_IP = 0x7F000001;
 
 TunnelSettings loopback(const std::string& pinned) {

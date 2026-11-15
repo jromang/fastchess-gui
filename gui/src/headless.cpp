@@ -342,7 +342,7 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
             // The end of the last games, then time for the clients to acknowledge it.
-            const auto until = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+            const auto until = std::chrono::steady_clock::now() + std::chrono::milliseconds(broadcast.end_wait_ms);
             while (std::chrono::steady_clock::now() < until) {
                 broadcaster.update(*state, *observer, std::nullopt, -1);
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
