@@ -156,6 +156,7 @@ TEST_CASE("portable: the profile's files keep relative paths, and the folder can
 
     // The folder copied elsewhere: the paths follow.
     const auto moved = tempDir("portable-moved");
+    fs::remove(moved);  // copied as a whole: Windows does not copy a folder into one that exists
     fs::copy(program, moved, fs::copy_options::recursive);
     {
         const PortableBase on(moved);

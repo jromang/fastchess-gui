@@ -27,6 +27,13 @@ using namespace std::chrono_literals;
 namespace {
 
 std::string randomMover() { return (fcg::test::selfPath().parent_path() / FCG_RANDOM_MOVER).string(); }
+// The program a tournament plays in: where the build put it, else beside the tests (copied to another machine).
+std::string guiProgram() {
+    const fs::path built(FCG_GUI_PROGRAM);
+    std::error_code ec;
+    if (fs::is_regular_file(built, ec)) return built.string();
+    return (fcg::test::selfPath().parent_path() / built.filename()).string();
+}
 
 void setEnv(const char* name, const char* value) {
 #ifdef _WIN32
@@ -125,7 +132,7 @@ TEST_CASE("remote: a tournament in a process of its own; its copy follows; pause
 
     Harness h;
     RemoteStart start;
-    start.program = FCG_GUI_PROGRAM;
+    start.program = guiProgram();
     start.profile = profile;
     start.dir     = dir;
     REQUIRE(h.run.start(start).empty());
@@ -254,7 +261,7 @@ TEST_CASE("remote: a game ended by the operator, then the window going away stop
     {
         Harness h;
         RemoteStart start;
-        start.program = FCG_GUI_PROGRAM;
+        start.program = guiProgram();
         start.profile = profile;
         start.dir     = dir;
         REQUIRE(h.run.start(start).empty());
@@ -309,7 +316,7 @@ TEST_CASE("remote: a tournament on its socket plays on without the window, which
     {
         Harness h;
         RemoteStart start;
-        start.program  = FCG_GUI_PROGRAM;
+        start.program  = guiProgram();
         start.profile  = profile;
         start.dir      = dir;
         start.detached = true;
@@ -333,7 +340,7 @@ TEST_CASE("remote: a tournament on its socket plays on without the window, which
     {
         ChildProcess attach;
         std::string error;
-        REQUIRE(attach.start(FCG_GUI_PROGRAM, {"--attach", dir.string()}, error));
+        REQUIRE(attach.start(guiProgram(), {"--attach", dir.string()}, error));
         REQUIRE(attach.write("{\"hello\":{\"protocol\":1,\"version\":\"test\",\"journal\":0}}\n"));
         std::string got;
         char buffer[4096];
@@ -383,7 +390,7 @@ TEST_CASE("remote: a tournament on its socket plays on without the window, which
 
     // Nothing plays it now: --attach says so.
     ChildProcess attach;
-    REQUIRE(attach.start(FCG_GUI_PROGRAM, {"--attach", dir.string()}, error));
+    REQUIRE(attach.start(guiProgram(), {"--attach", dir.string()}, error));
     attach.closeInput();
     CHECK(attach.wait() == 2);
 }

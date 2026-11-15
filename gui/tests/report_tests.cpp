@@ -122,7 +122,12 @@ TEST_CASE("report: the system named") {
 
 TEST_CASE("report: the form's field ids are those the address fills") {
 #ifdef FCG_SOURCE_DIR
-    std::ifstream in(fs::path(FCG_SOURCE_DIR) / ".github" / "ISSUE_TEMPLATE" / "bug_report.yml");
+    const auto form_file = fs::path(FCG_SOURCE_DIR) / ".github" / "ISSUE_TEMPLATE" / "bug_report.yml";
+    if (!fs::is_regular_file(form_file)) {
+        MESSAGE("the sources are not on this machine (tests copied elsewhere), skipped");
+        return;
+    }
+    std::ifstream in(form_file);
     REQUIRE(in);
     const std::string form((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     for (const char* id : {"version", "system", "log", "seen"}) {
