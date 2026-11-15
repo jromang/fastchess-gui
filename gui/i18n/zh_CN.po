@@ -459,6 +459,12 @@ msgstr "其他 SSH 服务器"
 msgid "Another engine of the list takes its place and plays its games, those it played included."
 msgstr "由列表中的另一个引擎接替它，并下它的对局，包括它已下过的。"
 
+msgid "Answers {} as {}."
+msgstr "以 {} 应答，名为 {}。"
+
+msgid "Answers {}."
+msgstr "应答 {}。"
+
 msgid "Any PGN file: its games listed and filtered by their tags, each replayed here. A file can also be dropped on the window."
 msgstr "任意 PGN 文件：列出其对局并按标签筛选，每局都可在此回放。也可以把文件拖到窗口上。"
 
@@ -645,6 +651,21 @@ msgstr "棋盘"
 msgid "Book"
 msgstr "开局库"
 
+msgid "Book {} cannot be read on this computer."
+msgstr "无法在本机读取开局库 {}。"
+
+msgid "Book {} copied to {}."
+msgstr "开局库 {} 已复制到 {}。"
+
+msgid "Book {} missing on {} ({})."
+msgstr "开局库 {} 在 {} 上缺失（{}）。"
+
+msgid "Book {}: on {}, the same."
+msgstr "开局库 {}：{} 上的相同。"
+
+msgid "Book {}: {} has another file of that name ({} to copy)."
+msgstr "开局库 {}：{} 上有同名的另一个文件（需复制 {}）。"
+
 msgid "Books"
 msgstr "开局库"
 
@@ -707,6 +728,9 @@ msgstr "取消正在生成的 Polyglot 开局库"
 
 msgid "Cancel the analysis of the game"
 msgstr "取消对局分析"
+
+msgid "Cancelled."
+msgstr "已取消。"
 
 msgid "Cancelling…"
 msgstr "正在取消…"
@@ -804,6 +828,15 @@ msgstr "检查尚未检查的（{}）"
 msgid "Checked: it works."
 msgstr "已检查：可以正常工作。"
 
+msgid "Checking the copy of {}…"
+msgstr "正在检查 {} 的副本…"
+
+msgid "Checking the program on the machine…"
+msgstr "正在检查机器上的程序…"
+
+msgid "Checking {}…"
+msgstr "正在检查 {}…"
+
 msgid "Checking…"
 msgstr "正在检查…"
 
@@ -866,6 +899,9 @@ msgstr "请至少选择两个引擎。"
 
 msgid "Choose engines A and B."
 msgstr "请选择引擎 A 和 B。"
+
+msgid "Choose the key file, or log in with the SSH agent."
+msgstr "选择密钥文件，或使用 SSH 代理登录。"
 
 msgid "Choose the opening book"
 msgstr "选择开局库"
@@ -936,6 +972,9 @@ msgstr "通用设置：{}"
 msgid "Compare with a saved run…"
 msgstr "与已保存的运行结果比较…"
 
+msgid "Comparing {} here and on {}…"
+msgstr "正在比较{}（本机与 {}）…"
+
 msgid "Computing…"
 msgstr "计算中…"
 
@@ -944,6 +983,15 @@ msgstr "并发"
 
 msgid "Concurrent games"
 msgstr "同时进行的对局"
+
+msgid "Connected. Host key {}, as before."
+msgstr "已连接。主机密钥 {}，与之前相同。"
+
+msgid "Connected. Host key {}: seen for the first time, trusted from now on."
+msgstr "已连接。主机密钥 {}：首次见到，今后视为可信。"
+
+msgid "Connecting to {}…"
+msgstr "正在连接 {}…"
 
 msgid "Consecutive moves"
 msgstr "连续步数"
@@ -977,6 +1025,12 @@ msgstr "复制 PGN"
 
 msgid "Copy the version"
 msgstr "复制版本号"
+
+msgid "Copying {} ({})…"
+msgstr "正在复制 {}（{}）…"
+
+msgid "Copying {} to {}…"
+msgstr "正在复制 {} 到 {}…"
 
 msgid "Cores"
 msgstr "核心"
@@ -1452,6 +1506,9 @@ msgstr "筛选：棋手、赛事、开局、日期…"
 msgid "Final"
 msgstr "决赛"
 
+msgid "Finding out the system…"
+msgstr "正在识别系统…"
+
 msgid "Finish the running games, then stop"
 msgstr "下完进行中的对局，然后停止"
 
@@ -1617,11 +1674,20 @@ msgstr "生成 Chess324 开局库"
 msgid "Give the Syzygy tablebase directory."
 msgstr "请指定 Syzygy 残局库目录。"
 
+msgid "Give the machine's folder for fastchess-gui."
+msgstr "请填写机器上 fastchess-gui 的文件夹。"
+
+msgid "Give the machine's host name or address."
+msgstr "请填写机器的主机名或地址。"
+
 msgid "Give the server's host."
 msgstr "请填写服务器的主机。"
 
 msgid "Give the tester's name and the event."
 msgstr "请填写测试者姓名和赛事。"
+
+msgid "Give the user to log in as."
+msgstr "请填写登录用户名。"
 
 msgid "Green"
 msgstr "绿色"
@@ -1767,6 +1833,12 @@ msgstr "初始局面"
 
 msgid "Interface size"
 msgstr "界面大小"
+
+msgid "Internal error."
+msgstr "内部错误。"
+
+msgid "Internal error: {}"
+msgstr "内部错误：{}"
 
 msgid "Interrupted"
 msgstr "已中断"
@@ -1990,6 +2062,9 @@ msgstr "变化"
 msgid "Listed among lichess' broadcasts"
 msgstr "列入 lichess 的直播列表"
 
+msgid "Listing the tablebases of {}…"
+msgstr "正在列出 {} 上的残局库…"
+
 msgid "Live"
 msgstr "实时"
 
@@ -2007,6 +2082,9 @@ msgstr "逻辑斯谛 Elo，及其 95 % 区间。"
 
 msgid "Logo"
 msgstr "标志"
+
+msgid "Looking for {} on {}…"
+msgstr "正在查找 {}（在 {} 上）…"
 
 msgid "Loss when an engine reports a score ≤ -threshold for N consecutive moves."
 msgstr "当某个引擎连续 N 步报告分数 ≤ -阈值时判负。"
@@ -2044,6 +2122,9 @@ msgstr "MB；0：使用引擎自己的设置。"
 
 msgid "Machine: {} physical cores, {} threads"
 msgstr "本机：{} 个物理核心，{} 个线程"
+
+msgid "Making the folder {}…"
+msgstr "正在创建文件夹 {}…"
 
 msgid "Margin (ms)"
 msgstr "余量 (ms)"
@@ -2153,6 +2234,9 @@ msgstr "尚未导入 PGN 文件。"
 msgid "No Polyglot (.bin) or PGN book in the library: add one in the Books window."
 msgstr "库中没有 Polyglot（.bin）或 PGN 开局库：请在“开局库”窗口中添加。"
 
+msgid "No SSH agent answers on this computer: start one and add your key to it (ssh-add), or log in with a key file."
+msgstr "本机上没有 SSH 代理响应：请启动一个并加入你的密钥（ssh-add），或使用密钥文件登录。"
+
 msgid "No book"
 msgstr "无开局库"
 
@@ -2224,6 +2308,9 @@ msgstr "未下任何对局"
 
 msgid "No game yet."
 msgstr "还没有对局。"
+
+msgid "No key file is chosen for {}: choose one, or log in with the SSH agent."
+msgstr "{} 未选择密钥文件：请选择一个，或使用 SSH 代理登录。"
 
 msgid "No longer playing: withdrawn or replaced. Its games that count still count for its team."
 msgstr "已不再参赛：退赛或被替换。它计分的对局仍计入所在队。"
@@ -2345,6 +2432,9 @@ msgstr "未检查"
 
 msgid "Not checked yet."
 msgstr "尚未检查。"
+
+msgid "Not connected to {}."
+msgstr "未连接到 {}。"
 
 msgid "Not enough memory to draw it."
 msgstr "内存不足，无法绘制。"
@@ -3400,9 +3490,17 @@ msgid "Syzygy {} pieces: {} file missing in {} ({})."
 msgid_plural "Syzygy {} pieces: {} files missing in {} ({})."
 msgstr[0] "Syzygy {} 子：{} 个文件缺失，位于 {}（{}）。"
 
+msgid "Syzygy: the {} file is on {}."
+msgid_plural "Syzygy: the {} files are on {}."
+msgstr[0] "Syzygy：{} 个文件都在 {} 上。"
+
 msgid "Syzygy: {} damaged file in {} ({}): its size is not a tablebase file's."
 msgid_plural "Syzygy: {} damaged files in {} ({}): their size is not a tablebase file's."
 msgstr[0] "Syzygy：{} 个损坏文件，位于 {}（{}）：其大小不是残局库文件应有的大小。"
+
+msgid "Syzygy: {} file missing on {} ({})."
+msgid_plural "Syzygy: {} files missing on {} ({})."
+msgstr[0] "Syzygy：{} 个文件在 {} 上缺失（{}）。"
 
 msgid "SyzygyPath of {}"
 msgstr "{} 的 SyzygyPath"
@@ -3484,6 +3582,9 @@ msgstr "测试集 {}：{} 个局面，{} 个引擎，同时 {} 个。"
 msgid "Test suites"
 msgstr "测试集"
 
+msgid "Test the connection first: it tells the machine's system."
+msgstr "请先测试连接：它会告诉你机器的系统。"
+
 msgid "Tested engines"
 msgstr "被测引擎"
 
@@ -3510,6 +3611,21 @@ msgstr "设置的 PGN 选项，用于以后的锦标赛。"
 
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr "按 PGN 标准，这些是注释。fastchess-gui 0.4.13 及更早版本把它们当作着法读取，可能从错误的局面（常常是初始局面）开始下此开局库中的某些开局。"
+
+msgid "The SSH agent cannot be used."
+msgstr "无法使用 SSH 代理。"
+
+msgid "The SSH agent cannot list its keys."
+msgstr "SSH 代理无法列出其密钥。"
+
+msgid "The SSH agent holds no key: add yours to it (ssh-add), or log in with a key file."
+msgstr "SSH 代理中没有密钥：请加入你的密钥（ssh-add），或使用密钥文件登录。"
+
+msgid "The SSH session cannot be set up."
+msgstr "无法设置 SSH 会话。"
+
+msgid "The SSH session cannot start."
+msgstr "无法启动 SSH 会话。"
 
 msgid "The Schedule tab shows the impact before anything changes."
 msgstr "赛程标签页会在任何改动之前显示影响。"
@@ -3568,8 +3684,23 @@ msgstr "深色主题下棋盘的颜色。"
 msgid "The colours of the boards while the theme is light."
 msgstr "浅色主题下棋盘的颜色。"
 
+msgid "The connection to {} broke while {}."
+msgstr "与 {} 的连接中断（步骤：{}）。"
+
 msgid "The console of {} is open."
 msgstr "{} 的控制台已打开。"
+
+msgid "The copy of {} from {} has {} bytes instead of {}."
+msgstr "{} 的副本（来自 {}）有 {} 字节，而不是 {}。"
+
+msgid "The copy of {} on {} has {} bytes instead of {}: copy it again."
+msgstr "{} 在 {} 上的副本有 {} 字节，而不是 {}：请重新复制。"
+
+msgid "The copy of {} on {} is not the same as here: copy it again."
+msgstr "{} 在 {} 上的副本与本机不同：请重新复制。"
+
+msgid "The cryptography cannot start."
+msgstr "加密模块无法启动。"
 
 msgid "The depth must be positive."
 msgstr "深度必须为正数。"
@@ -3640,6 +3771,9 @@ msgstr "最前面的是种子，即被测引擎：它们与其他所有引擎对
 msgid "The first participant, {}, has no reference Elo."
 msgstr "第一个参赛者 {} 没有参考 Elo。"
 
+msgid "The folder {} cannot be named in a Windows command: leave out quotes, % and '."
+msgstr "文件夹 {} 不能用在 Windows 命令中：请去掉引号、% 和 '。"
+
 msgid "The folder {} is not there any more."
 msgstr "文件夹 {} 已不存在。"
 
@@ -3673,11 +3807,32 @@ msgstr "对局正在等待 {}：{}。每局结束后重试。"
 msgid "The guide, at this page (F1)"
 msgstr "本页的指南（F1）"
 
+msgid "The host key of {} cannot be checked."
+msgstr "无法检查 {} 的主机密钥。"
+
+msgid "The host key of {} cannot be checked: nowhere to keep it."
+msgstr "无法检查 {} 的主机密钥：没有地方保存它。"
+
+msgid "The host key of {} cannot be kept in {}."
+msgstr "无法将 {} 的主机密钥保存到 {}。"
+
+msgid "The host key of {} changed: {} now, {} before. Someone may be in the way; trust the new key only if the machine was reinstalled or its owner says it changed."
+msgstr "{} 的主机密钥已更改：现在是 {}，之前是 {}。可能有人在中间拦截；只有在机器重装过或其所有者确认更改时才信任新密钥。"
+
 msgid "The host key of {} changed: {} now, {} before. Someone may be in the way; trust the new key only if the server's owner says it changed."
 msgstr "{} 的主机密钥已改变：现在是 {}，之前是 {}。可能有人在中间拦截；只有在服务器所有者确认更换后才信任新密钥。"
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "{} 的主机密钥不是预期的（{}，而不是 {}）：可能有人在中间拦截。未发送任何内容。"
+
+msgid "The key file {} cannot be read."
+msgstr "无法读取密钥文件 {}。"
+
+msgid "The key file {} cannot be used: {}"
+msgstr "无法使用密钥文件 {}：{}"
+
+msgid "The key file {} needs its passphrase."
+msgstr "密钥文件 {} 需要口令。"
 
 msgid "The keys still work. Settings or the command palette shows them again."
 msgstr "按键仍然有效。可在设置或命令面板中重新显示它们。"
@@ -3718,6 +3873,12 @@ msgstr "标志未更改：{}"
 msgid "The machine is full: the tournament's games and the analysis use {} of its {} threads, and this game needs {}. It would slow them down, and its own engines."
 msgstr "机器已满：锦标赛对局和分析使用了 {} 个线程（共 {} 个），这局还需要 {} 个。这会拖慢它们以及这局的引擎。"
 
+msgid "The machine runs Windows ({}): download fastchess-gui for Windows from the releases page, then choose its fastchess-gui.exe below."
+msgstr "该机器运行 Windows（{}）：请从发布页面下载 Windows 版 fastchess-gui，然后在下方选择其 fastchess-gui.exe。"
+
+msgid "The machine runs {} {}, this computer {} {}: download fastchess-gui for {} {} from the releases page and choose its program below, or install it on the machine yourself, in {}."
+msgstr "该机器运行 {} {}，本机为 {} {}：请从发布页面下载 {} {} 版 fastchess-gui 并在下方选择其程序，或自行安装到机器上的 {}。"
+
 msgid "The most interesting"
 msgstr "最有看点的"
 
@@ -3751,6 +3912,9 @@ msgstr "以你选择的名称保存面板及其位置。"
 msgid "The participants selected (Delete)."
 msgstr "选中的参赛者（Delete）。"
 
+msgid "The passphrase of the key file {} is not the right one."
+msgstr "密钥文件 {} 的口令不正确。"
+
 msgid "The paused tournament goes on, and the queue starts its next tournament when the running one ends."
 msgstr "暂停的锦标赛继续进行，当前锦标赛结束后队列开始下一个锦标赛。"
 
@@ -3765,6 +3929,9 @@ msgstr "PGN 文件中按名称（不计大小写和空格）或按你的选择�
 
 msgid "The players of the PGN files that are no library engine by their name, letter case and spaces aside. Say which library engine a player is, and its games are the engine's; the choice is kept for every PGN file that names the player. A name that two library engines have waits for your choice; a hint is a guess, never applied."
 msgstr "PGN 文件中按名称（不计大小写和空格）不是库引擎的棋手。指定某位棋手是哪个库引擎，其对局即计为该引擎的对局；该选择对所有提到此棋手的 PGN 文件都有效。两个库引擎共有的名称需要你来选择；提示只是猜测，从不自动应用。"
+
+msgid "The port is 1 to 65535 (22 for SSH)."
+msgstr "端口为 1 到 65535（SSH 为 22）。"
 
 msgid "The port the server opens for the page, as ssh -R REMOTE_PORT:localhost:PORT user@host would ask (0: the server chooses). Authentication \"none\" only: a service that lets anyone in, or a server of one's own that lets the user in without a key. Its host key is trusted the first time and must stay the same."
 msgstr "服务器为页面打开的端口，与 ssh -R REMOTE_PORT:localhost:PORT user@host 所请求的相同（0：由服务器选择）。仅支持 \"none\" 认证：允许任何人进入的服务，或允许该用户无密钥进入的自有服务器。其主机密钥在首次连接时被信任，之后必须保持不变。"
@@ -4439,6 +4606,15 @@ msgstr "将死"
 msgid "colours reversed of an earlier one"
 msgstr "与之前某局面颜色互换"
 
+msgid "connecting"
+msgstr "连接"
+
+msgid "copying {} from {}"
+msgstr "复制 {}（来自 {}）"
+
+msgid "copying {} to {}"
+msgstr "复制 {} 到 {}"
+
 msgid "decision time"
 msgstr "决定时间"
 
@@ -4493,6 +4669,21 @@ msgstr "全员交叉对抗"
 
 msgid "fastchess-gui cannot draw its window."
 msgstr "fastchess-gui 无法绘制其窗口。"
+
+msgid "fastchess-gui is not in {}: Install puts it there."
+msgstr "fastchess-gui 不在 {} 中：“安装”会把它放到那里。"
+
+msgid "fastchess-gui was copied to {}, but it does not start there: {}"
+msgstr "fastchess-gui 已复制到 {}，但在那里无法启动：{}"
+
+msgid "fastchess-gui {} installed in {} (protocol {})."
+msgstr "fastchess-gui {} 已安装到 {}（协议 {}）。"
+
+msgid "fastchess-gui {} is in {} (protocol {})."
+msgstr "fastchess-gui {} 位于 {}（协议 {}）。"
+
+msgid "fastchess-gui {} is in {}, too old to run tournaments for this window: Update replaces it."
+msgstr "fastchess-gui {} 位于 {}，版本太旧，无法为本窗口运行比赛：“更新”会替换它。"
 
 msgid "fastchess-gui {} is out (this is {})."
 msgstr "fastchess-gui {} 已发布（当前为 {}）。"
@@ -4578,14 +4769,26 @@ msgstr "时长未知"
 msgid "lines starting with %, ignored"
 msgstr "以 % 开头的行，已忽略"
 
+msgid "listing {}"
+msgstr "列出 {}"
+
 msgid "live.pgn: the games in progress · standings.html · tournament.json (for scripts)"
 msgstr "live.pgn：进行中的对局 · standings.html · tournament.json（供脚本使用）"
+
+msgid "logging in"
+msgstr "登录"
+
+msgid "looking at {}"
+msgstr "查看 {}"
 
 msgid "loss on time or crash"
 msgstr "超时判负或崩溃"
 
 msgid "losses"
 msgstr "负"
+
+msgid "making the folder {}"
+msgstr "创建文件夹 {}"
 
 msgid "margin {} ms"
 msgstr "余量 {} ms"
@@ -4661,8 +4864,17 @@ msgstr "预设"
 msgid "random"
 msgstr "随机"
 
+msgid "reading from a program"
+msgstr "读取程序输出"
+
 msgid "reading the tournaments…"
 msgstr "正在读取锦标赛…"
+
+msgid "removing {}"
+msgstr "删除 {}"
+
+msgid "renaming {}"
+msgstr "重命名 {}"
 
 msgid "replay requested"
 msgstr "已要求重下"
@@ -4676,6 +4888,9 @@ msgstr "认输 {}/{} cp，双方引擎"
 msgid "round {}"
 msgstr "第 {} 轮"
 
+msgid "running {}"
+msgstr "运行 {}"
+
 msgid "s"
 msgstr "秒"
 
@@ -4688,8 +4903,17 @@ msgstr "启动时发送"
 msgid "set by hand"
 msgstr "手动设置"
 
+msgid "setting the permissions of {}"
+msgstr "设置 {} 的权限"
+
 msgid "stalemate"
 msgstr "逼和"
+
+msgid "starting SFTP"
+msgstr "启动 SFTP"
+
+msgid "starting a command"
+msgstr "启动命令"
 
 msgid "starts about {}"
 msgstr "预计 {} 开始"
@@ -4781,6 +5005,9 @@ msgstr "胜和负"
 msgid "without mirrored positions"
 msgstr "不含镜像局面"
 
+msgid "writing to a program"
+msgstr "向程序写入"
+
 msgid "your choice"
 msgstr "你的选择"
 
@@ -4832,11 +5059,21 @@ msgstr "{} / {} 分"
 msgid "{} = {}: a value it refuses"
 msgstr "{} = {}：引擎拒绝的值"
 
+msgid "{} KB"
+msgstr "{} KB"
+
 msgid "{} MB"
 msgstr "{} MB"
 
+msgid "{} Syzygy file copied to {}."
+msgid_plural "{} Syzygy files copied to {}."
+msgstr[0] "已将 {} 个 Syzygy 文件复制到 {}。"
+
 msgid "{} The default pieces are drawn meanwhile."
 msgstr "{} 在此期间显示默认棋子。"
+
+msgid "{} accepts none of the SSH agent's keys for user {}: add your public key to ~/.ssh/authorized_keys on the machine (on Windows, for an administrator: C:\\ProgramData\\ssh\\administrators_authorized_keys)."
+msgstr "{} 不接受 SSH 代理中任何密钥（用户 {}）：请将你的公钥加入机器上的 ~/.ssh/authorized_keys（Windows 上的管理员：C:\\ProgramData\\ssh\\administrators_authorized_keys）。"
 
 msgid "{} against each opponent"
 msgstr "{} 对每个对手"
@@ -4857,11 +5094,26 @@ msgstr[0] "{} 个败着"
 msgid "{} boards × 2 games × {} cycles"
 msgstr "{} 台 × 2 局 × {} 个循环"
 
+msgid "{} bytes"
+msgstr "{} 字节"
+
+msgid "{} cannot be named in a Windows command: leave out quotes and %."
+msgstr "{} 不能用在 Windows 命令中：请去掉引号和 %。"
+
+msgid "{} cannot be reached on port {} ({}): check the host name, that the machine is on and that its SSH server runs."
+msgstr "{} 无法通过端口 {} 连接（{}）：请检查主机名、机器是否开机以及其 SSH 服务器是否运行。"
+
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "无法读取 {}，因此之前信任的主机密钥未知：未向 {} 发送任何内容。请修复该文件，或删除它以重新信任服务器的密钥。"
 
 msgid "{} cannot be read."
 msgstr "无法读取 {}。"
+
+msgid "{} cannot be run on {}: make it executable there (chmod +x)."
+msgstr "{} 无法在 {} 上运行：请在那里将其设为可执行（chmod +x）。"
+
+msgid "{} cannot be written."
+msgstr "无法写入 {}。"
 
 msgid "{} cannot start"
 msgstr "{} 无法启动"
@@ -4896,11 +5148,26 @@ msgid "{} cycle of 2 games"
 msgid_plural "{} cycles of 2 games"
 msgstr[0] "{} 个循环，每次 2 局"
 
+msgid "{} did not answer in time while {}: is the machine overloaded, or the network down?"
+msgstr "{} 未及时响应（步骤：{}）：机器是否过载，或网络中断？"
+
+msgid "{} did not answer {} within {} s; it printed: {}"
+msgstr "{} 未在规定时间内应答 {}（{} 秒）；它输出了：{}"
+
 msgid "{} did not show an RSA host key"
 msgstr "{} 未提供 RSA 主机密钥"
 
+msgid "{} did not show an RSA host key."
+msgstr "{} 未提供 RSA 主机密钥。"
+
 msgid "{} did not start (try {} of {})"
 msgstr "{} 未能启动（第 {} 次尝试，共 {} 次）"
+
+msgid "{} did not tell its system and processors: {}"
+msgstr "{} 未告知其系统和处理器：{}"
+
+msgid "{} does not accept keys for user {} (it accepts: {}): turn on PubkeyAuthentication in its SSH server's configuration."
+msgstr "{} 不接受用户 {} 的密钥（它接受：{}）：请在其 SSH 服务器配置中开启 PubkeyAuthentication。"
 
 msgid "{} does not answer isready."
 msgstr "{} 不回应 isready。"
@@ -4914,8 +5181,14 @@ msgstr "{} 收到停止指令后不给出着法。"
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} 不允许用户“{}”无密钥或密码登录（它接受：{}）"
 
+msgid "{} does not offer SFTP: turn on its sftp subsystem (Subsystem sftp in its SSH server's configuration)."
+msgstr "{} 不提供 SFTP：请开启其 sftp 子系统（SSH 服务器配置中的 Subsystem sftp）。"
+
 msgid "{} does not play Chess960."
 msgstr "{} 不支持 Chess960。"
+
+msgid "{} does not start on {}: {}"
+msgstr "{} 无法在 {} 上启动：{}"
 
 msgid "{} earlier match imported."
 msgid_plural "{} earlier matches imported."
@@ -4924,6 +5197,10 @@ msgstr[0] "已导入 {} 场早期比赛。"
 msgid "{} engine"
 msgid_plural "{} engines"
 msgstr[0] "{} 个引擎"
+
+msgid "{} engine does not run on {}."
+msgid_plural "{} engines do not run on {}."
+msgstr[0] "{} 个引擎无法在 {} 上运行。"
 
 msgid "{} engine found. Untick those to leave out."
 msgid_plural "{} engines found. Untick those to leave out."
@@ -4956,6 +5233,9 @@ msgstr "每个引擎：{}"
 
 msgid "{} free"
 msgstr "{} 空闲"
+
+msgid "{} free where its folder {} is."
+msgstr "其文件夹所在处可用空间：{}（文件夹 {}）。"
 
 msgid "{} game"
 msgid_plural "{} games"
@@ -5041,8 +5321,14 @@ msgstr "{} 个硬件线程，{} 个核心。一局对局占用其两个引擎中
 msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
 msgstr "{} 与 fastchess-gui 没有共同的算法（需要 curve25519-sha256、RSA 主机密钥和 AES）"
 
+msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES): add an RSA host key to its SSH server (ssh-keygen -A)."
+msgstr "{} 与 fastchess-gui 没有共同的算法（需要 curve25519-sha256、RSA 主机密钥和 AES）：请为其 SSH 服务器添加 RSA 主机密钥（ssh-keygen -A）。"
+
 msgid "{} has no option {} (any more): its value {} is not sent."
 msgstr "{} 没有（或不再有）选项 {}：其值 {} 不会发送。"
+
+msgid "{} holds a key of type {}: fastchess-gui logs in with RSA and Ed25519 keys only (make one with ssh-keygen -t ed25519), or with the SSH agent."
+msgstr "{} 中的密钥类型为 {}：fastchess-gui 只支持 RSA 和 Ed25519 密钥登录（用 ssh-keygen -t ed25519 生成一个），或使用 SSH 代理。"
 
 msgid "{} holds the games of the tournament: choose another file"
 msgstr "{} 保存着锦标赛的对局：请选择其他文件"
@@ -5057,6 +5343,15 @@ msgstr "{} 次非法着法"
 msgid "{} inaccuracy"
 msgid_plural "{} inaccuracies"
 msgstr[0] "{} 个缓着"
+
+msgid "{} is a folder: give the engine's program in it."
+msgstr "{} 是一个文件夹：请指定其中的引擎程序。"
+
+msgid "{} is in a format fastchess-gui cannot read: convert it with ssh-keygen -p -f \"{}\"."
+msgstr "{} 的格式 fastchess-gui 无法读取：请用 ssh-keygen -p -f \"{}\" 转换。"
+
+msgid "{} is in an old encrypted format: convert it with ssh-keygen -p -f \"{}\"."
+msgstr "{} 是旧的加密格式：请用 ssh-keygen -p -f \"{}\" 转换。"
 
 msgid "{} is larger than 1 MB: is it a piece?"
 msgstr "{} 大于 1 MB：这是棋子图片吗？"
@@ -5073,11 +5368,23 @@ msgstr "{} 不是 logos 文件夹中的文件。"
 msgid "{} is not a legal move from the initial position."
 msgstr "{} 在初始局面中不是合法着法。"
 
+msgid "{} is not a private key file (the public key ends in .pub; choose the file without it)."
+msgstr "{} 不是私钥文件（公钥以 .pub 结尾；请选择不带 .pub 的文件）。"
+
+msgid "{} is not a valid private key file."
+msgstr "{} 不是有效的私钥文件。"
+
 msgid "{} is not an SVG picture the program can draw."
 msgstr "{} 不是程序能够绘制的 SVG 图片。"
 
+msgid "{} is not on {}: give the program's path there."
+msgstr "{} 不在 {} 上：请填写程序在那里的路径。"
+
 msgid "{} is not there."
 msgstr "{} 不存在。"
+
+msgid "{} is not there: choose the fastchess-gui for {} {} again."
+msgstr "{} 不存在：请重新选择 {} {} 版的 fastchess-gui。"
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} 已在另一个程序中打开：此处仅按打开时的状态显示。"
@@ -5275,6 +5582,9 @@ msgid "{} reference Elo set from the rating list."
 msgid_plural "{} reference Elo set from the rating list."
 msgstr[0] "已从等级分榜设置 {} 个参考 Elo。"
 
+msgid "{} refused the key {} for user {}: add its public key ({}.pub) to ~/.ssh/authorized_keys on the machine (on Windows, for an administrator: C:\\ProgramData\\ssh\\administrators_authorized_keys)."
+msgstr "{} 拒绝了密钥 {}（用户 {}）：请将其公钥（{}.pub）加入机器上的 ~/.ssh/authorized_keys（Windows 上的管理员：C:\\ProgramData\\ssh\\administrators_authorized_keys）。"
+
 msgid "{} refused to forward its port {}"
 msgstr "{} 拒绝转发其端口 {}"
 
@@ -5291,11 +5601,17 @@ msgstr[0] "{} 轮"
 msgid "{} rounds × {} pairings × 2 games"
 msgstr "{} 轮 × {} 组配对 × 2 局"
 
+msgid "{} runs commands with a shell fastchess-gui does not speak (PowerShell?): on Windows, make cmd the SSH server's shell again (remove the value DefaultShell of HKEY_LOCAL_MACHINE\\SOFTWARE\\OpenSSH)."
+msgstr "{} 使用 fastchess-gui 不支持的 shell 运行命令（PowerShell？）：在 Windows 上请把 cmd 恢复为 SSH 服务器的 shell（删除 HKEY_LOCAL_MACHINE\\SOFTWARE\\OpenSSH 的 DefaultShell 值）。"
+
 msgid "{} s"
 msgstr "{} 秒"
 
 msgid "{} s/move"
 msgstr "{} 秒/步"
+
+msgid "{} said nothing within {} s: is it an engine for {}'s system, and a {} engine?"
+msgstr "{} 在 {} 秒内没有任何输出：它是适用于 {} 系统的引擎吗？是 {} 引擎吗？"
 
 msgid "{} searches to depth {}"
 msgstr "{} 搜索到深度 {}"
@@ -5397,6 +5713,9 @@ msgid "{}, {} thread"
 msgid_plural "{}, {} threads"
 msgstr[0] "{}，{} 线程"
 
+msgid "{}, {} threads, {} of memory."
+msgstr "{}，{} 个线程，{} 内存。"
+
 msgid "{}-man Syzygy for every engine"
 msgstr "每个引擎都有 {} 子 Syzygy"
 
@@ -5412,6 +5731,9 @@ msgstr "{}：已取消，未写入任何内容。"
 msgid "{}: decision"
 msgstr "{}：决定"
 
+msgid "{}: failed while {} ({})."
+msgstr "{}：失败（步骤：{}）（{}）。"
+
 msgid "{}: folder not found: {}"
 msgstr "{}：找不到文件夹：{}"
 
@@ -5421,8 +5743,14 @@ msgstr "{}：其开局库无法使用：{}"
 msgid "{}: its book is not found: {}"
 msgstr "{}：找不到其开局库：{}"
 
+msgid "{}: not found while {}."
+msgstr "{}：未找到（步骤：{}）。"
+
 msgid "{}: only PGN files, FEN and EPD positions can be dropped here."
 msgstr "{}：此处只能拖放 PGN 文件以及 FEN、EPD 局面。"
+
+msgid "{}: permission denied while {}: the user {} may not write there."
+msgstr "{}：权限被拒绝（步骤：{}）：用户 {} 无权在那里写入。"
 
 msgid "{}: program not found ({})"
 msgstr "{}：找不到程序（{}）"
@@ -5433,11 +5761,17 @@ msgstr "{}：另存为配置"
 msgid "{}: seldepth"
 msgstr "{}：seldepth"
 
+msgid "{}: the disk is full while {}: free some space on the machine."
+msgstr "{}：磁盘已满（步骤：{}）：请在机器上释放一些空间。"
+
 msgid "{}: the host key cannot be used (RSA keys of 2048 to 4096 bits only)"
 msgstr "{}：主机密钥不可用（仅支持 2048 至 4096 位的 RSA 密钥）"
 
 msgid "{}: the host key's signature is not valid"
 msgstr "{}：主机密钥的签名无效"
+
+msgid "{}: the server refused while {} (SFTP error {})."
+msgstr "{}：服务器拒绝（步骤：{}）（SFTP 错误 {}）。"
 
 msgid "{}: trying to start it again."
 msgstr "{}：再次尝试启动。"
@@ -5454,6 +5788,9 @@ msgstr "{}：{}"
 msgid "{}: {} core in use"
 msgid_plural "{}: {} cores in use"
 msgstr[0] "{}：已用 {} 个核心"
+
+msgid "{}: {} is a file, not a folder."
+msgstr "{}：{} 是文件，不是文件夹。"
 
 msgid "{}: {} → {} points"
 msgstr "{}：{} → {} 分"

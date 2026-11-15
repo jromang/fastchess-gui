@@ -25,6 +25,12 @@ int ssh2_rsa_new(ssh2_rsa_ctx** rsa, LIBSSH2_SESSION* session, const unsigned ch
 int ssh2_rsa_sha2_verify(ssh2_rsa_ctx* rsa, LIBSSH2_SESSION* session, size_t hash_len, const unsigned char* sig,
                          size_t sig_len, const unsigned char* m, size_t m_len);
 void ssh2_rsa_free(ssh2_rsa_ctx* rsa, LIBSSH2_SESSION* session);
+int ssh2_rsa_new_priv(ssh2_rsa_ctx** rsa, LIBSSH2_SESSION* session, const char* filename, const char* blob,
+                      size_t blob_len, const char* passphrase);
+int ssh2_rsa_sha2_sign(ssh2_rsa_ctx* rsa, LIBSSH2_SESSION* session, const unsigned char* hash, size_t hash_len,
+                       unsigned char** signature, size_t* signature_len);
+int ssh2_pub_privkey(LIBSSH2_SESSION* session, char** method, unsigned char** pubkeydata, size_t* pubkeydata_len,
+                     const char* privkeyfile, const char* privkeyblob, size_t privkeyblob_len, const char* passphrase);
 
 int ssh2_curve25519_new(LIBSSH2_SESSION* session, uint8_t** out_public_key, uint8_t** out_private_key);
 int ssh2_curve25519_gen_k(ssh2_bn** k, uint8_t private_key[32], uint8_t server_public_key[32]);
@@ -41,8 +47,7 @@ int ssh2_cipher_crypt(ssh2_cipher_ctx* ctx, int algo, int encrypt, unsigned char
                       int firstlast);
 void ssh2_cipher_dtor(ssh2_cipher_ctx* ctx);
 
-int ssh2_dh_key_pair(ssh2_dh_ctx* dhctx, ssh2_bn* pub, const ssh2_bn* g, const ssh2_bn* p, int group_order,
-                     int* bnctx);
+int ssh2_dh_key_pair(ssh2_dh_ctx* dhctx, ssh2_bn* pub, const ssh2_bn* g, const ssh2_bn* p, int group_order, int* bnctx);
 }
 
 // libssh2_priv.h's, for ssh2_cipher_crypt().

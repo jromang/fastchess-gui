@@ -304,13 +304,16 @@ if(FCG_BUILD_GUI)
                  mac misc packet pem poly1305 publickey scp session sftp transport userauth userauth_kbd_packet version)
         list(APPEND FCG_LIBSSH2_SOURCES ${libssh2_SOURCE_DIR}/src/${file}.c)
     endforeach()
-    add_library(fcg_libssh2 STATIC ${FCG_LIBSSH2_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/mbedtls_psa.c)
+    # Ed25519 signatures for the user's keys (the remote machines), which PSA does not have: gui/libssh2-psa/ed25519.c.
+    add_library(fcg_libssh2 STATIC ${FCG_LIBSSH2_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/mbedtls_psa.c
+                ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/ed25519.c)
     target_include_directories(fcg_libssh2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa ${libssh2_SOURCE_DIR}/src)
     target_include_directories(fcg_libssh2 SYSTEM PUBLIC ${libssh2_SOURCE_DIR}/include)
     # LIBSSH2DEBUG for libssh2_trace(): the tunnel reads libssh2's errors as they come, the first one often the only
     # one to tell why a call failed (a host key's signature, say). Nothing is traced but the errors.
     target_compile_definitions(fcg_libssh2 PRIVATE HAVE_CONFIG_H LIBSSH2_MBEDTLS LIBSSH2_MBEDTLS_H LIBSSH2DEBUG)
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/mbedtls_psa.c PROPERTIES
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/mbedtls_psa.c
+                                ${CMAKE_CURRENT_SOURCE_DIR}/gui/libssh2-psa/ed25519.c PROPERTIES
                                 COMPILE_OPTIONS "-Wall;-Wextra")
     target_link_libraries(fcg_libssh2 PRIVATE tfpsacrypto)
     if(WIN32)

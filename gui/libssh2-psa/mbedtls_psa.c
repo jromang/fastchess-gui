@@ -12,6 +12,8 @@
 
 #include <mbedtls/platform_util.h>
 
+#include "ed25519.h"
+
 /* Every buffer handed to PSA here is at most this long: one block of libssh2's packet layer with its tag (a GCM
  * packet's last block is up to two blocks), or an RSA signature or key of PSA's largest size. */
 #define PSA_BUF_MAX 64
@@ -385,7 +387,7 @@ void ssh2_dh_dtor(ssh2_dh_ctx *dhctx)
 }
 
 /*******************************************************************/
-/* RSA: host keys, verified */
+/* RSA: host keys, verified; the user's keys, which sign (below, with the private key files) */
 
 /* A DER length (X.690, 8.1.3). */
 static unsigned char *der_length(unsigned char *out, size_t len)
@@ -510,15 +512,350 @@ int ssh2_rsa_new(ssh2_rsa_ctx **rsa, LIBSSH2_SESSION *session,
     return 0;
 }
 
+/*******************************************************************/
+/* Private keys: the user's, for public key authentication on the remote machines */
+
+/* A private key file read: RSA's numbers (big-endian, without leading zeros) or Ed25519's seed and public key, which
+   point into `decrypted` (the OpenSSH format) or `der` (PKCS #1), freed by priv_key_free(). For the PEM format,
+   `der` is the RSAPrivateKey PSA imports as it is. */
+struct priv_key {
+    int type; /* PRIV_RSA or PRIV_ED25519 */
+    struct string_buf *decrypted;
+    unsigned char *der;
+    size_t der_len;
+    const unsigned char *n, *e, *d, *p, *q, *qinv;
+    size_t n_len, e_len, d_len, p_len, q_len, qinv_len;
+    const unsigned char *ed_seed, *ed_pub;
+};
+
+#define PRIV_RSA     1
+#define PRIV_ED25519 2
+
+#define OPENSSH_HEADER "-----BEGIN OPENSSH PRIVATE KEY-----"
+
+static void priv_key_free(LIBSSH2_SESSION *session, struct priv_key *key)
+{
+    if(key->decrypted) {
+        if(key->decrypted->data)
+            mbedtls_platform_zeroize(key->decrypted->data, key->decrypted->len);
+        ssh2_string_buf_free(session, key->decrypted);
+    }
+    if(key->der)
+        ssh2_zero_free(session, key->der, key->der_len);
+    memset(key, 0, sizeof(*key));
+}
+
+static int contains(const char *data, size_t len, const char *text)
+{
+    size_t n = strlen(text), i;
+    for(i = 0; i + n <= len; ++i) {
+        if(!memcmp(data + i, text, n))
+            return 1;
+    }
+    return 0;
+}
+
+/* The next INTEGER of a DER sequence, without its leading zeros. */
+static int der_next(unsigned char **data, size_t *len, const unsigned char **value, size_t *value_len)
+{
+    unsigned char *i;
+    unsigned int ilen;
+    size_t n;
+    if(ssh2_pem_decode_integer(data, len, &i, &ilen))
+        return -1;
+    n = ilen;
+    *value = skip_zeros(i, &n);
+    *value_len = n;
+    return 0;
+}
+
+/* The key of `filename`, or of `blob` when there is no file name. libssh2's error is set when it fails. */
+static int priv_key_read(LIBSSH2_SESSION *session, const char *filename, const char *blob, size_t blob_len,
+                         const char *passphrase, struct priv_key *key)
+{
+    char *filedata = NULL;
+    size_t filedata_len = 0;
+    int rc = -1;
+
+    memset(key, 0, sizeof(*key));
+    if(filename) {
+        rc = ssh2_file_to_blob(session, filename, &filedata, &filedata_len);
+        if(rc)
+            return rc;
+        blob = filedata;
+        blob_len = filedata_len;
+    }
+    if(!blob || !blob_len) {
+        rc = ssh2_err(session, LIBSSH2_ERROR_FILE, "The key file is empty");
+        goto out;
+    }
+
+    if(contains(blob, blob_len, OPENSSH_HEADER)) {
+        /* ssh-keygen's own format: decrypted by libssh2 (bcrypt_pbkdf and the cipher it names, AES here). */
+        char *name = NULL;
+        size_t name_len = 0;
+        rc = ssh2_openssh_pem_parse(session, NULL, blob, blob_len, passphrase, &key->decrypted);
+        if(rc)
+            goto out;
+        rc = -1;
+        if(ssh2_get_chars(key->decrypted, &name, &name_len)) {
+            rc = ssh2_err(session, LIBSSH2_ERROR_FILE, "The key file is not valid");
+            goto out;
+        }
+        if(name_len == 7 && !memcmp(name, "ssh-rsa", 7)) {
+            /* n, e, d, iqmp, p, q */
+            unsigned char *v[6];
+            size_t l[6];
+            int k;
+            for(k = 0; k < 6; ++k) {
+                if(ssh2_get_bignum_bytes(key->decrypted, &v[k], &l[k]) || !l[k]) {
+                    rc = ssh2_err(session, LIBSSH2_ERROR_FILE, "The RSA key file is not valid");
+                    goto out;
+                }
+            }
+            key->n = v[0];
+            key->n_len = l[0];
+            key->e = v[1];
+            key->e_len = l[1];
+            key->d = v[2];
+            key->d_len = l[2];
+            key->qinv = v[3];
+            key->qinv_len = l[3];
+            key->p = v[4];
+            key->p_len = l[4];
+            key->q = v[5];
+            key->q_len = l[5];
+            key->type = PRIV_RSA;
+        }
+        else if(name_len == 11 && !memcmp(name, "ssh-ed25519", 11)) {
+            /* The public key, then the seed followed by the public key again. */
+            unsigned char *pub = NULL, *priv = NULL;
+            size_t pub_len = 0, priv_len = 0;
+            if(ssh2_get_string(key->decrypted, &pub, &pub_len) ||
+               ssh2_get_string(key->decrypted, &priv, &priv_len) || pub_len != SSH2_ED25519_KEY_LEN ||
+               priv_len != SSH2_ED25519_PRIVATE_KEY_LEN) {
+                rc = ssh2_err(session, LIBSSH2_ERROR_FILE, "The Ed25519 key file is not valid");
+                goto out;
+            }
+            key->ed_pub = pub;
+            key->ed_seed = priv;
+            key->type = PRIV_ED25519;
+        }
+        else {
+            rc = ssh2_err(session, LIBSSH2_ERROR_METHOD_NOT_SUPPORTED,
+                          "Only RSA and Ed25519 keys are supported (not ECDSA nor DSA)");
+            goto out;
+        }
+        rc = 0;
+    }
+    else if(contains(blob, blob_len, PEM_RSA_HEADER)) {
+        /* RSAPrivateKey ::= SEQUENCE { version, n, e, d, p, q, dp, dq, qinv } (RFC 8017, A.1.2). An encrypted one
+           needs a CBC cipher, which is not here. */
+        unsigned char *data;
+        size_t len;
+        const unsigned char *version;
+        size_t version_len;
+        if(contains(blob, blob_len, "Proc-Type: 4,ENCRYPTED")) {
+            rc = ssh2_err(session, LIBSSH2_ERROR_METHOD_NOT_SUPPORTED,
+                          "This old encrypted key format is not supported: convert the key to the OpenSSH format "
+                          "with ssh-keygen -p -f <key file>");
+            goto out;
+        }
+        if(ssh2_pem_parse(session, PEM_RSA_HEADER, PEM_RSA_FOOTER, NULL, blob, blob_len, passphrase, &key->der,
+                          &key->der_len, NULL)) {
+            key->der = NULL;
+            rc = ssh2_err(session, LIBSSH2_ERROR_FILE, "The RSA key file is not valid");
+            goto out;
+        }
+        data = key->der;
+        len = key->der_len;
+        if(ssh2_pem_decode_sequence(&data, &len) || der_next(&data, &len, &version, &version_len) ||
+           der_next(&data, &len, &key->n, &key->n_len) || der_next(&data, &len, &key->e, &key->e_len) ||
+           !key->n_len || !key->e_len) {
+            rc = ssh2_err(session, LIBSSH2_ERROR_FILE, "The RSA key file is not valid");
+            goto out;
+        }
+        key->type = PRIV_RSA;
+        rc = 0;
+    }
+    else if(contains(blob, blob_len, "-----BEGIN ") && contains(blob, blob_len, "PRIVATE KEY-----")) {
+        rc = ssh2_err(session, LIBSSH2_ERROR_METHOD_NOT_SUPPORTED,
+                      "This key format is not supported: convert the key to the OpenSSH format with "
+                      "ssh-keygen -p -f <key file>");
+    }
+    else {
+        rc = ssh2_err(session, LIBSSH2_ERROR_FILE, "This is not a private key file");
+    }
+
+out:
+    if(rc)
+        priv_key_free(session, key);
+    if(filedata)
+        ssh2_zero_free(session, filedata, filedata_len + 1);
+    return rc;
+}
+
+/* r = a mod m, big-endian numbers without leading zeros, r as long as m, `work` m_len + 1 bytes. Bit by bit, as Mbed
+   TLS computes these numbers too (mbedtls_rsa_deduce_crt): not in constant time, once for each authentication. */
+static void bn_mod(unsigned char *r, const unsigned char *a, size_t a_len, const unsigned char *m, size_t m_len,
+                   unsigned char *work)
+{
+    size_t i, k;
+    int bit;
+    memset(work, 0, m_len + 1);
+    for(i = 0; i < a_len; ++i) {
+        for(bit = 7; bit >= 0; --bit) {
+            int ge = 1, borrow = 0;
+            unsigned carry = (unsigned)(a[i] >> bit) & 1;
+            /* The remainder so far, times two, plus the next bit of a: less than 2m, so m_len + 1 bytes. */
+            for(k = m_len + 1; k-- > 0;) {
+                unsigned v = ((unsigned)work[k] << 1) | carry;
+                carry = v >> 8;
+                work[k] = (unsigned char)v;
+            }
+            if(!work[0]) {
+                for(k = 0; k < m_len; ++k) {
+                    if(work[k + 1] != m[k]) {
+                        ge = work[k + 1] > m[k];
+                        break;
+                    }
+                }
+            }
+            if(!ge)
+                continue;
+            for(k = m_len + 1; k-- > 0;) {
+                int v = (int)work[k] - (k ? m[k - 1] : 0) - borrow;
+                borrow = v < 0;
+                work[k] = (unsigned char)(v + (borrow ? 256 : 0));
+            }
+        }
+    }
+    memcpy(r, work + 1, m_len);
+}
+
+/* The RSAPrivateKey PSA imports, from the numbers of an OpenSSH key, which leaves out d mod (p - 1) and
+   d mod (q - 1). */
+static int rsa_der(LIBSSH2_SESSION *session, const struct priv_key *key, unsigned char **out, size_t *out_len)
+{
+    unsigned char *pm1 = NULL, *qm1 = NULL, *dp = NULL, *dq = NULL, *work = NULL, *der = NULL, *at;
+    const unsigned char *dp_v, *dq_v;
+    size_t dp_len, dq_len, body, total = 0, work_len;
+    static const unsigned char zero = 0;
+    int rc = -1;
+
+    /* p and q are odd primes: minus one, only their last byte changes. */
+    if(!(key->p[key->p_len - 1] & 1) || !(key->q[key->q_len - 1] & 1) || key->p_len < 2 || key->q_len < 2)
+        return ssh2_err(session, LIBSSH2_ERROR_FILE, "The RSA key file is not valid");
+    work_len = (key->p_len > key->q_len ? key->p_len : key->q_len) + 1;
+    pm1 = SSH2_ALLOC(session, key->p_len);
+    qm1 = SSH2_ALLOC(session, key->q_len);
+    dp = SSH2_ALLOC(session, key->p_len);
+    dq = SSH2_ALLOC(session, key->q_len);
+    work = SSH2_ALLOC(session, work_len);
+    if(!pm1 || !qm1 || !dp || !dq || !work)
+        goto out;
+    memcpy(pm1, key->p, key->p_len);
+    pm1[key->p_len - 1] -= 1;
+    memcpy(qm1, key->q, key->q_len);
+    qm1[key->q_len - 1] -= 1;
+    bn_mod(dp, key->d, key->d_len, pm1, key->p_len, work);
+    bn_mod(dq, key->d, key->d_len, qm1, key->q_len, work);
+    dp_len = key->p_len;
+    dq_len = key->q_len;
+    dp_v = skip_zeros(dp, &dp_len);
+    dq_v = skip_zeros(dq, &dq_len);
+    if(!dp_len || !dq_len)
+        goto out;
+
+    body = der_integer(NULL, &zero, 1) + der_integer(NULL, key->n, key->n_len) +
+           der_integer(NULL, key->e, key->e_len) + der_integer(NULL, key->d, key->d_len) +
+           der_integer(NULL, key->p, key->p_len) + der_integer(NULL, key->q, key->q_len) +
+           der_integer(NULL, dp_v, dp_len) + der_integer(NULL, dq_v, dq_len) +
+           der_integer(NULL, key->qinv, key->qinv_len);
+    if(body > 0xFFFF)
+        goto out;
+    total = 4 + body;
+    der = SSH2_ALLOC(session, total);
+    if(!der)
+        goto out;
+    der[0] = 0x30;
+    at = der_length(der + 1, body);
+    /* The version, 0: an INTEGER of one zero byte (der_integer() takes numbers without leading zeros). */
+    *at++ = 0x02;
+    *at++ = 0x01;
+    *at++ = 0x00;
+    at += der_integer(at, key->n, key->n_len);
+    at += der_integer(at, key->e, key->e_len);
+    at += der_integer(at, key->d, key->d_len);
+    at += der_integer(at, key->p, key->p_len);
+    at += der_integer(at, key->q, key->q_len);
+    at += der_integer(at, dp_v, dp_len);
+    at += der_integer(at, dq_v, dq_len);
+    at += der_integer(at, key->qinv, key->qinv_len);
+    *out = der;
+    *out_len = (size_t)(at - der);
+    der = NULL;
+    rc = 0;
+out:
+    if(pm1)
+        ssh2_zero_free(session, pm1, key->p_len);
+    if(qm1)
+        ssh2_zero_free(session, qm1, key->q_len);
+    if(dp)
+        ssh2_zero_free(session, dp, key->p_len);
+    if(dq)
+        ssh2_zero_free(session, dq, key->q_len);
+    if(work)
+        ssh2_zero_free(session, work, work_len);
+    if(der)
+        ssh2_zero_free(session, der, total);
+    return rc ? ssh2_err(session, LIBSSH2_ERROR_FILE, "The RSA key file is not valid") : 0;
+}
+
 int ssh2_rsa_new_priv(ssh2_rsa_ctx **rsa, LIBSSH2_SESSION *session, const char *filename, const char *blob,
                       size_t blob_len, const char *passphrase)
 {
-    (void)filename;
-    (void)blob;
-    (void)blob_len;
-    (void)passphrase;
+    struct priv_key key;
+    unsigned char *der = NULL;
+    size_t der_len = 0;
+    ssh2_rsa_ctx *ctx;
+    int own_der = 0;
+
     *rsa = NULL;
-    return ssh2_err(session, LIBSSH2_ERROR_FILE, "Private keys are not supported by this backend");
+    if(priv_key_read(session, filename, blob, blob_len, passphrase, &key))
+        return -1;
+    if(key.type != PRIV_RSA) {
+        priv_key_free(session, &key);
+        return ssh2_err(session, LIBSSH2_ERROR_FILE, "The key file does not hold an RSA key");
+    }
+    if(key.der) {
+        der = key.der;
+        der_len = key.der_len;
+    }
+    else {
+        if(rsa_der(session, &key, &der, &der_len)) {
+            priv_key_free(session, &key);
+            return -1;
+        }
+        own_der = 1;
+    }
+    ctx = SSH2_ALLOC(session, sizeof(*ctx));
+    if(ctx) {
+        ctx->bytes = key.n_len;
+        ctx->key = psa_import(PSA_KEY_TYPE_RSA_KEY_PAIR, 0, PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_ANY_HASH),
+                              PSA_KEY_USAGE_SIGN_HASH, der, der_len);
+    }
+    if(own_der)
+        ssh2_zero_free(session, der, der_len);
+    priv_key_free(session, &key);
+    if(!ctx)
+        return -1;
+    if(ctx->key == PSA_KEY_ID_NULL) {
+        SSH2_FREE(session, ctx);
+        return ssh2_err(session, LIBSSH2_ERROR_FILE, "The RSA key cannot be used (2048 to 4096 bits only)");
+    }
+    *rsa = ctx;
+    return 0;
 }
 
 int ssh2_rsa_sha2_verify(ssh2_rsa_ctx *rsa, LIBSSH2_SESSION *session, size_t hash_len, const unsigned char *sig,
@@ -553,13 +890,28 @@ int ssh2_rsa_sha2_verify(ssh2_rsa_ctx *rsa, LIBSSH2_SESSION *session, size_t has
 int ssh2_rsa_sha2_sign(ssh2_rsa_ctx *rsa, LIBSSH2_SESSION *session, const unsigned char *hash, size_t hash_len,
                        unsigned char **signature, size_t *signature_len)
 {
-    (void)rsa;
-    (void)session;
-    (void)hash;
-    (void)hash_len;
+    psa_algorithm_t alg;
+    unsigned char *sig;
+    size_t n = 0;
+
     *signature = NULL;
     *signature_len = 0;
-    return -1;
+    if(hash_len == SSH2_SHA256_DIG_LEN)
+        alg = PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_256);
+    else if(hash_len == SSH2_SHA512_DIG_LEN)
+        alg = PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_SHA_512);
+    else
+        return -1;
+    sig = SSH2_ALLOC(session, rsa->bytes);
+    if(!sig)
+        return -1;
+    if(psa_sign_hash(rsa->key, alg, hash, hash_len, sig, rsa->bytes, &n) != PSA_SUCCESS) {
+        SSH2_FREE(session, sig);
+        return -1;
+    }
+    *signature = sig;
+    *signature_len = n;
+    return 0;
 }
 
 void ssh2_rsa_free(ssh2_rsa_ctx *rsa, LIBSSH2_SESSION *session)
@@ -647,7 +999,7 @@ int ssh2_curve25519_gen_k(ssh2_bn **k, uint8_t private_key[SSH2_ED25519_KEY_LEN]
 }
 
 /*******************************************************************/
-/* Ed25519: not in PSA, every function fails */
+/* Ed25519: private keys, to sign with (ed25519.c); public keys, to verify, are not supported */
 
 int ssh2_ed25519_new_public(ssh2_ed25519_ctx **ed_ctx, LIBSSH2_SESSION *session, const unsigned char *raw_pub_key,
                             const size_t key_len)
@@ -655,30 +1007,51 @@ int ssh2_ed25519_new_public(ssh2_ed25519_ctx **ed_ctx, LIBSSH2_SESSION *session,
     (void)raw_pub_key;
     (void)key_len;
     *ed_ctx = NULL;
-    return ssh2_err(session, LIBSSH2_ERROR_METHOD_NOT_SUPPORTED, "Ed25519 is not supported by this backend");
+    return ssh2_err(session, LIBSSH2_ERROR_METHOD_NOT_SUPPORTED, "Ed25519 host keys are not supported");
 }
 
 int ssh2_ed25519_new_priv(ssh2_ed25519_ctx **ed_ctx, LIBSSH2_SESSION *session, const char *filename,
                           const char *blob, size_t blob_len, const char *passphrase)
 {
-    (void)filename;
-    (void)blob;
-    (void)blob_len;
-    (void)passphrase;
+    struct priv_key key;
+    ssh2_ed25519_ctx *ctx;
+
     *ed_ctx = NULL;
-    return ssh2_err(session, LIBSSH2_ERROR_METHOD_NOT_SUPPORTED, "Ed25519 is not supported by this backend");
+    if(priv_key_read(session, filename, blob, blob_len, passphrase, &key))
+        return -1;
+    if(key.type != PRIV_ED25519) {
+        priv_key_free(session, &key);
+        return ssh2_err(session, LIBSSH2_ERROR_FILE, "The key file does not hold an Ed25519 key");
+    }
+    ctx = SSH2_ALLOC(session, sizeof(*ctx));
+    if(ctx) {
+        memcpy(ctx->seed, key.ed_seed, sizeof(ctx->seed));
+        memcpy(ctx->pub, key.ed_pub, sizeof(ctx->pub));
+    }
+    priv_key_free(session, &key);
+    if(!ctx)
+        return -1;
+    *ed_ctx = ctx;
+    return 0;
 }
 
 int ssh2_ed25519_sign(ssh2_ed25519_ctx *ed_ctx, LIBSSH2_SESSION *session, uint8_t **out_sig, size_t *out_sig_len,
                       const uint8_t *message, size_t message_len)
 {
-    (void)ed_ctx;
-    (void)session;
-    (void)message;
-    (void)message_len;
+    uint8_t *sig;
+
     *out_sig = NULL;
     *out_sig_len = 0;
-    return -1;
+    sig = SSH2_ALLOC(session, SSH2_ED25519_SIG_LEN);
+    if(!sig)
+        return -1;
+    if(fcg_ed25519_sign(sig, message, message_len, ed_ctx->seed, ed_ctx->pub)) {
+        SSH2_FREE(session, sig);
+        return -1;
+    }
+    *out_sig = sig;
+    *out_sig_len = SSH2_ED25519_SIG_LEN;
+    return 0;
 }
 
 int ssh2_ed25519_verify(ssh2_ed25519_ctx *ed_ctx, LIBSSH2_SESSION *session, const uint8_t *s, size_t s_len,
@@ -696,23 +1069,60 @@ int ssh2_ed25519_verify(ssh2_ed25519_ctx *ed_ctx, LIBSSH2_SESSION *session, cons
 void ssh2_ed25519_free(ssh2_ed25519_ctx *ed_ctx, LIBSSH2_SESSION *session)
 {
     if(ed_ctx)
-        SSH2_FREE(session, ed_ctx);
+        ssh2_zero_free(session, ed_ctx, sizeof(*ed_ctx));
 }
 
 /*******************************************************************/
-/* Private keys: not supported (security keys neither: misc.c's ssh2_sk_pubkey() refuses them without
-   LIBSSH2_KEY_SK) */
+/* The public key of a private key file, as libssh2 sends it: the key's type and its SSH blob. Security keys are not
+   supported (misc.c's ssh2_sk_pubkey() refuses them without LIBSSH2_KEY_SK). */
 
 int ssh2_pub_privkey(LIBSSH2_SESSION *session, char **method, unsigned char **pubkeydata, size_t *pubkeydata_len,
                      const char *privkeyfile, const char *privkeyblob, size_t privkeyblob_len,
                      const char *passphrase)
 {
-    (void)privkeyfile;
-    (void)privkeyblob;
-    (void)privkeyblob_len;
-    (void)passphrase;
+    struct priv_key key;
+    const char *name;
+    size_t name_len, len;
+    unsigned char *blob, *at;
+    char *method_buf;
+    int rc;
+
     *method = NULL;
     *pubkeydata = NULL;
     *pubkeydata_len = 0;
-    return ssh2_err(session, LIBSSH2_ERROR_FILE, "Private keys are not supported by this backend");
+    /* libssh2's error code, which tells a passphrase missing or wrong (LIBSSH2_ERROR_KEYFILE_AUTH_FAILED). */
+    rc = priv_key_read(session, privkeyfile, privkeyblob, privkeyblob_len, passphrase, &key);
+    if(rc)
+        return rc < 0 ? rc : -1;
+    name = key.type == PRIV_RSA ? "ssh-rsa" : "ssh-ed25519";
+    name_len = strlen(name);
+    /* string type, then mpint e and mpint n, or string key; an mpint whose high bit is set takes a zero first. */
+    if(key.type == PRIV_RSA)
+        len = 4 + name_len + 4 + key.e_len + 1 + 4 + key.n_len + 1;
+    else
+        len = 4 + name_len + 4 + SSH2_ED25519_KEY_LEN;
+    blob = SSH2_ALLOC(session, len);
+    method_buf = SSH2_ALLOC(session, name_len + 1);
+    if(!blob || !method_buf) {
+        if(blob)
+            SSH2_FREE(session, blob);
+        if(method_buf)
+            SSH2_FREE(session, method_buf);
+        priv_key_free(session, &key);
+        return -1;
+    }
+    memcpy(method_buf, name, name_len + 1);
+    at = blob;
+    ssh2_store_str(&at, name, name_len);
+    if(key.type == PRIV_RSA) {
+        ssh2_store_bignum_bytes(&at, key.e, key.e_len);
+        ssh2_store_bignum_bytes(&at, key.n, key.n_len);
+    }
+    else
+        ssh2_store_str(&at, key.ed_pub, SSH2_ED25519_KEY_LEN);
+    priv_key_free(session, &key);
+    *method = method_buf;
+    *pubkeydata = blob;
+    *pubkeydata_len = (size_t)(at - blob);
+    return 0;
 }

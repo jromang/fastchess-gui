@@ -37,6 +37,7 @@
 #include "console.hpp"
 #include "engines.hpp"
 #include "headless.hpp"
+#include "machines.hpp"
 #include "i18n.hpp"
 #include "logo.hpp"
 #include "portable.hpp"
@@ -139,7 +140,12 @@ Args parseArgs(int argc, char** argv) {
             std::sscanf(next().c_str(), "%dx%d", &args.width, &args.height);
         else if (a == "--software")
             args.software = true;
-        else if (a == "--help" || a == "-h") {
+        else if (a == "--version") {
+            // Read by the window on a remote machine (see machines.hpp): the version, and the protocol of the
+            // channel its tournaments are followed through.
+            std::printf("fastchess-gui %s\nprotocol %d\n", FCG_VERSION, fcg::REMOTE_PROTOCOL);
+            std::exit(0);
+        } else if (a == "--help" || a == "-h") {
             std::printf(
                 "fastchess-gui [--profile DIR] [--autostart] [--size WxH] [--software]\n"
                 "              [--shot FILE.png[@WINDOW[@SECONDS]]]... [--select-game N] [--focus WINDOW]\n"
@@ -148,7 +154,8 @@ Args parseArgs(int argc, char** argv) {
                 "              [--tlcs UDP_PORT [--tlcs-lanes]] [--web TCP_PORT] [--live-files [DIR]]\n"
                 "              [--lichess ROUND_URL|ROUND_ID|new]   (token in FCG_LICHESS_TOKEN)\n"
                 "              [--tunnel [localhost.run|ssh://USER@HOST[:PORT][/REMOTE_PORT]]]\n"
-                "                  (the web page on the internet through an SSH tunnel; --web's port, else 8080)\n");
+                "                  (the web page on the internet through an SSH tunnel; --web's port, else 8080)\n"
+                "fastchess-gui --version   (the version, and the protocol of the remote machines)\n");
             std::exit(0);
         }
     }
