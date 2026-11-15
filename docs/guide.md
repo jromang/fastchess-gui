@@ -52,7 +52,7 @@ the window full screen, and back.
 Under every board that shows a game (the replay of the *Games* tab, the game in focus in *Live*, a detached board,
 the Board page), a row of small buttons goes to the start position, the previous move, the next move and the last
 one, and turns the board over; their tooltips give the keys, which do the same: ← → Home End, and F to flip. Those
-who prefer the keys hide the buttons with **Settings** > Boards > *Navigation buttons under the boards*, a right
+who prefer the keys hide the buttons with **Settings** > *Appearance* > *Navigation buttons under the boards*, a right
 click on them, or the command palette (*Hide the navigation buttons under the boards*, and *Show…* to bring them
 back). The mouse wheel over a move list scrolls the list, never the moves.
 
