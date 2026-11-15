@@ -18,6 +18,7 @@ struct HeadlessBroadcast {
     std::optional<std::string> live_dir;  // live files in this folder; empty = "live" in the tournament folder
     std::optional<std::string> lichess;   // a lichess round's URL or id, "new" for a new broadcast
     std::optional<std::string> tunnel;    // the web page on the internet: "localhost.run" or ssh://user@host...
+    int end_wait_ms = 3000;               // after the last game, for the clients to acknowledge its end
 };
 
 // Resumes the tournament in `target`, or creates one from a setup (or template) file with the engines of the

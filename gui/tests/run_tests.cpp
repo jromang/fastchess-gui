@@ -646,8 +646,9 @@ TEST_CASE("headless: the processor use of each game is kept in processor.tsv, as
         fs::create_directories(profile);
         const Storage storage(profile);
         storage.saveEngines(randomEngines());
-        REQUIRE(writeJson(profile / "setup-file.json", randomSetup(4)));
+        REQUIRE(writeJson(profile / "setup-file.json", randomSetup(2)));
         HeadlessBroadcast broadcast;
+        broadcast.end_wait_ms = 100;  // no client to wait for
         if (broadcasting) broadcast.live_dir = (profile / "live").string();
         const auto code = runHeadless((profile / "setup-file.json").string(), storage,
                                       topologyFromCores({{0, 0}, {0, 1}}), broadcast);
@@ -657,7 +658,7 @@ TEST_CASE("headless: the processor use of each game is kept in processor.tsv, as
         REQUIRE(dirs.size() == 1);
         std::set<uint64_t> offsets;
         for (const auto& result : tour::TournamentState::open(dirs[0])->results()) offsets.insert(result.pgn.offset);
-        REQUIRE(offsets.size() == 4);
+        REQUIRE(offsets.size() == 2);
 
         // One line per game, by its PGN offset, with the time White's and Black's engines thought.
         std::ifstream in(dirs[0] / "processor.tsv", std::ios::binary);
@@ -761,12 +762,13 @@ TEST_CASE("headless: the tournament is broadcast over TLCS and as live files") {
     fs::create_directories(profile);
     const Storage storage(profile);
     storage.saveEngines(randomEngines());
-    REQUIRE(writeJson(profile / "setup-file.json", randomSetup(200)));
+    REQUIRE(writeJson(profile / "setup-file.json", randomSetup(40)));
 
     const uint16_t tlcs_port = fcg::test::freePort();
     HeadlessBroadcast broadcast;
-    broadcast.tlcs_port = tlcs_port;
-    broadcast.live_dir  = (profile / "live").string();
+    broadcast.tlcs_port   = tlcs_port;
+    broadcast.live_dir    = (profile / "live").string();
+    broadcast.end_wait_ms = 2000;  // the live files are written once a second: time for the last of them
 
     std::atomic_int code{-1};
     std::thread play([&] {

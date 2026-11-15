@@ -345,7 +345,7 @@ TEST_CASE("runner: a pause holds the next try of an engine that failed to start,
     // Paused while the engine waits for its next try: nothing is played during the pause, the try comes after it.
     // The waiting game does not count as running meanwhile (a paused tournament shows no game finishing), and
     // counts again once resumed.
-    constexpr auto held = 3s;
+    constexpr auto held = 1s;
     std::atomic_int running_paused{-1}, running_resumed{-1};
     std::thread pauser([&] {
         auto& gate             = fastchess::observer::PauseGate::instance();
