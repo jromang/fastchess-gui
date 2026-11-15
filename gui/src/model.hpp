@@ -97,6 +97,9 @@ struct EngineEntry {
     // It plays on a GPU (a network engine such as Lc0): no more such engines play at once than the GPUs of Settings.
     // Saved only when set.
     bool gpu = false;
+    // Its logo: a file name in the profile's logos folder (Storage::logosDir), a copy of the picture chosen, so that
+    // the original can move and the profile be moved whole. Saved only when set.
+    std::string logo;
 
     // Last health check: -1 never, 0 failed, 1 passed.
     int check_ok = -1;
@@ -157,6 +160,7 @@ void to_json(BasicJsonType& nlohmann_json_j, const EngineEntry& nlohmann_json_t)
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_ENGINE_ENTRY_FIELDS))
     if (nlohmann_json_t.start_timeout > 0) nlohmann_json_j["start_timeout"] = nlohmann_json_t.start_timeout;
     if (!nlohmann_json_t.aliases.empty()) nlohmann_json_j["aliases"] = nlohmann_json_t.aliases;
+    if (!nlohmann_json_t.logo.empty()) nlohmann_json_j["logo"] = nlohmann_json_t.logo;
     if (nlohmann_json_t.read_from.size > 0) nlohmann_json_j["read_from"] = nlohmann_json_t.read_from;
     if (nlohmann_json_t.changes) nlohmann_json_j["changes"] = *nlohmann_json_t.changes;
     if (nlohmann_json_t.gpu) nlohmann_json_j["gpu"] = true;
@@ -168,6 +172,7 @@ void from_json(const BasicJsonType& nlohmann_json_j, EngineEntry& nlohmann_json_
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_ENGINE_ENTRY_FIELDS))
     NLOHMANN_JSON_FROM_WITH_DEFAULT(start_timeout)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(aliases)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(logo)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(read_from)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(gpu)
     if (const auto it = nlohmann_json_j.find("changes"); it != nlohmann_json_j.end() && it->is_object())
@@ -192,7 +197,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BookEntry, name, path, descripti
                                                 chess960)
 
 enum class MatchMode { Fixed = 0, Infinite = 1, Sprt = 2 };
-enum class TournamentFormat { Match = 0, RoundRobin = 1, Gauntlet = 2, Swiss = 3, Knockout = 4 };
+enum class TournamentFormat { Match = 0, RoundRobin = 1, Gauntlet = 2, Swiss = 3, Knockout = 4, TeamMatch = 5 };
 
 // A participant's own opening book: a Polyglot book of the library, which plays for the engine while the game is
 // in it (see tour/book_adapter.hpp). The tournament's openings, if any, come first.
@@ -214,8 +219,12 @@ struct ParticipantSetup {
     uint64_t nodes   = 0;    // fixed nodes: 0 = the common value
     int depth        = 0;    // fixed depth: 0 = the common value
     OwnBook book     = {};
+    // A team match: 1 team A, 2 team B, 0 not chosen (see setupTeams(): the upper half of the list against the lower
+    // half, or the smaller team when some were chosen).
+    int team = 0;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ParticipantSetup, name, hash, threads, time_percent, nodes, depth, book)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ParticipantSetup, name, hash, threads, time_percent, nodes, depth, book,
+                                                team)
 enum class LimitKind { Time = 0, Nodes = 1, MoveTime = 2, Depth = 3 };
 // A node count or a depth: the same moves however fast the machine, so no clock to share fairly.
 inline bool clockFree(LimitKind limit) { return limit == LimitKind::Nodes || limit == LimitKind::Depth; }
@@ -242,6 +251,11 @@ struct MatchSetup {
     // pairs per match.
     int cycles         = 1;
     int seeds          = 1;  // gauntlet: the first `seeds` participants play all the others
+    // Team match: board by board rather than every engine of a team against every engine of the other; the teams'
+    // names, empty for "Team A" and "Team B".
+    bool team_boards = false;
+    std::string team_a;
+    std::string team_b;
     int common_hash    = 0;  // MB, forced on every participant unless overridden; 0 = each engine's own
     int common_threads = 0;
     // Forced on the engines that have the option: SyzygyPath = tb_paths, OwnBook = false.
@@ -256,6 +270,10 @@ struct MatchSetup {
     double sprt_beta       = 0.05;
     std::string sprt_model = "normalized";
     int sprt_max_games     = 0;  // 0 = no limit
+    // Added to both bounds given to the SPRT (a version known to be stronger or weaker by that much), and no decision
+    // before this many games, the LLR still shown (tour/sprt_rules.hpp); 0: none.
+    double sprt_bias   = 0;
+    int sprt_min_games = 0;
     // The SPRT calculator's guesses about the games to come; fishtest's values for its openings by default.
     double sprt_draw_ratio = 0.49;
     double sprt_rms_bias   = 191;  // Elo
@@ -280,6 +298,16 @@ struct MatchSetup {
     bool chess960          = false;  // Fischer random; without a book, the 960 starting positions
     bool opening_per_round = false;  // round robin, gauntlet, Swiss: one opening for every pair of a round
     uint64_t seed          = 0;      // 0 = new seed for every run
+    // How the moves of the Polyglot books are chosen, the tournament's and the participants' own: -100 the best move
+    // only, 0 by their weights, 100 every move alike (tour::choiceWeights()).
+    int book_randomness = 0;
+    // Unbalanced openings flagged as the games end (tour/unbalanced.hpp): both engines beyond unbalanced_cp for the
+    // same side for their first unbalanced_moves moves after the book; with unbalanced_replace, the pair is voided and
+    // played again from another opening.
+    bool unbalanced_enabled = false;
+    int unbalanced_cp       = 200;
+    int unbalanced_moves    = 4;
+    bool unbalanced_replace = false;
 
     bool draw_enabled   = false;
     int draw_movenumber = 40;
@@ -325,6 +353,7 @@ struct MatchSetup {
     bool tile_info       = false;        // live mosaic: the 50-move counter, material and pieces under every board
     bool live_seed_side  = true;         // live boards of a gauntlet turned to the seed's side
     bool live_arrows     = true;         // live board: the PV move of the side to move and the reply it expects
+    bool nav_buttons     = true;         // first, previous, next, last and Flip under the boards that show a game
     std::map<std::string, float> panes;  // the list's share of the width on list + detail pages, by page
     // Big screen: the size of its text (on top of what the window gives), what it follows (BigFollow: this game,
     // every game in turn, the most interesting) and how many seconds a game stays before the next one is chosen.
@@ -368,6 +397,7 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
     next.tile_info        = current.tile_info;
     next.live_seed_side   = current.live_seed_side;
     next.live_arrows      = current.live_arrows;
+    next.nav_buttons      = current.nav_buttons;
     next.big_scale        = current.big_scale;
     next.big_follow       = current.big_follow;
     next.big_seconds      = current.big_seconds;
@@ -381,22 +411,26 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
         fixed_games, sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, sprt_draw_ratio,        \
         sprt_rms_bias, limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto,    \
         concurrency, affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out, \
-        engine_syzygy, engine_ownbook_off, book_a, book_b, big_scale, big_follow, big_seconds
-#define FCG_MATCH_SETUP_FIELDS_2                                                                                       \
-    draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,         \
-        resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,          \
-        pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,          \
-        log_every_game, stop_on_start_failure, check_mate_pvs, notify, language, theme, ui_zoom, tile_info,            \
-        live_seed_side, live_arrows, panes, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, tlcs_lanes,     \
-        broadcast_web, web_port, broadcast_follow, broadcast_lichess, lichess_round, lichess_listed, resume_at_launch, \
-        broadcast_tunnel, tunnel_service, tunnel_host, tunnel_port, tunnel_user, tunnel_remote_port, web_chat_link,    \
-        web_discord_id
+        engine_syzygy, engine_ownbook_off, book_a, book_b, big_scale, big_follow, big_seconds, book_randomness,       \
+        unbalanced_enabled, unbalanced_cp, unbalanced_moves, unbalanced_replace, sprt_bias, sprt_min_games
+#define FCG_MATCH_SETUP_FIELDS_2                                                                                  \
+    draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,    \
+        resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,     \
+        pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,     \
+        log_every_game, stop_on_start_failure, check_mate_pvs, notify, language, theme, ui_zoom, tile_info,       \
+        live_seed_side, live_arrows, nav_buttons,                                                                 \
+        panes, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, tlcs_lanes, broadcast_web, web_port,    \
+        broadcast_follow, broadcast_lichess, lichess_round, lichess_listed, resume_at_launch, broadcast_tunnel,   \
+        tunnel_service, tunnel_host, tunnel_port, tunnel_user, tunnel_remote_port, web_chat_link, web_discord_id
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
 void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) {
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_MATCH_SETUP_FIELDS_1))
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_MATCH_SETUP_FIELDS_2))
     if (!nlohmann_json_t.profiles.empty()) nlohmann_json_j["profiles"] = nlohmann_json_t.profiles;
+    NLOHMANN_JSON_TO(team_boards)
+    NLOHMANN_JSON_TO(team_a)
+    NLOHMANN_JSON_TO(team_b)
 }
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
@@ -405,6 +439,9 @@ void from_json(const BasicJsonType& nlohmann_json_j, MatchSetup& nlohmann_json_t
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_MATCH_SETUP_FIELDS_1))
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_MATCH_SETUP_FIELDS_2))
     NLOHMANN_JSON_FROM_WITH_DEFAULT(profiles)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(team_boards)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(team_a)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(team_b)
 }
 #undef FCG_MATCH_SETUP_FIELDS_1
 #undef FCG_MATCH_SETUP_FIELDS_2

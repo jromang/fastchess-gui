@@ -1,12 +1,13 @@
 #pragma once
 
 // A participant's own opening book, without changing fastchess: the engine is started through an adapter,
-// `fastchess-gui --book-adapter --book FILE --depth N --seed S -- ENGINE [ARGS...]`, that speaks UCI to both sides
-// and passes everything on, except that it answers a go itself, at once, with a move of the book while the game is
-// in it (within the depth): the engine never searches a book move. The tournament's opening is played first, as
-// for every engine; the book takes over from there.
+// `fastchess-gui --book-adapter --book FILE --depth N --seed S [--randomness R] -- ENGINE [ARGS...]`, that speaks UCI
+// to both sides and passes everything on, except that it answers a go itself, at once, with a move of the book while
+// the game is in it (within the depth): the engine never searches a book move. The tournament's opening is played
+// first, as for every engine; the book takes over from there.
 //
-// The book move is chosen at random in proportion to the book's weights, as Cute Chess does. Each game draws its
+// The book move is chosen at random in proportion to the book's weights, as Cute Chess does, or as the randomness
+// makes them (choiceWeights(): from the best move only to every move alike). Each game draws its
 // own choices: an adapter process mixes a random number of its own into the seed (the tournament's), so that the
 // processes of an engine (one per concurrent game, a new one after each restart, crash or resume, or for every game
 // when the engine is restarted for each) do not replay the same lines. The adapter cannot know a game's number in
@@ -34,9 +35,11 @@ inline std::string book_adapter;
 
 // The configuration that starts `engine` through the adapter with `book`: the same name, options and limits, the
 // program and its arguments those of the adapter. A WinBoard engine goes on through the WinBoard adapter, behind
-// the book adapter. Throws std::runtime_error when book_adapter is not set.
+// the book adapter. `randomness`: how its moves are chosen (choiceWeights()), not written when 0. Throws
+// std::runtime_error when book_adapter is not set.
 [[nodiscard]] fastchess::EngineConfiguration throughBookAdapter(fastchess::EngineConfiguration engine,
-                                                                const std::string& book, int depth, uint64_t seed);
+                                                                const std::string& book, int depth, uint64_t seed,
+                                                                int randomness = 0);
 
 // Marks as book moves (PGN comment "book") the moves of `side` that its adapter played from `book`: those of the
 // positions the book has a move for, within `depth`. The adapter answers exactly these, so no other trace is needed.
@@ -49,9 +52,9 @@ class BookAdapter {
 
     // `chess960`: castling moves are written as the king taking its rook (also set by UCI_Chess960). `seed` is used
     // as given, so that the tests get the same choices from the same seed; runBookAdapter() mixes its random number
-    // into it first.
+    // into it first. `randomness`: how the book's moves are chosen (choiceWeights()).
     BookAdapter(Sink to_gui, Sink to_engine, std::unique_ptr<PolyglotBook> book, int depth, uint64_t seed,
-                bool chess960 = false);
+                bool chess960 = false, int randomness = 0);
 
     // A UCI command from the GUI.
     void fromGui(const std::string& line);
@@ -68,8 +71,9 @@ class BookAdapter {
     Sink to_gui_;
     Sink to_engine_;
     std::unique_ptr<PolyglotBook> book_;
-    int depth_     = 0;
-    uint64_t seed_ = 0;
+    int depth_      = 0;
+    uint64_t seed_  = 0;
+    int randomness_ = 0;
 
     bool chess960_ = false;
     chess::Board board_;

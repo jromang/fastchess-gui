@@ -567,6 +567,7 @@ int main(int argc, char** argv) {
                 ImGui_ImplSDL3_ProcessEvent(&event);
                 if (event.type == SDL_EVENT_QUIT) app.requestQuit();
                 if (event.type == SDL_EVENT_WINDOW_FOCUS_GAINED) app.onFocusGained();
+                if (event.type == SDL_EVENT_DROP_FILE && event.drop.data) app.dropFile(event.drop.data);
                 // The scale of the screen the window is on, as at startup: moved to another, or changed in the
                 // system's settings.
                 if ((event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED ||

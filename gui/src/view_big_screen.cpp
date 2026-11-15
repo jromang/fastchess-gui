@@ -273,6 +273,7 @@ void App::drawBigGame(BigView& big, bool main_window) {
         big.slot   = follow == BigFollow::InTurn ? nextGame(games, big.slot) : mostInteresting(games, big.slot);
         big.turned = now;
     }
+    if (slots > 0) hearMoves(big.slot);
 
     const auto centered = [&](const std::string& message) {
         const auto s = textSize(font, u, message);
@@ -355,9 +356,18 @@ void App::drawBigGame(BigView& big, bool main_window) {
                             white ? IM_COL32(245, 245, 245, 255) : IM_COL32(20, 20, 20, 255), 24);
         dl->AddCircle(ImVec2(at.x + disc, at.y + line / 2), disc, to_move ? BIG_MOVE : BIG_BAR_BD, 24,
                       to_move ? std::max(2.0f, u / 10) : 1.0f);
-        auto name        = white ? st.white : st.black;
-        const float left = disc * 2 + u * 0.35f;
-        const float fit  = fitted(bold, name_px, width - left, name);
+        auto name  = white ? st.white : st.black;
+        float left = disc * 2 + u * 0.35f;
+        // The engine's logo as high as its name and clock together, at most twice as wide.
+        if (const auto* logo = engineLogo(name)) {
+            const float high = player_h();
+            const float w    = std::min(high * logo->width / logo->height, high * 2.0f);
+            const float h    = w * logo->height / logo->width;
+            dl->AddImage(logo->texture(h * ImGui::GetIO().DisplayFramebufferScale.y),
+                         ImVec2(at.x + left, at.y + (high - h) / 2), ImVec2(at.x + left + w, at.y + (high + h) / 2));
+            left += w + u * 0.35f;
+        }
+        const float fit = fitted(bold, name_px, width - left, name);
         text(dl, bold, fit, ImVec2(at.x + left, at.y + (line - textSize(bold, fit, "Ag").y) / 2),
              to_move ? BIG_MOVE : BIG_TEXT, name);
 

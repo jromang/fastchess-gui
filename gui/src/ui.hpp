@@ -73,6 +73,17 @@ enum class Icon {
     Pencil,  // edit in place
     More,    // ⋯: a menu of what else can be done
     Star,    // a seed
+    Board,  // a knight: the Board page
+    Paste,
+    Edit,
+    Analyse,
+    // Through a game's moves, under the boards.
+    First,
+    Previous,
+    Next,
+    Last,
+    Flip,
+    Live  // back to the move being played
 };
 
 // Draws `icon` centred on `center`, `size` pixels wide, in `col`.

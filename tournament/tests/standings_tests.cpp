@@ -161,6 +161,52 @@ TEST_CASE("bbcode: title in bold, details, the text in a code block") {
     CHECK(forumDetails(spec, computeTable(spec, results)) == "Round robin, 3 engines, 10+0.1, 2 games, book UHO.epd");
 }
 
+TEST_CASE("the book under the standings: its name, its depth, and for a Polyglot book how its moves were chosen") {
+    auto spec = players(2);
+    for (auto& p : spec.participants) p.engine.limit.tc.time = 60000;
+    std::vector<GameResult> results;
+    add(results, 100, 101, 1.0, 2);
+    const auto table = computeTable(spec, results);
+
+    CHECK(bookText(spec).empty());
+    spec.conditions.opening.file   = "/books/8moves.pgn";
+    spec.conditions.opening.format = fastchess::FormatType::PGN;
+    spec.conditions.opening.plies  = 16;
+    CHECK(bookText(spec) == "8moves.pgn (16 plies)");
+    spec.conditions.opening.plies = -1;  // the whole of its games
+    CHECK(bookText(spec) == "8moves.pgn");
+
+    // A Polyglot book: its positions in the tournament folder, named after the book.
+    spec.conditions.opening.file   = "/runs/cup/Perfect2023-8plies.epd";
+    spec.conditions.opening.format = fastchess::FormatType::EPD;
+    spec.polyglot_book             = "/books/Perfect2023.bin";
+    spec.polyglot_plies            = 8;
+    CHECK(bookText(spec) == "Perfect2023.bin (8 plies, moves by weight)");
+    spec.book_randomness = -40;
+    CHECK(footerLine(spec, table, 4) ==
+          "2/4 games, 0% draws, time control:60+0, book:Perfect2023.bin (8 plies, randomness -40)");
+    CHECK(forumDetails(spec, table).find(", book Perfect2023.bin (8 plies, randomness -40)") != std::string::npos);
+    CHECK(tableHtml(table, "Cup", footerLine(spec, table, 4)).find("book:Perfect2023.bin (8 plies, randomness -40)") !=
+          std::string::npos);
+
+    // Kept in tournament.json; a tournament without them reads none.
+    nlohmann::json j = spec;
+    const auto back  = j.get<TournamentSpec>();
+    CHECK(back.polyglot_book == "/books/Perfect2023.bin");
+    CHECK(back.polyglot_plies == 8);
+    CHECK(back.book_randomness == -40);
+    j.erase("polyglot_book");
+    j.erase("polyglot_plies");
+    j.erase("book_randomness");
+    const auto old = j.get<TournamentSpec>();
+    CHECK(old.polyglot_book.empty());
+    CHECK(old.book_randomness == 0);
+    spec.polyglot_book.clear();
+    spec.book_randomness = 0;
+    CHECK(nlohmann::json(spec).count("polyglot_book") == 0);
+    CHECK(nlohmann::json(spec).count("book_randomness") == 0);
+}
+
 TEST_CASE("gauntlet table: the seed, its opponents by their own points, and the line under it") {
     auto spec   = players(4);
     spec.format = Format::Gauntlet;

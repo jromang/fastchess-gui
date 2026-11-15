@@ -154,6 +154,9 @@ void App::applyFix(const Fix& fix) {
         case Fix::Kind::OpenFolder:
             ui::openPath(fix.path);
             break;
+        case Fix::Kind::ChangeTournamentsFolder:
+            dialogs_.openFolder(Dialogs::Purpose::TournamentsFolder, storage_.runsDir().string());
+            break;
     }
 }
 

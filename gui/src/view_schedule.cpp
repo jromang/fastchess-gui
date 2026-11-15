@@ -49,6 +49,7 @@ ImU32 statusColor(tour::GameStatus status) {
     N_("this game does not count: it was voided, or is not over"),
     N_("the game already has this result"),
     N_("in a knockout, only the games of the round being played can have their result set"),
+    N_("a team match board by board takes no new engine: replace one instead"),
 };
 
 std::string resultLabel(const std::string& result) { return result == "1/2-1/2" ? "½-½" : result; }
@@ -465,7 +466,26 @@ void App::drawEditPanel() {
 
     switch (edit.kind) {
         case tour::Edit::Kind::AddParticipant:
+            // Board by board, a newcomer would have no board.
+            if (spec.format == tour::Format::TeamMatch && spec.team_boards) {
+                ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+                ImGui::TextWrapped("%s", TR("A team match board by board takes no new engine: its board would have no "
+                                            "opponent. Replace an engine of a team instead."));
+                ImGui::PopStyleColor();
+                ready = false;
+                break;
+            }
             engineChoice(TR("Engine to add"));
+            if (spec.format == tour::Format::TeamMatch) {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(TR("Team"));
+                ImGui::SameLine();
+                ImGui::RadioButton((teamLabel(spec, 0) + "###edit_team_a").c_str(), &edit_team_, 0);
+                ImGui::SameLine();
+                ImGui::RadioButton((teamLabel(spec, 1) + "###edit_team_b").c_str(), &edit_team_, 1);
+                ui::help(TR("It plays every engine of the other team."));
+                edit.team = edit_team_;
+            }
             ImGui::Checkbox(TR("Catch up the cycles already started"), &edit_catch_up_);
             ui::help(TR("Otherwise it joins from the next cycle and plays fewer games than the others."));
             edit.catch_up = edit_catch_up_;
@@ -521,9 +541,9 @@ void App::drawEditPanel() {
     if (ready) {
         // Made again when the tournament or the edit changed, not every frame: a copy of a big tournament.
         const auto key =
-            fmt::format("{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}", static_cast<const void*>(t), t->version(),
+            fmt::format("{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}:{}", static_cast<const void*>(t), t->version(),
                         static_cast<int>(edit.kind), edit.engine.name, edit.engine.cmd, edit.catch_up, edit.participant,
-                        edit.void_played, edit.cycles, edit_preview_.games_key, edit.games.size());
+                        edit.void_played, edit.cycles, edit_preview_.games_key, edit.games.size(), edit.team);
         if (edit_preview_.key != key) {
             edit_preview_.key    = key;
             edit_preview_.impact = t->preview(edit);

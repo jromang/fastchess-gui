@@ -17,22 +17,17 @@
 #include "renderer.hpp"
 #include "ui.hpp"
 
-namespace fcg::assets {
-extern const std::array<std::string_view, 12> piece_svgs;
-}
-
 namespace fcg {
 
 namespace {
 
-constexpr ImU32 LIGHT     = IM_COL32(222, 227, 230, 255);
-constexpr ImU32 DARK      = IM_COL32(140, 162, 173, 255);
-constexpr ImU32 LAST_MOVE = IM_COL32(155, 199, 0, 105);
 constexpr ImU32 CHECK     = IM_COL32(220, 40, 40, 150);
+constexpr ImU32 SELECTED  = IM_COL32(20, 85, 30, 110);
+constexpr ImU32 TARGET    = IM_COL32(20, 85, 30, 90);
 constexpr ImU32 BAR_WHITE = IM_COL32(236, 236, 236, 255);
 constexpr ImU32 BAR_BLACK = IM_COL32(48, 48, 48, 255);
 
-// Atlas column of a piece: white K Q R B N P, then black K Q R B N P (the order of piece_svgs).
+// Atlas column of a piece: white K Q R B N P, then black K Q R B N P (the order of appearance::PIECE_FILES).
 int atlasIndex(chess::Piece piece) {
     // PieceType order is P N B R Q K; the atlas is K Q R B N P.
     static constexpr int by_type[6] = {5, 4, 3, 2, 1, 0};
@@ -52,7 +47,7 @@ chess::Square displayedTarget(const chess::Move& move) {
 
 }  // namespace
 
-std::vector<unsigned char> rasterizePieces(int px) {
+std::vector<unsigned char> rasterizePieces(int px, const appearance::PieceSvgs& svgs) {
     const int width = px * 12;
     std::vector<unsigned char> pixels(static_cast<std::size_t>(width) * px * 4, 0);
 
@@ -64,7 +59,7 @@ std::vector<unsigned char> rasterizePieces(int px) {
 
     for (int i = 0; i < 12; ++i) {
         // nsvgParse modifies its input.
-        std::string svg(assets::piece_svgs[static_cast<std::size_t>(i)]);
+        std::string svg(svgs[static_cast<std::size_t>(i)]);
         NSVGimage* image = nsvgParse(svg.data(), "px", 96.0f);
         if (!image) {
             ok = false;
@@ -87,16 +82,20 @@ std::vector<unsigned char> rasterizePieces(int px) {
     return pixels;
 }
 
-PieceAtlas::~PieceAtlas() {
+PieceAtlas::~PieceAtlas() { clear(); }
+
+void PieceAtlas::clear() {
     for (const auto& level : levels_) render::destroyTexture(level.texture);
+    levels_.clear();
 }
 
-bool PieceAtlas::create(int px) {
+bool PieceAtlas::create(int px, const appearance::PieceSvgs& svgs) {
+    clear();
     // OpenGL makes the smaller sizes itself (mipmaps). SDL's renderer has none: they are rasterized from the SVGs,
     // sharper than shrunk.
     const int smallest = render::mipmapped() ? px : std::max(1, px / 8);
     for (int size = px; size >= smallest; size /= 2) {
-        const auto pixels = rasterizePieces(size);
+        const auto pixels = rasterizePieces(size, svgs);
         if (pixels.empty()) return false;
         const auto texture = render::createTexture(size * 12, size, pixels.data());
         if (texture == ImTextureID_Invalid) return !levels_.empty();
@@ -126,14 +125,45 @@ float evalBarFraction(int cp_white, bool mate, int mate_white) {
     return 1.0f / (1.0f + std::pow(10.0f, -static_cast<float>(cp_white) / 400.0f));
 }
 
+namespace {
+
+// Where the squares start, right of the eval bar when it is shown.
+ImVec2 boardOrigin(ImVec2 top, float size, bool bar) {
+    const float bar_w = bar ? std::max(6.0f, size * 0.03f) : 0.0f;
+    const float gap   = bar ? 4.0f : 0.0f;
+    return ImVec2(top.x + bar_w + gap, top.y);
+}
+
+}  // namespace
+
+std::optional<chess::Square> boardSquareAt(ImVec2 point, ImVec2 top, float size, const BoardDecor& decor) {
+    const ImVec2 origin = boardOrigin(top, size, decor.eval_white >= 0.0f);
+    const float sq      = size / 8.0f;
+    const int col       = static_cast<int>(std::floor((point.x - origin.x) / sq));
+    const int row       = static_cast<int>(std::floor((point.y - origin.y) / sq));
+    if (col < 0 || col > 7 || row < 0 || row > 7) return std::nullopt;
+    const int file = decor.flipped ? 7 - col : col;
+    const int rank = decor.flipped ? row : 7 - row;
+    return chess::Square(chess::File(file), chess::Rank(rank));
+}
+
 void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, const BoardDecor& decor) {
+    std::array<chess::Piece, 64> pieces;
+    for (int i = 0; i < 64; ++i) pieces[static_cast<std::size_t>(i)] = board.at(chess::Square(i));
+    std::optional<chess::Square> check;
+    if (board.inCheck()) check = board.kingSq(board.sideToMove());
+    drawBoard(atlas, pieces, size, decor, check);
+}
+
+void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& pieces, float size,
+               const BoardDecor& decor, std::optional<chess::Square> check) {
     ImDrawList* dl   = ImGui::GetWindowDrawList();
     const ImVec2 top = ImGui::GetCursorScreenPos();
 
     const bool bar      = decor.eval_white >= 0.0f;
     const float bar_w   = bar ? std::max(6.0f, size * 0.03f) : 0.0f;
     const float gap     = bar ? 4.0f : 0.0f;
-    const ImVec2 origin = ImVec2(top.x + bar_w + gap, top.y);
+    const ImVec2 origin = boardOrigin(top, size, bar);
     const float sq      = size / 8.0f;
 
     if (bar) {
@@ -147,12 +177,12 @@ void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, c
         dl->AddRectFilled(ImVec2(top.x, split), ImVec2(top.x + bar_w, split), BAR_WHITE);
     }
 
-    std::optional<chess::Square> from, to, check;
+    const auto colours = decor.colours ? *decor.colours : appearance::boardColours();
+    std::optional<chess::Square> from, to;
     if (decor.last_move) {
         from = decor.last_move->from();
         to   = displayedTarget(*decor.last_move);
     }
-    if (board.inCheck()) check = board.kingSq(board.sideToMove());
 
     const float font_size = std::max(9.0f, sq * 0.2f);
     ImFont* font          = ImGui::GetFont();
@@ -168,21 +198,22 @@ void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, c
             const chess::Square square{chess::File(file), chess::Rank(rank)};
             const bool light = (file + rank) % 2 == 1;
 
-            dl->AddRectFilled(p0, p1, light ? LIGHT : DARK);
+            dl->AddRectFilled(p0, p1, light ? colours.light : colours.dark);
             if ((from && *from == square) || (to && *to == square)) {
-                dl->AddRectFilled(p0, p1, LAST_MOVE);
+                dl->AddRectFilled(p0, p1, colours.highlight);
                 if (decor.last_move_frame > 0) {
                     const float inset = decor.last_move_frame / 2;
                     dl->AddRect(ImVec2(p0.x + inset, p0.y + inset), ImVec2(p1.x - inset, p1.y - inset),
                                 decor.last_move_colour, 0.0f, 0, decor.last_move_frame);
                 }
             }
+            if (decor.selected && *decor.selected == square) dl->AddRectFilled(p0, p1, SELECTED);
             if (check && *check == square) {
                 dl->AddCircleFilled(ImVec2(p0.x + sq / 2, p0.y + sq / 2), sq * 0.48f, CHECK, 24);
             }
 
             // Coordinates along the bottom and left edges, in the opposite square colour.
-            const ImU32 coord = light ? DARK : LIGHT;
+            const ImU32 coord = light ? colours.dark : colours.light;
             if (row == 7) {
                 const char label[2] = {static_cast<char>('a' + file), 0};
                 dl->AddText(font, font_size, ImVec2(p1.x - font_size * 0.6f, p1.y - font_size * 1.05f), coord, label);
@@ -192,11 +223,19 @@ void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, c
                 dl->AddText(font, font_size, ImVec2(p0.x + 2.0f, p0.y + 1.0f), coord, label);
             }
 
-            const auto piece = board.at(square);
+            const auto piece = pieces[static_cast<std::size_t>(square.index())];
             if (piece != chess::Piece::NONE && atlas.ready()) {
                 ImVec2 uv0, uv1;
                 atlas.uv(piece, uv0, uv1);
                 dl->AddImage(atlas.texture(sq * ImGui::GetIO().DisplayFramebufferScale.x), p0, p1, uv0, uv1);
+            }
+            // Where the piece picked up may go: a dot, a ring around a piece it would take.
+            if (std::find(decor.targets.begin(), decor.targets.end(), square) != decor.targets.end()) {
+                const ImVec2 c(p0.x + sq / 2, p0.y + sq / 2);
+                if (piece != chess::Piece::NONE)
+                    dl->AddCircle(c, sq * 0.45f, TARGET, 32, sq * 0.07f);
+                else
+                    dl->AddCircleFilled(c, sq * 0.15f, TARGET, 24);
             }
         }
     }

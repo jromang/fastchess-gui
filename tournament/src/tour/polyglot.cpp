@@ -2,8 +2,10 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cstdint>
 #include <fstream>
+#include <numeric>
 #include <stdexcept>
 #include <unordered_set>
 
@@ -69,6 +71,50 @@ chess::Move decode(const chess::Board& board, uint16_t move) {
 }
 
 }  // namespace
+
+std::vector<uint64_t> choiceWeights(const std::vector<uint16_t>& weights, int randomness) {
+    randomness = std::clamp(randomness, -RANDOMNESS_LIMIT, RANDOMNESS_LIMIT);
+    std::vector<uint64_t> out(weights.begin(), weights.end());
+    if (out.empty() || randomness == 0) return out;  // exactly the weights: the choices of the versions before
+
+    const uint16_t best = *std::max_element(weights.begin(), weights.end());
+    const double e      = randomness > 0 ? 1.0 - randomness / 100.0 : 100.0 / (100.0 + randomness);
+    for (std::size_t i = 0; i < weights.size(); ++i) {
+        const auto w = weights[i];
+        if (w == 0) continue;
+        if (randomness == RANDOMNESS_LIMIT) {
+            out[i] = 1;
+        } else if (randomness == -RANDOMNESS_LIMIT) {
+            out[i] = w == best ? 1 : 0;
+        } else {
+            // The best is CHOICE_SCALE exactly (1 to any power is 1); the ratios are below 1, so nothing overflows.
+            out[i] = static_cast<uint64_t>(
+                std::llround(std::pow(static_cast<double>(w) / best, e) * static_cast<double>(CHOICE_SCALE)));
+        }
+    }
+    return out;
+}
+
+std::optional<std::size_t> drawChoice(const std::vector<uint64_t>& weights, uint64_t draw) {
+    const uint64_t total = std::accumulate(weights.begin(), weights.end(), uint64_t{0});
+    if (total == 0) return std::nullopt;
+    // Not std::uniform_int_distribution, which each standard library implements its own way: the same seed gives
+    // the same choices everywhere. The bias of the modulo is far below what a game could show.
+    auto n = draw % total;
+    for (std::size_t i = 0; i < weights.size(); ++i) {
+        if (n < weights[i]) return i;
+        n -= weights[i];
+    }
+    return weights.size() - 1;
+}
+
+std::string randomnessLabel(int randomness) {
+    randomness = std::clamp(randomness, -RANDOMNESS_LIMIT, RANDOMNESS_LIMIT);
+    if (randomness == 0) return "moves by weight";
+    if (randomness == -RANDOMNESS_LIMIT) return "best moves only";
+    if (randomness == RANDOMNESS_LIMIT) return "every move alike";
+    return fmt::format("randomness {:+}", randomness);
+}
 
 bool isPolyglot(const std::filesystem::path& file) {
     auto ext = file.extension().string();
@@ -162,35 +208,29 @@ std::vector<PolyglotBook::Choice> PolyglotBook::moves(const chess::Board& board)
     return out;
 }
 
-chess::Move PolyglotBook::pick(const chess::Board& board, std::mt19937_64& rng) {
+chess::Move PolyglotBook::pick(const chess::Board& board, std::mt19937_64& rng, int randomness) {
     const auto choices = moves(board);
-    uint64_t total     = 0;
-    for (const auto& c : choices) total += c.weight;
-    if (total == 0) return chess::Move::NO_MOVE;
-
-    // Not std::uniform_int_distribution, which each standard library implements its own way: the same seed gives
-    // the same choices everywhere. The bias of the modulo is far below what a game could show.
-    auto n = rng() % total;
-    for (const auto& c : choices) {
-        if (n < c.weight) return c.move;
-        n -= c.weight;
-    }
-    return choices.back().move;
+    std::vector<uint16_t> weights;
+    weights.reserve(choices.size());
+    for (const auto& c : choices) weights.push_back(c.weight);
+    const auto chosen = drawChoice(choiceWeights(weights, randomness), rng());
+    return chosen ? choices[*chosen].move : chess::Move::NO_MOVE;
 }
 
-std::vector<std::string> polyglotPositions(const std::filesystem::path& file, const PolyglotWalk& walk) {
+std::vector<PolyglotLine> polyglotLines(const std::filesystem::path& file, const PolyglotWalk& walk) {
     const auto entries = readBook(file);
     if (entries.empty()) throw std::runtime_error(fmt::format("the Polyglot book {} is empty", file.string()));
 
-    std::vector<std::string> out;
+    std::vector<PolyglotLine> out;
     std::unordered_set<uint64_t> seen;  // positions already met, as leaves or on the way
     chess::Board board;
 
-    const auto leaf = [&] {
+    const auto leaf = [&](double share) {
         // An en passant square only when the capture is legal, as a FEN wants it (the key has it whenever a pawn
         // stands beside, see playForBook()).
-        out.push_back(board.enpassantSq() == chess::Square::NO_SQ ? board.getFen(false)
-                                                                  : chess::Board(board.getFen()).getFen(false));
+        out.push_back({board.enpassantSq() == chess::Square::NO_SQ ? board.getFen(false)
+                                                                   : chess::Board(board.getFen()).getFen(false),
+                       share});
         if (out.size() > walk.max_positions) {
             throw std::runtime_error(
                 fmt::format("the Polyglot book {} gives more than {} positions at {} plies: choose fewer plies",
@@ -198,33 +238,39 @@ std::vector<std::string> polyglotPositions(const std::filesystem::path& file, co
         }
     };
 
-    const auto visit = [&](auto& self, int depth) -> void {
+    const auto visit = [&](auto& self, int depth, double share) -> void {
         if (!seen.insert(board.hash()).second) return;  // a transposition: already followed
 
         const auto [first, last] = std::equal_range(entries.begin(), entries.end(), Entry{board.hash()},
                                                     [](const Entry& a, const Entry& b) { return a.key < b.key; });
-        uint16_t best            = 0;
-        for (auto it = first; it != last; ++it) best = std::max(best, it->weight);
+        std::vector<uint16_t> weights;
+        for (auto it = first; it != last; ++it) weights.push_back(it->weight);
+        const auto chance   = choiceWeights(weights, walk.randomness);
+        const uint64_t best = chance.empty() ? 0 : *std::max_element(chance.begin(), chance.end());
 
-        std::vector<chess::Move> moves;
+        std::vector<std::pair<chess::Move, uint64_t>> moves;
+        uint64_t total = 0;
         if (depth < walk.plies && best > 0) {
-            for (auto it = first; it != last; ++it) {
-                if (it->weight == 0 || it->weight < walk.min_share * best) continue;
-                const auto move = decode(board, it->move);
-                if (move != chess::Move::NO_MOVE) moves.push_back(move);
+            for (std::size_t i = 0; i < chance.size(); ++i) {
+                if (chance[i] == 0 || static_cast<double>(chance[i]) < walk.min_share * static_cast<double>(best))
+                    continue;
+                const auto move = decode(board, (first + static_cast<std::ptrdiff_t>(i))->move);
+                if (move == chess::Move::NO_MOVE) continue;
+                moves.emplace_back(move, chance[i]);
+                total += chance[i];
             }
         }
         if (moves.empty()) {
-            if (depth > 0) leaf();  // the end of a line; the initial position itself is no opening
+            if (depth > 0) leaf(share);  // the end of a line; the initial position itself is no opening
             return;
         }
-        for (const auto& move : moves) {
+        for (const auto& [move, weight] : moves) {
             playForBook(board, move);
-            self(self, depth + 1);
+            self(self, depth + 1, share * static_cast<double>(weight) / static_cast<double>(total));
             board.unmakeMove(move);
         }
     };
-    visit(visit, 0);
+    visit(visit, 0, 1.0);
 
     if (out.empty()) {
         throw std::runtime_error(
@@ -233,9 +279,33 @@ std::vector<std::string> polyglotPositions(const std::filesystem::path& file, co
     return out;
 }
 
-std::size_t polyglotToEpd(const std::filesystem::path& file, const std::filesystem::path& epd,
-                          const PolyglotWalk& walk) {
-    const auto positions = polyglotPositions(file, walk);
+std::vector<std::string> polyglotPositions(const std::filesystem::path& file, const PolyglotWalk& walk) {
+    std::vector<std::string> out;
+    for (auto& line : polyglotLines(file, walk)) out.push_back(std::move(line.epd));
+    return out;
+}
+
+std::vector<std::string> drawnInOrder(const std::vector<PolyglotLine>& lines, uint64_t seed) {
+    // Each line gets the key u^(1 / share), u uniform in (0, 1); the largest keys first. As logarithms, log(u) /
+    // share, which a share far below 1 does not underflow.
+    std::mt19937_64 rng(seed);
+    std::vector<std::pair<double, std::size_t>> keys;
+    keys.reserve(lines.size());
+    for (std::size_t i = 0; i < lines.size(); ++i) {
+        const double u     = (static_cast<double>(rng() >> 11) + 0.5) / 9007199254740992.0;  // 2^53
+        const double share = lines[i].share > 0 ? lines[i].share : 1e-300;
+        keys.emplace_back(std::log(u) / share, i);
+    }
+    std::stable_sort(keys.begin(), keys.end(), [](const auto& a, const auto& b) { return a.first > b.first; });
+    std::vector<std::string> out;
+    out.reserve(keys.size());
+    for (const auto& [key, i] : keys) out.push_back(lines[i].epd);
+    return out;
+}
+
+std::size_t polyglotToEpd(const std::filesystem::path& file, const std::filesystem::path& epd, const PolyglotWalk& walk,
+                          std::optional<uint64_t> seed) {
+    const auto positions = seed ? drawnInOrder(polyglotLines(file, walk), *seed) : polyglotPositions(file, walk);
     std::ofstream out(epd, std::ios::binary | std::ios::trunc);
     for (const auto& p : positions) out << p << '\n';
     out.close();

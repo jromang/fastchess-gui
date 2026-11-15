@@ -33,8 +33,14 @@ struct OpeningStats {
     int one_engine_twice = 0;  // the same engine won both: the opening tells the engines apart
     int drawn_twice      = 0;
 
+    // Games flagged when they ended (GameResult::unbalanced): both engines saw White, or Black, far ahead right
+    // after the book.
+    int unbalanced_white = 0;
+    int unbalanced_black = 0;
+
     std::vector<uint64_t> game_numbers;  // 1-based, as the Games tab shows them
 
+    [[nodiscard]] int unbalancedGames() const noexcept { return unbalanced_white + unbalanced_black; }
     [[nodiscard]] double whiteScore() const noexcept { return games ? white_points / games : 0.0; }
     [[nodiscard]] double drawRate() const noexcept { return games ? static_cast<double>(draws) / games : 0.0; }
     // Pairs a colour won twice, among the complete pairs.
@@ -62,7 +68,8 @@ struct ClassifiedOpening {
                                                          const std::map<uint32_t, fastchess::book::Opening>& openings,
                                                          bool chess960);
 
-// The openings' starting positions, one EPD line each: a book of them.
-[[nodiscard]] std::string openingsEpd(const std::vector<const OpeningStats*>& openings);
+// The openings' starting positions, one EPD line each: a book of them. `balanced_only`: those with a game flagged
+// unbalanced left out.
+[[nodiscard]] std::string openingsEpd(const std::vector<const OpeningStats*>& openings, bool balanced_only = false);
 
 }  // namespace fcg::tour

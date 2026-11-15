@@ -14,7 +14,7 @@
 
 #include <fmt/include/fmt/format.h>
 
-#include <stb_image.h>  // its inflater, compiled in zip_tests.cpp
+#include <stb_image.h>  // its inflater, compiled in engine_logos.cpp
 
 #include "broadcast.hpp"
 #include "broadcaster.hpp"
@@ -771,6 +771,56 @@ TEST_CASE("broadcast: the viewers are counted from their requests, all from one 
     }
     CHECK(server.viewers() == 4);
     server.stop();
+}
+
+TEST_CASE("broadcast: a team match's score in the JSON of the web page, the TLCS crosstable and standings.html") {
+    BroadcastInput in;
+    in.dir                = "/tournaments/Teams";
+    in.spec.format        = fcg::tour::Format::TeamMatch;
+    in.spec.team_names[0] = "Old";
+    for (const auto* name : {"A1", "A2", "B1", "B2"}) {
+        fcg::tour::Participant p;
+        p.id          = static_cast<int>(in.spec.participants.size());
+        p.team        = p.id < 2 ? 0 : 1;
+        p.engine.name = name;
+        in.spec.participants.push_back(p);
+    }
+    const auto result = [](uint32_t encounter, int game, int white, int black, const char* score) {
+        fcg::tour::GameResult r;
+        r.encounter = encounter;
+        r.game      = game;
+        r.white     = white;
+        r.black     = black;
+        r.result    = score;
+        return r;
+    };
+    in.results = {result(0, 0, 0, 2, "1-0"), result(0, 1, 2, 0, "1/2-1/2"), result(1, 0, 3, 1, "1-0"),
+                  result(1, 1, 1, 3, "1-0"), result(2, 0, 0, 3, "1/2-1/2")};
+
+    const auto s = makeSnapshot(in);
+    CHECK(s.format == "team_match");
+    REQUIRE(s.teams);
+    CHECK(s.teams->teams[0].points == 3.0);
+    CHECK(s.teams->teams[1].points == 2.0);
+    REQUIRE(s.teams->elo);
+
+    const auto json = nlohmann::json::parse(snapshotJson(s));
+    REQUIRE(json["teams"].size() == 2);
+    CHECK(json["teams"][0]["name"] == "Old");
+    CHECK(json["teams"][1]["name"] == "Team B");
+    CHECK(json["teams"][0]["points"] == 3.0);
+    CHECK(json["teams"][1]["engines"] == nlohmann::json{"B1", "B2"});
+    CHECK(json.contains("team_elo"));
+
+    const auto lines = tlcsCrosstable(s, 5);
+    CHECK(std::find(lines.begin(), lines.end(),
+                    "Old 3 - 2 Team B · 60.0 % · Elo " +
+                        fmt::format("{:+.1f} ± {:.1f}", *s.teams->elo, *s.teams->error)) != lines.end());
+    CHECK(lines[0].rfind("RANK", 0) == 0);  // the table node-tlcv reads comes first, as before
+
+    // Another format has no teams.
+    in.spec.format = fcg::tour::Format::RoundRobin;
+    CHECK(nlohmann::json::parse(snapshotJson(makeSnapshot(in)))["teams"].is_null());
 }
 
 TEST_CASE("broadcast: the statistics, the anomalies and each move's search, for the web page") {

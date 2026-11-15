@@ -13,11 +13,14 @@
 #include <fmt/include/fmt/format.h>
 #include <core/globals/globals.hpp>
 #include <tour/files.hpp>
+#include <tour/sprt_rules.hpp>
 
 #include "i18n.hpp"
 #include "memory.hpp"
 #include "notify.hpp"
+#include "renderer.hpp"
 #include "setup_checks.hpp"
+#include "sound.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -41,6 +44,7 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
     // A setup saved before there were profiles: its sections get those they play like.
     recognizeProfiles(setup_, profiles_);
     i18n::setLanguage(i18n::resolve(setup_.language));
+    loadAppearance();
 
     if (!setup_.concurrency_auto) setup_.concurrency = std::clamp(setup_.concurrency, 1, topology_.logical);
 
@@ -91,9 +95,23 @@ App::~App() {
     storage_.saveSetup(setup_);
     storage_.saveEngines(engines_);
     saveLichessToken();  // a token still being typed when the program quits
+    if (appearance_save_due_) storage_.setAppearance(appearance::current());
+    for (const auto& [file, logo] : logo_textures_) {
+        render::destroyTexture(logo.large);
+        render::destroyTexture(logo.small);
+    }
+    for (const auto texture : stale_textures_) render::destroyTexture(texture);
+    sound::shutdown();
 }
 
-bool App::initGraphics() { return atlas_.create(160); }
+bool App::initGraphics() {
+    // The pieces chosen, or the default ones when the folder chosen cannot be used (pieces_error_ says why).
+    std::string error;
+    const auto svgs = appearance::piecesFor(appearance::current(), error);
+    if (error != pieces_error_ && !error.empty()) Console::instance().add(error, true);
+    pieces_error_ = error;
+    return atlas_.create(160, svgs);
+}
 
 void App::requestQuit() {
     if (runsPlaying() > 0) {
@@ -155,6 +173,14 @@ void App::frame() {
         launch_checked_ = true;
         resumeAtLaunch();
     }
+    // Other pieces, logos dropped: before anything is drawn, the last frame drawn with the old ones.
+    if (pieces_dirty_) rebuildPieces();
+    for (const auto texture : stale_textures_) render::destroyTexture(texture);
+    stale_textures_.clear();
+    if (appearance_save_due_ && std::chrono::steady_clock::now() >= *appearance_save_due_) {
+        appearance_save_due_.reset();
+        storage_.setAppearance(appearance::current());
+    }
     pollRun();
     pollProbe();
     pollCheck();
@@ -162,6 +188,8 @@ void App::frame() {
     pollOwnBooks();
     pollBookBuild();
     pollUpdateCheck();
+    pollEngineConsole();
+    pollBoard();
     handleDialogs();
 
     if (engines_save_due_ && std::chrono::steady_clock::now() >= *engines_save_due_) {
@@ -220,6 +248,35 @@ void App::frame() {
         else if (w == "engines-card") {
             page_            = Page::Engines;
             selected_engine_ = engines_.empty() ? -1 : 0;
+        } else if (w == "board" || w == "board-analyse") {  // the Board page; its analysis started
+            page_ = Page::Board;
+            if (w == "board-analyse") setBoardAnalysis(true);
+        } else if (w.rfind("board=", 0) == 0 || w.rfind("board-analyse=", 0) == 0 ||
+                   w.rfind("board-review=", 0) == 0) {
+            // board=FILE: a PGN file (or a FEN, EPD file) on the Board page; board-analyse=FILE, analysed;
+            // board-review=FILE: its first game analysed move by move, once read.
+            const auto eq = w.find('=');
+            dropFile(w.substr(eq + 1));
+            if (w.rfind("board-analyse=", 0) == 0) setBoardAnalysis(true);
+            if (w.rfind("board-review=", 0) == 0) review_when_read_ = true;
+        } else if (w == "board-edit") {  // the position editor
+            page_ = Page::Board;
+            openPositionEditor();
+        } else if (w == "board-play" || w == "board-play-start") {  // a game from the board: its settings; started
+            page_             = Page::Board;
+            board_.play_open  = true;
+            if (w == "board-play-start") {
+                loadBoardSettings();
+                if (engines_.size() > 1) {
+                    board_.settings.game_first  = engines_[0].name;
+                    board_.settings.game_second = engines_[1].name;
+                }
+                startBoardGames();
+            }
+        } else if (w == "engines-console") {  // the console of the first engine, which answered uci
+            page_            = Page::Engines;
+            selected_engine_ = engines_.empty() ? -1 : 0;
+            openEngineConsole(0);
         } else if (w == "engines-refresh") {
             page_ = Page::Engines;
             refreshEngineFolder();
@@ -319,6 +376,14 @@ void App::frame() {
             page_        = Page::Tournament;
             tab_request_ = Tab::Games;
             openSubmissionExport();
+        } else if (w.rfind("live-back=", 0) == 0) {  // live-back=N: the game followed stepped back N plies
+            page_        = Page::Tournament;
+            tab_request_ = Tab::Live;
+            if (live_slot_ >= 0 && live_slot_ < static_cast<int>(slot_views_.size())) {
+                auto& v         = slot_views_[static_cast<std::size_t>(live_slot_)];
+                const int total = static_cast<int>(v.state.moves.size());
+                v.nav.show(total - std::atoi(w.c_str() + 10), total);
+            }
         } else if (w.rfind("games-", 0) == 0 || w.rfind("live-", 0) == 0) {
             // The tab with a chart under the game: games-time, live-agreement...
             const auto chart                     = w.substr(w.find('-') + 1);
@@ -719,6 +784,8 @@ void App::clearRunView() {
     const auto& info = run_->info();
     sprt_.reset();
     if (info.sprt) sprt_.emplace(info.alpha, info.beta, info.elo0, info.elo1, info.model, true);
+    // The openings it replaced before it was opened are in its results already.
+    openings_replaced_seen_ = run_->tournament() ? run_->tournament()->openingsReplaced() : 0;
 
     live_slot_        = std::clamp(live_slot_, 0, std::max(1, info.concurrency) - 1);
     games_per_hour_   = 0;
@@ -786,11 +853,26 @@ void App::pollRun() {
         }
     }
 
+    // A pair voided and played again from another opening, its own found unbalanced: the views show the results
+    // as they count now, as after a void of the user's.
+    if (const auto* t = run_->tournament()) {
+        if (const auto replaced = t->openingsReplaced(); replaced != openings_replaced_seen_) {
+            if (replaced > openings_replaced_seen_) {
+                const auto n = replaced - openings_replaced_seen_;
+                Console::instance().add(trn("{} unbalanced opening: its game pair is played again from another one.",
+                                            "{} unbalanced openings: their game pairs are played again from others.", n,
+                                            n));
+            }
+            openings_replaced_seen_ = replaced;
+            refreshAfterEdit();
+        }
+    }
+
     if (auto* open = shownRun()) watchStartFailures(*open);
     arbitrate();
     // The queue's next tournament beside those playing, once cores are free (checked now and then).
     if (budget_setting_.queue_when_free && !queue_.empty() && !pending_start_ && !quit_pending_ && runsPlaying() > 0 &&
-        std::chrono::steady_clock::now() - queue_checked_ > std::chrono::seconds(2)) {
+        !queue_held_ && std::chrono::steady_clock::now() - queue_checked_ > std::chrono::seconds(2)) {
         queue_checked_ = std::chrono::steady_clock::now();
         if (queueBeside(0)) startFromQueue(false);
     }
@@ -904,9 +986,9 @@ void App::onRunFinished() {
             if (p && p->active) names += (names.empty() ? "" : ", ") + e.name;
         }
         verdict = trf("Stopped: no game is left to play without {}, which cannot start", names);
-    } else if (info.sprt && sprt_ && current_.llr >= sprt_->getUpperBound()) {
+    } else if (info.sprt && sprt_ && sprtVerdict() == fastchess::SPRT_H1) {
         verdict = trf("SPRT finished: H1 accepted, {} is stronger", info.engine_a);
-    } else if (info.sprt && sprt_ && current_.llr <= sprt_->getLowerBound()) {
+    } else if (info.sprt && sprt_ && sprtVerdict() == fastchess::SPRT_H0) {
         verdict = trf("SPRT finished: H0 accepted, {} is not stronger", info.engine_a);
     } else if (run_->stoppedByUser()) {
         verdict = TR("Stopped");
@@ -951,7 +1033,15 @@ void App::onRunFinished() {
 
     // The queue goes on after a tournament that ended by itself, not after a stop or an error.
     const bool completed = error.empty() && !run_->stoppedByUser() && !abnormal;
-    if (completed && !queue_.empty() && !quit_pending_) startFromQueue(true);
+    if (completed && !queue_.empty() && !quit_pending_) {
+        // Held by Pause all: Resume all starts it.
+        if (queue_held_) {
+            queue_blocked_ = true;
+            Console::instance().add(TR("The queue waits for Resume all."));
+        } else {
+            startFromQueue(true);
+        }
+    }
 }
 
 void App::enqueue() {
@@ -1002,6 +1092,12 @@ void App::startFromQueue(bool go_on, std::size_t from, const std::string& label)
     }
 }
 
+fastchess::SPRTResult App::sprtVerdict() const {
+    const auto* t  = run_->tournament();
+    const auto why = t ? t->finishReason() : std::string();
+    return why == "sprt_h1" ? fastchess::SPRT_H1 : why == "sprt_h0" ? fastchess::SPRT_H0 : fastchess::SPRT_CONTINUE;
+}
+
 std::string App::summaryText() const {
     const auto& info = run_->info();
     const auto& s    = stats_;
@@ -1020,6 +1116,12 @@ std::string App::summaryText() const {
     if (info.sprt && sprt_) {
         text += fmt::format("LLR: {:.2f} ({:.2f}, {:.2f}) [{:.2f}, {:.2f}] {}\n", current_.llr, sprt_->getLowerBound(),
                             sprt_->getUpperBound(), info.elo0, info.elo1, info.model);
+        // The bounds above are those the SPRT was given: the tester's, the bias on them.
+        if (info.sprt_bias != 0 || info.sprt_min_games > 0) {
+            text += tour::sprtText(info.elo0 - info.sprt_bias, info.elo1 - info.sprt_bias, info.sprt_bias,
+                                   info.sprt_min_games) +
+                    "\n";
+        }
     }
     if (s.sum() > 0 && info.penta) text += statisticsText(matchStatistics(s, sprt_ ? &*sprt_ : nullptr));
     return text;
@@ -1098,11 +1200,12 @@ void App::handleDialogs() {
             case Dialogs::Purpose::ExportOpenings: {
                 const auto shown = shownOpenings();
                 std::ofstream out(path, std::ios::binary | std::ios::trunc);
-                out << tour::openingsEpd(shown);
-                Console::instance().add(
-                    out ? trn("{} opening written to {}", "{} openings written to {}", shown.size(), shown.size(), path)
-                        : trf("Cannot write {}", path),
-                    !out);
+                const auto epd = tour::openingsEpd(shown, export_balanced_only_);
+                out << epd;
+                const auto n = static_cast<std::size_t>(std::count(epd.begin(), epd.end(), '\n'));
+                Console::instance().add(out ? trn("{} opening written to {}", "{} openings written to {}", n, n, path)
+                                            : trf("Cannot write {}", path),
+                                        !out);
                 break;
             }
             case Dialogs::Purpose::AddBook:
@@ -1164,8 +1267,10 @@ void App::handleDialogs() {
             case Dialogs::Purpose::ExportStandings:
                 if (const auto* t = run_->tournament()) {
                     std::ofstream out(path, std::ios::binary | std::ios::trunc);
-                    out << tour::tableHtml(shown_, t->spec().name,
-                                           tour::footerLine(t->spec(), shown_, t->totalGames()));
+                    const auto footer = tour::footerLine(t->spec(), shown_, t->totalGames());
+                    out << (t->spec().format == tour::Format::TeamMatch
+                                ? tour::teamHtml(teams_, table_, t->spec().name, footer)
+                                : tour::tableHtml(shown_, t->spec().name, footer));
                     Console::instance().add(out ? trf("Standings written to {}", path) : trf("Cannot write {}", path),
                                             !out);
                 }
@@ -1185,6 +1290,16 @@ void App::handleDialogs() {
                     storage_.saveEngines(engines_);
                 }
                 break;
+            case Dialogs::Purpose::EngineLogo:
+                setEngineLogo(selected_engine_, path);
+                break;
+            case Dialogs::Purpose::PieceFolder: {
+                auto settings         = appearance::current();
+                settings.pieces       = appearance::FOLDER;
+                settings.piece_folder = path;
+                applyAppearance(settings);
+                break;
+            }
             case Dialogs::Purpose::EngineOption:
                 if (selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size())) {
                     engines_[selected_engine_].setOption(option_browse_, path);
@@ -1222,6 +1337,12 @@ void App::handleDialogs() {
                 break;
             case Dialogs::Purpose::ExportSubmission:
                 writeSubmissionExport(path);
+                break;
+            case Dialogs::Purpose::ConsoleLog:
+                saveConsoleLog(path);
+                break;
+            case Dialogs::Purpose::BoardPgn:
+                openBoardPgn(std::filesystem::path(path));
                 break;
         }
     }

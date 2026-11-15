@@ -169,14 +169,16 @@ if(FCG_BUILD_GUI)
     set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
     set(SDL_TESTS OFF CACHE BOOL "" FORCE)
     set(SDL_INSTALL OFF CACHE BOOL "" FORCE)
-    # Only windows, OpenGL, events, dialogs and the 2D renderer are used. The renderer draws the window where OpenGL 3.2
-    # is missing (virtual machines, remote desktops): its software driver, its OpenGL 2.1 and ES 2 ones, and Direct3D
-    # 11 on Windows, the one a remote desktop session has.
-    foreach(sdl_off SDL_AUDIO SDL_GPU SDL_CAMERA SDL_HAPTIC SDL_SENSOR SDL_POWER SDL_VULKAN SDL_HIDAPI
-                    SDL_RENDER_D3D SDL_RENDER_D3D12 SDL_RENDER_METAL)
+    # Only windows, OpenGL, events, dialogs, the 2D renderer and the audio are used. The renderer draws the window where
+    # OpenGL 3.2 is missing (virtual machines, remote desktops): its software driver, its OpenGL 2.1 and ES 2 ones, and
+    # Direct3D 11 on Windows, the one a remote desktop session has. The audio plays the move sounds, started only when
+    # they are on; its Linux backends (PipeWire, PulseAudio, ALSA) are loaded when used, found when their headers are.
+    foreach(sdl_off SDL_GPU SDL_CAMERA SDL_HAPTIC SDL_SENSOR SDL_POWER SDL_VULKAN SDL_HIDAPI SDL_RENDER_D3D
+                    SDL_RENDER_D3D12 SDL_RENDER_METAL SDL_DISKAUDIO SDL_DUMMYAUDIO)
         set(${sdl_off} OFF CACHE BOOL "" FORCE)
     endforeach()
     set(SDL_RENDER ON CACHE BOOL "" FORCE)
+    set(SDL_AUDIO ON CACHE BOOL "" FORCE)
 
     FetchContent_Declare(sdl3
         GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
@@ -315,16 +317,25 @@ if(FCG_BUILD_GUI)
         target_link_libraries(fcg_libssh2 PUBLIC ws2_32)
     endif()
 
-    # Piece artwork, embedded as string literals.
+    # Piece artwork, embedded as string literals: the piece sets of gui/assets/pieces (their authors and licenses in
+    # gui/assets/ATTRIBUTION.md), the default one first.
+    set(FCG_PIECE_SETS cburnett chessnut celtic fantasy)
     set(FCG_ASSET_CPP ${CMAKE_CURRENT_BINARY_DIR}/generated/piece_svgs.cpp)
-    file(GLOB FCG_PIECE_SVGS ${CMAKE_CURRENT_SOURCE_DIR}/gui/assets/pieces/*.svg)
+    set(FCG_PIECE_SVGS)
+    foreach(set ${FCG_PIECE_SETS})
+        file(GLOB svgs ${CMAKE_CURRENT_SOURCE_DIR}/gui/assets/pieces/${set}/*.svg)
+        list(APPEND FCG_PIECE_SVGS ${svgs})
+    endforeach()
+    string(REPLACE ";" "|" FCG_PIECE_SET_LIST "${FCG_PIECE_SETS}")
     add_custom_command(
         OUTPUT ${FCG_ASSET_CPP}
         COMMAND ${CMAKE_COMMAND} -DOUT=${FCG_ASSET_CPP}
                 -DDIR=${CMAKE_CURRENT_SOURCE_DIR}/gui/assets/pieces
+                "-DSETS=${FCG_PIECE_SET_LIST}"
                 -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_pieces.cmake
         DEPENDS ${FCG_PIECE_SVGS} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_pieces.cmake
-        COMMENT "Embedding piece SVGs")
+        COMMENT "Embedding piece SVGs"
+        VERBATIM)
 
     # The fonts, embedded as byte arrays.
     set(FCG_FONT_CPPS)

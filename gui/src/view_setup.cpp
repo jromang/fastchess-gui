@@ -8,6 +8,7 @@
 
 #include <tour/pgn_book.hpp>
 #include <tour/polyglot.hpp>
+#include <tour/sprt_rules.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -16,6 +17,7 @@
 #include "app.hpp"
 #include "i18n.hpp"
 #include "memory.hpp"
+#include "participants.hpp"
 #include "run.hpp"
 #include "setup_checks.hpp"
 #include "stats.hpp"
@@ -70,6 +72,27 @@ void itemHelp(const std::string& text) {
     ImGui::TextUnformatted(text.c_str());
     ImGui::PopTextWrapPos();
     ImGui::EndTooltip();
+}
+
+// How the moves of the Polyglot books are chosen, from -100 to 100, its meaning beside the number.
+bool randomnessSlider(const char* id, int& value, float width) {
+    const int v        = value;
+    const char* format = v == -tour::RANDOMNESS_LIMIT ? TR("%d · the best moves only")
+                         : v < 0                      ? TR("%d · toward the best moves")
+                         : v == 0                     ? TR("%d · moves by their weights")
+                         : v < tour::RANDOMNESS_LIMIT ? TR("%d · toward every move alike")
+                                                      : TR("%d · every move alike");
+    ImGui::SetNextItemWidth(width);
+    return ImGui::SliderInt(id, &value, -tour::RANDOMNESS_LIMIT, tour::RANDOMNESS_LIMIT, format,
+                            ImGuiSliderFlags_AlwaysClamp);
+}
+
+std::string randomnessHelp() {
+    return std::string(TR("How the moves of a Polyglot book are chosen, for the tournament's openings and for the "
+                          "participants' own books: -100 the best move only, 0 in proportion to their weights, as "
+                          "Polyglot and Cute Chess choose, 100 every move alike. In between, -50 squares the weights "
+                          "and 50 takes their square roots.")) +
+           "\n" + TR("Ctrl+click to type a value.");
 }
 
 // The Syzygy directories of the setup, typed or added with the folder dialog. This machine's: in no profile, the same
@@ -309,6 +332,13 @@ bool App::ownBookButton(const char* id, OwnBook& book, float width, bool* again,
             depth_help += "\n" + std::string(TR("Its book moves are played at once, without a search."));
             itemHelp(depth_help);
         }
+        // The setting of every book of the tournament (Openings), here too since it chooses this book's moves.
+        ImGui::BeginDisabled(book.empty());
+        const auto randomness_label = fmt::format("{}##own_randomness", TR("Randomness"));
+        if (randomnessSlider(randomness_label.c_str(), setup_.book_randomness, px(260))) changed = true;
+        ImGui::EndDisabled();
+        itemHelp(randomnessHelp() + "\n" +
+                 TR("The same for every book of the tournament: also in the Openings section."));
 
         if (again) {
             ImGui::Separator();
@@ -834,11 +864,20 @@ void App::setupMatch() {
 
             changed |= inputInt(TR("Max games"), "##sprt_max", setup_.sprt_max_games, 0, 100'000'000);
             ui::help(TR("0 = no limit."));
+            changed |= inputDouble(TR("Elo bias"), "##sprt_bias", setup_.sprt_bias, -1000, 1000);
+            itemHelp(
+                TR("Added to elo0 and elo1, for a test against a version known to be stronger or weaker by that "
+                   "much: the SPRT is given [elo0 + bias, elo1 + bias]."));
+            changed |= inputInt(TR("Min games"), "##sprt_min", setup_.sprt_min_games, 0, 100'000'000);
+            itemHelp(
+                TR("No decision before this number of games, the LLR still shown: it guards a short test "
+                   "against an early lucky stop. 0 = none."));
 
-            // What these bounds are likely to cost, from the calculator's guesses. The usual bounds are profiles
-            // (SPRT gainer, non-regression).
-            const auto plan = sprtPlan(setup_.sprt_alpha, setup_.sprt_beta, setup_.sprt_elo0, setup_.sprt_elo1,
-                                       setup_.sprt_model, setup_.sprt_draw_ratio, setup_.sprt_rms_bias);
+            // What these bounds are likely to cost, from the calculator's guesses (the bias on them). The usual
+            // bounds are profiles (SPRT gainer, non-regression).
+            const auto given = tour::biasedBounds(setup_.sprt_elo0, setup_.sprt_elo1, setup_.sprt_bias);
+            const auto plan  = sprtPlan(setup_.sprt_alpha, setup_.sprt_beta, given.elo0, given.elo1, setup_.sprt_model,
+                                        setup_.sprt_draw_ratio, setup_.sprt_rms_bias);
             if (plan.valid) {
                 ImGui::PushTextWrapPos(0);
                 ImGui::TextDisabled("%s", trf("About {} games if the change is worth elo0, {} if it is worth elo1.",
@@ -873,6 +912,10 @@ void App::drawSprtCalculator() {
     ImGui::BeginChild("##sprt_inputs", ImVec2(px(300), 0));
     inputDouble("elo0", "##calc_elo0", c.sprt_elo0, -1000, 1000);
     inputDouble("elo1", "##calc_elo1", c.sprt_elo1, -1000, 1000);
+    inputDouble(TR("Elo bias"), "##calc_sprt_bias", c.sprt_bias, -1000, 1000);
+    itemHelp(
+        TR("Added to elo0 and elo1, for a test against a version known to be stronger or weaker by that much: "
+           "the SPRT is given [elo0 + bias, elo1 + bias]."));
     inputDouble("alpha", "##calc_alpha", c.sprt_alpha, 0.001, 0.5, "%.3f");
     inputDouble("beta", "##calc_beta", c.sprt_beta, 0.001, 0.5, "%.3f");
     ui::label(TR("Model"), labelWidth());
@@ -893,8 +936,9 @@ void App::drawSprtCalculator() {
         TR("How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the "
            "same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."));
 
+    const auto given = tour::biasedBounds(c.sprt_elo0, c.sprt_elo1, c.sprt_bias);
     const auto plan =
-        sprtPlan(c.sprt_alpha, c.sprt_beta, c.sprt_elo0, c.sprt_elo1, c.sprt_model, c.sprt_draw_ratio, c.sprt_rms_bias);
+        sprtPlan(c.sprt_alpha, c.sprt_beta, given.elo0, given.elo1, c.sprt_model, c.sprt_draw_ratio, c.sprt_rms_bias);
     ImGui::Spacing();
     if (!plan.valid) {
         ImGui::PushTextWrapPos(0);
@@ -921,6 +965,7 @@ void App::drawSprtCalculator() {
         setup_.mode            = MatchMode::Sprt;
         setup_.sprt_elo0       = c.sprt_elo0;
         setup_.sprt_elo1       = c.sprt_elo1;
+        setup_.sprt_bias       = c.sprt_bias;
         setup_.sprt_alpha      = c.sprt_alpha;
         setup_.sprt_beta       = c.sprt_beta;
         setup_.sprt_model      = c.sprt_model;
@@ -1137,27 +1182,60 @@ void App::setupOpenings() {
         TR("Fischer random chess. The engines must play it (the UCI_Chess960 option, or the fischerandom "
            "variant of a WinBoard engine). A book of Chess960 positions, or none for all 960."));
 
+    const bool polyglot = tour::isPolyglot(setup_.book);
     changed |= ImGui::Checkbox(TR("Random order"), &setup_.book_random);
-    itemHelp(
-        TR("The openings in a random order (order=random), or one after the other from Start at (order="
-           "sequential)."));
-    if (tour::isPolyglot(setup_.book)) {
+    itemHelp(polyglot ? TR("The positions of the Polyglot book in the order they are drawn, each once, the likelier "
+                           "lines (by the weights of their moves, as the randomness makes them) the sooner; or in the "
+                           "order of the book, from Start at.")
+                      : TR("The openings in a random order (order=random), or one after the other from Start at "
+                           "(order=sequential)."));
+    if (polyglot) {
         changed |= inputInt(TR("Depth (plies)"), "##plies", setup_.book_plies, -1, 40);
         ui::help(trf("A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the "
                      "moves weighing less than a tenth of the best one; the positions reached are the openings.",
                      POLYGLOT_PLIES)
                      .c_str());
-    } else {
+    }
+    // The participants' own books choose their moves with it too: shown for them, the book being of another kind.
+    const auto people   = fcg::setupParticipants(setup_);
+    const bool own_book = std::any_of(people.begin(), people.end(), [](const auto& p) { return !p.book.empty(); });
+    if (polyglot || own_book) {
+        ui::label(TR("Randomness"), labelWidth());
+        changed |= randomnessSlider("##book_randomness", setup_.book_randomness, px(260));
+        itemHelp(randomnessHelp());
+    }
+    if (!polyglot) {
         changed |= inputInt(TR("Plies (PGN)"), "##plies", setup_.book_plies, -1, 1000);
         ui::help(TR("For a PGN book: number of plies kept. -1 = all."));
     }
     changed |= inputInt(TR("Start at"), "##book_start", setup_.book_start, 1, 100'000'000);
     if (setup_.format == TournamentFormat::RoundRobin || setup_.format == TournamentFormat::Gauntlet ||
-        setup_.format == TournamentFormat::Swiss) {
+        setup_.format == TournamentFormat::Swiss || setup_.format == TournamentFormat::TeamMatch) {
         changed |= ImGui::Checkbox(TR("The same opening for every pair of a round"), &setup_.opening_per_round);
         ui::help(
             TR("Every game pair of a round plays the same opening, the next of the book for each round: no engine "
                "gets easier openings than the others of its round. Otherwise each pair takes the next one."));
+    }
+
+    // The openings that decide the game by themselves, seen as the games end.
+    changed |= ImGui::Checkbox(TR("Flag unbalanced openings"), &setup_.unbalanced_enabled);
+    itemHelp(
+        TR("A game is flagged when both engines see the same side ahead by the score below for each of their "
+           "first moves after the book: the Games tab can show those games, the Openings tab marks and counts "
+           "their openings, the overview counts them. The results are not changed."));
+    if (setup_.unbalanced_enabled) {
+        ImGui::Indent();
+        changed |= inputInt(TR("Score (cp)"), "##unbalanced_cp", setup_.unbalanced_cp, 1, 100000);
+        itemHelp(TR("200 cp: both engines think a side is two pawns ahead, or more."));
+        changed |= inputInt(TR("Moves"), "##unbalanced_moves", setup_.unbalanced_moves, 1, 100);
+        itemHelp(TR("The number of moves each engine plays after the book, all of them beyond the score."));
+        changed |= ImGui::Checkbox(TR("Play the pair again from another opening"), &setup_.unbalanced_replace);
+        itemHelp(
+            trf("Once its two games are played, a pair with a game flagged is voided (its games stay in the PGN "
+                "files and the journal) and played again from an opening at the end of the book, which the "
+                "tournament would play last; at most {} times for one pair.",
+                tour::MAX_OPENING_REPLACEMENTS));
+        ImGui::Unindent();
     }
 
     int64_t seed = static_cast<int64_t>(setup_.seed);
@@ -1324,6 +1402,10 @@ void App::setupFormat() {
     radio(TR("Knockout"), 4,
           TR("Matches in a bracket, the winner goes through; tiebreak pairs of games when a match is tied. The list "
              "order is the seeding."));
+    ImGui::SameLine();
+    radio(TR("Team match"), 5,
+          TR("Two teams of engines, one family or version against another: every engine of a team meets every "
+             "engine of the other, or board by board. The teams are scored as a whole, and each engine too."));
     setup_.format = static_cast<TournamentFormat>(format);
 
     if (setup_.format == TournamentFormat::Swiss) {
@@ -1344,6 +1426,7 @@ void App::setupFormat() {
                 TR("The first engines of the list play every other engine, not each other: the gauntlet's seeds "
                    "(-seeds N)."));
         }
+        if (setup_.format == TournamentFormat::TeamMatch) changed |= setupTeamOptions();
     }
     if (changed) saveSetupSoon();
 
@@ -1352,6 +1435,38 @@ void App::setupFormat() {
         ImGui::Spacing();
         setupMatch();
     }
+}
+
+bool App::setupTeamOptions() {
+    bool changed = false;
+    int boards   = setup_.team_boards ? 1 : 0;
+    ui::label(TR("Pairings"), labelWidth());
+    changed |= ImGui::RadioButton(TR("Everyone against everyone"), &boards, 0);
+    itemHelp(
+        TR("Every engine of a team meets every engine of the other team, one opponent per round (a Scheveningen "
+           "system); the teams may differ in size."));
+    ImGui::SameLine();
+    changed |= ImGui::RadioButton(TR("Board by board"), &boards, 1);
+    itemHelp(
+        TR("The first engine of each team against the first of the other, the second against the second, and so on: "
+           "two teams of the same size, in the order of the list."));
+    setup_.team_boards = boards == 1;
+
+    // The names, and how many engines each team has: the teams are made in the list of participants.
+    const auto [a, b]  = teamSizes(setup_);
+    const float name_w = px(200);
+    ui::label(TR("Team A"), labelWidth());
+    changed |= inputText("##team_a", setup_.team_a, name_w, TR("Team A"));
+    ImGui::SameLine();
+    ImGui::TextDisabled("%s", trn("{} engine", "{} engines", static_cast<uint64_t>(a), a).c_str());
+    ui::label(TR("Team B"), labelWidth());
+    changed |= inputText("##team_b", setup_.team_b, name_w, TR("Team B"));
+    ImGui::SameLine();
+    ImGui::TextDisabled("%s", trn("{} engine", "{} engines", static_cast<uint64_t>(b), b).c_str());
+    itemHelp(
+        TR("Without a choice, the upper half of the list plays the lower half. A participant's ⋯, or the Team A and "
+           "Team B buttons under the list, move engines from one team to the other."));
+    return changed;
 }
 
 void App::drawSetupSummary() {
@@ -1396,13 +1511,36 @@ void App::drawSetupSummary() {
             formula                = trf("{} matches × {} pairs of games, plus tiebreaks", matches, cycles);
             break;
         }
+        case TournamentFormat::TeamMatch: {
+            const auto [a, b] = teamSizes(setup_);
+            if (setup_.team_boards) {
+                formula    = trf("{} boards × 2 games × {} cycles", std::min(a, b), cycles);
+                per_engine = trn("{} game per engine", "{} games per engine", 2 * cycles, 2 * cycles);
+            } else {
+                formula    = trf("{} × {} pairings × 2 games × {} cycles", a, b, cycles);
+                per_engine = a == b
+                                 ? trn("{} game per engine", "{} games per engine", 2 * cycles * b, 2 * cycles * b)
+                                 : trf("{} games per engine of team A, {} of team B", 2 * cycles * b, 2 * cycles * a);
+            }
+            break;
+        }
     }
 
     ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.8f);
     ImGui::TextUnformatted(games ? trn("{} game", "{} games", games, games).c_str() : "∞");
     ImGui::PopFont();
-    ImGui::TextDisabled("%s", formula.c_str());
-    if (!per_engine.empty()) ImGui::TextDisabled("%s", per_engine.c_str());
+    // Wrapped: a team match's line is longer than the card is wide.
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    ImGui::TextWrapped("%s", formula.c_str());
+    if (!per_engine.empty()) ImGui::TextWrapped("%s", per_engine.c_str());
+    // The SPRT's bounds, with the bias and the minimum of games when there are some.
+    if (setup_.format == TournamentFormat::Match && setup_.mode == MatchMode::Sprt &&
+        (setup_.sprt_bias != 0 || setup_.sprt_min_games > 0)) {
+        ImGui::TextWrapped("%s", sprtText(setup_.sprt_elo0, setup_.sprt_elo1, setup_.sprt_bias,
+                                          static_cast<uint64_t>(std::max(0, setup_.sprt_min_games)))
+                                     .c_str());
+    }
+    ImGui::PopStyleColor();
 
     // A rough duration, with a clock.
     const bool fixed_nodes = clockFree(setup_.limit);
@@ -1430,6 +1568,21 @@ void App::drawSetupSummary() {
         check(!setup_.engine_a.empty() && !setup_.engine_b.empty() && apart,
               setup_.engine_a == setup_.engine_b && apart ? std::string(TR("The same engine, with different books"))
                                                           : std::string(TR("Two different engines chosen")));
+    } else if (setup_.format == TournamentFormat::TeamMatch) {
+        // Each team needs an engine, and board by board the same number.
+        const auto [a, b] = teamSizes(setup_);
+        const auto name   = [&](const std::string& given, const char* fallback) {
+            return given.empty() ? std::string(fallback) : given;
+        };
+        if (a == 0 || b == 0) {
+            check(false, TR("A team match needs an engine in each team: put one in the other team (the participant's "
+                            "⋯)."));
+        } else if (setup_.team_boards && a != b) {
+            check(false, trf("Board by board needs two teams of the same size, not {} and {}.", a, b));
+        } else {
+            check(true, trf("{} ({}) against {} ({})", name(setup_.team_a, TR("Team A")), a,
+                            name(setup_.team_b, TR("Team B")), b));
+        }
     } else {
         check(n >= 2, trn("{} engine", "{} engines", n, n));
     }
@@ -1466,17 +1619,35 @@ void App::drawSetupSummary() {
             }
         }
     } else if (!book_missing) {
-        check(!setup_.book.empty(),
-              setup_.book.empty() ? std::string(TR("No opening book: every game starts from the initial position"))
-                                  : trf("Openings: {}", std::filesystem::path(setup_.book).filename().string()));
+        // The book's name, the plies kept of a PGN book, and how a Polyglot book's lines are followed.
+        auto text = setup_.book.empty()
+                        ? std::string(TR("No opening book: every game starts from the initial position"))
+                        : trf("Openings: {}", std::filesystem::path(setup_.book).filename().string());
+        if (tour::isPgnBook(setup_.book) && setup_.book_plies > 0) {
+            text += ", " + trn("{} ply", "{} plies", static_cast<uint64_t>(setup_.book_plies), setup_.book_plies);
+        }
+        check(!setup_.book.empty(), text);
         if (tour::isPolyglot(setup_.book)) {
-            check(true, trf("Polyglot book: its lines to {} plies, as positions",
-                            setup_.book_plies > 0 ? setup_.book_plies : POLYGLOT_PLIES));
+            check(true, trf("Polyglot book: its lines to {} plies, as positions; {}",
+                            setup_.book_plies > 0 ? setup_.book_plies : POLYGLOT_PLIES,
+                            randomnessText(setup_.book_randomness)));
         }
     }
     const bool per_round = setup_.format == TournamentFormat::RoundRobin ||
-                           setup_.format == TournamentFormat::Gauntlet || setup_.format == TournamentFormat::Swiss;
+                           setup_.format == TournamentFormat::Gauntlet || setup_.format == TournamentFormat::Swiss ||
+                           setup_.format == TournamentFormat::TeamMatch;
     if (per_round && setup_.opening_per_round) check(true, TR("The same opening for every pair of a round"));
+    if (setup_.unbalanced_enabled) {
+        const auto moves = static_cast<uint64_t>(std::max(1, setup_.unbalanced_moves));
+        const int cp     = std::max(1, setup_.unbalanced_cp);
+        check(true, setup_.unbalanced_replace
+                        ? trn("Unbalanced openings replaced: both engines beyond ±{} cp for {} move after the book",
+                              "Unbalanced openings replaced: both engines beyond ±{} cp for {} moves after the book",
+                              moves, cp, moves)
+                        : trn("Unbalanced openings flagged: both engines beyond ±{} cp for {} move after the book",
+                              "Unbalanced openings flagged: both engines beyond ±{} cp for {} moves after the book",
+                              moves, cp, moves));
+    }
     if (!setup_.pgn_out.empty()) {
         check(true, trf("Games also appended to {}", std::filesystem::path(setup_.pgn_out).filename().string()));
     }
@@ -1510,8 +1681,12 @@ void App::drawSetupSummary() {
             check(true, trf("{} searches to depth {}", p.name, p.depth));
         }
     }
-    // The participants with a book of their own: "Alpha: own book A, 12 plies".
+    // The participants with a book of their own: "Alpha: own book A, 12 plies", and how their moves are chosen.
     const auto people = fcg::setupParticipants(setup_);
+    if (setup_.book_randomness != 0 &&
+        std::any_of(people.begin(), people.end(), [](const auto& p) { return !p.book.empty(); })) {
+        check(true, trf("Own books: {}", randomnessText(setup_.book_randomness)));
+    }
     for (std::size_t i = 0; i < people.size(); ++i) {
         const auto& book = people[i].book;
         if (book.empty()) continue;

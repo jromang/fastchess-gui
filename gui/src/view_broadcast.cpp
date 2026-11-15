@@ -11,6 +11,7 @@
 #include "app.hpp"
 #include "broadcaster.hpp"
 #include "console.hpp"
+#include "engine_logos.hpp"
 #include "i18n.hpp"
 #include "net.hpp"
 #include "qr.hpp"
@@ -77,6 +78,13 @@ void App::updateBroadcast() {
     if (!broadcast_editing_) saveLichessToken();
     broadcast_editing_ = false;  // the fields drawn in this frame say again
     for (const auto& error : broadcaster_.configure(settings)) Console::instance().add(error, true);
+    // The engines' logos for the page: made when it is served, and again when one is chosen or an engine renamed.
+    if (!broadcaster_.web().running()) {
+        web_logos_version_ = -1;
+    } else if (web_logos_version_ != logos_version_) {
+        web_logos_version_ = logos_version_;
+        broadcaster_.setLogos(logos::webLogos(engines_, storage_.logosDir()));
+    }
 
     const auto* t   = run_->tournament();
     const auto* obs = run_->observer();

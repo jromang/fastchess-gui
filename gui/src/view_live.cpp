@@ -319,17 +319,20 @@ MosaicGrid mosaicGrid(int n, ImVec2 size, bool tile_info) {
     return grid;
 }
 
-// Evaluation shown by the bar: the side to move's current search, else the last move's score.
-float evalBar(const SlotState& st) {
+// Evaluation shown by the bar: the side to move's current search, else the last move's score. With `ply` before the
+// last move (the board stepped back), the score of the last move before it.
+float evalBar(const SlotState& st, int ply = -1) {
     std::optional<fastchess::Score> score;
-    chess::Color pov = st.stm;
-    const auto& info = st.info[st.stm == chess::Color::WHITE ? 0 : 1];
-    if (st.thinking && !info.empty()) {
+    chess::Color pov   = st.stm;
+    const auto& info   = st.info[st.stm == chess::Color::WHITE ? 0 : 1];
+    const bool earlier = ply >= 0 && static_cast<std::size_t>(ply) < st.moves.size();
+    if (!earlier && st.thinking && !info.empty()) {
         const auto parsed = fastchess::engine::UciEngine::parseInfo(info);
         if (parsed.score) score = *parsed.score;
     }
     if (!score) {
-        for (auto it = st.moves.rbegin(); it != st.moves.rend(); ++it) {
+        const auto end = earlier ? st.moves.begin() + ply : st.moves.end();
+        for (auto it = std::make_reverse_iterator(end); it != st.moves.rend(); ++it) {
             if (!it->book && it->score) {
                 score = it->score;
                 pov   = it->mover;
@@ -395,10 +398,20 @@ void App::refreshSlot(int slot) {
             if (const auto black = seedHasBlack(t->spec(), v.state.white, v.state.black)) v.flip = *black;
         }
     }
+    // A new game: its board follows it, whatever position the previous one was stepped back to.
+    if (v.state.has_game && v.state.game_id != v.nav_game) {
+        v.nav_game = v.state.game_id;
+        v.nav.follow();
+        v.listed_ply = -1;
+    }
     if (v.state.has_game && v.state.version != v.board_version) {
         v.board = chess::Board();
         v.board.setFen(v.state.start_fen);
-        for (const auto& m : v.state.moves) v.board.makeMove<true>(m.move);
+        v.last_capture = false;
+        for (const auto& m : v.state.moves) {
+            v.last_capture = v.board.isCapture(m.move);
+            v.board.makeMove<true>(m.move);
+        }
         v.board_version = v.state.version;
     }
 }
@@ -428,6 +441,7 @@ void App::drawLive() {
     const int slots = obs->slotCount();
     live_slot_      = std::clamp(live_slot_, 0, slots - 1);
     for (int i = 0; i < slots; ++i) refreshSlot(i);
+    hearMoves(live_slot_);
 
     // The parts of the followed game that have no panel of their own open are shown here, beside the mosaic.
     const unsigned parts = livePartsHere();
@@ -503,7 +517,7 @@ void App::drawLive() {
             // panel beside it.
             const bool board = parts & LiveBoard;
             const bool side  = parts & ~LiveBoard;
-            const float want = (board ? avail.y - ImGui::GetTextLineHeightWithSpacing() : 0.0f) +
+            const float want = (board ? avail.y - ImGui::GetTextLineHeightWithSpacing() - liveNavHeight() : 0.0f) +
                                (board && side ? gap : 0.0f) + (side ? sidePanel() : 0.0f);
             const float focus =
                 board ? std::clamp(want, avail.x * 0.4f, avail.x * 0.7f) : std::min(want, avail.x * 0.5f);
@@ -518,6 +532,12 @@ void App::drawLive() {
             drawLiveGame(slot_views_[static_cast<std::size_t>(live_slot_)], "##focus", parts, live_slot_);
             ImGui::EndChild();
         }
+    }
+    // A, the mouse over no board: the game followed. The arrows, Home and End step through it.
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) {
+        if (boardKey()) analyseLiveGame(live_slot_);
+        if (live_slot_ >= 0 && live_slot_ < static_cast<int>(slot_views_.size()))
+            liveNavKeys(slot_views_[static_cast<std::size_t>(live_slot_)]);
     }
 
     ui::endPanel();
@@ -603,6 +623,8 @@ void App::drawMosaic(int cols, float card) {
         ImGui::PopStyleColor(2);
 
         if (ImGui::IsItemClicked()) live_slot_ = i;
+        // A: this game on the Board page, analysed.
+        if (ImGui::IsItemHovered() && st.has_game && boardKey()) analyseLiveGame(i);
         if (ImGui::IsItemHovered() && st.has_game) {
             ImGui::SetTooltip(
                 "%s – %s\n%s%s", st.white.c_str(), st.black.c_str(),
@@ -677,17 +699,42 @@ void App::drawEndGameMenu(int slot) {
     }
 }
 
-// The board as large as `size`, with the 50-move counter and the material under it.
+float App::liveNavHeight() const { return setup_.nav_buttons ? boardNavHeight() : 0.0f; }
+
+void App::liveNavKeys(SlotView& view) {
+    if (!view.state.has_game) return;
+    view.nav.step(navKeys(view.flip), static_cast<int>(view.state.moves.size()));
+}
+
+// The board as large as `size`, with the 50-move counter and the material under it, and the buttons through the moves.
+// Stepped back, it shows that earlier position while the game goes on.
 void App::drawLiveBoard(SlotView& view, float size) {
-    const auto& st = view.state;
+    const auto& st  = view.state;
+    const int total = static_cast<int>(st.moves.size());
+    const bool held = view.nav.held(total);
+    const int ply   = view.nav.shown(total);
+    chess::Board earlier;
+    if (held) {
+        earlier.setFen(st.start_fen);
+        for (int i = 0; i < ply; ++i) earlier.makeMove<true>(st.moves[static_cast<std::size_t>(i)].move);
+    }
+    const chess::Board& board = held ? earlier : view.board;
+
+    ImGui::BeginGroup();
     ImGui::BeginGroup();
     BoardDecor decor;
     decor.flipped    = view.flip;
-    decor.eval_white = evalBar(st);
-    if (!st.moves.empty()) decor.last_move = st.moves.back().move;
-    if (setup_.live_arrows) decor.arrows = pvArrows(st, view.board);
-    drawBoard(atlas_, view.board, size, decor);
-    drawBoardInfo(atlas_, view.board, size, tbPieces());
+    decor.eval_white = evalBar(st, ply);
+    if (ply > 0) decor.last_move = st.moves[static_cast<std::size_t>(ply - 1)].move;
+    if (setup_.live_arrows && !held) decor.arrows = pvArrows(st, view.board);
+    drawBoard(atlas_, board, size, decor);
+    // Without the buttons, the way back to the game over the board.
+    if (held && !setup_.nav_buttons && drawBackOverBoard()) view.nav.follow();
+    // A: this game on the Board page, analysed.
+    if (ImGui::IsItemHovered() && st.has_game && boardKey()) {
+        analyseLiveGame(static_cast<int>(&view - slot_views_.data()));
+    }
+    drawBoardInfo(atlas_, board, size, tbPieces());
     ImGui::EndGroup();
     // Right click on the board: the game ended with a result. Asked from the palette, once the panel is in front.
     const int slot = static_cast<int>(&view - slot_views_.data());
@@ -699,12 +746,21 @@ void App::drawLiveBoard(SlotView& view, float size) {
         drawEndGameMenu(slot);
         ImGui::EndPopup();
     }
+    if (setup_.nav_buttons) {
+        const auto click = drawBoardNav("##live_nav", ply, total, view.flip, true, st.active, size);
+        view.nav.step(click.step, total);
+        if (click.hide) {
+            setup_.nav_buttons = false;
+            saveSetupSoon();
+        }
+    }
+    ImGui::EndGroup();
 }
 
 // The board alone, as large as the room allows, in the middle of it.
 void App::drawLiveBoardFitted(SlotView& view) {
     const ImVec2 avail = ImGui::GetContentRegionAvail();
-    const float info_h = ImGui::GetTextLineHeightWithSpacing();
+    const float info_h = ImGui::GetTextLineHeightWithSpacing() + liveNavHeight();
     const float size   = std::floor(std::max(px(120), std::min(avail.x, avail.y - info_h - 4.0f)));
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + std::max(0.0f, (avail.x - size) * 0.5f));
     drawLiveBoard(view, size);
@@ -730,6 +786,7 @@ void App::drawLivePlayer(SlotView& view, chess::Color color, bool search) {
     dl->AddCircle(c, r, IM_COL32(130, 130, 130, 255), 16);
     ImGui::Dummy(ImVec2(r * 2, ImGui::GetTextLineHeight()));
     ImGui::SameLine();
+    if (drawEngineLogo(name, ImGui::GetTextLineHeight()) > 0) ImGui::SameLine();
 
     if (to_move) ImGui::PushStyleColor(ImGuiCol_Text, ui::ACCENT);
     if (isMatch() && obs) {
@@ -787,7 +844,8 @@ void App::drawLivePlayer(SlotView& view, chess::Color color, bool search) {
     ImGui::PopTextWrapPos();
 }
 
-// The game and round, the result once over, and the board's buttons: Detach (not in a detached board), Arrows, Flip.
+// The game and round, the result once over, and the board's buttons: Detach (not in a detached board), Arrows, and Flip
+// when the buttons under the board, which have it, are hidden.
 void App::drawLiveGameLine(SlotView& view, int slot, bool allow_detach) {
     const auto& st = view.state;
     ImGui::Text(TR("Game %zu · round %zu"), st.game_id, st.round_id + 1);
@@ -798,8 +856,9 @@ void App::drawLiveGameLine(SlotView& view, int slot, bool allow_detach) {
     const auto check_w = [](const char* label) {
         return ImGui::CalcTextSize(label).x + ImGui::GetFrameHeight() + ImGui::GetStyle().ItemInnerSpacing.x;
     };
-    const float flip_w   = check_w(TR("Flip"));
-    const float arrows_w = check_w(TR("Arrows")) + ImGui::GetStyle().ItemSpacing.x;
+    const bool flip      = !setup_.nav_buttons;
+    const float flip_w   = flip ? check_w(TR("Flip")) + ImGui::GetStyle().ItemSpacing.x : 0.0f;
+    const float arrows_w = check_w(TR("Arrows"));
     // Detach, or in a detached board, Big screen.
     const float detach_w = ImGui::CalcTextSize(allow_detach ? TR("Detach") : TR("Big screen")).x +
                            ImGui::GetStyle().FramePadding.x * 2 + px(8);
@@ -830,13 +889,20 @@ void App::drawLiveGameLine(SlotView& view, int slot, bool allow_detach) {
         ImGui::SetTooltip("%s", TR("The move the side to move is thinking of, and the reply it expects, in the "
                                    "colours of the engines that would play them."));
     }
-    ImGui::SameLine();
-    ImGui::Checkbox(TR("Flip"), &view.flip);
+    if (flip) {
+        ImGui::SameLine();
+        ImGui::Checkbox(TR("Flip"), &view.flip);
+    }
 }
 
-// The moves played, kept scrolled to the last one while the list is at its end.
+// The moves played, kept scrolled to the last one while the list is at its end. A click on a move shows the position
+// after it on the board; the wheel scrolls the list.
 void App::drawLiveMoves(SlotView& view, float height) {
-    const auto& st = view.state;
+    const auto& st   = view.state;
+    const int total  = static_cast<int>(st.moves.size());
+    const bool held  = view.nav.held(total);
+    const int shown  = view.nav.shown(total);
+    const bool moved = shown != view.listed_ply;  // keys or buttons: the move shown kept in sight
     ImGui::BeginChild("##moves", ImVec2(0, height), ImGuiChildFlags_Borders);
     if (ImGui::BeginTable("##movetable", 3, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg)) {
         ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed, ImGui::CalcTextSize("000.").x);
@@ -848,11 +914,16 @@ void App::drawLiveMoves(SlotView& view, float height) {
         int number      = start.fullMoveNumber();
         std::size_t i   = 0;
         const auto cell = [&](const LiveMove& m) {
-            if (m.book) {
-                ImGui::TextColored(ui::MUTED4, "%s", m.san.c_str());
-                return;
-            }
-            ImGui::TextUnformatted(m.san.c_str());
+            const int index    = static_cast<int>(&m - st.moves.data());
+            const bool current = held && index + 1 == shown;
+            if (m.book) ImGui::PushStyleColor(ImGuiCol_Text, ui::MUTED4);
+            const auto label = fmt::format("{}##lm{}", m.san, index);
+            if (ImGui::Selectable(label.c_str(), current, ImGuiSelectableFlags_None,
+                                  ImGui::CalcTextSize(m.san.c_str())))
+                view.nav.show(index + 1, total);
+            if (m.book) ImGui::PopStyleColor();
+            if (current && moved && !ImGui::IsItemVisible()) ImGui::SetScrollHereY();
+            if (m.book) return;
             ImGui::SameLine();
             ImGui::TextColored(ui::MUTED4, "%s/%lld", ui::formatScore(m.score).c_str(),
                                static_cast<long long>(m.depth));
@@ -882,15 +953,19 @@ void App::drawLiveMoves(SlotView& view, float height) {
 
         ImGui::EndTable();
     }
-    // Follow the game, if the list was at its end (or the game is a new one): earlier moves being read stay in sight.
-    // Repeated for a few frames because the table grows after the first one.
+    // Follow the game, if the list was at its end (or the game is a new one): earlier moves being read stay in sight,
+    // as does the move shown while the board is stepped back. Repeated for a few frames because the table grows after
+    // the first one.
     if (st.moves.size() != view.followed) {
         const bool new_game = view.followed == 0 || st.moves.size() < view.followed;
         const bool at_end   = view.follow_frames > 0 ||
                               ImGui::GetScrollY() >= ImGui::GetScrollMaxY() - ImGui::GetTextLineHeightWithSpacing();
-        if (new_game || at_end) view.follow_frames = 3;
+        if (new_game || (at_end && !held)) view.follow_frames = 3;
         view.followed = st.moves.size();
     }
+    // Back to the current move: the list too.
+    if (moved && !held && view.listed_ply >= 0) view.follow_frames = 3;
+    view.listed_ply = shown;
     if (view.follow_frames > 0) {
         ImGui::SetScrollY(ImGui::GetScrollMaxY());
         view.follow_frames--;
@@ -910,21 +985,28 @@ void App::drawLiveChart(SlotView& view) {
         evals.push_back(previous);
     }
     moveChartChoice("##live_chart", live_chart_);
+    // The position shown marked when the board stepped back; a click shows another.
+    const int total    = static_cast<int>(st.moves.size());
+    const int marker   = view.nav.held(total) ? view.nav.shown(total) : -1;
     const float height = std::max(60.0f, ImGui::GetContentRegionAvail().y);
+    int clicked        = -1;
     if (live_chart_ != MoveChart::Eval) {
         // Read from the engines' output, whatever the PGN options: only what they did not report is missing.
-        plotMoves("##live_moves", live_chart_, moveSeries(st.moves, live_chart_), {st.white, st.black}, evals.size(),
-                  -1, height,
-                  live_chart_ == MoveChart::TbHits ? TR("No tablebase hits.") : TR("Nothing reported yet."));
+        clicked = plotMoves("##live_moves", live_chart_, moveSeries(st.moves, live_chart_), {st.white, st.black},
+                            evals.size(), marker, height,
+                            live_chart_ == MoveChart::TbHits ? TR("No tablebase hits.") : TR("Nothing reported yet."));
     } else {
         const auto wdl     = wdlSeries(st.moves);
         const float eval_h = wdl.empty() ? height : std::max(60.0f, std::floor(height * 0.62f));
-        plotEval("##live_eval", evals, -1, eval_h);
+        clicked            = plotEval("##live_eval", evals, marker, eval_h);
         if (!wdl.empty()) {
-            plotWdl("##live_wdl", wdl, evals.size(), -1,
-                    std::max(30.0f, height - eval_h - ImGui::GetStyle().ItemSpacing.y - 1.0f));
+            if (const int ply = plotWdl("##live_wdl", wdl, evals.size(), marker,
+                                        std::max(30.0f, height - eval_h - ImGui::GetStyle().ItemSpacing.y - 1.0f));
+                ply >= 0)
+                clicked = ply;
         }
     }
+    if (clicked >= 0) view.nav.show(std::clamp(clicked, 0, total), total);
 }
 
 // The parts beside the board, one under the other: the players with their searches, the game, the moves, the chart.
@@ -985,7 +1067,7 @@ void App::drawLiveGame(SlotView& view, const char* id, unsigned parts, int slot,
     // The board as large as the panel allows, with the players, moves and charts beside it; under it when that
     // gives a much larger board (a narrow, tall panel).
     const ImVec2 avail     = ImGui::GetContentRegionAvail();
-    const float info_h     = ImGui::GetTextLineHeightWithSpacing();
+    const float info_h     = ImGui::GetTextLineHeightWithSpacing() + liveNavHeight();
     const float beside     = std::min(avail.y - 4.0f - info_h, avail.x - sidePanel() - ImGui::GetStyle().ItemSpacing.x);
     const float under      = std::min(avail.x, (avail.y - info_h) * 0.6f);
     const bool stacked     = beside < under * 0.75f;
@@ -1026,6 +1108,7 @@ void App::drawLivePart(unsigned part) {
         ImGui::TextDisabled("%s", TR("No game in this slot yet."));
         return;
     }
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) liveNavKeys(view);
     ImGui::PushID(static_cast<int>(part));
     switch (part) {
         case LiveBoard:
@@ -1059,8 +1142,11 @@ void App::drawDetachedBoard(int slot) {
         drawBigGame(big->second, false);
         return;
     }
-    if (slot < static_cast<int>(slot_views_.size()))
-        drawLiveGame(slot_views_[static_cast<std::size_t>(slot)], "##detached", LiveAll, slot, false);
+    if (slot < static_cast<int>(slot_views_.size())) {
+        auto& view = slot_views_[static_cast<std::size_t>(slot)];
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) liveNavKeys(view);
+        drawLiveGame(view, "##detached", LiveAll, slot, false);
+    }
 }
 
 }  // namespace fcg

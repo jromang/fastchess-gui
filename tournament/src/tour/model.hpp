@@ -2,6 +2,7 @@
 
 // What a tournament is: its settings and its participants, as stored in tournament.json.
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -14,13 +15,14 @@
 
 namespace fcg::tour {
 
-enum class Format { Match = 0, RoundRobin = 1, Gauntlet = 2, Swiss = 3, Knockout = 4 };
+enum class Format { Match = 0, RoundRobin = 1, Gauntlet = 2, Swiss = 3, Knockout = 4, TeamMatch = 5 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(Format, {{Format::Match, "match"},
                                       {Format::RoundRobin, "round_robin"},
                                       {Format::Gauntlet, "gauntlet"},
                                       {Format::Swiss, "swiss"},
-                                      {Format::Knockout, "knockout"}})
+                                      {Format::Knockout, "knockout"},
+                                      {Format::TeamMatch, "team_match"}})
 
 // Formats whose rounds are paired from the results, as the tournament goes.
 [[nodiscard]] inline bool pairedAsItGoes(Format f) noexcept { return f == Format::Swiss || f == Format::Knockout; }
@@ -62,6 +64,8 @@ struct Participant {
     // Its engine uses a GPU (a network engine such as Lc0): no more such engines play at once than the machine has
     // GPUs (budget.hpp). From the engine library; saved only when set.
     bool gpu = false;
+    // A team match: 0 for team A, 1 for team B. A replacement takes the team of the participant it replaces.
+    int team = 0;
 };
 
 struct TournamentSpec {
@@ -74,6 +78,17 @@ struct TournamentSpec {
     int rounds         = 0;  // Swiss: number of rounds
     int seeds          = 1;  // gauntlet: the first `seeds` participants play every other one
     uint64_t max_games = 0;  // match: 0 = until stopped or decided by the SPRT
+    // Match, SPRT (sprt_rules.hpp): the Elo bias added to both bounds (conditions.sprt has them with it), and no
+    // decision before this many games; 0: none.
+    double sprt_bias        = 0;
+    uint64_t sprt_min_games = 0;
+
+    // A team match: board by board (the first engine of each team against the first of the other, and so on, the
+    // teams of the same size) rather than every engine of a team against every engine of the other (a Scheveningen
+    // system); `cycles` repeats it. `team_names`: team A's and team B's, "Team A" and "Team B" when empty. A
+    // tournament with teams is of version 4, which versions up to 0.5.9 (that would take it for a match) refuse.
+    bool team_boards = false;
+    std::array<std::string, 2> team_names;
 
     // Openings, adjudication, SPRT, PGN options, concurrency, seed, variant: fastchess' own settings.
     // games, rounds and the output file names are not used, the tournament layer decides them.
@@ -81,6 +96,22 @@ struct TournamentSpec {
 
     std::vector<Participant> participants;
     FileFingerprint book;
+
+    // A Polyglot book the openings were drawn from (conditions.opening.file is then the positions its lines lead to,
+    // written to the tournament's folder): its file, and the depth its lines were followed to. Empty for another
+    // book, and in the tournaments of 0.5.9 and earlier.
+    std::string polyglot_book;
+    int polyglot_plies = 0;
+    // How the moves of a Polyglot book are chosen, the tournament's and the participants' own: from -100, the best
+    // move only, through 0, by their weights, to 100, every move alike (choiceWeights() in polyglot.hpp).
+    int book_randomness = 0;
+
+    // Unbalanced openings (unbalanced.hpp): a game whose two engines both see the same side beyond `unbalanced_cp`
+    // for their first `unbalanced_moves` moves after the book is flagged when it ends; 0 cp: not looked for. With
+    // `unbalanced_replace`, its pair is voided and played again from another opening.
+    int unbalanced_cp       = 0;
+    int unbalanced_moves    = 4;
+    bool unbalanced_replace = false;
 
     bool log_every_game = false;  // keep the engine log of every game, not only of those that end badly
     // An engine that cannot start stops the tournament once its tries are used up, rather than have its games set
@@ -110,6 +141,11 @@ struct TournamentSpec {
     [[nodiscard]] std::string chessbasePgnFile() const {
         return pgn_chessbase_file.empty() ? "games-chessbase.pgn" : pgn_chessbase_file;
     }
+
+    // A team match: the name of team `team` (0: A, 1: B), and its participants' ids in the list's order, the withdrawn
+    // and replaced ones too unless `active_only`.
+    [[nodiscard]] std::string teamName(int team) const;
+    [[nodiscard]] std::vector<int> teamMembers(int team, bool active_only = false) const;
 
     [[nodiscard]] const Participant* participant(int id) const {
         for (const auto& p : participants) {

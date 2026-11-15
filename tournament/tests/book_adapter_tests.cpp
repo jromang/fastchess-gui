@@ -55,10 +55,10 @@ struct Adapter {
     std::vector<std::string> gui, engine;
     BookAdapter adapter;
 
-    explicit Adapter(const fs::path& book, int depth = 0, uint64_t seed = 1, bool chess960 = false)
+    explicit Adapter(const fs::path& book, int depth = 0, uint64_t seed = 1, bool chess960 = false, int randomness = 0)
         : adapter([this](const std::string& l) { gui.push_back(l); },
                   [this](const std::string& l) { engine.push_back(l); }, std::make_unique<PolyglotBook>(book), depth,
-                  seed, chess960) {}
+                  seed, chess960, randomness) {}
 
     void fromGui(const std::string& line) { adapter.fromGui(line); }
     [[nodiscard]] bool engineGot(const std::string& line) const {
@@ -401,6 +401,49 @@ TEST_CASE("own book adapter: the same seed gives the same choices, game after ga
     CHECK(c.find('d') != std::string::npos);
 }
 
+TEST_CASE("own book: the randomness chooses the moves, from the best one only to every move alike, the seed alike") {
+    PolyglotBook book(smallBook());  // 1. e4 three times for one d4
+    const chess::Board start;
+    const auto e4_share = [&](int randomness, uint64_t seed) {
+        std::mt19937_64 rng(seed);
+        int e4 = 0;
+        for (int i = 0; i < 4000; ++i) e4 += chess::uci::moveToUci(book.pick(start, rng, randomness)) == "e2e4";
+        return e4;
+    };
+    CHECK(e4_share(-100, 1) == 4000);  // the best move only
+    const int alike = e4_share(100, 1);
+    CHECK(alike > 1800);
+    CHECK(alike < 2200);
+    const int squared = e4_share(-50, 1);  // 9 for 1
+    CHECK(squared > 3500);
+    CHECK(squared < 3700);
+    // By the weights, as without the randomness: the same choices from the same seed.
+    std::mt19937_64 a(5), b(5);
+    for (int i = 0; i < 200; ++i) CHECK(book.pick(start, a, 0) == book.pick(start, b));
+    CHECK(e4_share(30, 9) == e4_share(30, 9));
+
+    // The adapter answers with the best move only.
+    Adapter adapter(smallBook(), 0, 3, false, -100);
+    for (int game = 0; game < 30; ++game) {
+        adapter.fromGui("ucinewgame");
+        adapter.fromGui("position startpos");
+        adapter.fromGui("go movetime 100");
+        CHECK(adapter.gui.back() == "bestmove e2e4");
+    }
+
+    // The tournament gives it to the adapter's command line, only when it is not 0.
+    fastchess::EngineConfiguration engine;
+    engine.name         = "Alpha";
+    engine.cmd          = "/engines/alpha";
+    const auto previous = book_adapter;
+    book_adapter        = "/opt/fastchess-gui";
+    CHECK(throughBookAdapter(engine, "/books/a.bin", 8, 5, -40).args ==
+          "--book-adapter --book \"/books/a.bin\" --depth 8 --seed 5 --randomness -40 -- \"/engines/alpha\"");
+    CHECK(throughBookAdapter(engine, "/books/a.bin", 8, 5, 300).args.find("--randomness 100 ") != std::string::npos);
+    CHECK(throughBookAdapter(engine, "/books/a.bin", 8, 5, 0).args.find("randomness") == std::string::npos);
+    book_adapter = previous;
+}
+
 TEST_CASE("own book adapter: its processes draw their own book moves, from the same seed and the same position") {
     if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available, skipped");
@@ -544,8 +587,8 @@ TEST_CASE("own book: a tournament with one is of version 3, which the versions b
     again.participants[0].book = "";
     CHECK(nlohmann::json(again).at("version") == 3);
 
-    // A later version still is refused, as before.
-    j["version"] = 4;
+    // A later version still is refused, as before (4 is a team match's).
+    j["version"] = 5;
     CHECK_THROWS_WITH_AS((void)j.get<TournamentSpec>(), doctest::Contains("newer version"), std::runtime_error);
 
     // The folder of a tournament with an own book.

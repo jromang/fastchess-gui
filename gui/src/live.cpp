@@ -792,6 +792,7 @@ GameRecord GuiObserver::makeRecord(const tour::GameResult& result, std::string_v
     record.a_result     = resultForA(result, id_a_);
     record.termination  = static_cast<uint8_t>(result.termination);
     record.result_set   = result.set.has_value();
+    record.unbalanced   = static_cast<int8_t>(std::clamp(result.unbalanced, -1, 1));
     record.reason       = internReason(result.reason);
     const auto& extras  = extrasOf(result, pgn);
     record.opening      = extras.opening;
@@ -924,6 +925,13 @@ bool GuiObserver::slotActive(int i) const {
     if (i < 0 || i >= static_cast<int>(slots_.size())) return false;
     std::lock_guard<std::mutex> lock(slots_[i]->mutex);
     return slots_[i]->state.active;
+}
+
+std::optional<std::array<int, 2>> GuiObserver::slotPlayers(int i) const {
+    if (i < 0 || i >= static_cast<int>(slots_.size())) return std::nullopt;
+    std::lock_guard<std::mutex> lock(slots_[i]->mutex);
+    if (!slots_[i]->state.active) return std::nullopt;
+    return slots_[i]->participant;
 }
 
 bool GuiObserver::loading() const {

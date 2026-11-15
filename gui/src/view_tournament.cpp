@@ -100,8 +100,10 @@ void App::refreshTable() {
     // count, so that fast games do not hold the window. Asked for (a new anchor, an edit), it is computed now.
     const auto now = std::chrono::steady_clock::now();
     if (table_for_ != ~std::size_t(0) && now < table_next_) return;
-    table_      = tour::computeTable(t->spec(), t->results(), anchor_, t->byes());
-    shown_      = tour::ordered(table_, t->spec(), standings_order_);
+    const auto results = t->results();
+    table_             = tour::computeTable(t->spec(), results, anchor_, t->byes());
+    shown_             = tour::ordered(table_, t->spec(), standings_order_);
+    if (t->spec().format == tour::Format::TeamMatch) teams_ = tour::computeTeams(t->spec(), results);
     table_for_  = games_.size();
     table_next_ = now + std::min<std::chrono::steady_clock::duration>(10 * (std::chrono::steady_clock::now() - now),
                                                                       std::chrono::seconds(5));
@@ -234,6 +236,13 @@ void App::drawTournamentOverview() {
 
     ImGui::BeginChild("##ov_left", ImVec2(left, 0));
     drawPgnOutError();
+    // A team match: the teams' score first.
+    if (t->spec().format == tour::Format::TeamMatch) {
+        ui::beginCard("team_score_card");
+        drawTeamScore();
+        ui::endCard();
+        ImGui::Spacing();
+    }
     ui::beginCard("standings_card");
     ImGui::TextUnformatted(TR("Standings"));
     ImGui::SameLine();
@@ -343,6 +352,7 @@ void App::drawTournamentOverview() {
                 trf("{:.0f} games/h · about {} left", games_per_hour_, ui::formatDuration(hours * 3600.0)).c_str());
         }
     }
+    drawUnbalancedCount();
     ui::endCard();
     drawSubmissionChecklist();  // once it is finished
 
@@ -404,6 +414,47 @@ void App::drawTournamentOverview() {
     ImGui::EndChild();
 }
 
+void App::drawUnbalancedCount() {
+    const auto* t = run_->tournament();
+    if (!t || t->spec().unbalanced_cp <= 0) return;
+    const auto& spec   = t->spec();
+    const auto flagged = static_cast<uint64_t>(
+        std::count_if(games_.begin(), games_.end(), [](const GameRecord& g) { return g.unbalanced != 0; }));
+    const auto replaced = t->openingsReplaced();
+    std::string text =
+        trn("{} game from an unbalanced opening", "{} games from an unbalanced opening", flagged, flagged);
+    if (replaced > 0) text += " · " + trn("{} opening replaced", "{} openings replaced", replaced, replaced);
+    ImGui::PushStyleColor(ImGuiCol_Text, flagged + replaced > 0 ? ui::WARN : ImGui::GetColorU32(ImGuiCol_TextDisabled));
+    ImGui::TextUnformatted(text.c_str());
+    ImGui::PopStyleColor();
+    if (ImGui::BeginItemTooltip()) {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+        ImGui::TextUnformatted(trf("Both engines beyond ±{} cp for the same side for their first {} moves after the "
+                                   "book. The results are not changed.",
+                                   spec.unbalanced_cp, spec.unbalanced_moves)
+                                   .c_str());
+        if (spec.unbalanced_replace) {
+            ImGui::TextUnformatted(trf("Such a pair is voided and played again from another opening, at most {} "
+                                       "times.",
+                                       tour::MAX_OPENING_REPLACEMENTS)
+                                       .c_str());
+        }
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+    if (flagged > 0) {
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Show##unbalanced"))) showUnbalancedGames();
+    }
+}
+
+void App::showUnbalancedGames() {
+    page_         = Page::Tournament;
+    tab_request_  = Tab::Games;
+    games_filter_ = UNBALANCED_FILTER;
+    filtered_for_ = ~std::size_t(0);
+}
+
 void App::copyStandings(ui::CopyAs as) {
     const auto* t = run_->tournament();
     if (!t || isMatch()) return;
@@ -412,15 +463,20 @@ void App::copyStandings(ui::CopyAs as) {
     // a table posted on a forum is told apart from those of other GUIs.
     const auto& spec  = t->spec();
     const auto footer = tour::footerLine(spec, shown_, t->totalGames()) + "\nfastchess-gui " FCG_VERSION;
+    // A team match: the teams' scores and their engines against each other, rather than a crosstable mostly empty.
+    const bool teams = spec.format == tour::Format::TeamMatch;
     std::string text;
     switch (as) {
         case ui::CopyAs::None:
             return;
         case ui::CopyAs::Text:
-            text = tour::tableText(shown_, spec.name, footer);
+            text =
+                teams ? tour::teamText(teams_, table_, spec.name, footer) : tour::tableText(shown_, spec.name, footer);
             break;
         case ui::CopyAs::Bbcode:
-            text = tour::bbcode(spec.name, tour::forumDetails(spec, shown_), tour::tableText(shown_, "", footer));
+            text =
+                tour::bbcode(spec.name, tour::forumDetails(spec, shown_),
+                             teams ? tour::teamText(teams_, table_, "", footer) : tour::tableText(shown_, "", footer));
             break;
         case ui::CopyAs::GauntletText:
             text = tour::gauntletText(spec, table_, spec.name, footer);
@@ -442,12 +498,18 @@ void App::drawStandings() {
     const auto format  = t->spec().format;
     const auto engines = t->spec().participants.size();
     const bool fits    = engines <= CROSSTABLE_MAX;
+    // A team match opens on its teams.
+    const bool teams = format == tour::Format::TeamMatch;
     if (standings_view_ < 0) {
-        standings_view_ = format == tour::Format::RoundRobin && engines <= CROSSTABLE_AUTO ? 1 : 0;
+        standings_view_ = teams ? 2 : format == tour::Format::RoundRobin && engines <= CROSSTABLE_AUTO ? 1 : 0;
         // A gauntlet opens with the opponents of its (first) seed under the table.
         if (format == tour::Format::Gauntlet && engines > 0) standings_engine_ = t->spec().participants.front().id;
     }
-    if (!fits) standings_view_ = 0;
+    if ((!fits && standings_view_ == 1) || (!teams && standings_view_ == 2)) standings_view_ = 0;
+    if (teams) {
+        ImGui::RadioButton(TR("Teams"), &standings_view_, 2);
+        ImGui::SameLine();
+    }
     ImGui::RadioButton(TR("Table"), &standings_view_, 0);
     ImGui::SameLine();
     ImGui::BeginDisabled(!fits);
@@ -529,7 +591,9 @@ void App::drawStandings() {
     refreshTable();
 
     ImGui::Spacing();
-    if (standings_view_ == 1) {
+    if (standings_view_ == 2) {
+        drawTeamStandings();
+    } else if (standings_view_ == 1) {
         drawCrosstable();
     } else if (!standings_engine_) {
         drawStandingsTable(false);
@@ -539,6 +603,152 @@ void App::drawStandings() {
         drawStandingsTable(false);
         ImGui::EndChild();
         drawOpponents(*standings_engine_);
+    }
+}
+
+void App::drawTeamScore() {
+    const auto* t = run_->tournament();
+    if (!t) return;
+    const auto& spec = t->spec();
+    const auto& a    = teams_.teams[0];
+    const auto& b    = teams_.teams[1];
+
+    // "Team A  12½ – 7½  Team B", each team in its colour, then the score and its Elo.
+    ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.5f);
+    ImGui::PushStyleColor(ImGuiCol_Text, ui::ACCENT);
+    ImGui::TextUnformatted(teamLabel(spec, 0).c_str());
+    ImGui::PopStyleColor();
+    ImGui::SameLine(0, px(14));
+    ImGui::TextUnformatted(fmt::format("{} – {}", half(a.points), half(b.points)).c_str());
+    ImGui::SameLine(0, px(14));
+    ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+    ImGui::TextUnformatted(teamLabel(spec, 1).c_str());
+    ImGui::PopStyleColor();
+    ImGui::PopFont();
+
+    std::string line = trn("{} game", "{} games", static_cast<uint64_t>(a.games), a.games);
+    if (a.games > 0) line += " · " + trf("{:.1f} % for {}", 100.0 * a.score(), teamLabel(spec, 0));
+    if (teams_.elo) line += " · " + trf("Elo {:+.1f} ± {:.1f}", *teams_.elo, *teams_.error);
+    if (teams_.los) line += " · " + trf("LOS {:.1f} %", 100.0 * *teams_.los);
+    ImGui::TextDisabled("%s", line.c_str());
+    if (ImGui::BeginItemTooltip()) {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+        ImGui::TextUnformatted(
+            trf("The Elo difference {}'s score stands for, with its 95 % interval, counted on the pairs of games as "
+                "in a match (pentanomial); LOS: the likelihood that it is the stronger team. +{} ={} −{}.",
+                teamLabel(spec, 0), a.wins, a.draws, a.losses)
+                .c_str());
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
+
+void App::drawTeamStandings() {
+    const auto* t = run_->tournament();
+    if (!t) return;
+    const auto& spec = t->spec();
+
+    ui::beginCard("team_score_card");
+    drawTeamScore();
+    ui::endCard();
+
+    // Each team's engines with their own score and rating, and their points against each engine of the other team:
+    // the crosstable of the two teams, seen from each side.
+    for (int i = 0; i < 2; ++i) {
+        const auto& mine    = teams_.teams[static_cast<std::size_t>(i)];
+        const auto& theirs  = teams_.teams[static_cast<std::size_t>(1 - i)];
+        const char* mine_l  = i == 0 ? "A" : "B";
+        const char* their_l = i == 0 ? "B" : "A";
+        // As many opponents' columns as ImGui allows.
+        const int cells   = static_cast<int>(std::min<std::size_t>(theirs.members.size(), 400));
+        const int columns = 7 + cells;
+
+        ImGui::Spacing();
+        ui::beginCard(i == 0 ? "team_a_card" : "team_b_card");
+        ImGui::PushStyleColor(ImGuiCol_Text, i == 0 ? ui::ACCENT : ui::WARN);
+        ImGui::TextUnformatted(teamLabel(spec, i).c_str());
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        ImGui::TextDisabled(
+            "%s", trf("{} points of {} against {}", half(mine.points), mine.games, teamLabel(spec, 1 - i)).c_str());
+
+        const auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit |
+                           ImGuiTableFlags_ScrollX | ImGuiTableFlags_PadOuterX;
+        if (ImGui::BeginTable(i == 0 ? "##team_a" : "##team_b", columns, flags)) {
+            ImGui::TableSetupColumn("#");
+            ImGui::TableSetupColumn(TR("Engine"), ImGuiTableColumnFlags_WidthStretch);
+            ImGui::TableSetupColumn(TR("Games"));
+            ImGui::TableSetupColumn(TR("Points"));
+            ImGui::TableSetupColumn("%");
+            ImGui::TableSetupColumn("Elo");
+            ImGui::TableSetupColumn("±");
+            std::vector<std::string> heads;
+            for (int j = 0; j < cells; ++j) heads.push_back(fmt::format("{}{}", their_l, j + 1));
+            for (const auto& h : heads) ImGui::TableSetupColumn(h.c_str());
+            // The header row, an opponent's name at the cursor on its column.
+            ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
+            for (int c = 0; c < columns; ++c) {
+                ImGui::TableSetColumnIndex(c);
+                ImGui::TableHeader(ImGui::TableGetColumnName(c));
+                if (c >= 7 && ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("%s", theirs.members[static_cast<std::size_t>(c - 7)].name.c_str());
+                }
+            }
+
+            for (std::size_t k = 0; k < mine.members.size(); ++k) {
+                const auto& m          = mine.members[k];
+                const auto it          = std::find_if(table_.rows.begin(), table_.rows.end(),
+                                                      [&](const tour::Standing& s) { return s.id == m.id; });
+                const tour::Standing s = it == table_.rows.end() ? tour::Standing{} : *it;
+                ImGui::PushID(static_cast<int>(k));
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::TextDisabled("%s%d", mine_l, static_cast<int>(k + 1));
+                ImGui::TableNextColumn();
+                if (m.active) {
+                    ImGui::TextUnformatted(m.name.c_str());
+                } else {
+                    ImGui::TextDisabled("%s", m.name.c_str());
+                    ImGui::SetItemTooltip("%s", TR("No longer playing: withdrawn or replaced. Its games that count "
+                                                   "still count for its team."));
+                }
+                ImGui::TableNextColumn();
+                ImGui::TextDisabled("%d", s.games);
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(half(s.points).c_str());
+                ImGui::TableNextColumn();
+                ImGui::TextDisabled("%.1f", 100.0 * s.score());
+                ImGui::TableNextColumn();
+                if (s.rated) {
+                    ImGui::Text("%+ld", std::lround(s.rating.elo));
+                } else {
+                    ImGui::TextDisabled("—");
+                }
+                ImGui::TableNextColumn();
+                if (s.rated && s.rating.error > 0) {
+                    ImGui::TextDisabled("%.0f", s.rating.error);
+                } else {
+                    ImGui::TextDisabled(" ");
+                }
+                for (int j = 0; j < cells; ++j) {
+                    ImGui::TableNextColumn();
+                    const auto& o = theirs.members[static_cast<std::size_t>(j)];
+                    const auto p  = teams_.pair(m.id, o.id);
+                    if (p.games() == 0) {
+                        ImGui::TextDisabled("·");
+                        continue;
+                    }
+                    const double score = p.points() / p.games();
+                    ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, scoreColor(score, 0.6f));
+                    ImGui::TextUnformatted(half(p.points()).c_str());
+                    ImGui::SetItemTooltip(
+                        "%s", fmt::format("{} – {}: +{} ={} −{}", m.name, o.name, p.wins, p.draws, p.losses).c_str());
+                }
+                ImGui::PopID();
+            }
+            ImGui::EndTable();
+        }
+        ui::endCard();
     }
 }
 

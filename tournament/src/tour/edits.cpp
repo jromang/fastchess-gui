@@ -15,10 +15,15 @@ std::vector<int> activeIds(const TournamentSpec& spec) {
     return ids;
 }
 
-// Who a new participant meets: everyone in a round robin, the tested engines in a gauntlet.
+// Who a new participant meets: everyone in a round robin, the tested engines in a gauntlet, the other team in a team
+// match.
 std::vector<int> opponents(const TournamentSpec& spec, int id) {
     const auto active = activeIds(spec);
     std::vector<int> out;
+    if (spec.format == Format::TeamMatch) {
+        const auto* p = spec.participant(id);
+        return spec.teamMembers(p && p->team == 0 ? 1 : 0, true);
+    }
     if (spec.format == Format::Gauntlet) {
         const auto seeds = std::min<std::size_t>(static_cast<std::size_t>(std::max(1, spec.seeds)), active.size());
         for (std::size_t i = 0; i < seeds; ++i) {
@@ -47,7 +52,26 @@ std::vector<Encounter> encountersOf(int id, const std::vector<int>& opps, uint32
 }
 
 // Whole new cycles for the active participants, as the schedule would have generated them.
-std::vector<Encounter> newCycle(const TournamentSpec& spec, uint32_t cycle) {
+std::vector<Encounter> newCycle(const TournamentSpec& spec, const Schedule& schedule, uint32_t cycle) {
+    if (spec.format == Format::TeamMatch) {
+        if (!spec.team_boards) return teamCycle(spec.teamMembers(0, true), spec.teamMembers(1, true), false, cycle);
+        // Board by board: the boards of the first cycle, where a replacement took the place of the engine it
+        // replaced, less those of the withdrawn engines.
+        const auto active = [&](int id) {
+            const auto* p = spec.participant(id);
+            return p && p->active;
+        };
+        std::vector<Encounter> out;
+        for (uint32_t i = 0; i < schedule.size().value_or(0); ++i) {
+            auto e = *schedule.at(i);
+            if (e.cycle != 1 || !active(e.first) || !active(e.second)) continue;
+            if (cycle % 2 == 0) std::swap(e.first, e.second);
+            e.cycle = cycle;
+            out.push_back(e);
+        }
+        return out;
+    }
+
     const auto ids    = activeIds(spec);
     const int n       = static_cast<int>(ids.size());
     const auto rounds = spec.format == Format::RoundRobin ? bergerRounds(n) : gauntletRounds(n, spec.seeds);
@@ -127,6 +151,7 @@ nlohmann::json editEvent(const Edit& edit, uint32_t at, int new_id, const Tourna
             p.engine.name = uniqueName(spec, edit.engine.name);
             p.elo         = edit.elo;
             p.gpu         = edit.gpu;
+            p.team        = spec.format == Format::TeamMatch && edit.team == 1 ? 1 : 0;
             return {{"t", "participant_added"}, {"at", at}, {"participant", p}, {"catch_up", edit.catch_up}};
         }
         case Edit::Kind::ReplaceParticipant: {
@@ -136,6 +161,7 @@ nlohmann::json editEvent(const Edit& edit, uint32_t at, int new_id, const Tourna
             p.engine.name = uniqueName(spec, edit.engine.name);
             p.elo         = edit.elo;
             p.gpu         = edit.gpu;
+            if (const auto* old = spec.participant(edit.participant)) p.team = old->team;
             return {{"t", "participant_replaced"}, {"at", at}, {"old", edit.participant}, {"participant", p}};
         }
         case Edit::Kind::Withdraw:
@@ -172,6 +198,9 @@ void applyEditEvent(const nlohmann::json& event, TournamentSpec& spec, Schedule&
     if (type == "participant_added") {
         const auto p = event.at("participant").get<Participant>();
         if (spec.participant(p.id)) throw std::runtime_error("participant id already used");
+        // Its board would have no opponent.
+        if (spec.format == Format::TeamMatch && spec.team_boards)
+            throw std::runtime_error("a team match board by board takes no new engine: replace one instead");
         spec.participants.push_back(p);
         const auto opps = opponents(spec, p.id);
         if (opps.empty()) return;
@@ -220,7 +249,7 @@ void applyEditEvent(const nlohmann::json& event, TournamentSpec& spec, Schedule&
         const auto last = schedule.lastCycle();
         if (static_cast<uint32_t>(cycles) > last) {
             for (uint32_t c = last + 1; c <= static_cast<uint32_t>(cycles); ++c) {
-                schedule.insert(schedule.size().value_or(0), newCycle(spec, c));
+                schedule.insert(schedule.size().value_or(0), newCycle(spec, schedule, c));
             }
         } else {
             schedule.eraseFrom(at, [&](const Encounter& e) { return e.cycle > static_cast<uint32_t>(cycles); });

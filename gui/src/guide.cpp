@@ -10,6 +10,8 @@ const char* anchor(Section section) {
     switch (section) {
         case Section::Window:
             return "the-window";
+        case Section::Home:
+            return "the-home-page";
         case Section::Engines:
             return "engines";
         case Section::Books:
@@ -26,6 +28,10 @@ const char* anchor(Section section) {
             return "ratings";
         case Section::Broadcast:
             return "broadcast";
+        case Section::Board:
+            return "board";
+        case Section::Appearance:
+            return "appearance";
         case Section::Count:
             break;
     }

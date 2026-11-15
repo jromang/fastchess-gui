@@ -76,15 +76,17 @@ uint64_t processEntropy() {
 }  // namespace
 
 fastchess::EngineConfiguration throughBookAdapter(fastchess::EngineConfiguration engine, const std::string& book,
-                                                  int depth, uint64_t seed) {
+                                                  int depth, uint64_t seed, int randomness) {
     if (book_adapter.empty()) throw std::runtime_error("an engine's own book needs fastchess-gui's book adapter");
 
     // The engine behind it: a WinBoard engine through the WinBoard adapter, which is fastchess-gui too.
     auto child = inQuotes(engine.cmd) + (engine.args.empty() ? "" : " " + engine.args);
     if (engine.protocol == "xboard") child = inQuotes(book_adapter) + " --wb2uci " + child;
 
+    randomness = std::clamp(randomness, -RANDOMNESS_LIMIT, RANDOMNESS_LIMIT);
     engine.args =
-        fmt::format("--book-adapter --book {} --depth {} --seed {}{} -- {}", inQuotes(book), std::max(0, depth), seed,
+        fmt::format("--book-adapter --book {} --depth {} --seed {}{}{} -- {}", inQuotes(book), std::max(0, depth), seed,
+                    randomness != 0 ? fmt::format(" --randomness {}", randomness) : "",
                     engine.variant == fastchess::VariantType::FRC ? " --chess960" : "", child);
     engine.cmd      = book_adapter;
     engine.protocol = "uci";
@@ -110,12 +112,13 @@ void markOwnBookMoves(fastchess::MatchData& data, chess::Color side, PolyglotBoo
 // The translation
 
 BookAdapter::BookAdapter(Sink to_gui, Sink to_engine, std::unique_ptr<PolyglotBook> book, int depth, uint64_t seed,
-                         bool chess960)
+                         bool chess960, int randomness)
     : to_gui_(std::move(to_gui)),
       to_engine_(std::move(to_engine)),
       book_(std::move(book)),
       depth_(depth),
       seed_(seed),
+      randomness_(randomness),
       chess960_(chess960) {}
 
 void BookAdapter::fromGui(const std::string& line) {
@@ -189,7 +192,7 @@ bool BookAdapter::answerFromBook(const std::vector<std::string>& tokens) {
     for (const auto& t : tokens) {
         if (t == "ponder" || t == "infinite") return false;
     }
-    const auto move = book_->pick(board_, rng_);
+    const auto move = book_->pick(board_, rng_, randomness_);
     if (move == chess::Move::NO_MOVE) return false;
     to_gui_("bestmove " + chess::uci::moveToUci(move, chess960_));
     return true;
@@ -200,10 +203,11 @@ bool BookAdapter::answerFromBook(const std::vector<std::string>& tokens) {
 
 int runBookAdapter(const std::vector<std::string>& args) {
     std::string book;
-    int depth     = 0;
-    uint64_t seed = 0;
-    bool chess960 = false;
-    std::size_t i = 0;
+    int depth      = 0;
+    uint64_t seed  = 0;
+    int randomness = 0;
+    bool chess960  = false;
+    std::size_t i  = 0;
     for (; i < args.size() && args[i] != "--"; ++i) {
         const bool more = i + 1 < args.size();
         try {
@@ -213,6 +217,8 @@ int runBookAdapter(const std::vector<std::string>& args) {
                 depth = std::stoi(args[++i]);
             } else if (args[i] == "--seed" && more) {
                 seed = std::stoull(args[++i]);
+            } else if (args[i] == "--randomness" && more) {
+                randomness = std::clamp(std::stoi(args[++i]), -RANDOMNESS_LIMIT, RANDOMNESS_LIMIT);
             } else if (args[i] == "--chess960") {
                 chess960 = true;
             }
@@ -221,8 +227,8 @@ int runBookAdapter(const std::vector<std::string>& args) {
     }
     if (book.empty() || i + 1 >= args.size()) {
         std::fprintf(stderr,
-                     "usage: fastchess-gui --book-adapter --book FILE [--depth PLIES] [--seed N] [--chess960] -- "
-                     "ENGINE [ARGS...]\n");
+                     "usage: fastchess-gui --book-adapter --book FILE [--depth PLIES] [--seed N] [--randomness R] "
+                     "[--chess960] -- ENGINE [ARGS...]\n");
         return 2;
     }
 
@@ -257,7 +263,7 @@ int runBookAdapter(const std::vector<std::string>& args) {
     process.setRealtimeLogging(false);
     BookAdapter adapter(
         to_gui, [&](const std::string& line) { (void)process.writeInput(line + "\n"); }, std::move(polyglot), depth,
-        mix(seed) ^ processEntropy(), chess960);
+        mix(seed) ^ processEntropy(), chess960, randomness);
 
     // The lines read, which the reads collect besides passing each to the callbacks: emptied at each, so that they
     // do not pile up for the life of the engine (see the reading below). Only the reading thread touches them.

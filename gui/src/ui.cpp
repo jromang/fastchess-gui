@@ -281,6 +281,26 @@ const char* glyph(Icon icon) {
             return "\uE0B6";  // ellipsis
         case Icon::Star:
             return "\uE176";  // star
+        case Icon::Board:
+            return "\uE6A2";  // chess-knight
+        case Icon::Paste:
+            return "\uE3E8";  // clipboard-paste
+        case Icon::Edit:
+            return "\uE172";  // square-pen
+        case Icon::Analyse:
+            return "\uE3C6";  // brain
+        case Icon::First:
+            return "\uE243";  // chevron-first
+        case Icon::Previous:
+            return "\uE06E";  // chevron-left
+        case Icon::Next:
+            return "\uE06F";  // chevron-right
+        case Icon::Last:
+            return "\uE244";  // chevron-last
+        case Icon::Flip:
+            return "\uE37D";  // arrow-up-down
+        case Icon::Live:
+            return "\uE142";  // radio
     }
     return "";
 }

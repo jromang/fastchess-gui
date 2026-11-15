@@ -105,7 +105,8 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
                        : spec.format == tour::Format::RoundRobin ? "round_robin"
                        : spec.format == tour::Format::Gauntlet   ? "gauntlet"
                        : spec.format == tour::Format::Swiss      ? "swiss"
-                                                                 : "knockout";
+                       : spec.format == tour::Format::Knockout   ? "knockout"
+                                                                 : "team_match";
     s.chess960       = frc;
     // The time control when every participant has the same.
     for (const auto& p : spec.participants) {
@@ -122,6 +123,7 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
     s.total             = in.total;
     s.finished          = in.finished;
     s.table             = tour::computeTable(spec, results, in.anchor, in.byes);
+    if (spec.format == tour::Format::TeamMatch) s.teams = tour::computeTeams(spec, results);
 
     const auto name = [&](int id) { return spec.participant(id) ? spec.participant(id)->engine.name : "?"; };
     std::map<std::string, BroadcastEngine> lost;  // the anomalies of each engine, by name
@@ -408,6 +410,14 @@ void Broadcaster::update(const tour::TournamentState& state, const LiveSource& o
     wake_.notify_all();
 }
 
+void Broadcaster::setLogos(const std::vector<WebLogo>& logos) {
+    web_.setLogos(logos);
+    std::map<std::string, std::string> paths;
+    for (const auto& l : logos) paths[l.engine] = l.path;
+    std::lock_guard<std::mutex> lock(mutex_);
+    logo_paths_ = std::move(paths);
+}
+
 std::string Broadcaster::filesStatus() const {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!files_error_.empty()) return files_error_;
@@ -466,6 +476,10 @@ void Broadcaster::publish(const Job& job, const BroadcastSettings& settings) {
     auto snapshot       = makeSnapshot(job.input);
     snapshot.chat_link  = settings.chat_link;
     snapshot.discord_id = settings.discord_id;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        snapshot.logos = logo_paths_;
+    }
     // The lichess round, with its own chat, while the games are pushed there.
     if (settings.lichess) {
         if (const auto status = lichess(); status.running) snapshot.lichess_url = status.url;

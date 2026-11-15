@@ -7,6 +7,7 @@
 #include <tour/files.hpp>
 
 #include "app.hpp"
+#include "engine_client.hpp"
 #include "i18n.hpp"
 #include "local_socket.hpp"
 #include "memory.hpp"
@@ -322,45 +323,17 @@ void App::drawRunControls(std::size_t index) {
     if (index >= runs_.size()) return;
     auto& open = runs_[index];
     auto& r    = *open.run;
-    if (!r.running()) return;
-    const auto* t   = r.tournament();
-    const auto dir  = t ? fs::absolute(t->dir()).lexically_normal().string() : std::string();
+    if (!r.running() || !r.remote()) return;  // the quick test is not shared out
+    const auto* t  = r.tournament();
+    const auto dir = t ? fs::absolute(t->dir()).lexically_normal().string() : std::string();
     const auto mark = [&](bool paused) {
-        if (!open.quick_test) storage_.setRunningMarker(RunningMarker{dir, paused, open.resume_guarded, open.weight});
+        storage_.setRunningMarker(RunningMarker{dir, paused, open.resume_guarded, open.weight});
     };
-    if (r.paused()) {
-        if (ui::iconButton("resume", ui::Icon::Play, TR("Resume"), !r.stopping() && !r.stoppingWhenIdle())) {
-            r.setPaused(false);
-            mark(false);
-        }
-    } else if (ui::iconButton("pause", ui::Icon::Pause, TR("Pause"), !r.stopping())) {
-        r.setPaused(true);
-        mark(true);
-    }
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", TR("Pause: no new pair starts. Running games, and the second game of their "
-                                   "pair,\nplay to the end; its cores go to the other tournaments."));
-    }
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(t ? t->spec().name.c_str() : "");
     ImGui::SameLine();
-    if (ui::iconButton("stop", ui::Icon::Stop, TR("Stop"), !r.stopping())) ImGui::OpenPopup("stop_menu");
-    if (ImGui::BeginPopup("stop_menu")) {
-        const bool now = ImGui::MenuItem(TR("Stop now (running games are lost)"));
-        if (ImGui::MenuItem(TR("Finish the running games, then stop")) || now) {
-            open.user_stop = true;
-            if (index == shown_run_) user_stop_ = true;
-            if (now) {
-                r.stopNow();
-            } else {
-                r.stopWhenIdle();
-            }
-            storage_.clearRunningMarker(dir);
-        }
-        ImGui::EndPopup();
-    }
-    if (!r.remote()) return;  // the quick test is not shared out
 
     // Its weight: its share of the cores against the others'.
-    ImGui::SameLine();
     ImGui::AlignTextToFramePadding();
     ImGui::TextDisabled("%s", TR("Weight"));
     ImGui::SameLine();
@@ -407,6 +380,8 @@ tour::Budget App::machineBudget() const {
     b.gpus = budget_setting_.gpus;
     return b;
 }
+
+int App::analysisThreads() const { return boardThreads(); }
 
 int App::localThreads() const {
     int threads = 0;

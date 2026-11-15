@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "appearance.hpp"
 #include "layout.hpp"
 #include "model.hpp"
 #include "update_check.hpp"
@@ -66,6 +67,12 @@ class Storage {
     // The check for a new version (settings.json): whether it is wanted, when it was last made and what it found.
     [[nodiscard]] update::Settings updateSettings() const;
     void setUpdateSettings(const update::Settings& updates) const;
+
+    // How the boards look and sound (settings.json): colours, pieces, move sounds.
+    [[nodiscard]] appearance::Settings appearance() const;
+    void setAppearance(const appearance::Settings& settings) const;
+    // The engines' logos, copies of the pictures chosen on their cards (EngineEntry::logo is a file name in it).
+    [[nodiscard]] std::filesystem::path logosDir() const { return root_ / "logos"; }
 
     [[nodiscard]] std::vector<BookEntry> loadBooks() const;
     void saveBooks(const std::vector<BookEntry>& books) const;

@@ -9,6 +9,8 @@
 
 #include <chess.hpp>
 
+#include "appearance.hpp"
+
 namespace fcg {
 
 // The twelve piece images, rasterized once into a texture atlas: mipmapped with OpenGL; with SDL's renderer, which has
@@ -20,8 +22,11 @@ class PieceAtlas {
     PieceAtlas& operator=(const PieceAtlas&) = delete;
     ~PieceAtlas();
 
-    // Needs the window's renderer (render::open). Returns false if the SVGs could not be rendered.
-    bool create(int pixels_per_piece);
+    // Needs the window's renderer (render::open). Returns false if the SVGs could not be rendered. Made again, from
+    // other pieces, it frees the textures it had: between frames, since the last frame's drawing may use them.
+    bool create(int pixels_per_piece, const appearance::PieceSvgs& svgs);
+    bool create(int pixels_per_piece) { return create(pixels_per_piece, appearance::builtInPieces({})); }
+    void clear();
 
     [[nodiscard]] bool ready() const noexcept { return !levels_.empty(); }
     // The atlas for pieces drawn `pixels` wide on the screen: the smallest image at least that large.
@@ -39,8 +44,11 @@ class PieceAtlas {
 };
 
 // The twelve pieces side by side, `pixels` x `pixels` each, RGBA rows from the top: the atlas' image. Empty if an SVG
-// could not be rendered.
-[[nodiscard]] std::vector<unsigned char> rasterizePieces(int pixels);
+// could not be rendered. Without `svgs`, the default set.
+[[nodiscard]] std::vector<unsigned char> rasterizePieces(int pixels, const appearance::PieceSvgs& svgs);
+[[nodiscard]] inline std::vector<unsigned char> rasterizePieces(int pixels) {
+    return rasterizePieces(pixels, appearance::builtInPieces({}));
+}
 
 // An arrow over the board, for a move (castling drawn to the king's square).
 struct BoardArrow {
@@ -57,10 +65,22 @@ struct BoardDecor {
     ImU32 last_move_colour = IM_COL32(255, 210, 70, 255);
     float eval_white       = 0.5f;   // fraction of the eval bar that is white, < 0 hides the bar
     std::vector<BoardArrow> arrows;  // drawn in order, over the pieces
+    std::optional<chess::Square> selected;  // a piece picked up, to move it
+    std::vector<chess::Square> targets;     // where it may go, a dot on each
+    // The squares' colours; by default those of the theme in use (appearance::boardColours()), as on every board.
+    std::optional<appearance::BoardColours> colours;
 };
 
 // Draws the position at the cursor and reserves `size` x `size` (plus the eval bar if shown).
 void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, const BoardDecor& decor);
+// The same for any placement of pieces (a1 = 0 ... h8 = 63), even one without kings, as the position editor has;
+// `check`: a king's square to mark.
+void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& pieces, float size,
+               const BoardDecor& decor, std::optional<chess::Square> check = std::nullopt);
+
+// The square under `point` of a board drawBoard() drew with its top left corner (its eval bar's, if shown) at `top`;
+// nullopt off the squares.
+[[nodiscard]] std::optional<chess::Square> boardSquareAt(ImVec2 point, ImVec2 top, float size, const BoardDecor& decor);
 
 // The centre of `square` on a board whose a8 corner (h1 when flipped) is at `origin`, `size` wide.
 [[nodiscard]] ImVec2 squareCentre(chess::Square square, ImVec2 origin, float size, bool flipped);

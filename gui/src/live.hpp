@@ -99,6 +99,7 @@ struct GameRecord {
     int8_t a_result     = 0;     // +1 A won, 0 draw, -1 A lost
     uint8_t termination = 0;
     bool result_set     = false;  // the result was set by hand (tour::GameResult::set)
+    int8_t unbalanced   = 0;      // its opening was unbalanced: +1 for White, -1 for Black (tour::GameResult)
     uint16_t reason     = 0;      // index into GuiObserver::reasons()
     uint16_t opening    = 0;      // index into GuiObserver::openings(); 0: none (Chess960, or an older PGN)
     EvalFacts facts;              // what its evaluations tell, for the "interesting games" filters
@@ -232,6 +233,9 @@ class LiveSource {
     [[nodiscard]] virtual std::vector<SlotState> endedGames(int i) const = 0;
     // Is anything going on in slot `i` (cheap, for tab labels)?
     [[nodiscard]] virtual bool slotActive(int i) const = 0;
+    // The participants of White and Black (indexes of names(), -1 for a name not known) of the game played in slot
+    // `i`; nullopt when none is (cheap, for the cores in use).
+    [[nodiscard]] virtual std::optional<std::array<int, 2>> slotPlayers(int i) const = 0;
     // The games a resumed tournament already holds are still being read.
     [[nodiscard]] virtual bool loading() const = 0;
     // Moves the games and statistics that arrived since the last call into the given vectors.
@@ -297,6 +301,7 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     bool copySlot(int i, SlotState& out) const override;
     [[nodiscard]] std::vector<SlotState> endedGames(int i) const override;
     [[nodiscard]] bool slotActive(int i) const override;
+    [[nodiscard]] std::optional<std::array<int, 2>> slotPlayers(int i) const override;
 
     // Calls `stop` with the process of the engine on move in slot `i`, while it plays game `game_id`
     // (SlotState::game_id) and its engines are started; false otherwise. See RunController::endGame().

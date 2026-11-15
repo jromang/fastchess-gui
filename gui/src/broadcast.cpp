@@ -219,12 +219,48 @@ std::string snapshotJson(const BroadcastSnapshot& s) {
         }
         rows.push_back(std::move(row));
     }
+    // A team match: each team's score and engines, and team A's Elo over team B (null without an interval yet).
+    if (s.teams) {
+        const auto& t = *s.teams;
+        auto& teams = j["teams"] = nlohmann::json::array();
+        for (int i = 0; i < 2; ++i) {
+            const auto& team     = t.teams[static_cast<std::size_t>(i)];
+            nlohmann::json names = nlohmann::json::array();
+            for (const auto& m : team.members) names.push_back(m.name);
+            teams.push_back({{"name", team.name},
+                             {"points", team.points},
+                             {"games", team.games},
+                             {"wins", team.wins},
+                             {"draws", team.draws},
+                             {"losses", team.losses},
+                             {"engines", names}});
+        }
+        j["team_elo"]       = t.elo ? nlohmann::json(std::round(*t.elo * 10) / 10) : nlohmann::json(nullptr);
+        j["team_elo_error"] = t.error ? nlohmann::json(std::round(*t.error * 10) / 10) : nlohmann::json(nullptr);
+        j["team_los"]       = t.los ? nlohmann::json(std::round(*t.los * 1000) / 1000) : nlohmann::json(nullptr);
+    } else {
+        j["teams"] = nullptr;
+    }
     j["recent"] = s.recent;
     // Where the viewers talk; only what passes the checks, whoever filled the snapshot.
     j["chat"]    = orNull(webChatLink(s.chat_link));
     j["lichess"] = orNull(webChatLink(s.lichess_url));
     j["discord"] = orNull(webDiscordId(s.discord_id));
+    // The logos of the tournament's engines only: the page learns nothing of the rest of the library.
+    auto& logos = j["logos"] = nlohmann::json::object();
+    for (const auto& r : s.table.rows) {
+        if (const auto it = s.logos.find(r.name); it != s.logos.end() && webLogoPath(it->second))
+            logos[r.name] = it->second;
+    }
     return j.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
+}
+
+bool webLogoPath(std::string_view path) {
+    constexpr std::string_view head = "logo/", tail = ".png";
+    if (path.size() < head.size() + 8 + tail.size() || path.size() > head.size() + 64 + tail.size()) return false;
+    if (!path.starts_with(head) || !path.ends_with(tail)) return false;
+    const auto hex = path.substr(head.size(), path.size() - head.size() - tail.size());
+    return std::all_of(hex.begin(), hex.end(), [](char c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'); });
 }
 
 std::string livePgn(const BroadcastSnapshot& s) {
@@ -310,6 +346,11 @@ std::vector<std::string> tlcsCrosstable(const BroadcastSnapshot& s, uint64_t tot
     }
     out.push_back("");
     out.push_back(fmt::format("total games = {}", total_games));
+    // A team match: the teams' score under the table, where a TLCS client shows the text as it is.
+    if (s.teams) {
+        out.push_back("");
+        out.push_back(tour::teamScoreLine(*s.teams));
+    }
 
     // The games, newest first, as TLCS lists them after the table; node-tlcv numbers its games from them. Three
     // spaces at least between the columns.
@@ -336,7 +377,8 @@ std::string writeBroadcastFiles(const BroadcastSnapshot& s, const fs::path& dir)
     if (ec) return "cannot create " + dir.string();
 
     bool ok = writeAtomically(dir / "live.pgn", livePgn(s));
-    ok &= writeAtomically(dir / "standings.html", tour::tableHtml(s.table, s.name));
+    ok &= writeAtomically(dir / "standings.html",
+                          s.teams ? tour::teamHtml(*s.teams, s.table, s.name) : tour::tableHtml(s.table, s.name));
     ok &= writeAtomically(dir / "tournament.json", snapshotJson(s));
     return ok ? std::string() : "cannot write in " + dir.string();
 }

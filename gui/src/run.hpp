@@ -41,8 +41,10 @@ struct RunInfo {
     bool affinity        = false;
 
     bool sprt   = false;
-    double elo0 = 0, elo1 = 0, alpha = 0, beta = 0;
+    double elo0 = 0, elo1 = 0, alpha = 0, beta = 0;  // the bounds the SPRT is given, the bias on them
     std::string model;
+    double sprt_bias        = 0;  // tour::TournamentSpec::sprt_bias
+    uint64_t sprt_min_games = 0;
     bool penta = true;
 
     Clock::time_point started{};
@@ -147,6 +149,10 @@ void interruptEngineProcesses();
 
 // The tournament's name when the user gave none: "A vs B", "Round robin, 8 engines"...
 [[nodiscard]] std::string defaultTournamentName(const MatchSetup& setup);
+
+// A team match's team (0: A, 1: B) as the window shows it: its name, "Team A" or "Team B" translated without one.
+// The exports and the PGN tags write spec.teamName(), in English.
+[[nodiscard]] std::string teamLabel(const tour::TournamentSpec& spec, int team);
 
 // The participants of a setup in order, with their own settings: A and B of a match (with their books), the list
 // otherwise.

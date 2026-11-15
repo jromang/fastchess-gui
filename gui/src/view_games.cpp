@@ -28,7 +28,8 @@ const char* FILTERS[] = {N_("All"),
                          N_("The engines disagree"),
                          N_("An evaluation swings"),
                          N_("Lost after a winning score"),
-                         N_("Wrong PVs")};
+                         N_("Wrong PVs"),
+                         N_("Unbalanced opening")};
 
 // In a tournament, results are seen from the engine chosen in the filter, or from White when none is.
 const char* TOURNAMENT_FILTERS[] = {N_("All"),
@@ -41,11 +42,14 @@ const char* TOURNAMENT_FILTERS[] = {N_("All"),
                                     N_("The engines disagree"),
                                     N_("An evaluation swings"),
                                     N_("Lost after a winning score"),
-                                    N_("Wrong PVs")};
+                                    N_("Wrong PVs"),
+                                    N_("Unbalanced opening")};
+static_assert(IM_ARRAYSIZE(FILTERS) == IM_ARRAYSIZE(TOURNAMENT_FILTERS));
 
 // The filters on what the evaluations tell, which take a threshold in pawns.
 constexpr int FIRST_EVAL_FILTER = 7;
 constexpr int LAST_EVAL_FILTER  = 9;
+static_assert(UNBALANCED_FILTER == IM_ARRAYSIZE(FILTERS) - 1);
 
 // The ply an evaluation filter is about, -1 for the others.
 int pliesOfInterest(const GameRecord& g, int filter) {
@@ -97,6 +101,8 @@ bool matches(const GameRecord& g, int filter, int subject, bool match, float paw
             return g.facts.loser_best >= pawns;
         case 10:
             return g.pv_warnings > 0;
+        case UNBALANCED_FILTER:
+            return g.unbalanced != 0;
         default:
             return true;
     }
@@ -469,13 +475,9 @@ void App::drawGames() {
     const int total  = static_cast<int>(game.moves.size());
 
     // Keyboard navigation while the window has focus, unless the keys go to a text field (the opening filter).
-    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && !ImGui::GetIO().WantTextInput) {
-        if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) replay_ply_--;
-        if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) replay_ply_++;
-        if (ImGui::IsKeyPressed(ImGuiKey_Home)) replay_ply_ = 0;
-        if (ImGui::IsKeyPressed(ImGuiKey_End)) replay_ply_ = total;
-    }
     replay_ply_ = std::clamp(replay_ply_, 0, total);
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+        replay_ply_ = stepPly(navKeys(flip_replay_), replay_ply_, total);
 
     ImGui::AlignTextToFramePadding();  // the same height with or without the engine log button
     ImGui::Text("%s – %s  %s", game.header("White").c_str(), game.header("Black").c_str(), game.result.c_str());
@@ -524,10 +526,11 @@ void App::drawGames() {
         break;
     }
 
-    // The board, its info line and buttons, then the chart (its menu and a plot of at least 110 pixels) in the height
-    // left: nothing under a scroll bar of its own beside the moves' one.
+    // The board, its info line and buttons (unless hidden), then the chart (its menu and a plot of at least 110 pixels)
+    // in the height left: nothing under a scroll bar of its own beside the moves' one.
     const ImVec2 area      = ImGui::GetContentRegionAvail();
-    const float under      = ImGui::GetTextLineHeightWithSpacing() + ImGui::GetFrameHeightWithSpacing();
+    const float nav_h      = setup_.nav_buttons ? boardNavHeight() : 0.0f;
+    const float under      = ImGui::GetTextLineHeightWithSpacing() + nav_h;
     const float chart_min  = ImGui::GetFrameHeightWithSpacing() + 110.0f * ImGui::GetFontSize() / 16.0f;
     const float board_size = std::floor(std::max(
         120.0f,
@@ -540,23 +543,30 @@ void App::drawGames() {
 
     ImGui::BeginGroup();
     drawBoard(atlas_, board, board_size, decor);
+    // A: the game on the Board page, at this move, analysed.
+    if ((ImGui::IsItemHovered() || ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) && boardKey()) {
+        analyseReplay();
+        ImGui::EndGroup();
+        ImGui::EndChild();
+        ui::endPanel();
+        return;
+    }
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", TR("A: analyse it on the Board page"));
     drawBoardInfo(atlas_, board, board_size, tbPieces());
-    if (ImGui::Button("|<")) replay_ply_ = 0;
-    ImGui::SameLine();
-    if (ImGui::Button("<")) replay_ply_ = std::max(0, replay_ply_ - 1);
-    ImGui::SameLine();
-    if (ImGui::Button(">")) replay_ply_ = std::min(total, replay_ply_ + 1);
-    ImGui::SameLine();
-    if (ImGui::Button(">|")) replay_ply_ = total;
-    ImGui::SameLine();
-    ImGui::Checkbox(TR("Flip##replay"), &flip_replay_);
+    if (setup_.nav_buttons) {
+        const auto click = drawBoardNav("##replay_nav", replay_ply_, total, flip_replay_, true, false, board_size);
+        replay_ply_      = stepPly(click.step, replay_ply_, total);
+        if (click.hide) {
+            setup_.nav_buttons = false;
+            saveSetupSoon();
+        }
+    }
     ImGui::EndGroup();
 
+    // The moves beside the board; the wheel scrolls them.
     ImGui::SameLine();
-    ImGui::BeginChild(
-        "##replay_moves",
-        ImVec2(0, board_size + ImGui::GetTextLineHeightWithSpacing() + ImGui::GetFrameHeightWithSpacing()),
-        ImGuiChildFlags_Borders);
+    ImGui::BeginChild("##replay_moves", ImVec2(0, board_size + ImGui::GetTextLineHeightWithSpacing() + nav_h),
+                      ImGuiChildFlags_Borders);
     {
         chess::Board start;
         start.setFen(game.start_fen);

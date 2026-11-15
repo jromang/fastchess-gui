@@ -52,6 +52,7 @@
 #include "pgn_file.hpp"
 #include "schedule.hpp"
 #include "start_failures.hpp"
+#include "unbalanced.hpp"
 
 namespace fcg::tour {
 
@@ -95,6 +96,9 @@ struct GameResult {
     int64_t finished_at = 0;  // unix time, milliseconds
     // What fastchess' PV checks found (an illegal PV move, a mate PV that does not mate...): (ply, warning).
     std::vector<std::pair<uint32_t, std::string>> pv_warnings;
+    // The opening was unbalanced (unbalanced.hpp), as the tournament's rule tells it when the game ended: +1 for White,
+    // -1 for Black, 0 not, or not looked for.
+    int unbalanced = 0;
 
     // No longer counted (replay requested, participant replaced or withdrawn); kept to be shown as such.
     bool voided = false;
@@ -166,6 +170,8 @@ class TournamentState {
         bool finished = false;
         std::string finish_reason;
         std::vector<GameResult> results;  // the games that count
+        std::map<int, int> byes;          // Swiss: byes received, by participant id
+        std::vector<std::vector<int>> last_bracket;  // knockout: the places of the last round paired
     };
     [[nodiscard]] static Replayed replay(const std::vector<nlohmann::json>& events, TournamentSpec& spec);
 
@@ -305,6 +311,10 @@ class TournamentState {
     // The opening each encounter started with (book position and moves), by encounter index.
     [[nodiscard]] std::map<uint32_t, fastchess::book::Opening> encounterOpenings() const;
 
+    // How many times a pair was voided and played again from another opening, its own found unbalanced
+    // (spec().unbalanced_replace): the views show it, and know that the results changed.
+    [[nodiscard]] uint64_t openingsReplaced() const;
+
     // Statistics of `a` against `b` from a's point of view, counted on complete encounters only (both games),
     // like fastchess does with pentanomial reporting. Includes the pentanomial counts.
     [[nodiscard]] fastchess::Stats pairStats(int a, int b) const;
@@ -340,6 +350,10 @@ class TournamentState {
     [[nodiscard]] bool gamesLeft() const;  // games to claim, finished or not; mutex_ held
     [[nodiscard]] uint64_t totalLocked() const;
     void checkSprt();
+    // The encounter, complete, played an unbalanced opening and the tournament replaces such openings: its games
+    // are voided and played again from another opening (UNBALANCED_REASON), at most MAX_OPENING_REPLACEMENTS times.
+    // True when it was. mutex_ held.
+    bool replaceUnbalanced(uint32_t encounter);
     // Every game played, none running: the end is journaled. mutex_ held.
     void finishIfComplete();
     [[nodiscard]] GameTask makeTask(uint32_t encounter, int game);
@@ -399,6 +413,8 @@ class TournamentState {
     std::vector<GameResult> results_;
     std::set<uint64_t> done_;                               // game numbers
     std::map<uint32_t, fastchess::book::Opening> started_;  // encounter -> opening it started with
+    uint64_t replaced_ = 0;                                 // openings replaced as unbalanced (replaceUnbalanced())
+    std::map<uint32_t, int> replacements_;                  // encounter -> how many times its opening was
     // spec_.opening_per_round: (cycle, round) -> the opening of its encounters.
     std::map<std::pair<uint32_t, uint32_t>, fastchess::book::Opening> round_openings_;
     std::map<uint32_t, std::size_t> half_;                   // encounter -> index in results_ of its first game

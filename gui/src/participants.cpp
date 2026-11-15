@@ -70,6 +70,47 @@ bool addToSetup(MatchSetup& setup, const std::vector<std::string>& names, int at
     return added;
 }
 
+std::vector<int> setupTeams(const MatchSetup& setup) {
+    const auto& list = setup.participants;
+    const int n      = static_cast<int>(list.size());
+    std::vector<int> teams(list.size(), -1);
+    int sizes[2] = {0, 0};
+    for (int i = 0; i < n; ++i) {
+        if (list[i].team == 1 || list[i].team == 2) {
+            teams[i] = list[i].team - 1;
+            sizes[teams[i]]++;
+        }
+    }
+    // None chosen: the upper half, the larger one when the number is odd, against the lower half.
+    if (sizes[0] + sizes[1] == 0) {
+        for (int i = 0; i < n; ++i) teams[i] = i < (n + 1) / 2 ? 0 : 1;
+        return teams;
+    }
+    for (int i = 0; i < n; ++i) {
+        if (teams[i] >= 0) continue;
+        teams[i] = sizes[1] < sizes[0] ? 1 : 0;
+        sizes[teams[i]]++;
+    }
+    return teams;
+}
+
+void setTeam(MatchSetup& setup, const std::vector<int>& indices, int team) {
+    const auto teams = setupTeams(setup);
+    auto& list       = setup.participants;
+    for (std::size_t i = 0; i < list.size(); ++i) list[i].team = teams[i] + 1;
+    for (const int i : validIndices(indices, list.size())) list[i].team = team == 1 ? 2 : 1;
+}
+
+void splitTeams(MatchSetup& setup) {
+    for (auto& p : setup.participants) p.team = 0;
+}
+
+std::pair<int, int> teamSizes(const MatchSetup& setup) {
+    const auto teams = setupTeams(setup);
+    const auto b     = static_cast<int>(std::count(teams.begin(), teams.end(), 1));
+    return {static_cast<int>(teams.size()) - b, b};
+}
+
 std::vector<std::string> participantDifferences(const ParticipantSetup& p, const MatchSetup& setup) {
     std::vector<std::string> out;
     if (p.hash > 0 && p.hash != setup.common_hash) out.push_back(trf("Hash {} MB", p.hash));

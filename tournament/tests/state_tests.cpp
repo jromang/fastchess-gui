@@ -226,6 +226,51 @@ TEST_CASE("summaries: kept between two listings, read again when the journal cha
     CHECK(cache.list(root).empty());
 }
 
+TEST_CASE("summaries: a match's score, A first; a round robin's standings, the leader first") {
+    const auto root = freshDir("summary-scores");
+    fs::create_directories(root);
+    {
+        // B wins three games of four.
+        auto state = TournamentState::create(root / "20260101-000000 match", matchSpec(4));
+        int i      = 0;
+        while (auto task = state->claimNext()) {
+            const bool b_white = task->white.name == "B";
+            const auto result  = i++ == 1 ? (b_white ? "0-1" : "1-0") : (b_white ? "1-0" : "0-1");
+            state->complete(*task, gameData(*task, result));
+        }
+    }
+    auto summary = summarize(root / "20260101-000000 match");
+    REQUIRE(summary);
+    REQUIRE(summary->scores.size() == 2);
+    CHECK(summary->scores[0].name == "A");
+    CHECK(summary->scores[0].points == 1.0);
+    CHECK(summary->scores[1].name == "B");
+    CHECK(summary->scores[1].points == 3.0);
+    CHECK(summary->scores[1].games == 4);
+
+    // A round robin of three, everything drawn but C, who loses every game.
+    auto spec   = matchSpec();
+    spec.format = Format::RoundRobin;
+    Participant c;
+    c.id          = 2;
+    c.engine.name = "C";
+    spec.participants.push_back(c);
+    {
+        auto state = TournamentState::create(root / "20260101-000001 rr", spec);
+        while (auto task = state->claimNext()) {
+            const auto result = task->white.name == "C" ? "0-1" : task->black.name == "C" ? "1-0" : "1/2-1/2";
+            state->complete(*task, gameData(*task, result));
+        }
+    }
+    summary = summarize(root / "20260101-000001 rr");
+    REQUIRE(summary);
+    REQUIRE(summary->scores.size() == 3);
+    CHECK(summary->scores[0].points == 3.0);  // A or B: two wins and two draws
+    CHECK(summary->scores[0].games == 4);
+    CHECK(summary->scores[2].name == "C");
+    CHECK(summary->scores[2].points == 0.0);
+}
+
 TEST_CASE("state: the SPRT ends a match and the verdict is journaled") {
     auto spec                    = matchSpec();
     spec.conditions.sprt.enabled = true;

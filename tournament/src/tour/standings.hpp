@@ -143,6 +143,9 @@ enum class Order {
 // played, book. In English, like the table.
 [[nodiscard]] std::string forumDetails(const TournamentSpec& spec, const Table& table);
 
+// Points as the tables write them: "12½", "½", "3".
+[[nodiscard]] std::string pointsText(double points);
+
 // `s` with &, <, > and " as HTML entities.
 [[nodiscard]] std::string escapeHtml(const std::string& s);
 
@@ -173,5 +176,11 @@ struct ScoreElo {
 // control:90+1, book:UHO.epd, event: Cup", the games played of those planned (when known), the time control of the
 // first participant, the book and the event (the tournament's name), the last two only when there is one.
 [[nodiscard]] std::string footerLine(const TournamentSpec& spec, const Table& table, std::optional<uint64_t> planned);
+
+// The tournament's book as those lines name it, so that a table posted on a forum says how the openings were chosen:
+// its file, then for a Polyglot book the depth its lines were followed to and how its moves were weighed
+// ("Perfect2023.bin (8 plies, moves by weight)"), for a PGN book the plies kept when it was cut ("8moves.pgn
+// (16 plies)"). Empty without a book.
+[[nodiscard]] std::string bookText(const TournamentSpec& spec);
 
 }  // namespace fcg::tour
