@@ -6,6 +6,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <thread>
 
 #include "../../tournament/tests/self_path.hpp"
@@ -379,18 +380,29 @@ TEST_CASE("remote: a tournament on its socket plays on without the window, which
         (void)attach.wait();
     }
 
-    // The window connects again: its copy has every game, and the games in progress as they stand.
-    Harness h;
+    // The window connects again: its copy has every game, and the games in progress as they stand. The script's
+    // connection may still be closing: the connection refused, or turned away as busy while the process has not seen
+    // the script go yet (a busy machine schedules its thread late), is tried again a moment.
+    std::unique_ptr<Harness> again;
     std::string error;
-    std::unique_ptr<Link> link;
-    // The script's connection may still be closing: tried again a moment.
-    for (int i = 0; i < 50 && !link; ++i) {
-        link = local::connect(control->endpoint, error);
-        if (!link) std::this_thread::sleep_for(100ms);
+    const auto give_up = std::chrono::steady_clock::now() + 60s;
+    const auto played = [&] { return again && again->games.size() > seen + 2 && again->saw_moves; };
+    while (!played() && std::chrono::steady_clock::now() < give_up) {
+        auto link = local::connect(control->endpoint, error);
+        if (!link) {
+            std::this_thread::sleep_for(100ms);
+            continue;
+        }
+        again = std::make_unique<Harness>();
+        REQUIRE(again->run.attach(dir, std::move(link)).empty());
+        const auto left =
+            std::chrono::duration_cast<std::chrono::milliseconds>(give_up - std::chrono::steady_clock::now());
+        again->waitFor([&] { return again->run.elsewhere() || played(); }, left);
+        if (again->run.elsewhere()) std::this_thread::sleep_for(100ms);
     }
-    REQUIRE(link);
-    REQUIRE(h.run.attach(dir, std::move(link)).empty());
-    // What the window and the process were doing, told only if the wait below fails.
+    REQUIRE(again);
+    auto& h = *again;
+    // What the window and the process were doing, told only if it failed.
     const auto state_then = [&] {
         std::ifstream in(dir / "fastchess-gui.log", std::ios::binary);
         std::string log((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
@@ -407,7 +419,7 @@ TEST_CASE("remote: a tournament on its socket plays on without the window, which
                std::to_string(on_disk) + "\nthe process's log ends with:\n" + log;
     };
     INFO(state_then());
-    REQUIRE(h.waitFor([&] { return h.games.size() > seen + 2 && h.saw_moves; }, 60s));
+    REQUIRE(played());
     CHECK(h.run.pid() == control->pid);
     // Its time counts from the process's start, told in its hello, not from this connection.
     CHECK(h.run.info().started < played_by);
