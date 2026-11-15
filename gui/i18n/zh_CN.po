@@ -48,6 +48,10 @@ msgstr "%s  对  %s"
 msgid "%s: %d loss(es) on time, %d crash(es), %d illegal move(s)"
 msgstr "%s：%d 次超时判负，%d 次崩溃，%d 次非法着法"
 
+msgid "(+{} tournament)"
+msgid_plural "(+{} tournaments)"
+msgstr[0] "（另有 {} 个锦标赛）"
+
 msgid "(already in the list)"
 msgstr "（已在列表中）"
 
@@ -178,11 +182,11 @@ msgstr "已有比赛正在进行。"
 msgid "A match is running. The games in progress will be lost."
 msgstr "比赛正在进行。进行中的对局将会丢失。"
 
-msgid "A match is running: wait for its end to open another one."
-msgstr "比赛正在进行：请等它结束后再打开另一场。"
-
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "将杀分数的 PV 必须长度正确并以将杀结束。PV 中的非法着法总是会被检查；PV 错误的着法会在“对局”页中标出。"
+
+msgid "A message of the tournament's process could not be read: {}"
+msgstr "无法读取锦标赛进程的一条消息：{}"
 
 msgid "A move counts when the player who made it is rated this or more, by the game's WhiteElo or BlackElo tag; a player without a rating is left out."
 msgstr "仅当走出该着法的棋手等级分不低于此值时（依据对局的 WhiteElo 或 BlackElo 标签），该着法才计入；没有等级分的棋手被排除。"
@@ -567,6 +571,9 @@ msgstr "无法导入 {}：{}"
 msgid "Cannot load the Syzygy tablebases from "
 msgstr "无法加载 Syzygy 残局库，路径："
 
+msgid "Cannot open the tournament again: {}"
+msgstr "无法重新打开锦标赛：{}"
+
 msgid "Cannot open the tournament: {}"
 msgstr "无法打开锦标赛：{}"
 
@@ -590,6 +597,9 @@ msgstr "无法开始比赛：{}"
 
 msgid "Cannot start the quick test: {}"
 msgstr "无法开始快速测试：{}"
+
+msgid "Cannot start the tournament: {}"
+msgstr "无法启动锦标赛：{}"
 
 msgid "Cannot write {}"
 msgstr "无法写入 {}"
@@ -2949,6 +2959,9 @@ msgstr "图表会随第一批结果出现。"
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "为了开始，{} 的检查已中断：稍后会重新进行。"
 
+msgid "The connection with the tournament's process was lost."
+msgstr "与锦标赛进程的连接已断开。"
+
 msgid "The depth must be positive."
 msgstr "深度必须为正数。"
 
@@ -3194,6 +3207,9 @@ msgstr "使用此裁定设置，赛事无法开始。"
 msgid "The tournament goes on with the programs as they are now; this notice closes."
 msgstr "锦标赛使用当前的程序继续进行；此提示关闭。"
 
+msgid "The tournament is not playing."
+msgstr "锦标赛未在进行。"
+
 msgid "The tournament is not running: resume it to play the new games."
 msgstr "锦标赛没有在进行：请恢复它以下新的对局。"
 
@@ -3205,6 +3221,18 @@ msgstr "程序结束时正在进行的锦标赛已完成：队列继续。"
 
 msgid "The tournament was changed."
 msgstr "锦标赛已修改。"
+
+msgid "The tournament's process did not answer."
+msgstr "锦标赛进程没有响应。"
+
+msgid "The tournament's process ended unexpectedly (exit code {}): it resumes exactly where it stopped."
+msgstr "锦标赛进程意外结束（退出码 {}）：它会从停止处准确继续。"
+
+msgid "The tournament's process is gone."
+msgstr "锦标赛进程已不存在。"
+
+msgid "The tournament's process speaks another version of the program ({}): restart the window."
+msgstr "锦标赛进程使用的是另一版本的程序（{}）：请重新启动窗口。"
 
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "按对局对计算时单局的方差与单独计算时单局方差之比：低于 1 时，成对对局只需相应更少的对局即可达到同样精度。"
@@ -3220,6 +3248,9 @@ msgstr "找不到 {} 的工作目录：{}"
 
 msgid "Theme"
 msgstr "主题"
+
+msgid "There is no change to undo."
+msgstr "没有可撤销的更改。"
 
 msgid "These settings under a name, to choose them again in other tournaments and templates."
 msgstr "为这些设置命名，以便在其他比赛和模板中再次选用。"
@@ -3253,6 +3284,15 @@ msgstr "这是最新版本。"
 
 msgid "This match is already finished."
 msgstr "这场比赛已经结束。"
+
+msgid "This program cannot find its own file to start a tournament."
+msgstr "本程序找不到自己的文件，无法启动锦标赛。"
+
+msgid "This tournament is playing already."
+msgstr "该锦标赛已在进行中。"
+
+msgid "This tournament is playing in another program."
+msgstr "该锦标赛正由另一个程序进行。"
 
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr "此赛事启动时未开启“重启崩溃的引擎”（设置，PGN 及其他）：结束对局会停止轮到走子的引擎，这会使赛事停止。请在对局结束后，在“对局”标签页设定结果。"
@@ -4404,6 +4444,9 @@ msgid "{} thread"
 msgid_plural "{} threads"
 msgstr[0] "{} 线程"
 
+msgid "{} tournaments are running. The games in progress will be lost; each resumes exactly where it stopped."
+msgstr "有 {} 个锦标赛正在进行。进行中的对局将会丢失；每个锦标赛都会从停止处准确继续。"
+
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"
 msgstr[0] "{} 局作废对局，已排除"
@@ -4424,6 +4467,9 @@ msgstr[0] "已写入 {}：{} 个局面，来自 {} 局对局。"
 msgid "{} · depth {} · {}"
 msgstr "{} · 深度 {} · {}"
 
+msgid "{} · {} / {} games · {} playing"
+msgstr "{} · {} / {} 局 · {} 局进行中"
+
 msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
 msgstr "{} · {} / {} 局 · {} 局进行中 · {:.0f} 局/小时 · {}"
 
@@ -4435,6 +4481,9 @@ msgstr "{} · {} 局 · Elo {} · {}"
 
 msgid "{} · {} games · first: {} · {}"
 msgstr "{} · {} 局 · 首个：{} · {}"
+
+msgid "{} · {} games · {}"
+msgstr "{} · {} 局 · {}"
 
 msgid "{} – fastchess-gui"
 msgstr "{} – fastchess-gui"

@@ -49,6 +49,11 @@ msgstr "%s  contro  %s"
 msgid "%s: %d loss(es) on time, %d crash(es), %d illegal move(s)"
 msgstr "%s: %d sconfitta/e per tempo, %d crash, %d mossa/e illegale/i"
 
+msgid "(+{} tournament)"
+msgid_plural "(+{} tournaments)"
+msgstr[0] "(+{} torneo)"
+msgstr[1] "(+{} tornei)"
+
 msgid "(already in the list)"
 msgstr "(già nell'elenco)"
 
@@ -180,11 +185,11 @@ msgstr "Un match è già in corso."
 msgid "A match is running. The games in progress will be lost."
 msgstr "Un match è in corso. Le partite in corso andranno perse."
 
-msgid "A match is running: wait for its end to open another one."
-msgstr "Un match è in corso: aspetta che finisca per aprirne un altro."
-
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "La PV di un punteggio di matto deve avere la lunghezza giusta e finire con il matto. Le PV vengono sempre controllate per mosse illegali; le mosse con una PV errata sono segnate nella scheda Partite."
+
+msgid "A message of the tournament's process could not be read: {}"
+msgstr "Non è stato possibile leggere un messaggio del processo del torneo: {}"
 
 msgid "A move counts when the player who made it is rated this or more, by the game's WhiteElo or BlackElo tag; a player without a rating is left out."
 msgstr "Una mossa conta quando il giocatore che l'ha giocata ha almeno questo Elo, secondo il tag WhiteElo o BlackElo della partita; un giocatore senza Elo è escluso."
@@ -571,6 +576,9 @@ msgstr "Impossibile importare {}: {}"
 msgid "Cannot load the Syzygy tablebases from "
 msgstr "Impossibile caricare le tablebase Syzygy da "
 
+msgid "Cannot open the tournament again: {}"
+msgstr "Impossibile riaprire il torneo: {}"
+
 msgid "Cannot open the tournament: {}"
 msgstr "Impossibile aprire il torneo: {}"
 
@@ -594,6 +602,9 @@ msgstr "Impossibile avviare il match: {}"
 
 msgid "Cannot start the quick test: {}"
 msgstr "Impossibile avviare il test rapido: {}"
+
+msgid "Cannot start the tournament: {}"
+msgstr "Impossibile avviare il torneo: {}"
 
 msgid "Cannot write {}"
 msgstr "Impossibile scrivere {}"
@@ -2965,6 +2976,9 @@ msgstr "I grafici compaiono con i primi risultati."
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "La verifica di {} è interrotta per l'avvio: sarà rifatta più tardi."
 
+msgid "The connection with the tournament's process was lost."
+msgstr "La connessione con il processo del torneo è stata persa."
+
 msgid "The depth must be positive."
 msgstr "La profondità deve essere positiva."
 
@@ -3212,6 +3226,9 @@ msgstr "Il torneo non può partire con questa aggiudicazione."
 msgid "The tournament goes on with the programs as they are now; this notice closes."
 msgstr "Il torneo continua con i programmi come sono ora; questo avviso si chiude."
 
+msgid "The tournament is not playing."
+msgstr "Il torneo non è in corso."
+
 msgid "The tournament is not running: resume it to play the new games."
 msgstr "Il torneo non è in corso: riprendilo per giocare le nuove partite."
 
@@ -3223,6 +3240,18 @@ msgstr "Il torneo in corso alla chiusura del programma è finito: la coda proseg
 
 msgid "The tournament was changed."
 msgstr "Il torneo è stato modificato."
+
+msgid "The tournament's process did not answer."
+msgstr "Il processo del torneo non ha risposto."
+
+msgid "The tournament's process ended unexpectedly (exit code {}): it resumes exactly where it stopped."
+msgstr "Il processo del torneo è terminato in modo inatteso (codice di uscita {}): riprende esattamente da dove si è fermato."
+
+msgid "The tournament's process is gone."
+msgstr "Il processo del torneo non c'è più."
+
+msgid "The tournament's process speaks another version of the program ({}): restart the window."
+msgstr "Il processo del torneo parla un'altra versione del programma ({}): riavvia la finestra."
 
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "La varianza di una partita quando le partite sono contate a coppie, rapportata alla varianza delle partite singole: sotto 1, le coppie richiedono altrettante partite in meno per la stessa precisione."
@@ -3238,6 +3267,9 @@ msgstr "La cartella di lavoro di {} non è stata trovata: {}"
 
 msgid "Theme"
 msgstr "Tema"
+
+msgid "There is no change to undo."
+msgstr "Non c'è nessuna modifica da annullare."
 
 msgid "These settings under a name, to choose them again in other tournaments and templates."
 msgstr "Queste impostazioni con un nome, per sceglierle di nuovo in altri tornei e modelli."
@@ -3271,6 +3303,15 @@ msgstr "Questa è l'ultima versione."
 
 msgid "This match is already finished."
 msgstr "Questo match è già finito."
+
+msgid "This program cannot find its own file to start a tournament."
+msgstr "Questo programma non trova il proprio file per avviare un torneo."
+
+msgid "This tournament is playing already."
+msgstr "Questo torneo è già in corso."
+
+msgid "This tournament is playing in another program."
+msgstr "Questo torneo è giocato da un altro programma."
 
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr "Questo torneo è stato avviato senza «Riavvia un motore che va in crash» (preparazione, PGN e varie): terminare una partita ferma il motore al tratto, il che fermerebbe il torneo. Fissa il risultato quando la partita è finita, nella scheda Partite."
@@ -4480,6 +4521,9 @@ msgid_plural "{} threads"
 msgstr[0] "{} thread"
 msgstr[1] "{} thread"
 
+msgid "{} tournaments are running. The games in progress will be lost; each resumes exactly where it stopped."
+msgstr "{} tornei sono in corso. Le partite in corso andranno perse; ognuno riprenderà esattamente da dove si è fermato."
+
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"
 msgstr[0] "{} partita annullata, esclusa"
@@ -4502,6 +4546,9 @@ msgstr[1] "{} scritto: {} posizioni, da {} partite."
 msgid "{} · depth {} · {}"
 msgstr "{} · profondità {} · {}"
 
+msgid "{} · {} / {} games · {} playing"
+msgstr "{} · {} / {} partite · {} in corso"
+
 msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
 msgstr "{} · {} / {} partite · {} in gioco · {:.0f} partite/h · {}"
 
@@ -4513,6 +4560,9 @@ msgstr "{} · {} partite · Elo {} · {}"
 
 msgid "{} · {} games · first: {} · {}"
 msgstr "{} · {} partite · primo: {} · {}"
+
+msgid "{} · {} games · {}"
+msgstr "{} · {} partite · {}"
 
 msgid "{} – fastchess-gui"
 msgstr "{} – fastchess-gui"

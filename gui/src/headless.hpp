@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 
+#include "control_child.hpp"
 #include "storage.hpp"
 #include "topology.hpp"
 
@@ -23,7 +24,10 @@ struct HeadlessBroadcast {
 // Resumes the tournament in `target`, or creates one from a setup (or template) file with the engines of the
 // profile, and plays it to the end. Ctrl+C stops it, resumable. Returns the process exit code: 0 finished,
 // 1 error while playing, 2 nothing to run, 3 stopped before the end.
+//
+// With `control` (--control stdio), `target` is a tournament folder, and the process talks with the window through
+// the control channel (control.hpp) instead of printing: the window started it to play that tournament.
 int runHeadless(const std::string& target, const Storage& storage, const CpuTopology& topology,
-                const HeadlessBroadcast& broadcast = {});
+                const HeadlessBroadcast& broadcast = {}, const ControlOptions& control = {});
 
 }  // namespace fcg

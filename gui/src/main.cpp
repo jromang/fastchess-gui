@@ -40,9 +40,9 @@
 #include "i18n.hpp"
 #include "logo.hpp"
 #include "portable.hpp"
+#include "renderer.hpp"
 #include "report.hpp"
 #include "screenshot.hpp"
-#include "renderer.hpp"
 #include "storage.hpp"
 #include "topology.hpp"
 #include "ui.hpp"
@@ -92,6 +92,8 @@ struct Args {
     std::optional<std::string> live_dir;  // empty = "live" in the tournament folder
     std::optional<std::string> lichess;   // a lichess round, or "new"
     std::optional<std::string> tunnel;    // localhost.run, or ssh://user@host[:port][/remote_port]
+    fcg::ControlOptions control;          // --control stdio|socket, --detach, --allowance
+    std::string attach;                   // --attach: a tournament folder whose process to talk with
 };
 
 Args parseArgs(int argc, char** argv) {
@@ -135,6 +137,15 @@ Args parseArgs(int argc, char** argv) {
             args.lichess = next();
         else if (a == "--tunnel")
             args.tunnel = i + 1 < argc && argv[i + 1][0] != '-' ? next() : std::string("localhost.run");
+        else if (a == "--control") {
+            const auto mode   = next();
+            args.control.mode = mode == "socket" ? fcg::ControlOptions::Mode::Socket : fcg::ControlOptions::Mode::Stdio;
+        } else if (a == "--detach")
+            args.control.detach = true;
+        else if (a == "--allowance")
+            args.control.allowance = fcg::parseAllowance(next());
+        else if (a == "--attach")
+            args.attach = next();
         else if (a == "--size")
             std::sscanf(next().c_str(), "%dx%d", &args.width, &args.height);
         else if (a == "--software")
@@ -368,7 +379,7 @@ int main(int argc, char** argv) {
         broadcast.live_dir   = args.live_dir;
         broadcast.lichess    = args.lichess;
         broadcast.tunnel     = args.tunnel;
-        return fcg::runHeadless(args.run, storage, fcg::detectTopology(), broadcast);
+        return fcg::runHeadless(args.run, storage, fcg::detectTopology(), broadcast, args.control);
     }
 
 #if !defined(_WIN32) && !defined(__APPLE__)

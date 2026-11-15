@@ -50,6 +50,12 @@ msgstr "%s  против  %s"
 msgid "%s: %d loss(es) on time, %d crash(es), %d illegal move(s)"
 msgstr "%s: поражений по времени: %d, вылетов: %d, нелегальных ходов: %d"
 
+msgid "(+{} tournament)"
+msgid_plural "(+{} tournaments)"
+msgstr[0] "(+{} турнир)"
+msgstr[1] "(+{} турнира)"
+msgstr[2] "(+{} турниров)"
+
 msgid "(already in the list)"
 msgstr "(уже в списке)"
 
@@ -182,11 +188,11 @@ msgstr "Матч уже идёт."
 msgid "A match is running. The games in progress will be lost."
 msgstr "Идёт матч. Текущие партии будут потеряны."
 
-msgid "A match is running: wait for its end to open another one."
-msgstr "Идёт матч: дождитесь его окончания, чтобы открыть другой."
-
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "PV матовой оценки должен иметь правильную длину и заканчиваться матом. PV всегда проверяются на нелегальные ходы; ходы с неверным PV отмечаются на вкладке «Партии»."
+
+msgid "A message of the tournament's process could not be read: {}"
+msgstr "Не удалось прочитать сообщение процесса турнира: {}"
 
 msgid "A move counts when the player who made it is rated this or more, by the game's WhiteElo or BlackElo tag; a player without a rating is left out."
 msgstr "Ход учитывается, если у сделавшего его игрока рейтинг не ниже этого, по тегу WhiteElo или BlackElo партии; игрок без рейтинга не учитывается."
@@ -575,6 +581,9 @@ msgstr "Не удалось импортировать {}: {}"
 msgid "Cannot load the Syzygy tablebases from "
 msgstr "Не удалось загрузить таблицы Syzygy из "
 
+msgid "Cannot open the tournament again: {}"
+msgstr "Не удаётся снова открыть турнир: {}"
+
 msgid "Cannot open the tournament: {}"
 msgstr "Не удалось открыть турнир: {}"
 
@@ -598,6 +607,9 @@ msgstr "Не удалось запустить матч: {}"
 
 msgid "Cannot start the quick test: {}"
 msgstr "Не удалось запустить быстрый тест: {}"
+
+msgid "Cannot start the tournament: {}"
+msgstr "Не удаётся запустить турнир: {}"
 
 msgid "Cannot write {}"
 msgstr "Не удалось записать {}"
@@ -2981,6 +2993,9 @@ msgstr "Графики появятся с первыми результатам
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "Проверка {} прервана для запуска: она будет повторена позже."
 
+msgid "The connection with the tournament's process was lost."
+msgstr "Связь с процессом турнира потеряна."
+
 msgid "The depth must be positive."
 msgstr "Глубина должна быть положительной."
 
@@ -3230,6 +3245,9 @@ msgstr "С таким присуждением турнир не может на
 msgid "The tournament goes on with the programs as they are now; this notice closes."
 msgstr "Турнир продолжается с программами в их нынешнем виде; это уведомление закрывается."
 
+msgid "The tournament is not playing."
+msgstr "Турнир не идёт."
+
 msgid "The tournament is not running: resume it to play the new games."
 msgstr "Турнир не запущен: возобновите его, чтобы сыграть новые партии."
 
@@ -3241,6 +3259,18 @@ msgstr "Турнир, шедший при завершении программ�
 
 msgid "The tournament was changed."
 msgstr "Турнир изменён."
+
+msgid "The tournament's process did not answer."
+msgstr "Процесс турнира не ответил."
+
+msgid "The tournament's process ended unexpectedly (exit code {}): it resumes exactly where it stopped."
+msgstr "Процесс турнира неожиданно завершился (код выхода {}): турнир продолжится ровно с того места, где остановился."
+
+msgid "The tournament's process is gone."
+msgstr "Процесса турнира больше нет."
+
+msgid "The tournament's process speaks another version of the program ({}): restart the window."
+msgstr "Процесс турнира работает с другой версией программы ({}): перезапустите окно."
 
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "Дисперсия партии при подсчёте по парам, делённая на дисперсию отдельных партий: если она меньше 1, парам нужно во столько же раз меньше партий для той же точности."
@@ -3256,6 +3286,9 @@ msgstr "Рабочая папка движка {} не найдена: {}"
 
 msgid "Theme"
 msgstr "Тема"
+
+msgid "There is no change to undo."
+msgstr "Нет изменений для отмены."
 
 msgid "These settings under a name, to choose them again in other tournaments and templates."
 msgstr "Эти настройки под именем, чтобы снова выбирать их в других турнирах и шаблонах."
@@ -3289,6 +3322,15 @@ msgstr "Это последняя версия."
 
 msgid "This match is already finished."
 msgstr "Этот матч уже завершён."
+
+msgid "This program cannot find its own file to start a tournament."
+msgstr "Программа не находит собственный файл, чтобы запустить турнир."
+
+msgid "This tournament is playing already."
+msgstr "Этот турнир уже идёт."
+
+msgid "This tournament is playing in another program."
+msgstr "Этот турнир играет другая программа."
 
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr "Этот турнир запущен без «Перезапускать вылетевший движок» (настройка, PGN и прочее): завершение партии останавливает движок, чей ход, а это остановило бы турнир. Задайте результат, когда партия закончится, на вкладке «Партии»."
@@ -4556,6 +4598,9 @@ msgstr[0] "{} поток"
 msgstr[1] "{} потока"
 msgstr[2] "{} потоков"
 
+msgid "{} tournaments are running. The games in progress will be lost; each resumes exactly where it stopped."
+msgstr "Идут турниры: {}. Текущие партии будут потеряны; каждый турнир продолжится ровно с того места, где остановился."
+
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"
 msgstr[0] "{} аннулированная партия исключена"
@@ -4580,6 +4625,9 @@ msgstr[2] "Записано {}: позиций — {}, из {} партий."
 msgid "{} · depth {} · {}"
 msgstr "{} · глубина {} · {}"
 
+msgid "{} · {} / {} games · {} playing"
+msgstr "{} · {} / {} партий · идёт: {}"
+
 msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
 msgstr "{} · партий: {} / {} · идёт: {} · {:.0f} партий/ч · {}"
 
@@ -4591,6 +4639,9 @@ msgstr "{} · партий: {} · Elo {} · {}"
 
 msgid "{} · {} games · first: {} · {}"
 msgstr "{} · партий: {} · первый: {} · {}"
+
+msgid "{} · {} games · {}"
+msgstr "{} · партий: {} · {}"
 
 msgid "{} – fastchess-gui"
 msgstr "{} – fastchess-gui"

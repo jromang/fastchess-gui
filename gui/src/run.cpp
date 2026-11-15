@@ -599,17 +599,17 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     spec.rounds = setup.format == TournamentFormat::Swiss ? std::max(1, setup.cycles) : 0;
     spec.seeds  = std::max(1, setup.seeds);
     if (match) spec.max_games = t.rounds >= UNBOUNDED_ROUNDS ? 0 : t.rounds * t.games;
-    spec.log_every_game    = setup.log_every_game;
-    spec.opening_per_round = setup.opening_per_round && !match && setup.format != TournamentFormat::Knockout;
-    spec.pgn_out           = setup.pgn_out;
-    spec.pgn_out_chessbase = setup.export_style == PgnStyle::ChessBase;
-    spec.conditions        = t;
+    spec.log_every_game        = setup.log_every_game;
+    spec.opening_per_round     = setup.opening_per_round && !match && setup.format != TournamentFormat::Knockout;
+    spec.pgn_out               = setup.pgn_out;
+    spec.pgn_out_chessbase     = setup.export_style == PgnStyle::ChessBase;
+    spec.conditions            = t;
     spec.stop_on_start_failure = setup.stop_on_start_failure;
     if (setup.engine_syzygy) spec.forced_options.emplace_back("SyzygyPath", setup.tb_paths);
     if (setup.engine_ownbook_off) spec.forced_options.emplace_back("OwnBook", "false");
     for (std::size_t i = 0; i < run.engines.size(); ++i) {
         tour::Participant p;
-        p.id     = static_cast<int>(i);
+        p.id         = static_cast<int>(i);
         p.engine     = run.engines[i];
         p.elo        = people[i].first->elo;
         p.book       = people[i].second.book.path;
@@ -890,10 +890,6 @@ std::string RunController::undoEdit() {
     return {};
 }
 
-namespace {
-
-// Ends the engine process `pid` of a game being played, with what it started (the engine behind a WinBoard adapter
-// or a book adapter), as interruptEngineProcesses() ends them all.
 void stopEngineProcess(int64_t pid) {
     fastchess::process_list.lock();
     for (const auto& process : fastchess::process_list) {
@@ -905,8 +901,6 @@ void stopEngineProcess(int64_t pid) {
     }
     fastchess::process_list.unlock();
 }
-
-}  // namespace
 
 std::string RunController::endGame(int slot, uint64_t number, const std::string& result, const std::string& why) {
     if (!running() || !tournament_ || !observer_) return TR("No game is being played.");
@@ -986,7 +980,7 @@ void configureFastchess(const tour::TournamentSpec& spec) {
 }
 
 std::string playTournament(tour::TournamentState& tournament, fastchess::observer::GameObserver* observer,
-                           tour::RecordListener* listener) {
+                           tour::RecordListener* listener, const std::function<void(tour::Runner*)>& on_runner) {
     std::string error;
     try {
         const auto& tb = fastchess::config::TournamentConfig->tb_adjudication;
@@ -996,6 +990,13 @@ std::string playTournament(tour::TournamentState& tournament, fastchess::observe
 
         // The runner is fastchess' observer while it plays, and forwards everything to ours.
         tour::Runner runner(tournament, observer, listener);
+        struct Told {
+            const std::function<void(tour::Runner*)>& on_runner;
+            ~Told() {
+                if (on_runner) on_runner(nullptr);
+            }
+        } told{on_runner};
+        if (on_runner) on_runner(&runner);
         runner.start();
         error = runner.error();
     } catch (const std::exception& e) {
@@ -1077,6 +1078,8 @@ std::string RunController::error() const {
     std::lock_guard<std::mutex> lock(outcome_mutex_);
     return error_;
 }
+
+bool RunController::abnormal() const { return fastchess::atomic::abnormal_termination; }
 
 bool RunController::takeFinishedEvent() {
     const bool event = finished_event_;

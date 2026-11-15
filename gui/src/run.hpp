@@ -3,6 +3,7 @@
 #include <atomic>
 #include <chrono>
 #include <filesystem>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -12,11 +13,13 @@
 #include <types/engine_config.hpp>
 #include <types/tournament.hpp>
 
+#include <tour/budget.hpp>
 #include <tour/state.hpp>
 #include <tour/summary.hpp>
 
 #include "live.hpp"
 #include "model.hpp"
+#include "setup_checks.hpp"
 #include "topology.hpp"
 
 namespace fcg {
@@ -66,9 +69,15 @@ struct BuiltRun {
 void configureFastchess(const tour::TournamentSpec& spec);
 
 // Plays `tournament` on this thread until it is finished or fastchess::atomic::stop is set; configureFastchess()
-// first. Returns an error message, empty on success.
+// first. Returns an error message, empty on success. `on_runner`, when given, is told the runner once it exists (to
+// set its allowance, read what it plays), and nullptr before it goes away.
 [[nodiscard]] std::string playTournament(tour::TournamentState& tournament, fastchess::observer::GameObserver* observer,
-                                         tour::RecordListener* listener);
+                                         tour::RecordListener* listener,
+                                         const std::function<void(tour::Runner*)>& on_runner = {});
+
+// Ends the engine process `pid` of a game being played, with what it started (the engine behind a WinBoard adapter
+// or a book adapter), as interruptEngineProcesses() ends them all.
+void stopEngineProcess(int64_t pid);
 
 // The most recent match in `runs_root`, if it is not finished (stopped, or interrupted by a crash).
 [[nodiscard]] std::optional<tour::Summary> unfinishedMatch(const std::filesystem::path& runs_root);
@@ -169,14 +178,84 @@ void interruptEngineProcesses();
 // distinct: buildRun() refuses a setup whose names are not.
 [[nodiscard]] std::vector<std::string> participantNames(const MatchSetup& setup);
 
-// Owns the thread a tournament runs on, and the tournament's state. Only one run exists at a time, because
-// fastchess keeps its configuration and stop flag in globals.
-class RunController {
+// A tournament the window shows: played on a thread of this process (RunController: quick tests, and a tournament
+// opened to look at it), or in a process of its own (RemoteRun, remote_run.hpp: every tournament started or resumed).
+// The views read only this, so that they do not know where a tournament plays.
+class Run {
    public:
     enum class State { Idle, Running, Finished };
 
+    virtual ~Run() = default;
+
+    // Changes the open tournament, running or not; returns an error message, empty on success.
+    virtual std::string applyEdit(const tour::Edit& edit) = 0;
+    // Undoes the last change while no game started since (TournamentState::canUndo()).
+    virtual std::string undoEdit() = 0;
+
+    // Ends game `number` (tour::GameTask::number()), played in slot `slot`, with the operator's `result` for `why`;
+    // returns an error message, empty on success. fastchess cannot be told to end one game, so the process of the
+    // engine on move is stopped: fastchess ends the game at once (a disconnection, its engine started again for its
+    // next game, as "Restart an engine that crashes" does, which this needs), and the runner records it with the
+    // result asked for (tour::TournamentState::requestEnd()).
+    virtual std::string endGame(int slot, uint64_t number, const std::string& result, const std::string& why) = 0;
+
+    virtual void setPaused(bool paused)       = 0;
+    [[nodiscard]] virtual bool paused() const = 0;
+
+    // The engine of `participant`, which cannot start, is tried again as soon as a game of it can be played, rather
+    // than at its next try (tour::StartFailures). False when the run is not playing, or that engine is not failing.
+    virtual bool tryEngineAgain(int participant) = 0;
+
+    // Interrupts the running games (they are not scored) and ends the run.
+    virtual void stopNow() = 0;
+    // Pauses, waits for the running games to finish, then ends the run.
+    virtual void stopWhenIdle()                         = 0;
+    [[nodiscard]] virtual bool stoppingWhenIdle() const = 0;
+    [[nodiscard]] virtual bool stopping() const         = 0;
+
+    // Call once per frame.
+    virtual void update() = 0;
+
+    [[nodiscard]] virtual State state() const = 0;
+    [[nodiscard]] bool running() const { return state() == State::Running; }
+
+    // Games that passed the pause gate and are not finished yet.
+    [[nodiscard]] virtual int runningGames() const = 0;
+
+    [[nodiscard]] virtual LiveSource* observer() const                    = 0;
+    [[nodiscard]] virtual const tour::TournamentState* tournament() const = 0;
+    [[nodiscard]] virtual const RunInfo& info() const                     = 0;
+
+    // Why it ended: an error message (empty if none), whether the user stopped it, whether fastchess stopped it (an
+    // engine that crashed without "Restart an engine that crashes"), and the engine fastchess said could not start
+    // when that stopped it (nullopt when unknown here: the window reads its log).
+    [[nodiscard]] virtual std::string error() const  = 0;
+    [[nodiscard]] virtual bool stoppedByUser() const = 0;
+    [[nodiscard]] virtual bool abnormal() const      = 0;
+    [[nodiscard]] virtual std::optional<StartupFailure> startupFailed() const { return std::nullopt; }
+
+    // True exactly once, on the first update() after the run ended.
+    [[nodiscard]] virtual bool takeFinishedEvent() = 0;
+    // True once after its copy of the tournament was opened again (an edit undone in its process): the views start
+    // over from it.
+    [[nodiscard]] virtual bool takeReopened() { return false; }
+
+    // What it may use of the machine (budget.hpp), what its games in flight take, and what holds its next game back.
+    // Only a tournament in a process of its own is shared out by the window.
+    virtual void setAllowance(const tour::Allowance& /*allowance*/) {}
+    [[nodiscard]] virtual tour::Allowance allowance() const { return {}; }
+    [[nodiscard]] virtual tour::GameCost inFlight() const { return {}; }
+    [[nodiscard]] virtual tour::Wait waiting() const { return tour::Wait::None; }
+    // Played in a process of its own.
+    [[nodiscard]] virtual bool remote() const { return false; }
+};
+
+// Owns the thread a tournament runs on, and the tournament's state. Only one runs at a time in a process, because
+// fastchess keeps its configuration and stop flag in globals: the window plays here only its quick tests.
+class RunController final : public Run {
+   public:
     RunController() = default;
-    ~RunController();
+    ~RunController() override;
 
     // Starts a run; returns an error message, empty on success.
     std::string start(const MatchSetup& setup, const std::vector<EngineEntry>& engines, const CpuTopology& topology,
@@ -188,51 +267,32 @@ class RunController {
     // Opens the match stored in `dir` to look at it, without playing; returns an error message, empty on success.
     std::string view(const std::filesystem::path& dir);
 
-    // Changes the open tournament, running or not; returns an error message, empty on success.
-    std::string applyEdit(const tour::Edit& edit);
-    // Undoes the last change while no game started since (TournamentState::canUndo()).
-    std::string undoEdit();
+    std::string applyEdit(const tour::Edit& edit) override;
+    std::string undoEdit() override;
+    std::string endGame(int slot, uint64_t number, const std::string& result, const std::string& why) override;
 
-    // Ends game `number` (tour::GameTask::number()), played in slot `slot`, with the operator's `result` for `why`;
-    // returns an error message, empty on success. fastchess cannot be told to end one game, so the process of the
-    // engine on move is stopped: fastchess ends the game at once (a disconnection, its engine started again for its
-    // next game, as "Restart an engine that crashes" does, which this needs), and the runner records it with the
-    // result asked for (tour::TournamentState::requestEnd()).
-    std::string endGame(int slot, uint64_t number, const std::string& result, const std::string& why);
+    void setPaused(bool paused) override;
+    [[nodiscard]] bool paused() const override;
+    bool tryEngineAgain(int participant) override;
 
-    void setPaused(bool paused);
-    [[nodiscard]] bool paused() const;
+    void stopNow() override;
+    void stopWhenIdle() override;
+    [[nodiscard]] bool stoppingWhenIdle() const noexcept override { return stop_when_idle_; }
+    [[nodiscard]] bool stopping() const noexcept override { return stop_requested_; }
 
-    // The engine of `participant`, which cannot start, is tried again as soon as a game of it can be played, rather
-    // than at its next try (tour::StartFailures). False when the run is not playing, or that engine is not failing.
-    bool tryEngineAgain(int participant);
+    void update() override;
 
-    // Interrupts the running games (they are not scored) and ends the run.
-    void stopNow();
-    // Pauses, waits for the running games to finish, then ends the run.
-    void stopWhenIdle();
-    [[nodiscard]] bool stoppingWhenIdle() const noexcept { return stop_when_idle_; }
-    [[nodiscard]] bool stopping() const noexcept { return stop_requested_; }
+    [[nodiscard]] State state() const noexcept override { return state_; }
+    [[nodiscard]] int runningGames() const override;
 
-    // Call once per frame.
-    void update();
+    [[nodiscard]] GuiObserver* observer() const noexcept override { return observer_.get(); }
+    [[nodiscard]] const tour::TournamentState* tournament() const noexcept override { return tournament_.get(); }
+    [[nodiscard]] const RunInfo& info() const noexcept override { return info_; }
 
-    [[nodiscard]] State state() const noexcept { return state_; }
-    [[nodiscard]] bool running() const noexcept { return state_ == State::Running; }
-
-    // Games that passed the pause gate and are not finished yet.
-    [[nodiscard]] int runningGames() const;
-
-    [[nodiscard]] GuiObserver* observer() const noexcept { return observer_.get(); }
-    [[nodiscard]] const tour::TournamentState* tournament() const noexcept { return tournament_.get(); }
-    [[nodiscard]] const RunInfo& info() const noexcept { return info_; }
-
-    // Why the run thread ended: an error message (empty if none), and whether the user stopped it.
-    [[nodiscard]] std::string error() const;
-    [[nodiscard]] bool stoppedByUser() const noexcept { return stop_requested_; }
-
-    // True exactly once, on the first update() after the run ended.
-    [[nodiscard]] bool takeFinishedEvent();
+    [[nodiscard]] std::string error() const override;
+    [[nodiscard]] bool stoppedByUser() const noexcept override { return stop_requested_; }
+    [[nodiscard]] bool abnormal() const override;
+    [[nodiscard]] bool takeFinishedEvent() override;
 
    private:
     void afterEdit();  // after a change or its undo: participants and totals

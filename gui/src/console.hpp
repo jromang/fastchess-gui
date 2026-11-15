@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <deque>
 #include <filesystem>
+#include <functional>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -18,15 +19,22 @@ class Console {
     // Installs the Logger sink. Call once at startup.
     void attach();
 
-    // Also appends every line to this file (truncated first). A GUI program on Windows has no stderr.
-    void logTo(const std::filesystem::path& path);
+    // Also appends every line to this file (truncated first, unless `append`). A GUI program on Windows has no
+    // stderr.
+    void logTo(const std::filesystem::path& path, bool append = false);
 
-    void add(std::string line, bool warning = false);
+    // `source`: the tournament the line comes from, as the Log page filters them (the name a tournament process's
+    // lines are shown under); empty for the window's own.
+    void add(std::string line, bool warning = false, std::string source = {});
 
     struct Line {
         std::string text;
         bool warning = false;
+        std::string source;
     };
+
+    // Told about every line added, after it is (a tournament process sends them to the window). Not with the lock.
+    void setListener(std::function<void(const Line&)> listener);
 
     // Copies the lines if they changed since `version`.
     bool copy(std::vector<Line>& out, uint64_t& version) const;
@@ -45,7 +53,8 @@ class Console {
 
     mutable std::mutex mutex_;
     std::deque<Line> lines_;
-    std::FILE* log_   = nullptr;
+    std::FILE* log_ = nullptr;
+    std::function<void(const Line&)> listener_;
     uint64_t version_ = 1;
     uint64_t added_   = 0;
 };

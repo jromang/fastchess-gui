@@ -419,9 +419,11 @@ if(FCG_BUILD_GUI)
             target_link_options(fcg_wb_mover PRIVATE -static -static-libgcc -static-libstdc++)
         endif()
 
-        add_dependencies(fastchess-gui-tests fcg_random_mover fcg_wb_mover)
+        # The program itself too: the tests start tournament processes (--run ... --control stdio).
+        add_dependencies(fastchess-gui-tests fcg_random_mover fcg_wb_mover fastchess-gui)
         target_compile_definitions(fastchess-gui-tests PRIVATE FCG_RANDOM_MOVER="$<TARGET_FILE_NAME:fcg_random_mover>"
                                                               FCG_WB_MOVER="$<TARGET_FILE_NAME:fcg_wb_mover>"
+                                                              FCG_GUI_PROGRAM="$<TARGET_FILE:fastchess-gui>"
                                                               FCG_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
         if(WIN32)
             target_link_options(fastchess-gui-tests PRIVATE -static -static-libgcc -static-libstdc++)

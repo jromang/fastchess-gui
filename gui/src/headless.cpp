@@ -16,9 +16,18 @@
 #include <tour/standings.hpp>
 
 #include "broadcaster.hpp"
+#include "console.hpp"
+#include "control_child.hpp"
 #include "memory.hpp"
 #include "portable.hpp"
 #include "run.hpp"
+#include "setup_checks.hpp"
+
+#ifdef _WIN32
+#    include <process.h>
+#else
+#    include <unistd.h>
+#endif
 
 namespace fcg {
 
@@ -210,8 +219,13 @@ class BothListeners final : public tour::RecordListener {
 
 }  // namespace
 
+int runControlled(const std::string& target, const Storage& storage, const HeadlessBroadcast& broadcast,
+                  const ControlOptions& control);
+
 int runHeadless(const std::string& target, const Storage& storage, const CpuTopology& topology,
-                const HeadlessBroadcast& broadcast) {
+                const HeadlessBroadcast& broadcast, const ControlOptions& control) {
+    if (control.mode != ControlOptions::Mode::None) return runControlled(target, storage, broadcast, control);
+
     // The version first: what a log of the run, sent with a bug report, must tell.
     std::printf("fastchess-gui %s\n", FCG_VERSION);
     std::fflush(stdout);
@@ -434,6 +448,281 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
     }
     std::printf("Finished (%s).\n", state->finishReason().c_str());
     return 0;
+}
+
+}  // namespace fcg
+
+namespace fcg {
+
+namespace {
+
+// The broadcast settings of the command line (the window passes those the tournament was started with).
+BroadcastSettings commandLineBroadcast(const HeadlessBroadcast& broadcast, const Storage& storage) {
+    BroadcastSettings settings;
+    if (broadcast.tlcs_port) settings.tlcs = true, settings.tlcs_port = *broadcast.tlcs_port;
+    if (broadcast.tlcs_lanes) settings.tlcs_lanes = true;
+    if (broadcast.web_port) settings.web = true, settings.web_port = *broadcast.web_port;
+    if (broadcast.live_dir) settings.files = true, settings.dir = *broadcast.live_dir;
+    if (broadcast.lichess) {
+        const char* token      = std::getenv("FCG_LICHESS_TOKEN");
+        settings.lichess       = true;
+        settings.lichess_token = token && *token ? token : storage.lichessToken();
+        settings.lichess_round = *broadcast.lichess == "new" ? "" : *broadcast.lichess;
+    }
+    if (broadcast.tunnel) {
+        std::string error;
+        if (auto to = parseTunnel(*broadcast.tunnel, error)) {
+            if (to->pinned.empty()) to->known_hosts = storage.root() / "known_hosts.json";
+            settings.web       = true;
+            settings.tunnel    = true;
+            settings.tunnel_to = *to;
+        }
+    }
+    return settings;
+}
+
+int64_t ownPid() {
+#ifdef _WIN32
+    return static_cast<int64_t>(_getpid());
+#else
+    return static_cast<int64_t>(::getpid());
+#endif
+}
+
+}  // namespace
+
+int runControlled(const std::string& target, const Storage& storage, const HeadlessBroadcast& broadcast,
+                  const ControlOptions& control) {
+    namespace fs = std::filesystem;
+    const fs::path dir(target);
+    // The channel first: from now on nothing else may write to the standard output, which goes to the log.
+    std::error_code ec;
+    const auto log_file = fs::is_directory(dir, ec) ? dir / "fastchess-gui.log" : storage.root() / "fastchess-gui.log";
+    auto channel        = std::make_unique<StdioChannel>(log_file.string());
+
+    control::Hello hello;
+    hello.version = FCG_VERSION;
+    hello.dir     = fs::absolute(dir).lexically_normal().string();
+    hello.pid     = ownPid();
+    channel->hello(hello);
+
+    // What it says goes to the window and to the tournament's log.
+    auto& console = Console::instance();
+    console.logTo(log_file, true);
+    console.setListener([&channel](const Console::Line& line) {
+        channel->send("log", {{"text", line.text}, {"warning", line.warning}});
+    });
+    console.add(fmt::format("fastchess-gui {}: {} plays here (process {})", FCG_VERSION, hello.dir, hello.pid));
+    const auto console_mark = console.added();
+
+    control::End end;
+    const auto finish = [&](int code) {
+        end.exit_code = code;
+        channel->send("end", control::endJson(end));
+        console.setListener({});
+        return code;
+    };
+
+    std::unique_ptr<tour::TournamentState> state;
+    try {
+        if (!tour::TournamentState::isTournament(dir)) throw std::runtime_error("no tournament in " + target);
+        state = tour::TournamentState::open(dir);
+    } catch (const std::exception& e) {
+        end.error = e.what();
+        console.add(end.error, true);
+        return finish(2);
+    }
+    for (const auto& w : state->warnings()) console.add(w, true);
+    if (state->finished()) {
+        end.finished = true;
+        return finish(0);
+    }
+    // Its PGN books, turned into Polyglot books when their files changed since (the window prepared them already).
+    for (const auto& need : pgnBookNeeds(state->spec())) {
+        if (const auto problem = pgnBookProblem(need.path, need.depth, need.chess960); !problem.empty()) {
+            end.error = fmt::format("the book of {} cannot be used: {}", need.participant, problem);
+            console.add(end.error, true);
+            return finish(2);
+        }
+    }
+
+    ControlObserver observer(*channel, *state);
+    state->setJournalListener([&channel](uint64_t at, uint64_t last, const nlohmann::json& event) {
+        channel->send("journal", {{"at", at}, {"end", last}, {"event", event}});
+    });
+
+    // Broadcasting from here: it goes on without the window.
+    const auto settings     = commandLineBroadcast(broadcast, storage);
+    const bool broadcasting = settings.files || settings.tlcs || settings.web || settings.lichess;
+    Broadcaster broadcaster;
+    if (broadcasting) {
+        for (const auto& error : broadcaster.configure(settings)) console.add(error, true);
+    }
+
+    std::mutex runner_mutex;
+    tour::Runner* runner = nullptr;
+    auto allowance       = control.allowance.value_or(tour::Allowance{});
+    std::atomic_bool playing{true};
+    bool stopped_by_user = false, stop_idle = false;
+
+    const auto reply = [&](const nlohmann::json& command, const std::string& error) {
+        if (command.contains("id")) channel->send("reply", {{"id", command["id"]}, {"error", error}});
+    };
+    const auto stopNow = [&] {
+        fastchess::atomic::stop = true;
+        fastchess::observer::PauseGate::instance().wakeAll();
+    };
+    const auto handle = [&](const nlohmann::json& c) {
+        const auto kind = c.value("c", std::string{});
+        auto& gate      = fastchess::observer::PauseGate::instance();
+        try {
+            if (kind == "pause" || kind == "resume") {
+                gate.setPaused(kind == "pause");
+            } else if (kind == "stop") {
+                stopped_by_user = true;
+                if (c.value("now", false)) {
+                    stopNow();
+                } else {
+                    stop_idle = true;
+                    gate.stopWhenIdle();
+                }
+            } else if (kind == "edit") {
+                state->applyEdit(c.at("edit").get<tour::Edit>());
+                observer.live().updateParticipants(state->spec());
+                reply(c, {});
+            } else if (kind == "undo") {
+                state->undoEdit();
+                observer.live().updateParticipants(state->spec());
+                reply(c, {});
+            } else if (kind == "end_game") {
+                const auto number = c.at("number").get<uint64_t>();
+                if (!state->spec().conditions.recover) throw std::runtime_error("no restart of crashed engines");
+                if (!state->requestEnd(number, c.at("result").get<std::string>(), c.value("why", std::string{})))
+                    throw std::runtime_error("this game is over already");
+                if (!observer.live().stopEngineOnMove(c.at("slot").get<int>(), static_cast<std::size_t>(number + 1),
+                                                      stopEngineProcess) &&
+                    state->takeEnd(number)) {
+                    throw std::runtime_error("this game is not being played");
+                }
+                reply(c, {});
+            } else if (kind == "try_engine") {
+                (void)state->startFailures().tryNow(c.at("participant").get<int>(), tour::StartFailures::Clock::now());
+            } else if (kind == "allowance") {
+                std::lock_guard<std::mutex> lock(runner_mutex);
+                allowance = control::allowanceFromJson(c.at("allowance"));
+                if (runner) runner->setAllowance(allowance);
+            } else if (kind == "snapshot") {
+                observer.sendSlots();
+            }
+        } catch (const std::exception& e) {
+            reply(c, e.what());
+        }
+    };
+
+    // The control loop: the window's commands, the searches held back, the state when it changes.
+    std::thread loop([&] {
+        control::Status last;
+        bool sent       = false;
+        auto next_state = Clock::now();
+        std::vector<GameRecord> games;
+        std::vector<fastchess::Stats> stats;
+        while (playing) {
+            for (const auto& c : channel->takeCommands()) handle(c);
+            // The window went away without a word (closed, crashed): the tournament stops, resumable.
+            if (channel->closed() && control.mode == ControlOptions::Mode::Stdio && !fastchess::atomic::stop) {
+                console.add("The window went away: the tournament stops, to be resumed.", true);
+                stopNow();
+            }
+            auto& gate = fastchess::observer::PauseGate::instance();
+            // Idle means no game running and no pair waiting for its second game, so no result is thrown away.
+            if (stop_idle && !fastchess::atomic::stop && gate.running() == 0 && gate.openPairs() == 0) stopNow();
+            observer.flush();
+            observer.live().drain(games, stats);  // the window's lists, not kept here
+            games.clear();
+            stats.clear();
+            if (broadcasting) broadcaster.update(*state, observer.live(), std::nullopt, -1);
+
+            if (Clock::now() >= next_state) {
+                next_state = Clock::now() + std::chrono::milliseconds(200);
+                control::Status st;
+                st.phase         = control::Status::Phase::Running;
+                st.paused        = gate.paused();
+                st.stop_idle     = stop_idle;
+                st.stopping      = fastchess::atomic::stop;
+                st.running_games = gate.running();
+                st.open_pairs    = static_cast<int>(gate.openPairs());
+                for (int i = 0; i < observer.live().slotCount(); ++i) {
+                    SlotState slot;
+                    if (observer.live().copySlot(i, slot) && slot.active && slot.game_id > 0)
+                        st.running.push_back(slot.game_id - 1);
+                }
+                std::sort(st.running.begin(), st.running.end());
+                st.can_undo       = state->canUndo();
+                st.undo_lasts     = state->undoLasts();
+                st.pgn_out_error  = state->pgnOutError();
+                st.start_failures = state->startFailures().engines();
+                st.stalled        = state->startFailures().stalled();
+                {
+                    std::lock_guard<std::mutex> lock(runner_mutex);
+                    st.allowance = allowance;
+                    if (runner) {
+                        st.in_flight = runner->inFlight();
+                        st.waiting   = runner->waiting();
+                    }
+                }
+                if (!sent || !(st == last)) {
+                    channel->send("state", control::statusJson(st));
+                    last = st;
+                    sent = true;
+                }
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
+    });
+
+    // Stopped by the system (shut down, a terminal's Ctrl+C on a tournament started from it): resumable.
+    std::signal(SIGINT, onSignal);
+    std::signal(SIGTERM, onSignal);
+
+    configureFastchess(state->spec());
+    const auto error    = playTournament(*state, &observer, &observer, [&](tour::Runner* r) {
+        std::lock_guard<std::mutex> lock(runner_mutex);
+        runner = r;
+        if (runner) runner->setAllowance(allowance);
+    });
+    const bool abnormal = fastchess::atomic::abnormal_termination;
+    playing             = false;
+    loop.join();
+    if (broadcasting) {
+        // The end of the last games, then time for the viewers to see it.
+        const auto until = Clock::now() + std::chrono::seconds(2);
+        while (Clock::now() < until) {
+            broadcaster.update(*state, observer.live(), std::nullopt, -1);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        broadcaster.stop();
+    }
+    state->setJournalListener({});
+
+    control::Status final_state;
+    final_state.phase          = control::Status::Phase::Finished;
+    final_state.can_undo       = state->canUndo();
+    final_state.start_failures = state->startFailures().engines();
+    final_state.stalled        = state->startFailures().stalled();
+    channel->send("state", control::statusJson(final_state));
+
+    end.error           = error;
+    end.abnormal        = abnormal;
+    end.stopped_by_user = stopped_by_user;
+    end.finished        = state->finished();
+    end.stalled         = state->startFailures().stalled();
+    if (error.empty() && abnormal && !stopped_by_user) {
+        if (const auto failed = startupFailure(console.since(console_mark))) {
+            end.failed_engine = failed->engine;
+            end.failed_reason = failed->reason;
+        }
+    }
+    return finish(!error.empty() ? 1 : state->finished() ? 0 : 3);
 }
 
 }  // namespace fcg
