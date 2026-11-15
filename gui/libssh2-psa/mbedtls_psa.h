@@ -7,12 +7,14 @@
  *   host keys      rsa-sha2-256, rsa-sha2-512 (verification only, 2048 to 4096 bits)
  *   ciphers        aes128-ctr, aes192-ctr, aes256-ctr, aes128-gcm@openssh.com, aes256-gcm@openssh.com
  *   MACs           hmac-sha1, hmac-sha2-256, hmac-sha2-512 (and their -etm@openssh.com forms)
+ *   user keys      RSA (2048 to 4096 bits) and Ed25519, signing only: the private key files of the remote machines,
+ *                  in OpenSSH's format (encrypted with a passphrase or not), RSA in PKCS #1's PEM too (not
+ *                  encrypted). Ed25519 signatures come from ed25519.c, PSA having no EdDSA.
  *
- * libssh2 compiles curve25519 only along with Ed25519 (LIBSSH2_ED25519), which PSA does not have: the Ed25519
- * functions are there and fail, so an ssh-ed25519 host key is refused if it is ever negotiated. Nothing private-key
- * (public key authentication, key files) is supported, nor the classic Diffie-Hellman groups, whose bignums PSA does
- * not offer: their functions fail too. The caller restricts the negotiation to the algorithms above with
- * libssh2_session_method_pref(), so none of these is reached.
+ * libssh2 compiles curve25519 only along with Ed25519 (LIBSSH2_ED25519): the Ed25519 functions that verify fail, so
+ * an ssh-ed25519 host key is refused if it is ever negotiated. Nor are the classic Diffie-Hellman groups supported,
+ * whose bignums PSA does not offer: their functions fail too. The caller restricts the negotiation to the
+ * algorithms above with libssh2_session_method_pref(), so none of these is reached.
  *
  * libssh2_config.h includes this file (see there); mbedtls_psa.c implements it. */
 
@@ -74,7 +76,7 @@ struct ssh2_psa_hmac_ctx {
 #define ssh2_hmac_update(ctx, data, len) \
     (psa_mac_update(&(ctx)->mac, (const uint8_t *)(data), len) == PSA_SUCCESS)
 
-/* RSA: a public key, imported in PSA, and its size */
+/* RSA: a public key (a host's) or a key pair (the user's), imported in PSA, and its size */
 
 struct ssh2_psa_rsa_ctx {
     psa_key_id_t key;
@@ -83,10 +85,11 @@ struct ssh2_psa_rsa_ctx {
 
 #define ssh2_rsa_ctx           struct ssh2_psa_rsa_ctx
 
-/* Ed25519: not supported, every function fails */
+/* Ed25519: a private key (the user's), to sign with; public keys are not supported, their functions fail */
 
 struct ssh2_psa_ed25519_ctx {
-    int unused;
+    unsigned char seed[32];
+    unsigned char pub[32];
 };
 
 #define ssh2_ed25519_ctx       struct ssh2_psa_ed25519_ctx

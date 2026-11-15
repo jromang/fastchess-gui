@@ -65,6 +65,7 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
     queue_      = storage_.loadQueue();
     budget_setting_ = storage_.machineBudget();
     if (const auto memory = systemMemory()) installed_mb_ = memory->total_mb;
+    loadMachines();
     layouts_    = layout::named(storage_.loadLayouts());
     if (ImGui::GetCurrentContext()) registerPanelSettings();
 
@@ -90,6 +91,8 @@ App::~App() {
     if (update_checker_.running() && window_) SDL_HideWindow(window_);
     fingerprints_cancel_ = true;
     if (fingerprints_.valid()) fingerprints_.wait();
+    machine_activity_.clear();  // the machines' jobs cancelled, a second or two at most
+    forgetPassphrases();
     cancelBookScan();
     for (auto& f : abandoned_scans_) f.wait();
     storage_.saveSetup(setup_);
@@ -190,6 +193,7 @@ void App::frame() {
     pollUpdateCheck();
     pollEngineConsole();
     pollBoard();
+    pollMachines();
     handleDialogs();
 
     if (engines_save_due_ && std::chrono::steady_clock::now() >= *engines_save_due_) {
@@ -294,7 +298,16 @@ void App::frame() {
             page_ = Page::Log;
         else if (w == "settings")
             page_ = Page::Settings;
-        else if (w == "ratings" || w == "ratings-engine" || w == "ratings-h2h" || w == "ratings-progress") {
+        else if (w == "machines" || w == "machines-test" || w == "machines-files") {
+            // The first machine's card in Settings; tested, or the setup's books and tablebases compared with its.
+            page_               = Page::Settings;
+            scroll_to_machines_ = true;
+            if (!machines_.empty()) {
+                machine_open_ = machines_.front().id;
+                if (w == "machines-test") startMachineJob(machine_open_, MachineJob::Kind::Test);
+                if (w == "machines-files") startMachineJob(machine_open_, MachineJob::Kind::Files);
+            }
+        } else if (w == "ratings" || w == "ratings-engine" || w == "ratings-h2h" || w == "ratings-progress") {
             page_                = Page::Ratings;
             ratings_tab_request_ = w == "ratings-engine" ? 1 : w == "ratings-h2h" ? 2 : w == "ratings-progress" ? 3 : 0;
         } else if (w == "ratings-players") {  // the players of the PGN files and the library engines they are
@@ -563,13 +576,21 @@ void App::startRun() {
     storage_.saveSetup(setup_);
     if (startAfterReads("start", enginesOfSetup(setup_), pgnBookNeeds(setup_), [this] { startRun(); })) return;
 
+    // On a remote machine (Run on): its processors make the concurrency, its memory is its own.
+    const Machine* machine = setup_.machine.empty() ? nullptr : machineById(setup_.machine);
+    CpuTopology topology   = topology_;
+    if (machine && machine->system.threads > 0) {
+        topology.logical  = machine->system.threads;
+        topology.physical = std::max(1, machine->system.threads / 2);
+    }
+
     // Hash tables larger than the memory installed cannot work; larger than the free memory, they swap.
-    if (const auto memory = setupMemory(setup_, engines_, topology_); memory.aboveInstalled()) {
+    if (const auto memory = setupMemory(setup_, engines_, topology_); !machine && memory.aboveInstalled()) {
         start_error_ = memoryNotice(setup_, engines_, memory).text;
         Console::instance().add(trf("Cannot start the match: {}", start_error_), true);
         setStartFixes();
         return;
-    } else if (memory.aboveAvailable()) {
+    } else if (!machine && memory.aboveAvailable()) {
         Console::instance().add(memoryNotice(setup_, engines_, memory).text, true);
     }
 
@@ -581,12 +602,14 @@ void App::startRun() {
                          : storage_.runsDir() /
                                makeTournamentDirName(setup_.name.empty() ? defaultTournamentName(setup_) : setup_.name);
     try {
-        const auto built = buildRun(setup_, engines_, topology_, dir);
+        const auto built = buildRun(setup_, engines_, topology, dir);
         (void)tour::TournamentState::create(dir, built.spec);  // closed at once: the process opens it
     } catch (const std::exception& e) {
         start_error_ = e.what();
     }
-    if (start_error_.empty()) start_error_ = launchTournament(dir);
+    if (start_error_.empty()) {
+        start_error_ = setup_.machine.empty() ? launchTournament(dir) : launchOnMachine(dir, setup_.machine);
+    }
     if (!start_error_.empty()) {
         Console::instance().add(trf("Cannot start the match: {}", start_error_), true);
         setStartFixes();
@@ -617,7 +640,11 @@ void App::resumeRun(bool at_launch) {
     const auto dir = fs::absolute(unfinished_->dir).lexically_normal().string();
     if (at_launch) storage_.setRunningMarker(RunningMarker{dir, false, true});
     start_error_ = resumeCheck(unfinished_->dir);
-    if (start_error_.empty()) start_error_ = launchTournament(unfinished_->dir);
+    if (start_error_.empty()) {
+        // A tournament of a remote machine resumes there.
+        const auto place = readMachinePlace(unfinished_->dir);
+        start_error_ = place ? launchOnMachine(unfinished_->dir, place->machine) : launchTournament(unfinished_->dir);
+    }
     if (!start_error_.empty()) {
         // It did not start, which ended nothing: it is tried again at the next launch.
         if (at_launch) storage_.setRunningMarker(RunningMarker{dir, false, false});
@@ -870,6 +897,8 @@ void App::pollRun() {
 
     if (auto* open = shownRun()) watchStartFailures(*open);
     arbitrate();
+    arbitrateMachines();
+    pollMachineRuns();
     // The queue's next tournament beside those playing, once cores are free (checked now and then).
     if (budget_setting_.queue_when_free && !queue_.empty() && !pending_start_ && !quit_pending_ && runsPlaying() > 0 &&
         !queue_held_ && std::chrono::steady_clock::now() - queue_checked_ > std::chrono::seconds(2)) {
@@ -1343,6 +1372,13 @@ void App::handleDialogs() {
                 break;
             case Dialogs::Purpose::BoardPgn:
                 openBoardPgn(std::filesystem::path(path));
+                break;
+            case Dialogs::Purpose::MachineKey:
+            case Dialogs::Purpose::MachineProgram:
+                if (auto* machine = machineById(machine_dialog_for_)) {
+                    (answer->purpose == Dialogs::Purpose::MachineKey ? machine->key_file : machine->program) = path;
+                    saveMachines();
+                }
                 break;
         }
     }

@@ -22,6 +22,7 @@ enum class Section {
     Broadcast,      // Broadcast
     Board,          // Board
     Appearance,     // Appearance: board colours, pieces, move sounds, engine logos
+    Machines,       // Machines: remote machines, set up and tested, Windows included
     Count
 };
 

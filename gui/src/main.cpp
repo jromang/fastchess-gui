@@ -44,6 +44,7 @@
 #include "console.hpp"
 #include "engines.hpp"
 #include "headless.hpp"
+#include "machines.hpp"
 #include "i18n.hpp"
 #include "local_socket.hpp"
 #include "logo.hpp"
@@ -158,7 +159,12 @@ Args parseArgs(int argc, char** argv) {
             std::sscanf(next().c_str(), "%dx%d", &args.width, &args.height);
         else if (a == "--software")
             args.software = true;
-        else if (a == "--help" || a == "-h") {
+        else if (a == "--version") {
+            // Read by the window on a remote machine (see machines.hpp): the version, and the protocol of the
+            // channel its tournaments are followed through.
+            std::printf("fastchess-gui %s\nprotocol %d\n", FCG_VERSION, fcg::REMOTE_PROTOCOL);
+            std::exit(0);
+        } else if (a == "--help" || a == "-h") {
             std::printf(
                 "fastchess-gui [--profile DIR] [--autostart] [--size WxH] [--software]\n"
                 "              [--shot FILE.png[@WINDOW[@SECONDS]]]... [--select-game N] [--focus WINDOW]\n"
@@ -171,7 +177,8 @@ Args parseArgs(int argc, char** argv) {
                 "              [--control stdio|socket] [--detach] [--allowance THREADS:MEMORY_MB:GPUS:ONE]\n"
                 "                  (driven by the window: its control channel; --detach plays on in the background)\n"
                 "fastchess-gui --attach TOURNAMENT_FOLDER   (the control channel of the process playing it, on the\n"
-                "              standard input and output)\n");
+                "              standard input and output)\n"
+                "fastchess-gui --version   (the version, and the protocol of the remote machines)\n");
             std::exit(0);
         }
     }

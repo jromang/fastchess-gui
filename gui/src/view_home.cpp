@@ -18,6 +18,7 @@
 #include "home.hpp"
 #include "i18n.hpp"
 #include "memory.hpp"
+#include "remote_run.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -204,7 +205,8 @@ std::vector<home::ResourceBar> App::resourceBars() {
     for (std::size_t i = 0; i < runs_.size(); ++i) {
         const auto& r = *runs_[i].run;
         const auto* t = r.tournament();
-        if (!r.running() || !t) continue;
+        // A tournament on a remote machine takes nothing of this computer's.
+        if (!r.running() || !t || !runs_[i].machine_id.empty()) continue;
         const auto& name  = t->spec().name;
         const ImU32 color = runs_.size() > 1
                                 ? ImGui::ColorConvertFloat4ToU32(ImPlot::GetColormapColor(static_cast<int>(i)))
@@ -482,6 +484,14 @@ void App::drawRunCards() {
         if (several && runs_[i].run->remote()) {
             cards.back().weight   = static_cast<int>(std::lround(runs_[i].weight));
             cards.back().controls = [this, i] { drawRunControls(i); };
+        }
+        // On a remote machine: which, and whether the window reaches it at the moment.
+        if (!runs_[i].machine_id.empty()) {
+            cards.back().format = trf("On {}", runs_[i].machine_name) + " · " + cards.back().format;
+            if (const auto* remote = dynamic_cast<const RemoteRun*>(runs_[i].run.get()); remote && remote->connecting()) {
+                cards.back().state      = trf("Reaching {}…", runs_[i].machine_name);
+                cards.back().warn_state = true;
+            }
         }
         of.push_back(i);
     }

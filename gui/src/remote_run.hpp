@@ -87,6 +87,13 @@ class RemoteRun final : public Run {
     [[nodiscard]] int64_t pid() const noexcept { return pid_; }
     // Leaves the process running without the window (it plays on, detached): the connection ends.
     void disconnect();
+
+    // A tournament on another machine (machine_run.hpp): how to reach its process again once the connection is lost,
+    // in place of its local socket. It gives a link (which may still be connecting), or nullptr: not now (tried
+    // again in a moment), or never again when `gone` says why (the process is not there any more).
+    using Reconnect = std::function<std::unique_ptr<Link>(std::string& gone)>;
+    void setReconnect(Reconnect reconnect) { reconnect_ = std::move(reconnect); }
+    [[nodiscard]] bool onMachine() const noexcept { return static_cast<bool>(reconnect_); }
     // Still waiting to connect to the process it started (detached), which is making its socket.
     [[nodiscard]] bool connecting() const noexcept { return connecting_; }
 
@@ -118,6 +125,8 @@ class RemoteRun final : public Run {
     bool connecting_ = false;
     std::chrono::steady_clock::time_point connect_until_{};
     void tryConnect();
+    void attachLink(std::unique_ptr<Link> link);  // talks through `link`, saying where its copy's journal ends
+    Reconnect reconnect_;
     bool elsewhere_ = false;  // another window shows it: this one let go
 
     State state_         = State::Idle;

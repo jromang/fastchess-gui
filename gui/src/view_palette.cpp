@@ -456,6 +456,24 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             applyAppearance(s);
         });
     }
+    // The remote machines: their section of Settings, a new one, and each one's test.
+    add(TR("Machines"), TR("Settings"), [this, go = page(Page::Settings)] {
+        go();
+        scroll_to_machines_ = true;
+    });
+    add(TR("Add a machine"), TR("Settings"), [this, go = page(Page::Settings)] {
+        go();
+        addMachine();
+        scroll_to_machines_ = true;
+    });
+    for (const auto& m : machines_) {
+        add(trf("Test the connection to {}", m.name), TR("Machines"), [this, go = page(Page::Settings), id = m.id] {
+            go();
+            machine_open_       = id;
+            scroll_to_machines_ = true;
+            startMachineJob(id, MachineJob::Kind::Test);
+        });
+    }
     add(TR("Pieces: your own folder…"), TR("Settings"),
         [this] { dialogs_.openFolder(Dialogs::Purpose::PieceFolder, appearance::current().piece_folder); });
     add(appearance::current().sounds ? TR("Turn the move sounds off") : TR("Turn the move sounds on"), TR("Settings"),

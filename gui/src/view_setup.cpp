@@ -453,6 +453,14 @@ std::string App::concurrencySummary() const {
                                                : std::clamp(setup_.concurrency, 1, topology_.logical);
     std::string text = trn("{} game at a time", "{} games at a time", static_cast<uint64_t>(games), games) + " · " +
                        concurrencyRule(true);
+    // On a remote machine: said first.
+    if (!setup_.machine.empty()) {
+        const auto m = std::find_if(machines_.begin(), machines_.end(),
+                                     [&](const Machine& x) { return x.id == setup_.machine; });
+        text = trf("On {}", m != machines_.end() ? (m->name.empty() ? m->host : m->name)
+                                                 : std::string(TR("a machine removed"))) +
+               " · " + text;
+    }
     // Fewer, by the memory and the GPUs of the budget.
     const auto limit = budgetLimit(setup_, engines_, machineBudget(), games);
     if (limit.games < games) text += " · " + trf("{} allowed by the memory", limit.games);
@@ -1070,6 +1078,9 @@ void App::setupLimit() {
 }
 
 void App::setupConcurrency() {
+    // Where it plays: this computer, or a remote machine (view_machine_runs.cpp).
+    drawRunOn(labelWidth());
+
     bool changed           = false;
     const bool fixed_nodes = clockFree(setup_.limit);
     const int auto_value   = topology_.defaultConcurrency(fixed_nodes);

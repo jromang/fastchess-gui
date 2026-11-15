@@ -30,6 +30,8 @@
 #include "home.hpp"
 #include "layout.hpp"
 #include "live.hpp"
+#include "machine_jobs.hpp"
+#include "machine_run.hpp"
 #include "model.hpp"
 #include "notice.hpp"
 #include "pgn_store.hpp"
@@ -266,6 +268,12 @@ class App {
         // watchStartFailures(): the version of its StartFailures seen, and the participants told set aside.
         uint64_t start_failures_seen = ~uint64_t(0);
         std::set<int> start_failures_told;
+        // Played on a remote machine (machine_run.hpp): which, what became of its process there, and its files
+        // copied back. Empty and null for a tournament of this computer.
+        std::string machine_id, machine_name;
+        std::shared_ptr<LinkStatus> link_status;
+        std::shared_ptr<MachineSync> sync;
+        bool sync_finishing = false;
     };
     // One view per concurrent game, shared by the mosaic, the focus panel and detached windows.
     struct SlotView {
@@ -1431,6 +1439,55 @@ class App {
     std::string logo_error_for_;  // the engine whose card shows it
     int logos_version_     = 0;   // changed with each logo set or removed
     int web_logos_version_ = -1;  // the version the web page's logos were made from
+
+    // Remote machines (view_machines.cpp, machines.hpp): their cards in Settings, the jobs running on them, and the
+    // passphrases of key files typed this session, in memory only.
+    struct MachineActivity {
+        std::unique_ptr<MachineJob> job;       // a test, Install, the engines' check, the files compared
+        std::unique_ptr<MachineJob> transfer;  // books and tablebases copied, which may take hours, beside the others
+        std::optional<JobResult> last;         // what the last job found, shown on the card
+        MachineJob::Kind last_kind = MachineJob::Kind::Test;
+        std::optional<JobResult> last_transfer;
+        std::optional<FilesCheck> files;  // the last comparison, what a push sends
+        std::string message;              // what keeps a job from starting (the machine incomplete, a key file)
+        bool remove_asked = false;
+    };
+    void loadMachines();
+    void saveMachines();
+    void forgetPassphrases();  // wiped
+    void pollMachines();
+    void drawMachineSettings(float label);
+    void drawMachineCard(std::size_t index, float label);
+    void drawMachineEngines(Machine& machine, MachineActivity& activity);
+    void drawMachineFiles(Machine& machine, MachineActivity& activity);
+    void drawPassphrasePrompt();
+    // Starts a job on the machine `id`, its key's passphrase asked first when it has one not typed yet.
+    void startMachineJob(const std::string& id, MachineJob::Kind kind);
+    void addMachine();
+    [[nodiscard]] Machine* machineById(const std::string& id);
+    [[nodiscard]] FilesRequest setupFiles() const;  // the setup's books and tablebases
+    // Tournaments on a machine: the one in `dir` started (or resumed) there and shown in its tab, or the window
+    // connected to the one playing there already. An error message, empty on success.
+    std::string launchOnMachine(const std::filesystem::path& dir, const std::string& machine_id);
+    bool attachOnMachine(const std::filesystem::path& dir, double weight);
+    // The tab of a tournament on a machine, its process reached through `link`.
+    std::string openMachineRun(const std::filesystem::path& dir, const Machine& machine, const std::string& remote_dir,
+                               std::unique_ptr<SshLink> link, std::shared_ptr<LinkStatus> status, double weight);
+    // The passphrase of a machine's key, empty when it needs none or it was not typed yet (`missing` then).
+    [[nodiscard]] std::string machinePassphrase(const Machine& machine, bool& missing);
+    void pollMachineRuns();       // their files' last copy once they end, what their start said
+    void arbitrateMachines();     // each machine's budget shared by its tournaments
+    void drawRunOn(float label);  // the setup's Run on, its label `label` wide
+    std::vector<Machine> machines_;
+    std::map<std::string, MachineActivity> machine_activity_;  // by machine id
+    std::map<std::string, std::string> machine_passphrases_;   // by key file
+    std::string machine_open_;        // the machine whose card is open
+    std::string machine_dialog_for_;  // the machine a file dialog was opened for
+    std::string passphrase_machine_;  // the machine whose key's passphrase is asked, and the job then started
+    MachineJob::Kind passphrase_kind_ = MachineJob::Kind::Test;
+    bool open_passphrase_             = false;
+    std::array<char, 256> passphrase_input_{};
+    bool scroll_to_machines_ = false;  // asked from the command palette
 };
 
 }  // namespace fcg

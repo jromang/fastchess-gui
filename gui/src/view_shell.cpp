@@ -826,6 +826,11 @@ void App::drawSettings() {
     ImGui::Separator();
     drawMachineBudget(label);
 
+    // The remote machines (view_machines.cpp).
+    ImGui::Spacing();
+    ImGui::Separator();
+    drawMachineSettings(label);
+
     // lichess, for the broadcasts of the Broadcast tab.
     ImGui::Spacing();
     ImGui::Separator();

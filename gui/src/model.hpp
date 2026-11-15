@@ -385,6 +385,10 @@ struct MatchSetup {
     int tunnel_port        = 22;
     std::string tunnel_user;
     int tunnel_remote_port = 80;
+
+    // Run on: the id of a remote machine of Settings (machines.hpp) the tournament plays on, empty for this computer.
+    // Saved only when set.
+    std::string machine;
 };
 
 // Gives `next`, a setup loaded from a template or started from the queue, the settings of the program that `current`
@@ -431,6 +435,7 @@ void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) 
     NLOHMANN_JSON_TO(team_boards)
     NLOHMANN_JSON_TO(team_a)
     NLOHMANN_JSON_TO(team_b)
+    if (!nlohmann_json_t.machine.empty()) nlohmann_json_j["machine"] = nlohmann_json_t.machine;
 }
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
@@ -442,6 +447,7 @@ void from_json(const BasicJsonType& nlohmann_json_j, MatchSetup& nlohmann_json_t
     NLOHMANN_JSON_FROM_WITH_DEFAULT(team_boards)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(team_a)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(team_b)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(machine)
 }
 #undef FCG_MATCH_SETUP_FIELDS_1
 #undef FCG_MATCH_SETUP_FIELDS_2

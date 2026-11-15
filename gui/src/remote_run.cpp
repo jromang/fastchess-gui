@@ -61,12 +61,33 @@ std::string RemoteRun::start(const RemoteStart& s) {
 }
 
 void RemoteRun::tryConnect() {
+    if (reconnect_) {
+        // On another machine: through its SSH, the link connecting on its own thread.
+        std::string gone;
+        auto link = reconnect_(gone);
+        if (!link) {
+            if (!gone.empty()) {
+                connecting_     = false;
+                error_          = gone;
+                state_          = State::Finished;
+                info_.finished  = Clock::now();
+                finished_event_ = true;
+            }
+            return;
+        }
+        attachLink(std::move(link));
+        return;
+    }
     const auto file     = local::readControlFile(dir_);
     const auto endpoint = file ? file->endpoint : local::endpointFor(dir_);
     std::string error;
     auto link = local::connect(endpoint, error);
     if (!link) return;
     if (file && file->pid) pid_ = file->pid;
+    attachLink(std::move(link));
+}
+
+void RemoteRun::attachLink(std::unique_ptr<Link> link) {
     process_.attach(std::move(link));
     // Where its copy's journal ends: the process sends the lines after it, then the games in progress as they stand.
     control::Hello hello;
@@ -242,10 +263,11 @@ void RemoteRun::update() {
     // Its last words, then its end.
     for (const auto& m : process_.take()) apply(m);
     // Detached, the connection may end while the tournament plays on (the process was busy, a broken connection): it
-    // is connected again while its socket is there.
-    if (detached_ && !ended_ && !elsewhere_ && local::readControlFile(dir_)) {
+    // is connected again while its socket is there. On another machine, as long as the network takes to come back:
+    // the reconnection says when its process is gone.
+    if (detached_ && !ended_ && !elsewhere_ && (reconnect_ || local::readControlFile(dir_))) {
         connecting_    = true;
-        connect_until_ = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+        connect_until_ = std::chrono::steady_clock::now() + std::chrono::seconds(reconnect_ ? 365 * 24 * 3600 : 10);
         return;
     }
     if (!ended_ && error_.empty()) {

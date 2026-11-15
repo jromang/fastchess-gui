@@ -283,6 +283,9 @@ msgstr ""
 msgid "A preset of this name: your profile takes its place."
 msgstr ""
 
+msgid "A private key file, RSA or Ed25519 (~/.ssh/id_ed25519): its passphrase, if it has one, is asked once a session and never saved."
+msgstr ""
+
 msgid "A profile of this name: it is replaced."
 msgstr ""
 
@@ -314,6 +317,9 @@ msgid "A team match needs an engine in each team: put one in the other team (the
 msgstr ""
 
 msgid "A template is the whole setup: a profile for each section, and what no profile holds (the name, the participants, the concurrency, the PGN files, the broadcast). A section that played as its profile takes the profile's values of the day."
+msgstr ""
+
+msgid "A test box, a server or a second PC with an SSH server (on Windows, its built-in OpenSSH Server): the window logs in with your SSH agent or a key file, finds out the machine, installs fastchess-gui there and copies the books and tablebases. Nothing secret is saved: the key's passphrase is asked once a session."
 msgstr ""
 
 msgid "A tournament is running: the analysis competes with its games ({} threads)."
@@ -355,10 +361,19 @@ msgstr ""
 msgid "Add a PGN file…"
 msgstr ""
 
+msgid "Add a machine"
+msgstr ""
+
+msgid "Add a machine…"
+msgstr ""
+
 msgid "Add all shown"
 msgstr ""
 
 msgid "Add an engine"
+msgstr ""
+
+msgid "Add an engine…"
 msgstr ""
 
 msgid "Add engines in the Engines window."
@@ -507,6 +522,12 @@ msgid "Another SSH server"
 msgstr ""
 
 msgid "Another engine of the list takes its place and plays its games, those it played included."
+msgstr ""
+
+msgid "Answers {} as {}."
+msgstr ""
+
+msgid "Answers {}."
 msgstr ""
 
 msgid "Any PGN file: its games listed and filtered by their tags, each replayed here. A file can also be dropped on the window."
@@ -698,10 +719,34 @@ msgstr ""
 msgid "Book"
 msgstr ""
 
+msgid "Book {} cannot be read on this computer."
+msgstr ""
+
+msgid "Book {} copied to {}."
+msgstr ""
+
+msgid "Book {} is missing on {}: push it from Settings > Machines > Books and tablebases."
+msgstr ""
+
+msgid "Book {} missing on {} ({})."
+msgstr ""
+
+msgid "Book {}: on {}, the same."
+msgstr ""
+
+msgid "Book {}: {} has another file of that name ({} to copy)."
+msgstr ""
+
 msgid "Books"
 msgstr ""
 
 msgid "Books (EPD, PGN, Polyglot)"
+msgstr ""
+
+msgid "Books and tablebases"
+msgstr ""
+
+msgid "Books folder"
 msgstr ""
 
 msgid "Books the program writes, added to the library."
@@ -720,6 +765,12 @@ msgid "Broadcast"
 msgstr ""
 
 msgid "Brown"
+msgstr ""
+
+msgid "Browse…"
+msgstr ""
+
+msgid "Budget"
 msgstr ""
 
 msgid "Build a Polyglot book"
@@ -762,6 +813,9 @@ msgid "Cancel the Polyglot book being built"
 msgstr ""
 
 msgid "Cancel the analysis of the game"
+msgstr ""
+
+msgid "Cancelled."
 msgstr ""
 
 msgid "Cancelling…"
@@ -857,13 +911,28 @@ msgstr ""
 msgid "Check"
 msgstr ""
 
+msgid "Check the engines"
+msgstr ""
+
 msgid "Check the mate PVs"
 msgstr ""
 
 msgid "Check those not checked ({})"
 msgstr ""
 
+msgid "Check what the setup uses"
+msgstr ""
+
 msgid "Checked: it works."
+msgstr ""
+
+msgid "Checking the copy of {}…"
+msgstr ""
+
+msgid "Checking the program on the machine…"
+msgstr ""
+
+msgid "Checking {}…"
 msgstr ""
 
 msgid "Checking…"
@@ -927,6 +996,9 @@ msgid "Choose at least two engines."
 msgstr ""
 
 msgid "Choose engines A and B."
+msgstr ""
+
+msgid "Choose the key file, or log in with the SSH agent."
 msgstr ""
 
 msgid "Choose the opening book"
@@ -998,6 +1070,9 @@ msgstr ""
 msgid "Compare with a saved run…"
 msgstr ""
 
+msgid "Comparing {} here and on {}…"
+msgstr ""
+
 msgid "Computing…"
 msgstr ""
 
@@ -1005,6 +1080,15 @@ msgid "Concurrency"
 msgstr ""
 
 msgid "Concurrent games"
+msgstr ""
+
+msgid "Connected. Host key {}, as before."
+msgstr ""
+
+msgid "Connected. Host key {}: seen for the first time, trusted from now on."
+msgstr ""
+
+msgid "Connecting to {}…"
 msgstr ""
 
 msgid "Consecutive moves"
@@ -1028,6 +1112,12 @@ msgstr ""
 msgid "Continue with the changed programs"
 msgstr ""
 
+msgid "Copies fastchess-gui {} to {} on the machine (resumed if the copy is cut), then checks it starts there."
+msgstr ""
+
+msgid "Copies them to the machine's folders in the background, each one checked after; a copy cut short resumes where it stopped."
+msgstr ""
+
 msgid "Copy"
 msgstr ""
 
@@ -1038,6 +1128,12 @@ msgid "Copy PGN"
 msgstr ""
 
 msgid "Copy the version"
+msgstr ""
+
+msgid "Copying {} ({})…"
+msgstr ""
+
+msgid "Copying {} to {}…"
 msgstr ""
 
 msgid "Cores"
@@ -1358,6 +1454,9 @@ msgstr ""
 msgid "Engines"
 msgstr ""
 
+msgid "Engines on this machine ({})"
+msgstr ""
+
 msgid "Engines' own books off"
 msgstr ""
 
@@ -1532,6 +1631,9 @@ msgstr ""
 msgid "Final"
 msgstr ""
 
+msgid "Finding out the system…"
+msgstr ""
+
 msgid "Finish the running games, then stop"
 msgstr ""
 
@@ -1574,6 +1676,9 @@ msgstr ""
 msgid "Folder (empty: \"live\" in the tournament folder)"
 msgstr ""
 
+msgid "Folder there"
+msgstr ""
+
 msgid "Follow"
 msgstr ""
 
@@ -1590,6 +1695,9 @@ msgid "For a game the program could not decide well: a hang it did not catch, a 
 msgstr ""
 
 msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
+msgstr ""
+
+msgid "For each path: the program is there, can be run, and answers uci (xboard for a WinBoard engine) within 10 seconds."
 msgstr ""
 
 msgid "Format"
@@ -1706,10 +1814,19 @@ msgstr ""
 msgid "Give the Syzygy tablebase directory."
 msgstr ""
 
+msgid "Give the machine's folder for fastchess-gui."
+msgstr ""
+
+msgid "Give the machine's host name or address."
+msgstr ""
+
 msgid "Give the server's host."
 msgstr ""
 
 msgid "Give the tester's name and the event."
+msgstr ""
+
+msgid "Give the user to log in as."
 msgstr ""
 
 msgid "Green"
@@ -1858,7 +1975,16 @@ msgstr ""
 msgid "Initial position"
 msgstr ""
 
+msgid "Install fastchess-gui"
+msgstr ""
+
 msgid "Interface size"
+msgstr ""
+
+msgid "Internal error."
+msgstr ""
+
+msgid "Internal error: {}"
 msgstr ""
 
 msgid "Interrupted"
@@ -1978,6 +2104,9 @@ msgstr ""
 msgid "Its workspace: standings, live games, schedule"
 msgstr ""
 
+msgid "Keep"
+msgstr ""
+
 msgid "Keep my value"
 msgstr ""
 
@@ -1996,10 +2125,16 @@ msgstr ""
 msgid "Keep them running and quit"
 msgstr ""
 
+msgid "Kept in memory until fastchess-gui ends, never saved."
+msgstr ""
+
 msgid "Kept in the library, but out of the engine pickers (setup, suites, quick test, relaunch, adding to a tournament) and of Check those not checked. A tournament that has it already plays it as before."
 msgstr ""
 
 msgid "Kept in the profile only, never in a tournament's files or the log."
+msgstr ""
+
+msgid "Key file"
 msgstr ""
 
 msgid "Knockout"
@@ -2092,6 +2227,9 @@ msgstr ""
 msgid "Listed among lichess' broadcasts"
 msgstr ""
 
+msgid "Listing the tablebases of {}…"
+msgstr ""
+
 msgid "Live"
 msgstr ""
 
@@ -2104,10 +2242,19 @@ msgstr ""
 msgid "Log"
 msgstr ""
 
+msgid "Log in with"
+msgstr ""
+
 msgid "Logistic Elo, with its 95 % interval."
 msgstr ""
 
 msgid "Logo"
+msgstr ""
+
+msgid "Logs in, then tells the machine's system, threads, memory and free space, and whether fastchess-gui is installed in its folder."
+msgstr ""
+
+msgid "Looking for {} on {}…"
 msgstr ""
 
 msgid "Loss when an engine reports a score ≤ -threshold for N consecutive moves."
@@ -2142,10 +2289,22 @@ msgid_plural "Lower to {} pieces"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "MB of memory (now {})"
+msgstr ""
+
 msgid "MB; 0: the engine's own."
 msgstr ""
 
+msgid "Machine {}"
+msgstr ""
+
 msgid "Machine: {} physical cores, {} threads"
+msgstr ""
+
+msgid "Machines"
+msgstr ""
+
+msgid "Making the folder {}…"
 msgstr ""
 
 msgid "Margin (ms)"
@@ -2265,6 +2424,9 @@ msgstr ""
 msgid "No Polyglot (.bin) or PGN book in the library: add one in the Books window."
 msgstr ""
 
+msgid "No SSH agent answers on this computer: start one and add your key to it (ssh-add), or log in with a key file."
+msgstr ""
+
 msgid "No book"
 msgstr ""
 
@@ -2290,6 +2452,9 @@ msgid "No engine found in this file."
 msgstr ""
 
 msgid "No engine found in this folder."
+msgstr ""
+
+msgid "No engine on this machine yet: add the library's engines it has, with their path there."
 msgstr ""
 
 msgid "No engine that works within that range. Engines that were never checked do not count: check them first (Engines, More…)."
@@ -2338,6 +2503,9 @@ msgid "No game played"
 msgstr ""
 
 msgid "No game yet."
+msgstr ""
+
+msgid "No key file is chosen for {}: choose one, or log in with the SSH agent."
 msgstr ""
 
 msgid "No longer playing: withdrawn or replaced. Its games that count still count for its team."
@@ -2468,6 +2636,9 @@ msgstr ""
 msgid "Not checked yet."
 msgstr ""
 
+msgid "Not connected to {}."
+msgstr ""
+
 msgid "Not enough memory to draw it."
 msgstr ""
 
@@ -2510,13 +2681,22 @@ msgstr ""
 msgid "Number of cycles"
 msgstr ""
 
+msgid "OK"
+msgstr ""
+
 msgid "Of one game's score. Pairs: as measured on the pairs."
+msgstr ""
+
+msgid "Off this machine's list (the engine stays in the library)."
 msgstr ""
 
 msgid "On its error output:"
 msgstr ""
 
 msgid "On the list"
+msgstr ""
+
+msgid "On {}"
 msgstr ""
 
 msgid "Once it has played two tournaments."
@@ -2538,6 +2718,9 @@ msgid "One game per hardware thread ({} on this machine): a node count or a dept
 msgstr ""
 
 msgid "One port per game"
+msgstr ""
+
+msgid "Only if the machine was reinstalled, or its owner says its key changed: otherwise someone may be in the way."
 msgstr ""
 
 msgid "Only the 18 symmetrical ones…"
@@ -2642,6 +2825,9 @@ msgstr ""
 msgid "Order:"
 msgstr ""
 
+msgid "Other computers to run tournaments on, reached with SSH."
+msgstr ""
+
 msgid "Other programs call it concurrency too: the games played at the same time (-concurrency)."
 msgstr ""
 
@@ -2736,6 +2922,9 @@ msgid "Paste"
 msgstr ""
 
 msgid "Paste a rating list, or open its file: a rating list's text version or its web page (copied from the browser or saved), Ordo's output, or CSV (name,elo). The library engines it names get their reference Elo from it: the same name, letter case and spaces aside."
+msgstr ""
+
+msgid "Path on the machine"
 msgstr ""
 
 msgid "Pause"
@@ -2922,6 +3111,9 @@ msgstr ""
 msgid "Push the games to lichess"
 msgstr ""
 
+msgid "Push the missing files ({})"
+msgstr ""
+
 msgid "Put the participants selected in team A."
 msgstr ""
 
@@ -2982,6 +3174,9 @@ msgid "Ratings"
 msgstr ""
 
 msgid "Reachable from the local network; open the port in your router to share it further."
+msgstr ""
+
+msgid "Reaching {}…"
 msgstr ""
 
 msgid "Read again"
@@ -3056,6 +3251,9 @@ msgid "Remove the saved runs from the grid"
 msgstr ""
 
 msgid "Remove the {}"
+msgstr ""
+
+msgid "Remove this machine"
 msgstr ""
 
 msgid "Remove {} engine from the list? The files are not deleted."
@@ -3180,6 +3378,9 @@ msgstr ""
 msgid "Run as a test suite…"
 msgstr ""
 
+msgid "Run on"
+msgstr ""
+
 msgid "Run the TLCS server"
 msgstr ""
 
@@ -3208,6 +3409,9 @@ msgid "SPRT gainer [0, 3]"
 msgstr ""
 
 msgid "SPRT non-regression [-5, 0]"
+msgstr ""
+
+msgid "SSH agent"
 msgstr ""
 
 msgid "Same number of games"
@@ -3559,8 +3763,18 @@ msgid_plural "Syzygy {} pieces: {} files missing in {} ({})."
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "Syzygy: the {} file is on {}."
+msgid_plural "Syzygy: the {} files are on {}."
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "Syzygy: {} damaged file in {} ({}): its size is not a tablebase file's."
 msgid_plural "Syzygy: {} damaged files in {} ({}): their size is not a tablebase file's."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Syzygy: {} file missing on {} ({})."
+msgid_plural "Syzygy: {} files missing on {} ({})."
 msgstr[0] ""
 msgstr[1] ""
 
@@ -3604,6 +3818,9 @@ msgstr ""
 msgid "Tablebases"
 msgstr ""
 
+msgid "Tablebases folder"
+msgstr ""
+
 msgid "Tabs"
 msgstr ""
 
@@ -3634,6 +3851,9 @@ msgstr ""
 msgid "Template name"
 msgstr ""
 
+msgid "Test"
+msgstr ""
+
 msgid "Test suite finished; its results are kept in suites/ in the profile."
 msgstr ""
 
@@ -3644,6 +3864,18 @@ msgid "Test suite {}: {} positions, {} engines, {} at a time."
 msgstr ""
 
 msgid "Test suites"
+msgstr ""
+
+msgid "Test the connection"
+msgstr ""
+
+msgid "Test the connection first: it tells the machine's system."
+msgstr ""
+
+msgid "Test the connection to {}"
+msgstr ""
+
+msgid "Test the connection to {} first (Settings > Machines): it finds out the machine."
 msgstr ""
 
 msgid "Tested engines"
@@ -3683,7 +3915,25 @@ msgstr ""
 msgid "The PGN standard makes them comments. fastchess-gui 0.4.13 and earlier read them as moves, and could play some openings of this book from a wrong position, often the starting one."
 msgstr ""
 
+msgid "The SSH agent cannot be used."
+msgstr ""
+
+msgid "The SSH agent cannot list its keys."
+msgstr ""
+
+msgid "The SSH agent holds no key: add yours to it (ssh-add), or log in with a key file."
+msgstr ""
+
+msgid "The SSH session cannot be set up."
+msgstr ""
+
+msgid "The SSH session cannot start."
+msgstr ""
+
 msgid "The Schedule tab shows the impact before anything changes."
+msgstr ""
+
+msgid "The account to log in as on the machine: its tournaments run as this user."
 msgstr ""
 
 msgid "The analysis"
@@ -3740,10 +3990,25 @@ msgstr ""
 msgid "The colours of the boards while the theme is light."
 msgstr ""
 
+msgid "The connection to {} broke while {}."
+msgstr ""
+
 msgid "The connection with the tournament's process was lost."
 msgstr ""
 
 msgid "The console of {} is open."
+msgstr ""
+
+msgid "The copy of {} from {} has {} bytes instead of {}."
+msgstr ""
+
+msgid "The copy of {} on {} has {} bytes instead of {}: copy it again."
+msgstr ""
+
+msgid "The copy of {} on {} is not the same as here: copy it again."
+msgstr ""
+
+msgid "The cryptography cannot start."
 msgstr ""
 
 msgid "The depth must be positive."
@@ -3818,6 +4083,9 @@ msgstr ""
 msgid "The first participant, {}, has no reference Elo."
 msgstr ""
 
+msgid "The folder {} cannot be named in a Windows command: leave out quotes, % and '."
+msgstr ""
+
 msgid "The folder {} is not there any more."
 msgstr ""
 
@@ -3854,10 +4122,37 @@ msgstr ""
 msgid "The guide, at this page (F1)"
 msgstr ""
 
+msgid "The host key of {} cannot be checked."
+msgstr ""
+
+msgid "The host key of {} cannot be checked: nowhere to keep it."
+msgstr ""
+
+msgid "The host key of {} cannot be kept in {}."
+msgstr ""
+
+msgid "The host key of {} changed: {} now, {} before. Someone may be in the way; trust the new key only if the machine was reinstalled or its owner says it changed."
+msgstr ""
+
 msgid "The host key of {} changed: {} now, {} before. Someone may be in the way; trust the new key only if the server's owner says it changed."
 msgstr ""
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
+msgstr ""
+
+msgid "The key file {} cannot be read."
+msgstr ""
+
+msgid "The key file {} cannot be used: {}"
+msgstr ""
+
+msgid "The key file {} needs its passphrase."
+msgstr ""
+
+msgid "The key of {} needs its passphrase: type it, then start again."
+msgstr ""
+
+msgid "The keys of your SSH agent (ssh-agent, Pageant, or the OpenSSH Authentication Agent service of Windows): add yours with ssh-add. The key never leaves it."
 msgstr ""
 
 msgid "The keys still work. Settings or the command palette shows them again."
@@ -3899,7 +4194,19 @@ msgstr ""
 msgid "The logo was not changed: {}"
 msgstr ""
 
+msgid "The machine chosen in Run on is not in Settings > Machines any more: choose another."
+msgstr ""
+
 msgid "The machine is full: the tournament's games and the analysis use {} of its {} threads, and this game needs {}. It would slow them down, and its own engines."
+msgstr ""
+
+msgid "The machine runs Windows ({}): download fastchess-gui for Windows from the releases page, then choose its fastchess-gui.exe below."
+msgstr ""
+
+msgid "The machine runs {} {}, this computer {} {}: download fastchess-gui for {} {} from the releases page and choose its program below, or install it on the machine yourself, in {}."
+msgstr ""
+
+msgid "The machine's name on the network, or its address (192.168.1.20)."
 msgstr ""
 
 msgid "The memory budget of Settings, {}: a game starts only when its engines' Hash and processes fit in it."
@@ -3947,6 +4254,12 @@ msgstr ""
 msgid "The participants selected (Delete)."
 msgstr ""
 
+msgid "The passphrase of the key file {} is not the right one."
+msgstr ""
+
+msgid "The passphrase of {}, for {}"
+msgstr ""
+
 msgid "The paused tournament goes on, and the queue starts its next tournament when the running one ends."
 msgstr ""
 
@@ -3960,6 +4273,9 @@ msgid "The players of the PGN files taken for engines of the library, by their n
 msgstr ""
 
 msgid "The players of the PGN files that are no library engine by their name, letter case and spaces aside. Say which library engine a player is, and its games are the engine's; the choice is kept for every PGN file that names the player. A name that two library engines have waits for your choice; a hint is a guess, never applied."
+msgstr ""
+
+msgid "The port is 1 to 65535 (22 for SSH)."
 msgstr ""
 
 msgid "The port the server opens for the page, as ssh -R REMOTE_PORT:localhost:PORT user@host would ask (0: the server chooses). Authentication \"none\" only: a service that lets anyone in, or a server of one's own that lets the user in without a key. Its host key is trusted the first time and must stay the same."
@@ -4044,6 +4360,12 @@ msgstr ""
 msgid "The setup and the templates that use it keep its values."
 msgstr ""
 
+msgid "The setup uses no book and no tablebases."
+msgstr ""
+
+msgid "The setup's opening book and the participants' own books, compared by size and hash with the machine's; its Syzygy files (6 pieces at most), by name and size. A tournament does not start on a machine without its book; tablebases missing are a warning."
+msgstr ""
+
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr ""
 
@@ -4092,7 +4414,16 @@ msgstr ""
 msgid "The time per move must be positive."
 msgstr ""
 
+msgid "The tournament cannot be reached on {}: {}"
+msgstr ""
+
 msgid "The tournament cannot start with this adjudication."
+msgstr ""
+
+msgid "The tournament did not start on {}: {}"
+msgstr ""
+
+msgid "The tournament does not play on {} any more."
 msgstr ""
 
 msgid "The tournament goes on with the programs as they are now; this notice closes."
@@ -4176,6 +4507,12 @@ msgid "They have not played each other."
 msgstr ""
 
 msgid "This book cannot play for an engine: {}"
+msgstr ""
+
+msgid "This computer"
+msgstr ""
+
+msgid "This computer's fastchess-gui does not run on the machine's system: download the release for it and choose its program here (fastchess-gui.exe for Windows). Install copies it."
 msgstr ""
 
 msgid "This draw ratio and this RMS bias are not compatible."
@@ -4386,6 +4723,9 @@ msgstr ""
 msgid "Up to {} engines."
 msgstr ""
 
+msgid "Update fastchess-gui"
+msgstr ""
+
 msgid "Update the graphics driver, or turn on 3D acceleration in the virtual machine or the remote desktop's settings."
 msgstr ""
 
@@ -4467,6 +4807,9 @@ msgstr ""
 msgid "What changed: {}"
 msgstr ""
 
+msgid "What the tournaments on this machine may use at once. 0 takes what the test found: every thread but one, and 80 % of the memory."
+msgstr ""
+
 msgid "What was sent to the engines of its last try and what they answered, their error output included:\n{}"
 msgstr ""
 
@@ -4483,6 +4826,12 @@ msgid "When the queue ends is not known: an SPRT without a game limit, or nodes 
 msgstr ""
 
 msgid "Where new tournaments are written, as in Settings. Those played so far stay where they are: Open a folder… opens them."
+msgstr ""
+
+msgid "Where the Syzygy files go on the machine, the engines' SyzygyPath there."
+msgstr ""
+
+msgid "Where the tournament plays: this computer, or a machine of Settings > Machines, followed from here as if it played here. Its engines play there at their paths there; its books and tablebases must be there (Settings > Machines > Books and tablebases)."
 msgstr ""
 
 msgid "While a tournament runs, an SSH tunnel built into fastchess-gui gives the page a public https address, without opening a port in the router or installing anything. Only the page is reachable that way, read-only."
@@ -4644,6 +4993,9 @@ msgstr ""
 msgid "a crash stops the tournament"
 msgstr ""
 
+msgid "a machine removed"
+msgstr ""
+
 msgid "a result is 1-0, 0-1 or 1/2-1/2"
 msgstr ""
 
@@ -4714,6 +5066,18 @@ msgstr ""
 msgid "colours reversed of an earlier one"
 msgstr ""
 
+msgid "connecting"
+msgstr ""
+
+msgid "copying {} from {}"
+msgstr ""
+
+msgid "copying {} to {}"
+msgstr ""
+
+msgid "cores (now {})"
+msgstr ""
+
 msgid "decision time"
 msgstr ""
 
@@ -4770,13 +5134,46 @@ msgstr ""
 msgid "everyone against everyone"
 msgstr ""
 
+msgid "fails"
+msgstr ""
+
 msgid "fastchess-gui cannot draw its window."
+msgstr ""
+
+msgid "fastchess-gui for {} {}"
+msgstr ""
+
+msgid "fastchess-gui is not in {}: Install puts it there."
+msgstr ""
+
+msgid "fastchess-gui is not installed on {}: Install it from Settings > Machines."
+msgstr ""
+
+msgid "fastchess-gui not installed"
+msgstr ""
+
+msgid "fastchess-gui was copied to {}, but it does not start there: {}"
+msgstr ""
+
+msgid "fastchess-gui {} installed in {} (protocol {})."
+msgstr ""
+
+msgid "fastchess-gui {} is in {} (protocol {})."
+msgstr ""
+
+msgid "fastchess-gui {} is in {}, too old to run tournaments for this window: Update replaces it."
 msgstr ""
 
 msgid "fastchess-gui {} is out (this is {})."
 msgstr ""
 
+msgid "fastchess-gui {} on {} cannot run tournaments for this window: Update it from Settings > Machines."
+msgstr ""
+
 msgid "fastchess-gui {} — {} physical cores, {} threads"
+msgstr ""
+
+msgid "fastchess-gui's folder on the machine, for the program, its tournaments, books and tablebases: relative to the user's home folder, or absolute (/srv/fcg, D:\\fcg)."
 msgstr ""
 
 msgid "filter"
@@ -4866,13 +5263,25 @@ msgstr ""
 msgid "lines starting with %, ignored"
 msgstr ""
 
+msgid "listing {}"
+msgstr ""
+
 msgid "live.pgn: the games in progress · standings.html · tournament.json (for scripts)"
+msgstr ""
+
+msgid "logging in"
+msgstr ""
+
+msgid "looking at {}"
 msgstr ""
 
 msgid "loss on time or crash"
 msgstr ""
 
 msgid "losses"
+msgstr ""
+
+msgid "making the folder {}"
 msgstr ""
 
 msgid "margin {} ms"
@@ -4906,7 +5315,13 @@ msgstr[1] ""
 msgid "no engine has a SyzygyPath"
 msgstr ""
 
+msgid "no host yet"
+msgstr ""
+
 msgid "no mistake"
+msgstr ""
+
+msgid "no path"
 msgstr ""
 
 msgid "nodes"
@@ -4924,7 +5339,13 @@ msgstr ""
 msgid "normalized: bounds in nElo (fishtest, OpenBench). logistic: classic Elo. bayesian: BayesElo, without pentanomial."
 msgstr ""
 
+msgid "not checked"
+msgstr ""
+
 msgid "not counted"
+msgstr ""
+
+msgid "not tested yet"
 msgstr ""
 
 msgid "one opening per round"
@@ -4968,7 +5389,16 @@ msgstr ""
 msgid "randomness {}"
 msgstr ""
 
+msgid "reading from a program"
+msgstr ""
+
 msgid "reading the tournaments…"
+msgstr ""
+
+msgid "removing {}"
+msgstr ""
+
+msgid "renaming {}"
 msgstr ""
 
 msgid "replay requested"
@@ -4983,6 +5413,9 @@ msgstr ""
 msgid "round {}"
 msgstr ""
 
+msgid "running {}"
+msgstr ""
+
 msgid "s"
 msgstr ""
 
@@ -4995,7 +5428,16 @@ msgstr ""
 msgid "set by hand"
 msgstr ""
 
+msgid "setting the permissions of {}"
+msgstr ""
+
 msgid "stalemate"
+msgstr ""
+
+msgid "starting SFTP"
+msgstr ""
+
+msgid "starting a command"
 msgstr ""
 
 msgid "starts about {}"
@@ -5074,6 +5516,9 @@ msgstr ""
 msgid "until the next game starts"
 msgstr ""
 
+msgid "up to date"
+msgstr ""
+
 msgid "uses {:.0f} % of a core while its opponent thinks"
 msgstr ""
 
@@ -5099,6 +5544,9 @@ msgid "wins and losses"
 msgstr ""
 
 msgid "without mirrored positions"
+msgstr ""
+
+msgid "writing to a program"
 msgstr ""
 
 msgid "your choice"
@@ -5152,10 +5600,21 @@ msgstr ""
 msgid "{} = {}: a value it refuses"
 msgstr ""
 
+msgid "{} KB"
+msgstr ""
+
 msgid "{} MB"
 msgstr ""
 
+msgid "{} Syzygy file copied to {}."
+msgid_plural "{} Syzygy files copied to {}."
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{} The default pieces are drawn meanwhile."
+msgstr ""
+
+msgid "{} accepts none of the SSH agent's keys for user {}: add your public key to ~/.ssh/authorized_keys on the machine (on Windows, for an administrator: C:\\ProgramData\\ssh\\administrators_authorized_keys)."
 msgstr ""
 
 msgid "{} against each opponent"
@@ -5181,10 +5640,25 @@ msgstr[1] ""
 msgid "{} boards × 2 games × {} cycles"
 msgstr ""
 
+msgid "{} bytes"
+msgstr ""
+
+msgid "{} cannot be named in a Windows command: leave out quotes and %."
+msgstr ""
+
+msgid "{} cannot be reached on port {} ({}): check the host name, that the machine is on and that its SSH server runs."
+msgstr ""
+
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr ""
 
 msgid "{} cannot be read."
+msgstr ""
+
+msgid "{} cannot be run on {}: make it executable there (chmod +x)."
+msgstr ""
+
+msgid "{} cannot be written."
 msgstr ""
 
 msgid "{} cannot start"
@@ -5228,10 +5702,25 @@ msgid_plural "{} cycles of 2 games"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "{} did not answer in time while {}: is the machine overloaded, or the network down?"
+msgstr ""
+
+msgid "{} did not answer {} within {} s; it printed: {}"
+msgstr ""
+
 msgid "{} did not show an RSA host key"
 msgstr ""
 
+msgid "{} did not show an RSA host key."
+msgstr ""
+
 msgid "{} did not start (try {} of {})"
+msgstr ""
+
+msgid "{} did not tell its system and processors: {}"
+msgstr ""
+
+msgid "{} does not accept keys for user {} (it accepts: {}): turn on PubkeyAuthentication in its SSH server's configuration."
 msgstr ""
 
 msgid "{} does not answer isready."
@@ -5246,7 +5735,13 @@ msgstr ""
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr ""
 
+msgid "{} does not offer SFTP: turn on its sftp subsystem (Subsystem sftp in its SSH server's configuration)."
+msgstr ""
+
 msgid "{} does not play Chess960."
+msgstr ""
+
+msgid "{} does not start on {}: {}"
 msgstr ""
 
 msgid "{} earlier match imported."
@@ -5256,6 +5751,11 @@ msgstr[1] ""
 
 msgid "{} engine"
 msgid_plural "{} engines"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} engine does not run on {}."
+msgid_plural "{} engines do not run on {}."
 msgstr[0] ""
 msgstr[1] ""
 
@@ -5294,6 +5794,9 @@ msgid "{} for every engine"
 msgstr ""
 
 msgid "{} free"
+msgstr ""
+
+msgid "{} free where its folder {} is."
 msgstr ""
 
 msgid "{} game"
@@ -5394,6 +5897,9 @@ msgstr ""
 msgid "{} h {:02} min"
 msgstr ""
 
+msgid "{} h {} min left"
+msgstr ""
+
 msgid "{} hardware thread"
 msgid_plural "{} hardware threads"
 msgstr[0] ""
@@ -5405,7 +5911,16 @@ msgstr ""
 msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
 msgstr ""
 
+msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES): add an RSA host key to its SSH server (ssh-keygen -A)."
+msgstr ""
+
 msgid "{} has no option {} (any more): its value {} is not sent."
+msgstr ""
+
+msgid "{} has no path on {}: give it in Settings > Machines > Engines on this machine."
+msgstr ""
+
+msgid "{} holds a key of type {}: fastchess-gui logs in with RSA and Ed25519 keys only (make one with ssh-keygen -t ed25519), or with the SSH agent."
 msgstr ""
 
 msgid "{} holds the games of the tournament: choose another file"
@@ -5424,6 +5939,18 @@ msgid_plural "{} inaccuracies"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "{} is a folder: give the engine's program in it."
+msgstr ""
+
+msgid "{} is forgotten here; nothing is deleted on it."
+msgstr ""
+
+msgid "{} is in a format fastchess-gui cannot read: convert it with ssh-keygen -p -f \"{}\"."
+msgstr ""
+
+msgid "{} is in an old encrypted format: convert it with ssh-keygen -p -f \"{}\"."
+msgstr ""
+
 msgid "{} is larger than 1 MB: is it a piece?"
 msgstr ""
 
@@ -5439,10 +5966,25 @@ msgstr ""
 msgid "{} is not a legal move from the initial position."
 msgstr ""
 
+msgid "{} is not a private key file (the public key ends in .pub; choose the file without it)."
+msgstr ""
+
+msgid "{} is not a valid private key file."
+msgstr ""
+
 msgid "{} is not an SVG picture the program can draw."
 msgstr ""
 
+msgid "{} is not on {} ({}): give its path there in Settings > Machines > Engines on this machine."
+msgstr ""
+
+msgid "{} is not on {}: give the program's path there."
+msgstr ""
+
 msgid "{} is not there."
+msgstr ""
+
+msgid "{} is not there: choose the fastchess-gui for {} {} again."
 msgstr ""
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
@@ -5490,6 +6032,9 @@ msgid "{} matches × {} pairs of games, plus tiebreaks"
 msgstr ""
 
 msgid "{} min"
+msgstr ""
+
+msgid "{} min left"
 msgstr ""
 
 msgid "{} min {:02} s"
@@ -5636,6 +6181,15 @@ msgid_plural "{} players that two library engines may be: say which one."
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "{} plays on {}, which is not in Settings > Machines any more."
+msgstr ""
+
+msgid "{} plays on {}: shown again."
+msgstr ""
+
+msgid "{} plays on {}: test the connection there (Settings > Machines) to see it again."
+msgstr ""
+
 msgid "{} plays with its own settings: {}"
 msgstr ""
 
@@ -5685,6 +6239,9 @@ msgid_plural "{} reference Elo set from the rating list."
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "{} refused the key {} for user {}: add its public key ({}.pub) to ~/.ssh/authorized_keys on the machine (on Windows, for an administrator: C:\\ProgramData\\ssh\\administrators_authorized_keys)."
+msgstr ""
+
 msgid "{} refused to forward its port {}"
 msgstr ""
 
@@ -5707,10 +6264,19 @@ msgstr[1] ""
 msgid "{} rounds × {} pairings × 2 games"
 msgstr ""
 
+msgid "{} runs commands with a shell fastchess-gui does not speak (PowerShell?): on Windows, make cmd the SSH server's shell again (remove the value DefaultShell of HKEY_LOCAL_MACHINE\\SOFTWARE\\OpenSSH)."
+msgstr ""
+
 msgid "{} s"
 msgstr ""
 
+msgid "{} s left"
+msgstr ""
+
 msgid "{} s/move"
+msgstr ""
+
+msgid "{} said nothing within {} s: is it an engine for {}'s system, and a {} engine?"
 msgstr ""
 
 msgid "{} searches to depth {}"
@@ -5808,6 +6374,9 @@ msgstr ""
 msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
 msgstr ""
 
+msgid "{} · {} cores, {} for tournaments"
+msgstr ""
+
 msgid "{} · {} games"
 msgstr ""
 
@@ -5849,6 +6418,9 @@ msgid_plural "{}, {} threads"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "{}, {} threads, {} of memory."
+msgstr ""
+
 msgid "{}-man Syzygy for every engine"
 msgstr ""
 
@@ -5862,6 +6434,9 @@ msgid "{}: cancelled, nothing written."
 msgstr ""
 
 msgid "{}: decision"
+msgstr ""
+
+msgid "{}: failed while {} ({})."
 msgstr ""
 
 msgid "{}: folder not found: {}"
@@ -5879,7 +6454,16 @@ msgstr ""
 msgid "{}: its book is not found: {}"
 msgstr ""
 
+msgid "{}: no Syzygy file in {}: the adjudication does without them; push them from Settings > Machines > Books and tablebases."
+msgstr ""
+
+msgid "{}: not found while {}."
+msgstr ""
+
 msgid "{}: only PGN files, FEN and EPD positions can be dropped here."
+msgstr ""
+
+msgid "{}: permission denied while {}: the user {} may not write there."
 msgstr ""
 
 msgid "{}: program not found ({})"
@@ -5891,10 +6475,19 @@ msgstr ""
 msgid "{}: seldepth"
 msgstr ""
 
+msgid "{}: starting on {} ({})."
+msgstr ""
+
+msgid "{}: the disk is full while {}: free some space on the machine."
+msgstr ""
+
 msgid "{}: the host key cannot be used (RSA keys of 2048 to 4096 bits only)"
 msgstr ""
 
 msgid "{}: the host key's signature is not valid"
+msgstr ""
+
+msgid "{}: the server refused while {} (SFTP error {})."
 msgstr ""
 
 msgid "{}: trying to start it again."
@@ -5920,6 +6513,9 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "{}: {} for its games' engines"
+msgstr ""
+
+msgid "{}: {} is a file, not a folder."
 msgstr ""
 
 msgid "{}: {} → {} points"
