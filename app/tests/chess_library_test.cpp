@@ -71,6 +71,15 @@ TEST_SUITE("Chess Library Input") {
               chess::Move::make<chess::Move::PROMOTION>(chess::Square::SQ_B7, chess::Square::SQ_B8,
                                                         chess::PieceType::QUEEN));
     }
+
+    TEST_CASE("setFen keeps the move number of a FEN with full move 0 or a huge one") {
+        CHECK(chess::Board("4k3/8/8/8/8/8/8/4K3 w - - 0 0").fullMoveNumber() == 1);
+        CHECK(chess::Board("4k3/8/8/8/8/8/8/4K3 b - - 0 0").fullMoveNumber() == 1);
+        CHECK(chess::Board("4k3/8/8/8/8/8/8/4K3 w - - 0 -3").fullMoveNumber() == 1);
+        CHECK(chess::Board("4k3/8/8/8/8/8/8/4K3 b - - 0 40000").fullMoveNumber() == 32768);
+        CHECK(chess::Board("4k3/8/8/8/8/8/8/4K3 b - - 0 2147483647").fullMoveNumber() == 32768);
+        CHECK(chess::Board("4k3/8/8/8/8/8/8/4K3 b - - 0 57").fullMoveNumber() == 57);
+    }
 }
 
 }  // namespace fastchess
