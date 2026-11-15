@@ -651,6 +651,9 @@ class FakeServer {
     };
 
     FakeServer(uint16_t port, Script script) : script_(std::move(script)) {
+        // The host key before the client is waited for: made the first time it is asked for, in each test case's
+        // process when they run side by side, and that takes seconds, more than the wait, on a loaded machine.
+        serverKey();
         REQUIRE(listener_.listen(port).empty());
         thread_ = std::thread([this] {
             try {
