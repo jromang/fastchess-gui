@@ -82,6 +82,10 @@ MatchSetup roundRobin(int players, int cycles) {
     setup.concurrency_auto = false;
     setup.concurrency      = 2;
     setup.notify           = false;
+    // Games of random moves can last hundreds of plies, each a timer tick on Windows with FCG_MOCK_MOVE_MS: these
+    // tests are about the tournament's process, not the length of its games, which end as draws after 40 moves.
+    setup.maxmoves_enabled = true;
+    setup.maxmoves         = 40;
     return setup;
 }
 
@@ -320,11 +324,6 @@ TEST_CASE("remote: a tournament on its socket plays on without the window, which
         MESSAGE("random mover not available on this platform, skipped");
         return;
     }
-#ifdef _WIN32
-    // Named pipes: the same code paths, tested by hand (docs/guide.md).
-    MESSAGE("detached tournaments are tested on Linux and macOS, skipped");
-    return;
-#endif
     const ScopedEnv mock_move_ms("FCG_MOCK_MOVE_MS", "15");
     const auto profile = fs::temp_directory_path() / "fcg-remote-tests-detach";
     const auto dir     = makeTournament(profile, roundRobin(3, 4), 3);
