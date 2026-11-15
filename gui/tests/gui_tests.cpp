@@ -1837,13 +1837,14 @@ TEST_CASE("live: a move the slot's board already has, or cannot play, is left ou
     };
     move(chess::Color::WHITE, "e2e4");
     CHECK_FALSE(obs.takeResync());
-    // From another process, a snapshot of the slot taken between the move and its event: the move comes twice.
+    // From another process, a snapshot of the slot taken between the move and its event: the move comes twice, and
+    // the board has it already.
     move(chess::Color::WHITE, "e2e4");
-    CHECK(obs.takeResync());
-    CHECK_FALSE(obs.takeResync());  // once
+    CHECK_FALSE(obs.takeResync());
     move(chess::Color::BLACK, "e7e5");
     move(chess::Color::WHITE, "a1a8");  // not a move here
     CHECK(obs.takeResync());
+    CHECK_FALSE(obs.takeResync());  // once
     SlotState slot;
     REQUIRE(obs.copySlot(0, slot));
     REQUIRE(slot.moves.size() == 2);

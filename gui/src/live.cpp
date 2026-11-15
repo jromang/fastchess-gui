@@ -627,6 +627,10 @@ void GuiObserver::onMove(int slot_index, chess::Color mover, const fastchess::Mo
     std::lock_guard<std::mutex> lock(s->mutex);
     auto& st = s->state;
 
+    // The last move again (a snapshot of the slot taken between the move and its event): the board has it already.
+    if (!st.moves.empty() && st.moves.back().mover == mover &&
+        chess::uci::moveToUci(st.moves.back().move, s->board.chess960()) == data.move)
+        return;
     m.move = chess::uci::uciToMove(s->board, data.move);
     // Played only on the position it was played on: see takeResync().
     chess::Movelist legal;
