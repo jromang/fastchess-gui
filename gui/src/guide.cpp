@@ -73,7 +73,7 @@ std::vector<std::string> anchors(std::string_view markdown) {
 
         auto anchor = slug(text);
         if (const int n = seen[anchor]++; n > 0) anchor += "-" + std::to_string(n);
-        out.push_back(anchor);
+        out.push_back(std::move(anchor));
     }
     return out;
 }

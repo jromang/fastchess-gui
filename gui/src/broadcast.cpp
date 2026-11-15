@@ -306,7 +306,7 @@ std::vector<std::string> tlcsCrosstable(const BroadcastSnapshot& s, uint64_t tot
             }
             line += fmt::format("{:<{}}", cell, cell_w);
         }
-        out.push_back(line);
+        out.push_back(std::move(line));
     }
     out.push_back("");
     out.push_back(fmt::format("total games = {}", total_games));

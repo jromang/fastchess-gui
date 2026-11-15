@@ -111,7 +111,7 @@ Args parseArgs(int argc, char** argv) {
                 shot.window   = spec.substr(c1 + 1, c2 == std::string::npos ? std::string::npos : c2 - c1 - 1);
                 if (c2 != std::string::npos) shot.at = std::atof(spec.c_str() + c2 + 1);
             }
-            args.shots.push_back(shot);
+            args.shots.push_back(std::move(shot));
         } else if (a == "--select-game")
             args.select_game = std::atoi(next().c_str());
         else if (a == "--focus")

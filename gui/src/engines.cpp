@@ -74,13 +74,13 @@ std::optional<UciOptionInfo> parseUciOption(std::string_view line) {
         if (value == "<empty>") value.clear();
 
         if (key == "default")
-            option.default_value = value;
+            option.default_value = std::move(value);
         else if (key == "min")
-            option.min = value;
+            option.min = std::move(value);
         else if (key == "max")
-            option.max = value;
+            option.max = std::move(value);
         else if (key == "var")
-            option.vars.push_back(value);
+            option.vars.push_back(std::move(value));
 
         i = end;
     }
