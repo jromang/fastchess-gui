@@ -209,6 +209,9 @@ msgstr "Файл на ваш выбор"
 msgid "A folder of 12 SVG pictures named wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg and bK.svg … bP.svg: the white and black king, queen, rook, bishop, knight and pawn."
 msgstr "Папка с 12 изображениями SVG с именами wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg и bK.svg … bP.svg: белые и чёрные король, ферзь, ладья, слон, конь и пешка."
 
+msgid "A format, a time control and the participants."
+msgstr "Формат, контроль времени и участники."
+
 msgid "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
 msgid_plural "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
 msgstr[0] "Партии двух движков, использующих GPU, нужно два GPU, а на этой машине {} (настройки): такая партия играется одна."
@@ -385,6 +388,9 @@ msgstr "Добавить движок…"
 
 msgid "Add engines in the Engines window."
 msgstr "Добавьте движки в окне «Движки»."
+
+msgid "Add engines to the library"
+msgstr "Добавьте движки в библиотеку"
 
 msgid "Add the engine to test first: it is the first participant."
 msgstr "Сначала добавьте тестируемый движок: это первый участник."
@@ -590,6 +596,9 @@ msgstr "Спрашивает, куда записать книгу, затем �
 msgid "At launch, at most once a day, the program asks GitHub for its latest release; the home page tells when there is a newer one, with its notes and a link to its page. Nothing is downloaded nor installed."
 msgstr "При запуске, не чаще раза в день, программа запрашивает у GitHub свой последний выпуск; главная страница сообщит вам о более новой версии, покажет её описание и ссылку на её страницу. Ничего не скачивается и не устанавливается."
 
+msgid "At least two engines: their programs, or the engine list of another program."
+msgstr "Не менее двух движков: их программы или список движков другой программы."
+
 msgid "Author: {} → {}"
 msgstr "Автор: {} → {}"
 
@@ -619,6 +628,9 @@ msgstr "B (базовый)"
 
 msgid "Back"
 msgstr "Назад"
+
+msgid "Back (Alt+Left)"
+msgstr "Назад (Alt+Влево)"
 
 msgid "Back to the books"
 msgstr "Вернуться к книгам"
@@ -1079,6 +1091,9 @@ msgstr "Часы"
 msgid "Close"
 msgstr "Закрыть"
 
+msgid "Close (F1)"
+msgstr "Закрыть (F1)"
+
 msgid "Close it"
 msgstr "Закрыть её"
 
@@ -1138,6 +1153,9 @@ msgstr "Консоль · {}"
 
 msgid "Console…"
 msgstr "Консоль…"
+
+msgid "Contents"
+msgstr "Содержание"
 
 msgid "Continue"
 msgstr "Продолжить"
@@ -1661,6 +1679,9 @@ msgstr "Экспорт…"
 msgid "Extra fields in the comments:"
 msgstr "Дополнительные поля в комментариях:"
 
+msgid "F1: more in the guide"
+msgstr "F1: подробнее в руководстве"
+
 msgid "Failed or changed"
 msgstr "Сбой или изменён"
 
@@ -1759,6 +1780,9 @@ msgstr "Для каждого пути: программа на месте, за
 
 msgid "Format"
 msgstr "Формат"
+
+msgid "Forward (Alt+Right)"
+msgstr "Вперёд (Alt+Вправо)"
 
 msgid "Found for (plies)"
 msgstr "Удерживается (полуходы)"
@@ -1868,6 +1892,9 @@ msgstr "Гаунтлет, движков: {} против {}"
 msgid "Generate Chess324 book"
 msgstr "Создать книгу Chess324"
 
+msgid "Getting started"
+msgstr "Первые шаги"
+
 msgid "Give the Syzygy tablebase directory."
 msgstr "Укажите папку таблиц Syzygy."
 
@@ -1886,6 +1913,9 @@ msgstr "Укажите имя тестера и соревнование."
 msgid "Give the user to log in as."
 msgstr "Укажите пользователя для входа."
 
+msgid "Go to the engines"
+msgstr "Перейти к движкам"
+
 msgid "Green"
 msgstr "Зелёная"
 
@@ -1900,6 +1930,12 @@ msgstr "Группы"
 
 msgid "Groups: {}"
 msgstr "Группы: {}"
+
+msgid "Guide"
+msgstr "Руководство"
+
+msgid "Guide: {}"
+msgstr "Руководство: {}"
 
 msgid "G{}"
 msgstr "Ц{}"
@@ -2017,6 +2053,9 @@ msgstr "Импорт…"
 
 msgid "In the background, resumed where it stopped if it is cut; each file's SHA-256 checked there after; then the engine's path set and checked."
 msgstr "В фоновом режиме, с продолжением с места остановки при обрыве; SHA-256 каждого файла проверяется там после; затем путь движка задаётся и проверяется."
+
+msgid "In the guide: {}"
+msgstr "В руководстве: {}"
 
 msgid "Inaccuracy"
 msgstr "Неточность"
@@ -2486,6 +2525,9 @@ msgstr "Новые турниры создаются там, а списки п�
 msgid "Next move (→)"
 msgstr "Следующий ход (→)"
 
+msgid "Next: {}"
+msgstr "Следующий: {}"
+
 msgid "No PGN file imported."
 msgstr "Файлы PGN не импортированы."
 
@@ -2644,6 +2686,9 @@ msgstr "Результатов пока нет."
 
 msgid "No round yet."
 msgstr "Туров пока нет."
+
+msgid "No section matches."
+msgstr "Подходящих разделов нет."
 
 msgid "No sound device could be opened: the log says why."
 msgstr "Не удалось открыть звуковое устройство: причина в журнале."
@@ -2821,6 +2866,9 @@ msgstr "Открыть файл…"
 
 msgid "Open a folder…"
 msgstr "Открыть папку…"
+
+msgid "Open in the browser"
+msgstr "Открыть в браузере"
 
 msgid "Open it for its end"
 msgstr "Откройте его, чтобы увидеть окончание"
@@ -3143,6 +3191,9 @@ msgstr "Нажмите A или «Анализировать», чтобы ув�
 msgid "Previous move (←)"
 msgstr "Предыдущий ход (←)"
 
+msgid "Previous: {}"
+msgstr "Предыдущий: {}"
+
 msgid "Probability that H1 is accepted (%)"
 msgstr "Вероятность принятия H1 (%)"
 
@@ -3268,6 +3319,9 @@ msgstr "Прочитать статистику поиска"
 
 msgid "Read the UCI options again"
 msgstr "Перечитать опции UCI"
+
+msgid "Read the quick start"
+msgstr "Прочитать «Быстрый старт»"
 
 msgid "Reading the engine…"
 msgstr "Чтение движка…"
@@ -3551,6 +3605,12 @@ msgstr "Поиск"
 msgid "Search per engine"
 msgstr "Поиск у каждого движка"
 
+msgid "Search the guide"
+msgstr "Поиск по руководству"
+
+msgid "Search the guide for “{}”"
+msgstr "Искать в руководстве «{}»"
+
 msgid "Search: name, program, author, notes"
 msgstr "Поиск: имя, программа, автор, заметки"
 
@@ -3613,6 +3673,9 @@ msgstr "Задать результат партии {}…"
 
 msgid "Set up a position: pieces, side to move, castling, en passant, Chess960."
 msgstr "Расставить позицию: фигуры, очередь хода, рокировка, взятие на проходе, Chess960."
+
+msgid "Set up a tournament"
+msgstr "Настройте турнир"
 
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
@@ -3710,6 +3773,9 @@ msgstr "Запустите новый турнир или откройте им�
 msgid "Start at"
 msgstr "Начать с"
 
+msgid "Start it"
+msgstr "Запустите его"
+
 msgid "Start now"
 msgstr "Запустить сейчас"
 
@@ -3724,6 +3790,9 @@ msgstr "Тайм-аут запуска (с)"
 
 msgid "Start when cores are free"
 msgstr "Запускать, когда есть свободные ядра"
+
+msgid "Start, on the New tournament page; the home page then follows the games."
+msgstr "«Запустить» на странице «Новый турнир»; затем за партиями следит главная страница."
 
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr "Запускаются один за другим, когда текущий турнир завершается сам."
@@ -4657,6 +4726,12 @@ msgstr "Этот матч уже завершён."
 
 msgid "This program cannot find its own file to start a tournament."
 msgstr "Программа не находит собственный файл, чтобы запустить турнир."
+
+msgid "This section changed after it was translated; here it is in English."
+msgstr "Этот раздел изменился после перевода; здесь он на английском."
+
+msgid "This section is not translated yet; here it is in English."
+msgstr "Этот раздел ещё не переведён; здесь он на английском."
 
 msgid "This tournament is playing already."
 msgstr "Этот турнир уже идёт."
@@ -6601,6 +6676,12 @@ msgstr "{} ничего не ответил за {} с: это движок дл
 
 msgid "{} searches to depth {}"
 msgstr "{} считает до глубины {}"
+
+msgid "{} section found"
+msgid_plural "{} sections found"
+msgstr[0] "Найден {} раздел"
+msgstr[1] "Найдено {} раздела"
+msgstr[2] "Найдено {} разделов"
 
 msgid "{} seed"
 msgid_plural "{} seeds"

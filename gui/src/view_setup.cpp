@@ -372,6 +372,7 @@ void App::drawSetup(bool two_columns, bool with_summary) {
     players_list_h_ =
         std::clamp((static_cast<float>(match ? 0 : setup_.participants.size()) + 1.5f) * row, px(240), px(480));
     const auto players = [&] {
+        ui::TopicRegion topic(guide::topics::Participants);
         ui::beginCard("players_card");
         if (match)
             setupEngines();
@@ -380,6 +381,7 @@ void App::drawSetup(bool two_columns, bool with_summary) {
         ui::endCard();
     };
     const auto library = [&] {
+        ui::TopicRegion topic(guide::topics::Participants);
         ui::beginCard("library_card");
         participantPicker();
         ui::endCard();
@@ -416,17 +418,27 @@ void App::drawSetupRows() {
     for (const char* t : {TR("Concurrency"), TR("PGN and misc")})
         setup_title_w_ = std::max(setup_title_w_, ImGui::CalcTextSize(t).x);
     setup_title_w_ += ImGui::GetStyle().ItemSpacing.x * 2;
-    sectionRow(RowFormat, SetupSection::Format, &App::setupFormat);
-    sectionRow(RowTime, SetupSection::Time, &App::setupLimit);
-    sectionRow(RowOpenings, SetupSection::Openings, &App::setupOpenings);
-    sectionRow(RowAdjudication, SetupSection::Adjudication, &App::setupAdjudication);
-    sectionRow(RowEngines, SetupSection::Engines, &App::setupEngineOptions);
+    // Each row, its details included, tells F1 its section of the guide.
+    const auto row = [&](const char* topic, auto&& draw) {
+        ui::TopicRegion region(topic);
+        draw();
+    };
+    row(guide::topics::Format, [&] { sectionRow(RowFormat, SetupSection::Format, &App::setupFormat); });
+    row(guide::topics::TimeControl, [&] { sectionRow(RowTime, SetupSection::Time, &App::setupLimit); });
+    row(guide::topics::Openings, [&] { sectionRow(RowOpenings, SetupSection::Openings, &App::setupOpenings); });
+    row(guide::topics::Adjudication,
+        [&] { sectionRow(RowAdjudication, SetupSection::Adjudication, &App::setupAdjudication); });
+    row(guide::topics::EngineSettings,
+        [&] { sectionRow(RowEngines, SetupSection::Engines, &App::setupEngineOptions); });
     // What no profile holds: this tournament's.
     ImGui::Separator();
-    setupRow(RowConcurrency, TR("Concurrency"), concurrencySummary(),
-             TR("Other programs call it concurrency too: the games played at the same time (-concurrency)."),
-             std::nullopt, &App::setupConcurrency);
-    setupRow(RowPgn, TR("PGN and misc"), pgnSummary(), std::string(), std::nullopt, &App::setupPgn);
+    row(guide::topics::Concurrency, [&] {
+        setupRow(RowConcurrency, TR("Concurrency"), concurrencySummary(),
+                 TR("Other programs call it concurrency too: the games played at the same time (-concurrency)."),
+                 std::nullopt, &App::setupConcurrency);
+    });
+    row(guide::topics::PgnMisc,
+        [&] { setupRow(RowPgn, TR("PGN and misc"), pgnSummary(), std::string(), std::nullopt, &App::setupPgn); });
     drawProfilePopups();
 }
 

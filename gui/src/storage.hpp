@@ -68,6 +68,15 @@ class Storage {
     [[nodiscard]] update::Settings updateSettings() const;
     void setUpdateSettings(const update::Settings& updates) const;
 
+    // The guide panel's width in font sizes (0: the default) and the home page's Getting started card hidden
+    // (settings.json).
+    struct GuideSettings {
+        float width_em              = 0;
+        bool getting_started_hidden = false;
+    };
+    [[nodiscard]] GuideSettings guideSettings() const;
+    void setGuideSettings(const GuideSettings& guide) const;
+
     // How the boards look and sound (settings.json): colours, pieces, move sounds.
     [[nodiscard]] appearance::Settings appearance() const;
     void setAppearance(const appearance::Settings& settings) const;

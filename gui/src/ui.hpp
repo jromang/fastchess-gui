@@ -4,6 +4,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -83,8 +84,19 @@ enum class Icon {
     Next,
     Last,
     Flip,
-    Live  // back to the move being played
+    Live,  // back to the move being played
+    // The guide panel.
+    Forward,
+    External,  // open in the browser
+    Close,
+    Contents,
+    Search,
+    Help,  // a circled ?
+    Copy
 };
+
+// A small square button showing `icon`, its tooltip `tip`; true when clicked.
+bool iconOnlyButton(const char* id, Icon icon, const char* tip, bool enabled = true);
 
 // Draws `icon` centred on `center`, `size` pixels wide, in `col`.
 void drawIcon(ImDrawList* dl, Icon icon, ImVec2 center, float size, ImU32 col);
@@ -93,6 +105,10 @@ void drawIcon(ImDrawList* dl, Icon icon, ImVec2 center, float size, ImU32 col);
 void setFonts(ImFont* text, ImFont* titles, ImFont* icons);
 // The titles' font (semibold), nullptr before setFonts(). Like every font, it is made at the size it is drawn at.
 [[nodiscard]] ImFont* titleFont();
+// The guide's italics (Inter Italic) and code (ImGui's scalable monospaced font); the text font until set.
+void setGuideFonts(ImFont* italic, ImFont* mono);
+[[nodiscard]] ImFont* italicFont();
+[[nodiscard]] ImFont* monoFont();
 
 // Chinese needs a system font: requestCjkFont() when Chinese text is to be shown, and it is merged in by
 // loadRequestedFonts(), called between frames.
@@ -115,8 +131,35 @@ bool railButton(const char* id, Icon icon, const char* label, bool selected, flo
 
 // Large page title.
 void pageTitle(const char* text);
-// The same, followed by a round `?` that opens the guide at `help` (as F1 does).
-void pageTitle(const char* text, guide::Section help);
+// The same, followed by a round `?` that opens the guide at `topic` (an id of guide::topics, as F1 does).
+void pageTitle(const char* text, const char* topic);
+
+// Help at the cursor (docs/design/help.md, "Topics"). The guide panel opens through the function given here (the
+// browser at the guide on GitHub until one is given).
+void setGuideOpener(std::function<void(const char* topic)> open);
+void openGuide(const char* topic);
+// At the start of each frame: the topic under the mouse in the frame before becomes hoveredTopic().
+void beginTopicFrame();
+// The topic under the mouse in the last frame: the innermost item or region marked, nullptr when none.
+[[nodiscard]] const char* hoveredTopic();
+// Marks the last item with `topic`: under the mouse, it is the topic F1 opens. Call it after the item's tooltip:
+// when one is shown, it ends with "F1: more in the guide".
+void topic(const char* topic);
+// Marks a region, from here to the end of the scope: the mouse in it and in no item or region marked inside it,
+// `topic` is the one F1 opens.
+class TopicRegion {
+   public:
+    explicit TopicRegion(const char* topic);
+    ~TopicRegion();
+    TopicRegion(const TopicRegion&)            = delete;
+    TopicRegion& operator=(const TopicRegion&) = delete;
+
+   private:
+    const char* topic_;
+    int serial_;
+};
+// A small round `?` on the line, opening the guide at `topic`, its tooltip "In the guide: <title>".
+void guideLink(const char* id, const char* topic);
 
 // A rounded card filling the available width, with a border; pair with endCard().
 void beginCard(const char* id, ImVec2 size = ImVec2(0, 0));

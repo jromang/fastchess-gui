@@ -285,6 +285,21 @@ update::Settings Storage::updateSettings() const {
     return out;
 }
 
+Storage::GuideSettings Storage::guideSettings() const {
+    const auto s = settings();
+    GuideSettings out;
+    out.width_em               = static_cast<float>(setting(s, "guide_width", 0.0));
+    out.getting_started_hidden = setting(s, "getting_started_hidden", false);
+    return out;
+}
+
+void Storage::setGuideSettings(const GuideSettings& guide) const {
+    auto settings                      = this->settings();
+    settings["guide_width"]            = guide.width_em;
+    settings["getting_started_hidden"] = guide.getting_started_hidden;
+    save(root_ / "settings.json", settings);
+}
+
 void Storage::setUpdateSettings(const update::Settings& updates) const {
     auto settings                     = this->settings();
     settings["check_new_version"]     = updates.enabled;

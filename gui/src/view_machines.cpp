@@ -286,7 +286,7 @@ void App::drawMachineSettings(float label) {
     }
     (void)label;
     ImGui::PushID("machines");
-    ui::pageTitle(TR("Machines"), guide::Section::Machines);
+    ui::pageTitle(TR("Machines"), guide::topics::Machines);
     ImGui::AlignTextToFramePadding();
     ImGui::TextDisabled("%s", TR("Other computers to run tournaments on, reached with SSH."));
     if (ImGui::IsItemHovered()) {

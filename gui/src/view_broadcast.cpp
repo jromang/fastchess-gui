@@ -98,7 +98,7 @@ void App::drawBroadcast() {
 
     // Files.
     ui::beginCard("bc_files");
-    ui::pageTitle(TR("Files"));
+    ui::pageTitle(TR("Files"), guide::topics::LiveFiles);
     ImGui::TextDisabled("%s", TR("Live PGN, standings and crosstable, to publish anywhere (FTP, rsync, a website)."));
     toggle(TR("Write the live files"), setup_.broadcast_files);
     ImGui::TextUnformatted(TR("live.pgn: the games in progress · standings.html · tournament.json (for scripts)"));
@@ -123,7 +123,7 @@ void App::drawBroadcast() {
 
     // TLCS.
     ui::beginCard("bc_tlcs");
-    ui::pageTitle(TR("TLCS server"));
+    ui::pageTitle(TR("TLCS server"), guide::topics::Tlcs);
     ImGui::TextDisabled("%s", TR("For TLCV, node-tlcv and Livius: one game at a time, with the "
                                  "engines' searches, and the crosstable after every game."));
     toggle(TR("Run the TLCS server"), setup_.broadcast_tlcs);
@@ -173,7 +173,7 @@ void App::drawBroadcast() {
 
     // Web page.
     ui::beginCard("bc_web");
-    ui::pageTitle(TR("Web page"));
+    ui::pageTitle(TR("Web page"), guide::topics::WebPage);
     ImGui::PushTextWrapPos(0);
     ImGui::TextDisabled("%s", TR("Every game in progress, the one followed with its evaluation bar, arrows and charts; "
                                  "the standings, the crosstable, the statistics and anomalies, and the games' PGN "
@@ -256,6 +256,7 @@ void App::drawTunnel(bool& changed) {
     ui::help(TR("While a tournament runs, an SSH tunnel built into fastchess-gui gives the page a public https "
                 "address, without opening a port in the router or installing anything. Only the page is reachable "
                 "that way, read-only."));
+    ui::topic(guide::topics::Tunnel);
     // Changed only while it is not connected; after an error, to mend it (it starts again once a field is left).
     const auto status = broadcaster_.tunnel();
     const bool locked = status.state == TunnelState::Connecting || status.state == TunnelState::OnAir;
@@ -392,7 +393,7 @@ void App::lichessTokenField() {
 
 void App::drawLichess(bool& changed) {
     ui::beginCard("bc_lichess");
-    ui::pageTitle("lichess");
+    ui::pageTitle("lichess", guide::topics::Lichess);
     ImGui::PushTextWrapPos(0);
     ImGui::TextDisabled("%s",
                         TR("A lichess broadcast: its board, evaluation bar and chat, for anyone, on the internet. "

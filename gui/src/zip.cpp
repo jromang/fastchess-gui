@@ -9,6 +9,8 @@
 
 // The zlib compressor of stb_image_write (compiled in screenshot.cpp), which its header does not declare.
 extern "C" unsigned char* stbi_zlib_compress(unsigned char* data, int data_len, int* out_len, int quality);
+// And stb_image's decompressor (compiled in engine_logos.cpp): a raw deflate stream, without zlib's header.
+extern "C" char* stbi_zlib_decode_noheader_malloc(const char* buffer, int len, int* outlen);
 
 namespace fcg {
 
@@ -43,6 +45,40 @@ std::string gzipped(const std::string& data, int quality) {
     put32(out, fastchess::crc::finalize_crc32(
                    fastchess::crc::incremental_crc32(fastchess::crc::initial_crc32(), data)));
     put32(out, static_cast<uint32_t>(data.size()));
+    return out;
+}
+
+std::optional<std::string> gunzipped(std::string_view gzip) {
+    const auto byte = [&](std::size_t i) { return static_cast<uint8_t>(gzip[i]); };
+    const auto le32 = [&](std::size_t i) {
+        return static_cast<uint32_t>(byte(i)) | static_cast<uint32_t>(byte(i + 1)) << 8 |
+               static_cast<uint32_t>(byte(i + 2)) << 16 | static_cast<uint32_t>(byte(i + 3)) << 24;
+    };
+    if (gzip.size() < 18 || gzip.size() >= 0x7FFFFFFF || byte(0) != 0x1f || byte(1) != 0x8b || byte(2) != 8)
+        return std::nullopt;
+    // The header's optional fields (RFC 1952, 2.3.1): extra, name, comment, header CRC.
+    const uint8_t flags = byte(3);
+    std::size_t at      = 10;
+    if (flags & 4) {
+        if (at + 2 > gzip.size()) return std::nullopt;
+        at += 2 + (byte(at) | static_cast<std::size_t>(byte(at + 1)) << 8);
+    }
+    for (const uint8_t field : {uint8_t{8}, uint8_t{16}}) {
+        if (!(flags & field)) continue;
+        while (at < gzip.size() && gzip[at] != '\0') ++at;
+        ++at;
+    }
+    if (flags & 2) at += 2;
+    if (at + 8 > gzip.size()) return std::nullopt;
+
+    int length = 0;
+    char* raw  = stbi_zlib_decode_noheader_malloc(gzip.data() + at, static_cast<int>(gzip.size() - 8 - at), &length);
+    if (!raw) return std::nullopt;
+    std::string out(raw, static_cast<std::size_t>(length));
+    std::free(raw);
+    const uint32_t crc =
+        fastchess::crc::finalize_crc32(fastchess::crc::incremental_crc32(fastchess::crc::initial_crc32(), out));
+    if (crc != le32(gzip.size() - 8) || static_cast<uint32_t>(out.size()) != le32(gzip.size() - 4)) return std::nullopt;
     return out;
 }
 

@@ -1413,7 +1413,7 @@ resumes where it stopped.
 (`xboard` for a WinBoard engine) within 10 seconds. The mark beside it, and its tooltip, say what was found: the
 engine's name, or why it does not run (missing, not executable, made for another system, silent).
 
-An engine missing on the machine is copied there with *Copy…* on its row (or *Copy <engine> to <machine>* in the
+An engine missing on the machine is copied there with *Copy…* on its row (or *Copy \<engine\> to \<machine\>* in the
 command palette, or the button of a start refused because an engine has no path there). The panel that opens says
 first what goes: the program, its size and the system it is built for, read from its first bytes (a Windows
 program, a Linux or macOS one, universal or not, or a script). A program the machine cannot run is refused before
@@ -1421,7 +1421,7 @@ anything is sent, saying which build to choose: "Alpha is a Windows program; tc-
 build of Alpha". The architecture counts as well (x86-64 or arm64); an x86-64 build on an arm64 Mac runs only under
 Rosetta, and a format the program does not know is copied all the same: both are said, not refused. A script goes
 only to a Linux or macOS machine, and only when the interpreter of its first line (`python3`, `/bin/sh`) is there.
-*Choose the <system> build of <engine>…* takes another file of this computer, the Windows build of the engine say,
+*Choose the \<system\> build of \<engine\>…* takes another file of this computer, the Windows build of the engine say,
 checks it the same way, and keeps it for that machine: later comparisons and replacements use it, not the library's
 program.
 
@@ -1461,7 +1461,7 @@ adjudication and the engines do without them).
 
 In the setup, *Run on* (in *Concurrency*) chooses where the tournament plays: *This computer*, or a machine. *Start*
 then prepares it there: fastchess-gui must be installed there in this version (else *Update fastchess-gui*), every
-engine must have its path on the machine (else the start offers *Copy <engine> to <machine>…*), and the setup's
+engine must have its path on the machine (else the start offers *Copy \<engine\> to \<machine\>…*), and the setup's
 books must be in its books folder (else the start says which is missing, and *Push the missing files* puts it
 there); tablebases missing are only a warning. The tournament gets its folder in `tournaments/` of the machine's
 folder, with the engines, books and tablebases at their paths there, and its process starts there out of the SSH
@@ -1469,7 +1469,7 @@ session (`fastchess-gui --run <folder> --detach`): it plays on whatever happens 
 window follows it as a tournament of this computer: Live, Games, the standings, pause, stop and the changes, through
 the control channel of its process (`fastchess-gui --attach <folder>` over SSH).
 
-Its card on the home page says *On <machine>*, and *Reaching <machine>…* while the connection is cut: the window
+Its card on the home page says *On \<machine\>*, and *Reaching \<machine\>…* while the connection is cut: the window
 connects again on its own, a little longer after each failure, and takes up the events where its copy stopped.
 The journal and the PGN files are copied back to the tournament's folder here as they grow, every few seconds, so
 that Ratings, exports and the submission checklist read them; the machine's folder stays the reference
@@ -1495,10 +1495,10 @@ Set-Service sshd -StartupType Automatic
 
 The installation opens port 22 in the firewall. Then put your public key in `C:\Users\<user>\.ssh\authorized_keys`,
 or, for an account of the Administrators group, in `C:\ProgramData\ssh\administrators_authorized_keys`, which only
-Administrators and SYSTEM may read:
+Administrators and SYSTEM may read (the groups are given by their SIDs, the same in every language of Windows):
 
 ```powershell
-icacls C:\ProgramData\ssh\administrators_authorized_keys /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"
+icacls C:\ProgramData\ssh\administrators_authorized_keys /inheritance:r /grant "*S-1-5-32-544:F" /grant "*S-1-5-18:F"
 ```
 
 Keep cmd as the server's shell: fastchess-gui speaks cmd, not PowerShell (if a `DefaultShell` value was set under

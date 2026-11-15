@@ -58,7 +58,14 @@ struct Notice {
     std::string text;
     std::string detail;  // shown when the mouse is on the text (the whole list of files missing...); may be empty
     std::vector<Fix> fixes;
+    // The guide's section that explains it (guide::topics), shown as a `?` after its fixes; nullptr: the one its
+    // fixes point to (noticeTopic()).
+    const char* topic = nullptr;
 };
+
+// The guide's section of a notice: its own, else the troubleshooting entry its fixes point to (an engine's program,
+// threads or tablebases, the log), nullptr when none.
+[[nodiscard]] const char* noticeTopic(const Notice& notice);
 
 // Draws `notice` as the lines of the setup summary are: a mark (✓, or ! orange for a warning, red for an error), the
 // text wrapped, then its fixes, small buttons on the next line. `id` tells its buttons from another notice's.

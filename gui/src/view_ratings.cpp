@@ -257,19 +257,31 @@ void App::drawRatings() {
         return ImGui::BeginTabItem(label, nullptr, flags);
     };
     if (tab(TR("Rating list###rt_list"), 0)) {
-        drawRatingList();
+        {
+            ui::TopicRegion topic(guide::topics::RatingList);
+            drawRatingList();
+        }
         ImGui::EndTabItem();
     }
     if (tab(TR("Engine###rt_engine"), 1)) {
-        drawEngineCard();
+        {
+            ui::TopicRegion topic(guide::topics::EngineCard);
+            drawEngineCard();
+        }
         ImGui::EndTabItem();
     }
     if (tab(TR("Head to head###rt_h2h"), 2)) {
-        drawHeadToHead();
+        {
+            ui::TopicRegion topic(guide::topics::HeadToHead);
+            drawHeadToHead();
+        }
         ImGui::EndTabItem();
     }
     if (tab(TR("Progress###rt_progress"), 3)) {
-        drawProgress();
+        {
+            ui::TopicRegion topic(guide::topics::Progress);
+            drawProgress();
+        }
         ImGui::EndTabItem();
     }
     ImGui::EndTabBar();

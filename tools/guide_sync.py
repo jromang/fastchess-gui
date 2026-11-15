@@ -24,6 +24,8 @@ STAMP = re.compile(r"^<!-- en: ([A-Za-z0-9_\-\u0080-\U0010ffff]+) ([0-9a-f]{8}) 
 HEADING = re.compile(r"^(#{1,6}) +(.*?)(?: +#+)? *$")
 LINK = re.compile(r"\]\(#([^)\s]+)\)")
 CODE_SPAN = re.compile(r"(`+)(.+?)\1")
+# A tag outside code: GitHub and the program's panel take it for HTML and show nothing of it. <kbd> is meant.
+RAW_TAG = re.compile(r"(?<!\\)<(?!/?kbd>|!--)[A-Za-z/][^>]*>")
 
 
 def lower(cp: int) -> int:
@@ -123,6 +125,18 @@ class Section:
                 spans += [m.group(2).strip() for m in CODE_SPAN.finditer(line)]
         return sorted(spans), blocks
 
+    def raw_tags(self):
+        """Text between < and > outside code (a placeholder such as <engine>), which shows as nothing: write \\<engine\\>."""
+        out, fenced = [], False
+        for line in self.body:
+            if line.startswith("```") or line.startswith("~~~"):
+                fenced = not fenced
+                continue
+            if fenced or STAMP.match(line.strip()):
+                continue
+            out += RAW_TAG.findall(CODE_SPAN.sub("", line))
+        return out
+
     def links(self):
         return [m.group(1) for m in LINK.finditer("\n".join(l for l in self.body))]
 
@@ -161,6 +175,8 @@ def check_english(english):
             problems.append(f"guide.md:{s.line_no}: heading '{s.title}' is not unique")
     known = set(anchors)
     for s in english:
+        for tag in s.raw_tags():
+            problems.append(f"guide.md:{s.line_no}: {tag} outside code shows as nothing; write it \\{tag[:-1]}\\>")
         for target in s.links():
             if target not in known:
                 problems.append(f"guide.md:{s.line_no}: link to #{target}, which is no heading")
@@ -215,6 +231,8 @@ def check_language(code, english):
                 problems.append(f"{where}: '{e.anchor}': code spans differ (not in English: {extra}; missing: {gone})")
             if eb != tb:
                 problems.append(f"{where}: '{e.anchor}': code blocks differ from the English ones")
+        for tag in t.raw_tags():
+            problems.append(f"{where}: {tag} outside code shows as nothing; write it \\{tag[:-1]}\\>")
         for target in t.links():
             if target not in anchors:
                 problems.append(f"{where}: link to #{target}, which is no heading of guide.{code}.md")

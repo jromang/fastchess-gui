@@ -325,6 +325,17 @@ void App::drawPanels() {
                 panel_focused_ = panel;
                 focused_one    = true;
             }
+            // F1 over a panel: its section of the guide.
+            using namespace layout::panel;
+            const char* topic = panel == OVERVIEW    ? guide::topics::Overview
+                                : panel == STANDINGS ? guide::topics::Standings
+                                : panel == BRACKET   ? guide::topics::Schedule
+                                : panel == SCHEDULE  ? guide::topics::Changing
+                                : panel == BROADCAST ? guide::topics::Broadcast
+                                : panel == GAMES     ? guide::topics::Games
+                                : panel == OPENINGS  ? guide::topics::OpeningsTab
+                                                     : guide::topics::Live;
+            ui::TopicRegion region(topic);
             drawPanelContent(panel);
         } else if (panel_focused_ == panel && !focused_one) {
             panel_focused_.clear();  // hidden behind another tab: the guide follows what is shown

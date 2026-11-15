@@ -93,7 +93,7 @@ void App::drawAppearanceSettings(float label) {
         ImGui::SetScrollHereY(0.0f);
         scroll_to_appearance_ = false;
     }
-    ui::pageTitle(TR("Appearance"), guide::Section::Appearance);
+    ui::pageTitle(TR("Appearance"), guide::topics::Appearance);
     const float preview = std::floor(px(200));
 
     // In the group, the widgets' column is placed from the group's left: where the other rows have it.

@@ -5,7 +5,9 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
+#include <string_view>
 
 namespace fcg {
 
@@ -18,6 +20,10 @@ namespace fcg {
 // "Content-Encoding: gzip". Empty when it cannot be compressed. A higher `quality` (stb's hash chain length) finds
 // longer matches, slower.
 [[nodiscard]] std::string gzipped(const std::string& data, int quality = 8);
+
+// The data of a gzip member (what gzipped() makes, or `gzip -9`, or CMake's ARCHIVE_CREATE of the embedded guides):
+// nullopt when it is not one, is cut short or its CRC-32 or length does not match.
+[[nodiscard]] std::optional<std::string> gunzipped(std::string_view gzip);
 
 // Writes `zip`, the archive of one file `name` holding `data`, dated now. False with the reason in `error` when it
 // cannot be written.

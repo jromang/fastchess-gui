@@ -206,6 +206,9 @@ msgstr "Eine Datei deiner Wahl"
 msgid "A folder of 12 SVG pictures named wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg and bK.svg … bP.svg: the white and black king, queen, rook, bishop, knight and pawn."
 msgstr "Ein Ordner mit 12 SVG-Bildern namens wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg und bK.svg … bP.svg: weißer und schwarzer König, Dame, Turm, Läufer, Springer und Bauer."
 
+msgid "A format, a time control and the participants."
+msgstr "Ein Format, eine Bedenkzeit und die Teilnehmer."
+
 msgid "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
 msgid_plural "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
 msgstr[0] "Eine Partie zwischen zwei Engines, die eine GPU nutzen, braucht zwei, und dieser Rechner hat {} (Einstellungen): Eine solche Partie spielt allein."
@@ -381,6 +384,9 @@ msgstr "Engine hinzufügen…"
 
 msgid "Add engines in the Engines window."
 msgstr "Füge Engines im Fenster Engines hinzu."
+
+msgid "Add engines to the library"
+msgstr "Engines zur Bibliothek hinzufügen"
 
 msgid "Add the engine to test first: it is the first participant."
 msgstr "Füge zuerst die zu testende Engine hinzu: Sie ist der erste Teilnehmer."
@@ -584,6 +590,9 @@ msgstr "Fragt, wohin das Buch geschrieben wird, und liest dann die Partien im Hi
 msgid "At launch, at most once a day, the program asks GitHub for its latest release; the home page tells when there is a newer one, with its notes and a link to its page. Nothing is downloaded nor installed."
 msgstr "Beim Start, höchstens einmal am Tag, fragt das Programm GitHub nach seiner neuesten Version; die Startseite sagt dir, wenn es eine neuere gibt, mit ihren Hinweisen und einem Link zu ihrer Seite. Nichts wird heruntergeladen oder installiert."
 
+msgid "At least two engines: their programs, or the engine list of another program."
+msgstr "Mindestens zwei Engines: ihre Programme oder die Engine-Liste eines anderen Programms."
+
 msgid "Author: {} → {}"
 msgstr "Autor: {} → {}"
 
@@ -613,6 +622,9 @@ msgstr "B (Referenz)"
 
 msgid "Back"
 msgstr "Zurück"
+
+msgid "Back (Alt+Left)"
+msgstr "Zurück (Alt+Links)"
 
 msgid "Back to the books"
 msgstr "Zurück zu den Büchern"
@@ -1073,6 +1085,9 @@ msgstr "Uhr"
 msgid "Close"
 msgstr "Schließen"
 
+msgid "Close (F1)"
+msgstr "Schließen (F1)"
+
 msgid "Close it"
 msgstr "Schließen"
 
@@ -1132,6 +1147,9 @@ msgstr "Konsole · {}"
 
 msgid "Console…"
 msgstr "Konsole…"
+
+msgid "Contents"
+msgstr "Inhalt"
 
 msgid "Continue"
 msgstr "Weiter"
@@ -1655,6 +1673,9 @@ msgstr "Exportieren…"
 msgid "Extra fields in the comments:"
 msgstr "Zusätzliche Felder in den Kommentaren:"
 
+msgid "F1: more in the guide"
+msgstr "F1: mehr in der Anleitung"
+
 msgid "Failed or changed"
 msgstr "Fehlgeschlagen oder geändert"
 
@@ -1753,6 +1774,9 @@ msgstr "Für jeden Pfad: das Programm ist da, lässt sich starten und antwortet 
 
 msgid "Format"
 msgstr "Format"
+
+msgid "Forward (Alt+Right)"
+msgstr "Vorwärts (Alt+Rechts)"
 
 msgid "Found for (plies)"
 msgstr "Gefunden seit (Halbzüge)"
@@ -1862,6 +1886,9 @@ msgstr "Gauntlet {} gegen {} Engines"
 msgid "Generate Chess324 book"
 msgstr "Chess324-Buch erzeugen"
 
+msgid "Getting started"
+msgstr "Erste Schritte"
+
 msgid "Give the Syzygy tablebase directory."
 msgstr "Gib das Verzeichnis der Syzygy-Tablebases an."
 
@@ -1880,6 +1907,9 @@ msgstr "Gib den Namen des Testers und die Veranstaltung an."
 msgid "Give the user to log in as."
 msgstr "Gib den Benutzer für die Anmeldung an."
 
+msgid "Go to the engines"
+msgstr "Zu den Engines"
+
 msgid "Green"
 msgstr "Grün"
 
@@ -1894,6 +1924,12 @@ msgstr "Gruppen"
 
 msgid "Groups: {}"
 msgstr "Gruppen: {}"
+
+msgid "Guide"
+msgstr "Anleitung"
+
+msgid "Guide: {}"
+msgstr "Anleitung: {}"
 
 msgid "G{}"
 msgstr "P{}"
@@ -2010,6 +2046,9 @@ msgstr "Importieren…"
 
 msgid "In the background, resumed where it stopped if it is cut; each file's SHA-256 checked there after; then the engine's path set and checked."
 msgstr "Im Hintergrund, bei einem Abbruch dort fortgesetzt, wo es aufhörte; der SHA-256 jeder Datei danach dort geprüft; dann der Pfad der Engine gesetzt und geprüft."
+
+msgid "In the guide: {}"
+msgstr "In der Anleitung: {}"
 
 msgid "Inaccuracy"
 msgstr "Ungenauigkeit"
@@ -2478,6 +2517,9 @@ msgstr "Neue Turniere werden dort angelegt, und die Listen zeigen die dort gefun
 msgid "Next move (→)"
 msgstr "Nächster Zug (→)"
 
+msgid "Next: {}"
+msgstr "Nächster Abschnitt: {}"
+
 msgid "No PGN file imported."
 msgstr "Keine PGN-Datei importiert."
 
@@ -2635,6 +2677,9 @@ msgstr "Noch keine Ergebnisse."
 
 msgid "No round yet."
 msgstr "Noch keine Runde."
+
+msgid "No section matches."
+msgstr "Kein Abschnitt passt."
 
 msgid "No sound device could be opened: the log says why."
 msgstr "Es konnte kein Audiogerät geöffnet werden: Das Protokoll sagt, warum."
@@ -2812,6 +2857,9 @@ msgstr "Datei öffnen…"
 
 msgid "Open a folder…"
 msgstr "Ordner öffnen…"
+
+msgid "Open in the browser"
+msgstr "Im Browser öffnen"
 
 msgid "Open it for its end"
 msgstr "Öffne es für sein Ende"
@@ -3132,6 +3180,9 @@ msgstr "Drücke A oder Analysieren für die besten Züge der Engine hier."
 msgid "Previous move (←)"
 msgstr "Vorheriger Zug (←)"
 
+msgid "Previous: {}"
+msgstr "Vorheriger Abschnitt: {}"
+
 msgid "Probability that H1 is accepted (%)"
 msgstr "Wahrscheinlichkeit, dass H1 angenommen wird (%)"
 
@@ -3257,6 +3308,9 @@ msgstr "Ihre Suchstatistiken lesen"
 msgid "Read the UCI options again"
 msgstr "UCI-Optionen neu lesen"
 
+msgid "Read the quick start"
+msgstr "Schnellstart lesen"
+
 msgid "Reading the engine…"
 msgstr "Lese die Engine…"
 
@@ -3337,7 +3391,7 @@ msgid "Rename it “{}”"
 msgstr "In „{}“ umbenennen"
 
 msgid "Rendering"
-msgstr "Darstellung"
+msgstr "Grafikausgabe"
 
 msgid "Replace"
 msgstr "Ersetzen"
@@ -3537,6 +3591,12 @@ msgstr "Suche"
 msgid "Search per engine"
 msgstr "Suche pro Engine"
 
+msgid "Search the guide"
+msgstr "Anleitung durchsuchen"
+
+msgid "Search the guide for “{}”"
+msgstr "Anleitung nach „{}“ durchsuchen"
+
 msgid "Search: name, program, author, notes"
 msgstr "Suche: Name, Programm, Autor, Notizen"
 
@@ -3599,6 +3659,9 @@ msgstr "Ergebnis von Partie {} setzen…"
 
 msgid "Set up a position: pieces, side to move, castling, en passant, Chess960."
 msgstr "Eine Stellung aufbauen: Figuren, Seite am Zug, Rochade, en passant, Chess960."
+
+msgid "Set up a tournament"
+msgstr "Ein Turnier einrichten"
 
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
@@ -3695,6 +3758,9 @@ msgstr "Beginne ein neues Turnier oder öffne eines aus der Liste der Turniere."
 msgid "Start at"
 msgstr "Beginnen bei"
 
+msgid "Start it"
+msgstr "Es starten"
+
 msgid "Start now"
 msgstr "Jetzt starten"
 
@@ -3709,6 +3775,9 @@ msgstr "Start-Timeout (s)"
 
 msgid "Start when cores are free"
 msgstr "Starten, wenn Kerne frei sind"
+
+msgid "Start, on the New tournament page; the home page then follows the games."
+msgstr "Start auf der Seite Neues Turnier; die Startseite verfolgt danach die Partien."
 
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr "Nacheinander gestartet, wenn das laufende Turnier von selbst endet."
@@ -4631,6 +4700,12 @@ msgstr "Dieses Match ist bereits beendet."
 
 msgid "This program cannot find its own file to start a tournament."
 msgstr "Dieses Programm findet seine eigene Datei nicht, um ein Turnier zu starten."
+
+msgid "This section changed after it was translated; here it is in English."
+msgstr "Dieser Abschnitt wurde nach seiner Übersetzung geändert; hier ist er auf Englisch."
+
+msgid "This section is not translated yet; here it is in English."
+msgstr "Dieser Abschnitt ist noch nicht übersetzt; hier ist er auf Englisch."
 
 msgid "This tournament is playing already."
 msgstr "Dieses Turnier läuft bereits."
@@ -6500,6 +6575,11 @@ msgstr "{} hat innerhalb von {} s nichts gesagt: ist es eine Engine für das Sys
 
 msgid "{} searches to depth {}"
 msgstr "{} sucht bis Tiefe {}"
+
+msgid "{} section found"
+msgid_plural "{} sections found"
+msgstr[0] "{} Abschnitt gefunden"
+msgstr[1] "{} Abschnitte gefunden"
 
 msgid "{} seed"
 msgid_plural "{} seeds"

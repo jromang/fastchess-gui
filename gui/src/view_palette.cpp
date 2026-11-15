@@ -32,32 +32,60 @@ std::string shown(const char* label) {
 
 }  // namespace
 
-guide::Section App::guideSection() const {
+const char* App::guideSection() const {
+    using namespace guide::topics;
     switch (page_) {
         case Page::Home:
-            return guide::Section::Home;
+            return Home;
         case Page::NewMatch:
-            return guide::Section::NewTournament;
+            return NewTournament;
         case Page::Tournament:
-            if (!run_->tournament()) return guide::Section::Running;
-            return shown_tab_ == Tab::Broadcast  ? guide::Section::Broadcast
-                   : shown_tab_ == Tab::Schedule ? guide::Section::Changing
-                                                 : guide::Section::Running;
+            if (!run_->tournament()) return Running;
+            switch (shown_tab_) {
+                case Tab::Overview:
+                    return Overview;
+                case Tab::Standings:
+                    return Standings;
+                case Tab::Bracket:
+                    return Schedule;
+                case Tab::Schedule:
+                    return Changing;
+                case Tab::Live:
+                    return Live;
+                case Tab::Games:
+                    return Games;
+                case Tab::Openings:
+                    return OpeningsTab;
+                case Tab::Broadcast:
+                    return Broadcast;
+            }
+            return Running;
         case Page::Engines:
-            return guide::Section::Engines;
+            return Engines;
         case Page::Books:
-            return guide::Section::Books;
+            return Books;
         case Page::Board:
-            return guide::Section::Board;
+            return Board;
         case Page::Suites:
-            return guide::Section::TestSuites;
+            return Suites;
         case Page::Ratings:
-            return guide::Section::Ratings;
+            return Ratings;
         case Page::Log:
+            return Report;
         case Page::Settings:
             break;
     }
-    return guide::Section::Window;
+    return Window;
+}
+
+void App::toggleGuide() {
+    // Over the panel itself, F1 closes it; else it opens at what is under the mouse, or at the page.
+    if (guide_.isOpen() && guide_.hovered()) {
+        guide_.close();
+        return;
+    }
+    const char* topic = ui::hoveredTopic();
+    guide_.toggle(topic ? topic : guideSection());
 }
 
 // The actions possible now first, then the pages, the panels of the tournament and the tabs of the ratings, the
@@ -543,12 +571,24 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             book_item_     = -1;
         });
     }
+    // The guide's sections, by their titles in the interface's language, and its search with what was typed.
+    if (const auto* en = guide::doc("en")) {
+        const auto code = guide::currentCode();
+        for (std::size_t i = 1; i < en->headings.size(); ++i) {
+            const auto s = guide::shown(code, i);
+            if (!s.heading) continue;
+            add(trf("Guide: {}", s.heading->title), TR("Guide"), [this, id = en->headings[i].id] { guide_.open(id); });
+        }
+    }
+    if (!palette_query_.empty())
+        add(trf("Search the guide for “{}”", palette_query_), TR("Guide"),
+            [this, q = palette_query_] { guide_.search(q); });
     return out;
 }
 
 void App::drawPalette() {
-    // F1: the guide at the page shown, also from a text field (none uses it).
-    if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) guide::open(guideSection());
+    // F1: the guide at what is under the mouse, or at the page shown, also from a text field (none uses it).
+    if (ImGui::IsKeyPressed(ImGuiKey_F1, false)) toggleGuide();
 
     // Ctrl+K, but not while a text field has the keys, nor over another popup or dialog: opening this one would close
     // it.

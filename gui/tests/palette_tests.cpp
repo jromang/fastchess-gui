@@ -1,20 +1,14 @@
-// The command palette's matching, and the guide's sections the pages lead to.
+// The command palette's matching.
 
 #include <doctest/doctest.hpp>
 
 #include <algorithm>
-#include <cstdlib>
-#include <filesystem>
-#include <fstream>
-#include <iterator>
 #include <string>
 #include <vector>
 
-#include "guide.hpp"
 #include "palette.hpp"
 
 using namespace fcg;
-namespace fs = std::filesystem;
 
 namespace {
 
@@ -91,39 +85,4 @@ TEST_CASE("palette: what an entry belongs to is searched too, after the entry it
     const std::vector<std::string> actions = {"Settings of the books", "Pause", "A rating list…"};
     const std::vector<std::string> where   = {"", "Stockfish 17 vs 16", "Engines · Import…"};
     CHECK(ranked("sto", actions, &where) == std::vector<std::string>{"Pause", "Settings of the books"});
-}
-
-TEST_CASE("guide: anchors made from headings as GitHub makes them") {
-    CHECK(guide::slug("The window") == "the-window");
-    CHECK(guide::slug("Changing a running tournament") == "changing-a-running-tournament");
-    CHECK(guide::slug("What's new? (0.4.13)") == "whats-new-0413");
-    CHECK(guide::slug("SPRT & Elo: the basics") == "sprt--elo-the-basics");
-    CHECK(guide::slug("`settings.json` file_name") == "settingsjson-file_name");
-    CHECK(guide::slug("Équipe") == "Équipe");  // only ASCII letters are lowered here
-
-    const auto anchors = guide::anchors(
-        "# Guide\n\nText # not a heading\n## The window ##\n```\n# code\n```\n"
-        "### Files\n#### Files\n#NoSpace\n## Files\r\n");
-    CHECK(anchors == std::vector<std::string>{"guide", "the-window", "files", "files-1", "files-2"});
-}
-
-TEST_CASE("guide: every section the pages lead to is a heading of docs/guide.md") {
-    const char* env     = std::getenv("FCG_SOURCE_DIR");
-    const fs::path path = fs::path(env ? env : FCG_SOURCE_DIR) / "docs" / "guide.md";
-    std::ifstream in(path, std::ios::binary);
-    if (!in) {
-        MESSAGE("guide not found: " << path.string());
-        return;
-    }
-    const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-    const auto anchors = guide::anchors(text);
-    CHECK(anchors.size() > 10);
-    for (int i = 0; i < static_cast<int>(guide::Section::Count); ++i) {
-        const auto section = static_cast<guide::Section>(i);
-        CAPTURE(guide::anchor(section));
-        CHECK(std::string(guide::anchor(section)).size() > 0);
-        CHECK(std::find(anchors.begin(), anchors.end(), guide::anchor(section)) != anchors.end());
-        CHECK(guide::url(section) ==
-              std::string("https://github.com/jromang/fastchess-gui/blob/gui/docs/guide.md#") + guide::anchor(section));
-    }
 }

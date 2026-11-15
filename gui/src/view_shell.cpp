@@ -182,8 +182,11 @@ void App::drawShell() {
     drawRail(rail);
     ImGui::SameLine(0, 0);
 
+    // The guide panel, when open, at the right of the page: the page keeps working beside it.
+    const float guide_width = guide_.width(ImGui::GetContentRegionAvail().x);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(px(24), px(18)));
-    ImGui::BeginChild("##page", ImVec2(0, 0), ImGuiChildFlags_AlwaysUseWindowPadding);
+    ImGui::BeginChild("##page", ImVec2(guide_width > 0 ? -guide_width : 0.0f, 0),
+                      ImGuiChildFlags_AlwaysUseWindowPadding);
     switch (page_) {
         case Page::Home:
             drawHome();
@@ -225,6 +228,10 @@ void App::drawShell() {
     layout::keepAlive(workspaceDock());
     ImGui::EndChild();
     ImGui::PopStyleVar();
+    if (guide_width > 0) {
+        ImGui::SameLine(0, 0);
+        guide_.draw(guide_width, ImGui::GetContentRegionAvail().y);
+    }
     ui::drawOpenPathError();
 
     ImGui::End();
@@ -620,6 +627,8 @@ bool App::drawStartFailures(const char* title) {
                 e.log.string());
             if (button(TR("Engine log"), log_tip)) ui::openPath(e.log);
         }
+        ImGui::SameLine();
+        ui::guideLink("cannot_start_guide", guide::topics::CannotStart);
         ImGui::PopID();
     }
     ui::endCard();
@@ -717,6 +726,7 @@ void App::drawSettings() {
     const float label = px(220);
 
     ui::label(TR("Language"), label);
+    ui::topic(guide::topics::Language);
     ImGui::SetNextItemWidth(px(220));
     // Each language under its own name: Chinese too, hence its font.
     ui::requestCjkFont();
@@ -734,6 +744,7 @@ void App::drawSettings() {
     }
 
     ui::label(TR("Theme"), label);
+    ui::topic(guide::topics::Language);
     ImGui::SetNextItemWidth(px(220));
     const char* themes[] = {TR("Automatic (system)"), TR("Dark"), TR("Light")};
     int theme            = setup_.theme == "dark" ? 1 : setup_.theme == "light" ? 2 : 0;
@@ -743,6 +754,7 @@ void App::drawSettings() {
     }
 
     ui::label(TR("Interface size"), label);
+    ui::topic(guide::topics::Language);
     ImGui::SetNextItemWidth(px(220));
     if (ImGui::BeginCombo("##zoom", fmt::format("{} %", setup_.ui_zoom).c_str())) {
         for (const int zoom : ZOOMS) {
@@ -773,6 +785,7 @@ void App::drawSettings() {
     ImGui::Spacing();
     ImGui::Separator();
     ui::label(TR("Profile"), label);
+    ui::topic(guide::topics::Portable);
     ImGui::TextUnformatted(storage_.root().string().c_str());
     ImGui::SetCursorPosX(label);
     if (ImGui::Button(TR("Open the folder##profile"))) openFolder(storage_.root());
@@ -800,6 +813,7 @@ void App::drawSettings() {
     ImGui::Spacing();
     ImGui::Separator();
     ui::label(TR("Tournaments folder"), label);
+    ui::topic(guide::topics::Files);
     ImGui::TextUnformatted(storage_.runsDir().string().c_str());
     ImGui::SetCursorPosX(label);  // under the path: ui::label() places it at `label` from the window's left
     if (ImGui::Button(TR("Change…"))) {
@@ -844,6 +858,7 @@ void App::drawSettings() {
     ImGui::Spacing();
     ImGui::Separator();
     ui::label(TR("Version"), label);
+    ui::topic(guide::topics::Version);
     ImGui::BeginGroup();
     drawVersionSettings();
     ImGui::EndGroup();
@@ -851,6 +866,7 @@ void App::drawSettings() {
     ImGui::Spacing();
     ImGui::Separator();
     ui::label(TR("Rendering"), label);
+    ui::topic(guide::topics::Drawing);
     ImGui::TextUnformatted(render::description().c_str());
     if (!render::fallbackReason().empty()) {
         ImGui::SetCursorPosX(label);

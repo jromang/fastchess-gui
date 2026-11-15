@@ -230,9 +230,15 @@ if(FCG_BUILD_GUI)
         URL_HASH SHA256=39e2f835692c193233ac7bcdf34eb0cc2da0f839fd9f3674c34d2751bccf37f0
         SOURCE_SUBDIR fcg-no-cmake)
 
+    # The guide's Markdown, parsed in the guide panel: md4c (MIT), its parser compiled in.
+    FetchContent_Declare(md4c
+        URL https://github.com/mity/md4c/archive/refs/tags/release-0.5.2.tar.gz
+        URL_HASH SHA256=55d0111d48fb11883aaee91465e642b8b640775a4d6993c2d0e7a8092758ef21
+        SOURCE_SUBDIR fcg-no-cmake)
+
     # SOURCE_SUBDIR points nowhere for the header/source-only dependencies,
     # so MakeAvailable only downloads them.
-    FetchContent_MakeAvailable(sdl3 imgui implot nanosvg stb inter lucide)
+    FetchContent_MakeAvailable(sdl3 imgui implot nanosvg stb inter lucide md4c)
 
     # The patches below are run by FetchContent once after the download, and again on the same sources whenever their
     # command changes, never otherwise: the command has the script's hash, so that a script changed is run again, and
@@ -314,6 +320,9 @@ if(FCG_BUILD_GUI)
         target_link_libraries(imgui_lib PUBLIC opengl32)
     endif()
 
+    add_library(fcg_md4c STATIC ${md4c_SOURCE_DIR}/src/md4c.c)
+    target_include_directories(fcg_md4c SYSTEM PUBLIC ${md4c_SOURCE_DIR}/src)
+
     # libssh2's sources, but its own cryptography backends: ours instead of its mbedtls.c (see libssh2_config.h).
     # The other backends' files compile to nothing without their define.
     set(FCG_LIBSSH2_SOURCES)
@@ -361,6 +370,7 @@ if(FCG_BUILD_GUI)
     set(FCG_FONT_CPPS)
     foreach(font IN ITEMS "inter_regular|${inter_SOURCE_DIR}/extras/ttf/Inter-Regular.ttf"
                           "inter_semibold|${inter_SOURCE_DIR}/extras/ttf/Inter-SemiBold.ttf"
+                          "inter_italic|${inter_SOURCE_DIR}/extras/ttf/Inter-Italic.ttf"
                           "lucide_icons|${lucide_SOURCE_DIR}/font/lucide.ttf")
         string(REPLACE "|" ";" font "${font}")
         list(GET font 0 symbol)
@@ -387,11 +397,36 @@ if(FCG_BUILD_GUI)
         COMMENT "Embedding translations"
         VERBATIM)
 
+    # The user guide, its translations and its pictures (docs/guide.md, docs/guide.<code>.md), embedded under their
+    # names: the guide panel shows them, for the version that runs, without a network.
+    file(GLOB FCG_GUIDES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/docs/guide*.md)
+    set(FCG_GUIDE_PICTURES screenshots/appearance.png)
+    set(FCG_DOC_LIST "")
+    set(FCG_DOC_DEPENDS "")
+    foreach(guide IN LISTS FCG_GUIDES)
+        get_filename_component(name ${guide} NAME)
+        list(APPEND FCG_DOC_LIST "${name}=${guide}")
+        list(APPEND FCG_DOC_DEPENDS ${guide})
+    endforeach()
+    foreach(picture IN LISTS FCG_GUIDE_PICTURES)
+        list(APPEND FCG_DOC_LIST "${picture}=${CMAKE_CURRENT_SOURCE_DIR}/docs/${picture}")
+        list(APPEND FCG_DOC_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/docs/${picture})
+    endforeach()
+    string(REPLACE ";" "|" FCG_DOC_LIST "${FCG_DOC_LIST}")
+    set(FCG_DOC_CPP ${CMAKE_CURRENT_BINARY_DIR}/generated/docs.cpp)
+    add_custom_command(
+        OUTPUT ${FCG_DOC_CPP}
+        COMMAND ${CMAKE_COMMAND} -DOUT=${FCG_DOC_CPP} "-DFILES=${FCG_DOC_LIST}"
+                -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_docs.cmake
+        DEPENDS ${FCG_DOC_DEPENDS} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_docs.cmake
+        COMMENT "Embedding the guide"
+        VERBATIM)
+
     file(GLOB FCG_GUI_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/*.cpp)
     list(REMOVE_ITEM FCG_GUI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/main.cpp)
 
     # Everything except main(), so the unit tests can link it too.
-    add_library(fcg_lib STATIC ${FCG_GUI_SOURCES} ${FCG_ASSET_CPP} ${FCG_FONT_CPPS} ${FCG_PO_CPP}
+    add_library(fcg_lib STATIC ${FCG_GUI_SOURCES} ${FCG_ASSET_CPP} ${FCG_FONT_CPPS} ${FCG_PO_CPP} ${FCG_DOC_CPP}
                 ${qrcodegen_SOURCE_DIR}/cpp/qrcodegen.cpp)
     target_compile_features(fcg_lib PUBLIC cxx_std_20)
     target_include_directories(fcg_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/gui/src)
@@ -403,7 +438,7 @@ if(FCG_BUILD_GUI)
     )
     target_compile_options(fcg_lib PRIVATE -Wall -Wextra)
     target_compile_definitions(fcg_lib PUBLIC FCG_VERSION="${PROJECT_VERSION}")
-    target_link_libraries(fcg_lib PUBLIC fcg_tournament imgui_lib PRIVATE mbedtls fcg_libssh2 tinygettext)
+    target_link_libraries(fcg_lib PUBLIC fcg_tournament imgui_lib PRIVATE mbedtls fcg_libssh2 tinygettext fcg_md4c)
     if(WIN32)
         target_link_libraries(fcg_lib PUBLIC ws2_32)
     endif()

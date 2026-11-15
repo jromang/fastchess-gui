@@ -67,6 +67,8 @@ extern const unsigned char inter_regular[];
 extern const std::size_t inter_regular_size;
 extern const unsigned char inter_semibold[];
 extern const std::size_t inter_semibold_size;
+extern const unsigned char inter_italic[];
+extern const std::size_t inter_italic_size;
 extern const unsigned char lucide_icons[];
 extern const std::size_t lucide_icons_size;
 }  // namespace fcg::assets
@@ -227,6 +229,13 @@ void loadFonts(float size) {
     add_symbols();
     ImFont* icons = addEmbedded(lucide_icons, lucide_icons_size, size);
     fcg::ui::setFonts(text, titles, icons);
+    // The guide panel's italics and code.
+    ImFont* italic = addEmbedded(inter_italic, inter_italic_size, size);
+    add_symbols();
+    ImFontConfig mono_config;
+    mono_config.SizePixels = size;
+    ImFont* mono           = ImGui::GetIO().Fonts->AddFontDefaultVector(&mono_config);
+    fcg::ui::setGuideFonts(italic, mono);
 }
 
 // Startup failures are reported in a message box too: a Windows GUI program has no console. `what` is followed by

@@ -46,6 +46,20 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
     i18n::setLanguage(i18n::resolve(setup_.language));
     loadAppearance();
 
+    // The guide panel: its width kept, the `?` of the titles and the messages opening it, links in the browser.
+    {
+        const auto g            = storage_.guideSettings();
+        guide_.width_em         = g.width_em;
+        getting_started_hidden_ = g.getting_started_hidden;
+        guide_.on_width         = [this](float width) {
+            auto settings     = storage_.guideSettings();
+            settings.width_em = width;
+            storage_.setGuideSettings(settings);
+        };
+        guide_.open_url = [](const std::string& url) { SDL_OpenURL(url.c_str()); };
+        ui::setGuideOpener([this](const char* topic) { guide_.open(topic ? topic : guide::topics::Intro); });
+    }
+
     if (!setup_.concurrency_auto) setup_.concurrency = std::clamp(setup_.concurrency, 1, topology_.logical);
 
     if (!engines_.empty()) selected_engine_ = 0;
@@ -77,6 +91,7 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
 }
 
 App::~App() {
+    ui::setGuideOpener(nullptr);
     // A read or a check may be waiting on a hung engine, up to a minute or two: its engine is ended, so that its
     // thread ends at once, and the window goes away first rather than freeze while it does.
     if (probe_.valid() || check_.valid()) {
@@ -179,6 +194,7 @@ void App::forceQuit() {
 // Frame
 
 void App::frame() {
+    ui::beginTopicFrame();
     // Before the engines are read: nothing is read yet, so a resume at launch starts at once, and the queue reads only
     // the engines it plays first.
     if (!launch_checked_) {
@@ -372,7 +388,12 @@ void App::frame() {
             startRun();
         } else if (w == "suites")
             page_ = Page::Suites;
-        else if (w.rfind("palette", 0) == 0) {  // palette=TEXT: the command palette, TEXT typed in it
+        else if (w == "guide" || w.rfind("guide=", 0) == 0) {
+            // guide[=ID]: the guide panel at the section ID (the page's without one).
+            guide_.open(w.size() > 6 ? w.substr(6) : std::string(guideSection()));
+        } else if (w.rfind("guide-search=", 0) == 0) {  // guide-search=TEXT: the guide panel, searching TEXT
+            guide_.search(w.substr(13));
+        } else if (w.rfind("palette", 0) == 0) {  // palette=TEXT: the command palette, TEXT typed in it
             palette_request_ = true;
             if (const auto eq = w.find('='); eq != std::string::npos) palette_query_ = w.substr(eq + 1);
         } else if (w == "layout-menu" || w == "layout-save") {  // the Layout menu, or its Save the layout as…

@@ -27,6 +27,7 @@
 #include "engine_changes.hpp"
 #include "engine_import.hpp"
 #include "engines.hpp"
+#include "guide_view.hpp"
 #include "home.hpp"
 #include "layout.hpp"
 #include "live.hpp"
@@ -308,7 +309,8 @@ class App {
     // of the running tournament, the queue and when it all ends, the last tournaments finished with their result,
     // the health of the last 24 hours, then every tournament.
     void drawHome();
-    void drawHomeHeader();  // the title, Pause all (or Resume all), Open a folder… and New tournament
+    void drawHomeHeader();      // the title, Pause all (or Resume all), Open a folder… and New tournament
+    void drawGettingStarted();  // the steps of the guide's Quick start, until a first tournament is started
     // The machine's resources and who uses them: the cores of the running games against the hardware threads. The
     // memory and the GPUs join them once tournaments have a budget of them.
     [[nodiscard]] std::vector<home::ResourceBar> resourceBars();
@@ -510,10 +512,14 @@ class App {
     };
     void drawPalette();
     [[nodiscard]] std::vector<PaletteEntry> paletteEntries();
-    [[nodiscard]] guide::Section guideSection() const;  // the section of the page and tab shown
-    bool palette_request_ = false;                      // opens on the next frame (Ctrl+K, --focus palette)
+    [[nodiscard]] const char* guideSection() const;  // the guide's topic of the page and tab shown
+    void toggleGuide();                              // F1
+    bool palette_request_ = false;                   // opens on the next frame (Ctrl+K, --focus palette)
     std::string palette_query_;
     int palette_selected_ = 0;  // in the matches, best first
+    // The guide panel at the right of the page (guide_view.hpp), and the home page's Getting started card hidden.
+    GuideView guide_;
+    bool getting_started_hidden_ = false;
 
     // tournaments
     [[nodiscard]] bool isMatch() const;

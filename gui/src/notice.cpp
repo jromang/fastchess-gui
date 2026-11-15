@@ -95,6 +95,39 @@ Fix copyToMachineFix(const std::string& engine, const std::string& machine_id, c
     return f;
 }
 
+const char* noticeTopic(const Notice& notice) {
+    if (notice.topic) return notice.topic;
+    const char* topic = nullptr;
+    for (const auto& f : notice.fixes) {
+        switch (f.kind) {
+            case Fix::Kind::OpenEngine:
+            case Fix::Kind::LocateProgram:
+            case Fix::Kind::LocateDir:
+            case Fix::Kind::CopyToMachine:
+                if (!topic) topic = guide::topics::TroubleEngine;
+                break;
+            case Fix::Kind::LowerEngineThreads:
+            case Fix::Kind::LowerParticipantThreads:
+            case Fix::Kind::LowerCommonThreads:
+            case Fix::Kind::LocateTablebases:
+            case Fix::Kind::LowerTablebasePieces:
+                return guide::topics::TroubleGames;
+            case Fix::Kind::LocateBook:
+                if (!topic) topic = guide::topics::Openings;
+                break;
+            case Fix::Kind::ChangeTournamentsFolder:
+                if (!topic) topic = guide::topics::Home;
+                break;
+            case Fix::Kind::OpenLog:
+                if (!topic) topic = guide::topics::Troubleshooting;
+                break;
+            case Fix::Kind::OpenFolder:
+                break;
+        }
+    }
+    return topic;
+}
+
 const Fix* drawNotice(const Notice& notice, const char* id) {
     const bool ok    = notice.level == Notice::Level::Ok;
     const bool error = notice.level == Notice::Level::Error;
@@ -112,9 +145,10 @@ const Fix* drawNotice(const Notice& notice, const char* id) {
         ImGui::PopTextWrapPos();
         ImGui::EndTooltip();
     }
-    if (notice.fixes.empty()) return nullptr;
+    const char* topic = noticeTopic(notice);
+    if (notice.fixes.empty() && !topic) return nullptr;
 
-    // The fixes under the text, from where it starts.
+    // The fixes under the text, from where it starts, then the `?` of the guide's section that explains it.
     const Fix* clicked = nullptr;
     ImGui::PushID(id);
     ImGui::SetCursorPosX(text_x);
@@ -126,6 +160,10 @@ const Fix* drawNotice(const Notice& notice, const char* id) {
         if (ImGui::SmallButton(fix.label.c_str())) clicked = &fix;
         ImGui::PopID();
         if (!fix.tooltip.empty()) ImGui::SetItemTooltip("%s", fix.tooltip.c_str());
+    }
+    if (topic) {
+        if (!notice.fixes.empty()) ImGui::SameLine();
+        ui::guideLink("notice_guide", topic);
     }
     ImGui::PopID();
     return clicked;

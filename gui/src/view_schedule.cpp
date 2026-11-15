@@ -403,7 +403,7 @@ void App::drawEditPanel() {
     const auto& spec = t->spec();
 
     ui::beginCard("edit_card");
-    ui::pageTitle(TR("Change the tournament"));
+    ui::pageTitle(TR("Change the tournament"), guide::topics::Changing);
     ImGui::TextDisabled("%s", TR("Without stopping it: running games go on, nothing played is lost."));
     ImGui::Spacing();
 

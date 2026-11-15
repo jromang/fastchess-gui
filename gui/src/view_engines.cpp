@@ -624,6 +624,7 @@ void App::drawEngines() {
     }
     ui::sameLineOrWrap(TR("Import…"));
     if (ImGui::Button(TR("Import…"))) ImGui::OpenPopup("import_menu");
+    ui::topic(guide::topics::Import);
     if (ImGui::BeginPopup("import_menu")) {
         if (ImGui::MenuItem(TR("An engine list…"))) askEngineList();
         ImGui::TextDisabled("%s", TR("ChessGUI (ChsGUI_Eng.TXT), cutechess or Banksia (engines.json), Arena…"));
@@ -1076,14 +1077,17 @@ void App::drawEngines() {
         ui::help(
             TR("WinBoard engines (xboard protocol) are run through a translation to UCI built into "
                "fastchess-gui. Automatic: found out when the engine is read."));
+        ui::topic(guide::topics::WinBoard);
     }
 
     changed |= ImGui::Checkbox(TR("Restart the engine for every game"), &e.restart);
+    ui::topic(guide::topics::StartingEngines);
     ImGui::SameLine(0, ImGui::GetFontSize() * 1.5f);
     changed |= ImGui::Checkbox(TR("Inactive"), &e.inactive);
     ui::help(
         TR("Kept in the library, but out of the engine pickers (setup, suites, quick test, relaunch, adding to a "
            "tournament) and of Check those not checked. A tournament that has it already plays it as before."));
+    ui::topic(guide::topics::Library);
     ImGui::SameLine(0, ImGui::GetFontSize() * 1.5f);
     changed |= ImGui::Checkbox(TR("Uses a GPU"), &e.gpu);
     if (ImGui::IsItemHovered()) {
@@ -1094,6 +1098,7 @@ void App::drawEngines() {
                       budget_setting_.gpus == 0 ? std::string(TR("not counted")) : std::to_string(budget_setting_.gpus))
                       .c_str());
     }
+    ui::topic(guide::topics::Library);
 
     // The usual start timeout is shown rather than 0, and saved as 0 when typed back.
     ui::label(TR("Start timeout (s)"), label);
@@ -1111,6 +1116,7 @@ void App::drawEngines() {
                      "game: more for an engine that loads a large network or hash table. Usually {} s.",
                      usual)
                      .c_str());
+        ui::topic(guide::topics::StartingEngines);
     }
 
     ui::label(TR("Groups"), label);
@@ -1142,6 +1148,7 @@ void App::drawEngines() {
         changed = true;
     }
     ui::help(TR("Its rating on a list you trust, to anchor a tournament's ratings. 0 = none."));
+    ui::topic(guide::topics::Library);
     ImGui::SameLine(0, ImGui::GetFontSize() * 1.5f);
     if (ImGui::SmallButton(TR("Its results…"))) showEngineCard(e.name);
     if (ImGui::IsItemHovered())
@@ -1164,6 +1171,7 @@ void App::drawEngines() {
     if (ImGui::Button(check_.valid() && check_index_ == selected_engine_ ? TR("Checking…") : TR("Check"))) {
         startCheck(selected_engine_);
     }
+    ui::topic(guide::topics::EngineChecks);
     ImGui::EndDisabled();
     ImGui::SameLine();
     // Its console: lines typed to it, outside any tournament.
@@ -1172,6 +1180,7 @@ void App::drawEngines() {
         ImGui::SetTooltip("%s", TR("Talk to the engine: type commands (an option, a position, a go with given "
                                    "limits, a stop) and read its answers."));
     }
+    ui::topic(guide::topics::EngineChecks);
     ImGui::BeginDisabled(in_use);
     ImGui::SameLine();
     if (e.check_ok >= 0) {
@@ -1218,6 +1227,7 @@ void App::drawEngines() {
                                                     "tournament whether it loses on time, crashes, plays an illegal "
                                                     "move or uses its clock badly."));
     }
+    if (!test_waits) ui::topic(guide::topics::EngineChecks);
     ImGui::SameLine();
     ImGui::TextUnformatted(TR("against"));
     ImGui::SameLine();

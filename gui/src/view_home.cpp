@@ -4,6 +4,7 @@
 // tournament of the profile.
 
 #include <algorithm>
+#include <functional>
 #include <cmath>
 #include <unordered_map>
 
@@ -62,15 +63,28 @@ void App::drawHome() {
 
     if (!start_error_.empty()) drawMessage(start_error_, start_fixes_, start_fixes_for_, true, "start_error");
     drawUpdateNotice();
+    drawGettingStarted();
 
-    // What runs, and what needs the tester, first.
+    // What runs, and what needs the tester, first. Each part tells F1 its section of the guide.
     ImGui::Spacing();
-    home::drawResourceBars(resourceBars());
-    drawNeedsAction();
-    drawRunCards();
-    drawQueue();
-    drawLastFinished();
-    drawHealth();
+    {
+        ui::TopicRegion topic(guide::topics::Several);
+        home::drawResourceBars(resourceBars());
+    }
+    {
+        ui::TopicRegion topic(guide::topics::Home);
+        drawNeedsAction();
+        drawRunCards();
+    }
+    {
+        ui::TopicRegion topic(guide::topics::Queue);
+        drawQueue();
+        drawLastFinished();
+    }
+    {
+        ui::TopicRegion topic(guide::topics::Home);
+        drawHealth();
+    }
 
     if (legacy_runs_ > 0) {
         ImGui::Spacing();
@@ -122,6 +136,85 @@ void App::drawHomeHeader() {
                           ui::currentTheme() == ui::Theme::Dark ? ImVec4(0.04f, 0.07f, 0.13f, 1) : ImVec4(1, 1, 1, 1));
     if (ui::iconButton("new_match", ui::Icon::Plus, new_match)) page_ = Page::NewMatch;
     ImGui::PopStyleColor(2);
+}
+
+// ---------------------------------------------------------------------------
+// Getting started
+
+void App::drawGettingStarted() {
+    // Until a first tournament is started (none in the list, none playing), unless hidden.
+    if (getting_started_hidden_ || !tournaments_read_ || !tournaments_.empty() || runsPlaying() > 0 || unfinished_)
+        return;
+    ui::TopicRegion topic(guide::topics::QuickStart);
+    ImGui::Spacing();
+    ui::beginCard("getting_started");
+    ImGui::PushFont(ui::titleFont(), ImGui::GetStyle().FontSizeBase * 1.1f);
+    ImGui::TextUnformatted(TR("Getting started"));
+    ImGui::PopFont();
+    const char* hide = TR("Hide");
+    ImGui::SameLine(ImGui::GetContentRegionMax().x - ImGui::CalcTextSize(hide).x - ImGui::GetStyle().FramePadding.x * 2);
+    if (ImGui::SmallButton(hide)) {
+        getting_started_hidden_ = true;
+        auto settings           = storage_.guideSettings();
+        settings.getting_started_hidden = true;
+        storage_.setGuideSettings(settings);
+    }
+
+    struct Step {
+        const char* title;
+        const char* detail;
+        bool done;
+        const char* button;
+        std::function<void()> go;
+    };
+    const Step steps[] = {
+        {TR("Add engines to the library"),
+         TR("At least two engines: their programs, or the engine list of another program."), engines_.size() >= 2,
+         TR("Go to the engines"), [this] { page_ = Page::Engines; }},
+        {TR("Set up a tournament"), TR("A format, a time control and the participants."), setupChosen(),
+         TR("New tournament"), [this] { page_ = Page::NewMatch; }},
+        {TR("Start it"), TR("Start, on the New tournament page; the home page then follows the games."), false,
+         nullptr, nullptr},
+    };
+    auto* dl          = ImGui::GetWindowDrawList();
+    const float r     = ImGui::GetFontSize() * 0.62f;
+    const float right = ImGui::GetContentRegionMax().x;
+    for (int i = 0; i < 3; ++i) {
+        const auto& s = steps[i];
+        ImGui::PushID(i);
+        ImGui::Spacing();
+        const ImVec2 at = ImGui::GetCursorScreenPos();
+        const ImVec2 c(at.x + r, at.y + ImGui::GetTextLineHeight() * 0.5f);
+        if (s.done) {
+            dl->AddCircleFilled(c, r, ui::GOOD);
+            ImGui::PushFont(nullptr, ImGui::GetFontSize() * 0.8f);
+            const ImVec2 ts = ImGui::CalcTextSize("\xE2\x9C\x93");
+            dl->AddText(ImVec2(c.x - ts.x * 0.5f, c.y - ts.y * 0.5f), IM_COL32(255, 255, 255, 255), "\xE2\x9C\x93");
+            ImGui::PopFont();
+        } else {
+            dl->AddCircle(c, r, ImGui::GetColorU32(ImGuiCol_TextDisabled), 0, std::max(1.0f, px(1.5f)));
+            const std::string n = std::to_string(i + 1);
+            const ImVec2 ts     = ImGui::CalcTextSize(n.c_str());
+            dl->AddText(ImVec2(c.x - ts.x * 0.5f, c.y - ts.y * 0.5f), ImGui::GetColorU32(ImGuiCol_Text), n.c_str());
+        }
+        ImGui::Indent(r * 2 + px(10));
+        if (s.done) ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+        ImGui::TextUnformatted(s.title);
+        if (s.done) ImGui::PopStyleColor();
+        if (s.button) {
+            ImGui::SameLine(std::max(ImGui::GetCursorPosX() + px(16),
+                                     right - ImGui::CalcTextSize(s.button).x - ImGui::GetStyle().FramePadding.x * 2));
+            if (ImGui::SmallButton(s.button)) s.go();
+        }
+        ImGui::PushTextWrapPos(right);
+        ImGui::TextDisabled("%s", s.detail);
+        ImGui::PopTextWrapPos();
+        ImGui::Unindent(r * 2 + px(10));
+        ImGui::PopID();
+    }
+    ImGui::Spacing();
+    if (ImGui::Button(TR("Read the quick start"))) guide_.open(guide::topics::QuickStart);
+    ui::endCard();
 }
 
 // ---------------------------------------------------------------------------

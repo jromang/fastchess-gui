@@ -239,8 +239,10 @@ std::string formatDuration(double seconds) {
 
 namespace {
 
-ImFont* g_title_font = nullptr;
-ImFont* g_icon_font  = nullptr;
+ImFont* g_title_font  = nullptr;
+ImFont* g_icon_font   = nullptr;
+ImFont* g_italic_font = nullptr;
+ImFont* g_mono_font   = nullptr;
 
 // Lucide 1.59 code points (font/codepoints.json).
 const char* glyph(Icon icon) {
@@ -303,6 +305,20 @@ const char* glyph(Icon icon) {
             return "\uE37D";  // arrow-up-down
         case Icon::Live:
             return "\uE142";  // radio
+        case Icon::Forward:
+            return "\uE049";  // arrow-right
+        case Icon::External:
+            return "\uE0B9";  // external-link
+        case Icon::Close:
+            return "\uE1B2";  // x
+        case Icon::Contents:
+            return "\uE61E";  // table-of-contents
+        case Icon::Search:
+            return "\uE151";  // search
+        case Icon::Help:
+            return "\uE082";  // circle-help
+        case Icon::Copy:
+            return "\uE09E";  // copy
     }
     return "";
 }
@@ -310,6 +326,13 @@ const char* glyph(Icon icon) {
 }  // namespace
 
 ImFont* titleFont() { return g_title_font; }
+ImFont* italicFont() { return g_italic_font ? g_italic_font : ImGui::GetIO().FontDefault; }
+ImFont* monoFont() { return g_mono_font ? g_mono_font : ImGui::GetIO().FontDefault; }
+
+void setGuideFonts(ImFont* italic, ImFont* mono) {
+    g_italic_font = italic;
+    g_mono_font   = mono;
+}
 
 void setFonts(ImFont* text, ImFont* titles, ImFont* icons) {
     ImGui::GetIO().FontDefault = text;
@@ -328,7 +351,7 @@ void loadRequestedFonts(float size) {
     if (!g_cjk_requested || g_cjk_loaded) return;
     g_cjk_loaded = true;
 
-    // A system font with the Chinese characters, read once and merged into the text and the title fonts: some
+    // A system font with the Chinese characters, read once and merged into the text, title and guide fonts: some
     // 20 MB, so only when Chinese is shown. Its glyphs are made when first drawn.
     struct Candidate {
         const char* path;
@@ -356,7 +379,7 @@ void loadRequestedFonts(float size) {
         if (!in) continue;
         data.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
         if (data.empty()) continue;
-        for (ImFont* font : {ImGui::GetIO().FontDefault, g_title_font}) {
+        for (ImFont* font : {ImGui::GetIO().FontDefault, g_title_font, g_italic_font, g_mono_font}) {
             if (!font) continue;
             ImFontConfig config;
             config.MergeMode            = true;
@@ -374,6 +397,20 @@ void drawIcon(ImDrawList* dl, Icon icon, ImVec2 c, float size, ImU32 col) {
     const char* text = glyph(icon);
     const ImVec2 ext = font->CalcTextSizeA(size, FLT_MAX, 0.0f, text);
     dl->AddText(font, size, ImVec2(c.x - ext.x * 0.5f, c.y - ext.y * 0.5f), col, text);
+}
+
+bool iconOnlyButton(const char* id, Icon icon, const char* tip, bool enabled) {
+    const float side = ImGui::GetFrameHeight();
+    ImGui::BeginDisabled(!enabled);
+    const bool pressed = ImGui::Button(id, ImVec2(side, side));
+    ImGui::EndDisabled();
+    const ImVec2 min = ImGui::GetItemRectMin(), max = ImGui::GetItemRectMax();
+    const ImU32 col  = ImGui::GetColorU32(enabled ? ImGuiCol_Text : ImGuiCol_TextDisabled);
+    drawIcon(ImGui::GetWindowDrawList(), icon, ImVec2((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f),
+             ImGui::GetFontSize() * 1.05f, col);
+    if (tip && ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip("%s", tip);
+    return pressed && enabled;
 }
 
 bool iconButton(const char* id, Icon icon, const char* label, bool enabled) {
@@ -447,7 +484,100 @@ void pageTitle(const char* text) {
     ImGui::PopFont();
 }
 
-void pageTitle(const char* text, guide::Section help) {
+namespace {
+std::function<void(const char*)> g_guide_opener;
+const char* g_topic      = nullptr;  // under the mouse in this frame so far
+const char* g_last_topic = nullptr;  // in the frame before
+int g_topic_serial       = 0;        // counts the topics set, so that a region knows whether one was set inside it
+}  // namespace
+
+void setGuideOpener(std::function<void(const char*)> open) { g_guide_opener = std::move(open); }
+
+void openGuide(const char* topic) {
+    if (g_guide_opener) {
+        g_guide_opener(topic);
+    } else {
+        SDL_OpenURL(guide::url(guide::currentCode(), topic ? topic : guide::topics::Intro).c_str());
+    }
+}
+
+void beginTopicFrame() {
+    g_last_topic = g_topic;
+    g_topic      = nullptr;
+}
+
+const char* hoveredTopic() { return g_last_topic; }
+
+namespace {
+// A tooltip shown this frame (for the item under the mouse) gets the line that says F1 tells more.
+void addF1Line() {
+    ImGuiContext& g = *GImGui;
+    if (g.TooltipPreviousWindow && g.TooltipPreviousWindow->LastFrameActive == g.FrameCount &&
+        !g.TooltipPreviousWindow->Hidden) {
+        ImGui::BeginTooltip();
+        ImGui::Separator();
+        ImGui::TextDisabled("%s", TR("F1: more in the guide"));
+        ImGui::EndTooltip();
+    }
+}
+}  // namespace
+
+void topic(const char* topic) {
+    if (!topic || !ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem |
+                                        ImGuiHoveredFlags_AllowWhenDisabled))
+        return;
+    g_topic = topic;
+    ++g_topic_serial;
+    addF1Line();
+}
+
+TopicRegion::TopicRegion(const char* topic) : topic_(topic), serial_(g_topic_serial) { ImGui::BeginGroup(); }
+
+TopicRegion::~TopicRegion() {
+    ImGui::EndGroup();
+    if (g_topic_serial != serial_ || !topic_) return;
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem | ImGuiHoveredFlags_AllowWhenDisabled |
+                             ImGuiHoveredFlags_AllowWhenOverlappedByItem)) {
+        g_topic = topic_;
+        ++g_topic_serial;
+        addF1Line();
+    }
+}
+
+void guideLink(const char* id, const char* topic) {
+    const float size = ImGui::GetFontSize() * 1.05f;
+    ImGui::PushID(id);
+    const bool clicked = ImGui::InvisibleButton("##guide_link", ImVec2(size, ImGui::GetTextLineHeight()));
+    ImGui::PopID();
+    const bool hovered = ImGui::IsItemHovered();
+    const ImVec2 min = ImGui::GetItemRectMin(), max = ImGui::GetItemRectMax();
+    const ImVec2 center((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f);
+    auto* dl = ImGui::GetWindowDrawList();
+    dl->AddCircle(center, size * 0.42f, ImGui::GetColorU32(hovered ? ImGuiCol_Text : ImGuiCol_TextDisabled), 0,
+                  std::max(1.0f, size * 0.07f));
+    ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 0.8f);
+    const ImVec2 mark = ImGui::CalcTextSize("?");
+    dl->AddText(ImVec2(center.x - mark.x * 0.5f, center.y - mark.y * 0.5f),
+                ImGui::GetColorU32(hovered ? ImGuiCol_Text : ImGuiCol_TextDisabled), "?");
+    ImGui::PopFont();
+    if (hovered) {
+        std::string title = topic ? topic : "";
+        if (const auto* en = guide::doc("en"); en && topic) {
+            if (const int i = en->byId(topic); i >= 0) {
+                const auto s = guide::shown(guide::currentCode(), static_cast<std::size_t>(i));
+                if (s.heading) title = s.heading->title;
+            }
+        }
+        ImGui::SetTooltip("%s", trf("In the guide: {}", title).c_str());
+    }
+    if (clicked) openGuide(topic);
+    if (topic && hovered) {
+        g_topic = topic;
+        ++g_topic_serial;
+    }
+}
+
+void pageTitle(const char* text, const char* help) {
     pageTitle(text);
     // As tall as the title, the circle in its middle: what follows is placed as after the title alone.
     const float height = ImGui::GetItemRectSize().y;
@@ -463,7 +593,7 @@ void pageTitle(const char* text, guide::Section help) {
     const ImVec2 mark = ImGui::CalcTextSize("?");
     dl->AddText(ImVec2(center.x - mark.x * 0.5f, center.y - mark.y * 0.5f), col, "?");
     if (hovered) ImGui::SetTooltip("%s", TR("The guide, at this page (F1)"));
-    if (clicked) guide::open(help);
+    if (clicked) openGuide(help);
 }
 
 void beginCard(const char* id, ImVec2 size) {

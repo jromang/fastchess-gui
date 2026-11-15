@@ -203,6 +203,9 @@ msgstr "自选文件"
 msgid "A folder of 12 SVG pictures named wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg and bK.svg … bP.svg: the white and black king, queen, rook, bishop, knight and pawn."
 msgstr "一个包含 12 张 SVG 图片的文件夹，文件名为 wK.svg、wQ.svg、wR.svg、wB.svg、wN.svg、wP.svg 以及 bK.svg … bP.svg：白方和黑方的王、后、车、象、马和兵。"
 
+msgid "A format, a time control and the participants."
+msgstr "格式、时限和参赛者。"
+
 msgid "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
 msgid_plural "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
 msgstr[0] "两个都使用 GPU 的引擎之间的一局需要两块 GPU，而本机有 {} 块（设置）：这样的对局会单独进行。"
@@ -377,6 +380,9 @@ msgstr "添加引擎…"
 
 msgid "Add engines in the Engines window."
 msgstr "请在“引擎”窗口中添加引擎。"
+
+msgid "Add engines to the library"
+msgstr "将引擎添加到引擎库"
 
 msgid "Add the engine to test first: it is the first participant."
 msgstr "先添加要测试的引擎：它是第一个参赛者。"
@@ -578,6 +584,9 @@ msgstr "先询问开局库的保存位置，然后在后台读取对局；开局
 msgid "At launch, at most once a day, the program asks GitHub for its latest release; the home page tells when there is a newer one, with its notes and a link to its page. Nothing is downloaded nor installed."
 msgstr "启动时（每天最多一次），程序向 GitHub 查询其最新发布版本；有更新的版本时，主页会提示，并显示其说明和页面链接。不会下载或安装任何东西。"
 
+msgid "At least two engines: their programs, or the engine list of another program."
+msgstr "至少两个引擎：它们的程序，或其他程序的引擎列表。"
+
 msgid "Author: {} → {}"
 msgstr "作者：{} → {}"
 
@@ -607,6 +616,9 @@ msgstr "B（基准）"
 
 msgid "Back"
 msgstr "返回"
+
+msgid "Back (Alt+Left)"
+msgstr "后退（Alt+Left）"
 
 msgid "Back to the books"
 msgstr "回到开局库"
@@ -1067,6 +1079,9 @@ msgstr "棋钟"
 msgid "Close"
 msgstr "关闭"
 
+msgid "Close (F1)"
+msgstr "关闭（F1）"
+
 msgid "Close it"
 msgstr "关闭它"
 
@@ -1126,6 +1141,9 @@ msgstr "控制台 · {}"
 
 msgid "Console…"
 msgstr "控制台…"
+
+msgid "Contents"
+msgstr "目录"
 
 msgid "Continue"
 msgstr "继续"
@@ -1649,6 +1667,9 @@ msgstr "导出…"
 msgid "Extra fields in the comments:"
 msgstr "注释中的额外字段："
 
+msgid "F1: more in the guide"
+msgstr "F1：指南中有更多说明"
+
 msgid "Failed or changed"
 msgstr "失败或已更改"
 
@@ -1747,6 +1768,9 @@ msgstr "对每个路径：程序存在、可以运行，并在 10 秒内响应 u
 
 msgid "Format"
 msgstr "格式"
+
+msgid "Forward (Alt+Right)"
+msgstr "前进（Alt+Right）"
 
 msgid "Found for (plies)"
 msgstr "已找到（半回合）"
@@ -1856,6 +1880,9 @@ msgstr "车轮战：{} 对 {} 个引擎"
 msgid "Generate Chess324 book"
 msgstr "生成 Chess324 开局库"
 
+msgid "Getting started"
+msgstr "开始使用"
+
 msgid "Give the Syzygy tablebase directory."
 msgstr "请指定 Syzygy 残局库目录。"
 
@@ -1874,6 +1901,9 @@ msgstr "请填写测试者姓名和赛事。"
 msgid "Give the user to log in as."
 msgstr "请填写登录用户名。"
 
+msgid "Go to the engines"
+msgstr "前往引擎页"
+
 msgid "Green"
 msgstr "绿色"
 
@@ -1888,6 +1918,12 @@ msgstr "分组"
 
 msgid "Groups: {}"
 msgstr "分组：{}"
+
+msgid "Guide"
+msgstr "指南"
+
+msgid "Guide: {}"
+msgstr "指南：{}"
 
 msgid "G{}"
 msgstr "循环{}"
@@ -2003,6 +2039,9 @@ msgstr "导入…"
 
 msgid "In the background, resumed where it stopped if it is cut; each file's SHA-256 checked there after; then the engine's path set and checked."
 msgstr "在后台进行，中断后从停止处继续；之后在那里检查每个文件的 SHA-256；然后设置并检查引擎的路径。"
+
+msgid "In the guide: {}"
+msgstr "指南中的说明：{}"
 
 msgid "Inaccuracy"
 msgstr "缓着"
@@ -2470,6 +2509,9 @@ msgstr "新锦标赛将建在这里，列表显示在这里找到的锦标赛。
 msgid "Next move (→)"
 msgstr "下一步 (→)"
 
+msgid "Next: {}"
+msgstr "下一节：{}"
+
 msgid "No PGN file imported."
 msgstr "尚未导入 PGN 文件。"
 
@@ -2626,6 +2668,9 @@ msgstr "还没有成绩。"
 
 msgid "No round yet."
 msgstr "还没有轮次。"
+
+msgid "No section matches."
+msgstr "没有匹配的章节。"
 
 msgid "No sound device could be opened: the log says why."
 msgstr "无法打开任何音频设备：原因见日志。"
@@ -2803,6 +2848,9 @@ msgstr "打开文件…"
 
 msgid "Open a folder…"
 msgstr "打开文件夹…"
+
+msgid "Open in the browser"
+msgstr "在浏览器中打开"
 
 msgid "Open it for its end"
 msgstr "打开它以查看结束时间"
@@ -3121,6 +3169,9 @@ msgstr "按 A 或“分析”，在此查看引擎的最佳着法。"
 msgid "Previous move (←)"
 msgstr "上一步 (←)"
 
+msgid "Previous: {}"
+msgstr "上一节：{}"
+
 msgid "Probability that H1 is accepted (%)"
 msgstr "接受 H1 的概率 (%)"
 
@@ -3244,6 +3295,9 @@ msgstr "读取其搜索统计"
 
 msgid "Read the UCI options again"
 msgstr "重新读取 UCI 选项"
+
+msgid "Read the quick start"
+msgstr "阅读快速入门"
 
 msgid "Reading the engine…"
 msgstr "正在读取引擎…"
@@ -3523,6 +3577,12 @@ msgstr "搜索"
 msgid "Search per engine"
 msgstr "各引擎的搜索"
 
+msgid "Search the guide"
+msgstr "搜索指南"
+
+msgid "Search the guide for “{}”"
+msgstr "在指南中搜索“{}”"
+
 msgid "Search: name, program, author, notes"
 msgstr "搜索：名称、程序、作者、备注"
 
@@ -3585,6 +3645,9 @@ msgstr "设定对局 {} 的结果…"
 
 msgid "Set up a position: pieces, side to move, castling, en passant, Chess960."
 msgstr "摆放局面：棋子、走棋方、易位、吃过路兵、Chess960。"
+
+msgid "Set up a tournament"
+msgstr "设置锦标赛"
 
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
@@ -3680,6 +3743,9 @@ msgstr "新建一个锦标赛，或从锦标赛列表中打开一个。"
 msgid "Start at"
 msgstr "开始时间"
 
+msgid "Start it"
+msgstr "开始比赛"
+
 msgid "Start now"
 msgstr "立即开始"
 
@@ -3694,6 +3760,9 @@ msgstr "启动超时（秒）"
 
 msgid "Start when cores are free"
 msgstr "有空闲核心时启动"
+
+msgid "Start, on the New tournament page; the home page then follows the games."
+msgstr "在“新建锦标赛”页面点击“开始”，之后主页会跟踪对局。"
 
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr "在当前锦标赛自行结束后依次开始。"
@@ -4605,6 +4674,12 @@ msgstr "这场比赛已经结束。"
 
 msgid "This program cannot find its own file to start a tournament."
 msgstr "本程序找不到自己的文件，无法启动锦标赛。"
+
+msgid "This section changed after it was translated; here it is in English."
+msgstr "本节在翻译后有过改动，以下为英文原文。"
+
+msgid "This section is not translated yet; here it is in English."
+msgstr "本节尚未翻译，以下为英文原文。"
 
 msgid "This tournament is playing already."
 msgstr "该锦标赛已在进行中。"
@@ -6399,6 +6474,10 @@ msgstr "{} 在 {} 秒内没有任何输出：它是适用于 {} 系统的引擎�
 
 msgid "{} searches to depth {}"
 msgstr "{} 搜索到深度 {}"
+
+msgid "{} section found"
+msgid_plural "{} sections found"
+msgstr[0] "找到 {} 个章节"
 
 msgid "{} seed"
 msgid_plural "{} seeds"
