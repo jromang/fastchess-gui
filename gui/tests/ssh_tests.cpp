@@ -246,6 +246,21 @@ TEST_CASE("libssh2 backend: X25519 gives RFC 7748's public keys and shared secre
     }
 }
 
+TEST_CASE("libssh2 backend: a word set into a number, without leading zeros; none made for a number not given") {
+    ssh2_bn* n = ssh2_bn_init();
+    REQUIRE(n);
+    REQUIRE(ssh2_bn_set_word(n, 0x10203) == 0);
+    CHECK(ssh2_bn_bits(n) == 17);
+    std::string value(3, '\0');
+    ssh2_bn_to_bin(n, bytes(value));
+    CHECK(value == std::string("\x01\x02\x03", 3));
+    REQUIRE(ssh2_bn_set_word(n, 0) == 0);
+    CHECK(ssh2_bn_bits(n) == 0);
+    ssh2_bn_free(n);
+    // Refused, rather than a number allocated that the caller never sees (LeakSanitizer would tell).
+    CHECK(ssh2_bn_set_word(nullptr, 5) != 0);
+}
+
 TEST_CASE("libssh2 backend: RSA host keys, rsa-sha2-512 and rsa-sha2-256 signatures, sizes in bits") {
     TestSession session;
     auto* rsa = rsaKey(session.s, KAT_RSA_BLOB);

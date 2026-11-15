@@ -311,6 +311,10 @@ int ssh2_bn_from_bin(ssh2_bn **bn, const unsigned char *bin, size_t len)
 int ssh2_bn_set_word(ssh2_bn *bn, uint32_t word)
 {
     unsigned char bin[4];
+
+    /* Into the number given: ssh2_bn_from_bin() would make one of its own for a NULL, never seen by the caller. */
+    if(!bn)
+        return -1;
     ssh2_htonu32(bin, word);
     return ssh2_bn_from_bin(&bn, bin, sizeof(bin));
 }
