@@ -122,6 +122,71 @@ std::string absolutePaths(const std::string& paths, const std::string& base) {
 
 }  // namespace
 
+tour::GameCost setupGameCost(const MatchSetup& setup, const std::vector<EngineEntry>& engines) {
+    const auto people = setupParticipants(setup);
+    const auto hashes = setupHashes(setup, engines);
+    std::vector<uint64_t> process;
+    tour::GameCost cost;
+    int gpus = 0;
+    for (std::size_t i = 0; i < people.size(); ++i) {
+        const auto* engine  = findEngine(engines, people[i].name);
+        const int threads   = engine ? participantThreads(setup, people[i], *engine).threads : 1;
+        const uint64_t hash = i < hashes.size() && hashes[i] > 0 ? hashes[i] : tour::DEFAULT_HASH_MB;
+        cost.threads        = std::max(cost.threads, threads);
+        process.push_back(hash + tour::PROCESS_MB + tour::THREAD_MB * static_cast<uint64_t>(threads));
+        gpus += engine && engine->gpu ? 1 : 0;
+    }
+    std::sort(process.rbegin(), process.rend());
+    for (std::size_t i = 0; i < 2 && i < process.size(); ++i) cost.memory_mb += process[i];
+    cost.gpus    = std::min(gpus, 2);
+    cost.threads = std::max(1, cost.threads);
+    return cost;
+}
+
+BudgetLimit budgetLimit(const MatchSetup& setup, const std::vector<EngineEntry>& engines, const tour::Budget& budget,
+                        int concurrency) {
+    BudgetLimit limit;
+    const auto cost = setupGameCost(setup, engines);
+    tour::Budget memory;
+    memory.threads   = 0;
+    memory.memory_mb = budget.memory_mb;
+    limit.games      = tour::gamesAllowed(memory, cost, concurrency);
+    limit.gpu_games  = concurrency;
+    if (cost.gpus > 0) {
+        if (budget.gpus == 0) {
+            limit.warn = true;
+            limit.why  = TR("An engine of it uses a GPU, and no GPU is counted (Settings): games may share one.");
+            return limit;
+        }
+        if (cost.gpus > budget.gpus) {
+            limit.warn      = true;
+            limit.gpu_games = 1;
+            limit.why =
+                trn("A game between two engines that use a GPU needs two, and this machine has {} "
+                    "(Settings): such a game plays alone.",
+                    "A game between two engines that use a GPU needs two, and this machine has {} "
+                    "(Settings): such a game plays alone.",
+                    budget.gpus, budget.gpus);
+            return limit;
+        }
+        limit.gpu_games = std::min(concurrency, budget.gpus / cost.gpus);
+    }
+    if (limit.games < concurrency) {
+        limit.why =
+            trf("The memory budget, {}, lets {} of the {} games play at a time: each takes {} (the Hash of "
+                "its engines and their processes). The others wait for it.",
+                formatMemory(budget.memory_mb), limit.games, concurrency, formatMemory(cost.memory_mb));
+    } else if (limit.gpu_games < concurrency) {
+        limit.why =
+            trn("The {} GPU lets {} game with an engine that uses a GPU play at a time; the other games play "
+                "beside it.",
+                "The {} GPUs let {} games with an engine that uses a GPU play at a time; the other games play "
+                "beside them.",
+                budget.gpus, budget.gpus, limit.gpu_games);
+    }
+    return limit;
+}
+
 int threadsPerGame(const MatchSetup& setup, const CpuTopology& topology) {
     const int hardware = clockFree(setup.limit) ? topology.logical : topology.physical;
     return std::max(1, hardware / concurrencyOf(setup, topology));

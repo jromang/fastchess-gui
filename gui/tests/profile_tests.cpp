@@ -353,11 +353,62 @@ TEST_CASE("profiles: each section said on one line, and as cutechess and fastche
     s.cycles = 2;
     CHECK(sectionSummary(s, SetupSection::Format, books) == "Gauntlet · 1 seed · 2 cycles of 2 games");
     CHECK(sectionSummary(MatchSetup{}, SetupSection::Format, books) == "Match · SPRT [0, 3]");
+    // The bias and the minimum of games, as the testers write them; fastchess' command line gets the bounds moved.
+    MatchSetup biased;
+    biased.sprt_bias      = 5;
+    biased.sprt_min_games = 2000;
+    CHECK(sectionSummary(biased, SetupSection::Format, books) ==
+          "Match · SPRT [0, 3] + 5 · no decision before 2000 games");
+    CHECK(sectionCommandLine(biased, SetupSection::Format) ==
+          "-sprt elo0=5 elo1=8 alpha=0.05 beta=0.05 model=normalized");
+    CHECK(sprtText(0, 3, -2.5, 0) == "SPRT [0, 3] - 2.5");
+    CHECK(sprtText(-5, 0, 0, 800) == "SPRT [-5, 0], no decision before 800 games");
+    MatchSetup plain;
+    CHECK_FALSE(sameSection(plain, biased, SetupSection::Format));
+    biased.sprt_bias      = 0;
+    biased.sprt_min_games = 0;
+    CHECK(sameSection(plain, biased, SetupSection::Format));
 
     s.book = "/books/uho.epd";
     s.seed = 7;
     CHECK(sectionSummary(s, SetupSection::Openings, books) == "UHO 2024 · random · seed 7");
     CHECK(sectionCommandLine(s, SetupSection::Openings) == "-openings file=uho.epd format=epd order=random -srand 7");
+    // The randomness only chooses the moves of a Polyglot book: said for the tournament's, and for the participants'
+    // own books when it is not the weights as they are.
+    s.book_randomness = -40;
+    CHECK(sectionSummary(s, SetupSection::Openings, books) == "UHO 2024 · random · seed 7");
+    s.participants              = {{"Alpha"}, {"Beta"}};  // a gauntlet
+    s.participants[1].book.path = "/books/a.bin";
+    CHECK(sectionSummary(s, SetupSection::Openings, books) == "UHO 2024 · random · seed 7 · own books: randomness -40");
+    s.participants.clear();
+    s.book = "/books/Perfect2023.bin";
+    s.seed = 0;
+    CHECK(sectionSummary(s, SetupSection::Openings, books) == "Perfect2023.bin · 8 plies · random · randomness -40");
+    s.book_randomness = 0;
+    s.book_plies      = 12;
+    CHECK(sectionSummary(s, SetupSection::Openings, books) ==
+          "Perfect2023.bin · 12 plies · random · moves by their "
+          "weights");
+    // The unbalanced openings flagged, or replaced; their score and moves only count when they are looked for.
+    s.unbalanced_enabled = true;
+    CHECK(unbalancedText(s) == "unbalanced openings flagged (±200 cp for 4 moves)");
+    s.unbalanced_replace = true;
+    s.unbalanced_moves   = 1;
+    CHECK(sectionSummary(s, SetupSection::Openings, books) ==
+          "Perfect2023.bin · 12 plies · random · moves by their weights · unbalanced openings replaced (±200 cp for 1 "
+          "move)");
+    MatchSetup other    = s;
+    other.unbalanced_cp = 300;
+    CHECK_FALSE(sameSection(s, other, SetupSection::Openings));
+    s.unbalanced_enabled     = false;
+    other.unbalanced_enabled = false;
+    CHECK(sameSection(s, other, SetupSection::Openings));
+    CHECK(unbalancedText(s).empty());
+    CHECK(randomnessText(-100) == "the best moves only");
+    CHECK(randomnessText(100) == "every move alike");
+    CHECK(randomnessText(25) == "randomness +25");
+    s.book       = "/books/uho.epd";
+    s.book_plies = -1;
 
     s.common_hash    = 256;
     s.common_threads = 1;

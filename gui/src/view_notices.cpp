@@ -37,7 +37,7 @@ void App::drawSetupNotices(std::vector<Notice> notices, const char* id) {
                 case Fix::Kind::LowerParticipantThreads:
                 case Fix::Kind::LowerCommonThreads:
                 case Fix::Kind::LowerTablebasePieces:
-                    return run_.running();
+                    return run_->running();
                 case Fix::Kind::LocateProgram:
                 case Fix::Kind::LocateDir:
                 case Fix::Kind::LowerEngineThreads:

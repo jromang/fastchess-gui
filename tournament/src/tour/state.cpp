@@ -16,6 +16,7 @@
 #include "engine_text.hpp"
 #include "pairing.hpp"
 #include "pgn_book.hpp"
+#include "sprt_rules.hpp"
 
 namespace fcg::tour {
 
@@ -74,6 +75,7 @@ nlohmann::json toJson(const GameResult& r) {
                         {"cb", {r.pgn_chessbase.offset, r.pgn_chessbase.length}},
                         {"at", r.finished_at}};
     if (!r.pv_warnings.empty()) j["pv"] = r.pv_warnings;
+    if (r.unbalanced != 0) j["unbalanced"] = r.unbalanced;
     if (r.set) {
         j["set"] = {{"why", r.set->why},
                     {"played", r.set->played_result},
@@ -98,6 +100,7 @@ GameResult resultFromJson(const nlohmann::json& j) {
     r.pgn_chessbase = {j.at("cb").at(0).get<uint64_t>(), j.at("cb").at(1).get<uint32_t>()};
     r.finished_at   = j.value("at", int64_t{0});
     if (j.contains("pv")) j.at("pv").get_to(r.pv_warnings);
+    r.unbalanced = std::clamp(j.value("unbalanced", 0), -1, 1);
     if (const auto it = j.find("set"); it != j.end() && it->is_object()) {
         ResultSet set;
         set.why                = it->value("why", std::string{});
@@ -419,7 +422,8 @@ void TournamentState::load() {
     // A damaged line (a disk that lost part of a write) is skipped rather than making the tournament impossible to
     // open; read-only, the file is not touched.
     std::vector<std::string> damaged;
-    const auto events = withoutUndoneEdits(Journal::read(dir_ / JOURNAL_FILE, !read_only_, &damaged));
+    const auto events =
+        withoutUndoneEdits(Journal::read(dir_ / JOURNAL_FILE, !read_only_, &damaged, &journal_size_));
     for (const auto& d : damaged) warnings_.push_back(d + ": skipped");
     std::set<uint64_t> written_out;           // pgnPath() offsets of the games written to spec_.pgn_out
     std::optional<nlohmann::json> out_begun;  // a write to spec_.pgn_out begun, its end not journaled
@@ -435,7 +439,12 @@ void TournamentState::load() {
             if (type == "encounter_started") {
                 OpeningText text{e.at("fen").get<std::string>(), e.value("moves", std::vector<std::string>{})};
                 const auto encounter = e.at("encounter").get<uint32_t>();
-                started_[encounter]  = fromText(text, frc());
+                // Started again: its opening was replaced, as unbalanced (replaceUnbalanced()).
+                if (started_.count(encounter)) {
+                    ++replaced_;
+                    ++replacements_[encounter];
+                }
+                started_[encounter] = fromText(text, frc());
                 if (const auto enc = schedule_.at(encounter); enc && openingPerRound()) {
                     round_openings_.emplace(std::pair{enc->cycle, enc->round}, started_[encounter]);
                 }
@@ -939,11 +948,13 @@ void TournamentState::applyEdit(const Edit& edit) {
 
 bool TournamentState::canUndo() const {
     std::lock_guard<std::mutex> lock(mutex_);
+    if (read_only_) return replica_.can_undo;
     return undo_ && (undo_->results_only || undo_->claims == claims_);
 }
 
 bool TournamentState::undoLasts() const {
     std::lock_guard<std::mutex> lock(mutex_);
+    if (read_only_) return replica_.undo_lasts;
     return undo_ && undo_->results_only;
 }
 
@@ -1002,10 +1013,11 @@ std::vector<ScheduleRow> TournamentState::scheduleRows() const {
         row.encounter = *schedule_.at(e);
         for (int g = 0; g < 2; ++g) {
             const auto n  = uint64_t{e} * 2 + g;
-            row.status[g] = done_.count(n)      ? GameStatus::Done
-                            : dropped_.count(n) ? GameStatus::Dropped
-                            : running_.count(n) ? GameStatus::Running
-                                                : GameStatus::Pending;
+            const auto& running = read_only_ ? replica_.running : running_;
+            row.status[g]       = done_.count(n)      ? GameStatus::Done
+                                  : dropped_.count(n) ? GameStatus::Dropped
+                                  : running.count(n)  ? GameStatus::Running
+                                                      : GameStatus::Pending;
         }
         rows.push_back(row);
     }
@@ -1054,17 +1066,27 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
     const auto own_book = [&](fastchess::EngineConfiguration& config, const Participant& p) {
         if (p.book.empty()) return;
         const auto seed = spec_.conditions.seed ^ (0x9e3779b97f4a7c15ULL * static_cast<uint64_t>(p.id + 1));
-        config          = throughBookAdapter(std::move(config), ownBookFileOf(p), p.book_depth, seed);
+        config = throughBookAdapter(std::move(config), ownBookFileOf(p), p.book_depth, seed, spec_.book_randomness);
     };
     own_book(task.white, game == 0 ? *first : *second);
     own_book(task.black, game == 0 ? *second : *first);
     return task;
 }
 
-std::optional<GameTask> TournamentState::claimNext() {
+std::optional<GameTask> TournamentState::claimNext(const Admit& admit) {
     const Bump bump{version_};
     std::lock_guard<std::mutex> lock(mutex_);
     if (finished_ || read_only_) return std::nullopt;
+
+    // The game is held back (nothing claimed) when the runner cannot start it now.
+    const auto admitted = [&](uint32_t encounter) {
+        if (!admit) return true;
+        const auto e = schedule_.at(encounter);
+        if (!e) return true;
+        const auto* first  = spec_.participant(e->first);
+        const auto* second = spec_.participant(e->second);
+        return !first || !second || admit(*first, *second);
+    };
 
     // The games of the participants whose engine cannot start wait for its next try.
     const auto aside_ids = start_failures_.setAside(StartFailures::Clock::now());
@@ -1091,6 +1113,7 @@ std::optional<GameTask> TournamentState::claimNext() {
         } else if (aside(encounter)) {
             ++it;
         } else {
+            if (!admitted(encounter)) return std::nullopt;
             open_.erase(it);
             return claim(encounter, game);
         }
@@ -1103,7 +1126,7 @@ std::optional<GameTask> TournamentState::claimNext() {
     for (; schedule_.at(next) && aside(next); ++next) {
         if (!schedule_.size() && next - next_encounter_ > 1000) return std::nullopt;
     }
-    if (!schedule_.at(next)) return std::nullopt;
+    if (!schedule_.at(next) || !admitted(next)) return std::nullopt;
     for (auto passed = next_encounter_; passed < next; ++passed) {
         open_.emplace_back(passed, 0);
         open_.emplace_back(passed, 1);
@@ -1180,6 +1203,11 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
         }
     }
     const auto& game = marked ? *marked : data;
+    // An opening that decided the game by itself, from the evaluations after the book (the own books' moves are book
+    // moves by now). The result is not changed.
+    if (spec_.unbalanced_cp > 0) {
+        result.unbalanced = unbalancedOpening(game, {spec_.unbalanced_cp, spec_.unbalanced_moves});
+    }
 
     std::unique_lock<std::mutex> lock(mutex_);
     const auto elo      = [&](int id) { return spec_.participant(id) ? spec_.participant(id)->elo : 0; };
@@ -1244,6 +1272,8 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     Recorded recorded{result, std::nullopt};
     if (apply(result)) {
         recorded.pair = pairs_[{std::min(result.white, result.black), std::max(result.white, result.black)}];
+        // Its pair played from an unbalanced opening, played again from another: its statistics did not count.
+        if (replaceUnbalanced(result.encounter)) recorded.pair.reset();
     }
     out_held_.push_back(results_.size() - 1);
     checkSprt();
@@ -1252,6 +1282,49 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     writeOut(lock);
 
     return recorded;
+}
+
+bool TournamentState::replaceUnbalanced(uint32_t encounter) {
+    if (!spec_.unbalanced_replace || spec_.unbalanced_cp <= 0 || finished_ || !journal_) return false;
+    const bool unbalanced = std::any_of(results_.begin(), results_.end(), [&](const GameResult& r) {
+        return !r.voided && r.encounter == encounter && r.unbalanced != 0;
+    });
+    if (!unbalanced || replacements_[encounter] >= MAX_OPENING_REPLACEMENTS) return false;
+    const auto& book = openings();
+    const auto n     = book.size();
+    if (n < 2) return false;  // no other opening to play
+
+    // One from the end of the book, which the tournament would reach last (in its playing order: shuffled with the
+    // seed in random order): the openings of the encounters to come are not moved. Not the same one again.
+    const auto current = toText(started_[encounter], frc());
+    auto index         = n - 1 - static_cast<std::size_t>(replaced_ % n);
+    auto text          = toText(book.at(index), frc());
+    if (text.fen == current.fen && text.moves == current.moves) {
+        index = (index + n - 1) % n;
+        text  = toText(book.at(index), frc());
+    }
+
+    // Its games voided and played again, as a void of the Games tab would, then the encounter started anew from
+    // that opening: a resume, and the versions before, read the last opening an encounter started with.
+    nlohmann::json games = nlohmann::json::array();
+    games.push_back(nlohmann::json::array({encounter, 0}));
+    games.push_back(nlohmann::json::array({encounter, 1}));
+    const nlohmann::json voided = {
+        {"t", "games_voided"}, {"games", games}, {"replay", true}, {"why", UNBALANCED_REASON}};
+    journal_->append(voided);
+    applyEvent(voided);
+    // The user's last change is no longer the last edit of the journal: undoing it would undo this void instead.
+    undo_.reset();
+    journal_->append({{"t", "encounter_started"}, {"encounter", encounter}, {"fen", text.fen}, {"moves", text.moves}});
+    started_[encounter] = book.at(index);
+    ++replaced_;
+    ++replacements_[encounter];
+    return true;
+}
+
+uint64_t TournamentState::openingsReplaced() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return replaced_;
 }
 
 void TournamentState::finishIfComplete() {
@@ -1437,6 +1510,7 @@ bool TournamentState::settleOut(const nlohmann::json& begun,
 
 std::string TournamentState::pgnOutError() const {
     std::lock_guard<std::mutex> lock(mutex_);
+    if (read_only_) return replica_.pgn_out_error;
     return out_error_;
 }
 
@@ -1449,7 +1523,9 @@ void TournamentState::checkSprt() {
     if (it == pairs_.end()) return;
     const auto stats = a < b ? it->second : ~it->second;
 
-    const auto verdict = sprt_.getResult(sprt_.getLLR(stats, true));
+    // No decision before the minimum of games, however far the LLR is beyond a bound (sprt_rules.hpp).
+    const auto games   = static_cast<uint64_t>(std::max(0, stats.sum()));
+    const auto verdict = sprtDecision(sprt_, sprt_.getLLR(stats, true), games, spec_.sprt_min_games);
     if (verdict == fastchess::SPRT_CONTINUE) return;
 
     finished_      = true;
@@ -1551,6 +1627,65 @@ bool TournamentState::gamesLeft() const {
         if (!done(encounter, game) && !dropped_.count(n) && !running_.count(n)) return true;
     }
     return schedule_.at(next_encounter_).has_value();
+}
+
+nlohmann::json gameResultJson(const GameResult& result) { return toJson(result); }
+
+GameResult gameResultFromJson(const nlohmann::json& j) { return resultFromJson(j); }
+
+void TournamentState::setJournalListener(Journal::Listener listener) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (journal_) journal_->setListener(std::move(listener));
+}
+
+uint64_t TournamentState::journalSize() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return journal_size_;
+}
+
+bool TournamentState::follow(const nlohmann::json& e, uint64_t end) {
+    if (!read_only_) throw std::logic_error("only a read-only tournament follows another program's journal");
+    const Bump bump{version_};
+    std::lock_guard<std::mutex> lock(mutex_);
+    const auto type = e.at("t").get<std::string>();
+    // What the writer wrote: undoing an edit needs what it changed, which only a fresh open knows.
+    if (type == "edit_undone") return false;
+    if (type == "encounter_started") {
+        OpeningText text{e.at("fen").get<std::string>(), e.value("moves", std::vector<std::string>{})};
+        const auto encounter = e.at("encounter").get<uint32_t>();
+        // Started again: its opening was replaced, as unbalanced (replaceUnbalanced()).
+        if (started_.count(encounter)) {
+            ++replaced_;
+            ++replacements_[encounter];
+        }
+        started_[encounter] = fromText(text, frc());
+        if (const auto enc = schedule_.at(encounter); enc && openingPerRound()) {
+            round_openings_.emplace(std::pair{enc->cycle, enc->round}, started_[encounter]);
+        }
+        next_encounter_ = std::max(next_encounter_, encounter + 1);
+    } else if (isEditEvent(type)) {
+        applyEvent(e);
+    } else if (type == "round_paired" || type == "tiebreak_added") {
+        applyRoundEvent(e);
+    } else if (type == "game_finished") {
+        const auto result = resultFromJson(e);
+        replica_.running.erase(result.number());
+        apply(result);
+    } else if (type == "finished") {
+        finished_      = true;
+        finish_reason_ = e.value("why", std::string{});
+    } else if (type != "pgn_out") {
+        throw std::runtime_error("unknown event \"" + type + "\"");
+    }
+    journal_size_ = std::max(journal_size_, end);
+    return true;
+}
+
+void TournamentState::setReplicaStatus(ReplicaStatus status) {
+    if (!read_only_) return;
+    const Bump bump{version_};
+    std::lock_guard<std::mutex> lock(mutex_);
+    replica_ = std::move(status);
 }
 
 bool TournamentState::finished() const {

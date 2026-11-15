@@ -251,6 +251,25 @@ void Storage::setWindowPlace(const WindowPlace& place) const {
     save(root_ / "settings.json", settings);
 }
 
+MachineBudget Storage::machineBudget() const {
+    const auto s = settings();
+    MachineBudget b;
+    b.cores           = std::max(0, setting(s, "budget_cores", 0));
+    b.memory_mb       = std::max(0, setting(s, "budget_memory_mb", 0));
+    b.gpus            = std::max(0, setting(s, "budget_gpus", 0));
+    b.queue_when_free = setting(s, "queue_when_free", false);
+    return b;
+}
+
+void Storage::setMachineBudget(const MachineBudget& budget) const {
+    auto settings                = this->settings();
+    settings["budget_cores"]     = budget.cores;
+    settings["budget_memory_mb"] = budget.memory_mb;
+    settings["budget_gpus"]      = budget.gpus;
+    settings["queue_when_free"]  = budget.queue_when_free;
+    save(root_ / "settings.json", settings);
+}
+
 update::Settings Storage::updateSettings() const {
     const auto s = settings();
     update::Settings out;
@@ -334,19 +353,60 @@ void Storage::saveQueue(const std::vector<QueuedTournament>& queue) const {
     save(root_ / "queue.json", kept);
 }
 
-std::optional<RunningMarker> Storage::runningMarker() const { return readJson<RunningMarker>(root_ / "running.json"); }
-
-void Storage::setRunningMarker(const std::optional<RunningMarker>& marker) const {
-    if (marker) {
-        save(root_ / "running.json", *marker);
-    } else {
-        std::error_code ec;
-        fs::remove(root_ / "running.json", ec);
+std::vector<RunningMarker> Storage::runningMarkers() const {
+    std::vector<RunningMarker> out;
+    const auto j = readJson<nlohmann::json>(root_ / "running.json");
+    if (!j) return out;
+    try {
+        if (j->is_array()) {
+            for (const auto& m : *j) out.push_back(m.get<RunningMarker>());
+        } else if (j->is_object()) {
+            out.push_back(j->get<RunningMarker>());
+        }
+    } catch (const std::exception&) {
+        out.clear();
     }
+    std::erase_if(out, [](const RunningMarker& m) { return m.dir.empty(); });
+    return out;
+}
+
+std::optional<RunningMarker> Storage::runningMarker(const std::string& dir) const {
+    for (const auto& m : runningMarkers()) {
+        if (m.dir == dir) return m;
+    }
+    return std::nullopt;
+}
+
+namespace {
+
+void saveMarkers(const fs::path& file, const std::vector<RunningMarker>& markers) {
+    if (markers.empty()) {
+        std::error_code ec;
+        fs::remove(file, ec);
+        return;
+    }
+    (void)writeJson(file, nlohmann::json(markers));
+}
+
+}  // namespace
+
+void Storage::setRunningMarker(const RunningMarker& marker) const {
+    auto markers = runningMarkers();
+    const auto it =
+        std::find_if(markers.begin(), markers.end(), [&](const RunningMarker& m) { return m.dir == marker.dir; });
+    if (it != markers.end()) {
+        *it = marker;
+    } else {
+        markers.push_back(marker);
+    }
+    saveMarkers(root_ / "running.json", markers);
 }
 
 void Storage::clearRunningMarker(const std::string& dir) const {
-    if (markerNames(runningMarker(), dir)) setRunningMarker(std::nullopt);
+    auto markers     = runningMarkers();
+    const auto count = markers.size();
+    std::erase_if(markers, [&](const RunningMarker& m) { return m.dir == dir; });
+    if (markers.size() != count) saveMarkers(root_ / "running.json", markers);
 }
 
 }  // namespace fcg

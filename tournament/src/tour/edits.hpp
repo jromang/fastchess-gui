@@ -27,6 +27,7 @@ struct Edit {
 
     fastchess::EngineConfiguration engine;        // add, replace: the new engine (its name is made unique if needed)
     int elo          = 0;                         // add, replace: the new engine's reference rating, 0 = none
+    bool gpu         = false;                     // add, replace: the new engine uses a GPU (Participant::gpu)
     bool catch_up    = true;                      // add: also play the cycles already started
     int team         = 0;                         // add, a team match: the team it joins (0: A, 1: B)
     int participant  = -1;                        // replace, withdraw: the participant's id
@@ -38,6 +39,10 @@ struct Edit {
     // Set result: "1-0", "0-1" or "1/2-1/2". The result the game was played to takes the game back as played.
     std::string result;
 };
+
+// An edit as the window sends it to the tournament process, and back.
+void to_json(nlohmann::json& j, const Edit& edit);
+void from_json(const nlohmann::json& j, Edit& edit);
 
 // What an edit changes, computed before it is made.
 struct Impact {

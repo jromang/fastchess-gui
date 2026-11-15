@@ -103,11 +103,11 @@ void App::panelsChanged() {
 }
 
 bool App::panelAvailable(std::string_view panel) const {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return false;
     // A detached board while its game can be played.
     if (const auto slot = layout::detachedSlot(panel)) {
-        const auto* obs = run_.observer();
+        const auto* obs = run_->observer();
         return obs && *slot < obs->slotCount();
     }
     return layout::available(panel, isMatch(), t->spec().format == tour::Format::Knockout);
@@ -237,16 +237,16 @@ void App::drawWorkspaceDock() {
 
 void App::drawPanels() {
     loadPanels();
-    if (tab_request_ && run_.tournament()) {
+    if (tab_request_ && run_->tournament()) {
         const std::string panel = panelOfTab(static_cast<int>(*tab_request_));
         tab_request_.reset();
         if (panelAvailable(panel)) showPanel(panel);
     }
-    if (!run_.tournament()) return;  // what is asked for waits for the tournament (--focus before --autostart)
+    if (!run_->tournament()) return;  // what is asked for waits for the tournament (--focus before --autostart)
     if (panel_request_ && !panelAvailable(*panel_request_)) panel_request_.reset();
 
     // The game followed, for the panels of its parts, also when the live view is not drawn.
-    if (const auto* obs = run_.observer(); obs && obs->slotCount() > 0) {
+    if (const auto* obs = run_->observer(); obs && obs->slotCount() > 0) {
         live_slot_ = std::clamp(live_slot_, 0, obs->slotCount() - 1);
         refreshSlot(live_slot_);
     }

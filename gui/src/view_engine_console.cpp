@@ -172,7 +172,7 @@ void App::drawEngineConsole(const EngineEntry& e) {
     }
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Ends the engine."));
 
-    if (run_.running()) {
+    if (run_->running()) {
         ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
         ImGui::TextWrapped("%s", TR("A tournament is running: what this engine searches takes cores from its games."));
         ImGui::PopStyleColor();

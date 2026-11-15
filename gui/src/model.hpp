@@ -94,6 +94,9 @@ struct EngineEntry {
     // Kept in the library, but out of the engine pickers and of the checks of the whole library. A tournament that
     // has it already plays it as before.
     bool inactive = false;
+    // It plays on a GPU (a network engine such as Lc0): no more such engines play at once than the GPUs of Settings.
+    // Saved only when set.
+    bool gpu = false;
     // Its logo: a file name in the profile's logos folder (Storage::logosDir), a copy of the picture chosen, so that
     // the original can move and the profile be moved whole. Saved only when set.
     std::string logo;
@@ -160,6 +163,7 @@ void to_json(BasicJsonType& nlohmann_json_j, const EngineEntry& nlohmann_json_t)
     if (!nlohmann_json_t.logo.empty()) nlohmann_json_j["logo"] = nlohmann_json_t.logo;
     if (nlohmann_json_t.read_from.size > 0) nlohmann_json_j["read_from"] = nlohmann_json_t.read_from;
     if (nlohmann_json_t.changes) nlohmann_json_j["changes"] = *nlohmann_json_t.changes;
+    if (nlohmann_json_t.gpu) nlohmann_json_j["gpu"] = true;
 }
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
@@ -170,6 +174,7 @@ void from_json(const BasicJsonType& nlohmann_json_j, EngineEntry& nlohmann_json_
     NLOHMANN_JSON_FROM_WITH_DEFAULT(aliases)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(logo)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(read_from)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(gpu)
     if (const auto it = nlohmann_json_j.find("changes"); it != nlohmann_json_j.end() && it->is_object())
         nlohmann_json_t.changes = it->template get<ProgramChanges>();
 }
@@ -265,6 +270,10 @@ struct MatchSetup {
     double sprt_beta       = 0.05;
     std::string sprt_model = "normalized";
     int sprt_max_games     = 0;  // 0 = no limit
+    // Added to both bounds given to the SPRT (a version known to be stronger or weaker by that much), and no decision
+    // before this many games, the LLR still shown (tour/sprt_rules.hpp); 0: none.
+    double sprt_bias   = 0;
+    int sprt_min_games = 0;
     // The SPRT calculator's guesses about the games to come; fishtest's values for its openings by default.
     double sprt_draw_ratio = 0.49;
     double sprt_rms_bias   = 191;  // Elo
@@ -289,6 +298,16 @@ struct MatchSetup {
     bool chess960          = false;  // Fischer random; without a book, the 960 starting positions
     bool opening_per_round = false;  // round robin, gauntlet, Swiss: one opening for every pair of a round
     uint64_t seed          = 0;      // 0 = new seed for every run
+    // How the moves of the Polyglot books are chosen, the tournament's and the participants' own: -100 the best move
+    // only, 0 by their weights, 100 every move alike (tour::choiceWeights()).
+    int book_randomness = 0;
+    // Unbalanced openings flagged as the games end (tour/unbalanced.hpp): both engines beyond unbalanced_cp for the
+    // same side for their first unbalanced_moves moves after the book; with unbalanced_replace, the pair is voided and
+    // played again from another opening.
+    bool unbalanced_enabled = false;
+    int unbalanced_cp       = 200;
+    int unbalanced_moves    = 4;
+    bool unbalanced_replace = false;
 
     bool draw_enabled   = false;
     int draw_movenumber = 40;
@@ -392,7 +411,8 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
         fixed_games, sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, sprt_draw_ratio,        \
         sprt_rms_bias, limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto,    \
         concurrency, affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out, \
-        engine_syzygy, engine_ownbook_off, book_a, book_b, big_scale, big_follow, big_seconds
+        engine_syzygy, engine_ownbook_off, book_a, book_b, big_scale, big_follow, big_seconds, book_randomness,       \
+        unbalanced_enabled, unbalanced_cp, unbalanced_moves, unbalanced_replace, sprt_bias, sprt_min_games
 #define FCG_MATCH_SETUP_FIELDS_2                                                                                  \
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,    \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,     \
@@ -448,21 +468,38 @@ struct QueuedTournament {
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(QueuedTournament, label, setup)
 
-// The tournament the window was running, kept while it runs (running.json), so that one still there when the
-// program starts again was interrupted: by a crash, a power cut, a reboot, or by quitting while it ran.
+// A tournament the window plays, kept while it plays (running.json lists them), so that one still there when the
+// program starts again was interrupted: by a crash, a power cut, a reboot, or by quitting while it ran; or plays on
+// without the window (detached), which connects to it again.
 struct RunningMarker {
     std::string dir;
     bool paused = false;  // the user paused it: it waits for them at the next launch too
     // Resumed at launch and not yet seen playing for a while: if the program ends meanwhile (the resume crashed
     // it), the next launch does not resume it again.
     bool resuming = false;
+    double weight = 1;  // its share of the machine against the others' (budget.hpp)
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RunningMarker, dir, paused, resuming)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RunningMarker, dir, paused, resuming, weight)
 
 // The marker names the tournament in `dir`: another window of the profile may have written its own since.
 [[nodiscard]] inline bool markerNames(const std::optional<RunningMarker>& marker, const std::string& dir) {
     return marker && marker->dir == dir;
 }
+
+// What the tournaments may use of the machine together (Settings): engine threads, memory, GPUs. 0 is the default:
+// the physical cores less one (one left to the window and the system), MEMORY_SHARE percent of the installed memory,
+// and no GPU counted.
+struct MachineBudget {
+    int cores     = 0;
+    int memory_mb = 0;
+    int gpus      = 0;
+    // The queue starts its next tournament as soon as the budget has cores no tournament playing can take, rather than
+    // once the tournament playing ended.
+    bool queue_when_free              = false;
+    static constexpr int MEMORY_SHARE = 75;
+
+    bool operator==(const MachineBudget&) const = default;
+};
 
 // What to do at launch about the tournament running when the program ended.
 enum class LaunchResume {

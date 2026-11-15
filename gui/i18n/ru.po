@@ -38,17 +38,41 @@ msgstr "! неверных PV: {}, в ходах этого цвета"
 msgid "%.1f pawns"
 msgstr "%.1f пешки"
 
+msgid "%d cores"
+msgstr "ядер: %d"
+
 msgid "%d games × %d threads > %d available threads."
 msgstr "Партий × потоков: %d × %d > доступных потоков: %d."
 
 msgid "%d plies"
 msgstr "полуходов: %d"
 
+msgid "%d · every move alike"
+msgstr "%d · все ходы поровну"
+
+msgid "%d · moves by their weights"
+msgstr "%d · ходы по их весу"
+
+msgid "%d · the best moves only"
+msgstr "%d · только лучшие ходы"
+
+msgid "%d · toward every move alike"
+msgstr "%d · ближе к равным шансам для всех ходов"
+
+msgid "%d · toward the best moves"
+msgstr "%d · ближе к лучшим ходам"
+
 msgid "%s  vs  %s"
 msgstr "%s  против  %s"
 
 msgid "%s: %d loss(es) on time, %d crash(es), %d illegal move(s)"
 msgstr "%s: поражений по времени: %d, вылетов: %d, нелегальных ходов: %d"
+
+msgid "(+{} tournament)"
+msgid_plural "(+{} tournaments)"
+msgstr[0] "(+{} турнир)"
+msgstr[1] "(+{} турнира)"
+msgstr[2] "(+{} турниров)"
 
 msgid "(already in the list)"
 msgstr "(уже в списке)"
@@ -122,6 +146,9 @@ msgstr "1 поражение по времени"
 msgid "10 games at 10+0.1 from 5 positions, to see before a long tournament whether it loses on time, crashes, plays an illegal move or uses its clock badly."
 msgstr "10 партий с контролем 10+0.1 из 5 позиций, чтобы перед долгим турниром проверить, не проигрывает ли движок по времени, не вылетает ли, не делает ли нелегальных ходов и хорошо ли распоряжается временем."
 
+msgid "200 cp: both engines think a side is two pawns ahead, or more."
+msgstr "200 cp: оба движка считают, что одна сторона впереди на две пешки или больше."
+
 msgid "200k nodes"
 msgstr "200k узлов"
 
@@ -179,11 +206,23 @@ msgstr "Файл на ваш выбор"
 msgid "A folder of 12 SVG pictures named wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg and bK.svg … bP.svg: the white and black king, queen, rook, bishop, knight and pawn."
 msgstr "Папка с 12 изображениями SVG с именами wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg и bK.svg … bP.svg: белые и чёрные король, ферзь, ладья, слон, конь и пешка."
 
+msgid "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
+msgid_plural "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
+msgstr[0] "Партии двух движков, использующих GPU, нужно два GPU, а на этой машине {} (настройки): такая партия играется одна."
+msgstr[1] "Партии двух движков, использующих GPU, нужно два GPU, а на этой машине {} (настройки): такая партия играется одна."
+msgstr[2] "Партии двух движков, использующих GPU, нужно два GPU, а на этой машине {} (настройки): такая партия играется одна."
+
 msgid "A game has no port: {}"
 msgstr "У партии нет порта: {}"
 
 msgid "A game is being analysed move by move: wait for its end, or cancel it."
 msgstr "Партия анализируется ход за ходом: дождитесь окончания или отмените."
+
+msgid "A game is flagged when both engines see the same side ahead by the score below for each of their first moves after the book: the Games tab can show those games, the Openings tab marks and counts their openings, the overview counts them. The results are not changed."
+msgstr "Партия отмечается, когда оба движка видят одну и ту же сторону впереди не меньше, чем на оценку ниже, на каждом из своих первых ходов после книги: вкладка «Партии» может показать эти партии, вкладка «Дебюты» отмечает и считает их дебюты, обзор их считает. Результаты не меняются."
+
+msgid "A game starts only when the Hash of its two engines, and what each engine process takes besides ({} MB, and {} MB per thread), fit in what the games playing leave: no tournament swaps. Automatic: {} % of the installed memory."
+msgstr "Партия начинается, только если Hash двух её движков и то, что каждый процесс движка занимает сверх того ({} МБ и {} МБ на поток), помещаются в то, что оставляют идущие партии: ни один турнир не уходит в подкачку. Автоматически: {} % установленной памяти."
 
 msgid "A game, or two with the colours reversed, between two engines of the library from this position, with a clock for each."
 msgstr "Партия или две со сменой цвета между двумя движками библиотеки из этой позиции, у каждого свои часы."
@@ -203,11 +242,11 @@ msgstr "Матч уже идёт."
 msgid "A match is running. The games in progress will be lost."
 msgstr "Идёт матч. Текущие партии будут потеряны."
 
-msgid "A match is running: wait for its end to open another one."
-msgstr "Идёт матч: дождитесь его окончания, чтобы открыть другой."
-
 msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr "PV матовой оценки должен иметь правильную длину и заканчиваться матом. PV всегда проверяются на нелегальные ходы; ходы с неверным PV отмечаются на вкладке «Партии»."
+
+msgid "A message of the tournament's process could not be read: {}"
+msgstr "Не удалось прочитать сообщение процесса турнира: {}"
 
 msgid "A move counts when the player who made it is rated this or more, by the game's WhiteElo or BlackElo tag; a player without a rating is left out."
 msgstr "Ход учитывается, если у сделавшего его игрока рейтинг не ниже этого, по тегу WhiteElo или BlackElo партии; игрок без рейтинга не учитывается."
@@ -220,6 +259,9 @@ msgstr "Вес хода — число партий, в которых он сы
 
 msgid "A move weighs the points the side that played it made in its games: a win 2, a draw 1, a loss 0, as Polyglot counts. The games without a result are left out, and so is a move whose games were all lost."
 msgstr "Вес хода — очки, набранные в его партиях стороной, которая его сделала: победа 2, ничья 1, поражение 0, как считает Polyglot. Партии без результата отбрасываются, как и ход, все партии с которым проиграны."
+
+msgid "A network engine that plays on a graphics card (Lc0...): no more such engines play at once than the GPUs of Settings ({}), in a tournament and across tournaments. From the next tournament it joins."
+msgstr "Сетевой движок, играющий на видеокарте (Lc0…): таких движков одновременно играет не больше, чем GPU в настройках ({}), в одном турнире и между турнирами. С ближайшего турнира, в который он войдёт."
 
 msgid "A or B of the match."
 msgstr "A или B матча."
@@ -356,6 +398,9 @@ msgstr[0] "Добавить {} движок"
 msgstr[1] "Добавить {} движка"
 msgstr[2] "Добавить {} движков"
 
+msgid "Added to elo0 and elo1, for a test against a version known to be stronger or weaker by that much: the SPRT is given [elo0 + bias, elo1 + bias]."
+msgstr "Прибавляется к elo0 и elo1 — для теста против версии, которая заведомо сильнее или слабее на столько: SPRT получает [elo0 + сдвиг, elo1 + сдвиг]."
+
 msgid "Add…"
 msgstr "Добавить…"
 
@@ -439,6 +484,9 @@ msgstr "Идёт чтение движка, повторите попытку ч
 
 msgid "An engine list…"
 msgstr "Список движков…"
+
+msgid "An engine of it uses a GPU, and no GPU is counted (Settings): games may share one."
+msgstr "Один из его движков использует GPU, а GPU не учитываются (настройки): партии могут делить одну."
 
 msgid "An evaluation swings"
 msgstr "Резкий скачок оценки"
@@ -602,6 +650,9 @@ msgstr "Большой экран"
 msgid "Black"
 msgstr "Чёрные"
 
+msgid "Black ahead: {}"
+msgstr "Чёрные впереди: {}"
+
 msgid "Black disconnects"
 msgstr "Чёрные отключились"
 
@@ -701,6 +752,9 @@ msgstr "Папка книг"
 msgid "Books the program writes, added to the library."
 msgstr "Книги, которые пишет программа; они добавляются в библиотеку."
 
+msgid "Both engines beyond ±{} cp for the same side for their first {} moves after the book. The results are not changed."
+msgstr "Оба движка за пределами ±{} cp в пользу одной стороны на своих первых {} ходах после книги. Результаты не меняются."
+
 msgid "Both engines must agree"
 msgstr "Оба движка должны согласиться"
 
@@ -776,6 +830,9 @@ msgstr "Не удалось импортировать {}: {}"
 msgid "Cannot load the Syzygy tablebases from "
 msgstr "Не удалось загрузить таблицы Syzygy из "
 
+msgid "Cannot open the tournament again: {}"
+msgstr "Не удаётся снова открыть турнир: {}"
+
 msgid "Cannot open the tournament: {}"
 msgstr "Не удалось открыть турнир: {}"
 
@@ -799,6 +856,9 @@ msgstr "Не удалось запустить матч: {}"
 
 msgid "Cannot start the quick test: {}"
 msgstr "Не удалось запустить быстрый тест: {}"
+
+msgid "Cannot start the tournament: {}"
+msgstr "Не удаётся запустить турнир: {}"
 
 msgid "Cannot start {}: {}"
 msgstr "Не удаётся запустить {}: {}"
@@ -1079,6 +1139,9 @@ msgstr "Копирование {} на {}…"
 msgid "Cores"
 msgstr "Ядра"
 
+msgid "Cores for the tournaments"
+msgstr "Ядра для турниров"
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "Ядра, занятые, пока он думает · доля ядра, используемая, пока думает соперник (0 % без ponder). Измеряется после 20 с каждого режима."
 
@@ -1108,6 +1171,9 @@ msgstr "Перекрёстная таблица"
 
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr "Ctrl + колесо мыши, Ctrl + и Ctrl -, Ctrl 0"
+
+msgid "Ctrl+click to type a value."
+msgstr "Ctrl+щелчок — ввести значение."
 
 msgid "Custom"
 msgstr "Своя"
@@ -1268,11 +1334,17 @@ msgstr "Каждая новая партия гаунтлета показыва
 msgid "Each pair is two games on the same opening, colours reversed."
 msgstr "Каждая пара — две партии одним дебютом с переменой цветов."
 
+msgid "Each plays on in its own process. The window shows them again at its next launch; fastchess-gui --attach <folder> talks with one from a terminal."
+msgstr "Каждый продолжает играть в своём процессе. Окно снова покажет их при следующем запуске; fastchess-gui --attach <папка> связывается с одним из них из терминала."
+
 msgid "Each round is two games, colours reversed, against an engine with a similar score."
 msgstr "Каждый тур — две партии с переменой цветов против движка с близким результатом."
 
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
 msgstr "В каждом туре встречаются движки с близкими результатами, никогда дважды одни и те же; для больших составов. Порядок списка задаёт посев."
+
+msgid "Each tournament: the cores its games use, of those it may use. The budget is set in Settings; the weights on each card decide who gets more."
+msgstr "Каждый турнир: ядра, которые используют его партии, из тех, что ему разрешены. Бюджет задаётся в настройках; веса на карточках решают, кому достаётся больше."
 
 msgid "Edit in place"
 msgstr "Изменить здесь"
@@ -1288,6 +1360,9 @@ msgstr "Elo (ДИ 95%)"
 
 msgid "Elo above the next engine of the list."
 msgstr "Эло выше следующего движка списка."
+
+msgid "Elo bias"
+msgstr "Сдвиг Elo"
 
 msgid "Elo difference"
 msgstr "Разница Elo"
@@ -1484,6 +1559,9 @@ msgstr "Каждый турнир — это папка: он продолжае
 msgid "Everyone against everyone"
 msgstr "Каждый с каждым"
 
+msgid "Everything"
+msgstr "Всё"
+
 msgid "Everything paused: no new game pair starts, and the queue waits for Resume all."
 msgstr "Всё приостановлено: новые пары партий не начинаются, очередь ждёт «Продолжить всё»."
 
@@ -1504,6 +1582,9 @@ msgstr "Экспортировать всё…"
 
 msgid "Export as EPD…"
 msgstr "Экспорт в EPD…"
+
+msgid "Export as EPD… leaves out the openings with a game flagged unbalanced."
+msgstr "«Экспорт в EPD…» пропускает дебюты, в которых есть партия, отмеченная как неравная."
 
 msgid "Export filtered…"
 msgstr "Экспортировать отфильтрованные…"
@@ -1577,6 +1658,12 @@ msgstr "Фиксированные узлы"
 msgid "Fixed nodes or depth: one game per hardware thread (Hyper-Threading does not change the moves played). With a clock: physical cores − 1, so the engines do not slow each other down."
 msgstr "Фиксированные узлы или глубина: одна партия на аппаратный поток (Hyper-Threading не меняет сыгранные ходы). С часами: физические ядра − 1, чтобы движки не замедляли друг друга."
 
+msgid "Flag unbalanced openings"
+msgstr "Отмечать неравные дебюты"
+
+msgid "Flagged unbalanced during the games"
+msgstr "Отмеченные как неравные во время партий"
+
 msgid "Flip"
 msgstr "Перевернуть"
 
@@ -1645,6 +1732,9 @@ msgstr "Из {}: {}"
 
 msgid "Full screen (F11)"
 msgstr "Во весь экран (F11)"
+
+msgid "GPUs"
+msgstr "GPU"
 
 msgid "Game #{}"
 msgstr "Партия № {}"
@@ -1838,6 +1928,9 @@ msgstr "Сколько лучших ходов показывать (MultiPV)."
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "Сколько раз играется каждая пара; каждый раз две партии со сменой цвета. Другие программы называют цикл раундом из 2 партий на встречу (-rounds N -games 2)."
 
+msgid "How the moves of a Polyglot book are chosen, for the tournament's openings and for the participants' own books: -100 the best move only, 0 in proportion to their weights, as Polyglot and Cute Chess choose, 100 every move alike. In between, -50 squares the weights and 50 takes their square roots."
+msgstr "Как выбираются ходы книги Polyglot — для дебютов турнира и для собственных книг участников: -100 только лучший ход, 0 пропорционально их весу, как выбирают Polyglot и Cute Chess, 100 все ходы поровну. В промежутке -50 возводит веса в квадрат, а 50 извлекает из них квадратный корень."
+
 msgid "How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."
 msgstr "Насколько несбалансированы дебюты: разброс даваемого ими преимущества в Elo. Пары партий одним дебютом его компенсируют, поэтому чем больше смещение, тем короче тест. Книга fishtest: около 191."
 
@@ -1931,6 +2024,9 @@ msgstr "Его размер {}×{} пикселей: не более {} по к�
 msgid "It needs the web page served."
 msgstr "Для этого веб-страница должна обслуживаться."
 
+msgid "It plays beside the tournaments running, sharing the cores with them."
+msgstr "Он играет рядом с идущими турнирами и делит с ними ядра."
+
 msgid "It plays every engine of the other team."
 msgstr "Он играет с каждым движком другой команды."
 
@@ -2006,6 +2102,9 @@ msgstr "Его рейтинг в списке, которому вы довер�
 msgid "Its results…"
 msgstr "Его результаты…"
 
+msgid "Its share of the cores against the other tournaments': a tournament of weight 2 gets twice the cores of one of weight 1, up to its own concurrency. Each tournament gets one game's worth first, while the budget allows (Settings)."
+msgstr "Его доля ядер по сравнению с другими турнирами: турнир с весом 2 получает вдвое больше ядер, чем турнир с весом 1, но не больше своей параллельности. Сначала каждый турнир получает ядра на одну партию, пока позволяет бюджет (настройки)."
+
 msgid "Its workspace: standings, live games, schedule"
 msgstr "Его рабочая область: турнирная таблица, партии онлайн, расписание"
 
@@ -2026,6 +2125,9 @@ msgstr "Сохранять журнал движков для каждой па�
 
 msgid "Keep the old default"
 msgstr "Оставить старое по умолчанию"
+
+msgid "Keep them running and quit"
+msgstr "Оставить играть и выйти"
 
 msgid "Kept in memory until fastchess-gui ends, never saved."
 msgstr "Хранится в памяти до завершения fastchess-gui, никогда не сохраняется."
@@ -2240,6 +2342,15 @@ msgstr "Макс. оценка (cp)"
 msgid "Maximum number of moves"
 msgstr "Максимальное число ходов"
 
+msgid "Memory"
+msgstr "Память"
+
+msgid "Memory for the engines"
+msgstr "Память для движков"
+
+msgid "Min games"
+msgstr "Мин. партий"
+
 msgid "Minimum games"
 msgstr "Минимум партий"
 
@@ -2333,6 +2444,9 @@ msgstr "Книг пока нет. Нажмите «Добавить»."
 msgid "No crashes, time losses or illegal moves"
 msgstr "Нет вылетов, поражений по времени и нелегальных ходов"
 
+msgid "No decision before this number of games, the LLR still shown: it guards a short test against an early lucky stop. 0 = none."
+msgstr "Никакого решения до этого числа партий, LLR по-прежнему показывается: защищает короткий тест от ранней случайной остановки. 0 = нет."
+
 msgid "No duplicate games"
 msgstr "Нет повторяющихся партий"
 
@@ -2407,6 +2521,12 @@ msgstr "Нет матча"
 
 msgid "No match yet. Choose two engines, then click Start."
 msgstr "Матча пока нет. Выберите два движка и нажмите «Запустить»."
+
+msgid "No more engines marked \"Uses a GPU\" (on their card) play at once than there are GPUs, in a tournament and across tournaments: two games never share a GPU without you knowing."
+msgstr "Одновременно играет не больше движков с отметкой «Использует GPU» (на их карточке), чем есть GPU, в одном турнире и между турнирами: две партии никогда не делят GPU без вашего ведома."
+
+msgid "No more engines that use a GPU play at once than the GPUs of Settings."
+msgstr "Одновременно играет не больше движков на GPU, чем GPU в настройках."
 
 msgid "No move after 10 seconds of a 0.3 s search."
 msgstr "Нет хода через 10 секунд при поиске на 0,3 с."
@@ -2585,6 +2705,9 @@ msgstr "В списке"
 msgid "Once it has played two tournaments."
 msgstr "Когда он сыграет два турнира."
 
+msgid "Once its two games are played, a pair with a game flagged is voided (its games stay in the PGN files and the journal) and played again from an opening at the end of the book, which the tournament would play last; at most {} times for one pair."
+msgstr "Когда обе её партии сыграны, пара с отмеченной партией аннулируется (её партии остаются в файлах PGN и в журнале) и переигрывается из дебюта в конце книги, который турнир сыграл бы последним; не больше {} раз для одной пары."
+
 msgid "Once the game is over."
 msgstr "Когда партия закончится."
 
@@ -2630,6 +2753,9 @@ msgstr "Открыть файл…"
 msgid "Open a folder…"
 msgstr "Открыть папку…"
 
+msgid "Open it for its end and its leader"
+msgstr "Откройте его, чтобы увидеть окончание и лидера"
+
 msgid "Open the engine"
 msgstr "Открыть движок"
 
@@ -2671,6 +2797,9 @@ msgstr "Дебют · {}"
 
 msgid "Openings"
 msgstr "Дебюты"
+
+msgid "Openings with a game flagged unbalanced: both engines beyond ±{} cp for the same side for their first {} moves after the book."
+msgstr "Дебюты с партией, отмеченной как неравная: оба движка за пределами ±{} cp в пользу одной стороны на своих первых {} ходах после книги."
 
 msgid "Openings: {}"
 msgstr "Дебюты: {}"
@@ -2722,6 +2851,9 @@ msgstr "Допустимое превышение времени, прежде �
 
 msgid "Overview"
 msgstr "Обзор"
+
+msgid "Own books: {}"
+msgstr "Собственные книги: {}"
 
 msgid "OwnBook is set to false on the engines that have it, so that every game is played from the openings of the tournament."
 msgstr "У движков с опцией OwnBook она устанавливается в false, чтобы каждая партия игралась из дебютов турнира."
@@ -2858,6 +2990,9 @@ msgstr "Всё равно играть"
 msgid "Play games again"
 msgstr "Переиграть партии"
 
+msgid "Play the pair again from another opening"
+msgstr "Переиграть пару из другого дебюта"
+
 msgid "Play the two games"
 msgstr "Сыграть две партии"
 
@@ -2900,8 +3035,8 @@ msgstr "Очки"
 msgid "Polyglot book"
 msgstr "Книга Polyglot"
 
-msgid "Polyglot book: its lines to {} plies, as positions"
-msgstr "Книга Polyglot: её варианты до глубины {} (в полуходах), в виде позиций"
+msgid "Polyglot book: its lines to {} plies, as positions; {}"
+msgstr "Книга Polyglot: её варианты до глубины {} (в полуходах), в виде позиций; {}"
 
 msgid "Ponder is on for {}"
 msgstr "Ponder включён у {}"
@@ -3022,6 +3157,9 @@ msgstr "RMS-смещение (Elo)"
 
 msgid "Random order"
 msgstr "Случайный порядок"
+
+msgid "Randomness"
+msgstr "Случайность"
 
 msgid "Rating"
 msgstr "Рейтинг"
@@ -3410,20 +3548,26 @@ msgstr "Устанавливает опцию Threads движка {} на {} в
 msgid "Settings"
 msgstr "Параметры"
 
-msgid "Settings are locked while a match is running."
-msgstr "Настройка заблокирована, пока идёт матч."
-
 msgid "Setup"
 msgstr "Настройка"
 
 msgid "Share of drawn games."
 msgstr "Доля ничейных партий."
 
+msgid "Show"
+msgstr "Показать"
+
 msgid "Show it"
 msgstr "Показать её"
 
+msgid "Show the games from unbalanced openings"
+msgstr "Показать партии из неравных дебютов"
+
 msgid "Show the navigation buttons under the boards"
 msgstr "Показать кнопки навигации под досками"
+
+msgid "Show the unbalanced openings"
+msgstr "Показать неравные дебюты"
 
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "Показать эту партию в отдельной панели, которую можно закрепить рядом с другими или перенести на другой экран."
@@ -3490,6 +3634,9 @@ msgstr "Начальная позиция, предыдущий ход, след
 
 msgid "Start timeout (s)"
 msgstr "Тайм-аут запуска (с)"
+
+msgid "Start when cores are free"
+msgstr "Запускать, когда есть свободные ядра"
 
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr "Запускаются один за другим, когда текущий турнир завершается сам."
@@ -3568,6 +3715,9 @@ msgstr "Остановка…"
 
 msgid "Submission checklist"
 msgstr "Чек-лист перед отправкой"
+
+msgid "Such a pair is voided and played again from another opening, at most {} times."
+msgstr "Такая пара аннулируется и переигрывается из другого дебюта, не больше {} раз."
 
 msgid "Suggest"
 msgstr "Предложить"
@@ -3752,6 +3902,12 @@ msgstr "Счётчик 50 ходов, материал и оставшиеся �
 msgid "The Elo difference {}'s score stands for, with its 95 % interval, counted on the pairs of games as in a match (pentanomial); LOS: the likelihood that it is the stronger team. +{} ={} −{}."
 msgstr "Разница Elo, которой соответствует результат команды {}, с интервалом 95 %, по парам партий, как в матче (пентаномиально); LOS: вероятность того, что это более сильная команда. +{} ={} −{}."
 
+msgid "The LLR is beyond a bound: no decision before {} game, {} played."
+msgid_plural "The LLR is beyond a bound: no decision before {} games, {} played."
+msgstr[0] "LLR за пределом: без решения до {} партии, сыграно {}."
+msgstr[1] "LLR за пределом: без решения до {} партий, сыграно {}."
+msgstr[2] "LLR за пределом: без решения до {} партий, сыграно {}."
+
 msgid "The Log page: fastchess' output and the program's messages"
 msgstr "Страница «Журнал»: вывод fastchess и сообщения программы"
 
@@ -3839,6 +3995,9 @@ msgstr "Цвета досок при светлой теме."
 msgid "The connection to {} broke while {}."
 msgstr "Соединение с {} прервалось (этап: {})."
 
+msgid "The connection with the tournament's process was lost."
+msgstr "Связь с процессом турнира потеряна."
+
 msgid "The console of {} is open."
 msgstr "Консоль {} открыта."
 
@@ -3871,6 +4030,9 @@ msgstr "Движок перестал отвечать после отправк
 
 msgid "The engine stopped while it was asked to think."
 msgstr "Движок остановился, когда его попросили думать."
+
+msgid "The engine threads the tournaments playing at once share, by their weights (each card of the home page). Automatic: the physical cores less one, {} here. A tournament alone plays as many games as its concurrency says."
+msgstr "Потоки движков, которые делят одновременно идущие турниры по своим весам (каждая карточка главной страницы). Автоматически: физические ядра минус одно, здесь {}. Турнир в одиночку играет столько партий, сколько задаёт его параллельность."
 
 msgid "The engine wrote:"
 msgstr "Движок написал:"
@@ -3953,6 +4115,9 @@ msgstr "Партии в том виде, в каком их присылают �
 msgid "The games counted, as a PGN of headers, which Ordo and BayesElo read: ordo -p ratings.pgn -o ratings.txt"
 msgstr "Учтённые партии в виде PGN из одних заголовков, который читают Ordo и BayesElo: ordo -p ratings.pgn -o ratings.txt"
 
+msgid "The games in progress are lost; each tournament resumes exactly where it stopped."
+msgstr "Текущие партии будут потеряны; каждый турнир продолжится ровно с того места, где остановился."
+
 msgid "The games wait for {}: {}. Another try after each game."
 msgstr "Партии ждут {}: {}. Новая попытка после каждой партии."
 
@@ -4016,6 +4181,9 @@ msgstr "Последняя проверка или чтение завершил
 msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
 msgstr "Имя в библиотеке, которое ему дадут следующие турниры. Уже сыгранные турниры сохраняют старое, как и их партии и рейтинги."
 
+msgid "The lines of one tournament, or of the window."
+msgstr "Строки одного турнира или окна."
+
 msgid "The list order is the seeding."
 msgstr "Порядок списка — это посев."
 
@@ -4037,11 +4205,23 @@ msgstr "На машине {} {}, на этом компьютере {} {}: ск�
 msgid "The machine's name on the network, or its address (192.168.1.20)."
 msgstr "Имя машины в сети или её адрес (192.168.1.20)."
 
+msgid "The memory budget of Settings, {}: a game starts only when its engines' Hash and processes fit in it."
+msgstr "Бюджет памяти из настроек, {}: партия начинается, только если Hash и процессы её движков в него помещаются."
+
+msgid "The memory budget, {}, lets {} of the {} games play at a time: each takes {} (the Hash of its engines and their processes). The others wait for it."
+msgstr "Бюджет памяти, {}, позволяет играть {} из {} партий одновременно: каждая занимает {} (Hash её движков и их процессы). Остальные ждут."
+
 msgid "The most interesting"
 msgstr "Самая интересная"
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "Ход, который обдумывает сторона, чья очередь ходить, и ожидаемый ответ — цветами движков, которые их сделали бы."
+
+msgid "The next tournament starts beside those running as soon as the cores of the budget (Settings) are more than they can take, each at its concurrency."
+msgstr "Следующий турнир запускается рядом с идущими, как только ядер в бюджете (настройки) больше, чем они могут взять, каждый со своей параллельностью."
+
+msgid "The number of moves each engine plays after the book, all of them beyond the score."
+msgstr "Число ходов, которые каждый движок делает после книги, все за пределами оценки."
 
 msgid "The number of nodes must be positive."
 msgstr "Число узлов должно быть положительным."
@@ -4096,6 +4276,9 @@ msgstr "Порт от 1 до 65535 (22 для SSH)."
 
 msgid "The port the server opens for the page, as ssh -R REMOTE_PORT:localhost:PORT user@host would ask (0: the server chooses). Authentication \"none\" only: a service that lets anyone in, or a server of one's own that lets the user in without a key. Its host key is trusted the first time and must stay the same."
 msgstr "Порт, который сервер открывает для страницы, как его запросил бы ssh -R REMOTE_PORT:localhost:PORT user@host (0: выбирает сервер). Только аутентификация «none»: сервис, пускающий всех, или собственный сервер, пускающий пользователя без ключа. Ключ хоста принимается при первом подключении и не должен меняться."
+
+msgid "The positions of the Polyglot book in the order they are drawn, each once, the likelier lines (by the weights of their moves, as the randomness makes them) the sooner; or in the order of the book, from Start at."
+msgstr "Позиции книги Polyglot в порядке розыгрыша, каждая один раз, более вероятные варианты (по весу их ходов с учётом случайности) раньше; или в порядке книги, начиная с «Начать с»."
 
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
 msgstr "Процессорное время процессов каждого движка, пока он думает (не больше ядер, чем его потоков) и пока думает соперник (ноль без пондеринга). Измеряется во время партий, сыгранных в окне, и сохраняется вместе с ними для возобновления турнира."
@@ -4159,6 +4342,9 @@ msgstr "Один и тот же движок с разными книгами"
 
 msgid "The same for both"
 msgstr "Одинаковые для обоих"
+
+msgid "The same for every book of the tournament: also in the Openings section."
+msgstr "Одна для всех книг турнира: также в разделе «Дебюты»."
 
 msgid "The same match with a new engine A in place of {}, e.g. its next version."
 msgstr "Тот же матч с новым движком A вместо {}, например его следующей версией."
@@ -4232,6 +4418,9 @@ msgstr "С таким присуждением турнир не может на
 msgid "The tournament goes on with the programs as they are now; this notice closes."
 msgstr "Турнир продолжается с программами в их нынешнем виде; это уведомление закрывается."
 
+msgid "The tournament is not playing."
+msgstr "Турнир не идёт."
+
 msgid "The tournament is not running: resume it to play the new games."
 msgstr "Турнир не запущен: возобновите его, чтобы сыграть новые партии."
 
@@ -4247,6 +4436,21 @@ msgstr "Турнир остаётся в списке: его можно про�
 msgid "The tournament was changed."
 msgstr "Турнир изменён."
 
+msgid "The tournament's process did not answer."
+msgstr "Процесс турнира не ответил."
+
+msgid "The tournament's process ended as it started: see its log (fastchess-gui.log in its folder)."
+msgstr "Процесс турнира завершился при запуске: смотрите его журнал (fastchess-gui.log в его папке)."
+
+msgid "The tournament's process ended unexpectedly (exit code {}): it resumes exactly where it stopped."
+msgstr "Процесс турнира неожиданно завершился (код выхода {}): турнир продолжится ровно с того места, где остановился."
+
+msgid "The tournament's process is gone."
+msgstr "Процесса турнира больше нет."
+
+msgid "The tournament's process speaks another version of the program ({}): restart the window."
+msgstr "Процесс турнира работает с другой версией программы ({}): перезапустите окно."
+
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "Дисперсия партии при подсчёте по парам, делённая на дисперсию отдельных партий: если она меньше 1, парам нужно во столько же раз меньше партий для той же точности."
 
@@ -4256,17 +4460,29 @@ msgstr "Версия и система — для сообщения об оши
 msgid "The whole log, to the clipboard."
 msgstr "Весь журнал — в буфер обмена."
 
+msgid "The window"
+msgstr "Окно"
+
 msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
 msgstr "Окно рисует процессор (программный рендерер SDL), а не видеокарта через OpenGL: для виртуальных машин, удалённых рабочих столов и неисправных графических драйверов. Медленнее, а панели, вынесенные из окна, остаются внутри него. --software в командной строке делает то же самое на один запуск."
 
 msgid "The working directory of {} is not found: {}"
 msgstr "Рабочая папка движка {} не найдена: {}"
 
+msgid "The {} GPU lets {} game with an engine that uses a GPU play at a time; the other games play beside it."
+msgid_plural "The {} GPUs let {} games with an engine that uses a GPU play at a time; the other games play beside them."
+msgstr[0] "{} GPU позволяет играть одновременно {} партиям с движком на GPU; остальные партии играются рядом."
+msgstr[1] "{} GPU позволяют играть одновременно {} партиям с движком на GPU; остальные партии играются рядом."
+msgstr[2] "{} GPU позволяют играть одновременно {} партиям с движком на GPU; остальные партии играются рядом."
+
 msgid "Their PGN file, its games listed beside the moves."
 msgstr "Их PGN-файл, партии перечислены рядом с ходами."
 
 msgid "Theme"
 msgstr "Тема"
+
+msgid "There is no change to undo."
+msgstr "Нет изменений для отмены."
 
 msgid "These settings are the analysis's: they change neither the engine in the library nor a tournament."
 msgstr "Это настройки анализа: они не меняют ни движок в библиотеке, ни турнир."
@@ -4307,8 +4523,23 @@ msgstr "Это последняя версия."
 msgid "This match is already finished."
 msgstr "Этот матч уже завершён."
 
+msgid "This program cannot find its own file to start a tournament."
+msgstr "Программа не находит собственный файл, чтобы запустить турнир."
+
+msgid "This tournament is playing already."
+msgstr "Этот турнир уже идёт."
+
+msgid "This tournament is playing in another program."
+msgstr "Этот турнир играет другая программа."
+
+msgid "This tournament is shown in another window."
+msgstr "Этот турнир показан в другом окне."
+
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr "Этот турнир запущен без «Перезапускать вылетевший движок» (настройка, PGN и прочее): завершение партии останавливает движок, чей ход, а это остановило бы турнир. Задайте результат, когда партия закончится, на вкладке «Партии»."
+
+msgid "This window (quick test, analysis)"
+msgstr "Это окно (быстрый тест, анализ)"
 
 msgid "Those with a problem"
 msgstr "Проблемные"
@@ -4439,6 +4670,21 @@ msgstr "Соответствие UCI: этап {} не пройден, см. о�
 msgid "UDP port"
 msgstr "Порт UDP"
 
+msgid "Unbalanced opening"
+msgstr "Неравный дебют"
+
+msgid "Unbalanced openings flagged: both engines beyond ±{} cp for {} move after the book"
+msgid_plural "Unbalanced openings flagged: both engines beyond ±{} cp for {} moves after the book"
+msgstr[0] "Неравные дебюты отмечаются: оба движка за пределами ±{} cp в течение {} хода после книги"
+msgstr[1] "Неравные дебюты отмечаются: оба движка за пределами ±{} cp в течение {} ходов после книги"
+msgstr[2] "Неравные дебюты отмечаются: оба движка за пределами ±{} cp в течение {} ходов после книги"
+
+msgid "Unbalanced openings replaced: both engines beyond ±{} cp for {} move after the book"
+msgid_plural "Unbalanced openings replaced: both engines beyond ±{} cp for {} moves after the book"
+msgstr[0] "Неравные дебюты заменяются: оба движка за пределами ±{} cp в течение {} хода после книги"
+msgstr[1] "Неравные дебюты заменяются: оба движка за пределами ±{} cp в течение {} ходов после книги"
+msgstr[2] "Неравные дебюты заменяются: оба движка за пределами ±{} cp в течение {} ходов после книги"
+
 msgid "Under Wayland the software renderer needs X11: start the program with the environment variable SDL_VIDEODRIVER=x11."
 msgstr "В Wayland программному рендереру нужен X11: запустите программу с переменной окружения SDL_VIDEODRIVER=x11."
 
@@ -4493,6 +4739,9 @@ msgstr "Использовать эти границы"
 msgid "User"
 msgstr "Пользователь"
 
+msgid "Uses a GPU"
+msgstr "Использует GPU"
+
 msgid "Value"
 msgstr "Значение"
 
@@ -4531,6 +4780,9 @@ msgstr "Ожидает чтения · прочитать следующим"
 
 msgid "Web page"
 msgstr "Веб-страница"
+
+msgid "Weight"
+msgstr "Вес"
 
 msgid "Weights"
 msgstr "Вес"
@@ -4573,6 +4825,9 @@ msgstr "Пока идёт турнир, встроенный в fastchess-gui SS
 
 msgid "White"
 msgstr "Белые"
+
+msgid "White ahead: {}"
+msgstr "Белые впереди: {}"
 
 msgid "White disconnects"
 msgstr "Белые отключились"
@@ -4666,6 +4921,9 @@ msgstr "Без выбора верхняя половина списка игр�
 
 msgid "Without stopping it: running games go on, nothing played is lost."
 msgstr "Без остановки: текущие партии продолжаются, ничего сыгранного не теряется."
+
+msgid "Without the unbalanced"
+msgstr "Без неравных"
 
 msgid "Won twice by one engine"
 msgstr "Обе выиграны одним движком"
@@ -4853,6 +5111,9 @@ msgstr "каждая партия из начальной позиции"
 msgid "every game's engine log"
 msgstr "журнал движков каждой партии"
 
+msgid "every move alike"
+msgstr "все ходы поровну"
+
 msgid "every pair with both colours"
 msgstr "каждая пара с обоими цветами"
 
@@ -4921,6 +5182,15 @@ msgstr "уже оконченные партии"
 
 msgid "games at least"
 msgstr "минимум партий"
+
+msgid "games wait for a GPU"
+msgstr "партии ждут GPU"
+
+msgid "games wait for cores"
+msgstr "партии ждут ядер"
+
+msgid "games wait for memory"
+msgstr "партии ждут памяти"
 
 msgid "gone"
 msgstr "исчезла"
@@ -5003,6 +5273,9 @@ msgstr "PV матов проверяются"
 msgid "moves"
 msgstr "ходы"
 
+msgid "moves by their weights"
+msgstr "ходы по их весу"
+
 msgid "moves of {} game or more"
 msgid_plural "moves of {} games or more"
 msgstr[0] "ходы, сыгранные в {} партии и более"
@@ -5014,6 +5287,12 @@ msgstr "nElo A (ДИ 95%)"
 
 msgid "new"
 msgstr "новая"
+
+msgid "no decision before {} game"
+msgid_plural "no decision before {} games"
+msgstr[0] "без решения до {} партии"
+msgstr[1] "без решения до {} партий"
+msgstr[2] "без решения до {} партий"
 
 msgid "no engine has a SyzygyPath"
 msgstr "ни у одного движка нет SyzygyPath"
@@ -5045,6 +5324,9 @@ msgstr "normalized: границы в nElo (fishtest, OpenBench). logistic: кл
 msgid "not checked"
 msgstr "не проверено"
 
+msgid "not counted"
+msgstr "не учитываются"
+
 msgid "not tested yet"
 msgstr "ещё не проверена"
 
@@ -5069,6 +5351,9 @@ msgstr[2] "собственная книга {}, {} полуходов"
 msgid "own books off"
 msgstr "собственные книги выключены"
 
+msgid "own books: {}"
+msgstr "собственные книги: {}"
+
 msgid "pairs"
 msgstr "пары"
 
@@ -5083,6 +5368,9 @@ msgstr "готовый"
 
 msgid "random"
 msgstr "случайно"
+
+msgid "randomness {}"
+msgstr "случайность {}"
 
 msgid "reading from a program"
 msgstr "чтение вывода программы"
@@ -5141,6 +5429,9 @@ msgstr "начнётся около {}"
 msgid "stopped"
 msgstr "остановлен"
 
+msgid "the best moves only"
+msgstr "только лучшие ходы"
+
 msgid "the driver gives OpenGL {}"
 msgstr "драйвер предоставляет OpenGL {}"
 
@@ -5188,6 +5479,18 @@ msgstr "истинная разница (Elo)"
 
 msgid "two draws {:.1f} % · a win and a loss {:.1f} %"
 msgstr "две ничьи {:.1f} % · победа и поражение {:.1f} %"
+
+msgid "unbalanced openings flagged (±{} cp for {} move)"
+msgid_plural "unbalanced openings flagged (±{} cp for {} moves)"
+msgstr[0] "неравные дебюты отмечаются (±{} cp в течение {} хода)"
+msgstr[1] "неравные дебюты отмечаются (±{} cp в течение {} ходов)"
+msgstr[2] "неравные дебюты отмечаются (±{} cp в течение {} ходов)"
+
+msgid "unbalanced openings replaced (±{} cp for {} move)"
+msgid_plural "unbalanced openings replaced (±{} cp for {} moves)"
+msgstr[0] "неравные дебюты заменяются (±{} cp в течение {} хода)"
+msgstr[1] "неравные дебюты заменяются (±{} cp в течение {} ходов)"
+msgstr[2] "неравные дебюты заменяются (±{} cp в течение {} ходов)"
 
 msgid "until stopped"
 msgstr "до остановки"
@@ -5303,6 +5606,9 @@ msgstr "{} не принимает ни один ключ агента SSH дл�
 msgid "{} against each opponent"
 msgstr "{} против каждого соперника"
 
+msgid "{} allowed by the memory"
+msgstr "память позволяет {}"
+
 msgid "{} analyses the game move by move."
 msgstr "{} анализирует партию ход за ходом."
 
@@ -5356,6 +5662,18 @@ msgstr "{} изменился: его опции перечитаны, они т
 
 msgid "{} changed: its options were read again."
 msgstr "{} изменился: его опции перечитаны."
+
+msgid "{} core in use"
+msgid_plural "{} cores in use"
+msgstr[0] "{} ядро занято"
+msgstr[1] "{} ядра занято"
+msgstr[2] "{} ядер занято"
+
+msgid "{} core shared:"
+msgid_plural "{} cores shared:"
+msgstr[0] "{} ядро общее:"
+msgstr[1] "{} ядра общие:"
+msgstr[2] "{} ядер общие:"
 
 msgid "{} could not be read: kept as {}"
 msgstr "{} не удалось прочитать: сохранено как {}"
@@ -5527,6 +5845,18 @@ msgid_plural "{} games exported to {}"
 msgstr[0] "{} партия экспортирована в {}"
 msgstr[1] "{} партии экспортированы в {}"
 msgstr[2] "{} партий экспортировано в {}"
+
+msgid "{} game flagged unbalanced when it ended: both engines saw a side far ahead right after the book."
+msgid_plural "{} games flagged unbalanced when they ended: both engines saw a side far ahead right after the book."
+msgstr[0] "{} партия отмечена как неравная по её окончании: оба движка видели одну сторону далеко впереди сразу после книги."
+msgstr[1] "{} партии отмечены как неравные по их окончании: оба движка видели одну сторону далеко впереди сразу после книги."
+msgstr[2] "{} партий отмечены как неравные по их окончании: оба движка видели одну сторону далеко впереди сразу после книги."
+
+msgid "{} game from an unbalanced opening"
+msgid_plural "{} games from an unbalanced opening"
+msgstr[0] "{} партия из неравного дебюта"
+msgstr[1] "{} партии из неравных дебютов"
+msgstr[2] "{} партий из неравных дебютов"
 
 msgid "{} game in {}"
 msgid_plural "{} games in {}"
@@ -5768,6 +6098,12 @@ msgstr "свободно {} памяти из {}"
 msgid "{} of {}"
 msgstr "{} из {}"
 
+msgid "{} of {} cores"
+msgstr "{} из {} ядер"
+
+msgid "{} of {} for the engines"
+msgstr "{} из {} для движков"
+
 msgid "{} of {} in use"
 msgstr "занято {} из {}"
 
@@ -5782,6 +6118,12 @@ msgid_plural "{} openings"
 msgstr[0] "{} дебют"
 msgstr[1] "{} дебюта"
 msgstr[2] "{} дебютов"
+
+msgid "{} opening replaced"
+msgid_plural "{} openings replaced"
+msgstr[0] "{} дебют заменён"
+msgstr[1] "{} дебюта заменены"
+msgstr[2] "{} дебютов заменены"
 
 msgid "{} opening written to {}"
 msgid_plural "{} openings written to {}"
@@ -5800,6 +6142,12 @@ msgid_plural "{} options read."
 msgstr[0] "Прочитана {} опция."
 msgstr[1] "Прочитаны {} опции."
 msgstr[2] "Прочитано {} опций."
+
+msgid "{} pair was played again from another opening: its first opening is no longer listed."
+msgid_plural "{} pairs were played again from another opening: their first openings are no longer listed."
+msgstr[0] "{} пара переиграна из другого дебюта: её первого дебюта больше нет в списке."
+msgstr[1] "{} пары переиграны из других дебютов: их первых дебютов больше нет в списке."
+msgstr[2] "{} пар переиграны из других дебютов: их первых дебютов больше нет в списке."
 
 msgid "{} pair with one game only: the game with colours reversed is missing."
 msgid_plural "{} pairs with one game only: the games with colours reversed are missing."
@@ -5848,6 +6196,9 @@ msgid_plural "{} played games stop counting"
 msgstr[0] "{} сыгранная партия перестаёт учитываться"
 msgstr[1] "{} сыгранные партии перестают учитываться"
 msgstr[2] "{} сыгранных партий перестают учитываться"
+
+msgid "{} played on without the window: shown again."
+msgstr "{} продолжал играть без окна: снова показан."
 
 msgid "{} played · {} running · {} to play"
 msgstr "сыграно: {} · идёт: {} · осталось: {}"
@@ -5936,6 +6287,12 @@ msgstr "{} не принимает свою опцию {} = {}: {}. Она не 
 msgid "{} refuses {} = {}, given by this tournament: {}. It is not sent: the engine plays with its default."
 msgstr "{} не принимает {} = {}, заданное этим турниром: {}. Оно не отправляется: движок играет со значением по умолчанию."
 
+msgid "{} replaced"
+msgid_plural "{} replaced"
+msgstr[0] "{} заменён"
+msgstr[1] "{} заменены"
+msgstr[2] "{} заменены"
+
 msgid "{} round"
 msgid_plural "{} rounds"
 msgstr[0] "{} тур"
@@ -6002,6 +6359,24 @@ msgstr[0] "{} поток"
 msgstr[1] "{} потока"
 msgstr[2] "{} потоков"
 
+msgid "{} tournament is running. It can play on without the window, which shows it again when it opens."
+msgid_plural "{} tournaments are running. They can play on without the window, which shows them again when it opens."
+msgstr[0] "Идёт {} турнир. Он может играть без окна, которое снова покажет его при открытии."
+msgstr[1] "Идут {} турнира. Они могут играть без окна, которое снова покажет их при открытии."
+msgstr[2] "Идут {} турниров. Они могут играть без окна, которое снова покажет их при открытии."
+
+msgid "{} unbalanced"
+msgid_plural "{} unbalanced"
+msgstr[0] "{} неравный"
+msgstr[1] "{} неравных"
+msgstr[2] "{} неравных"
+
+msgid "{} unbalanced opening: its game pair is played again from another one."
+msgid_plural "{} unbalanced openings: their game pairs are played again from others."
+msgstr[0] "{} неравный дебют: его пара партий переигрывается из другого."
+msgstr[1] "{} неравных дебюта: их пары партий переигрываются из других."
+msgstr[2] "{} неравных дебютов: их пары партий переигрываются из других."
+
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"
 msgstr[0] "{} аннулированная партия исключена"
@@ -6016,6 +6391,9 @@ msgstr "{} шёл, когда программа завершилась: он п
 
 msgid "{} will be the book of the next tournament."
 msgstr "{} станет книгой следующего турнира."
+
+msgid "{} with a GPU engine at a time"
+msgstr "{} с GPU-движком одновременно"
 
 msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
 msgstr "{} был бы одновременно PGN-файлом и его zip-архивом: выберите имя, оканчивающееся на .pgn."
@@ -6032,6 +6410,9 @@ msgstr "{} · глубина {} · {}"
 msgid "{} · opening {}"
 msgstr "{} · дебют {}"
 
+msgid "{} · {} / {} games · {} playing"
+msgstr "{} · {} / {} партий · идёт: {}"
+
 msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
 msgstr "{} · партий: {} / {} · идёт: {} · {:.0f} партий/ч · {}"
 
@@ -6043,6 +6424,9 @@ msgstr "{} · партий: {} · Elo {} · {}"
 
 msgid "{} · {} games · first: {} · {}"
 msgstr "{} · партий: {} · первый: {} · {}"
+
+msgid "{} · {} games · {}"
+msgstr "{} · партий: {} · {}"
 
 msgid "{} × {} pairings × 2 games × {} cycles"
 msgstr "пар: {} × {} × 2 партии × циклов: {}"
@@ -6098,6 +6482,12 @@ msgstr "{}: ошибка (этап: {}) ({})."
 msgid "{}: folder not found: {}"
 msgstr "{}: папка не найдена: {}"
 
+msgid "{}: games wait for a GPU"
+msgstr "{}: партии ждут GPU"
+
+msgid "{}: games wait for memory"
+msgstr "{}: партии ждут памяти"
+
 msgid "{}: its book cannot be used: {}"
 msgstr "{}: его книгу нельзя использовать: {}"
 
@@ -6146,11 +6536,20 @@ msgstr "{}: потеряно {:.0f} % шансов на победу."
 msgid "{}: {}"
 msgstr "{}: {}"
 
+msgid "{}: {} GPU in use"
+msgid_plural "{}: {} GPUs in use"
+msgstr[0] "{}: занята {} GPU"
+msgstr[1] "{}: занято {} GPU"
+msgstr[2] "{}: занято {} GPU"
+
 msgid "{}: {} core in use"
 msgid_plural "{}: {} cores in use"
 msgstr[0] "{}: занято {} ядро"
 msgstr[1] "{}: занято {} ядра"
 msgstr[2] "{}: занято {} ядер"
+
+msgid "{}: {} for its games' engines"
+msgstr "{}: {} для движков его партий"
 
 msgid "{}: {} is a file, not a folder."
 msgstr "{}: {} — это файл, а не папка."

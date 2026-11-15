@@ -13,6 +13,7 @@
 #include <fmt/include/fmt/format.h>
 #include <core/globals/globals.hpp>
 #include <tour/files.hpp>
+#include <tour/sprt_rules.hpp>
 
 #include "i18n.hpp"
 #include "memory.hpp"
@@ -62,6 +63,8 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
 
     unfinished_ = unfinishedMatch(storage_.runsDir());
     queue_      = storage_.loadQueue();
+    budget_setting_ = storage_.machineBudget();
+    if (const auto memory = systemMemory()) installed_mb_ = memory->total_mb;
     loadMachines();
     layouts_    = layout::named(storage_.loadLayouts());
     if (ImGui::GetCurrentContext()) registerPanelSettings();
@@ -114,7 +117,7 @@ bool App::initGraphics() {
 }
 
 void App::requestQuit() {
-    if (run_.running()) {
+    if (runsPlaying() > 0) {
         open_quit_modal_ = true;
     } else {
         quit_ = true;
@@ -133,9 +136,30 @@ bool App::debugSelectGame(int index) {
     return true;
 }
 
+void App::keepRunningAndQuit() {
+    // The quick test plays here: it stops. The others are let go, playing on: their markers stay, and the next launch
+    // connects to them again.
+    bool local = false;
+    for (auto& r : runs_) {
+        if (r.run->running() && !r.run->remote()) {
+            r.run->stopNow();
+            local = true;
+        } else if (auto* remote = dynamic_cast<RemoteRun*>(r.run.get()); remote && remote->running()) {
+            remote->disconnect();
+        }
+    }
+    if (local) {
+        quit_pending_ = true;
+    } else {
+        quit_ = true;
+    }
+}
+
 void App::forceQuit() {
-    if (run_.running()) {
-        run_.stopNow();
+    if (runsPlaying() > 0) {
+        for (auto& r : runs_) {
+            if (r.run->running()) r.run->stopNow();
+        }
         quit_pending_ = true;
     } else {
         quit_ = true;
@@ -418,12 +442,16 @@ void App::frame() {
     // The window title tells how the run is going, also when the window is in the background.
     {
         std::string title = "fastchess-gui " FCG_VERSION;
-        if (run_.running()) {
-            const auto& info = run_.info();
-            title = trf("{} – {} · {} games", run_.paused() ? TR("Paused") : TR("Running"), info.name, games_.size());
+        if (run_->running()) {
+            const auto& info = run_->info();
+            title = trf("{} – {} · {} games", run_->paused() ? TR("Paused") : TR("Running"), info.name, games_.size());
             if (info.sprt) title += fmt::format(" · LLR {:.2f}", current_.llr);
-        } else if (run_.state() == RunController::State::Finished) {
+        } else if (run_->state() == Run::State::Finished) {
             title = trf("{} – fastchess-gui", TR("Finished")) + " " FCG_VERSION;
+        }
+        // The others playing, after it.
+        if (const int others = runsPlaying() - (run_->running() ? 1 : 0); others > 0) {
+            title += " " + trn("(+{} tournament)", "(+{} tournaments)", others, others);
         }
         if (title != window_title_) {
             SDL_SetWindowTitle(window_, title.c_str());
@@ -444,21 +472,21 @@ void App::frame() {
 // Status
 
 std::string App::runStatusText() const {
-    if (run_.state() == RunController::State::Idle) {
+    if (run_->state() == Run::State::Idle) {
         return trf("Ready · {} cores, {} threads", topology_.physical, topology_.logical);
     }
 
-    if (run_.state() == RunController::State::Finished) return finish_message_;
+    if (run_->state() == Run::State::Finished) return finish_message_;
 
-    const auto& info = run_.info();
+    const auto& info = run_->info();
     std::string state;
-    if (run_.stopping()) {
+    if (run_->stopping()) {
         state = TR("Stopping…");
-    } else if (run_.paused()) {
-        const int n = run_.runningGames();
+    } else if (run_->paused()) {
+        const int n = run_->runningGames();
         state =
             n > 0 ? trn("Paused ({} game finishing)", "Paused ({} games finishing)", n, n) : std::string(TR("Paused"));
-        if (run_.stoppingWhenIdle()) state = trf("Stopping after the running games ({})", n);
+        if (run_->stoppingWhenIdle()) state = trf("Stopping after the running games ({})", n);
     } else {
         state = TR("Running");
     }
@@ -469,7 +497,7 @@ std::string App::runStatusText() const {
 
     std::string text = trf("{} · {} / {} games · {} playing · {:.0f} games/h · {}", state, played,
                            info.total_games ? fmt::format("{}", info.total_games) : std::string("∞"),
-                           run_.runningGames(), rate, ui::formatDuration(elapsed));
+                           run_->runningGames(), rate, ui::formatDuration(elapsed));
 
     if (info.sprt && sprt_) {
         text +=
@@ -489,19 +517,49 @@ void App::drawQuitModal() {
     ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
     if (ImGui::BeginPopupModal(TR("Quit?###quit"), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::TextUnformatted(TR("A match is running. The games in progress will be lost."));
+        // The tournaments play on in their own processes, unless asked to stop; the quick test plays here, and stops.
+        const int playing = runsPlaying();
+        const bool keep   = std::any_of(runs_.begin(), runs_.end(),
+                                        [](const OpenRun& r) { return r.run->running() && r.run->remote(); });
+        if (keep) {
+            ImGui::TextUnformatted(
+                trn("{} tournament is running. It can play on without the window, which shows it again when it opens.",
+                    "{} tournaments are running. They can play on without the window, which shows them again when it "
+                    "opens.",
+                    playing, playing)
+                    .c_str());
+        } else {
+            ImGui::TextUnformatted(TR("A match is running. The games in progress will be lost."));
+        }
         ImGui::Spacing();
+        if (keep) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
+            const bool chosen = ImGui::Button(TR("Keep them running and quit"));
+            ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", TR("Each plays on in its own process. The window shows them again at its next "
+                                           "launch; fastchess-gui --attach <folder> talks with one from a terminal."));
+            }
+            if (chosen || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
+                keepRunningAndQuit();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+        }
         if (ImGui::Button(TR("Stop and quit"))) {
-            run_.stopNow();
-            quit_pending_ = true;
+            forceQuit();
             ImGui::CloseCurrentPopup();
         }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("The games in progress are lost; each tournament resumes exactly where it "
+                                       "stopped."));
+        }
         ImGui::SameLine();
-        if (ImGui::Button(TR("Cancel"))) ImGui::CloseCurrentPopup();
+        if (ImGui::Button(TR("Cancel")) || ImGui::IsKeyPressed(ImGuiKey_Escape)) ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }
 
-    if (quit_pending_ && run_.running()) {
+    if (quit_pending_ && runsPlaying() > 0) {
         ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
         ImGui::Begin(
             "##stopping", nullptr,
@@ -528,17 +586,29 @@ void App::startRun() {
         Console::instance().add(memoryNotice(setup_, engines_, memory).text, true);
     }
 
-    start_error_ = run_.start(setup_, engines_, topology_, storage_.runsDir());
+    // The tournament's folder, made here (what the setup holds is checked here, its errors said here), then played
+    // by a process of its own.
+    const auto dir = setup_.format == TournamentFormat::Match
+                         ? storage_.runsDir() / makeRunDirName(setup_.engine_a.empty() ? "A" : setup_.engine_a,
+                                                               setup_.engine_b.empty() ? "B" : setup_.engine_b)
+                         : storage_.runsDir() /
+                               makeTournamentDirName(setup_.name.empty() ? defaultTournamentName(setup_) : setup_.name);
+    try {
+        const auto built = buildRun(setup_, engines_, topology_, dir);
+        (void)tour::TournamentState::create(dir, built.spec);  // closed at once: the process opens it
+    } catch (const std::exception& e) {
+        start_error_ = e.what();
+    }
+    if (start_error_.empty()) start_error_ = launchTournament(dir);
     if (!start_error_.empty()) {
         Console::instance().add(trf("Cannot start the match: {}", start_error_), true);
         setStartFixes();
         return;
     }
 
-    resetRunView();
     user_stop_       = false;
     resume_guarded_  = false;
-    const auto& info = run_.info();
+    const auto& info = run_->info();
     storage_.setRunningMarker(RunningMarker{runMarkerDir(), false});
     Console::instance().add(trf("Started: {}, {}, {} concurrent games{}. Folder: {}", info.name, info.limit_text,
                                 info.concurrency, info.affinity ? TR(", CPU affinity") : "", info.dir.string()));
@@ -559,7 +629,8 @@ void App::resumeRun(bool at_launch) {
     // Resumed at launch: the marker says so before anything can end the program (RunningMarker::resuming).
     const auto dir = fs::absolute(unfinished_->dir).lexically_normal().string();
     if (at_launch) storage_.setRunningMarker(RunningMarker{dir, false, true});
-    start_error_ = run_.resume(unfinished_->dir);
+    start_error_ = resumeCheck(unfinished_->dir);
+    if (start_error_.empty()) start_error_ = launchTournament(unfinished_->dir);
     if (!start_error_.empty()) {
         // It did not start, which ended nothing: it is tried again at the next launch.
         if (at_launch) storage_.setRunningMarker(RunningMarker{dir, false, false});
@@ -567,11 +638,10 @@ void App::resumeRun(bool at_launch) {
         return;
     }
 
-    resetRunView();
     user_stop_      = false;
     resume_guarded_ = at_launch;
     // The games that count, as games_ holds: voided games are not shown.
-    if (const auto* t = run_.tournament()) {
+    if (const auto* t = run_->tournament()) {
         const auto results = t->results();
         games_at_start_    = static_cast<std::size_t>(
             std::count_if(results.begin(), results.end(), [](const auto& r) { return !r.voided; }));
@@ -579,7 +649,7 @@ void App::resumeRun(bool at_launch) {
         // in the Log. It does not stop by itself.
         resumed_programs_ = changedPrograms(t->spec());
     }
-    const auto& info = run_.info();
+    const auto& info = run_->info();
     storage_.setRunningMarker(RunningMarker{runMarkerDir(), false, at_launch});
     if (at_launch) Console::instance().add(trf("{} was running when the program ended: it resumes.", info.name));
     Console::instance().add(
@@ -587,77 +657,92 @@ void App::resumeRun(bool at_launch) {
 }
 
 void App::resumeAtLaunch() {
-    const auto marker = storage_.runningMarker();
-    if (!marker) return;
-    const auto summary    = tour::summarize(marker->dir);
-    const bool unfinished = summary && !summary->finished && !(summary->total && summary->played >= *summary->total);
-    // Another window of the profile plays it, and the marker is that window's: its folder is locked.
-    bool busy = false;
-    std::error_code ec;
-    if (fs::is_directory(marker->dir, ec)) {
-        try {
-            const tour::FolderLock probe(marker->dir);
-        } catch (const tour::FolderBusy&) {
-            busy = true;
-        } catch (const std::exception&) {
+    const auto markers = storage_.runningMarkers();
+    bool resumed = false, queue = false;
+    for (const auto& marker : markers) {
+        // Played on without the window (it was let go when it closed): shown again, as it stands.
+        if (attachTournament(marker.dir, marker.weight)) {
+            resumed = true;
+            continue;
+        }
+        const auto summary = tour::summarize(marker.dir);
+        const bool unfinished =
+            summary && !summary->finished && !(summary->total && summary->played >= *summary->total);
+        // Another window of the profile plays it, and the marker is that window's: its folder is locked.
+        bool busy = false;
+        std::error_code ec;
+        if (fs::is_directory(marker.dir, ec)) {
+            try {
+                const tour::FolderLock probe(marker.dir);
+            } catch (const tour::FolderBusy&) {
+                busy = true;
+            } catch (const std::exception&) {
+            }
+        }
+        const auto name = summary ? summary->spec.name : marker.dir;
+        switch (launchResume(setup_.resume_at_launch, options_.autostart, marker, unfinished, queue_.empty(), busy)) {
+            case LaunchResume::Resume:
+                // The marker stays until the tournament ends: a resume that cannot start is tried again at the next
+                // launch. resumeRun() says that it resumes once it does.
+                unfinished_ = summary;
+                resumeRun(true);
+                if (const int i = findRun(marker.dir); i >= 0)
+                    runs_[static_cast<std::size_t>(i)].weight = marker.weight;
+                resumed = true;
+                break;
+            case LaunchResume::Busy:
+                Console::instance().add(trf("{} is playing in another window: it is not resumed here.", name));
+                break;
+            case LaunchResume::Crashed:
+                // Resuming it again could end the program again, at every launch: the user decides.
+                storage_.clearRunningMarker(marker.dir);
+                unfinished_     = summary;
+                resume_crashed_ = fs::absolute(summary->dir).lexically_normal();
+                Console::instance().add(
+                    trf("The program ended while it resumed {} at the last launch: it is not resumed "
+                        "automatically again. Resume it from the Tournaments page.",
+                        name),
+                    true);
+                break;
+            case LaunchResume::Queue:
+                storage_.clearRunningMarker(marker.dir);
+                queue = true;
+                break;
+            case LaunchResume::Nothing:
+                // Paused, or not to be resumed at launch: it waits for the user, as any interrupted tournament.
+                storage_.clearRunningMarker(marker.dir);
+                break;
         }
     }
-    const auto name = summary ? summary->spec.name : marker->dir;
-    switch (launchResume(setup_.resume_at_launch, options_.autostart, marker, unfinished, queue_.empty(), busy)) {
-        case LaunchResume::Resume:
-            // The marker stays until the tournament ends: a resume that cannot start is tried again at the next
-            // launch. resumeRun() says that it resumes once it does.
-            unfinished_ = summary;
-            resumeRun(true);
-            break;
-        case LaunchResume::Busy:
-            Console::instance().add(trf("{} is playing in another window: it is not resumed here.", name));
-            break;
-        case LaunchResume::Crashed:
-            // Resuming it again could end the program again, at every launch: the user decides.
-            storage_.setRunningMarker(std::nullopt);
-            unfinished_     = summary;
-            resume_crashed_ = fs::absolute(summary->dir).lexically_normal();
-            Console::instance().add(trf("The program ended while it resumed {} at the last launch: it is not resumed "
-                                        "automatically again. Resume it from the Tournaments page.",
-                                        name),
-                                    true);
-            break;
-        case LaunchResume::Queue:
-            storage_.setRunningMarker(std::nullopt);
-            Console::instance().add(TR("The tournament running when the program ended is over: the queue goes on."));
-            startFromQueue(true);
-            break;
-        case LaunchResume::Nothing:
-            // Paused, or not to be resumed at launch: it waits for the user, as any interrupted tournament.
-            storage_.setRunningMarker(std::nullopt);
-            break;
+    if (queue && !resumed) {
+        Console::instance().add(TR("The tournament running when the program ended is over: the queue goes on."));
+        startFromQueue(true);
     }
 }
 
 void App::setRunPaused(bool paused) {
-    run_.setPaused(paused);
-    if (quick_test_engine_.empty() && !user_stop_)
-        storage_.setRunningMarker(RunningMarker{runMarkerDir(), paused, resume_guarded_});
+    run_->setPaused(paused);
+    const auto* open = shownRun();
+    if (open && !open->quick_test && !user_stop_)
+        storage_.setRunningMarker(RunningMarker{runMarkerDir(), paused, resume_guarded_, open->weight});
 }
 
 void App::stopRun(bool now) {
-    if (!run_.running()) return;
+    if (!run_->running()) return;
     user_stop_ = true;
     if (now) {
-        run_.stopNow();
+        run_->stopNow();
     } else {
-        run_.stopWhenIdle();
+        run_->stopWhenIdle();
     }
     // Stopped, not interrupted: not resumed at the next launch, even if the program ends before the engines stop.
     storage_.clearRunningMarker(runMarkerDir());
 }
 
-std::string App::runMarkerDir() const { return fs::absolute(run_.info().dir).lexically_normal().string(); }
+std::string App::runMarkerDir() const { return fs::absolute(run_->info().dir).lexically_normal().string(); }
 
 void App::resetRunView() {
     page_ = Page::Tournament;
-    select_game_id_.reset();
     // On its overview, when the panels are tabs of one node; side by side, they stay as they are.
     if (const auto* root = ImGui::DockBuilderGetNode(workspaceDock());
         panelOpen(layout::panel::OVERVIEW) && (!root || !root->IsSplitNode()))
@@ -665,6 +750,14 @@ void App::resetRunView() {
     tournaments_dirty_ = true;
     unfinished_.reset();
     resumed_programs_.clear();
+    finish_message_.clear();
+    console_mark_   = Console::instance().added();  // what fastchess says from now on is this tournament's
+    games_at_start_ = 0;
+    clearRunView();
+}
+
+void App::clearRunView() {
+    select_game_id_.reset();
     games_.clear();
     history_.clear();
     stats_   = {};
@@ -700,30 +793,35 @@ void App::resetRunView() {
             ++it;
         }
     }
-    finish_message_.clear();
-    console_mark_ = Console::instance().added();  // what fastchess says from now on is this tournament's
 
-    const auto& info = run_.info();
+    const auto& info = run_->info();
     sprt_.reset();
     if (info.sprt) sprt_.emplace(info.alpha, info.beta, info.elo0, info.elo1, info.model, true);
+    // The openings it replaced before it was opened are in its results already.
+    openings_replaced_seen_ = run_->tournament() ? run_->tournament()->openingsReplaced() : 0;
 
-    live_slot_        = std::clamp(live_slot_, 0, info.concurrency - 1);
+    live_slot_        = std::clamp(live_slot_, 0, std::max(1, info.concurrency) - 1);
     games_per_hour_   = 0;
-    games_at_start_   = 0;
     last_rate_update_ = {};
 }
 
 void App::pollRun() {
-    run_.update();
+    // Every tournament open: the shown one feeds the views below, the others keep their own observers.
+    for (std::size_t i = 0; i < runs_.size(); ++i) {
+        runs_[i].run->update();
+        if (i != shown_run_) watchStartFailures(runs_[i]);
+    }
+    // Its copy opened again (an edit undone in its process): the views start over from it.
+    if (run_->takeReopened()) refreshAfterEdit();
 
-    if (auto* obs = run_.observer()) {
+    if (auto* obs = run_->observer()) {
         std::vector<fastchess::Stats> fresh;
         const auto before = games_.size();
         obs->drain(games_, fresh);
 
         for (const auto& s : fresh) {
             stats_ = s;
-            history_.push_back(computeStats(s, run_.info().penta, sprt_ ? &*sprt_ : nullptr));
+            history_.push_back(computeStats(s, run_->info().penta, sprt_ ? &*sprt_ : nullptr));
         }
         if (!fresh.empty()) current_ = history_.back();
 
@@ -748,10 +846,10 @@ void App::pollRun() {
     }
 
     // Games per hour, recomputed at most once per second so the number does not flicker.
-    if (run_.running()) {
+    if (run_->running()) {
         const auto now = Clock::now();
         if (now - last_rate_update_ >= std::chrono::seconds(1)) {
-            const auto elapsed = std::chrono::duration<double>(now - run_.info().started).count();
+            const auto elapsed = std::chrono::duration<double>(now - run_->info().started).count();
             // games_ can get below games_at_start_ when games are voided meanwhile.
             const auto played = games_.size() > games_at_start_ ? games_.size() - games_at_start_ : 0;
             games_per_hour_   = elapsed > 5 ? static_cast<double>(played) / (elapsed / 3600.0) : 0.0;
@@ -760,29 +858,55 @@ void App::pollRun() {
     }
 
     // A resume at launch that has played a while did not end the program: the next launch may resume it again.
-    if (resume_guarded_ && run_.running() && Clock::now() - run_.info().started >= std::chrono::seconds(30)) {
+    if (resume_guarded_ && run_->running() && Clock::now() - run_->info().started >= std::chrono::seconds(30)) {
         resume_guarded_ = false;
-        if (auto marker = storage_.runningMarker(); markerNames(marker, runMarkerDir())) {
+        if (auto marker = storage_.runningMarker(runMarkerDir())) {
             marker->resuming = false;
-            storage_.setRunningMarker(marker);
+            storage_.setRunningMarker(*marker);
         }
     }
 
-    watchStartFailures();
-    if (run_.takeFinishedEvent()) onRunFinished();
+    // A pair voided and played again from another opening, its own found unbalanced: the views show the results
+    // as they count now, as after a void of the user's.
+    if (const auto* t = run_->tournament()) {
+        if (const auto replaced = t->openingsReplaced(); replaced != openings_replaced_seen_) {
+            if (replaced > openings_replaced_seen_) {
+                const auto n = replaced - openings_replaced_seen_;
+                Console::instance().add(trn("{} unbalanced opening: its game pair is played again from another one.",
+                                            "{} unbalanced openings: their game pairs are played again from others.", n,
+                                            n));
+            }
+            openings_replaced_seen_ = replaced;
+            refreshAfterEdit();
+        }
+    }
 
-    if (quit_pending_ && !run_.running()) quit_ = true;
+    if (auto* open = shownRun()) watchStartFailures(*open);
+    arbitrate();
+    // The queue's next tournament beside those playing, once cores are free (checked now and then).
+    if (budget_setting_.queue_when_free && !queue_.empty() && !pending_start_ && !quit_pending_ && runsPlaying() > 0 &&
+        !queue_held_ && std::chrono::steady_clock::now() - queue_checked_ > std::chrono::seconds(2)) {
+        queue_checked_ = std::chrono::steady_clock::now();
+        if (queueBeside(0)) startFromQueue(false);
+    }
+    for (std::size_t i = 0; i < runs_.size(); ++i) {
+        if (!runs_[i].run->takeFinishedEvent()) continue;
+        if (i == shown_run_) {
+            onRunFinished();
+        } else {
+            onBackgroundRunFinished(i);
+        }
+    }
+
+    if (quit_pending_ && runsPlaying() == 0) quit_ = true;
 }
 
-void App::watchStartFailures() {
-    const auto* t = run_.tournament();
-    if (!t || !quick_test_engine_.empty()) return;
-    if (run_.info().started != start_failures_run_) {
-        start_failures_run_  = run_.info().started;
-        start_failures_seen_ = ~uint64_t(0);
-        start_failures_told_.clear();
-    }
-    const auto& failures = t->startFailures();
+void App::watchStartFailures(OpenRun& open) {
+    const auto* t = open.run->tournament();
+    if (!t || open.quick_test) return;
+    auto& start_failures_seen_ = open.start_failures_seen;
+    auto& start_failures_told_ = open.start_failures_told;
+    const auto& failures       = t->startFailures();
     if (failures.version() == start_failures_seen_) return;
     start_failures_seen_ = failures.version();
 
@@ -809,12 +933,18 @@ void App::watchStartFailures() {
 }
 
 void App::onRunFinished() {
-    if (!quick_test_engine_.empty()) {
+    if (const auto* open = shownRun(); open && open->quick_test) {
         finishQuickTest();
         return;
     }
-    const auto& info  = run_.info();
-    const auto error  = run_.error();
+    // Another window shows it: said, and left to it (its marker is that window's too).
+    if (run_->elsewhere()) {
+        finish_message_ = run_->error();
+        Console::instance().add(finish_message_, true);
+        return;
+    }
+    const auto& info  = run_->info();
+    const auto error  = run_->error();
     const auto played = stats_.sum();
 
     // Quitting while it runs leaves it to be resumed at the next launch; otherwise it ended, or the user stopped it.
@@ -822,20 +952,24 @@ void App::onRunFinished() {
     const auto marker_dir = runMarkerDir();
     if (!keepMarkerAtEnd(quit_pending_, user_stop_)) {
         storage_.clearRunningMarker(marker_dir);
-    } else if (auto marker = storage_.runningMarker(); markerNames(marker, marker_dir) && marker->resuming) {
+    } else if (auto marker = storage_.runningMarker(marker_dir); marker && marker->resuming) {
         marker->resuming = false;  // quit by the user: the resume did not end the program
-        storage_.setRunningMarker(marker);
+        storage_.setRunningMarker(*marker);
     }
     resume_guarded_ = false;
 
     // The engine that stopped it: one that could not start (fastchess said so in the log), or that crashed.
     stopped_by_.clear();
     std::string why;
-    if (error.empty() && fastchess::atomic::abnormal_termination && !run_.stoppedByUser()) {
-        if (const auto failed = startupFailure(Console::instance().since(console_mark_))) {
+    const bool abnormal = run_->abnormal();
+    if (error.empty() && abnormal && !run_->stoppedByUser()) {
+        // Its process said which engine; a tournament played here, the window's log does.
+        auto failed = run_->startupFailed();
+        if (!failed && !run_->remote()) failed = startupFailure(Console::instance().since(console_mark_));
+        if (failed) {
             stopped_by_ = failed->engine;
             why         = trf("Interrupted: {} could not start: {}", failed->engine, failed->reason);
-        } else if (const auto* t = run_.tournament()) {
+        } else if (const auto* t = run_->tournament()) {
             const auto results = t->results();
             for (auto r = results.rbegin(); r != results.rend(); ++r) {
                 using T = fastchess::MatchTermination;
@@ -850,26 +984,26 @@ void App::onRunFinished() {
     }
 
     std::string verdict;
-    const auto* stalled = run_.tournament();
+    const auto* stalled = run_->tournament();
     if (stalled && !stalled->startFailures().stalled()) stalled = nullptr;
     if (!error.empty()) {
         verdict = trf("Error: {}", error);
     } else if (!why.empty()) {
         verdict = why;
-    } else if (fastchess::atomic::abnormal_termination && !run_.stoppedByUser()) {
+    } else if (abnormal && !run_->stoppedByUser()) {
         verdict = TR("Interrupted: an engine crashed or stopped responding (see the Log)");
-    } else if (stalled && !run_.stoppedByUser()) {
+    } else if (stalled && !run_->stoppedByUser()) {
         std::string names;
         for (const auto& e : stalled->startFailures().engines()) {
             const auto* p = stalled->spec().participant(e.participant);
             if (p && p->active) names += (names.empty() ? "" : ", ") + e.name;
         }
         verdict = trf("Stopped: no game is left to play without {}, which cannot start", names);
-    } else if (info.sprt && sprt_ && current_.llr >= sprt_->getUpperBound()) {
+    } else if (info.sprt && sprt_ && sprtVerdict() == fastchess::SPRT_H1) {
         verdict = trf("SPRT finished: H1 accepted, {} is stronger", info.engine_a);
-    } else if (info.sprt && sprt_ && current_.llr <= sprt_->getLowerBound()) {
+    } else if (info.sprt && sprt_ && sprtVerdict() == fastchess::SPRT_H0) {
         verdict = trf("SPRT finished: H0 accepted, {} is not stronger", info.engine_a);
-    } else if (run_.stoppedByUser()) {
+    } else if (run_->stoppedByUser()) {
         verdict = TR("Stopped");
     } else {
         verdict = TR("Finished");
@@ -885,7 +1019,7 @@ void App::onRunFinished() {
         refreshTable();
         auto leader = table_.rows.empty() ? std::string("—") : table_.rows.front().name;
         // A knockout is won in its final, not on points.
-        if (const auto* t = run_.tournament(); t && t->spec().format == tour::Format::Knockout && t->finished()) {
+        if (const auto* t = run_->tournament(); t && t->spec().format == tour::Format::Knockout && t->finished()) {
             const auto brackets = t->brackets();
             if (!brackets.empty() && brackets.rbegin()->second.size() == 1 &&
                 brackets.rbegin()->second[0].size() == 2) {
@@ -900,7 +1034,7 @@ void App::onRunFinished() {
     }
 
     Console::instance().add(finish_message_, !error.empty() || !why.empty());
-    if (!error.empty() || fastchess::atomic::abnormal_termination) setFinishFixes();
+    if (!error.empty() || abnormal) setFinishFixes();
 
     // A stopped or interrupted match can be continued later.
     unfinished_        = unfinishedMatch(storage_.runsDir());
@@ -911,7 +1045,7 @@ void App::onRunFinished() {
     }
 
     // The queue goes on after a tournament that ended by itself, not after a stop or an error.
-    const bool completed = error.empty() && !run_.stoppedByUser() && !fastchess::atomic::abnormal_termination;
+    const bool completed = error.empty() && !run_->stoppedByUser() && !abnormal;
     if (completed && !queue_.empty() && !quit_pending_) {
         // Held by Pause all: Resume all starts it.
         if (queue_held_) {
@@ -933,7 +1067,13 @@ void App::enqueue() {
 }
 
 void App::startFromQueue(bool go_on, std::size_t from, const std::string& label) {
-    if (run_.running()) return;
+    // One after the other: the next starts when no tournament plays (its process ended), or beside them when the
+    // budget has cores they cannot take (Start when cores are free).
+    if (!queueBeside(label.empty() ? 0 : from)) {
+        for (const auto& r : runs_) {
+            if (r.run->running() && !r.quick_test) return;
+        }
+    }
     // Going on from the tournament `label` (put off, or the next after one that could not start), unless the queue
     // changed meanwhile.
     if (!label.empty() && (from >= queue_.size() || queue_[from].label != label)) from = 0;
@@ -956,7 +1096,7 @@ void App::startFromQueue(bool go_on, std::size_t from, const std::string& label)
         setup_ = setup;
         startRun();
         // Taken off the queue once started: one that cannot start (an engine removed since...) is not lost.
-        if (run_.running()) {
+        if (start_error_.empty() && run_->running()) {
             queue_.erase(queue_.begin() + static_cast<std::ptrdiff_t>(i));
             storage_.saveQueue(queue_);
             return;
@@ -965,8 +1105,14 @@ void App::startFromQueue(bool go_on, std::size_t from, const std::string& label)
     }
 }
 
+fastchess::SPRTResult App::sprtVerdict() const {
+    const auto* t  = run_->tournament();
+    const auto why = t ? t->finishReason() : std::string();
+    return why == "sprt_h1" ? fastchess::SPRT_H1 : why == "sprt_h0" ? fastchess::SPRT_H0 : fastchess::SPRT_CONTINUE;
+}
+
 std::string App::summaryText() const {
-    const auto& info = run_.info();
+    const auto& info = run_->info();
     const auto& s    = stats_;
 
     std::string text = fmt::format("{} vs {}, {}, {} games\n", info.engine_a, info.engine_b, info.limit_text, s.sum());
@@ -983,6 +1129,12 @@ std::string App::summaryText() const {
     if (info.sprt && sprt_) {
         text += fmt::format("LLR: {:.2f} ({:.2f}, {:.2f}) [{:.2f}, {:.2f}] {}\n", current_.llr, sprt_->getLowerBound(),
                             sprt_->getUpperBound(), info.elo0, info.elo1, info.model);
+        // The bounds above are those the SPRT was given: the tester's, the bias on them.
+        if (info.sprt_bias != 0 || info.sprt_min_games > 0) {
+            text += tour::sprtText(info.elo0 - info.sprt_bias, info.elo1 - info.sprt_bias, info.sprt_bias,
+                                   info.sprt_min_games) +
+                    "\n";
+        }
     }
     if (s.sum() > 0 && info.penta) text += statisticsText(matchStatistics(s, sprt_ ? &*sprt_ : nullptr));
     return text;
@@ -1061,11 +1213,12 @@ void App::handleDialogs() {
             case Dialogs::Purpose::ExportOpenings: {
                 const auto shown = shownOpenings();
                 std::ofstream out(path, std::ios::binary | std::ios::trunc);
-                out << tour::openingsEpd(shown);
-                Console::instance().add(
-                    out ? trn("{} opening written to {}", "{} openings written to {}", shown.size(), shown.size(), path)
-                        : trf("Cannot write {}", path),
-                    !out);
+                const auto epd = tour::openingsEpd(shown, export_balanced_only_);
+                out << epd;
+                const auto n = static_cast<std::size_t>(std::count(epd.begin(), epd.end(), '\n'));
+                Console::instance().add(out ? trn("{} opening written to {}", "{} openings written to {}", n, n, path)
+                                            : trf("Cannot write {}", path),
+                                        !out);
                 break;
             }
             case Dialogs::Purpose::AddBook:
@@ -1125,7 +1278,7 @@ void App::handleDialogs() {
                 openTournament(path);
                 break;
             case Dialogs::Purpose::ExportStandings:
-                if (const auto* t = run_.tournament()) {
+                if (const auto* t = run_->tournament()) {
                     std::ofstream out(path, std::ios::binary | std::ios::trunc);
                     const auto footer = tour::footerLine(t->spec(), shown_, t->totalGames());
                     out << (t->spec().format == tour::Format::TeamMatch

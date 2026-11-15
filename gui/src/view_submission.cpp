@@ -70,7 +70,7 @@ int egtbPieces(const tour::TournamentSpec& spec) {
 }  // namespace
 
 void App::openSubmissionExport() {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return;
     const auto& spec = t->spec();
 
@@ -104,7 +104,7 @@ void App::openSubmissionExport() {
 }
 
 void App::drawSubmissionExport() {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (submission_.open) {
         ImGui::OpenPopup(TR("Export for a rating list###submission_export"));
         submission_.open = false;
@@ -214,7 +214,7 @@ void App::drawSubmissionExport() {
 }
 
 void App::writeSubmissionExport(const std::string& path) {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return;
     const std::filesystem::path file(path);
     std::error_code ec;
@@ -267,7 +267,7 @@ void App::writeSubmissionExport(const std::string& path) {
 }
 
 void App::drawSubmissionChecklist() {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t || !t->finished()) return;
     if (submission_facts_for_ != t->version()) {
         submission_facts_     = tour::submissionFacts(t->spec(), t->results(), t->totalGames());

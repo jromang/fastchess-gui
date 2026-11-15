@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <deque>
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -51,6 +52,7 @@
 #include "pgn_file.hpp"
 #include "schedule.hpp"
 #include "start_failures.hpp"
+#include "unbalanced.hpp"
 
 namespace fcg::tour {
 
@@ -94,6 +96,9 @@ struct GameResult {
     int64_t finished_at = 0;  // unix time, milliseconds
     // What fastchess' PV checks found (an illegal PV move, a mate PV that does not mate...): (ply, warning).
     std::vector<std::pair<uint32_t, std::string>> pv_warnings;
+    // The opening was unbalanced (unbalanced.hpp), as the tournament's rule tells it when the game ended: +1 for White,
+    // -1 for Black, 0 not, or not looked for.
+    int unbalanced = 0;
 
     // No longer counted (replay requested, participant replaced or withdrawn); kept to be shown as such.
     bool voided = false;
@@ -118,6 +123,10 @@ struct GameResult {
 // hand gets that result, the Termination tag OPERATOR_TERMINATION and setResultComment() before the result; another
 // game comes back as it is. What the exports and the replay read, as voided games are left out of them.
 [[nodiscard]] std::string countedPgn(std::string text, const GameResult& r);
+
+// A game as its journal line keeps it ("game_finished"), and back; the latter throws on a line that is none.
+[[nodiscard]] nlohmann::json gameResultJson(const GameResult& result);
+[[nodiscard]] GameResult gameResultFromJson(const nlohmann::json& j);
 
 // The statistics of one complete encounter (its two games), from participant `pov`'s point of view, pentanomial
 // counts included.
@@ -213,7 +222,11 @@ class TournamentState {
     // after the first), then the next encounter of the schedule. The games of the participants startFailures() sets
     // aside are left for later: an encounter of theirs passed over counts as started, not played yet, so that edits
     // leave it in place and its games come first once their engine starts. nullopt when there is nothing to play now.
-    [[nodiscard]] std::optional<GameTask> claimNext();
+    // `admit`, when given, is asked about the game found (its encounter's two participants) before it is claimed:
+    // false holds it back and nothing is claimed (the runner's allowance, budget.hpp). Called with the state's lock
+    // held: it must not call the state.
+    using Admit = std::function<bool(const Participant& first, const Participant& second)>;
+    [[nodiscard]] std::optional<GameTask> claimNext(const Admit& admit = {});
 
     // A claimed game that will not be finished (interrupted): it is played again later.
     void release(const GameTask& task);
@@ -256,6 +269,30 @@ class TournamentState {
     [[nodiscard]] bool finished() const;
     [[nodiscard]] std::string finishReason() const;
 
+    // --- the tournament process and the window ---
+
+    // The tournament process tells the window each line of the journal as it is written (Journal::setListener()).
+    void setJournalListener(Journal::Listener listener);
+
+    // Read-only: the bytes of the journal this copy holds, as read when opened, then as followed.
+    [[nodiscard]] uint64_t journalSize() const;
+
+    // Read-only: a journal line the program playing the tournament wrote since the copy was opened (or since the last
+    // one followed), ending at `end` in the file. False when the copy cannot follow it (an edit undone): it is to be
+    // opened again. Throws on an event it does not know.
+    bool follow(const nlohmann::json& event, uint64_t end);
+
+    // Read-only: what the program playing the tournament tells of it, which its journal does not: the games being
+    // played, whether its last change can be undone, why its games wait for spec().pgn_out. scheduleRows(),
+    // canUndo(), undoLasts() and pgnOutError() answer with them.
+    struct ReplicaStatus {
+        std::set<uint64_t> running;  // game numbers
+        bool can_undo   = false;
+        bool undo_lasts = false;
+        std::string pgn_out_error;
+    };
+    void setReplicaStatus(ReplicaStatus status);
+
     // --- any thread ---
 
     // Scored games, in the order they finished, voided ones included (flagged).
@@ -273,6 +310,10 @@ class TournamentState {
 
     // The opening each encounter started with (book position and moves), by encounter index.
     [[nodiscard]] std::map<uint32_t, fastchess::book::Opening> encounterOpenings() const;
+
+    // How many times a pair was voided and played again from another opening, its own found unbalanced
+    // (spec().unbalanced_replace): the views show it, and know that the results changed.
+    [[nodiscard]] uint64_t openingsReplaced() const;
 
     // Statistics of `a` against `b` from a's point of view, counted on complete encounters only (both games),
     // like fastchess does with pentanomial reporting. Includes the pentanomial counts.
@@ -309,6 +350,10 @@ class TournamentState {
     [[nodiscard]] bool gamesLeft() const;  // games to claim, finished or not; mutex_ held
     [[nodiscard]] uint64_t totalLocked() const;
     void checkSprt();
+    // The encounter, complete, played an unbalanced opening and the tournament replaces such openings: its games
+    // are voided and played again from another opening (UNBALANCED_REASON), at most MAX_OPENING_REPLACEMENTS times.
+    // True when it was. mutex_ held.
+    bool replaceUnbalanced(uint32_t encounter);
     // Every game played, none running: the end is journaled. mutex_ held.
     void finishIfComplete();
     [[nodiscard]] GameTask makeTask(uint32_t encounter, int game);
@@ -368,6 +413,8 @@ class TournamentState {
     std::vector<GameResult> results_;
     std::set<uint64_t> done_;                               // game numbers
     std::map<uint32_t, fastchess::book::Opening> started_;  // encounter -> opening it started with
+    uint64_t replaced_ = 0;                                 // openings replaced as unbalanced (replaceUnbalanced())
+    std::map<uint32_t, int> replacements_;                  // encounter -> how many times its opening was
     // spec_.opening_per_round: (cycle, round) -> the opening of its encounters.
     std::map<std::pair<uint32_t, uint32_t>, fastchess::book::Opening> round_openings_;
     std::map<uint32_t, std::size_t> half_;                   // encounter -> index in results_ of its first game
@@ -401,6 +448,9 @@ class TournamentState {
 
     std::optional<UndoPoint> undo_;
     uint64_t claims_ = 0;  // games claimed since the tournament was opened
+
+    uint64_t journal_size_ = 0;  // read-only: see journalSize()
+    ReplicaStatus replica_;      // read-only: see setReplicaStatus()
 
     StartFailures start_failures_;
     std::map<uint64_t, std::pair<std::string, std::string>> end_requests_;  // requestEnd(): number -> (result, why)

@@ -144,13 +144,13 @@ void App::drawResults() {
         return;
     }
 
-    if (run_.state() == RunController::State::Idle) {
+    if (run_->state() == RunController::State::Idle) {
         ImGui::TextDisabled("%s", TR("No results yet."));
         ui::endPanel();
         return;
     }
 
-    const auto& info = run_.info();
+    const auto& info = run_->info();
     const auto& s    = stats_;
     const int n      = s.sum();
 
@@ -196,14 +196,33 @@ void App::drawResults() {
         const double hi = sprt_->getUpperBound();
         const double t  = std::clamp((current_.llr - lo) / (hi - lo), 0.0, 1.0);
 
-        ImGui::Text("SPRT [%.2f, %.2f] %s, α %.3f β %.3f", info.elo0, info.elo1, info.model.c_str(), info.alpha,
-                    info.beta);
+        // The tester's bounds, then the bias the SPRT has on them, and the games before which it decides nothing.
+        auto head = fmt::format("SPRT [{:.2f}, {:.2f}]", info.elo0 - info.sprt_bias, info.elo1 - info.sprt_bias);
+        if (info.sprt_bias != 0) {
+            head += fmt::format(" {} {:g}", info.sprt_bias > 0 ? "+" : "-", std::abs(info.sprt_bias));
+        }
+        head += fmt::format(" {}, α {:.3f} β {:.3f}", info.model, info.alpha, info.beta);
+        if (info.sprt_min_games > 0) {
+            head += ", " + trn("no decision before {} game", "no decision before {} games", info.sprt_min_games,
+                               info.sprt_min_games);
+        }
+        ImGui::TextUnformatted(head.c_str());
         ImGui::SameLine();
         const auto overlay = fmt::format("LLR {:.2f}  ({:.2f} … {:.2f})", current_.llr, lo, hi);
         ImGui::PushStyleColor(ImGuiCol_PlotHistogram,
                               current_.llr >= 0 ? ImVec4(0.47f, 0.78f, 0.47f, 1) : ImVec4(0.9f, 0.43f, 0.39f, 1));
         ImGui::ProgressBar(static_cast<float>(t), ImVec2(-FLT_MIN, 0), overlay.c_str());
         ImGui::PopStyleColor();
+        // Beyond a bound before the minimum of games: the match goes on, and says why.
+        const auto played = static_cast<uint64_t>(std::max(0, n));
+        if (played < info.sprt_min_games && (current_.llr >= hi || current_.llr <= lo)) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+            ImGui::TextUnformatted(trn("The LLR is beyond a bound: no decision before {} game, {} played.",
+                                       "The LLR is beyond a bound: no decision before {} games, {} played.",
+                                       info.sprt_min_games, info.sprt_min_games, played)
+                                       .c_str());
+            ImGui::PopStyleColor();
+        }
     }
 
     if (open_statistics_ && n > 0) {
@@ -216,6 +235,7 @@ void App::drawResults() {
     }
 
     drawPgnOutError();
+    drawUnbalancedCount();
 
     // Engine health, shown only when something happened.
     for (int i = 0; i < std::min(2, static_cast<int>(totals_.size())); ++i) {
@@ -226,7 +246,7 @@ void App::drawResults() {
                                TR("%s: %d loss(es) on time, %d crash(es), %d illegal move(s)"), name, t.timeouts,
                                t.crashes, t.illegal);
         }
-        if (const auto* tour = run_.tournament(); tour && i < static_cast<int>(tour->spec().participants.size())) {
+        if (const auto* tour = run_->tournament(); tour && i < static_cast<int>(tour->spec().participants.size())) {
             const auto problem = cpuProblem(t, configThreads(tour->spec().participants[i].engine));
             if (!problem.empty()) ImGui::TextColored(ImVec4(0.95f, 0.65f, 0.3f, 1), "%s: %s", name, problem.c_str());
         }
@@ -247,7 +267,7 @@ void App::drawCharts() {
         return;
     }
 
-    const auto& info   = run_.info();
+    const auto& info   = run_->info();
     const ImVec2 avail = ImGui::GetContentRegionAvail();
     const float half_w = (avail.x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
     const float row_h  = std::max(160.0f, (avail.y - ImGui::GetStyle().ItemSpacing.y * 2) / 3.0f);

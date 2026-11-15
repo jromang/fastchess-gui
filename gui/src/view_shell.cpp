@@ -18,9 +18,9 @@
 #include "i18n.hpp"
 #include "logo.hpp"
 #include "memory.hpp"
+#include "renderer.hpp"
 #include "report.hpp"
 #include "setup_checks.hpp"
-#include "renderer.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -133,20 +133,29 @@ void App::importLegacyRuns() {
 }
 
 void App::openTournament(const fs::path& dir) {
-    if (run_.running()) {
-        if (run_.tournament() && run_.tournament()->dir() == dir) {
-            page_ = Page::Tournament;
-        } else {
-            start_error_ = TR("A match is running: wait for its end to open another one.");
-        }
+    // Open already (playing, or looked at): its tab.
+    if (const int i = findRun(dir); i >= 0) {
+        showRun(static_cast<std::size_t>(i));
+        page_ = Page::Tournament;
         return;
     }
 
-    start_error_ = run_.view(dir);
+    auto view    = std::make_unique<RunController>();
+    start_error_ = view->view(dir);
     if (!start_error_.empty()) return;
 
     const auto summary = tour::summarize(dir);
-    resetRunView();
+    // In the tab of a tournament only looked at, rather than a tab more for each one opened.
+    OpenRun open;
+    open.run = std::move(view);
+    if (auto* shown = shownRun(); shown && !shown->run->running() && !shown->quick_test) {
+        *shown = std::move(open);
+        run_   = shown->run.get();
+        resetRunView();
+        loadRunView();
+    } else {
+        addRun(std::move(open));
+    }
     if (summary) {
         finish_message_ = trf("{} · {} games", statusLabel(*summary, false), summary->played);
         if (!summary->finished) unfinished_ = summary;
@@ -221,11 +230,14 @@ void App::drawShell() {
     ImGui::End();
 }
 
-int App::gamesPlaying() const {
-    const auto* obs = run_.observer();
-    if (!obs || !run_.running()) return 0;
+int App::gamesPlaying(bool all) const {
     int n = 0;
-    for (int i = 0; i < obs->slotCount(); ++i) n += obs->slotActive(i) ? 1 : 0;
+    for (const auto& r : runs_) {
+        if (!all && r.run.get() != run_) continue;
+        const auto* obs = r.run->observer();
+        if (!obs || !r.run->running()) continue;
+        for (int i = 0; i < obs->slotCount(); ++i) n += obs->slotActive(i) ? 1 : 0;
+    }
     return n;
 }
 
@@ -248,7 +260,7 @@ void App::drawRail(float width) {
     }
 
     const bool in_tournaments = page_ == Page::Home || page_ == Page::NewMatch || page_ == Page::Tournament;
-    const int playing         = gamesPlaying();
+    const int playing         = gamesPlaying(true);
     if (ui::railButton("rail_home", ui::Icon::Trophy, TR("Tournaments"), in_tournaments, width, button)) {
         page_              = Page::Home;
         tournaments_dirty_ = true;
@@ -324,8 +336,6 @@ bool App::setupProbing() const {
 }
 
 void App::drawNewMatch() {
-    const bool locked = run_.running();
-
     ui::pageTitle(TR("New tournament"), guideSection());
     ImGui::TextDisabled("%s", TR("A match between two versions, a round robin or a gauntlet."));
 
@@ -338,10 +348,10 @@ void App::drawNewMatch() {
         ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
         ImGui::PushStyleColor(
             ImGuiCol_Text, ui::currentTheme() == ui::Theme::Dark ? ImVec4(0.04f, 0.07f, 0.13f, 1) : ImVec4(1, 1, 1, 1));
-        if (ui::iconButton("start", ui::Icon::Play, TR("Start"), ready && !locked)) startRun();
+        if (ui::iconButton("start", ui::Icon::Play, TR("Start"), ready)) startRun();
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-            if (locked)
-                ImGui::SetTooltip("%s", TR("A match is already running."));
+            if (ready && runsPlaying() > 0)
+                ImGui::SetTooltip("%s", TR("It plays beside the tournaments running, sharing the cores with them."));
             else if (!chosen)
                 ImGui::SetTooltip("%s", setup_.format == TournamentFormat::Match ? TR("Choose engines A and B.")
                                                                                  : TR("Choose at least two engines."));
@@ -359,7 +369,6 @@ void App::drawNewMatch() {
                                          : TR("Starts by itself when the running tournament ends."));
     }
     // What no profile holds, beside the buttons: the template the setup came from, the tournament's name.
-    ImGui::BeginDisabled(locked);
     ui::sameLineOrWrap(px(200));
     drawTemplates();
     ui::sameLineOrWrap(px(380));
@@ -379,7 +388,6 @@ void App::drawNewMatch() {
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip) && setup_.name.empty())
             ImGui::SetTooltip("%s", TR("Empty: a name made from the engines."));
     }
-    ImGui::EndDisabled();
     if (!start_error_.empty()) {
         drawMessage(start_error_, start_fixes_, start_fixes_for_, true, "start_error");
     }
@@ -417,11 +425,19 @@ void App::drawNewMatch() {
 // Tournament workspace
 
 void App::drawWorkspaceHeader() {
-    const auto& info = run_.info();
-    const auto* t    = run_.tournament();
+    const auto& info = run_->info();
+    const auto* t    = run_->tournament();
 
+    // An SPRT with the tester's bounds, the bias on them and the games before which it decides nothing.
+    auto sprt = info.sprt ? sprtText(info.elo0 - info.sprt_bias, info.elo1 - info.sprt_bias, info.sprt_bias, 0) + " " +
+                                info.model
+                          : std::string();
+    if (info.sprt && info.sprt_min_games > 0) {
+        sprt += " · " + trn("no decision before {} game", "no decision before {} games", info.sprt_min_games,
+                            info.sprt_min_games);
+    }
     const auto detail = info.format == tour::Format::Match
-                            ? (info.sprt ? fmt::format("SPRT [{:g}, {:g}] {}", info.elo0, info.elo1, info.model)
+                            ? (info.sprt          ? sprt
                                : info.total_games ? trn("{} game", "{} games", info.total_games, info.total_games)
                                                   : std::string(TR("until stopped")))
                             : trf("{} engines · {} games", info.participants, info.total_games);
@@ -429,9 +445,9 @@ void App::drawWorkspaceHeader() {
     ui::pageTitle(t ? t->spec().name.c_str() : TR("No match"), guideSection());
 
     const auto status   = runStatusText();
-    const bool finished = run_.state() == RunController::State::Finished;
+    const bool finished = run_->state() == Run::State::Finished;
     // Ended by an error or an engine that failed: which engine, with Open the engine and Open the log.
-    if (finished && (!run_.error().empty() || finish_fixes_for_ == status)) {
+    if (finished && (!run_->error().empty() || finish_fixes_for_ == status)) {
         drawMessage(status, finish_fixes_, finish_fixes_for_, true, "finish");
     } else if (finished && t && t->startFailures().stalled()) {
         ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
@@ -448,14 +464,15 @@ void App::drawWorkspaceHeader() {
     if (drawStartFailures()) ImGui::Spacing();
     drawResumedPrograms();
 
-    if (run_.running()) {
-        const bool paused = run_.paused();
+    if (run_->running()) {
+        const bool paused = run_->paused();
         if (paused) {
-            if (ui::iconButton("resume", ui::Icon::Play, TR("Resume"), !run_.stopping() && !run_.stoppingWhenIdle())) {
+            if (ui::iconButton("resume", ui::Icon::Play, TR("Resume"),
+                               !run_->stopping() && !run_->stoppingWhenIdle())) {
                 setRunPaused(false);
             }
         } else {
-            if (ui::iconButton("pause", ui::Icon::Pause, TR("Pause"), !run_.stopping())) setRunPaused(true);
+            if (ui::iconButton("pause", ui::Icon::Pause, TR("Pause"), !run_->stopping())) setRunPaused(true);
         }
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("%s", TR("Pause: no new pair starts. Running games, and the second game of their "
@@ -463,7 +480,7 @@ void App::drawWorkspaceHeader() {
         }
 
         ImGui::SameLine();
-        if (ui::iconButton("stop", ui::Icon::Stop, TR("Stop"), !run_.stopping())) ImGui::OpenPopup("stop_menu");
+        if (ui::iconButton("stop", ui::Icon::Stop, TR("Stop"), !run_->stopping())) ImGui::OpenPopup("stop_menu");
         if (ImGui::BeginPopup("stop_menu")) {
             if (ImGui::MenuItem(TR("Finish the running games, then stop"))) stopRun(false);
             if (ImGui::MenuItem(TR("Stop now (running games are lost)"))) stopRun(true);
@@ -482,7 +499,7 @@ void App::drawWorkspaceHeader() {
         }
         if (ui::iconButton("folder", ui::Icon::Folder, TR("Folder"))) openFolder(t->dir());
     }
-    if (run_.running() && t) {
+    if (run_->running() && t) {
         ImGui::SameLine();
         if (ui::iconButton("folder", ui::Icon::Folder, TR("Folder"))) openFolder(t->dir());
     }
@@ -491,7 +508,8 @@ void App::drawWorkspaceHeader() {
 }
 
 void App::drawWorkspace() {
-    if (!run_.tournament()) {
+    drawRunTabs();
+    if (!run_->tournament()) {
         ui::pageTitle(TR("No match"), guideSection());
         ImGui::TextDisabled("%s", TR("Start a new tournament, or open one from the list of tournaments."));
         if (ImGui::Button(TR("Tournaments"))) page_ = Page::Home;
@@ -505,7 +523,7 @@ void App::drawWorkspace() {
 }
 
 bool App::drawStartFailures(const char* title) {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return false;
     const auto& failures = t->startFailures();
     if (failures.empty()) return false;
@@ -518,7 +536,7 @@ bool App::drawStartFailures(const char* title) {
     if (shown.empty()) return false;
 
     if (title) sectionTitle(title);
-    const bool running  = run_.running();
+    const bool running  = run_->running();
     const bool editable = t->spec().format == tour::Format::RoundRobin || t->spec().format == tour::Format::Gauntlet ||
                           t->spec().format == tour::Format::TeamMatch;
     const auto now      = tour::StartFailures::Clock::now();
@@ -575,10 +593,10 @@ bool App::drawStartFailures(const char* title) {
             return hit;
         };
         if (running) {
-            ImGui::BeginDisabled(e.trying || run_.stopping());
+            ImGui::BeginDisabled(e.trying || run_->stopping());
             const char* try_tip =
                 TR("Try to start it now, rather than at its next try: its games come back if it starts.");
-            if (button(TR("Try again"), try_tip) && run_.tryEngineAgain(e.participant)) {
+            if (button(TR("Try again"), try_tip) && run_->tryEngineAgain(e.participant)) {
                 Console::instance().add(trf("{}: trying to start it again.", e.name));
             }
             ImGui::EndDisabled();
@@ -674,7 +692,7 @@ void App::drawRelaunch(const std::string& engine_a, const std::string& engine_b,
     ImGui::TextDisabled("%s", TR("The other settings: those of the New tournament page."));
     const bool known =
         std::any_of(engines_.begin(), engines_.end(), [&](const EngineEntry& e) { return e.name == relaunch_engine_; });
-    ImGui::BeginDisabled(!known || run_.running());
+    ImGui::BeginDisabled(!known || run_->running());
     if (ImGui::Button(TR("Start"))) {
         setup_.format   = TournamentFormat::Match;
         setup_.engine_a = relaunch_engine_;
@@ -811,6 +829,10 @@ void App::drawSettings() {
     ImGui::TextWrapped("%s", TR("New tournaments go there, and the lists show the tournaments found there. Tournaments "
                                 "already played are not moved: a tournament is a folder, move it yourself."));
     ImGui::PopStyleColor();
+
+    ImGui::Spacing();
+    ImGui::Separator();
+    drawMachineBudget(label);
 
     // The remote machines (view_machines.cpp).
     ImGui::Spacing();

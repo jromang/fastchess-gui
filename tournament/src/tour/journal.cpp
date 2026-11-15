@@ -10,8 +10,10 @@ namespace fcg::tour {
 
 namespace fs = std::filesystem;
 
-std::vector<nlohmann::json> Journal::read(const fs::path& file, bool repair, std::vector<std::string>* damaged) {
+std::vector<nlohmann::json> Journal::read(const fs::path& file, bool repair, std::vector<std::string>* damaged,
+                                          uint64_t* consumed) {
     std::vector<nlohmann::json> events;
+    if (consumed) *consumed = 0;
 
     std::ifstream in(file, std::ios::binary);
     if (!in) return events;
@@ -35,6 +37,7 @@ std::vector<nlohmann::json> Journal::read(const fs::path& file, bool repair, std
         ++line;
         const std::string_view content(text.data() + pos, end - pos);
         pos = end + 1;
+        if (consumed) *consumed = pos;
         if (content.find_first_not_of(" \t\r") == std::string_view::npos) continue;
 
         try {
@@ -68,6 +71,14 @@ Journal::Journal(const fs::path& file) {
         file_ = nullptr;
         throw std::runtime_error("cannot write " + file.string());
     }
+    std::error_code ec;
+    size_ = fs::file_size(file, ec);
+    if (ec) size_ = 0;
+}
+
+void Journal::setListener(Listener listener) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    listener_ = std::move(listener);
 }
 
 Journal::~Journal() {
@@ -82,6 +93,9 @@ void Journal::append(const nlohmann::json& event) {
         failed_ = true;
         throw std::runtime_error("cannot write the tournament journal (is the disk full?)");
     }
+    const auto at = size_;
+    size_ += line.size();
+    if (listener_) listener_(at, size_, event);
 }
 
 }  // namespace fcg::tour

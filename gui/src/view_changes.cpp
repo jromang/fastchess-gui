@@ -259,7 +259,7 @@ void App::drawRebuiltSincePlayed(const std::vector<std::string>& names) {
 }
 
 void App::drawResumedPrograms() {
-    if (resumed_programs_.empty() || !run_.running()) return;
+    if (resumed_programs_.empty() || !run_->running()) return;
     std::vector<std::string> changed, missing;
     std::string paths;
     for (const auto& p : resumed_programs_) {
@@ -283,7 +283,7 @@ void App::drawResumedPrograms() {
     }
 
     // The text, then Continue and Pause at its right.
-    const bool can_pause = !run_.paused() && !run_.stopping();
+    const bool can_pause = !run_->paused() && !run_->stopping();
     const auto& style    = ImGui::GetStyle();
     const auto button    = [&](const char* label) {
         return ImGui::CalcTextSize(label, nullptr, true).x + style.FramePadding.x * 2 + style.ItemSpacing.x;

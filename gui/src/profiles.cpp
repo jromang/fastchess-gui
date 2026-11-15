@@ -6,8 +6,11 @@
 
 #include <fmt/include/fmt/format.h>
 
+#include <tour/polyglot.hpp>
+
 #include "i18n.hpp"
 #include "portable.hpp"
+#include "run.hpp"
 #include "storage.hpp"
 #include "ui.hpp"
 
@@ -141,13 +144,15 @@ const char* sectionTitle(SetupSection section) {
 }
 
 const std::vector<std::string>& sectionFields(SetupSection section) {
-    static const std::vector<std::string> format{
-        "format",     "cycles",    "seeds",      "mode",           "fixed_games",     "sprt_elo0",     "sprt_elo1",
-        "sprt_alpha", "sprt_beta", "sprt_model", "sprt_max_games", "sprt_draw_ratio", "sprt_rms_bias", "team_boards"};
+    static const std::vector<std::string> format{"format",        "cycles",      "seeds",          "mode",
+                                                 "fixed_games",   "sprt_elo0",   "sprt_elo1",      "sprt_alpha",
+                                                 "sprt_beta",     "sprt_model",  "sprt_max_games", "sprt_draw_ratio",
+                                                 "sprt_rms_bias", "team_boards", "sprt_bias",      "sprt_min_games"};
     static const std::vector<std::string> time{"limit",        "tc_base_s", "tc_inc_s", "tc_moves",
                                                "tc_margin_ms", "nodes",     "move_s",   "depth"};
-    static const std::vector<std::string> openings{"book",     "book_random",       "book_plies", "book_start",
-                                                   "chess960", "opening_per_round", "seed"};
+    static const std::vector<std::string> openings{
+        "book", "book_random",     "book_plies",         "book_start",    "chess960",         "opening_per_round",
+        "seed", "book_randomness", "unbalanced_enabled", "unbalanced_cp", "unbalanced_moves", "unbalanced_replace"};
     static const std::vector<std::string> adjudication{
         "draw_enabled",     "draw_movenumber", "draw_movecount",  "draw_score",       "resign_enabled",
         "resign_movecount", "resign_score",    "resign_twosided", "maxmoves_enabled", "maxmoves",
@@ -213,7 +218,8 @@ bool sameSection(const MatchSetup& a, const MatchSetup& b, SetupSection section)
                         // The draw ratio and the RMS bias are the calculator's guesses: they change no game.
                         return a.sprt_elo0 == b.sprt_elo0 && a.sprt_elo1 == b.sprt_elo1 &&
                                a.sprt_alpha == b.sprt_alpha && a.sprt_beta == b.sprt_beta &&
-                               a.sprt_model == b.sprt_model && a.sprt_max_games == b.sprt_max_games;
+                               a.sprt_model == b.sprt_model && a.sprt_max_games == b.sprt_max_games &&
+                               a.sprt_bias == b.sprt_bias && a.sprt_min_games == b.sprt_min_games;
                     }
                     return true;
                 case TournamentFormat::Gauntlet:
@@ -238,10 +244,15 @@ bool sameSection(const MatchSetup& a, const MatchSetup& b, SetupSection section)
             }
             return true;
         case SetupSection::Openings:
-            // The plies of a book only matter with a book.
+            // The plies of a book only matter with a book. The randomness also chooses the moves of the
+            // participants' own books, which are not in the section: it always counts.
             return a.book == b.book && (a.book.empty() || a.book_plies == b.book_plies) &&
                    a.book_random == b.book_random && a.book_start == b.book_start && a.chess960 == b.chess960 &&
-                   a.opening_per_round == b.opening_per_round && a.seed == b.seed;
+                   a.opening_per_round == b.opening_per_round && a.seed == b.seed &&
+                   a.book_randomness == b.book_randomness && a.unbalanced_enabled == b.unbalanced_enabled &&
+                   (!a.unbalanced_enabled ||
+                    (a.unbalanced_cp == b.unbalanced_cp && a.unbalanced_moves == b.unbalanced_moves &&
+                     a.unbalanced_replace == b.unbalanced_replace));
         case SetupSection::Adjudication:
             if (a.draw_enabled != b.draw_enabled || a.resign_enabled != b.resign_enabled ||
                 a.maxmoves_enabled != b.maxmoves_enabled || a.tb_enabled != b.tb_enabled) {
@@ -282,6 +293,8 @@ void copySection(MatchSetup& to, const MatchSetup& from, SetupSection section) {
             to.sprt_max_games  = from.sprt_max_games;
             to.sprt_draw_ratio = from.sprt_draw_ratio;
             to.sprt_rms_bias   = from.sprt_rms_bias;
+            to.sprt_bias       = from.sprt_bias;
+            to.sprt_min_games  = from.sprt_min_games;
             return;
         case SetupSection::Time:
             to.limit        = from.limit;
@@ -301,6 +314,11 @@ void copySection(MatchSetup& to, const MatchSetup& from, SetupSection section) {
             to.chess960          = from.chess960;
             to.opening_per_round = from.opening_per_round;
             to.seed              = from.seed;
+            to.book_randomness    = from.book_randomness;
+            to.unbalanced_enabled = from.unbalanced_enabled;
+            to.unbalanced_cp      = from.unbalanced_cp;
+            to.unbalanced_moves   = from.unbalanced_moves;
+            to.unbalanced_replace = from.unbalanced_replace;
             return;
         case SetupSection::Adjudication:
             to.draw_enabled     = from.draw_enabled;
@@ -477,6 +495,33 @@ std::optional<MatchSetup> readTemplate(const std::filesystem::path& file, const 
     }
 }
 
+std::string randomnessText(int randomness) {
+    randomness = std::clamp(randomness, -tour::RANDOMNESS_LIMIT, tour::RANDOMNESS_LIMIT);
+    if (randomness == 0) return TR("moves by their weights");
+    if (randomness == -tour::RANDOMNESS_LIMIT) return TR("the best moves only");
+    if (randomness == tour::RANDOMNESS_LIMIT) return TR("every move alike");
+    return trf("randomness {}", fmt::format("{:+}", randomness));
+}
+
+std::string sprtText(double elo0, double elo1, double bias, uint64_t min_games) {
+    auto text = fmt::format("SPRT [{}, {}]", number(elo0), number(elo1));
+    if (bias != 0) text += fmt::format(" {} {}", bias > 0 ? "+" : "-", number(std::abs(bias)));
+    if (min_games > 0) {
+        text += ", " + trn("no decision before {} game", "no decision before {} games", min_games, min_games);
+    }
+    return text;
+}
+
+std::string unbalancedText(const MatchSetup& s) {
+    if (!s.unbalanced_enabled) return {};
+    const int cp     = std::max(1, s.unbalanced_cp);
+    const auto moves = static_cast<uint64_t>(std::max(1, s.unbalanced_moves));
+    return s.unbalanced_replace ? trn("unbalanced openings replaced (±{} cp for {} move)",
+                                      "unbalanced openings replaced (±{} cp for {} moves)", moves, cp, moves)
+                                : trn("unbalanced openings flagged (±{} cp for {} move)",
+                                      "unbalanced openings flagged (±{} cp for {} moves)", moves, cp, moves);
+}
+
 std::string durationText(double seconds) {
     if (!(seconds > 0)) return trf("{} s", 0);
     const double whole = std::round(seconds);
@@ -530,9 +575,17 @@ std::string formatSummary(const MatchSetup& s) {
             if (s.mode == MatchMode::Sprt) {
                 std::vector<std::string> parts{TR("Match"),
                                                fmt::format("SPRT [{}, {}]", number(s.sprt_elo0), number(s.sprt_elo1))};
+                // The bias as the testers write it: "SPRT [0, 3] + 5", the bounds given being [5, 8].
+                if (s.sprt_bias != 0) {
+                    parts.back() += fmt::format(" {} {}", s.sprt_bias > 0 ? "+" : "-", number(std::abs(s.sprt_bias)));
+                }
                 if (s.sprt_model != "normalized") parts.back() += " " + s.sprt_model;
                 if (s.sprt_alpha != 0.05 || s.sprt_beta != 0.05) {
                     parts.back() += fmt::format(" α {} β {}", number(s.sprt_alpha), number(s.sprt_beta));
+                }
+                if (s.sprt_min_games > 0) {
+                    parts.push_back(trn("no decision before {} game", "no decision before {} games",
+                                        static_cast<uint64_t>(s.sprt_min_games), s.sprt_min_games));
                 }
                 if (s.sprt_max_games > 0) {
                     parts.push_back(trn("at most {} game", "at most {} games", static_cast<uint64_t>(s.sprt_max_games),
@@ -562,17 +615,30 @@ std::string formatSummary(const MatchSetup& s) {
 }
 
 std::string openingsSummary(const MatchSetup& s, const std::vector<BookEntry>& books) {
+    // The participants' own books choose their moves as the randomness says too.
+    const auto people = setupParticipants(s);
+    const bool own    = std::any_of(people.begin(), people.end(), [](const auto& p) { return !p.book.empty(); });
+    const auto own_text =
+        own && s.book_randomness != 0 ? trf("own books: {}", randomnessText(s.book_randomness)) : std::string();
+    const auto unbalanced = unbalancedText(s);
     if (s.book.empty()) {
-        return s.chess960 ? std::string(TR("Chess960: the 960 starting positions"))
-                          : std::string(TR("every game from the initial position"));
+        return joined({s.chess960 ? std::string(TR("Chess960: the 960 starting positions"))
+                                  : std::string(TR("every game from the initial position")),
+                       own_text, unbalanced});
     }
+    const bool polyglot = tour::isPolyglot(s.book);
     std::vector<std::string> parts{bookLabel(s.book, books)};
-    if (s.book_plies > 0) parts.push_back(trn("{} ply", "{} plies", static_cast<uint64_t>(s.book_plies), s.book_plies));
+    // A Polyglot book is always followed to some depth: the default one when none is set.
+    const int plies = polyglot && s.book_plies <= 0 ? POLYGLOT_PLIES : s.book_plies;
+    if (plies > 0) parts.push_back(trn("{} ply", "{} plies", static_cast<uint64_t>(plies), plies));
     parts.push_back(s.book_random ? TR("random") : TR("in order"));
+    if (polyglot) parts.push_back(randomnessText(s.book_randomness));
     if (s.book_start > 1) parts.push_back(trf("from opening {}", s.book_start));
     if (s.seed > 0) parts.push_back(trf("seed {}", s.seed));
     if (s.chess960) parts.push_back("Chess960");
     if (s.opening_per_round) parts.push_back(TR("one opening per round"));
+    if (!polyglot) parts.push_back(own_text);
+    parts.push_back(unbalanced);
     return joined(parts);
 }
 
@@ -630,9 +696,10 @@ std::string sectionCommandLine(const MatchSetup& s, SetupSection section) {
             switch (s.format) {
                 case TournamentFormat::Match:
                     if (s.mode == MatchMode::Sprt) {
-                        return fmt::format("-sprt elo0={} elo1={} alpha={} beta={} model={}", number(s.sprt_elo0),
-                                           number(s.sprt_elo1), number(s.sprt_alpha), number(s.sprt_beta),
-                                           s.sprt_model);
+                        // The bounds fastchess would be given, the bias on them; it has no minimum of games.
+                        return fmt::format("-sprt elo0={} elo1={} alpha={} beta={} model={}",
+                                           number(s.sprt_elo0 + s.sprt_bias), number(s.sprt_elo1 + s.sprt_bias),
+                                           number(s.sprt_alpha), number(s.sprt_beta), s.sprt_model);
                     }
                     if (s.mode == MatchMode::Fixed)
                         return fmt::format("-rounds {} -games 2 -repeat", std::max(1, s.fixed_games / 2));

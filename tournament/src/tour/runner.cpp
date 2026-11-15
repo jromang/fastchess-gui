@@ -106,6 +106,9 @@ void Runner::start() {
         // A withdrawal may have dropped the game a pair was waiting for.
         closeSettledPairs();
 
+        // A larger allowance: the games it lets start, now.
+        if (allowance_changed_.exchange(false)) startNext();
+
         // While engines cannot start, the games set aside come back as their engines are due for a try or start
         // again, on the threads left free meanwhile.
         if (!failures.empty() || failures.version() != failures_seen) {
@@ -145,18 +148,52 @@ void Runner::startNext() {
     std::lock_guard<std::mutex> lock(mutex_);
 
     while (!fastchess::atomic::stop && in_flight_ < static_cast<int>(pool_.getNumThreads())) {
+        // The game found starts only if it fits the allowance with the games in flight (asked under the state's lock,
+        // before it is claimed: a game held back is not claimed, and comes first next time).
+        GameCost cost;
+        Wait held = Wait::None;
         std::optional<GameTask> task;
         try {
-            task = state_.claimNext();
+            task = state_.claimNext([&](const Participant& first, const Participant& second) {
+                cost = gameCost(first, second);
+                held = allowance_.admits(in_flight_cost_, in_flight_, cost);
+                return held == Wait::None;
+            });
         } catch (const std::exception& e) {
             fail(e.what());
             return;
         }
+        waiting_ = task ? Wait::None : held;
         if (!task) return;
 
         ++in_flight_;
-        pool_.enqueue([this, task = std::move(*task)]() { play(task); });
+        in_flight_cost_ += cost;
+        pool_.enqueue([this, task = std::move(*task), cost]() { play(task, cost); });
     }
+}
+
+void Runner::setAllowance(const Allowance& allowance) {
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (allowance_ == allowance) return;
+        allowance_ = allowance;
+    }
+    allowance_changed_ = true;
+}
+
+Allowance Runner::allowance() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return allowance_;
+}
+
+GameCost Runner::inFlight() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return in_flight_cost_;
+}
+
+int Runner::gamesInFlight() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return in_flight_;
 }
 
 bool Runner::gameWanted(std::size_t /*game_id*/) const {
@@ -186,7 +223,7 @@ bool Runner::gameHeld(std::size_t /*game_id*/) const {
     return held;
 }
 
-void Runner::play(const GameTask& task) {
+void Runner::play(const GameTask& task, const GameCost& cost) {
     t_task     = &task;
     t_recorded = false;
     t_started  = false;
@@ -254,6 +291,7 @@ void Runner::play(const GameTask& task) {
     {
         std::lock_guard<std::mutex> lock(mutex_);
         --in_flight_;
+        in_flight_cost_ -= cost;
     }
     startNext();
 }

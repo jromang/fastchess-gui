@@ -78,7 +78,7 @@ ImU32 scoreColor(double score, float strength) {
 }  // namespace
 
 void App::drawPgnOutError() {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t || t->spec().pgn_out.empty()) return;
     const auto error = t->pgnOutError();
     if (error.empty()) return;
@@ -89,12 +89,12 @@ void App::drawPgnOutError() {
 }
 
 bool App::isMatch() const {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     return !t || t->spec().format == tour::Format::Match;
 }
 
 void App::refreshTable() {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t || isMatch() || table_for_ == games_.size()) return;
     // Hundreds of engines and their games take a while: then the table waits ten times that before the next games
     // count, so that fast games do not hold the window. Asked for (a new anchor, an edit), it is computed now.
@@ -113,7 +113,7 @@ void App::drawStandingsTable(bool compact) {
     // The whole table scrolls under its header in the space left; the compact one is as tall as its rows.
     const auto flags  = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit |
                         ImGuiTableFlags_ScrollX | ImGuiTableFlags_PadOuterX | (compact ? 0 : ImGuiTableFlags_ScrollY);
-    const bool swiss  = run_.tournament() && run_.tournament()->spec().format == tour::Format::Swiss;
+    const bool swiss  = run_->tournament() && run_->tournament()->spec().format == tour::Format::Swiss;
     const int columns = compact ? 11 : swiss ? 14 : 13;
     if (!ImGui::BeginTable("##standings", columns, flags)) return;
     if (!compact) ImGui::TableSetupScrollFreeze(2, 1);
@@ -162,7 +162,7 @@ void App::drawStandingsRow(std::size_t i, bool compact, bool swiss) {
     }
     // A book of its own: which, and how deep.
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip)) {
-        const auto* t = run_.tournament();
+        const auto* t = run_->tournament();
         const auto* p = t ? t->spec().participant(r.id) : nullptr;
         if (p && !p->book.empty()) {
             ImGui::SetTooltip(
@@ -228,7 +228,7 @@ void App::drawStandingsRow(std::size_t i, bool compact, bool swiss) {
 
 void App::drawTournamentOverview() {
     refreshTable();
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return;
 
     const float right = std::max(px(320), ImGui::GetContentRegionAvail().x * 0.34f);
@@ -247,7 +247,7 @@ void App::drawTournamentOverview() {
     ImGui::TextUnformatted(TR("Standings"));
     ImGui::SameLine();
     if (anchor_) {
-        const auto name = run_.observer()->name(static_cast<std::size_t>(std::max(0, indexOf(t->spec(), anchor_->id))));
+        const auto name = run_->observer()->name(static_cast<std::size_t>(std::max(0, indexOf(t->spec(), anchor_->id))));
         ImGui::TextDisabled("%s", trf("Elo: {} = {:.0f}, 95 % interval", name, anchor_->elo).c_str());
     } else {
         ImGui::TextDisabled("%s", TR("Elo relative to the average, 95 % interval"));
@@ -312,12 +312,12 @@ void App::drawTournamentOverview() {
         const auto round = schedule_.last_round;
         ImGui::TextUnformatted(spec.format == tour::Format::Swiss ? trf("Round {} / {}", round, spec.rounds).c_str()
                                                                   : trf("Round {}", round).c_str());
-        const auto all = run_.info().total_games;
+        const auto all = run_->info().total_games;
         ImGui::ProgressBar(all ? static_cast<float>(games_.size()) / static_cast<float>(all) : 0.0f,
                            ImVec2(-FLT_MIN, px(8)), "");
         ImGui::TextDisabled("%s", trf("{} / {} games", games_.size(), all).c_str());
     } else {
-        const auto total   = run_.info().total_games;
+        const auto total   = run_->info().total_games;
         const int cycles   = std::max(1, spec.cycles);
         const uint64_t per = total / 2 / static_cast<uint64_t>(cycles);  // encounters per cycle
         std::vector<int> done(static_cast<std::size_t>(cycles), 0);
@@ -352,6 +352,7 @@ void App::drawTournamentOverview() {
                 trf("{:.0f} games/h · about {} left", games_per_hour_, ui::formatDuration(hours * 3600.0)).c_str());
         }
     }
+    drawUnbalancedCount();
     ui::endCard();
     drawSubmissionChecklist();  // once it is finished
 
@@ -389,7 +390,7 @@ void App::drawTournamentOverview() {
     ImGui::Spacing();
     ui::beginCard("latest_card", ImVec2(0, std::max(px(160), ImGui::GetContentRegionAvail().y)));
     ImGui::TextUnformatted(TR("Latest results"));
-    const auto* obs = run_.observer();
+    const auto* obs = run_->observer();
     ImGui::BeginChild("##latest");
     const float right_x = ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize("½-½").x;
     ImGuiListClipper clipper;
@@ -413,8 +414,49 @@ void App::drawTournamentOverview() {
     ImGui::EndChild();
 }
 
+void App::drawUnbalancedCount() {
+    const auto* t = run_->tournament();
+    if (!t || t->spec().unbalanced_cp <= 0) return;
+    const auto& spec   = t->spec();
+    const auto flagged = static_cast<uint64_t>(
+        std::count_if(games_.begin(), games_.end(), [](const GameRecord& g) { return g.unbalanced != 0; }));
+    const auto replaced = t->openingsReplaced();
+    std::string text =
+        trn("{} game from an unbalanced opening", "{} games from an unbalanced opening", flagged, flagged);
+    if (replaced > 0) text += " · " + trn("{} opening replaced", "{} openings replaced", replaced, replaced);
+    ImGui::PushStyleColor(ImGuiCol_Text, flagged + replaced > 0 ? ui::WARN : ImGui::GetColorU32(ImGuiCol_TextDisabled));
+    ImGui::TextUnformatted(text.c_str());
+    ImGui::PopStyleColor();
+    if (ImGui::BeginItemTooltip()) {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+        ImGui::TextUnformatted(trf("Both engines beyond ±{} cp for the same side for their first {} moves after the "
+                                   "book. The results are not changed.",
+                                   spec.unbalanced_cp, spec.unbalanced_moves)
+                                   .c_str());
+        if (spec.unbalanced_replace) {
+            ImGui::TextUnformatted(trf("Such a pair is voided and played again from another opening, at most {} "
+                                       "times.",
+                                       tour::MAX_OPENING_REPLACEMENTS)
+                                       .c_str());
+        }
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+    if (flagged > 0) {
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Show##unbalanced"))) showUnbalancedGames();
+    }
+}
+
+void App::showUnbalancedGames() {
+    page_         = Page::Tournament;
+    tab_request_  = Tab::Games;
+    games_filter_ = UNBALANCED_FILTER;
+    filtered_for_ = ~std::size_t(0);
+}
+
 void App::copyStandings(ui::CopyAs as) {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t || isMatch()) return;
     refreshTable();
     // In the order shown, the line of the event, the games and the book under it, then the program's name, so that
@@ -448,7 +490,7 @@ void App::copyStandings(ui::CopyAs as) {
 
 void App::drawStandings() {
     refreshTable();
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return;
 
     // The table, or the crosstable for a round robin of a size that fits: a Swiss, a knockout or a gauntlet leaves
@@ -565,7 +607,7 @@ void App::drawStandings() {
 }
 
 void App::drawTeamScore() {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return;
     const auto& spec = t->spec();
     const auto& a    = teams_.teams[0];
@@ -602,7 +644,7 @@ void App::drawTeamScore() {
 }
 
 void App::drawTeamStandings() {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return;
     const auto& spec = t->spec();
 
@@ -711,7 +753,7 @@ void App::drawTeamStandings() {
 }
 
 void App::drawOpponents(int id) {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     const auto* p = t ? t->spec().participant(id) : nullptr;
     if (!p) {
         standings_engine_.reset();
@@ -910,14 +952,14 @@ void App::drawCrosstable() {
     if (!crosstable_cell_) return;
 
     // The games of the selected encounter.
-    const auto* t   = run_.tournament();
+    const auto* t   = run_->tournament();
     const auto& ids = t->spec().participants;
     int a = -1, b = -1;
     for (std::size_t i = 0; i < ids.size(); ++i) {
         if (ids[i].id == crosstable_cell_->first) a = static_cast<int>(i);
         if (ids[i].id == crosstable_cell_->second) b = static_cast<int>(i);
     }
-    const auto* obs = run_.observer();
+    const auto* obs = run_->observer();
     const auto p    = table_.pair(crosstable_cell_->first, crosstable_cell_->second);
 
     ImGui::BeginChild("##pair_games", ImVec2(0, 0));
@@ -972,7 +1014,7 @@ namespace fcg {
 
 void App::drawBracket() {
     refreshTable();
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return;
 
     const auto brackets = t->brackets();

@@ -18,6 +18,7 @@
 // The caller sets fastchess' global configuration first (config::TournamentConfig with an empty opening file,
 // pgn file and config name; config::EngineConfigs with the participants), as for any fastchess tournament.
 
+#include <atomic>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -27,6 +28,7 @@
 #include <core/observer.hpp>
 #include <matchmaking/tournament/base/tournament.hpp>
 
+#include "budget.hpp"
 #include "engine_log.hpp"
 #include "state.hpp"
 
@@ -75,6 +77,18 @@ class Runner final : public fastchess::BaseTournament, public fastchess::observe
     [[nodiscard]] std::string error() const;
     [[nodiscard]] bool stalled() const noexcept { return state_.startFailures().stalled(); }
 
+    // What the tournament may use of the machine (budget.hpp): a game starts only when the games in flight and it fit,
+    // or none is in flight and the allowance lets one game always play. From any thread, before or while it plays: a
+    // larger allowance starts games at once, a smaller one at the next game (no game is interrupted).
+    void setAllowance(const Allowance& allowance);
+    [[nodiscard]] Allowance allowance() const;
+    // What the games in flight take, and how many they are.
+    [[nodiscard]] GameCost inFlight() const;
+    [[nodiscard]] int gamesInFlight() const;
+    // What held the next game back the last time one was looked for: Wait::None when nothing did (it started, or no
+    // game was left to start).
+    [[nodiscard]] Wait waiting() const noexcept { return waiting_.load(); }
+
    protected:
     void startNext() override;
     // While an engine fails to start: the game is still to be played, and the tournament is not stopping once the
@@ -85,7 +99,7 @@ class Runner final : public fastchess::BaseTournament, public fastchess::observe
     [[nodiscard]] bool gameHeld(std::size_t game_id) const override;
 
    private:
-    void play(const GameTask& task);
+    void play(const GameTask& task, const GameCost& cost);
     void fail(const std::string& message);
     // An engine of `task` failed to start (fastchess logged `failure`): counted, its engine log written, reported.
     void startFailed(const GameTask& task, const StartFailureLine& failure);
@@ -115,8 +129,12 @@ class Runner final : public fastchess::BaseTournament, public fastchess::observe
     RecordListener* listener_;
     fastchess::observer::GameObserver* previous_ = nullptr;
 
-    std::mutex mutex_;
+    mutable std::mutex mutex_;
     int in_flight_ = 0;  // games handed to the pool and not finished
+    GameCost in_flight_cost_;
+    Allowance allowance_;
+    std::atomic_bool allowance_changed_{false};
+    std::atomic<Wait> waiting_{Wait::None};
 
     mutable std::mutex error_mutex_;
     std::string error_;

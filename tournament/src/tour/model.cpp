@@ -19,6 +19,7 @@ void to_json(nlohmann::json& j, const Participant& p) {
         j["book"] = p.book;
         if (p.book_depth > 0) j["book_depth"] = p.book_depth;
     }
+    if (p.gpu) j["gpu"] = true;
     if (p.team != 0) j["team"] = p.team;
 }
 
@@ -31,6 +32,7 @@ void from_json(const nlohmann::json& j, Participant& p) {
     p.elo        = j.value("elo", 0);
     p.book       = j.value("book", std::string());
     p.book_depth = j.value("book_depth", 0);
+    p.gpu        = j.value("gpu", false);
     p.team       = j.value("team", 0) == 1 ? 1 : 0;
 }
 
@@ -110,6 +112,16 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
         j["team_boards"] = s.team_boards;
         j["team_names"]  = s.team_names;
     }
+    if (!s.polyglot_book.empty()) {
+        j["polyglot_book"]  = s.polyglot_book;
+        j["polyglot_plies"] = s.polyglot_plies;
+    }
+    if (s.book_randomness != 0) j["book_randomness"] = s.book_randomness;
+    if (s.sprt_bias != 0) j["sprt_bias"] = s.sprt_bias;
+    if (s.sprt_min_games != 0) j["sprt_min_games"] = s.sprt_min_games;
+    if (s.unbalanced_cp > 0) {
+        j["unbalanced"] = {{"cp", s.unbalanced_cp}, {"moves", s.unbalanced_moves}, {"replace", s.unbalanced_replace}};
+    }
     if (s.log_every_game) j["log_every_game"] = true;
     if (s.stop_on_start_failure) j["stop_on_start_failure"] = true;
     if (s.opening_per_round) j["opening_per_round"] = true;
@@ -145,6 +157,16 @@ void from_json(const nlohmann::json& j, TournamentSpec& s) {
     j.at("conditions").get_to(s.conditions);
     j.at("participants").get_to(s.participants);
     if (j.contains("book")) j.at("book").get_to(s.book);
+    s.polyglot_book         = j.value("polyglot_book", std::string{});
+    s.polyglot_plies        = j.value("polyglot_plies", 0);
+    s.book_randomness       = std::clamp(j.value("book_randomness", 0), -100, 100);
+    s.sprt_bias             = j.value("sprt_bias", 0.0);
+    s.sprt_min_games        = j.value("sprt_min_games", uint64_t{0});
+    if (const auto it = j.find("unbalanced"); it != j.end() && it->is_object()) {
+        s.unbalanced_cp      = std::max(0, it->value("cp", 0));
+        s.unbalanced_moves   = std::max(1, it->value("moves", 4));
+        s.unbalanced_replace = it->value("replace", false);
+    }
     s.log_every_game        = j.value("log_every_game", false);
     s.stop_on_start_failure = j.value("stop_on_start_failure", false);
     s.opening_per_round     = j.value("opening_per_round", false);

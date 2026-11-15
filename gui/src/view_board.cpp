@@ -154,12 +154,21 @@ bool App::boardKey() {
 std::string App::boardFen() { return boardAt(board_.game, board_.chess960, board_.ply).getFen(); }
 
 int App::tournamentThreads() const {
-    const auto* t = run_.tournament();
-    if (!run_.running() || !t) return 0;
-    // The two engines of a game take turns: the larger of their thread counts, for each game played.
-    int per_game = 1;
-    for (const auto& p : t->spec().participants) per_game = std::max(per_game, configThreads(p.engine));
-    return gamesPlaying() * per_game;
+    int threads = 0;
+    for (const auto& r : runs_) {
+        const auto* t = r.run->tournament();
+        if (!r.run->running() || !t) continue;
+        // A tournament in a process of its own tells what its games in flight take.
+        if (r.run->remote()) {
+            threads += r.run->inFlight().threads;
+            continue;
+        }
+        // The two engines of a game take turns: the larger of their thread counts, for each game played.
+        int per_game = 1;
+        for (const auto& p : t->spec().participants) per_game = std::max(per_game, configThreads(p.engine));
+        threads += r.run->runningGames() * per_game;
+    }
+    return threads;
 }
 
 void App::openOnBoard(ReplayGame game, int ply, bool chess960, std::string title, bool analyse) {
@@ -192,7 +201,7 @@ void App::analyseLiveGame(int slot) {
     if (slot < 0 || slot >= static_cast<int>(slot_views_.size())) return;
     const auto& st = slot_views_[static_cast<std::size_t>(slot)].state;
     if (!st.has_game) return;
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     ReplayGame game;
     game.start_fen = st.start_fen;
     game.headers   = {{"White", st.white}, {"Black", st.black}};
@@ -227,7 +236,7 @@ void App::analyseLiveGame(int slot) {
 
 void App::analyseReplay() {
     if (!replay_ || selected_game_ < 0 || selected_game_ >= static_cast<int>(games_.size())) return;
-    const auto* t       = run_.tournament();
+    const auto* t       = run_->tournament();
     const bool chess960 = t && t->spec().conditions.variant == fastchess::VariantType::FRC;
     auto title          = fmt::format("{} – {}", replay_->header("White"), replay_->header("Black"));
     if (t) title += " · " + t->spec().name;

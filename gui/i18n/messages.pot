@@ -37,10 +37,28 @@ msgstr ""
 msgid "%.1f pawns"
 msgstr ""
 
+msgid "%d cores"
+msgstr ""
+
 msgid "%d games × %d threads > %d available threads."
 msgstr ""
 
 msgid "%d plies"
+msgstr ""
+
+msgid "%d · every move alike"
+msgstr ""
+
+msgid "%d · moves by their weights"
+msgstr ""
+
+msgid "%d · the best moves only"
+msgstr ""
+
+msgid "%d · toward every move alike"
+msgstr ""
+
+msgid "%d · toward the best moves"
 msgstr ""
 
 msgid "%s  vs  %s"
@@ -48,6 +66,11 @@ msgstr ""
 
 msgid "%s: %d loss(es) on time, %d crash(es), %d illegal move(s)"
 msgstr ""
+
+msgid "(+{} tournament)"
+msgid_plural "(+{} tournaments)"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "(already in the list)"
 msgstr ""
@@ -120,6 +143,9 @@ msgstr ""
 msgid "10 games at 10+0.1 from 5 positions, to see before a long tournament whether it loses on time, crashes, plays an illegal move or uses its clock badly."
 msgstr ""
 
+msgid "200 cp: both engines think a side is two pawns ahead, or more."
+msgstr ""
+
 msgid "200k nodes"
 msgstr ""
 
@@ -177,10 +203,21 @@ msgstr ""
 msgid "A folder of 12 SVG pictures named wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg and bK.svg … bP.svg: the white and black king, queen, rook, bishop, knight and pawn."
 msgstr ""
 
+msgid "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
+msgid_plural "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "A game has no port: {}"
 msgstr ""
 
 msgid "A game is being analysed move by move: wait for its end, or cancel it."
+msgstr ""
+
+msgid "A game is flagged when both engines see the same side ahead by the score below for each of their first moves after the book: the Games tab can show those games, the Openings tab marks and counts their openings, the overview counts them. The results are not changed."
+msgstr ""
+
+msgid "A game starts only when the Hash of its two engines, and what each engine process takes besides ({} MB, and {} MB per thread), fit in what the games playing leave: no tournament swaps. Automatic: {} % of the installed memory."
 msgstr ""
 
 msgid "A game, or two with the colours reversed, between two engines of the library from this position, with a clock for each."
@@ -201,10 +238,10 @@ msgstr ""
 msgid "A match is running. The games in progress will be lost."
 msgstr ""
 
-msgid "A match is running: wait for its end to open another one."
+msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
 msgstr ""
 
-msgid "A mate score's PV must have the right length and end in mate. PVs are always checked for illegal moves; the moves whose PV is wrong are marked in the Games tab."
+msgid "A message of the tournament's process could not be read: {}"
 msgstr ""
 
 msgid "A move counts when the player who made it is rated this or more, by the game's WhiteElo or BlackElo tag; a player without a rating is left out."
@@ -217,6 +254,9 @@ msgid "A move weighs the number of games that play it, whatever their results."
 msgstr ""
 
 msgid "A move weighs the points the side that played it made in its games: a win 2, a draw 1, a loss 0, as Polyglot counts. The games without a result are left out, and so is a move whose games were all lost."
+msgstr ""
+
+msgid "A network engine that plays on a graphics card (Lc0...): no more such engines play at once than the GPUs of Settings ({}), in a tournament and across tournaments. From the next tournament it joins."
 msgstr ""
 
 msgid "A or B of the match."
@@ -353,6 +393,9 @@ msgid_plural "Add {} engines"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "Added to elo0 and elo1, for a test against a version known to be stronger or weaker by that much: the SPRT is given [elo0 + bias, elo1 + bias]."
+msgstr ""
+
 msgid "Add…"
 msgstr ""
 
@@ -434,6 +477,9 @@ msgid "An engine is being read, try again in a moment."
 msgstr ""
 
 msgid "An engine list…"
+msgstr ""
+
+msgid "An engine of it uses a GPU, and no GPU is counted (Settings): games may share one."
 msgstr ""
 
 msgid "An evaluation swings"
@@ -598,6 +644,9 @@ msgstr ""
 msgid "Black"
 msgstr ""
 
+msgid "Black ahead: {}"
+msgstr ""
+
 msgid "Black disconnects"
 msgstr ""
 
@@ -697,6 +746,9 @@ msgstr ""
 msgid "Books the program writes, added to the library."
 msgstr ""
 
+msgid "Both engines beyond ±{} cp for the same side for their first {} moves after the book. The results are not changed."
+msgstr ""
+
 msgid "Both engines must agree"
 msgstr ""
 
@@ -772,6 +824,9 @@ msgstr ""
 msgid "Cannot load the Syzygy tablebases from "
 msgstr ""
 
+msgid "Cannot open the tournament again: {}"
+msgstr ""
+
 msgid "Cannot open the tournament: {}"
 msgstr ""
 
@@ -794,6 +849,9 @@ msgid "Cannot start the match: {}"
 msgstr ""
 
 msgid "Cannot start the quick test: {}"
+msgstr ""
+
+msgid "Cannot start the tournament: {}"
 msgstr ""
 
 msgid "Cannot start {}: {}"
@@ -1075,6 +1133,9 @@ msgstr ""
 msgid "Cores"
 msgstr ""
 
+msgid "Cores for the tournaments"
+msgstr ""
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr ""
 
@@ -1103,6 +1164,9 @@ msgid "Crosstable"
 msgstr ""
 
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
+msgstr ""
+
+msgid "Ctrl+click to type a value."
 msgstr ""
 
 msgid "Custom"
@@ -1264,10 +1328,16 @@ msgstr ""
 msgid "Each pair is two games on the same opening, colours reversed."
 msgstr ""
 
+msgid "Each plays on in its own process. The window shows them again at its next launch; fastchess-gui --attach <folder> talks with one from a terminal."
+msgstr ""
+
 msgid "Each round is two games, colours reversed, against an engine with a similar score."
 msgstr ""
 
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
+msgstr ""
+
+msgid "Each tournament: the cores its games use, of those it may use. The budget is set in Settings; the weights on each card decide who gets more."
 msgstr ""
 
 msgid "Edit in place"
@@ -1283,6 +1353,9 @@ msgid "Elo (95% CI)"
 msgstr ""
 
 msgid "Elo above the next engine of the list."
+msgstr ""
+
+msgid "Elo bias"
 msgstr ""
 
 msgid "Elo difference"
@@ -1480,6 +1553,9 @@ msgstr ""
 msgid "Everyone against everyone"
 msgstr ""
 
+msgid "Everything"
+msgstr ""
+
 msgid "Everything paused: no new game pair starts, and the queue waits for Resume all."
 msgstr ""
 
@@ -1499,6 +1575,9 @@ msgid "Export all…"
 msgstr ""
 
 msgid "Export as EPD…"
+msgstr ""
+
+msgid "Export as EPD… leaves out the openings with a game flagged unbalanced."
 msgstr ""
 
 msgid "Export filtered…"
@@ -1573,6 +1652,12 @@ msgstr ""
 msgid "Fixed nodes or depth: one game per hardware thread (Hyper-Threading does not change the moves played). With a clock: physical cores − 1, so the engines do not slow each other down."
 msgstr ""
 
+msgid "Flag unbalanced openings"
+msgstr ""
+
+msgid "Flagged unbalanced during the games"
+msgstr ""
+
 msgid "Flip"
 msgstr ""
 
@@ -1640,6 +1725,9 @@ msgid "From {}: {}"
 msgstr ""
 
 msgid "Full screen (F11)"
+msgstr ""
+
+msgid "GPUs"
 msgstr ""
 
 msgid "Game #{}"
@@ -1833,6 +1921,9 @@ msgstr ""
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr ""
 
+msgid "How the moves of a Polyglot book are chosen, for the tournament's openings and for the participants' own books: -100 the best move only, 0 in proportion to their weights, as Polyglot and Cute Chess choose, 100 every move alike. In between, -50 squares the weights and 50 takes their square roots."
+msgstr ""
+
 msgid "How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."
 msgstr ""
 
@@ -1926,6 +2017,9 @@ msgstr ""
 msgid "It needs the web page served."
 msgstr ""
 
+msgid "It plays beside the tournaments running, sharing the cores with them."
+msgstr ""
+
 msgid "It plays every engine of the other team."
 msgstr ""
 
@@ -2001,6 +2095,9 @@ msgstr ""
 msgid "Its results…"
 msgstr ""
 
+msgid "Its share of the cores against the other tournaments': a tournament of weight 2 gets twice the cores of one of weight 1, up to its own concurrency. Each tournament gets one game's worth first, while the budget allows (Settings)."
+msgstr ""
+
 msgid "Its workspace: standings, live games, schedule"
 msgstr ""
 
@@ -2020,6 +2117,9 @@ msgid "Keep the engine log of every game"
 msgstr ""
 
 msgid "Keep the old default"
+msgstr ""
+
+msgid "Keep them running and quit"
 msgstr ""
 
 msgid "Kept in memory until fastchess-gui ends, never saved."
@@ -2234,6 +2334,15 @@ msgstr ""
 msgid "Maximum number of moves"
 msgstr ""
 
+msgid "Memory"
+msgstr ""
+
+msgid "Memory for the engines"
+msgstr ""
+
+msgid "Min games"
+msgstr ""
+
 msgid "Minimum games"
 msgstr ""
 
@@ -2327,6 +2436,9 @@ msgstr ""
 msgid "No crashes, time losses or illegal moves"
 msgstr ""
 
+msgid "No decision before this number of games, the LLR still shown: it guards a short test against an early lucky stop. 0 = none."
+msgstr ""
+
 msgid "No duplicate games"
 msgstr ""
 
@@ -2400,6 +2512,12 @@ msgid "No match"
 msgstr ""
 
 msgid "No match yet. Choose two engines, then click Start."
+msgstr ""
+
+msgid "No more engines marked \"Uses a GPU\" (on their card) play at once than there are GPUs, in a tournament and across tournaments: two games never share a GPU without you knowing."
+msgstr ""
+
+msgid "No more engines that use a GPU play at once than the GPUs of Settings."
 msgstr ""
 
 msgid "No move after 10 seconds of a 0.3 s search."
@@ -2578,6 +2696,9 @@ msgstr ""
 msgid "Once it has played two tournaments."
 msgstr ""
 
+msgid "Once its two games are played, a pair with a game flagged is voided (its games stay in the PGN files and the journal) and played again from an opening at the end of the book, which the tournament would play last; at most {} times for one pair."
+msgstr ""
+
 msgid "Once the game is over."
 msgstr ""
 
@@ -2623,6 +2744,9 @@ msgstr ""
 msgid "Open a folder…"
 msgstr ""
 
+msgid "Open it for its end and its leader"
+msgstr ""
+
 msgid "Open the engine"
 msgstr ""
 
@@ -2663,6 +2787,9 @@ msgid "Opening · {}"
 msgstr ""
 
 msgid "Openings"
+msgstr ""
+
+msgid "Openings with a game flagged unbalanced: both engines beyond ±{} cp for the same side for their first {} moves after the book."
 msgstr ""
 
 msgid "Openings: {}"
@@ -2714,6 +2841,9 @@ msgid "Overrun tolerated before a game is lost on time."
 msgstr ""
 
 msgid "Overview"
+msgstr ""
+
+msgid "Own books: {}"
 msgstr ""
 
 msgid "OwnBook is set to false on the engines that have it, so that every game is played from the openings of the tournament."
@@ -2850,6 +2980,9 @@ msgstr ""
 msgid "Play games again"
 msgstr ""
 
+msgid "Play the pair again from another opening"
+msgstr ""
+
 msgid "Play the two games"
 msgstr ""
 
@@ -2892,7 +3025,7 @@ msgstr ""
 msgid "Polyglot book"
 msgstr ""
 
-msgid "Polyglot book: its lines to {} plies, as positions"
+msgid "Polyglot book: its lines to {} plies, as positions; {}"
 msgstr ""
 
 msgid "Ponder is on for {}"
@@ -3011,6 +3144,9 @@ msgid "RMS bias (Elo)"
 msgstr ""
 
 msgid "Random order"
+msgstr ""
+
+msgid "Randomness"
 msgstr ""
 
 msgid "Rating"
@@ -3397,19 +3533,25 @@ msgstr ""
 msgid "Settings"
 msgstr ""
 
-msgid "Settings are locked while a match is running."
-msgstr ""
-
 msgid "Setup"
 msgstr ""
 
 msgid "Share of drawn games."
 msgstr ""
 
+msgid "Show"
+msgstr ""
+
 msgid "Show it"
 msgstr ""
 
+msgid "Show the games from unbalanced openings"
+msgstr ""
+
 msgid "Show the navigation buttons under the boards"
+msgstr ""
+
+msgid "Show the unbalanced openings"
 msgstr ""
 
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
@@ -3476,6 +3618,9 @@ msgid "Start position, previous move, next move, last move and Flip, under the b
 msgstr ""
 
 msgid "Start timeout (s)"
+msgstr ""
+
+msgid "Start when cores are free"
 msgstr ""
 
 msgid "Started one after the other, when the running tournament ends by itself."
@@ -3554,6 +3699,9 @@ msgid "Stopping…"
 msgstr ""
 
 msgid "Submission checklist"
+msgstr ""
+
+msgid "Such a pair is voided and played again from another opening, at most {} times."
 msgstr ""
 
 msgid "Suggest"
@@ -3733,6 +3881,11 @@ msgstr ""
 msgid "The Elo difference {}'s score stands for, with its 95 % interval, counted on the pairs of games as in a match (pentanomial); LOS: the likelihood that it is the stronger team. +{} ={} −{}."
 msgstr ""
 
+msgid "The LLR is beyond a bound: no decision before {} game, {} played."
+msgid_plural "The LLR is beyond a bound: no decision before {} games, {} played."
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "The Log page: fastchess' output and the program's messages"
 msgstr ""
 
@@ -3820,6 +3973,9 @@ msgstr ""
 msgid "The connection to {} broke while {}."
 msgstr ""
 
+msgid "The connection with the tournament's process was lost."
+msgstr ""
+
 msgid "The console of {} is open."
 msgstr ""
 
@@ -3851,6 +4007,9 @@ msgid "The engine stopped answering once its options were sent."
 msgstr ""
 
 msgid "The engine stopped while it was asked to think."
+msgstr ""
+
+msgid "The engine threads the tournaments playing at once share, by their weights (each card of the home page). Automatic: the physical cores less one, {} here. A tournament alone plays as many games as its concurrency says."
 msgstr ""
 
 msgid "The engine wrote:"
@@ -3934,6 +4093,9 @@ msgstr ""
 msgid "The games counted, as a PGN of headers, which Ordo and BayesElo read: ordo -p ratings.pgn -o ratings.txt"
 msgstr ""
 
+msgid "The games in progress are lost; each tournament resumes exactly where it stopped."
+msgstr ""
+
 msgid "The games wait for {}: {}. Another try after each game."
 msgstr ""
 
@@ -3997,6 +4159,9 @@ msgstr ""
 msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
 msgstr ""
 
+msgid "The lines of one tournament, or of the window."
+msgstr ""
+
 msgid "The list order is the seeding."
 msgstr ""
 
@@ -4018,10 +4183,22 @@ msgstr ""
 msgid "The machine's name on the network, or its address (192.168.1.20)."
 msgstr ""
 
+msgid "The memory budget of Settings, {}: a game starts only when its engines' Hash and processes fit in it."
+msgstr ""
+
+msgid "The memory budget, {}, lets {} of the {} games play at a time: each takes {} (the Hash of its engines and their processes). The others wait for it."
+msgstr ""
+
 msgid "The most interesting"
 msgstr ""
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
+msgstr ""
+
+msgid "The next tournament starts beside those running as soon as the cores of the budget (Settings) are more than they can take, each at its concurrency."
+msgstr ""
+
+msgid "The number of moves each engine plays after the book, all of them beyond the score."
 msgstr ""
 
 msgid "The number of nodes must be positive."
@@ -4076,6 +4253,9 @@ msgid "The port is 1 to 65535 (22 for SSH)."
 msgstr ""
 
 msgid "The port the server opens for the page, as ssh -R REMOTE_PORT:localhost:PORT user@host would ask (0: the server chooses). Authentication \"none\" only: a service that lets anyone in, or a server of one's own that lets the user in without a key. Its host key is trusted the first time and must stay the same."
+msgstr ""
+
+msgid "The positions of the Polyglot book in the order they are drawn, each once, the likelier lines (by the weights of their moves, as the randomness makes them) the sooner; or in the order of the book, from Start at."
 msgstr ""
 
 msgid "The processor time of each engine's processes, while it thinks (no more cores than its threads) and while its opponent does (none without pondering). Measured during the games played in the window, and kept with them for when the tournament is resumed."
@@ -4137,6 +4317,9 @@ msgid "The same engine, with different books"
 msgstr ""
 
 msgid "The same for both"
+msgstr ""
+
+msgid "The same for every book of the tournament: also in the Openings section."
 msgstr ""
 
 msgid "The same match with a new engine A in place of {}, e.g. its next version."
@@ -4211,6 +4394,9 @@ msgstr ""
 msgid "The tournament goes on with the programs as they are now; this notice closes."
 msgstr ""
 
+msgid "The tournament is not playing."
+msgstr ""
+
 msgid "The tournament is not running: resume it to play the new games."
 msgstr ""
 
@@ -4226,6 +4412,21 @@ msgstr ""
 msgid "The tournament was changed."
 msgstr ""
 
+msgid "The tournament's process did not answer."
+msgstr ""
+
+msgid "The tournament's process ended as it started: see its log (fastchess-gui.log in its folder)."
+msgstr ""
+
+msgid "The tournament's process ended unexpectedly (exit code {}): it resumes exactly where it stopped."
+msgstr ""
+
+msgid "The tournament's process is gone."
+msgstr ""
+
+msgid "The tournament's process speaks another version of the program ({}): restart the window."
+msgstr ""
+
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr ""
 
@@ -4235,16 +4436,27 @@ msgstr ""
 msgid "The whole log, to the clipboard."
 msgstr ""
 
+msgid "The window"
+msgstr ""
+
 msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
 msgstr ""
 
 msgid "The working directory of {} is not found: {}"
 msgstr ""
 
+msgid "The {} GPU lets {} game with an engine that uses a GPU play at a time; the other games play beside it."
+msgid_plural "The {} GPUs let {} games with an engine that uses a GPU play at a time; the other games play beside them."
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "Their PGN file, its games listed beside the moves."
 msgstr ""
 
 msgid "Theme"
+msgstr ""
+
+msgid "There is no change to undo."
 msgstr ""
 
 msgid "These settings are the analysis's: they change neither the engine in the library nor a tournament."
@@ -4286,7 +4498,22 @@ msgstr ""
 msgid "This match is already finished."
 msgstr ""
 
+msgid "This program cannot find its own file to start a tournament."
+msgstr ""
+
+msgid "This tournament is playing already."
+msgstr ""
+
+msgid "This tournament is playing in another program."
+msgstr ""
+
+msgid "This tournament is shown in another window."
+msgstr ""
+
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
+msgstr ""
+
+msgid "This window (quick test, analysis)"
 msgstr ""
 
 msgid "Those with a problem"
@@ -4418,6 +4645,19 @@ msgstr ""
 msgid "UDP port"
 msgstr ""
 
+msgid "Unbalanced opening"
+msgstr ""
+
+msgid "Unbalanced openings flagged: both engines beyond ±{} cp for {} move after the book"
+msgid_plural "Unbalanced openings flagged: both engines beyond ±{} cp for {} moves after the book"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "Unbalanced openings replaced: both engines beyond ±{} cp for {} move after the book"
+msgid_plural "Unbalanced openings replaced: both engines beyond ±{} cp for {} moves after the book"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "Under Wayland the software renderer needs X11: start the program with the environment variable SDL_VIDEODRIVER=x11."
 msgstr ""
 
@@ -4472,6 +4712,9 @@ msgstr ""
 msgid "User"
 msgstr ""
 
+msgid "Uses a GPU"
+msgstr ""
+
 msgid "Value"
 msgstr ""
 
@@ -4509,6 +4752,9 @@ msgid "Waiting to be read · read it next"
 msgstr ""
 
 msgid "Web page"
+msgstr ""
+
+msgid "Weight"
 msgstr ""
 
 msgid "Weights"
@@ -4551,6 +4797,9 @@ msgid "While a tournament runs, an SSH tunnel built into fastchess-gui gives the
 msgstr ""
 
 msgid "White"
+msgstr ""
+
+msgid "White ahead: {}"
 msgstr ""
 
 msgid "White disconnects"
@@ -4644,6 +4893,9 @@ msgid "Without a choice, the upper half of the list plays the lower half. A part
 msgstr ""
 
 msgid "Without stopping it: running games go on, nothing played is lost."
+msgstr ""
+
+msgid "Without the unbalanced"
 msgstr ""
 
 msgid "Won twice by one engine"
@@ -4829,6 +5081,9 @@ msgstr ""
 msgid "every game's engine log"
 msgstr ""
 
+msgid "every move alike"
+msgstr ""
+
 msgid "every pair with both colours"
 msgstr ""
 
@@ -4896,6 +5151,15 @@ msgid "games already over"
 msgstr ""
 
 msgid "games at least"
+msgstr ""
+
+msgid "games wait for a GPU"
+msgstr ""
+
+msgid "games wait for cores"
+msgstr ""
+
+msgid "games wait for memory"
 msgstr ""
 
 msgid "gone"
@@ -4979,6 +5243,9 @@ msgstr ""
 msgid "moves"
 msgstr ""
 
+msgid "moves by their weights"
+msgstr ""
+
 msgid "moves of {} game or more"
 msgid_plural "moves of {} games or more"
 msgstr[0] ""
@@ -4989,6 +5256,11 @@ msgstr ""
 
 msgid "new"
 msgstr ""
+
+msgid "no decision before {} game"
+msgid_plural "no decision before {} games"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "no engine has a SyzygyPath"
 msgstr ""
@@ -5020,6 +5292,9 @@ msgstr ""
 msgid "not checked"
 msgstr ""
 
+msgid "not counted"
+msgstr ""
+
 msgid "not tested yet"
 msgstr ""
 
@@ -5043,6 +5318,9 @@ msgstr[1] ""
 msgid "own books off"
 msgstr ""
 
+msgid "own books: {}"
+msgstr ""
+
 msgid "pairs"
 msgstr ""
 
@@ -5056,6 +5334,9 @@ msgid "preset"
 msgstr ""
 
 msgid "random"
+msgstr ""
+
+msgid "randomness {}"
 msgstr ""
 
 msgid "reading from a program"
@@ -5115,6 +5396,9 @@ msgstr ""
 msgid "stopped"
 msgstr ""
 
+msgid "the best moves only"
+msgstr ""
+
 msgid "the driver gives OpenGL {}"
 msgstr ""
 
@@ -5162,6 +5446,16 @@ msgstr ""
 
 msgid "two draws {:.1f} % · a win and a loss {:.1f} %"
 msgstr ""
+
+msgid "unbalanced openings flagged (±{} cp for {} move)"
+msgid_plural "unbalanced openings flagged (±{} cp for {} moves)"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "unbalanced openings replaced (±{} cp for {} move)"
+msgid_plural "unbalanced openings replaced (±{} cp for {} moves)"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "until stopped"
 msgstr ""
@@ -5276,6 +5570,9 @@ msgstr ""
 msgid "{} against each opponent"
 msgstr ""
 
+msgid "{} allowed by the memory"
+msgstr ""
+
 msgid "{} analyses the game move by move."
 msgstr ""
 
@@ -5328,6 +5625,16 @@ msgstr ""
 
 msgid "{} changed: its options were read again."
 msgstr ""
+
+msgid "{} core in use"
+msgid_plural "{} cores in use"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} core shared:"
+msgid_plural "{} cores shared:"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "{} could not be read: kept as {}"
 msgstr ""
@@ -5479,6 +5786,16 @@ msgstr[1] ""
 
 msgid "{} game exported to {}"
 msgid_plural "{} games exported to {}"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} game flagged unbalanced when it ended: both engines saw a side far ahead right after the book."
+msgid_plural "{} games flagged unbalanced when they ended: both engines saw a side far ahead right after the book."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} game from an unbalanced opening"
+msgid_plural "{} games from an unbalanced opening"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -5705,6 +6022,12 @@ msgstr ""
 msgid "{} of {}"
 msgstr ""
 
+msgid "{} of {} cores"
+msgstr ""
+
+msgid "{} of {} for the engines"
+msgstr ""
+
 msgid "{} of {} in use"
 msgstr ""
 
@@ -5716,6 +6039,11 @@ msgstr ""
 
 msgid "{} opening"
 msgid_plural "{} openings"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} opening replaced"
+msgid_plural "{} openings replaced"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -5731,6 +6059,11 @@ msgstr[1] ""
 
 msgid "{} option read."
 msgid_plural "{} options read."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} pair was played again from another opening: its first opening is no longer listed."
+msgid_plural "{} pairs were played again from another opening: their first openings are no longer listed."
 msgstr[0] ""
 msgstr[1] ""
 
@@ -5775,6 +6108,9 @@ msgid "{} played game stops counting"
 msgid_plural "{} played games stop counting"
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "{} played on without the window: shown again."
+msgstr ""
 
 msgid "{} played · {} running · {} to play"
 msgstr ""
@@ -5855,6 +6191,11 @@ msgstr ""
 msgid "{} refuses {} = {}, given by this tournament: {}. It is not sent: the engine plays with its default."
 msgstr ""
 
+msgid "{} replaced"
+msgid_plural "{} replaced"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{} round"
 msgid_plural "{} rounds"
 msgstr[0] ""
@@ -5916,6 +6257,21 @@ msgid_plural "{} threads"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "{} tournament is running. It can play on without the window, which shows it again when it opens."
+msgid_plural "{} tournaments are running. They can play on without the window, which shows them again when it opens."
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} unbalanced"
+msgid_plural "{} unbalanced"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} unbalanced opening: its game pair is played again from another one."
+msgid_plural "{} unbalanced openings: their game pairs are played again from others."
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"
 msgstr[0] ""
@@ -5928,6 +6284,9 @@ msgid "{} was running when the program ended: it resumes."
 msgstr ""
 
 msgid "{} will be the book of the next tournament."
+msgstr ""
+
+msgid "{} with a GPU engine at a time"
 msgstr ""
 
 msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
@@ -5944,6 +6303,9 @@ msgstr ""
 msgid "{} · opening {}"
 msgstr ""
 
+msgid "{} · {} / {} games · {} playing"
+msgstr ""
+
 msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
 msgstr ""
 
@@ -5954,6 +6316,9 @@ msgid "{} · {} games · Elo {} · {}"
 msgstr ""
 
 msgid "{} · {} games · first: {} · {}"
+msgstr ""
+
+msgid "{} · {} games · {}"
 msgstr ""
 
 msgid "{} × {} pairings × 2 games × {} cycles"
@@ -6009,6 +6374,12 @@ msgstr ""
 msgid "{}: folder not found: {}"
 msgstr ""
 
+msgid "{}: games wait for a GPU"
+msgstr ""
+
+msgid "{}: games wait for memory"
+msgstr ""
+
 msgid "{}: its book cannot be used: {}"
 msgstr ""
 
@@ -6057,10 +6428,18 @@ msgstr ""
 msgid "{}: {}"
 msgstr ""
 
+msgid "{}: {} GPU in use"
+msgid_plural "{}: {} GPUs in use"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{}: {} core in use"
 msgid_plural "{}: {} cores in use"
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "{}: {} for its games' engines"
+msgstr ""
 
 msgid "{}: {} is a file, not a folder."
 msgstr ""

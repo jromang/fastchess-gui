@@ -105,6 +105,38 @@ std::string uniqueName(const TournamentSpec& spec, const std::string& base) {
 
 }  // namespace
 
+void to_json(nlohmann::json& j, const Edit& e) {
+    j = {{"kind", static_cast<int>(e.kind)},
+         {"engine", e.engine},
+         {"elo", e.elo},
+         {"gpu", e.gpu},
+         {"catch_up", e.catch_up},
+         {"participant", e.participant},
+         {"void_played", e.void_played},
+         {"cycles", e.cycles},
+         {"games", e.games},
+         {"replay", e.replay},
+         {"why", e.why},
+         {"result", e.result}};
+}
+
+void from_json(const nlohmann::json& j, Edit& e) {
+    const int kind = j.at("kind").get<int>();
+    if (kind < 0 || kind > static_cast<int>(Edit::Kind::SetResult)) throw std::runtime_error("unknown edit");
+    e.kind        = static_cast<Edit::Kind>(kind);
+    e.engine      = j.value("engine", fastchess::EngineConfiguration{});
+    e.elo         = j.value("elo", 0);
+    e.gpu         = j.value("gpu", false);
+    e.catch_up    = j.value("catch_up", true);
+    e.participant = j.value("participant", -1);
+    e.void_played = j.value("void_played", false);
+    e.cycles      = j.value("cycles", 0);
+    e.games       = j.value("games", std::vector<std::pair<uint32_t, int>>{});
+    e.replay      = j.value("replay", true);
+    e.why         = j.value("why", std::string{});
+    e.result      = j.value("result", std::string{});
+}
+
 bool isEditEvent(const std::string& type) {
     return type == "participant_added" || type == "participant_replaced" || type == "participant_withdrawn" ||
            type == "cycles_changed" || type == "games_voided" || type == "result_set";
@@ -118,6 +150,7 @@ nlohmann::json editEvent(const Edit& edit, uint32_t at, int new_id, const Tourna
             p.engine      = edit.engine;
             p.engine.name = uniqueName(spec, edit.engine.name);
             p.elo         = edit.elo;
+            p.gpu         = edit.gpu;
             p.team        = spec.format == Format::TeamMatch && edit.team == 1 ? 1 : 0;
             return {{"t", "participant_added"}, {"at", at}, {"participant", p}, {"catch_up", edit.catch_up}};
         }
@@ -127,6 +160,7 @@ nlohmann::json editEvent(const Edit& edit, uint32_t at, int new_id, const Tourna
             p.engine      = edit.engine;
             p.engine.name = uniqueName(spec, edit.engine.name);
             p.elo         = edit.elo;
+            p.gpu         = edit.gpu;
             if (const auto* old = spec.participant(edit.participant)) p.team = old->team;
             return {{"t", "participant_replaced"}, {"at", at}, {"old", edit.participant}, {"participant", p}};
         }

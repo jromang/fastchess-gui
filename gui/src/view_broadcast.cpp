@@ -62,7 +62,7 @@ void App::updateBroadcast() {
     settings.lichess_listed = setup_.lichess_listed;
     // The tunnel stops with the tournament; another server needs a host.
     settings.tunnel =
-        setup_.broadcast_tunnel && run_.running() && (setup_.tunnel_service == 0 || !setup_.tunnel_host.empty());
+        setup_.broadcast_tunnel && run_->running() && (setup_.tunnel_service == 0 || !setup_.tunnel_host.empty());
     settings.tunnel_to = tunnelSettings(setup_, storage_.root() / "known_hosts.json");
     // What is being typed is taken once the field is left: not a folder per keystroke, nor a lichess broadcast for
     // each letter of a round.
@@ -86,8 +86,8 @@ void App::updateBroadcast() {
         broadcaster_.setLogos(logos::webLogos(engines_, storage_.logosDir()));
     }
 
-    const auto* t   = run_.tournament();
-    const auto* obs = run_.observer();
+    const auto* t   = run_->tournament();
+    const auto* obs = run_->observer();
     if (t && obs) broadcaster_.update(*t, *obs, anchor_, setup_.broadcast_follow == 1 ? live_slot_ : -1);
 }
 

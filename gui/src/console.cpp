@@ -28,22 +28,37 @@ void Console::attach() {
     });
 }
 
-void Console::logTo(const std::filesystem::path& path) {
+void Console::logTo(const std::filesystem::path& path, bool append) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (log_) std::fclose(log_);
-    log_ = tour::openFile(path, "w");  // not writable by others, and the UTF-16 path on Windows
+    log_ = tour::openFile(path, append ? "a" : "w");  // not writable by others, and the UTF-16 path on Windows
 }
 
-void Console::add(std::string line, bool warning) {
+void Console::setListener(std::function<void(const Line&)> listener) {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (log_) {
-        std::fprintf(log_, "%s%s\n", warning ? "! " : "", line.c_str());
-        std::fflush(log_);
+    listener_ = std::move(listener);
+}
+
+void Console::add(std::string line, bool warning, std::string source) {
+    std::function<void(const Line&)> listener;
+    Line added{std::move(line), warning, std::move(source)};
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        if (log_) {
+            if (added.source.empty()) {
+                std::fprintf(log_, "%s%s\n", warning ? "! " : "", added.text.c_str());
+            } else {
+                std::fprintf(log_, "%s[%s] %s\n", warning ? "! " : "", added.source.c_str(), added.text.c_str());
+            }
+            std::fflush(log_);
+        }
+        listener = listener_;
+        lines_.push_back(added);
+        while (lines_.size() > MAX_LINES) lines_.pop_front();
+        version_++;
+        added_++;
     }
-    lines_.push_back({std::move(line), warning});
-    while (lines_.size() > MAX_LINES) lines_.pop_front();
-    version_++;
-    added_++;
+    if (listener) listener(added);
 }
 
 uint64_t Console::added() const {

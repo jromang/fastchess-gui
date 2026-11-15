@@ -50,7 +50,7 @@ std::vector<std::pair<std::size_t, int>> nextGames(const std::vector<tour::Sched
     return started;
 }
 
-BroadcastInput broadcastInput(const tour::TournamentState& state, const GuiObserver& observer,
+BroadcastInput broadcastInput(const tour::TournamentState& state, const LiveSource& observer,
                               const std::optional<tour::Anchor>& anchor) {
     BroadcastInput in;
     in.tournament = &state;
@@ -392,7 +392,7 @@ std::vector<std::string> Broadcaster::configure(const BroadcastSettings& setting
     return errors;
 }
 
-void Broadcaster::update(const tour::TournamentState& state, const GuiObserver& observer,
+void Broadcaster::update(const tour::TournamentState& state, const LiveSource& observer,
                          const std::optional<tour::Anchor>& anchor, int featured) {
     if (!settings_.files && !tlcs_.running() && !web_.running() && !settings_.lichess) return;
 

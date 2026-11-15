@@ -25,6 +25,9 @@ this repository still builds unchanged.
   everyone or board by board, scored by team and by engine), with per engine Hash, Threads, nodes and time
   odds. Standings with ratings and confidence intervals, Sonneborn-Berger or Buchholz, a crosstable, export as
   text or HTML.
+- **Several tournaments at once**, a tab each, each in a process of its own: they share the cores by weight (a
+  budget in Settings), never more memory than the budget nor more GPU engines than GPUs, and play on when the
+  window closes; it shows them again when it opens (`--attach` talks with one from a terminal).
 - **Exact resume**: every tournament is a folder with an append-only journal; after a crash, a closed window or
   a power cut it continues with no game lost or played twice.
 - **Unattended nights**: an engine that cannot start has its games set aside while the others go on; it is tried
@@ -46,8 +49,8 @@ this repository still builds unchanged.
   reference Elo; an engine's card (results, health, rating over time), head to head records, the progress of an
   engine's versions, an export for Ordo and BayesElo.
 - **Matches**: a fixed number of games, unlimited, or an SPRT (normalized, logistic or BayesElo model, with
-  gainer and non-regression presets). Time control (base + increment, moves per period), time per move, fixed
-  nodes or fixed depth.
+  gainer and non-regression presets, an Elo bias on both bounds and a minimum of games before a decision). Time
+  control (base + increment, moves per period), time per move, fixed nodes or fixed depth.
 - **Concurrency** detected at startup: one game per hardware thread at fixed nodes or depth, physical cores − 1
   with a clock. Optional CPU affinity.
 - **Checks before the start**, each naming the engine, the resource and the fix, one click away: a program not
@@ -81,8 +84,11 @@ this repository still builds unchanged.
   a pair) between two engines from any position, with a clock for each, played beside a running tournament.
 - **Opening books**: EPD, PGN or Polyglot, in a library; each book checked for illegal, duplicate, mirrored and
   finished positions, browsed on a board, and cleaned. A Chess324 book of start positions written by the program,
-  and Polyglot books built from PGN files (depth, minimum games, weights by score or count, a rating filter).
-  Results by opening after a tournament: the unbalanced, the drawish and the decisive ones, exported as EPD.
+  and Polyglot books built from PGN files (depth, minimum games, weights by score or count, a rating filter). A
+  randomness for the Polyglot books, the tournament's and the engines' own, from the best move only to every move
+  alike. Results by opening after a tournament: the unbalanced, the drawish and the decisive ones, exported as EPD;
+  and during it, the openings both engines judge lost for one side right after the book, flagged as the games end,
+  their pairs played again from another opening if asked.
 - **Test suites** (STS, WAC, ERET…): several engines on the positions of an EPD file (`bm`, `am`, STS points),
   as a grid with the time to solution, the totals and the STS score, saved to compare versions, exported as CSV.
 - Chess960 (the 960 positions, or a book), draw / resign / max moves / Syzygy
@@ -100,6 +106,10 @@ this repository still builds unchanged.
 | A two-engine SPRT match | The big screen, for a television or a stream |
 |---|---|
 | ![Charts](docs/screenshots/charts.png) | ![Big screen](docs/screenshots/big-screen.png) |
+
+| Two tournaments at once, sharing the cores by weight |
+|---|
+| ![Several tournaments](docs/screenshots/several.png) |
 
 ## Downloads
 

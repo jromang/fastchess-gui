@@ -198,7 +198,7 @@ void CpuMeter::recorded(const tour::GameResult& result) {
     (void)tour::syncFile(file_);
 }
 
-GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
+GuiObserver::GuiObserver(int slots, const tour::TournamentState& state, bool measure)
     : engine_a_(state.spec().participants.at(0).engine.name),
       engine_b_(state.spec().participants.at(1).engine.name),
       id_a_(state.spec().participants.at(0).id),
@@ -207,9 +207,10 @@ GuiObserver::GuiObserver(int slots, const tour::TournamentState& state)
       pgn_chessbase_(state.chessbasePgnPath()),
       cpu_path_(state.dir() / "processor.tsv"),
       cpu_known_(knownSize(cpu_path_)),
-      cpu_(slots, cpu_path_) {
+      cpu_(measure ? slots : 0, cpu_path_) {
     const auto& spec = state.spec();
     match_           = spec.format == tour::Format::Match;
+    frc_             = spec.conditions.variant == fastchess::VariantType::FRC;
     for (const auto& p : spec.participants) {
         index_[p.id] = static_cast<uint16_t>(names_.size());
         names_.push_back(p.engine.name);
@@ -451,8 +452,7 @@ void GuiObserver::onGameStart(const fastchess::observer::GameStart& info) {
 
     // Book moves are converted outside the lock.
     chess::Board board;
-    board.set960(fastchess::config::TournamentConfig &&
-                 fastchess::config::TournamentConfig->variant == fastchess::VariantType::FRC);
+    board.set960(frc_);
     board.setFen(info.start_fen);
 
     std::vector<LiveMove> moves;
@@ -622,22 +622,10 @@ void GuiObserver::onMove(int slot_index, chess::Color mover, const fastchess::Mo
     m.decision_ms = data.decision_millis;
 
     // What the engines used while the mover thought.
-    const auto used = cpu_.moved(slot_index, mover);
+    if (const auto used = cpu_.moved(slot_index, mover)) addCpu(slot_index, mover, *used);
 
     std::lock_guard<std::mutex> lock(s->mutex);
     auto& st = s->state;
-
-    if (used) {
-        std::lock_guard<std::mutex> data_lock(data_mutex_);
-        for (int side = 0; side < 2; ++side) {
-            const int p = s->participant[side];
-            if (p < 0 || p >= static_cast<int>(totals_.size())) continue;
-            const bool own = side == colorIndex(mover);
-            auto& t        = totals_[p];
-            (own ? t.own_cpu_ms : t.wait_cpu_ms) += used->cpu_ms[side];
-            (own ? t.own_wall_ms : t.wait_wall_ms) += used->wall_ms;
-        }
-    }
 
     m.move = chess::uci::uciToMove(s->board, data.move);
     s->board.makeMove<true>(m.move);
@@ -689,6 +677,11 @@ uint16_t GuiObserver::internReason(const std::string& reason) {
 
 void GuiObserver::onGameEnd(int slot_index, std::size_t, std::size_t, const fastchess::MatchData& data, bool counted) {
     cpu_.gameEnd(slot_index, counted);
+    gameEnded(slot_index, counted,
+              counted ? fastchess::pgn::PgnBuilder::getResultFromWhiteMatch(data.players.white) : "*", data.reason);
+}
+
+void GuiObserver::gameEnded(int slot_index, bool counted, const std::string& result, const std::string& reason) {
     auto* s = slot(slot_index);
     if (!s) return;
 
@@ -696,9 +689,72 @@ void GuiObserver::onGameEnd(int slot_index, std::size_t, std::size_t, const fast
     auto& st    = s->state;
     st.active   = false;
     st.thinking = false;
-    st.result   = counted ? fastchess::pgn::PgnBuilder::getResultFromWhiteMatch(data.players.white) : "*";
-    st.reason   = counted ? data.reason : N_("Game interrupted");
+    st.result   = counted ? result : "*";
+    st.reason   = counted ? reason : N_("Game interrupted");
     st.version++;
+}
+
+void GuiObserver::addCpu(int slot_index, chess::Color mover, const CpuMeter::Used& used) {
+    auto* s = slot(slot_index);
+    if (!s) return;
+    std::lock_guard<std::mutex> lock(s->mutex);
+    std::lock_guard<std::mutex> data_lock(data_mutex_);
+    for (int side = 0; side < 2; ++side) {
+        const int p = s->participant[side];
+        if (p < 0 || p >= static_cast<int>(totals_.size())) continue;
+        const bool own = side == colorIndex(mover);
+        auto& t        = totals_[p];
+        (own ? t.own_cpu_ms : t.wait_cpu_ms) += used.cpu_ms[side];
+        (own ? t.own_wall_ms : t.wait_wall_ms) += used.wall_ms;
+    }
+}
+
+void GuiObserver::restoreSlot(int slot_index, const SlotState& state) {
+    auto* s = slot(slot_index);
+    if (!s) return;
+    chess::Board board;
+    board.set960(frc_);
+    if (!state.start_fen.empty()) board.setFen(state.start_fen);
+    for (const auto& m : state.moves) board.makeMove<true>(m.move);
+    const std::array<int, 2> participant{participantIndex(state.white), participantIndex(state.black)};
+
+    std::lock_guard<std::mutex> lock(s->mutex);
+    const auto version = s->state.version;
+    s->state           = state;
+    s->state.version   = version + 1;
+    s->board           = board;
+    s->participant     = participant;
+    s->pids            = {0, 0};
+}
+
+std::array<EngineTotals, 2> sideTotals(const fastchess::MatchData& data) {
+    std::array<EngineTotals, 2> side{};
+    chess::Board board;
+    board.set960(data.variant == fastchess::VariantType::FRC);
+    board.setFen(data.fen);
+    const bool white_first = board.sideToMove() == chess::Color::WHITE;
+    for (std::size_t i = 0; i < data.moves.size(); ++i) {
+        const auto& mv = data.moves[i];
+        if (mv.book || !mv.legal) continue;
+        const bool white_moved = (i % 2 == 0) == white_first;
+        auto& t                = side[white_moved ? 0 : 1];
+        t.moves++;
+        if (mv.decision_millis) {
+            t.decision_ms += static_cast<uint64_t>(std::max<int64_t>(0, *mv.decision_millis));
+            t.decision_samples++;
+        }
+        t.depth_sum += static_cast<uint64_t>(std::max<int64_t>(0, mv.depth));
+        t.time_ms += static_cast<uint64_t>(std::max<int64_t>(0, mv.elapsed_millis));
+        if (mv.nps > 0) {
+            t.nps_sum += static_cast<double>(mv.nps);
+            t.nps_samples++;
+        }
+        if (mv.nodes > 0) {
+            t.nodes_sum += mv.nodes;
+            t.nodes_samples++;
+        }
+    }
+    return side;
 }
 
 const GuiObserver::GameExtras& GuiObserver::extrasOf(const tour::GameResult& result, std::string_view pgn) {
@@ -736,6 +792,7 @@ GameRecord GuiObserver::makeRecord(const tour::GameResult& result, std::string_v
     record.a_result     = resultForA(result, id_a_);
     record.termination  = static_cast<uint8_t>(result.termination);
     record.result_set   = result.set.has_value();
+    record.unbalanced   = static_cast<int8_t>(std::clamp(result.unbalanced, -1, 1));
     record.reason       = internReason(result.reason);
     const auto& extras  = extrasOf(result, pgn);
     record.opening      = extras.opening;
@@ -789,7 +846,11 @@ void GuiObserver::countLoss(const tour::GameResult& result, GameExtras& extras) 
 void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::MatchData& data,
                              const std::optional<fastchess::Stats>& pair) {
     cpu_.recorded(result);
+    recorded(result, sideTotals(data), pair);
+}
 
+void GuiObserver::recorded(const tour::GameResult& result, const std::array<EngineTotals, 2>& side,
+                           const std::optional<fastchess::Stats>& pair) {
     std::lock_guard<std::mutex> lock(data_mutex_);
 
     // The game is in the tournament's results before the observer is told: when the lists started over meanwhile
@@ -800,18 +861,20 @@ void GuiObserver::onRecorded(const tour::GameResult& result, const fastchess::Ma
         countLoss(result, extras_.at(result.pgn.offset));  // made by makeRecord()
 
         // Per engine search statistics, from the moves each side actually played.
-        chess::Board board;
-        board.set960(data.variant == fastchess::VariantType::FRC);
-        board.setFen(data.fen);
-        const bool white_first = board.sideToMove() == chess::Color::WHITE;
-
-        for (std::size_t i = 0; i < data.moves.size(); ++i) {
-            const auto& mv = data.moves[i];
-            if (mv.book || !mv.legal) continue;
-
-            const bool white_moved = (i % 2 == 0) == white_first;
-            addMove(totals_[white_moved ? record.white : record.black], mv.depth, mv.elapsed_millis,
-                    static_cast<int64_t>(mv.nps), mv.nodes, mv.decision_millis);
+        for (int s = 0; s < 2; ++s) {
+            const auto index = s == 0 ? record.white : record.black;
+            if (index >= totals_.size()) continue;
+            auto& t         = totals_[index];
+            const auto& add = side[static_cast<std::size_t>(s)];
+            t.moves += add.moves;
+            t.depth_sum += add.depth_sum;
+            t.nps_sum += add.nps_sum;
+            t.nps_samples += add.nps_samples;
+            t.nodes_sum += add.nodes_sum;
+            t.nodes_samples += add.nodes_samples;
+            t.time_ms += add.time_ms;
+            t.decision_ms += add.decision_ms;
+            t.decision_samples += add.decision_samples;
         }
     }
 

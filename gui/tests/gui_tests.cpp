@@ -863,6 +863,21 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     CHECK(run.tournament.sprt.enabled);
     CHECK(run.info.total_games == 0);
     CHECK(run.info.limit_text == "10+0.1");
+    CHECK(run.spec.sprt_bias == 0);
+    CHECK(run.spec.sprt_min_games == 0);
+
+    // An Elo bias moves both bounds the SPRT is given; the minimum of games is the tournament's.
+    setup.sprt_bias      = 5;
+    setup.sprt_min_games = 2000;
+    run                  = buildRun(setup, engines, topology, dir);
+    CHECK(run.tournament.sprt.elo0 == setup.sprt_elo0 + 5);
+    CHECK(run.tournament.sprt.elo1 == setup.sprt_elo1 + 5);
+    CHECK(run.spec.sprt_bias == 5);
+    CHECK(run.spec.sprt_min_games == 2000);
+    CHECK(run.info.elo0 - run.info.sprt_bias == setup.sprt_elo0);
+    CHECK(run.info.sprt_min_games == 2000);
+    setup.sprt_bias      = 0;
+    setup.sprt_min_games = 0;
 
     // A time per move, and a depth: like a node count, it does not depend on the machine's speed.
     setup.limit        = LimitKind::MoveTime;
@@ -968,6 +983,35 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
         int lines = 0;
         for (std::string line; std::getline(epd, line);) ++lines;
         CHECK(lines == 2);
+        // In random order, drawn in order already from the seed: played in that order. The book, its depth and the
+        // randomness are kept for the line under the standings.
+        CHECK(run.tournament.opening.order == fastchess::OrderType::SEQUENTIAL);
+        CHECK(run.spec.polyglot_book == bin.string());
+        CHECK(run.spec.polyglot_plies == 1);
+        CHECK(run.spec.book_randomness == 0);
+        CHECK(run.spec.unbalanced_cp == 0);  // not looked for unless asked
+        setup.unbalanced_enabled = true;
+        setup.unbalanced_replace = true;
+        run                      = buildRun(setup, engines, topology, dir / "polyglot-unbalanced");
+        CHECK(run.spec.unbalanced_cp == 200);
+        CHECK(run.spec.unbalanced_moves == 4);
+        CHECK(run.spec.unbalanced_replace);
+        setup.unbalanced_enabled = false;
+        // The best move only: one line (both moves weigh the same here, so both stay); clamped beyond the limits.
+        setup.book_randomness = -300;
+        run                   = buildRun(setup, engines, topology, dir / "polyglot-best");
+        CHECK(run.spec.book_randomness == -100);
+        // The same seed draws the same order.
+        setup.seed            = 12;
+        setup.book_randomness = 0;
+        const auto first      = buildRun(setup, engines, topology, dir / "polyglot-a");
+        const auto second     = buildRun(setup, engines, topology, dir / "polyglot-b");
+        const auto read       = [](const std::string& path) {
+            std::ifstream in(path);
+            return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+        };
+        CHECK(read(first.tournament.opening.file) == read(second.tournament.opening.file));
+        setup.seed = 0;
         setup.book.clear();
         setup.book_plies = -1;
     }

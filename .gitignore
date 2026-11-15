@@ -98,3 +98,4 @@ scripted_result
 /build-*/
 !gui/win/fastchess-gui.rc
 !gui/win/fastchess-gui.manifest
+__pycache__/
