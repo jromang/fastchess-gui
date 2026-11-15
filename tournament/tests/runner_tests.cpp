@@ -630,7 +630,11 @@ TEST_CASE("runner: an engine set aside is tried again when asked, and its games 
     CHECK(state->startFailures().empty());
     CHECK_FALSE(state->startFailures().stalled());
     CHECK(events.count(StartFailureEvent::Kind::SetAside) == 1u);
-    CHECK(events.count(StartFailureEvent::Kind::Started) == 1u);
+    // Back once, or twice: with two games at a time, the other game may have started the engine just before the
+    // repair, and that start failed too (a second failure, mended at its first try).
+    const auto back = events.count(StartFailureEvent::Kind::Started);
+    CHECK(back >= 1u);
+    CHECK(back <= 2u);
 }
 
 TEST_CASE("runner: set to, an engine that cannot start stops the tournament once its tries are used up") {
