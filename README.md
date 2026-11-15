@@ -105,6 +105,8 @@ this repository still builds unchanged.
   pieces, move sounds for the game followed (off by default), and a logo per engine, shown in the live view, on the
   big screen and on the broadcast web page.
 
+## Screenshots
+
 | Standings, ratings and latest results | Games and replay |
 |---|---|
 | ![Overview](docs/screenshots/overview.png) | ![Games](docs/screenshots/games.png) |
@@ -113,13 +115,29 @@ this repository still builds unchanged.
 |---|---|
 | ![Charts](docs/screenshots/charts.png) | ![Big screen](docs/screenshots/big-screen.png) |
 
-| A new tournament: a profile for each section, the engine library beside the participants | The Board page: an engine of the library analyses any position |
+| The crosstable of a round robin | Ratings over every tournament played: an engine's card |
 |---|---|
-| ![New tournament](docs/screenshots/new-tournament.png) | ![Board](docs/screenshots/board.png) |
+| ![Crosstable](docs/screenshots/standings.png) | ![Ratings](docs/screenshots/ratings.png) |
 
-| Two tournaments at once, sharing the cores by weight |
-|---|
-| ![Several tournaments](docs/screenshots/several.png) |
+| Two tournaments at once, sharing the cores by weight | An engine that cannot start: its games set aside, the others go on |
+|---|---|
+| ![Several tournaments](docs/screenshots/several.png) | ![Needs action](docs/screenshots/needs-action.png) |
+
+| A new tournament: a profile for each section, the engine library beside the participants | The engine library, with the UCI options the engine tells |
+|---|---|
+| ![New tournament](docs/screenshots/new-tournament.png) | ![Engines](docs/screenshots/engines.png) |
+
+| The Board page: an engine of the library analyses any position | A finished game analysed move by move, its mistakes marked |
+|---|---|
+| ![Board](docs/screenshots/board.png) | ![Game review](docs/screenshots/review.png) |
+
+| A test suite: several engines on the positions of an EPD file | An opening book checked, and browsed on a board |
+|---|---|
+| ![Test suite](docs/screenshots/suites.png) | ![Books](docs/screenshots/books.png) |
+
+| A remote machine: a Windows PC through its built-in OpenSSH server | The broadcast's web page |
+|---|---|
+| ![Machines](docs/screenshots/machines.png) | ![Broadcast web page](docs/screenshots/broadcast-web.png) |
 
 ## Downloads
 
