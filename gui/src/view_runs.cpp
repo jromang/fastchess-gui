@@ -78,8 +78,13 @@ void App::showRun(std::size_t index) {
 
 void App::closeRun(std::size_t index) {
     if (index >= runs_.size() || runs_[index].run->running()) return;
-    if (index == shown_run_) stashRunView();
+    const bool shown = index == shown_run_;
     runs_.erase(runs_.begin() + static_cast<std::ptrdiff_t>(index));
+    if (!shown) {
+        // Another tab: the one shown stays as it is, its place moved.
+        if (shown_run_ > index) --shown_run_;
+        return;
+    }
     if (runs_.empty()) {
         shown_run_ = 0;
         run_       = &idle_run_;
@@ -87,10 +92,10 @@ void App::closeRun(std::size_t index) {
         finish_message_.clear();
         return;
     }
-    const auto shown = shown_run_ == index ? std::min(index, runs_.size() - 1) : shown_run_ - (shown_run_ > index);
-    shown_run_       = runs_.size();  // none: showRun() shows it afresh
-    run_             = runs_[shown].run.get();
-    showRun(shown);
+    const auto next = std::min(index, runs_.size() - 1);
+    shown_run_      = runs_.size();  // none: showRun() shows it afresh, nothing kept of the tab closed
+    run_            = runs_[next].run.get();
+    showRun(next);
 }
 
 void App::stashRunView() {
@@ -411,8 +416,7 @@ int App::localThreads() const {
         if (r.run->remote() || !r.run->running() || !t) continue;
         threads += r.run->runningGames() * tour::largestGame(t->spec()).threads;
     }
-    // The analysis engine of the Board page, when there is one, counts here too.
-    return threads;
+    return threads + analysisThreads();
 }
 
 namespace {

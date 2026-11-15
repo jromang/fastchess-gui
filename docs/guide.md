@@ -101,11 +101,15 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
 - **Inactive** (on the card, or from the right click for all the engines selected): the engine stays in the library,
   greyed, but is left out of the engine pickers (setup, suites, quick test, relaunch, adding an engine to a running
   tournament) and of *Check those not checked*. A tournament or a setup that has it already keeps it.
+- **Uses a GPU** (on the card): a network engine that plays on a graphics card, such as Lc0. No more such engines
+  play at once than the *GPUs* of **Settings**, in a tournament and across tournaments (see *Several tournaments at
+  once*); from the next tournament it joins.
 - **Reading the options** never blocks a start. *Resume* starts at once: a tournament plays the engines copied in
-  its folder. *Start*, the queue (one tournament at a time) and the quick test wait only for the read of an engine
-  they play, read first; any other read or check is interrupted and done again later. A start that waits says so on
-  its button (*Waiting for …*, with *Cancel*), and another start is refused meanwhile. A start also waits for a
-  running test suite, and a test suite does not start while a tournament runs or waits. A queued engine can be read
+  its folder. *Start*, the queue and the quick test wait only for the read of an engine they play, read first; any
+  other read or check is interrupted and done again later. A start that waits says so on its button (*Waiting for
+  …*, with *Cancel*), and another start is refused meanwhile. A start also waits for a running test suite, and a test
+  suite does not start while the quick test runs or a start waits. Reads, checks and test suites run beside the
+  tournaments, which play in processes of their own. A queued engine can be read
   next from its menu.
 - **Reference Elo**: the engine's rating on a list you trust. A tournament or the rating list can be anchored on it,
   and the games of a tournament carry it in their `WhiteElo` and `BlackElo` tags (copied when the engine joins).
@@ -258,7 +262,9 @@ testing two versions of one engine again is: choose A and B, **Start**.
 The summary also gives the memory the hash tables can take: two engine processes per game played at the same time,
 and the engines waiting for their next game, each with its `Hash`. Above the free memory it warns (the system will
 swap), naming the engine with the largest `Hash`; above the memory installed the tournament does not start. `--run`
-says the same. It also names the engines whose program changed since their last tournament (a new build), with
+says the same. When the memory budget of **Settings** lets fewer games play at once than the concurrency, the summary
+says how many (each game takes the `Hash` of its two engines and what their processes take besides), and so does the
+*Concurrency* row; the same for the games with an engine that uses a GPU, against the *GPUs*. It also names the engines whose program changed since their last tournament (a new build), with
 *What changed* when the engine's card lists new defaults or options (see *Engines*).
 
 What would go wrong is said with the engine, the resource and the fix, a button under the line (the command palette
@@ -492,6 +498,46 @@ you, and `--autostart` starts the saved setup instead. A participant whose progr
 since it joined is named in the header of the resumed tournament, with *Continue* and *Pause*: its next games are
 played by the program as it is now, with the options the tournament gave it.
 
+### Several tournaments at once
+
+Several tournaments can play side by side: a gauntlet beside an SPRT, two gauntlets at a time. *Start* on the *New
+tournament* page starts another one while some play; *Resume* resumes one beside them. Each tournament plays in a
+process of its own (`fastchess-gui --run <folder>` driven by the window), so a crash takes down that tournament only,
+and the window, its engine checks, quick tests and test suites no longer wait for a tournament to end.
+
+The workspace has **a tab per open tournament**, above its header: a dot while it plays (a pause sign while paused),
+its status at the cursor, a cross to close one that does not play. The panels show the tab chosen; the command
+palette lists the others (*Show …*, *Pause*, *Resume*). A finished tournament opened from the list takes the tab of
+one only looked at. The home page has a card for each tournament playing, with *Open*, *Pause*, *Stop* and its
+**weight**, the cores its games use of those it may use, and what its next game waits for; under the cards, a bar
+shares out the cores between them. The *Log* shows the lines of one tournament, of the window, or all (each line of a
+tournament carries its name); a tournament's lines are also kept in `fastchess-gui.log` in its folder.
+
+**Sharing the machine**: the tournaments playing share a budget of cores, set in **Settings** (*Cores for the
+tournaments*: the physical cores less one by default). Each gets one game's worth first while the budget allows, the
+heaviest weight first; the rest goes by weight (a tournament of weight 2 gets twice the cores of one of weight 1), none
+above its own concurrency, what one cannot take going to the others. A game counts as the `Threads` of the larger of
+its two engines: one thinks while the other waits. A paused tournament keeps only what its running games and the
+second games of their pairs need. A smaller share never interrupts a game: the tournament plays fewer games from its
+next one. A tournament alone plays as many games as its concurrency says, as before.
+
+**Memory**: a game starts only when the `Hash` of its two engines, and what each engine process takes besides (64 MB,
+and 8 MB per thread), fit in what the games playing leave of the memory budget (*Memory for the engines* in
+**Settings**, 75 % of the installed memory by default), shared between the tournaments. The setup summary says how
+many games the budget lets play at once, and the home page's *Health* card when games wait for memory.
+
+**GPUs**: an engine marked *Uses a GPU* on its card (a network engine such as Lc0) counts against the *GPUs* of
+**Settings**: no more such engines play at once than there are GPUs, in a tournament and across tournaments, while the
+other games play beside them. The setup summary says how many games with a GPU engine that allows, and warns when no
+GPU is counted, or when a game between two GPU engines needs more GPUs than the machine has (it then plays alone).
+
+**Keeping them running**: closing the window while tournaments play asks what to do. *Keep them running and quit* (the
+default) leaves each one playing in its process; the window shows them again, as they stand, at its next launch. *Stop
+and quit* stops them, each to be resumed exactly where it stopped. The quick test stops either way. A tournament whose
+process is gone by the next launch (a reboot, a crash) is resumed as any interrupted tournament. The broadcast of the
+*Broadcast* tab runs in the window, for the tournament shown: for a broadcast that goes on without the window, start
+the tournament from a terminal with the broadcast options (see *Headless mode*).
+
 ### An engine that cannot start
 
 A night left alone does not stop on one engine. An engine that does not start (a program moved or rebuilt, a
@@ -546,7 +592,8 @@ made are kept). A result set by hand can be undone as long as it is the last cha
 ### Queue and relaunch
 
 The **Queue** on the home page holds tournaments to play one after the other: when one ends, the next starts. They
-can be reordered or removed. The home page tells when the running tournament ends (*Ends about HH:MM (in …)*) and
+can be reordered or removed. With *Start when cores are free*, the next one starts beside those playing as soon as the
+budget of cores is more than they can take, each at its concurrency. The home page tells when the running tournament ends (*Ends about HH:MM (in …)*) and
 when the whole queue does; the tournaments whose length cannot be known (an SPRT without a maximum, nodes or depth
 per move) are counted apart. Its *Health* card gives the crashes or hangs, losses on time and illegal moves of the
 last 24 hours, the memory free and installed, and the engine processes running; then the engines that lost those
@@ -705,7 +752,22 @@ No window is opened; the version, then the progress, are printed on the console,
 cannot start, the engine set aside (with its engine log) or back, as in the window. **Ctrl+C** stops after the
 running games and the tournament can be resumed later, from the command line or the GUI. Exit codes: 0 finished,
 1 error while playing, 2 nothing to run, 3 stopped before the end (by Ctrl+C, or with nothing left to play without
-an engine that cannot start).
+an engine that cannot start). The memory budget and the GPUs of the profile's **Settings** apply to it too.
+
+`--detach` plays it in the background instead: the command returns at once, and the tournament goes on without a
+terminal; the window shows it (it connects to it) when it opens with the same profile, and `--attach` talks with it:
+
+```
+fastchess-gui --run FOLDER --detach         # in the background, on a local socket
+fastchess-gui --attach FOLDER               # its control channel on the standard input and output
+```
+
+The window drives each tournament the same way: `--run FOLDER --control socket` (or `--control stdio`) plays it
+without printing, talking JSON lines with the window: the tournament's events (its state, each journal line, the
+games in progress move by move, each game recorded, its log, its end) and the window's commands (pause, resume, stop,
+changes, the end of a game, its share of the machine with `--allowance THREADS:MEMORY_MB:GPUS:ONE`). The first line
+each way is a hello, `{"hello": {"protocol": 1, ...}}`; a script through `--attach` gets the tournament's hello and
+events, and may send commands such as `{"c": "pause"}`. One window (or script) at a time talks with a tournament.
 
 The tournament can be broadcast at the same time, as from the *Broadcast* tab:
 
@@ -751,9 +813,11 @@ application from a temporary place, where the `portable` file is not.
 - `suite.json`: the last setup of the Suites page; `suites/<suite>-<date>.json`: the finished test suite runs;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**, *Software rendering*, the
   folder of *Every engine of a folder…*, the tester and site of *Export for a rating list…*, the lichess token, the
-  window's size and place, and the check for a new version (wanted or not, when it was last made, the release it
-  found, the notice hidden);
-- `running.json`: the tournament running now, removed when it stops; found at launch, it tells what to resume;
+  window's size and place, the check for a new version (wanted or not, when it was last made, the release it
+  found, the notice hidden), and the machine's budget (cores, memory and GPUs for the tournaments, *Start when cores
+  are free*);
+- `running.json`: the tournaments playing now, with their weights, each removed when it stops; found at launch, it
+  tells what to show again (a tournament that played on without the window) or to resume;
 - `runs/<date>_<A>_vs_<B>/` for a match, `runs/<date>_<name>/` for a tournament (in `runs/` or the chosen
   folder), one folder each, which can be moved, copied, zipped and sent:
   - `tournament.json`: the format, the participants (engines copied with their options) and the conditions;
@@ -779,6 +843,9 @@ application from a temporary place, where the `portable` file is not.
     `games-chessbase.pgn`;
   - `lichess.json`: the lichess broadcast and round its games went to (no token);
   - `processor.tsv`: the processor time each game's engines used, for the *Processor use* of a resumed tournament;
+  - `fastchess-gui.log`: the log of the processes that played it (each tournament plays in a process of its own);
+    `control.json`, while one plays it: where its local socket is (`control.sock` in the folder, or in the user's
+    runtime folder when that path is too long; a named pipe on Windows), and which process listens;
   - `logs/game-N.log`: every line exchanged with both engines during game N (the number shown in the *Games*
     tab), with the time it was sent or read (`W>` sent to White's engine, `W<` read from its output, `W!` read
     from its error output: assertions, crash messages), for the games lost on time, by a crash, a stall or an illegal move
@@ -799,6 +866,8 @@ fastchess-gui [--profile DIR] [--autostart] [--size WxH] [--software]
               [--quit-after SECONDS]
 fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_PORT [--tlcs-lanes]]
               [--web TCP_PORT] [--tunnel [localhost.run|ssh://USER@HOST[:PORT][/REMOTE_PORT]]] [--live-files [DIR]] [--lichess ROUND_URL|ROUND_ID|new]
+              [--control stdio|socket] [--detach] [--allowance THREADS:MEMORY_MB:GPUS:ONE]
+fastchess-gui --attach TOURNAMENT_FOLDER
 ```
 
 - `--profile DIR` uses another profile folder;
@@ -825,7 +894,7 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
   game of slot N, from 1), `big-screen[=N]` (the big screen, of the game of slot N);
 - `--select-game N` opens game N (in finishing order) in the *Games* tab as soon as it exists;
 - `--quit-after SECONDS` stops the tournament and quits;
-- `--run`: see *Headless mode*.
+- `--run`, `--detach`, `--attach`, `--control`, `--allowance`: see *Headless mode*.
 
 ## Development notes
 

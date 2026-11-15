@@ -24,6 +24,9 @@ this repository still builds unchanged.
   rematch, byes) and knockout (seeded bracket, tiebreak pairs), with per engine Hash, Threads, nodes and time
   odds. Standings with ratings and confidence intervals, Sonneborn-Berger or Buchholz, a crosstable, export as
   text or HTML.
+- **Several tournaments at once**, a tab each, each in a process of its own: they share the cores by weight (a
+  budget in Settings), never more memory than the budget nor more GPU engines than GPUs, and play on when the
+  window closes; it shows them again when it opens (`--attach` talks with one from a terminal).
 - **Exact resume**: every tournament is a folder with an append-only journal; after a crash, a closed window or
   a power cut it continues with no game lost or played twice.
 - **Unattended nights**: an engine that cannot start has its games set aside while the others go on; it is tried
@@ -88,6 +91,10 @@ this repository still builds unchanged.
 | A two-engine SPRT match | The big screen, for a television or a stream |
 |---|---|
 | ![Charts](docs/screenshots/charts.png) | ![Big screen](docs/screenshots/big-screen.png) |
+
+| Two tournaments at once, sharing the cores by weight |
+|---|
+| ![Several tournaments](docs/screenshots/several.png) |
 
 ## Downloads
 

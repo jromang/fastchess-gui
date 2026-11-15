@@ -783,6 +783,9 @@ class App {
     [[nodiscard]] tour::Budget machineBudget() const;
     // The engine threads of the window's own engines: the quick test's games, the analysis engine of the Board page.
     [[nodiscard]] int localThreads() const;
+    // The threads of the Board page's analysis engine while it analyses (#138), counted with the cores the
+    // tournaments share; none until that page exists.
+    [[nodiscard]] int analysisThreads() const { return 0; }
     // The share of each tournament playing, by weight (budget.hpp): their allowances, sent to their processes when
     // they change. Every frame: a tournament started, ended, paused, its weight changed, the budget changed.
     void arbitrate();
