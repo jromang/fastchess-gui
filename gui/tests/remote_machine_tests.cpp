@@ -1747,8 +1747,9 @@ TEST_CASE("Machine jobs: an engine copied with its folder, each file's hash chec
     CHECK(server.written == written);
     CHECK(joined(again.lines).find("there already") != std::string::npos);
 
-    // Rebuilt here: changed since the comparison, then a different build.
-    writeFile(here / "alpha/alpha", elfHeader(62) + std::string(70000, 'b'));
+    // Rebuilt here: changed since the comparison, then a different build. Its size changes too: a file's time has
+    // whole seconds only with MinGW's library, the same time as the first build's here.
+    writeFile(here / "alpha/alpha", elfHeader(62) + std::string(70001, 'b'));
     CHECK(buildMatch(e, fileStamp(here / "alpha/alpha")) == BuildMatch::Changed);
     JobResult rebuilt;
     compareBuilds(client, m, {{"Alpha", here / "alpha/alpha"}}, state, rebuilt);
