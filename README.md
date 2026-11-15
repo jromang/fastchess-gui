@@ -4,6 +4,7 @@
 [![CodeQL](https://github.com/jromang/fastchess-gui/actions/workflows/codeql.yml/badge.svg?branch=gui)](https://github.com/jromang/fastchess-gui/actions/workflows/codeql.yml)
 [![Coverity Scan](https://scan.coverity.com/projects/jromang-fastchess-gui/badge.svg)](https://scan.coverity.com/projects/jromang-fastchess-gui)
 [![Downloads](https://img.shields.io/github/downloads/jromang/fastchess-gui/total)](https://github.com/jromang/fastchess-gui/releases)
+
 ![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS-blue)
 
 A desktop front end for [fastchess](https://github.com/Disservin/fastchess), the chess engine tournament
@@ -25,15 +26,26 @@ this repository still builds unchanged.
   everyone or board by board, scored by team and by engine), with per engine Hash, Threads, nodes and time
   odds. Standings with ratings and confidence intervals, Sonneborn-Berger or Buchholz, a crosstable, export as
   text or HTML.
+
+| The crosstable of a round robin | Standings, ratings and latest results |
+|---|---|
+| ![The crosstable of a round robin](docs/screenshots/standings.png) | ![Standings, ratings and latest results](docs/screenshots/overview.png) |
+
 - **Several tournaments at once**, a tab each, each in a process of its own: they share the cores by weight (a
   budget in Settings), never more memory than the budget nor more GPU engines than GPUs, and play on when the
   window closes; it shows them again when it opens (`--attach` talks with one from a terminal).
+
+![The home page: two tournaments at once, sharing the cores by weight](docs/screenshots/several.png)
+
 - **Remote machines**: a tournament runs on a test box, a server or a second PC (Linux, macOS, Windows' built-in
   OpenSSH server) reached with SSH (the agent or a key file, nothing secret saved), followed in the window as if
   it played here, connected again after a cut, its files copied back. Settings installs fastchess-gui there,
   checks the engines' paths, copies an engine missing there (the build for the machine's system and architecture,
   with its folder if it needs one), tells whether the engine there is the same build as here (SHA-256), and
   pushes the books and tablebases missing.
+
+![Settings > Machines: a Windows PC through its built-in OpenSSH server](docs/screenshots/machines.png)
+
 - **Exact resume**: every tournament is a folder with an append-only journal; after a crash, a closed window or
   a power cut it continues with no game lost or played twice.
 - **Unattended nights**: an engine that cannot start has its games set aside while the others go on; it is tried
@@ -43,13 +55,18 @@ this repository still builds unchanged.
   and leader or LLR), what needs action with its fix (an engine that cannot start, a tournament an error stopped, a
   drive too full), the queue and when it all ends, the last results with *Relaunch with…*, and *Pause all*.
 
-![The home page: two tournaments at once, sharing the cores by weight](docs/screenshots/several.png)
+![Needs action: an engine that cannot start, its games set aside while the others go on](docs/screenshots/needs-action.png)
 
 - **Changes while running**: add, withdraw or replace an engine, change the number of cycles, play games again,
   void them or set their result by hand (a game in progress too), with the impact shown first and an undo. No
   played game is lost.
 - **Broadcast**: live PGN, HTML standings and JSON files, a TLCS server for TLCV and other viewers, a built-in
   web page, and lichess broadcasts (pushed through the API with a personal token).
+
+| The big screen, for a television or a stream | The broadcast's web page |
+|---|---|
+| ![The big screen, for a television or a stream](docs/screenshots/big-screen.png) | ![The broadcast's web page](docs/screenshots/broadcast-web.png) |
+
 - **Workflow**: named profiles for each part of the setup (time control, openings, adjudication, format, engine
   settings) with presets for the usual rating list and fishtest conditions, templates made of them, the engine
   library beside the participants (double-click, drag, groups), a queue of tournaments, *Relaunch with…* a new
@@ -60,6 +77,9 @@ this repository still builds unchanged.
 - **Ratings** over every tournament played (and imported PGN files), by time control, group or period, anchored on a
   reference Elo; an engine's card (results, health, rating over time), head to head records, the progress of an
   engine's versions, an export for Ordo and BayesElo.
+
+![Ratings over every tournament played: an engine's card](docs/screenshots/ratings.png)
+
 - **Matches**: a fixed number of games, unlimited, or an SPRT (normalized, logistic or BayesElo model, with
   gainer and non-regression presets, an Elo bias on both bounds and a minimum of games before a decision). Time
   control (base + increment, moves per period), time per move, fixed nodes or fixed depth.
@@ -82,6 +102,9 @@ this repository still builds unchanged.
   two PGN files, `{+0.35/18 1.234s}` (cutechess style) and `{[%eval 0.35,18] [%clk …] [%emt …]}`
   (ChessBase / Fritz / Lichess), and can be exported in either. One PGN file can also collect the games of every
   tournament, like cutechess' `-pgnout`, in schedule order: the two games of an opening side by side.
+
+![Games and replay](docs/screenshots/games.png)
+
 - **Results and charts**: Elo and nElo with 95 % confidence interval, LOS, pentanomial counts, LLR against its
   bounds, Elo and LLR over time, game lengths, how games ended, average depth and NPS per engine.
 
@@ -92,13 +115,18 @@ this repository still builds unchanged.
   Arena engine lists. A rebuilt program is noticed, with what its new build changed (name, option defaults,
   options new and gone) and the choice to keep your values. WinBoard engines too, through a translation to UCI
   built in. A console to type commands to an engine and read its answers.
+
+![The engine library, with the UCI options the engine tells](docs/screenshots/engines.png)
+
 - **Board**: any position analysed by an engine of the library, with several lines drawn as arrows; A on any board
   (a live game, a finished one, an opening) opens it there. Any PGN file opened, its games filtered by their tags and
   replayed with their evaluations (`%eval` or cutechess comments); a FEN, a PGN or a list of moves pasted; a
   position editor. A finished game analysed move by move, its inaccuracies, mistakes and blunders marked. A game (or
   a pair) between two engines from any position, with a clock for each, played beside a running tournament.
 
-![The Board page: a finished game analysed move by move, its mistake marked](docs/screenshots/review.png)
+| An engine of the library analyses any position | A finished game analysed move by move, its mistakes marked |
+|---|---|
+| ![An engine of the library analyses any position](docs/screenshots/board.png) | ![A finished game analysed move by move, its mistakes marked](docs/screenshots/review.png) |
 
 - **Opening books**: EPD, PGN or Polyglot, in a library; each book checked for illegal, duplicate, mirrored and
   finished positions, browsed on a board, and cleaned. A Chess324 book of start positions written by the program,
@@ -109,6 +137,11 @@ this repository still builds unchanged.
   their pairs played again from another opening if asked.
 - **Test suites** (STS, WAC, ERET…): several engines on the positions of an EPD file (`bm`, `am`, STS points),
   as a grid with the time to solution, the totals and the STS score, saved to compare versions, exported as CSV.
+
+| An opening book checked, and browsed on a board | A test suite: several engines on the positions of an EPD file |
+|---|---|
+| ![An opening book checked, and browsed on a board](docs/screenshots/books.png) | ![A test suite: several engines on the positions of an EPD file](docs/screenshots/suites.png) |
+
 - Chess960 (the 960 positions, or a book), draw / resign / max moves / Syzygy
   adjudication, crash recovery, a desktop notification when a match ends.
 - Light and dark themes; English, French, German, Spanish, Italian, Portuguese (Brazil), Russian or Chinese
@@ -117,31 +150,7 @@ this repository still builds unchanged.
   pieces, move sounds for the game followed (off by default), and a logo per engine, shown in the live view, on the
   big screen and on the broadcast web page.
 
-## More screenshots
-
-| Standings, ratings and latest results | Games and replay |
-|---|---|
-| ![Overview](docs/screenshots/overview.png) | ![Games](docs/screenshots/games.png) |
-
-| The crosstable of a round robin | Ratings over every tournament played: an engine's card |
-|---|---|
-| ![Crosstable](docs/screenshots/standings.png) | ![Ratings](docs/screenshots/ratings.png) |
-
-| An engine that cannot start: its games set aside, the others go on | The big screen, for a television or a stream |
-|---|---|
-| ![Needs action](docs/screenshots/needs-action.png) | ![Big screen](docs/screenshots/big-screen.png) |
-
-| The engine library, with the UCI options the engine tells | The Board page: an engine of the library analyses any position |
-|---|---|
-| ![Engines](docs/screenshots/engines.png) | ![Board](docs/screenshots/board.png) |
-
-| A test suite: several engines on the positions of an EPD file | An opening book checked, and browsed on a board |
-|---|---|
-| ![Test suite](docs/screenshots/suites.png) | ![Books](docs/screenshots/books.png) |
-
-| A remote machine: a Windows PC through its built-in OpenSSH server | The broadcast's web page |
-|---|---|
-| ![Machines](docs/screenshots/machines.png) | ![Broadcast web page](docs/screenshots/broadcast-web.png) |
+![Settings > Appearance: the brown board and the Celtic pieces](docs/screenshots/appearance.png)
 
 ## Downloads
 
