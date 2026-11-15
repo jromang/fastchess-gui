@@ -87,11 +87,19 @@ class StdioChannel final : public ChildChannel {
     ~StdioChannel() override;
 
    private:
+    // How the reader reaches the channel: blocked on the window's pipe, it can outlive the channel (until the process
+    // ends), so it goes through this, which the destructor empties under its lock.
+    struct ReaderLink {
+        std::mutex mutex;
+        StdioChannel* channel = nullptr;
+    };
+
     bool write(const std::string& line) override;
-    void readLoop();
+    static void readLoop(int in, const std::shared_ptr<ReaderLink>& link);
 
     int out_ = -1;  // the window's pipe, kept apart from the standard output
     int in_  = -1;
+    std::shared_ptr<ReaderLink> link_ = std::make_shared<ReaderLink>();
 };
 
 // On a local socket (local_socket.hpp), so that the tournament plays on without the window, which connects to it again:

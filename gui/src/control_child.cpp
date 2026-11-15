@@ -123,11 +123,16 @@ StdioChannel::StdioChannel(const std::string& log) {
         ::close(null_fd);
     }
 #endif
-    std::thread([this] { readLoop(); }).detach();
+    link_->channel = this;
+    std::thread([in = in_, link = link_] { readLoop(in, link); }).detach();
 }
 
 StdioChannel::~StdioChannel() {
-    // The reader may still be blocked on the window's pipe: it ends with the process.
+    // The reader may still be blocked on the window's pipe: it ends with the process, and no longer reaches this.
+    {
+        std::lock_guard<std::mutex> lock(link_->mutex);
+        link_->channel = nullptr;
+    }
 #ifdef _WIN32
     if (out_ >= 0) _close(out_);
 #else
@@ -156,23 +161,26 @@ bool StdioChannel::write(const std::string& line) {
     return true;
 }
 
-void StdioChannel::readLoop() {
+void StdioChannel::readLoop(int in, const std::shared_ptr<ReaderLink>& link) {
     control::LineSplitter split;
     std::vector<std::string> lines;
     char buffer[65536];
     for (;;) {
 #ifdef _WIN32
-        const int n = _read(in_, buffer, sizeof buffer);
+        const int n = _read(in, buffer, sizeof buffer);
 #else
-        const auto n = ::read(in_, buffer, sizeof buffer);
+        const auto n = ::read(in, buffer, sizeof buffer);
         if (n < 0 && errno == EINTR) continue;
 #endif
         if (n <= 0) break;
         lines.clear();
         split.feed(std::string_view(buffer, static_cast<std::size_t>(n)), lines);
-        for (const auto& line : lines) received(line);
+        std::lock_guard<std::mutex> lock(link->mutex);
+        if (!link->channel) return;
+        for (const auto& line : lines) link->channel->received(line);
     }
-    setClosed();
+    std::lock_guard<std::mutex> lock(link->mutex);
+    if (link->channel) link->channel->setClosed();
 }
 
 SocketChannel::SocketChannel(const std::string& log, std::filesystem::path dir, control::Hello hello)
