@@ -837,7 +837,8 @@ void App::drawBracket() {
             const auto& place = places[i];
             ImGui::PushID(static_cast<int>(round * 1000 + i));
             ui::beginCard("place", ImVec2(column, 0));
-            for (std::size_t k = 0; k < place.size(); ++k) {
+            // A place holds two participants, or one with a bye; a damaged journal could give it more.
+            for (std::size_t k = 0; k < std::min<std::size_t>(place.size(), 2); ++k) {
                 const int id     = place[k];
                 const bool bye   = place.size() == 1;
                 const double pts = bye ? 0 : table_.pair(id, place[1 - k]).points();
