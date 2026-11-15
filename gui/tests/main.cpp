@@ -14,6 +14,7 @@
 #endif
 
 #include <tour/book_adapter.hpp>
+#include <tour/files.hpp>
 
 #include "../../tournament/tests/own_temp.hpp"
 #include "wb2uci.hpp"
@@ -51,5 +52,6 @@ int main(int argc, char** argv) {
 #endif
     // Each run, each process, with a temporary folder of its own (own_temp.hpp).
     const fcg::test::OwnTempDir temp;
+    fcg::tour::setSyncToDisk(false);  // tour/files.hpp
     return doctest::Context(argc, argv).run();
 }
