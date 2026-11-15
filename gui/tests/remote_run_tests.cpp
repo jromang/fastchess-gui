@@ -201,6 +201,10 @@ TEST_CASE("remote: a tournament in a process of its own; its copy follows; pause
     h.run.setPaused(false);
     REQUIRE(h.waitFor([&] { return h.run.status().allowance == one && !h.run.status().paused; }, 5s));
     REQUIRE(h.waitFor([&] { return h.run.tournament()->results().size() >= at_pause + 3; }));
+    // The two games let through before the allowance (they waited at the pause gate) may still be in the last state
+    // the process sent: it sends one every 200 ms, as it stood then, and fast games end three results earlier. Watched
+    // from a state with one game at most, which every later one is.
+    REQUIRE(h.waitFor([&] { return h.run.runningGames() <= 1; }, 5s));
     h.watching = true;
     REQUIRE(h.waitFor([&] { return h.run.tournament()->results().size() >= at_pause + 6; }));
     CHECK(h.most_running <= 1);
@@ -326,7 +330,9 @@ TEST_CASE("remote: a tournament on its socket plays on without the window, which
     }
     const ScopedEnv mock_move_ms("FCG_MOCK_MOVE_MS", "15");
     const auto profile = fs::temp_directory_path() / "fcg-remote-tests-detach";
-    const auto dir     = makeTournament(profile, roundRobin(3, 4), 3);
+    // Long enough to play on until the window connects again, however slowly the processes start on a busy machine
+    // (the games take their time, the processes the processor's): it is stopped once idle, not played to its end.
+    const auto dir = makeTournament(profile, roundRobin(3, 30), 3);
 
     std::size_t seen = 0;
     Clock::time_point played_by{};  // the process played already then
