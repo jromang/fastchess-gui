@@ -134,6 +134,7 @@ class RemoteRun final : public Run {
     bool stop_when_idle_ = false;
     bool finished_event_ = false;
     bool reopened_       = false;
+    Clock::time_point resync_asked_{};  // the last snapshot asked for (GuiObserver::takeResync())
     bool ended_          = false;  // its end event came
     std::string error_;
     int64_t pid_      = 0;

@@ -1810,6 +1810,49 @@ TEST_CASE("live: an edit while a resumed tournament's games are read leaves the 
     CHECK(shown == expected);
 }
 
+TEST_CASE("live: a move the slot's board already has, or cannot play, is left out and the slots asked again") {
+    const auto dir = tempDir("resync");
+    tour::TournamentSpec spec;
+    spec.name      = "resync";
+    spec.format    = tour::Format::Match;
+    spec.max_games = 10;
+    for (int i = 0; i < 2; ++i) {
+        tour::Participant p;
+        p.id          = i;
+        p.engine.name = i == 0 ? "A" : "B";
+        spec.participants.push_back(p);
+    }
+    auto state = tour::TournamentState::create(dir / "t", spec);
+    GuiObserver obs(1, *state);
+    fastchess::observer::GameStart start;
+    start.slot      = 0;
+    start.white     = "A";
+    start.black     = "B";
+    start.start_fen = chess::constants::STARTPOS;
+    obs.onGameStart(start);
+    const auto move = [&](chess::Color mover, const char* uci) {
+        fastchess::MoveData data;
+        data.move = uci;
+        obs.onMove(0, mover, data, uci, 0, 0);
+    };
+    move(chess::Color::WHITE, "e2e4");
+    CHECK_FALSE(obs.takeResync());
+    // From another process, a snapshot of the slot taken between the move and its event: the move comes twice.
+    move(chess::Color::WHITE, "e2e4");
+    CHECK(obs.takeResync());
+    CHECK_FALSE(obs.takeResync());  // once
+    move(chess::Color::BLACK, "e7e5");
+    move(chess::Color::WHITE, "a1a8");  // not a move here
+    CHECK(obs.takeResync());
+    SlotState slot;
+    REQUIRE(obs.copySlot(0, slot));
+    REQUIRE(slot.moves.size() == 2);
+    CHECK(slot.moves[0].san == "e2e4");
+    CHECK(slot.moves[1].san == "e7e5");
+    std::error_code ec;
+    fs::remove_all(dir, ec);
+}
+
 TEST_CASE("live: a game recorded while the lists start over is counted once in the search totals") {
     const auto dir = tempDir("totals-once");
     tour::TournamentSpec spec;

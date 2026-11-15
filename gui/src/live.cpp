@@ -628,6 +628,13 @@ void GuiObserver::onMove(int slot_index, chess::Color mover, const fastchess::Mo
     auto& st = s->state;
 
     m.move = chess::uci::uciToMove(s->board, data.move);
+    // Played only on the position it was played on: see takeResync().
+    chess::Movelist legal;
+    chess::movegen::legalmoves(legal, s->board);
+    if (m.move == chess::Move::NO_MOVE || std::find(legal.begin(), legal.end(), m.move) == legal.end()) {
+        resync_ = true;
+        return;
+    }
     s->board.makeMove<true>(m.move);
 
     st.moves.push_back(std::move(m));

@@ -254,6 +254,11 @@ void RemoteRun::update() {
         }
     }
     for (const auto& m : process_.take()) apply(m);
+    // A move the copy of a game could not play: the games in progress are asked again, at most once a second.
+    if (observer_ && observer_->takeResync() && Clock::now() - resync_asked_ > std::chrono::seconds(1)) {
+        resync_asked_ = Clock::now();
+        process_.send(control::command("snapshot", 0, nlohmann::json::object()));
+    }
     if (!allowance_sent_) {
         allowance_sent_ =
             process_.send(control::command("allowance", 0, {{"allowance", control::allowanceJson(allowance_)}}));

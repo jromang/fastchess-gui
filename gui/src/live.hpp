@@ -295,6 +295,10 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
                   const std::optional<fastchess::Stats>& pair);
     // Slot `i` as it stands, for a window that connects to a tournament already playing.
     void restoreSlot(int i, const SlotState& state);
+    // A move arrived that the board of its slot cannot play (from a tournament in another process: one a snapshot of
+    // the slot already holds, or a position missed on a reconnection): left out, and true here once, for the slots to
+    // be asked again.
+    [[nodiscard]] bool takeResync() { return resync_.exchange(false); }
 
     // --- GUI thread ---
     [[nodiscard]] int slotCount() const noexcept override { return static_cast<int>(slots_.size()); }
@@ -417,6 +421,7 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     std::vector<tour::GameResult> to_load_;
     uint64_t generation_ = 0;
     std::atomic<bool> stop_loading_{false};
+    std::atomic<bool> resync_{false};  // see takeResync()
     std::thread loader_;  // last: started once everything else is there
 };
 
