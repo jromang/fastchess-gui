@@ -1935,8 +1935,9 @@ TEST_CASE("SSH client: a real server, when FCG_SSH_TEST names one") {
 
 // A real machine from end to end, when FCG_MACHINE_TEST names one: "user@host:port:key_file", with FCG_MACHINE_PROGRAM
 // the fastchess-gui built for its system and FCG_MACHINE_ENGINE the mock engine built for it (those of the Windows
-// build, from Linux). As the window does it: the machine tested, fastchess-gui installed there, the engine copied and
-// checked, a match started there in the background and followed, the window gone and back, the files copied back.
+// build, from Linux). As the window does it: the machine tested, fastchess-gui installed there, the engine copied
+// there by Copy to the machine and found the same build, a match started there in the background and followed, the
+// window gone and back, the files copied back.
 // Off by default; its folder there is left for a look (fcg-e2e-<time> in the user's home folder).
 TEST_CASE("Machines: a real machine from end to end, when FCG_MACHINE_TEST names one") {
     const char* spec    = std::getenv("FCG_MACHINE_TEST");
@@ -1975,22 +1976,74 @@ TEST_CASE("Machines: a real machine from end to end, when FCG_MACHINE_TEST names
     installProgram(client, m, program, state, result);
     REQUIRE_MESSAGE(result.ok, result.error.message);
 
-    // The mock engine there, checked as the library's engines are.
-    const auto engines_there = remoteJoin(machineFolder(m), "engines");
-    const auto engine_there  = remoteJoin(engines_there, fs::path(mock).filename().string());
-    REQUIRE_MESSAGE(client.makeDirs(engines_there), client.error().message);
-    REQUIRE_MESSAGE(client.upload(mock, engine_there), client.error().message);
-    m.engines = {{"Alpha", engine_there, -1, "", ""}, {"Bravo", engine_there, -1, "", ""}};
-    result    = {};
-    checkEngines(client, m, {}, std::chrono::seconds(20), state, result);
-    REQUIRE_MESSAGE(result.ok, result.error.message);
-
-    // A match of this computer, played there.
+    // The mock engine there, through Copy to the machine: its format checked against the machine's system, copied to
+    // the engines folder, its hash compared, its path set and checked.
     std::vector<EngineEntry> library(2);
     library[0].name = "Alpha";
     library[1].name = "Bravo";
-    writeFile(dir / "mock-engine", "the engine of this computer, played by its copy there");
-    for (auto& e : library) e.cmd = (dir / "mock-engine").string();
+    for (auto& e : library) e.cmd = mock;
+    for (const auto& e : library) {
+        const auto plan = planEngineCopy(e, m);
+        REQUIRE_MESSAGE(plan.error.empty(), plan.error);
+        REQUIRE_MESSAGE(plan.suits.level != Suitability::Level::Refused, plan.suits.message);
+        result = {};
+        copyEngine(client, m, plan, {}, state, result);
+        for (const auto& line : result.lines) MESSAGE(line);
+        REQUIRE_MESSAGE(result.ok, result.error.message);
+        REQUIRE(result.engines.size() == 1);
+        CHECK(insideRemoteFolder(result.engines[0].path, machineFolder(m)));
+        m.engines.push_back(result.engines[0]);
+    }
+    // The same build there, as the engines' check finds it.
+    result = {};
+    checkEngines(client, m, {}, std::chrono::seconds(20), state, result, {{"Alpha", mock}, {"Bravo", mock}});
+    REQUIRE_MESSAGE(result.ok, result.error.message);
+    for (const auto& e : result.engines) CHECK(buildMatch(e, fileStamp(mock)) == BuildMatch::Same);
+    // A build for another system is refused before anything is sent.
+    {
+        const bool windows = m.system.shell == RemoteShell::Cmd;
+        writeFile(dir / "other" / "alpha", windows ? std::string("\x7f"
+                                                                 "ELF\x02\x01\x01",
+                                                                 7) +
+                                                         std::string(100, '\0')
+                                                   : std::string("MZ") + std::string(100, '\0'));
+        const auto plan = planEngineCopy(library[0], m, dir / "other" / "alpha");
+        CHECK(plan.suits.level == Suitability::Level::Refused);
+        result = {};
+        copyEngine(client, m, plan, {}, state, result);
+        CHECK_FALSE(result.ok);
+        MESSAGE(result.error.message);
+        CHECK(result.error.message.find("choose the") != std::string::npos);
+    }
+    // An engine with its folder: a network in a folder beside the program, an option naming it, found in its copy.
+    {
+        const auto folder = dir / "charlie";
+        const auto exe    = folder / fs::path(mock).filename();
+        fs::create_directories(folder / "nets");
+        fs::copy_file(mock, exe);
+        writeFile(folder / "nets" / "charlie.nnue", std::string(300000, 'n'));
+        EngineEntry charlie;
+        charlie.name    = "Charlie";
+        charlie.cmd     = exe.string();
+        charlie.options = {{"EvalFile", (folder / "nets" / "charlie.nnue").string()}};
+        const auto plan = planEngineCopy(charlie, m);
+        REQUIRE(plan.with_folder);
+        CHECK(plan.files.size() == 2);
+        result = {};
+        copyEngine(client, m, plan, {}, state, result);
+        for (const auto& line : result.lines) MESSAGE(line);
+        REQUIRE_MESSAGE(result.ok, result.error.message);
+        const auto& e = result.engines[0];
+        CHECK(e.copied_dir == engineFolderThere(m, "Charlie"));
+        const auto net = optionThere(e, m.system.shell, charlie.options[0].second);
+        MESSAGE("EvalFile there: " << net);
+        CHECK(net.rfind(e.copied_dir, 0) == 0);
+        const auto hash = client.run(*hashCommand(m.system.shell, net), 30s);
+        REQUIRE(hash);
+        CHECK(readHash(hash->out) == sha256File(folder / "nets" / "charlie.nnue"));
+    }
+
+    // A match of this computer, played there.
     MatchSetup setup;
     setup.format      = TournamentFormat::Match;
     setup.name        = "e2e";
