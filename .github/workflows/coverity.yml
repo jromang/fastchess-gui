@@ -103,15 +103,16 @@ jobs:
 
       - name: Submit
         # Scan's three-step upload: the build form refuses archives this size (413). Scan gives an upload address and a
-        # build id, the archive goes there, then the build is queued for analysis. The project's name is URL-encoded.
+        # build id, the archive goes there, then the build is queued for analysis. These addresses take the project's
+        # slug (as in its page's address), not its name. xz keeps the archive about half the size gzip makes.
         run: |
-          tar -czf cov-int.tgz cov-int
-          ls -l cov-int.tgz
+          XZ_OPT=-T0 tar -cJf cov-int.tar.xz cov-int
+          ls -l cov-int.tar.xz
           version=$(git describe --tags --always)
-          project="${PROJECT//\//%2F}"
+          project="${PROJECT//\//-}"
           curl -fsS --retry 3 -o init.json \
             --data-urlencode "token=${COVERITY_SCAN_TOKEN}" --data-urlencode "email=${COVERITY_SCAN_EMAIL}" \
-            --data-urlencode "file_name=cov-int.tgz" --data-urlencode "version=${version}" \
+            --data-urlencode "file_name=cov-int.tar.xz" --data-urlencode "version=${version}" \
             --data-urlencode "description=${GITHUB_SHA}" \
             "https://scan.coverity.com/projects/${project}/builds/init"
           upload_url=$(jq -r '.url' init.json)
@@ -120,7 +121,7 @@ jobs:
             echo "::error::Scan gave no upload address: $(jq -c 'del(.url)' init.json 2>/dev/null || head -c 300 init.json)"
             exit 1
           fi
-          curl -fsS --retry 3 -X PUT --header "Content-Type: application/json" --upload-file cov-int.tgz "${upload_url}"
+          curl -fsS --retry 3 -X PUT --header "Content-Type: application/json" --upload-file cov-int.tar.xz "${upload_url}"
           curl -fsS --retry 3 -X PUT --data-urlencode "token=${COVERITY_SCAN_TOKEN}" \
             "https://scan.coverity.com/projects/${project}/builds/${build_id}/enqueue"
           echo
