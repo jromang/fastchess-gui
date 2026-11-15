@@ -41,6 +41,20 @@ std::string fromSftp(const std::string& path, RemoteShell shell) {
     return out;
 }
 
+// A path of the home folder as ~/..., and back.
+std::string tilde(const std::string& path, const std::string& home) {
+    if (home.empty() || home == "/") return path;
+    if (path == home) return "~";
+    if (path.rfind(home + "/", 0) == 0) return "~" + path.substr(home.size());
+    return path;
+}
+std::string untilde(const std::string& path, const std::string& home) {
+    if (home.empty() || path.empty() || path[0] != '~') return path;
+    if (path == "~") return home;
+    if (path.rfind("~/", 0) == 0) return home + path.substr(1);
+    return path;
+}
+
 std::string dayOf(int64_t time) {
     if (time <= 0) return {};
     const auto t = static_cast<std::time_t>(time);
@@ -422,7 +436,7 @@ void App::listRemote(const std::string& dir) {
     target.timeout            = std::chrono::seconds(10);
     mbedtls_platform_zeroize(passphrase.data(), passphrase.size());
     const bool folders = remote_picker_->folders;
-    const auto path    = dir.empty() ? std::string(".") : sftpPath(dir);
+    const auto path    = dir.empty() ? std::string(".") : sftpPath(untilde(dir, remote_picker_->home));
     remote_picker_->error.clear();
     remote_picker_->listing = std::async(std::launch::async, [target, path, folders]() mutable {
         RemoteListing out;
@@ -433,6 +447,7 @@ void App::listRemote(const std::string& dir) {
             out.error = client.error().message;
             return out;
         }
+        if (const auto home = client.realPath(".")) out.home = *home;
         const auto real = client.realPath(path);
         if (!real) {
             out.error = client.error().message;
@@ -467,7 +482,7 @@ void App::chooseRemote(const std::string& sftp_path) {
     remote_picker_.reset();
     const auto* m = machineById(picker.machine);
     if (!m) return;
-    const auto path  = fromSftp(sftp_path, m->system.shell);
+    const auto path = fromSftp(sftp_path, m->system.shell);
     const auto index = engineIndex(picker.engine);
     using Purpose    = RemotePicker::Purpose;
     switch (picker.purpose) {
@@ -540,11 +555,12 @@ void App::drawRemotePicker() {
             return;
         }
         p.error = listing.error;
+        if (!listing.home.empty()) p.home = listing.home;
         if (listing.error.empty()) {
             p.dir     = listing.dir;
             p.entries = std::move(listing.entries);
             p.selected.clear();
-            std::snprintf(p.typed.data(), p.typed.size(), "%s", p.dir.c_str());
+            std::snprintf(p.typed.data(), p.typed.size(), "%s", tilde(p.dir, p.home).c_str());
         }
     }
     const auto* m = machineById(p.machine);
@@ -572,7 +588,7 @@ void App::drawRemotePicker() {
     ImGui::TextUnformatted(title.c_str());
     if (ui::titleFont()) ImGui::PopFont();
     ImGui::SameLine();
-    ImGui::TextDisabled("%s", fmt::format("{} · {}", describeSystem(m->system), m->address()).c_str());
+    ImGui::TextDisabled("%s", fmt::format("{} · {}", describeSystem(m->system), m->host).c_str());
 
     bool close = false;
     if (p.untested) {

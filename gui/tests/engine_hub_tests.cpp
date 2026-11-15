@@ -293,6 +293,14 @@ TEST_CASE("Machines: an engine's command quotes each argument, its process id fi
     REQUIRE(in_dir);
     CHECK(shWords(shWords(*in_dir)[2]) ==
           std::vector<std::string>{"echo", "$$;", "cd", "/data/nets", "&&", "exec", "sf"});
+    // A path relative to the home folder: found again once in the program's folder, or from the home folder.
+    const auto relative = engineCommand(RemoteShell::Posix, "engines/gaia/gaia", {}, "");
+    REQUIRE(relative);
+    CHECK(shWords(shWords(*relative)[2]) ==
+          std::vector<std::string>{"echo", "$$;", "cd", "engines/gaia", "&&", "exec", "./gaia"});
+    const auto elsewhere = engineCommand(RemoteShell::Posix, "engines/gaia/gaia", {}, "/data/nets");
+    REQUIRE(elsewhere);
+    CHECK(shWords(shWords(*elsewhere)[2]).back() == "\"$OLDPWD\"/engines/gaia/gaia");
     const auto windows = engineCommand(RemoteShell::Cmd, "C:\\Engines\\sf.exe", {"a b"}, "");
     REQUIRE(windows);
     CHECK(*windows == "cd /d \"C:\\Engines\" && \"C:\\Engines\\sf.exe\" \"a b\"");

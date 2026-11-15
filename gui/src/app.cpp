@@ -281,10 +281,12 @@ void App::frame() {
             sprt_calc_open_ = true;
         } else if (w == "engines")
             page_ = Page::Engines;
-        else if (w == "engines-remote-picker") {
-            // The first machine's files, as Add, A program on <machine>, shows them.
-            page_ = Page::Engines;
-            if (!machines_.empty()) openRemotePicker(RemotePicker::Purpose::AddEngine, machines_.front().id);
+        else if (w.rfind("engines-remote-picker", 0) == 0) {
+            // The first machine's files, as Add, A program on <machine>, shows them; engines-remote-picker=PATH: from
+            // the folder of PATH there.
+            page_            = Page::Engines;
+            const auto start = w.find('=') == std::string::npos ? std::string() : w.substr(w.find('=') + 1);
+            if (!machines_.empty()) openRemotePicker(RemotePicker::Purpose::AddEngine, machines_.front().id, {}, {}, start);
         }
         else if (w == "engines-card") {
             page_            = Page::Engines;

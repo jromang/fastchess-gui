@@ -313,7 +313,16 @@ std::optional<std::string> engineCommand(RemoteShell shell, const std::string& p
     }
     std::string line = "echo $$; ";
     if (!folder.empty()) line += "cd " + shQuote(folder) + " && ";
-    line += "exec " + shQuote(program);
+    // A path relative to the home folder no longer leads to the program once in its folder: the program by its name
+    // there, or from the home folder the shell left ($OLDPWD).
+    const bool relative = !program.empty() && program[0] != '/' && program.find('/') != std::string::npos;
+    if (relative && !folder.empty() && dir.empty()) {
+        line += "exec ./" + shQuote(remoteName(program));
+    } else if (relative && !folder.empty()) {
+        line += "exec \"$OLDPWD\"/" + shQuote(program);
+    } else {
+        line += "exec " + shQuote(program);
+    }
     for (const auto& arg : args) line += " " + shQuote(arg);
     return viaSh(line);
 }

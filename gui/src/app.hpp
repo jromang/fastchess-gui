@@ -1567,6 +1567,7 @@ class App {
     // The files of a machine, looked through over SFTP in the page: to add an engine there, choose its program, its
     // folder, a file its options name, or the program of the machine's list of engines.
     struct RemoteListing {
+        std::string home;  // the user's home folder there, shown as ~
         std::string dir;   // where the server says it is
         std::string file;  // the path typed is a file: it is chosen
         std::vector<RemoteEntry> entries;
@@ -1582,6 +1583,7 @@ class App {
         bool shown   = false;
         bool untested = false;  // the machine's host key is not known yet
         bool hidden   = false;  // the files whose name starts with a dot shown
+        std::string home;  // known after the first listing
         std::string dir;
         std::string selected;
         std::array<char, 1024> typed{};
