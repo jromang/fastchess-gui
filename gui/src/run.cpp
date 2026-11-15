@@ -19,6 +19,7 @@
 #include <tour/pgn_book.hpp>
 #include <tour/polyglot.hpp>
 #include <tour/runner.hpp>
+#include <tour/sprt_rules.hpp>
 
 #include "console.hpp"
 #include "engines.hpp"
@@ -174,6 +175,8 @@ RunInfo runInfo(const tour::TournamentSpec& spec, const fs::path& dir) {
     info.alpha            = t.sprt.alpha;
     info.beta             = t.sprt.beta;
     info.model            = t.sprt.model;
+    info.sprt_bias        = spec.sprt_bias;
+    info.sprt_min_games   = spec.sprt_min_games;
     info.penta            = true;
     return info;
 }
@@ -469,8 +472,9 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
             t.rounds =
                 setup.sprt_max_games > 0 ? static_cast<std::size_t>((setup.sprt_max_games + 1) / 2) : UNBOUNDED_ROUNDS;
             t.sprt.enabled = true;
-            t.sprt.elo0    = setup.sprt_elo0;
-            t.sprt.elo1    = setup.sprt_elo1;
+            // The bounds moved by the bias; the minimum of games is the tournament layer's (spec below).
+            t.sprt.elo0    = tour::biasedBounds(setup.sprt_elo0, setup.sprt_elo1, setup.sprt_bias).elo0;
+            t.sprt.elo1    = tour::biasedBounds(setup.sprt_elo0, setup.sprt_elo1, setup.sprt_bias).elo1;
             t.sprt.alpha   = setup.sprt_alpha;
             t.sprt.beta    = setup.sprt_beta;
             t.sprt.model   = setup.sprt_model;
@@ -533,22 +537,31 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         book_random = true;
     }
 
-    // A Polyglot book becomes the positions its lines lead to, kept in the tournament folder.
-    auto book_plies = setup.book_plies;
+    // A Polyglot book becomes the positions its lines lead to, kept in the tournament folder. In random order, they
+    // are written in the order they are drawn, the likelier lines (by their moves' weights, as the randomness makes
+    // them) the sooner, from the tournament's seed: then played in that order.
+    auto book_plies      = setup.book_plies;
+    const int randomness = std::clamp(setup.book_randomness, -tour::RANDOMNESS_LIMIT, tour::RANDOMNESS_LIMIT);
+    std::string polyglot = {};
+    int polyglot_plies   = 0;
     if (!book.empty() && tour::isPolyglot(book)) {
         if (!fs::is_regular_file(book)) throw fastchess_exception(trf("Opening book not found: {}", book));
         tour::PolyglotWalk walk;
-        walk.plies = book_plies > 0 ? book_plies : POLYGLOT_PLIES;
+        walk.plies      = book_plies > 0 ? book_plies : POLYGLOT_PLIES;
+        walk.randomness = randomness;
         std::error_code ec;
         fs::create_directories(run_dir, ec);
         const auto epd = run_dir / fmt::format("{}-{}plies.epd", fs::path(book).stem().string(), walk.plies);
         try {
-            (void)tour::polyglotToEpd(book, epd, walk);
+            (void)tour::polyglotToEpd(book, epd, walk, book_random ? std::optional<uint64_t>(t.seed) : std::nullopt);
         } catch (const std::exception& e) {
             throw fastchess_exception(e.what());
         }
-        book       = epd.string();
-        book_plies = -1;
+        polyglot       = book;
+        polyglot_plies = walk.plies;
+        book           = epd.string();
+        book_plies     = -1;
+        book_random    = false;  // drawn in order already
     }
 
     if (!book.empty()) {
@@ -622,11 +635,21 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     spec.rounds = setup.format == TournamentFormat::Swiss ? std::max(1, setup.cycles) : 0;
     spec.seeds  = std::max(1, setup.seeds);
     if (match) spec.max_games = t.rounds >= UNBOUNDED_ROUNDS ? 0 : t.rounds * t.games;
+    if (t.sprt.enabled) {
+        spec.sprt_bias      = setup.sprt_bias;
+        spec.sprt_min_games = static_cast<uint64_t>(std::max(0, setup.sprt_min_games));
+    }
     spec.log_every_game    = setup.log_every_game;
     spec.opening_per_round = setup.opening_per_round && !match && setup.format != TournamentFormat::Knockout;
     spec.pgn_out           = setup.pgn_out;
     spec.pgn_out_chessbase = setup.export_style == PgnStyle::ChessBase;
     spec.conditions        = t;
+    spec.polyglot_book         = polyglot;
+    spec.polyglot_plies        = polyglot_plies;
+    spec.book_randomness       = randomness;
+    spec.unbalanced_cp         = setup.unbalanced_enabled ? std::max(1, setup.unbalanced_cp) : 0;
+    spec.unbalanced_moves      = std::max(1, setup.unbalanced_moves);
+    spec.unbalanced_replace    = setup.unbalanced_enabled && setup.unbalanced_replace;
     spec.stop_on_start_failure = setup.stop_on_start_failure;
     if (setup.engine_syzygy) spec.forced_options.emplace_back("SyzygyPath", setup.tb_paths);
     if (setup.engine_ownbook_off) spec.forced_options.emplace_back("OwnBook", "false");

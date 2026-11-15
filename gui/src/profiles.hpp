@@ -123,4 +123,16 @@ void recognizeProfiles(MatchSetup& setup, const ProfileStore& store);
 // A time in seconds as the summaries say it: "15 min", "1 min 30 s", "0.1 s".
 [[nodiscard]] std::string durationText(double seconds);
 
+// How the moves of the Polyglot books are chosen (MatchSetup::book_randomness), as the summaries say it: "moves by
+// their weights", "the best moves only", "every move alike", "randomness -40".
+[[nodiscard]] std::string randomnessText(int randomness);
+
+// An SPRT as the summaries and the overview say it: "SPRT [0, 3]", "SPRT [0, 3] + 5, no decision before 2000 games",
+// the bounds the tester gave (those the SPRT is given have the bias on them).
+[[nodiscard]] std::string sprtText(double elo0, double elo1, double bias, uint64_t min_games);
+
+// The rule for the unbalanced openings, as the summaries say it: "unbalanced openings flagged (±200 cp for 4 moves)",
+// "unbalanced openings replaced (…)"; empty when it is off.
+[[nodiscard]] std::string unbalancedText(const MatchSetup& setup);
+
 }  // namespace fcg

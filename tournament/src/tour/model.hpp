@@ -75,6 +75,10 @@ struct TournamentSpec {
     int rounds         = 0;  // Swiss: number of rounds
     int seeds          = 1;  // gauntlet: the first `seeds` participants play every other one
     uint64_t max_games = 0;  // match: 0 = until stopped or decided by the SPRT
+    // Match, SPRT (sprt_rules.hpp): the Elo bias added to both bounds (conditions.sprt has them with it), and no
+    // decision before this many games; 0: none.
+    double sprt_bias        = 0;
+    uint64_t sprt_min_games = 0;
 
     // A team match: board by board (the first engine of each team against the first of the other, and so on, the
     // teams of the same size) rather than every engine of a team against every engine of the other (a Scheveningen
@@ -89,6 +93,22 @@ struct TournamentSpec {
 
     std::vector<Participant> participants;
     FileFingerprint book;
+
+    // A Polyglot book the openings were drawn from (conditions.opening.file is then the positions its lines lead to,
+    // written to the tournament's folder): its file, and the depth its lines were followed to. Empty for another
+    // book, and in the tournaments of 0.5.9 and earlier.
+    std::string polyglot_book;
+    int polyglot_plies = 0;
+    // How the moves of a Polyglot book are chosen, the tournament's and the participants' own: from -100, the best
+    // move only, through 0, by their weights, to 100, every move alike (choiceWeights() in polyglot.hpp).
+    int book_randomness = 0;
+
+    // Unbalanced openings (unbalanced.hpp): a game whose two engines both see the same side beyond `unbalanced_cp`
+    // for their first `unbalanced_moves` moves after the book is flagged when it ends; 0 cp: not looked for. With
+    // `unbalanced_replace`, its pair is voided and played again from another opening.
+    int unbalanced_cp       = 0;
+    int unbalanced_moves    = 4;
+    bool unbalanced_replace = false;
 
     bool log_every_game = false;  // keep the engine log of every game, not only of those that end badly
     // An engine that cannot start stops the tournament once its tries are used up, rather than have its games set

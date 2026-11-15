@@ -352,6 +352,7 @@ void App::drawTournamentOverview() {
                 trf("{:.0f} games/h · about {} left", games_per_hour_, ui::formatDuration(hours * 3600.0)).c_str());
         }
     }
+    drawUnbalancedCount();
     ui::endCard();
     drawSubmissionChecklist();  // once it is finished
 
@@ -411,6 +412,47 @@ void App::drawTournamentOverview() {
     ui::endCard();
 
     ImGui::EndChild();
+}
+
+void App::drawUnbalancedCount() {
+    const auto* t = run_.tournament();
+    if (!t || t->spec().unbalanced_cp <= 0) return;
+    const auto& spec   = t->spec();
+    const auto flagged = static_cast<uint64_t>(
+        std::count_if(games_.begin(), games_.end(), [](const GameRecord& g) { return g.unbalanced != 0; }));
+    const auto replaced = t->openingsReplaced();
+    std::string text =
+        trn("{} game from an unbalanced opening", "{} games from an unbalanced opening", flagged, flagged);
+    if (replaced > 0) text += " · " + trn("{} opening replaced", "{} openings replaced", replaced, replaced);
+    ImGui::PushStyleColor(ImGuiCol_Text, flagged + replaced > 0 ? ui::WARN : ImGui::GetColorU32(ImGuiCol_TextDisabled));
+    ImGui::TextUnformatted(text.c_str());
+    ImGui::PopStyleColor();
+    if (ImGui::BeginItemTooltip()) {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+        ImGui::TextUnformatted(trf("Both engines beyond ±{} cp for the same side for their first {} moves after the "
+                                   "book. The results are not changed.",
+                                   spec.unbalanced_cp, spec.unbalanced_moves)
+                                   .c_str());
+        if (spec.unbalanced_replace) {
+            ImGui::TextUnformatted(trf("Such a pair is voided and played again from another opening, at most {} "
+                                       "times.",
+                                       tour::MAX_OPENING_REPLACEMENTS)
+                                       .c_str());
+        }
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+    if (flagged > 0) {
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Show##unbalanced"))) showUnbalancedGames();
+    }
+}
+
+void App::showUnbalancedGames() {
+    page_         = Page::Tournament;
+    tab_request_  = Tab::Games;
+    games_filter_ = UNBALANCED_FILTER;
+    filtered_for_ = ~std::size_t(0);
 }
 
 void App::copyStandings(ui::CopyAs as) {

@@ -1,8 +1,10 @@
 #include <doctest/doctest.hpp>
 
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <set>
 
 #include <chess.hpp>
 
@@ -117,4 +119,124 @@ TEST_CASE("polyglot: the lines are followed to the depth asked, rare moves left 
     CHECK(fs::file_size(epd) > 0);
     CHECK(isPolyglot("Perfect2023.BIN"));
     CHECK_FALSE(isPolyglot("book.epd"));
+}
+
+TEST_CASE("polyglot randomness: the weights as they are at 0, the best move only at -100, every move alike at 100") {
+    const std::vector<uint16_t> w{100, 50, 25, 0};
+    CHECK(choiceWeights(w, 0) == std::vector<uint64_t>{100, 50, 25, 0});
+    CHECK(choiceWeights(w, 100) == std::vector<uint64_t>{1, 1, 1, 0});  // a move that weighs nothing stays out
+    CHECK(choiceWeights(w, -100) == std::vector<uint64_t>{1, 0, 0, 0});
+    CHECK(choiceWeights({50, 10, 50}, -100) == std::vector<uint64_t>{1, 0, 1});  // the best ones, tied
+    CHECK(choiceWeights(w, 250) == choiceWeights(w, 100));                       // beyond the limits: clamped
+    CHECK(choiceWeights(w, -250) == choiceWeights(w, -100));
+    CHECK(choiceWeights({}, 30).empty());
+
+    // 50: the square roots of the shares of the best; -50: their squares. Out of CHOICE_SCALE for the best.
+    const auto half = choiceWeights(w, 50);
+    CHECK(half[0] == CHOICE_SCALE);
+    CHECK(half[1] == static_cast<uint64_t>(std::llround(std::sqrt(0.5) * CHOICE_SCALE)));
+    CHECK(half[2] == CHOICE_SCALE / 2);
+    CHECK(half[3] == 0);
+    const auto squared = choiceWeights(w, -50);
+    CHECK(squared == std::vector<uint64_t>{CHOICE_SCALE, CHOICE_SCALE / 4, CHOICE_SCALE / 16, 0});
+    // From the best move only to every move alike, the second move's chance grows all the way.
+    double previous = -1;
+    for (int r = -100; r <= 100; r += 10) {
+        const auto c       = choiceWeights({100, 50}, r);
+        const double share = static_cast<double>(c[1]) / static_cast<double>(c[0] + c[1]);
+        CHECK(share > previous);
+        previous = share;
+    }
+    CHECK(previous == doctest::Approx(0.5));
+
+    // The draw: each move in proportion to its weight, by the number given modulo the total.
+    CHECK(drawChoice({3, 1}, 0) == std::optional<std::size_t>(0));
+    CHECK(drawChoice({3, 1}, 2) == std::optional<std::size_t>(0));
+    CHECK(drawChoice({3, 1}, 3) == std::optional<std::size_t>(1));
+    CHECK(drawChoice({3, 1}, 4) == std::optional<std::size_t>(0));
+    CHECK(drawChoice({0, 2}, 0) == std::optional<std::size_t>(1));
+    CHECK_FALSE(drawChoice({0, 0}, 5));
+    CHECK_FALSE(drawChoice({}, 5));
+
+    CHECK(randomnessLabel(0) == "moves by weight");
+    CHECK(randomnessLabel(-100) == "best moves only");
+    CHECK(randomnessLabel(100) == "every move alike");
+    CHECK(randomnessLabel(-40) == "randomness -40");
+    CHECK(randomnessLabel(25) == "randomness +25");
+}
+
+TEST_CASE("polyglot randomness: the lines kept and their chances, from the best line only to every move alike") {
+    const auto book   = writeBook("fcg-polyglot-randomness.bin", {{"", {{"e2e4", 100}, {"d2d4", 50}, {"a2a3", 5}}},
+                                                                  {"e2e4", {{"e7e5", 100}, {"c7c5", 80}}},
+                                                                  {"d2d4", {{"d7d5", 10}}}});
+    const auto shares = [&](int randomness, int plies) {
+        std::map<std::string, double> out;
+        for (const auto& line : polyglotLines(book, {plies, 0.1, 200'000, randomness})) out[line.epd] = line.share;
+        return out;
+    };
+    const std::string e4e5 = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -";
+    const std::string e4c5 = "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -";
+    const std::string d4d5 = "rnbqkbnr/ppp1pppp/8/3p4/3P4/8/PPP1PPPP/RNBQKBNR w KQkq -";
+
+    // By the weights: a2a3 weighs less than a tenth of e2e4, left out; 1. e4 two times in three, then e5 or c5.
+    auto s = shares(0, 2);
+    REQUIRE(s.size() == 3);
+    CHECK(s[e4e5] == doctest::Approx(2.0 / 3 * 100 / 180));
+    CHECK(s[e4c5] == doctest::Approx(2.0 / 3 * 80 / 180));
+    CHECK(s[d4d5] == doctest::Approx(1.0 / 3));
+    double total = 0;
+    for (const auto& [epd, share] : s) total += share;
+    CHECK(total == doctest::Approx(1.0));
+    // The same positions as before the randomness, in the same order.
+    std::vector<std::string> order;
+    for (const auto& line : polyglotLines(book, {2})) order.push_back(line.epd);
+    CHECK(order == polyglotPositions(book, {2}));
+
+    // The best move only: one line.
+    s = shares(-100, 2);
+    REQUIRE(s.size() == 1);
+    CHECK(s[e4e5] == doctest::Approx(1.0));
+
+    // Every move alike: a2a3 comes back, and each first move is as likely.
+    s = shares(100, 1);
+    REQUIRE(s.size() == 3);
+    for (const auto& [epd, share] : s) CHECK(share == doctest::Approx(1.0 / 3));
+
+    // Squared weights: d4 (a quarter of e4's) is kept, its share smaller than by the weights.
+    s = shares(-50, 1);
+    REQUIRE(s.size() == 2);
+    CHECK(s["rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq -"] == doctest::Approx(0.25 / 1.25));
+}
+
+TEST_CASE("polyglot randomness: the openings drawn in order, each once, the likelier the sooner, the same seed alike") {
+    const std::vector<PolyglotLine> lines{{"a", 0.9}, {"b", 0.05}, {"c", 0.05}};
+
+    // Every position once, whatever the seed.
+    for (uint64_t seed = 1; seed <= 20; ++seed) {
+        auto drawn = drawnInOrder(lines, seed);
+        std::sort(drawn.begin(), drawn.end());
+        CHECK(drawn == std::vector<std::string>{"a", "b", "c"});
+    }
+    // The same seed, the same order; seeds differ.
+    CHECK(drawnInOrder(lines, 7) == drawnInOrder(lines, 7));
+    std::set<std::vector<std::string>> orders;
+    int a_first = 0;
+    for (uint64_t seed = 1; seed <= 2000; ++seed) {
+        const auto drawn = drawnInOrder(lines, seed);
+        orders.insert(drawn);
+        a_first += drawn.front() == "a";
+    }
+    CHECK(orders.size() > 1);
+    // The first one drawn is "a" nine times in ten.
+    CHECK(a_first > 1700);
+    CHECK(a_first < 1900);
+
+    // Written to an EPD file in that order.
+    const auto book = writeBook("fcg-polyglot-drawn.bin", {{"", {{"e2e4", 100}, {"d2d4", 50}, {"c2c4", 20}}}});
+    const auto epd  = fs::temp_directory_path() / "fcg-polyglot-drawn.epd";
+    CHECK(polyglotToEpd(book, epd, {1}, 42) == 3);
+    std::ifstream in(epd);
+    std::vector<std::string> written;
+    for (std::string line; std::getline(in, line);) written.push_back(line);
+    CHECK(written == drawnInOrder(polyglotLines(book, {1}), 42));
 }

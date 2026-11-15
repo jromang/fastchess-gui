@@ -265,6 +265,10 @@ struct MatchSetup {
     double sprt_beta       = 0.05;
     std::string sprt_model = "normalized";
     int sprt_max_games     = 0;  // 0 = no limit
+    // Added to both bounds given to the SPRT (a version known to be stronger or weaker by that much), and no decision
+    // before this many games, the LLR still shown (tour/sprt_rules.hpp); 0: none.
+    double sprt_bias   = 0;
+    int sprt_min_games = 0;
     // The SPRT calculator's guesses about the games to come; fishtest's values for its openings by default.
     double sprt_draw_ratio = 0.49;
     double sprt_rms_bias   = 191;  // Elo
@@ -289,6 +293,16 @@ struct MatchSetup {
     bool chess960          = false;  // Fischer random; without a book, the 960 starting positions
     bool opening_per_round = false;  // round robin, gauntlet, Swiss: one opening for every pair of a round
     uint64_t seed          = 0;      // 0 = new seed for every run
+    // How the moves of the Polyglot books are chosen, the tournament's and the participants' own: -100 the best move
+    // only, 0 by their weights, 100 every move alike (tour::choiceWeights()).
+    int book_randomness = 0;
+    // Unbalanced openings flagged as the games end (tour/unbalanced.hpp): both engines beyond unbalanced_cp for the
+    // same side for their first unbalanced_moves moves after the book; with unbalanced_replace, the pair is voided and
+    // played again from another opening.
+    bool unbalanced_enabled = false;
+    int unbalanced_cp       = 200;
+    int unbalanced_moves    = 4;
+    bool unbalanced_replace = false;
 
     bool draw_enabled   = false;
     int draw_movenumber = 40;
@@ -392,7 +406,8 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
         fixed_games, sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, sprt_draw_ratio,        \
         sprt_rms_bias, limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto,    \
         concurrency, affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out, \
-        engine_syzygy, engine_ownbook_off, book_a, book_b, big_scale, big_follow, big_seconds
+        engine_syzygy, engine_ownbook_off, book_a, book_b, big_scale, big_follow, big_seconds, book_randomness,       \
+        unbalanced_enabled, unbalanced_cp, unbalanced_moves, unbalanced_replace, sprt_bias, sprt_min_games
 #define FCG_MATCH_SETUP_FIELDS_2                                                                                  \
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,    \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,     \

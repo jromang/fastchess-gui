@@ -154,6 +154,17 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             openSubmissionExport();
         });
     }
+    // The games of the openings flagged unbalanced as they ended.
+    if (t && t->spec().unbalanced_cp > 0 &&
+        std::any_of(games_.begin(), games_.end(), [](const GameRecord& g) { return g.unbalanced != 0; })) {
+        add(TR("Show the games from unbalanced openings"), TR("Games"), [this] { showUnbalancedGames(); });
+        add(TR("Show the unbalanced openings"), TR("Openings"), [this] {
+            page_                = Page::Tournament;
+            tab_request_         = Tab::Openings;
+            opening_show_        = UNBALANCED_OPENINGS;
+            opening_order_dirty_ = true;
+        });
+    }
     // The big screen: the game followed, filling the window.
     if (t && run_.observer()) {
         if (big_.on) {

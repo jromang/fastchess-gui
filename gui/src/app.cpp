@@ -13,6 +13,7 @@
 #include <fmt/include/fmt/format.h>
 #include <core/globals/globals.hpp>
 #include <tour/files.hpp>
+#include <tour/sprt_rules.hpp>
 
 #include "i18n.hpp"
 #include "memory.hpp"
@@ -693,6 +694,8 @@ void App::resetRunView() {
     const auto& info = run_.info();
     sprt_.reset();
     if (info.sprt) sprt_.emplace(info.alpha, info.beta, info.elo0, info.elo1, info.model, true);
+    // The openings it replaced before it was opened are in its results already.
+    openings_replaced_seen_ = run_.tournament() ? run_.tournament()->openingsReplaced() : 0;
 
     live_slot_        = std::clamp(live_slot_, 0, info.concurrency - 1);
     games_per_hour_   = 0;
@@ -752,6 +755,21 @@ void App::pollRun() {
         if (auto marker = storage_.runningMarker(); markerNames(marker, runMarkerDir())) {
             marker->resuming = false;
             storage_.setRunningMarker(marker);
+        }
+    }
+
+    // A pair voided and played again from another opening, its own found unbalanced: the views show the results
+    // as they count now, as after a void of the user's.
+    if (const auto* t = run_.tournament()) {
+        if (const auto replaced = t->openingsReplaced(); replaced != openings_replaced_seen_) {
+            if (replaced > openings_replaced_seen_) {
+                const auto n = replaced - openings_replaced_seen_;
+                Console::instance().add(trn("{} unbalanced opening: its game pair is played again from another one.",
+                                            "{} unbalanced openings: their game pairs are played again from others.", n,
+                                            n));
+            }
+            openings_replaced_seen_ = replaced;
+            refreshAfterEdit();
         }
     }
 
@@ -852,9 +870,9 @@ void App::onRunFinished() {
             if (p && p->active) names += (names.empty() ? "" : ", ") + e.name;
         }
         verdict = trf("Stopped: no game is left to play without {}, which cannot start", names);
-    } else if (info.sprt && sprt_ && current_.llr >= sprt_->getUpperBound()) {
+    } else if (info.sprt && sprt_ && sprtVerdict() == fastchess::SPRT_H1) {
         verdict = trf("SPRT finished: H1 accepted, {} is stronger", info.engine_a);
-    } else if (info.sprt && sprt_ && current_.llr <= sprt_->getLowerBound()) {
+    } else if (info.sprt && sprt_ && sprtVerdict() == fastchess::SPRT_H0) {
         verdict = trf("SPRT finished: H0 accepted, {} is not stronger", info.engine_a);
     } else if (run_.stoppedByUser()) {
         verdict = TR("Stopped");
@@ -952,6 +970,12 @@ void App::startFromQueue(bool go_on, std::size_t from, const std::string& label)
     }
 }
 
+fastchess::SPRTResult App::sprtVerdict() const {
+    const auto* t  = run_.tournament();
+    const auto why = t ? t->finishReason() : std::string();
+    return why == "sprt_h1" ? fastchess::SPRT_H1 : why == "sprt_h0" ? fastchess::SPRT_H0 : fastchess::SPRT_CONTINUE;
+}
+
 std::string App::summaryText() const {
     const auto& info = run_.info();
     const auto& s    = stats_;
@@ -970,6 +994,12 @@ std::string App::summaryText() const {
     if (info.sprt && sprt_) {
         text += fmt::format("LLR: {:.2f} ({:.2f}, {:.2f}) [{:.2f}, {:.2f}] {}\n", current_.llr, sprt_->getLowerBound(),
                             sprt_->getUpperBound(), info.elo0, info.elo1, info.model);
+        // The bounds above are those the SPRT was given: the tester's, the bias on them.
+        if (info.sprt_bias != 0 || info.sprt_min_games > 0) {
+            text += tour::sprtText(info.elo0 - info.sprt_bias, info.elo1 - info.sprt_bias, info.sprt_bias,
+                                   info.sprt_min_games) +
+                    "\n";
+        }
     }
     if (s.sum() > 0 && info.penta) text += statisticsText(matchStatistics(s, sprt_ ? &*sprt_ : nullptr));
     return text;
@@ -1048,11 +1078,12 @@ void App::handleDialogs() {
             case Dialogs::Purpose::ExportOpenings: {
                 const auto shown = shownOpenings();
                 std::ofstream out(path, std::ios::binary | std::ios::trunc);
-                out << tour::openingsEpd(shown);
-                Console::instance().add(
-                    out ? trn("{} opening written to {}", "{} openings written to {}", shown.size(), shown.size(), path)
-                        : trf("Cannot write {}", path),
-                    !out);
+                const auto epd = tour::openingsEpd(shown, export_balanced_only_);
+                out << epd;
+                const auto n = static_cast<std::size_t>(std::count(epd.begin(), epd.end(), '\n'));
+                Console::instance().add(out ? trn("{} opening written to {}", "{} openings written to {}", n, n, path)
+                                            : trf("Cannot write {}", path),
+                                        !out);
                 break;
             }
             case Dialogs::Purpose::AddBook:

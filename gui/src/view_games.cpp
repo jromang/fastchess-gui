@@ -28,7 +28,8 @@ const char* FILTERS[] = {N_("All"),
                          N_("The engines disagree"),
                          N_("An evaluation swings"),
                          N_("Lost after a winning score"),
-                         N_("Wrong PVs")};
+                         N_("Wrong PVs"),
+                         N_("Unbalanced opening")};
 
 // In a tournament, results are seen from the engine chosen in the filter, or from White when none is.
 const char* TOURNAMENT_FILTERS[] = {N_("All"),
@@ -41,11 +42,14 @@ const char* TOURNAMENT_FILTERS[] = {N_("All"),
                                     N_("The engines disagree"),
                                     N_("An evaluation swings"),
                                     N_("Lost after a winning score"),
-                                    N_("Wrong PVs")};
+                                    N_("Wrong PVs"),
+                                    N_("Unbalanced opening")};
+static_assert(IM_ARRAYSIZE(FILTERS) == IM_ARRAYSIZE(TOURNAMENT_FILTERS));
 
 // The filters on what the evaluations tell, which take a threshold in pawns.
 constexpr int FIRST_EVAL_FILTER = 7;
 constexpr int LAST_EVAL_FILTER  = 9;
+static_assert(UNBALANCED_FILTER == IM_ARRAYSIZE(FILTERS) - 1);
 
 // The ply an evaluation filter is about, -1 for the others.
 int pliesOfInterest(const GameRecord& g, int filter) {
@@ -97,6 +101,8 @@ bool matches(const GameRecord& g, int filter, int subject, bool match, float paw
             return g.facts.loser_best >= pawns;
         case 10:
             return g.pv_warnings > 0;
+        case UNBALANCED_FILTER:
+            return g.unbalanced != 0;
         default:
             return true;
     }

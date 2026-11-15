@@ -57,6 +57,11 @@ struct SDL_Window;
 
 namespace fcg {
 
+// The Games tab's filter on the games whose opening was flagged unbalanced (the last of its list).
+inline constexpr int UNBALANCED_FILTER = 11;
+// The Openings tab's view of the openings with such a game.
+inline constexpr int UNBALANCED_OPENINGS = 4;
+
 // The date in the name of a tournament's folder: "20261109-185927_a_vs_b" -> "2026-11-09 18:59".
 std::string folderDate(const std::filesystem::path& dir);
 
@@ -490,6 +495,9 @@ class App {
     void copyStandings(ui::CopyAs as);  // to the clipboard, in the order shown
     void drawStandingsRow(std::size_t i, bool compact, bool swiss);
     void drawPgnOutError();  // when the PGN file of setup "Also append every game to" cannot be written
+    // The games from unbalanced openings and the openings replaced, when the tournament looks for them.
+    void drawUnbalancedCount();
+    void showUnbalancedGames();  // the Games tab, filtered on them
     void drawCrosstable();
     void drawOpponents(int id);  // the games of a participant against each opponent, under the standings table
     void drawTeamScore();        // a team match: the teams' score, its Elo and LOS
@@ -804,6 +812,9 @@ class App {
     void onRunFinished();
     std::string runStatusText() const;
     std::string summaryText() const;
+    // How the tournament's SPRT ended: H1, H0, or not by a decision (SPRT_CONTINUE: stopped, or its games over).
+    // The LLR may be beyond a bound without one, before the minimum of games.
+    [[nodiscard]] fastchess::SPRTResult sprtVerdict() const;
 
     // games
     void rebuildGameFilter();
@@ -922,8 +933,10 @@ class App {
     // Openings view: results by starting position.
     std::vector<tour::OpeningStats> by_opening_;
     std::size_t by_opening_for_ = ~std::size_t(0);  // games_.size() they were computed for
-    int opening_show_           = 0;                // 0 all, 1 a colour won both games, 2 drawn twice, 3 decisive
-    std::vector<int> opening_order_;                // rows shown, sorted
+    int opening_show_ = 0;  // 0 all, 1 a colour won both games, 2 drawn twice, 3 decisive, 4 flagged unbalanced
+    bool export_balanced_only_ = true;     // Export as EPD… leaves out the openings flagged unbalanced
+    std::vector<int> opening_order_;       // rows shown, sorted
+    uint64_t openings_replaced_seen_ = 0;  // the tournament's openingsReplaced() the views were refreshed for
     bool opening_order_dirty_ = true;
     int selected_opening_     = -1;  // index into by_opening_
     std::vector<int> opening_games_;  // indexes into games_ of the selected opening's games

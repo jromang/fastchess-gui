@@ -420,8 +420,16 @@ void App::drawWorkspaceHeader() {
     const auto& info = run_.info();
     const auto* t    = run_.tournament();
 
+    // An SPRT with the tester's bounds, the bias on them and the games before which it decides nothing.
+    auto sprt = info.sprt ? sprtText(info.elo0 - info.sprt_bias, info.elo1 - info.sprt_bias, info.sprt_bias, 0) + " " +
+                                info.model
+                          : std::string();
+    if (info.sprt && info.sprt_min_games > 0) {
+        sprt += " · " + trn("no decision before {} game", "no decision before {} games", info.sprt_min_games,
+                            info.sprt_min_games);
+    }
     const auto detail = info.format == tour::Format::Match
-                            ? (info.sprt ? fmt::format("SPRT [{:g}, {:g}] {}", info.elo0, info.elo1, info.model)
+                            ? (info.sprt          ? sprt
                                : info.total_games ? trn("{} game", "{} games", info.total_games, info.total_games)
                                                   : std::string(TR("until stopped")))
                             : trf("{} engines · {} games", info.participants, info.total_games);

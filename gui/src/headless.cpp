@@ -12,7 +12,9 @@
 #include <fmt/include/fmt/format.h>
 #include <core/globals/globals.hpp>
 #include <matchmaking/elo/elo_pentanomial.hpp>
+#include <matchmaking/sprt/sprt.hpp>
 #include <tour/pgn_book.hpp>
+#include <tour/sprt_rules.hpp>
 #include <tour/standings.hpp>
 #include <tour/teams.hpp>
 
@@ -79,10 +81,16 @@ class ConsoleListener final : public tour::RecordListener {
         const auto name   = [&](int id) { return spec.participant(id) ? spec.participant(id)->engine.name : "?"; };
         const auto total  = state_.totalGames();
         const auto played = ++played_ + already_;
-        std::printf("%s  %s - %s  %s  {%s}\n",
+        std::printf("%s  %s - %s  %s  {%s}%s\n",
                     total ? fmt::format("[{}/{}]", played, *total).c_str() : fmt::format("[{}]", played).c_str(),
                     name(result.white).c_str(), name(result.black).c_str(), result.result.c_str(),
-                    result.reason.c_str());
+                    result.reason.c_str(), result.unbalanced != 0 ? "  unbalanced opening" : "");
+        // Its pair voided, to be played again from another opening (TournamentSpec::unbalanced_replace).
+        if (const auto replaced = state_.openingsReplaced(); replaced != replaced_) {
+            replaced_ = replaced;
+            std::printf("Unbalanced opening: game pair %u is played again from another opening.\n",
+                        result.encounter + 1);
+        }
         if (played_ % 20 == 0) printStatus();
         std::fflush(stdout);
         if (auto error = state_.pgnOutError(); error != out_error_) {
@@ -136,7 +144,10 @@ class ConsoleListener final : public tour::RecordListener {
         std::fflush(stderr);
     }
 
-    void setAlready(uint64_t n) { already_ = n; }
+    void setAlready(uint64_t n) {
+        already_  = n;
+        replaced_ = state_.openingsReplaced();
+    }
 
     void printStatus() const {
         const auto& spec = state_.spec();
@@ -144,9 +155,19 @@ class ConsoleListener final : public tour::RecordListener {
             const auto stats = state_.pairStats(spec.participants[0].id, spec.participants[1].id);
             if (stats.sum() == 0) return;
             const fastchess::elo::EloPentanomial elo(stats);
-            std::printf("--- %s vs %s: +%d =%d -%d, Elo %s\n", spec.participants[0].engine.name.c_str(),
+            // The LLR all along, its decision held until the minimum of games (sprt_rules.hpp).
+            std::string llr;
+            if (const auto& s = spec.conditions.sprt; s.enabled) {
+                const fastchess::SPRT sprt(s.alpha, s.beta, s.elo0, s.elo1, s.model, true);
+                llr = fmt::format(", LLR {:.2f} ({:.2f}, {:.2f})", sprt.getLLR(stats, true), sprt.getLowerBound(),
+                                  sprt.getUpperBound());
+                if (static_cast<uint64_t>(stats.sum()) < spec.sprt_min_games) {
+                    llr += fmt::format(", no decision before {} games", spec.sprt_min_games);
+                }
+            }
+            std::printf("--- %s vs %s: +%d =%d -%d, Elo %s%s\n", spec.participants[0].engine.name.c_str(),
                         spec.participants[1].engine.name.c_str(), stats.wins, stats.draws, stats.losses,
-                        elo.getElo().c_str());
+                        elo.getElo().c_str(), llr.c_str());
             return;
         }
         const auto results = state_.results();
@@ -156,14 +177,18 @@ class ConsoleListener final : public tour::RecordListener {
             std::printf("\n%s\n", tour::teamText(tour::computeTeams(spec, results), table, spec.name).c_str());
             return;
         }
-        std::printf("\n%s\n", tour::tableText(table, spec.name).c_str());
+        // Under the table, the line of the copies: the games, the draws, the time control, the book and how its
+        // openings were chosen.
+        std::printf("\n%s\n",
+                    tour::tableText(table, spec.name, tour::footerLine(spec, table, state_.totalGames())).c_str());
     }
 
    private:
     const tour::TournamentState& state_;
     std::mutex mutex_;
-    uint64_t played_  = 0;
-    uint64_t already_ = 0;
+    uint64_t played_   = 0;
+    uint64_t already_  = 0;
+    uint64_t replaced_ = 0;  // openings replaced as unbalanced, as last told
     std::string out_error_;  // the last pgnOutError() reported
 };
 
@@ -291,10 +316,19 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
     const auto results = state->results();
     const auto played  = static_cast<uint64_t>(
         std::count_if(results.begin(), results.end(), [](const tour::GameResult& r) { return !r.voided; }));
-    std::printf("%s: %s\nFolder: %s\nCtrl+C stops it; it resumes where it stopped with --run on the folder.\n\n",
-                state->spec().name.c_str(),
+    std::printf("%s: %s\nFolder: %s\n", state->spec().name.c_str(),
                 results.empty() ? "starting" : fmt::format("resuming, {} games played", played).c_str(),
                 state->dir().string().c_str());
+    // A match's SPRT: the tester's bounds, the bias on them, the games before which it decides nothing.
+    if (const auto& spec = state->spec(); spec.format == tour::Format::Match && spec.conditions.sprt.enabled) {
+        const auto& s = spec.conditions.sprt;
+        std::printf(
+            "%s (%s, alpha %g, beta %g)\n",
+            tour::sprtText(s.elo0 - spec.sprt_bias, s.elo1 - spec.sprt_bias, spec.sprt_bias, spec.sprt_min_games)
+                .c_str(),
+            s.model.c_str(), s.alpha, s.beta);
+    }
+    std::printf("Ctrl+C stops it; it resumes where it stopped with --run on the folder.\n\n");
 
     ConsoleListener listener(*state);
     listener.setAlready(played);

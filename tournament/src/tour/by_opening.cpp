@@ -74,6 +74,8 @@ std::vector<OpeningStats> resultsByOpening(const std::vector<GameResult>& result
         s.games++;
         s.white_points += whiteScore(r);
         if (r.result == "1/2-1/2") s.draws++;
+        if (r.unbalanced > 0) s.unbalanced_white++;
+        if (r.unbalanced < 0) s.unbalanced_black++;
         s.plies += r.plies;
         s.game_numbers.push_back(r.number() + 1);
 
@@ -96,9 +98,11 @@ std::vector<OpeningStats> resultsByOpening(const std::vector<GameResult>& result
     return out;
 }
 
-std::string openingsEpd(const std::vector<const OpeningStats*>& openings) {
+std::string openingsEpd(const std::vector<const OpeningStats*>& openings, bool balanced_only) {
     std::string out;
-    for (const auto* o : openings) out += o->fen + "\n";
+    for (const auto* o : openings) {
+        if (!balanced_only || o->unbalancedGames() == 0) out += o->fen + "\n";
+    }
     return out;
 }
 
