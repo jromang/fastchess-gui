@@ -1,0 +1,31 @@
+name: Upstream fastchess tests
+
+# fastchess' own tests, of app/ as vendored: app/ changes only when fastchess is merged in.
+on:
+  push:
+    branches: ["gui"]
+    paths: ["app/**", ".github/workflows/upstream_tests.yml"]
+  pull_request:
+    branches: ["gui"]
+    paths: ["app/**", ".github/workflows/upstream_tests.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: fastchess tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Tests
+        run: |
+          command -v g++-12 || { sudo apt-get update && sudo apt-get install -y --no-install-recommends g++-12; }
+          make -C app -j"$(nproc)" tests CXX=g++-12
+          ./app/fastchess-tests

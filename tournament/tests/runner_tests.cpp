@@ -22,6 +22,7 @@
 
 #include <tour/runner.hpp>
 
+#include "own_temp.hpp"
 #include "self_path.hpp"
 
 #ifdef _WIN32
@@ -172,7 +173,7 @@ TEST_CASE("runner: a round robin plays every encounter, both colours, once") {
     }
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-rr";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     auto s                = spec(Format::RoundRobin, 4, 2);
     s.participants[0].elo = 3500;
     auto state            = TournamentState::create(dir, s);
@@ -219,7 +220,7 @@ TEST_CASE("runner: a match stopped abruptly resumes to exactly its number of gam
     }
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-resume";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
 
     {
         auto state = TournamentState::create(dir, spec(Format::Match, 2, 1, 60));
@@ -261,7 +262,7 @@ TEST_CASE("runner: a game whose pair partner was played before leaves no pair op
     }
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-lone";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     auto state = TournamentState::create(dir, spec(Format::Match, 2, 1, 2));
 
     // Game 1 of the only encounter, as if played before a stop; the runner plays game 2 alone.
@@ -288,7 +289,7 @@ TEST_CASE("runner: an engine that fails to start once is tried again, and the to
     }
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-retry";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
 
     // Exits at once the first time it is started, then is the random mover.
@@ -317,7 +318,7 @@ TEST_CASE("runner: a game whose engine fails to start is given up quietly once i
     }
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-withdrawn";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
 
     // Never starts; tells that it was tried.
@@ -360,7 +361,7 @@ TEST_CASE("runner: a pause holds the next try of an engine that failed to start,
     }
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-retry-pause";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
 
     // Exits at once the first time it is started, then is the random mover.
@@ -419,7 +420,7 @@ TEST_CASE("runner: \"stop when idle\" gives up at once a game whose engine waits
     }
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-retry-idle";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
 
     // Never starts; tells that it was tried.
@@ -461,7 +462,7 @@ TEST_CASE("runner: an engine whose game was given up while it failed to start is
     }
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-retry-anew";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
 
     // Fails to start the first time, slowly enough for the game to be given up at its first failure; then is the
@@ -505,7 +506,7 @@ TEST_CASE("runner: a round robin of more engines than games at a time starts eac
     }
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-starts";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
 
     // The random mover, writing a line to `starts` each time it is started.
@@ -677,20 +678,21 @@ TEST_CASE("engine start: an engine slow to start fails in the usual time, and st
         return;
     }
 
-    // The usual timeouts, short for the test: 500 ms for uciok and for the isready of a new game.
+    // The usual timeouts, short for the test: 1.5 s for uciok and for the isready of a new game, enough for an engine
+    // to start on a machine busy with other tests.
     fastchess::atomic::stop                              = false;
     fastchess::config::TournamentConfig                  = std::make_unique<fastchess::config::Tournament>();
-    fastchess::config::TournamentConfig->startup_time    = 500ms;
-    fastchess::config::TournamentConfig->ucinewgame_time = 500ms;
+    fastchess::config::TournamentConfig->startup_time    = 1500ms;
+    fastchess::config::TournamentConfig->ucinewgame_time = 1500ms;
 
     fastchess::EngineConfiguration config;
     config.name            = "slow";
     config.cmd             = randomMover();
     auto timed             = config;
-    timed.start_timeout_ms = 5000;
+    timed.start_timeout_ms = 10000;
 
-    // uciok after 1.5 s.
-    const ScopedEnv slow_uciok("FCG_MOCK_SLOW_UCIOK", "1500");
+    // uciok after 3 s.
+    setEnv("FCG_MOCK_SLOW_UCIOK", "3000");
     {
         fastchess::engine::UciEngine engine(config, false);
         const auto started = engine.start(std::nullopt);
@@ -703,8 +705,8 @@ TEST_CASE("engine start: an engine slow to start fails in the usual time, and st
     }
     setEnv("FCG_MOCK_SLOW_UCIOK", nullptr);
 
-    // readyok after 1.5 s: the isready of a new game, once the options are set.
-    const ScopedEnv slow_ready("FCG_MOCK_SLOW_READY", "1500");
+    // readyok after 3 s: the isready of a new game, once the options are set.
+    setEnv("FCG_MOCK_SLOW_READY", "3000");
     {
         fastchess::engine::UciEngine engine(config, false);
         REQUIRE(engine.start(std::nullopt));
@@ -725,7 +727,7 @@ TEST_CASE("runner: the start timeout of a participant reaches its engine, and is
     }
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-start-timeout";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
 
     // Both engines answer uciok after 1.5 s, beyond the tournament's 500 ms but within their own 5 s.
@@ -758,7 +760,7 @@ TEST_CASE("runner: engine logs, of every game when asked, with both directions o
     }
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-logs";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     auto s           = spec(Format::Match, 2, 1, 4);
     s.log_every_game = true;
     auto state       = TournamentState::create(dir, s);
@@ -782,7 +784,7 @@ TEST_CASE("runner: engine logs keep the engines' error output, marked apart, eve
     }
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-stderr";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     auto s           = spec(Format::Match, 2, 1, 2);
     s.log_every_game = true;
     auto state       = TournamentState::create(dir, s);
@@ -820,7 +822,7 @@ TEST_CASE("runner: an engine's last words on its error output, before it ends, a
     }
 
     const auto dir = fs::temp_directory_path() / "fcg-tour-runner-last-words";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     auto s           = spec(Format::Match, 2, 1, 1);
     s.log_every_game = true;
     auto state       = TournamentState::create(dir, s);

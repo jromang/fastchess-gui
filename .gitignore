@@ -99,3 +99,6 @@ scripted_result
 !gui/win/fastchess-gui.rc
 !gui/win/fastchess-gui.manifest
 __pycache__/
+
+# Instructions for Claude Code, kept out of the repository
+CLAUDE.md

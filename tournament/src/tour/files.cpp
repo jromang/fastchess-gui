@@ -1,5 +1,6 @@
 #include "files.hpp"
 
+#include <atomic>
 #include <cctype>
 #include <cerrno>
 #include <fstream>
@@ -44,9 +45,12 @@ std::string lastError() {
 #endif
 }
 
+std::atomic_bool sync_to_disk{true};
+
 #ifndef _WIN32
 // The rename of a file is on the disk once its folder is.
 void syncFolder(const fs::path& dir) {
+    if (!sync_to_disk) return;
     const int fd = ::open(dir.empty() ? "." : dir.c_str(), O_RDONLY | O_CLOEXEC);
     if (fd < 0) return;
     ::fsync(fd);
@@ -87,8 +91,11 @@ std::FILE* openFile(const fs::path& file, const char* mode) {
 #endif
 }
 
+void setSyncToDisk(bool on) { sync_to_disk = on; }
+
 bool syncFile(std::FILE* file) {
     if (std::fflush(file) != 0) return false;
+    if (!sync_to_disk) return true;
 #ifdef _WIN32
     return _commit(_fileno(file)) == 0;
 #else
@@ -115,7 +122,9 @@ void replaceFile(const fs::path& file, std::string_view text, bool backup, bool 
     if (!out) fail(tmp);
     const bool written = std::fwrite(text.data(), 1, text.size(), out) == text.size() && syncFile(out);
     if (std::fclose(out) != 0 || !written) fail(tmp);
-    if (!MoveFileExW(tmp.c_str(), file.c_str(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) fail(file);
+    if (!MoveFileExW(tmp.c_str(), file.c_str(),
+                     MOVEFILE_REPLACE_EXISTING | (sync_to_disk ? MOVEFILE_WRITE_THROUGH : 0)))
+        fail(file);
 #else
     // Made with the permissions of the file it replaces: settings.json holds a token only its owner may read. With
     // `owner_only`, readable by its owner only from the start, not once the text is in it.
@@ -133,7 +142,7 @@ void replaceFile(const fs::path& file, std::string_view text, bool backup, bool 
         written = n > 0;
         if (written) done += static_cast<std::size_t>(n);
     }
-    written = written && ::fsync(fd) == 0;
+    written = written && (!sync_to_disk || ::fsync(fd) == 0);
     if (::close(fd) != 0 || !written) fail(tmp);
     if (::rename(tmp.c_str(), file.c_str()) != 0) fail(file);
     syncFolder(file.parent_path());

@@ -192,10 +192,13 @@ The build also produces `fastchess` (the upstream command line tool, from the sa
 `fcg-tournament-tests` and `fastchess-gui-tests`:
 
 ```bash
+cmake --build build --target check             # both, every test case in a process of its own, side by side
 ./build/fcg-tournament-tests                   # tournament library: schedules, journal, resume, pairings, ratings
 ./build/fastchess-gui-tests                    # GUI tests, including real tournaments with a mock engine
 make -C app tests && ./app/fastchess-tests     # upstream fastchess tests, run from the repository root
 ```
+
+The build goes through ccache when it is installed.
 
 ## Using it
 

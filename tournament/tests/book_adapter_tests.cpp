@@ -20,6 +20,7 @@
 #include <tour/pgn_book.hpp>
 #include <tour/runner.hpp>
 
+#include "own_temp.hpp"
 #include "polyglot_writer.hpp"
 #include "self_path.hpp"
 
@@ -144,7 +145,7 @@ struct AdapterProcess {
 std::unique_ptr<TournamentState> ownBookMatch(const std::string& name, uint64_t games, const fs::path& book, int depth,
                                               bool restart = false) {
     const auto dir = fs::temp_directory_path() / name;
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     TournamentSpec s;
     s.name                   = "own book";
     s.format                 = Format::Match;
@@ -605,14 +606,14 @@ TEST_CASE("own book: a tournament with one is of version 3, which the versions b
 
     // The folder of a tournament with an own book.
     const auto dir = fs::temp_directory_path() / "fcg-tour-own-book-version";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     s.participants[0].book = smallBook().string();
     (void)TournamentState::create(dir, s);
     std::ifstream in(dir / "tournament.json", std::ios::binary);
     CHECK(nlohmann::json::parse(in).at("version") == 3);
     in.close();
     CHECK(TournamentState::open(dir)->spec().participants[0].book == smallBook().string());
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
 }
 
 TEST_CASE("own book: in a tournament, its moves come from the book, its engine plays the rest") {
@@ -707,7 +708,7 @@ TEST_CASE("own book: a PGN book plays for its participant, turned into a Polyglo
     const auto previous_adapter = book_adapter;
     const auto previous_cache   = book_cache_dir;
     const auto dir              = fs::temp_directory_path() / "fcg-own-book-pgn";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
     book_adapter   = self().string();
     book_cache_dir = dir / "cache";
@@ -803,7 +804,7 @@ TEST_CASE("own book: a tournament keeps the PGN book it was prepared with, the P
     const auto previous_adapter = book_adapter;
     const auto previous_cache   = book_cache_dir;
     const auto dir              = fs::temp_directory_path() / "fcg-own-book-pgn-kept";
-    fs::remove_all(dir);
+    fcg::test::removeAll(dir);
     fs::create_directories(dir);
     book_adapter   = self().string();
     book_cache_dir = dir / "cache";
