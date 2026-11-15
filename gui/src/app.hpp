@@ -892,8 +892,6 @@ class App {
     home::RunCard runCardOf(std::size_t index);
     // The controls of tab `index` on the home page's card: pause or resume, stop, its weight against the others'.
     void drawRunControls(std::size_t index);
-    // How the cores are shared now: by tournament and the analysis, a bar and a line each (home page).
-    void drawCoreShare();
     // The machine's budget (Settings, MachineBudget): what the tournaments share, its defaults resolved.
     MachineBudget budget_setting_;
     uint64_t installed_mb_ = 0;  // the machine's memory, read once
@@ -912,13 +910,6 @@ class App {
     [[nodiscard]] bool queueBeside(std::size_t index) const;
     // What a tournament about to start gets (with the weight `weight`), beside those playing.
     [[nodiscard]] tour::Allowance allowanceFor(const tour::TournamentSpec& spec, double weight) const;
-    // The cores of the budget by user: each tournament (what it may use, what it uses), the window's own engines.
-    struct CoreUse {
-        std::string label;
-        int allowed = 0;  // engine threads it may use; -1: no limit (it plays alone)
-        int in_use  = 0;
-    };
-    [[nodiscard]] std::vector<CoreUse> coreShare() const;
     // Settings: the machine's budget.
     void drawMachineBudget(float label);
     int tab_select_frames_ = 0;  // the tab bar selects the tab shown (showRun() from elsewhere) for a few frames
@@ -1234,6 +1225,8 @@ class App {
         Clock::time_point started{};
         std::string leader, detail;
     } leader_cache_;
+    // The same for the cards of the tournaments not shown, from their copy of the journal: by folder.
+    std::map<std::string, LeaderCache> other_leaders_;
     std::string finish_hidden_;  // the finish message whose card under Needs action was hidden
     std::future<std::vector<home::DiskSpace>> disk_job_;
     std::vector<home::DiskSpace> disks_;

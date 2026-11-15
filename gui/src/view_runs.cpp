@@ -329,10 +329,6 @@ void App::drawRunControls(std::size_t index) {
     const auto mark = [&](bool paused) {
         storage_.setRunningMarker(RunningMarker{dir, paused, open.resume_guarded, open.weight});
     };
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted(t ? t->spec().name.c_str() : "");
-    ImGui::SameLine();
-
     // Its weight: its share of the cores against the others'.
     ImGui::AlignTextToFramePadding();
     ImGui::TextDisabled("%s", TR("Weight"));
@@ -481,52 +477,6 @@ tour::Allowance App::allowanceFor(const tour::TournamentSpec& spec, double weigh
     const auto active = std::count_if(claims.begin(), claims.end(), [](const tour::Claim& c) { return c.active; });
     if (active == 1) out.threads = -1;
     return out;
-}
-
-std::vector<App::CoreUse> App::coreShare() const {
-    std::vector<CoreUse> out;
-    for (const auto& r : runs_) {
-        const auto* t = r.run->tournament();
-        if (!r.run->running() || !t || !r.run->remote()) continue;
-        out.push_back({t->spec().name, r.run->allowance().threads, r.run->inFlight().threads});
-    }
-    if (const int local = localThreads(); local > 0)
-        out.push_back({TR("This window (quick test, analysis)"), local, local});
-    return out;
-}
-
-void App::drawCoreShare() {
-    const auto share = coreShare();
-    const int budget = machineBudget().threads;
-    if (share.empty() || budget <= 0) return;
-    // A bar of the budget, a part per tournament: what it uses, darker, in what it may use.
-    const float width = ImGui::GetContentRegionAvail().x;
-    const float h     = px(10);
-    const auto pos    = ImGui::GetCursorScreenPos();
-    auto* draw        = ImGui::GetWindowDrawList();
-    draw->AddRectFilled(pos, ImVec2(pos.x + width, pos.y + h), ImGui::GetColorU32(ImGuiCol_FrameBg), px(3));
-    float x = pos.x;
-    for (std::size_t i = 0; i < share.size(); ++i) {
-        const auto& u     = share[i];
-        const int allowed = u.allowed < 0 ? budget : u.allowed;
-        const float w     = width * static_cast<float>(std::min(allowed, budget)) / static_cast<float>(budget);
-        const float used  = width * static_cast<float>(std::min(u.in_use, budget)) / static_cast<float>(budget);
-        const ImU32 color = ImGui::ColorConvertFloat4ToU32(ImPlot::GetColormapColor(static_cast<int>(i)));
-        draw->AddRectFilled(ImVec2(x, pos.y), ImVec2(x + w, pos.y + h), (color & 0x00FFFFFF) | 0x50000000);
-        draw->AddRectFilled(ImVec2(x, pos.y), ImVec2(x + std::min(used, w), pos.y + h), color);
-        x += w;
-    }
-    ImGui::Dummy(ImVec2(width, h));
-    std::string line = trn("{} core shared:", "{} cores shared:", budget, budget);
-    for (const auto& u : share) {
-        line += "  " + (u.allowed < 0 ? fmt::format("{} {}", u.label, u.in_use)
-                                      : fmt::format("{} {}/{}", u.label, u.in_use, u.allowed));
-    }
-    ImGui::TextDisabled("%s", line.c_str());
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", TR("Each tournament: the cores its games use, of those it may use. The budget is set "
-                                   "in Settings; the weights on each card decide who gets more."));
-    }
 }
 
 void App::drawMachineBudget(float label) {

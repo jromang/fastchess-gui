@@ -246,7 +246,7 @@ CardAction drawRunCard(const RunCard& c, float width) {
         ImGui::PopStyleColor();
     }
     ImGui::TextDisabled("%s", c.format.c_str());
-    if (c.weight) {
+    if (c.weight && !c.controls) {
         const auto weight = trf("weight {}", *c.weight);
         const float w     = ImGui::CalcTextSize(weight.c_str()).x;
         ImGui::SameLine(std::max(ImGui::GetCursorPosX(), ImGui::GetContentRegionMax().x - w));
@@ -284,6 +284,8 @@ CardAction drawRunCard(const RunCard& c, float width) {
                                        "pair,\nplay to the end (pair statistics stay complete)."));
         }
     }
+
+    if (c.controls) c.controls();
 
     ui::endCard();
     ImGui::PopID();

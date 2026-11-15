@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
 #include <vector>
@@ -112,6 +113,9 @@ struct RunCard {
     std::string detail;   // under it, grey: "Elo +3.1 ±4.0 · Alpha 412½ – 387½ Beta"
     // Its share of the cores against the other tournaments running, shown once several share them.
     std::optional<int> weight;
+    // Drawn on its own line under the buttons when given: its weight and its cores, once several tournaments share
+    // the machine (it then takes the place of `weight`).
+    std::function<void()> controls;
     bool paused     = false;
     bool can_pause  = true;  // not while it stops
     bool can_resume = true;

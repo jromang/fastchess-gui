@@ -1247,9 +1247,6 @@ msgstr "Jede Runde besteht aus zwei Partien mit vertauschten Farben gegen eine E
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
 msgstr "Jede Runde paart Engines mit ähnlicher Punktzahl, nie zweimal dieselben; für große Felder. Die Reihenfolge der Liste ist die Setzliste."
 
-msgid "Each tournament: the cores its games use, of those it may use. The budget is set in Settings; the weights on each card decide who gets more."
-msgstr "Jedes Turnier: die Kerne, die seine Partien nutzen, von denen, die es nutzen darf. Das Budget wird in den Einstellungen festgelegt; die Gewichte auf jeder Karte entscheiden, wer mehr bekommt."
-
 msgid "Edit in place"
 msgstr "Hier bearbeiten"
 
@@ -2570,8 +2567,8 @@ msgstr "Datei öffnen…"
 msgid "Open a folder…"
 msgstr "Ordner öffnen…"
 
-msgid "Open it for its end and its leader"
-msgstr "Öffne es für sein Ende und seinen Führenden"
+msgid "Open it for its end"
+msgstr "Öffne es für sein Ende"
 
 msgid "Open the engine"
 msgstr "Engine öffnen"
@@ -3664,6 +3661,11 @@ msgstr "Text"
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Der 50-Züge-Zähler, das Material und die verbleibenden Steine unter jedem Brett der Mosaikansicht."
 
+msgid "The Board page: {} core for its analysis and its games"
+msgid_plural "The Board page: {} cores for its analysis and its games"
+msgstr[0] "Die Brett-Seite: {} Kern für ihre Analyse und ihre Partien"
+msgstr[1] "Die Brett-Seite: {} Kerne für ihre Analyse und ihre Partien"
+
 msgid "The Elo difference {}'s score stands for, with its 95 % interval, counted on the pairs of games as in a match (pentanomial); LOS: the likelihood that it is the stronger team. +{} ={} −{}."
 msgstr "Der Elo-Unterschied, für den das Ergebnis von {} steht, mit seinem 95-%-Intervall, gezählt auf den Partiepaaren wie in einem Match (pentanomial); LOS: die Wahrscheinlichkeit, dass sie die stärkere Mannschaft ist. +{} ={} −{}."
 
@@ -4129,6 +4131,9 @@ msgstr "Der Turnierprozess ist nicht mehr da."
 msgid "The tournament's process speaks another version of the program ({}): restart the window."
 msgstr "Der Turnierprozess spricht eine andere Version des Programms ({}): Starte das Fenster neu."
 
+msgid "The tournaments playing at once share the cores of the budget (Settings) by their weights, set on each card: one game's worth each first, then by weight, none above its own concurrency."
+msgstr "Die gleichzeitig laufenden Turniere teilen sich die Kerne des Budgets (Einstellungen) nach ihren Gewichten, die auf jeder Karte eingestellt werden: zuerst eine Partie für jedes, dann nach Gewicht, keines über seine eigene Parallelität hinaus."
+
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "Die Varianz einer Partie, wenn die Partien paarweise gezählt werden, geteilt durch die Varianz einzelner Partien: unter 1 brauchen die Paare entsprechend weniger Partien für dieselbe Genauigkeit."
 
@@ -4211,9 +4216,6 @@ msgstr "Dieses Turnier wird in einem anderen Fenster angezeigt."
 
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr "Dieses Turnier wurde ohne „Eine abgestürzte Engine neu starten“ gestartet (Einstellungen, PGN und Sonstiges): Das Beenden einer Partie stoppt die Engine am Zug, was das Turnier stoppen würde. Setze das Ergebnis, sobald die Partie vorbei ist, im Reiter Partien."
-
-msgid "This window (quick test, analysis)"
-msgstr "Dieses Fenster (Schnelltest, Analyse)"
 
 msgid "Those with a problem"
 msgstr "Die mit einem Problem"
@@ -5205,11 +5207,6 @@ msgid_plural "{} cores in use"
 msgstr[0] "{} Kern belegt"
 msgstr[1] "{} Kerne belegt"
 
-msgid "{} core shared:"
-msgid_plural "{} cores shared:"
-msgstr[0] "{} Kern geteilt:"
-msgstr[1] "{} Kerne geteilt:"
-
 msgid "{} could not be read: kept as {}"
 msgstr "{} war nicht lesbar: aufbewahrt als {}"
 
@@ -5728,6 +5725,11 @@ msgid "{} selected"
 msgid_plural "{} selected"
 msgstr[0] "{} ausgewählt"
 msgstr[1] "{} ausgewählt"
+
+msgid "{} shared by the tournaments"
+msgid_plural "{} shared by the tournaments"
+msgstr[0] "{} von den Turnieren geteilt"
+msgstr[1] "{} von den Turnieren geteilt"
 
 msgid "{} shown"
 msgstr "{} angezeigt"

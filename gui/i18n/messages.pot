@@ -1247,9 +1247,6 @@ msgstr ""
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
 msgstr ""
 
-msgid "Each tournament: the cores its games use, of those it may use. The budget is set in Settings; the weights on each card decide who gets more."
-msgstr ""
-
 msgid "Edit in place"
 msgstr ""
 
@@ -2570,7 +2567,7 @@ msgstr ""
 msgid "Open a folder…"
 msgstr ""
 
-msgid "Open it for its end and its leader"
+msgid "Open it for its end"
 msgstr ""
 
 msgid "Open the engine"
@@ -3664,6 +3661,11 @@ msgstr ""
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr ""
 
+msgid "The Board page: {} core for its analysis and its games"
+msgid_plural "The Board page: {} cores for its analysis and its games"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "The Elo difference {}'s score stands for, with its 95 % interval, counted on the pairs of games as in a match (pentanomial); LOS: the likelihood that it is the stronger team. +{} ={} −{}."
 msgstr ""
 
@@ -4129,6 +4131,9 @@ msgstr ""
 msgid "The tournament's process speaks another version of the program ({}): restart the window."
 msgstr ""
 
+msgid "The tournaments playing at once share the cores of the budget (Settings) by their weights, set on each card: one game's worth each first, then by weight, none above its own concurrency."
+msgstr ""
+
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr ""
 
@@ -4210,9 +4215,6 @@ msgid "This tournament is shown in another window."
 msgstr ""
 
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
-msgstr ""
-
-msgid "This window (quick test, analysis)"
 msgstr ""
 
 msgid "Those with a problem"
@@ -5205,11 +5207,6 @@ msgid_plural "{} cores in use"
 msgstr[0] ""
 msgstr[1] ""
 
-msgid "{} core shared:"
-msgid_plural "{} cores shared:"
-msgstr[0] ""
-msgstr[1] ""
-
 msgid "{} could not be read: kept as {}"
 msgstr ""
 
@@ -5726,6 +5723,11 @@ msgstr[1] ""
 
 msgid "{} selected"
 msgid_plural "{} selected"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "{} shared by the tournaments"
+msgid_plural "{} shared by the tournaments"
 msgstr[0] ""
 msgstr[1] ""
 
