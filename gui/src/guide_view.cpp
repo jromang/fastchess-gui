@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <cmath>
 
 #include <imgui_internal.h>
 #include <stb_image.h>  // compiled in engine_logos.cpp
@@ -134,7 +135,7 @@ void GuideView::navigate(const std::string& id, bool record) {
         forward_.clear();
     }
     id_        = id;
-    scroll_    = 3;
+    scroll_    = 60;
     flash_     = ImGui::GetTime() + 1.6;
     searching_ = false;
 }
@@ -284,7 +285,7 @@ void GuideView::draw(float width, float height) {
         forward_.push_back(id_);
         id_ = back_.back();
         back_.pop_back();
-        scroll_    = 3;
+        scroll_    = 60;
         searching_ = false;
     };
     const auto forward = [&] {
@@ -292,7 +293,7 @@ void GuideView::draw(float width, float height) {
         back_.push_back(id_);
         id_ = forward_.back();
         forward_.pop_back();
-        scroll_    = 3;
+        scroll_    = 60;
         searching_ = false;
     };
     if ((focused && ImGui::IsKeyChordPressed(ImGuiMod_Alt | ImGuiKey_LeftArrow)) ||
@@ -323,7 +324,7 @@ void GuideView::drawHeader(float width) {
         forward_.push_back(id_);
         id_ = back_.back();
         back_.pop_back();
-        scroll_    = 3;
+        scroll_    = 60;
         searching_ = false;
     }
     ImGui::SameLine(0, spacing);
@@ -331,7 +332,7 @@ void GuideView::drawHeader(float width) {
         back_.push_back(id_);
         id_ = forward_.back();
         forward_.pop_back();
-        scroll_    = 3;
+        scroll_    = 60;
         searching_ = false;
     }
     ImGui::SameLine(0, spacing);
@@ -739,9 +740,18 @@ void GuideView::drawPage(float width) {
 
     for (std::size_t i = first; i < last; ++i) {
         const Section& s = section(i);
+        // The section asked for at the top, held there while the page settles (its width, the window's size, a
+        // font made), until the reader scrolls; a section near the end cannot reach the top: given up after a while.
         if (static_cast<int>(i) == target && scroll_ > 0) {
-            ImGui::SetScrollHereY(0.0f);
-            --scroll_;
+            const float want = std::max(0.0f, ImGui::GetCursorPosY() - ImGui::GetStyle().ItemSpacing.y);
+            if (ImGui::IsWindowHovered() && ImGui::GetIO().MouseWheel != 0.0f) {
+                scroll_ = 0;
+            } else if (std::abs(ImGui::GetScrollY() - want) < 1.0f) {
+                scroll_ = std::min(scroll_ - 1, 3);  // there: a few more frames, in case the page still moves
+            } else {
+                ImGui::SetScrollY(want);
+                --scroll_;
+            }
         }
         if (i != first) ImGui::Dummy(ImVec2(width, em() * 0.4f));
         md::Block heading;

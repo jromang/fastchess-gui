@@ -89,7 +89,7 @@ class GuideView {
     bool open_ = false;
     std::string id_;  // the English section asked for
     std::vector<std::string> back_, forward_;
-    // Frames left to scroll to the section asked for: a few, as the first frame's content is not measured yet.
+    // Frames left to hold the section asked for at the top, while the page settles (see drawPage).
     int scroll_   = 0;
     double flash_ = 0;        // the section asked for is highlighted until then
     char query_[200] = {};
