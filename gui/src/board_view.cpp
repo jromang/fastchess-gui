@@ -17,24 +17,17 @@
 #include "renderer.hpp"
 #include "ui.hpp"
 
-namespace fcg::assets {
-extern const std::array<std::string_view, 12> piece_svgs;
-}
-
 namespace fcg {
 
 namespace {
 
-constexpr ImU32 LIGHT     = IM_COL32(222, 227, 230, 255);
-constexpr ImU32 DARK      = IM_COL32(140, 162, 173, 255);
-constexpr ImU32 LAST_MOVE = IM_COL32(155, 199, 0, 105);
 constexpr ImU32 CHECK     = IM_COL32(220, 40, 40, 150);
 constexpr ImU32 SELECTED  = IM_COL32(20, 85, 30, 110);
 constexpr ImU32 TARGET    = IM_COL32(20, 85, 30, 90);
 constexpr ImU32 BAR_WHITE = IM_COL32(236, 236, 236, 255);
 constexpr ImU32 BAR_BLACK = IM_COL32(48, 48, 48, 255);
 
-// Atlas column of a piece: white K Q R B N P, then black K Q R B N P (the order of piece_svgs).
+// Atlas column of a piece: white K Q R B N P, then black K Q R B N P (the order of appearance::PIECE_FILES).
 int atlasIndex(chess::Piece piece) {
     // PieceType order is P N B R Q K; the atlas is K Q R B N P.
     static constexpr int by_type[6] = {5, 4, 3, 2, 1, 0};
@@ -54,7 +47,7 @@ chess::Square displayedTarget(const chess::Move& move) {
 
 }  // namespace
 
-std::vector<unsigned char> rasterizePieces(int px) {
+std::vector<unsigned char> rasterizePieces(int px, const appearance::PieceSvgs& svgs) {
     const int width = px * 12;
     std::vector<unsigned char> pixels(static_cast<std::size_t>(width) * px * 4, 0);
 
@@ -66,7 +59,7 @@ std::vector<unsigned char> rasterizePieces(int px) {
 
     for (int i = 0; i < 12; ++i) {
         // nsvgParse modifies its input.
-        std::string svg(assets::piece_svgs[static_cast<std::size_t>(i)]);
+        std::string svg(svgs[static_cast<std::size_t>(i)]);
         NSVGimage* image = nsvgParse(svg.data(), "px", 96.0f);
         if (!image) {
             ok = false;
@@ -89,16 +82,20 @@ std::vector<unsigned char> rasterizePieces(int px) {
     return pixels;
 }
 
-PieceAtlas::~PieceAtlas() {
+PieceAtlas::~PieceAtlas() { clear(); }
+
+void PieceAtlas::clear() {
     for (const auto& level : levels_) render::destroyTexture(level.texture);
+    levels_.clear();
 }
 
-bool PieceAtlas::create(int px) {
+bool PieceAtlas::create(int px, const appearance::PieceSvgs& svgs) {
+    clear();
     // OpenGL makes the smaller sizes itself (mipmaps). SDL's renderer has none: they are rasterized from the SVGs,
     // sharper than shrunk.
     const int smallest = render::mipmapped() ? px : std::max(1, px / 8);
     for (int size = px; size >= smallest; size /= 2) {
-        const auto pixels = rasterizePieces(size);
+        const auto pixels = rasterizePieces(size, svgs);
         if (pixels.empty()) return false;
         const auto texture = render::createTexture(size * 12, size, pixels.data());
         if (texture == ImTextureID_Invalid) return !levels_.empty();
@@ -180,6 +177,7 @@ void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& piec
         dl->AddRectFilled(ImVec2(top.x, split), ImVec2(top.x + bar_w, split), BAR_WHITE);
     }
 
+    const auto colours = decor.colours ? *decor.colours : appearance::boardColours();
     std::optional<chess::Square> from, to;
     if (decor.last_move) {
         from = decor.last_move->from();
@@ -200,9 +198,9 @@ void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& piec
             const chess::Square square{chess::File(file), chess::Rank(rank)};
             const bool light = (file + rank) % 2 == 1;
 
-            dl->AddRectFilled(p0, p1, light ? LIGHT : DARK);
+            dl->AddRectFilled(p0, p1, light ? colours.light : colours.dark);
             if ((from && *from == square) || (to && *to == square)) {
-                dl->AddRectFilled(p0, p1, LAST_MOVE);
+                dl->AddRectFilled(p0, p1, colours.highlight);
                 if (decor.last_move_frame > 0) {
                     const float inset = decor.last_move_frame / 2;
                     dl->AddRect(ImVec2(p0.x + inset, p0.y + inset), ImVec2(p1.x - inset, p1.y - inset),
@@ -215,7 +213,7 @@ void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& piec
             }
 
             // Coordinates along the bottom and left edges, in the opposite square colour.
-            const ImU32 coord = light ? DARK : LIGHT;
+            const ImU32 coord = light ? colours.dark : colours.light;
             if (row == 7) {
                 const char label[2] = {static_cast<char>('a' + file), 0};
                 dl->AddText(font, font_size, ImVec2(p1.x - font_size * 0.6f, p1.y - font_size * 1.05f), coord, label);

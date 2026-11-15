@@ -382,6 +382,43 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             [url = release->url] { SDL_OpenURL(url.c_str()); });
     }
     add(TR("Software rendering"), TR("Settings"), page(Page::Settings));  // the checkbox and what draws the window
+    // Appearance: its section of Settings, then its choices made at once (the board of the theme in use).
+    add(TR("Appearance: board colours, pieces, move sounds"), TR("Settings"), [this, go = page(Page::Settings)] {
+        go();
+        scroll_to_appearance_ = true;
+    });
+    for (const auto& p : appearance::boardPresets()) {
+        add(trf("Board colours: {}", TR(p.name)), TR("Settings"), [this, &p] {
+            auto s       = appearance::current();
+            auto& board  = s.board(ui::currentTheme());
+            board.preset = p.id;
+            board.custom = p.colours;
+            applyAppearance(s);
+        });
+    }
+    for (const auto& p : appearance::pieceSets()) {
+        add(trf("Pieces: {}", p.name), TR("Settings"), [this, id = p.id] {
+            auto s   = appearance::current();
+            s.pieces = id;
+            applyAppearance(s);
+        });
+    }
+    add(TR("Pieces: your own folder…"), TR("Settings"),
+        [this] { dialogs_.openFolder(Dialogs::Purpose::PieceFolder, appearance::current().piece_folder); });
+    add(appearance::current().sounds ? TR("Turn the move sounds off") : TR("Turn the move sounds on"), TR("Settings"),
+        [this] {
+            auto s   = appearance::current();
+            s.sounds = !s.sounds;
+            applyAppearance(s);
+        });
+    // The logo of the engine whose card is open.
+    if (page_ == Page::Engines && selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size())) {
+        add(trf("Choose a logo for {}…", engines_[static_cast<std::size_t>(selected_engine_)].name), TR("Engines"),
+            [this] {
+                dialogs_.openFile(Dialogs::Purpose::EngineLogo,
+                                  {{TR("Pictures (PNG, JPEG, SVG)"), "png;jpg;jpeg;svg"}, {TR("All files"), "*"}});
+            });
+    }
 
     // The tournaments of the home page: one opens as its Open button does.
     for (const auto& s : tournaments_) {

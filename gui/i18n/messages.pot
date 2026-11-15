@@ -150,6 +150,9 @@ msgstr ""
 msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
 msgstr ""
 
+msgid "A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live, on the big screen and on the broadcast web page. A copy is kept in the profile's folder logos: the picture chosen can be moved or deleted."
+msgstr ""
+
 msgid "A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves weighing less than a tenth of the best one; the positions reached are the openings."
 msgstr ""
 
@@ -169,6 +172,9 @@ msgid "A command for the engine"
 msgstr ""
 
 msgid "A file of your choice"
+msgstr ""
+
+msgid "A folder of 12 SVG pictures named wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg and bK.svg … bP.svg: the white and black king, queen, rook, bishop, knight and pawn."
 msgstr ""
 
 msgid "A game has no port: {}"
@@ -250,6 +256,12 @@ msgid "A second game, the colours reversed"
 msgstr ""
 
 msgid "A separate engine"
+msgstr ""
+
+msgid "A short knock for each move of the game followed, in Live and on the big screen, a heavier one for a capture; not for every game of the mosaic."
+msgstr ""
+
+msgid "A sound for each move"
 msgstr ""
 
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
@@ -341,6 +353,9 @@ msgid "Adjudications"
 msgstr ""
 
 msgid "Affinity ignored: an engine uses %d threads."
+msgstr ""
+
+msgid "After the folder's files were changed."
 msgstr ""
 
 msgid "After the running match."
@@ -443,6 +458,12 @@ msgid "Any PGN file: its games listed and filtered by their tags, each replayed 
 msgstr ""
 
 msgid "Anything to remember about it; the engine searches find it."
+msgstr ""
+
+msgid "Appearance"
+msgstr ""
+
+msgid "Appearance: board colours, pieces, move sounds"
 msgstr ""
 
 msgid "Applies at the next launch."
@@ -580,10 +601,19 @@ msgstr ""
 msgid "Black's pieces on the same files as White's: 18 starting positions, added to the library."
 msgstr ""
 
+msgid "Blue"
+msgstr ""
+
+msgid "Blue grey"
+msgstr ""
+
 msgid "Blunder"
 msgstr ""
 
 msgid "Board"
+msgstr ""
+
+msgid "Board colours: {}"
 msgstr ""
 
 msgid "Board position"
@@ -613,6 +643,9 @@ msgstr ""
 msgid "Broadcast"
 msgstr ""
 
+msgid "Brown"
+msgstr ""
+
 msgid "Build a Polyglot book"
 msgstr ""
 
@@ -629,6 +662,9 @@ msgid "By score"
 msgstr ""
 
 msgid "By time control"
+msgstr ""
+
+msgid "By {}, under the {} license."
 msgstr ""
 
 msgid "By {}, {}. Losses of 10, 20 and 30 % of the winning chances are an inaccuracy (?!), a mistake (?) and a blunder (??)."
@@ -692,6 +728,9 @@ msgid "Cannot start {}: {}"
 msgstr ""
 
 msgid "Cannot write {}"
+msgstr ""
+
+msgid "Cannot write {}."
 msgstr ""
 
 msgid "Cannot write {}: {}"
@@ -782,6 +821,9 @@ msgid "Choose a PGN file first."
 msgstr ""
 
 msgid "Choose a book in the list."
+msgstr ""
+
+msgid "Choose a logo for {}…"
 msgstr ""
 
 msgid "Choose an EPD file whose positions have their best move (bm), the moves to avoid (am), or STS points (c0)."
@@ -949,6 +991,9 @@ msgstr ""
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr ""
 
+msgid "Custom"
+msgstr ""
+
 msgid "Cut short, by a download that did not end for example. Engines leave such a file out, and some stop at once when they meet it."
 msgstr ""
 
@@ -962,6 +1007,12 @@ msgid "Cycles"
 msgstr ""
 
 msgid "Dark"
+msgstr ""
+
+msgid "Dark squares"
+msgstr ""
+
+msgid "Dark theme"
 msgstr ""
 
 msgid "Date"
@@ -1540,6 +1591,12 @@ msgstr ""
 msgid "Give the tester's name and the event."
 msgstr ""
 
+msgid "Green"
+msgstr ""
+
+msgid "Grey"
+msgstr ""
+
 msgid "Group"
 msgstr ""
 
@@ -1683,10 +1740,22 @@ msgstr ""
 msgid "Interrupted: {} crashed or stopped responding (game {})"
 msgstr ""
 
+msgid "It cannot be read: {}."
+msgstr ""
+
 msgid "It cannot play for an engine: {}"
 msgstr ""
 
 msgid "It continues exactly where it stopped: no game is lost or played twice."
+msgstr ""
+
+msgid "It is not a PNG or JPEG picture the program can read."
+msgstr ""
+
+msgid "It is not an SVG picture the program can draw."
+msgstr ""
+
+msgid "It is {}×{} pixels: at most {} each way."
 msgstr ""
 
 msgid "It needs the web page served."
@@ -1794,6 +1863,9 @@ msgstr ""
 msgid "Knockout, {} engines"
 msgstr ""
 
+msgid "Laid over the two squares of the last move: its transparency lets the square's colour through."
+msgstr ""
+
 msgid "Language"
 msgstr ""
 
@@ -1804,6 +1876,9 @@ msgid "Last 24 hours:"
 msgstr ""
 
 msgid "Last finished"
+msgstr ""
+
+msgid "Last move"
 msgstr ""
 
 msgid "Latest results"
@@ -1845,6 +1920,12 @@ msgstr ""
 msgid "Light"
 msgstr ""
 
+msgid "Light squares"
+msgstr ""
+
+msgid "Light theme"
+msgstr ""
+
 msgid "Like cutechess' -pgnout: the games of every tournament go on after those already in the file, which is never overwritten, in the order of the schedule: the two games of an opening side by side. Empty: none."
 msgstr ""
 
@@ -1873,6 +1954,9 @@ msgid "Log"
 msgstr ""
 
 msgid "Logistic Elo, with its 95 % interval."
+msgstr ""
+
+msgid "Logo"
 msgstr ""
 
 msgid "Loss when an engine reports a score ≤ -threshold for N consecutive moves."
@@ -1967,6 +2051,9 @@ msgstr ""
 msgid "Move down"
 msgstr ""
 
+msgid "Move sounds"
+msgstr ""
+
 msgid "Move to the top"
 msgstr ""
 
@@ -2048,6 +2135,9 @@ msgstr ""
 msgid "No engine yet: double-click engines of the library, or drag them here."
 msgstr ""
 
+msgid "No folder of pieces is chosen."
+msgstr ""
+
 msgid "No game finished yet"
 msgstr ""
 
@@ -2101,6 +2191,12 @@ msgstr ""
 msgid "No move of {} is played by {} games or more: lower the minimum."
 msgstr ""
 
+msgid "No move sounds: no sound device ({})."
+msgstr ""
+
+msgid "No move sounds: the sound could not be started ({})."
+msgstr ""
+
 msgid "No new engine in the folder."
 msgstr ""
 
@@ -2132,6 +2228,9 @@ msgid "No results yet."
 msgstr ""
 
 msgid "No round yet."
+msgstr ""
+
+msgid "No sound device could be opened: the log says why."
 msgstr ""
 
 msgid "No tablebase hits in this game."
@@ -2189,6 +2288,9 @@ msgid "Not checked"
 msgstr ""
 
 msgid "Not checked yet."
+msgstr ""
+
+msgid "Not enough memory to draw it."
 msgstr ""
 
 msgid "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the setup."
@@ -2466,7 +2568,19 @@ msgstr ""
 msgid "Physical cores − 1 ({} physical cores on this machine): with a clock, two engines on the same core would slow each other down."
 msgstr ""
 
+msgid "Pictures (PNG, JPEG, SVG)"
+msgstr ""
+
+msgid "Pieces"
+msgstr ""
+
 msgid "Pieces on the board, kings included."
+msgstr ""
+
+msgid "Pieces: your own folder…"
+msgstr ""
+
+msgid "Pieces: {}"
 msgstr ""
 
 msgid "Pins every game to its own processor, shared by its two engines since they never think at the same time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to a node count."
@@ -2660,6 +2774,9 @@ msgid "Ratings"
 msgstr ""
 
 msgid "Reachable from the local network; open the port in your router to share it further."
+msgstr ""
+
+msgid "Read again"
 msgstr ""
 
 msgid "Read it again"
@@ -3357,6 +3474,12 @@ msgstr ""
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr ""
 
+msgid "The colours of the boards while the theme is dark."
+msgstr ""
+
+msgid "The colours of the boards while the theme is light."
+msgstr ""
+
 msgid "The console of {} is open."
 msgstr ""
 
@@ -3429,6 +3552,9 @@ msgstr ""
 msgid "The folder {} is not there any more."
 msgstr ""
 
+msgid "The folder {} is not there."
+msgstr ""
+
 msgid "The game as it was, without the moves played over it."
 msgstr ""
 
@@ -3489,6 +3615,12 @@ msgstr ""
 msgid "The list order is the seeding."
 msgstr ""
 
+msgid "The logo of {} cannot be shown: {}"
+msgstr ""
+
+msgid "The logo was not changed: {}"
+msgstr ""
+
 msgid "The machine is full: the tournament's games and the analysis use {} of its {} threads, and this game needs {}. It would slow them down, and its own engines."
 msgstr ""
 
@@ -3526,6 +3658,9 @@ msgid "The participants selected (Delete)."
 msgstr ""
 
 msgid "The paused tournament goes on, and the queue starts its next tournament when the running one ends."
+msgstr ""
+
+msgid "The picture could not be made a texture."
 msgstr ""
 
 msgid "The place in the list, by rating."
@@ -3805,6 +3940,12 @@ msgstr ""
 msgid "Trust the new key"
 msgstr ""
 
+msgid "Try a capture"
+msgstr ""
+
+msgid "Try a move"
+msgstr ""
+
 msgid "Try again"
 msgstr ""
 
@@ -3833,6 +3974,12 @@ msgid "Tunnel: {}"
 msgstr ""
 
 msgid "Tunnel: {}; connecting again in {} s"
+msgstr ""
+
+msgid "Turn the move sounds off"
+msgstr ""
+
+msgid "Turn the move sounds on"
 msgstr ""
 
 msgid "Two different engines chosen"
@@ -3917,6 +4064,9 @@ msgid "Version {} is out."
 msgstr ""
 
 msgid "Void this game (no replay)"
+msgstr ""
+
+msgid "Volume %d %%"
 msgstr ""
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
@@ -4097,6 +4247,12 @@ msgid "Written when \"{}\" is on in the PGN options of the setup."
 msgstr ""
 
 msgid "Wrong PVs"
+msgstr ""
+
+msgid "Your own folder"
+msgstr ""
+
+msgid "Your own folder…"
 msgstr ""
 
 msgid "Your value"
@@ -4568,6 +4724,9 @@ msgstr ""
 msgid "{} MB"
 msgstr ""
 
+msgid "{} The default pieces are drawn meanwhile."
+msgstr ""
+
 msgid "{} against each opponent"
 msgstr ""
 
@@ -4586,6 +4745,9 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
+msgstr ""
+
+msgid "{} cannot be read."
 msgstr ""
 
 msgid "{} cannot start"
@@ -4807,7 +4969,25 @@ msgid_plural "{} inaccuracies"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "{} is larger than 1 MB: is it a piece?"
+msgstr ""
+
+msgid "{} is larger than 2 MB."
+msgstr ""
+
+msgid "{} is missing: the folder needs the 12 files wK.svg, wQ.svg … bN.svg, bP.svg."
+msgstr ""
+
+msgid "{} is not a file of the logos folder."
+msgstr ""
+
 msgid "{} is not a legal move from the initial position."
+msgstr ""
+
+msgid "{} is not an SVG picture the program can draw."
+msgstr ""
+
+msgid "{} is not there."
 msgstr ""
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
@@ -5156,6 +5336,9 @@ msgid "{}-man Syzygy for every engine"
 msgstr ""
 
 msgid "{}-man Syzygy for {} of {} engines"
+msgstr ""
+
+msgid "{}: a logo is a PNG, JPEG or SVG picture."
 msgstr ""
 
 msgid "{}: cancelled, nothing written."

@@ -73,7 +73,7 @@
       "bom-ref": "fetchcontent:stb",
       "name": "stb",
       "version": "2c980bb59875b0d32144a71867fbdebb2f77cd20",
-      "description": "stb_image.h (its inflater) and stb_image_write.h only.",
+      "description": "stb_image.h (PNG and JPEG only: the engines' logos, and its inflater) and stb_image_write.h only.",
       "purl": "pkg:github/nothings/stb@2c980bb59875b0d32144a71867fbdebb2f77cd20",
       "licenses": [{ "expression": "MIT OR Unlicense" }],
       "externalReferences": [{ "type": "vcs", "url": "https://github.com/nothings/stb.git" }],

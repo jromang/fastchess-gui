@@ -15,7 +15,7 @@ A navigation rail on the left leads to eight pages:
 | Suites | Test suites (STS, WAC, ERET…): engines against the positions of an EPD file |
 | Ratings | One rating list over every game of every tournament |
 | Log | fastchess' own output and the messages of the GUI, and *Report a problem…* |
-| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the profile folder and the portable mode, the tournaments folder, the lichess token, the version and new versions, what draws the window and software rendering, *Report a problem…* |
+| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the appearance of the boards (colours, pieces, move sounds, see *Appearance*), the profile folder and the portable mode, the tournaments folder, the lichess token, the version and new versions, what draws the window and software rendering, *Report a problem…* |
 
 The interface is in English, French, German, Spanish, Italian, Brazilian Portuguese, Russian or simplified Chinese.
 At startup it follows the first preferred language of the system (English when there is no translation for it); it
@@ -52,7 +52,7 @@ the window full screen, and back.
 **Ctrl+K** opens the command palette: the pages and tabs, the engines of the library (it opens the card), the books,
 the tournaments of the home page, and the actions possible now (*Pause*, *Resume*, *Pause all*, *Stop*, *Start*, *Add to
 the queue*, *Relaunch … with…*, the entries of *Import…*, *Check those not checked*, *Export for a rating list…*, *Copy* the standings,
-*Copy the version*, *Report a problem…*…).
+*Copy the version*, *Report a problem…*, the board colours and piece sets, the move sounds on or off…).
 Letter case does not matter and the letters typed need not be adjacent ("rl" finds *Rating list*); names that start
 with them, or with a word that does, come first. Up and Down choose, Enter runs, Escape closes; Ctrl+K is left alone
 while a text field is being typed in. The *?* beside each page's title, or F1, opens this guide at the page's section.
@@ -71,6 +71,41 @@ uses more processor time, redraws only what changes (and what moves, such as clo
 rather than onto another screen. Under Wayland (and on macOS) the processor's picture is still shown through the
 graphics driver; if there is none, start the program with `SDL_VIDEODRIVER=x11`. When no way of drawing works, a
 message says so before the program ends.
+
+### Appearance
+
+**Settings** > *Appearance* chooses how every board of the program looks (the live mosaic and the game followed,
+the detached boards, the big screen, a game replayed in *Games*, the *Openings* tab, the openings of a book), with
+a small board beside the choices showing them:
+
+![Settings > Appearance: the brown board and the Celtic pieces](screenshots/appearance.png)
+
+- **Board**: the colours of the squares, for the light theme and for the dark theme each (the board of the theme in
+  use is drawn). A preset (*Blue grey*, the colours of the earlier versions; *Brown*; *Blue*; *Green*; *Grey*), or
+  *Custom*: a click on *Light squares*, *Dark squares* or *Last move* opens a colour picker, and changing a colour
+  makes the board a custom one from the colours it had. *Last move* is laid over the two squares of the last move,
+  its transparency letting the square's colour through.
+- **Pieces**: a set built into the program (*Cburnett*, the default; *Chessnut*; *Celtic*; *Fantasy*; their authors
+  and licenses in the tooltip and in `ATTRIBUTION.md`), or *Your own folder…*: a folder of 12 SVG pictures named
+  `wK.svg`, `wQ.svg`, `wR.svg`, `wB.svg`, `wN.svg`, `wP.svg` and `bK.svg` … `bP.svg` (white and black king, queen,
+  rook, bishop, knight, pawn). The pictures are drawn with nanosvg, as the built-in ones: plain shapes, fills,
+  strokes and gradients; no text, filters or embedded images. When a file is missing, larger than 1 MB or not a
+  picture that can be drawn, the page says which and why, the default pieces are drawn meanwhile, and *Read again*
+  reads the folder once the files are fixed. The web page of the broadcast keeps the default pieces.
+- **Move sounds** (off by default): *A sound for each move* plays a short knock for each move of the game followed,
+  in *Live* and on the big screen, and a heavier one for a capture; not for every game of the mosaic. *Volume*, and
+  *Try a move* / *Try a capture* to hear them. The sounds are made by the program (no sound file); the sound device
+  is opened only while they are on, and when there is none the log says why and the program stays silent.
+
+The command palette has these choices too (*Board colours: Brown*, *Pieces: Celtic*, *Turn the move sounds on*…).
+They are kept in `settings.json` in the profile; the folder of pieces is kept relative to the program's folder in
+the portable mode.
+
+**Engine logos**: the card of an engine in the **Engines** page has *Logo* > *Choose…*, a PNG, JPEG or SVG picture
+of 2 MB at most (4096 pixels each way at most), shown beside the engine's name in *Live*, on the big screen and on
+the broadcast web page. The picture is copied into the folder `logos` of the profile, so the original can be moved
+or deleted and the profile moved whole; *Remove* takes it away (and its copy, unless another engine has it). The
+logo can be changed while the engine plays.
 
 ## The home page
 
@@ -141,6 +176,8 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
   is kept, in `tests/` in the profile (with the engine logs of its games that ended badly).
 - **Groups**: free labels separated by commas (`pool A`, `list 40/15`…). The list can be filtered by group or
   searched, and a group can be added to a tournament in one click. *Notes*: anything to remember about the engine.
+  *Logo*: a picture shown beside its name in *Live*, on the big screen and on the broadcast web page (see
+  *Appearance*).
 - **A large library**: every engine search (the library, and the engine lists of the other pages) finds a name, the
   name the engine reports, its author, its program path or its notes; the state filter shows the engines that work,
   failed or changed, were never checked, have lost their program, speak WinBoard, or are inactive. Ctrl or Shift
@@ -726,7 +763,9 @@ The *Broadcast* tab of a running tournament publishes it while it plays; the sna
   evaluation bar beside each player. *Moves* switches the moves between letters (Nf3) and figurines (♘f3), and the
   theme follows the system or is set to light or dark; the browser remembers these choices. The page loads nothing
   from elsewhere and works on phones. *Download the games (PGN)* gives the tournament's PGN file, up to the last
-  game recorded. `state.json`, which the page reads, holds all of it for scripts.
+  game recorded. `state.json`, which the page reads, holds all of it for scripts. The engines' logos (see
+  *Appearance*) show beside their names, as small PNG pictures the program makes from them and serves itself; the
+  page learns only those of the tournament's engines.
 - **lichess**: a lichess broadcast, with lichess' board, evaluation bar and chat, for anyone on the internet. It
   needs a personal API token with the `study:write` scope (*Create a token on lichess…*), kept in `settings.json`
   in the profile only, saved when its field is left. With no round given, a broadcast named after the tournament is made, unlisted unless
@@ -862,8 +901,9 @@ application from a temporary place, where the `portable` file is not.
   by move, one file each; `games/*.pgn`: the games played from the Board page;
 - `settings.json`: the tournaments folder, when another one was chosen in **Settings**, *Software rendering*, the
   folder of *Every engine of a folder…*, the tester and site of *Export for a rating list…*, the lichess token, the
-  window's size and place, and the check for a new version (wanted or not, when it was last made, the release it
-  found, the notice hidden);
+  window's size and place, the check for a new version (wanted or not, when it was last made, the release it
+  found, the notice hidden), and the appearance (board colours, pieces, move sounds);
+- `logos/`: the engines' logos, copies of the pictures chosen on their cards;
 - `running.json`: the tournament running now, removed when it stops; found at launch, it tells what to resume;
 - `runs/<date>_<A>_vs_<B>/` for a match, `runs/<date>_<name>/` for a tournament (in `runs/` or the chosen
   folder), one folder each, which can be moved, copied, zipped and sent:

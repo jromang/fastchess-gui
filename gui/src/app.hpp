@@ -253,6 +253,7 @@ class App {
         std::size_t turned_for = ~std::size_t{0};
         std::size_t followed   = 0;  // moves shown, to keep the move list scrolled to the end
         int follow_frames      = 0;
+        bool last_capture      = false;  // the last move took a piece: its sound (hearMoves)
     };
 
     enum class Page { Home, NewMatch, Tournament, Engines, Books, Board, Suites, Ratings, Log, Settings };
@@ -1275,6 +1276,54 @@ class App {
     void reportProblem(const std::string& seen = {});
     bool reportButton(const char* id, bool small = false, const std::string& seen = {});  // the button, its tooltip
     [[nodiscard]] std::string systemReport() const;
+
+    // Appearance (view_appearance.cpp): the boards' colours, the pieces and the move sounds, in Settings; the
+    // engines' logos, on their cards.
+    void loadAppearance();  // at startup, from settings.json
+    // `settings` in force and saved; the pieces made again at the start of the next frame when they changed.
+    void applyAppearance(const appearance::Settings& settings);
+    void rebuildPieces();  // between frames: the last frame may still draw the old atlas
+    void drawAppearanceSettings(float label);
+    void drawBoardPreview(ui::Theme theme, float size);
+    // A sound for each new move of the game in `slot`, when it is the one followed (Live, the big screen).
+    void hearMoves(int slot);
+    bool pieces_dirty_ = false;
+    std::string pieces_error_;  // why the folder's pieces are not those drawn, empty when they are
+    // settings.json written a moment after the last change: not at every step of a colour dragged in its picker.
+    std::optional<std::chrono::steady_clock::time_point> appearance_save_due_;
+    ui::Theme appearance_theme_ = ui::Theme::Light;  // the theme whose board the Settings page edits
+    bool appearance_theme_set_  = false;             // chosen once, then left as the user put it
+    bool scroll_to_appearance_  = false;             // asked from the command palette
+    struct Heard {
+        std::size_t game  = 0;
+        std::size_t plies = 0;
+        int frame         = -1;  // when: a game followed again after a while makes no sound for what it played since
+    };
+    std::map<int, Heard> heard_;  // by slot
+    int heard_frame_ = -1;        // the frame a sound was last played: one at a time
+
+    // The engines' logos, as textures made when first drawn; by file name in the logos folder. A small one too, for
+    // SDL's renderer, which has no mipmaps to draw the large one small.
+    struct LogoTexture {
+        ImTextureID large = ImTextureID_Invalid;
+        ImTextureID small = ImTextureID_Invalid;
+        int width = 0, height = 0;  // the large one's: the proportions
+        std::string error;          // why it cannot be shown, empty when it can
+        [[nodiscard]] ImTextureID texture(float pixels) const;
+    };
+    [[nodiscard]] const LogoTexture* engineLogo(const std::string& engine);  // nullptr: none, or unreadable
+    // The engine's logo as an item `height` high, its proportions kept; its width, 0 (and nothing drawn) without one.
+    float drawEngineLogo(const std::string& engine, float height);
+    void drawLogoRow(int index, float label);  // the engine card's row
+    void setEngineLogo(int index, const std::string& picture);
+    void removeEngineLogo(int index);
+    void forgetLogoFile(const std::string& file);  // its texture freed, the file removed when no engine has it
+    std::map<std::string, LogoTexture> logo_textures_;
+    std::vector<ImTextureID> stale_textures_;  // freed at the start of the next frame: this one may draw them
+    std::string logo_error_;      // the last choice of a logo that failed
+    std::string logo_error_for_;  // the engine whose card shows it
+    int logos_version_     = 0;   // changed with each logo set or removed
+    int web_logos_version_ = -1;  // the version the web page's logos were made from
 };
 
 }  // namespace fcg

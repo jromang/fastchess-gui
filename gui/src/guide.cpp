@@ -30,6 +30,8 @@ const char* anchor(Section section) {
             return "broadcast";
         case Section::Board:
             return "board";
+        case Section::Appearance:
+            return "appearance";
         case Section::Count:
             break;
     }

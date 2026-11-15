@@ -21,6 +21,7 @@ enum class Section {
     Ratings,        // Ratings
     Broadcast,      // Broadcast
     Board,          // Board
+    Appearance,     // Appearance: board colours, pieces, move sounds, engine logos
     Count
 };
 

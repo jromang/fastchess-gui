@@ -94,6 +94,9 @@ struct EngineEntry {
     // Kept in the library, but out of the engine pickers and of the checks of the whole library. A tournament that
     // has it already plays it as before.
     bool inactive = false;
+    // Its logo: a file name in the profile's logos folder (Storage::logosDir), a copy of the picture chosen, so that
+    // the original can move and the profile be moved whole. Saved only when set.
+    std::string logo;
 
     // Last health check: -1 never, 0 failed, 1 passed.
     int check_ok = -1;
@@ -154,6 +157,7 @@ void to_json(BasicJsonType& nlohmann_json_j, const EngineEntry& nlohmann_json_t)
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_ENGINE_ENTRY_FIELDS))
     if (nlohmann_json_t.start_timeout > 0) nlohmann_json_j["start_timeout"] = nlohmann_json_t.start_timeout;
     if (!nlohmann_json_t.aliases.empty()) nlohmann_json_j["aliases"] = nlohmann_json_t.aliases;
+    if (!nlohmann_json_t.logo.empty()) nlohmann_json_j["logo"] = nlohmann_json_t.logo;
     if (nlohmann_json_t.read_from.size > 0) nlohmann_json_j["read_from"] = nlohmann_json_t.read_from;
     if (nlohmann_json_t.changes) nlohmann_json_j["changes"] = *nlohmann_json_t.changes;
 }
@@ -164,6 +168,7 @@ void from_json(const BasicJsonType& nlohmann_json_j, EngineEntry& nlohmann_json_
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_ENGINE_ENTRY_FIELDS))
     NLOHMANN_JSON_FROM_WITH_DEFAULT(start_timeout)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(aliases)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(logo)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(read_from)
     if (const auto it = nlohmann_json_j.find("changes"); it != nlohmann_json_j.end() && it->is_object())
         nlohmann_json_t.changes = it->template get<ProgramChanges>();

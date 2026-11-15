@@ -152,6 +152,9 @@ msgstr "FEN, PGN или список ходов (e4 e5 Nf3 или e2e4 e7e5) и�
 msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
 msgstr "Книга PGN играет ходы своих партий так часто, как они в них встречаются; «вся» — это их первые {} полуходов."
 
+msgid "A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live, on the big screen and on the broadcast web page. A copy is kept in the profile's folder logos: the picture chosen can be moved or deleted."
+msgstr "Изображение PNG, JPEG или SVG размером не более 2 МБ, показываемое рядом с именем движка в разделе «Онлайн», на большом экране и на веб-странице трансляции. Копия хранится в папке logos профиля: выбранное изображение можно переместить или удалить."
+
 msgid "A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves weighing less than a tenth of the best one; the positions reached are the openings."
 msgstr "Книга Polyglot просматривается от начальной позиции до этой глубины (-1 = {}), без ходов, вес которых меньше десятой доли веса лучшего; полученные позиции и есть дебюты."
 
@@ -172,6 +175,9 @@ msgstr "Команда для движка"
 
 msgid "A file of your choice"
 msgstr "Файл на ваш выбор"
+
+msgid "A folder of 12 SVG pictures named wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg and bK.svg … bP.svg: the white and black king, queen, rook, bishop, knight and pawn."
+msgstr "Папка с 12 изображениями SVG с именами wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg и bK.svg … bP.svg: белые и чёрные король, ферзь, ладья, слон, конь и пешка."
 
 msgid "A game has no port: {}"
 msgstr "У партии нет порта: {}"
@@ -253,6 +259,12 @@ msgstr "Вторая партия со сменой цвета"
 
 msgid "A separate engine"
 msgstr "Отдельный движок"
+
+msgid "A short knock for each move of the game followed, in Live and on the big screen, a heavier one for a capture; not for every game of the mosaic."
+msgstr "Короткий стук на каждый ход отслеживаемой партии, в разделе «Онлайн» и на большом экране, более тяжёлый при взятии; не для каждой партии мозаики."
+
+msgid "A sound for each move"
+msgstr "Звук на каждый ход"
 
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
 msgstr "Таблица, которую GitHub и форумы показывают как таблицу, с тем же заголовком, что и HTML-страница."
@@ -346,6 +358,9 @@ msgstr "Присуждения"
 
 msgid "Affinity ignored: an engine uses %d threads."
 msgstr "Привязка к CPU не применяется: движок использует несколько потоков (%d)."
+
+msgid "After the folder's files were changed."
+msgstr "После изменения файлов папки."
 
 msgid "After the running match."
 msgstr "После текущего матча."
@@ -448,6 +463,12 @@ msgstr "Любой PGN-файл: его партии перечислены и �
 
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "Всё, что стоит о нём помнить; поиск движков находит этот текст."
+
+msgid "Appearance"
+msgstr "Внешний вид"
+
+msgid "Appearance: board colours, pieces, move sounds"
+msgstr "Внешний вид: цвета доски, фигуры, звуки ходов"
 
 msgid "Applies at the next launch."
 msgstr "Вступит в силу при следующем запуске."
@@ -584,11 +605,20 @@ msgstr "Чёрные не отвечают"
 msgid "Black's pieces on the same files as White's: 18 starting positions, added to the library."
 msgstr "Чёрные фигуры на тех же вертикалях, что и белые: 18 начальных позиций, добавленных в библиотеку."
 
+msgid "Blue"
+msgstr "Синяя"
+
+msgid "Blue grey"
+msgstr "Серо-голубая"
+
 msgid "Blunder"
 msgstr "Грубая ошибка"
 
 msgid "Board"
 msgstr "Доска"
+
+msgid "Board colours: {}"
+msgstr "Цвета доски: {}"
 
 msgid "Board position"
 msgstr "Позиция доски"
@@ -617,6 +647,9 @@ msgstr "Сетка"
 msgid "Broadcast"
 msgstr "Трансляция"
 
+msgid "Brown"
+msgstr "Коричневая"
+
 msgid "Build a Polyglot book"
 msgstr "Построить книгу Polyglot"
 
@@ -634,6 +667,9 @@ msgstr "По очкам"
 
 msgid "By time control"
 msgstr "По контролю времени"
+
+msgid "By {}, under the {} license."
+msgstr "Автор: {}, лицензия {}."
 
 msgid "By {}, {}. Losses of 10, 20 and 30 % of the winning chances are an inaccuracy (?!), a mistake (?) and a blunder (??)."
 msgstr "Движок {}, {}. Потеря 10, 20 и 30 % шансов на победу — неточность (?!), ошибка (?) и грубая ошибка (??)."
@@ -697,6 +733,9 @@ msgstr "Не удаётся запустить {}: {}"
 
 msgid "Cannot write {}"
 msgstr "Не удалось записать {}"
+
+msgid "Cannot write {}."
+msgstr "Не удаётся записать {}."
 
 msgid "Cannot write {}: {}"
 msgstr "Не удаётся записать {}: {}"
@@ -787,6 +826,9 @@ msgstr "Сначала выберите файл PGN."
 
 msgid "Choose a book in the list."
 msgstr "Выберите книгу в списке."
+
+msgid "Choose a logo for {}…"
+msgstr "Выбрать логотип для {}…"
 
 msgid "Choose an EPD file whose positions have their best move (bm), the moves to avoid (am), or STS points (c0)."
 msgstr "Выберите файл EPD, позиции которого содержат лучший ход (bm), ходы, которых следует избегать (am), или очки STS (c0)."
@@ -953,6 +995,9 @@ msgstr "Перекрёстная таблица"
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr "Ctrl + колесо мыши, Ctrl + и Ctrl -, Ctrl 0"
 
+msgid "Custom"
+msgstr "Своя"
+
 msgid "Cut short, by a download that did not end for example. Engines leave such a file out, and some stop at once when they meet it."
 msgstr "Обрезан, например незавершённой загрузкой. Движки пропускают такой файл, а некоторые сразу завершаются, встретив его."
 
@@ -967,6 +1012,12 @@ msgstr "Циклы"
 
 msgid "Dark"
 msgstr "Тёмная"
+
+msgid "Dark squares"
+msgstr "Тёмные поля"
+
+msgid "Dark theme"
+msgstr "Тёмная тема"
 
 msgid "Date"
 msgstr "Дата"
@@ -1544,6 +1595,12 @@ msgstr "Укажите хост сервера."
 msgid "Give the tester's name and the event."
 msgstr "Укажите имя тестера и соревнование."
 
+msgid "Green"
+msgstr "Зелёная"
+
+msgid "Grey"
+msgstr "Серая"
+
 msgid "Group"
 msgstr "Группа"
 
@@ -1688,11 +1745,23 @@ msgstr "Прервано: {} не удалось запустить: {}"
 msgid "Interrupted: {} crashed or stopped responding (game {})"
 msgstr "Прервано: {} вылетел или перестал отвечать (партия {})"
 
+msgid "It cannot be read: {}."
+msgstr "Его не удаётся прочитать: {}."
+
 msgid "It cannot play for an engine: {}"
 msgstr "Она не может играть за движок: {}"
 
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "Он продолжится ровно с того места, где остановился: ни одна партия не потеряется и не будет сыграна дважды."
+
+msgid "It is not a PNG or JPEG picture the program can read."
+msgstr "Это не изображение PNG или JPEG, которое программа может прочитать."
+
+msgid "It is not an SVG picture the program can draw."
+msgstr "Это не изображение SVG, которое программа может нарисовать."
+
+msgid "It is {}×{} pixels: at most {} each way."
+msgstr "Его размер {}×{} пикселей: не более {} по каждой стороне."
 
 msgid "It needs the web page served."
 msgstr "Для этого веб-страница должна обслуживаться."
@@ -1799,6 +1868,9 @@ msgstr "На выбывание"
 msgid "Knockout, {} engines"
 msgstr "На выбывание, движков: {}"
 
+msgid "Laid over the two squares of the last move: its transparency lets the square's colour through."
+msgstr "Накладывается на два поля последнего хода: его прозрачность пропускает цвет поля."
+
 msgid "Language"
 msgstr "Язык"
 
@@ -1810,6 +1882,9 @@ msgstr "За последние 24 часа:"
 
 msgid "Last finished"
 msgstr "Последние завершённые"
+
+msgid "Last move"
+msgstr "Последний ход"
 
 msgid "Latest results"
 msgstr "Последние результаты"
@@ -1850,6 +1925,12 @@ msgstr "Движок библиотеки"
 msgid "Light"
 msgstr "Светлая"
 
+msgid "Light squares"
+msgstr "Светлые поля"
+
+msgid "Light theme"
+msgstr "Светлая тема"
+
 msgid "Like cutechess' -pgnout: the games of every tournament go on after those already in the file, which is never overwritten, in the order of the schedule: the two games of an opening side by side. Empty: none."
 msgstr "Как -pgnout в cutechess: партии каждого турнира дописываются после уже имеющихся в файле, который никогда не перезаписывается, в порядке расписания: две партии одного дебюта рядом. Пусто: не дописывать."
 
@@ -1879,6 +1960,9 @@ msgstr "Журнал"
 
 msgid "Logistic Elo, with its 95 % interval."
 msgstr "Elo по логистической шкале, с интервалом 95 %."
+
+msgid "Logo"
+msgstr "Логотип"
 
 msgid "Loss when an engine reports a score ≤ -threshold for N consecutive moves."
 msgstr "Поражение, если у движка оценка ≤ -порог N ходов подряд."
@@ -1973,6 +2057,9 @@ msgstr "Ход №"
 msgid "Move down"
 msgstr "Вниз"
 
+msgid "Move sounds"
+msgstr "Звуки ходов"
+
 msgid "Move to the top"
 msgstr "В начало"
 
@@ -2054,6 +2141,9 @@ msgstr "Движков пока нет. Нажмите «Добавить»."
 msgid "No engine yet: double-click engines of the library, or drag them here."
 msgstr "Пока нет движков: дважды щёлкните движки библиотеки или перетащите их сюда."
 
+msgid "No folder of pieces is chosen."
+msgstr "Папка с фигурами не выбрана."
+
 msgid "No game finished yet"
 msgstr "Пока ни одна партия не завершена"
 
@@ -2108,6 +2198,12 @@ msgstr "С этими параметрами не остаётся ни одно
 msgid "No move of {} is played by {} games or more: lower the minimum."
 msgstr "Ни один ход из {} не сыгран в {} или более партиях: понизьте минимум."
 
+msgid "No move sounds: no sound device ({})."
+msgstr "Звуков ходов не будет: нет звукового устройства ({})."
+
+msgid "No move sounds: the sound could not be started ({})."
+msgstr "Звуков ходов не будет: не удалось запустить звук ({})."
+
 msgid "No new engine in the folder."
 msgstr "В папке нет новых движков."
 
@@ -2140,6 +2236,9 @@ msgstr "Результатов пока нет."
 
 msgid "No round yet."
 msgstr "Туров пока нет."
+
+msgid "No sound device could be opened: the log says why."
+msgstr "Не удалось открыть звуковое устройство: причина в журнале."
 
 msgid "No tablebase hits in this game."
 msgstr "В этой партии не было обращений к таблицам эндшпиля."
@@ -2197,6 +2296,9 @@ msgstr "Не проверен"
 
 msgid "Not checked yet."
 msgstr "Ещё не проверен."
+
+msgid "Not enough memory to draw it."
+msgstr "Недостаточно памяти, чтобы его нарисовать."
 
 msgid "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the setup."
 msgstr "Нет в PGN этой партии: её турнир игрался с выключенным «{}» в параметрах PGN настройки."
@@ -2474,8 +2576,20 @@ msgstr "Возможно, {}?"
 msgid "Physical cores − 1 ({} physical cores on this machine): with a clock, two engines on the same core would slow each other down."
 msgstr "Физические ядра − 1 ({} физических ядер на этом компьютере): с часами два движка на одном ядре замедляли бы друг друга."
 
+msgid "Pictures (PNG, JPEG, SVG)"
+msgstr "Изображения (PNG, JPEG, SVG)"
+
+msgid "Pieces"
+msgstr "Фигуры"
+
 msgid "Pieces on the board, kings included."
 msgstr "Фигуры на доске, включая королей."
+
+msgid "Pieces: your own folder…"
+msgstr "Фигуры: ваша папка…"
+
+msgid "Pieces: {}"
+msgstr "Фигуры: {}"
 
 msgid "Pins every game to its own processor, shared by its two engines since they never think at the same time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to a node count."
 msgstr "Закрепляет каждую партию за своим процессором, общим для обоих её движков, поскольку они никогда не думают одновременно: 2 партии загружают 2 ядра, а остальные простаивают. Полезно при игре с часами, бесполезно при фиксированном числе узлов."
@@ -2671,6 +2785,9 @@ msgstr "Рейтинги"
 
 msgid "Reachable from the local network; open the port in your router to share it further."
 msgstr "Доступно из локальной сети; откройте порт на роутере, чтобы открыть доступ извне."
+
+msgid "Read again"
+msgstr "Перечитать"
 
 msgid "Read it again"
 msgstr "Перечитать"
@@ -3374,6 +3491,12 @@ msgstr "Графики появятся с первыми результатам
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "Проверка {} прервана для запуска: она будет повторена позже."
 
+msgid "The colours of the boards while the theme is dark."
+msgstr "Цвета досок при тёмной теме."
+
+msgid "The colours of the boards while the theme is light."
+msgstr "Цвета досок при светлой теме."
+
 msgid "The console of {} is open."
 msgstr "Консоль {} открыта."
 
@@ -3446,6 +3569,9 @@ msgstr "У первого участника, {}, нет опорного рей
 msgid "The folder {} is not there any more."
 msgstr "Папки {} больше нет."
 
+msgid "The folder {} is not there."
+msgstr "Папки {} нет."
+
 msgid "The game as it was, without the moves played over it."
 msgstr "Партия, какой она была, без сыгранных поверх ходов."
 
@@ -3506,6 +3632,12 @@ msgstr "Имя в библиотеке, которое ему дадут сле�
 msgid "The list order is the seeding."
 msgstr "Порядок списка — это посев."
 
+msgid "The logo of {} cannot be shown: {}"
+msgstr "Логотип {} не удаётся показать: {}"
+
+msgid "The logo was not changed: {}"
+msgstr "Логотип не изменён: {}"
+
 msgid "The machine is full: the tournament's games and the analysis use {} of its {} threads, and this game needs {}. It would slow them down, and its own engines."
 msgstr "Машина загружена: партии турнира и анализ используют {} из {} её потоков, а этой партии нужно {}. Она замедлила бы их и свои собственные движки."
 
@@ -3544,6 +3676,9 @@ msgstr "Выделенные участники (Delete)."
 
 msgid "The paused tournament goes on, and the queue starts its next tournament when the running one ends."
 msgstr "Приостановленный турнир продолжается, а очередь запустит следующий турнир, когда текущий закончится."
+
+msgid "The picture could not be made a texture."
+msgstr "Не удалось превратить изображение в текстуру."
 
 msgid "The place in the list, by rating."
 msgstr "Место в списке по рейтингу."
@@ -3824,6 +3959,12 @@ msgstr "Новая попытка через {}."
 msgid "Trust the new key"
 msgstr "Доверять новому ключу"
 
+msgid "Try a capture"
+msgstr "Проверить взятие"
+
+msgid "Try a move"
+msgstr "Проверить ход"
+
 msgid "Try again"
 msgstr "Повторить"
 
@@ -3853,6 +3994,12 @@ msgstr "Туннель: {}"
 
 msgid "Tunnel: {}; connecting again in {} s"
 msgstr "Туннель: {}; повторное подключение через {} с"
+
+msgid "Turn the move sounds off"
+msgstr "Выключить звуки ходов"
+
+msgid "Turn the move sounds on"
+msgstr "Включить звуки ходов"
 
 msgid "Two different engines chosen"
 msgstr "Выбраны два разных движка"
@@ -3937,6 +4084,9 @@ msgstr "Вышла версия {}."
 
 msgid "Void this game (no replay)"
 msgstr "Аннулировать эту партию (без переигровки)"
+
+msgid "Volume %d %%"
+msgstr "Громкость %d %%"
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "В {:.0f} · Н {:.0f} · П {:.0f} %"
@@ -4117,6 +4267,12 @@ msgstr "Записывается, когда «{}» включён в парам
 
 msgid "Wrong PVs"
 msgstr "Неверные PV"
+
+msgid "Your own folder"
+msgstr "Ваша папка"
+
+msgid "Your own folder…"
+msgstr "Ваша папка…"
 
 msgid "Your value"
 msgstr "Ваше значение"
@@ -4592,6 +4748,9 @@ msgstr "{} = {}: недопустимое для него значение"
 msgid "{} MB"
 msgstr "{} МБ"
 
+msgid "{} The default pieces are drawn meanwhile."
+msgstr "{} Пока рисуются фигуры по умолчанию."
+
 msgid "{} against each opponent"
 msgstr "{} против каждого соперника"
 
@@ -4612,6 +4771,9 @@ msgstr[2] "{} грубых ошибок"
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} не читается, поэтому ранее доверенные ключи хостов неизвестны: на {} ничего не отправлено. Исправьте файл или удалите его, чтобы снова принять ключ сервера."
+
+msgid "{} cannot be read."
+msgstr "{} не удаётся прочитать."
 
 msgid "{} cannot start"
 msgstr "{} не запускается"
@@ -4859,8 +5021,26 @@ msgstr[0] "{} неточность"
 msgstr[1] "{} неточности"
 msgstr[2] "{} неточностей"
 
+msgid "{} is larger than 1 MB: is it a piece?"
+msgstr "{} больше 1 МБ: это точно фигура?"
+
+msgid "{} is larger than 2 MB."
+msgstr "{} больше 2 МБ."
+
+msgid "{} is missing: the folder needs the 12 files wK.svg, wQ.svg … bN.svg, bP.svg."
+msgstr "Нет файла {}: в папке должны быть 12 файлов wK.svg, wQ.svg … bN.svg, bP.svg."
+
+msgid "{} is not a file of the logos folder."
+msgstr "{} не является файлом папки logos."
+
 msgid "{} is not a legal move from the initial position."
 msgstr "{} — недопустимый ход из начальной позиции."
+
+msgid "{} is not an SVG picture the program can draw."
+msgstr "{} не является изображением SVG, которое программа может нарисовать."
+
+msgid "{} is not there."
+msgstr "{} нет на месте."
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} открыт в другой программе: здесь он только показан в том виде, в каком был при открытии."
@@ -5242,6 +5422,9 @@ msgstr "{}-фигурные таблицы Syzygy для каждого движ
 
 msgid "{}-man Syzygy for {} of {} engines"
 msgstr "{}-фигурные таблицы Syzygy для {} из {} движков"
+
+msgid "{}: a logo is a PNG, JPEG or SVG picture."
+msgstr "{}: логотип должен быть изображением PNG, JPEG или SVG."
 
 msgid "{}: cancelled, nothing written."
 msgstr "{}: отменено, ничего не записано."
