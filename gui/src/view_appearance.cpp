@@ -233,6 +233,16 @@ void App::drawAppearanceSettings(float label) {
         }
     }
     ImGui::EndGroup();
+
+    // The buttons under the boards that show a game.
+    ImGui::Spacing();
+    ui::label(TR("Boards"), label);
+    if (ImGui::Checkbox(TR("Navigation buttons under the boards"), &setup_.nav_buttons)) saveSetupSoon();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("Start position, previous move, next move, last move and Flip, under the boards "
+                                   "that show a game: Games, Live, the detached boards and the Board page. Without "
+                                   "them, the keys do the same: the left and right arrows, Home, End, and F to flip."));
+    }
     ImGui::EndGroup();
 
     // The board of the theme chosen above, as every board will show it.

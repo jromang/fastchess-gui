@@ -1349,9 +1349,6 @@ msgstr "Каждый тур — две партии с переменой цве
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
 msgstr "В каждом туре встречаются движки с близкими результатами, никогда дважды одни и те же; для больших составов. Порядок списка задаёт посев."
 
-msgid "Each tournament: the cores its games use, of those it may use. The budget is set in Settings; the weights on each card decide who gets more."
-msgstr "Каждый турнир: ядра, которые используют его партии, из тех, что ему разрешены. Бюджет задаётся в настройках; веса на карточках решают, кому достаётся больше."
-
 msgid "Edit in place"
 msgstr "Изменить здесь"
 
@@ -2762,8 +2759,8 @@ msgstr "Открыть файл…"
 msgid "Open a folder…"
 msgstr "Открыть папку…"
 
-msgid "Open it for its end and its leader"
-msgstr "Откройте его, чтобы увидеть окончание и лидера"
+msgid "Open it for its end"
+msgstr "Откройте его, чтобы увидеть окончание"
 
 msgid "Open the engine"
 msgstr "Открыть движок"
@@ -3917,6 +3914,12 @@ msgstr "Текст"
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Счётчик 50 ходов, материал и оставшиеся фигуры под каждой доской мозаики."
 
+msgid "The Board page: {} core for its analysis and its games"
+msgid_plural "The Board page: {} cores for its analysis and its games"
+msgstr[0] "Страница «Доска»: {} ядро для анализа и партий"
+msgstr[1] "Страница «Доска»: {} ядра для анализа и партий"
+msgstr[2] "Страница «Доска»: {} ядер для анализа и партий"
+
 msgid "The Elo difference {}'s score stands for, with its 95 % interval, counted on the pairs of games as in a match (pentanomial); LOS: the likelihood that it is the stronger team. +{} ={} −{}."
 msgstr "Разница Elo, которой соответствует результат команды {}, с интервалом 95 %, по парам партий, как в матче (пентаномиально); LOS: вероятность того, что это более сильная команда. +{} ={} −{}."
 
@@ -4484,6 +4487,9 @@ msgstr "Процесса турнира больше нет."
 msgid "The tournament's process speaks another version of the program ({}): restart the window."
 msgstr "Процесс турнира работает с другой версией программы ({}): перезапустите окно."
 
+msgid "The tournaments playing at once share the cores of the budget (Settings) by their weights, set on each card: one game's worth each first, then by weight, none above its own concurrency."
+msgstr "Одновременно идущие турниры делят ядра бюджета (Настройки) по своим весам, заданным на каждой карточке: сначала каждому по одной партии, затем по весу, никому сверх его собственного параллелизма."
+
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "Дисперсия партии при подсчёте по парам, делённая на дисперсию отдельных партий: если она меньше 1, парам нужно во столько же раз меньше партий для той же точности."
 
@@ -4573,9 +4579,6 @@ msgstr "Этот турнир показан в другом окне."
 
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr "Этот турнир запущен без «Перезапускать вылетевший движок» (настройка, PGN и прочее): завершение партии останавливает движок, чей ход, а это остановило бы турнир. Задайте результат, когда партия закончится, на вкладке «Партии»."
-
-msgid "This window (quick test, analysis)"
-msgstr "Это окно (быстрый тест, анализ)"
 
 msgid "Those with a problem"
 msgstr "Проблемные"
@@ -5717,12 +5720,6 @@ msgstr[0] "{} ядро занято"
 msgstr[1] "{} ядра занято"
 msgstr[2] "{} ядер занято"
 
-msgid "{} core shared:"
-msgid_plural "{} cores shared:"
-msgstr[0] "{} ядро общее:"
-msgstr[1] "{} ядра общие:"
-msgstr[2] "{} ядер общие:"
-
 msgid "{} could not be read: kept as {}"
 msgstr "{} не удалось прочитать: сохранено как {}"
 
@@ -6394,6 +6391,12 @@ msgid_plural "{} selected"
 msgstr[0] "Выбран {}"
 msgstr[1] "Выбрано {}"
 msgstr[2] "Выбрано {}"
+
+msgid "{} shared by the tournaments"
+msgid_plural "{} shared by the tournaments"
+msgstr[0] "{} общее на все турниры"
+msgstr[1] "{} общих на все турниры"
+msgstr[2] "{} общих на все турниры"
 
 msgid "{} shown"
 msgstr "показано: {}"

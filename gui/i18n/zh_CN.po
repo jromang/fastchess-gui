@@ -1337,9 +1337,6 @@ msgstr "每轮是与得分相近的引擎交换颜色下的两局对局。"
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
 msgstr "每轮让得分相近的引擎配对，同一对手不会相遇两次；适用于参赛者较多的情况。列表顺序即为种子排序。"
 
-msgid "Each tournament: the cores its games use, of those it may use. The budget is set in Settings; the weights on each card decide who gets more."
-msgstr "每个锦标赛：其对局正在使用的核心数 / 允许使用的核心数。预算在设置中设定；每张卡片上的权重决定谁得到更多。"
-
 msgid "Edit in place"
 msgstr "就地编辑"
 
@@ -2744,8 +2741,8 @@ msgstr "打开文件…"
 msgid "Open a folder…"
 msgstr "打开文件夹…"
 
-msgid "Open it for its end and its leader"
-msgstr "打开以查看其结束时间和领先者"
+msgid "Open it for its end"
+msgstr "打开它以查看结束时间"
 
 msgid "Open the engine"
 msgstr "打开引擎"
@@ -3875,6 +3872,10 @@ msgstr "文本"
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "50 步计数、子力以及剩余棋子，显示在平铺视图的每个棋盘下方。"
 
+msgid "The Board page: {} core for its analysis and its games"
+msgid_plural "The Board page: {} cores for its analysis and its games"
+msgstr[0] "棋盘页面：{} 个核心用于其分析和对局"
+
 msgid "The Elo difference {}'s score stands for, with its 95 % interval, counted on the pairs of games as in a match (pentanomial); LOS: the likelihood that it is the stronger team. +{} ={} −{}."
 msgstr "{} 的得分所对应的 Elo 差及其 95 % 区间，按对局对计算，与对抗赛相同（五项分布）；LOS：它是较强一队的概率。+{} ={} −{}。"
 
@@ -4436,6 +4437,9 @@ msgstr "锦标赛进程已不存在。"
 msgid "The tournament's process speaks another version of the program ({}): restart the window."
 msgstr "锦标赛进程使用的是另一版本的程序（{}）：请重新启动窗口。"
 
+msgid "The tournaments playing at once share the cores of the budget (Settings) by their weights, set on each card: one game's worth each first, then by weight, none above its own concurrency."
+msgstr "同时进行的锦标赛按各自的权重（在每张卡片上设置）分享预算（设置）中的核心：先每个一局，再按权重分配，均不超过其自身的并发数。"
+
 msgid "The variance of a game when the games are counted in pairs, over the variance of single games: below 1, the pairs need that much fewer games for the same precision."
 msgstr "按对局对计算时单局的方差与单独计算时单局方差之比：低于 1 时，成对对局只需相应更少的对局即可达到同样精度。"
 
@@ -4523,9 +4527,6 @@ msgstr "该锦标赛正显示在另一个窗口中。"
 
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr "此赛事启动时未开启“重启崩溃的引擎”（设置，PGN 及其他）：结束对局会停止轮到走子的引擎，这会使赛事停止。请在对局结束后，在“对局”标签页设定结果。"
-
-msgid "This window (quick test, analysis)"
-msgstr "本窗口（快速测试、分析）"
 
 msgid "Those with a problem"
 msgstr "有问题的开局"
@@ -5641,10 +5642,6 @@ msgid "{} core in use"
 msgid_plural "{} cores in use"
 msgstr[0] "{} 个核心使用中"
 
-msgid "{} core shared:"
-msgid_plural "{} cores shared:"
-msgstr[0] "共享 {} 个核心："
-
 msgid "{} could not be read: kept as {}"
 msgstr "无法读取 {}：已保存为 {}"
 
@@ -6194,6 +6191,10 @@ msgstr[0] "{} 名种子"
 msgid "{} selected"
 msgid_plural "{} selected"
 msgstr[0] "已选 {} 个"
+
+msgid "{} shared by the tournaments"
+msgid_plural "{} shared by the tournaments"
+msgstr[0] "{} 个由各锦标赛共享"
 
 msgid "{} shown"
 msgstr "显示 {} 个"

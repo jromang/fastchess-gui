@@ -756,14 +756,6 @@ void App::drawSettings() {
     ImGui::SameLine();
     ImGui::TextDisabled("%s", TR("Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"));
 
-    ui::label(TR("Boards"), label);
-    changed |= ImGui::Checkbox(TR("Navigation buttons under the boards"), &setup_.nav_buttons);
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", TR("Start position, previous move, next move, last move and Flip, under the boards "
-                                   "that show a game: Games, Live, the detached boards and the Board page. Without "
-                                   "them, the keys do the same: the left and right arrows, Home, End, and F to flip."));
-    }
-
     ImGui::Spacing();
     changed |= ImGui::Checkbox(TR("Notify when a match ends"), &setup_.notify);
     changed |= ImGui::Checkbox(TR("Resume at launch the tournament that was running"), &setup_.resume_at_launch);

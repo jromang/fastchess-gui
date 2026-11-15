@@ -11,6 +11,8 @@
 
 #include <implot.h>
 
+#include <tour/budget.hpp>
+
 #include "app.hpp"
 #include "console.hpp"
 #include "home.hpp"
@@ -203,13 +205,17 @@ std::vector<home::ResourceBar> App::resourceBars() {
     for (std::size_t i = 0; i < runs_.size(); ++i) {
         const auto& r = *runs_[i].run;
         const auto* t = r.tournament();
-        if (!r.running() || !t) continue;
+        // A tournament on a remote machine takes nothing of this computer's.
+        if (!r.running() || !t || !runs_[i].machine_id.empty()) continue;
         const auto& name  = t->spec().name;
         const ImU32 color = runs_.size() > 1
                                 ? ImGui::ColorConvertFloat4ToU32(ImPlot::GetColormapColor(static_cast<int>(i)))
                                 : ui::ACCENT;
         const auto use    = r.inFlight();
-        const int threads = r.remote() ? use.threads : (i == shown_run_ ? used : 0);
+        const int threads = r.remote() ? use.threads
+                            : i == shown_run_
+                                ? used
+                                : r.runningGames() * tour::largestGame(t->spec()).threads;
         if (threads > 0) {
             cores.shares.push_back({fmt::format("{} · {}", name, threads),
                                     trn("{}: {} core in use", "{}: {} cores in use", threads, name, threads),
@@ -228,10 +234,25 @@ std::vector<home::ResourceBar> App::resourceBars() {
             gpus_used += use.gpus;
         }
     }
-    // In use: every tournament's games.
+    // The window's own engines: the Board page's analysis and games.
+    if (const int board = analysisThreads(); board > 0) {
+        cores.shares.push_back({fmt::format("{} · {}", TR("Board"), board),
+                                trn("The Board page: {} core for its analysis and its games",
+                                    "The Board page: {} cores for its analysis and its games", board, board),
+                                double(board), ui::WARN});
+    }
+    // In use: every tournament's games, and the window's engines.
     double in_use = 0;
     for (const auto& share : cores.shares) in_use += share.amount;
-    cores.caption                       = trf("{} of {} in use", static_cast<int>(in_use), total);
+    cores.caption = trf("{} of {} in use", static_cast<int>(in_use), total);
+    // Several tournaments share the budget of Settings by their weights, set on each card.
+    if (runsPlaying() > 1) {
+        cores.caption += " · " + trn("{} shared by the tournaments", "{} shared by the tournaments", budget.threads,
+                                     budget.threads);
+        cores.tooltip += "\n" + std::string(TR("The tournaments playing at once share the cores of the budget "
+                                                "(Settings) by their weights, set on each card: one game's worth "
+                                                "each first, then by weight, none above its own concurrency."));
+    }
     cores.free                          = trf("{} free", std::max(0, total - static_cast<int>(in_use)));
     std::vector<home::ResourceBar> bars = {cores};
     if (budget.memory_mb > 0) {
@@ -403,7 +424,42 @@ home::RunCard App::runCardOf(std::size_t index) {
                    : r.stoppingWhenIdle() ? TR("Stopping after the running games")
                    : r.paused()           ? TR("Paused")
                                           : TR("Running");
-    c.end        = TR("Open it for its end and its leader");
+    c.end        = TR("Open it for its end");
+
+    // Who leads, from its copy of the journal, computed again when games came.
+    if (!t) return c;
+    const auto results = t->results();
+    auto& cache        = other_leaders_[c.id];
+    if (cache.games != results.size()) {
+        cache.games = results.size();
+        cache.leader.clear();
+        cache.detail.clear();
+        const auto& spec = t->spec();
+        if (c.played == 0) {
+            cache.leader = TR("No game finished yet");
+        } else if (spec.format == tour::Format::Match && spec.participants.size() == 2) {
+            double a = 0, b = 0;
+            for (const auto& g : results) {
+                if (g.voided) continue;
+                a += g.scoreOf(0);
+                b += g.scoreOf(1);
+            }
+            cache.leader = fmt::format("{} {} – {} {}", spec.participants[0].engine.name, home::halfPoints(a),
+                                       home::halfPoints(b), spec.participants[1].engine.name);
+        } else if (spec.format == tour::Format::RoundRobin || spec.format == tour::Format::Gauntlet ||
+                   spec.format == tour::Format::Swiss) {
+            const auto table = tour::computeTable(spec, results, std::nullopt, t->byes());
+            if (!table.rows.empty()) {
+                const auto& first = table.rows.front();
+                const bool rated  = first.rated && first.rating.error > 0 && first.rating.error < 300;
+                cache.leader = rated ? trf("Leader: {} {}", first.name, formatElo(first.rating.elo, first.rating.error))
+                                     : trf("Leader: {}", first.name);
+                cache.detail = trf("{} points of {} games", home::halfPoints(first.points), first.games);
+            }
+        }
+    }
+    c.leader = cache.leader;
+    c.detail = cache.detail;
     return c;
 }
 
@@ -425,7 +481,10 @@ void App::drawRunCards() {
     for (std::size_t i = 0; i < runs_.size(); ++i) {
         if (!runs_[i].run->running()) continue;
         cards.push_back(i == shown_run_ ? runCard() : runCardOf(i));
-        if (several && runs_[i].run->remote()) cards.back().weight = static_cast<int>(std::lround(runs_[i].weight));
+        if (several && runs_[i].run->remote()) {
+            cards.back().weight   = static_cast<int>(std::lround(runs_[i].weight));
+            cards.back().controls = [this, i] { drawRunControls(i); };
+        }
         // On a remote machine: which, and whether the window reaches it at the moment.
         if (!runs_[i].machine_id.empty()) {
             cards.back().format = trf("On {}", runs_[i].machine_name) + " · " + cards.back().format;
@@ -461,16 +520,6 @@ void App::drawRunCards() {
             }
             case home::CardAction::None:
                 break;
-        }
-    }
-    // Several tournaments share the machine: each one's weight, and what it may use of the cores.
-    if (several) {
-        drawCoreShare();
-        for (const auto run : of) {
-            if (!runs_[run].run->remote()) continue;
-            ImGui::PushID(static_cast<int>(run));
-            drawRunControls(run);
-            ImGui::PopID();
         }
     }
 }

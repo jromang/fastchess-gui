@@ -263,10 +263,53 @@ class BothListeners final : public tour::RecordListener {
     tour::RecordListener& second_;
 };
 
+// Hash tables larger than the memory installed cannot work; larger than the free memory, they swap.
+bool memoryFits(const tour::TournamentSpec& spec, const std::vector<EngineEntry>& engines) {
+    const auto memory = specMemory(spec, engines);
+    if (memory.aboveInstalled() || memory.aboveAvailable()) {
+        std::fprintf(stderr, "%s: %s\n", memory.aboveInstalled() ? "error" : "warning", memory.text().c_str());
+    }
+    return !memory.aboveInstalled();
+}
+
+// A new tournament in the profile's tournaments folder, from a setup, with the profile's engines: nullptr when its PGN
+// books cannot be prepared or its hash tables cannot fit (said on the standard error).
+std::unique_ptr<tour::TournamentState> createTournament(const MatchSetup& setup, const Storage& storage,
+                                                        const CpuTopology& topology) {
+    const auto engines = storage.loadEngines();
+    const auto dir =
+        storage.runsDir() / (setup.format == TournamentFormat::Match
+                                 ? makeRunDirName(setup.engine_a, setup.engine_b)
+                                 : makeTournamentDirName(setup.name.empty() ? defaultTournamentName(setup) : setup.name));
+    if (!preparePgnBooks(pgnBookNeeds(setup))) return nullptr;
+    const auto run = buildRun(setup, engines, topology, dir);
+    if (!memoryFits(run.spec, engines)) return nullptr;
+    return tour::TournamentState::create(dir, run.spec);
+}
+
 }  // namespace
 
 int runControlled(const std::string& target, const Storage& storage, const HeadlessBroadcast& broadcast,
                   const ControlOptions& control);
+
+std::optional<std::filesystem::path> tournamentFromSetup(const std::string& file, const Storage& storage,
+                                                         const CpuTopology& topology) {
+    try {
+        auto setup = readJson<MatchSetup>(file);
+        if (!setup) {
+            std::fprintf(stderr, "%s is neither a tournament folder nor a setup file\n", file.c_str());
+            return std::nullopt;
+        }
+        // A template of a portable profile names the files of the program's folder relative to it.
+        portable::resolve(*setup);
+        const auto state = createTournament(*setup, storage, topology);
+        if (!state) return std::nullopt;
+        return state->dir();
+    } catch (const std::exception& e) {
+        std::fprintf(stderr, "error: %s\n", e.what());
+        return std::nullopt;
+    }
+}
 
 int runHeadless(const std::string& target, const Storage& storage, const CpuTopology& topology,
                 const HeadlessBroadcast& broadcast, const ControlOptions& control) {
@@ -277,14 +320,6 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
     std::fflush(stdout);
     std::unique_ptr<tour::TournamentState> state;
     BroadcastSettings settings;
-    // Hash tables larger than the memory installed cannot work; larger than the free memory, they swap.
-    const auto memoryFits = [&](const tour::TournamentSpec& spec, const std::vector<EngineEntry>& engines) {
-        const auto memory = specMemory(spec, engines);
-        if (memory.aboveInstalled() || memory.aboveAvailable()) {
-            std::fprintf(stderr, "%s: %s\n", memory.aboveInstalled() ? "error" : "warning", memory.text().c_str());
-        }
-        return !memory.aboveInstalled();
-    };
     try {
         if (tour::TournamentState::isTournament(target)) {
             state = tour::TournamentState::open(target);
@@ -318,16 +353,8 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
             }
             settings.tunnel    = setup->broadcast_tunnel && (setup->tunnel_service == 0 || !setup->tunnel_host.empty());
             settings.tunnel_to = tunnelSettings(*setup, storage.root() / "known_hosts.json");
-            const auto engines = storage.loadEngines();
-            const auto dir =
-                storage.runsDir() /
-                (setup->format == TournamentFormat::Match
-                     ? makeRunDirName(setup->engine_a, setup->engine_b)
-                     : makeTournamentDirName(setup->name.empty() ? defaultTournamentName(*setup) : setup->name));
-            if (!preparePgnBooks(pgnBookNeeds(*setup))) return 2;
-            const auto run = buildRun(*setup, engines, topology, dir);
-            if (!memoryFits(run.spec, engines)) return 2;
-            state = tour::TournamentState::create(dir, run.spec);
+            state = createTournament(*setup, storage, topology);
+            if (!state) return 2;
         }
     } catch (const std::exception& e) {
         std::fprintf(stderr, "error: %s\n", e.what());

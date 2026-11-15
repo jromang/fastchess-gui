@@ -52,7 +52,7 @@ the window full screen, and back.
 Under every board that shows a game (the replay of the *Games* tab, the game in focus in *Live*, a detached board,
 the Board page), a row of small buttons goes to the start position, the previous move, the next move and the last
 one, and turns the board over; their tooltips give the keys, which do the same: ← → Home End, and F to flip. Those
-who prefer the keys hide the buttons with **Settings** > Boards > *Navigation buttons under the boards*, a right
+who prefer the keys hide the buttons with **Settings** > *Appearance* > *Navigation buttons under the boards*, a right
 click on them, or the command palette (*Hide the navigation buttons under the boards*, and *Show…* to bring them
 back). The mouse wheel over a move list scrolls the list, never the moves.
 
@@ -709,9 +709,10 @@ and the window, its engine checks, quick tests and test suites no longer wait fo
 The workspace has **a tab per open tournament**, above its header: a dot while it plays (a pause sign while paused),
 its status at the cursor, a cross to close one that does not play. The panels show the tab chosen; the command
 palette lists the others (*Show …*, *Pause*, *Resume*). A finished tournament opened from the list takes the tab of
-one only looked at. The home page has a card for each tournament playing, with *Open*, *Pause*, *Stop* and its
-**weight**, the cores its games use of those it may use, and what its next game waits for; under the cards, a bar
-shares out the cores between them. The *Log* shows the lines of one tournament, of the window, or all (each line of a
+one only looked at. The home page has a card for each tournament playing, with its progress, its leader, *Open* and
+*Pause*, and under them its **weight**, the cores its games use of those it may use, and what its next game waits
+for; the *Cores* bar at the top shows each tournament's part (and the Board page's), and how many cores the
+tournaments share. The *Log* shows the lines of one tournament, of the window, or all (each line of a
 tournament carries its name); a tournament's lines are also kept in `fastchess-gui.log` in its folder.
 
 **Sharing the machine**: the tournaments playing share a budget of cores, set in **Settings** (*Cores for the
@@ -1208,9 +1209,7 @@ fastchess-gui --version
   (*Export for a rating list…*), `ratings-players` (the *PGN players* window), `palette[=TEXT]` (the command palette, with TEXT typed in it),
   `game-menu=N` (the menu of game N in the *Games* tab, a result chosen), `end-menu=N` (*End with result* of the
   game of slot N, from 1), `big-screen[=N]` (the big screen, of the game of slot N), `live-back=N` (the game
-  followed in *Live*, stepped back N plies),
-
-  `engines-console` (the first engine's console), `board-analyse` (the Board page, analysed), `board=FILE` (a PGN,
+  followed in *Live*, stepped back N plies), `engines-console` (the first engine's console), `board-analyse` (the Board page, analysed), `board=FILE` (a PGN,
   FEN or EPD file on the Board page; `board-analyse=FILE` analysed, `board-review=FILE` its first game analysed move
   by move), `board-edit` (the position editor), `board-play` and `board-play-start` (a game between the first two
   engines, started), `machines` (the first remote machine's card in **Settings**; `machines-test` tested,

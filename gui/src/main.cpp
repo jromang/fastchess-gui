@@ -37,6 +37,7 @@
 #include <engine/uci_engine.hpp>
 #include <tour/book_adapter.hpp>
 #include <tour/pgn_book.hpp>
+#include <tour/state.hpp>
 
 #include "app.hpp"
 #include "child_process.hpp"
@@ -431,9 +432,23 @@ int main(int argc, char** argv) {
 
     // --run ... --detach: the same command again, out of this terminal's session, on its socket; this one returns.
     if (!args.run.empty() && args.control.detach) {
+        // The control channel takes a tournament folder: a setup file is made into one first, here.
+        const fcg::Storage storage(profileFolder(args, fastchess::engine::xboard_adapter));
+        std::string target = args.run;
+        if (!fcg::tour::TournamentState::isTournament(target)) {
+            useBookCache(storage);
+            const auto dir = fcg::tournamentFromSetup(target, storage, fcg::detectTopology());
+            if (!dir) return 2;
+            target = dir->string();
+        }
         std::vector<std::string> again;
         for (int i = 1; i < argc; ++i) {
-            if (std::string_view(argv[i]) != "--detach") again.push_back(argv[i]);
+            if (std::string_view(argv[i]) == "--detach") continue;
+            again.push_back(argv[i]);
+            if (std::string_view(argv[i]) == "--run" && i + 1 < argc) {
+                again.push_back(target);
+                ++i;
+            }
         }
         if (args.control.mode != fcg::ControlOptions::Mode::Socket) {
             again.push_back("--control");
@@ -447,10 +462,12 @@ int main(int argc, char** argv) {
         }
         child.closeInput();
         child.closeOutput();
+        // Marked as playing in the profile, as the window marks those it lets play on: it connects to it when it opens.
+        storage.setRunningMarker(fcg::RunningMarker{fs::absolute(target).lexically_normal().string()});
         std::printf(
             "%s plays in the background (process %lld). fastchess-gui --attach \"%s\" talks with it; the window "
             "shows it when it opens.\n",
-            args.run.c_str(), static_cast<long long>(child.pid()), args.run.c_str());
+            target.c_str(), static_cast<long long>(child.pid()), target.c_str());
         return 0;
     }
 
