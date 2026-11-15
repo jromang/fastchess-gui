@@ -243,6 +243,9 @@ msgstr "Un perfil incluido en el programa."
 msgid "A preset of this name: your profile takes its place."
 msgstr "Un perfil incluido tiene este nombre: el tuyo ocupa su lugar."
 
+msgid "A private key file, RSA or Ed25519 (~/.ssh/id_ed25519): its passphrase, if it has one, is asked once a session and never saved."
+msgstr "Un archivo de clave privada, RSA o Ed25519 (~/.ssh/id_ed25519): su frase de contraseña, si la tiene, se pide una vez por sesión y nunca se guarda."
+
 msgid "A profile of this name: it is replaced."
 msgstr "Un perfil tiene este nombre: se reemplaza."
 
@@ -275,6 +278,9 @@ msgstr "Un encuentro por equipos necesita un motor en cada equipo: pon uno en el
 
 msgid "A template is the whole setup: a profile for each section, and what no profile holds (the name, the participants, the concurrency, the PGN files, the broadcast). A section that played as its profile takes the profile's values of the day."
 msgstr "Una plantilla es la configuración entera: un perfil para cada sección y lo que ningún perfil contiene (el nombre, los participantes, la concurrencia, los archivos PGN, la retransmisión). Una sección que seguía su perfil toma los valores actuales del perfil."
+
+msgid "A test box, a server or a second PC with an SSH server (on Windows, its built-in OpenSSH Server): the window logs in with your SSH agent or a key file, finds out the machine, installs fastchess-gui there and copies the books and tablebases. Nothing secret is saved: the key's passphrase is asked once a session."
+msgstr "Una máquina de pruebas, un servidor o un segundo PC con servidor SSH (en Windows, su OpenSSH Server integrado): la ventana inicia sesión con tu agente SSH o un archivo de clave, averigua la máquina, instala allí fastchess-gui y copia los libros y las tablas de finales. No se guarda nada secreto: la frase de contraseña de la clave se pide una vez por sesión."
 
 msgid "A tournament is running: the analysis competes with its games ({} threads)."
 msgstr "Hay un torneo en curso: el análisis compite con sus partidas ({} hilos)."
@@ -315,11 +321,17 @@ msgstr "Añadir"
 msgid "Add a PGN file…"
 msgstr "Añadir un archivo PGN…"
 
+msgid "Add a machine"
+msgstr "Añadir una máquina"
+
 msgid "Add all shown"
 msgstr "Añadir todos los mostrados"
 
 msgid "Add an engine"
 msgstr "Añadir un motor"
+
+msgid "Add an engine…"
+msgstr "Añadir un motor…"
 
 msgid "Add engines in the Engines window."
 msgstr "Añade motores en la ventana Motores."
@@ -676,6 +688,12 @@ msgstr "Libros"
 msgid "Books (EPD, PGN, Polyglot)"
 msgstr "Libros (EPD, PGN, Polyglot)"
 
+msgid "Books and tablebases"
+msgstr "Libros y tablas de finales"
+
+msgid "Books folder"
+msgstr "Carpeta de libros"
+
 msgid "Books the program writes, added to the library."
 msgstr "Libros que escribe el programa, añadidos a la biblioteca."
 
@@ -690,6 +708,12 @@ msgstr "Retransmisión"
 
 msgid "Brown"
 msgstr "Marrón"
+
+msgid "Browse…"
+msgstr "Examinar…"
+
+msgid "Budget"
+msgstr "Presupuesto"
 
 msgid "Build a Polyglot book"
 msgstr "Construir un libro Polyglot"
@@ -823,11 +847,17 @@ msgstr "Enlace del chat"
 msgid "Check"
 msgstr "Comprobar"
 
+msgid "Check the engines"
+msgstr "Comprobar los motores"
+
 msgid "Check the mate PVs"
 msgstr "Comprobar las PV de mate"
 
 msgid "Check those not checked ({})"
 msgstr "Comprobar los no comprobados ({})"
+
+msgid "Check what the setup uses"
+msgstr "Comprobar lo que usa la configuración"
 
 msgid "Checked: it works."
 msgstr "Comprobado: funciona."
@@ -1017,6 +1047,12 @@ msgstr "Continuar"
 
 msgid "Continue with the changed programs"
 msgstr "Continuar con los programas modificados"
+
+msgid "Copies fastchess-gui {} to {} on the machine (resumed if the copy is cut), then checks it starts there."
+msgstr "Copia fastchess-gui {} a {} en la máquina (se reanuda si la copia se corta) y comprueba que arranca allí."
+
+msgid "Copies them to the machine's folders in the background, each one checked after; a copy cut short resumes where it stopped."
+msgstr "Los copia a las carpetas de la máquina en segundo plano, cada uno comprobado después; una copia cortada se reanuda donde se detuvo."
 
 msgid "Copy"
 msgstr "Copiar"
@@ -1342,6 +1378,9 @@ msgstr "Motor usado por el match en curso: no se puede modificar."
 msgid "Engines"
 msgstr "Motores"
 
+msgid "Engines on this machine ({})"
+msgstr "Motores en esta máquina ({})"
+
 msgid "Engines' own books off"
 msgstr "Libros propios de los motores desactivados"
 
@@ -1549,6 +1588,9 @@ msgstr "Carpeta"
 msgid "Folder (empty: \"live\" in the tournament folder)"
 msgstr "Carpeta (vacía: \"live\" en la carpeta del torneo)"
 
+msgid "Folder there"
+msgstr "Carpeta allí"
+
 msgid "Follow"
 msgstr "Seguir"
 
@@ -1566,6 +1608,9 @@ msgstr "Para una partida que el programa no supo decidir bien: un bloqueo que no
 
 msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
 msgstr "Para una partida que el programa no terminaría bien: un bloqueo que no detecta, un final ganado en el que los motores dan vueltas.\nEl motor que mueve se detiene (vuelve a arrancar para su siguiente partida), y la partida cuenta con este resultado: Termination \"adjudicated by the operator\" en las exportaciones, el motivo en un comentario.\nSu resultado se puede cambiar después en la pestaña Partidas."
+
+msgid "For each path: the program is there, can be run, and answers uci (xboard for a WinBoard engine) within 10 seconds."
+msgstr "Para cada ruta: el programa está, se puede ejecutar y responde a uci (xboard para un motor WinBoard) en 10 segundos."
 
 msgid "Format"
 msgstr "Formato"
@@ -1836,6 +1881,9 @@ msgstr "Infinito"
 msgid "Initial position"
 msgstr "Posición inicial"
 
+msgid "Install fastchess-gui"
+msgstr "Instalar fastchess-gui"
+
 msgid "Interface size"
 msgstr "Tamaño de la interfaz"
 
@@ -1956,6 +2004,9 @@ msgstr "Sus resultados…"
 msgid "Its workspace: standings, live games, schedule"
 msgstr "Su espacio de trabajo: clasificación, partidas en directo, calendario"
 
+msgid "Keep"
+msgstr "Conservar"
+
 msgid "Keep my value"
 msgstr "Conservar mi valor"
 
@@ -1971,11 +2022,17 @@ msgstr "Guardar el registro del motor de cada partida"
 msgid "Keep the old default"
 msgstr "Conservar el antiguo por defecto"
 
+msgid "Kept in memory until fastchess-gui ends, never saved."
+msgstr "Se guarda en memoria hasta que fastchess-gui termine, nunca en disco."
+
 msgid "Kept in the library, but out of the engine pickers (setup, suites, quick test, relaunch, adding to a tournament) and of Check those not checked. A tournament that has it already plays it as before."
 msgstr "Se conserva en la biblioteca, pero fuera de los selectores de motores (configuración, suites, prueba rápida, relanzar, añadir a un torneo) y de «Comprobar los no comprobados». Un torneo que ya lo tiene lo sigue haciendo jugar como antes."
 
 msgid "Kept in the profile only, never in a tournament's files or the log."
 msgstr "Se guarda solo en el perfil, nunca en los archivos de un torneo ni en el registro."
+
+msgid "Key file"
+msgstr "Archivo de clave"
 
 msgid "Knockout"
 msgstr "Eliminatoria"
@@ -2082,11 +2139,17 @@ msgstr "Localizar…"
 msgid "Log"
 msgstr "Registro"
 
+msgid "Log in with"
+msgstr "Iniciar sesión con"
+
 msgid "Logistic Elo, with its 95 % interval."
 msgstr "Elo logístico, con su intervalo del 95 %."
 
 msgid "Logo"
 msgstr "Logo"
+
+msgid "Logs in, then tells the machine's system, threads, memory and free space, and whether fastchess-gui is installed in its folder."
+msgstr "Inicia sesión y luego indica el sistema de la máquina, sus hilos, memoria y espacio libre, y si fastchess-gui está instalado en su carpeta."
 
 msgid "Looking for {} on {}…"
 msgstr "Buscando {} en {}…"
@@ -2123,11 +2186,20 @@ msgid_plural "Lower to {} pieces"
 msgstr[0] "Bajar a {} pieza"
 msgstr[1] "Bajar a {} piezas"
 
+msgid "MB of memory (now {})"
+msgstr "MB de memoria (ahora {})"
+
 msgid "MB; 0: the engine's own."
 msgstr "MB; 0: el del motor."
 
+msgid "Machine {}"
+msgstr "Máquina {}"
+
 msgid "Machine: {} physical cores, {} threads"
 msgstr "Máquina: {} núcleos físicos, {} hilos"
+
+msgid "Machines"
+msgstr "Máquinas"
 
 msgid "Making the folder {}…"
 msgstr "Creando la carpeta {}…"
@@ -2266,6 +2338,9 @@ msgstr "No se encontró ningún motor en este archivo."
 
 msgid "No engine found in this folder."
 msgstr "No se encontró ningún motor en esta carpeta."
+
+msgid "No engine on this machine yet: add the library's engines it has, with their path there."
+msgstr "Aún no hay motores en esta máquina: añade los motores de la biblioteca que tiene, con su ruta allí."
 
 msgid "No engine that works within that range. Engines that were never checked do not count: check them first (Engines, More…)."
 msgstr "Ningún motor que funcione en ese rango. Los motores nunca comprobados no cuentan: compruébalos primero (Motores, Más…)."
@@ -2485,8 +2560,14 @@ msgstr "Ahora {}. Solo se pueden quitar los ciclos no empezados."
 msgid "Number of cycles"
 msgstr "Número de ciclos"
 
+msgid "OK"
+msgstr "Aceptar"
+
 msgid "Of one game's score. Pairs: as measured on the pairs."
 msgstr "De la puntuación de una partida. Pares: medida sobre los pares."
+
+msgid "Off this machine's list (the engine stays in the library)."
+msgstr "Quitar de la lista de esta máquina (el motor sigue en la biblioteca)."
 
 msgid "On its error output:"
 msgstr "En su salida de error:"
@@ -2511,6 +2592,9 @@ msgstr "Una partida por hilo de hardware ({} en esta máquina): un número de no
 
 msgid "One port per game"
 msgstr "Un puerto por partida"
+
+msgid "Only if the machine was reinstalled, or its owner says its key changed: otherwise someone may be in the way."
+msgstr "Solo si la máquina se reinstaló o su propietario confirma que su clave cambió: si no, puede que alguien esté en medio."
 
 msgid "Only the 18 symmetrical ones…"
 msgstr "Solo las 18 simétricas…"
@@ -2608,6 +2692,9 @@ msgstr "Opciones no enviadas: {}"
 msgid "Order:"
 msgstr "Orden:"
 
+msgid "Other computers to run tournaments on, reached with SSH."
+msgstr "Otros ordenadores donde jugar torneos, accesibles por SSH."
+
 msgid "Other programs call it concurrency too: the games played at the same time (-concurrency)."
 msgstr "Otros programas también lo llaman concurrency: las partidas jugadas a la vez (-concurrency)."
 
@@ -2700,6 +2787,9 @@ msgstr "Pegar"
 
 msgid "Paste a rating list, or open its file: a rating list's text version or its web page (copied from the browser or saved), Ordo's output, or CSV (name,elo). The library engines it names get their reference Elo from it: the same name, letter case and spaces aside."
 msgstr "Pega una lista de rating, o abre su archivo: la versión de texto de una lista de rating o su página web (copiada del navegador o guardada), la salida de Ordo, o CSV (name,elo). Los motores de la biblioteca que nombra reciben de ella su Elo de referencia: el mismo nombre, salvo mayúsculas y espacios."
+
+msgid "Path on the machine"
+msgstr "Ruta en la máquina"
 
 msgid "Pause"
 msgstr "Pausa"
@@ -2882,6 +2972,9 @@ msgstr "Publicar en internet"
 msgid "Push the games to lichess"
 msgstr "Enviar las partidas a lichess"
 
+msgid "Push the missing files ({})"
+msgstr "Enviar los archivos que faltan ({})"
+
 msgid "Put the participants selected in team A."
 msgstr "Poner los participantes seleccionados en el equipo A."
 
@@ -3014,6 +3107,9 @@ msgstr "Quitar de la cuadrícula las ejecuciones guardadas"
 
 msgid "Remove the {}"
 msgstr "Quitar los {}"
+
+msgid "Remove this machine"
+msgstr "Quitar esta máquina"
 
 msgid "Remove {} engine from the list? The files are not deleted."
 msgid_plural "Remove {} engines from the list? The files are not deleted."
@@ -3166,6 +3262,9 @@ msgstr "SPRT mejora [0, 3]"
 
 msgid "SPRT non-regression [-5, 0]"
 msgstr "SPRT no regresión [-5, 0]"
+
+msgid "SSH agent"
+msgstr "Agente SSH"
 
 msgid "Same number of games"
 msgstr "Mismo número de partidas"
@@ -3559,6 +3658,9 @@ msgstr "Adjudicación por tablas: no se ha dado ninguna carpeta. El torneo no pu
 msgid "Tablebases"
 msgstr "Tablas de finales"
 
+msgid "Tablebases folder"
+msgstr "Carpeta de tablas de finales"
+
 msgid "Tabs"
 msgstr "Pestañas"
 
@@ -3589,6 +3691,9 @@ msgstr "Plantilla"
 msgid "Template name"
 msgstr "Nombre de la plantilla"
 
+msgid "Test"
+msgstr "Probar"
+
 msgid "Test suite finished; its results are kept in suites/ in the profile."
 msgstr "Suite de tests terminada; sus resultados se guardan en suites/ en el perfil."
 
@@ -3601,8 +3706,14 @@ msgstr "Suite de tests {}: {} posiciones, {} motores, {} a la vez."
 msgid "Test suites"
 msgstr "Suites de tests"
 
+msgid "Test the connection"
+msgstr "Probar la conexión"
+
 msgid "Test the connection first: it tells the machine's system."
 msgstr "Prueba primero la conexión: indica el sistema de la máquina."
+
+msgid "Test the connection to {}"
+msgstr "Probar la conexión con {}"
 
 msgid "Tested engines"
 msgstr "Motores probados"
@@ -3648,6 +3759,9 @@ msgstr "La sesión SSH no puede iniciarse."
 
 msgid "The Schedule tab shows the impact before anything changes."
 msgstr "La pestaña Calendario muestra el impacto antes de que nada cambie."
+
+msgid "The account to log in as on the machine: its tournaments run as this user."
+msgstr "La cuenta con la que iniciar sesión en la máquina: sus torneos se ejecutan como este usuario."
 
 msgid "The analysis"
 msgstr "El análisis"
@@ -3853,6 +3967,9 @@ msgstr "No se puede usar el archivo de clave {}: {}"
 msgid "The key file {} needs its passphrase."
 msgstr "El archivo de clave {} necesita su frase de contraseña."
 
+msgid "The keys of your SSH agent (ssh-agent, Pageant, or the OpenSSH Authentication Agent service of Windows): add yours with ssh-add. The key never leaves it."
+msgstr "Las claves de tu agente SSH (ssh-agent, Pageant o el servicio OpenSSH Authentication Agent de Windows): añade la tuya con ssh-add. La clave nunca sale de él."
+
 msgid "The keys still work. Settings or the command palette shows them again."
 msgstr "Las teclas siguen funcionando. Los ajustes o la paleta de comandos los vuelven a mostrar."
 
@@ -3898,6 +4015,9 @@ msgstr "La máquina usa Windows ({}): descarga fastchess-gui para Windows desde 
 msgid "The machine runs {} {}, this computer {} {}: download fastchess-gui for {} {} from the releases page and choose its program below, or install it on the machine yourself, in {}."
 msgstr "La máquina usa {} {}, este ordenador {} {}: descarga fastchess-gui para {} {} desde la página de versiones y elige su programa abajo, o instálalo tú mismo en la máquina, en {}."
 
+msgid "The machine's name on the network, or its address (192.168.1.20)."
+msgstr "El nombre de la máquina en la red, o su dirección (192.168.1.20)."
+
 msgid "The most interesting"
 msgstr "La más interesante"
 
@@ -3933,6 +4053,9 @@ msgstr "Los participantes seleccionados (Supr)."
 
 msgid "The passphrase of the key file {} is not the right one."
 msgstr "La frase de contraseña del archivo de clave {} no es la correcta."
+
+msgid "The passphrase of {}, for {}"
+msgstr "La frase de contraseña de {}, para {}"
 
 msgid "The paused tournament goes on, and the queue starts its next tournament when the running one ends."
 msgstr "El torneo en pausa continúa, y la cola inicia su siguiente torneo cuando termina el que está en curso."
@@ -4027,6 +4150,12 @@ msgstr "La búsqueda se detiene cuando una solución ha seguido siendo la primer
 
 msgid "The setup and the templates that use it keep its values."
 msgstr "La configuración y las plantillas que lo usan conservan sus valores."
+
+msgid "The setup uses no book and no tablebases."
+msgstr "La configuración no usa ni libro ni tablas de finales."
+
+msgid "The setup's opening book and the participants' own books, compared by size and hash with the machine's; its Syzygy files (6 pieces at most), by name and size. A tournament does not start on a machine without its book; tablebases missing are a warning."
+msgstr "El libro de aperturas de la configuración y los libros propios de los participantes, comparados por tamaño y hash con los de la máquina; sus archivos Syzygy (6 piezas como máximo), por nombre y tamaño. Un torneo no arranca en una máquina sin su libro; las tablas de finales que faltan son un aviso."
 
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "La proporción de tablas esperada entre los dos motores, a este ritmo de juego."
@@ -4129,6 +4258,9 @@ msgstr "No han jugado entre ellos."
 
 msgid "This book cannot play for an engine: {}"
 msgstr "Este libro no puede jugar por un motor: {}"
+
+msgid "This computer's fastchess-gui does not run on the machine's system: download the release for it and choose its program here (fastchess-gui.exe for Windows). Install copies it."
+msgstr "El fastchess-gui de este ordenador no funciona en el sistema de la máquina: descarga la versión para él y elige aquí su programa (fastchess-gui.exe para Windows). Instalar lo copia."
 
 msgid "This draw ratio and this RMS bias are not compatible."
 msgstr "Esta proporción de tablas y este sesgo RMS no son compatibles."
@@ -4313,6 +4445,9 @@ msgstr "Hasta la próxima versión."
 msgid "Up to {} engines."
 msgstr "Hasta {} motores."
 
+msgid "Update fastchess-gui"
+msgstr "Actualizar fastchess-gui"
+
 msgid "Update the graphics driver, or turn on 3D acceleration in the virtual machine or the remote desktop's settings."
 msgstr "Actualiza el controlador gráfico, o activa la aceleración 3D en la configuración de la máquina virtual o del escritorio remoto."
 
@@ -4388,6 +4523,9 @@ msgstr "Qué cambió"
 msgid "What changed: {}"
 msgstr "Qué cambió: {}"
 
+msgid "What the tournaments on this machine may use at once. 0 takes what the test found: every thread but one, and 80 % of the memory."
+msgstr "Lo que los torneos en esta máquina pueden usar a la vez. 0 toma lo que encontró la prueba: todos los hilos menos uno y el 80 % de la memoria."
+
 msgid "What was sent to the engines of its last try and what they answered, their error output included:\n{}"
 msgstr "Lo que se envió a los motores de su último intento y lo que respondieron, incluida su salida de error:\n{}"
 
@@ -4405,6 +4543,9 @@ msgstr "No se sabe cuándo termina la cola: un SPRT sin límite de partidas, o n
 
 msgid "Where new tournaments are written, as in Settings. Those played so far stay where they are: Open a folder… opens them."
 msgstr "Dónde se escriben los torneos nuevos, como en Ajustes. Los jugados hasta ahora se quedan donde están: Abrir una carpeta… los abre."
+
+msgid "Where the Syzygy files go on the machine, the engines' SyzygyPath there."
+msgstr "Dónde van los archivos Syzygy en la máquina, el SyzygyPath de los motores allí."
 
 msgid "While a tournament runs, an SSH tunnel built into fastchess-gui gives the page a public https address, without opening a port in the router or installing anything. Only the page is reachable that way, read-only."
 msgstr "Mientras se juega un torneo, un túnel SSH integrado en fastchess-gui da a la página una dirección https pública, sin abrir un puerto en el router ni instalar nada. Solo la página es accesible así, de solo lectura."
@@ -4638,6 +4779,9 @@ msgstr "copia de {} desde {}"
 msgid "copying {} to {}"
 msgstr "copia de {} a {}"
 
+msgid "cores (now {})"
+msgstr "núcleos (ahora {})"
+
 msgid "decision time"
 msgstr "tiempo de decisión"
 
@@ -4691,11 +4835,20 @@ msgstr "cada par con ambos colores"
 msgid "everyone against everyone"
 msgstr "cada motor contra todos"
 
+msgid "fails"
+msgstr "falla"
+
 msgid "fastchess-gui cannot draw its window."
 msgstr "fastchess-gui no puede dibujar su ventana."
 
+msgid "fastchess-gui for {} {}"
+msgstr "fastchess-gui para {} {}"
+
 msgid "fastchess-gui is not in {}: Install puts it there."
 msgstr "fastchess-gui no está en {}: Instalar lo pone ahí."
+
+msgid "fastchess-gui not installed"
+msgstr "fastchess-gui no instalado"
 
 msgid "fastchess-gui was copied to {}, but it does not start there: {}"
 msgstr "fastchess-gui se copió a {}, pero no arranca allí: {}"
@@ -4714,6 +4867,9 @@ msgstr "Ha salido fastchess-gui {} (tienes la {})."
 
 msgid "fastchess-gui {} — {} physical cores, {} threads"
 msgstr "fastchess-gui {} — {} núcleos físicos, {} hilos"
+
+msgid "fastchess-gui's folder on the machine, for the program, its tournaments, books and tablebases: relative to the user's home folder, or absolute (/srv/fcg, D:\\fcg)."
+msgstr "La carpeta de fastchess-gui en la máquina, para el programa, sus torneos, libros y tablas de finales: relativa a la carpeta personal del usuario, o absoluta (/srv/fcg, D:\\fcg)."
 
 msgid "filter"
 msgstr "filtrar"
@@ -4837,8 +4993,14 @@ msgstr "nueva"
 msgid "no engine has a SyzygyPath"
 msgstr "ningún motor tiene SyzygyPath"
 
+msgid "no host yet"
+msgstr "aún sin host"
+
 msgid "no mistake"
 msgstr "ningún error"
+
+msgid "no path"
+msgstr "sin ruta"
 
 msgid "nodes"
 msgstr "nodos"
@@ -4854,6 +5016,12 @@ msgstr "ninguno: cada partida empieza desde la posición inicial"
 
 msgid "normalized: bounds in nElo (fishtest, OpenBench). logistic: classic Elo. bayesian: BayesElo, without pentanomial."
 msgstr "normalized: límites en nElo (fishtest, OpenBench). logistic: Elo clásico. bayesian: BayesElo, sin pentanomial."
+
+msgid "not checked"
+msgstr "no comprobado"
+
+msgid "not tested yet"
+msgstr "aún sin probar"
 
 msgid "one opening per round"
 msgstr "una apertura por ronda"
@@ -5003,6 +5171,9 @@ msgstr "hasta que el SPRT decida"
 
 msgid "until the next game starts"
 msgstr "hasta que empiece la siguiente partida"
+
+msgid "up to date"
+msgstr "al día"
 
 msgid "uses {:.0f} % of a core while its opponent thinks"
 msgstr "usa el {:.0f} % de un núcleo mientras piensa su rival"
@@ -5364,6 +5535,9 @@ msgstr "{} h"
 msgid "{} h {:02} min"
 msgstr "{} h {:02} min"
 
+msgid "{} h {} min left"
+msgstr "quedan {} h {} min"
+
 msgid "{} hardware thread"
 msgid_plural "{} hardware threads"
 msgstr[0] "{} hilo de hardware"
@@ -5402,6 +5576,9 @@ msgstr[1] "{} imprecisiones"
 
 msgid "{} is a folder: give the engine's program in it."
 msgstr "{} es una carpeta: indica el programa del motor dentro."
+
+msgid "{} is forgotten here; nothing is deleted on it."
+msgstr "{} se olvida aquí; no se borra nada en ella."
 
 msgid "{} is in a format fastchess-gui cannot read: convert it with ssh-keygen -p -f \"{}\"."
 msgstr "{} está en un formato que fastchess-gui no puede leer: conviértelo con ssh-keygen -p -f \"{}\"."
@@ -5488,6 +5665,9 @@ msgstr "{} matches × {} pares de partidas, más los desempates"
 
 msgid "{} min"
 msgstr "{} min"
+
+msgid "{} min left"
+msgstr "quedan {} min"
 
 msgid "{} min {:02} s"
 msgstr "{} min {:02} s"
@@ -5688,6 +5868,9 @@ msgstr "{} ejecuta los comandos con un shell que fastchess-gui no habla (¿Power
 
 msgid "{} s"
 msgstr "{} s"
+
+msgid "{} s left"
+msgstr "quedan {} s"
 
 msgid "{} s/move"
 msgstr "{} s/jugada"

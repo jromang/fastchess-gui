@@ -241,6 +241,9 @@ msgstr "程序自带的预设。"
 msgid "A preset of this name: your profile takes its place."
 msgstr "已有同名预设：你的配置将取而代之。"
 
+msgid "A private key file, RSA or Ed25519 (~/.ssh/id_ed25519): its passphrase, if it has one, is asked once a session and never saved."
+msgstr "私钥文件，RSA 或 Ed25519（~/.ssh/id_ed25519）：如有口令，每次会话询问一次，从不保存。"
+
 msgid "A profile of this name: it is replaced."
 msgstr "已有同名配置：它将被替换。"
 
@@ -273,6 +276,9 @@ msgstr "团体赛每队至少需要一个引擎：把一个引擎放到另一队
 
 msgid "A template is the whole setup: a profile for each section, and what no profile holds (the name, the participants, the concurrency, the PGN files, the broadcast). A section that played as its profile takes the profile's values of the day."
 msgstr "模板是整个设置：每个部分一个配置，加上配置不包含的内容（名称、参赛者、并发、PGN 文件、直播）。与配置一致的部分会采用该配置当前的值。"
+
+msgid "A test box, a server or a second PC with an SSH server (on Windows, its built-in OpenSSH Server): the window logs in with your SSH agent or a key file, finds out the machine, installs fastchess-gui there and copies the books and tablebases. Nothing secret is saved: the key's passphrase is asked once a session."
+msgstr "一台测试机、服务器或第二台装有 SSH 服务器的电脑（Windows 上为内置的 OpenSSH Server）：窗口使用你的 SSH 代理或密钥文件登录，识别机器，在其上安装 fastchess-gui 并复制开局库和残局库。不保存任何机密：密钥口令每次会话询问一次。"
 
 msgid "A tournament is running: the analysis competes with its games ({} threads)."
 msgstr "有锦标赛正在进行：分析与其对局争用核心（{} 个线程）。"
@@ -313,11 +319,17 @@ msgstr "添加"
 msgid "Add a PGN file…"
 msgstr "添加 PGN 文件…"
 
+msgid "Add a machine"
+msgstr "添加机器"
+
 msgid "Add all shown"
 msgstr "添加所有显示的"
 
 msgid "Add an engine"
 msgstr "添加引擎"
+
+msgid "Add an engine…"
+msgstr "添加引擎…"
 
 msgid "Add engines in the Engines window."
 msgstr "请在“引擎”窗口中添加引擎。"
@@ -672,6 +684,12 @@ msgstr "开局库"
 msgid "Books (EPD, PGN, Polyglot)"
 msgstr "开局库（EPD、PGN、Polyglot）"
 
+msgid "Books and tablebases"
+msgstr "开局库与残局库"
+
+msgid "Books folder"
+msgstr "开局库文件夹"
+
 msgid "Books the program writes, added to the library."
 msgstr "由程序生成的开局库，加入库中。"
 
@@ -686,6 +704,12 @@ msgstr "直播"
 
 msgid "Brown"
 msgstr "棕色"
+
+msgid "Browse…"
+msgstr "浏览…"
+
+msgid "Budget"
+msgstr "预算"
 
 msgid "Build a Polyglot book"
 msgstr "生成 Polyglot 开局库"
@@ -819,11 +843,17 @@ msgstr "聊天链接"
 msgid "Check"
 msgstr "检查"
 
+msgid "Check the engines"
+msgstr "检查引擎"
+
 msgid "Check the mate PVs"
 msgstr "检查将杀 PV"
 
 msgid "Check those not checked ({})"
 msgstr "检查尚未检查的（{}）"
+
+msgid "Check what the setup uses"
+msgstr "检查设置所用的文件"
 
 msgid "Checked: it works."
 msgstr "已检查：可以正常工作。"
@@ -1013,6 +1043,12 @@ msgstr "继续"
 
 msgid "Continue with the changed programs"
 msgstr "使用已更改的程序继续"
+
+msgid "Copies fastchess-gui {} to {} on the machine (resumed if the copy is cut), then checks it starts there."
+msgstr "将 fastchess-gui {} 复制到机器上的 {}（中断后可续传），然后检查它能否在那里启动。"
+
+msgid "Copies them to the machine's folders in the background, each one checked after; a copy cut short resumes where it stopped."
+msgstr "在后台将它们复制到机器的文件夹，每个复制后都会检查；中断的复制会从停止处继续。"
 
 msgid "Copy"
 msgstr "复制"
@@ -1338,6 +1374,9 @@ msgstr "当前比赛正在使用此引擎：无法修改。"
 msgid "Engines"
 msgstr "引擎"
 
+msgid "Engines on this machine ({})"
+msgstr "此机器上的引擎（{}）"
+
 msgid "Engines' own books off"
 msgstr "关闭引擎自带开局库"
 
@@ -1545,6 +1584,9 @@ msgstr "文件夹"
 msgid "Folder (empty: \"live\" in the tournament folder)"
 msgstr "文件夹（留空：锦标赛文件夹中的 \"live\"）"
 
+msgid "Folder there"
+msgstr "那边的文件夹"
+
 msgid "Follow"
 msgstr "自动滚动"
 
@@ -1562,6 +1604,9 @@ msgstr "用于程序未能正确判定的对局：未被发现的卡死、引擎
 
 msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
 msgstr "用于程序无法正确结束的对局：未被发现的卡死、引擎在必胜残局中来回走子。\n轮到走子的引擎会被停止（下一局时重新启动），对局按此结果计分：导出时为 Termination \"adjudicated by the operator\"，原因写在注释中。\n之后可在“对局”标签页修改其结果。"
+
+msgid "For each path: the program is there, can be run, and answers uci (xboard for a WinBoard engine) within 10 seconds."
+msgstr "对每个路径：程序存在、可以运行，并在 10 秒内应答 uci（WinBoard 引擎为 xboard）。"
 
 msgid "Format"
 msgstr "格式"
@@ -1831,6 +1876,9 @@ msgstr "无限"
 msgid "Initial position"
 msgstr "初始局面"
 
+msgid "Install fastchess-gui"
+msgstr "安装 fastchess-gui"
+
 msgid "Interface size"
 msgstr "界面大小"
 
@@ -1951,6 +1999,9 @@ msgstr "它的成绩…"
 msgid "Its workspace: standings, live games, schedule"
 msgstr "它的工作区：排名、实时对局、赛程"
 
+msgid "Keep"
+msgstr "保留"
+
 msgid "Keep my value"
 msgstr "保留我的值"
 
@@ -1966,11 +2017,17 @@ msgstr "保存每局对局的引擎日志"
 msgid "Keep the old default"
 msgstr "保留旧的默认值"
 
+msgid "Kept in memory until fastchess-gui ends, never saved."
+msgstr "保存在内存中直到 fastchess-gui 退出，从不写入磁盘。"
+
 msgid "Kept in the library, but out of the engine pickers (setup, suites, quick test, relaunch, adding to a tournament) and of Check those not checked. A tournament that has it already plays it as before."
 msgstr "保留在库中，但不出现在引擎选择列表（配置、测试集、快速测试、重新开始、加入锦标赛）和“检查尚未检查的”中。已包含它的锦标赛照常让它参赛。"
 
 msgid "Kept in the profile only, never in a tournament's files or the log."
 msgstr "只保存在配置文件中，绝不写入锦标赛文件或日志。"
+
+msgid "Key file"
+msgstr "密钥文件"
 
 msgid "Knockout"
 msgstr "淘汰赛"
@@ -2077,11 +2134,17 @@ msgstr "定位…"
 msgid "Log"
 msgstr "日志"
 
+msgid "Log in with"
+msgstr "登录方式"
+
 msgid "Logistic Elo, with its 95 % interval."
 msgstr "逻辑斯谛 Elo，及其 95 % 区间。"
 
 msgid "Logo"
 msgstr "标志"
+
+msgid "Logs in, then tells the machine's system, threads, memory and free space, and whether fastchess-gui is installed in its folder."
+msgstr "登录后报告机器的系统、线程、内存和可用空间，以及其文件夹中是否已安装 fastchess-gui。"
 
 msgid "Looking for {} on {}…"
 msgstr "正在查找 {}（在 {} 上）…"
@@ -2117,11 +2180,20 @@ msgid "Lower to {} piece"
 msgid_plural "Lower to {} pieces"
 msgstr[0] "降为 {} 子"
 
+msgid "MB of memory (now {})"
+msgstr "MB 内存（当前 {}）"
+
 msgid "MB; 0: the engine's own."
 msgstr "MB；0：使用引擎自己的设置。"
 
+msgid "Machine {}"
+msgstr "机器 {}"
+
 msgid "Machine: {} physical cores, {} threads"
 msgstr "本机：{} 个物理核心，{} 个线程"
+
+msgid "Machines"
+msgstr "机器"
 
 msgid "Making the folder {}…"
 msgstr "正在创建文件夹 {}…"
@@ -2260,6 +2332,9 @@ msgstr "此文件中没有找到引擎。"
 
 msgid "No engine found in this folder."
 msgstr "此文件夹中没有找到引擎。"
+
+msgid "No engine on this machine yet: add the library's engines it has, with their path there."
+msgstr "此机器上还没有引擎：添加它拥有的引擎库中的引擎，并填写其在那里的路径。"
 
 msgid "No engine that works within that range. Engines that were never checked do not count: check them first (Engines, More…)."
 msgstr "该范围内没有可用的引擎。从未检查过的引擎不计入：请先检查它们（引擎，更多…）。"
@@ -2478,8 +2553,14 @@ msgstr "当前为 {}。只能移除尚未开始的循环。"
 msgid "Number of cycles"
 msgstr "循环数"
 
+msgid "OK"
+msgstr "确定"
+
 msgid "Of one game's score. Pairs: as measured on the pairs."
 msgstr "单局得分的。成对：按成对对局测量。"
+
+msgid "Off this machine's list (the engine stays in the library)."
+msgstr "从此机器的列表中移除（引擎仍保留在引擎库中）。"
 
 msgid "On its error output:"
 msgstr "其错误输出中："
@@ -2504,6 +2585,9 @@ msgstr "每个硬件线程一局（本机 {} 个）：固定节点或深度无�
 
 msgid "One port per game"
 msgstr "每局一个端口"
+
+msgid "Only if the machine was reinstalled, or its owner says its key changed: otherwise someone may be in the way."
+msgstr "仅当机器重装过或其所有者确认密钥已更改时：否则可能有人在中间拦截。"
 
 msgid "Only the 18 symmetrical ones…"
 msgstr "仅 18 个对称局面…"
@@ -2601,6 +2685,9 @@ msgstr "未发送的选项：{}"
 msgid "Order:"
 msgstr "排序："
 
+msgid "Other computers to run tournaments on, reached with SSH."
+msgstr "用于运行比赛的其他电脑，通过 SSH 连接。"
+
 msgid "Other programs call it concurrency too: the games played at the same time (-concurrency)."
 msgstr "其他程序也称之为 concurrency：同时进行的对局数（-concurrency）。"
 
@@ -2693,6 +2780,9 @@ msgstr "粘贴"
 
 msgid "Paste a rating list, or open its file: a rating list's text version or its web page (copied from the browser or saved), Ordo's output, or CSV (name,elo). The library engines it names get their reference Elo from it: the same name, letter case and spaces aside."
 msgstr "粘贴等级分榜，或打开其文件：等级分榜的文本版本或其网页（从浏览器复制或保存）、Ordo 的输出，或 CSV (name,elo)。榜中提到的库中引擎从中获得参考 Elo：名称相同即可，忽略大小写和空格。"
+
+msgid "Path on the machine"
+msgstr "机器上的路径"
 
 msgid "Pause"
 msgstr "暂停"
@@ -2873,6 +2963,9 @@ msgstr "发布到互联网"
 msgid "Push the games to lichess"
 msgstr "将对局推送到 lichess"
 
+msgid "Push the missing files ({})"
+msgstr "推送缺失的文件（{}）"
+
 msgid "Put the participants selected in team A."
 msgstr "把选中的参赛者放入 A 队。"
 
@@ -3003,6 +3096,9 @@ msgstr "从表格中移除已保存的运行结果"
 
 msgid "Remove the {}"
 msgstr "移除这 {} 个"
+
+msgid "Remove this machine"
+msgstr "移除此机器"
 
 msgid "Remove {} engine from the list? The files are not deleted."
 msgid_plural "Remove {} engines from the list? The files are not deleted."
@@ -3154,6 +3250,9 @@ msgstr "SPRT 提升 [0, 3]"
 
 msgid "SPRT non-regression [-5, 0]"
 msgstr "SPRT 无退步 [-5, 0]"
+
+msgid "SSH agent"
+msgstr "SSH 代理"
 
 msgid "Same number of games"
 msgstr "对局数不变"
@@ -3540,6 +3639,9 @@ msgstr "残局库裁定：未指定文件夹。没有文件夹，赛事无法开
 msgid "Tablebases"
 msgstr "残局库"
 
+msgid "Tablebases folder"
+msgstr "残局库文件夹"
+
 msgid "Tabs"
 msgstr "标签页"
 
@@ -3570,6 +3672,9 @@ msgstr "模板"
 msgid "Template name"
 msgstr "模板名称"
 
+msgid "Test"
+msgstr "测试"
+
 msgid "Test suite finished; its results are kept in suites/ in the profile."
 msgstr "测试集已完成；其结果保存在配置文件的 suites/ 中。"
 
@@ -3582,8 +3687,14 @@ msgstr "测试集 {}：{} 个局面，{} 个引擎，同时 {} 个。"
 msgid "Test suites"
 msgstr "测试集"
 
+msgid "Test the connection"
+msgstr "测试连接"
+
 msgid "Test the connection first: it tells the machine's system."
 msgstr "请先测试连接：它会告诉你机器的系统。"
+
+msgid "Test the connection to {}"
+msgstr "测试与 {} 的连接"
 
 msgid "Tested engines"
 msgstr "被测引擎"
@@ -3629,6 +3740,9 @@ msgstr "无法启动 SSH 会话。"
 
 msgid "The Schedule tab shows the impact before anything changes."
 msgstr "赛程标签页会在任何改动之前显示影响。"
+
+msgid "The account to log in as on the machine: its tournaments run as this user."
+msgstr "登录机器所用的账户：其上的比赛以此用户身份运行。"
 
 msgid "The analysis"
 msgstr "分析"
@@ -3834,6 +3948,9 @@ msgstr "无法使用密钥文件 {}：{}"
 msgid "The key file {} needs its passphrase."
 msgstr "密钥文件 {} 需要口令。"
 
+msgid "The keys of your SSH agent (ssh-agent, Pageant, or the OpenSSH Authentication Agent service of Windows): add yours with ssh-add. The key never leaves it."
+msgstr "你的 SSH 代理中的密钥（ssh-agent、Pageant 或 Windows 的 OpenSSH Authentication Agent 服务）：用 ssh-add 加入你的密钥。密钥从不离开代理。"
+
 msgid "The keys still work. Settings or the command palette shows them again."
 msgstr "按键仍然有效。可在设置或命令面板中重新显示它们。"
 
@@ -3879,6 +3996,9 @@ msgstr "该机器运行 Windows（{}）：请从发布页面下载 Windows 版 f
 msgid "The machine runs {} {}, this computer {} {}: download fastchess-gui for {} {} from the releases page and choose its program below, or install it on the machine yourself, in {}."
 msgstr "该机器运行 {} {}，本机为 {} {}：请从发布页面下载 {} {} 版 fastchess-gui 并在下方选择其程序，或自行安装到机器上的 {}。"
 
+msgid "The machine's name on the network, or its address (192.168.1.20)."
+msgstr "机器在网络上的名称，或其地址（192.168.1.20）。"
+
 msgid "The most interesting"
 msgstr "最有看点的"
 
@@ -3914,6 +4034,9 @@ msgstr "选中的参赛者（Delete）。"
 
 msgid "The passphrase of the key file {} is not the right one."
 msgstr "密钥文件 {} 的口令不正确。"
+
+msgid "The passphrase of {}, for {}"
+msgstr "{} 的口令，用于 {}"
 
 msgid "The paused tournament goes on, and the queue starts its next tournament when the running one ends."
 msgstr "暂停的锦标赛继续进行，当前锦标赛结束后队列开始下一个锦标赛。"
@@ -4006,6 +4129,12 @@ msgstr "当某个解答作为引擎首选着法又保持了这么多半回合深
 
 msgid "The setup and the templates that use it keep its values."
 msgstr "使用它的设置和模板会保留其值。"
+
+msgid "The setup uses no book and no tablebases."
+msgstr "该设置不使用开局库，也不使用残局库。"
+
+msgid "The setup's opening book and the participants' own books, compared by size and hash with the machine's; its Syzygy files (6 pieces at most), by name and size. A tournament does not start on a machine without its book; tablebases missing are a warning."
+msgstr "设置的开局库和参赛者自己的开局库按大小和哈希与机器上的比较；其 Syzygy 文件（最多 6 子）按名称和大小比较。机器上缺少开局库时比赛不会开始；缺少残局库只是警告。"
 
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "在此时限下，两个引擎之间预期的和棋比例。"
@@ -4108,6 +4237,9 @@ msgstr "它们之间没有对弈过。"
 
 msgid "This book cannot play for an engine: {}"
 msgstr "此开局库不能代替引擎走棋：{}"
+
+msgid "This computer's fastchess-gui does not run on the machine's system: download the release for it and choose its program here (fastchess-gui.exe for Windows). Install copies it."
+msgstr "本机的 fastchess-gui 无法在该机器的系统上运行：请下载适用的版本并在此选择其程序（Windows 为 fastchess-gui.exe）。“安装”会复制它。"
 
 msgid "This draw ratio and this RMS bias are not compatible."
 msgstr "此和棋率与此 RMS 偏差不相容。"
@@ -4292,6 +4424,9 @@ msgstr "直到下一个版本。"
 msgid "Up to {} engines."
 msgstr "最多 {} 个引擎。"
 
+msgid "Update fastchess-gui"
+msgstr "更新 fastchess-gui"
+
 msgid "Update the graphics driver, or turn on 3D acceleration in the virtual machine or the remote desktop's settings."
 msgstr "请更新显卡驱动，或在虚拟机或远程桌面的设置中开启 3D 加速。"
 
@@ -4367,6 +4502,9 @@ msgstr "更改内容"
 msgid "What changed: {}"
 msgstr "更改内容：{}"
 
+msgid "What the tournaments on this machine may use at once. 0 takes what the test found: every thread but one, and 80 % of the memory."
+msgstr "此机器上的比赛同时可以使用的资源。0 表示采用测试结果：除一个外的全部线程，以及 80 % 的内存。"
+
 msgid "What was sent to the engines of its last try and what they answered, their error output included:\n{}"
 msgstr "上次尝试时发送给引擎的内容以及它们的回复，包括错误输出：\n{}"
 
@@ -4384,6 +4522,9 @@ msgstr "无法得知队列何时结束：没有对局上限的 SPRT，或按节�
 
 msgid "Where new tournaments are written, as in Settings. Those played so far stay where they are: Open a folder… opens them."
 msgstr "新锦标赛的写入位置，与设置中相同。已下过的锦标赛留在原处：“打开文件夹…”可打开它们。"
+
+msgid "Where the Syzygy files go on the machine, the engines' SyzygyPath there."
+msgstr "Syzygy 文件在机器上的位置，即那里引擎的 SyzygyPath。"
 
 msgid "While a tournament runs, an SSH tunnel built into fastchess-gui gives the page a public https address, without opening a port in the router or installing anything. Only the page is reachable that way, read-only."
 msgstr "锦标赛进行时，fastchess-gui 内置的 SSH 隧道为页面提供一个公共 https 地址，无需在路由器上开放端口，也无需安装任何东西。通过这种方式只能访问该页面，且为只读。"
@@ -4615,6 +4756,9 @@ msgstr "复制 {}（来自 {}）"
 msgid "copying {} to {}"
 msgstr "复制 {} 到 {}"
 
+msgid "cores (now {})"
+msgstr "核心（当前 {}）"
+
 msgid "decision time"
 msgstr "决定时间"
 
@@ -4667,11 +4811,20 @@ msgstr "每一对都交换过颜色"
 msgid "everyone against everyone"
 msgstr "全员交叉对抗"
 
+msgid "fails"
+msgstr "失败"
+
 msgid "fastchess-gui cannot draw its window."
 msgstr "fastchess-gui 无法绘制其窗口。"
 
+msgid "fastchess-gui for {} {}"
+msgstr "适用于 {} {} 的 fastchess-gui"
+
 msgid "fastchess-gui is not in {}: Install puts it there."
 msgstr "fastchess-gui 不在 {} 中：“安装”会把它放到那里。"
+
+msgid "fastchess-gui not installed"
+msgstr "未安装 fastchess-gui"
 
 msgid "fastchess-gui was copied to {}, but it does not start there: {}"
 msgstr "fastchess-gui 已复制到 {}，但在那里无法启动：{}"
@@ -4690,6 +4843,9 @@ msgstr "fastchess-gui {} 已发布（当前为 {}）。"
 
 msgid "fastchess-gui {} — {} physical cores, {} threads"
 msgstr "fastchess-gui {} — {} 个物理核心，{} 个线程"
+
+msgid "fastchess-gui's folder on the machine, for the program, its tournaments, books and tablebases: relative to the user's home folder, or absolute (/srv/fcg, D:\\fcg)."
+msgstr "机器上 fastchess-gui 的文件夹，用于程序、比赛、开局库和残局库：相对于用户主文件夹，或绝对路径（/srv/fcg、D:\\fcg）。"
 
 msgid "filter"
 msgstr "筛选"
@@ -4812,8 +4968,14 @@ msgstr "新增"
 msgid "no engine has a SyzygyPath"
 msgstr "没有引擎设置了 SyzygyPath"
 
+msgid "no host yet"
+msgstr "尚无主机"
+
 msgid "no mistake"
 msgstr "没有错误"
+
+msgid "no path"
+msgstr "无路径"
 
 msgid "nodes"
 msgstr "节点"
@@ -4829,6 +4991,12 @@ msgstr "无：每局都从初始局面开始"
 
 msgid "normalized: bounds in nElo (fishtest, OpenBench). logistic: classic Elo. bayesian: BayesElo, without pentanomial."
 msgstr "normalized：以 nElo 为边界（fishtest、OpenBench）。logistic：经典 Elo。bayesian：BayesElo，不使用五项分布。"
+
+msgid "not checked"
+msgstr "未检查"
+
+msgid "not tested yet"
+msgstr "尚未测试"
 
 msgid "one opening per round"
 msgstr "每轮一个开局"
@@ -4977,6 +5145,9 @@ msgstr "直到 SPRT 得出结论"
 
 msgid "until the next game starts"
 msgstr "直到下一局开始"
+
+msgid "up to date"
+msgstr "已是最新"
 
 msgid "uses {:.0f} % of a core while its opponent thinks"
 msgstr "对手思考时占用一个核心的 {:.0f} %"
@@ -5311,6 +5482,9 @@ msgstr "{} 小时"
 msgid "{} h {:02} min"
 msgstr "{} 小时 {:02} 分"
 
+msgid "{} h {} min left"
+msgstr "剩余 {} 小时 {} 分钟"
+
 msgid "{} hardware thread"
 msgid_plural "{} hardware threads"
 msgstr[0] "{} 个硬件线程"
@@ -5346,6 +5520,9 @@ msgstr[0] "{} 个缓着"
 
 msgid "{} is a folder: give the engine's program in it."
 msgstr "{} 是一个文件夹：请指定其中的引擎程序。"
+
+msgid "{} is forgotten here; nothing is deleted on it."
+msgstr "{} 将在此处被遗忘；不会删除其上的任何内容。"
 
 msgid "{} is in a format fastchess-gui cannot read: convert it with ssh-keygen -p -f \"{}\"."
 msgstr "{} 的格式 fastchess-gui 无法读取：请用 ssh-keygen -p -f \"{}\" 转换。"
@@ -5428,6 +5605,9 @@ msgstr "{} 场比赛 × {} 对对局，另加加赛"
 
 msgid "{} min"
 msgstr "{} 分"
+
+msgid "{} min left"
+msgstr "剩余 {} 分钟"
 
 msgid "{} min {:02} s"
 msgstr "{} 分 {:02} 秒"
@@ -5606,6 +5786,9 @@ msgstr "{} 使用 fastchess-gui 不支持的 shell 运行命令（PowerShell？�
 
 msgid "{} s"
 msgstr "{} 秒"
+
+msgid "{} s left"
+msgstr "剩余 {} 秒"
 
 msgid "{} s/move"
 msgstr "{} 秒/步"

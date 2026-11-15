@@ -1117,6 +1117,15 @@ TEST_CASE("SSH client: a real server, when FCG_SSH_TEST names one") {
     m.folder              = (dir / "remote").string();
     const auto passphrase = parts.size() > 3 ? parts[3] : std::string();
     SshClient client;
+    {
+        // As the window runs it: a job on a thread of its own.
+        MachineJob job(MachineJob::Kind::Test, targetOf(m, dir, passphrase),
+                       [&m](SshClient& c, JobState& s, JobResult& r) { testMachine(c, m, s, r); });
+        for (int i = 0; i < 1000 && !job.finished(); ++i) std::this_thread::sleep_for(20ms);
+        REQUIRE(job.finished());
+        const auto result = job.take();
+        REQUIRE_MESSAGE(result.ok, result.error.message);
+    }
     REQUIRE_MESSAGE(client.connect(targetOf(m, dir, passphrase)), client.error().message);
     JobState state;
     JobResult result;

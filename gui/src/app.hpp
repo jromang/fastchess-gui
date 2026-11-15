@@ -30,6 +30,7 @@
 #include "home.hpp"
 #include "layout.hpp"
 #include "live.hpp"
+#include "machine_jobs.hpp"
 #include "model.hpp"
 #include "notice.hpp"
 #include "pgn_store.hpp"
@@ -1339,6 +1340,43 @@ class App {
     std::string logo_error_for_;  // the engine whose card shows it
     int logos_version_     = 0;   // changed with each logo set or removed
     int web_logos_version_ = -1;  // the version the web page's logos were made from
+
+    // Remote machines (view_machines.cpp, machines.hpp): their cards in Settings, the jobs running on them, and the
+    // passphrases of key files typed this session, in memory only.
+    struct MachineActivity {
+        std::unique_ptr<MachineJob> job;       // a test, Install, the engines' check, the files compared
+        std::unique_ptr<MachineJob> transfer;  // books and tablebases copied, which may take hours, beside the others
+        std::optional<JobResult> last;         // what the last job found, shown on the card
+        MachineJob::Kind last_kind = MachineJob::Kind::Test;
+        std::optional<JobResult> last_transfer;
+        std::optional<FilesCheck> files;  // the last comparison, what a push sends
+        std::string message;              // what keeps a job from starting (the machine incomplete, a key file)
+        bool remove_asked = false;
+    };
+    void loadMachines();
+    void saveMachines();
+    void forgetPassphrases();  // wiped
+    void pollMachines();
+    void drawMachineSettings(float label);
+    void drawMachineCard(std::size_t index, float label);
+    void drawMachineEngines(Machine& machine, MachineActivity& activity);
+    void drawMachineFiles(Machine& machine, MachineActivity& activity);
+    void drawPassphrasePrompt();
+    // Starts a job on the machine `id`, its key's passphrase asked first when it has one not typed yet.
+    void startMachineJob(const std::string& id, MachineJob::Kind kind);
+    void addMachine();
+    [[nodiscard]] Machine* machineById(const std::string& id);
+    [[nodiscard]] FilesRequest setupFiles() const;  // the setup's books and tablebases
+    std::vector<Machine> machines_;
+    std::map<std::string, MachineActivity> machine_activity_;  // by machine id
+    std::map<std::string, std::string> machine_passphrases_;   // by key file
+    std::string machine_open_;        // the machine whose card is open
+    std::string machine_dialog_for_;  // the machine a file dialog was opened for
+    std::string passphrase_machine_;  // the machine whose key's passphrase is asked, and the job then started
+    MachineJob::Kind passphrase_kind_ = MachineJob::Kind::Test;
+    bool open_passphrase_             = false;
+    std::array<char, 256> passphrase_input_{};
+    bool scroll_to_machines_ = false;  // asked from the command palette
 };
 
 }  // namespace fcg

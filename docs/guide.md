@@ -15,7 +15,7 @@ A navigation rail on the left leads to eight pages:
 | Suites | Test suites (STS, WAC, ERET…): engines against the positions of an EPD file |
 | Ratings | One rating list over every game of every tournament |
 | Log | fastchess' own output and the messages of the GUI, and *Report a problem…* |
-| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the appearance of the boards (colours, pieces, move sounds, see *Appearance*), the profile folder and the portable mode, the tournaments folder, the lichess token, the version and new versions, what draws the window and software rendering, *Report a problem…* |
+| Settings | Language, theme (automatic, dark, light), interface size, end of tournament notification, resuming at launch the tournament that was running, the appearance of the boards (colours, pieces, move sounds, see *Appearance*), the profile folder and the portable mode, the tournaments folder, the remote machines (see *Machines*), the lichess token, the version and new versions, what draws the window and software rendering, *Report a problem…* |
 
 The interface is in English, French, German, Spanish, Italian, Brazilian Portuguese, Russian or simplified Chinese.
 At startup it follows the first preferred language of the system (English when there is no translation for it); it
@@ -911,6 +911,79 @@ The options can be combined. A setup file saved with broadcasting switched on br
 them. For viewers outside the local network, open the ports in the router: TLCV and node-tlcv connect to
 the TLCS port. For the web page, a tunnel avoids opening a port (see *Putting the web page on the internet*).
 
+## Machines
+
+Other computers to run tournaments on: a test box, a server, a second PC. **Settings** > *Machines* lists them. A
+machine is reached with SSH: nothing has to be opened on it but its SSH server, and the program keeps nothing secret.
+
+*Add a machine*, then on its card:
+
+- *Name*, *Host* (its name on the network, or its address), *Port* (22) and *User*, the account its tournaments run
+  as;
+- *Log in with*: the *SSH agent* (ssh-agent on Linux and macOS, Pageant or the *OpenSSH Authentication Agent*
+  service on Windows; add your key to it with `ssh-add`), or a *Key file*, RSA or Ed25519 (`~/.ssh/id_ed25519`).
+  The passphrase of a key file is asked once a session: it stays in memory and is never written anywhere. The
+  machine must know the key: its public half (`id_ed25519.pub`) goes in `~/.ssh/authorized_keys` on the machine
+  (`ssh-copy-id user@host` puts it there), or, for an administrator of a Windows machine, in
+  `C:\ProgramData\ssh\administrators_authorized_keys`;
+- *Folder there*: fastchess-gui's folder on the machine, for the program, its tournaments, books and tablebases,
+  relative to the user's home folder (`fastchess-gui` by default) or absolute (`/srv/fcg`, `D:\fcg`);
+- *Budget*: the cores and the memory the tournaments on the machine may use at once; 0 takes what the test found,
+  every thread but one and 80 % of the memory.
+
+*Test the connection* logs in, then tells the machine's system, threads, memory, the free space where its folder is,
+and whether fastchess-gui is installed there, in which version. The first connection shows the machine's host key
+(its SHA256 fingerprint) and trusts it from then on (`known_hosts.json` in the profile, the broadcast tunnel's too).
+When the key changes later, nothing is sent and the card says so, with *Trust the new key* for a machine that was
+reinstalled. Every failure names the machine and what to do: the host that cannot be reached, a key the machine
+refuses (and where its public half goes), a passphrase that is not the right one, no agent running.
+
+*Install fastchess-gui* (*Update fastchess-gui* once it is there) copies the program to the machine's folder over
+SFTP, then checks it starts there (`fastchess-gui --version`). It copies this program when the machine runs the
+same system (Linux x86-64 to Linux x86-64); for another one, a Windows machine from Linux say, download the release
+for that system and choose its program on the card (*fastchess-gui for Windows x86_64*). A copy cut by the network
+resumes where it stopped.
+
+*Engines on this machine*: the library's engines the machine has, each with its path there (`/opt/engines/stockfish`,
+`C:\Engines\sf.exe`). *Check the engines* checks each path: the program is there, can be run, and answers `uci`
+(`xboard` for a WinBoard engine) within 10 seconds. The mark beside it, and its tooltip, say what was found: the
+engine's name, or why it does not run (missing, not executable, made for another system, silent).
+
+*Books and tablebases*: *Check what the setup uses* compares the opening book and the participants' own books of
+the setup with the machine's books folder, by size and SHA-256 (a book of the same name but another content is not
+the same book), and the setup's Syzygy files of 6 pieces at most with the machine's tablebases folder, by name and
+size. *Push the missing files* copies what is missing or different, in the background, with the time left; each book
+is checked by its hash once copied, each table by its size, and a copy cut short resumes. Tables of 7 pieces are
+not offered: they take terabytes. A tournament does not start on a machine without its book; tablebases missing
+are a warning (the adjudication and the engines do without them).
+
+A machine needs an OpenSSH server (Linux, macOS, BSD; Windows 10 1809 and later), with an RSA host key and SFTP,
+both there by default. Commands go through `sh` whatever the user's shell is (fish or csh are fine), and through
+cmd on Windows, the default shell of its OpenSSH server.
+
+### A Windows machine
+
+Windows 10 (1809 and later) and Windows 11 include an OpenSSH server, not installed by default. In PowerShell, as
+administrator:
+
+```powershell
+Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0
+Start-Service sshd
+Set-Service sshd -StartupType Automatic
+```
+
+The installation opens port 22 in the firewall. Then put your public key in `C:\Users\<user>\.ssh\authorized_keys`,
+or, for an account of the Administrators group, in `C:\ProgramData\ssh\administrators_authorized_keys`, which only
+Administrators and SYSTEM may read:
+
+```powershell
+icacls C:\ProgramData\ssh\administrators_authorized_keys /inheritance:r /grant "Administrators:F" /grant "SYSTEM:F"
+```
+
+Keep cmd as the server's shell: fastchess-gui speaks cmd, not PowerShell (if a `DefaultShell` value was set under
+`HKEY_LOCAL_MACHINE\SOFTWARE\OpenSSH`, remove it). On the machine's card, choose the Windows release's
+`fastchess-gui.exe`, then *Install fastchess-gui*.
+
 ## Files
 
 Everything lives in the profile folder: `~/.local/share/fastchess/fastchess-gui/` on Linux,
@@ -943,6 +1016,8 @@ application from a temporary place, where the `portable` file is not.
   window's size and place, the check for a new version (wanted or not, when it was last made, the release it
   found, the notice hidden), and the appearance (board colours, pieces, move sounds);
 - `logos/`: the engines' logos, copies of the pictures chosen on their cards;
+- `machines.json`: the remote machines of **Settings** (their address, folder, budgets, engines' paths and what the
+  last test found; no passphrase), and `known_hosts.json` the host keys trusted, of the machines and the tunnel;
 - `running.json`: the tournament running now, removed when it stops; found at launch, it tells what to resume;
 - `runs/<date>_<A>_vs_<B>/` for a match, `runs/<date>_<name>/` for a tournament (in `runs/` or the chosen
   folder), one folder each, which can be moved, copied, zipped and sent:
@@ -989,6 +1064,7 @@ fastchess-gui [--profile DIR] [--autostart] [--size WxH] [--software]
               [--quit-after SECONDS]
 fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_PORT [--tlcs-lanes]]
               [--web TCP_PORT] [--tunnel [localhost.run|ssh://USER@HOST[:PORT][/REMOTE_PORT]]] [--live-files [DIR]] [--lichess ROUND_URL|ROUND_ID|new]
+fastchess-gui --version
 ```
 
 - `--profile DIR` uses another profile folder;
@@ -1018,10 +1094,13 @@ fastchess-gui [--profile DIR] --run TOURNAMENT_FOLDER|SETUP.json [--tlcs UDP_POR
   `engines-console` (the first engine's console), `board-analyse` (the Board page, analysed), `board=FILE` (a PGN,
   FEN or EPD file on the Board page; `board-analyse=FILE` analysed, `board-review=FILE` its first game analysed move
   by move), `board-edit` (the position editor), `board-play` and `board-play-start` (a game between the first two
-  engines, started);
+  engines, started), `machines` (the first remote machine's card in **Settings**; `machines-test` tested,
+  `machines-files` the setup's books and tablebases compared with it);
 - `--select-game N` opens game N (in finishing order) in the *Games* tab as soon as it exists;
 - `--quit-after SECONDS` stops the tournament and quits;
-- `--run`: see *Headless mode*.
+- `--run`: see *Headless mode*;
+- `--version` prints the version and the protocol of the channel the window follows a remote tournament through
+  (see *Machines*), and quits.
 
 ## Development notes
 

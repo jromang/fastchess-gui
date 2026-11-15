@@ -62,6 +62,7 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
 
     unfinished_ = unfinishedMatch(storage_.runsDir());
     queue_      = storage_.loadQueue();
+    loadMachines();
     layouts_    = layout::named(storage_.loadLayouts());
     if (ImGui::GetCurrentContext()) registerPanelSettings();
 
@@ -87,6 +88,8 @@ App::~App() {
     if (update_checker_.running() && window_) SDL_HideWindow(window_);
     fingerprints_cancel_ = true;
     if (fingerprints_.valid()) fingerprints_.wait();
+    machine_activity_.clear();  // the machines' jobs cancelled, a second or two at most
+    forgetPassphrases();
     cancelBookScan();
     for (auto& f : abandoned_scans_) f.wait();
     storage_.saveSetup(setup_);
@@ -166,6 +169,7 @@ void App::frame() {
     pollUpdateCheck();
     pollEngineConsole();
     pollBoard();
+    pollMachines();
     handleDialogs();
 
     if (engines_save_due_ && std::chrono::steady_clock::now() >= *engines_save_due_) {
@@ -270,7 +274,16 @@ void App::frame() {
             page_ = Page::Log;
         else if (w == "settings")
             page_ = Page::Settings;
-        else if (w == "ratings" || w == "ratings-engine" || w == "ratings-h2h" || w == "ratings-progress") {
+        else if (w == "machines" || w == "machines-test" || w == "machines-files") {
+            // The first machine's card in Settings; tested, or the setup's books and tablebases compared with its.
+            page_               = Page::Settings;
+            scroll_to_machines_ = true;
+            if (!machines_.empty()) {
+                machine_open_ = machines_.front().id;
+                if (w == "machines-test") startMachineJob(machine_open_, MachineJob::Kind::Test);
+                if (w == "machines-files") startMachineJob(machine_open_, MachineJob::Kind::Files);
+            }
+        } else if (w == "ratings" || w == "ratings-engine" || w == "ratings-h2h" || w == "ratings-progress") {
             page_                = Page::Ratings;
             ratings_tab_request_ = w == "ratings-engine" ? 1 : w == "ratings-h2h" ? 2 : w == "ratings-progress" ? 3 : 0;
         } else if (w == "ratings-players") {  // the players of the PGN files and the library engines they are
@@ -1190,6 +1203,13 @@ void App::handleDialogs() {
                 break;
             case Dialogs::Purpose::BoardPgn:
                 openBoardPgn(std::filesystem::path(path));
+                break;
+            case Dialogs::Purpose::MachineKey:
+            case Dialogs::Purpose::MachineProgram:
+                if (auto* machine = machineById(machine_dialog_for_)) {
+                    (answer->purpose == Dialogs::Purpose::MachineKey ? machine->key_file : machine->program) = path;
+                    saveMachines();
+                }
                 break;
         }
     }
