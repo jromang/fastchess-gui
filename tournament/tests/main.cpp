@@ -11,6 +11,8 @@
 
 #include <tour/book_adapter.hpp>
 
+#include "own_temp.hpp"
+
 namespace fastchess {
 const char* version = "tournament-tests ";
 }
@@ -27,5 +29,7 @@ int main(int argc, char** argv) {
     if (argc >= 2 && std::string_view(argv[1]) == "--book-adapter") {
         return fcg::tour::runBookAdapter(std::vector<std::string>(argv + 2, argv + argc));
     }
+    // Each run, each process, with a temporary folder of its own (own_temp.hpp).
+    const fcg::test::OwnTempDir temp;
     return doctest::Context(argc, argv).run();
 }

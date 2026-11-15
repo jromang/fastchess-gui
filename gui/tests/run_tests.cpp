@@ -17,6 +17,7 @@
 #include "../../tournament/tests/self_path.hpp"
 #include "app.hpp"
 #include "engines.hpp"
+#include "free_ports.hpp"
 #include "headless.hpp"
 #include "net.hpp"
 #include "proc_tree.hpp"
@@ -762,8 +763,9 @@ TEST_CASE("headless: the tournament is broadcast over TLCS and as live files") {
     storage.saveEngines(randomEngines());
     REQUIRE(writeJson(profile / "setup-file.json", randomSetup(200)));
 
+    const uint16_t tlcs_port = fcg::test::freePort();
     HeadlessBroadcast broadcast;
-    broadcast.tlcs_port = 26041;
+    broadcast.tlcs_port = tlcs_port;
     broadcast.live_dir  = (profile / "live").string();
 
     std::atomic_int code{-1};
@@ -774,8 +776,8 @@ TEST_CASE("headless: the tournament is broadcast over TLCS and as live files") {
 
     // A viewer: logs on until the server answers, then acknowledges and keeps what it receives.
     net::UdpSocket client;
-    REQUIRE(client.bind(26042).empty());
-    const net::Endpoint to{0x7F000001, 26041};
+    REQUIRE(client.bind(fcg::test::freePort()).empty());
+    const net::Endpoint to{0x7F000001, tlcs_port};
     std::vector<std::string> received;
     bool logged_on   = false;
     const auto until = std::chrono::steady_clock::now() + 60s;

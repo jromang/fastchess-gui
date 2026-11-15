@@ -275,9 +275,13 @@ TEST_CASE("processor use: our own process is measured; too many cores or thinkin
     CHECK(tree.front() == self);
     const auto before = cpuTimeMs(tree);
     REQUIRE(before >= 0);
+    // Busy until 100 ms of processor time are measured: on a machine busy with other tests, 300 ms of the clock may
+    // give less. Ten seconds at most.
     volatile uint64_t x = 0;
-    const auto end      = std::chrono::steady_clock::now() + std::chrono::milliseconds(300);
-    while (std::chrono::steady_clock::now() < end) x = x + 1;
+    const auto end      = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    while (cpuTimeMs(tree) < before + 100 && std::chrono::steady_clock::now() < end) {
+        for (int i = 0; i < 1'000'000; ++i) x = x + 1;
+    }
     CHECK(cpuTimeMs(tree) >= before + 100);
     CHECK(cpuTimeMs({}) == -1);
 

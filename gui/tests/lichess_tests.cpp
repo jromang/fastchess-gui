@@ -16,6 +16,7 @@
 
 #include <fmt/include/fmt/format.h>
 
+#include "free_ports.hpp"
 #include "https.hpp"
 #include "lichess.hpp"
 #include "net.hpp"
@@ -149,7 +150,7 @@ TEST_CASE("lichess: the same tags in progress and finished, clocks sent once, ro
 }
 
 TEST_CASE("lichess: a broadcast made, its rounds filled up to 64 games, over HTTP") {
-    const uint16_t port = 26031;
+    const uint16_t port = fcg::test::freePort();
     std::atomic<int> rounds{0};
     FakeServer server(port, [&](const FakeServer::Request& r) -> std::string {
         if (r.path == "/broadcast/new") return R"({"tour":{"id":"TOUR0001"},"rounds":[]})";
@@ -227,7 +228,7 @@ TEST_CASE("lichess: a broadcast made, its rounds filled up to 64 games, over HTT
 }
 
 TEST_CASE("lichess: stopping returns at once, the last push made on the relay's thread") {
-    const uint16_t port = 26033;
+    const uint16_t port = fcg::test::freePort();
     std::atomic<int> pushes{0};
     FakeServer server(port, [&](const FakeServer::Request& r) -> std::string {
         if (r.path.find("/push") != std::string::npos) {
@@ -262,14 +263,15 @@ TEST_CASE("lichess: stopping returns at once, the last push made on the relay's 
 
 TEST_CASE("net: a connection that cannot be made gives up in time") {
     // A listener that never accepts: once its queue is full, connecting waits for nothing.
+    const uint16_t port = fcg::test::freePort();
     net::TcpListener listener;
-    REQUIRE(listener.listen(26035).empty());
+    REQUIRE(listener.listen(port).empty());
     std::vector<net::Handle> open;
     std::string error;
     bool timed_out = false;
     for (int i = 0; i < 200 && !timed_out; ++i) {
         const auto start = std::chrono::steady_clock::now();
-        const auto fd    = net::connectHost("127.0.0.1", "26035", 300, error);
+        const auto fd    = net::connectHost("127.0.0.1", std::to_string(port), 300, error);
         if (fd) {
             open.push_back(*fd);
             continue;
@@ -283,7 +285,7 @@ TEST_CASE("net: a connection that cannot be made gives up in time") {
 
     // Nobody on the port: refused at once.
     const auto start = std::chrono::steady_clock::now();
-    CHECK_FALSE(net::connectHost("127.0.0.1", "26036", 5000, error));
+    CHECK_FALSE(net::connectHost("127.0.0.1", std::to_string(fcg::test::freePort()), 5000, error));
     CHECK(std::chrono::steady_clock::now() - start < 3s);
 }
 
@@ -459,7 +461,8 @@ TEST_CASE("proxy: the variables read as curl reads them, NO_PROXY names passed b
 
 TEST_CASE("proxy: HTTPS goes through a CONNECT tunnel, TLS naming the server, the password never told") {
     ProxyEnvironment environment;
-    const uint16_t port = 26037;
+    const uint16_t port   = fcg::test::freePort();
+    const uint16_t nobody = fcg::test::freePort();  // nothing listens there
     // lichess.invalid cannot be reached directly: a request that went past the proxy would fail at once.
     const HttpRequest request{"https://lichess.invalid/api/broadcast/round/abcdefgh/push", "token", "text/plain", "x",
                               5};
@@ -503,23 +506,23 @@ TEST_CASE("proxy: HTTPS goes through a CONNECT tunnel, TLS naming the server, th
         REQUIRE(proxy.ok());
         ProxyEnvironment::set("ALL_PROXY", fmt::format("http://127.0.0.1:{}", port));
         ProxyEnvironment::set("NO_PROXY", "example.com, 127.0.0.1");
-        auto result = httpPost({"https://127.0.0.1:26038/", "", "text/plain", "x", 5});
+        auto result = httpPost({fmt::format("https://127.0.0.1:{}/", nobody), "", "text/plain", "x", 5});
         CHECK_MESSAGE(result.error.find("cannot connect to 127.0.0.1") != std::string::npos, result.error);
         ProxyEnvironment::set("NO_PROXY", "");
-        result = httpPost({"http://127.0.0.1:26038/", "", "text/plain", "x", 5});
+        result = httpPost({fmt::format("http://127.0.0.1:{}/", nobody), "", "text/plain", "x", 5});
         CHECK_MESSAGE(result.error.find("cannot connect to 127.0.0.1") != std::string::npos, result.error);
         CHECK(proxy.requests().empty());
     }
 
     SUBCASE("a proxy that cannot be reached, or of a kind not supported, named") {
-        ProxyEnvironment::set("HTTPS_PROXY", "http://127.0.0.1:26039");
+        ProxyEnvironment::set("HTTPS_PROXY", fmt::format("http://127.0.0.1:{}", nobody));
         auto result = httpPost(request);
         // Windows' variables have no case: there, https_proxy is HTTPS_PROXY, and found by that name first.
         auto error = result.error;
         for (auto& c : error) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
         CHECK_MESSAGE(error.find("(the proxy of https_proxy)") != std::string::npos, result.error);
         ProxyEnvironment::set("HTTPS_PROXY", "");
-        ProxyEnvironment::set("all_proxy", "socks5h://127.0.0.1:26039");
+        ProxyEnvironment::set("all_proxy", fmt::format("socks5h://127.0.0.1:{}", nobody));
         result = httpPost(request);
         CHECK_MESSAGE(result.error.find("all_proxy: only http:// proxies") != std::string::npos, result.error);
     }
