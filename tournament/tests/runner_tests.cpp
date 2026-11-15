@@ -783,7 +783,7 @@ TEST_CASE("runner: engine logs keep the engines' error output, marked apart, eve
     s.log_every_game = true;
     auto state       = TournamentState::create(dir, s);
 
-    const ScopedEnv stderr("FCG_MOCK_STDERR", "on stderr:");
+    const ScopedEnv stderr_text("FCG_MOCK_STDERR", "on stderr:");
     // About 100 KB on each engine's error output before it answers "uci", more than a pipe holds (64 KB on Linux,
     // 4 KB on Windows), in few enough lines that both engines' fit in the first lines of the log: the middle of a
     // long game's log is left out.
