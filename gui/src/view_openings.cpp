@@ -201,7 +201,8 @@ void App::drawOpenings() {
     }
     ImGui::EndChild();
 
-    if (!detail) {
+    // The opening chosen may have been clicked again in the list just now: none is chosen any more.
+    if (!detail || selected_opening_ < 0) {
         ui::endPanel();
         return;
     }
