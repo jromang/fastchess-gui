@@ -1008,6 +1008,8 @@ TEST_CASE("Machine jobs: engines' paths checked there: missing, a folder, mute, 
     checkEngines(client, m, {}, 1500ms, state, result);
     CHECK_FALSE(result.ok);
     REQUIRE(result.engines.size() == 5);
+    CAPTURE(result.engines[0].check_message);
+    CAPTURE(result.engines[3].check_message);
     CHECK(result.engines[0].check_ok == 1);
     CHECK(result.engines[0].id_name == "Mock 1.0");
     CHECK(result.engines[1].check_ok == 0);
@@ -1292,7 +1294,7 @@ TEST_CASE("Machine runs: the tournament's files copied back as they grow, writte
     CHECK(readFile(local / "logs/game-1.log") == "W> uci\n");
     CHECK(readFile(local / "tournament.json") == "{\"local\":true}");  // this computer's paths stay
     // Grown there: only the rest comes.
-    std::ofstream(there / "journal.jsonl", std::ios::app) << "{\"t\":\"game\"}\n";
+    std::ofstream(there / "journal.jsonl", std::ios::app | std::ios::binary) << "{\"t\":\"game\"}\n";
     copied = MachineSync::pass(client, "/fcg/tournaments/t", local, error);
     REQUIRE(copied);
     CHECK(*copied == std::string("{\"t\":\"game\"}\n").size());

@@ -598,6 +598,10 @@ struct MockServer::Connection {
         std::error_code ec;
         const auto status = fs::status(path, ec);
         uint32_t perms    = static_cast<uint32_t>(status.permissions()) & 0777;
+#ifdef _WIN32
+        // Windows keeps no execute bit: the server stands for a POSIX one, where the tests' programs can be run.
+        if (!fs::is_directory(status)) perms |= 0111;
+#endif
         perms |= fs::is_directory(status) ? 040000 : 0100000;
         const uint64_t size = fs::is_regular_file(status) ? fs::file_size(path, ec) : 0;
         w.u32(1 | 4).u32(static_cast<uint32_t>(size >> 32)).u32(static_cast<uint32_t>(size)).u32(perms);
