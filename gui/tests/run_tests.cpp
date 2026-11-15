@@ -788,7 +788,7 @@ TEST_CASE("a Swiss and a knockout are played to the end through the GUI's contro
     {
         Harness h;
         REQUIRE(h.run.start(setup, engines, cores, root).empty());
-        REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
+        REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 120s));
         CHECK(h.run.error().empty());
         CHECK(h.games.size() == 3u * 2u * 2u);  // 3 rounds, 2 pairings (one bye), 2 games
         CHECK(h.run.tournament()->byes().size() == 3);

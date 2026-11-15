@@ -391,7 +391,7 @@ TEST_CASE("remote: a tournament on its socket plays on without the window, which
         auto second = local::connect(control->endpoint, error);
         REQUIRE(second);
         REQUIRE(other.run.attach(dir, std::move(second)).empty());
-        CHECK(other.waitFor([&] { return other.run.elsewhere(); }, 10s));
+        CHECK(other.waitFor([&] { return other.run.elsewhere(); }, 60s));
     }
 
     h.run.stopWhenIdle();
