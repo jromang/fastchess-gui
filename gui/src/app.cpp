@@ -885,16 +885,7 @@ void App::pollRun() {
                 const auto wall = std::chrono::duration_cast<std::chrono::milliseconds>(
                                       std::chrono::system_clock::now().time_since_epoch())
                                       .count();
-                const int64_t from = wall - 600'000;
-                int64_t first      = wall;
-                std::size_t played = 0;
-                for (const auto& r : t->results()) {
-                    if (r.voided || r.finished_at <= 0) continue;
-                    first = std::min(first, r.finished_at);
-                    if (r.finished_at >= from) ++played;
-                }
-                const double span = static_cast<double>(wall - std::max(from, first)) / 1000.0;
-                games_per_hour_   = span > 5 ? static_cast<double>(played) / (span / 3600.0) : 0.0;
+                games_per_hour_ = home::gamesPerHour(t->results(), wall);
             } else {
                 const auto elapsed = std::chrono::duration<double>(now - run_->info().started).count();
                 // games_ can get below games_at_start_ when games are voided meanwhile.

@@ -15,6 +15,7 @@
 #include <imgui.h>
 
 #include <tour/model.hpp>
+#include <tour/state.hpp>
 #include <tour/summary.hpp>
 
 #include "notice.hpp"
@@ -35,6 +36,11 @@ void sectionTitle(const char* text);
 
 // "9½", "½", "12": points as the standings write them.
 [[nodiscard]] std::string halfPoints(double points);
+
+// A tournament's games per hour from its games' end times (unix milliseconds): those of the last ten minutes, or since
+// its first game; 0 until they span 5 seconds. For a tournament played in a process of its own, perhaps long before
+// the window connected, of which the window knows only its journal.
+[[nodiscard]] double gamesPerHour(const std::vector<tour::GameResult>& results, int64_t now_ms);
 
 // A tournament's result in a few words, for the list of the last ones finished: the SPRT's decision with the score,
 // a match's score ("Alpha 52½ – 47½ Beta"), a knockout's winner, or the first of the standings with its points and

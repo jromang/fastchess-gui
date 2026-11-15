@@ -32,6 +32,30 @@ TEST_CASE("home: half points as the standings write them") {
     CHECK(home::halfPoints(12) == "12");
 }
 
+TEST_CASE("home: a tournament's pace from its games' end times, the last ten minutes or since its first game") {
+    const int64_t now = 2'000'000'000'000;
+    auto ended        = [](int64_t at, bool voided = false) {
+        tour::GameResult r;
+        r.finished_at = at;
+        r.voided      = voided;
+        return r;
+    };
+    // Ten games in its first minute: 600 an hour. A game voided, or one without its end time, does not count.
+    std::vector<tour::GameResult> results;
+    for (int i = 0; i < 10; ++i) results.push_back(ended(now - 60'000 + i * 6'000));
+    results.push_back(ended(now - 1'000, true));
+    results.push_back(ended(0));
+    CHECK(home::gamesPerHour(results, now) == doctest::Approx(600.0));
+    // Long before, games that do not count: five in the last ten minutes, 30 an hour.
+    results.clear();
+    for (int i = 0; i < 20; ++i) results.push_back(ended(now - 3'600'000 + i * 1'000));
+    for (int i = 0; i < 5; ++i) results.push_back(ended(now - 500'000 + i * 60'000));
+    CHECK(home::gamesPerHour(results, now) == doctest::Approx(30.0));
+    // Unknown in its first seconds, and without games.
+    CHECK(home::gamesPerHour({ended(now - 2'000)}, now) == 0.0);
+    CHECK(home::gamesPerHour({}, now) == 0.0);
+}
+
 TEST_CASE("home: the result of a tournament in a few words") {
     // A match: A's score first, then B's.
     auto match = summary(tour::Format::Match, {{"Alpha", 52.5, 100}, {"Beta", 47.5, 100}});

@@ -356,24 +356,7 @@ home::RunCard App::runCard() {
         if (games_.empty()) {
             leader = TR("No game finished yet");
         } else if (match) {
-            // stats_ is A's point of view.
-            const double a = stats_.wins + 0.5 * stats_.draws;
-            const double b = stats_.losses + 0.5 * stats_.draws;
-            const auto score =
-                fmt::format("{} {} – {} {}", info.engine_a, home::halfPoints(a), home::halfPoints(b), info.engine_b);
-            if (info.sprt && sprt_) {
-                leader = fmt::format("LLR {:.2f} ({:.2f}, {:.2f})", current_.llr, sprt_->getLowerBound(),
-                                     sprt_->getUpperBound());
-                detail = current_.valid ? fmt::format("Elo {} · {}", formatElo(current_.elo, current_.elo_err), score)
-                                        : score;
-            } else if (current_.valid) {
-                const bool a_leads = current_.elo >= 0;
-                leader             = trf("Leader: {} {}", a_leads ? info.engine_a : info.engine_b,
-                                         formatElo(std::abs(current_.elo), current_.elo_err));
-                detail             = score;
-            } else {
-                leader = score;
-            }
+            std::tie(leader, detail) = matchLeader(info, stats_, current_, info.sprt && sprt_ ? &*sprt_ : nullptr);
         } else if (info.format == tour::Format::TeamMatch && t) {
             // The teams' score, and team A's Elo over team B once it has an interval.
             const auto& a = teams_.teams[0];
@@ -401,6 +384,25 @@ home::RunCard App::runCard() {
     return c;
 }
 
+std::pair<std::string, std::string> App::matchLeader(const RunInfo& info, const fastchess::Stats& stats,
+                                                     const StatPoint& point, const fastchess::SPRT* sprt) {
+    const double a = stats.wins + 0.5 * stats.draws;
+    const double b = stats.losses + 0.5 * stats.draws;
+    auto score = fmt::format("{} {} – {} {}", info.engine_a, home::halfPoints(a), home::halfPoints(b), info.engine_b);
+    if (sprt) {
+        auto llr = fmt::format("LLR {:.2f} ({:.2f}, {:.2f})", point.llr, sprt->getLowerBound(), sprt->getUpperBound());
+        if (!point.valid) return {std::move(llr), std::move(score)};
+        return {std::move(llr), fmt::format("Elo {} · {}", formatElo(point.elo, point.elo_err), score)};
+    }
+    if (point.valid) {
+        const bool a_leads = point.elo >= 0;
+        return {trf("Leader: {} {}", a_leads ? info.engine_a : info.engine_b,
+                    formatElo(std::abs(point.elo), point.elo_err)),
+                std::move(score)};
+    }
+    return {std::move(score), {}};
+}
+
 home::RunCard App::runCardOf(std::size_t index) {
     const auto& r    = *runs_[index].run;
     const auto* t    = r.tournament();
@@ -411,6 +413,7 @@ home::RunCard App::runCardOf(std::size_t index) {
     c.format = fmt::format("{} · {}", formatLabel(info.format), info.limit_text);
     if (info.format != tour::Format::Match)
         c.format += " · " + trn("{} engine", "{} engines", info.participants, info.participants);
+    if (info.sprt) c.format += fmt::format(" · SPRT [{:g}, {:g}]", info.elo0, info.elo1);
     if (t) {
         for (const auto& g : t->results()) c.played += g.voided ? 0 : 1;
     }
@@ -434,18 +437,20 @@ home::RunCard App::runCardOf(std::size_t index) {
         cache.games = results.size();
         cache.leader.clear();
         cache.detail.clear();
-        const auto& spec = t->spec();
+        const auto wall = std::chrono::duration_cast<std::chrono::milliseconds>(
+                              std::chrono::system_clock::now().time_since_epoch())
+                              .count();
+        cache.games_per_hour = home::gamesPerHour(results, wall);
+        const auto& spec     = t->spec();
         if (c.played == 0) {
             cache.leader = TR("No game finished yet");
         } else if (spec.format == tour::Format::Match && spec.participants.size() == 2) {
-            double a = 0, b = 0;
-            for (const auto& g : results) {
-                if (g.voided) continue;
-                a += g.scoreOf(0);
-                b += g.scoreOf(1);
-            }
-            cache.leader = fmt::format("{} {} – {} {}", spec.participants[0].engine.name, home::halfPoints(a),
-                                       home::halfPoints(b), spec.participants[1].engine.name);
+            // As the shown match's: its SPRT with fastchess' own classes, on the pairs complete.
+            std::optional<fastchess::SPRT> sprt;
+            if (info.sprt) sprt.emplace(info.alpha, info.beta, info.elo0, info.elo1, info.model, true);
+            const auto stats = t->pairStats(spec.participants[0].id, spec.participants[1].id);
+            const auto point = computeStats(stats, info.penta, sprt ? &*sprt : nullptr);
+            std::tie(cache.leader, cache.detail) = matchLeader(info, stats, point, sprt ? &*sprt : nullptr);
         } else if (spec.format == tour::Format::RoundRobin || spec.format == tour::Format::Gauntlet ||
                    spec.format == tour::Format::Swiss) {
             const auto table = tour::computeTable(spec, results, std::nullopt, t->byes());
@@ -460,6 +465,15 @@ home::RunCard App::runCardOf(std::size_t index) {
     }
     c.leader = cache.leader;
     c.detail = cache.detail;
+    if (c.total == 0) {
+        c.end = info.sprt ? TR("Until the SPRT decides") : TR("Until stopped");
+    } else if (cache.games_per_hour > 0 && !r.paused()) {
+        const double left =
+            c.played >= c.total ? 0.0 : static_cast<double>(c.total - c.played) / cache.games_per_hour * 3600.0;
+        c.end = trf("Ends about {} (in {})", endTime(left), ui::formatDuration(left));
+    } else {
+        c.end = TR("End estimated after the first games");
+    }
     return c;
 }
 

@@ -48,6 +48,19 @@ std::string formatLabel(tour::Format format) {
     return "";
 }
 
+double gamesPerHour(const std::vector<tour::GameResult>& results, int64_t now_ms) {
+    const int64_t from = now_ms - 600'000;
+    int64_t first      = now_ms;
+    std::size_t played = 0;
+    for (const auto& r : results) {
+        if (r.voided || r.finished_at <= 0) continue;
+        first = std::min(first, r.finished_at);
+        if (r.finished_at >= from) ++played;
+    }
+    const double span = static_cast<double>(now_ms - std::max(from, first)) / 1000.0;
+    return span > 5 ? static_cast<double>(played) / (span / 3600.0) : 0.0;
+}
+
 std::string statusLabel(const tour::Summary& s, bool running) {
     if (running) return TR("Running");
     if (!s.finished) return TR("Interrupted");

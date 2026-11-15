@@ -901,6 +901,10 @@ class App {
     void drawRunTabs();   // the tabs, above the workspace's header
     // The home page's card of a tournament playing that is not shown: what its copy and its process tell.
     home::RunCard runCardOf(std::size_t index);
+    // Who leads a match, from A's point of view (`stats`, `point`): the LLR of its SPRT with the Elo and the score, or
+    // the Elo of the engine ahead with the score. For its card on the home page.
+    static std::pair<std::string, std::string> matchLeader(const RunInfo& info, const fastchess::Stats& stats,
+                                                           const StatPoint& point, const fastchess::SPRT* sprt);
     // The controls of tab `index` on the home page's card: pause or resume, stop, its weight against the others'.
     void drawRunControls(std::size_t index);
     // The machine's budget (Settings, MachineBudget): what the tournaments share, its defaults resolved.
@@ -1235,6 +1239,7 @@ class App {
         std::size_t games = ~std::size_t(0);
         Clock::time_point started{};
         std::string leader, detail;
+        double games_per_hour = 0;  // the cards of the tournaments not shown
     } leader_cache_;
     // The same for the cards of the tournaments not shown, from their copy of the journal: by folder.
     std::map<std::string, LeaderCache> other_leaders_;
