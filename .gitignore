@@ -98,3 +98,6 @@ scripted_result
 /build-*/
 !gui/win/fastchess-gui.rc
 !gui/win/fastchess-gui.manifest
+
+# Instructions for Claude Code, kept out of the repository
+CLAUDE.md
