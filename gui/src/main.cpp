@@ -235,30 +235,10 @@ void useBookCache(const fcg::Storage& storage) {
     (void)fcg::tour::pruneBookCache(30);
 }
 
-}  // namespace
-
-int main(int argc, char** argv) {
-#ifdef _WIN32
-    // The engines inherit it: one missing a DLL (MSVCR100.dll) or crashing fails at once, instead of waiting on a
-    // system error box until someone clicks it.
-    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
-#else
-    // A write to an engine that just died must not kill the GUI.
-    std::signal(SIGPIPE, SIG_IGN);
-#endif
-
-    // A WinBoard engine, run as a UCI one for fastchess: stdin and stdout are the engine's UCI side, untouched.
-    if (argc >= 2 && std::string_view(argv[1]) == "--wb2uci") {
-        return fcg::wb2uci::run(std::vector<std::string>(argv + 2, argv + argc));
-    }
-    // An engine with a book of its own: the same, the book's moves answered by the adapter.
-    if (argc >= 2 && std::string_view(argv[1]) == "--book-adapter") {
-        return fcg::tour::runBookAdapter(std::vector<std::string>(argv + 2, argv + argc));
-    }
-
-    const auto args = parseArgs(argc, argv);
+// The program, headless or with its window.
+int run(const Args& args, const char* argv0) {
     fcg::Console::instance().attach();
-    fastchess::engine::xboard_adapter = selfPath(argc > 0 ? argv[0] : "");
+    fastchess::engine::xboard_adapter = selfPath(argv0);
     fcg::tour::book_adapter           = fastchess::engine::xboard_adapter;
 
     // Engine probes read timeouts from the global configuration before any run exists.
@@ -500,4 +480,38 @@ int main(int argc, char** argv) {
     SDL_Quit();
 
     return 0;
+}
+
+}  // namespace
+
+int main(int argc, char** argv) {
+#ifdef _WIN32
+    // The engines inherit it: one missing a DLL (MSVCR100.dll) or crashing fails at once, instead of waiting on a
+    // system error box until someone clicks it.
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
+#else
+    // A write to an engine that just died must not kill the GUI.
+    std::signal(SIGPIPE, SIG_IGN);
+#endif
+
+    // A WinBoard engine, run as a UCI one for fastchess: stdin and stdout are the engine's UCI side, untouched.
+    if (argc >= 2 && std::string_view(argv[1]) == "--wb2uci") {
+        return fcg::wb2uci::run(std::vector<std::string>(argv + 2, argv + argc));
+    }
+    // An engine with a book of its own: the same, the book's moves answered by the adapter.
+    if (argc >= 2 && std::string_view(argv[1]) == "--book-adapter") {
+        return fcg::tour::runBookAdapter(std::vector<std::string>(argv + 2, argv + argc));
+    }
+
+    // An error nothing else caught ends the program with its reason rather than without a word: in a message box
+    // too for the window, as a Windows GUI program has no console.
+    const auto args = parseArgs(argc, argv);
+    try {
+        return run(args, argc > 0 ? argv[0] : "");
+    } catch (const std::exception& e) {
+        const auto message = fcg::trf("Error: {}", e.what());
+        std::fprintf(stderr, "%s\n", message.c_str());
+        if (args.run.empty()) SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "fastchess-gui", message.c_str(), nullptr);
+        return 1;
+    }
 }
