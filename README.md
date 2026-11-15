@@ -217,7 +217,9 @@ installation (a USB stick, a folder copied between machines), put an empty file 
 program: everything then goes into a `data` folder beside it, and the engines, books and tablebases of the
 program's folder are found again wherever the folder is moved.
 
-The [user guide](docs/guide.md) covers every setting, window and file in detail. Problems and ideas are welcome in
+The [user guide](docs/guide.md) covers every setting, window and file in detail, with a quick start, the keyboard
+shortcuts, troubleshooting and a glossary. It is built into the program, in every language of the interface: F1
+opens it beside the page, at the section of what is under the mouse. Problems and ideas are welcome in
 the [issues](https://github.com/jromang/fastchess-gui/issues): *Report a problem…* (Settings, the Log page) opens a
 new one filled with the version, the system and the end of the log, to read and complete before sending.
 
@@ -240,7 +242,9 @@ one):
 
 The tournaments themselves (schedules, pairings, journal, resume, standings, ratings) are a separate library,
 `tournament/`, whose runner derives from fastchess' `BaseTournament`; see
-[docs/design/tournament.md](docs/design/tournament.md).
+[docs/design/tournament.md](docs/design/tournament.md). How the code is organised, translated and tested is in
+[docs/design/development.md](docs/design/development.md), the help and the guide in
+[docs/design/help.md](docs/design/help.md).
 
 The original fastchess README is kept as [README.fastchess.md](README.fastchess.md).
 
