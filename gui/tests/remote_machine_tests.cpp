@@ -22,6 +22,8 @@
 #include "machine_jobs.hpp"
 #include "machine_run.hpp"
 #include "machines.hpp"
+#include "remote_run.hpp"
+#include "run.hpp"
 #include "ssh_client.hpp"
 #include "ssh_server.hpp"
 #include "ssh_tunnel.hpp"
@@ -1417,3 +1419,141 @@ TEST_CASE("SSH client: a real server, when FCG_SSH_TEST names one") {
     CHECK(readHash(hash->out) == sha256File(dir / "data.bin"));
     fs::remove_all(dir);
 }
+
+// A real machine from end to end, when FCG_MACHINE_TEST names one: "user@host:port:key_file", with FCG_MACHINE_PROGRAM
+// the fastchess-gui built for its system and FCG_MACHINE_ENGINE the mock engine built for it (those of the Windows
+// build, from Linux). As the window does it: the machine tested, fastchess-gui installed there, the engine copied and
+// checked, a match started there in the background and followed, the window gone and back, the files copied back.
+// Off by default; its folder there is left for a look (fcg-e2e-<time> in the user's home folder).
+TEST_CASE("Machines: a real machine from end to end, when FCG_MACHINE_TEST names one") {
+    const char* spec    = std::getenv("FCG_MACHINE_TEST");
+    const char* program = std::getenv("FCG_MACHINE_PROGRAM");
+    const char* mock    = std::getenv("FCG_MACHINE_ENGINE");
+    if (!spec || !*spec || !program || !mock) return;
+    const std::string s = spec;
+    const auto at       = s.find('@');
+    const auto colon1   = s.find(':', at);
+    const auto colon2   = s.find(':', colon1 + 1);
+    REQUIRE((at != std::string::npos && colon1 != std::string::npos && colon2 != std::string::npos));
+
+    const auto dir = freshDir("e2e");
+    Machine m;
+    m.id       = "e2e";
+    m.name     = "e2e-box";
+    m.user     = s.substr(0, at);
+    m.host     = s.substr(at + 1, colon1 - at - 1);
+    m.port     = std::stoi(s.substr(colon1 + 1, colon2 - colon1 - 1));
+    m.auth     = SshAuth::KeyFile;
+    m.key_file = s.substr(colon2 + 1);
+    m.folder   = "fcg-e2e-" + std::to_string(std::time(nullptr));
+    m.program  = program;
+    const auto target = targetOf(m, dir, "");
+
+    SshClient client;
+    REQUIRE_MESSAGE(client.connect(target), client.error().message);
+    JobState state;
+    JobResult result;
+    testMachine(client, m, state, result);
+    REQUIRE_MESSAGE(result.ok, result.error.message);
+    for (const auto& line : result.lines) MESSAGE(line);
+    m.system = *result.system;
+
+    result = {};
+    installProgram(client, m, program, state, result);
+    REQUIRE_MESSAGE(result.ok, result.error.message);
+
+    // The mock engine there, checked as the library's engines are.
+    const auto engines_there = remoteJoin(machineFolder(m), "engines");
+    const auto engine_there  = remoteJoin(engines_there, fs::path(mock).filename().string());
+    REQUIRE_MESSAGE(client.makeDirs(engines_there), client.error().message);
+    REQUIRE_MESSAGE(client.upload(mock, engine_there), client.error().message);
+    m.engines = {{"Alpha", engine_there, -1, "", ""}, {"Bravo", engine_there, -1, "", ""}};
+    result    = {};
+    checkEngines(client, m, {}, std::chrono::seconds(20), state, result);
+    REQUIRE_MESSAGE(result.ok, result.error.message);
+
+    // A match of this computer, played there.
+    std::vector<EngineEntry> library(2);
+    library[0].name = "Alpha";
+    library[1].name = "Bravo";
+    writeFile(dir / "mock-engine", "the engine of this computer, played by its copy there");
+    for (auto& e : library) e.cmd = (dir / "mock-engine").string();
+    MatchSetup setup;
+    setup.format      = TournamentFormat::Match;
+    setup.name        = "e2e";
+    setup.engine_a    = "Alpha";
+    setup.engine_b    = "Bravo";
+    setup.mode        = MatchMode::Fixed;
+    setup.fixed_games = 16;
+    setup.limit       = LimitKind::Nodes;
+    setup.nodes       = 1000;
+    setup.concurrency = 2;
+    setup.recover     = true;
+    const auto local_dir = dir / "runs" / "e2e";
+    const auto local     = buildRun(setup, library, topologyFromCores({{0, 0}, {0, 1}}), local_dir).spec;
+    (void)tour::TournamentState::create(local_dir, local);
+    const auto remote_dir = remoteTournamentDir(m, local_dir);
+    tour::TournamentSpec there;
+    const auto spec_error = remoteSpec(local, m, library, local_dir, remote_dir, there);
+    REQUIRE_MESSAGE(spec_error.empty(), spec_error);
+    const auto spec_json = nlohmann::json(there).dump() + "\n";
+    const auto attach    = remoteAttachCommand(m, remote_dir);
+    REQUIRE(attach);
+
+    // Follows the match until `games` are in the copy here (the journal copied back), or it ended.
+    const auto follow = [&](RemoteRun& run, MachineSync& sync, std::size_t games, std::chrono::seconds limit) {
+        const auto until = std::chrono::steady_clock::now() + limit;
+        auto next_pass   = std::chrono::steady_clock::now();
+        while (std::chrono::steady_clock::now() < until) {
+            run.update();
+            if (std::chrono::steady_clock::now() >= next_pass) {
+                sync.now();
+                next_pass = std::chrono::steady_clock::now() + 1s;
+            }
+            const auto* t = run.tournament();
+            if (t && t->results().size() >= games) return true;
+            std::this_thread::sleep_for(50ms);
+        }
+        return false;
+    };
+    {
+        auto status              = std::make_shared<LinkStatus>();
+        SshLink::Prepare prepare = [m, local_dir, remote_dir, spec_json](SshClient& c, std::string& error,
+                                                                         std::vector<std::string>& notes) {
+            return startOnMachine(c, m, local_dir, remote_dir, spec_json, error, notes);
+        };
+        RemoteRun run;
+        const auto error = run.attach(local_dir, std::make_unique<SshLink>(target, *attach, prepare, status, 30s));
+        REQUIRE_MESSAGE(error.empty(), error);
+        MachineSync sync(target, remote_dir, local_dir);
+        REQUIRE_MESSAGE(follow(run, sync, 4, 300s), status->message());
+        MESSAGE("started there, 4 games copied back");
+    }  // the window goes away: the match plays on there
+
+    std::this_thread::sleep_for(3s);
+    {
+        auto status = std::make_shared<LinkStatus>();
+        RemoteRun run;
+        const auto error = run.attach(local_dir, std::make_unique<SshLink>(target, *attach, nullptr, status, 10s));
+        REQUIRE_MESSAGE(error.empty(), error);
+        MachineSync sync(target, remote_dir, local_dir);
+        REQUIRE_MESSAGE(follow(run, sync, 16, 600s), status->message());
+        // Its process ends there once the match is over: the files copied back a last time after.
+        const auto until = std::chrono::steady_clock::now() + 120s;
+        while (run.running() && std::chrono::steady_clock::now() < until) {
+            run.update();
+            std::this_thread::sleep_for(50ms);
+        }
+        CHECK_FALSE(run.running());
+        sync.finish();
+        for (int i = 0; i < 600 && !sync.finished(); ++i) std::this_thread::sleep_for(50ms);
+        CHECK_MESSAGE(sync.error().empty(), sync.error());
+    }
+    const auto copy = tour::TournamentState::open(local_dir, true);
+    std::size_t counted = 0;
+    for (const auto& r : copy->results()) counted += r.voided ? 0 : 1;
+    CHECK(counted == 16);
+    CHECK(copy->finished());
+    fs::remove_all(dir);
+}
+
