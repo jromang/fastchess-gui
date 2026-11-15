@@ -5,9 +5,11 @@
 // tests at once, or test cases run in processes of their own at the same time, then never share a folder of the same
 // name. Removed when the tests end.
 
+#include <chrono>
 #include <filesystem>
 #include <string>
 #include <system_error>
+#include <thread>
 
 #ifdef _WIN32
 #    include <process.h>
@@ -54,5 +56,17 @@ class OwnTempDir {
    private:
     std::filesystem::path dir_;
 };
+
+// std::filesystem::remove_all, tried again for five seconds while it fails: on Windows a folder cannot go while a
+// process still holds it, an engine's that is ending for one. Then it throws as remove_all does.
+inline void removeAll(const std::filesystem::path& path) {
+    for (int i = 0; i < 100; ++i) {
+        std::error_code ec;
+        std::filesystem::remove_all(path, ec);
+        if (!ec) return;
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+    std::filesystem::remove_all(path);
+}
 
 }  // namespace fcg::test
