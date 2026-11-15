@@ -985,7 +985,9 @@ without printing, talking JSON lines with the window: the tournament's events (i
 games in progress move by move, each game recorded, its log, its end) and the window's commands (pause, resume, stop,
 changes, the end of a game, its share of the machine with `--allowance THREADS:MEMORY_MB:GPUS:ONE`). The first line
 each way is a hello, `{"hello": {"protocol": 1, ...}}`; a script through `--attach` gets the tournament's hello and
-events, and may send commands such as `{"c": "pause"}`. One window (or script) at a time talks with a tournament.
+events, and may send commands such as `{"c": "pause"}`. One window (or script) at a time talks with a tournament;
+`--attach` lets go of it when its standard input ends or its output is no longer read, so that a script keeps its
+input open while it reads the answers.
 
 The tournament can be broadcast at the same time, as from the *Broadcast* tab:
 

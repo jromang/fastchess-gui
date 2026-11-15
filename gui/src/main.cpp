@@ -378,15 +378,21 @@ int attachTo(const std::string& folder) {
 #endif
             if (n <= 0 || !link->write(std::string(buffer, static_cast<std::size_t>(n)))) break;
         }
+        // The other side went away (the window, its SSH session): the connection is let go, for the next window to
+        // connect; otherwise the tournament would take this bridge for a window still there and refuse others.
+        link->close();
     });
     input.detach();  // a read of the terminal that waits ends with the program
     char buffer[65536];
     for (;;) {
         const long n = link->read(buffer, sizeof buffer);
         if (n <= 0) break;
-        std::fwrite(buffer, 1, static_cast<std::size_t>(n), stdout);
-        std::fflush(stdout);
+        // Nobody reads any more: the same.
+        if (std::fwrite(buffer, 1, static_cast<std::size_t>(n), stdout) != static_cast<std::size_t>(n) ||
+            std::fflush(stdout) != 0)
+            break;
     }
+    link->close();
     return 0;
 }
 
