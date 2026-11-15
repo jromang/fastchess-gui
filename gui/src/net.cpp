@@ -79,6 +79,7 @@ Handle openSocket(int type, int family = AF_INET) { return socket(family, type |
 #    endif
 void setBlocking(Handle fd, bool blocking) {
     const int flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0) return;  // not a descriptor: the calls that follow tell
     fcntl(fd, F_SETFL, blocking ? flags & ~O_NONBLOCK : flags | O_NONBLOCK);
 }
 bool wouldBlock() { return errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR; }

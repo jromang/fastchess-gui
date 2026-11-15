@@ -1149,7 +1149,7 @@ void App::startFromQueue(bool go_on, std::size_t from, const std::string& label)
         auto setup = queue_[i].setup;
         // The look of the program follows the settings, not the queued setup.
         keepProgramSettings(setup, setup_);
-        setup_ = setup;
+        setup_ = std::move(setup);
         startRun();
         // Taken off the queue once started: one that cannot start (an engine removed since...) is not lost.
         if (start_error_.empty() && run_->running()) {

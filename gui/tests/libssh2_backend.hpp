@@ -40,6 +40,7 @@ int ssh2_ed25519_verify(ssh2_ed25519_ctx* ed_ctx, LIBSSH2_SESSION* session, cons
 ssh2_bn* ssh2_bn_init(void);
 void ssh2_bn_free(ssh2_bn* bn);
 size_t ssh2_bn_bits(const ssh2_bn* bn);
+int ssh2_bn_set_word(ssh2_bn* bn, uint32_t word);
 int ssh2_bn_to_bin(const ssh2_bn* bn, unsigned char* bin);
 
 int ssh2_cipher_init(ssh2_cipher_ctx* ctx, int algo, unsigned char* iv, unsigned char* secret, int encrypt);

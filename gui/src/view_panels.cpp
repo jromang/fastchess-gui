@@ -286,7 +286,7 @@ void App::drawPanels() {
         } else {
             const auto it = std::find_if(layout::allPanels().begin(), layout::allPanels().end(),
                                          [&](const layout::PanelInfo& p) { return panel == p.id; });
-            title         = TR(it->label);
+            title         = it != layout::allPanels().end() ? std::string(TR(it->label)) : panel + "###" + panel;
         }
         // The live view's name leaves room for its badge.
         if (panel == layout::panel::LIVE) {

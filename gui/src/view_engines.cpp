@@ -642,7 +642,7 @@ void App::drawEngines() {
         copy.name = uniqueEngineName(copy.name, -1);
         copy.aliases.clear();  // a PGN player is one engine
         if (!copy.logo.empty()) ++logos_version_;  // the same logo, under its new name on the web page
-        engines_.push_back(copy);
+        engines_.push_back(std::move(copy));
         selected_engine_ = static_cast<int>(engines_.size()) - 1;
         engine_marked_.clear();
         storage_.saveEngines(engines_);
@@ -683,7 +683,7 @@ void App::drawEngines() {
             ImGui::SetTooltip("%s", TR("One after the other, not while a tournament plays. Not the inactive ones."));
         if (ImGui::MenuItem(trf("Remove the missing programs ({})…", missing.size()).c_str(), nullptr, false,
                             !missing.empty()))
-            askRemove(missing);
+            askRemove(std::move(missing));
         ImGui::EndPopup();
     }
 

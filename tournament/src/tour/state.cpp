@@ -1210,7 +1210,10 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     }
 
     std::unique_lock<std::mutex> lock(mutex_);
-    const auto elo      = [&](int id) { return spec_.participant(id) ? spec_.participant(id)->elo : 0; };
+    const auto elo = [&](int id) {
+        const auto* p = spec_.participant(id);
+        return p ? p->elo : 0;
+    };
     const auto text     = withTeams(withElo(PgnBuilder(pgn_config, game, round, CommentStyle::Fastchess).get(),
                                             elo(result.white), elo(result.black)),
                                     spec_, result.white, result.black);
