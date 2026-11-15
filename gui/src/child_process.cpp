@@ -74,12 +74,21 @@ bool ChildProcess::start(const std::string& program, const std::vector<std::stri
     std::wstring command = quoted(wide(program));
     for (const auto& a : args) command += L" " + quoted(wide(a));
 
+    // A detached process does not keep this one's error output: a terminal's pipe it held would never end
+    // (`fastchess-gui --run … --detach | more` waited for the tournament), and the terminal may be gone. It writes to
+    // its tournament's log.
+    HANDLE null_error = INVALID_HANDLE_VALUE;
+    if (detached) {
+        null_error = CreateFileW(L"NUL", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0,
+                                 nullptr);
+    }
+
     STARTUPINFOW si{};
     si.cb         = sizeof(si);
     si.dwFlags    = STARTF_USESTDHANDLES;
     si.hStdInput  = in_read;
     si.hStdOutput = out_write;
-    si.hStdError  = GetStdHandle(STD_ERROR_HANDLE);
+    si.hStdError  = null_error != INVALID_HANDLE_VALUE ? null_error : GetStdHandle(STD_ERROR_HANDLE);
     PROCESS_INFORMATION pi{};
     DWORD flags = CREATE_UNICODE_ENVIRONMENT;
     // Detached: no console of ours, a process group of its own, and out of this program's job when allowed.
@@ -92,6 +101,7 @@ bool ChildProcess::start(const std::string& program, const std::vector<std::stri
     }
     CloseHandle(in_read);
     CloseHandle(out_write);
+    if (null_error != INVALID_HANDLE_VALUE) CloseHandle(null_error);
     if (!ok) {
         CloseHandle(in_write);
         CloseHandle(out_read);
@@ -206,6 +216,8 @@ bool ChildProcess::start(const std::string& program, const std::vector<std::stri
     posix_spawn_file_actions_init(&actions);
     posix_spawn_file_actions_adddup2(&actions, in[0], 0);
     posix_spawn_file_actions_adddup2(&actions, out[1], 1);
+    // A detached process does not keep this one's error output (see the Windows version).
+    if (detached) posix_spawn_file_actions_addopen(&actions, 2, "/dev/null", O_WRONLY, 0);
     posix_spawnattr_t attr;
     posix_spawnattr_init(&attr);
     short flags = POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF;
