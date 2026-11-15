@@ -86,7 +86,8 @@ The move sounds are made by the program as it runs (`gui/src/sound.cpp`): no sou
 
 ## Fonts (fetched at build time and embedded)
 
-- **Inter** 4.1 by Rasmus Andersson (https://rsms.me/inter/), the text and titles (Regular and SemiBold),
+- **Inter** 4.1 by Rasmus Andersson (https://rsms.me/inter/), the text and titles (Regular, SemiBold, and Italic
+  for the guide),
   under the SIL Open Font License 1.1: [licenses/Inter-OFL-1.1.txt](licenses/Inter-OFL-1.1.txt).
 - **Lucide** 1.59 icon font (https://lucide.dev), the icons, under the ISC license:
   [licenses/Lucide-ISC.txt](licenses/Lucide-ISC.txt).
@@ -105,6 +106,7 @@ A system font (DejaVu Sans or Segoe UI Symbol) is merged in when present, for th
 | libssh2 (master, e75fa9a), modified for the tunnel's memory (see cmake/patch_libssh2.cmake in the sources), with a cryptography backend for Mbed TLS 4 written for fastchess-gui | BSD-3-Clause, below |
 | Mbed TLS 4.1.1 (TLS for lichess, cryptography for the tunnel) | Apache-2.0: [licenses/Apache-2.0.txt](licenses/Apache-2.0.txt) |
 | QR Code generator 1.8.0 by Project Nayuki | MIT, below |
+| md4c 0.5.2 by Martin Mitáš (the guide's Markdown) | MIT, below |
 | tinygettext | zlib, below |
 
 libssh2's license:
@@ -156,6 +158,24 @@ QR Code generator's license:
       the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of
       contract, tort or otherwise, arising from, out of or in connection with the Software or the use or other
       dealings in the Software.
+
+md4c's license:
+
+    Copyright © 2016-2024 Martin Mitáš
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+    documentation files (the “Software”), to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and
+    to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions
+    of the Software.
+
+    THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+    TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+    THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+    CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+    DEALINGS IN THE SOFTWARE.
 
 tinygettext's license (zlib):
 

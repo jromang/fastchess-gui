@@ -120,6 +120,24 @@
     },
     {
       "type": "library",
+      "bom-ref": "fetchcontent:md4c",
+      "name": "md4c",
+      "version": "0.5.2",
+      "description": "Markdown parser of the guide panel, compiled in.",
+      "purl": "pkg:github/mity/md4c@release-0.5.2",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "hashes": [{ "alg": "SHA-256", "content": "55d0111d48fb11883aaee91465e642b8b640775a4d6993c2d0e7a8092758ef21" }],
+      "externalReferences": [
+        { "type": "distribution", "url": "https://github.com/mity/md4c/archive/refs/tags/release-0.5.2.tar.gz" },
+        { "type": "vcs", "url": "https://github.com/mity/md4c.git" }
+      ],
+      "properties": [
+        { "name": "fastchess-gui:pin", "value": "https://github.com/mity/md4c/archive/refs/tags/release-0.5.2.tar.gz" },
+        { "name": "fastchess-gui:commit", "value": "729e6b8b320caa96328968ab27d7db2235e4fb47" }
+      ]
+    },
+    {
+      "type": "library",
       "bom-ref": "fetchcontent:mbedtls",
       "name": "Mbed TLS",
       "version": "4.1.1",
