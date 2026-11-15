@@ -390,6 +390,23 @@ TEST_CASE("remote: a tournament on its socket plays on without the window, which
     }
     REQUIRE(link);
     REQUIRE(h.run.attach(dir, std::move(link)).empty());
+    // What the window and the process were doing, told only if the wait below fails.
+    const auto state_then = [&] {
+        std::ifstream in(dir / "fastchess-gui.log", std::ios::binary);
+        std::string log((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+        if (log.size() > 3000) log = log.substr(log.size() - 3000);
+        std::size_t on_disk = 0;
+        try {
+            on_disk = tour::TournamentState::open(dir, true)->results().size();
+        } catch (const std::exception&) {
+        }
+        return "seen " + std::to_string(seen) + ", games since " + std::to_string(h.games.size()) +
+               ", moves seen " + std::to_string(h.saw_moves) + ", connecting " + std::to_string(h.run.connecting()) +
+               ", elsewhere " + std::to_string(h.run.elsewhere()) + ", running games " +
+               std::to_string(h.run.runningGames()) + ", error '" + h.run.error() + "', results on disk " +
+               std::to_string(on_disk) + "\nthe process's log ends with:\n" + log;
+    };
+    INFO(state_then());
     REQUIRE(h.waitFor([&] { return h.games.size() > seen + 2 && h.saw_moves; }, 60s));
     CHECK(h.run.pid() == control->pid);
     // Its time counts from the process's start, told in its hello, not from this connection.
