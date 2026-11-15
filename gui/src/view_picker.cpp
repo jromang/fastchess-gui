@@ -91,7 +91,7 @@ bool App::participantPicker(std::vector<ParticipantSetup>& list) {
     ImGui::TextUnformatted(rated ? trf("Elo of {} ({})", seed->name, seed->elo).c_str() : TR("Elo of the first"));
     ImGui::SameLine();
     ImGui::BeginDisabled(!rated);
-    if (ImGui::Button(TR("Suggest##picker")) || (open_for_shot == 2 && rated)) {
+    if ((ImGui::Button(TR("Suggest##picker")) || open_for_shot == 2) && rated) {
         std::vector<std::string> taken;
         for (const auto& q : list) taken.push_back(q.name);
         const auto names = suggestOpponents(engines_, seed->elo, p.range, p.suggest, taken);
