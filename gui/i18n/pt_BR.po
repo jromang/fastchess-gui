@@ -197,6 +197,9 @@ msgstr "Uma cor venceu as duas partidas de um par"
 msgid "A command for the engine"
 msgstr "Um comando para o motor"
 
+msgid "A file has no name."
+msgstr "Um arquivo não tem nome."
+
 msgid "A file of your choice"
 msgstr "Um arquivo à sua escolha"
 
@@ -521,8 +524,14 @@ msgstr "Âncora:"
 msgid "Another SSH server"
 msgstr "Outro servidor SSH"
 
+msgid "Another build…"
+msgstr "Outra compilação…"
+
 msgid "Another engine of the list takes its place and plays its games, those it played included."
 msgstr "Outro engine da lista toma o seu lugar e joga as suas partidas, incluindo as que ele já jogou."
+
+msgid "Another program of {}, for {}: copied instead of the library's, and kept for this machine."
+msgstr "Outro programa de {}, para {}: copiado no lugar do da biblioteca, e guardado para esta máquina."
 
 msgid "Answers {} as {}."
 msgstr "Responde a {} como {}."
@@ -773,6 +782,9 @@ msgstr "Procurar…"
 msgid "Budget"
 msgstr "Orçamento"
 
+msgid "Build"
+msgstr "Compilação"
+
 msgid "Build a Polyglot book"
 msgstr "Construir um livro Polyglot"
 
@@ -914,6 +926,9 @@ msgstr "Verificar"
 msgid "Check the engines"
 msgstr "Verificar os motores"
 
+msgid "Check the engines on {}"
+msgstr "Verificar os motores em {}"
+
 msgid "Check the mate PVs"
 msgstr "Verificar as PVs de mate"
 
@@ -1016,6 +1031,12 @@ msgstr "Escolha os dois motores da partida."
 msgid "Choose the working directory of {}"
 msgstr "Escolher a pasta de trabalho de {}"
 
+msgid "Choose the {} build of {}…"
+msgstr "Escolher a compilação {} de {}…"
+
+msgid "Choose the {} build…"
+msgstr "Escolher a compilação {}…"
+
 msgid "Choose two different engines, or give them books of their own."
 msgstr "Escolha dois engines diferentes, ou dê a eles livros próprios."
 
@@ -1067,8 +1088,14 @@ msgstr "Configurações comuns, impostas a todos os engines (0 = a de cada engin
 msgid "Common settings: {}"
 msgstr "Configurações comuns: {}"
 
+msgid "Compare"
+msgstr "Comparar"
+
 msgid "Compare with a saved run…"
 msgstr "Comparar com uma execução salva…"
+
+msgid "Compares the SHA-256 of each engine's program there with this computer's."
+msgstr "Compara o SHA-256 do programa de cada motor lá com o deste computador."
 
 msgid "Comparing {} here and on {}…"
 msgstr "Comparando {} aqui e em {}…"
@@ -1118,8 +1145,14 @@ msgstr "Copia o fastchess-gui {} para {} na máquina (retomada se a cópia cair)
 msgid "Copies them to the machine's folders in the background, each one checked after; a copy cut short resumes where it stopped."
 msgstr "Copia-os para as pastas da máquina em segundo plano, cada um verificado depois; uma cópia interrompida retoma de onde parou."
 
+msgid "Copies {} to the engines folder of {} and points the engine there; a program elsewhere on the machine is left as it is."
+msgstr "Copia {} para a pasta de motores de {} e aponta o motor para lá; um programa em outro lugar da máquina fica como está."
+
 msgid "Copy"
 msgstr "Copiar"
+
+msgid "Copy ({})"
+msgstr "Copiar ({})"
 
 msgid "Copy FEN"
 msgstr "Copiar FEN"
@@ -1130,11 +1163,26 @@ msgstr "Copiar PGN"
 msgid "Copy the version"
 msgstr "Copiar a versão"
 
+msgid "Copy to the machine: this computer's program of {} goes to {} on {} (with its folder if you want), then its path is set there and checked."
+msgstr "Copiar para a máquina: o programa de {} deste computador vai para {} em {} (com a pasta dele se você quiser), depois o caminho dele lá é definido e verificado."
+
+msgid "Copy {} to {}"
+msgstr "Copiar {} para {}"
+
+msgid "Copy {} to {}, in place of its program there"
+msgstr "Copiar {} para {}, no lugar do programa dele lá"
+
+msgid "Copy {} to {}…"
+msgstr "Copiar {} para {}…"
+
 msgid "Copying {} ({})…"
 msgstr "Copiando {} ({})…"
 
 msgid "Copying {} to {}…"
 msgstr "Copiando {} para {}…"
+
+msgid "Copy…"
+msgstr "Copiar…"
 
 msgid "Cores"
 msgstr "Núcleos"
@@ -1700,8 +1748,8 @@ msgstr "Para uma partida que o programa não soube decidir bem: um travamento qu
 msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
 msgstr "Para uma partida que o programa não terminaria bem: um travamento que ele não detecta, um final ganho em que os engines ficam andando em círculos.\nO engine da vez é parado (ele inicia de novo para a próxima partida), e a partida conta com este resultado: Termination \"adjudicated by the operator\" nas exportações, o motivo em um comentário.\nO resultado pode ser alterado depois na aba Partidas."
 
-msgid "For each path: the program is there, can be run, and answers uci (xboard for a WinBoard engine) within 10 seconds."
-msgstr "Para cada caminho: o programa está lá, pode ser executado e responde a uci (xboard para um motor WinBoard) em 10 segundos."
+msgid "For each path: the program is there, can be run, and answers uci (xboard for a WinBoard engine) within 10 seconds; and whether it is the same build as this computer's (their SHA-256)."
+msgstr "Para cada caminho: o programa está lá, pode ser executado e responde a uci (xboard para um motor WinBoard) em 10 segundos; e se é a mesma compilação que a deste computador (o SHA-256 deles)."
 
 msgid "Format"
 msgstr "Formato"
@@ -1960,6 +2008,9 @@ msgstr "Partidas importadas"
 msgid "Import…"
 msgstr "Importar…"
 
+msgid "In the background, resumed where it stopped if it is cut; each file's SHA-256 checked there after; then the engine's path set and checked."
+msgstr "Em segundo plano, retomado de onde parou se for interrompido; o SHA-256 de cada arquivo verificado lá depois; depois o caminho do motor definido e verificado."
+
 msgid "Inaccuracy"
 msgstr "Imprecisão"
 
@@ -2049,6 +2100,12 @@ msgstr "A ficha dele em Ratings: resultados, saúde e rating em todos os torneio
 
 msgid "Its card, with the options whose default changed, new or gone."
 msgstr "A ficha dele, com as opções cujo padrão mudou, novas ou removidas."
+
+msgid "Its folder {} holds more than {} files: the program goes alone."
+msgstr "A pasta {} dele contém mais de {} arquivos: o programa vai sozinho."
+
+msgid "Its former path there, {}, is left as it was."
+msgstr "O caminho anterior dele lá, {}, fica como estava."
 
 msgid "Its games"
 msgstr "Partidas dele"
@@ -2457,8 +2514,8 @@ msgstr "Nenhum engine encontrado neste arquivo."
 msgid "No engine found in this folder."
 msgstr "Nenhum engine encontrado nesta pasta."
 
-msgid "No engine on this machine yet: add the library's engines it has, with their path there."
-msgstr "Nenhum motor nesta máquina ainda: adicione os motores da biblioteca que ela tem, com o caminho lá."
+msgid "No engine on this machine yet: add the library's engines it has, with their path there, or copy them there."
+msgstr "Ainda nenhum motor nesta máquina: adicione os motores da biblioteca que ela tem, com o caminho deles lá, ou copie-os para lá."
 
 msgid "No engine that works within that range. Engines that were never checked do not count: check them first (Engines, More…)."
 msgstr "Nenhum engine que funcione nessa faixa. Engines nunca verificados não contam: verifique-os primeiro (Engines, Mais…)."
@@ -2695,6 +2752,9 @@ msgstr "Tirar da lista desta máquina (o motor continua na biblioteca)."
 
 msgid "On its error output:"
 msgstr "Na saída de erro dele:"
+
+msgid "On macOS, a program copied from another computer may need a signature, or to leave the quarantine: on {}, run codesign -s - {} and xattr -d com.apple.quarantine {}, then Check the engines."
+msgstr "No macOS, um programa copiado de outro computador pode precisar de uma assinatura, ou sair da quarentena: em {}, execute codesign -s - {} e xattr -d com.apple.quarantine {}, depois Verificar os motores."
 
 msgid "On the list"
 msgstr "Na lista"
@@ -3288,6 +3348,12 @@ msgstr "Substituir um engine"
 msgid "Replace the template {}?"
 msgstr "Substituir o modelo {}?"
 
+msgid "Replace with this computer's"
+msgstr "Substituir pelo deste computador"
+
+msgid "Replace {} on {} with this computer's build"
+msgstr "Substituir {} em {} pela compilação deste computador"
+
 msgid "Replace {}…"
 msgstr "Substituir {}…"
 
@@ -3398,6 +3464,9 @@ msgstr "Renderizador do SDL"
 
 msgid "SDL renderer, {} driver"
 msgstr "Renderizador do SDL, driver {}"
+
+msgid "SHA-256 {}…, here and there."
+msgstr "SHA-256 {}…, aqui e lá."
 
 msgid "SPRT calculator"
 msgstr "Calculadora SPRT"
@@ -3547,6 +3616,9 @@ msgstr "Define a opção Threads de {} como {} na biblioteca de engines: todo to
 
 msgid "Settings"
 msgstr "Preferências"
+
+msgid "Settings > Machines: copies this computer's program of {} to {}, sets its path there and checks it."
+msgstr "Configurações > Máquinas: copia o programa de {} deste computador para {}, define o caminho dele lá e o verifica."
 
 msgid "Setup"
 msgstr "Configuração"
@@ -3880,6 +3952,9 @@ msgstr "Testar a conexão com {}"
 
 msgid "Test the connection to {} first (Settings > Machines): it finds out the machine."
 msgstr "Teste primeiro a conexão com {} (Preferências > Máquinas): ela identifica a máquina."
+
+msgid "Test the connection to {} first: it tells the system the program must suit."
+msgstr "Teste primeiro a conexão com {}: ela informa o sistema ao qual o programa deve se adequar."
 
 msgid "Tested engines"
 msgstr "Engines testados"
@@ -4313,13 +4388,22 @@ msgstr[1] "Os programas de {} mudaram desde que eles entraram no torneio: as pr�
 msgid "The program of {} changed since its last tournament, “{}”."
 msgstr "O programa de {} mudou desde o último torneio dele, “{}”."
 
+msgid "The program of {} for {}: copied there, and kept for this machine to compare and replace it later."
+msgstr "O programa de {} para {}: copiado para lá, e guardado para esta máquina para compará-lo e substituí-lo depois."
+
 msgid "The program of {} is missing: its games cannot start until it is back."
 msgid_plural "The programs of {} are missing: their games cannot start until they are back."
 msgstr[0] "O programa de {} não foi encontrado: as partidas dele não podem começar até ele voltar."
 msgstr[1] "Os programas de {} não foram encontrados: as partidas deles não podem começar até eles voltarem."
 
+msgid "The program of {} is not a Windows, Linux or macOS program fastchess-gui knows, nor a script: copied all the same, the check after the copy tells whether it runs on {}."
+msgstr "O programa de {} não é um programa Windows, Linux ou macOS que o fastchess-gui conheça, nem um script: copiado mesmo assim, a verificação após a cópia diz se ele roda em {}."
+
 msgid "The program of {} is not found: {}"
 msgstr "O programa de {} não foi encontrado: {}"
+
+msgid "The program of {} is not on this computer ({}): locate it on the Engines page first."
+msgstr "O programa de {} não está neste computador ({}): localize-o primeiro na página Motores."
 
 msgid "The programs of a folder can be added instead:"
 msgstr "Em vez disso, os programas de uma pasta podem ser adicionados:"
@@ -4518,6 +4602,9 @@ msgstr "Este computador"
 msgid "This computer's fastchess-gui does not run on the machine's system: download the release for it and choose its program here (fastchess-gui.exe for Windows). Install copies it."
 msgstr "O fastchess-gui deste computador não roda no sistema da máquina: baixe a versão para ele e escolha o programa aqui (fastchess-gui.exe para Windows). Instalar o copia."
 
+msgid "This computer's {} ({}…) is not the program there ({}…)."
+msgstr "O {} deste computador ({}…) não é o programa de lá ({}…)."
+
 msgid "This draw ratio and this RMS bias are not compatible."
 msgstr "Esta taxa de empates e este viés RMS não são compatíveis."
 
@@ -4601,6 +4688,9 @@ msgstr "Para manter tudo ao lado do programa (um pendrive, uma pasta copiada ent
 
 msgid "To move"
 msgstr "Vez de"
+
+msgid "To {}"
+msgstr "Para {}"
 
 msgid "Total"
 msgstr "Total"
@@ -4918,6 +5008,11 @@ msgstr "Com cabeçalho"
 msgid "With a time: physical cores − 1, divided by the engines' threads; with nodes or a depth, every hardware thread."
 msgstr "Com tempo: núcleos físicos − 1, divididos pelas threads dos engines; com nós ou profundidade, todas as threads de hardware."
 
+msgid "With its folder {} ({} file, {})"
+msgid_plural "With its folder {} ({} files, {})"
+msgstr[0] "Com a pasta {} ({} arquivo, {})"
+msgstr[1] "Com a pasta {} ({} arquivos, {})"
+
 msgid "Withdraw an engine"
 msgstr "Retirar um engine"
 
@@ -4996,14 +5091,35 @@ msgstr "\"{}\" estava ativado nas opções PGN deste torneio: as engines não fo
 msgid "a crash stops the tournament"
 msgstr "uma falha para o torneio"
 
+msgid "a different build there"
+msgstr "outra compilação lá"
+
 msgid "a machine removed"
 msgstr "uma máquina removida"
+
+msgid "a program of a format fastchess-gui does not know"
+msgstr "um programa de um formato que o fastchess-gui não conhece"
 
 msgid "a result is 1-0, 0-1 or 1/2-1/2"
 msgstr "um resultado é 1-0, 0-1 ou 1/2-1/2"
 
+msgid "a script"
+msgstr "um script"
+
+msgid "a script for {}"
+msgstr "um script para {}"
+
 msgid "a team match board by board takes no new engine: replace one instead"
 msgstr "um match por equipes tabuleiro a tabuleiro não aceita um novo engine: substitua um em vez disso"
+
+msgid "a {} program"
+msgstr "um programa {}"
+
+msgid "a {} program (universal: {})"
+msgstr "um programa {} (universal: {})"
+
+msgid "a {} program for {}"
+msgstr "um programa {} para {}"
 
 msgid "about {}"
 msgstr "cerca de {}"
@@ -5062,6 +5178,9 @@ msgstr "por %s"
 
 msgid "bye"
 msgstr "folga"
+
+msgid "changed here since"
+msgstr "alterado aqui desde então"
 
 msgid "checkmate"
 msgstr "xeque-mate"
@@ -5218,6 +5337,9 @@ msgstr "partidas aguardam memória"
 msgid "gone"
 msgstr "removida"
 
+msgid "here: {}"
+msgstr "aqui: {}"
+
 msgid "illegal move {} by {}"
 msgstr "lance ilegal {} de {}"
 
@@ -5345,8 +5467,14 @@ msgstr "normalized: limites em nElo (fishtest, OpenBench). logistic: Elo clássi
 msgid "not checked"
 msgstr "não verificado"
 
+msgid "not compared"
+msgstr "não comparado"
+
 msgid "not counted"
 msgstr "não contado"
+
+msgid "not in the library"
+msgstr "não está na biblioteca"
 
 msgid "not tested yet"
 msgstr "ainda não testada"
@@ -5421,6 +5549,9 @@ msgstr "execução de {}"
 
 msgid "s"
 msgstr "s"
+
+msgid "same build as this computer"
+msgstr "mesma compilação que este computador"
 
 msgid "seed {}"
 msgstr "semente {}"
@@ -5588,6 +5719,9 @@ msgstr "{} (preparando o livro: {} %)"
 msgid "{} ({}) against {} ({})"
 msgstr "{} ({}) contra {} ({})"
 
+msgid "{} ({}), {}"
+msgstr "{} ({}), {}"
+
 msgid "{} + {} per move"
 msgstr "{} + {} por lance"
 
@@ -5646,6 +5780,12 @@ msgstr "{} tabuleiros × 2 partidas × {} ciclos"
 msgid "{} bytes"
 msgstr "{} bytes"
 
+msgid "{} cannot be copied to {}: {}"
+msgstr "{} não pode ser copiado para {}: {}"
+
+msgid "{} cannot be made executable on {}: {}"
+msgstr "{} não pode ser tornado executável em {}: {}"
+
 msgid "{} cannot be named in a Windows command: leave out quotes and %."
 msgstr "{} não pode ser usado num comando do Windows: evite aspas e %."
 
@@ -5678,6 +5818,14 @@ msgstr "{} mudou: as opções dele foram relidas, as mesmas de antes."
 
 msgid "{} changed: its options were read again."
 msgstr "{} mudou: as opções dele foram relidas."
+
+msgid "{} copied to {} with its folder ({} file): {}"
+msgid_plural "{} copied to {} with its folder ({} files): {}"
+msgstr[0] "{} copiado para {} com a pasta dele ({} arquivo): {}"
+msgstr[1] "{} copiado para {} com a pasta dele ({} arquivos): {}"
+
+msgid "{} copied to {}: {}"
+msgstr "{} copiado para {}: {}"
 
 msgid "{} core in use"
 msgid_plural "{} cores in use"
@@ -5752,6 +5900,9 @@ msgid_plural "{} earlier matches imported."
 msgstr[0] "{} match de uma versão anterior importado."
 msgstr[1] "{} matches de uma versão anterior importados."
 
+msgid "{} ends with a dot or a space, which Windows leaves out of a file name."
+msgstr "{} termina com um ponto ou um espaço, que o Windows remove de um nome de arquivo."
+
 msgid "{} engine"
 msgid_plural "{} engines"
 msgstr[0] "{} engine"
@@ -5792,6 +5943,11 @@ msgstr "{} engines na lista · {} na biblioteca · {} fora da biblioteca"
 
 msgid "{} engines · {} games"
 msgstr "{} engines · {} partidas"
+
+msgid "{} file was there already, the same: left as it was."
+msgid_plural "{} files were there already, the same: left as they were."
+msgstr[0] "{} arquivo já estava lá, igual: deixado como estava."
+msgstr[1] "{} arquivos já estavam lá, iguais: deixados como estavam."
 
 msgid "{} for every engine"
 msgstr "{} para cada engine"
@@ -5911,6 +6067,12 @@ msgstr[1] "{} threads de hardware"
 msgid "{} hardware threads on {} cores. A game takes the Threads of its engine that has the most: the two engines think in turn."
 msgstr "{} threads de hardware em {} núcleos. Uma partida ocupa os Threads do seu engine que tem mais: os dois engines pensam alternadamente."
 
+msgid "{} has a control character, which Windows does not take in a file name."
+msgstr "{} tem um caractere de controle, que o Windows não aceita em um nome de arquivo."
+
+msgid "{} has a {}, which Windows does not take in a file name."
+msgstr "{} tem um {}, que o Windows não aceita em um nome de arquivo."
+
 msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
 msgstr "{} não tem nenhum algoritmo em comum com o fastchess-gui (é preciso curve25519-sha256, uma chave de host RSA e AES)"
 
@@ -5925,6 +6087,9 @@ msgstr "{} não tem caminho em {}: informe-o em Preferências > Máquinas > Moto
 
 msgid "{} holds a key of type {}: fastchess-gui logs in with RSA and Ed25519 keys only (make one with ssh-keygen -t ed25519), or with the SSH agent."
 msgstr "{} contém uma chave do tipo {}: o fastchess-gui entra só com chaves RSA e Ed25519 (crie uma com ssh-keygen -t ed25519), ou com o agente SSH."
+
+msgid "{} holds more than {} files: copy the program of {} alone, or keep it in a folder of its own."
+msgstr "{} contém mais de {} arquivos: copie o programa de {} sozinho, ou mantenha-o em uma pasta própria."
 
 msgid "{} holds the games of the tournament: choose another file"
 msgstr "{} contém as partidas do torneio: escolha outro arquivo"
@@ -5942,8 +6107,44 @@ msgid_plural "{} inaccuracies"
 msgstr[0] "{} imprecisão"
 msgstr[1] "{} imprecisões"
 
+msgid "{} is a 32-bit program: {} runs it only with the 32-bit libraries installed."
+msgstr "{} é um programa de 32 bits: {} só o executa com as bibliotecas de 32 bits instaladas."
+
+msgid "{} is a Windows program; {} runs {}: choose the {} build of {}."
+msgstr "{} é um programa Windows; {} roda {}: escolha a compilação {} de {}."
+
 msgid "{} is a folder: give the engine's program in it."
 msgstr "{} é uma pasta: informe o programa do motor dentro dela."
+
+msgid "{} is a macOS program; {} runs {}: choose the {} build of {}."
+msgstr "{} é um programa macOS; {} roda {}: escolha a compilação {} de {}."
+
+msgid "{} is a name Windows keeps for a device (CON, NUL, COM1…)."
+msgstr "{} é um nome que o Windows reserva para um dispositivo (CON, NUL, COM1…)."
+
+msgid "{} is a script (#!{}), which Windows does not run: choose the Windows build of {}."
+msgstr "{} é um script (#!{}), que o Windows não executa: escolha a compilação Windows de {}."
+
+msgid "{} is a script for {}, which {} does not have: install it there, or choose another build of {}."
+msgstr "{} é um script para {}, que {} não tem: instale-o lá, ou escolha outra compilação de {}."
+
+msgid "{} is a script whose first line names no interpreter (#!{}): choose its program."
+msgstr "{} é um script cuja primeira linha não indica nenhum interpretador (#!{}): escolha o programa dele."
+
+msgid "{} is a {} program; {} runs {}: choose the {} build of {}."
+msgstr "{} é um programa {}; {} roda {}: escolha a compilação {} de {}."
+
+msgid "{} is a {} program; {} runs {}: it runs there only with a compatibility layer."
+msgstr "{} é um programa {}; {} roda {}: ele só roda lá com uma camada de compatibilidade."
+
+msgid "{} is built for x86_64; {} is an arm64 Mac: it runs there under Rosetta 2 only, if it is installed (softwareupdate --install-rosetta)."
+msgstr "{} foi compilado para x86_64; {} é um Mac arm64: ele só roda lá com o Rosetta 2, se estiver instalado (softwareupdate --install-rosetta)."
+
+msgid "{} is built for {}; {} runs Windows on arm64: Windows 11 emulates it, more slowly than an arm64 build."
+msgstr "{} foi compilado para {}; {} roda Windows em arm64: o Windows 11 o emula, mais devagar que uma compilação arm64."
+
+msgid "{} is built for {}; {} runs {}: choose the {} build of {}."
+msgstr "{} foi compilado para {}; {} roda {}: escolha a compilação {} de {}."
 
 msgid "{} is forgotten here; nothing is deleted on it."
 msgstr "{} é esquecida aqui; nada é apagado nela."
@@ -5978,6 +6179,12 @@ msgstr "{} não é um arquivo de chave privada válido."
 msgid "{} is not an SVG picture the program can draw."
 msgstr "{} não é uma imagem SVG que o programa consiga desenhar."
 
+msgid "{} is not in the engine library any more."
+msgstr "{} não está mais na biblioteca de motores."
+
+msgid "{} is not on this computer any more: choose the {} build of {} again."
+msgstr "{} não está mais neste computador: escolha de novo a compilação {} de {}."
+
 msgid "{} is not on {} ({}): give its path there in Settings > Machines > Engines on this machine."
 msgstr "{} não está em {} ({}): informe o caminho lá em Preferências > Máquinas > Motores nesta máquina."
 
@@ -5992,6 +6199,9 @@ msgstr "{} não está lá: escolha de novo o fastchess-gui para {} {}."
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} está aberto em outro programa: aqui ele só é exibido, como estava ao ser aberto."
+
+msgid "{} is outside the folder of {} there: not copied."
+msgstr "{} está fora da pasta de {} lá: não copiado."
 
 msgid "{} is playing in another window: it is not resumed here."
 msgstr "{} está sendo jogado em outra janela: ele não é retomado aqui."
@@ -6056,6 +6266,12 @@ msgstr "{} lances · profundidade {:.1f} · {:.0f} ms por lance{}"
 
 msgid "{} n/s"
 msgstr "{} n/s"
+
+msgid "{} names {} of its folder: copy it with its folder, or the engine will not find it there."
+msgstr "{} indica {} da pasta dele: copie-o com a pasta, ou o motor não o encontrará lá."
+
+msgid "{} names {} of its folder: found in its copy there."
+msgstr "{} indica {} da pasta dele: encontrado na cópia dela lá."
 
 msgid "{} new engine found. Untick those to leave out."
 msgid_plural "{} new engines found. Untick those to leave out."
@@ -6348,6 +6564,9 @@ msgstr[1] "{} partidas anuladas, deixadas de fora"
 msgid "{} vs {}"
 msgstr "{} vs {}"
 
+msgid "{} was copied to {}, but it does not run there: {}"
+msgstr "{} foi copiado para {}, mas não roda lá: {}"
+
 msgid "{} was running when the program ended: it resumes."
 msgstr "{} estava em andamento quando o programa foi encerrado: ele é retomado."
 
@@ -6430,6 +6649,9 @@ msgstr "Syzygy de {} peças para cada engine"
 msgid "{}-man Syzygy for {} of {} engines"
 msgstr "Syzygy de {} peças para {} de {} engines"
 
+msgid "{}: a different build there than this computer's (Replace with this computer's copies it)."
+msgstr "{}: lá há uma compilação diferente da deste computador (Substituir pelo deste computador a copia)."
+
 msgid "{}: a logo is a PNG, JPEG or SVG picture."
 msgstr "{}: um logo é uma imagem PNG, JPEG ou SVG."
 
@@ -6472,6 +6694,9 @@ msgstr "{}: permissão negada (etapa: {}): o usuário {} não pode gravar lá."
 msgid "{}: program not found ({})"
 msgstr "{}: programa não encontrado ({})"
 
+msgid "{}: same build as this computer."
+msgstr "{}: mesma compilação que este computador."
+
 msgid "{}: save as profile"
 msgstr "{}: salvar como perfil"
 
@@ -6480,6 +6705,9 @@ msgstr "{}: seldepth"
 
 msgid "{}: starting on {} ({})."
 msgstr "{}: iniciando em {} ({})."
+
+msgid "{}: the build chosen for this machine."
+msgstr "{}: a compilação escolhida para esta máquina."
 
 msgid "{}: the disk is full while {}: free some space on the machine."
 msgstr "{}: o disco está cheio (etapa: {}): libere espaço na máquina."
@@ -6492,6 +6720,9 @@ msgstr "{}: a assinatura da chave de host não é válida"
 
 msgid "{}: the server refused while {} (SFTP error {})."
 msgstr "{}: o servidor recusou (etapa: {}) (erro SFTP {})."
+
+msgid "{}: the whole folder copied beside the program, for an engine that needs files beside it (its networks, a book): in its copy there, the engine finds them as here. Files there already the same are not sent again."
+msgstr "{}: a pasta inteira copiada ao lado do programa, para um motor que precisa de arquivos ao lado dele (as redes dele, um livro): na cópia dela lá, o motor os encontra como aqui. Os arquivos já lá e iguais não são enviados de novo."
 
 msgid "{}: trying to start it again."
 msgstr "{}: nova tentativa de iniciar."

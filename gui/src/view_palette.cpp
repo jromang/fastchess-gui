@@ -473,6 +473,28 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             scroll_to_machines_ = true;
             startMachineJob(id, MachineJob::Kind::Test);
         });
+        if (!m.engines.empty()) {
+            add(trf("Check the engines on {}", m.name), TR("Machines"), [this, go = page(Page::Settings), id = m.id] {
+                go();
+                machine_open_                      = id;
+                scroll_to_machines_                = true;
+                machine_activity_[id].open_engines = true;
+                startMachineJob(id, MachineJob::Kind::Engines);
+            });
+        }
+        // The library's engines: copied to the machine when they have no path there, replaced when the build there
+        // is another one.
+        for (const auto& e : engines_) {
+            if (e.inactive) continue;
+            const auto* there = m.engine(e.name);
+            if (!there || there->path.empty()) {
+                add(trf("Copy {} to {}", e.name, m.name), TR("Machines"),
+                    [this, id = m.id, name = e.name] { offerEngineCopy(id, name); });
+            } else if (!there->remote_hash.empty() && there->remote_hash != there->local_hash) {
+                add(trf("Replace {} on {} with this computer's build", e.name, m.name), TR("Machines"),
+                    [this, id = m.id, name = e.name] { offerEngineCopy(id, name); });
+            }
+        }
     }
     add(TR("Pieces: your own folder…"), TR("Settings"),
         [this] { dialogs_.openFolder(Dialogs::Purpose::PieceFolder, appearance::current().piece_folder); });

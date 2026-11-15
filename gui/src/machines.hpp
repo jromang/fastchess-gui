@@ -19,6 +19,8 @@
 
 #include <json.hpp>
 
+#include <tour/model.hpp>
+
 #include "ssh_client.hpp"
 
 namespace fcg {
@@ -101,9 +103,34 @@ struct MachineEngine {
     int check_ok = -1;
     std::string check_message;
     std::string id_name;
+    // This computer's file copied for this machine instead of the library's program: the build for the machine's
+    // system when the library's is for another one (a Windows build for a Windows box, from Linux). Empty: the
+    // library's program. Replace and the builds' comparison use it.
+    std::string local_build;
+    // A folder copied whole with the program (Copy to the machine, with its folder): this computer's, and where it is
+    // there. The engine's options naming a file inside it name its copy there. Empty when the program went alone, or
+    // its path was given by hand.
+    std::string local_dir;
+    std::string copied_dir;
+    // This computer's build against the program there, as the last comparison found them (the engines' check,
+    // Compare, a copy): the SHA-256 of both, and the size and time of this computer's file then, which tell whether
+    // it changed since (its CRC is not read: the hash stands for it).
+    std::string remote_hash;
+    std::string local_hash;
+    tour::FileFingerprint local_stamp;
 
-    bool operator==(const MachineEngine&) const = default;
+    bool operator==(const MachineEngine& o) const {
+        return engine == o.engine && path == o.path && check_ok == o.check_ok && check_message == o.check_message &&
+               id_name == o.id_name && local_build == o.local_build && local_dir == o.local_dir &&
+               copied_dir == o.copied_dir && remote_hash == o.remote_hash && local_hash == o.local_hash &&
+               local_stamp.size == o.local_stamp.size && local_stamp.mtime == o.local_stamp.mtime;
+    }
 };
+
+// What the comparison of builds says of an engine there: never compared (or nothing to compare), the same as this
+// computer's, another one, or this computer's file changed since it was compared (`now`: its stamp today).
+enum class BuildMatch { Unknown, Same, Different, Changed };
+[[nodiscard]] BuildMatch buildMatch(const MachineEngine& engine, const tour::FileFingerprint& now);
 
 struct Machine {
     std::string id;  // made once, never shown: the setups name the machine by it
@@ -193,6 +220,12 @@ inline constexpr int MAX_PUSHED_PIECES = 6;
 
 // The SHA-256 of a file, hexadecimal; empty when it cannot be read, or `cancel` turned true.
 [[nodiscard]] std::string sha256File(const std::filesystem::path& file, const std::atomic_bool* cancel = nullptr);
+// The size and modification time of a file, as tour::fingerprint() reads them, without its CRC: what tells that a
+// program changed. All zero when it cannot be read.
+[[nodiscard]] tour::FileFingerprint fileStamp(const std::filesystem::path& file);
+// sha256File(), remembered by file, size and time until the program ends: an engine's program is read once until it
+// changes. Called off the UI thread (a program may weigh hundreds of MB); any thread.
+[[nodiscard]] std::string cachedSha256(const std::filesystem::path& file, const std::atomic_bool* cancel = nullptr);
 
 // "12 MB", "9.8 GB": a size for the window.
 [[nodiscard]] std::string formatBytes(uint64_t bytes);

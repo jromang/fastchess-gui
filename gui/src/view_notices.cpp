@@ -64,6 +64,17 @@ void App::setStartFixes() {
             if (std::find(start_fixes_.begin(), start_fixes_.end(), f) == start_fixes_.end()) start_fixes_.push_back(f);
         }
     }
+    // On a machine: the engines without a path there, each offered a copy of this computer's.
+    if (const auto* machine = setup_.machine.empty() ? nullptr : machineById(setup_.machine)) {
+        for (const auto& name : enginesOfSetup(setup_)) {
+            const auto* there = machine->engine(name);
+            const auto fix = copyToMachineFix(name, machine->id, machine->name.empty() ? machine->host : machine->name);
+            if ((!there || there->path.empty()) &&
+                std::find(start_fixes_.begin(), start_fixes_.end(), fix) == start_fixes_.end()) {
+                start_fixes_.push_back(fix);
+            }
+        }
+    }
     start_fixes_.push_back(openLogFix());
     start_fixes_for_ = start_error_;
 }
@@ -156,6 +167,9 @@ void App::applyFix(const Fix& fix) {
             break;
         case Fix::Kind::ChangeTournamentsFolder:
             dialogs_.openFolder(Dialogs::Purpose::TournamentsFolder, storage_.runsDir().string());
+            break;
+        case Fix::Kind::CopyToMachine:
+            offerEngineCopy(fix.path, fix.engine);
             break;
     }
 }

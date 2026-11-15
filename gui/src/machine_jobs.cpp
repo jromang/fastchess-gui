@@ -5,7 +5,9 @@
 #include <set>
 
 #include "i18n.hpp"
+#include "machine_run.hpp"
 #include "memory.hpp"
+#include "model.hpp"
 #include "ssh_tunnel.hpp"
 
 namespace fcg {
@@ -58,6 +60,23 @@ RemoteShell shellOf(SshClient& client, const Machine& machine, JobResult& result
     const auto shell = detectShell(client, machineName(machine), error);
     if (shell == RemoteShell::Unknown) result.error = {SshError::Kind::Remote, error, {}};
     return shell;
+}
+
+bool windowsMachine(const Machine& m) {
+    return m.system.shell == RemoteShell::Cmd || normalizePlatform(m.system.os, m.system.arch).os == "Windows";
+}
+
+bool absoluteRemote(const std::string& path) {
+    return (!path.empty() && (path[0] == '/' || path[0] == '\\')) ||
+           (path.size() >= 2 && std::isalpha(static_cast<unsigned char>(path[0])) && path[1] == ':');
+}
+
+// The SHA-256 of a file there, empty when it cannot be told.
+std::string remoteHash(SshClient& client, RemoteShell shell, const std::string& path) {
+    const auto command = hashCommand(shell, shellPath(shell, path));
+    if (!command) return {};
+    const auto out = client.run(*command, std::chrono::minutes(10));
+    return out ? readHash(out->out) : std::string();
 }
 
 // A copy's progress for JobState: `base` bytes copied before this file; the pace counts only what this job sends.
@@ -365,8 +384,70 @@ MachineEngine checkEngine(SshClient& client, const std::string& machine, RemoteS
 
 }  // namespace
 
+namespace {
+
+// The builds of `e` compared: the hash of its program there against this computer's `local`. Nothing compared (the
+// hashes cleared) when `local` is not a program for the machine's system, whose build there is another one anyway.
+// False when the connection broke.
+bool compareBuild(SshClient& client, RemoteShell shell, const RemoteSystem& system, MachineEngine& e,
+                  const fs::path& local, JobState& state) {
+    e.remote_hash.clear();
+    e.local_hash.clear();
+    e.local_stamp = {};
+    if (local.empty() || e.path.empty()) return true;
+    if (programSuits(readProgramFormat(local), system, e.engine, {}).level == Suitability::Level::Refused) return true;
+    const auto command = hashCommand(shell, shellPath(shell, e.path));
+    if (!command) return true;
+    const auto out = client.run(*command, std::chrono::minutes(10));
+    if (!out) return client.error().kind == SshError::Kind::Remote;
+    const auto theirs = readHash(out->out);
+    if (theirs.empty()) return true;
+    const auto stamp = fileStamp(local);
+    const auto mine  = cachedSha256(local, &state.cancel);
+    if (mine.empty()) return true;
+    e.remote_hash = theirs;
+    e.local_hash  = mine;
+    e.local_stamp = stamp;
+    return true;
+}
+
+// What the comparison found, for the report; empty when nothing was compared.
+std::string buildLine(const MachineEngine& e) {
+    if (e.remote_hash.empty()) return {};
+    return e.remote_hash == e.local_hash
+               ? trf("{}: same build as this computer.", e.engine)
+               : trf("{}: a different build there than this computer's (Replace with this computer's copies it).",
+                     e.engine);
+}
+
+}  // namespace
+
+void compareBuilds(SshClient& client, const Machine& machine, const std::map<std::string, fs::path>& programs,
+                   JobState& state, JobResult& result) {
+    const auto shell = shellOf(client, machine, result);
+    if (shell == RemoteShell::Unknown) return;
+    for (const auto& engine : machine.engines) {
+        if (state.cancel) {
+            result.error = {SshError::Kind::Cancelled, TR("Cancelled."), {}};
+            return;
+        }
+        const auto it = programs.find(engine.engine);
+        if (engine.path.empty() || it == programs.end()) continue;
+        state.setStep(trf("Comparing {} here and on {}…", engine.engine, machineName(machine)));
+        auto e = engine;
+        if (!compareBuild(client, shell, machine.system, e, it->second, state)) {
+            result.error = client.error();
+            return;
+        }
+        if (const auto line = buildLine(e); !line.empty()) result.lines.push_back(line);
+        result.engines.push_back(std::move(e));
+    }
+    result.ok = true;
+}
+
 void checkEngines(SshClient& client, const Machine& machine, const std::map<std::string, std::string>& protocols,
-                  std::chrono::milliseconds limit, JobState& state, JobResult& result) {
+                  std::chrono::milliseconds limit, JobState& state, JobResult& result,
+                  const std::map<std::string, fs::path>& programs) {
     const auto shell = shellOf(client, machine, result);
     if (shell == RemoteShell::Unknown) return;
     int failed = 0;
@@ -385,6 +466,13 @@ void checkEngines(SshClient& client, const Machine& machine, const std::map<std:
                                     it == protocols.end() ? std::string("uci") : it->second, limit);
         if (checked.check_ok != 1) ++failed;
         result.lines.push_back(e.engine + ": " + checked.check_message);
+        if (const auto local = programs.find(e.engine); local != programs.end() && checked.check_ok == 1) {
+            if (!compareBuild(client, shell, machine.system, checked, local->second, state)) {
+                result.error = client.error();
+                return;
+            }
+            if (const auto line = buildLine(checked); !line.empty()) result.lines.push_back(line);
+        }
         result.engines.push_back(std::move(checked));
         if (!client.connected()) {
             result.error = client.error();
@@ -555,6 +643,377 @@ void pushFiles(SshClient& client, const Machine& machine, const FilesCheck& chec
             trn("{} Syzygy file copied to {}.", "{} Syzygy files copied to {}.", tables.size(), tables.size(), name));
     }
     result.ok = true;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// An engine copied to a machine
+
+namespace {
+
+// `path` relative to `folder`, both of this computer, when it is inside; empty otherwise.
+fs::path insideLocal(const fs::path& path, const fs::path& folder) {
+    if (folder.empty()) return {};
+    const auto rel = path.lexically_normal().lexically_relative(folder.lexically_normal());
+    if (rel.empty() || rel == "." || *rel.begin() == "..") return {};
+    return rel;
+}
+
+// The parts of a remote path, '/' and '\' alike.
+std::vector<std::string> remoteParts(const std::string& path) {
+    std::vector<std::string> parts;
+    std::string part;
+    for (const char c : path) {
+        if (c == '/' || c == '\\') {
+            if (!part.empty()) parts.push_back(part);
+            part.clear();
+        } else {
+            part += c;
+        }
+    }
+    if (!part.empty()) parts.push_back(part);
+    return parts;
+}
+
+std::string lower(std::string s) {
+    for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    return s;
+}
+
+}  // namespace
+
+uint64_t EngineCopy::bytes() const {
+    if (!with_folder) return program_bytes;
+    // The program is one of its folder's files, or goes beside them.
+    return insideLocal(program, folder).empty() ? folder_bytes + program_bytes : folder_bytes;
+}
+
+fs::path programFor(const EngineEntry& engine, const Machine& machine) {
+    if (const auto* there = machine.engine(engine.name); there && !there->local_build.empty()) {
+        return there->local_build;
+    }
+    return engine.cmd;
+}
+
+std::string engineFolderThere(const Machine& machine, const std::string& engine) {
+    const auto dir = remoteJoin(remoteJoin(machineFolder(machine), "engines"), safeFolderName(engine));
+    return shellPath(windowsMachine(machine) ? RemoteShell::Cmd : RemoteShell::Posix, dir);
+}
+
+bool insideRemoteFolder(const std::string& path, const std::string& folder) {
+    const auto p = remoteParts(path), f = remoteParts(folder);
+    if (f.empty() || p.size() <= f.size()) return false;
+    if (std::any_of(p.begin(), p.end(), [](const std::string& s) { return s == ".." || s == "."; })) return false;
+    // Windows' paths ("C:\...") are the same whatever their letters' case.
+    const bool windows = folder.size() >= 2 && folder[1] == ':';
+    for (std::size_t i = 0; i < f.size(); ++i) {
+        if (windows ? lower(p[i]) != lower(f[i]) : p[i] != f[i]) return false;
+    }
+    // Both absolute, or both relative.
+    return absoluteRemote(path) == absoluteRemote(folder);
+}
+
+std::string optionThere(const MachineEngine& engine, RemoteShell shell, const std::string& value) {
+    if (engine.local_dir.empty() || engine.copied_dir.empty() || value.empty()) return value;
+    const fs::path p(value);
+    if (!p.is_absolute()) return value;
+    const auto rel = insideLocal(p, engine.local_dir);
+    if (rel.empty()) return value;
+    return shellPath(shell, remoteJoin(engine.copied_dir, rel.generic_string()));
+}
+
+EngineCopy planEngineCopy(const EngineEntry& engine, const Machine& machine, const fs::path& build) {
+    EngineCopy c;
+    c.engine           = engine.name;
+    const auto name    = machineName(machine);
+    const bool windows = windowsMachine(machine);
+    c.program          = build.empty() ? programFor(engine, machine) : build;
+    c.own_build        = c.program != fs::path(engine.cmd);
+    std::error_code ec;
+    if (c.program.empty() || !fs::is_regular_file(c.program, ec)) {
+        c.error = c.own_build
+                      ? trf("{} is not on this computer any more: choose the {} build of {} again.", c.program.string(),
+                            describeSystem(machine.system), engine.name)
+                      : trf("The program of {} is not on this computer ({}): locate it on the Engines page first.",
+                            engine.name, engine.cmd);
+        return c;
+    }
+    c.program_bytes = fs::file_size(c.program, ec);
+    c.format        = readProgramFormat(c.program);
+    c.suits         = programSuits(c.format, machine.system, engine.name, name);
+
+    // Its name there: Windows runs a program by its extension.
+    c.remote_name = c.program.filename().string();
+    if (windows) {
+        const auto ext = lower(c.program.extension().string());
+        if (ext != ".exe" && ext != ".com" && ext != ".bat" && ext != ".cmd") c.remote_name += ".exe";
+        if (const auto problem = windowsNameProblem(c.remote_name); !problem.empty()) {
+            c.error = trf("{} cannot be copied to {}: {}", c.program.filename().string(), name, problem);
+            return c;
+        }
+    }
+
+    // The folder: the engine's working directory, where it looks for its files, else the program's (that of the build
+    // chosen for the machine, which has its own).
+    c.folder = !c.own_build && !engine.dir.empty() ? fs::path(engine.dir) : c.program.parent_path();
+    fs::recursive_directory_iterator it(c.folder, fs::directory_options::skip_permission_denied, ec);
+    for (const fs::recursive_directory_iterator end; !ec && it != end; it.increment(ec)) {
+        std::error_code e;
+        if (it->is_directory(e)) {
+            // A source tree's history is not the engine's.
+            if (it->path().filename() == ".git") it.disable_recursion_pending();
+            continue;
+        }
+        if (!it->is_regular_file(e)) continue;
+        if (c.files.size() >= MAX_FOLDER_FILES) {
+            c.too_many = true;
+            break;
+        }
+        const auto rel  = it->path().lexically_relative(c.folder).generic_string();
+        const auto size = it->file_size(e);
+        c.files.emplace_back(rel, size);
+        c.folder_bytes += size;
+        if (windows && c.name_problem.empty()) {
+            for (const auto& part : remoteParts(rel)) {
+                if (const auto problem = windowsNameProblem(part); !problem.empty()) {
+                    c.name_problem = trf("{} cannot be copied to {}: {}", rel, name, problem);
+                    break;
+                }
+            }
+        }
+    }
+    std::sort(c.files.begin(), c.files.end());
+
+    // The options naming a file of the folder: found in its copy there.
+    std::set<std::string> seen;
+    const auto consider = [&](const std::string& option, const std::string& value) {
+        if (value.empty() || option == "SyzygyPath" || !seen.insert(option).second) return;
+        const fs::path p(value);
+        fs::path rel;
+        if (p.is_absolute()) {
+            rel = insideLocal(p, c.folder);
+        } else if (value.find_first_of("/\\.") != std::string::npos) {
+            rel = p.lexically_normal();  // relative to the working directory: the folder
+            if (!rel.empty() && *rel.begin() == "..") rel.clear();
+        }
+        std::error_code e;
+        if (rel.empty() || !fs::is_regular_file(c.folder / rel, e)) return;
+        c.options_inside.emplace_back(option, rel.generic_string());
+    };
+    for (const auto& [option, value] : engine.options) consider(option, value);
+    for (const auto& o : engine.uci_options) {
+        if (o.type == "string") consider(o.name, o.default_value);
+    }
+    const auto* there = machine.engine(engine.name);
+    c.with_folder     = !c.too_many && (!c.options_inside.empty() || (there && !there->local_dir.empty()));
+    return c;
+}
+
+void copyEngine(SshClient& client, const Machine& machine, const EngineCopy& copy,
+                const std::map<std::string, std::string>& protocols, JobState& state, JobResult& result) {
+    const auto name = machineName(machine);
+    const auto fail = [&](SshError::Kind kind, std::string message) { result.error = {kind, std::move(message), {}}; };
+    if (!copy.error.empty()) return fail(SshError::Kind::Local, copy.error);
+    auto m         = machine;
+    m.system.shell = shellOf(client, machine, result);
+    if (m.system.shell == RemoteShell::Unknown) return;
+    const auto shell   = m.system.shell;
+    const bool windows = shell == RemoteShell::Cmd;
+
+    // The program read again: it may have been rebuilt since the copy was offered.
+    const auto format = readProgramFormat(copy.program);
+    const auto suits  = programSuits(format, m.system, copy.engine, name);
+    if (suits.level == Suitability::Level::Refused) return fail(SshError::Kind::Local, suits.message);
+    if (suits.level == Suitability::Level::Warning) result.lines.push_back(suits.message);
+    if (format.kind == ProgramFormat::Kind::Script) {
+        // Its interpreter, there.
+        if (format.interpreter.empty()) {
+            return fail(SshError::Kind::Local,
+                        trf("{} is a script whose first line names no interpreter (#!{}): choose its program.",
+                            copy.engine, format.shebang));
+        }
+        state.setStep(trf("Looking for {} on {}…", format.interpreter, name));
+        const auto out = client.run(viaSh("command -v " + shQuote(format.interpreter)), 15s);
+        if (!out) {
+            result.error = client.error();
+            return;
+        }
+        if (out->exit_code != 0 || firstLine(out->out).empty()) {
+            return fail(SshError::Kind::Remote,
+                        trf("{} is a script for {}, which {} does not have: install it there, or choose another build "
+                            "of {}.",
+                            copy.engine, format.interpreter, name, copy.engine));
+        }
+    }
+    if (copy.with_folder && copy.too_many) {
+        return fail(SshError::Kind::Local,
+                    trf("{} holds more than {} files: copy the program of {} alone, or keep it in a folder of its own.",
+                        copy.folder.string(), MAX_FOLDER_FILES, copy.engine));
+    }
+    if (copy.with_folder && windows && !copy.name_problem.empty())
+        return fail(SshError::Kind::Local, copy.name_problem);
+
+    // Where it goes: the engine's folder in the machine's folder, and nowhere else.
+    auto base = machineFolder(m);
+    if (!absoluteRemote(base)) {
+        if (!client.makeDirs(sftpPath(base))) {
+            result.error = client.error();
+            return;
+        }
+        auto real = client.realPath(sftpPath(base));
+        if (!real) {
+            result.error = client.error();
+            return;
+        }
+        // "/C:/Users/..." as Windows' OpenSSH names it.
+        if (real->size() >= 3 && (*real)[0] == '/' && (*real)[2] == ':') real->erase(0, 1);
+        base = *real;
+    }
+    base             = shellPath(shell, base);
+    const auto dir   = shellPath(shell, remoteJoin(remoteJoin(base, "engines"), safeFolderName(copy.engine)));
+    const auto inner = copy.with_folder ? insideLocal(copy.program, copy.folder) : fs::path();
+    // The program at its place in the folder copied, else in the engine's folder.
+    const auto program_rel =
+        inner.empty() ? copy.remote_name : remoteJoin(inner.parent_path().generic_string(), copy.remote_name);
+    const auto remote_program = shellPath(shell, remoteJoin(dir, program_rel));
+
+    struct Item {
+        fs::path local;
+        std::string remote;
+        uint64_t size = 0;
+    };
+    std::vector<Item> items;
+    if (copy.with_folder) {
+        for (const auto& [rel, size] : copy.files) {
+            if (!inner.empty() && rel == inner.generic_string()) continue;  // the program, under its name there
+            items.push_back({copy.folder / fs::path(rel), shellPath(shell, remoteJoin(dir, rel)), size});
+        }
+    }
+    std::error_code ec;
+    items.push_back({copy.program, remote_program, fs::file_size(copy.program, ec)});
+    uint64_t total = 0;
+    for (const auto& item : items) {
+        // Never a file outside the machine's folder.
+        if (!insideRemoteFolder(item.remote, base)) {
+            return fail(SshError::Kind::Local,
+                        trf("{} is outside the folder of {} there: not copied.", item.remote, name));
+        }
+        total += item.size;
+    }
+    state.bytes_total = total;
+
+    uint64_t done = 0;
+    std::set<std::string> made;
+    std::string program_hash;
+    std::size_t sent = 0;
+    for (const auto& item : items) {
+        if (state.cancel) return fail(SshError::Kind::Cancelled, TR("Cancelled."));
+        const auto file   = remoteName(item.remote);
+        const auto parent = remoteParent(item.remote);
+        if (made.insert(parent).second && !client.makeDirs(sftpPath(parent))) {
+            result.error = client.error();
+            return;
+        }
+        // Hashed first: the copy there is compared with it, and a file there already the same is left as it is.
+        state.setStep(trf("Reading {}…", file));
+        const auto mine = cachedSha256(item.local, &state.cancel);
+        if (mine.empty()) {
+            if (state.cancel) return fail(SshError::Kind::Cancelled, TR("Cancelled."));
+            return fail(SshError::Kind::Local, trf("{} cannot be read.", item.local.string()));
+        }
+        const auto there = client.stat(sftpPath(item.remote));
+        if (!there && client.error().kind != SshError::Kind::NotFound) {
+            result.error = client.error();
+            return;
+        }
+        const bool same = there && there->size == item.size && remoteHash(client, shell, item.remote) == mine;
+        if (!same) {
+            state.setStep(trf("Copying {} to {}…", file, name));
+            // A program running there (an engine of a tournament's) cannot be replaced on Windows, but it can be
+            // renamed.
+            if (there) client.rename(sftpPath(item.remote), sftpPath(item.remote + ".old"));
+            const bool program = item.remote == remote_program;
+            if (!client.upload(item.local, sftpPath(item.remote), copyProgress(state, done),
+                               program && !windows ? 0755 : 0644)) {
+                result.error = client.error();
+                return;
+            }
+            if (there) client.remove(sftpPath(item.remote + ".old"));
+            state.setStep(trf("Checking the copy of {}…", file));
+            if (remoteHash(client, shell, item.remote) != mine) {
+                client.remove(sftpPath(item.remote));
+                return fail(SshError::Kind::Remote,
+                            trf("The copy of {} on {} is not the same as here: copy it again.", file, name));
+            }
+            ++sent;
+        }
+        done += item.size;
+        state.bytes_done = done;
+        if (item.remote == remote_program) program_hash = mine;
+    }
+    // Executable, on a POSIX system: through its shell, as a user would.
+    if (!windows) {
+        const auto out = client.run(viaSh("chmod 755 " + shQuote(remote_program)), 15s);
+        if (!out) {
+            result.error = client.error();
+            return;
+        }
+        if (out->exit_code != 0) {
+            return fail(SshError::Kind::Remote, trf("{} cannot be made executable on {}: {}", remote_program, name,
+                                                    firstLine(out->err.empty() ? out->out : out->err)));
+        }
+    }
+
+    // The engine there now: its path, what was copied, the builds the same.
+    const auto* before = machine.engine(copy.engine);
+    MachineEngine e    = before ? *before : MachineEngine{};
+    const auto former  = e.path;
+    e.engine           = copy.engine;
+    e.path             = remote_program;
+    e.local_build      = copy.own_build ? copy.program.string() : std::string();
+    e.local_dir        = copy.with_folder ? copy.folder.string() : std::string();
+    e.copied_dir       = copy.with_folder ? dir : std::string();
+    e.remote_hash      = program_hash;
+    e.local_hash       = program_hash;
+    e.local_stamp      = fileStamp(copy.program);
+    if (copy.with_folder) {
+        result.lines.push_back(trn("{} copied to {} with its folder ({} file): {}",
+                                   "{} copied to {} with its folder ({} files): {}", items.size(), copy.engine, name,
+                                   items.size(), remote_program));
+    } else {
+        result.lines.push_back(trf("{} copied to {}: {}", copy.engine, name, remote_program));
+    }
+    if (sent < items.size()) {
+        const auto kept = items.size() - sent;
+        result.lines.push_back(trn("{} file was there already, the same: left as it was.",
+                                   "{} files were there already, the same: left as they were.", kept, kept));
+    }
+    if (!former.empty() && former != remote_program) {
+        result.lines.push_back(trf("Its former path there, {}, is left as it was.", former));
+    }
+
+    // Checked as the engines' check does.
+    state.setStep(trf("Checking {}…", copy.engine));
+    const auto protocol = protocols.find(copy.engine);
+    auto checked =
+        checkEngine(client, name, shell, e, protocol == protocols.end() ? std::string("uci") : protocol->second, 10s);
+    if (checked.check_ok != 1 && normalizePlatform(m.system.os, m.system.arch).os == "Darwin") {
+        // macOS kills an arm64 program without a signature, and may keep one from elsewhere in quarantine.
+        const auto quoted = shQuote(remote_program);
+        checked.check_message +=
+            " " + trf("On macOS, a program copied from another computer may need a signature, or to leave the "
+                      "quarantine: on {}, run codesign -s - {} and xattr -d com.apple.quarantine {}, then Check the "
+                      "engines.",
+                      name, quoted, quoted);
+    }
+    result.lines.push_back(copy.engine + ": " + checked.check_message);
+    result.ok = checked.check_ok == 1;
+    if (!result.ok) {
+        result.error = {
+            SshError::Kind::Remote,
+            trf("{} was copied to {}, but it does not run there: {}", copy.engine, name, checked.check_message),
+            {}};
+    }
+    result.engines.push_back(std::move(checked));
 }
 
 }  // namespace fcg

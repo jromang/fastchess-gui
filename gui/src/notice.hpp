@@ -23,6 +23,7 @@ struct Fix {
         OpenLog,                  // the Log page
         OpenFolder,               // `path` in the file manager of the system
         ChangeTournamentsFolder,  // the folder dialog for where new tournaments are written
+        CopyToMachine,            // the copy of `engine` to the machine whose id is `path` offered (Settings)
     };
     Kind kind;
     std::string label;    // the button's
@@ -48,6 +49,8 @@ struct Fix {
 [[nodiscard]] Fix openLogFix();
 [[nodiscard]] Fix openFolderFix(const std::string& path);
 [[nodiscard]] Fix changeTournamentsFolderFix();
+[[nodiscard]] Fix copyToMachineFix(const std::string& engine, const std::string& machine_id,
+                                   const std::string& machine_name);
 
 struct Notice {
     enum class Level { Ok, Warning, Error };

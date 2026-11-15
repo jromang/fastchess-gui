@@ -1044,6 +1044,40 @@ resumes where it stopped.
 (`xboard` for a WinBoard engine) within 10 seconds. The mark beside it, and its tooltip, say what was found: the
 engine's name, or why it does not run (missing, not executable, made for another system, silent).
 
+An engine missing on the machine is copied there with *Copy…* on its row (or *Copy <engine> to <machine>* in the
+command palette, or the button of a start refused because an engine has no path there). The panel that opens says
+first what goes: the program, its size and the system it is built for, read from its first bytes (a Windows
+program, a Linux or macOS one, universal or not, or a script). A program the machine cannot run is refused before
+anything is sent, saying which build to choose: "Alpha is a Windows program; tc-box runs Linux: choose the Linux
+build of Alpha". The architecture counts as well (x86-64 or arm64); an x86-64 build on an arm64 Mac runs only under
+Rosetta, and a format the program does not know is copied all the same: both are said, not refused. A script goes
+only to a Linux or macOS machine, and only when the interpreter of its first line (`python3`, `/bin/sh`) is there.
+*Choose the <system> build of <engine>…* takes another file of this computer, the Windows build of the engine say,
+checks it the same way, and keeps it for that machine: later comparisons and replacements use it, not the library's
+program.
+
+*With its folder* copies the engine's whole folder beside the program (its working directory, or the program's
+folder), for an engine that needs files beside it: its networks, a book. The panel counts its files and their size
+first, and names the engine's options that point inside it (`EvalFile` of a network): in a tournament on the machine
+they point to the copy there, and the folder is the engine's working directory. A folder of more than 2000 files is
+not offered (a program in `/usr/bin` is not to be copied with its folder), a `.git` folder is left out, and for a
+Windows machine a file name Windows cannot hold (`:`, `*`, `?`, a trailing dot, `CON`, `NUL`...) is named and stops
+the copy before it starts. Files are copied as they are, line ends included.
+
+*Copy* sends the files over SFTP to `engines/<engine>/` in the machine's folder, in the background with the time
+left and *Cancel*, resumed where it stopped after a cut; each file's SHA-256 is compared with this computer's after
+the copy, and files already there and the same are not sent again. On Windows the program keeps or gets its `.exe`;
+elsewhere it is made executable (`chmod 755`). Then the engine's path on the machine is set to the copy and checked
+as *Check the engines* does. On a Mac, a program copied from another computer that does not start may need a
+signature or to leave the quarantine: the message gives the two commands to run there (`codesign -s -` and
+`xattr -d com.apple.quarantine`); the program does not run them itself.
+
+The *Build* column compares the engine there with this computer's, by their SHA-256 (*Check the engines* and
+*Compare* do it, this computer's program hashed once until it changes): *same build as this computer*, or *a
+different build there*, with *Replace with this computer's*. Replacing copies this computer's program to the
+engine's folder in the machine's folder and points the engine there: a program elsewhere on the machine
+(`/opt/engines/stockfish`) is never overwritten, it stays as it was.
+
 *Books and tablebases*: *Check what the setup uses* compares the opening book and the participants' own books of
 the setup with the machine's books folder, by size and SHA-256 (a book of the same name but another content is not
 the same book), and the setup's Syzygy files of 6 pieces at most with the machine's tablebases folder, by name and
@@ -1056,7 +1090,8 @@ are a warning (the adjudication and the engines do without them).
 
 In the setup, *Run on* (in *Concurrency*) chooses where the tournament plays: *This computer*, or a machine. *Start*
 then prepares it there: fastchess-gui must be installed there in this version (else *Update fastchess-gui*), every
-engine must have its path on the machine, and the setup's books must be in its books folder (else the start says
+engine must have its path on the machine (else the start offers *Copy <engine> to <machine>…*), and the setup's
+books must be in its books folder (else the start says
 which is missing, and *Push the missing files* puts it there); tablebases missing are only a warning. The tournament
 gets its folder in `tournaments/` of the machine's folder, with the engines, books and tablebases at their paths
 there, and its process starts there out of the SSH session (`fastchess-gui --run <folder> --detach`): it plays on

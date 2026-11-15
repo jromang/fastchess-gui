@@ -4,6 +4,7 @@
 #include <cctype>
 #include <ctime>
 #include <fstream>
+#include <mutex>
 #include <random>
 #include <set>
 
@@ -359,6 +360,14 @@ void to_json(nlohmann::json& j, const Machine& m) {
             je["check_message"] = e.check_message;
         }
         if (!e.id_name.empty()) je["id_name"] = e.id_name;
+        if (!e.local_build.empty()) je["local_build"] = portable::stored(e.local_build);
+        if (!e.local_dir.empty()) je["local_dir"] = portable::stored(e.local_dir);
+        if (!e.copied_dir.empty()) je["copied_dir"] = e.copied_dir;
+        if (!e.remote_hash.empty()) {
+            je["remote_hash"] = e.remote_hash;
+            je["local_hash"]  = e.local_hash;
+            je["local_stamp"] = {{"size", e.local_stamp.size}, {"mtime", e.local_stamp.mtime}};
+        }
         engines.push_back(std::move(je));
     }
     j["engines"]  = std::move(engines);
@@ -396,6 +405,15 @@ void from_json(const nlohmann::json& j, Machine& m) {
             e.check_ok      = je.value("check_ok", -1);
             e.check_message = je.value("check_message", std::string());
             e.id_name       = je.value("id_name", std::string());
+            e.local_build   = portable::resolved(je.value("local_build", std::string()));
+            e.local_dir     = portable::resolved(je.value("local_dir", std::string()));
+            e.copied_dir    = je.value("copied_dir", std::string());
+            e.remote_hash   = je.value("remote_hash", std::string());
+            e.local_hash    = je.value("local_hash", std::string());
+            if (const auto st = je.find("local_stamp"); st != je.end() && st->is_object()) {
+                e.local_stamp.size  = st->value("size", uint64_t(0));
+                e.local_stamp.mtime = st->value("mtime", int64_t(0));
+            }
             if (!e.engine.empty()) m.engines.push_back(std::move(e));
         }
     }
@@ -590,6 +608,51 @@ std::string sha256File(const fs::path& file, const std::atomic_bool* cancel) {
     std::string out;
     for (const auto b : hash) out += fmt::format("{:02x}", b);
     return out;
+}
+
+tour::FileFingerprint fileStamp(const fs::path& file) {
+    tour::FileFingerprint fp;
+    std::error_code ec;
+    if (!fs::is_regular_file(file, ec)) return fp;
+    const auto size  = fs::file_size(file, ec);
+    const auto mtime = fs::last_write_time(file, ec);
+    if (ec) return fp;
+    fp.size  = size;
+    fp.mtime = mtime.time_since_epoch().count();
+    return fp;
+}
+
+std::string cachedSha256(const fs::path& file, const std::atomic_bool* cancel) {
+    struct Known {
+        tour::FileFingerprint stamp;
+        std::string hash;
+    };
+    static std::mutex mutex;
+    static std::map<std::string, Known> known;
+    const auto key   = file.lexically_normal().string();
+    const auto stamp = fileStamp(file);
+    if (stamp.size == 0 && stamp.mtime == 0) return sha256File(file, cancel);  // not a file, or an empty one
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        if (const auto it = known.find(key);
+            it != known.end() && it->second.stamp.size == stamp.size && it->second.stamp.mtime == stamp.mtime) {
+            return it->second.hash;
+        }
+    }
+    auto hash = sha256File(file, cancel);
+    // Kept only when the file did not change while it was read.
+    const auto after = fileStamp(file);
+    if (!hash.empty() && after.size == stamp.size && after.mtime == stamp.mtime) {
+        std::lock_guard<std::mutex> lock(mutex);
+        known[key] = {stamp, hash};
+    }
+    return hash;
+}
+
+BuildMatch buildMatch(const MachineEngine& e, const tour::FileFingerprint& now) {
+    if (e.remote_hash.empty() || e.local_hash.empty()) return BuildMatch::Unknown;
+    if (now.size != e.local_stamp.size || now.mtime != e.local_stamp.mtime) return BuildMatch::Changed;
+    return e.remote_hash == e.local_hash ? BuildMatch::Same : BuildMatch::Different;
 }
 
 std::string formatBytes(uint64_t bytes) {

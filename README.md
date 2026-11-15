@@ -31,7 +31,9 @@ this repository still builds unchanged.
 - **Remote machines**: a tournament runs on a test box, a server or a second PC (Linux, macOS, Windows' built-in
   OpenSSH server) reached with SSH (the agent or a key file, nothing secret saved), followed in the window as if
   it played here, connected again after a cut, its files copied back. Settings installs fastchess-gui there,
-  checks the engines' paths and pushes the books and tablebases missing.
+  checks the engines' paths, copies an engine missing there (the build for the machine's system and architecture,
+  with its folder if it needs one), tells whether the engine there is the same build as here (SHA-256), and
+  pushes the books and tablebases missing.
 - **Exact resume**: every tournament is a folder with an append-only journal; after a crash, a closed window or
   a power cut it continues with no game lost or played twice.
 - **Unattended nights**: an engine that cannot start has its games set aside while the others go on; it is tried

@@ -51,8 +51,9 @@ class Dialogs {
         BoardPgn,      // a PGN file for the Board page
         EngineLogo,
         PieceFolder,
-        MachineKey,     // a remote machine's key file (Settings)
-        MachineProgram  // the fastchess-gui to install on a remote machine of another system
+        MachineKey,         // a remote machine's key file (Settings)
+        MachineProgram,     // the fastchess-gui to install on a remote machine of another system
+        MachineEngineBuild  // an engine's build for a remote machine's system, copied there
     };
 
     struct Answer {

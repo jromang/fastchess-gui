@@ -125,10 +125,16 @@ std::string remoteSpec(const tour::TournamentSpec& local, const Machine& machine
                        machine.name);
         }
         p.engine.cmd = engine->path;
-        p.engine.dir.clear();
-        p.program = {};
+        // The engine's folder copied with it is its working directory there, as the folder was here; otherwise it
+        // runs from its program's folder.
+        p.engine.dir = engine->copied_dir;
+        p.program    = {};
         for (auto& [name, value] : p.engine.options) {
-            if (name == "SyzygyPath" && !value.empty()) value = syzygy;
+            if (name == "SyzygyPath" && !value.empty()) {
+                value = syzygy;
+            } else {
+                value = optionThere(*engine, machine.system.shell, value);  // a file of its folder, in its copy there
+            }
         }
         p.book = there(p.book);
     }

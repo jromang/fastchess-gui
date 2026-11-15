@@ -307,6 +307,8 @@ void App::frame() {
                 if (w == "machines-test") startMachineJob(machine_open_, MachineJob::Kind::Test);
                 if (w == "machines-files") startMachineJob(machine_open_, MachineJob::Kind::Files);
             }
+        } else if (w.rfind("machines-copy=", 0) == 0) {  // machines-copy=ENGINE: its copy to the first machine offered
+            if (!machines_.empty()) offerEngineCopy(machines_.front().id, w.substr(14));
         } else if (w == "ratings" || w == "ratings-engine" || w == "ratings-h2h" || w == "ratings-progress") {
             page_                = Page::Ratings;
             ratings_tab_request_ = w == "ratings-engine" ? 1 : w == "ratings-h2h" ? 2 : w == "ratings-progress" ? 3 : 0;
@@ -1379,6 +1381,9 @@ void App::handleDialogs() {
                     (answer->purpose == Dialogs::Purpose::MachineKey ? machine->key_file : machine->program) = path;
                     saveMachines();
                 }
+                break;
+            case Dialogs::Purpose::MachineEngineBuild:
+                offerEngineCopy(machine_dialog_for_, machine_dialog_engine_, std::filesystem::path(path));
                 break;
         }
     }

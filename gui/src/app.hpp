@@ -1451,6 +1451,12 @@ class App {
         std::optional<FilesCheck> files;  // the last comparison, what a push sends
         std::string message;              // what keeps a job from starting (the machine incomplete, a key file)
         bool remove_asked = false;
+        // An engine copied there (Copy to the machine, Replace with this computer's): the copy offered, its panel
+        // open under the engines, then copied by the transfer job; and what the last copy said.
+        std::optional<EngineCopy> copy;
+        std::optional<JobResult> last_copy;
+        bool open_engines  = false;  // the engines' list opened at the next frame (a copy asked from elsewhere)
+        int scroll_to_copy = 0;      // and the page scrolled to the copy's panel, these frames (the card grows first)
     };
     void loadMachines();
     void saveMachines();
@@ -1460,6 +1466,17 @@ class App {
     void drawMachineCard(std::size_t index, float label);
     void drawMachineEngines(Machine& machine, MachineActivity& activity);
     void drawMachineFiles(Machine& machine, MachineActivity& activity);
+    void drawEngineCopy(Machine& machine, MachineActivity& activity);
+    // The copy of the library's engine `engine` to the machine `id` offered on its card (Settings opened there),
+    // `build` the file chosen for the machine instead of the program known.
+    void offerEngineCopy(const std::string& id, const std::string& engine, const std::filesystem::path& build = {});
+    // This computer's program of each engine of the machine's list, for the builds' comparison.
+    [[nodiscard]] std::map<std::string, std::filesystem::path> machinePrograms(const Machine& machine) const;
+    // The format of a program of this computer, read again when the file changes.
+    [[nodiscard]] const ProgramFormat& programFormatOf(const std::filesystem::path& program,
+                                                       const tour::FileFingerprint& stamp);
+    std::map<std::string, std::pair<tour::FileFingerprint, ProgramFormat>> program_formats_;
+    float copy_panel_y_ = -1;  // where the copy's panel was drawn, the page scrolled there once (screen, -1: no)
     void drawPassphrasePrompt();
     // Starts a job on the machine `id`, its key's passphrase asked first when it has one not typed yet.
     void startMachineJob(const std::string& id, MachineJob::Kind kind);
@@ -1483,6 +1500,7 @@ class App {
     std::map<std::string, std::string> machine_passphrases_;   // by key file
     std::string machine_open_;        // the machine whose card is open
     std::string machine_dialog_for_;  // the machine a file dialog was opened for
+    std::string machine_dialog_engine_;  // and the engine, for its build for the machine
     std::string passphrase_machine_;  // the machine whose key's passphrase is asked, and the job then started
     MachineJob::Kind passphrase_kind_ = MachineJob::Kind::Test;
     bool open_passphrase_             = false;

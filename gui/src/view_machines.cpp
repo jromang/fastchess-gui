@@ -57,6 +57,13 @@ std::string summaryOf(const Machine& m) {
     return out;
 }
 
+const EngineEntry* findEngine(const std::vector<EngineEntry>& engines, const std::string& name) {
+    for (const auto& e : engines) {
+        if (e.name == name) return &e;
+    }
+    return nullptr;
+}
+
 void wipe(std::string& secret) {
     if (!secret.empty()) mbedtls_platform_zeroize(secret.data(), secret.size());
     secret.clear();
@@ -166,10 +173,27 @@ void App::startMachineJob(const std::string& id, MachineJob::Kind kind) {
         case MachineJob::Kind::Engines: {
             std::map<std::string, std::string> protocols;
             for (const auto& e : engines_) protocols[e.name] = e.protocol;
-            work = [copy, protocols](SshClient& c, JobState& s, JobResult& r) {
-                checkEngines(c, copy, protocols, std::chrono::seconds(10), s, r);
+            work = [copy, protocols, programs = machinePrograms(copy)](SshClient& c, JobState& s, JobResult& r) {
+                checkEngines(c, copy, protocols, std::chrono::seconds(10), s, r, programs);
             };
             break;
+        }
+        case MachineJob::Kind::Builds:
+            work = [copy, programs = machinePrograms(copy)](SshClient& c, JobState& s, JobResult& r) {
+                compareBuilds(c, copy, programs, s, r);
+            };
+            break;
+        case MachineJob::Kind::CopyEngine: {
+            if (!activity.copy) return;
+            std::map<std::string, std::string> protocols;
+            for (const auto& e : engines_) protocols[e.name] = e.protocol;
+            work = [copy, plan = *activity.copy, protocols](SshClient& c, JobState& s, JobResult& r) {
+                copyEngine(c, copy, plan, protocols, s, r);
+            };
+            // Beside the other jobs, as a push: a folder with its networks may take a while.
+            activity.last_copy.reset();
+            activity.transfer = std::make_unique<MachineJob>(kind, target, std::move(work));
+            return;
         }
         case MachineJob::Kind::Files: {
             const auto request = setupFiles();
@@ -204,8 +228,19 @@ void App::pollMachines() {
                 changed         = true;
             }
             for (const auto& checked : result.engines) {
-                for (auto& e : machine->engines) {
-                    if (e.engine == checked.engine && e.path == checked.path) e = checked;
+                if (kind == MachineJob::Kind::CopyEngine) {
+                    // Its path is the copy's now, whatever it was: on the machine's list, added if it was not.
+                    auto it = std::find_if(machine->engines.begin(), machine->engines.end(),
+                                           [&](const MachineEngine& e) { return e.engine == checked.engine; });
+                    if (it == machine->engines.end()) {
+                        machine->engines.push_back(checked);
+                    } else {
+                        *it = checked;
+                    }
+                } else {
+                    for (auto& e : machine->engines) {
+                        if (e.engine == checked.engine && e.path == checked.path) e = checked;
+                    }
                 }
                 changed = true;
             }
@@ -224,6 +259,10 @@ void App::pollMachines() {
                     activity.files.reset();
                     startMachineJob(id, MachineJob::Kind::Files);
                 }
+            } else if (kind == MachineJob::Kind::CopyEngine) {
+                // Copied (even when it does not run there: its path is set, the report says why): the offer closes.
+                if (!result.engines.empty()) activity.copy.reset();
+                activity.last_copy = std::move(result);
             } else {
                 activity.last      = std::move(result);
                 activity.last_kind = kind;
@@ -254,6 +293,11 @@ void App::drawMachineSettings(float label) {
     ImGui::SameLine();
     if (ImGui::Button(TR("Add a machine"))) addMachine();
     for (std::size_t i = 0; i < machines_.size(); ++i) drawMachineCard(i, label);
+    // A copy offered from elsewhere (a start refused, the palette): its panel in sight.
+    if (copy_panel_y_ >= 0) {
+        ImGui::SetScrollFromPosY(copy_panel_y_ - ImGui::GetWindowPos().y, 0.25f);
+        copy_panel_y_ = -1;
+    }
     ImGui::PopID();
     drawPassphrasePrompt();
 }
@@ -445,6 +489,10 @@ void App::drawMachineCard(std::size_t index, float label) {
 
     // The engines, and the books and tablebases.
     ImGui::Spacing();
+    if (activity.open_engines) {
+        ImGui::SetNextItemOpen(true);
+        activity.open_engines = false;
+    }
     if (ImGui::TreeNode(trf("Engines on this machine ({})###engines", m.engines.size()).c_str())) {
         drawMachineEngines(m, activity);
         ImGui::TreePop();
@@ -480,16 +528,19 @@ void App::drawMachineCard(std::size_t index, float label) {
 }
 
 void App::drawMachineEngines(Machine& m, MachineActivity& activity) {
-    bool save       = false;
-    const bool busy = activity.job != nullptr;
+    bool save          = false;
+    const bool busy    = activity.job != nullptr;
+    const bool copying = activity.transfer && activity.transfer->kind() == MachineJob::Kind::CopyEngine;
+    const auto name    = m.name.empty() ? m.host : m.name;
     if (m.engines.empty()) {
         ImGui::TextDisabled("%s", TR("No engine on this machine yet: add the library's engines it has, with their "
-                                     "path there."));
-    } else if (ImGui::BeginTable("machine_engines", 4, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg)) {
+                                     "path there, or copy them there."));
+    } else if (ImGui::BeginTable("machine_engines", 5, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg)) {
         ImGui::TableSetupColumn(TR("Engine"), ImGuiTableColumnFlags_WidthStretch, 1.0f);
         ImGui::TableSetupColumn(TR("Path on the machine"), ImGuiTableColumnFlags_WidthStretch, 2.0f);
-        ImGui::TableSetupColumn(TR("Check"), ImGuiTableColumnFlags_WidthStretch, 1.5f);
-        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, px(24));
+        ImGui::TableSetupColumn(TR("Check"), ImGuiTableColumnFlags_WidthStretch, 1.2f);
+        ImGui::TableSetupColumn(TR("Build"), ImGuiTableColumnFlags_WidthStretch, 1.6f);
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, px(90));
         ImGui::TableHeadersRow();
         for (std::size_t i = 0; i < m.engines.size(); ++i) {
             auto& e = m.engines[i];
@@ -501,8 +552,13 @@ void App::drawMachineEngines(Machine& m, MachineActivity& activity) {
             ImGui::TableNextColumn();
             if (editField("##path", e.path, -FLT_MIN,
                           m.system.shell == RemoteShell::Cmd ? "C:\\Engines\\sf.exe" : "/opt/engines/stockfish")) {
+                // Another program: nothing known of it yet, nor of a folder copied with it.
                 e.check_ok = -1;
                 e.check_message.clear();
+                e.local_dir.clear();
+                e.copied_dir.clear();
+                e.remote_hash.clear();
+                e.local_hash.clear();
             }
             save |= ImGui::IsItemDeactivatedAfterEdit();
             ImGui::TableNextColumn();
@@ -517,7 +573,80 @@ void App::drawMachineEngines(Machine& m, MachineActivity& activity) {
             } else {
                 ImGui::TextDisabled("%s", e.path.empty() ? TR("no path") : TR("not checked"));
             }
+
+            // This computer's build against the one there.
             ImGui::TableNextColumn();
+            const auto* library = findEngine(engines_, e.engine);
+            if (!library) {
+                ImGui::TextDisabled("%s", TR("not in the library"));
+            } else {
+                const auto local   = programFor(*library, m);
+                const auto stamp   = fileStamp(local);
+                const auto& format = programFormatOf(local, stamp);
+                const bool suits = programSuits(format, m.system, e.engine, name).level != Suitability::Level::Refused;
+                switch (e.path.empty() ? BuildMatch::Unknown : buildMatch(e, stamp)) {
+                    case BuildMatch::Same:
+                        ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ui::GOOD), "%s",
+                                           TR("same build as this computer"));
+                        ImGui::SetItemTooltip("%s",
+                                              trf("SHA-256 {}…, here and there.", e.local_hash.substr(0, 16)).c_str());
+                        break;
+                    case BuildMatch::Different:
+                        ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ui::WARN), "%s",
+                                           TR("a different build there"));
+                        ImGui::SetItemTooltip("%s", trf("This computer's {} ({}…) is not the program there ({}…).",
+                                                        local.filename().string(), e.local_hash.substr(0, 12),
+                                                        e.remote_hash.substr(0, 12))
+                                                        .c_str());
+                        ImGui::BeginDisabled(copying);
+                        if (ImGui::SmallButton(TR("Replace with this computer's"))) offerEngineCopy(m.id, e.engine);
+                        ImGui::EndDisabled();
+                        ImGui::SetItemTooltip("%s",
+                                              trf("Copies {} to the engines folder of {} and points the engine there; "
+                                                  "a program elsewhere on the machine is left as it is.",
+                                                  local.filename().string(), name)
+                                                  .c_str());
+                        break;
+                    case BuildMatch::Changed:
+                    case BuildMatch::Unknown:
+                        if (!suits) {
+                            // This computer's program is for another system: the machine's build is another one.
+                            ImGui::TextDisabled("%s", trf("here: {}", describeFormat(format)).c_str());
+                            ImGui::BeginDisabled(copying);
+                            if (ImGui::SmallButton(trf("Choose the {} build…", describeSystem(m.system)).c_str())) {
+                                machine_dialog_for_    = m.id;
+                                machine_dialog_engine_ = e.engine;
+                                dialogs_.openFile(Dialogs::Purpose::MachineEngineBuild, {}, local.string());
+                            }
+                            ImGui::EndDisabled();
+                            ImGui::SetItemTooltip("%s", trf("The program of {} for {}: copied there, and kept for this "
+                                                            "machine to compare and replace it later.",
+                                                            e.engine, describeSystem(m.system))
+                                                            .c_str());
+                        } else if (!e.path.empty()) {
+                            ImGui::TextDisabled("%s",
+                                                e.remote_hash.empty() ? TR("not compared") : TR("changed here since"));
+                            ImGui::SameLine();
+                            ImGui::BeginDisabled(busy);
+                            if (ImGui::SmallButton(TR("Compare"))) startMachineJob(m.id, MachineJob::Kind::Builds);
+                            ImGui::EndDisabled();
+                            ImGui::SetItemTooltip("%s", TR("Compares the SHA-256 of each engine's program there with "
+                                                           "this computer's."));
+                        }
+                        break;
+                }
+            }
+
+            ImGui::TableNextColumn();
+            ImGui::BeginDisabled(copying || !library);
+            if (ImGui::SmallButton(TR("Copy…"))) offerEngineCopy(m.id, e.engine);
+            ImGui::EndDisabled();
+            ImGui::SetItemTooltip("%s",
+                                  trf("Copy to the machine: this computer's program of {} goes to {} on {} (with its "
+                                      "folder if you want), then its path is set there and checked.",
+                                      e.engine, engineFolderThere(m, e.engine), name)
+                                      .c_str());
+            ImGui::SameLine();
             if (ImGui::SmallButton("×")) {
                 m.engines.erase(m.engines.begin() + static_cast<std::ptrdiff_t>(i));
                 save = true;
@@ -535,7 +664,9 @@ void App::drawMachineEngines(Machine& m, MachineActivity& activity) {
         for (const auto& e : engines_) {
             if (e.inactive || m.engine(e.name)) continue;
             if (ImGui::Selectable(e.name.c_str())) {
-                m.engines.push_back({e.name, {}, -1, {}, {}});
+                MachineEngine added;
+                added.engine = e.name;
+                m.engines.push_back(std::move(added));
                 save = true;
             }
         }
@@ -546,16 +677,189 @@ void App::drawMachineEngines(Machine& m, MachineActivity& activity) {
     if (ImGui::Button(TR("Check the engines"))) startMachineJob(m.id, MachineJob::Kind::Engines);
     ImGui::EndDisabled();
     ImGui::SetItemTooltip("%s", TR("For each path: the program is there, can be run, and answers uci (xboard for a "
-                                   "WinBoard engine) within 10 seconds."));
-    if (activity.last && activity.last_kind == MachineJob::Kind::Engines && !busy && activity.last->error) {
+                                   "WinBoard engine) within 10 seconds; and whether it is the same build as this "
+                                   "computer's (their SHA-256)."));
+    if (activity.last && !busy && activity.last->error &&
+        (activity.last_kind == MachineJob::Kind::Engines || activity.last_kind == MachineJob::Kind::Builds)) {
         drawNotice({Notice::Level::Error, activity.last->error.message, {}, {}}, "engines_error");
+    }
+    if (activity.copy || copying) {
+        drawEngineCopy(m, activity);
+    } else if (activity.last_copy) {
+        int i = 0;
+        for (const auto& line : activity.last_copy->lines) {
+            drawNotice({Notice::Level::Ok, line, {}, {}}, fmt::format("copy_line{}", i++).c_str());
+        }
+        if (activity.last_copy->error) {
+            drawNotice({Notice::Level::Error, activity.last_copy->error.message, {}, {}}, "copy_error");
+        }
     }
     if (save) saveMachines();
 }
 
+void App::offerEngineCopy(const std::string& id, const std::string& engine, const std::filesystem::path& build) {
+    auto* machine = machineById(id);
+    if (!machine) return;
+    auto& activity = machine_activity_[id];
+    // Settings, at the machine's card, its engines shown.
+    page_                   = Page::Settings;
+    scroll_to_machines_     = machine_open_ != id;
+    machine_open_           = id;
+    activity.open_engines   = true;
+    activity.scroll_to_copy = 3;
+    activity.last_copy.reset();
+    const auto* library = findEngine(engines_, engine);
+    if (!library) {
+        activity.copy.reset();
+        activity.message = trf("{} is not in the engine library any more.", engine);
+        return;
+    }
+    activity.copy = planEngineCopy(*library, *machine, build);
+}
+
+std::map<std::string, std::filesystem::path> App::machinePrograms(const Machine& machine) const {
+    std::map<std::string, std::filesystem::path> out;
+    for (const auto& e : machine.engines) {
+        if (const auto* library = findEngine(engines_, e.engine)) out[e.engine] = programFor(*library, machine);
+    }
+    return out;
+}
+
+const ProgramFormat& App::programFormatOf(const std::filesystem::path& program, const tour::FileFingerprint& stamp) {
+    auto& known = program_formats_[program.string()];
+    // crc32 marks an entry read at least once (an empty or missing file too): the CRC itself is not read.
+    if (known.first.crc32 != 1 || known.first.size != stamp.size || known.first.mtime != stamp.mtime) {
+        known.first       = stamp;
+        known.first.crc32 = 1;
+        known.second      = readProgramFormat(program);
+    }
+    return known.second;
+}
+
+void App::drawEngineCopy(Machine& m, MachineActivity& activity) {
+    const auto name    = m.name.empty() ? m.host : m.name;
+    const bool copying = activity.transfer && activity.transfer->kind() == MachineJob::Kind::CopyEngine;
+    if (activity.scroll_to_copy > 0) {
+        copy_panel_y_ = ImGui::GetCursorScreenPos().y;
+        --activity.scroll_to_copy;
+    }
+    ui::beginCard("engine_copy");
+    if (activity.copy) {
+        auto& c            = *activity.copy;
+        const bool windows = normalizePlatform(m.system.os, m.system.arch).os == "Windows";
+        const auto* there  = m.engine(c.engine);
+        ImGui::TextUnformatted((there && !there->path.empty()
+                                    ? trf("Copy {} to {}, in place of its program there", c.engine, name)
+                                    : trf("Copy {} to {}", c.engine, name))
+                                   .c_str());
+        const auto chooseBuild = [&](const std::string& label) {
+            ImGui::BeginDisabled(copying);
+            if (ImGui::SmallButton(label.c_str())) {
+                machine_dialog_for_    = m.id;
+                machine_dialog_engine_ = c.engine;
+                dialogs_.openFile(Dialogs::Purpose::MachineEngineBuild, {}, c.program.string());
+            }
+            ImGui::EndDisabled();
+            ImGui::SetItemTooltip("%s", trf("Another program of {}, for {}: copied instead of the library's, and kept "
+                                            "for this machine.",
+                                            c.engine, describeSystem(m.system))
+                                            .c_str());
+        };
+        const auto build_label = trf("Choose the {} build of {}…", describeSystem(m.system), c.engine);
+        bool can_copy          = c.error.empty() && c.suits.level != Suitability::Level::Refused && !copying;
+        if (!c.error.empty()) {
+            drawNotice({Notice::Level::Error, c.error, {}, {}}, "copy_plan_error");
+            chooseBuild(build_label);
+        } else {
+            ImGui::TextDisabled("%s", trf("{} ({}), {}", c.program.filename().string(), formatBytes(c.program_bytes),
+                                          describeFormat(c.format))
+                                          .c_str());
+            ImGui::SetItemTooltip("%s", c.own_build
+                                            ? trf("{}: the build chosen for this machine.", c.program.string()).c_str()
+                                            : c.program.string().c_str());
+            ImGui::SameLine();
+            chooseBuild(TR("Another build…"));
+            if (c.suits.level != Suitability::Level::Fits) {
+                const auto level =
+                    c.suits.level == Suitability::Level::Refused ? Notice::Level::Error : Notice::Level::Warning;
+                drawNotice({level, c.suits.message, {}, {}}, "copy_suits");
+                if (c.suits.level == Suitability::Level::Refused) chooseBuild(build_label);
+            }
+            // The folder, counted first.
+            if (c.too_many) {
+                ImGui::TextDisabled("%s", trf("Its folder {} holds more than {} files: the program goes alone.",
+                                              c.folder.string(), MAX_FOLDER_FILES)
+                                              .c_str());
+            } else if (!c.files.empty()) {
+                ImGui::BeginDisabled(copying);
+                ImGui::Checkbox(
+                    trn("With its folder {} ({} file, {})", "With its folder {} ({} files, {})", c.files.size(),
+                        c.folder.filename().string(), c.files.size(), formatBytes(c.folder_bytes))
+                        .c_str(),
+                    &c.with_folder);
+                ImGui::EndDisabled();
+                ImGui::SetItemTooltip("%s", trf("{}: the whole folder copied beside the program, for an engine that "
+                                                "needs files beside it (its networks, a book): in its copy there, the "
+                                                "engine finds them as here. Files there already the same are not sent "
+                                                "again.",
+                                                c.folder.string())
+                                                .c_str());
+                if (c.with_folder && windows && !c.name_problem.empty()) {
+                    drawNotice({Notice::Level::Error, c.name_problem, {}, {}}, "copy_names");
+                    can_copy = false;
+                }
+            }
+            int i = 0;
+            for (const auto& [option, file] : c.options_inside) {
+                const auto n =
+                    c.with_folder
+                        ? Notice{Notice::Level::Ok,
+                                 trf("{} names {} of its folder: found in its copy there.", option, file),
+                                 {},
+                                 {}}
+                        : Notice{Notice::Level::Warning,
+                                 trf("{} names {} of its folder: copy it with its folder, or the engine will not find "
+                                     "it there.",
+                                     option, file),
+                                 {},
+                                 {}};
+                drawNotice(n, fmt::format("copy_option{}", i++).c_str());
+            }
+            ImGui::TextDisabled("%s", trf("To {}", remoteJoin(engineFolderThere(m, c.engine), c.remote_name)).c_str());
+        }
+        ImGui::BeginDisabled(!can_copy);
+        if (ImGui::Button(trf("Copy ({})##copy_engine", formatBytes(c.bytes())).c_str())) {
+            startMachineJob(m.id, MachineJob::Kind::CopyEngine);
+        }
+        ImGui::EndDisabled();
+        ImGui::SetItemTooltip("%s", TR("In the background, resumed where it stopped if it is cut; each file's SHA-256 "
+                                       "checked there after; then the engine's path set and checked."));
+        if (!copying) {
+            ImGui::SameLine();
+            if (ImGui::Button(TR("Cancel##copy_offer"))) activity.copy.reset();
+        }
+    }
+    if (copying) {
+        const auto& state = activity.transfer->state();
+        const auto total  = state.bytes_total.load();
+        const auto done   = state.bytes_done.load();
+        std::string text  = trf("{} of {}", formatBytes(done), formatBytes(total));
+        if (const auto left = activity.transfer->remaining()) text += " — " + remainingText(*left);
+        ImGui::ProgressBar(total > 0 ? static_cast<float>(done) / static_cast<float>(total) : 0.0f, ImVec2(px(320), 0),
+                           text.c_str());
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Cancel##copy_engine_job"))) activity.transfer->cancel();
+        ImGui::TextDisabled("%s", state.step().c_str());
+    } else if (activity.last_copy && activity.last_copy->error) {
+        drawNotice({Notice::Level::Error, activity.last_copy->error.message, {}, {}}, "copy_error");
+    }
+    ui::endCard();
+}
+
 void App::drawMachineFiles(Machine& m, MachineActivity& activity) {
-    bool save       = false;
-    const bool busy = activity.job != nullptr || activity.transfer != nullptr;
+    bool save          = false;
+    const bool busy    = activity.job != nullptr || activity.transfer != nullptr;
+    const bool pushing = activity.transfer && activity.transfer->kind() == MachineJob::Kind::Push;
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(TR("Books folder"));
     ImGui::SameLine(px(150));
@@ -583,7 +887,7 @@ void App::drawMachineFiles(Machine& m, MachineActivity& activity) {
         ImGui::TextDisabled("%s", activity.job->state().step().c_str());
     }
 
-    if (activity.files && !activity.transfer) {
+    if (activity.files && !pushing) {
         const auto& f = *activity.files;
         int i         = 0;
         for (const auto& b : f.books) {
@@ -649,7 +953,7 @@ void App::drawMachineFiles(Machine& m, MachineActivity& activity) {
                                            "after; a copy cut short resumes where it stopped."));
         }
     }
-    if (activity.transfer) {
+    if (pushing) {
         const auto& state = activity.transfer->state();
         const auto total  = state.bytes_total.load();
         const auto done   = state.bytes_done.load();

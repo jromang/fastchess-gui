@@ -194,6 +194,9 @@ msgstr "同一方赢下一对中的两局"
 msgid "A command for the engine"
 msgstr "发给引擎的命令"
 
+msgid "A file has no name."
+msgstr "有一个文件没有名称。"
+
 msgid "A file of your choice"
 msgstr "自选文件"
 
@@ -515,8 +518,14 @@ msgstr "锚点："
 msgid "Another SSH server"
 msgstr "其他 SSH 服务器"
 
+msgid "Another build…"
+msgstr "其他构建版本…"
+
 msgid "Another engine of the list takes its place and plays its games, those it played included."
 msgstr "由列表中的另一个引擎接替它，并下它的对局，包括它已下过的。"
+
+msgid "Another program of {}, for {}: copied instead of the library's, and kept for this machine."
+msgstr "{} 的另一个程序，适用于 {}：代替库中的程序复制，并为这台机器保留。"
 
 msgid "Answers {} as {}."
 msgstr "以 {} 应答，名为 {}。"
@@ -767,6 +776,9 @@ msgstr "浏览…"
 msgid "Budget"
 msgstr "预算"
 
+msgid "Build"
+msgstr "构建版本"
+
 msgid "Build a Polyglot book"
 msgstr "生成 Polyglot 开局库"
 
@@ -908,6 +920,9 @@ msgstr "检查"
 msgid "Check the engines"
 msgstr "检查引擎"
 
+msgid "Check the engines on {}"
+msgstr "检查 {} 上的引擎"
+
 msgid "Check the mate PVs"
 msgstr "检查将杀 PV"
 
@@ -1010,6 +1025,12 @@ msgstr "请选择对局的两个引擎。"
 msgid "Choose the working directory of {}"
 msgstr "选择 {} 的工作目录"
 
+msgid "Choose the {} build of {}…"
+msgstr "选择 {} 构建版本（{}）…"
+
+msgid "Choose the {} build…"
+msgstr "选择 {} 构建版本…"
+
 msgid "Choose two different engines, or give them books of their own."
 msgstr "请选择两个不同的引擎，或为它们各自指定专属开局库。"
 
@@ -1061,8 +1082,14 @@ msgstr "通用设置，强制用于所有引擎（0 = 各引擎自己的设置�
 msgid "Common settings: {}"
 msgstr "通用设置：{}"
 
+msgid "Compare"
+msgstr "比较"
+
 msgid "Compare with a saved run…"
 msgstr "与已保存的运行结果比较…"
+
+msgid "Compares the SHA-256 of each engine's program there with this computer's."
+msgstr "将每个引擎在那里的程序的 SHA-256 与本机的进行比较。"
 
 msgid "Comparing {} here and on {}…"
 msgstr "正在比较{}（本机与 {}）…"
@@ -1112,8 +1139,14 @@ msgstr "将 fastchess-gui {} 复制到机器上的 {}（中断后可续传），
 msgid "Copies them to the machine's folders in the background, each one checked after; a copy cut short resumes where it stopped."
 msgstr "在后台将它们复制到机器的文件夹，每个复制后都会检查；中断的复制会从停止处继续。"
 
+msgid "Copies {} to the engines folder of {} and points the engine there; a program elsewhere on the machine is left as it is."
+msgstr "将 {} 复制到 {} 的引擎文件夹并让引擎指向那里；机器上其他位置的程序保持不变。"
+
 msgid "Copy"
 msgstr "复制"
+
+msgid "Copy ({})"
+msgstr "复制（{}）"
 
 msgid "Copy FEN"
 msgstr "复制 FEN"
@@ -1124,11 +1157,26 @@ msgstr "复制 PGN"
 msgid "Copy the version"
 msgstr "复制版本号"
 
+msgid "Copy to the machine: this computer's program of {} goes to {} on {} (with its folder if you want), then its path is set there and checked."
+msgstr "复制到机器：本机的 {} 程序复制到 {}（位于 {}，可连同其文件夹），然后在那里设置并检查其路径。"
+
+msgid "Copy {} to {}"
+msgstr "将 {} 复制到 {}"
+
+msgid "Copy {} to {}, in place of its program there"
+msgstr "将 {} 复制到 {}，替换那里的程序"
+
+msgid "Copy {} to {}…"
+msgstr "将 {} 复制到 {}…"
+
 msgid "Copying {} ({})…"
 msgstr "正在复制 {}（{}）…"
 
 msgid "Copying {} to {}…"
 msgstr "正在复制 {} 到 {}…"
+
+msgid "Copy…"
+msgstr "复制…"
 
 msgid "Cores"
 msgstr "核心"
@@ -1694,8 +1742,8 @@ msgstr "用于程序未能正确判定的对局：未被发现的卡死、引擎
 msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
 msgstr "用于程序无法正确结束的对局：未被发现的卡死、引擎在必胜残局中来回走子。\n轮到走子的引擎会被停止（下一局时重新启动），对局按此结果计分：导出时为 Termination \"adjudicated by the operator\"，原因写在注释中。\n之后可在“对局”标签页修改其结果。"
 
-msgid "For each path: the program is there, can be run, and answers uci (xboard for a WinBoard engine) within 10 seconds."
-msgstr "对每个路径：程序存在、可以运行，并在 10 秒内应答 uci（WinBoard 引擎为 xboard）。"
+msgid "For each path: the program is there, can be run, and answers uci (xboard for a WinBoard engine) within 10 seconds; and whether it is the same build as this computer's (their SHA-256)."
+msgstr "对每个路径：程序存在、可以运行，并在 10 秒内响应 uci（WinBoard 引擎为 xboard）；以及它是否与本机的构建版本相同（比较 SHA-256）。"
 
 msgid "Format"
 msgstr "格式"
@@ -1953,6 +2001,9 @@ msgstr "已导入的对局"
 msgid "Import…"
 msgstr "导入…"
 
+msgid "In the background, resumed where it stopped if it is cut; each file's SHA-256 checked there after; then the engine's path set and checked."
+msgstr "在后台进行，中断后从停止处继续；之后在那里检查每个文件的 SHA-256；然后设置并检查引擎的路径。"
+
 msgid "Inaccuracy"
 msgstr "缓着"
 
@@ -2042,6 +2093,12 @@ msgstr "它在“等级分”中的信息卡：所有锦标赛中的成绩、稳
 
 msgid "Its card, with the options whose default changed, new or gone."
 msgstr "它的信息卡：默认值已更改、新增或移除的选项。"
+
+msgid "Its folder {} holds more than {} files: the program goes alone."
+msgstr "其文件夹 {} 中的文件超过 {} 个：只复制程序本身。"
+
+msgid "Its former path there, {}, is left as it was."
+msgstr "它在那里原来的路径 {} 保持不变。"
 
 msgid "Its games"
 msgstr "它的对局"
@@ -2449,8 +2506,8 @@ msgstr "此文件中没有找到引擎。"
 msgid "No engine found in this folder."
 msgstr "此文件夹中没有找到引擎。"
 
-msgid "No engine on this machine yet: add the library's engines it has, with their path there."
-msgstr "此机器上还没有引擎：添加它拥有的引擎库中的引擎，并填写其在那里的路径。"
+msgid "No engine on this machine yet: add the library's engines it has, with their path there, or copy them there."
+msgstr "这台机器上还没有引擎：添加它已有的库引擎及其在那里的路径，或将它们复制过去。"
 
 msgid "No engine that works within that range. Engines that were never checked do not count: check them first (Engines, More…)."
 msgstr "该范围内没有可用的引擎。从未检查过的引擎不计入：请先检查它们（引擎，更多…）。"
@@ -2686,6 +2743,9 @@ msgstr "从此机器的列表中移除（引擎仍保留在引擎库中）。"
 
 msgid "On its error output:"
 msgstr "其错误输出中："
+
+msgid "On macOS, a program copied from another computer may need a signature, or to leave the quarantine: on {}, run codesign -s - {} and xattr -d com.apple.quarantine {}, then Check the engines."
+msgstr "在 macOS 上，从其他计算机复制来的程序可能需要签名，或解除隔离：在 {} 上运行 codesign -s - {} 和 xattr -d com.apple.quarantine {}，然后点击“检查引擎”。"
 
 msgid "On the list"
 msgstr "列表中"
@@ -3274,6 +3334,12 @@ msgstr "替换引擎"
 msgid "Replace the template {}?"
 msgstr "替换模板 {}？"
 
+msgid "Replace with this computer's"
+msgstr "用本机的替换"
+
+msgid "Replace {} on {} with this computer's build"
+msgstr "用本机的构建版本替换 {}（位于 {}）"
+
 msgid "Replace {}…"
 msgstr "替换 {}…"
 
@@ -3384,6 +3450,9 @@ msgstr "SDL 渲染器"
 
 msgid "SDL renderer, {} driver"
 msgstr "SDL 渲染器，{} 驱动"
+
+msgid "SHA-256 {}…, here and there."
+msgstr "SHA-256 {}…，本机与那里相同。"
 
 msgid "SPRT calculator"
 msgstr "SPRT 计算器"
@@ -3532,6 +3601,9 @@ msgstr "在引擎库中将 {} 的 Threads 选项设为 {}：每个赛事都如�
 
 msgid "Settings"
 msgstr "设置"
+
+msgid "Settings > Machines: copies this computer's program of {} to {}, sets its path there and checks it."
+msgstr "设置 > 机器：将本机的 {} 程序复制到 {}，在那里设置其路径并检查。"
 
 msgid "Setup"
 msgstr "配置"
@@ -3859,6 +3931,9 @@ msgstr "测试与 {} 的连接"
 
 msgid "Test the connection to {} first (Settings > Machines): it finds out the machine."
 msgstr "请先测试与 {} 的连接（设置 > 机器）：它会识别该机器。"
+
+msgid "Test the connection to {} first: it tells the system the program must suit."
+msgstr "请先测试与 {} 的连接：它会告诉程序必须适配的系统。"
 
 msgid "Tested engines"
 msgstr "被测引擎"
@@ -4289,12 +4364,21 @@ msgstr[0] "{} 的程序自加入锦标赛以来已改变：其后续对局将由
 msgid "The program of {} changed since its last tournament, “{}”."
 msgstr "{} 的程序自其上次锦标赛“{}”以来已改变。"
 
+msgid "The program of {} for {}: copied there, and kept for this machine to compare and replace it later."
+msgstr "{} 适用于 {} 的程序：复制过去，并为这台机器保留，以便以后比较和替换。"
+
 msgid "The program of {} is missing: its games cannot start until it is back."
 msgid_plural "The programs of {} are missing: their games cannot start until they are back."
 msgstr[0] "{} 的程序不见了：在它恢复之前，其对局无法开始。"
 
+msgid "The program of {} is not a Windows, Linux or macOS program fastchess-gui knows, nor a script: copied all the same, the check after the copy tells whether it runs on {}."
+msgstr "{} 的程序不是 fastchess-gui 认识的 Windows、Linux 或 macOS 程序，也不是脚本：仍会复制，复制后的检查会说明它能否在 {} 上运行。"
+
 msgid "The program of {} is not found: {}"
 msgstr "找不到 {} 的程序：{}"
+
+msgid "The program of {} is not on this computer ({}): locate it on the Engines page first."
+msgstr "{} 的程序不在本机上（{}）：请先在“引擎”页面中定位它。"
 
 msgid "The programs of a folder can be added instead:"
 msgstr "也可以改为添加某个文件夹中的程序："
@@ -4492,6 +4576,9 @@ msgstr "本机"
 msgid "This computer's fastchess-gui does not run on the machine's system: download the release for it and choose its program here (fastchess-gui.exe for Windows). Install copies it."
 msgstr "本机的 fastchess-gui 无法在该机器的系统上运行：请下载适用的版本并在此选择其程序（Windows 为 fastchess-gui.exe）。“安装”会复制它。"
 
+msgid "This computer's {} ({}…) is not the program there ({}…)."
+msgstr "本机的 {}（{}…）与那里的程序（{}…）不同。"
+
 msgid "This draw ratio and this RMS bias are not compatible."
 msgstr "此和棋率与此 RMS 偏差不相容。"
 
@@ -4575,6 +4662,9 @@ msgstr "若要把所有内容放在程序旁边（U 盘、在多台机器间复�
 
 msgid "To move"
 msgstr "走棋方"
+
+msgid "To {}"
+msgstr "复制到 {}"
 
 msgid "Total"
 msgstr "合计"
@@ -4890,6 +4980,10 @@ msgstr "带页眉"
 msgid "With a time: physical cores − 1, divided by the engines' threads; with nodes or a depth, every hardware thread."
 msgstr "按时间：物理核心数 − 1，再除以引擎的线程数；按节点或深度：所有硬件线程。"
 
+msgid "With its folder {} ({} file, {})"
+msgid_plural "With its folder {} ({} files, {})"
+msgstr[0] "连同其文件夹 {}（{} 个文件，{}）"
+
 msgid "Withdraw an engine"
 msgstr "让一个引擎退赛"
 
@@ -4968,14 +5062,35 @@ msgstr "本锦标赛的 PGN 选项中“{}”是开启的：本局中引擎没�
 msgid "a crash stops the tournament"
 msgstr "崩溃会停止比赛"
 
+msgid "a different build there"
+msgstr "那里是不同的构建版本"
+
 msgid "a machine removed"
 msgstr "已移除的机器"
+
+msgid "a program of a format fastchess-gui does not know"
+msgstr "fastchess-gui 不认识其格式的程序"
 
 msgid "a result is 1-0, 0-1 or 1/2-1/2"
 msgstr "结果只能是 1-0、0-1 或 1/2-1/2"
 
+msgid "a script"
+msgstr "脚本"
+
+msgid "a script for {}"
+msgstr "{} 脚本"
+
 msgid "a team match board by board takes no new engine: replace one instead"
 msgstr "逐台对抗的团体赛不能加入新引擎：请改为替换一个"
+
+msgid "a {} program"
+msgstr "{} 程序"
+
+msgid "a {} program (universal: {})"
+msgstr "{} 程序（通用：{}）"
+
+msgid "a {} program for {}"
+msgstr "{} 程序，适用于 {}"
 
 msgid "about {}"
 msgstr "约 {}"
@@ -5032,6 +5147,9 @@ msgstr "作者 %s"
 
 msgid "bye"
 msgstr "轮空"
+
+msgid "changed here since"
+msgstr "本机程序已更改"
 
 msgid "checkmate"
 msgstr "将死"
@@ -5187,6 +5305,9 @@ msgstr "对局在等待内存"
 msgid "gone"
 msgstr "已移除"
 
+msgid "here: {}"
+msgstr "本机：{}"
+
 msgid "illegal move {} by {}"
 msgstr "非法着法 {}（{}）"
 
@@ -5312,8 +5433,14 @@ msgstr "normalized：以 nElo 为边界（fishtest、OpenBench）。logistic：�
 msgid "not checked"
 msgstr "未检查"
 
+msgid "not compared"
+msgstr "未比较"
+
 msgid "not counted"
 msgstr "不计入"
+
+msgid "not in the library"
+msgstr "不在库中"
 
 msgid "not tested yet"
 msgstr "尚未测试"
@@ -5387,6 +5514,9 @@ msgstr "运行 {}"
 
 msgid "s"
 msgstr "秒"
+
+msgid "same build as this computer"
+msgstr "与本机构建版本相同"
 
 msgid "seed {}"
 msgstr "种子 {}"
@@ -5552,6 +5682,9 @@ msgstr "{}（正在准备开局库：{} %）"
 msgid "{} ({}) against {} ({})"
 msgstr "{}（{}）对 {}（{}）"
 
+msgid "{} ({}), {}"
+msgstr "{}（{}），{}"
+
 msgid "{} + {} per move"
 msgstr "{} + 每步 {}"
 
@@ -5608,6 +5741,12 @@ msgstr "{} 台 × 2 局 × {} 个循环"
 msgid "{} bytes"
 msgstr "{} 字节"
 
+msgid "{} cannot be copied to {}: {}"
+msgstr "{} 无法复制到 {}：{}"
+
+msgid "{} cannot be made executable on {}: {}"
+msgstr "{} 无法在 {} 上设为可执行：{}"
+
 msgid "{} cannot be named in a Windows command: leave out quotes and %."
 msgstr "{} 不能用在 Windows 命令中：请去掉引号和 %。"
 
@@ -5640,6 +5779,13 @@ msgstr "{} 已改变：已重新读取其选项，与之前相同。"
 
 msgid "{} changed: its options were read again."
 msgstr "{} 已改变：已重新读取其选项。"
+
+msgid "{} copied to {} with its folder ({} file): {}"
+msgid_plural "{} copied to {} with its folder ({} files): {}"
+msgstr[0] "{} 已连同其文件夹复制到 {}（{} 个文件）：{}"
+
+msgid "{} copied to {}: {}"
+msgstr "{} 已复制到 {}：{}"
 
 msgid "{} core in use"
 msgid_plural "{} cores in use"
@@ -5709,6 +5855,9 @@ msgid "{} earlier match imported."
 msgid_plural "{} earlier matches imported."
 msgstr[0] "已导入 {} 场早期比赛。"
 
+msgid "{} ends with a dot or a space, which Windows leaves out of a file name."
+msgstr "{} 以点或空格结尾，Windows 会将其从文件名中去掉。"
+
 msgid "{} engine"
 msgid_plural "{} engines"
 msgstr[0] "{} 个引擎"
@@ -5742,6 +5891,10 @@ msgstr "列表中 {} 个引擎 · {} 个在库中 · {} 个不在库中"
 
 msgid "{} engines · {} games"
 msgstr "{} 个引擎 · {} 局"
+
+msgid "{} file was there already, the same: left as it was."
+msgid_plural "{} files were there already, the same: left as they were."
+msgstr[0] "{} 个文件已在那里且相同：保持不变。"
 
 msgid "{} for every engine"
 msgstr "每个引擎：{}"
@@ -5844,6 +5997,12 @@ msgstr[0] "{} 个硬件线程"
 msgid "{} hardware threads on {} cores. A game takes the Threads of its engine that has the most: the two engines think in turn."
 msgstr "{} 个硬件线程，{} 个核心。一局对局占用其两个引擎中 Threads 较多者的线程数：两个引擎轮流思考。"
 
+msgid "{} has a control character, which Windows does not take in a file name."
+msgstr "{} 含有控制字符，Windows 不允许其出现在文件名中。"
+
+msgid "{} has a {}, which Windows does not take in a file name."
+msgstr "{} 含有 {}，Windows 不允许其出现在文件名中。"
+
 msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
 msgstr "{} 与 fastchess-gui 没有共同的算法（需要 curve25519-sha256、RSA 主机密钥和 AES）"
 
@@ -5859,6 +6018,9 @@ msgstr "{} 在 {} 上没有路径：请在 设置 > 机器 > 此机器上的引�
 msgid "{} holds a key of type {}: fastchess-gui logs in with RSA and Ed25519 keys only (make one with ssh-keygen -t ed25519), or with the SSH agent."
 msgstr "{} 中的密钥类型为 {}：fastchess-gui 只支持 RSA 和 Ed25519 密钥登录（用 ssh-keygen -t ed25519 生成一个），或使用 SSH 代理。"
 
+msgid "{} holds more than {} files: copy the program of {} alone, or keep it in a folder of its own."
+msgstr "{} 中的文件超过 {} 个：请只复制 {} 的程序，或将它放在单独的文件夹中。"
+
 msgid "{} holds the games of the tournament: choose another file"
 msgstr "{} 保存着锦标赛的对局：请选择其他文件"
 
@@ -5873,8 +6035,44 @@ msgid "{} inaccuracy"
 msgid_plural "{} inaccuracies"
 msgstr[0] "{} 个缓着"
 
+msgid "{} is a 32-bit program: {} runs it only with the 32-bit libraries installed."
+msgstr "{} 是 32 位程序：{} 只有安装了 32 位库才能运行它。"
+
+msgid "{} is a Windows program; {} runs {}: choose the {} build of {}."
+msgstr "{} 是 Windows 程序；{} 运行的是 {}：请选择 {} 构建版本（{}）。"
+
 msgid "{} is a folder: give the engine's program in it."
 msgstr "{} 是一个文件夹：请指定其中的引擎程序。"
+
+msgid "{} is a macOS program; {} runs {}: choose the {} build of {}."
+msgstr "{} 是 macOS 程序；{} 运行的是 {}：请选择 {} 构建版本（{}）。"
+
+msgid "{} is a name Windows keeps for a device (CON, NUL, COM1…)."
+msgstr "{} 是 Windows 保留给设备的名称（CON、NUL、COM1…）。"
+
+msgid "{} is a script (#!{}), which Windows does not run: choose the Windows build of {}."
+msgstr "{} 是脚本（#!{}），Windows 无法运行：请选择 {} 的 Windows 构建版本。"
+
+msgid "{} is a script for {}, which {} does not have: install it there, or choose another build of {}."
+msgstr "{} 是 {} 脚本，而 {} 上没有它：请在那里安装，或选择 {} 的其他构建版本。"
+
+msgid "{} is a script whose first line names no interpreter (#!{}): choose its program."
+msgstr "{} 是脚本，但其第一行没有指明解释器（#!{}）：请选择它的程序。"
+
+msgid "{} is a {} program; {} runs {}: choose the {} build of {}."
+msgstr "{} 是 {} 程序；{} 运行的是 {}：请选择 {} 构建版本（{}）。"
+
+msgid "{} is a {} program; {} runs {}: it runs there only with a compatibility layer."
+msgstr "{} 是 {} 程序；{} 运行的是 {}：只有借助兼容层才能在那里运行。"
+
+msgid "{} is built for x86_64; {} is an arm64 Mac: it runs there under Rosetta 2 only, if it is installed (softwareupdate --install-rosetta)."
+msgstr "{} 是为 x86_64 构建的；{} 是 arm64 Mac：只有安装了 Rosetta 2 才能在那里运行（softwareupdate --install-rosetta）。"
+
+msgid "{} is built for {}; {} runs Windows on arm64: Windows 11 emulates it, more slowly than an arm64 build."
+msgstr "{} 是为 {} 构建的；{} 运行 arm64 上的 Windows：Windows 11 会模拟运行它，比 arm64 构建版本慢。"
+
+msgid "{} is built for {}; {} runs {}: choose the {} build of {}."
+msgstr "{} 是为 {} 构建的；{} 运行的是 {}：请选择 {} 构建版本（{}）。"
 
 msgid "{} is forgotten here; nothing is deleted on it."
 msgstr "{} 将在此处被遗忘；不会删除其上的任何内容。"
@@ -5909,6 +6107,12 @@ msgstr "{} 不是有效的私钥文件。"
 msgid "{} is not an SVG picture the program can draw."
 msgstr "{} 不是程序能够绘制的 SVG 图片。"
 
+msgid "{} is not in the engine library any more."
+msgstr "{} 已不在引擎库中。"
+
+msgid "{} is not on this computer any more: choose the {} build of {} again."
+msgstr "{} 已不在本机上：请重新选择 {} 构建版本（{}）。"
+
 msgid "{} is not on {} ({}): give its path there in Settings > Machines > Engines on this machine."
 msgstr "{} 不在 {} 上（{}）：请在 设置 > 机器 > 此机器上的引擎 中填写其在那里的路径。"
 
@@ -5923,6 +6127,9 @@ msgstr "{} 不存在：请重新选择 {} {} 版的 fastchess-gui。"
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} 已在另一个程序中打开：此处仅按打开时的状态显示。"
+
+msgid "{} is outside the folder of {} there: not copied."
+msgstr "{} 不在 {} 上的文件夹内：未复制。"
 
 msgid "{} is playing in another window: it is not resumed here."
 msgstr "{} 正在另一个窗口中进行：此处不恢复。"
@@ -5982,6 +6189,12 @@ msgstr "{} 步 · 深度 {:.1f} · 每步 {:.0f} ms{}"
 
 msgid "{} n/s"
 msgstr "{} 节点/秒"
+
+msgid "{} names {} of its folder: copy it with its folder, or the engine will not find it there."
+msgstr "{} 指向其文件夹中的 {}：请连同文件夹一起复制，否则引擎在那里找不到它。"
+
+msgid "{} names {} of its folder: found in its copy there."
+msgstr "{} 指向其文件夹中的 {}：会在那里的副本中找到。"
 
 msgid "{} new engine found. Untick those to leave out."
 msgid_plural "{} new engines found. Untick those to leave out."
@@ -6241,6 +6454,9 @@ msgstr[0] "{} 局作废对局，已排除"
 msgid "{} vs {}"
 msgstr "{} 对 {}"
 
+msgid "{} was copied to {}, but it does not run there: {}"
+msgstr "{} 已复制到 {}，但在那里无法运行：{}"
+
 msgid "{} was running when the program ended: it resumes."
 msgstr "程序结束时 {} 正在进行：现在恢复。"
 
@@ -6321,6 +6537,9 @@ msgstr "每个引擎都有 {} 子 Syzygy"
 msgid "{}-man Syzygy for {} of {} engines"
 msgstr "{} 子 Syzygy，用于 {} 个引擎（共 {} 个）"
 
+msgid "{}: a different build there than this computer's (Replace with this computer's copies it)."
+msgstr "{}：那里的构建版本与本机不同（“用本机的替换”会复制本机的版本）。"
+
 msgid "{}: a logo is a PNG, JPEG or SVG picture."
 msgstr "{}：标志必须是 PNG、JPEG 或 SVG 图片。"
 
@@ -6363,6 +6582,9 @@ msgstr "{}：权限被拒绝（步骤：{}）：用户 {} 无权在那里写入�
 msgid "{}: program not found ({})"
 msgstr "{}：找不到程序（{}）"
 
+msgid "{}: same build as this computer."
+msgstr "{}：与本机构建版本相同。"
+
 msgid "{}: save as profile"
 msgstr "{}：另存为配置"
 
@@ -6371,6 +6593,9 @@ msgstr "{}：seldepth"
 
 msgid "{}: starting on {} ({})."
 msgstr "{}：正在 {} 上启动（{}）。"
+
+msgid "{}: the build chosen for this machine."
+msgstr "{}：为这台机器选择的构建版本。"
 
 msgid "{}: the disk is full while {}: free some space on the machine."
 msgstr "{}：磁盘已满（步骤：{}）：请在机器上释放一些空间。"
@@ -6383,6 +6608,9 @@ msgstr "{}：主机密钥的签名无效"
 
 msgid "{}: the server refused while {} (SFTP error {})."
 msgstr "{}：服务器拒绝（步骤：{}）（SFTP 错误 {}）。"
+
+msgid "{}: the whole folder copied beside the program, for an engine that needs files beside it (its networks, a book): in its copy there, the engine finds them as here. Files there already the same are not sent again."
+msgstr "{}：整个文件夹复制到程序旁，适用于需要旁边文件（其网络、开局库）的引擎：在那里的副本中，引擎能像在本机一样找到它们。那里已有且相同的文件不会重新发送。"
 
 msgid "{}: trying to start it again."
 msgstr "{}：再次尝试启动。"
