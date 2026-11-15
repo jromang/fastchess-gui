@@ -39,7 +39,7 @@ body:
     attributes:
       label: Version
       description: Settings > Version, or the window title.
-      placeholder: fastchess-gui 0.5.9
+      placeholder: fastchess-gui 0.6.0
     validations:
       required: true
   - type: textarea
