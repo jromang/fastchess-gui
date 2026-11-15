@@ -6,9 +6,10 @@
 #include <fstream>
 #include <string>
 
-// stb_image's inflater, only to read back what the zip writer deflated.
+// stb_image's inflater, only to read back what the zip writer deflated: none of its image decoders.
 #define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_PNG
+#define STBI_ONLY_ZLIB
+#define STBI_SUPPORT_ZLIB
 #define STBI_NO_STDIO
 #include <stb_image.h>
 
