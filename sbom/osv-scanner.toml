@@ -4,3 +4,7 @@
 [[IgnoredVulns]]
 id = "CVE-2026-102804"
 reason = "stb: an integer overflow in stb_hexwave.h's hexwave_init. Only stb_image.h and stb_image_write.h are compiled in."
+
+[[IgnoredVulns]]
+id = "OSV-2022-126"
+reason = "md4c: a 1-byte heap over-read in md_analyze_inlines (table cells) found by OSS-Fuzz, never fixed upstream (every release). md4c parses only the guides embedded in the program at build time, never a file or text from outside; a test parses every section of every guide, under AddressSanitizer in the CI."

@@ -278,6 +278,28 @@ TEST_CASE("markdown: blocks and runs of a guide's text") {
     CHECK(md::plain(blocks[9].runs) == "AT&T \xC3\xA9");
 }
 
+TEST_CASE("markdown: every section of every embedded guide parses, as the panel reads it") {
+    // md4c only ever reads these texts: under the sanitizers, this is all it is given.
+    std::vector<std::string> codes{"en"};
+    for (const auto& c : guide::translations()) codes.push_back(c);
+    for (const auto& code : codes) {
+        CAPTURE(code);
+        const auto* d = guide::doc(code);
+        REQUIRE(d);
+        std::size_t blocks = 0;
+        for (const auto& h : d->headings) {
+            const auto parsed = md::parse(sectionBody(*d, h));
+            blocks += parsed.size();
+            for (const auto& b : parsed) {
+                CAPTURE(h.title);
+                // Text drawn by the panel wraps without a measure of fonts here: each run's text is valid to wrap.
+                if (!b.runs.empty()) CHECK_FALSE(md::wrap(b.runs, 40.0f, units).empty());
+            }
+        }
+        CHECK(blocks > 300);
+    }
+}
+
 TEST_CASE("markdown: lines wrapped between words, Chinese between characters") {
     const std::vector<md::Run> runs{{"one two three", md::Plain, {}}, {"four", md::Bold, {}}, {", five", md::Plain, {}}};
     // "one two three" is 13 bytes and two spaces of a half: 12 units.
