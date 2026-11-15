@@ -152,6 +152,15 @@ this repository still builds unchanged.
 
 ![Settings > Appearance: the brown board and the Celtic pieces](docs/screenshots/appearance.png)
 
+- **Help**: the guide is built into the program, in every language of the interface: F1 opens it beside the page at
+  the section of what is under the mouse, with its contents, a search and links between sections. A quick start
+  (shown on the home page until a first tournament), every keyboard shortcut, tips, troubleshooting and a glossary;
+  tooltips on the controls whose label does not say what they do.
+
+| The guide beside the page, F1 at the section of what is under the mouse | In every language of the interface |
+|---|---|
+| ![The guide panel](docs/screenshots/help.png) | ![The guide panel in French](docs/screenshots/help-fr.png) |
+
 ## Downloads
 
 Ready-made binaries are on the [releases page](https://github.com/jromang/fastchess-gui/releases):
