@@ -93,7 +93,7 @@ void collectJson(const nlohmann::json& node, const fs::path& base, ImportResult&
         }
         const auto from = e.dir.empty() ? base : fs::path(e.dir);
         e.cmd           = resolve(from, program).lexically_normal().string();
-        e.args          = args;
+        e.args          = std::move(args);
         if (node.contains("arguments") && node["arguments"].is_array()) {
             for (const auto& a : node["arguments"]) e.args += (e.args.empty() ? "" : " ") + jsonText(a);
         }

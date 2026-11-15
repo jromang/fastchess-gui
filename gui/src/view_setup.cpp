@@ -1225,21 +1225,22 @@ void App::drawSetupSummary() {
         case TournamentFormat::RoundRobin: {
             const uint64_t pairs = n >= 2 ? static_cast<uint64_t>(n) * (n - 1) / 2 : 0;
             formula              = trf("{} pairings × 2 games × {} cycles", pairs, cycles);
-            const auto each      = static_cast<uint64_t>(n >= 2 ? (n - 1) * 2 * cycles : 0);
+            const uint64_t each  = n >= 2 ? static_cast<uint64_t>(n - 1) * 2 * cycles : 0;
             per_engine           = trn("{} game per engine", "{} games per engine", each, each);
             break;
         }
         case TournamentFormat::Gauntlet: {
             const uint64_t pairs = n >= 2 ? static_cast<uint64_t>(seeds) * (n - seeds) : 0;
             formula              = trf("{} pairings × 2 games × {} cycles", pairs, cycles);
-            const auto each      = static_cast<uint64_t>(n >= 2 ? (n - seeds) * 2 * cycles : 0);
+            const uint64_t each  = n >= 2 ? static_cast<uint64_t>(n - seeds) * 2 * cycles : 0;
             per_engine           = trn("{} game per tested engine", "{} games per tested engine", each, each);
             break;
         }
         case TournamentFormat::Swiss: {
             const uint64_t pairs = static_cast<uint64_t>(n / 2);
             formula              = trf("{} rounds × {} pairings × 2 games", cycles, pairs);
-            per_engine           = trn("{} game per engine", "{} games per engine", 2 * cycles, 2 * cycles);
+            const uint64_t each  = uint64_t{2} * cycles;
+            per_engine           = trn("{} game per engine", "{} games per engine", each, each);
             break;
         }
         case TournamentFormat::Knockout: {

@@ -390,7 +390,7 @@ std::optional<TunnelSettings> parseTunnel(const std::string& text, std::string& 
         error = "--tunnel: ssh://user@host, the host is missing";
         return std::nullopt;
     }
-    s.host = rest;
+    s.host = std::move(rest);
     return s;
 }
 

@@ -371,7 +371,7 @@ std::vector<std::string> Broadcaster::configure(const BroadcastSettings& setting
     auto tunnel_to       = settings.tunnel_to;
     tunnel_to.local_port = settings.web_port;
     if (settings.tunnel && web_.running()) {
-        if (!tunnel_.running() || !(tunnel_.settings() == tunnel_to)) tunnel_.start(tunnel_to);
+        if (!tunnel_.running() || !(tunnel_.settings() == tunnel_to)) tunnel_.start(std::move(tunnel_to));
     } else if (tunnel_.running()) {
         tunnel_.stop();
     }
