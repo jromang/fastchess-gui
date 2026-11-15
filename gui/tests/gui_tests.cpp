@@ -1993,7 +1993,12 @@ TEST_CASE("processor use: a game voided while the games are read has its figures
     state->undoEdit();
     games = obs.records(state->results());
     REQUIRE(loaded());
-    CHECK(games.size() + 1 == 1500);  // the last one comes through drain()
+    // The last game comes back through drain() when the loader had not read it before the edit, through records()
+    // when it had (a fast machine reads 1500 games before the edit is made): every game once either way.
+    std::vector<GameRecord> loaded_since;
+    std::vector<fastchess::Stats> stats;
+    obs.drain(loaded_since, stats);
+    CHECK(games.size() + loaded_since.size() == 1500);
 
     const auto totals = obs.totals();
     REQUIRE(totals.size() == 2);
