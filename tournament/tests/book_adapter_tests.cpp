@@ -84,6 +84,18 @@ void setEnv(const char* name, const char* value) {
 #endif
 }
 
+// A variable of the mock engine for the time of a test, unset however the test ends: a REQUIRE that fails must not
+// leave it to the next tests.
+struct ScopedEnv {
+    ScopedEnv(const char* name, const char* value) : name_(name) { setEnv(name, value); }
+    ~ScopedEnv() { setEnv(name_, nullptr); }
+    ScopedEnv(const ScopedEnv&)            = delete;
+    ScopedEnv& operator=(const ScopedEnv&) = delete;
+
+   private:
+    const char* name_;
+};
+
 // A book of the twenty first moves, each as likely: a few games show whether they draw their own.
 fs::path wideBook() {
     const auto path = fs::temp_directory_path() / "fcg-own-book-wide.bin";
@@ -470,7 +482,7 @@ TEST_CASE("own book adapter: what the engine writes after its bestmove, in the s
         return;
     }
     // Its info line, its bestmove, an info string and a readyok in one write: they come in one read.
-    setEnv("FCG_MOCK_AFTER_BESTMOVE", "after the bestmove");
+    const ScopedEnv after_bestmove("FCG_MOCK_AFTER_BESTMOVE", "after the bestmove");
     AdapterProcess adapter(wideBook());
     setEnv("FCG_MOCK_AFTER_BESTMOVE", nullptr);
     REQUIRE(adapter.started);

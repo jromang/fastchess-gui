@@ -56,6 +56,18 @@ void setEnv(const char* name, const char* value) {
 #endif
 }
 
+// A variable of the mock engines for the time of a test, unset however the test ends: a REQUIRE that fails must not
+// leave the next tests' engines slow (on Windows a 2 ms wait lasts a timer tick, about 16 ms).
+struct ScopedEnv {
+    ScopedEnv(const char* name, const char* value) : name_(name) { setEnv(name, value); }
+    ~ScopedEnv() { setEnv(name_, nullptr); }
+    ScopedEnv(const ScopedEnv&)            = delete;
+    ScopedEnv& operator=(const ScopedEnv&) = delete;
+
+   private:
+    const char* name_;
+};
+
 struct Harness {
     RunController run;
     std::vector<GameRecord> games;
@@ -474,7 +486,8 @@ TEST_CASE("the games of a new setup's tournament have in their PGN every field t
             unsetenv(name);
 #endif
     };
-    setEnv("FCG_MOCK_SEARCH", "1");  // two search lines a move, with nodes, nps, seldepth, a time and a PV
+    // Two search lines a move, with nodes, nps, seldepth, a time and a PV.
+    const ScopedEnv mock_search("FCG_MOCK_SEARCH", "1");
 
     const auto root = fs::temp_directory_path() / "fcg-run-tests-chart-fields";
     fs::remove_all(root);
@@ -714,7 +727,7 @@ TEST_CASE("headless: the processor use of each game is kept in processor.tsv, as
     }
 
     // Each move takes a few milliseconds, so that the engines' thinking lasts long enough to be measured.
-    setEnv("FCG_MOCK_MOVE_MS", "3");
+    const ScopedEnv mock_move_ms("FCG_MOCK_MOVE_MS", "3");
     // Without a broadcast (no observer of the games but the one measuring), and with one (the window's observer).
     for (const bool broadcasting : {false, true}) {
         CAPTURE(broadcasting);
@@ -841,7 +854,7 @@ TEST_CASE("a game ended by the operator while it is played counts with their res
     fs::remove_all(root);
 
     // Games that last: the engines think 20 ms over each move.
-    setEnv("FCG_MOCK_MOVE_MS", "20");
+    const ScopedEnv mock_move_ms("FCG_MOCK_MOVE_MS", "20");
     auto setup        = randomSetup(4);
     setup.concurrency = 1;
     Harness h;
@@ -995,7 +1008,7 @@ TEST_CASE("a read or a check interrupted for a start ends at once instead of wai
     if (!fastchess::config::TournamentConfig)
         fastchess::config::TournamentConfig = std::make_unique<fastchess::config::Tournament>();
     // The engine takes 20 s to answer uci, like one loading a large network.
-    setEnv("FCG_MOCK_SLOW_UCIOK", "20000");
+    const ScopedEnv slow_uciok("FCG_MOCK_SLOW_UCIOK", "20000");
 
     EngineEntry entry;
     entry.name = "slow";

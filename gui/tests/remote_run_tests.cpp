@@ -46,6 +46,18 @@ void setEnv(const char* name, const char* value) {
 #endif
 }
 
+// A variable of the mock engines for the time of a test, unset however the test ends: a REQUIRE that fails must not
+// leave the next tests' engines slow (on Windows a 2 ms wait lasts a timer tick, about 16 ms).
+struct ScopedEnv {
+    ScopedEnv(const char* name, const char* value) : name_(name) { setEnv(name, value); }
+    ~ScopedEnv() { setEnv(name_, nullptr); }
+    ScopedEnv(const ScopedEnv&)            = delete;
+    ScopedEnv& operator=(const ScopedEnv&) = delete;
+
+   private:
+    const char* name_;
+};
+
 std::vector<EngineEntry> engines(int n) {
     std::vector<EngineEntry> out(static_cast<std::size_t>(n));
     for (int i = 0; i < n; ++i) {
@@ -106,7 +118,7 @@ struct Harness {
     }
 
     template <typename F>
-    bool waitFor(F done, std::chrono::milliseconds timeout = 30s) {
+    bool waitFor(F done, std::chrono::milliseconds timeout = 60s) {  // Windows starts processes slowly
         const auto end = std::chrono::steady_clock::now() + timeout;
         while (std::chrono::steady_clock::now() < end) {
             pump();
@@ -124,7 +136,7 @@ TEST_CASE("remote: a tournament in a process of its own; its copy follows; pause
         MESSAGE("random mover not available on this platform, skipped");
         return;
     }
-    setEnv("FCG_MOCK_MOVE_MS", "2");
+    const ScopedEnv mock_move_ms("FCG_MOCK_MOVE_MS", "2");
     const auto profile = fs::temp_directory_path() / "fcg-remote-tests";
     const auto setup   = roundRobin(3, 4);
     const auto dir     = makeTournament(profile, setup, 3);
@@ -240,7 +252,7 @@ TEST_CASE("remote: a game ended by the operator, then the window going away stop
         MESSAGE("random mover not available on this platform, skipped");
         return;
     }
-    setEnv("FCG_MOCK_MOVE_MS", "30");
+    const ScopedEnv mock_move_ms("FCG_MOCK_MOVE_MS", "30");
     const auto profile = fs::temp_directory_path() / "fcg-remote-tests-end";
     auto setup         = roundRobin(2, 2);
     setup.format       = TournamentFormat::Match;
@@ -313,7 +325,7 @@ TEST_CASE("remote: a tournament on its socket plays on without the window, which
     MESSAGE("detached tournaments are tested on Linux and macOS, skipped");
     return;
 #endif
-    setEnv("FCG_MOCK_MOVE_MS", "15");
+    const ScopedEnv mock_move_ms("FCG_MOCK_MOVE_MS", "15");
     const auto profile = fs::temp_directory_path() / "fcg-remote-tests-detach";
     const auto dir     = makeTournament(profile, roundRobin(3, 4), 3);
 

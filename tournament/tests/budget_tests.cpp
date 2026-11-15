@@ -213,6 +213,18 @@ void setEnv(const char* name, const char* value) {
 #endif
 }
 
+// A variable of the mock engine for the time of a test, unset however the test ends: a REQUIRE that fails must not
+// leave it to the next tests.
+struct ScopedEnv {
+    ScopedEnv(const char* name, const char* value) : name_(name) { setEnv(name, value); }
+    ~ScopedEnv() { setEnv(name_, nullptr); }
+    ScopedEnv(const ScopedEnv&)            = delete;
+    ScopedEnv& operator=(const ScopedEnv&) = delete;
+
+   private:
+    const char* name_;
+};
+
 TournamentSpec randomSpec(Format format, int players, int concurrency, uint64_t max_games = 0) {
     TournamentSpec s;
     s.name                   = "budget test";
@@ -303,7 +315,7 @@ TEST_CASE("runner: an allowance changed while it plays holds games back or start
     fs::remove_all(dir);
     auto state = TournamentState::create(dir, randomSpec(Format::Match, 2, 4, 36));
     configure(*state);
-    setEnv("FCG_MOCK_MOVE_MS", "2");
+    const ScopedEnv move_ms("FCG_MOCK_MOVE_MS", "2");
 
     Concurrency watch;
     Runner runner(*state, &watch, nullptr);
@@ -349,7 +361,7 @@ TEST_CASE("runner: games wait for memory, and no more GPU engines play at once t
         MESSAGE("random mover not available, skipped");
         return;
     }
-    setEnv("FCG_MOCK_MOVE_MS", "1");
+    const ScopedEnv move_ms("FCG_MOCK_MOVE_MS", "1");
 
     SUBCASE("memory") {
         const auto dir = fs::temp_directory_path() / "fcg-tour-budget-memory";

@@ -112,6 +112,18 @@ void setEnv(const char* name, const char* value) {
 #endif
 }
 
+// A variable of the mock engine for the time of a test, unset however the test ends: a REQUIRE that fails must not
+// leave it to the next tests.
+struct ScopedEnv {
+    ScopedEnv(const char* name, const char* value) : name_(name) { setEnv(name, value); }
+    ~ScopedEnv() { setEnv(name_, nullptr); }
+    ScopedEnv(const ScopedEnv&)            = delete;
+    ScopedEnv& operator=(const ScopedEnv&) = delete;
+
+   private:
+    const char* name_;
+};
+
 std::string readFile(const fs::path& path) {
     std::ifstream in(path, std::ios::binary);
     return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
@@ -674,7 +686,7 @@ TEST_CASE("engine start: an engine slow to start fails in the usual time, and st
     timed.start_timeout_ms = 5000;
 
     // uciok after 1.5 s.
-    setEnv("FCG_MOCK_SLOW_UCIOK", "1500");
+    const ScopedEnv slow_uciok("FCG_MOCK_SLOW_UCIOK", "1500");
     {
         fastchess::engine::UciEngine engine(config, false);
         const auto started = engine.start(std::nullopt);
@@ -688,7 +700,7 @@ TEST_CASE("engine start: an engine slow to start fails in the usual time, and st
     setEnv("FCG_MOCK_SLOW_UCIOK", nullptr);
 
     // readyok after 1.5 s: the isready of a new game, once the options are set.
-    setEnv("FCG_MOCK_SLOW_READY", "1500");
+    const ScopedEnv slow_ready("FCG_MOCK_SLOW_READY", "1500");
     {
         fastchess::engine::UciEngine engine(config, false);
         REQUIRE(engine.start(std::nullopt));
@@ -720,7 +732,7 @@ TEST_CASE("runner: the start timeout of a participant reaches its engine, and is
     s.participants[1].engine.start_timeout_ms = 5000;
     {
         auto state = TournamentState::create(dir / "t", s);
-        setEnv("FCG_MOCK_SLOW_UCIOK", "1500");
+        const ScopedEnv slow_uciok("FCG_MOCK_SLOW_UCIOK", "1500");
         const auto error = play(*state);
         setEnv("FCG_MOCK_SLOW_UCIOK", nullptr);
         CHECK(error.empty());
@@ -771,11 +783,11 @@ TEST_CASE("runner: engine logs keep the engines' error output, marked apart, eve
     s.log_every_game = true;
     auto state       = TournamentState::create(dir, s);
 
-    setEnv("FCG_MOCK_STDERR", "on stderr:");
+    const ScopedEnv stderr("FCG_MOCK_STDERR", "on stderr:");
     // About 100 KB on each engine's error output before it answers "uci", more than a pipe holds (64 KB on Linux,
     // 4 KB on Windows), in few enough lines that both engines' fit in the first lines of the log: the middle of a
     // long game's log is left out.
-    setEnv("FCG_MOCK_STDERR_FLOOD", "100");
+    const ScopedEnv stderr_flood("FCG_MOCK_STDERR_FLOOD", "100");
     const auto error = play(*state);
     setEnv("FCG_MOCK_STDERR", nullptr);
     setEnv("FCG_MOCK_STDERR_FLOOD", nullptr);
@@ -811,7 +823,7 @@ TEST_CASE("runner: an engine's last words on its error output, before it ends, a
 
     // White's engine writes about 50 KB on its error output at its first move, at once, and ends: its end is seen
     // when most of it is still to read.
-    setEnv("FCG_MOCK_STDERR_CRASH", "50");
+    const ScopedEnv stderr_crash("FCG_MOCK_STDERR_CRASH", "50");
     (void)play(*state);
     setEnv("FCG_MOCK_STDERR_CRASH", nullptr);
 
@@ -885,7 +897,7 @@ TEST_CASE("engine process: what an engine wrote on its error output before the l
     // "on stderr: <move> ..." longer than a read takes at once, then its bestmove, all before anything is read:
     // the read ends on the bestmove, which may be the last move of a game, and the engine's next read is in the
     // next game.
-    setEnv("FCG_MOCK_STDERR_PAD", "6000");
+    const ScopedEnv stderr_pad("FCG_MOCK_STDERR_PAD", "6000");
     MockProcess mock("FCG_MOCK_STDERR", "on stderr:");
     setEnv("FCG_MOCK_STDERR_PAD", nullptr);
     REQUIRE(mock.started);
@@ -1108,7 +1120,7 @@ TEST_CASE("runner: a game the operator ends while it is played counts with their
     } watch;
 
     // A few moves into the first game: a draw, asked for, and the engine on move stopped as the GUI does.
-    setEnv("FCG_MOCK_MOVE_MS", "20");
+    const ScopedEnv move_ms("FCG_MOCK_MOVE_MS", "20");
     bool asked = false;
     std::thread ender([&] {
         for (int i = 0; i < 2000; ++i) {
