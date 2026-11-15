@@ -2,6 +2,7 @@
 
 // fastchess-gui --run <tournament folder | setup file>: plays a tournament without a window, printing progress.
 
+#include <filesystem>
 #include <optional>
 #include <string>
 
@@ -29,5 +30,11 @@ struct HeadlessBroadcast {
 // the control channel (control.hpp) instead of printing: the window started it to play that tournament.
 int runHeadless(const std::string& target, const Storage& storage, const CpuTopology& topology,
                 const HeadlessBroadcast& broadcast = {}, const ControlOptions& control = {});
+
+// A setup (or template) file made into a new tournament folder, with the engines of the profile, as runHeadless does
+// with one: the folder, or nullopt when it cannot be (the reason on the standard error). --run ... --detach plays the
+// folder in the background, the control channel taking only tournament folders.
+std::optional<std::filesystem::path> tournamentFromSetup(const std::string& file, const Storage& storage,
+                                                         const CpuTopology& topology);
 
 }  // namespace fcg
