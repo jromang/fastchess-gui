@@ -144,6 +144,9 @@ msgstr "200k nodos"
 msgid "50 moves {}/100"
 msgstr "50 jugadas {}/100"
 
+msgid "50-move rule"
+msgstr "regla de las 50 jugadas"
+
 msgid "95 % interval"
 msgstr "intervalo del 95 %"
 
@@ -159,8 +162,14 @@ msgstr "Un botón Chat en la cabecera de la página abre esta dirección en una 
 msgid "A Discord server ID is 17 to 20 digits."
 msgstr "Un ID de servidor de Discord tiene de 17 a 20 dígitos."
 
+msgid "A FEN, a PGN or a list of moves (e4 e5 Nf3, or e2e4 e7e5) from the clipboard."
+msgstr "Un FEN, un PGN o una lista de jugadas (e4 e5 Nf3, o e2e4 e7e5) desde el portapapeles."
+
 msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
 msgstr "Un libro PGN juega las jugadas de sus partidas, tan a menudo como estas las juegan; «todo» son sus primeras {} medias jugadas."
+
+msgid "A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live, on the big screen and on the broadcast web page. A copy is kept in the profile's folder logos: the picture chosen can be moved or deleted."
+msgstr "Una imagen PNG, JPEG o SVG de 2 MB como máximo, mostrada junto al nombre del motor en Directo, en la pantalla grande y en la página web de la retransmisión. Se guarda una copia en la carpeta logos del perfil: la imagen elegida puede moverse o borrarse."
 
 msgid "A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves weighing less than a tenth of the best one; the positions reached are the openings."
 msgstr "Se sigue un libro Polyglot desde la posición inicial hasta esta profundidad (-1 = {}), dejando fuera las jugadas que pesan menos de una décima parte de la mejor; las posiciones alcanzadas son las aperturas."
@@ -177,14 +186,26 @@ msgstr "Un reloj: un tiempo base y un incremento, la base dada de nuevo cada N j
 msgid "A colour won both games of a pair"
 msgstr "Un color ganó las dos partidas de un par"
 
+msgid "A command for the engine"
+msgstr "Un comando para el motor"
+
 msgid "A file of your choice"
 msgstr "Un archivo de tu elección"
+
+msgid "A folder of 12 SVG pictures named wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg and bK.svg … bP.svg: the white and black king, queen, rook, bishop, knight and pawn."
+msgstr "Una carpeta de 12 imágenes SVG llamadas wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg y bK.svg … bP.svg: el rey, la dama, la torre, el alfil, el caballo y el peón blancos y negros."
 
 msgid "A game has no port: {}"
 msgstr "Una partida no tiene puerto: {}"
 
+msgid "A game is being analysed move by move: wait for its end, or cancel it."
+msgstr "Se está analizando una partida jugada a jugada: espera a que termine o cancélala."
+
 msgid "A game is flagged when both engines see the same side ahead by the score below for each of their first moves after the book: the Games tab can show those games, the Openings tab marks and counts their openings, the overview counts them. The results are not changed."
 msgstr "Una partida se marca cuando los dos motores ven al mismo bando por delante en al menos la puntuación de abajo en cada una de sus primeras jugadas tras el libro: la pestaña Partidas puede mostrar esas partidas, la pestaña Aperturas marca y cuenta sus aperturas, el resumen las cuenta. Los resultados no cambian."
+
+msgid "A game, or two with the colours reversed, between two engines of the library from this position, with a clock for each."
+msgstr "Una partida, o dos con los colores invertidos, entre dos motores de la biblioteca desde esta posición, con un reloj para cada uno."
 
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr "Un gauntlet necesita al menos un motor además de los probados."
@@ -234,6 +255,9 @@ msgstr "Ya es participante."
 msgid "A participant's own, from its ⋯ menu, comes first."
 msgstr "El de un participante, de su menú ⋯, va primero."
 
+msgid "A pawn is on the first or the last rank."
+msgstr "Hay un peón en la primera o la última fila."
+
 msgid "A preset of the program."
 msgstr "Un perfil incluido en el programa."
 
@@ -249,20 +273,50 @@ msgstr "Texto o página web de una lista de rating, Ordo, CSV (name,elo)"
 msgid "A rating list, for the reference Elo…"
 msgstr "Una lista de rating, para el Elo de referencia…"
 
+msgid "A second game, the colours reversed"
+msgstr "Una segunda partida, con los colores invertidos"
+
 msgid "A separate engine"
 msgstr "Un motor aparte"
+
+msgid "A short knock for each move of the game followed, in Live and on the big screen, a heavier one for a capture; not for every game of the mosaic."
+msgstr "Un golpe corto por cada jugada de la partida seguida, en Directo y en la pantalla grande, uno más pesado para una captura; no para cada partida del mosaico."
+
+msgid "A sound for each move"
+msgstr "Un sonido por cada jugada"
 
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
 msgstr "Una tabla que GitHub y los foros muestran como tal, con la misma cabecera que la página HTML."
 
+msgid "A team match board by board takes no new engine: its board would have no opponent. Replace an engine of a team instead."
+msgstr "Un encuentro por equipos tablero a tablero no admite un motor nuevo: su tablero no tendría rival. Sustituye en su lugar un motor de un equipo."
+
+msgid "A team match needs an engine in each team: put one in the other team (the participant's ⋯)."
+msgstr "Un encuentro por equipos necesita un motor en cada equipo: pon uno en el otro equipo (el ⋯ del participante)."
+
 msgid "A template is the whole setup: a profile for each section, and what no profile holds (the name, the participants, the concurrency, the PGN files, the broadcast). A section that played as its profile takes the profile's values of the day."
 msgstr "Una plantilla es la configuración entera: un perfil para cada sección y lo que ningún perfil contiene (el nombre, los participantes, la concurrencia, los archivos PGN, la retransmisión). Una sección que seguía su perfil toma los valores actuales del perfil."
+
+msgid "A tournament is running: the analysis competes with its games ({} threads)."
+msgstr "Hay un torneo en curso: el análisis compite con sus partidas ({} hilos)."
+
+msgid "A tournament is running: what this engine searches takes cores from its games."
+msgstr "Hay un torneo en curso: lo que calcula este motor quita núcleos a sus partidas."
 
 msgid "A tournament waits to start."
 msgstr "Un torneo espera para empezar."
 
+msgid "A1, A2… are team A, B1, B2… team B: the upper half of the list against the lower half, until engines are put in a team with their ⋯ or the Team A and Team B buttons under the list. Board by board, A1 plays B1, A2 plays B2, and so on."
+msgstr "A1, A2… son el equipo A, B1, B2… el equipo B: la mitad superior de la lista contra la inferior, hasta que pongas motores en un equipo con su ⋯ o con los botones Equipo A y Equipo B bajo la lista. Tablero a tablero, A1 juega contra B1, A2 contra B2, y así sucesivamente."
+
 msgid "A: +%d  =%d  -%d"
 msgstr "A: +%d  =%d  -%d"
+
+msgid "A: an engine of the library analyses the position."
+msgstr "A: un motor de la biblioteca analiza la posición."
+
+msgid "A: analyse it on the Board page"
+msgstr "A: analizarla en la página Tablero"
 
 msgid "API token (with the study:write scope)"
 msgstr "Token de API (con el permiso study:write)"
@@ -334,6 +388,9 @@ msgstr "Adjudicaciones"
 msgid "Affinity ignored: an engine uses %d threads."
 msgstr "Afinidad ignorada: un motor usa %d hilos."
 
+msgid "After the folder's files were changed."
+msgstr "Después de cambiar los archivos de la carpeta."
+
 msgid "After the running match."
 msgstr "Después del match en curso."
 
@@ -397,6 +454,30 @@ msgstr "Una evaluación cambia de signo"
 msgid "An opening book, or opening suite: EPD, PGN or Polyglot (.bin)."
 msgstr "Un libro de aperturas, o suite de aperturas: EPD, PGN o Polyglot (.bin)."
 
+msgid "Analyse"
+msgstr "Analizar"
+
+msgid "Analyse the game"
+msgstr "Analizar la partida"
+
+msgid "Analyse the game again"
+msgstr "Analizar otra vez la partida"
+
+msgid "Analyse the game followed"
+msgstr "Analizar la partida seguida"
+
+msgid "Analyse the game shown"
+msgstr "Analizar la partida mostrada"
+
+msgid "Analysing the game: {} of {} positions"
+msgstr "Analizando la partida: {} de {} posiciones"
+
+msgid "Analysis"
+msgstr "Análisis"
+
+msgid "Analysis: {} · {}"
+msgstr "Análisis: {} · {}"
+
 msgid "Anchor:"
 msgstr "Ancla:"
 
@@ -406,8 +487,17 @@ msgstr "Otro servidor SSH"
 msgid "Another engine of the list takes its place and plays its games, those it played included."
 msgstr "Otro motor de la lista ocupa su lugar y juega sus partidas, incluidas las que ya jugó."
 
+msgid "Any PGN file: its games listed and filtered by their tags, each replayed here. A file can also be dropped on the window."
+msgstr "Cualquier archivo PGN: sus partidas listadas y filtradas por sus etiquetas, cada una reproducida aquí. También se puede soltar un archivo sobre la ventana."
+
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "Cualquier cosa que recordar sobre él; las búsquedas de motores lo encuentran."
+
+msgid "Appearance"
+msgstr "Apariencia"
+
+msgid "Appearance: board colours, pieces, move sounds"
+msgstr "Apariencia: colores del tablero, piezas, sonidos de las jugadas"
 
 msgid "Applies at the next launch."
 msgstr "Se aplica en el próximo inicio."
@@ -469,17 +559,29 @@ msgstr "Profundidad media"
 msgid "B (baseline)"
 msgstr "B (referencia)"
 
+msgid "Back"
+msgstr "Volver"
+
+msgid "Back to the books"
+msgstr "Volver a los libros"
+
 msgid "Back to the default"
 msgstr "Volver a la carpeta por defecto"
 
 msgid "Back to the default value"
 msgstr "Volver al valor por defecto"
 
+msgid "Back to the game"
+msgstr "Volver a la partida"
+
 msgid "Back to the result as played ({})"
 msgstr "Volver al resultado jugado ({})"
 
 msgid "Back to the settings of {}."
 msgstr "Volver a los ajustes de {}."
+
+msgid "Back to the tournament"
+msgstr "Volver al torneo"
 
 msgid "Base (s)"
 msgstr "Tiempo base (s)"
@@ -489,6 +591,9 @@ msgstr "Antes"
 
 msgid "Being built from {}"
 msgstr "En construcción a partir de {}"
+
+msgid "Best: {} ({})"
+msgstr "Mejor: {} ({})"
 
 msgid "Big screen"
 msgstr "Pantalla grande"
@@ -508,6 +613,9 @@ msgstr "Las negras hacen una jugada ilegal"
 msgid "Black mates"
 msgstr "Las negras dan mate"
 
+msgid "Black needs one king, and only one."
+msgstr "Las negras necesitan un rey, y solo uno."
+
 msgid "Black resigns"
 msgstr "Las negras abandonan"
 
@@ -520,14 +628,41 @@ msgstr "Las negras ganan por adjudicación: Syzygy"
 msgid "Black ×2"
 msgstr "Negras ×2"
 
+msgid "Black's clock"
+msgstr "Reloj de las negras"
+
 msgid "Black's connection stalls"
 msgstr "Las negras dejan de responder"
 
 msgid "Black's pieces on the same files as White's: 18 starting positions, added to the library."
 msgstr "Las piezas negras en las mismas columnas que las blancas: 18 posiciones iniciales, añadidas a la biblioteca."
 
+msgid "Blue"
+msgstr "Azul"
+
+msgid "Blue grey"
+msgstr "Gris azulado"
+
+msgid "Blunder"
+msgstr "Error grave"
+
 msgid "Board"
 msgstr "Tablero"
+
+msgid "Board by board"
+msgstr "Tablero a tablero"
+
+msgid "Board by board needs two teams of the same size, not {} and {}."
+msgstr "Tablero a tablero necesita dos equipos del mismo tamaño, no de {} y {}."
+
+msgid "Board by board needs two teams of the same size, not {} and {}: move an engine to the other team, or play every engine against every engine of the other team."
+msgstr "Tablero a tablero necesita dos equipos del mismo tamaño, no de {} y {}: mueve un motor al otro equipo, o haz que cada motor juegue contra cada motor del otro equipo."
+
+msgid "Board colours: {}"
+msgstr "Colores del tablero: {}"
+
+msgid "Board position"
+msgstr "Posición del tablero"
 
 msgid "Board {} of {}"
 msgstr "Tablero {} de {}"
@@ -556,6 +691,9 @@ msgstr "Cuadro"
 msgid "Broadcast"
 msgstr "Retransmisión"
 
+msgid "Brown"
+msgstr "Marrón"
+
 msgid "Build a Polyglot book"
 msgstr "Construir un libro Polyglot"
 
@@ -574,6 +712,12 @@ msgstr "Por puntos"
 msgid "By time control"
 msgstr "Por ritmo de juego"
 
+msgid "By {}, under the {} license."
+msgstr "De {}, bajo la licencia {}."
+
+msgid "By {}, {}. Losses of 10, 20 and 30 % of the winning chances are an inaccuracy (?!), a mistake (?) and a blunder (??)."
+msgstr "Por {}, {}. Pérdidas del 10, 20 y 30 % de las posibilidades de ganar son una imprecisión (?!), un error (?) y un error grave (??)."
+
 msgid "CPU affinity"
 msgstr "Afinidad de CPU"
 
@@ -588,6 +732,9 @@ msgstr "Cancelar"
 
 msgid "Cancel the Polyglot book being built"
 msgstr "Cancelar el libro Polyglot en construcción"
+
+msgid "Cancel the analysis of the game"
+msgstr "Cancelar el análisis de la partida"
 
 msgid "Cancelling…"
 msgstr "Cancelando…"
@@ -625,8 +772,23 @@ msgstr "No se puede iniciar el match: {}"
 msgid "Cannot start the quick test: {}"
 msgstr "No se puede iniciar la prueba rápida: {}"
 
+msgid "Cannot start {}: {}"
+msgstr "No se puede iniciar {}: {}"
+
 msgid "Cannot write {}"
 msgstr "No se puede escribir {}"
+
+msgid "Cannot write {}."
+msgstr "No se puede escribir {}."
+
+msgid "Cannot write {}: {}"
+msgstr "No se puede escribir {}: {}"
+
+msgid "Castling"
+msgstr "Enroque"
+
+msgid "Castling as in Chess960: with the rooks where they stand."
+msgstr "Enroque como en Chess960: con las torres donde estén."
 
 msgid "Catch up the cycles already started"
 msgstr "Recuperar los ciclos ya empezados"
@@ -636,6 +798,9 @@ msgstr "Casillas:"
 
 msgid "Change the tournament"
 msgstr "Modificar el torneo"
+
+msgid "Change the tournaments folder…"
+msgstr "Cambiar la carpeta de torneos…"
 
 msgid "Changed for this tournament only."
 msgstr "Cambiado solo para este torneo."
@@ -706,8 +871,14 @@ msgstr "Elige primero un archivo PGN."
 msgid "Choose a book in the list."
 msgstr "Elige un libro de la lista."
 
+msgid "Choose a logo for {}…"
+msgstr "Elegir un logo para {}…"
+
 msgid "Choose an EPD file whose positions have their best move (bm), the moves to avoid (am), or STS points (c0)."
 msgstr "Elige un archivo EPD cuyas posiciones tengan su mejor jugada (bm), las jugadas que evitar (am) o puntos STS (c0)."
+
+msgid "Choose an engine"
+msgstr "Elige un motor"
 
 msgid "Choose an engine in the list."
 msgstr "Elige un motor de la lista."
@@ -732,6 +903,9 @@ msgstr "Elige el programa de {}"
 
 msgid "Choose the tablebase folder of this tournament (the adjudication's, and the engines' when it gives them its tablebases)"
 msgstr "Elige la carpeta de tablas de este torneo (la de la adjudicación, y la de los motores cuando les da sus tablas)"
+
+msgid "Choose the two engines of the game."
+msgstr "Elige los dos motores de la partida."
 
 msgid "Choose the working directory of {}"
 msgstr "Elige el directorio de trabajo de {}"
@@ -760,8 +934,23 @@ msgstr "Haz clic para ampliar"
 msgid "Click to sort; right-click to choose the columns."
 msgstr "Haz clic para ordenar; clic derecho para elegir las columnas."
 
+msgid "Click: play its first move. Scores are White's."
+msgstr "Clic: jugar su primera jugada. Las evaluaciones son de las blancas."
+
+msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
+msgstr "Clic: poner la pieza elegida (otra vez: quitarla). Clic derecho: quitarla."
+
+msgid "Clock"
+msgstr "Reloj"
+
 msgid "Close"
 msgstr "Cerrar"
+
+msgid "Close it"
+msgstr "Cerrarla"
+
+msgid "Close the console"
+msgstr "Cerrar la consola"
 
 msgid "Closes this notice. The options keep the values they have now."
 msgstr "Cierra este aviso. Las opciones conservan los valores que tienen ahora."
@@ -790,6 +979,15 @@ msgstr "Jugadas consecutivas"
 msgid "Console"
 msgstr "Consola"
 
+msgid "Console log written to {}"
+msgstr "Registro de la consola escrito en {}"
+
+msgid "Console · {}"
+msgstr "Consola · {}"
+
+msgid "Console…"
+msgstr "Consola…"
+
 msgid "Continue"
 msgstr "Continuar"
 
@@ -799,8 +997,17 @@ msgstr "Continuar con los programas modificados"
 msgid "Copy"
 msgstr "Copiar"
 
+msgid "Copy FEN"
+msgstr "Copiar FEN"
+
+msgid "Copy PGN"
+msgstr "Copiar PGN"
+
 msgid "Copy the version"
 msgstr "Copiar la versión"
+
+msgid "Cores"
+msgstr "Núcleos"
 
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "Núcleos ocupados mientras piensa · parte de un núcleo usada mientras piensa su rival (0 % sin pondering). Medido tras 20 s de cada uno."
@@ -813,6 +1020,9 @@ msgstr "No se pudo comprobar: {}"
 
 msgid "Count"
 msgstr "Número"
+
+msgid "Counts in the core budget · {} of {} threads"
+msgstr "Cuenta en el presupuesto de núcleos · {} de {} hilos"
 
 msgid "Crash / illegal move"
 msgstr "Cuelgue / jugada ilegal"
@@ -832,6 +1042,9 @@ msgstr "Ctrl + rueda del ratón, Ctrl + y Ctrl -, Ctrl 0"
 msgid "Ctrl+click to type a value."
 msgstr "Ctrl+clic para escribir un valor."
 
+msgid "Custom"
+msgstr "Personalizado"
+
 msgid "Cut short, by a download that did not end for example. Engines leave such a file out, and some stop at once when they meet it."
 msgstr "Cortado, por ejemplo por una descarga que no terminó. Los motores ignoran un archivo así, y algunos se detienen en cuanto lo encuentran."
 
@@ -846,6 +1059,12 @@ msgstr "Ciclos"
 
 msgid "Dark"
 msgstr "Oscuro"
+
+msgid "Dark squares"
+msgstr "Casillas oscuras"
+
+msgid "Dark theme"
+msgstr "Tema oscuro"
 
 msgid "Date"
 msgstr "Fecha"
@@ -897,6 +1116,9 @@ msgstr "Cerrar"
 
 msgid "Dismiss what changed: {}"
 msgstr "Cerrar el aviso de cambios: {}"
+
+msgid "Done"
+msgstr "Listo"
 
 msgid "Done: the tournament goes on with the change."
 msgstr "Hecho: el torneo continúa con el cambio."
@@ -988,6 +1210,9 @@ msgstr "Cada ronda empareja motores con puntuaciones similares, nunca dos veces 
 msgid "Edit in place"
 msgstr "Editar aquí"
 
+msgid "Edit the position"
+msgstr "Editar la posición"
+
 msgid "Elo"
 msgstr "Elo"
 
@@ -1015,6 +1240,9 @@ msgstr "Elo de {} ({})"
 msgid "Elo relative to the average, 95 % interval"
 msgstr "Elo respecto a la media, intervalo del 95 %"
 
+msgid "Elo {:+.1f} ± {:.1f}"
+msgstr "Elo {:+.1f} ± {:.1f}"
+
 msgid "Elo {}  ·  LOS {:.1f} %"
 msgstr "Elo {}  ·  LOS {:.1f} %"
 
@@ -1024,14 +1252,23 @@ msgstr "Elo {} ± {:.0f}"
 msgid "Elo: {} = {:.0f}, 95 % interval"
 msgstr "Elo: {} = {:.0f}, intervalo del 95 %"
 
+msgid "Empty board"
+msgstr "Tablero vacío"
+
 msgid "Empty: a name made from the engines."
 msgstr "Vacío: un nombre hecho con los motores."
 
 msgid "Empty: the program's directory."
 msgstr "Vacío: la carpeta del programa."
 
+msgid "En passant"
+msgstr "Al paso"
+
 msgid "End"
 msgstr "Fin"
+
+msgid "End estimated after the first games"
+msgstr "Fin estimado tras las primeras partidas"
 
 msgid "End game {} with a result…"
 msgstr "Terminar la partida {} con un resultado…"
@@ -1047,6 +1284,9 @@ msgstr "Terminada por el operador mientras se jugaba."
 
 msgid "Ends about {} (in {})"
 msgstr "Termina hacia {} (en {})"
+
+msgid "Ends the engine."
+msgstr "Detiene el motor."
 
 msgid "Engine"
 msgstr "Motor"
@@ -1081,6 +1321,9 @@ msgstr "Motores"
 msgid "Engines' own books off"
 msgstr "Libros propios de los motores desactivados"
 
+msgid "Eraser"
+msgstr "Borrador"
+
 msgid "Error: {}"
 msgstr "Error: {}"
 
@@ -1101,6 +1344,9 @@ msgstr "Cada motor se enfrenta a todos los demás, cada vez en dos partidas con 
 
 msgid "Every engine of a folder…"
 msgstr "Todos los motores de una carpeta…"
+
+msgid "Every engine of a team meets every engine of the other team, one opponent per round (a Scheveningen system); the teams may differ in size."
+msgstr "Cada motor de un equipo se enfrenta a cada motor del otro equipo, un rival por ronda (sistema Scheveningen); los equipos pueden ser de distinto tamaño."
 
 msgid "Every engine the filter and the group show: a whole group at once."
 msgstr "Todos los motores que muestran el filtro y el grupo: un grupo entero de una vez."
@@ -1168,6 +1414,15 @@ msgstr "Todos los ritmos de juego"
 msgid "Every tournament is a folder: it resumes exactly where it stopped, even after a power cut."
 msgstr "Cada torneo es una carpeta: se reanuda exactamente donde se detuvo, incluso tras un corte de luz."
 
+msgid "Everyone against everyone"
+msgstr "Cada motor contra todos"
+
+msgid "Everything paused: no new game pair starts, and the queue waits for Resume all."
+msgstr "Todo en pausa: no empieza ningún nuevo par de partidas y la cola espera a Reanudar todo."
+
+msgid "Everything resumed."
+msgstr "Todo reanudado."
+
 msgid "Expected number of games"
 msgstr "Número de partidas esperado"
 
@@ -1228,6 +1483,9 @@ msgstr "Archivos"
 msgid "Filter: name, group, notes"
 msgstr "Filtrar: nombre, grupo, notas"
 
+msgid "Filter: players, event, opening, date…"
+msgstr "Filtro: jugadores, evento, apertura, fecha…"
+
 msgid "Final"
 msgstr "Final"
 
@@ -1236,6 +1494,9 @@ msgstr "Terminar las partidas en curso y luego detener"
 
 msgid "Finished"
 msgstr "Terminado"
+
+msgid "First: {} {}/{}"
+msgstr "Primero: {} {}/{}"
 
 msgid "Fischer random chess. The engines must play it (the UCI_Chess960 option, or the fischerandom variant of a WinBoard engine). A book of Chess960 positions, or none for all 960."
 msgstr "Ajedrez aleatorio de Fischer. Los motores deben jugarlo (la opción UCI_Chess960, o la variante fischerandom de un motor WinBoard). Un libro de posiciones Chess960, o ninguno para las 960."
@@ -1297,11 +1558,17 @@ msgstr "Gratis, sin cuenta: sus direcciones cambian de vez en cuando y su veloci
 msgid "From move"
 msgstr "Desde la jugada"
 
+msgid "From the clipboard"
+msgstr "Desde el portapapeles"
+
 msgid "From the games of a PGN file: their moves up to a depth, those played by enough games, weighted by their number or their score; written as a Polyglot book (.bin) and added to the library."
 msgstr "A partir de las partidas de un archivo PGN: sus jugadas hasta una profundidad, las jugadas por suficientes partidas, ponderadas por su número o sus puntos; escrito como libro Polyglot (.bin) y añadido a la biblioteca."
 
 msgid "From the games only, with the DrawElo that goes with it."
 msgstr "Solo a partir de las partidas, con el DrawElo correspondiente."
+
+msgid "From the position on the board"
+msgstr "Desde la posición del tablero"
 
 msgid "From {}: {}"
 msgstr "De {}: {}"
@@ -1330,6 +1597,9 @@ msgstr "Partida mostrada:"
 msgid "Game {} counts as {}."
 msgstr "La partida {} cuenta como {}."
 
+msgid "Game {} of {}: {} – {}"
+msgstr "Partida {} de {}: {} – {}"
+
 msgid "Game {} was ended by the operator: {}."
 msgstr "La partida {} ha sido terminada por el operador: {}."
 
@@ -1341,6 +1611,9 @@ msgstr "Partida {} · jugada {}: {} – {}"
 
 msgid "Game {} · round {} · move {}"
 msgstr "Partida {} · ronda {} · jugada {}"
+
+msgid "Game {}: {}"
+msgstr "Partida {}: {}"
 
 msgid "Game {}: {} – {}  {}"
 msgstr "Partida {}: {} – {}  {}"
@@ -1390,6 +1663,12 @@ msgstr "Indica el host del servidor."
 msgid "Give the tester's name and the event."
 msgstr "Indica el nombre del tester y el evento."
 
+msgid "Green"
+msgstr "Verde"
+
+msgid "Grey"
+msgstr "Gris"
+
 msgid "Group"
 msgstr "Grupo"
 
@@ -1413,6 +1692,9 @@ msgstr "Página HTML…"
 
 msgid "Half-width of the 95 % interval of the rating."
 msgstr "Semiamplitud del intervalo al 95 % del rating."
+
+msgid "Halves"
+msgstr "Mitades"
 
 msgid "Hash"
 msgstr "Hash"
@@ -1443,6 +1725,9 @@ msgstr "Cara a cara"
 msgid "Health"
 msgstr "Fiabilidad"
 
+msgid "Held by Pause all: no tournament starts until Resume all."
+msgstr "Retenida por Pausar todo: ningún torneo empieza hasta Reanudar todo."
+
 msgid "Hide"
 msgstr "Ocultar"
 
@@ -1460,6 +1745,9 @@ msgstr "Cómo terminaron las partidas"
 
 msgid "How long the engine may take to answer uciok when started and isready at the start of each game: more for an engine that loads a large network or hash table. Usually {} s."
 msgstr "Cuánto puede tardar el motor en responder a uciok al arrancar y a isready al inicio de cada partida: más para un motor que carga una red o una tabla hash grandes. Normalmente {} s."
+
+msgid "How many best moves are shown (MultiPV)."
+msgstr "Cuántas mejores jugadas se muestran (MultiPV)."
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "Cuántas veces se juega cada emparejamiento; cada vez dos partidas, con los colores invertidos. Otros programas llaman a un ciclo ronda, de 2 partidas por encuentro (-rounds N -games 2)."
@@ -1497,6 +1785,9 @@ msgstr "Partidas importadas"
 msgid "Import…"
 msgstr "Importar…"
 
+msgid "Inaccuracy"
+msgstr "Imprecisión"
+
 msgid "Inactive"
 msgstr "Inactivo"
 
@@ -1508,6 +1799,9 @@ msgstr "Incremento (s)"
 
 msgid "Infinite"
 msgstr "Infinito"
+
+msgid "Initial position"
+msgstr "Posición inicial"
 
 msgid "Interface size"
 msgstr "Tamaño de la interfaz"
@@ -1524,14 +1818,29 @@ msgstr "Interrumpido: {} no pudo arrancar: {}"
 msgid "Interrupted: {} crashed or stopped responding (game {})"
 msgstr "Interrumpido: {} se colgó o dejó de responder (partida {})"
 
+msgid "It cannot be read: {}."
+msgstr "No se puede leer: {}."
+
 msgid "It cannot play for an engine: {}"
 msgstr "No puede jugar por un motor: {}"
 
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "Continúa exactamente donde se detuvo: ninguna partida se pierde ni se juega dos veces."
 
+msgid "It is not a PNG or JPEG picture the program can read."
+msgstr "No es una imagen PNG o JPEG que el programa pueda leer."
+
+msgid "It is not an SVG picture the program can draw."
+msgstr "No es una imagen SVG que el programa pueda dibujar."
+
+msgid "It is {}×{} pixels: at most {} each way."
+msgstr "Mide {}×{} píxeles: como máximo {} en cada sentido."
+
 msgid "It needs the web page served."
 msgstr "Necesita que la página web se sirva."
+
+msgid "It plays every engine of the other team."
+msgstr "Juega contra cada motor del otro equipo."
 
 msgid "It starts once the book of {} is prepared."
 msgstr "Empieza en cuanto el libro de {} esté preparado."
@@ -1605,6 +1914,9 @@ msgstr "Su rating en una lista de confianza, para anclar los ratings de un torne
 msgid "Its results…"
 msgstr "Sus resultados…"
 
+msgid "Its workspace: standings, live games, schedule"
+msgstr "Su espacio de trabajo: clasificación, partidas en directo, calendario"
+
 msgid "Keep my value"
 msgstr "Conservar mi valor"
 
@@ -1632,6 +1944,12 @@ msgstr "Eliminatoria"
 msgid "Knockout, {} engines"
 msgstr "Eliminatoria, {} motores"
 
+msgid "LOS {:.1f} %"
+msgstr "LOS {:.1f} %"
+
+msgid "Laid over the two squares of the last move: its transparency lets the square's colour through."
+msgstr "Se pone sobre las dos casillas de la última jugada: su transparencia deja ver el color de la casilla."
+
 msgid "Language"
 msgstr "Idioma"
 
@@ -1640,6 +1958,12 @@ msgstr "Torneo grande"
 
 msgid "Last 24 hours:"
 msgstr "Últimas 24 horas:"
+
+msgid "Last finished"
+msgstr "Últimos terminados"
+
+msgid "Last move"
+msgstr "Última jugada"
 
 msgid "Latest results"
 msgstr "Últimos resultados"
@@ -1652,6 +1976,12 @@ msgstr "Disposición"
 
 msgid "Layout saved: {}"
 msgstr "Disposición guardada: {}"
+
+msgid "Leader: {}"
+msgstr "Líder: {}"
+
+msgid "Leader: {} {}"
+msgstr "Líder: {} {}"
 
 msgid "Leave (Esc)"
 msgstr "Salir (Esc)"
@@ -1674,6 +2004,12 @@ msgstr "Motor de la biblioteca"
 msgid "Light"
 msgstr "Claro"
 
+msgid "Light squares"
+msgstr "Casillas claras"
+
+msgid "Light theme"
+msgstr "Tema claro"
+
 msgid "Like cutechess' -pgnout: the games of every tournament go on after those already in the file, which is never overwritten, in the order of the schedule: the two games of an opening side by side. Empty: none."
 msgstr "Como -pgnout de cutechess: las partidas de cada torneo se añaden tras las que ya hay en el archivo, que nunca se sobrescribe, en el orden del calendario: las dos partidas de una apertura una junto a otra. Vacío: ninguno."
 
@@ -1682,6 +2018,9 @@ msgstr "Probabilidad de superioridad sobre el siguiente motor de la lista: la pr
 
 msgid "Likelihood of superiority over the next engine of the list: the probability that it is the stronger of the two. Approximate: with more than 1000 engines, the covariance of the ratings is approximated from each one's games and the games the two played together."
 msgstr "Probabilidad de superioridad sobre el siguiente motor de la lista: la probabilidad de que sea el más fuerte de los dos. Aproximada: con más de 1000 motores, la covarianza de los ratings se estima a partir de las partidas de cada uno y las que jugaron entre sí."
+
+msgid "Lines"
+msgstr "Líneas"
 
 msgid "Listed among lichess' broadcasts"
 msgstr "Listada entre las retransmisiones de lichess"
@@ -1700,6 +2039,9 @@ msgstr "Registro"
 
 msgid "Logistic Elo, with its 95 % interval."
 msgstr "Elo logístico, con su intervalo del 95 %."
+
+msgid "Logo"
+msgstr "Logo"
 
 msgid "Loss when an engine reports a score ≤ -threshold for N consecutive moves."
 msgstr "Derrota cuando un motor da una puntuación ≤ -umbral durante N jugadas consecutivas."
@@ -1732,6 +2074,9 @@ msgid "Lower to {} piece"
 msgid_plural "Lower to {} pieces"
 msgstr[0] "Bajar a {} pieza"
 msgstr[1] "Bajar a {} piezas"
+
+msgid "MB; 0: the engine's own."
+msgstr "MB; 0: el del motor."
 
 msgid "Machine: {} physical cores, {} threads"
 msgstr "Máquina: {} núcleos físicos, {} hilos"
@@ -1772,6 +2117,12 @@ msgstr "Partidas mín."
 msgid "Minimum games"
 msgstr "Mínimo de partidas"
 
+msgid "Minutes for the game."
+msgstr "Minutos para la partida."
+
+msgid "Mistake"
+msgstr "Error"
+
 msgid "Model"
 msgstr "Modelo"
 
@@ -1781,8 +2132,14 @@ msgstr "Más…"
 msgid "Mosaic"
 msgstr "Mosaico"
 
+msgid "Move"
+msgstr "Jugada"
+
 msgid "Move down"
 msgstr "Bajar"
+
+msgid "Move sounds"
+msgstr "Sonidos de las jugadas"
 
 msgid "Move to the top"
 msgstr "Al principio"
@@ -1813,6 +2170,9 @@ msgstr "Requiere atención"
 
 msgid "New engine A"
 msgstr "Nuevo motor A"
+
+msgid "New game"
+msgstr "Nueva partida"
 
 msgid "New tournament"
 msgstr "Nuevo torneo"
@@ -1856,17 +2216,32 @@ msgstr "No se encontró ningún motor en esta carpeta."
 msgid "No engine that works within that range. Engines that were never checked do not count: check them first (Engines, More…)."
 msgstr "Ningún motor que funcione en ese rango. Los motores nunca comprobados no cuentan: compruébalos primero (Motores, Más…)."
 
+msgid "No engine to analyse with: add one on the Engines page."
+msgstr "Ningún motor para analizar: añade uno en la página Motores."
+
 msgid "No engine yet. Click Add."
 msgstr "Aún no hay ningún motor. Haz clic en Añadir."
 
 msgid "No engine yet: double-click engines of the library, or drag them here."
 msgstr "Aún no hay motores: haz doble clic en motores de la biblioteca, o arrástralos aquí."
 
+msgid "No folder of pieces is chosen."
+msgstr "No se ha elegido ninguna carpeta de piezas."
+
+msgid "No game finished yet"
+msgstr "Aún no ha terminado ninguna partida"
+
 msgid "No game finished yet."
 msgstr "Aún no ha terminado ninguna partida."
 
+msgid "No game in it, or a start position (its FEN tag) that cannot be played."
+msgstr "No contiene ninguna partida, o una posición inicial (su etiqueta FEN) que no se puede jugar."
+
 msgid "No game in this slot yet."
 msgstr "Aún no hay ninguna partida en este hueco."
+
+msgid "No game in {}."
+msgstr "Ninguna partida en {}."
 
 msgid "No game is being played here."
 msgstr "Aquí no se juega ninguna partida."
@@ -1880,8 +2255,14 @@ msgstr "No queda ninguna partida por jugar sin él: el torneo se ha detenido. Re
 msgid "No game of {} gives a move: is it a PGN file?"
 msgstr "Ninguna partida de {} da una jugada: ¿es un archivo PGN?"
 
+msgid "No game played"
+msgstr "Ninguna partida jugada"
+
 msgid "No game yet."
 msgstr "Aún no hay partidas."
+
+msgid "No longer playing: withdrawn or replaced. Its games that count still count for its team."
+msgstr "Ya no juega: retirado o sustituido. Sus partidas que cuentan siguen contando para su equipo."
 
 msgid "No match"
 msgstr "Ningún match"
@@ -1903,6 +2284,12 @@ msgstr "No queda ninguna jugada de {} con estas opciones."
 msgid "No move of {} is played by {} games or more: lower the minimum."
 msgstr "Ninguna jugada de {} se juega en {} partidas o más: baja el mínimo."
 
+msgid "No move sounds: no sound device ({})."
+msgstr "Sin sonidos de las jugadas: ningún dispositivo de sonido ({})."
+
+msgid "No move sounds: the sound could not be started ({})."
+msgstr "Sin sonidos de las jugadas: no se pudo iniciar el sonido ({})."
+
 msgid "No new engine in the folder."
 msgstr "Ningún motor nuevo en la carpeta."
 
@@ -1918,6 +2305,9 @@ msgstr "Aún no hay opciones: haz clic en Volver a leer las opciones UCI."
 msgid "No position with bm, am or c0 in this file."
 msgstr "Ninguna posición con bm, am o c0 en este archivo."
 
+msgid "No position, game or move found in the text."
+msgstr "No se encontró ninguna posición, partida ni jugada en el texto."
+
 msgid "No profile"
 msgstr "Sin perfil"
 
@@ -1932,6 +2322,9 @@ msgstr "Aún no hay resultados."
 
 msgid "No round yet."
 msgstr "Aún no hay rondas."
+
+msgid "No sound device could be opened: the log says why."
+msgstr "No se pudo abrir ningún dispositivo de sonido: el registro dice por qué."
 
 msgid "No tablebase hits in this game."
 msgstr "Ningún acceso a tablas de finales en esta partida."
@@ -1969,6 +2362,15 @@ msgstr "Ninguno de estos motores está en la biblioteca con el mismo nombre."
 msgid "Normalized Elo (fishtest, OpenBench), with its 95 % interval."
 msgstr "Elo normalizado (fishtest, OpenBench), con su intervalo del 95 %."
 
+msgid "Not a legal position."
+msgstr "No es una posición legal."
+
+msgid "Not a position: a FEN gives eight ranks of eight squares, the side to move (w or b), the castling rights (KQkq or -), the en passant square (or -) and two move counters."
+msgstr "No es una posición: un FEN da ocho filas de ocho casillas, el turno (w o b), los derechos de enroque (KQkq o -), la casilla al paso (o -) y dos contadores de jugadas."
+
+msgid "Not a position: a FEN gives eight ranks of eight squares, then the side to move."
+msgstr "No es una posición: un FEN da ocho filas de ocho casillas y luego el turno."
+
 msgid "Not a value the new build takes: fastchess would play without it."
 msgstr "No es un valor que acepte la nueva versión: fastchess jugaría sin él."
 
@@ -1981,6 +2383,9 @@ msgstr "No comprobado"
 msgid "Not checked yet."
 msgstr "Aún no comprobado."
 
+msgid "Not enough memory to draw it."
+msgstr "No hay memoria suficiente para dibujarla."
+
 msgid "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the setup."
 msgstr "No está en el PGN de esta partida: su torneo se jugó con «{}» desactivado en las opciones PGN de la configuración."
 
@@ -1989,6 +2394,9 @@ msgstr "No iniciado: otro inicio está en espera ({}). Cancélalo primero."
 
 msgid "Not started: the options of {} cannot be read."
 msgstr "No iniciado: no se pueden leer las opciones de {}."
+
+msgid "Not this position."
+msgstr "No es esta posición."
 
 msgid "Notes"
 msgstr "Notas"
@@ -2001,6 +2409,9 @@ msgstr "Ninguna coincidencia."
 
 msgid "Nothing reported yet."
 msgstr "Nada informado todavía."
+
+msgid "Nothing to read: the text is empty."
+msgstr "Nada que leer: el texto está vacío."
 
 msgid "Notify when a match ends"
 msgstr "Avisar cuando termine un match"
@@ -2029,6 +2440,9 @@ msgstr "Cuando haya jugado dos torneos."
 msgid "Once its two games are played, a pair with a game flagged is voided (its games stay in the PGN files and the journal) and played again from an opening at the end of the book, which the tournament would play last; at most {} times for one pair."
 msgstr "Una vez jugadas sus dos partidas, un par con una partida marcada se anula (sus partidas se quedan en los archivos PGN y en el diario) y se vuelve a jugar desde una apertura del final del libro, que el torneo jugaría la última; como mucho {} veces por par."
 
+msgid "Once the game is over."
+msgstr "Cuando la partida termine."
+
 msgid "One after the other, not while a tournament plays. Not the inactive ones."
 msgstr "Uno tras otro, no mientras se juega un torneo. No los inactivos."
 
@@ -2053,8 +2467,14 @@ msgstr "Solo las partidas entre motores de un grupo de la biblioteca."
 msgid "Only the moves of players rated at least"
 msgstr "Solo las jugadas de jugadores con un Elo de al menos"
 
+msgid "Only {} free of {} on the drive of {}: a tournament stops when its games cannot be written."
+msgstr "Solo {} libres de {} en la unidad de {}: un torneo se detiene cuando sus partidas no se pueden escribir."
+
 msgid "Open"
 msgstr "Abrir"
+
+msgid "Open a PGN…"
+msgstr "Abrir un PGN…"
 
 msgid "Open a file…"
 msgstr "Abrir un archivo…"
@@ -2068,6 +2488,9 @@ msgstr "Abrir el motor"
 msgid "Open the folder"
 msgstr "Abrir la carpeta"
 
+msgid "Open the games"
+msgstr "Abrir las partidas"
+
 msgid "Open the log"
 msgstr "Abrir el registro"
 
@@ -2076,6 +2499,9 @@ msgstr "Abrir la carpeta del perfil"
 
 msgid "Open the tournament."
 msgstr "Abrir el torneo."
+
+msgid "Open the tournaments folder"
+msgstr "Abrir la carpeta de torneos"
 
 msgid "OpenGL 3.2 cannot be used ({}): the window is drawn by SDL's renderer."
 msgstr "No se puede usar OpenGL 3.2 ({}): la ventana la dibuja el renderizador de SDL."
@@ -2091,6 +2517,9 @@ msgstr "Libro de aperturas"
 
 msgid "Opening book not found: {}"
 msgstr "Libro de aperturas no encontrado: {}"
+
+msgid "Opening · {}"
+msgstr "Apertura · {}"
 
 msgid "Openings"
 msgstr "Aperturas"
@@ -2176,6 +2605,9 @@ msgstr "Coincidencia de PV"
 msgid "Pair kinds"
 msgstr "Tipos de pares"
 
+msgid "Pairings"
+msgstr "Emparejamientos"
+
 msgid "Pairs"
 msgstr "Pares"
 
@@ -2221,6 +2653,9 @@ msgstr "Pega una lista de rating, o abre su archivo: la versión de texto de una
 msgid "Pause"
 msgstr "Pausa"
 
+msgid "Pause all"
+msgstr "Pausar todo"
+
 msgid "Pause: no new pair starts. Running games, and the second game of their pair,\nplay to the end (pair statistics stay complete)."
 msgstr "Pausa: no empieza ningún par nuevo. Las partidas en curso, y la segunda partida de su par,\nse juegan hasta el final (las estadísticas por pares siguen completas)."
 
@@ -2238,17 +2673,47 @@ msgstr "¿Quizá {}?"
 msgid "Physical cores − 1 ({} physical cores on this machine): with a clock, two engines on the same core would slow each other down."
 msgstr "Núcleos físicos − 1 ({} núcleos físicos en esta máquina): con reloj, dos motores en el mismo núcleo se frenarían."
 
+msgid "Pictures (PNG, JPEG, SVG)"
+msgstr "Imágenes (PNG, JPEG, SVG)"
+
+msgid "Pieces"
+msgstr "Piezas"
+
 msgid "Pieces on the board, kings included."
 msgstr "Piezas en el tablero, reyes incluidos."
 
+msgid "Pieces: your own folder…"
+msgstr "Piezas: tu propia carpeta…"
+
+msgid "Pieces: {}"
+msgstr "Piezas: {}"
+
 msgid "Pins every game to its own processor, shared by its two engines since they never think at the same time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to a node count."
 msgstr "Fija cada partida a su propio procesador, compartido por sus dos motores, ya que nunca piensan a la vez: 2 partidas mantienen 2 núcleos ocupados y dejan los demás libres. Útil con reloj, irrelevante con un número de nodos."
+
+msgid "Play"
+msgstr "Jugar"
+
+msgid "Play a game"
+msgstr "Jugar una partida"
+
+msgid "Play a game…"
+msgstr "Jugar una partida…"
+
+msgid "Play a move on the board, or open a game."
+msgstr "Juega una jugada en el tablero, o abre una partida."
+
+msgid "Play anyway"
+msgstr "Jugar de todos modos"
 
 msgid "Play games again"
 msgstr "Volver a jugar partidas"
 
 msgid "Play the pair again from another opening"
 msgstr "Volver a jugar el par desde otra apertura"
+
+msgid "Play the two games"
+msgstr "Jugar las dos partidas"
 
 msgid "Play this game again"
 msgstr "Volver a jugar esta partida"
@@ -2310,6 +2775,9 @@ msgstr "Modo portátil: desactivado"
 msgid "Position"
 msgstr "Posición"
 
+msgid "Position set up"
+msgstr "Posición preparada"
+
 msgid "Prepared from {} game: {} positions."
 msgid_plural "Prepared from {} games: {} positions."
 msgstr[0] "Preparado a partir de {} partida: {} posiciones."
@@ -2317,6 +2785,9 @@ msgstr[1] "Preparado a partir de {} partidas: {} posiciones."
 
 msgid "Preparing the book… {} %"
 msgstr "Preparando el libro… {} %"
+
+msgid "Press A, or Analyse, for the engine's best moves here."
+msgstr "Pulsa A, o Analizar, para ver aquí las mejores jugadas del motor."
 
 msgid "Probability that H1 is accepted (%)"
 msgstr "Probabilidad de que se acepte H1 (%)"
@@ -2360,8 +2831,16 @@ msgstr "Publicar en internet"
 msgid "Push the games to lichess"
 msgstr "Enviar las partidas a lichess"
 
-msgid "Queue"
-msgstr "Cola"
+msgid "Put the participants selected in team A."
+msgstr "Poner los participantes seleccionados en el equipo A."
+
+msgid "Put the participants selected in team B."
+msgstr "Poner los participantes seleccionados en el equipo B."
+
+msgid "Queue · {} tournament"
+msgid_plural "Queue · {} tournaments"
+msgstr[0] "Cola · {} torneo"
+msgstr[1] "Cola · {} torneos"
 
 msgid "Queued: {}"
 msgstr "En cola: {}"
@@ -2414,6 +2893,9 @@ msgstr "Clasificaciones"
 msgid "Reachable from the local network; open the port in your router to share it further."
 msgstr "Accesible desde la red local; abre el puerto en tu router para compartirla más allá."
 
+msgid "Read again"
+msgstr "Volver a leer"
+
 msgid "Read it again"
 msgstr "Volver a leerlo"
 
@@ -2434,6 +2916,9 @@ msgstr "Leyendo las partidas… {} %"
 
 msgid "Reading the options of an engine…"
 msgstr "Leyendo las opciones de un motor…"
+
+msgid "Reading {}…"
+msgstr "Leyendo {}…"
 
 msgid "Reading…"
 msgstr "Leyendo…"
@@ -2460,6 +2945,9 @@ msgstr "Actualizar: los motores nuevos de la carpeta"
 
 msgid "Relaunch with…"
 msgstr "Relanzar con…"
+
+msgid "Relaunch {} with…"
+msgstr "Relanzar {} con…"
 
 msgid "Remote port"
 msgstr "Puerto remoto"
@@ -2526,6 +3014,9 @@ msgstr "Informar de un problema…"
 msgid "Resign"
 msgstr "Abandono"
 
+msgid "Restart"
+msgstr "Reiniciar"
+
 msgid "Restart an engine that crashes"
 msgstr "Reiniciar un motor que se cuelga"
 
@@ -2549,6 +3040,9 @@ msgstr "Resultados por par de partidas (misma apertura, colores invertidos), en 
 
 msgid "Resume"
 msgstr "Reanudar"
+
+msgid "Resume all"
+msgstr "Reanudar todo"
 
 msgid "Resume at launch the tournament that was running"
 msgstr "Reanudar al iniciar el torneo que estaba en curso"
@@ -2646,6 +3140,12 @@ msgstr "Guardar la disposición como…"
 msgid "Save the setup as a template…"
 msgstr "Guardar la configuración como plantilla…"
 
+msgid "Saved in {}"
+msgstr "Guardada en {}"
+
+msgid "Save…"
+msgstr "Guardar…"
+
 msgid "Say which library engine a player of the PGN files is."
 msgstr "Indica qué motor de la biblioteca es un jugador de los archivos PGN."
 
@@ -2679,6 +3179,9 @@ msgstr "Búsquedas"
 msgid "Searches at a time"
 msgstr "Búsquedas a la vez"
 
+msgid "Seconds added after each move."
+msgstr "Segundos añadidos tras cada jugada."
+
 msgid "Seconds before the next game is chosen."
 msgstr "Segundos antes de que se elija la siguiente partida."
 
@@ -2699,6 +3202,9 @@ msgstr "Orden inicial"
 
 msgid "Seed order: as the engines were entered, the seeds of a gauntlet first; the columns of a gauntlet's crosstable stay in place."
 msgstr "Orden inicial: tal como se introdujeron los motores, primero los motores probados de un gauntlet; las columnas de la tabla cruzada de un gauntlet no se mueven."
+
+msgid "Send"
+msgstr "Enviar"
 
 msgid "Send its options"
 msgstr "Enviar sus opciones"
@@ -2723,6 +3229,9 @@ msgstr "Fijar el resultado"
 
 msgid "Set the result of game {}…"
 msgstr "Fijar el resultado de la partida {}…"
+
+msgid "Set up a position: pieces, side to move, castling, en passant, Chess960."
+msgstr "Preparar una posición: piezas, turno, enroque, al paso, Chess960."
 
 msgid "Set {} reference Elo"
 msgid_plural "Set {} reference Elo"
@@ -2753,6 +3262,9 @@ msgstr "Proporción de partidas en tablas."
 msgid "Show"
 msgstr "Mostrar"
 
+msgid "Show it"
+msgstr "Mostrarla"
+
 msgid "Show the games from unbalanced openings"
 msgstr "Mostrar las partidas de aperturas desequilibradas"
 
@@ -2765,6 +3277,9 @@ msgstr "Mostrar esta partida en su propio panel, que se puede acoplar junto a lo
 msgid "Show {}"
 msgstr "Mostrar: {}"
 
+msgid "Shown here as they are played, and saved as PGN in games/ in the profile."
+msgstr "Se muestran aquí mientras se juegan y se guardan en PGN en games/ del perfil."
+
 msgid "Site"
 msgstr "Lugar"
 
@@ -2776,6 +3291,9 @@ msgstr "Solución"
 
 msgid "Some engines take every core by default. Games played at the same time then slow each other down, and the engines lose on time or play weaker than they are."
 msgstr "Algunos motores usan todos los núcleos por defecto. Las partidas jugadas a la vez se frenan entonces unas a otras, y los motores pierden por tiempo o juegan peor de lo que son."
+
+msgid "Speak UCI to it through the translation a tournament uses, rather than its own protocol. The engine starts again."
+msgstr "Hablarle en UCI a través de la traducción que usa un torneo, en lugar de su propio protocolo. El motor se reinicia."
 
 msgid "Speed"
 msgstr "Velocidad"
@@ -2816,8 +3334,14 @@ msgstr "Tiempo de arranque (s)"
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr "Se inician uno tras otro, cuando el torneo en curso termina por sí solo."
 
+msgid "Started with the library's program, arguments, working directory and option values (sent once it answers uciok)."
+msgstr "Iniciado con el programa, los argumentos, la carpeta de trabajo y los valores de opciones de la biblioteca (enviados en cuanto responde uciok)."
+
 msgid "Started: {}, {}, {} concurrent games{}. Folder: {}"
 msgstr "Iniciado: {}, {}, {} partidas simultáneas{}. Carpeta: {}"
+
+msgid "Starting {}…"
+msgstr "Iniciando {}…"
 
 msgid "Starting…"
 msgstr "Iniciando…"
@@ -2852,6 +3376,12 @@ msgstr "Detener y salir"
 msgid "Stop now (running games are lost)"
 msgstr "Detener ahora (las partidas en curso se pierden)"
 
+msgid "Stop the analysis"
+msgstr "Detener el análisis"
+
+msgid "Stop the game"
+msgstr "Detener la partida"
+
 msgid "Stop the tournament when an engine cannot start"
 msgstr "Detener el torneo cuando un motor no arranca"
 
@@ -2863,6 +3393,9 @@ msgstr "Detenido antes del final."
 
 msgid "Stopped: no game is left to play without {}, which cannot start"
 msgstr "Detenido: no queda ninguna partida por jugar sin {}, que no arranca"
+
+msgid "Stopping after the running games"
+msgstr "Se detiene tras las partidas en curso"
 
 msgid "Stopping after the running games ({})"
 msgstr "Deteniendo tras las partidas en curso ({})"
@@ -2896,6 +3429,9 @@ msgstr "Resumen"
 
 msgid "Swap A and B"
 msgstr "Intercambiar A y B"
+
+msgid "Swap the engines and their clocks."
+msgstr "Intercambiar los motores y sus relojes."
 
 msgid "Swiss"
 msgstr "Suizo"
@@ -2971,6 +3507,24 @@ msgstr "Tablas de finales"
 msgid "Tabs"
 msgstr "Pestañas"
 
+msgid "Talk to the engine: type commands (an option, a position, a go with given limits, a stop) and read its answers."
+msgstr "Hablar con el motor: escribir comandos (una opción, una posición, un go con límites dados, un stop) y leer sus respuestas."
+
+msgid "Team"
+msgstr "Equipo"
+
+msgid "Team A"
+msgstr "Equipo A"
+
+msgid "Team B"
+msgstr "Equipo B"
+
+msgid "Team match"
+msgstr "Encuentro por equipos"
+
+msgid "Teams"
+msgstr "Equipos"
+
 msgid "Tell me when a new version is out"
 msgstr "Avisarme cuando salga una versión nueva"
 
@@ -3001,8 +3555,14 @@ msgstr "Tester"
 msgid "Testing…"
 msgstr "Probando…"
 
+msgid "Text"
+msgstr "Texto"
+
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "El contador de las 50 jugadas, el material y las piezas que quedan, bajo cada tablero del mosaico."
+
+msgid "The Elo difference {}'s score stands for, with its 95 % interval, counted on the pairs of games as in a match (pentanomial); LOS: the likelihood that it is the stronger team. +{} ={} −{}."
+msgstr "La diferencia de Elo que representa la puntuación de {}, con su intervalo del 95 %, contada sobre los pares de partidas como en un match (pentanomial); LOS: la probabilidad de que sea el equipo más fuerte. +{} ={} −{}."
 
 msgid "The LLR is beyond a bound: no decision before {} game, {} played."
 msgid_plural "The LLR is beyond a bound: no decision before {} games, {} played."
@@ -3020,6 +3580,21 @@ msgstr "El estándar PGN los convierte en comentarios. fastchess-gui 0.4.13 y an
 
 msgid "The Schedule tab shows the impact before anything changes."
 msgstr "La pestaña Calendario muestra el impacto antes de que nada cambie."
+
+msgid "The analysis"
+msgstr "El análisis"
+
+msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
+msgstr "El motor de análisis recorre todas las posiciones de la partida, en segundo plano: una evaluación por jugada, y sus imprecisiones, errores y errores graves marcados."
+
+msgid "The analysis engine stopped."
+msgstr "El motor de análisis se detuvo."
+
+msgid "The analysis engine waits."
+msgstr "El motor de análisis espera."
+
+msgid "The analysis is running."
+msgstr "El análisis está en curso."
 
 msgid "The arrow keys too."
 msgstr "También con las flechas del teclado."
@@ -3051,6 +3626,15 @@ msgstr "Los gráficos aparecen con los primeros resultados."
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "La comprobación de {} se interrumpe para el inicio: se volverá a hacer más tarde."
 
+msgid "The colours of the boards while the theme is dark."
+msgstr "Los colores de los tableros mientras el tema es oscuro."
+
+msgid "The colours of the boards while the theme is light."
+msgstr "Los colores de los tableros mientras el tema es claro."
+
+msgid "The console of {} is open."
+msgstr "La consola de {} está abierta."
+
 msgid "The depth must be positive."
 msgstr "La profundidad debe ser positiva."
 
@@ -3060,6 +3644,9 @@ msgstr "Las carpetas son de este ordenador: ningún perfil las contiene."
 msgid "The engine does not answer isready."
 msgstr "El motor no responde a isready."
 
+msgid "The engine ended."
+msgstr "El motor terminó."
+
 msgid "The engine stopped answering once its options were sent."
 msgstr "El motor dejó de responder tras enviarle sus opciones."
 
@@ -3068,6 +3655,15 @@ msgstr "El motor se detuvo cuando se le pidió que pensara."
 
 msgid "The engine wrote:"
 msgstr "El motor escribió:"
+
+msgid "The engine's own protocol (xboard), without the translation to UCI a tournament uses."
+msgstr "El protocolo propio del motor (xboard), sin la traducción a UCI que usa un torneo."
+
+msgid "The engine's settings; the console stays open."
+msgstr "Los ajustes del motor; la consola sigue abierta."
+
+msgid "The engines"
+msgstr "Los motores"
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "Los motores son los de {}, guardado antes del último cambio."
@@ -3093,6 +3689,9 @@ msgstr "El archivo llamado «portable» junto al programa guarda todo en esta ca
 msgid "The finished games of the match will appear here."
 msgstr "Las partidas terminadas del match aparecerán aquí."
 
+msgid "The first engine of each team against the first of the other, the second against the second, and so on: two teams of the same size, in the order of the list."
+msgstr "El primer motor de cada equipo contra el primero del otro, el segundo contra el segundo, y así sucesivamente: dos equipos del mismo tamaño, en el orden de la lista."
+
 msgid "The first engines of the list (the tested ones) meet every other engine."
 msgstr "Los primeros motores de la lista (los probados) se enfrentan a todos los demás."
 
@@ -3108,11 +3707,23 @@ msgstr "El primer participante, {}, no tiene Elo de referencia."
 msgid "The folder {} is not there any more."
 msgstr "La carpeta {} ya no existe."
 
+msgid "The folder {} is not there."
+msgstr "La carpeta {} no está."
+
+msgid "The game as it was, without the moves played over it."
+msgstr "La partida tal como era, sin las jugadas hechas encima."
+
+msgid "The game being played ends without a result."
+msgstr "La partida en curso termina sin resultado."
+
 msgid "The game counts again as it was."
 msgstr "La partida vuelve a contar como antes."
 
 msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
 msgstr "La partida seguida llenando la ventana, en letra grande, para una televisión, un club o un stream. F11: pantalla completa, Esc: volver."
+
+msgid "The game, with its tags and moves, as PGN."
+msgstr "La partida, con sus etiquetas y jugadas, en PGN."
 
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "Las partidas tal como las envían los testers de las listas de rating: el archivo con tu nombre, la fecha y las condiciones, los jugadores como los escriben las listas, las rondas renumeradas, sin las partidas anuladas ni los duplicados."
@@ -3131,6 +3742,12 @@ msgstr "La clave de host de {} cambió: {} ahora, {} antes. Puede que alguien es
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "La clave de host de {} no es la esperada ({} en lugar de {}): puede que alguien esté en medio. No se envió nada."
+
+msgid "The king and the rook are not where it needs them."
+msgstr "El rey y la torre no están donde hace falta."
+
+msgid "The larger thread count of the two engines: they take turns. Their games are played apart from any tournament."
+msgstr "El mayor número de hilos de los dos motores: juegan por turnos. Sus partidas se juegan aparte de cualquier torneo."
 
 msgid "The largest Hash: {}, {} per process."
 msgstr "El Hash más grande: {}, {} por proceso."
@@ -3152,6 +3769,15 @@ msgstr "El nombre en la biblioteca, el que le dan los próximos torneos. Los tor
 
 msgid "The list order is the seeding."
 msgstr "El orden de la lista es el de los cabezas de serie."
+
+msgid "The logo of {} cannot be shown: {}"
+msgstr "El logo de {} no se puede mostrar: {}"
+
+msgid "The logo was not changed: {}"
+msgstr "El logo no se cambió: {}"
+
+msgid "The machine is full: the tournament's games and the analysis use {} of its {} threads, and this game needs {}. It would slow them down, and its own engines."
+msgstr "La máquina está llena: las partidas del torneo y el análisis usan {} de sus {} hilos, y esta partida necesita {}. Las ralentizaría, y a sus propios motores."
 
 msgid "The most interesting"
 msgstr "La más interesante"
@@ -3177,6 +3803,9 @@ msgstr "Las aperturas en orden aleatorio (order=random), o una tras otra desde E
 msgid "The order is the one of the pairings' table."
 msgstr "El orden es el de la tabla de emparejamientos."
 
+msgid "The other settings: those of the New tournament page."
+msgstr "Los demás ajustes: los de la página Nuevo torneo."
+
 msgid "The page shows Discord's widget of this server, in its light or dark theme: its name, the members online and a Join button, not the messages. The server's owner switches the widget on in Server Settings, Widget, which also shows the server ID. Discord then sees the visits of the page's viewers."
 msgstr "La página muestra el widget de Discord de este servidor, en su tema claro u oscuro: su nombre, los miembros conectados y un botón Unirse, no los mensajes. El propietario del servidor activa el widget en Ajustes del servidor, Widget, que también muestra el ID del servidor. Discord ve entonces las visitas de los espectadores de la página."
 
@@ -3185,6 +3814,12 @@ msgstr "Los paneles y dónde están, con el nombre que elijas."
 
 msgid "The participants selected (Delete)."
 msgstr "Los participantes seleccionados (Supr)."
+
+msgid "The paused tournament goes on, and the queue starts its next tournament when the running one ends."
+msgstr "El torneo en pausa continúa, y la cola inicia su siguiente torneo cuando termina el que está en curso."
+
+msgid "The picture could not be made a texture."
+msgstr "No se pudo convertir la imagen en una textura."
 
 msgid "The place in the list, by rating."
 msgstr "El puesto en la lista, por rating."
@@ -3241,6 +3876,9 @@ msgstr "En su lugar se pueden añadir los programas de una carpeta:"
 msgid "The queue ends about {} (in {})"
 msgstr "La cola termina hacia {} (en {})"
 
+msgid "The queue waits for Resume all."
+msgstr "La cola espera a Reanudar todo."
+
 msgid "The rating of the engines chosen after each tournament they played: the versions of an engine, side by side."
 msgstr "El rating de los motores elegidos tras cada torneo que jugaron: las versiones de un motor, una junto a otra."
 
@@ -3250,14 +3888,20 @@ msgstr "La lectura de {} se interrumpe para el inicio: se volverá a hacer más 
 msgid "The reading stopped before the end of the file: {}"
 msgstr "La lectura se detuvo antes del final del archivo: {}"
 
+msgid "The running tournament starts no new game pair (the games in progress play to the end), and the queue starts no tournament until Resume all."
+msgstr "El torneo en curso no empieza ningún nuevo par de partidas (las partidas en juego llegan al final), y la cola no inicia ningún torneo hasta Reanudar todo."
+
 msgid "The same engine, with different books"
 msgstr "El mismo motor, con libros distintos"
+
+msgid "The same for both"
+msgstr "El mismo para ambos"
 
 msgid "The same for every book of the tournament: also in the Openings section."
 msgstr "La misma para todos los libros del torneo: también en la sección Aperturas."
 
-msgid "The same match with a new engine A, e.g. the next version: every other setting stays."
-msgstr "El mismo match con un nuevo motor A, p. ej. la siguiente versión: todos los demás ajustes se mantienen."
+msgid "The same match with a new engine A in place of {}, e.g. its next version."
+msgstr "El mismo match con un nuevo motor A en lugar de {}, p. ej. su siguiente versión."
 
 msgid "The same opening for every pair of a round"
 msgstr "La misma apertura para todos los pares de una ronda"
@@ -3270,6 +3914,12 @@ msgstr "La configuración y las plantillas que lo usan conservan sus valores."
 
 msgid "The share of drawn games expected between the two engines, at this time control."
 msgstr "La proporción de tablas esperada entre los dos motores, a este ritmo de juego."
+
+msgid "The side that is not to move is in check."
+msgstr "El bando que no tiene el turno está en jaque."
+
+msgid "The side to move is in check by more than two pieces."
+msgstr "El bando con el turno recibe jaque de más de dos piezas."
 
 msgid "The size of the text, for the distance it is read from (+ and - too)."
 msgstr "El tamaño del texto, según la distancia desde la que se lee (también + y -)."
@@ -3289,11 +3939,20 @@ msgstr "El sistema no pudo abrir:"
 msgid "The tablebase adjudication's Max pieces, in this tournament's Adjudication section."
 msgstr "Las Máx. piezas de la adjudicación por tablas, en la sección Adjudicación de este torneo."
 
+msgid "The teams made again from the list: its upper half against its lower half."
+msgstr "Los equipos rehechos a partir de la lista: su mitad superior contra la inferior."
+
 msgid "The test suite is not started: a tournament is running."
 msgstr "La suite de tests no se inicia: hay un torneo en curso."
 
 msgid "The test suite is not started: a tournament waits to start."
 msgstr "La suite de tests no se inicia: un torneo espera para empezar."
+
+msgid "The threads of the analysis: they count in the core budget, with a tournament's games."
+msgstr "Los hilos del análisis: cuentan en el presupuesto de núcleos, con las partidas de un torneo."
+
+msgid "The threads the analysis and the games of this page use now, out of the machine's."
+msgstr "Los hilos que usan ahora el análisis y las partidas de esta página, de los de la máquina."
 
 msgid "The time control needs a base time or an increment."
 msgstr "El ritmo de juego necesita un tiempo base o un incremento."
@@ -3316,6 +3975,9 @@ msgstr "El torneo está detenido: Reanudar lo vuelve a intentar."
 msgid "The tournament running when the program ended is over: the queue goes on."
 msgstr "El torneo en curso cuando se cerró el programa ha terminado: la cola continúa."
 
+msgid "The tournament stays in the list, to resume or open later."
+msgstr "El torneo sigue en la lista, para reanudarlo o abrirlo más tarde."
+
 msgid "The tournament was changed."
 msgstr "El torneo se ha modificado."
 
@@ -3325,14 +3987,23 @@ msgstr "La varianza de una partida cuando las partidas se cuentan por pares, fre
 msgid "The version and the system, for a bug report."
 msgstr "La versión y el sistema, para un informe de error."
 
+msgid "The whole log, to the clipboard."
+msgstr "Todo el registro, al portapapeles."
+
 msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
 msgstr "La ventana la dibuja el procesador (el renderizador por software de SDL) en lugar de la tarjeta gráfica con OpenGL: para máquinas virtuales, escritorios remotos y controladores gráficos que fallan. Más lento, y los paneles sacados de la ventana se quedan dentro. --software en la línea de comandos hace lo mismo para un inicio."
 
 msgid "The working directory of {} is not found: {}"
 msgstr "No se encuentra el directorio de trabajo de {}: {}"
 
+msgid "Their PGN file, its games listed beside the moves."
+msgstr "Su archivo PGN, sus partidas listadas junto a las jugadas."
+
 msgid "Theme"
 msgstr "Tema"
+
+msgid "These settings are the analysis's: they change neither the engine in the library nor a tournament."
+msgstr "Estos ajustes son del análisis: no cambian ni el motor de la biblioteca ni un torneo."
 
 msgid "These settings under a name, to choose them again in other tournaments and templates."
 msgstr "Estos ajustes con un nombre, para elegirlos de nuevo en otros torneos y plantillas."
@@ -3385,6 +4056,9 @@ msgstr "Hilos {}"
 msgid "Threads {} of the common settings: {} games × {} threads exceed the {}."
 msgstr "Threads {} de los ajustes comunes: {} partidas × {} threads superan los {}."
 
+msgid "Through the adapter"
+msgstr "Por el adaptador"
+
 msgid "Tick engines on the left."
 msgstr "Marca motores a la izquierda."
 
@@ -3409,6 +4083,9 @@ msgstr "Tiempo por jugada"
 msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
 msgstr "Para guardarlo todo junto al programa (una memoria USB, una carpeta copiada entre máquinas), pon un archivo vacío llamado «portable» junto a él: el perfil pasa a ser la carpeta «data» junto a él. Copia allí los archivos de esta carpeta para conservarlos."
 
+msgid "To move"
+msgstr "Turno"
+
 msgid "Total"
 msgstr "Total"
 
@@ -3429,6 +4106,12 @@ msgstr "Nuevo intento en {}."
 
 msgid "Trust the new key"
 msgstr "Confiar en la nueva clave"
+
+msgid "Try a capture"
+msgstr "Probar una captura"
+
+msgid "Try a move"
+msgstr "Probar una jugada"
 
 msgid "Try again"
 msgstr "Reintentar"
@@ -3460,6 +4143,12 @@ msgstr "Túnel: {}"
 msgid "Tunnel: {}; connecting again in {} s"
 msgstr "Túnel: {}; nueva conexión en {} s"
 
+msgid "Turn the move sounds off"
+msgstr "Desactivar los sonidos de las jugadas"
+
+msgid "Turn the move sounds on"
+msgstr "Activar los sonidos de las jugadas"
+
 msgid "Two different engines chosen"
 msgstr "Dos motores distintos elegidos"
 
@@ -3468,6 +4157,9 @@ msgstr "Dos tablas, y una victoria y una derrota, entre los pares que dan 1 punt
 
 msgid "Two engines: is the new version stronger? Statistics from A's point of view."
 msgstr "Dos motores: ¿es más fuerte la nueva versión? Estadísticas desde el punto de vista de A."
+
+msgid "Two teams of engines, one family or version against another: every engine of a team meets every engine of the other, or board by board. The teams are scored as a whole, and each engine too."
+msgstr "Dos equipos de motores, una familia o versión contra otra: cada motor de un equipo se enfrenta a cada motor del otro, o tablero a tablero. Se puntúa a los equipos en conjunto, y también a cada motor."
 
 msgid "UCI compliance report"
 msgstr "Informe de conformidad UCI"
@@ -3505,6 +4197,12 @@ msgstr "Motor desconocido: {}"
 
 msgid "Unreadable PGN."
 msgstr "PGN ilegible."
+
+msgid "Until stopped"
+msgstr "Hasta que se detenga"
+
+msgid "Until the SPRT decides"
+msgstr "Hasta que el SPRT decida"
 
 msgid "Until the next version."
 msgstr "Hasta la próxima versión."
@@ -3551,6 +4249,9 @@ msgstr "Ha salido la versión {}."
 msgid "Void this game (no replay)"
 msgstr "Anular esta partida (sin volver a jugarla)"
 
+msgid "Volume %d %%"
+msgstr "Volumen %d %%"
+
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "V {:.0f} · T {:.0f} · D {:.0f} %"
 
@@ -3596,6 +4297,12 @@ msgstr "Cuándo se decidió por la jugada que hizo, de media: una decisión much
 msgid "When the program ended while a tournament was running (a crash, a power cut, a reboot, or quitting while it ran), it resumes at the next launch, and the queue goes on after it. A tournament paused or stopped waits for you."
 msgstr "Si el programa se cerró mientras se jugaba un torneo (un cuelgue, un corte de luz, un reinicio, o al salir mientras se jugaba), este se reanuda en el siguiente inicio, y la cola continúa después. Un torneo en pausa o detenido te espera."
 
+msgid "When the queue ends is not known: an SPRT without a game limit, or nodes or depth per move, has no length to tell."
+msgstr "No se sabe cuándo termina la cola: un SPRT sin límite de partidas, o nodos o profundidad por jugada, no tiene una duración previsible."
+
+msgid "Where new tournaments are written, as in Settings. Those played so far stay where they are: Open a folder… opens them."
+msgstr "Dónde se escriben los torneos nuevos, como en Ajustes. Los jugados hasta ahora se quedan donde están: Abrir una carpeta… los abre."
+
 msgid "While a tournament runs, an SSH tunnel built into fastchess-gui gives the page a public https address, without opening a port in the router or installing anything. Only the page is reachable that way, read-only."
 msgstr "Mientras se juega un torneo, un túnel SSH integrado en fastchess-gui da a la página una dirección https pública, sin abrir un puerto en el router ni instalar nada. Solo la página es accesible así, de solo lectura."
 
@@ -3614,6 +4321,9 @@ msgstr "Las blancas hacen una jugada ilegal"
 msgid "White mates"
 msgstr "Las blancas dan mate"
 
+msgid "White needs one king, and only one."
+msgstr "Las blancas necesitan un rey, y solo uno."
+
 msgid "White resigns"
 msgstr "Las blancas abandonan"
 
@@ -3628,6 +4338,9 @@ msgstr "Blancas {:.0f} % · tablas {:.0f} % · negras {:.0f} %"
 
 msgid "White ×2"
 msgstr "Blancas ×2"
+
+msgid "White's clock"
+msgstr "Reloj de las blancas"
 
 msgid "White's connection stalls"
 msgstr "Las blancas dejan de responder"
@@ -3646,6 +4359,12 @@ msgstr "WinBoard"
 
 msgid "WinBoard engines (xboard protocol) are run through a translation to UCI built into fastchess-gui. Automatic: found out when the engine is read."
 msgstr "Los motores WinBoard (protocolo xboard) funcionan mediante una traducción a UCI integrada en fastchess-gui. Automático: se averigua al leer el motor."
+
+msgid "WinBoard, its own protocol"
+msgstr "WinBoard, su propio protocolo"
+
+msgid "Winner: {}"
+msgstr "Ganador: {}"
 
 msgid "Wins"
 msgstr "Victorias"
@@ -3679,6 +4398,9 @@ msgstr "Sin libro, todas las partidas empiezan desde la posición inicial."
 
 msgid "Without a book, the 960 starting positions, in random order."
 msgstr "Sin libro, las 960 posiciones iniciales, en orden aleatorio."
+
+msgid "Without a choice, the upper half of the list plays the lower half. A participant's ⋯, or the Team A and Team B buttons under the list, move engines from one team to the other."
+msgstr "Sin elección, la mitad superior de la lista juega contra la inferior. El ⋯ de un participante, o los botones Equipo A y Equipo B bajo la lista, pasan motores de un equipo al otro."
 
 msgid "Without stopping it: running games go on, nothing played is lost."
 msgstr "Sin detenerlo: las partidas en curso continúan, no se pierde nada de lo jugado."
@@ -3719,6 +4441,12 @@ msgstr "Se escribe cuando «{}» está activado en las opciones PGN de la config
 msgid "Wrong PVs"
 msgstr "PV erróneas"
 
+msgid "Your own folder"
+msgstr "Tu propia carpeta"
+
+msgid "Your own folder…"
+msgstr "Tu propia carpeta…"
+
 msgid "Your value"
 msgstr "Tu valor"
 
@@ -3736,6 +4464,12 @@ msgstr "un fallo detiene el torneo"
 
 msgid "a result is 1-0, 0-1 or 1/2-1/2"
 msgstr "un resultado es 1-0, 0-1 o 1/2-1/2"
+
+msgid "a team match board by board takes no new engine: replace one instead"
+msgstr "un encuentro por equipos tablero a tablero no admite un motor nuevo: sustituye uno en su lugar"
+
+msgid "about {}"
+msgstr "aprox. {}"
 
 msgid "about {} game"
 msgid_plural "about {} games"
@@ -3760,6 +4494,9 @@ msgstr "todo"
 msgid "also to {}"
 msgstr "también en {}"
 
+msgid "an engine does not answer isready"
+msgstr "un motor no responde a isready"
+
 msgid "and {} more"
 msgstr "y {} más"
 
@@ -3774,6 +4511,9 @@ msgstr "como mucho {} jugadas"
 msgid "automatic"
 msgstr "automático"
 
+msgid "board by board"
+msgstr "tablero a tablero"
+
 msgid "both"
 msgstr "todo"
 
@@ -3785,6 +4525,9 @@ msgstr "por %s"
 
 msgid "bye"
 msgstr "descansa"
+
+msgid "checkmate"
+msgstr "jaque mate"
 
 msgid "colours reversed of an earlier one"
 msgstr "colores invertidos de una anterior"
@@ -3842,6 +4585,9 @@ msgstr "todas las jugadas por igual"
 msgid "every pair with both colours"
 msgstr "cada par con ambos colores"
 
+msgid "everyone against everyone"
+msgstr "cada motor contra todos"
+
 msgid "fastchess-gui cannot draw its window."
 msgstr "fastchess-gui no puede dibujar su ventana."
 
@@ -3863,6 +4609,12 @@ msgstr "desde la apertura {}"
 msgid "game already over"
 msgstr "partida ya terminada"
 
+msgid "game too long"
+msgstr "partida demasiado larga"
+
+msgid "game {}"
+msgstr "partida {}"
+
 msgid "games"
 msgstr "partidas"
 
@@ -3874,6 +4626,9 @@ msgstr "partidas como mínimo"
 
 msgid "gone"
 msgstr "desaparecida"
+
+msgid "illegal move {} by {}"
+msgstr "jugada ilegal {} de {}"
 
 msgid "illegal position"
 msgstr "posición ilegal"
@@ -3889,6 +4644,12 @@ msgstr "en orden"
 
 msgid "initial position"
 msgstr "posición inicial"
+
+msgid "insufficient material"
+msgstr "material insuficiente"
+
+msgid "it cannot be read."
+msgstr "no se puede leer."
 
 msgid "it takes true or false"
 msgstr "acepta true o false"
@@ -3907,6 +4668,9 @@ msgstr "su rango va de {} a {}"
 
 msgid "itself"
 msgstr "sí mismo"
+
+msgid "length unknown"
+msgstr "duración desconocida"
 
 msgid "lines starting with %, ignored"
 msgstr "líneas que empiezan por %, ignoradas"
@@ -3950,6 +4714,9 @@ msgstr[1] "ninguna decisión antes de {} partidas"
 
 msgid "no engine has a SyzygyPath"
 msgstr "ningún motor tiene SyzygyPath"
+
+msgid "no mistake"
+msgstr "ningún error"
 
 msgid "nodes"
 msgstr "nodos"
@@ -4019,6 +4786,9 @@ msgstr "abandono {}/{} cp"
 msgid "resign {}/{} cp, both engines"
 msgstr "abandono {}/{} cp, ambos motores"
 
+msgid "round {}"
+msgstr "ronda {}"
+
 msgid "s"
 msgstr "s"
 
@@ -4030,6 +4800,15 @@ msgstr "enviar al arrancar"
 
 msgid "set by hand"
 msgstr "puesto a mano"
+
+msgid "stalemate"
+msgstr "ahogado"
+
+msgid "starts about {}"
+msgstr "empieza hacia {}"
+
+msgid "stopped"
+msgstr "detenido"
 
 msgid "the best moves only"
 msgstr "solo las mejores jugadas"
@@ -4061,11 +4840,17 @@ msgstr "la prueba rápida de {}"
 msgid "the resume of the interrupted tournament"
 msgstr "la reanudación del torneo interrumpido"
 
+msgid "this analysis only"
+msgstr "solo este análisis"
+
 msgid "this game does not count: it was voided, or is not over"
 msgstr "esta partida no cuenta: fue anulada, o no ha terminado"
 
 msgid "this tournament"
 msgstr "este torneo"
+
+msgid "threefold repetition"
+msgstr "triple repetición"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "para mencionar en el mensaje, o para volver a probar el motor:"
@@ -4104,6 +4889,9 @@ msgstr "usa {:.1f} núcleos mientras piensa, con {} hilo(s)"
 msgid "voided"
 msgstr "anulada"
 
+msgid "weight {}"
+msgstr "peso {}"
+
 msgid "weighted by count"
 msgstr "ponderado por número"
 
@@ -4131,11 +4919,17 @@ msgstr "{:+} partidas ({} → {})"
 msgid "{:.0f} games/h · about {} left"
 msgstr "{:.0f} partidas/h · quedan unas {}"
 
+msgid "{:.1f} % for {}"
+msgstr "{:.1f} % para {}"
+
 msgid "{:.1f} % that {} is stronger than {}."
 msgstr "{:.1f} % de que {} sea más fuerte que {}."
 
 msgid "{:.1f} GB"
 msgstr "{:.1f} GB"
+
+msgid "{:g} s per move"
+msgstr "{:g} s por jugada"
 
 msgid "{}  ({} openings)"
 msgstr "{}  ({} aperturas)"
@@ -4145,6 +4939,9 @@ msgstr "{} % del tiempo"
 
 msgid "{} (preparing the book: {} %)"
 msgstr "{} (preparando el libro: {} %)"
+
+msgid "{} ({}) against {} ({})"
+msgstr "{} ({}) contra {} ({})"
 
 msgid "{} + {} per move"
 msgstr "{} + {} por jugada"
@@ -4164,8 +4961,14 @@ msgstr "{} = {}: un valor que rechaza"
 msgid "{} MB"
 msgstr "{} MB"
 
+msgid "{} The default pieces are drawn meanwhile."
+msgstr "{} Mientras tanto se dibujan las piezas por defecto."
+
 msgid "{} against each opponent"
 msgstr "{} contra cada rival"
+
+msgid "{} analyses the game move by move."
+msgstr "{} analiza la partida jugada a jugada."
 
 msgid "{} and {}"
 msgstr "{} y {}"
@@ -4173,8 +4976,19 @@ msgstr "{} y {}"
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} pide que se reinicie en cada partida: Reiniciar el motor en cada partida está marcado."
 
+msgid "{} blunder"
+msgid_plural "{} blunders"
+msgstr[0] "{} error grave"
+msgstr[1] "{} errores graves"
+
+msgid "{} boards × 2 games × {} cycles"
+msgstr "{} tableros × 2 partidas × {} ciclos"
+
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} no se puede leer, así que las claves de host aceptadas antes son desconocidas: no se envió nada a {}. Repara el archivo, o bórralo para volver a aceptar la clave del servidor."
+
+msgid "{} cannot be read."
+msgstr "{} no se puede leer."
 
 msgid "{} cannot start"
 msgstr "{} no arranca"
@@ -4217,6 +5031,15 @@ msgstr "{} no presentó una clave de host RSA"
 
 msgid "{} did not start (try {} of {})"
 msgstr "{} no arrancó (intento {} de {})"
+
+msgid "{} does not answer isready."
+msgstr "{} no responde a isready."
+
+msgid "{} does not answer uci: is it a UCI engine?"
+msgstr "{} no responde a uci: ¿es un motor UCI?"
+
+msgid "{} does not give its move when told to stop."
+msgstr "{} no da su jugada cuando se le dice que pare."
 
 msgid "{} does not let user \"{}\" in without a key or a password (it accepts: {})"
 msgstr "{} no deja entrar al usuario «{}» sin clave ni contraseña (acepta: {})"
@@ -4268,6 +5091,9 @@ msgstr "{} motores · {} partidas"
 msgid "{} for every engine"
 msgstr "{} para cada motor"
 
+msgid "{} free"
+msgstr "{} libres"
+
 msgid "{} game"
 msgid_plural "{} games"
 msgstr[0] "{} partida"
@@ -4313,6 +5139,11 @@ msgid_plural "{} games from an unbalanced opening"
 msgstr[0] "{} partida de una apertura desequilibrada"
 msgstr[1] "{} partidas de aperturas desequilibradas"
 
+msgid "{} game in {}"
+msgid_plural "{} games in {}"
+msgstr[0] "{} partida en {}"
+msgstr[1] "{} partidas en {}"
+
 msgid "{} game left out by the options (a rating below the minimum, or no result)."
 msgid_plural "{} games left out by the options (a rating below the minimum, or no result)."
 msgstr[0] "{} partida fuera por las opciones (un Elo bajo el mínimo, o sin resultado)."
@@ -4346,6 +5177,9 @@ msgstr[1] "{} partidas registradas dos veces: la exportación conserva la primer
 msgid "{} games +{} ={} -{} · {} lost on time, {} crashes, {} illegal moves · {:.0f} % of its clock used"
 msgstr "{} partidas +{} ={} -{} · {} perdidas por tiempo, {} cuelgues, {} jugadas ilegales · {:.0f} % de su reloj usado"
 
+msgid "{} games per engine of team A, {} of team B"
+msgstr "{} partidas por motor del equipo A, {} del equipo B"
+
 msgid "{} games · {}"
 msgstr "{} partidas · {}"
 
@@ -4363,6 +5197,9 @@ msgid_plural "{} hardware threads"
 msgstr[0] "{} hilo de hardware"
 msgstr[1] "{} hilos de hardware"
 
+msgid "{} hardware threads on {} cores. A game takes the Threads of its engine that has the most: the two engines think in turn."
+msgstr "{} hilos de hardware en {} núcleos. Una partida ocupa los Threads de su motor que tiene más: los dos motores piensan por turnos."
+
 msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
 msgstr "{} no tiene ningún algoritmo en común con fastchess-gui (necesita curve25519-sha256, una clave de host RSA y AES)"
 
@@ -4379,6 +5216,32 @@ msgstr[1] "{} jugadas ilegales"
 
 msgid "{} illegal moves"
 msgstr "{} jugadas ilegales"
+
+msgid "{} inaccuracy"
+msgid_plural "{} inaccuracies"
+msgstr[0] "{} imprecisión"
+msgstr[1] "{} imprecisiones"
+
+msgid "{} is larger than 1 MB: is it a piece?"
+msgstr "{} ocupa más de 1 MB: ¿es una pieza?"
+
+msgid "{} is larger than 2 MB."
+msgstr "{} ocupa más de 2 MB."
+
+msgid "{} is missing: the folder needs the 12 files wK.svg, wQ.svg … bN.svg, bP.svg."
+msgstr "Falta {}: la carpeta necesita los 12 archivos wK.svg, wQ.svg … bN.svg, bP.svg."
+
+msgid "{} is not a file of the logos folder."
+msgstr "{} no es un archivo de la carpeta logos."
+
+msgid "{} is not a legal move from the initial position."
+msgstr "{} no es una jugada legal desde la posición inicial."
+
+msgid "{} is not an SVG picture the program can draw."
+msgstr "{} no es una imagen SVG que el programa pueda dibujar."
+
+msgid "{} is not there."
+msgstr "{} no está."
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} está abierto en otro programa: aquí solo se muestra, tal como estaba al abrirlo."
@@ -4399,6 +5262,9 @@ msgid "{} library engine has this name"
 msgid_plural "{} library engines have this name"
 msgstr[0] "{} motor de la biblioteca tiene este nombre"
 msgstr[1] "{} motores de la biblioteca tienen este nombre"
+
+msgid "{} loses on time"
+msgstr "{} pierde por tiempo"
 
 msgid "{} loss on time"
 msgid_plural "{} losses on time"
@@ -4427,6 +5293,11 @@ msgstr "{} min"
 msgid "{} min {:02} s"
 msgstr "{} min {:02} s"
 
+msgid "{} mistake"
+msgid_plural "{} mistakes"
+msgstr[0] "{} error"
+msgstr[1] "{} errores"
+
 msgid "{} moves in {}, repeated"
 msgstr "{} jugadas en {}, repetido"
 
@@ -4451,6 +5322,12 @@ msgstr "{} nodos"
 
 msgid "{} of memory free of {}"
 msgstr "{} de memoria libre de {}"
+
+msgid "{} of {}"
+msgstr "{} de {}"
+
+msgid "{} of {} in use"
+msgstr "{} de {} en uso"
 
 msgid "{} of {} openings"
 msgstr "{} de {} aperturas"
@@ -4538,6 +5415,11 @@ msgid_plural "{} players"
 msgstr[0] "{} jugador"
 msgstr[1] "{} jugadores"
 
+msgid "{} player left"
+msgid_plural "{} players left"
+msgstr[0] "Queda {} jugador"
+msgstr[1] "Quedan {} jugadores"
+
 msgid "{} player that two library engines may be: say which one."
 msgid_plural "{} players that two library engines may be: say which one."
 msgstr[0] "{} jugador puede ser dos motores de la biblioteca: indica cuál."
@@ -4567,6 +5449,12 @@ msgid "{} ply"
 msgid_plural "{} plies"
 msgstr[0] "{} media jugada"
 msgstr[1] "{} medias jugadas"
+
+msgid "{} points of {} against {}"
+msgstr "{} puntos de {} contra {}"
+
+msgid "{} points of {} games"
+msgstr "{} puntos en {} partidas"
 
 msgid "{} points to a folder with no tablebase files: {}"
 msgstr "{} apunta a una carpeta sin archivos de tablas: {}"
@@ -4636,6 +5524,9 @@ msgstr "{} vuelve a arrancar: sus partidas se juegan de nuevo."
 msgid "{} stays at {}."
 msgstr "{} se queda en {}."
 
+msgid "{} stopped."
+msgstr "{} se detuvo."
+
 msgid "{} takes these settings, for every tournament and template that uses it."
 msgstr "{} toma estos ajustes, para cada torneo y plantilla que lo usa."
 
@@ -4664,6 +5555,9 @@ msgid_plural "{} voided games, left out"
 msgstr[0] "{} partida anulada, excluida"
 msgstr[1] "{} partidas anuladas, excluidas"
 
+msgid "{} vs {}"
+msgstr "{} vs {}"
+
 msgid "{} was running when the program ended: it resumes."
 msgstr "{} estaba en curso cuando se cerró el programa: se reanuda."
 
@@ -4681,6 +5575,9 @@ msgstr[1] "{} escrito: {} posiciones, a partir de {} partidas."
 msgid "{} · depth {} · {}"
 msgstr "{} · profundidad {} · {}"
 
+msgid "{} · opening {}"
+msgstr "{} · apertura {}"
+
 msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
 msgstr "{} · {} / {} partidas · {} jugando · {:.0f} partidas/h · {}"
 
@@ -4693,11 +5590,20 @@ msgstr "{} · {} partidas · Elo {} · {}"
 msgid "{} · {} games · first: {} · {}"
 msgstr "{} · {} partidas · primero: {} · {}"
 
+msgid "{} × {} pairings × 2 games × {} cycles"
+msgstr "{} × {} emparejamientos × 2 partidas × {} ciclos"
+
 msgid "{} – fastchess-gui"
 msgstr "{} – fastchess-gui"
 
+msgid "{} – {} · game {} of {}"
+msgstr "{} – {} · partida {} de {}"
+
 msgid "{} – {} · {} games"
 msgstr "{} – {} · {} partidas"
+
+msgid "{}'s engine stopped"
+msgstr "el motor de {} se detuvo"
 
 msgid "{}, more than the {} of memory free: the system will swap."
 msgstr "{}, más que los {} de memoria libre: el sistema usará la memoria de intercambio."
@@ -4719,6 +5625,9 @@ msgstr "Syzygy de {} piezas para cada motor"
 msgid "{}-man Syzygy for {} of {} engines"
 msgstr "Syzygy de {} piezas para {} de {} motores"
 
+msgid "{}: a logo is a PNG, JPEG or SVG picture."
+msgstr "{}: un logo es una imagen PNG, JPEG o SVG."
+
 msgid "{}: cancelled, nothing written."
 msgstr "{}: cancelado, no se escribió nada."
 
@@ -4733,6 +5642,9 @@ msgstr "{}: su libro no se puede usar: {}"
 
 msgid "{}: its book is not found: {}"
 msgstr "{}: no se encuentra su libro: {}"
+
+msgid "{}: only PGN files, FEN and EPD positions can be dropped here."
+msgstr "{}: aquí solo se pueden soltar archivos PGN y posiciones FEN o EPD."
 
 msgid "{}: program not found ({})"
 msgstr "{}: programa no encontrado ({})"
@@ -4755,8 +5667,16 @@ msgstr "{}: nuevo intento de arranque."
 msgid "{}: unknown to the engine"
 msgstr "{}: desconocida para el motor"
 
+msgid "{}: {:.0f} % of the winning chances lost."
+msgstr "{}: {:.0f} % de las posibilidades de ganar perdidas."
+
 msgid "{}: {}"
 msgstr "{}: {}"
+
+msgid "{}: {} core in use"
+msgid_plural "{}: {} cores in use"
+msgstr[0] "{}: {} núcleo en uso"
+msgstr[1] "{}: {} núcleos en uso"
 
 msgid "{}: {} → {} points"
 msgstr "{}: {} → {} puntos"

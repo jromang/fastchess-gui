@@ -53,6 +53,7 @@ const std::vector<Preset>& presets(SetupSection section) {
         {N_("Gauntlet"), R"({"format": 2, "cycles": 1, "seeds": 1})"},
         {N_("Swiss, 9 rounds"), R"({"format": 3, "cycles": 9})"},
         {N_("Knockout"), R"({"format": 4, "cycles": 1})"},
+        {N_("Team match"), R"({"format": 5, "cycles": 1, "team_boards": false})"},
     };
     // The time controls testers use: fishtest's short and long tests, and the rating lists' blitz and long ones.
     static const std::vector<Preset> time{
@@ -143,10 +144,10 @@ const char* sectionTitle(SetupSection section) {
 }
 
 const std::vector<std::string>& sectionFields(SetupSection section) {
-    static const std::vector<std::string> format{"format",        "cycles",     "seeds",          "mode",
-                                                 "fixed_games",   "sprt_elo0",  "sprt_elo1",      "sprt_alpha",
-                                                 "sprt_beta",     "sprt_model", "sprt_max_games", "sprt_draw_ratio",
-                                                 "sprt_rms_bias", "sprt_bias",  "sprt_min_games"};
+    static const std::vector<std::string> format{"format",        "cycles",      "seeds",          "mode",
+                                                 "fixed_games",   "sprt_elo0",   "sprt_elo1",      "sprt_alpha",
+                                                 "sprt_beta",     "sprt_model",  "sprt_max_games", "sprt_draw_ratio",
+                                                 "sprt_rms_bias", "team_boards", "sprt_bias",      "sprt_min_games"};
     static const std::vector<std::string> time{"limit",        "tc_base_s", "tc_inc_s", "tc_moves",
                                                "tc_margin_ms", "nodes",     "move_s",   "depth"};
     static const std::vector<std::string> openings{
@@ -223,6 +224,8 @@ bool sameSection(const MatchSetup& a, const MatchSetup& b, SetupSection section)
                     return true;
                 case TournamentFormat::Gauntlet:
                     return a.cycles == b.cycles && a.seeds == b.seeds;
+                case TournamentFormat::TeamMatch:
+                    return a.cycles == b.cycles && a.team_boards == b.team_boards;
                 default:
                     return a.cycles == b.cycles;
             }
@@ -279,6 +282,7 @@ void copySection(MatchSetup& to, const MatchSetup& from, SetupSection section) {
             to.format          = from.format;
             to.cycles          = from.cycles;
             to.seeds           = from.seeds;
+            to.team_boards     = from.team_boards;
             to.mode            = from.mode;
             to.fixed_games     = from.fixed_games;
             to.sprt_elo0       = from.sprt_elo0;
@@ -603,6 +607,9 @@ std::string formatSummary(const MatchSetup& s) {
             return joined({TR("Swiss"), trn("{} round", "{} rounds", cycles, cycles)});
         case TournamentFormat::Knockout:
             return joined({TR("Knockout"), trn("{} game pair per match", "{} game pairs per match", cycles, cycles)});
+        case TournamentFormat::TeamMatch:
+            return joined({TR("Team match"), s.team_boards ? TR("board by board") : TR("everyone against everyone"),
+                           trn("{} cycle of 2 games", "{} cycles of 2 games", cycles, cycles)});
     }
     return "";
 }
@@ -705,6 +712,7 @@ std::string sectionCommandLine(const MatchSetup& s, SetupSection section) {
                 case TournamentFormat::Knockout:
                     return fmt::format("-tournament knockout -games {}", 2 * rounds);
                 case TournamentFormat::Swiss:
+                case TournamentFormat::TeamMatch:  // neither has one
                     return "";
             }
             return "";

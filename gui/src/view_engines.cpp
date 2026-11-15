@@ -128,6 +128,7 @@ void App::renameEngine(int index, const std::string& name) {
     const auto now       = uniqueEngineName(name, index);
     engines_[index].name = now;
     if (now == old) return;
+    if (!engines_[index].logo.empty()) ++logos_version_;  // the web page knows the logos by engine name
 
     // Everything that refers to it by name follows.
     const auto follow = [&](std::string& ref) {
@@ -163,9 +164,11 @@ void App::renameEngine(int index, const std::string& name) {
 
 void App::removeEngines(const std::vector<std::string>& names) {
     const int selected = selected_engine_;
+    std::vector<std::string> logos;
     for (int i = static_cast<int>(engines_.size()) - 1; i >= 0; --i) {
         const auto name = engines_[i].name;
         if (std::find(names.begin(), names.end(), name) == names.end()) continue;
+        if (!engines_[i].logo.empty()) logos.push_back(engines_[i].logo);
         // A read or a check still running belongs to an index: keep it on its engine, or drop it with it.
         for (int* busy : {&probe_index_, &check_index_, &selected_engine_}) {
             if (*busy == i)
@@ -182,6 +185,7 @@ void App::removeEngines(const std::vector<std::string>& names) {
     if (selected_engine_ < 0 && selected >= 0)
         selected_engine_ = std::min(selected, static_cast<int>(engines_.size()) - 1);
     storage_.saveEngines(engines_);
+    for (const auto& logo : logos) forgetLogoFile(logo);
 }
 
 void App::queueChecks(const std::vector<std::string>& names) {
@@ -636,6 +640,7 @@ void App::drawEngines() {
         auto copy = engines_[selected_engine_];
         copy.name = uniqueEngineName(copy.name, -1);
         copy.aliases.clear();  // a PGN player is one engine
+        if (!copy.logo.empty()) ++logos_version_;  // the same logo, under its new name on the web page
         engines_.push_back(copy);
         selected_engine_ = static_cast<int>(engines_.size()) - 1;
         engine_marked_.clear();
@@ -974,6 +979,28 @@ void App::drawEngines() {
     const float label  = 150.0f * ImGui::GetFontSize() / 16.0f;
     const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
 
+    // The engine's console, in place of its settings while it is shown.
+    if (engine_console_ && engine_console_->engine == e.name && engine_console_->shown) {
+        drawEngineConsole(e);
+        ImGui::EndChild();
+        ui::endPanel();
+        return;
+    }
+    if (engine_console_) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("%s", trf("The console of {} is open.", engine_console_->engine).c_str());
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Show it"))) {
+            for (int i = 0; i < static_cast<int>(engines_.size()); ++i) {
+                if (engines_[i].name == engine_console_->engine) selected_engine_ = i;
+            }
+            engine_console_->shown = true;
+            engine_console_->focus = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Close it"))) closeEngineConsole();
+    }
+
     ImGui::BeginDisabled(in_use);
 
     ui::label(TR("Name"), label);
@@ -1109,18 +1136,32 @@ void App::drawEngines() {
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("%s", TR("Its card in Ratings: results, health and rating over every tournament."));
 
+    // The logo can change while the engine plays: it is for the viewers.
+    ImGui::EndDisabled();
+    drawLogoRow(selected_engine_, label);
+    ImGui::BeginDisabled(in_use);
+
     ui::label(TR("Notes"), label);
     changed |= editLines("##notes", e.notes, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 3.5f));
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + label);
     ImGui::TextDisabled("%s", TR("Anything to remember about it; the engine searches find it."));
 
-    // Health check.
+    // Health check. Out of the lock of an engine the running tournament plays: its console stays at hand.
+    ImGui::EndDisabled();
     ImGui::Spacing();
     ImGui::BeginDisabled(check_.valid() || pending_start_ || in_use);
     if (ImGui::Button(check_.valid() && check_index_ == selected_engine_ ? TR("Checking…") : TR("Check"))) {
         startCheck(selected_engine_);
     }
     ImGui::EndDisabled();
+    ImGui::SameLine();
+    // Its console: lines typed to it, outside any tournament.
+    if (ImGui::Button(TR("Console…"))) openEngineConsole(selected_engine_);
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("Talk to the engine: type commands (an option, a position, a go with given "
+                                   "limits, a stop) and read its answers."));
+    }
+    ImGui::BeginDisabled(in_use);
     ImGui::SameLine();
     if (e.check_ok >= 0) {
         ImGui::PushStyleColor(ImGuiCol_Text, e.check_ok ? ui::GOOD : ui::WARN);

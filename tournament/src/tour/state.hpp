@@ -165,6 +165,8 @@ class TournamentState {
         bool finished = false;
         std::string finish_reason;
         std::vector<GameResult> results;  // the games that count
+        std::map<int, int> byes;          // Swiss: byes received, by participant id
+        std::vector<std::vector<int>> last_bracket;  // knockout: the places of the last round paired
     };
     [[nodiscard]] static Replayed replay(const std::vector<nlohmann::json>& events, TournamentSpec& spec);
 

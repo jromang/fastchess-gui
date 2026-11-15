@@ -398,7 +398,11 @@ void App::refreshSlot(int slot) {
     if (v.state.has_game && v.state.version != v.board_version) {
         v.board = chess::Board();
         v.board.setFen(v.state.start_fen);
-        for (const auto& m : v.state.moves) v.board.makeMove<true>(m.move);
+        v.last_capture = false;
+        for (const auto& m : v.state.moves) {
+            v.last_capture = v.board.isCapture(m.move);
+            v.board.makeMove<true>(m.move);
+        }
         v.board_version = v.state.version;
     }
 }
@@ -428,6 +432,7 @@ void App::drawLive() {
     const int slots = obs->slotCount();
     live_slot_      = std::clamp(live_slot_, 0, slots - 1);
     for (int i = 0; i < slots; ++i) refreshSlot(i);
+    hearMoves(live_slot_);
 
     // The parts of the followed game that have no panel of their own open are shown here, beside the mosaic.
     const unsigned parts = livePartsHere();
@@ -519,6 +524,8 @@ void App::drawLive() {
             ImGui::EndChild();
         }
     }
+    // A, the mouse over no board: the game followed.
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) && boardKey()) analyseLiveGame(live_slot_);
 
     ui::endPanel();
 }
@@ -603,6 +610,8 @@ void App::drawMosaic(int cols, float card) {
         ImGui::PopStyleColor(2);
 
         if (ImGui::IsItemClicked()) live_slot_ = i;
+        // A: this game on the Board page, analysed.
+        if (ImGui::IsItemHovered() && st.has_game && boardKey()) analyseLiveGame(i);
         if (ImGui::IsItemHovered() && st.has_game) {
             ImGui::SetTooltip(
                 "%s – %s\n%s%s", st.white.c_str(), st.black.c_str(),
@@ -687,6 +696,10 @@ void App::drawLiveBoard(SlotView& view, float size) {
     if (!st.moves.empty()) decor.last_move = st.moves.back().move;
     if (setup_.live_arrows) decor.arrows = pvArrows(st, view.board);
     drawBoard(atlas_, view.board, size, decor);
+    // A: this game on the Board page, analysed.
+    if (ImGui::IsItemHovered() && st.has_game && boardKey()) {
+        analyseLiveGame(static_cast<int>(&view - slot_views_.data()));
+    }
     drawBoardInfo(atlas_, view.board, size, tbPieces());
     ImGui::EndGroup();
     // Right click on the board: the game ended with a result. Asked from the palette, once the panel is in front.
@@ -730,6 +743,7 @@ void App::drawLivePlayer(SlotView& view, chess::Color color, bool search) {
     dl->AddCircle(c, r, IM_COL32(130, 130, 130, 255), 16);
     ImGui::Dummy(ImVec2(r * 2, ImGui::GetTextLineHeight()));
     ImGui::SameLine();
+    if (drawEngineLogo(name, ImGui::GetTextLineHeight()) > 0) ImGui::SameLine();
 
     if (to_move) ImGui::PushStyleColor(ImGuiCol_Text, ui::ACCENT);
     if (isMatch() && obs) {

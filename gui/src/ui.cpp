@@ -281,6 +281,14 @@ const char* glyph(Icon icon) {
             return "\uE0B6";  // ellipsis
         case Icon::Star:
             return "\uE176";  // star
+        case Icon::Board:
+            return "\uE6A2";  // chess-knight
+        case Icon::Paste:
+            return "\uE3E8";  // clipboard-paste
+        case Icon::Edit:
+            return "\uE172";  // square-pen
+        case Icon::Analyse:
+            return "\uE3C6";  // brain
     }
     return "";
 }

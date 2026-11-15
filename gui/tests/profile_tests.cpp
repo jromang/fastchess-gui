@@ -125,6 +125,17 @@ TEST_CASE("profiles: a setup changed for this tournament differs from its profil
     setup.sprt_elo1 = 2.5;
     CHECK(profileState(setup, SetupSection::Format, store) == ProfileState::Changed);
 
+    // A team match: its pairings count, its teams' names are this tournament's.
+    applyProfile(setup, SetupSection::Format, *store.find(SetupSection::Format, "Team match"));
+    CHECK(setup.format == TournamentFormat::TeamMatch);
+    setup.team_a = "Old versions";
+    CHECK(profileState(setup, SetupSection::Format, store) == ProfileState::Same);
+    CHECK(sectionSummary(setup, SetupSection::Format, {}) ==
+          "Team match · everyone against everyone · 1 cycle of 2 games");
+    setup.team_boards = true;
+    CHECK(profileState(setup, SetupSection::Format, store) == ProfileState::Changed);
+    CHECK(sectionCommandLine(setup, SetupSection::Format).empty());
+
     // No profile named, or one that is gone.
     setup.profiles.erase("engines");
     CHECK(profileState(setup, SetupSection::Engines, store) == ProfileState::None);

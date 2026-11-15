@@ -79,6 +79,12 @@ Fix openFolderFix(const std::string& path) {
     return f;
 }
 
+Fix changeTournamentsFolderFix() {
+    return make(Fix::Kind::ChangeTournamentsFolder, TR("Change the tournaments folder…"),
+                TR("Where new tournaments are written, as in Settings. Those played so far stay where they are: Open "
+                   "a folder… opens them."));
+}
+
 const Fix* drawNotice(const Notice& notice, const char* id) {
     const bool ok    = notice.level == Notice::Level::Ok;
     const bool error = notice.level == Notice::Level::Error;

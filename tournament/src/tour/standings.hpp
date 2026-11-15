@@ -143,6 +143,9 @@ enum class Order {
 // played, book. In English, like the table.
 [[nodiscard]] std::string forumDetails(const TournamentSpec& spec, const Table& table);
 
+// Points as the tables write them: "12½", "½", "3".
+[[nodiscard]] std::string pointsText(double points);
+
 // `s` with &, <, > and " as HTML entities.
 [[nodiscard]] std::string escapeHtml(const std::string& s);
 

@@ -16,8 +16,10 @@
 #include <tour/pgn_book.hpp>
 #include <tour/sprt_rules.hpp>
 #include <tour/standings.hpp>
+#include <tour/teams.hpp>
 
 #include "broadcaster.hpp"
+#include "engine_logos.hpp"
 #include "memory.hpp"
 #include "portable.hpp"
 #include "run.hpp"
@@ -168,9 +170,15 @@ class ConsoleListener final : public tour::RecordListener {
                         elo.getElo().c_str(), llr.c_str());
             return;
         }
+        const auto results = state_.results();
+        const auto table   = tour::computeTable(spec, results, std::nullopt, state_.byes());
+        // A team match: the teams' score and their engines against each other.
+        if (spec.format == tour::Format::TeamMatch) {
+            std::printf("\n%s\n", tour::teamText(tour::computeTeams(spec, results), table, spec.name).c_str());
+            return;
+        }
         // Under the table, the line of the copies: the games, the draws, the time control, the book and how its
         // openings were chosen.
-        const auto table = tour::computeTable(spec, state_.results(), std::nullopt, state_.byes());
         std::printf("\n%s\n",
                     tour::tableText(table, spec.name, tour::footerLine(spec, table, state_.totalGames())).c_str());
     }
@@ -370,7 +378,10 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
                                             : "TLCS server on UDP port %d\n",
                         settings.tlcs_port);
         }
-        if (broadcaster.web().running()) std::printf("Web page on http://localhost:%d/\n", settings.web_port);
+        if (broadcaster.web().running()) {
+            std::printf("Web page on http://localhost:%d/\n", settings.web_port);
+            broadcaster.setLogos(logos::webLogos(storage.loadEngines(), storage.logosDir()));
+        }
         if (settings.lichess) std::printf("Pushing the games to lichess\n");
         if (settings.tunnel && broadcaster.web().running()) {
             std::printf("Tunnel to %s for the web page on the internet\n", settings.tunnel_to.host.c_str());

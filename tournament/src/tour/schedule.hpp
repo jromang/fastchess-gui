@@ -32,10 +32,10 @@ class Schedule {
     // Number of encounters, nullopt for a match without a game limit.
     [[nodiscard]] std::optional<uint32_t> size() const noexcept { return size_; }
 
-    // --- edits of a round robin or a gauntlet (see edits.hpp); a match cannot be edited this way ---
+    // --- edits of a round robin, a gauntlet or a team match (see edits.hpp); a match cannot be edited this way ---
 
     [[nodiscard]] bool editable() const noexcept {
-        return format_ == Format::RoundRobin || format_ == Format::Gauntlet;
+        return format_ == Format::RoundRobin || format_ == Format::Gauntlet || format_ == Format::TeamMatch;
     }
 
     // Swiss and knockout: the schedule grows a round at a time, as rounds are paired.
@@ -83,5 +83,24 @@ class Schedule {
 
 // One cycle of a gauntlet: players 0..seeds-1 each meet every other player once, one opponent per round.
 [[nodiscard]] std::vector<std::vector<std::pair<int, int>>> gauntletRounds(int n, int seeds);
+
+// One cycle of a team match between team A's players 0..a-1 and team B's 0..b-1, pairs as (A's, B's, whether A's
+// player has White in the first game). Every player against every player of the other team (a Scheveningen
+// system): as many rounds as the larger team has players, each of the smaller team's players meeting another one
+// each round. Board by board (`boards`, a == b): one round, A's k-th player against B's k-th. The colours of the
+// first game alternate from board to board, as in a team match over the board, and for every player of a
+// Scheveningen from one opponent to the next.
+struct TeamPair {
+    int a        = 0;
+    int b        = 0;
+    bool a_white = true;
+};
+[[nodiscard]] std::vector<std::vector<TeamPair>> teamRounds(int a, int b, bool boards);
+
+// The encounters of cycle `cycle` (1-based) of a team match between the participants of ids `a` (team A) and `b`
+// (team B), in the order of teamRounds(); the colours of the first games are reversed every other cycle. Their
+// `index` is left at 0.
+[[nodiscard]] std::vector<Encounter> teamCycle(const std::vector<int>& a, const std::vector<int>& b, bool boards,
+                                               uint32_t cycle);
 
 }  // namespace fcg::tour

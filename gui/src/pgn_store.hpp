@@ -71,6 +71,11 @@ struct ReplayGame {
 
 [[nodiscard]] std::optional<ReplayGame> parseReplay(const std::string& pgn);
 
+// One game's PGN with its moves on one line (its tags as they are, its escape lines left out): chess.hpp's reader
+// loses a move's comment, and every move after it, when an end of line comes between the move and the comment, as
+// in the PGN files of programs that cut their lines anywhere.
+[[nodiscard]] std::string flattenMovetext(const std::string& pgn);
+
 // What the evaluations of a game (fastchess comment style) tell, in pawns from the engines' own scores, a mate
 // counting as 10: how far the two engines disagreed for 3 moves each in a row, the largest change of one engine's
 // evaluation between two of its moves, and the best evaluation the loser had, from its own point of view. Each
@@ -95,6 +100,11 @@ struct EvalFacts {
 
 // "{+0.35/18 1.234s, ...}" (the body without braces) into score, depth, time and nps.
 void parseFastchessComment(std::string_view comment, ReplayMove& move);
+
+// The "[%eval 0.17]" or "[%eval #-3]" of a comment (lichess, ChessBase: White's point of view, in pawns or a mate
+// in moves) into the move's score, from its mover's point of view; nothing when the comment has none. The mover must
+// be set.
+void parseEvalTag(std::string_view comment, ReplayMove& move);
 
 // Calls f(white_moved, move) for every move of a game in the fastchess comment style, from the comments alone:
 // the moves are not replayed, so it is fast enough for every game of a big tournament.

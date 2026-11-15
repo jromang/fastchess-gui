@@ -1,0 +1,181 @@
+#pragma once
+
+// The state of the Board page (view_board.cpp) and of the engine console of the Engines page
+// (view_engine_console.cpp): what they show, apart from the App that draws them.
+
+#include <array>
+#include <atomic>
+#include <filesystem>
+#include <future>
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
+
+#include <chess.hpp>
+#include <json.hpp>
+#include <types/score.hpp>
+
+#include <tour/pgn_index.hpp>
+
+#include "analysis.hpp"
+#include "board_game.hpp"
+#include "engine_client.hpp"
+#include "game_analysis.hpp"
+#include "pgn_store.hpp"
+
+namespace fcg {
+
+// The console of an engine of the library: the lines exchanged with it, typed by the user.
+struct EngineConsole {
+    std::string engine;  // the library engine, by name
+    bool raw = false;    // a WinBoard engine spoken to in its own protocol, without the adapter
+    EngineProcess process;
+    std::vector<EngineProcess::Line> log;
+    std::string input;
+    std::vector<std::string> history;
+    int history_pos = -1;  // browsing the history with Up and Down; -1: the line being typed
+    bool follow     = true;
+    bool focus      = true;  // the input line takes the keyboard on the next frame
+    bool shown      = true;  // in the engine's card, instead of its settings
+    // UCI: the library's option values are sent once the engine answers uciok.
+    std::vector<std::pair<std::string, std::string>> options;
+    bool options_due = false;
+};
+
+// The quick commands of the console, as typed: UCI's, or WinBoard's when spoken to in its own protocol.
+[[nodiscard]] const std::vector<const char*>& consoleCommands(bool winboard);
+
+// What the Board page keeps between two launches (board.json in the profile): the analysis's own settings.
+struct BoardSettings {
+    AnalysisSettings analysis;
+    bool arrows = true;  // the first move of each line drawn on the board
+    // The analysis of a whole game: the time of each position, or its depth when set.
+    int review_ms    = 1000;
+    int review_depth = 0;
+    // A game played from the board: the two engines, their clocks, and a second game with the colours reversed.
+    std::string game_first, game_second;
+    GameClock first_clock, second_clock;
+    bool same_clock = true;
+    bool game_pair  = false;
+};
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BoardSettings, analysis, arrows, review_ms, review_depth, game_first,
+                                                game_second, first_clock, second_clock, same_clock, game_pair)
+
+// A game being analysed move by move, in the background: its positions searched one after the other.
+struct ReviewJob {
+    ReplayGame game;
+    bool chess960 = false;
+    std::vector<AnalysisPosition> positions;  // from the start, one per ply and the last
+    GameReview review;                        // filled as they are searched
+    SearchLimit limit;
+    bool asked = false;  // the search of the next position was asked
+};
+
+// The position after the first `ply` moves of `game` (its start position for 0). The moves were checked when the game
+// was read or played.
+[[nodiscard]] chess::Board boardAt(const ReplayGame& game, bool chess960, int ply);
+
+// The same, for the analysis engine: the start position and the moves to it.
+[[nodiscard]] AnalysisPosition analysisPosition(const ReplayGame& game, bool chess960, int ply);
+
+// A score from the side to move's point of view, from White's.
+[[nodiscard]] fastchess::Score whiteScore(const fastchess::Score& score, chess::Color side_to_move);
+
+// Plays `move` on the game after its first `ply` moves: the game's next move when it is that one, otherwise the moves
+// after `ply` give way to it. Returns the new ply.
+int playOnGame(ReplayGame& game, bool chess960, int ply, chess::Move move);
+
+// The legal moves of the piece on `from`, the target squares as the board shows them (castling on the king's square).
+[[nodiscard]] std::vector<chess::Move> movesFrom(const chess::Board& board, chess::Square from);
+
+// The square a move goes to on the board: castling, stored as the king taking its rook, goes to the king's square.
+[[nodiscard]] chess::Square shownTarget(const chess::Move& move);
+
+// A PGN of several games, opened or pasted: its games listed, filtered by their tags, one shown at a time.
+struct PgnSource {
+    std::string name;                         // the file's, or "clipboard"
+    std::filesystem::path file;               // empty for a pasted text
+    std::shared_ptr<const std::string> text;  // the pasted text
+    std::shared_ptr<const tour::PgnIndex> index;
+    std::string filter;
+    std::vector<uint32_t> shown;  // the games the filter keeps
+    bool filter_dirty = true;
+    int selected      = -1;  // the game on the board
+};
+
+// The text of one game of a source.
+[[nodiscard]] std::optional<std::string> pgnSourceGame(const PgnSource& source, std::size_t game);
+
+// A PGN file being read in the background.
+struct PgnReading {
+    std::filesystem::path file;
+    uint64_t size = 0;
+    std::future<tour::PgnIndex> result;
+    std::shared_ptr<std::atomic<bool>> cancel;
+    std::shared_ptr<std::atomic<uint64_t>> done;
+};
+
+// The position editor: a placement of pieces, any while it is edited, and the rest of a FEN.
+struct PositionEditor {
+    std::array<chess::Piece, 64> squares{};  // a1 = 0 ... h8 = 63
+    chess::Color stm   = chess::Color::WHITE;
+    bool castle[4]     = {true, true, true, true};  // K Q k q
+    int ep_file        = -1;                        // the en passant square's file, -1 none
+    int fullmove       = 1;
+    bool chess960      = false;
+    chess::Piece brush = chess::Piece(chess::PieceType::QUEEN, chess::Color::WHITE);
+    bool erase         = false;
+    std::string fen_text;  // as typed in its field
+};
+
+// The editor's position as a FEN: the castling rights its kings and rooks allow, the en passant square only when a
+// pawn just moved two squares there.
+[[nodiscard]] std::string editorFen(const PositionEditor& editor);
+// The editor set to a FEN's position; false (unchanged) when the board cannot read it.
+bool editorLoad(PositionEditor& editor, const std::string& fen);
+// Whether the castling right (0 K, 1 Q, 2 k, 3 q) is possible: the king, and a rook on that side, on their first
+// rank (where they start in Chess960; on e1 and h1 or a1 otherwise).
+[[nodiscard]] bool editorCanCastle(const PositionEditor& editor, int right);
+
+// The game and the position of the Board page, and its analysis.
+struct BoardPage {
+    ReplayGame game;
+    bool chess960 = false;
+    std::string title;  // what the game is ("Alpha – Charlie · Round robin · round 12"), empty for the user's
+    std::optional<ReplayGame> original;  // the game as it came, before moves were played over it
+    int ply      = 0;                    // moves played on the board
+    int followed = -1;                   // the ply the move list was last scrolled to
+    bool flip    = false;
+    std::optional<chess::Square> selected;  // a piece picked up
+    std::optional<chess::Move> promotion;   // a pawn's move waiting for the piece it becomes
+    std::string message;                    // what the last paste or file gave, or why it gave nothing
+    bool message_error = false;
+
+    BoardSettings settings;
+    bool settings_loaded = false;
+    Analyser analyser;
+    bool analysing = false;  // asked for: the analysis follows the board while the page is shown
+    bool new_game  = true;   // another game came: the engine gets ucinewgame
+
+    std::optional<PgnSource> pgn;          // the games of a file or a paste
+    std::optional<PgnReading> reading;     // a file being read
+    std::optional<PositionEditor> editor;  // the position being set up
+    int game_tab = 0;                      // the game card: 0 its moves, 1 the games of the file
+    int open_tab = -1;                     // a tab to select on the next frame
+
+    std::optional<ReviewJob> review_job;  // a game analysed move by move
+    std::optional<GameReview> review;     // the analysis of the game shown, when it has one
+    std::string review_key;               // the game it is of (reviewKey)
+    std::vector<MoveReview> judged;       // its moves judged, for the game shown
+
+    // Games played from the board's position between two engines.
+    bool play_open   = false;  // their settings shown
+    bool play_anyway = false;  // asked to play on a machine the tournament and the analysis fill
+    std::unique_ptr<BoardMatch> match;
+    BoardMatch::State match_state;
+    uint64_t match_version = 0;
+    bool watching          = false;  // the board shows the game being played
+};
+
+}  // namespace fcg

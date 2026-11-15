@@ -94,6 +94,9 @@ struct EngineEntry {
     // Kept in the library, but out of the engine pickers and of the checks of the whole library. A tournament that
     // has it already plays it as before.
     bool inactive = false;
+    // Its logo: a file name in the profile's logos folder (Storage::logosDir), a copy of the picture chosen, so that
+    // the original can move and the profile be moved whole. Saved only when set.
+    std::string logo;
 
     // Last health check: -1 never, 0 failed, 1 passed.
     int check_ok = -1;
@@ -154,6 +157,7 @@ void to_json(BasicJsonType& nlohmann_json_j, const EngineEntry& nlohmann_json_t)
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_ENGINE_ENTRY_FIELDS))
     if (nlohmann_json_t.start_timeout > 0) nlohmann_json_j["start_timeout"] = nlohmann_json_t.start_timeout;
     if (!nlohmann_json_t.aliases.empty()) nlohmann_json_j["aliases"] = nlohmann_json_t.aliases;
+    if (!nlohmann_json_t.logo.empty()) nlohmann_json_j["logo"] = nlohmann_json_t.logo;
     if (nlohmann_json_t.read_from.size > 0) nlohmann_json_j["read_from"] = nlohmann_json_t.read_from;
     if (nlohmann_json_t.changes) nlohmann_json_j["changes"] = *nlohmann_json_t.changes;
 }
@@ -164,6 +168,7 @@ void from_json(const BasicJsonType& nlohmann_json_j, EngineEntry& nlohmann_json_
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_ENGINE_ENTRY_FIELDS))
     NLOHMANN_JSON_FROM_WITH_DEFAULT(start_timeout)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(aliases)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(logo)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(read_from)
     if (const auto it = nlohmann_json_j.find("changes"); it != nlohmann_json_j.end() && it->is_object())
         nlohmann_json_t.changes = it->template get<ProgramChanges>();
@@ -187,7 +192,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BookEntry, name, path, descripti
                                                 chess960)
 
 enum class MatchMode { Fixed = 0, Infinite = 1, Sprt = 2 };
-enum class TournamentFormat { Match = 0, RoundRobin = 1, Gauntlet = 2, Swiss = 3, Knockout = 4 };
+enum class TournamentFormat { Match = 0, RoundRobin = 1, Gauntlet = 2, Swiss = 3, Knockout = 4, TeamMatch = 5 };
 
 // A participant's own opening book: a Polyglot book of the library, which plays for the engine while the game is
 // in it (see tour/book_adapter.hpp). The tournament's openings, if any, come first.
@@ -209,8 +214,12 @@ struct ParticipantSetup {
     uint64_t nodes   = 0;    // fixed nodes: 0 = the common value
     int depth        = 0;    // fixed depth: 0 = the common value
     OwnBook book     = {};
+    // A team match: 1 team A, 2 team B, 0 not chosen (see setupTeams(): the upper half of the list against the lower
+    // half, or the smaller team when some were chosen).
+    int team = 0;
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ParticipantSetup, name, hash, threads, time_percent, nodes, depth, book)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ParticipantSetup, name, hash, threads, time_percent, nodes, depth, book,
+                                                team)
 enum class LimitKind { Time = 0, Nodes = 1, MoveTime = 2, Depth = 3 };
 // A node count or a depth: the same moves however fast the machine, so no clock to share fairly.
 inline bool clockFree(LimitKind limit) { return limit == LimitKind::Nodes || limit == LimitKind::Depth; }
@@ -237,6 +246,11 @@ struct MatchSetup {
     // pairs per match.
     int cycles         = 1;
     int seeds          = 1;  // gauntlet: the first `seeds` participants play all the others
+    // Team match: board by board rather than every engine of a team against every engine of the other; the teams'
+    // names, empty for "Team A" and "Team B".
+    bool team_boards = false;
+    std::string team_a;
+    std::string team_b;
     int common_hash    = 0;  // MB, forced on every participant unless overridden; 0 = each engine's own
     int common_threads = 0;
     // Forced on the engines that have the option: SyzygyPath = tb_paths, OwnBook = false.
@@ -407,6 +421,9 @@ void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) 
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_MATCH_SETUP_FIELDS_1))
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_TO, FCG_MATCH_SETUP_FIELDS_2))
     if (!nlohmann_json_t.profiles.empty()) nlohmann_json_j["profiles"] = nlohmann_json_t.profiles;
+    NLOHMANN_JSON_TO(team_boards)
+    NLOHMANN_JSON_TO(team_a)
+    NLOHMANN_JSON_TO(team_b)
 }
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
@@ -415,6 +432,9 @@ void from_json(const BasicJsonType& nlohmann_json_j, MatchSetup& nlohmann_json_t
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_MATCH_SETUP_FIELDS_1))
     NLOHMANN_JSON_EXPAND(NLOHMANN_JSON_PASTE(NLOHMANN_JSON_FROM_WITH_DEFAULT, FCG_MATCH_SETUP_FIELDS_2))
     NLOHMANN_JSON_FROM_WITH_DEFAULT(profiles)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(team_boards)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(team_a)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(team_b)
 }
 #undef FCG_MATCH_SETUP_FIELDS_1
 #undef FCG_MATCH_SETUP_FIELDS_2

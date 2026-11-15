@@ -112,6 +112,9 @@ class Broadcaster {
     // Stops everything, once the last update is published and the last push to lichess made (headless mode).
     void stop();
 
+    // The engines' logos for the web page (engineWebLogos), until other ones are given.
+    void setLogos(const std::vector<WebLogo>& logos);
+
     [[nodiscard]] const TlcsServer& tlcs() const noexcept { return tlcs_; }
     [[nodiscard]] const WebServer& web() const noexcept { return web_; }
     [[nodiscard]] const std::string& tlcsError() const noexcept { return tlcs_error_; }
@@ -150,6 +153,7 @@ class Broadcaster {
     std::optional<Job> job_;  // the latest update not published yet
     BroadcastSettings next_settings_;
     std::string files_error_, files_when_, files_dir_;  // the last writing of the files
+    std::map<std::string, std::string> logo_paths_;     // the web page's logos, by engine
     // Started and stopped by the thread, mutex_ held.
     LichessRelay lichess_;
 

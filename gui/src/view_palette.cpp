@@ -10,9 +10,11 @@
 #include <fmt/include/fmt/format.h>
 
 #include "app.hpp"
+#include "board_text.hpp"
 #include "i18n.hpp"
 #include "layout.hpp"
 #include "palette.hpp"
+#include "participants.hpp"
 #include "setup_checks.hpp"
 #include "ui.hpp"
 
@@ -33,7 +35,7 @@ std::string shown(const char* label) {
 guide::Section App::guideSection() const {
     switch (page_) {
         case Page::Home:
-            return guide::Section::Running;
+            return guide::Section::Home;
         case Page::NewMatch:
             return guide::Section::NewTournament;
         case Page::Tournament:
@@ -45,6 +47,8 @@ guide::Section App::guideSection() const {
             return guide::Section::Engines;
         case Page::Books:
             return guide::Section::Books;
+        case Page::Board:
+            return guide::Section::Board;
         case Page::Suites:
             return guide::Section::TestSuites;
         case Page::Ratings:
@@ -81,10 +85,27 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         if (unfinished_) add(TR("Resume"), unfinished_->spec.name, [this] { resumeRun(); });
         if (!queue_.empty()) add(TR("Start now"), queue_.front().label, [this] { startFromQueue(); });
     }
+    // Pause all and Resume all, as the home page offers them.
+    if (allPaused()) {
+        add(TR("Resume all"), TR("Tournaments"), [this] { resumeAll(); });
+    } else if (canPauseAll()) {
+        add(TR("Pause all"), TR("Tournaments"), [this] { pauseAll(); });
+    }
+    // The last matches finished, relaunched with another engine A from their row of the home page.
+    {
+        const auto busy = run_.running() && t ? t->dir() : std::filesystem::path();
+        for (const auto* s : home::lastFinished(tournaments_, home::LAST_FINISHED, busy)) {
+            if (s->spec.format != tour::Format::Match || s->spec.participants.size() < 2) continue;
+            add(trf("Relaunch {} with…", s->spec.name), TR("Last finished"), [this, dir = s->dir] {
+                page_             = Page::Home;
+                relaunch_request_ = dir;
+            });
+        }
+    }
     // The engines that cannot start, as their card offers.
     if (t) {
-        const bool editable =
-            t->spec().format == tour::Format::RoundRobin || t->spec().format == tour::Format::Gauntlet;
+        const bool editable = t->spec().format == tour::Format::RoundRobin ||
+                              t->spec().format == tour::Format::Gauntlet || t->spec().format == tour::Format::TeamMatch;
         for (const auto& e : t->startFailures().engines()) {
             const auto* p = t->spec().participant(e.participant);
             if (!p || !p->active) continue;
@@ -212,6 +233,12 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     }
     if (!resumed_programs_.empty() && run_.running())
         add(TR("Continue with the changed programs"), name, [this] { resumed_programs_.clear(); });
+    // The console of the engine shown, or the one open.
+    if (page_ == Page::Engines && selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size())) {
+        add(TR("Console…"), engines_[static_cast<std::size_t>(selected_engine_)].name,
+            [this] { openEngineConsole(selected_engine_); });
+    }
+    if (engine_console_) add(TR("Close the console"), engine_console_->engine, [this] { closeEngineConsole(); });
 
     // Pages, the panels of the tournament open, and the tabs of the ratings.
     const auto page = [this](Page p) {
@@ -244,6 +271,28 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         for (const auto section : SETUP_SECTIONS) row(sectionTitle(section), static_cast<SetupRow>(section));
         row(TR("Concurrency"), RowConcurrency);
         row(TR("PGN and misc"), RowPgn);
+        // A team match: the participants selected to a team, or the halves of the list again.
+        if (setup_.format == TournamentFormat::TeamMatch && !setup_.participants.empty()) {
+            std::vector<int> picked;
+            for (int i = 0; i < static_cast<int>(setup_.participants.size()); ++i) {
+                if (participants_selected_.Contains(static_cast<ImGuiID>(i))) picked.push_back(i);
+            }
+            for (int team = 0; team < 2 && !picked.empty(); ++team) {
+                add(team == 0 ? TR("Put the participants selected in team A.")
+                              : TR("Put the participants selected in team B."),
+                    TR("Team match"), [this, picked, team] {
+                        page_ = Page::NewMatch;
+                        setTeam(setup_, picked, team);
+                        saveSetupSoon();
+                    });
+            }
+            add(TR("The teams made again from the list: its upper half against its lower half."), TR("Team match"),
+                [this] {
+                    page_ = Page::NewMatch;
+                    splitTeams(setup_);
+                    saveSetupSoon();
+                });
+        }
         add(TR("Save the setup as a template…"), TR("New tournament"), [this] {
             page_               = Page::NewMatch;
             open_save_template_ = true;
@@ -302,6 +351,47 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         add(TR("Cancel the Polyglot book being built"), std::filesystem::path(book_build_.bin()).filename().string(),
             [this] { book_build_.cancel(); });
     }
+    add(TR("Board"), "", page(Page::Board));
+    add(board_.analysing ? TR("Stop the analysis") : TR("Analyse"), TR("Board"), [this] {
+        page_ = Page::Board;
+        setBoardAnalysis(!board_.analysing);
+    });
+    add(TR("Copy FEN"), TR("Board"), [this] { ImGui::SetClipboardText(boardFen().c_str()); });
+    add(TR("Open a PGN…"), TR("Board"), [this] {
+        page_ = Page::Board;
+        dialogs_.openFile(Dialogs::Purpose::BoardPgn, {{"PGN", "pgn"}}, storage_.runsDir().string());
+    });
+    add(TR("Paste"), TR("Board"), [this] {
+        page_ = Page::Board;
+        pasteOnBoard();
+    });
+    add(TR("Edit the position"), TR("Board"), [this] {
+        page_ = Page::Board;
+        openPositionEditor();
+    });
+    if (board_.match && board_.match_state.running) {
+        add(TR("Stop the game"), TR("Board"), [this] { board_.match->stop(); });
+    } else {
+        add(TR("Play a game…"), TR("Board"), [this] {
+            page_            = Page::Board;
+            board_.play_open = true;
+        });
+    }
+    if (board_.review_job) {
+        add(TR("Cancel the analysis of the game"), TR("Board"), [this] { cancelGameReview(); });
+    } else if (!board_.game.moves.empty()) {
+        add(TR("Analyse the game"), TR("Board"), [this] {
+            page_ = Page::Board;
+            startGameReview();
+        });
+    }
+    add(TR("Copy PGN"), TR("Board"),
+        [this] { ImGui::SetClipboardText(gamePgn(board_.game, board_.chess960).c_str()); });
+    if (live_slot_ >= 0 && live_slot_ < static_cast<int>(slot_views_.size()) &&
+        slot_views_[static_cast<std::size_t>(live_slot_)].state.has_game) {
+        add(TR("Analyse the game followed"), name, [this] { analyseLiveGame(live_slot_); });
+    }
+    if (replay_) add(TR("Analyse the game shown"), name, [this] { analyseReplay(); });
     add(TR("Test suites"), "", page(Page::Suites));
     add(TR("Ratings"), "", page(Page::Ratings));
     const auto ratings_tab = [&](const char* label, int index) {
@@ -319,11 +409,50 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     add(TR("Copy the version"), TR("Settings"), [this] { copyVersion(); });
     add(TR("Report a problem…"), TR("Settings"), [this] { reportProblem(); });
     add(TR("Open the profile folder"), TR("Settings"), [this] { ui::openPath(storage_.root()); });
+    add(TR("Open the tournaments folder"), TR("Settings"), [this] { ui::openPath(storage_.runsDir()); });
+    add(TR("Change the tournaments folder…"), TR("Settings"), [this] { applyFix(changeTournamentsFolderFix()); });
     if (const auto* release = update::notice(updates_, FCG_VERSION)) {
         add(trf("Download page of fastchess-gui {}", release->version), TR("Settings"),
             [url = release->url] { SDL_OpenURL(url.c_str()); });
     }
     add(TR("Software rendering"), TR("Settings"), page(Page::Settings));  // the checkbox and what draws the window
+    // Appearance: its section of Settings, then its choices made at once (the board of the theme in use).
+    add(TR("Appearance: board colours, pieces, move sounds"), TR("Settings"), [this, go = page(Page::Settings)] {
+        go();
+        scroll_to_appearance_ = true;
+    });
+    for (const auto& p : appearance::boardPresets()) {
+        add(trf("Board colours: {}", TR(p.name)), TR("Settings"), [this, &p] {
+            auto s       = appearance::current();
+            auto& board  = s.board(ui::currentTheme());
+            board.preset = p.id;
+            board.custom = p.colours;
+            applyAppearance(s);
+        });
+    }
+    for (const auto& p : appearance::pieceSets()) {
+        add(trf("Pieces: {}", p.name), TR("Settings"), [this, id = p.id] {
+            auto s   = appearance::current();
+            s.pieces = id;
+            applyAppearance(s);
+        });
+    }
+    add(TR("Pieces: your own folder…"), TR("Settings"),
+        [this] { dialogs_.openFolder(Dialogs::Purpose::PieceFolder, appearance::current().piece_folder); });
+    add(appearance::current().sounds ? TR("Turn the move sounds off") : TR("Turn the move sounds on"), TR("Settings"),
+        [this] {
+            auto s   = appearance::current();
+            s.sounds = !s.sounds;
+            applyAppearance(s);
+        });
+    // The logo of the engine whose card is open.
+    if (page_ == Page::Engines && selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size())) {
+        add(trf("Choose a logo for {}…", engines_[static_cast<std::size_t>(selected_engine_)].name), TR("Engines"),
+            [this] {
+                dialogs_.openFile(Dialogs::Purpose::EngineLogo,
+                                  {{TR("Pictures (PNG, JPEG, SVG)"), "png;jpg;jpeg;svg"}, {TR("All files"), "*"}});
+            });
+    }
 
     // The tournaments of the home page: one opens as its Open button does.
     for (const auto& s : tournaments_) {

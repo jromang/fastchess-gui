@@ -6,10 +6,7 @@
 #include <fstream>
 #include <string>
 
-// stb_image's inflater, only to read back what the zip writer deflated.
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_PNG
-#define STBI_NO_STDIO
+// stb_image's inflater (compiled in engine_logos.cpp), only to read back what the zip writer deflated.
 #include <stb_image.h>
 
 #include "zip.hpp"

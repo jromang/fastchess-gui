@@ -15,6 +15,12 @@
 //
 // With FCG_MOCK_SEARCH=1 it writes two info lines as a search would, with a seldepth, nodes, nps, a time and a PV of
 // two moves, the first line on another move: every chart of the Games tab has something to draw.
+//
+// With FCG_MOCK_ANALYSIS=1 it also has the options Threads, MultiPV and UCI_ShowWDL, and searches as an analysis
+// engine does: "go infinite" writes info lines for depths 1 to 8, one per MultiPV line (the first legal moves in
+// order, the best first), with a WDL when asked, and gives its move only at "stop"; "go movetime" and "go depth" do
+// the same, then give it at once. Its score is the material of the side to move, minus its opponent's, and half
+// of the best piece it can take.
 
 #include <chrono>
 #include <cstdlib>
@@ -26,6 +32,12 @@
 using namespace chess;
 
 std::mt19937 gen;
+
+bool analysis_mode() { return std::getenv("FCG_MOCK_ANALYSIS") != nullptr; }
+int multipv     = 1;
+bool show_wdl   = false;
+bool searching  = false;  // an infinite search, waiting for "stop"
+Move infinite_best;
 
 void initialize_rng(int argc, char *argv[]) {
     if (argc > 1) {
@@ -92,6 +104,11 @@ void uci_line(Board &board, const std::string &line) {
         std::cout << "id name random_move" << std::endl;
         std::cout << "id author fastchess" << std::endl;
         std::cout << "option name Hash type spin default 16 min 1 max 33554432" << std::endl;
+        if (analysis_mode()) {
+            std::cout << "option name Threads type spin default 1 min 1 max 1024" << std::endl;
+            std::cout << "option name MultiPV type spin default 1 min 1 max 256" << std::endl;
+            std::cout << "option name UCI_ShowWDL type check default false" << std::endl;
+        }
         if (const char *slow = std::getenv("FCG_MOCK_SLOW_UCIOK"))
             std::this_thread::sleep_for(std::chrono::milliseconds(std::atoi(slow)));
         std::cout << "uciok" << std::endl;
@@ -101,6 +118,63 @@ void uci_line(Board &board, const std::string &line) {
         std::cout << "readyok" << std::endl;
     } else if (tokens[0] == "ucinewgame") {
         board = Board();
+    } else if (tokens[0] == "setoption" && tokens.size() >= 5 && tokens[1] == "name") {
+        if (tokens[2] == "MultiPV") multipv = std::max(1, std::atoi(std::string(tokens[4]).c_str()));
+        if (tokens[2] == "UCI_ShowWDL") show_wdl = tokens[4] == "true";
+    } else if (tokens[0] == "stop") {
+        if (searching) {
+            searching = false;
+            std::cout << "bestmove " << uci::moveToUci(infinite_best) << std::endl;
+        }
+    } else if (tokens[0] == "go" && analysis_mode() && tokens.size() > 1 &&
+               (tokens[1] == "infinite" || tokens[1] == "movetime" || tokens[1] == "depth")) {
+        auto moves = Movelist();
+        movegen::legalmoves(moves, board);
+        if (moves.empty()) {
+            std::cout << "info depth 0 score " << (board.inCheck() ? "mate 0" : "cp 0") << std::endl;
+            std::cout << "bestmove (none)" << std::endl;
+            return;
+        }
+        const int lines = std::min<int>(multipv, moves.size());
+        // The material of the side to move, minus its opponent's, in centipawns: a game's captures swing it.
+        int material = 0;
+        for (const auto [type, value] : {std::pair{PieceType::PAWN, 100}, std::pair{PieceType::KNIGHT, 300},
+                                         std::pair{PieceType::BISHOP, 300}, std::pair{PieceType::ROOK, 500},
+                                         std::pair{PieceType::QUEEN, 900}}) {
+            material += value * (board.pieces(type, board.sideToMove()).count() -
+                                 board.pieces(type, ~board.sideToMove()).count());
+        }
+        // And half of the best piece it can take: a piece left hanging shows.
+        int best_take = 0;
+        for (const auto &m : moves) {
+            const auto victim = board.at(m.to());
+            if (victim == Piece::NONE || victim.color() == board.sideToMove()) continue;
+            static const int values[] = {100, 300, 300, 500, 900, 0};
+            best_take = std::max(best_take, values[static_cast<int>(victim.type())]);
+        }
+        material += best_take / 2;
+        for (int depth = 1; depth <= 8; ++depth) {
+            for (int i = 0; i < lines; ++i) {
+                Board after = board;
+                after.makeMove(moves[i]);
+                auto replies = Movelist();
+                movegen::legalmoves(replies, after);
+                std::cout << "info depth " << depth << " seldepth " << depth + 2 << " multipv " << i + 1
+                          << " score cp " << material + 40 - 15 * i + depth;
+                if (show_wdl) std::cout << " wdl " << 300 - 20 * i << " 600 " << 100 + 20 * i;
+                std::cout << " nodes " << 1000 * depth << " nps 500000 time " << 2 * depth << " pv "
+                          << uci::moveToUci(moves[i]);
+                if (!replies.empty()) std::cout << " " << uci::moveToUci(replies[0]);
+                std::cout << "\n";
+            }
+        }
+        std::cout << std::flush;
+        infinite_best = moves[0];
+        if (tokens[1] == "infinite") {
+            searching = true;
+            return;
+        }
+        std::cout << "bestmove " << uci::moveToUci(infinite_best) << std::endl;
     } else if (tokens[0] == "go") {
         if (const char *crash = std::getenv("FCG_MOCK_STDERR_CRASH")) {
             std::cout << "info string crashing" << std::endl;

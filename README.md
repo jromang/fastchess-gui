@@ -9,8 +9,8 @@
 A desktop front end for [fastchess](https://github.com/Disservin/fastchess), the chess engine tournament
 manager. Two jobs: measuring whether a new version of an engine is stronger than the last one (pick two engines,
 start an SPRT, follow Elo and LLR as results come in), and running engine tournaments (round robin, gauntlet,
-Swiss, knockout) that resume exactly after any interruption, can be changed while they run and can be broadcast
-live.
+Swiss, knockout, team match) that resume exactly after any interruption, can be changed while they run and can
+be broadcast live.
 
 ![A round robin in progress](docs/screenshots/live.png)
 
@@ -21,7 +21,8 @@ this repository still builds unchanged.
 ## Features
 
 - **Tournaments**: round robin (Berger tables, any number of cycles), gauntlet, Swiss (paired as results come, no
-  rematch, byes) and knockout (seeded bracket, tiebreak pairs), with per engine Hash, Threads, nodes and time
+  rematch, byes), knockout (seeded bracket, tiebreak pairs) and team match (two teams of engines, everyone against
+  everyone or board by board, scored by team and by engine), with per engine Hash, Threads, nodes and time
   odds. Standings with ratings and confidence intervals, Sonneborn-Berger or Buchholz, a crosstable, export as
   text or HTML.
 - **Exact resume**: every tournament is a folder with an append-only journal; after a crash, a closed window or
@@ -29,6 +30,9 @@ this repository still builds unchanged.
 - **Unattended nights**: an engine that cannot start has its games set aside while the others go on; it is tried
   again every 5 minutes and its games come back once it starts. The home page says which engine and why, with its
   engine log, *Try again*, *Withdraw…* and *Replace…*.
+- **A control room**: the home page shows what runs first (the cores in use, the running tournament's progress, end
+  and leader or LLR), what needs action with its fix (an engine that cannot start, a tournament an error stopped, a
+  drive too full), the queue and when it all ends, the last results with *Relaunch with…*, and *Pause all*.
 - **Changes while running**: add, withdraw or replace an engine, change the number of cycles, play games again,
   void them or set their result by hand (a game in progress too), with the impact shown first and an undo. No
   played game is lost.
@@ -69,7 +73,12 @@ this repository still builds unchanged.
   default are sent. A health check, groups, a reference Elo, and the import of ChessGUI, cutechess, Banksia and
   Arena engine lists. A rebuilt program is noticed, with what its new build changed (name, option defaults,
   options new and gone) and the choice to keep your values. WinBoard engines too, through a translation to UCI
-  built in.
+  built in. A console to type commands to an engine and read its answers.
+- **Board**: any position analysed by an engine of the library, with several lines drawn as arrows; A on any board
+  (a live game, a finished one, an opening) opens it there. Any PGN file opened, its games filtered by their tags and
+  replayed with their evaluations (`%eval` or cutechess comments); a FEN, a PGN or a list of moves pasted; a
+  position editor. A finished game analysed move by move, its inaccuracies, mistakes and blunders marked. A game (or
+  a pair) between two engines from any position, with a clock for each, played beside a running tournament.
 - **Opening books**: EPD, PGN or Polyglot, in a library; each book checked for illegal, duplicate, mirrored and
   finished positions, browsed on a board, and cleaned. A Chess324 book of start positions written by the program,
   and Polyglot books built from PGN files (depth, minimum games, weights by score or count, a rating filter). A
@@ -83,6 +92,9 @@ this repository still builds unchanged.
   adjudication, crash recovery, a desktop notification when a match ends.
 - Light and dark themes; English, French, German, Spanish, Italian, Portuguese (Brazil), Russian or Chinese
   (simplified), following the system (can be changed in the settings).
+- **Appearance**: board colours (presets or your own, for each theme), four piece sets or a folder of your own SVG
+  pieces, move sounds for the game followed (off by default), and a logo per engine, shown in the live view, on the
+  big screen and on the broadcast web page.
 
 | Standings, ratings and latest results | Games and replay |
 |---|---|
@@ -142,9 +154,9 @@ make -C app tests && ./app/fastchess-tests     # upstream fastchess tests, run f
 1. **Engines**: *Add…* a UCI executable, or *Import…* the engine list of another program. Options are read
    automatically. *Duplicate* gives the same binary with other options (`Hash`, `Threads`, a skill level…).
 2. **Tournaments → New tournament**: a profile for the format (a two-engine match, round robin, gauntlet, Swiss,
-   knockout), the time control, the openings, the adjudication and the engine settings, each changed in place
-   with ✎; then the engines, double-clicked in the library beside the participants. For a match, engine A is the one
-   being tested (statistics are from its point of view) and engine B the baseline.
+   knockout, team match), the time control, the openings, the adjudication and the engine settings, each changed in
+   place with ✎; then the engines, double-clicked in the library beside the participants. For a match, engine A is
+   the one being tested (statistics are from its point of view) and engine B the baseline.
 3. **Start**, or *Add to the queue*.
 
 Everything is stored in the profile folder (`~/.local/share/fastchess/fastchess-gui/` on Linux,

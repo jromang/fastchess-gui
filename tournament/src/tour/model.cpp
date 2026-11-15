@@ -19,6 +19,7 @@ void to_json(nlohmann::json& j, const Participant& p) {
         j["book"] = p.book;
         if (p.book_depth > 0) j["book_depth"] = p.book_depth;
     }
+    if (p.team != 0) j["team"] = p.team;
 }
 
 void from_json(const nlohmann::json& j, Participant& p) {
@@ -30,6 +31,7 @@ void from_json(const nlohmann::json& j, Participant& p) {
     p.elo        = j.value("elo", 0);
     p.book       = j.value("book", std::string());
     p.book_depth = j.value("book_depth", 0);
+    p.team       = j.value("team", 0) == 1 ? 1 : 0;
 }
 
 FileFingerprint fingerprint(const std::string& file) {
@@ -87,10 +89,14 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
     // they refuse such a folder instead.
     // Version 3: a participant with an opening book of its own. Versions up to 0.5.3 would ignore the book and play
     // the engine alone, "SF (A)" against "SF (B)" the same engine, so they refuse such a folder too.
+    // Version 4: a team match. Versions up to 0.5.9 would take its format for a match's, and refuse its participants
+    // without saying why.
     const bool named = s.pgnFile() != "games.pgn" || s.chessbasePgnFile() != "games-chessbase.pgn";
     const bool own_books =
         std::any_of(s.participants.begin(), s.participants.end(), [](const Participant& p) { return !p.book.empty(); });
-    j = {{"version", std::max({s.version, named ? 2 : 1, own_books ? 3 : 1})},
+    const bool teams = s.format == Format::TeamMatch;
+
+    j = {{"version", std::max({s.version, named ? 2 : 1, own_books ? 3 : 1, teams ? 4 : 1})},
          {"name", s.name},
          {"format", s.format},
          {"cycles", s.cycles},
@@ -100,6 +106,10 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
          {"conditions", s.conditions},
          {"participants", s.participants},
          {"book", s.book}};
+    if (teams) {
+        j["team_boards"] = s.team_boards;
+        j["team_names"]  = s.team_names;
+    }
     if (!s.polyglot_book.empty()) {
         j["polyglot_book"]  = s.polyglot_book;
         j["polyglot_plies"] = s.polyglot_plies;
@@ -127,14 +137,21 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
 
 void from_json(const nlohmann::json& j, TournamentSpec& s) {
     s.version = j.value("version", 1);
-    if (s.version > 3) throw std::runtime_error("this tournament was written by a newer version of fastchess-gui");
+    if (s.version > 4) throw std::runtime_error("this tournament was written by a newer version of fastchess-gui");
 
-    s.name      = j.value("name", std::string{});
-    s.format    = j.value("format", Format::Match);
-    s.cycles    = j.value("cycles", 1);
-    s.seeds     = j.value("seeds", 1);
-    s.max_games = j.value("max_games", uint64_t{0});
-    s.rounds    = j.value("rounds", 0);
+    s.name        = j.value("name", std::string{});
+    s.format      = j.value("format", Format::Match);
+    s.cycles      = j.value("cycles", 1);
+    s.seeds       = j.value("seeds", 1);
+    s.max_games   = j.value("max_games", uint64_t{0});
+    s.rounds      = j.value("rounds", 0);
+    s.team_boards = j.value("team_boards", false);
+    s.team_names  = {};
+    if (const auto it = j.find("team_names"); it != j.end() && it->is_array()) {
+        for (std::size_t i = 0; i < s.team_names.size() && i < it->size(); ++i) {
+            if ((*it)[i].is_string()) s.team_names[i] = (*it)[i].get<std::string>();
+        }
+    }
     j.at("conditions").get_to(s.conditions);
     j.at("participants").get_to(s.participants);
     if (j.contains("book")) j.at("book").get_to(s.book);
@@ -169,6 +186,20 @@ void from_json(const nlohmann::json& j, TournamentSpec& s) {
     }
     if (asciiLower(s.pgnFile()) == asciiLower(s.chessbasePgnFile()))
         throw std::runtime_error("the two PGN files have the same name \"" + s.pgnFile() + "\"");
+}
+
+std::string TournamentSpec::teamName(int team) const {
+    const auto& name = team_names[team == 1 ? 1 : 0];
+    if (!name.empty()) return name;
+    return team == 1 ? "Team B" : "Team A";
+}
+
+std::vector<int> TournamentSpec::teamMembers(int team, bool active_only) const {
+    std::vector<int> ids;
+    for (const auto& p : participants) {
+        if (p.team == team && (p.active || !active_only)) ids.push_back(p.id);
+    }
+    return ids;
 }
 
 std::string fileStemOf(const std::string& name) {
