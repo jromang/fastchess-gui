@@ -6485,6 +6485,9 @@ msgstr "{} · {} / {} 局 · {} 局进行中"
 msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
 msgstr "{} · {} / {} 局 · {} 局进行中 · {:.0f} 局/小时 · {}"
 
+msgid "{} · {} / {} games · {} playing · {}"
+msgstr "{} · {} / {} 局 · {} 局进行中 · {}"
+
 msgid "{} · {} cores, {} for tournaments"
 msgstr "{} · {} 个核心，{} 用于比赛"
 

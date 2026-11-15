@@ -497,9 +497,13 @@ std::string App::runStatusText() const {
     const auto elapsed = std::chrono::duration<double>(Clock::now() - info.started).count();
     const auto rate    = games_per_hour_;  // refreshed once per second in pollRun()
 
-    std::string text = trf("{} · {} / {} games · {} playing · {:.0f} games/h · {}", state, played,
-                           info.total_games ? fmt::format("{}", info.total_games) : std::string("∞"),
-                           run_->runningGames(), rate, ui::formatDuration(elapsed));
+    const auto total_text = info.total_games ? fmt::format("{}", info.total_games) : std::string("∞");
+    // The pace once it is known: none rather than 0 in the first seconds.
+    std::string text =
+        rate > 0 ? trf("{} · {} / {} games · {} playing · {:.0f} games/h · {}", state, played, total_text,
+                       run_->runningGames(), rate, ui::formatDuration(elapsed))
+                 : trf("{} · {} / {} games · {} playing · {}", state, played, total_text, run_->runningGames(),
+                       ui::formatDuration(elapsed));
 
     if (info.sprt && sprt_) {
         text +=
@@ -865,10 +869,29 @@ void App::pollRun() {
     if (run_->running()) {
         const auto now = Clock::now();
         if (now - last_rate_update_ >= std::chrono::seconds(1)) {
-            const auto elapsed = std::chrono::duration<double>(now - run_->info().started).count();
-            // games_ can get below games_at_start_ when games are voided meanwhile.
-            const auto played = games_.size() > games_at_start_ ? games_.size() - games_at_start_ : 0;
-            games_per_hour_   = elapsed > 5 ? static_cast<double>(played) / (elapsed / 3600.0) : 0.0;
+            const auto* t = run_->tournament();
+            if (run_->remote() && t) {
+                // Played elsewhere, perhaps long before this window connected: from the games' end times, those of the
+                // last ten minutes (or since its first game), rather than from what this window was told.
+                const auto wall = std::chrono::duration_cast<std::chrono::milliseconds>(
+                                      std::chrono::system_clock::now().time_since_epoch())
+                                      .count();
+                const int64_t from = wall - 600'000;
+                int64_t first      = wall;
+                std::size_t played = 0;
+                for (const auto& r : t->results()) {
+                    if (r.voided || r.finished_at <= 0) continue;
+                    first = std::min(first, r.finished_at);
+                    if (r.finished_at >= from) ++played;
+                }
+                const double span = static_cast<double>(wall - std::max(from, first)) / 1000.0;
+                games_per_hour_   = span > 5 ? static_cast<double>(played) / (span / 3600.0) : 0.0;
+            } else {
+                const auto elapsed = std::chrono::duration<double>(now - run_->info().started).count();
+                // games_ can get below games_at_start_ when games are voided meanwhile.
+                const auto played = games_.size() > games_at_start_ ? games_.size() - games_at_start_ : 0;
+                games_per_hour_   = elapsed > 5 ? static_cast<double>(played) / (elapsed / 3600.0) : 0.0;
+            }
             last_rate_update_ = now;
         }
     }

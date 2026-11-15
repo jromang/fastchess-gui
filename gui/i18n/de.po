@@ -6596,6 +6596,9 @@ msgstr "{} · {} / {} Partien · {} laufen"
 msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
 msgstr "{} · {} / {} Partien · {} laufen · {:.0f} Partien/h · {}"
 
+msgid "{} · {} / {} games · {} playing · {}"
+msgstr "{} · {} / {} Partien · {} laufen · {}"
+
 msgid "{} · {} cores, {} for tournaments"
 msgstr "{} · {} Kerne, {} für Turniere"
 

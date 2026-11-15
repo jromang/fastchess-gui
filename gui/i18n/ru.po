@@ -6707,6 +6707,9 @@ msgstr "{} · {} / {} партий · идёт: {}"
 msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
 msgstr "{} · партий: {} / {} · идёт: {} · {:.0f} партий/ч · {}"
 
+msgid "{} · {} / {} games · {} playing · {}"
+msgstr "{} · партий: {} / {} · идёт: {} · {}"
+
 msgid "{} · {} cores, {} for tournaments"
 msgstr "{} · {} ядер, {} для турниров"
 
