@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <vector>
 
 #ifdef _WIN32
 #    include <windows.h>
@@ -83,22 +84,55 @@ bool ChildProcess::start(const std::string& program, const std::vector<std::stri
                                  nullptr);
     }
 
-    STARTUPINFOW si{};
-    si.cb         = sizeof(si);
-    si.dwFlags    = STARTF_USESTDHANDLES;
-    si.hStdInput  = in_read;
-    si.hStdOutput = out_write;
-    si.hStdError  = null_error != INVALID_HANDLE_VALUE ? null_error : GetStdHandle(STD_ERROR_HANDLE);
+    // Its error output: this program's when it can be passed on (inheritable), else nothing.
+    HANDLE error_out = null_error;
+    if (error_out == INVALID_HANDLE_VALUE) {
+        const HANDLE own = GetStdHandle(STD_ERROR_HANDLE);
+        DWORD info       = 0;
+        if (own && own != INVALID_HANDLE_VALUE && GetHandleInformation(own, &info) && (info & HANDLE_FLAG_INHERIT)) {
+            error_out = own;
+        } else {
+            null_error = CreateFileW(L"NUL", GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, OPEN_EXISTING, 0,
+                                     nullptr);
+            error_out  = null_error;
+        }
+    }
+
+    // It inherits these three handles and no other this program holds: an inheritable handle it was given (the pipes
+    // of the SSH session or of the terminal that started it) would otherwise stay open in a detached tournament, and
+    // whoever waits for the end of those pipes (sshd, a shell's pipe) would wait for the tournament.
+    std::vector<HANDLE> inherited{in_read, out_write};
+    if (error_out != INVALID_HANDLE_VALUE && error_out != in_read && error_out != out_write) {
+        inherited.push_back(error_out);
+    }
+    SIZE_T list_size = 0;
+    InitializeProcThreadAttributeList(nullptr, 1, 0, &list_size);
+    std::vector<char> list_buffer(list_size);
+    auto* list     = reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(list_buffer.data());
+    const bool has = InitializeProcThreadAttributeList(list, 1, 0, &list_size) &&
+                     UpdateProcThreadAttribute(list, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST, inherited.data(),
+                                               inherited.size() * sizeof(HANDLE), nullptr, nullptr);
+
+    STARTUPINFOEXW six{};
+    six.StartupInfo.cb         = sizeof(six);
+    six.StartupInfo.dwFlags    = STARTF_USESTDHANDLES;
+    six.StartupInfo.hStdInput  = in_read;
+    six.StartupInfo.hStdOutput = out_write;
+    six.StartupInfo.hStdError  = error_out;
+    six.lpAttributeList        = has ? list : nullptr;
     PROCESS_INFORMATION pi{};
-    DWORD flags = CREATE_UNICODE_ENVIRONMENT;
+    DWORD flags = CREATE_UNICODE_ENVIRONMENT | (has ? EXTENDED_STARTUPINFO_PRESENT : 0);
     // Detached: no console of ours, a process group of its own, and out of this program's job when allowed.
     flags |= detached ? DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | CREATE_BREAKAWAY_FROM_JOB : CREATE_NO_WINDOW;
-    BOOL ok = CreateProcessW(nullptr, command.data(), nullptr, nullptr, TRUE, flags, nullptr, nullptr, &si, &pi);
+    BOOL ok = CreateProcessW(nullptr, command.data(), nullptr, nullptr, TRUE, flags, nullptr, nullptr,
+                             &six.StartupInfo, &pi);
     if (!ok && detached) {
         // Not allowed to leave this program's job: started inside it all the same.
         flags &= ~static_cast<DWORD>(CREATE_BREAKAWAY_FROM_JOB);
-        ok = CreateProcessW(nullptr, command.data(), nullptr, nullptr, TRUE, flags, nullptr, nullptr, &si, &pi);
+        ok = CreateProcessW(nullptr, command.data(), nullptr, nullptr, TRUE, flags, nullptr, nullptr, &six.StartupInfo,
+                            &pi);
     }
+    if (has) DeleteProcThreadAttributeList(list);
     CloseHandle(in_read);
     CloseHandle(out_write);
     if (null_error != INVALID_HANDLE_VALUE) CloseHandle(null_error);
