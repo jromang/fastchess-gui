@@ -18,6 +18,7 @@
 #include <vector>
 
 #include <tour/standings.hpp>
+#include <tour/teams.hpp>
 
 #include "net.hpp"
 
@@ -118,7 +119,7 @@ struct BroadcastNext {
 
 struct BroadcastSnapshot {
     std::string name;
-    std::string format;        // "match", "round_robin", "gauntlet", "swiss", "knockout"
+    std::string format;        // "match", "round_robin", "gauntlet", "swiss", "knockout", "team_match"
     std::string time_control;  // as the rating list shows it: "10+0.1", "5000 nodes"; empty when unknown
     bool chess960   = false;
     uint64_t played = 0;
@@ -127,6 +128,7 @@ struct BroadcastSnapshot {
     std::vector<LiveGame> games;
     std::vector<LiveGame> ended;  // the last games ended in each slot, so their end is not missed (TLCS)
     tour::Table table;
+    std::optional<tour::TeamTable> teams;  // a team match's
     std::vector<std::string> recent;  // latest results, newest first: "White - Black 1-0"
     struct Played {
         uint64_t number = 0;  // 1-based

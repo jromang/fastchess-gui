@@ -103,3 +103,33 @@ TEST_CASE("participants: what one plays differently from the common settings, fo
     p.book = {"/books/perfect.bin", "Perfect", 12};
     CHECK(participantDifferences(p, setup).back() == "own book Perfect, 12 plies");
 }
+
+TEST_CASE("participants: a team match's teams, the halves of the list until engines are put in a team") {
+    MatchSetup setup;
+    setup.format       = TournamentFormat::TeamMatch;
+    setup.participants = make({"A", "B", "C", "D", "E"});
+    // None chosen: the upper half, the larger one, against the lower half.
+    CHECK(setupTeams(setup) == std::vector<int>{0, 0, 0, 1, 1});
+    CHECK(teamSizes(setup) == std::pair{3, 2});
+
+    // One moved: the others keep the team they had, now chosen.
+    setTeam(setup, {1}, 1);
+    CHECK(setupTeams(setup) == std::vector<int>{0, 1, 0, 1, 1});
+    CHECK(setup.participants[0].team == 1);
+    CHECK(setup.participants[1].team == 2);
+    // A newcomer joins the smaller team, team A when they are level.
+    setup.participants.push_back({"F"});
+    CHECK(setupTeams(setup).back() == 0);
+    setup.participants.push_back({"G"});
+    setup.participants.push_back({"H"});
+    CHECK(setupTeams(setup) == std::vector<int>{0, 1, 0, 1, 1, 0, 0, 1});
+    // Several at once; indices outside the list are left out.
+    setTeam(setup, {0, 2, 9}, 1);
+    CHECK(teamSizes(setup) == std::pair{2, 6});
+    // The halves again.
+    splitTeams(setup);
+    CHECK(setupTeams(setup) == std::vector<int>{0, 0, 0, 0, 1, 1, 1, 1});
+    // A team moved as a whole leaves the other one empty.
+    setTeam(setup, {0, 1, 2, 3}, 1);
+    CHECK(teamSizes(setup) == std::pair{0, 8});
+}

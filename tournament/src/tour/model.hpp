@@ -2,6 +2,7 @@
 
 // What a tournament is: its settings and its participants, as stored in tournament.json.
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -14,13 +15,14 @@
 
 namespace fcg::tour {
 
-enum class Format { Match = 0, RoundRobin = 1, Gauntlet = 2, Swiss = 3, Knockout = 4 };
+enum class Format { Match = 0, RoundRobin = 1, Gauntlet = 2, Swiss = 3, Knockout = 4, TeamMatch = 5 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(Format, {{Format::Match, "match"},
                                       {Format::RoundRobin, "round_robin"},
                                       {Format::Gauntlet, "gauntlet"},
                                       {Format::Swiss, "swiss"},
-                                      {Format::Knockout, "knockout"}})
+                                      {Format::Knockout, "knockout"},
+                                      {Format::TeamMatch, "team_match"}})
 
 // Formats whose rounds are paired from the results, as the tournament goes.
 [[nodiscard]] inline bool pairedAsItGoes(Format f) noexcept { return f == Format::Swiss || f == Format::Knockout; }
@@ -58,6 +60,9 @@ struct Participant {
     // of version 3, which versions up to 0.5.3 (that would play the engine alone) refuse.
     std::string book;
     int book_depth = 0;
+
+    // A team match: 0 for team A, 1 for team B. A replacement takes the team of the participant it replaces.
+    int team = 0;
 };
 
 struct TournamentSpec {
@@ -70,6 +75,13 @@ struct TournamentSpec {
     int rounds         = 0;  // Swiss: number of rounds
     int seeds          = 1;  // gauntlet: the first `seeds` participants play every other one
     uint64_t max_games = 0;  // match: 0 = until stopped or decided by the SPRT
+
+    // A team match: board by board (the first engine of each team against the first of the other, and so on, the
+    // teams of the same size) rather than every engine of a team against every engine of the other (a Scheveningen
+    // system); `cycles` repeats it. `team_names`: team A's and team B's, "Team A" and "Team B" when empty. A
+    // tournament with teams is of version 4, which versions up to 0.5.9 (that would take it for a match) refuse.
+    bool team_boards = false;
+    std::array<std::string, 2> team_names;
 
     // Openings, adjudication, SPRT, PGN options, concurrency, seed, variant: fastchess' own settings.
     // games, rounds and the output file names are not used, the tournament layer decides them.
@@ -106,6 +118,11 @@ struct TournamentSpec {
     [[nodiscard]] std::string chessbasePgnFile() const {
         return pgn_chessbase_file.empty() ? "games-chessbase.pgn" : pgn_chessbase_file;
     }
+
+    // A team match: the name of team `team` (0: A, 1: B), and its participants' ids in the list's order, the withdrawn
+    // and replaced ones too unless `active_only`.
+    [[nodiscard]] std::string teamName(int team) const;
+    [[nodiscard]] std::vector<int> teamMembers(int team, bool active_only = false) const;
 
     [[nodiscard]] const Participant* participant(int id) const {
         for (const auto& p : participants) {

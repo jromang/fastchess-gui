@@ -6,6 +6,7 @@
 
 #include "i18n.hpp"
 #include "memory.hpp"
+#include "run.hpp"
 #include "ui.hpp"
 
 namespace fcg::home {
@@ -41,6 +42,8 @@ std::string formatLabel(tour::Format format) {
             return TR("Swiss");
         case tour::Format::Knockout:
             return TR("Knockout");
+        case tour::Format::TeamMatch:
+            return TR("Team match");
     }
     return "";
 }
@@ -94,6 +97,17 @@ std::string resultText(const tour::Summary& s) {
         if (s.finish_reason == "sprt_h1" || s.finish_reason == "sprt_h0")
             return fmt::format("{} · {}", statusLabel(s, false), score);
         return score;
+    }
+    // A team match: the teams' score, each engine's points added to its team's.
+    if (s.spec.format == tour::Format::TeamMatch) {
+        double points[2] = {0, 0};
+        for (const auto& score : s.scores) {
+            const auto p = std::find_if(s.spec.participants.begin(), s.spec.participants.end(),
+                                        [&](const tour::Participant& q) { return q.engine.name == score.name; });
+            if (p != s.spec.participants.end()) points[p->team == 1 ? 1 : 0] += score.points;
+        }
+        return fmt::format("{} {} – {} {}", teamLabel(s.spec, 0), halfPoints(points[0]), halfPoints(points[1]),
+                           teamLabel(s.spec, 1));
     }
     const auto& first = s.scores.front();
     if (s.spec.format == tour::Format::Knockout && s.finished) return trf("Winner: {}", first.name);

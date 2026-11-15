@@ -14,6 +14,7 @@
 #include "i18n.hpp"
 #include "layout.hpp"
 #include "palette.hpp"
+#include "participants.hpp"
 #include "setup_checks.hpp"
 #include "ui.hpp"
 
@@ -103,8 +104,8 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     }
     // The engines that cannot start, as their card offers.
     if (t) {
-        const bool editable =
-            t->spec().format == tour::Format::RoundRobin || t->spec().format == tour::Format::Gauntlet;
+        const bool editable = t->spec().format == tour::Format::RoundRobin ||
+                              t->spec().format == tour::Format::Gauntlet || t->spec().format == tour::Format::TeamMatch;
         for (const auto& e : t->startFailures().engines()) {
             const auto* p = t->spec().participant(e.participant);
             if (!p || !p->active) continue;
@@ -259,6 +260,28 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         for (const auto section : SETUP_SECTIONS) row(sectionTitle(section), static_cast<SetupRow>(section));
         row(TR("Concurrency"), RowConcurrency);
         row(TR("PGN and misc"), RowPgn);
+        // A team match: the participants selected to a team, or the halves of the list again.
+        if (setup_.format == TournamentFormat::TeamMatch && !setup_.participants.empty()) {
+            std::vector<int> picked;
+            for (int i = 0; i < static_cast<int>(setup_.participants.size()); ++i) {
+                if (participants_selected_.Contains(static_cast<ImGuiID>(i))) picked.push_back(i);
+            }
+            for (int team = 0; team < 2 && !picked.empty(); ++team) {
+                add(team == 0 ? TR("Put the participants selected in team A.")
+                              : TR("Put the participants selected in team B."),
+                    TR("Team match"), [this, picked, team] {
+                        page_ = Page::NewMatch;
+                        setTeam(setup_, picked, team);
+                        saveSetupSoon();
+                    });
+            }
+            add(TR("The teams made again from the list: its upper half against its lower half."), TR("Team match"),
+                [this] {
+                    page_ = Page::NewMatch;
+                    splitTeams(setup_);
+                    saveSetupSoon();
+                });
+        }
         add(TR("Save the setup as a template…"), TR("New tournament"), [this] {
             page_               = Page::NewMatch;
             open_save_template_ = true;

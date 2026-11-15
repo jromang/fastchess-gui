@@ -47,6 +47,16 @@ TEST_CASE("home: the result of a tournament in a few words") {
     // A knockout finished: its winner (summarize() puts the final's winner first).
     const auto ko = summary(tour::Format::Knockout, {{"P1", 6, 6}, {"P3", 13, 26}});
     CHECK(home::resultText(ko) == "Winner: P1");
+    // A team match: the teams' score, each engine's points to its team.
+    auto teams = summary(tour::Format::TeamMatch, {{"A1", 5, 8}, {"B1", 4.5, 8}, {"A2", 2.5, 8}, {"B2", 4, 8}});
+    for (const auto* name : {"A1", "A2", "B1", "B2"}) {
+        tour::Participant p;
+        p.engine.name = name;
+        p.team        = name[0] == 'B' ? 1 : 0;
+        teams.spec.participants.push_back(p);
+    }
+    teams.spec.team_names[1] = "Others";
+    CHECK(home::resultText(teams) == "Team A 7½ – 8½ Others");
     // No game.
     CHECK(home::resultText(summary(tour::Format::Gauntlet, {})) == "No game played");
 }

@@ -105,6 +105,7 @@ void App::setupParticipants() {
     bool changed      = false;
     const int n       = static_cast<int>(list.size());
     const bool seeded = setup_.format == TournamentFormat::Gauntlet;
+    const bool teams  = setup_.format == TournamentFormat::TeamMatch;
     const int seeds   = seeded ? std::clamp(setup_.seeds, 1, std::max(1, n - 1)) : 0;
     auto& selection   = participants_selected_;
     const auto& io    = ImGui::GetIO();
@@ -113,8 +114,11 @@ void App::setupParticipants() {
     ImGui::AlignTextToFramePadding();
     ImGui::TextDisabled("%s", TR("Participants"));
     const auto how =
-        std::string(seeded ? TR("The first ones are the seeds, the tested engines: they play all the "
-                                "others.")
+        std::string(seeded  ? TR("The first ones are the seeds, the tested engines: they play all the "
+                                 "others.")
+                    : teams ? TR("A1, A2… are team A, B1, B2… team B: the upper half of the list against the lower "
+                                 "half, until engines are put in a team with their ⋯ or the Team A and Team B buttons "
+                                 "under the list. Board by board, A1 plays B1, A2 plays B2, and so on.")
                     : setup_.format == TournamentFormat::RoundRobin ? TR("The order is the one of the pairings' table.")
                                                                     : TR("The list order is the seeding.")) +
         "\n\n" +
@@ -148,6 +152,11 @@ void App::setupParticipants() {
 
     const auto names = participantNames(setup_);
     const int count  = static_cast<int>(list.size());
+    // A team match: each participant's team and its place in it.
+    const auto team_of = teams ? setupTeams(setup_) : std::vector<int>();
+    std::vector<int> board_of(team_of.size());
+    int in_team[2] = {0, 0};
+    for (std::size_t i = 0; i < team_of.size(); ++i) board_of[i] = in_team[team_of[i]]++;
     int drop_at = -1, drop_from = -1, library_at = -1;
     ParticipantAction action = ParticipantAction::None;
     int action_on            = -1;
@@ -174,10 +183,14 @@ void App::setupParticipants() {
             ImGui::PushID(i);
             ImGui::TableNextRow();
 
-            // The place, a star for the seeds.
+            // The place, a star for the seeds; a team match's team and board.
             ImGui::TableNextColumn();
             const bool seed = i < seeds;
-            if (seed) {
+            if (teams && i < static_cast<int>(team_of.size())) {
+                ImGui::PushStyleColor(ImGuiCol_Text, team_of[i] == 0 ? ui::ACCENT : ui::WARN);
+                ImGui::Text("%s%d", team_of[i] == 0 ? "A" : "B", board_of[i] + 1);
+                ImGui::PopStyleColor();
+            } else if (seed) {
                 const ImVec2 at = ImGui::GetCursorScreenPos();
                 ui::drawIcon(ImGui::GetWindowDrawList(), ui::Icon::Star,
                              ImVec2(at.x + line * 0.45f, at.y + line * 0.5f), line * 0.75f, ui::ACCENT);
@@ -383,6 +396,28 @@ void App::setupParticipants() {
             changed = true;
         }
     }
+    // A team match: the selected ones to a team, or the halves of the list again.
+    if (teams && !list.empty()) {
+        ImGui::SameLine(0, px(16));
+        ImGui::BeginDisabled(chosen_now.empty());
+        for (int team = 0; team < 2; ++team) {
+            ImGui::PushID(team);
+            if (ImGui::SmallButton(team == 0 ? TR("Team A") : TR("Team B"))) {
+                setTeam(setup_, chosen_now, team);
+                changed = true;
+            }
+            itemHelp(team == 0 ? TR("Put the participants selected in team A.")
+                               : TR("Put the participants selected in team B."));
+            ImGui::PopID();
+            ImGui::SameLine();
+        }
+        ImGui::EndDisabled();
+        if (ImGui::SmallButton(TR("Halves"))) {
+            splitTeams(setup_);
+            changed = true;
+        }
+        itemHelp(TR("The teams made again from the list: its upper half against its lower half."));
+    }
 
     if (changed) saveSetupSoon();
 }
@@ -398,9 +433,27 @@ App::ParticipantAction App::participantMenu(ParticipantSetup& p, int index, bool
         ImGui::SameLine();
         ImGui::TextDisabled("%d", entry->elo);
     }
+    const float label_w = px(130), field_w = px(120);
+    // A team match: its team, first.
+    if (setup_.format == TournamentFormat::TeamMatch) {
+        const auto teams = setupTeams(setup_);
+        int team         = index >= 0 && index < static_cast<int>(teams.size()) ? teams[index] : 0;
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(TR("Team"));
+        ImGui::SameLine(label_w);
+        const auto name = [](const std::string& given, const char* fallback) {
+            return given.empty() ? std::string(fallback) : given;
+        };
+        bool moved = ImGui::RadioButton((name(setup_.team_a, TR("Team A")) + "###team_a").c_str(), &team, 0);
+        ImGui::SameLine();
+        moved |= ImGui::RadioButton((name(setup_.team_b, TR("Team B")) + "###team_b").c_str(), &team, 1);
+        if (moved) {
+            setTeam(setup_, {index}, team);
+            changed = true;
+        }
+    }
     ImGui::TextDisabled("%s", TR("Its own settings, before the common ones:"));
 
-    const float label_w = px(130), field_w = px(120);
     const auto field = [&](const char* label, const char* id, int& value, int min, int max, const std::string& common) {
         ImGui::AlignTextToFramePadding();
         ImGui::TextUnformatted(label);

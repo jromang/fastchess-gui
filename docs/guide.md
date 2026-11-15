@@ -125,15 +125,15 @@ The **Tournaments** page is a control room: what runs and what needs you come fi
   new tournaments go, as in **Settings**).
 - **Running**: the card of the running tournament: its name, format, time control and state, a progress bar with
   the games played of those planned and the games being played, when it ends, and who leads: the first of the
-  standings with its rating against the field and its points (a knockout: the players left), the engine ahead in a
-  match with its Elo and the score, or the LLR of an SPRT with its bounds, then the Elo and the score. *Open* goes
-  to its workspace, *Pause* pauses it. A tournament that can be resumed shows instead under *Interrupted*, with
-  *Resume*.
+  standings with its rating against the field and its points (a knockout: the players left; a team match: the
+  teams' score and its Elo), the engine ahead in a match with its Elo and the score, or the LLR of an SPRT with its
+  bounds, then the Elo and the score. *Open* goes to its workspace, *Pause* pauses it. A tournament that can be
+  resumed shows instead under *Interrupted*, with *Resume*.
 - **Queue**: the tournaments waiting, each with its length and when it starts, and when everything ends (see
   *Queue and relaunch*).
 - **Last finished**: the last five tournaments finished, with their result: a match's score, the SPRT's decision,
-  a knockout's winner (of its final), or the first of the standings with its points of its games. *Relaunch with…*
-  for a match, and *Open*.
+  a knockout's winner (of its final), a team match's score, or the first of the standings with its points of its
+  games. *Relaunch with…* for a match, and *Open*.
 - **Health**: the crashes or hangs, losses on time and illegal moves of the last 24 hours, the memory free and
   installed, and the engine processes running; then the engines that lost those games, the three with the most,
   with *Open the engine* and *Open the folder* (the tournament's `logs` folder keeps the engine log of every game
@@ -445,7 +445,7 @@ A change made for this tournament only puts a dot beside the profile, and its li
 - time controls: 10+0.1 and 60+0.6 (fishtest's short and long tests), 2+1, 40/4, 40/15 and 40/20 (40 moves in 4,
   15 or 20 minutes, repeated, as rating lists play them), and 200k nodes per move;
 - formats: SPRT gainer [0, 3] and non-regression [-5, 0], a match of 1000 games, a round robin, a gauntlet, a Swiss
-  of 9 rounds and a knockout;
+  of 9 rounds, a knockout and a team match;
 - adjudications: none, a standard one (a draw from move 40 after 8 moves within 10 cp, a loss after 3 moves at
   600 cp) and the same with the tablebases up to 6 pieces;
 - engine settings: each engine's own, or Hash 16, 64 or 256 MB with 1 thread and the engines' own books off;
@@ -485,6 +485,15 @@ profiles they play like. An empty name is made from the engines.
   - *Knockout*: engines are seeded in their list order, the top seeds get the byes when the field is not a power of
     two, and the first two seeds can only meet in the final. A match is *Game pairs per match* pairs of games; a
     tied match gets one more pair at a time, up to ten, after which the higher seed goes through.
+  - *Team match*: two teams of engines, to compare one family of engines, or a set of versions, with another as a
+    whole. *Pairings*: *Everyone against everyone*, every engine of a team against every engine of the other team,
+    one opponent per round (a Scheveningen system; the teams may differ in size), or *Board by board*, the first
+    engine of each team against the first of the other, the second against the second and so on (teams of the
+    same size). Each pairing is played *Cycles* times, each time two games on the same opening, colours reversed;
+    the colours of the first game alternate from board to board and from one cycle to the next. *Team A* and
+    *Team B* name the teams ("Team A" and "Team B" without a name); beside them, how many engines each has. The
+    teams are made in the participants list: the upper half of the list is team A, the lower half team B (team A
+    gets the odd one), until engines are put in a team.
 - **Participants**, with the **Library** beside them (under them in a narrow window). Each participant is a line:
   its place (a star for the seeds of a gauntlet), its name, its reference Elo, what it plays differently from the
   common settings ("Hash 512 MB · 80 % of the time") and ⋯, highlighted when it has settings of its own. ⋯, a right
@@ -493,6 +502,13 @@ profiles they play like. An empty name is made from the engines.
   The list order is the seeding: drag participants to reorder them (seeds first), or press Ctrl+Up or Ctrl+Down to
   send them to the top or the bottom, Alt+Up or Alt+Down to move them by one. Ctrl or Shift click selects several;
   Delete (or *Remove*) removes them.
+
+  In a team match the place is the team and the board, A1, A2… for team A, B1, B2… for team B, in the list's order
+  (board by board, A1 plays B1). The ⋯ menu puts the participant in a team; *Team A* and *Team B* under the list
+  put the participants selected in one, and *Halves* makes the teams again from the halves of the list (the command
+  palette offers the same). An engine added once teams are chosen joins the smaller one. The summary says how many
+  engines each team has, and a start is refused, with the reason, when a team is empty or, board by board, when the
+  teams differ in size.
 
   The library lists the active engines with their reference Elo, sorted by name or by Elo (click the column), a `!`
   on those with a problem (program missing or rebuilt, last check failed: the tooltip says which) and a ✓ on those
@@ -542,8 +558,8 @@ profiles they play like. An empty name is made from the engines.
   opening is played twice, with colours reversed. A Polyglot book is followed from the initial position to a depth
   (8 plies unless set), leaving out the moves that weigh less than a tenth of the best one of their position; the
   positions reached are written once to `<book>-<N>plies.epd` in the tournament folder and played like an EPD book.
-  In a round robin, a gauntlet or a Swiss, *The same opening for every pair of a round* gives every game pair of a
-  round the same opening, the next of the book for each round, so that no engine gets easier openings than the
+  In a round robin, a gauntlet, a Swiss or a team match, *The same opening for every pair of a round* gives every
+  game pair of a round the same opening (board by board, a cycle is one round: every board plays the same opening), the next of the book for each round, so that no engine gets easier openings than the
   others of its round (an engine added later catches up in rounds of its own, each with its opening).
 - **Chess960** (Fischer random), in the openings: without a book, the 960 starting positions in random order
   (written once to `chess960.epd` in the tournaments folder); with a book, its positions. Every engine must play
@@ -579,6 +595,7 @@ panels, shown by default as tabs:
 |---|---|
 | Overview | Match: Elo and nElo with their 95 % confidence interval, LOS, score, pentanomial counts, SPRT bounds and LLR; *Statistics* (folded) gives fishtest's numbers from the games and from the pairs: score, Elo, nElo and BayesElo with DrawElo, standard deviation per game, LLR of both, the variance ratio of pairs to single games, the RMS bias of the openings, the kinds of balanced pairs and the pairs won over lost, which *Copy* includes; and the charts (Elo and LLR over time, game lengths, how games ended, depth, NPS, time per move and decision time). Tournament: the standings (with *TF*, each engine's losses on time, in orange as soon as there is one; a *!* beside an engine that crashed or played an illegal move), progress by cycle or round, games per hour and time left, the latest results. A finished tournament adds a *Submission checklist*: all games played, every pair with both colours, no duplicate games, no crashes, time losses or illegal moves (with buttons that open those games), the hash of each engine (shown, not judged), ponder off, the opening book, the tablebases |
 | Standings | Points, games, losses on time (*TF*), wins/draws/losses, ratings with their confidence interval, Sonneborn-Berger (Buchholz for a Swiss), byes. *Table* lists them one engine per row; *Crosstable* (round robins, up to 200 engines) shows every pairing. *Order:* by points, score % or seed order (which keeps the columns of a gauntlet's crosstable in place). A click on an engine lists its opponents below: games, with White, with Black, + = −, points and %, with the pairs of which only one game was played marked; a gauntlet opens with its seed selected. *Copy* as text, or as BBCode for a forum post (with a line giving the format, time control, games and book), and in a gauntlet *Gauntlet table as text* or *as BBCode, for a forum* (the seed, then its opponents by their own points, each with points, %, Elo ±, W-L-D); *Export HTML…*; all with *TF* like the headless mode's standings, in the order chosen, and ending with a line giving the games played of those planned, the draw rate, time control, book and event; the copies then sign with *fastchess-gui* and its version, and the gauntlet table is ruled with = rather than -, so that a table posted on a forum is told apart from those of other GUIs |
+| Teams | Team match only, in the *Standings* tab (where it opens) and atop the *Overview*: the teams' score, "Lynx 17½ – 18½ Otter", with the games played, team A's score %, the Elo difference that score stands for with its 95 % interval and the LOS, counted on the pairs of games as the statistics of a match are (pentanomial); then each team's engines with their games, points, %, rating and the points each scored against each engine of the other team (B1, B2… as columns, the name at the cursor): the crosstable of the two teams. *Table* and *Crosstable* show the engines as in any tournament. *Copy* and *Export HTML…* give the teams' scores and both teams' engines against each other, with the line under them |
 | Bracket | Knockout only: the bracket, round by round, with the score of every match |
 | Schedule | Every game pair by cycle or round, with its state and the opening it plays (once started, or once its round started when the round shares one); editing (see below) |
 | Broadcast | Live files, the TLCS server and the web page (see below) |
@@ -648,7 +665,8 @@ other games go on. It is tried again every 5 minutes, one game at a time, and it
 starts. The tournament header and the home page (under *Needs action*) say which engine, the error, and offer:
 
 - **Try again**: at once, rather than at the next try (after fixing the program, say).
-- **Withdraw…** and **Replace…** (round robins and gauntlets): the Schedule tab's change panel, set for that engine,
+- **Withdraw…** and **Replace…** (round robins, gauntlets and team matches): the Schedule tab's change panel, set
+  for that engine,
   with the impact shown before anything changes.
 - **Engine log**: `logs/start-<engine>.log` in the tournament folder, what was sent to the engines of its last try
   and what they answered, their error output included (often the reason: a library or a network file not found).
@@ -670,6 +688,11 @@ played game is lost. Each change shows its impact before it is applied.
 - **Number of cycles**: more or fewer.
 - **Play games again**: every game of an engine, or the losses on time and crashes.
 - Right click on a game (here, or in the *Games* tab): play it again, void it (no replay), or set its result.
+
+In a team match an engine added joins the team chosen and plays every engine of the other team; board by board an
+engine cannot be added (its board would have no opponent): replace one instead. A replacement takes the team and the
+board of the engine it replaces; more cycles pair the engines still playing (board by board, on the boards of the
+first cycle). The games a withdrawn or replaced engine played still count for its team, unless they are voided.
 
 **Set the result** decides a game the program could not decide well: a hang it did not catch, a won ending the
 engines keep shuffling, a game that ended for a wrong reason. Choose 1-0, ½-½ or 0-1 and give a reason; the points
@@ -777,6 +800,12 @@ The *Broadcast* tab of a running tournament publishes it while it plays; the sna
   the same broadcast. lichess keeps only the clocks of what it is sent (it drops the `[%eval]` and the text of the
   move comments): its evaluation bar is its own, and the engines' evaluations do not show there.
 
+A team match shows the teams' score everywhere: in the web page's header and above its standings (with team A's
+score %, Elo ± and LOS), in `standings.html` (the teams, then each team's engines against the other team's), in
+`tournament.json` and `state.json` (`teams`, `team_elo`, `team_elo_error`, `team_los`), and in the TLCS crosstable, as
+a line under the table ("Lynx 17½ - 18½ Otter · 48.6 % · Elo -9.7 ± 31.2"). Its games carry `WhiteTeam` and
+`BlackTeam` tags in the PGN files, which the exports keep.
+
   The connection uses Mbed TLS, built into the program, and trusts only the root certificates that sign lichess.org
   (Google Trust Services) and those of Let's Encrypt. It goes through the HTTP proxy that `HTTPS_PROXY` (or
   `ALL_PROXY`) names, as `http://proxy.example:3128` or `http://user:password@proxy.example:3128`, except for the
@@ -850,7 +879,9 @@ fastchess-gui --run SETUP.json            # create one from a setup or template 
 ```
 
 No window is opened; the version, then the progress, are printed on the console, with the tries of an engine that
-cannot start, the engine set aside (with its engine log) or back, as in the window. **Ctrl+C** stops after the
+cannot start, the engine set aside (with its engine log) or back, as in the window, and the standings every 20 games
+and at the end (a team match: the teams' scores, then each team's engines against the other's). **Ctrl+C** stops
+after the
 running games and the tournament can be resumed later, from the command line or the GUI. Exit codes: 0 finished,
 1 error while playing, 2 nothing to run, 3 stopped before the end (by Ctrl+C, or with nothing left to play without
 an engine that cannot start).

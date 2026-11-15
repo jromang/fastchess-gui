@@ -280,6 +280,13 @@ home::RunCard App::runCard() {
             } else {
                 leader = score;
             }
+        } else if (info.format == tour::Format::TeamMatch && t) {
+            // The teams' score, and team A's Elo over team B once it has an interval.
+            const auto& a = teams_.teams[0];
+            const auto& b = teams_.teams[1];
+            leader        = fmt::format("{} {} – {} {}", teamLabel(t->spec(), 0), home::halfPoints(a.points),
+                                        home::halfPoints(b.points), teamLabel(t->spec(), 1));
+            if (teams_.elo) detail = trf("Elo {:+.1f} ± {:.1f}", *teams_.elo, *teams_.error);
         } else if (info.format == tour::Format::Knockout && t) {
             const auto left = t->enginesLeft();
             leader          = trn("{} player left", "{} players left", left.size(), left.size());

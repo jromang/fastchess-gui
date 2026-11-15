@@ -1,9 +1,10 @@
 #pragma once
 
-// Changes to a round robin or a gauntlet while it runs. Each one is a journal event, applied the same way when
-// the journal is replayed. An edit only ever changes encounters from position `at` on, the first encounter not
-// started when it was made: what was played, and the openings of started encounters, never move. Voiding games and
-// setting a result by hand change results only, in any format.
+// Changes to a round robin, a gauntlet or a team match while it runs. Each one is a journal event, applied the same
+// way when the journal is replayed. A team match board by board takes no new engine (its board would have no
+// opponent); a replacement takes the team, and the board, of the engine it replaces. An edit only ever changes
+// encounters from position `at` on, the first encounter not started when it was made: what was played, and the openings
+// of started encounters, never move. Voiding games and setting a result by hand change results only, in any format.
 
 #include <cstdint>
 #include <map>
@@ -27,6 +28,7 @@ struct Edit {
     fastchess::EngineConfiguration engine;        // add, replace: the new engine (its name is made unique if needed)
     int elo          = 0;                         // add, replace: the new engine's reference rating, 0 = none
     bool catch_up    = true;                      // add: also play the cycles already started
+    int team         = 0;                         // add, a team match: the team it joins (0: A, 1: B)
     int participant  = -1;                        // replace, withdraw: the participant's id
     bool void_played = false;                     // withdraw: its played games stop counting
     int cycles       = 0;                         // set cycles: the new number

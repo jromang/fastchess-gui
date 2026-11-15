@@ -105,7 +105,8 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
                        : spec.format == tour::Format::RoundRobin ? "round_robin"
                        : spec.format == tour::Format::Gauntlet   ? "gauntlet"
                        : spec.format == tour::Format::Swiss      ? "swiss"
-                                                                 : "knockout";
+                       : spec.format == tour::Format::Knockout   ? "knockout"
+                                                                 : "team_match";
     s.chess960       = frc;
     // The time control when every participant has the same.
     for (const auto& p : spec.participants) {
@@ -122,6 +123,7 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
     s.total             = in.total;
     s.finished          = in.finished;
     s.table             = tour::computeTable(spec, results, in.anchor, in.byes);
+    if (spec.format == tour::Format::TeamMatch) s.teams = tour::computeTeams(spec, results);
 
     const auto name = [&](int id) { return spec.participant(id) ? spec.participant(id)->engine.name : "?"; };
     std::map<std::string, BroadcastEngine> lost;  // the anomalies of each engine, by name

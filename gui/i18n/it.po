@@ -267,6 +267,12 @@ msgstr "Un suono per ogni mossa"
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
 msgstr "Una tabella che GitHub e i forum mostrano come tale, con la stessa intestazione della pagina HTML."
 
+msgid "A team match board by board takes no new engine: its board would have no opponent. Replace an engine of a team instead."
+msgstr "Un incontro a squadre scacchiera per scacchiera non accetta un nuovo motore: la sua scacchiera non avrebbe avversario. Sostituisci invece un motore di una squadra."
+
+msgid "A team match needs an engine in each team: put one in the other team (the participant's ⋯)."
+msgstr "Un incontro a squadre richiede un motore in ogni squadra: mettine uno nell'altra squadra (il ⋯ del partecipante)."
+
 msgid "A template is the whole setup: a profile for each section, and what no profile holds (the name, the participants, the concurrency, the PGN files, the broadcast). A section that played as its profile takes the profile's values of the day."
 msgstr "Un modello è l'intera configurazione: un profilo per ogni sezione, e ciò che nessun profilo contiene (il nome, i partecipanti, la concorrenza, i file PGN, la trasmissione). Una sezione che seguiva il suo profilo prende i valori attuali del profilo."
 
@@ -278,6 +284,9 @@ msgstr "Un torneo è in corso: ciò che questo motore calcola toglie core alle s
 
 msgid "A tournament waits to start."
 msgstr "Un torneo attende di partire."
+
+msgid "A1, A2… are team A, B1, B2… team B: the upper half of the list against the lower half, until engines are put in a team with their ⋯ or the Team A and Team B buttons under the list. Board by board, A1 plays B1, A2 plays B2, and so on."
+msgstr "A1, A2… sono la squadra A, B1, B2… la squadra B: la metà superiore della lista contro quella inferiore, finché non metti dei motori in una squadra con il loro ⋯ o con i pulsanti Squadra A e Squadra B sotto la lista. Scacchiera per scacchiera, A1 gioca contro B1, A2 contro B2, e così via."
 
 msgid "A: +%d  =%d  -%d"
 msgstr "A: +%d  =%d  -%d"
@@ -612,6 +621,15 @@ msgstr "Svarione"
 
 msgid "Board"
 msgstr "Scacchiera"
+
+msgid "Board by board"
+msgstr "Scacchiera per scacchiera"
+
+msgid "Board by board needs two teams of the same size, not {} and {}."
+msgstr "Scacchiera per scacchiera richiede due squadre della stessa dimensione, non {} e {}."
+
+msgid "Board by board needs two teams of the same size, not {} and {}: move an engine to the other team, or play every engine against every engine of the other team."
+msgstr "Scacchiera per scacchiera richiede due squadre della stessa dimensione, non {} e {}: sposta un motore nell'altra squadra, o fai giocare ogni motore contro ogni motore dell'altra squadra."
 
 msgid "Board colours: {}"
 msgstr "Colori della scacchiera: {}"
@@ -1186,6 +1204,9 @@ msgstr "Elo di {} ({})"
 msgid "Elo relative to the average, 95 % interval"
 msgstr "Elo rispetto alla media, intervallo al 95 %"
 
+msgid "Elo {:+.1f} ± {:.1f}"
+msgstr "Elo {:+.1f} ± {:.1f}"
+
 msgid "Elo {}  ·  LOS {:.1f} %"
 msgstr "Elo {}  ·  LOS {:.1f} %"
 
@@ -1288,6 +1309,9 @@ msgstr "Ogni motore incontra tutti gli altri, ogni volta in due partite sulla st
 msgid "Every engine of a folder…"
 msgstr "Tutti i motori di una cartella…"
 
+msgid "Every engine of a team meets every engine of the other team, one opponent per round (a Scheveningen system); the teams may differ in size."
+msgstr "Ogni motore di una squadra affronta ogni motore dell'altra, un avversario per turno (sistema Scheveningen); le squadre possono avere dimensioni diverse."
+
 msgid "Every engine the filter and the group show: a whole group at once."
 msgstr "Tutti i motori mostrati dal filtro e dal gruppo: un gruppo intero in una volta."
 
@@ -1353,6 +1377,9 @@ msgstr "Tutte le cadenze"
 
 msgid "Every tournament is a folder: it resumes exactly where it stopped, even after a power cut."
 msgstr "Ogni torneo è una cartella: riprende esattamente da dove si è fermato, anche dopo un blackout."
+
+msgid "Everyone against everyone"
+msgstr "Tutti contro tutti"
 
 msgid "Everything paused: no new game pair starts, and the queue waits for Resume all."
 msgstr "Tutto in pausa: non inizia nessuna nuova coppia di partite e la coda aspetta Riprendi tutto."
@@ -1621,6 +1648,9 @@ msgstr "Pagina HTML…"
 msgid "Half-width of the 95 % interval of the rating."
 msgstr "Semiampiezza dell'intervallo al 95 % del rating."
 
+msgid "Halves"
+msgstr "Metà"
+
 msgid "Hash"
 msgstr "Hash"
 
@@ -1761,6 +1791,9 @@ msgstr "Misura {}×{} pixel: al massimo {} per lato."
 msgid "It needs the web page served."
 msgstr "Richiede che la pagina web sia servita."
 
+msgid "It plays every engine of the other team."
+msgstr "Gioca contro ogni motore dell'altra squadra."
+
 msgid "It starts once the book of {} is prepared."
 msgstr "Parte appena il libro di {} è pronto."
 
@@ -1862,6 +1895,9 @@ msgstr "Eliminazione diretta"
 
 msgid "Knockout, {} engines"
 msgstr "Eliminazione diretta, {} motori"
+
+msgid "LOS {:.1f} %"
+msgstr "LOS {:.1f} %"
 
 msgid "Laid over the two squares of the last move: its transparency lets the square's colour through."
 msgstr "Posato sulle due case dell'ultima mossa: la sua trasparenza lascia vedere il colore della casa."
@@ -2170,6 +2206,9 @@ msgstr "Nessuna partita giocata"
 
 msgid "No game yet."
 msgstr "Ancora nessuna partita."
+
+msgid "No longer playing: withdrawn or replaced. Its games that count still count for its team."
+msgstr "Non gioca più: ritirato o sostituito. Le sue partite valide contano ancora per la sua squadra."
 
 msgid "No match"
 msgstr "Nessun match"
@@ -2503,6 +2542,9 @@ msgstr "Accordo delle PV"
 msgid "Pair kinds"
 msgstr "Tipi di coppie"
 
+msgid "Pairings"
+msgstr "Abbinamenti"
+
 msgid "Pairs"
 msgstr "Coppie"
 
@@ -2722,6 +2764,12 @@ msgstr "Pubblica su internet"
 
 msgid "Push the games to lichess"
 msgstr "Invia le partite a lichess"
+
+msgid "Put the participants selected in team A."
+msgstr "Metti i partecipanti selezionati nella squadra A."
+
+msgid "Put the participants selected in team B."
+msgstr "Metti i partecipanti selezionati nella squadra B."
 
 msgid "Queue · {} tournament"
 msgid_plural "Queue · {} tournaments"
@@ -3381,6 +3429,21 @@ msgstr "Schede"
 msgid "Talk to the engine: type commands (an option, a position, a go with given limits, a stop) and read its answers."
 msgstr "Parlare al motore: digita comandi (un'opzione, una posizione, un go con limiti dati, uno stop) e leggi le sue risposte."
 
+msgid "Team"
+msgstr "Squadra"
+
+msgid "Team A"
+msgstr "Squadra A"
+
+msgid "Team B"
+msgstr "Squadra B"
+
+msgid "Team match"
+msgstr "Incontro a squadre"
+
+msgid "Teams"
+msgstr "Squadre"
+
 msgid "Tell me when a new version is out"
 msgstr "Avvisami quando esce una nuova versione"
 
@@ -3416,6 +3479,9 @@ msgstr "Testo"
 
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Il contatore delle 50 mosse, il materiale e i pezzi rimasti, sotto ogni scacchiera del mosaico."
+
+msgid "The Elo difference {}'s score stands for, with its 95 % interval, counted on the pairs of games as in a match (pentanomial); LOS: the likelihood that it is the stronger team. +{} ={} −{}."
+msgstr "La differenza Elo che il punteggio di {} rappresenta, con il suo intervallo al 95 %, contata sulle coppie di partite come in un match (pentanomiale); LOS: la probabilità che sia la squadra più forte. +{} ={} −{}."
 
 msgid "The Log page: fastchess' output and the program's messages"
 msgstr "La pagina Log: l'output di fastchess e i messaggi del programma"
@@ -3536,6 +3602,9 @@ msgstr "Il file chiamato «portable» accanto al programma tiene tutto in questa
 
 msgid "The finished games of the match will appear here."
 msgstr "Le partite finite del match compariranno qui."
+
+msgid "The first engine of each team against the first of the other, the second against the second, and so on: two teams of the same size, in the order of the list."
+msgstr "Il primo motore di ogni squadra contro il primo dell'altra, il secondo contro il secondo, e così via: due squadre della stessa dimensione, nell'ordine della lista."
 
 msgid "The first engines of the list (the tested ones) meet every other engine."
 msgstr "I primi motori della lista (quelli testati) incontrano tutti gli altri motori."
@@ -3775,6 +3844,9 @@ msgstr "Il sistema non è riuscito ad aprire:"
 msgid "The tablebase adjudication's Max pieces, in this tournament's Adjudication section."
 msgstr "I Pezzi max dell'aggiudicazione con le tablebase, nella sezione Aggiudicazione di questo torneo."
 
+msgid "The teams made again from the list: its upper half against its lower half."
+msgstr "Le squadre rifatte dalla lista: la metà superiore contro quella inferiore."
+
 msgid "The test suite is not started: a tournament is running."
 msgstr "La suite di test non viene avviata: è in corso un torneo."
 
@@ -3990,6 +4062,9 @@ msgstr "Due patte, e una vittoria e una sconfitta, tra le coppie con 1 punto."
 
 msgid "Two engines: is the new version stronger? Statistics from A's point of view."
 msgstr "Due motori: la nuova versione è più forte? Statistiche dal punto di vista di A."
+
+msgid "Two teams of engines, one family or version against another: every engine of a team meets every engine of the other, or board by board. The teams are scored as a whole, and each engine too."
+msgstr "Due squadre di motori, una famiglia o versione contro un'altra: ogni motore di una squadra affronta ogni motore dell'altra, o scacchiera per scacchiera. Le squadre sono classificate nel loro insieme, e anche ogni motore."
 
 msgid "UCI compliance report"
 msgstr "Rapporto di conformità UCI"
@@ -4213,6 +4288,9 @@ msgstr "Senza libro, ogni partita parte dalla posizione iniziale."
 msgid "Without a book, the 960 starting positions, in random order."
 msgstr "Senza libro, le 960 posizioni iniziali, in ordine casuale."
 
+msgid "Without a choice, the upper half of the list plays the lower half. A participant's ⋯, or the Team A and Team B buttons under the list, move engines from one team to the other."
+msgstr "Senza una scelta, la metà superiore della lista gioca contro quella inferiore. Il ⋯ di un partecipante, o i pulsanti Squadra A e Squadra B sotto la lista, spostano i motori da una squadra all'altra."
+
 msgid "Without stopping it: running games go on, nothing played is lost."
 msgstr "Senza fermarlo: le partite in corso proseguono, niente di ciò che è stato giocato va perso."
 
@@ -4273,6 +4351,9 @@ msgstr "un crash ferma il torneo"
 msgid "a result is 1-0, 0-1 or 1/2-1/2"
 msgstr "un risultato è 1-0, 0-1 o 1/2-1/2"
 
+msgid "a team match board by board takes no new engine: replace one instead"
+msgstr "un incontro a squadre scacchiera per scacchiera non accetta un nuovo motore: sostituiscine uno invece"
+
 msgid "about {}"
 msgstr "circa {}"
 
@@ -4315,6 +4396,9 @@ msgstr "al massimo {} mosse"
 
 msgid "automatic"
 msgstr "automatico"
+
+msgid "board by board"
+msgstr "scacchiera per scacchiera"
 
 msgid "both"
 msgstr "entrambe"
@@ -4383,6 +4467,9 @@ msgstr "il log del motore di ogni partita"
 
 msgid "every pair with both colours"
 msgstr "ogni coppia con entrambi i colori"
+
+msgid "everyone against everyone"
+msgstr "tutti contro tutti"
 
 msgid "fastchess-gui cannot draw its window."
 msgstr "fastchess-gui non riesce a disegnare la sua finestra."
@@ -4688,6 +4775,9 @@ msgstr "{:+} partite ({} → {})"
 msgid "{:.0f} games/h · about {} left"
 msgstr "{:.0f} partite/h · ancora circa {}"
 
+msgid "{:.1f} % for {}"
+msgstr "{:.1f} % per {}"
+
 msgid "{:.1f} % that {} is stronger than {}."
 msgstr "{:.1f} % che {} sia più forte di {}."
 
@@ -4705,6 +4795,9 @@ msgstr "{} % del tempo"
 
 msgid "{} (preparing the book: {} %)"
 msgstr "{} (preparazione del libro: {} %)"
+
+msgid "{} ({}) against {} ({})"
+msgstr "{} ({}) contro {} ({})"
 
 msgid "{} + {} per move"
 msgstr "{} + {} per mossa"
@@ -4743,6 +4836,9 @@ msgid "{} blunder"
 msgid_plural "{} blunders"
 msgstr[0] "{} svarione"
 msgstr[1] "{} svarioni"
+
+msgid "{} boards × 2 games × {} cycles"
+msgstr "{} scacchiere × 2 partite × {} cicli"
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} non è leggibile, quindi le chiavi host accettate prima sono sconosciute: non è stato inviato nulla a {}. Ripara il file, o eliminalo per accettare di nuovo la chiave del server."
@@ -4926,6 +5022,9 @@ msgstr[1] "{} partite registrate due volte: l'esportazione tiene la prima"
 
 msgid "{} games +{} ={} -{} · {} lost on time, {} crashes, {} illegal moves · {:.0f} % of its clock used"
 msgstr "{} partite +{} ={} -{} · {} perse per tempo, {} crash, {} mosse illegali · {:.0f} % del suo orologio usato"
+
+msgid "{} games per engine of team A, {} of team B"
+msgstr "{} partite per motore della squadra A, {} della squadra B"
 
 msgid "{} games · {}"
 msgstr "{} partite · {}"
@@ -5187,6 +5286,9 @@ msgid_plural "{} plies"
 msgstr[0] "{} semimossa"
 msgstr[1] "{} semimosse"
 
+msgid "{} points of {} against {}"
+msgstr "{} punti su {} contro {}"
+
 msgid "{} points of {} games"
 msgstr "{} punti in {} partite"
 
@@ -5274,6 +5376,9 @@ msgid_plural "{} voided games, left out"
 msgstr[0] "{} partita annullata, esclusa"
 msgstr[1] "{} partite annullate, escluse"
 
+msgid "{} vs {}"
+msgstr "{} vs {}"
+
 msgid "{} was running when the program ended: it resumes."
 msgstr "{} era in corso alla chiusura del programma: riprende."
 
@@ -5305,6 +5410,9 @@ msgstr "{} · {} partite · Elo {} · {}"
 
 msgid "{} · {} games · first: {} · {}"
 msgstr "{} · {} partite · primo: {} · {}"
+
+msgid "{} × {} pairings × 2 games × {} cycles"
+msgstr "{} × {} abbinamenti × 2 partite × {} cicli"
 
 msgid "{} – fastchess-gui"
 msgstr "{} – fastchess-gui"

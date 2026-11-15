@@ -163,6 +163,21 @@ std::string withElo(std::string pgn, int white_elo, int black_elo) {
     return pgn;
 }
 
+// A team match: the WhiteTeam and BlackTeam tags after the Result tag, as databases read the teams of a game.
+std::string withTeams(std::string pgn, const TournamentSpec& spec, int white, int black) {
+    if (spec.format != Format::TeamMatch) return pgn;
+    const auto team = [&](int id) {
+        const auto* p = spec.participant(id);
+        return pgnTagValue(spec.teamName(p ? p->team : 0));
+    };
+    const auto result = pgn.find("\n[Result ");
+    const auto end    = result == std::string::npos ? result : pgn.find('\n', result + 1);
+    if (end != std::string::npos) {
+        pgn.insert(end + 1, fmt::format("[WhiteTeam \"{}\"]\n[BlackTeam \"{}\"]\n", team(white), team(black)));
+    }
+    return pgn;
+}
+
 // Games the tournament will have; Swiss and knockout schedules grow round by round, so their plan counts too.
 uint64_t plannedGames(const TournamentSpec& spec, const Schedule& schedule, std::size_t dropped) {
     const auto size = schedule.size();
@@ -1168,10 +1183,12 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
 
     std::unique_lock<std::mutex> lock(mutex_);
     const auto elo      = [&](int id) { return spec_.participant(id) ? spec_.participant(id)->elo : 0; };
-    const auto text     = withElo(PgnBuilder(pgn_config, game, round, CommentStyle::Fastchess).get(), elo(result.white),
-                                  elo(result.black));
-    const auto text_cb  = withElo(PgnBuilder(pgn_config, game, round, CommentStyle::ChessBase).get(), elo(result.white),
-                                  elo(result.black));
+    const auto text     = withTeams(withElo(PgnBuilder(pgn_config, game, round, CommentStyle::Fastchess).get(),
+                                            elo(result.white), elo(result.black)),
+                                    spec_, result.white, result.black);
+    const auto text_cb  = withTeams(withElo(PgnBuilder(pgn_config, game, round, CommentStyle::ChessBase).get(),
+                                            elo(result.white), elo(result.black)),
+                                    spec_, result.white, result.black);
     const auto unwanted = [&]() -> std::optional<Recorded> {
         // Already played, or no longer to be played (its participant was withdrawn meanwhile). It may have been the
         // last game the tournament was waiting for.
