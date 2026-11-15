@@ -42,6 +42,9 @@ this repository still builds unchanged.
 - **A control room**: the home page shows what runs first (the cores in use, the running tournament's progress, end
   and leader or LLR), what needs action with its fix (an engine that cannot start, a tournament an error stopped, a
   drive too full), the queue and when it all ends, the last results with *Relaunch with…*, and *Pause all*.
+
+![The home page: two tournaments at once, sharing the cores by weight](docs/screenshots/several.png)
+
 - **Changes while running**: add, withdraw or replace an engine, change the number of cycles, play games again,
   void them or set their result by hand (a game in progress too), with the impact shown first and an undo. No
   played game is lost.
@@ -51,6 +54,9 @@ this repository still builds unchanged.
   settings) with presets for the usual rating list and fishtest conditions, templates made of them, the engine
   library beside the participants (double-click, drag, groups), a queue of tournaments, *Relaunch with…* a new
   engine version, and a headless mode (`fastchess-gui --run`) for servers, which can broadcast too.
+
+![A new tournament: a profile for each section, the engine library beside the participants](docs/screenshots/new-tournament.png)
+
 - **Ratings** over every tournament played (and imported PGN files), by time control, group or period, anchored on a
   reference Elo; an engine's card (results, health, rating over time), head to head records, the progress of an
   engine's versions, an export for Ordo and BayesElo.
@@ -78,6 +84,9 @@ this repository still builds unchanged.
   tournament, like cutechess' `-pgnout`, in schedule order: the two games of an opening side by side.
 - **Results and charts**: Elo and nElo with 95 % confidence interval, LOS, pentanomial counts, LLR against its
   bounds, Elo and LLR over time, game lengths, how games ended, average depth and NPS per engine.
+
+![An SPRT between two versions of an engine: Elo and LLR as the games come](docs/screenshots/charts.png)
+
 - **Engines**: UCI options are read from the engine and edited in a table; only values that differ from the
   default are sent. A health check, groups, a reference Elo, and the import of ChessGUI, cutechess, Banksia and
   Arena engine lists. A rebuilt program is noticed, with what its new build changed (name, option defaults,
@@ -88,6 +97,9 @@ this repository still builds unchanged.
   replayed with their evaluations (`%eval` or cutechess comments); a FEN, a PGN or a list of moves pasted; a
   position editor. A finished game analysed move by move, its inaccuracies, mistakes and blunders marked. A game (or
   a pair) between two engines from any position, with a clock for each, played beside a running tournament.
+
+![The Board page: a finished game analysed move by move, its mistake marked](docs/screenshots/review.png)
+
 - **Opening books**: EPD, PGN or Polyglot, in a library; each book checked for illegal, duplicate, mirrored and
   finished positions, browsed on a board, and cleaned. A Chess324 book of start positions written by the program,
   and Polyglot books built from PGN files (depth, minimum games, weights by score or count, a rating filter). A
@@ -105,31 +117,23 @@ this repository still builds unchanged.
   pieces, move sounds for the game followed (off by default), and a logo per engine, shown in the live view, on the
   big screen and on the broadcast web page.
 
-## Screenshots
+## More screenshots
 
 | Standings, ratings and latest results | Games and replay |
 |---|---|
 | ![Overview](docs/screenshots/overview.png) | ![Games](docs/screenshots/games.png) |
 
-| A two-engine SPRT match | The big screen, for a television or a stream |
-|---|---|
-| ![Charts](docs/screenshots/charts.png) | ![Big screen](docs/screenshots/big-screen.png) |
-
 | The crosstable of a round robin | Ratings over every tournament played: an engine's card |
 |---|---|
 | ![Crosstable](docs/screenshots/standings.png) | ![Ratings](docs/screenshots/ratings.png) |
 
-| Two tournaments at once, sharing the cores by weight | An engine that cannot start: its games set aside, the others go on |
+| An engine that cannot start: its games set aside, the others go on | The big screen, for a television or a stream |
 |---|---|
-| ![Several tournaments](docs/screenshots/several.png) | ![Needs action](docs/screenshots/needs-action.png) |
+| ![Needs action](docs/screenshots/needs-action.png) | ![Big screen](docs/screenshots/big-screen.png) |
 
-| A new tournament: a profile for each section, the engine library beside the participants | The engine library, with the UCI options the engine tells |
+| The engine library, with the UCI options the engine tells | The Board page: an engine of the library analyses any position |
 |---|---|
-| ![New tournament](docs/screenshots/new-tournament.png) | ![Engines](docs/screenshots/engines.png) |
-
-| The Board page: an engine of the library analyses any position | A finished game analysed move by move, its mistakes marked |
-|---|---|
-| ![Board](docs/screenshots/board.png) | ![Game review](docs/screenshots/review.png) |
+| ![Engines](docs/screenshots/engines.png) | ![Board](docs/screenshots/board.png) |
 
 | A test suite: several engines on the positions of an EPD file | An opening book checked, and browsed on a board |
 |---|---|
