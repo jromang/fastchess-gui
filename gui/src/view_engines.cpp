@@ -974,6 +974,28 @@ void App::drawEngines() {
     const float label  = 150.0f * ImGui::GetFontSize() / 16.0f;
     const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
 
+    // The engine's console, in place of its settings while it is shown.
+    if (engine_console_ && engine_console_->engine == e.name && engine_console_->shown) {
+        drawEngineConsole(e);
+        ImGui::EndChild();
+        ui::endPanel();
+        return;
+    }
+    if (engine_console_) {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("%s", trf("The console of {} is open.", engine_console_->engine).c_str());
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Show it"))) {
+            for (int i = 0; i < static_cast<int>(engines_.size()); ++i) {
+                if (engines_[i].name == engine_console_->engine) selected_engine_ = i;
+            }
+            engine_console_->shown = true;
+            engine_console_->focus = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Close it"))) closeEngineConsole();
+    }
+
     ImGui::BeginDisabled(in_use);
 
     ui::label(TR("Name"), label);
@@ -1114,13 +1136,22 @@ void App::drawEngines() {
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + label);
     ImGui::TextDisabled("%s", TR("Anything to remember about it; the engine searches find it."));
 
-    // Health check.
+    // Health check. Out of the lock of an engine the running tournament plays: its console stays at hand.
+    ImGui::EndDisabled();
     ImGui::Spacing();
     ImGui::BeginDisabled(check_.valid() || pending_start_ || in_use);
     if (ImGui::Button(check_.valid() && check_index_ == selected_engine_ ? TR("Checking…") : TR("Check"))) {
         startCheck(selected_engine_);
     }
     ImGui::EndDisabled();
+    ImGui::SameLine();
+    // Its console: lines typed to it, outside any tournament.
+    if (ImGui::Button(TR("Console…"))) openEngineConsole(selected_engine_);
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("Talk to the engine: type commands (an option, a position, a go with given "
+                                   "limits, a stop) and read its answers."));
+    }
+    ImGui::BeginDisabled(in_use);
     ImGui::SameLine();
     if (e.check_ok >= 0) {
         ImGui::PushStyleColor(ImGuiCol_Text, e.check_ok ? ui::GOOD : ui::WARN);

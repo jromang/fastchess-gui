@@ -30,6 +30,9 @@ this repository still builds unchanged.
 - **Unattended nights**: an engine that cannot start has its games set aside while the others go on; it is tried
   again every 5 minutes and its games come back once it starts. The home page says which engine and why, with its
   engine log, *Try again*, *Withdraw…* and *Replace…*.
+- **A control room**: the home page shows what runs first (the cores in use, the running tournament's progress, end
+  and leader or LLR), what needs action with its fix (an engine that cannot start, a tournament an error stopped, a
+  drive too full), the queue and when it all ends, the last results with *Relaunch with…*, and *Pause all*.
 - **Changes while running**: add, withdraw or replace an engine, change the number of cycles, play games again,
   void them or set their result by hand (a game in progress too), with the impact shown first and an undo. No
   played game is lost.
@@ -70,7 +73,12 @@ this repository still builds unchanged.
   default are sent. A health check, groups, a reference Elo, and the import of ChessGUI, cutechess, Banksia and
   Arena engine lists. A rebuilt program is noticed, with what its new build changed (name, option defaults,
   options new and gone) and the choice to keep your values. WinBoard engines too, through a translation to UCI
-  built in.
+  built in. A console to type commands to an engine and read its answers.
+- **Board**: any position analysed by an engine of the library, with several lines drawn as arrows; A on any board
+  (a live game, a finished one, an opening) opens it there. Any PGN file opened, its games filtered by their tags and
+  replayed with their evaluations (`%eval` or cutechess comments); a FEN, a PGN or a list of moves pasted; a
+  position editor. A finished game analysed move by move, its inaccuracies, mistakes and blunders marked. A game (or
+  a pair) between two engines from any position, with a clock for each, played beside a running tournament.
 - **Opening books**: EPD, PGN or Polyglot, in a library; each book checked for illegal, duplicate, mirrored and
   finished positions, browsed on a board, and cleaned. A Chess324 book of start positions written by the program,
   and Polyglot books built from PGN files (depth, minimum games, weights by score or count, a rating filter).

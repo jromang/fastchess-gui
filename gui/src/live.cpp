@@ -864,6 +864,13 @@ bool GuiObserver::slotActive(int i) const {
     return slots_[i]->state.active;
 }
 
+std::optional<std::array<int, 2>> GuiObserver::slotPlayers(int i) const {
+    if (i < 0 || i >= static_cast<int>(slots_.size())) return std::nullopt;
+    std::lock_guard<std::mutex> lock(slots_[i]->mutex);
+    if (!slots_[i]->state.active) return std::nullopt;
+    return slots_[i]->participant;
+}
+
 bool GuiObserver::loading() const {
     std::lock_guard<std::mutex> lock(data_mutex_);
     return loading_;

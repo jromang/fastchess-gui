@@ -21,6 +21,15 @@ struct Summary {
     std::optional<uint64_t> total;  // nullopt for a match without a game limit
     bool finished = false;
     std::string finish_reason;
+
+    // The result so far, for the list of the home page: a match's two engines, A first; otherwise the participants
+    // in the order of the standings (computeTable(), byes counted), the winner of a finished knockout's final first.
+    struct Score {
+        std::string name;
+        double points = 0;
+        int games     = 0;
+    };
+    std::vector<Score> scores;
 };
 
 // nullopt when `dir` holds no readable tournament.

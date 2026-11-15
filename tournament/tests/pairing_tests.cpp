@@ -198,6 +198,47 @@ TEST_CASE("Knockout: after ten tiebreaks the better seed goes through, wherever 
     CHECK(brackets.at(3)[0][0] == 3);
 }
 
+TEST_CASE("summaries: a knockout is won in its final, not on points; a Swiss counts its byes") {
+    // As above: P3 goes through after ten tiebreaks with P7, with the most points, then loses the final to P1.
+    auto spec      = field(Format::Knockout, 8);
+    spec.cycles    = 1;
+    const auto dir = freshDir("ko-summary");
+    {
+        auto state = TournamentState::create(dir, spec);
+        int n      = 0;
+        while (auto task = state->claimNext()) {
+            const int w = std::stoi(task->white.name.substr(1)), b = std::stoi(task->black.name.substr(1));
+            const bool tied = std::min(w, b) == 3 && std::max(w, b) == 7;
+            auto d          = data(*task, tied);
+            if (std::min(w, b) == 0 && std::max(w, b) == 7) std::swap(d.players.white.result, d.players.black.result);
+            state->complete(*task, d);
+            REQUIRE(++n < 10000);
+        }
+    }
+    const auto summary = summarize(dir);
+    REQUIRE(summary);
+    REQUIRE(summary->scores.size() >= 2);
+    CHECK(summary->scores[0].name == "P1");
+    CHECK(summary->scores[1].name == "P3");  // the most points, second
+    CHECK(summary->scores[1].points > summary->scores[0].points);
+
+    // Seven players, five rounds: P0 wins every game and is first; the byes are in the points.
+    auto swiss      = field(Format::Swiss, 7);
+    swiss.rounds    = 5;
+    const auto sdir = freshDir("swiss-summary");
+    {
+        auto state = TournamentState::create(sdir, swiss);
+        playAll(*state);
+    }
+    const auto s = summarize(sdir);
+    REQUIRE(s);
+    REQUIRE(s->scores.size() == 7);
+    CHECK(s->scores[0].name == "P0");
+    double points = 0;
+    for (const auto& score : s->scores) points += score.points;
+    CHECK(points == doctest::Approx(30 + 5));
+}
+
 TEST_CASE("Knockout: a player knocked out has no game left at once, while the round goes on") {
     auto spec   = field(Format::Knockout, 4);
     spec.cycles = 1;

@@ -251,6 +251,9 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
 
     // Is anything going on in slot `i` (cheap, for tab labels)?
     [[nodiscard]] bool slotActive(int i) const;
+    // The participants of White and Black (indexes of names(), -1 for a name not known) of the game played in slot
+    // `i`; nullopt when none is (cheap, for the cores in use).
+    [[nodiscard]] std::optional<std::array<int, 2>> slotPlayers(int i) const;
 
     // Calls `stop` with the process of the engine on move in slot `i`, while it plays game `game_id`
     // (SlotState::game_id) and its engines are started; false otherwise. See RunController::endGame().

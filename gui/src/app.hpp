@@ -17,6 +17,7 @@
 #include <matchmaking/sprt/sprt.hpp>
 #include <matchmaking/stats.hpp>
 
+#include "board_page.hpp"
 #include "board_view.hpp"
 #include "book_jobs.hpp"
 #include "broadcaster.hpp"
@@ -25,6 +26,7 @@
 #include "engine_changes.hpp"
 #include "engine_import.hpp"
 #include "engines.hpp"
+#include "home.hpp"
 #include "layout.hpp"
 #include "live.hpp"
 #include "model.hpp"
@@ -229,6 +231,9 @@ class App {
     // The window came back to the front: an engine may have been rebuilt or moved meanwhile.
     void onFocusGained() { refreshPrograms(); }
 
+    // A file dropped on the window: a PGN file, or a FEN or EPD position, opens on the Board page.
+    void dropFile(const std::string& path);
+
     // The window moved to a screen of another scale (or the screen's changed): fonts and sizes follow it.
     void onDisplayScale(float scale);
 
@@ -251,14 +256,43 @@ class App {
         int follow_frames      = 0;
     };
 
-    enum class Page { Home, NewMatch, Tournament, Engines, Books, Suites, Ratings, Log, Settings };
+    enum class Page { Home, NewMatch, Tournament, Engines, Books, Board, Suites, Ratings, Log, Settings };
     enum class Tab { Overview, Standings, Bracket, Schedule, Live, Games, Openings, Broadcast };
 
     // shell
     void drawShell();
     void drawRail(float width);
     [[nodiscard]] int gamesPlaying() const;  // games in progress, shown beside the live view in the navigation
+
+    // The home page as a control room (view_home.cpp): Pause all, the cores in use, what needs action first, the card
+    // of the running tournament, the queue and when it all ends, the last tournaments finished with their result,
+    // the health of the last 24 hours, then every tournament.
     void drawHome();
+    void drawHomeHeader();  // the title, Pause all (or Resume all), Open a folder… and New tournament
+    // The machine's resources and who uses them: the cores of the running games against the hardware threads. The
+    // memory and the GPUs join them once tournaments have a budget of them.
+    [[nodiscard]] std::vector<home::ResourceBar> resourceBars();
+    // The cores of the games being played: for each, the Threads of its engine that has the most (the two engines
+    // think in turn).
+    [[nodiscard]] int coresInUse();
+    // The card of the running tournament, made from the run: one per tournament once several run at once.
+    [[nodiscard]] home::RunCard runCard();
+    void drawRunCards();
+    // An engine that cannot start, the tournament an error stopped (with the fixes of its message, and Resume), a
+    // drive too full: each with its fix. True when anything was shown.
+    bool drawNeedsAction();
+    // The last run ended by an error or an engine that stopped it, and the card saying so was not hidden.
+    [[nodiscard]] bool stoppedByError() const;
+    // The card of the tournament that can be resumed, with the error that stopped it when `error`.
+    void drawInterrupted(bool error);
+    void drawLastFinished();    // the last tournaments finished, their result, Relaunch with… and Open
+    void drawAllTournaments();  // the table of every tournament, folded
+    void pollDiskSpace();       // the free space of the tournaments' drives, asked on a worker thread now and then
+    // Pause all: the running tournament paused and the queue held (it starts no tournament until Resume all).
+    [[nodiscard]] bool canPauseAll() const;
+    [[nodiscard]] bool allPaused() const;
+    void pauseAll();
+    void resumeAll();
     void drawNewMatch();
     // The setup of the new tournament page: its engines chosen, its SPRT bounds the wrong way round, an engine of it
     // being read. Start and Add to the queue follow them.
@@ -369,6 +403,59 @@ class App {
     void drawCharts();
     void drawEngines();
     void drawConsole();
+    // The engine console (view_engine_console.cpp), in the card of its engine.
+    void openEngineConsole(int index);
+    void closeEngineConsole();
+    void pollEngineConsole();  // every frame, shown or not
+    void drawEngineConsole(const EngineEntry& e);
+    void saveConsoleLog(const std::string& path);
+
+    // The Board page (view_board.cpp): a game or a position, and its analysis.
+    void drawBoardPage();
+    void drawBoardColumn(float size);  // the board, the buttons under it
+    void drawBoardAnalysis();
+    void drawBoardMoves();
+    void pollBoard();  // every frame: the analysis follows the board while the page is shown
+    void loadBoardSettings();
+    void saveBoardSettings();
+    // Opens `game` on the Board page after `ply` moves, the page and tab shown kept to go back to; `analyse` starts
+    // the analysis. `title` says what the game is.
+    void openOnBoard(ReplayGame game, int ply, bool chess960, std::string title, bool analyse);
+    void openPositionOnBoard(const std::string& fen, bool chess960, std::string title, bool analyse);
+    void setBoardAnalysis(bool on);
+    // Key A, pressed for a board now: once a frame, not while a text field or a popup has the keys.
+    [[nodiscard]] bool boardKey();
+    [[nodiscard]] std::string boardFen();  // the position of the Board page
+    void boardPlay(chess::Move move);
+    void boardClick(const chess::Board& board, chess::Square square);
+    // The threads the running tournament's games use now, about: its games times the larger thread count of its
+    // engines.
+    [[nodiscard]] int tournamentThreads() const;
+    // A, on the boards of the other pages: their position on the Board page, analysed.
+    void analyseLiveGame(int slot);
+    void analyseReplay();
+    // Games and positions from elsewhere: a PGN file read in the background, the clipboard, a text.
+    void openBoardPgn(const std::filesystem::path& file);
+    void pollBoardPgn();
+    void showPgnSource(PgnSource source);  // its first game on the board, its games listed
+    void loadPgnGame(int index);
+    void readOnBoard(const std::string& text, const std::string& name);  // a FEN, a PGN, moves
+    void pasteOnBoard();
+    void drawPgnGames();
+    void openPositionEditor();
+    void drawPositionEditor(float size);
+    // A game analysed move by move, in the background, by the analysis engine (one line).
+    [[nodiscard]] const EngineEntry* analysisEngine();  // the one chosen, or the first that works; null without any
+    void startGameReview();
+    void cancelGameReview();
+    void pollGameReview();
+    void drawGameReview();  // its button, its progress, what it found
+    [[nodiscard]] std::string judgementTip(int ply, const MoveReview& judged) const;
+    // Games between two engines of the library from the board's position, played apart from any tournament.
+    void startBoardGames();
+    void pollBoardGames();  // every frame: the board follows the game being played
+    void drawBoardPlay();   // their settings, then the games as they are played
+    [[nodiscard]] int engineThreads(const std::string& name) const;  // a library engine's Threads, 1 without
     void drawQuitModal();
 
     // The command palette (Ctrl+K) and the guide (F1, the `?` of the page titles), see view_palette.cpp.
@@ -698,7 +785,10 @@ class App {
     [[nodiscard]] std::vector<Notice> engineIncidentNotices(const tour::Incidents& incidents) const;
     // About how long the running tournament has left at its pace; nullopt without a game count or a pace yet.
     [[nodiscard]] std::optional<double> runSecondsLeft() const;
-    void drawRelaunch();  // "Relaunch with…" of a finished match
+    // "Relaunch with…" of a finished match between `engine_a` and `engine_b`, played from the folder `from`: the
+    // same match with another engine A. `open`: its popup opens now (the command palette).
+    void drawRelaunch(const std::string& engine_a, const std::string& engine_b, const std::filesystem::path& from,
+                      bool open = false);
     void resetRunView();  // forgets the games and statistics shown, before a run starts
     void pollRun();
     void onRunFinished();
@@ -914,6 +1004,19 @@ class App {
     bool open_rating_import_  = false;
     bool open_import_preview_ = false;
 
+    // The engine console, while one is open.
+    std::unique_ptr<EngineConsole> engine_console_;
+
+    // The Board page, and where it was opened from (Back).
+    BoardPage board_;
+    struct BoardBack {
+        Page page;
+        std::optional<Tab> tab;
+    };
+    std::optional<BoardBack> board_back_;
+    bool board_key_taken_  = false;  // key A served a board this frame
+    bool review_when_read_ = false;  // --focus board-review: the game analysed once its file is read
+
     // Console view.
     std::vector<Console::Line> console_lines_;
     uint64_t console_version_ = 0;
@@ -1004,7 +1107,28 @@ class App {
 
     // Queue and relaunch.
     std::vector<QueuedTournament> queue_;
+    bool queue_held_    = false;  // Pause all: the queue starts no tournament until Resume all
+    bool queue_blocked_ = false;  // a tournament ended while it was held: Resume all starts the next one
     std::string relaunch_engine_;
+    std::filesystem::path relaunch_from_;     // the folder of the match whose Relaunch with… started last
+    std::filesystem::path relaunch_request_;  // its popup opens on the home page (the command palette)
+
+    // The home page's control room, computed again only when what it shows changed.
+    struct CoresCache {
+        const tour::TournamentState* of = nullptr;
+        uint64_t version                = ~uint64_t(0);
+        std::size_t names               = 0;
+        std::vector<int> threads;  // by the observer's participant index
+    } cores_cache_;
+    struct LeaderCache {
+        std::size_t games = ~std::size_t(0);
+        Clock::time_point started{};
+        std::string leader, detail;
+    } leader_cache_;
+    std::string finish_hidden_;  // the finish message whose card under Needs action was hidden
+    std::future<std::vector<home::DiskSpace>> disk_job_;
+    std::vector<home::DiskSpace> disks_;
+    std::chrono::steady_clock::time_point disk_asked_{};
 
     // Broadcast.
     Broadcaster broadcaster_;
