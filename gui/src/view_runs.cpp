@@ -174,6 +174,8 @@ std::string App::launchTournament(const fs::path& dir) {
 }
 
 bool App::attachTournament(const fs::path& dir, double weight) {
+    // On a remote machine: reached there, through SSH.
+    if (readMachinePlace(dir)) return attachOnMachine(dir, weight);
     // Its process listens on its socket (control.json): the window connects to it, and shows it as it stands.
     const auto file = local::readControlFile(dir);
     if (!file) return false;
@@ -425,7 +427,7 @@ void App::arbitrate() {
     // By weight, the heaviest first (the first gets one game always); the order they started in between equals.
     std::vector<std::size_t> order;
     for (std::size_t i = 0; i < runs_.size(); ++i) {
-        if (runs_[i].run->remote() && runs_[i].run->running()) order.push_back(i);
+        if (runs_[i].run->remote() && runs_[i].run->running() && runs_[i].machine_id.empty()) order.push_back(i);
     }
     if (order.empty()) return;
     std::stable_sort(order.begin(), order.end(),
@@ -446,7 +448,7 @@ int App::freeCores() const {
     int free = machineBudget().threads - localThreads();
     for (const auto& r : runs_) {
         const auto* t = r.run->tournament();
-        if (!r.run->remote() || !r.run->running() || !t) continue;
+        if (!r.run->remote() || !r.run->running() || !t || !r.machine_id.empty()) continue;
         free -= std::max(1, t->spec().conditions.concurrency) * tour::largestGame(t->spec()).threads;
     }
     return free;
@@ -462,7 +464,7 @@ tour::Allowance App::allowanceFor(const tour::TournamentSpec& spec, double weigh
     budget.threads = std::max(1, budget.threads - localThreads());
     std::vector<std::size_t> order;
     for (std::size_t i = 0; i < runs_.size(); ++i) {
-        if (runs_[i].run->remote() && runs_[i].run->running()) order.push_back(i);
+        if (runs_[i].run->remote() && runs_[i].run->running() && runs_[i].machine_id.empty()) order.push_back(i);
     }
     std::stable_sort(order.begin(), order.end(),
                      [&](std::size_t a, std::size_t b) { return runs_[a].weight > runs_[b].weight; });
@@ -487,7 +489,7 @@ std::vector<App::CoreUse> App::coreShare() const {
     std::vector<CoreUse> out;
     for (const auto& r : runs_) {
         const auto* t = r.run->tournament();
-        if (!r.run->running() || !t || !r.run->remote()) continue;
+        if (!r.run->running() || !t || !r.run->remote() || !r.machine_id.empty()) continue;
         out.push_back({t->spec().name, r.run->allowance().threads, r.run->inFlight().threads});
     }
     if (const int local = localThreads(); local > 0)

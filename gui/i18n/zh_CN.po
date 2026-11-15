@@ -360,6 +360,9 @@ msgstr "添加 PGN 文件…"
 msgid "Add a machine"
 msgstr "添加机器"
 
+msgid "Add a machine…"
+msgstr "添加机器…"
+
 msgid "Add all shown"
 msgstr "添加所有显示的"
 
@@ -715,6 +718,9 @@ msgstr "无法在本机读取开局库 {}。"
 
 msgid "Book {} copied to {}."
 msgstr "开局库 {} 已复制到 {}。"
+
+msgid "Book {} is missing on {}: push it from Settings > Machines > Books and tablebases."
+msgstr "开局库 {} 在 {} 上缺失：请在 设置 > 机器 > 开局库与残局库 中推送。"
 
 msgid "Book {} missing on {} ({})."
 msgstr "开局库 {} 在 {} 上缺失（{}）。"
@@ -2684,6 +2690,9 @@ msgstr "其错误输出中："
 msgid "On the list"
 msgstr "列表中"
 
+msgid "On {}"
+msgstr "在 {} 上"
+
 msgid "Once it has played two tournaments."
 msgstr "一旦它下过两个锦标赛。"
 
@@ -3158,6 +3167,9 @@ msgstr "等级分"
 msgid "Reachable from the local network; open the port in your router to share it further."
 msgstr "局域网内可访问；如需进一步共享，请在路由器中开放该端口。"
 
+msgid "Reaching {}…"
+msgstr "正在连接 {}…"
+
 msgid "Read again"
 msgstr "重新读取"
 
@@ -3354,6 +3366,9 @@ msgstr "轮数"
 
 msgid "Run as a test suite…"
 msgstr "作为测试集运行…"
+
+msgid "Run on"
+msgstr "运行于"
 
 msgid "Run the TLCS server"
 msgstr "运行 TLCS 服务器"
@@ -3842,6 +3857,9 @@ msgstr "请先测试连接：它会告诉你机器的系统。"
 msgid "Test the connection to {}"
 msgstr "测试与 {} 的连接"
 
+msgid "Test the connection to {} first (Settings > Machines): it finds out the machine."
+msgstr "请先测试与 {} 的连接（设置 > 机器）：它会识别该机器。"
+
 msgid "Tested engines"
 msgstr "被测引擎"
 
@@ -4107,6 +4125,9 @@ msgstr "无法使用密钥文件 {}：{}"
 msgid "The key file {} needs its passphrase."
 msgstr "密钥文件 {} 需要口令。"
 
+msgid "The key of {} needs its passphrase: type it, then start again."
+msgstr "{} 的密钥需要口令：请输入后重新开始。"
+
 msgid "The keys of your SSH agent (ssh-agent, Pageant, or the OpenSSH Authentication Agent service of Windows): add yours with ssh-add. The key never leaves it."
 msgstr "你的 SSH 代理中的密钥（ssh-agent、Pageant 或 Windows 的 OpenSSH Authentication Agent 服务）：用 ssh-add 加入你的密钥。密钥从不离开代理。"
 
@@ -4148,6 +4169,9 @@ msgstr "无法显示 {} 的标志：{}"
 
 msgid "The logo was not changed: {}"
 msgstr "标志未更改：{}"
+
+msgid "The machine chosen in Run on is not in Settings > Machines any more: choose another."
+msgstr "“运行于”中选择的机器已不在 设置 > 机器 中：请另选一台。"
 
 msgid "The machine is full: the tournament's games and the analysis use {} of its {} threads, and this game needs {}. It would slow them down, and its own engines."
 msgstr "机器已满：锦标赛对局和分析使用了 {} 个线程（共 {} 个），这局还需要 {} 个。这会拖慢它们以及这局的引擎。"
@@ -4364,8 +4388,17 @@ msgstr "时限需要基本时间或加秒。"
 msgid "The time per move must be positive."
 msgstr "每步时间必须为正数。"
 
+msgid "The tournament cannot be reached on {}: {}"
+msgstr "无法连接到 {} 上的比赛：{}"
+
 msgid "The tournament cannot start with this adjudication."
 msgstr "使用此裁定设置，赛事无法开始。"
+
+msgid "The tournament did not start on {}: {}"
+msgstr "比赛未能在 {} 上启动：{}"
+
+msgid "The tournament does not play on {} any more."
+msgstr "比赛已不在 {} 上进行。"
 
 msgid "The tournament goes on with the programs as they are now; this notice closes."
 msgstr "锦标赛使用当前的程序继续进行；此提示关闭。"
@@ -4445,6 +4478,9 @@ msgstr "它们之间没有对弈过。"
 
 msgid "This book cannot play for an engine: {}"
 msgstr "此开局库不能代替引擎走棋：{}"
+
+msgid "This computer"
+msgstr "本机"
 
 msgid "This computer's fastchess-gui does not run on the machine's system: download the release for it and choose its program here (fastchess-gui.exe for Windows). Install copies it."
 msgstr "本机的 fastchess-gui 无法在该机器的系统上运行：请下载适用的版本并在此选择其程序（Windows 为 fastchess-gui.exe）。“安装”会复制它。"
@@ -4766,6 +4802,9 @@ msgstr "新锦标赛的写入位置，与设置中相同。已下过的锦标赛
 msgid "Where the Syzygy files go on the machine, the engines' SyzygyPath there."
 msgstr "Syzygy 文件在机器上的位置，即那里引擎的 SyzygyPath。"
 
+msgid "Where the tournament plays: this computer, or a machine of Settings > Machines, followed from here as if it played here. Its engines play there at their paths there; its books and tablebases must be there (Settings > Machines > Books and tablebases)."
+msgstr "比赛在哪里运行：本机，或 设置 > 机器 中的一台机器，在此处跟踪就像在本机运行一样。其引擎使用那台机器上的路径运行；其开局库和残局库必须在那里（设置 > 机器 > 开局库与残局库）。"
+
 msgid "While a tournament runs, an SSH tunnel built into fastchess-gui gives the page a public https address, without opening a port in the router or installing anything. Only the page is reachable that way, read-only."
 msgstr "锦标赛进行时，fastchess-gui 内置的 SSH 隧道为页面提供一个公共 https 地址，无需在路由器上开放端口，也无需安装任何东西。通过这种方式只能访问该页面，且为只读。"
 
@@ -4925,6 +4964,9 @@ msgstr "本锦标赛的 PGN 选项中“{}”是开启的：本局中引擎没�
 msgid "a crash stops the tournament"
 msgstr "崩溃会停止比赛"
 
+msgid "a machine removed"
+msgstr "已移除的机器"
+
 msgid "a result is 1-0, 0-1 or 1/2-1/2"
 msgstr "结果只能是 1-0、0-1 或 1/2-1/2"
 
@@ -5072,6 +5114,9 @@ msgstr "适用于 {} {} 的 fastchess-gui"
 msgid "fastchess-gui is not in {}: Install puts it there."
 msgstr "fastchess-gui 不在 {} 中：“安装”会把它放到那里。"
 
+msgid "fastchess-gui is not installed on {}: Install it from Settings > Machines."
+msgstr "{} 上未安装 fastchess-gui：请在 设置 > 机器 中安装。"
+
 msgid "fastchess-gui not installed"
 msgstr "未安装 fastchess-gui"
 
@@ -5089,6 +5134,9 @@ msgstr "fastchess-gui {} 位于 {}，版本太旧，无法为本窗口运行比�
 
 msgid "fastchess-gui {} is out (this is {})."
 msgstr "fastchess-gui {} 已发布（当前为 {}）。"
+
+msgid "fastchess-gui {} on {} cannot run tournaments for this window: Update it from Settings > Machines."
+msgstr "fastchess-gui {}（{} 上）无法为本窗口运行比赛：请在 设置 > 机器 中更新。"
 
 msgid "fastchess-gui {} — {} physical cores, {} threads"
 msgstr "fastchess-gui {} — {} 个物理核心，{} 个线程"
@@ -5805,6 +5853,9 @@ msgstr "{} 与 fastchess-gui 没有共同的算法（需要 curve25519-sha256、
 msgid "{} has no option {} (any more): its value {} is not sent."
 msgstr "{} 没有（或不再有）选项 {}：其值 {} 不会发送。"
 
+msgid "{} has no path on {}: give it in Settings > Machines > Engines on this machine."
+msgstr "{} 在 {} 上没有路径：请在 设置 > 机器 > 此机器上的引擎 中填写。"
+
 msgid "{} holds a key of type {}: fastchess-gui logs in with RSA and Ed25519 keys only (make one with ssh-keygen -t ed25519), or with the SSH agent."
 msgstr "{} 中的密钥类型为 {}：fastchess-gui 只支持 RSA 和 Ed25519 密钥登录（用 ssh-keygen -t ed25519 生成一个），或使用 SSH 代理。"
 
@@ -5857,6 +5908,9 @@ msgstr "{} 不是有效的私钥文件。"
 
 msgid "{} is not an SVG picture the program can draw."
 msgstr "{} 不是程序能够绘制的 SVG 图片。"
+
+msgid "{} is not on {} ({}): give its path there in Settings > Machines > Engines on this machine."
+msgstr "{} 不在 {} 上（{}）：请在 设置 > 机器 > 此机器上的引擎 中填写其在那里的路径。"
 
 msgid "{} is not on {}: give the program's path there."
 msgstr "{} 不在 {} 上：请填写程序在那里的路径。"
@@ -6039,6 +6093,15 @@ msgid "{} player that two library engines may be: say which one."
 msgid_plural "{} players that two library engines may be: say which one."
 msgstr[0] "{} 位棋手可能是两个库引擎之一：请指定。"
 
+msgid "{} plays on {}, which is not in Settings > Machines any more."
+msgstr "{} 在 {} 上运行，而该机器已不在 设置 > 机器 中。"
+
+msgid "{} plays on {}: shown again."
+msgstr "{} 在 {} 上运行：已重新显示。"
+
+msgid "{} plays on {}: test the connection there (Settings > Machines) to see it again."
+msgstr "{} 在 {} 上运行：请测试与其的连接（设置 > 机器）以重新查看。"
+
 msgid "{} plays with its own settings: {}"
 msgstr "{} 使用自己的设置：{}"
 
@@ -6202,6 +6265,9 @@ msgstr "{} · {} / {} 局 · {} 局进行中"
 msgid "{} · {} / {} games · {} playing · {:.0f} games/h · {}"
 msgstr "{} · {} / {} 局 · {} 局进行中 · {:.0f} 局/小时 · {}"
 
+msgid "{} · {} cores, {} for tournaments"
+msgstr "{} · {} 个核心，{} 用于比赛"
+
 msgid "{} · {} games"
 msgstr "{} · {} 局"
 
@@ -6278,6 +6344,9 @@ msgstr "{}：其开局库无法使用：{}"
 msgid "{}: its book is not found: {}"
 msgstr "{}：找不到其开局库：{}"
 
+msgid "{}: no Syzygy file in {}: the adjudication does without them; push them from Settings > Machines > Books and tablebases."
+msgstr "{}：{} 中没有 Syzygy 文件：判定将不使用它们；请在 设置 > 机器 > 开局库与残局库 中推送。"
+
 msgid "{}: not found while {}."
 msgstr "{}：未找到（步骤：{}）。"
 
@@ -6295,6 +6364,9 @@ msgstr "{}：另存为配置"
 
 msgid "{}: seldepth"
 msgstr "{}：seldepth"
+
+msgid "{}: starting on {} ({})."
+msgstr "{}：正在 {} 上启动（{}）。"
 
 msgid "{}: the disk is full while {}: free some space on the machine."
 msgstr "{}：磁盘已满（步骤：{}）：请在机器上释放一些空间。"

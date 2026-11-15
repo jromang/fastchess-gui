@@ -1048,6 +1048,27 @@ is checked by its hash once copied, each table by its size, and a copy cut short
 not offered: they take terabytes. A tournament does not start on a machine without its book; tablebases missing
 are a warning (the adjudication and the engines do without them).
 
+### A tournament on a machine
+
+In the setup, *Run on* (in *Concurrency*) chooses where the tournament plays: *This computer*, or a machine. *Start*
+then prepares it there: fastchess-gui must be installed there in this version (else *Update fastchess-gui*), every
+engine must have its path on the machine, and the setup's books must be in its books folder (else the start says
+which is missing, and *Push the missing files* puts it there); tablebases missing are only a warning. The tournament
+gets its folder in `tournaments/` of the machine's folder, with the engines, books and tablebases at their paths
+there, and its process starts there out of the SSH session (`fastchess-gui --run <folder> --detach`): it plays on
+whatever happens to the window or the network. The window follows it as a tournament of this computer: Live,
+Games, the standings, pause, stop and the changes, through the control channel of its process
+(`fastchess-gui --attach <folder>` over SSH).
+
+Its card on the home page says *On <machine>*, and *Reaching <machine>…* while the connection is cut: the window
+connects again on its own, a little longer after each failure, and takes up the events where its copy stopped.
+The journal and the PGN files are copied back to the tournament's folder here as they grow, every few seconds, so
+that Ratings, exports and the submission checklist read them; the machine's folder stays the reference
+(`machine.json` here says which machine and folder). Closing the window leaves it playing there; the next launch
+shows it again. *Resume* of an interrupted tournament of a machine resumes it there. The machine's budget (its
+cores and memory) is shared by its own tournaments, apart from this computer's. One tournament plays on one machine:
+its games are not spread over several.
+
 A machine needs an OpenSSH server (Linux, macOS, BSD; Windows 10 1809 and later), with an RSA host key and SFTP,
 both there by default. Commands go through `sh` whatever the user's shell is (fish or csh are fine), and through
 cmd on Windows, the default shell of its OpenSSH server.

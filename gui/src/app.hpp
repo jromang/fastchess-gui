@@ -31,6 +31,7 @@
 #include "layout.hpp"
 #include "live.hpp"
 #include "machine_jobs.hpp"
+#include "machine_run.hpp"
 #include "model.hpp"
 #include "notice.hpp"
 #include "pgn_store.hpp"
@@ -267,6 +268,12 @@ class App {
         // watchStartFailures(): the version of its StartFailures seen, and the participants told set aside.
         uint64_t start_failures_seen = ~uint64_t(0);
         std::set<int> start_failures_told;
+        // Played on a remote machine (machine_run.hpp): which, what became of its process there, and its files
+        // copied back. Empty and null for a tournament of this computer.
+        std::string machine_id, machine_name;
+        std::shared_ptr<LinkStatus> link_status;
+        std::shared_ptr<MachineSync> sync;
+        bool sync_finishing = false;
     };
     // One view per concurrent game, shared by the mosaic, the focus panel and detached windows.
     struct SlotView {
@@ -1466,6 +1473,18 @@ class App {
     void addMachine();
     [[nodiscard]] Machine* machineById(const std::string& id);
     [[nodiscard]] FilesRequest setupFiles() const;  // the setup's books and tablebases
+    // Tournaments on a machine: the one in `dir` started (or resumed) there and shown in its tab, or the window
+    // connected to the one playing there already. An error message, empty on success.
+    std::string launchOnMachine(const std::filesystem::path& dir, const std::string& machine_id);
+    bool attachOnMachine(const std::filesystem::path& dir, double weight);
+    // The tab of a tournament on a machine, its process reached through `link`.
+    std::string openMachineRun(const std::filesystem::path& dir, const Machine& machine, const std::string& remote_dir,
+                               std::unique_ptr<SshLink> link, std::shared_ptr<LinkStatus> status, double weight);
+    // The passphrase of a machine's key, empty when it needs none or it was not typed yet (`missing` then).
+    [[nodiscard]] std::string machinePassphrase(const Machine& machine, bool& missing);
+    void pollMachineRuns();       // their files' last copy once they end, what their start said
+    void arbitrateMachines();     // each machine's budget shared by its tournaments
+    void drawRunOn(float label);  // the setup's Run on, its label `label` wide
     std::vector<Machine> machines_;
     std::map<std::string, MachineActivity> machine_activity_;  // by machine id
     std::map<std::string, std::string> machine_passphrases_;   // by key file

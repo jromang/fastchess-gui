@@ -1110,4 +1110,44 @@ bool SshClient::download(const std::string& remote, const fs::path& local, const
     return true;
 }
 
+std::optional<uint64_t> SshClient::fetch(const std::string& remote, const fs::path& local, uint64_t from) {
+    error_ = {};
+    if (!connected() || !impl_->startSftp()) return std::nullopt;
+    std::ofstream out(local, from > 0 ? std::ios::binary | std::ios::app : std::ios::binary | std::ios::trunc);
+    if (!out) {
+        impl_->fail(SshError::Kind::Local, trf("{} cannot be written.", local.string()));
+        return std::nullopt;
+    }
+    const auto what = trf("copying {} from {}", remoteName(remote), impl_->target.name);
+    auto* handle    = impl_->openFile(remote, LIBSSH2_FXF_READ, 0, LIBSSH2_SFTP_OPENFILE, what);
+    if (!handle) return std::nullopt;
+    libssh2_sftp_seek64(handle, from);
+    std::string piece(TRANSFER_PIECE, '\0');
+    uint64_t copied = 0;
+    bool ok         = true;
+    auto until      = impl_->deadline();
+    while (ok) {
+        const auto n = libssh2_sftp_read(handle, piece.data(), piece.size());
+        if (n == LIBSSH2_ERROR_EAGAIN) {
+            ok = impl_->wait(until, what);
+            continue;
+        }
+        if (n < 0) {
+            ok = impl_->failSsh(static_cast<int>(n), what);
+            break;
+        }
+        if (n == 0) break;
+        out.write(piece.data(), n);
+        if (!out) {
+            ok = impl_->fail(SshError::Kind::Local, trf("{} cannot be written.", local.string()));
+            break;
+        }
+        copied += static_cast<uint64_t>(n);
+        until = impl_->deadline();
+    }
+    impl_->closeFile(handle);
+    if (!ok) return std::nullopt;
+    return copied;
+}
+
 }  // namespace fcg

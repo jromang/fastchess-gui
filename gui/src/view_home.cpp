@@ -16,6 +16,7 @@
 #include "home.hpp"
 #include "i18n.hpp"
 #include "memory.hpp"
+#include "remote_run.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -425,6 +426,14 @@ void App::drawRunCards() {
         if (!runs_[i].run->running()) continue;
         cards.push_back(i == shown_run_ ? runCard() : runCardOf(i));
         if (several && runs_[i].run->remote()) cards.back().weight = static_cast<int>(std::lround(runs_[i].weight));
+        // On a remote machine: which, and whether the window reaches it at the moment.
+        if (!runs_[i].machine_id.empty()) {
+            cards.back().format = trf("On {}", runs_[i].machine_name) + " · " + cards.back().format;
+            if (const auto* remote = dynamic_cast<const RemoteRun*>(runs_[i].run.get()); remote && remote->connecting()) {
+                cards.back().state      = trf("Reaching {}…", runs_[i].machine_name);
+                cards.back().warn_state = true;
+            }
+        }
         of.push_back(i);
     }
     const float spacing = ImGui::GetStyle().ItemSpacing.x;

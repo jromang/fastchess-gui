@@ -28,6 +28,10 @@ this repository still builds unchanged.
 - **Several tournaments at once**, a tab each, each in a process of its own: they share the cores by weight (a
   budget in Settings), never more memory than the budget nor more GPU engines than GPUs, and play on when the
   window closes; it shows them again when it opens (`--attach` talks with one from a terminal).
+- **Remote machines**: a tournament runs on a test box, a server or a second PC (Linux, macOS, Windows' built-in
+  OpenSSH server) reached with SSH (the agent or a key file, nothing secret saved), followed in the window as if
+  it played here, connected again after a cut, its files copied back. Settings installs fastchess-gui there,
+  checks the engines' paths and pushes the books and tablebases missing.
 - **Exact resume**: every tournament is a folder with an append-only journal; after a crash, a closed window or
   a power cut it continues with no game lost or played twice.
 - **Unattended nights**: an engine that cannot start has its games set aside while the others go on; it is tried

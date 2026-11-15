@@ -151,6 +151,9 @@ class SshClient {
                 unsigned perms = 0644);
     // The other way, through `local`.part.
     bool download(const std::string& remote, const std::filesystem::path& local, const Progress& progress = {});
+    // What `remote` holds from byte `from` on, appended to `local` (written afresh when `from` is 0): a file that grows
+    // (a journal, a PGN file), copied as it grows. The bytes copied, nullopt and error() when it fails.
+    std::optional<uint64_t> fetch(const std::string& remote, const std::filesystem::path& local, uint64_t from);
 
    private:
     struct Impl;

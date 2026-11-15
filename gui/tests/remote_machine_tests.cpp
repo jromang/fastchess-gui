@@ -20,6 +20,7 @@
 #include "ed25519.h"
 #include "libssh2_backend.hpp"
 #include "machine_jobs.hpp"
+#include "machine_run.hpp"
 #include "machines.hpp"
 #include "ssh_client.hpp"
 #include "ssh_server.hpp"
@@ -1087,6 +1088,278 @@ TEST_CASE("Machine jobs: books and tablebases compared, the missing ones pushed,
     REQUIRE(missing.ok);
     CHECK(missing.files->books[0].state == BookCheck::State::Missing);
     CHECK(server.error().empty());
+    fs::remove_all(dir);
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Tournaments on a machine
+
+namespace {
+
+tour::Participant participant(int id, const std::string& name, const std::string& cmd) {
+    tour::Participant p;
+    p.id          = id;
+    p.engine.name = name;
+    p.engine.cmd  = cmd;
+    p.engine.dir  = "/home/me/engines";
+    p.engine.options.push_back({"SyzygyPath", "/home/me/syzygy"});
+    p.engine.options.push_back({"Hash", "64"});
+    return p;
+}
+
+Machine linuxMachine() {
+    Machine m;
+    m.id             = "m1";
+    m.name           = "test-box";
+    m.host           = "127.0.0.1";
+    m.port           = MACHINE_PORT;
+    m.user           = "tester";
+    m.folder         = "fcg";
+    m.system.shell   = RemoteShell::Posix;
+    m.system.home    = "/home/tester";
+    m.system.os      = "Linux";
+    m.system.arch    = "x86_64";
+    m.system.threads = 8;
+    m.system.checked = "2026-11-15 10:00";
+    return m;
+}
+
+}  // namespace
+
+TEST_CASE("Machine runs: the tournament as the machine plays it, its engines, books and tablebases there") {
+    const auto dir = freshDir("spec");
+    tour::TournamentSpec spec;
+    spec.name = "Gauntlet";
+    spec.participants.push_back(participant(1, "Alpha 1.0", "/home/me/engines/alpha"));
+    spec.participants.push_back(participant(2, "Beta (own book)", "/home/me/engines/beta"));
+    spec.participants[1].book                   = "/home/me/books/beta.bin";
+    spec.conditions.opening.file                = "/home/me/books/UHO.epd";
+    spec.conditions.tb_adjudication.syzygy_dirs = "/home/me/syzygy";
+    spec.forced_options                         = {{"SyzygyPath", "/home/me/syzygy"}};
+    spec.pgn_out                                = "/home/me/all.pgn";
+    spec.participants[0].program.size           = 1234;
+
+    auto m           = linuxMachine();
+    m.engines        = {{"Alpha 1.0", "/opt/alpha", -1, "", ""}};
+    const auto there = remoteTournamentDir(m, dir);
+    CHECK(machineFolder(m) == "/home/tester/fcg");
+    CHECK(there == "/home/tester/fcg/tournaments/" + dir.filename().string());
+
+    // Beta has no path there: named. Its library engine, by its program, has one: found.
+    tour::TournamentSpec out;
+    const auto error = remoteSpec(spec, m, {}, dir, there, out);
+    CHECK(error.find("Beta (own book)") != std::string::npos);
+    EngineEntry beta;
+    beta.name = "Beta";
+    beta.cmd  = "/home/me/engines/beta";
+    m.engines.push_back({"Beta", "/opt/beta", -1, "", ""});
+    REQUIRE(remoteSpec(spec, m, {beta}, dir, there, out).empty());
+
+    CHECK(out.participants[0].engine.cmd == "/opt/alpha");
+    CHECK(out.participants[0].engine.dir.empty());
+    CHECK(out.participants[0].program.size == 0);
+    CHECK(out.participants[0].engine.options[0].second == "/home/tester/fcg/syzygy");
+    CHECK(out.participants[0].engine.options[1].second == "64");
+    CHECK(out.participants[1].engine.cmd == "/opt/beta");
+    CHECK(out.participants[1].book == "/home/tester/fcg/books/beta.bin");
+    CHECK(out.conditions.opening.file == "/home/tester/fcg/books/UHO.epd");
+    CHECK(out.conditions.tb_adjudication.syzygy_dirs == "/home/tester/fcg/syzygy");
+    CHECK(out.forced_options[0].second == "/home/tester/fcg/syzygy");
+    CHECK(out.pgn_out.empty());
+    CHECK(requiredBooks(out, there) ==
+          std::vector<std::string>{"/home/tester/fcg/books/UHO.epd", "/home/tester/fcg/books/beta.bin"});
+
+    // A file of the tournament's folder (the positions of a Polyglot book) goes in its folder there, not required.
+    spec.conditions.opening.file = (dir / "openings.epd").string();
+    m.books_dir                  = "/data/books";
+    REQUIRE(remoteSpec(spec, m, {beta}, dir, there, out).empty());
+    CHECK(out.conditions.opening.file == there + "/openings.epd");
+    CHECK(out.participants[1].book == "/data/books/beta.bin");
+    CHECK(requiredBooks(out, there) == std::vector<std::string>{"/data/books/beta.bin"});
+
+    // A withdrawn participant without a path does not keep the tournament from playing there.
+    spec.participants.push_back(participant(3, "Gone", "/home/me/engines/gone"));
+    spec.participants.back().active = false;
+    CHECK(remoteSpec(spec, m, {beta}, dir, there, out).empty());
+    fs::remove_all(dir);
+}
+
+TEST_CASE("Machine runs: the commands that start a tournament there and reach its process, for sh and cmd") {
+    auto m = linuxMachine();
+    CHECK(unSh(*remoteStartCommand(m, "/home/tester/fcg/tournaments/t")) ==
+          "'/home/tester/fcg/fastchess-gui' --profile '/home/tester/fcg/profile' --run "
+          "'/home/tester/fcg/tournaments/t' --detach");
+    CHECK(unSh(*remoteAttachCommand(m, "/home/tester/fcg/tournaments/t")) ==
+          "exec '/home/tester/fcg/fastchess-gui' --attach '/home/tester/fcg/tournaments/t'");
+    m.system.shell = RemoteShell::Cmd;
+    m.system.home  = "C:\\Users\\tester";
+    CHECK(machineFolder(m) == "C:\\Users\\tester\\fcg");
+    CHECK(*remoteAttachCommand(m, "C:\\Users\\tester\\fcg/tournaments/t") ==
+          "\"C:\\Users\\tester\\fcg\\fastchess-gui.exe\" --attach \"C:\\Users\\tester\\fcg\\tournaments\\t\"");
+    CHECK_FALSE(remoteStartCommand(m, "C:\\100%").has_value());
+}
+
+TEST_CASE("Machine runs: where a tournament plays, kept in its folder here") {
+    const auto dir = freshDir("place");
+    CHECK_FALSE(readMachinePlace(dir).has_value());
+    REQUIRE(writeMachinePlace(dir, {"m1", "test-box", "/srv/fcg/tournaments/t"}));
+    const auto place = readMachinePlace(dir);
+    REQUIRE(place);
+    CHECK(place->machine == "m1");
+    CHECK(place->name == "test-box");
+    CHECK(place->dir == "/srv/fcg/tournaments/t");
+    fs::remove_all(dir);
+}
+
+TEST_CASE("Machine runs: prepared and started there, refused without fastchess-gui, an engine or a book") {
+    const auto dir  = freshDir("start");
+    const auto root = dir / "home";
+    const auto here = dir / "here";
+    fs::create_directories(here);
+    writeFile(here / "tournament.json", "{}");
+    writeFile(here / "openings.epd", "positions");
+    writeFile(here / "tournament.lock", "1");
+    writeFile(root / "opt/alpha", "binary");
+    writeFile(root / "home/tester/fcg/fastchess-gui", "program");
+    std::vector<std::string> commands;
+    ssh::MockServer::Options options;
+    options.root = root;
+    options.exec = [&root](const std::string& command) {
+        if (unSh(command).find("--detach") != std::string::npos) {
+            ssh::MockServer::Command reply;
+            reply.out = "plays in the background\n";
+            return reply;
+        }
+        return linuxBox(root, command);
+    };
+    ssh::MockServer server(MACHINE_PORT, options);
+    auto m = linuxMachine();
+
+    tour::TournamentSpec spec;
+    spec.participants.push_back(participant(1, "Alpha", "/opt/alpha"));
+    spec.participants.push_back(participant(2, "Alpha too", "/opt/alpha"));
+    spec.conditions.opening.file = "/home/tester/fcg/books/UHO.epd";
+    const auto there             = std::string("/home/tester/fcg/tournaments/t");
+    const auto json              = nlohmann::json(spec).dump();
+
+    SshClient client;
+    REQUIRE(client.connect(loopbackTarget(dir)));
+    std::string error;
+    std::vector<std::string> notes;
+    // The book is not there yet.
+    CHECK_FALSE(startOnMachine(client, m, here, there, json, error, notes));
+    CHECK(error.find("UHO.epd") != std::string::npos);
+    writeFile(root / "home/tester/fcg/books/UHO.epd", "book");
+    error.clear();
+    REQUIRE_MESSAGE(startOnMachine(client, m, here, there, json, error, notes), error);
+    CHECK(readFile(root / "home/tester/fcg/tournaments/t/tournament.json") == json);
+    CHECK(readFile(root / "home/tester/fcg/tournaments/t/openings.epd") == "positions");
+    CHECK_FALSE(fs::exists(root / "home/tester/fcg/tournaments/t/tournament.lock"));  // this computer's
+    CHECK_FALSE(fs::exists(here / ".tournament-remote.json"));
+    const auto ran = server.commands();
+    CHECK(std::any_of(ran.begin(), ran.end(),
+                      [](const std::string& c) { return unSh(c).find("--detach") != std::string::npos; }));
+
+    // An engine whose program is not there.
+    spec.participants[1].engine.cmd = "/opt/missing";
+    error.clear();
+    CHECK_FALSE(startOnMachine(client, m, here, there, nlohmann::json(spec).dump(), error, notes));
+    CHECK(error.find("Alpha too") != std::string::npos);
+    fs::remove_all(dir);
+}
+
+TEST_CASE("Machine runs: the tournament's files copied back as they grow, written afresh when shorter there") {
+    const auto dir   = freshDir("sync");
+    const auto root  = dir / "home";
+    const auto local = dir / "here";
+    fs::create_directories(local);
+    const auto there = root / "fcg/tournaments/t";
+    writeFile(there / "journal.jsonl", "{\"t\":\"created\"}\n");
+    writeFile(there / "games.pgn", "[Event \"1\"]\n");
+    writeFile(there / "logs/game-1.log", "W> uci\n");
+    writeFile(there / "tournament.json", "{\"remote\":true}");
+    writeFile(local / "tournament.json", "{\"local\":true}");
+    ssh::MockServer::Options options;
+    options.root = root;
+    ssh::MockServer server(MACHINE_PORT, options);
+    SshClient client;
+    REQUIRE(client.connect(loopbackTarget(dir)));
+    std::string error;
+    auto copied = MachineSync::pass(client, "/fcg/tournaments/t", local, error);
+    REQUIRE_MESSAGE(copied, error);
+    CHECK(readFile(local / "journal.jsonl") == "{\"t\":\"created\"}\n");
+    CHECK(readFile(local / "games.pgn") == "[Event \"1\"]\n");
+    CHECK(readFile(local / "logs/game-1.log") == "W> uci\n");
+    CHECK(readFile(local / "tournament.json") == "{\"local\":true}");  // this computer's paths stay
+    // Grown there: only the rest comes.
+    std::ofstream(there / "journal.jsonl", std::ios::app) << "{\"t\":\"game\"}\n";
+    copied = MachineSync::pass(client, "/fcg/tournaments/t", local, error);
+    REQUIRE(copied);
+    CHECK(*copied == std::string("{\"t\":\"game\"}\n").size());
+    CHECK(readFile(local / "journal.jsonl") == "{\"t\":\"created\"}\n{\"t\":\"game\"}\n");
+    // Nothing new: nothing copied.
+    CHECK(*MachineSync::pass(client, "/fcg/tournaments/t", local, error) == 0);
+    // Shorter there (written afresh): all of it.
+    writeFile(there / "games.pgn", "[A]\n");
+    REQUIRE(MachineSync::pass(client, "/fcg/tournaments/t", local, error));
+    CHECK(readFile(local / "games.pgn") == "[A]\n");
+    fs::remove_all(dir);
+}
+
+TEST_CASE("Machine runs: the control channel through SSH, and a process that is not there any more") {
+    const auto dir = freshDir("link");
+    ssh::MockServer::Options options;
+    options.root = dir;
+    options.exec = [](const std::string& command) {
+        ssh::MockServer::Command reply;
+        if (unSh(command).find("--attach 'playing'") != std::string::npos) {
+            // fastchess-gui --attach: the tournament's hello once the window's came, then an echo of each line.
+            reply.talk = [](const std::string& input, bool closed, bool& ended) {
+                ended = closed;
+                std::string out;
+                if (input.find("hello") != std::string::npos) out += "{\"hello\":{\"protocol\":1}}\n";
+                if (input.find("pause") != std::string::npos) out += "{\"e\":\"reply\"}\n";
+                return out;
+            };
+        } else {
+            reply.err    = "error: no tournament process plays gone (connection refused)\n";
+            reply.status = 2;
+        }
+        return reply;
+    };
+    ssh::MockServer server(MACHINE_PORT, options);
+    auto target = loopbackTarget(dir);
+    auto status = std::make_shared<LinkStatus>();
+    {
+        SshLink link(target, viaSh("exec fcg --attach 'playing'"), nullptr, status, std::chrono::seconds(2));
+        CHECK(link.write("{\"hello\":{\"protocol\":1,\"journal\":0}}\n"));
+        std::string got;
+        char buffer[256];
+        while (got.find('\n') == std::string::npos) {
+            const long n = link.read(buffer, sizeof buffer);
+            REQUIRE(n > 0);
+            got.append(buffer, static_cast<std::size_t>(n));
+        }
+        CHECK(got == "{\"hello\":{\"protocol\":1}}\n");
+        CHECK(status->attached);
+        CHECK(link.write("{\"c\":\"pause\"}\n"));
+        got.clear();
+        while (got.find('\n') == std::string::npos) {
+            const long n = link.read(buffer, sizeof buffer);
+            REQUIRE(n > 0);
+            got.append(buffer, static_cast<std::size_t>(n));
+        }
+        CHECK(got == "{\"e\":\"reply\"}\n");
+    }
+    CHECK_FALSE(status->gone);
+
+    // Nothing listens there: tried while it may be starting, then said gone.
+    auto gone_status = std::make_shared<LinkStatus>();
+    SshLink gone(target, viaSh("exec fcg --attach 'gone'"), nullptr, gone_status, std::chrono::seconds(1));
+    char buffer[64];
+    CHECK(gone.read(buffer, sizeof buffer) == 0);
+    CHECK(gone_status->gone);
+    CHECK(gone_status->message().find("does not play on test-box any more") != std::string::npos);
     fs::remove_all(dir);
 }
 
