@@ -1054,9 +1054,10 @@ class App {
     int book_show_ = 0;  // 0 every opening, 1 those with a problem
     std::string book_search_;
     std::vector<int> book_rows_;  // openings shown
-    bool book_rows_dirty_ = true;
-    int book_item_        = -1;     // opening shown on the board
-    bool drop_mirrored_   = false;  // the cleaned copy also leaves out mirrored positions
+    bool book_rows_dirty_  = true;
+    int book_item_         = -1;     // opening shown on the board
+    int book_item_request_ = -1;     // --focus books-item=N: that opening shown once the book is read
+    bool drop_mirrored_    = false;  // the cleaned copy also leaves out mirrored positions
 
     // Engines view.
     std::string quick_test_engine_;    // the engine of the quick test running, empty when none
@@ -1133,6 +1134,7 @@ class App {
     std::optional<BoardBack> board_back_;
     bool board_key_taken_  = false;  // key A served a board this frame
     bool review_when_read_ = false;  // --focus board-review: the game analysed once its file is read
+    int review_ply_        = -1;     // --focus board-review-PLY: the board at that ply then
 
     // Console view.
     std::vector<Console::Line> console_lines_;

@@ -265,13 +265,17 @@ void App::frame() {
             page_ = Page::Board;
             if (w == "board-analyse") setBoardAnalysis(true);
         } else if (w.rfind("board=", 0) == 0 || w.rfind("board-analyse=", 0) == 0 ||
-                   w.rfind("board-review=", 0) == 0) {
+                   w.rfind("board-review", 0) == 0) {
             // board=FILE: a PGN file (or a FEN, EPD file) on the Board page; board-analyse=FILE, analysed;
-            // board-review=FILE: its first game analysed move by move, once read.
+            // board-review=FILE: its first game analysed move by move, once read; board-review-PLY=FILE, shown at
+            // that ply.
             const auto eq = w.find('=');
             dropFile(w.substr(eq + 1));
             if (w.rfind("board-analyse=", 0) == 0) setBoardAnalysis(true);
-            if (w.rfind("board-review=", 0) == 0) review_when_read_ = true;
+            if (w.rfind("board-review", 0) == 0) {
+                review_when_read_ = true;
+                if (w.rfind("board-review-", 0) == 0) review_ply_ = std::atoi(w.c_str() + 13);
+            }
         } else if (w == "board-edit") {  // the position editor
             page_ = Page::Board;
             openPositionEditor();
@@ -326,6 +330,10 @@ void App::frame() {
             open_pgn_players_ = true;
         } else if (w == "books")
             page_ = Page::Books;
+        else if (w.rfind("books-item=", 0) == 0) {  // books-item=N: the Nth opening of the first book on its board
+            page_              = Page::Books;
+            book_item_request_ = std::max(0, std::atoi(w.c_str() + 11) - 1);
+        }
         else if (w == "books-create") {
             page_             = Page::Books;
             open_book_create_ = true;
@@ -423,15 +431,22 @@ void App::frame() {
             tab_request_                         = live ? Tab::Live : Tab::Games;
             (live ? live_chart_ : replay_chart_) = kind;
         } else {
+            // open=DIR, open-TAB=DIR: a tournament's folder opened as Open a folder… does, on that tab.
+            std::string tab = w;
+            if (w.rfind("open", 0) == 0 && w.find('=') != std::string::npos) {
+                const auto eq = w.find('=');
+                tab           = w.substr(std::min<std::size_t>(5, eq), eq - std::min<std::size_t>(5, eq));
+                openTournament(w.substr(eq + 1));
+            }
             page_        = Page::Tournament;
-            tab_request_ = w == "live"        ? Tab::Live
-                           : w == "games"     ? Tab::Games
-                           : w == "openings"  ? Tab::Openings
-                           : w == "standings" ? Tab::Standings
-                           : w == "schedule"  ? Tab::Schedule
-                           : w == "bracket"   ? Tab::Bracket
-                           : w == "broadcast" ? Tab::Broadcast
-                                              : Tab::Overview;
+            tab_request_ = tab == "live"        ? Tab::Live
+                           : tab == "games"     ? Tab::Games
+                           : tab == "openings"  ? Tab::Openings
+                           : tab == "standings" ? Tab::Standings
+                           : tab == "schedule"  ? Tab::Schedule
+                           : tab == "bracket"   ? Tab::Bracket
+                           : tab == "broadcast" ? Tab::Broadcast
+                                                : Tab::Overview;
         }
         focus_done_ = true;
     }

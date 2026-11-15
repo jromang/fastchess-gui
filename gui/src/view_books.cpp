@@ -671,6 +671,10 @@ void App::drawBookPositions() {
 
     ImGui::SameLine();
     ImGui::BeginChild("##book_board");
+    if (book_item_request_ >= 0 && book_item_request_ < static_cast<int>(scan.size())) {
+        book_item_         = book_item_request_;
+        book_item_request_ = -1;
+    }
     if (book_item_ >= 0 && book_item_ < static_cast<int>(scan.size())) {
         const auto item = scan.item(static_cast<std::size_t>(book_item_));
         chess::Board position;

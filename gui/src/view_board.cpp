@@ -610,6 +610,7 @@ void App::pollBoardPgn() {
         review_when_read_ = false;
         board_.open_tab   = 0;
         startGameReview();
+        if (review_ply_ >= 0) board_.ply = std::clamp(review_ply_, 0, static_cast<int>(board_.game.moves.size()));
     }
 }
 
