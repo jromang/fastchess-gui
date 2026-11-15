@@ -1112,9 +1112,7 @@ fastchess-gui --attach TOURNAMENT_FOLDER
   (*Export for a rating list…*), `ratings-players` (the *PGN players* window), `palette[=TEXT]` (the command palette, with TEXT typed in it),
   `game-menu=N` (the menu of game N in the *Games* tab, a result chosen), `end-menu=N` (*End with result* of the
   game of slot N, from 1), `big-screen[=N]` (the big screen, of the game of slot N), `live-back=N` (the game
-  followed in *Live*, stepped back N plies),
-
-  `engines-console` (the first engine's console), `board-analyse` (the Board page, analysed), `board=FILE` (a PGN,
+  followed in *Live*, stepped back N plies), `engines-console` (the first engine's console), `board-analyse` (the Board page, analysed), `board=FILE` (a PGN,
   FEN or EPD file on the Board page; `board-analyse=FILE` analysed, `board-review=FILE` its first game analysed move
   by move), `board-edit` (the position editor), `board-play` and `board-play-start` (a game between the first two
   engines, started);
