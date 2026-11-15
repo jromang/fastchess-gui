@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <fstream>
 
 #include <fcntl.h>
 
@@ -51,8 +52,12 @@ std::string allowanceArg(const tour::Allowance& a) {
 // -----------------------------------------------------------------------------------------------------------
 
 void ChildChannel::send(const char* kind, nlohmann::json fields) {
-    if (!fields.is_object()) fields = nlohmann::json::object();
     std::lock_guard<std::mutex> lock(write_mutex_);
+    sendLocked(kind, std::move(fields));
+}
+
+void ChildChannel::sendLocked(const char* kind, nlohmann::json fields) {
+    if (!fields.is_object()) fields = nlohmann::json::object();
     fields["seq"] = ++seq_;
     fields["e"]   = kind;
     (void)write(fields.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n");
@@ -60,6 +65,11 @@ void ChildChannel::send(const char* kind, nlohmann::json fields) {
 
 void ChildChannel::hello(const control::Hello& hello) {
     std::lock_guard<std::mutex> lock(write_mutex_);
+    helloLocked(hello);
+    setConnected();
+}
+
+void ChildChannel::helloLocked(const control::Hello& hello) {
     (void)write(control::helloJson(hello).dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n");
 }
 
@@ -163,6 +173,145 @@ void StdioChannel::readLoop() {
         for (const auto& line : lines) received(line);
     }
     setClosed();
+}
+
+SocketChannel::SocketChannel(const std::string& log, std::filesystem::path dir, control::Hello hello)
+    : dir_(std::move(dir)), hello_(std::move(hello)) {
+    // As the standard channel: stray writes to the standard output and error go to the log.
+#ifdef _WIN32
+    const int log_fd = _open(log.c_str(), _O_WRONLY | _O_CREAT | _O_APPEND | _O_BINARY, 0600);
+    if (log_fd >= 0) {
+        _dup2(log_fd, 1);
+        _dup2(log_fd, 2);
+        _close(log_fd);
+    }
+#else
+    const int log_fd = ::open(log.c_str(), O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0600);
+    if (log_fd >= 0) {
+        ::dup2(log_fd, 1);
+        ::dup2(log_fd, 2);
+        ::close(log_fd);
+    }
+    const int null_fd = ::open("/dev/null", O_RDONLY);
+    if (null_fd >= 0) {
+        ::dup2(null_fd, 0);
+        ::close(null_fd);
+    }
+#endif
+}
+
+SocketChannel::~SocketChannel() {
+    // control.json first: a window that sees the connection end finds nothing to connect to again.
+    local::removeControlFile(dir_);
+    server_.close();
+    {
+        std::lock_guard<std::mutex> lock(write_mutex_);
+        if (client_) client_->close();
+    }
+    if (accept_thread_.joinable()) accept_thread_.join();
+}
+
+bool SocketChannel::listen(std::string& error) {
+    const auto endpoint = local::endpointFor(dir_);
+    if (!server_.listen(endpoint, error)) return false;
+    local::ControlFile file;
+    file.endpoint = endpoint;
+    file.pid      = hello_.pid;
+    file.version  = hello_.version;
+    if (!local::writeControlFile(dir_, file)) {
+        error = "cannot write " + local::controlFilePath(dir_).string();
+        server_.close();
+        return false;
+    }
+    accept_thread_ = std::thread([this] { acceptLoop(); });
+    return true;
+}
+
+bool SocketChannel::write(const std::string& line) {
+    if (!client_ || !ready_) return false;
+    if (client_->write(line)) return true;
+    client_.reset();  // gone: the events wait for the next window
+    ready_ = false;
+    return false;
+}
+
+void SocketChannel::replayJournal(uint64_t from) {
+    std::ifstream in(dir_ / "journal.jsonl", std::ios::binary);
+    if (!in || !in.seekg(static_cast<std::streamoff>(from))) return;
+    uint64_t at = from;
+    for (std::string line; std::getline(in, line);) {
+        if (in.eof()) break;  // a last line without its end: not written yet, it comes as an event
+        const uint64_t end = at + line.size() + 1;
+        try {
+            if (line.find_first_not_of(" \t\r") != std::string::npos)
+                sendLocked("journal", {{"at", at}, {"end", end}, {"event", nlohmann::json::parse(line)}});
+        } catch (const nlohmann::json::exception&) {
+            // A damaged line: the window's copy reads the files again when it misses one.
+        }
+        at = end;
+    }
+}
+
+void SocketChannel::acceptLoop() {
+    while (auto link = server_.accept()) {
+        std::shared_ptr<Link> client(std::move(link));
+        {
+            // One window at a time: another one is told, and let go.
+            std::lock_guard<std::mutex> lock(write_mutex_);
+            if (client_) {
+                (void)client->write("{\"busy\":true}\n");
+                client->close();
+                continue;
+            }
+            client_ = client;  // taken, though its hello is still to come: no event goes to it before
+            ready_  = false;
+        }
+        if (serving_.joinable()) serving_.join();  // the window before, gone
+        serving_ = std::thread([this, client] { serve(client); });
+    }
+    if (serving_.joinable()) serving_.join();
+}
+
+void SocketChannel::serve(std::shared_ptr<Link> client) {
+    // Its first line: its hello, with where its copy's journal ends; else a command (a script through --attach), and
+    // no journal line is sent again.
+    control::LineSplitter split;
+    std::vector<std::string> lines;
+    char buffer[65536];
+    while (lines.empty()) {
+        const long n = client->read(buffer, sizeof buffer);
+        if (n <= 0) break;
+        split.feed(std::string_view(buffer, static_cast<std::size_t>(n)), lines);
+    }
+    if (!lines.empty()) {
+        std::optional<uint64_t> from;
+        try {
+            if (const auto hello = control::parseHello(nlohmann::json::parse(lines.front()))) from = hello->journal;
+        } catch (const nlohmann::json::exception&) {
+        }
+        {
+            std::lock_guard<std::mutex> lock(write_mutex_);
+            ready_ = true;
+            helloLocked(hello_);
+            if (from) replayJournal(*from);
+        }
+        for (std::size_t i = from ? 1 : 0; i < lines.size(); ++i) received(lines[i]);
+        setConnected();
+
+        // Its commands, until it goes away.
+        for (;;) {
+            const long n = client->read(buffer, sizeof buffer);
+            if (n <= 0) break;
+            lines.clear();
+            split.feed(std::string_view(buffer, static_cast<std::size_t>(n)), lines);
+            for (const auto& line : lines) received(line);
+        }
+    }
+    std::lock_guard<std::mutex> lock(write_mutex_);
+    if (client_ == client) {
+        client_.reset();
+        ready_ = false;
+    }
 }
 
 // --- observer

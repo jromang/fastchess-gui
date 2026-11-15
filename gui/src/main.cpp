@@ -14,6 +14,8 @@
 #include <SDL3/SDL.h>
 
 #ifdef _WIN32
+#    include <fcntl.h>
+#    include <io.h>
 #    include <windows.h>
 #elif defined(__APPLE__)
 #    include <mach-o/dyld.h>
@@ -24,6 +26,9 @@
 #include <implot.h>
 
 #ifndef _WIN32
+#    include <unistd.h>
+
+#    include <cerrno>
 #    include <csignal>
 #endif
 
@@ -34,10 +39,12 @@
 #include <tour/pgn_book.hpp>
 
 #include "app.hpp"
+#include "child_process.hpp"
 #include "console.hpp"
 #include "engines.hpp"
 #include "headless.hpp"
 #include "i18n.hpp"
+#include "local_socket.hpp"
 #include "logo.hpp"
 #include "portable.hpp"
 #include "renderer.hpp"
@@ -159,7 +166,11 @@ Args parseArgs(int argc, char** argv) {
                 "              [--tlcs UDP_PORT [--tlcs-lanes]] [--web TCP_PORT] [--live-files [DIR]]\n"
                 "              [--lichess ROUND_URL|ROUND_ID|new]   (token in FCG_LICHESS_TOKEN)\n"
                 "              [--tunnel [localhost.run|ssh://USER@HOST[:PORT][/REMOTE_PORT]]]\n"
-                "                  (the web page on the internet through an SSH tunnel; --web's port, else 8080)\n");
+                "                  (the web page on the internet through an SSH tunnel; --web's port, else 8080)\n"
+                "              [--control stdio|socket] [--detach] [--allowance THREADS:MEMORY_MB:GPUS:ONE]\n"
+                "                  (driven by the window: its control channel; --detach plays on in the background)\n"
+                "fastchess-gui --attach TOURNAMENT_FOLDER   (the control channel of the process playing it, on the\n"
+                "              standard input and output)\n");
             std::exit(0);
         }
     }
@@ -332,6 +343,45 @@ fs::path profileFolder(const Args& args, const std::string& executable) {
     return path;
 }
 
+// --attach <folder>: what comes on the standard input goes to the tournament process's socket, and what it sends to the
+// standard output, until either side ends. 0 when it ended, 2 when nothing listens.
+int attachTo(const std::string& folder) {
+    const auto file     = fcg::local::readControlFile(folder);
+    const auto endpoint = file ? file->endpoint : fcg::local::endpointFor(folder);
+    std::string error;
+    auto link = fcg::local::connect(endpoint, error);
+    if (!link) {
+        std::fprintf(stderr, "error: no tournament process plays %s (%s)\n", folder.c_str(), error.c_str());
+        return 2;
+    }
+#ifdef _WIN32
+    _setmode(_fileno(stdin), _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif
+    // What comes on the standard input, as it comes (a line at a time from a script), not a buffer full.
+    std::thread input([&] {
+        char buffer[4096];
+        for (;;) {
+#ifdef _WIN32
+            const int n = _read(0, buffer, sizeof buffer);
+#else
+            const auto n = ::read(0, buffer, sizeof buffer);
+            if (n < 0 && errno == EINTR) continue;
+#endif
+            if (n <= 0 || !link->write(std::string(buffer, static_cast<std::size_t>(n)))) break;
+        }
+    });
+    input.detach();  // a read of the terminal that waits ends with the program
+    char buffer[65536];
+    for (;;) {
+        const long n = link->read(buffer, sizeof buffer);
+        if (n <= 0) break;
+        std::fwrite(buffer, 1, static_cast<std::size_t>(n), stdout);
+        std::fflush(stdout);
+    }
+    return 0;
+}
+
 // The PGN books turned into Polyglot books are kept in the profile; those not used for a month are removed.
 void useBookCache(const fcg::Storage& storage) {
     fcg::tour::book_cache_dir = storage.root() / "book-cache";
@@ -369,6 +419,34 @@ int main(int argc, char** argv) {
     fastchess::config::TournamentConfig->startup_time = fcg::ENGINE_STARTUP_TIME;
 
     // No window: play a tournament from the command line.
+    // --attach <folder>: the standard input and output bridged to the socket of the process playing that tournament.
+    if (!args.attach.empty()) return attachTo(args.attach);
+
+    // --run ... --detach: the same command again, out of this terminal's session, on its socket; this one returns.
+    if (!args.run.empty() && args.control.detach) {
+        std::vector<std::string> again;
+        for (int i = 1; i < argc; ++i) {
+            if (std::string_view(argv[i]) != "--detach") again.push_back(argv[i]);
+        }
+        if (args.control.mode != fcg::ControlOptions::Mode::Socket) {
+            again.push_back("--control");
+            again.push_back("socket");
+        }
+        fcg::ChildProcess child;
+        std::string error;
+        if (!child.start(fastchess::engine::xboard_adapter, again, error, true)) {
+            std::fprintf(stderr, "error: %s\n", error.c_str());
+            return 2;
+        }
+        child.closeInput();
+        child.closeOutput();
+        std::printf(
+            "%s plays in the background (process %lld). fastchess-gui --attach \"%s\" talks with it; the window "
+            "shows it when it opens.\n",
+            args.run.c_str(), static_cast<long long>(child.pid()), args.run.c_str());
+        return 0;
+    }
+
     if (!args.run.empty()) {
         const fcg::Storage storage(profileFolder(args, fastchess::engine::xboard_adapter));
         useBookCache(storage);

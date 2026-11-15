@@ -225,6 +225,8 @@ class App {
 
     // Stops a running match without asking (used by --quit-after).
     void forceQuit();
+    // Quits, the tournaments playing on in their own processes (the quick test stops).
+    void keepRunningAndQuit();
 
     // The window came back to the front: an engine may have been rebuilt or moved meanwhile.
     void onFocusGained() { refreshPrograms(); }
@@ -802,6 +804,9 @@ class App {
     int tab_select_frames_ = 0;  // the tab bar selects the tab shown (showRun() from elsewhere) for a few frames
     // What runStatusText() says of tab `index`, shown or not.
     [[nodiscard]] std::string runStatusText(std::size_t index) const;
+    // Connects to the process playing the tournament in `dir` without the window (detached), in a new tab, with that
+    // weight; false when none listens there.
+    bool attachTournament(const std::filesystem::path& dir, double weight);
     // Why the tournament in `dir` cannot be resumed (finished, a book that cannot be used, played elsewhere); empty
     // when it can.
     [[nodiscard]] std::string resumeCheck(const std::filesystem::path& dir);

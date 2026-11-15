@@ -8,6 +8,7 @@
 
 #include "app.hpp"
 #include "i18n.hpp"
+#include "local_socket.hpp"
 #include "memory.hpp"
 #include "notify.hpp"
 #include "ui.hpp"
@@ -134,9 +135,10 @@ std::string App::launchTournament(const fs::path& dir) {
     if (program.empty()) return TR("This program cannot find its own file to start a tournament.");
 
     RemoteStart start;
-    start.program = program;
-    start.profile = storage_.root();
-    start.dir     = dir;
+    start.program  = program;
+    start.profile  = storage_.root();
+    start.dir      = dir;
+    start.detached = true;  // it plays on when the window closes
     // Its share beside the tournaments playing, from its first game.
     try {
         start.allowance = allowanceFor(tour::TournamentState::open(dir, true)->spec(), 1.0);
@@ -163,6 +165,26 @@ std::string App::launchTournament(const fs::path& dir) {
     }
     addRun(std::move(open));
     return {};
+}
+
+bool App::attachTournament(const fs::path& dir, double weight) {
+    // Its process listens on its socket (control.json): the window connects to it, and shows it as it stands.
+    const auto file = local::readControlFile(dir);
+    if (!file) return false;
+    std::string error;
+    auto link = local::connect(file->endpoint, error);
+    if (!link) return false;
+    auto remote = std::make_unique<RemoteRun>();
+    if (auto e = remote->attach(dir, std::move(link)); !e.empty()) {
+        Console::instance().add(e, true);
+        return false;
+    }
+    OpenRun open;
+    open.run    = std::move(remote);
+    open.weight = weight;
+    addRun(std::move(open));
+    Console::instance().add(trf("{} played on without the window: shown again.", run_->info().name));
+    return true;
 }
 
 std::string App::resumeCheck(const fs::path& dir) {
@@ -199,6 +221,12 @@ void App::onBackgroundRunFinished(std::size_t index) {
     const auto& run = *open.run;
     const auto* t   = run.tournament();
     const auto name = run.info().name;
+    // Another window shows it: said, and left to it.
+    if (run.elsewhere()) {
+        open.finish_message = run.error();
+        Console::instance().add(trf("{}: {}", name, run.error()), true);
+        return;
+    }
 
     // Quitting while it runs leaves it to be resumed at the next launch; otherwise it ended, or the user stopped it.
     const auto marker_dir = t ? fs::absolute(t->dir()).lexically_normal().string() : std::string();

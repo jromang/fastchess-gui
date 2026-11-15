@@ -115,6 +115,25 @@ bool App::debugSelectGame(int index) {
     return true;
 }
 
+void App::keepRunningAndQuit() {
+    // The quick test plays here: it stops. The others are let go, playing on: their markers stay, and the next launch
+    // connects to them again.
+    bool local = false;
+    for (auto& r : runs_) {
+        if (r.run->running() && !r.run->remote()) {
+            r.run->stopNow();
+            local = true;
+        } else if (auto* remote = dynamic_cast<RemoteRun*>(r.run.get()); remote && remote->running()) {
+            remote->disconnect();
+        }
+    }
+    if (local) {
+        quit_pending_ = true;
+    } else {
+        quit_ = true;
+    }
+}
+
 void App::forceQuit() {
     if (runsPlaying() > 0) {
         for (auto& r : runs_) {
@@ -420,19 +439,45 @@ void App::drawQuitModal() {
     ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
     if (ImGui::BeginPopupModal(TR("Quit?###quit"), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        // The tournaments play on in their own processes, unless asked to stop; the quick test plays here, and stops.
         const int playing = runsPlaying();
-        ImGui::TextUnformatted(playing > 1 ? trf("{} tournaments are running. The games in progress will be lost; "
-                                                 "each resumes exactly where it stopped.",
-                                                 playing)
-                                                 .c_str()
-                                           : TR("A match is running. The games in progress will be lost."));
+        const bool keep   = std::any_of(runs_.begin(), runs_.end(),
+                                        [](const OpenRun& r) { return r.run->running() && r.run->remote(); });
+        if (keep) {
+            ImGui::TextUnformatted(
+                trn("{} tournament is running. It can play on without the window, which shows it again when it opens.",
+                    "{} tournaments are running. They can play on without the window, which shows them again when it "
+                    "opens.",
+                    playing, playing)
+                    .c_str());
+        } else {
+            ImGui::TextUnformatted(TR("A match is running. The games in progress will be lost."));
+        }
         ImGui::Spacing();
+        if (keep) {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
+            const bool chosen = ImGui::Button(TR("Keep them running and quit"));
+            ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", TR("Each plays on in its own process. The window shows them again at its next "
+                                           "launch; fastchess-gui --attach <folder> talks with one from a terminal."));
+            }
+            if (chosen || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
+                keepRunningAndQuit();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+        }
         if (ImGui::Button(TR("Stop and quit"))) {
             forceQuit();
             ImGui::CloseCurrentPopup();
         }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("The games in progress are lost; each tournament resumes exactly where it "
+                                       "stopped."));
+        }
         ImGui::SameLine();
-        if (ImGui::Button(TR("Cancel"))) ImGui::CloseCurrentPopup();
+        if (ImGui::Button(TR("Cancel")) || ImGui::IsKeyPressed(ImGuiKey_Escape)) ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }
 
@@ -537,6 +582,11 @@ void App::resumeAtLaunch() {
     const auto markers = storage_.runningMarkers();
     bool resumed = false, queue = false;
     for (const auto& marker : markers) {
+        // Played on without the window (it was let go when it closed): shown again, as it stands.
+        if (attachTournament(marker.dir, marker.weight)) {
+            resumed = true;
+            continue;
+        }
         const auto summary = tour::summarize(marker.dir);
         const bool unfinished =
             summary && !summary->finished && !(summary->total && summary->played >= *summary->total);
@@ -790,6 +840,12 @@ void App::watchStartFailures(OpenRun& open) {
 void App::onRunFinished() {
     if (const auto* open = shownRun(); open && open->quick_test) {
         finishQuickTest();
+        return;
+    }
+    // Another window shows it: said, and left to it (its marker is that window's too).
+    if (run_->elsewhere()) {
+        finish_message_ = run_->error();
+        Console::instance().add(finish_message_, true);
         return;
     }
     const auto& info  = run_->info();

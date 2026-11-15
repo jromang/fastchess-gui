@@ -977,6 +977,9 @@ msgstr "Cada nova partida do gauntlet é mostrada do lado do seu engine testado,
 msgid "Each pair is two games on the same opening, colours reversed."
 msgstr "Cada par são duas partidas com a mesma abertura, cores invertidas."
 
+msgid "Each plays on in its own process. The window shows them again at its next launch; fastchess-gui --attach <folder> talks with one from a terminal."
+msgstr "Cada um continua em seu próprio processo. A janela os mostra de novo na próxima abertura; fastchess-gui --attach <pasta> conversa com um deles a partir de um terminal."
+
 msgid "Each round is two games, colours reversed, against an engine with a similar score."
 msgstr "Cada rodada são duas partidas, cores invertidas, contra um engine com pontuação parecida."
 
@@ -1617,6 +1620,9 @@ msgstr "Manter o log do engine de cada partida"
 
 msgid "Keep the old default"
 msgstr "Manter o padrão antigo"
+
+msgid "Keep them running and quit"
+msgstr "Deixá-los rodando e sair"
 
 msgid "Kept in the library, but out of the engine pickers (setup, suites, quick test, relaunch, adding to a tournament) and of Check those not checked. A tournament that has it already plays it as before."
 msgstr "Mantido na biblioteca, mas fora dos seletores de engines (configuração, suítes, teste rápido, relançar, adicionar a um torneio) e de “Verificar os não verificados”. Um torneio que já o tem continua a fazê-lo jogar como antes."
@@ -3098,6 +3104,9 @@ msgstr "As partidas como os testadores das listas de rating as enviam: o arquivo
 msgid "The games counted, as a PGN of headers, which Ordo and BayesElo read: ordo -p ratings.pgn -o ratings.txt"
 msgstr "As partidas contadas, como um PGN de cabeçalhos, que o Ordo e o BayesElo leem: ordo -p ratings.pgn -o ratings.txt"
 
+msgid "The games in progress are lost; each tournament resumes exactly where it stopped."
+msgstr "As partidas em andamento são perdidas; cada torneio retoma exatamente de onde parou."
+
 msgid "The games wait for {}: {}. Another try after each game."
 msgstr "As partidas aguardam {}: {}. Nova tentativa após cada partida."
 
@@ -3303,6 +3312,9 @@ msgstr "O torneio foi alterado."
 msgid "The tournament's process did not answer."
 msgstr "O processo do torneio não respondeu."
 
+msgid "The tournament's process ended as it started: see its log (fastchess-gui.log in its folder)."
+msgstr "O processo do torneio terminou ao iniciar: veja o log dele (fastchess-gui.log na pasta dele)."
+
 msgid "The tournament's process ended unexpectedly (exit code {}): it resumes exactly where it stopped."
 msgstr "O processo do torneio terminou inesperadamente (código de saída {}): ele retoma exatamente de onde parou."
 
@@ -3379,6 +3391,9 @@ msgstr "Este torneio já está em andamento."
 
 msgid "This tournament is playing in another program."
 msgstr "Este torneio está sendo jogado por outro programa."
+
+msgid "This tournament is shown in another window."
+msgstr "Este torneio está sendo mostrado em outra janela."
 
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr "Este torneio foi iniciado sem \"Reiniciar um engine que der crash\" (configuração, PGN e outros): encerrar uma partida para o engine da vez, o que pararia o torneio. Defina o resultado quando a partida terminar, na aba Partidas."
@@ -4511,6 +4526,9 @@ msgid_plural "{} played games stop counting"
 msgstr[0] "{} partida jogada deixa de contar"
 msgstr[1] "{} partidas jogadas deixam de contar"
 
+msgid "{} played on without the window: shown again."
+msgstr "{} continuou sem a janela: mostrado de novo."
+
 msgid "{} played · {} running · {} to play"
 msgstr "{} jogadas · {} em andamento · {} a jogar"
 
@@ -4625,8 +4643,10 @@ msgid_plural "{} threads"
 msgstr[0] "{} thread"
 msgstr[1] "{} threads"
 
-msgid "{} tournaments are running. The games in progress will be lost; each resumes exactly where it stopped."
-msgstr "{} torneios estão em andamento. As partidas em andamento serão perdidas; cada um retoma exatamente de onde parou."
+msgid "{} tournament is running. It can play on without the window, which shows it again when it opens."
+msgid_plural "{} tournaments are running. They can play on without the window, which shows them again when it opens."
+msgstr[0] "{} torneio está em andamento. Ele pode continuar sem a janela, que o mostrará de novo ao abrir."
+msgstr[1] "{} torneios estão em andamento. Eles podem continuar sem a janela, que os mostrará de novo ao abrir."
 
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"

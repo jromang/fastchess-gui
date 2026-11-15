@@ -9,7 +9,9 @@
 #include <thread>
 
 #include "../../tournament/tests/self_path.hpp"
+#include "child_process.hpp"
 #include "console.hpp"
+#include "local_socket.hpp"
 #include "remote_run.hpp"
 #include "run.hpp"
 #include "storage.hpp"
@@ -287,4 +289,101 @@ TEST_CASE("remote: a game ended by the operator, then the window going away stop
     const auto reopened = tour::TournamentState::open(dir);
     CHECK_FALSE(reopened->finished());
     CHECK(reopened->results().size() < 20);
+}
+
+TEST_CASE("remote: a tournament on its socket plays on without the window, which connects to it again") {
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+#ifdef _WIN32
+    // Named pipes: the same code paths, tested by hand (docs/guide.md).
+    MESSAGE("detached tournaments are tested on Linux and macOS, skipped");
+    return;
+#endif
+    setEnv("FCG_MOCK_MOVE_MS", "15");
+    const auto profile = fs::temp_directory_path() / "fcg-remote-tests-detach";
+    const auto dir     = makeTournament(profile, roundRobin(3, 4), 3);
+
+    std::size_t seen = 0;
+    {
+        Harness h;
+        RemoteStart start;
+        start.program  = FCG_GUI_PROGRAM;
+        start.profile  = profile;
+        start.dir      = dir;
+        start.detached = true;
+        REQUIRE(h.run.start(start).empty());
+        REQUIRE(h.waitFor([&] { return h.games.size() >= 2; }, 60s));
+        CHECK_FALSE(h.run.connecting());
+        CHECK(h.run.pid() > 0);
+        seen = h.games.size();
+        // The window goes away: its process plays on.
+        h.run.disconnect();
+    }
+    const auto control = local::readControlFile(dir);
+    REQUIRE(control);
+    const auto size  = fs::file_size(dir / "journal.jsonl");
+    const auto until = std::chrono::steady_clock::now() + 30s;
+    while (fs::file_size(dir / "journal.jsonl") == size && std::chrono::steady_clock::now() < until)
+        std::this_thread::sleep_for(50ms);
+    CHECK(fs::file_size(dir / "journal.jsonl") > size);
+
+    // A script talks with it through --attach: the process's hello, then the journal lines after the one it gives.
+    {
+        ChildProcess attach;
+        std::string error;
+        REQUIRE(attach.start(FCG_GUI_PROGRAM, {"--attach", dir.string()}, error));
+        REQUIRE(attach.write("{\"hello\":{\"protocol\":1,\"version\":\"test\",\"journal\":0}}\n"));
+        std::string got;
+        char buffer[4096];
+        while (got.find("\"journal\"") == std::string::npos || got.find("\"hello\"") == std::string::npos) {
+            const long n = attach.read(buffer, sizeof buffer);
+            if (n <= 0) break;
+            got.append(buffer, static_cast<std::size_t>(n));
+        }
+        CHECK(got.find("\"hello\"") != std::string::npos);
+        CHECK(got.find("\"journal\"") != std::string::npos);
+        attach.kill();
+        (void)attach.wait();
+    }
+
+    // The window connects again: its copy has every game, and the games in progress as they stand.
+    Harness h;
+    std::string error;
+    std::unique_ptr<Link> link;
+    // The script's connection may still be closing: tried again a moment.
+    for (int i = 0; i < 50 && !link; ++i) {
+        link = local::connect(control->endpoint, error);
+        if (!link) std::this_thread::sleep_for(100ms);
+    }
+    REQUIRE(link);
+    REQUIRE(h.run.attach(dir, std::move(link)).empty());
+    REQUIRE(h.waitFor([&] { return h.games.size() > seen + 2 && h.saw_moves; }, 60s));
+    CHECK(h.run.pid() == control->pid);
+
+    // A second window is turned away: one window at a time talks with a tournament.
+    {
+        Harness other;
+        auto second = local::connect(control->endpoint, error);
+        REQUIRE(second);
+        REQUIRE(other.run.attach(dir, std::move(second)).empty());
+        CHECK(other.waitFor([&] { return other.run.elsewhere(); }, 10s));
+    }
+
+    h.run.stopWhenIdle();
+    REQUIRE(h.waitFor([&] { return h.run.state() == Run::State::Finished; }, 60s));
+    CHECK(h.run.error().empty());
+    CHECK(h.run.end().exit_code == 3);
+    CHECK_FALSE(local::readControlFile(dir));
+    const auto fresh = tour::TournamentState::open(dir, true);
+    CHECK(fresh->results().size() == h.run.tournament()->results().size());
+    CHECK(h.games.size() == fresh->results().size());
+    setEnv("FCG_MOCK_MOVE_MS", nullptr);
+
+    // Nothing plays it now: --attach says so.
+    ChildProcess attach;
+    REQUIRE(attach.start(FCG_GUI_PROGRAM, {"--attach", dir.string()}, error));
+    attach.closeInput();
+    CHECK(attach.wait() == 2);
 }

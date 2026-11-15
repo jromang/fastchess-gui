@@ -197,6 +197,20 @@ class CpuObserver final : public fastchess::observer::GameObserver, public tour:
     CpuMeter meter_;
 };
 
+// What a tournament alone may use (from a terminal, or started without one): the memory and the GPUs of the
+// profile's budget (Settings); its concurrency decides the rest.
+tour::Allowance profileAllowance(const Storage& storage) {
+    const auto budget = storage.machineBudget();
+    tour::Allowance a;
+    if (budget.memory_mb > 0) {
+        a.memory_mb = budget.memory_mb;
+    } else if (const auto memory = systemMemory()) {
+        a.memory_mb = static_cast<int64_t>(memory->total_mb * MachineBudget::MEMORY_SHARE / 100);
+    }
+    if (budget.gpus > 0) a.gpus = budget.gpus;
+    return a;
+}
+
 // Each recorded game to two listeners, in turn.
 class BothListeners final : public tour::RecordListener {
    public:
@@ -433,7 +447,10 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
     std::signal(SIGTERM, onSignal);
 
     configureFastchess(state->spec());
-    const auto error = playTournament(*state, games, &listeners);
+    const auto allowance = profileAllowance(storage);
+    const auto error     = playTournament(*state, games, &listeners, [&](tour::Runner* runner) {
+        if (runner) runner->setAllowance(allowance);
+    });
     playing          = false;
     if (broadcast_thread.joinable()) broadcast_thread.join();
 
@@ -498,13 +515,25 @@ int runControlled(const std::string& target, const Storage& storage, const Headl
     // The channel first: from now on nothing else may write to the standard output, which goes to the log.
     std::error_code ec;
     const auto log_file = fs::is_directory(dir, ec) ? dir / "fastchess-gui.log" : storage.root() / "fastchess-gui.log";
-    auto channel        = std::make_unique<StdioChannel>(log_file.string());
-
     control::Hello hello;
     hello.version = FCG_VERSION;
     hello.dir     = fs::absolute(dir).lexically_normal().string();
     hello.pid     = ownPid();
-    channel->hello(hello);
+    std::unique_ptr<ChildChannel> channel;
+    if (control.mode == ControlOptions::Mode::Socket) {
+        // On its socket, to play on without the window: a window connects when it wants, and again.
+        auto socket = std::make_unique<SocketChannel>(log_file.string(), dir, hello);
+        std::string error;
+        if (!socket->listen(error)) {
+            Console::instance().logTo(log_file, true);
+            Console::instance().add(error, true);
+            return 2;
+        }
+        channel = std::move(socket);
+    } else {
+        channel = std::make_unique<StdioChannel>(log_file.string());
+        channel->hello(hello);
+    }
 
     // What it says goes to the window and to the tournament's log.
     auto& console = Console::instance();
@@ -561,7 +590,7 @@ int runControlled(const std::string& target, const Storage& storage, const Headl
 
     std::mutex runner_mutex;
     tour::Runner* runner = nullptr;
-    auto allowance       = control.allowance.value_or(tour::Allowance{});
+    auto allowance       = control.allowance.value_or(profileAllowance(storage));
     std::atomic_bool playing{true};
     bool stopped_by_user = false, stop_idle = false;
 
@@ -627,6 +656,12 @@ int runControlled(const std::string& target, const Storage& storage, const Headl
         std::vector<GameRecord> games;
         std::vector<fastchess::Stats> stats;
         while (playing) {
+            // A window connected: the games in progress and the state, as they stand.
+            if (channel->takeConnected()) {
+                observer.sendSlots();
+                sent       = false;
+                next_state = Clock::now();
+            }
             for (const auto& c : channel->takeCommands()) handle(c);
             // The window went away without a word (closed, crashed): the tournament stops, resumable.
             if (channel->closed() && control.mode == ControlOptions::Mode::Stdio && !fastchess::atomic::stop) {

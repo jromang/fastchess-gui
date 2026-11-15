@@ -971,6 +971,9 @@ msgstr "车轮战的每局新对局都从其被测引擎（与其他所有引擎
 msgid "Each pair is two games on the same opening, colours reversed."
 msgstr "每一对是同一开局上交换颜色的两局对局。"
 
+msgid "Each plays on in its own process. The window shows them again at its next launch; fastchess-gui --attach <folder> talks with one from a terminal."
+msgstr "每个锦标赛都在自己的进程中继续进行。窗口下次启动时会重新显示它们；fastchess-gui --attach <文件夹> 可在终端中与其中一个对话。"
+
 msgid "Each round is two games, colours reversed, against an engine with a similar score."
 msgstr "每轮是与得分相近的引擎交换颜色下的两局对局。"
 
@@ -1610,6 +1613,9 @@ msgstr "保存每局对局的引擎日志"
 
 msgid "Keep the old default"
 msgstr "保留旧的默认值"
+
+msgid "Keep them running and quit"
+msgstr "让它们继续并退出"
 
 msgid "Kept in the library, but out of the engine pickers (setup, suites, quick test, relaunch, adding to a tournament) and of Check those not checked. A tournament that has it already plays it as before."
 msgstr "保留在库中，但不出现在引擎选择列表（配置、测试集、快速测试、重新开始、加入锦标赛）和“检查尚未检查的”中。已包含它的锦标赛照常让它参赛。"
@@ -3080,6 +3086,9 @@ msgstr "按等级分列表测试者提交的方式整理对局：文件以你的
 msgid "The games counted, as a PGN of headers, which Ordo and BayesElo read: ordo -p ratings.pgn -o ratings.txt"
 msgstr "计入的对局，以只含头信息的 PGN 输出，可供 Ordo 和 BayesElo 读取：ordo -p ratings.pgn -o ratings.txt"
 
+msgid "The games in progress are lost; each tournament resumes exactly where it stopped."
+msgstr "进行中的对局会丢失；每个锦标赛都会从停止处准确继续。"
+
 msgid "The games wait for {}: {}. Another try after each game."
 msgstr "对局正在等待 {}：{}。每局结束后重试。"
 
@@ -3283,6 +3292,9 @@ msgstr "锦标赛已修改。"
 msgid "The tournament's process did not answer."
 msgstr "锦标赛进程没有响应。"
 
+msgid "The tournament's process ended as it started: see its log (fastchess-gui.log in its folder)."
+msgstr "锦标赛进程在启动时就结束了：请查看其日志（其文件夹中的 fastchess-gui.log）。"
+
 msgid "The tournament's process ended unexpectedly (exit code {}): it resumes exactly where it stopped."
 msgstr "锦标赛进程意外结束（退出码 {}）：它会从停止处准确继续。"
 
@@ -3358,6 +3370,9 @@ msgstr "该锦标赛已在进行中。"
 
 msgid "This tournament is playing in another program."
 msgstr "该锦标赛正由另一个程序进行。"
+
+msgid "This tournament is shown in another window."
+msgstr "该锦标赛正显示在另一个窗口中。"
 
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr "此赛事启动时未开启“重启崩溃的引擎”（设置，PGN 及其他）：结束对局会停止轮到走子的引擎，这会使赛事停止。请在对局结束后，在“对局”标签页设定结果。"
@@ -4442,6 +4457,9 @@ msgid "{} played game stops counting"
 msgid_plural "{} played games stop counting"
 msgstr[0] "{} 局已下的对局不再计分"
 
+msgid "{} played on without the window: shown again."
+msgstr "{} 在没有窗口时继续进行：已重新显示。"
+
 msgid "{} played · {} running · {} to play"
 msgstr "已下 {} · 进行中 {} · 待下 {}"
 
@@ -4544,8 +4562,9 @@ msgid "{} thread"
 msgid_plural "{} threads"
 msgstr[0] "{} 线程"
 
-msgid "{} tournaments are running. The games in progress will be lost; each resumes exactly where it stopped."
-msgstr "有 {} 个锦标赛正在进行。进行中的对局将会丢失；每个锦标赛都会从停止处准确继续。"
+msgid "{} tournament is running. It can play on without the window, which shows it again when it opens."
+msgid_plural "{} tournaments are running. They can play on without the window, which shows them again when it opens."
+msgstr[0] "有 {} 个锦标赛正在进行。它们可以在没有窗口时继续进行，窗口打开时会重新显示。"
 
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"

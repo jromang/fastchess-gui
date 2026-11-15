@@ -248,6 +248,8 @@ class Run {
     [[nodiscard]] virtual tour::Wait waiting() const { return tour::Wait::None; }
     // Played in a process of its own.
     [[nodiscard]] virtual bool remote() const { return false; }
+    // Shown by another window, which its process talks with: this one shows it no more, and leaves it be.
+    [[nodiscard]] virtual bool elsewhere() const { return false; }
 };
 
 // Owns the thread a tournament runs on, and the tournament's state. Only one runs at a time in a process, because

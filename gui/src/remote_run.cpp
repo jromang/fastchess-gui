@@ -20,7 +20,8 @@ constexpr auto REPLY_WAIT = std::chrono::seconds(10);
 }  // namespace
 
 std::vector<std::string> remoteArgs(const RemoteStart& s) {
-    std::vector<std::string> args = {"--profile", s.profile.string(), "--run", s.dir.string(), "--control", "stdio"};
+    std::vector<std::string> args = {"--profile",    s.profile.string(), "--run",
+                                     s.dir.string(), "--control",        s.detached ? "socket" : "stdio"};
     if (s.allowance) {
         args.push_back("--allowance");
         args.push_back(allowanceArg(*s.allowance));
@@ -41,6 +42,16 @@ std::string RemoteRun::start(const RemoteStart& s) {
         allowance_sent_ = true;
     }
     std::string error;
+    if (s.detached) {
+        // It makes its socket, then the window connects (update()); its copy is shown meanwhile.
+        if (!process_.spawnDetached(s.program, remoteArgs(s), error))
+            return trf("Cannot start the tournament: {}", error);
+        pid_           = process_.pid();
+        detached_      = true;
+        connecting_    = true;
+        connect_until_ = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+        return open(s.dir);
+    }
     if (!process_.start(s.program, remoteArgs(s), error)) return trf("Cannot start the tournament: {}", error);
     pid_ = process_.pid();
     control::Hello hello;
@@ -49,9 +60,28 @@ std::string RemoteRun::start(const RemoteStart& s) {
     return open(s.dir);
 }
 
+void RemoteRun::tryConnect() {
+    const auto file     = local::readControlFile(dir_);
+    const auto endpoint = file ? file->endpoint : local::endpointFor(dir_);
+    std::string error;
+    auto link = local::connect(endpoint, error);
+    if (!link) return;
+    if (file && file->pid) pid_ = file->pid;
+    process_.attach(std::move(link));
+    // Where its copy's journal ends: the process sends the lines after it, then the games in progress as they stand.
+    control::Hello hello;
+    hello.version = FCG_VERSION;
+    hello.journal = replica_ ? replica_->journalSize() : 0;
+    (void)process_.send(control::helloJson(hello));
+    allowance_sent_ = false;  // told again: it may have another one meanwhile
+    connecting_     = false;
+}
+
 std::string RemoteRun::attach(const std::filesystem::path& dir, std::unique_ptr<Link> link) {
-    dir_ = dir;
+    dir_      = dir;
+    detached_ = true;
     if (auto error = open(dir); !error.empty()) return error;
+    if (const auto file = local::readControlFile(dir); file && file->pid) pid_ = file->pid;
     process_.attach(std::move(link));
     // Where its copy's journal ends: the process sends the lines after it, then the games in progress as they stand.
     control::Hello hello;
@@ -91,6 +121,13 @@ void RemoteRun::reopen() {
 }
 
 void RemoteRun::apply(const nlohmann::json& m) {
+    // Another window talks with it already: this one lets go.
+    if (m.value("busy", false)) {
+        elsewhere_ = true;
+        error_     = TR("This tournament is shown in another window.");
+        process_.disconnect();
+        return;
+    }
     if (const auto hello = control::parseHello(m)) {
         if (hello->protocol != control::PROTOCOL) {
             error_ = trf("The tournament's process speaks another version of the program ({}): restart the window.",
@@ -178,6 +215,23 @@ void RemoteRun::apply(const nlohmann::json& m) {
 
 void RemoteRun::update() {
     if (state_ != State::Running) return;
+    if (connecting_) {
+        tryConnect();
+        if (connecting_) {
+            // Its process ended before it listened (it said why in its log), or does not answer.
+            const bool gone = pid_ && process_.pid() && !process_.childRunning();
+            if (gone || std::chrono::steady_clock::now() > connect_until_) {
+                connecting_     = false;
+                error_          = gone ? std::string(TR("The tournament's process ended as it started: see its log "
+                                                        "(fastchess-gui.log in its folder)."))
+                                       : std::string(TR("The connection with the tournament's process was lost."));
+                state_          = State::Finished;
+                info_.finished  = Clock::now();
+                finished_event_ = true;
+            }
+            return;
+        }
+    }
     for (const auto& m : process_.take()) apply(m);
     if (!allowance_sent_) {
         allowance_sent_ =
@@ -187,6 +241,13 @@ void RemoteRun::update() {
 
     // Its last words, then its end.
     for (const auto& m : process_.take()) apply(m);
+    // Detached, the connection may end while the tournament plays on (the process was busy, a broken connection): it
+    // is connected again while its socket is there.
+    if (detached_ && !ended_ && !elsewhere_ && local::readControlFile(dir_)) {
+        connecting_    = true;
+        connect_until_ = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+        return;
+    }
     if (!ended_ && error_.empty()) {
         const auto code = process_.exitCode();
         error_          = code ? trf("The tournament's process ended unexpectedly (exit code {}): it resumes exactly "

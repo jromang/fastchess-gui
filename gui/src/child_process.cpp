@@ -172,14 +172,30 @@ ChildProcess::~ChildProcess() {
     if (pid_ > 0 && !exit_code_) (void)::waitpid(static_cast<pid_t>(pid_), nullptr, WNOHANG);
 }
 
+namespace {
+
+// A pipe whose ends no other program started meanwhile inherits (macOS has no pipe2()).
+int closingPipe(int fds[2]) {
+#    ifdef __APPLE__
+    if (::pipe(fds) != 0) return -1;
+    ::fcntl(fds[0], F_SETFD, FD_CLOEXEC);
+    ::fcntl(fds[1], F_SETFD, FD_CLOEXEC);
+    return 0;
+#    else
+    return ::pipe2(fds, O_CLOEXEC);
+#    endif
+}
+
+}  // namespace
+
 bool ChildProcess::start(const std::string& program, const std::vector<std::string>& args, std::string& error,
                          bool detached) {
     int in[2], out[2];
-    if (::pipe2(in, O_CLOEXEC) != 0) {
+    if (closingPipe(in) != 0) {
         error = std::string("cannot create a pipe: ") + std::strerror(errno);
         return false;
     }
-    if (::pipe2(out, O_CLOEXEC) != 0) {
+    if (closingPipe(out) != 0) {
         error = std::string("cannot create a pipe: ") + std::strerror(errno);
         ::close(in[0]);
         ::close(in[1]);

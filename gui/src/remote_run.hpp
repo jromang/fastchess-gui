@@ -23,6 +23,9 @@ struct RemoteStart {
     std::filesystem::path dir;       // the tournament's folder (created already)
     std::vector<std::string> extra;  // more arguments (the broadcast: --tlcs PORT, --web PORT...)
     std::optional<tour::Allowance> allowance;
+    // Out of this program's session, on its socket (--control socket): it plays on when the window closes, which
+    // connects to it again. Otherwise on pipes (--control stdio), ending with the window.
+    bool detached = false;
 };
 
 // The arguments of a tournament process.
@@ -76,6 +79,7 @@ class RemoteRun final : public Run {
     [[nodiscard]] tour::GameCost inFlight() const override { return status_.in_flight; }
     [[nodiscard]] tour::Wait waiting() const override { return status_.waiting; }
     [[nodiscard]] bool remote() const override { return true; }
+    [[nodiscard]] bool elsewhere() const override { return elsewhere_; }
 
     // What the process told last of itself, and how it ended.
     [[nodiscard]] const control::Status& status() const noexcept { return status_; }
@@ -83,6 +87,8 @@ class RemoteRun final : public Run {
     [[nodiscard]] int64_t pid() const noexcept { return pid_; }
     // Leaves the process running without the window (it plays on, detached): the connection ends.
     void disconnect();
+    // Still waiting to connect to the process it started (detached), which is making its socket.
+    [[nodiscard]] bool connecting() const noexcept { return connecting_; }
 
    private:
     std::string open(const std::filesystem::path& dir);  // the copy and the observer
@@ -105,6 +111,14 @@ class RemoteRun final : public Run {
     control::End end_;
     tour::Allowance allowance_;
     bool allowance_sent_ = false;
+
+    // Detached: the socket it connects to, and until when it tries, the process making it, or connecting again after
+    // the connection was lost.
+    bool detached_   = false;
+    bool connecting_ = false;
+    std::chrono::steady_clock::time_point connect_until_{};
+    void tryConnect();
+    bool elsewhere_ = false;  // another window shows it: this one let go
 
     State state_         = State::Idle;
     bool stop_requested_ = false;

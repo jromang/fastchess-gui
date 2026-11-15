@@ -28,10 +28,9 @@ TournamentProcess::~TournamentProcess() {
     if (child_) (void)child_->running();
 }
 
-bool TournamentProcess::start(const std::string& program, const std::vector<std::string>& args, std::string& error,
-                              bool detached) {
+bool TournamentProcess::start(const std::string& program, const std::vector<std::string>& args, std::string& error) {
     child_ = std::make_unique<ChildProcess>();
-    if (!child_->start(program, args, error, detached)) {
+    if (!child_->start(program, args, error)) {
         child_.reset();
         return false;
     }
@@ -40,8 +39,26 @@ bool TournamentProcess::start(const std::string& program, const std::vector<std:
     return true;
 }
 
+bool TournamentProcess::spawnDetached(const std::string& program, const std::vector<std::string>& args,
+                                      std::string& error) {
+    child_ = std::make_unique<ChildProcess>();
+    if (!child_->start(program, args, error, true)) {
+        child_.reset();
+        return false;
+    }
+    // Its standard input and output are not the channel: closed here, it reads its end, as a detached process.
+    child_->closeInput();
+    child_->closeOutput();
+    detached_ = true;
+    return true;
+}
+
+bool TournamentProcess::childRunning() { return child_ && child_->running(); }
+
 void TournamentProcess::attach(std::unique_ptr<Link> link) {
+    if (reader_.joinable()) reader_.join();  // the connection before, ended
     link_   = std::move(link);
+    closed_ = false;
     reader_ = std::thread([this] { readLoop(); });
 }
 
@@ -89,7 +106,7 @@ std::optional<int> TournamentProcess::exitCode() {
 
 void TournamentProcess::disconnect() {
     if (link_) link_->close();
-    if (child_ && reader_.joinable()) {
+    if (child_ && !detached_ && reader_.joinable()) {
         // A process started with pipes stops when its input closes: it is given time to stop its engines, then ended.
         const auto until = std::chrono::steady_clock::now() + std::chrono::seconds(15);
         while (!closed_ && std::chrono::steady_clock::now() < until)

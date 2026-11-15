@@ -17,19 +17,9 @@
 
 #include "child_process.hpp"
 #include "control.hpp"
+#include "local_socket.hpp"
 
 namespace fcg {
-
-// Both ends of a connection: a pipe pair or a socket.
-class Link {
-   public:
-    virtual ~Link() = default;
-    // Waits for something: the bytes read, 0 at the end, -1 on an error.
-    virtual long read(char* buffer, std::size_t size) = 0;
-    virtual bool write(const std::string& data)       = 0;
-    // Ends the connection: a read() waiting returns.
-    virtual void close() = 0;
-};
 
 class TournamentProcess {
    public:
@@ -39,9 +29,13 @@ class TournamentProcess {
     TournamentProcess& operator=(const TournamentProcess&) = delete;
 
     // Starts `program` with `args` (--run <folder> --control stdio ...) and reads what it says. False with `error`.
-    bool start(const std::string& program, const std::vector<std::string>& args, std::string& error,
-               bool detached = false);
-    // Talks with a process through `link` (its socket), which it owns from then on.
+    bool start(const std::string& program, const std::vector<std::string>& args, std::string& error);
+    // Starts `program` with `args` (--run <folder> --control socket) out of this program's session: it plays on when
+    // this program ends, and is talked with through its socket (attach()).
+    bool spawnDetached(const std::string& program, const std::vector<std::string>& args, std::string& error);
+    // A process started detached is still running (and reaped once it ended).
+    [[nodiscard]] bool childRunning();
+    // Talks with a process through `link` (its socket), which it owns from then on; again after the connection ended.
     void attach(std::unique_ptr<Link> link);
 
     // The messages that came since the last call, in their order: the hello, then the events.
@@ -63,6 +57,7 @@ class TournamentProcess {
     void readLoop();
 
     std::unique_ptr<ChildProcess> child_;
+    bool detached_ = false;  // child_ plays on without this program: neither waited for nor ended
     std::unique_ptr<Link> link_;
     std::thread reader_;
     std::mutex mutex_;

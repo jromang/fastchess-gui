@@ -22,6 +22,7 @@
 
 #include "control.hpp"
 #include "live.hpp"
+#include "local_socket.hpp"
 
 namespace fcg {
 
@@ -54,18 +55,25 @@ class ChildChannel {
     [[nodiscard]] std::vector<nlohmann::json> takeCommands();
     // The window went away (its end of the channel closed).
     [[nodiscard]] bool closed() const noexcept { return closed_; }
+    // True once after a window connected: it is sent the games in progress and the state, though unchanged.
+    [[nodiscard]] bool takeConnected() { return connected_.exchange(false); }
 
    protected:
-    // Writes one line (with its end); false when it cannot.
+    // Writes one line (with its end); false when it cannot. write_mutex_ held.
     virtual bool write(const std::string& line) = 0;
+    // send() and hello() with write_mutex_ held.
+    void sendLocked(const char* kind, nlohmann::json fields);
+    void helloLocked(const control::Hello& hello);
     // A line the window sent.
     void received(const std::string& line);
     void setClosed() { closed_ = true; }
+    void setConnected() { connected_ = true; }
 
     std::mutex write_mutex_;  // held while a line is written: lines never mix
 
    private:
     uint64_t seq_ = 0;
+    std::atomic_bool connected_{false};
     std::mutex commands_mutex_;
     std::vector<nlohmann::json> commands_;
     std::atomic_bool closed_{false};
@@ -84,6 +92,35 @@ class StdioChannel final : public ChildChannel {
 
     int out_ = -1;  // the window's pipe, kept apart from the standard output
     int in_  = -1;
+};
+
+// On a local socket (local_socket.hpp), so that the tournament plays on without the window, which connects to it again:
+// one window at a time. A window that connects says in its hello where its copy's journal ends; it is sent the journal
+// lines after it, then (takeConnected()) the games in progress and the state. While no window listens, the events are
+// dropped. Writes control.json in the tournament's folder, removed with the channel.
+class SocketChannel final : public ChildChannel {
+   public:
+    SocketChannel(const std::string& log, std::filesystem::path dir, control::Hello hello);
+    ~SocketChannel() override;
+
+    // False with `error` when it cannot listen (another process plays the tournament).
+    bool listen(std::string& error);
+
+   private:
+    bool write(const std::string& line) override;
+    void acceptLoop();
+    // A window connected: its hello, the journal lines it lacks, then its commands until it goes away.
+    void serve(std::shared_ptr<Link> client);
+    // The journal lines from `from` on, as events; write_mutex_ held.
+    void replayJournal(uint64_t from);
+
+    std::filesystem::path dir_;
+    control::Hello hello_;
+    local::Server server_;
+    std::shared_ptr<Link> client_;  // the window connected, if any; write_mutex_ held
+    bool ready_ = false;            // it was sent the hello and the journal lines it lacked: the events go to it
+    std::thread accept_thread_;
+    std::thread serving_;  // serve() of the window connected last
 };
 
 // The games, told to the window as they are played, with what measures the engines' processor use (kept in
