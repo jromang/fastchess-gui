@@ -785,7 +785,8 @@ the *Games* tab marks it with a `*`, its tooltip giving the reason and how the g
 the result as played* takes it back. A game being played is ended the same way: right click on its board in the
 *Live* tab, *End with result* (also in the command palette for the game followed). The engine on move is stopped,
 fastchess ends the game at once and it counts with the result chosen; the engine starts again for its next game.
-It needs *Restart an engine that crashes* (setup, *PGN and misc*, on by default).
+It needs *Restart an engine that crashes* (setup, *PGN and misc*, on by default). Not on macOS yet, where the
+game did not end in the tests: there, set the result once the game is over.
 
 Voided games and results set by hand stay in the PGN files and the journal as they were played: the PGN files
 are only ever appended to. What reads the games applies them: voided games are left out, and a result set by hand

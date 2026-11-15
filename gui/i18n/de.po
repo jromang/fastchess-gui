@@ -1418,6 +1418,9 @@ msgstr "Mit einem Ergebnis beenden"
 msgid "Ended by the operator while it was played."
 msgstr "Vom Turnierleiter während der Partie beendet."
 
+msgid "Ending a game in progress is not available on macOS yet: set its result once it is over, in the Games tab."
+msgstr "Eine laufende Partie zu beenden ist unter macOS noch nicht möglich: setze ihr Ergebnis, wenn sie vorbei ist, im Tab Partien."
+
 msgid "Ends about {} (in {})"
 msgstr "Endet gegen {} (in {})"
 

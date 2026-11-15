@@ -1418,6 +1418,9 @@ msgstr ""
 msgid "Ended by the operator while it was played."
 msgstr ""
 
+msgid "Ending a game in progress is not available on macOS yet: set its result once it is over, in the Games tab."
+msgstr ""
+
 msgid "Ends about {} (in {})"
 msgstr ""
 
