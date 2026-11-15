@@ -22,6 +22,7 @@
 #include "machine_jobs.hpp"
 #include "machine_run.hpp"
 #include "machines.hpp"
+#include "program_format.hpp"
 #include "remote_run.hpp"
 #include "run.hpp"
 #include "ssh_client.hpp"
@@ -206,12 +207,31 @@ ssh::MockServer::Command linuxBox(const fs::path& root, const std::string& comma
         if (fs::exists(root / "fastchess-gui/fastchess-gui")) reply.out += "fastchess-gui 0.5.9\nprotocol 1\n";
     } else if (inner.find("sha256sum") != std::string::npos) {
         const auto file = quotedAfter(inner, "sha256sum");
-        const auto hash = sha256File(root / file);
+        const auto hash = sha256File(root / fs::path(file).relative_path());
         if (hash.empty()) {
             reply.err    = "sha256sum: " + file + ": No such file or directory\n";
             reply.status = 1;
         } else {
             reply.out = hash + "  " + file + "\n";
+        }
+    } else if (inner.rfind("chmod 755 ", 0) == 0) {
+        const auto file = root / fs::path(quotedAfter(inner, "chmod 755")).relative_path();
+        std::error_code ec;
+        fs::permissions(file,
+                        fs::perms::owner_all | fs::perms::group_read | fs::perms::group_exec | fs::perms::others_read |
+                            fs::perms::others_exec,
+                        ec);
+        if (ec) {
+            reply.err    = "chmod: cannot access the file\n";
+            reply.status = 1;
+        }
+    } else if (inner.rfind("command -v ", 0) == 0) {
+        // The interpreters this box has.
+        const auto name = quotedAfter(inner, "command -v");
+        if (name == "/bin/sh" || name == "python3") {
+            reply.out = name[0] == '/' ? name + "\n" : "/usr/bin/" + name + "\n";
+        } else {
+            reply.status = 1;
         }
     } else if (inner.find("--version") != std::string::npos) {
         reply.out = "fastchess-gui 0.5.9\nprotocol 1\n";
@@ -1368,6 +1388,500 @@ TEST_CASE("Machine runs: the control channel through SSH, and a process that is 
 }
 
 // Against a real SSH server, when FCG_SSH_TEST names one: "user@host:port:key_file[:passphrase]". Off by default.
+// ---------------------------------------------------------------------------------------------------------------
+// Engines copied to a machine
+
+namespace {
+
+// The first bytes of programs, as their linkers write them.
+std::string peHeader(uint16_t machine, std::size_t at = 0x80) {
+    std::string h(at + 24, '\0');
+    h[0] = 'M';
+    h[1] = 'Z';
+    for (int i = 0; i < 4; ++i) h[0x3c + i] = static_cast<char>((at >> (8 * i)) & 0xff);
+    h.replace(at, 4, std::string("PE\0\0", 4));
+    h[at + 4] = static_cast<char>(machine & 0xff);
+    h[at + 5] = static_cast<char>(machine >> 8);
+    return h;
+}
+
+std::string elfHeader(uint16_t machine, char osabi = 0) {
+    std::string h(64, '\0');
+    h.replace(0, 4,
+              "\x7f"
+              "ELF");
+    h[4]  = 2;  // 64-bit
+    h[5]  = 1;  // little-endian
+    h[6]  = 1;
+    h[7]  = osabi;
+    h[16] = 2;  // an executable
+    h[18] = static_cast<char>(machine & 0xff);
+    h[19] = static_cast<char>(machine >> 8);
+    return h;
+}
+
+std::string machoHeader(uint32_t cpu) {
+    std::string h(32, '\0');
+    const uint32_t magic = 0xfeedfacf;  // 64-bit, little-endian
+    for (int i = 0; i < 4; ++i) {
+        h[i]     = static_cast<char>((magic >> (8 * i)) & 0xff);
+        h[4 + i] = static_cast<char>((cpu >> (8 * i)) & 0xff);
+    }
+    return h;
+}
+
+std::string fatHeader(const std::vector<uint32_t>& cpus) {
+    std::string h;
+    const auto be = [&](uint32_t v) {
+        for (int i = 3; i >= 0; --i) h += static_cast<char>((v >> (8 * i)) & 0xff);
+    };
+    be(0xcafebabe);
+    be(static_cast<uint32_t>(cpus.size()));
+    for (const auto cpu : cpus) {
+        be(cpu);
+        be(3);
+        be(4096);
+        be(1000);
+        be(12);
+    }
+    return h;
+}
+
+constexpr uint32_t CPU_X86_64 = 0x01000007, CPU_ARM64 = 0x0100000c;
+
+RemoteSystem systemOf(const std::string& os, const std::string& arch) {
+    RemoteSystem s;
+    s.os    = os;
+    s.arch  = arch;
+    s.shell = os == "Windows" ? RemoteShell::Cmd : RemoteShell::Posix;
+    return s;
+}
+
+}  // namespace
+
+TEST_CASE("Machines: a program's system and architecture read from its first bytes") {
+    auto f = programFormat(peHeader(0x8664));
+    CHECK(f.kind == ProgramFormat::Kind::Windows);
+    CHECK(f.os == "Windows");
+    CHECK(f.archs == std::vector<std::string>{"x86_64"});
+    CHECK(programFormat(peHeader(0xaa64)).archs == std::vector<std::string>{"arm64"});
+    CHECK(programFormat(peHeader(0x14c)).archs == std::vector<std::string>{"x86"});
+    // MZ without a PE header within the bytes read: Windows, its architecture not told.
+    f = programFormat(peHeader(0x8664).substr(0, 0x60));
+    CHECK(f.kind == ProgramFormat::Kind::Windows);
+    CHECK(f.archs.empty());
+
+    f = programFormat(elfHeader(62));
+    CHECK(f.kind == ProgramFormat::Kind::Elf);
+    CHECK(f.os == "Linux");
+    CHECK(f.archs == std::vector<std::string>{"x86_64"});
+    CHECK(programFormat(elfHeader(183)).archs == std::vector<std::string>{"arm64"});
+    CHECK(programFormat(elfHeader(62, 9)).os == "FreeBSD");
+
+    f = programFormat(machoHeader(CPU_X86_64));
+    CHECK(f.kind == ProgramFormat::Kind::MachO);
+    CHECK(f.os == "Darwin");
+    CHECK(f.archs == std::vector<std::string>{"x86_64"});
+    CHECK(programFormat(machoHeader(CPU_ARM64)).archs == std::vector<std::string>{"arm64"});
+    f = programFormat(fatHeader({CPU_X86_64, CPU_ARM64}));
+    CHECK(f.kind == ProgramFormat::Kind::MachO);
+    CHECK(f.archs == std::vector<std::string>{"x86_64", "arm64"});
+    CHECK(describeFormat(f) == "a macOS program (universal: x86_64, arm64)");
+    // A Java class file begins as a universal program does; its version follows, not a count of architectures.
+    CHECK(programFormat(std::string("\xca\xfe\xba\xbe\x00\x00\x00\x34", 8)).kind == ProgramFormat::Kind::Unknown);
+
+    f = programFormat("#!/usr/bin/env python3\nprint('uciok')\n");
+    CHECK(f.kind == ProgramFormat::Kind::Script);
+    CHECK(f.interpreter == "python3");
+    CHECK(f.shebang == "/usr/bin/env python3");
+    CHECK(programFormat("#!/bin/sh\r\nexec ./engine\n").interpreter == "/bin/sh");
+    CHECK(programFormat("#! /usr/bin/env -S PYTHONUNBUFFERED=1 python3 -u\n").interpreter == "python3");
+    CHECK(programFormat("hello").kind == ProgramFormat::Kind::Unknown);
+    CHECK(programFormat("").kind == ProgramFormat::Kind::Unknown);
+
+    // A file, its PE header beyond the first 4 KiB read too.
+    const auto dir = freshDir("format");
+    writeFile(dir / "far.exe", peHeader(0xaa64, 6000) + std::string(100, 'x'));
+    CHECK(readProgramFormat(dir / "far.exe").archs == std::vector<std::string>{"arm64"});
+    CHECK(readProgramFormat(dir / "missing").kind == ProgramFormat::Kind::Unknown);
+    fs::remove_all(dir);
+}
+
+TEST_CASE("Machines: a program suits the machine's system and architecture, or the build to choose is said") {
+    using L         = Suitability::Level;
+    const auto suit = [](const std::string& head, const RemoteSystem& s) {
+        return programSuits(programFormat(head), s, "Alpha", "tc-box");
+    };
+    const auto linux_x64 = systemOf("Linux", "x86_64"), linux_arm = systemOf("Linux", "aarch64"),
+               mac_arm = systemOf("Darwin", "arm64"), mac_x64 = systemOf("Darwin", "x86_64"),
+               win_x64 = systemOf("Windows", "AMD64"), win_arm = systemOf("Windows", "ARM64");
+
+    auto s = suit(peHeader(0x8664), linux_x64);
+    CHECK(s.level == L::Refused);
+    CHECK(s.message == "Alpha is a Windows program; tc-box runs Linux: choose the Linux build of Alpha.");
+    CHECK(suit(elfHeader(62), linux_x64).level == L::Fits);
+    s = suit(elfHeader(183), linux_x64);
+    CHECK(s.level == L::Refused);
+    CHECK(s.message == "Alpha is built for arm64; tc-box runs Linux x86_64: choose the Linux x86_64 build of Alpha.");
+    CHECK(suit(elfHeader(183), linux_arm).level == L::Fits);
+    CHECK(suit(elfHeader(62), mac_arm).level == L::Refused);
+    CHECK(suit(machoHeader(CPU_ARM64), linux_arm).message.find("macOS program") != std::string::npos);
+    CHECK(suit(machoHeader(CPU_ARM64), mac_arm).level == L::Fits);
+    CHECK(suit(machoHeader(CPU_ARM64), mac_x64).level == L::Refused);
+    // x86-64 on an arm64 Mac: Rosetta, if it is installed.
+    s = suit(machoHeader(CPU_X86_64), mac_arm);
+    CHECK(s.level == L::Warning);
+    CHECK(s.message.find("Rosetta") != std::string::npos);
+    // A universal program suits both Macs.
+    CHECK(suit(fatHeader({CPU_X86_64, CPU_ARM64}), mac_arm).level == L::Fits);
+    CHECK(suit(fatHeader({CPU_X86_64, CPU_ARM64}), mac_x64).level == L::Fits);
+    CHECK(suit(peHeader(0x8664), win_x64).level == L::Fits);
+    CHECK(suit(peHeader(0x14c), win_x64).level == L::Fits);  // 32-bit on 64-bit Windows
+    CHECK(suit(peHeader(0x8664), win_arm).level == L::Warning);
+    CHECK(suit(peHeader(0xaa64), win_x64).level == L::Refused);
+    CHECK(suit(elfHeader(3), linux_x64).level == L::Warning);  // 32-bit: its libraries
+    // Scripts: on a POSIX system only.
+    CHECK(suit("#!/bin/sh\n", linux_x64).level == L::Fits);
+    s = suit("#!/usr/bin/env python3\n", win_x64);
+    CHECK(s.level == L::Refused);
+    CHECK(s.message.find("choose the Windows build of Alpha") != std::string::npos);
+    // A format not known is copied all the same, with a warning; an untested machine tells no system.
+    CHECK(suit("binary", linux_x64).level == L::Warning);
+    CHECK(suit(elfHeader(62), RemoteSystem{}).level == L::Refused);
+}
+
+TEST_CASE("Machines: the names Windows cannot hold, engines' folder names, paths inside a folder there") {
+    CHECK(windowsNameProblem("nn-1234.nnue").empty());
+    CHECK(windowsNameProblem("com10").empty());
+    CHECK_FALSE(windowsNameProblem("a:b").empty());
+    CHECK_FALSE(windowsNameProblem("what?").empty());
+    CHECK_FALSE(windowsNameProblem("x|y").empty());
+    CHECK_FALSE(windowsNameProblem("notes.").empty());
+    CHECK_FALSE(windowsNameProblem("trailing ").empty());
+    CHECK_FALSE(windowsNameProblem("CON").empty());
+    CHECK_FALSE(windowsNameProblem("nul.txt").empty());
+    CHECK_FALSE(windowsNameProblem("Com1").empty());
+    CHECK(windowsNameProblem("aux.txt").find("aux.txt") != std::string::npos);
+
+    CHECK(safeFolderName("Stockfish 17 (NNUE)") == "Stockfish 17 (NNUE)");
+    CHECK(safeFolderName("A/B:C*") == "A_B_C_");
+    CHECK(safeFolderName("CON") == "CON_");
+    CHECK(safeFolderName("Engine. ") == "Engine");
+    CHECK(safeFolderName("...") == "engine");
+
+    CHECK(insideRemoteFolder("/home/u/fcg/engines/Alpha/alpha", "/home/u/fcg"));
+    CHECK_FALSE(insideRemoteFolder("/home/u/fcg", "/home/u/fcg"));
+    CHECK_FALSE(insideRemoteFolder("/home/u/fcg/../.ssh/authorized_keys", "/home/u/fcg"));
+    CHECK_FALSE(insideRemoteFolder("/home/u/fcg-other/alpha", "/home/u/fcg"));
+    CHECK_FALSE(insideRemoteFolder("/opt/alpha", "/home/u/fcg"));
+    CHECK(insideRemoteFolder("c:\\users\\u\\FCG/engines/a.exe", "C:\\Users\\u\\fcg"));
+    CHECK_FALSE(insideRemoteFolder("D:\\fcg\\a.exe", "C:\\fcg"));
+
+    auto m = linuxMachine();
+    CHECK(engineFolderThere(m, "Alpha 1.0") == "/home/tester/fcg/engines/Alpha 1.0");
+    m.system      = systemOf("Windows", "AMD64");
+    m.system.home = "C:\\Users\\tester";
+    CHECK(engineFolderThere(m, "Alpha: dev") == "C:\\Users\\tester\\fcg\\engines\\Alpha_ dev");
+}
+
+TEST_CASE("Machines: an engine's copy planned here: its format, its folder counted, the options found in it") {
+    const auto dir = freshDir("copy-plan");
+    writeFile(dir / "alpha/alpha", elfHeader(62) + std::string(1000, 'a'));
+    writeFile(dir / "alpha/nn-test.nnue", std::string(3000, 'n'));
+    writeFile(dir / "alpha/books/own.bin", std::string(500, 'b'));
+    writeFile(dir / "alpha/.git/HEAD", "ref: refs/heads/master\n");
+    writeFile(dir / "windows/alpha.exe", peHeader(0x8664) + std::string(100, 'w'));
+    EngineEntry alpha;
+    alpha.name    = "Alpha";
+    alpha.cmd     = (dir / "alpha/alpha").string();
+    alpha.options = {{"EvalFile", (dir / "alpha/nn-test.nnue").string()}, {"Hash", "64"}};
+    alpha.uci_options.push_back({"BookFile", "string", "books/own.bin", "", "", {}});
+
+    auto m    = linuxMachine();
+    auto plan = planEngineCopy(alpha, m);
+    REQUIRE_MESSAGE(plan.error.empty(), plan.error);
+    CHECK(plan.format.kind == ProgramFormat::Kind::Elf);
+    CHECK(plan.suits.level == Suitability::Level::Fits);
+    CHECK(plan.folder == dir / "alpha");
+    CHECK(plan.files.size() == 3);  // its history left out
+    CHECK(plan.folder_bytes == 1064 + 3000 + 500);
+    CHECK(plan.bytes() == plan.folder_bytes);  // the program is one of them
+    REQUIRE(plan.options_inside.size() == 2);
+    CHECK(plan.options_inside[0] == std::pair<std::string, std::string>{"EvalFile", "nn-test.nnue"});
+    CHECK(plan.options_inside[1] == std::pair<std::string, std::string>{"BookFile", "books/own.bin"});
+    CHECK(plan.with_folder);  // it needs them
+    CHECK(plan.remote_name == "alpha");
+
+    // For a Windows machine: refused, until its Windows build is chosen, named with .exe there.
+    m.system      = systemOf("Windows", "AMD64");
+    m.system.home = "C:\\Users\\tester";
+    plan          = planEngineCopy(alpha, m);
+    CHECK(plan.suits.level == Suitability::Level::Refused);
+    CHECK(plan.remote_name == "alpha.exe");
+    plan = planEngineCopy(alpha, m, dir / "windows/alpha.exe");
+    CHECK(plan.own_build);
+    CHECK(plan.suits.level == Suitability::Level::Fits);
+    CHECK(plan.folder == dir / "windows");
+    CHECK(plan.remote_name == "alpha.exe");
+#ifndef _WIN32
+    // A name Windows cannot hold in the folder: said, naming the file (written where it can be).
+    writeFile(dir / "windows/aux.txt", "x");
+    plan = planEngineCopy(alpha, m, dir / "windows/alpha.exe");
+    CHECK(plan.name_problem.find("aux.txt") != std::string::npos);
+#endif
+
+    // The program missing here.
+    alpha.cmd = (dir / "gone").string();
+    CHECK(planEngineCopy(alpha, linuxMachine()).error.find("not on this computer") != std::string::npos);
+    fs::remove_all(dir);
+}
+
+TEST_CASE("Machine jobs: an engine copied with its folder, each file's hash checked, its path set and checked") {
+    const auto dir  = freshDir("copy");
+    const auto root = dir / "root";
+    fs::create_directories(root / "home/tester");
+    writeFile(root / "opt/alpha", "the build set there by hand");
+    const auto here = dir / "here";
+    writeFile(here / "alpha/alpha", elfHeader(62) + std::string(70000, 'a'));
+    writeFile(here / "alpha/nn-test.nnue", std::string(200000, 'n'));
+    writeFile(here / "alpha/sub/notes.txt", "line one\r\nline two\n");  // as it is, its line ends too
+    std::atomic_bool corrupt{false};
+    ssh::MockServer::Options options;
+    options.root = root;
+    options.exec = [&root, &corrupt](const std::string& command) {
+        const auto inner = unSh(command);
+        ssh::MockServer::Command reply;
+        if (inner.find("exec '/home/tester/fcg/engines/") != std::string::npos ||
+            inner.find("exec '/opt/alpha'") != std::string::npos) {
+            reply.talk = [](const std::string& input, bool closed, bool& ended) {
+                std::string out;
+                if (input.find("uci") != std::string::npos) out = "id name Alpha 2.0\nuciok\n";
+                ended = closed || input.find("quit") != std::string::npos;
+                return out;
+            };
+            return reply;
+        }
+        if (corrupt && inner.find("sha256sum") != std::string::npos) {
+            reply.out = std::string(64, '0') + "  file\n";
+            return reply;
+        }
+        return linuxBox(root, command);
+    };
+    ssh::MockServer server(MACHINE_PORT, options);
+
+    EngineEntry alpha;
+    alpha.name    = "Alpha";
+    alpha.cmd     = (here / "alpha/alpha").string();
+    alpha.options = {{"EvalFile", (here / "alpha/nn-test.nnue").string()}};
+    auto m        = linuxMachine();
+    MachineEngine by_hand;
+    by_hand.engine   = "Alpha";
+    by_hand.path     = "/opt/alpha";
+    by_hand.check_ok = 1;
+    m.engines        = {by_hand};
+    const std::map<std::string, std::string> protocols{{"Alpha", "uci"}};
+    SshClient client;
+    REQUIRE(client.connect(loopbackTarget(dir)));
+    JobState state;
+
+    // A different build there, at a path outside the machine's folder.
+    JobResult compared;
+    compareBuilds(client, m, {{"Alpha", here / "alpha/alpha"}}, state, compared);
+    REQUIRE_MESSAGE(compared.ok, compared.error.message);
+    REQUIRE(compared.engines.size() == 1);
+    CHECK(buildMatch(compared.engines[0], fileStamp(here / "alpha/alpha")) == BuildMatch::Different);
+
+    // Replaced with this computer's, with its folder: into the machine's folder, /opt/alpha left as it was.
+    const auto plan = planEngineCopy(alpha, m);
+    REQUIRE(plan.with_folder);
+    JobResult copied;
+    copyEngine(client, m, plan, protocols, state, copied);
+    REQUIRE_MESSAGE(copied.ok, copied.error.message);
+    const auto there = root / "home/tester/fcg/engines/Alpha";
+    CHECK(readFile(there / "alpha") == readFile(here / "alpha/alpha"));
+    CHECK(readFile(there / "nn-test.nnue") == readFile(here / "alpha/nn-test.nnue"));
+    CHECK(readFile(there / "sub/notes.txt") == "line one\r\nline two\n");
+    CHECK(readFile(root / "opt/alpha") == "the build set there by hand");
+    CHECK_FALSE(fs::exists(there / "alpha.part"));
+#ifndef _WIN32
+    CHECK((fs::status(there / "alpha").permissions() & fs::perms::others_exec) != fs::perms::none);
+#endif
+    CHECK(state.bytes_done == plan.bytes());
+    REQUIRE(copied.engines.size() == 1);
+    auto e = copied.engines[0];
+    CHECK(e.path == "/home/tester/fcg/engines/Alpha/alpha");
+    CHECK(e.copied_dir == "/home/tester/fcg/engines/Alpha");
+    CHECK(e.local_dir == (here / "alpha").string());
+    CHECK(e.local_build.empty());
+    CHECK(e.check_ok == 1);
+    CHECK(e.id_name == "Alpha 2.0");
+    CHECK(buildMatch(e, fileStamp(here / "alpha/alpha")) == BuildMatch::Same);
+    const auto joined = [](const std::vector<std::string>& lines) {
+        std::string out;
+        for (const auto& l : lines) out += l + "\n";
+        return out;
+    };
+    CHECK(joined(copied.lines).find("/opt/alpha, is left as it was") != std::string::npos);
+    const auto ran = server.commands();
+    CHECK(std::any_of(ran.begin(), ran.end(), [](const std::string& c) {
+        return unSh(c) == "chmod 755 '/home/tester/fcg/engines/Alpha/alpha'";
+    }));
+
+    // Played there: its option names the network's copy, its folder is its working directory.
+    m.engines = {e};
+    tour::TournamentSpec spec, out;
+    spec.participants.push_back(participant(1, "Alpha", alpha.cmd));
+    spec.participants[0].engine.options.push_back({"EvalFile", (here / "alpha/nn-test.nnue").string()});
+    spec.participants[0].engine.options.push_back({"Book", "/elsewhere/book.bin"});
+    REQUIRE(remoteSpec(spec, m, {alpha}, dir, "/home/tester/fcg/tournaments/t", out).empty());
+    CHECK(out.participants[0].engine.cmd == e.path);
+    CHECK(out.participants[0].engine.dir == e.copied_dir);
+    CHECK(out.participants[0].engine.options[2].second == "/home/tester/fcg/engines/Alpha/nn-test.nnue");
+    CHECK(out.participants[0].engine.options[3].second == "/elsewhere/book.bin");
+
+    // Copied again: the files there are the same, nothing is sent.
+    const auto written = server.written.load();
+    JobResult again;
+    copyEngine(client, m, planEngineCopy(alpha, m), protocols, state, again);
+    REQUIRE_MESSAGE(again.ok, again.error.message);
+    CHECK(server.written == written);
+    CHECK(joined(again.lines).find("there already") != std::string::npos);
+
+    // Rebuilt here: changed since the comparison, then a different build. Its size changes too: a file's time has
+    // whole seconds only with MinGW's library, the same time as the first build's here.
+    writeFile(here / "alpha/alpha", elfHeader(62) + std::string(70001, 'b'));
+    CHECK(buildMatch(e, fileStamp(here / "alpha/alpha")) == BuildMatch::Changed);
+    JobResult rebuilt;
+    compareBuilds(client, m, {{"Alpha", here / "alpha/alpha"}}, state, rebuilt);
+    REQUIRE(rebuilt.ok);
+    CHECK(buildMatch(rebuilt.engines[0], fileStamp(here / "alpha/alpha")) == BuildMatch::Different);
+
+    // A copy that is not the same there: removed, said.
+    corrupt = true;
+    JobResult bad;
+    auto alone        = planEngineCopy(alpha, m);
+    alone.with_folder = false;
+    copyEngine(client, m, alone, protocols, state, bad);
+    CHECK_FALSE(bad.ok);
+    CHECK(bad.error.message.find("not the same as here") != std::string::npos);
+    CHECK(bad.engines.empty());
+    CHECK_FALSE(fs::exists(there / "alpha"));
+    corrupt = false;
+
+    // A Windows build for this Linux box: refused before anything is sent.
+    writeFile(here / "win/alpha.exe", peHeader(0x8664) + std::string(500, 'w'));
+    const auto before = server.written.load();
+    JobResult refused;
+    copyEngine(client, m, planEngineCopy(alpha, m, here / "win/alpha.exe"), protocols, state, refused);
+    CHECK_FALSE(refused.ok);
+    CHECK(refused.error.message == "Alpha is a Windows program; test-box runs Linux: choose the Linux build of Alpha.");
+    CHECK(server.written == before);
+
+    // A script: its interpreter must be there.
+    writeFile(here / "script/alpha.py", "#!/usr/bin/env nosuchpython\nprint('uciok')\n");
+    JobResult script;
+    copyEngine(client, m, planEngineCopy(alpha, m, here / "script/alpha.py"), protocols, state, script);
+    CHECK_FALSE(script.ok);
+    CHECK(script.error.message.find("nosuchpython, which test-box does not have") != std::string::npos);
+    writeFile(here / "script/alpha.py", "#!/usr/bin/env python3\nprint('uciok')\n");
+    JobResult python;
+    copyEngine(client, m, planEngineCopy(alpha, m, here / "script/alpha.py"), protocols, state, python);
+    REQUIRE_MESSAGE(python.ok, python.error.message);
+    CHECK(python.engines[0].local_build == (here / "script/alpha.py").string());
+    CHECK(server.error().empty());
+    fs::remove_all(dir);
+}
+
+TEST_CASE("Machine jobs: an engine's copy cut by the network resumes; a Windows machine refuses names it cannot hold") {
+    const auto dir  = freshDir("copy-cut");
+    const auto root = dir / "root";
+    fs::create_directories(root / "home/tester");
+    const auto here    = dir / "here";
+    const auto content = elfHeader(62) + std::string(400000, 'c');
+    writeFile(here / "alpha/alpha", content);
+    ssh::MockServer::Options options;
+    options.root      = root;
+    options.cut_after = 250000;
+    options.exec      = [&root](const std::string& command) {
+        if (unSh(command).find("exec '/home/tester/fcg/engines/") != std::string::npos) {
+            ssh::MockServer::Command reply;
+            reply.talk = [](const std::string& input, bool closed, bool& ended) {
+                ended = closed || input.find("quit") != std::string::npos;
+                return input.find("uci") != std::string::npos ? std::string("uciok\n") : std::string();
+            };
+            return reply;
+        }
+        return linuxBox(root, command);
+    };
+    ssh::MockServer server(MACHINE_PORT, options);
+    EngineEntry alpha;
+    alpha.name = "Alpha";
+    alpha.cmd  = (here / "alpha/alpha").string();
+    auto m     = linuxMachine();
+    {
+        SshClient client;
+        REQUIRE(client.connect(loopbackTarget(dir)));
+        JobState state;
+        JobResult cut;
+        copyEngine(client, m, planEngineCopy(alpha, m), {}, state, cut);
+        CHECK_FALSE(cut.ok);
+        CHECK(cut.engines.empty());
+    }
+    CHECK(fs::exists(root / "home/tester/fcg/engines/Alpha/alpha.part"));
+    {
+        SshClient client;
+        REQUIRE(client.connect(loopbackTarget(dir)));
+        JobState state;
+        JobResult resumed;
+        copyEngine(client, m, planEngineCopy(alpha, m), {}, state, resumed);
+        REQUIRE_MESSAGE(resumed.ok, resumed.error.message);
+        CHECK(state.bytes_sent < content.size());  // from where the cut left it
+    }
+    CHECK(readFile(root / "home/tester/fcg/engines/Alpha/alpha") == content);
+
+#ifndef _WIN32
+    // A Windows machine: a folder with a name Windows cannot hold is refused, naming it, before anything is sent
+    // (such a file written where it can be).
+    writeFile(here / "win/alpha.exe", peHeader(0x8664) + std::string(500, 'w'));
+    writeFile(here / "win/net:v2.nnue", "n");
+    m.system         = systemOf("Windows", "AMD64");
+    m.system.home    = "C:\\Users\\tester";
+    auto plan        = planEngineCopy(alpha, m, here / "win/alpha.exe");
+    plan.with_folder = true;
+    SshClient client;
+    REQUIRE(client.connect(loopbackTarget(dir)));
+    JobState state;
+    JobResult refused;
+    const auto before = server.written.load();
+    copyEngine(client, m, plan, {}, state, refused);
+    CHECK_FALSE(refused.ok);
+    CHECK(refused.error.message.find("net:v2.nnue") != std::string::npos);
+    CHECK(server.written == before);
+#endif
+    fs::remove_all(dir);
+}
+
+TEST_CASE("Machines: an engine's copy and builds kept in machines.json, its local paths portable") {
+    Machine m;
+    m.id   = "m1";
+    m.name = "box";
+    MachineEngine e;
+    e.engine            = "Alpha";
+    e.path              = "/srv/fcg/engines/Alpha/alpha";
+    e.local_build       = "/home/me/builds/alpha-linux";
+    e.local_dir         = "/home/me/builds";
+    e.copied_dir        = "/srv/fcg/engines/Alpha";
+    e.remote_hash       = std::string(64, 'a');
+    e.local_hash        = std::string(64, 'a');
+    e.local_stamp.size  = 1234;
+    e.local_stamp.mtime = 5678;
+    m.engines.push_back(e);
+    const auto back = nlohmann::json(m).get<Machine>();
+    REQUIRE(back.engines.size() == 1);
+    CHECK(back.engines[0] == e);
+    CHECK(buildMatch(back.engines[0], e.local_stamp) == BuildMatch::Same);
+}
+
 TEST_CASE("SSH client: a real server, when FCG_SSH_TEST names one") {
     const char* spec = std::getenv("FCG_SSH_TEST");
     if (!spec || !*spec) return;
@@ -1422,8 +1936,9 @@ TEST_CASE("SSH client: a real server, when FCG_SSH_TEST names one") {
 
 // A real machine from end to end, when FCG_MACHINE_TEST names one: "user@host:port:key_file", with FCG_MACHINE_PROGRAM
 // the fastchess-gui built for its system and FCG_MACHINE_ENGINE the mock engine built for it (those of the Windows
-// build, from Linux). As the window does it: the machine tested, fastchess-gui installed there, the engine copied and
-// checked, a match started there in the background and followed, the window gone and back, the files copied back.
+// build, from Linux). As the window does it: the machine tested, fastchess-gui installed there, the engine copied
+// there by Copy to the machine and found the same build, a match started there in the background and followed, the
+// window gone and back, the files copied back.
 // Off by default; its folder there is left for a look (fcg-e2e-<time> in the user's home folder).
 TEST_CASE("Machines: a real machine from end to end, when FCG_MACHINE_TEST names one") {
     const char* spec    = std::getenv("FCG_MACHINE_TEST");
@@ -1462,22 +1977,74 @@ TEST_CASE("Machines: a real machine from end to end, when FCG_MACHINE_TEST names
     installProgram(client, m, program, state, result);
     REQUIRE_MESSAGE(result.ok, result.error.message);
 
-    // The mock engine there, checked as the library's engines are.
-    const auto engines_there = remoteJoin(machineFolder(m), "engines");
-    const auto engine_there  = remoteJoin(engines_there, fs::path(mock).filename().string());
-    REQUIRE_MESSAGE(client.makeDirs(engines_there), client.error().message);
-    REQUIRE_MESSAGE(client.upload(mock, engine_there), client.error().message);
-    m.engines = {{"Alpha", engine_there, -1, "", ""}, {"Bravo", engine_there, -1, "", ""}};
-    result    = {};
-    checkEngines(client, m, {}, std::chrono::seconds(20), state, result);
-    REQUIRE_MESSAGE(result.ok, result.error.message);
-
-    // A match of this computer, played there.
+    // The mock engine there, through Copy to the machine: its format checked against the machine's system, copied to
+    // the engines folder, its hash compared, its path set and checked.
     std::vector<EngineEntry> library(2);
     library[0].name = "Alpha";
     library[1].name = "Bravo";
-    writeFile(dir / "mock-engine", "the engine of this computer, played by its copy there");
-    for (auto& e : library) e.cmd = (dir / "mock-engine").string();
+    for (auto& e : library) e.cmd = mock;
+    for (const auto& e : library) {
+        const auto plan = planEngineCopy(e, m);
+        REQUIRE_MESSAGE(plan.error.empty(), plan.error);
+        REQUIRE_MESSAGE(plan.suits.level != Suitability::Level::Refused, plan.suits.message);
+        result = {};
+        copyEngine(client, m, plan, {}, state, result);
+        for (const auto& line : result.lines) MESSAGE(line);
+        REQUIRE_MESSAGE(result.ok, result.error.message);
+        REQUIRE(result.engines.size() == 1);
+        CHECK(insideRemoteFolder(result.engines[0].path, machineFolder(m)));
+        m.engines.push_back(result.engines[0]);
+    }
+    // The same build there, as the engines' check finds it.
+    result = {};
+    checkEngines(client, m, {}, std::chrono::seconds(20), state, result, {{"Alpha", mock}, {"Bravo", mock}});
+    REQUIRE_MESSAGE(result.ok, result.error.message);
+    for (const auto& e : result.engines) CHECK(buildMatch(e, fileStamp(mock)) == BuildMatch::Same);
+    // A build for another system is refused before anything is sent.
+    {
+        const bool windows = m.system.shell == RemoteShell::Cmd;
+        writeFile(dir / "other" / "alpha", windows ? std::string("\x7f"
+                                                                 "ELF\x02\x01\x01",
+                                                                 7) +
+                                                         std::string(100, '\0')
+                                                   : std::string("MZ") + std::string(100, '\0'));
+        const auto plan = planEngineCopy(library[0], m, dir / "other" / "alpha");
+        CHECK(plan.suits.level == Suitability::Level::Refused);
+        result = {};
+        copyEngine(client, m, plan, {}, state, result);
+        CHECK_FALSE(result.ok);
+        MESSAGE(result.error.message);
+        CHECK(result.error.message.find("choose the") != std::string::npos);
+    }
+    // An engine with its folder: a network in a folder beside the program, an option naming it, found in its copy.
+    {
+        const auto folder = dir / "charlie";
+        const auto exe    = folder / fs::path(mock).filename();
+        fs::create_directories(folder / "nets");
+        fs::copy_file(mock, exe);
+        writeFile(folder / "nets" / "charlie.nnue", std::string(300000, 'n'));
+        EngineEntry charlie;
+        charlie.name    = "Charlie";
+        charlie.cmd     = exe.string();
+        charlie.options = {{"EvalFile", (folder / "nets" / "charlie.nnue").string()}};
+        const auto plan = planEngineCopy(charlie, m);
+        REQUIRE(plan.with_folder);
+        CHECK(plan.files.size() == 2);
+        result = {};
+        copyEngine(client, m, plan, {}, state, result);
+        for (const auto& line : result.lines) MESSAGE(line);
+        REQUIRE_MESSAGE(result.ok, result.error.message);
+        const auto& e = result.engines[0];
+        CHECK(e.copied_dir == engineFolderThere(m, "Charlie"));
+        const auto net = optionThere(e, m.system.shell, charlie.options[0].second);
+        MESSAGE("EvalFile there: " << net);
+        CHECK(net.rfind(e.copied_dir, 0) == 0);
+        const auto hash = client.run(*hashCommand(m.system.shell, net), 30s);
+        REQUIRE(hash);
+        CHECK(readHash(hash->out) == sha256File(folder / "nets" / "charlie.nnue"));
+    }
+
+    // A match of this computer, played there.
     MatchSetup setup;
     setup.format      = TournamentFormat::Match;
     setup.name        = "e2e";

@@ -85,6 +85,16 @@ Fix changeTournamentsFolderFix() {
                    "a folder… opens them."));
 }
 
+Fix copyToMachineFix(const std::string& engine, const std::string& machine_id, const std::string& machine_name) {
+    auto f = make(Fix::Kind::CopyToMachine, trf("Copy {} to {}…", engine, machine_name),
+                  trf("Settings > Machines: copies this computer's program of {} to {}, sets its path there and checks "
+                      "it.",
+                      engine, machine_name),
+                  engine);
+    f.path = machine_id;
+    return f;
+}
+
 const Fix* drawNotice(const Notice& notice, const char* id) {
     const bool ok    = notice.level == Notice::Level::Ok;
     const bool error = notice.level == Notice::Level::Error;

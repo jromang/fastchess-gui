@@ -17,9 +17,12 @@
 #include <vector>
 
 #include "machines.hpp"
+#include "program_format.hpp"
 #include "ssh_client.hpp"
 
 namespace fcg {
+
+struct EngineEntry;
 
 // A book a setup uses, against the machine's copy.
 struct BookCheck {
@@ -82,7 +85,7 @@ struct JobState {
 
 class MachineJob {
    public:
-    enum class Kind { Test, Install, Engines, Files, Push };
+    enum class Kind { Test, Install, Engines, Files, Push, CopyEngine, Builds };
     using Work = std::function<void(SshClient&, JobState&, JobResult&)>;
 
     // Connects to `target`, then runs `work` with the connection, on a thread of its own.
@@ -122,9 +125,68 @@ void testMachine(SshClient& client, const Machine& machine, JobState& state, Job
 void installProgram(SshClient& client, const Machine& machine, const std::filesystem::path& program, JobState& state,
                     JobResult& result);
 // Checks each engine's path on the machine: there, a program, and it answers uci (or xboard, `protocols` giving the
-// library's protocol of each engine by name) within `limit`.
+// library's protocol of each engine by name) within `limit`. With `programs` (this computer's program of each engine
+// for the machine, by name: see programFor), the builds compared too.
 void checkEngines(SshClient& client, const Machine& machine, const std::map<std::string, std::string>& protocols,
-                  std::chrono::milliseconds limit, JobState& state, JobResult& result);
+                  std::chrono::milliseconds limit, JobState& state, JobResult& result,
+                  const std::map<std::string, std::filesystem::path>& programs = {});
+// Compares the SHA-256 of each engine's program there with this computer's (`programs`), without starting any.
+void compareBuilds(SshClient& client, const Machine& machine,
+                   const std::map<std::string, std::filesystem::path>& programs, JobState& state, JobResult& result);
+
+// ---------------------------------------------------------------------------------------------------------------
+// An engine copied to a machine (Copy to the machine, Replace with this computer's).
+
+// The most files a folder copied with its engine may hold: an engine's folder has a few (its networks, a book), and a
+// program in /usr/bin is not to be copied with its folder.
+inline constexpr std::size_t MAX_FOLDER_FILES = 2000;
+
+// What goes, where, and what was found about it here first: planned on the UI thread when the copy is offered (the
+// format read from the program's first bytes, the folder listed), copied by copyEngine().
+struct EngineCopy {
+    std::string engine;              // the library's name
+    std::filesystem::path program;   // this computer's file: the library's program, or the build chosen for the machine
+    bool own_build         = false;  // `program` is not the library's: kept as MachineEngine::local_build
+    uint64_t program_bytes = 0;
+    ProgramFormat format;
+    Suitability suits;
+    // The folder offered with it: the engine's working directory, or the program's folder.
+    std::filesystem::path folder;
+    bool with_folder = false;
+    std::vector<std::pair<std::string, uint64_t>> files;  // its files, relative ('/' between folders), and sizes
+    uint64_t folder_bytes = 0;
+    bool too_many         = false;  // more than MAX_FOLDER_FILES: offered without it
+    std::string name_problem;       // a file of the folder Windows cannot hold, for a Windows machine
+    // The engine's options naming a file of the folder (EvalFile...): the option and the file, relative to it.
+    std::vector<std::pair<std::string, std::string>> options_inside;
+    std::string remote_name;  // the program's name there: its own, with .exe added for Windows when it has none
+    std::string error;        // why it cannot be copied (the program is not on this computer)
+
+    // The bytes the copy sends at most.
+    [[nodiscard]] uint64_t bytes() const;
+};
+
+// This computer's program of `engine` for `machine`: the build chosen for it, else the library's program.
+[[nodiscard]] std::filesystem::path programFor(const EngineEntry& engine, const Machine& machine);
+// The copy of `engine` to `machine`, `build` (when not empty) the file chosen for it instead of the library's
+// program (and of the build chosen before).
+[[nodiscard]] EngineCopy planEngineCopy(const EngineEntry& engine, const Machine& machine,
+                                        const std::filesystem::path& build = {});
+// The engines folder of the machine, and an engine's folder in it: <folder>/engines/<engine>, its name made one every
+// system takes.
+[[nodiscard]] std::string engineFolderThere(const Machine& machine, const std::string& engine);
+// Whether the remote `path` is inside the remote `folder` ('/' and '\' alike, no "..").
+[[nodiscard]] bool insideRemoteFolder(const std::string& path, const std::string& folder);
+// The value of an option of the engine as a tournament on the machine passes it: a file of the folder copied with the
+// program (MachineEngine::local_dir) named in its copy there; any other value as it is.
+[[nodiscard]] std::string optionThere(const MachineEngine& engine, RemoteShell shell, const std::string& value);
+
+// Copies the engine's program (and its folder) to its folder on the machine, resuming what an earlier copy left,
+// each file's hash checked after; sets its path there, and checks it as checkEngines does. A file outside the
+// machine's folder is never written: an engine whose path was elsewhere is copied into its folder and pointed there.
+// The engine updated in result.engines.
+void copyEngine(SshClient& client, const Machine& machine, const EngineCopy& copy,
+                const std::map<std::string, std::string>& protocols, JobState& state, JobResult& result);
 // Compares the books and tablebases of `request` with the machine's folders.
 void checkFiles(SshClient& client, const Machine& machine, const FilesRequest& request, JobState& state,
                 JobResult& result);
