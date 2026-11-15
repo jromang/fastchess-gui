@@ -48,6 +48,8 @@ this repository still builds unchanged.
 
 ![Settings > Machines: a Windows PC through its built-in OpenSSH server](docs/screenshots/machines.png)
 
+![An engine that runs on another machine, played from this computer: Runs on gpu-box](docs/screenshots/remote-engine-card.png)
+
 - **Exact resume**: every tournament is a folder with an append-only journal; after a crash, a closed window or
   a power cut it continues with no game lost or played twice.
 - **Unattended nights**: an engine that cannot start has its games set aside while the others go on; it is tried
