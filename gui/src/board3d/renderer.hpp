@@ -10,6 +10,7 @@
 // The scene is small and mostly analytic: the board is a box, the studio round it a seamless sweep, the lights
 // rectangles, and only the pieces are meshes, six of them instanced on the squares (bvh.hpp).
 
+#include "board3d/camera.hpp"
 #include "board3d/piece_pack.hpp"
 
 #include <array>
@@ -19,15 +20,6 @@
 #include <vector>
 
 namespace fcg::board3d {
-
-struct Camera {
-    float yaw      = 0.0f;   // radians around the board, 0 behind White
-    float pitch    = 0.72f;  // radians above the board's plane
-    float distance = 13.0f;  // squares from the target
-    std::array<float, 3> target{0.0f, 0.0f, 0.6f};
-    float fovY     = 0.52f;  // vertical field of view, radians
-    float aperture = 0.0f;   // lens radius in squares; 0: everything sharp
-};
 
 // A light of a studio: a rectangle at centre, width by height squares, facing target, its colour a temperature. Or,
 // with sun > 0, a sun far away beyond centre as seen from target, sun degrees wide, its radiance then the light it
@@ -46,6 +38,7 @@ inline constexpr int kMaxLights = 4;
 // colour and finish of its floor and walls, the exposure it is made for. Coordinates in squares, y up, White at +z,
 // the playing surface at y = 0.
 struct Studio {
+    const char* id;    // as the settings keep it
     const char* name;
     int lightCount;
     std::array<StudioLight, kMaxLights> lights;
@@ -74,10 +67,28 @@ struct Finish {
     float varnishRough = 0.07f;
 };
 
-struct PlacedPiece {
-    int square = 0;  // 0 = a1 ... 63 = h8
-    Kind kind  = Kind::Pawn;
-    bool black = false;
+// What is laid over the board, as the 2D board draws it: tints over squares, a dot or a ring on a square, a disc under
+// a king in check, arrows. Colours as Dear ImGui packs them (IM_COL32: red in the low byte), with their opacity. Drawn
+// when the image is shown, over the surface of the board; where a piece hides it, the arrows, dots and rings show
+// faintly through.
+struct Overlay {
+    enum class Mark : std::uint8_t { None, Dot, Ring, Check };
+    struct Arrow {
+        int from = 0, to = 0;  // squares, 0 = a1 ... 63 = h8
+        std::uint32_t colour = 0;
+        bool operator==(const Arrow&) const = default;
+    };
+    static constexpr std::size_t kMaxArrows = 8;
+
+    std::array<std::uint32_t, 64> tint{};  // the colours laid over each square, composed into one
+    std::array<Mark, 64> mark{};
+    std::uint32_t markColour  = 0;  // of the dots and rings
+    std::uint32_t checkColour = 0;
+    std::vector<Arrow> arrows;  // drawn in order, the first kMaxArrows
+
+    // `colour` laid over what the square has already.
+    void addTint(int square, std::uint32_t colour);
+    bool operator==(const Overlay&) const = default;
 };
 
 // The pieces of a FEN's placement field (the rest ignored); empty if it is not one.
@@ -107,6 +118,7 @@ public:
     void setFinish(const Finish& finish);
     void setTargetSamples(int samples);
     void setDenoise(bool on);
+    void setOverlay(const Overlay& overlay);  // shown at once: the samples stay good
 
     // A step of the image of that size within about budgetMs of GPU time. True if the image changed.
     // With scale > 1 the image is traced at 1/scale of that size and shown stretched, a whole sample each frame: the
@@ -123,6 +135,10 @@ public:
     [[nodiscard]] int bands() const { return bands_; }
     [[nodiscard]] bool converged() const { return samples_ >= targetSamples_; }
     [[nodiscard]] bool denoise() const { return denoise_; }
+    [[nodiscard]] const Camera& camera() const { return camera_; }
+    [[nodiscard]] const std::vector<PlacedPiece>& pieces() const { return pieces_; }
+    // The pieces' bounding cylinders, in the order of Kind (for squareAt()); empty before init().
+    [[nodiscard]] const std::vector<PieceShape>& shapes() const { return shapes_; }
 
     // Waits for the GPU to finish what was asked of it: when nothing else paces the frames (no swap, no vsync).
     void finish() const;
@@ -148,6 +164,8 @@ private:
     void displayPass();
 
     std::vector<PieceMesh> meshes_;
+    std::vector<PieceShape> shapes_;
+    Overlay overlay_;
     std::vector<int> roots_;
     std::vector<PlacedPiece> pieces_;
     Camera camera_;

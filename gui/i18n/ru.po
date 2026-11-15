@@ -152,6 +152,9 @@ msgstr "200 cp: оба движка считают, что одна сторон
 msgid "200k nodes"
 msgstr "200k узлов"
 
+msgid "3D board"
+msgstr "3D-доска"
+
 msgid "50 moves {}/100"
 msgstr "50 ходов {}/100"
 
@@ -826,6 +829,9 @@ msgstr "Оценки обоих движков должны быть за пор
 
 msgid "Bracket"
 msgstr "Сетка"
+
+msgid "Brighter or darker than the lighting makes it, in stops: each one doubles or halves the light."
+msgstr "Светлее или темнее, чем даёт освещение, в ступенях: каждая удваивает или вдвое уменьшает свет."
 
 msgid "Broadcast"
 msgstr "Трансляция"
@@ -1736,6 +1742,9 @@ msgstr "Экспортировать партии…"
 msgid "Export…"
 msgstr "Экспорт…"
 
+msgid "Exposure %+.1f"
+msgstr "Экспозиция %+.1f"
+
 msgid "Extra fields in the comments:"
 msgstr "Дополнительные поля в комментариях:"
 
@@ -1976,8 +1985,14 @@ msgstr "Укажите имя тестера и соревнование."
 msgid "Give the user to log in as."
 msgstr "Укажите пользователя для входа."
 
+msgid "Gloss %.0f %%"
+msgstr "Глянец %.0f %%"
+
 msgid "Go to the engines"
 msgstr "Перейти к движкам"
+
+msgid "Golden hour"
+msgstr "Золотой час"
 
 msgid "Green"
 msgstr "Зелёная"
@@ -2060,6 +2075,9 @@ msgstr "Скрыть кнопки навигации"
 msgid "Hide the navigation buttons under the boards"
 msgstr "Скрыть кнопки навигации под досками"
 
+msgid "High key"
+msgstr "Высокий ключ"
+
 msgid "Host"
 msgstr "Хост"
 
@@ -2080,6 +2098,15 @@ msgstr "Сколько лучших ходов показывать (MultiPV)."
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "Сколько раз играется каждая пара; каждый раз две партии со сменой цвета. Другие программы называют цикл раундом из 2 партий на встречу (-rounds N -games 2)."
+
+msgid "How much varnish covers the board: none for waxed, matt wood, all of it for a coat that shows the lights."
+msgstr "Сколько лака покрывает доску: нисколько — вощёное матовое дерево, весь — слой, в котором отражаются источники света."
+
+msgid "How sharp the varnish's reflections are: satin at 0, a mirror at 100."
+msgstr "Насколько чёткие отражения в лаке: сатин при 0, зеркало при 100."
+
+msgid "How the board is lit, as photographers light a still life."
+msgstr "Как освещена доска — так, как фотографы освещают натюрморт."
 
 msgid "How the moves of a Polyglot book are chosen, for the tournament's openings and for the participants' own books: -100 the best move only, 0 in proportion to their weights, as Polyglot and Cute Chess choose, 100 every move alike. In between, -50 squares the weights and 50 takes their square roots."
 msgstr "Как выбираются ходы книги Polyglot — для дебютов турнира и для собственных книг участников: -100 только лучший ход, 0 пропорционально их весу, как выбирают Polyglot и Cute Chess, 100 все ходы поровну. В промежутке -50 возводит веса в квадрат, а 50 извлекает из них квадратный корень."
@@ -2458,6 +2485,9 @@ msgstr "Проигрыш после выигрышной оценки"
 
 msgid "Lost on time before move {}: more often an engine set up wrong (too many threads, a hash too large to allocate in time, a network loaded at every game, a slow start) than its time management."
 msgstr "Поражение по времени до {}-го хода: чаще неверно настроенный движок (слишком много потоков, хеш, слишком большой, чтобы успеть его выделить, сеть, загружаемая в каждой партии, медленный запуск), чем его контроль времени."
+
+msgid "Low key"
+msgstr "Низкий ключ"
 
 msgid "Lower Threads to {}"
 msgstr "Снизить Threads до {}"
@@ -3353,6 +3383,9 @@ msgstr "Ставит её в раздел «Дебюты» страницы «Н
 msgid "Puts this card away for good; the quick start stays in the guide."
 msgstr "Убирает эту карточку насовсем; «Быстрый старт» остаётся в руководстве."
 
+msgid "Quality %d samples"
+msgstr "Качество: %d сэмплов"
+
 msgid "Queue · {} tournament"
 msgid_plural "Queue · {} tournaments"
 msgstr[0] "Очередь · {} турнир"
@@ -3848,6 +3881,9 @@ msgstr "Показать: {}"
 msgid "Shown here as they are played, and saved as PGN in games/ in the profile."
 msgstr "Показываются здесь по ходу игры и сохраняются в PGN в папке games/ профиля."
 
+msgid "Showroom"
+msgstr "Выставочный зал"
+
 msgid "Site"
 msgstr "Место"
 
@@ -3991,6 +4027,9 @@ msgstr "Остановка движков…"
 
 msgid "Stopping…"
 msgstr "Остановка…"
+
+msgid "Studio"
+msgstr "Студия"
 
 msgid "Submission checklist"
 msgstr "Чек-лист перед отправкой"
@@ -4190,6 +4229,9 @@ msgstr "Текст"
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Счётчик 50 ходов, материал и оставшиеся фигуры под каждой доской мозаики."
 
+msgid "The Board page's board in 3D"
+msgstr "Доска страницы «Доска» в 3D"
+
 msgid "The Board page: {} core for its analysis and its games"
 msgid_plural "The Board page: {} cores for its analysis and its games"
 msgstr[0] "Страница «Доска»: {} ядро для анализа и партий"
@@ -4261,6 +4303,9 @@ msgstr "Средний рейтинг соперников, партия за п
 
 msgid "The board follows the game again (End)."
 msgstr "Доска снова следует за партией (End)."
+
+msgid "The board of the Board page drawn in three dimensions, lit as in a photographer's studio. Hold the right button to turn round it, the wheel to come closer, a click of the wheel to come back. The picture refines for a few seconds while nothing moves, using the graphics card, then rests."
+msgstr "Доска страницы «Доска», нарисованная в трёх измерениях и освещённая как в фотостудии. Удерживайте правую кнопку, чтобы обойти её кругом, колесо — чтобы приблизиться, щелчок колесом — чтобы вернуться. Пока ничего не движется, изображение несколько секунд уточняется на видеокарте, затем она отдыхает."
 
 msgid "The book cannot be built: {}"
 msgstr "Не удаётся построить книгу: {}"
@@ -4373,6 +4418,9 @@ msgstr "Ожидающие движки не проверяются; текущ�
 msgid "The engines' own books are off"
 msgstr "Собственные книги движков выключены"
 
+msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
+msgstr "Экспозиция, качество, лак и глянец как вначале; освещение остаётся."
+
 msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
 msgstr "Файл с именем «portable» рядом с программой хранит всё в этой папке. Пути внутри {} сохраняются относительно неё, поэтому эту папку можно перемещать или копировать на другой компьютер."
 
@@ -4432,6 +4480,9 @@ msgstr "Текущие партии будут потеряны; каждый т
 
 msgid "The games wait for {}: {}. Another try after each game."
 msgstr "Партии ждут {}: {}. Новая попытка после каждой партии."
+
+msgid "The graphics driver cannot draw the 3D board ({}): the boards stay flat."
+msgstr "Графический драйвер не может нарисовать 3D-доску ({}): доски остаются плоскими."
 
 msgid "The guide, at this page (F1)"
 msgstr "Руководство по этой странице (F1)"
@@ -4697,6 +4748,9 @@ msgstr "Тот же матч с новым движком A вместо {}, н�
 msgid "The same opening for every pair of a round"
 msgstr "Один дебют для всех пар тура"
 
+msgid "The samples the picture is made of before it rests: more is finer, and keeps the graphics card at work longer. Fewer spare a processor's graphics during tournaments."
+msgstr "Число сэмплов, из которых складывается изображение, прежде чем видеокарта отдыхает: больше — чище, но видеокарта работает дольше. Меньше — бережёт встроенную графику процессора во время турниров."
+
 msgid "The search stops once a solution has stayed the engine's first move for this many more plies of depth. 0: every search takes its whole time."
 msgstr "Поиск останавливается, когда решение остаётся первым ходом движка ещё на столько полуходов глубины. 0: каждый поиск использует всё своё время."
 
@@ -4825,6 +4879,9 @@ msgstr "Окно"
 
 msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
 msgstr "Окно рисует процессор (программный рендерер SDL), а не видеокарта через OpenGL: для виртуальных машин, удалённых рабочих столов и неисправных графических драйверов. Медленнее, а панели, вынесенные из окна, остаются внутри него. --software в командной строке делает то же самое на один запуск."
+
+msgid "The window is drawn without OpenGL (the software renderer of the Settings page, or a graphics driver without OpenGL 3.2): the boards stay flat."
+msgstr "Окно отрисовывается без OpenGL (программный рендерер со страницы «Параметры» или графический драйвер без OpenGL 3.2): доски остаются плоскими."
 
 msgid "The working directory of {} is not found: {}"
 msgstr "Рабочая папка движка {} не найдена: {}"
@@ -4966,6 +5023,9 @@ msgstr "Итого"
 
 msgid "Tournament"
 msgstr "Турнир"
+
+msgid "Tournament hall"
+msgstr "Турнирный зал"
 
 msgid "Tournaments"
 msgstr "Турниры"
@@ -5126,6 +5186,9 @@ msgstr "Значение"
 msgid "Variance ratio"
 msgstr "Отношение дисперсий"
 
+msgid "Varnish %.0f %%"
+msgstr "Лак %.0f %%"
+
 msgid "Version"
 msgstr "Версия"
 
@@ -5269,6 +5332,9 @@ msgstr "Движки WinBoard (протокол xboard) работают чер�
 
 msgid "WinBoard, its own protocol"
 msgstr "WinBoard, его собственный протокол"
+
+msgid "Window light"
+msgstr "Свет из окна"
 
 msgid "Winner: {}"
 msgstr "Победитель: {}"

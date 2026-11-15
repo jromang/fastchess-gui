@@ -72,17 +72,7 @@ GLuint link(const std::string& fragment, std::string& why) {
 
 GLint loc(GLuint program, const char* name) { return fn().GetUniformLocation(program, name); }
 
-struct V3 {
-    float x, y, z;
-};
-V3 operator-(V3 a, V3 b) { return {a.x - b.x, a.y - b.y, a.z - b.z}; }
-V3 operator+(V3 a, V3 b) { return {a.x + b.x, a.y + b.y, a.z + b.z}; }
-V3 operator*(V3 a, float s) { return {a.x * s, a.y * s, a.z * s}; }
-V3 cross(V3 a, V3 b) { return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x}; }
-V3 normalize(V3 a) {
-    float l = std::sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
-    return a * (1.0f / l);
-}
+using V3 = Vec3;
 
 // A rectangular light at `centre`, w by h squares, facing `target`.
 struct RectLight {
@@ -121,7 +111,8 @@ float linear(float srgb) { return std::pow(srgb / 255.0f, 2.2f); }
 // board from the main one, so that one exposure fits them all roughly; each has its own.
 constexpr Studio kStudios[] = {
     // Three-point lighting: a warm soft box above left, a dim cool fill on the right, a strip behind for the outlines.
-    {.name       = "Studio",
+    {.id         = "studio",
+     .name       = "Studio",
      .lightCount = 3,
      .lights     = {{{{-6.5f, 7.0f, 5.0f}, {0, 0, 0}, 3, 3, 4800, 18.5f},
                      {{9.0f, 6.0f, 7.0f}, {0, 0, 0}, 8, 8, 8000, 0.28f},
@@ -137,7 +128,8 @@ constexpr Studio kStudios[] = {
     // Low key: one small tungsten source close, front left, no fill, the light falling off across the board towards
     // Black and the pieces carved out of the dark (its reflection falls off the near edge); a cool kicker behind on
     // the right draws the far edges.
-    {.name       = "Low key",
+    {.id         = "low_key",
+     .name       = "Low key",
      .lightCount = 2,
      .lights     = {{{{-5.0f, 6.0f, 3.0f}, {0, 0.3f, 0}, 1.6f, 1.6f, 3200, 38},
                      {{7.5f, 2.5f, -8.0f}, {0, 0.8f, 0}, 0.8f, 4, 6500, 6}}},
@@ -151,7 +143,8 @@ constexpr Studio kStudios[] = {
      .exposure   = 1.3f},
     // High key: a white sweep lit evenly all over, a large soft box overhead and two fills: bright, soft, hardly a
     // shadow.
-    {.name       = "High key",
+    {.id         = "high_key",
+     .name       = "High key",
      .lightCount = 3,
      .lights     = {{{{0.0f, 12.0f, 2.5f}, {0, 0, 0}, 11, 11, 5600, 2.4f},
                      {{-11.0f, 5.0f, 6.0f}, {0, 0.5f, 0}, 6, 6, 5600, 3.5f},
@@ -167,7 +160,8 @@ constexpr Studio kStudios[] = {
      .exposure   = 0.9f},
     // Showroom: black acrylic that mirrors the board (its satin base matt: the coat alone gives the mirror), two tall
     // strip boxes behind on either side for the highlights along the pieces' curves, a soft box above.
-    {.name       = "Showroom",
+    {.id         = "showroom",
+     .name       = "Showroom",
      .lightCount = 3,
      .lights     = {{{{-8.5f, 3.5f, -6.0f}, {0, 1, 0}, 1.2f, 7, 6500, 9},
                      {{8.5f, 3.5f, -6.0f}, {0, 1, 0}, 1.2f, 7, 6500, 9},
@@ -182,7 +176,8 @@ constexpr Studio kStudios[] = {
      .exposure   = 1.4f},
     // A north window: a tall pane of daylight on the left, a white card on the right giving a little back, the sky's
     // blue in the shadows.
-    {.name       = "Window",
+    {.id         = "window",
+     .name       = "Window light",
      .lightCount = 2,
      .lights     = {{{{-24.0f, 7.5f, -3.0f}, {0, 1.5f, 0}, 7, 9, 6500, 26},
                      {{12.0f, 3.0f, 5.0f}, {0, 0.5f, 0}, 6, 5, 5000, 0.25f}}},
@@ -196,7 +191,8 @@ constexpr Studio kStudios[] = {
      .exposure   = 1.35f},
     // Golden hour: a low orange sun, 12 degrees up, raking the board, the pieces' shadows long across it, a blue sky
     // above.
-    {.name       = "Golden hour",
+    {.id         = "golden_hour",
+     .name       = "Golden hour",
      .lightCount = 1,
      .lights     = {{{{-25.0f, 6.0f, -12.0f}, {0, 0, 0}, 0, 0, 3000, 4.0f, 1.5f}}},
      .skyKelvin  = 11000,
@@ -208,7 +204,8 @@ constexpr Studio kStudios[] = {
      .coatRough  = 1,
      .exposure   = 1.2f},
     // A tournament hall: one large even panel overhead, neutral, a grey carpet; plain and easy to read.
-    {.name       = "Tournament hall",
+    {.id         = "hall",
+     .name       = "Tournament hall",
      .lightCount = 1,
      .lights     = {{{{0.0f, 10.0f, 0.0f}, {0, 0, 0}, 16, 16, 4300, 0.55f}}},
      .skyKelvin  = 5000,
@@ -269,6 +266,8 @@ bool Renderer::init(const ShaderSources& shaders, const unsigned char* pack, std
         return false;
     }
     if (!reloadShaders(shaders, why)) return false;
+    shapes_.clear();
+    for (const PieceMesh& m : meshes_) shapes_.push_back({m.radius, m.height});
 
     const auto& f    = fn();
     const GpuBvh bvh = buildBvh(meshes_);
@@ -328,6 +327,7 @@ void Renderer::shutdown() {
 }
 
 void Renderer::setPieces(const std::vector<PlacedPiece>& pieces) {
+    if (pieces == pieces_) return;
     pieces_         = pieces;
     instancesDirty_ = true;
     restart();
@@ -356,8 +356,30 @@ void Renderer::setFinish(const Finish& finish) {
 }
 
 void Renderer::setTargetSamples(int samples) {
-    targetSamples_ = std::max(1, samples);
+    samples = std::max(1, samples);
+    if (samples == targetSamples_) return;
+    targetSamples_ = samples;
     dirty_         = true;
+}
+
+void Renderer::setOverlay(const Overlay& overlay) {
+    if (overlay == overlay_) return;
+    overlay_ = overlay;
+    dirty_   = true;
+}
+
+void Overlay::addTint(int square, std::uint32_t colour) {
+    if (square < 0 || square > 63) return;
+    auto channel = [](std::uint32_t c, int i) { return float((c >> (8 * i)) & 0xFF) / 255.0f; };
+    const std::uint32_t under = tint[std::size_t(square)];
+    const float a2 = channel(colour, 3), a1 = channel(under, 3), a = a2 + a1 * (1 - a2);
+    if (a <= 0) return;
+    std::uint32_t out = std::uint32_t(std::lround(a * 255)) << 24;
+    for (int i = 0; i < 3; ++i) {
+        const float c = (channel(colour, i) * a2 + channel(under, i) * a1 * (1 - a2)) / a;
+        out |= std::uint32_t(std::lround(std::clamp(c, 0.0f, 1.0f) * 255)) << (8 * i);
+    }
+    tint[std::size_t(square)] = out;
 }
 
 void Renderer::setDenoise(bool on) {
@@ -478,16 +500,11 @@ void Renderer::tracePass(int y0, int y1) {
 
     // The camera: on a sphere round the target, a thin lens focused on it.
     const Camera& c = camera_;
-    const V3 target{c.target[0], c.target[1], c.target[2]};
-    const V3 eye = target + V3{std::sin(c.yaw) * std::cos(c.pitch), std::sin(c.pitch), std::cos(c.yaw) * std::cos(c.pitch)} *
-                                c.distance;
-    const V3 forward = normalize(target - eye);
-    const V3 right   = normalize(cross(forward, {0, 1, 0}));
-    const V3 up      = cross(right, forward);
-    f.Uniform3f(loc(p, "uCamPos"), eye.x, eye.y, eye.z);
-    f.Uniform3f(loc(p, "uCamRight"), right.x, right.y, right.z);
-    f.Uniform3f(loc(p, "uCamUp"), up.x, up.y, up.z);
-    f.Uniform3f(loc(p, "uCamForward"), forward.x, forward.y, forward.z);
+    const View view = viewOf(c, float(width_) / float(height_));
+    f.Uniform3f(loc(p, "uCamPos"), view.eye.x, view.eye.y, view.eye.z);
+    f.Uniform3f(loc(p, "uCamRight"), view.right.x, view.right.y, view.right.z);
+    f.Uniform3f(loc(p, "uCamUp"), view.up.x, view.up.y, view.up.z);
+    f.Uniform3f(loc(p, "uCamForward"), view.forward.x, view.forward.y, view.forward.z);
     f.Uniform1f(loc(p, "uTanHalfFov"), std::tan(c.fovY / 2));
     f.Uniform1f(loc(p, "uAperture"), c.aperture);
     f.Uniform1f(loc(p, "uFocusDist"), c.distance);
@@ -590,9 +607,9 @@ void Renderer::displayPass() {
     f.Disable(SCISSOR_TEST);
     const GLuint p = displayProgram_;
     f.UseProgram(p);
-    const int inputs[3] = {kRadiance, kGuide, filterResult_};
-    const char* names[3] = {"uRadiance", "uGuide", "uFiltered"};
-    for (int i = 0; i < 3; ++i) {
+    const int inputs[4]  = {kRadiance, kGuide, filterResult_, kGeometry};
+    const char* names[4] = {"uRadiance", "uGuide", "uFiltered", "uGeometry"};
+    for (int i = 0; i < 4; ++i) {
         f.ActiveTexture(TEXTURE0 + GLenum(i));
         f.BindTexture(TEXTURE_2D, target_[inputs[i]].texture);
         f.Uniform1i(loc(p, names[i]), i);
@@ -600,6 +617,45 @@ void Renderer::displayPass() {
     f.Uniform1i(loc(p, "uDenoise"), denoise_ && filtered_ >= 0 ? 1 : 0);
     f.Uniform1f(loc(p, "uExposure"), lighting_.exposure);
     f.Uniform2f(loc(p, "uScale"), float(width_) / float(outWidth_), float(height_) / float(outHeight_));
+    f.Uniform2f(loc(p, "uOutSize"), float(outWidth_), float(outHeight_));
+
+    // The overlay: the camera's rays again, to find the board under each pixel.
+    const View view = viewOf(camera_, float(outWidth_) / float(outHeight_));
+    f.Uniform3f(loc(p, "uCamPos"), view.eye.x, view.eye.y, view.eye.z);
+    f.Uniform3f(loc(p, "uCamRight"), view.right.x, view.right.y, view.right.z);
+    f.Uniform3f(loc(p, "uCamUp"), view.up.x, view.up.y, view.up.z);
+    f.Uniform3f(loc(p, "uCamForward"), view.forward.x, view.forward.y, view.forward.z);
+    f.Uniform1f(loc(p, "uTanHalfFov"), view.tanHalfFov);
+    auto rgba = [](std::uint32_t c, float* out) {
+        for (int i = 0; i < 4; ++i) out[i] = float((c >> (8 * i)) & 0xFF) / 255.0f;
+    };
+    float tint[64 * 4];
+    GLint marks[64];
+    for (int i = 0; i < 64; ++i) {
+        rgba(overlay_.tint[std::size_t(i)], tint + 4 * i);
+        marks[i] = GLint(overlay_.mark[std::size_t(i)]);
+    }
+    f.Uniform4fv(loc(p, "uTint"), 64, tint);
+    f.Uniform1iv(loc(p, "uMark"), 64, marks);
+    float colour[4];
+    rgba(overlay_.markColour, colour);
+    f.Uniform4f(loc(p, "uMarkColour"), colour[0], colour[1], colour[2], colour[3]);
+    rgba(overlay_.checkColour, colour);
+    f.Uniform4f(loc(p, "uCheckColour"), colour[0], colour[1], colour[2], colour[3]);
+    const int arrows = int(std::min(overlay_.arrows.size(), Overlay::kMaxArrows));
+    float ends[Overlay::kMaxArrows * 4], colours[Overlay::kMaxArrows * 4];
+    for (int i = 0; i < arrows; ++i) {
+        const Overlay::Arrow& a = overlay_.arrows[std::size_t(i)];
+        const Vec3 from = squareCentre(a.from), to = squareCentre(a.to);
+        ends[4 * i] = from.x, ends[4 * i + 1] = from.z, ends[4 * i + 2] = to.x, ends[4 * i + 3] = to.z;
+        rgba(a.colour, colours + 4 * i);
+    }
+    f.Uniform1i(loc(p, "uArrowCount"), arrows);
+    if (arrows > 0) {
+        f.Uniform4fv(loc(p, "uArrow"), arrows, ends);
+        f.Uniform4fv(loc(p, "uArrowColour"), arrows, colours);
+    }
+
     f.Viewport(0, 0, outWidth_, outHeight_);
     f.DrawArrays(TRIANGLES, 0, 3);
 }

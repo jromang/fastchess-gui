@@ -106,7 +106,14 @@ void to_json(nlohmann::json& j, const Settings& s) {
          {"pieces", s.pieces},
          {"piece_folder", s.piece_folder},
          {"sounds", s.sounds},
-         {"volume", s.volume}};
+         {"volume", s.volume},
+         {"board3d",
+          {{"on", s.board3d.on},
+           {"lighting", s.board3d.lighting},
+           {"exposure", s.board3d.exposure},
+           {"varnish", s.board3d.varnish},
+           {"gloss", s.board3d.gloss},
+           {"samples", s.board3d.samples}}}};
 }
 
 void from_json(const nlohmann::json& j, Settings& s) {
@@ -118,6 +125,15 @@ void from_json(const nlohmann::json& j, Settings& s) {
     s.piece_folder = value(j, "piece_folder", s.piece_folder);
     s.sounds       = value(j, "sounds", s.sounds);
     s.volume       = std::clamp(value(j, "volume", s.volume), 0, 100);
+    if (j.contains("board3d") && j["board3d"].is_object()) {
+        const auto& b      = j["board3d"];
+        s.board3d.on       = value(b, "on", s.board3d.on);
+        s.board3d.lighting = value(b, "lighting", s.board3d.lighting);
+        s.board3d.exposure = std::clamp(value(b, "exposure", s.board3d.exposure), -2.0f, 2.0f);
+        s.board3d.varnish  = std::clamp(value(b, "varnish", s.board3d.varnish), 0.0f, 1.0f);
+        s.board3d.gloss    = std::clamp(value(b, "gloss", s.board3d.gloss), 0.0f, 1.0f);
+        s.board3d.samples  = std::clamp(value(b, "samples", s.board3d.samples), 32, 4096);
+    }
 }
 
 std::string hexColour(ImU32 colour) {

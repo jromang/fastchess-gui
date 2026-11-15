@@ -327,6 +327,10 @@ void App::frame() {
             page_ = Page::Log;
         else if (w == "settings")
             page_ = Page::Settings;
+        else if (w == "appearance") {  // its section of Settings
+            page_                 = Page::Settings;
+            scroll_to_appearance_ = true;
+        }
         else if (w == "machines" || w == "machines-test" || w == "machines-files") {
             // The first machine's card in Settings; tested, or the setup's books and tablebases compared with its.
             page_               = Page::Settings;

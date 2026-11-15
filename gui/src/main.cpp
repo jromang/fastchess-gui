@@ -647,8 +647,8 @@ int run(const Args& args, int argc, char** argv) {
             fcg::render::drawViewports();  // windows dragged out of the main one
             fcg::render::present();
 
-            // About 30 frames per second is plenty, and leaves the CPU to the engines.
-            const auto target = std::chrono::milliseconds(33);
+            // About 30 frames per second is plenty, and leaves the CPU to the engines; 60 while a 3D board turns.
+            const auto target = std::chrono::milliseconds(app.wantsSmoothFrames() ? 16 : 33);
             const auto spent  = std::chrono::steady_clock::now() - frame_start;
             if (spent < target) std::this_thread::sleep_for(target - spent);
         }

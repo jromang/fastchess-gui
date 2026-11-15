@@ -1015,11 +1015,18 @@ void App::drawBoardColumn(float size) {
     }
 
     const ImVec2 top = ImGui::GetCursorScreenPos();
-    drawBoard(atlas_, board, size, decor);
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-        if (const auto square = boardSquareAt(ImGui::GetMousePos(), top, size, decor)) boardClick(board, *square);
+    if (appearance::current().board3d.on && board3d_.available()) {
+        const auto input = board3d_.draw(board, size, decor);
+        if (input.clicked) boardClick(board, *input.clicked);
+        if (input.right_click) b.selected.reset();
+    } else {
+        if (!appearance::current().board3d.on) board3d_.release();
+        drawBoard(atlas_, board, size, decor);
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+            if (const auto square = boardSquareAt(ImGui::GetMousePos(), top, size, decor)) boardClick(board, *square);
+        }
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) b.selected.reset();
     }
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) b.selected.reset();
 
     // The piece a pawn becomes.
     if (ImGui::BeginPopup("##promotion")) {

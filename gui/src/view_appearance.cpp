@@ -61,6 +61,7 @@ void App::applyAppearance(const appearance::Settings& settings) {
         (settings.pieces == appearance::FOLDER && settings.piece_folder != before.piece_folder)) {
         pieces_dirty_ = true;
     }
+    if (!settings.board3d.on && before.board3d.on) board3d_.release();  // its memory back on the graphics card
     if (settings.sounds != before.sounds || settings.volume != before.volume)
         sound::configure(settings.sounds && !options_.scripted, settings.volume);
     appearance_save_due_ = std::chrono::steady_clock::now() + std::chrono::seconds(1);
@@ -77,6 +78,11 @@ void App::drawBoardPreview(ui::Theme theme, float size) {
     decor.last_move  = chess::Move::make<chess::Move::NORMAL>(chess::Square(chess::File(0), chess::Rank(6)),
                                                               chess::Square(chess::File(0), chess::Rank(5)));
     decor.colours    = appearance::boardColours(theme);
+    // The 3D board when it is on: its light, varnish and exposure seen as they are changed.
+    if (appearance::current().board3d.on && board3d_.available()) {
+        (void)board3d_.draw(previewBoard(), size, decor);
+        return;
+    }
     drawBoard(atlas_, previewBoard(), size, decor);
 }
 
@@ -94,7 +100,7 @@ void App::drawAppearanceSettings(float label) {
         scroll_to_appearance_ = false;
     }
     ui::pageTitle(TR("Appearance"), guide::topics::Appearance);
-    const float preview = std::floor(px(200));
+    const float preview = std::floor(px(appearance::current().board3d.on && board3d_.available() ? 320 : 200));
 
     // In the group, the widgets' column is placed from the group's left: where the other rows have it.
     label -= ImGui::GetCursorPosX();
@@ -246,6 +252,93 @@ void App::drawAppearanceSettings(float label) {
                                    "that show a game: Games, Live, the detached boards and the Board page. Without "
                                    "them, the keys do the same: the left and right arrows, Home, End, and F to flip."));
     }
+
+    // The Board page's board in 3D, and its light.
+    ImGui::Spacing();
+    ui::label(TR("3D board"), label);
+    ImGui::BeginGroup();
+    const bool opengl = render::path() == render::Path::OpenGL;
+    ImGui::BeginDisabled(!opengl);
+    changed |= ImGui::Checkbox(TR("The Board page's board in 3D"), &s.board3d.on);
+    ImGui::SetItemTooltip("%s", TR("The board of the Board page drawn in three dimensions, lit as in a photographer's "
+                                   "studio. Hold the right button to turn round it, the wheel to come closer, a click "
+                                   "of the wheel to come back. The picture refines for a few seconds while nothing "
+                                   "moves, using the graphics card, then rests."));
+    if (s.board3d.on) {
+        ImGui::SameLine(0, px(16));
+        ImGui::SetNextItemWidth(px(180));
+        const int lighting = studioIndex(s.board3d.lighting);
+        const auto studios = board3d::studios();
+        if (ImGui::BeginCombo("##lighting", studioName(lighting))) {
+            for (int i = 0; i < static_cast<int>(studios.size()); ++i) {
+                if (ImGui::Selectable(studioName(i), i == lighting)) {
+                    s.board3d.lighting = studios[static_cast<std::size_t>(i)].id;
+                    changed            = true;
+                }
+            }
+            ImGui::EndCombo();
+        }
+        ImGui::SetItemTooltip("%s", TR("How the board is lit, as photographers light a still life."));
+
+        // The picture: its exposure and quality, the board's varnish and gloss.
+        const float slider = px(200);
+        const auto flags   = ImGuiSliderFlags_AlwaysClamp;
+        const appearance::Board3d first;
+        ImGui::SetNextItemWidth(slider);
+        changed |= ImGui::SliderFloat("##exposure", &s.board3d.exposure, -2.0f, 2.0f, TR("Exposure %+.1f"), flags);
+        ImGui::SetItemTooltip("%s", TR("Brighter or darker than the lighting makes it, in stops: each one doubles or "
+                                       "halves the light."));
+        ImGui::SameLine(0, px(16));
+        ImGui::SetNextItemWidth(slider);
+        changed |= ImGui::SliderInt("##samples", &s.board3d.samples, 32, 4096, TR("Quality %d samples"),
+                                    flags | ImGuiSliderFlags_Logarithmic);
+        ImGui::SetItemTooltip("%s", TR("The samples the picture is made of before it rests: more is finer, and keeps "
+                                       "the graphics card at work longer. Fewer spare a processor's graphics during "
+                                       "tournaments."));
+        float varnish = s.board3d.varnish * 100.0f;
+        ImGui::SetNextItemWidth(slider);
+        if (ImGui::SliderFloat("##varnish", &varnish, 0.0f, 100.0f, TR("Varnish %.0f %%"), flags)) {
+            s.board3d.varnish = varnish / 100.0f;
+            changed           = true;
+        }
+        ImGui::SetItemTooltip("%s", TR("How much varnish covers the board: none for waxed, matt wood, all of it for a "
+                                       "coat that shows the lights."));
+        ImGui::SameLine(0, px(16));
+        float gloss = s.board3d.gloss * 100.0f;
+        ImGui::BeginDisabled(s.board3d.varnish <= 0.0f);
+        ImGui::SetNextItemWidth(slider);
+        if (ImGui::SliderFloat("##gloss", &gloss, 0.0f, 100.0f, TR("Gloss %.0f %%"), flags)) {
+            s.board3d.gloss = gloss / 100.0f;
+            changed         = true;
+        }
+        ImGui::SetItemTooltip("%s", TR("How sharp the varnish's reflections are: satin at 0, a mirror at 100."));
+        ImGui::EndDisabled();
+        ImGui::SameLine();
+        const bool initial = s.board3d.exposure == first.exposure && s.board3d.varnish == first.varnish &&
+                             s.board3d.gloss == first.gloss && s.board3d.samples == first.samples;
+        ImGui::BeginDisabled(initial);
+        if (ImGui::SmallButton(TR("Default##board3d"))) {
+            s.board3d.exposure = first.exposure;
+            s.board3d.varnish  = first.varnish;
+            s.board3d.gloss    = first.gloss;
+            s.board3d.samples  = first.samples;
+            changed            = true;
+        }
+        ImGui::SetItemTooltip("%s", TR("The exposure, quality, varnish and gloss as they were at first; the lighting "
+                                       "stays."));
+        ImGui::EndDisabled();
+    }
+    ImGui::EndDisabled();
+    // Why it cannot be: the window drawn without OpenGL, or a driver that cannot draw it.
+    if (!opengl || (s.board3d.on && !board3d_.available())) {
+        (void)board3d_.available();
+        ImGui::PushStyleColor(ImGuiCol_Text, opengl ? ui::WARN : ImGui::GetColorU32(ImGuiCol_TextDisabled));
+        ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + px(440));
+        ImGui::TextUnformatted(board3d_.why().c_str());
+        ImGui::PopTextWrapPos();
+        ImGui::PopStyleColor();
+    }
+    ImGui::EndGroup();
     ImGui::EndGroup();
 
     // The board of the theme chosen above, as every board will show it.

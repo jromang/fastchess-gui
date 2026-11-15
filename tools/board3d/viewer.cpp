@@ -2,7 +2,7 @@
 // wheel to come closer, R to read the shaders again from the sources (gui/src/board3d/shaders).
 //
 //   fcg-board3d [--fen <FEN>] [--yaw r] [--pitch r] [--dist d] [--aperture a] [--studio n] [--exposure e]
-//               [--varnish v] [--varnish-rough r] [--spp n] [--size WxH] [--shot out.png]
+//               [--varnish v] [--varnish-rough r] [--spp n] [--size WxH] [--overlay 1] [--shot out.png]
 //
 // --shot renders --spp samples in a hidden window, writes the PNG and quits.
 
@@ -51,6 +51,24 @@ bool loadShaders(fcg::board3d::ShaderSources& s) {
 // The camera kept inside the studio (trace.frag: 36 squares round, 30 high).
 constexpr float kMaxDistance = 24.0f, kMaxPan = 5.0f;
 
+// What the GUI lays over the board, for a look at it: the last move Nf3 after 1. e4 e5, the knight picked up and
+// where it may go, two arrows.
+fcg::board3d::Overlay demoOverlay() {
+    fcg::board3d::Overlay o;
+    auto sq = [](const char* s) { return (s[1] - '1') * 8 + (s[0] - 'a'); };
+    const std::uint32_t highlight = 0x6900C79Bu, selected = 0x6E1E5514u, target = 0x5A1E5514u;  // as IM_COL32 packs
+    o.addTint(sq("g1"), highlight);
+    o.addTint(sq("f3"), highlight);
+    o.addTint(sq("f3"), selected);
+    o.markColour  = target;
+    o.checkColour = 0x962828DCu;
+    for (const char* s : {"g5", "h4", "d4", "g1"}) o.mark[std::size_t(sq(s))] = fcg::board3d::Overlay::Mark::Dot;
+    o.mark[std::size_t(sq("e5"))] = fcg::board3d::Overlay::Mark::Ring;
+    o.arrows.push_back({sq("d2"), sq("d4"), 0xB4329632u});
+    o.arrows.push_back({sq("f1"), sq("c4"), 0x96D2823Cu});
+    return o;
+}
+
 // The preview's scale while the camera moves: a whole sample in about 16 ms, from the time of one at full size.
 int previewScale(double fullPassMs) {
     if (fullPassMs <= 0) return 2;
@@ -69,6 +87,7 @@ int main(int argc, char** argv) {
     Finish finish;
     bool denoise = true;
     int orbit    = 0;
+    bool overlay = false;
     float exposure = 0;  // the studio's own unless given
     for (int i = 1; i + 1 < argc; i += 2) {
         std::string a = argv[i], v = argv[i + 1];
@@ -86,6 +105,7 @@ int main(int argc, char** argv) {
         else if (a == "--bounces") lighting.bounces = std::stoi(v);
         else if (a == "--denoise") denoise = v != "0";
         else if (a == "--orbit") orbit = std::stoi(v);
+        else if (a == "--overlay") overlay = v != "0";
         else if (a == "--size") std::sscanf(v.c_str(), "%dx%d", &width, &height);
         else if (a == "--target") std::sscanf(v.c_str(), "%f,%f,%f", &camera.target[0], &camera.target[1], &camera.target[2]);
     }
@@ -151,6 +171,7 @@ int main(int argc, char** argv) {
     renderer.setTargetSamples(spp);
     renderer.setDenoise(denoise);
     renderer.setFinish(finish);
+    renderer.setOverlay(overlay ? demoOverlay() : Overlay{});
 
     if (orbit > 0) {
         // The camera turning round the board, a preview each frame as while dragging it: the frame times.
@@ -288,6 +309,7 @@ int main(int argc, char** argv) {
         ImGui::SliderFloat("varnish", &finish.varnish, 0.0f, 1.0f);
         ImGui::SliderFloat("varnish rough", &finish.varnishRough, 0.02f, 0.5f, "%.3f", ImGuiSliderFlags_Logarithmic);
         if (ImGui::Checkbox("denoise", &denoise)) renderer.setDenoise(denoise);
+        if (ImGui::Checkbox("overlay", &overlay)) renderer.setOverlay(overlay ? demoOverlay() : Overlay{});
         ImGui::SliderFloat("aperture", &camera.aperture, 0.0f, 0.4f);
         ImGui::SliderFloat("fov", &camera.fovY, 0.2f, 1.2f);
         if (ImGui::InputText("FEN", fenBuffer, sizeof fenBuffer, ImGuiInputTextFlags_EnterReturnsTrue))

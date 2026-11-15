@@ -149,6 +149,9 @@ msgstr "200 cp: beide Engines sehen eine Seite zwei Bauern oder mehr vorn."
 msgid "200k nodes"
 msgstr "200k Knoten"
 
+msgid "3D board"
+msgstr "3D-Brett"
+
 msgid "50 moves {}/100"
 msgstr "50 Züge {}/100"
 
@@ -820,6 +823,9 @@ msgstr "Die Bewertungen beider Engines müssen in diesen Zügen jenseits der Sch
 
 msgid "Bracket"
 msgstr "Turnierbaum"
+
+msgid "Brighter or darker than the lighting makes it, in stops: each one doubles or halves the light."
+msgstr "Heller oder dunkler, als die Beleuchtung es macht, in Blendenstufen: Jede verdoppelt oder halbiert das Licht."
 
 msgid "Broadcast"
 msgstr "Übertragung"
@@ -1730,6 +1736,9 @@ msgstr "Partien exportieren…"
 msgid "Export…"
 msgstr "Exportieren…"
 
+msgid "Exposure %+.1f"
+msgstr "Belichtung %+.1f"
+
 msgid "Extra fields in the comments:"
 msgstr "Zusätzliche Felder in den Kommentaren:"
 
@@ -1970,8 +1979,14 @@ msgstr "Gib den Namen des Testers und die Veranstaltung an."
 msgid "Give the user to log in as."
 msgstr "Gib den Benutzer für die Anmeldung an."
 
+msgid "Gloss %.0f %%"
+msgstr "Glanz %.0f %%"
+
 msgid "Go to the engines"
 msgstr "Zu den Engines"
+
+msgid "Golden hour"
+msgstr "Goldene Stunde"
 
 msgid "Green"
 msgstr "Grün"
@@ -2053,6 +2068,9 @@ msgstr "Navigationsknöpfe ausblenden"
 msgid "Hide the navigation buttons under the boards"
 msgstr "Navigationsknöpfe unter den Brettern ausblenden"
 
+msgid "High key"
+msgstr "High Key"
+
 msgid "Host"
 msgstr "Host"
 
@@ -2073,6 +2091,15 @@ msgstr "Wie viele beste Züge gezeigt werden (MultiPV)."
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "Wie oft jede Paarung gespielt wird; jedes Mal zwei Partien mit getauschten Farben. Andere Programme nennen einen Zyklus eine Runde mit 2 Partien pro Begegnung (-rounds N -games 2)."
+
+msgid "How much varnish covers the board: none for waxed, matt wood, all of it for a coat that shows the lights."
+msgstr "Wie viel Lack das Brett bedeckt: keiner für gewachstes, mattes Holz, ganz für eine Schicht, in der sich die Lichter zeigen."
+
+msgid "How sharp the varnish's reflections are: satin at 0, a mirror at 100."
+msgstr "Wie scharf die Spiegelungen des Lacks sind: seidenmatt bei 0, ein Spiegel bei 100."
+
+msgid "How the board is lit, as photographers light a still life."
+msgstr "Wie das Brett beleuchtet ist, so wie Fotografen ein Stillleben ausleuchten."
 
 msgid "How the moves of a Polyglot book are chosen, for the tournament's openings and for the participants' own books: -100 the best move only, 0 in proportion to their weights, as Polyglot and Cute Chess choose, 100 every move alike. In between, -50 squares the weights and 50 takes their square roots."
 msgstr "Wie die Züge eines Polyglot-Buchs gewählt werden, für die Eröffnungen des Turniers und für die eigenen Bücher der Teilnehmer: -100 nur der beste Zug, 0 im Verhältnis zu ihren Gewichten, wie Polyglot und Cute Chess wählen, 100 jeder Zug gleich. Dazwischen quadriert -50 die Gewichte und 50 zieht ihre Quadratwurzel."
@@ -2451,6 +2478,9 @@ msgstr "Verloren nach Gewinnstellung"
 
 msgid "Lost on time before move {}: more often an engine set up wrong (too many threads, a hash too large to allocate in time, a network loaded at every game, a slow start) than its time management."
 msgstr "Vor Zug {} auf Zeit verloren: häufiger eine falsch eingestellte Engine (zu viele Threads, ein Hash, der zu groß ist, um rechtzeitig angelegt zu werden, ein Netz, das in jeder Partie geladen wird, ein langsamer Start) als ihre Zeiteinteilung."
+
+msgid "Low key"
+msgstr "Low Key"
 
 msgid "Lower Threads to {}"
 msgstr "Threads auf {} senken"
@@ -3342,6 +3372,9 @@ msgstr "Setzt es in die Eröffnungen der Seite Neues Turnier, mit seinen Halbzü
 msgid "Puts this card away for good; the quick start stays in the guide."
 msgstr "Blendet diese Karte endgültig aus; der Schnellstart bleibt in der Anleitung."
 
+msgid "Quality %d samples"
+msgstr "Qualität %d Samples"
+
 msgid "Queue · {} tournament"
 msgid_plural "Queue · {} tournaments"
 msgstr[0] "Warteschlange · {} Turnier"
@@ -3833,6 +3866,9 @@ msgstr "{} anzeigen"
 msgid "Shown here as they are played, and saved as PGN in games/ in the profile."
 msgstr "Hier gezeigt, während sie gespielt werden, und als PGN in games/ im Profil gespeichert."
 
+msgid "Showroom"
+msgstr "Ausstellungsraum"
+
 msgid "Site"
 msgstr "Ort"
 
@@ -3976,6 +4012,9 @@ msgstr "Stoppe die Engines…"
 
 msgid "Stopping…"
 msgstr "Stoppe…"
+
+msgid "Studio"
+msgstr "Studio"
 
 msgid "Submission checklist"
 msgstr "Checkliste vor dem Einsenden"
@@ -4169,6 +4208,9 @@ msgstr "Text"
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Der 50-Züge-Zähler, das Material und die verbleibenden Steine unter jedem Brett der Mosaikansicht."
 
+msgid "The Board page's board in 3D"
+msgstr "Das Brett der Seite Brett in 3D"
+
 msgid "The Board page: {} core for its analysis and its games"
 msgid_plural "The Board page: {} cores for its analysis and its games"
 msgstr[0] "Die Brett-Seite: {} Kern für ihre Analyse und ihre Partien"
@@ -4238,6 +4280,9 @@ msgstr "Die durchschnittliche Wertung der Gegner, Partie für Partie."
 
 msgid "The board follows the game again (End)."
 msgstr "Das Brett folgt wieder der Partie (Ende)."
+
+msgid "The board of the Board page drawn in three dimensions, lit as in a photographer's studio. Hold the right button to turn round it, the wheel to come closer, a click of the wheel to come back. The picture refines for a few seconds while nothing moves, using the graphics card, then rests."
+msgstr "Das Brett der Seite Brett dreidimensional gezeichnet, beleuchtet wie im Studio eines Fotografen. Halte die rechte Maustaste gedrückt, um es zu umrunden, das Mausrad, um näher heranzugehen, ein Klick mit dem Mausrad, um zurückzukehren. Das Bild wird einige Sekunden lang feiner, solange sich nichts bewegt, mit der Grafikkarte, dann ruht es."
 
 msgid "The book cannot be built: {}"
 msgstr "Das Buch kann nicht erstellt werden: {}"
@@ -4350,6 +4395,9 @@ msgstr "Die wartenden Engines werden nicht geprüft; die laufende Prüfung geht 
 msgid "The engines' own books are off"
 msgstr "Die eigenen Bücher der Engines sind aus"
 
+msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
+msgstr "Belichtung, Qualität, Lack und Glanz wie anfangs; die Beleuchtung bleibt."
+
 msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
 msgstr "Die Datei namens „portable“ neben dem Programm hält alles in diesem Ordner. Die Pfade in {} werden relativ dazu gespeichert, sodass dieser Ordner verschoben oder auf einen anderen Rechner kopiert werden kann."
 
@@ -4409,6 +4457,9 @@ msgstr "Die laufenden Partien gehen verloren; jedes Turnier wird genau dort fort
 
 msgid "The games wait for {}: {}. Another try after each game."
 msgstr "Die Partien warten auf {}: {}. Neuer Versuch nach jeder Partie."
+
+msgid "The graphics driver cannot draw the 3D board ({}): the boards stay flat."
+msgstr "Der Grafiktreiber kann das 3D-Brett nicht zeichnen ({}): Die Bretter bleiben flach."
 
 msgid "The guide, at this page (F1)"
 msgstr "Die Anleitung zu dieser Seite (F1)"
@@ -4672,6 +4723,9 @@ msgstr "Dasselbe Match mit einer neuen Engine A anstelle von {}, z. B. ihrer nä
 msgid "The same opening for every pair of a round"
 msgstr "Dieselbe Eröffnung für alle Paare einer Runde"
 
+msgid "The samples the picture is made of before it rests: more is finer, and keeps the graphics card at work longer. Fewer spare a processor's graphics during tournaments."
+msgstr "Die Samples, aus denen das Bild besteht, bevor es ruht: mehr ist feiner und beschäftigt die Grafikkarte länger. Weniger schonen die Grafik eines Prozessors während Turnieren."
+
 msgid "The search stops once a solution has stayed the engine's first move for this many more plies of depth. 0: every search takes its whole time."
 msgstr "Die Suche endet, sobald eine Lösung so viele weitere Halbzüge Tiefe lang der erste Zug der Engine geblieben ist. 0: Jede Suche nutzt ihre ganze Zeit."
 
@@ -4800,6 +4854,9 @@ msgstr "Das Fenster"
 
 msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
 msgstr "Das Fenster wird vom Prozessor gezeichnet (dem Software-Renderer von SDL) statt von der Grafikkarte mit OpenGL: für virtuelle Maschinen, Remotedesktops und fehlerhafte Grafiktreiber. Langsamer, und aus dem Fenster gezogene Bereiche bleiben darin. --software in der Befehlszeile macht dasselbe für einen Start."
+
+msgid "The window is drawn without OpenGL (the software renderer of the Settings page, or a graphics driver without OpenGL 3.2): the boards stay flat."
+msgstr "Das Fenster wird ohne OpenGL gezeichnet (der Software-Renderer der Seite Einstellungen oder ein Grafiktreiber ohne OpenGL 3.2): Die Bretter bleiben flach."
 
 msgid "The working directory of {} is not found: {}"
 msgstr "Das Arbeitsverzeichnis von {} wurde nicht gefunden: {}"
@@ -4940,6 +4997,9 @@ msgstr "Gesamt"
 
 msgid "Tournament"
 msgstr "Turnier"
+
+msgid "Tournament hall"
+msgstr "Turniersaal"
 
 msgid "Tournaments"
 msgstr "Turniere"
@@ -5098,6 +5158,9 @@ msgstr "Wert"
 msgid "Variance ratio"
 msgstr "Varianzverhältnis"
 
+msgid "Varnish %.0f %%"
+msgstr "Lack %.0f %%"
+
 msgid "Version"
 msgstr "Version"
 
@@ -5241,6 +5304,9 @@ msgstr "WinBoard-Engines (xboard-Protokoll) laufen über eine in fastchess-gui e
 
 msgid "WinBoard, its own protocol"
 msgstr "WinBoard, ihr eigenes Protokoll"
+
+msgid "Window light"
+msgstr "Fensterlicht"
 
 msgid "Winner: {}"
 msgstr "Sieger: {}"

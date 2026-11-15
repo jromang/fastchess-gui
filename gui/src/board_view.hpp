@@ -71,6 +71,19 @@ struct BoardDecor {
     std::optional<appearance::BoardColours> colours;
 };
 
+// The room the eval bar takes left of a board `size` high, the gap after it included.
+[[nodiscard]] float evalBarSpace(float size);
+// The bar at `top`, `size` high, `eval_white` of it White's: from the bottom, or from the top when flipped.
+void drawEvalBar(ImDrawList* dl, ImVec2 top, float size, float eval_white, bool flipped);
+
+// The colours of the marks drawBoard() lays over the squares, for a board drawn otherwise (board_3d.hpp).
+inline constexpr ImU32 BOARD_CHECK    = IM_COL32(220, 40, 40, 150);
+inline constexpr ImU32 BOARD_SELECTED = IM_COL32(20, 85, 30, 110);
+inline constexpr ImU32 BOARD_TARGET   = IM_COL32(20, 85, 30, 90);
+
+// The square a move visibly lands on: castling is stored as king takes rook.
+[[nodiscard]] chess::Square displayedTarget(const chess::Move& move);
+
 // Draws the position at the cursor and reserves `size` x `size` (plus the eval bar if shown).
 void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, const BoardDecor& decor);
 // The same for any placement of pieces (a1 = 0 ... h8 = 63), even one without kings, as the position editor has;

@@ -21,9 +21,9 @@ namespace fcg {
 
 namespace {
 
-constexpr ImU32 CHECK     = IM_COL32(220, 40, 40, 150);
-constexpr ImU32 SELECTED  = IM_COL32(20, 85, 30, 110);
-constexpr ImU32 TARGET    = IM_COL32(20, 85, 30, 90);
+constexpr ImU32 CHECK     = BOARD_CHECK;
+constexpr ImU32 SELECTED  = BOARD_SELECTED;
+constexpr ImU32 TARGET    = BOARD_TARGET;
 constexpr ImU32 BAR_WHITE = IM_COL32(236, 236, 236, 255);
 constexpr ImU32 BAR_BLACK = IM_COL32(48, 48, 48, 255);
 
@@ -37,15 +37,14 @@ int atlasIndex(chess::Piece piece) {
     return offset + by_type[type];
 }
 
-// The square a move visibly lands on: castling is stored as king takes rook.
+}  // namespace
+
 chess::Square displayedTarget(const chess::Move& move) {
     if (move.typeOf() != chess::Move::CASTLING) return move.to();
 
     const bool king_side = move.to().index() > move.from().index();
     return chess::Square(chess::File(king_side ? 6 : 2), move.from().rank());
 }
-
-}  // namespace
 
 std::vector<unsigned char> rasterizePieces(int px, const appearance::PieceSvgs& svgs) {
     const int width = px * 12;
@@ -127,14 +126,29 @@ float evalBarFraction(int cp_white, bool mate, int mate_white) {
 
 namespace {
 
+float evalBarWidth(float size) { return std::max(6.0f, size * 0.03f); }
+constexpr float EVAL_BAR_GAP = 4.0f;
+
 // Where the squares start, right of the eval bar when it is shown.
 ImVec2 boardOrigin(ImVec2 top, float size, bool bar) {
-    const float bar_w = bar ? std::max(6.0f, size * 0.03f) : 0.0f;
-    const float gap   = bar ? 4.0f : 0.0f;
-    return ImVec2(top.x + bar_w + gap, top.y);
+    return ImVec2(top.x + (bar ? evalBarSpace(size) : 0.0f), top.y);
 }
 
 }  // namespace
+
+float evalBarSpace(float size) { return evalBarWidth(size) + EVAL_BAR_GAP; }
+
+void drawEvalBar(ImDrawList* dl, ImVec2 top, float size, float eval_white, bool flipped) {
+    // White fills from the bottom when White is at the bottom.
+    const float bar_w = evalBarWidth(size);
+    const float frac  = std::clamp(eval_white, 0.0f, 1.0f);
+    const float split = flipped ? top.y + size * frac : top.y + size * (1.0f - frac);
+    dl->AddRectFilled(top, ImVec2(top.x + bar_w, top.y + size), flipped ? BAR_WHITE : BAR_BLACK);
+    dl->AddRectFilled(flipped ? top : ImVec2(top.x, split),
+                      flipped ? ImVec2(top.x + bar_w, split) : ImVec2(top.x + bar_w, top.y + size),
+                      flipped ? BAR_BLACK : BAR_WHITE);
+    dl->AddRectFilled(ImVec2(top.x, split), ImVec2(top.x + bar_w, split), BAR_WHITE);
+}
 
 std::optional<chess::Square> boardSquareAt(ImVec2 point, ImVec2 top, float size, const BoardDecor& decor) {
     const ImVec2 origin = boardOrigin(top, size, decor.eval_white >= 0.0f);
@@ -161,21 +175,10 @@ void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& piec
     const ImVec2 top = ImGui::GetCursorScreenPos();
 
     const bool bar      = decor.eval_white >= 0.0f;
-    const float bar_w   = bar ? std::max(6.0f, size * 0.03f) : 0.0f;
-    const float gap     = bar ? 4.0f : 0.0f;
     const ImVec2 origin = boardOrigin(top, size, bar);
     const float sq      = size / 8.0f;
 
-    if (bar) {
-        // White fills from the bottom when White is at the bottom.
-        const float frac  = std::clamp(decor.eval_white, 0.0f, 1.0f);
-        const float split = decor.flipped ? top.y + size * frac : top.y + size * (1.0f - frac);
-        dl->AddRectFilled(top, ImVec2(top.x + bar_w, top.y + size), decor.flipped ? BAR_WHITE : BAR_BLACK);
-        dl->AddRectFilled(decor.flipped ? top : ImVec2(top.x, split),
-                          decor.flipped ? ImVec2(top.x + bar_w, split) : ImVec2(top.x + bar_w, top.y + size),
-                          decor.flipped ? BAR_BLACK : BAR_WHITE);
-        dl->AddRectFilled(ImVec2(top.x, split), ImVec2(top.x + bar_w, split), BAR_WHITE);
-    }
+    if (bar) drawEvalBar(dl, top, size, decor.eval_white, decor.flipped);
 
     const auto colours = decor.colours ? *decor.colours : appearance::boardColours();
     std::optional<chess::Square> from, to;
@@ -260,7 +263,7 @@ void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& piec
                               ImVec2(base.x - n.x * head, base.y - n.y * head), arrow.colour);
     }
 
-    ImGui::Dummy(ImVec2(size + bar_w + gap, size));
+    ImGui::Dummy(ImVec2(size + (bar ? evalBarSpace(size) : 0.0f), size));
 }
 
 ImVec2 squareCentre(chess::Square square, ImVec2 origin, float size, bool flipped) {
