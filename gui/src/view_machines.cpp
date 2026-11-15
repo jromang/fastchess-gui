@@ -276,8 +276,13 @@ void App::pollMachines() {
 
 void App::drawMachineSettings(float label) {
     if (scroll_to_machines_) {
+        // Asked again on the next frames: on the first one of the page, the scroll is bounded by the height of the
+        // page laid out before (none, or without the machine's card opened with it).
         ImGui::SetScrollHereY(0.0f);
-        scroll_to_machines_ = false;
+        if (++machines_scroll_frames_ >= 3) {
+            scroll_to_machines_     = false;
+            machines_scroll_frames_ = 0;
+        }
     }
     (void)label;
     ImGui::PushID("machines");

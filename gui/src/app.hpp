@@ -1513,7 +1513,8 @@ class App {
     MachineJob::Kind passphrase_kind_ = MachineJob::Kind::Test;
     bool open_passphrase_             = false;
     std::array<char, 256> passphrase_input_{};
-    bool scroll_to_machines_ = false;  // asked from the command palette
+    bool scroll_to_machines_    = false;  // asked from the command palette
+    int machines_scroll_frames_ = 0;      // the frames it was asked on
 };
 
 }  // namespace fcg
