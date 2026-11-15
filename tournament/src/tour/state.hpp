@@ -81,6 +81,9 @@ struct ResultSet {
 };
 
 // A finished, scored game, as kept in the journal.
+// Why the games an engine on a machine lost to a broken connection were voided, before the machine's name.
+inline constexpr const char* NETWORK_REASON = "connection to its machine lost";
+
 struct GameResult {
     uint32_t encounter = 0;
     int game           = 0;
@@ -315,6 +318,14 @@ class TournamentState {
     // (spec().unbalanced_replace): the views show it, and know that the results changed.
     [[nodiscard]] uint64_t openingsReplaced() const;
 
+    // Games `numbers` (GameTask::number()) lost an engine that runs on a machine whose connection broke (`machine`
+    // its name): voided and played again, as a void of the Games tab would, in the journal with NETWORK_REASON, but
+    // not as an edit of the user's (undo goes past it, as for the unbalanced openings). Those without a result that
+    // counts are left out; false when none had one.
+    bool voidCutGames(const std::vector<uint64_t>& numbers, const std::string& machine);
+    // The games voided so: the views show it, and know that the results changed.
+    [[nodiscard]] uint64_t networkVoids() const;
+
     // Statistics of `a` against `b` from a's point of view, counted on complete encounters only (both games),
     // like fastchess does with pentanomial reporting. Includes the pentanomial counts.
     [[nodiscard]] fastchess::Stats pairStats(int a, int b) const;
@@ -414,6 +425,7 @@ class TournamentState {
     std::set<uint64_t> done_;                               // game numbers
     std::map<uint32_t, fastchess::book::Opening> started_;  // encounter -> opening it started with
     uint64_t replaced_ = 0;                                 // openings replaced as unbalanced (replaceUnbalanced())
+    uint64_t network_voids_ = 0;                            // games voided for a broken connection (voidCutGames())
     std::map<uint32_t, int> replacements_;                  // encounter -> how many times its opening was
     // spec_.opening_per_round: (cycle, round) -> the opening of its encounters.
     std::map<std::pair<uint32_t, uint32_t>, fastchess::book::Opening> round_openings_;

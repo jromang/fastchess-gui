@@ -73,12 +73,17 @@ class TcpListener {
     TcpListener(const TcpListener&)            = delete;
     TcpListener& operator=(const TcpListener&) = delete;
 
-    // Listens on every interface. Returns an error message, empty on success.
-    std::string listen(uint16_t port);
+    // Listens on every interface, or on the loopback only (127.0.0.1) for the programs of this machine. Port 0 takes
+    // a free one, which port() tells. Returns an error message, empty on success.
+    std::string listen(uint16_t port, bool loopback_only = false);
     void close();
 
-    // Waits up to `timeout_ms` for a connection.
+    // Waits up to `timeout_ms` for a connection (0: takes one only if it is there).
     std::optional<Handle> accept(int timeout_ms);
+    // The port it listens on, 0 when it does not.
+    [[nodiscard]] uint16_t port() const;
+    // To wait for with waitAny(): readable when a connection is there.
+    [[nodiscard]] Handle handle() const noexcept { return fd_; }
 
    private:
     Handle fd_ = 0;

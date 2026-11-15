@@ -89,6 +89,7 @@ inline constexpr const char* Tunnel             = "putting-the-web-page-on-the-i
 inline constexpr const char* Chat               = "where-the-viewers-talk";
 inline constexpr const char* Headless           = "headless-mode";
 inline constexpr const char* Machines           = "machines";
+inline constexpr const char* RemoteEngines      = "engines-played-from-this-computer";
 inline constexpr const char* Files              = "files";
 inline constexpr const char* Portable           = "portable-mode";
 inline constexpr const char* CommandLine        = "command-line";

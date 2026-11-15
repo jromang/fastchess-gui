@@ -84,11 +84,12 @@ void overrideOption(fastchess::EngineConfiguration& config, const EngineEntry& e
 fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSetup& setup,
                                         const ParticipantSetup& participant = {}) {
     fastchess::EngineConfiguration config;
-    config.name     = entry.name;
-    config.cmd      = entry.cmd;
-    config.args     = entry.args;
-    config.dir      = engineWorkingDir(entry);
-    config.restart  = entry.restart;
+    const auto start = engineStart(entry);
+    config.name      = entry.name;
+    config.cmd       = start.cmd;
+    config.args      = start.args;
+    config.dir       = start.dir;
+    config.restart   = entry.restart;
     config.options  = entry.options;
     config.protocol = entry.protocol;
     config.variant  = setup.chess960 ? fastchess::VariantType::FRC : fastchess::VariantType::STANDARD;
@@ -183,11 +184,12 @@ RunInfo runInfo(const tour::TournamentSpec& spec, const fs::path& dir) {
 
 fastchess::EngineConfiguration participantConfig(const EngineEntry& entry, const tour::TournamentSpec& spec) {
     fastchess::EngineConfiguration config;
-    config.name     = entry.name;
-    config.cmd      = entry.cmd;
-    config.args     = entry.args;
-    config.dir      = engineWorkingDir(entry);
-    config.restart  = entry.restart;
+    const auto start = engineStart(entry);
+    config.name      = entry.name;
+    config.cmd       = start.cmd;
+    config.args      = start.args;
+    config.dir       = start.dir;
+    config.restart   = entry.restart;
     config.options  = entry.options;
     config.protocol = entry.protocol;
 
@@ -487,7 +489,7 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     run.engines.clear();
     for (std::size_t i = 0; i < people.size(); ++i) {
         const auto& [entry, participant] = people[i];
-        if (!fs::is_regular_file(entry->cmd)) {
+        if (entry->machine.empty() && !fs::is_regular_file(entry->cmd)) {
             throw fastchess_exception(trf("The program of {} is not found: {}", entry->name, entry->cmd));
         }
         // An engine without UCI_Chess960 (a WinBoard one: without the fischerandom variant) would play other
@@ -665,6 +667,7 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
         p.engine     = run.engines[i];
         p.elo        = people[i].first->elo;
         p.gpu        = people[i].first->gpu;
+        p.remote     = remoteEngine(*people[i].first);
         p.book       = people[i].second.book.path;
         p.book_depth = std::max(0, people[i].second.book.depth);
         if (teams && i < team_of.size()) p.team = team_of[i];

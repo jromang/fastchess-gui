@@ -1,5 +1,7 @@
 #include "start_failures.hpp"
 
+#include <algorithm>
+
 #include <matchmaking/tournament/base/tournament.hpp>
 
 namespace fcg::tour {
@@ -55,6 +57,22 @@ StartFailures::Outcome StartFailures::failed(int participant, uint64_t game, con
     }
     e.next_try = now + retry_pause_;
     return Outcome::Retry;
+}
+
+void StartFailures::setAside(int participant, const std::string& name, const std::string& error,
+                             Clock::time_point now) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ++version_;
+    auto [it, fresh] = engines_.try_emplace(participant);
+    auto& e          = it->second;
+    e.participant    = participant;
+    e.name           = name;
+    e.error          = error;
+    if (fresh) e.since = std::chrono::system_clock::now();
+    e.trying   = false;
+    e.tries    = std::max(e.tries, TRIES);
+    e.failed   = true;
+    e.next_try = now + retry_every_;
 }
 
 bool StartFailures::started(int participant) {

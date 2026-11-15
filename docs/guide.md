@@ -1482,6 +1482,42 @@ A machine needs an OpenSSH server (Linux, macOS, BSD; Windows 10 1809 and later)
 both there by default. Commands go through `sh` whatever the user's shell is (fish or csh are fine), and through
 cmd on Windows, the default shell of its OpenSSH server.
 
+### Engines played from this computer
+
+An engine of the library can run on a machine while the tournament plays here: a GPU engine on the GPU box, an engine
+built for another system, a machine kept for one engine. On its card, *Runs on* chooses *This computer* or a machine;
+*Program there* and *Working directory there* are then paths on the machine (empty: the program's folder there), and
+the *…* buttons, those of the options that name a file included, look through the machine's files. Once there are
+machines, *Add…* offers *A program on \<machine\>…*, *Import…* offers *Every engine of a folder on \<machine\>…*,
+and the machine's *Add an engine…* offers *A program there…*. The engine is read, checked, and played in the console,
+the quick test and tournaments as an engine of this computer is. Its path is also the one of the machine's list of
+engines, and its program's SHA-256 there tells when it was rebuilt (Δ, read again).
+
+The machine must have been tested once (*Test the connection*), so that its host key is known: an engine never
+connects to a machine whose key was not shown and trusted. The key's passphrase, if it has one, is asked once a
+session, before the first read or the start, and kept in memory: the tournament's process gets it from the window and
+keeps it, so that the tournament plays on after the window closes. `--run` in a terminal does not ask for it: use the
+SSH agent there.
+
+Each engine is started through a relay, `fastchess-gui --remote-engine <key>`, which the process that plays it
+serves: one SSH connection to the machine for ten engines at most (the `MaxSessions` of an OpenSSH server), each engine
+started from its folder there. An engine whose relay goes is ended there too, by its process id, when it does not end
+by itself (on a Linux or macOS machine; on a Windows one, its channel is closed).
+
+*Check* measures the round trip to the machine, the median of a few `isready`. The clock counts it: the setup's summary
+warns when it takes more than 5 % of the increment, or of the time a move has without one, with *Set a margin of … ms*
+(twice the round trip). A machine never tested stops the start, and so does a tournament that runs on another machine
+than the engine's (one that runs on the engine's machine plays it there as its own engine).
+
+While the tournament plays, the home page has a *Machines* line under the cores: each machine, connected and what
+plays there, or since when it does not answer. A machine that does not answer is one entry under *Needs action*: its
+engines' games are set aside and tried again, the others go on, with *Try again* and *Test \<machine\>*. A game that
+an engine lost because its connection broke (its end as a disconnection) is voided and played again, written in the
+journal with its reason (`connection to its machine lost: <machine>`); *Health* counts it apart, not as the engine's
+crash. A machine cut off more than three times in an hour has its engines set aside. This computer's cores, memory and
+GPUs do not count the engines on machines, only their relays; the machine's budget, which its own tournaments share,
+does not count them yet.
+
 ### A Windows machine
 
 Windows 10 (1809 and later) and Windows 11 include an OpenSSH server, not installed by default. In PowerShell, as

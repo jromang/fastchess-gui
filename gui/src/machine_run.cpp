@@ -1,5 +1,7 @@
 #include "machine_run.hpp"
 
+#include "engines.hpp"
+
 #include <algorithm>
 #include <fstream>
 #include <set>
@@ -129,6 +131,18 @@ std::string remoteSpec(const tour::TournamentSpec& local, const Machine& machine
         // runs from its program's folder.
         p.engine.dir = engine->copied_dir;
         p.program    = {};
+        // An engine that runs on this machine plays there as its own: its program, arguments and folder there, no
+        // relay. One of another machine cannot (the window refuses such a start first).
+        if (p.remote) {
+            if (p.remote->machine != machine.id) {
+                return trf("{} runs on another machine than {}: run the tournament here, or on its machine.",
+                           p.engine.name, machine.name);
+            }
+            p.engine.cmd  = p.remote->program;
+            p.engine.args = joinArguments(p.remote->args);
+            if (!p.remote->dir.empty()) p.engine.dir = p.remote->dir;
+            p.remote.reset();
+        }
         for (auto& [name, value] : p.engine.options) {
             if (name == "SyzygyPath" && !value.empty()) {
                 value = syzygy;

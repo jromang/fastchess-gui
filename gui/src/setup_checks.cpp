@@ -1,6 +1,7 @@
 #include "setup_checks.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <set>
 #include <string_view>
@@ -129,7 +130,11 @@ tour::GameCost setupGameCost(const MatchSetup& setup, const std::vector<EngineEn
     tour::GameCost cost;
     int gpus = 0;
     for (std::size_t i = 0; i < people.size(); ++i) {
-        const auto* engine  = findEngine(engines, people[i].name);
+        const auto* engine = findEngine(engines, people[i].name);
+        if (engine && !engine->machine.empty()) {
+            process.push_back(tour::PROCESS_MB);  // on its machine: only its relay here
+            continue;
+        }
         const int threads   = engine ? participantThreads(setup, people[i], *engine).threads : 1;
         const uint64_t hash = i < hashes.size() && hashes[i] > 0 ? hashes[i] : tour::DEFAULT_HASH_MB;
         cost.threads        = std::max(cost.threads, threads);
@@ -528,6 +533,91 @@ std::vector<Notice> tablebaseNotices(const TablebaseUse& use, const TablebaseChe
                            "Tablebase adjudication up to {} pieces: every file there", used, used),
                        detail(),
                        {}});
+    }
+    return out;
+}
+
+}  // namespace fcg
+
+namespace fcg {
+
+int marginFor(double round_trip_ms) {
+    const auto twice = static_cast<int>(std::ceil(round_trip_ms * 2 / 10.0)) * 10;
+    return std::max(10, twice);
+}
+
+std::vector<Notice> remoteNotices(const MatchSetup& setup, const std::vector<EngineEntry>& engines,
+                                  const std::vector<Machine>& machines) {
+    std::vector<Notice> out;
+    std::vector<std::string> seen;
+    const auto machineOf = [&](const std::string& id) -> const Machine* {
+        for (const auto& m : machines) {
+            if (m.id == id) return &m;
+        }
+        return nullptr;
+    };
+    const auto nameOf = [](const Machine& m) { return m.name.empty() ? m.host : m.name; };
+    // The time a move has: the increment, else the time of a period over its moves (40 for a whole game).
+    double per_move_ms = 0;
+    if (setup.limit == LimitKind::Time) {
+        per_move_ms = setup.tc_inc_s > 0 ? setup.tc_inc_s * 1000.0
+                                         : setup.tc_base_s * 1000.0 / (setup.tc_moves > 0 ? setup.tc_moves : 40);
+    } else if (setup.limit == LimitKind::MoveTime) {
+        per_move_ms = setup.move_s * 1000.0;
+    }
+    for (const auto& p : setupParticipants(setup)) {
+        const auto* e = findEngine(engines, p.name);
+        if (!e || e->machine.empty() || std::find(seen.begin(), seen.end(), e->name) != seen.end()) continue;
+        seen.push_back(e->name);
+        const auto* m = machineOf(e->machine);
+        if (!m) {
+            out.push_back({Notice::Level::Error,
+                           trf("{} runs on a machine that is no longer in Settings > Machines.", e->name),
+                           {},
+                           {openEngineFix(e->name)}});
+            continue;
+        }
+        const auto where = nameOf(*m);
+        if (!setup.machine.empty() && setup.machine != m->id) {
+            const auto* run_on = machineOf(setup.machine);
+            out.push_back({Notice::Level::Error,
+                           trf("{} runs on {}, and the tournament on {}: an engine on a machine plays from this "
+                               "computer, or on its machine.",
+                               e->name, where, run_on ? nameOf(*run_on) : setup.machine),
+                           {},
+                           {setRunOnFix({}, {}), setRunOnFix(m->id, where)}});
+            continue;
+        }
+        if (setup.machine == m->id) {
+            out.push_back({Notice::Level::Ok, trf("{} plays on {}, where the tournament runs", e->name, where)});
+            continue;
+        }
+        if (m->system.checked.empty()) {
+            out.push_back({Notice::Level::Error,
+                           trf("{} has never been tested: its host key is unknown, and nothing is sent to it before.",
+                               where),
+                           {},
+                           {testMachineFix(m->id, where)}});
+            continue;
+        }
+        const double rtt = e->round_trip_ms;
+        if (rtt > 0 && per_move_ms > 0 && rtt > per_move_ms * 0.05 && setup.tc_margin_ms < marginFor(rtt)) {
+            const auto share = static_cast<int>(std::lround(100.0 * rtt / per_move_ms));
+            out.push_back({Notice::Level::Warning,
+                           setup.limit == LimitKind::Time && setup.tc_inc_s > 0
+                               ? trf("{} plays on {}: round trip {:.0f} ms, {} % of the {} s increment, counted on "
+                                     "its clock.",
+                                     e->name, where, rtt, share, setup.tc_inc_s)
+                               : trf("{} plays on {}: round trip {:.0f} ms, {} % of the time a move has, counted on "
+                                     "its clock.",
+                                     e->name, where, rtt, share),
+                           {},
+                           {setMarginFix(marginFor(rtt))}});
+            continue;
+        }
+        out.push_back({Notice::Level::Ok, rtt > 0 ? trf("{} plays on {} · round trip {:.1f} ms", e->name, where, rtt)
+                                                  : trf("{} plays on {} (Check measures the round trip)", e->name,
+                                                        where)});
     }
     return out;
 }

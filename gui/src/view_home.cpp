@@ -4,8 +4,9 @@
 // tournament of the profile.
 
 #include <algorithm>
-#include <functional>
 #include <cmath>
+#include <ctime>
+#include <functional>
 #include <unordered_map>
 
 #include <imgui.h>
@@ -71,6 +72,7 @@ void App::drawHome() {
         ui::TopicRegion topic(guide::topics::Several);
         home::drawResourceBars(resourceBars());
     }
+    drawRemoteMachinesLine();
     {
         ui::TopicRegion topic(guide::topics::Home);
         drawNeedsAction();
@@ -915,6 +917,10 @@ void App::drawHealth() {
         const auto& i = *incidents_;
         item(i.crashes > 0, trn("{} crash or hang", "{} crashes or hangs", i.crashes, i.crashes), true);
         item(i.time_losses > 0, trn("{} loss on time", "{} losses on time", i.time_losses, i.time_losses));
+        if (i.network_cuts > 0) {
+            item(false, trn("{} game cut by the network, played again", "{} games cut by the network, played again",
+                            i.network_cuts, i.network_cuts));
+        }
         item(i.illegal_moves > 0, trn("{} illegal move", "{} illegal moves", i.illegal_moves, i.illegal_moves));
     } else {
         ImGui::TextDisabled("%s", TR("reading the tournaments…"));
@@ -1008,6 +1014,64 @@ void App::drawAllTournaments() {
         }
     }
     ImGui::EndTable();
+}
+
+}  // namespace fcg
+
+namespace fcg {
+
+void App::drawRemoteMachinesLine() {
+    // The machines the running tournaments' engines run on, each once: connected and what plays there, or why not.
+    std::vector<control::Status::Machine> machines;
+    for (const auto& r : runs_) {
+        const auto* remote = dynamic_cast<const RemoteRun*>(r.run.get());
+        if (!remote || !remote->running()) continue;
+        for (const auto& m : remote->machines()) {
+            auto it = std::find_if(machines.begin(), machines.end(), [&](const auto& o) { return o.id == m.id; });
+            if (it == machines.end()) {
+                machines.push_back(m);
+            } else {
+                it->engines += m.engines;
+                it->connections += m.connections;
+                if (it->error.empty()) it->error = m.error;
+            }
+        }
+    }
+    if (machines.empty()) return;
+    ui::TopicRegion topic(guide::topics::RemoteEngines);
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(TR("Machines"));
+    for (const auto& m : machines) {
+        ImGui::SameLine();
+        const bool up = m.connections > 0;
+        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::ColorConvertU32ToFloat4(up ? ui::GOOD : m.error.empty() ? ui::MUTED
+                                                                                                           : ui::BAD));
+        ImGui::TextUnformatted("●");
+        ImGui::PopStyleColor();
+        ImGui::SameLine();
+        std::string text = m.name;
+        if (up) {
+            text += " · " + trn("{} engine playing", "{} engines playing", m.engines, m.engines);
+        } else if (!m.error.empty() && m.since > 0) {
+            const auto t = static_cast<std::time_t>(m.since);
+            std::tm tm{};
+#ifdef _WIN32
+            localtime_s(&tm, &t);
+#else
+            localtime_r(&t, &tm);
+#endif
+            char hhmm[8];
+            std::strftime(hhmm, sizeof hhmm, "%H:%M", &tm);
+            text += " · " + trf("not answering since {}", hhmm);
+        }
+        if (up) {
+            ImGui::TextUnformatted(text.c_str());
+        } else {
+            ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(m.error.empty() ? ui::MUTED : ui::BAD), "%s",
+                               text.c_str());
+        }
+        if (!m.error.empty()) ImGui::SetItemTooltip("%s", m.error.c_str());
+    }
 }
 
 }  // namespace fcg

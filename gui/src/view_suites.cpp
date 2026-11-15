@@ -25,10 +25,11 @@ float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
 // An engine of the library as the suite runs it: its options, Hash and Threads forced when asked and it has them.
 fastchess::EngineConfiguration suiteEngine(const EngineEntry& entry, int hash, int threads) {
     fastchess::EngineConfiguration config;
+    const auto start = engineStart(entry);
     config.name      = entry.name;
-    config.cmd       = entry.cmd;
-    config.args      = entry.args;
-    config.dir       = engineWorkingDir(entry);
+    config.cmd       = start.cmd;
+    config.args      = start.args;
+    config.dir       = start.dir;
     config.options   = entry.options;
     config.protocol  = entry.protocol;
     const auto force = [&](const char* name, int value) {

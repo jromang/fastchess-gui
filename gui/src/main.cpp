@@ -55,6 +55,7 @@
 #include "storage.hpp"
 #include "topology.hpp"
 #include "ui.hpp"
+#include "engine_relay.hpp"
 #include "wb2uci.hpp"
 #include "window_place.hpp"
 
@@ -679,6 +680,10 @@ int main(int argc, char** argv) {
     // A WinBoard engine, run as a UCI one for fastchess: stdin and stdout are the engine's UCI side, untouched.
     if (argc >= 2 && std::string_view(argv[1]) == "--wb2uci") {
         return fcg::wb2uci::run(std::vector<std::string>(argv + 2, argv + argc));
+    }
+    // An engine that runs on a remote machine: a relay to the engine hub of the process that started it.
+    if (argc >= 2 && std::string_view(argv[1]) == fcg::relay::FLAG) {
+        return fcg::relay::main(std::vector<std::string>(argv + 2, argv + argc));
     }
     // An engine with a book of its own: the same, the book's moves answered by the adapter.
     if (argc >= 2 && std::string_view(argv[1]) == "--book-adapter") {

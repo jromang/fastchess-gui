@@ -310,6 +310,11 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     // Calls `stop` with the process of the engine on move in slot `i`, while it plays game `game_id`
     // (SlotState::game_id) and its engines are started; false otherwise. See RunController::endGame().
     bool stopEngineOnMove(int i, std::size_t game_id, const std::function<void(int64_t pid)>& stop);
+    // The numbers (GameTask::number()) of the games played, or ended since `since`, by an engine process among
+    // `pids`: those an engine on a machine may have lost when its connection broke. An engine process plays game after
+    // game, so the games it ended before are left out by their time.
+    [[nodiscard]] std::vector<uint64_t> gamesOfProcesses(const std::vector<int64_t>& pids,
+                                                         std::chrono::system_clock::time_point since) const;
 
     [[nodiscard]] bool loading() const override;
     void drain(std::vector<GameRecord>& games, std::vector<fastchess::Stats>& stats) override;
@@ -341,6 +346,15 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
         chess::Board board;                      // current position of the game in this slot
         std::array<int, 2> participant{-1, -1};  // the participant indexes of White and Black, for their totals
         std::array<int64_t, 2> pids{};           // the processes of White's and Black's engines, 0 until started
+        // Those of the last games ended in it, with their game_id and when they ended: a game lost to a broken
+        // connection is over by the time the connection's cut is told.
+        struct Ended {
+            std::size_t game_id = 0;
+            std::array<int64_t, 2> pids{};
+            std::chrono::system_clock::time_point at;
+        };
+        std::deque<Ended> ended_pids;
+        std::chrono::system_clock::time_point ended_at;  // of the game in `state`, once it has a result
     };
 
     Slot* slot(int i) { return i >= 0 && i < static_cast<int>(slots_.size()) ? slots_[i].get() : nullptr; }

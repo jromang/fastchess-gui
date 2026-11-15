@@ -36,6 +36,9 @@ struct Incidents {
     int crashes       = 0;  // an engine disconnected (crashed) or stopped responding
     int time_losses   = 0;
     int illegal_moves = 0;
+    // Games an engine on a machine lost to the network (its connection broke), voided and played again: not counted
+    // above, nor against the engine.
+    int network_cuts = 0;
     // By engine, the most incidents first (by name at the same count). A game whose loser is not known (a draw by
     // a timeout, an old journal) counts above only.
     std::vector<EngineIncidents> engines;
@@ -56,8 +59,10 @@ class IncidentScanner {
     struct Found {
         int64_t at = 0;  // finished at
         fastchess::MatchTermination how{};
-        int loser      = -1;  // participant id, -1 when not known
-        uint32_t plies = 0;
+        int loser       = -1;  // participant id, -1 when not known
+        uint32_t plies  = 0;
+        uint64_t number = 0;  // GameTask::number()
+        bool network    = false;  // voided since for its machine's broken connection
     };
     struct Journal {
         std::uintmax_t read = 0;  // bytes read: up to the last complete line

@@ -155,7 +155,7 @@ bool BoardMatch::start(const EngineEntry& first, const EngineEntry& second, cons
     stop();
     for (const auto* e : {&first, &second}) {
         std::error_code ec;
-        if (!std::filesystem::is_regular_file(e->cmd, ec)) {
+        if (e->machine.empty() && !std::filesystem::is_regular_file(e->cmd, ec)) {
             error = trf("File not found: {}", e->cmd);
             return false;
         }

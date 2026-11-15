@@ -1,5 +1,7 @@
 #include "app.hpp"
 
+#include "engine_hub.hpp"
+
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
@@ -80,6 +82,9 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
     budget_setting_ = storage_.machineBudget();
     if (const auto memory = systemMemory()) installed_mb_ = memory->total_mb;
     loadMachines();
+    // The engines that run on a machine are on its list of engines too (an engines.json written by hand, an older
+    // machines.json).
+    for (const auto& e : engines_) mirrorOnMachine(e);
     layouts_    = layout::named(storage_.loadLayouts());
     if (ImGui::GetCurrentContext()) registerPanelSettings();
 
@@ -219,6 +224,8 @@ void App::frame() {
     pollEngineConsole();
     pollBoard();
     pollMachines();
+    syncEngineHub();
+    pollRemoteHashes();
     handleDialogs();
 
     if (engines_save_due_ && std::chrono::steady_clock::now() >= *engines_save_due_) {
@@ -274,6 +281,11 @@ void App::frame() {
             sprt_calc_open_ = true;
         } else if (w == "engines")
             page_ = Page::Engines;
+        else if (w == "engines-remote-picker") {
+            // The first machine's files, as Add, A program on <machine>, shows them.
+            page_ = Page::Engines;
+            if (!machines_.empty()) openRemotePicker(RemotePicker::Purpose::AddEngine, machines_.front().id);
+        }
         else if (w == "engines-card") {
             page_            = Page::Engines;
             selected_engine_ = engines_.empty() ? -1 : 0;
@@ -482,6 +494,9 @@ void App::frame() {
     drawSprtCalculator();
     drawQuitModal();
     drawImportPreview();
+    // Asked from any page: a machine key's passphrase, a machine's files.
+    drawPassphrasePrompt();
+    drawRemotePicker();
     drawRatingImport();
     drawPgnPlayers();
     drawPalette();
@@ -625,6 +640,15 @@ void App::drawQuitModal() {
 
 void App::startRun() {
     storage_.saveSetup(setup_);
+    // Its engines on machines: what forbids the start (a machine never tested, another machine's tournament), then
+    // the passphrase of a machine they run on, asked first.
+    for (const auto& n : remoteNotices(setup_, engines_, machines_)) {
+        if (n.level != Notice::Level::Error) continue;
+        start_error_ = n.text;
+        Console::instance().add(trf("Cannot start the match: {}", start_error_), true);
+        return;
+    }
+    if (setup_.machine.empty() && !remoteEnginesReady(enginesOfSetup(setup_), [this] { startRun(); })) return;
     if (startAfterReads("start", enginesOfSetup(setup_), pgnBookNeeds(setup_), [this] { startRun(); })) return;
 
     // On a remote machine (Run on): its processors make the concurrency, its memory is its own.
@@ -864,6 +888,7 @@ void App::clearRunView() {
     if (info.sprt) sprt_.emplace(info.alpha, info.beta, info.elo0, info.elo1, info.model, true);
     // The openings it replaced before it was opened are in its results already.
     openings_replaced_seen_ = run_->tournament() ? run_->tournament()->openingsReplaced() : 0;
+    network_voids_seen_     = run_->tournament() ? run_->tournament()->networkVoids() : 0;
 
     live_slot_        = std::clamp(live_slot_, 0, std::max(1, info.concurrency) - 1);
     games_per_hour_   = 0;
@@ -952,6 +977,20 @@ void App::pollRun() {
                                             n));
             }
             openings_replaced_seen_ = replaced;
+            refreshAfterEdit();
+        }
+        // Games an engine on a machine lost to a broken connection: voided and played again.
+        if (const auto cut = t->networkVoids(); cut != network_voids_seen_) {
+            if (cut > network_voids_seen_) {
+                const auto n = cut - network_voids_seen_;
+                Console::instance().add(trn("{} game voided, to be played again: the connection to its engine's "
+                                            "machine broke.",
+                                            "{} games voided, to be played again: the connection to their engines' "
+                                            "machine broke.",
+                                            n, n),
+                                        true);
+            }
+            network_voids_seen_ = cut;
             refreshAfterEdit();
         }
     }

@@ -473,6 +473,10 @@ void GuiObserver::onGameStart(const fastchess::observer::GameStart& info) {
         s->ended.push_back(st);
         if (s->ended.size() > 8) s->ended.pop_front();
     }
+    if (st.has_game && (s->pids[0] || s->pids[1])) {
+        s->ended_pids.push_back({st.game_id, s->pids, st.result.empty() ? std::chrono::system_clock::now() : s->ended_at});
+        if (s->ended_pids.size() > 8) s->ended_pids.pop_front();
+    }
 
     s->board = board;
     s->pids  = {0, 0};  // told once the engines are started
@@ -548,6 +552,28 @@ int GuiObserver::participantIndex(const std::string& name) const {
         if (names_[i] == name) return static_cast<int>(i);
     }
     return -1;
+}
+
+std::vector<uint64_t> GuiObserver::gamesOfProcesses(const std::vector<int64_t>& pids,
+                                                    std::chrono::system_clock::time_point since) const {
+    const auto among = [&](const std::array<int64_t, 2>& two) {
+        return std::any_of(two.begin(), two.end(), [&](int64_t pid) {
+            return pid != 0 && std::find(pids.begin(), pids.end(), pid) != pids.end();
+        });
+    };
+    std::vector<uint64_t> out;
+    const auto add = [&](std::size_t game_id) {
+        if (game_id > 0 && std::find(out.begin(), out.end(), game_id - 1) == out.end()) out.push_back(game_id - 1);
+    };
+    for (const auto& s : slots_) {
+        std::lock_guard<std::mutex> lock(s->mutex);
+        const bool over = !s->state.result.empty();
+        if (s->state.has_game && among(s->pids) && (!over || s->ended_at >= since)) add(s->state.game_id);
+        for (const auto& e : s->ended_pids) {
+            if (among(e.pids) && e.at >= since) add(e.game_id);
+        }
+    }
+    return out;
 }
 
 void GuiObserver::onEngineProcesses(int slot_index, int64_t white_pid, int64_t black_pid) {
@@ -698,6 +724,7 @@ void GuiObserver::gameEnded(int slot_index, bool counted, const std::string& res
 
     std::lock_guard<std::mutex> lock(s->mutex);
     auto& st    = s->state;
+    s->ended_at = std::chrono::system_clock::now();
     st.active   = false;
     st.thinking = false;
     st.result   = counted ? result : "*";

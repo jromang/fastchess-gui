@@ -61,6 +61,8 @@ struct SDL_Window;
 
 namespace fcg {
 
+class EngineHub;
+
 // The Games tab's filter on the games whose opening was flagged unbalanced (the last of its list).
 inline constexpr int UNBALANCED_FILTER = 11;
 // The Openings tab's view of the openings with such a game.
@@ -1037,6 +1039,7 @@ class App {
     bool export_balanced_only_ = true;     // Export as EPD… leaves out the openings flagged unbalanced
     std::vector<int> opening_order_;       // rows shown, sorted
     uint64_t openings_replaced_seen_ = 0;  // the tournament's openingsReplaced() the views were refreshed for
+    uint64_t network_voids_seen_ = 0;  // games voided for a machine's broken connection, as last seen
     bool opening_order_dirty_ = true;
     int selected_opening_     = -1;  // index into by_opening_
     std::vector<int> opening_games_;  // indexes into games_ of the selected opening's games
@@ -1521,6 +1524,86 @@ class App {
     MachineJob::Kind passphrase_kind_ = MachineJob::Kind::Test;
     bool open_passphrase_             = false;
     std::array<char, 256> passphrase_input_{};
+    std::function<void()> passphrase_then_;  // run once the passphrase is typed, instead of a machine job
+
+    // The engines of the library that run on a machine (engine_hub.hpp): the window's hub, for their reading, checks,
+    // console, quick test, analysis and games here; started with the first such engine.
+    std::unique_ptr<EngineHub> hub_;
+    std::string hub_signature_;  // the engines it was last told it may start
+    void syncEngineHub();
+    // Before an engine that runs on a machine starts: false when its key's passphrase must be typed first (asked
+    // then, `then` run once it is).
+    bool remoteReady(const EngineEntry& e, std::function<void()> then);
+    // A passphrase typed or refused, for the machine jobs and the hub alike (empty: forgotten).
+    void rememberPassphrase(const std::string& key_file, const std::string& passphrase);
+    // Why a read or a check of `e` failed, told by the hub when its machine could not be reached.
+    [[nodiscard]] std::string remoteFailure(const EngineEntry& e) const;
+    // Under the home page's cores: the machines the running tournaments' engines run on, and how they do.
+    void drawRemoteMachinesLine();
+    // The library's engine of that name, -1 when there is none (any more).
+    [[nodiscard]] int engineIndex(const std::string& name) const;
+    // The passphrases a tournament's engines on machines need, by key file, as far as they were typed.
+    [[nodiscard]] std::map<std::string, std::string> secretsFor(const tour::TournamentSpec& spec);
+    // Before a start: false when a machine of the setup's engines needs its key's passphrase first (asked, and
+    // `then` run once typed).
+    bool remoteEnginesReady(const std::vector<std::string>& engines, std::function<void()> then);
+
+    // The card's Runs on: this computer, or a machine; shown once there are machines (or the engine runs on one).
+    // True when it changed the engine.
+    bool drawRunsOn(EngineEntry& e, float label);
+    // `e` moved to `machine` (empty: this computer): the program there, or this computer's, taken back.
+    void moveEngine(EngineEntry& e, const std::string& machine);
+    // The program of an engine that runs on a machine, written in that machine's list of engines.
+    void mirrorOnMachine(const EngineEntry& e);
+    // A new engine of the library: the program `path` on `machine`, read at once.
+    void addRemoteEngine(const std::string& machine, const std::string& path);
+    // What is known of a machine an engine runs on, in a few words, and their colour.
+    struct MachineLine {
+        std::string text;
+        unsigned color = 0;
+    };
+    [[nodiscard]] MachineLine machineLine(const std::string& id) const;
+
+    // The files of a machine, looked through over SFTP in the page: to add an engine there, choose its program, its
+    // folder, a file its options name, or the program of the machine's list of engines.
+    struct RemoteListing {
+        std::string dir;   // where the server says it is
+        std::string file;  // the path typed is a file: it is chosen
+        std::vector<RemoteEntry> entries;
+        std::string error;
+    };
+    struct RemotePicker {
+        enum class Purpose { AddEngine, ImportFolder, Program, Folder, Option, OptionFolder, MachinePath };
+        Purpose purpose = Purpose::AddEngine;
+        std::string machine;  // its id
+        std::string engine;   // the engine it chooses for
+        std::string option;   // Option: its name
+        bool folders = false;  // a folder is chosen, not a file
+        bool shown   = false;
+        bool untested = false;  // the machine's host key is not known yet
+        bool hidden   = false;  // the files whose name starts with a dot shown
+        std::string dir;
+        std::string selected;
+        std::array<char, 1024> typed{};
+        std::vector<RemoteEntry> entries;
+        std::string error;
+        std::future<RemoteListing> listing;
+    };
+    std::optional<RemotePicker> remote_picker_;
+    // The SHA-256 of the programs of engines that run on machines, read there in the background: a program rebuilt
+    // there is noticed as a local one is (ProgramState::Changed, read again).
+    struct RemoteHash {
+        std::string engine, machine, program, hash;
+    };
+    std::future<std::vector<RemoteHash>> remote_hashes_;
+    std::vector<std::string> remote_hashes_next_;  // asked for while others are read
+    void hashRemotePrograms(std::vector<std::string> names);
+    void pollRemoteHashes();
+    void openRemotePicker(RemotePicker::Purpose purpose, const std::string& machine, const std::string& engine = {},
+                          const std::string& option = {}, const std::string& start = {});
+    void listRemote(const std::string& dir);
+    void drawRemotePicker();
+    void chooseRemote(const std::string& path);
     bool scroll_to_machines_    = false;  // asked from the command palette
     int machines_scroll_frames_ = 0;      // the frames it was asked on
 };

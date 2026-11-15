@@ -188,6 +188,8 @@ struct SshClient::Impl {
     LIBSSH2_SESSION* session = nullptr;
     LIBSSH2_SFTP* sftp       = nullptr;
     bool socket_closed       = false;
+    Clock::time_point last_received{};  // when the server last sent something
+    bool keepalive_set = false;
 
     explicit Impl(SshClient& client) : self(client) {}
     ~Impl() { close(); }
@@ -253,7 +255,10 @@ struct SshClient::Impl {
             return agentIo(socket, buffer, length, false);
         }
         const auto n = self.socket->receive(static_cast<char*>(buffer), length);
-        if (n > 0) return n;
+        if (n > 0) {
+            self.last_received = Clock::now();
+            return n;
+        }
         if (n == 0) return -EAGAIN;
         self.socket_closed = true;
         return 0;
@@ -288,6 +293,17 @@ struct SshClient::Impl {
         libssh2_session_last_error(session, &message, &length, 0);
         return message ? printableText(std::string(message, static_cast<std::size_t>(std::max(length, 0))))
                        : std::string();
+    }
+
+    // Why a libssh2 call failed with `rc` while doing `what`, without setting the client's error (a program of
+    // several says its own).
+    std::string describe(int rc, const std::string& what) const {
+        if (socket_closed || rc == LIBSSH2_ERROR_SOCKET_DISCONNECT || rc == LIBSSH2_ERROR_SOCKET_RECV ||
+            rc == LIBSSH2_ERROR_SOCKET_SEND) {
+            return trf("The connection to {} broke while {}.", target.name, what);
+        }
+        const auto detail = lastError();
+        return trf("{}: failed while {} ({}).", target.name, what, detail.empty() ? std::to_string(rc) : detail);
     }
 
     // A libssh2 call failed with `rc` while doing `what`.
@@ -386,8 +402,9 @@ struct SshClient::Impl {
                             "that its SSH server runs.",
                             target.host, target.port, error));
         }
-        socket  = std::make_unique<net::Socket>(*fd);
-        session = libssh2_session_init_ex(&Impl::allocate, &Impl::release, &Impl::reallocate, this);
+        socket        = std::make_unique<net::Socket>(*fd);
+        last_received = Clock::now();
+        session       = libssh2_session_init_ex(&Impl::allocate, &Impl::release, &Impl::reallocate, this);
         if (!session) return fail(SshError::Kind::Local, TR("The SSH session cannot start."));
         libssh2_session_set_blocking(session, 0);
         libssh2_session_callback_set2(session, LIBSSH2_CALLBACK_RECV,
@@ -441,6 +458,12 @@ struct SshClient::Impl {
                             target.known_hosts.string(), target.host));
         }
         if (known->empty()) {
+            if (!target.trust_new_host_key) {
+                return fail(SshError::Kind::HostKey,
+                            trf("{} has never been tested, so its host key is unknown and nothing was sent to it: "
+                                "test its connection first (Settings > Machines).",
+                                target.name));
+            }
             // Trusted on first use, and shown: the test of the connection tells it.
             if (!rememberHostKey(target.known_hosts, target.host, target.port, print)) {
                 return fail(SshError::Kind::Local,
@@ -733,6 +756,12 @@ void SshClient::disconnect() {
     if (impl_) impl_->close();
 }
 
+void SshClient::abandon() {
+    if (!impl_ || !impl_->socket) return;
+    impl_->socket->shutdownBoth();
+    impl_->socket_closed = true;
+}
+
 std::optional<SshClient::Result> SshClient::run(const std::string& command, std::chrono::milliseconds limit,
                                                 const std::string& input, std::size_t max_output) {
     error_ = {};
@@ -831,6 +860,130 @@ int SshClient::Channel::exitCode() {
     auto* channel = static_cast<LIBSSH2_CHANNEL*>(channel_);
     if (!eof_) return -1;
     return libssh2_channel_get_exit_status(channel);
+}
+
+// --- Without waiting ---
+
+std::unique_ptr<SshClient::Program> SshClient::launch(const std::string& command) {
+    if (!connected()) return nullptr;
+    return std::unique_ptr<Program>(new Program(*this, command));
+}
+
+SshClient::Program::~Program() {
+    if (channel_ && client_.impl_) client_.impl_->freeChannel(static_cast<LIBSSH2_CHANNEL*>(channel_));
+}
+
+bool SshClient::Program::fail(int rc, const std::string& what) {
+    failure_ = client_.impl_->describe(rc, what);
+    state_   = State::Failed;
+    return true;
+}
+
+bool SshClient::Program::step() {
+    if (done()) return false;
+    auto& impl = *client_.impl_;
+    if (!client_.connected()) return fail(LIBSSH2_ERROR_SOCKET_DISCONNECT, TR("running a program"));
+    bool moved    = false;
+    auto* channel = static_cast<LIBSSH2_CHANNEL*>(channel_);
+    if (!channel) {
+        channel = libssh2_channel_open_session(impl.session);
+        if (!channel) {
+            const int rc = libssh2_session_last_errno(impl.session);
+            return rc == LIBSSH2_ERROR_EAGAIN ? false : fail(rc, TR("starting a command"));
+        }
+        channel_ = channel;
+        moved    = true;
+    }
+    if (!started_) {
+        const int rc = libssh2_channel_process_startup(channel, "exec", 4, command_.c_str(),
+                                                       static_cast<unsigned>(command_.size()));
+        if (rc == LIBSSH2_ERROR_EAGAIN) return moved;
+        if (rc != 0) return fail(rc, TR("starting a command"));
+        started_ = true;
+        state_   = State::Running;
+        moved    = true;
+    }
+    while (!in_.empty()) {
+        const auto n = libssh2_channel_write(channel, in_.data(), in_.size());
+        if (n == LIBSSH2_ERROR_EAGAIN) break;
+        if (n < 0) return fail(static_cast<int>(n), TR("writing to a program"));
+        in_.erase(0, static_cast<std::size_t>(n));
+        moved = true;
+    }
+    if (in_.empty() && input_closed_ && !eof_sent_) {
+        const int rc = libssh2_channel_send_eof(channel);
+        if (rc == 0) {
+            eof_sent_ = true;
+            moved     = true;
+        } else if (rc != LIBSSH2_ERROR_EAGAIN) {
+            return fail(rc, TR("writing to a program"));
+        }
+    }
+    char buffer[16384];
+    for (int stream = 0; stream < 2; ++stream) {
+        while (true) {
+            const auto n = libssh2_channel_read_ex(channel, stream, buffer, sizeof buffer);
+            if (n == LIBSSH2_ERROR_EAGAIN || n == 0) break;
+            if (n < 0) return fail(static_cast<int>(n), TR("reading from a program"));
+            (stream == 0 ? out_ : err_).append(buffer, static_cast<std::size_t>(n));
+            moved = true;
+        }
+    }
+    if (!eof_ && libssh2_channel_eof(channel) == 1) {
+        eof_  = true;
+        moved = true;
+    }
+    if (!eof_) return moved;
+    // The exit status comes with the channel's close.
+    if (!closing_) {
+        const int rc = libssh2_channel_close(channel);
+        if (rc == LIBSSH2_ERROR_EAGAIN) return moved;
+        if (rc != 0) return fail(rc, TR("running a program"));
+        closing_ = true;
+    }
+    const int rc = libssh2_channel_wait_closed(channel);
+    if (rc == LIBSSH2_ERROR_EAGAIN) return moved;
+    exit_code_        = libssh2_channel_get_exit_status(channel);
+    char* signal      = nullptr;
+    std::size_t sig_n = 0;
+    libssh2_channel_get_exit_signal(channel, &signal, &sig_n, nullptr, nullptr, nullptr, nullptr);
+    if (signal) {
+        exit_code_ = -1;
+        libssh2_free(impl.session, signal);
+    }
+    state_ = State::Ended;
+    return true;
+}
+
+bool SshClient::Program::pending() const {
+    if (done() || !channel_) return false;
+    auto* channel       = static_cast<LIBSSH2_CHANNEL*>(channel_);
+    unsigned long avail = 0;
+    libssh2_channel_window_read_ex(channel, &avail, nullptr);
+    return avail > 0 || (!eof_ && libssh2_channel_eof(channel) == 1);
+}
+
+std::intptr_t SshClient::socketHandle() const noexcept {
+    return impl_ && impl_->socket ? static_cast<std::intptr_t>(impl_->socket->handle()) : -1;
+}
+
+bool SshClient::waitsToWrite() const noexcept {
+    return impl_ && impl_->session &&
+           (libssh2_session_block_directions(impl_->session) & LIBSSH2_SESSION_BLOCK_OUTBOUND) != 0;
+}
+
+std::chrono::steady_clock::time_point SshClient::lastReceived() const noexcept {
+    return impl_ ? impl_->last_received : Clock::time_point{};
+}
+
+void SshClient::keepAlive(std::chrono::seconds every) {
+    if (!connected()) return;
+    if (!impl_->keepalive_set) {
+        libssh2_keepalive_config(impl_->session, 1, static_cast<unsigned>(std::max<int64_t>(1, every.count())));
+        impl_->keepalive_set = true;
+    }
+    int next = 0;
+    (void)libssh2_keepalive_send(impl_->session, &next);
 }
 
 std::optional<RemoteEntry> SshClient::stat(const std::string& path) {

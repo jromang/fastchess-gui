@@ -1690,6 +1690,46 @@ Una máquina necesita un servidor OpenSSH (Linux, macOS, BSD; Windows 10 1809 y 
 y SFTP, ambos presentes por defecto. Los comandos pasan por `sh` sea cual sea el shell del usuario (fish o csh no son
 un problema), y por cmd en Windows, el shell por defecto de su servidor OpenSSH.
 
+### Motores jugados desde este ordenador
+<!-- en: engines-played-from-this-computer 8c14dc16 -->
+
+Un motor de la biblioteca puede ejecutarse en una máquina mientras el torneo se juega aquí: un motor de GPU en la
+máquina con GPU, un motor compilado para otro sistema, una máquina reservada para un motor. En su ficha, *Se ejecuta en*
+elige *Este ordenador* o una máquina; *Programa allí* y *Carpeta de trabajo allí* son entonces rutas en la máquina
+(vacía: la carpeta del programa allí), y los botones *…*, incluidos los de las opciones que nombran un archivo, exploran
+los archivos de la máquina. En cuanto hay máquinas, *Añadir…* ofrece *Un programa en \<máquina\>…*, *Importar…* ofrece
+*Todos los motores de una carpeta en \<máquina\>…*, y el *Añadir un motor…* de la máquina ofrece *Un programa de allí…*.
+El motor se lee, se comprueba y se juega en la consola, la prueba rápida y los torneos como un motor de este ordenador.
+Su ruta es también la de la lista de motores de la máquina, y el SHA-256 de su programa allí indica cuándo se recompiló
+(Δ, se vuelve a leer).
+
+La máquina debe haberse probado una vez (*Probar la conexión*), para que se conozca su clave de host: un motor nunca se
+conecta a una máquina cuya clave no se haya mostrado y aceptado. La frase de contraseña de la clave, si la tiene, se
+pide una vez por sesión, antes de la primera lectura o del inicio, y se queda en memoria: el proceso del torneo la
+recibe de la ventana y la conserva, para que el torneo siga jugándose después de cerrar la ventana. `--run` en un
+terminal no la pide: usa allí el agente SSH.
+
+Cada motor se inicia a través de un intermediario, `fastchess-gui --remote-engine <key>`, que atiende el proceso que lo
+hace jugar: una conexión SSH a la máquina para diez motores como máximo (el `MaxSessions` de un servidor OpenSSH), y
+cada motor se inicia desde su carpeta allí. Un motor cuyo intermediario desaparece también se detiene allí, por su
+identificador de proceso, cuando no se detiene por sí solo (en una máquina Linux o macOS; en una de Windows, se cierra
+su canal).
+
+*Comprobar* mide el tiempo de ida y vuelta hasta la máquina, la mediana de unos cuantos `isready`. El reloj lo
+descuenta: el resumen de la configuración avisa cuando supera el 5 % del incremento, o del tiempo que tiene una jugada
+si no hay incremento, con *Fijar un margen de … ms* (el doble del tiempo de ida y vuelta). Una máquina nunca probada
+impide el inicio, igual que un torneo que se juega en una máquina distinta de la del motor (uno que se juega en la
+máquina del motor lo juega allí como un motor propio).
+
+Mientras se juega el torneo, la página de inicio tiene una línea *Máquinas* bajo los núcleos: cada máquina, conectada y
+lo que juega allí, o desde cuándo no responde. Una máquina que no responde es una sola entrada bajo *Requiere atención*:
+las partidas de sus motores se apartan y se vuelven a intentar, las demás siguen, con *Reintentar* y *Probar
+\<máquina\>*. Una partida que un motor perdió porque se cortó su conexión (su final registrado como desconexión) se
+anula y se vuelve a jugar, anotada en el diario con su motivo (`connection to its machine lost: <machine>`);
+*Fiabilidad* la cuenta aparte, no como un cuelgue del motor. Una máquina cortada más de tres veces en una hora queda con
+sus motores apartados. Los núcleos, la memoria y las GPU de este ordenador no cuentan los motores en máquinas, solo sus
+intermediarios; el presupuesto de la máquina, que comparten sus propios torneos, aún no los cuenta.
+
 ### Una máquina Windows
 <!-- en: a-windows-machine 58ae029a -->
 

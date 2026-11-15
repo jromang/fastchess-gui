@@ -77,6 +77,17 @@ struct Status {
     tour::GameCost in_flight;
     tour::Allowance allowance;
     tour::Wait waiting = tour::Wait::None;
+    // The machines its engines run on, as its engine hub sees them: connected, playing, or why not.
+    struct Machine {
+        std::string id;
+        std::string name;
+        int connections = 0;
+        int engines     = 0;
+        std::string error;
+        int64_t since = 0;  // unix time of the error, seconds; 0 when none
+        bool operator==(const Machine&) const = default;
+    };
+    std::vector<Machine> machines;
 
     bool operator==(const Status&) const;
 };

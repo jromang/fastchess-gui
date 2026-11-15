@@ -75,6 +75,21 @@ Incidents IncidentScanner::scan(const fs::path& root, int64_t since_ms, std::chr
                     }
                     continue;
                 }
+                // The games an engine on a machine lost to the network: not its incidents.
+                if (line.find("\"games_voided\"") != std::string_view::npos &&
+                    line.find("\"network\":true") != std::string_view::npos) {
+                    try {
+                        const auto event = nlohmann::json::parse(line);  // kept: the loop reads into it
+                        for (const auto& g : event.at("games")) {
+                            const auto n = g.at(0).get<uint64_t>() * 2 + g.at(1).get<uint64_t>();
+                            for (auto& f : journal.found) {
+                                if (f.number == n) f.network = true;
+                            }
+                        }
+                    } catch (const std::exception&) {
+                    }
+                    continue;
+                }
                 // Most lines are games that ended normally: told by their termination, without parsing them.
                 if (line.find("\"game_finished\"") == std::string_view::npos) continue;
                 const auto key = line.find("\"termination\":");
@@ -88,6 +103,7 @@ Incidents IncidentScanner::scan(const fs::path& root, int64_t since_ms, std::chr
                     found.at    = event.value("at", int64_t{0});
                     found.how   = how;
                     found.plies = event.value("plies", 0u);
+                    found.number = event.value("encounter", uint64_t{0}) * 2 + event.value("game", uint64_t{0});
                     // The side that lost; a draw (a timeout against a bare king) has no loser.
                     const auto result = event.value("result", std::string());
                     if (result == "1-0") found.loser = event.value("black", -1);
@@ -109,6 +125,10 @@ Incidents IncidentScanner::scan(const fs::path& root, int64_t since_ms, std::chr
     std::map<std::string, int64_t> last;  // the time of each engine's last incident
     for (const auto& [file, journal] : journals_) {
         for (const auto& f : journal.found) {
+            if (f.network) {
+                ++out.network_cuts;
+                continue;
+            }
             const bool time  = f.how == MatchTermination::TIMEOUT;
             const bool crash = f.how == MatchTermination::DISCONNECT || f.how == MatchTermination::STALL;
             const bool move  = f.how == MatchTermination::ILLEGAL_MOVE;

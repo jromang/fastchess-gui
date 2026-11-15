@@ -447,6 +447,16 @@ void App::drawCharts() {
                                            "before the end of the time spent says the time was not used well."));
             }
             ImGui::TableNextColumn();
+            // An engine on a machine: its relay's processor time here says nothing of it.
+            const auto* tour = run_->tournament();
+            const auto* p    = tour && i < static_cast<int>(tour->spec().participants.size())
+                                   ? &tour->spec().participants[static_cast<std::size_t>(i)]
+                                   : nullptr;
+            if (p && p->remote) {
+                const auto* m = machineById(p->remote->machine);
+                ImGui::TextDisabled("%s", trf("on {}", m ? (m->name.empty() ? m->host : m->name) : p->remote->machine).c_str());
+                continue;
+            }
             const auto use = cpuUse(t);
             ImGui::TextUnformatted(
                 use.measured ? fmt::format("{:.1f} · {:.0f} %", use.thinking, 100 * use.waiting).c_str() : "—");

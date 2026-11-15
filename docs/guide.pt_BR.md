@@ -1651,6 +1651,44 @@ Uma máquina precisa de um servidor OpenSSH (Linux, macOS, BSD; Windows 10 1809 
 RSA e SFTP, os dois presentes por padrão. Os comandos passam pelo `sh`, qualquer que seja o shell do usuário (fish ou
 csh servem), e pelo cmd no Windows, o shell padrão do servidor OpenSSH dele.
 
+### Engines jogados a partir deste computador
+<!-- en: engines-played-from-this-computer 8c14dc16 -->
+
+Um engine da biblioteca pode rodar numa máquina enquanto o torneio é jogado aqui: um engine de GPU na máquina com a GPU,
+um engine compilado para outro sistema, uma máquina reservada para um engine. Na ficha dele, *Roda em* escolhe *Este
+computador* ou uma máquina; *Programa lá* e *Pasta de trabalho lá* são então caminhos na máquina (vazio: a pasta do
+programa lá), e os botões *…*, incluídos os das opções que nomeiam um arquivo, navegam pelos arquivos da máquina. Quando
+há máquinas, *Adicionar…* oferece *Um programa em \<máquina\>…*, *Importar…* oferece *Todos os engines de uma pasta em
+\<máquina\>…*, e o *Adicionar um motor…* da máquina oferece *Um programa de lá…*. O engine é lido, verificado e jogado
+no console, no teste rápido e nos torneios como um engine deste computador. O caminho dele é também o da lista de
+engines da máquina, e o SHA-256 do programa dele lá diz quando ele foi recompilado (Δ, lido de novo).
+
+A máquina precisa ter sido testada uma vez (*Testar a conexão*), para que a chave de host dela seja conhecida: um engine
+nunca se conecta a uma máquina cuja chave não foi mostrada e aceita como confiável. A frase-senha da chave, se ela tiver
+uma, é pedida uma vez por sessão, antes da primeira leitura ou do início, e fica na memória: o processo do torneio a
+recebe da janela e a guarda, para que o torneio continue jogando depois que a janela fecha. `--run` num terminal não a
+pede: use o agente SSH lá.
+
+Cada engine é iniciado por meio de um retransmissor, `fastchess-gui --remote-engine <key>`, servido pelo processo que o
+joga: uma conexão SSH com a máquina para no máximo dez engines (o `MaxSessions` de um servidor OpenSSH), cada engine
+iniciado a partir da pasta dele lá. Um engine cujo retransmissor termina é encerrado lá também, pelo id do processo
+dele, quando não termina sozinho (numa máquina Linux ou macOS; numa máquina Windows, o canal dele é fechado).
+
+*Verificar* mede o tempo de ida e volta até a máquina, a mediana de alguns `isready`. O relógio o conta: o resumo da
+configuração avisa quando ele passa de 5 % do incremento, ou do tempo por lance quando não há incremento, com *Definir
+uma margem de … ms* (o dobro da ida e volta). Uma máquina nunca testada impede o início, e o mesmo faz um torneio que
+roda numa máquina diferente da do engine (um torneio que roda na máquina do engine o joga lá como um engine da própria
+máquina).
+
+Enquanto o torneio é jogado, a página inicial tem uma linha *Máquinas* abaixo dos núcleos: cada máquina, conectada e o
+que joga lá, ou desde quando ela não responde. Uma máquina que não responde é um item em *Requer atenção*: as partidas
+dos engines dela são postas de lado e tentadas de novo, as outras continuam, com *Tentar novamente* e *Testar
+\<máquina\>*. Uma partida que um engine perdeu porque a conexão dele caiu (com o fim registrado como desconexão) é
+anulada e jogada de novo, registrada no diário com o motivo (`connection to its machine lost: <machine>`); *Saúde* a
+conta à parte, não como um crash do engine. Uma máquina desconectada mais de três vezes em uma hora tem os engines dela
+postos de lado. Os núcleos, a memória e as GPUs deste computador não contam os engines em máquinas, só os
+retransmissores deles; o orçamento da máquina, que os torneios dela dividem, ainda não os conta.
+
 ### Uma máquina Windows
 <!-- en: a-windows-machine 58ae029a -->
 

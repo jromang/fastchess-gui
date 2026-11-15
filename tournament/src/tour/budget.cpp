@@ -52,11 +52,21 @@ uint64_t processMb(const fastchess::EngineConfiguration& engine) {
     return engineHashMb(engine) + PROCESS_MB + THREAD_MB * static_cast<uint64_t>(engineThreads(engine));
 }
 
+namespace {
+
+// What a participant takes of this computer: nothing of its threads, hash and GPU when its engine runs on a machine,
+// only its relay's process.
+int localThreads(const Participant& p) { return p.remote ? 0 : engineThreads(p.engine); }
+uint64_t localProcessMb(const Participant& p) { return p.remote ? PROCESS_MB : processMb(p.engine); }
+bool localGpu(const Participant& p) { return p.gpu && !p.remote; }
+
+}  // namespace
+
 GameCost gameCost(const Participant& a, const Participant& b) {
     GameCost c;
-    c.threads   = std::max(engineThreads(a.engine), engineThreads(b.engine));
-    c.memory_mb = processMb(a.engine) + processMb(b.engine);
-    c.gpus      = (a.gpu ? 1 : 0) + (b.gpu ? 1 : 0);
+    c.threads   = std::max(localThreads(a), localThreads(b));
+    c.memory_mb = localProcessMb(a) + localProcessMb(b);
+    c.gpus      = (localGpu(a) ? 1 : 0) + (localGpu(b) ? 1 : 0);
     return c;
 }
 
@@ -67,9 +77,9 @@ GameCost largestGame(const TournamentSpec& spec) {
     int gpus = 0;
     for (const auto& p : spec.participants) {
         if (!p.active) continue;
-        threads.push_back(engineThreads(p.engine));
-        memory.push_back(processMb(p.engine));
-        gpus += p.gpu ? 1 : 0;
+        threads.push_back(localThreads(p));
+        memory.push_back(localProcessMb(p));
+        gpus += localGpu(p) ? 1 : 0;
     }
     std::sort(threads.rbegin(), threads.rend());
     std::sort(memory.rbegin(), memory.rend());
@@ -77,7 +87,7 @@ GameCost largestGame(const TournamentSpec& spec) {
     if (!threads.empty()) c.threads = threads[0];
     for (std::size_t i = 0; i < 2 && i < memory.size(); ++i) c.memory_mb += memory[i];
     c.gpus = std::min(gpus, 2);
-    if (c.threads == 0) c.threads = 1;  // no participant yet: single-thread engines
+    if (c.threads == 0) c.threads = 1;  // no participant yet, or only engines on machines: a thread for fastchess
     return c;
 }
 

@@ -319,6 +319,16 @@ const char* glyph(Icon icon) {
             return "\uE082";  // circle-help
         case Icon::Copy:
             return "\uE09E";  // copy
+        case Icon::Server:
+            return "\uE153";  // server
+        case Icon::Program:
+            return "\uE20A";  // square-terminal
+        case Icon::File:
+            return "\uE0C0";  // file
+        case Icon::FolderClosed:
+            return "\uE0D7";  // folder
+        case Icon::FolderUp:
+            return "\uE33D";  // folder-up
     }
     return "";
 }
@@ -397,6 +407,14 @@ void drawIcon(ImDrawList* dl, Icon icon, ImVec2 c, float size, ImU32 col) {
     const char* text = glyph(icon);
     const ImVec2 ext = font->CalcTextSizeA(size, FLT_MAX, 0.0f, text);
     dl->AddText(font, size, ImVec2(c.x - ext.x * 0.5f, c.y - ext.y * 0.5f), col, text);
+}
+
+void inlineIcon(Icon icon, ImU32 col) {
+    const float size   = ImGui::GetFontSize();
+    const float height = ImGui::GetTextLineHeight();
+    const ImVec2 at    = ImGui::GetCursorScreenPos();
+    ImGui::Dummy(ImVec2(size, height));
+    drawIcon(ImGui::GetWindowDrawList(), icon, ImVec2(at.x + size * 0.5f, at.y + height * 0.5f), size * 0.85f, col);
 }
 
 bool iconOnlyButton(const char* id, Icon icon, const char* tip, bool enabled) {

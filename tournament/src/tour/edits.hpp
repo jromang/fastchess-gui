@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,6 +29,7 @@ struct Edit {
     fastchess::EngineConfiguration engine;        // add, replace: the new engine (its name is made unique if needed)
     int elo          = 0;                         // add, replace: the new engine's reference rating, 0 = none
     bool gpu         = false;                     // add, replace: the new engine uses a GPU (Participant::gpu)
+    std::optional<RemoteEngine> remote;           // add, replace: it runs on a machine (Participant::remote)
     bool catch_up    = true;                      // add: also play the cycles already started
     int team         = 0;                         // add, a team match: the team it joins (0: A, 1: B)
     int participant  = -1;                        // replace, withdraw: the participant's id

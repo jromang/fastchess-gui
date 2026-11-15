@@ -12,6 +12,7 @@
 #include <tour/legacy.hpp>
 
 #include "app.hpp"
+#include "remote_run.hpp"
 #include "console.hpp"
 #include "gl.hpp"
 #include "home.hpp"
@@ -561,20 +562,50 @@ bool App::drawStartFailures(const char* title) {
         }
     };
 
+    // The engines on a machine that does not answer: one entry for the machine, its engines named in it.
+    const auto* remote_run = dynamic_cast<const RemoteRun*>(run_);
+    const auto machineOf   = [&](int participant) -> std::string {
+        const auto* p = t->spec().participant(participant);
+        return p && p->remote ? p->remote->machine : std::string();
+    };
+    const auto stateOf = [&](const std::string& id) -> const control::Status::Machine* {
+        if (!remote_run) return nullptr;
+        for (const auto& m : remote_run->machines()) {
+            if (m.id == id && !m.error.empty() && m.connections == 0) return &m;
+        }
+        return nullptr;
+    };
+    std::map<std::string, std::vector<tour::StartFailures::Engine>> by_machine;
+    for (const auto& e : shown) {
+        if (const auto id = machineOf(e.participant); !id.empty() && stateOf(id)) by_machine[id].push_back(e);
+    }
+
     ui::beginCard("start_failures_card");
     for (std::size_t i = 0; i < shown.size(); ++i) {
-        const auto& e = shown[i];
+        const auto& e         = shown[i];
+        const auto machine_id = machineOf(e.participant);
+        const auto* down      = machine_id.empty() ? nullptr : stateOf(machine_id);
+        // The others of its machine are told in its entry.
+        if (down && by_machine[machine_id].front().participant != e.participant) continue;
         ImGui::PushID(e.participant);
         if (i > 0) ImGui::Separator();
 
         auto heading = trf("{} cannot start", e.name);
         if (!e.failed) heading = trf("{} did not start (try {} of {})", e.name, e.tries, tour::StartFailures::TRIES);
-        ImGui::PushStyleColor(ImGuiCol_Text, e.failed ? ui::BAD : ui::WARN);
+        if (down) heading = trf("{} does not answer", down->name);
+        ImGui::PushStyleColor(ImGuiCol_Text, e.failed || down ? ui::BAD : ui::WARN);
         ImGui::TextUnformatted(heading.c_str());
         ImGui::PopStyleColor();
-        // fastchess' words, as the log has them.
+        // fastchess' words, as the log has them; the machine's, for engines that run on it.
         ImGui::PushTextWrapPos(0.0f);
-        ImGui::TextUnformatted(e.error.c_str());
+        if (down) {
+            std::string names;
+            for (const auto& other : by_machine[machine_id]) names += (names.empty() ? "" : ", ") + other.name;
+            ImGui::TextUnformatted(down->error.c_str());
+            ImGui::TextUnformatted(trn("{} plays there.", "{} play there.", by_machine[machine_id].size(), names).c_str());
+        } else {
+            ImGui::TextUnformatted(e.error.c_str());
+        }
         ImGui::PopTextWrapPos();
 
         std::string state;
@@ -608,10 +639,21 @@ bool App::drawStartFailures(const char* title) {
             ImGui::BeginDisabled(e.trying || run_->stopping());
             const char* try_tip =
                 TR("Try to start it now, rather than at its next try: its games come back if it starts.");
-            if (button(TR("Try again"), try_tip) && run_->tryEngineAgain(e.participant)) {
-                Console::instance().add(trf("{}: trying to start it again.", e.name));
+            if (button(TR("Try again"), try_tip)) {
+                if (down) {
+                    for (const auto& other : by_machine[machine_id]) (void)run_->tryEngineAgain(other.participant);
+                    Console::instance().add(trf("{}: trying to start it again.", down->name));
+                } else if (run_->tryEngineAgain(e.participant)) {
+                    Console::instance().add(trf("{}: trying to start it again.", e.name));
+                }
             }
             ImGui::EndDisabled();
+        }
+        if (down && machineById(machine_id)) {
+            if (button(trf("Test {}", down->name).c_str(),
+                       trf("Settings > Machines: connects to {} and tells what goes wrong.", down->name))) {
+                startMachineJob(machine_id, MachineJob::Kind::Test);
+            }
         }
         if (editable) {
             const std::string impact   = TR("The Schedule tab shows the impact before anything changes.");

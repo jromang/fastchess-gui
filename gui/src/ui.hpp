@@ -92,8 +92,17 @@ enum class Icon {
     Contents,
     Search,
     Help,  // a circled ?
-    Copy
+    Copy,
+    // Engines on a machine, and its files.
+    Server,
+    Program,
+    File,
+    FolderClosed,
+    FolderUp
 };
+
+// `icon` in a line of text, as wide as the font is high, in `col`.
+void inlineIcon(Icon icon, ImU32 col);
 
 // A small square button showing `icon`, its tooltip `tip`; true when clicked.
 bool iconOnlyButton(const char* id, Icon icon, const char* tip, bool enabled = true);

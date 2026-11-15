@@ -238,7 +238,10 @@ struct MockServer::Connection {
     std::map<std::string, Handle> handles;
     int next_handle = 0;
 
-    Connection(MockServer& s, net::Handle fd) : server(s), socket(std::make_unique<net::Socket>(fd)) {}
+    int cuts_seen = 0;
+
+    Connection(MockServer& s, net::Handle fd)
+        : server(s), socket(std::make_unique<net::Socket>(fd)), cuts_seen(s.cuts_) {}
 
     // --- The packets ---
 
@@ -263,6 +266,15 @@ struct MockServer::Connection {
     // The next message; nullopt once the client is gone or the server stops.
     std::optional<std::string> next() {
         while (!gone && !server.quit_) {
+            if (server.cuts_ != cuts_seen) {
+                socket->shutdownBoth();  // the network cut: no goodbye
+                gone = true;
+                break;
+            }
+            if (server.frozen_) {
+                std::this_thread::sleep_for(20ms);
+                continue;
+            }
             std::string payload;
             const auto r = rx.open(in, seq_rx, payload);
             if (r == PacketCipher::Open::Bad) throw failure("bad packet from the client");
@@ -409,6 +421,12 @@ struct MockServer::Connection {
                     send(Writer().byte(CHANNEL_OPEN_FAILURE).u32(sender).u32(3).string("no").string("").take());
                     return true;
                 }
+                if (server.options_.max_sessions > 0 &&
+                    static_cast<int>(channels.size()) >= server.options_.max_sessions) {
+                    ++server.refused_channels;
+                    send(Writer().byte(CHANNEL_OPEN_FAILURE).u32(sender).u32(1).string("open failed").string("").take());
+                    return true;
+                }
                 const auto id = next_channel++;
                 auto& c       = channels[id];
                 c.peer        = sender;
@@ -480,7 +498,7 @@ struct MockServer::Connection {
                 if (it != channels.end() && it->second.kind == Channel::Kind::Talk && !it->second.finished) {
                     bool ended = false;
                     it->second.out += it->second.talk({}, true, ended);
-                    it->second.finished = true;
+                    it->second.finished = ended;  // a program may go on without its input
                 }
                 return true;
             }
@@ -825,18 +843,24 @@ std::string MockServer::error() const {
 }
 
 void MockServer::serve() {
+    std::vector<std::thread> threads;
     while (!quit_) {
         const auto fd = listener_->tcp.accept(50);
         if (!fd) continue;
         ++connections;
-        try {
-            Connection connection(*this, *fd);
-            connection.run();
-        } catch (const std::exception& e) {
-            std::lock_guard<std::mutex> lock(mutex_);
-            if (error_.empty()) error_ = e.what();
-        }
+        threads.emplace_back([this, fd = *fd] {
+            ++live;
+            try {
+                Connection connection(*this, fd);
+                connection.run();
+            } catch (const std::exception& e) {
+                std::lock_guard<std::mutex> lock(mutex_);
+                if (error_.empty()) error_ = e.what();
+            }
+            --live;
+        });
     }
+    for (auto& t : threads) t.join();
 }
 
 }  // namespace fcg::ssh

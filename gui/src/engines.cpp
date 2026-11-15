@@ -1,4 +1,6 @@
 #include "engines.hpp"
+
+#include "engine_relay.hpp"
 #include "i18n.hpp"
 #include "wb2uci.hpp"
 
@@ -12,6 +14,9 @@
 #include <sstream>
 
 #include <engine/compliance.hpp>
+#ifdef _WIN32
+#    include <argv_split.hpp>  // fastchess' process has it on POSIX only
+#endif
 #include <engine/uci_engine.hpp>
 #include <tour/engine_text.hpp>
 #include <tour/game_db.hpp>
@@ -91,6 +96,7 @@ std::optional<UciOptionInfo> parseUciOption(std::string_view line) {
 bool programNeedsCrc(EngineEntry& entry) {
     namespace fs = std::filesystem;
     std::error_code ec;
+    if (!entry.machine.empty()) return false;  // its program is on its machine: its SHA-256 there tells (remote_sha)
     if (entry.cmd.empty()) {
         entry.program_state = ProgramState::Unknown;
         return false;
@@ -207,8 +213,43 @@ std::string toUtf8(std::string text) {
 }
 
 std::string engineWorkingDir(const EngineEntry& entry) {
+    if (!entry.machine.empty()) return std::filesystem::temp_directory_path().string();  // the relay's: any will do
     if (!entry.dir.empty()) return entry.dir;
     return std::filesystem::path(entry.cmd).parent_path().string();
+}
+
+std::vector<std::string> splitArguments(const std::string& args) {
+    if (args.find_first_not_of(' ') == std::string::npos) return {};
+    argv_split parser;  // without a program name first
+    parser.parse(args);
+    return parser.getArguments();
+}
+
+std::string joinArguments(const std::vector<std::string>& args) {
+    std::string out;
+    for (const auto& a : args) {
+        if (!out.empty()) out += ' ';
+        if (!a.empty() && a.find_first_of(" \t\"'") == std::string::npos) {
+            out += a;
+        } else {
+            const char quote = a.find('"') == std::string::npos ? '"' : '\'';
+            out += quote + a + quote;
+        }
+    }
+    return out;
+}
+
+std::optional<tour::RemoteEngine> remoteEngine(const EngineEntry& entry) {
+    if (entry.machine.empty()) return std::nullopt;
+    return tour::RemoteEngine{entry.machine, entry.cmd, splitArguments(entry.args), entry.dir};
+}
+
+EngineStart engineStart(const EngineEntry& entry) {
+    if (const auto remote = remoteEngine(entry)) {
+        return {fastchess::engine::xboard_adapter, std::string(relay::FLAG) + " " + relay::keyOf(*remote),
+                engineWorkingDir(entry)};
+    }
+    return {entry.cmd, entry.args, engineWorkingDir(entry)};
 }
 
 std::string detectProtocol(const EngineEntry& entry) {
@@ -217,7 +258,8 @@ std::string detectProtocol(const EngineEntry& entry) {
 
     fastchess::engine::process::Process process;
     process.setRealtimeLogging(false);
-    if (!process.init(engineWorkingDir(entry), entry.cmd, entry.args, "detect")) return "uci";
+    const auto launch = engineStart(entry);
+    if (!process.init(launch.dir, launch.cmd, launch.args, "detect")) return "uci";
 
     // A UCI engine answers uciok, possibly after loading a network. A WinBoard engine answers protover 2 with its
     // features; one of protocol 1 says nothing, but it usually complains about "uci" first.
@@ -300,12 +342,12 @@ ProbeResult probeEngine(const EngineEntry& entry, const std::atomic_bool* interr
     ProbeResult result;
 
     std::error_code ec;
-    if (!std::filesystem::is_regular_file(entry.cmd, ec)) {
+    if (entry.machine.empty() && !std::filesystem::is_regular_file(entry.cmd, ec)) {
         result.error = trf("File not found: {}", entry.cmd);
         return result;
     }
 
-    result.program  = tour::fingerprint(entry.cmd);
+    if (entry.machine.empty()) result.program = tour::fingerprint(entry.cmd);
     result.protocol = entry.protocol.empty() ? detectProtocol(entry) : entry.protocol;
     // Interrupted while the protocol was found out: what it found is not the engine's.
     if (interrupted && *interrupted) {
@@ -314,11 +356,12 @@ ProbeResult probeEngine(const EngineEntry& entry, const std::atomic_bool* interr
     }
 
     fastchess::EngineConfiguration config;
-    config.name     = entry.name.empty() ? std::filesystem::path(entry.cmd).stem().string() : entry.name;
-    config.cmd      = entry.cmd;
-    config.args     = entry.args;
-    config.dir      = engineWorkingDir(entry);
-    config.protocol = result.protocol;
+    const auto start = engineStart(entry);
+    config.name      = entry.name.empty() ? std::filesystem::path(entry.cmd).stem().string() : entry.name;
+    config.cmd       = start.cmd;
+    config.args      = start.args;
+    config.dir       = start.dir;
+    config.protocol  = result.protocol;
 
     config.start_timeout_ms = entry.start_timeout * 1000LL;
 
@@ -509,17 +552,18 @@ CheckResult checkEngine(const EngineEntry& entry, const std::atomic_bool* interr
     CheckResult result;
 
     fastchess::EngineConfiguration config;
-    config.name     = entry.name.empty() ? std::filesystem::path(entry.cmd).stem().string() : entry.name;
-    config.cmd      = entry.cmd;
-    config.args     = entry.args;
-    config.dir      = engineWorkingDir(entry);
-    config.options  = tour::forEngine(entry.options);
-    config.protocol = entry.protocol;
+    const auto start = engineStart(entry);
+    config.name      = entry.name.empty() ? std::filesystem::path(entry.cmd).stem().string() : entry.name;
+    config.cmd       = start.cmd;
+    config.args      = start.args;
+    config.dir       = start.dir;
+    config.options   = tour::forEngine(entry.options);
+    config.protocol  = entry.protocol;
 
     config.start_timeout_ms = entry.start_timeout * 1000LL;
 
     std::error_code ec;
-    if (!std::filesystem::is_regular_file(entry.cmd, ec)) {
+    if (entry.machine.empty() && !std::filesystem::is_regular_file(entry.cmd, ec)) {
         result.message = trf("File not found: {}", entry.cmd);
         return result;
     }
@@ -557,6 +601,18 @@ CheckResult checkEngine(const EngineEntry& entry, const std::atomic_bool* interr
         if (engine.isready().code != fastchess::engine::process::Status::OK)
             return fail(TR("The engine does not answer isready."));
         const auto ready_ms = duration_cast<microseconds>(steady_clock::now() - t1).count() / 1000.0;
+        // On a machine: the round trip, the median of a few more (the first includes what the engine does once).
+        if (!entry.machine.empty()) {
+            std::vector<double> times;
+            for (int i = 0; i < 9; ++i) {
+                const auto t = steady_clock::now();
+                if (engine.isready().code != fastchess::engine::process::Status::OK)
+                    return fail(TR("The engine does not answer isready."));
+                times.push_back(duration_cast<microseconds>(steady_clock::now() - t).count() / 1000.0);
+            }
+            std::nth_element(times.begin(), times.begin() + times.size() / 2, times.end());
+            result.round_trip_ms = times[times.size() / 2];
+        }
 
         // A short search from the initial position: the move must be legal.
         chess::Board board;
@@ -575,6 +631,7 @@ CheckResult checkEngine(const EngineEntry& entry, const std::atomic_bool* interr
         engine.quit();
         result.ok      = true;
         result.message = trf("Starts in {} ms · isready {:.1f} ms · first move {}", start_ms, ready_ms, *best);
+        if (result.round_trip_ms > 0) result.message += trf(" · round trip {:.1f} ms", result.round_trip_ms);
 
         if (interrupted && *interrupted) return fail("interrupted");
         if (config.protocol != "xboard") {

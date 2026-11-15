@@ -85,15 +85,20 @@ std::string resolvedList(const std::string& paths, const fs::path& base) {
 std::string stored(const std::string& path) { return stored(path, g_base); }
 std::string resolved(const std::string& path) { return resolved(path, g_base); }
 
+// An engine on a machine: its program and folder are paths there, left as they are; this computer's are kept aside.
 EngineEntry stored(EngineEntry engine) {
-    engine.cmd = stored(engine.cmd);
-    engine.dir = stored(engine.dir);
+    auto& cmd = engine.machine.empty() ? engine.cmd : engine.local_cmd;
+    auto& dir = engine.machine.empty() ? engine.dir : engine.local_dir;
+    cmd       = stored(cmd);
+    dir       = stored(dir);
     return engine;
 }
 
 void resolve(EngineEntry& engine) {
-    engine.cmd = resolved(engine.cmd);
-    engine.dir = resolved(engine.dir);
+    auto& cmd = engine.machine.empty() ? engine.cmd : engine.local_cmd;
+    auto& dir = engine.machine.empty() ? engine.dir : engine.local_dir;
+    cmd       = resolved(cmd);
+    dir       = resolved(dir);
 }
 
 BookEntry stored(BookEntry book) {

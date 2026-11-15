@@ -41,6 +41,19 @@ struct FileFingerprint {
 // the size is the same and the modification time differs.
 [[nodiscard]] bool changedSince(const std::string& file, const FileFingerprint& recorded);
 
+// An engine that runs on a remote machine (the window's Machines), played from this computer through the engine hub of
+// the process that plays the tournament: the machine's id, the program there, its arguments as fastchess splits them,
+// its working folder there (empty: the program's folder).
+struct RemoteEngine {
+    std::string machine;
+    std::string program;
+    std::vector<std::string> args;
+    std::string dir;
+    bool operator==(const RemoteEngine&) const = default;
+};
+void to_json(nlohmann::json& j, const RemoteEngine& r);
+void from_json(const nlohmann::json& j, RemoteEngine& r);
+
 struct Participant {
     int id = 0;  // never reused within a tournament
 
@@ -66,6 +79,10 @@ struct Participant {
     bool gpu = false;
     // A team match: 0 for team A, 1 for team B. A replacement takes the team of the participant it replaces.
     int team = 0;
+    // Its engine runs on a machine: `engine` starts its relay (fastchess-gui --remote-engine), which the engine hub of
+    // the process playing the tournament serves with this engine. Its program is not a file here, so it has no
+    // fingerprint. Saved only when set.
+    std::optional<RemoteEngine> remote;
 };
 
 struct TournamentSpec {

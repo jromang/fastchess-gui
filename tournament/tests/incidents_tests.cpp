@@ -113,3 +113,36 @@ TEST_CASE("incidents: by engine, the losers named, the losses on time in the fir
     CHECK(found.engines[2].illegal_moves == 1);
     fs::remove_all(root);
 }
+
+TEST_CASE("incidents: a game an engine on a machine lost to the network is not its crash") {
+    const auto root = fs::temp_directory_path() / "fcg-tour-incidents-network";
+    fs::remove_all(root);
+    const auto dir = tournament(root, "20261115-100000_net");
+    const auto lost = [&](uint32_t encounter, int g) {
+        const nlohmann::json event = {{"t", "game_finished"},
+                                      {"encounter", encounter},
+                                      {"game", g},
+                                      {"white", 0},
+                                      {"black", 1},
+                                      {"result", "1-0"},
+                                      {"termination", static_cast<int>(MatchTermination::DISCONNECT)},
+                                      {"reason", "x"},
+                                      {"at", 5000}};
+        std::ofstream(dir / "journal.jsonl", std::ios::app) << event.dump() << "\n";
+    };
+    lost(0, 0);
+    lost(0, 1);
+    const nlohmann::json voided = {{"t", "games_voided"},
+                                   {"games", nlohmann::json::array({nlohmann::json::array({0, 1})})},
+                                   {"replay", true},
+                                   {"why", "connection to its machine lost: gpu-box"},
+                                   {"network", true},
+                                   {"machine", "gpu-box"}};
+    std::ofstream(dir / "journal.jsonl", std::ios::app) << voided.dump() << "\n";
+
+    IncidentScanner scanner;
+    const auto found = scanner.scan(root, 0);
+    CHECK(found.crashes == 1);  // game (0, 0) only
+    CHECK(found.network_cuts == 1);
+    fs::remove_all(root);
+}

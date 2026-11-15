@@ -691,7 +691,7 @@ fs::path programFor(const EngineEntry& engine, const Machine& machine) {
     if (const auto* there = machine.engine(engine.name); there && !there->local_build.empty()) {
         return there->local_build;
     }
-    return engine.cmd;
+    return engine.machine.empty() ? engine.cmd : engine.local_cmd;  // an engine that runs on a machine: its build here
 }
 
 std::string engineFolderThere(const Machine& machine, const std::string& engine) {

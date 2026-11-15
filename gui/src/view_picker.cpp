@@ -242,6 +242,14 @@ void App::setupParticipants() {
 
             const auto entry =
                 std::find_if(engines_.begin(), engines_.end(), [&](const EngineEntry& e) { return e.name == p.name; });
+            // An engine that runs on a machine: the machine's name after its own.
+            if (entry != engines_.end() && !entry->machine.empty()) {
+                const auto* m = machineById(entry->machine);
+                ImGui::SameLine();
+                ui::inlineIcon(ui::Icon::Server, ui::MUTED);
+                ImGui::SameLine(0, 0);
+                ImGui::TextDisabled("%s", m ? (m->name.empty() ? m->host : m->name).c_str() : "?");
+            }
             const auto differences = participantDifferences(p, setup_);
             std::string note;
             for (const auto& d : differences) note += (note.empty() ? "" : " · ") + d;

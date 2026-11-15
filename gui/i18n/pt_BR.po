@@ -23,6 +23,9 @@ msgstr " · UCI: {} etapas aprovadas"
 msgid " · affinity"
 msgstr " · afinidade"
 
+msgid " · round trip {:.1f} ms"
+msgstr " · ida e volta {:.1f} ms"
+
 msgid " — not a UCI engine? For a WinBoard engine, choose the WinBoard protocol."
 msgstr " — não é um engine UCI? Para um engine WinBoard, escolha o protocolo WinBoard."
 
@@ -209,8 +212,14 @@ msgstr "Um arquivo não tem nome."
 msgid "A file of your choice"
 msgstr "Um arquivo à sua escolha"
 
+msgid "A folder is chosen: open it, then Choose this folder."
+msgstr "Para escolher uma pasta: abra-a e depois clique em Escolher esta pasta."
+
 msgid "A folder of 12 SVG pictures named wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg and bK.svg … bP.svg: the white and black king, queen, rook, bishop, knight and pawn."
 msgstr "Uma pasta com 12 imagens SVG chamadas wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg e bK.svg … bP.svg: o rei, a dama, a torre, o bispo, o cavalo e o peão brancos e pretos."
+
+msgid "A folder of engines on {}"
+msgstr "Uma pasta de engines em {}"
 
 msgid "A format, a time control and the participants."
 msgstr "Um formato, um controle de tempo e os participantes."
@@ -289,6 +298,9 @@ msgstr "Já é participante."
 msgid "A participant's own, from its ⋯ menu, comes first."
 msgstr "O de um participante, do menu ⋯ dele, vem primeiro."
 
+msgid "A path there, typed or pasted, then Enter."
+msgstr "Um caminho lá, digitado ou colado, depois Enter."
+
 msgid "A pawn is on the first or the last rank."
 msgstr "Há um peão na primeira ou na última fileira."
 
@@ -306,6 +318,18 @@ msgstr "Um arquivo de chave privada, RSA ou Ed25519 (~/.ssh/id_ed25519): a frase
 
 msgid "A profile of this name: it is replaced."
 msgstr "Um perfil tem este nome: ele é substituído."
+
+msgid "A program of this computer…"
+msgstr "Um programa deste computador…"
+
+msgid "A program on {}"
+msgstr "Um programa em {}"
+
+msgid "A program on {}…"
+msgstr "Um programa em {}…"
+
+msgid "A program there… (a new engine of the library)"
+msgstr "Um programa de lá… (um novo engine da biblioteca)"
 
 msgid "A rating list's text or web page, Ordo, CSV (name,elo)"
 msgstr "Texto ou página web de uma lista de rating, Ordo, CSV (name,elo)"
@@ -400,6 +424,9 @@ msgstr "Adicionar todos os mostrados"
 msgid "Add an engine"
 msgstr "Adicionar um engine"
 
+msgid "Add an engine from {}…"
+msgstr "Adicionar um engine de {}…"
+
 msgid "Add an engine…"
 msgstr "Adicionar um motor…"
 
@@ -412,6 +439,9 @@ msgstr "Adicionar engines à biblioteca"
 msgid "Add the engine to test first: it is the first participant."
 msgstr "Adicione primeiro o engine a testar: ele é o primeiro participante."
 
+msgid "Add the programs of this folder"
+msgstr "Adicionar os programas desta pasta"
+
 msgid "Add the {}"
 msgstr "Adicionar os {}"
 
@@ -420,6 +450,9 @@ msgstr "Adicionar a um grupo…"
 
 msgid "Add to the queue"
 msgstr "Adicionar à fila"
+
+msgid "Add {}"
+msgstr "Adicionar {}"
 
 msgid "Add {} engine"
 msgid_plural "Add {} engines"
@@ -437,6 +470,9 @@ msgstr "Adiciona à grade as colunas de uma execução anterior desta suíte, pa
 
 msgid "Add…"
 msgstr "Adicionar…"
+
+msgid "Add… ▾"
+msgstr "Adicionar… ▾"
 
 msgid "Adjudicate"
 msgstr "Adjudicar"
@@ -1040,6 +1076,9 @@ msgstr "ChessBase / Lichess: {[%eval 0.35,18] [%emt 0:00:01.234]}, avaliação d
 msgid "ChessGUI (ChsGUI_Eng.TXT), cutechess or Banksia (engines.json), Arena…"
 msgstr "ChessGUI (ChsGUI_Eng.TXT), cutechess ou Banksia (engines.json), Arena…"
 
+msgid "Choose"
+msgstr "Escolher"
+
 msgid "Choose a PGN file first."
 msgstr "Escolha primeiro um arquivo PGN."
 
@@ -1093,6 +1132,9 @@ msgstr "Escolher a compilação {} de {}…"
 
 msgid "Choose the {} build…"
 msgstr "Escolher a compilação {}…"
+
+msgid "Choose this folder"
+msgstr "Escolher esta pasta"
 
 msgid "Choose two different engines, or give them books of their own."
 msgstr "Escolha dois engines diferentes, ou dê a eles livros próprios."
@@ -1514,6 +1556,9 @@ msgstr "Vazio: um nome feito a partir dos engines."
 msgid "Empty: the program's directory."
 msgstr "Vazio: a pasta do programa."
 
+msgid "Empty: the program's folder on {}."
+msgstr "Vazio: a pasta do programa em {}."
+
 msgid "En passant"
 msgstr "En passant"
 
@@ -1586,6 +1631,9 @@ msgstr "Motores nesta máquina ({})"
 msgid "Engines' own books off"
 msgstr "Livros próprios dos engines desligados"
 
+msgid "Enter it now…"
+msgstr "Digitar agora…"
+
 msgid "Eraser"
 msgstr "Borracha"
 
@@ -1606,6 +1654,9 @@ msgstr "Todos os engines de novo"
 
 msgid "Every engine meets every other one, each time on two games with the same opening, colours reversed."
 msgstr "Cada engine enfrenta todos os outros, sempre em duas partidas com a mesma abertura, cores invertidas."
+
+msgid "Every engine of a folder on {}…"
+msgstr "Todos os engines de uma pasta em {}…"
 
 msgid "Every engine of a folder…"
 msgstr "Todos os engines de uma pasta…"
@@ -2044,6 +2095,9 @@ msgstr "Saúde"
 msgid "Held by Pause all: no tournament starts until Resume all."
 msgstr "Retida por Pausar tudo: nenhum torneio começa até Retomar tudo."
 
+msgid "Hidden files"
+msgstr "Arquivos ocultos"
+
 msgid "Hide"
 msgstr "Ocultar"
 
@@ -2425,8 +2479,14 @@ msgstr "Logo"
 msgid "Logs in, then tells the machine's system, threads, memory and free space, and whether fastchess-gui is installed in its folder."
 msgstr "Entra e depois informa o sistema da máquina, threads, memória e espaço livre, e se o fastchess-gui está instalado na pasta dela."
 
+msgid "Look again"
+msgstr "Ver de novo"
+
 msgid "Looking for {} on {}…"
 msgstr "Procurando {} em {}…"
+
+msgid "Looks for the program on {}."
+msgstr "Procura o programa em {}."
 
 msgid "Loss when an engine reports a score ≤ -threshold for N consecutive moves."
 msgstr "Derrota quando um engine indica uma avaliação ≤ -limite por N lances consecutivos."
@@ -2531,6 +2591,9 @@ msgstr "Erro"
 
 msgid "Model"
 msgstr "Modelo"
+
+msgid "Modified"
+msgstr "Modificado"
 
 msgid "More…"
 msgstr "Mais…"
@@ -2872,6 +2935,9 @@ msgstr "Da pontuação de uma partida. Pares: conforme medido nos pares."
 
 msgid "Off this machine's list (the engine stays in the library)."
 msgstr "Tirar da lista desta máquina (o motor continua na biblioteca)."
+
+msgid "On a machine"
+msgstr "Em uma máquina"
 
 msgid "On its error output:"
 msgstr "Na saída de erro dele:"
@@ -3309,6 +3375,9 @@ msgstr "Programa ausente"
 msgid "Program not found: {}"
 msgstr "Programa não encontrado: {}"
 
+msgid "Program there"
+msgstr "Programa lá"
+
 msgid "Programs"
 msgstr "Programas"
 
@@ -3421,6 +3490,9 @@ msgstr "Ler o início rápido"
 
 msgid "Reading the engine…"
 msgstr "Lendo o engine…"
+
+msgid "Reading the folder…"
+msgstr "Lendo a pasta…"
 
 msgid "Reading the games… {} %"
 msgstr "Lendo as partidas… {} %"
@@ -3615,14 +3687,26 @@ msgstr "Rodadas"
 msgid "Run as a test suite…"
 msgstr "Rodar como suíte de testes…"
 
+msgid "Run it on {}"
+msgstr "Rodar em {}"
+
 msgid "Run on"
 msgstr "Jogar em"
 
 msgid "Run the TLCS server"
 msgstr "Rodar o servidor TLCS"
 
+msgid "Run the tournament here"
+msgstr "Rodar o torneio aqui"
+
 msgid "Running"
 msgstr "Em andamento"
+
+msgid "Runs on"
+msgstr "Roda em"
+
+msgid "Runs on {}: {}"
+msgstr "Roda em {}: {}"
 
 msgid "R{}"
 msgstr "R{}"
@@ -3768,6 +3852,9 @@ msgstr "Servir a página web"
 msgid "Service:"
 msgstr "Serviço:"
 
+msgid "Set a margin of {} ms"
+msgstr "Definir uma margem de {} ms"
+
 msgid "Set by hand; the automatic choice would be {}."
 msgstr "Definido à mão; a escolha automática seria {}."
 
@@ -3799,6 +3886,12 @@ msgstr "Define a opção Threads de {} como {} na biblioteca de engines: todo to
 
 msgid "Settings"
 msgstr "Preferências"
+
+msgid "Settings > Machines: connects to {} and tells what goes wrong."
+msgstr "Preferências > Máquinas: conecta a {} e diz o que está errado."
+
+msgid "Settings > Machines: connects to {}, shows its host key and trusts it, and reads its system."
+msgstr "Preferências > Máquinas: conecta a {}, mostra a chave do host e confia nela, e lê o sistema da máquina."
 
 msgid "Settings > Machines: copies this computer's program of {} to {}, sets its path there and checks it."
 msgstr "Configurações > Máquinas: copia o programa de {} deste computador para {}, define o caminho dele lá e o verifica."
@@ -3835,6 +3928,9 @@ msgstr "Mostradas aqui enquanto são jogadas, e salvas em PGN em games/ no perfi
 
 msgid "Site"
 msgstr "Local"
+
+msgid "Size"
+msgstr "Tamanho"
 
 msgid "Software rendering"
 msgstr "Renderização por software"
@@ -4154,6 +4250,9 @@ msgstr "Teste primeiro a conexão com {} (Preferências > Máquinas): ela identi
 msgid "Test the connection to {} first: it tells the system the program must suit."
 msgstr "Teste primeiro a conexão com {}: ela informa o sistema ao qual o programa deve se adequar."
 
+msgid "Test {}"
+msgstr "Testar {}"
+
 msgid "Tested engines"
 msgstr "Engines testados"
 
@@ -4275,6 +4374,9 @@ msgstr "As cores das casas em todos os tabuleiros do programa, para o tema escol
 msgid "The connection to {} broke while {}."
 msgstr "A conexão com {} caiu (etapa: {})."
 
+msgid "The connection to {} broke."
+msgstr "A conexão com {} caiu."
+
 msgid "The connection with the tournament's process was lost."
 msgstr "A conexão com o processo do torneio foi perdida."
 
@@ -4341,6 +4443,9 @@ msgstr "Os engines discordam"
 msgid "The engines disagree: their evaluations differ by this much for 3 moves each in a row.\nAn evaluation swings: an engine's evaluation changes by this much from one of its moves to the next.\nLost after a winning score: the loser thought it was this much better.\nA game opens at that moment."
 msgstr "Os engines discordam: as avaliações deles diferem esse tanto por 3 lances seguidos de cada um.\nUma avaliação dá um salto: a avaliação de um engine muda esse tanto de um lance dele para o seguinte.\nPerdida após uma avaliação vencedora: o perdedor achava que estava esse tanto melhor.\nUma partida é aberta nesse momento."
 
+msgid "The engines on machines cannot be started: {}"
+msgstr "Os engines em máquinas não podem ser iniciados: {}"
+
 msgid "The engines that have a SyzygyPath option get these directories, those of the adjudication: otherwise each engine keeps its own setting."
 msgstr "Os engines que têm uma opção SyzygyPath recebem estas pastas, as da adjudicação: caso contrário, cada engine mantém sua própria configuração."
 
@@ -4373,6 +4478,9 @@ msgstr "Os primeiros são os cabeças de chave, os engines testados: jogam contr
 
 msgid "The first participant, {}, has no reference Elo."
 msgstr "O primeiro participante, {}, não tem Elo de referência."
+
+msgid "The folder above"
+msgstr "A pasta acima"
 
 msgid "The folder {} cannot be named in a Windows command: leave out quotes, % and '."
 msgstr "A pasta {} não pode ser usada num comando do Windows: evite aspas, % e '."
@@ -4440,6 +4548,9 @@ msgstr "O arquivo de chave {} não pode ser usado: {}"
 msgid "The key file {} needs its passphrase."
 msgstr "O arquivo de chave {} precisa da sua frase-senha."
 
+msgid "The key of {} needs its passphrase: Start asks for it once this session."
+msgstr "A chave de {} precisa da frase-senha: Iniciar a pede uma vez nesta sessão."
+
 msgid "The key of {} needs its passphrase: type it, then start again."
 msgstr "A chave de {} precisa da frase-senha: digite-a e inicie de novo."
 
@@ -4490,6 +4601,9 @@ msgstr "A máquina escolhida em “Jogar em” não está mais em Preferências 
 
 msgid "The machine is full: the tournament's games and the analysis use {} of its {} threads, and this game needs {}. It would slow them down, and its own engines."
 msgstr "A máquina está cheia: as partidas do torneio e a análise usam {} de seus {} threads, e esta partida precisa de {}. Ela as deixaria mais lentas, e também os próprios motores."
+
+msgid "The machine of this engine is not in Settings > Machines any more: choose where it runs on its card."
+msgstr "A máquina deste engine não está mais em Preferências > Máquinas: escolha onde ele roda na ficha dele."
 
 msgid "The machine runs Windows ({}): download fastchess-gui for Windows from the releases page, then choose its fastchess-gui.exe below."
 msgstr "A máquina roda Windows ({}): baixe o fastchess-gui para Windows na página de versões e escolha o fastchess-gui.exe abaixo."
@@ -4630,8 +4744,14 @@ msgstr "O programa de {} não foi encontrado: {}"
 msgid "The program of {} is not on this computer ({}): locate it on the Engines page first."
 msgstr "O programa de {} não está neste computador ({}): localize-o primeiro na página Motores."
 
+msgid "The program of {} on {}"
+msgstr "O programa de {} em {}"
+
 msgid "The programs of a folder can be added instead:"
 msgstr "Em vez disso, os programas de uma pasta podem ser adicionados:"
+
+msgid "The programs that can be run are in bold. A path can be typed or pasted."
+msgstr "Os programas que podem ser executados estão em negrito. Um caminho pode ser digitado ou colado."
 
 msgid "The queue ends about {} (in {})"
 msgstr "A fila termina por volta de {} (em {})"
@@ -4804,6 +4924,9 @@ msgstr "A janela desenhada pelo processador (o renderizador por software do SDL)
 msgid "The working directory of {} is not found: {}"
 msgstr "A pasta de trabalho de {} não foi encontrada: {}"
 
+msgid "The working folder of {} on {}"
+msgstr "A pasta de trabalho de {} em {}"
+
 msgid "The {} GPU lets {} game with an engine that uses a GPU play at a time; the other games play beside it."
 msgid_plural "The {} GPUs let {} games with an engine that uses a GPU play at a time; the other games play beside them."
 msgstr[0] "A {} GPU permite jogar {} partida com um motor que usa GPU ao mesmo tempo; as outras partidas são jogadas ao lado."
@@ -4883,6 +5006,15 @@ msgstr "Este torneio está sendo mostrado em outra janela."
 
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr "Este torneio foi iniciado sem \"Reiniciar um engine que der crash\" (configuração, PGN e outros): encerrar uma partida para o engine da vez, o que pararia o torneio. Defina o resultado quando a partida terminar, na aba Partidas."
+
+msgid "This tournament: its Run on, in Concurrency."
+msgstr "Este torneio: seu “Jogar em”, em Paralelismo."
+
+msgid "This tournament: the time an engine may go over its clock before it loses on time (its time control's Margin)."
+msgstr "Este torneio: o tempo que um engine pode passar do relógio antes de perder por tempo (a Margem do controle de tempo dele)."
+
+msgid "Those whose name starts with a dot."
+msgstr "Aqueles cujo nome começa com um ponto."
 
 msgid "Those with a problem"
 msgstr "As que têm problema"
@@ -5173,6 +5305,9 @@ msgstr "Onde os novos torneios são gravados, como em Preferências. Os jogados 
 msgid "Where the Syzygy files go on the machine, the engines' SyzygyPath there."
 msgstr "Onde ficam os arquivos Syzygy na máquina, o SyzygyPath dos motores lá."
 
+msgid "Where the engine runs when it plays from this computer: here, or on a machine of Settings > Machines, reached with SSH."
+msgstr "Onde o engine roda quando joga a partir deste computador: aqui, ou numa máquina de Preferências > Máquinas, acessada por SSH."
+
 msgid "Where the tournament plays: this computer, or a machine of Settings > Machines, followed from here as if it played here. Its engines play there at their paths there; its books and tablebases must be there (Settings > Machines > Books and tablebases)."
 msgstr "Onde o torneio roda: este computador, ou uma máquina de Preferências > Máquinas, acompanhado daqui como se rodasse aqui. Seus motores jogam lá com os caminhos de lá; seus livros e tablebases precisam estar lá (Preferências > Máquinas > Livros e tablebases)."
 
@@ -5301,6 +5436,9 @@ msgstr "Pasta de trabalho"
 msgid "Working directory not found: {}"
 msgstr "Pasta de trabalho não encontrada: {}"
 
+msgid "Working directory there"
+msgstr "Pasta de trabalho lá"
+
 msgid "Works"
 msgstr "Funciona"
 
@@ -5348,6 +5486,9 @@ msgstr "uma falha para o torneio"
 
 msgid "a different build there"
 msgstr "outra compilação lá"
+
+msgid "a machine no longer listed"
+msgstr "uma máquina que não está mais na lista"
 
 msgid "a machine removed"
 msgstr "uma máquina removida"
@@ -5443,6 +5584,9 @@ msgstr "xeque-mate"
 msgid "colours reversed of an earlier one"
 msgstr "cores invertidas de uma anterior"
 
+msgid "connected · {}"
+msgstr "conectada · {}"
+
 msgid "connecting"
 msgstr "conexão"
 
@@ -5531,6 +5675,9 @@ msgstr "fastchess-gui não instalado"
 
 msgid "fastchess-gui was copied to {}, but it does not start there: {}"
 msgstr "O fastchess-gui foi copiado para {}, mas não inicia lá: {}"
+
+msgid "fastchess-gui was not asked to start this engine on a machine."
+msgstr "O fastchess-gui não recebeu o pedido de iniciar este engine numa máquina."
 
 msgid "fastchess-gui {} installed in {} (protocol {})."
 msgstr "fastchess-gui {} instalado em {} (protocolo {})."
@@ -5684,6 +5831,9 @@ msgstr[1] "lances de {} partidas ou mais"
 msgid "nElo of A (95% CI)"
 msgstr "nElo de A (IC 95%)"
 
+msgid "never tested: test its connection in Settings > Machines"
+msgstr "nunca testada: teste a conexão dela em Preferências > Máquinas"
+
 msgid "new"
 msgstr "nova"
 
@@ -5719,6 +5869,9 @@ msgstr "nenhum: cada partida começa da posição inicial"
 msgid "normalized: bounds in nElo (fishtest, OpenBench). logistic: classic Elo. bayesian: BayesElo, without pentanomial."
 msgstr "normalized: limites em nElo (fishtest, OpenBench). logistic: Elo clássico. bayesian: BayesElo, sem pentanomial."
 
+msgid "not answering since {}"
+msgstr "sem resposta desde {}"
+
 msgid "not checked"
 msgstr "não verificado"
 
@@ -5731,8 +5884,14 @@ msgstr "não contado"
 msgid "not in the library"
 msgstr "não está na biblioteca"
 
+msgid "not tested"
+msgstr "não testada"
+
 msgid "not tested yet"
 msgstr "ainda não testada"
+
+msgid "on {}"
+msgstr "em {}"
 
 msgid "one opening per round"
 msgstr "uma abertura por rodada"
@@ -5762,6 +5921,9 @@ msgstr "pares"
 
 msgid "physical cores − 1, for a clock"
 msgstr "núcleos físicos − 1, para um relógio"
+
+msgid "played from here"
+msgstr "jogado daqui"
 
 msgid "players rated {} or more"
 msgstr "jogadores com Elo de {} ou mais"
@@ -5798,6 +5960,9 @@ msgstr "abandono {}/{} cp, os dois engines"
 
 msgid "round {}"
 msgstr "rodada {}"
+
+msgid "running a program"
+msgstr "execução de um programa"
 
 msgid "running {}"
 msgstr "execução de {}"
@@ -5870,6 +6035,9 @@ msgstr "só esta análise"
 
 msgid "this game does not count: it was voided, or is not over"
 msgstr "esta partida não conta: foi anulada, ou não terminou"
+
+msgid "this machine is no longer in Settings > Machines"
+msgstr "esta máquina não está mais em Preferências > Máquinas"
 
 msgid "this tournament"
 msgstr "este torneio"
@@ -6129,6 +6297,9 @@ msgstr "{} não informou seu sistema e processadores: {}"
 msgid "{} does not accept keys for user {} (it accepts: {}): turn on PubkeyAuthentication in its SSH server's configuration."
 msgstr "{} não aceita chaves para o usuário {} (aceita: {}): ative PubkeyAuthentication na configuração do servidor SSH dele."
 
+msgid "{} does not answer"
+msgstr "{} não responde"
+
 msgid "{} does not answer isready."
 msgstr "{} não responde a isready."
 
@@ -6182,6 +6353,11 @@ msgid "{} engine of the library in the PGN files"
 msgid_plural "{} engines of the library in the PGN files"
 msgstr[0] "{} motor da biblioteca nos arquivos PGN"
 msgstr[1] "{} motores da biblioteca nos arquivos PGN"
+
+msgid "{} engine playing"
+msgid_plural "{} engines playing"
+msgstr[0] "{} engine jogando"
+msgstr[1] "{} engines jogando"
 
 msgid "{} engine process running"
 msgid_plural "{} engine processes running"
@@ -6243,6 +6419,11 @@ msgid_plural "{} games could not be read: they are left out."
 msgstr[0] "{} partida não pôde ser lida: ela fica de fora."
 msgstr[1] "{} partidas não puderam ser lidas: elas ficam de fora."
 
+msgid "{} game cut by the network, played again"
+msgid_plural "{} games cut by the network, played again"
+msgstr[0] "{} partida interrompida pela rede, jogada de novo"
+msgstr[1] "{} partidas interrompidas pela rede, jogadas de novo"
+
 msgid "{} game exported to {}"
 msgid_plural "{} games exported to {}"
 msgstr[0] "{} partida exportada para {}"
@@ -6293,6 +6474,11 @@ msgid_plural "{} games recorded twice: the export keeps the first"
 msgstr[0] "{} partida registrada duas vezes: a exportação mantém a primeira"
 msgstr[1] "{} partidas registradas duas vezes: a exportação mantém a primeira"
 
+msgid "{} game voided, to be played again: the connection to its engine's machine broke."
+msgid_plural "{} games voided, to be played again: the connection to their engines' machine broke."
+msgstr[0] "{} partida anulada, a ser jogada de novo: a conexão com a máquina do engine dela caiu."
+msgstr[1] "{} partidas anuladas, a serem jogadas de novo: a conexão com a máquina dos engines delas caiu."
+
 msgid "{} games +{} ={} -{} · {} lost on time, {} crashes, {} illegal moves · {:.0f} % of its clock used"
 msgstr "{} partidas +{} ={} -{} · {} perdidas por tempo, {} crashes, {} lances ilegais · {:.0f}% do relógio usado"
 
@@ -6327,6 +6513,15 @@ msgstr "{} tem um caractere de controle, que o Windows não aceita em um nome de
 
 msgid "{} has a {}, which Windows does not take in a file name."
 msgstr "{} tem um {}, que o Windows não aceita em um nome de arquivo."
+
+msgid "{} has never been tested, so its host key is unknown and nothing was sent to it: test its connection first (Settings > Machines)."
+msgstr "A máquina {} nunca foi testada, então a chave do host dela é desconhecida e nada foi enviado a ela: teste primeiro a conexão dela (Preferências > Máquinas)."
+
+msgid "{} has never been tested: its host key is not known yet, so nothing is sent to it. Test its connection first, then look again."
+msgstr "A máquina {} nunca foi testada: a chave do host dela ainda não é conhecida, então nada é enviado a ela. Teste primeiro a conexão dela e depois veja de novo."
+
+msgid "{} has never been tested: its host key is unknown, and nothing is sent to it before."
+msgstr "A máquina {} nunca foi testada: a chave do host dela é desconhecida, e nada é enviado a ela antes do teste."
 
 msgid "{} has no algorithm in common with fastchess-gui (it needs curve25519-sha256, an RSA host key and AES)"
 msgstr "{} não tem nenhum algoritmo em comum com o fastchess-gui (é preciso curve25519-sha256, uma chave de host RSA e AES)"
@@ -6556,6 +6751,9 @@ msgstr "{} de {} para os motores"
 msgid "{} of {} in use"
 msgstr "{} de {} em uso"
 
+msgid "{} of {} on {}"
+msgstr "{} de {} em {}"
+
 msgid "{} of {} openings"
 msgstr "{} de {} aberturas"
 
@@ -6655,14 +6853,34 @@ msgid_plural "{} players that two library engines may be: say which one."
 msgstr[0] "{} jogador pode ser duas engines da biblioteca: diga qual."
 msgstr[1] "{} jogadores podem ser duas engines da biblioteca: diga qual."
 
+msgid "{} plays on {} (Check measures the round trip)"
+msgstr "{} joga em {} (Verificar mede o tempo de ida e volta)"
+
+msgid "{} plays on {} · round trip {:.1f} ms"
+msgstr "{} joga em {} · ida e volta {:.1f} ms"
+
+msgid "{} plays on {}, where the tournament runs"
+msgstr "{} joga em {}, onde o torneio roda"
+
 msgid "{} plays on {}, which is not in Settings > Machines any more."
 msgstr "{} roda em {}, que não está mais em Preferências > Máquinas."
+
+msgid "{} plays on {}: round trip {:.0f} ms, {} % of the time a move has, counted on its clock."
+msgstr "{} joga em {}: ida e volta de {:.0f} ms, {} % do tempo por lance, contados no relógio dele."
+
+msgid "{} plays on {}: round trip {:.0f} ms, {} % of the {} s increment, counted on its clock."
+msgstr "{} joga em {}: ida e volta de {:.0f} ms, {} % do incremento de {} s, contados no relógio dele."
 
 msgid "{} plays on {}: shown again."
 msgstr "{} roda em {}: mostrado de novo."
 
 msgid "{} plays on {}: test the connection there (Settings > Machines) to see it again."
 msgstr "{} roda em {}: teste a conexão lá (Preferências > Máquinas) para vê-lo de novo."
+
+msgid "{} plays there."
+msgid_plural "{} play there."
+msgstr[0] "{} joga lá."
+msgstr[1] "{} jogam lá."
 
 msgid "{} plays with its own settings: {}"
 msgstr "{} joga com suas configurações próprias: {}"
@@ -6741,6 +6959,18 @@ msgstr "{} rodadas × {} emparceiramentos × 2 partidas"
 msgid "{} runs commands with a shell fastchess-gui does not speak (PowerShell?): on Windows, make cmd the SSH server's shell again (remove the value DefaultShell of HKEY_LOCAL_MACHINE\\SOFTWARE\\OpenSSH)."
 msgstr "{} executa comandos com um shell que o fastchess-gui não fala (PowerShell?): no Windows, volte a usar o cmd como shell do servidor SSH (remova o valor DefaultShell de HKEY_LOCAL_MACHINE\\SOFTWARE\\OpenSSH)."
 
+msgid "{} runs on a machine that is no longer in Settings > Machines."
+msgstr "{} roda numa máquina que não está mais em Preferências > Máquinas."
+
+msgid "{} runs on another machine than {}: run the tournament here, or on its machine."
+msgstr "{} roda numa máquina diferente de {}: rode o torneio aqui, ou na máquina dele."
+
+msgid "{} runs on {} when it plays from this computer (its card's Runs on)."
+msgstr "{} roda em {} quando joga a partir deste computador (o “Roda em” da ficha dele)."
+
+msgid "{} runs on {}, and the tournament on {}: an engine on a machine plays from this computer, or on its machine."
+msgstr "{} roda em {}, e o torneio em {}: um engine numa máquina joga a partir deste computador, ou na própria máquina."
+
 msgid "{} s"
 msgstr "{} s"
 
@@ -6784,6 +7014,9 @@ msgstr "{} voltou a iniciar: as partidas dele são jogadas de novo."
 
 msgid "{} stays at {}."
 msgstr "{} fica em {}."
+
+msgid "{} stopped answering: the machine is off, or the network is down."
+msgstr "{} parou de responder: a máquina está desligada, ou a rede caiu."
 
 msgid "{} stopped."
 msgstr "{} parou."
@@ -6920,6 +7153,9 @@ msgstr "{}: um logo é uma imagem PNG, JPEG ou SVG."
 
 msgid "{}: cancelled, nothing written."
 msgstr "{}: cancelado, nada gravado."
+
+msgid "{}: cmd on {} cannot take one of its arguments (a double quote, a % or a line break)."
+msgstr "{}: o cmd em {} não aceita um dos argumentos dele (aspas duplas, um % ou uma quebra de linha)."
 
 msgid "{}: decision"
 msgstr "{}: decisão"
@@ -7079,3 +7315,6 @@ msgstr "✓ novo padrão"
 
 msgid "✓ works · ! problem · Δ program changed · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right click: more"
 msgstr "✓ funciona · ! problema · Δ programa alterado · ↔ WinBoard · cinza: inativo · clique com Ctrl ou Shift: vários · clique direito: mais"
+
+msgid "✓ works · ! problem · Δ program changed · ↔ WinBoard · then a machine's name: runs there · grey: inactive · Ctrl or Shift click: several · right click: more"
+msgstr "✓ funciona · ! problema · Δ programa alterado · ↔ WinBoard · depois o nome de uma máquina: roda lá · cinza: inativo · clique com Ctrl ou Shift: vários · clique direito: mais"

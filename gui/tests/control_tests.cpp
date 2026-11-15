@@ -218,3 +218,23 @@ TEST_CASE("control: totals, statistics and allowances come back the same; lines 
     REQUIRE(lines.size() == 1);
     CHECK(lines[0] == "ok");
 }
+
+TEST_CASE("control: the machines a tournament's engines run on, in its status, read back and compared") {
+    control::Status s;
+    control::Status::Machine m;
+    m.id          = "gpu1";
+    m.name        = "gpu-box";
+    m.connections = 0;
+    m.engines     = 0;
+    m.error       = "gpu-box stopped answering: the machine is off, or the network is down.";
+    m.since       = 1794770000;
+    s.machines.push_back(m);
+    const auto back = control::statusFromJson(control::statusJson(s));
+    REQUIRE(back.machines.size() == 1);
+    CHECK(back.machines[0] == m);
+    CHECK(back == s);
+    auto other                   = s;
+    other.machines[0].connections = 1;
+    CHECK_FALSE(other == s);  // sent again when a machine comes back
+    CHECK_FALSE(control::statusJson(control::Status{}).contains("machines"));
+}

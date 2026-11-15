@@ -29,14 +29,15 @@ using fastchess::engine::process::Status;
 
 EngineLaunch engineLaunch(const EngineEntry& entry, bool raw) {
     EngineLaunch launch;
-    launch.name    = entry.name;
-    launch.dir     = engineWorkingDir(entry);
-    launch.program = entry.cmd;
-    launch.args    = entry.args;
+    const auto start = engineStart(entry);
+    launch.name      = entry.name;
+    launch.dir       = start.dir;
+    launch.program   = start.cmd;
+    launch.args      = start.args;
     // As fastchess starts it in a tournament (UciEngine::start), the program quoted for the adapter.
     if (!raw && entry.protocol == "xboard" && !fastchess::engine::xboard_adapter.empty()) {
         launch.program = fastchess::engine::xboard_adapter;
-        launch.args    = fmt::format("--wb2uci \"{}\"{}{}", entry.cmd, entry.args.empty() ? "" : " ", entry.args);
+        launch.args    = fmt::format("--wb2uci \"{}\"{}{}", start.cmd, start.args.empty() ? "" : " ", start.args);
     }
     return launch;
 }

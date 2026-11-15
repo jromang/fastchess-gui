@@ -5,7 +5,10 @@
 #include <chrono>
 #include <csignal>
 #include <cstdio>
+#include <deque>
+#include <map>
 #include <mutex>
+#include <set>
 #include <optional>
 #include <thread>
 
@@ -21,7 +24,9 @@
 #include "broadcaster.hpp"
 #include "console.hpp"
 #include "control_child.hpp"
+#include "engine_hub.hpp"
 #include "engine_logos.hpp"
+#include "machines.hpp"
 #include "memory.hpp"
 #include "portable.hpp"
 #include "run.hpp"
@@ -36,6 +41,70 @@
 namespace fcg {
 
 namespace {
+
+// The engine hub of a tournament process: started once its spec has engines on machines, told which, and put in the
+// environment of fastchess' engines; the passphrases the window sends kept for it, in memory only.
+class TournamentHub {
+   public:
+    explicit TournamentHub(const Storage& storage) : storage_(storage) { clearHubEnvironment(); }
+    ~TournamentHub() {
+        for (auto& [file, secret] : passphrases_) wipeText(secret);
+    }
+    TournamentHub(const TournamentHub&)            = delete;
+    TournamentHub& operator=(const TournamentHub&) = delete;
+
+    // Started if needed and told the engines; why it could not start, empty when it did or need not.
+    std::string sync(const tour::TournamentSpec& spec) {
+        std::vector<tour::RemoteEngine> remote;
+        for (const auto& p : spec.participants) {
+            if (p.remote) remote.push_back(*p.remote);
+        }
+        if (remote.empty() && !hub_) return {};
+        if (!hub_) {
+            EngineHub::Options options;
+            options.profile = storage_.root();
+            auto hub        = std::make_unique<EngineHub>(options);
+            std::string error;
+            if (!hub->start(error)) return error;
+            hub->exportEnvironment();
+            for (const auto& [file, secret] : passphrases_) hub->setPassphrase(file, secret);
+            hub_ = std::move(hub);
+        }
+        hub_->allow(remote);
+        return {};
+    }
+    void setPassphrase(const std::string& key_file, const std::string& passphrase) {
+        wipeText(passphrases_[key_file]);
+        passphrases_[key_file] = passphrase;
+        if (hub_) hub_->setPassphrase(key_file, passphrase);
+    }
+    [[nodiscard]] EngineHub* hub() { return hub_.get(); }
+
+    // The machines of its engines whose key needs a passphrase, which a terminal's --run cannot ask for.
+    [[nodiscard]] std::vector<std::string> lockedMachines(const tour::TournamentSpec& spec) const {
+        std::vector<std::string> out;
+        const auto machines = loadMachines(storage_.root());
+        for (const auto& p : spec.participants) {
+            if (!p.remote) continue;
+            for (const auto& m : machines) {
+                if (m.id != p.remote->machine || m.auth != SshAuth::KeyFile) continue;
+                const auto name = m.name.empty() ? m.host : m.name;
+                if (inspectKeyFile(m.key_file).encrypted && std::find(out.begin(), out.end(), name) == out.end())
+                    out.push_back(name);
+            }
+        }
+        return out;
+    }
+
+   private:
+    static void wipeText(std::string& s) {
+        for (auto& c : s) c = '\0';
+        s.clear();
+    }
+    const Storage& storage_;
+    std::unique_ptr<EngineHub> hub_;
+    std::map<std::string, std::string> passphrases_;
+};
 
 void onSignal(int) { fastchess::atomic::stop = true; }
 
@@ -385,6 +454,19 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
     }
     std::printf("Ctrl+C stops it; it resumes where it stopped with --run on the folder.\n\n");
 
+    // Its engines on machines: the hub of this process.
+    TournamentHub engine_hub(storage);
+    if (const auto error = engine_hub.sync(state->spec()); !error.empty()) {
+        std::fprintf(stderr, "error: the engines on machines cannot be started: %s\n", error.c_str());
+        return 2;
+    }
+    for (const auto& name : engine_hub.lockedMachines(state->spec())) {
+        std::fprintf(stderr,
+                     "warning: the key of %s needs its passphrase, which a terminal's --run does not ask for: add it "
+                     "to the SSH agent (ssh-add), or start the tournament from the window\n",
+                     name.c_str());
+    }
+
     ConsoleListener listener(*state);
     listener.setAlready(played);
 
@@ -646,6 +728,11 @@ int runControlled(const std::string& target, const Storage& storage, const Headl
         }
     }
 
+    // Its engines on machines: the hub of this process, told again after each edit, given the window's passphrases.
+    TournamentHub engine_hub(storage);
+    if (const auto error = engine_hub.sync(state->spec()); !error.empty()) {
+        console.add(fmt::format("The engines on machines cannot be started: {}", error), true);
+    }
     ControlObserver observer(*channel, *state);
     state->setJournalListener([&channel](uint64_t at, uint64_t last, const nlohmann::json& event) {
         channel->send("journal", {{"at", at}, {"end", last}, {"event", event}});
@@ -689,11 +776,15 @@ int runControlled(const std::string& target, const Storage& storage, const Headl
             } else if (kind == "edit") {
                 state->applyEdit(c.at("edit").get<tour::Edit>());
                 observer.live().updateParticipants(state->spec());
+                (void)engine_hub.sync(state->spec());
                 reply(c, {});
             } else if (kind == "undo") {
                 state->undoEdit();
                 observer.live().updateParticipants(state->spec());
+                (void)engine_hub.sync(state->spec());
                 reply(c, {});
+            } else if (kind == "passphrase") {
+                engine_hub.setPassphrase(c.at("key_file").get<std::string>(), c.at("passphrase").get<std::string>());
             } else if (kind == "end_game") {
                 const auto number = c.at("number").get<uint64_t>();
                 if (!state->spec().conditions.recover) throw std::runtime_error("no restart of crashed engines");
@@ -719,6 +810,78 @@ int runControlled(const std::string& target, const Storage& storage, const Headl
         }
     };
 
+    // Games that lost an engine on a machine to a broken connection: voided and played again once they have their
+    // result (the engine's end made them a loss). A machine cut more than CUTS_PER_HOUR times in an hour has its
+    // engines set aside, as engines that cannot start, rather than games played and voided again and again.
+    struct CutGame {
+        uint64_t number = 0;
+        std::string machine;
+        Clock::time_point since;
+    };
+    std::vector<CutGame> cut_games;
+    // A cut's relays, looked for a while: a game may start on one of them, which ends with its cut connection.
+    struct RecentCut {
+        std::vector<int64_t> pids;
+        std::string machine;
+        std::chrono::system_clock::time_point since;
+        Clock::time_point until;
+        std::set<uint64_t> seen;
+    };
+    std::vector<RecentCut> recent_cuts;
+    std::map<std::string, std::deque<Clock::time_point>> cut_times;  // by machine id
+    constexpr std::size_t CUTS_PER_HOUR = 3;
+    const auto handleCuts = [&] {
+        auto* hub = engine_hub.hub();
+        if (!hub) return;
+        const auto now = Clock::now();
+        for (const auto& cut : hub->takeCuts()) {
+            std::string name = cut.machine;
+            for (const auto& m : hub->machines()) {
+                if (m.id == cut.machine) name = m.name;
+            }
+            console.add(fmt::format("The connection to {} broke: the games its engines lose for it are played again "
+                                    "({})",
+                                    name, cut.reason),
+                        true);
+            // The games its engines played then: in progress, or ended a moment before it was told.
+            recent_cuts.push_back({cut.pids, name, cut.when - std::chrono::seconds(10), now + std::chrono::seconds(30), {}});
+            auto& times = cut_times[cut.machine];
+            times.push_back(now);
+            while (!times.empty() && now - times.front() > std::chrono::hours(1)) times.pop_front();
+            if (times.size() > CUTS_PER_HOUR) {
+                times.clear();
+                for (const auto& p : state->spec().participants) {
+                    if (!p.active || !p.remote || p.remote->machine != cut.machine) continue;
+                    state->startFailures().setAside(
+                        p.id, p.engine.name,
+                        fmt::format("the connection to {} broke more than {} times in an hour", name, CUTS_PER_HOUR),
+                        tour::StartFailures::Clock::now());
+                }
+            }
+        }
+        for (auto& cut : recent_cuts) {
+            for (const auto n : observer.live().gamesOfProcesses(cut.pids, cut.since)) {
+                if (cut.seen.insert(n).second) cut_games.push_back({n, cut.machine, now});
+            }
+        }
+        std::erase_if(recent_cuts, [&](const RecentCut& c) { return now > c.until; });
+        for (auto it = cut_games.begin(); it != cut_games.end();) {
+            if (const auto result = state->resultOf(it->number)) {
+                // Lost by the engine's end (its relay went with the connection): played again. A game that ended
+                // otherwise was not the cut's.
+                if (result->termination == fastchess::MatchTermination::DISCONNECT ||
+                    result->termination == fastchess::MatchTermination::STALL) {
+                    (void)state->voidCutGames({it->number}, it->machine);
+                }
+                it = cut_games.erase(it);
+            } else if (now - it->since > std::chrono::minutes(5)) {
+                it = cut_games.erase(it);  // never got a result: given up, or played again already
+            } else {
+                ++it;
+            }
+        }
+    };
+
     // The control loop: the window's commands, the searches held back, the state when it changes.
     std::thread loop([&] {
         control::Status last;
@@ -734,6 +897,7 @@ int runControlled(const std::string& target, const Storage& storage, const Headl
                 next_state = Clock::now();
             }
             for (const auto& c : channel->takeCommands()) handle(c);
+            handleCuts();
             // The window went away without a word (closed, crashed): the tournament stops, resumable.
             if (channel->closed() && control.mode == ControlOptions::Mode::Stdio && !fastchess::atomic::stop) {
                 console.add("The window went away: the tournament stops, to be resumed.", true);
@@ -756,6 +920,21 @@ int runControlled(const std::string& target, const Storage& storage, const Headl
                 st.stop_idle     = stop_idle;
                 st.stopping      = fastchess::atomic::stop;
                 st.running_games = gate.running();
+                if (auto* hub = engine_hub.hub()) {
+                    for (const auto& m : hub->machines()) {
+                        control::Status::Machine machine;
+                        machine.id          = m.id;
+                        machine.name        = m.name;
+                        machine.connections = m.connections;
+                        machine.engines     = m.engines;
+                        machine.error       = m.error;
+                        if (!m.error.empty())
+                            machine.since = std::chrono::duration_cast<std::chrono::seconds>(
+                                                m.since.time_since_epoch())
+                                                .count();
+                        st.machines.push_back(std::move(machine));
+                    }
+                }
                 st.open_pairs    = static_cast<int>(gate.openPairs());
                 for (int i = 0; i < observer.live().slotCount(); ++i) {
                     SlotState slot;

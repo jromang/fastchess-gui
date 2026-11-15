@@ -71,6 +71,9 @@ class StartFailures {
 
     // The engine of `participant` started: its games come back. True when it was failing.
     bool started(int participant);
+    // `participant`'s engine (`name`) is set aside now as if its tries were used up, with `error`: its machine keeps
+    // breaking off. Tried again every RETRY_EVERY, or at once when asked, as a failed engine is.
+    void setAside(int participant, const std::string& name, const std::string& error, Clock::time_point now);
 
     // Game `game` of `participant` was claimed: when its engine waits for a try, this is it.
     void claimed(int participant, uint64_t game);

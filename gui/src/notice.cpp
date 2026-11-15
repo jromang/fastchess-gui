@@ -95,6 +95,37 @@ Fix copyToMachineFix(const std::string& engine, const std::string& machine_id, c
     return f;
 }
 
+Fix testMachineFix(const std::string& machine_id, const std::string& machine_name) {
+    auto f = make(Fix::Kind::TestMachine, trf("Test {}", machine_name),
+                  trf("Settings > Machines: connects to {}, shows its host key and trusts it, and reads its system.",
+                      machine_name));
+    f.path = machine_id;
+    return f;
+}
+
+Fix setRunOnFix(const std::string& machine_id, const std::string& machine_name) {
+    auto f = make(Fix::Kind::SetRunOn,
+                  machine_id.empty() ? std::string(TR("Run the tournament here")) : trf("Run it on {}", machine_name),
+                  TR("This tournament: its Run on, in Concurrency."));
+    f.path = machine_id;
+    return f;
+}
+
+Fix setMarginFix(int milliseconds) {
+    auto f  = make(Fix::Kind::SetMargin, trf("Set a margin of {} ms", milliseconds),
+                   TR("This tournament: the time an engine may go over its clock before it loses on time (its time "
+                      "control's Margin)."));
+    f.value = milliseconds;
+    return f;
+}
+
+Fix enterPassphraseFix(const std::string& machine_id) {
+    auto f = make(Fix::Kind::EnterPassphrase, TR("Enter it now…"),
+                  TR("Kept in memory until fastchess-gui ends, never saved."));
+    f.path = machine_id;
+    return f;
+}
+
 const char* noticeTopic(const Notice& notice) {
     if (notice.topic) return notice.topic;
     const char* topic = nullptr;
@@ -122,6 +153,12 @@ const char* noticeTopic(const Notice& notice) {
                 if (!topic) topic = guide::topics::Troubleshooting;
                 break;
             case Fix::Kind::OpenFolder:
+                break;
+            case Fix::Kind::TestMachine:
+            case Fix::Kind::SetRunOn:
+            case Fix::Kind::EnterPassphrase:
+            case Fix::Kind::SetMargin:
+                if (!topic) topic = guide::topics::RemoteEngines;
                 break;
         }
     }

@@ -94,6 +94,13 @@ void readWindowsProbe(const std::string& output, RemoteSystem& system);
 // The command that runs `program` with `args`, from the folder it is in (an engine's own files beside it).
 [[nodiscard]] std::optional<std::string> startCommand(RemoteShell shell, const std::string& program,
                                                       const std::string& args = {});
+// The command the engine hub starts an engine with: from `dir` (empty: the program's folder), each argument quoted on
+// its own, so that the shell runs nothing else; on a POSIX shell the process id is printed on a first line (the
+// shell's, which exec hands to the engine), for endProcessCommand(). nullopt when cmd cannot hold an argument.
+[[nodiscard]] std::optional<std::string> engineCommand(RemoteShell shell, const std::string& program,
+                                                       const std::vector<std::string>& args, const std::string& dir);
+// Ends the process `pid` of a POSIX machine: asked to (TERM), then made to a second later (KILL).
+[[nodiscard]] std::string endProcessCommand(int64_t pid);
 
 // An engine of the library, on a machine: the program's path there.
 struct MachineEngine {
@@ -220,6 +227,8 @@ inline constexpr int MAX_PUSHED_PIECES = 6;
 
 // The SHA-256 of a file, hexadecimal; empty when it cannot be read, or `cancel` turned true.
 [[nodiscard]] std::string sha256File(const std::filesystem::path& file, const std::atomic_bool* cancel = nullptr);
+// The SHA-256 of `data`, in lower case hexadecimal; empty when the cryptography cannot start.
+[[nodiscard]] std::string sha256Hex(std::string_view data);
 // The size and modification time of a file, as tour::fingerprint() reads them, without its CRC: what tells that a
 // program changed. All zero when it cannot be read.
 [[nodiscard]] tour::FileFingerprint fileStamp(const std::filesystem::path& file);

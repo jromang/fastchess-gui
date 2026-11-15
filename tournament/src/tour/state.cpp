@@ -311,7 +311,7 @@ std::unique_ptr<TournamentState> TournamentState::create(const fs::path& dir, To
 
     if (spec.pgn_file.empty() || spec.pgn_chessbase_file.empty()) namePgnFiles(spec);
     spec.book = fingerprint(spec.conditions.opening.file);
-    for (auto& p : spec.participants) p.program = fingerprint(p.engine.cmd);
+    for (auto& p : spec.participants) p.program = p.remote ? FileFingerprint{} : fingerprint(p.engine.cmd);
     replaceFile(dir / SPEC_FILE,
                 nlohmann::json(spec).dump(4, ' ', false, nlohmann::json::error_handler_t::replace) + "\n");
 
@@ -436,6 +436,7 @@ void TournamentState::load() {
         const auto& e = events[i];
         try {
             const auto type = e.at("t").get<std::string>();
+            if (type == "games_voided" && e.value("network", false)) network_voids_ += e.at("games").size();
             if (type == "encounter_started") {
                 OpeningText text{e.at("fen").get<std::string>(), e.value("moves", std::vector<std::string>{})};
                 const auto encounter = e.at("encounter").get<uint32_t>();
@@ -926,7 +927,7 @@ void TournamentState::applyEdit(const Edit& edit) {
     // The newcomer's program is read here rather than in editEvent(), which every preview calls.
     if (auto it = event.find("participant"); it != event.end() && it->is_object()) {
         auto p    = it->get<Participant>();
-        p.program = fingerprint(p.engine.cmd);
+        p.program = p.remote ? FileFingerprint{} : fingerprint(p.engine.cmd);
         *it       = p;
     }
     journal_->append(event);
@@ -1330,6 +1331,37 @@ uint64_t TournamentState::openingsReplaced() const {
     return replaced_;
 }
 
+bool TournamentState::voidCutGames(const std::vector<uint64_t>& numbers, const std::string& machine) {
+    if (read_only_) throw std::logic_error("a read-only tournament does not void games");
+    const Bump bump{version_};
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (finished_ || !journal_) return false;
+    nlohmann::json games = nlohmann::json::array();
+    for (const auto n : numbers) {
+        if (!done_.count(n)) continue;
+        const bool counts = std::any_of(results_.begin(), results_.end(),
+                                        [&](const GameResult& r) { return !r.voided && r.number() == n; });
+        if (counts) games.push_back(nlohmann::json::array({n / 2, n % 2}));
+    }
+    if (games.empty()) return false;
+    const nlohmann::json voided = {{"t", "games_voided"},
+                                   {"games", games},
+                                   {"replay", true},
+                                   {"why", std::string(NETWORK_REASON) + ": " + machine},
+                                   {"network", true},
+                                   {"machine", machine}};
+    journal_->append(voided);
+    applyEvent(voided);
+    undo_.reset();  // the user's last change is no longer the journal's last edit
+    network_voids_ += games.size();
+    return true;
+}
+
+uint64_t TournamentState::networkVoids() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return network_voids_;
+}
+
 void TournamentState::finishIfComplete() {
     if (finished_ || !schedule_.size() || hasWorkLocked() || !running_.empty()) return;
     finished_      = true;
@@ -1653,6 +1685,7 @@ bool TournamentState::follow(const nlohmann::json& e, uint64_t end) {
     const auto type = e.at("t").get<std::string>();
     // What the writer wrote: undoing an edit needs what it changed, which only a fresh open knows.
     if (type == "edit_undone") return false;
+    if (type == "games_voided" && e.value("network", false)) network_voids_ += e.at("games").size();
     if (type == "encounter_started") {
         OpeningText text{e.at("fen").get<std::string>(), e.value("moves", std::vector<std::string>{})};
         const auto encounter = e.at("encounter").get<uint32_t>();
