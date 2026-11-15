@@ -168,9 +168,9 @@ TEST_CASE("remote: a tournament in a process of its own; its copy follows; pause
     CHECK_FALSE(h.run.applyEdit(bad).empty());
     CHECK(h.run.applyEdit(cycles).empty());
 
-    // One game at a time: two single-thread engines take 2 threads.
+    // One game at a time: a game of single-thread engines takes 1 thread.
     tour::Allowance one;
-    one.threads         = 2;
+    one.threads         = 1;
     one.one_game_always = false;
     h.run.setAllowance(one);
     h.run.setPaused(false);
@@ -179,7 +179,7 @@ TEST_CASE("remote: a tournament in a process of its own; its copy follows; pause
     h.watching = true;
     REQUIRE(h.waitFor([&] { return h.run.tournament()->results().size() >= at_pause + 6; }));
     CHECK(h.most_running <= 1);
-    CHECK(h.run.status().in_flight.threads <= 2);
+    CHECK(h.run.status().in_flight.threads <= 1);
 
     // Stopped once the running games are over: nothing is lost.
     h.run.stopWhenIdle();

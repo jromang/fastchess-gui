@@ -35,7 +35,9 @@ inline constexpr uint64_t THREAD_MB  = 8;
 
 // What a game takes while it is played.
 struct GameCost {
-    int threads        = 0;  // the engine threads of its two engines: two 4-thread engines take 8
+    // The engine threads it keeps busy: the Threads of the larger of its two engines, as one thinks while the other
+    // waits (ponder is off), the way the setup counts threads against cores. A game of two 4-thread engines takes 4.
+    int threads        = 0;
     uint64_t memory_mb = 0;  // the memory of their two processes (processMb())
     int gpus           = 0;  // its engines that use a GPU (Participant::gpu)
 

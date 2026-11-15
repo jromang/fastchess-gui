@@ -37,7 +37,7 @@ guide::Section App::guideSection() const {
         case Page::NewMatch:
             return guide::Section::NewTournament;
         case Page::Tournament:
-            if (!run_.tournament()) return guide::Section::Running;
+            if (!run_->tournament()) return guide::Section::Running;
             return shown_tab_ == Tab::Broadcast  ? guide::Section::Broadcast
                    : shown_tab_ == Tab::Schedule ? guide::Section::Changing
                                                  : guide::Section::Running;
@@ -63,17 +63,18 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     const auto add = [&](std::string label, std::string where, std::function<void()> run) {
         out.push_back({std::move(label), std::move(where), std::move(run)});
     };
-    const auto* t          = run_.tournament();
+    const auto* t          = run_->tournament();
     const std::string name = t ? t->spec().name : std::string();
 
     // Actions, as their buttons allow them.
-    if (run_.running()) {
-        if (run_.paused()) {
-            if (!run_.stopping() && !run_.stoppingWhenIdle()) add(TR("Resume"), name, [this] { setRunPaused(false); });
-        } else if (!run_.stopping()) {
+    if (run_->running()) {
+        if (run_->paused()) {
+            if (!run_->stopping() && !run_->stoppingWhenIdle())
+                add(TR("Resume"), name, [this] { setRunPaused(false); });
+        } else if (!run_->stopping()) {
             add(TR("Pause"), name, [this] { setRunPaused(true); });
         }
-        if (!run_.stopping()) {
+        if (!run_->stopping()) {
             add(TR("Finish the running games, then stop"), name, [this] { stopRun(false); });
             add(TR("Stop now (running games are lost)"), name, [this] { stopRun(true); });
         }
@@ -88,9 +89,9 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         for (const auto& e : t->startFailures().engines()) {
             const auto* p = t->spec().participant(e.participant);
             if (!p || !p->active) continue;
-            if (run_.running() && !run_.stopping() && !e.trying) {
+            if (run_->running() && !run_->stopping() && !e.trying) {
                 add(trf("Try again to start {}", e.name), name,
-                    [this, id = e.participant] { run_.tryEngineAgain(id); });
+                    [this, id = e.participant] { run_->tryEngineAgain(id); });
             }
             if (editable) {
                 add(trf("Withdraw {}…", e.name), name,
@@ -100,9 +101,27 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             }
         }
     }
+    // The other tournaments open, a tab each: shown, or paused and resumed from here.
+    for (std::size_t i = 0; i < runs_.size(); ++i) {
+        if (i == shown_run_) continue;
+        const auto* other = runs_[i].run->tournament();
+        if (!other) continue;
+        const auto& other_name = other->spec().name;
+        add(trf("Show {}", other_name), TR("Tournaments"), [this, i] {
+            showRun(i);
+            page_ = Page::Tournament;
+        });
+        auto& r = *runs_[i].run;
+        if (r.running() && !r.stopping()) {
+            if (r.paused()) {
+                add(TR("Resume"), other_name, [this, i] { runs_[i].run->setPaused(false); });
+            } else {
+                add(TR("Pause"), other_name, [this, i] { runs_[i].run->setPaused(true); });
+            }
+        }
+    }
     const bool ready = setupChosen() && !setupBadSprt();
-    if (ready && !run_.running() && !startPending("start"))
-        add(TR("Start"), TR("New tournament"), [this] { startRun(); });
+    if (ready && !startPending("start")) add(TR("Start"), TR("New tournament"), [this] { startRun(); });
     if (ready) add(TR("Add to the queue"), TR("New tournament"), [this] { enqueue(); });
     // The fixes the setup summary offers (Lower Threads, Lower to N pieces, Locate…), named after their engine. The
     // engines open from their own entries, below.
@@ -117,7 +136,7 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
                     f.kind == Fix::Kind::OpenEngine || f.kind == Fix::Kind::OpenLog || f.kind == Fix::Kind::OpenFolder;
                 const bool setup = f.kind != Fix::Kind::LocateProgram && f.kind != Fix::Kind::LocateDir &&
                                    f.kind != Fix::Kind::LowerEngineThreads;
-                if (generic || (setup && run_.running()) || (!setup && engineInUse(f.engine)) ||
+                if (generic || (!setup && engineInUse(f.engine)) ||
                     std::find(seen.begin(), seen.end(), f) != seen.end())
                     continue;
                 seen.push_back(f);
@@ -134,7 +153,7 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         });
     }
     // The big screen: the game followed, filling the window.
-    if (t && run_.observer()) {
+    if (t && run_->observer()) {
         if (big_.on) {
             add(TR("Leave the big screen"), TR("Live"), [this] { leaveBigScreen(); });
         } else {
@@ -150,7 +169,7 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             open_game_menu_ = id;
         });
     }
-    if (t && run_.running() && live_slot_ >= 0 && live_slot_ < static_cast<int>(slot_views_.size()) &&
+    if (t && run_->running() && live_slot_ >= 0 && live_slot_ < static_cast<int>(slot_views_.size()) &&
         slot_views_[static_cast<std::size_t>(live_slot_)].state.active) {
         const auto& st = slot_views_[static_cast<std::size_t>(live_slot_)].state;
         add(trf("End game {} with a result…", st.game_id), TR("Live"), [this, slot = live_slot_] {
@@ -199,7 +218,7 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         }
         add(trf("Dismiss what changed: {}", n), TR("Engines"), [this, n] { settleEngineChanges(n, std::nullopt); });
     }
-    if (!resumed_programs_.empty() && run_.running())
+    if (!resumed_programs_.empty() && run_->running())
         add(TR("Continue with the changed programs"), name, [this] { resumed_programs_.clear(); });
 
     // Pages, the panels of the tournament open, and the tabs of the ratings.
@@ -212,8 +231,8 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     };
     add(TR("Tournaments"), "", page(Page::Home));
     add(TR("New tournament"), "", page(Page::NewMatch));
-    // The profiles of each section, applied to the setup, and the templates, loaded: not while the setup is locked.
-    if (!run_.running()) {
+    // The profiles of each section, applied to the setup, and the templates, loaded.
+    {
         for (const auto section : SETUP_SECTIONS) {
             for (const auto& p : profiles_.list(section)) {
                 add(p.label(), fmt::format("{} · {}", TR("Profile"), sectionTitle(section)),

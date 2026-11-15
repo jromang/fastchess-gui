@@ -85,6 +85,7 @@ void to_json(nlohmann::json& j, const Edit& e) {
     j = {{"kind", static_cast<int>(e.kind)},
          {"engine", e.engine},
          {"elo", e.elo},
+         {"gpu", e.gpu},
          {"catch_up", e.catch_up},
          {"participant", e.participant},
          {"void_played", e.void_played},
@@ -101,6 +102,7 @@ void from_json(const nlohmann::json& j, Edit& e) {
     e.kind        = static_cast<Edit::Kind>(kind);
     e.engine      = j.value("engine", fastchess::EngineConfiguration{});
     e.elo         = j.value("elo", 0);
+    e.gpu         = j.value("gpu", false);
     e.catch_up    = j.value("catch_up", true);
     e.participant = j.value("participant", -1);
     e.void_played = j.value("void_played", false);
@@ -124,6 +126,7 @@ nlohmann::json editEvent(const Edit& edit, uint32_t at, int new_id, const Tourna
             p.engine      = edit.engine;
             p.engine.name = uniqueName(spec, edit.engine.name);
             p.elo         = edit.elo;
+            p.gpu         = edit.gpu;
             return {{"t", "participant_added"}, {"at", at}, {"participant", p}, {"catch_up", edit.catch_up}};
         }
         case Edit::Kind::ReplaceParticipant: {
@@ -132,6 +135,7 @@ nlohmann::json editEvent(const Edit& edit, uint32_t at, int new_id, const Tourna
             p.engine      = edit.engine;
             p.engine.name = uniqueName(spec, edit.engine.name);
             p.elo         = edit.elo;
+            p.gpu         = edit.gpu;
             return {{"t", "participant_replaced"}, {"at", at}, {"old", edit.participant}, {"participant", p}};
         }
         case Edit::Kind::Withdraw:

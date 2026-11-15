@@ -317,28 +317,41 @@ TEST_CASE("at launch, the tournament running when the program ended resumes, the
     fs::remove_all(dir);
     fs::create_directories(dir);
     const Storage storage(dir);
-    CHECK_FALSE(storage.runningMarker());
+    CHECK(storage.runningMarkers().empty());
     storage.setRunningMarker(paused);
-    REQUIRE(storage.runningMarker());
-    CHECK(storage.runningMarker()->dir == "/runs/t");
-    CHECK(storage.runningMarker()->paused);
-    CHECK_FALSE(storage.runningMarker()->resuming);
-    storage.setRunningMarker(std::nullopt);
-    CHECK_FALSE(storage.runningMarker());
+    REQUIRE(storage.runningMarker("/runs/t"));
+    CHECK(storage.runningMarker("/runs/t")->paused);
+    CHECK_FALSE(storage.runningMarker("/runs/t")->resuming);
+    storage.clearRunningMarker("/runs/t");
+    CHECK(storage.runningMarkers().empty());
     CHECK_FALSE(fs::exists(dir / "running.json"));
 
-    // The resume flag is kept; a window removes only the marker of its own tournament.
+    // Several tournaments play at once: a marker each, in the order they started; a window removes only its own.
     storage.setRunningMarker(resuming);
-    REQUIRE(storage.runningMarker());
-    CHECK(storage.runningMarker()->resuming);
-    storage.setRunningMarker(RunningMarker{"/runs/u"});
+    REQUIRE(storage.runningMarker("/runs/t"));
+    CHECK(storage.runningMarker("/runs/t")->resuming);
+    RunningMarker u{"/runs/u"};
+    u.weight = 3;
+    storage.setRunningMarker(u);
+    REQUIRE(storage.runningMarkers().size() == 2);
+    CHECK(storage.runningMarkers()[1].weight == 3);
+    // Replaced, not added again.
+    storage.setRunningMarker(RunningMarker{"/runs/t", true});
+    REQUIRE(storage.runningMarkers().size() == 2);
+    CHECK(storage.runningMarkers()[0].paused);
     storage.clearRunningMarker("/runs/t");
-    REQUIRE(storage.runningMarker());
-    CHECK(storage.runningMarker()->dir == "/runs/u");
-    CHECK(markerNames(storage.runningMarker(), "/runs/u"));
+    REQUIRE(storage.runningMarkers().size() == 1);
+    CHECK(storage.runningMarkers()[0].dir == "/runs/u");
+    CHECK(markerNames(storage.runningMarker("/runs/u"), "/runs/u"));
     CHECK_FALSE(markerNames(std::nullopt, "/runs/u"));
     storage.clearRunningMarker("/runs/u");
-    CHECK_FALSE(storage.runningMarker());
+    CHECK(storage.runningMarkers().empty());
+
+    // The running.json of earlier versions, with one marker.
+    REQUIRE(writeJson(dir / "running.json", nlohmann::json(RunningMarker{"/runs/old", true})));
+    REQUIRE(storage.runningMarkers().size() == 1);
+    CHECK(storage.runningMarkers()[0].dir == "/runs/old");
+    CHECK(storage.runningMarkers()[0].weight == 1);
     fs::remove_all(dir);
 }
 

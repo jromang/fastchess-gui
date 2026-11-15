@@ -37,6 +37,9 @@ msgstr "! {} PV erróneas, en las jugadas de este color"
 msgid "%.1f pawns"
 msgstr "%.1f peones"
 
+msgid "%d cores"
+msgstr "%d núcleos"
+
 msgid "%d games × %d threads > %d available threads."
 msgstr "%d partidas × %d hilos > %d hilos disponibles."
 
@@ -167,8 +170,16 @@ msgstr "Un color ganó las dos partidas de un par"
 msgid "A file of your choice"
 msgstr "Un archivo de tu elección"
 
+msgid "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
+msgid_plural "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
+msgstr[0] "Una partida entre dos motores que usan una GPU necesita dos, y esta máquina tiene {} (Ajustes): una partida así se juega sola."
+msgstr[1] "Una partida entre dos motores que usan una GPU necesita dos, y esta máquina tiene {} (Ajustes): una partida así se juega sola."
+
 msgid "A game has no port: {}"
 msgstr "Una partida no tiene puerto: {}"
+
+msgid "A game starts only when the Hash of its two engines, and what each engine process takes besides ({} MB, and {} MB per thread), fit in what the games playing leave: no tournament swaps. Automatic: {} % of the installed memory."
+msgstr "Una partida solo empieza cuando el Hash de sus dos motores, y lo que cada proceso de motor ocupa además ({} MB, y {} MB por hilo), caben en lo que dejan las partidas en curso: ningún torneo usa la memoria de intercambio. Automático: {} % de la memoria instalada."
 
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr "Un gauntlet necesita al menos un motor además de los probados."
@@ -202,6 +213,9 @@ msgstr "Una jugada pesa el número de partidas que la juegan, sean cuales sean s
 
 msgid "A move weighs the points the side that played it made in its games: a win 2, a draw 1, a loss 0, as Polyglot counts. The games without a result are left out, and so is a move whose games were all lost."
 msgstr "Una jugada pesa los puntos que el bando que la jugó obtuvo en sus partidas: una victoria 2, unas tablas 1, una derrota 0, como cuenta Polyglot. Las partidas sin resultado quedan fuera, y también una jugada cuyas partidas se perdieron todas."
+
+msgid "A network engine that plays on a graphics card (Lc0...): no more such engines play at once than the GPUs of Settings ({}), in a tournament and across tournaments. From the next tournament it joins."
+msgstr "Un motor de red que juega en una tarjeta gráfica (Lc0…): no juegan a la vez más motores así que GPU hay en Ajustes ({}), en un torneo y entre torneos. A partir del próximo torneo al que se una."
 
 msgid "A or B of the match."
 msgstr "A o B del match."
@@ -371,6 +385,9 @@ msgstr "Se está leyendo un motor, inténtalo de nuevo en un momento."
 
 msgid "An engine list…"
 msgstr "Una lista de motores…"
+
+msgid "An engine of it uses a GPU, and no GPU is counted (Settings): games may share one."
+msgstr "Uno de sus motores usa una GPU y no se cuenta ninguna GPU (Ajustes): las partidas pueden compartir una."
 
 msgid "An evaluation swings"
 msgstr "Una evaluación cambia de signo"
@@ -783,6 +800,9 @@ msgstr "Copiar"
 msgid "Copy the version"
 msgstr "Copiar la versión"
 
+msgid "Cores for the tournaments"
+msgstr "Núcleos para los torneos"
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "Núcleos ocupados mientras piensa · parte de un núcleo usada mientras piensa su rival (0 % sin pondering). Medido tras 20 s de cada uno."
 
@@ -962,6 +982,9 @@ msgstr "Cada ronda son dos partidas, con los colores invertidos, contra un motor
 
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
 msgstr "Cada ronda empareja motores con puntuaciones similares, nunca dos veces los mismos; para torneos con muchos participantes. El orden de la lista define los cabezas de serie."
+
+msgid "Each tournament: the cores its games use, of those it may use. The budget is set in Settings; the weights on each card decide who gets more."
+msgstr "Cada torneo: los núcleos que usan sus partidas, de los que puede usar. El presupuesto se fija en Ajustes; los pesos de cada tarjeta deciden quién recibe más."
 
 msgid "Edit in place"
 msgstr "Editar aquí"
@@ -1143,6 +1166,9 @@ msgstr "Todos los ritmos de juego"
 msgid "Every tournament is a folder: it resumes exactly where it stopped, even after a power cut."
 msgstr "Cada torneo es una carpeta: se reanuda exactamente donde se detuvo, incluso tras un corte de luz."
 
+msgid "Everything"
+msgstr "Todo"
+
 msgid "Expected number of games"
 msgstr "Número de partidas esperado"
 
@@ -1274,6 +1300,9 @@ msgstr "De {}: {}"
 
 msgid "Full screen (F11)"
 msgstr "Pantalla completa (F11)"
+
+msgid "GPUs"
+msgstr "GPU"
 
 msgid "Game #{}"
 msgstr "Partida n.º {}"
@@ -1496,6 +1525,9 @@ msgstr "Continúa exactamente donde se detuvo: ninguna partida se pierde ni se j
 msgid "It needs the web page served."
 msgstr "Necesita que la página web se sirva."
 
+msgid "It plays beside the tournaments running, sharing the cores with them."
+msgstr "Se juega junto a los torneos en curso y comparte los núcleos con ellos."
+
 msgid "It starts once the book of {} is prepared."
 msgstr "Empieza en cuanto el libro de {} esté preparado."
 
@@ -1567,6 +1599,9 @@ msgstr "Su rating en una lista de confianza, para anclar los ratings de un torne
 
 msgid "Its results…"
 msgstr "Sus resultados…"
+
+msgid "Its share of the cores against the other tournaments': a tournament of weight 2 gets twice the cores of one of weight 1, up to its own concurrency. Each tournament gets one game's worth first, while the budget allows (Settings)."
+msgstr "Su parte de los núcleos frente a los otros torneos: un torneo de peso 2 recibe el doble de núcleos que uno de peso 1, hasta su propia concurrencia. Cada torneo recibe primero lo de una partida, mientras el presupuesto lo permita (Ajustes)."
 
 msgid "Keep my value"
 msgstr "Conservar mi valor"
@@ -1729,6 +1764,9 @@ msgstr "Puntuación máx. (cp)"
 msgid "Maximum number of moves"
 msgstr "Número máximo de jugadas"
 
+msgid "Memory for the engines"
+msgstr "Memoria para los motores"
+
 msgid "Minimum games"
 msgstr "Mínimo de partidas"
 
@@ -1845,6 +1883,9 @@ msgstr "Ningún match"
 
 msgid "No match yet. Choose two engines, then click Start."
 msgstr "Aún no hay ningún match. Elige dos motores y haz clic en Iniciar."
+
+msgid "No more engines marked \"Uses a GPU\" (on their card) play at once than there are GPUs, in a tournament and across tournaments: two games never share a GPU without you knowing."
+msgstr "No juegan a la vez más motores marcados «Usa una GPU» (en su tarjeta) que GPU hay, en un torneo y entre torneos: dos partidas nunca comparten una GPU sin que lo sepas."
 
 msgid "No move after 10 seconds of a 0.3 s search."
 msgstr "Ninguna jugada tras 10 segundos de una búsqueda de 0,3 s."
@@ -2171,6 +2212,9 @@ msgstr "Pausa"
 
 msgid "Pause: no new pair starts. Running games, and the second game of their pair,\nplay to the end (pair statistics stay complete)."
 msgstr "Pausa: no empieza ningún par nuevo. Las partidas en curso, y la segunda partida de su par,\nse juegan hasta el final (las estadísticas por pares siguen completas)."
+
+msgid "Pause: no new pair starts. Running games, and the second game of their pair,\nplay to the end; its cores go to the other tournaments."
+msgstr "Pausa: no empieza ningún par nuevo. Las partidas en curso, y la segunda partida de su par,\\nse juegan hasta el final; sus núcleos pasan a los otros torneos."
 
 msgid "Paused"
 msgstr "En pausa"
@@ -2683,9 +2727,6 @@ msgstr "Pone la opción Threads de {} a {} en la biblioteca de motores: todos lo
 msgid "Settings"
 msgstr "Ajustes"
 
-msgid "Settings are locked while a match is running."
-msgstr "Los ajustes están bloqueados mientras se juega un match."
-
 msgid "Setup"
 msgstr "Configuración"
 
@@ -2745,6 +2786,12 @@ msgstr "Iniciar ahora"
 
 msgid "Start timeout (s)"
 msgstr "Tiempo de arranque (s)"
+
+msgid "Start when cores are free"
+msgstr "Empezar cuando haya núcleos libres"
+
+msgid "Started one after the other, or beside the tournaments running when cores are free."
+msgstr "Se inician uno tras otro, o junto a los torneos en curso cuando hay núcleos libres."
 
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr "Se inician uno tras otro, cuando el torneo en curso termina por sí solo."
@@ -2994,6 +3041,9 @@ msgstr "El motor dejó de responder tras enviarle sus opciones."
 msgid "The engine stopped while it was asked to think."
 msgstr "El motor se detuvo cuando se le pidió que pensara."
 
+msgid "The engine threads the tournaments playing at once share, by their weights (each card of the home page). Automatic: the physical cores less one, {} here. A tournament alone plays as many games as its concurrency says."
+msgstr "Los hilos de motor que comparten los torneos jugados a la vez, según sus pesos (cada tarjeta de la página de inicio). Automático: los núcleos físicos menos uno, {} aquí. Un torneo solo juega tantas partidas como indica su concurrencia."
+
 msgid "The engine wrote:"
 msgstr "El motor escribió:"
 
@@ -3078,14 +3128,23 @@ msgstr "La última comprobación o lectura falló."
 msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
 msgstr "El nombre en la biblioteca, el que le dan los próximos torneos. Los torneos ya jugados conservan el antiguo, igual que sus partidas y ratings."
 
+msgid "The lines of one tournament, or of the window."
+msgstr "Las líneas de un torneo, o de la ventana."
+
 msgid "The list order is the seeding."
 msgstr "El orden de la lista es el de los cabezas de serie."
+
+msgid "The memory budget, {}, lets {} of the {} games play at a time: each takes {} (the Hash of its engines and their processes). The others wait for it."
+msgstr "El presupuesto de memoria, {}, permite jugar {} de las {} partidas a la vez: cada una ocupa {} (el Hash de sus motores y sus procesos). Las demás esperan."
 
 msgid "The most interesting"
 msgstr "La más interesante"
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "La jugada que piensa el bando que mueve y la respuesta que espera, en los colores de los motores que las jugarían."
+
+msgid "The next tournament starts beside those running as soon as the cores of the budget (Settings) are more than they can take, each at its concurrency."
+msgstr "El siguiente torneo empieza junto a los que están en curso en cuanto los núcleos del presupuesto (Ajustes) superan lo que estos pueden tomar, cada uno con su concurrencia."
 
 msgid "The number of nodes must be positive."
 msgstr "El número de nodos debe ser positivo."
@@ -3259,11 +3318,19 @@ msgstr "La varianza de una partida cuando las partidas se cuentan por pares, fre
 msgid "The version and the system, for a bug report."
 msgstr "La versión y el sistema, para un informe de error."
 
+msgid "The window"
+msgstr "La ventana"
+
 msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
 msgstr "La ventana la dibuja el procesador (el renderizador por software de SDL) en lugar de la tarjeta gráfica con OpenGL: para máquinas virtuales, escritorios remotos y controladores gráficos que fallan. Más lento, y los paneles sacados de la ventana se quedan dentro. --software en la línea de comandos hace lo mismo para un inicio."
 
 msgid "The working directory of {} is not found: {}"
 msgstr "No se encuentra el directorio de trabajo de {}: {}"
+
+msgid "The {} GPU lets {} game with an engine that uses a GPU play at a time; the other games play beside it."
+msgid_plural "The {} GPUs let {} games with an engine that uses a GPU play at a time; the other games play beside them."
+msgstr[0] "La {} GPU permite jugar {} partida con un motor que usa una GPU a la vez; las demás partidas se juegan al lado."
+msgstr[1] "Las {} GPU permiten jugar {} partidas con un motor que usa una GPU a la vez; las demás partidas se juegan al lado."
 
 msgid "Theme"
 msgstr "Tema"
@@ -3315,6 +3382,9 @@ msgstr "Este torneo lo está jugando otro programa."
 
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr "Este torneo se inició sin «Reiniciar un motor que se cuelga» (preparación, PGN y otros): terminar una partida detiene el motor que mueve, lo que detendría el torneo. Fija el resultado cuando la partida haya terminado, en la pestaña Partidas."
+
+msgid "This window (quick test, analysis)"
+msgstr "Esta ventana (prueba rápida, análisis)"
 
 msgid "Those with a problem"
 msgstr "Las que tienen algún problema"
@@ -3469,6 +3539,9 @@ msgstr "Usar estos límites"
 msgid "User"
 msgstr "Usuario"
 
+msgid "Uses a GPU"
+msgstr "Usa una GPU"
+
 msgid "Value"
 msgstr "Valor"
 
@@ -3504,6 +3577,9 @@ msgstr "Esperando lectura · leerlo a continuación"
 
 msgid "Web page"
 msgstr "Página web"
+
+msgid "Weight"
+msgstr "Peso"
 
 msgid "Weights"
 msgstr "Pesos"
@@ -3796,6 +3872,15 @@ msgstr "partidas ya terminadas"
 msgid "games at least"
 msgstr "partidas como mínimo"
 
+msgid "games wait for a GPU"
+msgstr "hay partidas esperando una GPU"
+
+msgid "games wait for cores"
+msgstr "hay partidas esperando núcleos"
+
+msgid "games wait for memory"
+msgstr "hay partidas esperando memoria"
+
 msgid "gone"
 msgstr "desaparecida"
 
@@ -3881,6 +3966,9 @@ msgstr "ninguno: cada partida empieza desde la posición inicial"
 
 msgid "normalized: bounds in nElo (fishtest, OpenBench). logistic: classic Elo. bayesian: BayesElo, without pentanomial."
 msgstr "normalized: límites en nElo (fishtest, OpenBench). logistic: Elo clásico. bayesian: BayesElo, sin pentanomial."
+
+msgid "not counted"
+msgstr "sin contar"
 
 msgid "one opening per round"
 msgstr "una apertura por ronda"
@@ -4064,6 +4152,9 @@ msgstr "{} MB"
 msgid "{} against each opponent"
 msgstr "{} contra cada rival"
 
+msgid "{} allowed by the memory"
+msgstr "{} permitidas por la memoria"
+
 msgid "{} and {}"
 msgstr "{} y {}"
 
@@ -4087,6 +4178,16 @@ msgstr "{} ha cambiado: sus opciones se han vuelto a leer, las mismas que antes.
 
 msgid "{} changed: its options were read again."
 msgstr "{} ha cambiado: sus opciones se han vuelto a leer."
+
+msgid "{} core in use"
+msgid_plural "{} cores in use"
+msgstr[0] "{} núcleo en uso"
+msgstr[1] "{} núcleos en uso"
+
+msgid "{} core shared:"
+msgid_plural "{} cores shared:"
+msgstr[0] "{} núcleo compartido:"
+msgstr[1] "{} núcleos compartidos:"
 
 msgid "{} could not be read: kept as {}"
 msgstr "{} no se pudo leer: guardado como {}"
@@ -4339,6 +4440,9 @@ msgstr "{} nodos"
 msgid "{} of memory free of {}"
 msgstr "{} de memoria libre de {}"
 
+msgid "{} of {} cores"
+msgstr "{} de {} núcleos"
+
 msgid "{} of {} openings"
 msgstr "{} de {} aperturas"
 
@@ -4535,6 +4639,9 @@ msgstr "{} estaba en curso cuando se cerró el programa: se reanuda."
 msgid "{} will be the book of the next tournament."
 msgstr "{} será el libro del próximo torneo."
 
+msgid "{} with a GPU engine at a time"
+msgstr "{} con un motor de GPU a la vez"
+
 msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
 msgstr "{} sería a la vez el archivo PGN y su zip: elige un nombre que termine en .pgn."
 
@@ -4598,6 +4705,12 @@ msgstr "{}: decisión"
 
 msgid "{}: folder not found: {}"
 msgstr "{}: carpeta no encontrada: {}"
+
+msgid "{}: games wait for a GPU"
+msgstr "{}: hay partidas esperando una GPU"
+
+msgid "{}: games wait for memory"
+msgstr "{}: hay partidas esperando memoria"
 
 msgid "{}: its book cannot be used: {}"
 msgstr "{}: su libro no se puede usar: {}"

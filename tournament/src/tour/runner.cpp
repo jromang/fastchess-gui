@@ -228,7 +228,7 @@ void Runner::play(const GameTask& task, const GameCost& cost) {
     t_recorded = false;
     t_started  = false;
     t_failure.reset();
-    t_ended = false;
+    t_ended    = false;
 
     try {
         // A paused tournament lets running games (and the other game of their pair) finish but starts no new pair.

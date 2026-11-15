@@ -38,7 +38,7 @@ bool shown(const tour::OpeningStats& o, int show) {
 }  // namespace
 
 void App::refreshOpenings() {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t || by_opening_for_ == games_.size()) return;
 
     by_opening_          = tour::resultsByOpening(t->results(), t->encounterOpenings(), chess960(*t));
@@ -73,7 +73,7 @@ void App::drawOpenings() {
     ImGui::BeginDisabled(opening_order_.empty());
     if (ImGui::Button(TR("Export as EPD…"))) {
         dialogs_.saveFile(Dialogs::Purpose::ExportOpenings, {{"EPD", "epd"}},
-                          (run_.info().dir / "openings.epd").string());
+                          (run_->info().dir / "openings.epd").string());
     }
     ImGui::EndDisabled();
     ui::help(
@@ -212,7 +212,7 @@ void App::drawOpenings() {
     ImGui::BeginChild("##opening_detail");
     ImGui::TextWrapped("%s", name(o).c_str());
     chess::Board board;
-    board.set960(chess960(*run_.tournament()));
+    board.set960(chess960(*run_->tournament()));
     board.setFen(o.fen);
     BoardDecor decor;
     decor.eval_white = -1;
@@ -235,8 +235,8 @@ void App::drawOpenings() {
         if (index >= static_cast<int>(games_.size())) continue;
         const auto& g    = games_[static_cast<std::size_t>(index)];
         const auto n     = g.game_id;
-        const auto label = fmt::format("{}  {} – {}  {}##og{}", g.game_id, run_.observer()->name(g.white),
-                                       run_.observer()->name(g.black),
+        const auto label = fmt::format("{}  {} – {}  {}##og{}", g.game_id, run_->observer()->name(g.white),
+                                       run_->observer()->name(g.black),
                                        g.white_result > 0   ? "1-0"
                                        : g.white_result < 0 ? "0-1"
                                                             : "½-½",

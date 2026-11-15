@@ -308,8 +308,9 @@ std::string startedByKey(const std::string& key) {
 
 bool App::startAfterReads(const std::string& key, std::vector<std::string> needs, std::vector<OwnBookNeed> books,
                           std::function<void()> start, std::function<void()> failed) {
-    // A tournament plays: the start says so itself, and nothing here may end its engines.
-    if (run_.running()) return false;
+    // The quick test plays here: nothing here may end its engines. (A tournament plays in a process of its own, whose
+    // engines no read here touches.)
+    if (localPlaying()) return false;
     switch (startAsked(pending_start_ ? pending_start_->key : std::string(), key)) {
         case StartAsked::Go:
             break;
@@ -420,10 +421,10 @@ void App::pollStart() {
     // A start whose read failed goes on as it said (the queue, with its next tournament).
     if (start_failed_) {
         const auto failed = std::exchange(start_failed_, {});
-        if (!quit_ && !quit_pending_ && !run_.running()) failed();
+        if (!quit_ && !quit_pending_ && !localPlaying()) failed();
     }
     if (!pending_start_) return;
-    if (quit_ || quit_pending_ || run_.running()) {
+    if (quit_ || quit_pending_ || localPlaying()) {
         pending_start_.reset();
         return;
     }
@@ -468,7 +469,7 @@ void App::pollProbe() {
 
     // Start the next queued probe when idle, but never while a run is being set up, or a start waits: that start
     // reads what it needs itself (see advanceStart). The engines of the setup first.
-    if (!probe_.valid() && !probe_queue_.empty() && !run_.running() && !pending_start_) {
+    if (!probe_.valid() && !probe_queue_.empty() && !localPlaying() && !pending_start_) {
         auto next = std::find_if(probe_queue_.begin(), probe_queue_.end(), [&](const auto& n) { return inSetup(n); });
         if (next == probe_queue_.end()) next = probe_queue_.begin();
         const auto name = *next;
@@ -1056,6 +1057,16 @@ void App::drawEngines() {
     ui::help(
         TR("Kept in the library, but out of the engine pickers (setup, suites, quick test, relaunch, adding to a "
            "tournament) and of Check those not checked. A tournament that has it already plays it as before."));
+    ImGui::SameLine(0, ImGui::GetFontSize() * 1.5f);
+    changed |= ImGui::Checkbox(TR("Uses a GPU"), &e.gpu);
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip(
+            "%s", trf("A network engine that plays on a graphics card (Lc0...): no more such engines "
+                      "play at once than the GPUs of Settings ({}), in a tournament and across "
+                      "tournaments. From the next tournament it joins.",
+                      budget_setting_.gpus == 0 ? std::string(TR("not counted")) : std::to_string(budget_setting_.gpus))
+                      .c_str());
+    }
 
     // The usual start timeout is shown rather than 0, and saved as 0 when typed back.
     ui::label(TR("Start timeout (s)"), label);
@@ -1156,12 +1167,12 @@ void App::drawEngines() {
 
     // Quick test: a short match, through the tournament code.
     const bool test_waits = drawStartWaiting("quick_test", "test:" + e.name, false);
-    ImGui::BeginDisabled(run_.running());
+    ImGui::BeginDisabled(localPlaying());
     if (!test_waits && ImGui::Button(quick_test_engine_ == e.name ? TR("Testing…") : TR("Quick test")))
         startQuickTest(selected_engine_);
     ImGui::EndDisabled();
     if (!test_waits && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
-        ImGui::SetTooltip("%s", run_.running() ? TR("After the running match.")
+        ImGui::SetTooltip("%s", localPlaying() ? TR("After the running match.")
                                                : TR("10 games at 10+0.1 from 5 positions, to see before a long "
                                                     "tournament whether it loses on time, crashes, plays an illegal "
                                                     "move or uses its clock badly."));
@@ -1397,13 +1408,54 @@ void App::drawConsole() {
         return;
     }
 
-    Console::instance().copy(console_lines_, console_version_);
+    bool changed = Console::instance().copy(console_lines_, console_version_);
 
     if (ImGui::SmallButton(TR("Clear"))) Console::instance().clear();
     ImGui::SameLine();
+    // The lines of one tournament (each plays in a process of its own, whose lines carry its name), or of the
+    // window, or all.
+    if (changed) {
+        console_sources_.clear();
+        for (const auto& l : console_lines_) {
+            if (!l.source.empty() &&
+                std::find(console_sources_.begin(), console_sources_.end(), l.source) == console_sources_.end())
+                console_sources_.push_back(l.source);
+        }
+    }
+    if (!console_sources_.empty() || !console_source_.empty()) {
+        const auto label = console_source_.empty()  ? std::string(TR("Everything"))
+                           : console_source_ == "-" ? std::string(TR("The window"))
+                                                    : console_source_;
+        ImGui::SetNextItemWidth(px(220));
+        if (ImGui::BeginCombo("##log_source", label.c_str())) {
+            const auto item = [&](const std::string& text, const std::string& value) {
+                if (ImGui::Selectable(text.c_str(), console_source_ == value)) {
+                    console_source_ = value;
+                    changed         = true;
+                }
+            };
+            item(TR("Everything"), "");
+            item(TR("The window"), "-");
+            for (const auto& source : console_sources_) item(source, source);
+            ImGui::EndCombo();
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The lines of one tournament, or of the window."));
+        ImGui::SameLine();
+    }
+    if (changed) {
+        console_shown_.clear();
+        for (std::size_t i = 0; i < console_lines_.size(); ++i) {
+            const auto& source = console_lines_[i].source;
+            if (console_source_.empty() || (console_source_ == "-" ? source.empty() : source == console_source_))
+                console_shown_.push_back(static_cast<int>(i));
+        }
+    }
+    const auto lineText = [&](const Console::Line& l) {
+        return console_source_.empty() && !l.source.empty() ? "[" + l.source + "] " + l.text : l.text;
+    };
     if (ImGui::SmallButton(TR("Copy"))) {
         std::string all;
-        for (const auto& l : console_lines_) all += l.text + "\n";
+        for (const int i : console_shown_) all += lineText(console_lines_[static_cast<std::size_t>(i)]) + "\n";
         ImGui::SetClipboardText(all.c_str());
     }
     ImGui::SameLine();
@@ -1413,12 +1465,12 @@ void App::drawConsole() {
 
     ImGui::BeginChild("##console", ImVec2(0, 0), ImGuiChildFlags_Borders, ImGuiWindowFlags_HorizontalScrollbar);
     ImGuiListClipper clipper;
-    clipper.Begin(static_cast<int>(console_lines_.size()));
+    clipper.Begin(static_cast<int>(console_shown_.size()));
     while (clipper.Step()) {
         for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i) {
-            const auto& l = console_lines_[i];
+            const auto& l = console_lines_[static_cast<std::size_t>(console_shown_[static_cast<std::size_t>(i)])];
             if (l.warning) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.95f, 0.65f, 0.3f, 1));
-            ImGui::TextUnformatted(l.text.c_str());
+            ImGui::TextUnformatted(lineText(l).c_str());
             if (l.warning) ImGui::PopStyleColor();
         }
     }
@@ -1429,8 +1481,9 @@ void App::drawConsole() {
 }
 
 bool App::engineInUse(const std::string& name) const {
-    if (!run_.running()) return false;
-    if (const auto* t = run_.tournament()) {
+    for (const auto& r : runs_) {
+        const auto* t = r.run->tournament();
+        if (!r.run->running() || !t) continue;
         for (const auto& p : t->spec().participants) {
             if (p.engine.name == name) return true;
             // With a book of its own, it may play as "<engine> (<book>)".
@@ -1454,7 +1507,11 @@ void App::startCheck(int index) {
 }
 
 void App::startQuickTest(int index) {
-    if (index < 0 || index >= static_cast<int>(engines_.size()) || run_.running()) return;
+    if (index < 0 || index >= static_cast<int>(engines_.size())) return;
+    // Played in this program: one quick test at a time (fastchess keeps a tournament in globals).
+    for (const auto& r : runs_) {
+        if (r.quick_test && r.run->running()) return;
+    }
     const auto name                = engines_[index].name;
     std::vector<std::string> needs = {name};
     if (!quick_test_opponent_.empty()) needs.push_back(quick_test_opponent_);
@@ -1470,12 +1527,23 @@ void App::startQuickTest(int index) {
 
     auto engines     = engines_;
     const auto setup = quickTestSetup(engines_[index], quick_test_opponent_, dir / "quick-test.epd", engines);
-    start_error_     = run_.start(setup, engines, topology_, dir);
+    auto test        = std::make_unique<RunController>();
+    start_error_     = test->start(setup, engines, topology_, dir);
     if (!start_error_.empty()) {
         Console::instance().add(trf("Cannot start the quick test: {}", start_error_), true);
         return;
     }
-    resetRunView();
+    // The tab of the last quick test is taken over.
+    for (std::size_t i = 0; i < runs_.size(); ++i) {
+        if (runs_[i].quick_test && !runs_[i].run->running()) {
+            closeRun(i);
+            break;
+        }
+    }
+    OpenRun open;
+    open.run        = std::move(test);
+    open.quick_test = true;
+    addRun(std::move(open));
     quick_test_engine_ = engines_[index].name;
     tab_request_       = Tab::Live;
     Console::instance().add(trf("Quick test of {} started.", quick_test_engine_));
@@ -1490,14 +1558,14 @@ std::function<void()> App::quickTestLater(const std::string& name) {
 
 void App::finishQuickTest() {
     const auto name = std::exchange(quick_test_engine_, {});
-    const auto* t   = run_.tournament();
+    const auto* t   = run_->tournament();
     const auto it   = std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == name; });
     if (!t || it == engines_.end()) return;
 
     QuickTestReport report;
-    if (!run_.error().empty()) {
-        report.message = trf("Error: {}", run_.error());
-    } else if (run_.stoppedByUser()) {
+    if (!run_->error().empty()) {
+        report.message = trf("Error: {}", run_->error());
+    } else if (run_->stoppedByUser()) {
         report.message = TR("Stopped before the end.");
     } else {
         const auto totals = totals_.empty() ? EngineTotals{} : totals_[0];  // [0]: the engine tested, A
@@ -1514,7 +1582,7 @@ void App::finishQuickTest() {
 
 void App::pollCheck() {
     // The next queued check when idle: not while a run plays, whose games it would slow down, nor waits to start.
-    if (!check_.valid() && !check_queue_.empty() && !run_.running() && !pending_start_) {
+    if (!check_.valid() && !check_queue_.empty() && !localPlaying() && !pending_start_) {
         const auto name = check_queue_.front();
         check_queue_.erase(check_queue_.begin());
         const auto it = std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == name; });

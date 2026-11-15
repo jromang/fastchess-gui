@@ -7,6 +7,8 @@
 #include <string>
 #include <vector>
 
+#include <tour/budget.hpp>
+
 #include "memory.hpp"
 #include "model.hpp"
 #include "notice.hpp"
@@ -29,6 +31,23 @@ struct ParticipantThreads {
 };
 [[nodiscard]] ParticipantThreads participantThreads(const MatchSetup& setup, const ParticipantSetup& participant,
                                                     const EngineEntry& engine);
+
+// What the heaviest game of a setup takes of the machine (tour::GameCost): the larger Threads of its participants as
+// they will play, their two largest Hashes with what each engine process takes besides, and its engines that use a GPU
+// (EngineEntry::gpu), at most two.
+[[nodiscard]] tour::GameCost setupGameCost(const MatchSetup& setup, const std::vector<EngineEntry>& engines);
+
+// What the machine's budget (Settings) lets a setup play at once, and why fewer than its concurrency: the memory, the
+// GPUs. Empty `why` when the budget allows them all. The cores are not counted: a tournament alone plays its
+// concurrency, the cores being shared between tournaments.
+struct BudgetLimit {
+    int games     = 0;  // at a time, by the memory
+    int gpu_games = 0;  // of them with an engine that uses a GPU
+    std::string why;
+    bool warn = false;  // the games may share a GPU, or one game needs more GPUs than there are
+};
+[[nodiscard]] BudgetLimit budgetLimit(const MatchSetup& setup, const std::vector<EngineEntry>& engines,
+                                      const tour::Budget& budget, int concurrency);
 
 // Participant `index` of setupParticipants(setup) plays with too many threads: its engine's own Threads (some engines
 // take every core by default) above half the hardware threads or above threadsPerGame(), or Threads the setup gives

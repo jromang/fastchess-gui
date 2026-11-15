@@ -599,19 +599,20 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     spec.rounds = setup.format == TournamentFormat::Swiss ? std::max(1, setup.cycles) : 0;
     spec.seeds  = std::max(1, setup.seeds);
     if (match) spec.max_games = t.rounds >= UNBOUNDED_ROUNDS ? 0 : t.rounds * t.games;
-    spec.log_every_game        = setup.log_every_game;
-    spec.opening_per_round     = setup.opening_per_round && !match && setup.format != TournamentFormat::Knockout;
-    spec.pgn_out               = setup.pgn_out;
-    spec.pgn_out_chessbase     = setup.export_style == PgnStyle::ChessBase;
-    spec.conditions            = t;
+    spec.log_every_game    = setup.log_every_game;
+    spec.opening_per_round = setup.opening_per_round && !match && setup.format != TournamentFormat::Knockout;
+    spec.pgn_out           = setup.pgn_out;
+    spec.pgn_out_chessbase = setup.export_style == PgnStyle::ChessBase;
+    spec.conditions        = t;
     spec.stop_on_start_failure = setup.stop_on_start_failure;
     if (setup.engine_syzygy) spec.forced_options.emplace_back("SyzygyPath", setup.tb_paths);
     if (setup.engine_ownbook_off) spec.forced_options.emplace_back("OwnBook", "false");
     for (std::size_t i = 0; i < run.engines.size(); ++i) {
         tour::Participant p;
-        p.id         = static_cast<int>(i);
+        p.id     = static_cast<int>(i);
         p.engine     = run.engines[i];
         p.elo        = people[i].first->elo;
+        p.gpu        = people[i].first->gpu;
         p.book       = people[i].second.book.path;
         p.book_depth = std::max(0, people[i].second.book.depth);
         spec.participants.push_back(p);

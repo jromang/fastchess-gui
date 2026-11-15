@@ -144,13 +144,13 @@ void App::drawResults() {
         return;
     }
 
-    if (run_.state() == RunController::State::Idle) {
+    if (run_->state() == RunController::State::Idle) {
         ImGui::TextDisabled("%s", TR("No results yet."));
         ui::endPanel();
         return;
     }
 
-    const auto& info = run_.info();
+    const auto& info = run_->info();
     const auto& s    = stats_;
     const int n      = s.sum();
 
@@ -226,7 +226,7 @@ void App::drawResults() {
                                TR("%s: %d loss(es) on time, %d crash(es), %d illegal move(s)"), name, t.timeouts,
                                t.crashes, t.illegal);
         }
-        if (const auto* tour = run_.tournament(); tour && i < static_cast<int>(tour->spec().participants.size())) {
+        if (const auto* tour = run_->tournament(); tour && i < static_cast<int>(tour->spec().participants.size())) {
             const auto problem = cpuProblem(t, configThreads(tour->spec().participants[i].engine));
             if (!problem.empty()) ImGui::TextColored(ImVec4(0.95f, 0.65f, 0.3f, 1), "%s: %s", name, problem.c_str());
         }
@@ -247,7 +247,7 @@ void App::drawCharts() {
         return;
     }
 
-    const auto& info   = run_.info();
+    const auto& info   = run_->info();
     const ImVec2 avail = ImGui::GetContentRegionAvail();
     const float half_w = (avail.x - ImGui::GetStyle().ItemSpacing.x) * 0.5f;
     const float row_h  = std::max(160.0f, (avail.y - ImGui::GetStyle().ItemSpacing.y * 2) / 3.0f);

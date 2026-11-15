@@ -59,6 +59,10 @@ class Storage {
     [[nodiscard]] std::optional<WindowPlace> windowPlace() const;
     void setWindowPlace(const WindowPlace& place) const;
 
+    // What the tournaments may use of the machine (settings.json, see MachineBudget).
+    [[nodiscard]] MachineBudget machineBudget() const;
+    void setMachineBudget(const MachineBudget& budget) const;
+
     // The check for a new version (settings.json): whether it is wanted, when it was last made and what it found.
     [[nodiscard]] update::Settings updateSettings() const;
     void setUpdateSettings(const update::Settings& updates) const;
@@ -82,10 +86,14 @@ class Storage {
     [[nodiscard]] std::vector<QueuedTournament> loadQueue() const;
     void saveQueue(const std::vector<QueuedTournament>& queue) const;
 
-    // The tournament running now (running.json, see RunningMarker); nullopt removes it.
-    [[nodiscard]] std::optional<RunningMarker> runningMarker() const;
-    void setRunningMarker(const std::optional<RunningMarker>& marker) const;
-    // Removes it if it names the tournament in `dir`, not one another window of the profile wrote since.
+    // The tournaments playing now (running.json, see RunningMarker), in the order they started. A running.json of
+    // earlier versions names one.
+    [[nodiscard]] std::vector<RunningMarker> runningMarkers() const;
+    // The marker of `dir`, nullopt when there is none.
+    [[nodiscard]] std::optional<RunningMarker> runningMarker(const std::string& dir) const;
+    // Adds the marker, or replaces the one of its tournament.
+    void setRunningMarker(const RunningMarker& marker) const;
+    // Removes the marker of the tournament in `dir`, if any.
     void clearRunningMarker(const std::string& dir) const;
 
    private:

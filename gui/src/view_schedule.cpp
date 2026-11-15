@@ -63,7 +63,7 @@ std::string half(double points) {
 }  // namespace
 
 void App::applyTournamentEdit(const tour::Edit& edit) {
-    const auto error = run_.applyEdit(edit);
+    const auto error = run_->applyEdit(edit);
     edit_error_      = !error.empty();
     if (edit_error_) {
         edit_message_ = TR(error.c_str());
@@ -93,7 +93,7 @@ void App::openParticipantEdit(tour::Edit::Kind kind, int participant) {
 }
 
 void App::undoTournamentEdit() {
-    const auto error = run_.undoEdit();
+    const auto error = run_->undoEdit();
     edit_error_      = !error.empty();
     edit_message_    = edit_error_ ? error : TR("The change was undone.");
     if (edit_error_) return;
@@ -103,7 +103,7 @@ void App::undoTournamentEdit() {
 }
 
 const tour::GameResult* App::gameResult(uint64_t number) {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return nullptr;
     if (result_cache_of_ != t || result_cache_version_ != t->version()) {
         result_cache_.clear();
@@ -116,7 +116,7 @@ const tour::GameResult* App::gameResult(uint64_t number) {
 }
 
 void App::drawGameMenu(uint32_t encounter, int game) {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return;
     const uint64_t number = uint64_t{encounter} * 2 + game;
     const auto* r         = gameResult(number);
@@ -222,12 +222,12 @@ void App::drawGameMenu(uint32_t encounter, int game) {
 void App::refreshAfterEdit() {
     // Voided games leave the views; everything is shown again from the tournament's results. The game shown in the
     // Games tab stays, if it still counts (its result was set, another game was voided).
-    const auto* t       = run_.tournament();
+    const auto* t       = run_->tournament();
     const auto selected = selected_game_ >= 0 && selected_game_ < static_cast<int>(games_.size())
                               ? games_[static_cast<std::size_t>(selected_game_)].game_id
                               : 0;
     selected_game_      = -1;
-    if (auto* obs = run_.observer(); obs && t) {
+    if (auto* obs = run_->observer(); obs && t) {
         games_    = obs->records(t->results());
         reasons_  = obs->reasons();
         openings_ = obs->openings();
@@ -239,7 +239,7 @@ void App::refreshAfterEdit() {
     table_for_         = ~std::size_t(0);
     by_opening_for_    = ~std::size_t(0);
     tournaments_dirty_ = true;
-    if (!run_.running() && t) {
+    if (!run_->running() && t) {
         const auto summary = tour::summarize(t->dir());
         if (summary && !summary->finished) {
             unfinished_ = summary;
@@ -250,7 +250,7 @@ void App::refreshAfterEdit() {
 }
 
 void App::refreshSchedule() {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return;
     const auto version = t->version();
     if (schedule_.tournament == t && schedule_.version == version) return;
@@ -317,7 +317,7 @@ void App::refreshSchedule() {
 }
 
 void App::drawSchedule() {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return;
     refreshSchedule();
 
@@ -397,7 +397,7 @@ void App::drawSchedule() {
 }
 
 void App::drawEditPanel() {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (!t) return;
     const auto& spec = t->spec();
 
@@ -444,6 +444,7 @@ void App::drawEditPanel() {
         }
         edit.engine = participantConfig(*it, spec);
         edit.elo    = it->elo;
+        edit.gpu    = it->gpu;
     };
     // An active participant.
     const auto participantChoice = [&](const char* label) {
@@ -581,7 +582,7 @@ void App::drawEditPanel() {
             ImGui::TextDisabled("%s", TR("until the next game starts"));
         }
     }
-    if (!run_.running()) {
+    if (!run_->running()) {
         ImGui::TextDisabled("%s", TR("The tournament is not running: resume it to play the new games."));
     }
     ui::endCard();

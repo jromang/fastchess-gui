@@ -154,17 +154,17 @@ void App::selectGame(int index) {
     replay_log_.clear();
     replay_pv_.clear();
 
-    auto* obs = run_.observer();
+    auto* obs = run_->observer();
     if (!obs || index < 0 || index >= static_cast<int>(games_.size())) return;
 
-    if (const auto* t = run_.tournament(); t && games_[index].pv_warnings > 0) {
+    if (const auto* t = run_->tournament(); t && games_[index].pv_warnings > 0) {
         for (const auto& r : t->results()) {
             if (r.pgn.offset == games_[index].fastchess_span.offset) replay_pv_ = r.pv_warnings;
         }
     }
 
     std::error_code ec;
-    if (const auto log = tour::engineLogPath(run_.info().dir, games_[index].game_id);
+    if (const auto log = tour::engineLogPath(run_->info().dir, games_[index].game_id);
         std::filesystem::is_regular_file(log, ec)) {
         replay_log_ = log;
     }
@@ -193,7 +193,7 @@ void App::selectGame(int index) {
 }
 
 void App::exportGames(const std::string& path, bool all) {
-    auto* obs = run_.observer();
+    auto* obs = run_->observer();
     if (!obs) return;
 
     const bool chessbase = setup_.export_style == PgnStyle::ChessBase;
@@ -241,7 +241,7 @@ void App::drawGames() {
         return;
     }
 
-    auto* obs = run_.observer();
+    auto* obs = run_->observer();
     if (!obs) {
         ImGui::TextDisabled("%s", TR("The finished games of the match will appear here."));
         ui::endPanel();
@@ -332,7 +332,7 @@ void App::drawGames() {
     if (ImGui::Button(TR("Export game…"))) {
         dialogs_.saveFile(
             Dialogs::Purpose::ExportGames, {{"PGN", "pgn"}},
-            (run_.info().dir / fmt::format("game-{}.pgn", selected_game_ >= 0 ? games_[selected_game_].game_id : 0))
+            (run_->info().dir / fmt::format("game-{}.pgn", selected_game_ >= 0 ? games_[selected_game_].game_id : 0))
                 .string());
     }
     ImGui::EndDisabled();
@@ -340,22 +340,22 @@ void App::drawGames() {
     ImGui::BeginDisabled(shown == 0);
     if (ImGui::Button(all_games ? TR("Export all…") : TR("Export filtered…"))) {
         // Named after the tournament, next to its folder: in it, <name>.pgn is the tournament's own file.
-        auto stem = tour::fileStemOf(run_.info().name);
+        auto stem = tour::fileStemOf(run_->info().name);
         if (stem.empty()) stem = "export";
         dialogs_.saveFile(Dialogs::Purpose::ExportAll, {{"PGN", "pgn"}},
-                          (run_.info().dir.parent_path() / (stem + ".pgn")).string());
+                          (run_->info().dir.parent_path() / (stem + ".pgn")).string());
     }
     ImGui::EndDisabled();
     ImGui::SameLine();
-    if (ImGui::Button(TR("Folder"))) ui::openPath(run_.info().dir);
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", run_.info().dir.string().c_str());
+    if (ImGui::Button(TR("Folder"))) ui::openPath(run_->info().dir);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", run_->info().dir.string().c_str());
     // On the same line when it fits.
     const char* submit = TR("Export for a rating list…");
     ImGui::SameLine();
     if (ImGui::GetContentRegionAvail().x < ImGui::CalcTextSize(submit).x + 2 * ImGui::GetStyle().FramePadding.x) {
         ImGui::NewLine();
     }
-    ImGui::BeginDisabled(!run_.tournament() || games_.empty());
+    ImGui::BeginDisabled(!run_->tournament() || games_.empty());
     if (ImGui::Button(submit)) openSubmissionExport();
     ImGui::EndDisabled();
     drawSubmissionExport();
@@ -400,14 +400,14 @@ void App::drawGames() {
                     selectGame(index);
                 }
                 // Once the tab is in front: bringing it there would close the menu.
-                if (open_game_menu_ == g.game_id && run_.tournament() && !panel_request_) {
+                if (open_game_menu_ == g.game_id && run_->tournament() && !panel_request_) {
                     open_game_menu_     = 0;
                     result_menu_        = {};
                     result_menu_.game   = g.game_id - 1;
                     result_menu_.result = g.white_result == 0 ? "1-0" : "1/2-1/2";
                     ImGui::OpenPopup(ImGui::GetItemID());
                 }
-                if (run_.tournament() && ImGui::BeginPopupContextItem()) {
+                if (run_->tournament() && ImGui::BeginPopupContextItem()) {
                     drawGameMenu(g.round_id - 1, static_cast<int>((g.game_id - 1) % 2));
                     ImGui::EndPopup();
                 }
@@ -487,7 +487,7 @@ void App::drawGames() {
         const auto* r = gameResult(g.game_id - 1);
         if (r && r->set && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", resultSetTip(*r->set).c_str());
         // Set from here a moment ago: taken back from here too.
-        if (const auto* t = run_.tournament(); t && result_set_game_ == g.game_id - 1 && t->canUndo()) {
+        if (const auto* t = run_->tournament(); t && result_set_game_ == g.game_id - 1 && t->canUndo()) {
             ImGui::SameLine();
             if (ImGui::SmallButton(TR("Undo"))) undoTournamentEdit();
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The game counts again as it was."));
@@ -624,7 +624,7 @@ void App::drawGames() {
         if (ImGui::IsItemHovered()) {
             // With the option on, the decision time is still only written when the engines' lines tell it.
             std::optional<bool> on;
-            if (const auto* t = run_.tournament()) on = pgnFieldOn(t->spec().conditions.pgn, extra);
+            if (const auto* t = run_->tournament()) on = pgnFieldOn(t->spec().conditions.pgn, extra);
             ImGui::SetTooltip("%s", missingPgnFieldTip(extra, on).c_str());
         }
     }

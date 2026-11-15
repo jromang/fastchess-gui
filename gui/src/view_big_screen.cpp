@@ -206,7 +206,7 @@ void App::handleBigScreenKeys() {
         }
         return;
     }
-    const int slots = run_.observer() ? run_.observer()->slotCount() : 0;
+    const int slots = run_->observer() ? run_->observer()->slotCount() : 0;
     if (slots > 0 && ImGui::IsKeyPressed(ImGuiKey_RightArrow)) {
         view->slot   = (view->slot + 1) % slots;
         view->turned = Clock::now();
@@ -259,7 +259,7 @@ void App::drawBigGame(BigView& big, bool main_window) {
     const float u = bigTextSize(size.x, size.y, setup_.big_scale);
     const float m = std::floor(u * 0.6f);
 
-    auto* obs       = run_.observer();
+    auto* obs       = run_->observer();
     const int slots = obs ? obs->slotCount() : 0;
     for (int i = 0; i < slots; ++i) refreshSlot(i);
     big.slot = slots > 0 ? std::clamp(big.slot, 0, slots - 1) : 0;

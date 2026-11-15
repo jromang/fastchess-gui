@@ -380,7 +380,7 @@ std::string clockText(const SlotState& st, chess::Color color, int64_t elapsed) 
 }  // namespace
 
 void App::refreshSlot(int slot) {
-    auto* obs = run_.observer();
+    auto* obs = run_->observer();
     if (!obs || slot < 0) return;
     if (static_cast<int>(slot_views_.size()) < obs->slotCount())
         slot_views_.resize(static_cast<std::size_t>(obs->slotCount()));
@@ -391,7 +391,7 @@ void App::refreshSlot(int slot) {
     // A gauntlet's new game, from its seed's side; Flip turns it over until the next game.
     if (setup_.live_seed_side && v.state.has_game && v.state.game_id != v.turned_for) {
         v.turned_for = v.state.game_id;
-        if (const auto* t = run_.tournament()) {
+        if (const auto* t = run_->tournament()) {
             if (const auto black = seedHasBlack(t->spec(), v.state.white, v.state.black)) v.flip = *black;
         }
     }
@@ -404,7 +404,7 @@ void App::refreshSlot(int slot) {
 }
 
 int App::tbPieces() {
-    const auto* t = run_.tournament();
+    const auto* t = run_->tournament();
     if (t != tb_tournament_) {
         tb_tournament_ = t;
         tb_pieces_     = t ? tablebasePieces(t->spec().conditions.tb_adjudication) : 0;
@@ -418,7 +418,7 @@ void App::drawLive() {
         return;
     }
 
-    auto* obs = run_.observer();
+    auto* obs = run_->observer();
     if (!obs) {
         ImGui::TextDisabled("%s", TR("No match yet. Choose two engines, then click Start."));
         ui::endPanel();
@@ -446,7 +446,7 @@ void App::drawLive() {
         }
     }
 
-    if (const auto* t = run_.tournament(); t && t->spec().format == tour::Format::Gauntlet) {
+    if (const auto* t = run_->tournament(); t && t->spec().format == tour::Format::Gauntlet) {
         if (ImGui::Checkbox(TR("Seed at the bottom"), &setup_.live_seed_side)) {
             for (auto& v : slot_views_) v.turned_for = ~std::size_t{0};  // turned at once
             saveSetupSoon();
@@ -524,7 +524,7 @@ void App::drawLive() {
 }
 
 void App::drawMosaic(int cols, float card) {
-    auto* obs        = run_.observer();
+    auto* obs        = run_->observer();
     const int slots  = obs->slotCount();
     const float line = ImGui::GetTextLineHeightWithSpacing();
     const float h    = cardHeight(card, setup_.tile_info);
@@ -659,7 +659,7 @@ void App::drawEndGameMenu(int slot) {
         ImGui::TextUnformatted(
             fmt::format("{} {} · {} {}", st.white, points(white), st.black, points(1.0 - white)).c_str());
         if (ImGui::Button(TR("End the game"))) {
-            end_menu_.error = run_.endGame(slot, st.game_id - 1, end_menu_.result, end_menu_.why);
+            end_menu_.error = run_->endGame(slot, st.game_id - 1, end_menu_.result, end_menu_.why);
             if (end_menu_.error.empty()) {
                 Console::instance().add(trf("Game {} was ended by the operator: {}.", st.game_id,
                                             end_menu_.result == "1/2-1/2" ? "½-½" : end_menu_.result));
@@ -713,7 +713,7 @@ void App::drawLiveBoardFitted(SlotView& view) {
 // A player: the name and the clock, and with `search` what its engine is searching (else what its last move
 // reported).
 void App::drawLivePlayer(SlotView& view, chess::Color color, bool search) {
-    auto* obs          = run_.observer();
+    auto* obs          = run_->observer();
     const auto& st     = view.state;
     const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - st.think_start).count();
     const bool white   = color == chess::Color::WHITE;
@@ -1016,7 +1016,7 @@ unsigned App::livePartsHere() const {
 
 // A part of the followed game in its own panel.
 void App::drawLivePart(unsigned part) {
-    if (!run_.observer() || slot_views_.empty()) {
+    if (!run_->observer() || slot_views_.empty()) {
         ImGui::TextDisabled("%s", TR("No game is being played."));
         return;
     }
@@ -1049,7 +1049,7 @@ void App::drawLivePart(unsigned part) {
 
 // A detached board: every part of its game.
 void App::drawDetachedBoard(int slot) {
-    auto* obs = run_.observer();
+    auto* obs = run_->observer();
     if (!obs || slot >= obs->slotCount()) {
         ImGui::TextDisabled("%s", TR("No game is being played."));
         return;

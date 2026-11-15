@@ -329,14 +329,6 @@ void App::drawSetup(bool two_columns, bool with_summary) {
         return;
     }
 
-    const bool locked = run_.running();
-    if (locked) {
-        ImGui::TextDisabled("%s", TR("Settings are locked while a match is running."));
-        ImGui::Separator();
-    }
-
-    ImGui::BeginDisabled(locked);
-
     // How the games are played, one folded row per section; then who plays them.
     ui::beginCard("settings_card");
     drawSetupRows();
@@ -377,7 +369,6 @@ void App::drawSetup(bool two_columns, bool with_summary) {
         library();
     }
 
-    ImGui::EndDisabled();
     // A narrow window: the summary under the form, in the same scroll.
     if (with_summary) {
         ImGui::Spacing();
@@ -432,6 +423,10 @@ std::string App::concurrencySummary() const {
                                                : std::clamp(setup_.concurrency, 1, topology_.logical);
     std::string text = trn("{} game at a time", "{} games at a time", static_cast<uint64_t>(games), games) + " · " +
                        concurrencyRule(true);
+    // Fewer, by the memory and the GPUs of the budget.
+    const auto limit = budgetLimit(setup_, engines_, machineBudget(), games);
+    if (limit.games < games) text += " · " + trf("{} allowed by the memory", limit.games);
+    if (limit.gpu_games < games) text += " · " + trf("{} with a GPU engine at a time", limit.gpu_games);
     if (AFFINITY_SUPPORTED && setup_.affinity) text += " · " + std::string(TR("CPU affinity"));
     return text;
 }
@@ -761,7 +756,6 @@ void App::setupEngines() {
     }
     if (threads.size() == 2 && threads[0].text == threads[1].text) threads.pop_back();
     drawSetupNotices(threads, "engine_threads");
-
 }
 
 void App::setupEngineOptions() {
@@ -1501,6 +1495,10 @@ void App::drawSetupSummary() {
     // The hash tables against the memory: a warning above the free memory, an error above the installed one.
     if (const auto memory = setupMemory(setup_, engines_, topology_); memory.hash_mb > 0) {
         drawSetupNotices({memoryNotice(setup_, engines_, memory)}, "memory");
+    }
+    // What the machine's budget lets it play at once: the memory, the GPUs (Settings).
+    if (const auto limit = budgetLimit(setup_, engines_, machineBudget(), concurrency); !limit.why.empty()) {
+        check(false, limit.why);
     }
     // The threads, the option values the engines refuse, the tablebases.
     drawSetupNotices(setupNotices(), "checks");

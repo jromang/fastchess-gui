@@ -59,8 +59,9 @@ TEST_CASE("budget: a game takes its two engines' threads, their Hash and a proce
     CHECK(engineHashMb(a.engine) == 256);
     CHECK(engineHashMb(b.engine) == DEFAULT_HASH_MB);
 
+    // One engine thinks while the other waits: the larger Threads; both are in memory.
     const auto cost = gameCost(a, b);
-    CHECK(cost.threads == 5);
+    CHECK(cost.threads == 4);
     CHECK(cost.memory_mb == 256 + DEFAULT_HASH_MB + 2 * PROCESS_MB + 5 * THREAD_MB);
     CHECK(cost.gpus == 1);
 
@@ -69,7 +70,8 @@ TEST_CASE("budget: a game takes its two engines' threads, their Hash and a proce
     spec.participants           = {participant(0, 2), participant(1, 8, 1024), participant(2, 4), participant(3, 16)};
     spec.participants[3].active = false;  // withdrawn: plays no more
     const auto largest          = largestGame(spec);
-    CHECK(largest.threads == 12);
+    CHECK(largest.threads == 8);
+    CHECK(largest.memory_mb == processMb(spec.participants[1].engine) + processMb(spec.participants[2].engine));
     CHECK(largest.gpus == 0);
 }
 
@@ -305,9 +307,9 @@ TEST_CASE("runner: an allowance changed while it plays holds games back or start
 
     Concurrency watch;
     Runner runner(*state, &watch, nullptr);
-    // Two single-thread engines take 2 threads: one game at a time.
+    // Single-thread engines: a game takes 1 thread, one game at a time.
     Allowance one;
-    one.threads         = 2;
+    one.threads         = 1;
     one.one_game_always = false;
     runner.setAllowance(one);
     std::thread thread([&] { runner.start(); });
@@ -318,10 +320,10 @@ TEST_CASE("runner: an allowance changed while it plays holds games back or start
 
     // Room for four games: they start at once.
     Allowance four = one;
-    four.threads   = 8;
+    four.threads   = 4;
     runner.setAllowance(four);
     CHECK(waitUntil([&] { return watch.now() >= 3; }));
-    CHECK(runner.inFlight().threads <= 8);
+    CHECK(runner.inFlight().threads <= 4);
 
     // Back to one: the games in flight end as they go, and none starts until one game is left.
     {

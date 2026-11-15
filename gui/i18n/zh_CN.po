@@ -36,6 +36,9 @@ msgstr "! {} 条错误 PV，在该方的着法上"
 msgid "%.1f pawns"
 msgstr "%.1f 兵"
 
+msgid "%d cores"
+msgstr "%d 个核心"
+
 msgid "%d games × %d threads > %d available threads."
 msgstr "%d 局 × %d 线程 > %d 可用线程。"
 
@@ -164,8 +167,15 @@ msgstr "同一方赢下一对中的两局"
 msgid "A file of your choice"
 msgstr "自选文件"
 
+msgid "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
+msgid_plural "A game between two engines that use a GPU needs two, and this machine has {} (Settings): such a game plays alone."
+msgstr[0] "两个都使用 GPU 的引擎之间的一局需要两块 GPU，而本机有 {} 块（设置）：这样的对局会单独进行。"
+
 msgid "A game has no port: {}"
 msgstr "有一局对局没有端口：{}"
+
+msgid "A game starts only when the Hash of its two engines, and what each engine process takes besides ({} MB, and {} MB per thread), fit in what the games playing leave: no tournament swaps. Automatic: {} % of the installed memory."
+msgstr "只有当一局的两个引擎的 Hash，加上每个引擎进程额外占用的内存（{} MB，每线程 {} MB），能放进进行中的对局剩下的内存时，这局才会开始：没有锦标赛会用到交换空间。自动：已安装内存的 {} %。"
 
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr "车轮战除被测引擎外至少还需要一个引擎。"
@@ -199,6 +209,9 @@ msgstr "着法的权重为走出它的对局数，不论结果如何。"
 
 msgid "A move weighs the points the side that played it made in its games: a win 2, a draw 1, a loss 0, as Polyglot counts. The games without a result are left out, and so is a move whose games were all lost."
 msgstr "着法的权重为走出它的一方在这些对局中的得分：胜 2、和 1、负 0，与 Polyglot 的算法相同。没有结果的对局被排除，所有对局都输掉的着法也被排除。"
+
+msgid "A network engine that plays on a graphics card (Lc0...): no more such engines play at once than the GPUs of Settings ({}), in a tournament and across tournaments. From the next tournament it joins."
+msgstr "在显卡上运行的神经网络引擎（Lc0……）：同时下棋的此类引擎不会多于设置中的 GPU 数（{}），在一个锦标赛内和各锦标赛之间都是如此。从它加入的下一个锦标赛起生效。"
 
 msgid "A or B of the match."
 msgstr "比赛的 A 或 B。"
@@ -366,6 +379,9 @@ msgstr "正在读取一个引擎，请稍后再试。"
 
 msgid "An engine list…"
 msgstr "引擎列表…"
+
+msgid "An engine of it uses a GPU, and no GPU is counted (Settings): games may share one."
+msgstr "其中一个引擎使用 GPU，但未计入任何 GPU（设置）：对局可能会共用一块。"
 
 msgid "An evaluation swings"
 msgstr "评估出现大幅波动"
@@ -778,6 +794,9 @@ msgstr "复制"
 msgid "Copy the version"
 msgstr "复制版本号"
 
+msgid "Cores for the tournaments"
+msgstr "锦标赛使用的核心"
+
 msgid "Cores kept busy while it thinks · share of a core used while its opponent thinks (0 % without pondering). Measured after 20 s of each."
 msgstr "思考时占用的核心数 · 对手思考时占用一个核心的比例（不后台思考时为 0 %）。各测量 20 秒后得出。"
 
@@ -957,6 +976,9 @@ msgstr "每轮是与得分相近的引擎交换颜色下的两局对局。"
 
 msgid "Each round pairs engines with similar scores, never twice the same; for large fields. The list order is the seeding."
 msgstr "每轮让得分相近的引擎配对，同一对手不会相遇两次；适用于参赛者较多的情况。列表顺序即为种子排序。"
+
+msgid "Each tournament: the cores its games use, of those it may use. The budget is set in Settings; the weights on each card decide who gets more."
+msgstr "每个锦标赛：其对局正在使用的核心数 / 允许使用的核心数。预算在设置中设定；每张卡片上的权重决定谁得到更多。"
 
 msgid "Edit in place"
 msgstr "就地编辑"
@@ -1138,6 +1160,9 @@ msgstr "所有时限"
 msgid "Every tournament is a folder: it resumes exactly where it stopped, even after a power cut."
 msgstr "每个锦标赛都是一个文件夹：即使断电，也能从中断处准确继续。"
 
+msgid "Everything"
+msgstr "全部"
+
 msgid "Expected number of games"
 msgstr "预计对局数"
 
@@ -1269,6 +1294,9 @@ msgstr "来自 {}：{}"
 
 msgid "Full screen (F11)"
 msgstr "全屏（F11）"
+
+msgid "GPUs"
+msgstr "GPU"
 
 msgid "Game #{}"
 msgstr "第 {} 局"
@@ -1490,6 +1518,9 @@ msgstr "它会从中断处准确继续：不会丢失对局，也不会重复下
 msgid "It needs the web page served."
 msgstr "需要先提供网页。"
 
+msgid "It plays beside the tournaments running, sharing the cores with them."
+msgstr "它与正在进行的锦标赛同时进行，与它们共享核心。"
+
 msgid "It starts once the book of {} is prepared."
 msgstr "{} 的开局库准备好后即开始。"
 
@@ -1561,6 +1592,9 @@ msgstr "它在某个可信等级分榜上的等级分，用于锚定锦标赛的
 
 msgid "Its results…"
 msgstr "它的成绩…"
+
+msgid "Its share of the cores against the other tournaments': a tournament of weight 2 gets twice the cores of one of weight 1, up to its own concurrency. Each tournament gets one game's worth first, while the budget allows (Settings)."
+msgstr "它相对其他锦标赛的核心份额：权重为 2 的锦标赛得到的核心是权重为 1 的两倍，但不超过它自己的并发数。只要预算允许（设置），每个锦标赛先得到够下一局的核心。"
 
 msgid "Keep my value"
 msgstr "保留我的值"
@@ -1722,6 +1756,9 @@ msgstr "最大分数 (cp)"
 msgid "Maximum number of moves"
 msgstr "最大步数"
 
+msgid "Memory for the engines"
+msgstr "引擎使用的内存"
+
 msgid "Minimum games"
 msgstr "最少对局数"
 
@@ -1838,6 +1875,9 @@ msgstr "无比赛"
 
 msgid "No match yet. Choose two engines, then click Start."
 msgstr "还没有比赛。选择两个引擎，然后点击“开始”。"
+
+msgid "No more engines marked \"Uses a GPU\" (on their card) play at once than there are GPUs, in a tournament and across tournaments: two games never share a GPU without you knowing."
+msgstr "同时下棋的标为“使用 GPU”（在其卡片上）的引擎不会多于 GPU 数，在一个锦标赛内和各锦标赛之间都是如此：两局对局绝不会在你不知情时共用一块 GPU。"
 
 msgid "No move after 10 seconds of a 0.3 s search."
 msgstr "0.3 秒搜索 10 秒后仍未给出着法。"
@@ -2163,6 +2203,9 @@ msgstr "暂停"
 
 msgid "Pause: no new pair starts. Running games, and the second game of their pair,\nplay to the end (pair statistics stay complete)."
 msgstr "暂停：不再开始新的对局对。进行中的对局及其对局对中的第二局\n会下完（对局对统计保持完整）。"
+
+msgid "Pause: no new pair starts. Running games, and the second game of their pair,\nplay to the end; its cores go to the other tournaments."
+msgstr "暂停：不再开始新的一对对局。进行中的对局及其配对的第二局\\n会下完；它的核心分给其他锦标赛。"
 
 msgid "Paused"
 msgstr "已暂停"
@@ -2670,9 +2713,6 @@ msgstr "在引擎库中将 {} 的 Threads 选项设为 {}：每个赛事都如�
 msgid "Settings"
 msgstr "设置"
 
-msgid "Settings are locked while a match is running."
-msgstr "比赛进行中，设置已锁定。"
-
 msgid "Setup"
 msgstr "配置"
 
@@ -2732,6 +2772,12 @@ msgstr "立即开始"
 
 msgid "Start timeout (s)"
 msgstr "启动超时（秒）"
+
+msgid "Start when cores are free"
+msgstr "有空闲核心时启动"
+
+msgid "Started one after the other, or beside the tournaments running when cores are free."
+msgstr "一个接一个启动，或在有空闲核心时与进行中的锦标赛同时进行。"
 
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr "在当前锦标赛自行结束后依次开始。"
@@ -2977,6 +3023,9 @@ msgstr "发送选项后引擎停止响应。"
 msgid "The engine stopped while it was asked to think."
 msgstr "要求引擎思考时，它停止了运行。"
 
+msgid "The engine threads the tournaments playing at once share, by their weights (each card of the home page). Automatic: the physical cores less one, {} here. A tournament alone plays as many games as its concurrency says."
+msgstr "同时进行的锦标赛按权重（主页上的每张卡片）共享的引擎线程数。自动：物理核心数减一，此处为 {}。单独进行的锦标赛按其并发数下棋。"
+
 msgid "The engine wrote:"
 msgstr "引擎输出："
 
@@ -3061,14 +3110,23 @@ msgstr "上一次检查或读取失败。"
 msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
 msgstr "引擎库中的名称，之后的锦标赛会使用它。已进行的锦标赛保留旧名称，其对局和等级分也一样。"
 
+msgid "The lines of one tournament, or of the window."
+msgstr "某个锦标赛的日志行，或窗口自身的。"
+
 msgid "The list order is the seeding."
 msgstr "列表顺序即种子顺序。"
+
+msgid "The memory budget, {}, lets {} of the {} games play at a time: each takes {} (the Hash of its engines and their processes). The others wait for it."
+msgstr "内存预算 {} 允许同时进行 {} 局（共 {} 局）：每局占用 {}（其引擎的 Hash 及其进程）。其余对局等待内存。"
 
 msgid "The most interesting"
 msgstr "最有看点的"
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "轮到走棋的一方正在考虑的着法及其预期的应着，以将走这些着法的引擎的颜色显示。"
+
+msgid "The next tournament starts beside those running as soon as the cores of the budget (Settings) are more than they can take, each at its concurrency."
+msgstr "一旦预算（设置）中的核心多于进行中的锦标赛按各自并发数所能占用的，下一个锦标赛就与它们同时启动。"
 
 msgid "The number of nodes must be positive."
 msgstr "节点数必须为正数。"
@@ -3240,11 +3298,18 @@ msgstr "按对局对计算时单局的方差与单独计算时单局方差之比
 msgid "The version and the system, for a bug report."
 msgstr "版本和系统信息，用于错误报告。"
 
+msgid "The window"
+msgstr "窗口"
+
 msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
 msgstr "由处理器（SDL 的软件渲染器）而不是显卡通过 OpenGL 绘制窗口：适用于虚拟机、远程桌面和有故障的显卡驱动。速度较慢，拖出窗口的面板会留在窗口内。命令行参数 --software 对单次启动有同样效果。"
 
 msgid "The working directory of {} is not found: {}"
 msgstr "找不到 {} 的工作目录：{}"
+
+msgid "The {} GPU lets {} game with an engine that uses a GPU play at a time; the other games play beside it."
+msgid_plural "The {} GPUs let {} games with an engine that uses a GPU play at a time; the other games play beside them."
+msgstr[0] "{} 块 GPU 允许同时进行 {} 局含使用 GPU 的引擎的对局；其他对局在旁同时进行。"
 
 msgid "Theme"
 msgstr "主题"
@@ -3296,6 +3361,9 @@ msgstr "该锦标赛正由另一个程序进行。"
 
 msgid "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): ending a game stops the engine on move, which would stop the tournament. Set the result once the game is over, in the Games tab."
 msgstr "此赛事启动时未开启“重启崩溃的引擎”（设置，PGN 及其他）：结束对局会停止轮到走子的引擎，这会使赛事停止。请在对局结束后，在“对局”标签页设定结果。"
+
+msgid "This window (quick test, analysis)"
+msgstr "本窗口（快速测试、分析）"
 
 msgid "Those with a problem"
 msgstr "有问题的开局"
@@ -3450,6 +3518,9 @@ msgstr "使用这些边界"
 msgid "User"
 msgstr "用户"
 
+msgid "Uses a GPU"
+msgstr "使用 GPU"
+
 msgid "Value"
 msgstr "值"
 
@@ -3485,6 +3556,9 @@ msgstr "等待读取 · 下一个读取"
 
 msgid "Web page"
 msgstr "网页"
+
+msgid "Weight"
+msgstr "权重"
 
 msgid "Weights"
 msgstr "权重"
@@ -3774,6 +3848,15 @@ msgstr "对局已结束"
 msgid "games at least"
 msgstr "最少对局数"
 
+msgid "games wait for a GPU"
+msgstr "对局在等待 GPU"
+
+msgid "games wait for cores"
+msgstr "对局在等待核心"
+
+msgid "games wait for memory"
+msgstr "对局在等待内存"
+
 msgid "gone"
 msgstr "已移除"
 
@@ -3858,6 +3941,9 @@ msgstr "无：每局都从初始局面开始"
 
 msgid "normalized: bounds in nElo (fishtest, OpenBench). logistic: classic Elo. bayesian: BayesElo, without pentanomial."
 msgstr "normalized：以 nElo 为边界（fishtest、OpenBench）。logistic：经典 Elo。bayesian：BayesElo，不使用五项分布。"
+
+msgid "not counted"
+msgstr "不计入"
 
 msgid "one opening per round"
 msgstr "每轮一个开局"
@@ -4040,6 +4126,9 @@ msgstr "{} MB"
 msgid "{} against each opponent"
 msgstr "{} 对每个对手"
 
+msgid "{} allowed by the memory"
+msgstr "内存允许 {} 局"
+
 msgid "{} and {}"
 msgstr "{} 和 {}"
 
@@ -4063,6 +4152,14 @@ msgstr "{} 已改变：已重新读取其选项，与之前相同。"
 
 msgid "{} changed: its options were read again."
 msgstr "{} 已改变：已重新读取其选项。"
+
+msgid "{} core in use"
+msgid_plural "{} cores in use"
+msgstr[0] "{} 个核心使用中"
+
+msgid "{} core shared:"
+msgid_plural "{} cores shared:"
+msgstr[0] "共享 {} 个核心："
 
 msgid "{} could not be read: kept as {}"
 msgstr "无法读取 {}：已保存为 {}"
@@ -4284,6 +4381,9 @@ msgstr "{} 节点"
 msgid "{} of memory free of {}"
 msgstr "可用内存 {}，共 {}"
 
+msgid "{} of {} cores"
+msgstr "{} / {} 个核心"
+
 msgid "{} of {} openings"
 msgstr "{} 个，共 {} 个开局"
 
@@ -4457,6 +4557,9 @@ msgstr "程序结束时 {} 正在进行：现在恢复。"
 msgid "{} will be the book of the next tournament."
 msgstr "{} 将成为下一个锦标赛的开局库。"
 
+msgid "{} with a GPU engine at a time"
+msgstr "同时 {} 局含 GPU 引擎"
+
 msgid "{} would be both the PGN file and its zip: choose a name ending in .pgn."
 msgstr "{} 将同时是 PGN 文件和它的 zip 文件：请选择以 .pgn 结尾的名称。"
 
@@ -4518,6 +4621,12 @@ msgstr "{}：决定"
 
 msgid "{}: folder not found: {}"
 msgstr "{}：找不到文件夹：{}"
+
+msgid "{}: games wait for a GPU"
+msgstr "{}：对局在等待 GPU"
+
+msgid "{}: games wait for memory"
+msgstr "{}：对局在等待内存"
 
 msgid "{}: its book cannot be used: {}"
 msgstr "{}：其开局库无法使用：{}"

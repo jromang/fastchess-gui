@@ -94,6 +94,9 @@ struct EngineEntry {
     // Kept in the library, but out of the engine pickers and of the checks of the whole library. A tournament that
     // has it already plays it as before.
     bool inactive = false;
+    // It plays on a GPU (a network engine such as Lc0): no more such engines play at once than the GPUs of Settings.
+    // Saved only when set.
+    bool gpu = false;
 
     // Last health check: -1 never, 0 failed, 1 passed.
     int check_ok = -1;
@@ -156,6 +159,7 @@ void to_json(BasicJsonType& nlohmann_json_j, const EngineEntry& nlohmann_json_t)
     if (!nlohmann_json_t.aliases.empty()) nlohmann_json_j["aliases"] = nlohmann_json_t.aliases;
     if (nlohmann_json_t.read_from.size > 0) nlohmann_json_j["read_from"] = nlohmann_json_t.read_from;
     if (nlohmann_json_t.changes) nlohmann_json_j["changes"] = *nlohmann_json_t.changes;
+    if (nlohmann_json_t.gpu) nlohmann_json_j["gpu"] = true;
 }
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
@@ -165,6 +169,7 @@ void from_json(const BasicJsonType& nlohmann_json_j, EngineEntry& nlohmann_json_
     NLOHMANN_JSON_FROM_WITH_DEFAULT(start_timeout)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(aliases)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(read_from)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(gpu)
     if (const auto it = nlohmann_json_j.find("changes"); it != nlohmann_json_j.end() && it->is_object())
         nlohmann_json_t.changes = it->template get<ProgramChanges>();
 }
@@ -377,15 +382,15 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
         sprt_rms_bias, limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto,    \
         concurrency, affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out, \
         engine_syzygy, engine_ownbook_off, book_a, book_b, big_scale, big_follow, big_seconds
-#define FCG_MATCH_SETUP_FIELDS_2                                                                                  \
-    draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,    \
-        resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,     \
-        pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,     \
-        log_every_game, stop_on_start_failure, check_mate_pvs, notify, language, theme, ui_zoom, tile_info,       \
-        live_seed_side, live_arrows,                                                                              \
-        panes, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, tlcs_lanes, broadcast_web, web_port,    \
-        broadcast_follow, broadcast_lichess, lichess_round, lichess_listed, resume_at_launch, broadcast_tunnel,   \
-        tunnel_service, tunnel_host, tunnel_port, tunnel_user, tunnel_remote_port, web_chat_link, web_discord_id
+#define FCG_MATCH_SETUP_FIELDS_2                                                                                       \
+    draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,         \
+        resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,          \
+        pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,          \
+        log_every_game, stop_on_start_failure, check_mate_pvs, notify, language, theme, ui_zoom, tile_info,            \
+        live_seed_side, live_arrows, panes, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, tlcs_lanes,     \
+        broadcast_web, web_port, broadcast_follow, broadcast_lichess, lichess_round, lichess_listed, resume_at_launch, \
+        broadcast_tunnel, tunnel_service, tunnel_host, tunnel_port, tunnel_user, tunnel_remote_port, web_chat_link,    \
+        web_discord_id
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
 void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) {
@@ -426,21 +431,38 @@ struct QueuedTournament {
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(QueuedTournament, label, setup)
 
-// The tournament the window was running, kept while it runs (running.json), so that one still there when the
-// program starts again was interrupted: by a crash, a power cut, a reboot, or by quitting while it ran.
+// A tournament the window plays, kept while it plays (running.json lists them), so that one still there when the
+// program starts again was interrupted: by a crash, a power cut, a reboot, or by quitting while it ran; or plays on
+// without the window (detached), which connects to it again.
 struct RunningMarker {
     std::string dir;
     bool paused = false;  // the user paused it: it waits for them at the next launch too
     // Resumed at launch and not yet seen playing for a while: if the program ends meanwhile (the resume crashed
     // it), the next launch does not resume it again.
     bool resuming = false;
+    double weight = 1;  // its share of the machine against the others' (budget.hpp)
 };
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RunningMarker, dir, paused, resuming)
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RunningMarker, dir, paused, resuming, weight)
 
 // The marker names the tournament in `dir`: another window of the profile may have written its own since.
 [[nodiscard]] inline bool markerNames(const std::optional<RunningMarker>& marker, const std::string& dir) {
     return marker && marker->dir == dir;
 }
+
+// What the tournaments may use of the machine together (Settings): engine threads, memory, GPUs. 0 is the default:
+// the physical cores less one (one left to the window and the system), MEMORY_SHARE percent of the installed memory,
+// and no GPU counted.
+struct MachineBudget {
+    int cores     = 0;
+    int memory_mb = 0;
+    int gpus      = 0;
+    // The queue starts its next tournament as soon as the budget has cores no tournament playing can take, rather than
+    // once the tournament playing ended.
+    bool queue_when_free              = false;
+    static constexpr int MEMORY_SHARE = 75;
+
+    bool operator==(const MachineBudget&) const = default;
+};
 
 // What to do at launch about the tournament running when the program ended.
 enum class LaunchResume {

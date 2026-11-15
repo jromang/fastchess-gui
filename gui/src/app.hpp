@@ -33,6 +33,7 @@
 #include "portable.hpp"
 #include "profiles.hpp"
 #include "qr.hpp"
+#include "remote_run.hpp"
 #include "run.hpp"
 #include "stats.hpp"
 #include "storage.hpp"
@@ -43,11 +44,11 @@
 
 #include <tour/book_scan.hpp>
 #include <tour/by_opening.hpp>
-#include <tour/submission.hpp>
 #include <tour/game_db.hpp>
 #include <tour/incidents.hpp>
 #include <tour/ratinglist.hpp>
 #include <tour/standings.hpp>
+#include <tour/submission.hpp>
 
 struct SDL_Window;
 
@@ -238,6 +239,20 @@ class App {
     [[nodiscard]] bool initGraphics();
 
    private:
+    struct OpenRun {
+        std::unique_ptr<Run> run;
+        double weight   = 1;  // its share of the machine against the other tournaments' (budget.hpp)
+        bool quick_test = false;
+        std::string finish_message;
+        std::vector<Fix> finish_fixes;
+        std::string finish_fixes_for, stopped_by;
+        bool user_stop = false, resume_guarded = false;
+        std::size_t games_at_start = 0;
+        uint64_t console_mark      = 0;
+        // watchStartFailures(): the version of its StartFailures seen, and the participants told set aside.
+        uint64_t start_failures_seen = ~uint64_t(0);
+        std::set<int> start_failures_told;
+    };
     // One view per concurrent game, shared by the mosaic, the focus panel and detached windows.
     struct SlotView {
         SlotState state;
@@ -256,7 +271,8 @@ class App {
     // shell
     void drawShell();
     void drawRail(float width);
-    [[nodiscard]] int gamesPlaying() const;  // games in progress, shown beside the live view in the navigation
+    // Games in progress: of the tournament shown (beside the live view), or of every tournament (the rail).
+    [[nodiscard]] int gamesPlaying(bool all = false) const;
     void drawHome();
     void drawNewMatch();
     // The setup of the new tournament page: its engines chosen, its SPRT bounds the wrong way round, an engine of it
@@ -637,8 +653,8 @@ class App {
     void setInactive(const std::vector<std::string>& names, bool inactive);
     void drawImportPreview();
     void addImported();  // the engines chosen
-    // A rating list (a list site's text or page, Ordo, CSV) whose ratings become the reference Elo of the library engines it names, once
-    // seen in a preview.
+    // A rating list (a list site's text or page, Ordo, CSV) whose ratings become the reference Elo of the library
+    // engines it names, once seen in a preview.
     void openRatingImport(const std::string& text = {});
     void loadRatingList(const std::string& path);  // a file chosen, read into the preview
     void readRatingImport();                       // the text of the preview, read and matched again
@@ -689,13 +705,17 @@ class App {
     bool drawStartFailures(const char* title = nullptr);
     // An engine set aside, back, or the tournament stopped for want of one: told once each, in the log, and on the
     // desktop when an engine is set aside.
-    void watchStartFailures();
+    void watchStartFailures(OpenRun& open);
+    // Starts the process playing the tournament in `dir` (created already, or to resume), in a new tab; an error
+    // message, empty on success.
+    std::string launchTournament(const std::filesystem::path& dir);
     // Those incidents by engine, the most first: what happened to it, with Open the engine and its tournament's folder.
     [[nodiscard]] std::vector<Notice> engineIncidentNotices(const tour::Incidents& incidents) const;
     // About how long the running tournament has left at its pace; nullopt without a game count or a pace yet.
     [[nodiscard]] std::optional<double> runSecondsLeft() const;
     void drawRelaunch();  // "Relaunch with…" of a finished match
     void resetRunView();  // forgets the games and statistics shown, before a run starts
+    void clearRunView();  // the games, statistics and selections the views show, forgotten
     void pollRun();
     void onRunFinished();
     std::string runStatusText() const;
@@ -728,7 +748,65 @@ class App {
     bool setup_dirty_ = false;
     std::chrono::steady_clock::time_point last_setup_save_{};
 
-    RunController run_;
+    // The tournaments open in the workspace, a tab each: those playing, each in a process of its own (RemoteRun), the
+    // quick test (played here, RunController), and those opened to look at them. The views show `run_`, the tab
+    // chosen; what they showed of another tab is kept with it (OpenRun) while it is not shown.
+    std::vector<OpenRun> runs_;
+    std::size_t shown_run_ = 0;
+    RunController idle_run_;  // what the views read while no tournament is open
+    Run* run_ = &idle_run_;
+    [[nodiscard]] OpenRun* shownRun() { return shown_run_ < runs_.size() ? &runs_[shown_run_] : nullptr; }
+    // The tab of the tournament in `dir`, -1 when none.
+    [[nodiscard]] int findRun(const std::filesystem::path& dir) const;
+    [[nodiscard]] int runsPlaying() const;  // tournaments playing, the quick test included
+    // A tournament plays in this program (the quick test): fastchess' globals are taken, and its engines must not be
+    // ended by an engine read interrupted for a start.
+    [[nodiscard]] bool localPlaying() const;
+    // A new tab, shown at once (the views start over from it); returns its index.
+    std::size_t addRun(OpenRun run);
+    // The workspace shows tab `index`: what the views showed of the tab before is kept with it.
+    void showRun(std::size_t index);
+    // Closes the tab of a tournament that does not play.
+    void closeRun(std::size_t index);
+    void stashRunView();  // what the views show of the shown tab, into its OpenRun
+    void loadRunView();   // and back, then the views start over from its tournament
+    void drawRunTabs();   // the tabs, above the workspace's header
+    // The controls of tab `index` on the home page's card: pause or resume, stop, its weight against the others'.
+    void drawRunControls(std::size_t index);
+    // How the cores are shared now: by tournament and the analysis, a bar and a line each (home page).
+    void drawCoreShare();
+    // The machine's budget (Settings, MachineBudget): what the tournaments share, its defaults resolved.
+    MachineBudget budget_setting_;
+    uint64_t installed_mb_ = 0;  // the machine's memory, read once
+    [[nodiscard]] tour::Budget machineBudget() const;
+    // The engine threads of the window's own engines: the quick test's games, the analysis engine of the Board page.
+    [[nodiscard]] int localThreads() const;
+    // The share of each tournament playing, by weight (budget.hpp): their allowances, sent to their processes when
+    // they change. Every frame: a tournament started, ended, paused, its weight changed, the budget changed.
+    void arbitrate();
+    // The cores of the budget no tournament playing can take (each at its concurrency), nor the window's engines.
+    [[nodiscard]] int freeCores() const;
+    // The queue may start its next tournament beside those playing (MachineBudget::queue_when_free).
+    [[nodiscard]] bool queueBeside(std::size_t index) const;
+    // What a tournament about to start gets (with the weight `weight`), beside those playing.
+    [[nodiscard]] tour::Allowance allowanceFor(const tour::TournamentSpec& spec, double weight) const;
+    // The cores of the budget by user: each tournament (what it may use, what it uses), the window's own engines.
+    struct CoreUse {
+        std::string label;
+        int allowed = 0;  // engine threads it may use; -1: no limit (it plays alone)
+        int in_use  = 0;
+    };
+    [[nodiscard]] std::vector<CoreUse> coreShare() const;
+    // Settings: the machine's budget.
+    void drawMachineBudget(float label);
+    int tab_select_frames_ = 0;  // the tab bar selects the tab shown (showRun() from elsewhere) for a few frames
+    // What runStatusText() says of tab `index`, shown or not.
+    [[nodiscard]] std::string runStatusText(std::size_t index) const;
+    // Why the tournament in `dir` cannot be resumed (finished, a book that cannot be used, played elsewhere); empty
+    // when it can.
+    [[nodiscard]] std::string resumeCheck(const std::filesystem::path& dir);
+    // A tournament of a tab not shown ended: told, its queue goes on, as onRunFinished() does for the shown one.
+    void onBackgroundRunFinished(std::size_t index);
     Dialogs dialogs_;
     PieceAtlas atlas_;
 
@@ -913,7 +991,10 @@ class App {
     // Console view.
     std::vector<Console::Line> console_lines_;
     uint64_t console_version_ = 0;
-    bool console_follow_      = true;
+    std::string console_source_;                // the tournament whose lines are shown; empty: all; "-": the window's
+    std::vector<std::string> console_sources_;  // the tournaments the lines come from
+    std::vector<int> console_shown_;            // the lines shown, by index
+    bool console_follow_ = true;
 
     // Standings of a round robin or gauntlet, recomputed when games arrive.
     tour::Table table_;
@@ -990,14 +1071,9 @@ class App {
     uint64_t result_cache_version_ = ~uint64_t{0};
     const void* result_cache_of_   = nullptr;
 
-    // watchStartFailures(): the run it watches (by its start), the version of its StartFailures seen, and the
-    // participants told set aside.
-    Clock::time_point start_failures_run_{};
-    uint64_t start_failures_seen_ = ~uint64_t(0);
-    std::set<int> start_failures_told_;
-
     // Queue and relaunch.
     std::vector<QueuedTournament> queue_;
+    std::chrono::steady_clock::time_point queue_checked_{};  // the queue looked at for cores free
     std::string relaunch_engine_;
 
     // Broadcast.

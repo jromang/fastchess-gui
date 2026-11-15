@@ -54,7 +54,7 @@ uint64_t processMb(const fastchess::EngineConfiguration& engine) {
 
 GameCost gameCost(const Participant& a, const Participant& b) {
     GameCost c;
-    c.threads   = engineThreads(a.engine) + engineThreads(b.engine);
+    c.threads   = std::max(engineThreads(a.engine), engineThreads(b.engine));
     c.memory_mb = processMb(a.engine) + processMb(b.engine);
     c.gpus      = (a.gpu ? 1 : 0) + (b.gpu ? 1 : 0);
     return c;
@@ -74,12 +74,10 @@ GameCost largestGame(const TournamentSpec& spec) {
     std::sort(threads.rbegin(), threads.rend());
     std::sort(memory.rbegin(), memory.rend());
     GameCost c;
-    for (std::size_t i = 0; i < 2 && i < threads.size(); ++i) {
-        c.threads += threads[i];
-        c.memory_mb += memory[i];
-    }
+    if (!threads.empty()) c.threads = threads[0];
+    for (std::size_t i = 0; i < 2 && i < memory.size(); ++i) c.memory_mb += memory[i];
     c.gpus = std::min(gpus, 2);
-    if (c.threads == 0) c.threads = 2;  // no participant yet: two single-thread engines
+    if (c.threads == 0) c.threads = 1;  // no participant yet: single-thread engines
     return c;
 }
 
