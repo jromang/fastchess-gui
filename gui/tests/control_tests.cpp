@@ -16,6 +16,7 @@ TEST_CASE("control: hello, status and end come back as they went") {
     h.dir           = "/runs/a";
     h.pid           = 4242;
     h.journal       = 12345;
+    h.playing_ms    = 3'600'000;
     const auto back = parseHello(nlohmann::json::parse(helloJson(h).dump()));
     REQUIRE(back);
     CHECK(back->protocol == PROTOCOL);
@@ -23,6 +24,7 @@ TEST_CASE("control: hello, status and end come back as they went") {
     CHECK(back->dir == "/runs/a");
     CHECK(back->pid == 4242);
     CHECK(back->journal == 12345);
+    CHECK(back->playing_ms == 3'600'000);
     CHECK_FALSE(parseHello(nlohmann::json{{"seq", 1}, {"e", "state"}}));
 
     Status s;

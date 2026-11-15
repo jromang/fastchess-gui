@@ -46,6 +46,7 @@ nlohmann::json helloJson(const Hello& h) {
     nlohmann::json j = {{"protocol", h.protocol}, {"version", h.version}};
     if (!h.dir.empty()) j["dir"] = h.dir;
     if (h.pid) j["pid"] = h.pid;
+    if (h.playing_ms) j["playing_ms"] = h.playing_ms;
     if (h.journal) j["journal"] = h.journal;
     return {{"hello", j}};
 }
@@ -54,11 +55,12 @@ std::optional<Hello> parseHello(const nlohmann::json& line) {
     const auto it = line.find("hello");
     if (it == line.end() || !it->is_object()) return std::nullopt;
     Hello h;
-    h.protocol = get(*it, "protocol", 0);
-    h.version  = get(*it, "version", std::string{});
-    h.dir      = get(*it, "dir", std::string{});
-    h.pid      = get(*it, "pid", int64_t{0});
-    h.journal  = get(*it, "journal", uint64_t{0});
+    h.protocol   = get(*it, "protocol", 0);
+    h.version    = get(*it, "version", std::string{});
+    h.dir        = get(*it, "dir", std::string{});
+    h.pid        = get(*it, "pid", int64_t{0});
+    h.playing_ms = get(*it, "playing_ms", int64_t{0});
+    h.journal    = get(*it, "journal", uint64_t{0});
     return h;
 }
 

@@ -156,6 +156,8 @@ void RemoteRun::apply(const nlohmann::json& m) {
             process_.disconnect();
         }
         if (hello->pid) pid_ = hello->pid;
+        // Playing since before this window connected: its time counts from its start, not from the connection.
+        if (hello->playing_ms > 0) info_.started = Clock::now() - std::chrono::milliseconds(hello->playing_ms);
         return;
     }
     const auto kind = m.value("e", std::string{});

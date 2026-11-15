@@ -46,6 +46,9 @@ struct Hello {
     // The tournament's: its folder and process.
     std::string dir;
     int64_t pid = 0;
+    // How long it has played in this process, in milliseconds: a window that connects later counts its time from
+    // there rather than from its own start. As a duration, not a date, so that another machine's clock does not matter.
+    int64_t playing_ms = 0;
     // The window's: where the journal its copy of the tournament holds ends (TournamentState::journalSize()); the
     // tournament sends the lines after it.
     uint64_t journal = 0;

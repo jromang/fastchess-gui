@@ -124,6 +124,7 @@ class SocketChannel final : public ChildChannel {
 
     std::filesystem::path dir_;
     control::Hello hello_;
+    std::chrono::steady_clock::time_point started_ = std::chrono::steady_clock::now();  // for hello_.playing_ms
     local::Server server_;
     std::shared_ptr<Link> client_;  // the window connected, if any; write_mutex_ held
     bool ready_ = false;            // it was sent the hello and the journal lines it lacked: the events go to it

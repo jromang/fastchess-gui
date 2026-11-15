@@ -313,8 +313,12 @@ void SocketChannel::serve(std::shared_ptr<Link> client) {
         }
         {
             std::lock_guard<std::mutex> lock(write_mutex_);
-            ready_ = true;
-            helloLocked(hello_);
+            ready_     = true;
+            auto hello = hello_;
+            hello.playing_ms =
+                std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started_)
+                    .count();
+            helloLocked(hello);
             if (from) replayJournal(*from);
         }
         for (std::size_t i = from ? 1 : 0; i < lines.size(); ++i) received(lines[i]);

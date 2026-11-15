@@ -329,6 +329,7 @@ TEST_CASE("remote: a tournament on its socket plays on without the window, which
     const auto dir     = makeTournament(profile, roundRobin(3, 4), 3);
 
     std::size_t seen = 0;
+    Clock::time_point played_by{};  // the process played already then
     {
         Harness h;
         RemoteStart start;
@@ -338,6 +339,7 @@ TEST_CASE("remote: a tournament on its socket plays on without the window, which
         start.detached = true;
         REQUIRE(h.run.start(start).empty());
         REQUIRE(h.waitFor([&] { return h.games.size() >= 2; }, 60s));
+        played_by = Clock::now();
         CHECK_FALSE(h.run.connecting());
         CHECK(h.run.pid() > 0);
         seen = h.games.size();
@@ -384,6 +386,8 @@ TEST_CASE("remote: a tournament on its socket plays on without the window, which
     REQUIRE(h.run.attach(dir, std::move(link)).empty());
     REQUIRE(h.waitFor([&] { return h.games.size() > seen + 2 && h.saw_moves; }, 60s));
     CHECK(h.run.pid() == control->pid);
+    // Its time counts from the process's start, told in its hello, not from this connection.
+    CHECK(h.run.info().started < played_by);
 
     // A second window is turned away: one window at a time talks with a tournament.
     {
