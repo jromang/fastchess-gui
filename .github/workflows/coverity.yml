@@ -86,10 +86,11 @@ jobs:
           rm cov-analysis-linux64.tar.gz
 
       - name: Configure
+        # Without ccache: cov-build must see every compilation.
         env:
           CC: gcc-12
           CXX: g++-12
-        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DFCG_CCACHE=OFF
 
       - name: Build the dependencies
         # Before cov-build watches the compiler: the FetchContent libraries are not analysed, only the program, its

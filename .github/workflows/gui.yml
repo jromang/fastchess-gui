@@ -4,18 +4,31 @@ on:
   push:
     branches: ["gui"]
     tags: ["v*"]
+    # Not for a change of the documentation alone (docs/guide.md excepted: a test reads it). Tags are not filtered:
+    # a release is always built.
+    paths: ["**", "!**.md", "!docs/**", "docs/guide.md"]
   pull_request:
     branches: ["gui"]
+    paths: ["**", "!**.md", "!docs/**", "docs/guide.md"]
   workflow_dispatch:
 
 permissions:
   contents: read
+
+# A newer push to the branch or to the pull request makes the run still going useless: it is cancelled. Never a
+# release's.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 jobs:
   linux:
     name: Linux build and tests
     # The oldest supported runner, so that the binary runs on older glibc versions too.
     runs-on: ubuntu-22.04
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 500M
     steps:
       - uses: actions/checkout@v7
 
@@ -37,10 +50,18 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ninja-build g++-12 \
+          sudo apt-get install -y --no-install-recommends ninja-build ccache g++-12 \
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
             libxkbcommon-dev libwayland-dev wayland-protocols libdecor-0-dev libegl1-mesa-dev libgl1-mesa-dev \
             libdrm-dev libgbm-dev libdbus-1-dev libudev-dev
+
+      - name: Compiler cache
+        # What the last runs compiled (the dependencies above all): only what changed is compiled again.
+        uses: actions/cache@v6
+        with:
+          path: .ccache
+          key: ccache-linux-${{ github.run_id }}
+          restore-keys: ccache-linux-
 
       - name: Configure
         env:
@@ -49,18 +70,15 @@ jobs:
         run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DFCG_STATIC_RUNTIME=ON
 
       - name: Build
-        run: cmake --build build
-
-      - name: GUI tests
-        run: ./build/fastchess-gui-tests
-
-      - name: Tournament layer tests
-        run: ./build/fcg-tournament-tests
-
-      - name: Upstream fastchess tests
         run: |
-          make -C app -j"$(nproc)" tests CXX=g++-12
-          ./app/fastchess-tests
+          ccache -z
+          cmake --build build
+          ccache -s
+
+      - name: Tests
+        # Side by side, each test case in a process of its own (tools/run_tests.py): they mostly wait, so two per
+        # processor. fastchess' own tests run when app/ changes (upstream_tests.yml).
+        run: python3 tools/run_tests.py -j 8 build/fastchess-gui-tests build/fcg-tournament-tests
 
       - uses: actions/upload-artifact@v7
         with:
@@ -72,6 +90,9 @@ jobs:
   sanitizers:
     name: Linux tests with AddressSanitizer and UBSan
     runs-on: ubuntu-24.04
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 500M
     steps:
       - uses: actions/checkout@v7
 
@@ -91,9 +112,12 @@ jobs:
           fi
 
       - name: Install dependencies
+        # clang 23 from LLVM's archive, as for the fuzzers: everything instrumented compiles in a third of gcc's time.
         run: |
+          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc > /dev/null
+          echo "deb https://apt.llvm.org/noble/ llvm-toolchain-noble-23 main" | sudo tee /etc/apt/sources.list.d/llvm-23.list
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ninja-build g++-14 \
+          sudo apt-get install -y --no-install-recommends ninja-build ccache clang-23 libclang-rt-23-dev \
             libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
             libxkbcommon-dev libwayland-dev wayland-protocols libdecor-0-dev libegl1-mesa-dev libgl1-mesa-dev \
             libdrm-dev libgbm-dev libdbus-1-dev libudev-dev
@@ -102,11 +126,19 @@ jobs:
         # The runner's kernel randomises more address bits than the sanitizers' shadow memory allows.
         run: sudo sysctl -w vm.mmap_rnd_bits=28
 
+      - name: Compiler cache
+        # What the last runs compiled (the dependencies above all): only what changed is compiled again.
+        uses: actions/cache@v6
+        with:
+          path: .ccache
+          key: ccache-sanitizers-${{ github.run_id }}
+          restore-keys: ccache-sanitizers-
+
       - name: Configure
         # Everything instrumented, the dependencies too; the test engines the tests start as well.
         env:
-          CC: gcc-14
-          CXX: g++-14
+          CC: clang-23
+          CXX: clang++-23
         run: >
           cmake -B build-asan -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
           "-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
@@ -114,20 +146,24 @@ jobs:
           "-DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined"
 
       - name: Build
-        run: cmake --build build-asan --target fastchess-gui-tests fcg-tournament-tests
+        run: |
+          ccache -z
+          cmake --build build-asan --target fastchess-gui-tests fcg-tournament-tests
+          ccache -s
 
       - name: Tests
-        # Every report to a file of its process's own: the test programs' and those of the engines they start, whose
-        # output the tests read. A report fails the test program; any report fails the next step. Each call's locals
-        # on the stack, not in AddressSanitizer's heap for use after return: libssh2 sends the rest of a keepalive
-        # only from a buffer at the same address as the first time, a local of its keepalive function.
+        # Side by side, each test case in a process of its own (tools/run_tests.py), one per processor: instrumented,
+        # they are slower and some of their waits are short. Every report to a file of its process's own: the test
+        # cases' and those of the engines they start, whose output the tests read. A report fails its test case; any
+        # report fails the next step. Each call's locals on the stack, not in AddressSanitizer's heap for use after
+        # return: libssh2 sends the rest of a keepalive only from a buffer at the same address as the first time, a
+        # local of its keepalive function.
         env:
           ASAN_OPTIONS: detect_leaks=1:detect_stack_use_after_return=0:log_path=${{ runner.temp }}/sanitizers/report
           UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1:log_path=${{ runner.temp }}/sanitizers/report
         run: |
           mkdir -p "${RUNNER_TEMP}/sanitizers"
-          ./build-asan/fastchess-gui-tests
-          ./build-asan/fcg-tournament-tests
+          python3 tools/run_tests.py -j 4 build-asan/fastchess-gui-tests build-asan/fcg-tournament-tests
 
       - name: Sanitizer reports
         if: always()
@@ -140,6 +176,9 @@ jobs:
   windows-build:
     name: Windows cross-build
     runs-on: ubuntu-24.04
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 500M
     steps:
       - uses: actions/checkout@v7
 
@@ -161,7 +200,15 @@ jobs:
       - name: Install mingw-w64
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ninja-build mingw-w64
+          sudo apt-get install -y --no-install-recommends ninja-build ccache mingw-w64
+
+      - name: Compiler cache
+        # What the last runs compiled (the dependencies above all): only what changed is compiled again.
+        uses: actions/cache@v6
+        with:
+          path: .ccache
+          key: ccache-windows-${{ github.run_id }}
+          restore-keys: ccache-windows-
 
       - name: Configure
         run: >
@@ -169,7 +216,10 @@ jobs:
           -DCMAKE_TOOLCHAIN_FILE=cmake/mingw-w64.cmake -DMINGW_SUFFIX=-posix
 
       - name: Build
-        run: cmake --build build-win
+        run: |
+          ccache -z
+          cmake --build build-win
+          ccache -s
 
       - uses: actions/upload-artifact@v7
         with:
@@ -193,31 +243,45 @@ jobs:
           name: windows
           path: bin
 
-      - name: GUI tests
+      - name: Tests
+        # Side by side, each test case in a process of its own (tools/run_tests.py).
         env:
           FCG_SOURCE_DIR: ${{ github.workspace }}
-        run: bin\fastchess-gui-tests.exe
-
-      - name: Tournament layer tests
-        run: bin\fcg-tournament-tests.exe
+        run: python tools/run_tests.py -j 8 bin\fastchess-gui-tests.exe bin\fcg-tournament-tests.exe
 
   macos:
     name: macOS build and tests
     # Apple silicon. The programs are universal (arm64 and x86_64), for macOS 13.3 and later.
     runs-on: macos-latest
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_MAXSIZE: 500M
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Ninja
+      - name: Install Ninja and ccache
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
-        run: command -v ninja || brew install ninja
+        run: |
+          command -v ninja || brew install ninja
+          command -v ccache || brew install ccache
+
+      - name: Compiler cache
+        # What the last runs compiled (the dependencies above all): only what changed is compiled again.
+        uses: actions/cache@v6
+        with:
+          path: .ccache
+          key: ccache-macos-${{ github.run_id }}
+          restore-keys: ccache-macos-
 
       - name: Configure
         run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release "-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64"
 
       - name: Build
-        run: cmake --build build
+        run: |
+          ccache -z
+          cmake --build build
+          ccache -s
 
       - name: Universal binaries
         run: |
@@ -226,11 +290,9 @@ jobs:
             lipo "${program}" -verify_arch arm64 x86_64
           done
 
-      - name: GUI tests
-        run: ./build/fastchess-gui-tests
-
-      - name: Tournament layer tests
-        run: ./build/fcg-tournament-tests
+      - name: Tests
+        # Side by side, each test case in a process of its own (tools/run_tests.py), two per processor.
+        run: python3 tools/run_tests.py -j 6 build/fastchess-gui-tests build/fcg-tournament-tests
 
       - name: Package
         run: |
