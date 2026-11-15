@@ -174,7 +174,8 @@ TEST_CASE("portable: the profile's files keep relative paths, and the folder can
         e.name = "Stockfish";
         e.cmd  = engine;
         storage.saveEngines({e});
-        CHECK(json(plain / "engines.json").find(engine) != std::string::npos);
+        // As JSON writes it: Windows' backslashes are escaped there.
+        CHECK(json(plain / "engines.json").find(nlohmann::json(engine).dump()) != std::string::npos);
         CHECK(storage.loadEngines().at(0).cmd == engine);
         std::error_code ec;
         fs::remove_all(plain, ec);

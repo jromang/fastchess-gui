@@ -106,6 +106,7 @@ TEST_CASE("board game: a pair of games with the colours reversed, every move leg
     // Both games in the file, read back move for move.
     std::ifstream in(pgn, std::ios::binary);
     const std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    in.close();  // Windows removes no file still open
     std::istringstream stream(text);
     const auto index = tour::indexPgn(stream);
     REQUIRE(index.size() == 2);
