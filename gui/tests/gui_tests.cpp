@@ -2138,3 +2138,16 @@ TEST_CASE("processor use: kept with each game, so that a resumed tournament star
     std::error_code ec;
     fs::remove_all(dir, ec);
 }
+
+TEST_CASE("processor use: a process tree takes each process once, a parent id reused into a cycle included") {
+    // 10 started 11 and 12, 12 started 13; 14 names 13 as its parent, and 13 names 14: a process id reused.
+    const std::vector<std::pair<int64_t, int64_t>> parents{{11, 10}, {12, 10}, {13, 12}, {14, 13}, {13, 14}, {0, 0},
+                                                           {20, 1}};
+    CHECK(descendants(10, parents) == std::vector<int64_t>{10, 11, 12, 13, 14});
+    CHECK(descendants(20, parents) == std::vector<int64_t>{20});
+    CHECK(descendants(0, parents).empty());
+    // A process that starts processes without end: bounded.
+    std::vector<std::pair<int64_t, int64_t>> chain;
+    for (int64_t p = 1; p < 10000; ++p) chain.emplace_back(p + 1, p);
+    CHECK(descendants(1, chain).size() == MAX_PROCESS_TREE);
+}

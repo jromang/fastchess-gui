@@ -1,5 +1,8 @@
 #include "cpu_time.hpp"
 
+#include <algorithm>
+#include <set>
+
 #ifdef _WIN32
 #    include <windows.h>
 // windows.h first
@@ -22,6 +25,20 @@
 
 namespace fcg {
 
+std::vector<int64_t> descendants(int64_t pid, const std::vector<std::pair<int64_t, int64_t>>& parents) {
+    std::vector<int64_t> out;
+    if (pid <= 0) return out;
+    out.push_back(pid);
+    std::set<int64_t> seen{pid};
+    for (std::size_t i = 0; i < out.size() && out.size() < MAX_PROCESS_TREE; ++i) {
+        for (const auto& [p, parent] : parents) {
+            if (parent == out[i] && p > 0 && seen.insert(p).second) out.push_back(p);
+            if (out.size() >= MAX_PROCESS_TREE) break;
+        }
+    }
+    return out;
+}
+
 #ifdef _WIN32
 
 std::vector<int64_t> processTree(int64_t pid) {
@@ -31,20 +48,14 @@ std::vector<int64_t> processTree(int64_t pid) {
 
     const HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (snapshot == INVALID_HANDLE_VALUE) return out;
-    std::vector<std::pair<DWORD, DWORD>> all;  // (pid, parent)
+    std::vector<std::pair<int64_t, int64_t>> all;  // (pid, parent)
     PROCESSENTRY32 entry{};
     entry.dwSize = sizeof(entry);
     for (BOOL more = Process32First(snapshot, &entry); more; more = Process32Next(snapshot, &entry)) {
         all.emplace_back(entry.th32ProcessID, entry.th32ParentProcessID);
     }
     CloseHandle(snapshot);
-
-    for (std::size_t i = 0; i < out.size(); ++i) {
-        for (const auto& [p, parent] : all) {
-            if (static_cast<int64_t>(parent) == out[i] && p != 0) out.push_back(p);
-        }
-    }
-    return out;
+    return descendants(pid, all);
 }
 
 int64_t cpuTimeMs(const std::vector<int64_t>& pids) {
@@ -72,9 +83,12 @@ std::vector<int64_t> processTree(int64_t pid) {
     std::vector<int64_t> out;
     if (pid <= 0) return out;
     out.push_back(pid);
-    // Bounded, for a process that starts processes without end.
-    for (std::size_t i = 0; i < out.size() && out.size() < 4096; ++i) {
-        for (const int child : childProcesses(static_cast<int>(out[i]))) out.push_back(child);
+    // Bounded, for a process that starts processes without end; each once.
+    std::set<int64_t> seen{pid};
+    for (std::size_t i = 0; i < out.size() && out.size() < MAX_PROCESS_TREE; ++i) {
+        for (const int child : childProcesses(static_cast<int>(out[i]))) {
+            if (seen.insert(child).second) out.push_back(child);
+        }
     }
     return out;
 }
@@ -109,6 +123,7 @@ void children(int64_t pid, std::vector<int64_t>& out) {
     for (const auto& task : std::filesystem::directory_iterator("/proc/" + std::to_string(pid) + "/task", ec)) {
         std::ifstream list(task.path() / "children");
         for (int64_t child; list >> child;) {
+            if (out.size() >= MAX_PROCESS_TREE || std::find(out.begin(), out.end(), child) != out.end()) continue;
             out.push_back(child);
             children(child, out);
         }
