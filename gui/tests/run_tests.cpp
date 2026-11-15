@@ -91,6 +91,24 @@ struct Harness {
         }
         return false;
     }
+
+    // Pumps until the run is finished, however long that takes, as long as games keep ending: fails once none ended
+    // for `quiet`. A machine busy with other tests plays slowly, but plays; a fixed time to the end would be too short
+    // there one day.
+    bool waitFinished(std::chrono::milliseconds quiet = 90s) {
+        auto last_game   = std::chrono::steady_clock::now();
+        std::size_t seen = games.size();
+        while (std::chrono::steady_clock::now() - last_game < quiet) {
+            pump();
+            if (run.state() == RunController::State::Finished) return true;
+            if (games.size() != seen) {
+                seen      = games.size();
+                last_game = std::chrono::steady_clock::now();
+            }
+            std::this_thread::sleep_for(10ms);
+        }
+        return false;
+    }
 };
 
 MatchSetup randomSetup(int games) {
@@ -153,7 +171,7 @@ TEST_CASE("pause lets running games finish and starts no new one; stop when idle
     REQUIRE(h.waitFor([&] { return h.games.size() >= at_pause + 4; }));
 
     h.run.stopWhenIdle();
-    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }));
+    REQUIRE(h.waitFinished());
     CHECK(h.run.takeFinishedEvent());
     CHECK(h.run.stoppedByUser());
     CHECK(h.run.error().empty());
@@ -173,7 +191,7 @@ TEST_CASE("pause lets running games finish and starts no new one; stop when idle
     // A second run in the same process works (fastchess keeps its state in globals).
     Harness second;
     REQUIRE(second.run.start(randomSetup(6), randomEngines(), topologyFromCores({{0, 0}, {0, 1}}), root).empty());
-    REQUIRE(second.waitFor([&] { return second.run.state() == RunController::State::Finished; }, 30s));
+    REQUIRE(second.waitFinished());
     CHECK_FALSE(second.run.stoppedByUser());
     CHECK(second.games.size() == 6);
     CHECK(second.stats.back().sum() == 6);
@@ -417,7 +435,7 @@ TEST_CASE("a match stopped abruptly is offered for resume and ends with exactly 
         REQUIRE(h.run.start(setup, randomEngines(), topology, root).empty());
         REQUIRE(h.waitFor([&] { return h.games.size() >= 8; }));
         h.run.stopNow();  // running games are lost, as when the program is killed
-        REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }));
+        REQUIRE(h.waitFinished());
         totals = h.run.observer()->totals();
     }
 
@@ -496,7 +514,7 @@ TEST_CASE("the games of a new setup's tournament have in their PGN every field t
     {  // The harness keeps the journal open: Windows removes the folder only once it is closed.
         Harness h;
         REQUIRE(h.run.start(randomSetup(2), randomEngines(), topologyFromCores({{0, 0}, {0, 1}}), root).empty());
-        REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }));
+        REQUIRE(h.waitFinished());
         setEnv("FCG_MOCK_SEARCH", nullptr);
         REQUIRE(h.games.size() == 2);
 
@@ -540,7 +558,7 @@ TEST_CASE("a round robin of three engines plays every pairing and shows every na
 
     Harness h;
     REQUIRE(h.run.start(setup, engines, topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}}), root).empty());
-    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
+    REQUIRE(h.waitFinished());
     CHECK(h.run.error().empty());
 
     // 3 pairings x 2 games x 2 cycles.
@@ -619,7 +637,7 @@ TEST_CASE("an engine that cannot start: the other games go on through the contro
     // Repaired, then tried again at once: its games are played, and the tournament ends complete.
     fs::remove(broken);
     CHECK(h.run.tryEngineAgain(c));
-    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 60s));
+    REQUIRE(h.waitFinished());
     CHECK(h.run.error().empty());
     CHECK(h.games.size() == 3u * 2 * 40);
     CHECK(t->finished());
@@ -657,13 +675,17 @@ TEST_CASE("a finished round robin extended by a cycle resumes to play exactly th
     MatchSetup setup   = randomSetup(0);
     setup.format       = TournamentFormat::RoundRobin;
     setup.participants = {{"random-a"}, {"random-b"}, {"random-c"}};
-    const auto cores   = topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}});
+    // Games of random moves can last hundreds of plies, slow on Windows: this test is about the games played again,
+    // not their length, and they end as draws after 40 moves.
+    setup.maxmoves_enabled = true;
+    setup.maxmoves         = 40;
+    const auto cores       = topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}});
 
     fs::path dir;
     {
         Harness h;
         REQUIRE(h.run.start(setup, engines, cores, root).empty());
-        REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
+        REQUIRE(h.waitFinished());
         CHECK(h.games.size() == 6);
         dir = h.run.tournament()->dir();
 
@@ -681,7 +703,7 @@ TEST_CASE("a finished round robin extended by a cycle resumes to play exactly th
 
     Harness h;
     REQUIRE(h.run.resume(dir).empty());
-    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
+    REQUIRE(h.waitFinished());
     CHECK(h.run.error().empty());
     CHECK(h.games.size() == 12);
 }
@@ -791,7 +813,7 @@ TEST_CASE("a Swiss and a knockout are played to the end through the GUI's contro
     {
         Harness h;
         REQUIRE(h.run.start(setup, engines, cores, root).empty());
-        REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 120s));
+        REQUIRE(h.waitFinished());
         CHECK(h.run.error().empty());
         CHECK(h.games.size() == 3u * 2u * 2u);  // 3 rounds, 2 pairings (one bye), 2 games
         CHECK(h.run.tournament()->byes().size() == 3);
@@ -801,7 +823,7 @@ TEST_CASE("a Swiss and a knockout are played to the end through the GUI's contro
     setup.cycles = 1;
     Harness h;
     REQUIRE(h.run.start(setup, engines, cores, root).empty());
-    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 60s));
+    REQUIRE(h.waitFinished());
     CHECK(h.run.error().empty());
     CHECK(h.run.tournament()->finished());
     const auto brackets = h.run.tournament()->brackets();
@@ -840,7 +862,7 @@ TEST_CASE("the engines' search output reaches the live view while they think") {
     CHECK(seen);
 
     h.run.stopWhenIdle();
-    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 30s));
+    REQUIRE(h.waitFinished());
 }
 
 TEST_CASE("a game ended by the operator while it is played counts with their result, and the match goes on") {
@@ -879,7 +901,7 @@ TEST_CASE("a game ended by the operator while it is played counts with their res
     CHECK(error.empty());
     CHECK_FALSE(h.run.endGame(0, 3, "1-0", "").empty());  // not being played
 
-    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 60s));
+    REQUIRE(h.waitFinished());
     setEnv("FCG_MOCK_MOVE_MS", nullptr);
     CHECK(h.run.error().empty());
     const auto* t = h.run.tournament();
@@ -993,7 +1015,7 @@ TEST_CASE("quick test: ten games against the engine itself, then a report on its
 
     Harness h;
     REQUIRE(h.run.start(setup, engines, topologyFromCores({{0, 0}, {0, 1}, {0, 2}, {0, 3}}), root).empty());
-    REQUIRE(h.waitFor([&] { return h.run.state() == RunController::State::Finished; }, 60s));
+    REQUIRE(h.waitFinished());
     CHECK(h.run.error().empty());
     CHECK(h.games.size() == 10);
 
