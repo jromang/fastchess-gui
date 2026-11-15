@@ -113,6 +113,10 @@ this repository still builds unchanged.
 |---|---|
 | ![Charts](docs/screenshots/charts.png) | ![Big screen](docs/screenshots/big-screen.png) |
 
+| A new tournament: a profile for each section, the engine library beside the participants | The Board page: an engine of the library analyses any position |
+|---|---|
+| ![New tournament](docs/screenshots/new-tournament.png) | ![Board](docs/screenshots/board.png) |
+
 | Two tournaments at once, sharing the cores by weight |
 |---|
 | ![Several tournaments](docs/screenshots/several.png) |
