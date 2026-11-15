@@ -13,6 +13,7 @@
 #include <fmt/include/fmt/format.h>
 #include <core/globals/globals.hpp>
 #include <tour/files.hpp>
+#include <tour/sprt_rules.hpp>
 
 #include "i18n.hpp"
 #include "memory.hpp"
@@ -805,9 +806,9 @@ void App::onRunFinished() {
             if (p && p->active) names += (names.empty() ? "" : ", ") + e.name;
         }
         verdict = trf("Stopped: no game is left to play without {}, which cannot start", names);
-    } else if (info.sprt && sprt_ && current_.llr >= sprt_->getUpperBound()) {
+    } else if (info.sprt && sprt_ && sprtVerdict() == fastchess::SPRT_H1) {
         verdict = trf("SPRT finished: H1 accepted, {} is stronger", info.engine_a);
-    } else if (info.sprt && sprt_ && current_.llr <= sprt_->getLowerBound()) {
+    } else if (info.sprt && sprt_ && sprtVerdict() == fastchess::SPRT_H0) {
         verdict = trf("SPRT finished: H0 accepted, {} is not stronger", info.engine_a);
     } else if (run_.stoppedByUser()) {
         verdict = TR("Stopped");
@@ -897,6 +898,12 @@ void App::startFromQueue(bool go_on, std::size_t from, const std::string& label)
     }
 }
 
+fastchess::SPRTResult App::sprtVerdict() const {
+    const auto* t  = run_.tournament();
+    const auto why = t ? t->finishReason() : std::string();
+    return why == "sprt_h1" ? fastchess::SPRT_H1 : why == "sprt_h0" ? fastchess::SPRT_H0 : fastchess::SPRT_CONTINUE;
+}
+
 std::string App::summaryText() const {
     const auto& info = run_.info();
     const auto& s    = stats_;
@@ -915,6 +922,12 @@ std::string App::summaryText() const {
     if (info.sprt && sprt_) {
         text += fmt::format("LLR: {:.2f} ({:.2f}, {:.2f}) [{:.2f}, {:.2f}] {}\n", current_.llr, sprt_->getLowerBound(),
                             sprt_->getUpperBound(), info.elo0, info.elo1, info.model);
+        // The bounds above are those the SPRT was given: the tester's, the bias on them.
+        if (info.sprt_bias != 0 || info.sprt_min_games > 0) {
+            text += tour::sprtText(info.elo0 - info.sprt_bias, info.elo1 - info.sprt_bias, info.sprt_bias,
+                                   info.sprt_min_games) +
+                    "\n";
+        }
     }
     if (s.sum() > 0 && info.penta) text += statisticsText(matchStatistics(s, sprt_ ? &*sprt_ : nullptr));
     return text;

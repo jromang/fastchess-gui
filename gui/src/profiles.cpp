@@ -143,9 +143,10 @@ const char* sectionTitle(SetupSection section) {
 }
 
 const std::vector<std::string>& sectionFields(SetupSection section) {
-    static const std::vector<std::string> format{
-        "format",     "cycles",    "seeds",      "mode",           "fixed_games",     "sprt_elo0",    "sprt_elo1",
-        "sprt_alpha", "sprt_beta", "sprt_model", "sprt_max_games", "sprt_draw_ratio", "sprt_rms_bias"};
+    static const std::vector<std::string> format{"format",        "cycles",     "seeds",          "mode",
+                                                 "fixed_games",   "sprt_elo0",  "sprt_elo1",      "sprt_alpha",
+                                                 "sprt_beta",     "sprt_model", "sprt_max_games", "sprt_draw_ratio",
+                                                 "sprt_rms_bias", "sprt_bias",  "sprt_min_games"};
     static const std::vector<std::string> time{"limit",        "tc_base_s", "tc_inc_s", "tc_moves",
                                                "tc_margin_ms", "nodes",     "move_s",   "depth"};
     static const std::vector<std::string> openings{
@@ -216,7 +217,8 @@ bool sameSection(const MatchSetup& a, const MatchSetup& b, SetupSection section)
                         // The draw ratio and the RMS bias are the calculator's guesses: they change no game.
                         return a.sprt_elo0 == b.sprt_elo0 && a.sprt_elo1 == b.sprt_elo1 &&
                                a.sprt_alpha == b.sprt_alpha && a.sprt_beta == b.sprt_beta &&
-                               a.sprt_model == b.sprt_model && a.sprt_max_games == b.sprt_max_games;
+                               a.sprt_model == b.sprt_model && a.sprt_max_games == b.sprt_max_games &&
+                               a.sprt_bias == b.sprt_bias && a.sprt_min_games == b.sprt_min_games;
                     }
                     return true;
                 case TournamentFormat::Gauntlet:
@@ -287,6 +289,8 @@ void copySection(MatchSetup& to, const MatchSetup& from, SetupSection section) {
             to.sprt_max_games  = from.sprt_max_games;
             to.sprt_draw_ratio = from.sprt_draw_ratio;
             to.sprt_rms_bias   = from.sprt_rms_bias;
+            to.sprt_bias       = from.sprt_bias;
+            to.sprt_min_games  = from.sprt_min_games;
             return;
         case SetupSection::Time:
             to.limit        = from.limit;
@@ -495,6 +499,15 @@ std::string randomnessText(int randomness) {
     return trf("randomness {}", fmt::format("{:+}", randomness));
 }
 
+std::string sprtText(double elo0, double elo1, double bias, uint64_t min_games) {
+    auto text = fmt::format("SPRT [{}, {}]", number(elo0), number(elo1));
+    if (bias != 0) text += fmt::format(" {} {}", bias > 0 ? "+" : "-", number(std::abs(bias)));
+    if (min_games > 0) {
+        text += ", " + trn("no decision before {} game", "no decision before {} games", min_games, min_games);
+    }
+    return text;
+}
+
 std::string unbalancedText(const MatchSetup& s) {
     if (!s.unbalanced_enabled) return {};
     const int cp     = std::max(1, s.unbalanced_cp);
@@ -558,9 +571,17 @@ std::string formatSummary(const MatchSetup& s) {
             if (s.mode == MatchMode::Sprt) {
                 std::vector<std::string> parts{TR("Match"),
                                                fmt::format("SPRT [{}, {}]", number(s.sprt_elo0), number(s.sprt_elo1))};
+                // The bias as the testers write it: "SPRT [0, 3] + 5", the bounds given being [5, 8].
+                if (s.sprt_bias != 0) {
+                    parts.back() += fmt::format(" {} {}", s.sprt_bias > 0 ? "+" : "-", number(std::abs(s.sprt_bias)));
+                }
                 if (s.sprt_model != "normalized") parts.back() += " " + s.sprt_model;
                 if (s.sprt_alpha != 0.05 || s.sprt_beta != 0.05) {
                     parts.back() += fmt::format(" α {} β {}", number(s.sprt_alpha), number(s.sprt_beta));
+                }
+                if (s.sprt_min_games > 0) {
+                    parts.push_back(trn("no decision before {} game", "no decision before {} games",
+                                        static_cast<uint64_t>(s.sprt_min_games), s.sprt_min_games));
                 }
                 if (s.sprt_max_games > 0) {
                     parts.push_back(trn("at most {} game", "at most {} games", static_cast<uint64_t>(s.sprt_max_games),
@@ -668,9 +689,10 @@ std::string sectionCommandLine(const MatchSetup& s, SetupSection section) {
             switch (s.format) {
                 case TournamentFormat::Match:
                     if (s.mode == MatchMode::Sprt) {
-                        return fmt::format("-sprt elo0={} elo1={} alpha={} beta={} model={}", number(s.sprt_elo0),
-                                           number(s.sprt_elo1), number(s.sprt_alpha), number(s.sprt_beta),
-                                           s.sprt_model);
+                        // The bounds fastchess would be given, the bias on them; it has no minimum of games.
+                        return fmt::format("-sprt elo0={} elo1={} alpha={} beta={} model={}",
+                                           number(s.sprt_elo0 + s.sprt_bias), number(s.sprt_elo1 + s.sprt_bias),
+                                           number(s.sprt_alpha), number(s.sprt_beta), s.sprt_model);
                     }
                     if (s.mode == MatchMode::Fixed)
                         return fmt::format("-rounds {} -games 2 -repeat", std::max(1, s.fixed_games / 2));

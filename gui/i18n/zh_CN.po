@@ -305,6 +305,9 @@ msgid "Add {} engine"
 msgid_plural "Add {} engines"
 msgstr[0] "添加 {} 个引擎"
 
+msgid "Added to elo0 and elo1, for a test against a version known to be stronger or weaker by that much: the SPRT is given [elo0 + bias, elo1 + bias]."
+msgstr "加到 elo0 和 elo1 上，用于与已知强或弱这么多的版本对测：SPRT 使用 [elo0 + 偏移, elo1 + 偏移]。"
+
 msgid "Add…"
 msgstr "添加…"
 
@@ -989,6 +992,9 @@ msgstr "Elo（95% 置信区间）"
 
 msgid "Elo above the next engine of the list."
 msgstr "高于列表中下一个引擎的 Elo。"
+
+msgid "Elo bias"
+msgstr "Elo 偏移"
 
 msgid "Elo difference"
 msgstr "Elo 差"
@@ -1754,6 +1760,9 @@ msgstr "最大分数 (cp)"
 msgid "Maximum number of moves"
 msgstr "最大步数"
 
+msgid "Min games"
+msgstr "最少对局"
+
 msgid "Minimum games"
 msgstr "最少对局数"
 
@@ -1822,6 +1831,9 @@ msgstr "还没有开局库。请点击“添加”。"
 
 msgid "No crashes, time losses or illegal moves"
 msgstr "没有崩溃、超时判负或非法着法"
+
+msgid "No decision before this number of games, the LLR still shown: it guards a short test against an early lucky stop. 0 = none."
+msgstr "在达到这么多局之前不作判定，LLR 照常显示：防止短测试因早期运气而过早停止。0 = 不限。"
 
 msgid "No duplicate games"
 msgstr "没有重复对局"
@@ -2976,6 +2988,10 @@ msgstr "正在测试…"
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "50 步计数、子力以及剩余棋子，显示在平铺视图的每个棋盘下方。"
 
+msgid "The LLR is beyond a bound: no decision before {} game, {} played."
+msgid_plural "The LLR is beyond a bound: no decision before {} games, {} played."
+msgstr[0] "LLR 已越过界限：{} 局前不作判定，已下 {} 局。"
+
 msgid "The Log page: fastchess' output and the program's messages"
 msgstr "日志页面：fastchess 的输出和程序的消息"
 
@@ -3901,6 +3917,10 @@ msgstr "A 的 nElo（95% 置信区间）"
 
 msgid "new"
 msgstr "新增"
+
+msgid "no decision before {} game"
+msgid_plural "no decision before {} games"
+msgstr[0] "{} 局前不作判定"
 
 msgid "no engine has a SyzygyPath"
 msgstr "没有引擎设置了 SyzygyPath"

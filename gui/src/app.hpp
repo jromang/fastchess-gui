@@ -708,6 +708,9 @@ class App {
     void onRunFinished();
     std::string runStatusText() const;
     std::string summaryText() const;
+    // How the tournament's SPRT ended: H1, H0, or not by a decision (SPRT_CONTINUE: stopped, or its games over).
+    // The LLR may be beyond a bound without one, before the minimum of games.
+    [[nodiscard]] fastchess::SPRTResult sprtVerdict() const;
 
     // games
     void rebuildGameFilter();

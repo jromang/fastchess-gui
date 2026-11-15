@@ -308,6 +308,9 @@ msgid_plural "Add {} engines"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "Added to elo0 and elo1, for a test against a version known to be stronger or weaker by that much: the SPRT is given [elo0 + bias, elo1 + bias]."
+msgstr ""
+
 msgid "Add…"
 msgstr ""
 
@@ -992,6 +995,9 @@ msgid "Elo (95% CI)"
 msgstr ""
 
 msgid "Elo above the next engine of the list."
+msgstr ""
+
+msgid "Elo bias"
 msgstr ""
 
 msgid "Elo difference"
@@ -1760,6 +1766,9 @@ msgstr ""
 msgid "Maximum number of moves"
 msgstr ""
 
+msgid "Min games"
+msgstr ""
+
 msgid "Minimum games"
 msgstr ""
 
@@ -1827,6 +1836,9 @@ msgid "No book yet. Click Add."
 msgstr ""
 
 msgid "No crashes, time losses or illegal moves"
+msgstr ""
+
+msgid "No decision before this number of games, the LLR still shown: it guards a short test against an early lucky stop. 0 = none."
 msgstr ""
 
 msgid "No duplicate games"
@@ -2992,6 +3004,11 @@ msgstr ""
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr ""
 
+msgid "The LLR is beyond a bound: no decision before {} game, {} played."
+msgid_plural "The LLR is beyond a bound: no decision before {} games, {} played."
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "The Log page: fastchess' output and the program's messages"
 msgstr ""
 
@@ -3925,6 +3942,11 @@ msgstr ""
 
 msgid "new"
 msgstr ""
+
+msgid "no decision before {} game"
+msgid_plural "no decision before {} games"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "no engine has a SyzygyPath"
 msgstr ""

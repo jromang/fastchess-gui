@@ -251,6 +251,10 @@ struct MatchSetup {
     double sprt_beta       = 0.05;
     std::string sprt_model = "normalized";
     int sprt_max_games     = 0;  // 0 = no limit
+    // Added to both bounds given to the SPRT (a version known to be stronger or weaker by that much), and no decision
+    // before this many games, the LLR still shown (tour/sprt_rules.hpp); 0: none.
+    double sprt_bias   = 0;
+    int sprt_min_games = 0;
     // The SPRT calculator's guesses about the games to come; fishtest's values for its openings by default.
     double sprt_draw_ratio = 0.49;
     double sprt_rms_bias   = 191;  // Elo
@@ -387,7 +391,7 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
         sprt_rms_bias, limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto,    \
         concurrency, affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out, \
         engine_syzygy, engine_ownbook_off, book_a, book_b, big_scale, big_follow, big_seconds, book_randomness,       \
-        unbalanced_enabled, unbalanced_cp, unbalanced_moves, unbalanced_replace
+        unbalanced_enabled, unbalanced_cp, unbalanced_moves, unbalanced_replace, sprt_bias, sprt_min_games
 #define FCG_MATCH_SETUP_FIELDS_2                                                                                  \
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,    \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,     \

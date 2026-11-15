@@ -311,6 +311,9 @@ msgstr[0] "Добавить {} движок"
 msgstr[1] "Добавить {} движка"
 msgstr[2] "Добавить {} движков"
 
+msgid "Added to elo0 and elo1, for a test against a version known to be stronger or weaker by that much: the SPRT is given [elo0 + bias, elo1 + bias]."
+msgstr "Прибавляется к elo0 и elo1 — для теста против версии, которая заведомо сильнее или слабее на столько: SPRT получает [elo0 + сдвиг, elo1 + сдвиг]."
+
 msgid "Add…"
 msgstr "Добавить…"
 
@@ -997,6 +1000,9 @@ msgstr "Elo (ДИ 95%)"
 
 msgid "Elo above the next engine of the list."
 msgstr "Эло выше следующего движка списка."
+
+msgid "Elo bias"
+msgstr "Сдвиг Elo"
 
 msgid "Elo difference"
 msgstr "Разница Elo"
@@ -1766,6 +1772,9 @@ msgstr "Макс. оценка (cp)"
 msgid "Maximum number of moves"
 msgstr "Максимальное число ходов"
 
+msgid "Min games"
+msgstr "Мин. партий"
+
 msgid "Minimum games"
 msgstr "Минимум партий"
 
@@ -1834,6 +1843,9 @@ msgstr "Книг пока нет. Нажмите «Добавить»."
 
 msgid "No crashes, time losses or illegal moves"
 msgstr "Нет вылетов, поражений по времени и нелегальных ходов"
+
+msgid "No decision before this number of games, the LLR still shown: it guards a short test against an early lucky stop. 0 = none."
+msgstr "Никакого решения до этого числа партий, LLR по-прежнему показывается: защищает короткий тест от ранней случайной остановки. 0 = нет."
 
 msgid "No duplicate games"
 msgstr "Нет повторяющихся партий"
@@ -3008,6 +3020,12 @@ msgstr "Тестирование…"
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Счётчик 50 ходов, материал и оставшиеся фигуры под каждой доской мозаики."
 
+msgid "The LLR is beyond a bound: no decision before {} game, {} played."
+msgid_plural "The LLR is beyond a bound: no decision before {} games, {} played."
+msgstr[0] "LLR за пределом: без решения до {} партии, сыграно {}."
+msgstr[1] "LLR за пределом: без решения до {} партий, сыграно {}."
+msgstr[2] "LLR за пределом: без решения до {} партий, сыграно {}."
+
 msgid "The Log page: fastchess' output and the program's messages"
 msgstr "Страница «Журнал»: вывод fastchess и сообщения программы"
 
@@ -3949,6 +3967,12 @@ msgstr "nElo A (ДИ 95%)"
 
 msgid "new"
 msgstr "новая"
+
+msgid "no decision before {} game"
+msgid_plural "no decision before {} games"
+msgstr[0] "без решения до {} партии"
+msgstr[1] "без решения до {} партий"
+msgstr[2] "без решения до {} партий"
 
 msgid "no engine has a SyzygyPath"
 msgstr "ни у одного движка нет SyzygyPath"

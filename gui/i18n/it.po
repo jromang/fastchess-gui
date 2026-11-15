@@ -308,6 +308,9 @@ msgid_plural "Add {} engines"
 msgstr[0] "Aggiungi {} motore"
 msgstr[1] "Aggiungi {} motori"
 
+msgid "Added to elo0 and elo1, for a test against a version known to be stronger or weaker by that much: the SPRT is given [elo0 + bias, elo1 + bias]."
+msgstr "Aggiunto a elo0 ed elo1, per un test contro una versione nota per essere più forte o più debole di tanto: lo SPRT riceve [elo0 + scarto, elo1 + scarto]."
+
 msgid "Add…"
 msgstr "Aggiungi…"
 
@@ -993,6 +996,9 @@ msgstr "Elo (IC 95%)"
 
 msgid "Elo above the next engine of the list."
 msgstr "Elo sopra il motore successivo della lista."
+
+msgid "Elo bias"
+msgstr "Scarto Elo"
 
 msgid "Elo difference"
 msgstr "Differenza Elo"
@@ -1760,6 +1766,9 @@ msgstr "Valutazione max (cp)"
 msgid "Maximum number of moves"
 msgstr "Numero massimo di mosse"
 
+msgid "Min games"
+msgstr "Partite min."
+
 msgid "Minimum games"
 msgstr "Partite minime"
 
@@ -1828,6 +1837,9 @@ msgstr "Ancora nessun libro. Clicca su Aggiungi."
 
 msgid "No crashes, time losses or illegal moves"
 msgstr "Nessun crash, sconfitta per tempo o mossa illegale"
+
+msgid "No decision before this number of games, the LLR still shown: it guards a short test against an early lucky stop. 0 = none."
+msgstr "Nessuna decisione prima di questo numero di partite, l'LLR resta visibile: protegge un test breve da uno stop precoce fortunato. 0 = nessuno."
 
 msgid "No duplicate games"
 msgstr "Nessuna partita duplicata"
@@ -2992,6 +3004,11 @@ msgstr "Test in corso…"
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Il contatore delle 50 mosse, il materiale e i pezzi rimasti, sotto ogni scacchiera del mosaico."
 
+msgid "The LLR is beyond a bound: no decision before {} game, {} played."
+msgid_plural "The LLR is beyond a bound: no decision before {} games, {} played."
+msgstr[0] "L'LLR ha superato un limite: nessuna decisione prima di {} partita, {} giocate."
+msgstr[1] "L'LLR ha superato un limite: nessuna decisione prima di {} partite, {} giocate."
+
 msgid "The Log page: fastchess' output and the program's messages"
 msgstr "La pagina Log: l'output di fastchess e i messaggi del programma"
 
@@ -3925,6 +3942,11 @@ msgstr "nElo di A (IC 95%)"
 
 msgid "new"
 msgstr "nuova"
+
+msgid "no decision before {} game"
+msgid_plural "no decision before {} games"
+msgstr[0] "nessuna decisione prima di {} partita"
+msgstr[1] "nessuna decisione prima di {} partite"
 
 msgid "no engine has a SyzygyPath"
 msgstr "nessun motore ha un SyzygyPath"

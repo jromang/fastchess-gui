@@ -863,6 +863,21 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
     CHECK(run.tournament.sprt.enabled);
     CHECK(run.info.total_games == 0);
     CHECK(run.info.limit_text == "10+0.1");
+    CHECK(run.spec.sprt_bias == 0);
+    CHECK(run.spec.sprt_min_games == 0);
+
+    // An Elo bias moves both bounds the SPRT is given; the minimum of games is the tournament's.
+    setup.sprt_bias      = 5;
+    setup.sprt_min_games = 2000;
+    run                  = buildRun(setup, engines, topology, dir);
+    CHECK(run.tournament.sprt.elo0 == setup.sprt_elo0 + 5);
+    CHECK(run.tournament.sprt.elo1 == setup.sprt_elo1 + 5);
+    CHECK(run.spec.sprt_bias == 5);
+    CHECK(run.spec.sprt_min_games == 2000);
+    CHECK(run.info.elo0 - run.info.sprt_bias == setup.sprt_elo0);
+    CHECK(run.info.sprt_min_games == 2000);
+    setup.sprt_bias      = 0;
+    setup.sprt_min_games = 0;
 
     // A time per move, and a depth: like a node count, it does not depend on the machine's speed.
     setup.limit        = LimitKind::MoveTime;

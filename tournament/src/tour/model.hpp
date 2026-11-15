@@ -70,6 +70,10 @@ struct TournamentSpec {
     int rounds         = 0;  // Swiss: number of rounds
     int seeds          = 1;  // gauntlet: the first `seeds` participants play every other one
     uint64_t max_games = 0;  // match: 0 = until stopped or decided by the SPRT
+    // Match, SPRT (sprt_rules.hpp): the Elo bias added to both bounds (conditions.sprt has them with it), and no
+    // decision before this many games; 0: none.
+    double sprt_bias        = 0;
+    uint64_t sprt_min_games = 0;
 
     // Openings, adjudication, SPRT, PGN options, concurrency, seed, variant: fastchess' own settings.
     // games, rounds and the output file names are not used, the tournament layer decides them.

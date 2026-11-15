@@ -342,6 +342,21 @@ TEST_CASE("profiles: each section said on one line, and as cutechess and fastche
     s.cycles = 2;
     CHECK(sectionSummary(s, SetupSection::Format, books) == "Gauntlet · 1 seed · 2 cycles of 2 games");
     CHECK(sectionSummary(MatchSetup{}, SetupSection::Format, books) == "Match · SPRT [0, 3]");
+    // The bias and the minimum of games, as the testers write them; fastchess' command line gets the bounds moved.
+    MatchSetup biased;
+    biased.sprt_bias      = 5;
+    biased.sprt_min_games = 2000;
+    CHECK(sectionSummary(biased, SetupSection::Format, books) ==
+          "Match · SPRT [0, 3] + 5 · no decision before 2000 games");
+    CHECK(sectionCommandLine(biased, SetupSection::Format) ==
+          "-sprt elo0=5 elo1=8 alpha=0.05 beta=0.05 model=normalized");
+    CHECK(sprtText(0, 3, -2.5, 0) == "SPRT [0, 3] - 2.5");
+    CHECK(sprtText(-5, 0, 0, 800) == "SPRT [-5, 0], no decision before 800 games");
+    MatchSetup plain;
+    CHECK_FALSE(sameSection(plain, biased, SetupSection::Format));
+    biased.sprt_bias      = 0;
+    biased.sprt_min_games = 0;
+    CHECK(sameSection(plain, biased, SetupSection::Format));
 
     s.book = "/books/uho.epd";
     s.seed = 7;

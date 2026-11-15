@@ -326,6 +326,13 @@ profiles they play like. An empty name is made from the engines.
     SPRT calculator does, the probability that H1 is accepted and the expected number of games against the true
     Elo difference, from an expected draw ratio and the RMS bias of the openings; *Use these bounds* copies the
     bounds it was given back to the setup.
+    *Elo bias* (0 by default) is added to both bounds, to test against a version known to be stronger or weaker by
+    that much: [0, 3] with a bias of 5 gives the SPRT [5, 8], which the summary, the overview and the headless mode
+    write `SPRT [0, 3] + 5`; the calculator and the line under the bounds take it into account. *Min games* (0, none,
+    by default) holds the decision until that many games are played, the LLR still computed and shown, to guard a
+    short test against an early lucky stop: an LLR beyond a bound before then is said under the LLR bar and the
+    match goes on; once the games are there, the next pair that ends with the LLR beyond a bound ends the match. A
+    maximum of games below the minimum ends the match without a decision.
     This is the quickest way to compare two versions of an engine, and nothing else is needed.
   - *Round robin*: every engine plays every other one, *Cycles* times, each time two games with colours reversed
     (what cutechess calls rounds, of 2 games per encounter). The rounds follow Berger tables, so every engine plays

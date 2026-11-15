@@ -38,8 +38,10 @@ struct RunInfo {
     bool affinity        = false;
 
     bool sprt   = false;
-    double elo0 = 0, elo1 = 0, alpha = 0, beta = 0;
+    double elo0 = 0, elo1 = 0, alpha = 0, beta = 0;  // the bounds the SPRT is given, the bias on them
     std::string model;
+    double sprt_bias        = 0;  // tour::TournamentSpec::sprt_bias
+    uint64_t sprt_min_games = 0;
     bool penta = true;
 
     Clock::time_point started{};

@@ -8,6 +8,7 @@
 
 #include <tour/pgn_book.hpp>
 #include <tour/polyglot.hpp>
+#include <tour/sprt_rules.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -868,11 +869,20 @@ void App::setupMatch() {
 
             changed |= inputInt(TR("Max games"), "##sprt_max", setup_.sprt_max_games, 0, 100'000'000);
             ui::help(TR("0 = no limit."));
+            changed |= inputDouble(TR("Elo bias"), "##sprt_bias", setup_.sprt_bias, -1000, 1000);
+            itemHelp(
+                TR("Added to elo0 and elo1, for a test against a version known to be stronger or weaker by that "
+                   "much: the SPRT is given [elo0 + bias, elo1 + bias]."));
+            changed |= inputInt(TR("Min games"), "##sprt_min", setup_.sprt_min_games, 0, 100'000'000);
+            itemHelp(
+                TR("No decision before this number of games, the LLR still shown: it guards a short test "
+                   "against an early lucky stop. 0 = none."));
 
-            // What these bounds are likely to cost, from the calculator's guesses. The usual bounds are profiles
-            // (SPRT gainer, non-regression).
-            const auto plan = sprtPlan(setup_.sprt_alpha, setup_.sprt_beta, setup_.sprt_elo0, setup_.sprt_elo1,
-                                       setup_.sprt_model, setup_.sprt_draw_ratio, setup_.sprt_rms_bias);
+            // What these bounds are likely to cost, from the calculator's guesses (the bias on them). The usual
+            // bounds are profiles (SPRT gainer, non-regression).
+            const auto given = tour::biasedBounds(setup_.sprt_elo0, setup_.sprt_elo1, setup_.sprt_bias);
+            const auto plan  = sprtPlan(setup_.sprt_alpha, setup_.sprt_beta, given.elo0, given.elo1, setup_.sprt_model,
+                                        setup_.sprt_draw_ratio, setup_.sprt_rms_bias);
             if (plan.valid) {
                 ImGui::PushTextWrapPos(0);
                 ImGui::TextDisabled("%s", trf("About {} games if the change is worth elo0, {} if it is worth elo1.",
@@ -907,6 +917,10 @@ void App::drawSprtCalculator() {
     ImGui::BeginChild("##sprt_inputs", ImVec2(px(300), 0));
     inputDouble("elo0", "##calc_elo0", c.sprt_elo0, -1000, 1000);
     inputDouble("elo1", "##calc_elo1", c.sprt_elo1, -1000, 1000);
+    inputDouble(TR("Elo bias"), "##calc_sprt_bias", c.sprt_bias, -1000, 1000);
+    itemHelp(
+        TR("Added to elo0 and elo1, for a test against a version known to be stronger or weaker by that much: "
+           "the SPRT is given [elo0 + bias, elo1 + bias]."));
     inputDouble("alpha", "##calc_alpha", c.sprt_alpha, 0.001, 0.5, "%.3f");
     inputDouble("beta", "##calc_beta", c.sprt_beta, 0.001, 0.5, "%.3f");
     ui::label(TR("Model"), labelWidth());
@@ -927,8 +941,9 @@ void App::drawSprtCalculator() {
         TR("How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the "
            "same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."));
 
+    const auto given = tour::biasedBounds(c.sprt_elo0, c.sprt_elo1, c.sprt_bias);
     const auto plan =
-        sprtPlan(c.sprt_alpha, c.sprt_beta, c.sprt_elo0, c.sprt_elo1, c.sprt_model, c.sprt_draw_ratio, c.sprt_rms_bias);
+        sprtPlan(c.sprt_alpha, c.sprt_beta, given.elo0, given.elo1, c.sprt_model, c.sprt_draw_ratio, c.sprt_rms_bias);
     ImGui::Spacing();
     if (!plan.valid) {
         ImGui::PushTextWrapPos(0);
@@ -955,6 +970,7 @@ void App::drawSprtCalculator() {
         setup_.mode            = MatchMode::Sprt;
         setup_.sprt_elo0       = c.sprt_elo0;
         setup_.sprt_elo1       = c.sprt_elo1;
+        setup_.sprt_bias       = c.sprt_bias;
         setup_.sprt_alpha      = c.sprt_alpha;
         setup_.sprt_beta       = c.sprt_beta;
         setup_.sprt_model      = c.sprt_model;
@@ -1470,6 +1486,15 @@ void App::drawSetupSummary() {
     ImGui::PopFont();
     ImGui::TextDisabled("%s", formula.c_str());
     if (!per_engine.empty()) ImGui::TextDisabled("%s", per_engine.c_str());
+    // The SPRT's bounds, with the bias and the minimum of games when there are some.
+    if (setup_.format == TournamentFormat::Match && setup_.mode == MatchMode::Sprt &&
+        (setup_.sprt_bias != 0 || setup_.sprt_min_games > 0)) {
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextDisabled("%s", sprtText(setup_.sprt_elo0, setup_.sprt_elo1, setup_.sprt_bias,
+                                           static_cast<uint64_t>(std::max(0, setup_.sprt_min_games)))
+                                      .c_str());
+        ImGui::PopTextWrapPos();
+    }
 
     // A rough duration, with a clock.
     const bool fixed_nodes = clockFree(setup_.limit);

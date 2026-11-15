@@ -19,6 +19,7 @@
 #include <tour/pgn_book.hpp>
 #include <tour/polyglot.hpp>
 #include <tour/runner.hpp>
+#include <tour/sprt_rules.hpp>
 
 #include "console.hpp"
 #include "engines.hpp"
@@ -173,6 +174,8 @@ RunInfo runInfo(const tour::TournamentSpec& spec, const fs::path& dir) {
     info.alpha            = t.sprt.alpha;
     info.beta             = t.sprt.beta;
     info.model            = t.sprt.model;
+    info.sprt_bias        = spec.sprt_bias;
+    info.sprt_min_games   = spec.sprt_min_games;
     info.penta            = true;
     return info;
 }
@@ -446,8 +449,9 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
             t.rounds =
                 setup.sprt_max_games > 0 ? static_cast<std::size_t>((setup.sprt_max_games + 1) / 2) : UNBOUNDED_ROUNDS;
             t.sprt.enabled = true;
-            t.sprt.elo0    = setup.sprt_elo0;
-            t.sprt.elo1    = setup.sprt_elo1;
+            // The bounds moved by the bias; the minimum of games is the tournament layer's (spec below).
+            t.sprt.elo0    = tour::biasedBounds(setup.sprt_elo0, setup.sprt_elo1, setup.sprt_bias).elo0;
+            t.sprt.elo1    = tour::biasedBounds(setup.sprt_elo0, setup.sprt_elo1, setup.sprt_bias).elo1;
             t.sprt.alpha   = setup.sprt_alpha;
             t.sprt.beta    = setup.sprt_beta;
             t.sprt.model   = setup.sprt_model;
@@ -608,6 +612,10 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     spec.rounds = setup.format == TournamentFormat::Swiss ? std::max(1, setup.cycles) : 0;
     spec.seeds  = std::max(1, setup.seeds);
     if (match) spec.max_games = t.rounds >= UNBOUNDED_ROUNDS ? 0 : t.rounds * t.games;
+    if (t.sprt.enabled) {
+        spec.sprt_bias      = setup.sprt_bias;
+        spec.sprt_min_games = static_cast<uint64_t>(std::max(0, setup.sprt_min_games));
+    }
     spec.log_every_game    = setup.log_every_game;
     spec.opening_per_round = setup.opening_per_round && !match && setup.format != TournamentFormat::Knockout;
     spec.pgn_out           = setup.pgn_out;

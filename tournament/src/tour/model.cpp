@@ -105,6 +105,8 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
         j["polyglot_plies"] = s.polyglot_plies;
     }
     if (s.book_randomness != 0) j["book_randomness"] = s.book_randomness;
+    if (s.sprt_bias != 0) j["sprt_bias"] = s.sprt_bias;
+    if (s.sprt_min_games != 0) j["sprt_min_games"] = s.sprt_min_games;
     if (s.unbalanced_cp > 0) {
         j["unbalanced"] = {{"cp", s.unbalanced_cp}, {"moves", s.unbalanced_moves}, {"replace", s.unbalanced_replace}};
     }
@@ -139,6 +141,8 @@ void from_json(const nlohmann::json& j, TournamentSpec& s) {
     s.polyglot_book         = j.value("polyglot_book", std::string{});
     s.polyglot_plies        = j.value("polyglot_plies", 0);
     s.book_randomness       = std::clamp(j.value("book_randomness", 0), -100, 100);
+    s.sprt_bias             = j.value("sprt_bias", 0.0);
+    s.sprt_min_games        = j.value("sprt_min_games", uint64_t{0});
     if (const auto it = j.find("unbalanced"); it != j.end() && it->is_object()) {
         s.unbalanced_cp      = std::max(0, it->value("cp", 0));
         s.unbalanced_moves   = std::max(1, it->value("moves", 4));

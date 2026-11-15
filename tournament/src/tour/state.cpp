@@ -16,6 +16,7 @@
 #include "engine_text.hpp"
 #include "pairing.hpp"
 #include "pgn_book.hpp"
+#include "sprt_rules.hpp"
 
 namespace fcg::tour {
 
@@ -1485,7 +1486,9 @@ void TournamentState::checkSprt() {
     if (it == pairs_.end()) return;
     const auto stats = a < b ? it->second : ~it->second;
 
-    const auto verdict = sprt_.getResult(sprt_.getLLR(stats, true));
+    // No decision before the minimum of games, however far the LLR is beyond a bound (sprt_rules.hpp).
+    const auto games   = static_cast<uint64_t>(std::max(0, stats.sum()));
+    const auto verdict = sprtDecision(sprt_, sprt_.getLLR(stats, true), games, spec_.sprt_min_games);
     if (verdict == fastchess::SPRT_CONTINUE) return;
 
     finished_      = true;
