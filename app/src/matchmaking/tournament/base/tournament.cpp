@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <exception>
 #include <memory>
 #include <optional>
 #include <string>
@@ -91,7 +92,13 @@ BaseTournament::~BaseTournament() {
         }
     }
 
-    saveJson();
+    // An exception must not leave a destructor (std::terminate): a failed save is reported instead.
+    try {
+        saveJson();
+    } catch (const std::exception& e) {
+        Logger::print<Logger::Level::ERR>("Failed to save the results to {}: {}", config::TournamentConfig->config_name,
+                                          e.what());
+    }
 }
 
 void BaseTournament::start() {
@@ -251,7 +258,9 @@ void BaseTournament::saveJson() {
     jsonfile["stats"]               = merged_results();
 
     std::ofstream file(config.config_name);
-    file << std::setw(4) << jsonfile << std::endl;
+    // Names and paths that are not valid UTF-8 (a command line in a legacy code page) are written with U+FFFD
+    // rather than throwing.
+    file << jsonfile.dump(4, ' ', false, nlohmann::ordered_json::error_handler_t::replace) << std::endl;
 
     LOG_TRACE("Saved results to.");
 }
