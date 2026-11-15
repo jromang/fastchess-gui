@@ -320,6 +320,20 @@ if(FCG_BUILD_GUI)
         target_link_libraries(imgui_lib PUBLIC opengl32)
     endif()
 
+    # The 3D board's prototype viewer (tools/board3d/viewer.cpp), not part of the GUI yet: gui/src/board3d, a path
+    # tracer in OpenGL 3.3, and its pieces baked by tools/board3d/bake.cpp.
+    option(FCG_BOARD3D_VIEWER "Build fcg-board3d, the 3D board's prototype viewer" OFF)
+    if(FCG_BOARD3D_VIEWER)
+        file(GLOB FCG_BOARD3D_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/board3d/*.cpp)
+        add_executable(fcg-board3d ${CMAKE_CURRENT_SOURCE_DIR}/tools/board3d/viewer.cpp ${FCG_BOARD3D_SOURCES})
+        target_compile_features(fcg-board3d PRIVATE cxx_std_20)
+        target_include_directories(fcg-board3d PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui/src)
+        target_include_directories(fcg-board3d SYSTEM PRIVATE ${stb_SOURCE_DIR})
+        target_link_libraries(fcg-board3d PRIVATE imgui_lib)
+        target_compile_definitions(fcg-board3d PRIVATE FCG_BOARD3D_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+        target_compile_options(fcg-board3d PRIVATE -Wall -Wextra)
+    endif()
+
     add_library(fcg_md4c STATIC ${md4c_SOURCE_DIR}/src/md4c.c)
     target_include_directories(fcg_md4c SYSTEM PUBLIC ${md4c_SOURCE_DIR}/src)
 
