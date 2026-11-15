@@ -570,7 +570,36 @@ TEST_CASE("Tunnel: host keys trusted on first use, kept by host and port, forgot
 
 namespace {
 
-// An RSA key for the fake server, made once (PSA), as an SSH blob and a signer.
+// The fake server's RSA key, made for the tests only (OpenSSL, PKCS#1 DER): the same in every run. Made at random,
+// it took seconds, more under the sanitizers, in each test case's process.
+const std::string SERVER_KEY_DER = unhex(
+    "308204a50201000282010100de7987623d17896b9ad1614da3b620f4a2cc49ddcbf0e3b4d89e03c424c248471fffcdfe"
+    "398fa91139f9518765dee222f1efc842a051f3c156eed457e7a0636184f877c15a7ce0d5a027122e48e044448284dbfe"
+    "66d5844298e6991b481783f7cc2c2831020168227d571c106a253a6facbf2fcefe43d49ef3a2ca84d5568f6348b05958"
+    "70f661b9559c4884975f0aea9293b6e5ff558ef40f96e6f8151008ba80ecf76a1d646bd8019d1228638f5d0c01298b2d"
+    "03b63cac6c1b99681b31121020983194fbcf6a10f435d5debaff16de4457e5084a4827381968a232877ca6c7db440d1e"
+    "5c68fceeb653c33184189f64930d373ed380b3a1d3b00e0890c2f639020301000102820100229c9da77701b66b7b469f"
+    "f0c84b898d05d6ea970b278b0593bde1b01e57eb8ec537b3009e4bef6db2ab4b37d96d77992032c1e13bb804484c1214"
+    "0f290616f01113e6edb9fa3bb0809e138207ec7c327c6bd71e193996be15b3aa9647fd009708b8c5f7f9ebe61b978c79"
+    "dd43e64ed518f715a50a81db0e6fb11ff8d28808fe8afd590fb71106a9c75dc6e0e2f4489a5ab7c19f0510e2fb9df611"
+    "3c5256a334128bac7278d9e49593128ed29f302c9114a13a1e2caf1d7ea6b659692dba878f3ea20c94b1aef6d2228534"
+    "b1be2eaa620c4f7ccf4e375136440fcede164bc804928e79a2c51ad91a0a4c605754af250871ee7bb2c37634736da81e"
+    "14c1a0a8d102818100f7babbcb068dde01699e8f771412250daa594589916a43800fd55541a9f562da772ba6e027b007"
+    "beea38805122a658a9dca7b7745da41959b0822648c30728b6be39a5b29a615827fe6f44ec3ce6348073c77c600d81cd"
+    "a8cd4bc3e6564b8c9d329c20d3adfaca9b5ecee3628730095f967910eb472ef48027f0fb7f52363a8b02818100e5e6f3"
+    "7ebfdb5d6233e94765d8bcfd995571df5d440aa0ceaa3f20f7e91245fed3a1003d7fb03cbe0232cef9598bd2a3649ffc"
+    "e9ca319e686bbb310ce2f7a9d4f5deeaec915829c8fd3961115a6f0a51ff2032db2e3f2eefe167038298ca4d7a6fefa0"
+    "558f418cb10f3f829d8cc3c8f2d5a35fd7a2fe16de20c2b1cc70badecb02818100a19747b9f62b81fdcfe462d69cdbfd"
+    "197dddbf732dcc6ffd4fd6ab472ad2eac97064a3f4a14ebcaeb6df662c067b1568af8b232a9f8e540ee208f36a10f551"
+    "846a6ef5fb9ba215bbf8c6a1e1ab13ca79638c633fd06fb43400be0429f26e536992c2aed305308b0a6ffc69ec321c8e"
+    "70b0998604c2a90949b34408f9132a566302818100c662f211992b89bcd940df6ca2880b6a8a9216065c55b38842def0"
+    "eb1d03b8c4fa07ffb611fe999bf937b0e4f901b04570eaa20b788032cab6d434b28314e647afd7a9ef744898de28ad9f"
+    "f6a28c1962c27e1d8487b6dc2101e7abdec14c296993383baa39517e3fb801bd0b8951d590bf0c19037252429771bbb0"
+    "43d3af5ddb02818100ac4589f3d4dbb8cd4d79848794c9df157274f0cfe069c621ac3f41df6f14c1077f006b1a0499af"
+    "047bf0ce422b047403497ac3a230a48125e2d7afb32bb73729a5b4f26ee3f50e15edb356d5ad0e782461b00b5e91341c"
+    "f75756bb8811e8a4740d34108308cf9e4d63ec77f8f47519c7a958769862bfdd2d48eddc4701a081a7");
+
+// The fake server's key in PSA, as an SSH blob and a signer.
 struct ServerKey {
     mbedtls_svc_key_id_t id = 0;
     std::string blob;
@@ -582,7 +611,7 @@ struct ServerKey {
         psa_set_key_bits(&a, 2048);
         psa_set_key_algorithm(&a, PSA_ALG_RSA_PKCS1V15_SIGN(PSA_ALG_ANY_HASH));
         psa_set_key_usage_flags(&a, PSA_KEY_USAGE_SIGN_MESSAGE);
-        REQUIRE(psa_generate_key(&a, &id) == PSA_SUCCESS);
+        REQUIRE(psa_import_key(&a, bytes(SERVER_KEY_DER), SERVER_KEY_DER.size(), &id) == PSA_SUCCESS);
         // RSAPublicKey ::= SEQUENCE { modulus INTEGER, publicExponent INTEGER }, short DER read.
         std::string der(600, '\0');
         std::size_t n = 0;
@@ -651,9 +680,6 @@ class FakeServer {
     };
 
     FakeServer(uint16_t port, Script script) : script_(std::move(script)) {
-        // The host key before the client is waited for: made the first time it is asked for, in each test case's
-        // process when they run side by side, and that takes seconds, more than the wait, on a loaded machine.
-        serverKey();
         REQUIRE(listener_.listen(port).empty());
         thread_ = std::thread([this] {
             try {
