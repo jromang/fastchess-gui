@@ -493,6 +493,15 @@ void Renderer::tracePass(int y0, int y1) {
             f.Uniform4fv(loc(p, names[k]), count, column.data());
         }
     }
+    // The squares' pieces, for walking the board square by square; the tallest piece's top.
+    GLint squares[64];
+    std::fill(std::begin(squares), std::end(squares), -1);
+    for (int i = 0; i < count && i < int(pieces_.size()); ++i)
+        if (pieces_[std::size_t(i)].square >= 0 && pieces_[std::size_t(i)].square < 64) squares[pieces_[std::size_t(i)].square] = i;
+    f.Uniform1iv(loc(p, "uSquare"), 64, squares);
+    float top = 0;
+    for (const PieceShape& s : shapes_) top = std::max(top, s.height);
+    f.Uniform1f(loc(p, "uPieceTop"), top + 1e-3f);
     f.Uniform2f(loc(p, "uResolution"), float(width_), float(height_));
     f.Uniform1i(loc(p, "uSample"), samples_);
     // A preview carries one bounce: less to compute, and far less noise for one sample.

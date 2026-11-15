@@ -17,6 +17,8 @@ uniform samplerBuffer uNorms;  // n0, n1, n2 per triangle
 #define MAX_INST 40
 uniform vec4 uInstXf[MAX_INST], uInstInfo[MAX_INST], uInstMin[MAX_INST], uInstMax[MAX_INST];
 uniform int uInstCount;
+uniform int uSquare[64];  // the piece standing on each square (0 = a1 ... 63 = h8), -1 none
+uniform float uPieceTop;  // the top of the tallest piece
 
 uniform vec2 uResolution;
 uniform int uSample;
@@ -186,6 +188,42 @@ bool traverse(int root, vec3 ro, vec3 rd, inout float tBest, inout int tri, inou
     return hit;
 }
 
+// The pieces a ray meets over the board, square by square from the nearest (Amanatides and Woo's walk through a grid):
+// a piece stands inside its square, so the first one hit is the nearest, and a ray that never passes below the
+// tallest piece's top over the board meets none. The piece hit, -1 none; with `any`, the first hit found.
+int piecesHit(vec3 ro, vec3 rd, inout float tBest, inout int tri, inout vec2 bary, out vec3 hitLo, out vec3 hitLd,
+              bool any) {
+    hitLo = hitLd = vec3(0.0);
+    vec3 inv    = safeInverse(rd);
+    vec3 t0     = (vec3(-HALF, 0.0, -HALF) - ro) * inv, t1 = (vec3(HALF, uPieceTop, HALF) - ro) * inv;
+    vec3 tn     = min(t0, t1), tf = max(t0, t1);
+    float enter = max(max(tn.x, tn.y), max(tn.z, 0.0));
+    float leave = min(min(tf.x, tf.y), min(tf.z, tBest));
+    if (enter > leave) return -1;
+    ivec2 cell = clamp(ivec2(floor(ro.xz + rd.xz * enter + HALF)), ivec2(0), ivec2(7));
+    ivec2 step = ivec2(rd.x >= 0.0 ? 1 : -1, rd.z >= 0.0 ? 1 : -1);
+    vec2 next  = (vec2(cell) - HALF + vec2(step.x > 0 ? 1.0 : 0.0, step.y > 0 ? 1.0 : 0.0) - ro.xz) * inv.xz;
+    vec2 delta = abs(inv.xz);
+    for (int k = 0; k < 16; ++k) {
+        int i = uSquare[(7 - cell.y) * 8 + cell.x];  // z grows towards White: the 8th rank at z = -4
+        if (i >= 0 && slab(ro, inv, uInstMin[i].xyz, uInstMax[i].xyz, tBest) < INF) {
+            vec4 a = uInstXf[i], b = uInstInfo[i];
+            vec3 p  = ro - vec3(a.x, 0.0, a.y);
+            vec3 lo = vec3(a.z * p.x + a.w * p.z, p.y, -a.w * p.x + a.z * p.z) / b.z;
+            vec3 ld = vec3(a.z * rd.x + a.w * rd.z, rd.y, -a.w * rd.x + a.z * rd.z) / b.z;
+            if (traverse(int(b.w), lo, ld, tBest, tri, bary, any)) {
+                hitLo = lo, hitLd = ld;
+                return i;
+            }
+        }
+        if (min(next.x, next.y) >= leave) break;
+        if (next.x < next.y) cell.x += step.x, next.x += delta.x;
+        else cell.y += step.y, next.y += delta.y;
+        if (cell.x < 0 || cell.x > 7 || cell.y < 0 || cell.y > 7) break;
+    }
+    return -1;
+}
+
 struct Hit {
     float t;
     int mat;
@@ -304,17 +342,10 @@ bool intersect(vec3 ro, vec3 rd, bool lights, out Hit h) {
         }
     }
 
-    int hitInst = -1, tri = 0;
+    int tri = 0;
     vec2 bary;
     vec3 hitLo, hitLd;
-    for (int i = 0; i < uInstCount; ++i) {
-        if (slab(ro, inv, uInstMin[i].xyz, uInstMax[i].xyz, h.t) >= INF) continue;
-        vec4 a = uInstXf[i], b = uInstInfo[i];
-        vec3 p   = ro - vec3(a.x, 0.0, a.y);
-        vec3 lo  = vec3(a.z * p.x + a.w * p.z, p.y, -a.w * p.x + a.z * p.z) / b.z;
-        vec3 ld  = vec3(a.z * rd.x + a.w * rd.z, rd.y, -a.w * rd.x + a.z * rd.z) / b.z;
-        if (traverse(int(b.w), lo, ld, h.t, tri, bary, false)) hitInst = i, hitLo = lo, hitLd = ld;
-    }
+    int hitInst = piecesHit(ro, rd, h.t, tri, bary, hitLo, hitLd, false);
     if (hitInst >= 0) {
         vec4 a  = uInstXf[hitInst];
         vec3 n0 = texelFetch(uNorms, 3 * tri).xyz, n1 = texelFetch(uNorms, 3 * tri + 1).xyz;
@@ -336,18 +367,11 @@ bool occluded(vec3 ro, vec3 rd, float tmax) {
     float tb;
     vec3 nb;
     if (boardBox(ro, inv, tmax, tb, nb)) return true;
-    for (int i = 0; i < uInstCount; ++i) {
-        if (slab(ro, inv, uInstMin[i].xyz, uInstMax[i].xyz, tmax) >= INF) continue;
-        vec4 a = uInstXf[i], b = uInstInfo[i];
-        vec3 p  = ro - vec3(a.x, 0.0, a.y);
-        vec3 lo = vec3(a.z * p.x + a.w * p.z, p.y, -a.w * p.x + a.z * p.z) / b.z;
-        vec3 ld = vec3(a.z * rd.x + a.w * rd.z, rd.y, -a.w * rd.x + a.z * rd.z) / b.z;
-        float t = tmax;
-        int tri;
-        vec2 bary;
-        if (traverse(int(b.w), lo, ld, t, tri, bary, true)) return true;
-    }
-    return false;
+    float t = tmax;
+    int tri = 0;
+    vec2 bary;
+    vec3 lo, ld;
+    return piecesHit(ro, rd, t, tri, bary, lo, ld, true) >= 0;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
