@@ -507,6 +507,9 @@ msgstr "返回"
 msgid "Back to the books"
 msgstr "回到开局库"
 
+msgid "Back to the current move"
+msgstr "回到当前着法"
+
 msgid "Back to the default"
 msgstr "恢复默认文件夹"
 
@@ -587,6 +590,9 @@ msgstr "棋盘局面"
 
 msgid "Board {} of {}"
 msgstr "棋盘 {} / {}"
+
+msgid "Boards"
+msgstr "棋盘"
 
 msgid "Book"
 msgstr "开局库"
@@ -1374,6 +1380,9 @@ msgstr "固定节点数或深度：每个硬件线程一局（超线程不会改
 msgid "Flip"
 msgstr "翻转"
 
+msgid "Flip the board (F)"
+msgstr "翻转棋盘 (F)"
+
 msgid "Fold the details"
 msgstr "收起详情"
 
@@ -1572,6 +1581,12 @@ msgstr "稳定性"
 
 msgid "Hide"
 msgstr "隐藏"
+
+msgid "Hide the navigation buttons"
+msgstr "隐藏导航按钮"
+
+msgid "Hide the navigation buttons under the boards"
+msgstr "隐藏棋盘下方的导航按钮"
 
 msgid "Host"
 msgstr "主机"
@@ -1774,6 +1789,9 @@ msgstr "大型锦标赛"
 msgid "Last 24 hours:"
 msgstr "最近 24 小时："
 
+msgid "Last move (End)"
+msgstr "最后一步 (End)"
+
 msgid "Latest results"
 msgstr "最近成绩"
 
@@ -1952,6 +1970,9 @@ msgstr "名称：{} → {}"
 msgid "Names of the list that are no library engine"
 msgstr "列表中不属于库中引擎的名称"
 
+msgid "Navigation buttons under the boards"
+msgstr "棋盘下方的导航按钮"
+
 msgid "Needs action"
 msgstr "需要处理"
 
@@ -1966,6 +1987,9 @@ msgstr "新建锦标赛"
 
 msgid "New tournaments go there, and the lists show the tournaments found there. Tournaments already played are not moved: a tournament is a folder, move it yourself."
 msgstr "新锦标赛将建在这里，列表显示在这里找到的锦标赛。已下过的锦标赛不会被移动：锦标赛就是一个文件夹，请自行移动。"
+
+msgid "Next move (→)"
+msgstr "下一步 (→)"
 
 msgid "No PGN file imported."
 msgstr "尚未导入 PGN 文件。"
@@ -2510,6 +2534,9 @@ msgstr "正在准备开局库… {} %"
 msgid "Press A, or Analyse, for the engine's best moves here."
 msgstr "按 A 或“分析”，在此查看引擎的最佳着法。"
 
+msgid "Previous move (←)"
+msgstr "上一步 (←)"
+
 msgid "Probability that H1 is accepted (%)"
 msgstr "接受 H1 的概率 (%)"
 
@@ -2960,6 +2987,9 @@ msgstr "和棋所占比例。"
 msgid "Show it"
 msgstr "显示它"
 
+msgid "Show the navigation buttons under the boards"
+msgstr "显示棋盘下方的导航按钮"
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "在单独的面板中显示这局对局，该面板可停靠在其他面板旁，或移到另一块屏幕。"
 
@@ -3016,6 +3046,12 @@ msgstr "开始时间"
 
 msgid "Start now"
 msgstr "立即开始"
+
+msgid "Start position (Home)"
+msgstr "初始局面 (Home)"
+
+msgid "Start position, previous move, next move, last move and Flip, under the boards that show a game: Games, Live, the detached boards and the Board page. Without them, the keys do the same: the left and right arrows, Home, End, and F to flip."
+msgstr "初始局面、上一步、下一步、最后一步和翻转，位于显示对局的棋盘下方：对局、实时、分离的棋盘和棋盘页面。隐藏后，按键的作用相同：左右方向键、Home、End，以及 F 翻转。"
 
 msgid "Start timeout (s)"
 msgstr "启动超时（秒）"
@@ -3258,6 +3294,9 @@ msgstr "也可用方向键。"
 msgid "The average rating of the opponents met, game by game."
 msgstr "逐局计算的所遇对手平均等级分。"
 
+msgid "The board follows the game again (End)."
+msgstr "棋盘重新跟随对局 (End)。"
+
 msgid "The book cannot be built: {}"
 msgstr "无法生成开局库：{}"
 
@@ -3386,6 +3425,9 @@ msgstr "{} 的主机密钥已改变：现在是 {}，之前是 {}。可能有人
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "{} 的主机密钥不是预期的（{}，而不是 {}）：可能有人在中间拦截。未发送任何内容。"
+
+msgid "The keys still work. Settings or the command palette shows them again."
+msgstr "按键仍然有效。可在设置或命令面板中重新显示它们。"
 
 msgid "The king and the rook are not where it needs them."
 msgstr "王和车不在所需的位置。"

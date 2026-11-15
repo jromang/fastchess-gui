@@ -511,6 +511,9 @@ msgstr "Voltar"
 msgid "Back to the books"
 msgstr "Voltar aos livros"
 
+msgid "Back to the current move"
+msgstr "Voltar ao lance atual"
+
 msgid "Back to the default"
 msgstr "Voltar ao padrão"
 
@@ -591,6 +594,9 @@ msgstr "Posição do tabuleiro"
 
 msgid "Board {} of {}"
 msgstr "Tabuleiro {} de {}"
+
+msgid "Boards"
+msgstr "Tabuleiros"
 
 msgid "Book"
 msgstr "Livro"
@@ -1378,6 +1384,9 @@ msgstr "Nós ou profundidade fixos: uma partida por thread de hardware (o Hyper-
 msgid "Flip"
 msgstr "Girar"
 
+msgid "Flip the board (F)"
+msgstr "Girar o tabuleiro (F)"
+
 msgid "Fold the details"
 msgstr "Recolher os detalhes"
 
@@ -1577,6 +1586,12 @@ msgstr "Saúde"
 
 msgid "Hide"
 msgstr "Ocultar"
+
+msgid "Hide the navigation buttons"
+msgstr "Ocultar os botões de navegação"
+
+msgid "Hide the navigation buttons under the boards"
+msgstr "Ocultar os botões de navegação sob os tabuleiros"
 
 msgid "Host"
 msgstr "Host"
@@ -1779,6 +1794,9 @@ msgstr "Torneio grande"
 msgid "Last 24 hours:"
 msgstr "Últimas 24 horas:"
 
+msgid "Last move (End)"
+msgstr "Último lance (End)"
+
 msgid "Latest results"
 msgstr "Últimos resultados"
 
@@ -1958,6 +1976,9 @@ msgstr "Nome: {} → {}"
 msgid "Names of the list that are no library engine"
 msgstr "Nomes da lista que não são engines da biblioteca"
 
+msgid "Navigation buttons under the boards"
+msgstr "Botões de navegação sob os tabuleiros"
+
 msgid "Needs action"
 msgstr "Requer atenção"
 
@@ -1972,6 +1993,9 @@ msgstr "Novo torneio"
 
 msgid "New tournaments go there, and the lists show the tournaments found there. Tournaments already played are not moved: a tournament is a folder, move it yourself."
 msgstr "Os novos torneios vão para lá, e as listas mostram os torneios encontrados lá. Os torneios já jogados não são movidos: um torneio é uma pasta, mova-a você mesmo."
+
+msgid "Next move (→)"
+msgstr "Próximo lance (→)"
 
 msgid "No PGN file imported."
 msgstr "Nenhum arquivo PGN importado."
@@ -2519,6 +2543,9 @@ msgstr "Preparando o livro… {} %"
 msgid "Press A, or Analyse, for the engine's best moves here."
 msgstr "Pressione A, ou Analisar, para ver aqui os melhores lances do motor."
 
+msgid "Previous move (←)"
+msgstr "Lance anterior (←)"
+
 msgid "Probability that H1 is accepted (%)"
 msgstr "Probabilidade de H1 ser aceita (%)"
 
@@ -2972,6 +2999,9 @@ msgstr "Fração de partidas empatadas."
 msgid "Show it"
 msgstr "Mostrá-lo"
 
+msgid "Show the navigation buttons under the boards"
+msgstr "Mostrar os botões de navegação sob os tabuleiros"
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "Mostrar esta partida em um painel próprio, que pode ser encaixado ao lado dos outros ou movido para outra tela."
 
@@ -3028,6 +3058,12 @@ msgstr "Começar em"
 
 msgid "Start now"
 msgstr "Iniciar agora"
+
+msgid "Start position (Home)"
+msgstr "Posição inicial (Home)"
+
+msgid "Start position, previous move, next move, last move and Flip, under the boards that show a game: Games, Live, the detached boards and the Board page. Without them, the keys do the same: the left and right arrows, Home, End, and F to flip."
+msgstr "Posição inicial, lance anterior, próximo lance, último lance e Girar, sob os tabuleiros que mostram uma partida: Partidas, Ao vivo, os tabuleiros destacados e a página Tabuleiro. Sem eles, as teclas fazem o mesmo: as setas esquerda e direita, Home, End, e F para girar."
 
 msgid "Start timeout (s)"
 msgstr "Tempo limite de início (s)"
@@ -3274,6 +3310,9 @@ msgstr "As setas do teclado também."
 msgid "The average rating of the opponents met, game by game."
 msgstr "O rating médio dos adversários enfrentados, partida a partida."
 
+msgid "The board follows the game again (End)."
+msgstr "O tabuleiro volta a acompanhar a partida (End)."
+
 msgid "The book cannot be built: {}"
 msgstr "O livro não pode ser construído: {}"
 
@@ -3402,6 +3441,9 @@ msgstr "A chave de host de {} mudou: {} agora, {} antes. Alguém pode estar no m
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "A chave de host de {} não é a esperada ({} em vez de {}): alguém pode estar no meio. Nada foi enviado."
+
+msgid "The keys still work. Settings or the command palette shows them again."
+msgstr "As teclas continuam funcionando. As preferências ou a paleta de comandos os mostram de novo."
 
 msgid "The king and the rook are not where it needs them."
 msgstr "O rei e a torre não estão onde precisam estar."

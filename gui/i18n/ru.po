@@ -515,6 +515,9 @@ msgstr "Назад"
 msgid "Back to the books"
 msgstr "Вернуться к книгам"
 
+msgid "Back to the current move"
+msgstr "Вернуться к текущему ходу"
+
 msgid "Back to the default"
 msgstr "Вернуть по умолчанию"
 
@@ -595,6 +598,9 @@ msgstr "Позиция доски"
 
 msgid "Board {} of {}"
 msgstr "Доска {} из {}"
+
+msgid "Boards"
+msgstr "Доски"
 
 msgid "Book"
 msgstr "Книга"
@@ -1382,6 +1388,9 @@ msgstr "Фиксированные узлы или глубина: одна па
 msgid "Flip"
 msgstr "Перевернуть"
 
+msgid "Flip the board (F)"
+msgstr "Перевернуть доску (F)"
+
 msgid "Fold the details"
 msgstr "Свернуть подробности"
 
@@ -1582,6 +1591,12 @@ msgstr "Надёжность"
 
 msgid "Hide"
 msgstr "Скрыть"
+
+msgid "Hide the navigation buttons"
+msgstr "Скрыть кнопки навигации"
+
+msgid "Hide the navigation buttons under the boards"
+msgstr "Скрыть кнопки навигации под досками"
 
 msgid "Host"
 msgstr "Хост"
@@ -1784,6 +1799,9 @@ msgstr "Большой турнир"
 msgid "Last 24 hours:"
 msgstr "За последние 24 часа:"
 
+msgid "Last move (End)"
+msgstr "Последний ход (End)"
+
 msgid "Latest results"
 msgstr "Последние результаты"
 
@@ -1964,6 +1982,9 @@ msgstr "Имя: {} → {}"
 msgid "Names of the list that are no library engine"
 msgstr "Имена из списка, которых нет среди движков библиотеки"
 
+msgid "Navigation buttons under the boards"
+msgstr "Кнопки навигации под досками"
+
 msgid "Needs action"
 msgstr "Требует внимания"
 
@@ -1978,6 +1999,9 @@ msgstr "Новый турнир"
 
 msgid "New tournaments go there, and the lists show the tournaments found there. Tournaments already played are not moved: a tournament is a folder, move it yourself."
 msgstr "Новые турниры создаются там, а списки показывают найденные там турниры. Уже сыгранные турниры не переносятся: турнир — это папка, перенесите её сами."
+
+msgid "Next move (→)"
+msgstr "Следующий ход (→)"
 
 msgid "No PGN file imported."
 msgstr "Файлы PGN не импортированы."
@@ -2528,6 +2552,9 @@ msgstr "Подготовка книги… {} %"
 msgid "Press A, or Analyse, for the engine's best moves here."
 msgstr "Нажмите A или «Анализировать», чтобы увидеть лучшие ходы движка."
 
+msgid "Previous move (←)"
+msgstr "Предыдущий ход (←)"
+
 msgid "Probability that H1 is accepted (%)"
 msgstr "Вероятность принятия H1 (%)"
 
@@ -2984,6 +3011,9 @@ msgstr "Доля ничейных партий."
 msgid "Show it"
 msgstr "Показать её"
 
+msgid "Show the navigation buttons under the boards"
+msgstr "Показать кнопки навигации под досками"
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "Показать эту партию в отдельной панели, которую можно закрепить рядом с другими или перенести на другой экран."
 
@@ -3040,6 +3070,12 @@ msgstr "Начать с"
 
 msgid "Start now"
 msgstr "Запустить сейчас"
+
+msgid "Start position (Home)"
+msgstr "Начальная позиция (Home)"
+
+msgid "Start position, previous move, next move, last move and Flip, under the boards that show a game: Games, Live, the detached boards and the Board page. Without them, the keys do the same: the left and right arrows, Home, End, and F to flip."
+msgstr "Начальная позиция, предыдущий ход, следующий ход, последний ход и «Перевернуть» под досками, на которых показана партия: «Партии», «Онлайн», открепленные доски и страница «Доска». Без них то же делают клавиши: стрелки влево и вправо, Home, End и F, чтобы перевернуть доску."
 
 msgid "Start timeout (s)"
 msgstr "Тайм-аут запуска (с)"
@@ -3290,6 +3326,9 @@ msgstr "Также клавиши со стрелками."
 msgid "The average rating of the opponents met, game by game."
 msgstr "Средний рейтинг соперников, партия за партией."
 
+msgid "The board follows the game again (End)."
+msgstr "Доска снова следует за партией (End)."
+
 msgid "The book cannot be built: {}"
 msgstr "Не удаётся построить книгу: {}"
 
@@ -3418,6 +3457,9 @@ msgstr "Ключ хоста {} изменился: сейчас {}, раньше
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "Ключ хоста {} не совпадает с ожидаемым ({} вместо {}): возможно, кто-то вмешивается. Ничего не отправлено."
+
+msgid "The keys still work. Settings or the command palette shows them again."
+msgstr "Клавиши по-прежнему работают. Вернуть кнопки можно в параметрах или в палитре команд."
 
 msgid "The king and the rook are not where it needs them."
 msgstr "Король и ладья стоят не там, где нужно."

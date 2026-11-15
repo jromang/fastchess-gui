@@ -320,6 +320,7 @@ struct MatchSetup {
     bool tile_info       = false;        // live mosaic: the 50-move counter, material and pieces under every board
     bool live_seed_side  = true;         // live boards of a gauntlet turned to the seed's side
     bool live_arrows     = true;         // live board: the PV move of the side to move and the reply it expects
+    bool nav_buttons     = true;         // first, previous, next, last and Flip under the boards that show a game
     std::map<std::string, float> panes;  // the list's share of the width on list + detail pages, by page
     // Big screen: the size of its text (on top of what the window gives), what it follows (BigFollow: this game,
     // every game in turn, the most interesting) and how many seconds a game stays before the next one is chosen.
@@ -363,6 +364,7 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
     next.tile_info        = current.tile_info;
     next.live_seed_side   = current.live_seed_side;
     next.live_arrows      = current.live_arrows;
+    next.nav_buttons      = current.nav_buttons;
     next.big_scale        = current.big_scale;
     next.big_follow       = current.big_follow;
     next.big_seconds      = current.big_seconds;
@@ -382,7 +384,7 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,     \
         pgn_event, export_style, pgn_nodes, pgn_seldepth, pgn_nps, pgn_pv, pgn_tbhits, pgn_decision, recover,     \
         log_every_game, stop_on_start_failure, check_mate_pvs, notify, language, theme, ui_zoom, tile_info,       \
-        live_seed_side, live_arrows,                                                                              \
+        live_seed_side, live_arrows, nav_buttons,                                                                 \
         panes, broadcast_files, broadcast_dir, broadcast_tlcs, tlcs_port, tlcs_lanes, broadcast_web, web_port,    \
         broadcast_follow, broadcast_lichess, lichess_round, lichess_listed, resume_at_launch, broadcast_tunnel,   \
         tunnel_service, tunnel_host, tunnel_port, tunnel_user, tunnel_remote_port, web_chat_link, web_discord_id

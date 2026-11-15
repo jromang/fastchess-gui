@@ -217,8 +217,9 @@ void App::analyseLiveGame(int slot) {
         game.moves.push_back(std::move(r));
     }
     const bool chess960 = t && t->spec().conditions.variant == fastchess::VariantType::FRC;
-    const int ply       = static_cast<int>(game.moves.size());
-    auto title          = fmt::format("{} – {}", st.white, st.black);
+    // At the position the board shows: an earlier one when it was stepped back.
+    const int ply = slot_views_[static_cast<std::size_t>(slot)].nav.shown(static_cast<int>(game.moves.size()));
+    auto title    = fmt::format("{} – {}", st.white, st.black);
     if (t) title += " · " + t->spec().name;
     title += " · " + trf("game {}", st.game_id);
     openOnBoard(std::move(game), ply, chess960, std::move(title), true);
@@ -503,10 +504,7 @@ void App::drawBoardPage() {
     const bool keys = !ImGui::GetIO().WantTextInput && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId);
     const int total = static_cast<int>(b.game.moves.size());
     if (keys && !b.editor) {
-        if (ImGui::IsKeyPressed(ImGuiKey_LeftArrow)) b.ply = std::max(0, b.ply - 1);
-        if (ImGui::IsKeyPressed(ImGuiKey_RightArrow)) b.ply = std::min(total, b.ply + 1);
-        if (ImGui::IsKeyPressed(ImGuiKey_Home)) b.ply = 0;
-        if (ImGui::IsKeyPressed(ImGuiKey_End)) b.ply = total;
+        b.ply = stepPly(navKeys(b.flip), b.ply, total);
         if (ImGui::IsKeyPressed(ImGuiKey_Escape)) b.selected.reset();
         if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_V)) pasteOnBoard();
     }
@@ -1033,18 +1031,20 @@ void App::drawBoardColumn(float size) {
 
     drawBoardInfo(atlas_, board, size, 0);
 
-    // Through the moves, and the position as text.
+    // Through the moves, back to the move being played while a game from here goes on, and the position as text.
     const int total = static_cast<int>(b.game.moves.size());
-    if (ImGui::Button("|<")) b.ply = 0;
-    ImGui::SameLine();
-    if (ImGui::Button("<")) b.ply = std::max(0, b.ply - 1);
-    ImGui::SameLine();
-    if (ImGui::Button(">")) b.ply = std::min(total, b.ply + 1);
-    ImGui::SameLine();
-    if (ImGui::Button(">|")) b.ply = total;
-    ImGui::SameLine();
-    ImGui::Checkbox(TR("Flip##board"), &b.flip);
-    ImGui::SameLine();
+    const bool live = b.match && b.match_state.running && b.watching;
+    if (setup_.nav_buttons || (live && b.ply < total)) {
+        const float copy = ImGui::CalcTextSize(TR("Copy FEN")).x + ImGui::GetStyle().FramePadding.x * 2 +
+                           ImGui::GetStyle().ItemSpacing.x;
+        const auto click = drawBoardNav("##board_nav", b.ply, total, b.flip, setup_.nav_buttons, live, size - copy);
+        b.ply            = stepPly(click.step, b.ply, total);
+        if (click.hide) {
+            setup_.nav_buttons = false;
+            saveSetupSoon();
+        }
+        ImGui::SameLine();
+    }
     if (ImGui::Button(TR("Copy FEN"))) ImGui::SetClipboardText(board.getFen().c_str());
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", board.getFen().c_str());
     if (b.original) {
