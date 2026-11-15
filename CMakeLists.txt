@@ -28,6 +28,8 @@ if(FCG_CCACHE AND NOT CMAKE_CXX_COMPILER_LAUNCHER)
         set(CMAKE_C_COMPILER_LAUNCHER ${CMAKE_COMMAND} -E env CCACHE_BASEDIR=${CMAKE_CURRENT_SOURCE_DIR}
                                       ${FCG_CCACHE_PROGRAM})
         set(CMAKE_CXX_COMPILER_LAUNCHER ${CMAKE_C_COMPILER_LAUNCHER})
+        # SDL's precompiled header would make every one of its files uncacheable (gcc): none.
+        set(CMAKE_DISABLE_PRECOMPILE_HEADERS ON)
         message(STATUS "Compiling through ${FCG_CCACHE_PROGRAM}")
     endif()
 endif()
