@@ -974,6 +974,14 @@ TEST_CASE("the setup becomes a sanitized fastchess configuration") {
         CHECK(run.spec.polyglot_book == bin.string());
         CHECK(run.spec.polyglot_plies == 1);
         CHECK(run.spec.book_randomness == 0);
+        CHECK(run.spec.unbalanced_cp == 0);  // not looked for unless asked
+        setup.unbalanced_enabled = true;
+        setup.unbalanced_replace = true;
+        run                      = buildRun(setup, engines, topology, dir / "polyglot-unbalanced");
+        CHECK(run.spec.unbalanced_cp == 200);
+        CHECK(run.spec.unbalanced_moves == 4);
+        CHECK(run.spec.unbalanced_replace);
+        setup.unbalanced_enabled = false;
         // The best move only: one line (both moves weigh the same here, so both stay); clamped beyond the limits.
         setup.book_randomness = -300;
         run                   = buildRun(setup, engines, topology, dir / "polyglot-best");

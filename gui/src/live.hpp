@@ -99,6 +99,7 @@ struct GameRecord {
     int8_t a_result     = 0;     // +1 A won, 0 draw, -1 A lost
     uint8_t termination = 0;
     bool result_set     = false;  // the result was set by hand (tour::GameResult::set)
+    int8_t unbalanced   = 0;      // its opening was unbalanced: +1 for White, -1 for Black (tour::GameResult)
     uint16_t reason     = 0;      // index into GuiObserver::reasons()
     uint16_t opening    = 0;      // index into GuiObserver::openings(); 0: none (Chess960, or an older PGN)
     EvalFacts facts;              // what its evaluations tell, for the "interesting games" filters

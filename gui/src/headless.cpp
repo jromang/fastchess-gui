@@ -77,10 +77,16 @@ class ConsoleListener final : public tour::RecordListener {
         const auto name   = [&](int id) { return spec.participant(id) ? spec.participant(id)->engine.name : "?"; };
         const auto total  = state_.totalGames();
         const auto played = ++played_ + already_;
-        std::printf("%s  %s - %s  %s  {%s}\n",
+        std::printf("%s  %s - %s  %s  {%s}%s\n",
                     total ? fmt::format("[{}/{}]", played, *total).c_str() : fmt::format("[{}]", played).c_str(),
                     name(result.white).c_str(), name(result.black).c_str(), result.result.c_str(),
-                    result.reason.c_str());
+                    result.reason.c_str(), result.unbalanced != 0 ? "  unbalanced opening" : "");
+        // Its pair voided, to be played again from another opening (TournamentSpec::unbalanced_replace).
+        if (const auto replaced = state_.openingsReplaced(); replaced != replaced_) {
+            replaced_ = replaced;
+            std::printf("Unbalanced opening: game pair %u is played again from another opening.\n",
+                        result.encounter + 1);
+        }
         if (played_ % 20 == 0) printStatus();
         std::fflush(stdout);
         if (auto error = state_.pgnOutError(); error != out_error_) {
@@ -134,7 +140,10 @@ class ConsoleListener final : public tour::RecordListener {
         std::fflush(stderr);
     }
 
-    void setAlready(uint64_t n) { already_ = n; }
+    void setAlready(uint64_t n) {
+        already_  = n;
+        replaced_ = state_.openingsReplaced();
+    }
 
     void printStatus() const {
         const auto& spec = state_.spec();
@@ -157,8 +166,9 @@ class ConsoleListener final : public tour::RecordListener {
    private:
     const tour::TournamentState& state_;
     std::mutex mutex_;
-    uint64_t played_  = 0;
-    uint64_t already_ = 0;
+    uint64_t played_   = 0;
+    uint64_t already_  = 0;
+    uint64_t replaced_ = 0;  // openings replaced as unbalanced, as last told
     std::string out_error_;  // the last pgnOutError() reported
 };
 

@@ -148,8 +148,9 @@ const std::vector<std::string>& sectionFields(SetupSection section) {
         "sprt_alpha", "sprt_beta", "sprt_model", "sprt_max_games", "sprt_draw_ratio", "sprt_rms_bias"};
     static const std::vector<std::string> time{"limit",        "tc_base_s", "tc_inc_s", "tc_moves",
                                                "tc_margin_ms", "nodes",     "move_s",   "depth"};
-    static const std::vector<std::string> openings{"book",     "book_random",       "book_plies", "book_start",
-                                                   "chess960", "opening_per_round", "seed",       "book_randomness"};
+    static const std::vector<std::string> openings{
+        "book", "book_random",     "book_plies",         "book_start",    "chess960",         "opening_per_round",
+        "seed", "book_randomness", "unbalanced_enabled", "unbalanced_cp", "unbalanced_moves", "unbalanced_replace"};
     static const std::vector<std::string> adjudication{
         "draw_enabled",     "draw_movenumber", "draw_movecount",  "draw_score",       "resign_enabled",
         "resign_movecount", "resign_score",    "resign_twosided", "maxmoves_enabled", "maxmoves",
@@ -243,7 +244,10 @@ bool sameSection(const MatchSetup& a, const MatchSetup& b, SetupSection section)
             return a.book == b.book && (a.book.empty() || a.book_plies == b.book_plies) &&
                    a.book_random == b.book_random && a.book_start == b.book_start && a.chess960 == b.chess960 &&
                    a.opening_per_round == b.opening_per_round && a.seed == b.seed &&
-                   a.book_randomness == b.book_randomness;
+                   a.book_randomness == b.book_randomness && a.unbalanced_enabled == b.unbalanced_enabled &&
+                   (!a.unbalanced_enabled ||
+                    (a.unbalanced_cp == b.unbalanced_cp && a.unbalanced_moves == b.unbalanced_moves &&
+                     a.unbalanced_replace == b.unbalanced_replace));
         case SetupSection::Adjudication:
             if (a.draw_enabled != b.draw_enabled || a.resign_enabled != b.resign_enabled ||
                 a.maxmoves_enabled != b.maxmoves_enabled || a.tb_enabled != b.tb_enabled) {
@@ -302,7 +306,11 @@ void copySection(MatchSetup& to, const MatchSetup& from, SetupSection section) {
             to.chess960          = from.chess960;
             to.opening_per_round = from.opening_per_round;
             to.seed              = from.seed;
-            to.book_randomness   = from.book_randomness;
+            to.book_randomness    = from.book_randomness;
+            to.unbalanced_enabled = from.unbalanced_enabled;
+            to.unbalanced_cp      = from.unbalanced_cp;
+            to.unbalanced_moves   = from.unbalanced_moves;
+            to.unbalanced_replace = from.unbalanced_replace;
             return;
         case SetupSection::Adjudication:
             to.draw_enabled     = from.draw_enabled;
@@ -487,6 +495,16 @@ std::string randomnessText(int randomness) {
     return trf("randomness {}", fmt::format("{:+}", randomness));
 }
 
+std::string unbalancedText(const MatchSetup& s) {
+    if (!s.unbalanced_enabled) return {};
+    const int cp     = std::max(1, s.unbalanced_cp);
+    const auto moves = static_cast<uint64_t>(std::max(1, s.unbalanced_moves));
+    return s.unbalanced_replace ? trn("unbalanced openings replaced (±{} cp for {} move)",
+                                      "unbalanced openings replaced (±{} cp for {} moves)", moves, cp, moves)
+                                : trn("unbalanced openings flagged (±{} cp for {} move)",
+                                      "unbalanced openings flagged (±{} cp for {} moves)", moves, cp, moves);
+}
+
 std::string durationText(double seconds) {
     if (!(seconds > 0)) return trf("{} s", 0);
     const double whole = std::round(seconds);
@@ -574,10 +592,11 @@ std::string openingsSummary(const MatchSetup& s, const std::vector<BookEntry>& b
     const bool own    = std::any_of(people.begin(), people.end(), [](const auto& p) { return !p.book.empty(); });
     const auto own_text =
         own && s.book_randomness != 0 ? trf("own books: {}", randomnessText(s.book_randomness)) : std::string();
+    const auto unbalanced = unbalancedText(s);
     if (s.book.empty()) {
         return joined({s.chess960 ? std::string(TR("Chess960: the 960 starting positions"))
                                   : std::string(TR("every game from the initial position")),
-                       own_text});
+                       own_text, unbalanced});
     }
     const bool polyglot = tour::isPolyglot(s.book);
     std::vector<std::string> parts{bookLabel(s.book, books)};
@@ -591,6 +610,7 @@ std::string openingsSummary(const MatchSetup& s, const std::vector<BookEntry>& b
     if (s.chess960) parts.push_back("Chess960");
     if (s.opening_per_round) parts.push_back(TR("one opening per round"));
     if (!polyglot) parts.push_back(own_text);
+    parts.push_back(unbalanced);
     return joined(parts);
 }
 

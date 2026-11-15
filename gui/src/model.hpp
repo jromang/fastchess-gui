@@ -278,6 +278,13 @@ struct MatchSetup {
     // How the moves of the Polyglot books are chosen, the tournament's and the participants' own: -100 the best move
     // only, 0 by their weights, 100 every move alike (tour::choiceWeights()).
     int book_randomness = 0;
+    // Unbalanced openings flagged as the games end (tour/unbalanced.hpp): both engines beyond unbalanced_cp for the
+    // same side for their first unbalanced_moves moves after the book; with unbalanced_replace, the pair is voided and
+    // played again from another opening.
+    bool unbalanced_enabled = false;
+    int unbalanced_cp       = 200;
+    int unbalanced_moves    = 4;
+    bool unbalanced_replace = false;
 
     bool draw_enabled   = false;
     int draw_movenumber = 40;
@@ -379,7 +386,8 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
         fixed_games, sprt_elo0, sprt_elo1, sprt_alpha, sprt_beta, sprt_model, sprt_max_games, sprt_draw_ratio,        \
         sprt_rms_bias, limit, tc_base_s, tc_inc_s, tc_moves, tc_margin_ms, nodes, move_s, depth, concurrency_auto,    \
         concurrency, affinity, book, book_random, book_plies, book_start, chess960, opening_per_round, seed, pgn_out, \
-        engine_syzygy, engine_ownbook_off, book_a, book_b, big_scale, big_follow, big_seconds, book_randomness
+        engine_syzygy, engine_ownbook_off, book_a, book_b, big_scale, big_follow, big_seconds, book_randomness,       \
+        unbalanced_enabled, unbalanced_cp, unbalanced_moves, unbalanced_replace
 #define FCG_MATCH_SETUP_FIELDS_2                                                                                  \
     draw_enabled, draw_movenumber, draw_movecount, draw_score, resign_enabled, resign_movecount, resign_score,    \
         resign_twosided, maxmoves_enabled, maxmoves, tb_enabled, tb_paths, tb_pieces, tb_ignore50, tb_result,     \

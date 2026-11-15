@@ -19,8 +19,18 @@ float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
 
 bool chess960(const tour::TournamentState& t) { return t.spec().conditions.variant == fastchess::VariantType::FRC; }
 
+// A tooltip at the cursor for the item just drawn, wrapped.
+void itemHelp(const std::string& text) {
+    if (text.empty() || !ImGui::BeginItemTooltip()) return;
+    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 30.0f);
+    ImGui::TextUnformatted(text.c_str());
+    ImGui::PopTextWrapPos();
+    ImGui::EndTooltip();
+}
+
 const char* SHOW[] = {N_("All openings"), N_("A colour won both games of a pair"), N_("Drawn twice"),
-                      N_("Won twice by one engine")};
+                      N_("Won twice by one engine"), N_("Flagged unbalanced during the games")};
+static_assert(UNBALANCED_OPENINGS == IM_ARRAYSIZE(SHOW) - 1);
 
 bool shown(const tour::OpeningStats& o, int show) {
     switch (show) {
@@ -30,9 +40,24 @@ bool shown(const tour::OpeningStats& o, int show) {
             return o.drawn_twice > 0;
         case 3:
             return o.one_engine_twice > 0;
+        case UNBALANCED_OPENINGS:
+            return o.unbalancedGames() > 0;
         default:
             return true;
     }
+}
+
+// What the mark of an opening flagged unbalanced says: its games flagged, and for which side.
+std::string unbalancedTip(const tour::OpeningStats& o) {
+    std::string tip =
+        trn("{} game flagged unbalanced when it ended: both engines saw a side far ahead right after "
+            "the book.",
+            "{} games flagged unbalanced when they ended: both engines saw a side far ahead right after "
+            "the book.",
+            static_cast<uint64_t>(o.unbalancedGames()), o.unbalancedGames());
+    if (o.unbalanced_white > 0) tip += "\n" + trf("White ahead: {}", o.unbalanced_white);
+    if (o.unbalanced_black > 0) tip += "\n" + trf("Black ahead: {}", o.unbalanced_black);
+    return tip;
 }
 
 }  // namespace
@@ -69,6 +94,29 @@ void App::drawOpenings() {
     if (ImGui::Combo("##opening_show", &opening_show_, show, IM_ARRAYSIZE(SHOW))) opening_order_dirty_ = true;
     ImGui::SameLine();
     ImGui::TextDisabled("%s", trf("{} of {} openings", opening_order_.size(), by_opening_.size()).c_str());
+    // The openings flagged unbalanced as their games ended, and those replaced by others (the tournament's rule).
+    const auto& spec    = run_.tournament()->spec();
+    const auto flagged  = std::count_if(by_opening_.begin(), by_opening_.end(),
+                                        [](const tour::OpeningStats& o) { return o.unbalancedGames() > 0; });
+    const auto replaced = run_.tournament()->openingsReplaced();
+    if (spec.unbalanced_cp > 0) {
+        ImGui::SameLine();
+        ImGui::PushStyleColor(ImGuiCol_Text, flagged > 0 ? ui::WARN : ImGui::GetColorU32(ImGuiCol_TextDisabled));
+        ImGui::TextUnformatted(
+            (trn("{} unbalanced", "{} unbalanced", static_cast<uint64_t>(flagged), flagged) +
+             (replaced > 0 ? " · " + trn("{} replaced", "{} replaced", replaced, replaced) : std::string()))
+                .c_str());
+        ImGui::PopStyleColor();
+        itemHelp(trf("Openings with a game flagged unbalanced: both engines beyond ±{} cp for the same side for their "
+                     "first {} moves after the book.",
+                     spec.unbalanced_cp, spec.unbalanced_moves) +
+                 (replaced > 0 ? "\n" + trn("{} pair was played again from another opening: its first opening is "
+                                            "no longer listed.",
+                                            "{} pairs were played again from another opening: their first openings "
+                                            "are no longer listed.",
+                                            replaced, replaced)
+                               : std::string()));
+    }
     ImGui::SameLine();
     ImGui::BeginDisabled(opening_order_.empty());
     if (ImGui::Button(TR("Export as EPD…"))) {
@@ -79,6 +127,11 @@ void App::drawOpenings() {
     ui::help(
         TR("The starting positions of the openings shown, in the order shown: a book of them, to keep them "
            "or to remove them from another book."));
+    if (flagged > 0) {
+        ImGui::SameLine();
+        ImGui::Checkbox(TR("Without the unbalanced"), &export_balanced_only_);
+        itemHelp(TR("Export as EPD… leaves out the openings with a game flagged unbalanced."));
+    }
 
     if (by_opening_.empty()) {
         ImGui::TextDisabled("%s", TR("The openings appear here once their games are played."));
@@ -171,11 +224,21 @@ void App::drawOpenings() {
                 const auto& o = by_opening_[i];
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
+                // An opening flagged unbalanced during the games: "!" before its name, its games counted.
+                const bool flagged_row = o.unbalancedGames() > 0;
+                if (flagged_row) {
+                    ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+                    ImGui::TextUnformatted("!");
+                    ImGui::PopStyleColor();
+                    ImGui::SameLine(0, ImGui::GetStyle().ItemInnerSpacing.x);
+                }
                 const auto label = fmt::format("{}##o{}", name(o), i);
                 if (ImGui::Selectable(label.c_str(), selected_opening_ == i, ImGuiSelectableFlags_SpanAllColumns)) {
                     selected_opening_ = selected_opening_ == i ? -1 : i;
                 }
-                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", o.fen.c_str());
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("%s", flagged_row ? (o.fen + "\n\n" + unbalancedTip(o)).c_str() : o.fen.c_str());
+                }
                 ImGui::TableNextColumn();
                 ImGui::Text("%d", o.pairs);
                 ImGui::TableNextColumn();
@@ -218,6 +281,13 @@ void App::drawOpenings() {
     decor.eval_white = -1;
     drawBoard(atlas_, board, std::min(ImGui::GetContentRegionAvail().x, px(320)), decor);
     ImGui::TextDisabled("%s", o.fen.c_str());
+    if (o.unbalancedGames() > 0) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
+        ImGui::PushTextWrapPos(0);
+        ImGui::TextUnformatted(unbalancedTip(o).c_str());
+        ImGui::PopTextWrapPos();
+        ImGui::PopStyleColor();
+    }
 
     ImGui::Spacing();
     ImGui::TextUnformatted(TR("Its games"));

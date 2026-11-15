@@ -363,6 +363,21 @@ TEST_CASE("profiles: each section said on one line, and as cutechess and fastche
     CHECK(sectionSummary(s, SetupSection::Openings, books) ==
           "Perfect2023.bin · 12 plies · random · moves by their "
           "weights");
+    // The unbalanced openings flagged, or replaced; their score and moves only count when they are looked for.
+    s.unbalanced_enabled = true;
+    CHECK(unbalancedText(s) == "unbalanced openings flagged (±200 cp for 4 moves)");
+    s.unbalanced_replace = true;
+    s.unbalanced_moves   = 1;
+    CHECK(sectionSummary(s, SetupSection::Openings, books) ==
+          "Perfect2023.bin · 12 plies · random · moves by their weights · unbalanced openings replaced (±200 cp for 1 "
+          "move)");
+    MatchSetup other    = s;
+    other.unbalanced_cp = 300;
+    CHECK_FALSE(sameSection(s, other, SetupSection::Openings));
+    s.unbalanced_enabled     = false;
+    other.unbalanced_enabled = false;
+    CHECK(sameSection(s, other, SetupSection::Openings));
+    CHECK(unbalancedText(s).empty());
     CHECK(randomnessText(-100) == "the best moves only");
     CHECK(randomnessText(100) == "every move alike");
     CHECK(randomnessText(25) == "randomness +25");

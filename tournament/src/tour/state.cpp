@@ -74,6 +74,7 @@ nlohmann::json toJson(const GameResult& r) {
                         {"cb", {r.pgn_chessbase.offset, r.pgn_chessbase.length}},
                         {"at", r.finished_at}};
     if (!r.pv_warnings.empty()) j["pv"] = r.pv_warnings;
+    if (r.unbalanced != 0) j["unbalanced"] = r.unbalanced;
     if (r.set) {
         j["set"] = {{"why", r.set->why},
                     {"played", r.set->played_result},
@@ -98,6 +99,7 @@ GameResult resultFromJson(const nlohmann::json& j) {
     r.pgn_chessbase = {j.at("cb").at(0).get<uint64_t>(), j.at("cb").at(1).get<uint32_t>()};
     r.finished_at   = j.value("at", int64_t{0});
     if (j.contains("pv")) j.at("pv").get_to(r.pv_warnings);
+    r.unbalanced = std::clamp(j.value("unbalanced", 0), -1, 1);
     if (const auto it = j.find("set"); it != j.end() && it->is_object()) {
         ResultSet set;
         set.why                = it->value("why", std::string{});
@@ -416,7 +418,12 @@ void TournamentState::load() {
             if (type == "encounter_started") {
                 OpeningText text{e.at("fen").get<std::string>(), e.value("moves", std::vector<std::string>{})};
                 const auto encounter = e.at("encounter").get<uint32_t>();
-                started_[encounter]  = fromText(text, frc());
+                // Started again: its opening was replaced, as unbalanced (replaceUnbalanced()).
+                if (started_.count(encounter)) {
+                    ++replaced_;
+                    ++replacements_[encounter];
+                }
+                started_[encounter] = fromText(text, frc());
                 if (const auto enc = schedule_.at(encounter); enc && openingPerRound()) {
                     round_openings_.emplace(std::pair{enc->cycle, enc->round}, started_[encounter]);
                 }
@@ -1161,6 +1168,11 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
         }
     }
     const auto& game = marked ? *marked : data;
+    // An opening that decided the game by itself, from the evaluations after the book (the own books' moves are book
+    // moves by now). The result is not changed.
+    if (spec_.unbalanced_cp > 0) {
+        result.unbalanced = unbalancedOpening(game, {spec_.unbalanced_cp, spec_.unbalanced_moves});
+    }
 
     std::unique_lock<std::mutex> lock(mutex_);
     const auto elo      = [&](int id) { return spec_.participant(id) ? spec_.participant(id)->elo : 0; };
@@ -1223,6 +1235,8 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     Recorded recorded{result, std::nullopt};
     if (apply(result)) {
         recorded.pair = pairs_[{std::min(result.white, result.black), std::max(result.white, result.black)}];
+        // Its pair played from an unbalanced opening, played again from another: its statistics did not count.
+        if (replaceUnbalanced(result.encounter)) recorded.pair.reset();
     }
     out_held_.push_back(results_.size() - 1);
     checkSprt();
@@ -1231,6 +1245,49 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     writeOut(lock);
 
     return recorded;
+}
+
+bool TournamentState::replaceUnbalanced(uint32_t encounter) {
+    if (!spec_.unbalanced_replace || spec_.unbalanced_cp <= 0 || finished_ || !journal_) return false;
+    const bool unbalanced = std::any_of(results_.begin(), results_.end(), [&](const GameResult& r) {
+        return !r.voided && r.encounter == encounter && r.unbalanced != 0;
+    });
+    if (!unbalanced || replacements_[encounter] >= MAX_OPENING_REPLACEMENTS) return false;
+    const auto& book = openings();
+    const auto n     = book.size();
+    if (n < 2) return false;  // no other opening to play
+
+    // One from the end of the book, which the tournament would reach last (in its playing order: shuffled with the
+    // seed in random order): the openings of the encounters to come are not moved. Not the same one again.
+    const auto current = toText(started_[encounter], frc());
+    auto index         = n - 1 - static_cast<std::size_t>(replaced_ % n);
+    auto text          = toText(book.at(index), frc());
+    if (text.fen == current.fen && text.moves == current.moves) {
+        index = (index + n - 1) % n;
+        text  = toText(book.at(index), frc());
+    }
+
+    // Its games voided and played again, as a void of the Games tab would, then the encounter started anew from
+    // that opening: a resume, and the versions before, read the last opening an encounter started with.
+    nlohmann::json games = nlohmann::json::array();
+    games.push_back(nlohmann::json::array({encounter, 0}));
+    games.push_back(nlohmann::json::array({encounter, 1}));
+    const nlohmann::json voided = {
+        {"t", "games_voided"}, {"games", games}, {"replay", true}, {"why", UNBALANCED_REASON}};
+    journal_->append(voided);
+    applyEvent(voided);
+    // The user's last change is no longer the last edit of the journal: undoing it would undo this void instead.
+    undo_.reset();
+    journal_->append({{"t", "encounter_started"}, {"encounter", encounter}, {"fen", text.fen}, {"moves", text.moves}});
+    started_[encounter] = book.at(index);
+    ++replaced_;
+    ++replacements_[encounter];
+    return true;
+}
+
+uint64_t TournamentState::openingsReplaced() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return replaced_;
 }
 
 void TournamentState::finishIfComplete() {

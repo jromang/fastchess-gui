@@ -127,4 +127,8 @@ void recognizeProfiles(MatchSetup& setup, const ProfileStore& store);
 // their weights", "the best moves only", "every move alike", "randomness -40".
 [[nodiscard]] std::string randomnessText(int randomness);
 
+// The rule for the unbalanced openings, as the summaries say it: "unbalanced openings flagged (±200 cp for 4 moves)",
+// "unbalanced openings replaced (…)"; empty when it is off.
+[[nodiscard]] std::string unbalancedText(const MatchSetup& setup);
+
 }  // namespace fcg

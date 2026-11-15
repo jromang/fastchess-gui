@@ -135,6 +135,9 @@ msgstr "1 sconfitta per tempo"
 msgid "10 games at 10+0.1 from 5 positions, to see before a long tournament whether it loses on time, crashes, plays an illegal move or uses its clock badly."
 msgstr "10 partite a 10+0.1 da 5 posizioni, per vedere prima di un lungo torneo se perde per tempo, va in crash, gioca una mossa illegale o gestisce male l'orologio."
 
+msgid "200 cp: both engines think a side is two pawns ahead, or more."
+msgstr "200 cp: entrambi i motori pensano che un lato sia avanti di due pedoni, o più."
+
 msgid "200k nodes"
 msgstr "200k nodi"
 
@@ -179,6 +182,9 @@ msgstr "Un file a tua scelta"
 
 msgid "A game has no port: {}"
 msgstr "Una partita non ha una porta: {}"
+
+msgid "A game is flagged when both engines see the same side ahead by the score below for each of their first moves after the book: the Games tab can show those games, the Openings tab marks and counts their openings, the overview counts them. The results are not changed."
+msgstr "Una partita viene segnalata quando entrambi i motori vedono lo stesso lato in vantaggio di almeno il punteggio qui sotto a ciascuna delle loro prime mosse dopo il libro: la scheda Partite può mostrare quelle partite, la scheda Aperture segna e conta le loro aperture, la panoramica le conta. I risultati non cambiano."
 
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr "Un gauntlet richiede almeno un motore oltre a quelli testati."
@@ -487,6 +493,9 @@ msgstr "Schermo grande"
 msgid "Black"
 msgstr "Nero"
 
+msgid "Black ahead: {}"
+msgstr "Nero in vantaggio: {}"
+
 msgid "Black disconnects"
 msgstr "Il Nero si disconnette"
 
@@ -531,6 +540,9 @@ msgstr "Libri (EPD, PGN, Polyglot)"
 
 msgid "Books the program writes, added to the library."
 msgstr "Libri scritti dal programma, aggiunti alla libreria."
+
+msgid "Both engines beyond ±{} cp for the same side for their first {} moves after the book. The results are not changed."
+msgstr "Entrambi i motori oltre ±{} cp per lo stesso lato nelle loro prime {} mosse dopo il libro. I risultati non cambiano."
 
 msgid "Both engines must agree"
 msgstr "Entrambi i motori d'accordo"
@@ -1165,6 +1177,9 @@ msgstr "Esporta tutto…"
 msgid "Export as EPD…"
 msgstr "Esporta come EPD…"
 
+msgid "Export as EPD… leaves out the openings with a game flagged unbalanced."
+msgstr "Esporta come EPD… tralascia le aperture con una partita segnalata come sbilanciata."
+
 msgid "Export filtered…"
 msgstr "Esporta i filtrati…"
 
@@ -1227,6 +1242,12 @@ msgstr "Nodi fissi"
 
 msgid "Fixed nodes or depth: one game per hardware thread (Hyper-Threading does not change the moves played). With a clock: physical cores − 1, so the engines do not slow each other down."
 msgstr "Nodi o profondità fissi: una partita per thread hardware (l'Hyper-Threading non cambia le mosse giocate). Con l'orologio: core fisici − 1, così i motori non si rallentano a vicenda."
+
+msgid "Flag unbalanced openings"
+msgstr "Segnala le aperture sbilanciate"
+
+msgid "Flagged unbalanced during the games"
+msgstr "Segnalate come sbilanciate durante le partite"
 
 msgid "Flip"
 msgstr "Ruota"
@@ -1993,6 +2014,9 @@ msgstr "Nella lista"
 msgid "Once it has played two tournaments."
 msgstr "Appena avrà giocato due tornei."
 
+msgid "Once its two games are played, a pair with a game flagged is voided (its games stay in the PGN files and the journal) and played again from an opening at the end of the book, which the tournament would play last; at most {} times for one pair."
+msgstr "Giocate le sue due partite, una coppia con una partita segnalata viene annullata (le sue partite restano nei file PGN e nel diario) e rigiocata da un'apertura alla fine del libro, che il torneo giocherebbe per ultima; al massimo {} volte per coppia."
+
 msgid "One after the other, not while a tournament plays. Not the inactive ones."
 msgstr "Uno dopo l'altro, non mentre si gioca un torneo. Non quelli inattivi."
 
@@ -2058,6 +2082,9 @@ msgstr "Libro di aperture non trovato: {}"
 
 msgid "Openings"
 msgstr "Aperture"
+
+msgid "Openings with a game flagged unbalanced: both engines beyond ±{} cp for the same side for their first {} moves after the book."
+msgstr "Aperture con una partita segnalata come sbilanciata: entrambi i motori oltre ±{} cp per lo stesso lato nelle loro prime {} mosse dopo il libro."
 
 msgid "Openings: {}"
 msgstr "Aperture: {}"
@@ -2207,6 +2234,9 @@ msgstr "Assegna ogni partita al proprio processore, condiviso dai suoi due motor
 
 msgid "Play games again"
 msgstr "Rigioca partite"
+
+msgid "Play the pair again from another opening"
+msgstr "Rigiocare la coppia da un'altra apertura"
 
 msgid "Play this game again"
 msgstr "Rigioca questa partita"
@@ -2708,6 +2738,15 @@ msgstr "Configurazione"
 msgid "Share of drawn games."
 msgstr "Percentuale di partite patte."
 
+msgid "Show"
+msgstr "Mostra"
+
+msgid "Show the games from unbalanced openings"
+msgstr "Mostra le partite da aperture sbilanciate"
+
+msgid "Show the unbalanced openings"
+msgstr "Mostra le aperture sbilanciate"
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "Mostra questa partita in un pannello proprio, che si può agganciare accanto agli altri o spostare su un altro schermo."
 
@@ -2824,6 +2863,9 @@ msgstr "Arresto in corso…"
 
 msgid "Submission checklist"
 msgstr "Checklist dell'invio"
+
+msgid "Such a pair is voided and played again from another opening, at most {} times."
+msgstr "Una coppia così viene annullata e rigiocata da un'altra apertura, al massimo {} volte."
 
 msgid "Suggest"
 msgstr "Suggerisci"
@@ -3099,6 +3141,9 @@ msgstr "La più interessante"
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "La mossa a cui pensa il lato che muove e la risposta che si aspetta, nei colori dei motori che le giocherebbero."
+
+msgid "The number of moves each engine plays after the book, all of them beyond the score."
+msgstr "Il numero di mosse che ogni motore gioca dopo il libro, tutte oltre il punteggio."
 
 msgid "The number of nodes must be positive."
 msgstr "Il numero di nodi deve essere positivo."
@@ -3416,6 +3461,19 @@ msgstr "Conformità UCI: il passo {} non è riuscito, vedi il rapporto"
 msgid "UDP port"
 msgstr "Porta UDP"
 
+msgid "Unbalanced opening"
+msgstr "Apertura sbilanciata"
+
+msgid "Unbalanced openings flagged: both engines beyond ±{} cp for {} move after the book"
+msgid_plural "Unbalanced openings flagged: both engines beyond ±{} cp for {} moves after the book"
+msgstr[0] "Aperture sbilanciate segnalate: entrambi i motori oltre ±{} cp per {} mossa dopo il libro"
+msgstr[1] "Aperture sbilanciate segnalate: entrambi i motori oltre ±{} cp per {} mosse dopo il libro"
+
+msgid "Unbalanced openings replaced: both engines beyond ±{} cp for {} move after the book"
+msgid_plural "Unbalanced openings replaced: both engines beyond ±{} cp for {} moves after the book"
+msgstr[0] "Aperture sbilanciate sostituite: entrambi i motori oltre ±{} cp per {} mossa dopo il libro"
+msgstr[1] "Aperture sbilanciate sostituite: entrambi i motori oltre ±{} cp per {} mosse dopo il libro"
+
 msgid "Under Wayland the software renderer needs X11: start the program with the environment variable SDL_VIDEODRIVER=x11."
 msgstr "Con Wayland il renderer software ha bisogno di X11: avvia il programma con la variabile d'ambiente SDL_VIDEODRIVER=x11."
 
@@ -3527,6 +3585,9 @@ msgstr "Mentre un torneo è in corso, un tunnel SSH integrato in fastchess-gui d
 msgid "White"
 msgstr "Bianco"
 
+msgid "White ahead: {}"
+msgstr "Bianco in vantaggio: {}"
+
 msgid "White disconnects"
 msgstr "Il Bianco si disconnette"
 
@@ -3604,6 +3665,9 @@ msgstr "Senza libro, le 960 posizioni iniziali, in ordine casuale."
 
 msgid "Without stopping it: running games go on, nothing played is lost."
 msgstr "Senza fermarlo: le partite in corso proseguono, niente di ciò che è stato giocato va perso."
+
+msgid "Without the unbalanced"
+msgstr "Senza le sbilanciate"
 
 msgid "Won twice by one engine"
 msgstr "Vinta due volte dallo stesso motore"
@@ -3990,6 +4054,16 @@ msgstr "differenza reale (Elo)"
 msgid "two draws {:.1f} % · a win and a loss {:.1f} %"
 msgstr "due patte {:.1f} % · una vittoria e una sconfitta {:.1f} %"
 
+msgid "unbalanced openings flagged (±{} cp for {} move)"
+msgid_plural "unbalanced openings flagged (±{} cp for {} moves)"
+msgstr[0] "aperture sbilanciate segnalate (±{} cp per {} mossa)"
+msgstr[1] "aperture sbilanciate segnalate (±{} cp per {} mosse)"
+
+msgid "unbalanced openings replaced (±{} cp for {} move)"
+msgid_plural "unbalanced openings replaced (±{} cp for {} moves)"
+msgstr[0] "aperture sbilanciate sostituite (±{} cp per {} mossa)"
+msgstr[1] "aperture sbilanciate sostituite (±{} cp per {} mosse)"
+
 msgid "until stopped"
 msgstr "fino all'arresto"
 
@@ -4207,6 +4281,16 @@ msgid_plural "{} games exported to {}"
 msgstr[0] "{} partita esportata in {}"
 msgstr[1] "{} partite esportate in {}"
 
+msgid "{} game flagged unbalanced when it ended: both engines saw a side far ahead right after the book."
+msgid_plural "{} games flagged unbalanced when they ended: both engines saw a side far ahead right after the book."
+msgstr[0] "{} partita segnalata come sbilanciata alla fine: entrambi i motori vedevano un lato molto avanti subito dopo il libro."
+msgstr[1] "{} partite segnalate come sbilanciate alla fine: entrambi i motori vedevano un lato molto avanti subito dopo il libro."
+
+msgid "{} game from an unbalanced opening"
+msgid_plural "{} games from an unbalanced opening"
+msgstr[0] "{} partita da un'apertura sbilanciata"
+msgstr[1] "{} partite da aperture sbilanciate"
+
 msgid "{} game left out by the options (a rating below the minimum, or no result)."
 msgid_plural "{} games left out by the options (a rating below the minimum, or no result)."
 msgstr[0] "{} partita esclusa dalle opzioni (un Elo sotto il minimo, o nessun risultato)."
@@ -4357,6 +4441,11 @@ msgid_plural "{} openings"
 msgstr[0] "{} apertura"
 msgstr[1] "{} aperture"
 
+msgid "{} opening replaced"
+msgid_plural "{} openings replaced"
+msgstr[0] "{} apertura sostituita"
+msgstr[1] "{} aperture sostituite"
+
 msgid "{} opening written to {}"
 msgid_plural "{} openings written to {}"
 msgstr[0] "{} apertura scritta in {}"
@@ -4371,6 +4460,11 @@ msgid "{} option read."
 msgid_plural "{} options read."
 msgstr[0] "{} opzione letta."
 msgstr[1] "{} opzioni lette."
+
+msgid "{} pair was played again from another opening: its first opening is no longer listed."
+msgid_plural "{} pairs were played again from another opening: their first openings are no longer listed."
+msgstr[0] "{} coppia è stata rigiocata da un'altra apertura: la sua prima apertura non è più nell'elenco."
+msgstr[1] "{} coppie sono state rigiocate da altre aperture: le loro prime aperture non sono più nell'elenco."
 
 msgid "{} pair with one game only: the game with colours reversed is missing."
 msgid_plural "{} pairs with one game only: the games with colours reversed are missing."
@@ -4479,6 +4573,11 @@ msgstr "{} rifiuta la sua opzione {} = {}: {}. Non viene inviata: il motore gioc
 msgid "{} refuses {} = {}, given by this tournament: {}. It is not sent: the engine plays with its default."
 msgstr "{} rifiuta {} = {}, dato da questo torneo: {}. Non viene inviato: il motore gioca con il suo valore predefinito."
 
+msgid "{} replaced"
+msgid_plural "{} replaced"
+msgstr[0] "{} sostituita"
+msgstr[1] "{} sostituite"
+
 msgid "{} round"
 msgid_plural "{} rounds"
 msgstr[0] "{} turno"
@@ -4527,6 +4626,16 @@ msgid "{} thread"
 msgid_plural "{} threads"
 msgstr[0] "{} thread"
 msgstr[1] "{} thread"
+
+msgid "{} unbalanced"
+msgid_plural "{} unbalanced"
+msgstr[0] "{} sbilanciata"
+msgstr[1] "{} sbilanciate"
+
+msgid "{} unbalanced opening: its game pair is played again from another one."
+msgid_plural "{} unbalanced openings: their game pairs are played again from others."
+msgstr[0] "{} apertura sbilanciata: la sua coppia di partite viene rigiocata da un'altra."
+msgstr[1] "{} aperture sbilanciate: le loro coppie di partite vengono rigiocate da altre."
 
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"

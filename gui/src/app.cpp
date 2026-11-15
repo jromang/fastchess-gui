@@ -629,6 +629,8 @@ void App::resetRunView() {
     const auto& info = run_.info();
     sprt_.reset();
     if (info.sprt) sprt_.emplace(info.alpha, info.beta, info.elo0, info.elo1, info.model, true);
+    // The openings it replaced before it was opened are in its results already.
+    openings_replaced_seen_ = run_.tournament() ? run_.tournament()->openingsReplaced() : 0;
 
     live_slot_        = std::clamp(live_slot_, 0, info.concurrency - 1);
     games_per_hour_   = 0;
@@ -688,6 +690,21 @@ void App::pollRun() {
         if (auto marker = storage_.runningMarker(); markerNames(marker, runMarkerDir())) {
             marker->resuming = false;
             storage_.setRunningMarker(marker);
+        }
+    }
+
+    // A pair voided and played again from another opening, its own found unbalanced: the views show the results
+    // as they count now, as after a void of the user's.
+    if (const auto* t = run_.tournament()) {
+        if (const auto replaced = t->openingsReplaced(); replaced != openings_replaced_seen_) {
+            if (replaced > openings_replaced_seen_) {
+                const auto n = replaced - openings_replaced_seen_;
+                Console::instance().add(trn("{} unbalanced opening: its game pair is played again from another one.",
+                                            "{} unbalanced openings: their game pairs are played again from others.", n,
+                                            n));
+            }
+            openings_replaced_seen_ = replaced;
+            refreshAfterEdit();
         }
     }
 
@@ -976,11 +993,12 @@ void App::handleDialogs() {
             case Dialogs::Purpose::ExportOpenings: {
                 const auto shown = shownOpenings();
                 std::ofstream out(path, std::ios::binary | std::ios::trunc);
-                out << tour::openingsEpd(shown);
-                Console::instance().add(
-                    out ? trn("{} opening written to {}", "{} openings written to {}", shown.size(), shown.size(), path)
-                        : trf("Cannot write {}", path),
-                    !out);
+                const auto epd = tour::openingsEpd(shown, export_balanced_only_);
+                out << epd;
+                const auto n = static_cast<std::size_t>(std::count(epd.begin(), epd.end(), '\n'));
+                Console::instance().add(out ? trn("{} opening written to {}", "{} openings written to {}", n, n, path)
+                                            : trf("Cannot write {}", path),
+                                        !out);
                 break;
             }
             case Dialogs::Purpose::AddBook:

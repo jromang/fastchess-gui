@@ -616,6 +616,9 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     spec.polyglot_book         = polyglot;
     spec.polyglot_plies        = polyglot_plies;
     spec.book_randomness       = randomness;
+    spec.unbalanced_cp         = setup.unbalanced_enabled ? std::max(1, setup.unbalanced_cp) : 0;
+    spec.unbalanced_moves      = std::max(1, setup.unbalanced_moves);
+    spec.unbalanced_replace    = setup.unbalanced_enabled && setup.unbalanced_replace;
     spec.stop_on_start_failure = setup.stop_on_start_failure;
     if (setup.engine_syzygy) spec.forced_options.emplace_back("SyzygyPath", setup.tb_paths);
     if (setup.engine_ownbook_off) spec.forced_options.emplace_back("OwnBook", "false");

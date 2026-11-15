@@ -87,6 +87,13 @@ struct TournamentSpec {
     // move only, through 0, by their weights, to 100, every move alike (choiceWeights() in polyglot.hpp).
     int book_randomness = 0;
 
+    // Unbalanced openings (unbalanced.hpp): a game whose two engines both see the same side beyond `unbalanced_cp`
+    // for their first `unbalanced_moves` moves after the book is flagged when it ends; 0 cp: not looked for. With
+    // `unbalanced_replace`, its pair is voided and played again from another opening.
+    int unbalanced_cp       = 0;
+    int unbalanced_moves    = 4;
+    bool unbalanced_replace = false;
+
     bool log_every_game = false;  // keep the engine log of every game, not only of those that end badly
     // An engine that cannot start stops the tournament once its tries are used up, rather than have its games set
     // aside while the others go on (start_failures.hpp).

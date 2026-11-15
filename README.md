@@ -74,7 +74,9 @@ this repository still builds unchanged.
   finished positions, browsed on a board, and cleaned. A Chess324 book of start positions written by the program,
   and Polyglot books built from PGN files (depth, minimum games, weights by score or count, a rating filter). A
   randomness for the Polyglot books, the tournament's and the engines' own, from the best move only to every move
-  alike. Results by opening after a tournament: the unbalanced, the drawish and the decisive ones, exported as EPD.
+  alike. Results by opening after a tournament: the unbalanced, the drawish and the decisive ones, exported as EPD;
+  and during it, the openings both engines judge lost for one side right after the book, flagged as the games end,
+  their pairs played again from another opening if asked.
 - **Test suites** (STS, WAC, ERET…): several engines on the positions of an EPD file (`bm`, `am`, STS points),
   as a grid with the time to solution, the totals and the STS score, saved to compare versions, exported as CSV.
 - Chess960 (the 960 positions, or a book), draw / resign / max moves / Syzygy

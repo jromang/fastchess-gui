@@ -133,6 +133,9 @@ msgstr "1 次超时判负"
 msgid "10 games at 10+0.1 from 5 positions, to see before a long tournament whether it loses on time, crashes, plays an illegal move or uses its clock badly."
 msgstr "以 10+0.1 从 5 个局面下 10 局，在长时间锦标赛之前检查它是否会超时判负、崩溃、走出非法着法或用时不当。"
 
+msgid "200 cp: both engines think a side is two pawns ahead, or more."
+msgstr "200 cp：两个引擎都认为一方领先两个兵或更多。"
+
 msgid "200k nodes"
 msgstr "20 万节点"
 
@@ -177,6 +180,9 @@ msgstr "自选文件"
 
 msgid "A game has no port: {}"
 msgstr "有一局对局没有端口：{}"
+
+msgid "A game is flagged when both engines see the same side ahead by the score below for each of their first moves after the book: the Games tab can show those games, the Openings tab marks and counts their openings, the overview counts them. The results are not changed."
+msgstr "当两个引擎在出库后的前几步中每一步都认为同一方至少领先下面的分数时，该对局会被标记：“对局”页可以显示这些对局，“开局”页标记并统计其开局，概览会计数。结果不会改变。"
 
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr "车轮战除被测引擎外至少还需要一个引擎。"
@@ -483,6 +489,9 @@ msgstr "大屏幕"
 msgid "Black"
 msgstr "黑方"
 
+msgid "Black ahead: {}"
+msgstr "黑方领先：{}"
+
 msgid "Black disconnects"
 msgstr "黑方断开连接"
 
@@ -527,6 +536,9 @@ msgstr "开局库（EPD、PGN、Polyglot）"
 
 msgid "Books the program writes, added to the library."
 msgstr "由程序生成的开局库，加入库中。"
+
+msgid "Both engines beyond ±{} cp for the same side for their first {} moves after the book. The results are not changed."
+msgstr "两个引擎都认为同一方超过 ±{} cp，持续出库后的前 {} 步。结果不会改变。"
 
 msgid "Both engines must agree"
 msgstr "双方引擎必须一致"
@@ -1161,6 +1173,9 @@ msgstr "全部导出…"
 msgid "Export as EPD…"
 msgstr "导出为 EPD…"
 
+msgid "Export as EPD… leaves out the openings with a game flagged unbalanced."
+msgstr "“导出为 EPD…”会排除有对局被标记为失衡的开局。"
+
 msgid "Export filtered…"
 msgstr "导出筛选结果…"
 
@@ -1223,6 +1238,12 @@ msgstr "固定节点数"
 
 msgid "Fixed nodes or depth: one game per hardware thread (Hyper-Threading does not change the moves played). With a clock: physical cores − 1, so the engines do not slow each other down."
 msgstr "固定节点数或深度：每个硬件线程一局（超线程不会改变走出的着法）。有计时：物理核心数 − 1，使引擎之间不会互相拖慢。"
+
+msgid "Flag unbalanced openings"
+msgstr "标记失衡的开局"
+
+msgid "Flagged unbalanced during the games"
+msgstr "对局中被标记为失衡"
 
 msgid "Flip"
 msgstr "翻转"
@@ -1986,6 +2007,9 @@ msgstr "列表中"
 msgid "Once it has played two tournaments."
 msgstr "一旦它下过两个锦标赛。"
 
+msgid "Once its two games are played, a pair with a game flagged is voided (its games stay in the PGN files and the journal) and played again from an opening at the end of the book, which the tournament would play last; at most {} times for one pair."
+msgstr "一对对局的两局下完后，若其中有被标记的对局，则作废该对（其对局仍保留在 PGN 文件和日志中），并从开局库末尾的一个开局（比赛最后才会用到的）重新下；同一对最多 {} 次。"
+
 msgid "One after the other, not while a tournament plays. Not the inactive ones."
 msgstr "逐个进行，锦标赛进行时不进行。不包括停用的。"
 
@@ -2051,6 +2075,9 @@ msgstr "找不到开局库：{}"
 
 msgid "Openings"
 msgstr "开局"
+
+msgid "Openings with a game flagged unbalanced: both engines beyond ±{} cp for the same side for their first {} moves after the book."
+msgstr "有对局被标记为失衡的开局：两个引擎都认为同一方超过 ±{} cp，持续出库后的前 {} 步。"
 
 msgid "Openings: {}"
 msgstr "开局：{}"
@@ -2199,6 +2226,9 @@ msgstr "把每局对局固定在一个处理器上，由该局的两个引擎共
 
 msgid "Play games again"
 msgstr "重下对局"
+
+msgid "Play the pair again from another opening"
+msgstr "用另一个开局重下这一对"
 
 msgid "Play this game again"
 msgstr "重下这局对局"
@@ -2696,6 +2726,15 @@ msgstr "配置"
 msgid "Share of drawn games."
 msgstr "和棋所占比例。"
 
+msgid "Show"
+msgstr "显示"
+
+msgid "Show the games from unbalanced openings"
+msgstr "显示来自失衡开局的对局"
+
+msgid "Show the unbalanced openings"
+msgstr "显示失衡的开局"
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "在单独的面板中显示这局对局，该面板可停靠在其他面板旁，或移到另一块屏幕。"
 
@@ -2812,6 +2851,9 @@ msgstr "正在停止…"
 
 msgid "Submission checklist"
 msgstr "提交检查清单"
+
+msgid "Such a pair is voided and played again from another opening, at most {} times."
+msgstr "这样的一对会被作废并用另一个开局重下，最多 {} 次。"
 
 msgid "Suggest"
 msgstr "建议"
@@ -3083,6 +3125,9 @@ msgstr "最有看点的"
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "轮到走棋的一方正在考虑的着法及其预期的应着，以将走这些着法的引擎的颜色显示。"
+
+msgid "The number of moves each engine plays after the book, all of them beyond the score."
+msgstr "每个引擎出库后要走的步数，每一步都须超过该分数。"
 
 msgid "The number of nodes must be positive."
 msgstr "节点数必须为正数。"
@@ -3398,6 +3443,17 @@ msgstr "UCI 合规性：第 {} 步失败，请查看报告"
 msgid "UDP port"
 msgstr "UDP 端口"
 
+msgid "Unbalanced opening"
+msgstr "失衡的开局"
+
+msgid "Unbalanced openings flagged: both engines beyond ±{} cp for {} move after the book"
+msgid_plural "Unbalanced openings flagged: both engines beyond ±{} cp for {} moves after the book"
+msgstr[0] "失衡开局会被标记：两个引擎都超过 ±{} cp，持续出库后 {} 步"
+
+msgid "Unbalanced openings replaced: both engines beyond ±{} cp for {} move after the book"
+msgid_plural "Unbalanced openings replaced: both engines beyond ±{} cp for {} moves after the book"
+msgstr[0] "失衡开局会被替换：两个引擎都超过 ±{} cp，持续出库后 {} 步"
+
 msgid "Under Wayland the software renderer needs X11: start the program with the environment variable SDL_VIDEODRIVER=x11."
 msgstr "在 Wayland 下，软件渲染器需要 X11：请使用环境变量 SDL_VIDEODRIVER=x11 启动程序。"
 
@@ -3509,6 +3565,9 @@ msgstr "锦标赛进行时，fastchess-gui 内置的 SSH 隧道为页面提供�
 msgid "White"
 msgstr "白方"
 
+msgid "White ahead: {}"
+msgstr "白方领先：{}"
+
 msgid "White disconnects"
 msgstr "白方断开连接"
 
@@ -3586,6 +3645,9 @@ msgstr "没有开局库时，使用 960 种初始局面，随机顺序。"
 
 msgid "Without stopping it: running games go on, nothing played is lost."
 msgstr "无需停止：进行中的对局继续，已下的内容不会丢失。"
+
+msgid "Without the unbalanced"
+msgstr "不含失衡的"
 
 msgid "Won twice by one engine"
 msgstr "同一引擎两局皆胜"
@@ -3967,6 +4029,14 @@ msgstr "真实差距 (Elo)"
 msgid "two draws {:.1f} % · a win and a loss {:.1f} %"
 msgstr "两局和棋 {:.1f} % · 一胜一负 {:.1f} %"
 
+msgid "unbalanced openings flagged (±{} cp for {} move)"
+msgid_plural "unbalanced openings flagged (±{} cp for {} moves)"
+msgstr[0] "标记失衡开局（±{} cp，{} 步）"
+
+msgid "unbalanced openings replaced (±{} cp for {} move)"
+msgid_plural "unbalanced openings replaced (±{} cp for {} moves)"
+msgstr[0] "替换失衡开局（±{} cp，{} 步）"
+
 msgid "until stopped"
 msgstr "直到手动停止"
 
@@ -4167,6 +4237,14 @@ msgid "{} game exported to {}"
 msgid_plural "{} games exported to {}"
 msgstr[0] "已导出 {} 局对局到 {}"
 
+msgid "{} game flagged unbalanced when it ended: both engines saw a side far ahead right after the book."
+msgid_plural "{} games flagged unbalanced when they ended: both engines saw a side far ahead right after the book."
+msgstr[0] "{} 局在结束时被标记为失衡：两个引擎在出库后立即都认为一方大幅领先。"
+
+msgid "{} game from an unbalanced opening"
+msgid_plural "{} games from an unbalanced opening"
+msgstr[0] "{} 局来自失衡的开局"
+
 msgid "{} game left out by the options (a rating below the minimum, or no result)."
 msgid_plural "{} games left out by the options (a rating below the minimum, or no result)."
 msgstr[0] "{} 局对局被选项排除（等级分低于最低值，或没有结果）。"
@@ -4302,6 +4380,10 @@ msgid "{} opening"
 msgid_plural "{} openings"
 msgstr[0] "{} 个开局"
 
+msgid "{} opening replaced"
+msgid_plural "{} openings replaced"
+msgstr[0] "已替换 {} 个开局"
+
 msgid "{} opening written to {}"
 msgid_plural "{} openings written to {}"
 msgstr[0] "已将 {} 个开局写入 {}"
@@ -4313,6 +4395,10 @@ msgstr[0] "已选中 {} 个对手，最接近的在前：按 Enter 添加。"
 msgid "{} option read."
 msgid_plural "{} options read."
 msgstr[0] "已读取 {} 个选项。"
+
+msgid "{} pair was played again from another opening: its first opening is no longer listed."
+msgid_plural "{} pairs were played again from another opening: their first openings are no longer listed."
+msgstr[0] "{} 对已用其他开局重下：其最初的开局不再列出。"
 
 msgid "{} pair with one game only: the game with colours reversed is missing."
 msgid_plural "{} pairs with one game only: the games with colours reversed are missing."
@@ -4408,6 +4494,10 @@ msgstr "{} 不接受其选项 {} = {}：{}。该值不会发送：引擎使用�
 msgid "{} refuses {} = {}, given by this tournament: {}. It is not sent: the engine plays with its default."
 msgstr "{} 不接受本赛事设定的 {} = {}：{}。该值不会发送：引擎使用其默认值。"
 
+msgid "{} replaced"
+msgid_plural "{} replaced"
+msgstr[0] "已替换 {} 个"
+
 msgid "{} round"
 msgid_plural "{} rounds"
 msgstr[0] "{} 轮"
@@ -4451,6 +4541,14 @@ msgstr[0] "{} 个有歧义"
 msgid "{} thread"
 msgid_plural "{} threads"
 msgstr[0] "{} 线程"
+
+msgid "{} unbalanced"
+msgid_plural "{} unbalanced"
+msgstr[0] "{} 个失衡"
+
+msgid "{} unbalanced opening: its game pair is played again from another one."
+msgid_plural "{} unbalanced openings: their game pairs are played again from others."
+msgstr[0] "{} 个失衡开局：其对局对改用另一个开局重下。"
 
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"

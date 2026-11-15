@@ -1206,6 +1206,27 @@ void App::setupOpenings() {
                "gets easier openings than the others of its round. Otherwise each pair takes the next one."));
     }
 
+    // The openings that decide the game by themselves, seen as the games end.
+    changed |= ImGui::Checkbox(TR("Flag unbalanced openings"), &setup_.unbalanced_enabled);
+    itemHelp(
+        TR("A game is flagged when both engines see the same side ahead by the score below for each of their "
+           "first moves after the book: the Games tab can show those games, the Openings tab marks and counts "
+           "their openings, the overview counts them. The results are not changed."));
+    if (setup_.unbalanced_enabled) {
+        ImGui::Indent();
+        changed |= inputInt(TR("Score (cp)"), "##unbalanced_cp", setup_.unbalanced_cp, 1, 100000);
+        itemHelp(TR("200 cp: both engines think a side is two pawns ahead, or more."));
+        changed |= inputInt(TR("Moves"), "##unbalanced_moves", setup_.unbalanced_moves, 1, 100);
+        itemHelp(TR("The number of moves each engine plays after the book, all of them beyond the score."));
+        changed |= ImGui::Checkbox(TR("Play the pair again from another opening"), &setup_.unbalanced_replace);
+        itemHelp(
+            trf("Once its two games are played, a pair with a game flagged is voided (its games stay in the PGN "
+                "files and the journal) and played again from an opening at the end of the book, which the "
+                "tournament would play last; at most {} times for one pair.",
+                tour::MAX_OPENING_REPLACEMENTS));
+        ImGui::Unindent();
+    }
+
     int64_t seed = static_cast<int64_t>(setup_.seed);
     ui::label(TR("Seed"), labelWidth());
     ImGui::SetNextItemWidth(160.0f * ImGui::GetFontSize() / 16.0f);
@@ -1529,6 +1550,17 @@ void App::drawSetupSummary() {
     const bool per_round = setup_.format == TournamentFormat::RoundRobin ||
                            setup_.format == TournamentFormat::Gauntlet || setup_.format == TournamentFormat::Swiss;
     if (per_round && setup_.opening_per_round) check(true, TR("The same opening for every pair of a round"));
+    if (setup_.unbalanced_enabled) {
+        const auto moves = static_cast<uint64_t>(std::max(1, setup_.unbalanced_moves));
+        const int cp     = std::max(1, setup_.unbalanced_cp);
+        check(true, setup_.unbalanced_replace
+                        ? trn("Unbalanced openings replaced: both engines beyond ±{} cp for {} move after the book",
+                              "Unbalanced openings replaced: both engines beyond ±{} cp for {} moves after the book",
+                              moves, cp, moves)
+                        : trn("Unbalanced openings flagged: both engines beyond ±{} cp for {} move after the book",
+                              "Unbalanced openings flagged: both engines beyond ±{} cp for {} moves after the book",
+                              moves, cp, moves));
+    }
     if (!setup_.pgn_out.empty()) {
         check(true, trf("Games also appended to {}", std::filesystem::path(setup_.pgn_out).filename().string()));
     }

@@ -105,6 +105,9 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
         j["polyglot_plies"] = s.polyglot_plies;
     }
     if (s.book_randomness != 0) j["book_randomness"] = s.book_randomness;
+    if (s.unbalanced_cp > 0) {
+        j["unbalanced"] = {{"cp", s.unbalanced_cp}, {"moves", s.unbalanced_moves}, {"replace", s.unbalanced_replace}};
+    }
     if (s.log_every_game) j["log_every_game"] = true;
     if (s.stop_on_start_failure) j["stop_on_start_failure"] = true;
     if (s.opening_per_round) j["opening_per_round"] = true;
@@ -136,6 +139,11 @@ void from_json(const nlohmann::json& j, TournamentSpec& s) {
     s.polyglot_book         = j.value("polyglot_book", std::string{});
     s.polyglot_plies        = j.value("polyglot_plies", 0);
     s.book_randomness       = std::clamp(j.value("book_randomness", 0), -100, 100);
+    if (const auto it = j.find("unbalanced"); it != j.end() && it->is_object()) {
+        s.unbalanced_cp      = std::max(0, it->value("cp", 0));
+        s.unbalanced_moves   = std::max(1, it->value("moves", 4));
+        s.unbalanced_replace = it->value("replace", false);
+    }
     s.log_every_game        = j.value("log_every_game", false);
     s.stop_on_start_failure = j.value("stop_on_start_failure", false);
     s.opening_per_round     = j.value("opening_per_round", false);

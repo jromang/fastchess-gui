@@ -216,6 +216,7 @@ void App::drawResults() {
     }
 
     drawPgnOutError();
+    drawUnbalancedCount();
 
     // Engine health, shown only when something happened.
     for (int i = 0; i < std::min(2, static_cast<int>(totals_.size())); ++i) {

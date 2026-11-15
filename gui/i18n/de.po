@@ -135,6 +135,9 @@ msgstr "1 Zeitverlust"
 msgid "10 games at 10+0.1 from 5 positions, to see before a long tournament whether it loses on time, crashes, plays an illegal move or uses its clock badly."
 msgstr "10 Partien mit 10+0.1 aus 5 Stellungen, um vor einem langen Turnier zu sehen, ob sie die Zeit überschreitet, abstürzt, einen illegalen Zug spielt oder ihre Uhr schlecht nutzt."
 
+msgid "200 cp: both engines think a side is two pawns ahead, or more."
+msgstr "200 cp: beide Engines sehen eine Seite zwei Bauern oder mehr vorn."
+
 msgid "200k nodes"
 msgstr "200k Knoten"
 
@@ -179,6 +182,9 @@ msgstr "Eine Datei deiner Wahl"
 
 msgid "A game has no port: {}"
 msgstr "Eine Partie hat keinen Port: {}"
+
+msgid "A game is flagged when both engines see the same side ahead by the score below for each of their first moves after the book: the Games tab can show those games, the Openings tab marks and counts their openings, the overview counts them. The results are not changed."
+msgstr "Eine Partie wird markiert, wenn beide Engines bei jedem ihrer ersten Züge nach dem Buch dieselbe Seite um mindestens die Bewertung unten vorn sehen: der Reiter Partien kann diese Partien zeigen, der Reiter Eröffnungen markiert und zählt ihre Eröffnungen, die Übersicht zählt sie. Die Ergebnisse ändern sich nicht."
 
 msgid "A gauntlet needs at least one engine besides the tested ones."
 msgstr "Ein Gauntlet braucht mindestens eine Engine außer den getesteten."
@@ -487,6 +493,9 @@ msgstr "Großbild"
 msgid "Black"
 msgstr "Schwarz"
 
+msgid "Black ahead: {}"
+msgstr "Schwarz vorn: {}"
+
 msgid "Black disconnects"
 msgstr "Schwarz verliert die Verbindung"
 
@@ -531,6 +540,9 @@ msgstr "Bücher (EPD, PGN, Polyglot)"
 
 msgid "Books the program writes, added to the library."
 msgstr "Bücher, die das Programm schreibt, zur Bibliothek hinzugefügt."
+
+msgid "Both engines beyond ±{} cp for the same side for their first {} moves after the book. The results are not changed."
+msgstr "Beide Engines jenseits von ±{} cp für dieselbe Seite bei ihren ersten {} Zügen nach dem Buch. Die Ergebnisse ändern sich nicht."
 
 msgid "Both engines must agree"
 msgstr "Beide Engines müssen zustimmen"
@@ -1165,6 +1177,9 @@ msgstr "Alle exportieren…"
 msgid "Export as EPD…"
 msgstr "Als EPD exportieren…"
 
+msgid "Export as EPD… leaves out the openings with a game flagged unbalanced."
+msgstr "Als EPD exportieren… lässt die Eröffnungen mit einer als unausgeglichen markierten Partie weg."
+
 msgid "Export filtered…"
 msgstr "Gefilterte exportieren…"
 
@@ -1227,6 +1242,12 @@ msgstr "Feste Knotenzahl"
 
 msgid "Fixed nodes or depth: one game per hardware thread (Hyper-Threading does not change the moves played). With a clock: physical cores − 1, so the engines do not slow each other down."
 msgstr "Feste Knotenzahl oder Tiefe: eine Partie pro Hardware-Thread (Hyper-Threading ändert die gespielten Züge nicht). Mit Uhr: physische Kerne − 1, damit sich die Engines nicht gegenseitig bremsen."
+
+msgid "Flag unbalanced openings"
+msgstr "Unausgeglichene Eröffnungen markieren"
+
+msgid "Flagged unbalanced during the games"
+msgstr "Während der Partien als unausgeglichen markiert"
 
 msgid "Flip"
 msgstr "Drehen"
@@ -1993,6 +2014,9 @@ msgstr "Auf der Liste"
 msgid "Once it has played two tournaments."
 msgstr "Sobald sie zwei Turniere gespielt hat."
 
+msgid "Once its two games are played, a pair with a game flagged is voided (its games stay in the PGN files and the journal) and played again from an opening at the end of the book, which the tournament would play last; at most {} times for one pair."
+msgstr "Sind ihre beiden Partien gespielt, wird ein Paar mit einer markierten Partie annulliert (seine Partien bleiben in den PGN-Dateien und im Journal) und von einer Eröffnung am Ende des Buchs neu gespielt, die das Turnier zuletzt spielen würde; höchstens {}-mal für ein Paar."
+
 msgid "One after the other, not while a tournament plays. Not the inactive ones."
 msgstr "Einer nach dem anderen, nicht während ein Turnier läuft. Nicht die inaktiven."
 
@@ -2058,6 +2082,9 @@ msgstr "Eröffnungsbuch nicht gefunden: {}"
 
 msgid "Openings"
 msgstr "Eröffnungen"
+
+msgid "Openings with a game flagged unbalanced: both engines beyond ±{} cp for the same side for their first {} moves after the book."
+msgstr "Eröffnungen mit einer als unausgeglichen markierten Partie: beide Engines jenseits von ±{} cp für dieselbe Seite bei ihren ersten {} Zügen nach dem Buch."
 
 msgid "Openings: {}"
 msgstr "Eröffnungen: {}"
@@ -2207,6 +2234,9 @@ msgstr "Bindet jede Partie an einen eigenen Prozessor, geteilt von ihren zwei En
 
 msgid "Play games again"
 msgstr "Partien neu spielen"
+
+msgid "Play the pair again from another opening"
+msgstr "Das Paar mit einer anderen Eröffnung neu spielen"
 
 msgid "Play this game again"
 msgstr "Diese Partie neu spielen"
@@ -2708,6 +2738,15 @@ msgstr "Setup"
 msgid "Share of drawn games."
 msgstr "Anteil der Remispartien."
 
+msgid "Show"
+msgstr "Zeigen"
+
+msgid "Show the games from unbalanced openings"
+msgstr "Die Partien aus unausgeglichenen Eröffnungen zeigen"
+
+msgid "Show the unbalanced openings"
+msgstr "Die unausgeglichenen Eröffnungen zeigen"
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "Diese Partie in einem eigenen Bereich zeigen, der neben den anderen angedockt oder auf einen anderen Bildschirm verschoben werden kann."
 
@@ -2824,6 +2863,9 @@ msgstr "Stoppe…"
 
 msgid "Submission checklist"
 msgstr "Checkliste vor dem Einsenden"
+
+msgid "Such a pair is voided and played again from another opening, at most {} times."
+msgstr "Ein solches Paar wird annulliert und mit einer anderen Eröffnung neu gespielt, höchstens {}-mal."
 
 msgid "Suggest"
 msgstr "Vorschlagen"
@@ -3099,6 +3141,9 @@ msgstr "Die interessanteste"
 
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "Der Zug, über den die Seite am Zug nachdenkt, und die erwartete Antwort, in den Farben der Engines, die sie spielen würden."
+
+msgid "The number of moves each engine plays after the book, all of them beyond the score."
+msgstr "Die Zahl der Züge, die jede Engine nach dem Buch spielt, alle jenseits der Bewertung."
 
 msgid "The number of nodes must be positive."
 msgstr "Die Knotenzahl muss positiv sein."
@@ -3416,6 +3461,19 @@ msgstr "UCI-Konformität: Schritt {} fehlgeschlagen, siehe Bericht"
 msgid "UDP port"
 msgstr "UDP-Port"
 
+msgid "Unbalanced opening"
+msgstr "Unausgeglichene Eröffnung"
+
+msgid "Unbalanced openings flagged: both engines beyond ±{} cp for {} move after the book"
+msgid_plural "Unbalanced openings flagged: both engines beyond ±{} cp for {} moves after the book"
+msgstr[0] "Unausgeglichene Eröffnungen markiert: beide Engines jenseits von ±{} cp für {} Zug nach dem Buch"
+msgstr[1] "Unausgeglichene Eröffnungen markiert: beide Engines jenseits von ±{} cp für {} Züge nach dem Buch"
+
+msgid "Unbalanced openings replaced: both engines beyond ±{} cp for {} move after the book"
+msgid_plural "Unbalanced openings replaced: both engines beyond ±{} cp for {} moves after the book"
+msgstr[0] "Unausgeglichene Eröffnungen ersetzt: beide Engines jenseits von ±{} cp für {} Zug nach dem Buch"
+msgstr[1] "Unausgeglichene Eröffnungen ersetzt: beide Engines jenseits von ±{} cp für {} Züge nach dem Buch"
+
 msgid "Under Wayland the software renderer needs X11: start the program with the environment variable SDL_VIDEODRIVER=x11."
 msgstr "Unter Wayland braucht der Software-Renderer X11: Starte das Programm mit der Umgebungsvariable SDL_VIDEODRIVER=x11."
 
@@ -3527,6 +3585,9 @@ msgstr "Während ein Turnier läuft, gibt ein in fastchess-gui eingebauter SSH-T
 msgid "White"
 msgstr "Weiß"
 
+msgid "White ahead: {}"
+msgstr "Weiß vorn: {}"
+
 msgid "White disconnects"
 msgstr "Weiß verliert die Verbindung"
 
@@ -3604,6 +3665,9 @@ msgstr "Ohne Buch die 960 Startstellungen in zufälliger Reihenfolge."
 
 msgid "Without stopping it: running games go on, nothing played is lost."
 msgstr "Ohne es zu stoppen: laufende Partien gehen weiter, nichts Gespieltes geht verloren."
+
+msgid "Without the unbalanced"
+msgstr "Ohne die unausgeglichenen"
 
 msgid "Won twice by one engine"
 msgstr "Zweimal von derselben Engine gewonnen"
@@ -3990,6 +4054,16 @@ msgstr "tatsächlicher Unterschied (Elo)"
 msgid "two draws {:.1f} % · a win and a loss {:.1f} %"
 msgstr "zwei Remis {:.1f} % · ein Sieg und eine Niederlage {:.1f} %"
 
+msgid "unbalanced openings flagged (±{} cp for {} move)"
+msgid_plural "unbalanced openings flagged (±{} cp for {} moves)"
+msgstr[0] "unausgeglichene Eröffnungen markiert (±{} cp für {} Zug)"
+msgstr[1] "unausgeglichene Eröffnungen markiert (±{} cp für {} Züge)"
+
+msgid "unbalanced openings replaced (±{} cp for {} move)"
+msgid_plural "unbalanced openings replaced (±{} cp for {} moves)"
+msgstr[0] "unausgeglichene Eröffnungen ersetzt (±{} cp für {} Zug)"
+msgstr[1] "unausgeglichene Eröffnungen ersetzt (±{} cp für {} Züge)"
+
 msgid "until stopped"
 msgstr "bis zum Stoppen"
 
@@ -4207,6 +4281,16 @@ msgid_plural "{} games exported to {}"
 msgstr[0] "{} Partie exportiert nach {}"
 msgstr[1] "{} Partien exportiert nach {}"
 
+msgid "{} game flagged unbalanced when it ended: both engines saw a side far ahead right after the book."
+msgid_plural "{} games flagged unbalanced when they ended: both engines saw a side far ahead right after the book."
+msgstr[0] "{} Partie bei ihrem Ende als unausgeglichen markiert: beide Engines sahen eine Seite gleich nach dem Buch weit vorn."
+msgstr[1] "{} Partien bei ihrem Ende als unausgeglichen markiert: beide Engines sahen eine Seite gleich nach dem Buch weit vorn."
+
+msgid "{} game from an unbalanced opening"
+msgid_plural "{} games from an unbalanced opening"
+msgstr[0] "{} Partie aus einer unausgeglichenen Eröffnung"
+msgstr[1] "{} Partien aus unausgeglichenen Eröffnungen"
+
 msgid "{} game left out by the options (a rating below the minimum, or no result)."
 msgid_plural "{} games left out by the options (a rating below the minimum, or no result)."
 msgstr[0] "{} Partie durch die Optionen ausgelassen (eine Wertung unter dem Minimum oder kein Ergebnis)."
@@ -4357,6 +4441,11 @@ msgid_plural "{} openings"
 msgstr[0] "{} Eröffnung"
 msgstr[1] "{} Eröffnungen"
 
+msgid "{} opening replaced"
+msgid_plural "{} openings replaced"
+msgstr[0] "{} Eröffnung ersetzt"
+msgstr[1] "{} Eröffnungen ersetzt"
+
 msgid "{} opening written to {}"
 msgid_plural "{} openings written to {}"
 msgstr[0] "{} Eröffnung nach {} geschrieben"
@@ -4371,6 +4460,11 @@ msgid "{} option read."
 msgid_plural "{} options read."
 msgstr[0] "{} Option gelesen."
 msgstr[1] "{} Optionen gelesen."
+
+msgid "{} pair was played again from another opening: its first opening is no longer listed."
+msgid_plural "{} pairs were played again from another opening: their first openings are no longer listed."
+msgstr[0] "{} Paar wurde mit einer anderen Eröffnung neu gespielt: seine erste Eröffnung steht nicht mehr in der Liste."
+msgstr[1] "{} Paare wurden mit anderen Eröffnungen neu gespielt: ihre ersten Eröffnungen stehen nicht mehr in der Liste."
 
 msgid "{} pair with one game only: the game with colours reversed is missing."
 msgid_plural "{} pairs with one game only: the games with colours reversed are missing."
@@ -4479,6 +4573,11 @@ msgstr "{} lehnt ihre Option {} = {} ab: {}. Sie wird nicht gesendet: Die Engine
 msgid "{} refuses {} = {}, given by this tournament: {}. It is not sent: the engine plays with its default."
 msgstr "{} lehnt {} = {} ab, von diesem Turnier vorgegeben: {}. Es wird nicht gesendet: Die Engine spielt mit ihrem Standardwert."
 
+msgid "{} replaced"
+msgid_plural "{} replaced"
+msgstr[0] "{} ersetzt"
+msgstr[1] "{} ersetzt"
+
 msgid "{} round"
 msgid_plural "{} rounds"
 msgstr[0] "{} Runde"
@@ -4527,6 +4626,16 @@ msgid "{} thread"
 msgid_plural "{} threads"
 msgstr[0] "{} Thread"
 msgstr[1] "{} Threads"
+
+msgid "{} unbalanced"
+msgid_plural "{} unbalanced"
+msgstr[0] "{} unausgeglichen"
+msgstr[1] "{} unausgeglichen"
+
+msgid "{} unbalanced opening: its game pair is played again from another one."
+msgid_plural "{} unbalanced openings: their game pairs are played again from others."
+msgstr[0] "{} unausgeglichene Eröffnung: ihr Partiepaar wird mit einer anderen neu gespielt."
+msgstr[1] "{} unausgeglichene Eröffnungen: ihre Partiepaare werden mit anderen neu gespielt."
 
 msgid "{} voided game, left out"
 msgid_plural "{} voided games, left out"
