@@ -46,7 +46,9 @@ class Dialogs {
         TournamentsFolder,
         PgnOut,
         ExportSubmission,
-        EngineOption  // a file or a folder for a UCI option (EvalFile, SyzygyPath)
+        EngineOption,  // a file or a folder for a UCI option (EvalFile, SyzygyPath)
+        EngineLogo,
+        PieceFolder
     };
 
     struct Answer {

@@ -279,6 +279,22 @@ void Storage::setUpdateSettings(const update::Settings& updates) const {
     save(root_ / "settings.json", settings);
 }
 
+appearance::Settings Storage::appearance() const {
+    const auto s = settings();
+    appearance::Settings out;
+    if (const auto it = s.find("appearance"); it != s.end()) appearance::from_json(*it, out);
+    out.piece_folder = portable::resolved(out.piece_folder);
+    return out;
+}
+
+void Storage::setAppearance(const appearance::Settings& appearance) const {
+    auto kept         = appearance;
+    kept.piece_folder = portable::stored(kept.piece_folder);
+    auto settings     = this->settings();
+    appearance::to_json(settings["appearance"], kept);
+    save(root_ / "settings.json", settings);
+}
+
 std::vector<BookEntry> Storage::loadBooks() const {
     return readProfileFile<std::vector<BookEntry>>(root_ / "books.json", resolvedList<BookEntry>)
         .value_or(std::vector<BookEntry>{});

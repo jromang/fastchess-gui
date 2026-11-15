@@ -8,6 +8,7 @@
 #include <chrono>
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -150,7 +151,22 @@ struct BroadcastSnapshot {
     std::string chat_link;
     std::string lichess_url;
     std::string discord_id;
+
+    // The engines' logos the web server serves, by engine name: "logo/<hex>.png" (see webLogoPath). Only those of the
+    // tournament's engines are written.
+    std::map<std::string, std::string> logos;
 };
+
+// An engine's logo for the web page: a PNG file the program wrote itself, at an address made from its content.
+struct WebLogo {
+    std::string engine;
+    std::string path;  // "logo/<hex>.png"
+    std::string png;
+};
+
+// Whether `path` is the address of a logo as the web server serves them: "logo/", 8 to 64 lower case hexadecimal
+// digits, ".png".
+[[nodiscard]] bool webLogoPath(std::string_view path);
 
 // `text` as a link the web page may offer, the spaces around it left out: an absolute https URL with a host and no
 // space, quote, angle bracket, backslash, backtick or control character in it. Empty when it is not one.
@@ -220,7 +236,8 @@ class TlcsServer {
 };
 
 // A small web server: a page showing every game in progress, the standings and the crosstable, refreshed every
-// second from /state.json; the games played as one PGN file, from /games.pgn. Read-only and bounded, to be put on the
+// second from /state.json; the games played as one PGN file, from /games.pgn; the engines' logos, from /logo/<hex>.png
+// (setLogos). Read-only and bounded, to be put on the
 // internet behind a tunnel: GET of those paths only, each request on a thread of its own (32 at most, each within
 // ten seconds), two downloads at once.
 class WebServer {
@@ -237,6 +254,9 @@ class WebServer {
     // round (`links`), and Discord's widget, a frame from discord.com its Content-Security-Policy then allows. With
     // neither, the page is the plain one.
     void setExtras(bool links, bool discord);
+
+    // The engines' logos, served at their path ("/logo/<hex>.png") from memory: never a file named by a request.
+    void setLogos(const std::vector<WebLogo>& logos);
 
     [[nodiscard]] int viewers() const noexcept { return viewers_; }
 
@@ -261,6 +281,7 @@ class WebServer {
     uint64_t pgn_bytes_ = 0;
     std::vector<std::chrono::steady_clock::time_point> recent_;  // state requests, to count viewers
     int downloads_ = 0;                                          // under way
+    std::map<std::string, std::string, std::less<>> logos_;      // PNG files, by path ("logo/<hex>.png")
 
     struct Worker {
         std::thread thread;
@@ -284,11 +305,13 @@ struct WebRequest {
         Page,
         State,
         Games,
+        Logo,
         NotFound,
     };
     Route route = Route::None;
     bool gzip   = false;             // the client takes gzip
     std::string_view if_none_match;  // the page's tag the client kept, quotes included
+    std::string_view logo;           // Logo: its path, without the first slash (a webLogoPath)
 };
 [[nodiscard]] WebRequest readWebRequest(std::string_view request);
 

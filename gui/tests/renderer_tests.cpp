@@ -16,7 +16,7 @@
 #include <imgui.h>
 
 #define STBI_NO_STDIO
-#include <stb_image.h>  // its PNG reader, compiled in zip_tests.cpp
+#include <stb_image.h>  // its PNG reader, compiled in engine_logos.cpp
 
 #include "board_view.hpp"
 #include "renderer.hpp"

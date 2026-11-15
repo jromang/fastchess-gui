@@ -9,6 +9,8 @@
 
 #include <chess.hpp>
 
+#include "appearance.hpp"
+
 namespace fcg {
 
 // The twelve piece images, rasterized once into a texture atlas: mipmapped with OpenGL; with SDL's renderer, which has
@@ -20,8 +22,11 @@ class PieceAtlas {
     PieceAtlas& operator=(const PieceAtlas&) = delete;
     ~PieceAtlas();
 
-    // Needs the window's renderer (render::open). Returns false if the SVGs could not be rendered.
-    bool create(int pixels_per_piece);
+    // Needs the window's renderer (render::open). Returns false if the SVGs could not be rendered. Made again, from
+    // other pieces, it frees the textures it had: between frames, since the last frame's drawing may use them.
+    bool create(int pixels_per_piece, const appearance::PieceSvgs& svgs);
+    bool create(int pixels_per_piece) { return create(pixels_per_piece, appearance::builtInPieces({})); }
+    void clear();
 
     [[nodiscard]] bool ready() const noexcept { return !levels_.empty(); }
     // The atlas for pieces drawn `pixels` wide on the screen: the smallest image at least that large.
@@ -39,8 +44,11 @@ class PieceAtlas {
 };
 
 // The twelve pieces side by side, `pixels` x `pixels` each, RGBA rows from the top: the atlas' image. Empty if an SVG
-// could not be rendered.
-[[nodiscard]] std::vector<unsigned char> rasterizePieces(int pixels);
+// could not be rendered. Without `svgs`, the default set.
+[[nodiscard]] std::vector<unsigned char> rasterizePieces(int pixels, const appearance::PieceSvgs& svgs);
+[[nodiscard]] inline std::vector<unsigned char> rasterizePieces(int pixels) {
+    return rasterizePieces(pixels, appearance::builtInPieces({}));
+}
 
 // An arrow over the board, for a move (castling drawn to the king's square).
 struct BoardArrow {
@@ -57,6 +65,8 @@ struct BoardDecor {
     ImU32 last_move_colour = IM_COL32(255, 210, 70, 255);
     float eval_white       = 0.5f;   // fraction of the eval bar that is white, < 0 hides the bar
     std::vector<BoardArrow> arrows;  // drawn in order, over the pieces
+    // The squares' colours; by default those of the theme in use (appearance::boardColours()), as on every board.
+    std::optional<appearance::BoardColours> colours;
 };
 
 // Draws the position at the cursor and reserves `size` x `size` (plus the eval bar if shown).

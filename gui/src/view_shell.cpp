@@ -1032,6 +1032,11 @@ void App::drawSettings() {
            "while it ran), it resumes at the next launch, and the queue goes on after it. A tournament paused or "
            "stopped waits for you."));
 
+    // The boards' colours, the pieces, the move sounds.
+    ImGui::Spacing();
+    ImGui::Separator();
+    drawAppearanceSettings(label);
+
     // Where the program keeps its files, and whether that is beside the program (the portable mode).
     ImGui::Spacing();
     ImGui::Separator();

@@ -17,7 +17,9 @@
 #include "i18n.hpp"
 #include "memory.hpp"
 #include "notify.hpp"
+#include "renderer.hpp"
 #include "setup_checks.hpp"
+#include "sound.hpp"
 #include "ui.hpp"
 
 namespace fcg {
@@ -41,6 +43,7 @@ App::App(SDL_Window* window, Storage storage, CpuTopology topology, AppOptions o
     // A setup saved before there were profiles: its sections get those they play like.
     recognizeProfiles(setup_, profiles_);
     i18n::setLanguage(i18n::resolve(setup_.language));
+    loadAppearance();
 
     if (!setup_.concurrency_auto) setup_.concurrency = std::clamp(setup_.concurrency, 1, topology_.logical);
 
@@ -89,9 +92,23 @@ App::~App() {
     storage_.saveSetup(setup_);
     storage_.saveEngines(engines_);
     saveLichessToken();  // a token still being typed when the program quits
+    if (appearance_save_due_) storage_.setAppearance(appearance::current());
+    for (const auto& [file, logo] : logo_textures_) {
+        render::destroyTexture(logo.large);
+        render::destroyTexture(logo.small);
+    }
+    for (const auto texture : stale_textures_) render::destroyTexture(texture);
+    sound::shutdown();
 }
 
-bool App::initGraphics() { return atlas_.create(160); }
+bool App::initGraphics() {
+    // The pieces chosen, or the default ones when the folder chosen cannot be used (pieces_error_ says why).
+    std::string error;
+    const auto svgs = appearance::piecesFor(appearance::current(), error);
+    if (error != pieces_error_ && !error.empty()) Console::instance().add(error, true);
+    pieces_error_ = error;
+    return atlas_.create(160, svgs);
+}
 
 void App::requestQuit() {
     if (run_.running()) {
@@ -131,6 +148,14 @@ void App::frame() {
     if (!launch_checked_) {
         launch_checked_ = true;
         resumeAtLaunch();
+    }
+    // Other pieces, logos dropped: before anything is drawn, the last frame drawn with the old ones.
+    if (pieces_dirty_) rebuildPieces();
+    for (const auto texture : stale_textures_) render::destroyTexture(texture);
+    stale_textures_.clear();
+    if (appearance_save_due_ && std::chrono::steady_clock::now() >= *appearance_save_due_) {
+        appearance_save_due_.reset();
+        storage_.setAppearance(appearance::current());
     }
     pollRun();
     pollProbe();
@@ -1063,6 +1088,16 @@ void App::handleDialogs() {
                     storage_.saveEngines(engines_);
                 }
                 break;
+            case Dialogs::Purpose::EngineLogo:
+                setEngineLogo(selected_engine_, path);
+                break;
+            case Dialogs::Purpose::PieceFolder: {
+                auto settings         = appearance::current();
+                settings.pieces       = appearance::FOLDER;
+                settings.piece_folder = path;
+                applyAppearance(settings);
+                break;
+            }
             case Dialogs::Purpose::EngineOption:
                 if (selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size())) {
                     engines_[selected_engine_].setOption(option_browse_, path);

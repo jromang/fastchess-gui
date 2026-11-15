@@ -144,6 +144,9 @@ msgstr "Um ID de servidor do Discord tem de 17 a 20 dígitos."
 msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
 msgstr "Um livro PGN joga os lances de suas partidas, com a frequência com que elas os jogam; \"tudo\" são os seus primeiros {} meios-lances."
 
+msgid "A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live, on the big screen and on the broadcast web page. A copy is kept in the profile's folder logos: the picture chosen can be moved or deleted."
+msgstr "Uma imagem PNG, JPEG ou SVG de no máximo 2 MB, mostrada ao lado do nome da engine em Ao vivo, na tela grande e na página web da transmissão. Uma cópia fica na pasta logos do perfil: a imagem escolhida pode ser movida ou apagada."
+
 msgid "A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves weighing less than a tenth of the best one; the positions reached are the openings."
 msgstr "Um livro Polyglot é seguido a partir da posição inicial até esta profundidade (-1 = {}), deixando de fora os lances com peso menor que um décimo do melhor; as posições alcançadas são as aberturas."
 
@@ -161,6 +164,9 @@ msgstr "Uma cor venceu as duas partidas de um par"
 
 msgid "A file of your choice"
 msgstr "Um arquivo à sua escolha"
+
+msgid "A folder of 12 SVG pictures named wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg and bK.svg … bP.svg: the white and black king, queen, rook, bishop, knight and pawn."
+msgstr "Uma pasta com 12 imagens SVG chamadas wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg e bK.svg … bP.svg: o rei, a dama, a torre, o bispo, o cavalo e o peão brancos e pretos."
 
 msgid "A game has no port: {}"
 msgstr "Uma partida não tem porta: {}"
@@ -230,6 +236,12 @@ msgstr "Uma lista de rating, para o Elo de referência…"
 
 msgid "A separate engine"
 msgstr "Uma engine à parte"
+
+msgid "A short knock for each move of the game followed, in Live and on the big screen, a heavier one for a capture; not for every game of the mosaic."
+msgstr "Uma batida curta para cada lance da partida acompanhada, em Ao vivo e na tela grande, uma mais pesada para uma captura; não para cada partida do mosaico."
+
+msgid "A sound for each move"
+msgstr "Um som para cada lance"
 
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
 msgstr "Uma tabela que o GitHub e os fóruns mostram como tal, com o mesmo cabeçalho da página HTML."
@@ -310,6 +322,9 @@ msgstr "Adjudicações"
 msgid "Affinity ignored: an engine uses %d threads."
 msgstr "Afinidade ignorada: um engine usa %d threads."
 
+msgid "After the folder's files were changed."
+msgstr "Depois que os arquivos da pasta forem alterados."
+
 msgid "After the running match."
 msgstr "Depois do match em andamento."
 
@@ -384,6 +399,12 @@ msgstr "Outro engine da lista toma o seu lugar e joga as suas partidas, incluind
 
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "Qualquer coisa a lembrar sobre ele; as buscas de engines encontram isso."
+
+msgid "Appearance"
+msgstr "Aparência"
+
+msgid "Appearance: board colours, pieces, move sounds"
+msgstr "Aparência: cores do tabuleiro, peças, sons dos lances"
 
 msgid "Applies at the next launch."
 msgstr "Vale a partir da próxima inicialização."
@@ -499,8 +520,17 @@ msgstr "A conexão das Pretas trava"
 msgid "Black's pieces on the same files as White's: 18 starting positions, added to the library."
 msgstr "As peças pretas nas mesmas colunas que as brancas: 18 posições iniciais, adicionadas à biblioteca."
 
+msgid "Blue"
+msgstr "Azul"
+
+msgid "Blue grey"
+msgstr "Cinza-azulado"
+
 msgid "Board"
 msgstr "Tabuleiro"
+
+msgid "Board colours: {}"
+msgstr "Cores do tabuleiro: {}"
 
 msgid "Board {} of {}"
 msgstr "Tabuleiro {} de {}"
@@ -526,6 +556,9 @@ msgstr "Chave"
 msgid "Broadcast"
 msgstr "Transmissão"
 
+msgid "Brown"
+msgstr "Marrom"
+
 msgid "Build a Polyglot book"
 msgstr "Construir um livro Polyglot"
 
@@ -543,6 +576,9 @@ msgstr "Por pontos"
 
 msgid "By time control"
 msgstr "Por controle de tempo"
+
+msgid "By {}, under the {} license."
+msgstr "Por {}, sob a licença {}."
 
 msgid "CPU affinity"
 msgstr "Afinidade de CPU"
@@ -597,6 +633,9 @@ msgstr "Não foi possível iniciar o teste rápido: {}"
 
 msgid "Cannot write {}"
 msgstr "Não foi possível gravar {}"
+
+msgid "Cannot write {}."
+msgstr "Não é possível gravar {}."
 
 msgid "Catch up the cycles already started"
 msgstr "Recuperar os ciclos já começados"
@@ -675,6 +714,9 @@ msgstr "Escolha primeiro um arquivo PGN."
 
 msgid "Choose a book in the list."
 msgstr "Escolha um livro na lista."
+
+msgid "Choose a logo for {}…"
+msgstr "Escolher um logo para {}…"
 
 msgid "Choose an EPD file whose positions have their best move (bm), the moves to avoid (am), or STS points (c0)."
 msgstr "Escolha um arquivo EPD cujas posições tenham o melhor lance (bm), os lances a evitar (am) ou pontos STS (c0)."
@@ -799,6 +841,9 @@ msgstr "Tabela cruzada"
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr "Ctrl + roda do mouse, Ctrl + e Ctrl -, Ctrl 0"
 
+msgid "Custom"
+msgstr "Personalizado"
+
 msgid "Cut short, by a download that did not end for example. Engines leave such a file out, and some stop at once when they meet it."
 msgstr "Cortado, por um download que não terminou, por exemplo. Os engines ignoram um arquivo assim, e alguns param na hora quando o encontram."
 
@@ -813,6 +858,12 @@ msgstr "Ciclos"
 
 msgid "Dark"
 msgstr "Escuro"
+
+msgid "Dark squares"
+msgstr "Casas escuras"
+
+msgid "Dark theme"
+msgstr "Tema escuro"
 
 msgid "Date"
 msgstr "Data"
@@ -1345,6 +1396,12 @@ msgstr "Informe o host do servidor."
 msgid "Give the tester's name and the event."
 msgstr "Informe o nome do testador e o evento."
 
+msgid "Green"
+msgstr "Verde"
+
+msgid "Grey"
+msgstr "Cinza"
+
 msgid "Group"
 msgstr "Grupo"
 
@@ -1476,11 +1533,23 @@ msgstr "Interrompido: {} não conseguiu iniciar: {}"
 msgid "Interrupted: {} crashed or stopped responding (game {})"
 msgstr "Interrompido: {} travou ou parou de responder (partida {})"
 
+msgid "It cannot be read: {}."
+msgstr "Ela não pode ser lida: {}."
+
 msgid "It cannot play for an engine: {}"
 msgstr "Ele não pode jogar por um engine: {}"
 
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "Ele continua exatamente de onde parou: nenhuma partida é perdida ou jogada duas vezes."
+
+msgid "It is not a PNG or JPEG picture the program can read."
+msgstr "Não é uma imagem PNG ou JPEG que o programa consiga ler."
+
+msgid "It is not an SVG picture the program can draw."
+msgstr "Não é uma imagem SVG que o programa consiga desenhar."
+
+msgid "It is {}×{} pixels: at most {} each way."
+msgstr "Ela tem {}×{} pixels: no máximo {} em cada sentido."
 
 msgid "It needs the web page served."
 msgstr "Requer que a página web esteja sendo servida."
@@ -1584,6 +1653,9 @@ msgstr "Mata-mata"
 msgid "Knockout, {} engines"
 msgstr "Mata-mata, {} engines"
 
+msgid "Laid over the two squares of the last move: its transparency lets the square's colour through."
+msgstr "Colocada sobre as duas casas do último lance: sua transparência deixa ver a cor da casa."
+
 msgid "Language"
 msgstr "Idioma"
 
@@ -1592,6 +1664,9 @@ msgstr "Torneio grande"
 
 msgid "Last 24 hours:"
 msgstr "Últimas 24 horas:"
+
+msgid "Last move"
+msgstr "Último lance"
 
 msgid "Latest results"
 msgstr "Últimos resultados"
@@ -1626,6 +1701,12 @@ msgstr "Engine da biblioteca"
 msgid "Light"
 msgstr "Claro"
 
+msgid "Light squares"
+msgstr "Casas claras"
+
+msgid "Light theme"
+msgstr "Tema claro"
+
 msgid "Like cutechess' -pgnout: the games of every tournament go on after those already in the file, which is never overwritten, in the order of the schedule: the two games of an opening side by side. Empty: none."
 msgstr "Como o -pgnout do cutechess: as partidas de cada torneio vêm depois das que já estão no arquivo, que nunca é sobrescrito, na ordem do calendário: as duas partidas de uma abertura lado a lado. Vazio: nenhum."
 
@@ -1652,6 +1733,9 @@ msgstr "Log"
 
 msgid "Logistic Elo, with its 95 % interval."
 msgstr "Elo logístico, com seu intervalo de 95%."
+
+msgid "Logo"
+msgstr "Logo"
 
 msgid "Loss when an engine reports a score ≤ -threshold for N consecutive moves."
 msgstr "Derrota quando um engine indica uma avaliação ≤ -limite por N lances consecutivos."
@@ -1733,6 +1817,9 @@ msgstr "Mosaico"
 msgid "Move down"
 msgstr "Descer"
 
+msgid "Move sounds"
+msgstr "Sons dos lances"
+
 msgid "Move to the top"
 msgstr "Para o topo"
 
@@ -1808,6 +1895,9 @@ msgstr "Nenhum engine ainda. Clique em Adicionar."
 msgid "No engine yet: double-click engines of the library, or drag them here."
 msgstr "Nenhum engine ainda: dê duplo clique em engines da biblioteca, ou arraste-os para cá."
 
+msgid "No folder of pieces is chosen."
+msgstr "Nenhuma pasta de peças foi escolhida."
+
 msgid "No game finished yet."
 msgstr "Nenhuma partida terminada ainda."
 
@@ -1849,6 +1939,12 @@ msgstr "Nenhum lance de {} resta com essas opções."
 msgid "No move of {} is played by {} games or more: lower the minimum."
 msgstr "Nenhum lance de {} é jogado por {} partidas ou mais: baixe o mínimo."
 
+msgid "No move sounds: no sound device ({})."
+msgstr "Sem sons dos lances: nenhum dispositivo de áudio ({})."
+
+msgid "No move sounds: the sound could not be started ({})."
+msgstr "Sem sons dos lances: não foi possível iniciar o som ({})."
+
 msgid "No new engine in the folder."
 msgstr "Nenhum engine novo na pasta."
 
@@ -1878,6 +1974,9 @@ msgstr "Nenhum resultado ainda."
 
 msgid "No round yet."
 msgstr "Nenhuma rodada ainda."
+
+msgid "No sound device could be opened: the log says why."
+msgstr "Nenhum dispositivo de áudio pôde ser aberto: o log diz por quê."
 
 msgid "No tablebase hits in this game."
 msgstr "Nenhum acesso às tablebases nesta partida."
@@ -1926,6 +2025,9 @@ msgstr "Não verificado"
 
 msgid "Not checked yet."
 msgstr "Ainda não verificado."
+
+msgid "Not enough memory to draw it."
+msgstr "Memória insuficiente para desenhá-la."
 
 msgid "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the setup."
 msgstr "Ausente do PGN desta partida: seu torneio foi jogado com \"{}\" desativado nas opções PGN da configuração."
@@ -2175,8 +2277,20 @@ msgstr "Talvez {}?"
 msgid "Physical cores − 1 ({} physical cores on this machine): with a clock, two engines on the same core would slow each other down."
 msgstr "Núcleos físicos − 1 ({} núcleos físicos nesta máquina): com relógio, dois engines no mesmo núcleo se atrasariam."
 
+msgid "Pictures (PNG, JPEG, SVG)"
+msgstr "Imagens (PNG, JPEG, SVG)"
+
+msgid "Pieces"
+msgstr "Peças"
+
 msgid "Pieces on the board, kings included."
 msgstr "Peças no tabuleiro, reis incluídos."
+
+msgid "Pieces: your own folder…"
+msgstr "Peças: sua própria pasta…"
+
+msgid "Pieces: {}"
+msgstr "Peças: {}"
 
 msgid "Pins every game to its own processor, shared by its two engines since they never think at the same time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to a node count."
 msgstr "Fixa cada partida no seu próprio processador, compartilhado pelos seus dois engines, já que eles nunca pensam ao mesmo tempo: 2 partidas mantêm 2 núcleos ocupados e deixam os outros livres. Útil com relógio, irrelevante para uma contagem de nós."
@@ -2344,6 +2458,9 @@ msgstr "Ratings"
 
 msgid "Reachable from the local network; open the port in your router to share it further."
 msgstr "Acessível pela rede local; abra a porta no seu roteador para compartilhar além dela."
+
+msgid "Read again"
+msgstr "Ler de novo"
 
 msgid "Read it again"
 msgstr "Ler de novo"
@@ -2965,6 +3082,12 @@ msgstr "Os gráficos aparecem com os primeiros resultados."
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "A verificação de {} foi interrompida para o início: será refeita mais tarde."
 
+msgid "The colours of the boards while the theme is dark."
+msgstr "As cores dos tabuleiros enquanto o tema é escuro."
+
+msgid "The colours of the boards while the theme is light."
+msgstr "As cores dos tabuleiros enquanto o tema é claro."
+
 msgid "The depth must be positive."
 msgstr "A profundidade deve ser positiva."
 
@@ -3022,6 +3145,9 @@ msgstr "O primeiro participante, {}, não tem Elo de referência."
 msgid "The folder {} is not there any more."
 msgstr "A pasta {} não existe mais."
 
+msgid "The folder {} is not there."
+msgstr "A pasta {} não está lá."
+
 msgid "The game counts again as it was."
 msgstr "A partida volta a contar como antes."
 
@@ -3067,6 +3193,12 @@ msgstr "O nome na biblioteca, que os próximos torneios dão a ele. Os torneios 
 msgid "The list order is the seeding."
 msgstr "A ordem da lista é a dos cabeças de chave."
 
+msgid "The logo of {} cannot be shown: {}"
+msgstr "O logo de {} não pode ser mostrado: {}"
+
+msgid "The logo was not changed: {}"
+msgstr "O logo não foi alterado: {}"
+
 msgid "The most interesting"
 msgstr "A mais interessante"
 
@@ -3096,6 +3228,9 @@ msgstr "Os painéis e onde estão, com um nome à sua escolha."
 
 msgid "The participants selected (Delete)."
 msgstr "Os participantes selecionados (Delete)."
+
+msgid "The picture could not be made a texture."
+msgstr "Não foi possível transformar a imagem em uma textura."
 
 msgid "The place in the list, by rating."
 msgstr "A posição na lista, por rating."
@@ -3335,6 +3470,12 @@ msgstr "Nova tentativa em {}."
 msgid "Trust the new key"
 msgstr "Confiar na nova chave"
 
+msgid "Try a capture"
+msgstr "Testar uma captura"
+
+msgid "Try a move"
+msgstr "Testar um lance"
+
 msgid "Try again"
 msgstr "Tentar novamente"
 
@@ -3364,6 +3505,12 @@ msgstr "Túnel: {}"
 
 msgid "Tunnel: {}; connecting again in {} s"
 msgstr "Túnel: {}; nova conexão em {} s"
+
+msgid "Turn the move sounds off"
+msgstr "Desligar os sons dos lances"
+
+msgid "Turn the move sounds on"
+msgstr "Ligar os sons dos lances"
 
 msgid "Two different engines chosen"
 msgstr "Dois engines diferentes escolhidos"
@@ -3442,6 +3589,9 @@ msgstr "A versão {} foi lançada."
 
 msgid "Void this game (no replay)"
 msgstr "Anular esta partida (sem jogá-la de novo)"
+
+msgid "Volume %d %%"
+msgstr "Volume %d %%"
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "V {:.0f} · E {:.0f} · D {:.0f}%"
@@ -3604,6 +3754,12 @@ msgstr "Escrito quando \"{}\" está ativado nas opções PGN da configuração."
 
 msgid "Wrong PVs"
 msgstr "PVs erradas"
+
+msgid "Your own folder"
+msgstr "Sua própria pasta"
+
+msgid "Your own folder…"
+msgstr "Sua própria pasta…"
 
 msgid "Your value"
 msgstr "Seu valor"
@@ -4020,6 +4176,9 @@ msgstr "{} = {}: um valor que ele recusa"
 msgid "{} MB"
 msgstr "{} MB"
 
+msgid "{} The default pieces are drawn meanwhile."
+msgstr "{} Enquanto isso, as peças padrão são desenhadas."
+
 msgid "{} against each opponent"
 msgstr "{} contra cada adversário"
 
@@ -4031,6 +4190,9 @@ msgstr "{} pede para ser reiniciado a cada partida: “Reiniciar o engine a cada
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "{} não pode ser lido, então as chaves de host aceitas antes são desconhecidas: nada foi enviado a {}. Repare o arquivo, ou apague-o para aceitar de novo a chave do servidor."
+
+msgid "{} cannot be read."
+msgstr "{} não pode ser lido."
 
 msgid "{} cannot start"
 msgstr "{} não inicia"
@@ -4225,6 +4387,24 @@ msgstr[1] "{} lances ilegais"
 
 msgid "{} illegal moves"
 msgstr "{} lances ilegais"
+
+msgid "{} is larger than 1 MB: is it a piece?"
+msgstr "{} tem mais de 1 MB: é mesmo uma peça?"
+
+msgid "{} is larger than 2 MB."
+msgstr "{} tem mais de 2 MB."
+
+msgid "{} is missing: the folder needs the 12 files wK.svg, wQ.svg … bN.svg, bP.svg."
+msgstr "Falta {}: a pasta precisa dos 12 arquivos wK.svg, wQ.svg … bN.svg, bP.svg."
+
+msgid "{} is not a file of the logos folder."
+msgstr "{} não é um arquivo da pasta logos."
+
+msgid "{} is not an SVG picture the program can draw."
+msgstr "{} não é uma imagem SVG que o programa consiga desenhar."
+
+msgid "{} is not there."
+msgstr "{} não está lá."
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} está aberto em outro programa: aqui ele só é exibido, como estava ao ser aberto."
@@ -4539,6 +4719,9 @@ msgstr "Syzygy de {} peças para cada engine"
 
 msgid "{}-man Syzygy for {} of {} engines"
 msgstr "Syzygy de {} peças para {} de {} engines"
+
+msgid "{}: a logo is a PNG, JPEG or SVG picture."
+msgstr "{}: um logo é uma imagem PNG, JPEG ou SVG."
 
 msgid "{}: cancelled, nothing written."
 msgstr "{}: cancelado, nada gravado."

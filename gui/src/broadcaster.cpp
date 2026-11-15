@@ -408,6 +408,14 @@ void Broadcaster::update(const tour::TournamentState& state, const GuiObserver& 
     wake_.notify_all();
 }
 
+void Broadcaster::setLogos(const std::vector<WebLogo>& logos) {
+    web_.setLogos(logos);
+    std::map<std::string, std::string> paths;
+    for (const auto& l : logos) paths[l.engine] = l.path;
+    std::lock_guard<std::mutex> lock(mutex_);
+    logo_paths_ = std::move(paths);
+}
+
 std::string Broadcaster::filesStatus() const {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!files_error_.empty()) return files_error_;
@@ -466,6 +474,10 @@ void Broadcaster::publish(const Job& job, const BroadcastSettings& settings) {
     auto snapshot       = makeSnapshot(job.input);
     snapshot.chat_link  = settings.chat_link;
     snapshot.discord_id = settings.discord_id;
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        snapshot.logos = logo_paths_;
+    }
     // The lichess round, with its own chat, while the games are pushed there.
     if (settings.lichess) {
         if (const auto status = lichess(); status.running) snapshot.lichess_url = status.url;

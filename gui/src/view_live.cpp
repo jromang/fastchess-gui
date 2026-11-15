@@ -398,7 +398,11 @@ void App::refreshSlot(int slot) {
     if (v.state.has_game && v.state.version != v.board_version) {
         v.board = chess::Board();
         v.board.setFen(v.state.start_fen);
-        for (const auto& m : v.state.moves) v.board.makeMove<true>(m.move);
+        v.last_capture = false;
+        for (const auto& m : v.state.moves) {
+            v.last_capture = v.board.isCapture(m.move);
+            v.board.makeMove<true>(m.move);
+        }
         v.board_version = v.state.version;
     }
 }
@@ -428,6 +432,7 @@ void App::drawLive() {
     const int slots = obs->slotCount();
     live_slot_      = std::clamp(live_slot_, 0, slots - 1);
     for (int i = 0; i < slots; ++i) refreshSlot(i);
+    hearMoves(live_slot_);
 
     // The parts of the followed game that have no panel of their own open are shown here, beside the mosaic.
     const unsigned parts = livePartsHere();
@@ -730,6 +735,7 @@ void App::drawLivePlayer(SlotView& view, chess::Color color, bool search) {
     dl->AddCircle(c, r, IM_COL32(130, 130, 130, 255), 16);
     ImGui::Dummy(ImVec2(r * 2, ImGui::GetTextLineHeight()));
     ImGui::SameLine();
+    if (drawEngineLogo(name, ImGui::GetTextLineHeight()) > 0) ImGui::SameLine();
 
     if (to_move) ImGui::PushStyleColor(ImGuiCol_Text, ui::ACCENT);
     if (isMatch() && obs) {

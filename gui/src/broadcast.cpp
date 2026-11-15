@@ -224,7 +224,21 @@ std::string snapshotJson(const BroadcastSnapshot& s) {
     j["chat"]    = orNull(webChatLink(s.chat_link));
     j["lichess"] = orNull(webChatLink(s.lichess_url));
     j["discord"] = orNull(webDiscordId(s.discord_id));
+    // The logos of the tournament's engines only: the page learns nothing of the rest of the library.
+    auto& logos = j["logos"] = nlohmann::json::object();
+    for (const auto& r : s.table.rows) {
+        if (const auto it = s.logos.find(r.name); it != s.logos.end() && webLogoPath(it->second))
+            logos[r.name] = it->second;
+    }
     return j.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace);
+}
+
+bool webLogoPath(std::string_view path) {
+    constexpr std::string_view head = "logo/", tail = ".png";
+    if (path.size() < head.size() + 8 + tail.size() || path.size() > head.size() + 64 + tail.size()) return false;
+    if (!path.starts_with(head) || !path.ends_with(tail)) return false;
+    const auto hex = path.substr(head.size(), path.size() - head.size() - tail.size());
+    return std::all_of(hex.begin(), hex.end(), [](char c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'); });
 }
 
 std::string livePgn(const BroadcastSnapshot& s) {

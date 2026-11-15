@@ -128,6 +128,7 @@ void App::renameEngine(int index, const std::string& name) {
     const auto now       = uniqueEngineName(name, index);
     engines_[index].name = now;
     if (now == old) return;
+    if (!engines_[index].logo.empty()) ++logos_version_;  // the web page knows the logos by engine name
 
     // Everything that refers to it by name follows.
     const auto follow = [&](std::string& ref) {
@@ -163,9 +164,11 @@ void App::renameEngine(int index, const std::string& name) {
 
 void App::removeEngines(const std::vector<std::string>& names) {
     const int selected = selected_engine_;
+    std::vector<std::string> logos;
     for (int i = static_cast<int>(engines_.size()) - 1; i >= 0; --i) {
         const auto name = engines_[i].name;
         if (std::find(names.begin(), names.end(), name) == names.end()) continue;
+        if (!engines_[i].logo.empty()) logos.push_back(engines_[i].logo);
         // A read or a check still running belongs to an index: keep it on its engine, or drop it with it.
         for (int* busy : {&probe_index_, &check_index_, &selected_engine_}) {
             if (*busy == i)
@@ -182,6 +185,7 @@ void App::removeEngines(const std::vector<std::string>& names) {
     if (selected_engine_ < 0 && selected >= 0)
         selected_engine_ = std::min(selected, static_cast<int>(engines_.size()) - 1);
     storage_.saveEngines(engines_);
+    for (const auto& logo : logos) forgetLogoFile(logo);
 }
 
 void App::queueChecks(const std::vector<std::string>& names) {
@@ -636,6 +640,7 @@ void App::drawEngines() {
         auto copy = engines_[selected_engine_];
         copy.name = uniqueEngineName(copy.name, -1);
         copy.aliases.clear();  // a PGN player is one engine
+        if (!copy.logo.empty()) ++logos_version_;  // the same logo, under its new name on the web page
         engines_.push_back(copy);
         selected_engine_ = static_cast<int>(engines_.size()) - 1;
         engine_marked_.clear();
@@ -1108,6 +1113,11 @@ void App::drawEngines() {
     if (ImGui::SmallButton(TR("Its results…"))) showEngineCard(e.name);
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("%s", TR("Its card in Ratings: results, health and rating over every tournament."));
+
+    // The logo can change while the engine plays: it is for the viewers.
+    ImGui::EndDisabled();
+    drawLogoRow(selected_engine_, label);
+    ImGui::BeginDisabled(in_use);
 
     ui::label(TR("Notes"), label);
     changed |= editLines("##notes", e.notes, ImVec2(-FLT_MIN, ImGui::GetTextLineHeight() * 3.5f));

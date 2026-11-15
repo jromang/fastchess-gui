@@ -14,7 +14,7 @@
 
 #include <fmt/include/fmt/format.h>
 
-#include <stb_image.h>  // its inflater, compiled in zip_tests.cpp
+#include <stb_image.h>  // its inflater, compiled in engine_logos.cpp
 
 #include "broadcast.hpp"
 #include "broadcaster.hpp"

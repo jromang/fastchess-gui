@@ -80,6 +80,9 @@ this repository still builds unchanged.
   adjudication, crash recovery, a desktop notification when a match ends.
 - Light and dark themes; English, French, German, Spanish, Italian, Portuguese (Brazil), Russian or Chinese
   (simplified), following the system (can be changed in the settings).
+- **Appearance**: board colours (presets or your own, for each theme), four piece sets or a folder of your own SVG
+  pieces, move sounds for the game followed (off by default), and a logo per engine, shown in the live view, on the
+  big screen and on the broadcast web page.
 
 | Standings, ratings and latest results | Games and replay |
 |---|---|

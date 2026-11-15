@@ -142,6 +142,9 @@ msgstr "Discord 服务器 ID 为 17 至 20 位数字。"
 msgid "A PGN book plays the moves of its games, as often as they play them; \"all\" is their first {} plies."
 msgstr "PGN 开局库按其对局中出现的频率走出对局中的着法；“全部”即对局的前 {} 个半回合。"
 
+msgid "A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live, on the big screen and on the broadcast web page. A copy is kept in the profile's folder logos: the picture chosen can be moved or deleted."
+msgstr "PNG、JPEG 或 SVG 图片，最大 2 MB，显示在实时页、大屏幕和直播网页中引擎名称的旁边。副本保存在配置文件夹的 logos 文件夹中：所选图片之后可以移动或删除。"
+
 msgid "A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves weighing less than a tenth of the best one; the positions reached are the openings."
 msgstr "从初始局面沿 Polyglot 开局库走到此深度（-1 = {}），去掉权重不足最佳着法十分之一的着法；到达的局面即为开局。"
 
@@ -159,6 +162,9 @@ msgstr "同一方赢下一对中的两局"
 
 msgid "A file of your choice"
 msgstr "自选文件"
+
+msgid "A folder of 12 SVG pictures named wK.svg, wQ.svg, wR.svg, wB.svg, wN.svg, wP.svg and bK.svg … bP.svg: the white and black king, queen, rook, bishop, knight and pawn."
+msgstr "一个包含 12 张 SVG 图片的文件夹，文件名为 wK.svg、wQ.svg、wR.svg、wB.svg、wN.svg、wP.svg 以及 bK.svg … bP.svg：白方和黑方的王、后、车、象、马和兵。"
 
 msgid "A game has no port: {}"
 msgstr "有一局对局没有端口：{}"
@@ -228,6 +234,12 @@ msgstr "等级分榜，用于参考 Elo…"
 
 msgid "A separate engine"
 msgstr "单独的引擎"
+
+msgid "A short knock for each move of the game followed, in Live and on the big screen, a heavier one for a capture; not for every game of the mosaic."
+msgstr "所关注对局的每一步发出一声短促的敲击声（在实时页和大屏幕上），吃子时声音更重；平铺中的其他对局不发声。"
+
+msgid "A sound for each move"
+msgstr "每步棋发出声音"
 
 msgid "A table that GitHub and forums show as one, with the same header as the HTML page."
 msgstr "GitHub 和论坛会显示为表格，页眉与 HTML 页面相同。"
@@ -306,6 +318,9 @@ msgstr "裁定"
 msgid "Affinity ignored: an engine uses %d threads."
 msgstr "已忽略亲和性：某个引擎使用 %d 个线程。"
 
+msgid "After the folder's files were changed."
+msgstr "在文件夹中的文件被修改之后。"
+
 msgid "After the running match."
 msgstr "在当前比赛之后。"
 
@@ -380,6 +395,12 @@ msgstr "由列表中的另一个引擎接替它，并下它的对局，包括它
 
 msgid "Anything to remember about it; the engine searches find it."
 msgstr "关于它需要记住的任何内容；搜索引擎时可以搜到。"
+
+msgid "Appearance"
+msgstr "外观"
+
+msgid "Appearance: board colours, pieces, move sounds"
+msgstr "外观：棋盘颜色、棋子、走棋声音"
 
 msgid "Applies at the next launch."
 msgstr "下次启动时生效。"
@@ -495,8 +516,17 @@ msgstr "黑方连接无响应"
 msgid "Black's pieces on the same files as White's: 18 starting positions, added to the library."
 msgstr "黑方棋子与白方位于相同的列：18 个初始局面，加入库中。"
 
+msgid "Blue"
+msgstr "蓝色"
+
+msgid "Blue grey"
+msgstr "蓝灰色"
+
 msgid "Board"
 msgstr "棋盘"
+
+msgid "Board colours: {}"
+msgstr "棋盘颜色：{}"
 
 msgid "Board {} of {}"
 msgstr "棋盘 {} / {}"
@@ -522,6 +552,9 @@ msgstr "对阵表"
 msgid "Broadcast"
 msgstr "直播"
 
+msgid "Brown"
+msgstr "棕色"
+
 msgid "Build a Polyglot book"
 msgstr "生成 Polyglot 开局库"
 
@@ -539,6 +572,9 @@ msgstr "按得分"
 
 msgid "By time control"
 msgstr "按时限"
+
+msgid "By {}, under the {} license."
+msgstr "作者 {}，采用 {} 许可证。"
 
 msgid "CPU affinity"
 msgstr "CPU 亲和性"
@@ -593,6 +629,9 @@ msgstr "无法开始快速测试：{}"
 
 msgid "Cannot write {}"
 msgstr "无法写入 {}"
+
+msgid "Cannot write {}."
+msgstr "无法写入 {}。"
 
 msgid "Catch up the cycles already started"
 msgstr "补齐已经开始的循环"
@@ -671,6 +710,9 @@ msgstr "请先选择一个 PGN 文件。"
 
 msgid "Choose a book in the list."
 msgstr "请在列表中选择一个开局库。"
+
+msgid "Choose a logo for {}…"
+msgstr "为 {} 选择标志…"
 
 msgid "Choose an EPD file whose positions have their best move (bm), the moves to avoid (am), or STS points (c0)."
 msgstr "选择一个 EPD 文件，其局面带有最佳着法 (bm)、应避免的着法 (am) 或 STS 分数 (c0)。"
@@ -795,6 +837,9 @@ msgstr "交叉表"
 msgid "Ctrl + mouse wheel, Ctrl + and Ctrl -, Ctrl 0"
 msgstr "Ctrl + 鼠标滚轮，Ctrl + 和 Ctrl -，Ctrl 0"
 
+msgid "Custom"
+msgstr "自定义"
+
 msgid "Cut short, by a download that did not end for example. Engines leave such a file out, and some stop at once when they meet it."
 msgstr "文件不完整，例如下载未完成。引擎会跳过这样的文件，有些引擎遇到时会立即退出。"
 
@@ -809,6 +854,12 @@ msgstr "循环数"
 
 msgid "Dark"
 msgstr "深色"
+
+msgid "Dark squares"
+msgstr "深色格"
+
+msgid "Dark theme"
+msgstr "深色主题"
 
 msgid "Date"
 msgstr "日期"
@@ -1341,6 +1392,12 @@ msgstr "请填写服务器的主机。"
 msgid "Give the tester's name and the event."
 msgstr "请填写测试者姓名和赛事。"
 
+msgid "Green"
+msgstr "绿色"
+
+msgid "Grey"
+msgstr "灰色"
+
 msgid "Group"
 msgstr "分组"
 
@@ -1471,11 +1528,23 @@ msgstr "已中断：{} 无法启动：{}"
 msgid "Interrupted: {} crashed or stopped responding (game {})"
 msgstr "已中断：{} 崩溃或无响应（第 {} 局）"
 
+msgid "It cannot be read: {}."
+msgstr "无法读取：{}。"
+
 msgid "It cannot play for an engine: {}"
 msgstr "它不能代替引擎走棋：{}"
 
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "它会从中断处准确继续：不会丢失对局，也不会重复下同一局。"
+
+msgid "It is not a PNG or JPEG picture the program can read."
+msgstr "这不是程序能够读取的 PNG 或 JPEG 图片。"
+
+msgid "It is not an SVG picture the program can draw."
+msgstr "这不是程序能够绘制的 SVG 图片。"
+
+msgid "It is {}×{} pixels: at most {} each way."
+msgstr "图片为 {}×{} 像素：每个方向最多 {}。"
 
 msgid "It needs the web page served."
 msgstr "需要先提供网页。"
@@ -1579,6 +1648,9 @@ msgstr "淘汰赛"
 msgid "Knockout, {} engines"
 msgstr "淘汰赛，{} 个引擎"
 
+msgid "Laid over the two squares of the last move: its transparency lets the square's colour through."
+msgstr "覆盖在上一步棋的两个格子上：其透明度让格子的颜色透出来。"
+
 msgid "Language"
 msgstr "语言"
 
@@ -1587,6 +1659,9 @@ msgstr "大型锦标赛"
 
 msgid "Last 24 hours:"
 msgstr "最近 24 小时："
+
+msgid "Last move"
+msgstr "上一步"
 
 msgid "Latest results"
 msgstr "最近成绩"
@@ -1621,6 +1696,12 @@ msgstr "库引擎"
 msgid "Light"
 msgstr "浅色"
 
+msgid "Light squares"
+msgstr "浅色格"
+
+msgid "Light theme"
+msgstr "浅色主题"
+
 msgid "Like cutechess' -pgnout: the games of every tournament go on after those already in the file, which is never overwritten, in the order of the schedule: the two games of an opening side by side. Empty: none."
 msgstr "与 cutechess 的 -pgnout 相同：每个锦标赛的对局追加在文件已有对局之后，文件绝不会被覆盖；按赛程顺序排列：同一开局的两局相邻。留空：不追加。"
 
@@ -1647,6 +1728,9 @@ msgstr "日志"
 
 msgid "Logistic Elo, with its 95 % interval."
 msgstr "逻辑斯谛 Elo，及其 95 % 区间。"
+
+msgid "Logo"
+msgstr "标志"
 
 msgid "Loss when an engine reports a score ≤ -threshold for N consecutive moves."
 msgstr "当某个引擎连续 N 步报告分数 ≤ -阈值时判负。"
@@ -1727,6 +1811,9 @@ msgstr "平铺"
 msgid "Move down"
 msgstr "下移"
 
+msgid "Move sounds"
+msgstr "走棋声音"
+
 msgid "Move to the top"
 msgstr "移到最前"
 
@@ -1802,6 +1889,9 @@ msgstr "还没有引擎。请点击“添加”。"
 msgid "No engine yet: double-click engines of the library, or drag them here."
 msgstr "还没有引擎：双击引擎库中的引擎，或把它们拖到这里。"
 
+msgid "No folder of pieces is chosen."
+msgstr "尚未选择棋子文件夹。"
+
 msgid "No game finished yet."
 msgstr "还没有已结束的对局。"
 
@@ -1842,6 +1932,12 @@ msgstr "使用这些选项后，{} 中没有剩下任何着法。"
 msgid "No move of {} is played by {} games or more: lower the minimum."
 msgstr "{} 中没有任何着法被 {} 局或更多对局走出：请降低最少对局数。"
 
+msgid "No move sounds: no sound device ({})."
+msgstr "没有走棋声音：没有音频设备（{}）。"
+
+msgid "No move sounds: the sound could not be started ({})."
+msgstr "没有走棋声音：无法启动声音（{}）。"
+
 msgid "No new engine in the folder."
 msgstr "文件夹中没有新引擎。"
 
@@ -1871,6 +1967,9 @@ msgstr "还没有成绩。"
 
 msgid "No round yet."
 msgstr "还没有轮次。"
+
+msgid "No sound device could be opened: the log says why."
+msgstr "无法打开任何音频设备：原因见日志。"
 
 msgid "No tablebase hits in this game."
 msgstr "本局没有残局库命中。"
@@ -1919,6 +2018,9 @@ msgstr "未检查"
 
 msgid "Not checked yet."
 msgstr "尚未检查。"
+
+msgid "Not enough memory to draw it."
+msgstr "内存不足，无法绘制。"
 
 msgid "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the setup."
 msgstr "不在本局 PGN 中：其锦标赛进行时，设置的 PGN 选项中“{}”是关闭的。"
@@ -2167,8 +2269,20 @@ msgstr "也许是 {}？"
 msgid "Physical cores − 1 ({} physical cores on this machine): with a clock, two engines on the same core would slow each other down."
 msgstr "物理核心数 − 1（本机 {} 个物理核心）：有棋钟时，同一核心上的两个引擎会互相拖慢。"
 
+msgid "Pictures (PNG, JPEG, SVG)"
+msgstr "图片（PNG、JPEG、SVG）"
+
+msgid "Pieces"
+msgstr "棋子"
+
 msgid "Pieces on the board, kings included."
 msgstr "棋盘上的棋子数，包括王。"
+
+msgid "Pieces: your own folder…"
+msgstr "棋子：自己的文件夹…"
+
+msgid "Pieces: {}"
+msgstr "棋子：{}"
 
 msgid "Pins every game to its own processor, shared by its two engines since they never think at the same time: 2 games keep 2 cores busy and leave the others idle. Useful with a clock, irrelevant to a node count."
 msgstr "把每局对局固定在一个处理器上，由该局的两个引擎共用，因为它们不会同时思考：2 局对局占满 2 个核心，其余核心空闲。有计时时有用，对固定节点数无影响。"
@@ -2335,6 +2449,9 @@ msgstr "等级分"
 
 msgid "Reachable from the local network; open the port in your router to share it further."
 msgstr "局域网内可访问；如需进一步共享，请在路由器中开放该端口。"
+
+msgid "Read again"
+msgstr "重新读取"
 
 msgid "Read it again"
 msgstr "重新读取"
@@ -2949,6 +3066,12 @@ msgstr "图表会随第一批结果出现。"
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "为了开始，{} 的检查已中断：稍后会重新进行。"
 
+msgid "The colours of the boards while the theme is dark."
+msgstr "深色主题下棋盘的颜色。"
+
+msgid "The colours of the boards while the theme is light."
+msgstr "浅色主题下棋盘的颜色。"
+
 msgid "The depth must be positive."
 msgstr "深度必须为正数。"
 
@@ -3006,6 +3129,9 @@ msgstr "第一个参赛者 {} 没有参考 Elo。"
 msgid "The folder {} is not there any more."
 msgstr "文件夹 {} 已不存在。"
 
+msgid "The folder {} is not there."
+msgstr "文件夹 {} 不存在。"
+
 msgid "The game counts again as it was."
 msgstr "对局恢复按原结果计分。"
 
@@ -3051,6 +3177,12 @@ msgstr "引擎库中的名称，之后的锦标赛会使用它。已进行的锦
 msgid "The list order is the seeding."
 msgstr "列表顺序即种子顺序。"
 
+msgid "The logo of {} cannot be shown: {}"
+msgstr "无法显示 {} 的标志：{}"
+
+msgid "The logo was not changed: {}"
+msgstr "标志未更改：{}"
+
 msgid "The most interesting"
 msgstr "最有看点的"
 
@@ -3080,6 +3212,9 @@ msgstr "以你选择的名称保存面板及其位置。"
 
 msgid "The participants selected (Delete)."
 msgstr "选中的参赛者（Delete）。"
+
+msgid "The picture could not be made a texture."
+msgstr "无法将图片转换为纹理。"
 
 msgid "The place in the list, by rating."
 msgstr "按等级分在列表中的名次。"
@@ -3317,6 +3452,12 @@ msgstr "{} 后再次尝试。"
 msgid "Trust the new key"
 msgstr "信任新密钥"
 
+msgid "Try a capture"
+msgstr "试听吃子"
+
+msgid "Try a move"
+msgstr "试听走棋"
+
 msgid "Try again"
 msgstr "重试"
 
@@ -3346,6 +3487,12 @@ msgstr "隧道：{}"
 
 msgid "Tunnel: {}; connecting again in {} s"
 msgstr "隧道：{}；{} 秒后重新连接"
+
+msgid "Turn the move sounds off"
+msgstr "关闭走棋声音"
+
+msgid "Turn the move sounds on"
+msgstr "开启走棋声音"
 
 msgid "Two different engines chosen"
 msgstr "已选择两个不同的引擎"
@@ -3424,6 +3571,9 @@ msgstr "版本 {} 已发布。"
 
 msgid "Void this game (no replay)"
 msgstr "作废这局对局（不重下）"
+
+msgid "Volume %d %%"
+msgstr "音量 %d %%"
 
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "胜 {:.0f} · 和 {:.0f} · 负 {:.0f} %"
@@ -3586,6 +3736,12 @@ msgstr "当设置的 PGN 选项中“{}”开启时写入。"
 
 msgid "Wrong PVs"
 msgstr "错误 PV"
+
+msgid "Your own folder"
+msgstr "自己的文件夹"
+
+msgid "Your own folder…"
+msgstr "自己的文件夹…"
 
 msgid "Your value"
 msgstr "你的值"
@@ -3997,6 +4153,9 @@ msgstr "{} = {}：引擎拒绝的值"
 msgid "{} MB"
 msgstr "{} MB"
 
+msgid "{} The default pieces are drawn meanwhile."
+msgstr "{} 在此期间显示默认棋子。"
+
 msgid "{} against each opponent"
 msgstr "{} 对每个对手"
 
@@ -4008,6 +4167,9 @@ msgstr "{} 要求每局都重新启动：已勾选“每局对局都重启引擎
 
 msgid "{} cannot be read, so the host keys trusted before are unknown: nothing was sent to {}. Repair the file, or delete it to trust the server's key again."
 msgstr "无法读取 {}，因此之前信任的主机密钥未知：未向 {} 发送任何内容。请修复该文件，或删除它以重新信任服务器的密钥。"
+
+msgid "{} cannot be read."
+msgstr "无法读取 {}。"
 
 msgid "{} cannot start"
 msgstr "{} 无法启动"
@@ -4177,6 +4339,24 @@ msgstr[0] "{} 次非法着法"
 
 msgid "{} illegal moves"
 msgstr "{} 次非法着法"
+
+msgid "{} is larger than 1 MB: is it a piece?"
+msgstr "{} 大于 1 MB：这是棋子图片吗？"
+
+msgid "{} is larger than 2 MB."
+msgstr "{} 大于 2 MB。"
+
+msgid "{} is missing: the folder needs the 12 files wK.svg, wQ.svg … bN.svg, bP.svg."
+msgstr "缺少 {}：文件夹需要包含 wK.svg、wQ.svg … bN.svg、bP.svg 这 12 个文件。"
+
+msgid "{} is not a file of the logos folder."
+msgstr "{} 不是 logos 文件夹中的文件。"
+
+msgid "{} is not an SVG picture the program can draw."
+msgstr "{} 不是程序能够绘制的 SVG 图片。"
+
+msgid "{} is not there."
+msgstr "{} 不存在。"
 
 msgid "{} is open in another program: it is only shown here, as it was when opened."
 msgstr "{} 已在另一个程序中打开：此处仅按打开时的状态显示。"
@@ -4460,6 +4640,9 @@ msgstr "每个引擎都有 {} 子 Syzygy"
 
 msgid "{}-man Syzygy for {} of {} engines"
 msgstr "{} 子 Syzygy，用于 {} 个引擎（共 {} 个）"
+
+msgid "{}: a logo is a PNG, JPEG or SVG picture."
+msgstr "{}：标志必须是 PNG、JPEG 或 SVG 图片。"
 
 msgid "{}: cancelled, nothing written."
 msgstr "{}：已取消，未写入任何内容。"

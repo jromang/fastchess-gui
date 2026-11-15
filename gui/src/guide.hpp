@@ -19,6 +19,7 @@ enum class Section {
     Changing,       // Changing a running tournament: the Schedule tab
     Ratings,        // Ratings
     Broadcast,      // Broadcast
+    Appearance,     // Appearance: board colours, pieces, move sounds, engine logos
     Count
 };
 

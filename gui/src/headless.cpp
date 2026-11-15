@@ -16,6 +16,7 @@
 #include <tour/standings.hpp>
 
 #include "broadcaster.hpp"
+#include "engine_logos.hpp"
 #include "memory.hpp"
 #include "portable.hpp"
 #include "run.hpp"
@@ -337,7 +338,10 @@ int runHeadless(const std::string& target, const Storage& storage, const CpuTopo
                                             : "TLCS server on UDP port %d\n",
                         settings.tlcs_port);
         }
-        if (broadcaster.web().running()) std::printf("Web page on http://localhost:%d/\n", settings.web_port);
+        if (broadcaster.web().running()) {
+            std::printf("Web page on http://localhost:%d/\n", settings.web_port);
+            broadcaster.setLogos(logos::webLogos(storage.loadEngines(), storage.logosDir()));
+        }
         if (settings.lichess) std::printf("Pushing the games to lichess\n");
         if (settings.tunnel && broadcaster.web().running()) {
             std::printf("Tunnel to %s for the web page on the internet\n", settings.tunnel_to.host.c_str());
