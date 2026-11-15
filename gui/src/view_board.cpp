@@ -825,7 +825,7 @@ void App::drawPositionEditor(float size) {
             const bool chosen = !e.erase && e.brush == piece;
             ImGui::PushID(static_cast<int>(piece));
             if (chosen) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::ColorConvertU32ToFloat4(ui::ACCENT));
-            if (ImGui::ImageButton("##brush", atlas_.texture(), ImVec2(button, button), uv0, uv1)) {
+            if (ImGui::ImageButton("##brush", atlas_.texture(button), ImVec2(button, button), uv0, uv1)) {
                 e.brush = piece;
                 e.erase = false;
             }
@@ -1011,7 +1011,8 @@ void App::drawBoardColumn(float size) {
             ImVec2 uv0, uv1;
             atlas_.uv(chess::Piece(type, stm), uv0, uv1);
             ImGui::PushID(static_cast<int>(type));
-            if (ImGui::ImageButton("##piece", atlas_.texture(), ImVec2(px(44), px(44)), uv0, uv1) && b.promotion) {
+            if (ImGui::ImageButton("##piece", atlas_.texture(px(44)), ImVec2(px(44), px(44)), uv0, uv1) &&
+                b.promotion) {
                 for (const auto& m : movesFrom(board, b.promotion->from())) {
                     if (shownTarget(m) == shownTarget(*b.promotion) && m.typeOf() == chess::Move::PROMOTION &&
                         m.promotionType() == type) {
