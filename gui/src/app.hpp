@@ -17,6 +17,7 @@
 #include <matchmaking/sprt/sprt.hpp>
 #include <matchmaking/stats.hpp>
 
+#include "board_nav.hpp"
 #include "board_page.hpp"
 #include "board_view.hpp"
 #include "book_jobs.hpp"
@@ -255,6 +256,10 @@ class App {
         std::size_t followed   = 0;  // moves shown, to keep the move list scrolled to the end
         int follow_frames      = 0;
         bool last_capture      = false;  // the last move took a piece: its sound (hearMoves)
+        // The position the board shows: the last, unless the user stepped back in the game (reset for each game).
+        FollowedPly nav;
+        std::size_t nav_game = ~std::size_t{0};
+        int listed_ply       = -1;  // nav's ply the move list was last scrolled to
     };
 
     enum class Page { Home, NewMatch, Tournament, Engines, Books, Board, Suites, Ratings, Log, Settings };
@@ -369,6 +374,10 @@ class App {
     void drawLiveGame(SlotView& view, const char* id, unsigned parts, int slot, bool allow_detach = true);
     void drawLiveBoard(SlotView& view, float size);
     void drawLiveBoardFitted(SlotView& view);
+    // The keys through the moves (navKeys) for the game of `view`, the window drawn having the focus.
+    void liveNavKeys(SlotView& view);
+    // The room the buttons take under a live board: none when the setting hides them.
+    [[nodiscard]] float liveNavHeight() const;
     void drawLivePlayer(SlotView& view, chess::Color color, bool search);
     void drawLiveGameLine(SlotView& view, int slot, bool allow_detach);
     void drawLiveMoves(SlotView& view, float height);

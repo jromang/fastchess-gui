@@ -541,6 +541,9 @@ msgstr ""
 msgid "Back to the books"
 msgstr ""
 
+msgid "Back to the current move"
+msgstr ""
+
 msgid "Back to the default"
 msgstr ""
 
@@ -638,6 +641,9 @@ msgid "Board position"
 msgstr ""
 
 msgid "Board {} of {}"
+msgstr ""
+
+msgid "Boards"
 msgstr ""
 
 msgid "Book"
@@ -1474,6 +1480,9 @@ msgstr ""
 msgid "Flip"
 msgstr ""
 
+msgid "Flip the board (F)"
+msgstr ""
+
 msgid "Fold the details"
 msgstr ""
 
@@ -1684,6 +1693,12 @@ msgid "Held by Pause all: no tournament starts until Resume all."
 msgstr ""
 
 msgid "Hide"
+msgstr ""
+
+msgid "Hide the navigation buttons"
+msgstr ""
+
+msgid "Hide the navigation buttons under the boards"
 msgstr ""
 
 msgid "Host"
@@ -1917,6 +1932,9 @@ msgstr ""
 msgid "Last move"
 msgstr ""
 
+msgid "Last move (End)"
+msgstr ""
+
 msgid "Latest results"
 msgstr ""
 
@@ -2114,6 +2132,9 @@ msgstr ""
 msgid "Names of the list that are no library engine"
 msgstr ""
 
+msgid "Navigation buttons under the boards"
+msgstr ""
+
 msgid "Needs action"
 msgstr ""
 
@@ -2127,6 +2148,9 @@ msgid "New tournament"
 msgstr ""
 
 msgid "New tournaments go there, and the lists show the tournaments found there. Tournaments already played are not moved: a tournament is a folder, move it yourself."
+msgstr ""
+
+msgid "Next move (→)"
 msgstr ""
 
 msgid "No PGN file imported."
@@ -2723,6 +2747,9 @@ msgstr ""
 msgid "Press A, or Analyse, for the engine's best moves here."
 msgstr ""
 
+msgid "Previous move (←)"
+msgstr ""
+
 msgid "Probability that H1 is accepted (%)"
 msgstr ""
 
@@ -3193,6 +3220,9 @@ msgstr ""
 msgid "Show it"
 msgstr ""
 
+msgid "Show the navigation buttons under the boards"
+msgstr ""
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr ""
 
@@ -3248,6 +3278,12 @@ msgid "Start at"
 msgstr ""
 
 msgid "Start now"
+msgstr ""
+
+msgid "Start position (Home)"
+msgstr ""
+
+msgid "Start position, previous move, next move, last move and Flip, under the boards that show a game: Games, Live, the detached boards and the Board page. Without them, the keys do the same: the left and right arrows, Home, End, and F to flip."
 msgstr ""
 
 msgid "Start timeout (s)"
@@ -3516,6 +3552,9 @@ msgstr ""
 msgid "The average rating of the opponents met, game by game."
 msgstr ""
 
+msgid "The board follows the game again (End)."
+msgstr ""
+
 msgid "The book cannot be built: {}"
 msgstr ""
 
@@ -3655,6 +3694,9 @@ msgid "The host key of {} changed: {} now, {} before. Someone may be in the way;
 msgstr ""
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
+msgstr ""
+
+msgid "The keys still work. Settings or the command palette shows them again."
 msgstr ""
 
 msgid "The king and the rook are not where it needs them."

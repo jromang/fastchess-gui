@@ -563,6 +563,7 @@ TEST_CASE("a template or a queued setup keeps the program's settings: its look, 
     current.tile_info        = true;
     current.live_seed_side   = false;
     current.live_arrows      = false;
+    current.nav_buttons      = false;
     current.panes["engines"] = 0.3f;
     current.notify           = false;
     current.resume_at_launch = false;
@@ -578,6 +579,7 @@ TEST_CASE("a template or a queued setup keeps the program's settings: its look, 
     CHECK(next.tile_info);
     CHECK_FALSE(next.live_seed_side);
     CHECK_FALSE(next.live_arrows);
+    CHECK_FALSE(next.nav_buttons);
     CHECK(next.panes == current.panes);
     CHECK_FALSE(next.notify);
     CHECK_FALSE(next.resume_at_launch);

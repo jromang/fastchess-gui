@@ -541,6 +541,9 @@ msgstr "Retour"
 msgid "Back to the books"
 msgstr "Revenir aux livres"
 
+msgid "Back to the current move"
+msgstr "Revenir au coup en cours"
+
 msgid "Back to the default"
 msgstr "Revenir au dossier par défaut"
 
@@ -639,6 +642,9 @@ msgstr "Position de l'échiquier"
 
 msgid "Board {} of {}"
 msgstr "Échiquier {} sur {}"
+
+msgid "Boards"
+msgstr "Échiquiers"
 
 msgid "Book"
 msgstr "Livre"
@@ -1474,6 +1480,9 @@ msgstr "Nœuds ou profondeur fixes : une partie par thread (l'Hyper-Threading ne
 msgid "Flip"
 msgstr "Retourner"
 
+msgid "Flip the board (F)"
+msgstr "Retourner l'échiquier (F)"
+
 msgid "Fold the details"
 msgstr "Replier les détails"
 
@@ -1685,6 +1694,12 @@ msgstr "Retenue par Tout mettre en pause : aucun tournoi ne démarre avant Tout 
 
 msgid "Hide"
 msgstr "Masquer"
+
+msgid "Hide the navigation buttons"
+msgstr "Masquer les boutons de navigation"
+
+msgid "Hide the navigation buttons under the boards"
+msgstr "Masquer les boutons de navigation sous les échiquiers"
 
 msgid "Host"
 msgstr "Hôte"
@@ -1917,6 +1932,9 @@ msgstr "Derniers terminés"
 msgid "Last move"
 msgstr "Dernier coup"
 
+msgid "Last move (End)"
+msgstr "Dernier coup (Fin)"
+
 msgid "Latest results"
 msgstr "Derniers résultats"
 
@@ -2114,6 +2132,9 @@ msgstr "Nom : {} → {}"
 msgid "Names of the list that are no library engine"
 msgstr "Noms de la liste qui ne sont pas des moteurs de la bibliothèque"
 
+msgid "Navigation buttons under the boards"
+msgstr "Boutons de navigation sous les échiquiers"
+
 msgid "Needs action"
 msgstr "À traiter"
 
@@ -2128,6 +2149,9 @@ msgstr "Nouveau tournoi"
 
 msgid "New tournaments go there, and the lists show the tournaments found there. Tournaments already played are not moved: a tournament is a folder, move it yourself."
 msgstr "Les nouveaux tournois y sont créés, et les listes montrent les tournois qui s'y trouvent. Les tournois déjà joués ne sont pas déplacés : un tournoi est un dossier, déplace-le toi-même."
+
+msgid "Next move (→)"
+msgstr "Coup suivant (→)"
 
 msgid "No PGN file imported."
 msgstr "Aucun fichier PGN importé."
@@ -2723,6 +2747,9 @@ msgstr "Préparation du livre… {} %"
 msgid "Press A, or Analyse, for the engine's best moves here."
 msgstr "Appuie sur A, ou Analyser, pour les meilleurs coups du moteur ici."
 
+msgid "Previous move (←)"
+msgstr "Coup précédent (←)"
+
 msgid "Probability that H1 is accepted (%)"
 msgstr "Probabilité qu'H1 soit acceptée (%)"
 
@@ -3193,6 +3220,9 @@ msgstr "Part des parties nulles."
 msgid "Show it"
 msgstr "L'afficher"
 
+msgid "Show the navigation buttons under the boards"
+msgstr "Afficher les boutons de navigation sous les échiquiers"
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "Afficher cette partie dans son propre panneau, que l'on peut ancrer à côté des autres ou déplacer sur un autre écran."
 
@@ -3249,6 +3279,12 @@ msgstr "Commencer à"
 
 msgid "Start now"
 msgstr "Lancer maintenant"
+
+msgid "Start position (Home)"
+msgstr "Position de départ (Début)"
+
+msgid "Start position, previous move, next move, last move and Flip, under the boards that show a game: Games, Live, the detached boards and the Board page. Without them, the keys do the same: the left and right arrows, Home, End, and F to flip."
+msgstr "Position de départ, coup précédent, coup suivant, dernier coup et Retourner, sous les échiquiers qui montrent une partie : Parties, Direct, les échiquiers détachés et la page Échiquier. Sans eux, les touches font de même : les flèches gauche et droite, Début, Fin, et F pour retourner."
 
 msgid "Start timeout (s)"
 msgstr "Délai de démarrage (s)"
@@ -3516,6 +3552,9 @@ msgstr "Les touches fléchées aussi."
 msgid "The average rating of the opponents met, game by game."
 msgstr "Le classement moyen des adversaires rencontrés, partie par partie."
 
+msgid "The board follows the game again (End)."
+msgstr "L'échiquier suit de nouveau la partie (Fin)."
+
 msgid "The book cannot be built: {}"
 msgstr "Le livre ne peut pas être construit : {}"
 
@@ -3656,6 +3695,9 @@ msgstr "La clé d'hôte de {} a changé : {} maintenant, {} avant. Quelqu'un est
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "La clé d'hôte de {} n'est pas celle attendue ({} au lieu de {}) : quelqu'un est peut-être au milieu. Rien n'a été envoyé."
+
+msgid "The keys still work. Settings or the command palette shows them again."
+msgstr "Les touches marchent toujours. Les réglages ou la palette de commandes les réaffichent."
 
 msgid "The king and the rook are not where it needs them."
 msgstr "Le roi et la tour ne sont pas là où il les faut."

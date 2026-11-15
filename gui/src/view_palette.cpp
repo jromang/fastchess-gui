@@ -442,6 +442,12 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
                                   {{TR("Pictures (PNG, JPEG, SVG)"), "png;jpg;jpeg;svg"}, {TR("All files"), "*"}});
             });
     }
+    add(setup_.nav_buttons ? TR("Hide the navigation buttons under the boards")
+                           : TR("Show the navigation buttons under the boards"),
+        TR("Settings"), [this] {
+            setup_.nav_buttons = !setup_.nav_buttons;
+            saveSetupSoon();
+        });
 
     // The tournaments of the home page: one opens as its Open button does.
     for (const auto& s : tournaments_) {

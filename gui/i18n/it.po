@@ -541,6 +541,9 @@ msgstr "Indietro"
 msgid "Back to the books"
 msgstr "Torna ai libri"
 
+msgid "Back to the current move"
+msgstr "Torna alla mossa attuale"
+
 msgid "Back to the default"
 msgstr "Torna alla cartella predefinita"
 
@@ -639,6 +642,9 @@ msgstr "Posizione della scacchiera"
 
 msgid "Board {} of {}"
 msgstr "Scacchiera {} di {}"
+
+msgid "Boards"
+msgstr "Scacchiere"
 
 msgid "Book"
 msgstr "Libro"
@@ -1474,6 +1480,9 @@ msgstr "Nodi o profondità fissi: una partita per thread hardware (l'Hyper-Threa
 msgid "Flip"
 msgstr "Ruota"
 
+msgid "Flip the board (F)"
+msgstr "Ruota la scacchiera (F)"
+
 msgid "Fold the details"
 msgstr "Chiudi i dettagli"
 
@@ -1685,6 +1694,12 @@ msgstr "Trattenuta da Metti tutto in pausa: nessun torneo parte prima di Riprend
 
 msgid "Hide"
 msgstr "Nascondi"
+
+msgid "Hide the navigation buttons"
+msgstr "Nascondi i pulsanti di navigazione"
+
+msgid "Hide the navigation buttons under the boards"
+msgstr "Nascondi i pulsanti di navigazione sotto le scacchiere"
 
 msgid "Host"
 msgstr "Host"
@@ -1917,6 +1932,9 @@ msgstr "Ultimi terminati"
 msgid "Last move"
 msgstr "Ultima mossa"
 
+msgid "Last move (End)"
+msgstr "Ultima mossa (Fine)"
+
 msgid "Latest results"
 msgstr "Ultimi risultati"
 
@@ -2114,6 +2132,9 @@ msgstr "Nome: {} → {}"
 msgid "Names of the list that are no library engine"
 msgstr "Nomi della lista che non sono motori della libreria"
 
+msgid "Navigation buttons under the boards"
+msgstr "Pulsanti di navigazione sotto le scacchiere"
+
 msgid "Needs action"
 msgstr "Da sistemare"
 
@@ -2128,6 +2149,9 @@ msgstr "Nuovo torneo"
 
 msgid "New tournaments go there, and the lists show the tournaments found there. Tournaments already played are not moved: a tournament is a folder, move it yourself."
 msgstr "I nuovi tornei vanno lì, e le liste mostrano i tornei che vi si trovano. I tornei già giocati non vengono spostati: un torneo è una cartella, spostala tu."
+
+msgid "Next move (→)"
+msgstr "Mossa successiva (→)"
 
 msgid "No PGN file imported."
 msgstr "Nessun file PGN importato."
@@ -2723,6 +2747,9 @@ msgstr "Preparazione del libro… {} %"
 msgid "Press A, or Analyse, for the engine's best moves here."
 msgstr "Premi A, o Analizza, per le mosse migliori del motore qui."
 
+msgid "Previous move (←)"
+msgstr "Mossa precedente (←)"
+
 msgid "Probability that H1 is accepted (%)"
 msgstr "Probabilità che H1 venga accettata (%)"
 
@@ -3193,6 +3220,9 @@ msgstr "Percentuale di partite patte."
 msgid "Show it"
 msgstr "Mostrala"
 
+msgid "Show the navigation buttons under the boards"
+msgstr "Mostra i pulsanti di navigazione sotto le scacchiere"
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "Mostra questa partita in un pannello proprio, che si può agganciare accanto agli altri o spostare su un altro schermo."
 
@@ -3249,6 +3279,12 @@ msgstr "Inizia da"
 
 msgid "Start now"
 msgstr "Avvia ora"
+
+msgid "Start position (Home)"
+msgstr "Posizione iniziale (Inizio)"
+
+msgid "Start position, previous move, next move, last move and Flip, under the boards that show a game: Games, Live, the detached boards and the Board page. Without them, the keys do the same: the left and right arrows, Home, End, and F to flip."
+msgstr "Posizione iniziale, mossa precedente, mossa successiva, ultima mossa e Ruota, sotto le scacchiere che mostrano una partita: Partite, Diretta, le scacchiere staccate e la pagina Scacchiera. Senza di essi, i tasti fanno lo stesso: le frecce sinistra e destra, Inizio, Fine, e F per ruotare."
 
 msgid "Start timeout (s)"
 msgstr "Timeout di avvio (s)"
@@ -3516,6 +3552,9 @@ msgstr "Anche con i tasti freccia."
 msgid "The average rating of the opponents met, game by game."
 msgstr "Il rating medio degli avversari incontrati, partita per partita."
 
+msgid "The board follows the game again (End)."
+msgstr "La scacchiera segue di nuovo la partita (Fine)."
+
 msgid "The book cannot be built: {}"
 msgstr "Il libro non può essere costruito: {}"
 
@@ -3656,6 +3695,9 @@ msgstr "La chiave host di {} è cambiata: {} ora, {} prima. Qualcuno potrebbe es
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "La chiave host di {} non è quella attesa ({} invece di {}): qualcuno potrebbe essere in mezzo. Non è stato inviato nulla."
+
+msgid "The keys still work. Settings or the command palette shows them again."
+msgstr "I tasti funzionano ancora. Le impostazioni o la tavolozza dei comandi li mostrano di nuovo."
 
 msgid "The king and the rook are not where it needs them."
 msgstr "Il re e la torre non sono dove servono."

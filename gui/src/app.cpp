@@ -352,6 +352,14 @@ void App::frame() {
             page_        = Page::Tournament;
             tab_request_ = Tab::Games;
             openSubmissionExport();
+        } else if (w.rfind("live-back=", 0) == 0) {  // live-back=N: the game followed stepped back N plies
+            page_        = Page::Tournament;
+            tab_request_ = Tab::Live;
+            if (live_slot_ >= 0 && live_slot_ < static_cast<int>(slot_views_.size())) {
+                auto& v         = slot_views_[static_cast<std::size_t>(live_slot_)];
+                const int total = static_cast<int>(v.state.moves.size());
+                v.nav.show(total - std::atoi(w.c_str() + 10), total);
+            }
         } else if (w.rfind("games-", 0) == 0 || w.rfind("live-", 0) == 0) {
             // The tab with a chart under the game: games-time, live-agreement...
             const auto chart                     = w.substr(w.find('-') + 1);

@@ -541,6 +541,9 @@ msgstr "Zurück"
 msgid "Back to the books"
 msgstr "Zurück zu den Büchern"
 
+msgid "Back to the current move"
+msgstr "Zurück zum aktuellen Zug"
+
 msgid "Back to the default"
 msgstr "Zurück zum Standardordner"
 
@@ -639,6 +642,9 @@ msgstr "Stellung des Bretts"
 
 msgid "Board {} of {}"
 msgstr "Brett {} von {}"
+
+msgid "Boards"
+msgstr "Bretter"
 
 msgid "Book"
 msgstr "Buch"
@@ -1474,6 +1480,9 @@ msgstr "Feste Knotenzahl oder Tiefe: eine Partie pro Hardware-Thread (Hyper-Thre
 msgid "Flip"
 msgstr "Drehen"
 
+msgid "Flip the board (F)"
+msgstr "Brett drehen (F)"
+
 msgid "Fold the details"
 msgstr "Details einklappen"
 
@@ -1685,6 +1694,12 @@ msgstr "Angehalten durch Alles pausieren: kein Turnier startet vor Alles fortset
 
 msgid "Hide"
 msgstr "Ausblenden"
+
+msgid "Hide the navigation buttons"
+msgstr "Navigationsknöpfe ausblenden"
+
+msgid "Hide the navigation buttons under the boards"
+msgstr "Navigationsknöpfe unter den Brettern ausblenden"
 
 msgid "Host"
 msgstr "Host"
@@ -1917,6 +1932,9 @@ msgstr "Zuletzt beendet"
 msgid "Last move"
 msgstr "Letzter Zug"
 
+msgid "Last move (End)"
+msgstr "Letzter Zug (Ende)"
+
 msgid "Latest results"
 msgstr "Letzte Ergebnisse"
 
@@ -2114,6 +2132,9 @@ msgstr "Name: {} → {}"
 msgid "Names of the list that are no library engine"
 msgstr "Namen der Liste, die keine Engine der Bibliothek sind"
 
+msgid "Navigation buttons under the boards"
+msgstr "Navigationsknöpfe unter den Brettern"
+
 msgid "Needs action"
 msgstr "Zu erledigen"
 
@@ -2128,6 +2149,9 @@ msgstr "Neues Turnier"
 
 msgid "New tournaments go there, and the lists show the tournaments found there. Tournaments already played are not moved: a tournament is a folder, move it yourself."
 msgstr "Neue Turniere werden dort angelegt, und die Listen zeigen die dort gefundenen Turniere. Bereits gespielte Turniere werden nicht verschoben: ein Turnier ist ein Ordner, verschiebe ihn selbst."
+
+msgid "Next move (→)"
+msgstr "Nächster Zug (→)"
 
 msgid "No PGN file imported."
 msgstr "Keine PGN-Datei importiert."
@@ -2723,6 +2747,9 @@ msgstr "Buch wird vorbereitet… {} %"
 msgid "Press A, or Analyse, for the engine's best moves here."
 msgstr "Drücke A oder Analysieren für die besten Züge der Engine hier."
 
+msgid "Previous move (←)"
+msgstr "Vorheriger Zug (←)"
+
 msgid "Probability that H1 is accepted (%)"
 msgstr "Wahrscheinlichkeit, dass H1 angenommen wird (%)"
 
@@ -3193,6 +3220,9 @@ msgstr "Anteil der Remispartien."
 msgid "Show it"
 msgstr "Anzeigen"
 
+msgid "Show the navigation buttons under the boards"
+msgstr "Navigationsknöpfe unter den Brettern anzeigen"
+
 msgid "Show this game in a panel of its own, which can be docked beside the others or moved to another screen."
 msgstr "Diese Partie in einem eigenen Bereich zeigen, der neben den anderen angedockt oder auf einen anderen Bildschirm verschoben werden kann."
 
@@ -3249,6 +3279,12 @@ msgstr "Beginnen bei"
 
 msgid "Start now"
 msgstr "Jetzt starten"
+
+msgid "Start position (Home)"
+msgstr "Ausgangsstellung (Pos1)"
+
+msgid "Start position, previous move, next move, last move and Flip, under the boards that show a game: Games, Live, the detached boards and the Board page. Without them, the keys do the same: the left and right arrows, Home, End, and F to flip."
+msgstr "Ausgangsstellung, vorheriger Zug, nächster Zug, letzter Zug und Drehen, unter den Brettern, die eine Partie zeigen: Partien, Live, die abgetrennten Bretter und die Seite Brett. Ohne sie tun die Tasten dasselbe: die Pfeiltasten links und rechts, Pos1, Ende und F zum Drehen."
 
 msgid "Start timeout (s)"
 msgstr "Start-Timeout (s)"
@@ -3516,6 +3552,9 @@ msgstr "Auch mit den Pfeiltasten."
 msgid "The average rating of the opponents met, game by game."
 msgstr "Die durchschnittliche Wertung der Gegner, Partie für Partie."
 
+msgid "The board follows the game again (End)."
+msgstr "Das Brett folgt wieder der Partie (Ende)."
+
 msgid "The book cannot be built: {}"
 msgstr "Das Buch kann nicht erstellt werden: {}"
 
@@ -3656,6 +3695,9 @@ msgstr "Der Host-Schlüssel von {} hat sich geändert: jetzt {}, vorher {}. Jema
 
 msgid "The host key of {} is not the one expected ({}, instead of {}): someone may be in the way. Nothing was sent."
 msgstr "Der Host-Schlüssel von {} ist nicht der erwartete ({} statt {}): Jemand könnte dazwischen sein. Es wurde nichts gesendet."
+
+msgid "The keys still work. Settings or the command palette shows them again."
+msgstr "Die Tasten funktionieren weiter. Die Einstellungen oder die Befehlspalette zeigen sie wieder an."
 
 msgid "The king and the rook are not where it needs them."
 msgstr "König und Turm stehen nicht dort, wo sie dafür stehen müssen."
