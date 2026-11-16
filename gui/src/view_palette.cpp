@@ -15,6 +15,7 @@
 #include "layout.hpp"
 #include "palette.hpp"
 #include "participants.hpp"
+#include "review_stats.hpp"
 #include "setup_checks.hpp"
 #include "ui.hpp"
 
@@ -444,6 +445,37 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     }
     add(TR("Copy PGN"), TR("Board"),
         [this] { ImGui::SetClipboardText(gamePgn(board_.tree, board_.chess960).c_str()); });
+    add(board_.threat_on ? TR("Hide the threat") : TR("Show the threat"), TR("Board"), [this] {
+        page_ = Page::Board;
+        setBoardThreat(!board_.threat_on);
+    });
+    if (!board_.reviews.empty()) {
+        add(TR("Next marked move"), TR("Board"), [this] {
+            page_ = Page::Board;
+            if (const int to = judgedPly(1); to >= 0) showBoardLine(-1, to);
+        });
+        add(TR("Previous marked move"), TR("Board"), [this] {
+            page_ = Page::Board;
+            if (const int to = judgedPly(-1); to >= 0) showBoardLine(-1, to);
+        });
+        add(TR("Copy PGN with the analysis"), TR("Board"), [this] {
+            ImGui::SetClipboardText(
+                pgnWithAnalysis(board_.tree, board_.chess960, board_.reviews.front(), board_.judged).c_str());
+        });
+    }
+    add(TR("The game's review"), TR("Board"), [this] {
+        page_           = Page::Board;
+        board_.open_tab = 3;
+    });
+    add(appearance::current().figurines ? TR("Letters in the notation") : TR("Figurines in the notation"), TR("Board"),
+        [this] {
+            auto s      = appearance::current();
+            s.figurines = !s.figurines;
+            applyAppearance(s);
+        });
+    if (board_.line >= 0) {
+        add(TR("Back to the game"), TR("Board"), [this] { showBoardLine(-1, boardMainPly()); });
+    }
     if (live_slot_ >= 0 && live_slot_ < static_cast<int>(slot_views_.size()) &&
         slot_views_[static_cast<std::size_t>(live_slot_)].state.has_game) {
         add(TR("Analyse the game followed"), name, [this] { analyseLiveGame(live_slot_); });

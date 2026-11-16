@@ -2215,6 +2215,9 @@ msgstr "Ocultar los botones de navegación"
 msgid "Hide the navigation buttons under the boards"
 msgstr "Ocultar los botones de navegación bajo los tableros"
 
+msgid "Hide the threat"
+msgstr "Ocultar la amenaza"
+
 msgid "High key"
 msgstr "Clave alta"
 
@@ -2560,6 +2563,9 @@ msgstr "Salir de la pantalla grande"
 msgid "Letter case and spaces aside."
 msgstr "Sin contar mayúsculas ni espacios."
 
+msgid "Letters in the notation"
+msgstr "Letras en la notación"
+
 msgid "Library"
 msgstr "Biblioteca"
 
@@ -2807,6 +2813,9 @@ msgstr "Los torneos nuevos van ahí, y las listas muestran los torneos que hay a
 
 msgid "New tournaments go to {} again."
 msgstr "Los nuevos torneos vuelven a ir a {}."
+
+msgid "Next marked move"
+msgstr "Siguiente jugada marcada"
 
 msgid "Next move (→)"
 msgstr "Jugada siguiente (→)"
@@ -3495,6 +3504,9 @@ msgstr "Preparando el libro… {} %"
 msgid "Press A, or Analyse, for the engine's best moves here."
 msgstr "Pulsa A, o Analizar, para ver aquí las mejores jugadas del motor."
 
+msgid "Previous marked move"
+msgstr "Jugada marcada anterior"
+
 msgid "Previous move (←)"
 msgstr "Jugada anterior (←)"
 
@@ -4093,6 +4105,9 @@ msgstr "Mostrar el gráfico"
 
 msgid "Show the navigation buttons under the boards"
 msgstr "Mostrar los botones de navegación bajo los tableros"
+
+msgid "Show the threat"
+msgstr "Mostrar la amenaza"
 
 msgid "Show the unbalanced openings"
 msgstr "Mostrar las aperturas desequilibradas"
@@ -4712,6 +4727,9 @@ msgstr "La partida seguida llenando la ventana, en letra grande, para una televi
 
 msgid "The game's position this variation leaves it at; the variation stays in the moves."
 msgstr "La posición de la partida de la que sale esta variante; la variante sigue en las jugadas."
+
+msgid "The game's review"
+msgstr "La revisión de la partida"
 
 msgid "The game, with its tags, moves and variations, as PGN."
 msgstr "La partida, con sus etiquetas, jugadas y variantes, en PGN."

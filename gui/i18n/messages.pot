@@ -2215,6 +2215,9 @@ msgstr ""
 msgid "Hide the navigation buttons under the boards"
 msgstr ""
 
+msgid "Hide the threat"
+msgstr ""
+
 msgid "High key"
 msgstr ""
 
@@ -2560,6 +2563,9 @@ msgstr ""
 msgid "Letter case and spaces aside."
 msgstr ""
 
+msgid "Letters in the notation"
+msgstr ""
+
 msgid "Library"
 msgstr ""
 
@@ -2806,6 +2812,9 @@ msgid "New tournaments go there, and the lists show the tournaments found there.
 msgstr ""
 
 msgid "New tournaments go to {} again."
+msgstr ""
+
+msgid "Next marked move"
 msgstr ""
 
 msgid "Next move (→)"
@@ -3495,6 +3504,9 @@ msgstr ""
 msgid "Press A, or Analyse, for the engine's best moves here."
 msgstr ""
 
+msgid "Previous marked move"
+msgstr ""
+
 msgid "Previous move (←)"
 msgstr ""
 
@@ -4092,6 +4104,9 @@ msgid "Show the graph"
 msgstr ""
 
 msgid "Show the navigation buttons under the boards"
+msgstr ""
+
+msgid "Show the threat"
 msgstr ""
 
 msgid "Show the unbalanced openings"
@@ -4711,6 +4726,9 @@ msgid "The game followed filling the window, in large type, for a television, a 
 msgstr ""
 
 msgid "The game's position this variation leaves it at; the variation stays in the moves."
+msgstr ""
+
+msgid "The game's review"
 msgstr ""
 
 msgid "The game, with its tags, moves and variations, as PGN."

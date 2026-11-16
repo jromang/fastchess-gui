@@ -2222,6 +2222,9 @@ msgstr "Скрыть кнопки навигации"
 msgid "Hide the navigation buttons under the boards"
 msgstr "Скрыть кнопки навигации под досками"
 
+msgid "Hide the threat"
+msgstr "Скрыть угрозу"
+
 msgid "High key"
 msgstr "Высокий ключ"
 
@@ -2567,6 +2570,9 @@ msgstr "Выйти из большого экрана"
 msgid "Letter case and spaces aside."
 msgstr "Без учёта регистра и пробелов."
 
+msgid "Letters in the notation"
+msgstr "Буквы в нотации"
+
 msgid "Library"
 msgstr "Библиотека"
 
@@ -2815,6 +2821,9 @@ msgstr "Новые турниры создаются там, а списки п�
 
 msgid "New tournaments go to {} again."
 msgstr "Новые турниры снова будут сохраняться в {}."
+
+msgid "Next marked move"
+msgstr "Следующий отмеченный ход"
 
 msgid "Next move (→)"
 msgstr "Следующий ход (→)"
@@ -3506,6 +3515,9 @@ msgstr "Подготовка книги… {} %"
 msgid "Press A, or Analyse, for the engine's best moves here."
 msgstr "Нажмите A или «Анализировать», чтобы увидеть лучшие ходы движка."
 
+msgid "Previous marked move"
+msgstr "Предыдущий отмеченный ход"
+
 msgid "Previous move (←)"
 msgstr "Предыдущий ход (←)"
 
@@ -4108,6 +4120,9 @@ msgstr "Показать график"
 
 msgid "Show the navigation buttons under the boards"
 msgstr "Показать кнопки навигации под досками"
+
+msgid "Show the threat"
+msgstr "Показать угрозу"
 
 msgid "Show the unbalanced openings"
 msgstr "Показать неравные дебюты"
@@ -4735,6 +4750,9 @@ msgstr "Отслеживаемая партия на всё окно крупн�
 
 msgid "The game's position this variation leaves it at; the variation stays in the moves."
 msgstr "Позиция партии, от которой отходит этот вариант; вариант остаётся в ходах."
+
+msgid "The game's review"
+msgstr "Разбор партии"
 
 msgid "The game, with its tags, moves and variations, as PGN."
 msgstr "Партия с тегами, ходами и вариантами в формате PGN."

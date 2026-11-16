@@ -2208,6 +2208,9 @@ msgstr "隐藏导航按钮"
 msgid "Hide the navigation buttons under the boards"
 msgstr "隐藏棋盘下方的导航按钮"
 
+msgid "Hide the threat"
+msgstr "隐藏威胁"
+
 msgid "High key"
 msgstr "高调"
 
@@ -2553,6 +2556,9 @@ msgstr "退出大屏幕"
 msgid "Letter case and spaces aside."
 msgstr "不计大小写和空格。"
 
+msgid "Letters in the notation"
+msgstr "棋谱中使用字母"
+
 msgid "Library"
 msgstr "引擎库"
 
@@ -2799,6 +2805,9 @@ msgstr "新锦标赛将建在这里，列表显示在这里找到的锦标赛。
 
 msgid "New tournaments go to {} again."
 msgstr "新锦标赛将重新保存到 {}。"
+
+msgid "Next marked move"
+msgstr "下一个标记着法"
 
 msgid "Next move (→)"
 msgstr "下一步 (→)"
@@ -3484,6 +3493,9 @@ msgstr "正在准备开局库… {} %"
 msgid "Press A, or Analyse, for the engine's best moves here."
 msgstr "按 A 或“分析”，在此查看引擎的最佳着法。"
 
+msgid "Previous marked move"
+msgstr "上一个标记着法"
+
 msgid "Previous move (←)"
 msgstr "上一步 (←)"
 
@@ -4078,6 +4090,9 @@ msgstr "显示图表"
 
 msgid "Show the navigation buttons under the boards"
 msgstr "显示棋盘下方的导航按钮"
+
+msgid "Show the threat"
+msgstr "显示威胁"
 
 msgid "Show the unbalanced openings"
 msgstr "显示失衡的开局"
@@ -4689,6 +4704,9 @@ msgstr "所关注的对局占满窗口，大字显示，用于电视、俱乐部
 
 msgid "The game's position this variation leaves it at; the variation stays in the moves."
 msgstr "回到此变化分出时的对局局面；变化仍保留在着法中。"
+
+msgid "The game's review"
+msgstr "这盘棋的复盘"
 
 msgid "The game, with its tags, moves and variations, as PGN."
 msgstr "这盘棋的 PGN，包括标签、着法和变化。"
