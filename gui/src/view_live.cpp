@@ -18,101 +18,6 @@
 
 namespace fcg {
 
-int plotEval(const char* id, const std::vector<float>& evals, int marker_ply, float height) {
-    int clicked = -1;
-
-    constexpr ImPlotFlags flags = ImPlotFlags_NoTitle | ImPlotFlags_NoLegend | ImPlotFlags_NoMenus |
-                                  ImPlotFlags_NoBoxSelect | ImPlotFlags_NoMouseText;
-
-    if (ImPlot::BeginPlot(id, ImVec2(-1, height), flags)) {
-        const double n = std::max<double>(20, static_cast<double>(evals.size()));
-        ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_NoGridLines,
-                          ImPlotAxisFlags_NoGridLines);
-        ImPlot::SetupAxisLimits(ImAxis_X1, 0, n, ImPlotCond_Always);
-        ImPlot::SetupAxisLimits(ImAxis_Y1, -8.5, 8.5, ImPlotCond_Always);
-        ImPlot::SetupAxisTicks(ImAxis_Y1, -8, 8, 5);
-
-        if (!evals.empty()) {
-            std::vector<float> xs(evals.size());
-            for (std::size_t i = 0; i < xs.size(); ++i) xs[i] = static_cast<float>(i + 1);
-
-            ImPlotSpec area;
-            area.FillColor = ImVec4(0.85f, 0.85f, 0.85f, 0.25f);
-            ImPlot::PlotShaded("##area", xs.data(), evals.data(), static_cast<int>(evals.size()), 0.0, area);
-
-            ImPlotSpec line;
-            line.LineColor  = ImVec4(0.43f, 0.66f, 0.87f, 1.0f);
-            line.LineWeight = 1.5f;
-            ImPlot::PlotLine("##eval", xs.data(), evals.data(), static_cast<int>(evals.size()), line);
-        }
-
-        const double zero = 0;
-        ImPlotSpec zero_spec;
-        zero_spec.LineColor = ImVec4(0.5f, 0.5f, 0.5f, 0.6f);
-        zero_spec.Flags     = ImPlotInfLinesFlags_Horizontal;
-        ImPlot::PlotInfLines("##zero", &zero, 1, zero_spec);
-
-        if (marker_ply > 0) {
-            const double x = marker_ply;
-            ImPlotSpec marker;
-            marker.LineColor = ImVec4(0.95f, 0.75f, 0.3f, 0.8f);
-            ImPlot::PlotInfLines("##marker", &x, 1, marker);
-        }
-
-        if (ImPlot::IsPlotHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-            const auto mouse = ImPlot::GetPlotMousePos();
-            clicked          = static_cast<int>(std::lround(mouse.x));
-        }
-
-        ImPlot::EndPlot();
-    }
-
-    return clicked;
-}
-
-int plotWdl(const char* id, const WdlSeries& wdl, std::size_t plies, int marker_ply, float height) {
-    int clicked                 = -1;
-    constexpr ImPlotFlags flags = ImPlotFlags_NoTitle | ImPlotFlags_NoLegend | ImPlotFlags_NoMenus |
-                                  ImPlotFlags_NoBoxSelect | ImPlotFlags_NoMouseText;
-
-    if (ImPlot::BeginPlot(id, ImVec2(-1, height), flags)) {
-        ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_NoGridLines,
-                          ImPlotAxisFlags_NoGridLines | ImPlotAxisFlags_NoTickLabels);
-        ImPlot::SetupAxisLimits(ImAxis_X1, 0, std::max<double>(20, static_cast<double>(plies)), ImPlotCond_Always);
-        ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 1, ImPlotCond_Always);
-
-        const int n = static_cast<int>(wdl.ply.size());
-        std::vector<float> zero(wdl.ply.size(), 0.0f), one(wdl.ply.size(), 1.0f);
-        ImPlotSpec band;
-        band.FillColor = ImVec4(0.97f, 0.97f, 0.97f, 1.0f);
-        ImPlot::PlotShaded("##win", wdl.ply.data(), zero.data(), wdl.win.data(), n, band);
-        band.FillColor = ImVec4(0.74f, 0.74f, 0.74f, 1.0f);
-        ImPlot::PlotShaded("##draw", wdl.ply.data(), wdl.win.data(), wdl.not_lost.data(), n, band);
-        band.FillColor = ImVec4(0.32f, 0.32f, 0.32f, 1.0f);
-        ImPlot::PlotShaded("##loss", wdl.ply.data(), wdl.not_lost.data(), one.data(), n, band);
-
-        if (marker_ply > 0) {
-            const double x = marker_ply;
-            ImPlotSpec marker;
-            marker.LineColor = ImVec4(0.95f, 0.75f, 0.3f, 0.8f);
-            ImPlot::PlotInfLines("##marker", &x, 1, marker);
-        }
-        if (ImPlot::IsPlotHovered()) {
-            const auto mouse = ImPlot::GetPlotMousePos();
-            const auto it    = std::lower_bound(wdl.ply.begin(), wdl.ply.end(), static_cast<float>(mouse.x));
-            if (it != wdl.ply.end()) {
-                const auto k = static_cast<std::size_t>(it - wdl.ply.begin());
-                ImGui::SetTooltip("%s", trf("White {:.0f} % · draw {:.0f} % · Black {:.0f} %", 100 * wdl.win[k],
-                                            100 * (wdl.not_lost[k] - wdl.win[k]), 100 * (1 - wdl.not_lost[k]))
-                                            .c_str());
-            }
-            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) clicked = static_cast<int>(std::lround(mouse.x));
-        }
-        ImPlot::EndPlot();
-    }
-    return clicked;
-}
-
 int pvAgreement(const std::string& previous_pv, const std::string& pv) {
     // The previous PV starts with the opponent's move: what it expected next is from its second move on.
     std::istringstream expected(previous_pv), actual(pv);
@@ -174,88 +79,6 @@ std::string missingPgnFieldTip(uint8_t field, std::optional<bool> on) {
             pgnFieldOption(field));
     }
     return trf("Written when \"{}\" is on in the PGN options of the setup.", pgnFieldOption(field));
-}
-
-bool moveChartChoice(const char* id, MoveChart& chart) {
-    const char* names[] = {TR("Evaluation"), TR("Time"),    TR("Depth"),       TR("Nodes"),
-                           TR("Speed"),      TR("TB hits"), TR("PV agreement")};
-    int choice          = static_cast<int>(chart);
-    ImGui::SetNextItemWidth(ImGui::CalcTextSize(TR("PV agreement")).x + ImGui::GetFrameHeight() * 2);
-    const bool chosen = ImGui::Combo(id, &choice, names, IM_ARRAYSIZE(names));
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", TR("What the chart shows, move by move. Time: with the decision time. Depth: with the "
-                                   "seldepth. PV agreement: how many plies of an engine's PV repeat what the other "
-                                   "engine's PV predicted."));
-    }
-    if (!chosen) return false;
-    chart = static_cast<MoveChart>(choice);
-    return true;
-}
-
-int plotMoves(const char* id, MoveChart chart, const MoveSeries& series, const std::array<std::string, 2>& names,
-              std::size_t plies, int marker_ply, float height, const char* empty) {
-    int clicked = -1;
-    if (series.empty()) {
-        ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
-        ImGui::TextWrapped("%s", empty);
-        ImGui::PopStyleColor();
-        return clicked;
-    }
-
-    constexpr ImPlotFlags flags = ImPlotFlags_NoTitle | ImPlotFlags_NoMenus | ImPlotFlags_NoBoxSelect;
-    if (ImPlot::BeginPlot(id, ImVec2(-1, height), flags)) {
-        ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_NoGridLines,
-                          ImPlotAxisFlags_AutoFit);
-        ImPlot::SetupAxisLimits(ImAxis_X1, 0, std::max<double>(20, static_cast<double>(plies)), ImPlotCond_Always);
-        ImPlot::SetupLegend(ImPlotLocation_NorthWest, ImPlotLegendFlags_Horizontal);
-        if (chart == MoveChart::Nodes || chart == MoveChart::Speed || chart == MoveChart::TbHits) {
-            ImPlot::SetupAxisFormat(ImAxis_Y1, [](double v, char* buf, int size, void*) {
-                return std::snprintf(buf, static_cast<std::size_t>(size), "%s",
-                                     ui::formatCount(static_cast<uint64_t>(std::max(0.0, v))).c_str());
-            });
-        }
-
-        // White's engine light blue, Black's orange; the extra values thinner, with the same colour.
-        const ImVec4 colours[2] = {ImVec4(0.43f, 0.66f, 0.87f, 1.0f), ImVec4(0.93f, 0.6f, 0.3f, 1.0f)};
-        for (int side = 0; side < 2; ++side) {
-            const auto& xs = series.ply[side];
-            const int n    = static_cast<int>(xs.size());
-            if (n == 0) continue;
-            const auto label = names[side] + "##" + std::to_string(side);
-            ImPlotSpec spec;
-            spec.LineColor  = colours[side];
-            spec.FillColor  = colours[side];
-            spec.LineWeight = 1.5f;
-            if (chart == MoveChart::Agreement) {
-                spec.FillAlpha = 0.8f;
-                ImPlot::PlotBars(label.c_str(), xs.data(), series.value[side].data(), n, 0.8, spec);
-            } else {
-                ImPlot::PlotLine(label.c_str(), xs.data(), series.value[side].data(), n, spec);
-            }
-            if (std::any_of(series.extra[side].begin(), series.extra[side].end(),
-                            [](float v) { return std::isfinite(v); })) {
-                ImPlotSpec extra  = spec;
-                extra.LineWeight  = 1.0f;
-                extra.LineColor.w = 0.55f;
-                const auto extra_label =
-                    (chart == MoveChart::Time ? trf("{}: decision", names[side]) : trf("{}: seldepth", names[side])) +
-                    "##x" + std::to_string(side);
-                ImPlot::PlotLine(extra_label.c_str(), xs.data(), series.extra[side].data(), n, extra);
-            }
-        }
-
-        if (marker_ply > 0) {
-            const double x = marker_ply;
-            ImPlotSpec marker;
-            marker.LineColor = ImVec4(0.95f, 0.75f, 0.3f, 0.8f);
-            ImPlot::PlotInfLines("##marker", &x, 1, marker);
-        }
-        if (ImPlot::IsPlotHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-            clicked = static_cast<int>(std::lround(ImPlot::GetPlotMousePos().x));
-        }
-        ImPlot::EndPlot();
-    }
-    return clicked;
 }
 
 void wdlLine(const std::array<int64_t, 3>& wdl) {
@@ -979,40 +802,22 @@ void App::drawLiveMoves(SlotView& view, float height) {
     ImGui::EndChild();
 }
 
-// The chart chosen under its menu, filling the room left.
+// The game graph, filling the room left.
 void App::drawLiveChart(SlotView& view) {
     const auto& st = view.state;
-    std::vector<float> evals;
-    evals.reserve(st.moves.size());
-    float previous = 0.0f;
-    for (const auto& m : st.moves) {
-        const float v = m.book ? std::nanf("") : ui::whitePawns(m.score, m.mover);
-        if (std::isfinite(v)) previous = v;
-        evals.push_back(previous);
-    }
-    moveChartChoice("##live_chart", live_chart_);
+    const auto game     = replayOfSlot(st);
+    const int total     = static_cast<int>(st.moves.size());
+    const auto* t       = run_->tournament();
+    const bool chess960 = t && t->spec().conditions.variant == fastchess::VariantType::FRC;
+    const auto graph    = buildGameGraph(game, chess960, live_graph_.chart, {}, {});
+    GraphDraw draw;
     // The position shown marked when the board stepped back; a click shows another.
-    const int total    = static_cast<int>(st.moves.size());
-    const int marker   = view.nav.held(total) ? view.nav.shown(total) : -1;
-    const float height = std::max(60.0f, ImGui::GetContentRegionAvail().y);
-    int clicked        = -1;
-    if (live_chart_ != MoveChart::Eval) {
-        // Read from the engines' output, whatever the PGN options: only what they did not report is missing.
-        clicked = plotMoves("##live_moves", live_chart_, moveSeries(st.moves, live_chart_), {st.white, st.black},
-                            evals.size(), marker, height,
-                            live_chart_ == MoveChart::TbHits ? TR("No tablebase hits.") : TR("Nothing reported yet."));
-    } else {
-        const auto wdl     = wdlSeries(st.moves);
-        const float eval_h = wdl.empty() ? height : std::max(60.0f, std::floor(height * 0.62f));
-        clicked            = plotEval("##live_eval", evals, marker, eval_h);
-        if (!wdl.empty()) {
-            if (const int ply = plotWdl("##live_wdl", wdl, evals.size(), marker,
-                                        std::max(30.0f, height - eval_h - ImGui::GetStyle().ItemSpacing.y - 1.0f));
-                ply >= 0)
-                clicked = ply;
-        }
-    }
-    if (clicked >= 0) view.nav.show(std::clamp(clicked, 0, total), total);
+    draw.current = view.nav.held(total) ? view.nav.shown(total) : -1;
+    draw.tip     = [&game](int ply) { return graphMoveTip(game, ply); };
+    const auto ev =
+        drawGameGraph("##live_graph", graph, live_graph_, draw,
+                      ImVec2(ImGui::GetContentRegionAvail().x, std::max(60.0f, ImGui::GetContentRegionAvail().y)));
+    if (ev.go_to >= 0) view.nav.show(std::clamp(ev.go_to, 0, total), total);
 }
 
 // The parts beside the board, one under the other: the players with their searches, the game, the moves, the chart.

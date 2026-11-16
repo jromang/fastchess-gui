@@ -94,6 +94,9 @@ msgstr "（重复：请给它另一个开局库）"
 msgid "(withdrawn)"
 msgstr "（已退赛）"
 
+msgid "+ Engine"
+msgstr "+ 引擎"
+
 msgid "+ {} per move"
 msgstr "+ 每步 {}"
 
@@ -503,6 +506,9 @@ msgstr "在当前比赛之后。"
 msgid "After the running tournament: its end ends every engine."
 msgstr "请在当前锦标赛结束后：它结束时会关闭所有引擎。"
 
+msgid "Agreement"
+msgstr "一致性"
+
 msgid "All"
 msgstr "全部"
 
@@ -593,6 +599,9 @@ msgstr "正在分析对局：{} / {} 个局面"
 msgid "Analysis"
 msgstr "分析"
 
+msgid "Analysis ({}): {}"
+msgstr "分析（{}）：{}"
+
 msgid "Analysis: {} · {}"
 msgstr "分析：{} · {}"
 
@@ -604,6 +613,9 @@ msgstr "其他 SSH 服务器"
 
 msgid "Another build…"
 msgstr "其他构建版本…"
+
+msgid "Another engine analyses the game too."
+msgstr "再用一个引擎分析这盘棋。"
 
 msgid "Another engine of the list takes its place and plays its games, those it played included."
 msgstr "由列表中的另一个引擎接替它，并下它的对局，包括它已下过的。"
@@ -1172,11 +1184,17 @@ msgstr "点击放大"
 msgid "Click to sort; right-click to choose the columns."
 msgstr "点击排序；右键选择列。"
 
+msgid "Click: hide it."
+msgstr "单击：隐藏。"
+
 msgid "Click: play its first move. Scores are White's."
 msgstr "点击：走出其第一步。评分为白方视角。"
 
 msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
 msgstr "点击：放置所选棋子（再次点击：移除）。右键：移除。"
+
+msgid "Click: show it."
+msgstr "单击：显示。"
 
 msgid "Clock"
 msgstr "棋钟"
@@ -1595,6 +1613,9 @@ msgstr "以指定结果结束"
 msgid "Ended by the operator while it was played."
 msgstr "在对局进行中由操作员结束。"
 
+msgid "Endgame"
+msgstr "残局"
+
 msgid "Ending a game in progress is not available on macOS yet: set its result once it is over, in the Games tab."
 msgstr "在 macOS 上暂时无法结束正在进行的对局：请在对局结束后，在“对局”标签页中设置其结果。"
 
@@ -1874,6 +1895,9 @@ msgstr "翻转棋盘 (F)"
 msgid "Fold the details"
 msgstr "收起详情"
 
+msgid "Fold the graph"
+msgstr "折叠图表"
+
 msgid "Folder"
 msgstr "文件夹"
 
@@ -2142,6 +2166,9 @@ msgstr "主机"
 msgid "How deep the lines of the book are followed; -1 = {}."
 msgstr "沿开局库的变化走多深；-1 = {}。"
 
+msgid "How far apart the evaluations are, in pawns: the two players' (each move against the one before) and the analyses' at each position."
+msgstr "评估相差多少（以兵计）：双方棋手的评估（每步与上一步相比），以及各分析在每个局面的评估。"
+
 msgid "How far each game goes into the book, in plies (a move of one side) from its start."
 msgstr "每局对局从开始起进入开局库的深度，以半回合（一方走一步）计。"
 
@@ -2153,6 +2180,9 @@ msgstr "引擎启动时回复 uciok、每局开始时回复 isready 所允许的
 
 msgid "How many best moves are shown (MultiPV)."
 msgstr "显示多少个最佳着法（MultiPV）。"
+
+msgid "How many plies of an engine's PV repeat what the other engine's PV predicted."
+msgstr "一方引擎的 PV 中有多少个半回合与另一方引擎 PV 的预测相同。"
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "每个配对进行的次数；每次两局，交换先后手。其他程序把一个循环称为一轮，每次相遇 2 局（-rounds N -games 2）。"
@@ -2363,6 +2393,9 @@ msgstr "它相对其他锦标赛的核心份额：权重为 2 的锦标赛得到
 
 msgid "Its workspace: standings, live games, schedule"
 msgstr "它的工作区：排名、实时对局、赛程"
+
+msgid "Judge the moves with it"
+msgstr "用它评判着法"
 
 msgid "Keep"
 msgstr "保留"
@@ -2617,6 +2650,9 @@ msgstr "内存"
 msgid "Memory for the engines"
 msgstr "引擎使用的内存"
 
+msgid "Middlegame"
+msgstr "中局"
+
 msgid "Min games"
 msgstr "最少对局"
 
@@ -2634,6 +2670,9 @@ msgstr "模型"
 
 msgid "Modified"
 msgstr "修改时间"
+
+msgid "More charts"
+msgstr "更多图表"
 
 msgid "More…"
 msgstr "更多…"
@@ -2867,9 +2906,6 @@ msgstr "无法打开任何音频设备：原因见日志。"
 msgid "No tablebase hits in this game."
 msgstr "本局没有残局库命中。"
 
-msgid "No tablebase hits."
-msgstr "没有残局库命中。"
-
 msgid "No template yet."
 msgstr "还没有模板。"
 
@@ -2947,9 +2983,6 @@ msgstr "未找到。"
 
 msgid "Nothing matches."
 msgstr "没有匹配项。"
-
-msgid "Nothing reported yet."
-msgstr "尚无报告。"
 
 msgid "Nothing to read: the text is empty."
 msgstr "没有可读取的内容：文本为空。"
@@ -3594,6 +3627,9 @@ msgstr "从表格中移除已保存的运行结果"
 msgid "Remove the {}"
 msgstr "移除这 {} 个"
 
+msgid "Remove this analysis"
+msgstr "移除此分析"
+
 msgid "Remove this machine"
 msgstr "移除此机器"
 
@@ -3952,6 +3988,9 @@ msgstr "显示它"
 
 msgid "Show the games from unbalanced openings"
 msgstr "显示来自失衡开局的对局"
+
+msgid "Show the graph"
+msgstr "显示图表"
 
 msgid "Show the navigation buttons under the boards"
 msgstr "显示棋盘下方的导航按钮"
@@ -4360,9 +4399,6 @@ msgstr "赛程标签页会在任何改动之前显示影响。"
 msgid "The account to log in as on the machine: its tournaments run as this user."
 msgstr "登录机器所用的账户：其上的比赛以此用户身份运行。"
 
-msgid "The analysis"
-msgstr "分析"
-
 msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
 msgstr "分析引擎在后台逐个分析对局中的每个局面：每步一个评分，并标出缓着、错着和败着。"
 
@@ -4450,6 +4486,9 @@ msgstr "加密模块无法启动。"
 msgid "The depth must be positive."
 msgstr "深度必须为正数。"
 
+msgid "The depth of each move, with the seldepth."
+msgstr "每步的深度，含 seldepth。"
+
 msgid "The directories are this computer's: no profile holds them."
 msgstr "这些目录属于本机：没有配置包含它们。"
 
@@ -4479,9 +4518,6 @@ msgstr "引擎自己的协议（xboard），不经过锦标赛使用的 UCI 转�
 
 msgid "The engine's settings; the console stays open."
 msgstr "引擎的设置；控制台保持打开。"
-
-msgid "The engines"
-msgstr "引擎"
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "引擎来自 {}，即上次更改前保留的副本。"
@@ -4738,6 +4774,9 @@ msgstr "无法将图片转换为纹理。"
 msgid "The place in the list, by rating."
 msgstr "按等级分在列表中的名次。"
 
+msgid "The players apart"
+msgstr "双方棋手的分歧"
+
 msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside, or by your choice: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
 msgstr "PGN 文件中按名称（不计大小写和空格）或按你的选择被视为库引擎的棋手：其对局计为该引擎的对局，并应用该引擎的设置（其在列表中的等级分作为锚点）。"
 
@@ -4911,6 +4950,9 @@ msgstr "本页的分析和对局当前使用的线程数，以及本机的线程
 msgid "The time control needs a base time or an increment."
 msgstr "时限需要基本时间或加秒。"
 
+msgid "The time of each move, with the decision time when the PGN has it."
+msgstr "每步的用时，PGN 中有决定时间时一并显示。"
+
 msgid "The time per move must be positive."
 msgstr "每步时间必须为正数。"
 
@@ -4976,6 +5018,9 @@ msgstr "版本和系统信息，用于错误报告。"
 
 msgid "The whole log, to the clipboard."
 msgstr "将整个日志复制到剪贴板。"
+
+msgid "The win, draw and loss shares the engines reported (UCI_ShowWDL), White's wins at the bottom."
+msgstr "引擎报告的胜、和、负比例（UCI_ShowWDL），白方胜在下方。"
 
 msgid "The window"
 msgstr "窗口"
@@ -5313,6 +5358,9 @@ msgstr "音量 %d %%"
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "胜 {:.0f} · 和 {:.0f} · 负 {:.0f} %"
 
+msgid "WDL"
+msgstr "胜/和/负"
+
 msgid "Waiting for the book of {}…"
 msgstr "正在等待 {} 的开局库…"
 
@@ -5345,9 +5393,6 @@ msgstr "更改内容"
 
 msgid "What changed: {}"
 msgstr "更改内容：{}"
-
-msgid "What the chart shows, move by move. Time: with the decision time. Depth: with the seldepth. PV agreement: how many plies of an engine's PV repeat what the other engine's PV predicted."
-msgstr "图表逐步显示的内容。时间：含决定时间。深度：含 seldepth。PV 一致率：一方引擎的 PV 中有多少个半回合与另一方引擎 PV 的预测相同。"
 
 msgid "What the tournaments on this machine may use at once. 0 takes what the test found: every thread but one, and 80 % of the memory."
 msgstr "此机器上的比赛同时可以使用的资源。0 表示采用测试结果：除一个外的全部线程，以及 80 % 的内存。"
@@ -5415,9 +5460,6 @@ msgstr "白方裁定获胜"
 msgid "White wins by adjudication: SyzygyTB"
 msgstr "白方裁定获胜：Syzygy 残局库"
 
-msgid "White {:.0f} % · draw {:.0f} % · Black {:.0f} %"
-msgstr "白方 {:.0f} % · 和棋 {:.0f} % · 黑方 {:.0f} %"
-
 msgid "White ×2"
 msgstr "白方 ×2"
 
@@ -5430,11 +5472,17 @@ msgstr "白方连接无响应"
 msgid "White's score over the games."
 msgstr "白方在各局中的得分。"
 
+msgid "White's winning chances: from the engine's WDL when it gives it, from its score otherwise (lichess's formula). Engines' scores compare better here."
+msgstr "白方的胜率：引擎提供 WDL 时取自 WDL，否则由其分数换算（lichess 公式）。在这里比较引擎的分数更合适。"
+
 msgid "Why (kept with the game)"
 msgstr "原因（随对局保存）"
 
 msgid "Why: {}"
 msgstr "原因：{}"
+
+msgid "Win chances"
+msgstr "胜率"
 
 msgid "WinBoard"
 msgstr "WinBoard"
@@ -5615,6 +5663,9 @@ msgstr "也写入 {}"
 msgid "an engine does not answer isready"
 msgstr "有引擎不回应 isready"
 
+msgid "analysis"
+msgstr "分析"
+
 msgid "and {} more"
 msgstr "以及另外 {} 个"
 
@@ -5628,8 +5679,14 @@ msgstr "最多 {} 步"
 msgid "automatic"
 msgstr "自动"
 
+msgid "bars: the analyses apart"
+msgstr "柱：各分析之间的分歧"
+
 msgid "board by board"
 msgstr "逐台对抗"
+
+msgid "book"
+msgstr "开局库"
 
 msgid "both"
 msgstr "两者"
@@ -6067,6 +6124,9 @@ msgstr "预计 {} 开始"
 msgid "stopped"
 msgstr "已停止"
 
+msgid "tablebase"
+msgstr "残局库"
+
 msgid "the best moves only"
 msgstr "只选最佳着法"
 
@@ -6111,6 +6171,9 @@ msgstr "本次比赛"
 
 msgid "threefold repetition"
 msgstr "三次重复"
+
+msgid "time per move · White up, Black down"
+msgstr "每步用时 · 白方在上，黑方在下"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "可在帖子中注明，或重新测试引擎："
@@ -7145,9 +7208,6 @@ msgstr "{}：已取消，未写入任何内容。"
 msgid "{}: cmd on {} cannot take one of its arguments (a double quote, a % or a line break)."
 msgstr "{}：{} 上的 cmd 无法接受它的某个参数（含双引号、% 或换行符）。"
 
-msgid "{}: decision"
-msgstr "{}：决定"
-
 msgid "{}: failed while {} ({})."
 msgstr "{}：失败（步骤：{}）（{}）。"
 
@@ -7186,9 +7246,6 @@ msgstr "{}：与本机构建版本相同。"
 
 msgid "{}: save as profile"
 msgstr "{}：另存为配置"
-
-msgid "{}: seldepth"
-msgstr "{}：seldepth"
 
 msgid "{}: starting on {} ({})."
 msgstr "{}：正在 {} 上启动（{}）。"
@@ -7236,6 +7293,9 @@ msgstr "{}：其对局的引擎使用 {}"
 
 msgid "{}: {} is a file, not a folder."
 msgstr "{}：{} 是文件，不是文件夹。"
+
+msgid "{}: {} · depth {}"
+msgstr "{}：{} · 深度 {}"
 
 msgid "{}: {} → {} points"
 msgstr "{}：{} → {} 分"

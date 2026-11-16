@@ -53,13 +53,6 @@ float barFraction(const fastchess::Score& score, chess::Color stm) {
     return evalBarFraction(static_cast<int>(white.value), false, 0);
 }
 
-// White's evaluation in pawns, from a score of the side to move, within the chart's +-8; mated (mate 0) the lowest.
-float reviewPawns(const fastchess::Score& score, chess::Color stm) {
-    const float sign = stm == chess::Color::WHITE ? 1.0f : -1.0f;
-    if (score.type == fastchess::ScoreType::MATE) return score.value > 0 ? sign * 8.0f : -sign * 8.0f;
-    return std::clamp(sign * static_cast<float>(score.value) / 100.0f, -8.0f, 8.0f);
-}
-
 ImU32 judgementColour(Judgement judgement) {
     switch (judgement) {
         case Judgement::Inaccuracy:
@@ -69,61 +62,6 @@ ImU32 judgementColour(Judgement judgement) {
         default:
             return ui::BAD;
     }
-}
-
-// The engines' own evaluation (when the game has it) and the analysis's, White's, in pawns, one value per ply.
-// Returns the ply clicked, or -1.
-int plotReview(const char* id, const std::vector<float>& engines, const std::vector<float>& analysis, int marker_ply,
-               float height) {
-    int clicked = -1;
-    constexpr ImPlotFlags flags =
-        ImPlotFlags_NoTitle | ImPlotFlags_NoMenus | ImPlotFlags_NoBoxSelect | ImPlotFlags_NoMouseText;
-    if (ImPlot::BeginPlot(id, ImVec2(-1, height), flags)) {
-        const double n = std::max<double>(20, static_cast<double>(std::max(engines.size(), analysis.size())));
-        ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoTickLabels | ImPlotAxisFlags_NoGridLines,
-                          ImPlotAxisFlags_NoGridLines);
-        ImPlot::SetupAxisLimits(ImAxis_X1, 0, n, ImPlotCond_Always);
-        ImPlot::SetupAxisLimits(ImAxis_Y1, -8.5, 8.5, ImPlotCond_Always);
-        ImPlot::SetupAxisTicks(ImAxis_Y1, -8, 8, 5);
-        ImPlot::SetupLegend(ImPlotLocation_NorthWest);
-        const auto xs = [](std::size_t size) {
-            std::vector<float> x(size);
-            for (std::size_t i = 0; i < size; ++i) x[i] = static_cast<float>(i + 1);
-            return x;
-        };
-        if (!engines.empty()) {
-            const auto x = xs(engines.size());
-            ImPlotSpec area;
-            area.FillColor = ImVec4(0.85f, 0.85f, 0.85f, 0.25f);
-            ImPlot::PlotShaded("##engines_area", x.data(), engines.data(), static_cast<int>(engines.size()), 0.0, area);
-            ImPlotSpec line;
-            line.LineColor  = ImVec4(0.43f, 0.66f, 0.87f, 1.0f);
-            line.LineWeight = 1.5f;
-            ImPlot::PlotLine(TR("The engines"), x.data(), engines.data(), static_cast<int>(engines.size()), line);
-        }
-        if (!analysis.empty()) {
-            const auto x = xs(analysis.size());
-            ImPlotSpec line;
-            line.LineColor  = ImVec4(0.93f, 0.55f, 0.2f, 1.0f);
-            line.LineWeight = 1.5f;
-            ImPlot::PlotLine(TR("The analysis"), x.data(), analysis.data(), static_cast<int>(analysis.size()), line);
-        }
-        const double zero = 0;
-        ImPlotSpec zero_spec;
-        zero_spec.LineColor = ImVec4(0.5f, 0.5f, 0.5f, 0.6f);
-        zero_spec.Flags     = ImPlotInfLinesFlags_Horizontal;
-        ImPlot::PlotInfLines("##zero", &zero, 1, zero_spec);
-        if (marker_ply > 0) {
-            const double x = marker_ply;
-            ImPlotSpec marker;
-            marker.LineColor = ImVec4(0.95f, 0.75f, 0.3f, 0.8f);
-            ImPlot::PlotInfLines("##marker", &x, 1, marker);
-        }
-        if (ImPlot::IsPlotHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-            clicked = static_cast<int>(std::lround(ImPlot::GetPlotMousePos().x));
-        ImPlot::EndPlot();
-    }
-    return clicked;
 }
 
 }  // namespace
@@ -202,29 +140,8 @@ void App::analyseLiveGame(int slot) {
     const auto& st = slot_views_[static_cast<std::size_t>(slot)].state;
     if (!st.has_game) return;
     const auto* t = run_->tournament();
-    ReplayGame game;
-    game.start_fen = st.start_fen;
-    game.headers   = {{"White", st.white}, {"Black", st.black}};
+    auto game     = replayOfSlot(st);
     if (t) game.headers.emplace_back("Event", t->spec().name);
-    game.result = st.result;
-    for (const auto& m : st.moves) {
-        ReplayMove r;
-        r.san         = m.san;
-        r.move        = m.move;
-        r.mover       = m.mover;
-        r.book        = m.book;
-        r.score       = m.score;
-        r.depth       = static_cast<int>(m.depth);
-        r.time_ms     = m.time_ms;
-        r.nps         = static_cast<int64_t>(m.nps);
-        r.wdl         = m.wdl;
-        r.nodes       = m.nodes;
-        r.seldepth    = m.seldepth;
-        r.tbhits      = m.tbhits;
-        r.pv          = m.pv;
-        r.decision_ms = m.decision_ms;
-        game.moves.push_back(std::move(r));
-    }
     const bool chess960 = t && t->spec().conditions.variant == fastchess::VariantType::FRC;
     // At the position the board shows: an earlier one when it was stepped back.
     const int ply = slot_views_[static_cast<std::size_t>(slot)].nav.shown(static_cast<int>(game.moves.size()));
@@ -553,7 +470,9 @@ void App::drawBoardPage() {
     ImGui::BeginChild("##board_side", ImVec2(0, 0));
     if (b.play_open || (b.match && b.match_state.running)) drawBoardPlay();
     drawBoardAnalysis();
-    drawBoardMoves();
+    const float graph = boardGraphHeight();
+    drawBoardMoves(std::max(px(160), ImGui::GetContentRegionAvail().y - graph - ImGui::GetStyle().ItemSpacing.y));
+    drawBoardGraph(graph);
     ImGui::EndChild();
 }
 
@@ -1232,11 +1151,11 @@ void App::drawBoardAnalysis() {
     ui::endCard();
 }
 
-void App::drawBoardMoves() {
+void App::drawBoardMoves(float height) {
     auto& b         = board_;
     const int total = static_cast<int>(b.game.moves.size());
 
-    ui::beginCard("board_game", ImVec2(0, std::max(px(160), ImGui::GetContentRegionAvail().y)));
+    ui::beginCard("board_game", ImVec2(0, height));
     // The games of the file, when it has several, in a tab beside the moves.
     if (b.pgn && b.pgn->index->size() > 1) {
         if (ImGui::BeginTabBar("##board_game_tabs")) {
@@ -1287,33 +1206,7 @@ void App::drawBoardMoves() {
     }
     drawGameReview();
 
-    // The evaluation the engines gave of their moves, when the game has them, and the analysis's.
-    std::vector<float> evals, analysis;
-    bool scored = false;
-    {
-        float previous = 0.0f;
-        for (const auto& m : b.game.moves) {
-            const float v = m.book ? std::nanf("") : ui::whitePawns(m.score, m.mover);
-            if (std::isfinite(v)) {
-                previous = v;
-                scored   = true;
-            }
-            evals.push_back(previous);
-        }
-        if (!scored) evals.clear();
-        if (b.review) {
-            for (std::size_t i = 0; i < b.game.moves.size() && i + 1 < b.review->positions.size(); ++i) {
-                const auto& score = b.review->positions[i + 1].score;
-                analysis.push_back(score ? reviewPawns(*score, ~b.game.moves[i].mover)
-                                         : (analysis.empty() ? 0.0f : analysis.back()));
-            }
-        }
-    }
-    const bool curve   = scored || !analysis.empty();
-    const float chart  = curve ? std::max(px(70), ImGui::GetContentRegionAvail().y * 0.3f) : 0.0f;
-    const float height = std::max(px(60), ImGui::GetContentRegionAvail().y - chart);
-
-    ImGui::BeginChild("##board_moves", ImVec2(0, height), ImGuiChildFlags_Borders);
+    ImGui::BeginChild("##board_moves", ImVec2(0, 0), ImGuiChildFlags_Borders);
     if (total == 0) {
         ImGui::TextDisabled("%s", TR("Play a move on the board, or open a game."));
     } else {
@@ -1359,12 +1252,52 @@ void App::drawBoardMoves() {
     }
     b.followed = b.ply;
     ImGui::EndChild();
+    ui::endCard();
+}
 
-    if (curve) {
-        if (const int clicked = plotReview("##board_eval", evals, analysis, b.ply, ImGui::GetContentRegionAvail().y);
-            clicked >= 0)
-            b.ply = std::clamp(clicked, 0, total);
+// ---------------------------------------------------------------------------
+// The game graph
+
+float App::boardGraphHeight() const {
+    const auto& b = board_;
+    if (b.game.moves.empty()) return 0.0f;
+    const float pad = ImGui::GetStyle().WindowPadding.y * 2;
+    if (b.settings.graph.folded) return foldedGraphHeight() + pad;
+    return std::floor(std::max(px(230), std::min(px(320), ImGui::GetContentRegionAvail().y * 0.36f)));
+}
+
+std::string App::boardGraphTip(int ply) const {
+    const auto& b     = board_;
+    const auto judged = ply > 0 && static_cast<std::size_t>(ply - 1) < b.judged.size()
+                            ? b.judged[static_cast<std::size_t>(ply - 1)]
+                            : MoveReview{};
+    auto tip = graphMoveTip(b.game, ply, judged.judgement != Judgement::None ? judgementMark(judged.judgement) : "");
+    if (!tip.empty() && b.review && static_cast<std::size_t>(ply) < b.review->positions.size()) {
+        const auto& pos = b.review->positions[static_cast<std::size_t>(ply)];
+        if (const float v = graphPawns(pos.score, ~b.game.moves[static_cast<std::size_t>(ply - 1)].mover);
+            std::isfinite(v)) {
+            tip += "\n" +
+                   trf("Analysis ({}): {}", b.review->engine,
+                       ui::formatScore(whiteScore(*pos.score, ~b.game.moves[static_cast<std::size_t>(ply - 1)].mover)));
+        }
     }
+    return tip;
+}
+
+void App::drawBoardGraph(float height) {
+    auto& b = board_;
+    if (height <= 0) return;
+    ui::beginCard("board_graph", ImVec2(0, height));
+    std::vector<GraphAnalysis> analyses;
+    if (b.review) analyses.push_back({b.review->engine, TR("analysis"), ImGui::GetColorU32(ImGuiCol_Text), &*b.review});
+    const auto graph = buildGameGraph(b.game, b.chess960, b.settings.graph.chart, analyses, b.judged);
+    GraphDraw draw;
+    draw.current  = b.ply;
+    draw.tip      = [this](int ply) { return boardGraphTip(ply); };
+    const auto ev = drawGameGraph("##board_graph", graph, b.settings.graph, draw,
+                                  ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
+    if (ev.go_to >= 0) b.ply = std::clamp(ev.go_to, 0, static_cast<int>(b.game.moves.size()));
+    if (ev.view_changed) saveBoardSettings();
     ui::endCard();
 }
 

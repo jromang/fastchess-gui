@@ -1009,4 +1009,31 @@ std::vector<std::pair<std::string, EngineTotals>> GuiObserver::namedTotals() con
     return out;
 }
 
+ReplayGame replayOfSlot(const SlotState& st) {
+    ReplayGame game;
+    game.start_fen = st.start_fen;
+    game.headers   = {{"White", st.white}, {"Black", st.black}};
+    game.result    = st.result;
+    game.moves.reserve(st.moves.size());
+    for (const auto& m : st.moves) {
+        ReplayMove r;
+        r.san         = m.san;
+        r.move        = m.move;
+        r.mover       = m.mover;
+        r.book        = m.book;
+        r.score       = m.score;
+        r.depth       = static_cast<int>(m.depth);
+        r.time_ms     = m.time_ms;
+        r.nps         = static_cast<int64_t>(m.nps);
+        r.wdl         = m.wdl;
+        r.nodes       = m.nodes;
+        r.seldepth    = m.seldepth;
+        r.tbhits      = m.tbhits;
+        r.pv          = m.pv;
+        r.decision_ms = m.decision_ms;
+        game.moves.push_back(std::move(r));
+    }
+    return game;
+}
+
 }  // namespace fcg

@@ -28,6 +28,7 @@
 #include "engine_changes.hpp"
 #include "engine_import.hpp"
 #include "engines.hpp"
+#include "game_graph.hpp"
 #include "guide_view.hpp"
 #include "home.hpp"
 #include "layout.hpp"
@@ -72,121 +73,25 @@ inline constexpr int UNBALANCED_OPENINGS = 4;
 // The date in the name of a tournament's folder: "20261109-185927_a_vs_b" -> "2026-11-09 18:59".
 std::string folderDate(const std::filesystem::path& dir);
 
-// Plots a White point of view evaluation curve (one value per ply, in pawns).
-// Returns the ply clicked in the plot, or -1.
-int plotEval(const char* id, const std::vector<float>& evals, int marker_ply, float height);
-
-// The win, draw and loss shares engines reported (UCI_ShowWDL), from White's point of view, after the plies that
-// have them.
-struct WdlSeries {
-    std::vector<float> ply;
-    std::vector<float> win;       // White wins
-    std::vector<float> not_lost;  // White wins or draws
-    [[nodiscard]] bool empty() const noexcept { return ply.empty(); }
-};
-template <typename Moves>
-WdlSeries wdlSeries(const Moves& moves) {
-    WdlSeries s;
-    for (std::size_t i = 0; i < moves.size(); ++i) {
-        const auto& m = moves[i];
-        if (m.book || !m.wdl) continue;
-        const bool white = m.mover == chess::Color::WHITE;
-        const float w = static_cast<float>((*m.wdl)[white ? 0 : 2]), d = static_cast<float>((*m.wdl)[1]),
-                    l   = static_cast<float>((*m.wdl)[white ? 2 : 0]);
-        const float sum = std::max(1.0f, w + d + l);
-        s.ply.push_back(static_cast<float>(i + 1));
-        s.win.push_back(w / sum);
-        s.not_lost.push_back((w + d) / sum);
-    }
-    return s;
-}
-
-// The WdlSeries as three bands, White's wins at the bottom; the x axis is the eval curve's for `plies` plies.
-// Returns the ply clicked, or -1.
-int plotWdl(const char* id, const WdlSeries& wdl, std::size_t plies, int marker_ply, float height);
-
-// What the chart under a game shows, move by move.
-enum class MoveChart { Eval, Time, Depth, Nodes, Speed, TbHits, Agreement };
-
-// Each side's values, at the plies of its moves: [0] White, [1] Black. `extra` is the seldepth beside the depth and
-// the decision time beside the move time.
-struct MoveSeries {
-    std::array<std::vector<float>, 2> ply, value, extra;
-    [[nodiscard]] bool empty() const noexcept { return ply[0].empty() && ply[1].empty(); }
-};
-
-// How many plies the PV of a move repeats of what the opponent's previous PV predicted after its own move.
-[[nodiscard]] int pvAgreement(const std::string& previous_pv, const std::string& pv);
-
-template <typename Moves>
-MoveSeries moveSeries(const Moves& moves, MoveChart chart) {
-    MoveSeries s;
-    for (std::size_t i = 0; i < moves.size(); ++i) {
-        const auto& m = moves[i];
-        if (m.book) continue;
-        float value = 0, extra = std::nanf("");
-        switch (chart) {
-            case MoveChart::Eval:
-                return s;
-            case MoveChart::Time:
-                if (m.time_ms < 0) continue;
-                value = static_cast<float>(m.time_ms) / 1000.0f;
-                if (m.decision_ms) extra = static_cast<float>(*m.decision_ms) / 1000.0f;
-                break;
-            case MoveChart::Depth:
-                if (m.depth <= 0) continue;
-                value = static_cast<float>(m.depth);
-                if (m.seldepth > 0) extra = static_cast<float>(m.seldepth);
-                break;
-            case MoveChart::Nodes:
-                if (m.nodes == 0) continue;
-                value = static_cast<float>(m.nodes);
-                break;
-            case MoveChart::Speed:
-                if (m.nps == 0) continue;
-                value = static_cast<float>(m.nps);
-                break;
-            case MoveChart::TbHits:
-                value = static_cast<float>(m.tbhits);
-                break;
-            case MoveChart::Agreement:
-                if (i == 0 || moves[i - 1].book || moves[i - 1].pv.empty() || m.pv.empty()) continue;
-                value = static_cast<float>(pvAgreement(moves[i - 1].pv, m.pv));
-                break;
-        }
-        const int side = m.mover == chess::Color::WHITE ? 0 : 1;
-        s.ply[side].push_back(static_cast<float>(i + 1));
-        s.value[side].push_back(value);
-        s.extra[side].push_back(extra);
-    }
-    if (chart == MoveChart::TbHits) {
-        const auto none = [](const std::vector<float>& v) {
-            return std::all_of(v.begin(), v.end(), [](float x) { return x == 0; });
-        };
-        if (none(s.value[0]) && none(s.value[1])) return {};
-    }
-    return s;
-}
-
 // The PgnField a chart reads from the move comments of a PGN: 0 for the evaluation, the time and the depth, which
 // are always written.
-constexpr uint8_t chartField(MoveChart chart) {
+constexpr uint8_t chartField(GraphChart chart) {
     switch (chart) {
-        case MoveChart::Nodes:
+        case GraphChart::Nodes:
             return PGN_NODES;
-        case MoveChart::Speed:
+        case GraphChart::Speed:
             return PGN_NPS;
-        case MoveChart::TbHits:
+        case GraphChart::TbHits:
             return PGN_TBHITS;
-        case MoveChart::Agreement:
+        case GraphChart::Predicted:
             return PGN_PV;
         default:
             return 0;
     }
 }
 // The PgnField of its thinner line: the decision time beside the move time, the seldepth beside the depth.
-constexpr uint8_t chartExtraField(MoveChart chart) {
-    return chart == MoveChart::Time ? PGN_DECISION : chart == MoveChart::Depth ? PGN_SELDEPTH : 0;
+constexpr uint8_t chartExtraField(GraphChart chart) {
+    return chart == GraphChart::Time ? PGN_DECISION : chart == GraphChart::Depth ? PGN_SELDEPTH : 0;
 }
 // The name of the setup's PGN option that writes a PgnField.
 const char* pgnFieldOption(uint8_t field);
@@ -196,14 +101,6 @@ bool pgnFieldOn(const fastchess::config::Pgn& pgn, uint8_t field);
 // did not give what it needs (the decision time is only written when their info lines tell it); nullopt when the
 // tournament's options are not known.
 std::string missingPgnFieldTip(uint8_t field, std::optional<bool> on);
-
-// The chart choice above the curve; true when it changed.
-bool moveChartChoice(const char* id, MoveChart& chart);
-
-// The MoveSeries of both engines, named, over `plies` plies; `empty` instead when it has no values. Returns the ply
-// clicked, or -1.
-int plotMoves(const char* id, MoveChart chart, const MoveSeries& series, const std::array<std::string, 2>& names,
-              std::size_t plies, int marker_ply, float height, const char* empty);
 
 // "W 12 · D 80 · L 8 %" and a thin bar of the three, for a side's own win, draw, loss in permille.
 void wdlLine(const std::array<int64_t, 3>& wdl);
@@ -465,7 +362,10 @@ class App {
     void drawBoardPage();
     void drawBoardColumn(float size);  // the board, the buttons under it
     void drawBoardAnalysis();
-    void drawBoardMoves();
+    void drawBoardMoves(float height);
+    void drawBoardGraph(float height);  // the game graph card, under the moves
+    [[nodiscard]] float boardGraphHeight() const;
+    [[nodiscard]] std::string boardGraphTip(int ply) const;  // the graph's tooltip at a position
     void pollBoard();  // every frame: the analysis follows the board while the page is shown
     void loadBoardSettings();
     void saveBoardSettings();
@@ -973,8 +873,8 @@ class App {
     int live_slot_ = 0;
     std::vector<SlotView> slot_views_;
     bool live_mosaic_       = true;
-    MoveChart live_chart_   = MoveChart::Eval;
-    MoveChart replay_chart_ = MoveChart::Eval;
+    GraphView live_graph_;    // the Live view's graph: its tab, hidden curves, folded
+    GraphView replay_graph_;  // the Games page's
 
     // Big screen.
     struct {

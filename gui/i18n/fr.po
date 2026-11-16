@@ -96,6 +96,9 @@ msgstr "(deux fois : donne-lui un autre livre)"
 msgid "(withdrawn)"
 msgstr "(retiré)"
 
+msgid "+ Engine"
+msgstr "+ Moteur"
+
 msgid "+ {} per move"
 msgstr "+ {} par coup"
 
@@ -509,6 +512,9 @@ msgstr "Après le match en cours."
 msgid "After the running tournament: its end ends every engine."
 msgstr "Après le tournoi en cours : sa fin arrête tous les moteurs."
 
+msgid "Agreement"
+msgstr "Accord"
+
 msgid "All"
 msgstr "Toutes"
 
@@ -599,6 +605,9 @@ msgstr "Analyse de la partie : {} positions sur {}"
 msgid "Analysis"
 msgstr "Analyse"
 
+msgid "Analysis ({}): {}"
+msgstr "Analyse ({}) : {}"
+
 msgid "Analysis: {} · {}"
 msgstr "Analyse : {} · {}"
 
@@ -610,6 +619,9 @@ msgstr "Un autre serveur SSH"
 
 msgid "Another build…"
 msgstr "Une autre compilation…"
+
+msgid "Another engine analyses the game too."
+msgstr "Un autre moteur analyse aussi la partie."
 
 msgid "Another engine of the list takes its place and plays its games, those it played included."
 msgstr "Un autre moteur de la liste prend sa place et joue ses parties, celles qu'il a jouées comprises."
@@ -1178,11 +1190,17 @@ msgstr "Clique pour agrandir"
 msgid "Click to sort; right-click to choose the columns."
 msgstr "Clique pour trier ; clic droit pour choisir les colonnes."
 
+msgid "Click: hide it."
+msgstr "Clic : la masquer."
+
 msgid "Click: play its first move. Scores are White's."
 msgstr "Clic : jouer son premier coup. Les scores sont ceux des Blancs."
 
 msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
 msgstr "Clic : poser la pièce choisie (à nouveau : l'enlever). Clic droit : l'enlever."
+
+msgid "Click: show it."
+msgstr "Clic : l'afficher."
 
 msgid "Clock"
 msgstr "Pendule"
@@ -1601,6 +1619,9 @@ msgstr "Terminer avec un résultat"
 msgid "Ended by the operator while it was played."
 msgstr "Terminée par l'opérateur pendant qu'elle se jouait."
 
+msgid "Endgame"
+msgstr "Finale"
+
 msgid "Ending a game in progress is not available on macOS yet: set its result once it is over, in the Games tab."
 msgstr "Terminer une partie en cours n'est pas encore possible sur macOS : pose son résultat une fois finie, dans l'onglet Parties."
 
@@ -1880,6 +1901,9 @@ msgstr "Retourner l'échiquier (F)"
 msgid "Fold the details"
 msgstr "Replier les détails"
 
+msgid "Fold the graph"
+msgstr "Replier le graphe"
+
 msgid "Folder"
 msgstr "Dossier"
 
@@ -2149,6 +2173,9 @@ msgstr "Hôte"
 msgid "How deep the lines of the book are followed; -1 = {}."
 msgstr "Jusqu'où les lignes du livre sont suivies ; -1 = {}."
 
+msgid "How far apart the evaluations are, in pawns: the two players' (each move against the one before) and the analyses' at each position."
+msgstr "L'écart entre les évaluations, en pions : celles des deux joueurs (chaque coup face au précédent) et celles des analyses à chaque position."
+
 msgid "How far each game goes into the book, in plies (a move of one side) from its start."
 msgstr "Jusqu'où chaque partie entre dans le livre, en demi-coups (un coup d'un camp) depuis son début."
 
@@ -2160,6 +2187,9 @@ msgstr "Le temps que le moteur peut mettre à répondre à uciok au démarrage e
 
 msgid "How many best moves are shown (MultiPV)."
 msgstr "Combien de meilleurs coups sont montrés (MultiPV)."
+
+msgid "How many plies of an engine's PV repeat what the other engine's PV predicted."
+msgstr "Combien de demi-coups de la PV d'un moteur répètent ce que la PV de l'autre moteur prévoyait."
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "Combien de fois chaque appariement est joué ; chaque fois, deux parties, couleurs inversées. D'autres programmes appellent un cycle une ronde, de 2 parties par rencontre (-rounds N -games 2)."
@@ -2370,6 +2400,9 @@ msgstr "Sa part des cœurs face aux autres tournois : un tournoi de poids 2 a de
 
 msgid "Its workspace: standings, live games, schedule"
 msgstr "Son espace de travail : classement, parties en direct, calendrier"
+
+msgid "Judge the moves with it"
+msgstr "Juger les coups avec elle"
 
 msgid "Keep"
 msgstr "Garder"
@@ -2625,6 +2658,9 @@ msgstr "Mémoire"
 msgid "Memory for the engines"
 msgstr "Mémoire pour les moteurs"
 
+msgid "Middlegame"
+msgstr "Milieu de partie"
+
 msgid "Min games"
 msgstr "Parties min."
 
@@ -2642,6 +2678,9 @@ msgstr "Modèle"
 
 msgid "Modified"
 msgstr "Modifié"
+
+msgid "More charts"
+msgstr "Autres graphiques"
 
 msgid "More…"
 msgstr "Plus…"
@@ -2876,9 +2915,6 @@ msgstr "Aucun périphérique audio n'a pu être ouvert : le journal dit pourquoi
 msgid "No tablebase hits in this game."
 msgstr "Aucun accès aux tables de finales dans cette partie."
 
-msgid "No tablebase hits."
-msgstr "Aucun accès aux tables de finales."
-
 msgid "No template yet."
 msgstr "Aucun modèle pour l'instant."
 
@@ -2956,9 +2992,6 @@ msgstr "Rien trouvé."
 
 msgid "Nothing matches."
 msgstr "Aucun résultat."
-
-msgid "Nothing reported yet."
-msgstr "Rien de rapporté pour l'instant."
 
 msgid "Nothing to read: the text is empty."
 msgstr "Rien à lire : le texte est vide."
@@ -3607,6 +3640,9 @@ msgstr "Retirer les passages enregistrés de la grille"
 msgid "Remove the {}"
 msgstr "Retirer les {}"
 
+msgid "Remove this analysis"
+msgstr "Retirer cette analyse"
+
 msgid "Remove this machine"
 msgstr "Retirer cette machine"
 
@@ -3967,6 +4003,9 @@ msgstr "L'afficher"
 
 msgid "Show the games from unbalanced openings"
 msgstr "Afficher les parties des ouvertures déséquilibrées"
+
+msgid "Show the graph"
+msgstr "Afficher le graphe"
 
 msgid "Show the navigation buttons under the boards"
 msgstr "Afficher les boutons de navigation sous les échiquiers"
@@ -4383,9 +4422,6 @@ msgstr "L'onglet Calendrier montre l'impact avant que rien ne change."
 msgid "The account to log in as on the machine: its tournaments run as this user."
 msgstr "Le compte avec lequel se connecter sur la machine : ses tournois tournent sous cet utilisateur."
 
-msgid "The analysis"
-msgstr "L'analyse"
-
 msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
 msgstr "Le moteur d'analyse parcourt toutes les positions de la partie, en arrière-plan : un score par coup, et ses imprécisions, erreurs et gaffes marquées."
 
@@ -4473,6 +4509,9 @@ msgstr "La cryptographie ne peut pas démarrer."
 msgid "The depth must be positive."
 msgstr "La profondeur doit être positive."
 
+msgid "The depth of each move, with the seldepth."
+msgstr "La profondeur de chaque coup, avec la seldepth."
+
 msgid "The directories are this computer's: no profile holds them."
 msgstr "Les dossiers sont ceux de cet ordinateur : aucun profil ne les contient."
 
@@ -4502,9 +4541,6 @@ msgstr "Le protocole propre du moteur (xboard), sans la traduction en UCI qu'uti
 
 msgid "The engine's settings; the console stays open."
 msgstr "Les réglages du moteur ; la console reste ouverte."
-
-msgid "The engines"
-msgstr "Les moteurs"
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "Les moteurs sont ceux de {}, gardé avant la dernière modification."
@@ -4761,6 +4797,9 @@ msgstr "L'image n'a pas pu devenir une texture."
 msgid "The place in the list, by rating."
 msgstr "La place dans la liste, par classement."
 
+msgid "The players apart"
+msgstr "L'écart entre les joueurs"
+
 msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside, or by your choice: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
 msgstr "Les joueurs des fichiers PGN pris pour des moteurs de la bibliothèque, par leur nom, à la casse et aux espaces près, ou par ton choix : leurs parties sont celles du moteur, et ses réglages s'appliquent (son classement sur une liste, comme ancre)."
 
@@ -4936,6 +4975,9 @@ msgstr "Les threads qu'utilisent maintenant l'analyse et les parties de cette pa
 msgid "The time control needs a base time or an increment."
 msgstr "La cadence doit avoir un temps de base ou un incrément."
 
+msgid "The time of each move, with the decision time when the PGN has it."
+msgstr "Le temps de chaque coup, avec le temps de décision quand le PGN l'a."
+
 msgid "The time per move must be positive."
 msgstr "Le temps par coup doit être positif."
 
@@ -5001,6 +5043,9 @@ msgstr "La version et le système, pour un rapport de bug."
 
 msgid "The whole log, to the clipboard."
 msgstr "Tout le journal, dans le presse-papiers."
+
+msgid "The win, draw and loss shares the engines reported (UCI_ShowWDL), White's wins at the bottom."
+msgstr "Les parts de gain, de nulle et de perte données par les moteurs (UCI_ShowWDL), les gains des Blancs en bas."
 
 msgid "The window"
 msgstr "La fenêtre"
@@ -5341,6 +5386,9 @@ msgstr "Volume %d %%"
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "G {:.0f} · N {:.0f} · P {:.0f} %"
 
+msgid "WDL"
+msgstr "G/N/P"
+
 msgid "Waiting for the book of {}…"
 msgstr "En attente du livre de {}…"
 
@@ -5373,9 +5421,6 @@ msgstr "Ce qui a changé"
 
 msgid "What changed: {}"
 msgstr "Ce qui a changé : {}"
-
-msgid "What the chart shows, move by move. Time: with the decision time. Depth: with the seldepth. PV agreement: how many plies of an engine's PV repeat what the other engine's PV predicted."
-msgstr "Ce que montre le graphique, coup par coup. Temps : avec le temps de décision. Profondeur : avec la seldepth. Accord des PV : combien de demi-coups de la PV d'un moteur répètent ce que la PV de l'autre moteur prévoyait."
 
 msgid "What the tournaments on this machine may use at once. 0 takes what the test found: every thread but one, and 80 % of the memory."
 msgstr "Ce que les tournois sur cette machine peuvent utiliser à la fois. 0 prend ce que le test a trouvé : tous les threads sauf un, et 80 % de la mémoire."
@@ -5443,9 +5488,6 @@ msgstr "Les Blancs gagnent par adjudication"
 msgid "White wins by adjudication: SyzygyTB"
 msgstr "Les Blancs gagnent par adjudication : Syzygy"
 
-msgid "White {:.0f} % · draw {:.0f} % · Black {:.0f} %"
-msgstr "Blancs {:.0f} % · nulle {:.0f} % · Noirs {:.0f} %"
-
 msgid "White ×2"
 msgstr "Blancs ×2"
 
@@ -5458,11 +5500,17 @@ msgstr "Les Blancs ne répondent plus"
 msgid "White's score over the games."
 msgstr "Score des Blancs sur les parties."
 
+msgid "White's winning chances: from the engine's WDL when it gives it, from its score otherwise (lichess's formula). Engines' scores compare better here."
+msgstr "Les chances de gain des Blancs : tirées du WDL du moteur quand il le donne, de son score sinon (formule de lichess). Les scores des moteurs se comparent mieux ici."
+
 msgid "Why (kept with the game)"
 msgstr "Pourquoi (gardé avec la partie)"
 
 msgid "Why: {}"
 msgstr "Pourquoi : {}"
+
+msgid "Win chances"
+msgstr "Chances de gain"
 
 msgid "WinBoard"
 msgstr "WinBoard"
@@ -5645,6 +5693,9 @@ msgstr "aussi dans {}"
 msgid "an engine does not answer isready"
 msgstr "un moteur ne répond pas à isready"
 
+msgid "analysis"
+msgstr "analyse"
+
 msgid "and {} more"
 msgstr "et {} de plus"
 
@@ -5659,8 +5710,14 @@ msgstr "au plus {} coups"
 msgid "automatic"
 msgstr "automatique"
 
+msgid "bars: the analyses apart"
+msgstr "barres : l'écart entre les analyses"
+
 msgid "board by board"
 msgstr "échiquier par échiquier"
+
+msgid "book"
+msgstr "livre"
 
 msgid "both"
 msgstr "tout"
@@ -6102,6 +6159,9 @@ msgstr "démarre vers {}"
 msgid "stopped"
 msgstr "arrêtée"
 
+msgid "tablebase"
+msgstr "tables"
+
 msgid "the best moves only"
 msgstr "les meilleurs coups seulement"
 
@@ -6146,6 +6206,9 @@ msgstr "ce tournoi"
 
 msgid "threefold repetition"
 msgstr "triple répétition"
+
+msgid "time per move · White up, Black down"
+msgstr "temps par coup · Blancs en haut, Noirs en bas"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "à mentionner dans le message, ou pour retester le moteur :"
@@ -7262,9 +7325,6 @@ msgstr "{} : annulé, rien n'est écrit."
 msgid "{}: cmd on {} cannot take one of its arguments (a double quote, a % or a line break)."
 msgstr "{} : cmd sur {} n'accepte pas l'un de ses arguments (un guillemet double, un % ou un saut de ligne)."
 
-msgid "{}: decision"
-msgstr "{} : décision"
-
 msgid "{}: failed while {} ({})."
 msgstr "{} : échec (étape : {}) ({})."
 
@@ -7303,9 +7363,6 @@ msgstr "{} : même compilation que cet ordinateur."
 
 msgid "{}: save as profile"
 msgstr "{} : enregistrer comme profil"
-
-msgid "{}: seldepth"
-msgstr "{} : seldepth"
 
 msgid "{}: starting on {} ({})."
 msgstr "{} : démarrage sur {} ({})."
@@ -7355,6 +7412,9 @@ msgstr "{} : {} pour les moteurs de ses parties"
 
 msgid "{}: {} is a file, not a folder."
 msgstr "{} : {} est un fichier, pas un dossier."
+
+msgid "{}: {} · depth {}"
+msgstr "{} : {} · profondeur {}"
 
 msgid "{}: {} → {} points"
 msgstr "{} : {} → {} points"

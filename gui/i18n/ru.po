@@ -98,6 +98,9 @@ msgstr "(дважды: дайте ему другую книгу)"
 msgid "(withdrawn)"
 msgstr "(снят)"
 
+msgid "+ Engine"
+msgstr "+ Движок"
+
 msgid "+ {} per move"
 msgstr "+ {} на ход"
 
@@ -515,6 +518,9 @@ msgstr "После текущего матча."
 msgid "After the running tournament: its end ends every engine."
 msgstr "После текущего турнира: его завершение останавливает все движки."
 
+msgid "Agreement"
+msgstr "Согласие"
+
 msgid "All"
 msgstr "Все"
 
@@ -605,6 +611,9 @@ msgstr "Анализ партии: {} из {} позиций"
 msgid "Analysis"
 msgstr "Анализ"
 
+msgid "Analysis ({}): {}"
+msgstr "Анализ ({}): {}"
+
 msgid "Analysis: {} · {}"
 msgstr "Анализ: {} · {}"
 
@@ -616,6 +625,9 @@ msgstr "Другой SSH-сервер"
 
 msgid "Another build…"
 msgstr "Другая сборка…"
+
+msgid "Another engine analyses the game too."
+msgstr "Ещё один движок тоже анализирует партию."
 
 msgid "Another engine of the list takes its place and plays its games, those it played included."
 msgstr "Его место занимает другой движок из списка и играет его партии, включая уже сыгранные."
@@ -1184,11 +1196,17 @@ msgstr "Щёлкните, чтобы увеличить"
 msgid "Click to sort; right-click to choose the columns."
 msgstr "Щелчок — сортировка; правый щелчок — выбор столбцов."
 
+msgid "Click: hide it."
+msgstr "Щелчок: скрыть."
+
 msgid "Click: play its first move. Scores are White's."
 msgstr "Щелчок — сыграть её первый ход. Оценки — с точки зрения белых."
 
 msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
 msgstr "Щелчок — поставить выбранную фигуру (повторно — убрать). Правый щелчок — убрать."
+
+msgid "Click: show it."
+msgstr "Щелчок: показать."
 
 msgid "Clock"
 msgstr "Часы"
@@ -1607,6 +1625,9 @@ msgstr "Завершить с результатом"
 msgid "Ended by the operator while it was played."
 msgstr "Завершена оператором во время игры."
 
+msgid "Endgame"
+msgstr "Эндшпиль"
+
 msgid "Ending a game in progress is not available on macOS yet: set its result once it is over, in the Games tab."
 msgstr "Завершить идущую партию на macOS пока нельзя: задайте её результат после окончания, во вкладке «Партии»."
 
@@ -1886,6 +1907,9 @@ msgstr "Перевернуть доску (F)"
 msgid "Fold the details"
 msgstr "Свернуть подробности"
 
+msgid "Fold the graph"
+msgstr "Свернуть график"
+
 msgid "Folder"
 msgstr "Папка"
 
@@ -2156,6 +2180,9 @@ msgstr "Хост"
 msgid "How deep the lines of the book are followed; -1 = {}."
 msgstr "Насколько глубоко просматриваются варианты книги; -1 = {}."
 
+msgid "How far apart the evaluations are, in pawns: the two players' (each move against the one before) and the analyses' at each position."
+msgstr "Насколько расходятся оценки, в пешках: двух игроков (каждый ход против предыдущего) и анализов в каждой позиции."
+
 msgid "How far each game goes into the book, in plies (a move of one side) from its start."
 msgstr "Насколько глубоко каждая партия входит в книгу, в полуходах (ход одной стороны) от её начала."
 
@@ -2167,6 +2194,9 @@ msgstr "Сколько времени движок может отвечать �
 
 msgid "How many best moves are shown (MultiPV)."
 msgstr "Сколько лучших ходов показывать (MultiPV)."
+
+msgid "How many plies of an engine's PV repeat what the other engine's PV predicted."
+msgstr "Сколько полуходов PV одного движка повторяют то, что предсказывала PV другого."
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "Сколько раз играется каждая пара; каждый раз две партии со сменой цвета. Другие программы называют цикл раундом из 2 партий на встречу (-rounds N -games 2)."
@@ -2377,6 +2407,9 @@ msgstr "Его доля ядер по сравнению с другими ту�
 
 msgid "Its workspace: standings, live games, schedule"
 msgstr "Его рабочая область: турнирная таблица, партии онлайн, расписание"
+
+msgid "Judge the moves with it"
+msgstr "Оценивать ходы по нему"
 
 msgid "Keep"
 msgstr "Оставить"
@@ -2633,6 +2666,9 @@ msgstr "Память"
 msgid "Memory for the engines"
 msgstr "Память для движков"
 
+msgid "Middlegame"
+msgstr "Миттельшпиль"
+
 msgid "Min games"
 msgstr "Мин. партий"
 
@@ -2650,6 +2686,9 @@ msgstr "Модель"
 
 msgid "Modified"
 msgstr "Изменён"
+
+msgid "More charts"
+msgstr "Другие графики"
 
 msgid "More…"
 msgstr "Ещё…"
@@ -2885,9 +2924,6 @@ msgstr "Не удалось открыть звуковое устройство
 msgid "No tablebase hits in this game."
 msgstr "В этой партии не было обращений к таблицам эндшпиля."
 
-msgid "No tablebase hits."
-msgstr "Обращений к таблицам эндшпиля нет."
-
 msgid "No template yet."
 msgstr "Шаблонов пока нет."
 
@@ -2965,9 +3001,6 @@ msgstr "Ничего не найдено."
 
 msgid "Nothing matches."
 msgstr "Ничего не найдено."
-
-msgid "Nothing reported yet."
-msgstr "Пока ничего не сообщено."
 
 msgid "Nothing to read: the text is empty."
 msgstr "Нечего читать: текст пуст."
@@ -3620,6 +3653,9 @@ msgstr "Убрать сохранённые прогоны из сетки"
 msgid "Remove the {}"
 msgstr "Удалить {}"
 
+msgid "Remove this analysis"
+msgstr "Убрать этот анализ"
+
 msgid "Remove this machine"
 msgstr "Удалить эту машину"
 
@@ -3982,6 +4018,9 @@ msgstr "Показать её"
 
 msgid "Show the games from unbalanced openings"
 msgstr "Показать партии из неравных дебютов"
+
+msgid "Show the graph"
+msgstr "Показать график"
 
 msgid "Show the navigation buttons under the boards"
 msgstr "Показать кнопки навигации под досками"
@@ -4406,9 +4445,6 @@ msgstr "Вкладка «Расписание» показывает после�
 msgid "The account to log in as on the machine: its tournaments run as this user."
 msgstr "Учётная запись для входа на машину: её турниры работают от имени этого пользователя."
 
-msgid "The analysis"
-msgstr "Анализ"
-
 msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
 msgstr "Движок анализа проходит все позиции партии в фоне: оценка каждого хода, отмечены неточности, ошибки и грубые ошибки."
 
@@ -4496,6 +4532,9 @@ msgstr "Криптография не может запуститься."
 msgid "The depth must be positive."
 msgstr "Глубина должна быть положительной."
 
+msgid "The depth of each move, with the seldepth."
+msgstr "Глубина каждого хода, с seldepth."
+
 msgid "The directories are this computer's: no profile holds them."
 msgstr "Папки принадлежат этому компьютеру: ни один профиль их не содержит."
 
@@ -4525,9 +4564,6 @@ msgstr "Собственный протокол движка (xboard), без п
 
 msgid "The engine's settings; the console stays open."
 msgstr "Настройки движка; консоль остаётся открытой."
-
-msgid "The engines"
-msgstr "Движки"
 
 msgid "The engines are those of {}, kept before the last change."
 msgstr "Движки взяты из {}, сохранённого до последнего изменения."
@@ -4784,6 +4820,9 @@ msgstr "Не удалось превратить изображение в те�
 msgid "The place in the list, by rating."
 msgstr "Место в списке по рейтингу."
 
+msgid "The players apart"
+msgstr "Расхождение игроков"
+
 msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside, or by your choice: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
 msgstr "Игроки PGN-файлов, принятые за движки библиотеки по имени без учёта регистра и пробелов или по вашему выбору: их партии считаются партиями движка, и применяются его настройки (его рейтинг в листе как опора)."
 
@@ -4961,6 +5000,9 @@ msgstr "Потоки, которые сейчас используют анал�
 msgid "The time control needs a base time or an increment."
 msgstr "Контролю времени нужно базовое время или добавление."
 
+msgid "The time of each move, with the decision time when the PGN has it."
+msgstr "Время каждого хода, со временем решения, если оно есть в PGN."
+
 msgid "The time per move must be positive."
 msgstr "Время на ход должно быть положительным."
 
@@ -5026,6 +5068,9 @@ msgstr "Версия и система — для сообщения об оши
 
 msgid "The whole log, to the clipboard."
 msgstr "Весь журнал — в буфер обмена."
+
+msgid "The win, draw and loss shares the engines reported (UCI_ShowWDL), White's wins at the bottom."
+msgstr "Доли выигрыша, ничьей и проигрыша, которые сообщили движки (UCI_ShowWDL), выигрыши белых внизу."
 
 msgid "The window"
 msgstr "Окно"
@@ -5369,6 +5414,9 @@ msgstr "Громкость %d %%"
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr "В {:.0f} · Н {:.0f} · П {:.0f} %"
 
+msgid "WDL"
+msgstr "В/Н/П"
+
 msgid "Waiting for the book of {}…"
 msgstr "Ожидание книги {}…"
 
@@ -5401,9 +5449,6 @@ msgstr "Что изменилось"
 
 msgid "What changed: {}"
 msgstr "Что изменилось: {}"
-
-msgid "What the chart shows, move by move. Time: with the decision time. Depth: with the seldepth. PV agreement: how many plies of an engine's PV repeat what the other engine's PV predicted."
-msgstr "Что показывает график, ход за ходом. Время: со временем решения. Глубина: с seldepth. Совпадение PV: сколько полуходов PV одного движка повторяют то, что предсказывала PV другого."
 
 msgid "What the tournaments on this machine may use at once. 0 takes what the test found: every thread but one, and 80 % of the memory."
 msgstr "Что турниры на этой машине могут использовать одновременно. 0 берёт найденное проверкой: все потоки, кроме одного, и 80 % памяти."
@@ -5471,9 +5516,6 @@ msgstr "Победа белых по присуждению"
 msgid "White wins by adjudication: SyzygyTB"
 msgstr "Победа белых по присуждению: Syzygy"
 
-msgid "White {:.0f} % · draw {:.0f} % · Black {:.0f} %"
-msgstr "Белые {:.0f} % · ничья {:.0f} % · чёрные {:.0f} %"
-
 msgid "White ×2"
 msgstr "Белые ×2"
 
@@ -5486,11 +5528,17 @@ msgstr "Белые не отвечают"
 msgid "White's score over the games."
 msgstr "Результат белых по всем партиям."
 
+msgid "White's winning chances: from the engine's WDL when it gives it, from its score otherwise (lichess's formula). Engines' scores compare better here."
+msgstr "Шансы белых на выигрыш: из WDL движка, если он его даёт, иначе из его оценки (формула lichess). Оценки движков здесь сравниваются лучше."
+
 msgid "Why (kept with the game)"
 msgstr "Почему (сохраняется с партией)"
 
 msgid "Why: {}"
 msgstr "Почему: {}"
+
+msgid "Win chances"
+msgstr "Шансы на выигрыш"
 
 msgid "WinBoard"
 msgstr "WinBoard"
@@ -5675,6 +5723,9 @@ msgstr "также в {}"
 msgid "an engine does not answer isready"
 msgstr "движок не отвечает на isready"
 
+msgid "analysis"
+msgstr "анализ"
+
 msgid "and {} more"
 msgstr "и ещё {}"
 
@@ -5690,8 +5741,14 @@ msgstr "не более {} ходов"
 msgid "automatic"
 msgstr "автоматически"
 
+msgid "bars: the analyses apart"
+msgstr "столбцы: расхождение анализов"
+
 msgid "board by board"
 msgstr "по доскам"
+
+msgid "book"
+msgstr "книга"
 
 msgid "both"
 msgstr "и то и другое"
@@ -6137,6 +6194,9 @@ msgstr "начнётся около {}"
 msgid "stopped"
 msgstr "остановлен"
 
+msgid "tablebase"
+msgstr "таблицы"
+
 msgid "the best moves only"
 msgstr "только лучшие ходы"
 
@@ -6181,6 +6241,9 @@ msgstr "этот турнир"
 
 msgid "threefold repetition"
 msgstr "троекратное повторение"
+
+msgid "time per move · White up, Black down"
+msgstr "время на ход · белые вверху, чёрные внизу"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "упомянуть в сообщении или перепроверить движок:"
@@ -7379,9 +7442,6 @@ msgstr "{}: отменено, ничего не записано."
 msgid "{}: cmd on {} cannot take one of its arguments (a double quote, a % or a line break)."
 msgstr "{}: cmd на {} не может принять один из его аргументов (двойную кавычку, % или перевод строки)."
 
-msgid "{}: decision"
-msgstr "{}: время решения"
-
 msgid "{}: failed while {} ({})."
 msgstr "{}: ошибка (этап: {}) ({})."
 
@@ -7420,9 +7480,6 @@ msgstr "{}: та же сборка, что на этом компьютере."
 
 msgid "{}: save as profile"
 msgstr "{}: сохранить как профиль"
-
-msgid "{}: seldepth"
-msgstr "{}: seldepth"
 
 msgid "{}: starting on {} ({})."
 msgstr "{}: запуск на {} ({})."
@@ -7474,6 +7531,9 @@ msgstr "{}: {} для движков его партий"
 
 msgid "{}: {} is a file, not a folder."
 msgstr "{}: {} — это файл, а не папка."
+
+msgid "{}: {} · depth {}"
+msgstr "{}: {} · глубина {}"
 
 msgid "{}: {} → {} points"
 msgstr "{}: {} → {} очк."

@@ -96,6 +96,9 @@ msgstr ""
 msgid "(withdrawn)"
 msgstr ""
 
+msgid "+ Engine"
+msgstr ""
+
 msgid "+ {} per move"
 msgstr ""
 
@@ -509,6 +512,9 @@ msgstr ""
 msgid "After the running tournament: its end ends every engine."
 msgstr ""
 
+msgid "Agreement"
+msgstr ""
+
 msgid "All"
 msgstr ""
 
@@ -599,6 +605,9 @@ msgstr ""
 msgid "Analysis"
 msgstr ""
 
+msgid "Analysis ({}): {}"
+msgstr ""
+
 msgid "Analysis: {} · {}"
 msgstr ""
 
@@ -609,6 +618,9 @@ msgid "Another SSH server"
 msgstr ""
 
 msgid "Another build…"
+msgstr ""
+
+msgid "Another engine analyses the game too."
 msgstr ""
 
 msgid "Another engine of the list takes its place and plays its games, those it played included."
@@ -1178,10 +1190,16 @@ msgstr ""
 msgid "Click to sort; right-click to choose the columns."
 msgstr ""
 
+msgid "Click: hide it."
+msgstr ""
+
 msgid "Click: play its first move. Scores are White's."
 msgstr ""
 
 msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
+msgstr ""
+
+msgid "Click: show it."
 msgstr ""
 
 msgid "Clock"
@@ -1601,6 +1619,9 @@ msgstr ""
 msgid "Ended by the operator while it was played."
 msgstr ""
 
+msgid "Endgame"
+msgstr ""
+
 msgid "Ending a game in progress is not available on macOS yet: set its result once it is over, in the Games tab."
 msgstr ""
 
@@ -1880,6 +1901,9 @@ msgstr ""
 msgid "Fold the details"
 msgstr ""
 
+msgid "Fold the graph"
+msgstr ""
+
 msgid "Folder"
 msgstr ""
 
@@ -2149,6 +2173,9 @@ msgstr ""
 msgid "How deep the lines of the book are followed; -1 = {}."
 msgstr ""
 
+msgid "How far apart the evaluations are, in pawns: the two players' (each move against the one before) and the analyses' at each position."
+msgstr ""
+
 msgid "How far each game goes into the book, in plies (a move of one side) from its start."
 msgstr ""
 
@@ -2159,6 +2186,9 @@ msgid "How long the engine may take to answer uciok when started and isready at 
 msgstr ""
 
 msgid "How many best moves are shown (MultiPV)."
+msgstr ""
+
+msgid "How many plies of an engine's PV repeat what the other engine's PV predicted."
 msgstr ""
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
@@ -2369,6 +2399,9 @@ msgid "Its share of the cores against the other tournaments': a tournament of we
 msgstr ""
 
 msgid "Its workspace: standings, live games, schedule"
+msgstr ""
+
+msgid "Judge the moves with it"
 msgstr ""
 
 msgid "Keep"
@@ -2625,6 +2658,9 @@ msgstr ""
 msgid "Memory for the engines"
 msgstr ""
 
+msgid "Middlegame"
+msgstr ""
+
 msgid "Min games"
 msgstr ""
 
@@ -2641,6 +2677,9 @@ msgid "Model"
 msgstr ""
 
 msgid "Modified"
+msgstr ""
+
+msgid "More charts"
 msgstr ""
 
 msgid "More…"
@@ -2876,9 +2915,6 @@ msgstr ""
 msgid "No tablebase hits in this game."
 msgstr ""
 
-msgid "No tablebase hits."
-msgstr ""
-
 msgid "No template yet."
 msgstr ""
 
@@ -2955,9 +2991,6 @@ msgid "Nothing found."
 msgstr ""
 
 msgid "Nothing matches."
-msgstr ""
-
-msgid "Nothing reported yet."
 msgstr ""
 
 msgid "Nothing to read: the text is empty."
@@ -3607,6 +3640,9 @@ msgstr ""
 msgid "Remove the {}"
 msgstr ""
 
+msgid "Remove this analysis"
+msgstr ""
+
 msgid "Remove this machine"
 msgstr ""
 
@@ -3966,6 +4002,9 @@ msgid "Show it"
 msgstr ""
 
 msgid "Show the games from unbalanced openings"
+msgstr ""
+
+msgid "Show the graph"
 msgstr ""
 
 msgid "Show the navigation buttons under the boards"
@@ -4383,9 +4422,6 @@ msgstr ""
 msgid "The account to log in as on the machine: its tournaments run as this user."
 msgstr ""
 
-msgid "The analysis"
-msgstr ""
-
 msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
 msgstr ""
 
@@ -4473,6 +4509,9 @@ msgstr ""
 msgid "The depth must be positive."
 msgstr ""
 
+msgid "The depth of each move, with the seldepth."
+msgstr ""
+
 msgid "The directories are this computer's: no profile holds them."
 msgstr ""
 
@@ -4501,9 +4540,6 @@ msgid "The engine's own protocol (xboard), without the translation to UCI a tour
 msgstr ""
 
 msgid "The engine's settings; the console stays open."
-msgstr ""
-
-msgid "The engines"
 msgstr ""
 
 msgid "The engines are those of {}, kept before the last change."
@@ -4761,6 +4797,9 @@ msgstr ""
 msgid "The place in the list, by rating."
 msgstr ""
 
+msgid "The players apart"
+msgstr ""
+
 msgid "The players of the PGN files taken for engines of the library, by their name, letter case and spaces aside, or by your choice: their games are the engine's, and its settings apply (its rating on a list, as the anchor)."
 msgstr ""
 
@@ -4936,6 +4975,9 @@ msgstr ""
 msgid "The time control needs a base time or an increment."
 msgstr ""
 
+msgid "The time of each move, with the decision time when the PGN has it."
+msgstr ""
+
 msgid "The time per move must be positive."
 msgstr ""
 
@@ -5000,6 +5042,9 @@ msgid "The version and the system, for a bug report."
 msgstr ""
 
 msgid "The whole log, to the clipboard."
+msgstr ""
+
+msgid "The win, draw and loss shares the engines reported (UCI_ShowWDL), White's wins at the bottom."
 msgstr ""
 
 msgid "The window"
@@ -5341,6 +5386,9 @@ msgstr ""
 msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr ""
 
+msgid "WDL"
+msgstr ""
+
 msgid "Waiting for the book of {}…"
 msgstr ""
 
@@ -5372,9 +5420,6 @@ msgid "What changed"
 msgstr ""
 
 msgid "What changed: {}"
-msgstr ""
-
-msgid "What the chart shows, move by move. Time: with the decision time. Depth: with the seldepth. PV agreement: how many plies of an engine's PV repeat what the other engine's PV predicted."
 msgstr ""
 
 msgid "What the tournaments on this machine may use at once. 0 takes what the test found: every thread but one, and 80 % of the memory."
@@ -5443,9 +5488,6 @@ msgstr ""
 msgid "White wins by adjudication: SyzygyTB"
 msgstr ""
 
-msgid "White {:.0f} % · draw {:.0f} % · Black {:.0f} %"
-msgstr ""
-
 msgid "White ×2"
 msgstr ""
 
@@ -5458,10 +5500,16 @@ msgstr ""
 msgid "White's score over the games."
 msgstr ""
 
+msgid "White's winning chances: from the engine's WDL when it gives it, from its score otherwise (lichess's formula). Engines' scores compare better here."
+msgstr ""
+
 msgid "Why (kept with the game)"
 msgstr ""
 
 msgid "Why: {}"
+msgstr ""
+
+msgid "Win chances"
 msgstr ""
 
 msgid "WinBoard"
@@ -5645,6 +5693,9 @@ msgstr ""
 msgid "an engine does not answer isready"
 msgstr ""
 
+msgid "analysis"
+msgstr ""
+
 msgid "and {} more"
 msgstr ""
 
@@ -5659,7 +5710,13 @@ msgstr ""
 msgid "automatic"
 msgstr ""
 
+msgid "bars: the analyses apart"
+msgstr ""
+
 msgid "board by board"
+msgstr ""
+
+msgid "book"
 msgstr ""
 
 msgid "both"
@@ -6102,6 +6159,9 @@ msgstr ""
 msgid "stopped"
 msgstr ""
 
+msgid "tablebase"
+msgstr ""
+
 msgid "the best moves only"
 msgstr ""
 
@@ -6145,6 +6205,9 @@ msgid "this tournament"
 msgstr ""
 
 msgid "threefold repetition"
+msgstr ""
+
+msgid "time per move · White up, Black down"
 msgstr ""
 
 msgid "to mention in the post, or to test the engine again:"
@@ -7262,9 +7325,6 @@ msgstr ""
 msgid "{}: cmd on {} cannot take one of its arguments (a double quote, a % or a line break)."
 msgstr ""
 
-msgid "{}: decision"
-msgstr ""
-
 msgid "{}: failed while {} ({})."
 msgstr ""
 
@@ -7302,9 +7362,6 @@ msgid "{}: same build as this computer."
 msgstr ""
 
 msgid "{}: save as profile"
-msgstr ""
-
-msgid "{}: seldepth"
 msgstr ""
 
 msgid "{}: starting on {} ({})."
@@ -7354,6 +7411,9 @@ msgid "{}: {} for its games' engines"
 msgstr ""
 
 msgid "{}: {} is a file, not a folder."
+msgstr ""
+
+msgid "{}: {} · depth {}"
 msgstr ""
 
 msgid "{}: {} → {} points"

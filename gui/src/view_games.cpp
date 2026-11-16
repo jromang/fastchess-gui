@@ -627,59 +627,40 @@ void App::drawGames() {
         return;
     }
 
-    std::vector<float> evals;
-    evals.reserve(game.moves.size());
-    float previous = 0.0f;
-    for (const auto& m : game.moves) {
-        const float v = m.book ? std::nanf("") : ui::whitePawns(m.score, m.mover);
-        if (std::isfinite(v)) previous = v;
-        evals.push_back(previous);
-    }
-    moveChartChoice("##replay_chart", replay_chart_);
     // The charts read the PGN: a field its tournament did not write is told, with the option that writes it.
-    if (const uint8_t extra = chartExtraField(replay_chart_); extra && !(game.fields & extra) && total > 0) {
-        ImGui::SameLine();
+    std::optional<bool> on_known;
+    const auto* tournament = run_->tournament();
+    if (const uint8_t extra = chartExtraField(replay_graph_.chart); extra && !(game.fields & extra) && total > 0) {
         ImGui::TextDisabled("%s", trf("No {} in this game's PGN", pgnFieldOption(extra)).c_str());
         if (ImGui::IsItemHovered()) {
             // With the option on, the decision time is still only written when the engines' lines tell it.
-            std::optional<bool> on;
-            if (const auto* t = run_->tournament()) on = pgnFieldOn(t->spec().conditions.pgn, extra);
-            ImGui::SetTooltip("%s", missingPgnFieldTip(extra, on).c_str());
+            if (tournament) on_known = pgnFieldOn(tournament->spec().conditions.pgn, extra);
+            ImGui::SetTooltip("%s", missingPgnFieldTip(extra, on_known).c_str());
         }
     }
-    const float height = ImGui::GetContentRegionAvail().y;
-    int clicked        = -1;
-    if (replay_chart_ != MoveChart::Eval) {
-        const auto series = moveSeries(game.moves, replay_chart_);
-        if (const uint8_t field = chartField(replay_chart_); series.empty() && field && !(game.fields & field)) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
-            ImGui::TextWrapped("%s", trf("Not in this game's PGN: its tournament was played with \"{}\" off in the "
-                                         "PGN options of the setup.",
-                                         pgnFieldOption(field))
-                                         .c_str());
-            ImGui::PopStyleColor();
-            if (ImGui::SmallButton(TR("PGN options"))) {
-                page_           = Page::NewMatch;
-                open_pgn_setup_ = true;
-            }
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("%s", TR("The PGN options of the setup, for the tournaments to come."));
-            }
-        } else {
-            clicked = plotMoves("##replay_moves", replay_chart_, series, {game.header("White"), game.header("Black")},
-                                evals.size(), replay_ply_, height,
-                                replay_chart_ == MoveChart::TbHits ? TR("No tablebase hits in this game.")
-                                                                   : TR("The engines did not report it in this game."));
+    const bool chess960 = tournament && tournament->spec().conditions.variant == fastchess::VariantType::FRC;
+    const auto graph    = buildGameGraph(game, chess960, replay_graph_.chart, {}, {});
+    GraphDraw draw;
+    draw.current     = replay_ply_;
+    draw.tip         = [&game](int ply) { return graphMoveTip(game, ply); };
+    draw.pgn_options = true;
+    draw.missing     = [&](GraphChart chart) -> std::string {
+        const uint8_t field = chartField(chart);
+        if (field && !(game.fields & field)) {
+            return trf(
+                "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the "
+                "setup.",
+                pgnFieldOption(field));
         }
-    } else {
-        const auto wdl     = wdlSeries(game.moves);
-        const float eval_h = std::floor(height * 0.62f);
-        clicked            = plotEval("##replay_eval", evals, replay_ply_, wdl.empty() ? -1 : eval_h);
-        if (!wdl.empty()) {
-            const float wdl_h = std::max(30.0f, height - eval_h - ImGui::GetStyle().ItemSpacing.y - 1.0f);
-            if (const int ply = plotWdl("##replay_wdl", wdl, evals.size(), replay_ply_, wdl_h); ply >= 0) clicked = ply;
-        }
+        return chart == GraphChart::TbHits ? TR("No tablebase hits in this game.")
+                                           : TR("The engines did not report it in this game.");
+    };
+    const auto ev = drawGameGraph("##replay_graph", graph, replay_graph_, draw, ImGui::GetContentRegionAvail());
+    if (ev.pgn_options) {
+        page_           = Page::NewMatch;
+        open_pgn_setup_ = true;
     }
+    const int clicked = ev.go_to;
     if (clicked >= 0) replay_ply_ = std::clamp(clicked, 0, total);
 
     ImGui::EndChild();

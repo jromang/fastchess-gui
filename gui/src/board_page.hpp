@@ -22,6 +22,7 @@
 #include "board_game.hpp"
 #include "engine_client.hpp"
 #include "game_analysis.hpp"
+#include "game_graph.hpp"
 #include "pgn_store.hpp"
 
 namespace fcg {
@@ -58,9 +59,10 @@ struct BoardSettings {
     GameClock first_clock, second_clock;
     bool same_clock = true;
     bool game_pair  = false;
+    GraphView graph;  // the game graph's tab, hidden curves, folded
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BoardSettings, analysis, arrows, review_ms, review_depth, game_first,
-                                                game_second, first_clock, second_clock, same_clock, game_pair)
+                                                game_second, first_clock, second_clock, same_clock, game_pair, graph)
 
 // A game being analysed move by move, in the background: its positions searched one after the other.
 struct ReviewJob {

@@ -524,14 +524,17 @@ TEST_CASE("the games of a new setup's tournament have in their PGN every field t
         REQUIRE(game);
         CHECK(game->fields == (PGN_NODES | PGN_SELDEPTH | PGN_NPS | PGN_TBHITS | PGN_PV | PGN_DECISION));
         for (const auto chart :
-             {MoveChart::Time, MoveChart::Depth, MoveChart::Nodes, MoveChart::Speed, MoveChart::Agreement}) {
+             {GraphChart::Time, GraphChart::Depth, GraphChart::Nodes, GraphChart::Speed, GraphChart::Predicted}) {
             CAPTURE(static_cast<int>(chart));
-            CHECK_FALSE(moveSeries(game->moves, chart).empty());
+            const auto g = buildGameGraph(*game, false, chart, {}, {});
+            CHECK(g.available[static_cast<std::size_t>(chart)]);
+            CHECK_FALSE(g.players[0].x.empty());
         }
         // The decision time beside the move time, the seldepth beside the depth.
-        for (const auto chart : {MoveChart::Time, MoveChart::Depth}) {
-            const auto series = moveSeries(game->moves, chart);
-            CHECK(std::any_of(series.extra[0].begin(), series.extra[0].end(), [](float v) { return std::isfinite(v); }));
+        for (const auto chart : {GraphChart::Time, GraphChart::Depth}) {
+            const auto g = buildGameGraph(*game, false, chart, {}, {});
+            CHECK(std::any_of(g.players[0].extra.begin(), g.players[0].extra.end(),
+                              [](float v) { return std::isfinite(v); }));
         }
     }
     fcg::test::removeAll(root);

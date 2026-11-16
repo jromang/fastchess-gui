@@ -82,6 +82,10 @@ struct SlotState {
     std::string reason;
 };
 
+// The game of a slot as far as it went, as the Board page and the game graph read games: its players, start
+// position, moves with what the engines said, and result.
+[[nodiscard]] ReplayGame replayOfSlot(const SlotState& st);
+
 // In a gauntlet, whether the seed of a game between `white` and `black` has Black (true: the board is turned to its
 // side) or White (false). nullopt for a game without a seed or between two seeds, and in the other formats. The
 // seeds are the first spec.seeds participants, and those who replaced them.

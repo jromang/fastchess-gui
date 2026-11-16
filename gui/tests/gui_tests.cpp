@@ -1708,16 +1708,16 @@ TEST_CASE("replay charts: the fields a PGN has are told apart from zeros, and fr
     CHECK(game->moves[1].fields == 0);
 
     // What each chart needs, and the setup's option that writes it.
-    CHECK(chartField(MoveChart::Nodes) == PGN_NODES);
-    CHECK(chartField(MoveChart::Speed) == PGN_NPS);
-    CHECK(chartField(MoveChart::TbHits) == PGN_TBHITS);
-    CHECK(chartField(MoveChart::Agreement) == PGN_PV);
-    CHECK(chartField(MoveChart::Time) == 0);  // always written
-    CHECK(chartField(MoveChart::Depth) == 0);
-    CHECK(chartField(MoveChart::Eval) == 0);
-    CHECK(chartExtraField(MoveChart::Time) == PGN_DECISION);
-    CHECK(chartExtraField(MoveChart::Depth) == PGN_SELDEPTH);
-    CHECK(chartExtraField(MoveChart::Nodes) == 0);
+    CHECK(chartField(GraphChart::Nodes) == PGN_NODES);
+    CHECK(chartField(GraphChart::Speed) == PGN_NPS);
+    CHECK(chartField(GraphChart::TbHits) == PGN_TBHITS);
+    CHECK(chartField(GraphChart::Predicted) == PGN_PV);
+    CHECK(chartField(GraphChart::Time) == 0);  // always written
+    CHECK(chartField(GraphChart::Depth) == 0);
+    CHECK(chartField(GraphChart::Eval) == 0);
+    CHECK(chartExtraField(GraphChart::Time) == PGN_DECISION);
+    CHECK(chartExtraField(GraphChart::Depth) == PGN_SELDEPTH);
+    CHECK(chartExtraField(GraphChart::Nodes) == 0);
     CHECK(std::string(pgnFieldOption(PGN_NPS)) == "nps");
     CHECK(std::string(pgnFieldOption(PGN_PV)) == "pv");
     // A field missing with its option on (the decision time, which the engines' lines may not tell) does not
@@ -1730,8 +1730,9 @@ TEST_CASE("replay charts: the fields a PGN has are told apart from zeros, and fr
     CHECK(missingPgnFieldTip(PGN_SELDEPTH, false) ==
           "Written when \"seldepth\" is on in the PGN options of the setup.");
     CHECK(missingPgnFieldTip(PGN_DECISION, std::nullopt).find("the engines give") != std::string::npos);
-    CHECK_FALSE(moveSeries(game->moves, MoveChart::Nodes).empty());
-    CHECK(moveSeries(game->moves, MoveChart::Agreement).empty());
+    const auto nodes = buildGameGraph(*game, false, GraphChart::Nodes, {}, {});
+    CHECK_FALSE(nodes.players[0].x.empty());
+    CHECK_FALSE(nodes.available[static_cast<std::size_t>(GraphChart::Predicted)]);
 }
 
 TEST_CASE("move charts: each side's values at its plies, and how far the PVs agree") {
@@ -1751,20 +1752,27 @@ TEST_CASE("move charts: each side's values at its plies, and how far the PVs agr
     moves[2].pv          = "g1f3 b8c6 f1b5";
     moves[3].pv          = "b8c6 a2a3";
 
-    const auto time = moveSeries(moves, MoveChart::Time);
-    REQUIRE(time.ply[1].size() == 2);  // Black's moves: plies 2 and 4
-    CHECK(time.ply[1][0] == 2);
-    CHECK(time.value[1][0] == doctest::Approx(1.0));
-    CHECK(time.extra[1][0] == doctest::Approx(0.25));
-    CHECK(std::isnan(time.extra[1][1]));
-    CHECK(time.ply[0].size() == 1);
+    // A live game, as the graph reads it.
+    SlotState st;
+    st.white        = "W";
+    st.black        = "B";
+    st.moves        = moves;
+    const auto game = replayOfSlot(st);
+    REQUIRE(game.moves.size() == 4);
 
-    const auto agreement = moveSeries(moves, MoveChart::Agreement);
-    REQUIRE(agreement.ply[0].size() == 1);
-    CHECK(agreement.value[0][0] == 2);  // White's g1f3 b8c6 after Black's e7e5 g1f3 b8c6
-    CHECK(agreement.value[1][0] == 1);
-    CHECK(moveSeries(moves, MoveChart::TbHits).empty());
-    CHECK(moveSeries(moves, MoveChart::Eval).empty());
+    const auto time = buildGameGraph(game, false, GraphChart::Time, {}, {});
+    REQUIRE(time.players[1].x.size() == 2);  // Black's moves: plies 2 and 4
+    CHECK(time.players[1].x[0] == 2);
+    CHECK(time.players[1].y[0] == doctest::Approx(1.0));
+    CHECK(time.players[1].extra[0] == doctest::Approx(0.25));
+    CHECK(std::isnan(time.players[1].extra[1]));
+    CHECK(time.players[0].x.size() == 1);
+
+    const auto agreement = buildGameGraph(game, false, GraphChart::Predicted, {}, {});
+    REQUIRE(agreement.players[0].x.size() == 1);
+    CHECK(agreement.players[0].y[0] == 2);  // White's g1f3 b8c6 after Black's e7e5 g1f3 b8c6
+    CHECK(agreement.players[1].y[0] == 1);
+    CHECK_FALSE(agreement.available[static_cast<std::size_t>(GraphChart::TbHits)]);
 }
 
 TEST_CASE("live: an edit while a resumed tournament's games are read leaves the lists as a fresh open shows them") {

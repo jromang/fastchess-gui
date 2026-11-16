@@ -308,6 +308,10 @@ void App::frame() {
                 review_when_read_ = true;
                 if (w.rfind("board-review-", 0) == 0) review_ply_ = std::atoi(w.c_str() + 13);
             }
+        } else if (w.rfind("board-graph=", 0) == 0) {  // the Board page's graph on that chart: board-graph=win
+            loadBoardSettings();
+            board_.settings.graph.chart  = nlohmann::json(w.substr(12)).get<GraphChart>();
+            board_.settings.graph.folded = false;
         } else if (w.rfind("board-ply=", 0) == 0) {  // the Board page's game at that ply
             page_      = Page::Board;
             board_.ply = std::clamp(std::atoi(w.c_str() + 10), 0, static_cast<int>(board_.game.moves.size()));
@@ -467,17 +471,11 @@ void App::frame() {
         } else if (w.rfind("games-", 0) == 0 || w.rfind("live-", 0) == 0) {
             // The tab with a chart under the game: games-time, live-agreement...
             const auto chart                     = w.substr(w.find('-') + 1);
-            const auto kind                      = chart == "time"        ? MoveChart::Time
-                                                   : chart == "depth"     ? MoveChart::Depth
-                                                   : chart == "nodes"     ? MoveChart::Nodes
-                                                   : chart == "speed"     ? MoveChart::Speed
-                                                   : chart == "tbhits"    ? MoveChart::TbHits
-                                                   : chart == "agreement" ? MoveChart::Agreement
-                                                                          : MoveChart::Eval;
-            page_                                = Page::Tournament;
-            const bool live                      = w[0] == 'l';
-            tab_request_                         = live ? Tab::Live : Tab::Games;
-            (live ? live_chart_ : replay_chart_) = kind;
+            const auto kind = nlohmann::json(chart == "agreement" ? std::string("predicted") : chart).get<GraphChart>();
+            page_           = Page::Tournament;
+            const bool live = w[0] == 'l';
+            tab_request_    = live ? Tab::Live : Tab::Games;
+            (live ? live_graph_ : replay_graph_).chart = kind;
         } else {
             // open=DIR, open-TAB=DIR: a tournament's folder opened as Open a folder… does, on that tab.
             std::string tab = w;
