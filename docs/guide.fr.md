@@ -234,7 +234,7 @@ peut donc être déplacé ou supprimé, et le profil déplacé en entier ; *Reti
 qu'un autre moteur ne l'ait). Le logo peut être changé pendant que le moteur joue.
 
 ### L'échiquier 3D
-<!-- en: the-3d-board b8876424 -->
+<!-- en: the-3d-board 48808129 -->
 
 **Réglages** > *Apparence* > *Échiquier 3D* > *L'échiquier de la page Échiquier en 3D* dessine l'échiquier de la page
 [Échiquier](#échiquier) en trois dimensions, comme la photographie d'un vrai échiquier (désactivé par défaut ; tous
@@ -253,11 +253,12 @@ lui aussi, pour que les choix à côté se voient à mesure qu'ils changent :
 - *Défaut* remet l'exposition, la qualité, le vernis et la brillance comme ils étaient ; l'éclairage reste.
 
 Ce que montre l'échiquier plat y est : la barre d'évaluation, le dernier coup, la pièce prise en main et où elle peut
-aller, un roi en échec, et les flèches de l'analyse, qui se voient en transparence à travers les pièces. Un clic gauche
-choisit une case comme sur l'échiquier plat, sur une pièce ou sur l'échiquier derrière elle. Le bouton droit maintenu
-pendant que la souris bouge fait tourner autour de l'échiquier (un clic droit sans bouger lâche toujours la pièce prise
-en main), la molette rapproche, et un clic de la molette ramène la vue ; retourner l'échiquier (F) fait faire un
-demi-tour à la caméra.
+aller, un roi en échec, les flèches de l'analyse, qui se voient en transparence à travers les pièces, la réponse
+qu'attendait le moteur qui a joué le coup en pointillés, le jugement du coup en pastille au-dessus de sa case, et le
+cadre d'une ligne montrée à la place de la partie. Un clic gauche choisit une case comme sur l'échiquier plat, sur une
+pièce ou sur l'échiquier derrière elle. Le bouton droit maintenu pendant que la souris bouge fait tourner autour de
+l'échiquier (un clic droit sans bouger lâche toujours la pièce prise en main), la molette rapproche, et un clic de la
+molette ramène la vue ; retourner l'échiquier (F) fait faire un demi-tour à la caméra.
 
 L'échiquier 3D demande OpenGL 3.3. Là où la fenêtre est dessinée sans lui (le rendu logiciel de
 [Rendu de la fenêtre](#rendu-de-la-fenêtre), certaines machines virtuelles et certains bureaux à distance), les

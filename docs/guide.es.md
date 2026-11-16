@@ -232,7 +232,7 @@ que el original puede moverse o borrarse y el perfil trasladarse entero; *Quitar
 otro motor la tenga). El logo puede cambiarse mientras el motor juega.
 
 ### El tablero 3D
-<!-- en: the-3d-board b8876424 -->
+<!-- en: the-3d-board 48808129 -->
 
 **Ajustes** > *Apariencia* > *Tablero 3D* > *El tablero de la página Tablero en 3D* dibuja el tablero de la página
 [Tablero](#tablero) en tres dimensiones, como la fotografía de un tablero real (desactivado por defecto; todos los
@@ -250,12 +250,13 @@ también en 3D, para que las opciones de al lado se vean a medida que cambian:
 - *Barniz*, de una madera encerada y mate a una capa en la que se ven las luces, y *Brillo*, de satinado a espejo;
 - *Por defecto* devuelve la exposición, la calidad, el barniz y el brillo a como estaban; la iluminación se mantiene.
 
-Lo que muestra el tablero plano está en él: la barra de evaluación, la última jugada, la pieza tomada y adónde puede
-ir, un rey en jaque, y las flechas del análisis, que se ven tenuemente a través de las piezas. Un clic izquierdo elige
-una casilla como en el tablero plano, sobre una pieza o sobre el tablero detrás de ella. Si mantienes pulsado el botón
-derecho mientras mueves el ratón, la cámara gira alrededor del tablero (un clic derecho sin moverse sigue soltando la
-pieza tomada), la rueda acerca, y un clic de la rueda devuelve la vista; girar el tablero (F) hace que la cámara dé
-media vuelta.
+Lo que muestra el tablero plano está en él: la barra de evaluación, la última jugada, la pieza tomada y adónde puede ir,
+un rey en jaque, las flechas del análisis, que se ven tenuemente a través de las piezas, la respuesta que esperaba el
+motor que jugó la jugada, en trazos, el juicio de la jugada como insignia sobre su casilla, y el marco de una línea
+mostrada en lugar de la partida. Un clic izquierdo elige una casilla como en el tablero plano, sobre una pieza o sobre
+el tablero detrás de ella. Si mantienes pulsado el botón derecho mientras mueves el ratón, la cámara gira alrededor del
+tablero (un clic derecho sin moverse sigue soltando la pieza tomada), la rueda acerca, y un clic de la rueda devuelve la
+vista; girar el tablero (F) hace que la cámara dé media vuelta.
 
 El tablero 3D necesita OpenGL 3.3. Donde la ventana se dibuja sin él (el renderizador por software de
 [Cómo se dibuja la ventana](#cómo-se-dibuja-la-ventana), algunas máquinas virtuales y escritorios remotos), los

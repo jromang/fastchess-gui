@@ -226,7 +226,7 @@ pode ser movido ou apagado e o perfil movido inteiro; *Remover* a retira (e a c�
 use). O logo pode ser trocado enquanto o engine joga.
 
 ### O tabuleiro 3D
-<!-- en: the-3d-board b8876424 -->
+<!-- en: the-3d-board 48808129 -->
 
 **Preferências** > *Aparência* > *Tabuleiro 3D* > *O tabuleiro da página Tabuleiro em 3D* desenha o tabuleiro da
 página [Tabuleiro](#tabuleiro) em três dimensões, como a fotografia de um tabuleiro de verdade (desativado por padrão;
@@ -246,10 +246,12 @@ ser desenhado em 3D também, para que as escolhas ao lado apareçam à medida qu
 - *Padrão* devolve a exposição, a qualidade, o verniz e o brilho ao que eram; a iluminação fica.
 
 O que o tabuleiro plano mostra está nele: a barra de avaliação, o último lance, a peça pegada e para onde ela pode ir,
-um rei em xeque e as setas da análise, que aparecem de leve através das peças. Um clique esquerdo escolhe uma casa
-como no tabuleiro plano, numa peça ou no tabuleiro atrás dela. Se você mantiver o botão direito pressionado enquanto
-move o mouse, a câmera gira em volta do tabuleiro (um clique direito sem mover continua soltando a peça pegada), a
-roda aproxima, e um clique da roda traz a vista de volta; girar o tabuleiro (F) faz a câmera dar meia-volta.
+um rei em xeque, as setas da análise, que aparecem de leve através das peças, a resposta que o engine que jogou o lance
+esperava, tracejada, o julgamento do lance como selo acima da sua casa e a moldura de uma linha mostrada no lugar da
+partida. Um clique esquerdo escolhe uma casa como no tabuleiro plano, numa peça ou no tabuleiro atrás dela. Se você
+mantiver o botão direito pressionado enquanto move o mouse, a câmera gira em volta do tabuleiro (um clique direito sem
+mover continua soltando a peça pegada), a roda aproxima, e um clique da roda traz a vista de volta; girar o tabuleiro
+(F) faz a câmera dar meia-volta.
 
 O tabuleiro 3D precisa do OpenGL 3.3. Onde a janela é desenhada sem ele (o renderizador por software de
 [Renderização da janela](#renderização-da-janela), algumas máquinas virtuais e áreas de trabalho remotas), os

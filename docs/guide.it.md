@@ -233,7 +233,7 @@ quindi l'originale può essere spostato o cancellato e il profilo spostato per i
 copia, a meno che un altro motore non la usi). Il logo si può cambiare mentre il motore gioca.
 
 ### La scacchiera 3D
-<!-- en: the-3d-board b8876424 -->
+<!-- en: the-3d-board 48808129 -->
 
 **Impostazioni** > *Aspetto* > *Scacchiera 3D* > *La scacchiera della pagina Scacchiera in 3D* disegna la scacchiera
 della pagina [Scacchiera](#scacchiera) in tre dimensioni, come la fotografia di una scacchiera vera (disattivata per
@@ -252,11 +252,12 @@ scheda si ferma; mentre la scacchiera ruota, un'immagine più grossolana ne pren
 - *Predefinito* riporta esposizione, qualità, vernice e lucentezza come erano; l'illuminazione resta.
 
 Ciò che mostra la scacchiera piatta c'è: la barra di valutazione, l'ultima mossa, il pezzo preso e dove può andare, un
-re sotto scacco, e le frecce dell'analisi, che si vedono in trasparenza attraverso i pezzi. Un clic sinistro sceglie
-una casa come sulla scacchiera piatta, su un pezzo o sulla scacchiera dietro di esso. Se tieni premuto il tasto destro
-mentre muovi il mouse, la telecamera gira intorno alla scacchiera (un clic destro senza muoversi lascia sempre il pezzo
-preso), la rotellina avvicina, e un clic della rotellina riporta la vista; ruotare la scacchiera (F) fa fare alla
-telecamera mezzo giro.
+re sotto scacco, le frecce dell'analisi, che si vedono in trasparenza attraverso i pezzi, la risposta che il motore che
+ha giocato la mossa si aspettava, tratteggiata, il giudizio sulla mossa come bollino sopra la sua casa, e la cornice di
+una linea mostrata al posto della partita. Un clic sinistro sceglie una casa come sulla scacchiera piatta, su un pezzo o
+sulla scacchiera dietro di esso. Se tieni premuto il tasto destro mentre muovi il mouse, la telecamera gira intorno alla
+scacchiera (un clic destro senza muoversi lascia sempre il pezzo preso), la rotellina avvicina, e un clic della
+rotellina riporta la vista; ruotare la scacchiera (F) fa fare alla telecamera mezzo giro.
 
 La scacchiera 3D richiede OpenGL 3.3. Dove la finestra è disegnata senza (il renderer software di
 [Disegno della finestra](#disegno-della-finestra), alcune macchine virtuali e desktop remoti), le scacchiere restano

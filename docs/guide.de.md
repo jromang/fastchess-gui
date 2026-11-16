@@ -235,7 +235,7 @@ Original verschoben oder gelöscht und das Profil als Ganzes verschoben werden k
 seine Kopie, sofern keine andere Engine sie hat). Das Logo lässt sich ändern, während die Engine spielt.
 
 ### Das 3D-Brett
-<!-- en: the-3d-board b8876424 -->
+<!-- en: the-3d-board 48808129 -->
 
 **Einstellungen** > *Darstellung* > *3D-Brett* > *Das Brett der Seite Brett in 3D* zeichnet das Brett der Seite
 [Brett](#brett) dreidimensional, wie das Foto eines echten Bretts (standardmäßig aus; alle anderen Bretter bleiben
@@ -255,11 +255,12 @@ gezeichnet, sodass sich die Einstellungen daneben zeigen, während sie sich änd
 - *Standard* stellt Belichtung, Qualität, Lack und Glanz wieder her, wie sie anfangs waren; die Beleuchtung bleibt.
 
 Was das flache Brett zeigt, ist darauf: der Bewertungsbalken, der letzte Zug, die aufgenommene Figur und wohin sie
-ziehen kann, ein König im Schach und die Pfeile der Analyse, die schwach durch die Figuren hindurch zu sehen sind. Ein
-Linksklick wählt ein Feld wie auf dem flachen Brett, auf einer Figur oder auf dem Brett dahinter. Hältst du die rechte
-Maustaste gedrückt und bewegst die Maus, kreist die Kamera um das Brett (ein Rechtsklick ohne Bewegung legt die
-aufgenommene Figur weiterhin ab), das Mausrad geht näher heran, und ein Klick mit dem Mausrad holt die Ansicht zurück;
-das Brett zu drehen (F) lässt die Kamera eine halbe Runde machen.
+ziehen kann, ein König im Schach, die Pfeile der Analyse, die schwach durch die Figuren hindurch zu sehen sind, die
+Antwort, die die Engine des Zuges erwartete, gestrichelt, das Urteil über den Zug als Plakette über seinem Feld und der
+Rahmen einer Variante, die statt der Partie gezeigt wird. Ein Linksklick wählt ein Feld wie auf dem flachen Brett, auf
+einer Figur oder auf dem Brett dahinter. Hältst du die rechte Maustaste gedrückt und bewegst die Maus, kreist die Kamera
+um das Brett (ein Rechtsklick ohne Bewegung legt die aufgenommene Figur weiterhin ab), das Mausrad geht näher heran, und
+ein Klick mit dem Mausrad holt die Ansicht zurück; das Brett zu drehen (F) lässt die Kamera eine halbe Runde machen.
 
 Das 3D-Brett braucht OpenGL 3.3. Wo das Fenster ohne es gezeichnet wird (der Software-Renderer aus
 [Wie das Fenster gezeichnet wird](#wie-das-fenster-gezeichnet-wird), manche virtuellen Maschinen und Remotedesktops),

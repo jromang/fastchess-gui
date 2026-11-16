@@ -219,7 +219,9 @@ card each frame, then the card rests; while the board turns, a coarser picture s
 - *Default* brings the exposure, the quality, the varnish and the gloss back as they were; the lighting stays.
 
 What the flat board shows is on it: the eval bar, the last move, the piece picked up and where it may go, a king in
-check, and the analysis's arrows, which show faintly through the pieces. A left click picks a square as on the flat
+check, the analysis's arrows, which show faintly through the pieces, the reply the engine that played the move
+expected in dashes, the move's judgement as a badge above its square, and the frame of a line shown instead of the
+game. A left click picks a square as on the flat
 board, on a piece or on the board behind it. The right button held while the mouse moves turns round the board (a
 right click without moving still lets go of the piece picked up), the wheel comes closer, and a click of the wheel
 brings the view back; flipping the board (F) turns the camera half way round.
