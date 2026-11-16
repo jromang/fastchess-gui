@@ -1187,13 +1187,13 @@ msgstr ""
 msgid "Click: hide it."
 msgstr ""
 
-msgid "Click: play its first move. Scores are White's."
-msgstr ""
-
 msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
 msgstr ""
 
 msgid "Click: show it."
+msgstr ""
+
+msgid "Click: the line played up to this move. Scores are White's."
 msgstr ""
 
 msgid "Clock"
@@ -1842,6 +1842,9 @@ msgid "Failed: {}"
 msgstr ""
 
 msgid "Few enough pieces for the tablebase adjudication."
+msgstr ""
+
+msgid "Figurines in the notation"
 msgstr ""
 
 msgid "File"
@@ -4776,6 +4779,9 @@ msgstr ""
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr ""
 
+msgid "The moves of the Board page written with the pieces of the set chosen above (Nf3 becomes a knight and f3), in its moves and its analysis's lines."
+msgstr ""
+
 msgid "The next tournament starts beside those running as soon as the cores of the budget (Settings) are more than they can take, each at its concurrency."
 msgstr ""
 
@@ -5103,13 +5109,13 @@ msgstr ""
 msgid "There is no change to undo."
 msgstr ""
 
-msgid "These settings are the analysis's: they change neither the engine in the library nor a tournament."
-msgstr ""
-
 msgid "These settings under a name, to choose them again in other tournaments and templates."
 msgstr ""
 
 msgid "They have not played each other."
+msgstr ""
+
+msgid "This analysis's own threads, hash and lines: they change neither the engine in the library nor a tournament."
 msgstr ""
 
 msgid "This book cannot play for an engine: {}"
@@ -5194,6 +5200,18 @@ msgid "Threads {}"
 msgstr ""
 
 msgid "Threads {} of the common settings: {} games × {} threads exceed the {}."
+msgstr ""
+
+msgid "Threat"
+msgstr ""
+
+msgid "Threat: none while in check."
+msgstr ""
+
+msgid "Threat: {} ({})"
+msgstr ""
+
+msgid "Threat: …"
 msgstr ""
 
 msgid "Through the adapter"
@@ -5640,6 +5658,9 @@ msgstr ""
 msgid "Wrong PVs"
 msgstr ""
 
+msgid "X: the opponent's best move if it could move again, as a red arrow (another process of the engine, its threads counted)."
+msgstr ""
+
 msgid "Your own folder"
 msgstr ""
 
@@ -5932,6 +5953,9 @@ msgid "games wait for memory"
 msgstr ""
 
 msgid "gone"
+msgstr ""
+
+msgid "hash of the engine"
 msgstr ""
 
 msgid "here: {}"
@@ -6261,6 +6285,9 @@ msgstr ""
 msgid "to mention in the post, or to test the engine again:"
 msgstr ""
 
+msgid "tournament on {}"
+msgstr ""
+
 msgid "true difference (Elo)"
 msgstr ""
 
@@ -6371,6 +6398,9 @@ msgid "{} / {} games"
 msgstr ""
 
 msgid "{} / {} points"
+msgstr ""
+
+msgid "{} / {} threads"
 msgstr ""
 
 msgid "{} = {}: a value it refuses"
@@ -6892,6 +6922,11 @@ msgid_plural "{} library engines have this name"
 msgstr[0] ""
 msgstr[1] ""
 
+msgid "{} line"
+msgid_plural "{} lines"
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "{} loses on time"
 msgstr ""
 
@@ -7330,6 +7365,9 @@ msgid "{} · {} games · first: {} · {}"
 msgstr ""
 
 msgid "{} · {} games · {}"
+msgstr ""
+
+msgid "{} · {} · {}"
 msgstr ""
 
 msgid "{} × {} pairings × 2 games × {} cycles"

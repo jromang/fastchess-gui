@@ -40,6 +40,8 @@ struct AnalysisLine {
     uint64_t nodes  = 0;
     uint64_t nps    = 0;
     int64_t time_ms = 0;
+    uint64_t tbhits  = 0;
+    int64_t hashfull = -1;        // permille, -1 when not told
     std::vector<std::string> pv;  // UCI moves
 };
 

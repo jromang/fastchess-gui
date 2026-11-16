@@ -44,6 +44,8 @@ bool takeInfoLine(std::vector<AnalysisLine>& lines, const std::string& info, int
     if (parsed.nodes) line.nodes = *parsed.nodes;
     if (parsed.nps) line.nps = *parsed.nps;
     if (parsed.time) line.time_ms = *parsed.time;
+    if (parsed.tbhits) line.tbhits = *parsed.tbhits;
+    if (parsed.hashfull) line.hashfull = *parsed.hashfull;
     // A bound often comes without its PV: the last one stays.
     if (!parsed.pv.empty()) line.pv = parsed.pv;
     return true;

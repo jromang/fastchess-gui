@@ -160,6 +160,8 @@ struct BoardPage {
     bool settings_loaded = false;
     Analyser analyser;
     bool analysing = false;  // asked for: the analysis follows the board while the page is shown
+    Analyser threat;         // the opponent's best move were it to move again (X), on an engine of its own
+    bool threat_on = false;
     bool new_game  = true;   // another game came: the engine gets ucinewgame
 
     std::optional<PgnSource> pgn;          // the games of a file or a paste

@@ -1181,14 +1181,14 @@ msgstr "点击排序；右键选择列。"
 msgid "Click: hide it."
 msgstr "单击：隐藏。"
 
-msgid "Click: play its first move. Scores are White's."
-msgstr "点击：走出其第一步。评分为白方视角。"
-
 msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
 msgstr "点击：放置所选棋子（再次点击：移除）。右键：移除。"
 
 msgid "Click: show it."
 msgstr "单击：显示。"
+
+msgid "Click: the line played up to this move. Scores are White's."
+msgstr "单击：把这条变化走到这一步。分数以白方计。"
 
 msgid "Clock"
 msgstr "棋钟"
@@ -1837,6 +1837,9 @@ msgstr "失败：{}"
 
 msgid "Few enough pieces for the tablebase adjudication."
 msgstr "棋子足够少，可以用残局库裁定。"
+
+msgid "Figurines in the notation"
+msgstr "棋谱中使用棋子图形"
 
 msgid "File"
 msgstr "文件"
@@ -4753,6 +4756,9 @@ msgstr "最有看点的"
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "轮到走棋的一方正在考虑的着法及其预期的应着，以将走这些着法的引擎的颜色显示。"
 
+msgid "The moves of the Board page written with the pieces of the set chosen above (Nf3 becomes a knight and f3), in its moves and its analysis's lines."
+msgstr "棋盘页面的着法用上面所选棋子套装的图形书写（Nf3 写成马和 f3），包括其着法和分析的变化。"
+
 msgid "The next tournament starts beside those running as soon as the cores of the budget (Settings) are more than they can take, each at its concurrency."
 msgstr "一旦预算（设置）中的核心多于进行中的锦标赛按各自并发数所能占用的，下一个锦标赛就与它们同时启动。"
 
@@ -5077,14 +5083,14 @@ msgstr "主题"
 msgid "There is no change to undo."
 msgstr "没有可撤销的更改。"
 
-msgid "These settings are the analysis's: they change neither the engine in the library nor a tournament."
-msgstr "这些是分析自己的设置：既不改变引擎库中的引擎，也不影响锦标赛。"
-
 msgid "These settings under a name, to choose them again in other tournaments and templates."
 msgstr "为这些设置命名，以便在其他比赛和模板中再次选用。"
 
 msgid "They have not played each other."
 msgstr "它们之间没有对弈过。"
+
+msgid "This analysis's own threads, hash and lines: they change neither the engine in the library nor a tournament."
+msgstr "本分析自己的线程、哈希和变化数：既不改变库中的引擎，也不影响比赛。"
 
 msgid "This book cannot play for an engine: {}"
 msgstr "此开局库不能代替引擎走棋：{}"
@@ -5169,6 +5175,18 @@ msgstr "线程 {}"
 
 msgid "Threads {} of the common settings: {} games × {} threads exceed the {}."
 msgstr "通用设置的 Threads {}：{} 局 × {} 线程超过了 {}。"
+
+msgid "Threat"
+msgstr "威胁"
+
+msgid "Threat: none while in check."
+msgstr "威胁：被将军时无。"
+
+msgid "Threat: {} ({})"
+msgstr "威胁：{}（{}）"
+
+msgid "Threat: …"
+msgstr "威胁：…"
 
 msgid "Through the adapter"
 msgstr "通过适配器"
@@ -5611,6 +5629,9 @@ msgstr "当设置的 PGN 选项中“{}”开启时写入。"
 msgid "Wrong PVs"
 msgstr "错误 PV"
 
+msgid "X: the opponent's best move if it could move again, as a red arrow (another process of the engine, its threads counted)."
+msgstr "X：如果对手能再走一步时的最佳着法，以红色箭头显示（引擎的另一个进程，计入其线程）。"
+
 msgid "Your own folder"
 msgstr "自己的文件夹"
 
@@ -5901,6 +5922,9 @@ msgstr "对局在等待内存"
 
 msgid "gone"
 msgstr "已移除"
+
+msgid "hash of the engine"
+msgstr "引擎自身的哈希"
 
 msgid "here: {}"
 msgstr "本机：{}"
@@ -6226,6 +6250,9 @@ msgstr "每步用时 · 白方在上，黑方在下"
 msgid "to mention in the post, or to test the engine again:"
 msgstr "可在帖子中注明，或重新测试引擎："
 
+msgid "tournament on {}"
+msgstr "比赛占用 {}"
+
 msgid "true difference (Elo)"
 msgstr "真实差距 (Elo)"
 
@@ -6335,6 +6362,9 @@ msgstr "{} / {} 局"
 
 msgid "{} / {} points"
 msgstr "{} / {} 分"
+
+msgid "{} / {} threads"
+msgstr "{} / {} 线程"
 
 msgid "{} = {}: a value it refuses"
 msgstr "{} = {}：引擎拒绝的值"
@@ -6816,6 +6846,10 @@ msgid "{} library engine has this name"
 msgid_plural "{} library engines have this name"
 msgstr[0] "{} 个库引擎使用此名称"
 
+msgid "{} line"
+msgid_plural "{} lines"
+msgstr[0] "{} 条变化"
+
 msgid "{} loses on time"
 msgstr "{} 超时判负"
 
@@ -7215,6 +7249,9 @@ msgstr "{} · {} 局 · 首个：{} · {}"
 
 msgid "{} · {} games · {}"
 msgstr "{} · {} 局 · {}"
+
+msgid "{} · {} · {}"
+msgstr "{} · {} · {}"
 
 msgid "{} × {} pairings × 2 games × {} cycles"
 msgstr "{} × {} 组配对 × 2 局 × {} 个循环"

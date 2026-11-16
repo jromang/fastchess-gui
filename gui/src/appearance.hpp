@@ -86,6 +86,7 @@ struct Settings {
     std::string piece_folder;         // with FOLDER: 12 SVG files named wK.svg ... bP.svg
     bool sounds = false;              // a sound for each move of the game followed
     int volume  = 70;                 // percent
+    bool figurines = true;               // the pieces of the set in the notation, instead of letters
     Board3d board3d;
 
     [[nodiscard]] const Board& board(ui::Theme theme) const {

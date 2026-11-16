@@ -19,6 +19,7 @@
 #include "board_text.hpp"
 #include "console.hpp"
 #include "i18n.hpp"
+#include "notation_view.hpp"
 #include "run.hpp"
 #include "storage.hpp"
 #include "ui.hpp"
@@ -222,9 +223,46 @@ void App::setBoardAnalysis(bool on) {
     board_.analysing = true;
 }
 
+std::optional<AnalysisPosition> App::threatPosition() const {
+    const auto& b = board_;
+    auto board    = boardAt(b.game, b.chess960, b.ply);
+    if (board.inCheck() || board.isGameOver().second != chess::GameResult::NONE) return std::nullopt;
+    board.makeNullMove();
+    return AnalysisPosition{board.getFen(), {}, b.chess960};
+}
+
+void App::setBoardThreat(bool on) {
+    auto& b = board_;
+    if (!on) {
+        b.threat_on = false;
+        b.threat.halt();
+        return;
+    }
+    const auto* engine = analysisEngine();
+    if (!engine) {
+        b.message       = TR("No engine to analyse with: add one on the Engines page.");
+        b.message_error = true;
+        return;
+    }
+    auto one    = b.settings.analysis;
+    one.multipv = 1;
+    if (!b.threat.active() || b.threat.engine() != engine->name) b.threat.start(*engine, one);
+    b.threat_on = true;
+}
+
 void App::pollBoard() {
     board_key_taken_ = false;
     board_.analyser.poll();
+    board_.threat.poll();
+    if (board_.threat_on && board_.threat.state() == Analyser::State::Failed) board_.threat_on = false;
+    if (board_.threat_on && page_ == Page::Board && !board_.editor) {
+        if (const auto position = threatPosition())
+            board_.threat.analyse(*position);
+        else
+            board_.threat.halt();
+    } else if (board_.threat.state() == Analyser::State::Searching) {
+        board_.threat.halt();
+    }
     pollBoardPgn();
     pollBoardGames();
     if (board_.analysing && board_.analyser.state() == Analyser::State::Failed) board_.analysing = false;
@@ -581,6 +619,8 @@ void App::drawBoardPage() {
         if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_V)) pasteOnBoard();
     }
     if (keys && boardKey()) setBoardAnalysis(!b.analysing);
+    if (keys && !b.editor && ImGui::IsKeyPressed(ImGuiKey_X, false) && !ImGui::GetIO().KeyCtrl)
+        setBoardThreat(!b.threat_on);
     if (keys && !b.editor && ImGui::IsKeyPressed(ImGuiKey_G, false) && !ImGui::GetIO().KeyCtrl) {
         if (b.reviewing())
             cancelGameReview();
@@ -1100,6 +1140,15 @@ void App::drawBoardColumn(float size) {
     if (b.selected) {
         for (const auto& m : movesFrom(board, *b.selected)) decor.targets.push_back(shownTarget(m));
     }
+    // The threat, in red.
+    if (b.threat_on && !b.threat.lines().empty() && !b.threat.lines().front().pv.empty()) {
+        if (const auto position = threatPosition(); position && b.threat.position() == *position) {
+            auto passed = board;
+            passed.makeNullMove();
+            if (const auto moves = legalPrefix(passed, {b.threat.lines().front().pv.front()}, 1); !moves.empty())
+                decor.arrows.push_back({moves.front(), IM_COL32(205, 40, 40, 200)});
+        }
+    }
     if (b.ply > 0) {
         const auto& m = b.game.moves[static_cast<std::size_t>(b.ply - 1)];
         // The move's judgement on its square.
@@ -1280,6 +1329,7 @@ void App::drawBoardAnalysis() {
             saveBoardSettings();
             // Another engine: the one running ends, the new one starts if the analysis runs.
             a.stop();
+            b.threat.stop();
             if (b.analysing) setBoardAnalysis(true);
         }
         ImGui::EndCombo();
@@ -1289,32 +1339,80 @@ void App::drawBoardAnalysis() {
                                    "than those beside are the library's, sent as a game sends them."));
     }
     ui::topic(guide::topics::Analysis);
-    // Threads, hash and lines: the analysis's own.
-    const auto number = [&](const char* id, const char* label, int& value, int lo, int hi, const char* tip) {
-        ui::sameLineOrWrap(ImGui::CalcTextSize(label).x + px(56));
-        ImGui::TextDisabled("%s", label);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tip);
-        ImGui::SameLine(0, px(4));
-        ImGui::SetNextItemWidth(px(52));
-        if (ui::inputInt(id, &value)) {
-            value   = std::clamp(value, lo, hi);
-            changed = true;
+
+    // Threads, hash and lines, folded into one line: a click opens them.
+    ImGui::SameLine();
+    {
+        const auto summary = trf("{} · {} · {}", trn("{} thread", "{} threads", s.threads, s.threads),
+                                 s.hash > 0 ? fmt::format("{} MB", s.hash) : std::string(TR("hash of the engine")),
+                                 trn("{} line", "{} lines", s.multipv, s.multipv));
+        if (ui::iconButton("analysis_settings", ui::Icon::Settings, summary.c_str()))
+            ImGui::OpenPopup("##analysis_settings_popup");
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("This analysis's own threads, hash and lines: they change neither the engine in "
+                                       "the library nor a tournament."));
         }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tip);
-    };
-    number("##analysis_threads", TR("Threads"), s.threads, 1, std::max(1, topology_.logical),
-           TR("The threads of the analysis: they count in the core budget, with a tournament's games."));
-    number("##analysis_hash", TR("Hash"), s.hash, 0, 1 << 20, TR("MB; 0: the engine's own."));
-    number("##analysis_lines", TR("Lines"), s.multipv, 1, 10, TR("How many best moves are shown (MultiPV)."));
-    ui::sameLineOrWrap(TR("this analysis only"));
-    ImGui::TextDisabled("%s", TR("this analysis only"));
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", TR("These settings are the analysis's: they change neither the engine in the library "
-                                   "nor a tournament."));
+        if (ImGui::BeginPopup("##analysis_settings_popup")) {
+            const auto number = [&](const char* id, const char* label, int& value, int lo, int hi, const char* tip) {
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(label);
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tip);
+                ImGui::SameLine(px(90));
+                ImGui::SetNextItemWidth(px(80));
+                if (ui::inputInt(id, &value)) {
+                    value   = std::clamp(value, lo, hi);
+                    changed = true;
+                }
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tip);
+            };
+            number("##analysis_threads", TR("Threads"), s.threads, 1, std::max(1, topology_.logical),
+                   TR("The threads of the analysis: they count in the core budget, with a tournament's games."));
+            number("##analysis_hash", TR("Hash"), s.hash, 0, 1 << 20, TR("MB; 0: the engine's own."));
+            number("##analysis_lines", TR("Lines"), s.multipv, 1, 10, TR("How many best moves are shown (MultiPV)."));
+            ImGui::TextDisabled("%s", TR("this analysis only"));
+            ImGui::EndPopup();
+        }
     }
     if (changed) {
         saveBoardSettings();
         a.update(s);
+        auto one    = s;
+        one.multipv = 1;
+        b.threat.update(one);
+    }
+    // The threat: the opponent's best move, were it to move again.
+    ImGui::SameLine();
+    {
+        const bool on = b.threat_on;
+        if (on) ImGui::PushStyleColor(ImGuiCol_Button, ui::SELECT);
+        if (ImGui::SmallButton(TR("Threat"))) setBoardThreat(!b.threat_on);
+        if (on) ImGui::PopStyleColor();
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("X: the opponent's best move if it could move again, as a red arrow (another "
+                                       "process of the engine, its threads counted)."));
+        }
+        ImGui::SameLine(0, px(4));
+        ImGui::TextDisabled("X");
+    }
+    // Its place among the cores, at the right.
+    {
+        const int threads = boardThreads();
+        const int busy    = tournamentThreads();
+        auto chip         = trf("{} / {} threads", threads, topology_.logical);
+        if (busy > 0) chip += " · " + trf("tournament on {}", busy);
+        ImGui::SameLine(std::max(ImGui::GetCursorPosX() + px(8),
+                                 ImGui::GetContentRegionMax().x - ImGui::CalcTextSize(chip.c_str()).x - px(4)));
+        ImGui::AlignTextToFramePadding();
+        if (busy > 0)
+            ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ui::WARN), "%s", chip.c_str());
+        else
+            ImGui::TextDisabled("%s", chip.c_str());
+        if (ImGui::IsItemHovered()) {
+            std::string tip = TR("The threads the analysis and the games of this page use now, out of the machine's.");
+            if (busy > 0)
+                tip += "\n" + trf("A tournament is running: the analysis competes with its games ({} threads).", busy);
+            ImGui::SetTooltip("%s", tip.c_str());
+        }
     }
 
     // How the search goes.
@@ -1329,60 +1427,111 @@ void App::drawBoardAnalysis() {
         ImGui::TextDisabled("%s", trf("Starting {}…", a.engine()).c_str());
     } else {
         const auto& lines = a.lines();
-        std::string head  = a.idName().empty() ? a.engine() : a.idName();
-        head += " · " + trn("{} thread", "{} threads", a.hasOption("Threads") ? s.threads : 1,
-                            a.hasOption("Threads") ? s.threads : 1);
-        if (a.hasOption("MultiPV")) head += fmt::format(" · MultiPV {}", s.multipv);
-        if (!lines.empty()) {
-            const auto& best = lines.front();
-            head += fmt::format(" · d{}/{} · {} n · {} n/s · {}", best.depth, best.seldepth,
-                                ui::formatCount(best.nodes), ui::formatCount(best.nps), ui::formatClock(best.time_ms));
-        }
-        if (!b.analysing) head += " · " + std::string(TR("stopped"));
-        ImGui::TextDisabled("%s", head.c_str());
-
-        const bool fresh = a.position() == analysisPosition(b.game, b.chess960, b.ply);
+        const bool fresh  = a.position() == analysisPosition(b.game, b.chess960, b.ply);
         if (!fresh) {
             ImGui::TextDisabled("%s", b.analysing ? "…" : TR("Not this position."));
-        } else if (!lines.empty() && lines.front().wdl) {
-            // The best line's chances, White's.
-            auto wdl = *lines.front().wdl;
-            if (stm == chess::Color::BLACK) std::swap(wdl[0], wdl[2]);
-            wdlLine(wdl);
+        } else if (!lines.empty()) {
+            // The search in figures.
+            const auto& best = lines.front();
+            const std::array<std::pair<const char*, std::string>, 6> tiles{
+                {{TR("Depth"), fmt::format("{}/{}", best.depth, best.seldepth)},
+                 {TR("Nodes"), ui::formatCount(best.nodes)},
+                 {TR("Speed"), ui::formatCount(best.nps) + "/s"},
+                 {TR("Time"), ui::formatClock(best.time_ms)},
+                 {TR("TB hits"), ui::formatCount(best.tbhits)},
+                 {TR("Hash"), best.hashfull >= 0 ? fmt::format("{} %", best.hashfull / 10) : std::string("–")}}};
+            const float gap = px(4);
+            const float w   = (ImGui::GetContentRegionAvail().x - gap * 5) / 6;
+            const float h   = ImGui::GetTextLineHeight() * 2.1f + px(6);
+            auto* dl        = ImGui::GetWindowDrawList();
+            const ImVec2 at = ImGui::GetCursorScreenPos();
+            const ImU32 tile =
+                ui::currentTheme() == ui::Theme::Light ? IM_COL32(243, 245, 248, 255) : IM_COL32(32, 36, 43, 255);
+            for (std::size_t i = 0; i < tiles.size(); ++i) {
+                const ImVec2 p0(at.x + static_cast<float>(i) * (w + gap), at.y);
+                dl->AddRectFilled(p0, ImVec2(p0.x + w, p0.y + h), tile, px(5));
+                dl->AddText(ImGui::GetFont(), ImGui::GetFontSize() * 0.7f, ImVec2(p0.x + px(7), p0.y + px(3)),
+                            ui::MUTED, tiles[i].first);
+                dl->AddText(ImVec2(p0.x + px(7), p0.y + h - ImGui::GetTextLineHeight() - px(3)),
+                            ImGui::GetColorU32(ImGuiCol_Text), tiles[i].second.c_str());
+            }
+            ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, h));
+            if (best.wdl) {
+                // The best line's chances, White's.
+                auto wdl = *best.wdl;
+                if (stm == chess::Color::BLACK) std::swap(wdl[0], wdl[2]);
+                wdlLine(wdl);
+            }
         }
         if (fresh) {
+            const auto* figurines = appearance::current().figurines ? &atlas_ : nullptr;
+            const float badge_w   = ImGui::CalcTextSize("+00.00").x + px(10);
+            const float depth_w   = ImGui::CalcTextSize("d00").x + px(8);
             for (std::size_t i = 0; i < lines.size(); ++i) {
                 const auto& line = lines[i];
                 if (line.pv.empty()) continue;
-                const auto score = whiteScoreText(line, stm);
-                const auto pv    = pvToSan(board, line.pv, 14);
                 ImGui::PushID(static_cast<int>(i));
-                // A click plays its first move.
-                const auto label = fmt::format("{:>6}  d{}  {}", score, line.depth, pv);
-                if (ImGui::Selectable(label.c_str(), false)) {
-                    const auto first = legalPrefix(board, line.pv, 1);
-                    if (!first.empty()) boardPlay(first.front());
+                // Its score, White's, the best one set apart; its depth; its moves on two lines at most.
+                const auto score = whiteScoreText(line, stm);
+                const ImVec2 p   = ImGui::GetCursorScreenPos();
+                auto* dl         = ImGui::GetWindowDrawList();
+                const float lh   = ImGui::GetTextLineHeight() + px(7);
+                const ImU32 bg   = i == 0 ? (ui::currentTheme() == ui::Theme::Light ? IM_COL32(250, 251, 253, 255)
+                                                                                    : IM_COL32(230, 234, 240, 255))
+                                          : (ui::currentTheme() == ui::Theme::Light ? IM_COL32(236, 239, 244, 255)
+                                                                                    : IM_COL32(40, 45, 54, 255));
+                const ImU32 fg   = i == 0 && ui::currentTheme() != ui::Theme::Light ? IM_COL32(29, 35, 48, 255)
+                                                                                    : ImGui::GetColorU32(ImGuiCol_Text);
+                dl->AddRectFilled(ImVec2(p.x, p.y + px(2)), ImVec2(p.x + badge_w - px(6), p.y + lh - px(3)), bg, px(4));
+                if (i == 0)
+                    dl->AddRect(ImVec2(p.x, p.y + px(2)), ImVec2(p.x + badge_w - px(6), p.y + lh - px(3)), ui::CARD_BD,
+                                px(4));
+                const ImVec2 ts = ImGui::CalcTextSize(score.c_str());
+                dl->AddText(ImVec2(p.x + (badge_w - px(6) - ts.x) / 2, p.y + (lh - ts.y) / 2), fg, score.c_str());
+                dl->AddText(ImVec2(p.x + badge_w, p.y + (lh - ts.y) / 2), ui::MUTED,
+                            fmt::format("d{}", line.depth).c_str());
+                ImGui::SetCursorScreenPos(ImVec2(p.x + badge_w + depth_w, p.y));
+                const auto items = lineItems(board, line.pv, 24);
+                const auto ev    = drawNotation("##line", items, ImGui::GetContentRegionAvail().x, figurines, 2);
+                // Hovered: the position after that move, on the board; clicked: the line played up to it.
+                if (ev.hovered >= 0) {
+                    BoardPreview preview;
+                    preview.ply = preview.at = b.ply;
+                    preview.moves.assign(
+                        line.pv.begin(),
+                        line.pv.begin() +
+                            std::min<std::size_t>(line.pv.size(), static_cast<std::size_t>(ev.hovered) + 1));
+                    preview.label     = pvToSan(board, preview.moves, preview.moves.size());
+                    preview.hover     = true;
+                    b.preview         = std::move(preview);
+                    b.preview_hovered = true;
+                    ImGui::SetTooltip("%s", TR("Click: the line played up to this move. Scores are White's."));
                 }
-                if (ImGui::IsItemHovered()) {
-                    ImGui::SetTooltip("%s", TR("Click: play its first move. Scores are White's."));
+                if (ev.clicked >= 0) {
+                    for (const auto& m : legalPrefix(board, line.pv, static_cast<std::size_t>(ev.clicked) + 1))
+                        boardPlay(m);
+                    b.preview.reset();
                 }
                 ImGui::PopID();
             }
+            // The threat.
+            if (b.threat_on) {
+                const auto& t = b.threat.lines();
+                ImGui::PushStyleColor(ImGuiCol_Text, ui::BAD);
+                if (board.inCheck())
+                    ImGui::TextUnformatted(TR("Threat: none while in check."));
+                else if (!t.empty() && !t.front().pv.empty()) {
+                    auto passed = board;
+                    passed.makeNullMove();
+                    ImGui::TextUnformatted(trf("Threat: {} ({})", pvToSan(passed, t.front().pv, 4),
+                                               t.front().score ? whiteScoreText(t.front(), ~stm) : "")
+                                               .c_str());
+                } else {
+                    ImGui::TextUnformatted(TR("Threat: …"));
+                }
+                ImGui::PopStyleColor();
+            }
         }
-    }
-
-    // Its place among the cores.
-    const int threads = boardThreads();
-    ImGui::TextDisabled("%s", trf("Counts in the core budget · {} of {} threads", threads, topology_.logical).c_str());
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("%s", TR("The threads the analysis and the games of this page use now, out of the "
-                                   "machine's."));
-    }
-    if (const int busy = tournamentThreads(); busy > 0) {
-        ImGui::PushStyleColor(ImGuiCol_Text, ui::WARN);
-        ImGui::TextWrapped(
-            "%s", trf("A tournament is running: the analysis competes with its games ({} threads).", busy).c_str());
-        ImGui::PopStyleColor();
     }
     ui::endCard();
 }

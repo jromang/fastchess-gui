@@ -374,6 +374,8 @@ class App {
     void openOnBoard(ReplayGame game, int ply, bool chess960, std::string title, bool analyse);
     void openPositionOnBoard(const std::string& fen, bool chess960, std::string title, bool analyse);
     void setBoardAnalysis(bool on);
+    void setBoardThreat(bool on);  // X: the opponent's best move were it to move again
+    [[nodiscard]] std::optional<AnalysisPosition> threatPosition() const;  // the board's, the turn passed
     // Key A, pressed for a board now: once a frame, not while a text field or a popup has the keys.
     [[nodiscard]] bool boardKey();
     [[nodiscard]] std::string boardFen();  // the position of the Board page

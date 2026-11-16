@@ -1187,14 +1187,14 @@ msgstr "Klicken zum Sortieren; Rechtsklick zur Auswahl der Spalten."
 msgid "Click: hide it."
 msgstr "Klick: ausblenden."
 
-msgid "Click: play its first move. Scores are White's."
-msgstr "Klick: ihren ersten Zug spielen. Bewertungen aus Sicht von Weiß."
-
 msgid "Click: put the piece chosen (again: take it away). Right click: take it away."
 msgstr "Klick: die gewählte Figur setzen (noch einmal: entfernen). Rechtsklick: entfernen."
 
 msgid "Click: show it."
 msgstr "Klick: einblenden."
+
+msgid "Click: the line played up to this move. Scores are White's."
+msgstr "Klick: die Variante bis zu diesem Zug spielen. Die Bewertungen sind die von Weiß."
 
 msgid "Clock"
 msgstr "Uhr"
@@ -1843,6 +1843,9 @@ msgstr "Fehlgeschlagen: {}"
 
 msgid "Few enough pieces for the tablebase adjudication."
 msgstr "Wenig genug Steine für die Abschätzung per Tablebases."
+
+msgid "Figurines in the notation"
+msgstr "Figurinen in der Notation"
 
 msgid "File"
 msgstr "Datei"
@@ -4776,6 +4779,9 @@ msgstr "Die interessanteste"
 msgid "The move the side to move is thinking of, and the reply it expects, in the colours of the engines that would play them."
 msgstr "Der Zug, über den die Seite am Zug nachdenkt, und die erwartete Antwort, in den Farben der Engines, die sie spielen würden."
 
+msgid "The moves of the Board page written with the pieces of the set chosen above (Nf3 becomes a knight and f3), in its moves and its analysis's lines."
+msgstr "Die Züge der Brett-Seite mit den Figuren des oben gewählten Satzes geschrieben (Sf3 wird ein Springer und f3), in ihren Zügen und den Varianten ihrer Analyse."
+
 msgid "The next tournament starts beside those running as soon as the cores of the budget (Settings) are more than they can take, each at its concurrency."
 msgstr "Das nächste Turnier startet neben den laufenden, sobald das Budget (Einstellungen) mehr Kerne hat, als diese nehmen können, jedes mit seiner Parallelität."
 
@@ -5103,14 +5109,14 @@ msgstr "Design"
 msgid "There is no change to undo."
 msgstr "Es gibt keine Änderung zum Rückgängigmachen."
 
-msgid "These settings are the analysis's: they change neither the engine in the library nor a tournament."
-msgstr "Diese Einstellungen gehören der Analyse: Sie ändern weder die Engine der Bibliothek noch ein Turnier."
-
 msgid "These settings under a name, to choose them again in other tournaments and templates."
 msgstr "Diese Einstellungen unter einem Namen, um sie in anderen Turnieren und Vorlagen wieder zu wählen."
 
 msgid "They have not played each other."
 msgstr "Sie haben nicht gegeneinander gespielt."
+
+msgid "This analysis's own threads, hash and lines: they change neither the engine in the library nor a tournament."
+msgstr "Threads, Hash und Varianten nur dieser Analyse: Sie ändern weder die Engine in der Bibliothek noch ein Turnier."
 
 msgid "This book cannot play for an engine: {}"
 msgstr "Dieses Buch kann nicht für eine Engine spielen: {}"
@@ -5195,6 +5201,18 @@ msgstr "Threads {}"
 
 msgid "Threads {} of the common settings: {} games × {} threads exceed the {}."
 msgstr "Threads {} der gemeinsamen Einstellungen: {} Partien × {} Threads übersteigen die {}."
+
+msgid "Threat"
+msgstr "Drohung"
+
+msgid "Threat: none while in check."
+msgstr "Drohung: keine, solange Schach."
+
+msgid "Threat: {} ({})"
+msgstr "Drohung: {} ({})"
+
+msgid "Threat: …"
+msgstr "Drohung: …"
 
 msgid "Through the adapter"
 msgstr "Über den Adapter"
@@ -5640,6 +5658,9 @@ msgstr "Geschrieben, wenn „{}“ in den PGN-Optionen der Einrichtung eingescha
 msgid "Wrong PVs"
 msgstr "Falsche PVs"
 
+msgid "X: the opponent's best move if it could move again, as a red arrow (another process of the engine, its threads counted)."
+msgstr "X: der beste Zug des Gegners, wenn er noch einmal ziehen dürfte, als roter Pfeil (ein weiterer Prozess der Engine, ihre Threads mitgezählt)."
+
 msgid "Your own folder"
 msgstr "Dein eigener Ordner"
 
@@ -5933,6 +5954,9 @@ msgstr "Partien warten auf Speicher"
 
 msgid "gone"
 msgstr "entfernt"
+
+msgid "hash of the engine"
+msgstr "Hash der Engine"
 
 msgid "here: {}"
 msgstr "hier: {}"
@@ -6261,6 +6285,9 @@ msgstr "Zeit pro Zug · Weiß oben, Schwarz unten"
 msgid "to mention in the post, or to test the engine again:"
 msgstr "im Beitrag zu erwähnen oder um die Engine erneut zu testen:"
 
+msgid "tournament on {}"
+msgstr "Turnier auf {}"
+
 msgid "true difference (Elo)"
 msgstr "tatsächlicher Unterschied (Elo)"
 
@@ -6372,6 +6399,9 @@ msgstr "{} / {} Partien"
 
 msgid "{} / {} points"
 msgstr "{} / {} Punkte"
+
+msgid "{} / {} threads"
+msgstr "{} / {} Threads"
 
 msgid "{} = {}: a value it refuses"
 msgstr "{} = {}: ein Wert, den sie ablehnt"
@@ -6892,6 +6922,11 @@ msgid_plural "{} library engines have this name"
 msgstr[0] "{} Engine der Bibliothek trägt diesen Namen"
 msgstr[1] "{} Engines der Bibliothek tragen diesen Namen"
 
+msgid "{} line"
+msgid_plural "{} lines"
+msgstr[0] "{} Variante"
+msgstr[1] "{} Varianten"
+
 msgid "{} loses on time"
 msgstr "{} verliert auf Zeit"
 
@@ -7331,6 +7366,9 @@ msgstr "{} · {} Partien · Erster: {} · {}"
 
 msgid "{} · {} games · {}"
 msgstr "{} · {} Partien · {}"
+
+msgid "{} · {} · {}"
+msgstr "{} · {} · {}"
 
 msgid "{} × {} pairings × 2 games × {} cycles"
 msgstr "{} × {} Paarungen × 2 Partien × {} Zyklen"
