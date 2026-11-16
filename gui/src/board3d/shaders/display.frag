@@ -24,9 +24,34 @@ uniform vec4 uArrowColour[8];
 const float HALF = 4.0;  // half the playing surface (trace.frag)
 const float THROUGH = 0.35;  // how much of an arrow, a dot or a ring shows through a piece
 
-// AgX (Troy Sobotka's display transform) as fitted by Benjamin Wrensch's "Minimal AgX implementation" (iolite blog),
-// with a mild punchy look. Its license is to be confirmed before this ships; Khronos PBR Neutral (Apache 2.0) would do
-// otherwise.
+// AgX, Troy Sobotka's display transform (https://github.com/sobotka/AgX), as Benjamin Wrensch fitted it in his
+// "Minimal AgX implementation" (https://iolite-engine.com/blog_posts/minimal_agx_implementation), with a milder
+// punchy look than his. Its notice:
+//
+// MIT License
+//
+// Copyright (c) 2024 Missing Deadlines (Benjamin Wrensch)
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+// All values used to derive this implementation are sourced from Troy's initial AgX implementation/OCIO config file
+// available here: https://github.com/sobotka/AgX
 vec3 agxContrast(vec3 x) {
     vec3 x2 = x * x, x4 = x2 * x2;
     return 15.5 * x4 * x2 - 40.14 * x4 * x + 31.96 * x4 - 6.868 * x2 * x + 0.4298 * x2 + 0.1191 * x - 0.00232;
