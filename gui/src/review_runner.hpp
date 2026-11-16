@@ -3,10 +3,14 @@
 // The continuous analysis of a game (Board page): every position searched by an engine of the library at each pass,
 // passTime(pass) each, four times longer at each pass, on a thread of its own with its own engine process, so that
 // its pace does not depend on the window's frames. The positions go from the last to the first (the engine's hash
-// then holds what comes after a position), the board's position first; before a position, its principal variation
-// of the previous pass is searched from its end back to it, for a quarter of the position's time, so that the engine
-// finds that line again (REVIEW_BACKWARD, REVIEW_PV_REPLAY: tools/analysis_bench.py measured both). Its threads
-// count in the core budget while it searches.
+// then holds what comes after a position), the board's position first. Its threads count in the core budget while it
+// searches.
+//
+// tools/analysis_bench.py measured the order and the replay of a position's previous principal variation before it
+// (from its end back to it, for a quarter of its time), against searches of 2 M nodes per position, for the same
+// total work (8 games each, about 1,000 positions): backward rather than forward cut the error of the winning chances
+// by about 16 % and found the reference's best move 5 points more often, with Stockfish 19 as with Gaia 4.4.3; the
+// replayed variation then lost a little (error +3 % and +9 %). Both stay as switches.
 
 #include <atomic>
 #include <condition_variable>
@@ -26,7 +30,7 @@
 namespace fcg {
 
 inline constexpr bool REVIEW_BACKWARD  = true;
-inline constexpr bool REVIEW_PV_REPLAY = true;
+inline constexpr bool REVIEW_PV_REPLAY = false;
 
 // The passes a ceiling allows: those whose time per position is at most `ceiling_ms`; 0, until stopped (as many as
 // there are times).
