@@ -4416,6 +4416,9 @@ msgstr "I primi motori della lista (quelli testati) incontrano tutti gli altri m
 msgid "The first engines of the list play every other engine, not each other: the gauntlet's seeds (-seeds N)."
 msgstr "I primi motori dell'elenco giocano contro tutti gli altri, non tra loro: le teste di serie del gauntlet (-seeds N)."
 
+msgid "The first move of each line drawn as an arrow on the board, in 2D as in 3D. Without them the lines below still show the moves."
+msgstr "La prima mossa di ogni linea disegnata come freccia sulla scacchiera, in 2D come in 3D. Senza di esse, le linee qui sotto mostrano comunque le mosse."
+
 msgid "The first ones are the seeds, the tested engines: they play all the others."
 msgstr "I primi sono le teste di serie, i motori testati: giocano contro tutti gli altri."
 

@@ -4393,6 +4393,9 @@ msgstr "列表中的前几个引擎（被测引擎）与其他所有引擎对弈
 msgid "The first engines of the list play every other engine, not each other: the gauntlet's seeds (-seeds N)."
 msgstr "列表最前面的引擎与其他所有引擎对局，彼此之间不对局：车轮战的种子（-seeds N）。"
 
+msgid "The first move of each line drawn as an arrow on the board, in 2D as in 3D. Without them the lines below still show the moves."
+msgstr "每条线路的第一步以箭头画在棋盘上，2D 和 3D 都是如此。关闭后，下方的线路仍会显示着法。"
+
 msgid "The first ones are the seeds, the tested engines: they play all the others."
 msgstr "最前面的是种子，即被测引擎：它们与其他所有引擎对局。"
 

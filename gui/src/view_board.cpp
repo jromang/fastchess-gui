@@ -1159,6 +1159,15 @@ void App::drawBoardAnalysis() {
         saveBoardSettings();
         a.update(s);
     }
+    // The lines' first moves on the board, or not: some find them distracting.
+    ui::sameLineOrWrap(ImGui::CalcTextSize(TR("Arrows")).x + ImGui::GetFrameHeight() +
+                       ImGui::GetStyle().ItemInnerSpacing.x);
+    if (ImGui::Checkbox(TR("Arrows"), &b.settings.arrows)) saveBoardSettings();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s",
+                          TR("The first move of each line drawn as an arrow on the board, in 2D as in 3D. Without "
+                             "them the lines below still show the moves."));
+    }
 
     // How the search goes.
     const auto stm = board.sideToMove();

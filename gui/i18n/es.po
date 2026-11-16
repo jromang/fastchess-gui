@@ -4416,6 +4416,9 @@ msgstr "Los primeros motores de la lista (los probados) se enfrentan a todos los
 msgid "The first engines of the list play every other engine, not each other: the gauntlet's seeds (-seeds N)."
 msgstr "Los primeros motores de la lista juegan contra todos los demás, no entre sí: los cabezas de serie del gauntlet (-seeds N)."
 
+msgid "The first move of each line drawn as an arrow on the board, in 2D as in 3D. Without them the lines below still show the moves."
+msgstr "La primera jugada de cada línea dibujada como flecha en el tablero, en 2D como en 3D. Sin ellas, las líneas de abajo siguen mostrando las jugadas."
+
 msgid "The first ones are the seeds, the tested engines: they play all the others."
 msgstr "Los primeros son los cabezas de serie, los motores probados: juegan contra todos los demás."
 
