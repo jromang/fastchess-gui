@@ -188,7 +188,12 @@ bool openGl(const char* title, int width, int height, SDL_WindowFlags flags, std
         why = fmt::format("SDL_CreateWindow: {}", SDL_GetError());
         return false;
     }
-    SDL_GLContext context = SDL_GL_CreateContext(window);
+    // 3.3 for the 3D board (board_3d.hpp), which some drivers give only to a program asking for it; else 3.2.
+    SDL_GLContext context = nullptr;
+    for (const int minor : {3, 2}) {
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, minor);
+        if ((context = SDL_GL_CreateContext(window))) break;
+    }
     if (!context) {
         why = fmt::format("SDL_GL_CreateContext: {}", SDL_GetError());
         SDL_DestroyWindow(window);

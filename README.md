@@ -2,7 +2,6 @@
 
 [![Build](https://github.com/jromang/fastchess-gui/actions/workflows/gui.yml/badge.svg?branch=gui)](https://github.com/jromang/fastchess-gui/actions/workflows/gui.yml)
 [![CodeQL](https://github.com/jromang/fastchess-gui/actions/workflows/codeql.yml/badge.svg?branch=gui)](https://github.com/jromang/fastchess-gui/actions/workflows/codeql.yml)
-[![Coverity Scan](https://scan.coverity.com/projects/jromang-fastchess-gui/badge.svg)](https://scan.coverity.com/projects/jromang-fastchess-gui)
 [![Downloads](https://img.shields.io/github/downloads/jromang/fastchess-gui/total)](https://github.com/jromang/fastchess-gui/releases)
 
 ![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS-blue)
@@ -18,6 +17,8 @@ be broadcast live.
 The tournament engine is fastchess itself, running inside the application (no command line parsing, no log
 scraping): the games, the statistics and the SPRT are exactly those of the fastchess command line tool, which
 this repository still builds unchanged.
+
+![The Board page in 3D: a game of Capablanca analysed by Gaia, its three best lines as arrows](docs/screenshots/board-3d.png)
 
 ## Features
 
@@ -152,7 +153,8 @@ this repository still builds unchanged.
   (simplified), following the system (can be changed in the settings).
 - **Appearance**: board colours (presets or your own, for each theme), four piece sets or a folder of your own SVG
   pieces, move sounds for the game followed (off by default), and a logo per engine, shown in the live view, on the
-  big screen and on the broadcast web page.
+  big screen and on the broadcast web page. The Board page's board can be drawn in 3D (an option): path-traced on
+  the graphics card, lit as in a photographer's studio (seven lightings), turned round with the mouse.
 
 ![Settings > Appearance: the brown board and the Celtic pieces](docs/screenshots/appearance.png)
 
@@ -263,5 +265,6 @@ The original fastchess README is kept as [README.fastchess.md](README.fastchess.
 
 ## License
 
-MIT, like fastchess (see [LICENSE](LICENSE)). The piece set is Colin M.L. Burnett's, used under the BSD license;
-see [gui/assets/ATTRIBUTION.md](gui/assets/ATTRIBUTION.md) for the assets and libraries.
+MIT, like fastchess (see [LICENSE](LICENSE)). The piece set is Colin M.L. Burnett's, used under the BSD license; the
+3D board's pieces are clarkerubber's [Staunton-Pieces](https://github.com/clarkerubber/Staunton-Pieces), used under
+the MIT license; see [gui/assets/ATTRIBUTION.md](gui/assets/ATTRIBUTION.md) for the assets and libraries.

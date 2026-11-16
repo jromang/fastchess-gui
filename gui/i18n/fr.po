@@ -152,6 +152,9 @@ msgstr "200 cp : les deux moteurs pensent qu'un camp a deux pions d'avance, ou p
 msgid "200k nodes"
 msgstr "200k nœuds"
 
+msgid "3D board"
+msgstr "Échiquier 3D"
+
 msgid "50 moves {}/100"
 msgstr "50 coups {}/100"
 
@@ -856,6 +859,9 @@ msgstr "Les scores des deux moteurs doivent dépasser le seuil pendant ces coups
 
 msgid "Bracket"
 msgstr "Tableau"
+
+msgid "Brighter or darker than the lighting makes it, in stops: each one doubles or halves the light."
+msgstr "Plus clair ou plus sombre que l'éclairage ne le rend, en diaphs : chacun double ou divise par deux la lumière."
 
 msgid "Broadcast"
 msgstr "Diffusion"
@@ -1781,6 +1787,9 @@ msgstr "Exporter les parties…"
 msgid "Export…"
 msgstr "Exporter…"
 
+msgid "Exposure %+.1f"
+msgstr "Exposition %+.1f"
+
 msgid "Extra fields in the comments:"
 msgstr "Champs en plus dans les commentaires :"
 
@@ -2021,8 +2030,14 @@ msgstr "Indique le nom du testeur et l'événement."
 msgid "Give the user to log in as."
 msgstr "Indique l'utilisateur avec lequel se connecter."
 
+msgid "Gloss %.0f %%"
+msgstr "Brillance %.0f %%"
+
 msgid "Go to the engines"
 msgstr "Aller aux moteurs"
+
+msgid "Golden hour"
+msgstr "Heure dorée"
 
 msgid "Green"
 msgstr "Vert"
@@ -2107,6 +2122,9 @@ msgstr "Masquer les boutons de navigation"
 msgid "Hide the navigation buttons under the boards"
 msgstr "Masquer les boutons de navigation sous les échiquiers"
 
+msgid "High key"
+msgstr "High key"
+
 msgid "Host"
 msgstr "Hôte"
 
@@ -2127,6 +2145,15 @@ msgstr "Combien de meilleurs coups sont montrés (MultiPV)."
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "Combien de fois chaque appariement est joué ; chaque fois, deux parties, couleurs inversées. D'autres programmes appellent un cycle une ronde, de 2 parties par rencontre (-rounds N -games 2)."
+
+msgid "How much varnish covers the board: none for waxed, matt wood, all of it for a coat that shows the lights."
+msgstr "La quantité de vernis sur l'échiquier : aucune pour un bois ciré et mat, toute pour une couche où se reflètent les lumières."
+
+msgid "How sharp the varnish's reflections are: satin at 0, a mirror at 100."
+msgstr "La netteté des reflets du vernis : satiné à 0, un miroir à 100."
+
+msgid "How the board is lit, as photographers light a still life."
+msgstr "Comment l'échiquier est éclairé, comme les photographes éclairent une nature morte."
 
 msgid "How the moves of a Polyglot book are chosen, for the tournament's openings and for the participants' own books: -100 the best move only, 0 in proportion to their weights, as Polyglot and Cute Chess choose, 100 every move alike. In between, -50 squares the weights and 50 takes their square roots."
 msgstr "Comment les coups d'un livre Polyglot sont choisis, pour les ouvertures du tournoi et pour les livres propres des participants : -100 le meilleur coup seulement, 0 en proportion de leurs poids, comme le font Polyglot et Cute Chess, 100 tous les coups à égalité. Entre les deux, -50 met les poids au carré et 50 en prend la racine carrée."
@@ -2511,6 +2538,9 @@ msgstr "Perdue après un score gagnant"
 
 msgid "Lost on time before move {}: more often an engine set up wrong (too many threads, a hash too large to allocate in time, a network loaded at every game, a slow start) than its time management."
 msgstr "Perdu au temps avant le coup {} : plus souvent un moteur mal réglé (trop de threads, un hash trop grand pour être alloué à temps, un réseau chargé à chaque partie, un démarrage lent) que sa gestion du temps."
+
+msgid "Low key"
+msgstr "Low key"
 
 msgid "Lower Threads to {}"
 msgstr "Ramener Threads à {}"
@@ -3411,6 +3441,9 @@ msgstr "Le met dans les Ouvertures de la page Nouveau tournoi, avec ses demi-cou
 msgid "Puts this card away for good; the quick start stays in the guide."
 msgstr "Range cette carte pour de bon ; le démarrage rapide reste dans le guide."
 
+msgid "Quality %d samples"
+msgstr "Qualité %d échantillons"
+
 msgid "Queue · {} tournament"
 msgid_plural "Queue · {} tournaments"
 msgstr[0] "File d'attente · {} tournoi"
@@ -3926,6 +3959,9 @@ msgstr "Afficher : {}"
 msgid "Shown here as they are played, and saved as PGN in games/ in the profile."
 msgstr "Affichées ici pendant qu'elles se jouent, et enregistrées en PGN dans games/ du profil."
 
+msgid "Showroom"
+msgstr "Salle d'exposition"
+
 msgid "Site"
 msgstr "Lieu"
 
@@ -4072,6 +4108,9 @@ msgstr "Arrêt des moteurs…"
 
 msgid "Stopping…"
 msgstr "Arrêt en cours…"
+
+msgid "Studio"
+msgstr "Studio"
 
 msgid "Submission checklist"
 msgstr "Liste de contrôle avant envoi"
@@ -4265,8 +4304,14 @@ msgstr "Test en cours…"
 msgid "Text"
 msgstr "Texte"
 
+msgid "The 3D pieces:"
+msgstr "Les pièces 3D :"
+
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Le compteur des 50 coups, le matériel et les pièces restantes, sous chaque échiquier de la mosaïque."
+
+msgid "The Board page's board in 3D"
+msgstr "L'échiquier de la page Échiquier en 3D"
 
 msgid "The Board page: {} core for its analysis and its games"
 msgid_plural "The Board page: {} cores for its analysis and its games"
@@ -4337,6 +4382,9 @@ msgstr "Le classement moyen des adversaires rencontrés, partie par partie."
 
 msgid "The board follows the game again (End)."
 msgstr "L'échiquier suit de nouveau la partie (Fin)."
+
+msgid "The board of the Board page drawn in three dimensions, lit as in a photographer's studio. Hold the right button to turn round it, the wheel to come closer, a click of the wheel to come back. The picture refines for a few seconds while nothing moves, using the graphics card, then rests."
+msgstr "L'échiquier de la page Échiquier dessiné en trois dimensions, éclairé comme dans le studio d'un photographe. Garde le bouton droit enfoncé pour tourner autour, la molette pour t'approcher, un clic de la molette pour revenir. L'image s'affine quelques secondes tant que rien ne bouge, avec la carte graphique, puis se repose."
 
 msgid "The book cannot be built: {}"
 msgstr "Le livre ne peut pas être construit : {}"
@@ -4455,6 +4503,9 @@ msgstr "Les moteurs en attente ne sont pas vérifiés ; la vérification en cour
 msgid "The engines' own books are off"
 msgstr "Les livres propres des moteurs sont désactivés"
 
+msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
+msgstr "L'exposition, la qualité, le vernis et la brillance d'origine ; l'éclairage reste."
+
 msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
 msgstr "Le fichier nommé « portable » à côté du programme garde tout dans ce dossier. Les chemins dans {} sont gardés relatifs à lui, pour que ce dossier puisse être déplacé ou copié sur une autre machine."
 
@@ -4472,6 +4523,9 @@ msgstr "Les premiers moteurs de la liste (les moteurs testés) rencontrent tous 
 
 msgid "The first engines of the list play every other engine, not each other: the gauntlet's seeds (-seeds N)."
 msgstr "Les premiers moteurs de la liste jouent contre tous les autres, pas entre eux : les têtes de série du gauntlet (-seeds N)."
+
+msgid "The first move of each line drawn as an arrow on the board, in 2D as in 3D. Without them the lines below still show the moves."
+msgstr "Le premier coup de chaque ligne dessiné en flèche sur l'échiquier, en 2D comme en 3D. Sans elles, les lignes ci-dessous montrent toujours les coups."
 
 msgid "The first ones are the seeds, the tested engines: they play all the others."
 msgstr "Les premiers sont les têtes de série, les moteurs testés : ils jouent contre tous les autres."
@@ -4517,6 +4571,9 @@ msgstr "Les parties en cours sont perdues ; chaque tournoi reprend exactement l�
 
 msgid "The games wait for {}: {}. Another try after each game."
 msgstr "Les parties attendent {} : {}. Nouvel essai après chaque partie."
+
+msgid "The graphics driver cannot draw the 3D board ({}): the boards stay flat."
+msgstr "Le pilote graphique ne peut pas dessiner l'échiquier 3D ({}) : les échiquiers restent plats."
 
 msgid "The guide, at this page (F1)"
 msgstr "Le guide, à cette page (F1)"
@@ -4792,6 +4849,9 @@ msgstr "Le même match avec un nouveau moteur A à la place de {}, par exemple s
 msgid "The same opening for every pair of a round"
 msgstr "La même ouverture pour toutes les paires d'une ronde"
 
+msgid "The samples the picture is made of before it rests: more is finer, and keeps the graphics card at work longer. Fewer spare a processor's graphics during tournaments."
+msgstr "Les échantillons dont l'image est faite avant de se reposer : plus, c'est plus fin, et la carte graphique travaille plus longtemps. Moins ménage la puce graphique d'un processeur pendant les tournois."
+
 msgid "The search stops once a solution has stayed the engine's first move for this many more plies of depth. 0: every search takes its whole time."
 msgstr "La recherche s'arrête quand une solution est restée le premier coup du moteur pendant ce nombre de demi-coups de profondeur en plus. 0 : chaque recherche prend tout son temps."
 
@@ -4920,6 +4980,9 @@ msgstr "La fenêtre"
 
 msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
 msgstr "La fenêtre dessinée par le processeur (le moteur de rendu logiciel de SDL) plutôt que par la carte graphique avec OpenGL : pour les machines virtuelles, les bureaux à distance et les pilotes graphiques défaillants. Plus lent, et les panneaux sortis de la fenêtre restent à l'intérieur. --software sur la ligne de commande fait de même pour un lancement."
+
+msgid "The window is drawn without OpenGL (the software renderer of the Settings page, or a graphics driver without OpenGL 3.2): the boards stay flat."
+msgstr "La fenêtre est dessinée sans OpenGL (le rendu logiciel de la page Réglages, ou un pilote graphique sans OpenGL 3.2) : les échiquiers restent plats."
 
 msgid "The working directory of {} is not found: {}"
 msgstr "Le dossier de travail de {} est introuvable : {}"
@@ -5072,6 +5135,9 @@ msgstr "Total"
 
 msgid "Tournament"
 msgstr "Tournoi"
+
+msgid "Tournament hall"
+msgstr "Salle de tournoi"
 
 msgid "Tournaments"
 msgstr "Tournois"
@@ -5230,6 +5296,9 @@ msgstr "Valeur"
 msgid "Variance ratio"
 msgstr "Rapport des variances"
 
+msgid "Varnish %.0f %%"
+msgstr "Vernis %.0f %%"
+
 msgid "Version"
 msgstr "Version"
 
@@ -5376,6 +5445,9 @@ msgstr "Les moteurs WinBoard (protocole xboard) passent par une traduction vers 
 
 msgid "WinBoard, its own protocol"
 msgstr "WinBoard, son propre protocole"
+
+msgid "Window light"
+msgstr "Lumière de fenêtre"
 
 msgid "Winner: {}"
 msgstr "Vainqueur : {}"
@@ -5571,6 +5643,9 @@ msgstr "bouton"
 
 msgid "by %s"
 msgstr "par %s"
+
+msgid "by {}, under the {} license."
+msgstr "par {}, sous licence {}."
 
 msgid "bye"
 msgstr "exempt"

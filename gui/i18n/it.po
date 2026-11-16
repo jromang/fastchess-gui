@@ -152,6 +152,9 @@ msgstr "200 cp: entrambi i motori pensano che un lato sia avanti di due pedoni, 
 msgid "200k nodes"
 msgstr "200k nodi"
 
+msgid "3D board"
+msgstr "Scacchiera 3D"
+
 msgid "50 moves {}/100"
 msgstr "50 mosse {}/100"
 
@@ -856,6 +859,9 @@ msgstr "Le valutazioni di entrambi i motori devono superare la soglia per quelle
 
 msgid "Bracket"
 msgstr "Tabellone"
+
+msgid "Brighter or darker than the lighting makes it, in stops: each one doubles or halves the light."
+msgstr "Più chiaro o più scuro di come lo rende l'illuminazione, in stop: ognuno raddoppia o dimezza la luce."
 
 msgid "Broadcast"
 msgstr "Trasmissione"
@@ -1781,6 +1787,9 @@ msgstr "Esporta le partite…"
 msgid "Export…"
 msgstr "Esporta…"
 
+msgid "Exposure %+.1f"
+msgstr "Esposizione %+.1f"
+
 msgid "Extra fields in the comments:"
 msgstr "Campi aggiuntivi nei commenti:"
 
@@ -2021,8 +2030,14 @@ msgstr "Indica il nome del tester e l'evento."
 msgid "Give the user to log in as."
 msgstr "Indica l'utente con cui accedere."
 
+msgid "Gloss %.0f %%"
+msgstr "Lucentezza %.0f %%"
+
 msgid "Go to the engines"
 msgstr "Vai ai motori"
+
+msgid "Golden hour"
+msgstr "Ora d'oro"
 
 msgid "Green"
 msgstr "Verde"
@@ -2107,6 +2122,9 @@ msgstr "Nascondi i pulsanti di navigazione"
 msgid "Hide the navigation buttons under the boards"
 msgstr "Nascondi i pulsanti di navigazione sotto le scacchiere"
 
+msgid "High key"
+msgstr "High key"
+
 msgid "Host"
 msgstr "Host"
 
@@ -2127,6 +2145,15 @@ msgstr "Quante mosse migliori vengono mostrate (MultiPV)."
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "Quante volte si gioca ogni abbinamento; ogni volta due partite, colori invertiti. Altri programmi chiamano un ciclo turno, di 2 partite per incontro (-rounds N -games 2)."
+
+msgid "How much varnish covers the board: none for waxed, matt wood, all of it for a coat that shows the lights."
+msgstr "Quanta vernice copre la scacchiera: nessuna per un legno cerato e opaco, tutta per uno strato in cui si vedono le luci."
+
+msgid "How sharp the varnish's reflections are: satin at 0, a mirror at 100."
+msgstr "Quanto sono nitidi i riflessi della vernice: satinato a 0, uno specchio a 100."
+
+msgid "How the board is lit, as photographers light a still life."
+msgstr "Come è illuminata la scacchiera, come i fotografi illuminano una natura morta."
 
 msgid "How the moves of a Polyglot book are chosen, for the tournament's openings and for the participants' own books: -100 the best move only, 0 in proportion to their weights, as Polyglot and Cute Chess choose, 100 every move alike. In between, -50 squares the weights and 50 takes their square roots."
 msgstr "Come vengono scelte le mosse di un libro Polyglot, per le aperture del torneo e per i libri propri dei partecipanti: -100 solo la mossa migliore, 0 in proporzione ai loro pesi, come scelgono Polyglot e Cute Chess, 100 tutte le mosse alla pari. Nel mezzo, -50 eleva i pesi al quadrato e 50 ne prende la radice quadrata."
@@ -2511,6 +2538,9 @@ msgstr "Persa dopo una valutazione vincente"
 
 msgid "Lost on time before move {}: more often an engine set up wrong (too many threads, a hash too large to allocate in time, a network loaded at every game, a slow start) than its time management."
 msgstr "Persa per tempo prima della mossa {}: più spesso un motore configurato male (troppi thread, un hash troppo grande da allocare in tempo, una rete caricata a ogni partita, un avvio lento) che la sua gestione del tempo."
+
+msgid "Low key"
+msgstr "Low key"
 
 msgid "Lower Threads to {}"
 msgstr "Abbassa Threads a {}"
@@ -3411,6 +3441,9 @@ msgstr "Lo mette nelle Aperture della pagina Nuovo torneo, con le sue semimosse,
 msgid "Puts this card away for good; the quick start stays in the guide."
 msgstr "Toglie questa scheda per sempre; l'avvio rapido resta nella guida."
 
+msgid "Quality %d samples"
+msgstr "Qualità %d campioni"
+
 msgid "Queue · {} tournament"
 msgid_plural "Queue · {} tournaments"
 msgstr[0] "Coda · {} torneo"
@@ -3926,6 +3959,9 @@ msgstr "Mostra: {}"
 msgid "Shown here as they are played, and saved as PGN in games/ in the profile."
 msgstr "Mostrate qui mentre si giocano, e salvate in PGN in games/ nel profilo."
 
+msgid "Showroom"
+msgstr "Showroom"
+
 msgid "Site"
 msgstr "Luogo"
 
@@ -4072,6 +4108,9 @@ msgstr "Arresto dei motori…"
 
 msgid "Stopping…"
 msgstr "Arresto in corso…"
+
+msgid "Studio"
+msgstr "Studio"
 
 msgid "Submission checklist"
 msgstr "Checklist dell'invio"
@@ -4265,8 +4304,14 @@ msgstr "Test in corso…"
 msgid "Text"
 msgstr "Testo"
 
+msgid "The 3D pieces:"
+msgstr "I pezzi 3D:"
+
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Il contatore delle 50 mosse, il materiale e i pezzi rimasti, sotto ogni scacchiera del mosaico."
+
+msgid "The Board page's board in 3D"
+msgstr "La scacchiera della pagina Scacchiera in 3D"
 
 msgid "The Board page: {} core for its analysis and its games"
 msgid_plural "The Board page: {} cores for its analysis and its games"
@@ -4337,6 +4382,9 @@ msgstr "Il rating medio degli avversari incontrati, partita per partita."
 
 msgid "The board follows the game again (End)."
 msgstr "La scacchiera segue di nuovo la partita (Fine)."
+
+msgid "The board of the Board page drawn in three dimensions, lit as in a photographer's studio. Hold the right button to turn round it, the wheel to come closer, a click of the wheel to come back. The picture refines for a few seconds while nothing moves, using the graphics card, then rests."
+msgstr "La scacchiera della pagina Scacchiera disegnata in tre dimensioni, illuminata come nello studio di un fotografo. Tieni premuto il tasto destro per girarle intorno, la rotellina per avvicinarti, un clic della rotellina per tornare. L'immagine si affina per qualche secondo finché nulla si muove, con la scheda grafica, poi si ferma."
 
 msgid "The book cannot be built: {}"
 msgstr "Il libro non può essere costruito: {}"
@@ -4455,6 +4503,9 @@ msgstr "I motori in attesa non vengono verificati; la verifica in corso continua
 msgid "The engines' own books are off"
 msgstr "I libri propri dei motori sono disattivati"
 
+msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
+msgstr "Esposizione, qualità, vernice e lucentezza come all'inizio; l'illuminazione resta."
+
 msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
 msgstr "Il file chiamato «portable» accanto al programma tiene tutto in questa cartella. I percorsi in {} sono salvati relativi a essa, così quella cartella può essere spostata o copiata su un'altra macchina."
 
@@ -4472,6 +4523,9 @@ msgstr "I primi motori della lista (quelli testati) incontrano tutti gli altri m
 
 msgid "The first engines of the list play every other engine, not each other: the gauntlet's seeds (-seeds N)."
 msgstr "I primi motori dell'elenco giocano contro tutti gli altri, non tra loro: le teste di serie del gauntlet (-seeds N)."
+
+msgid "The first move of each line drawn as an arrow on the board, in 2D as in 3D. Without them the lines below still show the moves."
+msgstr "La prima mossa di ogni linea disegnata come freccia sulla scacchiera, in 2D come in 3D. Senza di esse, le linee qui sotto mostrano comunque le mosse."
 
 msgid "The first ones are the seeds, the tested engines: they play all the others."
 msgstr "I primi sono le teste di serie, i motori testati: giocano contro tutti gli altri."
@@ -4517,6 +4571,9 @@ msgstr "Le partite in corso vanno perse; ogni torneo riprende esattamente da dov
 
 msgid "The games wait for {}: {}. Another try after each game."
 msgstr "Le partite aspettano {}: {}. Un nuovo tentativo dopo ogni partita."
+
+msgid "The graphics driver cannot draw the 3D board ({}): the boards stay flat."
+msgstr "Il driver grafico non può disegnare la scacchiera 3D ({}): le scacchiere restano piatte."
 
 msgid "The guide, at this page (F1)"
 msgstr "La guida, a questa pagina (F1)"
@@ -4792,6 +4849,9 @@ msgstr "Lo stesso match con un nuovo motore A al posto di {}, per esempio la sua
 msgid "The same opening for every pair of a round"
 msgstr "La stessa apertura per tutte le coppie di un turno"
 
+msgid "The samples the picture is made of before it rests: more is finer, and keeps the graphics card at work longer. Fewer spare a processor's graphics during tournaments."
+msgstr "I campioni di cui è fatta l'immagine prima di fermarsi: di più è più fine e tiene la scheda grafica al lavoro più a lungo. Di meno risparmiano la grafica di un processore durante i tornei."
+
 msgid "The search stops once a solution has stayed the engine's first move for this many more plies of depth. 0: every search takes its whole time."
 msgstr "La ricerca si ferma quando una soluzione è rimasta la prima mossa del motore per questo numero di semimosse di profondità in più. 0: ogni ricerca usa tutto il suo tempo."
 
@@ -4920,6 +4980,9 @@ msgstr "La finestra"
 
 msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
 msgstr "La finestra disegnata dal processore (il renderer software di SDL) invece che dalla scheda grafica con OpenGL: per macchine virtuali, desktop remoti e driver grafici che non funzionano. Più lento, e i pannelli trascinati fuori dalla finestra restano al suo interno. --software sulla riga di comando fa lo stesso per un avvio."
+
+msgid "The window is drawn without OpenGL (the software renderer of the Settings page, or a graphics driver without OpenGL 3.2): the boards stay flat."
+msgstr "La finestra è disegnata senza OpenGL (il renderer software della pagina Impostazioni, o un driver grafico senza OpenGL 3.2): le scacchiere restano piatte."
 
 msgid "The working directory of {} is not found: {}"
 msgstr "La cartella di lavoro di {} non è stata trovata: {}"
@@ -5072,6 +5135,9 @@ msgstr "Totale"
 
 msgid "Tournament"
 msgstr "Torneo"
+
+msgid "Tournament hall"
+msgstr "Sala del torneo"
 
 msgid "Tournaments"
 msgstr "Tornei"
@@ -5230,6 +5296,9 @@ msgstr "Valore"
 msgid "Variance ratio"
 msgstr "Rapporto delle varianze"
 
+msgid "Varnish %.0f %%"
+msgstr "Vernice %.0f %%"
+
 msgid "Version"
 msgstr "Versione"
 
@@ -5376,6 +5445,9 @@ msgstr "I motori WinBoard (protocollo xboard) passano per una traduzione verso U
 
 msgid "WinBoard, its own protocol"
 msgstr "WinBoard, il suo protocollo"
+
+msgid "Window light"
+msgstr "Luce da finestra"
 
 msgid "Winner: {}"
 msgstr "Vincitore: {}"
@@ -5571,6 +5643,9 @@ msgstr "pulsante"
 
 msgid "by %s"
 msgstr "di %s"
+
+msgid "by {}, under the {} license."
+msgstr "di {}, con licenza {}."
 
 msgid "bye"
 msgstr "riposo"

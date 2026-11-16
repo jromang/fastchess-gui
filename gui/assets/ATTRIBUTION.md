@@ -1,5 +1,58 @@
 # Assets
 
+## 3D chess pieces (`board3d/pieces.bin`)
+
+The Staunton pieces of clarkerubber's Staunton-Pieces (https://github.com/clarkerubber/Staunton-Pieces,
+`Source/Staunton/*/*.STL`), simplified and packed by `tools/board3d/bake.cpp`. MIT license:
+
+    The MIT License (MIT)
+
+    Copyright (c) 2014 clarkerubber
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+    documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of
+    the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+    WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+    COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+    OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## The 3D board's tone mapping (`gui/src/board3d/shaders/display.frag`)
+
+AgX, Troy Sobotka's display transform (https://github.com/sobotka/AgX), as Benjamin Wrensch fitted it in his
+"Minimal AgX implementation" (https://iolite-engine.com/blog_posts/minimal_agx_implementation), its look changed. MIT
+license:
+
+    MIT License
+
+    Copyright (c) 2024 Missing Deadlines (Benjamin Wrensch)
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in
+    all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+    All values used to derive this implementation are sourced from Troy's initial AgX implementation/OCIO config
+    file available here: https://github.com/sobotka/AgX
+
 ## Chess pieces (`pieces/<set>/*.svg`)
 
 Four sets, embedded in the program and chosen in **Settings** > Appearance. Each is the version the lichess project

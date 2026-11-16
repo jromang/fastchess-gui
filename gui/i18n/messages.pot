@@ -152,6 +152,9 @@ msgstr ""
 msgid "200k nodes"
 msgstr ""
 
+msgid "3D board"
+msgstr ""
+
 msgid "50 moves {}/100"
 msgstr ""
 
@@ -855,6 +858,9 @@ msgid "Both engines' scores must be beyond the threshold for those moves, the wi
 msgstr ""
 
 msgid "Bracket"
+msgstr ""
+
+msgid "Brighter or darker than the lighting makes it, in stops: each one doubles or halves the light."
 msgstr ""
 
 msgid "Broadcast"
@@ -1781,6 +1787,9 @@ msgstr ""
 msgid "Export…"
 msgstr ""
 
+msgid "Exposure %+.1f"
+msgstr ""
+
 msgid "Extra fields in the comments:"
 msgstr ""
 
@@ -2021,7 +2030,13 @@ msgstr ""
 msgid "Give the user to log in as."
 msgstr ""
 
+msgid "Gloss %.0f %%"
+msgstr ""
+
 msgid "Go to the engines"
+msgstr ""
+
+msgid "Golden hour"
 msgstr ""
 
 msgid "Green"
@@ -2107,6 +2122,9 @@ msgstr ""
 msgid "Hide the navigation buttons under the boards"
 msgstr ""
 
+msgid "High key"
+msgstr ""
+
 msgid "Host"
 msgstr ""
 
@@ -2126,6 +2144,15 @@ msgid "How many best moves are shown (MultiPV)."
 msgstr ""
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
+msgstr ""
+
+msgid "How much varnish covers the board: none for waxed, matt wood, all of it for a coat that shows the lights."
+msgstr ""
+
+msgid "How sharp the varnish's reflections are: satin at 0, a mirror at 100."
+msgstr ""
+
+msgid "How the board is lit, as photographers light a still life."
 msgstr ""
 
 msgid "How the moves of a Polyglot book are chosen, for the tournament's openings and for the participants' own books: -100 the best move only, 0 in proportion to their weights, as Polyglot and Cute Chess choose, 100 every move alike. In between, -50 squares the weights and 50 takes their square roots."
@@ -2510,6 +2537,9 @@ msgid "Lost after a winning score"
 msgstr ""
 
 msgid "Lost on time before move {}: more often an engine set up wrong (too many threads, a hash too large to allocate in time, a network loaded at every game, a slow start) than its time management."
+msgstr ""
+
+msgid "Low key"
 msgstr ""
 
 msgid "Lower Threads to {}"
@@ -3411,6 +3441,9 @@ msgstr ""
 msgid "Puts this card away for good; the quick start stays in the guide."
 msgstr ""
 
+msgid "Quality %d samples"
+msgstr ""
+
 msgid "Queue · {} tournament"
 msgid_plural "Queue · {} tournaments"
 msgstr[0] ""
@@ -3926,6 +3959,9 @@ msgstr ""
 msgid "Shown here as they are played, and saved as PGN in games/ in the profile."
 msgstr ""
 
+msgid "Showroom"
+msgstr ""
+
 msgid "Site"
 msgstr ""
 
@@ -4071,6 +4107,9 @@ msgid "Stopping the engines…"
 msgstr ""
 
 msgid "Stopping…"
+msgstr ""
+
+msgid "Studio"
 msgstr ""
 
 msgid "Submission checklist"
@@ -4265,7 +4304,13 @@ msgstr ""
 msgid "Text"
 msgstr ""
 
+msgid "The 3D pieces:"
+msgstr ""
+
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
+msgstr ""
+
+msgid "The Board page's board in 3D"
 msgstr ""
 
 msgid "The Board page: {} core for its analysis and its games"
@@ -4336,6 +4381,9 @@ msgid "The average rating of the opponents met, game by game."
 msgstr ""
 
 msgid "The board follows the game again (End)."
+msgstr ""
+
+msgid "The board of the Board page drawn in three dimensions, lit as in a photographer's studio. Hold the right button to turn round it, the wheel to come closer, a click of the wheel to come back. The picture refines for a few seconds while nothing moves, using the graphics card, then rests."
 msgstr ""
 
 msgid "The book cannot be built: {}"
@@ -4455,6 +4503,9 @@ msgstr ""
 msgid "The engines' own books are off"
 msgstr ""
 
+msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
+msgstr ""
+
 msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
 msgstr ""
 
@@ -4471,6 +4522,9 @@ msgid "The first engines of the list (the tested ones) meet every other engine."
 msgstr ""
 
 msgid "The first engines of the list play every other engine, not each other: the gauntlet's seeds (-seeds N)."
+msgstr ""
+
+msgid "The first move of each line drawn as an arrow on the board, in 2D as in 3D. Without them the lines below still show the moves."
 msgstr ""
 
 msgid "The first ones are the seeds, the tested engines: they play all the others."
@@ -4516,6 +4570,9 @@ msgid "The games in progress are lost; each tournament resumes exactly where it 
 msgstr ""
 
 msgid "The games wait for {}: {}. Another try after each game."
+msgstr ""
+
+msgid "The graphics driver cannot draw the 3D board ({}): the boards stay flat."
 msgstr ""
 
 msgid "The guide, at this page (F1)"
@@ -4792,6 +4849,9 @@ msgstr ""
 msgid "The same opening for every pair of a round"
 msgstr ""
 
+msgid "The samples the picture is made of before it rests: more is finer, and keeps the graphics card at work longer. Fewer spare a processor's graphics during tournaments."
+msgstr ""
+
 msgid "The search stops once a solution has stayed the engine's first move for this many more plies of depth. 0: every search takes its whole time."
 msgstr ""
 
@@ -4919,6 +4979,9 @@ msgid "The window"
 msgstr ""
 
 msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
+msgstr ""
+
+msgid "The window is drawn without OpenGL (the software renderer of the Settings page, or a graphics driver without OpenGL 3.2): the boards stay flat."
 msgstr ""
 
 msgid "The working directory of {} is not found: {}"
@@ -5071,6 +5134,9 @@ msgid "Total"
 msgstr ""
 
 msgid "Tournament"
+msgstr ""
+
+msgid "Tournament hall"
 msgstr ""
 
 msgid "Tournaments"
@@ -5230,6 +5296,9 @@ msgstr ""
 msgid "Variance ratio"
 msgstr ""
 
+msgid "Varnish %.0f %%"
+msgstr ""
+
 msgid "Version"
 msgstr ""
 
@@ -5375,6 +5444,9 @@ msgid "WinBoard engines (xboard protocol) are run through a translation to UCI b
 msgstr ""
 
 msgid "WinBoard, its own protocol"
+msgstr ""
+
+msgid "Window light"
 msgstr ""
 
 msgid "Winner: {}"
@@ -5570,6 +5642,9 @@ msgid "button"
 msgstr ""
 
 msgid "by %s"
+msgstr ""
+
+msgid "by {}, under the {} license."
 msgstr ""
 
 msgid "bye"

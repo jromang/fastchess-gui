@@ -320,6 +320,20 @@ if(FCG_BUILD_GUI)
         target_link_libraries(imgui_lib PUBLIC opengl32)
     endif()
 
+    # The 3D board: gui/src/board3d, a path tracer in OpenGL 3.3, and its pieces baked by tools/board3d/bake.cpp. Its
+    # viewer (tools/board3d/viewer.cpp) reads the shaders from the sources, for working on them.
+    file(GLOB FCG_BOARD3D_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/board3d/*.cpp)
+    option(FCG_BOARD3D_VIEWER "Build fcg-board3d, the 3D board's viewer" OFF)
+    if(FCG_BOARD3D_VIEWER)
+        add_executable(fcg-board3d ${CMAKE_CURRENT_SOURCE_DIR}/tools/board3d/viewer.cpp ${FCG_BOARD3D_SOURCES})
+        target_compile_features(fcg-board3d PRIVATE cxx_std_20)
+        target_include_directories(fcg-board3d PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/gui/src)
+        target_include_directories(fcg-board3d SYSTEM PRIVATE ${stb_SOURCE_DIR})
+        target_link_libraries(fcg-board3d PRIVATE imgui_lib)
+        target_compile_definitions(fcg-board3d PRIVATE FCG_BOARD3D_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+        target_compile_options(fcg-board3d PRIVATE -Wall -Wextra)
+    endif()
+
     add_library(fcg_md4c STATIC ${md4c_SOURCE_DIR}/src/md4c.c)
     target_include_directories(fcg_md4c SYSTEM PUBLIC ${md4c_SOURCE_DIR}/src)
 
@@ -385,6 +399,27 @@ if(FCG_BUILD_GUI)
         list(APPEND FCG_FONT_CPPS ${cpp})
     endforeach()
 
+    # The 3D board's shaders and pieces, embedded as byte arrays.
+    set(FCG_BOARD3D_CPPS)
+    foreach(asset IN ITEMS "board3d_trace|gui/src/board3d/shaders/trace.frag"
+                           "board3d_prepare|gui/src/board3d/shaders/prepare.frag"
+                           "board3d_atrous|gui/src/board3d/shaders/atrous.frag"
+                           "board3d_display|gui/src/board3d/shaders/display.frag"
+                           "board3d_pieces|gui/assets/board3d/pieces.bin")
+        string(REPLACE "|" ";" asset "${asset}")
+        list(GET asset 0 symbol)
+        list(GET asset 1 file)
+        set(file ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+        set(cpp ${CMAKE_CURRENT_BINARY_DIR}/generated/${symbol}.cpp)
+        add_custom_command(
+            OUTPUT ${cpp}
+            COMMAND ${CMAKE_COMMAND} -DIN=${file} -DOUT=${cpp} -DSYMBOL=${symbol}
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_binary.cmake
+            DEPENDS ${file} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/embed_binary.cmake
+            COMMENT "Embedding ${symbol}")
+        list(APPEND FCG_BOARD3D_CPPS ${cpp})
+    endforeach()
+
     # The translations, embedded with their language codes (gui/i18n/<code>.po).
     file(GLOB FCG_PO_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gui/i18n/*.po)
     set(FCG_PO_CPP ${CMAKE_CURRENT_BINARY_DIR}/generated/translations.cpp)
@@ -426,8 +461,8 @@ if(FCG_BUILD_GUI)
     list(REMOVE_ITEM FCG_GUI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/gui/src/main.cpp)
 
     # Everything except main(), so the unit tests can link it too.
-    add_library(fcg_lib STATIC ${FCG_GUI_SOURCES} ${FCG_ASSET_CPP} ${FCG_FONT_CPPS} ${FCG_PO_CPP} ${FCG_DOC_CPP}
-                ${qrcodegen_SOURCE_DIR}/cpp/qrcodegen.cpp)
+    add_library(fcg_lib STATIC ${FCG_GUI_SOURCES} ${FCG_BOARD3D_SOURCES} ${FCG_ASSET_CPP} ${FCG_FONT_CPPS}
+                ${FCG_BOARD3D_CPPS} ${FCG_PO_CPP} ${FCG_DOC_CPP} ${qrcodegen_SOURCE_DIR}/cpp/qrcodegen.cpp)
     target_compile_features(fcg_lib PUBLIC cxx_std_20)
     target_include_directories(fcg_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/gui/src)
     # Header-only libraries compiled in our files: their warnings are not ours to fix.

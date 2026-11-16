@@ -67,6 +67,18 @@ inline constexpr const char* FOLDER = "folder";  // the pieces of the user's fol
 inline constexpr std::array<const char*, 12> PIECE_FILES = {"wK", "wQ", "wR", "wB", "wN", "wP",
                                                             "bK", "bQ", "bR", "bB", "bN", "bP"};
 
+// The board of the Board page drawn in 3D (board_3d.hpp), how it is lit, its finish, how long its image refines.
+struct Board3d {
+    bool on              = false;
+    std::string lighting = "studio";  // a board3d::studios() id
+    float exposure       = 0.0f;      // stops over or under the lighting's own, -2 to 2
+    float varnish        = 1.0f;      // 0: waxed, matt; 1: a full coat
+    float gloss          = 0.58f;     // 0: satin; 1: a mirror
+    int samples          = 512;       // the image's samples before it rests, 32 to 4096
+
+    bool operator==(const Board3d&) const = default;
+};
+
 struct Settings {
     Board light_board;                // with the light theme
     Board dark_board;                 // with the dark theme
@@ -74,6 +86,7 @@ struct Settings {
     std::string piece_folder;         // with FOLDER: 12 SVG files named wK.svg ... bP.svg
     bool sounds = false;              // a sound for each move of the game followed
     int volume  = 70;                 // percent
+    Board3d board3d;
 
     [[nodiscard]] const Board& board(ui::Theme theme) const {
         return theme == ui::Theme::Dark ? dark_board : light_board;

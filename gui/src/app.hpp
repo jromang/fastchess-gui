@@ -17,6 +17,7 @@
 #include <matchmaking/sprt/sprt.hpp>
 #include <matchmaking/stats.hpp>
 
+#include "board_3d.hpp"
 #include "board_nav.hpp"
 #include "board_page.hpp"
 #include "board_view.hpp"
@@ -236,6 +237,8 @@ class App {
     // The window asked to close: confirm first if a match is running.
     void requestQuit();
     [[nodiscard]] bool shouldQuit() const noexcept { return quit_; }
+    // Frames wanted at a steadier pace than the usual 30 a second: a 3D board's camera moving.
+    [[nodiscard]] bool wantsSmoothFrames() const { return board3d_.moving(); }
 
     // Quits without asking (--shot, --quit-after): what this window started stops, the tournaments found playing at
     // launch play on.
@@ -948,6 +951,7 @@ class App {
     void onBackgroundRunFinished(std::size_t index);
     Dialogs dialogs_;
     PieceAtlas atlas_;
+    Board3d board3d_;  // the Board page's, when appearance::current().board3d.on
 
     // Data copied from the observer of the current (or last) run.
     std::vector<GameRecord> games_;

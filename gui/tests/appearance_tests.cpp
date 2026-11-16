@@ -101,6 +101,12 @@ TEST_CASE("appearance: colours as #rrggbbaa, and the settings in settings.json")
     s.piece_folder                 = "/some/pieces";
     s.sounds                       = true;
     s.volume                       = 35;
+    s.board3d.on                   = true;
+    s.board3d.lighting             = "golden_hour";
+    s.board3d.exposure             = -0.5f;
+    s.board3d.varnish              = 0.25f;
+    s.board3d.gloss                = 0.75f;
+    s.board3d.samples              = 128;
     nlohmann::json j;
     appearance::to_json(j, s);
     appearance::Settings back;
@@ -109,11 +115,21 @@ TEST_CASE("appearance: colours as #rrggbbaa, and the settings in settings.json")
 
     // What is missing or of another type keeps its default; the volume stays in its range.
     appearance::Settings odd;
-    appearance::from_json(nlohmann::json::parse(R"({"pieces": 3, "volume": 900, "board_dark": {"light": "red"}})"),
+    appearance::from_json(nlohmann::json::parse(R"({"pieces": 3, "volume": 900, "board_dark": {"light": "red"},
+                                                    "board3d": {"on": "yes", "lighting": 2}})"),
                           odd);
     CHECK(odd.pieces == "cburnett");
+    CHECK(odd.board3d == appearance::Board3d{});
     CHECK(odd.volume == 100);
     CHECK(odd.dark_board == appearance::Board{});
+    // The 3D board's values held in their ranges.
+    appearance::Settings held;
+    appearance::from_json(
+        nlohmann::json::parse(R"({"board3d": {"exposure": 9, "varnish": -1, "gloss": 3, "samples": 100000}})"), held);
+    CHECK(held.board3d.exposure == 2.0f);
+    CHECK(held.board3d.varnish == 0.0f);
+    CHECK(held.board3d.gloss == 1.0f);
+    CHECK(held.board3d.samples == 4096);
     appearance::from_json(nlohmann::json::array(), odd);
     CHECK(odd == appearance::Settings{});
 

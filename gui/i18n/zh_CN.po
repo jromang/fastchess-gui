@@ -149,6 +149,9 @@ msgstr "200 cp：两个引擎都认为一方领先两个兵或更多。"
 msgid "200k nodes"
 msgstr "20 万节点"
 
+msgid "3D board"
+msgstr "3D 棋盘"
+
 msgid "50 moves {}/100"
 msgstr "50 步 {}/100"
 
@@ -850,6 +853,9 @@ msgstr "在这些步数内，双方引擎的分数都必须超过阈值，胜方
 
 msgid "Bracket"
 msgstr "对阵表"
+
+msgid "Brighter or darker than the lighting makes it, in stops: each one doubles or halves the light."
+msgstr "比该布光更亮或更暗，以档为单位：每一档使光线加倍或减半。"
 
 msgid "Broadcast"
 msgstr "直播"
@@ -1775,6 +1781,9 @@ msgstr "导出对局…"
 msgid "Export…"
 msgstr "导出…"
 
+msgid "Exposure %+.1f"
+msgstr "曝光 %+.1f"
+
 msgid "Extra fields in the comments:"
 msgstr "注释中的额外字段："
 
@@ -2015,8 +2024,14 @@ msgstr "请填写测试者姓名和赛事。"
 msgid "Give the user to log in as."
 msgstr "请填写登录用户名。"
 
+msgid "Gloss %.0f %%"
+msgstr "光泽 %.0f %%"
+
 msgid "Go to the engines"
 msgstr "前往引擎页"
+
+msgid "Golden hour"
+msgstr "黄金时刻"
 
 msgid "Green"
 msgstr "绿色"
@@ -2100,6 +2115,9 @@ msgstr "隐藏导航按钮"
 msgid "Hide the navigation buttons under the boards"
 msgstr "隐藏棋盘下方的导航按钮"
 
+msgid "High key"
+msgstr "高调"
+
 msgid "Host"
 msgstr "主机"
 
@@ -2120,6 +2138,15 @@ msgstr "显示多少个最佳着法（MultiPV）。"
 
 msgid "How many times every pairing is played; each time is two games, colours reversed. Other programs call a cycle a round, of 2 games per encounter (-rounds N -games 2)."
 msgstr "每个配对进行的次数；每次两局，交换先后手。其他程序把一个循环称为一轮，每次相遇 2 局（-rounds N -games 2）。"
+
+msgid "How much varnish covers the board: none for waxed, matt wood, all of it for a coat that shows the lights."
+msgstr "棋盘上清漆的多少：没有为打蜡的哑光木头，全部为能映出灯光的漆层。"
+
+msgid "How sharp the varnish's reflections are: satin at 0, a mirror at 100."
+msgstr "清漆反射的清晰程度：0 为缎面，100 为镜面。"
+
+msgid "How the board is lit, as photographers light a still life."
+msgstr "棋盘的布光方式，如同摄影师为静物布光。"
 
 msgid "How the moves of a Polyglot book are chosen, for the tournament's openings and for the participants' own books: -100 the best move only, 0 in proportion to their weights, as Polyglot and Cute Chess choose, 100 every move alike. In between, -50 squares the weights and 50 takes their square roots."
 msgstr "Polyglot 开局库如何选着，适用于比赛的开局和参赛者的专属开局库：-100 只选最佳着法，0 按权重比例选择（与 Polyglot 和 Cute Chess 相同），100 每步棋机会均等。介于其间时，-50 将权重平方，50 取其平方根。"
@@ -2504,6 +2531,9 @@ msgstr "领先后输掉"
 
 msgid "Lost on time before move {}: more often an engine set up wrong (too many threads, a hash too large to allocate in time, a network loaded at every game, a slow start) than its time management."
 msgstr "在第 {} 步之前超时判负：这更常见于引擎设置不当（线程过多、哈希太大无法及时分配、每局都加载网络、启动缓慢），而非其时间管理。"
+
+msgid "Low key"
+msgstr "低调"
 
 msgid "Lower Threads to {}"
 msgstr "将 Threads 降为 {}"
@@ -3400,6 +3430,9 @@ msgstr "将其放入“新建锦标赛”页面的“开局”中，连同其半
 msgid "Puts this card away for good; the quick start stays in the guide."
 msgstr "永久隐藏此卡片；快速入门仍在指南中。"
 
+msgid "Quality %d samples"
+msgstr "质量 %d 个采样"
+
 msgid "Queue · {} tournament"
 msgid_plural "Queue · {} tournaments"
 msgstr[0] "队列 · {} 个锦标赛"
@@ -3911,6 +3944,9 @@ msgstr "显示：{}"
 msgid "Shown here as they are played, and saved as PGN in games/ in the profile."
 msgstr "对局进行时在此显示，并以 PGN 保存到配置目录的 games/ 中。"
 
+msgid "Showroom"
+msgstr "展厅"
+
 msgid "Site"
 msgstr "地点"
 
@@ -4057,6 +4093,9 @@ msgstr "正在停止引擎…"
 
 msgid "Stopping…"
 msgstr "正在停止…"
+
+msgid "Studio"
+msgstr "摄影棚"
 
 msgid "Submission checklist"
 msgstr "提交检查清单"
@@ -4244,8 +4283,14 @@ msgstr "正在测试…"
 msgid "Text"
 msgstr "文本"
 
+msgid "The 3D pieces:"
+msgstr "3D 棋子："
+
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "50 步计数、子力以及剩余棋子，显示在平铺视图的每个棋盘下方。"
+
+msgid "The Board page's board in 3D"
+msgstr "棋盘页面的棋盘以 3D 显示"
 
 msgid "The Board page: {} core for its analysis and its games"
 msgid_plural "The Board page: {} cores for its analysis and its games"
@@ -4314,6 +4359,9 @@ msgstr "逐局计算的所遇对手平均等级分。"
 
 msgid "The board follows the game again (End)."
 msgstr "棋盘重新跟随对局 (End)。"
+
+msgid "The board of the Board page drawn in three dimensions, lit as in a photographer's studio. Hold the right button to turn round it, the wheel to come closer, a click of the wheel to come back. The picture refines for a few seconds while nothing moves, using the graphics card, then rests."
+msgstr "棋盘页面的棋盘以三维绘制，光照如同摄影棚。按住右键可绕棋盘旋转，滚轮可拉近，单击滚轮可恢复视角。画面静止时会用显卡细化几秒钟，然后停止。"
 
 msgid "The book cannot be built: {}"
 msgstr "无法生成开局库：{}"
@@ -4432,6 +4480,9 @@ msgstr "等待中的引擎不再检查；正在进行的检查会继续。"
 msgid "The engines' own books are off"
 msgstr "引擎自带开局库已关闭"
 
+msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
+msgstr "恢复初始的曝光、质量、清漆和光泽；布光保持不变。"
+
 msgid "The file named \"portable\" beside the program keeps everything in this folder. The paths in {} are kept relative to it, so that folder can be moved or copied to another machine."
 msgstr "程序旁名为“portable”的文件让所有内容都保存在此文件夹中。{} 中的路径以相对于它的形式保存，因此该文件夹可以移动或复制到另一台机器。"
 
@@ -4449,6 +4500,9 @@ msgstr "列表中的前几个引擎（被测引擎）与其他所有引擎对弈
 
 msgid "The first engines of the list play every other engine, not each other: the gauntlet's seeds (-seeds N)."
 msgstr "列表最前面的引擎与其他所有引擎对局，彼此之间不对局：车轮战的种子（-seeds N）。"
+
+msgid "The first move of each line drawn as an arrow on the board, in 2D as in 3D. Without them the lines below still show the moves."
+msgstr "每条线路的第一步以箭头画在棋盘上，2D 和 3D 都是如此。关闭后，下方的线路仍会显示着法。"
 
 msgid "The first ones are the seeds, the tested engines: they play all the others."
 msgstr "最前面的是种子，即被测引擎：它们与其他所有引擎对局。"
@@ -4494,6 +4548,9 @@ msgstr "进行中的对局会丢失；每个锦标赛都会从停止处准确继
 
 msgid "The games wait for {}: {}. Another try after each game."
 msgstr "对局正在等待 {}：{}。每局结束后重试。"
+
+msgid "The graphics driver cannot draw the 3D board ({}): the boards stay flat."
+msgstr "显卡驱动无法绘制 3D 棋盘（{}）：棋盘保持平面。"
 
 msgid "The guide, at this page (F1)"
 msgstr "本页的指南（F1）"
@@ -4767,6 +4824,9 @@ msgstr "同样的比赛，用新引擎 A 替换 {}，例如它的下一版本。
 msgid "The same opening for every pair of a round"
 msgstr "同一轮中所有对局对使用同一开局"
 
+msgid "The samples the picture is made of before it rests: more is finer, and keeps the graphics card at work longer. Fewer spare a processor's graphics during tournaments."
+msgstr "画面在停止前由多少个采样组成：越多越精细，显卡工作时间也越长。较少的采样可在比赛期间减轻处理器集成显卡的负担。"
+
 msgid "The search stops once a solution has stayed the engine's first move for this many more plies of depth. 0: every search takes its whole time."
 msgstr "当某个解答作为引擎首选着法又保持了这么多半回合深度后，搜索停止。0：每次搜索都用满全部时间。"
 
@@ -4895,6 +4955,9 @@ msgstr "窗口"
 
 msgid "The window drawn by the processor (SDL's software renderer) rather than by the graphics card with OpenGL: for virtual machines, remote desktops and graphics drivers that fail. Slower, and panels dragged out of the window stay inside it. --software on the command line does the same for one launch."
 msgstr "由处理器（SDL 的软件渲染器）而不是显卡通过 OpenGL 绘制窗口：适用于虚拟机、远程桌面和有故障的显卡驱动。速度较慢，拖出窗口的面板会留在窗口内。命令行参数 --software 对单次启动有同样效果。"
+
+msgid "The window is drawn without OpenGL (the software renderer of the Settings page, or a graphics driver without OpenGL 3.2): the boards stay flat."
+msgstr "窗口未使用 OpenGL 绘制（设置页面的软件渲染器，或显卡驱动不支持 OpenGL 3.2）：棋盘保持平面。"
 
 msgid "The working directory of {} is not found: {}"
 msgstr "找不到 {} 的工作目录：{}"
@@ -5046,6 +5109,9 @@ msgstr "合计"
 
 msgid "Tournament"
 msgstr "锦标赛"
+
+msgid "Tournament hall"
+msgstr "比赛大厅"
 
 msgid "Tournaments"
 msgstr "锦标赛"
@@ -5202,6 +5268,9 @@ msgstr "值"
 msgid "Variance ratio"
 msgstr "方差比"
 
+msgid "Varnish %.0f %%"
+msgstr "清漆 %.0f %%"
+
 msgid "Version"
 msgstr "版本"
 
@@ -5348,6 +5417,9 @@ msgstr "WinBoard 引擎（xboard 协议）通过 fastchess-gui 内置的 UCI 转
 
 msgid "WinBoard, its own protocol"
 msgstr "WinBoard，它自己的协议"
+
+msgid "Window light"
+msgstr "窗光"
 
 msgid "Winner: {}"
 msgstr "冠军：{}"
@@ -5540,6 +5612,9 @@ msgstr "按钮"
 
 msgid "by %s"
 msgstr "作者 %s"
+
+msgid "by {}, under the {} license."
+msgstr "— 作者 {}，采用 {} 许可证。"
 
 msgid "bye"
 msgstr "轮空"

@@ -295,6 +295,26 @@
       "purl": "pkg:github/bitmeal/argv_split",
       "licenses": [{ "license": { "name": "NOASSERTION" } }],
       "externalReferences": [{ "type": "vcs", "url": "https://github.com/bitmeal/argv_split.git" }]
+    },
+    {
+      "type": "library",
+      "bom-ref": "gui:minimal-agx",
+      "name": "Minimal AgX implementation",
+      "version": "2024",
+      "description": "Benjamin Wrensch's fit of Troy Sobotka's AgX display transform, adapted in gui/src/board3d/shaders/display.frag (the 3D board's tone mapping); a blog post's code, unversioned.",
+      "purl": "pkg:generic/minimal-agx@2024",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "externalReferences": [{ "type": "website", "url": "https://iolite-engine.com/blog_posts/minimal_agx_implementation" }]
+    },
+    {
+      "type": "data",
+      "bom-ref": "gui:staunton-pieces",
+      "name": "Staunton-Pieces",
+      "version": "unversioned",
+      "description": "clarkerubber's Staunton chess pieces (Source/Staunton/*/*.STL), simplified and packed into gui/assets/board3d/pieces.bin by tools/board3d/bake.cpp: the 3D board's pieces.",
+      "purl": "pkg:github/clarkerubber/staunton-pieces",
+      "licenses": [{ "license": { "id": "MIT" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://github.com/clarkerubber/Staunton-Pieces.git" }]
     }
   ]
 }
