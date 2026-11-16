@@ -498,14 +498,37 @@ void App::boardPlay(chess::Move move) {
     showBoardLine(line, p);
 }
 
+void App::boardMove(chess::Move move) {
+    auto& b = board_;
+    if (b.humanTurn()) {
+        b.match->play(chess::uci::moveToUci(move, b.chess960));
+        b.selected.reset();
+        return;
+    }
+    boardPlay(move);
+}
+
 void App::boardClick(const chess::Board& board, chess::Square square) {
+    // In a game the user plays: their pieces at their turn only, on the position of the game; a click elsewhere in
+    // the game brings the board back to it.
+    if (auto& b = board_; b.humanGame()) {
+        const int last = static_cast<int>(b.game.moves.size());
+        if (b.line >= 0 || b.ply != last) {
+            showBoardLine(-1, last);
+            return;
+        }
+        if (!b.humanTurn()) {
+            b.selected.reset();
+            return;
+        }
+    }
     if (board_.selected) {
         std::vector<chess::Move> moves;
         for (const auto& m : movesFrom(board, *board_.selected)) {
             if (shownTarget(m) == square) moves.push_back(m);
         }
         if (moves.size() == 1) {
-            boardPlay(moves.front());
+            boardMove(moves.front());
             return;
         }
         if (moves.size() > 1) {  // a promotion: the piece is chosen
@@ -1268,7 +1291,7 @@ void App::drawBoardColumn(float size) {
                 for (const auto& m : movesFrom(board, b.promotion->from())) {
                     if (shownTarget(m) == shownTarget(*b.promotion) && m.typeOf() == chess::Move::PROMOTION &&
                         m.promotionType() == type) {
-                        boardPlay(m);
+                        boardMove(m);
                     }
                 }
                 b.promotion.reset();
@@ -2570,6 +2593,11 @@ void App::startBoardGames() {
         if (e.name == s.game_first) first = &e;
         if (e.name == s.game_second) second = &e;
     }
+    // The user in place of an engine: only a name, the one their games give them.
+    EngineEntry you;
+    you.name = humanName();
+    if (s.game_human == 0) first = &you;
+    if (s.game_human == 1) second = &you;
     if (!first || !second) {
         b.message       = TR("Choose the two engines of the game.");
         b.message_error = true;
@@ -2583,6 +2611,7 @@ void App::startBoardGames() {
     setup.pair         = s.game_pair;
     setup.fen          = boardFen();
     setup.chess960     = b.chess960;
+    setup.human        = s.game_human;
     // The analysis would compete with the engines of the game.
     if (b.analysing) setBoardAnalysis(false);
     std::error_code ec;
@@ -2600,6 +2629,7 @@ void App::startBoardGames() {
     b.match_state   = {};
     b.watching      = true;
     b.play_anyway   = false;
+    b.flipped_game  = -1;
     b.chess960      = setup.chess960;
     b.title         = fmt::format("{} – {} · {}", first->name, second->name, clockText(setup.first_clock));
     b.message.clear();
@@ -2620,6 +2650,11 @@ void App::pollBoardGames() {
     if (last) b.ply = static_cast<int>(b.game.moves.size());
     b.ply = std::min(b.ply, static_cast<int>(b.game.moves.size()));
     b.selected.reset();
+    // A game the user plays: their side at the bottom, once a game, so that they can still turn the board.
+    if (st.you && b.flipped_game != st.game) {
+        b.flip         = *st.you == chess::Color::BLACK;
+        b.flipped_game = st.game;
+    }
     if (st.games > 1) {
         b.title = trf("{} – {} · game {} of {}", st.current.header("White"), st.current.header("Black"), st.game + 1,
                       st.games);
@@ -2652,6 +2687,14 @@ void App::drawBoardPlay() {
             const auto& g = st.current;
             ImGui::TextUnformatted(
                 trf("Game {} of {}: {} – {}", st.game + 1, st.games, g.header("White"), g.header("Black")).c_str());
+            if (st.you) {
+                ImGui::SameLine();
+                if (ImGui::SmallButton(TR("Resign the game"))) b.match->resign();
+                if (ImGui::IsItemHovered()) {
+                    ImGui::SetTooltip("%s", TR("The game ends, won by the engine; the second game of a pair "
+                                               "follows."));
+                }
+            }
             ImGui::SameLine();
             if (ImGui::SmallButton(TR("Stop##games"))) b.match->stop();
             if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The game being played ends without a result."));
@@ -2670,7 +2713,9 @@ void App::drawBoardPlay() {
                 else
                     ImGui::TextDisabled("%s", text.c_str());
             }
-            // What the side to move searches.
+            // What the side to move searches; in a game the user plays, whose turn it is (the engine's search
+            // would tell its plan).
+            if (b.humanTurn()) ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ui::ACCENT), "%s", TR("Your move"));
             if (st.thinking && !st.info.empty()) {
                 const auto info  = fastchess::engine::UciEngine::parseInfo(st.info);
                 const auto board = boardAt(st.current, b.chess960, static_cast<int>(st.current.moves.size()));
@@ -2718,19 +2763,28 @@ void App::drawBoardPlay() {
         return;
     }
 
-    // The engines: the first has White in the first game.
-    const auto engineCombo = [&](const char* id, std::string& name) {
+    // The engines: the first has White in the first game. You, first in each list, plays one side in place of its
+    // engine, its moves made on the board.
+    const auto engineCombo = [&](const char* id, std::string& name, int side) {
+        const bool you = s.game_human == side;
         ImGui::SetNextItemWidth(px(150));
-        if (ImGui::BeginCombo(id, name.empty() ? TR("Choose an engine") : name.c_str(),
+        if (ImGui::BeginCombo(id,
+                              you            ? TR("You")
+                              : name.empty() ? TR("Choose an engine")
+                                             : name.c_str(),
                               ImGuiComboFlags_HeightLargest)) {
-            std::vector<std::string> names, more;
+            std::vector<std::string> names{TR("You")}, more{std::string()};
             for (const auto& e : engines_) {
                 if (e.inactive && e.name != name) continue;
                 names.push_back(e.name);
                 more.push_back(engineSearchText(e));
             }
-            if (const int i = ui::searchComboItems(names, name, &more); i >= 0) {
-                name    = names[static_cast<std::size_t>(i)];
+            if (const int i = ui::searchComboItems(names, you ? names.front() : name, &more); i == 0) {
+                s.game_human = side;
+                changed      = true;
+            } else if (i > 0) {
+                name = names[static_cast<std::size_t>(i)];
+                if (you) s.game_human = -1;
                 changed = true;
             }
             ImGui::EndCombo();
@@ -2741,18 +2795,19 @@ void App::drawBoardPlay() {
     ImGui::AlignTextToFramePadding();
     ImGui::TextDisabled("%s", TR("White"));
     ImGui::SameLine();
-    engineCombo("##game_first", s.game_first);
+    engineCombo("##game_first", s.game_first, 0);
     ImGui::SameLine();
     if (ImGui::SmallButton("<->")) {
         std::swap(s.game_first, s.game_second);
         std::swap(s.first_clock, s.second_clock);
+        if (s.game_human >= 0) s.game_human = 1 - s.game_human;
         changed = true;
     }
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("Swap the engines and their clocks."));
     ImGui::SameLine();
     ImGui::TextDisabled("%s", TR("Black"));
     ImGui::SameLine();
-    engineCombo("##game_second", s.game_second);
+    engineCombo("##game_second", s.game_second, 1);
 
     // The clocks: minutes and an increment in seconds.
     const auto clockFields = [&](const char* id, const char* label, GameClock& clock) {
@@ -2792,7 +2847,8 @@ void App::drawBoardPlay() {
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", fen.c_str());
 
     // Its place among the cores: refused, or played anyway, when the machine is full.
-    const int need  = std::max(engineThreads(s.game_first), engineThreads(s.game_second));
+    const int need  = std::max(s.game_human == 0 ? 0 : engineThreads(s.game_first),
+                               s.game_human == 1 ? 0 : engineThreads(s.game_second));
     const int busy  = tournamentThreads() + boardThreads();
     const bool full = busy + need > topology_.logical;
     ImGui::TextDisabled("%s", trf("Counts in the core budget · {} of {} threads", need, topology_.logical).c_str());
@@ -2808,7 +2864,8 @@ void App::drawBoardPlay() {
                                      .c_str());
         ImGui::PopStyleColor();
     }
-    const bool ready = !s.game_first.empty() && !s.game_second.empty() && positionProblem(fen, b.chess960).empty();
+    const bool ready = (s.game_human == 0 || !s.game_first.empty()) && (s.game_human == 1 || !s.game_second.empty()) &&
+                       positionProblem(fen, b.chess960).empty();
     ImGui::BeginDisabled(!ready);
     if (!full || b.play_anyway) {
         if (ui::iconButton("board_play_start", ui::Icon::Play, s.game_pair ? TR("Play the two games") : TR("Play")))

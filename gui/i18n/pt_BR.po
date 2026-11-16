@@ -3798,6 +3798,9 @@ msgstr "Relatar um problema…"
 msgid "Resign"
 msgstr "Abandono"
 
+msgid "Resign the game"
+msgstr "Abandonar a partida"
+
 msgid "Restart"
 msgstr "Reiniciar"
 
@@ -4733,6 +4736,9 @@ msgstr "A partida em andamento termina sem resultado."
 
 msgid "The game counts again as it was."
 msgstr "A partida volta a contar como antes."
+
+msgid "The game ends, won by the engine; the second game of a pair follows."
+msgstr "A partida termina, vencida pelo engine; a segunda partida de um par vem a seguir."
 
 msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
 msgstr "A partida acompanhada ocupando a janela, em letras grandes, para uma TV, um clube ou uma transmissão. F11: tela cheia, Esc: voltar."
@@ -5768,6 +5774,12 @@ msgstr "PVs erradas"
 
 msgid "X: the opponent's best move if it could move again, as a red arrow (another process of the engine, its threads counted)."
 msgstr "X: o melhor lance do adversário se ele pudesse jogar de novo, como seta vermelha (outro processo do engine, seus threads contados)."
+
+msgid "You"
+msgstr "Você"
+
+msgid "Your move"
+msgstr "Sua vez"
 
 msgid "Your own folder"
 msgstr "Sua própria pasta"
@@ -7345,6 +7357,9 @@ msgid "{} replaced"
 msgid_plural "{} replaced"
 msgstr[0] "{} substituída"
 msgstr[1] "{} substituídas"
+
+msgid "{} resigns"
+msgstr "{} abandona"
 
 msgid "{} round"
 msgid_plural "{} rounds"

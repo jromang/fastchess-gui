@@ -741,7 +741,7 @@ captura ou um lance de peão tivesse acabado de ser jogado, o que é exato excet
 perto. As tabelas são as do processo do programa: elas não são consultadas enquanto um torneio joga nele.
 
 ### Jogar uma partida a partir de uma posição
-<!-- en: playing-a-game-from-a-position 6e79a367 -->
+<!-- en: playing-a-game-from-a-position 305b1b4e -->
 
 **Jogar uma partida…** joga uma partida a partir da posição do tabuleiro entre dois engines da biblioteca (*Brancas*
 e *Pretas*, `<->` os troca junto com os relógios), com um relógio para cada um (minutos e um incremento em segundos;
@@ -759,6 +759,18 @@ enquanto um torneio é jogado, sem mexer nele. As threads delas (o maior valor e
 alternadamente) contam no orçamento de núcleos; quando as partidas dos torneios em andamento e a análise já ocupam a
 máquina, o cartão avisa e oferece *Jogar mesmo assim* em vez de *Jogar*. A análise para quando uma partida começa, já
 que competiria com os engines dela.
+
+**Você**, primeiro nas listas de *Brancas* e *Pretas*, joga esse lado você mesmo: seus lances são feitos no tabuleiro
+com o mouse, no tabuleiro plano como no 3D (um peão que chega à última fileira pede a peça). O tabuleiro gira para
+deixar o seu lado embaixo a cada partida (*Girar* continua girando-o), só aceita suas peças na sua vez (o cartão mostra
+*Sua vez*), e um clique enquanto você olha um lance anterior o traz de volta à partida. Seu relógio corre como o de um
+engine, perda por tempo incluída: dê a si mesmo mais tempo que ao engine desmarcando *O mesmo para os dois*. Enquanto
+você joga, o que o engine pensa fica guardado (a avaliação, a profundidade e a linha dele, portanto também a barra de
+avaliação e a curva do gráfico); a partida terminada tem tudo isso, pronta para *Analisar a partida*. *Abandonar a
+partida* a encerra a qualquer momento, vencida pelo engine; com uma segunda partida, ela vem a seguir, com a sua cor
+invertida. Suas partidas são salvas com o seu nome de usuário, e só o engine conta no orçamento de núcleos. Não dá para
+voltar um lance, e o engine joga com força total, a menos que o cartão dele defina uma menor (`UCI_LimitStrength` e
+`UCI_Elo`, ou `Skill Level`, quando ele os tem).
 
 ## Suítes de testes
 <!-- en: test-suites 42c2b2ba -->

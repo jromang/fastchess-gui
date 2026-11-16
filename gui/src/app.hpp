@@ -392,6 +392,8 @@ class App {
     [[nodiscard]] bool boardKey();
     [[nodiscard]] std::string boardFen();  // the position of the Board page
     void boardPlay(chess::Move move);
+    // A move made on the board with the mouse: the user's move in the game they play, else boardPlay().
+    void boardMove(chess::Move move);
     void boardClick(const chess::Board& board, chess::Square square);
     // The threads the running tournament's games use now, about: its games times the larger thread count of its
     // engines.

@@ -59,10 +59,12 @@ struct BoardSettings {
     GameClock first_clock, second_clock;
     bool same_clock = true;
     bool game_pair  = false;
-    GraphView graph;  // the game graph's tab, hidden curves, folded
+    int game_human  = -1;  // the user plays the first side (0) or the second (1), in place of its engine
+    GraphView graph;       // the game graph's tab, hidden curves, folded
 };
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BoardSettings, analysis, arrows, review_ceiling_ms, game_first,
-                                                game_second, first_clock, second_clock, same_clock, game_pair, graph)
+                                                game_second, first_clock, second_clock, same_clock, game_pair,
+                                                game_human, graph)
 
 // The position after the first `ply` moves of `game` (its start position for 0). The moves were checked when the game
 // was read or played.
@@ -234,6 +236,10 @@ struct BoardPage {
     BoardMatch::State match_state;
     uint64_t match_version = 0;
     bool watching          = false;  // the board shows the game being played
+    int flipped_game       = -1;     // the game the board was turned for, the user's side at the bottom
+    // The user plays the game being played, and it is their move.
+    [[nodiscard]] bool humanGame() const { return match && match_state.running && match_state.you.has_value(); }
+    [[nodiscard]] bool humanTurn() const { return humanGame() && match_state.thinking == match_state.you; }
 };
 
 }  // namespace fcg

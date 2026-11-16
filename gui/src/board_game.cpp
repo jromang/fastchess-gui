@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <ctime>
 #include <deque>
 
@@ -21,13 +22,17 @@ namespace {
 
 using Clock = std::chrono::steady_clock;
 
-// An engine playing a game, spoken to in UCI (a WinBoard engine through the adapter), from the game's thread.
+// An engine playing a game, spoken to in UCI (a WinBoard engine through the adapter), from the game's thread; or,
+// with a `seat`, the user, whose moves the window gives there.
 class Player {
    public:
-    Player(const EngineEntry& entry, const std::atomic<bool>& stop) : entry_(entry), stop_(stop) {}
+    Player(const EngineEntry& entry, const std::atomic<bool>& stop, const std::atomic<bool>& resign,
+           BoardSeat* seat = nullptr)
+        : entry_(entry), stop_(stop), resign_(resign), seat_(seat) {}
 
     // Started, given the library's option values (and Chess960 when asked), and ready. False with the reason.
     bool start(bool chess960, std::string& error) {
+        if (seat_) return true;
         std::string why;
         if (!process_.start(engineLaunch(entry_), why)) {
             error = trf("Cannot start {}: {}", entry_.name, toUtf8(why));
@@ -60,14 +65,16 @@ class Player {
     }
 
     bool newGame() {
+        if (seat_) return true;
         (void)process_.send("ucinewgame");
         return ready(std::chrono::seconds(60));
     }
 
     // Its move for the position, within `budget` (its clock and the margin): the move in UCI, or nullopt (out of
-    // time, stopped, or the engine ended). `info` gets each info line with a score.
+    // time, stopped, resigned, or the engine ended). `info` gets each info line with a score.
     std::optional<std::string> go(const std::string& position, const std::string& go, std::chrono::milliseconds budget,
                                   const std::function<void(const std::string&)>& info) {
+        if (seat_) return userMove(budget);
         (void)process_.send(position);
         (void)process_.send(go);
         std::optional<std::string> move;
@@ -76,25 +83,46 @@ class Player {
             [&](const std::string& line) {
                 if (line.rfind("info", 0) == 0 && line.find(" score ") != std::string::npos) info(line);
             },
-            &move);
-        if (!got) return std::nullopt;
+            &move, true);
+        if (!got) {
+            // The user resigned while it searched: stopped and its bestmove read, ready for the next game.
+            if (resign_ && !stop_ && process_.running()) {
+                (void)process_.send("stop");
+                (void)waitFor("bestmove", Clock::now() + std::chrono::seconds(2), [](const std::string&) {});
+            }
+            return std::nullopt;
+        }
         return move;
     }
 
-    [[nodiscard]] bool alive() const { return process_.running(); }
-    void quit() { process_.stop(std::chrono::milliseconds(500)); }
+    [[nodiscard]] bool alive() const { return seat_ || process_.running(); }
+    void quit() {
+        if (!seat_) process_.stop(std::chrono::milliseconds(500));
+    }
 
    private:
+    // The user's move, given by the window while their turn lasts: nullopt when their clock ran out, the games were
+    // stopped or they resigned. A move given before their turn is not taken.
+    std::optional<std::string> userMove(std::chrono::milliseconds budget) {
+        std::unique_lock lock(seat_->mutex);
+        seat_->move.reset();
+        seat_->turn = true;
+        seat_->cv.wait_until(lock, Clock::now() + budget, [&] { return seat_->move || stop_ || resign_; });
+        seat_->turn = false;
+        return std::exchange(seat_->move, std::nullopt);
+    }
+
     bool ready(std::chrono::milliseconds timeout) {
         (void)process_.send("isready");
         return waitFor("readyok", Clock::now() + timeout, [](const std::string&) {});
     }
 
     // Reads its lines until one starting with `word`, passing the others to `each`; `move` gets the word's first
-    // argument (bestmove e2e4). False on the deadline, a stop or the engine's end.
+    // argument (bestmove e2e4). False on the deadline, a stop or the engine's end, and, `interruptible`, when the user
+    // resigns.
     template <typename F>
-    bool waitFor(std::string_view word, Clock::time_point deadline, F each,
-                 std::optional<std::string>* move = nullptr) {
+    bool waitFor(std::string_view word, Clock::time_point deadline, F each, std::optional<std::string>* move = nullptr,
+                 bool interruptible = false) {
         while (true) {
             for (auto& line : process_.take()) {
                 if (line.kind != EngineProcess::Line::Kind::Out) continue;
@@ -108,7 +136,7 @@ class Player {
                 }
                 each(text);
             }
-            if (stop_ || !process_.running() || Clock::now() >= deadline) return false;
+            if (stop_ || (interruptible && resign_) || !process_.running() || Clock::now() >= deadline) return false;
             const auto left = std::chrono::duration_cast<std::chrono::milliseconds>(deadline - Clock::now());
             process_.wait(std::clamp(left, std::chrono::milliseconds(1), std::chrono::milliseconds(50)));
         }
@@ -116,8 +144,25 @@ class Player {
 
     const EngineEntry& entry_;
     const std::atomic<bool>& stop_;
+    const std::atomic<bool>& resign_;
+    BoardSeat* seat_ = nullptr;
     EngineProcess process_;
 };
+
+// The game as the user sees it while they play it: the engine's scores, depths and lines left out.
+ReplayGame withoutEvaluations(ReplayGame game) {
+    for (auto& m : game.moves) {
+        m.score.reset();
+        m.wdl.reset();
+        m.depth    = 0;
+        m.seldepth = 0;
+        m.nodes    = 0;
+        m.nps      = 0;
+        m.tbhits   = 0;
+        m.pv.clear();
+    }
+    return game;
+}
 
 std::string today() {
     const auto now = std::time(nullptr);
@@ -137,6 +182,13 @@ std::string pgnTimeControl(const GameClock& c) { return fmt::format("{:g}+{:g}",
 
 }  // namespace
 
+std::string humanName() {
+    for (const char* var : {"USER", "USERNAME", "LOGNAME"}) {
+        if (const char* value = std::getenv(var); value && *value) return toUtf8(value);
+    }
+    return "Human";
+}
+
 std::string clockText(const GameClock& c) {
     if (c.base_s >= 60 && std::fmod(c.base_s, 60.0) == 0) return fmt::format("{:g}+{:g}", c.base_s / 60, c.inc_s);
     const auto whole = static_cast<int>(c.base_s);
@@ -153,7 +205,9 @@ void BoardMatch::update(F f) {
 bool BoardMatch::start(const EngineEntry& first, const EngineEntry& second, const BoardMatchSetup& setup,
                        const std::filesystem::path& pgn, std::string& error) {
     stop();
-    for (const auto* e : {&first, &second}) {
+    for (int i = 0; i < 2; ++i) {
+        if (setup.human == i) continue;
+        const auto* e = i == 0 ? &first : &second;
         std::error_code ec;
         if (e->machine.empty() && !std::filesystem::is_regular_file(e->cmd, ec)) {
             error = trf("File not found: {}", e->cmd);
@@ -169,16 +223,43 @@ bool BoardMatch::start(const EngineEntry& first, const EngineEntry& second, cons
         state_.running     = true;
         state_.pgn         = pgn;
     }
-    stop_ = false;
-    claim_.set(std::max(first.threads(), second.threads()));
+    stop_   = false;
+    resign_ = false;
+    claim_.set(std::max(setup.human == 0 ? 0 : first.threads(), setup.human == 1 ? 0 : second.threads()));
     thread_ = std::thread([this, first, second, setup, pgn] { run(first, second, setup, pgn); });
     return true;
 }
 
 void BoardMatch::stop() {
-    stop_ = true;
+    {
+        // Under the seat's lock: the user's wait cannot miss it.
+        std::lock_guard lock(seat_.mutex);
+        stop_ = true;
+    }
+    seat_.cv.notify_all();
     if (thread_.joinable()) thread_.join();
     claim_.set(0);
+}
+
+void BoardMatch::play(const std::string& uci) {
+    {
+        std::lock_guard lock(seat_.mutex);
+        if (!seat_.turn) return;
+        seat_.move = uci;
+    }
+    seat_.cv.notify_all();
+}
+
+void BoardMatch::resign() {
+    {
+        std::lock_guard lock(mutex_);
+        if (!state_.running || !state_.you) return;
+    }
+    {
+        std::lock_guard lock(seat_.mutex);
+        resign_ = true;
+    }
+    seat_.cv.notify_all();
 }
 
 bool BoardMatch::state(State& out, uint64_t& version) const {
@@ -195,7 +276,10 @@ bool BoardMatch::running() const {
 }
 
 void BoardMatch::run(EngineEntry first, EngineEntry second, BoardMatchSetup setup, std::filesystem::path pgn) {
-    Player one(first, stop_), two(second, stop_);
+    Player one(first, stop_, resign_, setup.human == 0 ? &seat_ : nullptr);
+    Player two(second, stop_, resign_, setup.human == 1 ? &seat_ : nullptr);
+    // While the user plays, what the engine thinks is not shown: its scores come with the finished game.
+    const bool hide = setup.human >= 0;
     std::string error;
     if (!one.start(setup.chess960, error) || !two.start(setup.chess960, error)) {
         update([&](State& s) {
@@ -231,12 +315,17 @@ void BoardMatch::run(EngineEntry first, EngineEntry second, BoardMatchSetup setu
                                                static_cast<int64_t>(clocks[1].base_s * 1000)};
         const std::array<int64_t, 2> inc_ms = {static_cast<int64_t>(clocks[0].inc_s * 1000),
                                                static_cast<int64_t>(clocks[1].inc_s * 1000)};
+        // The user's side: the first has White in the first game.
+        std::optional<chess::Color> you;
+        if (setup.human >= 0) you = (setup.human == 0) == (g == 0) ? chess::Color::WHITE : chess::Color::BLACK;
+        resign_ = false;
         update([&](State& s) {
             s.game     = g;
             s.current  = game;
             s.clock_ms = clock_ms;
             s.thinking.reset();
             s.info.clear();
+            s.you = you;
         });
 
         std::string result = "*", reason;
@@ -287,10 +376,16 @@ void BoardMatch::run(EngineEntry first, EngineEntry second, BoardMatchSetup setu
             const auto move  = player.go(position, go, std::chrono::milliseconds(clock_ms[side]) + CLOCK_MARGIN,
                                          [&](const std::string& line) {
                                             last_info = line;
-                                            update([&](State& s) { s.info = line; });
+                                            if (!hide) update([&](State& s) { s.info = line; });
                                          });
             const auto spent = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - start).count();
             if (stop_) break;
+            if (you && resign_) {
+                result  = *you == chess::Color::WHITE ? "0-1" : "1-0";
+                reason  = trf("{} resigns", *you == chess::Color::WHITE ? white_name : black_name);
+                resign_ = false;
+                break;
+            }
             const char* winner = side == 0 ? "0-1" : "1-0";
             if (!move) {
                 result = winner;
@@ -328,7 +423,7 @@ void BoardMatch::run(EngineEntry first, EngineEntry second, BoardMatchSetup setu
             board.makeMove<true>(parsed);
             game.moves.push_back(played);
             update([&](State& s) {
-                s.current  = game;
+                s.current  = hide ? withoutEvaluations(game) : game;
                 s.clock_ms = clock_ms;
                 s.thinking.reset();
             });

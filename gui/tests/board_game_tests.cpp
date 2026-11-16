@@ -1,5 +1,6 @@
 // A game between two engines of the library from a position of the Board page, played outside fastchess, against
-// the mock engine: a pair with the colours reversed, a loss on time, a stop, the PGN file.
+// the mock engine: a pair with the colours reversed, a loss on time, a stop, the PGN file; and the user against an
+// engine.
 
 #include <doctest/doctest.hpp>
 
@@ -55,6 +56,30 @@ BoardMatch::State waitEnd(BoardMatch& match, std::chrono::seconds limit = 60s) {
     }
     match.reap();
     return state;
+}
+
+// The state once `done` holds, or the last one after `limit`.
+template <typename F>
+BoardMatch::State waitFor(BoardMatch& match, F done, std::chrono::seconds limit = 30s) {
+    BoardMatch::State state;
+    uint64_t version = 0;
+    const auto until = std::chrono::steady_clock::now() + limit;
+    while (std::chrono::steady_clock::now() < until) {
+        match.state(state, version);
+        if (done(state)) break;
+        std::this_thread::sleep_for(5ms);
+    }
+    return state;
+}
+
+// A legal move of the game's position, in UCI.
+std::string anyMove(const BoardMatch::State& state, const std::string& fen) {
+    chess::Board board;
+    board.setFen(fen);
+    for (const auto& m : state.current.moves) board.makeMove<true>(m.move);
+    chess::Movelist moves;
+    chess::movegen::legalmoves(moves, board);
+    return moves.empty() ? std::string() : chess::uci::moveToUci(moves[0]);
 }
 
 fs::path freshDir(const char* name) {
@@ -172,5 +197,77 @@ TEST_CASE("board game: an engine that thinks past its clock loses on time; a sto
     CHECK(clockText({2400, 0}) == "40+0");
     CHECK(clockText({30, 0.2}) == "0:30+0.2");
     CHECK(clockText({90, 1}) == "1:30+1");
+    fs::remove_all(dir);
+}
+
+TEST_CASE("board game: the user against an engine, their moves at their turn only, the engine's scores kept back") {
+    if (!fs::is_regular_file(mockEngine())) return;
+    const auto dir = freshDir("fcg-board-game-human");
+    BoardMatchSetup setup;
+    setup.first        = "You";
+    setup.second       = "Bravo";
+    setup.first_clock  = {60, 0};
+    setup.second_clock = {60, 0};
+    setup.fen          = std::string(chess::constants::STARTPOS);
+    setup.human        = 0;
+    EngineEntry you;
+    you.name = "You";  // no program: the user
+    std::string error;
+
+    setVar("FCG_MOCK_MOVE_MS", "300");
+    BoardMatch match;
+    const int before = boardThreads();
+    REQUIRE(match.start(you, engine("Bravo", 2), setup, dir / "human.pgn", error));
+    CHECK(boardThreads() == before + 2);  // the engine's threads only
+
+    // Their turn: the move is taken.
+    auto state = waitFor(match, [](const auto& s) { return s.thinking == chess::Color::WHITE; });
+    REQUIRE(state.you == chess::Color::WHITE);
+    match.play("e2e4");
+    // The engine's turn: a move given now is not taken.
+    state = waitFor(match, [](const auto& s) { return s.thinking == chess::Color::BLACK; });
+    REQUIRE(state.current.moves.size() == 1);
+    CHECK(state.current.moves[0].san == "e4");
+    match.play("d2d4");
+    state =
+        waitFor(match, [](const auto& s) { return s.thinking == chess::Color::WHITE && s.current.moves.size() == 2; });
+    REQUIRE(state.current.moves.size() == 2);
+    CHECK(state.current.moves[1].mover == chess::Color::BLACK);
+    // The engine's score and depth are not shown while the user plays.
+    CHECK_FALSE(state.current.moves[1].score.has_value());
+    CHECK(state.current.moves[1].depth == 0);
+    CHECK(state.info.empty());
+
+    // Resigned while the engine thinks: the user's side loses at once, the engine stopped.
+    match.play(anyMove(state, setup.fen));
+    state = waitFor(match, [](const auto& s) { return s.thinking == chess::Color::BLACK; });
+    match.resign();
+    state = waitEnd(match);
+    setVar("FCG_MOCK_MOVE_MS", nullptr);
+    CHECK(boardThreads() == before);
+    REQUIRE(state.finished.size() == 1);
+    const auto& game = state.finished[0];
+    CHECK(game.result == "0-1");
+    CHECK(game.final_comment.find("You") != std::string::npos);
+    CHECK(game.header("White") == "You");
+    REQUIRE(game.moves.size() >= 3);
+    CHECK(game.moves[1].score.has_value());  // the finished game has them
+
+    // A pair: the user has Black, then White; their clock runs out in the first game.
+    setup.human        = 1;
+    setup.first        = "Bravo";
+    setup.second       = "You";
+    setup.second_clock = {0.3, 0};
+    setup.pair         = true;
+    BoardMatch pair;
+    REQUIRE(pair.start(engine("Bravo"), you, setup, dir / "pair.pgn", error));
+    state = waitFor(pair, [](const auto& s) { return s.you.has_value(); });
+    CHECK(state.you == chess::Color::BLACK);
+    state = waitFor(pair, [](const auto& s) { return s.game == 1 && s.you == chess::Color::WHITE; });
+    REQUIRE(state.game == 1);
+    REQUIRE(state.finished.size() == 1);
+    CHECK(state.finished[0].result == "1-0");
+    CHECK(state.finished[0].final_comment.find("on time") != std::string::npos);
+    pair.stop();
     fs::remove_all(dir);
 }

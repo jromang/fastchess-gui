@@ -3784,6 +3784,9 @@ msgstr "报告问题…"
 msgid "Resign"
 msgstr "认输"
 
+msgid "Resign the game"
+msgstr "认输"
+
 msgid "Restart"
 msgstr "重新启动"
 
@@ -4710,6 +4713,9 @@ msgstr "正在进行的对局将无结果结束。"
 
 msgid "The game counts again as it was."
 msgstr "对局恢复按原结果计分。"
+
+msgid "The game ends, won by the engine; the second game of a pair follows."
+msgstr "对局结束，引擎获胜；如果是一对对局，接着下第二局。"
 
 msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
 msgstr "所关注的对局占满窗口，大字显示，用于电视、俱乐部或直播。F11：全屏，Esc：返回。"
@@ -5739,6 +5745,12 @@ msgstr "错误 PV"
 
 msgid "X: the opponent's best move if it could move again, as a red arrow (another process of the engine, its threads counted)."
 msgstr "X：如果对手能再走一步时的最佳着法，以红色箭头显示（引擎的另一个进程，计入其线程）。"
+
+msgid "You"
+msgstr "你"
+
+msgid "Your move"
+msgstr "轮到你走棋"
 
 msgid "Your own folder"
 msgstr "自己的文件夹"
@@ -7240,6 +7252,9 @@ msgstr "{} 不接受本赛事设定的 {} = {}：{}。该值不会发送：引�
 msgid "{} replaced"
 msgid_plural "{} replaced"
 msgstr[0] "已替换 {} 个"
+
+msgid "{} resigns"
+msgstr "{} 认输"
 
 msgid "{} round"
 msgid_plural "{} rounds"

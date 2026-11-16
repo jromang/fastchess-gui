@@ -756,7 +756,7 @@ dove la regola delle 50 mosse è vicina. Le tabelle sono quelle del processo del
 mentre un torneo vi gioca.
 
 ### Giocare una partita da una posizione
-<!-- en: playing-a-game-from-a-position 6e79a367 -->
+<!-- en: playing-a-game-from-a-position 305b1b4e -->
 
 **Gioca una partita…** gioca una partita dalla posizione sulla scacchiera tra due motori della libreria (*Bianco* e
 *Nero*, `<->` li scambia con i loro orologi), con un orologio per ciascuno (minuti e un incremento in secondi; *Lo
@@ -775,6 +775,18 @@ mentre ne gioca uno, senza toccarlo. I loro thread (il maggiore tra quelli dei d
 contano nel budget dei core; quando le partite dei tornei in corso e l'analisi riempiono già la macchina, la scheda lo
 dice e propone *Gioca comunque* invece di *Gioca*. L'analisi si ferma quando inizia una partita, perché competerebbe
 con i suoi motori.
+
+**Tu**, primo negli elenchi *Bianco* e *Nero*, gioca quel lato in prima persona: le tue mosse si fanno sulla scacchiera
+con il mouse, su quella piatta come su quella 3D (un pedone che raggiunge l'ultima traversa chiede il suo pezzo). La
+scacchiera si gira per mettere il tuo lato in basso a ogni partita (*Ruota* continua a girarla), accetta i tuoi pezzi
+solo quando tocca a te (la scheda mostra *Tocca a te*), e un clic mentre guardi una mossa precedente la riporta alla
+partita. Il tuo orologio scorre come quello di un motore, sconfitta per tempo compresa: concediti più tempo del motore
+togliendo la spunta a *Lo stesso per entrambi*. Mentre giochi, ciò che pensa il motore viene tenuto da parte (la sua
+valutazione, la profondità e la variante, quindi anche la barra di valutazione e la curva del grafico); la partita
+finita li ha, pronta per *Analizza la partita*. *Abbandona la partita* la chiude in qualsiasi momento, vinta dal
+motore; con una seconda partita, questa segue, con il tuo colore invertito. Le tue partite vengono salvate con il tuo
+nome utente, e solo il motore conta nel budget dei core. Non si può ritirare una mossa, e il motore gioca a piena forza
+a meno che la sua scheda non ne imposti una minore (`UCI_LimitStrength` e `UCI_Elo`, o `Skill Level`, se li ha).
 
 ## Suite di test
 <!-- en: test-suites 42c2b2ba -->

@@ -3798,6 +3798,9 @@ msgstr ""
 msgid "Resign"
 msgstr ""
 
+msgid "Resign the game"
+msgstr ""
+
 msgid "Restart"
 msgstr ""
 
@@ -4732,6 +4735,9 @@ msgid "The game being played ends without a result."
 msgstr ""
 
 msgid "The game counts again as it was."
+msgstr ""
+
+msgid "The game ends, won by the engine; the second game of a pair follows."
 msgstr ""
 
 msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
@@ -5767,6 +5773,12 @@ msgid "Wrong PVs"
 msgstr ""
 
 msgid "X: the opponent's best move if it could move again, as a red arrow (another process of the engine, its threads counted)."
+msgstr ""
+
+msgid "You"
+msgstr ""
+
+msgid "Your move"
 msgstr ""
 
 msgid "Your own folder"
@@ -7345,6 +7357,9 @@ msgid "{} replaced"
 msgid_plural "{} replaced"
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "{} resigns"
+msgstr ""
 
 msgid "{} round"
 msgid_plural "{} rounds"
