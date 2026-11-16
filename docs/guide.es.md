@@ -1218,7 +1218,7 @@ cuando la ronda comparte una), y los cambios en el torneo (consulta [Modificar u
 curso](#modificar-un-torneo-en-curso)).
 
 ### Directo
-<!-- en: live 002a902e -->
+<!-- en: live 48ceada0 -->
 
 Las partidas en curso, como un mosaico de tableros o una partida en primer plano con los relojes, la búsqueda en curso
 de cada motor (profundidad, puntuación, nodos, nps, PV en SAN), la lista de jugadas y el gráfico de la partida (consulta
@@ -1228,6 +1228,12 @@ la velocidad, los accesos a tablas de finales, cuánto se separan, o cuántas me
 otro motor repite una PV. Las proporciones de victoria/tablas/derrota (`UCI_ShowWDL`, activado para los motores que lo
 tienen cuando se añaden) siguen cada línea de búsqueda; la pestaña *V/T/D* las dibuja como bandas, con las victorias de
 las blancas abajo.
+
+El mosaico tiene un tablero por partida en curso, no por partida que permita la concurrencia: hacia el final de un
+torneo, o con menos partidas que eso, los tableros que quedan crecen. Un tablero cuya partida terminó se queda 10
+segundos (la siguiente partida de su hueco empieza ahí), el de la partida seguida se queda, y cuando no se juega nada,
+se quedan las últimas partidas. Cuando los tableros necesitarían una barra de desplazamiento, el mosaico le quita
+anchura a la partida en primer plano, hasta dejarle el 40 % de la página.
 
 Bajo el tablero: el contador de las 50 jugadas (medias jugadas desde la última captura o jugada de peón, sobre 100),
 la diferencia de material con las piezas que un bando tiene de más, y las piezas que quedan, marcadas *TB* cuando la

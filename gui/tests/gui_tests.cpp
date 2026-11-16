@@ -2159,3 +2159,23 @@ TEST_CASE("processor use: a process tree takes each process once, a parent id re
     for (int64_t p = 1; p < 10000; ++p) chain.emplace_back(p + 1, p);
     CHECK(descendants(1, chain).size() == MAX_PROCESS_TREE);
 }
+
+TEST_CASE("live view: as many cards as games, not as fastchess' threads") {
+    using namespace std::chrono_literals;
+    const auto now = Clock::now();
+    // The last four games of a tournament on 32 threads, in slots 3, 9, 17 and 30; slot 5 ended its game 3 s ago (its
+    // next one starts), slot 6 a minute ago, the others never played.
+    std::vector<SlotSeen> slots(32);
+    for (const int i : {3, 9, 17, 30}) slots[static_cast<std::size_t>(i)] = {true, true, now};
+    slots[5] = {false, true, now - 3s};
+    slots[6] = {false, true, now - 60s};
+    CHECK(shownSlots(slots, 0, now) == std::vector<int>{3, 5, 9, 17, 30});
+    // The game followed stays, however long ago it ended.
+    CHECK(shownSlots(slots, 6, now) == std::vector<int>{3, 5, 6, 9, 17, 30});
+    // Nothing playing any more (paused, finished): the last games played, within the grace of the last one.
+    for (const int i : {3, 9, 17, 30}) slots[static_cast<std::size_t>(i)] = {false, true, now - 2s};
+    slots[5].last_active = now - 30s;
+    CHECK(shownSlots(slots, 0, now + 1h) == std::vector<int>{3, 9, 17, 30});
+    // No game yet: the slot followed alone.
+    CHECK(shownSlots(std::vector<SlotSeen>(32), 4, now) == std::vector<int>{4});
+}

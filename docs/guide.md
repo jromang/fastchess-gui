@@ -1085,6 +1085,11 @@ seldepth, nodes, speed, tablebase hits, how far apart they are, or how many plie
 engine's PV predicted. The win/draw/loss shares (`UCI_ShowWDL`, switched on for the engines that have it when they are
 added) follow each search line; the *WDL* tab draws them as bands, White's wins at the bottom.
 
+The mosaic has a board for each game being played, not for each game the concurrency allows: near the end of a
+tournament, or with fewer games than that, the boards left grow. A board whose game ended stays 10 seconds (the next
+game of its slot starts there), the one followed stays, and when nothing plays the last games stay. When the boards
+would need a scroll bar, the mosaic takes width from the game in focus, down to 40 % of the page for it.
+
 Under the board: the 50-move counter (plies since the last capture or pawn move, out of 100), the material difference
 with the pieces one side has more of, and the pieces left, marked *TB* when the tablebase adjudication can end the
 game; *Details under the boards* adds them to the mosaic. Under them, the buttons through the moves (see [Boards and

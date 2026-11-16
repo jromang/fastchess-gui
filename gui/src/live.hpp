@@ -443,4 +443,18 @@ class GuiObserver final : public fastchess::observer::GameObserver, public tour:
     std::thread loader_;  // last: started once everything else is there
 };
 
+// What the live view knows of a slot, to choose the slots it shows.
+struct SlotSeen {
+    bool active   = false;  // a game is being played there
+    bool has_game = false;  // it played one (the last stays shown)
+    Clock::time_point last_active{};
+};
+// How long a slot stays shown after its game ended: the thread that played it starts its next game.
+inline constexpr std::chrono::seconds LIVE_SLOT_GRACE{10};
+// The slots the live view shows, in order: the slots are fastchess' threads, as many as the games played at once, and
+// near the end of a tournament or with fewer games than threads most have nothing to play. Those playing, or that
+// ended their game less than LIVE_SLOT_GRACE ago, and `followed` if it has a game; with none of them (paused,
+// finished), the last that played, within LIVE_SLOT_GRACE of the last one; with no game at all, `followed`.
+[[nodiscard]] std::vector<int> shownSlots(const std::vector<SlotSeen>& slots, int followed, Clock::time_point now);
+
 }  // namespace fcg

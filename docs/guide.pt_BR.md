@@ -1193,7 +1193,7 @@ começou, quando a rodada compartilha uma), e as alterações do torneio (veja [
 andamento](#alterar-um-torneio-em-andamento)).
 
 ### Ao vivo
-<!-- en: live 002a902e -->
+<!-- en: live 48ceada0 -->
 
 As partidas em andamento, como um mosaico de tabuleiros ou uma partida em foco com os relógios, a busca em curso de
 cada engine (profundidade, pontuação, nós, nps, PV em SAN), a lista de lances e o gráfico da partida (veja [O gráfico
@@ -1202,6 +1202,12 @@ tempo por lance com o tempo de decisão, a profundidade com a seldepth, os nós,
 tablebases, quanto eles se afastam, ou quantos meios-lances uma PV repete do que a PV do outro engine previa. As
 parcelas de vitória/empate/derrota (`UCI_ShowWDL`, ligado para os engines que o têm quando são adicionados)
 acompanham cada linha de busca; a aba *V/E/D* as desenha como faixas, as vitórias das Brancas embaixo.
+
+O mosaico tem um tabuleiro por partida em andamento, não por partida que o paralelismo permite: perto do fim de um
+torneio, ou com menos partidas que isso, os tabuleiros restantes crescem. Um tabuleiro cuja partida terminou fica 10
+segundos (a próxima partida da sua vaga começa ali), o da partida acompanhada fica, e quando nada está sendo jogado, as
+últimas partidas ficam. Quando os tabuleiros precisariam de uma barra de rolagem, o mosaico tira largura da partida em
+foco, até deixar 40 % da página para ela.
 
 Sob o tabuleiro: o contador dos 50 lances (meios-lances desde a última captura ou lance de peão, de 100), a diferença
 de material com as peças que um lado tem a mais, e as peças restantes, marcadas com *TB* quando a adjudicação por

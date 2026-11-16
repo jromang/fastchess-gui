@@ -1236,7 +1236,7 @@ commencée quand la ronde en partage une), et les modifications du tournoi (voir
 [Modifier un tournoi en cours](#modifier-un-tournoi-en-cours)).
 
 ### Direct
-<!-- en: live 002a902e -->
+<!-- en: live 48ceada0 -->
 
 Les parties en cours, en mosaïque d'échiquiers ou en une partie mise en avant avec les pendules, la recherche en cours
 de chaque moteur (profondeur, score, nœuds, nps, PV en SAN), la liste des coups et le graphe de la partie (voir
@@ -1245,6 +1245,12 @@ chances de gain, le temps par coup avec le temps de décision, la profondeur ave
 les accès aux tables, leur écart, ou combien de demi-coups une PV reprend de ce que la PV de l'autre moteur avait
 prévu. Les parts de victoire, de nulle et de défaite (`UCI_ShowWDL`, activé pour les moteurs qui l'ont quand ils sont
 ajoutés) suivent chaque ligne de recherche ; l'onglet *G/N/P* les dessine en bandes, les victoires des Blancs en bas.
+
+La mosaïque a un échiquier par partie en cours, et non par partie que le parallélisme permet : vers la fin d'un
+tournoi, ou avec moins de parties que cela, les échiquiers restants grandissent. Un échiquier dont la partie s'est
+terminée reste 10 secondes (la partie suivante de son emplacement y commence), celui de la partie suivie reste, et
+quand rien ne joue, les dernières parties restent. Quand les échiquiers demanderaient une barre de défilement, la
+mosaïque prend de la largeur à la partie mise en avant, jusqu'à lui laisser 40 % de la page.
 
 Sous l'échiquier : le compteur des 50 coups (demi-coups depuis la dernière prise ou le dernier coup de pion, sur 100),
 la différence de matériel avec les pièces qu'un camp a en plus, et les pièces restantes, marquées *TB* quand

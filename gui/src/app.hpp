@@ -196,6 +196,7 @@ class App {
         FollowedPly nav;
         std::size_t nav_game = ~std::size_t{0};
         int listed_ply       = -1;  // nav's ply the move list was last scrolled to
+        Clock::time_point last_active{};  // the last frame its game was being played (shownSlots)
     };
 
     enum class Page { Home, NewMatch, Tournament, Engines, Books, Board, Suites, Ratings, Log, Settings };
@@ -900,6 +901,7 @@ class App {
 
     // Live view.
     int live_slot_ = 0;
+    std::vector<int> live_shown_;  // the slots the live view shows this frame (shownSlots)
     std::vector<SlotView> slot_views_;
     bool live_mosaic_       = true;
     GraphView live_graph_;    // the Live view's graph: its tab, hidden curves, folded

@@ -1245,7 +1245,7 @@ begonnen hat, oder sobald seine Runde begonnen hat, wenn sich die Runde eine tei
 (siehe [Ein laufendes Turnier ändern](#ein-laufendes-turnier-ändern)).
 
 ### Live
-<!-- en: live 002a902e -->
+<!-- en: live 48ceada0 -->
 
 Die laufenden Partien, als Mosaik von Brettern oder als eine Partie im Fokus mit den Uhren, der laufenden Suche jeder
 Engine (Tiefe, Bewertung, Knoten, nps, PV in SAN), der Zugliste und der Partiegrafik (siehe
@@ -1255,6 +1255,12 @@ Tablebase-Treffer, wie weit sie auseinanderliegen, oder wie viele Halbzüge eine
 anderen Engine vorhergesagt hat. Die Anteile für Sieg/Remis/Niederlage (`UCI_ShowWDL`, beim Hinzufügen für die Engines
 eingeschaltet, die es haben) folgen jeder Suchzeile; der Tab *S/R/N* zeichnet sie als Bänder, die Siege von Weiß
 unten.
+
+Das Mosaik hat ein Brett je laufender Partie, nicht je Partie, die die Parallelität erlaubt: gegen Ende eines Turniers
+oder mit weniger Partien als das werden die übrigen Bretter größer. Ein Brett, dessen Partie beendet ist, bleibt 10
+Sekunden (die nächste Partie seines Platzes beginnt dort), das der verfolgten Partie bleibt, und wenn nichts spielt,
+bleiben die letzten Partien. Bräuchten die Bretter einen Rollbalken, nimmt das Mosaik der Partie im Fokus Breite weg,
+bis ihr 40 % der Seite bleiben.
 
 Unter dem Brett: der 50-Züge-Zähler (Halbzüge seit dem letzten Schlagen oder Bauernzug, von 100), der
 Materialunterschied mit den Figuren, die eine Seite mehr hat, und die verbleibenden Steine, mit *TB* markiert, wenn die

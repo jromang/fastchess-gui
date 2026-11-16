@@ -220,6 +220,7 @@ void App::refreshSlot(int slot) {
 
     auto& v = slot_views_[static_cast<std::size_t>(slot)];
     obs->copySlot(slot, v.state);
+    if (v.state.active) v.last_active = Clock::now();
     // A gauntlet's new game, from its seed's side; Flip turns it over until the next game.
     if (setup_.live_seed_side && v.state.has_game && v.state.game_id != v.turned_for) {
         v.turned_for = v.state.game_id;
@@ -270,13 +271,27 @@ void App::drawLive() {
     const int slots = obs->slotCount();
     live_slot_      = std::clamp(live_slot_, 0, slots - 1);
     for (int i = 0; i < slots; ++i) refreshSlot(i);
+    // As many cards as games, not as threads: a tournament's last games, or fewer games than threads, leave most
+    // slots idle. The game followed is one of those shown.
+    {
+        std::vector<SlotSeen> seen;
+        seen.reserve(static_cast<std::size_t>(slots));
+        for (int i = 0; i < slots; ++i) {
+            const auto& v = slot_views_[static_cast<std::size_t>(i)];
+            seen.push_back({v.state.active, v.state.has_game, v.last_active});
+        }
+        live_shown_ = shownSlots(seen, live_slot_, Clock::now());
+        if (!live_shown_.empty() && std::find(live_shown_.begin(), live_shown_.end(), live_slot_) == live_shown_.end())
+            live_slot_ = live_shown_.front();
+    }
+    const int shown = static_cast<int>(live_shown_.size());
     hearMoves(live_slot_);
 
     // The parts of the followed game that have no panel of their own open are shown here, beside the mosaic.
     const unsigned parts = livePartsHere();
 
     // Mosaic of every game with the chosen one beside it, or one game with tabs.
-    const bool mosaic = live_mosaic_ && slots > 1;
+    const bool mosaic = live_mosaic_ && shown > 1;
     if (slots > 1) {
         if (ImGui::RadioButton(TR("Mosaic"), live_mosaic_)) live_mosaic_ = true;
         ImGui::SameLine();
@@ -310,7 +325,7 @@ void App::drawLive() {
 
     if (!mosaic) {
         if (ImGui::BeginTabBar("##slots", ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_TabListPopupButton)) {
-            for (int i = 0; i < slots; ++i) {
+            for (const int i : live_shown_) {
                 const bool active = obs->slotActive(i);
                 if (!active) ImGui::PushStyleColor(ImGuiCol_Text, ui::MUTED4);
                 const auto label = fmt::format("#{}###slot{}", i + 1, i);
@@ -329,14 +344,14 @@ void App::drawLive() {
         const float gap    = ImGui::GetStyle().ItemSpacing.x;
         if (parts == 0) {
             // The followed game in panels of its own: the mosaic takes the whole room.
-            const auto grid = mosaicGrid(slots, avail, setup_.tile_info);
+            const auto grid = mosaicGrid(shown, avail, setup_.tile_info);
             ImGui::BeginChild("##mosaic", ImVec2(0, 0));
             drawMosaic(grid.cols, grid.card);
             ImGui::EndChild();
         } else if (avail.x < px(700)) {
             // Narrow: the mosaic above, the followed game under it.
             const ImVec2 strip(avail.x, std::floor(avail.y * 0.4f));
-            const auto grid = mosaicGrid(slots, strip, setup_.tile_info);
+            const auto grid = mosaicGrid(shown, strip, setup_.tile_info);
             ImGui::BeginChild("##mosaic", ImVec2(0, strip.y));
             drawMosaic(grid.cols, grid.card);
             ImGui::EndChild();
@@ -348,9 +363,14 @@ void App::drawLive() {
             const bool side  = parts & ~LiveBoard;
             const float want = (board ? avail.y - ImGui::GetTextLineHeightWithSpacing() - liveNavHeight() : 0.0f) +
                                (board && side ? gap : 0.0f) + (side ? sidePanel() : 0.0f);
-            const float focus =
-                board ? std::clamp(want, avail.x * 0.4f, avail.x * 0.7f) : std::min(want, avail.x * 0.5f);
-            const auto grid   = mosaicGrid(slots, ImVec2(avail.x - focus - gap, avail.y), setup_.tile_info);
+            float focus = board ? std::clamp(want, avail.x * 0.4f, avail.x * 0.7f) : std::min(want, avail.x * 0.5f);
+            auto grid   = mosaicGrid(shown, ImVec2(avail.x - focus - gap, avail.y), setup_.tile_info);
+            // Cards that would need a scroll bar: the mosaic takes from the followed board, down to 40 % of the width
+            // for it, until they fit, or as wide as it can.
+            for (float f = focus - px(16); grid.scrolls && board && f >= avail.x * 0.4f - 0.5f; f -= px(16)) {
+                focus = std::max(f, avail.x * 0.4f);
+                grid  = mosaicGrid(shown, ImVec2(avail.x - focus - gap, avail.y), setup_.tile_info);
+            }
             ImGui::BeginChild("##mosaic", ImVec2(std::min(grid.width(), avail.x - focus - gap), 0));
             drawMosaic(grid.cols, grid.card);
             ImGui::EndChild();
@@ -373,16 +393,15 @@ void App::drawLive() {
 }
 
 void App::drawMosaic(int cols, float card) {
-    auto* obs        = run_->observer();
-    const int slots  = obs->slotCount();
     const float line = ImGui::GetTextLineHeightWithSpacing();
     const float h    = cardHeight(card, setup_.tile_info);
 
     const auto now = Clock::now();
-    for (int i = 0; i < slots; ++i) {
+    for (std::size_t k = 0; k < live_shown_.size(); ++k) {
+        const int i    = live_shown_[k];
         auto& v        = slot_views_[static_cast<std::size_t>(i)];
         const auto& st = v.state;
-        if (i % cols != 0) ImGui::SameLine();
+        if (k % static_cast<std::size_t>(cols) != 0) ImGui::SameLine();
 
         const bool selected = i == live_slot_;
         ImGui::PushStyleColor(ImGuiCol_Border, selected ? ImGui::ColorConvertU32ToFloat4(ui::ACCENT)

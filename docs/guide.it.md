@@ -1211,7 +1211,7 @@ iniziata, o una volta iniziato il suo turno quando il turno ne condivide una), e
 [Modificare un torneo in corso](#modificare-un-torneo-in-corso)).
 
 ### Diretta
-<!-- en: live 002a902e -->
+<!-- en: live 48ceada0 -->
 
 Le partite in corso, come un mosaico di scacchiere o una sola partita in primo piano con gli orologi, la ricerca in
 corso di ogni motore (profondità, valutazione, nodi, nps, PV in SAN), l'elenco delle mosse e il grafico della partita
@@ -1221,6 +1221,12 @@ velocità, gli accessi alle tablebase, quanto distano, o quante semimosse una PV
 motore aveva previsto. Le quote di vittoria/patta/sconfitta (`UCI_ShowWDL`, attivato per i motori che lo hanno quando
 vengono aggiunti) seguono ogni riga di ricerca; la scheda *V/P/S* le disegna come fasce, le vittorie del Bianco in
 basso.
+
+Il mosaico ha una scacchiera per ogni partita in corso, non per ogni partita che il parallelismo consente: verso la
+fine di un torneo, o con meno partite di così, le scacchiere rimaste si ingrandiscono. Una scacchiera la cui partita è
+finita resta 10 secondi (la partita successiva del suo posto inizia lì), quella della partita seguita resta, e quando
+non si gioca nulla restano le ultime partite. Quando le scacchiere richiederebbero una barra di scorrimento, il mosaico
+toglie larghezza alla partita in primo piano, fino a lasciarle il 40 % della pagina.
 
 Sotto la scacchiera: il contatore delle 50 mosse (semimosse dall'ultima cattura o mossa di pedone, su 100), la
 differenza di materiale con i pezzi che una parte ha in più, e i pezzi rimasti, marcati *TB* quando l'aggiudicazione
