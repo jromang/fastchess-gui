@@ -300,18 +300,19 @@ The **Tournaments** page is a control room: what runs and what needs you come fi
   [Queue and relaunch](#queue-and-relaunch)).
 - **Last finished**: the last five tournaments finished, with their result: a match's score, the SPRT's decision,
   a knockout's winner (of its final), a team match's score, or the first of the standings with its points of its
-  games. *Relaunch with…* for a match, and *Open*.
+  games. *Relaunch with…* for a match, *Clone* (see [Queue and relaunch](#queue-and-relaunch)) and *Open*.
 - **Health**: the crashes or hangs, losses on time and illegal moves of the last 24 hours, the memory free and
   installed, and the engine processes running; then the engines that lost those games, the three with the most,
   with *Open the engine* and *Open the folder* (the tournament's `logs` folder keeps the engine log of every game
   that ended badly). A loss on time before move 20 is told apart: it is more often an engine set up wrong (too many
   threads, a hash too large to allocate in time, a network loaded at every game, a slow start) than its time
   management.
-- **All tournaments**: every tournament of the profile, newest first, with *Open* and *Folder*; its title folds
+- **All tournaments**: every tournament of the profile, newest first, with *Open*, *Clone* and *Folder*; its title folds
   it. The result of a finished one shows at the cursor, over its state.
 
 The command palette has these actions too: *Pause all*, *Resume all*, *Relaunch … with…* for the last matches
-finished, *Open the tournaments folder* and *Change the tournaments folder…*.
+finished, *Clone …* for the tournament shown and the last finished, *Open the tournaments folder* and *Change the
+tournaments folder…*.
 
 ## Engines
 
@@ -1000,8 +1001,8 @@ optionally both engines agreeing), a maximum number of moves, and Syzygy tableba
 
 ## Running a tournament
 
-A running or opened tournament has a workspace with a header (name, progress, *Pause*, *Stop*, *Layout*) and
-panels, shown by default as tabs:
+A running or opened tournament has a workspace with a header (name, progress, *Pause*, *Stop*, *Clone*, *Folder*,
+*Layout*) and panels, shown by default as tabs:
 
 | Tab | What it shows |
 |---|---|
@@ -1292,8 +1293,15 @@ length and, while the lengths before it are known, when it starts; the tournamen
 SPRT without a maximum, nodes or depth per move) are counted apart.
 
 **Relaunch with…** on a finished match (in its header, or under *Last finished* on the home page) plays it again with
-another engine A, typically the next version, against the same engine B; the other settings are those of the *New
-tournament* page.
+another engine A, typically the next version, against the same engine B, with the match's other settings (those of the
+*New tournament* page for a match started by an older version, which did not keep them).
+
+**Clone** (in a tournament's header, under *Last finished* and in *All tournaments* on the home page) opens the *New
+tournament* page filled with that tournament's setup, whatever its format: the participants with their own settings,
+the time control, the openings, the adjudication and the rest, every value as it played. Its profiles are named, and
+one changed since is marked as changed for this tournament. Change what should differ (another time control, the next
+version of an engine, another book), then **Start** or *Add to the queue*. A tournament still playing can be cloned
+too; one started by an older version, which did not keep its setup, cannot.
 
 ## Ratings
 
@@ -1744,6 +1752,8 @@ place, where the `portable` file is not.
 folder each, which can be moved, copied, zipped and sent:
 
 - `tournament.json`: the format, the participants (engines copied with their options) and the conditions;
+- `setup.json`: the *New tournament* page's setup it started from, which *Clone* and *Relaunch with…* read (see
+  [Queue and relaunch](#queue-and-relaunch)); a tournament started by an older version has none;
 - `journal.jsonl`: everything that happened since, one line per event (game pairs started, games finished, changes,
   Swiss and knockout pairings); with the PGN files, it is what a resume reads. A game is on disk before its line, so a
   power cut loses at most the games being played. Game text no line points to (a game dropped by a change while it
@@ -1810,7 +1820,8 @@ fastchess-gui --version
   list), `setup-picker` and `setup-suggest` (the library's filter focused, or the suggested opponents selected),
   `setup-open=ROW` and `setup-profiles=ROW` (a row of the setup opened, or its profile list: `format`, `time`,
   `openings`, `adjudication`, `engines`, `concurrency`, `pgn`), `setup-book` (the first participant's own book),
-  `submission-export` (*Export for a rating list…*), `ratings-players` (the *PGN players* window),
+  `submission-export` (*Export for a rating list…*), `ratings-players` (the *PGN players* window), `clone=DIR`
+  (the *New tournament* page filled by *Clone* of that tournament's folder),
   `palette[=TEXT]` (the command palette, with TEXT typed in it), `game-menu=N` (the menu of game N in the *Games*
   tab, a result chosen), `end-menu=N` (*End with result* of the game of slot N, from 1), `big-screen[=N]` (the big
   screen, of the game of slot N), `live-back=N` (the game followed in *Live*, stepped back N plies),

@@ -299,7 +299,7 @@ MIT; *Aparência* tem o link para elas.
 | <kbd>Ctrl</kbd>+<kbd>C</kbd> | O modo headless | Parar depois das partidas em andamento |
 
 ## A página inicial
-<!-- en: the-home-page a1acacdb -->
+<!-- en: the-home-page 40031a16 -->
 
 A página **Torneios** é uma sala de controle: o que está rodando e o que precisa de você vem primeiro, depois o resto.
 
@@ -331,18 +331,20 @@ A página **Torneios** é uma sala de controle: o que está rodando e o que prec
   [Fila e relançamento](#fila-e-relançamento)).
 - **Últimos concluídos**: os cinco últimos torneios concluídos, com o resultado: o placar de um match, a decisão do
   SPRT, o vencedor de um mata-mata (da final), o placar de um match por equipes, ou o primeiro da classificação com
-  seus pontos sobre o número de partidas. *Relançar com…* para um match, e *Abrir*.
+  seus pontos sobre o número de partidas. *Relançar com…* para um match, *Clonar* (veja [Fila e
+  relançamento](#fila-e-relançamento)) e *Abrir*.
 - **Saúde**: os crashes ou travamentos, as perdas por tempo e os lances ilegais das últimas 24 horas, a memória livre
   e instalada, e os processos de engines em execução; depois os engines que perderam essas partidas, os três com
   mais, com *Abrir o engine* e *Abrir a pasta* (a pasta `logs` do torneio guarda o log do engine de cada partida que
   terminou mal). Uma perda por tempo antes do lance 20 é contada à parte: ela vem mais vezes de um engine mal
   configurado (threads demais, um hash grande demais para alocar a tempo, uma rede carregada a cada partida, um
   início lento) do que da sua gestão do tempo.
-- **Todos os torneios**: todos os torneios do perfil, os mais recentes primeiro, com *Abrir* e *Pasta*; um clique no
-  título recolhe o cartão. O resultado de um torneio concluído aparece ao passar o cursor sobre o estado dele.
+- **Todos os torneios**: todos os torneios do perfil, os mais recentes primeiro, com *Abrir*, *Clonar* e *Pasta*; um
+  clique no título recolhe o cartão. O resultado de um torneio concluído aparece ao passar o cursor sobre o estado dele.
 
 A paleta de comandos também tem estas ações: *Pausar tudo*, *Retomar tudo*, *Relançar … com…* para os últimos
-matches concluídos, *Abrir a pasta dos torneios* e *Alterar a pasta dos torneios…*.
+matches concluídos, *Clonar …* para o torneio mostrado e os últimos concluídos, *Abrir a pasta dos torneios* e
+*Alterar a pasta dos torneios…*.
 
 ## Engines
 <!-- en: engines 4f15155a -->
@@ -1103,10 +1105,10 @@ tablebases Syzygy.
   tempo](#vários-torneios-ao-mesmo-tempo)).
 
 ## Um torneio em andamento
-<!-- en: running-a-tournament 4fc881da -->
+<!-- en: running-a-tournament 9bcba803 -->
 
 Um torneio em andamento ou aberto tem um espaço de trabalho com um cabeçalho (nome, progresso, *Pausar*, *Parar*,
-*Layout*) e painéis, mostrados por padrão como abas:
+*Clonar*, *Pasta*, *Layout*) e painéis, mostrados por padrão como abas:
 
 | Aba | O que mostra |
 |---|---|
@@ -1429,7 +1431,7 @@ cujas rodadas seguintes decorrem dos resultados, até a próxima partida começa
 *Desfazer* ao lado da partida.
 
 ### Fila e relançamento
-<!-- en: queue-and-relaunch d28daeec -->
+<!-- en: queue-and-relaunch 382fd33e -->
 
 A **Fila** da página inicial guarda torneios a jogar um depois do outro: quando um termina sozinho, o seguinte começa
 (não depois de uma parada ou de um erro, nem enquanto *Pausar tudo* segura a fila). Com *Iniciar quando houver
@@ -1441,8 +1443,16 @@ conhecidas, quando ele começa; os torneios cuja duração não pode ser conheci
 profundidade por lance) são contados à parte.
 
 **Relançar com…** num match terminado (no cabeçalho dele, ou em *Últimos concluídos* na página inicial) o joga de novo
-com outro engine A, normalmente a versão seguinte, contra o mesmo engine B; as outras configurações são as da página
-*Novo torneio*.
+com outro engine A, normalmente a versão seguinte, contra o mesmo engine B, com as outras configurações do match (as
+da página *Novo torneio* para um match iniciado por uma versão anterior, que não as guardava).
+
+**Clonar** (no cabeçalho de um torneio, em *Últimos concluídos* e em *Todos os torneios* na página inicial) abre a
+página *Novo torneio* preenchida com a configuração desse torneio, seja qual for o formato: os participantes com as
+configurações próprias deles, o controle de tempo, as aberturas, a adjudicação e o resto, cada valor como foi jogado.
+Os perfis dele aparecem pelo nome, e um perfil alterado desde então é marcado como mudado para este torneio. Mude o que
+deve ser diferente (outro controle de tempo, a próxima versão de um engine, outro livro) e depois **Iniciar** ou
+*Adicionar à fila*. Um torneio ainda em andamento também pode ser clonado; um iniciado por uma versão anterior, que não
+guardava a configuração, não.
 
 ## Ratings
 <!-- en: ratings 3e4be48f -->
@@ -1935,12 +1945,14 @@ aplicativo a partir de um lugar temporário, onde o arquivo `portable` não est�
   torneio](#a-pasta-de-um-torneio)).
 
 ### A pasta de um torneio
-<!-- en: a-tournaments-folder 822c459b -->
+<!-- en: a-tournaments-folder 76959723 -->
 
 `runs/<date>_<A>_vs_<B>/` para um match, `runs/<date>_<name>/` para um torneio (em `runs/` ou na pasta escolhida),
 uma pasta cada, que pode ser movida, copiada, compactada em zip e enviada:
 
 - `tournament.json`: o formato, os participantes (engines copiados com as opções) e as condições;
+- `setup.json`: a configuração da página *Novo torneio* com que ele começou, lida por *Clonar* e *Relançar com…*
+  (veja [Fila e relançamento](#fila-e-relançamento)); um torneio iniciado por uma versão anterior não o tem;
 - `journal.jsonl`: tudo o que aconteceu desde então, uma linha por evento (pares de partidas iniciados, partidas
   terminadas, alterações, emparceiramentos de suíço e de mata-mata); com os arquivos PGN, é o que uma retomada lê.
   Uma partida está no disco antes da sua linha, então uma queda de energia perde no máximo as partidas em andamento.
@@ -1980,7 +1992,7 @@ Retomá-la roda os engines que o `tournament.json` dela nomeia, como qualquer to
 Os matches jogados com a versão 0.2 aparecem na página inicial: *Importá-los* os transforma em torneios concluídos.
 
 ## Linha de comando
-<!-- en: command-line 827032fe -->
+<!-- en: command-line bba4b98e -->
 
 ```
 fastchess-gui [--profile DIR] [--autostart] [--size WxH] [--software]
@@ -2014,7 +2026,8 @@ fastchess-gui --version
   selecionados), `setup-open=ROW` e `setup-profiles=ROW` (uma linha da configuração aberta, ou a lista de perfis
   dela: `format`, `time`, `openings`, `adjudication`, `engines`, `concurrency`, `pgn`), `setup-book` (o livro
   próprio do primeiro participante), `submission-export` (*Exportar para uma lista de rating…*), `ratings-players` (a
-  janela *Jogadores PGN*), `palette[=TEXT]` (a paleta de comandos, com TEXT digitado nela), `game-menu=N` (o menu da
+  janela *Jogadores PGN*), `clone=DIR` (a página *Novo torneio* preenchida por *Clonar* a partir da pasta desse
+  torneio), `palette[=TEXT]` (a paleta de comandos, com TEXT digitado nela), `game-menu=N` (o menu da
   partida N na aba *Partidas*, com um resultado escolhido), `end-menu=N` (*Encerrar com um resultado* da partida do
   slot N, a partir de 1), `big-screen[=N]` (a tela grande, da partida do slot N), `live-back=N` (a partida
   acompanhada em *Ao vivo*, N meios-lances para trás), `engines-console` (o console do primeiro engine),

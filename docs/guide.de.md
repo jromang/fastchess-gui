@@ -308,7 +308,7 @@ der MIT-Lizenz; die *Darstellung* verlinkt sie.
 | <kbd>Strg</kbd>+<kbd>C</kbd> | Der Headless-Modus | Nach den laufenden Partien anhalten |
 
 ## Die Startseite
-<!-- en: the-home-page a1acacdb -->
+<!-- en: the-home-page 40031a16 -->
 
 Die Seite **Turniere** ist ein Kontrollraum: Was läuft und was dich braucht, kommt zuerst, danach der Rest.
 
@@ -341,18 +341,21 @@ Die Seite **Turniere** ist ein Kontrollraum: Was läuft und was dich braucht, ko
   [Warteschlange und Neustart](#warteschlange-und-neustart)).
 - **Zuletzt beendet**: die letzten fünf beendeten Turniere mit ihrem Ergebnis: der Stand eines Matches, die
   Entscheidung des SPRT, der Sieger eines K.-o.-Turniers (seines Finales), der Stand eines Mannschaftskampfs, oder der
-  Erste der Tabelle mit seinen Punkten aus seinen Partien. *Neu starten mit…* für ein Match, und *Öffnen*.
+  Erste der Tabelle mit seinen Punkten aus seinen Partien. *Neu starten mit…* für ein Match, *Klonen* (siehe
+  [Warteschlange und Neustart](#warteschlange-und-neustart)) und *Öffnen*.
 - **Zustand**: die Abstürze oder Hänger, Zeitverluste und illegalen Züge der letzten 24 Stunden, der freie und der
   eingebaute Speicher und die laufenden Engine-Prozesse; dann die Engines, die diese Partien verloren haben, die drei
   mit den meisten, mit *Engine öffnen* und *Ordner öffnen* (der Ordner `logs` des Turniers bewahrt das Engine-Log jeder
   Partie auf, die schlecht endete). Ein Zeitverlust vor dem 20. Zug wird gesondert ausgewiesen: Er liegt häufiger an
   einer falsch eingerichteten Engine (zu viele Threads, ein Hash, der zu groß ist, um rechtzeitig reserviert zu werden,
   ein Netz, das bei jeder Partie geladen wird, ein langsamer Start) als an ihrem Zeitmanagement.
-- **Alle Turniere**: jedes Turnier des Profils, das neueste zuerst, mit *Öffnen* und *Ordner*; ein Klick auf den Titel
-  klappt die Liste zu. Das Ergebnis eines beendeten Turniers erscheint unter dem Mauszeiger, über seinem Zustand.
+- **Alle Turniere**: jedes Turnier des Profils, das neueste zuerst, mit *Öffnen*, *Klonen* und *Ordner*; ein Klick
+  auf den Titel klappt die Liste zu. Das Ergebnis eines beendeten Turniers erscheint unter dem Mauszeiger, über seinem
+  Zustand.
 
 Die Befehlspalette hat diese Aktionen auch: *Alles pausieren*, *Alles fortsetzen*, *… neu starten mit…* für die
-zuletzt beendeten Matches, *Turnierordner öffnen* und *Turnierordner ändern…*.
+zuletzt beendeten Matches, *… klonen* für das angezeigte Turnier und die zuletzt beendeten, *Turnierordner öffnen*
+und *Turnierordner ändern…*.
 
 ## Engines
 <!-- en: engines 4f15155a -->
@@ -1151,10 +1154,10 @@ Remis (ab einer Zugnummer, für N aufeinanderfolgende Züge, unter einer Bewertu
   [Mehrere Turniere gleichzeitig](#mehrere-turniere-gleichzeitig)).
 
 ## Ein Turnier durchführen
-<!-- en: running-a-tournament 4fc881da -->
+<!-- en: running-a-tournament 9bcba803 -->
 
 Ein laufendes oder geöffnetes Turnier hat einen Arbeitsbereich mit einem Kopf (Name, Fortschritt, *Pause*, *Stopp*,
-*Layout*) und Bereichen, standardmäßig als Tabs gezeigt:
+*Klonen*, *Ordner*, *Layout*) und Bereichen, standardmäßig als Tabs gezeigt:
 
 | Tab | Was er zeigt |
 |---|---|
@@ -1493,7 +1496,7 @@ ist, ob seither Partien gespielt wurden oder nicht (in einem K.-o.-Turnier, dess
 folgen, bis die nächste Partie beginnt); der Tab *Partien* bietet *Rückgängig* auch neben der Partie an.
 
 ### Warteschlange und Neustart
-<!-- en: queue-and-relaunch d28daeec -->
+<!-- en: queue-and-relaunch 382fd33e -->
 
 Die **Warteschlange** auf der Startseite enthält Turniere, die nacheinander gespielt werden: Wenn eines von selbst
 endet, startet das nächste (nicht nach einem Stopp oder einem Fehler, und nicht, solange *Alles pausieren* die
@@ -1505,8 +1508,17 @@ Dauer und, solange die Dauern davor bekannt sind, wann es startet; die Turniere,
 (ein SPRT ohne Höchstzahl, Knoten oder Tiefe pro Zug), werden gesondert gezählt.
 
 **Neu starten mit…** bei einem beendeten Match (in seinem Kopf oder unter *Zuletzt beendet* auf der Startseite) spielt
-es erneut mit einer anderen Engine A, typischerweise der nächsten Version, gegen dieselbe Engine B; die anderen
-Einstellungen sind die der Seite *Neues Turnier*.
+es erneut mit einer anderen Engine A, typischerweise der nächsten Version, gegen dieselbe Engine B, mit den übrigen
+Einstellungen des Matches (denen der Seite *Neues Turnier* bei einem Match, das eine ältere Version gestartet hat, die
+sie nicht aufbewahrte).
+
+**Klonen** (im Kopf eines Turniers, unter *Zuletzt beendet* und in *Alle Turniere* auf der Startseite) öffnet die Seite
+*Neues Turnier*, gefüllt mit der Einrichtung dieses Turniers, gleich welches Format: die Teilnehmer mit ihren eigenen
+Einstellungen, die Bedenkzeit, die Eröffnungen, die Abschätzung und der Rest, jeder Wert so, wie er gespielt wurde.
+Seine Profile sind genannt, und ein seitdem geändertes Profil ist als für dieses Turnier geändert markiert. Ändere, was
+anders sein soll (eine andere Bedenkzeit, die nächste Version einer Engine, ein anderes Buch), dann **Start** oder *Zur
+Warteschlange hinzufügen*. Ein Turnier, das noch spielt, lässt sich ebenfalls klonen; eines, das eine ältere Version
+gestartet hat, die seine Einrichtung nicht aufbewahrte, nicht.
 
 ## Elo-Listen
 <!-- en: ratings 3e4be48f -->
@@ -2022,12 +2034,15 @@ Sonst führt macOS die Anwendung von einem temporären Ort aus, an dem die Datei
   [Der Ordner eines Turniers](#der-ordner-eines-turniers)).
 
 ### Der Ordner eines Turniers
-<!-- en: a-tournaments-folder 822c459b -->
+<!-- en: a-tournaments-folder 76959723 -->
 
 `runs/<date>_<A>_vs_<B>/` für ein Match, `runs/<date>_<name>/` für ein Turnier (in `runs/` oder im gewählten Ordner),
 je ein Ordner, der sich verschieben, kopieren, zippen und verschicken lässt:
 
 - `tournament.json`: das Format, die Teilnehmer (Engines mit ihren Optionen kopiert) und die Bedingungen;
+- `setup.json`: die Einrichtung der Seite *Neues Turnier*, mit der es gestartet wurde, die *Klonen* und *Neu starten
+  mit…* lesen (siehe [Warteschlange und Neustart](#warteschlange-und-neustart)); ein Turnier, das eine ältere Version
+  gestartet hat, hat keine;
 - `journal.jsonl`: alles, was seitdem geschehen ist, eine Zeile pro Ereignis (begonnene Partiepaare, beendete
   Partien, Änderungen, Paarungen des Schweizer Systems und des K.-o.-Systems); zusammen mit den PGN-Dateien ist es das,
   was ein Fortsetzen liest. Eine Partie steht auf der Festplatte, bevor ihre Zeile geschrieben wird, so dass ein
@@ -2073,7 +2088,7 @@ dazu bringen kann, außerhalb von ihm zu schreiben. Wird er fortgesetzt, laufen 
 Mit Version 0.2 gespielte Matches erscheinen auf der Startseite: *Importieren* macht sie zu beendeten Turnieren.
 
 ## Befehlszeile
-<!-- en: command-line 827032fe -->
+<!-- en: command-line bba4b98e -->
 
 ```
 fastchess-gui [--profile DIR] [--autostart] [--size WxH] [--software]
@@ -2107,7 +2122,8 @@ fastchess-gui --version
   Gegner ausgewählt), `setup-open=ROW` und `setup-profiles=ROW` (eine Zeile der Einrichtung geöffnet, oder ihre
   Profilliste: `format`, `time`, `openings`, `adjudication`, `engines`, `concurrency`, `pgn`), `setup-book` (das
   eigene Buch des ersten Teilnehmers), `submission-export` (*Für eine Rangliste exportieren…*), `ratings-players` (das
-  Fenster *PGN-Spieler*), `palette[=TEXT]` (die Befehlspalette, mit TEXT darin eingetippt), `game-menu=N` (das Menü
+  Fenster *PGN-Spieler*), `clone=DIR` (die Seite *Neues Turnier*, gefüllt durch *Klonen* des Ordners dieses
+  Turniers), `palette[=TEXT]` (die Befehlspalette, mit TEXT darin eingetippt), `game-menu=N` (das Menü
   von Partie N im Tab *Partien*, ein Ergebnis gewählt), `end-menu=N` (*Mit einem Ergebnis beenden* für die Partie von
   Platz N, ab 1), `big-screen[=N]` (das Großbild, mit der Partie von Platz N), `live-back=N` (die verfolgte Partie in
   *Live*, um N Halbzüge zurückgeblättert), `engines-console` (die Konsole der ersten Engine), `board-analyse` (die

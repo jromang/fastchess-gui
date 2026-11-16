@@ -1844,6 +1844,43 @@ bool App::loadTemplate(const std::string& name) {
     return true;
 }
 
+bool App::cloneTournament(const std::filesystem::path& dir) {
+    auto loaded = readTournamentSetup(dir, profiles_);
+    if (!loaded) return false;
+    keepProgramSettings(*loaded, setup_);
+    setup_ = std::move(*loaded);
+    template_loaded_.clear();
+    template_message_.clear();
+    start_error_.clear();
+    saveSetupSoon();
+    page_ = Page::NewMatch;
+    return true;
+}
+
+bool App::canClone(const std::filesystem::path& dir) {
+    const auto [it, added] = clone_sources_.try_emplace(dir.string(), false);
+    if (added) {
+        std::error_code ec;
+        it->second = std::filesystem::is_regular_file(dir / TOURNAMENT_SETUP_FILE, ec);
+    }
+    return it->second;
+}
+
+void App::drawClone(const std::filesystem::path& dir, bool compact) {
+    const bool can = canClone(dir);
+    ImGui::BeginDisabled(!can);
+    const bool clicked =
+        compact ? ImGui::SmallButton(TR("Clone")) : ui::iconButton("clone", ui::Icon::Copy, TR("Clone"));
+    ImGui::EndDisabled();
+    if (clicked) cloneTournament(dir);
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+        ImGui::SetTooltip("%s", can ? TR("A new tournament with this one's participants and settings, to change "
+                                         "before it starts: another time control, the next version of an engine.")
+                                    : TR("Started by a version that did not keep its setup: it cannot be cloned."));
+    }
+    ui::topic(guide::topics::Queue);
+}
+
 void App::drawTemplates() {
     listTemplates();
     const auto dir = storage_.root() / "templates";

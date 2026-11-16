@@ -437,6 +437,9 @@ void App::frame() {
             guide_.open(w.size() > 6 ? w.substr(6) : std::string(guideSection()));
         } else if (w.rfind("guide-search=", 0) == 0) {  // guide-search=TEXT: the guide panel, searching TEXT
             guide_.search(w.substr(13));
+        } else if (w.rfind("clone=", 0) == 0) {  // clone=DIR: the New tournament page filled by Clone of that folder
+            if (!cloneTournament(w.substr(6)))
+                Console::instance().add(fmt::format("{} cannot be cloned.", w.substr(6)), true);
         } else if (w.rfind("palette", 0) == 0) {  // palette=TEXT: the command palette, TEXT typed in it
             palette_request_ = true;
             if (const auto eq = w.find('='); eq != std::string::npos) palette_query_ = w.substr(eq + 1);
@@ -705,6 +708,8 @@ void App::startRun() {
     try {
         const auto built = buildRun(setup_, engines_, topology, dir);
         (void)tour::TournamentState::create(dir, built.spec);  // closed at once: the process opens it
+        // Kept for Clone and Relaunch with…; without it they are only unavailable.
+        clone_sources_[dir.string()] = writeTournamentSetup(dir, setup_);
     } catch (const std::exception& e) {
         start_error_ = e.what();
     }

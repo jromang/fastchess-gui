@@ -772,6 +772,10 @@ TEST_CASE("headless: a setup file becomes a tournament played to the end; the qu
     REQUIRE(summary);
     CHECK(summary->finished);
     CHECK(summary->played == 10);
+    // Its setup kept beside it, for the window's Clone.
+    const auto kept = readTournamentSetup(dirs[0], ProfileStore{});
+    REQUIRE(kept);
+    CHECK(kept->fixed_games == 10);
 
     // Running a finished tournament again does nothing and succeeds.
     CHECK(runHeadless(dirs[0].string(), storage, cores) == 0);

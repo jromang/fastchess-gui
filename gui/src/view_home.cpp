@@ -839,8 +839,9 @@ void App::drawLastFinished() {
     sectionTitle(TR("Last finished"));
     ui::beginCard("finished_card");
     constexpr auto flags = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingStretchProp;
-    const float buttons  = iconButtonWidth(TR("Relaunch with…")) + ImGui::GetStyle().ItemSpacing.x +
-                           ImGui::CalcTextSize(TR("Open")).x + ImGui::GetStyle().FramePadding.x * 2;
+    const float buttons  = iconButtonWidth(TR("Relaunch with…")) + iconButtonWidth(TR("Clone")) +
+                           ImGui::GetStyle().ItemSpacing.x * 2 + ImGui::CalcTextSize(TR("Open")).x +
+                           ImGui::GetStyle().FramePadding.x * 2;
     if (ImGui::BeginTable("finished", 5, flags)) {
         ImGui::TableSetupColumn(TR("Tournament"), ImGuiTableColumnFlags_WidthStretch, 2.5f);
         ImGui::TableSetupColumn(TR("Format"), ImGuiTableColumnFlags_WidthStretch, 1.0f);
@@ -871,6 +872,8 @@ void App::drawLastFinished() {
                 }
                 ImGui::SameLine();
             }
+            drawClone(s->dir);
+            ImGui::SameLine();
             // Open at the right, under the other rows'.
             const float open_w = ImGui::CalcTextSize(TR("Open")).x + ImGui::GetStyle().FramePadding.x * 2;
             ImGui::SetCursorPosX(
@@ -975,7 +978,11 @@ void App::drawAllTournaments() {
     ImGui::TableSetupColumn(TR("Games"), ImGuiTableColumnFlags_WidthStretch, 1.0f);
     ImGui::TableSetupColumn(TR("State"), ImGuiTableColumnFlags_WidthStretch, 1.2f);
     ImGui::TableSetupColumn(TR("Date"), ImGuiTableColumnFlags_WidthStretch, 1.3f);
-    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, px(180));
+    const auto small_width = [](const char* label) {
+        return ImGui::CalcTextSize(label).x + ImGui::GetStyle().FramePadding.x * 2 + ImGui::GetStyle().ItemSpacing.x;
+    };
+    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed,
+                            small_width(TR("Open")) + small_width(TR("Clone")) + small_width(TR("Folder")) + px(8));
     ImGui::TableHeadersRow();
 
     ImGuiListClipper clipper;
@@ -1007,6 +1014,8 @@ void App::drawAllTournaments() {
             ImGui::TextDisabled("%s", folderDate(s.dir).c_str());
             ImGui::TableNextColumn();
             if (ImGui::SmallButton(TR("Open"))) openTournament(s.dir);
+            ImGui::SameLine();
+            drawClone(s.dir, true);
             ImGui::SameLine();
             if (ImGui::SmallButton(TR("Folder"))) ui::openPath(s.dir);
 

@@ -58,7 +58,8 @@ this repository still builds unchanged.
   engine log, *Try again*, *Withdraw…* and *Replace…*.
 - **A control room**: the home page shows what runs first (the cores in use, the running tournament's progress, end
   and leader or LLR), what needs action with its fix (an engine that cannot start, a tournament an error stopped, a
-  drive too full), the queue and when it all ends, the last results with *Relaunch with…*, and *Pause all*.
+  drive too full), the queue and when it all ends, the last results with *Relaunch with…* and *Clone*, and *Pause
+  all*.
 
 ![Needs action: an engine that cannot start, its games set aside while the others go on](docs/screenshots/needs-action.png)
 
@@ -74,8 +75,9 @@ this repository still builds unchanged.
 
 - **Workflow**: named profiles for each part of the setup (time control, openings, adjudication, format, engine
   settings) with presets for the usual rating list and fishtest conditions, templates made of them, the engine
-  library beside the participants (double-click, drag, groups), a queue of tournaments, *Relaunch with…* a new
-  engine version, and a headless mode (`fastchess-gui --run`) for servers, which can broadcast too.
+  library beside the participants (double-click, drag, groups), a queue of tournaments, *Clone* to play a
+  tournament again with another time control or engine, *Relaunch with…* a new engine version, and a headless mode
+  (`fastchess-gui --run`) for servers, which can broadcast too.
 
 ![A new tournament: a profile for each section, the engine library beside the participants](docs/screenshots/new-tournament.png)
 
@@ -234,10 +236,10 @@ The build goes through ccache when it is installed.
 
 Everything is stored in the profile folder (`~/.local/share/fastchess/fastchess-gui/` on Linux,
 `%APPDATA%\fastchess\fastchess-gui\` on Windows): the engine library, the last setup, profiles, templates, the
-queue, and one folder per tournament under `runs/` with its description, its journal and both PGN files. For a portable
-installation (a USB stick, a folder copied between machines), put an empty file named `portable` beside the
-program: everything then goes into a `data` folder beside it, and the engines, books and tablebases of the
-program's folder are found again wherever the folder is moved.
+queue, and one folder per tournament under `runs/` with its description, the setup it started from, its journal and
+both PGN files. For a portable installation (a USB stick, a folder copied between machines), put an empty file named
+`portable` beside the program: everything then goes into a `data` folder beside it, and the engines, books and
+tablebases of the program's folder are found again wherever the folder is moved.
 
 The [user guide](docs/guide.md) covers every setting, window and file in detail, with a quick start, the keyboard
 shortcuts, troubleshooting and a glossary. It is built into the program, in every language of the interface: F1

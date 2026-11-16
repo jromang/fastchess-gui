@@ -289,6 +289,9 @@ msgstr ""
 msgid "A network engine that plays on a graphics card (Lc0...): no more such engines play at once than the GPUs of Settings ({}), in a tournament and across tournaments. From the next tournament it joins."
 msgstr ""
 
+msgid "A new tournament with this one's participants and settings, to change before it starts: another time control, the next version of an engine."
+msgstr ""
+
 msgid "A or B of the match."
 msgstr ""
 
@@ -1215,6 +1218,12 @@ msgid "Click: the line played up to this move. Scores are White's."
 msgstr ""
 
 msgid "Clock"
+msgstr ""
+
+msgid "Clone"
+msgstr ""
+
+msgid "Clone {}"
 msgstr ""
 
 msgid "Close"
@@ -4193,6 +4202,9 @@ msgstr ""
 msgid "Start, on the New tournament page; the home page then follows the games."
 msgstr ""
 
+msgid "Started by a version that did not keep its setup: it cannot be cloned."
+msgstr ""
+
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr ""
 
@@ -4888,6 +4900,9 @@ msgid "The order is the one of the pairings' table."
 msgstr ""
 
 msgid "The other settings: those of the New tournament page."
+msgstr ""
+
+msgid "The other settings: those of this match."
 msgstr ""
 
 msgid "The page shows Discord's widget of this server, in its light or dark theme: its name, the members online and a Join button, not the messages. The server's owner switches the widget on in Server Settings, Widget, which also shows the server ID. Discord then sees the visits of the page's viewers."

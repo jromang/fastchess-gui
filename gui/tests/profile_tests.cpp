@@ -435,3 +435,45 @@ TEST_CASE("profiles: each section said on one line, and as cutechess and fastche
     CHECK(sectionSummary(s, SetupSection::Engines, books) == "Hash 256 MB · 1 thread · Syzygy");
     CHECK(sectionCommandLine(s, SetupSection::Engines) == "-each option.Hash=256 option.Threads=1 option.SyzygyPath=…");
 }
+
+TEST_CASE("tournament setup: kept in its folder for Clone, every value as it played, a profile changed since shown") {
+    const auto dir = fs::temp_directory_path() / "fcg-tests-tournament-setup";
+    fs::remove_all(dir);
+    fs::create_directories(dir);
+
+    ProfileStore store;
+    MatchSetup setup;
+    setup.name                 = "Gauntlet 40/15";
+    setup.format               = TournamentFormat::Gauntlet;
+    setup.participants         = {{"A"}, {"B"}, {"C"}};
+    setup.participants[1].hash = 512;
+    setup.limit                = LimitKind::Time;
+    setup.tc_moves             = 40;
+    setup.tc_base_s            = 900;
+    setup.tc_inc_s             = 0;
+    store.save(SetupSection::Time, "Long", setup);
+    setup.profiles["time"] = "Long";
+    REQUIRE(profileState(setup, SetupSection::Time, store) == ProfileState::Same);
+
+    CHECK(!readTournamentSetup(dir, store));  // a tournament started before it was kept
+    REQUIRE(writeTournamentSetup(dir, setup));
+
+    // The profile changed since: unlike a template, the clone plays what the tournament played.
+    MatchSetup update = setup;
+    update.tc_base_s  = 600;
+    store.save(SetupSection::Time, "Long", update);
+    const auto clone = readTournamentSetup(dir, store);
+    REQUIRE(clone);
+    CHECK(clone->name == "Gauntlet 40/15");
+    CHECK(clone->format == TournamentFormat::Gauntlet);
+    REQUIRE(clone->participants.size() == 3);
+    CHECK(clone->participants[1].name == "B");
+    CHECK(clone->participants[1].hash == 512);
+    CHECK(clone->tc_base_s == 900);
+    CHECK(sectionProfile(*clone, SetupSection::Time) == "Long");
+    CHECK(profileState(*clone, SetupSection::Time, store) == ProfileState::Changed);
+
+    std::ofstream(dir / TOURNAMENT_SETUP_FILE) << "{ not json";
+    CHECK(!readTournamentSetup(dir, store));
+    fs::remove_all(dir);
+}

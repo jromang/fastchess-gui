@@ -132,6 +132,22 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             });
         }
     }
+    // Clone: the tournament shown, and the last finished, as their headers and rows offer it.
+    {
+        std::vector<std::pair<std::filesystem::path, std::string>> sources;
+        if (t) sources.emplace_back(t->dir(), name);
+        const auto busy = run_->running() && t ? t->dir() : std::filesystem::path();
+        for (const auto* s : home::lastFinished(tournaments_, home::LAST_FINISHED, busy)) {
+            if (!t || s->dir != t->dir()) sources.emplace_back(s->dir, s->spec.name);
+        }
+        for (const auto& source : sources) {
+            // Its date beside it: a tournament cloned is often named as the one it came from.
+            if (canClone(source.first)) {
+                add(trf("Clone {}", source.second), fmt::format("{} · {}", TR("Tournaments"), folderDate(source.first)),
+                    [this, dir = source.first] { cloneTournament(dir); });
+            }
+        }
+    }
     // The engines that cannot start, as their card offers.
     if (t) {
         const bool editable = t->spec().format == tour::Format::RoundRobin ||

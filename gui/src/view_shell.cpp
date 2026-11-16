@@ -109,6 +109,7 @@ void App::refreshTournaments() {
         legacy_runs_      = list.legacy_runs;
         tournaments_read_ = true;
         played_programs_  = lastPlayedPrograms(tournaments_);
+        clone_sources_.clear();  // a folder copied in or removed since
     }
     if (!tournaments_dirty_) return;
 
@@ -511,9 +512,13 @@ void App::drawWorkspaceHeader() {
             if (!drawStartWaiting("relaunch", "start")) drawRelaunch(info.engine_a, info.engine_b, t->dir());
             ImGui::SameLine();
         }
+        drawClone(t->dir());
+        ImGui::SameLine();
         if (ui::iconButton("folder", ui::Icon::Folder, TR("Folder"))) openFolder(t->dir());
     }
     if (run_->running() && t) {
+        ImGui::SameLine();
+        drawClone(t->dir());
         ImGui::SameLine();
         if (ui::iconButton("folder", ui::Icon::Folder, TR("Folder"))) openFolder(t->dir());
     }
@@ -746,11 +751,19 @@ void App::drawRelaunch(const std::string& engine_a, const std::string& engine_b,
         ImGui::EndCombo();
     }
     ImGui::TextDisabled("%s", trf("against {}", engine_b).c_str());
-    ImGui::TextDisabled("%s", TR("The other settings: those of the New tournament page."));
+    // The match's own settings when its folder kept them, else the page's (a match started by an older version).
+    const bool kept = canClone(from);
+    ImGui::TextDisabled("%s", kept ? TR("The other settings: those of this match.")
+                                   : TR("The other settings: those of the New tournament page."));
     const bool known =
         std::any_of(engines_.begin(), engines_.end(), [&](const EngineEntry& e) { return e.name == relaunch_engine_; });
     ImGui::BeginDisabled(!known || run_->running());
     if (ImGui::Button(TR("Start"))) {
+        if (auto played = kept ? readTournamentSetup(from, profiles_) : std::nullopt) {
+            keepProgramSettings(*played, setup_);
+            setup_ = std::move(*played);
+            template_loaded_.clear();
+        }
         setup_.format   = TournamentFormat::Match;
         setup_.engine_a = relaunch_engine_;
         setup_.engine_b = engine_b;

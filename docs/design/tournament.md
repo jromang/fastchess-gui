@@ -137,6 +137,7 @@ and is the only thing the GUI reads, through a thread-safe snapshot (section 8).
 ```
 <tournaments>/2026-11-09 Blitz 2+1 Poule A/
   tournament.json        spec and initial participants, written once when the tournament is created
+  setup.json             the window's setup it started from, read by Clone and Relaunch with… (GUI side)
   journal.jsonl          everything that happened since, one JSON object per line
   games.pgn              cutechess-style comments   (as today)
   games-chessbase.pgn    [%eval] [%clk] comments     (as today)

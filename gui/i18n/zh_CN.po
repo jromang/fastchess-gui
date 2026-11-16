@@ -285,6 +285,9 @@ msgstr "着法的权重为走出它的一方在这些对局中的得分：胜 2�
 msgid "A network engine that plays on a graphics card (Lc0...): no more such engines play at once than the GPUs of Settings ({}), in a tournament and across tournaments. From the next tournament it joins."
 msgstr "在显卡上运行的神经网络引擎（Lc0……）：同时下棋的此类引擎不会多于设置中的 GPU 数（{}），在一个锦标赛内和各锦标赛之间都是如此。从它加入的下一个锦标赛起生效。"
 
+msgid "A new tournament with this one's participants and settings, to change before it starts: another time control, the next version of an engine."
+msgstr "以此锦标赛的参赛者和设置新建一个锦标赛，开始前可以修改：换一个时限，换成某个引擎的下一个版本。"
+
 msgid "A or B of the match."
 msgstr "比赛的 A 或 B。"
 
@@ -1210,6 +1213,12 @@ msgstr "单击：把这条变化走到这一步。分数以白方计。"
 
 msgid "Clock"
 msgstr "棋钟"
+
+msgid "Clone"
+msgstr "克隆"
+
+msgid "Clone {}"
+msgstr "克隆 {}"
 
 msgid "Close"
 msgstr "关闭"
@@ -4178,6 +4187,9 @@ msgstr "有空闲核心时启动"
 msgid "Start, on the New tournament page; the home page then follows the games."
 msgstr "在“新建锦标赛”页面点击“开始”，之后主页会跟踪对局。"
 
+msgid "Started by a version that did not keep its setup: it cannot be cloned."
+msgstr "由不保存设置的版本启动：无法克隆。"
+
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr "在当前锦标赛自行结束后依次开始。"
 
@@ -4866,6 +4878,9 @@ msgstr "顺序即配对表的顺序。"
 
 msgid "The other settings: those of the New tournament page."
 msgstr "其他设置：取自“新建锦标赛”页面。"
+
+msgid "The other settings: those of this match."
+msgstr "其他设置：取自此比赛。"
 
 msgid "The page shows Discord's widget of this server, in its light or dark theme: its name, the members online and a Join button, not the messages. The server's owner switches the widget on in Server Settings, Widget, which also shows the server ID. Discord then sees the visits of the page's viewers."
 msgstr "页面以其浅色或深色主题显示该服务器的 Discord 小组件：服务器名称、在线成员和“加入”按钮，不显示消息。服务器所有者在“服务器设置”中的“小组件”里开启它，那里也显示服务器 ID。这样 Discord 会看到页面观众的访问。"

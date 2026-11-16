@@ -1115,6 +1115,15 @@ class App {
     bool loadTemplate(const std::string& name);
     void listTemplates();  // template_names_, listed again every few seconds
 
+    // Clone: the New tournament page filled with the setup the tournament of `dir` started from, every value as it
+    // played, to change before it starts. False when it has none (see readTournamentSetup).
+    bool cloneTournament(const std::filesystem::path& dir);
+    // Whether that setup is there, looked at once per folder: the buttons of a list ask it every frame.
+    bool canClone(const std::filesystem::path& dir);
+    // The Clone button of a tournament (`compact`: in a table's row), greyed with the reason when it cannot.
+    void drawClone(const std::filesystem::path& dir, bool compact = false);
+    std::map<std::string, bool> clone_sources_;  // canClone() by folder; cleared when the list is read again
+
     // Schedule tab and edits.
     int edit_kind_ = 0;        // tour::Edit::Kind
     std::string edit_engine_;  // engine list entry to add or bring in

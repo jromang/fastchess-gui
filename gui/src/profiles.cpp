@@ -497,6 +497,15 @@ std::optional<MatchSetup> readTemplate(const std::filesystem::path& file, const 
     }
 }
 
+bool writeTournamentSetup(const std::filesystem::path& dir, const MatchSetup& setup) {
+    return writeJson(dir / TOURNAMENT_SETUP_FILE, nlohmann::json(portable::stored(setup)));
+}
+
+std::optional<MatchSetup> readTournamentSetup(const std::filesystem::path& dir, const ProfileStore& store) {
+    // Without "follow", a template's reading keeps every value it holds.
+    return readTemplate(dir / TOURNAMENT_SETUP_FILE, store);
+}
+
 std::string randomnessText(int randomness) {
     randomness = std::clamp(randomness, -tour::RANDOMNESS_LIMIT, tour::RANDOMNESS_LIMIT);
     if (randomness == 0) return TR("moves by their weights");

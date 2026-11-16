@@ -112,6 +112,15 @@ void recognizeProfiles(MatchSetup& setup, const ProfileStore& store);
 // The same, read from a file: nullopt when it is missing or unreadable.
 [[nodiscard]] std::optional<MatchSetup> readTemplate(const std::filesystem::path& file, const ProfileStore& store);
 
+// The setup a tournament started from, kept in its folder for Clone and Relaunch with…: every value as it played, with
+// the names of its profiles. Unlike a template's, no section follows its profile: a profile changed since shows as
+// changed for this tournament, the values it played kept.
+inline constexpr const char* TOURNAMENT_SETUP_FILE = "setup.json";
+bool writeTournamentSetup(const std::filesystem::path& dir, const MatchSetup& setup);
+// nullopt for a tournament without it (started by a version that did not keep it) or when it cannot be read.
+[[nodiscard]] std::optional<MatchSetup> readTournamentSetup(const std::filesystem::path& dir,
+                                                            const ProfileStore& store);
+
 // One line saying what a section of the setup plays: "40 moves in 15 min, repeated", "draw 40/8/10 cp · TB 6 pieces".
 // `books` gives the library's names of the books.
 [[nodiscard]] std::string sectionSummary(const MatchSetup& setup, SetupSection section,

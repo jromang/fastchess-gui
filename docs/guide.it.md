@@ -305,7 +305,7 @@ collegamento.
 | <kbd>Ctrl</kbd>+<kbd>C</kbd> | La modalità headless | Ferma dopo le partite in corso |
 
 ## La pagina iniziale
-<!-- en: the-home-page a1acacdb -->
+<!-- en: the-home-page 40031a16 -->
 
 La pagina **Tornei** è una sala di controllo: prima ciò che è in corso e ciò che ha bisogno di te, poi il resto.
 
@@ -336,18 +336,20 @@ La pagina **Tornei** è una sala di controllo: prima ciò che è in corso e ciò
   rilancio](#coda-e-rilancio)).
 - **Ultimi terminati**: gli ultimi cinque tornei terminati, con il loro risultato: il punteggio di un match, la
   decisione dell'SPRT, il vincitore di un'eliminazione diretta (della sua finale), il punteggio di un incontro a
-  squadre, o il primo della classifica con i punti delle sue partite. *Rilancia con…* per un match, e *Apri*.
+  squadre, o il primo della classifica con i punti delle sue partite. *Rilancia con…* per un match, *Clona* (vedi
+  [Coda e rilancio](#coda-e-rilancio)) e *Apri*.
 - **Affidabilità**: i crash o blocchi, le sconfitte per tempo e le mosse illegali delle ultime 24 ore, la memoria
   libera e installata, e i processi dei motori in esecuzione; poi i motori che hanno perso quelle partite, i tre con il
   numero più alto, con *Apri il motore* e *Apri la cartella* (la cartella `logs` del torneo conserva il log del motore
   di ogni partita finita male). Una sconfitta per tempo prima della mossa 20 viene distinta: più spesso è un motore
   configurato male (troppi thread, un hash troppo grande per essere allocato in tempo, una rete caricata a ogni
   partita, un avvio lento) che un problema di gestione del tempo.
-- **Tutti i tornei**: tutti i tornei del profilo, dal più recente, con *Apri* e *Cartella*; il titolo li ripiega. Il
-  risultato di un torneo terminato compare al passaggio del mouse, sopra il suo stato.
+- **Tutti i tornei**: tutti i tornei del profilo, dal più recente, con *Apri*, *Clona* e *Cartella*; il titolo li
+  ripiega. Il risultato di un torneo terminato compare al passaggio del mouse, sopra il suo stato.
 
 Anche la tavolozza dei comandi ha queste azioni: *Metti tutto in pausa*, *Riprendi tutto*, *Rilancia … con…* per gli
-ultimi match terminati, *Apri la cartella dei tornei* e *Cambia la cartella dei tornei…*.
+ultimi match terminati, *Clona …* per il torneo mostrato e gli ultimi terminati, *Apri la cartella dei tornei* e
+*Cambia la cartella dei tornei…*.
 
 ## Motori
 <!-- en: engines 4f15155a -->
@@ -1119,10 +1121,10 @@ una valutazione, facoltativamente con entrambi i motori d'accordo), un numero ma
   insieme](#più-tornei-insieme)).
 
 ## Svolgimento di un torneo
-<!-- en: running-a-tournament 4fc881da -->
+<!-- en: running-a-tournament 9bcba803 -->
 
 Un torneo in corso o aperto ha uno spazio di lavoro con un'intestazione (nome, avanzamento, *Pausa*, *Ferma*,
-*Layout*) e dei pannelli, mostrati per impostazione predefinita come schede:
+*Clona*, *Cartella*, *Layout*) e dei pannelli, mostrati per impostazione predefinita come schede:
 
 | Scheda | Cosa mostra |
 |---|---|
@@ -1449,7 +1451,7 @@ un'eliminazione diretta, i cui turni successivi dipendono dai risultati, finché
 scheda *Partite* propone anche *Annulla* accanto alla partita.
 
 ### Coda e rilancio
-<!-- en: queue-and-relaunch d28daeec -->
+<!-- en: queue-and-relaunch 382fd33e -->
 
 La **Coda** nella pagina iniziale contiene tornei da giocare uno dopo l'altro: quando uno finisce da solo, parte il
 successivo (non dopo un arresto o un errore, né mentre *Metti tutto in pausa* trattiene la coda). Con *Avvia quando ci
@@ -1461,8 +1463,17 @@ quando parte; i tornei la cui durata non si può conoscere (un SPRT senza massim
 contati a parte.
 
 **Rilancia con…** su un match terminato (nella sua intestazione, o sotto *Ultimi terminati* nella pagina iniziale) lo
-rigioca con un altro motore A, tipicamente la versione successiva, contro lo stesso motore B; le altre impostazioni
-sono quelle della pagina *Nuovo torneo*.
+rigioca con un altro motore A, tipicamente la versione successiva, contro lo stesso motore B, con le altre
+impostazioni del match (quelle della pagina *Nuovo torneo* per un match avviato da una versione precedente, che non le
+conservava).
+
+**Clona** (nell'intestazione di un torneo, sotto *Ultimi terminati* e in *Tutti i tornei* nella pagina iniziale) apre
+la pagina *Nuovo torneo* compilata con la configurazione di quel torneo, qualunque sia il formato: i partecipanti con le
+loro impostazioni, la cadenza, le aperture, l'aggiudicazione e il resto, ogni valore com'è stato giocato. I suoi
+profili sono indicati per nome, e un profilo modificato da allora è segnato come cambiato per questo torneo. Cambia ciò
+che deve essere diverso (un'altra cadenza, la versione successiva di un motore, un altro libro), poi **Avvia** o *Metti
+in coda*. Anche un torneo ancora in corso si può clonare; uno avviato da una versione precedente, che non ne conservava
+la configurazione, no.
 
 ## Classifiche
 <!-- en: ratings 3e4be48f -->
@@ -1963,12 +1974,14 @@ file `portable` non c'è.
   torneo](#la-cartella-di-un-torneo)).
 
 ### La cartella di un torneo
-<!-- en: a-tournaments-folder 822c459b -->
+<!-- en: a-tournaments-folder 76959723 -->
 
 `runs/<date>_<A>_vs_<B>/` per un match, `runs/<date>_<name>/` per un torneo (in `runs/` o nella cartella scelta), una
 cartella ciascuno, che si può spostare, copiare, comprimere in zip e inviare:
 
 - `tournament.json`: il formato, i partecipanti (motori copiati con le loro opzioni) e le condizioni;
+- `setup.json`: la configurazione della pagina *Nuovo torneo* da cui è partito, che leggono *Clona* e *Rilancia con…*
+  (vedi [Coda e rilancio](#coda-e-rilancio)); un torneo avviato da una versione precedente non ce l'ha;
 - `journal.jsonl`: tutto ciò che è successo da allora, una riga per evento (coppie di partite iniziate, partite
   terminate, modifiche, abbinamenti del sistema svizzero e dell'eliminazione diretta); con i file PGN, è ciò che legge
   una ripresa. Una partita è su disco prima della sua riga, quindi un'interruzione di corrente perde al massimo le
@@ -2010,7 +2023,7 @@ fuori di essa. Riprenderla esegue i motori nominati dal suo `tournament.json`, c
 I match giocati con la versione 0.2 compaiono nella pagina iniziale: *Importali* li trasforma in tornei terminati.
 
 ## Riga di comando
-<!-- en: command-line 827032fe -->
+<!-- en: command-line bba4b98e -->
 
 ```
 fastchess-gui [--profile DIR] [--autostart] [--size WxH] [--software]
@@ -2043,7 +2056,8 @@ fastchess-gui --version
   selezionati), `setup-open=ROW` e `setup-profiles=ROW` (una riga della configurazione aperta, o il suo elenco di
   profili: `format`, `time`, `openings`, `adjudication`, `engines`, `concurrency`, `pgn`), `setup-book` (il libro
   proprio del primo partecipante), `submission-export` (*Esporta per una lista di rating…*), `ratings-players` (la
-  finestra *Giocatori PGN*), `palette[=TEXT]` (la tavolozza dei comandi, con TEXT digitato), `game-menu=N` (il menu
+  finestra *Giocatori PGN*), `clone=DIR` (la pagina *Nuovo torneo* compilata da *Clona* dalla cartella di quel
+  torneo), `palette[=TEXT]` (la tavolozza dei comandi, con TEXT digitato), `game-menu=N` (il menu
   della partita N nella scheda *Partite*, con un risultato scelto), `end-menu=N` (*Termina con un risultato* della
   partita dello slot N, da 1), `big-screen[=N]` (lo schermo grande, della partita dello slot N), `live-back=N` (la
   partita seguita in *Diretta*, riportata indietro di N semimosse), `engines-console` (la console del primo motore),

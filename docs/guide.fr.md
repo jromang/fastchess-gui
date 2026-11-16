@@ -306,7 +306,7 @@ licence MIT ; *Apparence* donne le lien vers elles.
 | <kbd>Ctrl</kbd>+<kbd>C</kbd> | Le mode sans interface | S'arrêter après les parties en cours |
 
 ## La page d'accueil
-<!-- en: the-home-page a1acacdb -->
+<!-- en: the-home-page 40031a16 -->
 
 La page **Tournois** est une salle de contrôle : d'abord ce qui tourne et ce qui a besoin de toi, puis le reste.
 
@@ -338,18 +338,21 @@ La page **Tournois** est une salle de contrôle : d'abord ce qui tourne et ce qu
   laquelle tout se termine (voir [File d'attente et relance](#file-dattente-et-relance)).
 - **Derniers terminés** : les cinq derniers tournois terminés, avec leur résultat : le score d'un match, la décision
   du SPRT, le vainqueur d'un KO (celui de sa finale), le score d'un match par équipes, ou le premier du classement avec
-  les points de ses parties. *Relancer avec…* pour un match, et *Ouvrir*.
+  les points de ses parties. *Relancer avec…* pour un match, *Cloner* (voir [File d'attente et
+  relance](#file-dattente-et-relance)) et *Ouvrir*.
 - **Santé** : les plantages ou blocages, les pertes au temps et les coups illégaux des dernières 24 heures, la mémoire
   libre et installée, et les processus de moteurs en cours ; puis les moteurs qui ont perdu ces parties, les trois qui
   en comptent le plus, avec *Ouvrir le moteur* et *Ouvrir le dossier* (le dossier `logs` du tournoi garde le journal
   moteur de chaque partie qui a mal fini). Une perte au temps avant le coup 20 est mise à part : c'est plus souvent un
   moteur mal réglé (trop de threads, un hash trop grand pour être alloué à temps, un réseau chargé à chaque partie, un
   démarrage lent) que sa gestion du temps.
-- **Tous les tournois** : tous les tournois du profil, du plus récent au plus ancien, avec *Ouvrir* et *Dossier* ; un
-  clic sur le titre de la carte la replie. Le résultat d'un tournoi terminé s'affiche au curseur, par-dessus son état.
+- **Tous les tournois** : tous les tournois du profil, du plus récent au plus ancien, avec *Ouvrir*, *Cloner* et
+  *Dossier* ; un clic sur le titre de la carte la replie. Le résultat d'un tournoi terminé s'affiche au curseur,
+  par-dessus son état.
 
 La palette de commandes propose aussi ces actions : *Tout mettre en pause*, *Tout reprendre*, *Relancer … avec…*
-pour les derniers matchs terminés, *Ouvrir le dossier des tournois* et *Changer le dossier des tournois…*.
+pour les derniers matchs terminés, *Cloner …* pour le tournoi affiché et les derniers terminés, *Ouvrir le dossier
+des tournois* et *Changer le dossier des tournois…*.
 
 ## Moteurs
 <!-- en: engines 4f15155a -->
@@ -1142,10 +1145,10 @@ au-dessus d'un score, avec l'accord des deux moteurs si l'on veut), un nombre ma
   pause (voir [Plusieurs tournois à la fois](#plusieurs-tournois-à-la-fois)).
 
 ## Un tournoi en cours
-<!-- en: running-a-tournament 4fc881da -->
+<!-- en: running-a-tournament 9bcba803 -->
 
 Un tournoi en cours ou ouvert a un espace de travail avec un en-tête (nom, progression, *Pause*, *Arrêter*,
-*Disposition*) et des panneaux, montrés par défaut sous forme d'onglets :
+*Cloner*, *Dossier*, *Disposition*) et des panneaux, montrés par défaut sous forme d'onglets :
 
 | Onglet | Ce qu'il montre |
 |---|---|
@@ -1476,7 +1479,7 @@ jouées depuis ou non (dans un KO, dont les tours suivants découlent des résul
 ; l'onglet *Parties* propose aussi *Annuler* à côté de la partie.
 
 ### File d'attente et relance
-<!-- en: queue-and-relaunch d28daeec -->
+<!-- en: queue-and-relaunch 382fd33e -->
 
 La **File d'attente** de la page d'accueil contient des tournois à jouer l'un après l'autre : quand l'un se termine de
 lui-même, le suivant commence (pas après un arrêt ou une erreur, ni pendant que *Tout mettre en pause* retient la file
@@ -1488,8 +1491,16 @@ durées de ceux qui le précèdent sont connues, l'heure à laquelle il commence
 être connue (un SPRT sans maximum, des nœuds ou une profondeur par coup) sont comptés à part.
 
 **Relancer avec…** sur un match terminé (dans son en-tête, ou sous *Derniers terminés* sur la page d'accueil) le
-rejoue avec un autre moteur A, typiquement la version suivante, contre le même moteur B ; les autres réglages sont
-ceux de la page *Nouveau tournoi*.
+rejoue avec un autre moteur A, typiquement la version suivante, contre le même moteur B, avec les autres réglages du
+match (ceux de la page *Nouveau tournoi* pour un match lancé par une version plus ancienne, qui ne les gardait pas).
+
+**Cloner** (dans l'en-tête d'un tournoi, sous *Derniers terminés* et dans *Tous les tournois* sur la page d'accueil)
+ouvre la page *Nouveau tournoi* remplie avec la configuration de ce tournoi, quel que soit son format : les
+participants avec leurs propres réglages, la cadence, les ouvertures, l'adjudication et le reste, chaque valeur telle
+qu'elle a été jouée. Ses profils sont nommés, et un profil modifié depuis est marqué comme changé pour ce tournoi.
+Change ce qui doit différer (une autre cadence, la version suivante d'un moteur, un autre livre), puis **Lancer** ou
+*Mettre en file d'attente*. Un tournoi qui joue encore peut aussi être cloné ; un tournoi lancé par une version plus
+ancienne, qui ne gardait pas sa configuration, ne le peut pas.
 
 ## Classements
 <!-- en: ratings 3e4be48f -->
@@ -2002,12 +2013,15 @@ le fichier `portable` n'est pas.
   [Le dossier d'un tournoi](#le-dossier-dun-tournoi)).
 
 ### Le dossier d'un tournoi
-<!-- en: a-tournaments-folder 822c459b -->
+<!-- en: a-tournaments-folder 76959723 -->
 
 `runs/<date>_<A>_vs_<B>/` pour un match, `runs/<date>_<name>/` pour un tournoi (dans `runs/` ou le dossier choisi), un
 dossier chacun, qui peut être déplacé, copié, zippé et envoyé :
 
 - `tournament.json` : le format, les participants (moteurs copiés avec leurs options) et les conditions ;
+- `setup.json` : la configuration de la page *Nouveau tournoi* dont il est parti, que lisent *Cloner* et *Relancer
+  avec…* (voir [File d'attente et relance](#file-dattente-et-relance)) ; un tournoi lancé par une version plus
+  ancienne n'en a pas ;
 - `journal.jsonl` : tout ce qui s'est passé depuis, une ligne par événement (paires de parties commencées, parties
   terminées, modifications, appariements des suisses et des KO) ; avec les fichiers PGN, c'est ce que lit une reprise.
   Une partie est sur le disque avant sa ligne, si bien qu'une coupure de courant fait perdre au plus les parties en
@@ -2053,7 +2067,7 @@ tout tournoi.
 Les matchs joués avec la version 0.2 apparaissent sur la page d'accueil : *Les importer* en fait des tournois terminés.
 
 ## Ligne de commande
-<!-- en: command-line 827032fe -->
+<!-- en: command-line bba4b98e -->
 
 ```
 fastchess-gui [--profile DIR] [--autostart] [--size WxH] [--software]
@@ -2086,7 +2100,8 @@ fastchess-gui --version
   suggérés sélectionnés), `setup-open=ROW` et `setup-profiles=ROW` (une ligne de la configuration ouverte, ou sa liste
   de profils : `format`, `time`, `openings`, `adjudication`, `engines`, `concurrency`, `pgn`), `setup-book` (le livre
   propre du premier participant), `submission-export` (*Exporter pour une liste de classement…*), `ratings-players`
-  (la fenêtre *Joueurs PGN…*), `palette[=TEXT]` (la palette de commandes, avec TEXT tapé dedans), `game-menu=N` (le
+  (la fenêtre *Joueurs PGN…*), `clone=DIR` (la page *Nouveau tournoi* remplie par *Cloner* du dossier de ce
+  tournoi), `palette[=TEXT]` (la palette de commandes, avec TEXT tapé dedans), `game-menu=N` (le
   menu de la partie N dans l'onglet *Parties*, un résultat choisi), `end-menu=N` (*Terminer avec un résultat* de la
   partie de l'emplacement N, à partir de 1), `big-screen[=N]` (le grand écran, de la partie de l'emplacement N),
   `live-back=N` (la partie suivie dans *Direct*, reculée de N demi-coups), `engines-console` (la console du premier

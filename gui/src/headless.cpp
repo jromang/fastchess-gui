@@ -29,6 +29,7 @@
 #include "machines.hpp"
 #include "memory.hpp"
 #include "portable.hpp"
+#include "profiles.hpp"
 #include "run.hpp"
 #include "setup_checks.hpp"
 
@@ -353,7 +354,9 @@ std::unique_ptr<tour::TournamentState> createTournament(const MatchSetup& setup,
     if (!preparePgnBooks(pgnBookNeeds(setup))) return nullptr;
     const auto run = buildRun(setup, engines, topology, dir);
     if (!memoryFits(run.spec, engines)) return nullptr;
-    return tour::TournamentState::create(dir, run.spec);
+    auto state = tour::TournamentState::create(dir, run.spec);
+    (void)writeTournamentSetup(dir, setup);  // for the window's Clone and Relaunch with…
+    return state;
 }
 
 }  // namespace

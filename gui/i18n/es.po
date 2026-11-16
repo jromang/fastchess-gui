@@ -289,6 +289,9 @@ msgstr "Una jugada pesa los puntos que el bando que la jugó obtuvo en sus parti
 msgid "A network engine that plays on a graphics card (Lc0...): no more such engines play at once than the GPUs of Settings ({}), in a tournament and across tournaments. From the next tournament it joins."
 msgstr "Un motor de red que juega en una tarjeta gráfica (Lc0…): no juegan a la vez más motores así que GPU hay en Ajustes ({}), en un torneo y entre torneos. A partir del próximo torneo al que se una."
 
+msgid "A new tournament with this one's participants and settings, to change before it starts: another time control, the next version of an engine."
+msgstr "Un torneo nuevo con los participantes y los ajustes de este, para cambiar antes de que empiece: otro ritmo de juego, la siguiente versión de un motor."
+
 msgid "A or B of the match."
 msgstr "A o B del match."
 
@@ -1216,6 +1219,12 @@ msgstr "Clic: la línea jugada hasta esta jugada. Las puntuaciones son las de la
 
 msgid "Clock"
 msgstr "Reloj"
+
+msgid "Clone"
+msgstr "Clonar"
+
+msgid "Clone {}"
+msgstr "Clonar {}"
 
 msgid "Close"
 msgstr "Cerrar"
@@ -4193,6 +4202,9 @@ msgstr "Empezar cuando haya núcleos libres"
 msgid "Start, on the New tournament page; the home page then follows the games."
 msgstr "Iniciar, en la página Nuevo torneo; la página de inicio sigue luego las partidas."
 
+msgid "Started by a version that did not keep its setup: it cannot be cloned."
+msgstr "Iniciado por una versión que no guardaba su configuración: no se puede clonar."
+
 msgid "Started one after the other, when the running tournament ends by itself."
 msgstr "Se inician uno tras otro, cuando el torneo en curso termina por sí solo."
 
@@ -4889,6 +4901,9 @@ msgstr "El orden es el de la tabla de emparejamientos."
 
 msgid "The other settings: those of the New tournament page."
 msgstr "Los demás ajustes: los de la página Nuevo torneo."
+
+msgid "The other settings: those of this match."
+msgstr "Los demás ajustes: los de este match."
 
 msgid "The page shows Discord's widget of this server, in its light or dark theme: its name, the members online and a Join button, not the messages. The server's owner switches the widget on in Server Settings, Widget, which also shows the server ID. Discord then sees the visits of the page's viewers."
 msgstr "La página muestra el widget de Discord de este servidor, en su tema claro u oscuro: su nombre, los miembros conectados y un botón Unirse, no los mensajes. El propietario del servidor activa el widget en Ajustes del servidor, Widget, que también muestra el ID del servidor. Discord ve entonces las visitas de los espectadores de la página."
