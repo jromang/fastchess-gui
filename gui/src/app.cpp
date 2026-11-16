@@ -8,6 +8,7 @@
 #include <ctime>
 #include <fstream>
 #include <limits>
+#include <sstream>
 
 #include <SDL3/SDL.h>
 
@@ -308,6 +309,13 @@ void App::frame() {
                 review_when_read_ = true;
                 if (w.rfind("board-review-", 0) == 0) review_ply_ = std::atoi(w.c_str() + 13);
             }
+        } else if (w.rfind("board-preview=", 0) == 0) {  // a line shown on the Board page: board-preview=e2e4,e7e5
+            BoardPreview p;
+            p.ply = p.at = board_.ply;
+            std::istringstream in(w.substr(14));
+            for (std::string m; std::getline(in, m, ',');) p.moves.push_back(m);
+            p.label        = "preview";
+            board_.preview = std::move(p);
         } else if (w.rfind("board-add-analysis=", 0) == 0) {  // another engine analyses the Board page's game
             addReviewEngine(w.substr(19));
         } else if (w.rfind("board-graph=", 0) == 0) {  // the Board page's graph on that chart: board-graph=win

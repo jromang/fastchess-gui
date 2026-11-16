@@ -54,6 +54,14 @@ class PieceAtlas {
 struct BoardArrow {
     chess::Move move;
     ImU32 colour = 0;
+    bool dashed  = false;  // a move expected rather than found: a shaft in dashes
+};
+
+// A mark on a square's corner: a move's judgement (?!, ?, ??) on the square it went to.
+struct BoardBadge {
+    chess::Square square;
+    std::string text;
+    ImU32 colour = 0;
 };
 
 struct BoardDecor {
@@ -65,6 +73,8 @@ struct BoardDecor {
     ImU32 last_move_colour = IM_COL32(255, 210, 70, 255);
     float eval_white       = 0.5f;   // fraction of the eval bar that is white, < 0 hides the bar
     std::vector<BoardArrow> arrows;  // drawn in order, over the pieces
+    std::optional<BoardBadge> badge;        // over everything, at the square's top right corner
+    std::optional<ImU32> frame;             // a frame around the board: a line shown on it rather than the game
     std::optional<chess::Square> selected;  // a piece picked up, to move it
     std::vector<chess::Square> targets;     // where it may go, a dot on each
     // The squares' colours; by default those of the theme in use (appearance::boardColours()), as on every board.

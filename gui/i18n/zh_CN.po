@@ -1673,6 +1673,9 @@ msgstr "橡皮擦"
 msgid "Error: {}"
 msgstr "错误：{}"
 
+msgid "Esc or a click: the game"
+msgstr "Esc 或单击：返回对局"
+
 msgid "Evaluation"
 msgstr "评估"
 
@@ -2298,6 +2301,9 @@ msgstr "它不能代替引擎走棋：{}"
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "它会从中断处准确继续：不会丢失对局，也不会重复下同一局。"
 
+msgid "It expected"
+msgstr "预期"
+
 msgid "It is not a PNG or JPEG picture the program can read."
 msgstr "这不是程序能够读取的 PNG 或 JPEG 图片。"
 
@@ -2712,6 +2718,9 @@ msgstr "着法"
 
 msgid "Moves / period"
 msgstr "步数 / 时段"
+
+msgid "N: the next move the analysis marked (?!, ?, ??)."
+msgstr "N：下一个被分析标出的着法（?!、?、??）。"
 
 msgid "Name"
 msgstr "名称"
@@ -3995,6 +4004,9 @@ msgstr "配置"
 msgid "Share of drawn games."
 msgstr "和棋所占比例。"
 
+msgid "Shift+N: the previous move the analysis marked (?!, ?, ??)."
+msgstr "Shift+N：上一个被分析标出的着法（?!、?、??）。"
+
 msgid "Show"
 msgstr "显示"
 
@@ -4432,6 +4444,9 @@ msgstr "也可用方向键。"
 msgid "The average rating of the opponents met, game by game."
 msgstr "逐局计算的所遇对手平均等级分。"
 
+msgid "The best move ({})"
+msgstr "最佳着法（{}）"
+
 msgid "The board follows the game again (End)."
 msgstr "棋盘重新跟随对局 (End)。"
 
@@ -4692,6 +4707,9 @@ msgstr "上一次检查或读取失败。"
 
 msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
 msgstr "引擎库中的名称，之后的锦标赛会使用它。已进行的锦标赛保留旧名称，其对局和等级分也一样。"
+
+msgid "The line on the board, the game untouched."
+msgstr "在棋盘上显示这条变化，对局不变。"
 
 msgid "The lines of one tournament, or of the window."
 msgstr "某个锦标赛的日志行，或窗口自身的。"
@@ -5103,6 +5121,9 @@ msgstr "这是最新版本。"
 
 msgid "This match is already finished."
 msgstr "这场比赛已经结束。"
+
+msgid "This move"
+msgstr "本步"
 
 msgid "This program cannot find its own file to start a tournament."
 msgstr "本程序找不到自己的文件，无法启动锦标赛。"
@@ -5691,11 +5712,17 @@ msgstr "自动"
 msgid "bars: the analyses apart"
 msgstr "柱：各分析之间的分歧"
 
+msgid "best {}"
+msgstr "最佳 {}"
+
 msgid "board by board"
 msgstr "逐台对抗"
 
 msgid "book"
 msgstr "开局库"
+
+msgid "book move"
+msgstr "开局库着法"
 
 msgid "both"
 msgstr "两者"
@@ -6264,6 +6291,9 @@ msgstr "{:+.2f}  (DrawElo {:.0f})"
 msgid "{:+} games ({} → {})"
 msgstr "{:+} 局（{} → {}）"
 
+msgid "{:.0f} % of the winning chances lost"
+msgstr "失去 {:.0f} % 的胜率"
+
 msgid "{:.0f} games/h · about {} left"
 msgstr "{:.0f} 局/小时 · 约剩 {}"
 
@@ -6507,6 +6537,9 @@ msgstr "列表中 {} 个引擎 · {} 个在库中 · {} 个不在库中"
 
 msgid "{} engines · {} games"
 msgstr "{} 个引擎 · {} 局"
+
+msgid "{} expected {}"
+msgstr "{} 预期 {}"
 
 msgid "{} file was there already, the same: left as it was."
 msgid_plural "{} files were there already, the same: left as they were."
@@ -7297,6 +7330,9 @@ msgstr "{}：再次尝试启动。"
 
 msgid "{}: unknown to the engine"
 msgstr "{}：引擎不认识"
+
+msgid "{}: {:.0f} % of the winning chances lost"
+msgstr "{}：失去 {:.0f} % 的胜率"
 
 msgid "{}: {:.0f} % of the winning chances lost."
 msgstr "{}：失去了 {:.0f} % 的获胜机会。"

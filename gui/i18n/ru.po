@@ -1685,6 +1685,9 @@ msgstr "Ластик"
 msgid "Error: {}"
 msgstr "Ошибка: {}"
 
+msgid "Esc or a click: the game"
+msgstr "Esc или щелчок: партия"
+
 msgid "Evaluation"
 msgstr "Оценка"
 
@@ -2312,6 +2315,9 @@ msgstr "Она не может играть за движок: {}"
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "Он продолжится ровно с того места, где остановился: ни одна партия не потеряется и не будет сыграна дважды."
 
+msgid "It expected"
+msgstr "Ожидал"
+
 msgid "It is not a PNG or JPEG picture the program can read."
 msgstr "Это не изображение PNG или JPEG, которое программа может прочитать."
 
@@ -2728,6 +2734,9 @@ msgstr "Ходы"
 
 msgid "Moves / period"
 msgstr "Ходов / период"
+
+msgid "N: the next move the analysis marked (?!, ?, ??)."
+msgstr "N: следующий ход, отмеченный анализом (?!, ?, ??)."
 
 msgid "Name"
 msgstr "Имя"
@@ -4025,6 +4034,9 @@ msgstr "Настройка"
 msgid "Share of drawn games."
 msgstr "Доля ничейных партий."
 
+msgid "Shift+N: the previous move the analysis marked (?!, ?, ??)."
+msgstr "Shift+N: предыдущий отмеченный ход (?!, ?, ??)."
+
 msgid "Show"
 msgstr "Показать"
 
@@ -4478,6 +4490,9 @@ msgstr "Также клавиши со стрелками."
 msgid "The average rating of the opponents met, game by game."
 msgstr "Средний рейтинг соперников, партия за партией."
 
+msgid "The best move ({})"
+msgstr "Лучший ход ({})"
+
 msgid "The board follows the game again (End)."
 msgstr "Доска снова следует за партией (End)."
 
@@ -4738,6 +4753,9 @@ msgstr "Последняя проверка или чтение завершил
 
 msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
 msgstr "Имя в библиотеке, которое ему дадут следующие турниры. Уже сыгранные турниры сохраняют старое, как и их партии и рейтинги."
+
+msgid "The line on the board, the game untouched."
+msgstr "Вариант на доске, партия не меняется."
 
 msgid "The lines of one tournament, or of the window."
 msgstr "Строки одного турнира или окна."
@@ -5155,6 +5173,9 @@ msgstr "Это последняя версия."
 
 msgid "This match is already finished."
 msgstr "Этот матч уже завершён."
+
+msgid "This move"
+msgstr "Этот ход"
 
 msgid "This program cannot find its own file to start a tournament."
 msgstr "Программа не находит собственный файл, чтобы запустить турнир."
@@ -5753,11 +5774,17 @@ msgstr "автоматически"
 msgid "bars: the analyses apart"
 msgstr "столбцы: расхождение анализов"
 
+msgid "best {}"
+msgstr "лучше {}"
+
 msgid "board by board"
 msgstr "по доскам"
 
 msgid "book"
 msgstr "книга"
+
+msgid "book move"
+msgstr "ход из книги"
 
 msgid "both"
 msgstr "и то и другое"
@@ -6338,6 +6365,9 @@ msgstr "{:+.2f}  (DrawElo {:.0f})"
 msgid "{:+} games ({} → {})"
 msgstr "партий: {:+} ({} → {})"
 
+msgid "{:.0f} % of the winning chances lost"
+msgstr "потеряно {:.0f} % шансов на выигрыш"
+
 msgid "{:.0f} games/h · about {} left"
 msgstr "{:.0f} партий/ч · осталось около {}"
 
@@ -6613,6 +6643,9 @@ msgstr "движков в списке: {} · в библиотеке: {} · н�
 
 msgid "{} engines · {} games"
 msgstr "движков: {} · партий: {}"
+
+msgid "{} expected {}"
+msgstr "{} ожидал {}"
 
 msgid "{} file was there already, the same: left as it was."
 msgid_plural "{} files were there already, the same: left as they were."
@@ -7531,6 +7564,9 @@ msgstr "{}: новая попытка запуска."
 
 msgid "{}: unknown to the engine"
 msgstr "{}: неизвестен движку"
+
+msgid "{}: {:.0f} % of the winning chances lost"
+msgstr "{}: потеряно {:.0f} % шансов на выигрыш"
 
 msgid "{}: {:.0f} % of the winning chances lost."
 msgstr "{}: потеряно {:.0f} % шансов на победу."

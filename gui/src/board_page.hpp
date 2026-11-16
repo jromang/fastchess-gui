@@ -131,6 +131,16 @@ bool editorLoad(PositionEditor& editor, const std::string& fen);
 [[nodiscard]] bool editorCanCastle(const PositionEditor& editor, int right);
 
 // The game and the position of the Board page, and its analysis.
+// A line laid on the board without touching the game (Show, a line hovered): the position `ply` of the game, then
+// the line's moves.
+struct BoardPreview {
+    int ply = 0;
+    int at  = 0;                     // the board's ply when it was shown: moving through the game ends it
+    std::vector<std::string> moves;  // UCI
+    std::string label;               // what it is, over the board
+    bool hover = false;              // shown while the mouse is on it: gone when it leaves
+};
+
 struct BoardPage {
     ReplayGame game;
     bool chess960 = false;
@@ -141,6 +151,8 @@ struct BoardPage {
     bool flip    = false;
     std::optional<chess::Square> selected;  // a piece picked up
     std::optional<chess::Move> promotion;   // a pawn's move waiting for the piece it becomes
+    std::optional<BoardPreview> preview;    // a line shown on the board instead of the game
+    bool preview_hovered = false;           // a hovered line asked for it this frame
     std::string message;                    // what the last paste or file gave, or why it gave nothing
     bool message_error = false;
 

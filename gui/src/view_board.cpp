@@ -53,6 +53,17 @@ float barFraction(const fastchess::Score& score, chess::Color stm) {
     return evalBarFraction(static_cast<int>(white.value), false, 0);
 }
 
+ImU32 judgementBadgeColour(Judgement judgement) {
+    switch (judgement) {
+        case Judgement::Inaccuracy:
+            return IM_COL32(212, 169, 21, 255);
+        case Judgement::Mistake:
+            return IM_COL32(226, 116, 31, 255);
+        default:
+            return IM_COL32(200, 45, 40, 255);
+    }
+}
+
 ImU32 judgementColour(Judgement judgement) {
     switch (judgement) {
         case Judgement::Inaccuracy:
@@ -549,9 +560,24 @@ void App::drawBoardPage() {
     // Keys, unless a text field has them.
     const bool keys = !ImGui::GetIO().WantTextInput && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId);
     const int total = static_cast<int>(b.game.moves.size());
+    if (b.preview && b.preview->hover) {
+        if (!b.preview_hovered) b.preview.reset();
+        b.preview_hovered = false;
+    }
+    if (b.preview && !b.preview->hover && b.preview->at != b.ply) b.preview.reset();
     if (keys && !b.editor) {
+        const int before = b.ply;
         b.ply = stepPly(navKeys(b.flip), b.ply, total);
-        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) b.selected.reset();
+        if (b.ply != before) b.preview.reset();
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            if (b.preview)
+                b.preview.reset();
+            else
+                b.selected.reset();
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_N, false) && !ImGui::GetIO().KeyCtrl) {
+            if (const int to = judgedPly(ImGui::GetIO().KeyShift ? -1 : 1); to >= 0) b.ply = to;
+        }
         if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_V)) pasteOnBoard();
     }
     if (keys && boardKey()) setBoardAnalysis(!b.analysing);
@@ -1074,19 +1100,73 @@ void App::drawBoardColumn(float size) {
     if (b.selected) {
         for (const auto& m : movesFrom(board, *b.selected)) decor.targets.push_back(shownTarget(m));
     }
+    if (b.ply > 0) {
+        const auto& m = b.game.moves[static_cast<std::size_t>(b.ply - 1)];
+        // The move's judgement on its square.
+        if (static_cast<std::size_t>(b.ply - 1) < b.judged.size()) {
+            const auto j = b.judged[static_cast<std::size_t>(b.ply - 1)].judgement;
+            if (j != Judgement::None)
+                decor.badge = BoardBadge{shownTarget(m.move), judgementMark(j), judgementBadgeColour(j)};
+        }
+        // The reply the engine that played it expected, in dashes: its PV's second move.
+        if (b.settings.arrows && !m.pv.empty()) {
+            std::istringstream pv(m.pv);
+            std::string first, reply;
+            if (pv >> first >> reply) {
+                if (const auto moves = legalPrefix(board, {reply}, 1); !moves.empty())
+                    decor.arrows.insert(decor.arrows.begin(), {moves.front(), IM_COL32(60, 64, 74, 190), true});
+            }
+        }
+    }
+
+    // A line shown on the board instead of the game: its last position, framed.
+    std::optional<chess::Board> line_board;
+    if (b.preview) {
+        auto at = boardAt(b.game, b.chess960, std::clamp(b.preview->ply, 0, static_cast<int>(b.game.moves.size())));
+        const auto moves = legalPrefix(at, b.preview->moves, b.preview->moves.size());
+        for (const auto& mv : moves) at.makeMove(mv);
+        line_board       = at;
+        const float bar  = decor.eval_white;  // kept: the board does not move
+        decor            = BoardDecor{};
+        decor.flipped    = b.flip;
+        decor.eval_white = bar;
+        if (!moves.empty()) decor.last_move = moves.back();
+        decor.frame = ui::ACCENT;
+    }
+    const auto& shown = line_board ? *line_board : board;
 
     const ImVec2 top = ImGui::GetCursorScreenPos();
     if (appearance::current().board3d.on && board3d_.available()) {
-        const auto input = board3d_.draw(board, size, decor);
-        if (input.clicked) boardClick(board, *input.clicked);
-        if (input.right_click) b.selected.reset();
+        const auto input = board3d_.draw(shown, size, decor);
+        if (line_board && (input.clicked || input.right_click)) {
+            b.preview.reset();
+        } else {
+            if (input.clicked) boardClick(board, *input.clicked);
+            if (input.right_click) b.selected.reset();
+        }
     } else {
         if (!appearance::current().board3d.on) board3d_.release();
-        drawBoard(atlas_, board, size, decor);
-        if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-            if (const auto square = boardSquareAt(ImGui::GetMousePos(), top, size, decor)) boardClick(board, *square);
+        drawBoard(atlas_, shown, size, decor);
+        if (line_board &&
+            (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right))) {
+            b.preview.reset();
+        } else {
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+                if (const auto square = boardSquareAt(ImGui::GetMousePos(), top, size, decor))
+                    boardClick(board, *square);
+            }
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) b.selected.reset();
         }
-        if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) b.selected.reset();
+    }
+    // What the line is, over the board.
+    if (line_board && b.preview) {
+        auto* dl = ImGui::GetWindowDrawList();
+        const auto label =
+            b.preview->label + (b.preview->hover ? "" : "  ·  " + std::string(TR("Esc or a click: the game")));
+        const ImVec2 ts = ImGui::CalcTextSize(label.c_str());
+        const ImVec2 p0(top.x + evalBarSpace(size) + px(8), top.y + px(8));
+        dl->AddRectFilled(p0, ImVec2(p0.x + ts.x + px(16), p0.y + ts.y + px(8)), IM_COL32(20, 24, 32, 215), px(6));
+        dl->AddText(ImVec2(p0.x + px(8), p0.y + px(4)), IM_COL32(240, 243, 248, 255), label.c_str());
     }
 
     // The piece a pawn becomes.
@@ -1131,6 +1211,22 @@ void App::drawBoardColumn(float size) {
             setup_.nav_buttons = false;
             saveSetupSoon();
         }
+        ImGui::SameLine();
+    }
+    // From one judged move to the next.
+    if (std::any_of(b.judged.begin(), b.judged.end(), [](const auto& j) { return j.judgement != Judgement::None; })) {
+        const int prev = judgedPly(-1), next = judgedPly(1);
+        ImGui::BeginDisabled(prev < 0);
+        if (ImGui::Button("< ?##prev_judged")) b.ply = prev;
+        ImGui::EndDisabled();
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+            ImGui::SetTooltip("%s", TR("Shift+N: the previous move the analysis marked (?!, ?, ??)."));
+        ImGui::SameLine(0, px(2));
+        ImGui::BeginDisabled(next < 0);
+        if (ImGui::Button("? >##next_judged")) b.ply = next;
+        ImGui::EndDisabled();
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+            ImGui::SetTooltip("%s", TR("N: the next move the analysis marked (?!, ?, ??)."));
         ImGui::SameLine();
     }
     if (ImGui::Button(TR("Copy FEN"))) ImGui::SetClipboardText(board.getFen().c_str());
@@ -1346,7 +1442,8 @@ void App::drawBoardMoves(float height) {
     }
     drawGameReview();
 
-    ImGui::BeginChild("##board_moves", ImVec2(0, 0), ImGuiChildFlags_Borders);
+    const float strip = b.ply > 0 && b.ply <= total ? thisMoveHeight() : 0.0f;
+    ImGui::BeginChild("##board_moves", ImVec2(0, -strip), ImGuiChildFlags_Borders);
     if (total == 0) {
         ImGui::TextDisabled("%s", TR("Play a move on the board, or open a game."));
     } else {
@@ -1392,7 +1489,144 @@ void App::drawBoardMoves(float height) {
     }
     b.followed = b.ply;
     ImGui::EndChild();
+    if (strip > 0) drawThisMove();
     ui::endCard();
+}
+
+float App::thisMoveHeight() const {
+    const auto& b = board_;
+    const auto& m = b.game.moves[static_cast<std::size_t>(b.ply - 1)];
+    int rows      = 1 + (!m.book && m.pv.find(' ') != std::string::npos ? 1 : 0);
+    for (const auto* r : shownReviews())
+        if (static_cast<std::size_t>(b.ply) < r->positions.size()) ++rows;
+    return static_cast<float>(rows) * ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y * 2;
+}
+
+int App::judgedPly(int direction) const {
+    const auto& b   = board_;
+    const int total = static_cast<int>(std::min(b.judged.size(), b.game.moves.size()));
+    for (int ply = b.ply + direction; ply >= 1 && ply <= total; ply += direction) {
+        if (b.judged[static_cast<std::size_t>(ply - 1)].judgement != Judgement::None) return ply;
+    }
+    return -1;
+}
+
+void App::drawThisMove() {
+    auto& b          = board_;
+    const int ply    = b.ply;
+    const auto& m    = b.game.moves[static_cast<std::size_t>(ply - 1)];
+    const auto prior = boardAt(b.game, b.chess960, ply - 1);
+    const auto after = boardAt(b.game, b.chess960, ply);
+    const auto split = [](const std::string& pv) {
+        std::vector<std::string> out;
+        std::istringstream in(pv);
+        for (std::string w; in >> w;) out.push_back(w);
+        return out;
+    };
+    const auto name_of = [&](chess::Color c) {
+        auto name = b.game.header(c == chess::Color::WHITE ? "White" : "Black");
+        return name.empty() || name == "?" ? std::string(c == chess::Color::WHITE ? TR("White") : TR("Black")) : name;
+    };
+    const auto white = [](fastchess::Score score, chess::Color stm) {
+        if (stm == chess::Color::BLACK) score.value = -score.value;
+        return ui::formatScore(score);
+    };
+    const auto reviews = shownReviews();
+    float label_w      = ImGui::CalcTextSize(TR("This move")).x;
+    label_w            = std::max(label_w, ImGui::CalcTextSize(TR("It expected")).x);
+    for (const auto* r : reviews) label_w = std::max(label_w, ImGui::CalcTextSize(r->engine.c_str()).x);
+    label_w += px(12);
+    const float show_w = ImGui::CalcTextSize(TR("Show")).x + ImGui::GetStyle().FramePadding.x * 2;
+    int row_id         = 0;
+    // A row: its label, its text (cut to the room), a Show that lays a line on the board.
+    const auto row = [&](const std::string& label, const std::string& text, int base, std::vector<std::string> line,
+                         const std::string& line_label) {
+        ImGui::PushID(row_id++);
+        const float start = ImGui::GetCursorPosX();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("%s", label.c_str());
+        ImGui::SameLine(start + label_w);
+        const float room  = ImGui::GetContentRegionAvail().x - (line.empty() ? 0.0f : show_w + px(8));
+        std::string shown = text;
+        while (!shown.empty() && ImGui::CalcTextSize(shown.c_str()).x > room) shown.pop_back();
+        if (shown.size() < text.size() && shown.size() > 3) shown = shown.substr(0, shown.size() - 3) + "…";
+        ImGui::TextUnformatted(shown.c_str());
+        if (shown.size() < text.size() && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", text.c_str());
+        if (!line.empty()) {
+            ImGui::SameLine(ImGui::GetContentRegionMax().x - show_w);
+            const bool on = b.preview && !b.preview->hover && b.preview->label == line_label;
+            if (ImGui::SmallButton(on ? TR("Back") : TR("Show"))) {
+                if (on)
+                    b.preview.reset();
+                else
+                    b.preview = BoardPreview{base, b.ply, std::move(line), line_label, false};
+            }
+            if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The line on the board, the game untouched."));
+        }
+        ImGui::PopID();
+    };
+
+    ImGui::Separator();
+    // The move, and what the engine that played it said.
+    const int number  = prior.fullMoveNumber();
+    const auto judged = static_cast<std::size_t>(ply - 1) < b.judged.size()
+                            ? b.judged[static_cast<std::size_t>(ply - 1)]
+                            : MoveReview{};
+    std::string text  = fmt::format("{}{}{}{}", number, m.mover == chess::Color::WHITE ? "." : "…", m.san,
+                                    judgementMark(judged.judgement));
+    if (m.book) {
+        text += "   " + std::string(TR("book move"));
+    } else if (m.score) {
+        text += "   " + name_of(m.mover) + ": " + white(*m.score, m.mover);
+        if (m.depth > 0)
+            text += m.seldepth > 0 ? fmt::format(" · d{}/{}", m.depth, m.seldepth) : fmt::format(" · d{}", m.depth);
+        if (m.time_ms >= 0) text += " · " + ui::formatClock(m.time_ms);
+        if (m.nodes > 0) text += " · " + ui::formatCount(m.nodes) + " n";
+        if (m.nps > 0) text += " · " + ui::formatCount(static_cast<uint64_t>(m.nps)) + " n/s";
+        if (m.tbhits > 0) text += " · TB " + ui::formatCount(m.tbhits);
+    }
+    row(TR("This move"), text, 0, {}, "");
+    // The line it expected after it.
+    if (!m.book) {
+        auto pv = split(m.pv);
+        if (pv.size() > 1) {
+            pv.erase(pv.begin());
+            const auto san = pvToSan(after, pv, 10);
+            row(TR("It expected"), san, ply, pv, trf("{} expected {}", name_of(m.mover), pvToSan(after, pv, 6)));
+        }
+    }
+    // Each analysis's verdict, and its best line from the position before the move.
+    for (std::size_t i = 0; i < reviews.size(); ++i) {
+        const auto& r = *reviews[i];
+        if (static_cast<std::size_t>(ply) >= r.positions.size()) continue;
+        const auto& before = r.positions[static_cast<std::size_t>(ply - 1)];
+        MoveReview verdict;
+        if (i == 0) {
+            verdict = judged;
+        } else if (const auto all = reviewMoves(b.game, b.chess960, r);
+                   static_cast<std::size_t>(ply - 1) < all.size()) {
+            verdict = all[static_cast<std::size_t>(ply - 1)];
+        }
+        std::string what;
+        const auto best      = legalPrefix(prior, {before.best}, 1);
+        const auto best_text = best.empty() || !before.score ? std::string()
+                                                             : chess::uci::moveToSan(prior, best.front()) + " (" +
+                                                                   white(*before.score, prior.sideToMove()) + ")";
+        if (!before.score || !r.positions[static_cast<std::size_t>(ply)].score) {
+            what = "…";
+        } else if (verdict.best) {
+            what = trf("The best move ({})", white(*before.score, prior.sideToMove()));
+        } else {
+            const char* kind = verdict.judgement == Judgement::Blunder      ? TR("Blunder")
+                               : verdict.judgement == Judgement::Mistake    ? TR("Mistake")
+                               : verdict.judgement == Judgement::Inaccuracy ? TR("Inaccuracy")
+                                                                            : nullptr;
+            what             = kind ? trf("{}: {:.0f} % of the winning chances lost", kind, verdict.loss)
+                                    : trf("{:.0f} % of the winning chances lost", verdict.loss);
+            if (!best_text.empty()) what += " · " + trf("best {}", best_text);
+        }
+        row(r.engine, what, ply - 1, split(before.pv), trf("{}: {}", r.engine, pvToSan(prior, split(before.pv), 6)));
+    }
 }
 
 // ---------------------------------------------------------------------------

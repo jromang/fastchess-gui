@@ -1679,6 +1679,9 @@ msgstr "Borrador"
 msgid "Error: {}"
 msgstr "Error: {}"
 
+msgid "Esc or a click: the game"
+msgstr "Esc o un clic: la partida"
+
 msgid "Evaluation"
 msgstr "Evaluación"
 
@@ -2305,6 +2308,9 @@ msgstr "No puede jugar por un motor: {}"
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr "Continúa exactamente donde se detuvo: ninguna partida se pierde ni se juega dos veces."
 
+msgid "It expected"
+msgstr "Esperaba"
+
 msgid "It is not a PNG or JPEG picture the program can read."
 msgstr "No es una imagen PNG o JPEG que el programa pueda leer."
 
@@ -2720,6 +2726,9 @@ msgstr "Jugadas"
 
 msgid "Moves / period"
 msgstr "Jugadas / periodo"
+
+msgid "N: the next move the analysis marked (?!, ?, ??)."
+msgstr "N: la siguiente jugada marcada por el análisis (?!, ?, ??)."
 
 msgid "Name"
 msgstr "Nombre"
@@ -4010,6 +4019,9 @@ msgstr "Configuración"
 msgid "Share of drawn games."
 msgstr "Proporción de partidas en tablas."
 
+msgid "Shift+N: the previous move the analysis marked (?!, ?, ??)."
+msgstr "Mayús+N: la jugada marcada anterior (?!, ?, ??)."
+
 msgid "Show"
 msgstr "Mostrar"
 
@@ -4455,6 +4467,9 @@ msgstr "También con las flechas del teclado."
 msgid "The average rating of the opponents met, game by game."
 msgstr "El rating medio de los rivales, partida a partida."
 
+msgid "The best move ({})"
+msgstr "La mejor jugada ({})"
+
 msgid "The board follows the game again (End)."
 msgstr "El tablero vuelve a seguir la partida (Fin)."
 
@@ -4715,6 +4730,9 @@ msgstr "La última comprobación o lectura falló."
 
 msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
 msgstr "El nombre en la biblioteca, el que le dan los próximos torneos. Los torneos ya jugados conservan el antiguo, igual que sus partidas y ratings."
+
+msgid "The line on the board, the game untouched."
+msgstr "La línea en el tablero, sin tocar la partida."
 
 msgid "The lines of one tournament, or of the window."
 msgstr "Las líneas de un torneo, o de la ventana."
@@ -5129,6 +5147,9 @@ msgstr "Esta es la última versión."
 
 msgid "This match is already finished."
 msgstr "Este match ya ha terminado."
+
+msgid "This move"
+msgstr "Esta jugada"
 
 msgid "This program cannot find its own file to start a tournament."
 msgstr "Este programa no encuentra su propio archivo para iniciar un torneo."
@@ -5722,11 +5743,17 @@ msgstr "automático"
 msgid "bars: the analyses apart"
 msgstr "barras: separación de los análisis"
 
+msgid "best {}"
+msgstr "mejor {}"
+
 msgid "board by board"
 msgstr "tablero a tablero"
 
 msgid "book"
 msgstr "libro"
+
+msgid "book move"
+msgstr "jugada de libro"
 
 msgid "both"
 msgstr "todo"
@@ -6301,6 +6328,9 @@ msgstr "{:+.2f}  (DrawElo {:.0f})"
 msgid "{:+} games ({} → {})"
 msgstr "{:+} partidas ({} → {})"
 
+msgid "{:.0f} % of the winning chances lost"
+msgstr "{:.0f} % de las posibilidades de victoria perdidas"
+
 msgid "{:.0f} games/h · about {} left"
 msgstr "{:.0f} partidas/h · quedan unas {}"
 
@@ -6560,6 +6590,9 @@ msgstr "{} motores en la lista · {} en la biblioteca · {} fuera de la bibliote
 
 msgid "{} engines · {} games"
 msgstr "{} motores · {} partidas"
+
+msgid "{} expected {}"
+msgstr "{} esperaba {}"
 
 msgid "{} file was there already, the same: left as it was."
 msgid_plural "{} files were there already, the same: left as they were."
@@ -7414,6 +7447,9 @@ msgstr "{}: nuevo intento de arranque."
 
 msgid "{}: unknown to the engine"
 msgstr "{}: desconocida para el motor"
+
+msgid "{}: {:.0f} % of the winning chances lost"
+msgstr "{}: {:.0f} % de las posibilidades de victoria perdidas"
 
 msgid "{}: {:.0f} % of the winning chances lost."
 msgstr "{}: {:.0f} % de las posibilidades de ganar perdidas."

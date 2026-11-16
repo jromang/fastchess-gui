@@ -1679,6 +1679,9 @@ msgstr ""
 msgid "Error: {}"
 msgstr ""
 
+msgid "Esc or a click: the game"
+msgstr ""
+
 msgid "Evaluation"
 msgstr ""
 
@@ -2305,6 +2308,9 @@ msgstr ""
 msgid "It continues exactly where it stopped: no game is lost or played twice."
 msgstr ""
 
+msgid "It expected"
+msgstr ""
+
 msgid "It is not a PNG or JPEG picture the program can read."
 msgstr ""
 
@@ -2719,6 +2725,9 @@ msgid "Moves"
 msgstr ""
 
 msgid "Moves / period"
+msgstr ""
+
+msgid "N: the next move the analysis marked (?!, ?, ??)."
 msgstr ""
 
 msgid "Name"
@@ -4010,6 +4019,9 @@ msgstr ""
 msgid "Share of drawn games."
 msgstr ""
 
+msgid "Shift+N: the previous move the analysis marked (?!, ?, ??)."
+msgstr ""
+
 msgid "Show"
 msgstr ""
 
@@ -4455,6 +4467,9 @@ msgstr ""
 msgid "The average rating of the opponents met, game by game."
 msgstr ""
 
+msgid "The best move ({})"
+msgstr ""
+
 msgid "The board follows the game again (End)."
 msgstr ""
 
@@ -4714,6 +4729,9 @@ msgid "The last check or reading failed."
 msgstr ""
 
 msgid "The library's name, which the next tournaments give it. The tournaments already played keep the old one, and so do their games and ratings."
+msgstr ""
+
+msgid "The line on the board, the game untouched."
 msgstr ""
 
 msgid "The lines of one tournament, or of the window."
@@ -5128,6 +5146,9 @@ msgid "This is the latest version."
 msgstr ""
 
 msgid "This match is already finished."
+msgstr ""
+
+msgid "This move"
 msgstr ""
 
 msgid "This program cannot find its own file to start a tournament."
@@ -5722,10 +5743,16 @@ msgstr ""
 msgid "bars: the analyses apart"
 msgstr ""
 
+msgid "best {}"
+msgstr ""
+
 msgid "board by board"
 msgstr ""
 
 msgid "book"
+msgstr ""
+
+msgid "book move"
 msgstr ""
 
 msgid "both"
@@ -6301,6 +6328,9 @@ msgstr ""
 msgid "{:+} games ({} → {})"
 msgstr ""
 
+msgid "{:.0f} % of the winning chances lost"
+msgstr ""
+
 msgid "{:.0f} games/h · about {} left"
 msgstr ""
 
@@ -6559,6 +6589,9 @@ msgid "{} engines on the list · {} in the library · {} not in the library"
 msgstr ""
 
 msgid "{} engines · {} games"
+msgstr ""
+
+msgid "{} expected {}"
 msgstr ""
 
 msgid "{} file was there already, the same: left as it was."
@@ -7413,6 +7446,9 @@ msgid "{}: trying to start it again."
 msgstr ""
 
 msgid "{}: unknown to the engine"
+msgstr ""
+
+msgid "{}: {:.0f} % of the winning chances lost"
 msgstr ""
 
 msgid "{}: {:.0f} % of the winning chances lost."

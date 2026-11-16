@@ -255,13 +255,40 @@ void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& piec
         const float shaft = sq * 0.09f, head = sq * 0.24f, head_len = sq * 0.42f, stop = sq * 0.12f;
         const ImVec2 tip(b.x - u.x * stop, b.y - u.y * stop);
         const ImVec2 base(tip.x - u.x * head_len, tip.y - u.y * head_len);
-        dl->AddQuadFilled(ImVec2(a.x + n.x * shaft, a.y + n.y * shaft),
-                          ImVec2(base.x + n.x * shaft, base.y + n.y * shaft),
-                          ImVec2(base.x - n.x * shaft, base.y - n.y * shaft),
-                          ImVec2(a.x - n.x * shaft, a.y - n.y * shaft), arrow.colour);
+        const auto segment = [&](ImVec2 p, ImVec2 q) {
+            dl->AddQuadFilled(ImVec2(p.x + n.x * shaft, p.y + n.y * shaft),
+                              ImVec2(q.x + n.x * shaft, q.y + n.y * shaft),
+                              ImVec2(q.x - n.x * shaft, q.y - n.y * shaft),
+                              ImVec2(p.x - n.x * shaft, p.y - n.y * shaft), arrow.colour);
+        };
+        if (arrow.dashed) {
+            const float shaft_len = std::max(0.0f, length - stop - head_len), dash = sq * 0.22f, gap = sq * 0.14f;
+            for (float t = 0; t < shaft_len; t += dash + gap) {
+                const float e = std::min(shaft_len, t + dash);
+                segment(ImVec2(a.x + u.x * t, a.y + u.y * t), ImVec2(a.x + u.x * e, a.y + u.y * e));
+            }
+        } else {
+            segment(a, base);
+        }
         dl->AddTriangleFilled(tip, ImVec2(base.x + n.x * head, base.y + n.y * head),
                               ImVec2(base.x - n.x * head, base.y - n.y * head), arrow.colour);
     }
+
+    // A move's judgement on the corner of its square.
+    if (decor.badge) {
+        const ImVec2 c = squareCentre(decor.badge->square, origin, size, decor.flipped);
+        const float r  = sq * 0.17f;
+        const ImVec2 at(std::min(c.x + sq * 0.5f - r * 0.55f, origin.x + size - r),
+                        std::max(c.y - sq * 0.5f + r * 0.55f, origin.y + r));
+        dl->AddCircleFilled(ImVec2(at.x + 1, at.y + 1.5f), r, IM_COL32(0, 0, 0, 70), 24);
+        dl->AddCircleFilled(at, r, decor.badge->colour, 24);
+        const float fs  = r * 1.25f;
+        const ImVec2 ts = font->CalcTextSizeA(fs, FLT_MAX, 0, decor.badge->text.c_str());
+        dl->AddText(font, fs, ImVec2(at.x - ts.x / 2, at.y - ts.y / 2), IM_COL32_WHITE, decor.badge->text.c_str());
+    }
+    if (decor.frame)
+        dl->AddRect(ImVec2(origin.x - 2, origin.y - 2), ImVec2(origin.x + size + 2, origin.y + size + 2), *decor.frame,
+                    0, 0, 3.0f);
 
     ImGui::Dummy(ImVec2(size + (bar ? evalBarSpace(size) : 0.0f), size));
 }

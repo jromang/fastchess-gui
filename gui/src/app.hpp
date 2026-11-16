@@ -411,6 +411,10 @@ class App {
     void removeReview(const std::string& engine);
     void startReviewTask(const EngineEntry& engine, const std::vector<GameReview>& kept);
     [[nodiscard]] std::string judgementTip(int ply, const MoveReview& judged) const;
+    // The position after the next (1) or previous (-1) judged move from the board's; -1 when there is none.
+    [[nodiscard]] int judgedPly(int direction) const;
+    void drawThisMove();  // under the moves: what the engine that played the move said, and each analysis's verdict
+    [[nodiscard]] float thisMoveHeight() const;
     // Games between two engines of the library from the board's position, played apart from any tournament.
     void startBoardGames();
     void pollBoardGames();  // every frame: the board follows the game being played
