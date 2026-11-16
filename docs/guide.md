@@ -676,16 +676,16 @@ program's process: they are not probed while a tournament plays in it.
 
 ### Playing a game from a position
 
-**Play a game…** plays a game from the position on the board between two engines of the library (*White* and
-*Black*, `<->` swaps them with their clocks), with a clock for each (minutes and an increment in seconds; *The same
-for both*, or one each for time odds), and, if ticked, a second game with the colours reversed. The engines are
-started with the library's option values, a WinBoard engine through the adapter. The board follows the game as it is
-played (going back in it stops following until its end is reached again, or *Back to the current move* is clicked),
-with the clocks, the side to move's search and *Stop*, which ends the game without a result. A game ends by mate,
-stalemate, insufficient material, the 50-move rule, a threefold repetition, an illegal move, an engine that stops, or
-a loss on time (the clock given 0.1 s for the move to come through). Each game is appended, as it ends, to a PGN file
-in `games/` in the profile (named after the date and the engines, with a `Termination` tag), which *Open the games*
-lists on the board.
+**Play a game…** plays a game from the position on the board between two engines of the library, or between you and one
+(see *You* below) (*White* and *Black*, `<->` swaps them with their clocks), with a clock for each (minutes and an
+increment in seconds; *The same for both*, or one each for time odds), and, if ticked, a second game with the colours
+reversed. The engines are started with the library's option values, a WinBoard engine through the adapter. The board
+follows the game as it is played (going back in it stops following until its end is reached again, or *Back to the
+current move* is clicked), with the clocks, the side to move's search and *Stop*, which ends the game without a result.
+A game ends by mate, stalemate, insufficient material, the 50-move rule, a threefold repetition, an illegal move, an
+engine that stops, or a loss on time (the clock given 0.1 s for the move to come through). Each game is appended, as it
+ends, to a PGN file in `games/` in the profile (named after the date and the engines, with a `Termination` tag), which
+*Open the games* lists on the board.
 
 The games are played by fastchess-gui's own engine client, apart from any tournament: they run while one plays,
 without touching it. Their threads (the larger of the two engines', as they take turns) count in the core budget;

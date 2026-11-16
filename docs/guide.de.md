@@ -776,19 +776,19 @@ wird abgefragt, als wäre gerade ein Schlagzug oder ein Bauernzug gespielt worde
 darin spielt.
 
 ### Eine Partie aus einer Stellung spielen
-<!-- en: playing-a-game-from-a-position 305b1b4e -->
+<!-- en: playing-a-game-from-a-position cbbcfcd3 -->
 
-**Eine Partie spielen…** spielt eine Partie aus der Stellung auf dem Brett zwischen zwei Engines der Bibliothek
-(*Weiß* und *Schwarz*, `<->` tauscht sie samt ihren Uhren), mit einer Uhr für jede (Minuten und ein Inkrement in
-Sekunden; *Für beide gleich* oder je eine eigene für Zeitvorgabe) und, falls angehakt, eine zweite Partie mit
-vertauschten Farben. Die Engines werden mit den Optionswerten der Bibliothek gestartet, eine WinBoard-Engine über den
-Adapter. Das Brett folgt der Partie, während sie gespielt wird (geht man in ihr zurück, folgt es ihr nicht mehr, bis
-ihr Ende wieder erreicht ist oder *Zurück zum aktuellen Zug* angeklickt wird), mit den Uhren, der Suche der Seite am Zug und
-*Stopp*, das die Partie ohne Ergebnis beendet. Eine Partie endet durch Matt, Patt, ungenügendes Material, die
-50-Züge-Regel, eine dreifache Wiederholung, einen illegalen Zug, eine Engine, die stehen bleibt, oder durch Zeitverlust
-(mit 0,1 s Spielraum auf der Uhr, damit der Zug ankommt). Jede Partie wird an ihrem Ende an eine PGN-Datei in `games/` im Profil
-angehängt (benannt nach dem Datum und den Engines, mit einem Tag `Termination`), die *Partien öffnen* auf dem Brett
-auflistet.
+**Eine Partie spielen…** spielt eine Partie aus der Stellung auf dem Brett zwischen zwei Engines der Bibliothek oder
+zwischen dir und einer davon (siehe *Du* weiter unten) (*Weiß* und *Schwarz*, `<->` tauscht sie samt ihren Uhren), mit
+einer Uhr für jede (Minuten und ein Inkrement in Sekunden; *Für beide gleich* oder je eine eigene für Zeitvorgabe) und,
+falls angehakt, eine zweite Partie mit vertauschten Farben. Die Engines werden mit den Optionswerten der Bibliothek
+gestartet, eine WinBoard-Engine über den Adapter. Das Brett folgt der Partie, während sie gespielt wird (geht man in ihr
+zurück, folgt es ihr nicht mehr, bis ihr Ende wieder erreicht ist oder *Zurück zum aktuellen Zug* angeklickt wird), mit
+den Uhren, der Suche der Seite am Zug und *Stopp*, das die Partie ohne Ergebnis beendet. Eine Partie endet durch Matt,
+Patt, ungenügendes Material, die 50-Züge-Regel, eine dreifache Wiederholung, einen illegalen Zug, eine Engine, die
+stehen bleibt, oder durch Zeitverlust (mit 0,1 s Spielraum auf der Uhr, damit der Zug ankommt). Jede Partie wird an
+ihrem Ende an eine PGN-Datei in `games/` im Profil angehängt (benannt nach dem Datum und den Engines, mit einem Tag
+`Termination`), die *Partien öffnen* auf dem Brett auflistet.
 
 Die Partien werden vom eigenen Engine-Client von fastchess-gui gespielt, unabhängig von jedem Turnier: Sie laufen,
 während eines spielt, ohne es zu berühren. Ihre Threads (die der größeren der beiden Engines, da sie abwechselnd

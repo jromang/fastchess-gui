@@ -771,19 +771,19 @@ là où la règle des 50 coups est proche. Les tables sont celles du processus d
 interrogées pendant qu'un tournoi y joue.
 
 ### Jouer une partie depuis une position
-<!-- en: playing-a-game-from-a-position 305b1b4e -->
+<!-- en: playing-a-game-from-a-position cbbcfcd3 -->
 
-**Jouer une partie…** joue une partie depuis la position de l'échiquier entre deux moteurs de la bibliothèque
-(*Blancs* et *Noirs*, `<->` les échange avec leurs pendules), avec une pendule pour chacun (des minutes et un
-incrément en secondes ; *La même pour les deux*, ou une chacun pour un handicap de temps), et, si c'est coché, une
-seconde partie avec les couleurs inversées. Les moteurs sont lancés avec les valeurs d'options de la bibliothèque, un
-moteur WinBoard par l'adaptateur. L'échiquier suit la partie au fil du jeu (revenir en arrière arrête de la suivre
-jusqu'à ce que sa fin soit de nouveau atteinte, ou qu'on clique sur *Revenir au coup en cours*), avec les pendules, la
-recherche du camp au trait et *Arrêter*, qui termine la partie sans résultat. Une partie se termine par mat, pat,
-matériel insuffisant, la règle des 50 coups, une triple répétition, un coup illégal, un moteur qui s'arrête, ou une
-perte au temps (la pendule accordant 0,1 s pour que le coup arrive). Chaque partie est ajoutée, quand elle se termine,
-à un fichier PGN dans `games/` dans le profil (nommé d'après la date et les moteurs, avec une balise `Termination`),
-que *Ouvrir les parties* liste sur l'échiquier.
+**Jouer une partie…** joue une partie depuis la position de l'échiquier entre deux moteurs de la bibliothèque, ou entre
+toi et l'un d'eux (voir *Toi* plus bas) (*Blancs* et *Noirs*, `<->` les échange avec leurs pendules), avec une pendule
+pour chacun (des minutes et un incrément en secondes ; *La même pour les deux*, ou une chacun pour un handicap de
+temps), et, si c'est coché, une seconde partie avec les couleurs inversées. Les moteurs sont lancés avec les valeurs
+d'options de la bibliothèque, un moteur WinBoard par l'adaptateur. L'échiquier suit la partie au fil du jeu (revenir en
+arrière arrête de la suivre jusqu'à ce que sa fin soit de nouveau atteinte, ou qu'on clique sur *Revenir au coup en
+cours*), avec les pendules, la recherche du camp au trait et *Arrêter*, qui termine la partie sans résultat. Une partie
+se termine par mat, pat, matériel insuffisant, la règle des 50 coups, une triple répétition, un coup illégal, un moteur
+qui s'arrête, ou une perte au temps (la pendule accordant 0,1 s pour que le coup arrive). Chaque partie est ajoutée,
+quand elle se termine, à un fichier PGN dans `games/` dans le profil (nommé d'après la date et les moteurs, avec une
+balise `Termination`), que *Ouvrir les parties* liste sur l'échiquier.
 
 Les parties sont jouées par le client de moteurs propre à fastchess-gui, à l'écart de tout tournoi : elles tournent
 pendant qu'un tournoi joue, sans y toucher. Leurs threads (le plus grand nombre des deux moteurs, puisqu'ils jouent à

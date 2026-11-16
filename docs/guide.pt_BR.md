@@ -741,18 +741,18 @@ captura ou um lance de peão tivesse acabado de ser jogado, o que é exato excet
 perto. As tabelas são as do processo do programa: elas não são consultadas enquanto um torneio joga nele.
 
 ### Jogar uma partida a partir de uma posição
-<!-- en: playing-a-game-from-a-position 305b1b4e -->
+<!-- en: playing-a-game-from-a-position cbbcfcd3 -->
 
-**Jogar uma partida…** joga uma partida a partir da posição do tabuleiro entre dois engines da biblioteca (*Brancas*
-e *Pretas*, `<->` os troca junto com os relógios), com um relógio para cada um (minutos e um incremento em segundos;
-*O mesmo para os dois*, ou um para cada, para dar vantagem de tempo), e, se marcado, uma segunda partida com as cores
-invertidas. Os engines são iniciados com os valores de opções da biblioteca, um engine WinBoard pelo adaptador. O
-tabuleiro acompanha a partida enquanto ela é jogada (voltar nela para de acompanhar até chegar de novo ao fim, ou até
-um clique em *Voltar ao lance atual*), com os relógios, a busca do lado que tem a vez e *Parar*, que encerra a
-partida sem resultado. Uma partida termina por mate, afogamento, material insuficiente, a regra dos 50 lances, uma
-tripla repetição, um lance ilegal, um engine que para, ou uma perda por tempo (o relógio concede 0,1 s para o lance
-chegar). Cada partida é adicionada, quando termina, a um arquivo PGN em `games/` no perfil (com o nome da data e dos
-engines, e uma tag `Termination`), que *Abrir as partidas* lista no tabuleiro.
+**Jogar uma partida…** joga uma partida a partir da posição do tabuleiro entre dois engines da biblioteca, ou entre você
+e um deles (veja *Você* mais abaixo) (*Brancas* e *Pretas*, `<->` os troca junto com os relógios), com um relógio para
+cada um (minutos e um incremento em segundos; *O mesmo para os dois*, ou um para cada, para dar vantagem de tempo), e,
+se marcado, uma segunda partida com as cores invertidas. Os engines são iniciados com os valores de opções da
+biblioteca, um engine WinBoard pelo adaptador. O tabuleiro acompanha a partida enquanto ela é jogada (voltar nela para
+de acompanhar até chegar de novo ao fim, ou até um clique em *Voltar ao lance atual*), com os relógios, a busca do lado
+que tem a vez e *Parar*, que encerra a partida sem resultado. Uma partida termina por mate, afogamento, material
+insuficiente, a regra dos 50 lances, uma tripla repetição, um lance ilegal, um engine que para, ou uma perda por tempo
+(o relógio concede 0,1 s para o lance chegar). Cada partida é adicionada, quando termina, a um arquivo PGN em `games/`
+no perfil (com o nome da data e dos engines, e uma tag `Termination`), que *Abrir as partidas* lista no tabuleiro.
 
 As partidas são jogadas pelo próprio cliente de engines do fastchess-gui, à parte de qualquer torneio: elas rodam
 enquanto um torneio é jogado, sem mexer nele. As threads delas (o maior valor entre os dois engines, já que eles jogam

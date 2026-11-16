@@ -756,19 +756,19 @@ dove la regola delle 50 mosse è vicina. Le tabelle sono quelle del processo del
 mentre un torneo vi gioca.
 
 ### Giocare una partita da una posizione
-<!-- en: playing-a-game-from-a-position 305b1b4e -->
+<!-- en: playing-a-game-from-a-position cbbcfcd3 -->
 
-**Gioca una partita…** gioca una partita dalla posizione sulla scacchiera tra due motori della libreria (*Bianco* e
-*Nero*, `<->` li scambia con i loro orologi), con un orologio per ciascuno (minuti e un incremento in secondi; *Lo
-stesso per entrambi*, o uno ciascuno per un handicap di tempo), e, se spuntata, una seconda partita a colori
-invertiti. I motori vengono avviati con i valori delle opzioni della libreria, un motore WinBoard tramite
-l'adattatore. La scacchiera segue la partita mentre viene giocata (tornare indietro smette di seguirla finché non se
-ne raggiunge di nuovo la fine, o si clicca *Torna alla mossa attuale*), con gli orologi, la ricerca del lato che muove
-e *Ferma*, che termina la partita senza risultato. Una partita finisce per matto, stallo, materiale insufficiente,
-regola delle 50 mosse, triplice ripetizione, mossa illegale, un motore che si ferma, o sconfitta per tempo (all'orologio
-sono concessi 0.1 s perché la mossa arrivi). Ogni partita viene aggiunta, quando finisce, a un file PGN in `games/` nel
-profilo (con il nome della data e dei motori, con un tag `Termination`), che *Apri le partite* elenca sulla
-scacchiera.
+**Gioca una partita…** gioca una partita dalla posizione sulla scacchiera tra due motori della libreria, o tra te e uno
+di essi (vedi *Tu* più sotto) (*Bianco* e *Nero*, `<->` li scambia con i loro orologi), con un orologio per ciascuno
+(minuti e un incremento in secondi; *Lo stesso per entrambi*, o uno ciascuno per un handicap di tempo), e, se spuntata,
+una seconda partita a colori invertiti. I motori vengono avviati con i valori delle opzioni della libreria, un motore
+WinBoard tramite l'adattatore. La scacchiera segue la partita mentre viene giocata (tornare indietro smette di seguirla
+finché non se ne raggiunge di nuovo la fine, o si clicca *Torna alla mossa attuale*), con gli orologi, la ricerca del
+lato che muove e *Ferma*, che termina la partita senza risultato. Una partita finisce per matto, stallo, materiale
+insufficiente, regola delle 50 mosse, triplice ripetizione, mossa illegale, un motore che si ferma, o sconfitta per
+tempo (all'orologio sono concessi 0.1 s perché la mossa arrivi). Ogni partita viene aggiunta, quando finisce, a un file
+PGN in `games/` nel profilo (con il nome della data e dei motori, con un tag `Termination`), che *Apri le partite*
+elenca sulla scacchiera.
 
 Le partite sono giocate dal client per motori proprio di fastchess-gui, al di fuori di qualsiasi torneo: si svolgono
 mentre ne gioca uno, senza toccarlo. I loro thread (il maggiore tra quelli dei due motori, perché giocano a turno)

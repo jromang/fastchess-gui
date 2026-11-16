@@ -758,19 +758,19 @@ regla de las 50 jugadas está cerca. Las tablas son las del proceso del programa
 torneo en él.
 
 ### Jugar una partida desde una posición
-<!-- en: playing-a-game-from-a-position 305b1b4e -->
+<!-- en: playing-a-game-from-a-position cbbcfcd3 -->
 
-**Jugar una partida…** juega una partida desde la posición del tablero entre dos motores de la biblioteca (*Blancas*
-y *Negras*; `<->` los intercambia con sus relojes), con un reloj para cada uno (minutos y un incremento en segundos;
-*El mismo para ambos*, o uno para cada uno para dar ventaja de tiempo) y, si está marcado, una segunda partida con
-los colores invertidos. Los motores se arrancan con los valores de opciones de la biblioteca, un motor WinBoard a
-través del adaptador. El tablero sigue la partida a medida que se juega (retroceder en ella deja de seguirla hasta
-que se vuelve a alcanzar su final, o hasta que se hace clic en *Volver a la jugada actual*), con los relojes, la
-búsqueda del bando al que le toca mover y *Detener*, que termina la partida sin resultado. Una partida termina por
-mate, ahogado, material insuficiente, la regla de las 50 jugadas, una triple repetición, una jugada ilegal, un motor
-que se detiene, o una pérdida por tiempo (con 0,1 s de margen en el reloj para que llegue la jugada). Cada partida se
-añade, al terminar, a un archivo PGN en `games/` en el perfil (con el nombre de la fecha y de los motores, y una
-etiqueta `Termination`), que *Abrir las partidas* lista en el tablero.
+**Jugar una partida…** juega una partida desde la posición del tablero entre dos motores de la biblioteca, o entre tú y
+uno de ellos (ver *Tú* más abajo) (*Blancas* y *Negras*; `<->` los intercambia con sus relojes), con un reloj para cada
+uno (minutos y un incremento en segundos; *El mismo para ambos*, o uno para cada uno para dar ventaja de tiempo) y, si
+está marcado, una segunda partida con los colores invertidos. Los motores se arrancan con los valores de opciones de la
+biblioteca, un motor WinBoard a través del adaptador. El tablero sigue la partida a medida que se juega (retroceder en
+ella deja de seguirla hasta que se vuelve a alcanzar su final, o hasta que se hace clic en *Volver a la jugada actual*),
+con los relojes, la búsqueda del bando al que le toca mover y *Detener*, que termina la partida sin resultado. Una
+partida termina por mate, ahogado, material insuficiente, la regla de las 50 jugadas, una triple repetición, una jugada
+ilegal, un motor que se detiene, o una pérdida por tiempo (con 0,1 s de margen en el reloj para que llegue la jugada).
+Cada partida se añade, al terminar, a un archivo PGN en `games/` en el perfil (con el nombre de la fecha y de los
+motores, y una etiqueta `Termination`), que *Abrir las partidas* lista en el tablero.
 
 Las partidas las juega el cliente de motores propio de fastchess-gui, al margen de cualquier torneo: se juegan
 mientras se juega uno, sin interferir con él. Sus hilos (los del motor que más tiene de los dos, ya que juegan por
