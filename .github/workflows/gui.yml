@@ -311,14 +311,13 @@ jobs:
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then version="${GITHUB_REF_NAME}"; else version="${GITHUB_SHA::7}"; fi
           macos="fastchess-gui-${version}-macos-universal"
           mkdir -p "dist/${macos}"
-          cp -R build/fastchess-gui.app build/fastchess "dist/${macos}/"
-          cp README.md LICENSE docs/guide*.md gui/assets/ATTRIBUTION.md "dist/${macos}/"
-          mkdir -p "dist/${macos}/screenshots" && cp docs/screenshots/appearance.png "dist/${macos}/screenshots/"
+          # The application alone, as on Linux and Windows: it carries fastchess built in, and the guide (F1).
+          cp -R build/fastchess-gui.app "dist/${macos}/"
+          cp README.md LICENSE gui/assets/ATTRIBUTION.md "dist/${macos}/"
           cp -R gui/assets/licenses "dist/${macos}/"
           # Not signed by a developer (that needs an Apple Developer account): signed ad hoc, the whole bundle
           # sealed, which Apple silicon requires. Gatekeeper still asks, at the first start, to allow it.
           codesign --force --deep --sign - "dist/${macos}/fastchess-gui.app"
-          codesign --force --sign - "dist/${macos}/fastchess"
           codesign --verify --deep --strict "dist/${macos}/fastchess-gui.app"
           # ditto keeps the bundle as it is: permissions, signature, extended attributes.
           ditto -c -k --keepParent "dist/${macos}" "dist/${macos}.zip"
@@ -346,14 +345,14 @@ jobs:
       - name: Package
         run: |
           version="${GITHUB_REF_NAME}"
-          docs="README.md LICENSE docs/guide*.md gui/assets/ATTRIBUTION.md"
+          # The guide is built into the program (F1): its Markdown files are not shipped.
+          docs="README.md LICENSE gui/assets/ATTRIBUTION.md"
 
           linux="fastchess-gui-${version}-linux-x86_64"
           mkdir -p "dist/${linux}"
           cp artifacts/linux/fastchess-gui "dist/${linux}/"
           chmod +x "dist/${linux}/fastchess-gui"
           cp ${docs} "dist/${linux}/"
-          mkdir -p "dist/${linux}/screenshots" && cp docs/screenshots/appearance.png "dist/${linux}/screenshots/"
           cp -r gui/assets/licenses "dist/${linux}/"
           tar -C dist -czf "dist/${linux}.tar.gz" "${linux}"
 
@@ -361,7 +360,6 @@ jobs:
           mkdir -p "dist/${windows}"
           cp artifacts/windows/fastchess-gui.exe "dist/${windows}/"
           cp ${docs} "dist/${windows}/"
-          mkdir -p "dist/${windows}/screenshots" && cp docs/screenshots/appearance.png "dist/${windows}/screenshots/"
           cp -r gui/assets/licenses "dist/${windows}/"
           (cd dist && zip -qr "${windows}.zip" "${windows}")
 
