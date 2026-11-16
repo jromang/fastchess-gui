@@ -1720,7 +1720,8 @@ void App::drawBoardMoves(float height) {
     }
     updateBoardTablebase();
 
-    const float strip = b.ply > 0 && b.ply <= total ? thisMoveHeight() : 0.0f;
+    // This move under the moves and the table; the review is about the whole game.
+    const float strip = b.ply > 0 && b.ply <= total && b.game_tab != 3 ? thisMoveHeight() : 0.0f;
     ImGui::BeginChild("##board_moves", ImVec2(0, -strip), ImGuiChildFlags_Borders);
     std::optional<ui::TopicRegion> moves_region(
         std::in_place, b.tree.variations.empty() ? guide::topics::BoardMoves : guide::topics::Variations);
@@ -2357,7 +2358,9 @@ void App::drawBoardReview() {
     if (moments.empty())
         ImGui::TextDisabled("%s", TR("No mistake: the game was lost little by little, or not at all."));
     const auto pawns = [](double v) {
-        return std::fabs(v) >= MATE_PAWNS * 0.99 ? std::string(v > 0 ? "+M" : "-M") : fmt::format("{:+.2f}", v);
+        if (std::fabs(v) >= MATE_PAWNS * 0.99) return std::string(v > 0 ? "+M" : "-M");
+        const double r = std::round(v * 100.0) / 100.0;
+        return r == 0.0 ? std::string("0.00") : fmt::format("{:+.2f}", r);
     };
     const auto best_of = [&](int ply) -> std::string {
         if (ply <= 0 || static_cast<std::size_t>(ply - 1) >= review.positions.size()) return {};
