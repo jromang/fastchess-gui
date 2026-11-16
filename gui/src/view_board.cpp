@@ -93,9 +93,15 @@ ImU32 analysisColour(std::size_t index) {
 
 // A player's colour: a white or a black disc, whatever the theme.
 void playerDot(ImDrawList* dl, ImVec2 c, float r, chess::Color side) {
-    const bool white = side == chess::Color::WHITE;
-    dl->AddCircleFilled(c, r, white ? IM_COL32(246, 247, 249, 255) : IM_COL32(24, 26, 31, 255));
-    dl->AddCircle(c, r, white ? IM_COL32(70, 76, 88, 255) : IM_COL32(150, 156, 168, 255), 0, px(1.5f));
+    // In the dark theme, Black's disc a little lighter than the page, or it would read as an empty ring.
+    const bool white = side == chess::Color::WHITE, dark = ui::currentTheme() == ui::Theme::Dark;
+    const ImU32 fill = white  ? IM_COL32(246, 247, 249, 255)
+                       : dark ? IM_COL32(62, 67, 77, 255)
+                              : IM_COL32(24, 26, 31, 255);
+    const ImU32 edge = white ? (dark ? IM_COL32(246, 247, 249, 255) : IM_COL32(70, 76, 88, 255))
+                             : (dark ? IM_COL32(120, 127, 140, 255) : IM_COL32(24, 26, 31, 255));
+    dl->AddCircleFilled(c, r, fill);
+    dl->AddCircle(c, r, edge, 0, px(1.5f));
 }
 
 }  // namespace

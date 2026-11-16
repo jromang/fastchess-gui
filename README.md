@@ -18,7 +18,7 @@ The tournament engine is fastchess itself, running inside the application (no co
 scraping): the games, the statistics and the SPRT are exactly those of the fastchess command line tool, which
 this repository still builds unchanged.
 
-![The Board page in 3D: a game of Capablanca analysed by Gaia, its three best lines as arrows](docs/screenshots/board-3d.png)
+![The Board page in 3D: a game of Capablanca analysed by Gaia and Stockfish, its graph beside, Gaia's three best lines as arrows](docs/screenshots/board-3d.png)
 
 ## Features
 
