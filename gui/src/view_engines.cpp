@@ -13,6 +13,7 @@
 #include <tour/rating_import.hpp>
 
 #include "app.hpp"
+#include "program_format.hpp"
 #include "engine_changes.hpp"
 #include "i18n.hpp"
 #include "ui.hpp"
@@ -160,6 +161,12 @@ void App::renameEngine(int index, const std::string& name) {
     for (auto& n : suite_setup_.engines) suite |= follow(n);
     if (suite) saveSuiteSetup();
     if (engine_marked_.erase(old)) engine_marked_.insert(now);
+    // The machines' lists of engines know them by name too.
+    bool machines = false;
+    for (auto& m : machines_) {
+        for (auto& there : m.engines) machines |= follow(there.engine);
+    }
+    if (machines) saveMachines();
 }
 
 void App::removeEngines(const std::vector<std::string>& names) {
@@ -209,6 +216,14 @@ void App::addEngine(const std::string& path) {
 }
 
 void App::refreshPrograms() {
+    // The engines on machines: their programs' SHA-256 there, in the background.
+    {
+        std::vector<std::string> remote;
+        for (const auto& e : engines_) {
+            if (!e.machine.empty() && !e.remote_sha.empty()) remote.push_back(e.name);
+        }
+        if (!remote.empty()) hashRemotePrograms(std::move(remote));
+    }
     // What the file system tells at once; the CRCs (seconds for hundreds of large engines after an import) are read
     // in the background, see pollFingerprints.
     std::vector<std::string> programs;
@@ -277,6 +292,11 @@ void App::startProbe(int index) {
 
 void App::launchProbe(int index) {
     std::erase(probe_queue_, engines_[index].name);
+    if (!remoteReady(engines_[index], [this, name = engines_[index].name] {
+            if (const auto i = engineIndex(name); i >= 0) startProbe(i);
+        })) {
+        return;
+    }
     probe_index_       = index;
     probe_entry_       = engines_[index];
     probe_again_       = false;
@@ -529,6 +549,7 @@ void App::applyProbe() {
     e.read_by = FCG_VERSION;
 
     if (!result.ok) {
+        if (auto why = remoteFailure(e); !why.empty()) result.error = std::move(why);  // its machine's, not fastchess'
         probe_message_ = trf("Failed: {}", result.error);
         // A start waited for it: it would play an engine that cannot be read. The queue goes on with its next
         // tournament, at the next frame (this may be called while a start is asked for).
@@ -575,6 +596,12 @@ void App::applyProbe() {
     e.protocol  = result.protocol;
     e.program   = result.program;
     refreshProgram(e);
+    // On a machine: the program read is the one there now, its SHA-256 read there for the next time.
+    if (!e.machine.empty()) {
+        e.remote_sha.clear();
+        e.program_state = ProgramState::Unknown;
+        hashRemotePrograms({e.name});
+    }
 
     e.id_name     = result.id_name;
     e.id_author   = result.id_author;
@@ -620,12 +647,36 @@ void App::drawEngines() {
     const float list_w = ui::paneWidth(setup_.panes["engines"], page, px(260), px(520));
     ImGui::BeginChild("##engine_list", ImVec2(list_w, 0), ImGuiChildFlags_Borders);
 
-    if (ImGui::Button(TR("Add…"))) {
+    // A program of this computer; with machines, a menu that offers theirs too.
+    const auto addLocal = [&] {
 #ifdef _WIN32
         dialogs_.openFile(Dialogs::Purpose::AddEngine, {{TR("Programs"), "exe"}, {TR("All files"), "*"}});
 #else
         dialogs_.openFile(Dialogs::Purpose::AddEngine);
 #endif
+    };
+    if (ImGui::Button(machines_.empty() ? TR("Add…") : TR("Add… ▾"))) {
+        if (machines_.empty())
+            addLocal();
+        else
+            ImGui::OpenPopup("add_menu");
+    }
+    if (ImGui::BeginPopup("add_menu")) {
+        if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
+        if (ImGui::MenuItem(TR("A program of this computer…"), "Enter")) {
+            ImGui::CloseCurrentPopup();
+            addLocal();
+        }
+        ImGui::SeparatorText(TR("On a machine"));
+        for (const auto& m : machines_) {
+            const auto name = m.name.empty() ? m.host : m.name;
+            const auto item = trf("A program on {}…", name) + "##" + m.id;
+            if (ImGui::MenuItem(item.c_str(), m.system.checked.empty() ? TR("not tested")
+                                                                       : describeSystem(m.system).c_str())) {
+                openRemotePicker(RemotePicker::Purpose::AddEngine, m.id);
+            }
+        }
+        ImGui::EndPopup();
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("%s", TR("An engine's program, UCI or WinBoard: it is started once to read its name, author "
@@ -639,6 +690,10 @@ void App::drawEngines() {
         if (ImGui::MenuItem(TR("An engine list…"))) askEngineList();
         ImGui::TextDisabled("%s", TR("ChessGUI (ChsGUI_Eng.TXT), cutechess or Banksia (engines.json), Arena…"));
         if (ImGui::MenuItem(TR("Every engine of a folder…"))) dialogs_.openFolder(Dialogs::Purpose::ImportEngineFolder);
+        for (const auto& m : machines_) {
+            const auto item = trf("Every engine of a folder on {}…", m.name.empty() ? m.host : m.name) + "##" + m.id;
+            if (ImGui::MenuItem(item.c_str())) openRemotePicker(RemotePicker::Purpose::ImportFolder, m.id);
+        }
         if (const auto& folder = engineFolder(); !folder.empty()) {
             if (ImGui::MenuItem(TR("Refresh: the new engines of the folder"))) refreshEngineFolder();
             ImGui::TextDisabled("%s", folder.string().c_str());
@@ -845,9 +900,11 @@ void App::drawEngines() {
     int inactive_asked = -1;  // from the right click's menu: 1 inactive, 0 active again
 
     // Only the engines scroll: the buttons above and the legend below stay in sight.
-    const char* legend = TR(
-        "✓ works · ! problem · Δ program changed · ↔ WinBoard · grey: inactive · Ctrl or Shift click: several · right "
-        "click: more");
+    const char* legend = machines_.empty()
+                             ? TR("✓ works · ! problem · Δ program changed · ↔ WinBoard · grey: inactive · Ctrl or Shift "
+                                  "click: several · right click: more")
+                             : TR("✓ works · ! problem · Δ program changed · ↔ WinBoard · then a machine's name: runs "
+                                  "there · grey: inactive · Ctrl or Shift click: several · right click: more");
     const float legend_h = engines_.empty()
                                ? 0.0f
                                : ImGui::CalcTextSize(legend, nullptr, false, ImGui::GetContentRegionAvail().x).y +
@@ -889,6 +946,22 @@ void App::drawEngines() {
             if (e.inactive) ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
             const bool clicked = ImGui::Selectable(label.c_str(), selected_engine_ == i || marked);
             if (e.inactive) ImGui::PopStyleColor();
+            // An engine that runs on a machine: the machine's name after its own.
+            if (!e.machine.empty()) {
+                const auto* m     = machineById(e.machine);
+                const auto where  = m ? (m->name.empty() ? m->host : m->name) : std::string("?");
+                const float size  = ImGui::GetFontSize();
+                const ImVec2 min  = ImGui::GetItemRectMin();
+                const float x     = min.x + ImGui::CalcTextSize(fmt::format("{}{}", e.name, tag).c_str()).x + size * 0.6f;
+                const float mid   = min.y + ImGui::GetTextLineHeight() * 0.5f;
+                auto* dl          = ImGui::GetWindowDrawList();
+                ui::drawIcon(dl, ui::Icon::Server, ImVec2(x + size * 0.4f, mid), size * 0.8f, ui::MUTED);
+                dl->AddText(ImVec2(x + size * 0.95f, min.y), ui::MUTED, where.c_str());
+                if (ImGui::IsItemHovered()) {
+                    const auto line = machineLine(e.machine);
+                    ImGui::SetTooltip("%s", trf("Runs on {}: {}", where, line.text).c_str());
+                }
+            }
             if (clicked) {
                 const auto& io = ImGui::GetIO();
                 if (io.KeyCtrl) {
@@ -1002,7 +1075,10 @@ void App::drawEngines() {
     auto& e            = engines_[selected_engine_];
     bool changed       = false;
     const bool in_use  = engineInUse(e.name);
-    const float label  = 150.0f * ImGui::GetFontSize() / 16.0f;
+    // As wide as its longest label, an engine on a machine's included, so that the card does not move from one engine
+    // to the other.
+    const float label  = std::max(150.0f * ImGui::GetFontSize() / 16.0f,
+                                  ImGui::CalcTextSize(TR("Working directory there")).x + ImGui::GetStyle().ItemSpacing.x * 2);
     const float browse = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 4;
 
     // The engine's console, in place of its settings while it is shown.
@@ -1055,21 +1131,39 @@ void App::drawEngines() {
         }
     }
 
-    ui::label(TR("Program"), label);
+    // Where it runs: this computer, or a machine (its program and folder are then paths there).
+    changed |= drawRunsOn(e, label);
+    const bool remote = !e.machine.empty();
+    const auto* there = remote ? machineById(e.machine) : nullptr;
+
+    ui::label(remote ? TR("Program there") : TR("Program"), label);
     changed |= editText("##cmd", e.cmd, ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x);
     ImGui::SameLine();
-    if (ImGui::Button("…##cmd_browse")) dialogs_.openFile(Dialogs::Purpose::EngineCommand, {}, e.cmd);
+    if (ImGui::Button("…##cmd_browse")) {
+        if (remote)
+            openRemotePicker(RemotePicker::Purpose::Program, e.machine, e.name, {}, e.cmd);
+        else
+            dialogs_.openFile(Dialogs::Purpose::EngineCommand, {}, e.cmd);
+    }
 
     ui::label(TR("Arguments"), label);
     changed |= editText("##args", e.args);
 
-    ui::label(TR("Working directory"), label);
+    ui::label(remote ? TR("Working directory there") : TR("Working directory"), label);
     changed |= editText("##dir", e.dir, ImGui::GetContentRegionAvail().x - browse - ImGui::GetStyle().ItemSpacing.x);
     ImGui::SameLine();
-    if (ImGui::Button("…##dir_browse")) dialogs_.openFolder(Dialogs::Purpose::EngineDir, engineWorkingDir(e));
+    if (ImGui::Button("…##dir_browse")) {
+        if (remote)
+            openRemotePicker(RemotePicker::Purpose::Folder, e.machine, e.name, {}, e.dir.empty() ? remoteParent(e.cmd) : e.dir);
+        else
+            dialogs_.openFolder(Dialogs::Purpose::EngineDir, engineWorkingDir(e));
+    }
     if (e.dir.empty()) {
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + label);
-        ImGui::TextDisabled("%s", TR("Empty: the program's directory."));
+        ImGui::TextDisabled("%s", remote && there ? trf("Empty: the program's folder on {}.",
+                                                        there->name.empty() ? there->host : there->name)
+                                                        .c_str()
+                                                  : TR("Empty: the program's directory."));
     }
     if (const auto problem = programProblem(e); !problem.empty()) {
         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + label);
@@ -1432,7 +1526,11 @@ void App::drawEngines() {
                 ImGui::SameLine();
                 if (ImGui::Button("…##browse")) {
                     option_browse_ = opt.name;
-                    if (path == OptionPath::File)
+                    if (!e.machine.empty())  // a file or folder there
+                        openRemotePicker(path == OptionPath::File ? RemotePicker::Purpose::Option
+                                                                  : RemotePicker::Purpose::OptionFolder,
+                                         e.machine, e.name, opt.name, value);
+                    else if (path == OptionPath::File)
                         dialogs_.openFile(Dialogs::Purpose::EngineOption, {}, value);
                     else
                         dialogs_.openFolder(Dialogs::Purpose::EngineOption, value);
@@ -1482,6 +1580,7 @@ void App::drawEngines() {
 
     if (changed) {
         refreshProgram(e);
+        mirrorOnMachine(e);  // an engine on a machine: its program in the machine's list too
         engines_save_due_ = std::chrono::steady_clock::now() + std::chrono::seconds(1);
     }
 
@@ -1587,6 +1686,11 @@ bool App::engineInUse(const std::string& name) const {
 
 void App::startCheck(int index) {
     if (check_.valid() || pending_start_ || index < 0 || index >= static_cast<int>(engines_.size())) return;
+    if (!remoteReady(engines_[index], [this, name = engines_[index].name] {
+            if (const auto i = engineIndex(name); i >= 0) startCheck(i);
+        })) {
+        return;
+    }
     check_index_       = index;
     const auto entry   = engines_[index];
     check_interrupted_ = std::make_shared<std::atomic_bool>(false);
@@ -1604,7 +1708,12 @@ void App::startQuickTest(int index) {
     for (const auto& r : runs_) {
         if (r.quick_test && r.run->running()) return;
     }
-    const auto name                = engines_[index].name;
+    const auto name = engines_[index].name;
+    if (!remoteReady(engines_[index], [this, name] {
+            if (const auto i = engineIndex(name); i >= 0) startQuickTest(i);
+        })) {
+        return;
+    }
     std::vector<std::string> needs = {name};
     if (!quick_test_opponent_.empty()) needs.push_back(quick_test_opponent_);
     if (startAfterReads("test:" + name, std::move(needs), {}, quickTestLater(name))) return;
@@ -1698,7 +1807,11 @@ void App::pollCheck() {
         return;
     }
 
-    auto& e         = engines_[index];
+    auto& e = engines_[index];
+    if (!result.ok) {
+        if (auto why = remoteFailure(e); !why.empty()) result.message = std::move(why);
+    }
+    if (result.round_trip_ms > 0) e.round_trip_ms = result.round_trip_ms;
     e.check_ok      = result.ok ? 1 : 0;
     e.check_message = result.message;
     e.check_report  = result.report;

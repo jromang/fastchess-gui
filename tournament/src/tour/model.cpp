@@ -21,6 +21,7 @@ void to_json(nlohmann::json& j, const Participant& p) {
     }
     if (p.gpu) j["gpu"] = true;
     if (p.team != 0) j["team"] = p.team;
+    if (p.remote) j["remote"] = *p.remote;
 }
 
 void from_json(const nlohmann::json& j, Participant& p) {
@@ -34,6 +35,26 @@ void from_json(const nlohmann::json& j, Participant& p) {
     p.book_depth = j.value("book_depth", 0);
     p.gpu        = j.value("gpu", false);
     p.team       = j.value("team", 0) == 1 ? 1 : 0;
+    if (const auto it = j.find("remote"); it != j.end() && it->is_object()) {
+        auto r = it->get<RemoteEngine>();
+        if (!r.machine.empty() && !r.program.empty()) p.remote = std::move(r);
+    }
+}
+
+void to_json(nlohmann::json& j, const RemoteEngine& r) {
+    j = {{"machine", r.machine}, {"program", r.program}, {"args", r.args}, {"dir", r.dir}};
+}
+
+void from_json(const nlohmann::json& j, RemoteEngine& r) {
+    r         = RemoteEngine{};
+    r.machine = j.value("machine", std::string());
+    r.program = j.value("program", std::string());
+    if (const auto args = j.find("args"); args != j.end() && args->is_array()) {
+        for (const auto& a : *args) {
+            if (a.is_string()) r.args.push_back(a.get<std::string>());
+        }
+    }
+    r.dir = j.value("dir", std::string());
 }
 
 FileFingerprint fingerprint(const std::string& file) {

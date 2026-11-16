@@ -1721,6 +1721,48 @@ Eine Maschine braucht einen OpenSSH-Server (Linux, macOS, BSD; Windows 10 1809 u
 und SFTP, beides standardmäßig vorhanden. Befehle laufen über `sh`, welche Shell der Benutzer auch hat (fish oder csh
 sind kein Problem), und unter Windows über cmd, die Standard-Shell seines OpenSSH-Servers.
 
+### Von diesem Computer aus gespielte Engines
+<!-- en: engines-played-from-this-computer 8c14dc16 -->
+
+Eine Engine der Bibliothek kann auf einer Maschine laufen, während das Turnier hier spielt: eine GPU-Engine auf dem
+GPU-Rechner, eine für ein anderes System gebaute Engine, eine Maschine, die einer einzigen Engine vorbehalten ist. Auf
+ihrer Karte wählt *Läuft auf* zwischen *Dieser Computer* und einer Maschine; *Programm dort* und *Arbeitsverzeichnis
+dort* sind dann Pfade auf der Maschine (leer: der Ordner des Programms dort), und die Knöpfe *…*, auch die der Optionen,
+die eine Datei angeben, durchsuchen die Dateien der Maschine. Sobald es Maschinen gibt, bietet *Hinzufügen…* auch *Ein
+Programm auf \<machine\>…* an, *Importieren…* auch *Alle Engines eines Ordners auf \<machine\>…*, und *Engine
+hinzufügen…* der Maschine bietet *Ein Programm dort…* an. Die Engine wird wie eine Engine dieses Computers gelesen,
+geprüft und in der Konsole, im Schnelltest und in Turnieren gespielt. Ihr Pfad ist zugleich der in der Engine-Liste der
+Maschine, und der SHA-256 ihres Programms dort zeigt, wann sie neu gebaut wurde (Δ, neu gelesen).
+
+Die Maschine muss einmal getestet worden sein (*Verbindung testen*), damit ihr Host-Schlüssel bekannt ist: Eine Engine
+verbindet sich nie mit einer Maschine, deren Schlüssel nicht gezeigt und für vertrauenswürdig erklärt wurde. Die
+Passphrase des Schlüssels, falls er eine hat, wird einmal pro Sitzung abgefragt, vor dem ersten Lesen oder dem Start,
+und im Speicher behalten: Der Prozess des Turniers bekommt sie vom Fenster und behält sie, damit das Turnier
+weiterspielt, nachdem das Fenster geschlossen wurde. `--run` in einem Terminal fragt nicht danach: Verwende dort den
+SSH-Agent.
+
+Jede Engine wird über ein Relais gestartet, `fastchess-gui --remote-engine <key>`, das der Prozess bedient, der sie
+spielt: eine SSH-Verbindung zur Maschine für höchstens zehn Engines (die `MaxSessions` eines OpenSSH-Servers), jede
+Engine aus ihrem Ordner dort gestartet. Eine Engine, deren Relais wegfällt, wird auch dort beendet, über ihre
+Prozess-ID, wenn sie nicht von selbst endet (auf einer Linux- oder macOS-Maschine; auf einer Windows-Maschine wird ihr
+Kanal geschlossen).
+
+*Prüfen* misst die Umlaufzeit zur Maschine, den Median einiger `isready`. Sie wird auf die Uhr angerechnet: Die
+Zusammenfassung der Einrichtung warnt, wenn sie mehr als 5 % des Inkrements beträgt, oder ohne Inkrement der Zeit für
+einen Zug, mit *Toleranz auf … ms setzen* (das Doppelte der Umlaufzeit). Eine nie getestete Maschine verhindert den
+Start, ebenso ein Turnier, das auf einer anderen Maschine läuft als der der Engine (eines, das auf der Maschine der
+Engine läuft, spielt sie dort als seine eigene Engine).
+
+Während das Turnier spielt, hat die Startseite unter den Kernen eine Zeile *Maschinen*: jede Maschine, verbunden und was
+dort spielt, oder seit wann sie nicht antwortet. Eine Maschine, die nicht antwortet, ist ein Eintrag unter *Zu
+erledigen*: Die Partien ihrer Engines werden zurückgestellt und erneut versucht, die anderen gehen weiter, mit *Erneut
+versuchen* und *\<machine\> testen*. Eine Partie, die eine Engine verloren hat, weil ihre Verbindung abbrach (ihr Ende
+als Verbindungsverlust), wird annulliert und neu gespielt und mit ihrem Grund ins Journal geschrieben
+(`connection to its machine lost: <machine>`); *Zustand* zählt sie gesondert, nicht als Absturz der Engine. Bei einer
+Maschine, deren Verbindung innerhalb einer Stunde mehr als dreimal abbricht, werden ihre Engines zurückgestellt. Die
+Kerne, der Speicher und die GPUs dieses Computers zählen die Engines auf Maschinen nicht mit, nur ihre Relais; das
+Budget der Maschine, das sich ihre eigenen Turniere teilen, zählt sie noch nicht.
+
 ### Eine Windows-Maschine
 <!-- en: a-windows-machine 58ae029a -->
 

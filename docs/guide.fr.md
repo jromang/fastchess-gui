@@ -1707,6 +1707,46 @@ Une machine a besoin d'un serveur OpenSSH (Linux, macOS, BSD ; Windows 10 1809 e
 et SFTP, tous deux présents par défaut. Les commandes passent par `sh` quel que soit le shell de l'utilisateur (fish ou
 csh conviennent), et par cmd sous Windows, le shell par défaut de son serveur OpenSSH.
 
+### Moteurs joués depuis cet ordinateur
+<!-- en: engines-played-from-this-computer 8c14dc16 -->
+
+Un moteur de la bibliothèque peut tourner sur une machine pendant que le tournoi joue ici : un moteur GPU sur la machine
+à GPU, un moteur compilé pour un autre système, une machine réservée à un moteur. Sur sa carte, *Tourne sur* choisit
+*Cet ordinateur* ou une machine ; *Programme là-bas* et *Dossier de travail là-bas* sont alors des chemins sur la
+machine (vide : le dossier du programme là-bas), et les boutons *…*, ceux des options qui nomment un fichier compris,
+parcourent les fichiers de la machine. Dès qu'il y a des machines, *Ajouter…* propose *Un programme sur \<machine\>…*,
+*Importer…* propose *Tous les moteurs d'un dossier sur \<machine\>…*, et *Ajouter un moteur…* de la machine propose *Un
+programme là-bas…*. Le moteur est lu, vérifié, et joué dans la console, le test rapide et les tournois comme l'est un
+moteur de cet ordinateur. Son chemin est aussi celui de la liste des moteurs de la machine, et le SHA-256 de son
+programme là-bas dit quand il a été recompilé (Δ, relu).
+
+La machine doit avoir été testée une fois (*Tester la connexion*), pour que sa clé d'hôte soit connue : un moteur ne se
+connecte jamais à une machine dont la clé n'a pas été montrée et acceptée. La phrase de passe de la clé, si elle en a
+une, est demandée une fois par session, avant la première lecture ou le lancement, et gardée en mémoire : le processus
+du tournoi la reçoit de la fenêtre et la garde, pour que le tournoi continue de jouer une fois la fenêtre fermée.
+`--run` dans un terminal ne la demande pas : là, utilise l'agent SSH.
+
+Chaque moteur est lancé par un relais, `fastchess-gui --remote-engine <key>`, que sert le processus qui le fait jouer :
+une connexion SSH à la machine pour dix moteurs au plus (le `MaxSessions` d'un serveur OpenSSH), chaque moteur étant
+lancé depuis son dossier là-bas. Un moteur dont le relais disparaît est arrêté là-bas aussi, par son identifiant de
+processus, quand il ne s'arrête pas de lui-même (sur une machine Linux ou macOS ; sur une machine Windows, son canal est
+fermé).
+
+*Vérifier* mesure l'aller-retour jusqu'à la machine, la médiane de quelques `isready`. La pendule le compte : le résumé
+de la configuration avertit quand il prend plus de 5 % de l'incrément, ou du temps dont dispose un coup sans incrément,
+avec *Mettre une marge de … ms* (deux fois l'aller-retour). Une machine jamais testée arrête le lancement, de même qu'un
+tournoi qui joue sur une autre machine que celle du moteur (un tournoi qui joue sur la machine du moteur l'y fait jouer
+comme son propre moteur).
+
+Pendant que le tournoi joue, la page d'accueil a une ligne *Machines* sous les cœurs : chaque machine, connectée et ce
+qui y joue, ou depuis quand elle ne répond pas. Une machine qui ne répond pas fait une seule entrée sous *À traiter* :
+les parties de ses moteurs sont mises de côté et réessayées, les autres continuent, avec *Réessayer* et *Tester
+\<machine\>*. Une partie qu'un moteur a perdue parce que sa connexion s'est rompue (sa fin étant une déconnexion) est
+annulée et rejouée, écrite dans le journal avec sa raison (`connection to its machine lost: <machine>`) ; *Santé* la
+compte à part, pas comme un plantage du moteur. Une machine coupée plus de trois fois en une heure voit ses moteurs mis
+de côté. Les cœurs, la mémoire et les GPU de cet ordinateur ne comptent pas les moteurs sur des machines, seulement
+leurs relais ; le budget de la machine, que partagent ses propres tournois, ne les compte pas encore.
+
 ### Une machine Windows
 <!-- en: a-windows-machine 58ae029a -->
 

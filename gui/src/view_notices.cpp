@@ -37,6 +37,8 @@ void App::drawSetupNotices(std::vector<Notice> notices, const char* id) {
                 case Fix::Kind::LowerParticipantThreads:
                 case Fix::Kind::LowerCommonThreads:
                 case Fix::Kind::LowerTablebasePieces:
+                case Fix::Kind::SetRunOn:
+                case Fix::Kind::SetMargin:
                     return run_->running();
                 case Fix::Kind::LocateProgram:
                 case Fix::Kind::LocateDir:
@@ -170,6 +172,22 @@ void App::applyFix(const Fix& fix) {
             break;
         case Fix::Kind::CopyToMachine:
             offerEngineCopy(fix.path, fix.engine);
+            break;
+        case Fix::Kind::TestMachine:
+            startMachineJob(fix.path, MachineJob::Kind::Test);
+            break;
+        case Fix::Kind::SetRunOn:
+            setup_.machine = fix.path;
+            saveSetupSoon();
+            break;
+        case Fix::Kind::SetMargin:
+            setup_.tc_margin_ms = fix.value;
+            saveSetupSoon();
+            break;
+        case Fix::Kind::EnterPassphrase:
+            passphrase_machine_ = fix.path;
+            passphrase_then_    = [] {};  // only kept
+            open_passphrase_    = true;
             break;
     }
 }

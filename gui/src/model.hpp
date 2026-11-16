@@ -57,9 +57,21 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ProgramChanges, when, id_name_be
 
 struct EngineEntry {
     std::string name;  // unique, also the name fastchess and the PGN use
-    std::string cmd;   // absolute path to the binary
+    std::string cmd;   // absolute path to the binary (on its machine, for an engine that runs on one)
     std::string args;
     std::string dir;  // working directory, empty = the binary's directory
+    // The machine it runs on (Settings > Machines; machines.hpp), by its id: `cmd` and `dir` are then the program and
+    // the folder there, mirrored in the machine's list of engines, and it is started through the engine hub of the
+    // process that plays it (engine_hub.hpp). Empty: this computer. Saved only when set.
+    std::string machine;
+    // This computer's program and folder while it runs on a machine: for when it comes back here, and to copy or
+    // compare its build. Saved only when set.
+    std::string local_cmd;
+    std::string local_dir;
+    // On a machine: the SHA-256 of the program there when it was last read (another one there: it was rebuilt), and
+    // the round trip to the machine as the last check measured it (milliseconds). Saved only when set.
+    std::string remote_sha;
+    double round_trip_ms = 0;
     bool restart = false;
     std::string protocol;  // "uci", "xboard" (WinBoard), empty = not known yet: found out by the next probe
 
@@ -164,6 +176,11 @@ void to_json(BasicJsonType& nlohmann_json_j, const EngineEntry& nlohmann_json_t)
     if (nlohmann_json_t.read_from.size > 0) nlohmann_json_j["read_from"] = nlohmann_json_t.read_from;
     if (nlohmann_json_t.changes) nlohmann_json_j["changes"] = *nlohmann_json_t.changes;
     if (nlohmann_json_t.gpu) nlohmann_json_j["gpu"] = true;
+    if (!nlohmann_json_t.machine.empty()) nlohmann_json_j["machine"] = nlohmann_json_t.machine;
+    if (!nlohmann_json_t.local_cmd.empty()) nlohmann_json_j["local_cmd"] = nlohmann_json_t.local_cmd;
+    if (!nlohmann_json_t.local_dir.empty()) nlohmann_json_j["local_dir"] = nlohmann_json_t.local_dir;
+    if (!nlohmann_json_t.remote_sha.empty()) nlohmann_json_j["remote_sha"] = nlohmann_json_t.remote_sha;
+    if (nlohmann_json_t.round_trip_ms > 0) nlohmann_json_j["round_trip_ms"] = nlohmann_json_t.round_trip_ms;
 }
 template <typename BasicJsonType,
           nlohmann::detail::enable_if_t<nlohmann::detail::is_basic_json<BasicJsonType>::value, int> = 0>
@@ -175,6 +192,11 @@ void from_json(const BasicJsonType& nlohmann_json_j, EngineEntry& nlohmann_json_
     NLOHMANN_JSON_FROM_WITH_DEFAULT(logo)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(read_from)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(gpu)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(machine)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(local_cmd)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(local_dir)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(remote_sha)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(round_trip_ms)
     if (const auto it = nlohmann_json_j.find("changes"); it != nlohmann_json_j.end() && it->is_object())
         nlohmann_json_t.changes = it->template get<ProgramChanges>();
 }

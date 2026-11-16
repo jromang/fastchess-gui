@@ -9,6 +9,7 @@
 
 #include <tour/budget.hpp>
 
+#include "machines.hpp"
 #include "memory.hpp"
 #include "model.hpp"
 #include "notice.hpp"
@@ -72,6 +73,15 @@ struct BudgetLimit {
 // engine when that Hash is the engine's own.
 [[nodiscard]] Notice memoryNotice(const MatchSetup& setup, const std::vector<EngineEntry>& engines,
                                   const MemoryNeed& need);
+
+// The engines of the setup that run on a machine (their card's Runs on): their machine gone or never tested (an
+// error, with Test), the setup run on another machine (an error: an engine on a machine plays from this computer, or
+// on its own machine), and the round trip to their machine against the clock: a warning above 5 % of the increment,
+// or of the time a move has without one, with Set a margin of twice the round trip; a line for each otherwise.
+[[nodiscard]] std::vector<Notice> remoteNotices(const MatchSetup& setup, const std::vector<EngineEntry>& engines,
+                                                const std::vector<Machine>& machines);
+// The margin a round trip asks for on the clock: twice it, in whole tens of milliseconds.
+[[nodiscard]] int marginFor(double round_trip_ms);
 
 // The setup's opening book, given and not found, with Locate…; nullopt otherwise.
 [[nodiscard]] std::optional<Notice> bookNotice(const MatchSetup& setup);

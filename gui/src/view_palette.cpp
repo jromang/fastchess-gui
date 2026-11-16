@@ -262,6 +262,16 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
     if (!engineFolder().empty())
         add(TR("Refresh: the new engines of the folder"), import, engines_page([this] { refreshEngineFolder(); }));
     add(TR("A rating list, for the reference Elo…"), import, engines_page([this] { openRatingImport(); }));
+    // The engines of a machine, played from this computer.
+    for (const auto& m : machines_) {
+        const auto name = m.name.empty() ? m.host : m.name;
+        add(trf("Add an engine from {}…", name), TR("Engines"), engines_page([this, id = m.id] {
+                openRemotePicker(RemotePicker::Purpose::AddEngine, id);
+            }));
+        add(trf("Every engine of a folder on {}…", name), import, engines_page([this, id = m.id] {
+                openRemotePicker(RemotePicker::Purpose::ImportFolder, id);
+            }));
+    }
     if (const auto unchecked = uncheckedEngines(); !unchecked.empty()) {
         add(trf("Check those not checked ({})", unchecked.size()), TR("Engines"),
             engines_page([this, unchecked] { queueChecks(unchecked); }));

@@ -224,3 +224,17 @@ TEST_CASE("start failures: a participant withdrawn or replaced is forgotten") {
     state->applyEdit(replace);
     CHECK(f.empty());
 }
+
+TEST_CASE("start failures: an engine whose machine keeps breaking off set aside at once, tried again later") {
+    StartFailures failures;
+    const auto now = StartFailures::Clock::now();
+    failures.setAside(4, "Lc0", "the connection to gpu-box broke more than 3 times in an hour", now);
+    const auto e = failures.engine(4);
+    REQUIRE(e);
+    CHECK(e->failed);
+    CHECK(e->error.find("gpu-box") != std::string::npos);
+    CHECK(failures.setAside(now).count(4) == 1);
+    CHECK(failures.tryNow(4, now));  // asked for: tried at once
+    CHECK(failures.started(4));
+    CHECK(failures.empty());
+}

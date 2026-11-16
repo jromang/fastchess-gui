@@ -41,9 +41,13 @@ this repository still builds unchanged.
   it played here, connected again after a cut, its files copied back. Settings installs fastchess-gui there,
   checks the engines' paths, copies an engine missing there (the build for the machine's system and architecture,
   with its folder if it needs one), tells whether the engine there is the same build as here (SHA-256), and
-  pushes the books and tablebases missing.
+  pushes the books and tablebases missing. An engine can also run on a machine while the tournament plays here (a
+  GPU engine on the GPU box): read, checked and played as an engine of this computer, through the program's own SSH
+  connection, its games played again if the connection breaks.
 
 ![Settings > Machines: a Windows PC through its built-in OpenSSH server](docs/screenshots/machines.png)
+
+![An engine that runs on another machine, played from this computer: Runs on gpu-box](docs/screenshots/remote-engine-card.png)
 
 - **Exact resume**: every tournament is a folder with an append-only journal; after a crash, a closed window or
   a power cut it continues with no game lost or played twice.

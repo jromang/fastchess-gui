@@ -48,12 +48,14 @@ struct CheckResult {
     bool ok = false;
     std::string message;  // what was measured, or what went wrong
     std::string report;   // the UCI compliance steps, one per line, with the engine's output after a failed one
+    double round_trip_ms = 0;  // an engine on a machine: the median of isready's answers, the network's share in it
 };
 
 // Starts the engine and sends its options (one it does not have or a value it refuses fails the check), measures how
 // long it takes to answer uciok and isready, lets it think on the initial position and checks that its move is legal;
 // then runs fastchess' UCI compliance steps, its options sent too (not for an engine spoken to in xboard). Blocks for
-// up to the startup timeout plus a few seconds. Failures come with what the engine wrote last, in the report.
+// up to the startup timeout plus a few seconds. Failures come with what the engine wrote last, in the report. An
+// engine on a machine answers isready a few more times, for the round trip to its machine.
 // `interrupted`: as for probeEngine.
 [[nodiscard]] CheckResult checkEngine(const EngineEntry& entry, const std::atomic_bool* interrupted = nullptr);
 
@@ -107,6 +109,21 @@ bool applyFingerprint(EngineEntry& entry, const tour::FileFingerprint& now);
 
 // The working directory fastchess should use for this engine.
 [[nodiscard]] std::string engineWorkingDir(const EngineEntry& entry);
+
+// An engine's arguments as fastchess splits its command line (quotes holding spaces), and back.
+[[nodiscard]] std::vector<std::string> splitArguments(const std::string& args);
+[[nodiscard]] std::string joinArguments(const std::vector<std::string>& args);
+// The engine an engine of the library is on its machine, for the engine hub; nullopt for one of this computer.
+[[nodiscard]] std::optional<tour::RemoteEngine> remoteEngine(const EngineEntry& entry);
+// What starts an engine of the library from this computer, as fastchess takes it: its program, arguments and working
+// folder; for one on a machine, this program as its relay (fastchess-gui --remote-engine <key>), which the engine hub
+// of the process that starts it serves (engine_hub.hpp).
+struct EngineStart {
+    std::string cmd;
+    std::string args;
+    std::string dir;
+};
+[[nodiscard]] EngineStart engineStart(const EngineEntry& entry);
 
 // A string option that holds a file (EvalFile, BookFile) or a folder (SyzygyPath, NalimovPath), told by its name: the
 // option editor offers to browse for it.

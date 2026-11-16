@@ -166,6 +166,10 @@ std::vector<uint64_t> setupHashes(const MatchSetup& setup, const std::vector<Eng
     for (const auto& p : people) {
         const auto* entry = findEngine(engines, p.name);
         if (!entry) continue;
+        if (!entry->machine.empty()) {
+            hashes.push_back(0);  // its hash table is on its machine
+            continue;
+        }
         // As buildRun() forces it: on the engines that have the option, or whose options are not known yet.
         const int forced = p.hash > 0 ? p.hash : setup.common_hash;
         const bool has   = entry->uci_options.empty() || uciOption(*entry, "Hash");
@@ -178,6 +182,10 @@ std::vector<uint64_t> specHashes(const tour::TournamentSpec& spec, const std::ve
     std::vector<uint64_t> hashes;
     for (const auto& p : spec.participants) {
         if (!p.active) continue;  // its processes are ended
+        if (p.remote) {
+            hashes.push_back(0);  // on its machine
+            continue;
+        }
         uint64_t hash = 0;
         bool given    = false;
         for (const auto& [k, v] : p.engine.options) {

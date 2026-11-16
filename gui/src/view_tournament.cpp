@@ -361,7 +361,8 @@ void App::drawTournamentOverview() {
         std::vector<std::string> problems;
         int measured = 0;
         for (std::size_t i = 0; i < totals_.size() && i < spec.participants.size(); ++i) {
-            if (!spec.participants[i].active || !cpuUse(totals_[i]).measured) continue;
+            // An engine on a machine: its relay's processor time here says nothing of it.
+            if (!spec.participants[i].active || spec.participants[i].remote || !cpuUse(totals_[i]).measured) continue;
             measured++;
             const auto problem = cpuProblem(totals_[i], configThreads(spec.participants[i].engine));
             if (!problem.empty()) problems.push_back(fmt::format("{}: {}", spec.participants[i].engine.name, problem));

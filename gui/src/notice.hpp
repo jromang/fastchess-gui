@@ -24,6 +24,10 @@ struct Fix {
         OpenFolder,               // `path` in the file manager of the system
         ChangeTournamentsFolder,  // the folder dialog for where new tournaments are written
         CopyToMachine,            // the copy of `engine` to the machine whose id is `path` offered (Settings)
+        TestMachine,              // the test of the connection to the machine whose id is `path`
+        SetRunOn,                 // the setup's Run on set to the machine whose id is `path` (empty: this computer)
+        SetMargin,                // the setup's time margin set to `value` milliseconds
+        EnterPassphrase,          // the passphrase of the key of the machine whose id is `path` asked
     };
     Kind kind;
     std::string label;    // the button's
@@ -51,6 +55,10 @@ struct Fix {
 [[nodiscard]] Fix changeTournamentsFolderFix();
 [[nodiscard]] Fix copyToMachineFix(const std::string& engine, const std::string& machine_id,
                                    const std::string& machine_name);
+[[nodiscard]] Fix testMachineFix(const std::string& machine_id, const std::string& machine_name);
+[[nodiscard]] Fix setRunOnFix(const std::string& machine_id, const std::string& machine_name);
+[[nodiscard]] Fix setMarginFix(int milliseconds);
+[[nodiscard]] Fix enterPassphraseFix(const std::string& machine_id);
 
 struct Notice {
     enum class Level { Ok, Warning, Error };

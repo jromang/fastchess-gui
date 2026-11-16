@@ -145,13 +145,17 @@ std::string App::launchTournament(const fs::path& dir) {
     start.profile  = storage_.root();
     start.dir      = dir;
     start.detached = true;  // it plays on when the window closes
-    // Its share beside the tournaments playing, from its first game.
+    // Its share beside the tournaments playing, from its first game; the passphrases its engines on machines need.
+    std::map<std::string, std::string> secrets;
     try {
-        start.allowance = allowanceFor(tour::TournamentState::open(dir, true)->spec(), 1.0);
+        const auto spec = tour::TournamentState::open(dir, true)->spec();
+        start.allowance = allowanceFor(spec, 1.0);
+        secrets         = secretsFor(spec);
     } catch (const std::exception&) {
         // Said by the start below.
     }
     auto remote = std::make_unique<RemoteRun>();
+    remote->setSecrets(std::move(secrets));
     if (auto error = remote->start(start); !error.empty()) return error;
 
     OpenRun open;

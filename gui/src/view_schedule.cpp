@@ -446,6 +446,7 @@ void App::drawEditPanel() {
         edit.engine = participantConfig(*it, spec);
         edit.elo    = it->elo;
         edit.gpu    = it->gpu;
+        edit.remote = remoteEngine(*it);
     };
     // An active participant.
     const auto participantChoice = [&](const char* label) {

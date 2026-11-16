@@ -118,6 +118,7 @@ void to_json(nlohmann::json& j, const Edit& e) {
          {"replay", e.replay},
          {"why", e.why},
          {"result", e.result}};
+    if (e.remote) j["remote"] = *e.remote;
 }
 
 void from_json(const nlohmann::json& j, Edit& e) {
@@ -135,6 +136,8 @@ void from_json(const nlohmann::json& j, Edit& e) {
     e.replay      = j.value("replay", true);
     e.why         = j.value("why", std::string{});
     e.result      = j.value("result", std::string{});
+    e.remote.reset();
+    if (const auto it = j.find("remote"); it != j.end() && it->is_object()) e.remote = it->get<RemoteEngine>();
 }
 
 bool isEditEvent(const std::string& type) {
@@ -151,6 +154,7 @@ nlohmann::json editEvent(const Edit& edit, uint32_t at, int new_id, const Tourna
             p.engine.name = uniqueName(spec, edit.engine.name);
             p.elo         = edit.elo;
             p.gpu         = edit.gpu;
+            p.remote      = edit.remote;
             p.team        = spec.format == Format::TeamMatch && edit.team == 1 ? 1 : 0;
             return {{"t", "participant_added"}, {"at", at}, {"participant", p}, {"catch_up", edit.catch_up}};
         }
@@ -161,6 +165,7 @@ nlohmann::json editEvent(const Edit& edit, uint32_t at, int new_id, const Tourna
             p.engine.name = uniqueName(spec, edit.engine.name);
             p.elo         = edit.elo;
             p.gpu         = edit.gpu;
+            p.remote      = edit.remote;
             if (const auto* old = spec.participant(edit.participant)) p.team = old->team;
             return {{"t", "participant_replaced"}, {"at", at}, {"old", edit.participant}, {"participant", p}};
         }

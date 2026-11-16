@@ -50,6 +50,11 @@ class RemoteRun final : public Run {
     void setPaused(bool paused) override;
     [[nodiscard]] bool paused() const override { return status_.paused; }
     bool tryEngineAgain(int participant) override;
+    // The machines its engines run on, as its process's engine hub sees them.
+    [[nodiscard]] const std::vector<control::Status::Machine>& machines() const { return status_.machines; }
+    // The passphrases of the machines its engines run on, by key file: sent to its process (its engine hub), again at
+    // every connection; kept in memory only, wiped when it goes.
+    void setSecrets(std::map<std::string, std::string> secrets);
 
     void stopNow() override;
     void stopWhenIdle() override;
@@ -118,6 +123,8 @@ class RemoteRun final : public Run {
     control::End end_;
     tour::Allowance allowance_;
     bool allowance_sent_ = false;
+    std::map<std::string, std::string> secrets_;  // by key file: for its engines on machines
+    bool secrets_sent_ = true;
 
     // Detached: the socket it connects to, and until when it tries, the process making it, or connecting again after
     // the connection was lost.

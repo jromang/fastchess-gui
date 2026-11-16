@@ -72,7 +72,8 @@ bool Status::operator==(const Status& o) const {
     return phase == o.phase && paused == o.paused && stop_idle == o.stop_idle && stopping == o.stopping &&
            running_games == o.running_games && open_pairs == o.open_pairs && running == o.running &&
            can_undo == o.can_undo && undo_lasts == o.undo_lasts && pgn_out_error == o.pgn_out_error &&
-           stalled == o.stalled && in_flight == o.in_flight && allowance == o.allowance && waiting == o.waiting;
+           stalled == o.stalled && in_flight == o.in_flight && allowance == o.allowance && waiting == o.waiting &&
+           machines == o.machines;
 }
 
 nlohmann::json statusJson(const Status& s) {
@@ -93,6 +94,18 @@ nlohmann::json statusJson(const Status& s) {
     if (!s.pgn_out_error.empty()) j["pgn_out_error"] = s.pgn_out_error;
     if (!failures.empty()) j["start_failures"] = failures;
     if (s.stalled) j["stalled"] = true;
+    if (!s.machines.empty()) {
+        auto machines = nlohmann::json::array();
+        for (const auto& m : s.machines) {
+            machines.push_back({{"id", m.id},
+                                {"name", m.name},
+                                {"connections", m.connections},
+                                {"engines", m.engines},
+                                {"error", m.error},
+                                {"since", m.since}});
+        }
+        j["machines"] = std::move(machines);
+    }
     return j;
 }
 
@@ -115,6 +128,19 @@ Status statusFromJson(const nlohmann::json& j) {
     if (const auto it = j.find("in_flight"); it != j.end()) s.in_flight = costFromJson(*it);
     if (const auto it = j.find("allowance"); it != j.end()) s.allowance = allowanceFromJson(*it);
     s.waiting = waitFromName(get(j, "waiting", std::string{}));
+    if (const auto it = j.find("machines"); it != j.end() && it->is_array()) {
+        for (const auto& m : *it) {
+            if (!m.is_object()) continue;
+            Status::Machine machine;
+            machine.id          = get(m, "id", std::string{});
+            machine.name        = get(m, "name", std::string{});
+            machine.connections = get(m, "connections", 0);
+            machine.engines     = get(m, "engines", 0);
+            machine.error       = get(m, "error", std::string{});
+            machine.since       = get(m, "since", int64_t{0});
+            s.machines.push_back(std::move(machine));
+        }
+    }
     return s;
 }
 

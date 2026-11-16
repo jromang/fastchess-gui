@@ -295,6 +295,43 @@ std::optional<std::string> startCommand(RemoteShell shell, const std::string& pr
     return viaSh(line);
 }
 
+std::optional<std::string> engineCommand(RemoteShell shell, const std::string& program,
+                                         const std::vector<std::string>& args, const std::string& dir) {
+    const auto folder = dir.empty() ? remoteParent(program) : dir;
+    if (shell == RemoteShell::Cmd) {
+        auto line = cmdQuote(program);
+        if (!line) return std::nullopt;
+        for (const auto& arg : args) {
+            const auto quoted = cmdQuote(arg);
+            if (!quoted) return std::nullopt;
+            *line += " " + *quoted;
+        }
+        if (folder.empty()) return line;
+        const auto quoted = cmdQuote(folder);
+        if (!quoted) return std::nullopt;
+        return "cd /d " + *quoted + " && " + *line;
+    }
+    std::string line = "echo $$; ";
+    if (!folder.empty()) line += "cd " + shQuote(folder) + " && ";
+    // A path relative to the home folder no longer leads to the program once in its folder: the program by its name
+    // there, or from the home folder the shell left ($OLDPWD).
+    const bool relative = !program.empty() && program[0] != '/' && program.find('/') != std::string::npos;
+    if (relative && !folder.empty() && dir.empty()) {
+        line += "exec ./" + shQuote(remoteName(program));
+    } else if (relative && !folder.empty()) {
+        line += "exec \"$OLDPWD\"/" + shQuote(program);
+    } else {
+        line += "exec " + shQuote(program);
+    }
+    for (const auto& arg : args) line += " " + shQuote(arg);
+    return viaSh(line);
+}
+
+std::string endProcessCommand(int64_t pid) {
+    const auto id = std::to_string(pid);
+    return viaSh("kill " + id + " 2>/dev/null; sleep 1; kill -9 " + id + " 2>/dev/null; true");
+}
+
 // ---------------------------------------------------------------------------------------------------------------
 // Machines
 
@@ -605,6 +642,20 @@ std::string sha256File(const fs::path& file, const std::atomic_bool* cancel) {
     uint8_t hash[32];
     std::size_t n = 0;
     if (psa_hash_finish(&op, hash, sizeof hash, &n) != PSA_SUCCESS || n != sizeof hash) return {};
+    std::string out;
+    for (const auto b : hash) out += fmt::format("{:02x}", b);
+    return out;
+}
+
+std::string sha256Hex(std::string_view data) {
+    if (psa_crypto_init() != PSA_SUCCESS) return {};
+    uint8_t hash[32];
+    std::size_t n = 0;
+    if (psa_hash_compute(PSA_ALG_SHA_256, reinterpret_cast<const uint8_t*>(data.data()), data.size(), hash,
+                         sizeof hash, &n) != PSA_SUCCESS ||
+        n != sizeof hash) {
+        return {};
+    }
     std::string out;
     for (const auto b : hash) out += fmt::format("{:02x}", b);
     return out;

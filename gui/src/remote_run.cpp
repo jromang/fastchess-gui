@@ -1,5 +1,7 @@
 #include "remote_run.hpp"
 
+#include <mbedtls/platform_util.h>
+
 #include <chrono>
 #include <set>
 #include <thread>
@@ -33,6 +35,17 @@ std::vector<std::string> remoteArgs(const RemoteStart& s) {
 RemoteRun::~RemoteRun() {
     // The process started here with pipes reads the end of its input and stops, resumable.
     process_.disconnect();
+    for (auto& [file, secret] : secrets_) {
+        if (!secret.empty()) mbedtls_platform_zeroize(secret.data(), secret.size());
+    }
+}
+
+void RemoteRun::setSecrets(std::map<std::string, std::string> secrets) {
+    for (auto& [file, secret] : secrets_) {
+        if (!secret.empty()) mbedtls_platform_zeroize(secret.data(), secret.size());
+    }
+    secrets_      = std::move(secrets);
+    secrets_sent_ = secrets_.empty();
 }
 
 std::string RemoteRun::start(const RemoteStart& s) {
@@ -95,6 +108,7 @@ void RemoteRun::attachLink(std::unique_ptr<Link> link) {
     hello.journal = replica_ ? replica_->journalSize() : 0;
     (void)process_.send(control::helloJson(hello));
     allowance_sent_ = false;  // told again: it may have another one meanwhile
+    secrets_sent_   = secrets_.empty();
     connecting_     = false;
 }
 
@@ -264,6 +278,13 @@ void RemoteRun::update() {
     if (!allowance_sent_) {
         allowance_sent_ =
             process_.send(control::command("allowance", 0, {{"allowance", control::allowanceJson(allowance_)}}));
+    }
+    if (!secrets_sent_) {
+        bool sent = true;
+        for (const auto& [file, secret] : secrets_) {
+            sent &= process_.send(control::command("passphrase", 0, {{"key_file", file}, {"passphrase", secret}}));
+        }
+        secrets_sent_ = sent;
     }
     if (!process_.closed()) return;
 

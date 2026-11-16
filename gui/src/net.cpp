@@ -253,14 +253,14 @@ bool TcpConnection::sendAll(std::string_view data, int timeout_ms) {
 
 TcpListener::~TcpListener() { close(); }
 
-std::string TcpListener::listen(uint16_t port) {
+std::string TcpListener::listen(uint16_t port, bool loopback_only) {
     ensureStarted();
     close();
     fd_ = openSocket(SOCK_STREAM);
     if (fd_ == INVALID) return "cannot create a TCP socket";
     open_ = true;
     exclusive(fd_, true);
-    const auto a = address(INADDR_ANY, port);
+    const auto a = address(loopback_only ? INADDR_LOOPBACK : INADDR_ANY, port);
     // Room for a burst of connections (many viewers, or a tunnel opening one per request): those the queue does not
     // take wait a second or more for the system to try them again.
     constexpr int BACKLOG = 128;
@@ -290,6 +290,14 @@ std::optional<Handle> TcpListener::accept(int timeout_ms) {
     if (fd == INVALID) return std::nullopt;
 #endif
     return fd;
+}
+
+uint16_t TcpListener::port() const {
+    if (!open_) return 0;
+    sockaddr_in a{};
+    SockLen length = sizeof(a);
+    if (getsockname(fd_, reinterpret_cast<sockaddr*>(&a), &length) != 0) return 0;
+    return ntohs(a.sin_port);
 }
 
 Socket::Socket(Handle fd) : fd_(fd) { setBlocking(fd_, false); }

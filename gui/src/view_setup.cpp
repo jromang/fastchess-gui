@@ -1651,6 +1651,29 @@ void App::drawSetupSummary() {
     };
     // A program or a working directory not found, with Open the engine and Locate…; the opening book not found.
     drawSetupNotices(programNotices(setup_, engines_), "programs");
+    // The engines on machines: their machine, its round trip against the clock, a passphrase to type.
+    drawSetupNotices(remoteNotices(setup_, engines_, machines_), "remote");
+    if (setup_.machine.empty()) {
+        std::vector<Notice> locked;
+        std::vector<std::string> asked;
+        for (const auto& name : names) {
+            const auto i = engineIndex(name);
+            if (i < 0 || engines_[i].machine.empty()) continue;
+            const auto* m = machineById(engines_[i].machine);
+            if (!m || std::find(asked.begin(), asked.end(), m->id) != asked.end()) continue;
+            asked.push_back(m->id);
+            bool missing = false;
+            (void)machinePassphrase(*m, missing);
+            if (missing) {
+                locked.push_back({Notice::Level::Warning,
+                                  trf("The key of {} needs its passphrase: Start asks for it once this session.",
+                                      m->name.empty() ? m->host : m->name),
+                                  {},
+                                  {enterPassphraseFix(m->id)}});
+            }
+        }
+        drawSetupNotices(std::move(locked), "passphrases");
+    }
     const auto book_missing = bookNotice(setup_);
     if (book_missing) drawSetupNotices({*book_missing}, "book");
     drawRebuiltSincePlayed(names);

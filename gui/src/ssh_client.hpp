@@ -15,6 +15,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace fcg {
@@ -34,6 +35,9 @@ struct SshTarget {
     std::string passphrase;  // empty when the key has none
     // The host keys trusted on first use (the tunnel's file, see knownHostKey()).
     std::filesystem::path known_hosts;
+    // False: a host key never seen is refused rather than trusted, for the connections made without the user (the
+    // engine hub): only the test of a machine, which shows the key, trusts it.
+    bool trust_new_host_key = true;
     // The most a step waits without any progress: the connection, the log in, a command's answer, a file's packet.
     std::chrono::milliseconds timeout{20000};
 };
@@ -95,6 +99,9 @@ class SshClient {
     [[nodiscard]] bool hostKeyNew() const noexcept { return host_key_new_; }
     // Says goodbye and closes the connection (the destructor does it too).
     void disconnect();
+    // Gives the connection up at once, without a word to the server (one that stopped answering): its programs and
+    // channels then end without waiting for it.
+    void abandon();
 
     // A command run by the machine's shell, its output read whole (`max_output` bytes of each stream at most), `input`
     // written to it first. nullopt and error() when it cannot run or does not end within `limit`.
@@ -132,6 +139,60 @@ class SshClient {
         std::string err_;
     };
     std::unique_ptr<Channel> start(const std::string& command);
+
+    // --- Without waiting: for a thread that serves several programs at once (the engine hub, engine_hub.hpp) ---
+
+    // A command run as start() runs it, moved on by step() instead of waits: its channel opened, the command started,
+    // its input sent and its output read as far as the connection lets them go at once. Several share the connection,
+    // each with its channel; they must go before the client.
+    class Program {
+       public:
+        enum class State { Starting, Running, Ended, Failed };
+        ~Program();
+        Program(const Program&)            = delete;
+        Program& operator=(const Program&) = delete;
+
+        // Moves what can move without waiting; true when something did.
+        bool step();
+        // Something the connection already received waits for step() (another program's step read it off the socket,
+        // which then has nothing more to tell).
+        [[nodiscard]] bool pending() const;
+        // Queued, and sent by step(); after closeInput(), the end of the input once the queue is sent.
+        void write(std::string_view data) { in_.append(data); }
+        void closeInput() { input_closed_ = true; }
+        // What it wrote since the last call, on its output and on its error output.
+        [[nodiscard]] std::string takeOutput() { return std::exchange(out_, {}); }
+        [[nodiscard]] std::string takeErrors() { return std::exchange(err_, {}); }
+        [[nodiscard]] State state() const noexcept { return state_; }
+        [[nodiscard]] bool done() const noexcept { return state_ == State::Ended || state_ == State::Failed; }
+        // Ended: its exit code, -1 when a signal ended it or the server did not say.
+        [[nodiscard]] int exitCode() const noexcept { return exit_code_; }
+        // Failed: why, in a sentence that names the machine.
+        [[nodiscard]] const std::string& failure() const noexcept { return failure_; }
+
+       private:
+        friend class SshClient;
+        Program(SshClient& client, std::string command) : client_(client), command_(std::move(command)) {}
+        bool fail(int rc, const std::string& what);
+        SshClient& client_;
+        std::string command_;
+        void* channel_ = nullptr;  // LIBSSH2_CHANNEL
+        State state_   = State::Starting;
+        bool started_ = false, input_closed_ = false, eof_sent_ = false, eof_ = false, closing_ = false;
+        std::string in_, out_, err_, failure_;
+        int exit_code_ = -1;
+    };
+    // Starts it, opening its channel as step() goes; nullptr when the client is not connected. Never waits.
+    std::unique_ptr<Program> launch(const std::string& command);
+
+    // The connection's socket, to wait for with net::waitAny(): always to read, and to write when waitsToWrite().
+    [[nodiscard]] std::intptr_t socketHandle() const noexcept;
+    [[nodiscard]] bool waitsToWrite() const noexcept;
+    // When something last came from the server.
+    [[nodiscard]] std::chrono::steady_clock::time_point lastReceived() const noexcept;
+    // An SSH keepalive, which the server answers, once `every` passed since the last one: a connection whose server
+    // says nothing long after is gone (the machine off, the network down). Never waits.
+    void keepAlive(std::chrono::seconds every);
 
     // SFTP. Paths as the server takes them: relative to the user's home, or absolute ("/C:/..." on Windows).
     [[nodiscard]] std::optional<RemoteEntry> stat(const std::string& path);  // nullopt: error(), NotFound if absent

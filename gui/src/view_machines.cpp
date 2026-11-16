@@ -145,6 +145,7 @@ void App::startMachineJob(const std::string& id, MachineJob::Kind kind) {
                 // Asked first; the job starts once it is typed.
                 passphrase_machine_ = id;
                 passphrase_kind_    = kind;
+                passphrase_then_    = {};
                 open_passphrase_    = true;
                 return;
             }
@@ -246,12 +247,7 @@ void App::pollMachines() {
             }
             if (result.files) activity.files = result.files;
             // A passphrase the key refused is asked again next time.
-            if (result.error.kind == SshError::Kind::Passphrase) {
-                if (auto it = machine_passphrases_.find(machine->key_file); it != machine_passphrases_.end()) {
-                    wipe(it->second);
-                    machine_passphrases_.erase(it);
-                }
-            }
+            if (result.error.kind == SshError::Kind::Passphrase) rememberPassphrase(machine->key_file, {});
             if (kind == MachineJob::Kind::Push) {
                 activity.last_transfer = std::move(result);
                 // What is there now: compared again.
@@ -304,7 +300,6 @@ void App::drawMachineSettings(float label) {
         copy_panel_y_ = -1;
     }
     ImGui::PopID();
-    drawPassphrasePrompt();
 }
 
 void App::drawMachineCard(std::size_t index, float label) {
@@ -559,8 +554,18 @@ void App::drawMachineEngines(Machine& m, MachineActivity& activity) {
             ImGui::TableNextColumn();
             ImGui::AlignTextToFramePadding();
             ImGui::TextUnformatted(e.engine.c_str());
+            // An engine that runs here, played from this computer.
+            const int played = engineIndex(e.engine);
+            if (played >= 0 && engines_[played].machine == m.id) {
+                ImGui::SameLine();
+                ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ui::ACCENT), "%s", TR("played from here"));
+                ImGui::SetItemTooltip("%s", trf("{} runs on {} when it plays from this computer (its card's Runs on).",
+                                                e.engine, name)
+                                                .c_str());
+            }
             ImGui::TableNextColumn();
-            if (editField("##path", e.path, -FLT_MIN,
+            const float browse_w = ImGui::CalcTextSize("…").x + ImGui::GetStyle().FramePadding.x * 2;
+            if (editField("##path", e.path, -(browse_w + ImGui::GetStyle().ItemSpacing.x),
                           m.system.shell == RemoteShell::Cmd ? "C:\\Engines\\sf.exe" : "/opt/engines/stockfish")) {
                 // Another program: nothing known of it yet, nor of a folder copied with it.
                 e.check_ok = -1;
@@ -570,7 +575,20 @@ void App::drawMachineEngines(Machine& m, MachineActivity& activity) {
                 e.remote_hash.clear();
                 e.local_hash.clear();
             }
-            save |= ImGui::IsItemDeactivatedAfterEdit();
+            if (ImGui::IsItemDeactivatedAfterEdit()) {
+                save = true;
+                // The engine that runs here plays the program given here.
+                if (played >= 0 && engines_[played].machine == m.id && engines_[played].cmd != e.path) {
+                    engines_[played].cmd = e.path;
+                    storage_.saveEngines(engines_);
+                }
+            }
+            ImGui::SameLine();
+            ImGui::BeginDisabled(m.system.checked.empty());
+            if (ImGui::Button("…##path_browse"))
+                openRemotePicker(RemotePicker::Purpose::MachinePath, m.id, e.engine, {}, e.path);
+            ImGui::EndDisabled();
+            ImGui::SetItemTooltip("%s", trf("Looks for the program on {}.", name).c_str());
             ImGui::TableNextColumn();
             if (e.check_ok >= 0) {
                 ImGui::PushStyleColor(ImGuiCol_Text,
@@ -671,6 +689,12 @@ void App::drawMachineEngines(Machine& m, MachineActivity& activity) {
     // The library's engines not on the list yet.
     ImGui::SetNextItemWidth(px(220));
     if (ImGui::BeginCombo("##add_engine", TR("Add an engine…"))) {
+        // A program of the machine that is not in the library yet: a new engine there.
+        ImGui::BeginDisabled(m.system.checked.empty());
+        if (ImGui::Selectable(TR("A program there… (a new engine of the library)")))
+            openRemotePicker(RemotePicker::Purpose::AddEngine, m.id);
+        ImGui::EndDisabled();
+        ImGui::Separator();
         for (const auto& e : engines_) {
             if (e.inactive || m.engine(e.name)) continue;
             if (ImGui::Selectable(e.name.c_str())) {
@@ -1010,16 +1034,22 @@ void App::drawPassphrasePrompt() {
     const auto id    = passphrase_machine_;
     const auto kind  = passphrase_kind_;
     if (ImGui::Button(TR("OK##passphrase")) || enter) {
-        machine_passphrases_[machine->key_file] = passphrase_input_.data();
+        rememberPassphrase(machine->key_file, passphrase_input_.data());
         passphrase_input_.fill('\0');
         ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
-        startMachineJob(id, kind);
+        // An engine that runs on the machine, waiting to start; else the machine's job.
+        if (auto then = std::exchange(passphrase_then_, {})) {
+            then();
+        } else {
+            startMachineJob(id, kind);
+        }
         return;
     }
     ImGui::SameLine();
     if (ImGui::Button(TR("Cancel##passphrase")) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
         passphrase_input_.fill('\0');
+        passphrase_then_ = {};
         ImGui::CloseCurrentPopup();
     }
     ImGui::EndPopup();

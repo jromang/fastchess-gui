@@ -683,3 +683,42 @@ TEST_CASE("edit: the export for a rating list gives the result set by hand") {
     CHECK(draws == 1);
     CHECK(submissionFacts(state->spec(), state->results(), state->totalGames()).played == 6);
 }
+
+TEST_CASE("edit: games lost to an engine's broken connection voided and played again, not as the user's edit") {
+    const auto dir = freshDir("network");
+    auto state     = TournamentState::create(dir, roundRobin(3, 1));
+    play(*state, 2);
+    // The user's last edit, which the voids must not take the place of.
+    Edit cycles;
+    cycles.kind   = Edit::Kind::SetCycles;
+    cycles.cycles = 2;
+    state->applyEdit(cycles);
+    REQUIRE(state->canUndo());
+
+    // Game 1 has its result, game 5 none yet: only game 1 is voided.
+    CHECK(state->voidCutGames({1, 5}, "gpu-box"));
+    CHECK(state->networkVoids() == 1);
+    CHECK_FALSE(state->resultOf(1).has_value());
+    CHECK(state->canUndo() == false);  // undo goes past it, as for the unbalanced openings
+    CHECK_FALSE(state->voidCutGames({1, 5}, "gpu-box"));  // nothing that counts any more
+
+    // Played again.
+    bool again = false;
+    while (auto task = state->claimNext()) {
+        if (task->number() == 1) again = true;
+        state->complete(*task, data(*task, "1/2-1/2"));
+    }
+    CHECK(again);
+
+    // In the journal with its reason and the machine; counted again when it is opened.
+    auto reopened = TournamentState::open(dir);
+    CHECK(reopened->networkVoids() == 1);
+    bool found = false;
+    for (const auto& r : reopened->results()) {
+        if (r.voided && r.number() == 1) {
+            found = true;
+            CHECK(r.void_reason == std::string(NETWORK_REASON) + ": gpu-box");
+        }
+    }
+    CHECK(found);
+}

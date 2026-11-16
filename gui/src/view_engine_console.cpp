@@ -46,6 +46,11 @@ const std::vector<const char*>& consoleCommands(bool winboard) {
 void App::openEngineConsole(int index) {
     if (index < 0 || index >= static_cast<int>(engines_.size())) return;
     const auto& e = engines_[static_cast<std::size_t>(index)];
+    if (!remoteReady(e, [this, name = e.name] {
+            if (const auto i = engineIndex(name); i >= 0) openEngineConsole(i);
+        })) {
+        return;
+    }
     // The same engine's console, shown again; another one replaces it (its engine ended).
     if (engine_console_ && engine_console_->engine == e.name && engine_console_->process.running()) {
         engine_console_->shown = true;
