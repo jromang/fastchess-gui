@@ -45,6 +45,10 @@ class Board3d {
     Input draw(const std::array<chess::Piece, 64>& pieces, float size, const BoardDecor& decor,
                std::optional<chess::Square> check = std::nullopt);
 
+    // Turned `yaw` radians round the board from the side at the bottom, seen `pitch` radians above it: the right
+    // button's drag, for screenshots (--focus board-3d=YAW,PITCH).
+    void setView(float yaw, float pitch);
+
     // While the camera moves: frames wanted at a steadier pace.
     [[nodiscard]] bool moving() const;
     // The graphics card's memory given back while the 3D board is not wanted; made again when drawn.

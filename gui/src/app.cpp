@@ -1,6 +1,7 @@
 #include "app.hpp"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
@@ -292,6 +293,13 @@ void App::frame() {
                 review_when_read_ = true;
                 if (w.rfind("board-review-", 0) == 0) review_ply_ = std::atoi(w.c_str() + 13);
             }
+        } else if (w.rfind("board-ply=", 0) == 0) {  // the Board page's game at that ply
+            page_      = Page::Board;
+            board_.ply = std::clamp(std::atoi(w.c_str() + 10), 0, static_cast<int>(board_.game.moves.size()));
+        } else if (w.rfind("board-3d=", 0) == 0) {  // the 3D board turned, YAW,PITCH in radians
+            float yaw = 0.0f, pitch = 0.95f;
+            std::sscanf(w.c_str() + 9, "%f,%f", &yaw, &pitch);
+            board3d_.setView(yaw, pitch);
         } else if (w == "board-edit") {  // the position editor
             page_ = Page::Board;
             openPositionEditor();

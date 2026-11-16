@@ -152,6 +152,11 @@ void Board3d::release() {
     full_pass_   = 0;
 }
 
+void Board3d::setView(float yaw, float pitch) {
+    yaw_offset_ = yaw;
+    pitch_      = std::clamp(pitch, 0.25f, 1.55f);
+}
+
 bool Board3d::moving() const {
     const auto now = std::chrono::steady_clock::now();
     return renderer_ && (now - last_move_ < STILL_AFTER || now - turn_start_ < TURN_TIME || right_down_);
