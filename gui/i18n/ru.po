@@ -7604,8 +7604,14 @@ msgstr "{} – {} · партия {} из {}"
 msgid "{} – {} · {} games"
 msgstr "{} – {} · партий: {}"
 
+msgid "{} → {}: the move spoils it"
+msgstr "{} → {}: ход это портит"
+
 msgid "{}'s engine stopped"
 msgstr "движок {} остановился"
+
+msgid "{}, kept"
+msgstr "{}, сохранено"
 
 msgid "{}, more than the {} of memory free: the system will swap."
 msgstr "{}, больше свободной памяти ({}): система начнёт использовать подкачку."

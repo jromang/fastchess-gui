@@ -78,6 +78,15 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BoardSettings, analysis, arrows,
 // after `ply` give way to it. Returns the new ply.
 int playOnGame(ReplayGame& game, bool chess960, int ply, chess::Move move);
 
+// The Syzygy tablebases' result of each position of `game` (the side to move's: 1 win, 0 draw, -1 loss, -2 not
+// known), with the tables of the folders `paths` (fastchess' probing code, whose tables are the process's: loaded
+// again when the folders changed or a tournament let them go). Each position is probed as if a capture or a pawn
+// move had just been played: exact but where the 50-move rule is near.
+[[nodiscard]] std::vector<int8_t> tablebaseResults(const ReplayGame& game, bool chess960, const std::string& paths);
+
+// A tablebase result (`result` of the side `stm`: 1 win, 0 draw, -1 loss) as a score: "1-0", "½-½", "0-1".
+[[nodiscard]] const char* tablebaseScore(int result, chess::Color stm);
+
 // Each move's mover's clock after it: from its [%clk] when the game has them, else rebuilt from the TimeControl tag
 // ("base+increment" in seconds, or "base") and the moves' times, book moves taking none; nullopt where neither tells.
 [[nodiscard]] std::vector<std::optional<int64_t>> moveClocks(const ReplayGame& game);
@@ -210,6 +219,10 @@ struct BoardPage {
     std::string review_game_key;  // reviewKey(review_game)
     int64_t review_offered = 0;   // the time of the board's search last offered to them
     [[nodiscard]] bool reviewing() const { return !review_tasks.empty(); }
+    // The tablebases' result of each position of the game (the side to move's: 1 win, 0 draw, -1 loss; -2 not
+    // known), with the Syzygy folders of the setup.
+    std::vector<int8_t> tb;
+    std::string tb_key;               // the game they are of, and the folders
     std::vector<GameReview> reviews;  // the analyses of the game shown, the judging one first
     std::string review_key;           // the game they are of (reviewKey)
     std::vector<MoveReview> judged;   // its moves judged by the first, for the game shown

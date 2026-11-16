@@ -372,6 +372,8 @@ class App {
     [[nodiscard]] int boardMainPly() const;
     // The players above and below the board: name, evaluation of its last move, time, clock at the move shown.
     [[nodiscard]] bool boardStrips() const;  // the game has players to show
+    void updateBoardTablebase();             // the tablebases' result of each position of the board's game
+    [[nodiscard]] int boardTablebasePly() const;  // the first position they know, -1 none
     void drawPlayerStrip(chess::Color side, float size, const std::vector<std::optional<int64_t>>& clocks);
     void drawBoardGraph(float height);  // the game graph card, under the moves
     [[nodiscard]] float boardGraphHeight() const;

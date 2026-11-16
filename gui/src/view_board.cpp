@@ -14,6 +14,7 @@
 
 #include <fmt/include/fmt/format.h>
 
+#include <matchmaking/syzygy.hpp>
 #include <tour/chess_text.hpp>
 
 #include "app.hpp"
@@ -1569,6 +1570,23 @@ void App::showBoardLine(int line, int ply) {
     b.selected.reset();
 }
 
+void App::updateBoardTablebase() {
+    auto& b        = board_;
+    const auto key = b.review_key + "|" + setup_.tb_paths;
+    if (key == b.tb_key) return;
+    // fastchess' Syzygy tables are those of the process: not while a tournament plays in it.
+    if (run_->running()) return;
+    b.tb_key = key;
+    b.tb     = tablebaseResults(b.tree.main, b.chess960, setup_.tb_paths);
+}
+
+int App::boardTablebasePly() const {
+    const auto& tb = board_.tb;
+    for (std::size_t p = 0; p < tb.size(); ++p)
+        if (tb[p] != -2) return static_cast<int>(p);
+    return -1;
+}
+
 bool App::boardStrips() const {
     const auto& g = board_.tree.main;
     const auto w = g.header("White"), k = g.header("Black");
@@ -1693,6 +1711,7 @@ void App::drawBoardMoves(float height) {
         b.reviews = !main.moves.empty() ? loadReviews(storage_.root() / "analyses", main) : std::vector<GameReview>{};
         b.judged  = b.reviews.empty() ? std::vector<MoveReview>{} : reviewMoves(main, b.chess960, b.reviews.front());
     }
+    updateBoardTablebase();
 
     const float strip = b.ply > 0 && b.ply <= total ? thisMoveHeight() : 0.0f;
     ImGui::BeginChild("##board_moves", ImVec2(0, -strip), ImGuiChildFlags_Borders);
@@ -1929,7 +1948,8 @@ void App::drawBoardTable() {
 float App::thisMoveHeight() const {
     const auto& b = board_;
     const auto& m = b.game.moves[static_cast<std::size_t>(b.ply - 1)];
-    int rows      = 1 + (!m.book && m.pv.find(' ') != std::string::npos ? 1 : 0);
+    int rows = 1 + (!m.book && m.pv.find(' ') != std::string::npos ? 1 : 0) +
+               (static_cast<std::size_t>(b.ply) < b.tb.size() && b.tb[static_cast<std::size_t>(b.ply)] != -2 ? 1 : 0);
     for (const auto* r : shownReviews())
         if (static_cast<std::size_t>(b.ply) < r->positions.size()) ++rows;
     return static_cast<float>(rows) * ImGui::GetFrameHeightWithSpacing() + ImGui::GetStyle().ItemSpacing.y * 2;
@@ -2028,6 +2048,20 @@ void App::drawThisMove() {
             row(TR("It expected"), san, ply, pv, trf("{} expected {}", name_of(m.mover), pvToSan(after, pv, 6)));
         }
     }
+    // The tablebases: the result after the move, and whether the move kept the one before it.
+    if ((b.line < 0 || boardMainPly() == ply) && static_cast<std::size_t>(ply) < b.tb.size() &&
+        b.tb[static_cast<std::size_t>(ply)] != -2) {
+        const int now  = b.tb[static_cast<std::size_t>(ply)];
+        const auto stm = after.sideToMove();
+        std::string tb = tablebaseScore(now, stm);
+        const int was  = b.tb[static_cast<std::size_t>(ply - 1)];
+        if (was != -2) {
+            const char* before_score = tablebaseScore(was, prior.sideToMove());
+            tb = std::string(before_score) == tb ? trf("{}, kept", tb)
+                                                 : trf("{} → {}: the move spoils it", before_score, tb);
+        }
+        row(TR("Tablebases"), tb, 0, {}, "");
+    }
     // Each analysis's verdict, and its best line from the position before the move: of the game's moves only.
     const bool on_main = b.line < 0 || boardMainPly() == b.ply;
     for (std::size_t i = 0; i < reviews.size() && on_main; ++i) {
@@ -2104,7 +2138,8 @@ void App::drawBoardGraph(float height) {
         analyses.push_back({reviews[i]->engine, i == 0 && reviews.size() > 1 ? TR("judge") : TR("analysis"),
                             analysisColour(i), reviews[i]});
     }
-    auto graph = buildGameGraph(b.tree.main, b.chess960, b.settings.graph.chart, analyses, b.judged);
+    auto graph      = buildGameGraph(b.tree.main, b.chess960, b.settings.graph.chart, analyses, b.judged);
+    graph.tablebase = boardTablebasePly();
     // A mark is settled when the last pass did not change it and every other analysis judged the move alike.
     if (!b.reviews.empty()) {
         const auto& previous = b.reviews.front().previous;
@@ -2305,7 +2340,7 @@ void App::drawBoardReview() {
     // The key moments, each a click away.
     ImGui::Spacing();
     ImGui::TextDisabled("%s", TR("KEY MOMENTS"));
-    const auto moments = keyMoments(main, review, b.judged, phases, -1);
+    const auto moments = keyMoments(main, review, b.judged, phases, boardTablebasePly());
     if (moments.empty())
         ImGui::TextDisabled("%s", TR("No mistake: the game was lost little by little, or not at all."));
     const auto pawns = [](double v) {

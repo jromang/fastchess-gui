@@ -7370,8 +7370,14 @@ msgstr "{} – {} · 第 {} / {} 局"
 msgid "{} – {} · {} games"
 msgstr "{} – {} · {} 局"
 
+msgid "{} → {}: the move spoils it"
+msgstr "{} → {}：这步棋把结果弄丢了"
+
 msgid "{}'s engine stopped"
 msgstr "{} 的引擎已停止"
+
+msgid "{}, kept"
+msgstr "{}，保持"
 
 msgid "{}, more than the {} of memory free: the system will swap."
 msgstr "{}，超过可用内存 {}：系统将使用交换空间。"

@@ -7487,7 +7487,13 @@ msgstr ""
 msgid "{} – {} · {} games"
 msgstr ""
 
+msgid "{} → {}: the move spoils it"
+msgstr ""
+
 msgid "{}'s engine stopped"
+msgstr ""
+
+msgid "{}, kept"
 msgstr ""
 
 msgid "{}, more than the {} of memory free: the system will swap."

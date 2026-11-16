@@ -7487,8 +7487,14 @@ msgstr "{} – {} · partida {} de {}"
 msgid "{} – {} · {} games"
 msgstr "{} – {} · {} partidas"
 
+msgid "{} → {}: the move spoils it"
+msgstr "{} → {}: la jugada lo estropea"
+
 msgid "{}'s engine stopped"
 msgstr "el motor de {} se detuvo"
+
+msgid "{}, kept"
+msgstr "{}, mantenido"
 
 msgid "{}, more than the {} of memory free: the system will swap."
 msgstr "{}, más que los {} de memoria libre: el sistema usará la memoria de intercambio."

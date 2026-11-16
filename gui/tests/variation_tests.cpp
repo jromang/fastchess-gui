@@ -3,10 +3,13 @@
 
 #include <doctest/doctest.hpp>
 
+#include <filesystem>
+
 #include "board_page.hpp"
 #include "board_text.hpp"
 
 using namespace fcg;
+namespace fs = std::filesystem;
 
 namespace {
 
@@ -200,4 +203,30 @@ TEST_CASE("clocks: from [%clk] when the game has them, else rebuilt from the tim
     const auto none = parseReplay("[White \"A\"]\n[Black \"B\"]\n[Result \"*\"]\n\n1. e4 e5 *\n");
     REQUIRE(none);
     CHECK_FALSE(moveClocks(*none)[1].has_value());
+}
+
+TEST_CASE("tablebases: each position's result, with fastchess' 3-piece tables") {
+    const auto tables = fs::path(FCG_SOURCE_DIR) / "app" / "tests" / "data" / "syzygy_wdl3";
+    if (!fs::is_directory(tables)) return;
+    ReplayGame game;
+    game.start_fen = "8/8/8/8/8/8/1Q6/K6k w - - 0 1";
+    chess::Board board(game.start_fen);
+    for (const char* uci : {"b2b1", "h1h2", "b1a2"}) {
+        ReplayMove m;
+        m.move  = chess::uci::uciToMove(board, uci);
+        m.mover = board.sideToMove();
+        m.san   = chess::uci::moveToSan(board, m.move);
+        board.makeMove(m.move);
+        game.moves.push_back(m);
+    }
+    const auto tb = tablebaseResults(game, false, tables.string());
+    REQUIRE(tb.size() == 4);
+    CHECK(tb[0] == 1);   // White to move wins
+    CHECK(tb[1] == -1);  // Black to move loses
+    CHECK(tb[2] == 1);
+    CHECK(std::string(tablebaseScore(tb[1], chess::Color::BLACK)) == "1-0");
+    CHECK(std::string(tablebaseScore(0, chess::Color::WHITE)) == "½-½");
+    CHECK(std::string(tablebaseScore(1, chess::Color::BLACK)) == "0-1");
+    // Without folders, nothing known.
+    CHECK(tablebaseResults(game, false, "")[0] == -2);
 }

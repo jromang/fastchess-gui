@@ -5,6 +5,7 @@
 #include <cctype>
 #include <sstream>
 
+#include <matchmaking/syzygy.hpp>
 #include <tour/pgn_file.hpp>
 
 namespace fcg {
@@ -342,6 +343,47 @@ std::vector<std::optional<int64_t>> moveClocks(const ReplayGame& game) {
             }
         }
         if (clock) out[i] = static_cast<int64_t>(std::lround(*clock));
+    }
+    return out;
+}
+
+const char* tablebaseScore(int result, chess::Color stm) {
+    if (result == 0) return "½-½";
+    const bool white_wins = (result > 0) == (stm == chess::Color::WHITE);
+    return white_wins ? "1-0" : "0-1";
+}
+
+std::vector<int8_t> tablebaseResults(const ReplayGame& game, bool chess960, const std::string& paths) {
+    std::vector<int8_t> out(game.moves.size() + 1, -2);
+    if (paths.empty()) return out;
+    static std::string loaded;
+    static int largest = 0;
+    static const chess::Board kqk("8/8/8/8/8/8/8/KQ5k w - - 0 1");
+    if (loaded != paths || (largest > 0 && !fastchess::canProbeSyzgyWdl(kqk))) {
+        largest = fastchess::initSyzygy(paths);
+        loaded  = paths;
+    }
+    if (largest <= 0) return out;
+    auto board = boardAt(game, chess960, 0);
+    for (std::size_t p = 0; p <= game.moves.size(); ++p) {
+        if (board.occ().count() <= largest) {
+            // The tables are exact right after a capture or a pawn move: each position as if it were one, which only
+            // errs where the 50-move rule is near.
+            auto zeroed = board;
+            if (board.halfMoveClock() != 0) {
+                std::istringstream fields(board.getFen());
+                std::string placement, side, castling, ep;
+                fields >> placement >> side >> castling >> ep;
+                zeroed.setFen(placement + " " + side + " " + castling + " " + ep + " 0 1");
+            }
+            const auto r = fastchess::canProbeSyzgyWdl(zeroed) ? fastchess::probeSyzygyWdl(zeroed, false)
+                                                               : chess::GameResult::NONE;
+            out[p]       = r == chess::GameResult::WIN    ? 1
+                           : r == chess::GameResult::DRAW ? 0
+                           : r == chess::GameResult::LOSE ? -1
+                                                          : -2;
+        }
+        if (p < game.moves.size()) board.makeMove<true>(game.moves[p].move);
     }
     return out;
 }
