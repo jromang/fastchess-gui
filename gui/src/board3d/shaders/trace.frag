@@ -22,6 +22,7 @@ uniform float uPieceTop;  // the top of the tallest piece
 
 uniform vec2 uResolution;
 uniform int uSample;
+uniform int uSeed;  // another series of random numbers, for measuring against a reference
 uniform int uBounces;
 
 uniform vec3 uCamPos, uCamRight, uCamUp, uCamForward;
@@ -694,7 +695,7 @@ vec3 trace(vec3 ro, vec3 rd) {
 }
 
 void main() {
-    rngState = pcg(uint(gl_FragCoord.x) + pcg(uint(gl_FragCoord.y) + pcg(uint(uSample) * 7919u + 13u)));
+    rngState = pcg(uint(gl_FragCoord.x) + pcg(uint(gl_FragCoord.y) + pcg(uint(uSample) * 7919u + 13u + uint(uSeed) * 104729u)));
 
     // A random point of the pixel, through a thin lens focused at the target.
     vec2 jitter = vec2(rnd(), rnd());

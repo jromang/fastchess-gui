@@ -3,8 +3,11 @@
 //
 //   fcg-board3d [--fen <FEN>] [--yaw r] [--pitch r] [--dist d] [--aperture a] [--studio n] [--exposure e]
 //               [--varnish v] [--varnish-rough r] [--spp n] [--size WxH] [--overlay 1] [--shot out.png]
+//               [--save-ref ref.pfm] [--compare ref.pfm --checkpoints 16,64,256]
 //
-// --shot renders --spp samples in a hidden window, writes the PNG and quits.
+// --shot renders --spp samples in a hidden window, writes the PNG and quits. For measuring the noise: --save-ref
+// writes the mean radiance of the shot (linear, PFM), the reference of many samples; --compare prints the error of
+// this one against it (relative mean squared error) at each count of samples of --checkpoints.
 
 #include "board3d/renderer.hpp"
 
@@ -51,6 +54,51 @@ bool loadShaders(fcg::board3d::ShaderSources& s) {
 // The camera kept inside the studio (trace.frag: 36 squares round, 30 high).
 constexpr float kMaxDistance = 24.0f, kMaxPan = 5.0f;
 
+// The mean radiance of the samples, RGB, rows bottom up.
+std::vector<float> meanRadiance(const fcg::board3d::Renderer& renderer) {
+    std::vector<float> accum, out;
+    renderer.readAccumulation(accum);
+    out.reserve(accum.size() / 4 * 3);
+    for (std::size_t i = 0; i + 3 < accum.size(); i += 4) {
+        const float n = std::max(accum[i + 3], 1.0f);
+        out.insert(out.end(), {accum[i] / n, accum[i + 1] / n, accum[i + 2] / n});
+    }
+    return out;
+}
+
+// PFM: "PF", the size, a negative scale for little endian, then RGB floats from the bottom row.
+bool writePfm(const std::string& path, int width, int height, const std::vector<float>& rgb) {
+    std::FILE* f = std::fopen(path.c_str(), "wb");
+    if (!f) return false;
+    std::fprintf(f, "PF\n%d %d\n-1.0\n", width, height);
+    const bool ok = std::fwrite(rgb.data(), sizeof(float), rgb.size(), f) == rgb.size();
+    std::fclose(f);
+    return ok;
+}
+
+std::vector<float> readPfm(const std::string& path, int& width, int& height) {
+    std::ifstream in(path, std::ios::binary);
+    std::string magic;
+    float scale = 0;
+    in >> magic >> width >> height >> scale;
+    in.get();
+    if (magic != "PF" || width <= 0 || height <= 0) return {};
+    std::vector<float> rgb(std::size_t(width) * std::size_t(height) * 3);
+    in.read(reinterpret_cast<char*>(rgb.data()), std::streamsize(rgb.size() * sizeof(float)));
+    return in ? rgb : std::vector<float>{};
+}
+
+// The error of an image against the reference: the relative mean squared error, each channel's squared difference
+// over the reference's square plus 0.01 (the dark pixels not counting for more than they show).
+double relativeMse(const std::vector<float>& image, const std::vector<float>& reference) {
+    double sum = 0;
+    for (std::size_t i = 0; i < image.size() && i < reference.size(); ++i) {
+        const double d = double(image[i]) - double(reference[i]), r = reference[i];
+        sum += d * d / (r * r + 0.01);
+    }
+    return image.empty() ? 0 : sum / double(image.size());
+}
+
 // What the GUI lays over the board, for a look at it: the last move Nf3 after 1. e4 e5, the knight picked up and
 // where it may go, two arrows.
 fcg::board3d::Overlay demoOverlay() {
@@ -88,6 +136,9 @@ int main(int argc, char** argv) {
     bool denoise = true;
     int orbit    = 0;
     bool overlay = false;
+    std::string saveRef, compare;
+    int seed = 0;
+    std::vector<int> checkpoints;
     float exposure = 0;  // the studio's own unless given
     for (int i = 1; i + 1 < argc; i += 2) {
         std::string a = argv[i], v = argv[i + 1];
@@ -106,6 +157,13 @@ int main(int argc, char** argv) {
         else if (a == "--denoise") denoise = v != "0";
         else if (a == "--orbit") orbit = std::stoi(v);
         else if (a == "--overlay") overlay = v != "0";
+        else if (a == "--save-ref") saveRef = v;
+        else if (a == "--seed") seed = std::stoi(v);
+        else if (a == "--compare") compare = v;
+        else if (a == "--checkpoints") {
+            std::stringstream list(v);
+            for (std::string n; std::getline(list, n, ',');) checkpoints.push_back(std::stoi(n));
+        }
         else if (a == "--size") std::sscanf(v.c_str(), "%dx%d", &width, &height);
         else if (a == "--target") std::sscanf(v.c_str(), "%f,%f,%f", &camera.target[0], &camera.target[1], &camera.target[2]);
     }
@@ -170,6 +228,7 @@ int main(int argc, char** argv) {
     renderer.setPieces(piecesFromFen(fen));
     renderer.setTargetSamples(spp);
     renderer.setDenoise(denoise);
+    renderer.setSeed(seed);
     renderer.setFinish(finish);
     renderer.setOverlay(overlay ? demoOverlay() : Overlay{});
 
@@ -204,9 +263,24 @@ int main(int argc, char** argv) {
         renderer.setLighting(lighting);
         const auto start = std::chrono::steady_clock::now();
         int last         = -1;
+        std::vector<float> reference;
+        if (!compare.empty()) {
+            int rw = 0, rh = 0;
+            reference = readPfm(compare, rw, rh);
+            if (rw != width || rh != height) {
+                std::fprintf(stderr, "%s: not a reference of %dx%d\n", compare.c_str(), width, height);
+                return 1;
+            }
+        }
+        std::size_t checkpoint = 0;
         while (!renderer.converged() || renderer.width() != width) {
             renderer.render(width, height, 50.0);
             renderer.finish();  // a hidden window paces nothing: without this the GPU's queue grows past its watchdog
+            if (!reference.empty() && checkpoint < checkpoints.size() && renderer.samples() >= checkpoints[checkpoint]) {
+                std::fprintf(stderr, "\n%5d samples: relative MSE %.5f", renderer.samples(),
+                             relativeMse(meanRadiance(renderer), reference));
+                ++checkpoint;
+            }
             if (renderer.samples() != last && renderer.samples() % 16 == 0) {
                 last = renderer.samples();
                 std::fprintf(stderr, "\r%d/%d samples, %.1f ms per sample, %d bands", last, spp, renderer.passMs(),
@@ -217,6 +291,11 @@ int main(int argc, char** argv) {
         renderer.readPixels(rgba);  // waits for the GPU
         const double s = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
         stbi_write_png(shot.c_str(), width, height, 4, rgba.data(), width * 4);
+        if (!saveRef.empty() && !writePfm(saveRef, width, height, meanRadiance(renderer)))
+            std::fprintf(stderr, "\n%s: cannot be written", saveRef.c_str());
+        if (!reference.empty())
+            std::fprintf(stderr, "\n%5d samples: relative MSE %.5f", renderer.samples(),
+                         relativeMse(meanRadiance(renderer), reference));
         std::fprintf(stderr, "\n%s: %d samples in %.2f s (%.1f ms per sample, last timed pass)\n", shot.c_str(),
                      renderer.samples(), s, renderer.passMs());
         // The radiance of the pixels: mean and spread, to see light levels and fireflies.

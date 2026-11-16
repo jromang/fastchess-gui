@@ -382,6 +382,12 @@ void Overlay::addTint(int square, std::uint32_t colour) {
     tint[std::size_t(square)] = out;
 }
 
+void Renderer::setSeed(int seed) {
+    if (seed == seed_) return;
+    seed_ = seed;
+    restart();
+}
+
 void Renderer::setDenoise(bool on) {
     if (on == denoise_) return;
     denoise_  = on;
@@ -504,6 +510,7 @@ void Renderer::tracePass(int y0, int y1) {
     f.Uniform1f(loc(p, "uPieceTop"), top + 1e-3f);
     f.Uniform2f(loc(p, "uResolution"), float(width_), float(height_));
     f.Uniform1i(loc(p, "uSample"), samples_);
+    f.Uniform1i(loc(p, "uSeed"), seed_);
     // A preview carries one bounce: less to compute, and far less noise for one sample.
     f.Uniform1i(loc(p, "uBounces"), scale_ > 1 ? std::min(lighting_.bounces, 1) : lighting_.bounces);
 

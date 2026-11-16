@@ -118,6 +118,7 @@ public:
     void setFinish(const Finish& finish);
     void setTargetSamples(int samples);
     void setDenoise(bool on);
+    void setSeed(int seed);  // another series of random numbers: for measuring the noise against a reference
     void setOverlay(const Overlay& overlay);  // shown at once: the samples stay good
 
     // A step of the image of that size within about budgetMs of GPU time. True if the image changed.
@@ -194,6 +195,7 @@ private:
     double passMs_ = 0;
     bool dirty_    = true;
     bool denoise_  = true;
+    int seed_      = 0;
     bool instancesDirty_ = true;
 };
 
