@@ -280,17 +280,22 @@ void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& piec
         const float r  = sq * 0.17f;
         const ImVec2 at(std::min(c.x + sq * 0.5f - r * 0.55f, origin.x + size - r),
                         std::max(c.y - sq * 0.5f + r * 0.55f, origin.y + r));
-        dl->AddCircleFilled(ImVec2(at.x + 1, at.y + 1.5f), r, IM_COL32(0, 0, 0, 70), 24);
-        dl->AddCircleFilled(at, r, decor.badge->colour, 24);
-        const float fs  = r * 1.25f;
-        const ImVec2 ts = font->CalcTextSizeA(fs, FLT_MAX, 0, decor.badge->text.c_str());
-        dl->AddText(font, fs, ImVec2(at.x - ts.x / 2, at.y - ts.y / 2), IM_COL32_WHITE, decor.badge->text.c_str());
+        drawBoardBadge(dl, at, r, *decor.badge);
     }
     if (decor.frame)
         dl->AddRect(ImVec2(origin.x - 2, origin.y - 2), ImVec2(origin.x + size + 2, origin.y + size + 2), *decor.frame,
                     0, 0, 3.0f);
 
     ImGui::Dummy(ImVec2(size + (bar ? evalBarSpace(size) : 0.0f), size));
+}
+
+void drawBoardBadge(ImDrawList* dl, ImVec2 centre, float radius, const BoardBadge& badge) {
+    ImFont* font = ImGui::GetFont();
+    dl->AddCircleFilled(ImVec2(centre.x + 1, centre.y + 1.5f), radius, IM_COL32(0, 0, 0, 70), 24);
+    dl->AddCircleFilled(centre, radius, badge.colour, 24);
+    const float fs  = radius * 1.25f;
+    const ImVec2 ts = font->CalcTextSizeA(fs, FLT_MAX, 0, badge.text.c_str());
+    dl->AddText(font, fs, ImVec2(centre.x - ts.x / 2, centre.y - ts.y / 2), IM_COL32_WHITE, badge.text.c_str());
 }
 
 ImVec2 squareCentre(chess::Square square, ImVec2 origin, float size, bool flipped) {

@@ -20,6 +20,7 @@ uniform vec4 uMarkColour, uCheckColour;
 uniform int uArrowCount;
 uniform vec4 uArrow[8];  // from x, z, to x, z
 uniform vec4 uArrowColour[8];
+uniform int uArrowDashed;  // a bit per arrow: its shaft in dashes
 
 const float HALF = 4.0;  // half the playing surface (trace.frag)
 const float THROUGH = 0.35;  // how much of an arrow, a dot or a ring shows through a piece
@@ -165,6 +166,12 @@ vec3 marked(vec3 c, Surface s) {
         float along  = dot(r, u), across = abs(dot(r, vec2(-u.y, u.x)));
         float tip    = len - stop, base = tip - headLength, slope = head / headLength;
         float dShaft = max(across - shaft, max(-along, along - base));
+        // Dashed, as the 2D board: dashes of 0.22 square and gaps of 0.14 from the first square's centre.
+        if (((uArrowDashed >> k) & 1) != 0) {
+            float phase = mod(along, 0.36);
+            float dDash = phase < 0.22 ? max(-phase, phase - 0.22) : min(phase - 0.22, 0.36 - phase);
+            dShaft      = max(dShaft, dDash);
+        }
         float dHead  = max((across - slope * (tip - along)) / sqrt(1.0 + slope * slope), base - along);
         c = over(c, uArrowColour[k], through * cover(min(dShaft, dHead), s.w));
     }

@@ -660,13 +660,16 @@ void Renderer::displayPass() {
     f.Uniform4f(loc(p, "uCheckColour"), colour[0], colour[1], colour[2], colour[3]);
     const int arrows = int(std::min(overlay_.arrows.size(), Overlay::kMaxArrows));
     float ends[Overlay::kMaxArrows * 4], colours[Overlay::kMaxArrows * 4];
+    int dashed = 0;  // a bit per arrow
     for (int i = 0; i < arrows; ++i) {
         const Overlay::Arrow& a = overlay_.arrows[std::size_t(i)];
         const Vec3 from = squareCentre(a.from), to = squareCentre(a.to);
         ends[4 * i] = from.x, ends[4 * i + 1] = from.z, ends[4 * i + 2] = to.x, ends[4 * i + 3] = to.z;
         rgba(a.colour, colours + 4 * i);
+        if (a.dashed) dashed |= 1 << i;
     }
     f.Uniform1i(loc(p, "uArrowCount"), arrows);
+    f.Uniform1i(loc(p, "uArrowDashed"), dashed);
     if (arrows > 0) {
         f.Uniform4fv(loc(p, "uArrow"), arrows, ends);
         f.Uniform4fv(loc(p, "uArrowColour"), arrows, colours);

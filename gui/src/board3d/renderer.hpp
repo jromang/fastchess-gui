@@ -76,6 +76,7 @@ struct Overlay {
     struct Arrow {
         int from = 0, to = 0;  // squares, 0 = a1 ... 63 = h8
         std::uint32_t colour = 0;
+        bool dashed                         = false;  // a shaft in dashes, as the 2D board draws an expected move
         bool operator==(const Arrow&) const = default;
     };
     static constexpr std::size_t kMaxArrows = 8;

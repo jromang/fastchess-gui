@@ -81,6 +81,10 @@ struct BoardDecor {
     std::optional<appearance::BoardColours> colours;
 };
 
+// A move's judgement as a disc with its mark, centred on `centre`, `radius` wide; the 2D board puts it on the corner
+// of the square, the 3D board over it.
+void drawBoardBadge(ImDrawList* dl, ImVec2 centre, float radius, const BoardBadge& badge);
+
 // The room the eval bar takes left of a board `size` high, the gap after it included.
 [[nodiscard]] float evalBarSpace(float size);
 // The bar at `top`, `size` high, `eval_white` of it White's: from the bottom, or from the top when flipped.

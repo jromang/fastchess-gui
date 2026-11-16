@@ -109,7 +109,8 @@ board3d::Overlay overlayOf(const BoardDecor& decor, const std::array<chess::Piec
     }
     for (const auto& arrow : decor.arrows) {
         if (o.arrows.size() == board3d::Overlay::kMaxArrows) break;
-        o.arrows.push_back({arrow.move.from().index(), displayedTarget(arrow.move).index(), arrow.colour});
+        o.arrows.push_back(
+            {arrow.move.from().index(), displayedTarget(arrow.move).index(), arrow.colour, arrow.dashed});
     }
     return o;
 }
@@ -251,6 +252,27 @@ Board3d::Input Board3d::draw(const std::array<chess::Piece, 64>& pieces, float s
     if (bar) drawEvalBar(dl, top, size, decor.eval_white, decor.flipped);
     if (r.width() > 0)
         dl->AddImage(ImTextureRef(static_cast<ImTextureID>(r.texture())), p0, p1, ImVec2(0, 1), ImVec2(1, 0));
+
+    // The move's judgement over its square, above the piece standing there, a disc facing the viewer as on the 2D
+    // board; the frame of a line shown instead of the game round the view.
+    if (decor.badge && r.width() > 0) {
+        const int square = decor.badge->square.index();
+        auto point       = board3d::squareCentre(square);
+        const auto piece = pieces[static_cast<std::size_t>(square)];
+        const int type   = piece == chess::Piece::NONE ? -1 : static_cast<int>(piece.type());
+        if (type >= 0 && type < static_cast<int>(r.shapes().size()))
+            point.y += r.shapes()[static_cast<std::size_t>(type)].height;
+        if (const auto at = board3d::project(board3d::viewOf(r.camera(), 1.0f), point)) {
+            const float radius = size / 8.0f * 0.15f;
+            const ImVec2 c(p0.x + ((*at)[0] + 1) / 2 * size + radius * 0.9f,
+                           p0.y + (1 - (*at)[1]) / 2 * size - radius * 0.9f);
+            drawBoardBadge(
+                dl,
+                ImVec2(std::clamp(c.x, p0.x + radius, p1.x - radius), std::clamp(c.y, p0.y + radius, p1.y - radius)),
+                radius, *decor.badge);
+        }
+    }
+    if (decor.frame) dl->AddRect(ImVec2(p0.x - 2, p0.y - 2), ImVec2(p1.x + 2, p1.y + 2), *decor.frame, 0, 0, 3.0f);
 
     const ImVec2 m = io.MousePos;
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && m.x >= p0.x && m.x < p1.x && m.y >= p0.y && m.y < p1.y) {
