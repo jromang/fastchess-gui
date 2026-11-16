@@ -193,7 +193,7 @@ gezeigt; gibt es keinen, starte das Programm mit `SDL_VIDEODRIVER=x11`. Funktion
 eine Meldung das, bevor das Programm endet.
 
 ### Darstellung
-<!-- en: appearance 19dea41f -->
+<!-- en: appearance decda352 -->
 
 **Einstellungen** > *Darstellung* legt fest, wie jedes Brett des Programms aussieht (das Live-Mosaik und die
 verfolgte Partie, die abgetrennten Bretter, das Großbild, eine in *Partien* nachgespielte Partie, der Tab
@@ -219,6 +219,10 @@ verfolgte Partie, die abgetrennten Bretter, das Großbild, eine in *Partien* nac
   *Lautstärke*, und *Zug anhören* / *Schlagen anhören*, um sie zu hören. Die Töne erzeugt das Programm selbst (keine
   Tondatei); das Audiogerät wird nur geöffnet, solange sie eingeschaltet sind, und gibt es keines, sagt das Protokoll,
   warum, und das Programm bleibt stumm.
+
+- **Figurinen in der Notation** (standardmäßig an): Die Züge der Seite Brett, in ihren Zügen und in den Linien ihrer
+  Analyse, werden mit den Figuren des oben gewählten Satzes geschrieben (aus Nf3 werden ein Springer und f3); aus, mit
+  Buchstaben.
 
 Die Befehlspalette bietet diese Wahl auch (*Brettfarben: Braun*, *Figuren: Celtic*, *Zugtöne einschalten*…). Sie wird
 in `settings.json` im Profil gespeichert; der Figurenordner wird im portablen Modus relativ zum Programmordner
@@ -263,7 +267,7 @@ bleiben die Bretter flach, und die *Darstellung* sagt, warum. Die Figuren sind c
 der MIT-Lizenz; die *Darstellung* verlinkt sie.
 
 ## Tastenkürzel
-<!-- en: keyboard-shortcuts 45f7a67b -->
+<!-- en: keyboard-shortcuts e0d74f26 -->
 
 | Tasten | Wo | Was sie tun |
 |---|---|---|
@@ -282,7 +286,10 @@ der MIT-Lizenz; die *Darstellung* verlinkt sie.
 | <kbd>A</kbd> | Ein Brett | Die Stellung auf der Seite Brett öffnen und analysieren; auf der Seite Brett: die Analyse starten oder beenden |
 | <kbd>Ende</kbd> | Die Partie im Fokus in *Live* | Zurück zum aktuellen Zug |
 | <kbd>Strg</kbd>+<kbd>V</kbd> | Die Seite Brett | Eine FEN, eine EPD-Zeile, ein PGN oder eine Zugliste einfügen |
-| <kbd>Esc</kbd> | Die Seite Brett | Die aufgenommene Figur wieder ablegen |
+| <kbd>G</kbd> | Die Seite Brett | Die Partie analysieren, Durchgang um Durchgang; noch einmal: anhalten |
+| <kbd>X</kbd> | Die Seite Brett | Die Drohung zeigen oder ausblenden |
+| <kbd>N</kbd>, <kbd>Umschalt</kbd>+<kbd>N</kbd> | Die Seite Brett | Der nächste, der vorherige von der Analyse markierte Zug |
+| <kbd>Esc</kbd> | Die Seite Brett | Die Partie zurückholen, nachdem eine Linie gezeigt wurde; die aufgenommene Figur wieder ablegen |
 | <kbd>←</kbd> <kbd>→</kbd> | Das Großbild | Die vorherige oder nächste Partie |
 | <kbd>+</kbd> <kbd>-</kbd> | Das Großbild | Größerer oder kleinerer Text |
 | <kbd>Esc</kbd> | Das Großbild | Es verlassen |
@@ -571,7 +578,7 @@ angehakt, ohne die Stellungen mit vertauschten Farben) und fügt es zur Biblioth
   Partien eingegangen sind, wie viele die Optionen weggelassen haben und wie viele nicht gelesen werden konnten.
 
 ## Brett
-<!-- en: board ef08c39c -->
+<!-- en: board 1b231755 -->
 
 Die Seite Brett zeigt eine Partie oder eine Stellung, von irgendwoher: **A** auf einem beliebigen Brett des Programms
 (eine Partie des Mosaiks im Tab *Live* oder die verfolgte, das Brett des Tabs *Partien*, des Tabs *Eröffnungen*, einer
@@ -579,17 +586,23 @@ Eröffnung eines Buchs) öffnet seine Stellung hier und analysiert sie; auf der 
 Analyse. *Zurück zum Turnier* (oder *Zurück*) kehrt zu der Seite zurück, von der aus sie geöffnet wurde. Ihr Brett kann
 in 3D gezeichnet werden: siehe [Das 3D-Brett](#das-3d-brett).
 
+Das Brett steht links, mit den Spielern darüber und darunter; rechts, von oben nach unten, die Analyse, die Züge (mit
+der Tabelle der Züge, der Auswertung der Partie und den Partien der Datei in Tabs) und die Partiegrafik. Der
+Untertitel der Seite sagt, was für eine Partie es ist: ihre Veranstaltung und Runde, ihr Ergebnis, ihre Bedenkzeit,
+ihr ECO-Code und ihre Eröffnung, und wie sie endete.
+
 ### Eine Stellung öffnen, einfügen und aufbauen
-<!-- en: opening-pasting-and-setting-up-a-position dd0f4636 -->
+<!-- en: opening-pasting-and-setting-up-a-position 3778ddb5 -->
 
 - **PGN öffnen…** liest eine beliebige PGN-Datei (eine Datei lässt sich auch auf das Fenster ziehen), im Hintergrund
   mit einem Fortschrittsbalken: Eine Datei mit Millionen Partien braucht ein paar Sekunden, und ihre Partien werden in
   einem Tab neben den Zügen aufgelistet, gefiltert nach dem Eingetippten (jedes Wort, gefunden in den Spielern, der
   Veranstaltung, dem Ort, dem Datum, der Runde, der Eröffnung, dem ECO-Code oder dem Ergebnis). Ein Klick zeigt eine
-  Partie. Die Bewertungen ihrer Züge zeichnen die Kurve darunter: Gelesen werden die Kommentare von cutechess und
-  fastchess (`{+0.35/18 1.2s}`) und das `[%eval 0.35]` von lichess und ChessBase (aus der Sicht von Weiß, `#-3` für
-  ein Matt). Eine Partie, deren FEN-Tag sich nicht spielen lässt, wird abgelehnt, und die Züge einer Partie enden beim
-  ersten, der sich nicht lesen lässt.
+  Partie. Die Bewertungen ihrer Züge zeichnen die Grafik: Gelesen werden die Kommentare von cutechess und fastchess
+  (`{+0.35/18 1.2s}`) und das `[%eval 0.35]` von lichess und ChessBase (aus der Sicht von Weiß, `#-3` für ein Matt),
+  ebenso die Uhren von `[%clk 0:01:23]`. Ihre Varianten bleiben erhalten (siehe [Varianten](#varianten)). Eine
+  Partie, deren FEN-Tag sich nicht spielen lässt, wird abgelehnt, und die Züge einer Partie enden beim ersten, der
+  sich nicht lesen lässt.
 - **Einfügen** (Strg+V auf der Seite) liest die Zwischenablage: eine FEN oder die vier Felder einer EPD-Zeile; ein PGN
   mit einer oder mehreren Partien (aufgelistet wie die einer Datei); eine Zugliste ab der Ausgangsstellung, in SAN mit
   oder ohne Zugnummern (`1. e4 e5 2. Nf3`) oder in UCI (`e2e4 e7e5`). Eine Stellung, die sich nicht spielen lässt,
@@ -602,43 +615,161 @@ in 3D gezeichnet werden: siehe [Das 3D-Brett](#das-3d-brett).
   wenn König und Turm stehen, wo sie stehen müssen), das En-passant-Feld (nur hinter einem Bauern, der gerade zwei
   Felder gezogen ist) und Chess960. Die FEN darunter folgt dem Brett, und eine dort eingetippte FEN stellt es ein.
   *Fertig* wird angeboten, sobald sich die Stellung spielen lässt, und bringt sie auf das Brett.
-- *PGN kopieren* kopiert die gezeigte Partie mit ihren Tags und Zügen (die Bewertungen der Engines als Kommentare,
-  wenn sie welche hat).
+- *PGN kopieren* (rechts von den Tabs der Züge) kopiert die gezeigte Partie mit ihren Tags, ihren Zügen (die
+  Bewertungen der Engines als Kommentare, wenn sie welche hat) und ihren Varianten.
 - **Das Brett**: Die Knöpfe darunter und ← → Pos1 Ende gehen durch die Züge, und F (oder der letzte Knopf) dreht es
   um; ein Klick auf eine Figur und auf ein Feld spielt einen Zug (ein Bauer, der umwandelt, fragt nach seiner Figur).
-  Ein anderer Zug als der nächste der Partie ersetzt die Züge danach, und *Zurück zur Partie* holt die Partie so
-  zurück, wie sie war. *FEN kopieren* kopiert die Stellung.
+  *FEN kopieren* kopiert die Stellung.
+
+### Die Spieler
+<!-- en: the-players 1f4f551f -->
+
+Über und unter dem Brett, wenn die Partie Spieler hat: der Name jedes Spielers, die Bewertung seines letzten Zugs
+durch seine Engine (die Bewertung aus der Sicht von Weiß und die Tiefe, als Chip), der Zug, den er gespielt hat, und
+die Zeit, die er dafür gebraucht hat, oder *am Zug*, und rechts seine Uhr nach seinem letzten Zug, umrahmt, solange er
+am Zug ist. Die Uhren sind die der `[%clk]` der Züge, wenn die Partie sie hat; sonst werden sie aus ihrem Tag
+`TimeControl` (`300+2`, `10+0.1`: Sekunden und Inkrement) und der Zeit jedes Zugs rekonstruiert, wobei Buchzüge keine
+Zeit verbrauchen.
 
 ### Die Analyse
-<!-- en: the-analysis 40171591 -->
+<!-- en: the-analysis 63237b12 -->
 
-Eine Engine der Bibliothek durchsucht die gezeigte Stellung und folgt dem Brett: Tiefe, Knoten, Geschwindigkeit, die
-Gewinn-, Remis- und Verlustchancen, wenn die Engine sie angibt (`UCI_ShowWDL`), und mehrere Linien (MultiPV), deren
-erste Züge als Pfeile gezeichnet werden, der beste dunkler (**Einstellungen** > *Darstellung* > *Die Pfeile der Analyse
-auf der Seite Brett* blendet sie aus; die Linien zeigen die Züge weiterhin). Die Bewertungen sind aus der Sicht von
-Weiß. Ein Klick auf eine Linie spielt ihren ersten Zug. Ihre Engine, *Threads*, *Hash* (0: der eigene der Engine) und
-*Linien* sind Einstellungen der Analyse selbst: Sie bleiben für das nächste Mal erhalten und ändern weder die Engine der
-Bibliothek noch irgendein Turnier. Die übrigen Optionswerte der Bibliothek werden so gesendet, wie eine Partie sie
-sendet. Die Analyse wartet, während eine andere Seite gezeigt wird, und geht weiter, wenn die Seite Brett wiederkommt;
-*Analyse beenden* (oder A) beendet sie, und ein Punkt auf dem Knopf *Brett* der Leiste zeigt an, dass sie läuft.
+Eine Engine der Bibliothek durchsucht die gezeigte Stellung und folgt dem Brett. Die Karte zeigt ihre Engine, dann
+einen Knopf mit ihren *Threads*, ihrem *Hash* (0: der eigene der Engine) und ihren *Linien* (MultiPV), den ein Klick
+öffnet: die Einstellungen der Analyse selbst, die für das nächste Mal erhalten bleiben und weder die Engine der
+Bibliothek noch irgendein Turnier ändern (die übrigen Optionswerte der Bibliothek werden so gesendet, wie eine Partie
+sie sendet). Rechts die Threads, die die Seite Brett von denen der Maschine belegt, in der Warnfarbe, während ein
+Turnier läuft (ihr Tooltip sagt, wie viele Threads die Partien des Turniers belegen: Die Analyse konkurriert mit
+ihnen).
 
-Die Threads der Analyse zählen zum Kern-Budget, das darunter mit den Threads der Maschine gezeigt wird. Während ein
-Turnier läuft, konkurriert die Analyse mit seinen Partien: Die Seite weist darauf hin, mit den Threads, die die
-Partien belegen. Ihre Engine ist keiner der Prozesse des Turniers: Das Ende eines Turniers beendet sie nicht.
+Die Suche erscheint als Kacheln (Tiefe und seldepth, Knoten, Geschwindigkeit, Zeit, Tablebase-Treffer, wie voll der
+Hash ist), dazu die Gewinn-, Remis- und Verlustchancen, wenn die Engine sie angibt (`UCI_ShowWDL`), und jede Linie:
+ihre Bewertung (aus der Sicht von Weiß, die beste hervorgehoben), ihre Tiefe und ihre Züge auf zwei Zeilen, mit
+Figurinen (siehe [Darstellung](#darstellung)). Steht die Maus über einem Zug einer Linie, zeigt das Brett die
+Stellung danach, umrahmt; ein Klick spielt die Linie bis zu diesem Zug. Der erste Zug jeder Linie wird als Pfeil
+gezeichnet, der beste dunkler (**Einstellungen** > *Darstellung* > *Die Pfeile der Analyse auf der Seite Brett*
+blendet sie aus; die Linien zeigen die Züge weiterhin).
+
+**Drohung** (X) lässt einen weiteren Prozess der Engine die Stellung mit übergebenem Zugrecht durchsuchen: den besten
+Zug des Gegners, dürfte er noch einmal ziehen, als roter Pfeil gezeichnet und unter die Linien geschrieben (keiner,
+solange die Seite am Zug im Schach steht).
+
+Die Analyse wartet, während eine andere Seite gezeigt wird, und geht weiter, wenn die Seite Brett wiederkommt;
+*Analyse beenden* (oder A) beendet sie, und ein Punkt auf dem Knopf *Brett* der Leiste zeigt an, dass sie läuft. Ihre
+Engine ist keiner der Prozesse des Turniers: Das Ende eines Turniers beendet sie nicht.
 
 ### Eine ganze Partie analysieren
-<!-- en: analysing-a-whole-game 81150c63 -->
+<!-- en: analysing-a-whole-game a7e6166c -->
 
-**Partie analysieren** geht mit der Analyse-Engine (ihren Threads und ihrem Hash, eine Linie) durch jede Stellung der
-gezeigten Partie, für die neben dem Knopf gewählte Zeit pro Zug oder Tiefe, im Hintergrund: Der Fortschritt erscheint
-über den Zügen, *Abbrechen* beendet den Durchlauf, und die Analyse des Bretts wartet so lange. Jeder Zug wird nach den
-Gewinnchancen beurteilt, die die ziehende Seite mit ihm verloren hat, aus den Bewertungen der Engine davor und danach
-(das Maß von lichess: 50 % bei 0.00, etwa 59 % bei +1.00): 10 verlorene Punkte sind eine Ungenauigkeit (`?!`), 20 ein
-Fehler (`?`), 30 ein grober Fehler (`??`), markiert hinter dem Zug in der Liste; der Zug, den die Engine gespielt
-hätte, wird nie markiert. Der Tooltip eines markierten Zugs gibt an, was er verloren hat, und nennt den Zug der Engine. Eine
-Zeile zählt sie für jeden Spieler, und die Kurve der Analyse (orange) wird über die der Engines selbst (blau)
-gezeichnet. Die Analyse wird mit der Partie aufbewahrt (in `analyses/` im Profil): Dieselbe Partie, von irgendwo erneut
-geöffnet, zeigt sie sofort.
+**Partie analysieren** (G, in den Werkzeugen der Seite oder in der Kopfzeile der Grafik) lässt die Analyse-Engine
+(ihre Threads und ihr Hash, eine Linie) jede Stellung der Partie im Hintergrund durchsuchen, zuerst je 20 ms, dann bei
+jedem Durchgang erneut viermal so lange (80 ms, 0,3 s, 1,3 s, 5 s…), bis zu der Zeit, die mit dem Pfeil neben dem
+Knopf gewählt wird (0,3 s, 1,3 s, 5 s, 20 s pro Stellung oder *bis zum Stoppen*): Die Grafik ist nach ein, zwei
+Sekunden da und wird mit jedem Durchgang schärfer. Die Stellungen werden von der letzten zur ersten durchlaufen,
+sodass der Hash der Engine festhält, was nach einer Stellung kommt (gemessen: bei gleicher Zeit etwa 16 % näher an
+langen Suchen als von der ersten zur letzten), die Stellung auf dem Brett zuerst. Die Kopfzeile der Grafik nennt den
+Durchgang, die Zeit pro Stellung und den Fortschritt, und ein schmales Band unter ihrem Zeitstreifen, was jede
+Stellung bekommen hat; *Stopp* (oder G) hält sie an.
+
+Jeder Zug wird nach den Gewinnchancen beurteilt, die die ziehende Seite mit ihm verloren hat, aus den Bewertungen der
+Analyse davor und danach (das Maß von lichess: 50 % bei 0.00, etwa 59 % bei +1.00): 10 verlorene Punkte sind eine
+Ungenauigkeit (`?!`), 20 ein Fehler (`?`), 30 ein grober Fehler (`??`), markiert hinter dem Zug, auf der Grafik und
+auf dem Brett; der Zug, den die Engine gespielt hätte, wird nie markiert. Ein Zug wird nach dem letzten vollständigen
+Durchgang beurteilt; eine Markierung, die der letzte Durchgang geändert hat, ist hohl, bis der nächste sie bestätigt.
+N und Umschalt+N (oder die Knöpfe neben der Navigation) gehen zum nächsten und zum vorherigen markierten Zug.
+
+Jeder vollständige Durchgang wird mit der Partie aufbewahrt (in `analyses/` im Profil): Dieselbe Partie, von irgendwo
+erneut geöffnet, zeigt die Analyse sofort, und G macht bei den erledigten Durchgängen weiter. Die Analyse läuft in
+einem eigenen Thread mit einem eigenen Engine-Prozess, ihre Threads zählen zum Kern-Budget; die Analyse des Bretts (A)
+pausiert sie, und wenn A eine Stellung der Partie länger durchsucht, als der Durchgang es tat, tritt ihr Wert an die
+Stelle des Werts dieser Stellung.
+
+**Mehrere Analysen**: *+ Engine* in der Legende der Grafik lässt eine weitere Engine der Bibliothek die Partie
+ebenfalls analysieren, bei jedem Durchgang gleich lang. Jede Analyse hat ihre Farbe auf der Grafik und auf dem Brett
+(ihr bester Zug als Pfeil, solange die Analyse des Bretts aus ist), ihre Zeile in *Dieser Zug* und ihre Genauigkeiten
+in der Auswertung. Sie gehen gemeinsam Durchgang für Durchgang vor, alle gleichzeitig, wenn die Kerne es erlauben,
+sonst eine nach der anderen. Eine Analyse beurteilt die Züge (die erste; ein Rechtsklick auf eine andere in der
+Legende macht sie zum Richter oder entfernt sie); eine Markierung ist hohl, wenn die Analysen den Zug nicht alle
+gleich beurteilen. Gewinnchancen vergleichen Engines besser als Centipawns, die sich von einer Engine zur anderen
+unterscheiden: Sie nehmen das WDL jeder Engine, wenn sie eines angibt.
+
+### Die Partiegrafik
+<!-- en: the-game-graph 14e02bad -->
+
+Unter den Zügen die Grafik der Partie, dieselbe wie in *Live* und *Partien*:
+
+- **Bewertung**: die beurteilende Analyse als weiße und schwarze Fläche (der Vorteil von Weiß über der Linie, der von
+  Schwarz darunter), jede Engine, die gespielt hat, als Kurve in ihrer Farbe bei ihren eigenen Zügen, die anderen
+  Analysen als gestrichelte Kurven; die markierten Züge auf der Kurve; Werte jenseits von ±6 am Rand entlang in der
+  Warnfarbe gezeichnet. Ohne Analyse ist die Fläche der Mittelwert der Bewertungen der beiden Engines.
+- Die Buchzüge schraffiert, die Phasen unter der Achse (die Eröffnung; das Mittelspiel ab der ersten Stellung mit
+  höchstens 10 Figuren außer Königen und Bauern oder weniger als 4 auf einer Grundreihe; das Endspiel ab höchstens 6,
+  wie lichess eine Partie einteilt), die Zone, die die Tablebases kennen, eingefärbt, die Zugnummern am unteren Rand.
+- Unter der Achse die Zeit jedes Zugs: die von Weiß nach oben, die von Schwarz nach unten.
+
+Ihre Tabs: *Gewinnchancen* (aus dem WDL, wenn die Engines es angeben, sonst nach der Formel von lichess), *S/R/N* (die
+Anteile, die die Engines gemeldet haben, die Siege von Weiß unten), *Zeit* (mit der Entscheidungszeit), *Tiefe* (mit
+der seldepth), *Knoten*, *Geschwindigkeit*, *TB-Treffer*, *Übereinstimmung* (wie weit die Bewertungen der beiden
+Spieler auseinanderliegen, jeder Zug gegen den vorherigen, und die der Analysen in jeder Stellung) und
+*PV-Übereinstimmung* (wie viele Halbzüge der PV einer Engine wiederholen, was die der anderen vorhergesagt hat); die,
+für die die Partie keine Werte hat, werden weggelassen, und die, die keinen Platz haben, kommen in das Menü `⋯`. Steht
+die Maus darüber, nennt die Grafik den Zug und was jede Engine sagte; ein Klick oder ein Ziehen geht zu dem Zug. Ein
+Klick auf eine Kurve in der Legende blendet sie aus oder ein; der Pfeil rechts klappt die Grafik ein.
+
+### Dieser Zug
+<!-- en: this-move a4a908f8 -->
+
+Unter den Zügen, zum gezeigten Zug: was die Engine, die ihn gespielt hat, sagte (ihre Bewertung, Tiefe und seldepth,
+Zeit, Knoten, Geschwindigkeit, Tablebase-Treffer, so wie das PGN sie hat), die Linie, die sie danach erwartete, der
+Befund jeder Analyse (der Anteil der verlorenen Gewinnchancen, das Urteil, der beste Zug und seine Bewertung), und mit
+den Tablebases das Ergebnis nach dem Zug und ob der Zug das vorherige gehalten hat. *Zeigen* legt eine Linie auf das
+Brett, ohne die Partie zu berühren: die Stellung danach, das Brett umrahmt, darüber geschrieben, was es ist; Esc, ein
+Klick auf das Brett oder ein Schritt durch die Partie holt die Partie zurück. Auf dem Brett ist das Urteil über den
+Zug ein Abzeichen auf seinem Feld, und die Antwort, die seine Engine erwartete, ein gestrichelter Pfeil.
+
+### Varianten
+<!-- en: variations 7932794c -->
+
+Ein Zug, der auf dem Brett gespielt wird, wo die Partie anders weiterging, beginnt eine Variante: Die Partie bleibt,
+wie sie war, mit ihren Analysen und ihrer Grafik. Die Züge zeigen die Varianten in Klammern nach dem Zug, den sie
+ersetzen, verschachtelt und nummeriert; ein Klick auf einen Zug geht dorthin, und *Zurück zur Partie* kehrt zu der
+Stellung zurück, an der die Variante abzweigt. Ein Rechtsklick auf einen Zug einer Variante stuft sie hoch (sie wird
+zur Linie, von der sie abzweigt, deren Züge danach zur Variante werden), löscht sie samt den von ihr abzweigenden
+oder kopiert sie. *PGN kopieren* schreibt die Varianten, und die einer geöffneten PGN-Datei werden gelesen
+(Kommentare, Zugnummern, Anmerkungen und Ergebnisse übersprungen; ein Zug, der sich nicht spielen lässt, beendet nur
+seine Variante). Die Grafik, die Analysen und die Urteile gehören zur Partie; auf einer Variante markiert die Grafik,
+wo sie die Partie verlässt.
+
+### Die Züge, die Tabelle und die Auswertung
+<!-- en: the-moves-the-table-and-the-review 7880f8d8 -->
+
+**Züge** schreibt die Partie als fließenden Text: Figurinen (siehe [Darstellung](#darstellung)), die Buchzüge grau
+und das Ende des Buchs markiert, die Urteile farbig, der aktuelle Zug umrahmt; steht die Maus über einem Zug, nennt
+er, was seine Engine sagte, und sein Urteil. **Tabelle** listet jeden Zug mit der Bewertung seiner Engine (aus der
+Sicht von Weiß), Tiefe und Zeit, einem Balken für die Zeit, die markierten Züge farbig.
+
+**Auswertung**, sobald die Partie analysiert ist: für jede Seite ihre Genauigkeit (die von lichess: die jedes Zugs aus
+den Gewinnchancen, die er verloren hat, wobei die Züge der scharfen Momente mehr zählen), ihre Ungenauigkeiten, Fehler
+und groben Fehler, ihr durchschnittlicher Verlust in Centipawns, der Anteil ihrer Züge, die auch die Analyse spielen
+würde, die durchschnittliche Tiefe und Zeit ihrer Engine; ihre Genauigkeit in der Eröffnung, im Mittelspiel und im
+Endspiel; mit mehreren Analysen die Genauigkeiten, die jede angibt. Dann die Schlüsselmomente, jeder einen Klick
+entfernt: der Wendepunkt (der Zug, der am meisten verloren hat, mit dem besten Zug), die anderen Fehler und groben
+Fehler, die Stellen, an denen die beiden Engines zwei Züge in Folge um 1,5 Bauern oder mehr uneinig waren, der Beginn
+des Endspiels und der der Tablebases. *Wer es zuerst sah* sagt für den Wendepunkt, bei welchem Zug jede Engine, die
+gespielt hat, und jede Analyse der Seite, die gewinnt, zum ersten Mal einen Bauern oder mehr gab.
+*PGN mit der Analyse kopieren* schreibt die Partie mit der Bewertung jeder Stellung (`[%eval]`), den Urteilen als NAGs
+und, nach einem markierten Zug, der Linie, die die Analyse vorzog; *Als BBCode kopieren* liefert die Auswertung für ein
+Forum.
+
+### Tablebases auf der Seite Brett
+<!-- en: tablebases-on-the-board-page 721b71dd -->
+
+Mit den Syzygy-Ordnern der Einrichtung (*Abschätzung* > Tablebases) fragt die Seite Brett jede Stellung der Partie
+ab: Die Grafik färbt die Zone ein, die die Tabellen kennen, *Dieser Zug* nennt das Ergebnis nach dem Zug und ob der
+Zug das vorherige gehalten oder verdorben hat, und die Auswertung markiert, wo die Tabellen übernehmen. Jede Stellung
+wird abgefragt, als wäre gerade ein Schlagzug oder ein Bauernzug gespielt worden, was genau ist, außer wo die
+50-Züge-Regel nahe ist. Die Tabellen sind die des Programmprozesses: Sie werden nicht abgefragt, während ein Turnier
+darin spielt.
 
 ### Eine Partie aus einer Stellung spielen
 <!-- en: playing-a-game-from-a-position 6e79a367 -->
@@ -1098,15 +1229,16 @@ begonnen hat, oder sobald seine Runde begonnen hat, wenn sich die Runde eine tei
 (siehe [Ein laufendes Turnier ändern](#ein-laufendes-turnier-ändern)).
 
 ### Live
-<!-- en: live 08ae852d -->
+<!-- en: live 002a902e -->
 
 Die laufenden Partien, als Mosaik von Brettern oder als eine Partie im Fokus mit den Uhren, der laufenden Suche jeder
-Engine (Tiefe, Bewertung, Knoten, nps, PV in SAN), der Zugliste und der Bewertungskurve. Über der Kurve lässt sich
-stattdessen für jede Engine die Zeit pro Zug mit ihrer Entscheidungszeit anzeigen, die Tiefe mit seldepth, die Knoten,
-die Geschwindigkeit, die Tablebase-Treffer, oder wie viele Halbzüge ihre PV von dem wiederholt, was die PV der anderen
-Engine vorhergesagt hat. Die Anteile für Sieg/Remis/Niederlage (`UCI_ShowWDL`, beim Hinzufügen für die Engines
-eingeschaltet, die es haben) folgen jeder Suchzeile und werden als Bänder unter der Kurve gezeichnet, die Siege von
-Weiß unten.
+Engine (Tiefe, Bewertung, Knoten, nps, PV in SAN), der Zugliste und der Partiegrafik (siehe
+[Die Partiegrafik](#die-partiegrafik)): die Bewertungen der beiden Engines und in ihren Tabs ihre Gewinnchancen, die
+Zeit pro Zug mit der Entscheidungszeit, die Tiefe mit seldepth, die Knoten, die Geschwindigkeit, die
+Tablebase-Treffer, wie weit sie auseinanderliegen, oder wie viele Halbzüge eine PV von dem wiederholt, was die PV der
+anderen Engine vorhergesagt hat. Die Anteile für Sieg/Remis/Niederlage (`UCI_ShowWDL`, beim Hinzufügen für die Engines
+eingeschaltet, die es haben) folgen jeder Suchzeile; der Tab *S/R/N* zeichnet sie als Bänder, die Siege von Weiß
+unten.
 
 Unter dem Brett: der 50-Züge-Zähler (Halbzüge seit dem letzten Schlagen oder Bauernzug, von 100), der
 Materialunterschied mit den Figuren, die eine Seite mehr hat, und die verbleibenden Steine, mit *TB* markiert, wenn die
@@ -1143,13 +1275,13 @@ Fernseher) verschobenes abgetrenntes Brett zeigt es in seinem eigenen Fenster, w
 schaltet, während das Hauptfenster weiterläuft; im Hauptfenster angedockt, zeigt das Hauptfenster es.
 
 ### Partien
-<!-- en: games 1f173028 -->
+<!-- en: games ba4a9604 -->
 
 Die beendeten Partien mit ihrer Eröffnung (ECO-Code und Name) und ein Brett zum Nachspielen: die Knöpfe darunter,
-← → Pos1 Ende und F, oder ein Klick auf einen Zug oder auf die Kurve; dieselben Details darunter und dieselben
-Diagramme wie in *Live*, aus den Feldern, mit denen das PGN geschrieben wurde (ein Diagramm, dessen Feld das Turnier
-nicht geschrieben hat, sagt das, mit einem Knopf zu den PGN-Optionen der Einrichtung), mit den Sieg-, Remis- und
-Verlustanteilen der Engines, die sie melden, unter der Bewertungskurve.
+← → Pos1 Ende und F, oder ein Klick auf einen Zug oder auf die Grafik; dieselben Details darunter und dieselbe
+Partiegrafik wie in *Live* (siehe [Die Partiegrafik](#die-partiegrafik)), aus den Feldern, mit denen das PGN
+geschrieben wurde: Ein Diagramm, dessen Feld das Turnier nicht geschrieben hat, steht ausgegraut im Menü `⋯` der
+Grafik und sagt das, mit einem Knopf zu den PGN-Optionen der Einrichtung.
 
 **Filter**: nach Ergebnis (Siege, Remis, Niederlagen, Zeitverluste, Abstürze und illegale Züge, Abschätzungen, falsche
 PVs, und die Partien einer als unausgeglichen markierten Eröffnung, wenn die Einrichtung nach ihnen sucht); nach dem,

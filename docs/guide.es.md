@@ -189,7 +189,7 @@ gráfico; si no lo hay, inicia el programa con `SDL_VIDEODRIVER=x11`. Cuando nin
 mensaje lo indica antes de que el programa termine.
 
 ### Apariencia
-<!-- en: appearance 19dea41f -->
+<!-- en: appearance decda352 -->
 
 **Ajustes** > *Apariencia* elige el aspecto de todos los tableros del programa (el mosaico en directo y la partida
 seguida, los tableros separados, la pantalla grande, una partida reproducida en *Partidas*, la pestaña *Aperturas*,
@@ -216,6 +216,10 @@ las aperturas de un libro), con un pequeño tablero junto a las opciones que las
   las partidas del mosaico. *Volumen*, y *Probar una jugada* / *Probar una captura* para oírlos. Los sonidos los
   genera el programa (ningún archivo de sonido); el dispositivo de sonido solo se abre mientras están activados, y
   cuando no hay ninguno el registro dice por qué y el programa permanece en silencio.
+
+- **Figuras en la notación** (activado por defecto): las jugadas de la página Tablero, en su lista de jugadas y en las
+  líneas de su análisis, se escriben con las piezas del juego elegido arriba (Nf3 pasa a ser un caballo y f3);
+  desactivado, con letras.
 
 La paleta de comandos también tiene estas opciones (*Colores del tablero: Marrón*, *Piezas: Celtic*, *Activar los
 sonidos de las jugadas*…). Se guardan en `settings.json`, en el perfil; en el modo portátil, la carpeta de piezas se
@@ -259,7 +263,7 @@ tableros siguen planos y *Apariencia* dice por qué. Las piezas son las Staunton
 licencia MIT; *Apariencia* enlaza con ellas.
 
 ## Atajos de teclado
-<!-- en: keyboard-shortcuts 45f7a67b -->
+<!-- en: keyboard-shortcuts e0d74f26 -->
 
 | Teclas | Dónde | Qué hacen |
 |---|---|---|
@@ -278,7 +282,10 @@ licencia MIT; *Apariencia* enlaza con ellas.
 | <kbd>A</kbd> | Un tablero | Abrir la posición en la página Tablero y analizarla; en la página Tablero: iniciar o detener el análisis |
 | <kbd>Fin</kbd> | La partida en primer plano en *Directo* | Volver a la jugada actual |
 | <kbd>Ctrl</kbd>+<kbd>V</kbd> | La página Tablero | Pegar una FEN, una línea EPD, un PGN o una lista de jugadas |
-| <kbd>Esc</kbd> | La página Tablero | Soltar la pieza cogida |
+| <kbd>G</kbd> | La página Tablero | Analizar la partida, pasada tras pasada; otra vez: detenerlo |
+| <kbd>X</kbd> | La página Tablero | Mostrar u ocultar la amenaza |
+| <kbd>N</kbd>, <kbd>Mayús</kbd>+<kbd>N</kbd> | La página Tablero | La jugada siguiente, la anterior que marcó el análisis |
+| <kbd>Esc</kbd> | La página Tablero | Devolver la partida tras mostrar una línea; soltar la pieza cogida |
 | <kbd>←</kbd> <kbd>→</kbd> | La pantalla grande | La partida anterior o la siguiente |
 | <kbd>+</kbd> <kbd>-</kbd> | La pantalla grande | Texto más grande o más pequeño |
 | <kbd>Esc</kbd> | La pantalla grande | Salir de ella |
@@ -558,7 +565,7 @@ en **Suites**.
   pudieron leer.
 
 ## Tablero
-<!-- en: board ef08c39c -->
+<!-- en: board 1b231755 -->
 
 La página Tablero muestra una partida o una posición, de cualquier procedencia: **A** en cualquier tablero del programa
 (una partida del mosaico de la pestaña *Directo* o la seguida, el tablero de la pestaña *Partidas*, el de la pestaña
@@ -566,17 +573,23 @@ La página Tablero muestra una partida o una posición, de cualquier procedencia
 detiene el análisis. *Volver al torneo* (o *Volver*) regresa a la página de la que vino. Su tablero puede dibujarse en
 3D: véase [El tablero 3D](#el-tablero-3d).
 
+El tablero está a la izquierda, con los jugadores encima y debajo; a la derecha, de arriba abajo, el análisis, las
+jugadas (con la tabla de las jugadas, la revisión de la partida y las partidas del archivo en pestañas) y el gráfico de
+la partida. El subtítulo de la página dice qué partida es: su evento y su ronda, su resultado, su ritmo de juego, su
+código ECO y su apertura, y cómo terminó.
+
 ### Abrir, pegar y preparar una posición
-<!-- en: opening-pasting-and-setting-up-a-position dd0f4636 -->
+<!-- en: opening-pasting-and-setting-up-a-position 3778ddb5 -->
 
 - **Abrir un PGN…** lee cualquier archivo PGN (también se puede soltar un archivo sobre la ventana), en segundo plano
   con una barra de progreso: un archivo de millones de partidas tarda unos segundos, y sus partidas se listan en una
   pestaña junto a las jugadas, filtradas por lo que se escribe (cada palabra debe encontrarse en los jugadores, el
   evento, el lugar, la fecha, la ronda, la apertura, el código ECO o el resultado). Un clic muestra una partida. Las
-  evaluaciones de sus jugadas dibujan la curva que hay debajo: se leen los comentarios de cutechess y fastchess
-  (`{+0.35/18 1.2s}`) y el `[%eval 0.35]` de lichess y ChessBase (desde el lado de las blancas, `#-3` para un mate).
-  Una partida cuya etiqueta FEN no se puede jugar se rechaza, y las jugadas de una partida se detienen en la primera
-  que no se puede leer.
+  evaluaciones de sus jugadas dibujan el gráfico: se leen los comentarios de cutechess y fastchess
+  (`{+0.35/18 1.2s}`) y el `[%eval 0.35]` de lichess y ChessBase (desde el lado de las blancas, `#-3` para un mate),
+  y también los relojes de `[%clk 0:01:23]`. Sus variantes se conservan (consulta [Variantes](#variantes)). Una
+  partida cuya etiqueta FEN no se puede jugar se rechaza, y las jugadas de una partida se detienen en la primera que no
+  se puede leer.
 - **Pegar** (Ctrl+V en la página) lee el portapapeles: una FEN, o los cuatro campos de una línea EPD; un PGN de una
   o más partidas (listadas como las de un archivo); una lista de jugadas desde la posición inicial, en SAN con o sin
   números (`1. e4 e5 2. Nf3`) o en UCI (`e2e4 e7e5`). Una posición que no se puede jugar se rechaza indicando el
@@ -588,43 +601,158 @@ detiene el análisis. *Volver al torneo* (o *Volver*) regresa a la página de la
   (ofrecidos solo cuando el rey y la torre están donde deben), la casilla al paso (solo detrás de un peón que acaba de
   avanzar dos casillas) y Chess960. La FEN de debajo sigue al tablero, y una FEN escrita ahí lo fija. *Listo* se
   ofrece en cuanto la posición se puede jugar, y la pone en el tablero.
-- *Copiar PGN* copia la partida mostrada, con sus etiquetas y jugadas (y las puntuaciones de los motores como
-  comentarios cuando las tiene).
+- *Copiar PGN* (a la derecha de las pestañas de las jugadas) copia la partida mostrada, con sus etiquetas, sus jugadas
+  (las puntuaciones de los motores como comentarios cuando las tiene) y sus variantes.
 - **El tablero**: los botones de debajo y ← → Inicio Fin recorren las jugadas, y F (o el último botón) lo gira; un
-  clic en una pieza y en una casilla juega una jugada (un peón que corona pregunta por su pieza). Una jugada distinta
-  de la siguiente de la partida reemplaza a las jugadas posteriores, y *Volver a la partida* devuelve la partida tal
-  como llegó. *Copiar FEN* copia la posición.
+  clic en una pieza y en una casilla juega una jugada (un peón que corona pregunta por su pieza). *Copiar FEN* copia la
+  posición.
+
+### Los jugadores
+<!-- en: the-players 1f4f551f -->
+
+Encima y debajo del tablero, cuando la partida tiene jugadores: el nombre de cada uno, la evaluación de su última
+jugada según su motor (la puntuación desde el lado de las blancas y la profundidad, en una etiqueta), la jugada que hizo
+y el tiempo que tardó, o *le toca jugar*, y a la derecha su reloj tras su última jugada, enmarcado mientras tiene el
+turno. Los relojes son los de los `[%clk]` de las jugadas cuando la partida los tiene; si no, se reconstruyen a partir
+de su etiqueta `TimeControl` (`300+2`, `10+0.1`: segundos e incremento) y del tiempo de cada jugada, sin que las
+jugadas de libro consuman ninguno.
 
 ### El análisis
-<!-- en: the-analysis 40171591 -->
+<!-- en: the-analysis 63237b12 -->
 
-Un motor de la biblioteca busca en la posición mostrada y sigue al tablero: profundidad, nodos, velocidad, las
-probabilidades de victoria, tablas y derrota cuando el motor las da (`UCI_ShowWDL`), y varias líneas (MultiPV), cuyas
-primeras jugadas se dibujan como flechas, la mejor más oscura (**Ajustes** > *Apariencia* > *Las flechas del análisis en
-la página Tablero* las quita; las líneas siguen mostrando las jugadas). Las puntuaciones son desde el lado de las
-blancas. Un clic en una línea juega su primera jugada. Su motor, *Threads*, *Hash* (0: el del motor) y *Líneas* son
-ajustes propios del análisis: se conservan para la próxima vez y no cambian ni el motor de la biblioteca ni ningún
-torneo. Los demás valores de opciones de la biblioteca se envían como los envía una partida. El análisis espera mientras
-se muestra otra página, y continúa cuando se vuelve a la página Tablero; *Detener el análisis* (o A) lo detiene, y un
-punto en el botón *Tablero* de la barra indica cuándo está en marcha.
+Un motor de la biblioteca busca en la posición mostrada y sigue al tablero. La tarjeta muestra su motor y luego un
+botón con sus *Threads*, su *Hash* (0: el del motor) y sus *Líneas* (MultiPV), que se abre con un clic: los ajustes
+propios del análisis, que se conservan para la próxima vez y no cambian ni el motor de la biblioteca ni ningún torneo
+(los demás valores de opciones de la biblioteca se envían como los envía una partida). A la derecha, los hilos que usa
+la página Tablero de los de la máquina, en el color de aviso mientras se juega un torneo (su descripción emergente
+indica cuántos hilos ocupan las partidas del torneo: el análisis compite con ellas).
 
-Los hilos del análisis cuentan en el presupuesto de núcleos, mostrado debajo con los hilos de la máquina. Mientras se
-juega un torneo, el análisis compite con sus partidas: la página lo indica, con los hilos que usan las partidas. Su
-motor no es uno de los procesos del torneo: el final de un torneo no lo detiene.
+La búsqueda se muestra en recuadros (profundidad y seldepth, nodos, velocidad, tiempo, accesos a tablas de finales, lo
+lleno que está el hash), las probabilidades de victoria, tablas y derrota cuando el motor las da (`UCI_ShowWDL`), y cada
+línea: su puntuación (desde el lado de las blancas, la mejor destacada), su profundidad y sus jugadas en dos renglones,
+con figuras (consulta [Apariencia](#apariencia)). Pasar el ratón por una jugada de una línea muestra en el tablero,
+enmarcado, la posición tras ella; un clic juega la línea hasta esa jugada. La primera jugada de cada línea se dibuja
+como una flecha, la mejor más oscura (**Ajustes** > *Apariencia* > *Las flechas del análisis en la página Tablero* las
+quita; las líneas siguen mostrando las jugadas).
+
+**Amenaza** (X) hace que otro proceso del motor busque en la posición pasando el turno: la mejor jugada del rival si
+volviera a mover, dibujada como una flecha roja y escrita bajo las líneas (ninguna mientras el bando al que le toca
+mover está en jaque).
+
+El análisis espera mientras se muestra otra página, y continúa cuando se vuelve a la página Tablero; *Detener el
+análisis* (o A) lo detiene, y un punto en el botón *Tablero* de la barra indica cuándo está en marcha. Su motor no es
+uno de los procesos del torneo: el final de un torneo no lo detiene.
 
 ### Analizar una partida entera
-<!-- en: analysing-a-whole-game 81150c63 -->
+<!-- en: analysing-a-whole-game a7e6166c -->
 
-**Analizar la partida** recorre cada posición de la partida mostrada con el motor de análisis (sus hilos y su hash,
-una línea), durante el tiempo por jugada o hasta la profundidad elegidos junto al botón, en segundo plano: el progreso
-aparece encima de las jugadas, *Cancelar* lo detiene, y mientras tanto el análisis del tablero espera. Cada jugada se
-juzga por las probabilidades de ganar que perdió quien la jugó, a partir de las puntuaciones del motor antes y después
-de ella (la medida de lichess: 50 % a 0.00, alrededor del 59 % a +1.00): 10 puntos perdidos es una imprecisión
-(`?!`), 20 un error (`?`), 30 un error grave (`??`), marcados tras la jugada en la lista; la jugada que habría jugado
-el motor nunca se marca. La descripción emergente de una jugada marcada indica lo que perdió y la jugada del motor.
-Una línea los cuenta para cada jugador, y la curva del análisis (naranja) se dibuja sobre la de los propios motores
-(azul). El análisis se guarda con la partida (en `analyses/` en el perfil): la misma partida, abierta de nuevo desde
-cualquier sitio, lo muestra de inmediato.
+**Analizar la partida** (G, en las herramientas de la página o en la cabecera del gráfico) hace que el motor de
+análisis (sus hilos y su hash, una línea) busque en cada posición de la partida en segundo plano, primero 20 ms cada
+una, luego de nuevo cuatro veces más en cada pasada (80 ms, 0,3 s, 1,3 s, 5 s…), hasta el tiempo elegido con la flecha
+junto al botón (0,3 s, 1,3 s, 5 s, 20 s por posición, o *hasta que lo detengas*): el gráfico aparece en un segundo o
+dos y se afina en cada pasada. Las posiciones van de la última a la primera, lo que permite que el hash del motor
+guarde lo que viene después de una posición (medido: alrededor de un 16 % más cerca de las búsquedas largas que de la
+primera a la última, con el mismo tiempo), empezando por la posición del tablero. La cabecera del gráfico indica la
+pasada, el tiempo por posición y el progreso, y una banda fina bajo su franja de tiempos lo que recibió cada posición;
+*Detener* (o G) lo detiene.
+
+Cada jugada se juzga por las probabilidades de ganar que perdió quien la jugó, a partir de las puntuaciones del
+análisis antes y después de ella (la medida de lichess: 50 % a 0.00, alrededor del 59 % a +1.00): 10 puntos perdidos
+es una imprecisión (`?!`), 20 un error (`?`), 30 un error grave (`??`), marcados tras la jugada, en el gráfico y en el
+tablero; la jugada que habría jugado el motor nunca se marca. Una jugada se juzga según la última pasada completa; una
+marca que la última pasada cambió queda hueca hasta que la siguiente la confirma. N y Mayús+N (o los botones junto a la
+navegación) van a la jugada marcada siguiente y a la anterior.
+
+Cada pasada completa se guarda con la partida (en `analyses/` en el perfil): la misma partida, abierta de nuevo desde
+cualquier sitio, la muestra de inmediato, y G continúa a partir de las pasadas hechas. El análisis se ejecuta en su
+propio hilo con su propio proceso de motor, y sus hilos cuentan en el presupuesto de núcleos; el análisis del tablero
+(A) lo pone en pausa, y cuando A busca en una posición de la partida durante más tiempo que la pasada, su valor ocupa
+el lugar del de esa posición.
+
+**Varios análisis**: *+ Motor* en la leyenda del gráfico hace que otro motor de la biblioteca analice también la
+partida, el mismo tiempo en cada pasada. Cada análisis tiene su color en el gráfico y en el tablero (su mejor jugada
+como una flecha mientras el análisis del tablero está detenido), su línea en *Esta jugada* y sus precisiones en la
+revisión. Avanzan juntos pasada a pasada, todos a la vez cuando los núcleos lo permiten, uno tras otro si no. Un
+análisis juzga las jugadas (el primero; un clic derecho en otro en la leyenda lo convierte en el juez, o lo quita); una
+marca queda hueca cuando los análisis no juzgan todos igual la jugada. Las probabilidades de victoria comparan los
+motores mejor que los centipeones, que difieren de un motor a otro: toman el WDL de cada motor cuando lo da.
+
+### El gráfico de la partida
+<!-- en: the-game-graph 14e02bad -->
+
+Bajo las jugadas, el gráfico de la partida, el mismo que en *Directo* y en *Partidas*:
+
+- **Evaluación**: el análisis que juzga como un área blanca y negra (la ventaja de las blancas por encima de la línea,
+  la de las negras por debajo), cada motor que jugó como una curva de su color en sus propias jugadas, los demás
+  análisis como curvas discontinuas; las jugadas marcadas sobre la curva; los valores más allá de ±6 dibujados a lo
+  largo del borde en el color de aviso. Sin análisis, el área es la media de las evaluaciones de los dos motores.
+- Las jugadas de libro rayadas, las fases bajo el eje (la apertura; el medio juego desde la primera posición con 10
+  piezas como mucho sin contar los reyes y los peones, o menos de 4 en la primera fila de un bando; el final desde 6
+  como mucho, como divide lichess una partida), la zona que conocen las tablas de finales coloreada, los números de
+  jugada a lo largo de la parte inferior.
+- Bajo el eje, el tiempo de cada jugada: el de las blancas hacia arriba, el de las negras hacia abajo.
+
+Sus pestañas: *Posibilidades de victoria* (a partir del WDL cuando los motores lo dan, con la fórmula de lichess si
+no), *V/T/D* (las proporciones que comunicaron los motores, con las victorias de las blancas abajo), *Tiempo* (con el
+tiempo de decisión), *Profundidad* (con la seldepth), *Nodos*, *Velocidad*, *Accesos a tablas*, *Acuerdo* (cuánto se
+separan las evaluaciones de los dos jugadores, cada jugada frente a la anterior, y las de los análisis en cada
+posición) y *Coincidencia de PV* (cuántas medias jugadas de la PV de un motor repiten lo que predijo la del otro); las
+que no tienen valores en la partida se omiten, y las que no caben van al menú `⋯`. Al pasar el ratón se ven la jugada
+y lo que dijo cada motor; un clic o un arrastre lleva a la jugada. Un clic en una curva de la leyenda la oculta o la
+muestra; la flecha de la derecha pliega el gráfico.
+
+### Esta jugada
+<!-- en: this-move a4a908f8 -->
+
+Bajo las jugadas, sobre la jugada mostrada: lo que dijo el motor que la jugó (su puntuación, profundidad y seldepth,
+tiempo, nodos, velocidad, accesos a tablas de finales, según los tenga el PGN), la línea que esperaba tras ella, el
+veredicto de cada análisis (la parte de las probabilidades de ganar perdida, el juicio, la mejor jugada y su
+puntuación), y con las tablas de finales el resultado tras la jugada y si la jugada conservó el de antes. *Mostrar*
+pone una línea en el tablero sin tocar la partida: la posición tras ella, el tablero enmarcado, lo que es, escrito
+encima; Esc, un clic en el tablero o un paso por la partida devuelven la partida. En el tablero, el juicio de la jugada
+es una insignia en su casilla, y la respuesta que esperaba su motor, una flecha discontinua.
+
+### Variantes
+<!-- en: variations 7932794c -->
+
+Una jugada hecha en el tablero donde la partida siguió otro camino empieza una variante: la partida se queda como
+llegó, con sus análisis y su gráfico. Las jugadas muestran las variantes entre paréntesis tras la jugada que
+reemplazan, anidadas y numeradas; un clic en una jugada lleva allí, y *Volver a la partida* regresa a la posición de la
+que sale la variante. Un clic derecho en una jugada de una variante la promueve (pasa a ser la línea de la que parte,
+cuyas jugadas a partir de ahí pasan a ser la variante), la borra junto con las que parten de ella, o la copia. *Copiar
+PGN* escribe las variantes, y se leen las de un archivo PGN abierto (se omiten comentarios, números, anotaciones y
+resultados; una jugada que no se puede jugar solo termina su variante). El gráfico, los análisis y los juicios son los
+de la partida; en una variante, el gráfico marca dónde sale de la partida.
+
+### Las jugadas, la tabla y la revisión
+<!-- en: the-moves-the-table-and-the-review 7880f8d8 -->
+
+**Jugadas** escribe la partida como texto corrido: figuras (consulta [Apariencia](#apariencia)), las jugadas de libro
+en gris y el final del libro marcado, los juicios en color, la jugada actual enmarcada; al pasar el ratón por una
+jugada se ve lo que dijo su motor y su juicio. **Tabla** lista cada jugada con la puntuación de su motor (desde el lado
+de las blancas), su profundidad y su tiempo, una barra para el tiempo, y las jugadas marcadas en color.
+
+**Revisión**, una vez analizada la partida: para cada bando su precisión (la de lichess: la de cada jugada según las
+probabilidades de ganar que perdió, pesando más las jugadas de los momentos tensos), sus imprecisiones, errores y
+errores graves, su pérdida media en centipeones, la parte de sus jugadas que el análisis también jugaría, la
+profundidad y el tiempo medios de su motor; su precisión en la apertura, el medio juego y el final; con varios
+análisis, las precisiones que da cada uno. Luego los momentos clave, cada uno a un clic: el punto de inflexión (la
+jugada que más perdió, con la mejor jugada), los demás errores y errores graves, dónde los dos motores discreparon en
+1,5 peones o más durante dos jugadas seguidas, el comienzo del final y el de las tablas de finales. *Quién lo vio
+primero* indica, para el punto de inflexión, en qué jugada cada motor que jugó y cada análisis dieron por primera vez
+un peón o más al bando que gana. *Copiar el PGN con el análisis* escribe la partida con la evaluación de cada posición
+(`[%eval]`), los juicios como NAG y, tras una jugada marcada, la línea que prefería el análisis; *Copiar como BBCode*
+da la revisión para un foro.
+
+### Tablas de finales en la página Tablero
+<!-- en: tablebases-on-the-board-page 721b71dd -->
+
+Con las carpetas Syzygy de la configuración (*Adjudicación* > tablas de finales), la página Tablero consulta cada
+posición de la partida: el gráfico colorea la zona que conocen las tablas, *Esta jugada* indica el resultado tras la
+jugada y si la jugada conservó el de antes o lo estropeó, y la revisión marca dónde toman el relevo las tablas. Cada
+posición se consulta como si se acabara de hacer una captura o una jugada de peón, lo que es exacto salvo cuando la
+regla de las 50 jugadas está cerca. Las tablas son las del proceso del programa: no se consultan mientras se juega un
+torneo en él.
 
 ### Jugar una partida desde una posición
 <!-- en: playing-a-game-from-a-position 6e79a367 -->
@@ -1075,15 +1203,16 @@ cuando la ronda comparte una), y los cambios en el torneo (consulta [Modificar u
 curso](#modificar-un-torneo-en-curso)).
 
 ### Directo
-<!-- en: live 08ae852d -->
+<!-- en: live 002a902e -->
 
 Las partidas en curso, como un mosaico de tableros o una partida en primer plano con los relojes, la búsqueda en curso
-de cada motor (profundidad, puntuación, nodos, nps, PV en SAN), la lista de jugadas y la curva de evaluación. Encima
-de la curva, puede mostrar en su lugar el tiempo por jugada de cada motor con su tiempo de decisión, la profundidad
-con la seldepth, los nodos, la velocidad, los accesos a tablas de finales, o cuántas medias jugadas de lo que predijo
-la PV del otro motor repite su PV. Las proporciones de victoria/tablas/derrota (`UCI_ShowWDL`, activado para los
-motores que lo tienen cuando se añaden) siguen cada línea de búsqueda y se dibujan como bandas bajo la curva, con las
-victorias de las blancas abajo.
+de cada motor (profundidad, puntuación, nodos, nps, PV en SAN), la lista de jugadas y el gráfico de la partida (consulta
+[El gráfico de la partida](#el-gráfico-de-la-partida)): las evaluaciones de los dos motores, y en sus pestañas sus
+posibilidades de victoria, el tiempo por jugada con el tiempo de decisión, la profundidad con la seldepth, los nodos,
+la velocidad, los accesos a tablas de finales, cuánto se separan, o cuántas medias jugadas de lo que predijo la PV del
+otro motor repite una PV. Las proporciones de victoria/tablas/derrota (`UCI_ShowWDL`, activado para los motores que lo
+tienen cuando se añaden) siguen cada línea de búsqueda; la pestaña *V/T/D* las dibuja como bandas, con las victorias de
+las blancas abajo.
 
 Bajo el tablero: el contador de las 50 jugadas (medias jugadas desde la última captura o jugada de peón, sobre 100),
 la diferencia de material con las piezas que un bando tiene de más, y las piezas que quedan, marcadas *TB* cuando la
@@ -1120,13 +1249,13 @@ pone esa ventana a pantalla completa mientras la ventana principal sigue funcion
 principal, la muestra la ventana principal.
 
 ### Partidas
-<!-- en: games 1f173028 -->
+<!-- en: games ba4a9604 -->
 
 Las partidas terminadas con su apertura (código ECO y nombre), y un tablero de reproducción: los botones de debajo, ←
-→ Inicio Fin y F, o un clic en una jugada o en la curva; los mismos detalles debajo y los mismos gráficos que en
-*Directo*, a partir de los campos con los que se escribió el PGN (un gráfico cuyo campo no escribió el torneo lo
-indica, con un botón hacia las opciones PGN de la configuración), con las proporciones de victoria, tablas y derrota
-de los motores que las comunican bajo la curva de evaluación.
+→ Inicio Fin y F, o un clic en una jugada o en el gráfico; los mismos detalles debajo y el mismo gráfico de la partida
+que en *Directo* (consulta [El gráfico de la partida](#el-gráfico-de-la-partida)), a partir de los campos con los que
+se escribió el PGN: una pestaña cuyo campo no escribió el torneo está en el menú `⋯` del gráfico, atenuada, y lo
+indica con un botón hacia las opciones PGN de la configuración.
 
 **Filtros**: por resultado (victorias, tablas, derrotas, pérdidas por tiempo, cuelgues y jugadas ilegales,
 adjudicaciones, PV erróneas, y las partidas de una apertura marcada como desequilibrada cuando la configuración las

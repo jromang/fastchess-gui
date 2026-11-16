@@ -191,7 +191,7 @@ grafico; se non ce n'è uno, avvia il programma con `SDL_VIDEODRIVER=x11`. Quand
 un messaggio lo dice prima che il programma termini.
 
 ### Aspetto
-<!-- en: appearance 19dea41f -->
+<!-- en: appearance decda352 -->
 
 **Impostazioni** > *Aspetto* sceglie l'aspetto di tutte le scacchiere del programma (il mosaico in diretta e la
 partita seguita, le scacchiere staccate, lo schermo grande, una partita rivista in *Partite*, la scheda *Aperture*,
@@ -217,6 +217,10 @@ le aperture di un libro), con una piccola scacchiera accanto alle scelte che le 
   per ogni partita del mosaico. *Volume*, e *Prova una mossa* / *Prova una cattura* per sentirli. I suoni sono generati
   dal programma (nessun file audio); il dispositivo audio viene aperto solo mentre sono attivi, e quando non ce n'è uno
   il log dice perché e il programma resta in silenzio.
+
+- **Figurine nella notazione** (attive per impostazione predefinita): le mosse della pagina Scacchiera, nelle sue mosse
+  e nelle linee della sua analisi, sono scritte con i pezzi del set scelto sopra (Nf3 diventa un cavallo e f3);
+  disattivate, con le lettere.
 
 Anche la tavolozza dei comandi ha queste scelte (*Colori della scacchiera: Marrone*, *Pezzi: Celtic*, *Attiva i suoni
 delle mosse*…). Sono conservate in `settings.json` nel profilo; nella modalità portatile la cartella dei pezzi viene
@@ -260,7 +264,7 @@ piatte e *Aspetto* dice perché. I pezzi sono gli Staunton-Pieces di clarkerubbe
 collegamento.
 
 ## Scorciatoie da tastiera
-<!-- en: keyboard-shortcuts 45f7a67b -->
+<!-- en: keyboard-shortcuts e0d74f26 -->
 
 | Tasti | Dove | Cosa fanno |
 |---|---|---|
@@ -279,7 +283,10 @@ collegamento.
 | <kbd>A</kbd> | Una scacchiera | Apre la posizione nella pagina Scacchiera e la analizza; nella pagina Scacchiera: avvia o ferma l'analisi |
 | <kbd>Fine</kbd> | La partita in primo piano in *Diretta* | Torna alla mossa attuale |
 | <kbd>Ctrl</kbd>+<kbd>V</kbd> | La pagina Scacchiera | Incolla un FEN, una riga EPD, un PGN o un elenco di mosse |
-| <kbd>Esc</kbd> | La pagina Scacchiera | Posa il pezzo preso |
+| <kbd>G</kbd> | La pagina Scacchiera | Analizza la partita, passaggio dopo passaggio; di nuovo: la ferma |
+| <kbd>X</kbd> | La pagina Scacchiera | Mostra o nasconde la minaccia |
+| <kbd>N</kbd>, <kbd>Maiusc</kbd>+<kbd>N</kbd> | La pagina Scacchiera | La mossa successiva, la precedente segnata dall'analisi |
+| <kbd>Esc</kbd> | La pagina Scacchiera | Riporta la partita dopo che è stata mostrata una linea; posa il pezzo preso |
 | <kbd>←</kbd> <kbd>→</kbd> | Lo schermo grande | La partita precedente o successiva |
 | <kbd>+</kbd> <kbd>-</kbd> | Lo schermo grande | Testo più grande o più piccolo |
 | <kbd>Esc</kbd> | Lo schermo grande | Esce |
@@ -555,7 +562,7 @@ invertiti), e lo aggiunge alla libreria. *Esegui come suite di test…* apre un 
   potute leggere.
 
 ## Scacchiera
-<!-- en: board ef08c39c -->
+<!-- en: board 1b231755 -->
 
 La pagina Scacchiera mostra una partita o una posizione, di qualsiasi provenienza: **A** su qualsiasi scacchiera del
 programma (una partita del mosaico della scheda *Diretta* o quella seguita, la scacchiera della scheda *Partite*, della
@@ -563,17 +570,23 @@ scheda *Aperture*, di un'apertura di un libro) apre qui la sua posizione e la an
 e ferma l'analisi. *Torna al torneo* (o *Indietro*) riporta alla pagina da cui si è arrivati. La sua scacchiera può
 essere disegnata in 3D: vedi [La scacchiera 3D](#la-scacchiera-3d).
 
+La scacchiera è a sinistra, con i giocatori sopra e sotto di essa; a destra, dall'alto, l'analisi, le mosse (con la
+tabella delle mosse, il resoconto della partita e le partite del file in schede) e il grafico della partita. Il
+sottotitolo della pagina dice di che partita si tratta: il suo evento e il suo turno, il suo risultato, la sua cadenza,
+il suo codice ECO e la sua apertura, e come è finita.
+
 ### Aprire, incollare e impostare una posizione
-<!-- en: opening-pasting-and-setting-up-a-position dd0f4636 -->
+<!-- en: opening-pasting-and-setting-up-a-position 3778ddb5 -->
 
 - **Apri un PGN…** legge qualsiasi file PGN (un file si può anche trascinare sulla finestra), in background con una
   barra di avanzamento: un file di milioni di partite richiede pochi secondi, e le sue partite sono elencate in una
   scheda accanto alle mosse, filtrate da ciò che viene digitato (ogni parola trovata nei giocatori, nell'evento, nel
   luogo, nella data, nel turno, nell'apertura, nel codice ECO o nel risultato). Un clic mostra una partita. Le
-  valutazioni delle sue mosse disegnano la curva sotto di esse: vengono letti i commenti di cutechess e fastchess
-  (`{+0.35/18 1.2s}`) e il `[%eval 0.35]` di lichess e ChessBase (dal punto di vista del Bianco, `#-3` per un matto).
-  Una partita il cui tag FEN non si può giocare viene rifiutata, e le mosse di una partita si fermano alla prima che
-  non si può leggere.
+  valutazioni delle sue mosse disegnano il grafico: vengono letti i commenti di cutechess e fastchess
+  (`{+0.35/18 1.2s}`) e il `[%eval 0.35]` di lichess e ChessBase (dal punto di vista del Bianco, `#-3` per un matto),
+  e anche gli orologi di `[%clk 0:01:23]`. Le sue varianti vengono conservate (vedi [Varianti](#varianti)). Una
+  partita il cui tag FEN non si può giocare viene rifiutata, e le mosse di una partita si fermano alla prima che non
+  si può leggere.
 - **Incolla** (Ctrl+V sulla pagina) legge gli appunti: un FEN, o i quattro campi di una riga EPD; un PGN di una o più
   partite (elencate come quelle di un file); un elenco di mosse dalla posizione iniziale, in SAN con o senza numeri
   (`1. e4 e5 2. Nf3`) o in UCI (`e2e4 e7e5`). Una posizione che non si può giocare viene rifiutata con il motivo (un re
@@ -585,42 +598,159 @@ essere disegnata in 3D: vedi [La scacchiera 3D](#la-scacchiera-3d).
   quando il re e la torre sono dove devono essere), la casa en passant (solo dietro un pedone che ha appena avanzato di
   due case) e Chess960. Il FEN sotto segue la scacchiera, e un FEN digitato lì la imposta. *Fatto* viene proposto
   appena la posizione si può giocare, e la mette sulla scacchiera.
-- *Copia PGN* copia la partita mostrata, con i suoi tag e le sue mosse (i punteggi dei motori come commenti quando li
-  ha).
+- *Copia PGN* (a destra delle schede delle mosse) copia la partita mostrata, con i suoi tag, le sue mosse (i punteggi
+  dei motori come commenti quando li ha) e le sue varianti.
 - **La scacchiera**: i pulsanti sotto di essa e ← → Inizio Fine scorrono le mosse, e F (o l'ultimo pulsante) la ruota;
-  un clic su un pezzo e su una casa gioca una mossa (un pedone che promuove chiede il suo pezzo). Una mossa diversa
-  dalla successiva della partita prende il posto delle mosse seguenti, e *Torna alla partita* riporta la partita come
-  era. *Copia FEN* copia la posizione.
+  un clic su un pezzo e su una casa gioca una mossa (un pedone che promuove chiede il suo pezzo). *Copia FEN* copia la
+  posizione.
+
+### I giocatori
+<!-- en: the-players 1f4f551f -->
+
+Sopra e sotto la scacchiera, quando la partita ha dei giocatori: il nome di ciascuno, la valutazione della sua ultima
+mossa data dal suo motore (il punteggio del Bianco e la profondità, in un'etichetta), la mossa che ha giocato e il
+tempo che ha impiegato, oppure *al tratto*, e a destra il suo orologio dopo la sua ultima mossa, incorniciato mentre ha
+il tratto. Gli orologi sono quelli dei `[%clk]` delle mosse quando la partita li ha; altrimenti vengono ricostruiti dal
+suo tag `TimeControl` (`300+2`, `10+0.1`: secondi e incremento) e dal tempo di ogni mossa, senza che le mosse di libro
+ne consumino.
 
 ### Analisi
-<!-- en: the-analysis 40171591 -->
+<!-- en: the-analysis 63237b12 -->
 
-Un motore della libreria analizza la posizione mostrata e segue la scacchiera: profondità, nodi, velocità, le
-probabilità di vittoria, patta e sconfitta quando il motore le dà (`UCI_ShowWDL`), e più linee (MultiPV), le cui prime
-mosse sono disegnate come frecce, la migliore più scura (**Impostazioni** > *Aspetto* > *Le frecce dell'analisi nella
-pagina Scacchiera* le toglie; le linee mostrano comunque le mosse). I punteggi sono dal punto di vista del Bianco. Un
-clic su una linea ne gioca la prima mossa. Il suo motore, *Threads*, *Hash* (0: quello del motore) e *Linee* sono
-impostazioni proprie dell'analisi: conservate per la volta successiva, non cambiano né il motore della libreria né alcun
-torneo. Gli altri valori delle opzioni della libreria vengono inviati come li invia una partita. L'analisi attende
-mentre è mostrata un'altra pagina, e prosegue quando si torna alla pagina Scacchiera; *Ferma l'analisi* (o A) la ferma,
-e un punto sul pulsante *Scacchiera* della barra indica quando è in corso.
+Un motore della libreria analizza la posizione mostrata e segue la scacchiera. La scheda mostra il suo motore, poi un
+pulsante con i suoi *Threads*, *Hash* (0: quello del motore) e *Linee* (MultiPV), che un clic apre: le impostazioni
+proprie dell'analisi, conservate per la volta successiva, che non cambiano né il motore della libreria né alcun torneo
+(gli altri valori delle opzioni della libreria vengono inviati come li invia una partita). A destra, i thread che la
+pagina Scacchiera usa su quelli della macchina, nel colore di avviso mentre un torneo è in corso (il suo tooltip dice
+quanti thread prendono le partite del torneo: l'analisi compete con esse).
 
-I thread dell'analisi contano nel budget dei core, mostrato sotto di essa con i thread della macchina. Mentre un
-torneo è in corso, l'analisi compete con le sue partite: la pagina lo dice, con i thread usati dalle partite. Il suo
-motore non è uno dei processi del torneo: la fine di un torneo non lo termina.
+La ricerca si presenta in riquadri (profondità e seldepth, nodi, velocità, tempo, accessi alle tablebase, quanto è
+pieno l'hash), le probabilità di vittoria, patta e sconfitta quando il motore le dà (`UCI_ShowWDL`), e ogni linea: il
+suo punteggio (del Bianco, il migliore messo in risalto), la sua profondità e le sue mosse su due righe, con le figurine
+(vedi [Aspetto](#aspetto)). Passare il mouse su una mossa di una linea mostra sulla scacchiera, incorniciata, la
+posizione dopo di essa; un clic gioca la linea fino a quella mossa. La prima mossa di ogni linea è disegnata come una
+freccia, la migliore più scura (**Impostazioni** > *Aspetto* > *Le frecce dell'analisi nella pagina Scacchiera* le
+toglie; le linee mostrano comunque le mosse).
+
+**Minaccia** (X) fa analizzare a un altro processo del motore la posizione con il tratto passato: la mossa migliore
+dell'avversario, se muovesse di nuovo, disegnata come una freccia rossa e scritta sotto le linee (nessuna mentre il
+lato che muove è sotto scacco).
+
+L'analisi attende mentre è mostrata un'altra pagina, e prosegue quando si torna alla pagina Scacchiera; *Ferma
+l'analisi* (o A) la ferma, e un punto sul pulsante *Scacchiera* della barra indica quando è in corso. Il suo motore non
+è uno dei processi del torneo: la fine di un torneo non lo termina.
 
 ### Analizzare una partita intera
-<!-- en: analysing-a-whole-game 81150c63 -->
+<!-- en: analysing-a-whole-game a7e6166c -->
 
-**Analizza la partita** passa in rassegna ogni posizione della partita mostrata con il motore dell'analisi (i suoi
-thread e il suo hash, una linea), per il tempo per mossa o la profondità scelti accanto al pulsante, in background:
-l'avanzamento compare sopra le mosse, *Annulla* lo ferma, e l'analisi della scacchiera intanto attende. Ogni mossa è
-giudicata dalle probabilità di vittoria che chi l'ha giocata ha perso, secondo i punteggi del motore prima e dopo di
-essa (la misura di lichess: 50 % a 0.00, circa 59 % a +1.00): 10 punti persi sono un'imprecisione (`?!`), 20 un errore
-(`?`), 30 un grave errore (`??`), segnati dopo la mossa nell'elenco; la mossa che il motore avrebbe giocato non viene
-mai segnata. Il tooltip di una mossa segnata indica cosa ha perso e la mossa del motore. Una riga li conta per ogni
-giocatore, e la curva dell'analisi (arancione) è disegnata sopra quella dei motori (blu). L'analisi viene conservata
-con la partita (in `analyses/` nel profilo): la stessa partita, riaperta da qualsiasi punto, la mostra subito.
+**Analizza la partita** (G, negli strumenti della pagina o nell'intestazione del grafico) fa analizzare al motore
+dell'analisi (i suoi thread e il suo hash, una linea) ogni posizione della partita in background, prima per 20 ms
+ciascuna, poi di nuovo quattro volte più a lungo a ogni passaggio (80 ms, 0.3 s, 1.3 s, 5 s…), fino al tempo scelto con
+la freccia accanto al pulsante (0.3 s, 1.3 s, 5 s, 20 s per posizione, o *fino all'arresto*): il grafico compare in un
+secondo o due e si affina a ogni passaggio. Le posizioni vanno dall'ultima alla prima, così l'hash del motore conserva
+ciò che viene dopo una posizione (misurato: circa il 16 % più vicino alle ricerche lunghe che dalla prima all'ultima, a
+parità di tempo), con la posizione sulla scacchiera per prima. L'intestazione del grafico indica il passaggio, il tempo
+per posizione e l'avanzamento, e una sottile fascia sotto la sua striscia dei tempi ciò che ha ricevuto ogni posizione;
+*Ferma* (o G) la ferma.
+
+Ogni mossa è giudicata dalle probabilità di vittoria che chi l'ha giocata ha perso, secondo i punteggi dell'analisi
+prima e dopo di essa (la misura di lichess: 50 % a 0.00, circa 59 % a +1.00): 10 punti persi sono un'imprecisione
+(`?!`), 20 un errore (`?`), 30 uno svarione (`??`), segnati dopo la mossa, sul grafico e sulla scacchiera; la mossa che
+il motore avrebbe giocato non viene mai segnata. Una mossa è giudicata sull'ultimo passaggio completo; un segno che
+l'ultimo passaggio ha cambiato resta vuoto finché il successivo non lo conferma. N e Maiusc+N (o i pulsanti accanto
+alla navigazione) vanno alla mossa segnata successiva e a quella precedente.
+
+Ogni passaggio completo viene conservato con la partita (in `analyses/` nel profilo): la stessa partita, riaperta da
+qualsiasi punto, lo mostra subito, e G riprende dai passaggi fatti. L'analisi gira su un thread proprio con un proprio
+processo del motore, i suoi thread contati nel budget dei core; l'analisi della scacchiera (A) la mette in pausa, e
+quando A analizza una posizione della partita più a lungo del passaggio, il suo valore prende il posto di quello della
+posizione.
+
+**Più analisi**: *+ Motore* nella legenda del grafico fa analizzare la partita anche a un altro motore della libreria,
+altrettanto a lungo a ogni passaggio. Ogni analisi ha il suo colore sul grafico e sulla scacchiera (la sua mossa
+migliore come freccia mentre l'analisi della scacchiera è ferma), la sua riga in *Questa mossa* e le sue precisioni nel
+resoconto. Procedono insieme passaggio per passaggio, tutte allo stesso tempo quando i core lo permettono, una dopo
+l'altra altrimenti. Un'analisi giudica le mosse (la prima; un clic destro su un'altra nella legenda ne fa il giudice, o
+la rimuove); un segno è vuoto quando le analisi non giudicano tutte la mossa allo stesso modo. Le probabilità di
+vittoria confrontano i motori meglio dei centipedoni, che differiscono da un motore all'altro: prendono il WDL di ogni
+motore quando ne dà uno.
+
+### Il grafico della partita
+<!-- en: the-game-graph 14e02bad -->
+
+Sotto le mosse, il grafico della partita, lo stesso che in *Diretta* e in *Partite*:
+
+- **Valutazione**: l'analisi che giudica come un'area bianca e nera (il vantaggio del Bianco sopra la linea, quello del
+  Nero sotto), ogni motore che ha giocato come una curva del suo colore alle sue mosse, le altre analisi come curve
+  tratteggiate; le mosse segnate sulla curva; i valori oltre ±6 disegnati lungo il bordo nel colore di avviso. Senza
+  un'analisi, l'area è la media delle valutazioni dei due motori.
+- Le mosse di libro a strisce, le fasi sotto l'asse (l'apertura; il mediogioco dalla prima posizione con al massimo 10
+  pezzi oltre ai re e ai pedoni, o meno di 4 su una traversa di fondo; il finale da al massimo 6, come lichess divide
+  una partita), la zona che le tablebase conoscono colorata, i numeri delle mosse lungo il fondo.
+- Sotto l'asse, il tempo di ogni mossa: quello del Bianco verso l'alto, quello del Nero verso il basso.
+
+Le sue schede: *Probabilità di vittoria* (dal WDL quando i motori lo danno, con la formula di lichess altrimenti),
+*V/P/S* (le quote riportate dai motori, le vittorie del Bianco in basso), *Tempo* (con il tempo di decisione),
+*Profondità* (con la seldepth), *Nodi*, *Velocità*, *Accessi alle tablebase*, *Accordo* (quanto distano le valutazioni
+dei due giocatori, ogni mossa rispetto a quella prima, e quelle delle analisi in ogni posizione) e *Accordo delle PV*
+(quante semimosse della PV di un motore ripetono ciò che quella dell'altro aveva previsto); quelle per cui la partita
+non ha valori sono escluse, e quelle che non ci stanno vanno nel menu `⋯`. Passando il mouse si vedono la mossa e ciò
+che ha detto ogni motore; un clic o un trascinamento va alla mossa. Un clic su una curva nella legenda la nasconde o la
+mostra; la freccia a destra chiude il grafico.
+
+### Questa mossa
+<!-- en: this-move a4a908f8 -->
+
+Sotto le mosse, sulla mossa mostrata: ciò che ha detto il motore che l'ha giocata (il suo punteggio, profondità e
+seldepth, tempo, nodi, velocità, accessi alle tablebase, come li ha il PGN), la linea che si aspettava dopo di essa, il
+verdetto di ogni analisi (la quota delle probabilità di vittoria persa, il giudizio, la mossa migliore e il suo
+punteggio), e con le tablebase il risultato dopo la mossa e se la mossa ha mantenuto quello di prima. *Mostra* posa una
+linea sulla scacchiera senza toccare la partita: la posizione dopo di essa, la scacchiera incorniciata, con scritto
+sopra di che cosa si tratta; Esc, un clic sulla scacchiera o una mossa nella partita riporta la partita. Sulla
+scacchiera, il giudizio della mossa è un distintivo sulla sua casa, e la risposta che il suo motore si aspettava una
+freccia tratteggiata.
+
+### Varianti
+<!-- en: variations 7932794c -->
+
+Una mossa giocata sulla scacchiera dove la partita è andata diversamente apre una variante: la partita resta com'era,
+con le sue analisi e il suo grafico. Le mosse mostrano le varianti tra parentesi dopo la mossa che sostituiscono,
+annidate e numerate; un clic su una mossa porta lì, e *Torna alla partita* riporta alla posizione da cui parte la
+variante. Un clic destro su una mossa di una variante la promuove (diventa la linea da cui parte, le cui mosse dopo di
+essa diventano la variante), la elimina con quelle che partono da essa, o la copia. *Copia PGN* scrive le varianti, e
+quelle di un file PGN aperto vengono lette (commenti, numeri, annotazioni e risultati saltati; una mossa che non si può
+giocare termina solo la sua variante). Il grafico, le analisi e i giudizi sono quelli della partita; su una variante,
+il grafico segna dove essa lascia la partita.
+
+### Le mosse, la tabella e il resoconto
+<!-- en: the-moves-the-table-and-the-review 7880f8d8 -->
+
+**Mosse** scrive la partita come testo continuo: figurine (vedi [Aspetto](#aspetto)), le mosse di libro in grigio e la
+fine del libro segnata, i giudizi a colori, la mossa attuale incorniciata; passando il mouse su una mossa si vedono ciò
+che ha detto il suo motore e il suo giudizio. **Tabella** elenca ogni mossa con il punteggio del suo motore (del
+Bianco), la profondità e il tempo, una barra per il tempo, le mosse segnate colorate.
+
+**Resoconto**, una volta analizzata la partita: per ciascun lato la sua precisione (quella di lichess: quella di ogni
+mossa dalle probabilità di vittoria che ha perso, le mosse dei momenti critici pesano di più), le sue imprecisioni,
+errori e svarioni, la sua perdita media in centipedoni, la quota delle sue mosse che anche l'analisi giocherebbe, la
+profondità e il tempo medi del suo motore; la sua precisione nell'apertura, nel mediogioco e nel finale; con più
+analisi, le precisioni che dà ciascuna. Poi i momenti chiave, ognuno a un clic di distanza: la svolta (la mossa che ha
+perso di più, con la mossa migliore), gli altri errori e svarioni, dove i due motori sono stati in disaccordo di 1.5
+pedoni o più per due mosse di fila, l'inizio del finale e quello delle tablebase. *Chi l'ha visto per primo* indica,
+per la svolta, a quale mossa ogni motore che ha giocato e ogni analisi ha dato per la prima volta un pedone o più al
+lato che guadagna. *Copia il PGN con l'analisi* scrive la partita con la valutazione di ogni posizione (`[%eval]`), i
+giudizi come NAG e, dopo una mossa segnata, la linea che l'analisi preferiva; *Copia come BBCode* dà il resoconto per
+un forum.
+
+### Le tablebase nella pagina Scacchiera
+<!-- en: tablebases-on-the-board-page 721b71dd -->
+
+Con le cartelle Syzygy della configurazione (*Aggiudicazione* > tablebase), la pagina Scacchiera interroga ogni
+posizione della partita: il grafico colora la zona che le tabelle conoscono, *Questa mossa* indica il risultato dopo la
+mossa e se la mossa ha mantenuto quello di prima o lo ha rovinato, e il resoconto segna dove subentrano le tabelle. Ogni
+posizione è interrogata come se fosse appena stata giocata una cattura o una mossa di pedone, il che è esatto tranne
+dove la regola delle 50 mosse è vicina. Le tabelle sono quelle del processo del programma: non vengono interrogate
+mentre un torneo vi gioca.
 
 ### Giocare una partita da una posizione
 <!-- en: playing-a-game-from-a-position 6e79a367 -->
@@ -1066,15 +1196,16 @@ iniziata, o una volta iniziato il suo turno quando il turno ne condivide una), e
 [Modificare un torneo in corso](#modificare-un-torneo-in-corso)).
 
 ### Diretta
-<!-- en: live 08ae852d -->
+<!-- en: live 002a902e -->
 
 Le partite in corso, come un mosaico di scacchiere o una sola partita in primo piano con gli orologi, la ricerca in
-corso di ogni motore (profondità, valutazione, nodi, nps, PV in SAN), l'elenco delle mosse e la curva di valutazione.
-Sopra la curva, può mostrare invece per ogni motore il tempo per mossa con il tempo di decisione, la profondità con la
-seldepth, i nodi, la velocità, gli accessi alle tablebase, o quante semimosse della sua PV ripetono ciò che la PV
-dell'altro motore aveva previsto. Le quote di vittoria/patta/sconfitta (`UCI_ShowWDL`, attivato per i motori che lo
-hanno quando vengono aggiunti) seguono ogni riga di ricerca e sono disegnate come fasce sotto la curva, le vittorie del
-Bianco in basso.
+corso di ogni motore (profondità, valutazione, nodi, nps, PV in SAN), l'elenco delle mosse e il grafico della partita
+(vedi [Il grafico della partita](#il-grafico-della-partita)): le valutazioni dei due motori, e nelle sue schede le loro
+probabilità di vittoria, il tempo per mossa con il tempo di decisione, la profondità con la seldepth, i nodi, la
+velocità, gli accessi alle tablebase, quanto distano, o quante semimosse una PV ripete di ciò che la PV dell'altro
+motore aveva previsto. Le quote di vittoria/patta/sconfitta (`UCI_ShowWDL`, attivato per i motori che lo hanno quando
+vengono aggiunti) seguono ogni riga di ricerca; la scheda *V/P/S* le disegna come fasce, le vittorie del Bianco in
+basso.
 
 Sotto la scacchiera: il contatore delle 50 mosse (semimosse dall'ultima cattura o mossa di pedone, su 100), la
 differenza di materiale con i pezzi che una parte ha in più, e i pezzi rimasti, marcati *TB* quando l'aggiudicazione
@@ -1111,13 +1242,13 @@ schermo (la televisione) lo mostra nella sua finestra, con F11 che porta quella 
 finestra principale continua; agganciata nella finestra principale, lo mostra la finestra principale.
 
 ### Partite
-<!-- en: games 1f173028 -->
+<!-- en: games ba4a9604 -->
 
 Le partite terminate con la loro apertura (codice ECO e nome), e una scacchiera di riproduzione: i pulsanti sotto di
-essa, ← → Inizio Fine e F, o un clic su una mossa o sulla curva; gli stessi dettagli sotto di essa e gli stessi grafici
-che in *Diretta*, dai campi con cui è stato scritto il PGN (un grafico il cui campo il torneo non ha scritto lo dice,
-con un pulsante verso le opzioni PGN della configurazione), con le quote di vittoria, patta e sconfitta dei motori che
-le forniscono sotto la curva di valutazione.
+essa, ← → Inizio Fine e F, o un clic su una mossa o sul grafico; gli stessi dettagli sotto di essa e lo stesso grafico
+della partita che in *Diretta* (vedi [Il grafico della partita](#il-grafico-della-partita)), dai campi con cui è stato
+scritto il PGN: un grafico il cui campo il torneo non ha scritto si trova nel menu `⋯` del grafico della partita, in
+grigio, e lo dice con un pulsante verso le opzioni PGN della configurazione.
 
 **Filtri**: per risultato (vittorie, patte, sconfitte, sconfitte per tempo, crash e mosse illegali, aggiudicazioni, PV
 errate, e le partite di un'apertura segnalata come sbilanciata quando la configurazione le cerca); per ciò che dicono

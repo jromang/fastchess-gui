@@ -1594,6 +1594,7 @@ bool App::boardStrips() const {
 }
 
 void App::drawPlayerStrip(chess::Color side, float size, const std::vector<std::optional<int64_t>>& clocks) {
+    const ui::TopicRegion region(guide::topics::BoardPlayers);
     const auto& b   = board_;
     const auto& g   = b.game;
     const float bar = evalBarSpace(size);
@@ -1715,6 +1716,8 @@ void App::drawBoardMoves(float height) {
 
     const float strip = b.ply > 0 && b.ply <= total ? thisMoveHeight() : 0.0f;
     ImGui::BeginChild("##board_moves", ImVec2(0, -strip), ImGuiChildFlags_Borders);
+    const ui::TopicRegion moves_region(b.tree.variations.empty() ? guide::topics::BoardMoves
+                                                                 : guide::topics::Variations);
     if (b.game_tab == 3) {
         drawBoardReview();
     } else if (b.game_tab == 2) {
@@ -1965,6 +1968,7 @@ int App::judgedPly(int direction) const {
 }
 
 void App::drawThisMove() {
+    const ui::TopicRegion region(guide::topics::ThisMove);
     auto& b          = board_;
     const int ply    = b.ply;
     const auto& m    = b.game.moves[static_cast<std::size_t>(ply - 1)];
@@ -2061,6 +2065,7 @@ void App::drawThisMove() {
                                                  : trf("{} → {}: the move spoils it", before_score, tb);
         }
         row(TR("Tablebases"), tb, 0, {}, "");
+        ui::topic(guide::topics::BoardTablebases);
     }
     // Each analysis's verdict, and its best line from the position before the move: of the game's moves only.
     const bool on_main = b.line < 0 || boardMainPly() == b.ply;

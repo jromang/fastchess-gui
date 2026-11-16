@@ -189,6 +189,9 @@ a small board beside the choices showing them:
   *Try a move* / *Try a capture* to hear them. The sounds are made by the program (no sound file); the sound device
   is opened only while they are on, and when there is none the log says why and the program stays silent.
 
+- **Figurines in the notation** (on by default): the moves of the Board page, in its moves and its analysis's lines,
+  are written with the pieces of the set chosen above (Nf3 becomes a knight and f3); off, with letters.
+
 The command palette has these choices too (*Board colours: Brown*, *Pieces: Celtic*, *Turn the move sounds on*…).
 They are kept in `settings.json` in the profile; the folder of pieces is kept relative to the program's folder in
 the portable mode.
@@ -245,7 +248,10 @@ them.
 | <kbd>A</kbd> | A board | Open the position on the Board page and analyse it; on the Board page: start or stop the analysis |
 | <kbd>End</kbd> | The game in focus in *Live* | Back to the current move |
 | <kbd>Ctrl</kbd>+<kbd>V</kbd> | The Board page | Paste a FEN, an EPD line, a PGN or a list of moves |
-| <kbd>Escape</kbd> | The Board page | Put down the piece picked up |
+| <kbd>G</kbd> | The Board page | Analyse the game, pass after pass; again: stop |
+| <kbd>X</kbd> | The Board page | Show or hide the threat |
+| <kbd>N</kbd>, <kbd>Shift</kbd>+<kbd>N</kbd> | The Board page | The next, the previous move the analysis marked |
+| <kbd>Escape</kbd> | The Board page | The game back after a line was shown; put down the piece picked up |
 | <kbd>←</kbd> <kbd>→</kbd> | The big screen | The previous or next game |
 | <kbd>+</kbd> <kbd>-</kbd> | The big screen | Larger or smaller text |
 | <kbd>Escape</kbd> | The big screen | Leave it |
@@ -504,15 +510,21 @@ book) opens its position here and analyses it; on the Board page, A starts and s
 tournament* (or *Back*) returns to the page it came from. Its board can be drawn in 3D: see
 [The 3D board](#the-3d-board).
 
+The board is on the left, with the players above and below it; on the right, from the top, the analysis, the moves
+(with the table of the moves, the review of the game and the games of the file in tabs), and the game graph. The
+page's subtitle tells what the game is: its event and round, its result, its time control, its ECO code and opening,
+and how it ended.
+
 ### Opening, pasting and setting up a position
 
 - **Open a PGN…** reads any PGN file (a file can also be dropped on the window), in the background with a progress
   bar: a file of millions of games takes a few seconds, and its games are listed in a tab beside the moves, filtered
   by what is typed (every word found in the players, the event, the site, the date, the round, the opening, the
-  ECO code or the result). A click shows a game. The evaluations of its moves draw the curve under them: the
-  cutechess and fastchess comments (`{+0.35/18 1.2s}`) and the `[%eval 0.35]` of lichess and ChessBase (from
-  White's side, `#-3` for a mate) are read. A game whose FEN tag cannot be played is refused, and the moves of a
-  game stop at the first that cannot be read.
+  ECO code or the result). A click shows a game. The evaluations of its moves draw the graph: the cutechess and
+  fastchess comments (`{+0.35/18 1.2s}`) and the `[%eval 0.35]` of lichess and ChessBase (from White's side, `#-3`
+  for a mate) are read, the clocks of `[%clk 0:01:23]` too. Its variations are kept (see
+  [Variations](#variations)). A game whose FEN tag cannot be played is refused, and the moves of a game stop at the
+  first that cannot be read.
 - **Paste** (Ctrl+V on the page) reads the clipboard: a FEN, or the four fields of an EPD line; a PGN of one game or
   more (listed like a file's); a list of moves from the initial position, in SAN with or without numbers
   (`1. e4 e5 2. Nf3`) or in UCI (`e2e4 e7e5`). A position that cannot be played is refused with the reason (a king
@@ -524,38 +536,140 @@ tournament* (or *Back*) returns to the page it came from. Its board can be drawn
   king and the rook are where they need to be), the en passant square (only behind a pawn that just moved two
   squares) and Chess960. The FEN below follows the board, and a FEN typed there sets it. *Done* is offered once the
   position can be played, and puts it on the board.
-- *Copy PGN* copies the game shown, with its tags and moves (the engines' scores as comments when it has them).
+- *Copy PGN* (at the right of the moves' tabs) copies the game shown, with its tags, its moves (the engines' scores
+  as comments when it has them) and its variations.
 - **The board**: the buttons under it and ← → Home End go through the moves, and F (or the last button) turns it
-  over; a click on a piece and on a square plays a move (a pawn that promotes asks for its piece). A move other than
-  the game's next one takes the place of the moves after it, and *Back to the game* brings the game back as it came.
-  *Copy FEN* copies the position.
+  over; a click on a piece and on a square plays a move (a pawn that promotes asks for its piece). *Copy FEN* copies
+  the position.
+
+### The players
+
+Above and below the board, when the game has players: each one's name, its engine's evaluation of its last move
+(White's score and the depth, as a chip), the move it played and the time it took, or *to move*, and at the right its
+clock after its last move, framed while it has the move. The clocks are those of the moves' `[%clk]` when the game
+has them; otherwise they are rebuilt from its `TimeControl` tag (`300+2`, `10+0.1`: seconds and increment) and the
+time of each move, book moves taking none.
 
 ### The analysis
 
-An engine of the library searches the position shown and follows the board: depth, nodes, speed, the chances of a win,
-draw and loss when the engine gives them (`UCI_ShowWDL`), and several lines (MultiPV), their first moves drawn as
-arrows, the best one darker (**Settings** > *Appearance* > *The analysis's arrows on the Board page* turns them off; the
-lines still show the moves). Scores are White's. A click on a line plays its first move. Its engine, *Threads*, *Hash*
-(0: the engine's own) and *Lines* are the analysis's own settings: kept for the next time, they change neither the
-engine of the library nor any tournament. The library's other option values are sent as a game sends them. The analysis
-waits while another page is shown, and goes on when the Board page comes back; *Stop the analysis* (or A) stops it, and
-a dot on the rail's *Board* button tells when it runs.
+An engine of the library searches the position shown and follows the board. The card shows its engine, then one
+button with its *Threads*, *Hash* (0: the engine's own) and *Lines* (MultiPV), which a click opens: the analysis's
+own settings, kept for the next time, which change neither the engine of the library nor any tournament (the
+library's other option values are sent as a game sends them). At the right, the threads the Board page uses out of the
+machine's, in the warning colour while a tournament runs (its tooltip says how many threads the tournament's games
+take: the analysis competes with them).
 
-The analysis's threads count in the core budget, shown under it with the machine's threads. While a tournament runs,
-the analysis competes with its games: the page says so, with the threads the games use. Its engine is not one of the
-tournament's processes: the end of a tournament does not end it.
+The search shows as tiles (depth and seldepth, nodes, speed, time, tablebase hits, how full the hash is), the chances
+of a win, draw and loss when the engine gives them (`UCI_ShowWDL`), and each line: its score (White's, the best one
+set apart), its depth and its moves on two lines, with figurines (see [Appearance](#appearance)). Hovering a move of a
+line shows the position after it on the board, framed; a click plays the line up to that move. The first move of each
+line is drawn as an arrow, the best one darker (**Settings** > *Appearance* > *The analysis's arrows on the Board page*
+turns them off; the lines still show the moves).
+
+**Threat** (X) has another process of the engine search the position with the turn passed: the opponent's best move,
+were it to move again, drawn as a red arrow and written under the lines (none while the side to move is in check).
+
+The analysis waits while another page is shown, and goes on when the Board page comes back; *Stop the analysis* (or
+A) stops it, and a dot on the rail's *Board* button tells when it runs. Its engine is not one of the tournament's
+processes: the end of a tournament does not end it.
 
 ### Analysing a whole game
 
-**Analyse the game** goes through every position of the game shown with the analysis engine (its threads and hash,
-one line), for the time per move or the depth chosen beside the button, in the background: the progress shows above
-the moves, *Cancel* stops it, and the analysis of the board waits meanwhile. Each move is judged by the winning
-chances its mover lost, from the engine's scores before and after it (lichess' measure: 50 % at 0.00, about 59 % at
-+1.00): 10 points lost is an inaccuracy (`?!`), 20 a mistake (`?`), 30 a blunder (`??`), marked after the move in the
-list; the move the engine would have played is never marked. The tooltip of a marked move gives what it lost and the
-engine's move. A line counts them for each player, and the analysis's curve (orange) is drawn over the engines' own
-(blue). The analysis is kept with the game (in `analyses/` in the profile): the same game, opened again from
-anywhere, shows it at once.
+**Analyse the game** (G, in the page's tools or in the graph's header) has the analysis engine (its threads and hash,
+one line) search every position of the game in the background, first for 20 ms each, then again four times longer
+at each pass (80 ms, 0.3 s, 1.3 s, 5 s…), up to the time chosen with the arrow beside the button (0.3 s, 1.3 s, 5 s,
+20 s per position, or *until stopped*): the graph comes in a second or two and sharpens at each pass. The positions
+go from the last to the first, which lets the engine's hash hold what comes after a position (measured: about 16 %
+closer to long searches than from the first to the last, for the same time), the position on the board first. The
+graph's header tells the pass, the time per position and the progress, and a thin band under its time strip what each
+position got; *Stop* (or G) stops it.
+
+Each move is judged by the winning chances its mover lost, from the analysis's scores before and after it (lichess'
+measure: 50 % at 0.00, about 59 % at +1.00): 10 points lost is an inaccuracy (`?!`), 20 a mistake (`?`), 30 a blunder
+(`??`), marked after the move, on the graph and on the board; the move the engine would have played is never marked.
+A move is judged on the last complete pass; a mark the last pass changed is hollow until the next one confirms it.
+N and Shift+N (or the buttons beside the navigation) go to the next and the previous marked move.
+
+Each complete pass is kept with the game (in `analyses/` in the profile): the same game, opened again from anywhere,
+shows it at once, and G goes on from the passes done. The analysis runs on its own thread with its own engine
+process, its threads counted in the core budget; the board's analysis (A) pauses it, and when A searches a position
+of the game longer than the pass did, its value takes that position's place.
+
+**Several analyses**: *+ Engine* in the graph's legend has another engine of the library analyse the game too, for as
+long at each pass. Each analysis has its colour on the graph and on the board (its best move as an arrow while the
+board's analysis is off), its line in *This move* and its accuracies in the review. They go pass by pass together, all
+at once when the cores allow, one after the other otherwise. One analysis judges the moves (the first; a right click on
+another in the legend makes it the judge, or removes it); a mark is hollow when the analyses do not all judge the move
+alike. Win chances compare engines better than centipawns, which differ from one engine to another: they take each
+engine's WDL when it gives one.
+
+### The game graph
+
+Under the moves, the graph of the game, the same as in *Live* and *Games*:
+
+- **Evaluation**: the judging analysis as a white and black area (White's advantage above the line, Black's below),
+  each engine that played as a curve of its colour at its own moves, the other analyses as dashed curves; the marked
+  moves on the curve; values beyond ±6 drawn along the edge in the warning colour. Without an analysis, the area is
+  the two engines' evaluations averaged.
+- The book moves hatched, the phases under the axis (the opening; the middlegame from the first position with at most
+  10 pieces besides the kings and pawns, or fewer than 4 on a back rank; the endgame from at most 6, as lichess
+  divides a game), the zone the tablebases know tinted, the move numbers along the bottom.
+- Under the axis, the time of each move: White's up, Black's down.
+
+Its tabs: *Win chances* (from the WDL when the engines give it, lichess' formula otherwise), *WDL* (the shares the
+engines reported, White's wins at the bottom), *Time* (with the decision time), *Depth* (with the seldepth), *Nodes*,
+*Speed*, *TB hits*, *Agreement* (how far apart the two players' evaluations are, each move against the one before,
+and the analyses' at each position) and *PV agreement* (how many plies of an engine's PV repeat what the other's
+predicted); those the game has no values for are left out, and those that do not fit go in the `⋯` menu. Hovering
+tells the move and what each engine said; a click or a drag goes to the move. A click on a curve in the legend hides
+or shows it; the arrow at the right folds the graph.
+
+### This move
+
+Under the moves, about the move shown: what the engine that played it said (its score, depth and seldepth, time,
+nodes, speed, tablebase hits, as the PGN has them), the line it expected after it, each analysis's verdict (the share
+of the winning chances lost, the judgement, the best move and its score), and with the tablebases the result after the
+move and whether the move kept the one before it. *Show* lays a line on the board without touching the game: the
+position after it, the board framed, what it is written over it; Esc, a click on the board or a move through the game
+brings the game back. On the board, the move's judgement is a badge on its square, and the reply its engine expected
+a dashed arrow.
+
+### Variations
+
+A move played on the board where the game went another way starts a variation: the game stays as it came, with its
+analyses and its graph. The moves show the variations in brackets after the move they replace, nested and numbered; a
+click on a move goes there, and *Back to the game* returns to the position the variation leaves. A right click on a
+variation's move promotes it (it becomes the line it branches from, whose moves after it become the variation),
+deletes it with those branching from it, or copies it. *Copy PGN* writes the variations, and those of an opened PGN
+file are read (comments, numbers, annotations and results skipped; a move that cannot be played ends its variation
+only). The graph, the analyses and the judgements are the game's; on a variation, the graph marks where it leaves the
+game.
+
+### The moves, the table and the review
+
+**Moves** writes the game as flowing text: figurines (see [Appearance](#appearance)), the book moves greyed and the
+end of the book marked, the judgements in colour, the current move framed; hovering a move tells what its engine said
+and its judgement. **Table** lists each move with its engine's score (White's), depth and time, a bar for the time,
+the marked moves coloured.
+
+**Review**, once the game is analysed: for each side its accuracy (lichess': each move's from the winning chances it
+lost, the moves of the sharp moments weighing more), its inaccuracies, mistakes and blunders, its average loss in
+centipawns, the share of its moves the analysis would also play, its engine's average depth and time; its accuracy in
+the opening, the middlegame and the endgame; with several analyses, the accuracies each one gives. Then the key
+moments, each a click away: the turning point (the move that lost the most, with the best move), the other mistakes
+and blunders, where the two engines disagreed by 1.5 pawns or more for two moves in a row, the start of the endgame
+and of the tablebases. *Who saw it first* tells, for the turning point, at which move each engine that played and
+each analysis first gave the side that gains a pawn or more. *Copy PGN with the analysis* writes the game with each
+position's evaluation (`[%eval]`), the judgements as NAGs and, after a marked move, the line the analysis preferred;
+*Copy as BBCode* gives the review for a forum.
+
+### Tablebases on the Board page
+
+With the Syzygy folders of the setup (*Adjudication* > tablebases), the Board page probes each position of the game:
+the graph tints the zone the tables know, *This move* tells the result after the move and whether the move kept the
+one before it or spoiled it, and the review marks where the tables take over. Each position is probed as if a capture
+or a pawn move had just been played, which is exact except where the 50-move rule is near. The tables are those of the
+program's process: they are not probed while a tournament plays in it.
 
 ### Playing a game from a position
 
@@ -951,11 +1065,11 @@ shares one), and the changes to the tournament (see [Changing a running tourname
 ### Live
 
 The games in progress, as a mosaic of boards or one game in focus with the clocks, the running search of each engine
-(depth, score, nodes, nps, PV in SAN), the move list and the evaluation curve. Above the curve, it can show instead
-each engine's time per move with its decision time, depth with seldepth, nodes, speed, tablebase hits, or how many
-plies its PV repeats of what the other engine's PV predicted. The win/draw/loss shares (`UCI_ShowWDL`, switched on for
-the engines that have it when they are added) follow each search line and are drawn as bands under the curve, White's
-wins at the bottom.
+(depth, score, nodes, nps, PV in SAN), the move list and the game graph (see [The game graph](#the-game-graph)): the
+two engines' evaluations, and in its tabs their win chances, time per move with the decision time, depth with
+seldepth, nodes, speed, tablebase hits, how far apart they are, or how many plies a PV repeats of what the other
+engine's PV predicted. The win/draw/loss shares (`UCI_ShowWDL`, switched on for the engines that have it when they are
+added) follow each search line; the *WDL* tab draws them as bands, White's wins at the bottom.
 
 Under the board: the 50-move counter (plies since the last capture or pawn move, out of 100), the material difference
 with the pieces one side has more of, and the pieces left, marked *TB* when the tablebase adjudication can end the
@@ -990,9 +1104,9 @@ docked in the main window, the main window shows it.
 ### Games
 
 The finished games with their opening (ECO code and name), and a replay board: the buttons under it, ← → Home End
-and F, or a click on a move or on the curve; the same details under it and the same charts as in *Live*, from the
-fields the PGN was written with (a chart whose field the tournament did not write says so, with a button to the PGN
-options of the setup), with the win, draw and loss shares of the engines that report them under the evaluation curve.
+and F, or a click on a move or on the graph; the same details under it and the same game graph as in *Live* (see
+[The game graph](#the-game-graph)), from the fields the PGN was written with: a chart whose field the tournament did
+not write is in the graph's `⋯` menu, greyed, and says so with a button to the PGN options of the setup.
 
 **Filters**: by result (wins, draws, losses, losses on time, crashes and illegal moves, adjudications, wrong PVs, and
 the games of an opening flagged unbalanced when the setup looks for them); by what the evaluations tell (the engines

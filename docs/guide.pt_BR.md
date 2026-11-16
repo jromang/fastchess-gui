@@ -185,7 +185,7 @@ nenhum, inicie o programa com `SDL_VIDEODRIVER=x11`. Quando nenhuma forma de des
 antes de o programa terminar.
 
 ### Aparência
-<!-- en: appearance 19dea41f -->
+<!-- en: appearance decda352 -->
 
 **Preferências** > *Aparência* escolhe a aparência de todos os tabuleiros do programa (o mosaico ao vivo e a partida
 acompanhada, os tabuleiros destacados, a tela grande, uma partida reproduzida em *Partidas*, a aba *Aberturas*, as
@@ -211,6 +211,9 @@ aberturas de um livro), com um pequeno tabuleiro ao lado das opções que as mos
   *Volume*, e *Testar um lance* / *Testar uma captura* para ouvi-los. Os sons são gerados pelo programa (nenhum
   arquivo de som); o dispositivo de som só é aberto enquanto eles estão ligados, e quando não há nenhum o log diz por
   quê e o programa fica em silêncio.
+
+- **Figuras na notação** (ligadas por padrão): os lances da página Tabuleiro, nos lances dela e nas linhas da sua
+  análise, são escritos com as peças do conjunto escolhido acima (Nf3 vira um cavalo e f3); desligadas, com letras.
 
 A paleta de comandos também tem essas opções (*Cores do tabuleiro: Marrom*, *Peças: Celtic*, *Ligar os sons dos
 lances*…). Elas são guardadas em `settings.json` no perfil; no modo portátil, a pasta de peças é guardada em relação
@@ -254,7 +257,7 @@ tabuleiros continuam planos e *Aparência* diz por quê. As peças são as Staun
 MIT; *Aparência* tem o link para elas.
 
 ## Atalhos de teclado
-<!-- en: keyboard-shortcuts 45f7a67b -->
+<!-- en: keyboard-shortcuts e0d74f26 -->
 
 | Teclas | Onde | O que fazem |
 |---|---|---|
@@ -273,7 +276,10 @@ MIT; *Aparência* tem o link para elas.
 | <kbd>A</kbd> | Um tabuleiro | Abrir a posição na página Tabuleiro e analisá-la; na página Tabuleiro: iniciar ou parar a análise |
 | <kbd>End</kbd> | A partida em foco em *Ao vivo* | Voltar ao lance atual |
 | <kbd>Ctrl</kbd>+<kbd>V</kbd> | A página Tabuleiro | Colar um FEN, uma linha EPD, um PGN ou uma lista de lances |
-| <kbd>Esc</kbd> | A página Tabuleiro | Soltar a peça levantada |
+| <kbd>G</kbd> | A página Tabuleiro | Analisar a partida, passada após passada; de novo: parar |
+| <kbd>X</kbd> | A página Tabuleiro | Mostrar ou ocultar a ameaça |
+| <kbd>N</kbd>, <kbd>Shift</kbd>+<kbd>N</kbd> | A página Tabuleiro | O próximo, o anterior lance marcado pela análise |
+| <kbd>Esc</kbd> | A página Tabuleiro | A partida de volta depois que uma linha foi mostrada; soltar a peça levantada |
 | <kbd>←</kbd> <kbd>→</kbd> | A tela grande | A partida anterior ou a seguinte |
 | <kbd>+</kbd> <kbd>-</kbd> | A tela grande | Texto maior ou menor |
 | <kbd>Esc</kbd> | A tela grande | Sair dela |
@@ -546,7 +552,7 @@ adiciona à biblioteca. *Rodar como suíte de testes…* abre um livro EPD em **
   entraram nele, quantas as opções deixaram de fora e quantas não puderam ser lidas.
 
 ## Tabuleiro
-<!-- en: board ef08c39c -->
+<!-- en: board 1b231755 -->
 
 A página Tabuleiro mostra uma partida ou uma posição, vinda de qualquer lugar: **A** em qualquer tabuleiro do programa
 (uma partida do mosaico da aba *Ao vivo* ou a acompanhada, o tabuleiro da aba *Partidas*, o da aba *Aberturas*, o de uma
@@ -554,16 +560,22 @@ abertura de um livro) abre a posição dele aqui e a analisa; na página Tabulei
 torneio* (ou *Voltar*) retorna à página de onde se veio. O tabuleiro dela pode ser desenhado em 3D: veja [O tabuleiro
 3D](#o-tabuleiro-3d).
 
+O tabuleiro fica à esquerda, com os jogadores acima e abaixo dele; à direita, de cima para baixo, a análise, os lances
+(com a tabela dos lances, a revisão da partida e as partidas do arquivo em abas) e o gráfico da partida. O subtítulo
+da página diz que partida é: o evento e a rodada, o resultado, o controle de tempo, o código ECO e a abertura, e como
+ela terminou.
+
 ### Abrir, colar e montar uma posição
-<!-- en: opening-pasting-and-setting-up-a-position dd0f4636 -->
+<!-- en: opening-pasting-and-setting-up-a-position 3778ddb5 -->
 
 - **Abrir um PGN…** lê qualquer arquivo PGN (um arquivo também pode ser solto sobre a janela), em segundo plano com
   uma barra de progresso: um arquivo de milhões de partidas leva alguns segundos, e as partidas dele são listadas numa
   aba ao lado dos lances, filtradas pelo que é digitado (cada palavra encontrada nos jogadores, no evento, no local,
   na data, na rodada, na abertura, no código ECO ou no resultado). Um clique mostra uma partida. As avaliações dos
-  lances desenham a curva sob eles: são lidos os comentários do cutechess e do fastchess (`{+0.35/18 1.2s}`) e o
-  `[%eval 0.35]` do lichess e do ChessBase (do ponto de vista das Brancas, `#-3` para um mate). Uma partida cuja tag
-  FEN não pode ser jogada é recusada, e os lances de uma partida param no primeiro que não pode ser lido.
+  lances desenham o gráfico: são lidos os comentários do cutechess e do fastchess (`{+0.35/18 1.2s}`) e o
+  `[%eval 0.35]` do lichess e do ChessBase (do ponto de vista das Brancas, `#-3` para um mate), e também os relógios
+  de `[%clk 0:01:23]`. As variantes dela são mantidas (veja [Variantes](#variantes)). Uma partida cuja tag FEN não
+  pode ser jogada é recusada, e os lances de uma partida param no primeiro que não pode ser lido.
 - **Colar** (Ctrl+V na página) lê a área de transferência: um FEN, ou os quatro campos de uma linha EPD; um PGN de
   uma ou mais partidas (listadas como as de um arquivo); uma lista de lances a partir da posição inicial, em SAN com
   ou sem números (`1. e4 e5 2. Nf3`) ou em UCI (`e2e4 e7e5`). Uma posição que não pode ser jogada é recusada com o
@@ -575,42 +587,154 @@ torneio* (ou *Voltar*) retorna à página de onde se veio. O tabuleiro dela pode
   quando o rei e a torre estão onde precisam estar), a casa en passant (só atrás de um peão que acabou de avançar duas
   casas) e Chess960. O FEN abaixo acompanha o tabuleiro, e um FEN digitado ali o define. *Pronto* é oferecido assim
   que a posição pode ser jogada, e a coloca no tabuleiro.
-- *Copiar PGN* copia a partida mostrada, com as tags e os lances (as pontuações dos engines como comentários, quando
-  ela as tem).
+- *Copiar PGN* (à direita das abas dos lances) copia a partida mostrada, com as tags, os lances (as pontuações dos
+  engines como comentários, quando ela as tem) e as variantes.
 - **O tabuleiro**: os botões sob ele e ← → Home End percorrem os lances, e F (ou o último botão) o gira; um clique
-  numa peça e numa casa joga um lance (um peão que promove pergunta a peça). Um lance diferente do próximo lance da
-  partida substitui os lances seguintes, e *Voltar à partida* traz a partida de volta como ela veio. *Copiar FEN*
-  copia a posição.
+  numa peça e numa casa joga um lance (um peão que promove pergunta a peça). *Copiar FEN* copia a posição.
+
+### Os jogadores
+<!-- en: the-players 1f4f551f -->
+
+Acima e abaixo do tabuleiro, quando a partida tem jogadores: o nome de cada um, a avaliação que o engine dele deu ao
+seu último lance (a pontuação das Brancas e a profundidade, numa etiqueta), o lance que ele jogou e o tempo que levou,
+ou *a jogar*, e à direita o relógio dele depois do último lance, enquadrado enquanto ele tem a vez. Os relógios são os
+do `[%clk]` dos lances quando a partida os tem; senão, são reconstruídos a partir da tag `TimeControl` dela (`300+2`,
+`10+0.1`: segundos e incremento) e do tempo de cada lance, os lances de livro não gastando nenhum.
 
 ### A análise
-<!-- en: the-analysis 40171591 -->
+<!-- en: the-analysis 63237b12 -->
 
-Um engine da biblioteca analisa a posição mostrada e acompanha o tabuleiro: profundidade, nós, velocidade, as chances de
-vitória, empate e derrota quando o engine as fornece (`UCI_ShowWDL`), e várias linhas (MultiPV), com os primeiros lances
-desenhados como setas, o da melhor mais escuro (**Preferências** > *Aparência* > *As setas da análise na página
-Tabuleiro* as desativa; as linhas continuam mostrando os lances). As pontuações são do ponto de vista das Brancas. Um
-clique numa linha joga o primeiro lance dela. O engine, *Threads*, *Hash* (0: o do próprio engine) e *Linhas* são
-configurações próprias da análise: guardadas para a próxima vez, não alteram nem o engine da biblioteca nem nenhum
-torneio. Os outros valores de opções da biblioteca são enviados como uma partida os envia. A análise espera enquanto
-outra página é mostrada, e continua quando a página Tabuleiro volta; *Parar a análise* (ou A) a para, e um ponto no
-botão *Tabuleiro* da barra indica quando ela está rodando.
+Um engine da biblioteca analisa a posição mostrada e acompanha o tabuleiro. O cartão mostra o engine dela, depois um
+botão com *Threads*, *Hash* (0: o do próprio engine) e *Linhas* (MultiPV), que um clique abre: as configurações
+próprias da análise, guardadas para a próxima vez, que não alteram nem o engine da biblioteca nem nenhum torneio (os
+outros valores de opções da biblioteca são enviados como uma partida os envia). À direita, as threads que a página
+Tabuleiro usa, entre as da máquina, na cor de aviso enquanto um torneio roda (a dica diz quantas threads as partidas
+do torneio ocupam: a análise compete com elas).
 
-As threads da análise contam no orçamento de núcleos, mostrado abaixo dela com as threads da máquina. Enquanto um
-torneio roda, a análise compete com as partidas dele: a página avisa, com as threads que as partidas usam. O engine da
-análise não é um dos processos do torneio: o fim de um torneio não o encerra.
+A busca aparece em quadros (profundidade e seldepth, nós, velocidade, tempo, acessos às tablebases, quanto o hash está
+cheio), as chances de vitória, empate e derrota quando o engine as fornece (`UCI_ShowWDL`), e cada linha: a pontuação
+(do ponto de vista das Brancas, a da melhor destacada), a profundidade e os lances em duas linhas, com figurinhas
+(veja [Aparência](#aparência)). Passar o mouse sobre um lance de uma linha mostra no tabuleiro, enquadrado, a posição
+depois dele; um clique joga a linha até esse lance. O primeiro lance de cada linha é desenhado como uma seta, o da
+melhor mais escuro (**Preferências** > *Aparência* > *As setas da análise na página Tabuleiro* as desativa; as linhas
+continuam mostrando os lances).
+
+**Ameaça** (X) faz outro processo do engine analisar a posição com a vez passada: o melhor lance do adversário, se ele
+jogasse de novo, desenhado como uma seta vermelha e escrito sob as linhas (nenhum enquanto o lado que tem a vez está
+em xeque).
+
+A análise espera enquanto outra página é mostrada, e continua quando a página Tabuleiro volta; *Parar a análise* (ou
+A) a para, e um ponto no botão *Tabuleiro* da barra indica quando ela está rodando. O engine dela não é um dos
+processos do torneio: o fim de um torneio não o encerra.
 
 ### Analisar uma partida inteira
-<!-- en: analysing-a-whole-game 81150c63 -->
+<!-- en: analysing-a-whole-game a7e6166c -->
 
-**Analisar a partida** percorre cada posição da partida mostrada com o engine de análise (as threads e o hash dele,
-uma linha), pelo tempo por lance ou a profundidade escolhidos ao lado do botão, em segundo plano: o progresso aparece
-acima dos lances, *Cancelar* a interrompe, e a análise do tabuleiro espera enquanto isso. Cada lance é julgado pelas
-chances de vitória que o jogador que o fez perdeu, a partir das pontuações do engine antes e depois dele (a medida do
-lichess: 50 % em 0,00, cerca de 59 % em +1,00): 10 pontos perdidos é uma imprecisão (`?!`), 20 um erro (`?`), 30 um
-erro grave (`??`), marcados depois do lance na lista; o lance que o engine teria jogado nunca é marcado. A dica de um
-lance marcado dá o que ele perdeu e o lance do engine. Uma linha os conta para cada jogador, e a curva da análise
-(laranja) é desenhada sobre a dos próprios engines (azul). A análise é guardada com a partida (em `analyses/` no
-perfil): a mesma partida, aberta de novo de qualquer lugar, a mostra imediatamente.
+**Analisar a partida** (G, nas ferramentas da página ou no cabeçalho do gráfico) faz o engine de análise (as threads e
+o hash dele, uma linha) analisar cada posição da partida em segundo plano, primeiro por 20 ms cada uma, depois de novo
+por quatro vezes mais tempo a cada passada (80 ms, 0,3 s, 1,3 s, 5 s…), até o tempo escolhido com a seta ao lado do
+botão (0,3 s, 1,3 s, 5 s, 20 s por posição, ou *até ser parado*): o gráfico chega em um ou dois segundos e fica mais
+nítido a cada passada. As posições vão da última à primeira, o que deixa o hash do engine guardar o que vem depois de
+uma posição (medido: cerca de 16 % mais perto de buscas longas do que da primeira à última, pelo mesmo tempo),
+começando pela posição do tabuleiro. O cabeçalho do gráfico indica a passada, o tempo por posição e o progresso, e uma
+tira fina sob a faixa dos tempos, o que cada posição recebeu; *Parar* (ou G) a interrompe.
+
+Cada lance é julgado pelas chances de vitória que o jogador que o fez perdeu, a partir das pontuações da análise antes
+e depois dele (a medida do lichess: 50 % em 0,00, cerca de 59 % em +1,00): 10 pontos perdidos é uma imprecisão (`?!`),
+20 um erro (`?`), 30 um erro grave (`??`), marcados depois do lance, no gráfico e no tabuleiro; o lance que o engine
+teria jogado nunca é marcado. Um lance é julgado na última passada completa; uma marca que a última passada mudou fica
+vazada até que a próxima a confirme. N e Shift+N (ou os botões ao lado da navegação) vão ao próximo e ao anterior
+lance marcado.
+
+Cada passada completa é guardada com a partida (em `analyses/` no perfil): a mesma partida, aberta de novo de qualquer
+lugar, a mostra imediatamente, e G continua a partir das passadas feitas. A análise roda numa thread própria com um
+processo próprio do engine, as threads dela contadas no orçamento de núcleos; a análise do tabuleiro (A) a pausa, e
+quando A analisa uma posição da partida por mais tempo do que a passada, o valor de A toma o lugar do valor dessa
+posição.
+
+**Várias análises**: *+ Engine* na legenda do gráfico faz outro engine da biblioteca analisar a partida também, pelo
+mesmo tempo a cada passada. Cada análise tem a sua cor no gráfico e no tabuleiro (o melhor lance dela como uma seta
+enquanto a análise do tabuleiro está desligada), a sua linha em *Este lance* e as suas precisões na revisão. Elas
+avançam juntas, passada a passada, todas ao mesmo tempo quando os núcleos permitem, uma depois da outra caso
+contrário. Uma análise julga os lances (a primeira; um clique direito numa outra na legenda a torna o juiz, ou a
+remove); uma marca fica vazada quando as análises não julgam todas o lance da mesma forma. As chances de vitória
+comparam os engines melhor do que os centipeões, que diferem de um engine para outro: elas usam o WDL de cada engine
+quando ele o fornece.
+
+### O gráfico da partida
+<!-- en: the-game-graph 14e02bad -->
+
+Sob os lances, o gráfico da partida, o mesmo de *Ao vivo* e de *Partidas*:
+
+- **Avaliação**: a análise que julga os lances desenhada como uma área branca e preta (a vantagem das Brancas acima da
+  linha, a das Pretas abaixo), cada engine que jogou como uma curva da sua cor nos lances dele, as outras análises
+  como curvas tracejadas; os lances marcados sobre a curva; os valores além de ±6 desenhados ao longo da borda na cor
+  de aviso. Sem análise, a área é a média das avaliações dos dois engines.
+- Os lances de livro hachurados, as fases sob o eixo (a abertura; o meio-jogo a partir da primeira posição com no
+  máximo 10 peças além dos reis e dos peões, ou menos de 4 na fileira de fundo de um dos lados; o final a partir de no
+  máximo 6, como o lichess divide uma partida), a zona que as tablebases conhecem tingida, os números dos lances ao
+  longo da parte de baixo.
+- Sob o eixo, o tempo de cada lance: o das Brancas para cima, o das Pretas para baixo.
+
+As abas dele: *Chances de vitória* (a partir do WDL quando os engines o fornecem, senão pela fórmula do lichess),
+*V/E/D* (as parcelas que os engines informaram, as vitórias das Brancas embaixo), *Tempo* (com o tempo de decisão),
+*Profundidade* (com a seldepth), *Nós*, *Velocidade*, *Acessos às tablebases*, *Concordância* (quanto as avaliações
+dos dois jogadores se afastam, cada lance contra o anterior, e as das análises em cada posição) e *Concordância das
+PVs* (quantos meios-lances da PV de um engine repetem o que a do outro previa); as abas para as quais a partida não
+tem valores ficam de fora, e as que não cabem vão para o menu `⋯`. Passar o mouse indica o lance e o que cada engine
+disse; um clique ou um arrasto vai até o lance. Um clique numa curva na legenda a oculta ou a mostra; a seta à direita
+recolhe o gráfico.
+
+### Este lance
+<!-- en: this-move a4a908f8 -->
+
+Sob os lances, sobre o lance mostrado: o que disse o engine que o jogou (a pontuação, a profundidade e a seldepth, o
+tempo, os nós, a velocidade, os acessos às tablebases, como o PGN os tem), a linha que ele esperava depois do lance, o
+veredito de cada análise (a parte das chances de vitória perdida, o julgamento, o melhor lance e a pontuação dele) e,
+com as tablebases, o resultado depois do lance e se o lance manteve o de antes. *Mostrar* põe uma linha no tabuleiro
+sem mexer na partida: a posição depois dela, o tabuleiro enquadrado e, por cima dele, o que ela é; Esc, um clique no
+tabuleiro ou um lance percorrido na partida traz a partida de volta. No tabuleiro, o julgamento do lance é um selo na
+casa dele, e a resposta que o engine dele esperava, uma seta tracejada.
+
+### Variantes
+<!-- en: variations 7932794c -->
+
+Um lance jogado no tabuleiro onde a partida seguiu outro caminho começa uma variante: a partida fica como veio, com as
+análises e o gráfico dela. Os lances mostram as variantes entre parênteses depois do lance que elas substituem,
+aninhadas e numeradas; um clique num lance vai até lá, e *Voltar à partida* volta à posição de onde a variante sai. Um
+clique direito num lance de uma variante a promove (ela vira a linha de onde parte, cujos lances a partir dali viram a
+variante), a apaga junto com as que partem dela, ou a copia. *Copiar PGN* escreve as variantes, e as de um arquivo PGN
+aberto são lidas (comentários, números, anotações e resultados ignorados; um lance que não pode ser jogado encerra só
+a variante dele). O gráfico, as análises e os julgamentos são os da partida; numa variante, o gráfico marca onde ela
+sai da partida.
+
+### Os lances, a tabela e a revisão
+<!-- en: the-moves-the-table-and-the-review 7880f8d8 -->
+
+**Lances** escreve a partida como texto corrido: figurinhas (veja [Aparência](#aparência)), os lances de livro em
+cinza e o fim do livro marcado, os julgamentos em cor, o lance atual enquadrado; passar o mouse sobre um lance indica
+o que o engine dele disse e o julgamento. **Tabela** lista cada lance com a pontuação do engine dele (do ponto de
+vista das Brancas), a profundidade e o tempo, uma barra para o tempo, os lances marcados coloridos.
+
+**Revisão**, depois que a partida foi analisada: para cada lado a precisão (a do lichess: a de cada lance segundo as
+chances de vitória perdidas, os lances dos momentos tensos pesando mais), as imprecisões, os erros e os erros graves,
+a perda média em centipeões, a parte dos lances que a análise também jogaria, a profundidade e o tempo médios do
+engine; a precisão na abertura, no meio-jogo e no final; com várias análises, as precisões que cada uma dá. Depois os
+momentos-chave, cada um a um clique: a virada (o lance que mais perdeu, com o melhor lance), os outros erros e erros
+graves, onde os dois engines discordaram em 1,5 peão ou mais por dois lances seguidos, o começo do final e o das
+tablebases. *Quem viu primeiro* indica, para a virada, em que lance cada engine que jogou e cada análise deu pela
+primeira vez um peão ou mais ao lado que ganha. *Copiar o PGN com a análise* escreve a partida com a avaliação de cada
+posição (`[%eval]`), os julgamentos como NAGs e, depois de um lance marcado, a linha que a análise preferia; *Copiar
+como BBCode* dá a revisão para um fórum.
+
+### Tablebases na página Tabuleiro
+<!-- en: tablebases-on-the-board-page 721b71dd -->
+
+Com as pastas Syzygy da configuração (*Adjudicação* > tablebases), a página Tabuleiro consulta cada posição da
+partida: o gráfico tinge a zona que as tabelas conhecem, *Este lance* indica o resultado depois do lance e se o lance
+manteve o de antes ou o estragou, e a revisão marca onde as tabelas assumem. Cada posição é consultada como se uma
+captura ou um lance de peão tivesse acabado de ser jogado, o que é exato exceto quando a regra dos 50 lances está
+perto. As tabelas são as do processo do programa: elas não são consultadas enquanto um torneio joga nele.
 
 ### Jogar uma partida a partir de uma posição
 <!-- en: playing-a-game-from-a-position 6e79a367 -->
@@ -1053,14 +1177,15 @@ começou, quando a rodada compartilha uma), e as alterações do torneio (veja [
 andamento](#alterar-um-torneio-em-andamento)).
 
 ### Ao vivo
-<!-- en: live 08ae852d -->
+<!-- en: live 002a902e -->
 
 As partidas em andamento, como um mosaico de tabuleiros ou uma partida em foco com os relógios, a busca em curso de
-cada engine (profundidade, pontuação, nós, nps, PV em SAN), a lista de lances e a curva de avaliação. Acima da curva,
-ela pode mostrar em vez disso o tempo por lance de cada engine com o tempo de decisão, a profundidade com a seldepth,
-os nós, a velocidade, os acessos às tablebases, ou quantos meios-lances da PV dele repetem o que a PV do outro engine
-previa. As parcelas de vitória/empate/derrota (`UCI_ShowWDL`, ligado para os engines que o têm quando são
-adicionados) acompanham cada linha de busca e são desenhadas como faixas sob a curva, as vitórias das Brancas embaixo.
+cada engine (profundidade, pontuação, nós, nps, PV em SAN), a lista de lances e o gráfico da partida (veja [O gráfico
+da partida](#o-gráfico-da-partida)): as avaliações dos dois engines e, nas abas dele, as chances de vitória deles, o
+tempo por lance com o tempo de decisão, a profundidade com a seldepth, os nós, a velocidade, os acessos às
+tablebases, quanto eles se afastam, ou quantos meios-lances uma PV repete do que a PV do outro engine previa. As
+parcelas de vitória/empate/derrota (`UCI_ShowWDL`, ligado para os engines que o têm quando são adicionados)
+acompanham cada linha de busca; a aba *V/E/D* as desenha como faixas, as vitórias das Brancas embaixo.
 
 Sob o tabuleiro: o contador dos 50 lances (meios-lances desde a última captura ou lance de peão, de 100), a diferença
 de material com as peças que um lado tem a mais, e as peças restantes, marcadas com *TB* quando a adjudicação por
@@ -1095,13 +1220,13 @@ para outra tela (a TV) a mostra na própria janela, com F11 colocando essa janel
 principal continua; encaixado na janela principal, é a janela principal que a mostra.
 
 ### Partidas
-<!-- en: games 1f173028 -->
+<!-- en: games ba4a9604 -->
 
 As partidas terminadas com a abertura (código ECO e nome), e um tabuleiro de reprodução: os botões sob ele, ← → Home
-End e F, ou um clique num lance ou na curva; os mesmos detalhes sob ele e os mesmos gráficos de *Ao vivo*, a partir
-dos campos com que o PGN foi gravado (um gráfico cujo campo o torneio não gravou avisa, com um botão para as opções
-PGN da configuração), com as parcelas de vitória, empate e derrota dos engines que as informam sob a curva de
-avaliação.
+End e F, ou um clique num lance ou no gráfico; os mesmos detalhes sob ele e o mesmo gráfico da partida de *Ao vivo*
+(veja [O gráfico da partida](#o-gráfico-da-partida)), a partir dos campos com que o PGN foi gravado: um gráfico cujo
+campo o torneio não gravou fica no menu `⋯` do gráfico, em cinza, e avisa, com um botão para as opções PGN da
+configuração.
 
 **Filtros**: por resultado (vitórias, empates, derrotas, perdas por tempo, crashes e lances ilegais, adjudicações,
 PVs erradas, e as partidas de uma abertura marcada como desequilibrada quando a configuração as procura); pelo que as

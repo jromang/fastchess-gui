@@ -192,7 +192,7 @@ graphique ; s'il n'y en a pas, lance le programme avec `SDL_VIDEODRIVER=x11`. Qu
 fonctionne, un message le dit avant que le programme se termine.
 
 ### Apparence
-<!-- en: appearance 19dea41f -->
+<!-- en: appearance decda352 -->
 
 **Réglages** > *Apparence* choisit l'aspect de chaque échiquier du programme (la mosaïque en direct et la partie
 suivie, les échiquiers détachés, le grand écran, une partie rejouée dans *Parties*, l'onglet *Ouvertures*, les
@@ -218,6 +218,10 @@ ouvertures d'un livre), avec, à côté des choix, un petit échiquier qui les m
   mosaïque. *Volume*, et *Essayer un coup* / *Essayer une prise* pour les entendre. Les sons sont produits par le
   programme (aucun fichier son) ; le périphérique audio n'est ouvert que lorsqu'ils sont activés, et quand il n'y en a
   pas, le journal dit pourquoi et le programme reste muet.
+
+- **Figurines dans la notation** (activées par défaut) : les coups de la page Échiquier, dans ses coups et dans les
+  lignes de son analyse, sont écrits avec les pièces du jeu choisi plus haut (Nf3 devient un cavalier et f3) ;
+  désactivées, avec des lettres.
 
 La palette de commandes propose aussi ces choix (*Couleurs de l'échiquier : Brun*, *Pièces : Celtic*, *Activer les
 sons des coups*…). Ils sont gardés dans `settings.json`, dans le profil ; le dossier des pièces est gardé relatif au
@@ -261,7 +265,7 @@ L'échiquier 3D demande OpenGL 3.3. Là où la fenêtre est dessinée sans lui (
 licence MIT ; *Apparence* donne le lien vers elles.
 
 ## Raccourcis clavier
-<!-- en: keyboard-shortcuts 45f7a67b -->
+<!-- en: keyboard-shortcuts e0d74f26 -->
 
 | Touches | Où | Ce qu'elles font |
 |---|---|---|
@@ -280,7 +284,10 @@ licence MIT ; *Apparence* donne le lien vers elles.
 | <kbd>A</kbd> | Un échiquier | Ouvrir la position sur la page Échiquier et l'analyser ; sur la page Échiquier : lancer ou arrêter l'analyse |
 | <kbd>Fin</kbd> | La partie mise en avant dans *Direct* | Revenir au coup en cours |
 | <kbd>Ctrl</kbd>+<kbd>V</kbd> | La page Échiquier | Coller un FEN, une ligne EPD, un PGN ou une liste de coups |
-| <kbd>Échap</kbd> | La page Échiquier | Reposer la pièce prise en main |
+| <kbd>G</kbd> | La page Échiquier | Analyser la partie, passe après passe ; une seconde fois : l'arrêter |
+| <kbd>X</kbd> | La page Échiquier | Afficher ou masquer la menace |
+| <kbd>N</kbd>, <kbd>Maj</kbd>+<kbd>N</kbd> | La page Échiquier | Le coup suivant, le coup précédent marqué par l'analyse |
+| <kbd>Échap</kbd> | La page Échiquier | Rétablir la partie après qu'une ligne a été montrée ; reposer la pièce prise en main |
 | <kbd>←</kbd> <kbd>→</kbd> | Le grand écran | La partie précédente ou suivante |
 | <kbd>+</kbd> <kbd>-</kbd> | Le grand écran | Texte plus grand ou plus petit |
 | <kbd>Échap</kbd> | Le grand écran | Le quitter |
@@ -567,7 +574,7 @@ tests…* ouvre un livre EPD dans **Suites**.
   en ont écartées et combien n'ont pas pu être lues.
 
 ## Échiquier
-<!-- en: board ef08c39c -->
+<!-- en: board 1b231755 -->
 
 La page Échiquier montre une partie ou une position, venue de n'importe où : **A** sur n'importe quel échiquier du
 programme (une partie de la mosaïque de l'onglet *Direct* ou celle suivie, l'échiquier de l'onglet *Parties*, de
@@ -575,17 +582,23 @@ l'onglet *Ouvertures*, d'une ouverture d'un livre) ouvre sa position ici et l'an
 et arrête l'analyse. *Revenir au tournoi* (ou *Retour*) ramène à la page d'où l'on vient. Son échiquier peut être
 dessiné en 3D : voir [L'échiquier 3D](#léchiquier-3d).
 
+L'échiquier est à gauche, avec les joueurs au-dessus et en dessous ; à droite, de haut en bas, l'analyse, les coups
+(avec, en onglets, le tableau des coups, le bilan de la partie et les parties du fichier), et le graphe de la partie.
+Le sous-titre de la page dit ce qu'est la partie : son événement et sa ronde, son résultat, sa cadence, son code ECO
+et son ouverture, et comment elle s'est terminée.
+
 ### Ouvrir, coller et mettre en place une position
-<!-- en: opening-pasting-and-setting-up-a-position dd0f4636 -->
+<!-- en: opening-pasting-and-setting-up-a-position 3778ddb5 -->
 
 - **Ouvrir un PGN…** lit n'importe quel fichier PGN (un fichier peut aussi être déposé sur la fenêtre), en
   arrière-plan avec une barre de progression : un fichier de millions de parties prend quelques secondes, et ses
   parties sont listées dans un onglet à côté des coups, filtrées par ce qui est tapé (chaque mot trouvé dans les
   joueurs, l'événement, le lieu, la date, la ronde, l'ouverture, le code ECO ou le résultat). Un clic montre une
-  partie. Les évaluations de ses coups dessinent la courbe en dessous : les commentaires de cutechess et de fastchess
+  partie. Les évaluations de ses coups dessinent le graphe : les commentaires de cutechess et de fastchess
   (`{+0.35/18 1.2s}`) et le `[%eval 0.35]` de lichess et de ChessBase (du point de vue des Blancs, `#-3` pour un mat)
-  sont lus. Une partie dont la balise FEN ne peut pas être jouée est refusée, et les coups d'une partie s'arrêtent au
-  premier qui ne peut pas être lu.
+  sont lus, les pendules de `[%clk 0:01:23]` aussi. Ses variantes sont gardées (voir [Variantes](#variantes)). Une
+  partie dont la balise FEN ne peut pas être jouée est refusée, et les coups d'une partie s'arrêtent au premier qui ne
+  peut pas être lu.
 - **Coller** (Ctrl+V sur la page) lit le presse-papiers : un FEN, ou les quatre champs d'une ligne EPD ; un PGN d'une
   partie ou plus (listées comme celles d'un fichier) ; une liste de coups depuis la position initiale, en SAN avec ou
   sans numéros (`1. e4 e5 2. Nf3`) ou en UCI (`e2e4 e7e5`). Une position qui ne peut pas être jouée est refusée avec
@@ -597,42 +610,161 @@ dessiné en 3D : voir [L'échiquier 3D](#léchiquier-3d).
   roi et la tour sont là où ils doivent être), la case de prise en passant (seulement derrière un pion qui vient
   d'avancer de deux cases) et Chess960. Le FEN en dessous suit l'échiquier, et un FEN tapé là le règle. *Terminé* est
   proposé dès que la position peut être jouée, et la met sur l'échiquier.
-- *Copier le PGN* copie la partie affichée, avec ses balises et ses coups (les scores des moteurs en commentaires
-  quand elle en a).
+- *Copier le PGN* (à droite des onglets des coups) copie la partie affichée, avec ses balises, ses coups (les scores
+  des moteurs en commentaires quand elle en a) et ses variantes.
 - **L'échiquier** : les boutons en dessous et ← → Origine Fin parcourent les coups, et F (ou le dernier bouton) le
-  retourne ; un clic sur une pièce puis sur une case joue un coup (un pion qui est promu demande sa pièce). Un coup
-  autre que le coup suivant de la partie remplace les coups qui le suivaient, et *Revenir à la partie* rétablit la
-  partie telle qu'elle était. *Copier le FEN* copie la position.
+  retourne ; un clic sur une pièce puis sur une case joue un coup (un pion qui est promu demande sa pièce). *Copier le
+  FEN* copie la position.
+
+### Les joueurs
+<!-- en: the-players 1f4f551f -->
+
+Au-dessus et en dessous de l'échiquier, quand la partie a des joueurs : le nom de chacun, l'évaluation de son dernier
+coup par son moteur (le score des Blancs et la profondeur, en pastille), le coup qu'il a joué et le temps qu'il y a
+mis, ou *au trait*, et à droite sa pendule après son dernier coup, encadrée tant qu'il a le trait. Les pendules sont
+celles des `[%clk]` des coups quand la partie en a ; sinon elles sont reconstituées à partir de sa balise
+`TimeControl` (`300+2`, `10+0.1` : secondes et incrément) et du temps de chaque coup, les coups du livre n'en prenant
+aucun.
 
 ### Analyse
-<!-- en: the-analysis 40171591 -->
+<!-- en: the-analysis 63237b12 -->
 
-Un moteur de la bibliothèque analyse la position affichée et suit l'échiquier : profondeur, nœuds, vitesse, les chances
-de gain, de nulle et de perte quand le moteur les donne (`UCI_ShowWDL`), et plusieurs lignes (MultiPV), leurs premiers
-coups dessinés en flèches, la meilleure plus foncée (**Réglages** > *Apparence* > *Les flèches de l'analyse sur la page
-Échiquier* les retire ; les lignes montrent toujours les coups). Les scores sont ceux des Blancs. Un clic sur une ligne
-joue son premier coup. Son moteur, *Threads*, *Hash* (0 : celui du moteur) et *Lignes* sont des réglages propres à
-l'analyse : gardés pour la prochaine fois, ils ne changent ni le moteur de la bibliothèque ni aucun tournoi. Les autres
-valeurs d'options de la bibliothèque sont envoyées comme une partie les envoie. L'analyse attend pendant qu'une autre
-page est affichée, et reprend quand la page Échiquier revient ; *Arrêter l'analyse* (ou A) l'arrête, et un point sur le
-bouton *Échiquier* de la barre de navigation indique qu'elle tourne.
+Un moteur de la bibliothèque analyse la position affichée et suit l'échiquier. La carte montre son moteur, puis un
+bouton avec ses *Threads*, son *Hash* (0 : celui du moteur) et ses *Lignes* (MultiPV), qu'un clic ouvre : les
+réglages propres à l'analyse, gardés pour la prochaine fois, qui ne changent ni le moteur de la bibliothèque ni aucun
+tournoi (les autres valeurs d'options de la bibliothèque sont envoyées comme une partie les envoie). À droite, les
+threads qu'utilise la page Échiquier sur ceux de la machine, dans la couleur d'avertissement pendant qu'un tournoi
+tourne (son infobulle dit combien de threads prennent les parties du tournoi : l'analyse est en concurrence avec
+elles).
 
-Les threads de l'analyse comptent dans le budget de cœurs, affiché en dessous avec les threads de la machine. Pendant
-qu'un tournoi tourne, l'analyse est en concurrence avec ses parties : la page le dit, avec les threads qu'utilisent les
-parties. Son moteur ne fait pas partie des processus du tournoi : la fin d'un tournoi ne l'arrête pas.
+La recherche s'affiche en tuiles (profondeur et seldepth, nœuds, vitesse, temps, accès aux tables, remplissage du
+hash), les chances de gain, de nulle et de perte quand le moteur les donne (`UCI_ShowWDL`), et chaque ligne : son
+score (celui des Blancs, le meilleur mis à part), sa profondeur et ses coups sur deux lignes de texte, en figurines
+(voir [Apparence](#apparence)). Survoler un coup d'une ligne montre la position après lui sur l'échiquier, encadré ;
+un clic joue la ligne jusqu'à ce coup. Le premier coup de chaque ligne est dessiné en flèche, la meilleure plus foncée
+(**Réglages** > *Apparence* > *Les flèches de l'analyse sur la page Échiquier* les retire ; les lignes montrent
+toujours les coups).
+
+**Menace** (X) fait analyser la position, le trait passé, par un autre processus du moteur : le meilleur coup de
+l'adversaire, s'il jouait de nouveau, dessiné en flèche rouge et écrit sous les lignes (aucun quand le camp au trait
+est en échec).
+
+L'analyse attend pendant qu'une autre page est affichée, et reprend quand la page Échiquier revient ; *Arrêter
+l'analyse* (ou A) l'arrête, et un point sur le bouton *Échiquier* de la barre de navigation indique qu'elle tourne.
+Son moteur ne fait pas partie des processus du tournoi : la fin d'un tournoi ne l'arrête pas.
 
 ### Analyser une partie entière
-<!-- en: analysing-a-whole-game 81150c63 -->
+<!-- en: analysing-a-whole-game a7e6166c -->
 
-**Analyser la partie** parcourt chaque position de la partie affichée avec le moteur d'analyse (ses threads et son
-hash, une ligne), pour le temps par coup ou la profondeur choisis à côté du bouton, en arrière-plan : la progression
-s'affiche au-dessus des coups, *Annuler* l'arrête, et l'analyse de l'échiquier attend entre-temps. Chaque coup est
-jugé sur les chances de gain que son auteur a perdues, d'après les scores du moteur avant et après lui (la mesure de
-lichess : 50 % à 0.00, environ 59 % à +1.00) : 10 points perdus font une imprécision (`?!`), 20 une erreur (`?`),
-30 une gaffe (`??`), marquées après le coup dans la liste ; le coup que le moteur aurait joué n'est jamais marqué.
-L'infobulle d'un coup marqué donne ce qu'il a perdu et le coup du moteur. Une ligne les compte pour chaque joueur, et
-la courbe de l'analyse (orange) est dessinée par-dessus celle des moteurs eux-mêmes (bleue). L'analyse est gardée avec
-la partie (dans `analyses/` dans le profil) : la même partie, rouverte depuis n'importe où, la montre aussitôt.
+**Analyser la partie** (G, dans les outils de la page ou dans l'en-tête du graphe) fait analyser chaque position de
+la partie par le moteur d'analyse (ses threads et son hash, une ligne), en arrière-plan, d'abord 20 ms chacune, puis
+de nouveau quatre fois plus longtemps à chaque passe (80 ms, 0,3 s, 1,3 s, 5 s…), jusqu'au temps choisi avec la
+flèche à côté du bouton (0,3 s, 1,3 s, 5 s, 20 s par position, ou *jusqu'à l'arrêt*) : le graphe vient en une seconde
+ou deux et s'affine à chaque passe. Les positions vont de la dernière à la première, ce qui laisse le hash du moteur
+garder ce qui vient après une position (mesuré : environ 16 % plus près des longues recherches que de la première à
+la dernière, pour le même temps), la position de l'échiquier en premier. L'en-tête du graphe indique la passe, le
+temps par position et la progression, et un mince liseré sous sa bande des temps ce que chaque position a reçu ;
+*Arrêter* (ou G) l'arrête.
+
+Chaque coup est jugé sur les chances de gain que son auteur a perdues, d'après les scores de l'analyse avant et après
+lui (la mesure de lichess : 50 % à 0.00, environ 59 % à +1.00) : 10 points perdus font une imprécision (`?!`), 20 une
+erreur (`?`), 30 une gaffe (`??`), marquées après le coup, sur le graphe et sur l'échiquier ; le coup que le moteur
+aurait joué n'est jamais marqué. Un coup est jugé sur la dernière passe complète ; une marque que la dernière passe a
+changée reste creuse jusqu'à ce que la suivante la confirme. N et Maj+N (ou les boutons à côté de la navigation) vont
+au coup marqué suivant et au précédent.
+
+Chaque passe complète est gardée avec la partie (dans `analyses/` dans le profil) : la même partie, rouverte depuis
+n'importe où, la montre aussitôt, et G reprend à partir des passes terminées. L'analyse tourne sur son propre thread
+avec son propre processus de moteur, ses threads comptés dans le budget de cœurs ; l'analyse de l'échiquier (A) la met
+en pause, et quand A analyse une position de la partie plus longtemps que la passe ne l'a fait, sa valeur prend la
+place de celle de cette position.
+
+**Plusieurs analyses** : *+ Moteur*, dans la légende du graphe, fait analyser la partie par un autre moteur de la
+bibliothèque en plus, aussi longtemps à chaque passe. Chaque analyse a sa couleur sur le graphe et sur l'échiquier
+(son meilleur coup en flèche quand l'analyse de l'échiquier est arrêtée), sa ligne dans *Ce coup* et ses précisions
+dans le bilan. Elles avancent ensemble passe par passe, toutes à la fois quand les cœurs le permettent, l'une après
+l'autre sinon. Une analyse juge les coups (la première ; un clic droit sur une autre dans la légende en fait le juge,
+ou la retire) ; une marque est creuse quand les analyses ne jugent pas toutes le coup de la même façon. Les chances de
+gain comparent mieux les moteurs que les centipions, qui diffèrent d'un moteur à l'autre : elles prennent le WDL de
+chaque moteur quand il en donne un.
+
+### Le graphe de la partie
+<!-- en: the-game-graph 14e02bad -->
+
+Sous les coups, le graphe de la partie, le même que dans *Direct* et *Parties* :
+
+- **Évaluation** : l'analyse qui juge, en aire blanche et noire (l'avantage des Blancs au-dessus de la ligne, celui
+  des Noirs en dessous), chaque moteur qui a joué en courbe de sa couleur à ses propres coups, les autres analyses en
+  courbes pointillées ; les coups marqués sur la courbe ; les valeurs au-delà de ±6 dessinées le long du bord dans la
+  couleur d'avertissement. Sans analyse, l'aire est la moyenne des évaluations des deux moteurs.
+- Les coups du livre hachurés, les phases sous l'axe (l'ouverture ; le milieu de partie à partir de la première
+  position avec au plus 10 pièces en dehors des rois et des pions, ou moins de 4 sur une rangée du fond ; la finale à
+  partir de 6 au plus, comme lichess découpe une partie), la zone que connaissent les tables teintée, les numéros des
+  coups en bas.
+- Sous l'axe, le temps de chaque coup : celui des Blancs vers le haut, celui des Noirs vers le bas.
+
+Ses onglets : *Chances de gain* (d'après le WDL quand les moteurs le donnent, la formule de lichess sinon), *G/N/P*
+(les parts que les moteurs ont données, les victoires des Blancs en bas), *Temps* (avec le temps de décision),
+*Profondeur* (avec la seldepth), *Nœuds*, *Vitesse*, *Accès aux tables*, *Accord* (l'écart entre les évaluations des
+deux joueurs, chaque coup contre le précédent, et celui des analyses à chaque position) et *Accord des PV* (combien de
+demi-coups de la PV d'un moteur reprennent ce que celle de l'autre avait prévu) ; ceux pour lesquels la partie n'a pas
+de valeurs sont omis, et ceux qui ne tiennent pas vont dans le menu `⋯`. Le survol indique le coup et ce que chaque
+moteur a dit ; un clic ou un glissement va au coup. Un clic sur une courbe dans la légende la masque ou l'affiche ; la
+flèche à droite replie le graphe.
+
+### Ce coup
+<!-- en: this-move a4a908f8 -->
+
+Sous les coups, à propos du coup affiché : ce qu'a dit le moteur qui l'a joué (son score, sa profondeur et sa
+seldepth, son temps, ses nœuds, sa vitesse, ses accès aux tables, tels que le PGN les a), la ligne qu'il attendait
+après lui, le verdict de chaque analyse (la part des chances de gain perdue, le jugement, le meilleur coup et son
+score), et avec les tables de finales le résultat après le coup et si le coup a gardé celui d'avant. *Afficher* pose
+une ligne sur l'échiquier sans toucher à la partie : la position après elle, l'échiquier encadré, et par-dessus ce
+qu'est cette ligne ; Échap, un clic sur l'échiquier ou un déplacement dans la partie ramène la partie. Sur
+l'échiquier, le jugement du coup est un badge sur sa case, et la réponse que son moteur attendait une flèche en
+pointillés.
+
+### Variantes
+<!-- en: variations 7932794c -->
+
+Un coup joué sur l'échiquier là où la partie a pris un autre chemin commence une variante : la partie reste telle
+qu'elle était, avec ses analyses et son graphe. Les coups montrent les variantes entre parenthèses après le coup
+qu'elles remplacent, imbriquées et numérotées ; un clic sur un coup y va, et *Revenir à la partie* ramène à la
+position que la variante quitte. Un clic droit sur un coup d'une variante la promeut (elle devient la ligne dont elle
+part, dont les coups après elle deviennent la variante), la supprime avec celles qui en partent, ou la copie.
+*Copier le PGN* écrit les variantes, et celles d'un fichier PGN ouvert sont lues (commentaires, numéros, annotations
+et résultats ignorés ; un coup qui ne peut pas être joué ne termine que sa variante). Le graphe, les analyses et les
+jugements sont ceux de la partie ; sur une variante, le graphe marque où elle quitte la partie.
+
+### Les coups, le tableau et le bilan
+<!-- en: the-moves-the-table-and-the-review 7880f8d8 -->
+
+**Coups** écrit la partie en texte continu : figurines (voir [Apparence](#apparence)), les coups du livre grisés et
+la fin du livre marquée, les jugements en couleur, le coup en cours encadré ; survoler un coup indique ce qu'a dit son
+moteur et son jugement. **Tableau** liste chaque coup avec le score de son moteur (celui des Blancs), sa profondeur et
+son temps, une barre pour le temps, les coups marqués en couleur.
+
+**Bilan**, une fois la partie analysée : pour chaque camp sa précision (celle de lichess : celle de chaque coup
+d'après les chances de gain qu'il a perdues, les coups des moments tendus pesant plus), ses imprécisions, erreurs et
+gaffes, sa perte moyenne en centipions, la part de ses coups que l'analyse jouerait aussi, la profondeur et le temps
+moyens de son moteur ; sa précision dans l'ouverture, le milieu de partie et la finale ; avec plusieurs analyses, les
+précisions que donne chacune. Puis les moments clés, chacun à un clic : le tournant (le coup qui a perdu le plus, avec
+le meilleur coup), les autres erreurs et gaffes, les moments où les deux moteurs étaient en désaccord de 1,5 pion ou
+plus pendant deux coups de suite, le début de la finale et l'entrée dans les tables. *Qui l'a vu en premier* indique,
+pour le tournant, à quel coup chaque moteur qui a joué et chaque analyse a donné pour la première fois un pion ou plus
+au camp qui gagne. *Copier le PGN avec l'analyse* écrit la partie avec l'évaluation de chaque position (`[%eval]`),
+les jugements en NAG et, après un coup marqué, la ligne que l'analyse préférait ; *Copier en BBCode* donne le bilan
+pour un forum.
+
+### Les tables de finales sur la page Échiquier
+<!-- en: tablebases-on-the-board-page 721b71dd -->
+
+Avec les dossiers Syzygy de la configuration (*Adjudication* > tables de finales), la page Échiquier interroge les
+tables pour chaque position de la partie : le graphe teinte la zone que connaissent les tables, *Ce coup* indique le
+résultat après le coup et si le coup a gardé celui d'avant ou l'a gâché, et le bilan marque où les tables prennent le
+relais. Chaque position est interrogée comme si une prise ou un coup de pion venait d'être joué, ce qui est exact sauf
+là où la règle des 50 coups est proche. Les tables sont celles du processus du programme : elles ne sont pas
+interrogées pendant qu'un tournoi y joue.
 
 ### Jouer une partie depuis une position
 <!-- en: playing-a-game-from-a-position 6e79a367 -->
@@ -1088,15 +1220,15 @@ commencée quand la ronde en partage une), et les modifications du tournoi (voir
 [Modifier un tournoi en cours](#modifier-un-tournoi-en-cours)).
 
 ### Direct
-<!-- en: live 08ae852d -->
+<!-- en: live 002a902e -->
 
 Les parties en cours, en mosaïque d'échiquiers ou en une partie mise en avant avec les pendules, la recherche en cours
-de chaque moteur (profondeur, score, nœuds, nps, PV en SAN), la liste des coups et la courbe d'évaluation. Au-dessus de
-la courbe, il peut montrer à la place, pour chaque moteur, le temps par coup avec le temps de décision, la profondeur
-avec la seldepth, les nœuds, la vitesse, les accès aux tables, ou combien de demi-coups sa PV reprend de ce que la PV
-de l'autre moteur avait prévu. Les parts de victoire, de nulle et de défaite (`UCI_ShowWDL`, activé pour les moteurs
-qui l'ont quand ils sont ajoutés) suivent chaque ligne de recherche et sont dessinées en bandes sous la courbe, les
-victoires des Blancs en bas.
+de chaque moteur (profondeur, score, nœuds, nps, PV en SAN), la liste des coups et le graphe de la partie (voir
+[Le graphe de la partie](#le-graphe-de-la-partie)) : les évaluations des deux moteurs, et dans ses onglets leurs
+chances de gain, le temps par coup avec le temps de décision, la profondeur avec la seldepth, les nœuds, la vitesse,
+les accès aux tables, leur écart, ou combien de demi-coups une PV reprend de ce que la PV de l'autre moteur avait
+prévu. Les parts de victoire, de nulle et de défaite (`UCI_ShowWDL`, activé pour les moteurs qui l'ont quand ils sont
+ajoutés) suivent chaque ligne de recherche ; l'onglet *G/N/P* les dessine en bandes, les victoires des Blancs en bas.
 
 Sous l'échiquier : le compteur des 50 coups (demi-coups depuis la dernière prise ou le dernier coup de pion, sur 100),
 la différence de matériel avec les pièces qu'un camp a en plus, et les pièces restantes, marquées *TB* quand
@@ -1133,13 +1265,13 @@ plein écran pendant que la fenêtre principale continue ; ancré dans la fenêt
 qui le montre.
 
 ### Parties
-<!-- en: games 1f173028 -->
+<!-- en: games ba4a9604 -->
 
 Les parties terminées avec leur ouverture (code ECO et nom), et un échiquier de rejeu : les boutons en dessous, ← →
-Origine Fin et F, ou un clic sur un coup ou sur la courbe ; les mêmes détails en dessous et les mêmes graphiques que
-dans *Direct*, à partir des champs avec lesquels le PGN a été écrit (un graphique dont le tournoi n'a pas écrit le
-champ le dit, avec un bouton vers les options PGN de la configuration), avec les parts de victoire, de nulle et de
-défaite des moteurs qui les donnent sous la courbe d'évaluation.
+Origine Fin et F, ou un clic sur un coup ou sur le graphe ; les mêmes détails en dessous et le même graphe de la
+partie que dans *Direct* (voir [Le graphe de la partie](#le-graphe-de-la-partie)), à partir des champs avec lesquels
+le PGN a été écrit : un graphique dont le tournoi n'a pas écrit le champ est dans le menu `⋯` du graphe, grisé, et le
+dit avec un bouton vers les options PGN de la configuration.
 
 **Filtres** : par résultat (victoires, nulles, défaites, pertes au temps, plantages et coups illégaux, adjudications,
 PV fausses, et les parties d'une ouverture signalée déséquilibrée quand la configuration les cherche) ; par ce que

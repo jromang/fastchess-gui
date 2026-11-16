@@ -1878,7 +1878,7 @@ msgid "Few enough pieces for the tablebase adjudication."
 msgstr "Poucas peças o bastante para a adjudicação por tablebase."
 
 msgid "Figurines in the notation"
-msgstr "Figurinhas na notação"
+msgstr "Figuras na notação"
 
 msgid "File"
 msgstr "Arquivo"
