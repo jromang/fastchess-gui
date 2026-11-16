@@ -94,8 +94,8 @@ this repository still builds unchanged.
   found, an engine that takes too many threads (some take every core by default), an option value an engine refuses,
   the memory of the hash tables, missing or damaged Syzygy files for the pieces adjudicated.
 - **Live view**: every game in progress as a mosaic, or one in focus, with the board, clocks, the running search of each engine
-  (depth, score, nodes, nps, win/draw/loss shares, PV in SAN), the annotated move list and the evaluation and WDL
-  curves; under the board, the
+  (depth, score, nodes, nps, win/draw/loss shares, PV in SAN), the annotated move list and the game graph; under the
+  board, the
   50-move counter, the material and the pieces left. Boards can be detached into their own windows. A big screen
   mode shows one game filling the window, in large type, for a television or a stream, switching between the games
   in progress or following the most interesting one.
@@ -103,7 +103,7 @@ this repository still builds unchanged.
   when it uses more cores than its threads or thinks on its opponent's time.
 - **Pause / resume** without losing anything: no new game pair starts, running games (and the second game of
   their pair) play to the end. Stop either after the running games or immediately.
-- **Games**: every finished game, filterable, with a replay board and evaluation curve. Each game is written to
+- **Games**: every finished game, filterable, with a replay board and the game graph. Each game is written to
   two PGN files, `{+0.35/18 1.234s}` (cutechess style) and `{[%eval 0.35,18] [%clk …] [%emt …]}`
   (ChessBase / Fritz / Lichess), and can be exported in either. One PGN file can also collect the games of every
   tournament, like cutechess' `-pgnout`, in schedule order: the two games of an opening side by side.
@@ -123,15 +123,22 @@ this repository still builds unchanged.
 
 ![The engine library, with the UCI options the engine tells](docs/screenshots/engines.png)
 
-- **Board**: any position analysed by an engine of the library, with several lines drawn as arrows; A on any board
+- **Board**: any position analysed by an engine of the library (its search as tiles, several lines with figurines,
+  hovered to see them on the board, the threat), with the players and their clocks around the board; A on any board
   (a live game, a finished one, an opening) opens it there. Any PGN file opened, its games filtered by their tags and
-  replayed with their evaluations (`%eval` or cutechess comments); a FEN, a PGN or a list of moves pasted; a
-  position editor. A finished game analysed move by move, its inaccuracies, mistakes and blunders marked. A game (or
-  a pair) between two engines from any position, with a clock for each, played beside a running tournament.
+  replayed with their evaluations (`%eval` or cutechess comments) and variations; a FEN, a PGN or a list of moves
+  pasted; a position editor; moves played on the board kept as variations. A game graph: the analysis as an area,
+  each engine's own evaluations as a curve, the marked moves, the book, the phases, the tablebase zone and the time of
+  each move, with tabs for win chances, WDL, time, depth, speed and agreement (the same graph in *Live* and *Games*).
+  A continuous analysis: the graph in a second or two, then sharper at each pass, by one engine or several
+  (Gaia and Stockfish side by side, one judging), kept with the game. *This move* tells what the engine that played
+  it said, the line it expected and each analysis's verdict; a *Review* tab gives each side's accuracy, the key moments
+  and who saw the turning point first. A game (or a pair) between two engines from any position, with a clock for
+  each, played beside a running tournament.
 
-| An engine of the library analyses any position | A finished game analysed move by move, its mistakes marked |
+| The Board page: a game analysed by Gaia and Stockfish, its graph and this move | The review: accuracy, key moments, who saw it first |
 |---|---|
-| ![An engine of the library analyses any position](docs/screenshots/board.png) | ![A finished game analysed move by move, its mistakes marked](docs/screenshots/review.png) |
+| ![The Board page: a game analysed by Gaia and Stockfish, its graph and this move](docs/screenshots/board.png) | ![The review of a game: each side's accuracy, the key moments, who saw the turning point first](docs/screenshots/review.png) |
 
 - **Opening books**: EPD, PGN or Polyglot, in a library; each book checked for illegal, duplicate, mirrored and
   finished positions, browsed on a board, and cleaned. A Chess324 book of start positions written by the program,
@@ -152,7 +159,7 @@ this repository still builds unchanged.
 - Light and dark themes; English, French, German, Spanish, Italian, Portuguese (Brazil), Russian or Chinese
   (simplified), following the system (can be changed in the settings).
 - **Appearance**: board colours (presets or your own, for each theme), four piece sets or a folder of your own SVG
-  pieces, move sounds for the game followed (off by default), and a logo per engine, shown in the live view, on the
+  pieces (figurines in the Board page's notation), move sounds for the game followed (off by default), and a logo per engine, shown in the live view, on the
   big screen and on the broadcast web page. The Board page's board can be drawn in 3D (an option): path-traced on
   the graphics card, lit as in a photographer's studio (seven lightings), turned round with the mouse.
 

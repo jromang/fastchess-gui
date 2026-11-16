@@ -91,6 +91,13 @@ ImU32 analysisColour(std::size_t index) {
     return (light ? lit : dark)[(index - 1) % 5];
 }
 
+// A player's colour: a white or a black disc, whatever the theme.
+void playerDot(ImDrawList* dl, ImVec2 c, float r, chess::Color side) {
+    const bool white = side == chess::Color::WHITE;
+    dl->AddCircleFilled(c, r, white ? IM_COL32(246, 247, 249, 255) : IM_COL32(24, 26, 31, 255));
+    dl->AddCircle(c, r, white ? IM_COL32(70, 76, 88, 255) : IM_COL32(150, 156, 168, 255), 0, px(1.5f));
+}
+
 }  // namespace
 
 void App::loadBoardSettings() {
@@ -1613,8 +1620,7 @@ void App::drawPlayerStrip(chess::Color side, float size, const std::vector<std::
     float x       = p.x + bar + px(4);
     const float r = ImGui::GetFontSize() * 0.32f;
     const ImVec2 c(x + r, p.y + h / 2);
-    if (side == chess::Color::BLACK) dl->AddCircleFilled(c, r, ImGui::GetColorU32(ImGuiCol_Text));
-    dl->AddCircle(c, r, ImGui::GetColorU32(ImGuiCol_Text), 0, px(1.5f));
+    playerDot(dl, c, r, side);
     x += r * 2 + px(8);
     const float ty = p.y + (h - ImGui::GetTextLineHeight()) / 2;
     auto name      = g.header(side == chess::Color::WHITE ? "White" : "Black");
@@ -1716,8 +1722,8 @@ void App::drawBoardMoves(float height) {
 
     const float strip = b.ply > 0 && b.ply <= total ? thisMoveHeight() : 0.0f;
     ImGui::BeginChild("##board_moves", ImVec2(0, -strip), ImGuiChildFlags_Borders);
-    const ui::TopicRegion moves_region(b.tree.variations.empty() ? guide::topics::BoardMoves
-                                                                 : guide::topics::Variations);
+    std::optional<ui::TopicRegion> moves_region(
+        std::in_place, b.tree.variations.empty() ? guide::topics::BoardMoves : guide::topics::Variations);
     if (b.game_tab == 3) {
         drawBoardReview();
     } else if (b.game_tab == 2) {
@@ -1863,6 +1869,7 @@ void App::drawBoardMoves(float height) {
     }
     b.followed      = b.ply;
     b.followed_line = b.line;
+    moves_region.reset();  // its group ends inside the child
     ImGui::EndChild();
     if (strip > 0) drawThisMove();
     ui::endCard();
@@ -2137,6 +2144,7 @@ void App::drawBoardGraph(float height) {
     auto& b = board_;
     if (height <= 0) return;
     ui::beginCard("board_graph", ImVec2(0, height));
+    std::optional<ui::TopicRegion> region(std::in_place, guide::topics::GameGraph);
     const auto reviews = shownReviews();
     std::vector<GraphAnalysis> analyses;
     for (std::size_t i = 0; i < reviews.size(); ++i) {
@@ -2225,6 +2233,7 @@ void App::drawBoardGraph(float height) {
         if (!any) ImGui::TextDisabled("%s", TR("Every engine of the library analyses it already."));
         ImGui::EndPopup();
     }
+    region.reset();  // its group ends inside the card
     ui::endCard();
 }
 
@@ -2273,8 +2282,7 @@ void App::drawBoardReview() {
         const ImVec2 dot = ImGui::GetCursorScreenPos();
         const float r    = ImGui::GetFontSize() * 0.35f;
         const ImVec2 c(dot.x + r, dot.y + ImGui::GetTextLineHeight() / 2);
-        if (side == 1) dl->AddCircleFilled(c, r, ImGui::GetColorU32(ImGuiCol_Text));
-        dl->AddCircle(c, r, ImGui::GetColorU32(ImGuiCol_Text), 0, px(1.5f));
+        playerDot(dl, c, r, side == 0 ? chess::Color::WHITE : chess::Color::BLACK);
         ImGui::Dummy(ImVec2(r * 2 + px(4), ImGui::GetTextLineHeight()));
         ImGui::SameLine();
         ImGui::TextUnformatted(name_of(side).c_str());
