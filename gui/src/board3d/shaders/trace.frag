@@ -581,8 +581,59 @@ int pickLight(float u) {
 }
 float lightProbability(int i) { return uLightCdf[i] - (i > 0 ? uLightCdf[i - 1] : 0.0); }
 
-// The pdf in solid angle of reaching light i at distance t along rd by sampling the lights.
-float lightPdf(int i, vec3 rd, float t) {
+// A rectangular light seen from a point o as a spherical rectangle (Ureña, Fajardo and King, "An area-preserving
+// parametrization for spherical rectangles", 2013): sampled uniformly in the solid angle it fills, every sample is
+// worth as much, where points drawn evenly on its area would be worth less when far or edge on. In the frame of the
+// rectangle's edges, o at the origin: x0..x1, y0..y1 its sides, z0 its plane (negative), S its solid angle.
+struct SphQuad {
+    vec3 x, y, z;
+    float x0, x1, y0, y1, z0, b0, b1, k, S;
+};
+
+SphQuad sphQuad(int i, vec3 o) {
+    SphQuad q;
+    float w = length(uLightU[i]), h = length(uLightV[i]);
+    q.x     = uLightU[i] / w;
+    q.y     = uLightV[i] / h;
+    q.z     = cross(q.x, q.y);
+    vec3 d  = uLightC[i] - 0.5 * (uLightU[i] + uLightV[i]) - o;  // to a corner
+    q.z0    = dot(d, q.z);
+    if (q.z0 > 0.0) q.z = -q.z, q.z0 = -q.z0;
+    q.x0 = dot(d, q.x), q.y0 = dot(d, q.y);
+    q.x1 = q.x0 + w, q.y1 = q.y0 + h;
+    // The normals of the planes through o and each edge, the angles between them: the solid angle.
+    vec3 n0 = normalize(cross(vec3(q.x0, q.y0, q.z0), vec3(q.x1, q.y0, q.z0)));
+    vec3 n1 = normalize(cross(vec3(q.x1, q.y0, q.z0), vec3(q.x1, q.y1, q.z0)));
+    vec3 n2 = normalize(cross(vec3(q.x1, q.y1, q.z0), vec3(q.x0, q.y1, q.z0)));
+    vec3 n3 = normalize(cross(vec3(q.x0, q.y1, q.z0), vec3(q.x0, q.y0, q.z0)));
+    float g0 = acos(clamp(-dot(n0, n1), -1.0, 1.0)), g1 = acos(clamp(-dot(n1, n2), -1.0, 1.0));
+    float g2 = acos(clamp(-dot(n2, n3), -1.0, 1.0)), g3 = acos(clamp(-dot(n3, n0), -1.0, 1.0));
+    q.b0 = n0.z, q.b1 = n2.z;
+    q.k  = 2.0 * PI - g2 - g3;
+    q.S  = g0 + g1 - q.k;
+    return q;
+}
+
+// Too small or too wide a solid angle loses the parametrization's precision in 32-bit floats: the area then.
+bool spherical(SphQuad q) { return q.S > 1e-3 && q.S < 6.0; }
+
+// The point of the light for (u, v), uniform in solid angle; relative to o.
+vec3 sphQuadSample(SphQuad q, float u, float v) {
+    float au = u * q.S + q.k;
+    float fu = (cos(au) * q.b0 - q.b1) / sin(au);
+    float cu = clamp((fu > 0.0 ? 1.0 : -1.0) / sqrt(fu * fu + q.b0 * q.b0), -1.0, 1.0);
+    float xu = clamp(-(cu * q.z0) / sqrt(max(1.0 - cu * cu, 1e-12)), q.x0, q.x1);
+    float d  = sqrt(xu * xu + q.z0 * q.z0);
+    float h0 = q.y0 / sqrt(d * d + q.y0 * q.y0), h1 = q.y1 / sqrt(d * d + q.y1 * q.y1);
+    float hv = mix(h0, h1, v);
+    float yv = hv * hv < 1.0 - 1e-6 ? hv * d / sqrt(1.0 - hv * hv) : q.y1;
+    return xu * q.x + yv * q.y + q.z0 * q.z;
+}
+
+// The pdf in solid angle, from o, of reaching light i at distance t along rd by sampling the lights.
+float lightPdf(int i, vec3 o, vec3 rd, float t) {
+    SphQuad q = sphQuad(i, o);
+    if (spherical(q)) return lightProbability(i) / q.S;
     vec3 n     = normalize(cross(uLightU[i], uLightV[i]));
     float cosL = abs(dot(rd, n));
     float area = length(uLightU[i]) * length(uLightV[i]);
@@ -613,7 +664,7 @@ vec3 trace(vec3 ro, vec3 rd) {
         }
         if (h.mat == MAT_LIGHT) {  // never on the first hit
             vec3 le  = lightRadiance(h.id, rd);
-            float pl = lightPdf(h.id, rd, h.t);
+            float pl = lightPdf(h.id, ro, rd, h.t);
             float w  = lastPdf * lastPdf / (lastPdf * lastPdf + pl * pl);
             radiance += throughput * le * w;
             break;
@@ -656,12 +707,14 @@ vec3 trace(vec3 ro, vec3 rd) {
                 le = uLightL[i];
                 pl = lightProbability(i) / (2.0 * PI * (1.0 - uLightSun[i]));
             } else {
-                vec3 q = uLightC[i] + (rnd() - 0.5) * uLightU[i] + (rnd() - 0.5) * uLightV[i];
-                wi     = q - origin;
-                d      = length(wi);
+                SphQuad sq = sphQuad(i, origin);
+                float u = rnd(), v = rnd();
+                wi = spherical(sq) ? sphQuadSample(sq, u, v)
+                                   : uLightC[i] + (u - 0.5) * uLightU[i] + (v - 0.5) * uLightV[i] - origin;
+                d  = length(wi);
                 wi /= d;
                 le = lightRadiance(i, wi);
-                pl = lightPdf(i, wi, d);
+                pl = spherical(sq) ? lightProbability(i) / sq.S : lightPdf(i, origin, wi, d);
             }
             if (dot(wi, h.ng) > 0.0 && dot(le, le) > 0.0 && !occluded(origin, wi, d * 0.999)) {
                 Material lit = m;
