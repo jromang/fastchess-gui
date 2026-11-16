@@ -229,7 +229,7 @@ GameGraph buildGameGraph(const ReplayGame& game, bool chess960, GraphChart chart
             if (!std::isfinite(v)) continue;
             c.x.push_back(static_cast<float>(p));
             c.y.push_back(v);
-            c.win.push_back(graphWin(pos.score, std::nullopt, stmAt(p)));
+            c.win.push_back(graphWin(pos.score, pos.wdl, stmAt(p)));
         }
         return c;
     };

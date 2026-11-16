@@ -189,9 +189,13 @@ std::optional<GameReview> loadReview(const std::filesystem::path& dir, const Rep
 
 bool saveReview(const std::filesystem::path& dir, const ReplayGame& game, const GameReview& review) {
     auto all = loadReviews(dir, game);
-    // The same engine's analysis replaced, the others kept after it.
-    std::erase_if(all, [&](const GameReview& r) { return r.engine == review.engine; });
-    all.insert(all.begin(), review);
+    // The same engine's analysis replaced in its place, another one after the others.
+    const auto it =
+        std::find_if(all.begin(), all.end(), [&](const GameReview& r) { return r.engine == review.engine; });
+    if (it != all.end())
+        *it = review;
+    else
+        all.push_back(review);
     return saveReviews(dir, game, all);
 }
 

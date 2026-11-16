@@ -156,16 +156,20 @@ struct BoardPage {
     int game_tab = 0;                      // the game card: 0 its moves, 1 the games of the file
     int open_tab = -1;                     // a tab to select on the next frame
 
-    // The game analysed in passes (the continuous analysis), on a thread of its own.
-    std::unique_ptr<ReviewRunner> review_runner;
-    ReviewRunner::State review_state;  // copied when it changes
-    uint64_t review_version = 0;
-    ReplayGame review_game;  // the game it analyses
+    // The game analysed in passes (the continuous analysis), by one engine or several, each on a thread of its own.
+    struct ReviewTask {
+        std::string engine;
+        std::unique_ptr<ReviewRunner> runner;
+        ReviewRunner::State state;  // copied when it changes
+        uint64_t version = 0;
+        int saved        = 0;  // its passes kept in the profile
+    };
+    std::vector<ReviewTask> review_tasks;
+    ReplayGame review_game;  // the game they analyse
     bool review_chess960 = false;
     std::string review_game_key;  // reviewKey(review_game)
-    int review_saved       = 0;   // its passes kept in the profile
-    int64_t review_offered = 0;   // the time of the board's search last offered to it
-    [[nodiscard]] bool reviewing() const { return review_runner && review_state.running; }
+    int64_t review_offered = 0;   // the time of the board's search last offered to them
+    [[nodiscard]] bool reviewing() const { return !review_tasks.empty(); }
     std::vector<GameReview> reviews;  // the analyses of the game shown, the judging one first
     std::string review_key;           // the game they are of (reviewKey)
     std::vector<MoveReview> judged;   // its moves judged by the first, for the game shown

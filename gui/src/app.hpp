@@ -403,6 +403,13 @@ class App {
     void drawGameReview();  // what it found
     // The analysis shown with the board's game: the one running for it (its latest values), else the first kept.
     [[nodiscard]] const GameReview* shownReview() const;
+    // Every analysis of the board's game, the judging one first: those running with their latest values.
+    [[nodiscard]] std::vector<const GameReview*> shownReviews() const;
+    // Another engine of the library analyses the board's game too; an analysis judges or goes.
+    void addReviewEngine(const std::string& engine);
+    void judgeWith(const std::string& engine);
+    void removeReview(const std::string& engine);
+    void startReviewTask(const EngineEntry& engine, const std::vector<GameReview>& kept);
     [[nodiscard]] std::string judgementTip(int ply, const MoveReview& judged) const;
     // Games between two engines of the library from the board's position, played apart from any tournament.
     void startBoardGames();

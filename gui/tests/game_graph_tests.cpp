@@ -148,6 +148,11 @@ TEST_CASE("game graph: the analyses, the judging one's marks and the agreement b
     CHECK(g.analyses[1].y[6] == doctest::Approx(2.60f));  // White to move
     REQUIRE(g.marks.size() == 1);
     CHECK(g.marks[0].ply == 6);
+    // Win chances from the formula, or from the position's WDL when the engine gave one.
+    CHECK(g.analyses[0].win[0] == doctest::Approx(graphWin(cp(20), std::nullopt, chess::Color::WHITE)));
+    first.positions[0].wdl = std::array<int64_t, 3>{500, 500, 0};
+    g                      = buildGameGraph(*game, false, GraphChart::Win, {{"One", "analysis", 0, &first}}, judged);
+    CHECK(g.analyses[0].win[0] == doctest::Approx(0.75f));
     CHECK(g.marks[0].judgement == Judgement::Mistake);
 
     // Agreement: the two players apart, and the analyses apart where they both have a value.

@@ -611,6 +611,9 @@ msgstr ""
 msgid "Another build…"
 msgstr ""
 
+msgid "Another engine analyses the game too, for as long at each pass:"
+msgstr ""
+
 msgid "Another engine analyses the game too."
 msgstr ""
 
@@ -1698,6 +1701,9 @@ msgid "Every engine of a folder…"
 msgstr ""
 
 msgid "Every engine of a team meets every engine of the other team, one opponent per round (a Scheveningen system); the teams may differ in size."
+msgstr ""
+
+msgid "Every engine of the library analyses it already."
 msgstr ""
 
 msgid "Every engine the filter and the group show: a whole group at once."
@@ -5944,6 +5950,9 @@ msgid "its range is {} to {}"
 msgstr ""
 
 msgid "itself"
+msgstr ""
+
+msgid "judge"
 msgstr ""
 
 msgid "length unknown"

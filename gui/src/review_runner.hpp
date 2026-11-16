@@ -69,6 +69,8 @@ class ReviewRunner {
     void stop();
     // While the board's analysis (A) has the machine: no search, the one under way stopped and done again after.
     void setPaused(bool paused) { paused_ = paused; }
+    // No pass beyond this one is started (several analyses of a game going pass by pass together).
+    void setPassLimit(int pass) { pass_limit_ = pass; }
     void setCeiling(int64_t ceiling_ms) { ceiling_ = ceiling_ms; }
     // The board's position, searched first at each pass; -1 when the board shows something else.
     void setFirst(int ply) { first_ = ply; }
@@ -89,6 +91,7 @@ class ReviewRunner {
     std::thread thread_;
     std::atomic<bool> stop_{false};
     std::atomic<bool> paused_{false};
+    std::atomic<int> pass_limit_{1 << 20};
     std::atomic<int> first_{-1};
     std::atomic<int64_t> ceiling_{0};
     mutable std::mutex mutex_;

@@ -611,6 +611,9 @@ msgstr "Outro servidor SSH"
 msgid "Another build…"
 msgstr "Outra compilação…"
 
+msgid "Another engine analyses the game too, for as long at each pass:"
+msgstr "Outro engine também analisa a partida, pelo mesmo tempo a cada passada:"
+
 msgid "Another engine analyses the game too."
 msgstr "Outro engine também analisa a partida."
 
@@ -1699,6 +1702,9 @@ msgstr "Todos os engines de uma pasta…"
 
 msgid "Every engine of a team meets every engine of the other team, one opponent per round (a Scheveningen system); the teams may differ in size."
 msgstr "Cada engine de uma equipe enfrenta cada engine da outra equipe, um adversário por rodada (sistema Scheveningen); as equipes podem ter tamanhos diferentes."
+
+msgid "Every engine of the library analyses it already."
+msgstr "Todos os engines da biblioteca já a analisam."
 
 msgid "Every engine the filter and the group show: a whole group at once."
 msgstr "Todos os engines que o filtro e o grupo mostram: um grupo inteiro de uma vez."
@@ -5945,6 +5951,9 @@ msgstr "seu intervalo vai de {} a {}"
 
 msgid "itself"
 msgstr "ele mesmo"
+
+msgid "judge"
+msgstr "juiz"
 
 msgid "length unknown"
 msgstr "duração desconhecida"

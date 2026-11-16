@@ -3,6 +3,7 @@
 
 #include <doctest/doctest.hpp>
 
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <thread>
@@ -111,13 +112,20 @@ TEST_CASE("continuous analysis: several analyses kept with a game, and one as th
     CHECK(loaded[0].previous == std::vector<int8_t>{0, 1, 0, 2});
     CHECK(loaded[1].engine == "Two");
 
-    // The same engine's analysis saved again: in its place, first.
+    // The same engine's analysis saved again: in its place; another engine's after the others.
     two.passes = 4;
     REQUIRE(saveReview(dir, game, two));
     loaded = loadReviews(dir, game);
     REQUIRE(loaded.size() == 2);
-    CHECK(loaded[0].engine == "Two");
-    CHECK(loaded[0].passes == 4);
+    CHECK(loaded[1].engine == "Two");
+    CHECK(loaded[1].passes == 4);
+    GameReview three = one;
+    three.engine     = "Three";
+    REQUIRE(saveReview(dir, game, three));
+    loaded = loadReviews(dir, game);
+    REQUIRE(loaded.size() == 3);
+    CHECK(loaded[0].engine == "One");
+    CHECK(loaded[2].engine == "Three");
 
     // A file of the first versions: one analysis at its top level.
     const auto file = dir / (reviewKey(game) + ".json");
@@ -223,4 +231,41 @@ TEST_CASE("continuous analysis: stopped, it keeps the passes it completed") {
     CHECK(st.settled.passes >= 1);
     CHECK(st.settled.positions.size() == 5);
     CHECK(runner.threads() == 0);
+}
+
+TEST_CASE("continuous analysis: an analysis waits at a pass for the others, then goes on") {
+    if (!fs::is_regular_file(randomMover())) return;
+    ScopedEnv env("FCG_MOCK_ANALYSIS", "1");
+    ReviewRunner runner;
+    ReviewRunner::Setup setup;
+    setup.engine.name     = "mover";
+    setup.engine.cmd      = randomMover();
+    setup.engine.protocol = "uci";
+    setup.game            = shortGame();
+    setup.ceiling_ms      = passTime(1);
+    runner.start(setup);
+    runner.setPassLimit(0);
+
+    // Its first pass done, it holds before the second.
+    ReviewRunner::State st;
+    uint64_t version = 0;
+    const auto until = std::chrono::steady_clock::now() + 60s;
+    while (std::chrono::steady_clock::now() < until) {
+        (void)runner.state(st, version);
+        if (st.settled.passes >= 1 || !st.running) break;
+        std::this_thread::sleep_for(10ms);
+    }
+    REQUIRE(st.settled.passes == 1);
+    CHECK(st.running);
+    CHECK(st.pass == 1);
+    CHECK(std::count(st.done.begin(), st.done.end(), true) == 0);
+
+    // Let go, it completes its last pass.
+    runner.setPassLimit(1);
+    while (std::chrono::steady_clock::now() < until) {
+        (void)runner.state(st, version);
+        if (!st.running) break;
+        std::this_thread::sleep_for(10ms);
+    }
+    CHECK(st.settled.passes == 2);
 }

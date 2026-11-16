@@ -617,6 +617,9 @@ msgstr "Другой SSH-сервер"
 msgid "Another build…"
 msgstr "Другая сборка…"
 
+msgid "Another engine analyses the game too, for as long at each pass:"
+msgstr "Ещё один движок тоже анализирует партию, столько же времени на каждом проходе:"
+
 msgid "Another engine analyses the game too."
 msgstr "Ещё один движок тоже анализирует партию."
 
@@ -1705,6 +1708,9 @@ msgstr "Все движки из папки…"
 
 msgid "Every engine of a team meets every engine of the other team, one opponent per round (a Scheveningen system); the teams may differ in size."
 msgstr "Каждый движок одной команды встречается с каждым движком другой, по одному сопернику за тур (схевенингенская система); команды могут быть разного размера."
+
+msgid "Every engine of the library analyses it already."
+msgstr "Все движки библиотеки уже анализируют её."
 
 msgid "Every engine the filter and the group show: a whole group at once."
 msgstr "Все движки, показанные фильтром и группой: целая группа сразу."
@@ -5977,6 +5983,9 @@ msgstr "диапазон от {} до {}"
 
 msgid "itself"
 msgstr "самого себя"
+
+msgid "judge"
+msgstr "судья"
 
 msgid "length unknown"
 msgstr "длительность неизвестна"

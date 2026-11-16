@@ -86,7 +86,7 @@ struct MoveReview {
 // when there is no file or it is not the game's.
 [[nodiscard]] std::vector<GameReview> loadReviews(const std::filesystem::path& dir, const ReplayGame& game);
 bool saveReviews(const std::filesystem::path& dir, const ReplayGame& game, const std::vector<GameReview>& reviews);
-// The judging one alone.
+// The judging one alone; `review` saved in the place of the same engine's, or after the others.
 [[nodiscard]] std::optional<GameReview> loadReview(const std::filesystem::path& dir, const ReplayGame& game);
 bool saveReview(const std::filesystem::path& dir, const ReplayGame& game, const GameReview& review);
 

@@ -56,8 +56,9 @@ std::vector<AnalysisPosition> pvPositions(const AnalysisPosition& position, cons
 
 void ReviewRunner::start(Setup setup) {
     stop();
-    stop_    = false;
-    paused_  = false;
+    stop_       = false;
+    paused_     = false;
+    pass_limit_ = 1 << 20;
     first_   = -1;
     ceiling_ = setup.ceiling_ms;
     std::vector<AnalysisPosition> positions;
@@ -292,8 +293,8 @@ void ReviewRunner::run(Setup setup, std::vector<AnalysisPosition> positions) {
             }
             offers_.clear();
         }
-        // Paused while the board's analysis has the machine.
-        if (paused_) {
+        // Paused while the board's analysis has the machine, or until the other analyses caught up.
+        if (paused_ || pass > pass_limit_) {
             std::this_thread::sleep_for(std::chrono::milliseconds(30));
             continue;
         }

@@ -308,6 +308,8 @@ void App::frame() {
                 review_when_read_ = true;
                 if (w.rfind("board-review-", 0) == 0) review_ply_ = std::atoi(w.c_str() + 13);
             }
+        } else if (w.rfind("board-add-analysis=", 0) == 0) {  // another engine analyses the Board page's game
+            addReviewEngine(w.substr(19));
         } else if (w.rfind("board-graph=", 0) == 0) {  // the Board page's graph on that chart: board-graph=win
             loadBoardSettings();
             board_.settings.graph.chart  = nlohmann::json(w.substr(12)).get<GraphChart>();

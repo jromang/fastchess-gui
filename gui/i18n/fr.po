@@ -611,6 +611,9 @@ msgstr "Un autre serveur SSH"
 msgid "Another build…"
 msgstr "Une autre compilation…"
 
+msgid "Another engine analyses the game too, for as long at each pass:"
+msgstr "Un autre moteur analyse aussi la partie, aussi longtemps à chaque passe :"
+
 msgid "Another engine analyses the game too."
 msgstr "Un autre moteur analyse aussi la partie."
 
@@ -1699,6 +1702,9 @@ msgstr "Tous les moteurs d'un dossier…"
 
 msgid "Every engine of a team meets every engine of the other team, one opponent per round (a Scheveningen system); the teams may differ in size."
 msgstr "Chaque moteur d'une équipe rencontre chaque moteur de l'autre équipe, un adversaire par ronde (système Scheveningen) ; les équipes peuvent être de tailles différentes."
+
+msgid "Every engine of the library analyses it already."
+msgstr "Tous les moteurs de la bibliothèque l'analysent déjà."
 
 msgid "Every engine the filter and the group show: a whole group at once."
 msgstr "Tous les moteurs que montrent le filtre et le groupe : un groupe entier d'un coup."
@@ -5945,6 +5951,9 @@ msgstr "sa plage va de {} à {}"
 
 msgid "itself"
 msgstr "lui-même"
+
+msgid "judge"
+msgstr "juge"
 
 msgid "length unknown"
 msgstr "durée inconnue"

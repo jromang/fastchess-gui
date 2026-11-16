@@ -64,6 +64,18 @@ ImU32 judgementColour(Judgement judgement) {
     }
 }
 
+// The colour of each analysis on the graph and the board: the judging one in the text's, the others apart.
+ImU32 analysisColour(std::size_t index) {
+    if (index == 0) return ImGui::GetColorU32(ImGuiCol_Text);
+    const bool light          = ui::currentTheme() == ui::Theme::Light;
+    static const ImU32 lit[]  = {IM_COL32(138, 79, 214, 255), IM_COL32(0, 140, 128, 255), IM_COL32(205, 45, 125, 255),
+                                 IM_COL32(120, 120, 0, 255), IM_COL32(150, 90, 40, 255)};
+    static const ImU32 dark[] = {IM_COL32(180, 140, 255, 255), IM_COL32(80, 205, 190, 255),
+                                 IM_COL32(245, 120, 185, 255), IM_COL32(205, 205, 90, 255),
+                                 IM_COL32(215, 160, 110, 255)};
+    return (light ? lit : dark)[(index - 1) % 5];
+}
+
 }  // namespace
 
 void App::loadBoardSettings() {
@@ -215,13 +227,16 @@ void App::pollBoard() {
         b.analyser.analyse(position, {}, b.new_game);
         b.new_game = false;
         // A position of the game analysed in passes, searched for longer than its pass did: its value offered.
-        if (b.reviewing() && b.review_game_key == b.review_key && b.analyser.position() == position &&
+        BoardPage::ReviewTask* same = nullptr;
+        for (auto& t : b.review_tasks)
+            if (t.engine == b.analyser.engine()) same = &t;
+        if (same && b.review_game_key == b.review_key && b.analyser.position() == position &&
             !b.analyser.lines().empty() && b.analyser.lines().front().score && !b.analyser.lines().front().pv.empty()) {
             const auto& line = b.analyser.lines().front();
             const auto ply   = static_cast<std::size_t>(b.ply);
             // Once a second at most, and when it went further than what the analysis has.
-            if (ply < b.review_state.live.positions.size() &&
-                static_cast<int64_t>(line.time_ms) > b.review_state.live.positions[ply].time_ms &&
+            if (ply < same->state.live.positions.size() &&
+                static_cast<int64_t>(line.time_ms) > same->state.live.positions[ply].time_ms &&
                 static_cast<int64_t>(line.time_ms) >= b.review_offered + 1000) {
                 b.review_offered = static_cast<int64_t>(line.time_ms);
                 PositionEval value;
@@ -231,7 +246,7 @@ void App::pollBoard() {
                 value.time_ms = static_cast<int64_t>(line.time_ms);
                 value.wdl     = line.wdl;
                 for (const auto& m : line.pv) value.pv += (value.pv.empty() ? "" : " ") + m;
-                b.review_runner->offer(b.ply, std::move(value));
+                same->runner->offer(b.ply, std::move(value));
             }
         }
     } else if (b.analyser.state() == Analyser::State::Searching) {
@@ -263,67 +278,150 @@ const EngineEntry* App::analysisEngine() {
     return nullptr;
 }
 
+void App::startReviewTask(const EngineEntry& engine, const std::vector<GameReview>& kept) {
+    auto& b = board_;
+    ReviewRunner::Setup setup;
+    setup.engine     = engine;
+    setup.settings   = b.settings.analysis;
+    setup.game       = b.review_game;
+    setup.chess960   = b.review_chess960;
+    setup.ceiling_ms = b.settings.review_ceiling_ms;
+    // Resumed after the passes this engine completed, unless it went as far as asked: then again from the start.
+    for (const auto& r : kept) {
+        if (r.engine == engine.name && r.passes > 0 && r.complete(b.review_game.moves.size()) &&
+            r.passes < reviewPasses(setup.ceiling_ms))
+            setup.resume = r;
+    }
+    BoardPage::ReviewTask task;
+    task.engine = engine.name;
+    task.saved  = setup.resume.passes;
+    task.runner = std::make_unique<ReviewRunner>();
+    task.runner->start(std::move(setup));
+    (void)task.runner->state(task.state, task.version);
+    b.review_tasks.push_back(std::move(task));
+}
+
 void App::startGameReview() {
     auto& b = board_;
     if (b.reviewing() || b.game.moves.empty() || (b.watching && b.match && b.match_state.running)) return;
-    const auto* engine = analysisEngine();
-    if (!engine) {
-        b.message       = TR("No engine to analyse with: add one on the Engines page.");
-        b.message_error = true;
-        return;
+    // Every analysis the game has goes on; without one, the analysis engine's.
+    const auto kept = loadReviews(storage_.root() / "analyses", b.game);
+    std::vector<const EngineEntry*> engines;
+    for (const auto& r : kept) {
+        const auto it =
+            std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == r.engine; });
+        if (it != engines_.end()) engines.push_back(&*it);
     }
-    ReviewRunner::Setup setup;
-    setup.engine     = *engine;
-    setup.settings   = b.settings.analysis;
-    setup.game       = b.game;
-    setup.chess960   = b.chess960;
-    setup.ceiling_ms = b.settings.review_ceiling_ms;
-    // Resumed after the passes this engine completed, unless it went as far as asked: then again from the start.
-    for (auto& r : loadReviews(storage_.root() / "analyses", b.game)) {
-        if (r.engine == engine->name && r.passes > 0 && r.complete(b.game.moves.size()) &&
-            r.passes < reviewPasses(setup.ceiling_ms))
-            setup.resume = std::move(r);
+    if (engines.empty()) {
+        const auto* engine = analysisEngine();
+        if (!engine) {
+            b.message       = TR("No engine to analyse with: add one on the Engines page.");
+            b.message_error = true;
+            return;
+        }
+        engines.push_back(engine);
     }
     b.review_game     = b.game;
     b.review_chess960 = b.chess960;
     b.review_game_key = reviewKey(b.game);
-    b.review_saved    = setup.resume.passes;
-    if (!b.review_runner) b.review_runner = std::make_unique<ReviewRunner>();
-    b.review_runner->start(std::move(setup));
-    b.review_version = 0;
-    (void)b.review_runner->state(b.review_state, b.review_version);
+    for (const auto* e : engines) startReviewTask(*e, kept);
     b.message.clear();
+}
+
+void App::addReviewEngine(const std::string& name) {
+    auto& b       = board_;
+    const auto it = std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == name; });
+    if (it == engines_.end() || b.game.moves.empty()) return;
+    // The analyses of another game end first, their passes kept.
+    if (b.reviewing() && b.review_game_key != reviewKey(b.game)) cancelGameReview();
+    if (std::any_of(b.review_tasks.begin(), b.review_tasks.end(), [&](const auto& t) { return t.engine == name; }))
+        return;
+    const auto kept = loadReviews(storage_.root() / "analyses", b.game);
+    if (!b.reviewing()) {
+        b.review_game     = b.game;
+        b.review_chess960 = b.chess960;
+        b.review_game_key = reviewKey(b.game);
+        // The game's other analyses go on with it, so that they stay comparable.
+        for (const auto& r : kept) {
+            const auto e =
+                std::find_if(engines_.begin(), engines_.end(), [&](const auto& x) { return x.name == r.engine; });
+            if (e != engines_.end() && r.engine != name) startReviewTask(*e, kept);
+        }
+    }
+    startReviewTask(*it, kept);
+}
+
+void App::judgeWith(const std::string& engine) {
+    auto& b       = board_;
+    auto kept     = loadReviews(storage_.root() / "analyses", b.game);
+    const auto it = std::find_if(kept.begin(), kept.end(), [&](const auto& r) { return r.engine == engine; });
+    if (it == kept.end() || it == kept.begin()) return;
+    std::rotate(kept.begin(), it, it + 1);
+    (void)saveReviews(storage_.root() / "analyses", b.game, kept);
+    b.review_key.clear();
+}
+
+void App::removeReview(const std::string& engine) {
+    auto& b = board_;
+    if (b.review_game_key == reviewKey(b.game)) {
+        for (auto it = b.review_tasks.begin(); it != b.review_tasks.end(); ++it) {
+            if (it->engine != engine) continue;
+            it->runner->stop();
+            b.review_tasks.erase(it);
+            break;
+        }
+    }
+    auto kept = loadReviews(storage_.root() / "analyses", b.game);
+    std::erase_if(kept, [&](const auto& r) { return r.engine == engine; });
+    (void)saveReviews(storage_.root() / "analyses", b.game, kept);
+    b.review_key.clear();
 }
 
 void App::cancelGameReview() {
     auto& b = board_;
-    if (!b.review_runner) return;
-    b.review_runner->stop();
-    pollGameReview();  // its passes done kept
+    for (auto& t : b.review_tasks) t.runner->stop();
+    pollGameReview();  // their passes done kept
+    b.review_tasks.clear();
 }
 
 void App::pollGameReview() {
     auto& b = board_;
-    if (!b.review_runner) return;
-    auto& r = *b.review_runner;
-    r.setPaused(b.analysing);
-    r.setFirst(b.review_game_key == b.review_key ? b.ply : -1);
-    r.setCeiling(b.settings.review_ceiling_ms);
-    if (!r.state(b.review_state, b.review_version)) return;
-    const auto& st = b.review_state;
-    // A pass completed: kept with the game, and read again if it is the game shown.
-    if (st.settled.passes > b.review_saved) {
-        (void)saveReview(storage_.root() / "analyses", b.review_game, st.settled);
-        b.review_saved = st.settled.passes;
-        if (b.review_key == b.review_game_key) b.review_key.clear();
-    }
-    if (!st.running) {
-        if (!st.error.empty()) {
-            b.message       = st.error;
+    if (b.review_tasks.empty()) return;
+    // Together pass by pass, so that their curves compare: none starts a pass before the others finished theirs; all
+    // at once when the cores allow, else one after the other, the judging one first.
+    int lowest = 1 << 20;
+    for (const auto& t : b.review_tasks)
+        if (t.state.running) lowest = std::min(lowest, t.state.pass);
+    int needed = tournamentThreads();
+    for (const auto& t : b.review_tasks) needed += t.state.running ? std::max(1, b.settings.analysis.threads) : 0;
+    const bool one_at_a_time = b.review_tasks.size() > 1 && needed > std::max(1, topology_.logical);
+    bool given               = false;
+    for (auto& t : b.review_tasks) {
+        auto& r = *t.runner;
+        r.setFirst(b.review_game_key == b.review_key ? b.ply : -1);
+        r.setCeiling(b.settings.review_ceiling_ms);
+        r.setPassLimit(lowest);
+        bool paused = b.analysing;
+        if (one_at_a_time && t.state.running) {
+            if (t.state.pass == lowest && !given)
+                given = true;
+            else
+                paused = true;
+        }
+        r.setPaused(paused);
+        if (!r.state(t.state, t.version)) continue;
+        // A pass completed: kept with the game, and read again if it is the game shown.
+        if (t.state.settled.passes > t.saved) {
+            (void)saveReview(storage_.root() / "analyses", b.review_game, t.state.settled);
+            t.saved = t.state.settled.passes;
+            if (b.review_key == b.review_game_key) b.review_key.clear();
+        }
+        if (!t.state.running && !t.state.error.empty()) {
+            b.message       = t.state.error;
             b.message_error = true;
         }
-        b.review_runner.reset();
     }
+    std::erase_if(b.review_tasks, [](const auto& t) { return !t.state.running; });
 }
 
 void App::boardPlay(chess::Move move) {
@@ -949,6 +1047,22 @@ void App::drawBoardColumn(float size) {
             break;
         }
     }
+    // Without the board's analysis, each analysis of the game's best move here, in its colour.
+    if (!fresh && b.settings.arrows) {
+        const auto reviews = shownReviews();
+        for (std::size_t i = reviews.size(); i-- > 0;) {
+            const auto& positions = reviews[i]->positions;
+            if (static_cast<std::size_t>(b.ply) >= positions.size() ||
+                positions[static_cast<std::size_t>(b.ply)].best.empty())
+                continue;
+            const auto moves = legalPrefix(board, {positions[static_cast<std::size_t>(b.ply)].best}, 1);
+            if (!moves.empty()) {
+                auto colour = analysisColour(i);
+                colour      = (colour & ~IM_COL32_A_MASK) | (IM_COL32(0, 0, 0, 170) & IM_COL32_A_MASK);
+                decor.arrows.push_back({moves.front(), colour});
+            }
+        }
+    }
     // The first move of each line, the best on top.
     if (fresh && b.settings.arrows) {
         for (int i = static_cast<int>(lines.size()) - 1; i >= 0; --i) {
@@ -1315,43 +1429,64 @@ void App::drawBoardGraph(float height) {
     auto& b = board_;
     if (height <= 0) return;
     ui::beginCard("board_graph", ImVec2(0, height));
+    const auto reviews = shownReviews();
     std::vector<GraphAnalysis> analyses;
-    if (const auto* review = shownReview())
-        analyses.push_back({review->engine, TR("analysis"), ImGui::GetColorU32(ImGuiCol_Text), review});
+    for (std::size_t i = 0; i < reviews.size(); ++i) {
+        analyses.push_back({reviews[i]->engine, i == 0 && reviews.size() > 1 ? TR("judge") : TR("analysis"),
+                            analysisColour(i), reviews[i]});
+    }
     auto graph = buildGameGraph(b.game, b.chess960, b.settings.graph.chart, analyses, b.judged);
-    // A mark the last pass changed is not settled yet.
+    // A mark is settled when the last pass did not change it and every other analysis judged the move alike.
     if (!b.reviews.empty()) {
         const auto& previous = b.reviews.front().previous;
+        std::vector<std::vector<MoveReview>> others;
+        for (std::size_t i = 1; i < b.reviews.size(); ++i) {
+            if (b.reviews[i].complete(b.game.moves.size()))
+                others.push_back(reviewMoves(b.game, b.chess960, b.reviews[i]));
+        }
         for (auto& m : graph.marks) {
             const auto i = static_cast<std::size_t>(m.ply - 1);
             m.hollow     = i < previous.size() && previous[i] != static_cast<int8_t>(m.judgement);
+            for (const auto& o : others) m.hollow |= i < o.size() && o[i].judgement != m.judgement;
         }
     }
     GraphDraw draw;
-    draw.current = b.ply;
-    draw.tip     = [this](int ply) { return boardGraphTip(ply); };
-    // The analysis in passes: where it is, what each position got.
+    draw.current       = b.ply;
+    draw.tip           = [this](int ply) { return boardGraphTip(ply); };
+    draw.can_add       = !b.game.moves.empty() && !(b.watching && b.match && b.match_state.running);
+    draw.analyses_menu = true;
+    // The analyses in passes: where they are, what each position got.
     const bool running = b.reviewing() && b.review_game_key == b.review_key;
     if (running) {
-        const auto& job    = b.review_state;
         const auto ceiling = b.settings.review_ceiling_ms;
         const int passes   = reviewPasses(ceiling);
-        const auto done    = std::count(job.done.begin(), job.done.end(), true);
-        draw.progress      = ceiling > 0 ? trf("pass {} of {} · {} per position · {}/{}", job.pass + 1, passes,
-                                               ui::formatClock(passTime(job.pass)), done, job.done.size())
-                                         : trf("pass {} · {} per position · {}/{}", job.pass + 1,
-                                               ui::formatClock(passTime(job.pass)), done, job.done.size());
+        int pass           = 1 << 20;
+        std::size_t done = 0, all = 0;
+        for (const auto& t : b.review_tasks) pass = std::min(pass, t.state.pass);
+        for (const auto& t : b.review_tasks) {
+            if (t.state.pass != pass) {
+                done += t.state.done.size();  // waiting for the others
+            } else {
+                done += static_cast<std::size_t>(std::count(t.state.done.begin(), t.state.done.end(), true));
+            }
+            all += t.state.done.size();
+        }
+        draw.progress = ceiling > 0 ? trf("pass {} of {} · {} per position · {}/{}", pass + 1, passes,
+                                          ui::formatClock(passTime(pass)), done, all)
+                                    : trf("pass {} · {} per position · {}/{}", pass + 1,
+                                          ui::formatClock(passTime(pass)), done, all);
         if (b.analysing) draw.progress += " · " + std::string(TR("paused while A analyses"));
-        const int top = ceiling > 0 ? passes : job.pass + 1;
+        const auto& job = b.review_tasks.front().state;
+        const int top   = ceiling > 0 ? passes : pass + 1;
         for (const int level : job.level)
             graph.level.push_back(level < 0 ? 0.0f : static_cast<float>(level + 1) / static_cast<float>(top));
         draw.action = TR("Stop");
         draw.action_tip =
             TR("G: stop the analysis of the game. Its passes done are kept, and it goes on from there "
                "next time.");
-    } else if (!b.reviewing() && !b.game.moves.empty() && !(b.watching && b.match && b.match_state.running)) {
-        const bool more = !b.reviews.empty() && b.reviews.front().passes > 0 &&
-                          b.reviews.front().passes < reviewPasses(b.settings.review_ceiling_ms);
+    } else if (!b.reviewing() && draw.can_add) {
+        bool more = false;
+        for (const auto& r : b.reviews) more |= r.passes > 0 && r.passes < reviewPasses(b.settings.review_ceiling_ms);
         draw.action     = more ? TR("Continue the analysis") : b.reviews.empty() ? TR("Analyse the game") : nullptr;
         draw.action_tip =
             TR("G: the analysis engine goes through every position of the game, in the background, "
@@ -1362,6 +1497,25 @@ void App::drawBoardGraph(float height) {
     if (ev.go_to >= 0) b.ply = std::clamp(ev.go_to, 0, static_cast<int>(b.game.moves.size()));
     if (ev.view_changed) saveBoardSettings();
     if (ev.action) running ? cancelGameReview() : startGameReview();
+    if (ev.judge >= 0 && static_cast<std::size_t>(ev.judge) < reviews.size())
+        judgeWith(reviews[static_cast<std::size_t>(ev.judge)]->engine);
+    if (ev.remove >= 0 && static_cast<std::size_t>(ev.remove) < reviews.size())
+        removeReview(reviews[static_cast<std::size_t>(ev.remove)]->engine);
+    // Another engine: those of the library that have no analysis of the game yet.
+    if (ev.add_analysis) ImGui::OpenPopup("##add_analysis");
+    if (ImGui::BeginPopup("##add_analysis")) {
+        ImGui::TextDisabled("%s", TR("Another engine analyses the game too, for as long at each pass:"));
+        bool any = false;
+        for (const auto& e : engines_) {
+            if (e.inactive ||
+                std::any_of(reviews.begin(), reviews.end(), [&](const auto* r) { return r->engine == e.name; }))
+                continue;
+            any = true;
+            if (ImGui::MenuItem(e.name.c_str())) addReviewEngine(e.name);
+        }
+        if (!any) ImGui::TextDisabled("%s", TR("Every engine of the library analyses it already."));
+        ImGui::EndPopup();
+    }
     ui::endCard();
 }
 
@@ -1415,10 +1569,33 @@ void App::drawGameReview() {
     ui::topic(guide::topics::GameAnalysis);
 }
 
-const GameReview* App::shownReview() const {
+std::vector<const GameReview*> App::shownReviews() const {
     const auto& b = board_;
-    if (b.reviewing() && b.review_game_key == b.review_key) return &b.review_state.live;
-    return b.reviews.empty() ? nullptr : &b.reviews.front();
+    std::vector<const GameReview*> out;
+    const bool running = b.reviewing() && b.review_game_key == b.review_key;
+    const auto task    = [&](const std::string& engine) -> const GameReview* {
+        if (!running) return nullptr;
+        for (const auto& t : b.review_tasks)
+            if (t.engine == engine) return &t.state.live;
+        return nullptr;
+    };
+    for (const auto& r : b.reviews) {
+        const auto* live = task(r.engine);
+        out.push_back(live ? live : &r);
+    }
+    // Those started that have no pass done yet.
+    if (running) {
+        for (const auto& t : b.review_tasks) {
+            if (std::none_of(b.reviews.begin(), b.reviews.end(), [&](const auto& r) { return r.engine == t.engine; }))
+                out.push_back(&t.state.live);
+        }
+    }
+    return out;
+}
+
+const GameReview* App::shownReview() const {
+    const auto all = shownReviews();
+    return all.empty() ? nullptr : all.front();
 }
 
 // ---------------------------------------------------------------------------

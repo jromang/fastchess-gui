@@ -605,6 +605,9 @@ msgstr "其他 SSH 服务器"
 msgid "Another build…"
 msgstr "其他构建版本…"
 
+msgid "Another engine analyses the game too, for as long at each pass:"
+msgstr "再用一个引擎分析这盘棋，每轮用时相同："
+
 msgid "Another engine analyses the game too."
 msgstr "再用一个引擎分析这盘棋。"
 
@@ -1693,6 +1696,9 @@ msgstr "某个文件夹中的所有引擎…"
 
 msgid "Every engine of a team meets every engine of the other team, one opponent per round (a Scheveningen system); the teams may differ in size."
 msgstr "一队的每个引擎与另一队的每个引擎各赛一次，每轮一个对手（舍维宁根制）；两队人数可以不同。"
+
+msgid "Every engine of the library analyses it already."
+msgstr "库中的所有引擎都已在分析它。"
 
 msgid "Every engine the filter and the group show: a whole group at once."
 msgstr "筛选和分组显示的所有引擎：一次添加整组。"
@@ -5913,6 +5919,9 @@ msgstr "范围为 {} 到 {}"
 
 msgid "itself"
 msgstr "自己"
+
+msgid "judge"
+msgstr "评判"
 
 msgid "length unknown"
 msgstr "时长未知"
