@@ -230,8 +230,10 @@ TEST_CASE("lichess: a broadcast made, its rounds filled up to 64 games, over HTT
 TEST_CASE("lichess: stopping returns at once, the last push made on the relay's thread") {
     const uint16_t port = fcg::test::freePort();
     std::atomic<int> pushes{0};
+    std::atomic<bool> pushing{false};
     FakeServer server(port, [&](const FakeServer::Request& r) -> std::string {
         if (r.path.find("/push") != std::string::npos) {
+            pushing = true;
             std::this_thread::sleep_for(1500ms);  // a slow lichess
             pushes++;
         }
@@ -245,7 +247,11 @@ TEST_CASE("lichess: stopping returns at once, the last push made on the relay's 
     LichessRelay relay;
     relay.start({"secret", "ABCDEFGH", false, "Stop test", dir, fmt::format("http://127.0.0.1:{}", port)});
     relay.offer({lichessLiveGame(liveGame(1), "Stop test", 0, 0, false)}, {});
-    std::this_thread::sleep_for(200ms);  // the first push under way
+    // The first push under way: the server has it (a fixed wait can be too short on a loaded machine).
+    for (const auto until = std::chrono::steady_clock::now() + 10s;
+         !pushing && std::chrono::steady_clock::now() < until;)
+        std::this_thread::sleep_for(5ms);
+    REQUIRE(pushing);
     auto start = std::chrono::steady_clock::now();
     relay.stop();
     CHECK(std::chrono::steady_clock::now() - start < 100ms);
