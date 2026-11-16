@@ -758,19 +758,19 @@ regla de las 50 jugadas está cerca. Las tablas son las del proceso del programa
 torneo en él.
 
 ### Jugar una partida desde una posición
-<!-- en: playing-a-game-from-a-position cbbcfcd3 -->
+<!-- en: playing-a-game-from-a-position 7e83c318 -->
 
 **Jugar una partida…** juega una partida desde la posición del tablero entre dos motores de la biblioteca, o entre tú y
-uno de ellos (ver *Tú* más abajo) (*Blancas* y *Negras*; `<->` los intercambia con sus relojes), con un reloj para cada
-uno (minutos y un incremento en segundos; *El mismo para ambos*, o uno para cada uno para dar ventaja de tiempo) y, si
-está marcado, una segunda partida con los colores invertidos. Los motores se arrancan con los valores de opciones de la
-biblioteca, un motor WinBoard a través del adaptador. El tablero sigue la partida a medida que se juega (retroceder en
-ella deja de seguirla hasta que se vuelve a alcanzar su final, o hasta que se hace clic en *Volver a la jugada actual*),
-con los relojes, la búsqueda del bando al que le toca mover y *Detener*, que termina la partida sin resultado. Una
-partida termina por mate, ahogado, material insuficiente, la regla de las 50 jugadas, una triple repetición, una jugada
-ilegal, un motor que se detiene, o una pérdida por tiempo (con 0,1 s de margen en el reloj para que llegue la jugada).
-Cada partida se añade, al terminar, a un archivo PGN en `games/` en el perfil (con el nombre de la fecha y de los
-motores, y una etiqueta `Termination`), que *Abrir las partidas* lista en el tablero.
+uno de ellos (ver *Humano* más abajo) (*Blancas* y *Negras*; `<->` los intercambia con sus relojes), con un reloj para
+cada uno (minutos y un incremento en segundos; *El mismo para ambos*, o uno para cada uno para dar ventaja de tiempo) y,
+si está marcado, una segunda partida con los colores invertidos. Los motores se arrancan con los valores de opciones de
+la biblioteca, un motor WinBoard a través del adaptador. El tablero sigue la partida a medida que se juega (retroceder
+en ella deja de seguirla hasta que se vuelve a alcanzar su final, o hasta que se hace clic en *Volver a la jugada
+actual*), con los relojes, la búsqueda del bando al que le toca mover y *Detener*, que termina la partida sin resultado.
+Una partida termina por mate, ahogado, material insuficiente, la regla de las 50 jugadas, una triple repetición, una
+jugada ilegal, un motor que se detiene, o una pérdida por tiempo (con 0,1 s de margen en el reloj para que llegue la
+jugada). Cada partida se añade, al terminar, a un archivo PGN en `games/` en el perfil (con el nombre de la fecha y de
+los motores, y una etiqueta `Termination`), que *Abrir las partidas* lista en el tablero.
 
 Las partidas las juega el cliente de motores propio de fastchess-gui, al margen de cualquier torneo: se juegan
 mientras se juega uno, sin interferir con él. Sus hilos (los del motor que más tiene de los dos, ya que juegan por
@@ -778,17 +778,17 @@ turnos) cuentan en el presupuesto de núcleos; cuando las partidas de los torneo
 máquina, la tarjeta lo indica y ofrece *Jugar de todos modos* en lugar de *Jugar*. El análisis se detiene cuando
 empieza una partida, ya que competiría con sus motores.
 
-**Tú**, primero en las listas de *Blancas* y *Negras*, juega ese bando tú mismo: tus jugadas se hacen en el tablero con
-el ratón, en el tablero plano como en el 3D (un peón que llega a la última fila pide su pieza). El tablero se gira para
-dejar tu bando abajo en cada partida (*Girar* lo sigue girando), solo toma tus piezas en tu turno (la tarjeta muestra
-*Te toca mover*), y un clic mientras miras una jugada anterior lo devuelve a la partida. Tu reloj corre como el de un
-motor, pérdida por tiempo incluida: date más tiempo que al motor desmarcando *El mismo para ambos*. Mientras juegas, lo
-que piensa el motor se guarda aparte (su evaluación, su profundidad y su línea, y por tanto la barra de evaluación y la
-curva del gráfico); la partida terminada lo tiene, lista para *Analizar la partida*. *Abandonar la partida* la termina
-en cualquier momento, ganada por el motor; con una segunda partida, esta sigue, con tu color invertido. Tus partidas se
-guardan con tu nombre de usuario, y solo el motor cuenta en el presupuesto de núcleos. No se puede deshacer una jugada,
-y el motor juega a plena fuerza salvo que su tarjeta fije una menor (`UCI_LimitStrength` y `UCI_Elo`, o `Skill Level`,
-si los tiene).
+**Humano**, primero en las listas de *Blancas* y *Negras*, eres tú: juegas ese bando tú mismo; tus jugadas se hacen en
+el tablero con el ratón, en el tablero plano como en el 3D (un peón que llega a la última fila pide su pieza). El
+tablero se gira para dejar tu bando abajo en cada partida (*Girar* lo sigue girando), solo toma tus piezas en tu turno
+(la tarjeta muestra *Te toca mover*), y un clic mientras miras una jugada anterior lo devuelve a la partida. Tu reloj
+corre como el de un motor, pérdida por tiempo incluida: date más tiempo que al motor desmarcando *El mismo para ambos*.
+Mientras juegas, lo que piensa el motor se guarda aparte (su evaluación, su profundidad y su línea, y por tanto la barra
+de evaluación y la curva del gráfico); la partida terminada lo tiene, lista para *Analizar la partida*. *Abandonar la
+partida* la termina en cualquier momento, ganada por el motor; con una segunda partida, esta sigue, con tu color
+invertido. Tus partidas se guardan con tu nombre de usuario, y solo el motor cuenta en el presupuesto de núcleos. No se
+puede deshacer una jugada, y el motor juega a plena fuerza salvo que su tarjeta fije una menor (`UCI_LimitStrength` y
+`UCI_Elo`, o `Skill Level`, si los tiene).
 
 ## Suites de tests
 <!-- en: test-suites 42c2b2ba -->

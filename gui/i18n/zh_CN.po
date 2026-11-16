@@ -2268,6 +2268,9 @@ msgstr "Polyglot 开局库如何选着，适用于比赛的开局和参赛者的
 msgid "How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."
 msgstr "开局的不平衡程度：它们带来的优势的离散度，以 Elo 计。同一开局上的成对对局会将其抵消，因此偏差越大，测试越短。fishtest 的开局库：约 191。"
 
+msgid "Human"
+msgstr "人类"
+
 msgid "Ignore the 50-move rule"
 msgstr "忽略 50 步规则"
 
@@ -5745,9 +5748,6 @@ msgstr "错误 PV"
 
 msgid "X: the opponent's best move if it could move again, as a red arrow (another process of the engine, its threads counted)."
 msgstr "X：如果对手能再走一步时的最佳着法，以红色箭头显示（引擎的另一个进程，计入其线程）。"
-
-msgid "You"
-msgstr "你"
 
 msgid "Your move"
 msgstr "轮到你走棋"

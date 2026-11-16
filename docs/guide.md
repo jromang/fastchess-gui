@@ -677,7 +677,7 @@ program's process: they are not probed while a tournament plays in it.
 ### Playing a game from a position
 
 **Play a game…** plays a game from the position on the board between two engines of the library, or between you and one
-(see *You* below) (*White* and *Black*, `<->` swaps them with their clocks), with a clock for each (minutes and an
+(see *Human* below) (*White* and *Black*, `<->` swaps them with their clocks), with a clock for each (minutes and an
 increment in seconds; *The same for both*, or one each for time odds), and, if ticked, a second game with the colours
 reversed. The engines are started with the library's option values, a WinBoard engine through the adapter. The board
 follows the game as it is played (going back in it stops following until its end is reached again, or *Back to the
@@ -692,16 +692,16 @@ without touching it. Their threads (the larger of the two engines', as they take
 when the running tournaments' games and the analysis already fill the machine, the card says so and offers *Play
 anyway* instead of *Play*. The analysis stops when a game starts, as it would compete with its engines.
 
-**You**, first in the lists of *White* and *Black*, plays that side yourself, your moves made on the board with the
-mouse, on the flat board as on the 3D one (a pawn reaching the last rank asks for its piece). The board turns so that
-your side is at the bottom at each game (*Flip* still turns it), takes your pieces only at your turn (the card says
-*Your move*), and a click while you look at an earlier move brings it back to the game. Your clock runs as an engine's
-would, a loss on time included: give yourself more time than the engine by unticking *The same for both*. While you
-play, what the engine thinks is kept back (its score, depth and line, so the evaluation bar and the graph's curve
+**Human**, first in the lists of *White* and *Black*, is you: you play that side yourself, your moves made on the board
+with the mouse, on the flat board as on the 3D one (a pawn reaching the last rank asks for its piece). The board turns
+so that your side is at the bottom at each game (*Flip* still turns it), takes your pieces only at your turn (the card
+says *Your move*), and a click while you look at an earlier move brings it back to the game. Your clock runs as an
+engine's would, a loss on time included: give yourself more time than the engine by unticking *The same for both*. While
+you play, what the engine thinks is kept back (its score, depth and line, so the evaluation bar and the graph's curve
 too); the finished game has it, ready for *Analyse the game*. *Resign the game* ends it at any moment, won by the
-engine; with a second game, it follows, your colour reversed. Your games are saved under your login name, and only
-the engine counts in the core budget. There is no takeback, and the engine plays at its full strength unless its card
-sets a lower one (`UCI_LimitStrength` and `UCI_Elo`, or `Skill Level`, where it has them).
+engine; with a second game, it follows, your colour reversed. Your games are saved under your login name, and only the
+engine counts in the core budget. There is no takeback, and the engine plays at its full strength unless its card sets a
+lower one (`UCI_LimitStrength` and `UCI_Elo`, or `Skill Level`, where it has them).
 
 ## Test suites
 

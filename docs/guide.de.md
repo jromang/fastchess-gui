@@ -776,12 +776,12 @@ wird abgefragt, als wäre gerade ein Schlagzug oder ein Bauernzug gespielt worde
 darin spielt.
 
 ### Eine Partie aus einer Stellung spielen
-<!-- en: playing-a-game-from-a-position cbbcfcd3 -->
+<!-- en: playing-a-game-from-a-position 7e83c318 -->
 
 **Eine Partie spielen…** spielt eine Partie aus der Stellung auf dem Brett zwischen zwei Engines der Bibliothek oder
-zwischen dir und einer davon (siehe *Du* weiter unten) (*Weiß* und *Schwarz*, `<->` tauscht sie samt ihren Uhren), mit
-einer Uhr für jede (Minuten und ein Inkrement in Sekunden; *Für beide gleich* oder je eine eigene für Zeitvorgabe) und,
-falls angehakt, eine zweite Partie mit vertauschten Farben. Die Engines werden mit den Optionswerten der Bibliothek
+zwischen dir und einer davon (siehe *Mensch* weiter unten) (*Weiß* und *Schwarz*, `<->` tauscht sie samt ihren Uhren),
+mit einer Uhr für jede (Minuten und ein Inkrement in Sekunden; *Für beide gleich* oder je eine eigene für Zeitvorgabe)
+und, falls angehakt, eine zweite Partie mit vertauschten Farben. Die Engines werden mit den Optionswerten der Bibliothek
 gestartet, eine WinBoard-Engine über den Adapter. Das Brett folgt der Partie, während sie gespielt wird (geht man in ihr
 zurück, folgt es ihr nicht mehr, bis ihr Ende wieder erreicht ist oder *Zurück zum aktuellen Zug* angeklickt wird), mit
 den Uhren, der Suche der Seite am Zug und *Stopp*, das die Partie ohne Ergebnis beendet. Eine Partie endet durch Matt,
@@ -796,17 +796,17 @@ ziehen) zählen zum Kern-Budget; füllen die Partien der laufenden Turniere und 
 die Karte das und bietet *Trotzdem spielen* statt *Spielen* an. Die Analyse endet, wenn eine Partie beginnt, da sie
 mit deren Engines konkurrieren würde.
 
-**Du**, als Erstes in den Listen *Weiß* und *Schwarz*, spielt diese Seite selbst: Deine Züge machst du mit der Maus auf
-dem Brett, auf dem flachen wie auf dem 3D-Brett (ein Bauer, der die letzte Reihe erreicht, fragt nach seiner Figur).
-Das Brett dreht sich bei jeder Partie so, dass deine Seite unten ist (*Drehen* dreht es weiterhin), nimmt deine Figuren
-nur an, wenn du am Zug bist (die Karte zeigt *Du bist am Zug*), und ein Klick, während du dir einen früheren Zug
-ansiehst, bringt es zur Partie zurück. Deine Uhr läuft wie die einer Engine, Zeitverlust inbegriffen: Gib dir mehr Zeit
-als der Engine, indem du *Für beide gleich* abwählst. Während du spielst, wird zurückgehalten, was die Engine denkt
-(ihre Bewertung, Tiefe und Variante, also auch der Bewertungsbalken und die Kurve des Graphen); die beendete Partie hat
-es, bereit für *Partie analysieren*. *Partie aufgeben* beendet sie jederzeit, gewonnen von der Engine; mit einer zweiten
-Partie folgt diese, mit vertauschter Farbe. Deine Partien werden unter deinem Anmeldenamen gespeichert, und nur die
-Engine zählt im Kernbudget. Zurücknehmen geht nicht, und die Engine spielt mit voller Stärke, außer ihre Karte stellt
-eine geringere ein (`UCI_LimitStrength` und `UCI_Elo` oder `Skill Level`, wo sie diese hat).
+**Mensch**, als Erstes in den Listen *Weiß* und *Schwarz*, bist du: Du spielst diese Seite selbst; Deine Züge machst du
+mit der Maus auf dem Brett, auf dem flachen wie auf dem 3D-Brett (ein Bauer, der die letzte Reihe erreicht, fragt nach
+seiner Figur). Das Brett dreht sich bei jeder Partie so, dass deine Seite unten ist (*Drehen* dreht es weiterhin), nimmt
+deine Figuren nur an, wenn du am Zug bist (die Karte zeigt *Du bist am Zug*), und ein Klick, während du dir einen
+früheren Zug ansiehst, bringt es zur Partie zurück. Deine Uhr läuft wie die einer Engine, Zeitverlust inbegriffen: Gib
+dir mehr Zeit als der Engine, indem du *Für beide gleich* abwählst. Während du spielst, wird zurückgehalten, was die
+Engine denkt (ihre Bewertung, Tiefe und Variante, also auch der Bewertungsbalken und die Kurve des Graphen); die
+beendete Partie hat es, bereit für *Partie analysieren*. *Partie aufgeben* beendet sie jederzeit, gewonnen von der
+Engine; mit einer zweiten Partie folgt diese, mit vertauschter Farbe. Deine Partien werden unter deinem Anmeldenamen
+gespeichert, und nur die Engine zählt im Kernbudget. Zurücknehmen geht nicht, und die Engine spielt mit voller Stärke,
+außer ihre Karte stellt eine geringere ein (`UCI_LimitStrength` und `UCI_Elo` oder `Skill Level`, wo sie diese hat).
 
 ## Testsuiten
 <!-- en: test-suites 42c2b2ba -->

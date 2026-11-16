@@ -771,12 +771,12 @@ là où la règle des 50 coups est proche. Les tables sont celles du processus d
 interrogées pendant qu'un tournoi y joue.
 
 ### Jouer une partie depuis une position
-<!-- en: playing-a-game-from-a-position cbbcfcd3 -->
+<!-- en: playing-a-game-from-a-position 7e83c318 -->
 
 **Jouer une partie…** joue une partie depuis la position de l'échiquier entre deux moteurs de la bibliothèque, ou entre
-toi et l'un d'eux (voir *Toi* plus bas) (*Blancs* et *Noirs*, `<->` les échange avec leurs pendules), avec une pendule
-pour chacun (des minutes et un incrément en secondes ; *La même pour les deux*, ou une chacun pour un handicap de
-temps), et, si c'est coché, une seconde partie avec les couleurs inversées. Les moteurs sont lancés avec les valeurs
+toi et l'un d'eux (voir *Humain* plus bas) (*Blancs* et *Noirs*, `<->` les échange avec leurs pendules), avec une
+pendule pour chacun (des minutes et un incrément en secondes ; *La même pour les deux*, ou une chacun pour un handicap
+de temps), et, si c'est coché, une seconde partie avec les couleurs inversées. Les moteurs sont lancés avec les valeurs
 d'options de la bibliothèque, un moteur WinBoard par l'adaptateur. L'échiquier suit la partie au fil du jeu (revenir en
 arrière arrête de la suivre jusqu'à ce que sa fin soit de nouveau atteinte, ou qu'on clique sur *Revenir au coup en
 cours*), avec les pendules, la recherche du camp au trait et *Arrêter*, qui termine la partie sans résultat. Une partie
@@ -791,17 +791,17 @@ tour de rôle) comptent dans le budget de cœurs ; quand les parties des tournoi
 la machine, la carte le dit et propose *Jouer quand même* au lieu de *Jouer*. L'analyse s'arrête quand une partie
 commence, car elle serait en concurrence avec ses moteurs.
 
-**Toi**, en tête des listes *Blancs* et *Noirs*, te fait jouer ce camp toi-même : tes coups se jouent sur le plateau à
-la souris, sur le plateau à plat comme sur le plateau 3D (un pion qui atteint la dernière rangée demande sa pièce). Le
-plateau se retourne pour mettre ton camp en bas à chaque partie (*Retourner* le tourne toujours), ne prend tes pièces
-qu'à ton tour (la carte affiche *À toi de jouer*), et un clic pendant que tu regardes un coup précédent le ramène à la
-partie. Ta pendule tourne comme celle d'un moteur, perte au temps comprise : donne-toi plus de temps qu'au moteur en
-décochant *La même pour les deux*. Pendant que tu joues, ce que pense le moteur est gardé de côté (son score, sa
-profondeur et sa ligne, donc aussi la barre d'évaluation et la courbe du graphe) ; la partie terminée les a, prête pour
-*Analyser la partie*. *Abandonner la partie* la termine à tout moment, gagnée par le moteur ; avec une seconde partie,
-celle-ci suit, ta couleur inversée. Tes parties sont enregistrées sous ton nom de session, et seul le moteur compte dans
-le budget de cœurs. On ne peut pas reprendre un coup, et le moteur joue à pleine force sauf si sa fiche en règle une
-plus faible (`UCI_LimitStrength` et `UCI_Elo`, ou `Skill Level`, s'il les a).
+**Humain**, en tête des listes *Blancs* et *Noirs*, c'est toi : tu joues ce camp toi-même ; tes coups se jouent sur le
+plateau à la souris, sur le plateau à plat comme sur le plateau 3D (un pion qui atteint la dernière rangée demande sa
+pièce). Le plateau se retourne pour mettre ton camp en bas à chaque partie (*Retourner* le tourne toujours), ne prend
+tes pièces qu'à ton tour (la carte affiche *À toi de jouer*), et un clic pendant que tu regardes un coup précédent le
+ramène à la partie. Ta pendule tourne comme celle d'un moteur, perte au temps comprise : donne-toi plus de temps qu'au
+moteur en décochant *La même pour les deux*. Pendant que tu joues, ce que pense le moteur est gardé de côté (son score,
+sa profondeur et sa ligne, donc aussi la barre d'évaluation et la courbe du graphe) ; la partie terminée les a, prête
+pour *Analyser la partie*. *Abandonner la partie* la termine à tout moment, gagnée par le moteur ; avec une seconde
+partie, celle-ci suit, ta couleur inversée. Tes parties sont enregistrées sous ton nom de session, et seul le moteur
+compte dans le budget de cœurs. On ne peut pas reprendre un coup, et le moteur joue à pleine force sauf si sa fiche en
+règle une plus faible (`UCI_LimitStrength` et `UCI_Elo`, ou `Skill Level`, s'il les a).
 
 ## Suites de tests
 <!-- en: test-suites 42c2b2ba -->

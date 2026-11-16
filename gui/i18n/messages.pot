@@ -2275,6 +2275,9 @@ msgstr ""
 msgid "How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."
 msgstr ""
 
+msgid "Human"
+msgstr ""
+
 msgid "Ignore the 50-move rule"
 msgstr ""
 
@@ -5773,9 +5776,6 @@ msgid "Wrong PVs"
 msgstr ""
 
 msgid "X: the opponent's best move if it could move again, as a red arrow (another process of the engine, its threads counted)."
-msgstr ""
-
-msgid "You"
 msgstr ""
 
 msgid "Your move"

@@ -2763,17 +2763,17 @@ void App::drawBoardPlay() {
         return;
     }
 
-    // The engines: the first has White in the first game. You, first in each list, plays one side in place of its
+    // The engines: the first has White in the first game. Human, first in each list, is the user, in place of its
     // engine, its moves made on the board.
     const auto engineCombo = [&](const char* id, std::string& name, int side) {
         const bool you = s.game_human == side;
         ImGui::SetNextItemWidth(px(150));
         if (ImGui::BeginCombo(id,
-                              you            ? TR("You")
+                              you            ? TR("Human")
                               : name.empty() ? TR("Choose an engine")
                                              : name.c_str(),
                               ImGuiComboFlags_HeightLargest)) {
-            std::vector<std::string> names{TR("You")}, more{std::string()};
+            std::vector<std::string> names{TR("Human")}, more{std::string()};
             for (const auto& e : engines_) {
                 if (e.inactive && e.name != name) continue;
                 names.push_back(e.name);

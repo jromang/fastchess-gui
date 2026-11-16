@@ -2275,6 +2275,9 @@ msgstr "Wie die Züge eines Polyglot-Buchs gewählt werden, für die Eröffnunge
 msgid "How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."
 msgstr "Wie unausgeglichen die Eröffnungen sind: die Streuung des Vorteils, den sie geben, in Elo. Partiepaare mit derselben Eröffnung heben ihn auf, ein größerer Bias verkürzt also den Test. Das Buch von fishtest: etwa 191."
 
+msgid "Human"
+msgstr "Mensch"
+
 msgid "Ignore the 50-move rule"
 msgstr "Die 50-Züge-Regel ignorieren"
 
@@ -5774,9 +5777,6 @@ msgstr "Falsche PVs"
 
 msgid "X: the opponent's best move if it could move again, as a red arrow (another process of the engine, its threads counted)."
 msgstr "X: der beste Zug des Gegners, wenn er noch einmal ziehen dürfte, als roter Pfeil (ein weiterer Prozess der Engine, ihre Threads mitgezählt)."
-
-msgid "You"
-msgstr "Du"
 
 msgid "Your move"
 msgstr "Du bist am Zug"

@@ -2275,6 +2275,9 @@ msgstr "Como os lances de um livro Polyglot são escolhidos, para as aberturas d
 msgid "How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."
 msgstr "Quão desequilibradas são as aberturas: a dispersão da vantagem que elas dão, em Elo. Pares de partidas com a mesma abertura a anulam, então um viés maior deixa o teste mais curto. Livro do fishtest: cerca de 191."
 
+msgid "Human"
+msgstr "Humano"
+
 msgid "Ignore the 50-move rule"
 msgstr "Ignorar a regra dos 50 lances"
 
@@ -5774,9 +5777,6 @@ msgstr "PVs erradas"
 
 msgid "X: the opponent's best move if it could move again, as a red arrow (another process of the engine, its threads counted)."
 msgstr "X: o melhor lance do adversário se ele pudesse jogar de novo, como seta vermelha (outro processo do engine, seus threads contados)."
-
-msgid "You"
-msgstr "Você"
 
 msgid "Your move"
 msgstr "Sua vez"

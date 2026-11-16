@@ -2282,6 +2282,9 @@ msgstr "Как выбираются ходы книги Polyglot — для де
 msgid "How unbalanced the openings are: the spread of the advantage they give, in Elo. Pairs of games on the same opening cancel it out, so a larger bias makes the test shorter. fishtest's book: about 191."
 msgstr "Насколько несбалансированы дебюты: разброс даваемого ими преимущества в Elo. Пары партий одним дебютом его компенсируют, поэтому чем больше смещение, тем короче тест. Книга fishtest: около 191."
 
+msgid "Human"
+msgstr "Человек"
+
 msgid "Ignore the 50-move rule"
 msgstr "Игнорировать правило 50 ходов"
 
@@ -5803,9 +5806,6 @@ msgstr "Неверные PV"
 
 msgid "X: the opponent's best move if it could move again, as a red arrow (another process of the engine, its threads counted)."
 msgstr "X: лучший ход соперника, если бы он мог ходить снова, красной стрелкой (ещё один процесс движка, его потоки учитываются)."
-
-msgid "You"
-msgstr "Вы"
 
 msgid "Your move"
 msgstr "Ваш ход"
