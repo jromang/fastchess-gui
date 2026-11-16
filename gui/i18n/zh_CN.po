@@ -4184,6 +4184,9 @@ msgstr "正在测试…"
 msgid "Text"
 msgstr "文本"
 
+msgid "The 3D pieces:"
+msgstr "3D 棋子："
+
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "50 步计数、子力以及剩余棋子，显示在平铺视图的每个棋盘下方。"
 
@@ -5468,6 +5471,9 @@ msgstr "按钮"
 
 msgid "by %s"
 msgstr "作者 %s"
+
+msgid "by {}, under the {} license."
+msgstr "— 作者 {}，采用 {} 许可证。"
 
 msgid "bye"
 msgstr "轮空"

@@ -4226,6 +4226,9 @@ msgstr "Тестирование…"
 msgid "Text"
 msgstr "Текст"
 
+msgid "The 3D pieces:"
+msgstr "3D-фигуры:"
+
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Счётчик 50 ходов, материал и оставшиеся фигуры под каждой доской мозаики."
 
@@ -5530,6 +5533,9 @@ msgstr "кнопка"
 
 msgid "by %s"
 msgstr "автор: %s"
+
+msgid "by {}, under the {} license."
+msgstr "— автор: {}, лицензия {}."
 
 msgid "bye"
 msgstr "без пары"

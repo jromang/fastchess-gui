@@ -259,5 +259,6 @@ The original fastchess README is kept as [README.fastchess.md](README.fastchess.
 
 ## License
 
-MIT, like fastchess (see [LICENSE](LICENSE)). The piece set is Colin M.L. Burnett's, used under the BSD license;
-see [gui/assets/ATTRIBUTION.md](gui/assets/ATTRIBUTION.md) for the assets and libraries.
+MIT, like fastchess (see [LICENSE](LICENSE)). The piece set is Colin M.L. Burnett's, used under the BSD license; the
+3D board's pieces are clarkerubber's [Staunton-Pieces](https://github.com/clarkerubber/Staunton-Pieces), used under
+the MIT license; see [gui/assets/ATTRIBUTION.md](gui/assets/ATTRIBUTION.md) for the assets and libraries.

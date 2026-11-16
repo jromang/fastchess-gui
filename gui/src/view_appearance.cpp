@@ -327,6 +327,14 @@ void App::drawAppearanceSettings(float label) {
         ImGui::SetItemTooltip("%s", TR("The exposure, quality, varnish and gloss as they were at first; the lighting "
                                        "stays."));
         ImGui::EndDisabled();
+        // Whose the pieces are, as the 2D sets say it.
+        constexpr const char* PIECES_URL = "https://github.com/clarkerubber/Staunton-Pieces";
+        ImGui::TextDisabled("%s", TR("The 3D pieces:"));
+        ImGui::SameLine();
+        ImGui::TextLinkOpenURL("Staunton-Pieces", PIECES_URL);
+        ImGui::SetItemTooltip("%s", PIECES_URL);
+        ImGui::SameLine();
+        ImGui::TextDisabled("%s", trf("by {}, under the {} license.", "clarkerubber", "MIT").c_str());
     }
     ImGui::EndDisabled();
     // Why it cannot be: the window drawn without OpenGL, or a driver that cannot draw it.

@@ -4205,6 +4205,9 @@ msgstr "Probando…"
 msgid "Text"
 msgstr "Texto"
 
+msgid "The 3D pieces:"
+msgstr "Las piezas 3D:"
+
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "El contador de las 50 jugadas, el material y las piezas que quedan, bajo cada tablero del mosaico."
 
@@ -5499,6 +5502,9 @@ msgstr "botón"
 
 msgid "by %s"
 msgstr "por %s"
+
+msgid "by {}, under the {} license."
+msgstr "de {}, bajo la licencia {}."
 
 msgid "bye"
 msgstr "descansa"

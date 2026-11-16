@@ -4205,6 +4205,9 @@ msgstr ""
 msgid "Text"
 msgstr ""
 
+msgid "The 3D pieces:"
+msgstr ""
+
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr ""
 
@@ -5498,6 +5501,9 @@ msgid "button"
 msgstr ""
 
 msgid "by %s"
+msgstr ""
+
+msgid "by {}, under the {} license."
 msgstr ""
 
 msgid "bye"

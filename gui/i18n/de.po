@@ -4205,6 +4205,9 @@ msgstr "Teste…"
 msgid "Text"
 msgstr "Text"
 
+msgid "The 3D pieces:"
+msgstr "Die 3D-Figuren:"
+
 msgid "The 50-move counter, the material and the pieces left, under every board of the mosaic."
 msgstr "Der 50-Züge-Zähler, das Material und die verbleibenden Steine unter jedem Brett der Mosaikansicht."
 
@@ -5499,6 +5502,9 @@ msgstr "Schaltfläche"
 
 msgid "by %s"
 msgstr "von %s"
+
+msgid "by {}, under the {} license."
+msgstr "von {}, unter der Lizenz {}."
 
 msgid "bye"
 msgstr "spielfrei"
