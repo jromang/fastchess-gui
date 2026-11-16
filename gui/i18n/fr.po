@@ -6246,6 +6246,12 @@ msgstr "cœurs physiques − 1, pour une pendule"
 msgid "played from here"
 msgstr "joué d'ici"
 
+msgid "played {}"
+msgstr "a joué {}"
+
+msgid "played {} in {}"
+msgstr "a joué {} en {}"
+
 msgid "players rated {} or more"
 msgstr "joueurs classés {} ou plus"
 
@@ -6374,6 +6380,9 @@ msgstr "temps par coup · Blancs en haut, Noirs en bas"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "à mentionner dans le message, ou pour retester le moteur :"
+
+msgid "to move"
+msgstr "au trait"
 
 msgid "tournament on {}"
 msgstr "tournoi sur {}"

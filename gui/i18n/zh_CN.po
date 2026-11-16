@@ -6211,6 +6211,12 @@ msgstr "物理核心数 − 1，用于棋钟"
 msgid "played from here"
 msgstr "从本机下棋"
 
+msgid "played {}"
+msgstr "走了 {}"
+
+msgid "played {} in {}"
+msgstr "走了 {}，用时 {}"
+
 msgid "players rated {} or more"
 msgstr "等级分 {} 及以上的棋手"
 
@@ -6339,6 +6345,9 @@ msgstr "每步用时 · 白方在上，黑方在下"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "可在帖子中注明，或重新测试引擎："
+
+msgid "to move"
+msgstr "轮到走棋"
 
 msgid "tournament on {}"
 msgstr "比赛占用 {}"

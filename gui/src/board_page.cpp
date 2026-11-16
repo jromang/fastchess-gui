@@ -1,6 +1,7 @@
 #include "board_page.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <sstream>
 
@@ -306,6 +307,43 @@ int promoteVariation(GameTree& tree, int line) {
     }
     if (parent < 0) tree.main.result.clear();
     return parent;
+}
+
+std::vector<std::optional<int64_t>> moveClocks(const ReplayGame& game) {
+    std::vector<std::optional<int64_t>> out(game.moves.size());
+    // The time control: "300+2", "10+0.1", "600".
+    std::optional<double> base;
+    double increment = 0;
+    {
+        const auto tc   = game.header("TimeControl");
+        const auto plus = tc.find('+');
+        try {
+            if (!tc.empty() && tc.find_first_of("/:") == std::string::npos && tc != "-" && tc != "?") {
+                base = std::stod(tc.substr(0, plus));
+                if (plus != std::string::npos) increment = std::stod(tc.substr(plus + 1));
+            }
+        } catch (...) {
+            base.reset();
+        }
+    }
+    std::array<std::optional<double>, 2> left;
+    if (base) left = {*base * 1000.0, *base * 1000.0};
+    for (std::size_t i = 0; i < game.moves.size(); ++i) {
+        const auto& m  = game.moves[i];
+        const int side = m.mover == chess::Color::WHITE ? 0 : 1;
+        auto& clock    = left[static_cast<std::size_t>(side)];
+        if (m.clock_ms) {
+            clock = static_cast<double>(*m.clock_ms);
+        } else if (clock && !m.book) {
+            if (m.time_ms < 0) {
+                clock.reset();  // a move without its time: the clock is lost from here
+            } else {
+                clock = std::max(0.0, *clock - static_cast<double>(m.time_ms)) + increment * 1000.0;
+            }
+        }
+        if (clock) out[i] = static_cast<int64_t>(std::lround(*clock));
+    }
+    return out;
 }
 
 }  // namespace fcg

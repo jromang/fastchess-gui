@@ -6246,6 +6246,12 @@ msgstr "núcleos físicos − 1, para um relógio"
 msgid "played from here"
 msgstr "jogado daqui"
 
+msgid "played {}"
+msgstr "jogou {}"
+
+msgid "played {} in {}"
+msgstr "jogou {} em {}"
+
 msgid "players rated {} or more"
 msgstr "jogadores com Elo de {} ou mais"
 
@@ -6374,6 +6380,9 @@ msgstr "tempo por lance · brancas em cima, pretas embaixo"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "para mencionar na postagem, ou para testar o engine de novo:"
+
+msgid "to move"
+msgstr "a jogar"
 
 msgid "tournament on {}"
 msgstr "torneio em {}"

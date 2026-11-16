@@ -6246,6 +6246,12 @@ msgstr "physische Kerne − 1, für eine Uhr"
 msgid "played from here"
 msgstr "von hier gespielt"
 
+msgid "played {}"
+msgstr "spielte {}"
+
+msgid "played {} in {}"
+msgstr "spielte {} in {}"
+
 msgid "players rated {} or more"
 msgstr "Spieler mit Wertung {} oder mehr"
 
@@ -6374,6 +6380,9 @@ msgstr "Zeit pro Zug · Weiß oben, Schwarz unten"
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "im Beitrag zu erwähnen oder um die Engine erneut zu testen:"
+
+msgid "to move"
+msgstr "am Zug"
 
 msgid "tournament on {}"
 msgstr "Turnier auf {}"

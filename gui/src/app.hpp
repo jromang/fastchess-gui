@@ -370,6 +370,9 @@ class App {
     void showBoardLine(int line, int ply);
     // The position of the game the board's position is on, or leaves it at (a variation).
     [[nodiscard]] int boardMainPly() const;
+    // The players above and below the board: name, evaluation of its last move, time, clock at the move shown.
+    [[nodiscard]] bool boardStrips() const;  // the game has players to show
+    void drawPlayerStrip(chess::Color side, float size, const std::vector<std::optional<int64_t>>& clocks);
     void drawBoardGraph(float height);  // the game graph card, under the moves
     [[nodiscard]] float boardGraphHeight() const;
     [[nodiscard]] std::string boardGraphTip(int ply) const;  // the graph's tooltip at a position

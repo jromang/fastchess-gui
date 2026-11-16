@@ -638,7 +638,19 @@ void App::drawBoardPage() {
         if (ImGui::SmallButton(TR("Cancel"))) *b.reading->cancel = true;
     }
 
-    if (!b.title.empty()) ImGui::TextDisabled("%s", b.title.c_str());
+    // What the game is: its title, result, time control, opening and how it ended.
+    {
+        const auto& main = b.tree.main;
+        std::string line = b.title;
+        const auto add   = [&](const std::string& part) {
+            if (!part.empty() && part != "?" && part != "-") line += (line.empty() ? "" : " · ") + part;
+        };
+        if (!main.result.empty() && main.result != "*") add(main.result);
+        add(main.header("TimeControl"));
+        add((main.header("ECO").empty() ? "" : main.header("ECO") + " ") + main.header("Opening"));
+        if (!main.final_comment.empty() && main.final_comment.size() < 60) add(main.final_comment);
+        if (!line.empty()) ImGui::TextDisabled("%s", line.c_str());
+    }
     if (!b.message.empty()) {
         ImGui::PushStyleColor(ImGuiCol_Text, b.message_error ? ui::BAD : ui::MUTED);
         ImGui::TextWrapped("%s", b.message.c_str());
@@ -647,7 +659,8 @@ void App::drawBoardPage() {
 
     const ImVec2 avail = ImGui::GetContentRegionAvail();
     const float side   = std::clamp(avail.x * 0.42f, px(340), px(620));
-    const float under  = ImGui::GetTextLineHeightWithSpacing() * 2 + ImGui::GetFrameHeightWithSpacing() * 2;
+    const float under  = ImGui::GetTextLineHeightWithSpacing() * 2 + ImGui::GetFrameHeightWithSpacing() * 2 +
+                         (boardStrips() ? ImGui::GetFrameHeightWithSpacing() * 2 : 0.0f);
     const float size   = std::floor(
         std::max(px(200), std::min(avail.x - side - ImGui::GetStyle().ItemSpacing.x - px(20), avail.y - under)));
 
@@ -1186,6 +1199,14 @@ void App::drawBoardColumn(float size) {
     }
     const auto& shown = line_board ? *line_board : board;
 
+    const bool strips = boardStrips() && !line_board;
+    std::vector<std::optional<int64_t>> clocks;
+    if (strips) {
+        clocks = moveClocks(b.game);
+        drawPlayerStrip(b.flip ? chess::Color::WHITE : chess::Color::BLACK, size, clocks);
+    } else if (boardStrips()) {
+        ImGui::Dummy(ImVec2(size, ImGui::GetFrameHeight()));
+    }
     const ImVec2 top = ImGui::GetCursorScreenPos();
     if (appearance::current().board3d.on && board3d_.available()) {
         const auto input = board3d_.draw(shown, size, decor);
@@ -1248,6 +1269,10 @@ void App::drawBoardColumn(float size) {
         b.promotion.reset();
     }
 
+    if (strips)
+        drawPlayerStrip(b.flip ? chess::Color::BLACK : chess::Color::WHITE, size, clocks);
+    else if (boardStrips())
+        ImGui::Dummy(ImVec2(size, ImGui::GetFrameHeight()));
     drawBoardInfo(atlas_, board, size, 0);
 
     // Through the moves, back to the move being played while a game from here goes on, and the position as text.
@@ -1542,6 +1567,74 @@ void App::showBoardLine(int line, int ply) {
     b.line = line;
     b.ply  = std::clamp(ply, 0, static_cast<int>(b.game.moves.size()));
     b.selected.reset();
+}
+
+bool App::boardStrips() const {
+    const auto& g = board_.tree.main;
+    const auto w = g.header("White"), k = g.header("Black");
+    return (!w.empty() && w != "?") || (!k.empty() && k != "?");
+}
+
+void App::drawPlayerStrip(chess::Color side, float size, const std::vector<std::optional<int64_t>>& clocks) {
+    const auto& b   = board_;
+    const auto& g   = b.game;
+    const float bar = evalBarSpace(size);
+    auto* dl        = ImGui::GetWindowDrawList();
+    const ImVec2 p  = ImGui::GetCursorScreenPos();
+    const float h   = ImGui::GetFrameHeight();
+    // Who has the move here, and what this side last played.
+    const bool to_move = boardAt(g, b.chess960, b.ply).sideToMove() == side;
+    int last           = -1;
+    for (int i = std::min(b.ply, static_cast<int>(g.moves.size())) - 1; i >= 0; --i) {
+        if (g.moves[static_cast<std::size_t>(i)].mover == side) {
+            last = i;
+            break;
+        }
+    }
+    float x       = p.x + bar + px(4);
+    const float r = ImGui::GetFontSize() * 0.32f;
+    const ImVec2 c(x + r, p.y + h / 2);
+    if (side == chess::Color::BLACK) dl->AddCircleFilled(c, r, ImGui::GetColorU32(ImGuiCol_Text));
+    dl->AddCircle(c, r, ImGui::GetColorU32(ImGuiCol_Text), 0, px(1.5f));
+    x += r * 2 + px(8);
+    const float ty = p.y + (h - ImGui::GetTextLineHeight()) / 2;
+    auto name      = g.header(side == chess::Color::WHITE ? "White" : "Black");
+    if (name.empty() || name == "?") name = side == chess::Color::WHITE ? TR("White") : TR("Black");
+    dl->AddText(ImVec2(x, ty), ImGui::GetColorU32(ImGuiCol_Text), name.c_str());
+    dl->AddText(ImVec2(x + 0.6f, ty), ImGui::GetColorU32(ImGuiCol_Text), name.c_str());
+    x += ImGui::CalcTextSize(name.c_str()).x + px(10);
+    if (last >= 0) {
+        const auto& m = g.moves[static_cast<std::size_t>(last)];
+        // Its evaluation of the move, as a chip.
+        if (m.score && !m.book) {
+            auto white = *m.score;
+            if (m.mover == chess::Color::BLACK) white.value = -white.value;
+            const auto chip = ui::formatScore(white) + (m.depth > 0 ? fmt::format(" d{}", m.depth) : "");
+            const ImVec2 cs = ImGui::CalcTextSize(chip.c_str());
+            dl->AddRectFilled(ImVec2(x, ty - px(1)), ImVec2(x + cs.x + px(12), ty + cs.y + px(1)), ui::SELECT, px(4));
+            dl->AddText(ImVec2(x + px(6), ty), ImGui::GetColorU32(ImGuiCol_Text), chip.c_str());
+            x += cs.x + px(20);
+        }
+        if (!to_move) {
+            const auto played = m.time_ms >= 0 && !m.book ? trf("played {} in {}", m.san, ui::formatClock(m.time_ms))
+                                                          : trf("played {}", m.san);
+            dl->AddText(ImVec2(x, ty), ui::MUTED, played.c_str());
+        }
+    }
+    if (to_move) dl->AddText(ImVec2(x, ty), ui::MUTED, TR("to move"));
+    // Its clock after its last move, at the right, framed while it has the move.
+    if (last >= 0 && static_cast<std::size_t>(last) < clocks.size() && clocks[static_cast<std::size_t>(last)]) {
+        const auto text = ui::formatClock(*clocks[static_cast<std::size_t>(last)]);
+        ImGui::PushFont(ui::titleFont(), ImGui::GetFontSize() * 1.1f);
+        const ImVec2 ts = ImGui::CalcTextSize(text.c_str());
+        const float x1 = p.x + bar + size, x0 = x1 - ts.x - px(20);
+        dl->AddRectFilled(ImVec2(x0, p.y + px(1)), ImVec2(x1, p.y + h - px(1)), ui::CARD_BG, px(5));
+        dl->AddRect(ImVec2(x0, p.y + px(1)), ImVec2(x1, p.y + h - px(1)), to_move ? ui::ACCENT : ui::CARD_BD, px(5), 0,
+                    to_move ? px(2) : px(1));
+        dl->AddText(ImVec2(x0 + px(10), p.y + (h - ts.y) / 2), ImGui::GetColorU32(ImGuiCol_Text), text.c_str());
+        ImGui::PopFont();
+    }
+    ImGui::Dummy(ImVec2(bar + size, h));
 }
 
 int App::boardMainPly() const { return branchPly(board_.tree, board_.line, board_.ply); }

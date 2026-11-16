@@ -6281,6 +6281,12 @@ msgstr "физические ядра − 1, для часов"
 msgid "played from here"
 msgstr "играет отсюда"
 
+msgid "played {}"
+msgstr "сыграл {}"
+
+msgid "played {} in {}"
+msgstr "сыграл {} за {}"
+
 msgid "players rated {} or more"
 msgstr "игроки с рейтингом от {}"
 
@@ -6409,6 +6415,9 @@ msgstr "время на ход · белые вверху, чёрные вниз
 
 msgid "to mention in the post, or to test the engine again:"
 msgstr "упомянуть в сообщении или перепроверить движок:"
+
+msgid "to move"
+msgstr "ход за ним"
 
 msgid "tournament on {}"
 msgstr "турнир на {}"

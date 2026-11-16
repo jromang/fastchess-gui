@@ -55,6 +55,7 @@ struct ReplayMove {
     uint64_t tbhits  = 0;
     std::string pv;  // UCI moves, from the move played
     std::optional<int64_t> decision_ms;
+    std::optional<int64_t> clock_ms;  // the mover's clock after the move, when the comment has [%clk]
     uint8_t fields = 0;  // the PgnField found in its comment, a zero told apart from a field not written
 };
 
@@ -118,6 +119,8 @@ void parseFastchessComment(std::string_view comment, ReplayMove& move);
 // in moves) into the move's score, from its mover's point of view; nothing when the comment has none. The mover must
 // be set.
 void parseEvalTag(std::string_view comment, ReplayMove& move);
+// [%clk 0:01:23.4] in a move's comment: the mover's clock after it.
+void parseClockTag(std::string_view comment, ReplayMove& move);
 
 // Calls f(white_moved, move) for every move of a game in the fastchess comment style, from the comments alone:
 // the moves are not replayed, so it is fast enough for every game of a big tournament.

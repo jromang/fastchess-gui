@@ -336,6 +336,7 @@ class ReplayVisitor : public chess::pgn::Visitor {
 
         parseFastchessComment(comment, move);
         if (!move.score) parseEvalTag(comment, move);
+        parseClockTag(comment, move);
         game_.fields |= move.fields;
 
         // The last move's comment ends with the termination reason, after the engine data.
@@ -360,6 +361,31 @@ class ReplayVisitor : public chess::pgn::Visitor {
 };
 
 }  // namespace
+
+void parseClockTag(std::string_view comment, ReplayMove& move) {
+    const auto at = comment.find("[%clk ");
+    if (at == std::string_view::npos) return;
+    auto value = comment.substr(at + 6);
+    value      = value.substr(0, value.find(']'));
+    // h:mm:ss, m:ss or s, the seconds with a fraction or not.
+    double total     = 0;
+    std::size_t from = 0;
+    for (int part = 0; part < 3 && from <= value.size(); ++part) {
+        const auto colon = value.find(':', from);
+        const auto piece = value.substr(from, colon == std::string_view::npos ? std::string_view::npos : colon - from);
+        double v         = 0;
+        try {
+            v = std::stod(std::string(piece));
+        } catch (...) {
+            return;
+        }
+        total = total * 60 + v;
+        if (colon == std::string_view::npos) break;
+        from = colon + 1;
+    }
+    if (std::isfinite(total) && total >= 0 && total < 1e7)
+        move.clock_ms = static_cast<int64_t>(std::lround(total * 1000));
+}
 
 void parseEvalTag(std::string_view comment, ReplayMove& move) {
     const auto at = comment.find("[%eval ");

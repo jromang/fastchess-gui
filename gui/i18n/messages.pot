@@ -6246,6 +6246,12 @@ msgstr ""
 msgid "played from here"
 msgstr ""
 
+msgid "played {}"
+msgstr ""
+
+msgid "played {} in {}"
+msgstr ""
+
 msgid "players rated {} or more"
 msgstr ""
 
@@ -6373,6 +6379,9 @@ msgid "time per move · White up, Black down"
 msgstr ""
 
 msgid "to mention in the post, or to test the engine again:"
+msgstr ""
+
+msgid "to move"
 msgstr ""
 
 msgid "tournament on {}"

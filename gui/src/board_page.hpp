@@ -78,6 +78,10 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(BoardSettings, analysis, arrows,
 // after `ply` give way to it. Returns the new ply.
 int playOnGame(ReplayGame& game, bool chess960, int ply, chess::Move move);
 
+// Each move's mover's clock after it: from its [%clk] when the game has them, else rebuilt from the TimeControl tag
+// ("base+increment" in seconds, or "base") and the moves' times, book moves taking none; nullopt where neither tells.
+[[nodiscard]] std::vector<std::optional<int64_t>> moveClocks(const ReplayGame& game);
+
 // The moves of a line from the start: the game's (-1), or a variation's after those of its parents up to where it
 // starts. Its tags are the game's.
 [[nodiscard]] ReplayGame lineOf(const GameTree& tree, int line);
