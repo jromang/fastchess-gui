@@ -1158,18 +1158,24 @@ Un torneo in corso o aperto ha uno spazio di lavoro con un'intestazione (nome, a
 | Aperture | I risultati per posizione di partenza |
 
 ### Panoramica
-<!-- en: overview 9e592b4b -->
+<!-- en: overview 6985cebb -->
 
 **Un match**: Elo e nElo con il loro intervallo di confidenza al 95 %, LOS, punteggio, conteggi pentanomiali, limiti
 dell'SPRT e LLR. *Statistiche* (ripiegato) dà i numeri di fishtest calcolati sulle partite e sulle coppie: punteggio,
-Elo, nElo e BayesElo con DrawElo, deviazione standard per partita, LLR di entrambi, il rapporto di varianza tra coppie
-e partite singole, il bias RMS delle aperture, i tipi di coppie in equilibrio e le coppie vinte su quelle perse, che
-*Copia* include. Poi i grafici: Elo e LLR nel tempo, lunghezza delle partite, come sono finite le partite, profondità,
-NPS, tempo per mossa e tempo di decisione.
+Elo, nElo e BayesElo con DrawElo, deviazione standard per partita, LLR di entrambi, il rapporto di varianza tra coppie e
+partite singole, il bias RMS delle aperture, i tipi di coppie in equilibrio e le coppie vinte su quelle perse, che
+*Copia* include. Poi i grafici: Elo e LLR nel tempo, lunghezza delle partite, come sono finite le partite e *Ricerca per
+motore*.
 
 **Un torneo**: la classifica (con *TF*, le sconfitte per tempo di ogni motore, in arancione appena ce n'è una; un *!*
-accanto a un motore che è andato in crash o ha giocato una mossa illegale), l'avanzamento per ciclo o per turno, le
-partite all'ora e il tempo rimanente, gli ultimi risultati.
+accanto a un motore che è andato in crash o ha giocato una mossa illegale), *Ricerca per motore* sotto di essa,
+l'avanzamento per ciclo o per turno, le partite all'ora e il tempo rimanente, gli ultimi risultati.
+
+*Ricerca per motore* dà la media di ogni motore sulle mosse che ha cercato, escluse le mosse di libro: profondità, NPS,
+tempo per mossa, tempo di decisione e uso del processore; un clic su una colonna ordina i motori secondo quella. Accanto
+ai suoi NPS, ×4 dice che il motore cerca con 4 thread: conta più nodi che con uno solo senza essere per questo più
+veloce, quindi confronta i suoi NPS con quelli dei motori che ne hanno altrettanti. Gli NPS richiedono motori che li
+forniscano, e *nps* in *PGN e varie* per essere riletti alla ripresa.
 
 Entrambi contano le partite da aperture sbilanciate, e le aperture sostituite, quando la configurazione le cerca, con
 *Mostra* per quelle partite. Un torneo terminato aggiunge una *Checklist dell'invio*: tutte le partite giocate, ogni

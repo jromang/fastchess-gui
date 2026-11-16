@@ -3026,6 +3026,11 @@ msgstr "Knoten pro Zug"
 msgid "Nodes per position"
 msgstr "Knoten pro Stellung"
 
+msgid "Nodes per second, on average over its moves, with {} thread."
+msgid_plural "Nodes per second, on average over its moves, with {} threads."
+msgstr[0] "Knoten pro Sekunde, im Schnitt über ihre Züge, mit {} Thread."
+msgstr[1] "Knoten pro Sekunde, im Schnitt über ihre Züge, mit {} Threads."
+
 msgid "None"
 msgstr "Keine"
 
@@ -6246,6 +6251,9 @@ msgstr "nicht getestet"
 
 msgid "not tested yet"
 msgstr "noch nicht getestet"
+
+msgid "on average per move, book moves left out"
+msgstr "im Schnitt pro Zug, ohne Buchzüge"
 
 msgid "on {}"
 msgstr "auf {}"

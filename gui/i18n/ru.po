@@ -3035,6 +3035,12 @@ msgstr "Узлов на ход"
 msgid "Nodes per position"
 msgstr "Узлов на позицию"
 
+msgid "Nodes per second, on average over its moves, with {} thread."
+msgid_plural "Nodes per second, on average over its moves, with {} threads."
+msgstr[0] "Узлов в секунду, в среднем по его ходам, с {} потоком."
+msgstr[1] "Узлов в секунду, в среднем по его ходам, с {} потоками."
+msgstr[2] "Узлов в секунду, в среднем по его ходам, с {} потоками."
+
 msgid "None"
 msgstr "Нет"
 
@@ -6280,6 +6286,9 @@ msgstr "не проверена"
 
 msgid "not tested yet"
 msgstr "ещё не проверена"
+
+msgid "on average per move, book moves left out"
+msgstr "в среднем за ход, без ходов из книги"
 
 msgid "on {}"
 msgstr "на {}"

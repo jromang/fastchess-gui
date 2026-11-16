@@ -1165,18 +1165,24 @@ Un torneo en marcha o abierto tiene un espacio de trabajo con una cabecera (nomb
 | Aperturas | Los resultados por posición inicial |
 
 ### Vista general
-<!-- en: overview 9e592b4b -->
+<!-- en: overview 6985cebb -->
 
-**Un match**: Elo y nElo con su intervalo de confianza del 95 %, LOS, puntuación, recuentos pentanomiales, límites
-del SPRT y LLR. *Estadísticas* (plegado) da las cifras de fishtest a partir de las partidas y de los pares:
-puntuación, Elo, nElo y BayesElo con DrawElo, desviación típica por partida, el LLR de ambos, la razón de varianzas de
-los pares frente a las partidas sueltas, el sesgo RMS de las aperturas, los tipos de pares equilibrados y los pares
-ganados frente a perdidos, que *Copiar* incluye. Luego los gráficos: Elo y LLR a lo largo del tiempo, duración de las
-partidas, cómo terminaron las partidas, profundidad, NPS, tiempo por jugada y tiempo de decisión.
+**Un match**: Elo y nElo con su intervalo de confianza del 95 %, LOS, puntuación, recuentos pentanomiales, límites del
+SPRT y LLR. *Estadísticas* (plegado) da las cifras de fishtest a partir de las partidas y de los pares: puntuación, Elo,
+nElo y BayesElo con DrawElo, desviación típica por partida, el LLR de ambos, la razón de varianzas de los pares frente a
+las partidas sueltas, el sesgo RMS de las aperturas, los tipos de pares equilibrados y los pares ganados frente a
+perdidos, que *Copiar* incluye. Luego los gráficos: Elo y LLR a lo largo del tiempo, duración de las partidas, cómo
+terminaron las partidas y *Búsqueda por motor*.
 
-**Un torneo**: la clasificación (con *TF*, las pérdidas por tiempo de cada motor, en naranja en cuanto hay una; un
-*!* junto a un motor que se colgó o hizo una jugada ilegal), el progreso por ciclo o ronda, las partidas por hora y el
-tiempo restante, los últimos resultados.
+**Un torneo**: la clasificación (con *TF*, las pérdidas por tiempo de cada motor, en naranja en cuanto hay una; un *!*
+junto a un motor que se colgó o hizo una jugada ilegal), *Búsqueda por motor* debajo, el progreso por ciclo o ronda, las
+partidas por hora y el tiempo restante, los últimos resultados.
+
+*Búsqueda por motor* da la media de cada motor en las jugadas que buscó, sin las jugadas de libro: profundidad, NPS,
+tiempo por jugada, tiempo de decisión y uso del procesador; un clic en una columna ordena los motores por ella. Junto a
+sus NPS, ×4 indica que el motor busca con 4 hilos: cuenta más nodos que con uno sin ser por ello más rápido, así que
+compara sus NPS con los de motores que tengan los mismos. Los NPS necesitan motores que los den, y *nps* en *PGN y
+otros* para volver a leerse al reanudar.
 
 Ambos cuentan las partidas de aperturas desequilibradas, y las aperturas sustituidas, cuando la configuración las
 busca, con *Mostrar* para esas partidas. Un torneo terminado añade una *Lista de comprobación del envío*: todas las

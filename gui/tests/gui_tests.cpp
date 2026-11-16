@@ -299,6 +299,29 @@ TEST_CASE("processor use: our own process is measured; too many cores or thinkin
     CHECK(cpuProblem(t, 1).empty());
 }
 
+TEST_CASE("search per engine: averages over the moves that told each figure, none before") {
+    EngineTotals t;
+    auto a = searchAverage(t);
+    CHECK_FALSE(a.depth);
+    CHECK_FALSE(a.nps);
+    CHECK_FALSE(a.time_ms);
+    CHECK_FALSE(a.decision_ms);
+
+    // Four moves searched, two of them with their nps, one with when it was decided.
+    t.moves            = 4;
+    t.depth_sum        = 50;
+    t.time_ms          = 2'000;
+    t.nps_sum          = 3e6;
+    t.nps_samples      = 2;
+    t.decision_ms      = 120;
+    t.decision_samples = 1;
+    a                  = searchAverage(t);
+    CHECK(a.depth == doctest::Approx(12.5));
+    CHECK(a.time_ms == doctest::Approx(500));
+    CHECK(a.nps == doctest::Approx(1.5e6));
+    CHECK(a.decision_ms == doctest::Approx(120));
+}
+
 TEST_CASE("Ctrl and the mouse wheel zoom the interface, not the chart under the mouse") {
     auto* context      = ImGui::CreateContext();
     auto* plot_context = ImPlot::CreateContext();

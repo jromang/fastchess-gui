@@ -350,6 +350,9 @@ class App {
     [[nodiscard]] std::vector<const tour::OpeningStats*> shownOpenings() const;  // filtered, in the shown order
     void drawResults();
     void drawCharts();
+    // The search of the participants given by their indexes, a row each, by default in that order (a click on a column
+    // sorts by it): in the overview of a match and, in the order of the standings, of a tournament.
+    void drawSearchTable(const std::vector<std::size_t>& participants);
     void drawEngines();
     void drawConsole();
     // The engine console (view_engine_console.cpp), in the card of its engine.

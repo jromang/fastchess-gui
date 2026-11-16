@@ -113,7 +113,8 @@ this repository still builds unchanged.
 ![Games and replay](docs/screenshots/games.png)
 
 - **Results and charts**: Elo and nElo with 95 % confidence interval, LOS, pentanomial counts, LLR against its
-  bounds, Elo and LLR over time, game lengths, how games ended, average depth and NPS per engine.
+  bounds, Elo and LLR over time, game lengths, how games ended; each engine's average depth, NPS, time per move and
+  processor use, in a match as in a tournament.
 
 ![An SPRT between two versions of an engine: Elo and LLR as the games come](docs/screenshots/charts.png)
 

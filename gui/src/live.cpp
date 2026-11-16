@@ -526,6 +526,18 @@ std::string pvToSan(chess::Board board, const std::vector<std::string>& pv, std:
     return out;
 }
 
+SearchAverage searchAverage(const EngineTotals& t) {
+    const auto per = [](double sum, uint64_t n) {
+        return n ? std::optional(sum / static_cast<double>(n)) : std::nullopt;
+    };
+    SearchAverage a;
+    a.depth       = per(static_cast<double>(t.depth_sum), t.moves);
+    a.time_ms     = per(static_cast<double>(t.time_ms), t.moves);
+    a.nps         = per(t.nps_sum, t.nps_samples);
+    a.decision_ms = per(static_cast<double>(t.decision_ms), t.decision_samples);
+    return a;
+}
+
 CpuUse cpuUse(const EngineTotals& t) {
     // 20 s of each, so that the start of the engine (a network to load) does not count for much.
     constexpr uint64_t ENOUGH_MS = 20'000;

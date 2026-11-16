@@ -595,7 +595,7 @@ function anomalies(s){const t=s.stats||{},n=v=>v?`<span class="bad">${v}</span>`
  let html=`<div>Time losses ${n(t.time_losses)} · crashes ${n(t.crashes)} · no answer ${n(t.stalls)} · illegal moves ${n(t.illegal_moves)}</div>`;
  if(!s.anomalies.length)return html+'<div class="muted">None so far.</div>';
  return html+'<table>'+s.anomalies.slice(0,15).map(a=>`<tr title="${esc(a.reason)}"><td>#${a.number}</td><td class="n">${esc(a.white)} – ${esc(a.black)}</td><td>${esc(a.result)}</td><td class="n">${KINDS[a.kind]||esc(a.kind)}${a.engine?' · '+esc(a.engine):''}</td></tr>`).join('')+'</table>'}
-// Each engine's search per move and the games it lost badly, as the Statistics tab shows them.
+// Each engine's search per move and the games it lost badly, as the overview's Search per engine shows them.
 function engines(s){const e=s.engines||[],v=(x,f)=>x===null||x===undefined?'<span class="muted">–</span>':f(x);
  if(!e.some(x=>x.moves))return '<div class="muted">No game played yet.</div>';
  const bad=x=>[[x.time_losses,'time loss','time losses'],[x.crashes,'crash','crashes'],[x.stalls,'no answer','no answer'],[x.illegal_moves,'illegal move','illegal moves']]

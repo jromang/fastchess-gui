@@ -255,6 +255,21 @@ void App::drawTournamentOverview() {
     drawStandingsTable(true);
     ui::endCard();
 
+    // How each engine searched, in the order of the standings, once one has played a move.
+    if (std::any_of(totals_.begin(), totals_.end(), [](const EngineTotals& e) { return e.moves > 0; })) {
+        ImGui::Spacing();
+        ui::beginCard("search_card");
+        ImGui::TextUnformatted(TR("Search per engine"));
+        ImGui::SameLine();
+        ImGui::TextDisabled("%s", TR("on average per move, book moves left out"));
+        std::vector<std::size_t> order;
+        for (const auto& r : table_.rows) {
+            if (const int i = indexOf(t->spec(), r.id); i >= 0) order.push_back(static_cast<std::size_t>(i));
+        }
+        drawSearchTable(order);
+        ui::endCard();
+    }
+
     // The ratings and their intervals, in the height left under the table.
     const float chart_h = ImGui::GetContentRegionAvail().y - ImGui::GetStyle().ItemSpacing.y;
     const auto rated    = std::count_if(table_.rows.begin(), table_.rows.end(), [](const auto& r) { return r.rated; });

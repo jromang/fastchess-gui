@@ -3026,6 +3026,11 @@ msgstr ""
 msgid "Nodes per position"
 msgstr ""
 
+msgid "Nodes per second, on average over its moves, with {} thread."
+msgid_plural "Nodes per second, on average over its moves, with {} threads."
+msgstr[0] ""
+msgstr[1] ""
+
 msgid "None"
 msgstr ""
 
@@ -6245,6 +6250,9 @@ msgid "not tested"
 msgstr ""
 
 msgid "not tested yet"
+msgstr ""
+
+msgid "on average per move, book moves left out"
 msgstr ""
 
 msgid "on {}"

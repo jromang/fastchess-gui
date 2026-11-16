@@ -186,8 +186,9 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
         }
     }
 
-    // Each engine's search, from the totals the Statistics tab shows, in the order of the standings. A name taken
-    // again (a participant replaced by an engine of the same name) has the counters of its latest participant.
+    // Each engine's search, from the totals the overview's Search per engine shows, in the order of the standings. A
+    // name taken again (a participant replaced by an engine of the same name) has the counters of its latest
+    // participant.
     for (const auto& row : s.table.rows) {
         auto e = lost[row.name];
         e.name = row.name;

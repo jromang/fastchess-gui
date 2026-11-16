@@ -3017,6 +3017,10 @@ msgstr "每步节点数"
 msgid "Nodes per position"
 msgstr "每个局面节点数"
 
+msgid "Nodes per second, on average over its moves, with {} thread."
+msgid_plural "Nodes per second, on average over its moves, with {} threads."
+msgstr[0] "每秒节点数，按其各步平均，使用 {} 个线程。"
+
 msgid "None"
 msgstr "无"
 
@@ -6212,6 +6216,9 @@ msgstr "未测试"
 
 msgid "not tested yet"
 msgstr "尚未测试"
+
+msgid "on average per move, book moves left out"
+msgstr "每步平均，不计开局库着法"
 
 msgid "on {}"
 msgstr "在 {} 上"

@@ -1142,18 +1142,24 @@ Um torneio em andamento ou aberto tem um espaço de trabalho com um cabeçalho (
 | Aberturas | Os resultados por posição inicial |
 
 ### Visão geral
-<!-- en: overview 9e592b4b -->
+<!-- en: overview 6985cebb -->
 
 **Um match**: Elo e nElo com o intervalo de confiança de 95 %, LOS, placar, contagens pentanomiais, limites do SPRT e
 LLR. *Estatísticas* (recolhido) dá os números do fishtest a partir das partidas e dos pares: placar, Elo, nElo e
 BayesElo com DrawElo, desvio padrão por partida, o LLR de ambos, a razão de variância dos pares em relação às partidas
 isoladas, o viés RMS das aberturas, os tipos de pares equilibrados e os pares ganhos sobre os perdidos, que *Copiar*
-inclui. Depois os gráficos: Elo e LLR ao longo do tempo, duração das partidas, como as partidas terminaram,
-profundidade, NPS, tempo por lance e tempo de decisão.
+inclui. Depois os gráficos: Elo e LLR ao longo do tempo, duração das partidas, como as partidas terminaram e *Busca por
+engine*.
 
 **Um torneio**: a classificação (com *TF*, as perdas por tempo de cada engine, em laranja assim que houver uma; um *!*
-ao lado de um engine que deu crash ou jogou um lance ilegal), o progresso por ciclo ou rodada, partidas por hora e
-tempo restante, os últimos resultados.
+ao lado de um engine que deu crash ou jogou um lance ilegal), *Busca por engine* logo abaixo, o progresso por ciclo ou
+rodada, partidas por hora e tempo restante, os últimos resultados.
+
+*Busca por engine* dá a média de cada engine nos lances que ele buscou, sem os lances de livro: profundidade, NPS, tempo
+por lance, tempo de decisão e uso do processador; um clique numa coluna ordena os engines por ela. Ao lado do NPS, ×4
+indica que o engine busca com 4 threads: ele conta mais nós do que com uma sem ser mais rápido por isso, então compare o
+NPS dele com o de engines que tenham as mesmas. O NPS precisa de engines que o informem, e de *nps* em *PGN e outros*
+para ser relido ao retomar.
 
 Os dois contam as partidas de aberturas desequilibradas, e as aberturas substituídas, quando a configuração as
 procura, com *Mostrar* para essas partidas. Um torneio concluído acrescenta um *Checklist do envio*: todas as

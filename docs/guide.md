@@ -1040,11 +1040,16 @@ A running or opened tournament has a workspace with a header (name, progress, *P
 *Statistics* (folded) gives fishtest's numbers from the games and from the pairs: score, Elo, nElo and BayesElo with
 DrawElo, standard deviation per game, LLR of both, the variance ratio of pairs to single games, the RMS bias of the
 openings, the kinds of balanced pairs and the pairs won over lost, which *Copy* includes. Then the charts: Elo and LLR
-over time, game lengths, how games ended, depth, NPS, time per move and decision time.
+over time, game lengths, how games ended, and *Search per engine*.
 
 **A tournament**: the standings (with *TF*, each engine's losses on time, in orange as soon as there is one; a *!*
-beside an engine that crashed or played an illegal move), progress by cycle or round, games per hour and time left,
-the latest results.
+beside an engine that crashed or played an illegal move), *Search per engine* under them, progress by cycle or round,
+games per hour and time left, the latest results.
+
+*Search per engine* gives each engine's average over the moves it searched, book moves left out: depth, NPS, time per
+move, decision time and processor use; a click on a column sorts the engines by it. Beside its NPS, ×4 says the
+engine searches with 4 threads: it counts more nodes than on one without being any faster, so compare its NPS with
+engines that have as many. The NPS needs engines that give it, and *nps* in *PGN and misc* to be read back on a resume.
 
 Both count the games from unbalanced openings, and the openings replaced, when the setup looks for them, with *Show*
 for those games. A finished tournament adds a *Submission checklist*: all games played, every pair with both colours,

@@ -1191,18 +1191,24 @@ Ein laufendes oder geöffnetes Turnier hat einen Arbeitsbereich mit einem Kopf (
 | Eröffnungen | Die Ergebnisse nach Startstellung |
 
 ### Übersicht
-<!-- en: overview 9e592b4b -->
+<!-- en: overview 6985cebb -->
 
 **Ein Match**: Elo und nElo mit ihrem 95-%-Konfidenzintervall, LOS, Punktzahl, Pentanomial-Zählungen, SPRT-Grenzen und
 LLR. *Statistik* (zugeklappt) gibt die Zahlen von fishtest aus den Partien und aus den Paaren an: Punktzahl, Elo, nElo
 und BayesElo mit DrawElo, Standardabweichung pro Partie, die LLR von beiden, das Varianzverhältnis von Paaren zu
 Einzelpartien, den RMS-Bias der Eröffnungen, die Arten ausgeglichener Paare und die gewonnenen gegenüber den verlorenen
-Paaren, die *Kopieren* mitnimmt. Dann die Diagramme: Elo und LLR im Zeitverlauf, Partielängen, wie Partien endeten,
-Tiefe, NPS, Zeit pro Zug und Entscheidungszeit.
+Paaren, die *Kopieren* mitnimmt. Dann die Diagramme: Elo und LLR im Zeitverlauf, Partielängen, wie Partien endeten, und
+*Suche pro Engine*.
 
 **Ein Turnier**: die Tabelle (mit *TF*, den Zeitverlusten jeder Engine, orange, sobald es einen gibt; ein *!* neben
-einer Engine, die abgestürzt ist oder einen illegalen Zug gespielt hat), der Fortschritt nach Zyklus oder Runde,
-Partien pro Stunde und verbleibende Zeit, die neuesten Ergebnisse.
+einer Engine, die abgestürzt ist oder einen illegalen Zug gespielt hat), *Suche pro Engine* darunter, der Fortschritt
+nach Zyklus oder Runde, Partien pro Stunde und verbleibende Zeit, die neuesten Ergebnisse.
+
+*Suche pro Engine* gibt für jede Engine den Schnitt über die Züge, die sie gesucht hat, ohne Buchzüge: Tiefe, NPS, Zeit
+pro Zug, Entscheidungszeit und Prozessornutzung; ein Klick auf eine Spalte sortiert die Engines danach. Neben ihren NPS
+sagt ×4, dass die Engine mit 4 Threads sucht: Sie zählt mehr Knoten als mit einem, ohne deshalb schneller zu sein, also
+vergleiche ihre NPS mit Engines, die ebenso viele haben. Die NPS brauchen Engines, die sie angeben, und *nps* in *PGN
+und Sonstiges*, um beim Fortsetzen zurückgelesen zu werden.
 
 Beide zählen die Partien aus unausgeglichenen Eröffnungen und die ersetzten Eröffnungen, wenn die Einrichtung nach
 ihnen sucht, mit *Zeigen* für diese Partien. Ein beendetes Turnier fügt eine *Checkliste vor dem Einsenden* hinzu: alle

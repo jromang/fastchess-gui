@@ -3026,6 +3026,11 @@ msgstr "Nodi per mossa"
 msgid "Nodes per position"
 msgstr "Nodi per posizione"
 
+msgid "Nodes per second, on average over its moves, with {} thread."
+msgid_plural "Nodes per second, on average over its moves, with {} threads."
+msgstr[0] "Nodi al secondo, in media sulle sue mosse, con {} thread."
+msgstr[1] "Nodi al secondo, in media sulle sue mosse, con {} thread."
+
 msgid "None"
 msgstr "Nessuno"
 
@@ -6246,6 +6251,9 @@ msgstr "non provata"
 
 msgid "not tested yet"
 msgstr "non ancora provata"
+
+msgid "on average per move, book moves left out"
+msgstr "in media per mossa, escluse le mosse di libro"
 
 msgid "on {}"
 msgstr "su {}"

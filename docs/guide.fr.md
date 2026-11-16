@@ -1182,18 +1182,24 @@ Un tournoi en cours ou ouvert a un espace de travail avec un en-tête (nom, prog
 | Ouvertures | Les résultats par position de départ |
 
 ### Vue d'ensemble
-<!-- en: overview 9e592b4b -->
+<!-- en: overview 6985cebb -->
 
-**Un match** : l'Elo et le nElo avec leur intervalle de confiance à 95 %, la LOS, le score, les comptes
-pentanomiaux, les bornes du SPRT et le LLR. *Statistiques* (replié) donne les chiffres de fishtest à partir des
-parties et à partir des paires : score, Elo, nElo et BayesElo avec DrawElo, écart type par partie, LLR des deux, le
-rapport de variance des paires aux parties seules, le biais RMS des ouvertures, les sortes de paires équilibrées et
-les paires gagnées sur perdues, que *Copier* inclut. Puis les graphiques : Elo et LLR au fil du temps, longueurs des
-parties, façons dont les parties se sont terminées, profondeur, NPS, temps par coup et temps de décision.
+**Un match** : l'Elo et le nElo avec leur intervalle de confiance à 95 %, la LOS, le score, les comptes pentanomiaux,
+les bornes du SPRT et le LLR. *Statistiques* (replié) donne les chiffres de fishtest à partir des parties et à partir
+des paires : score, Elo, nElo et BayesElo avec DrawElo, écart type par partie, LLR des deux, le rapport de variance des
+paires aux parties seules, le biais RMS des ouvertures, les sortes de paires équilibrées et les paires gagnées sur
+perdues, que *Copier* inclut. Puis les graphiques : Elo et LLR au fil du temps, longueurs des parties, façons dont les
+parties se sont terminées, et *Recherche par moteur*.
 
-**Un tournoi** : le classement (avec *TF*, les pertes au temps de chaque moteur, en orange dès qu'il y en a une ; un
-*!* à côté d'un moteur qui a planté ou joué un coup illégal), la progression par cycle ou par ronde, les parties par
-heure et le temps restant, les derniers résultats.
+**Un tournoi** : le classement (avec *TF*, les pertes au temps de chaque moteur, en orange dès qu'il y en a une ; un *!*
+à côté d'un moteur qui a planté ou joué un coup illégal), *Recherche par moteur* en dessous, la progression par cycle ou
+par ronde, les parties par heure et le temps restant, les derniers résultats.
+
+*Recherche par moteur* donne la moyenne de chaque moteur sur les coups qu'il a cherchés, hors coups du livre :
+profondeur, NPS, temps par coup, temps de décision et utilisation du processeur ; un clic sur une colonne trie les
+moteurs selon elle. À côté de ses NPS, ×4 dit que le moteur cherche avec 4 threads : il compte plus de nœuds que sur un
+seul sans être plus rapide pour autant, donc compare ses NPS à ceux des moteurs qui en ont autant. Les NPS demandent des
+moteurs qui les donnent, et *nps* dans *PGN et divers* pour être relus à une reprise.
 
 Les deux comptent les parties issues d'ouvertures déséquilibrées, et les ouvertures remplacées, quand la
 configuration les cherche, avec *Afficher* pour ces parties. Un tournoi terminé ajoute une *Liste de contrôle avant

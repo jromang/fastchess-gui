@@ -3026,6 +3026,11 @@ msgstr "Nœuds par coup"
 msgid "Nodes per position"
 msgstr "Nœuds par position"
 
+msgid "Nodes per second, on average over its moves, with {} thread."
+msgid_plural "Nodes per second, on average over its moves, with {} threads."
+msgstr[0] "Nœuds par seconde, en moyenne sur ses coups, avec {} thread."
+msgstr[1] "Nœuds par seconde, en moyenne sur ses coups, avec {} threads."
+
 msgid "None"
 msgstr "Aucun"
 
@@ -6246,6 +6251,9 @@ msgstr "pas testée"
 
 msgid "not tested yet"
 msgstr "pas encore testée"
+
+msgid "on average per move, book moves left out"
+msgstr "en moyenne par coup, hors coups du livre"
 
 msgid "on {}"
 msgstr "sur {}"

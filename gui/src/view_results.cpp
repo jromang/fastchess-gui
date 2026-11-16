@@ -261,6 +261,133 @@ void App::drawResults() {
     ui::endPanel();
 }
 
+void App::drawSearchTable(const std::vector<std::size_t>& participants) {
+    const auto* obs  = run_->observer();
+    const auto* tour = run_->tournament();
+    if (!obs || !tour) return;
+    const auto& spec = tour->spec();
+
+    struct Row {
+        std::size_t index;
+        SearchAverage search;
+        CpuUse cpu;
+        int threads = 1;
+        const tour::Participant* p;
+    };
+    std::vector<Row> rows;
+    for (const auto i : participants) {
+        if (i >= spec.participants.size()) continue;
+        const auto& p = spec.participants[i];
+        rows.push_back({i, i < totals_.size() ? searchAverage(totals_[i]) : SearchAverage{},
+                        i < totals_.size() ? cpuUse(totals_[i]) : CpuUse{}, configThreads(p.engine), &p});
+    }
+
+    constexpr auto flags = ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg | ImGuiTableFlags_Sortable |
+                           ImGuiTableFlags_SortTristate;
+    if (!ImGui::BeginTable("##search", 6, flags)) return;
+    constexpr auto most_first = ImGuiTableColumnFlags_PreferSortDescending;
+    ImGui::TableSetupColumn(TR("Engine"));
+    ImGui::TableSetupColumn(TR("Avg depth"), most_first);
+    ImGui::TableSetupColumn(TR("Avg NPS"), most_first);
+    ImGui::TableSetupColumn(TR("Time / move"), most_first);
+    ImGui::TableSetupColumn(TR("Decision"), most_first);
+    ImGui::TableSetupColumn(TR("Processor"), most_first);
+    ImGui::TableHeadersRow();
+
+    // As given unless a column is clicked; what an engine has not told yet last.
+    if (const auto* specs = ImGui::TableGetSortSpecs(); specs && specs->SpecsCount > 0) {
+        const int column     = specs->Specs[0].ColumnIndex;
+        const bool ascending = specs->Specs[0].SortDirection == ImGuiSortDirection_Ascending;
+        const auto value     = [&](const Row& r) -> std::optional<double> {
+            switch (column) {
+                case 1:
+                    return r.search.depth;
+                case 2:
+                    return r.search.nps;
+                case 3:
+                    return r.search.time_ms;
+                case 4:
+                    return r.search.decision_ms;
+                case 5:
+                    return r.cpu.measured && !r.p->remote ? std::optional(r.cpu.thinking) : std::nullopt;
+                default:
+                    return std::nullopt;
+            }
+        };
+        std::stable_sort(rows.begin(), rows.end(), [&](const Row& a, const Row& b) {
+            if (column == 0) {
+                const int c = obs->name(a.index).compare(obs->name(b.index));
+                return ascending ? c < 0 : c > 0;
+            }
+            const auto x = value(a), y = value(b);
+            if (!x || !y) return x.has_value() && !y.has_value();
+            return ascending ? *x < *y : *x > *y;
+        });
+    }
+
+    const auto none = [] { ImGui::TextDisabled("—"); };
+    for (const auto& r : rows) {
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted(obs->name(r.index).c_str());
+        ImGui::TableNextColumn();
+        if (r.search.depth)
+            ImGui::Text("%.1f", *r.search.depth);
+        else
+            none();
+        ImGui::TableNextColumn();
+        if (r.search.nps) {
+            // Its threads beside it: an engine on four searches more nodes than on one, without being any faster.
+            ImGui::BeginGroup();
+            ImGui::TextUnformatted(ui::formatCount(static_cast<uint64_t>(*r.search.nps)).c_str());
+            if (r.threads > 1) {
+                ImGui::SameLine(0, ImGui::GetFontSize() * 0.3f);
+                ImGui::TextDisabled("×%d", r.threads);
+            }
+            ImGui::EndGroup();
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip(
+                    "%s", trn("Nodes per second, on average over its moves, with {} thread.",
+                              "Nodes per second, on average over its moves, with {} threads.", r.threads, r.threads)
+                              .c_str());
+            }
+        } else {
+            none();
+        }
+        ImGui::TableNextColumn();
+        if (r.search.time_ms)
+            ImGui::TextUnformatted(ui::formatClock(static_cast<int64_t>(*r.search.time_ms)).c_str());
+        else
+            none();
+        ImGui::TableNextColumn();
+        if (r.search.decision_ms)
+            ImGui::TextUnformatted(ui::formatClock(static_cast<int64_t>(*r.search.decision_ms)).c_str());
+        else
+            none();
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("When it settled on the move it played, on average: a decision long "
+                                       "before the end of the time spent says the time was not used well."));
+        }
+        ImGui::TableNextColumn();
+        // An engine on a machine: its relay's processor time here says nothing of it.
+        if (r.p->remote) {
+            const auto* m = machineById(r.p->remote->machine);
+            ImGui::TextDisabled("%s",
+                                trf("on {}", m ? (m->name.empty() ? m->host : m->name) : r.p->remote->machine).c_str());
+            continue;
+        }
+        if (r.cpu.measured)
+            ImGui::TextUnformatted(fmt::format("{:.1f} · {:.0f} %", r.cpu.thinking, 100 * r.cpu.waiting).c_str());
+        else
+            none();
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("Cores kept busy while it thinks · share of a core used while its opponent "
+                                       "thinks (0 % without pondering). Measured after 20 s of each."));
+        }
+    }
+    ImGui::EndTable();
+}
+
 void App::drawCharts() {
     if (!ui::beginPanel(TR("Charts###charts"))) {
         ui::endPanel();
@@ -424,55 +551,7 @@ void App::drawCharts() {
     ImGui::BeginChild("##engine_stats", ImVec2(half_w, row_h), ImGuiChildFlags_Borders);
     ImGui::TextUnformatted(TR("Search per engine"));
     ImGui::Separator();
-    if (ImGui::BeginTable("##search", 6, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg)) {
-        ImGui::TableSetupColumn(TR("Engine"));
-        ImGui::TableSetupColumn(TR("Avg depth"));
-        ImGui::TableSetupColumn(TR("Avg NPS"));
-        ImGui::TableSetupColumn(TR("Time / move"));
-        ImGui::TableSetupColumn(TR("Decision"));
-        ImGui::TableSetupColumn(TR("Processor"));
-        ImGui::TableHeadersRow();
-        for (int i = 0; i < std::min(2, static_cast<int>(totals_.size())); ++i) {
-            const auto& t = totals_[i];
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted(i == 0 ? info.engine_a.c_str() : info.engine_b.c_str());
-            ImGui::TableNextColumn();
-            ImGui::Text("%.1f", t.moves ? static_cast<double>(t.depth_sum) / t.moves : 0.0);
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted(
-                ui::formatCount(t.nps_samples ? static_cast<uint64_t>(t.nps_sum / t.nps_samples) : 0).c_str());
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted(ui::formatClock(t.moves ? static_cast<int64_t>(t.time_ms / t.moves) : 0).c_str());
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted(
-                t.decision_samples ? ui::formatClock(static_cast<int64_t>(t.decision_ms / t.decision_samples)).c_str()
-                                   : "—");
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("%s", TR("When it settled on the move it played, on average: a decision long "
-                                           "before the end of the time spent says the time was not used well."));
-            }
-            ImGui::TableNextColumn();
-            // An engine on a machine: its relay's processor time here says nothing of it.
-            const auto* tour = run_->tournament();
-            const auto* p    = tour && i < static_cast<int>(tour->spec().participants.size())
-                                   ? &tour->spec().participants[static_cast<std::size_t>(i)]
-                                   : nullptr;
-            if (p && p->remote) {
-                const auto* m = machineById(p->remote->machine);
-                ImGui::TextDisabled("%s", trf("on {}", m ? (m->name.empty() ? m->host : m->name) : p->remote->machine).c_str());
-                continue;
-            }
-            const auto use = cpuUse(t);
-            ImGui::TextUnformatted(
-                use.measured ? fmt::format("{:.1f} · {:.0f} %", use.thinking, 100 * use.waiting).c_str() : "—");
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("%s", TR("Cores kept busy while it thinks · share of a core used while its opponent "
-                                           "thinks (0 % without pondering). Measured after 20 s of each."));
-            }
-        }
-        ImGui::EndTable();
-    }
+    drawSearchTable({0, 1});
     ImGui::EndChild();
 
     ui::endPanel();

@@ -157,6 +157,13 @@ struct CpuUse {
 // opponent's time (pondering it was not asked for, a background thread).
 [[nodiscard]] std::string cpuProblem(const EngineTotals& totals, int threads);
 
+// An engine's search on average over the moves it searched (book moves left out), each figure nullopt until a move
+// told it: the nps only from engines that give it, written in the PGN with nps=.
+struct SearchAverage {
+    std::optional<double> depth, nps, time_ms, decision_ms;
+};
+[[nodiscard]] SearchAverage searchAverage(const EngineTotals& totals);
+
 // A PV in UCI notation as SAN, with move numbers, played from `board`: at most `max_moves`, then "…". Stops at the
 // first move that is not legal.
 [[nodiscard]] std::string pvToSan(chess::Board board, const std::vector<std::string>& pv, std::size_t max_moves);
