@@ -241,9 +241,6 @@ msgstr[1] "Una partita tra due motori che usano una GPU ne richiede due, e quest
 msgid "A game has no port: {}"
 msgstr "Una partita non ha una porta: {}"
 
-msgid "A game is being analysed move by move: wait for its end, or cancel it."
-msgstr "Una partita viene analizzata mossa per mossa: attendi la fine o annullala."
-
 msgid "A game is flagged when both engines see the same side ahead by the score below for each of their first moves after the book: the Games tab can show those games, the Openings tab marks and counts their openings, the overview counts them. The results are not changed."
 msgstr "Una partita viene segnalata quando entrambi i motori vedono lo stesso lato in vantaggio di almeno il punteggio qui sotto a ciascuna delle loro prime mosse dopo il libro: la scheda Partite può mostrare quelle partite, la scheda Aperture segna e conta le loro aperture, la panoramica le conta. I risultati non cambiano."
 
@@ -590,17 +587,11 @@ msgstr "Analizza"
 msgid "Analyse the game"
 msgstr "Analizza la partita"
 
-msgid "Analyse the game again"
-msgstr "Analizza di nuovo la partita"
-
 msgid "Analyse the game followed"
 msgstr "Analizza la partita seguita"
 
 msgid "Analyse the game shown"
 msgstr "Analizza la partita mostrata"
-
-msgid "Analysing the game: {} of {} positions"
-msgstr "Analisi della partita: {} di {} posizioni"
 
 msgid "Analysis"
 msgstr "Analisi"
@@ -1279,6 +1270,9 @@ msgstr "Indice"
 
 msgid "Continue"
 msgstr "Continua"
+
+msgid "Continue the analysis"
+msgstr "Continua l'analisi"
 
 msgid "Continue with the changed programs"
 msgstr "Continua con i programmi cambiati"
@@ -1967,6 +1961,15 @@ msgstr "Da {}: {}"
 msgid "Full screen (F11)"
 msgstr "Schermo intero (F11)"
 
+msgid "G: stop the analysis of the game. Its passes done are kept, and it goes on from there next time."
+msgstr "G: ferma l'analisi della partita. I passaggi completati sono conservati e la prossima volta riprende da lì."
+
+msgid "G: the analysis engine goes through every position of the game, in the background, then again for longer at each pass: the graph comes at once and sharpens."
+msgstr "G: il motore di analisi esamina ogni posizione della partita, in background, poi di nuovo più a lungo a ogni passaggio: il grafico compare subito e si affina."
+
+msgid "G: the analysis engine goes through every position of the game, in the background, then again for longer at each pass: the graph comes at once and sharpens. Its inaccuracies, mistakes and blunders are marked."
+msgstr "G: il motore di analisi esamina ogni posizione della partita, in background, poi di nuovo più a lungo a ogni passaggio: il grafico compare subito e si affina. Le imprecisioni, gli errori e gli errori gravi sono segnati."
+
 msgid "GPUs"
 msgstr "GPU"
 
@@ -2178,6 +2181,9 @@ msgstr "Quanto distano le valutazioni, in pedoni: quelle dei due giocatori (ogni
 
 msgid "How far each game goes into the book, in plies (a move of one side) from its start."
 msgstr "Fin dove ogni partita entra nel libro, in semimosse (una mossa di una parte) dal suo inizio."
+
+msgid "How far the analysis of the game goes."
+msgstr "Fin dove arriva l'analisi della partita."
 
 msgid "How games ended"
 msgstr "Come sono finite le partite"
@@ -3610,6 +3616,9 @@ msgstr "Già pronti"
 msgid "Reference Elo"
 msgstr "Elo di riferimento"
 
+msgid "Refine the analysis of the game up to"
+msgstr "Affina l'analisi della partita fino a"
+
 msgid "Refresh"
 msgstr "Aggiorna"
 
@@ -4148,6 +4157,9 @@ msgstr "Ferma l'analisi"
 msgid "Stop the game"
 msgstr "Ferma la partita"
 
+msgid "Stop the game's analysis"
+msgstr "Ferma l'analisi della partita"
+
 msgid "Stop the tournament when an engine cannot start"
 msgstr "Ferma il torneo quando un motore non parte"
 
@@ -4421,12 +4433,6 @@ msgstr "La scheda Calendario mostra l'impatto prima che cambi qualcosa."
 
 msgid "The account to log in as on the machine: its tournaments run as this user."
 msgstr "L'account con cui accedere alla macchina: i suoi tornei girano come questo utente."
-
-msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
-msgstr "Il motore di analisi esamina ogni posizione della partita, in background: un punteggio per mossa, e imprecisioni, errori e svarioni segnati."
-
-msgid "The analysis engine stopped."
-msgstr "Il motore di analisi si è fermato."
 
 msgid "The analysis engine waits."
 msgstr "Il motore di analisi attende."
@@ -4980,9 +4986,6 @@ msgstr "Il tempo di ogni mossa, con il tempo di decisione quando il PGN lo conti
 
 msgid "The time per move must be positive."
 msgstr "Il tempo per mossa deve essere positivo."
-
-msgid "The time, or the depth, of the search of each position when the game is analysed."
-msgstr "Il tempo, o la profondità, della ricerca di ogni posizione quando la partita viene analizzata."
 
 msgid "The tournament cannot be reached on {}: {}"
 msgstr "Il torneo non è raggiungibile su {}: {}"
@@ -6078,6 +6081,15 @@ msgstr "libri propri: {}"
 msgid "pairs"
 msgstr "coppie"
 
+msgid "pass {} of {} · {} per position · {}/{}"
+msgstr "passaggio {} di {} · {} per posizione · {}/{}"
+
+msgid "pass {} · {} per position · {}/{}"
+msgstr "passaggio {} · {} per posizione · {}/{}"
+
+msgid "paused while A analyses"
+msgstr "in pausa mentre A analizza"
+
 msgid "physical cores − 1, for a clock"
 msgstr "core fisici − 1, per un orologio"
 
@@ -6348,9 +6360,6 @@ msgstr "{} contro ogni avversario"
 msgid "{} allowed by the memory"
 msgstr "{} consentite dalla memoria"
 
-msgid "{} analyses the game move by move."
-msgstr "{} analizza la partita mossa per mossa."
-
 msgid "{} and {}"
 msgstr "{} e {}"
 
@@ -6446,6 +6455,9 @@ msgstr "{} non ha risposto in tempo (passo: {}): la macchina è sovraccarica o l
 
 msgid "{} did not answer {} within {} s; it printed: {}"
 msgstr "{} non ha risposto a {} entro {} s; ha stampato: {}"
+
+msgid "{} did not give its move in time."
+msgstr "{} non ha dato la sua mossa in tempo."
 
 msgid "{} did not show an RSA host key"
 msgstr "{} non ha presentato una chiave host RSA"
@@ -6981,6 +6993,9 @@ msgstr "{} per partita"
 
 msgid "{} per move"
 msgstr "{} per mossa"
+
+msgid "{} per position"
+msgstr "{} per posizione"
 
 msgid "{} physical core"
 msgid_plural "{} physical cores"

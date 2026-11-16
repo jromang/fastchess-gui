@@ -400,7 +400,9 @@ class App {
     void startGameReview();
     void cancelGameReview();
     void pollGameReview();
-    void drawGameReview();  // its button, its progress, what it found
+    void drawGameReview();  // what it found
+    // The analysis shown with the board's game: the one running for it (its latest values), else the first kept.
+    [[nodiscard]] const GameReview* shownReview() const;
     [[nodiscard]] std::string judgementTip(int ply, const MoveReview& judged) const;
     // Games between two engines of the library from the board's position, played apart from any tournament.
     void startBoardGames();

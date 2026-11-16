@@ -237,9 +237,6 @@ msgstr[0] "两个都使用 GPU 的引擎之间的一局需要两块 GPU，而本
 msgid "A game has no port: {}"
 msgstr "有一局对局没有端口：{}"
 
-msgid "A game is being analysed move by move: wait for its end, or cancel it."
-msgstr "正在逐步分析一局对局：请等待结束，或取消。"
-
 msgid "A game is flagged when both engines see the same side ahead by the score below for each of their first moves after the book: the Games tab can show those games, the Openings tab marks and counts their openings, the overview counts them. The results are not changed."
 msgstr "当两个引擎在出库后的前几步中每一步都认为同一方至少领先下面的分数时，该对局会被标记：“对局”页可以显示这些对局，“开局”页标记并统计其开局，概览会计数。结果不会改变。"
 
@@ -584,17 +581,11 @@ msgstr "分析"
 msgid "Analyse the game"
 msgstr "分析对局"
 
-msgid "Analyse the game again"
-msgstr "重新分析对局"
-
 msgid "Analyse the game followed"
 msgstr "分析正在关注的对局"
 
 msgid "Analyse the game shown"
 msgstr "分析显示的对局"
-
-msgid "Analysing the game: {} of {} positions"
-msgstr "正在分析对局：{} / {} 个局面"
 
 msgid "Analysis"
 msgstr "分析"
@@ -1273,6 +1264,9 @@ msgstr "目录"
 
 msgid "Continue"
 msgstr "继续"
+
+msgid "Continue the analysis"
+msgstr "继续分析"
 
 msgid "Continue with the changed programs"
 msgstr "使用已更改的程序继续"
@@ -1961,6 +1955,15 @@ msgstr "来自 {}：{}"
 msgid "Full screen (F11)"
 msgstr "全屏（F11）"
 
+msgid "G: stop the analysis of the game. Its passes done are kept, and it goes on from there next time."
+msgstr "G：停止分析这盘棋。已完成的轮次会保留，下次从那里继续。"
+
+msgid "G: the analysis engine goes through every position of the game, in the background, then again for longer at each pass: the graph comes at once and sharpens."
+msgstr "G：分析引擎在后台逐一分析这盘棋的每个局面，之后每一轮用更长时间再分析一遍：图表立即出现并逐渐精确。"
+
+msgid "G: the analysis engine goes through every position of the game, in the background, then again for longer at each pass: the graph comes at once and sharpens. Its inaccuracies, mistakes and blunders are marked."
+msgstr "G：分析引擎在后台逐一分析这盘棋的每个局面，之后每一轮用更长时间再分析一遍：图表立即出现并逐渐精确。不精确、错误和大错都会被标出。"
+
 msgid "GPUs"
 msgstr "GPU"
 
@@ -2171,6 +2174,9 @@ msgstr "评估相差多少（以兵计）：双方棋手的评估（每步与上
 
 msgid "How far each game goes into the book, in plies (a move of one side) from its start."
 msgstr "每局对局从开始起进入开局库的深度，以半回合（一方走一步）计。"
+
+msgid "How far the analysis of the game goes."
+msgstr "这盘棋的分析进行到什么程度。"
 
 msgid "How games ended"
 msgstr "对局结束方式"
@@ -3597,6 +3603,9 @@ msgstr "预设"
 msgid "Reference Elo"
 msgstr "参考 Elo"
 
+msgid "Refine the analysis of the game up to"
+msgstr "精炼这盘棋的分析，直到"
+
 msgid "Refresh"
 msgstr "刷新"
 
@@ -4133,6 +4142,9 @@ msgstr "停止分析"
 msgid "Stop the game"
 msgstr "停止对局"
 
+msgid "Stop the game's analysis"
+msgstr "停止分析这盘棋"
+
 msgid "Stop the tournament when an engine cannot start"
 msgstr "引擎无法启动时停止锦标赛"
 
@@ -4398,12 +4410,6 @@ msgstr "赛程标签页会在任何改动之前显示影响。"
 
 msgid "The account to log in as on the machine: its tournaments run as this user."
 msgstr "登录机器所用的账户：其上的比赛以此用户身份运行。"
-
-msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
-msgstr "分析引擎在后台逐个分析对局中的每个局面：每步一个评分，并标出缓着、错着和败着。"
-
-msgid "The analysis engine stopped."
-msgstr "分析引擎已停止。"
 
 msgid "The analysis engine waits."
 msgstr "分析引擎在等待。"
@@ -4955,9 +4961,6 @@ msgstr "每步的用时，PGN 中有决定时间时一并显示。"
 
 msgid "The time per move must be positive."
 msgstr "每步时间必须为正数。"
-
-msgid "The time, or the depth, of the search of each position when the game is analysed."
-msgstr "分析对局时每个局面的搜索时间或深度。"
 
 msgid "The tournament cannot be reached on {}: {}"
 msgstr "无法连接到 {} 上的比赛：{}"
@@ -6043,6 +6046,15 @@ msgstr "专属开局库：{}"
 msgid "pairs"
 msgstr "对局对"
 
+msgid "pass {} of {} · {} per position · {}/{}"
+msgstr "第 {} 轮，共 {} 轮 · 每个局面 {} · {}/{}"
+
+msgid "pass {} · {} per position · {}/{}"
+msgstr "第 {} 轮 · 每个局面 {} · {}/{}"
+
+msgid "paused while A analyses"
+msgstr "A 分析时暂停"
+
 msgid "physical cores − 1, for a clock"
 msgstr "物理核心数 − 1，用于棋钟"
 
@@ -6310,9 +6322,6 @@ msgstr "{} 对每个对手"
 msgid "{} allowed by the memory"
 msgstr "内存允许 {} 局"
 
-msgid "{} analyses the game move by move."
-msgstr "{} 正在逐步分析对局。"
-
 msgid "{} and {}"
 msgstr "{} 和 {}"
 
@@ -6402,6 +6411,9 @@ msgstr "{} 未及时响应（步骤：{}）：机器是否过载，或网络中�
 
 msgid "{} did not answer {} within {} s; it printed: {}"
 msgstr "{} 未在规定时间内应答 {}（{} 秒）；它输出了：{}"
+
+msgid "{} did not give its move in time."
+msgstr "{} 没有及时给出着法。"
 
 msgid "{} did not show an RSA host key"
 msgstr "{} 未提供 RSA 主机密钥"
@@ -6890,6 +6902,9 @@ msgstr "每局 {}"
 
 msgid "{} per move"
 msgstr "每步 {}"
+
+msgid "{} per position"
+msgstr "每个局面 {}"
 
 msgid "{} physical core"
 msgid_plural "{} physical cores"

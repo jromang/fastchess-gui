@@ -89,39 +89,41 @@ std::string reviewKey(const ReplayGame& game) {
     return fmt::format("{:016x}", hash);
 }
 
-std::optional<GameReview> loadReview(const std::filesystem::path& dir, const ReplayGame& game) {
-    const auto key = reviewKey(game);
-    const auto j   = readJson<nlohmann::json>(dir / (key + ".json"));
-    if (!j || !j->is_object() || j->value("key", "") != key) return std::nullopt;
-    try {
-        GameReview review;
-        review.engine      = j->value("engine", "");
-        review.movetime_ms = j->value("movetime_ms", int64_t{0});
-        review.depth       = j->value("depth", 0);
-        for (const auto& p : j->at("positions")) {
-            PositionEval e;
-            const auto type = p.value("type", "");
-            if (type == "cp" || type == "mate") {
-                e.score = fastchess::Score{type == "cp" ? fastchess::ScoreType::CP : fastchess::ScoreType::MATE,
-                                           p.value("value", int64_t{0})};
-            }
-            e.best  = p.value("best", "");
-            e.depth = p.value("depth", 0);
-            review.positions.push_back(std::move(e));
+namespace {
+
+GameReview reviewFromJson(const nlohmann::json& j) {
+    GameReview review;
+    review.engine      = j.value("engine", "");
+    review.movetime_ms = j.value("movetime_ms", int64_t{0});
+    review.depth       = j.value("depth", 0);
+    review.passes      = j.value("passes", 0);
+    for (const auto& p : j.at("positions")) {
+        PositionEval e;
+        const auto type = p.value("type", "");
+        if (type == "cp" || type == "mate") {
+            e.score = fastchess::Score{type == "cp" ? fastchess::ScoreType::CP : fastchess::ScoreType::MATE,
+                                       p.value("value", int64_t{0})};
         }
-        if (review.positions.size() > game.moves.size() + 1) return std::nullopt;
-        return review;
-    } catch (...) {
-        return std::nullopt;
+        e.best    = p.value("best", "");
+        e.depth   = p.value("depth", 0);
+        e.time_ms = p.value("time_ms", int64_t{0});
+        e.pv      = p.value("pv", "");
+        if (p.contains("wdl") && p["wdl"].is_array() && p["wdl"].size() == 3)
+            e.wdl = std::array<int64_t, 3>{p["wdl"][0].get<int64_t>(), p["wdl"][1].get<int64_t>(),
+                                           p["wdl"][2].get<int64_t>()};
+        review.positions.push_back(std::move(e));
     }
+    if (j.contains("previous") && j["previous"].is_array())
+        for (const auto& v : j["previous"]) review.previous.push_back(static_cast<int8_t>(v.get<int>()));
+    return review;
 }
 
-bool saveReview(const std::filesystem::path& dir, const ReplayGame& game, const GameReview& review) {
+nlohmann::json reviewToJson(const GameReview& review) {
     nlohmann::json j;
-    j["key"]         = reviewKey(game);
     j["engine"]      = review.engine;
     j["movetime_ms"] = review.movetime_ms;
     j["depth"]       = review.depth;
+    j["passes"]      = review.passes;
     j["positions"]   = nlohmann::json::array();
     for (const auto& p : review.positions) {
         nlohmann::json e;
@@ -131,11 +133,66 @@ bool saveReview(const std::filesystem::path& dir, const ReplayGame& game, const 
         }
         e["best"]  = p.best;
         e["depth"] = p.depth;
+        if (p.time_ms > 0) e["time_ms"] = p.time_ms;
+        if (!p.pv.empty()) e["pv"] = p.pv;
+        if (p.wdl) e["wdl"] = *p.wdl;
         j["positions"].push_back(std::move(e));
     }
+    if (!review.previous.empty()) {
+        j["previous"] = nlohmann::json::array();
+        for (const auto v : review.previous) j["previous"].push_back(static_cast<int>(v));
+    }
+    return j;
+}
+
+}  // namespace
+
+std::vector<GameReview> loadReviews(const std::filesystem::path& dir, const ReplayGame& game) {
+    const auto key = reviewKey(game);
+    const auto j   = readJson<nlohmann::json>(dir / (key + ".json"));
+    if (!j || !j->is_object() || j->value("key", "") != key) return {};
+    std::vector<GameReview> out;
+    try {
+        // Several analyses, or one as the first versions kept it.
+        if (j->contains("analyses")) {
+            for (const auto& a : j->at("analyses")) out.push_back(reviewFromJson(a));
+        } else {
+            out.push_back(reviewFromJson(*j));
+        }
+    } catch (...) {
+        return {};
+    }
+    std::erase_if(out, [&](const GameReview& r) { return r.positions.size() > game.moves.size() + 1; });
+    return out;
+}
+
+bool saveReviews(const std::filesystem::path& dir, const ReplayGame& game, const std::vector<GameReview>& reviews) {
     std::error_code ec;
+    const auto file = dir / (reviewKey(game) + ".json");
+    if (reviews.empty()) {
+        std::filesystem::remove(file, ec);
+        return true;
+    }
+    nlohmann::json j;
+    j["key"]      = reviewKey(game);
+    j["analyses"] = nlohmann::json::array();
+    for (const auto& r : reviews) j["analyses"].push_back(reviewToJson(r));
     std::filesystem::create_directories(dir, ec);
-    return writeJson(dir / (reviewKey(game) + ".json"), j);
+    return writeJson(file, j);
+}
+
+std::optional<GameReview> loadReview(const std::filesystem::path& dir, const ReplayGame& game) {
+    auto all = loadReviews(dir, game);
+    if (all.empty()) return std::nullopt;
+    return std::move(all.front());
+}
+
+bool saveReview(const std::filesystem::path& dir, const ReplayGame& game, const GameReview& review) {
+    auto all = loadReviews(dir, game);
+    // The same engine's analysis replaced, the others kept after it.
+    std::erase_if(all, [&](const GameReview& r) { return r.engine == review.engine; });
+    all.insert(all.begin(), review);
+    return saveReviews(dir, game, all);
 }
 
 }  // namespace fcg

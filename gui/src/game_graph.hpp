@@ -154,6 +154,7 @@ struct GraphEvents {
     int judge         = -1;     // an analysis to judge the moves with, by index
     int remove        = -1;     // an analysis to remove, by index
     bool pgn_options  = false;  // the setup's PGN options asked for (a chart its PGN lacks)
+    bool action       = false;  // GraphDraw::action clicked
 };
 
 struct GraphDraw {
@@ -166,6 +167,9 @@ struct GraphDraw {
     // Why a chart has no values, for the charts menu (the PGN options that write them); none: such charts are left out.
     std::function<std::string(GraphChart)> missing;
     bool pgn_options = false;  // with them, a button to the setup's PGN options
+    // A button in the header, right, beside the progress (the continuous analysis's start or stop).
+    const char* action     = nullptr;
+    const char* action_tip = nullptr;
 };
 
 // Draws the graph in `size` (its header, legend, chart, phases and time strip); folded, only its header.

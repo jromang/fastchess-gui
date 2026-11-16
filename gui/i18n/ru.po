@@ -245,9 +245,6 @@ msgstr[2] "Партии двух движков, использующих GPU, �
 msgid "A game has no port: {}"
 msgstr "У партии нет порта: {}"
 
-msgid "A game is being analysed move by move: wait for its end, or cancel it."
-msgstr "Партия анализируется ход за ходом: дождитесь окончания или отмените."
-
 msgid "A game is flagged when both engines see the same side ahead by the score below for each of their first moves after the book: the Games tab can show those games, the Openings tab marks and counts their openings, the overview counts them. The results are not changed."
 msgstr "Партия отмечается, когда оба движка видят одну и ту же сторону впереди не меньше, чем на оценку ниже, на каждом из своих первых ходов после книги: вкладка «Партии» может показать эти партии, вкладка «Дебюты» отмечает и считает их дебюты, обзор их считает. Результаты не меняются."
 
@@ -596,17 +593,11 @@ msgstr "Анализировать"
 msgid "Analyse the game"
 msgstr "Анализировать партию"
 
-msgid "Analyse the game again"
-msgstr "Снова анализировать партию"
-
 msgid "Analyse the game followed"
 msgstr "Анализировать отслеживаемую партию"
 
 msgid "Analyse the game shown"
 msgstr "Анализировать показанную партию"
-
-msgid "Analysing the game: {} of {} positions"
-msgstr "Анализ партии: {} из {} позиций"
 
 msgid "Analysis"
 msgstr "Анализ"
@@ -1285,6 +1276,9 @@ msgstr "Содержание"
 
 msgid "Continue"
 msgstr "Продолжить"
+
+msgid "Continue the analysis"
+msgstr "Продолжить анализ"
 
 msgid "Continue with the changed programs"
 msgstr "Продолжить с изменёнными программами"
@@ -1973,6 +1967,15 @@ msgstr "Из {}: {}"
 msgid "Full screen (F11)"
 msgstr "Во весь экран (F11)"
 
+msgid "G: stop the analysis of the game. Its passes done are kept, and it goes on from there next time."
+msgstr "G: остановить анализ партии. Завершённые проходы сохраняются, в следующий раз анализ продолжится с этого места."
+
+msgid "G: the analysis engine goes through every position of the game, in the background, then again for longer at each pass: the graph comes at once and sharpens."
+msgstr "G: движок анализа проходит по каждой позиции партии в фоне, затем снова, дольше с каждым проходом: график появляется сразу и уточняется."
+
+msgid "G: the analysis engine goes through every position of the game, in the background, then again for longer at each pass: the graph comes at once and sharpens. Its inaccuracies, mistakes and blunders are marked."
+msgstr "G: движок анализа проходит по каждой позиции партии в фоне, затем снова, дольше с каждым проходом: график появляется сразу и уточняется. Неточности, ошибки и грубые ошибки отмечаются."
+
 msgid "GPUs"
 msgstr "GPU"
 
@@ -2185,6 +2188,9 @@ msgstr "Насколько расходятся оценки, в пешках: �
 
 msgid "How far each game goes into the book, in plies (a move of one side) from its start."
 msgstr "Насколько глубоко каждая партия входит в книгу, в полуходах (ход одной стороны) от её начала."
+
+msgid "How far the analysis of the game goes."
+msgstr "Насколько глубоко идёт анализ партии."
 
 msgid "How games ended"
 msgstr "Как заканчивались партии"
@@ -3623,6 +3629,9 @@ msgstr "Готовые"
 msgid "Reference Elo"
 msgstr "Опорный рейтинг Elo"
 
+msgid "Refine the analysis of the game up to"
+msgstr "Уточнять анализ партии до"
+
 msgid "Refresh"
 msgstr "Обновить"
 
@@ -4163,6 +4172,9 @@ msgstr "Остановить анализ"
 msgid "Stop the game"
 msgstr "Остановить партию"
 
+msgid "Stop the game's analysis"
+msgstr "Остановить анализ партии"
+
 msgid "Stop the tournament when an engine cannot start"
 msgstr "Останавливать турнир, если движок не запускается"
 
@@ -4444,12 +4456,6 @@ msgstr "Вкладка «Расписание» показывает после�
 
 msgid "The account to log in as on the machine: its tournaments run as this user."
 msgstr "Учётная запись для входа на машину: её турниры работают от имени этого пользователя."
-
-msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
-msgstr "Движок анализа проходит все позиции партии в фоне: оценка каждого хода, отмечены неточности, ошибки и грубые ошибки."
-
-msgid "The analysis engine stopped."
-msgstr "Движок анализа остановился."
 
 msgid "The analysis engine waits."
 msgstr "Движок анализа ждёт."
@@ -5005,9 +5011,6 @@ msgstr "Время каждого хода, со временем решения
 
 msgid "The time per move must be positive."
 msgstr "Время на ход должно быть положительным."
-
-msgid "The time, or the depth, of the search of each position when the game is analysed."
-msgstr "Время или глубина поиска в каждой позиции при анализе партии."
 
 msgid "The tournament cannot be reached on {}: {}"
 msgstr "Турнир на {} недоступен: {}"
@@ -6113,6 +6116,15 @@ msgstr "собственные книги: {}"
 msgid "pairs"
 msgstr "пары"
 
+msgid "pass {} of {} · {} per position · {}/{}"
+msgstr "проход {} из {} · {} на позицию · {}/{}"
+
+msgid "pass {} · {} per position · {}/{}"
+msgstr "проход {} · {} на позицию · {}/{}"
+
+msgid "paused while A analyses"
+msgstr "на паузе, пока идёт анализ A"
+
 msgid "physical cores − 1, for a clock"
 msgstr "физические ядра − 1, для часов"
 
@@ -6386,9 +6398,6 @@ msgstr "{} против каждого соперника"
 msgid "{} allowed by the memory"
 msgstr "память позволяет {}"
 
-msgid "{} analyses the game move by move."
-msgstr "{} анализирует партию ход за ходом."
-
 msgid "{} and {}"
 msgstr "{} и {}"
 
@@ -6490,6 +6499,9 @@ msgstr "{} не ответил вовремя (этап: {}): машина пе�
 
 msgid "{} did not answer {} within {} s; it printed: {}"
 msgstr "{} не ответил на {} за {} с; вывод: {}"
+
+msgid "{} did not give its move in time."
+msgstr "{} не дал свой ход вовремя."
 
 msgid "{} did not show an RSA host key"
 msgstr "{} не предъявил RSA-ключ хоста"
@@ -7072,6 +7084,9 @@ msgstr "{} на партию"
 
 msgid "{} per move"
 msgstr "{} на ход"
+
+msgid "{} per position"
+msgstr "{} на позицию"
 
 msgid "{} physical core"
 msgid_plural "{} physical cores"

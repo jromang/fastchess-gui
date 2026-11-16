@@ -401,7 +401,8 @@ GraphEvents drawGameGraph(const char* id, const GameGraph& g, GraphView& view, c
     {
         const float room = width - ImGui::GetFrameHeight() - px(8) -
                            (d.progress.empty() ? 0.0f : ImGui::CalcTextSize(d.progress.c_str()).x + px(10)) -
-                           ImGui::GetFrameHeight() - px(8);
+                           (d.action ? ImGui::CalcTextSize(d.action).x + px(24) : 0.0f) - ImGui::GetFrameHeight() -
+                           px(8);
         float used       = 0;
         const auto tab_w = [&](int c) {
             return ImGui::CalcTextSize(graphChartName(static_cast<GraphChart>(c))).x + px(16) + px(2);
@@ -504,10 +505,18 @@ GraphEvents drawGameGraph(const char* id, const GameGraph& g, GraphView& view, c
     {
         const float fold_w = ImGui::GetFrameHeight();
         const float prog_w = d.progress.empty() ? 0.0f : ImGui::CalcTextSize(d.progress.c_str()).x + px(10);
-        ImGui::SameLine(std::max(ImGui::GetCursorPosX(), top.x - ImGui::GetWindowPos().x + width - fold_w - prog_w));
+        const float act_w =
+            d.action ? ImGui::CalcTextSize(d.action).x + ImGui::GetStyle().FramePadding.x * 2 + px(8) : 0.0f;
+        ImGui::SameLine(
+            std::max(ImGui::GetCursorPosX(), top.x - ImGui::GetWindowPos().x + width - fold_w - prog_w - act_w));
         if (!d.progress.empty()) {
             ImGui::AlignTextToFramePadding();
             ImGui::TextDisabled("%s", d.progress.c_str());
+            ImGui::SameLine();
+        }
+        if (d.action) {
+            if (ImGui::SmallButton(d.action)) ev.action = true;
+            if (d.action_tip && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", d.action_tip);
             ImGui::SameLine();
         }
         if (ImGui::ArrowButton("##fold", view.folded ? ImGuiDir_Down : ImGuiDir_Up)) {

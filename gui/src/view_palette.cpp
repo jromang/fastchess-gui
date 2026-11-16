@@ -434,7 +434,7 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             board_.play_open = true;
         });
     }
-    if (board_.review_job) {
+    if (board_.reviewing()) {
         add(TR("Cancel the analysis of the game"), TR("Board"), [this] { cancelGameReview(); });
     } else if (!board_.game.moves.empty()) {
         add(TR("Analyse the game"), TR("Board"), [this] {

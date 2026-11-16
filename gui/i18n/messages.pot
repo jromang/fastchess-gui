@@ -241,9 +241,6 @@ msgstr[1] ""
 msgid "A game has no port: {}"
 msgstr ""
 
-msgid "A game is being analysed move by move: wait for its end, or cancel it."
-msgstr ""
-
 msgid "A game is flagged when both engines see the same side ahead by the score below for each of their first moves after the book: the Games tab can show those games, the Openings tab marks and counts their openings, the overview counts them. The results are not changed."
 msgstr ""
 
@@ -590,16 +587,10 @@ msgstr ""
 msgid "Analyse the game"
 msgstr ""
 
-msgid "Analyse the game again"
-msgstr ""
-
 msgid "Analyse the game followed"
 msgstr ""
 
 msgid "Analyse the game shown"
-msgstr ""
-
-msgid "Analysing the game: {} of {} positions"
 msgstr ""
 
 msgid "Analysis"
@@ -1278,6 +1269,9 @@ msgid "Contents"
 msgstr ""
 
 msgid "Continue"
+msgstr ""
+
+msgid "Continue the analysis"
 msgstr ""
 
 msgid "Continue with the changed programs"
@@ -1967,6 +1961,15 @@ msgstr ""
 msgid "Full screen (F11)"
 msgstr ""
 
+msgid "G: stop the analysis of the game. Its passes done are kept, and it goes on from there next time."
+msgstr ""
+
+msgid "G: the analysis engine goes through every position of the game, in the background, then again for longer at each pass: the graph comes at once and sharpens."
+msgstr ""
+
+msgid "G: the analysis engine goes through every position of the game, in the background, then again for longer at each pass: the graph comes at once and sharpens. Its inaccuracies, mistakes and blunders are marked."
+msgstr ""
+
 msgid "GPUs"
 msgstr ""
 
@@ -2177,6 +2180,9 @@ msgid "How far apart the evaluations are, in pawns: the two players' (each move 
 msgstr ""
 
 msgid "How far each game goes into the book, in plies (a move of one side) from its start."
+msgstr ""
+
+msgid "How far the analysis of the game goes."
 msgstr ""
 
 msgid "How games ended"
@@ -3610,6 +3616,9 @@ msgstr ""
 msgid "Reference Elo"
 msgstr ""
 
+msgid "Refine the analysis of the game up to"
+msgstr ""
+
 msgid "Refresh"
 msgstr ""
 
@@ -4148,6 +4157,9 @@ msgstr ""
 msgid "Stop the game"
 msgstr ""
 
+msgid "Stop the game's analysis"
+msgstr ""
+
 msgid "Stop the tournament when an engine cannot start"
 msgstr ""
 
@@ -4420,12 +4432,6 @@ msgid "The Schedule tab shows the impact before anything changes."
 msgstr ""
 
 msgid "The account to log in as on the machine: its tournaments run as this user."
-msgstr ""
-
-msgid "The analysis engine goes through every position of the game, in the background: a score per move, and its inaccuracies, mistakes and blunders marked."
-msgstr ""
-
-msgid "The analysis engine stopped."
 msgstr ""
 
 msgid "The analysis engine waits."
@@ -4979,9 +4985,6 @@ msgid "The time of each move, with the decision time when the PGN has it."
 msgstr ""
 
 msgid "The time per move must be positive."
-msgstr ""
-
-msgid "The time, or the depth, of the search of each position when the game is analysed."
 msgstr ""
 
 msgid "The tournament cannot be reached on {}: {}"
@@ -6078,6 +6081,15 @@ msgstr ""
 msgid "pairs"
 msgstr ""
 
+msgid "pass {} of {} · {} per position · {}/{}"
+msgstr ""
+
+msgid "pass {} · {} per position · {}/{}"
+msgstr ""
+
+msgid "paused while A analyses"
+msgstr ""
+
 msgid "physical cores − 1, for a clock"
 msgstr ""
 
@@ -6348,9 +6360,6 @@ msgstr ""
 msgid "{} allowed by the memory"
 msgstr ""
 
-msgid "{} analyses the game move by move."
-msgstr ""
-
 msgid "{} and {}"
 msgstr ""
 
@@ -6445,6 +6454,9 @@ msgid "{} did not answer in time while {}: is the machine overloaded, or the net
 msgstr ""
 
 msgid "{} did not answer {} within {} s; it printed: {}"
+msgstr ""
+
+msgid "{} did not give its move in time."
 msgstr ""
 
 msgid "{} did not show an RSA host key"
@@ -6980,6 +6992,9 @@ msgid "{} per game"
 msgstr ""
 
 msgid "{} per move"
+msgstr ""
+
+msgid "{} per position"
 msgstr ""
 
 msgid "{} physical core"
