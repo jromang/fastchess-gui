@@ -46,6 +46,15 @@ struct Ray {
 [[nodiscard]] Ray rayAt(const View& view, float x, float y);
 // A point's place in the image, normalized as rayAt() takes it; nullopt behind the camera.
 [[nodiscard]] std::optional<std::array<float, 2>> project(const View& view, Vec3 point);
+// The same projection as a matrix for drawing triangles (OpenGL's clip space, column-major): a point it takes to
+// (x, y, z, w) lands at (x / w, y / w) as project() says; depth from `depth_near` to `depth_far` squares.
+[[nodiscard]] std::array<float, 16> viewProjection(const View& view, float depth_near = 0.05f, float depth_far = 100.0f);
+
+// How high a piece dragged with the mouse floats above the board, in squares.
+inline constexpr float kGhostLift = 0.3f;
+// Where the base of a piece dragged along `ray` stands: where the ray reaches kGhostLift above the board, kept over
+// the board and its frame; nullopt for a ray that does not go down to it.
+[[nodiscard]] std::optional<std::array<float, 2>> ghostAt(const Ray& ray);
 
 // The board's geometry, in squares (trace.frag's): the playing surface at y = 0, 8 squares wide, its frame round it.
 inline constexpr float kHalfBoard = 4.0f, kFrame = 0.62f, kThickness = 0.32f;

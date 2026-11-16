@@ -211,6 +211,7 @@ void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& piec
                 }
             }
             if (decor.selected && *decor.selected == square) dl->AddRectFilled(p0, p1, SELECTED);
+            if (decor.drop && *decor.drop == square) dl->AddRectFilled(p0, p1, BOARD_DROP);
             if (check && *check == square) {
                 dl->AddCircleFilled(ImVec2(p0.x + sq / 2, p0.y + sq / 2), sq * 0.48f, CHECK, 24);
             }
@@ -227,7 +228,7 @@ void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& piec
             }
 
             const auto piece = pieces[static_cast<std::size_t>(square.index())];
-            if (piece != chess::Piece::NONE && atlas.ready()) {
+            if (piece != chess::Piece::NONE && atlas.ready() && !(decor.lifted && *decor.lifted == square)) {
                 ImVec2 uv0, uv1;
                 atlas.uv(piece, uv0, uv1);
                 dl->AddImage(atlas.texture(sq * ImGui::GetIO().DisplayFramebufferScale.x), p0, p1, uv0, uv1);
@@ -287,6 +288,18 @@ void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& piec
                     0, 0, 3.0f);
 
     ImGui::Dummy(ImVec2(size + (bar ? evalBarSpace(size) : 0.0f), size));
+}
+
+void drawDraggedPiece(const PieceAtlas& atlas, chess::Piece piece, float size) {
+    if (piece == chess::Piece::NONE || !atlas.ready()) return;
+    const float sq  = size / 8.0f;
+    const ImVec2 at = ImGui::GetIO().MousePos;
+    ImVec2 uv0, uv1;
+    atlas.uv(piece, uv0, uv1);
+    // Over the panels around the board too, as a piece held in the hand.
+    ImGui::GetForegroundDrawList()->AddImage(atlas.texture(sq * ImGui::GetIO().DisplayFramebufferScale.x),
+                                             ImVec2(at.x - sq / 2, at.y - sq / 2), ImVec2(at.x + sq / 2, at.y + sq / 2),
+                                             uv0, uv1);
 }
 
 void drawBoardBadge(ImDrawList* dl, ImVec2 centre, float radius, const BoardBadge& badge) {

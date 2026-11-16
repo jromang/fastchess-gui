@@ -235,7 +235,7 @@ Original verschoben oder gelöscht und das Profil als Ganzes verschoben werden k
 seine Kopie, sofern keine andere Engine sie hat). Das Logo lässt sich ändern, während die Engine spielt.
 
 ### Das 3D-Brett
-<!-- en: the-3d-board 48808129 -->
+<!-- en: the-3d-board cc0dd596 -->
 
 **Einstellungen** > *Darstellung* > *3D-Brett* > *Das Brett der Seite Brett in 3D* zeichnet das Brett der Seite
 [Brett](#brett) dreidimensional, wie das Foto eines echten Bretts (standardmäßig aus; alle anderen Bretter bleiben
@@ -258,9 +258,10 @@ Was das flache Brett zeigt, ist darauf: der Bewertungsbalken, der letzte Zug, di
 ziehen kann, ein König im Schach, die Pfeile der Analyse, die schwach durch die Figuren hindurch zu sehen sind, die
 Antwort, die die Engine des Zuges erwartete, gestrichelt, das Urteil über den Zug als Plakette über seinem Feld und der
 Rahmen einer Variante, die statt der Partie gezeigt wird. Ein Linksklick wählt ein Feld wie auf dem flachen Brett, auf
-einer Figur oder auf dem Brett dahinter. Hältst du die rechte Maustaste gedrückt und bewegst die Maus, kreist die Kamera
-um das Brett (ein Rechtsklick ohne Bewegung legt die aufgenommene Figur weiterhin ab), das Mausrad geht näher heran, und
-ein Klick mit dem Mausrad holt die Ansicht zurück; das Brett zu drehen (F) lässt die Kamera eine halbe Runde machen.
+einer Figur oder auf dem Brett dahinter, und eine Figur lässt sich ziehen, ihr Abbild folgt dem Zeiger (siehe
+[Brett](#brett)). Hältst du die rechte Maustaste gedrückt und bewegst die Maus, kreist die Kamera um das Brett (ein
+Rechtsklick ohne Bewegung legt die aufgenommene Figur weiterhin ab), das Mausrad geht näher heran, und ein Klick mit dem
+Mausrad holt die Ansicht zurück; das Brett zu drehen (F) lässt die Kamera eine halbe Runde machen.
 
 Das 3D-Brett braucht OpenGL 3.3. Wo das Fenster ohne es gezeichnet wird (der Software-Renderer aus
 [Wie das Fenster gezeichnet wird](#wie-das-fenster-gezeichnet-wird), manche virtuellen Maschinen und Remotedesktops),
@@ -582,7 +583,7 @@ angehakt, ohne die Stellungen mit vertauschten Farben) und fügt es zur Biblioth
   Partien eingegangen sind, wie viele die Optionen weggelassen haben und wie viele nicht gelesen werden konnten.
 
 ## Brett
-<!-- en: board 1b231755 -->
+<!-- en: board 0bbd00c9 -->
 
 Die Seite Brett zeigt eine Partie oder eine Stellung, von irgendwoher: **A** auf einem beliebigen Brett des Programms
 (eine Partie des Mosaiks im Tab *Live* oder die verfolgte, das Brett des Tabs *Partien*, des Tabs *Eröffnungen*, einer
@@ -594,6 +595,12 @@ Das Brett steht links, mit den Spielern darüber und darunter; rechts, von oben 
 der Tabelle der Züge, der Auswertung der Partie und den Partien der Datei in Tabs) und die Partiegrafik. Der
 Untertitel der Seite sagt, was für eine Partie es ist: ihre Veranstaltung und Runde, ihr Ergebnis, ihre Bedenkzeit,
 ihr ECO-Code und ihre Eröffnung, und wie sie endete.
+
+Ein Zug wird mit der Maus auf dem Brett gespielt: ein Klick auf die Figur, dann einer auf ihr Feld, oder die Figur
+dorthin gezogen. Während sie gezogen wird, folgt sie dem Zeiger, und das Feld, auf dem sie landen würde, ist getönt;
+woanders losgelassen, kehrt sie zurück, weiterhin aufgenommen, um mit einem Klick gezogen zu werden. Auf dem 3D-Brett
+folgt ein durchscheinendes Abbild der Figur dem Zeiger, über dem Brett schwebend und hinter den Figuren vor ihm vorbei,
+während das Bild bleibt, wie es ist; die Figur selbst bewegt sich, wenn sie losgelassen wird.
 
 ### Eine Stellung öffnen, einfügen und aufbauen
 <!-- en: opening-pasting-and-setting-up-a-position 3778ddb5 -->

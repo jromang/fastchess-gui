@@ -170,6 +170,45 @@ TEST_CASE("board 3D: a piece's profile follows its surface, and a ray beside its
     CHECK(squareAt(at(squareCentre(28) + Vec3{0.25f, 0.05f, 0}), pawn, profiled) == 28);  // the base
 }
 
+TEST_CASE("board 3D: the ghost's projection matrix agrees with the rays, and the ghost stands under the pointer") {
+    for (const float yaw : {0.0f, PI, 0.6f}) {
+        CAPTURE(yaw);
+        Camera c;
+        c.yaw = yaw, c.pitch = 0.8f;
+        c            = framed(c, 1.3f, 1.65f);
+        const View v = viewOf(c, 1.3f);
+        const auto m = viewProjection(v);
+        // Points of the board, of a piece's height and of the frame: the matrix puts each where project() does, its
+        // depth between -1 and 1.
+        for (const Vec3 p :
+             {squareCentre(0), squareCentre(63), squareCentre(36) + Vec3{0.2f, 1.4f, -0.3f}, Vec3{4.5f, 0, -4.5f}}) {
+            const auto q = project(v, p);
+            REQUIRE(q.has_value());
+            float clip[4];
+            for (int r = 0; r < 4; ++r)
+                clip[r] = m[std::size_t(r)] * p.x + m[std::size_t(4 + r)] * p.y + m[std::size_t(8 + r)] * p.z +
+                          m[std::size_t(12 + r)];
+            REQUIRE(clip[3] > 0);
+            CHECK(clip[0] / clip[3] == doctest::Approx((*q)[0]).epsilon(1e-4));
+            CHECK(clip[1] / clip[3] == doctest::Approx((*q)[1]).epsilon(1e-4));
+            CHECK(std::fabs(clip[2] / clip[3]) < 1.0f);
+        }
+        // The pointer over e4: the ghost's base, kGhostLift above the board, on the pointer's ray.
+        const Vec3 base = squareCentre(28) + Vec3{0.1f, kGhostLift, 0.2f};
+        const auto q    = project(v, base);
+        REQUIRE(q.has_value());
+        const auto at = ghostAt(rayAt(v, (*q)[0], (*q)[1]));
+        REQUIRE(at.has_value());
+        CHECK((*at)[0] == doctest::Approx(base.x).epsilon(1e-3));
+        CHECK((*at)[1] == doctest::Approx(base.z).epsilon(1e-3));
+        // Far off the board, it stays over the frame; a ray to the sky has none.
+        const auto off = ghostAt(rayAt(v, 3.0f, -0.2f));
+        REQUIRE(off.has_value());
+        CHECK(std::fabs((*off)[0]) <= kHalfBoard + kFrame);
+        CHECK_FALSE(ghostAt(rayAt(v, 0, 5)).has_value());
+    }
+}
+
 TEST_CASE("board 3D: the pieces of a position, and what a decor lays over them") {
     const chess::Board start;
     const auto pieces = piecesOf(start);

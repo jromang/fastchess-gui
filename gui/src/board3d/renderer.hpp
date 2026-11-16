@@ -15,6 +15,7 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 #include <span>
 #include <string>
 #include <vector>
@@ -92,6 +93,17 @@ struct Overlay {
     bool operator==(const Overlay&) const = default;
 };
 
+// A piece dragged with the mouse: drawn by rasterization over the traced image, translucent, kGhostLift above the board
+// where the pointer is, and hidden wherever the image shows something nearer the camera (its first hits' distance),
+// so that it passes behind the pieces in front of it. The image is not traced again while it moves.
+struct Ghost {
+    Kind kind  = Kind::Pawn;
+    bool black = false;
+    float x = 0, z = 0;                       // where its base stands, in squares (ghostAt())
+    int square                          = 0;  // the square it was taken from, for its turn as it stands there
+    bool operator==(const Ghost&) const = default;
+};
+
 // The pieces of a FEN's placement field (the rest ignored); empty if it is not one.
 [[nodiscard]] std::vector<PlacedPiece> piecesFromFen(const std::string& fen);
 
@@ -121,6 +133,7 @@ public:
     void setDenoise(bool on);
     void setSeed(int seed);  // another series of random numbers: for measuring the noise against a reference
     void setOverlay(const Overlay& overlay);  // shown at once: the samples stay good
+    void setGhost(const std::optional<Ghost>& ghost);  // shown at once: the samples stay good
 
     // A step of the image of that size within about budgetMs of GPU time. True if the image changed.
     // With scale > 1 the image is traced at 1/scale of that size and shown stretched, a whole sample each frame: the
@@ -164,10 +177,12 @@ private:
     void tracePass(int y0, int y1);
     void filterPasses();
     void displayPass();
+    void ghostPass();  // over the image the display pass made
 
     std::vector<PieceMesh> meshes_;
     std::vector<PieceShape> shapes_;
     Overlay overlay_;
+    std::optional<Ghost> ghost_;
     std::vector<int> roots_;
     std::vector<PlacedPiece> pieces_;
     Camera camera_;
@@ -175,6 +190,11 @@ private:
     Finish finish_;
 
     unsigned traceProgram_ = 0, prepareProgram_ = 0, atrousProgram_ = 0, displayProgram_ = 0, vao_ = 0;
+    // The ghost: its program, a vertex array per kind of piece over its positions, normals and indices, the depth
+    // buffer it is drawn with into the image shown.
+    unsigned ghostProgram_ = 0, ghostDepth_ = 0;
+    std::array<unsigned, 6> ghostVaos_{};
+    std::array<unsigned, 18> ghostBuffers_{};
     static constexpr std::size_t kMaxInstances = 40;  // the 32 of a game, and a few to spare
     unsigned buffers_[3]  = {};  // nodes, triangles, normals
     unsigned textures_[3] = {};

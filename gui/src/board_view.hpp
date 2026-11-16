@@ -77,6 +77,10 @@ struct BoardDecor {
     std::optional<ImU32> frame;             // a frame around the board: a line shown on it rather than the game
     std::optional<chess::Square> selected;  // a piece picked up, to move it
     std::vector<chess::Square> targets;     // where it may go, a dot on each
+    // A piece dragged with the mouse from this square: not drawn there on the 2D board (it follows the pointer, see
+    // drawDraggedPiece()); on the 3D board a ghost of it follows the pointer, the piece staying on its square.
+    std::optional<chess::Square> lifted;
+    std::optional<chess::Square> drop;  // the square under the piece dragged, where it would land: tinted
     // The squares' colours; by default those of the theme in use (appearance::boardColours()), as on every board.
     std::optional<appearance::BoardColours> colours;
 };
@@ -94,6 +98,7 @@ void drawEvalBar(ImDrawList* dl, ImVec2 top, float size, float eval_white, bool 
 inline constexpr ImU32 BOARD_CHECK    = IM_COL32(220, 40, 40, 150);
 inline constexpr ImU32 BOARD_SELECTED = IM_COL32(20, 85, 30, 110);
 inline constexpr ImU32 BOARD_TARGET   = IM_COL32(20, 85, 30, 90);
+inline constexpr ImU32 BOARD_DROP     = IM_COL32(20, 85, 30, 70);
 
 // The square a move visibly lands on: castling is stored as king takes rook.
 [[nodiscard]] chess::Square displayedTarget(const chess::Move& move);
@@ -104,6 +109,9 @@ void drawBoard(const PieceAtlas& atlas, const chess::Board& board, float size, c
 // `check`: a king's square to mark.
 void drawBoard(const PieceAtlas& atlas, const std::array<chess::Piece, 64>& pieces, float size,
                const BoardDecor& decor, std::optional<chess::Square> check = std::nullopt);
+
+// The piece dragged with the mouse on a board `size` wide, drawn over everything at the pointer.
+void drawDraggedPiece(const PieceAtlas& atlas, chess::Piece piece, float size);
 
 // The square under `point` of a board drawBoard() drew with its top left corner (its eval bar's, if shown) at `top`;
 // nullopt off the squares.

@@ -226,7 +226,7 @@ pode ser movido ou apagado e o perfil movido inteiro; *Remover* a retira (e a c�
 use). O logo pode ser trocado enquanto o engine joga.
 
 ### O tabuleiro 3D
-<!-- en: the-3d-board 48808129 -->
+<!-- en: the-3d-board cc0dd596 -->
 
 **Preferências** > *Aparência* > *Tabuleiro 3D* > *O tabuleiro da página Tabuleiro em 3D* desenha o tabuleiro da
 página [Tabuleiro](#tabuleiro) em três dimensões, como a fotografia de um tabuleiro de verdade (desativado por padrão;
@@ -248,10 +248,11 @@ ser desenhado em 3D também, para que as escolhas ao lado apareçam à medida qu
 O que o tabuleiro plano mostra está nele: a barra de avaliação, o último lance, a peça pegada e para onde ela pode ir,
 um rei em xeque, as setas da análise, que aparecem de leve através das peças, a resposta que o engine que jogou o lance
 esperava, tracejada, o julgamento do lance como selo acima da sua casa e a moldura de uma linha mostrada no lugar da
-partida. Um clique esquerdo escolhe uma casa como no tabuleiro plano, numa peça ou no tabuleiro atrás dela. Se você
-mantiver o botão direito pressionado enquanto move o mouse, a câmera gira em volta do tabuleiro (um clique direito sem
-mover continua soltando a peça pegada), a roda aproxima, e um clique da roda traz a vista de volta; girar o tabuleiro
-(F) faz a câmera dar meia-volta.
+partida. Um clique esquerdo escolhe uma casa como no tabuleiro plano, numa peça ou no tabuleiro atrás dela, e uma peça
+pode ser arrastada, com o fantasma dela seguindo o ponteiro (veja [Tabuleiro](#tabuleiro)). Se você mantiver o botão
+direito pressionado enquanto move o mouse, a câmera gira em volta do tabuleiro (um clique direito sem mover continua
+soltando a peça pegada), a roda aproxima, e um clique da roda traz a vista de volta; girar o tabuleiro (F) faz a câmera
+dar meia-volta.
 
 O tabuleiro 3D precisa do OpenGL 3.3. Onde a janela é desenhada sem ele (o renderizador por software de
 [Renderização da janela](#renderização-da-janela), algumas máquinas virtuais e áreas de trabalho remotas), os
@@ -556,7 +557,7 @@ adiciona à biblioteca. *Rodar como suíte de testes…* abre um livro EPD em **
   entraram nele, quantas as opções deixaram de fora e quantas não puderam ser lidas.
 
 ## Tabuleiro
-<!-- en: board 1b231755 -->
+<!-- en: board 0bbd00c9 -->
 
 A página Tabuleiro mostra uma partida ou uma posição, vinda de qualquer lugar: **A** em qualquer tabuleiro do programa
 (uma partida do mosaico da aba *Ao vivo* ou a acompanhada, o tabuleiro da aba *Partidas*, o da aba *Aberturas*, o de uma
@@ -568,6 +569,12 @@ O tabuleiro fica à esquerda, com os jogadores acima e abaixo dele; à direita, 
 (com a tabela dos lances, a revisão da partida e as partidas do arquivo em abas) e o gráfico da partida. O subtítulo
 da página diz que partida é: o evento e a rodada, o resultado, o controle de tempo, o código ECO e a abertura, e como
 ela terminou.
+
+Um lance é feito no tabuleiro com o mouse: um clique na peça e depois outro na casa dela, ou a peça arrastada até lá.
+Enquanto é arrastada, ela segue o ponteiro e a casa onde cairia fica destacada; solta em outro lugar, ela volta, ainda
+selecionada, para ser movida com um clique. No tabuleiro 3D, um fantasma translúcido da peça segue o ponteiro, flutuando
+sobre o tabuleiro e passando por trás das peças à frente dele, enquanto a imagem fica como está; a peça em si se move
+quando é solta.
 
 ### Abrir, colar e montar uma posição
 <!-- en: opening-pasting-and-setting-up-a-position 3778ddb5 -->

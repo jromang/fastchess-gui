@@ -38,6 +38,39 @@ std::optional<std::array<float, 2>> project(const View& v, Vec3 point) {
     return std::array<float, 2>{dot(d, v.right) / (far * v.tanHalfFov * v.aspect), dot(d, v.up) / (far * v.tanHalfFov)};
 }
 
+std::array<float, 16> viewProjection(const View& v, float depth_near, float depth_far) {
+    // Clip x and y are the point's distances along right and up over tanHalfFov (times the aspect for x), clip w its
+    // distance along forward: x / w is what project() gives. Clip z from depth_near to depth_far, as glFrustum maps it.
+    const float sx = 1.0f / (v.tanHalfFov * v.aspect), sy = 1.0f / v.tanHalfFov;
+    const float a = (depth_far + depth_near) / (depth_far - depth_near);
+    const float b = -2.0f * depth_far * depth_near / (depth_far - depth_near);
+    const Vec3 rows[3] = {v.right * sx, v.up * sy, v.forward};
+    std::array<float, 16> m{};
+    // Row r of the matrix: rows[r] . (p - eye); the third row's depth a * w + b.
+    for (int c = 0; c < 3; ++c) {
+        const float axis[3][3] = {
+            {rows[0].x, rows[0].y, rows[0].z}, {rows[1].x, rows[1].y, rows[1].z}, {rows[2].x, rows[2].y, rows[2].z}};
+        m[std::size_t(c * 4 + 0)] = axis[0][c];
+        m[std::size_t(c * 4 + 1)] = axis[1][c];
+        m[std::size_t(c * 4 + 2)] = a * axis[2][c];
+        m[std::size_t(c * 4 + 3)] = axis[2][c];
+    }
+    m[12] = -dot(rows[0], v.eye);
+    m[13] = -dot(rows[1], v.eye);
+    m[14] = -a * dot(rows[2], v.eye) + b;
+    m[15] = -dot(rows[2], v.eye);
+    return m;
+}
+
+std::optional<std::array<float, 2>> ghostAt(const Ray& ray) {
+    if (ray.dir.y >= -1e-6f) return std::nullopt;
+    const float t = (kGhostLift - ray.origin.y) / ray.dir.y;
+    if (t <= 0) return std::nullopt;
+    const float edge = kHalfBoard + kFrame * 0.5f;
+    return std::array<float, 2>{std::clamp(ray.origin.x + t * ray.dir.x, -edge, edge),
+                                std::clamp(ray.origin.z + t * ray.dir.z, -edge, edge)};
+}
+
 Camera framed(Camera camera, float aspect, float pieceHeight, float margin) {
     if (aspect <= 0) aspect = 1;
     const float edge = kHalfBoard + kFrame, inner = kHalfBoard - 0.5f;

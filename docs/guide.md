@@ -222,7 +222,8 @@ What the flat board shows is on it: the eval bar, the last move, the piece picke
 check, the analysis's arrows, which show faintly through the pieces, the reply the engine that played the move
 expected in dashes, the move's judgement as a badge above its square, and the frame of a line shown instead of the
 game. A left click picks a square as on the flat
-board, on a piece or on the board behind it. The right button held while the mouse moves turns round the board (a
+board, on a piece or on the board behind it, and a piece can be dragged, its ghost following the pointer (see
+[Board](#board)). The right button held while the mouse moves turns round the board (a
 right click without moving still lets go of the piece picked up), the wheel comes closer, and a click of the wheel
 brings the view back; flipping the board (F) turns the camera half way round.
 
@@ -517,6 +518,12 @@ The board is on the left, with the players above and below it; on the right, fro
 (with the table of the moves, the review of the game and the games of the file in tabs), and the game graph. The
 page's subtitle tells what the game is: its event and round, its result, its time control, its ECO code and opening,
 and how it ended.
+
+A move is played on the board with the mouse: a click on the piece then one on its square, or the piece dragged there.
+While it is dragged, it follows the pointer and the square it would land on is tinted; let go anywhere else, it goes
+back, still picked up, to be moved by a click. On the 3D board, a translucent ghost of the piece follows the pointer,
+floating above the board and passing behind the pieces in front of it, the image staying as it is; the piece itself
+moves when it is let go.
 
 ### Opening, pasting and setting up a position
 

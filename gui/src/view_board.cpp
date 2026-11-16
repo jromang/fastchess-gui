@@ -546,6 +546,43 @@ void App::boardClick(const chess::Board& board, chess::Square square) {
     }
 }
 
+void App::boardPointer(const chess::Board& board, std::optional<chess::Square> press,
+                       std::optional<chess::Square> hover, bool right) {
+    auto& b = board_;
+    if (right) {
+        b.selected.reset();
+        b.drag.reset();
+        return;
+    }
+    if (press) {
+        if (b.selected == *press) {
+            b.drag = BoardPage::Drag{*press, false, true};
+        } else {
+            boardClick(board, *press);
+            if (b.selected == *press)
+                b.drag = BoardPage::Drag{*press, false, false};
+            else
+                b.drag.reset();
+        }
+    }
+    if (!b.drag) return;
+    b.drag_over = hover;
+    if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) b.drag->moved = true;
+    if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) return;
+    // Released.
+    const auto drag = *b.drag;
+    b.drag.reset();
+    b.drag_over.reset();
+    if (drag.moved) {
+        if (!hover || *hover == drag.from || b.selected != drag.from) return;
+        const auto moves = movesFrom(board, drag.from);
+        if (std::any_of(moves.begin(), moves.end(), [&](const chess::Move& m) { return shownTarget(m) == *hover; }))
+            boardClick(board, *hover);
+    } else if (drag.picked_before) {
+        b.selected.reset();
+    }
+}
+
 void App::drawBoardPage() {
     loadBoardSettings();
     auto& b = board_;
@@ -1192,6 +1229,13 @@ void App::drawBoardColumn(float size) {
     if (b.selected) {
         for (const auto& m : movesFrom(board, *b.selected)) decor.targets.push_back(shownTarget(m));
     }
+    // A piece dragged: off its square in 2D, a ghost of it in 3D; where it would land, tinted.
+    const bool dragging = b.drag && b.drag->moved && b.selected == b.drag->from;
+    if (dragging) {
+        decor.lifted = b.drag->from;
+        if (b.drag_over && std::find(decor.targets.begin(), decor.targets.end(), *b.drag_over) != decor.targets.end())
+            decor.drop = b.drag_over;
+    }
     // The threat, in red.
     if (b.threat_on && !b.threat.lines().empty() && !b.threat.lines().front().pv.empty()) {
         if (const auto position = threatPosition(); position && b.threat.position() == *position) {
@@ -1250,22 +1294,21 @@ void App::drawBoardColumn(float size) {
         if (line_board && (input.clicked || input.right_click)) {
             b.preview.reset();
         } else {
-            if (input.clicked) boardClick(board, *input.clicked);
-            if (input.right_click) b.selected.reset();
+            boardPointer(board, input.clicked, input.hovered, input.right_click);
         }
     } else {
         if (!appearance::current().board3d.on) board3d_.release();
         drawBoard(atlas_, shown, size, decor);
-        if (line_board &&
-            (ImGui::IsItemClicked(ImGuiMouseButton_Left) || ImGui::IsItemClicked(ImGuiMouseButton_Right))) {
+        const auto hover = boardSquareAt(ImGui::GetMousePos(), top, size, decor);
+        const bool left  = ImGui::IsItemClicked(ImGuiMouseButton_Left),
+                   right = ImGui::IsItemClicked(ImGuiMouseButton_Right);
+        if (line_board && (left || right)) {
             b.preview.reset();
         } else {
-            if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                if (const auto square = boardSquareAt(ImGui::GetMousePos(), top, size, decor))
-                    boardClick(board, *square);
-            }
-            if (ImGui::IsItemClicked(ImGuiMouseButton_Right)) b.selected.reset();
+            boardPointer(board, left ? hover : std::nullopt, hover, right);
         }
+        // The piece dragged, at the pointer.
+        if (dragging && b.drag) drawDraggedPiece(atlas_, board.at(b.drag->from), size);
     }
     // What the line is, over the board.
     if (line_board && b.preview) {

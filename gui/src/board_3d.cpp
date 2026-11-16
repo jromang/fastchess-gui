@@ -101,6 +101,7 @@ board3d::Overlay overlayOf(const BoardDecor& decor, const std::array<chess::Piec
         o.addTint(displayedTarget(*decor.last_move).index(), colours.highlight);
     }
     if (decor.selected) o.addTint(decor.selected->index(), BOARD_SELECTED);
+    if (decor.drop) o.addTint(decor.drop->index(), BOARD_DROP);
     using Mark = board3d::Overlay::Mark;
     if (check) o.mark[static_cast<std::size_t>(check->index())] = Mark::Check;
     for (const auto& square : decor.targets) {
@@ -237,6 +238,26 @@ Board3d::Input Board3d::draw(const std::array<chess::Piece, 64>& pieces, float s
     r.setTargetSamples(settings.samples);
     r.setOverlay(overlayOf(decor, pieces, check, colours));
 
+    // The pointer's ray; a piece dragged (decor.lifted) has its ghost where it points, floating over the board.
+    const ImVec2 m     = io.MousePos;
+    const auto pointer = [&] {
+        return board3d::rayAt(board3d::viewOf(r.camera(), 1.0f), (m.x - p0.x) / size * 2 - 1,
+                              1 - (m.y - p0.y) / size * 2);
+    };
+    std::optional<board3d::Ghost> ghost;
+    if (decor.lifted) {
+        for (const auto& placed : r.pieces()) {
+            if (placed.square != decor.lifted->index()) continue;
+            if (const auto at = board3d::ghostAt(pointer()))
+                ghost = board3d::Ghost{placed.kind, placed.black, (*at)[0], (*at)[1], placed.square};
+        }
+    }
+    r.setGhost(ghost);
+    if (m.x >= p0.x && m.x < p1.x && m.y >= p0.y && m.y < p1.y) {
+        if (const int square = board3d::squareAt(pointer(), r.pieces(), r.shapes()); square >= 0)
+            input.hovered = chess::Square(square);
+    }
+
     // The pixels: a new size is shown as the camera moving is, a whole preview at once, then refined.
     const int pixels = std::max(1, static_cast<int>(std::lround(size * io.DisplayFramebufferScale.x)));
     if (std::memcmp(&camera, &shown_, sizeof camera) != 0 || pixels != last_pixels_) last_move_ = now;
@@ -274,7 +295,6 @@ Board3d::Input Board3d::draw(const std::array<chess::Piece, 64>& pieces, float s
     }
     if (decor.frame) dl->AddRect(ImVec2(p0.x - 2, p0.y - 2), ImVec2(p1.x + 2, p1.y + 2), *decor.frame, 0, 0, 3.0f);
 
-    const ImVec2 m = io.MousePos;
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && m.x >= p0.x && m.x < p1.x && m.y >= p0.y && m.y < p1.y) {
         const float x = (m.x - p0.x) / size * 2 - 1, y = 1 - (m.y - p0.y) / size * 2;
         const int square =

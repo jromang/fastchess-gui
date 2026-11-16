@@ -187,6 +187,15 @@ struct BoardPage {
     int followed_line = -1;                   // and its line
     bool flip    = false;
     std::optional<chess::Square> selected;  // a piece picked up
+    // A piece pressed with the left button, followed until the button is released: where from, whether the mouse
+    // moved enough for a drag, whether it was picked up before the press (a click on it then puts it down).
+    struct Drag {
+        chess::Square from;
+        bool moved         = false;
+        bool picked_before = false;
+    };
+    std::optional<Drag> drag;
+    std::optional<chess::Square> drag_over;  // the square under it, as the last frame saw it
     std::optional<chess::Move> promotion;   // a pawn's move waiting for the piece it becomes
     std::optional<BoardPreview> preview;    // a line shown on the board instead of the game
     bool preview_hovered = false;           // a hovered line asked for it this frame

@@ -233,7 +233,7 @@ quindi l'originale può essere spostato o cancellato e il profilo spostato per i
 copia, a meno che un altro motore non la usi). Il logo si può cambiare mentre il motore gioca.
 
 ### La scacchiera 3D
-<!-- en: the-3d-board 48808129 -->
+<!-- en: the-3d-board cc0dd596 -->
 
 **Impostazioni** > *Aspetto* > *Scacchiera 3D* > *La scacchiera della pagina Scacchiera in 3D* disegna la scacchiera
 della pagina [Scacchiera](#scacchiera) in tre dimensioni, come la fotografia di una scacchiera vera (disattivata per
@@ -255,7 +255,8 @@ Ciò che mostra la scacchiera piatta c'è: la barra di valutazione, l'ultima mos
 re sotto scacco, le frecce dell'analisi, che si vedono in trasparenza attraverso i pezzi, la risposta che il motore che
 ha giocato la mossa si aspettava, tratteggiata, il giudizio sulla mossa come bollino sopra la sua casa, e la cornice di
 una linea mostrata al posto della partita. Un clic sinistro sceglie una casa come sulla scacchiera piatta, su un pezzo o
-sulla scacchiera dietro di esso. Se tieni premuto il tasto destro mentre muovi il mouse, la telecamera gira intorno alla
+sulla scacchiera dietro di esso, e un pezzo si può trascinare, con il suo fantasma che segue il puntatore (vedi
+[Scacchiera](#scacchiera)). Se tieni premuto il tasto destro mentre muovi il mouse, la telecamera gira intorno alla
 scacchiera (un clic destro senza muoversi lascia sempre il pezzo preso), la rotellina avvicina, e un clic della
 rotellina riporta la vista; ruotare la scacchiera (F) fa fare alla telecamera mezzo giro.
 
@@ -565,7 +566,7 @@ invertiti), e lo aggiunge alla libreria. *Esegui come suite di test…* apre un 
   potute leggere.
 
 ## Scacchiera
-<!-- en: board 1b231755 -->
+<!-- en: board 0bbd00c9 -->
 
 La pagina Scacchiera mostra una partita o una posizione, di qualsiasi provenienza: **A** su qualsiasi scacchiera del
 programma (una partita del mosaico della scheda *Diretta* o quella seguita, la scacchiera della scheda *Partite*, della
@@ -577,6 +578,12 @@ La scacchiera è a sinistra, con i giocatori sopra e sotto di essa; a destra, da
 tabella delle mosse, il resoconto della partita e le partite del file in schede) e il grafico della partita. Il
 sottotitolo della pagina dice di che partita si tratta: il suo evento e il suo turno, il suo risultato, la sua cadenza,
 il suo codice ECO e la sua apertura, e come è finita.
+
+Una mossa si gioca sulla scacchiera con il mouse: un clic sul pezzo e poi uno sulla sua casa, oppure il pezzo trascinato
+fin lì. Mentre viene trascinato, segue il puntatore e la casa in cui atterrerebbe è colorata; lasciato altrove, torna
+indietro, ancora preso, per essere mosso con un clic. Sulla scacchiera 3D un fantasma traslucido del pezzo segue il
+puntatore, sospeso sopra la scacchiera e passando dietro i pezzi davanti a lui, mentre l'immagine resta com'è; il pezzo
+stesso si muove quando viene lasciato.
 
 ### Aprire, incollare e impostare una posizione
 <!-- en: opening-pasting-and-setting-up-a-position 3778ddb5 -->

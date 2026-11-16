@@ -396,6 +396,12 @@ class App {
     // A move made on the board with the mouse: the user's move in the game they play, else boardPlay().
     void boardMove(chess::Move move);
     void boardClick(const chess::Board& board, chess::Square square);
+    // The left button on the board (board_.drag): `press`, the square it went down on this frame; `hover`, the square
+    // under the pointer; `right`, a right click. A press acts as a click (boardClick); a piece picked up and dragged
+    // lands where it is released when it may go there, and else stays picked up; one pressed again without moving is
+    // put down.
+    void boardPointer(const chess::Board& board, std::optional<chess::Square> press, std::optional<chess::Square> hover,
+                      bool right);
     // The threads the running tournament's games use now, about: its games times the larger thread count of its
     // engines.
     [[nodiscard]] int tournamentThreads() const;

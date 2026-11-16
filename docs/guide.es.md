@@ -232,7 +232,7 @@ que el original puede moverse o borrarse y el perfil trasladarse entero; *Quitar
 otro motor la tenga). El logo puede cambiarse mientras el motor juega.
 
 ### El tablero 3D
-<!-- en: the-3d-board 48808129 -->
+<!-- en: the-3d-board cc0dd596 -->
 
 **Ajustes** > *Apariencia* > *Tablero 3D* > *El tablero de la página Tablero en 3D* dibuja el tablero de la página
 [Tablero](#tablero) en tres dimensiones, como la fotografía de un tablero real (desactivado por defecto; todos los
@@ -254,7 +254,8 @@ Lo que muestra el tablero plano está en él: la barra de evaluación, la últim
 un rey en jaque, las flechas del análisis, que se ven tenuemente a través de las piezas, la respuesta que esperaba el
 motor que jugó la jugada, en trazos, el juicio de la jugada como insignia sobre su casilla, y el marco de una línea
 mostrada en lugar de la partida. Un clic izquierdo elige una casilla como en el tablero plano, sobre una pieza o sobre
-el tablero detrás de ella. Si mantienes pulsado el botón derecho mientras mueves el ratón, la cámara gira alrededor del
+el tablero detrás de ella, y una pieza se puede arrastrar, con su fantasma siguiendo al puntero (ver
+[Tablero](#tablero)). Si mantienes pulsado el botón derecho mientras mueves el ratón, la cámara gira alrededor del
 tablero (un clic derecho sin moverse sigue soltando la pieza tomada), la rueda acerca, y un clic de la rueda devuelve la
 vista; girar el tablero (F) hace que la cámara dé media vuelta.
 
@@ -568,7 +569,7 @@ en **Suites**.
   pudieron leer.
 
 ## Tablero
-<!-- en: board 1b231755 -->
+<!-- en: board 0bbd00c9 -->
 
 La página Tablero muestra una partida o una posición, de cualquier procedencia: **A** en cualquier tablero del programa
 (una partida del mosaico de la pestaña *Directo* o la seguida, el tablero de la pestaña *Partidas*, el de la pestaña
@@ -580,6 +581,12 @@ El tablero está a la izquierda, con los jugadores encima y debajo; a la derecha
 jugadas (con la tabla de las jugadas, la revisión de la partida y las partidas del archivo en pestañas) y el gráfico de
 la partida. El subtítulo de la página dice qué partida es: su evento y su ronda, su resultado, su ritmo de juego, su
 código ECO y su apertura, y cómo terminó.
+
+Una jugada se hace en el tablero con el ratón: un clic en la pieza y luego otro en su casilla, o la pieza arrastrada
+hasta allí. Mientras se arrastra, sigue al puntero y la casilla donde caería se tiñe; si se suelta en otro sitio,
+vuelve, todavía tomada, para moverla con un clic. En el tablero 3D, un fantasma translúcido de la pieza sigue al
+puntero, flotando sobre el tablero y pasando por detrás de las piezas que tiene delante, mientras la imagen se queda
+como está; la pieza misma se mueve al soltarla.
 
 ### Abrir, pegar y preparar una posición
 <!-- en: opening-pasting-and-setting-up-a-position 3778ddb5 -->

@@ -36,6 +36,15 @@ constexpr GLenum RGBA32F             = 0x8814;
 constexpr GLenum FLOAT               = 0x1406;
 constexpr GLenum UNSIGNED_BYTE       = 0x1401;
 constexpr GLenum ARRAY_BUFFER        = 0x8892;
+constexpr GLenum ELEMENT_ARRAY_BUFFER   = 0x8893;
+constexpr GLenum UNSIGNED_INT           = 0x1405;
+constexpr GLenum RENDERBUFFER           = 0x8D41;
+constexpr GLenum DEPTH_COMPONENT24      = 0x81A6;
+constexpr GLenum DEPTH_ATTACHMENT       = 0x8D00;
+constexpr GLenum DEPTH_BUFFER_BIT       = 0x00000100;
+constexpr GLenum LESS                   = 0x0201;
+constexpr GLenum SRC_ALPHA              = 0x0302;
+constexpr GLenum ONE_MINUS_SRC_ALPHA    = 0x0303;
 constexpr GLenum STATIC_DRAW         = 0x88E4;
 constexpr GLenum DYNAMIC_DRAW        = 0x88E8;
 constexpr GLenum FRAGMENT_SHADER     = 0x8B30;
@@ -69,71 +78,83 @@ constexpr GLenum MAJOR_VERSION       = 0x821B;
 constexpr GLenum MINOR_VERSION       = 0x821C;
 
 struct Functions {
-#define FCG_GL3_FUNCTIONS(X)                                                                                         \
-    X(void, GenTextures, GLsizei, GLuint*)                                                                           \
-    X(void, DeleteTextures, GLsizei, const GLuint*)                                                                  \
-    X(void, BindTexture, GLenum, GLuint)                                                                             \
-    X(void, ActiveTexture, GLenum)                                                                                   \
-    X(void, TexParameteri, GLenum, GLenum, GLint)                                                                    \
-    X(void, TexImage2D, GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum, GLenum, const void*)                  \
-    X(void, TexBuffer, GLenum, GLenum, GLuint)                                                                       \
-    X(void, GenBuffers, GLsizei, GLuint*)                                                                            \
-    X(void, DeleteBuffers, GLsizei, const GLuint*)                                                                   \
-    X(void, BindBuffer, GLenum, GLuint)                                                                              \
-    X(void, BufferData, GLenum, GLsizeiptr, const void*, GLenum)                                                     \
-    X(void, BufferSubData, GLenum, GLintptr, GLsizeiptr, const void*)                                                \
-    X(GLuint, CreateShader, GLenum)                                                                                  \
-    X(void, DeleteShader, GLuint)                                                                                    \
-    X(void, ShaderSource, GLuint, GLsizei, const GLchar* const*, const GLint*)                                       \
-    X(void, CompileShader, GLuint)                                                                                   \
-    X(void, GetShaderiv, GLuint, GLenum, GLint*)                                                                     \
-    X(void, GetShaderInfoLog, GLuint, GLsizei, GLsizei*, GLchar*)                                                    \
-    X(GLuint, CreateProgram)                                                                                         \
-    X(void, DeleteProgram, GLuint)                                                                                   \
-    X(void, AttachShader, GLuint, GLuint)                                                                            \
-    X(void, LinkProgram, GLuint)                                                                                     \
-    X(void, GetProgramiv, GLuint, GLenum, GLint*)                                                                    \
-    X(void, GetProgramInfoLog, GLuint, GLsizei, GLsizei*, GLchar*)                                                   \
-    X(void, UseProgram, GLuint)                                                                                      \
-    X(GLint, GetUniformLocation, GLuint, const GLchar*)                                                              \
-    X(void, Uniform1i, GLint, GLint)                                                                                 \
-    X(void, Uniform1f, GLint, GLfloat)                                                                               \
-    X(void, Uniform2f, GLint, GLfloat, GLfloat)                                                                      \
-    X(void, Uniform3f, GLint, GLfloat, GLfloat, GLfloat)                                                             \
-    X(void, Uniform4f, GLint, GLfloat, GLfloat, GLfloat, GLfloat)                                                    \
-    X(void, Uniform1iv, GLint, GLsizei, const GLint*)                                                                \
-    X(void, Uniform1fv, GLint, GLsizei, const GLfloat*)                                                              \
-    X(void, Uniform3fv, GLint, GLsizei, const GLfloat*)                                                              \
-    X(void, Uniform4fv, GLint, GLsizei, const GLfloat*)                                                              \
-    X(void, GenVertexArrays, GLsizei, GLuint*)                                                                       \
-    X(void, DeleteVertexArrays, GLsizei, const GLuint*)                                                              \
-    X(void, BindVertexArray, GLuint)                                                                                 \
-    X(void, DrawArrays, GLenum, GLint, GLsizei)                                                                      \
-    X(void, GenFramebuffers, GLsizei, GLuint*)                                                                       \
-    X(void, DeleteFramebuffers, GLsizei, const GLuint*)                                                              \
-    X(void, BindFramebuffer, GLenum, GLuint)                                                                         \
-    X(void, FramebufferTexture2D, GLenum, GLenum, GLenum, GLuint, GLint)                                             \
-    X(GLenum, CheckFramebufferStatus, GLenum)                                                                        \
-    X(void, DrawBuffers, GLsizei, const GLenum*)                                                                     \
-    X(void, Enable, GLenum)                                                                                          \
-    X(void, Disable, GLenum)                                                                                         \
-    X(GLboolean, IsEnabled, GLenum)                                                                                  \
-    X(void, BlendFunc, GLenum, GLenum)                                                                               \
-    X(void, BlendEquation, GLenum)                                                                                   \
-    X(void, Scissor, GLint, GLint, GLsizei, GLsizei)                                                                 \
-    X(void, Viewport, GLint, GLint, GLsizei, GLsizei)                                                                \
-    X(void, ClearColor, GLfloat, GLfloat, GLfloat, GLfloat)                                                          \
-    X(void, Clear, GLbitfield)                                                                                       \
-    X(void, GetIntegerv, GLenum, GLint*)                                                                             \
-    X(void, ReadPixels, GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void*)                                       \
-    X(void, PixelStorei, GLenum, GLint)                                                                              \
-    X(void, GenQueries, GLsizei, GLuint*)                                                                            \
-    X(void, DeleteQueries, GLsizei, const GLuint*)                                                                   \
-    X(void, BeginQuery, GLenum, GLuint)                                                                              \
-    X(void, EndQuery, GLenum)                                                                                        \
-    X(void, GetQueryObjectiv, GLuint, GLenum, GLint*)                                                                \
-    X(void, GetQueryObjectui64v, GLuint, GLenum, GLuint64*)                                                          \
-    X(void, Flush)                                                                                                   \
+#define FCG_GL3_FUNCTIONS(X)                                                                        \
+    X(void, GenTextures, GLsizei, GLuint*)                                                          \
+    X(void, DeleteTextures, GLsizei, const GLuint*)                                                 \
+    X(void, BindTexture, GLenum, GLuint)                                                            \
+    X(void, ActiveTexture, GLenum)                                                                  \
+    X(void, TexParameteri, GLenum, GLenum, GLint)                                                   \
+    X(void, TexImage2D, GLenum, GLint, GLint, GLsizei, GLsizei, GLint, GLenum, GLenum, const void*) \
+    X(void, TexBuffer, GLenum, GLenum, GLuint)                                                      \
+    X(void, GenBuffers, GLsizei, GLuint*)                                                           \
+    X(void, DeleteBuffers, GLsizei, const GLuint*)                                                  \
+    X(void, BindBuffer, GLenum, GLuint)                                                             \
+    X(void, BufferData, GLenum, GLsizeiptr, const void*, GLenum)                                    \
+    X(void, BufferSubData, GLenum, GLintptr, GLsizeiptr, const void*)                               \
+    X(GLuint, CreateShader, GLenum)                                                                 \
+    X(void, DeleteShader, GLuint)                                                                   \
+    X(void, ShaderSource, GLuint, GLsizei, const GLchar* const*, const GLint*)                      \
+    X(void, CompileShader, GLuint)                                                                  \
+    X(void, GetShaderiv, GLuint, GLenum, GLint*)                                                    \
+    X(void, GetShaderInfoLog, GLuint, GLsizei, GLsizei*, GLchar*)                                   \
+    X(GLuint, CreateProgram)                                                                        \
+    X(void, DeleteProgram, GLuint)                                                                  \
+    X(void, AttachShader, GLuint, GLuint)                                                           \
+    X(void, LinkProgram, GLuint)                                                                    \
+    X(void, GetProgramiv, GLuint, GLenum, GLint*)                                                   \
+    X(void, GetProgramInfoLog, GLuint, GLsizei, GLsizei*, GLchar*)                                  \
+    X(void, UseProgram, GLuint)                                                                     \
+    X(GLint, GetUniformLocation, GLuint, const GLchar*)                                             \
+    X(void, Uniform1i, GLint, GLint)                                                                \
+    X(void, Uniform1f, GLint, GLfloat)                                                              \
+    X(void, Uniform2f, GLint, GLfloat, GLfloat)                                                     \
+    X(void, Uniform3f, GLint, GLfloat, GLfloat, GLfloat)                                            \
+    X(void, Uniform4f, GLint, GLfloat, GLfloat, GLfloat, GLfloat)                                   \
+    X(void, Uniform1iv, GLint, GLsizei, const GLint*)                                               \
+    X(void, Uniform1fv, GLint, GLsizei, const GLfloat*)                                             \
+    X(void, Uniform3fv, GLint, GLsizei, const GLfloat*)                                             \
+    X(void, Uniform4fv, GLint, GLsizei, const GLfloat*)                                             \
+    X(void, GenVertexArrays, GLsizei, GLuint*)                                                      \
+    X(void, DeleteVertexArrays, GLsizei, const GLuint*)                                             \
+    X(void, BindVertexArray, GLuint)                                                                \
+    X(void, DrawArrays, GLenum, GLint, GLsizei)                                                     \
+    X(void, DrawElements, GLenum, GLsizei, GLenum, const void*)                                     \
+    X(void, VertexAttribPointer, GLuint, GLint, GLenum, GLboolean, GLsizei, const void*)            \
+    X(void, EnableVertexAttribArray, GLuint)                                                        \
+    X(void, UniformMatrix4fv, GLint, GLsizei, GLboolean, const GLfloat*)                            \
+    X(void, GenRenderbuffers, GLsizei, GLuint*)                                                     \
+    X(void, DeleteRenderbuffers, GLsizei, const GLuint*)                                            \
+    X(void, BindRenderbuffer, GLenum, GLuint)                                                       \
+    X(void, RenderbufferStorage, GLenum, GLenum, GLsizei, GLsizei)                                  \
+    X(void, FramebufferRenderbuffer, GLenum, GLenum, GLenum, GLuint)                                \
+    X(void, DepthFunc, GLenum)                                                                      \
+    X(void, DepthMask, GLboolean)                                                                   \
+    X(void, GenFramebuffers, GLsizei, GLuint*)                                                      \
+    X(void, DeleteFramebuffers, GLsizei, const GLuint*)                                             \
+    X(void, BindFramebuffer, GLenum, GLuint)                                                        \
+    X(void, FramebufferTexture2D, GLenum, GLenum, GLenum, GLuint, GLint)                            \
+    X(GLenum, CheckFramebufferStatus, GLenum)                                                       \
+    X(void, DrawBuffers, GLsizei, const GLenum*)                                                    \
+    X(void, Enable, GLenum)                                                                         \
+    X(void, Disable, GLenum)                                                                        \
+    X(GLboolean, IsEnabled, GLenum)                                                                 \
+    X(void, BlendFunc, GLenum, GLenum)                                                              \
+    X(void, BlendFuncSeparate, GLenum, GLenum, GLenum, GLenum)                                      \
+    X(void, BlendEquation, GLenum)                                                                  \
+    X(void, Scissor, GLint, GLint, GLsizei, GLsizei)                                                \
+    X(void, Viewport, GLint, GLint, GLsizei, GLsizei)                                               \
+    X(void, ClearColor, GLfloat, GLfloat, GLfloat, GLfloat)                                         \
+    X(void, Clear, GLbitfield)                                                                      \
+    X(void, GetIntegerv, GLenum, GLint*)                                                            \
+    X(void, ReadPixels, GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void*)                      \
+    X(void, PixelStorei, GLenum, GLint)                                                             \
+    X(void, GenQueries, GLsizei, GLuint*)                                                           \
+    X(void, DeleteQueries, GLsizei, const GLuint*)                                                  \
+    X(void, BeginQuery, GLenum, GLuint)                                                             \
+    X(void, EndQuery, GLenum)                                                                       \
+    X(void, GetQueryObjectiv, GLuint, GLenum, GLint*)                                               \
+    X(void, GetQueryObjectui64v, GLuint, GLenum, GLuint64*)                                         \
+    X(void, Flush)                                                                                  \
     X(void, Finish)
 
 #define FCG_GL3_MEMBER(ret, name, ...) ret (*name)(__VA_ARGS__) = nullptr;

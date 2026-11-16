@@ -1,8 +1,9 @@
 #pragma once
 
 // The 3D board (board3d/renderer.hpp) where a 2D board would be: an image of the same size, the eval bar left of it,
-// the BoardDecor laid over its squares as drawBoard() lays it. A left click picks a square as on the 2D board; the
-// right button held turns round the board, the wheel comes closer, a click of the wheel brings the view back.
+// the BoardDecor laid over its squares as drawBoard() lays it. A left click picks a square as on the 2D board, and a
+// piece dragged (BoardDecor::lifted) has a ghost under the pointer; the right button held turns round the board, the
+// wheel comes closer, a click of the wheel brings the view back.
 // Flipping the board turns the camera half way round.
 //
 // The image refines while nothing changes, a few milliseconds of the graphics card each frame, then rests. It is drawn
@@ -38,6 +39,7 @@ class Board3d {
 
     struct Input {
         std::optional<chess::Square> clicked;  // a left click on a square, a piece's or the board's
+        std::optional<chess::Square> hovered;  // the square under the pointer, a piece's or the board's
         bool right_click = false;              // a right click that did not turn the board
     };
     // Draws the position at the cursor and reserves `size` x `size`, plus the eval bar if shown, as drawBoard().

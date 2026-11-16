@@ -234,7 +234,7 @@ peut donc être déplacé ou supprimé, et le profil déplacé en entier ; *Reti
 qu'un autre moteur ne l'ait). Le logo peut être changé pendant que le moteur joue.
 
 ### L'échiquier 3D
-<!-- en: the-3d-board 48808129 -->
+<!-- en: the-3d-board cc0dd596 -->
 
 **Réglages** > *Apparence* > *Échiquier 3D* > *L'échiquier de la page Échiquier en 3D* dessine l'échiquier de la page
 [Échiquier](#échiquier) en trois dimensions, comme la photographie d'un vrai échiquier (désactivé par défaut ; tous
@@ -256,9 +256,10 @@ Ce que montre l'échiquier plat y est : la barre d'évaluation, le dernier coup,
 aller, un roi en échec, les flèches de l'analyse, qui se voient en transparence à travers les pièces, la réponse
 qu'attendait le moteur qui a joué le coup en pointillés, le jugement du coup en pastille au-dessus de sa case, et le
 cadre d'une ligne montrée à la place de la partie. Un clic gauche choisit une case comme sur l'échiquier plat, sur une
-pièce ou sur l'échiquier derrière elle. Le bouton droit maintenu pendant que la souris bouge fait tourner autour de
-l'échiquier (un clic droit sans bouger lâche toujours la pièce prise en main), la molette rapproche, et un clic de la
-molette ramène la vue ; retourner l'échiquier (F) fait faire un demi-tour à la caméra.
+pièce ou sur l'échiquier derrière elle, et une pièce peut être glissée, son fantôme suivant le pointeur (voir
+[Échiquier](#échiquier)). Le bouton droit maintenu pendant que la souris bouge fait tourner autour de l'échiquier (un
+clic droit sans bouger lâche toujours la pièce prise en main), la molette rapproche, et un clic de la molette ramène la
+vue ; retourner l'échiquier (F) fait faire un demi-tour à la caméra.
 
 L'échiquier 3D demande OpenGL 3.3. Là où la fenêtre est dessinée sans lui (le rendu logiciel de
 [Rendu de la fenêtre](#rendu-de-la-fenêtre), certaines machines virtuelles et certains bureaux à distance), les
@@ -578,7 +579,7 @@ tests…* ouvre un livre EPD dans **Suites**.
   en ont écartées et combien n'ont pas pu être lues.
 
 ## Échiquier
-<!-- en: board 1b231755 -->
+<!-- en: board 0bbd00c9 -->
 
 La page Échiquier montre une partie ou une position, venue de n'importe où : **A** sur n'importe quel échiquier du
 programme (une partie de la mosaïque de l'onglet *Direct* ou celle suivie, l'échiquier de l'onglet *Parties*, de
@@ -590,6 +591,12 @@ L'échiquier est à gauche, avec les joueurs au-dessus et en dessous ; à droite
 (avec, en onglets, le tableau des coups, le bilan de la partie et les parties du fichier), et le graphe de la partie.
 Le sous-titre de la page dit ce qu'est la partie : son événement et sa ronde, son résultat, sa cadence, son code ECO
 et son ouverture, et comment elle s'est terminée.
+
+Un coup se joue sur l'échiquier à la souris : un clic sur la pièce puis un sur sa case, ou la pièce glissée jusque-là.
+Pendant qu'elle est glissée, elle suit le pointeur et la case où elle arriverait est teintée ; lâchée ailleurs, elle
+revient, toujours prise, pour être jouée par un clic. Sur l'échiquier 3D, un fantôme translucide de la pièce suit le
+pointeur, flottant au-dessus de l'échiquier et passant derrière les pièces devant lui, l'image restant telle quelle ; la
+pièce elle-même bouge quand elle est lâchée.
 
 ### Ouvrir, coller et mettre en place une position
 <!-- en: opening-pasting-and-setting-up-a-position 3778ddb5 -->

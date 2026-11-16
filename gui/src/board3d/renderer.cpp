@@ -41,9 +41,52 @@ GLuint compile(GLenum type, const std::string& source, std::string& why) {
     return shader;
 }
 
-GLuint link(const std::string& fragment, std::string& why) {
+// The ghost (Ghost): the piece's mesh turned and placed as trace.frag places a piece, seen through the same camera.
+constexpr const char* kGhostVertex = R"(#version 330 core
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec3 aNormal;
+uniform mat4 uViewProj;
+uniform vec4 uPlace;  // its base, and its turn round y
+out vec3 vWorld, vNormal;
+void main() {
+    float c = cos(uPlace.w), s = sin(uPlace.w);
+    // From the piece's space to the world, as trace.frag turns its normals.
+    vNormal     = vec3(c * aNormal.x - s * aNormal.z, aNormal.y, s * aNormal.x + c * aNormal.z);
+    vWorld      = vec3(c * aPos.x - s * aPos.z, aPos.y, s * aPos.x + c * aPos.z) + uPlace.xyz;
+    gl_Position = uViewProj * vec4(vWorld, 1.0);
+}
+)";
+
+// Lit by the studio's main light, outlined against the board, translucent; hidden where the traced image shows
+// something nearer: the mean distance of its first hits (trace.frag's gDepth over GUIDE_SAMPLES, as display.frag reads
+// it for the arrows), with a soft edge where a pixel's samples saw two depths.
+constexpr const char* kGhostFragment = R"(#version 330 core
+in vec3 vWorld, vNormal;
+out vec4 outColor;
+uniform sampler2D uRadiance, uGeometry;
+uniform vec2 uScale;  // traced size over shown size
+uniform vec3 uCamPos, uLight;
+uniform int uBlack;
+void main() {
+    ivec2 p     = clamp(ivec2(gl_FragCoord.xy * uScale), ivec2(0), textureSize(uGeometry, 0) - 1);
+    float n     = min(max(texelFetch(uRadiance, p, 0).a, 1.0), 64.0);
+    float scene = texelFetch(uGeometry, p, 0).w / n;
+    float d     = distance(vWorld, uCamPos);
+    float seen  = scene > 0.0 ? 1.0 - smoothstep(scene - 0.02, scene + 0.05, d) : 1.0;
+    vec3 v      = normalize(uCamPos - vWorld);
+    vec3 nn     = normalize(vNormal);
+    if (dot(nn, v) < 0.0) nn = -nn;
+    float lit  = max(dot(nn, uLight), 0.0);
+    float rim  = pow(1.0 - max(dot(nn, v), 0.0), 3.0);
+    vec3 base  = uBlack == 1 ? vec3(0.17, 0.14, 0.13) : vec3(0.95, 0.90, 0.80);
+    vec3 c     = base * (0.45 + 0.6 * lit) + vec3(0.35) * rim;
+    outColor   = vec4(min(c, vec3(1.0)), 0.72 * seen);
+}
+)";
+
+GLuint link(const std::string& fragment, std::string& why, const char* vertex = kFullscreenVertex) {
     const auto& f = fn();
-    GLuint vs     = compile(VERTEX_SHADER, kFullscreenVertex, why);
+    GLuint vs     = compile(VERTEX_SHADER, vertex, why);
     GLuint fs     = compile(FRAGMENT_SHADER, fragment, why);
     if (!vs || !fs) {
         if (vs) f.DeleteShader(vs);
@@ -286,6 +329,29 @@ bool Renderer::init(const ShaderSources& shaders, const unsigned char* pack, std
     f.BindBuffer(TEXTURE_BUFFER, 0);
     f.GenVertexArrays(1, &vao_);
     f.GenQueries(2, queries_);
+
+    // The ghost's meshes, drawn as they are; its program.
+    ghostProgram_ = link(kGhostFragment, why, kGhostVertex);
+    if (!ghostProgram_) return false;
+    f.GenVertexArrays(GLsizei(ghostVaos_.size()), ghostVaos_.data());
+    f.GenBuffers(GLsizei(ghostBuffers_.size()), ghostBuffers_.data());
+    for (std::size_t k = 0; k < meshes_.size() && k < ghostVaos_.size(); ++k) {
+        const PieceMesh& m = meshes_[k];
+        f.BindVertexArray(ghostVaos_[k]);
+        const std::vector<float>* attributes[2] = {&m.positions, &m.normals};
+        for (GLuint a = 0; a < 2; ++a) {
+            f.BindBuffer(ARRAY_BUFFER, ghostBuffers_[k * 3 + a]);
+            f.BufferData(ARRAY_BUFFER, GLsizeiptr(attributes[a]->size() * sizeof(float)), attributes[a]->data(),
+                         STATIC_DRAW);
+            f.VertexAttribPointer(a, 3, FLOAT, 0, 0, nullptr);
+            f.EnableVertexAttribArray(a);
+        }
+        f.BindBuffer(ELEMENT_ARRAY_BUFFER, ghostBuffers_[k * 3 + 2]);
+        f.BufferData(ELEMENT_ARRAY_BUFFER, GLsizeiptr(m.indices.size() * sizeof(std::uint32_t)), m.indices.data(),
+                     STATIC_DRAW);
+    }
+    f.BindVertexArray(0);
+    f.BindBuffer(ARRAY_BUFFER, 0);
     return true;
 }
 
@@ -316,6 +382,14 @@ void Renderer::shutdown() {
     for (unsigned p : {traceProgram_, prepareProgram_, atrousProgram_, displayProgram_}) f.DeleteProgram(p);
     traceProgram_ = prepareProgram_ = atrousProgram_ = displayProgram_ = 0;
     f.DeleteVertexArrays(1, &vao_);
+    if (ghostProgram_) f.DeleteProgram(ghostProgram_);
+    ghostProgram_ = 0;
+    f.DeleteVertexArrays(GLsizei(ghostVaos_.size()), ghostVaos_.data());
+    f.DeleteBuffers(GLsizei(ghostBuffers_.size()), ghostBuffers_.data());
+    ghostVaos_    = {};
+    ghostBuffers_ = {};
+    if (ghostDepth_) f.DeleteRenderbuffers(1, &ghostDepth_);
+    ghostDepth_ = 0;
     f.DeleteBuffers(3, buffers_);
     f.DeleteTextures(3, textures_);
     f.DeleteQueries(2, queries_);
@@ -367,6 +441,12 @@ void Renderer::setOverlay(const Overlay& overlay) {
     if (overlay == overlay_) return;
     overlay_ = overlay;
     dirty_   = true;
+}
+
+void Renderer::setGhost(const std::optional<Ghost>& ghost) {
+    if (ghost == ghost_) return;
+    ghost_ = ghost;
+    dirty_ = true;
 }
 
 void Overlay::addTint(int square, std::uint32_t colour) {
@@ -473,6 +553,12 @@ void Renderer::resizeDisplay(int width, int height) {
     f.GetIntegerv(FRAMEBUFFER_BINDING, &previous);
     f.BindFramebuffer(FRAMEBUFFER, displayFbo_);
     f.FramebufferTexture2D(FRAMEBUFFER, COLOR_ATTACHMENT0, TEXTURE_2D, target_[kDisplay].texture, 0);
+    // The ghost's own depth, so that its near side hides its far side.
+    if (!ghostDepth_) f.GenRenderbuffers(1, &ghostDepth_);
+    f.BindRenderbuffer(RENDERBUFFER, ghostDepth_);
+    f.RenderbufferStorage(RENDERBUFFER, DEPTH_COMPONENT24, width, height);
+    f.BindRenderbuffer(RENDERBUFFER, 0);
+    f.FramebufferRenderbuffer(FRAMEBUFFER, DEPTH_ATTACHMENT, RENDERBUFFER, ghostDepth_);
     f.BindFramebuffer(FRAMEBUFFER, GLuint(previous));
     dirty_ = true;
 }
@@ -680,6 +766,56 @@ void Renderer::displayPass() {
     f.DrawArrays(TRIANGLES, 0, 3);
 }
 
+void Renderer::ghostPass() {
+    if (!ghost_ || !ghostProgram_ || std::size_t(ghost_->kind) >= meshes_.size()) return;
+    const auto& f  = fn();
+    const Ghost& g = *ghost_;
+    const GLuint p = ghostProgram_;
+    f.BindFramebuffer(FRAMEBUFFER, displayFbo_);
+    f.Viewport(0, 0, outWidth_, outHeight_);
+    f.Disable(SCISSOR_TEST);
+    f.Enable(DEPTH_TEST);
+    f.DepthFunc(LESS);
+    f.DepthMask(1);
+    f.Clear(DEPTH_BUFFER_BIT);
+    // Over the image; its opacity left as it is, which the GUI draws it with.
+    f.Enable(BLEND);
+    f.BlendEquation(FUNC_ADD);
+    f.BlendFuncSeparate(SRC_ALPHA, ONE_MINUS_SRC_ALPHA, ZERO, ONE);
+    f.UseProgram(p);
+
+    const View view   = viewOf(camera_, float(outWidth_) / float(outHeight_));
+    const auto matrix = viewProjection(view);
+    f.UniformMatrix4fv(loc(p, "uViewProj"), 1, 0, matrix.data());
+    const float turn = (g.black ? 3.14159265f : 0.0f) + jitter(g.square);
+    f.Uniform4f(loc(p, "uPlace"), g.x, kGhostLift, g.z, turn);
+    f.Uniform3f(loc(p, "uCamPos"), view.eye.x, view.eye.y, view.eye.z);
+    // The studio's main light: the way to a sun, or to the centre of a soft box from the board's.
+    const Studio& s = kStudios[std::clamp(lighting_.studio, 0, int(std::size(kStudios)) - 1)];
+    V3 light{0, 1, 0};
+    if (s.lightCount > 0) {
+        const StudioLight& key = s.lights[0];
+        light = normalize(key.sun > 0 ? V3{key.centre[0] - key.target[0], key.centre[1] - key.target[1],
+                                           key.centre[2] - key.target[2]}
+                                      : V3{key.centre[0], key.centre[1], key.centre[2]});
+    }
+    f.Uniform3f(loc(p, "uLight"), light.x, light.y, light.z);
+    f.Uniform1i(loc(p, "uBlack"), g.black ? 1 : 0);
+    f.Uniform2f(loc(p, "uScale"), float(width_) / float(outWidth_), float(height_) / float(outHeight_));
+    const int inputs[2]  = {kRadiance, kGeometry};
+    const char* names[2] = {"uRadiance", "uGeometry"};
+    for (int i = 0; i < 2; ++i) {
+        f.ActiveTexture(TEXTURE0 + GLenum(i));
+        f.BindTexture(TEXTURE_2D, target_[inputs[i]].texture);
+        f.Uniform1i(loc(p, names[i]), i);
+    }
+    f.BindVertexArray(ghostVaos_[std::size_t(g.kind)]);
+    f.DrawElements(TRIANGLES, GLsizei(meshes_[std::size_t(g.kind)].indices.size()), UNSIGNED_INT, nullptr);
+    f.BindVertexArray(vao_);
+    f.Disable(DEPTH_TEST);
+    f.Disable(BLEND);
+}
+
 bool Renderer::render(int width, int height, double budgetMs, int scale) {
     if (width <= 0 || height <= 0 || !vao_) return false;
     scale        = std::clamp(scale, 1, 8);
@@ -760,6 +896,7 @@ bool Renderer::render(int width, int height, double budgetMs, int scale) {
     // What is shown stays until the new image has a whole sample.
     const bool show = samples_ > 0;
     if (show) displayPass();
+    if (show && ghost_) ghostPass();
     dirty_ = !show;
 
     f.BindFramebuffer(FRAMEBUFFER, GLuint(previousFbo));
