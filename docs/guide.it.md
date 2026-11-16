@@ -759,7 +759,7 @@ caricano com'erano, e le loro sezioni ricevono i profili a cui corrispondono. Un
 motori.
 
 ### Formato
-<!-- en: format be3029c4 -->
+<!-- en: format c316d5e2 -->
 
 Il tooltip di ogni formato dice di cosa si tratta.
 
@@ -779,6 +779,13 @@ Il tooltip di ogni formato dice di cosa si tratta.
   segnalato sotto la barra dell'LLR e il match continua; una volta raggiunte le partite, la prossima coppia che
   termina con l'LLR oltre un limite termina il match. Un massimo di partite inferiore al minimo termina il match senza
   decisione. È il modo più rapido per confrontare due versioni di un motore, e non serve altro.
+  *Colori* (*Alternati* per impostazione predefinita) dice chi ha il Bianco: A e B a turno, oppure *A sempre col Bianco*
+  o *B sempre col Bianco*, come `-noswap` (e `-reverse`) di fastchess, per le partite con handicap in cui il motore più
+  forte deve avere sempre il lato svantaggiato, o un'apertura provata da un solo lato. Ogni apertura viene comunque
+  giocata due volte, entrambe le partite con gli stessi colori: le coppie e le loro statistiche restano, il punteggio
+  include il vantaggio del Bianco, e il bias RMS, che invertire i colori annulla, non viene mostrato. I motori che
+  giocano due volte la stessa partita (nodi o profondità fissi, un solo thread) giocano allo stesso modo le due partite
+  di una coppia. Il riepilogo e l'intestazione del match lo indicano.
 - *Girone all'italiana*: ogni motore gioca contro ogni altro, *Cicli* volte, ogni volta due partite a colori invertiti
   (ciò che cutechess chiama round, da 2 partite per incontro). I turni seguono le tabelle Berger, quindi ogni motore
   gioca una volta per turno.
@@ -887,11 +894,11 @@ thread hardware (o, con un orologio, i core fisici). *Gioca su* sceglie la macch
 torneo su una macchina](#un-torneo-su-una-macchina)).
 
 ### Aperture
-<!-- en: openings 20a9290b -->
+<!-- en: openings 89eaf506 -->
 
 Un libro EPD, PGN o Polyglot (`.bin`) (una suite di aperture), ordine casuale o sequenziale, il numero di semimosse
 tenute da un libro PGN, l'indice di partenza e il seme casuale (0 = un nuovo ordine per ogni torneo). Ogni apertura
-viene giocata due volte, a colori invertiti.
+viene giocata due volte, a colori invertiti (con gli stessi colori in un match i cui *Colori* sono fissati).
 
 Un libro Polyglot viene seguito dalla posizione iniziale fino a una profondità (8 semimosse se non impostata),
 escludendo le mosse che pesano meno di un decimo della migliore della loro posizione; le posizioni raggiunte vengono

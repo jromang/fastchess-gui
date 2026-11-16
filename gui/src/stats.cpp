@@ -169,7 +169,10 @@ std::string statisticsText(const MatchStatistics& m) {
     out += fmt::format("BayesElo: {:.2f}, DrawElo: {:.1f}\n", m.bayeselo, m.drawelo);
     out += fmt::format("Pairs: two draws {:.2f} %, a win and a loss {:.2f} %, won/lost {:.2f}\n", 100 * m.two_draws,
                        100 * m.win_and_loss, m.pairs_ratio);
-    out += fmt::format("Variance ratio (pairs/games): {:.3f}, RMS bias: {:.1f} Elo\n", m.variance_ratio, m.rms_bias);
+    out += fmt::format("Variance ratio (pairs/games): {:.3f}", m.variance_ratio);
+    // Left out with locked colours (NaN then): it is what reversing them cancels out.
+    if (std::isfinite(m.rms_bias)) out += fmt::format(", RMS bias: {:.1f} Elo", m.rms_bias);
+    out += "\n";
     return out;
 }
 

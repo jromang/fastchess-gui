@@ -22,7 +22,7 @@ struct OpeningStats {
     std::string name;                // moves), empty when it is not a known opening (Chess960, odd positions)
 
     int games           = 0;
-    int pairs           = 0;  // complete pairs: both games, colours reversed, counted
+    int pairs           = 0;  // complete pairs: both games (colours reversed, unless locked) counted
     double white_points = 0;
     int draws           = 0;
     uint64_t plies      = 0;
@@ -30,7 +30,8 @@ struct OpeningStats {
     // Complete pairs that ended this way.
     int white_twice      = 0;  // White won both games: the opening favours White
     int black_twice      = 0;
-    int one_engine_twice = 0;  // the same engine won both: the opening tells the engines apart
+    int one_engine_twice = 0;  // the same engine won both: the opening tells the engines apart (with locked
+                               // colours, a colour that won both games too)
     int drawn_twice      = 0;
 
     // Games flagged when they ended (GameResult::unbalanced): both engines saw White, or Black, far ahead right

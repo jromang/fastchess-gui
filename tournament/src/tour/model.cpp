@@ -114,12 +114,14 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
     // the engine alone, "SF (A)" against "SF (B)" the same engine, so they refuse such a folder too.
     // Version 4: a team match. Versions up to 0.5.9 would take its format for a match's, and refuse its participants
     // without saying why.
+    // Version 5: a match with locked colours. Versions up to 0.6.2 would alternate them.
     const bool named = s.pgnFile() != "games.pgn" || s.chessbasePgnFile() != "games-chessbase.pgn";
     const bool own_books =
         std::any_of(s.participants.begin(), s.participants.end(), [](const Participant& p) { return !p.book.empty(); });
-    const bool teams = s.format == Format::TeamMatch;
+    const bool teams  = s.format == Format::TeamMatch;
+    const bool locked = s.format == Format::Match && s.coloursLocked();
 
-    j = {{"version", std::max({s.version, named ? 2 : 1, own_books ? 3 : 1, teams ? 4 : 1})},
+    j = {{"version", std::max({s.version, named ? 2 : 1, own_books ? 3 : 1, teams ? 4 : 1, locked ? 5 : 1})},
          {"name", s.name},
          {"format", s.format},
          {"cycles", s.cycles},
@@ -140,6 +142,7 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
     if (s.book_randomness != 0) j["book_randomness"] = s.book_randomness;
     if (s.sprt_bias != 0) j["sprt_bias"] = s.sprt_bias;
     if (s.sprt_min_games != 0) j["sprt_min_games"] = s.sprt_min_games;
+    if (locked) j["colours"] = s.colours;
     if (s.unbalanced_cp > 0) {
         j["unbalanced"] = {{"cp", s.unbalanced_cp}, {"moves", s.unbalanced_moves}, {"replace", s.unbalanced_replace}};
     }
@@ -160,7 +163,7 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
 
 void from_json(const nlohmann::json& j, TournamentSpec& s) {
     s.version = j.value("version", 1);
-    if (s.version > 4) throw std::runtime_error("this tournament was written by a newer version of fastchess-gui");
+    if (s.version > 5) throw std::runtime_error("this tournament was written by a newer version of fastchess-gui");
 
     s.name        = j.value("name", std::string{});
     s.format      = j.value("format", Format::Match);
@@ -183,6 +186,8 @@ void from_json(const nlohmann::json& j, TournamentSpec& s) {
     s.book_randomness       = std::clamp(j.value("book_randomness", 0), -100, 100);
     s.sprt_bias             = j.value("sprt_bias", 0.0);
     s.sprt_min_games        = j.value("sprt_min_games", uint64_t{0});
+    // A match only: the other formats alternate the colours.
+    s.colours = s.format == Format::Match ? j.value("colours", Colours::Alternate) : Colours::Alternate;
     if (const auto it = j.find("unbalanced"); it != j.end() && it->is_object()) {
         s.unbalanced_cp      = std::max(0, it->value("cp", 0));
         s.unbalanced_moves   = std::max(1, it->value("moves", 4));

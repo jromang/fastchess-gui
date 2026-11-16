@@ -856,10 +856,27 @@ void App::setupMatch() {
            "the error rates alpha and beta, whether A is worth elo1 more than B (H1 accepted) or only elo0."));
     setup_.mode = static_cast<MatchMode>(mode);
 
+    // Who has White: A and B in turn, or always the same one (odds games, an opening tried from one side).
+    ui::label(TR("Colours"), labelWidth());
+    ImGui::SetNextItemWidth(px(170));
+    int colours                  = static_cast<int>(setup_.colours);
+    const char* colour_choices[] = {coloursText(tour::Colours::Alternate), coloursText(tour::Colours::AWhite),
+                                    coloursText(tour::Colours::BWhite)};
+    if (ImGui::Combo("##colours", &colours, colour_choices, 3)) {
+        setup_.colours = static_cast<tour::Colours>(colours);
+        changed        = true;
+    }
+    itemHelp(
+        TR("Alternate: each opening is played twice, colours reversed, which cancels out what the opening gives "
+           "a side. Always White: for odds games, or an opening tried from one side; each opening is still played "
+           "twice, with the same colours, and the score includes White's advantage."));
+    const bool locked = setup_.colours != tour::Colours::Alternate;
+
     switch (setup_.mode) {
         case MatchMode::Fixed:
             changed |= inputInt(TR("Games"), "##games", setup_.fixed_games, 2, 100'000'000);
-            ui::help(TR("Played in pairs: each opening is played twice, with colours reversed."));
+            ui::help(locked ? TR("Played in pairs: each opening is played twice, with the same colours.")
+                            : TR("Played in pairs: each opening is played twice, with colours reversed."));
             break;
         case MatchMode::Infinite:
             break;
@@ -1622,6 +1639,11 @@ void App::drawSetupSummary() {
         check(!setup_.engine_a.empty() && !setup_.engine_b.empty() && apart,
               setup_.engine_a == setup_.engine_b && apart ? std::string(TR("The same engine, with different books"))
                                                           : std::string(TR("Two different engines chosen")));
+        if (setup_.colours != tour::Colours::Alternate) {
+            const bool a     = setup_.colours == tour::Colours::AWhite;
+            const auto white = names_played[a ? 0 : 1];
+            check(true, trf("{} has White in every game", white.empty() ? std::string(a ? "A" : "B") : white));
+        }
     } else if (setup_.format == TournamentFormat::TeamMatch) {
         // Each team needs an engine, and board by board the same number.
         const auto [a, b] = teamSizes(setup_);

@@ -600,8 +600,8 @@ TEST_CASE("own book: a tournament with one is of version 3, which the versions b
     again.participants[0].book = "";
     CHECK(nlohmann::json(again).at("version") == 3);
 
-    // A later version still is refused, as before (4 is a team match's).
-    j["version"] = 5;
+    // A later version still is refused, as before (4 is a team match's, 5 a match's with locked colours).
+    j["version"] = 6;
     CHECK_THROWS_WITH_AS((void)j.get<TournamentSpec>(), doctest::Contains("newer version"), std::runtime_error);
 
     // The folder of a tournament with an own book.

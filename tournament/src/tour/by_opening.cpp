@@ -51,6 +51,7 @@ std::vector<OpeningStats> resultsByOpening(const std::vector<GameResult>& result
     struct Pair {
         std::size_t entry = 0;
         std::vector<double> white;  // White's score in each counted game
+        std::vector<int> winner;    // the participant that won it, -1 for a draw
     };
     std::map<uint32_t, Pair> pairs;  // by encounter
 
@@ -82,9 +83,11 @@ std::vector<OpeningStats> resultsByOpening(const std::vector<GameResult>& result
         auto& pair = pairs[r.encounter];
         pair.entry = pos->second;
         pair.white.push_back(whiteScore(r));
+        pair.winner.push_back(r.result == "1-0" ? r.white : r.result == "0-1" ? r.black : -1);
     }
 
-    // The colours are reversed in the second game: White winning both means each engine won once.
+    // Who won is told by the participants, not the colours: they are reversed in the second game (White winning both
+    // means each engine won once), but not in a match with locked colours.
     for (const auto& [encounter, pair] : pairs) {
         if (pair.white.size() != 2) continue;
         auto& s = out[pair.entry];
@@ -92,7 +95,7 @@ std::vector<OpeningStats> resultsByOpening(const std::vector<GameResult>& result
         const double a = pair.white[0], b = pair.white[1];
         if (a == 1 && b == 1) s.white_twice++;
         if (a == 0 && b == 0) s.black_twice++;
-        if (a + b == 1 && a != 0.5) s.one_engine_twice++;
+        if (pair.winner[0] >= 0 && pair.winner[0] == pair.winner[1]) s.one_engine_twice++;
         if (a == 0.5 && b == 0.5) s.drawn_twice++;
     }
     return out;

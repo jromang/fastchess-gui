@@ -292,8 +292,8 @@ BroadcastSnapshot makeSnapshot(const BroadcastInput& in) {
         next.number = uint64_t{e.index} * 2 + static_cast<uint64_t>(n.game) + 1;
         next.round  = e.round;
         next.cycle  = e.cycle;
-        next.white  = name(n.game == 0 ? e.first : e.second);
-        next.black  = name(n.game == 0 ? e.second : e.first);
+        next.white  = name(in.spec.firstHasWhite(n.game) ? e.first : e.second);
+        next.black  = name(in.spec.firstHasWhite(n.game) ? e.second : e.first);
         if (n.opening) {
             next.opening = tour::openingLabel(tour::classify(*n.opening, frc));
             if (next.opening.empty()) next.opening = "initial position";

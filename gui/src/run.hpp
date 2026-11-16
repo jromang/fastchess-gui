@@ -45,6 +45,7 @@ struct RunInfo {
     std::string model;
     double sprt_bias        = 0;  // tour::TournamentSpec::sprt_bias
     uint64_t sprt_min_games = 0;
+    tour::Colours colours   = tour::Colours::Alternate;  // a match: who has White
     bool penta = true;
 
     Clock::time_point started{};

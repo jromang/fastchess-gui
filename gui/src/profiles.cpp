@@ -147,7 +147,8 @@ const std::vector<std::string>& sectionFields(SetupSection section) {
     static const std::vector<std::string> format{"format",        "cycles",      "seeds",          "mode",
                                                  "fixed_games",   "sprt_elo0",   "sprt_elo1",      "sprt_alpha",
                                                  "sprt_beta",     "sprt_model",  "sprt_max_games", "sprt_draw_ratio",
-                                                 "sprt_rms_bias", "team_boards", "sprt_bias",      "sprt_min_games"};
+                                                 "sprt_rms_bias", "team_boards", "sprt_bias",      "sprt_min_games",
+                                                 "colours"};
     static const std::vector<std::string> time{"limit",        "tc_base_s", "tc_inc_s", "tc_moves",
                                                "tc_margin_ms", "nodes",     "move_s",   "depth"};
     static const std::vector<std::string> openings{
@@ -212,7 +213,7 @@ bool sameSection(const MatchSetup& a, const MatchSetup& b, SetupSection section)
             if (a.format != b.format) return false;
             switch (a.format) {
                 case TournamentFormat::Match:
-                    if (a.mode != b.mode) return false;
+                    if (a.mode != b.mode || a.colours != b.colours) return false;
                     if (a.mode == MatchMode::Fixed) return a.fixed_games == b.fixed_games;
                     if (a.mode == MatchMode::Sprt) {
                         // The draw ratio and the RMS bias are the calculator's guesses: they change no game.
@@ -295,6 +296,7 @@ void copySection(MatchSetup& to, const MatchSetup& from, SetupSection section) {
             to.sprt_rms_bias   = from.sprt_rms_bias;
             to.sprt_bias       = from.sprt_bias;
             to.sprt_min_games  = from.sprt_min_games;
+            to.colours         = from.colours;
             return;
         case SetupSection::Time:
             to.limit        = from.limit;
@@ -512,6 +514,17 @@ std::string sprtText(double elo0, double elo1, double bias, uint64_t min_games) 
     return text;
 }
 
+const char* coloursText(tour::Colours colours) {
+    switch (colours) {
+        case tour::Colours::AWhite:
+            return TR("A always White");
+        case tour::Colours::BWhite:
+            return TR("B always White");
+        default:
+            return TR("Alternate");
+    }
+}
+
 std::string unbalancedText(const MatchSetup& s) {
     if (!s.unbalanced_enabled) return {};
     const int cp     = std::max(1, s.unbalanced_cp);
@@ -571,7 +584,8 @@ std::string timeSummary(const MatchSetup& s) {
 std::string formatSummary(const MatchSetup& s) {
     const auto cycles = static_cast<uint64_t>(std::max(1, s.cycles));
     switch (s.format) {
-        case TournamentFormat::Match:
+        case TournamentFormat::Match: {
+            std::string summary;
             if (s.mode == MatchMode::Sprt) {
                 std::vector<std::string> parts{TR("Match"),
                                                fmt::format("SPRT [{}, {}]", number(s.sprt_elo0), number(s.sprt_elo1))};
@@ -591,11 +605,16 @@ std::string formatSummary(const MatchSetup& s) {
                     parts.push_back(trn("at most {} game", "at most {} games", static_cast<uint64_t>(s.sprt_max_games),
                                         s.sprt_max_games));
                 }
-                return joined(parts);
+                summary = joined(parts);
+            } else if (s.mode == MatchMode::Infinite) {
+                summary = joined({TR("Match"), TR("until stopped")});
+            } else {
+                summary = joined({TR("Match"), trn("{} game", "{} games",
+                                                   static_cast<uint64_t>(std::max(0, s.fixed_games)), s.fixed_games)});
             }
-            if (s.mode == MatchMode::Infinite) return joined({TR("Match"), TR("until stopped")});
-            return joined({TR("Match"), trn("{} game", "{} games", static_cast<uint64_t>(std::max(0, s.fixed_games)),
-                                            s.fixed_games)});
+            if (s.colours != tour::Colours::Alternate) summary = joined({summary, coloursText(s.colours)});
+            return summary;
+        }
         case TournamentFormat::RoundRobin:
             return joined({TR("Round robin"), trn("{} cycle of 2 games", "{} cycles of 2 games", cycles, cycles)});
         case TournamentFormat::Gauntlet: {
@@ -694,16 +713,21 @@ std::string sectionCommandLine(const MatchSetup& s, SetupSection section) {
         case SetupSection::Format: {
             const auto rounds = std::max(1, s.cycles);
             switch (s.format) {
-                case TournamentFormat::Match:
+                case TournamentFormat::Match: {
+                    // Locked colours: fastchess' -noswap, -reverse giving White to the second engine.
+                    const std::string colours = s.colours == tour::Colours::AWhite   ? " -noswap"
+                                                : s.colours == tour::Colours::BWhite ? " -noswap -reverse"
+                                                                                     : "";
                     if (s.mode == MatchMode::Sprt) {
                         // The bounds fastchess would be given, the bias on them; it has no minimum of games.
-                        return fmt::format("-sprt elo0={} elo1={} alpha={} beta={} model={}",
+                        return fmt::format("-sprt elo0={} elo1={} alpha={} beta={} model={}{}",
                                            number(s.sprt_elo0 + s.sprt_bias), number(s.sprt_elo1 + s.sprt_bias),
-                                           number(s.sprt_alpha), number(s.sprt_beta), s.sprt_model);
+                                           number(s.sprt_alpha), number(s.sprt_beta), s.sprt_model, colours);
                     }
                     if (s.mode == MatchMode::Fixed)
-                        return fmt::format("-rounds {} -games 2 -repeat", std::max(1, s.fixed_games / 2));
-                    return "";
+                        return fmt::format("-rounds {} -games 2 -repeat{}", std::max(1, s.fixed_games / 2), colours);
+                    return colours.empty() ? std::string() : colours.substr(1);
+                }
                 case TournamentFormat::RoundRobin:
                     return fmt::format("-tournament round-robin -rounds {} -games 2 -repeat", rounds);
                 case TournamentFormat::Gauntlet:

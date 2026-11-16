@@ -781,7 +781,7 @@ werden so geladen, wie sie waren, und ihre Abschnitte erhalten die Profile, dene
 aus den Engines gebildet.
 
 ### Format
-<!-- en: format be3029c4 -->
+<!-- en: format c316d5e2 -->
 
 Der Tooltip jedes Formats sagt, was es ist.
 
@@ -802,6 +802,13 @@ Der Tooltip jedes Formats sagt, was es ist.
   Partien erreicht, beendet das nächste Paar, das mit der LLR jenseits einer Grenze endet, das Match. Eine Höchstzahl
   an Partien unter der Mindestzahl beendet das Match ohne Entscheidung. Das ist der schnellste Weg, zwei Versionen
   einer Engine zu vergleichen, und mehr braucht es nicht.
+  *Farben* (standardmäßig *Abwechselnd*) legt fest, wer Weiß hat: A und B im Wechsel, oder *A immer mit Weiß* oder *B
+  immer mit Weiß*, wie fastchess' `-noswap` (und `-reverse`), für Vorgabepartien, in denen die stärkere Engine immer die
+  benachteiligte Seite haben muss, oder für eine Eröffnung, die nur von einer Seite erprobt wird. Jede Eröffnung wird
+  weiterhin zweimal gespielt, beide Partien mit denselben Farben: Die Paare und ihre Statistiken bleiben, das Ergebnis
+  enthält den Vorteil von Weiß, und der RMS-Bias, den das Vertauschen der Farben aufhebt, wird nicht angezeigt. Engines,
+  die zweimal dieselbe Partie spielen (feste Knoten oder Tiefe, ein Thread), spielen die beiden Partien eines Paares
+  gleich. Die Zusammenfassung und der Kopf des Matches zeigen es an.
 - *Rundenturnier*: Jede Engine spielt gegen jede andere, *Zyklen*-mal, jedes Mal zwei Partien mit vertauschten Farben
   (was cutechess Runden nennt, mit 2 Partien pro Begegnung). Die Runden folgen Berger-Tabellen, so dass jede Engine
   einmal pro Runde spielt.
@@ -915,11 +922,12 @@ Hardware-Threads übersteigt (oder, mit einer Uhr, die physischen Kerne). *Spiel
 Turnier spielt (siehe [Ein Turnier auf einer Maschine](#ein-turnier-auf-einer-maschine)).
 
 ### Eröffnungen
-<!-- en: openings 20a9290b -->
+<!-- en: openings 89eaf506 -->
 
 Ein EPD-, PGN- oder Polyglot-Buch (`.bin`), also eine Eröffnungssammlung, zufällige oder sequenzielle Reihenfolge, die
 Zahl der aus einem PGN-Buch übernommenen Halbzüge, der Startindex und der Zufallsstartwert (0 = eine neue Reihenfolge
-für jedes Turnier). Jede Eröffnung wird zweimal gespielt, mit vertauschten Farben.
+für jedes Turnier). Jede Eröffnung wird zweimal gespielt, mit vertauschten Farben (mit denselben Farben in einem Match,
+dessen *Farben* festgelegt sind).
 
 Einem Polyglot-Buch wird von der Ausgangsstellung bis zu einer Tiefe gefolgt (8 Halbzüge, sofern nicht anders
 eingestellt), wobei die Züge wegfallen, die weniger als ein Zehntel des besten Zugs ihrer Stellung wiegen; die

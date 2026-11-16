@@ -1052,12 +1052,13 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
     const auto* second = spec_.participant(enc->second);
     if (!first || !second) throw std::logic_error("unknown participant in the schedule");
 
+    const bool first_white = spec_.firstHasWhite(game);
     GameTask task;
     task.encounter = *enc;
     task.game      = game;
     task.opening   = it->second;
-    task.white     = game == 0 ? first->engine : second->engine;
-    task.black     = game == 0 ? second->engine : first->engine;
+    task.white     = first_white ? first->engine : second->engine;
+    task.black     = first_white ? second->engine : first->engine;
     // As the engines read them; the spec keeps the UTF-8.
     task.white.options = forEngine(std::move(task.white.options));
     task.black.options = forEngine(std::move(task.black.options));
@@ -1069,8 +1070,8 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
         const auto seed = spec_.conditions.seed ^ (0x9e3779b97f4a7c15ULL * static_cast<uint64_t>(p.id + 1));
         config = throughBookAdapter(std::move(config), ownBookFileOf(p), p.book_depth, seed, spec_.book_randomness);
     };
-    own_book(task.white, game == 0 ? *first : *second);
-    own_book(task.black, game == 0 ? *second : *first);
+    own_book(task.white, first_white ? *first : *second);
+    own_book(task.black, first_white ? *second : *first);
     return task;
 }
 
@@ -1169,8 +1170,8 @@ Recorded TournamentState::complete(const GameTask& task, const fastchess::MatchD
     GameResult result;
     result.encounter   = task.encounter.index;
     result.game        = task.game;
-    result.white       = task.game == 0 ? task.encounter.first : task.encounter.second;
-    result.black       = task.game == 0 ? task.encounter.second : task.encounter.first;
+    result.white       = spec_.firstHasWhite(task.game) ? task.encounter.first : task.encounter.second;
+    result.black       = spec_.firstHasWhite(task.game) ? task.encounter.second : task.encounter.first;
     result.result      = PgnBuilder::getResultFromWhiteMatch(data.players.white);
     result.termination = data.termination;
     result.reason      = data.reason;

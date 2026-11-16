@@ -305,7 +305,7 @@ void Runner::closeSettledPairs() {
 
 void Runner::startFailed(const GameTask& task, const StartFailureLine& failure) {
     const bool white   = failure.engine == task.white.name;
-    const int id       = (task.game == 0) == white ? task.encounter.first : task.encounter.second;
+    const int id       = state_.spec().firstHasWhite(task.game) == white ? task.encounter.first : task.encounter.second;
     const auto& engine = white ? task.white : task.black;
 
     // What the engines of the game exchanged until then, the engine's error output first: what its author needs. A

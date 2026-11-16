@@ -194,6 +194,9 @@ msgstr ""
 msgid "A WinBoard engine."
 msgstr ""
 
+msgid "A always White"
+msgstr ""
+
 msgid "A book is being built already: wait for it, or cancel it."
 msgstr ""
 
@@ -542,6 +545,12 @@ msgstr ""
 msgid "Also as a zip"
 msgstr ""
 
+msgid "Alternate"
+msgstr ""
+
+msgid "Alternate: each opening is played twice, colours reversed, which cancels out what the opening gives a side. Always White: for odds games, or an opening tried from one side; each opening is still played twice, with the same colours, and the score includes White's advantage."
+msgstr ""
+
 msgid "An ECO code or its beginning (B9), a range (B20-B99), or words of the name (sicilian najdorf)."
 msgstr ""
 
@@ -690,6 +699,9 @@ msgid "Avg depth"
 msgstr ""
 
 msgid "B (baseline)"
+msgstr ""
+
+msgid "B always White"
 msgstr ""
 
 msgid "Back"
@@ -1188,6 +1200,9 @@ msgid "Close the console"
 msgstr ""
 
 msgid "Closes this notice. The options keep the values they have now."
+msgstr ""
+
+msgid "Colours"
 msgstr ""
 
 msgid "Common settings, forced on every engine (0 = each engine's own):"
@@ -3197,13 +3212,25 @@ msgstr ""
 msgid "Pairs of games played from this position, colours reversed."
 msgstr ""
 
+msgid "Pairs of games played from this position, with the same colours."
+msgstr ""
+
 msgid "Pairs scoring more than 1 for A, over those scoring less."
+msgstr ""
+
+msgid "Pairs where Black won both games."
 msgstr ""
 
 msgid "Pairs where Black won both games: the opening favours Black."
 msgstr ""
 
+msgid "Pairs where White won both games."
+msgstr ""
+
 msgid "Pairs where White won both games: the opening favours White."
+msgstr ""
+
+msgid "Pairs where the same engine won both games."
 msgstr ""
 
 msgid "Pairs where the same engine won both games: the opening tells the engines apart."
@@ -3302,6 +3329,9 @@ msgid "Play this game again"
 msgstr ""
 
 msgid "Played in pairs: each opening is played twice, with colours reversed."
+msgstr ""
+
+msgid "Played in pairs: each opening is played twice, with the same colours."
 msgstr ""
 
 msgid "Player"
@@ -3667,6 +3697,9 @@ msgid "Results of A"
 msgstr ""
 
 msgid "Results per game pair (same opening, colours reversed), in points for A: 0, 0.5, 1, 1.5, 2."
+msgstr ""
+
+msgid "Results per game pair (same opening, same colours), in points for A: 0, 0.5, 1, 1.5, 2."
 msgstr ""
 
 msgid "Resume"
@@ -6584,6 +6617,9 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "{} hardware threads on {} cores. A game takes the Threads of its engine that has the most: the two engines think in turn."
+msgstr ""
+
+msgid "{} has White in every game"
 msgstr ""
 
 msgid "{} has a control character, which Windows does not take in a file name."

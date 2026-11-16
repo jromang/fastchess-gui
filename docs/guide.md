@@ -697,7 +697,12 @@ The tooltip of each format says what it is.
   short test against an early lucky stop: an LLR beyond a bound before then is said under the LLR bar and the match
   goes on; once the games are there, the next pair that ends with the LLR beyond a bound ends the match. A maximum
   of games below the minimum ends the match without a decision. This is the quickest way to compare two versions of
-  an engine, and nothing else is needed.
+  an engine, and nothing else is needed. *Colours* (*Alternate* by default) says who has White: A and B in turn, or
+  *A always White* or *B always White*, as fastchess' `-noswap` (and `-reverse`), for odds games where the stronger
+  engine must always have the handicapped side, or an opening tried from one side. Each opening is still played
+  twice, both games with the same colours: the pairs and their statistics stay, the score includes White's advantage,
+  and the RMS bias, which reversing the colours cancels out, is not shown. Engines that play the same game twice
+  (fixed nodes or depth, one thread) play the two games of a pair alike. The summary and the match's header say it.
 - *Round robin*: every engine plays every other one, *Cycles* times, each time two games with colours reversed
   (what cutechess calls rounds, of 2 games per encounter). The rounds follow Berger tables, so every engine plays
   once per round.
@@ -797,7 +802,7 @@ machine](#a-tournament-on-a-machine)).
 
 An EPD, PGN or Polyglot (`.bin`) book (an opening suite), random or sequential order, the number of plies kept from a
 PGN book, the starting index and the random seed (0 = a new order for every tournament). Every opening is played
-twice, with colours reversed.
+twice, with colours reversed (with the same colours in a match whose *Colours* are locked).
 
 A Polyglot book is followed from the initial position to a depth (8 plies unless set), leaving out the moves that
 weigh less than a tenth of the best one of their position; the positions reached are written once to

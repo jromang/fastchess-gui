@@ -197,6 +197,9 @@ msgstr "Книга Polyglot просматривается от начально
 msgid "A WinBoard engine."
 msgstr "Движок WinBoard."
 
+msgid "A always White"
+msgstr "A всегда белыми"
+
 msgid "A book is being built already: wait for it, or cancel it."
 msgstr "Книга уже строится: дождитесь её или отмените."
 
@@ -548,6 +551,12 @@ msgstr "Также дописывать каждую партию в:"
 msgid "Also as a zip"
 msgstr "Также в zip"
 
+msgid "Alternate"
+msgstr "Поочерёдно"
+
+msgid "Alternate: each opening is played twice, colours reversed, which cancels out what the opening gives a side. Always White: for odds games, or an opening tried from one side; each opening is still played twice, with the same colours, and the score includes White's advantage."
+msgstr "Поочерёдно: каждый дебют играется дважды, с переменой цветов, что компенсирует преимущество, которое дебют даёт одной из сторон. Всегда белыми: для партий с форой или дебюта, проверяемого за одну сторону; каждый дебют по-прежнему играется дважды, но теми же цветами, и результат включает преимущество белых."
+
 msgid "An ECO code or its beginning (B9), a range (B20-B99), or words of the name (sicilian najdorf)."
 msgstr "Код ECO или его начало (B9), диапазон (B20-B99) или слова английского названия (sicilian najdorf)."
 
@@ -697,6 +706,9 @@ msgstr "Средн. глубина"
 
 msgid "B (baseline)"
 msgstr "B (базовый)"
+
+msgid "B always White"
+msgstr "B всегда белыми"
 
 msgid "Back"
 msgstr "Назад"
@@ -1195,6 +1207,9 @@ msgstr "Закрыть консоль"
 
 msgid "Closes this notice. The options keep the values they have now."
 msgstr "Закрывает это уведомление. Опции сохраняют свои текущие значения."
+
+msgid "Colours"
+msgstr "Цвета"
 
 msgid "Common settings, forced on every engine (0 = each engine's own):"
 msgstr "Общие настройки, обязательные для всех движков (0 = у каждого своя):"
@@ -3206,14 +3221,26 @@ msgstr "Пары (очки A из 2)"
 msgid "Pairs of games played from this position, colours reversed."
 msgstr "Пары партий, сыгранные из этой позиции с переменой цветов."
 
+msgid "Pairs of games played from this position, with the same colours."
+msgstr "Пары партий, сыгранные из этой позиции теми же цветами."
+
 msgid "Pairs scoring more than 1 for A, over those scoring less."
 msgstr "Пары, где A набрал больше 1 очка, по отношению к парам, где меньше."
+
+msgid "Pairs where Black won both games."
+msgstr "Пары, где чёрные выиграли обе партии."
 
 msgid "Pairs where Black won both games: the opening favours Black."
 msgstr "Пары, где чёрные выиграли обе партии: дебют в пользу чёрных."
 
+msgid "Pairs where White won both games."
+msgstr "Пары, где белые выиграли обе партии."
+
 msgid "Pairs where White won both games: the opening favours White."
 msgstr "Пары, где белые выиграли обе партии: дебют в пользу белых."
+
+msgid "Pairs where the same engine won both games."
+msgstr "Пары, где один и тот же движок выиграл обе партии."
 
 msgid "Pairs where the same engine won both games: the opening tells the engines apart."
 msgstr "Пары, где один и тот же движок выиграл обе партии: дебют выявляет разницу между движками."
@@ -3313,6 +3340,9 @@ msgstr "Переиграть эту партию"
 
 msgid "Played in pairs: each opening is played twice, with colours reversed."
 msgstr "Игра парами: каждый дебют играется дважды, с переменой цветов."
+
+msgid "Played in pairs: each opening is played twice, with the same colours."
+msgstr "Игра парами: каждый дебют играется дважды, теми же цветами."
 
 msgid "Player"
 msgstr "Игрок"
@@ -3682,6 +3712,9 @@ msgstr "Результаты A"
 
 msgid "Results per game pair (same opening, colours reversed), in points for A: 0, 0.5, 1, 1.5, 2."
 msgstr "Результаты по парам партий (один дебют, перемена цветов), в очках A: 0, 0.5, 1, 1.5, 2."
+
+msgid "Results per game pair (same opening, same colours), in points for A: 0, 0.5, 1, 1.5, 2."
+msgstr "Результаты по парам партий (один дебют, те же цвета), в очках A: 0, 0.5, 1, 1.5, 2."
 
 msgid "Resume"
 msgstr "Продолжить"
@@ -6658,6 +6691,9 @@ msgstr[2] "{} аппаратных потоков"
 
 msgid "{} hardware threads on {} cores. A game takes the Threads of its engine that has the most: the two engines think in turn."
 msgstr "{} аппаратных потоков на {} ядрах. Партия занимает Threads того из своих движков, у которого их больше: движки думают по очереди."
+
+msgid "{} has White in every game"
+msgstr "{} играет белыми в каждой партии"
 
 msgid "{} has a control character, which Windows does not take in a file name."
 msgstr "{} содержит управляющий символ, который Windows не допускает в имени файла."

@@ -35,8 +35,9 @@ ImVec4 eloColour(double elo, double err) {
     return ImGui::GetStyleColorVec4(ImGuiCol_Text);
 }
 
-// fishtest's statistics of the match, games against pairs, in a table.
-void statisticsTable(const MatchStatistics& m, bool penta, bool sprt) {
+// fishtest's statistics of the match, games against pairs, in a table. `reversed`: the colours are reversed in the
+// second game of a pair (not in a match with locked colours, where the RMS bias means nothing).
+void statisticsTable(const MatchStatistics& m, bool penta, bool sprt, bool reversed) {
     constexpr auto flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingFixedFit;
     if (!ImGui::BeginTable("##statistics", penta ? 3 : 2, flags)) return;
     ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
@@ -86,10 +87,12 @@ void statisticsTable(const MatchStatistics& m, bool penta, bool sprt) {
             TR("The variance of a game when the games are counted in pairs, over the variance of single games: "
                "below 1, the pairs need that much fewer games for the same precision."),
             "", number(m.variance_ratio, "{:.3f}"));
-        row(TR("RMS bias"),
-            TR("The spread of the advantage the openings give, in Elo: what playing each opening twice, colours "
-               "reversed, cancels out."),
-            "", std::isfinite(m.rms_bias) ? fmt::format("{:.1f} Elo", m.rms_bias) : std::string("—"));
+        if (reversed) {
+            row(TR("RMS bias"),
+                TR("The spread of the advantage the openings give, in Elo: what playing each opening twice, colours "
+                   "reversed, cancels out."),
+                "", std::isfinite(m.rms_bias) ? fmt::format("{:.1f} Elo", m.rms_bias) : std::string("—"));
+        }
         row(TR("Pair kinds"), TR("Two draws, and a win and a loss, among the pairs scoring 1."), "",
             trf("two draws {:.1f} % · a win and a loss {:.1f} %", 100 * m.two_draws, 100 * m.win_and_loss));
         row(TR("Pairs won / lost"), TR("Pairs scoring more than 1 for A, over those scoring less."), "",
@@ -188,7 +191,9 @@ void App::drawResults() {
         ImGui::SameLine();
         ImGui::TextDisabled(TR("· pairs [0-2]: %d  %d  %d  %d  %d"), s.penta_LL, s.penta_LD, s.penta_WL + s.penta_DD,
                             s.penta_WD, s.penta_WW);
-        ui::help(TR("Results per game pair (same opening, colours reversed), in points for A: 0, 0.5, 1, 1.5, 2."));
+        ui::help(info.colours == tour::Colours::Alternate
+                     ? TR("Results per game pair (same opening, colours reversed), in points for A: 0, 0.5, 1, 1.5, 2.")
+                     : TR("Results per game pair (same opening, same colours), in points for A: 0, 0.5, 1, 1.5, 2."));
     }
 
     if (info.sprt && sprt_) {
@@ -230,7 +235,8 @@ void App::drawResults() {
         open_statistics_ = false;
     }
     if (n > 0 && ImGui::TreeNode(TR("Statistics"))) {
-        statisticsTable(matchStatistics(s, sprt_ ? &*sprt_ : nullptr), info.penta, info.sprt && sprt_);
+        statisticsTable(matchStatistics(s, sprt_ ? &*sprt_ : nullptr), info.penta, info.sprt && sprt_,
+                        info.colours == tour::Colours::Alternate);
         ImGui::TreePop();
     }
 

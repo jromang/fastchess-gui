@@ -12,12 +12,13 @@
 
 namespace fcg::tour {
 
-// A pair of games between two participants on the same opening, colours swapped: the pentanomial unit.
+// A pair of games between two participants on the same opening, colours swapped (in a match with locked colours,
+// the same in both: TournamentSpec::colours): the pentanomial unit.
 struct Encounter {
     uint32_t index = 0;  // position in the schedule, also the encounter's id and its opening number
     uint32_t cycle = 1;  // 1-based
     uint32_t round = 1;  // 1-based, inside the cycle
-    int first      = 0;  // participant ids; `first` has White in game 0, `second` in game 1
+    int first      = 0;  // participant ids; `first` has White in game 0, `second` in game 1 (firstHasWhite())
     int second     = 0;
 };
 

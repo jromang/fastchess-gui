@@ -203,6 +203,85 @@ TEST_CASE("state: a released game is played again first") {
     CHECK(state->version() > before);
 }
 
+TEST_CASE("state: a match with locked colours gives the same engine White in both games of a pair, after a reopen") {
+    for (const auto colours : {Colours::AWhite, Colours::BWhite}) {
+        const bool a_white = colours == Colours::AWhite;
+        CAPTURE(a_white);
+        const auto dir          = freshDir(a_white ? "locked-a" : "locked-b");
+        auto spec               = matchSpec(4);
+        spec.colours            = colours;
+        const std::string white = a_white ? "A" : "B", black = a_white ? "B" : "A";
+        const int white_id = a_white ? 0 : 1;
+
+        {
+            auto state = TournamentState::create(dir, spec);
+            CHECK(state->totalGames() == 4u);
+            const auto g0 = state->claimNext(), g1 = state->claimNext();
+            REQUIRE(g0);
+            REQUIRE(g1);
+            // Still a pair: the same encounter and opening, games 0 and 1, now with the same colours.
+            CHECK(g0->encounter.index == 0);
+            CHECK(g1->encounter.index == 0);
+            CHECK(g1->game == 1);
+            CHECK(g0->opening.fen_epd == g1->opening.fen_epd);
+            for (const auto* g : {&*g0, &*g1}) {
+                CHECK(g->white.name == white);
+                CHECK(g->black.name == black);
+            }
+
+            // White wins both: the engine with White won the pair, the other lost it.
+            const auto r0 = state->complete(*g0, gameData(*g0, "1-0"));
+            CHECK(r0.result.white == white_id);
+            CHECK(r0.result.black == 1 - white_id);
+            const auto r1 = state->complete(*g1, gameData(*g1, "1-0"));
+            CHECK(r1.result.white == white_id);
+            REQUIRE(r1.pair);
+            CHECK(r1.pair->penta_WW + r1.pair->penta_LL == 1);
+            CHECK(state->pairStats(0, 1).wins == (a_white ? 2 : 0));
+            CHECK(state->pairStats(0, 1).losses == (a_white ? 0 : 2));
+        }
+
+        // Saved, of a version the versions that would alternate the colours refuse.
+        const auto saved = nlohmann::json::parse(readAll(dir / "tournament.json"));
+        CHECK(saved.at("version") == 5);
+        CHECK(saved.at("colours") == (a_white ? "a_white" : "b_white"));
+
+        auto state = TournamentState::open(dir);
+        CHECK(state->spec().colours == colours);
+        const auto next = state->claimNext();
+        REQUIRE(next);
+        CHECK(next->encounter.index == 1);
+        CHECK(next->white.name == white);
+    }
+}
+
+TEST_CASE("spec: locked colours are a match's only, and saved only when locked") {
+    auto match       = matchSpec(2);
+    nlohmann::json j = match;
+    CHECK_FALSE(j.contains("colours"));
+    CHECK(j.at("version") == 1);
+    CHECK(j.get<TournamentSpec>().colours == Colours::Alternate);
+    CHECK(match.firstHasWhite(0));
+    CHECK_FALSE(match.firstHasWhite(1));
+    match.colours = Colours::BWhite;
+    CHECK_FALSE(match.firstHasWhite(0));
+    CHECK_FALSE(match.firstHasWhite(1));
+
+    // A round robin alternates: the choice is neither saved nor read for it.
+    auto rr    = matchSpec(2);
+    rr.format  = Format::RoundRobin;
+    rr.colours = Colours::AWhite;
+    j          = rr;
+    CHECK_FALSE(j.contains("colours"));
+    j["colours"] = "a_white";
+    CHECK(j.get<TournamentSpec>().colours == Colours::Alternate);
+
+    // A version this one does not know is refused.
+    j            = matchSpec(2);
+    j["version"] = 6;
+    CHECK_THROWS_AS((void)j.get<TournamentSpec>(), std::runtime_error);
+}
+
 TEST_CASE("summaries: kept between two listings, read again when the journal changed") {
     const auto root = freshDir("summaries");
     fs::create_directories(root);

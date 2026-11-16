@@ -502,10 +502,13 @@ TEST_CASE("results by opening: games, pairs by kind, the starting position after
     openings[1] = fastchess::book::Opening(chess::constants::STARTPOS, {e4});  // the same position again
     openings[2] = fastchess::book::Opening(chess::constants::STARTPOS, {});
 
-    const auto game = [](uint32_t encounter, int g, const std::string& result) {
+    // Participant 0 has White in game 0, participant 1 in game 1; with `locked` colours, 0 in both.
+    const auto game = [](uint32_t encounter, int g, const std::string& result, bool locked = false) {
         GameResult r;
         r.encounter = encounter;
         r.game      = g;
+        r.white     = g == 0 || locked ? 0 : 1;
+        r.black     = 1 - r.white;
         r.result    = result;
         r.plies     = 40;
         return r;
@@ -535,6 +538,15 @@ TEST_CASE("results by opening: games, pairs by kind, the starting position after
     CHECK(by[1].drawn_twice == 1);
     CHECK(by[1].drawRate() == 1.0);
     CHECK(openingsEpd({&by[1]}) == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -\n");
+
+    // Locked colours: White winning both games is also the same engine winning both; a win each is not.
+    const auto locked = resultsByOpening(
+        {game(0, 0, "1-0", true), game(0, 1, "1-0", true), game(1, 0, "1-0", true), game(1, 1, "0-1", true)}, openings,
+        false);
+    REQUIRE(locked.size() == 1);
+    CHECK(locked[0].pairs == 2);
+    CHECK(locked[0].white_twice == 1);
+    CHECK(locked[0].one_engine_twice == 1);
 }
 
 TEST_CASE("rating list: the time control text of every kind of limit") {

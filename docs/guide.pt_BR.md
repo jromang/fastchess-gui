@@ -745,7 +745,7 @@ torneio mantém os próprios valores. Os modelos salvos por versões anteriores 
 recebem os perfis equivalentes ao que jogam. Um nome vazio é formado a partir dos engines.
 
 ### Formato
-<!-- en: format be3029c4 -->
+<!-- en: format c316d5e2 -->
 
 A dica de cada formato diz o que ele é.
 
@@ -765,6 +765,13 @@ A dica de cada formato diz o que ele é.
   próximo par que terminar com o LLR além de um limite encerra o match. Um máximo de partidas abaixo do mínimo
   encerra o match sem decisão. Esta é a forma mais rápida de comparar duas versões de um engine, e nada mais é
   necessário.
+  *Cores* (*Alternadas* por padrão) diz quem joga de Brancas: A e B alternadamente, ou *A sempre de Brancas* ou *B
+  sempre de Brancas*, como `-noswap` (e `-reverse`) do fastchess, para partidas com handicap em que o engine mais forte
+  deve ficar sempre com o lado em desvantagem, ou uma abertura testada por um só lado. Cada abertura continua sendo
+  jogada duas vezes, as duas partidas com as mesmas cores: os pares e suas estatísticas permanecem, a pontuação inclui a
+  vantagem das Brancas, e o viés RMS, que inverter as cores anula, não é mostrado. Engines que jogam duas vezes a mesma
+  partida (nós ou profundidade fixos, uma thread) jogam igual as duas partidas de um par. O resumo e o cabeçalho do
+  match o indicam.
 - *Todos contra todos*: cada engine joga contra todos os outros, *Ciclos* vezes, cada vez duas partidas com as cores
   invertidas (o que o cutechess chama de rodadas, de 2 partidas por encontro). As rodadas seguem as tabelas de
   Berger, então cada engine joga uma vez por rodada.
@@ -874,11 +881,12 @@ com relógio, dos núcleos físicos). *Jogar em* escolhe a máquina em que o tor
 máquina](#um-torneio-numa-máquina)).
 
 ### Aberturas
-<!-- en: openings 20a9290b -->
+<!-- en: openings 89eaf506 -->
 
 Um livro EPD, PGN ou Polyglot (`.bin`) (uma suíte de aberturas), ordem aleatória ou sequencial, o número de
 meios-lances mantidos de um livro PGN, o índice inicial e a semente aleatória (0 = uma nova ordem para cada torneio).
-Cada abertura é jogada duas vezes, com as cores invertidas.
+Cada abertura é jogada duas vezes, com as cores invertidas (com as mesmas cores em um match cujas *Cores* estão
+fixadas).
 
 Um livro Polyglot é seguido a partir da posição inicial até uma profundidade (8 meios-lances, se não for definida),
 deixando de fora os lances com peso menor que um décimo do melhor da sua posição; as posições alcançadas são gravadas

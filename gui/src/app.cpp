@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
+#include <limits>
 
 #include <SDL3/SDL.h>
 
@@ -1245,7 +1246,12 @@ std::string App::summaryText() const {
     const auto& info = run_->info();
     const auto& s    = stats_;
 
-    std::string text = fmt::format("{} vs {}, {}, {} games\n", info.engine_a, info.engine_b, info.limit_text, s.sum());
+    // Locked colours as fastchess' options say it.
+    const auto colours = info.colours == tour::Colours::AWhite   ? fmt::format(", {} always White", info.engine_a)
+                         : info.colours == tour::Colours::BWhite ? fmt::format(", {} always White", info.engine_b)
+                                                                 : std::string();
+    std::string text =
+        fmt::format("{} vs {}, {}, {} games{}\n", info.engine_a, info.engine_b, info.limit_text, s.sum(), colours);
     text += fmt::format("Elo: {:.2f} +/- {:.2f}, nElo: {:.2f} +/- {:.2f}\n", current_.elo, current_.elo_err,
                         current_.nelo, current_.nelo_err);
     text +=
@@ -1266,7 +1272,11 @@ std::string App::summaryText() const {
                     "\n";
         }
     }
-    if (s.sum() > 0 && info.penta) text += statisticsText(matchStatistics(s, sprt_ ? &*sprt_ : nullptr));
+    if (s.sum() > 0 && info.penta) {
+        auto m = matchStatistics(s, sprt_ ? &*sprt_ : nullptr);
+        if (info.colours != tour::Colours::Alternate) m.rms_bias = std::numeric_limits<double>::quiet_NaN();
+        text += statisticsText(m);
+    }
     return text;
 }
 

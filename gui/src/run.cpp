@@ -178,6 +178,7 @@ RunInfo runInfo(const tour::TournamentSpec& spec, const fs::path& dir) {
     info.model            = t.sprt.model;
     info.sprt_bias        = spec.sprt_bias;
     info.sprt_min_games   = spec.sprt_min_games;
+    info.colours          = spec.format == tour::Format::Match ? spec.colours : tour::Colours::Alternate;
     info.penta            = true;
     return info;
 }
@@ -637,6 +638,7 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     spec.rounds = setup.format == TournamentFormat::Swiss ? std::max(1, setup.cycles) : 0;
     spec.seeds  = std::max(1, setup.seeds);
     if (match) spec.max_games = t.rounds >= UNBOUNDED_ROUNDS ? 0 : t.rounds * t.games;
+    if (match) spec.colours = setup.colours;
     if (t.sprt.enabled) {
         spec.sprt_bias      = setup.sprt_bias;
         spec.sprt_min_games = static_cast<uint64_t>(std::max(0, setup.sprt_min_games));

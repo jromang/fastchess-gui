@@ -163,16 +163,23 @@ void App::drawOpenings() {
         ImGui::TableSetupColumn("2-0", down, width("2-0", "0000"));
         ImGui::TableSetupColumn(TR("Moves"), down, width(TR("Moves"), "000"));
 
-        // Header tooltips: what each column counts.
+        // Header tooltips: what each column counts. With locked colours, a colour that won both games is also an
+        // engine that did: the opening and the engines cannot be told apart.
+        const bool locked = run_->info().colours != tour::Colours::Alternate;
         ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
-        const char* tips[] = {nullptr,
-                              TR("Pairs of games played from this position, colours reversed."),
-                              TR("White's score over the games."),
-                              TR("Share of drawn games."),
-                              TR("Pairs where White won both games: the opening favours White."),
-                              TR("Pairs where Black won both games: the opening favours Black."),
-                              TR("Pairs where the same engine won both games: the opening tells the engines apart."),
-                              TR("Average length of the games, in moves.")};
+        const char* tips[] = {
+            nullptr,
+            locked ? TR("Pairs of games played from this position, with the same colours.")
+                   : TR("Pairs of games played from this position, colours reversed."),
+            TR("White's score over the games."),
+            TR("Share of drawn games."),
+            locked ? TR("Pairs where White won both games.")
+                   : TR("Pairs where White won both games: the opening favours White."),
+            locked ? TR("Pairs where Black won both games.")
+                   : TR("Pairs where Black won both games: the opening favours Black."),
+            locked ? TR("Pairs where the same engine won both games.")
+                   : TR("Pairs where the same engine won both games: the opening tells the engines apart."),
+            TR("Average length of the games, in moves.")};
         for (int c = 0; c < 8; ++c) {
             ImGui::TableSetColumnIndex(c);
             ImGui::TableHeader(ImGui::TableGetColumnName(c));

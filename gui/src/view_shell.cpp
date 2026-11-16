@@ -444,11 +444,12 @@ void App::drawWorkspaceHeader() {
         sprt += " · " + trn("no decision before {} game", "no decision before {} games", info.sprt_min_games,
                             info.sprt_min_games);
     }
-    const auto detail = info.format == tour::Format::Match
-                            ? (info.sprt          ? sprt
-                               : info.total_games ? trn("{} game", "{} games", info.total_games, info.total_games)
-                                                  : std::string(TR("until stopped")))
-                            : trf("{} engines · {} games", info.participants, info.total_games);
+    auto detail = info.format == tour::Format::Match
+                      ? (info.sprt          ? sprt
+                         : info.total_games ? trn("{} game", "{} games", info.total_games, info.total_games)
+                                            : std::string(TR("until stopped")))
+                      : trf("{} engines · {} games", info.participants, info.total_games);
+    if (info.colours != tour::Colours::Alternate) detail += std::string(" · ") + coloursText(info.colours);
     ImGui::TextDisabled("%s", fmt::format("{} · {} · {}", formatLabel(info.format), info.limit_text, detail).c_str());
     ui::pageTitle(t ? t->spec().name.c_str() : TR("No match"), guideSection());
 

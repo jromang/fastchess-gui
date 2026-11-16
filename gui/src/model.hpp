@@ -296,6 +296,8 @@ struct MatchSetup {
     // before this many games, the LLR still shown (tour/sprt_rules.hpp); 0: none.
     double sprt_bias   = 0;
     int sprt_min_games = 0;
+    // A match: A and B in turn with White, or always the same one (tour::TournamentSpec::colours).
+    tour::Colours colours = tour::Colours::Alternate;
     // The SPRT calculator's guesses about the games to come; fishtest's values for its openings by default.
     double sprt_draw_ratio = 0.49;
     double sprt_rms_bias   = 191;  // Elo
@@ -457,6 +459,7 @@ void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) 
     NLOHMANN_JSON_TO(team_boards)
     NLOHMANN_JSON_TO(team_a)
     NLOHMANN_JSON_TO(team_b)
+    NLOHMANN_JSON_TO(colours)
     if (!nlohmann_json_t.machine.empty()) nlohmann_json_j["machine"] = nlohmann_json_t.machine;
 }
 template <typename BasicJsonType,
@@ -469,6 +472,7 @@ void from_json(const BasicJsonType& nlohmann_json_j, MatchSetup& nlohmann_json_t
     NLOHMANN_JSON_FROM_WITH_DEFAULT(team_boards)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(team_a)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(team_b)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(colours)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(machine)
 }
 #undef FCG_MATCH_SETUP_FIELDS_1

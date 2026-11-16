@@ -131,6 +131,10 @@ void recognizeProfiles(MatchSetup& setup, const ProfileStore& store);
 // the bounds the tester gave (those the SPRT is given have the bias on them).
 [[nodiscard]] std::string sprtText(double elo0, double elo1, double bias, uint64_t min_games);
 
+// Who has White in a match (MatchSetup::colours), as its choice and the summaries say it: "Alternate", "A always
+// White", "B always White".
+[[nodiscard]] const char* coloursText(tour::Colours colours);
+
 // The rule for the unbalanced openings, as the summaries say it: "unbalanced openings flagged (±200 cp for 4 moves)",
 // "unbalanced openings replaced (…)"; empty when it is off.
 [[nodiscard]] std::string unbalancedText(const MatchSetup& setup);

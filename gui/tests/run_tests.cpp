@@ -660,6 +660,43 @@ TEST_CASE("stopping at once for an engine that cannot start: the setup's choice 
     CHECK(quickTestSetup(engines[0], "", root / "quick-test.epd", library).stop_on_start_failure);
 }
 
+TEST_CASE("a match with B always White plays every game with B as White; other formats alternate") {
+    const auto root     = fs::temp_directory_path() / "fcg-run-tests-locked-colours";
+    const auto topology = topologyFromCores({{0, 0}, {0, 1}});
+    fcg::test::removeAll(root);
+    auto setup       = randomSetup(4);
+    setup.colours    = tour::Colours::BWhite;
+    const auto built = buildRun(setup, randomEngines(), topology, root);
+    CHECK(built.spec.colours == tour::Colours::BWhite);
+    CHECK(built.info.colours == tour::Colours::BWhite);
+
+    auto rr         = setup;
+    rr.format       = TournamentFormat::RoundRobin;
+    rr.participants = {{"random-a"}, {"random-b"}};
+    CHECK(buildRun(rr, randomEngines(), topology, root).spec.colours == tour::Colours::Alternate);
+
+    if (!fs::is_regular_file(randomMover())) {
+        MESSAGE("random mover not available on this platform, skipped");
+        return;
+    }
+    {  // The harness keeps the journal open: Windows removes the folder only once it is closed.
+        Harness h;
+        REQUIRE(h.run.start(setup, randomEngines(), topology, root).empty());
+        REQUIRE(h.waitFinished());
+        CHECK(h.run.error().empty());
+        REQUIRE(h.games.size() == 4);
+        for (const auto& g : h.games) {
+            CHECK(g.white == 1);
+            CHECK_FALSE(g.a_white);
+        }
+        // Still counted in pairs: two of them.
+        REQUIRE_FALSE(h.stats.empty());
+        const auto& s = h.stats.back();
+        CHECK(s.penta_WW + s.penta_WD + s.penta_WL + s.penta_DD + s.penta_LD + s.penta_LL == 2);
+    }
+    fcg::test::removeAll(root);
+}
+
 TEST_CASE("a finished round robin extended by a cycle resumes to play exactly the new games") {
     if (!fs::is_regular_file(randomMover())) {
         MESSAGE("random mover not available on this platform, skipped");

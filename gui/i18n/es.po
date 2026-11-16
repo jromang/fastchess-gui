@@ -194,6 +194,9 @@ msgstr "Se sigue un libro Polyglot desde la posición inicial hasta esta profund
 msgid "A WinBoard engine."
 msgstr "Un motor WinBoard."
 
+msgid "A always White"
+msgstr "A siempre con blancas"
+
 msgid "A book is being built already: wait for it, or cancel it."
 msgstr "Ya se está construyendo un libro: espéralo o cancélalo."
 
@@ -542,6 +545,12 @@ msgstr "Añadir también cada partida a:"
 msgid "Also as a zip"
 msgstr "También en zip"
 
+msgid "Alternate"
+msgstr "Alternados"
+
+msgid "Alternate: each opening is played twice, colours reversed, which cancels out what the opening gives a side. Always White: for odds games, or an opening tried from one side; each opening is still played twice, with the same colours, and the score includes White's advantage."
+msgstr "Alternados: cada apertura se juega dos veces, con los colores invertidos, lo que anula lo que la apertura da a un bando. Siempre con blancas: para partidas con ventaja, o una apertura probada desde un solo bando; cada apertura se sigue jugando dos veces, con los mismos colores, y la puntuación incluye la ventaja de las blancas."
+
 msgid "An ECO code or its beginning (B9), a range (B20-B99), or words of the name (sicilian najdorf)."
 msgstr "Un código ECO o su comienzo (B9), un rango (B20-B99), o palabras del nombre, en inglés (sicilian najdorf)."
 
@@ -691,6 +700,9 @@ msgstr "Profundidad media"
 
 msgid "B (baseline)"
 msgstr "B (referencia)"
+
+msgid "B always White"
+msgstr "B siempre con blancas"
 
 msgid "Back"
 msgstr "Volver"
@@ -1189,6 +1201,9 @@ msgstr "Cerrar la consola"
 
 msgid "Closes this notice. The options keep the values they have now."
 msgstr "Cierra este aviso. Las opciones conservan los valores que tienen ahora."
+
+msgid "Colours"
+msgstr "Colores"
 
 msgid "Common settings, forced on every engine (0 = each engine's own):"
 msgstr "Ajustes comunes, impuestos a todos los motores (0 = el propio de cada motor):"
@@ -3197,14 +3212,26 @@ msgstr "Pares (puntos de A sobre 2)"
 msgid "Pairs of games played from this position, colours reversed."
 msgstr "Pares de partidas jugadas desde esta posición, con los colores invertidos."
 
+msgid "Pairs of games played from this position, with the same colours."
+msgstr "Pares de partidas jugadas desde esta posición, con los mismos colores."
+
 msgid "Pairs scoring more than 1 for A, over those scoring less."
 msgstr "Pares que dan más de 1 punto a A, frente a los que dan menos."
+
+msgid "Pairs where Black won both games."
+msgstr "Pares en los que las negras ganaron las dos partidas."
 
 msgid "Pairs where Black won both games: the opening favours Black."
 msgstr "Pares en los que las negras ganaron las dos partidas: la apertura favorece a las negras."
 
+msgid "Pairs where White won both games."
+msgstr "Pares en los que las blancas ganaron las dos partidas."
+
 msgid "Pairs where White won both games: the opening favours White."
 msgstr "Pares en los que las blancas ganaron las dos partidas: la apertura favorece a las blancas."
+
+msgid "Pairs where the same engine won both games."
+msgstr "Pares en los que el mismo motor ganó las dos partidas."
 
 msgid "Pairs where the same engine won both games: the opening tells the engines apart."
 msgstr "Pares en los que el mismo motor ganó las dos partidas: la apertura distingue a los motores."
@@ -3303,6 +3330,9 @@ msgstr "Volver a jugar esta partida"
 
 msgid "Played in pairs: each opening is played twice, with colours reversed."
 msgstr "Jugado por pares: cada apertura se juega dos veces, con los colores invertidos."
+
+msgid "Played in pairs: each opening is played twice, with the same colours."
+msgstr "Jugado por pares: cada apertura se juega dos veces, con los mismos colores."
 
 msgid "Player"
 msgstr "Jugador"
@@ -3668,6 +3698,9 @@ msgstr "Resultados de A"
 
 msgid "Results per game pair (same opening, colours reversed), in points for A: 0, 0.5, 1, 1.5, 2."
 msgstr "Resultados por par de partidas (misma apertura, colores invertidos), en puntos para A: 0, 0.5, 1, 1.5, 2."
+
+msgid "Results per game pair (same opening, same colours), in points for A: 0, 0.5, 1, 1.5, 2."
+msgstr "Resultados por par de partidas (misma apertura, mismos colores), en puntos para A: 0, 0.5, 1, 1.5, 2."
 
 msgid "Resume"
 msgstr "Reanudar"
@@ -6585,6 +6618,9 @@ msgstr[1] "{} hilos de hardware"
 
 msgid "{} hardware threads on {} cores. A game takes the Threads of its engine that has the most: the two engines think in turn."
 msgstr "{} hilos de hardware en {} núcleos. Una partida ocupa los Threads de su motor que tiene más: los dos motores piensan por turnos."
+
+msgid "{} has White in every game"
+msgstr "{} lleva las blancas en todas las partidas"
 
 msgid "{} has a control character, which Windows does not take in a file name."
 msgstr "{} tiene un carácter de control, que Windows no acepta en un nombre de archivo."

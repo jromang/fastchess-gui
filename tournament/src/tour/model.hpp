@@ -27,6 +27,14 @@ NLOHMANN_JSON_SERIALIZE_ENUM(Format, {{Format::Match, "match"},
 // Formats whose rounds are paired from the results, as the tournament goes.
 [[nodiscard]] inline bool pairedAsItGoes(Format f) noexcept { return f == Format::Swiss || f == Format::Knockout; }
 
+// Who has White in a match: A and B in turn (each opening twice, colours reversed), or always the same engine
+// (fastchess' -noswap, and -noswap -reverse for B).
+enum class Colours { Alternate = 0, AWhite = 1, BWhite = 2 };
+
+NLOHMANN_JSON_SERIALIZE_ENUM(Colours, {{Colours::Alternate, "alternate"},
+                                       {Colours::AWhite, "a_white"},
+                                       {Colours::BWhite, "b_white"}})
+
 // Identifies a file a tournament depends on, an opening book or an engine's program, to warn when it changed.
 struct FileFingerprint {
     uint64_t size  = 0;  // 0: unknown, the file could not be read
@@ -99,6 +107,11 @@ struct TournamentSpec {
     // decision before this many games; 0: none.
     double sprt_bias        = 0;
     uint64_t sprt_min_games = 0;
+    // Match: who has White. Locked, an encounter is still two games on the same opening, both with the same colours
+    // (as fastchess plays -noswap -games 2): the pairs, their numbers and the pentanomial stay. A match with locked
+    // colours is of version 5, which versions up to 0.6.2 (that would alternate them) refuse. Alternate in the
+    // other formats.
+    Colours colours = Colours::Alternate;
 
     // A team match: board by board (the first engine of each team against the first of the other, and so on, the
     // teams of the same size) rather than every engine of a team against every engine of the other (a Scheveningen
@@ -153,6 +166,19 @@ struct TournamentSpec {
     // that an engine added later gets them too; the engines' own options are in their configuration. Empty when
     // the setup forced none, and in the tournaments of 0.4.13 and earlier.
     std::vector<std::pair<std::string, std::string>> forced_options;
+
+    // Whether an encounter's `first` participant (A in a match) has White in its game `game` (0 or 1).
+    [[nodiscard]] bool firstHasWhite(int game) const noexcept {
+        switch (colours) {
+            case Colours::AWhite:
+                return true;
+            case Colours::BWhite:
+                return false;
+            default:
+                return game == 0;
+        }
+    }
+    [[nodiscard]] bool coloursLocked() const noexcept { return colours != Colours::Alternate; }
 
     [[nodiscard]] std::string pgnFile() const { return pgn_file.empty() ? "games.pgn" : pgn_file; }
     [[nodiscard]] std::string chessbasePgnFile() const {
