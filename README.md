@@ -137,7 +137,8 @@ this repository still builds unchanged.
   (Gaia and Stockfish side by side, one judging), kept with the game. *This move* tells what the engine that played
   it said, the line it expected and each analysis's verdict; a *Review* tab gives each side's accuracy, the key moments
   and who saw the turning point first. A game (or a pair) between two engines from any position, with a clock for
-  each, played beside a running tournament, or between you and an engine, in 2D or 3D.
+  each, played beside a running tournament, or between you and an engine, in 2D or 3D, a piece played by two clicks or
+  dragged (on the 3D board, a ghost of it that passes behind the pieces in front).
 
 | The Board page: a game analysed by Gaia and Stockfish, its graph and this move | The review: accuracy, key moments, who saw it first |
 |---|---|
