@@ -1301,6 +1301,9 @@ msgstr ""
 msgid "Copy PGN"
 msgstr ""
 
+msgid "Copy the variation"
+msgstr ""
+
 msgid "Copy the version"
 msgstr ""
 
@@ -1404,6 +1407,9 @@ msgid "Delete"
 msgstr ""
 
 msgid "Delete the profile {}?"
+msgstr ""
+
+msgid "Delete the variation"
 msgstr ""
 
 msgid "Delete {}…"
@@ -1680,6 +1686,9 @@ msgid "Error: {}"
 msgstr ""
 
 msgid "Esc or a click: the game"
+msgstr ""
+
+msgid "Eval"
 msgstr ""
 
 msgid "Evaluation"
@@ -2300,6 +2309,9 @@ msgid "Interrupted: {} could not start: {}"
 msgstr ""
 
 msgid "Interrupted: {} crashed or stopped responding (game {})"
+msgstr ""
+
+msgid "It becomes the line it branches from; that line's moves after it become the variation."
 msgstr ""
 
 msgid "It cannot be read: {}."
@@ -3492,6 +3504,9 @@ msgstr ""
 msgid "Progress"
 msgstr ""
 
+msgid "Promote the variation"
+msgstr ""
+
 msgid "Protocol"
 msgstr ""
 
@@ -4638,9 +4653,6 @@ msgstr ""
 msgid "The folder {} is not there."
 msgstr ""
 
-msgid "The game as it was, without the moves played over it."
-msgstr ""
-
 msgid "The game being played ends without a result."
 msgstr ""
 
@@ -4650,7 +4662,10 @@ msgstr ""
 msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
 msgstr ""
 
-msgid "The game, with its tags and moves, as PGN."
+msgid "The game's position this variation leaves it at; the variation stays in the moves."
+msgstr ""
+
+msgid "The game, with its tags, moves and variations, as PGN."
 msgstr ""
 
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
@@ -7527,6 +7542,9 @@ msgid "· STS points"
 msgstr ""
 
 msgid "· draws %.1f %%"
+msgstr ""
+
+msgid "· end of book ·"
 msgstr ""
 
 msgid "· pairs [0-2]: %d  %d  %d  %d  %d"

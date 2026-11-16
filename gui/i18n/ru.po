@@ -1307,6 +1307,9 @@ msgstr "Копировать FEN"
 msgid "Copy PGN"
 msgstr "Копировать PGN"
 
+msgid "Copy the variation"
+msgstr "Копировать вариант"
+
 msgid "Copy the version"
 msgstr "Скопировать версию"
 
@@ -1411,6 +1414,9 @@ msgstr "Удалить"
 
 msgid "Delete the profile {}?"
 msgstr "Удалить профиль {}?"
+
+msgid "Delete the variation"
+msgstr "Удалить вариант"
 
 msgid "Delete {}…"
 msgstr "Удалить {}…"
@@ -1687,6 +1693,9 @@ msgstr "Ошибка: {}"
 
 msgid "Esc or a click: the game"
 msgstr "Esc или щелчок: партия"
+
+msgid "Eval"
+msgstr "Оценка"
 
 msgid "Evaluation"
 msgstr "Оценка"
@@ -2308,6 +2317,9 @@ msgstr "Прервано: {} не удалось запустить: {}"
 
 msgid "Interrupted: {} crashed or stopped responding (game {})"
 msgstr "Прервано: {} вылетел или перестал отвечать (партия {})"
+
+msgid "It becomes the line it branches from; that line's moves after it become the variation."
+msgstr "Он становится линией, от которой ответвляется; ходы той линии после него становятся вариантом."
 
 msgid "It cannot be read: {}."
 msgstr "Его не удаётся прочитать: {}."
@@ -3503,6 +3515,9 @@ msgstr "Программы"
 msgid "Progress"
 msgstr "Прогресс"
 
+msgid "Promote the variation"
+msgstr "Поднять вариант"
+
 msgid "Protocol"
 msgstr "Протокол"
 
@@ -4661,9 +4676,6 @@ msgstr "Папки {} больше нет."
 msgid "The folder {} is not there."
 msgstr "Папки {} нет."
 
-msgid "The game as it was, without the moves played over it."
-msgstr "Партия, какой она была, без сыгранных поверх ходов."
-
 msgid "The game being played ends without a result."
 msgstr "Текущая партия заканчивается без результата."
 
@@ -4673,8 +4685,11 @@ msgstr "Партия снова засчитывается как прежде."
 msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
 msgstr "Отслеживаемая партия на всё окно крупным шрифтом — для телевизора, клуба или трансляции. F11: во весь экран, Esc: назад."
 
-msgid "The game, with its tags and moves, as PGN."
-msgstr "Партия с тегами и ходами в формате PGN."
+msgid "The game's position this variation leaves it at; the variation stays in the moves."
+msgstr "Позиция партии, от которой отходит этот вариант; вариант остаётся в ходах."
+
+msgid "The game, with its tags, moves and variations, as PGN."
+msgstr "Партия с тегами, ходами и вариантами в формате PGN."
 
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "Партии в том виде, в каком их присылают тестеры рейтинг-листов: файл назван вашим именем, дата и условия, игроки записаны так, как в списках, туры перенумерованы, аннулированные партии и дубликаты исключены."
@@ -7648,6 +7663,9 @@ msgstr "· очки STS"
 
 msgid "· draws %.1f %%"
 msgstr "· ничьи %.1f %%"
+
+msgid "· end of book ·"
+msgstr "· конец книги ·"
 
 msgid "· pairs [0-2]: %d  %d  %d  %d  %d"
 msgstr "· пары [0-2]: %d  %d  %d  %d  %d"

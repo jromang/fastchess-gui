@@ -363,6 +363,11 @@ class App {
     void drawBoardColumn(float size);  // the board, the buttons under it
     void drawBoardAnalysis();
     void drawBoardMoves(float height);
+    void drawBoardTable();  // the Table tab: each move with its engine's score, depth and time
+    // The line shown on the board: the game (-1) or a variation, at its position `ply`.
+    void showBoardLine(int line, int ply);
+    // The position of the game the board's position is on, or leaves it at (a variation).
+    [[nodiscard]] int boardMainPly() const;
     void drawBoardGraph(float height);  // the game graph card, under the moves
     [[nodiscard]] float boardGraphHeight() const;
     [[nodiscard]] std::string boardGraphTip(int ply) const;  // the graph's tooltip at a position

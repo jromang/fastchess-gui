@@ -309,6 +309,9 @@ void App::frame() {
                 review_when_read_ = true;
                 if (w.rfind("board-review-", 0) == 0) review_ply_ = std::atoi(w.c_str() + 13);
             }
+        } else if (w.rfind("board-tab=", 0) == 0) {  // the Board page's moves card on a tab: moves, table, review
+            const auto tab  = w.substr(10);
+            board_.open_tab = tab == "table" ? 2 : tab == "review" ? 3 : tab == "games" ? 1 : 0;
         } else if (w.rfind("board-preview=", 0) == 0) {  // a line shown on the Board page: board-preview=e2e4,e7e5
             BoardPreview p;
             p.ply = p.at = board_.ply;

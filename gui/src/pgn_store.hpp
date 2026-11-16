@@ -69,6 +69,19 @@ struct ReplayGame {
     [[nodiscard]] std::string header(const std::string& key) const;
 };
 
+// Moves played where the game, or another variation, went another way: the moves from that position on.
+struct Variation {
+    int parent = -1;  // the line it branches from: -1 the game, else a variation
+    int from   = 0;   // the position of that line it starts from: its first move instead of that line's move from+1
+    std::vector<ReplayMove> moves;
+};
+
+// A game and its variations.
+struct GameTree {
+    ReplayGame main;
+    std::vector<Variation> variations;
+};
+
 [[nodiscard]] std::optional<ReplayGame> parseReplay(const std::string& pgn);
 
 // One game's PGN with its moves on one line (its tags as they are, its escape lines left out): chess.hpp's reader

@@ -161,9 +161,11 @@ NotationEvents drawNotation(const char* id, const std::vector<NotationItem>& ite
             }
             x += w + gap * 0.5f;
         } else {
+            // No room inside the brackets of a variation.
+            if (it.text == ")" && x > o.x + gap) x -= gap * 0.5f + pad;
             const ImU32 col = it.colour ? it.colour : ui::MUTED;
             dl->AddText(font, fs, ImVec2(x, y + (lh - px(2) - ImGui::GetTextLineHeight()) / 2), col, it.text.c_str());
-            x += w + (it.kind == NotationItem::Kind::Number ? px(1) : gap);
+            x += w + (it.kind == NotationItem::Kind::Number ? px(1) : it.text == "(" ? 0.0f : gap);
         }
     }
     if (cut) dl->AddText(font, fs, ImVec2(std::min(x, o.x + room - ImGui::CalcTextSize("…").x), y), ui::MUTED, "…");

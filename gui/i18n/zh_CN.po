@@ -1295,6 +1295,9 @@ msgstr "复制 FEN"
 msgid "Copy PGN"
 msgstr "复制 PGN"
 
+msgid "Copy the variation"
+msgstr "复制此变化"
+
 msgid "Copy the version"
 msgstr "复制版本号"
 
@@ -1399,6 +1402,9 @@ msgstr "删除"
 
 msgid "Delete the profile {}?"
 msgstr "删除配置 {}？"
+
+msgid "Delete the variation"
+msgstr "删除此变化"
 
 msgid "Delete {}…"
 msgstr "删除 {}…"
@@ -1675,6 +1681,9 @@ msgstr "错误：{}"
 
 msgid "Esc or a click: the game"
 msgstr "Esc 或单击：返回对局"
+
+msgid "Eval"
+msgstr "评估"
 
 msgid "Evaluation"
 msgstr "评估"
@@ -2294,6 +2303,9 @@ msgstr "已中断：{} 无法启动：{}"
 
 msgid "Interrupted: {} crashed or stopped responding (game {})"
 msgstr "已中断：{} 崩溃或无响应（第 {} 局）"
+
+msgid "It becomes the line it branches from; that line's moves after it become the variation."
+msgstr "它成为其分出的那条线；那条线之后的着法成为变化。"
 
 msgid "It cannot be read: {}."
 msgstr "无法读取：{}。"
@@ -3481,6 +3493,9 @@ msgstr "程序"
 msgid "Progress"
 msgstr "进度"
 
+msgid "Promote the variation"
+msgstr "提升此变化"
+
 msgid "Protocol"
 msgstr "协议"
 
@@ -4615,9 +4630,6 @@ msgstr "文件夹 {} 已不存在。"
 msgid "The folder {} is not there."
 msgstr "文件夹 {} 不存在。"
 
-msgid "The game as it was, without the moves played over it."
-msgstr "恢复原来的对局，去掉在其上走的着法。"
-
 msgid "The game being played ends without a result."
 msgstr "正在进行的对局将无结果结束。"
 
@@ -4627,8 +4639,11 @@ msgstr "对局恢复按原结果计分。"
 msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
 msgstr "所关注的对局占满窗口，大字显示，用于电视、俱乐部或直播。F11：全屏，Esc：返回。"
 
-msgid "The game, with its tags and moves, as PGN."
-msgstr "以 PGN 格式复制对局及其标签和着法。"
+msgid "The game's position this variation leaves it at; the variation stays in the moves."
+msgstr "回到此变化分出时的对局局面；变化仍保留在着法中。"
+
+msgid "The game, with its tags, moves and variations, as PGN."
+msgstr "这盘棋的 PGN，包括标签、着法和变化。"
 
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "按等级分列表测试者提交的方式整理对局：文件以你的名字命名，附日期和条件，棋手名称按列表的写法，轮次重新编号，去除作废对局和重复对局。"
@@ -7408,6 +7423,9 @@ msgstr "· STS 分数"
 
 msgid "· draws %.1f %%"
 msgstr "· 和棋 %.1f %%"
+
+msgid "· end of book ·"
+msgstr "· 开局库结束 ·"
 
 msgid "· pairs [0-2]: %d  %d  %d  %d  %d"
 msgstr "· 对局对 [0-2]：%d  %d  %d  %d  %d"

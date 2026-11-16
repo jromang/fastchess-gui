@@ -1301,6 +1301,9 @@ msgstr "Copier le FEN"
 msgid "Copy PGN"
 msgstr "Copier le PGN"
 
+msgid "Copy the variation"
+msgstr "Copier la variante"
+
 msgid "Copy the version"
 msgstr "Copier la version"
 
@@ -1405,6 +1408,9 @@ msgstr "Supprimer"
 
 msgid "Delete the profile {}?"
 msgstr "Supprimer le profil {} ?"
+
+msgid "Delete the variation"
+msgstr "Supprimer la variante"
 
 msgid "Delete {}…"
 msgstr "Supprimer {}…"
@@ -1681,6 +1687,9 @@ msgstr "Erreur : {}"
 
 msgid "Esc or a click: the game"
 msgstr "Échap ou un clic : la partie"
+
+msgid "Eval"
+msgstr "Éval"
 
 msgid "Evaluation"
 msgstr "Évaluation"
@@ -2301,6 +2310,9 @@ msgstr "Interrompu : {} n'a pas pu démarrer : {}"
 
 msgid "Interrupted: {} crashed or stopped responding (game {})"
 msgstr "Interrompu : {} a planté ou ne répond plus (partie {})"
+
+msgid "It becomes the line it branches from; that line's moves after it become the variation."
+msgstr "Elle devient la ligne dont elle part ; les coups de cette ligne après elle deviennent la variante."
 
 msgid "It cannot be read: {}."
 msgstr "Elle ne peut pas être lue : {}."
@@ -3492,6 +3504,9 @@ msgstr "Programmes"
 msgid "Progress"
 msgstr "Progression"
 
+msgid "Promote the variation"
+msgstr "Promouvoir la variante"
+
 msgid "Protocol"
 msgstr "Protocole"
 
@@ -4638,9 +4653,6 @@ msgstr "Le dossier {} n'existe plus."
 msgid "The folder {} is not there."
 msgstr "Le dossier {} n'est pas là."
 
-msgid "The game as it was, without the moves played over it."
-msgstr "La partie telle qu'elle était, sans les coups joués par-dessus."
-
 msgid "The game being played ends without a result."
 msgstr "La partie en cours s'arrête sans résultat."
 
@@ -4650,8 +4662,11 @@ msgstr "La partie compte de nouveau comme avant."
 msgid "The game followed filling the window, in large type, for a television, a club or a stream. F11: full screen, Esc: back."
 msgstr "La partie suivie en plein dans la fenêtre, en grands caractères, pour une télévision, un club ou un stream. F11 : plein écran, Échap : retour."
 
-msgid "The game, with its tags and moves, as PGN."
-msgstr "La partie, avec ses balises et ses coups, en PGN."
+msgid "The game's position this variation leaves it at; the variation stays in the moves."
+msgstr "La position de la partie que cette variante quitte ; la variante reste dans les coups."
+
+msgid "The game, with its tags, moves and variations, as PGN."
+msgstr "La partie, avec ses tags, ses coups et ses variantes, en PGN."
 
 msgid "The games as rating list testers send them: the file named after you, the date and the conditions, the players as the lists write them, the rounds numbered again, the voided games and the duplicates left out."
 msgstr "Les parties telles que les testeurs des listes de classement les envoient : le fichier à ton nom, la date et les conditions, les joueurs comme les listes les écrivent, les rondes renumérotées, les parties annulées et les doublons écartés."
@@ -7528,6 +7543,9 @@ msgstr "· points STS"
 
 msgid "· draws %.1f %%"
 msgstr "· nulles %.1f %%"
+
+msgid "· end of book ·"
+msgstr "· fin du livre ·"
 
 msgid "· pairs [0-2]: %d  %d  %d  %d  %d"
 msgstr "· paires [0-2] : %d  %d  %d  %d  %d"

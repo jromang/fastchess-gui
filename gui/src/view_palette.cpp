@@ -443,7 +443,7 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         });
     }
     add(TR("Copy PGN"), TR("Board"),
-        [this] { ImGui::SetClipboardText(gamePgn(board_.game, board_.chess960).c_str()); });
+        [this] { ImGui::SetClipboardText(gamePgn(board_.tree, board_.chess960).c_str()); });
     if (live_slot_ >= 0 && live_slot_ < static_cast<int>(slot_views_.size()) &&
         slot_views_[static_cast<std::size_t>(live_slot_)].state.has_game) {
         add(TR("Analyse the game followed"), name, [this] { analyseLiveGame(live_slot_); });

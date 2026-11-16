@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cmath>
 #include <fstream>
+#include <functional>
 #include <sstream>
 
 #include <SDL3/SDL.h>
@@ -139,9 +140,10 @@ void App::openOnBoard(ReplayGame game, int ply, bool chess960, std::string title
     }
     if (game.start_fen.empty()) game.start_fen = std::string(chess::constants::STARTPOS);
     board_.game     = std::move(game);
+    board_.tree     = GameTree{board_.game, {}};
+    board_.line     = -1;
     board_.chess960 = chess960;
     board_.title    = std::move(title);
-    board_.original.reset();
     board_.ply      = std::clamp(ply, 0, static_cast<int>(board_.game.moves.size()));
     board_.followed = -1;
     board_.selected.reset();
@@ -279,7 +281,7 @@ void App::pollBoard() {
         BoardPage::ReviewTask* same = nullptr;
         for (auto& t : b.review_tasks)
             if (t.engine == b.analyser.engine()) same = &t;
-        if (same && b.review_game_key == b.review_key && b.analyser.position() == position &&
+        if (same && b.line < 0 && b.review_game_key == b.review_key && b.analyser.position() == position &&
             !b.analyser.lines().empty() && b.analyser.lines().front().score && !b.analyser.lines().front().pv.empty()) {
             const auto& line = b.analyser.lines().front();
             const auto ply   = static_cast<std::size_t>(b.ply);
@@ -352,9 +354,9 @@ void App::startReviewTask(const EngineEntry& engine, const std::vector<GameRevie
 
 void App::startGameReview() {
     auto& b = board_;
-    if (b.reviewing() || b.game.moves.empty() || (b.watching && b.match && b.match_state.running)) return;
+    if (b.reviewing() || b.tree.main.moves.empty() || (b.watching && b.match && b.match_state.running)) return;
     // Every analysis the game has goes on; without one, the analysis engine's.
-    const auto kept = loadReviews(storage_.root() / "analyses", b.game);
+    const auto kept = loadReviews(storage_.root() / "analyses", b.tree.main);
     std::vector<const EngineEntry*> engines;
     for (const auto& r : kept) {
         const auto it =
@@ -370,9 +372,9 @@ void App::startGameReview() {
         }
         engines.push_back(engine);
     }
-    b.review_game     = b.game;
+    b.review_game     = b.tree.main;
     b.review_chess960 = b.chess960;
-    b.review_game_key = reviewKey(b.game);
+    b.review_game_key = reviewKey(b.tree.main);
     for (const auto* e : engines) startReviewTask(*e, kept);
     b.message.clear();
 }
@@ -380,16 +382,16 @@ void App::startGameReview() {
 void App::addReviewEngine(const std::string& name) {
     auto& b       = board_;
     const auto it = std::find_if(engines_.begin(), engines_.end(), [&](const auto& e) { return e.name == name; });
-    if (it == engines_.end() || b.game.moves.empty()) return;
+    if (it == engines_.end() || b.tree.main.moves.empty()) return;
     // The analyses of another game end first, their passes kept.
-    if (b.reviewing() && b.review_game_key != reviewKey(b.game)) cancelGameReview();
+    if (b.reviewing() && b.review_game_key != reviewKey(b.tree.main)) cancelGameReview();
     if (std::any_of(b.review_tasks.begin(), b.review_tasks.end(), [&](const auto& t) { return t.engine == name; }))
         return;
-    const auto kept = loadReviews(storage_.root() / "analyses", b.game);
+    const auto kept = loadReviews(storage_.root() / "analyses", b.tree.main);
     if (!b.reviewing()) {
-        b.review_game     = b.game;
+        b.review_game     = b.tree.main;
         b.review_chess960 = b.chess960;
-        b.review_game_key = reviewKey(b.game);
+        b.review_game_key = reviewKey(b.tree.main);
         // The game's other analyses go on with it, so that they stay comparable.
         for (const auto& r : kept) {
             const auto e =
@@ -402,17 +404,17 @@ void App::addReviewEngine(const std::string& name) {
 
 void App::judgeWith(const std::string& engine) {
     auto& b       = board_;
-    auto kept     = loadReviews(storage_.root() / "analyses", b.game);
+    auto kept     = loadReviews(storage_.root() / "analyses", b.tree.main);
     const auto it = std::find_if(kept.begin(), kept.end(), [&](const auto& r) { return r.engine == engine; });
     if (it == kept.end() || it == kept.begin()) return;
     std::rotate(kept.begin(), it, it + 1);
-    (void)saveReviews(storage_.root() / "analyses", b.game, kept);
+    (void)saveReviews(storage_.root() / "analyses", b.tree.main, kept);
     b.review_key.clear();
 }
 
 void App::removeReview(const std::string& engine) {
     auto& b = board_;
-    if (b.review_game_key == reviewKey(b.game)) {
+    if (b.review_game_key == reviewKey(b.tree.main)) {
         for (auto it = b.review_tasks.begin(); it != b.review_tasks.end(); ++it) {
             if (it->engine != engine) continue;
             it->runner->stop();
@@ -420,9 +422,9 @@ void App::removeReview(const std::string& engine) {
             break;
         }
     }
-    auto kept = loadReviews(storage_.root() / "analyses", b.game);
+    auto kept = loadReviews(storage_.root() / "analyses", b.tree.main);
     std::erase_if(kept, [&](const auto& r) { return r.engine == engine; });
-    (void)saveReviews(storage_.root() / "analyses", b.game, kept);
+    (void)saveReviews(storage_.root() / "analyses", b.tree.main, kept);
     b.review_key.clear();
 }
 
@@ -447,7 +449,7 @@ void App::pollGameReview() {
     bool given               = false;
     for (auto& t : b.review_tasks) {
         auto& r = *t.runner;
-        r.setFirst(b.review_game_key == b.review_key ? b.ply : -1);
+        r.setFirst(b.review_game_key == b.review_key ? boardMainPly() : -1);
         r.setCeiling(b.settings.review_ceiling_ms);
         r.setPassLimit(lowest);
         bool paused = b.analysing;
@@ -474,14 +476,11 @@ void App::pollGameReview() {
 }
 
 void App::boardPlay(chess::Move move) {
-    // Moves played over a game keep the game as it came, to go back to it.
-    const auto ply = static_cast<std::size_t>(board_.ply);
-    if (!board_.original && !board_.title.empty() && ply < board_.game.moves.size() &&
-        board_.game.moves[ply].move != move) {
-        board_.original = board_.game;
-    }
-    board_.ply = playOnGame(board_.game, board_.chess960, board_.ply, move);
-    board_.selected.reset();
+    // A move where the game went another way starts a variation; the game stays as it came.
+    auto& b              = board_;
+    const auto [line, p] = playInTree(b.tree, b.chess960, b.line, b.ply, move);
+    b.game               = lineOf(b.tree, line);
+    showBoardLine(line, p);
 }
 
 void App::boardClick(const chess::Board& board, chess::Square square) {
@@ -614,7 +613,7 @@ void App::drawBoardPage() {
                 b.selected.reset();
         }
         if (ImGui::IsKeyPressed(ImGuiKey_N, false) && !ImGui::GetIO().KeyCtrl) {
-            if (const int to = judgedPly(ImGui::GetIO().KeyShift ? -1 : 1); to >= 0) b.ply = to;
+            if (const int to = judgedPly(ImGui::GetIO().KeyShift ? -1 : 1); to >= 0) showBoardLine(-1, to);
         }
         if (ImGui::IsKeyChordPressed(ImGuiMod_Ctrl | ImGuiKey_V)) pasteOnBoard();
     }
@@ -754,7 +753,8 @@ void App::loadPgnGame(int index) {
         title += " · " + trf("round {}", round);
     const auto back = board_back_;
     openOnBoard(std::move(*game), 0, chess960, std::move(title), false);
-    board_back_ = back;
+    board_back_       = back;
+    b.tree.variations = readVariations(*text, b.tree.main, chess960);  // those of the file, kept
     b.message.clear();
 }
 
@@ -1114,7 +1114,8 @@ void App::drawBoardColumn(float size) {
         }
     }
     // Without the board's analysis, each analysis of the game's best move here, in its colour.
-    if (!fresh && b.settings.arrows) {
+    const bool on_main = b.line < 0 || boardMainPly() == b.ply;
+    if (!fresh && b.settings.arrows && on_main) {
         const auto reviews = shownReviews();
         for (std::size_t i = reviews.size(); i-- > 0;) {
             const auto& positions = reviews[i]->positions;
@@ -1152,7 +1153,7 @@ void App::drawBoardColumn(float size) {
     if (b.ply > 0) {
         const auto& m = b.game.moves[static_cast<std::size_t>(b.ply - 1)];
         // The move's judgement on its square.
-        if (static_cast<std::size_t>(b.ply - 1) < b.judged.size()) {
+        if (on_main && static_cast<std::size_t>(b.ply - 1) < b.judged.size()) {
             const auto j = b.judged[static_cast<std::size_t>(b.ply - 1)].judgement;
             if (j != Judgement::None)
                 decor.badge = BoardBadge{shownTarget(m.move), judgementMark(j), judgementBadgeColour(j)};
@@ -1266,13 +1267,13 @@ void App::drawBoardColumn(float size) {
     if (std::any_of(b.judged.begin(), b.judged.end(), [](const auto& j) { return j.judgement != Judgement::None; })) {
         const int prev = judgedPly(-1), next = judgedPly(1);
         ImGui::BeginDisabled(prev < 0);
-        if (ImGui::Button("< ?##prev_judged")) b.ply = prev;
+        if (ImGui::Button("< ?##prev_judged")) showBoardLine(-1, prev);
         ImGui::EndDisabled();
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
             ImGui::SetTooltip("%s", TR("Shift+N: the previous move the analysis marked (?!, ?, ??)."));
         ImGui::SameLine(0, px(2));
         ImGui::BeginDisabled(next < 0);
-        if (ImGui::Button("? >##next_judged")) b.ply = next;
+        if (ImGui::Button("? >##next_judged")) showBoardLine(-1, next);
         ImGui::EndDisabled();
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
             ImGui::SetTooltip("%s", TR("N: the next move the analysis marked (?!, ?, ??)."));
@@ -1280,15 +1281,12 @@ void App::drawBoardColumn(float size) {
     }
     if (ImGui::Button(TR("Copy FEN"))) ImGui::SetClipboardText(board.getFen().c_str());
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", board.getFen().c_str());
-    if (b.original) {
+    if (b.line >= 0) {
         ImGui::SameLine();
-        if (ImGui::Button(TR("Back to the game"))) {
-            b.game = *b.original;
-            b.original.reset();
-            b.ply = std::min(b.ply, static_cast<int>(b.game.moves.size()));
-        }
+        if (ImGui::Button(TR("Back to the game"))) showBoardLine(-1, boardMainPly());
         if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("%s", TR("The game as it was, without the moves played over it."));
+            ImGui::SetTooltip("%s", TR("The game's position this variation leaves it at; the variation stays in the "
+                                       "moves."));
     }
     if (board_back_) {
         const char* back = board_back_->page == Page::Tournament ? TR("Back to the tournament")
@@ -1536,110 +1534,300 @@ void App::drawBoardAnalysis() {
     ui::endCard();
 }
 
+void App::showBoardLine(int line, int ply) {
+    auto& b = board_;
+    if (line < -1 || line >= static_cast<int>(b.tree.variations.size())) line = -1;
+    if (line != b.line || line >= 0) b.game = lineOf(b.tree, line);
+    b.line = line;
+    b.ply  = std::clamp(ply, 0, static_cast<int>(b.game.moves.size()));
+    b.selected.reset();
+}
+
+int App::boardMainPly() const { return branchPly(board_.tree, board_.line, board_.ply); }
+
 void App::drawBoardMoves(float height) {
     auto& b         = board_;
     const int total = static_cast<int>(b.game.moves.size());
+    const auto& main = b.tree.main;
 
     ui::beginCard("board_game", ImVec2(0, height));
-    // The games of the file, when it has several, in a tab beside the moves.
-    if (b.pgn && b.pgn->index->size() > 1) {
-        if (ImGui::BeginTabBar("##board_game_tabs")) {
-            const auto tab = [&](const char* label, int index) {
-                const ImGuiTabItemFlags flags = b.open_tab == index ? ImGuiTabItemFlags_SetSelected : 0;
-                if (ImGui::BeginTabItem(label, nullptr, flags)) {
-                    b.game_tab = index;
-                    ImGui::EndTabItem();
-                }
-            };
-            tab(TR("Moves###board_moves_tab"), 0);
+    // The moves, a table of them, and the games of the file when it has several.
+    if (ImGui::BeginTabBar("##board_game_tabs")) {
+        const auto tab = [&](const char* label, int index) {
+            const ImGuiTabItemFlags flags = b.open_tab == index ? ImGuiTabItemFlags_SetSelected : 0;
+            if (ImGui::BeginTabItem(label, nullptr, flags)) {
+                b.game_tab = index;
+                ImGui::EndTabItem();
+            }
+        };
+        tab(TR("Moves###board_moves_tab"), 0);
+        tab(TR("Table###board_table_tab"), 2);
+        if (b.pgn && b.pgn->index->size() > 1)
             tab(fmt::format("{} ({})###board_games_tab", b.pgn->name, b.pgn->index->size()).c_str(), 1);
-            b.open_tab = -1;
-            ImGui::EndTabBar();
-        }
-        if (b.game_tab == 1) {
-            drawPgnGames();
-            ui::endCard();
-            return;
-        }
+        else if (b.game_tab == 1)
+            b.game_tab = 0;
+        b.open_tab = -1;
+        // The game as PGN, with its variations, at the right of the tabs.
+        const char* copy = TR("Copy PGN");
+        if (ImGui::TabItemButton(copy, ImGuiTabItemFlags_Trailing | ImGuiTabItemFlags_NoTooltip))
+            ImGui::SetClipboardText(gamePgn(b.tree, b.chess960).c_str());
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", TR("The game, with its tags, moves and variations, as PGN."));
+        ImGui::EndTabBar();
+    }
+    if (b.game_tab == 1) {
+        drawPgnGames();
+        ui::endCard();
+        return;
     }
     {
-        const auto white = b.game.header("White"), black = b.game.header("Black");
-        ImGui::AlignTextToFramePadding();
+        const auto white = main.header("White"), black = main.header("Black");
         if (!white.empty() || !black.empty()) {
             ImGui::TextUnformatted(
                 fmt::format("{} – {}", white.empty() ? "?" : white, black.empty() ? "?" : black).c_str());
-            if (!b.game.result.empty() && b.game.result != "*") {
+            if (!main.result.empty() && main.result != "*") {
                 ImGui::SameLine();
-                ImGui::TextDisabled("%s", b.game.result.c_str());
+                ImGui::TextDisabled("%s", main.result.c_str());
             }
-        } else {
-            ImGui::TextUnformatted(total > 0 ? TR("Moves") : TR("Position"));
         }
-        // The game as PGN, to the clipboard.
-        const char* copy = TR("Copy PGN");
-        ImGui::SameLine(std::max(ImGui::GetCursorPosX() + px(8),
-                                 ImGui::GetContentRegionMax().x - ImGui::CalcTextSize(copy).x - px(12)));
-        if (ImGui::SmallButton(copy)) ImGui::SetClipboardText(gamePgn(b.game, b.chess960).c_str());
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", TR("The game, with its tags and moves, as PGN."));
     }
 
-    // Its analysis move by move: kept with the game, read again when another game comes.
-    if (const auto key = reviewKey(b.game); key != b.review_key) {
+    // Its analyses: kept with the game, read again when another game comes.
+    if (const auto key = reviewKey(main); key != b.review_key) {
         b.review_key = key;
-        b.reviews    = total > 0 ? loadReviews(storage_.root() / "analyses", b.game) : std::vector<GameReview>{};
-        b.judged = b.reviews.empty() ? std::vector<MoveReview>{} : reviewMoves(b.game, b.chess960, b.reviews.front());
+        b.reviews = !main.moves.empty() ? loadReviews(storage_.root() / "analyses", main) : std::vector<GameReview>{};
+        b.judged  = b.reviews.empty() ? std::vector<MoveReview>{} : reviewMoves(main, b.chess960, b.reviews.front());
     }
     drawGameReview();
 
     const float strip = b.ply > 0 && b.ply <= total ? thisMoveHeight() : 0.0f;
     ImGui::BeginChild("##board_moves", ImVec2(0, -strip), ImGuiChildFlags_Borders);
-    if (total == 0) {
+    if (b.game_tab == 2) {
+        drawBoardTable();
+    } else if (total == 0 && main.moves.empty()) {
         ImGui::TextDisabled("%s", TR("Play a move on the board, or open a game."));
     } else {
-        int number        = boardAt(b.game, b.chess960, 0).fullMoveNumber();
-        const bool follow = b.ply != b.followed;
-        if (follow && b.ply == 0) ImGui::SetScrollY(0);
-        for (int i = 0; i < total; ++i) {
-            const auto& m = b.game.moves[static_cast<std::size_t>(i)];
-            if (m.mover == chess::Color::WHITE || i == 0) {
-                if (i > 0) ImGui::NewLine();
-                ImGui::TextDisabled(m.mover == chess::Color::WHITE ? "%d." : "%d...", number);
-                ImGui::SameLine();
+        // The game and its variations as flowing text; each move a click away.
+        const auto id_of    = [](int line, int ply) { return (line + 1) * 100000 + ply; };
+        const int owner     = b.ply > 0 ? ownerOf(b.tree, b.line, b.ply - 1) : -2;
+        const ImU32 var_col = ImGui::GetColorU32(ImGuiCol_Text, 0.62f);
+        std::vector<NotationItem> items;
+        int last_book = -1;
+        for (int i = 0; i < static_cast<int>(main.moves.size()) && main.moves[static_cast<std::size_t>(i)].book; ++i)
+            last_book = i;
+        const std::function<void(int, int, chess::Board, int)> emit = [&](int line, int base, chess::Board at,
+                                                                          int depth) {
+            const auto& moves = line < 0 ? main.moves : b.tree.variations[static_cast<std::size_t>(line)].moves;
+            bool number       = true;
+            for (std::size_t i = 0; i < moves.size(); ++i) {
+                const auto& m = moves[i];
+                const int ply = base + static_cast<int>(i);  // the position before it
+                if (at.sideToMove() == chess::Color::WHITE || number) {
+                    NotationItem n;
+                    n.kind = NotationItem::Kind::Number;
+                    n.text = std::to_string(at.fullMoveNumber()) + (at.sideToMove() == chess::Color::WHITE ? "." : "…");
+                    n.indent = px(10) * static_cast<float>(depth);
+                    items.push_back(std::move(n));
+                }
+                number = false;
+                NotationItem item;
+                item.text    = m.san.empty() ? chess::uci::moveToSan(at, m.move) : m.san;
+                item.id      = id_of(line, ply + 1);
+                item.current = line == owner && ply + 1 == b.ply;
+                item.indent  = px(10) * static_cast<float>(depth);
+                if (line >= 0) item.colour = var_col;
+                if (line < 0 && m.book) item.colour = ImGui::GetColorU32(ImGuiCol_TextDisabled);
+                if (line < 0 && static_cast<std::size_t>(ply) < b.judged.size()) {
+                    const auto j = b.judged[static_cast<std::size_t>(ply)].judgement;
+                    if (j != Judgement::None) {
+                        item.mark        = judgementMark(j);
+                        item.mark_colour = judgementColour(j);
+                    }
+                }
+                items.push_back(std::move(item));
+                if (line < 0 && ply == last_book && last_book + 1 < static_cast<int>(main.moves.size())) {
+                    NotationItem book;
+                    book.kind   = NotationItem::Kind::Text;
+                    book.text   = TR("· end of book ·");
+                    book.colour = ImGui::GetColorU32(ImGuiCol_TextDisabled);
+                    items.push_back(std::move(book));
+                }
+                for (std::size_t v = 0; v < b.tree.variations.size(); ++v) {
+                    const auto& var = b.tree.variations[v];
+                    if (var.parent != line || var.from != ply || var.moves.empty()) continue;
+                    NotationItem open;
+                    open.kind   = NotationItem::Kind::Text;
+                    open.text   = "(";
+                    open.colour = var_col;
+                    items.push_back(std::move(open));
+                    emit(static_cast<int>(v), ply, at, depth + 1);
+                    NotationItem close = items.back();
+                    close              = NotationItem{};
+                    close.kind         = NotationItem::Kind::Text;
+                    close.text         = ")";
+                    close.colour       = var_col;
+                    items.push_back(std::move(close));
+                    number = true;
+                }
+                at.makeMove<true>(m.move);
             }
-            if (m.mover == chess::Color::BLACK) number++;
-            const bool current = i + 1 == b.ply;
-            if (m.book) ImGui::PushStyleColor(ImGuiCol_Text, ui::MUTED4);
-            const auto label = fmt::format("{}##bm{}", m.san, i);
-            if (ImGui::Selectable(label.c_str(), current, ImGuiSelectableFlags_None,
-                                  ImGui::CalcTextSize(m.san.c_str())))
-                b.ply = i + 1;
-            if (m.book) ImGui::PopStyleColor();
-            if (current && (ImGui::IsWindowAppearing() || (follow && !ImGui::IsItemVisible()))) ImGui::SetScrollHereY();
-            const auto judged =
-                static_cast<std::size_t>(i) < b.judged.size() ? b.judged[static_cast<std::size_t>(i)] : MoveReview{};
-            if (ImGui::IsItemHovered()) {
+        };
+        emit(-1, 0, boardAt(main, b.chess960, 0), 0);
+        if (!main.result.empty() && main.result != "*") {
+            NotationItem result;
+            result.kind = NotationItem::Kind::Text;
+            result.text = main.result;
+            items.push_back(std::move(result));
+        }
+        const bool follow = b.ply != b.followed || b.line != b.followed_line;
+        if (follow && b.ply == 0) ImGui::SetScrollY(0);
+        const auto ev = drawNotation("##moves", items, ImGui::GetContentRegionAvail().x,
+                                     appearance::current().figurines ? &atlas_ : nullptr);
+        if (follow && ev.current_min) {
+            const float top = ImGui::GetWindowPos().y, bottom = top + ImGui::GetWindowHeight();
+            if (ev.current_min->y < top || ev.current_max->y > bottom)
+                ImGui::SetScrollY(ImGui::GetScrollY() + ev.current_min->y - top - ImGui::GetWindowHeight() * 0.35f);
+        }
+        if (ev.clicked >= 0) {
+            showBoardLine(ev.clicked / 100000 - 1, ev.clicked % 100000);
+            b.preview.reset();
+        }
+        // A move of the game: what its engine said and its judgement.
+        if (ev.hovered >= 0 && ev.hovered / 100000 == 0) {
+            const int i = ev.hovered % 100000 - 1;
+            if (i >= 0 && i < static_cast<int>(main.moves.size())) {
+                const auto& m = main.moves[static_cast<std::size_t>(i)];
                 std::string tip;
                 if (m.score && !m.book) {
                     tip = fmt::format("{}/{}  {}", ui::formatScore(m.score), m.depth,
                                       m.time_ms >= 0 ? ui::formatClock(m.time_ms) : "");
                 }
+                const auto judged = static_cast<std::size_t>(i) < b.judged.size()
+                                        ? b.judged[static_cast<std::size_t>(i)]
+                                        : MoveReview{};
                 if (judged.judgement != Judgement::None) tip += (tip.empty() ? "" : "\n") + judgementTip(i, judged);
                 if (!tip.empty()) ImGui::SetTooltip("%s", tip.c_str());
             }
-            // Its judgement, after it.
-            if (judged.judgement != Judgement::None) {
-                ImGui::SameLine(0, 0);
-                ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(judgementColour(judged.judgement)), "%s",
-                                   judgementMark(judged.judgement));
-            }
-            ImGui::SameLine();
         }
-        if (!b.game.result.empty() && b.game.result != "*") ImGui::TextDisabled("%s", b.game.result.c_str());
+        // A variation's move: promote it, remove it.
+        if (ev.right_clicked >= 0 && ev.right_clicked / 100000 > 0) {
+            b.menu_line = ev.right_clicked / 100000 - 1;
+            ImGui::OpenPopup("##variation_menu");
+        }
+        if (ImGui::BeginPopup("##variation_menu")) {
+            if (ImGui::MenuItem(TR("Promote the variation"))) {
+                const int line = promoteVariation(b.tree, b.menu_line);
+                b.game         = lineOf(b.tree, line);
+                showBoardLine(line, b.ply);
+            }
+            if (ImGui::IsItemHovered())
+                ImGui::SetTooltip("%s",
+                                  TR("It becomes the line it branches from; that line's moves after it become the "
+                                     "variation."));
+            if (ImGui::MenuItem(TR("Delete the variation"))) {
+                const int ply    = b.ply;
+                const int branch = branchPly(b.tree, b.menu_line, b.ply);
+                const bool shown = b.line >= 0;
+                const int parent = removeVariation(b.tree, b.menu_line);
+                b.game           = lineOf(b.tree, shown ? parent : -1);
+                showBoardLine(shown ? parent : -1, shown ? std::min(ply, branch) : ply);
+            }
+            if (ImGui::MenuItem(TR("Copy the variation"))) {
+                const auto line = lineOf(b.tree, b.menu_line);
+                std::vector<std::string> uci;
+                for (const auto& m : line.moves) uci.push_back(chess::uci::moveToUci(m.move, b.chess960));
+                const auto& var = b.tree.variations[static_cast<std::size_t>(b.menu_line)];
+                const std::vector<std::string> own(uci.begin() + var.from, uci.end());
+                ImGui::SetClipboardText(pvToSan(boardAt(line, b.chess960, var.from), own, own.size()).c_str());
+            }
+            ImGui::EndPopup();
+        }
     }
-    b.followed = b.ply;
+    b.followed      = b.ply;
+    b.followed_line = b.line;
     ImGui::EndChild();
     if (strip > 0) drawThisMove();
     ui::endCard();
+}
+
+void App::drawBoardTable() {
+    auto& b          = board_;
+    const auto& main = b.tree.main;
+    if (main.moves.empty()) {
+        ImGui::TextDisabled("%s", TR("Play a move on the board, or open a game."));
+        return;
+    }
+    // Each move with what its engine said: score (White's), depth, time.
+    int64_t longest = 1;
+    for (const auto& m : main.moves) longest = std::max(longest, m.time_ms);
+    const ImGuiTableFlags flags = ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_ScrollY;
+    if (!ImGui::BeginTable("##moves_table", 9, flags)) return;
+    ImGui::TableSetupScrollFreeze(0, 1);
+    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, px(34));
+    for (const char* side : {TR("White"), TR("Black")}) {
+        ImGui::TableSetupColumn(side, ImGuiTableColumnFlags_WidthStretch, 1.2f);
+        ImGui::TableSetupColumn(TR("Eval"), ImGuiTableColumnFlags_WidthStretch, 0.9f);
+        ImGui::TableSetupColumn(TR("Depth"), ImGuiTableColumnFlags_WidthStretch, 0.7f);
+        ImGui::TableSetupColumn(TR("Time"), ImGuiTableColumnFlags_WidthStretch, 1.3f);
+    }
+    ImGui::TableHeadersRow();
+    const auto start  = boardAt(main, b.chess960, 0);
+    const bool black  = start.sideToMove() == chess::Color::BLACK;
+    const int first   = start.fullMoveNumber();
+    const int on_main = boardMainPly();
+    const int rows    = (static_cast<int>(main.moves.size()) + (black ? 1 : 0) + 1) / 2;
+    ImGuiListClipper clipper;
+    clipper.Begin(rows);
+    while (clipper.Step()) {
+        for (int r = clipper.DisplayStart; r < clipper.DisplayEnd; ++r) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextDisabled("%d.", first + r);
+            for (int side = 0; side < 2; ++side) {
+                const int i = r * 2 + side - (black ? 1 : 0);  // the move's index
+                if (i < 0 || i >= static_cast<int>(main.moves.size())) {
+                    for (int k = 0; k < 4; ++k) ImGui::TableNextColumn();
+                    continue;
+                }
+                const auto& m     = main.moves[static_cast<std::size_t>(i)];
+                const auto judged = static_cast<std::size_t>(i) < b.judged.size()
+                                        ? b.judged[static_cast<std::size_t>(i)].judgement
+                                        : Judgement::None;
+                ImGui::TableNextColumn();
+                if (judged != Judgement::None) {
+                    auto bg = judgementColour(judged);
+                    bg      = (bg & ~IM_COL32_A_MASK) | (IM_COL32(0, 0, 0, 50) & IM_COL32_A_MASK);
+                    ImGui::TableSetBgColor(ImGuiTableBgTarget_CellBg, bg);
+                }
+                if (m.book) ImGui::PushStyleColor(ImGuiCol_Text, ui::MUTED4);
+                const auto label = fmt::format("{}{}##t{}", m.san, judgementMark(judged), i);
+                if (ImGui::Selectable(label.c_str(), on_main == i + 1 && b.line < 0, ImGuiSelectableFlags_None))
+                    showBoardLine(-1, i + 1);
+                if (m.book) ImGui::PopStyleColor();
+                ImGui::TableNextColumn();
+                if (m.book) {
+                    ImGui::TextDisabled("%s", TR("book"));
+                } else if (m.score) {
+                    ImGui::TextUnformatted(ui::formatScore(whiteScore(*m.score, m.mover)).c_str());
+                }
+                ImGui::TableNextColumn();
+                if (!m.book && m.depth > 0) ImGui::Text("%d", m.depth);
+                ImGui::TableNextColumn();
+                if (!m.book && m.time_ms >= 0) {
+                    ImGui::TextUnformatted(ui::formatClock(m.time_ms).c_str());
+                    ImGui::SameLine(0, px(4));
+                    const ImVec2 p = ImGui::GetCursorScreenPos();
+                    const float w  = px(36) * static_cast<float>(m.time_ms) / static_cast<float>(longest);
+                    ImGui::GetWindowDrawList()->AddRectFilled(
+                        ImVec2(p.x, p.y + ImGui::GetTextLineHeight() * 0.35f),
+                        ImVec2(p.x + std::max(1.0f, w), p.y + ImGui::GetTextLineHeight() * 0.7f),
+                        ImGui::GetColorU32(ImGuiCol_TextDisabled), px(2));
+                    ImGui::Dummy(ImVec2(px(36), ImGui::GetTextLineHeight()));
+                }
+            }
+        }
+    }
+    ImGui::EndTable();
 }
 
 float App::thisMoveHeight() const {
@@ -1653,8 +1841,8 @@ float App::thisMoveHeight() const {
 
 int App::judgedPly(int direction) const {
     const auto& b   = board_;
-    const int total = static_cast<int>(std::min(b.judged.size(), b.game.moves.size()));
-    for (int ply = b.ply + direction; ply >= 1 && ply <= total; ply += direction) {
+    const int total = static_cast<int>(std::min(b.judged.size(), b.tree.main.moves.size()));
+    for (int ply = boardMainPly() + direction; ply >= 1 && ply <= total; ply += direction) {
         if (b.judged[static_cast<std::size_t>(ply - 1)].judgement != Judgement::None) return ply;
     }
     return -1;
@@ -1718,7 +1906,7 @@ void App::drawThisMove() {
     ImGui::Separator();
     // The move, and what the engine that played it said.
     const int number  = prior.fullMoveNumber();
-    const auto judged = static_cast<std::size_t>(ply - 1) < b.judged.size()
+    const auto judged = (b.line < 0 || boardMainPly() == ply) && static_cast<std::size_t>(ply - 1) < b.judged.size()
                             ? b.judged[static_cast<std::size_t>(ply - 1)]
                             : MoveReview{};
     std::string text  = fmt::format("{}{}{}{}", number, m.mover == chess::Color::WHITE ? "." : "…", m.san,
@@ -1744,8 +1932,9 @@ void App::drawThisMove() {
             row(TR("It expected"), san, ply, pv, trf("{} expected {}", name_of(m.mover), pvToSan(after, pv, 6)));
         }
     }
-    // Each analysis's verdict, and its best line from the position before the move.
-    for (std::size_t i = 0; i < reviews.size(); ++i) {
+    // Each analysis's verdict, and its best line from the position before the move: of the game's moves only.
+    const bool on_main = b.line < 0 || boardMainPly() == b.ply;
+    for (std::size_t i = 0; i < reviews.size() && on_main; ++i) {
         const auto& r = *reviews[i];
         if (static_cast<std::size_t>(ply) >= r.positions.size()) continue;
         const auto& before = r.positions[static_cast<std::size_t>(ply - 1)];
@@ -1794,15 +1983,16 @@ std::string App::boardGraphTip(int ply) const {
     const auto judged = ply > 0 && static_cast<std::size_t>(ply - 1) < b.judged.size()
                             ? b.judged[static_cast<std::size_t>(ply - 1)]
                             : MoveReview{};
-    auto tip = graphMoveTip(b.game, ply, judged.judgement != Judgement::None ? judgementMark(judged.judgement) : "");
+    auto tip =
+        graphMoveTip(b.tree.main, ply, judged.judgement != Judgement::None ? judgementMark(judged.judgement) : "");
     const auto* review = shownReview();
     if (!tip.empty() && review && static_cast<std::size_t>(ply) < review->positions.size()) {
         const auto& pos = review->positions[static_cast<std::size_t>(ply)];
-        if (const float v = graphPawns(pos.score, ~b.game.moves[static_cast<std::size_t>(ply - 1)].mover);
+        if (const float v = graphPawns(pos.score, ~b.tree.main.moves[static_cast<std::size_t>(ply - 1)].mover);
             std::isfinite(v)) {
-            tip += "\n" +
-                   trf("Analysis ({}): {}", review->engine,
-                       ui::formatScore(whiteScore(*pos.score, ~b.game.moves[static_cast<std::size_t>(ply - 1)].mover)));
+            tip += "\n" + trf("Analysis ({}): {}", review->engine,
+                              ui::formatScore(
+                                  whiteScore(*pos.score, ~b.tree.main.moves[static_cast<std::size_t>(ply - 1)].mover)));
         }
     }
     return tip;
@@ -1818,14 +2008,14 @@ void App::drawBoardGraph(float height) {
         analyses.push_back({reviews[i]->engine, i == 0 && reviews.size() > 1 ? TR("judge") : TR("analysis"),
                             analysisColour(i), reviews[i]});
     }
-    auto graph = buildGameGraph(b.game, b.chess960, b.settings.graph.chart, analyses, b.judged);
+    auto graph = buildGameGraph(b.tree.main, b.chess960, b.settings.graph.chart, analyses, b.judged);
     // A mark is settled when the last pass did not change it and every other analysis judged the move alike.
     if (!b.reviews.empty()) {
         const auto& previous = b.reviews.front().previous;
         std::vector<std::vector<MoveReview>> others;
         for (std::size_t i = 1; i < b.reviews.size(); ++i) {
-            if (b.reviews[i].complete(b.game.moves.size()))
-                others.push_back(reviewMoves(b.game, b.chess960, b.reviews[i]));
+            if (b.reviews[i].complete(b.tree.main.moves.size()))
+                others.push_back(reviewMoves(b.tree.main, b.chess960, b.reviews[i]));
         }
         for (auto& m : graph.marks) {
             const auto i = static_cast<std::size_t>(m.ply - 1);
@@ -1834,9 +2024,9 @@ void App::drawBoardGraph(float height) {
         }
     }
     GraphDraw draw;
-    draw.current       = b.ply;
+    draw.current       = boardMainPly();
     draw.tip           = [this](int ply) { return boardGraphTip(ply); };
-    draw.can_add       = !b.game.moves.empty() && !(b.watching && b.match && b.match_state.running);
+    draw.can_add       = !b.tree.main.moves.empty() && !(b.watching && b.match && b.match_state.running);
     draw.analyses_menu = true;
     // The analyses in passes: where they are, what each position got.
     const bool running = b.reviewing() && b.review_game_key == b.review_key;
@@ -1877,7 +2067,7 @@ void App::drawBoardGraph(float height) {
     }
     const auto ev = drawGameGraph("##board_graph", graph, b.settings.graph, draw,
                                   ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y));
-    if (ev.go_to >= 0) b.ply = std::clamp(ev.go_to, 0, static_cast<int>(b.game.moves.size()));
+    if (ev.go_to >= 0) showBoardLine(-1, ev.go_to);
     if (ev.view_changed) saveBoardSettings();
     if (ev.action) running ? cancelGameReview() : startGameReview();
     if (ev.judge >= 0 && static_cast<std::size_t>(ev.judge) < reviews.size())
@@ -1912,7 +2102,7 @@ std::string App::judgementTip(int ply, const MoveReview& judged) const {
     const auto* review = b.reviews.empty() ? nullptr : &b.reviews.front();
     if (review && static_cast<std::size_t>(ply) < review->positions.size()) {
         const auto& before = review->positions[static_cast<std::size_t>(ply)];
-        const auto board   = boardAt(b.game, b.chess960, ply);
+        const auto board   = boardAt(b.tree.main, b.chess960, ply);
         const auto best    = legalPrefix(board, {before.best}, 1);
         if (!best.empty() && before.score) {
             tip += "\n" + trf("Best: {} ({})", chess::uci::moveToSan(board, best.front()),
@@ -1925,9 +2115,9 @@ std::string App::judgementTip(int ply, const MoveReview& judged) const {
 void App::drawGameReview() {
     auto& b = board_;
     // What the analysis found, by side.
-    if (b.reviews.empty() || !b.reviews.front().complete(b.game.moves.size())) return;
+    if (b.reviews.empty() || !b.reviews.front().complete(b.tree.main.moves.size())) return;
     const auto& review = b.reviews.front();
-    const auto counts  = judgementCounts(b.game, b.judged);
+    const auto counts  = judgementCounts(b.tree.main, b.judged);
     const auto side    = [&](int colour) {
         const auto& c = counts[static_cast<std::size_t>(colour)];
         std::string parts;
@@ -1936,7 +2126,7 @@ void App::drawGameReview() {
         if (c[1]) add(trn("{} mistake", "{} mistakes", c[1], c[1]));
         if (c[0]) add(trn("{} inaccuracy", "{} inaccuracies", c[0], c[0]));
         if (parts.empty()) parts = TR("no mistake");
-        auto name = b.game.header(colour == 0 ? "White" : "Black");
+        auto name = b.tree.main.header(colour == 0 ? "White" : "Black");
         if (name.empty() || name == "?") name = colour == 0 ? TR("White") : TR("Black");
         return fmt::format("{}: {}", name, parts);
     };
@@ -2042,9 +2232,10 @@ void App::pollBoardGames() {
     if (!changed || !b.watching) return;
     // The board follows the game being played, unless the user went back in it.
     const auto& st  = b.match_state;
-    const bool last = b.ply >= static_cast<int>(b.game.moves.size());
+    const bool last = b.line >= 0 || b.ply >= static_cast<int>(b.game.moves.size());
     b.game          = st.current;
-    b.original.reset();
+    b.tree          = GameTree{b.game, {}};
+    b.line          = -1;
     if (last) b.ply = static_cast<int>(b.game.moves.size());
     b.ply = std::min(b.ply, static_cast<int>(b.game.moves.size()));
     b.selected.reset();

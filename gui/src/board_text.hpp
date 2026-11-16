@@ -43,5 +43,10 @@ struct BoardText {
 // The game as PGN: its tags (the Seven Tag Roster first, SetUp and FEN when it starts from another position), its
 // moves in SAN, each with the engine's score, depth and time as a comment in fastchess' style when it has them.
 [[nodiscard]] std::string gamePgn(const ReplayGame& game, bool chess960);
+// The same with its variations, each in brackets after the move it replaces.
+[[nodiscard]] std::string gamePgn(const GameTree& tree, bool chess960);
+// The variations of a PGN game whose main line is `main` (as readPgnGame() read it): those it can play, each from
+// the position it starts in. Comments, numbers, annotations and results are skipped.
+[[nodiscard]] std::vector<Variation> readVariations(const std::string& pgn, const ReplayGame& main, bool chess960);
 
 }  // namespace fcg
