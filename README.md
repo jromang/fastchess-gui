@@ -18,6 +18,8 @@ The tournament engine is fastchess itself, running inside the application (no co
 scraping): the games, the statistics and the SPRT are exactly those of the fastchess command line tool, which
 this repository still builds unchanged.
 
+![The Board page in 3D: a game of Capablanca analysed by Gaia, its three best lines as arrows](docs/screenshots/board-3d.png)
+
 ## Features
 
 - **Tournaments**: round robin (Berger tables, any number of cycles), gauntlet, Swiss (paired as results come, no
@@ -151,7 +153,8 @@ this repository still builds unchanged.
   (simplified), following the system (can be changed in the settings).
 - **Appearance**: board colours (presets or your own, for each theme), four piece sets or a folder of your own SVG
   pieces, move sounds for the game followed (off by default), and a logo per engine, shown in the live view, on the
-  big screen and on the broadcast web page.
+  big screen and on the broadcast web page. The Board page's board can be drawn in 3D (an option): path-traced on
+  the graphics card, lit as in a photographer's studio (seven lightings), turned round with the mouse.
 
 ![Settings > Appearance: the brown board and the Celtic pieces](docs/screenshots/appearance.png)
 
