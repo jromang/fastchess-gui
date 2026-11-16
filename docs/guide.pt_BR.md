@@ -583,16 +583,17 @@ torneio* (ou *Voltar*) retorna à página de onde se veio. O tabuleiro dela pode
   copia a posição.
 
 ### A análise
-<!-- en: the-analysis f1bc5164 -->
+<!-- en: the-analysis 40171591 -->
 
 Um engine da biblioteca analisa a posição mostrada e acompanha o tabuleiro: profundidade, nós, velocidade, as chances de
 vitória, empate e derrota quando o engine as fornece (`UCI_ShowWDL`), e várias linhas (MultiPV), com os primeiros lances
-desenhados como setas, o da melhor mais escuro (*Setas* as desativa; as linhas continuam mostrando os lances). As
-pontuações são do ponto de vista das Brancas. Um clique numa linha joga o primeiro lance dela. O engine, *Threads*,
-*Hash* (0: o do próprio engine) e *Linhas* são configurações próprias da análise: guardadas para a próxima vez, não
-alteram nem o engine da biblioteca nem nenhum torneio. Os outros valores de opções da biblioteca são enviados como uma
-partida os envia. A análise espera enquanto outra página é mostrada, e continua quando a página Tabuleiro volta; *Parar
-a análise* (ou A) a para, e um ponto no botão *Tabuleiro* da barra indica quando ela está rodando.
+desenhados como setas, o da melhor mais escuro (**Preferências** > *Aparência* > *As setas da análise na página
+Tabuleiro* as desativa; as linhas continuam mostrando os lances). As pontuações são do ponto de vista das Brancas. Um
+clique numa linha joga o primeiro lance dela. O engine, *Threads*, *Hash* (0: o do próprio engine) e *Linhas* são
+configurações próprias da análise: guardadas para a próxima vez, não alteram nem o engine da biblioteca nem nenhum
+torneio. Os outros valores de opções da biblioteca são enviados como uma partida os envia. A análise espera enquanto
+outra página é mostrada, e continua quando a página Tabuleiro volta; *Parar a análise* (ou A) a para, e um ponto no
+botão *Tabuleiro* da barra indica quando ela está rodando.
 
 As threads da análise contam no orçamento de núcleos, mostrado abaixo dela com as threads da máquina. Enquanto um
 torneio roda, a análise compete com as partidas dele: a página avisa, com as threads que as partidas usam. O engine da

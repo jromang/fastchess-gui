@@ -605,16 +605,17 @@ dessiné en 3D : voir [L'échiquier 3D](#léchiquier-3d).
   partie telle qu'elle était. *Copier le FEN* copie la position.
 
 ### Analyse
-<!-- en: the-analysis f1bc5164 -->
+<!-- en: the-analysis 40171591 -->
 
 Un moteur de la bibliothèque analyse la position affichée et suit l'échiquier : profondeur, nœuds, vitesse, les chances
 de gain, de nulle et de perte quand le moteur les donne (`UCI_ShowWDL`), et plusieurs lignes (MultiPV), leurs premiers
-coups dessinés en flèches, la meilleure plus foncée (*Flèches* les retire ; les lignes montrent toujours les coups). Les
-scores sont ceux des Blancs. Un clic sur une ligne joue son premier coup. Son moteur, *Threads*, *Hash* (0 : celui du
-moteur) et *Lignes* sont des réglages propres à l'analyse : gardés pour la prochaine fois, ils ne changent ni le moteur
-de la bibliothèque ni aucun tournoi. Les autres valeurs d'options de la bibliothèque sont envoyées comme une partie les
-envoie. L'analyse attend pendant qu'une autre page est affichée, et reprend quand la page Échiquier revient ; *Arrêter
-l'analyse* (ou A) l'arrête, et un point sur le bouton *Échiquier* de la barre de navigation indique qu'elle tourne.
+coups dessinés en flèches, la meilleure plus foncée (**Réglages** > *Apparence* > *Les flèches de l'analyse sur la page
+Échiquier* les retire ; les lignes montrent toujours les coups). Les scores sont ceux des Blancs. Un clic sur une ligne
+joue son premier coup. Son moteur, *Threads*, *Hash* (0 : celui du moteur) et *Lignes* sont des réglages propres à
+l'analyse : gardés pour la prochaine fois, ils ne changent ni le moteur de la bibliothèque ni aucun tournoi. Les autres
+valeurs d'options de la bibliothèque sont envoyées comme une partie les envoie. L'analyse attend pendant qu'une autre
+page est affichée, et reprend quand la page Échiquier revient ; *Arrêter l'analyse* (ou A) l'arrête, et un point sur le
+bouton *Échiquier* de la barre de navigation indique qu'elle tourne.
 
 Les threads de l'analyse comptent dans le budget de cœurs, affiché en dessous avec les threads de la machine. Pendant
 qu'un tournoi tourne, l'analyse est en concurrence avec ses parties : la page le dit, avec les threads qu'utilisent les

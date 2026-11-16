@@ -610,17 +610,17 @@ in 3D gezeichnet werden: siehe [Das 3D-Brett](#das-3d-brett).
   zurück, wie sie war. *FEN kopieren* kopiert die Stellung.
 
 ### Die Analyse
-<!-- en: the-analysis f1bc5164 -->
+<!-- en: the-analysis 40171591 -->
 
 Eine Engine der Bibliothek durchsucht die gezeigte Stellung und folgt dem Brett: Tiefe, Knoten, Geschwindigkeit, die
 Gewinn-, Remis- und Verlustchancen, wenn die Engine sie angibt (`UCI_ShowWDL`), und mehrere Linien (MultiPV), deren
-erste Züge als Pfeile gezeichnet werden, der beste dunkler (*Pfeile* blendet sie aus; die Linien zeigen die Züge
-weiterhin). Die Bewertungen sind aus der Sicht von Weiß. Ein Klick auf eine Linie spielt ihren ersten Zug. Ihre Engine,
-*Threads*, *Hash* (0: der eigene der Engine) und *Linien* sind Einstellungen der Analyse selbst: Sie bleiben für das
-nächste Mal erhalten und ändern weder die Engine der Bibliothek noch irgendein Turnier. Die übrigen Optionswerte der
-Bibliothek werden so gesendet, wie eine Partie sie sendet. Die Analyse wartet, während eine andere Seite gezeigt wird,
-und geht weiter, wenn die Seite Brett wiederkommt; *Analyse beenden* (oder A) beendet sie, und ein Punkt auf dem Knopf
-*Brett* der Leiste zeigt an, dass sie läuft.
+erste Züge als Pfeile gezeichnet werden, der beste dunkler (**Einstellungen** > *Darstellung* > *Die Pfeile der Analyse
+auf der Seite Brett* blendet sie aus; die Linien zeigen die Züge weiterhin). Die Bewertungen sind aus der Sicht von
+Weiß. Ein Klick auf eine Linie spielt ihren ersten Zug. Ihre Engine, *Threads*, *Hash* (0: der eigene der Engine) und
+*Linien* sind Einstellungen der Analyse selbst: Sie bleiben für das nächste Mal erhalten und ändern weder die Engine der
+Bibliothek noch irgendein Turnier. Die übrigen Optionswerte der Bibliothek werden so gesendet, wie eine Partie sie
+sendet. Die Analyse wartet, während eine andere Seite gezeigt wird, und geht weiter, wenn die Seite Brett wiederkommt;
+*Analyse beenden* (oder A) beendet sie, und ein Punkt auf dem Knopf *Brett* der Leiste zeigt an, dass sie läuft.
 
 Die Threads der Analyse zählen zum Kern-Budget, das darunter mit den Threads der Maschine gezeigt wird. Während ein
 Turnier läuft, konkurriert die Analyse mit seinen Partien: Die Seite weist darauf hin, mit den Threads, die die

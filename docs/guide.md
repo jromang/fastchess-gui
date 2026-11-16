@@ -534,11 +534,12 @@ tournament* (or *Back*) returns to the page it came from. Its board can be drawn
 
 An engine of the library searches the position shown and follows the board: depth, nodes, speed, the chances of a win,
 draw and loss when the engine gives them (`UCI_ShowWDL`), and several lines (MultiPV), their first moves drawn as
-arrows, the best one darker (*Arrows* turns them off; the lines still show the moves). Scores are White's. A click on a
-line plays its first move. Its engine, *Threads*, *Hash* (0: the engine's own) and *Lines* are the analysis's own
-settings: kept for the next time, they change neither the engine of the library nor any tournament. The library's other
-option values are sent as a game sends them. The analysis waits while another page is shown, and goes on when the Board
-page comes back; *Stop the analysis* (or A) stops it, and a dot on the rail's *Board* button tells when it runs.
+arrows, the best one darker (**Settings** > *Appearance* > *The analysis's arrows on the Board page* turns them off; the
+lines still show the moves). Scores are White's. A click on a line plays its first move. Its engine, *Threads*, *Hash*
+(0: the engine's own) and *Lines* are the analysis's own settings: kept for the next time, they change neither the
+engine of the library nor any tournament. The library's other option values are sent as a game sends them. The analysis
+waits while another page is shown, and goes on when the Board page comes back; *Stop the analysis* (or A) stops it, and
+a dot on the rail's *Board* button tells when it runs.
 
 The analysis's threads count in the core budget, shown under it with the machine's threads. While a tournament runs,
 the analysis competes with its games: the page says so, with the threads the games use. Its engine is not one of the

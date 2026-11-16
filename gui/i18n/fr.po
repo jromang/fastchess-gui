@@ -4374,6 +4374,9 @@ msgstr "Le moteur d'analyse attend."
 msgid "The analysis is running."
 msgstr "L'analyse est en cours."
 
+msgid "The analysis's arrows on the Board page"
+msgstr "Les flèches de l'analyse sur la page Échiquier"
+
 msgid "The arrow keys too."
 msgstr "Les touches fléchées aussi."
 
@@ -4524,8 +4527,8 @@ msgstr "Les premiers moteurs de la liste (les moteurs testés) rencontrent tous 
 msgid "The first engines of the list play every other engine, not each other: the gauntlet's seeds (-seeds N)."
 msgstr "Les premiers moteurs de la liste jouent contre tous les autres, pas entre eux : les têtes de série du gauntlet (-seeds N)."
 
-msgid "The first move of each line drawn as an arrow on the board, in 2D as in 3D. Without them the lines below still show the moves."
-msgstr "Le premier coup de chaque ligne dessiné en flèche sur l'échiquier, en 2D comme en 3D. Sans elles, les lignes ci-dessous montrent toujours les coups."
+msgid "The first move of each line of the Board page's analysis drawn as an arrow on the board, in 2D as in 3D. Without them the lines still show the moves."
+msgstr "Le premier coup de chaque ligne de l'analyse de la page Échiquier dessiné en flèche sur l'échiquier, en 2D comme en 3D. Sans elles, les lignes montrent toujours les coups."
 
 msgid "The first ones are the seeds, the tested engines: they play all the others."
 msgstr "Les premiers sont les têtes de série, les moteurs testés : ils jouent contre tous les autres."

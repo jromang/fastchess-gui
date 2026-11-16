@@ -596,16 +596,17 @@ detiene el análisis. *Volver al torneo* (o *Volver*) regresa a la página de la
   como llegó. *Copiar FEN* copia la posición.
 
 ### El análisis
-<!-- en: the-analysis f1bc5164 -->
+<!-- en: the-analysis 40171591 -->
 
 Un motor de la biblioteca busca en la posición mostrada y sigue al tablero: profundidad, nodos, velocidad, las
 probabilidades de victoria, tablas y derrota cuando el motor las da (`UCI_ShowWDL`), y varias líneas (MultiPV), cuyas
-primeras jugadas se dibujan como flechas, la mejor más oscura (*Flechas* las quita; las líneas siguen mostrando las
-jugadas). Las puntuaciones son desde el lado de las blancas. Un clic en una línea juega su primera jugada. Su motor,
-*Threads*, *Hash* (0: el del motor) y *Líneas* son ajustes propios del análisis: se conservan para la próxima vez y no
-cambian ni el motor de la biblioteca ni ningún torneo. Los demás valores de opciones de la biblioteca se envían como los
-envía una partida. El análisis espera mientras se muestra otra página, y continúa cuando se vuelve a la página Tablero;
-*Detener el análisis* (o A) lo detiene, y un punto en el botón *Tablero* de la barra indica cuándo está en marcha.
+primeras jugadas se dibujan como flechas, la mejor más oscura (**Ajustes** > *Apariencia* > *Las flechas del análisis en
+la página Tablero* las quita; las líneas siguen mostrando las jugadas). Las puntuaciones son desde el lado de las
+blancas. Un clic en una línea juega su primera jugada. Su motor, *Threads*, *Hash* (0: el del motor) y *Líneas* son
+ajustes propios del análisis: se conservan para la próxima vez y no cambian ni el motor de la biblioteca ni ningún
+torneo. Los demás valores de opciones de la biblioteca se envían como los envía una partida. El análisis espera mientras
+se muestra otra página, y continúa cuando se vuelve a la página Tablero; *Detener el análisis* (o A) lo detiene, y un
+punto en el botón *Tablero* de la barra indica cuándo está en marcha.
 
 Los hilos del análisis cuentan en el presupuesto de núcleos, mostrado debajo con los hilos de la máquina. Mientras se
 juega un torneo, el análisis compite con sus partidas: la página lo indica, con los hilos que usan las partidas. Su

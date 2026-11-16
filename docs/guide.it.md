@@ -593,16 +593,17 @@ essere disegnata in 3D: vedi [La scacchiera 3D](#la-scacchiera-3d).
   era. *Copia FEN* copia la posizione.
 
 ### Analisi
-<!-- en: the-analysis f1bc5164 -->
+<!-- en: the-analysis 40171591 -->
 
 Un motore della libreria analizza la posizione mostrata e segue la scacchiera: profondità, nodi, velocità, le
 probabilità di vittoria, patta e sconfitta quando il motore le dà (`UCI_ShowWDL`), e più linee (MultiPV), le cui prime
-mosse sono disegnate come frecce, la migliore più scura (*Frecce* le toglie; le linee mostrano comunque le mosse). I
-punteggi sono dal punto di vista del Bianco. Un clic su una linea ne gioca la prima mossa. Il suo motore, *Threads*,
-*Hash* (0: quello del motore) e *Linee* sono impostazioni proprie dell'analisi: conservate per la volta successiva, non
-cambiano né il motore della libreria né alcun torneo. Gli altri valori delle opzioni della libreria vengono inviati come
-li invia una partita. L'analisi attende mentre è mostrata un'altra pagina, e prosegue quando si torna alla pagina
-Scacchiera; *Ferma l'analisi* (o A) la ferma, e un punto sul pulsante *Scacchiera* della barra indica quando è in corso.
+mosse sono disegnate come frecce, la migliore più scura (**Impostazioni** > *Aspetto* > *Le frecce dell'analisi nella
+pagina Scacchiera* le toglie; le linee mostrano comunque le mosse). I punteggi sono dal punto di vista del Bianco. Un
+clic su una linea ne gioca la prima mossa. Il suo motore, *Threads*, *Hash* (0: quello del motore) e *Linee* sono
+impostazioni proprie dell'analisi: conservate per la volta successiva, non cambiano né il motore della libreria né alcun
+torneo. Gli altri valori delle opzioni della libreria vengono inviati come li invia una partita. L'analisi attende
+mentre è mostrata un'altra pagina, e prosegue quando si torna alla pagina Scacchiera; *Ferma l'analisi* (o A) la ferma,
+e un punto sul pulsante *Scacchiera* della barra indica quando è in corso.
 
 I thread dell'analisi contano nel budget dei core, mostrato sotto di essa con i thread della macchina. Mentre un
 torneo è in corso, l'analisi compete con le sue partite: la pagina lo dice, con i thread usati dalle partite. Il suo

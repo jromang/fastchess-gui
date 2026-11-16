@@ -246,12 +246,19 @@ void App::drawAppearanceSettings(float label) {
     // The buttons under the boards that show a game.
     ImGui::Spacing();
     ui::label(TR("Boards"), label);
+    ImGui::BeginGroup();
     if (ImGui::Checkbox(TR("Navigation buttons under the boards"), &setup_.nav_buttons)) saveSetupSoon();
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("%s", TR("Start position, previous move, next move, last move and Flip, under the boards "
                                    "that show a game: Games, Live, the detached boards and the Board page. Without "
                                    "them, the keys do the same: the left and right arrows, Home, End, and F to flip."));
     }
+    // The analysis's lines on the Board page as arrows, or not: some find them distracting.
+    if (ImGui::Checkbox(TR("The analysis's arrows on the Board page"), &board_.settings.arrows)) saveBoardSettings();
+    ImGui::SetItemTooltip("%s", TR("The first move of each line of the Board page's analysis drawn as an arrow on the "
+                                   "board, in 2D as in 3D. Without them the lines still show the moves."));
+    ui::topic(guide::topics::Analysis);
+    ImGui::EndGroup();
 
     // The Board page's board in 3D, and its light.
     ImGui::Spacing();
