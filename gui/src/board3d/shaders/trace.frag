@@ -75,6 +75,59 @@ float rnd() {
     return float(rngState >> 8) * (1.0 / 16777216.0);
 }
 
+// The samples' numbers: a Sobol sequence in four dimensions, Owen-scrambled by hashing (Burley, "Practical hash-based
+// Owen scrambling", 2020), one set of four for each use along a path, each set shuffled apart from the others. The
+// samples of a pixel then cover each set's first two dimensions evenly at every power of two, where independent
+// numbers leave clumps and holes: less noise for as many samples. The directions of dimensions 1 to 3 are Joe and
+// Kuo's (new-joe-kuo-6.21201), 16 bits: 65536 samples at most, far more than the image takes.
+const uint SOBOL1[16] = uint[16](0x80000000u, 0xc0000000u, 0xa0000000u, 0xf0000000u, 0x88000000u, 0xcc000000u,
+                                 0xaa000000u, 0xff000000u, 0x80800000u, 0xc0c00000u, 0xa0a00000u, 0xf0f00000u,
+                                 0x88880000u, 0xcccc0000u, 0xaaaa0000u, 0xffff0000u);
+const uint SOBOL2[16] = uint[16](0x80000000u, 0xc0000000u, 0x60000000u, 0x90000000u, 0xe8000000u, 0x5c000000u,
+                                 0x8e000000u, 0xc5000000u, 0x68800000u, 0x9cc00000u, 0xee600000u, 0x55900000u,
+                                 0x80680000u, 0xc09c0000u, 0x60ee0000u, 0x90550000u);
+const uint SOBOL3[16] = uint[16](0x80000000u, 0xc0000000u, 0x20000000u, 0x50000000u, 0xf8000000u, 0x74000000u,
+                                 0xa2000000u, 0x93000000u, 0xd8800000u, 0x25400000u, 0x59e00000u, 0xe6d00000u,
+                                 0x78080000u, 0xb40c0000u, 0x82020000u, 0xc3050000u);
+
+uint gPixelSeed;  // the pixel's (and uSeed's)
+
+uint reverseBits(uint x) {  // bitfieldReverse() needs GLSL 4.00
+    x = ((x >> 1u) & 0x55555555u) | ((x & 0x55555555u) << 1u);
+    x = ((x >> 2u) & 0x33333333u) | ((x & 0x33333333u) << 2u);
+    x = ((x >> 4u) & 0x0F0F0F0Fu) | ((x & 0x0F0F0F0Fu) << 4u);
+    x = ((x >> 8u) & 0x00FF00FFu) | ((x & 0x00FF00FFu) << 8u);
+    return (x >> 16u) | (x << 16u);
+}
+
+// A random permutation of the bits read from the most significant, each bit flipped by a hash of those above it: a
+// nested uniform scramble (Vegdahl's hash, after Laine and Karras), done on the bits reversed.
+uint owenHash(uint x, uint seed) {
+    x ^= x * 0x3d20adeau;
+    x += seed;
+    x *= (seed >> 16u) | 1u;
+    x ^= x * 0x05526c56u;
+    x ^= x * 0x53a22864u;
+    return x;
+}
+uint owenScramble(uint x, uint seed) { return reverseBits(owenHash(reverseBits(x), seed)); }
+
+// The set of four numbers `set` of this pixel's sample uSample.
+vec4 sample4(int set) {
+    uint seed = pcg(gPixelSeed + uint(set) * 0x9e3779b9u);
+    // The samples' order shuffled, power-of-two runs kept whole: an Owen scramble of the index's 16 bits.
+    uint index = reverseBits(owenHash(reverseBits(uint(uSample)), seed) & 0xffff0000u);
+    uvec4 x    = uvec4(reverseBits(index), 0u, 0u, 0u);
+    for (int b = 0; b < 16; ++b) {
+        if ((index & (1u << uint(b))) != 0u) x.yzw ^= uvec3(SOBOL1[b], SOBOL2[b], SOBOL3[b]);
+    }
+    x.x = owenScramble(x.x, pcg(seed ^ 0x68bc21ebu));
+    x.y = owenScramble(x.y, pcg(seed ^ 0x02e5be93u));
+    x.z = owenScramble(x.z, pcg(seed ^ 0x967a889bu));
+    x.w = owenScramble(x.w, pcg(seed ^ 0x1b56c4e9u));
+    return vec4(x >> 8u) * (1.0 / 16777216.0);
+}
+
 float hash1(float n) { return fract(sin(n * 12.9898) * 43758.5453); }
 float hash3(vec3 p) {
     p = fract(p * 0.3183099 + 0.1);
@@ -550,14 +603,14 @@ vec3 sampleVndf(vec3 v, float alpha, float u1, float u2) {
     return normalize(vec3(alpha * nh.x, alpha * nh.y, max(1e-6, nh.z)));
 }
 
-vec3 sampleBsdf(Material m, vec3 n, vec3 v, out vec3 l, out float pdf) {
+vec3 sampleBsdf(Material m, vec3 n, vec3 v, vec3 u, out vec3 l, out float pdf) {
     vec3 t, b;
     basis(n, t, b);
     vec3 vt   = vec3(dot(v, t), dot(v, b), dot(v, n));
     float NoV = max(vt.z, 1e-4);
     float pd, ps, pc;
     lobes(m, NoV, pd, ps, pc);
-    float pick = rnd(), u1 = rnd(), u2 = rnd();
+    float pick = u.x, u1 = u.y, u2 = u.z;
     if (pick < pd) {
         float r = sqrt(u1), phi = 2.0 * PI * u2;
         vec3 lt = vec3(r * cos(phi), r * sin(phi), sqrt(max(0.0, 1.0 - u1)));
@@ -654,6 +707,9 @@ vec3 trace(vec3 ro, vec3 rd) {
     float lastPdf   = 0.0;
     bool seeLights  = false;
     for (int bounce = 0; bounce <= uBounces; ++bounce) {
+        // This bounce's numbers: the light's point, which light, the roulette; the BSDF's direction and lobe. Each
+        // pair that draws a point first in its set, where Sobol's two first dimensions are evenly spread.
+        vec4 forLight = sample4(1 + 2 * bounce), forBsdf = sample4(2 + 2 * bounce);
         Hit h;
         // The camera does not see the lights, nor does the studio's floor mirror them, as a photographer keeps them
         // out of the picture: they light the board and shine in its varnish.
@@ -695,11 +751,12 @@ vec3 trace(vec3 ro, vec3 rd) {
         // too. The studio's floor takes the lights without its clear coat: the light, not its reflection.
         bool room = h.mat == MAT_ROOM;
         if (uLightCount > 0) {
-            int i = pickLight(rnd());
+            int i = pickLight(forLight.z);
             vec3 wi, le;
             float d, pl;
             if (uLightSun[i] > 0.0) {  // a direction within the sun's disc, uniform in solid angle
-                float c = mix(1.0, uLightSun[i], rnd()), s = sqrt(max(0.0, 1.0 - c * c)), phi = 2.0 * PI * rnd();
+                float c = mix(1.0, uLightSun[i], forLight.x), s = sqrt(max(0.0, 1.0 - c * c));
+                float phi = 2.0 * PI * forLight.y;
                 vec3 t, b;
                 basis(uLightC[i], t, b);
                 wi = normalize(c * uLightC[i] + s * cos(phi) * t + s * sin(phi) * b);
@@ -708,7 +765,7 @@ vec3 trace(vec3 ro, vec3 rd) {
                 pl = lightProbability(i) / (2.0 * PI * (1.0 - uLightSun[i]));
             } else {
                 SphQuad sq = sphQuad(i, origin);
-                float u = rnd(), v = rnd();
+                float u = forLight.x, v = forLight.y;
                 wi = spherical(sq) ? sphQuadSample(sq, u, v)
                                    : uLightC[i] + (u - 0.5) * uLightU[i] + (v - 0.5) * uLightV[i] - origin;
                 d  = length(wi);
@@ -730,7 +787,7 @@ vec3 trace(vec3 ro, vec3 rd) {
 
         vec3 wi;
         float pdf;
-        vec3 f = sampleBsdf(m, h.n, v, wi, pdf);
+        vec3 f = sampleBsdf(m, h.n, v, vec3(forBsdf.z, forBsdf.xy), wi, pdf);
         if (pdf <= 1e-8 || dot(wi, h.ng) <= 0.0) break;
         throughput *= f / pdf;
         lastPdf   = pdf;
@@ -738,7 +795,7 @@ vec3 trace(vec3 ro, vec3 rd) {
 
         if (bounce >= 2) {
             float survive = clamp(max(throughput.r, max(throughput.g, throughput.b)), 0.05, 0.95);
-            if (rnd() > survive) break;
+            if (forLight.w > survive) break;
             throughput /= survive;
         }
         ro = origin;
@@ -748,17 +805,19 @@ vec3 trace(vec3 ro, vec3 rd) {
 }
 
 void main() {
-    rngState = pcg(uint(gl_FragCoord.x) + pcg(uint(gl_FragCoord.y) + pcg(uint(uSample) * 7919u + 13u + uint(uSeed) * 104729u)));
+    rngState   = pcg(uint(gl_FragCoord.x) + pcg(uint(gl_FragCoord.y) + pcg(uint(uSample) * 7919u + 13u + uint(uSeed) * 104729u)));
+    gPixelSeed = pcg(uint(gl_FragCoord.x) + pcg(uint(gl_FragCoord.y) + pcg(uint(uSeed) + 0x51ed27u)));
 
     // A random point of the pixel, through a thin lens focused at the target.
-    vec2 jitter = vec2(rnd(), rnd());
+    vec4 forCamera = sample4(0);
+    vec2 jitter    = forCamera.xy;
     vec2 ndc    = ((gl_FragCoord.xy - 0.5 + jitter) / uResolution) * 2.0 - 1.0;
     float aspect = uResolution.x / uResolution.y;
     vec3 dir     = normalize(uCamForward + uCamRight * ndc.x * uTanHalfFov * aspect + uCamUp * ndc.y * uTanHalfFov);
     vec3 origin  = uCamPos;
     if (uAperture > 0.0) {
         vec3 focus = uCamPos + dir * (uFocusDist / dot(dir, uCamForward));
-        float r = sqrt(rnd()) * uAperture, phi = 2.0 * PI * rnd();
+        float r = sqrt(forCamera.z) * uAperture, phi = 2.0 * PI * forCamera.w;
         origin += uCamRight * r * cos(phi) + uCamUp * r * sin(phi);
         dir = normalize(focus - origin);
     }
