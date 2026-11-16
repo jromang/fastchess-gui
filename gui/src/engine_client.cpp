@@ -1,8 +1,10 @@
 #include "engine_client.hpp"
 
+#include <algorithm>
 #include <atomic>
 #include <ctime>
 #include <filesystem>
+#include <iterator>
 
 #include <core/globals/globals.hpp>
 #include <core/threading/thread_vector.hpp>
@@ -140,12 +142,17 @@ void EngineProcess::readLoop() {
 
 bool EngineProcess::send(const std::string& line) {
     if (!running()) return false;
-    {
-        std::lock_guard lock(impl_->io);
-        if (!impl_->process.writeInput(line + "\n")) return false;
-    }
+    std::lock_guard lock(impl_->io);
+    // Written down before it is written: an engine quick to answer had its answer read, and shown, before the line it
+    // answered (issue #175).
     push(Line::Kind::Sent, line);
-    return true;
+    if (impl_->process.writeInput(line + "\n")) return true;
+    // Not sent after all: taken back, unless already collected.
+    std::lock_guard pending(mutex_);
+    const auto it = std::find_if(pending_.rbegin(), pending_.rend(),
+                                 [&](const Line& l) { return l.kind == Line::Kind::Sent && l.text == line; });
+    if (it != pending_.rend()) pending_.erase(std::next(it).base());
+    return false;
 }
 
 std::vector<EngineProcess::Line> EngineProcess::take() {

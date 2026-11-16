@@ -84,8 +84,13 @@ TEST_CASE("engine client: a process of its own, off fastchess' list, that answer
         if (!lines.empty() && lines.back().text == "uciok") break;
     }
     REQUIRE(!lines.empty());
-    CHECK(lines.front().kind == EngineProcess::Line::Kind::Sent);
-    CHECK(lines.front().text == "uci");
+    INFO(consoleTranscript(lines));  // all of it, should a check fail
+    // The engine's banner ("Using random seed", written unasked) may come before "uci" was sent, on a slow machine.
+    const auto sent = std::find_if(lines.begin(), lines.end(), [](const auto& l) {
+        return l.kind == EngineProcess::Line::Kind::Sent && l.text == "uci";
+    });
+    REQUIRE(sent != lines.end());
+    CHECK(std::all_of(lines.begin(), sent, [](const auto& l) { return l.kind != EngineProcess::Line::Kind::Sent; }));
     CHECK(lines.back().text == "uciok");
     CHECK(std::any_of(lines.begin(), lines.end(), [](const auto& l) { return l.text == "id name random_move"; }));
 
