@@ -230,6 +230,38 @@ dem Großbild und auf der Webseite der Übertragung. Das Bild wird in den Ordner
 Original verschoben oder gelöscht und das Profil als Ganzes verschoben werden kann; *Entfernen* nimmt es weg (und
 seine Kopie, sofern keine andere Engine sie hat). Das Logo lässt sich ändern, während die Engine spielt.
 
+### Das 3D-Brett
+<!-- en: the-3d-board b8876424 -->
+
+**Einstellungen** > *Darstellung* > *3D-Brett* > *Das Brett der Seite Brett in 3D* zeichnet das Brett der Seite
+[Brett](#brett) dreidimensional, wie das Foto eines echten Bretts (standardmäßig aus; alle anderen Bretter bleiben
+flach). Die Grafikkarte berechnet es durch Pfadverfolgung (Path Tracing): Das Bild wird einige Sekunden lang feiner,
+solange sich nichts bewegt, mit einigen Millisekunden der Karte pro Bild, dann ruht die Karte; während sich das Brett
+dreht, steht ein gröberes Bild an seiner Stelle. Das kleine Brett der *Darstellung* wird dann ebenfalls in 3D
+gezeichnet, sodass sich die Einstellungen daneben zeigen, während sie sich ändern:
+
+- die Beleuchtung, wie Fotografen ein Stillleben ausleuchten: *Studio*, *Low Key*, *High Key*, *Ausstellungsraum*,
+  *Fensterlicht*, *Goldene Stunde* oder *Turniersaal*;
+- *Belichtung*: heller oder dunkler, als die Beleuchtung es macht, in Blendenstufen, jede verdoppelt oder halbiert
+  das Licht;
+- *Qualität*: die Samples, aus denen das Bild besteht, bevor es ruht, standardmäßig 512; weniger schonen die Grafik
+  eines Prozessors während Turnieren;
+- *Lack*, von gewachstem, mattem Holz bis zu einer Schicht, in der sich die Lichter zeigen, und *Glanz*, von
+  seidenmatt bis zum Spiegel;
+- *Standard* stellt Belichtung, Qualität, Lack und Glanz wieder her, wie sie anfangs waren; die Beleuchtung bleibt.
+
+Was das flache Brett zeigt, ist darauf: der Bewertungsbalken, der letzte Zug, die aufgenommene Figur und wohin sie
+ziehen kann, ein König im Schach und die Pfeile der Analyse, die schwach durch die Figuren hindurch zu sehen sind. Ein
+Linksklick wählt ein Feld wie auf dem flachen Brett, auf einer Figur oder auf dem Brett dahinter. Hältst du die rechte
+Maustaste gedrückt und bewegst die Maus, kreist die Kamera um das Brett (ein Rechtsklick ohne Bewegung legt die
+aufgenommene Figur weiterhin ab), das Mausrad geht näher heran, und ein Klick mit dem Mausrad holt die Ansicht zurück;
+das Brett zu drehen (F) lässt die Kamera eine halbe Runde machen.
+
+Das 3D-Brett braucht OpenGL 3.3. Wo das Fenster ohne es gezeichnet wird (der Software-Renderer aus
+[Wie das Fenster gezeichnet wird](#wie-das-fenster-gezeichnet-wird), manche virtuellen Maschinen und Remotedesktops),
+bleiben die Bretter flach, und die *Darstellung* sagt, warum. Die Figuren sind clarkerubbers Staunton-Pieces, unter
+der MIT-Lizenz; die *Darstellung* verlinkt sie.
+
 ## Tastenkürzel
 <!-- en: keyboard-shortcuts 45f7a67b -->
 
@@ -539,12 +571,13 @@ angehakt, ohne die Stellungen mit vertauschten Farben) und fügt es zur Biblioth
   Partien eingegangen sind, wie viele die Optionen weggelassen haben und wie viele nicht gelesen werden konnten.
 
 ## Brett
-<!-- en: board 5b1196ea -->
+<!-- en: board ef08c39c -->
 
 Die Seite Brett zeigt eine Partie oder eine Stellung, von irgendwoher: **A** auf einem beliebigen Brett des Programms
 (eine Partie des Mosaiks im Tab *Live* oder die verfolgte, das Brett des Tabs *Partien*, des Tabs *Eröffnungen*, einer
 Eröffnung eines Buchs) öffnet seine Stellung hier und analysiert sie; auf der Seite Brett startet und beendet A die
-Analyse. *Zurück zum Turnier* (oder *Zurück*) kehrt zu der Seite zurück, von der aus sie geöffnet wurde.
+Analyse. *Zurück zum Turnier* (oder *Zurück*) kehrt zu der Seite zurück, von der aus sie geöffnet wurde. Ihr Brett kann
+in 3D gezeichnet werden: siehe [Das 3D-Brett](#das-3d-brett).
 
 ### Eine Stellung öffnen, einfügen und aufbauen
 <!-- en: opening-pasting-and-setting-up-a-position dd0f4636 -->
@@ -577,16 +610,17 @@ Analyse. *Zurück zum Turnier* (oder *Zurück*) kehrt zu der Seite zurück, von 
   zurück, wie sie war. *FEN kopieren* kopiert die Stellung.
 
 ### Die Analyse
-<!-- en: the-analysis 506e4de1 -->
+<!-- en: the-analysis f1bc5164 -->
 
 Eine Engine der Bibliothek durchsucht die gezeigte Stellung und folgt dem Brett: Tiefe, Knoten, Geschwindigkeit, die
 Gewinn-, Remis- und Verlustchancen, wenn die Engine sie angibt (`UCI_ShowWDL`), und mehrere Linien (MultiPV), deren
-erste Züge als Pfeile gezeichnet werden, der beste dunkler. Die Bewertungen sind aus der Sicht von Weiß. Ein Klick auf
-eine Linie spielt ihren ersten Zug. Ihre Engine, *Threads*, *Hash* (0: der eigene der Engine) und *Linien* sind
-Einstellungen der Analyse selbst: Sie bleiben für das nächste Mal erhalten und ändern weder die Engine der Bibliothek
-noch irgendein Turnier. Die übrigen Optionswerte der Bibliothek werden so gesendet, wie eine Partie sie sendet. Die
-Analyse wartet, während eine andere Seite gezeigt wird, und geht weiter, wenn die Seite Brett wiederkommt; *Analyse
-beenden* (oder A) beendet sie, und ein Punkt auf dem Knopf *Brett* der Leiste zeigt an, dass sie läuft.
+erste Züge als Pfeile gezeichnet werden, der beste dunkler (*Pfeile* blendet sie aus; die Linien zeigen die Züge
+weiterhin). Die Bewertungen sind aus der Sicht von Weiß. Ein Klick auf eine Linie spielt ihren ersten Zug. Ihre Engine,
+*Threads*, *Hash* (0: der eigene der Engine) und *Linien* sind Einstellungen der Analyse selbst: Sie bleiben für das
+nächste Mal erhalten und ändern weder die Engine der Bibliothek noch irgendein Turnier. Die übrigen Optionswerte der
+Bibliothek werden so gesendet, wie eine Partie sie sendet. Die Analyse wartet, während eine andere Seite gezeigt wird,
+und geht weiter, wenn die Seite Brett wiederkommt; *Analyse beenden* (oder A) beendet sie, und ein Punkt auf dem Knopf
+*Brett* der Leiste zeigt an, dass sie läuft.
 
 Die Threads der Analyse zählen zum Kern-Budget, das darunter mit den Threads der Maschine gezeigt wird. Während ein
 Turnier läuft, konkurriert die Analyse mit seinen Partien: Die Seite weist darauf hin, mit den Threads, die die

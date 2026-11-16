@@ -227,6 +227,37 @@ la pantalla grande y en la página web de la retransmisión. La imagen se copia 
 que el original puede moverse o borrarse y el perfil trasladarse entero; *Quitar* la retira (y su copia, salvo que
 otro motor la tenga). El logo puede cambiarse mientras el motor juega.
 
+### El tablero 3D
+<!-- en: the-3d-board b8876424 -->
+
+**Ajustes** > *Apariencia* > *Tablero 3D* > *El tablero de la página Tablero en 3D* dibuja el tablero de la página
+[Tablero](#tablero) en tres dimensiones, como la fotografía de un tablero real (desactivado por defecto; todos los
+demás tableros siguen planos). La tarjeta gráfica lo calcula por trazado de caminos: la imagen se afina durante unos
+segundos mientras nada se mueve, unos milisegundos de la tarjeta en cada fotograma, y luego la tarjeta descansa;
+mientras el tablero gira, una imagen más tosca ocupa su lugar. El pequeño tablero de *Apariencia* se dibuja entonces
+también en 3D, para que las opciones de al lado se vean a medida que cambian:
+
+- la iluminación, como los fotógrafos iluminan un bodegón: *Estudio*, *Clave baja*, *Clave alta*, *Sala de
+  exposición*, *Luz de ventana*, *Hora dorada* o *Sala de torneo*;
+- *Exposición*: más claro o más oscuro de lo que lo deja la iluminación, en pasos, cada uno duplica o reduce a la
+  mitad la luz;
+- *Calidad*: las muestras de las que se compone la imagen antes de descansar, 512 por defecto; menos alivian los
+  gráficos de un procesador durante los torneos;
+- *Barniz*, de una madera encerada y mate a una capa en la que se ven las luces, y *Brillo*, de satinado a espejo;
+- *Por defecto* devuelve la exposición, la calidad, el barniz y el brillo a como estaban; la iluminación se mantiene.
+
+Lo que muestra el tablero plano está en él: la barra de evaluación, la última jugada, la pieza tomada y adónde puede
+ir, un rey en jaque, y las flechas del análisis, que se ven tenuemente a través de las piezas. Un clic izquierdo elige
+una casilla como en el tablero plano, sobre una pieza o sobre el tablero detrás de ella. Si mantienes pulsado el botón
+derecho mientras mueves el ratón, la cámara gira alrededor del tablero (un clic derecho sin moverse sigue soltando la
+pieza tomada), la rueda acerca, y un clic de la rueda devuelve la vista; girar el tablero (F) hace que la cámara dé
+media vuelta.
+
+El tablero 3D necesita OpenGL 3.3. Donde la ventana se dibuja sin él (el renderizador por software de
+[Cómo se dibuja la ventana](#cómo-se-dibuja-la-ventana), algunas máquinas virtuales y escritorios remotos), los
+tableros siguen planos y *Apariencia* dice por qué. Las piezas son las Staunton-Pieces de clarkerubber, bajo la
+licencia MIT; *Apariencia* enlaza con ellas.
+
 ## Atajos de teclado
 <!-- en: keyboard-shortcuts 45f7a67b -->
 
@@ -527,12 +558,13 @@ en **Suites**.
   pudieron leer.
 
 ## Tablero
-<!-- en: board 5b1196ea -->
+<!-- en: board ef08c39c -->
 
-La página Tablero muestra una partida o una posición, de cualquier procedencia: **A** en cualquier tablero del
-programa (una partida del mosaico de la pestaña *Directo* o la seguida, el tablero de la pestaña *Partidas*, el de la
-pestaña *Aperturas*, el de una apertura de un libro) abre aquí su posición y la analiza; en la página Tablero, A
-inicia y detiene el análisis. *Volver al torneo* (o *Volver*) regresa a la página de la que vino.
+La página Tablero muestra una partida o una posición, de cualquier procedencia: **A** en cualquier tablero del programa
+(una partida del mosaico de la pestaña *Directo* o la seguida, el tablero de la pestaña *Partidas*, el de la pestaña
+*Aperturas*, el de una apertura de un libro) abre aquí su posición y la analiza; en la página Tablero, A inicia y
+detiene el análisis. *Volver al torneo* (o *Volver*) regresa a la página de la que vino. Su tablero puede dibujarse en
+3D: véase [El tablero 3D](#el-tablero-3d).
 
 ### Abrir, pegar y preparar una posición
 <!-- en: opening-pasting-and-setting-up-a-position dd0f4636 -->
@@ -564,16 +596,16 @@ inicia y detiene el análisis. *Volver al torneo* (o *Volver*) regresa a la pág
   como llegó. *Copiar FEN* copia la posición.
 
 ### El análisis
-<!-- en: the-analysis 506e4de1 -->
+<!-- en: the-analysis f1bc5164 -->
 
 Un motor de la biblioteca busca en la posición mostrada y sigue al tablero: profundidad, nodos, velocidad, las
 probabilidades de victoria, tablas y derrota cuando el motor las da (`UCI_ShowWDL`), y varias líneas (MultiPV), cuyas
-primeras jugadas se dibujan como flechas, la mejor más oscura. Las puntuaciones son desde el lado de las blancas. Un
-clic en una línea juega su primera jugada. Su motor, *Threads*, *Hash* (0: el del motor) y *Líneas* son ajustes
-propios del análisis: se conservan para la próxima vez y no cambian ni el motor de la biblioteca ni ningún torneo. Los
-demás valores de opciones de la biblioteca se envían como los envía una partida. El análisis espera mientras se
-muestra otra página, y continúa cuando se vuelve a la página Tablero; *Detener el análisis* (o A) lo detiene, y un
-punto en el botón *Tablero* de la barra indica cuándo está en marcha.
+primeras jugadas se dibujan como flechas, la mejor más oscura (*Flechas* las quita; las líneas siguen mostrando las
+jugadas). Las puntuaciones son desde el lado de las blancas. Un clic en una línea juega su primera jugada. Su motor,
+*Threads*, *Hash* (0: el del motor) y *Líneas* son ajustes propios del análisis: se conservan para la próxima vez y no
+cambian ni el motor de la biblioteca ni ningún torneo. Los demás valores de opciones de la biblioteca se envían como los
+envía una partida. El análisis espera mientras se muestra otra página, y continúa cuando se vuelve a la página Tablero;
+*Detener el análisis* (o A) lo detiene, y un punto en el botón *Tablero* de la barra indica cuándo está en marcha.
 
 Los hilos del análisis cuentan en el presupuesto de núcleos, mostrado debajo con los hilos de la máquina. Mientras se
 juega un torneo, el análisis compite con sus partidas: la página lo indica, con los hilos que usan las partidas. Su

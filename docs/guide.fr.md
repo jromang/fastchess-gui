@@ -229,6 +229,37 @@ grand écran et sur la page web de la diffusion. L'image est copiée dans le dos
 peut donc être déplacé ou supprimé, et le profil déplacé en entier ; *Retirer* l'enlève (avec sa copie, à moins
 qu'un autre moteur ne l'ait). Le logo peut être changé pendant que le moteur joue.
 
+### L'échiquier 3D
+<!-- en: the-3d-board b8876424 -->
+
+**Réglages** > *Apparence* > *Échiquier 3D* > *L'échiquier de la page Échiquier en 3D* dessine l'échiquier de la page
+[Échiquier](#échiquier) en trois dimensions, comme la photographie d'un vrai échiquier (désactivé par défaut ; tous
+les autres échiquiers restent plats). La carte graphique le calcule par tracé de chemins : l'image s'affine quelques
+secondes tant que rien ne bouge, quelques millisecondes de la carte à chaque image, puis la carte se repose ; pendant
+que l'échiquier tourne, une image plus grossière la remplace. Le petit échiquier d'*Apparence* est alors dessiné en 3D
+lui aussi, pour que les choix à côté se voient à mesure qu'ils changent :
+
+- l'éclairage, comme les photographes éclairent une nature morte : *Studio*, *Low key*, *High key*, *Salle
+  d'exposition*, *Lumière de fenêtre*, *Heure dorée* ou *Salle de tournoi* ;
+- *Exposition* : plus clair ou plus sombre que l'éclairage ne le rend, en diaphs, chacun doublant ou divisant par deux
+  la lumière ;
+- *Qualité* : les échantillons dont l'image est faite avant de se reposer, 512 par défaut ; moins ménage la puce
+  graphique d'un processeur pendant les tournois ;
+- *Vernis*, d'un bois ciré et mat à une couche où se reflètent les lumières, et *Brillance*, du satiné au miroir ;
+- *Défaut* remet l'exposition, la qualité, le vernis et la brillance comme ils étaient ; l'éclairage reste.
+
+Ce que montre l'échiquier plat y est : la barre d'évaluation, le dernier coup, la pièce prise en main et où elle peut
+aller, un roi en échec, et les flèches de l'analyse, qui se voient en transparence à travers les pièces. Un clic gauche
+choisit une case comme sur l'échiquier plat, sur une pièce ou sur l'échiquier derrière elle. Le bouton droit maintenu
+pendant que la souris bouge fait tourner autour de l'échiquier (un clic droit sans bouger lâche toujours la pièce prise
+en main), la molette rapproche, et un clic de la molette ramène la vue ; retourner l'échiquier (F) fait faire un
+demi-tour à la caméra.
+
+L'échiquier 3D demande OpenGL 3.3. Là où la fenêtre est dessinée sans lui (le rendu logiciel de
+[Rendu de la fenêtre](#rendu-de-la-fenêtre), certaines machines virtuelles et certains bureaux à distance), les
+échiquiers restent plats et *Apparence* dit pourquoi. Les pièces sont les Staunton-Pieces de clarkerubber, sous
+licence MIT ; *Apparence* donne le lien vers elles.
+
 ## Raccourcis clavier
 <!-- en: keyboard-shortcuts 45f7a67b -->
 
@@ -536,12 +567,13 @@ tests…* ouvre un livre EPD dans **Suites**.
   en ont écartées et combien n'ont pas pu être lues.
 
 ## Échiquier
-<!-- en: board 5b1196ea -->
+<!-- en: board ef08c39c -->
 
 La page Échiquier montre une partie ou une position, venue de n'importe où : **A** sur n'importe quel échiquier du
 programme (une partie de la mosaïque de l'onglet *Direct* ou celle suivie, l'échiquier de l'onglet *Parties*, de
 l'onglet *Ouvertures*, d'une ouverture d'un livre) ouvre sa position ici et l'analyse ; sur la page Échiquier, A lance
-et arrête l'analyse. *Revenir au tournoi* (ou *Retour*) ramène à la page d'où l'on vient.
+et arrête l'analyse. *Revenir au tournoi* (ou *Retour*) ramène à la page d'où l'on vient. Son échiquier peut être
+dessiné en 3D : voir [L'échiquier 3D](#léchiquier-3d).
 
 ### Ouvrir, coller et mettre en place une position
 <!-- en: opening-pasting-and-setting-up-a-position dd0f4636 -->
@@ -573,16 +605,16 @@ et arrête l'analyse. *Revenir au tournoi* (ou *Retour*) ramène à la page d'o�
   partie telle qu'elle était. *Copier le FEN* copie la position.
 
 ### Analyse
-<!-- en: the-analysis 506e4de1 -->
+<!-- en: the-analysis f1bc5164 -->
 
-Un moteur de la bibliothèque analyse la position affichée et suit l'échiquier : profondeur, nœuds, vitesse, les
-chances de gain, de nulle et de perte quand le moteur les donne (`UCI_ShowWDL`), et plusieurs lignes (MultiPV), leurs
-premiers coups dessinés en flèches, la meilleure plus foncée. Les scores sont ceux des Blancs. Un clic sur une ligne
-joue son premier coup. Son moteur, *Threads*, *Hash* (0 : celui du moteur) et *Lignes* sont des réglages propres à
-l'analyse : gardés pour la prochaine fois, ils ne changent ni le moteur de la bibliothèque ni aucun tournoi. Les
-autres valeurs d'options de la bibliothèque sont envoyées comme une partie les envoie. L'analyse attend pendant
-qu'une autre page est affichée, et reprend quand la page Échiquier revient ; *Arrêter l'analyse* (ou A) l'arrête, et
-un point sur le bouton *Échiquier* de la barre de navigation indique qu'elle tourne.
+Un moteur de la bibliothèque analyse la position affichée et suit l'échiquier : profondeur, nœuds, vitesse, les chances
+de gain, de nulle et de perte quand le moteur les donne (`UCI_ShowWDL`), et plusieurs lignes (MultiPV), leurs premiers
+coups dessinés en flèches, la meilleure plus foncée (*Flèches* les retire ; les lignes montrent toujours les coups). Les
+scores sont ceux des Blancs. Un clic sur une ligne joue son premier coup. Son moteur, *Threads*, *Hash* (0 : celui du
+moteur) et *Lignes* sont des réglages propres à l'analyse : gardés pour la prochaine fois, ils ne changent ni le moteur
+de la bibliothèque ni aucun tournoi. Les autres valeurs d'options de la bibliothèque sont envoyées comme une partie les
+envoie. L'analyse attend pendant qu'une autre page est affichée, et reprend quand la page Échiquier revient ; *Arrêter
+l'analyse* (ou A) l'arrête, et un point sur le bouton *Échiquier* de la barre de navigation indique qu'elle tourne.
 
 Les threads de l'analyse comptent dans le budget de cœurs, affiché en dessous avec les threads de la machine. Pendant
 qu'un tournoi tourne, l'analyse est en concurrence avec ses parties : la page le dit, avec les threads qu'utilisent les

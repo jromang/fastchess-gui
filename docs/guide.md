@@ -199,6 +199,33 @@ the broadcast web page. The picture is copied into the folder `logos` of the pro
 or deleted and the profile moved whole; *Remove* takes it away (and its copy, unless another engine has it). The
 logo can be changed while the engine plays.
 
+### The 3D board
+
+**Settings** > *Appearance* > *3D board* > *The Board page's board in 3D* draws the board of the [Board](#board) page
+in three dimensions, as a photograph of a real board (off by default; every other board stays flat). The graphics
+card computes it by path tracing: the picture refines for a few seconds while nothing moves, a few milliseconds of the
+card each frame, then the card rests; while the board turns, a coarser picture stands in. The small board of
+*Appearance* is then drawn in 3D too, so that the choices beside it show as they change:
+
+- the lighting, as photographers light a still life: *Studio*, *Low key*, *High key*, *Showroom*, *Window light*,
+  *Golden hour* or *Tournament hall*;
+- *Exposure*: brighter or darker than the lighting makes it, in stops, each one doubling or halving the light;
+- *Quality*: the samples the picture is made of before it rests, 512 by default; fewer spare a processor's graphics
+  during tournaments;
+- *Varnish*, from waxed and matt wood to a coat that shows the lights, and *Gloss*, from satin to a mirror;
+- *Default* brings the exposure, the quality, the varnish and the gloss back as they were; the lighting stays.
+
+What the flat board shows is on it: the eval bar, the last move, the piece picked up and where it may go, a king in
+check, and the analysis's arrows, which show faintly through the pieces. A left click picks a square as on the flat
+board, on a piece or on the board behind it. The right button held while the mouse moves turns round the board (a
+right click without moving still lets go of the piece picked up), the wheel comes closer, and a click of the wheel
+brings the view back; flipping the board (F) turns the camera half way round.
+
+The 3D board needs OpenGL 3.3. Where the window is drawn without it (the software renderer of
+[Drawing the window](#drawing-the-window), some virtual machines and remote desktops), the boards stay flat and
+*Appearance* says why. The pieces are clarkerubber's Staunton-Pieces, under the MIT license; *Appearance* links to
+them.
+
 ## Keyboard shortcuts
 
 | Keys | Where | What they do |
@@ -474,7 +501,8 @@ it to the library. *Run as a test suite…* opens an EPD book in **Suites**.
 The Board page shows one game or one position, from anywhere: **A** on any board of the program (a game of the
 *Live* tab's mosaic or the one followed, the board of the *Games* tab, of the *Openings* tab, of an opening of a
 book) opens its position here and analyses it; on the Board page, A starts and stops the analysis. *Back to the
-tournament* (or *Back*) returns to the page it came from.
+tournament* (or *Back*) returns to the page it came from. Its board can be drawn in 3D: see
+[The 3D board](#the-3d-board).
 
 ### Opening, pasting and setting up a position
 
@@ -504,13 +532,13 @@ tournament* (or *Back*) returns to the page it came from.
 
 ### The analysis
 
-An engine of the library searches the position shown and follows the board: depth, nodes, speed, the chances of a
-win, draw and loss when the engine gives them (`UCI_ShowWDL`), and several lines (MultiPV), their first moves drawn
-as arrows, the best one darker. Scores are White's. A click on a line plays its first move. Its engine, *Threads*,
-*Hash* (0: the engine's own) and *Lines* are the analysis's own settings: kept for the next time, they change neither
-the engine of the library nor any tournament. The library's other option values are sent as a game sends them. The
-analysis waits while another page is shown, and goes on when the Board page comes back; *Stop the analysis* (or A)
-stops it, and a dot on the rail's *Board* button tells when it runs.
+An engine of the library searches the position shown and follows the board: depth, nodes, speed, the chances of a win,
+draw and loss when the engine gives them (`UCI_ShowWDL`), and several lines (MultiPV), their first moves drawn as
+arrows, the best one darker (*Arrows* turns them off; the lines still show the moves). Scores are White's. A click on a
+line plays its first move. Its engine, *Threads*, *Hash* (0: the engine's own) and *Lines* are the analysis's own
+settings: kept for the next time, they change neither the engine of the library nor any tournament. The library's other
+option values are sent as a game sends them. The analysis waits while another page is shown, and goes on when the Board
+page comes back; *Stop the analysis* (or A) stops it, and a dot on the rail's *Board* button tells when it runs.
 
 The analysis's threads count in the core budget, shown under it with the machine's threads. While a tournament runs,
 the analysis competes with its games: the page says so, with the threads the games use. Its engine is not one of the

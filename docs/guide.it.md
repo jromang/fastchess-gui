@@ -228,6 +228,37 @@ schermo grande e sulla pagina web della trasmissione. L'immagine viene copiata n
 quindi l'originale può essere spostato o cancellato e il profilo spostato per intero; *Rimuovi* la toglie (con la sua
 copia, a meno che un altro motore non la usi). Il logo si può cambiare mentre il motore gioca.
 
+### La scacchiera 3D
+<!-- en: the-3d-board b8876424 -->
+
+**Impostazioni** > *Aspetto* > *Scacchiera 3D* > *La scacchiera della pagina Scacchiera in 3D* disegna la scacchiera
+della pagina [Scacchiera](#scacchiera) in tre dimensioni, come la fotografia di una scacchiera vera (disattivata per
+impostazione predefinita; tutte le altre scacchiere restano piatte). La scheda grafica la calcola con il path tracing:
+l'immagine si affina per qualche secondo finché nulla si muove, pochi millisecondi della scheda per fotogramma, poi la
+scheda si ferma; mentre la scacchiera ruota, un'immagine più grossolana ne prende il posto. La piccola scacchiera di
+*Aspetto* è allora disegnata anch'essa in 3D, perché le scelte accanto si vedano mentre cambiano:
+
+- l'illuminazione, come i fotografi illuminano una natura morta: *Studio*, *Low key*, *High key*, *Showroom*, *Luce
+  da finestra*, *Ora d'oro* o *Sala del torneo*;
+- *Esposizione*: più chiaro o più scuro di come lo rende l'illuminazione, in stop, ognuno raddoppia o dimezza la luce;
+- *Qualità*: i campioni di cui è fatta l'immagine prima di fermarsi, 512 per impostazione predefinita; di meno
+  risparmiano la grafica di un processore durante i tornei;
+- *Vernice*, da un legno cerato e opaco a uno strato in cui si vedono le luci, e *Lucentezza*, dal satinato allo
+  specchio;
+- *Predefinito* riporta esposizione, qualità, vernice e lucentezza come erano; l'illuminazione resta.
+
+Ciò che mostra la scacchiera piatta c'è: la barra di valutazione, l'ultima mossa, il pezzo preso e dove può andare, un
+re sotto scacco, e le frecce dell'analisi, che si vedono in trasparenza attraverso i pezzi. Un clic sinistro sceglie
+una casa come sulla scacchiera piatta, su un pezzo o sulla scacchiera dietro di esso. Se tieni premuto il tasto destro
+mentre muovi il mouse, la telecamera gira intorno alla scacchiera (un clic destro senza muoversi lascia sempre il pezzo
+preso), la rotellina avvicina, e un clic della rotellina riporta la vista; ruotare la scacchiera (F) fa fare alla
+telecamera mezzo giro.
+
+La scacchiera 3D richiede OpenGL 3.3. Dove la finestra è disegnata senza (il renderer software di
+[Disegno della finestra](#disegno-della-finestra), alcune macchine virtuali e desktop remoti), le scacchiere restano
+piatte e *Aspetto* dice perché. I pezzi sono gli Staunton-Pieces di clarkerubber, con licenza MIT; *Aspetto* ne dà il
+collegamento.
+
 ## Scorciatoie da tastiera
 <!-- en: keyboard-shortcuts 45f7a67b -->
 
@@ -524,12 +555,13 @@ invertiti), e lo aggiunge alla libreria. *Esegui come suite di test…* apre un 
   potute leggere.
 
 ## Scacchiera
-<!-- en: board 5b1196ea -->
+<!-- en: board ef08c39c -->
 
 La pagina Scacchiera mostra una partita o una posizione, di qualsiasi provenienza: **A** su qualsiasi scacchiera del
-programma (una partita del mosaico della scheda *Diretta* o quella seguita, la scacchiera della scheda *Partite*,
-della scheda *Aperture*, di un'apertura di un libro) apre qui la sua posizione e la analizza; nella pagina
-Scacchiera, A avvia e ferma l'analisi. *Torna al torneo* (o *Indietro*) riporta alla pagina da cui si è arrivati.
+programma (una partita del mosaico della scheda *Diretta* o quella seguita, la scacchiera della scheda *Partite*, della
+scheda *Aperture*, di un'apertura di un libro) apre qui la sua posizione e la analizza; nella pagina Scacchiera, A avvia
+e ferma l'analisi. *Torna al torneo* (o *Indietro*) riporta alla pagina da cui si è arrivati. La sua scacchiera può
+essere disegnata in 3D: vedi [La scacchiera 3D](#la-scacchiera-3d).
 
 ### Aprire, incollare e impostare una posizione
 <!-- en: opening-pasting-and-setting-up-a-position dd0f4636 -->
@@ -561,16 +593,16 @@ Scacchiera, A avvia e ferma l'analisi. *Torna al torneo* (o *Indietro*) riporta 
   era. *Copia FEN* copia la posizione.
 
 ### Analisi
-<!-- en: the-analysis 506e4de1 -->
+<!-- en: the-analysis f1bc5164 -->
 
 Un motore della libreria analizza la posizione mostrata e segue la scacchiera: profondità, nodi, velocità, le
-probabilità di vittoria, patta e sconfitta quando il motore le dà (`UCI_ShowWDL`), e più linee (MultiPV), le cui
-prime mosse sono disegnate come frecce, la migliore più scura. I punteggi sono dal punto di vista del Bianco. Un clic
-su una linea ne gioca la prima mossa. Il suo motore, *Threads*, *Hash* (0: quello del motore) e *Linee* sono
-impostazioni proprie dell'analisi: conservate per la volta successiva, non cambiano né il motore della libreria né
-alcun torneo. Gli altri valori delle opzioni della libreria vengono inviati come li invia una partita. L'analisi
-attende mentre è mostrata un'altra pagina, e prosegue quando si torna alla pagina Scacchiera; *Ferma l'analisi* (o A)
-la ferma, e un punto sul pulsante *Scacchiera* della barra indica quando è in corso.
+probabilità di vittoria, patta e sconfitta quando il motore le dà (`UCI_ShowWDL`), e più linee (MultiPV), le cui prime
+mosse sono disegnate come frecce, la migliore più scura (*Frecce* le toglie; le linee mostrano comunque le mosse). I
+punteggi sono dal punto di vista del Bianco. Un clic su una linea ne gioca la prima mossa. Il suo motore, *Threads*,
+*Hash* (0: quello del motore) e *Linee* sono impostazioni proprie dell'analisi: conservate per la volta successiva, non
+cambiano né il motore della libreria né alcun torneo. Gli altri valori delle opzioni della libreria vengono inviati come
+li invia una partita. L'analisi attende mentre è mostrata un'altra pagina, e prosegue quando si torna alla pagina
+Scacchiera; *Ferma l'analisi* (o A) la ferma, e un punto sul pulsante *Scacchiera* della barra indica quando è in corso.
 
 I thread dell'analisi contano nel budget dei core, mostrato sotto di essa con i thread della macchina. Mentre un
 torneo è in corso, l'analisi compete con le sue partite: la pagina lo dice, con i thread usati dalle partite. Il suo

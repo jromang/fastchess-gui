@@ -222,6 +222,37 @@ tela grande e na página web da transmissão. A imagem é copiada para a pasta `
 pode ser movido ou apagado e o perfil movido inteiro; *Remover* a retira (e a cópia dela, a menos que outro engine a
 use). O logo pode ser trocado enquanto o engine joga.
 
+### O tabuleiro 3D
+<!-- en: the-3d-board b8876424 -->
+
+**Preferências** > *Aparência* > *Tabuleiro 3D* > *O tabuleiro da página Tabuleiro em 3D* desenha o tabuleiro da
+página [Tabuleiro](#tabuleiro) em três dimensões, como a fotografia de um tabuleiro de verdade (desativado por padrão;
+todos os outros tabuleiros continuam planos). A placa de vídeo o calcula por path tracing: a imagem fica mais nítida
+por alguns segundos enquanto nada se move, alguns milissegundos da placa a cada quadro, e depois a placa descansa;
+enquanto o tabuleiro gira, uma imagem mais grosseira fica no lugar. O pequeno tabuleiro de *Aparência* passa então a
+ser desenhado em 3D também, para que as escolhas ao lado apareçam à medida que mudam:
+
+- a iluminação, como os fotógrafos iluminam uma natureza-morta: *Estúdio*, *Low key*, *High key*, *Showroom*, *Luz de
+  janela*, *Hora dourada* ou *Salão de torneio*;
+- *Exposição*: mais claro ou mais escuro do que a iluminação deixa, em stops, cada um dobrando ou dividindo pela
+  metade a luz;
+- *Qualidade*: as amostras de que a imagem é feita antes de descansar, 512 por padrão; menos poupam o gráfico de um
+  processador durante os torneios;
+- *Verniz*, de uma madeira encerada e fosca a uma camada em que as luzes aparecem, e *Brilho*, do acetinado ao
+  espelho;
+- *Padrão* devolve a exposição, a qualidade, o verniz e o brilho ao que eram; a iluminação fica.
+
+O que o tabuleiro plano mostra está nele: a barra de avaliação, o último lance, a peça pegada e para onde ela pode ir,
+um rei em xeque e as setas da análise, que aparecem de leve através das peças. Um clique esquerdo escolhe uma casa
+como no tabuleiro plano, numa peça ou no tabuleiro atrás dela. Se você mantiver o botão direito pressionado enquanto
+move o mouse, a câmera gira em volta do tabuleiro (um clique direito sem mover continua soltando a peça pegada), a
+roda aproxima, e um clique da roda traz a vista de volta; girar o tabuleiro (F) faz a câmera dar meia-volta.
+
+O tabuleiro 3D precisa do OpenGL 3.3. Onde a janela é desenhada sem ele (o renderizador por software de
+[Renderização da janela](#renderização-da-janela), algumas máquinas virtuais e áreas de trabalho remotas), os
+tabuleiros continuam planos e *Aparência* diz por quê. As peças são as Staunton-Pieces de clarkerubber, sob a licença
+MIT; *Aparência* tem o link para elas.
+
 ## Atalhos de teclado
 <!-- en: keyboard-shortcuts 45f7a67b -->
 
@@ -515,12 +546,13 @@ adiciona à biblioteca. *Rodar como suíte de testes…* abre um livro EPD em **
   entraram nele, quantas as opções deixaram de fora e quantas não puderam ser lidas.
 
 ## Tabuleiro
-<!-- en: board 5b1196ea -->
+<!-- en: board ef08c39c -->
 
-A página Tabuleiro mostra uma partida ou uma posição, vinda de qualquer lugar: **A** em qualquer tabuleiro do
-programa (uma partida do mosaico da aba *Ao vivo* ou a acompanhada, o tabuleiro da aba *Partidas*, o da aba
-*Aberturas*, o de uma abertura de um livro) abre a posição dele aqui e a analisa; na página Tabuleiro, A inicia e
-para a análise. *Voltar ao torneio* (ou *Voltar*) retorna à página de onde se veio.
+A página Tabuleiro mostra uma partida ou uma posição, vinda de qualquer lugar: **A** em qualquer tabuleiro do programa
+(uma partida do mosaico da aba *Ao vivo* ou a acompanhada, o tabuleiro da aba *Partidas*, o da aba *Aberturas*, o de uma
+abertura de um livro) abre a posição dele aqui e a analisa; na página Tabuleiro, A inicia e para a análise. *Voltar ao
+torneio* (ou *Voltar*) retorna à página de onde se veio. O tabuleiro dela pode ser desenhado em 3D: veja [O tabuleiro
+3D](#o-tabuleiro-3d).
 
 ### Abrir, colar e montar uma posição
 <!-- en: opening-pasting-and-setting-up-a-position dd0f4636 -->
@@ -551,16 +583,16 @@ para a análise. *Voltar ao torneio* (ou *Voltar*) retorna à página de onde se
   copia a posição.
 
 ### A análise
-<!-- en: the-analysis 506e4de1 -->
+<!-- en: the-analysis f1bc5164 -->
 
-Um engine da biblioteca analisa a posição mostrada e acompanha o tabuleiro: profundidade, nós, velocidade, as chances
-de vitória, empate e derrota quando o engine as fornece (`UCI_ShowWDL`), e várias linhas (MultiPV), com os primeiros
-lances desenhados como setas, o da melhor mais escuro. As pontuações são do ponto de vista das Brancas. Um clique
-numa linha joga o primeiro lance dela. O engine, *Threads*, *Hash* (0: o do próprio engine) e *Linhas* são
-configurações próprias da análise: guardadas para a próxima vez, não alteram nem o engine da biblioteca nem nenhum
-torneio. Os outros valores de opções da biblioteca são enviados como uma partida os envia. A análise espera enquanto
-outra página é mostrada, e continua quando a página Tabuleiro volta; *Parar a análise* (ou A) a para, e um ponto no
-botão *Tabuleiro* da barra indica quando ela está rodando.
+Um engine da biblioteca analisa a posição mostrada e acompanha o tabuleiro: profundidade, nós, velocidade, as chances de
+vitória, empate e derrota quando o engine as fornece (`UCI_ShowWDL`), e várias linhas (MultiPV), com os primeiros lances
+desenhados como setas, o da melhor mais escuro (*Setas* as desativa; as linhas continuam mostrando os lances). As
+pontuações são do ponto de vista das Brancas. Um clique numa linha joga o primeiro lance dela. O engine, *Threads*,
+*Hash* (0: o do próprio engine) e *Linhas* são configurações próprias da análise: guardadas para a próxima vez, não
+alteram nem o engine da biblioteca nem nenhum torneio. Os outros valores de opções da biblioteca são enviados como uma
+partida os envia. A análise espera enquanto outra página é mostrada, e continua quando a página Tabuleiro volta; *Parar
+a análise* (ou A) a para, e um ponto no botão *Tabuleiro* da barra indica quando ela está rodando.
 
 As threads da análise contam no orçamento de núcleos, mostrado abaixo dela com as threads da máquina. Enquanto um
 torneio roda, a análise compete com as partidas dele: a página avisa, com as threads que as partidas usam. O engine da

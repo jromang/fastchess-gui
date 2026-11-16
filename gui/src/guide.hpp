@@ -27,6 +27,7 @@ inline constexpr const char* Version            = "version-and-new-versions";
 inline constexpr const char* Report             = "reporting-a-problem";
 inline constexpr const char* Drawing            = "drawing-the-window";
 inline constexpr const char* Appearance         = "appearance";
+inline constexpr const char* Board3d            = "the-3d-board";
 inline constexpr const char* Shortcuts          = "keyboard-shortcuts";
 inline constexpr const char* Home               = "the-home-page";
 inline constexpr const char* Engines            = "engines";

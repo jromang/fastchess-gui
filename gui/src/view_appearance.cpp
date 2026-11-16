@@ -264,6 +264,7 @@ void App::drawAppearanceSettings(float label) {
                                    "studio. Hold the right button to turn round it, the wheel to come closer, a click "
                                    "of the wheel to come back. The picture refines for a few seconds while nothing "
                                    "moves, using the graphics card, then rests."));
+    ui::topic(guide::topics::Board3d);
     if (s.board3d.on) {
         ImGui::SameLine(0, px(16));
         ImGui::SetNextItemWidth(px(180));
