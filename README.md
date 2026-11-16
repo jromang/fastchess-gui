@@ -2,7 +2,6 @@
 
 [![Build](https://github.com/jromang/fastchess-gui/actions/workflows/gui.yml/badge.svg?branch=gui)](https://github.com/jromang/fastchess-gui/actions/workflows/gui.yml)
 [![CodeQL](https://github.com/jromang/fastchess-gui/actions/workflows/codeql.yml/badge.svg?branch=gui)](https://github.com/jromang/fastchess-gui/actions/workflows/codeql.yml)
-[![Coverity Scan](https://scan.coverity.com/projects/jromang-fastchess-gui/badge.svg)](https://scan.coverity.com/projects/jromang-fastchess-gui)
 [![Downloads](https://img.shields.io/github/downloads/jromang/fastchess-gui/total)](https://github.com/jromang/fastchess-gui/releases)
 
 ![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20Windows%20%7C%20macOS-blue)
