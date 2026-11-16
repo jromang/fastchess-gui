@@ -762,7 +762,7 @@ plantillas guardadas por versiones anteriores se cargan tal como eran, y sus sec
 equivalen. Un nombre vacío se forma a partir de los motores.
 
 ### Formato
-<!-- en: format c316d5e2 -->
+<!-- en: format 29a36e7c -->
 
 La descripción emergente de cada formato dice qué es.
 
@@ -784,11 +784,10 @@ La descripción emergente de cada formato dice qué es.
   motor, y no hace falta nada más.
   *Colores* (*Alternados* por defecto) indica quién lleva las blancas: A y B por turnos, o *A siempre con blancas* o *B
   siempre con blancas*, como `-noswap` (y `-reverse`) de fastchess, para partidas con ventaja en las que el motor más
-  fuerte debe llevar siempre el bando en desventaja, o una apertura probada desde un solo bando. Cada apertura se sigue
-  jugando dos veces, las dos partidas con los mismos colores: los pares y sus estadísticas se mantienen, la puntuación
-  incluye la ventaja de las blancas, y el sesgo RMS, que invertir los colores anula, no se muestra. Los motores que
-  juegan dos veces la misma partida (nodos o profundidad fijos, un solo hilo) juegan igual las dos partidas de un par.
-  El resumen y la cabecera del match lo indican.
+  fuerte debe llevar siempre el bando en desventaja, o una apertura probada desde un solo bando. Las partidas siguen
+  yendo por pares, ambas con los mismos colores, pero cada partida tiene su propia apertura, la siguiente del libro
+  (como `-games 1` de fastchess): los pares y sus estadísticas se mantienen, la puntuación incluye la ventaja de las
+  blancas, y el sesgo RMS, que invertir los colores anula, no se muestra. El resumen y la cabecera del match lo indican.
 - *Todos contra todos*: cada motor juega contra todos los demás, *Ciclos* veces, cada vez dos partidas con los
   colores invertidos (lo que cutechess llama rondas, de 2 partidas por encuentro). Las rondas siguen las tablas de
   Berger, así que cada motor juega una vez por ronda.
@@ -900,12 +899,12 @@ físicos). *Jugar en* elige la máquina en la que se juega el torneo (consulta [
 máquina](#un-torneo-en-una-máquina)).
 
 ### Aperturas
-<!-- en: openings 89eaf506 -->
+<!-- en: openings 44656411 -->
 
 Un libro EPD, PGN o Polyglot (`.bin`) (una suite de aperturas), orden aleatorio o secuencial, el número de medias
 jugadas que se conservan de un libro PGN, el índice de inicio y la semilla aleatoria (0 = un orden nuevo para cada
-torneo). Cada apertura se juega dos veces, con los colores invertidos (con los mismos colores en un match cuyos
-*Colores* están fijados).
+torneo). Cada apertura se juega dos veces, con los colores invertidos (en un match cuyos *Colores* están fijados, cada
+partida desde su propia apertura).
 
 Un libro Polyglot se sigue desde la posición inicial hasta una profundidad (8 medias jugadas si no se fija otra),
 dejando fuera las jugadas que pesan menos de una décima parte de la mejor de su posición; las posiciones alcanzadas se
@@ -1150,7 +1149,7 @@ en una partida la vuelve a jugar, la anula o fija su resultado (consulta [Modifi
 curso](#modificar-un-torneo-en-curso)).
 
 ### La pestaña Aperturas
-<!-- en: the-openings-tab 61c5993e -->
+<!-- en: the-openings-tab c51dd29a -->
 
 Resultados por posición inicial: sus pares de partidas, la puntuación de las blancas, las tablas, y cuántos pares
 ganaron dos veces las blancas, dos veces las negras (la apertura favorece a un color) o dos veces un mismo motor
@@ -1159,7 +1158,8 @@ desequilibradas, las de tablas o las decisivas, o por las *Marcadas como desequi
 (consulta [Aperturas](#aperturas) en la configuración: marcadas con `!`, su número junto al recuento, con las
 aperturas sustituidas). *Exportar como EPD…* escribe las posiciones mostradas, para conservarlas o para limpiar un
 libro, y *Sin las desequilibradas* (activado por defecto, visible en cuanto se marca una apertura) deja fuera las
-marcadas. Un clic muestra la posición y sus partidas.
+marcadas. Un clic muestra la posición y sus partidas. En un match cuyos *Colores* están fijados, cada partida tiene su
+propia apertura: se cuentan las partidas, y las columnas y filtros sobre los pares no se muestran.
 
 ### Paneles y disposiciones
 <!-- en: panels-and-layouts 9ed9b915 -->

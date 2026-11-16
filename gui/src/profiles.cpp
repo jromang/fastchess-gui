@@ -714,9 +714,11 @@ std::string sectionCommandLine(const MatchSetup& s, SetupSection section) {
             const auto rounds = std::max(1, s.cycles);
             switch (s.format) {
                 case TournamentFormat::Match: {
-                    // Locked colours: fastchess' -noswap, -reverse giving White to the second engine.
-                    const std::string colours = s.colours == tour::Colours::AWhite   ? " -noswap"
-                                                : s.colours == tour::Colours::BWhite ? " -noswap -reverse"
+                    // Locked colours: fastchess' -noswap (-reverse giving White to the second engine), each game
+                    // from an opening of its own (-games 1).
+                    const bool locked         = s.colours != tour::Colours::Alternate;
+                    const std::string colours = s.colours == tour::Colours::AWhite   ? " -games 1 -noswap"
+                                                : s.colours == tour::Colours::BWhite ? " -games 1 -noswap -reverse"
                                                                                      : "";
                     if (s.mode == MatchMode::Sprt) {
                         // The bounds fastchess would be given, the bias on them; it has no minimum of games.
@@ -724,8 +726,10 @@ std::string sectionCommandLine(const MatchSetup& s, SetupSection section) {
                                            number(s.sprt_elo0 + s.sprt_bias), number(s.sprt_elo1 + s.sprt_bias),
                                            number(s.sprt_alpha), number(s.sprt_beta), s.sprt_model, colours);
                     }
+                    if (s.mode == MatchMode::Fixed && locked)
+                        return fmt::format("-rounds {}{}", std::max(2, (s.fixed_games + 1) / 2 * 2), colours);
                     if (s.mode == MatchMode::Fixed)
-                        return fmt::format("-rounds {} -games 2 -repeat{}", std::max(1, s.fixed_games / 2), colours);
+                        return fmt::format("-rounds {} -games 2 -repeat", std::max(1, s.fixed_games / 2));
                     return colours.empty() ? std::string() : colours.substr(1);
                 }
                 case TournamentFormat::RoundRobin:

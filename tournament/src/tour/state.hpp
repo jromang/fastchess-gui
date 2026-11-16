@@ -313,6 +313,9 @@ class TournamentState {
 
     // The opening each encounter started with (book position and moves), by encounter index.
     [[nodiscard]] std::map<uint32_t, fastchess::book::Opening> encounterOpenings() const;
+    // The opening of each game started, by game number (GameTask::number()): its encounter's, or in a match with
+    // locked colours, game 1's own (ownOpenings()).
+    [[nodiscard]] std::map<uint64_t, fastchess::book::Opening> gameOpenings() const;
 
     // How many times a pair was voided and played again from another opening, its own found unbalanced
     // (spec().unbalanced_replace): the views show it, and know that the results changed.
@@ -378,9 +381,16 @@ class TournamentState {
     // looking for a book never made. mutex_ held.
     void keepOwnBooks();
     const OpeningSource& openings();  // loads the book on first use; mutex_ held
-    // The opening a new encounter starts with: the next of the book, or its round's (spec_.opening_per_round).
-    fastchess::book::Opening openingFor(const Encounter& encounter);
+    // The opening a new encounter starts with: the next of the book, or its round's (spec_.opening_per_round). With
+    // ownOpenings(), the opening of its game `game`: two of the book for each encounter.
+    fastchess::book::Opening openingFor(const Encounter& encounter, int game = 0);
     [[nodiscard]] bool openingPerRound() const noexcept;
+    // A match with locked colours: each game of a pair has an opening of its own, rather than both the same with the
+    // colours reversed (which would repeat a game with the colours locked). Game 1's is journaled apart, as an
+    // encounter_started with "game": 1.
+    [[nodiscard]] bool ownOpenings() const noexcept;
+    // An encounter_started line of the journal, read when the tournament is opened or followed; mutex_ held.
+    void readStarted(const nlohmann::json& e);
     // Appends to spec_.pgn_out the finished games every game before which, in the schedule, is written there or
     // will not be played: the two games of an encounter side by side, rounds in order. A replayed game is written
     // when it ends; at the end of the tournament, everything left. Journaled ("pgn_out") before and after each
@@ -424,6 +434,7 @@ class TournamentState {
     std::vector<GameResult> results_;
     std::set<uint64_t> done_;                               // game numbers
     std::map<uint32_t, fastchess::book::Opening> started_;  // encounter -> opening it started with
+    std::map<uint32_t, fastchess::book::Opening> second_;   // ownOpenings(): encounter -> the opening of its game 1
     uint64_t replaced_ = 0;                                 // openings replaced as unbalanced (replaceUnbalanced())
     uint64_t network_voids_ = 0;                            // games voided for a broken connection (voidCutGames())
     std::map<uint32_t, int> replacements_;                  // encounter -> how many times its opening was

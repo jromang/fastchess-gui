@@ -73,18 +73,19 @@ BroadcastInput broadcastInput(const tour::TournamentState& state, const LiveSour
     // another encounter of their round.
     const auto rows = state.scheduleRows();
     if (const auto picked = nextGames(rows, NEXT_GAMES); !picked.empty()) {
-        const auto openings = state.encounterOpenings();
+        const auto openings = state.gameOpenings();  // by game number
         std::map<std::pair<uint32_t, uint32_t>, const fastchess::book::Opening*> rounds;
         if (in.spec.opening_per_round) {
             for (const auto& row : rows) {
-                const auto it = openings.find(row.encounter.index);
+                const auto it = openings.find(uint64_t{row.encounter.index} * 2);
                 if (it == openings.end()) continue;
                 rounds.emplace(std::pair{row.encounter.cycle, row.encounter.round}, &it->second);
             }
         }
         for (const auto& [i, game] : picked) {
             BroadcastNextGame next{rows[i].encounter, game, std::nullopt};
-            if (const auto it = openings.find(next.encounter.index); it != openings.end()) {
+            const auto number = uint64_t{next.encounter.index} * 2 + static_cast<uint64_t>(game);
+            if (const auto it = openings.find(number); it != openings.end()) {
                 next.opening = it->second;
             } else if (const auto r = rounds.find({next.encounter.cycle, next.encounter.round}); r != rounds.end()) {
                 next.opening = *r->second;

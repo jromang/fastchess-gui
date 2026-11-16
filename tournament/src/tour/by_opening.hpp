@@ -22,7 +22,7 @@ struct OpeningStats {
     std::string name;                // moves), empty when it is not a known opening (Chess960, odd positions)
 
     int games           = 0;
-    int pairs           = 0;  // complete pairs: both games (colours reversed, unless locked) counted
+    int pairs           = 0;  // complete pairs: both games, colours reversed, counted, both from this position
     double white_points = 0;
     int draws           = 0;
     uint64_t plies      = 0;
@@ -30,8 +30,7 @@ struct OpeningStats {
     // Complete pairs that ended this way.
     int white_twice      = 0;  // White won both games: the opening favours White
     int black_twice      = 0;
-    int one_engine_twice = 0;  // the same engine won both: the opening tells the engines apart (with locked
-                               // colours, a colour that won both games too)
+    int one_engine_twice = 0;  // the same engine won both: the opening tells the engines apart
     int drawn_twice      = 0;
 
     // Games flagged when they ended (GameResult::unbalanced): both engines saw White, or Black, far ahead right
@@ -64,9 +63,11 @@ struct ClassifiedOpening {
 // initial position.
 [[nodiscard]] std::string openingLabel(const ClassifiedOpening& opening);
 
-// One entry per starting position, in the order they were first played. Voided games do not count.
+// One entry per starting position, in the order they were first played, from the opening of each game by game number
+// (TournamentState::gameOpenings()). Voided games do not count. A pair counts in its position's pairs when both its
+// games started from it: not in a match with locked colours, where each game has an opening of its own.
 [[nodiscard]] std::vector<OpeningStats> resultsByOpening(const std::vector<GameResult>& results,
-                                                         const std::map<uint32_t, fastchess::book::Opening>& openings,
+                                                         const std::map<uint64_t, fastchess::book::Opening>& openings,
                                                          bool chess960);
 
 // The openings' starting positions, one EPD line each: a book of them. `balanced_only`: those with a game flagged

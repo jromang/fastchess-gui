@@ -774,7 +774,7 @@ précédentes se chargent tels qu'ils étaient, et leurs sections prennent les p
 nom vide est formé à partir des moteurs.
 
 ### Format
-<!-- en: format c316d5e2 -->
+<!-- en: format 29a36e7c -->
 
 L'infobulle de chaque format dit ce qu'il est.
 
@@ -796,11 +796,10 @@ L'infobulle de chaque format dit ce qu'il est.
   versions d'un moteur, et il n'en faut pas plus.
   *Couleurs* (*Alternées* par défaut) dit qui a les Blancs : A et B à tour de rôle, ou *A toujours avec les Blancs* ou
   *B toujours avec les Blancs*, comme `-noswap` (et `-reverse`) de fastchess, pour les parties à handicap où le moteur
-  le plus fort doit toujours avoir le camp handicapé, ou une ouverture essayée d'un seul côté. Chaque ouverture est
-  toujours jouée deux fois, les deux parties avec les mêmes couleurs : les paires et leurs statistiques restent, le
-  score inclut l'avantage des Blancs, et le biais RMS, qu'inverser les couleurs annule, n'est pas affiché. Des moteurs
-  qui jouent deux fois la même partie (nœuds ou profondeur fixes, un seul thread) jouent les deux parties d'une paire à
-  l'identique. Le résumé et l'en-tête du match l'indiquent.
+  le plus fort doit toujours avoir le camp handicapé, ou une ouverture essayée d'un seul côté. Les parties vont toujours
+  par paires, toutes deux avec les mêmes couleurs, mais chaque partie a sa propre ouverture, la suivante du livre (comme
+  `-games 1` de fastchess) : les paires et leurs statistiques restent, le score inclut l'avantage des Blancs, et le
+  biais RMS, qu'inverser les couleurs annule, n'est pas affiché. Le résumé et l'en-tête du match l'indiquent.
 - *Toutes rondes* : chaque moteur joue contre chacun des autres, *Cycles* fois, chaque fois deux parties avec les
   couleurs inversées (ce que cutechess appelle des rondes, de 2 parties par rencontre). Les rondes suivent les tables
   de Berger, si bien que chaque moteur joue une fois par ronde.
@@ -913,12 +912,12 @@ dépasse les threads matériels (ou, avec une pendule, les cœurs physiques). *J
 le tournoi joue (voir [Un tournoi sur une machine](#un-tournoi-sur-une-machine)).
 
 ### Ouvertures
-<!-- en: openings 89eaf506 -->
+<!-- en: openings 44656411 -->
 
 Un livre EPD, PGN ou Polyglot (`.bin`) (une suite d'ouvertures), l'ordre aléatoire ou séquentiel, le nombre de
 demi-coups gardés d'un livre PGN, l'indice de départ et la graine aléatoire (0 = un nouvel ordre pour chaque tournoi).
-Chaque ouverture est jouée deux fois, couleurs inversées (avec les mêmes couleurs dans un match dont les *Couleurs* sont
-fixées).
+Chaque ouverture est jouée deux fois, couleurs inversées (dans un match dont les *Couleurs* sont fixées, chaque partie
+depuis sa propre ouverture).
 
 Un livre Polyglot est suivi depuis la position initiale jusqu'à une profondeur (8 demi-coups sauf réglage contraire), en
 laissant de côté les coups qui pèsent moins d'un dixième du meilleur de leur position ; les positions atteintes sont
@@ -1161,7 +1160,7 @@ un blocage aussi, sauf si c'est décoché ; le `PlyCount` d'une partie perdue pa
 la rejoue, l'annule ou fixe son résultat (voir [Modifier un tournoi en cours](#modifier-un-tournoi-en-cours)).
 
 ### L'onglet Ouvertures
-<!-- en: the-openings-tab 61c5993e -->
+<!-- en: the-openings-tab c51dd29a -->
 
 Les résultats par position de départ : ses paires de parties, le score des Blancs, les nulles, et combien de paires
 les Blancs ont gagnées deux fois, les Noirs deux fois (l'ouverture favorise une couleur) ou un même moteur deux fois
@@ -1170,7 +1169,8 @@ déséquilibrées, les nulles ou les décisives, ou sur celles *Signalées dés�
 [Ouvertures](#ouvertures) dans la configuration : marquées `!`, leur nombre à côté du total, avec les ouvertures
 remplacées). *Exporter en EPD…* écrit les positions affichées, pour les garder ou pour nettoyer un livre, *Sans les
 déséquilibrées* (activé par défaut, affiché dès qu'une ouverture est signalée) écartant celles qui sont signalées. Un
-clic montre la position et ses parties.
+clic montre la position et ses parties. Dans un match dont les *Couleurs* sont fixées, chaque partie a sa propre
+ouverture : le décompte porte sur les parties, et les colonnes et filtres sur les paires ne sont pas affichés.
 
 ### Panneaux et dispositions
 <!-- en: panels-and-layouts 9ed9b915 -->

@@ -781,7 +781,7 @@ werden so geladen, wie sie waren, und ihre Abschnitte erhalten die Profile, dene
 aus den Engines gebildet.
 
 ### Format
-<!-- en: format c316d5e2 -->
+<!-- en: format 29a36e7c -->
 
 Der Tooltip jedes Formats sagt, was es ist.
 
@@ -804,11 +804,11 @@ Der Tooltip jedes Formats sagt, was es ist.
   einer Engine zu vergleichen, und mehr braucht es nicht.
   *Farben* (standardmäßig *Abwechselnd*) legt fest, wer Weiß hat: A und B im Wechsel, oder *A immer mit Weiß* oder *B
   immer mit Weiß*, wie fastchess' `-noswap` (und `-reverse`), für Vorgabepartien, in denen die stärkere Engine immer die
-  benachteiligte Seite haben muss, oder für eine Eröffnung, die nur von einer Seite erprobt wird. Jede Eröffnung wird
-  weiterhin zweimal gespielt, beide Partien mit denselben Farben: Die Paare und ihre Statistiken bleiben, das Ergebnis
-  enthält den Vorteil von Weiß, und der RMS-Bias, den das Vertauschen der Farben aufhebt, wird nicht angezeigt. Engines,
-  die zweimal dieselbe Partie spielen (feste Knoten oder Tiefe, ein Thread), spielen die beiden Partien eines Paares
-  gleich. Die Zusammenfassung und der Kopf des Matches zeigen es an.
+  benachteiligte Seite haben muss, oder für eine Eröffnung, die nur von einer Seite erprobt wird. Die Partien gehen
+  weiterhin in Paaren, beide mit denselben Farben, aber jede Partie hat ihre eigene Eröffnung, die nächste des Buchs
+  (wie fastchess' `-games 1`): Die Paare und ihre Statistiken bleiben, das Ergebnis enthält den Vorteil von Weiß, und
+  der RMS-Bias, den das Vertauschen der Farben aufhebt, wird nicht angezeigt. Die Zusammenfassung und der Kopf des
+  Matches zeigen es an.
 - *Rundenturnier*: Jede Engine spielt gegen jede andere, *Zyklen*-mal, jedes Mal zwei Partien mit vertauschten Farben
   (was cutechess Runden nennt, mit 2 Partien pro Begegnung). Die Runden folgen Berger-Tabellen, so dass jede Engine
   einmal pro Runde spielt.
@@ -922,12 +922,12 @@ Hardware-Threads übersteigt (oder, mit einer Uhr, die physischen Kerne). *Spiel
 Turnier spielt (siehe [Ein Turnier auf einer Maschine](#ein-turnier-auf-einer-maschine)).
 
 ### Eröffnungen
-<!-- en: openings 89eaf506 -->
+<!-- en: openings 44656411 -->
 
 Ein EPD-, PGN- oder Polyglot-Buch (`.bin`), also eine Eröffnungssammlung, zufällige oder sequenzielle Reihenfolge, die
 Zahl der aus einem PGN-Buch übernommenen Halbzüge, der Startindex und der Zufallsstartwert (0 = eine neue Reihenfolge
-für jedes Turnier). Jede Eröffnung wird zweimal gespielt, mit vertauschten Farben (mit denselben Farben in einem Match,
-dessen *Farben* festgelegt sind).
+für jedes Turnier). Jede Eröffnung wird zweimal gespielt, mit vertauschten Farben (in einem Match, dessen *Farben*
+festgelegt sind, jede Partie aus ihrer eigenen Eröffnung).
 
 Einem Polyglot-Buch wird von der Ausgangsstellung bis zu einer Tiefe gefolgt (8 Halbzüge, sofern nicht anders
 eingestellt), wobei die Züge wegfallen, die weniger als ein Zehntel des besten Zugs ihrer Stellung wiegen; die
@@ -1171,7 +1171,7 @@ zählt nur die geschriebenen Züge. Der Tester und der Ort werden gespeichert.
 spielt sie neu, annulliert sie oder setzt ihr Ergebnis (siehe [Ein laufendes Turnier ändern](#ein-laufendes-turnier-ändern)).
 
 ### Der Tab Eröffnungen
-<!-- en: the-openings-tab 61c5993e -->
+<!-- en: the-openings-tab c51dd29a -->
 
 Ergebnisse nach Startstellung: ihre Partiepaare, die Punktzahl von Weiß, die Remis, und wie viele Paare Weiß zweimal
 gewonnen hat, Schwarz zweimal (die Eröffnung bevorzugt eine Farbe) oder eine Engine zweimal (sie unterscheidet die Engines),
@@ -1180,7 +1180,9 @@ oder die entschiedenen, oder auf den Filter *Während der Partien als unausgegli
 [Eröffnungen](#eröffnungen) in der Einrichtung: mit `!` markiert, ihre Zahl neben der Gesamtzahl, mit den ersetzten
 Eröffnungen). *Als EPD exportieren…* schreibt die gezeigten Stellungen, um sie aufzubewahren oder ein Buch zu
 bereinigen, wobei *Ohne die unausgeglichenen* (standardmäßig an, gezeigt, sobald eine Eröffnung markiert ist) die
-markierten weglässt. Ein Klick zeigt die Stellung und ihre Partien.
+markierten weglässt. Ein Klick zeigt die Stellung und ihre Partien. In einem Match, dessen *Farben* festgelegt sind, hat
+jede Partie ihre eigene Eröffnung: gezählt werden die Partien, und die Spalten und Filter zu den Paaren werden nicht
+angezeigt.
 
 ### Bereiche und Layouts
 <!-- en: panels-and-layouts 9ed9b915 -->

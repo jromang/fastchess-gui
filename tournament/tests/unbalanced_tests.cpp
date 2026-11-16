@@ -174,7 +174,7 @@ TEST_CASE("unbalanced opening: flagged when the game ends, in the journal, the r
     REQUIRE(results.size() == 4);
     CHECK(results[0].unbalanced == 1);
     CHECK(results[3].unbalanced == 0);
-    const auto openings = resultsByOpening(results, again->encounterOpenings(), false);
+    const auto openings = resultsByOpening(results, again->gameOpenings(), false);
     REQUIRE(openings.size() == 2);
     CHECK(openings[0].unbalanced_white == 2);
     CHECK(openings[0].unbalancedGames() == 2);
@@ -238,6 +238,63 @@ TEST_CASE("unbalanced opening: the pair voided and played again from another ope
         CHECK(state->finished());
         CHECK(state->pairStats(0, 1).sum() == 4);
     }
+}
+
+TEST_CASE("locked colours: each game of a pair from an opening of its own, kept on reopening, both replaced") {
+    const auto starts = [](const GameTask& t, const char* fen) { return t.opening.fen_epd.rfind(fen, 0) == 0; };
+    {
+        const auto dir = freshDir("locked");
+        auto spec      = bookMatch(dir, 4, false);
+        spec.colours   = Colours::AWhite;
+        {
+            auto state = TournamentState::create(dir, spec);
+            // The book in order, two positions an encounter, A with White in each game.
+            const auto g0 = state->claimNext(), g1 = state->claimNext();
+            REQUIRE(g0);
+            REQUIRE(g1);
+            CHECK(g1->encounter.index == 0);
+            CHECK(starts(*g0, "rnbqkbnr/pppppppp/8/8/P7/"));
+            CHECK(starts(*g1, "rnbqkbnr/pppppppp/8/8/1P6/"));
+            CHECK(g0->white.name == "A");
+            CHECK(g1->white.name == "A");
+            state->complete(*g0, scoredGame(*g0, 0, 0));
+            state->release(*g1);  // still to play when the program stops
+        }
+        auto state    = TournamentState::open(dir);
+        const auto g1 = state->claimNext();
+        REQUIRE(g1);
+        CHECK(g1->number() == 1);
+        CHECK(starts(*g1, "rnbqkbnr/pppppppp/8/8/1P6/"));  // its own opening, as journaled
+        state->complete(*g1, scoredGame(*g1, 0, 0));
+        const auto g2 = state->claimNext();
+        REQUIRE(g2);
+        CHECK(starts(*g2, "rnbqkbnr/pppppppp/8/8/2P5/"));
+        // By opening: a game from each position, no pair from either.
+        const auto by = resultsByOpening(state->results(), state->gameOpenings(), false);
+        REQUIRE(by.size() == 2);
+        CHECK(by[0].games == 1);
+        CHECK(by[0].pairs == 0);
+    }
+
+    // Unbalanced, the pair is played again from two openings of the end of the book, one for each game.
+    const auto dir = freshDir("locked-replace");
+    auto spec      = bookMatch(dir, 4, true);
+    spec.colours   = Colours::BWhite;
+    {
+        auto state = TournamentState::create(dir, spec);
+        (void)playPair(*state, 300, -300);
+        CHECK(state->openingsReplaced() == 1);
+    }
+    auto state    = TournamentState::open(dir);
+    const auto g0 = state->claimNext(), g1 = state->claimNext();
+    REQUIRE(g0);
+    REQUIRE(g1);
+    CHECK(g0->number() == 0);
+    CHECK(g1->number() == 1);
+    CHECK(starts(*g0, "rnbqkbnr/pppppppp/8/8/7P/"));
+    CHECK(starts(*g1, "rnbqkbnr/pppppppp/8/8/4P3/"));
+    CHECK(g0->white.name == "B");
+    CHECK(state->openingsReplaced() == 1);
 }
 
 TEST_CASE("unbalanced opening: the rule kept in tournament.json, nothing when it is off") {

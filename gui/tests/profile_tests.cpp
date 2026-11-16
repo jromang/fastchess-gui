@@ -369,20 +369,21 @@ TEST_CASE("profiles: each section said on one line, and as cutechess and fastche
     biased.sprt_min_games = 0;
     CHECK(sameSection(plain, biased, SetupSection::Format));
 
-    // Locked colours: in the summary, as fastchess' -noswap (and -reverse for B), and a match that plays otherwise.
+    // Locked colours: in the summary, as fastchess' -noswap (and -reverse for B), each game from its own opening
+    // (-games 1), and a match that plays otherwise.
     MatchSetup locked;
     locked.colours = fcg::tour::Colours::AWhite;
     CHECK(sectionSummary(locked, SetupSection::Format, books) == "Match · SPRT [0, 3] · A always White");
     CHECK(sectionCommandLine(locked, SetupSection::Format) ==
-          "-sprt elo0=0 elo1=3 alpha=0.05 beta=0.05 model=normalized -noswap");
+          "-sprt elo0=0 elo1=3 alpha=0.05 beta=0.05 model=normalized -games 1 -noswap");
     CHECK_FALSE(sameSection(plain, locked, SetupSection::Format));
     locked.colours     = fcg::tour::Colours::BWhite;
     locked.mode        = MatchMode::Fixed;
     locked.fixed_games = 100;
     CHECK(sectionSummary(locked, SetupSection::Format, books) == "Match · 100 games · B always White");
-    CHECK(sectionCommandLine(locked, SetupSection::Format) == "-rounds 50 -games 2 -repeat -noswap -reverse");
+    CHECK(sectionCommandLine(locked, SetupSection::Format) == "-rounds 100 -games 1 -noswap -reverse");
     locked.mode = MatchMode::Infinite;
-    CHECK(sectionCommandLine(locked, SetupSection::Format) == "-noswap -reverse");
+    CHECK(sectionCommandLine(locked, SetupSection::Format) == "-games 1 -noswap -reverse");
     MatchSetup copied;
     copySection(copied, locked, SetupSection::Format);
     CHECK(copied.colours == fcg::tour::Colours::BWhite);

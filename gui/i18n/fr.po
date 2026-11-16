@@ -548,8 +548,8 @@ msgstr "Aussi en zip"
 msgid "Alternate"
 msgstr "Alternées"
 
-msgid "Alternate: each opening is played twice, colours reversed, which cancels out what the opening gives a side. Always White: for odds games, or an opening tried from one side; each opening is still played twice, with the same colours, and the score includes White's advantage."
-msgstr "Alternées : chaque ouverture est jouée deux fois, couleurs inversées, ce qui annule ce que l'ouverture donne à un camp. Toujours avec les Blancs : pour les parties à handicap, ou une ouverture essayée d'un seul côté ; chaque ouverture est toujours jouée deux fois, avec les mêmes couleurs, et le score inclut l'avantage des Blancs."
+msgid "Alternate: each opening is played twice, colours reversed, which cancels out what the opening gives a side. Always White: for odds games, or an opening tried from one side; each game then has an opening of its own, and the score includes White's advantage."
+msgstr "Alternées : chaque ouverture est jouée deux fois, couleurs inversées, ce qui annule ce que l'ouverture donne à un camp. Toujours avec les Blancs : pour les parties à handicap, ou une ouverture essayée d'un seul côté ; chaque partie a alors sa propre ouverture, et le score inclut l'avantage des Blancs."
 
 msgid "An ECO code or its beginning (B9), a range (B20-B99), or words of the name (sicilian najdorf)."
 msgstr "Un code ECO ou son début (B9), une plage (B20-B99), ou des mots du nom, en anglais (sicilian najdorf)."
@@ -2003,6 +2003,9 @@ msgstr "Parties perdues au temps, par un crash ou un coup illégal"
 msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine, and you can say which engine another player is."
 msgstr "Parties d'autres programmes ou de listes de classement, comptées avec celles des tournois. Les moteurs sont reconnus par leur nom, comme dans le PGN ; un joueur qui porte le nom d'un moteur de la bibliothèque, à la casse et aux espaces près, est ce moteur, et tu peux dire quel moteur est un autre joueur."
 
+msgid "Games played from this position."
+msgstr "Parties jouées depuis cette position."
+
 msgid "Games written to {}"
 msgstr "Parties écrites dans {}"
 
@@ -3212,26 +3215,14 @@ msgstr "Paires (points de A sur 2)"
 msgid "Pairs of games played from this position, colours reversed."
 msgstr "Paires de parties jouées depuis cette position, couleurs inversées."
 
-msgid "Pairs of games played from this position, with the same colours."
-msgstr "Paires de parties jouées depuis cette position, avec les mêmes couleurs."
-
 msgid "Pairs scoring more than 1 for A, over those scoring less."
 msgstr "Les paires qui rapportent plus d'1 point à A, rapportées à celles qui en rapportent moins."
-
-msgid "Pairs where Black won both games."
-msgstr "Paires dont les Noirs ont gagné les deux parties."
 
 msgid "Pairs where Black won both games: the opening favours Black."
 msgstr "Paires dont les Noirs ont gagné les deux parties : l'ouverture favorise les Noirs."
 
-msgid "Pairs where White won both games."
-msgstr "Paires dont les Blancs ont gagné les deux parties."
-
 msgid "Pairs where White won both games: the opening favours White."
 msgstr "Paires dont les Blancs ont gagné les deux parties : l'ouverture favorise les Blancs."
-
-msgid "Pairs where the same engine won both games."
-msgstr "Paires dont le même moteur a gagné les deux parties."
 
 msgid "Pairs where the same engine won both games: the opening tells the engines apart."
 msgstr "Paires dont le même moteur a gagné les deux parties : l'ouverture départage les moteurs."
@@ -3331,8 +3322,8 @@ msgstr "Rejouer cette partie"
 msgid "Played in pairs: each opening is played twice, with colours reversed."
 msgstr "Joué par paires : chaque ouverture est jouée deux fois, couleurs inversées."
 
-msgid "Played in pairs: each opening is played twice, with the same colours."
-msgstr "Joué par paires : chaque ouverture est jouée deux fois, avec les mêmes couleurs."
+msgid "Played in pairs: two games with the same colours, each from an opening of its own."
+msgstr "Joué par paires : deux parties avec les mêmes couleurs, chacune depuis sa propre ouverture."
 
 msgid "Player"
 msgstr "Joueur"
@@ -3699,8 +3690,8 @@ msgstr "Résultats de A"
 msgid "Results per game pair (same opening, colours reversed), in points for A: 0, 0.5, 1, 1.5, 2."
 msgstr "Résultats par paire de parties (même ouverture, couleurs inversées), en points pour A : 0, 0.5, 1, 1.5, 2."
 
-msgid "Results per game pair (same opening, same colours), in points for A: 0, 0.5, 1, 1.5, 2."
-msgstr "Résultats par paire de parties (même ouverture, mêmes couleurs), en points pour A : 0, 0.5, 1, 1.5, 2."
+msgid "Results per game pair (two openings, same colours), in points for A: 0, 0.5, 1, 1.5, 2."
+msgstr "Résultats par paire de parties (deux ouvertures, mêmes couleurs), en points pour A : 0, 0.5, 1, 1.5, 2."
 
 msgid "Resume"
 msgstr "Reprendre"

@@ -66,7 +66,7 @@ void App::refreshOpenings() {
     const auto* t = run_->tournament();
     if (!t || by_opening_for_ == games_.size()) return;
 
-    by_opening_          = tour::resultsByOpening(t->results(), t->encounterOpenings(), chess960(*t));
+    by_opening_          = tour::resultsByOpening(t->results(), t->gameOpenings(), chess960(*t));
     by_opening_for_      = games_.size();
     opening_order_dirty_ = true;
     opening_games_for_   = -1;
@@ -86,12 +86,30 @@ void App::drawOpenings() {
     }
     refreshOpenings();
     const auto name = [](const tour::OpeningStats& o) { return o.eco.empty() ? o.fen : o.eco + " " + o.name; };
+    // A match with locked colours: each game has an opening of its own, so no pair is played from one position, and
+    // what the pairs tell (a colour or an engine winning both games) is not shown.
+    const bool locked = run_->info().colours != tour::Colours::Alternate;
+    if (locked && opening_show_ > 0 && opening_show_ < UNBALANCED_OPENINGS) {
+        opening_show_        = 0;
+        opening_order_dirty_ = true;
+    }
 
     // Toolbar: what to show, how many, export.
     ImGui::SetNextItemWidth(px(280));
-    const char* show[IM_ARRAYSIZE(SHOW)];
-    for (int i = 0; i < IM_ARRAYSIZE(SHOW); ++i) show[i] = TR(SHOW[i]);
-    if (ImGui::Combo("##opening_show", &opening_show_, show, IM_ARRAYSIZE(SHOW))) opening_order_dirty_ = true;
+    std::vector<int> choices;
+    for (int i = 0; i < IM_ARRAYSIZE(SHOW); ++i) {
+        if (!locked || i == 0 || i == UNBALANCED_OPENINGS) choices.push_back(i);
+    }
+    std::vector<const char*> show;
+    int chosen = 0;
+    for (std::size_t i = 0; i < choices.size(); ++i) {
+        show.push_back(TR(SHOW[choices[i]]));
+        if (choices[i] == opening_show_) chosen = static_cast<int>(i);
+    }
+    if (ImGui::Combo("##opening_show", &chosen, show.data(), static_cast<int>(show.size()))) {
+        opening_show_        = choices[static_cast<std::size_t>(chosen)];
+        opening_order_dirty_ = true;
+    }
     ImGui::SameLine();
     ImGui::TextDisabled("%s", trf("{} of {} openings", opening_order_.size(), by_opening_.size()).c_str());
     // The openings flagged unbalanced as their games ended, and those replaced by others (the tournament's rule).
@@ -154,34 +172,30 @@ void App::drawOpenings() {
         };
         ImGui::TableSetupScrollFreeze(0, 1);
         constexpr auto down = ImGuiTableColumnFlags_PreferSortDescending;  // the largest first
+        const char* count_header = locked ? TR("Games") : TR("Pairs");
+        const auto pair_column   = down | (locked ? ImGuiTableColumnFlags_Disabled : ImGuiTableColumnFlags_None);
         ImGui::TableSetupColumn(TR("Opening"), ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoSort);
-        ImGui::TableSetupColumn(TR("Pairs"), ImGuiTableColumnFlags_DefaultSort | down, width(TR("Pairs"), "00000"));
+        ImGui::TableSetupColumn(count_header, ImGuiTableColumnFlags_DefaultSort | down, width(count_header, "00000"));
         ImGui::TableSetupColumn(TR("White"), down, width(TR("White"), "100.0 %"));
         ImGui::TableSetupColumn(TR("Draws"), down, width(TR("Draws"), "100.0 %"));
-        ImGui::TableSetupColumn(TR("White ×2"), down, width(TR("White ×2"), "00"));
-        ImGui::TableSetupColumn(TR("Black ×2"), down, width(TR("Black ×2"), "00"));
-        ImGui::TableSetupColumn("2-0", down, width("2-0", "0000"));
+        ImGui::TableSetupColumn(TR("White ×2"), pair_column, width(TR("White ×2"), "00"));
+        ImGui::TableSetupColumn(TR("Black ×2"), pair_column, width(TR("Black ×2"), "00"));
+        ImGui::TableSetupColumn("2-0", pair_column, width("2-0", "0000"));
         ImGui::TableSetupColumn(TR("Moves"), down, width(TR("Moves"), "000"));
 
-        // Header tooltips: what each column counts. With locked colours, a colour that won both games is also an
-        // engine that did: the opening and the engines cannot be told apart.
-        const bool locked = run_->info().colours != tour::Colours::Alternate;
+        // Header tooltips: what each column counts.
         ImGui::TableNextRow(ImGuiTableRowFlags_Headers);
-        const char* tips[] = {
-            nullptr,
-            locked ? TR("Pairs of games played from this position, with the same colours.")
-                   : TR("Pairs of games played from this position, colours reversed."),
-            TR("White's score over the games."),
-            TR("Share of drawn games."),
-            locked ? TR("Pairs where White won both games.")
-                   : TR("Pairs where White won both games: the opening favours White."),
-            locked ? TR("Pairs where Black won both games.")
-                   : TR("Pairs where Black won both games: the opening favours Black."),
-            locked ? TR("Pairs where the same engine won both games.")
-                   : TR("Pairs where the same engine won both games: the opening tells the engines apart."),
-            TR("Average length of the games, in moves.")};
+        const char* tips[] = {nullptr,
+                              locked ? TR("Games played from this position.")
+                                     : TR("Pairs of games played from this position, colours reversed."),
+                              TR("White's score over the games."),
+                              TR("Share of drawn games."),
+                              TR("Pairs where White won both games: the opening favours White."),
+                              TR("Pairs where Black won both games: the opening favours Black."),
+                              TR("Pairs where the same engine won both games: the opening tells the engines apart."),
+                              TR("Average length of the games, in moves.")};
         for (int c = 0; c < 8; ++c) {
-            ImGui::TableSetColumnIndex(c);
+            if (!ImGui::TableSetColumnIndex(c)) continue;  // hidden
             ImGui::TableHeader(ImGui::TableGetColumnName(c));
             if (tips[c] && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tips[c]);
         }
@@ -214,7 +228,7 @@ void App::drawOpenings() {
                         case 7:
                             return o.games ? static_cast<double>(o.plies) / o.games : 0.0;
                         default:
-                            return o.pairs;
+                            return locked ? o.games : o.pairs;
                     }
                 };
                 const bool up = spec.SortDirection == ImGuiSortDirection_Ascending;
@@ -248,7 +262,7 @@ void App::drawOpenings() {
                     ImGui::SetTooltip("%s", flagged_row ? (o.fen + "\n\n" + unbalancedTip(o)).c_str() : o.fen.c_str());
                 }
                 ImGui::TableNextColumn();
-                ImGui::Text("%d", o.pairs);
+                ImGui::Text("%d", locked ? o.games : o.pairs);
                 ImGui::TableNextColumn();
                 ImGui::Text("%.1f %%", 100.0 * o.whiteScore());
                 ImGui::TableNextColumn();

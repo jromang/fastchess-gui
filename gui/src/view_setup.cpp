@@ -868,14 +868,14 @@ void App::setupMatch() {
     }
     itemHelp(
         TR("Alternate: each opening is played twice, colours reversed, which cancels out what the opening gives "
-           "a side. Always White: for odds games, or an opening tried from one side; each opening is still played "
-           "twice, with the same colours, and the score includes White's advantage."));
+           "a side. Always White: for odds games, or an opening tried from one side; each game then has an opening "
+           "of its own, and the score includes White's advantage."));
     const bool locked = setup_.colours != tour::Colours::Alternate;
 
     switch (setup_.mode) {
         case MatchMode::Fixed:
             changed |= inputInt(TR("Games"), "##games", setup_.fixed_games, 2, 100'000'000);
-            ui::help(locked ? TR("Played in pairs: each opening is played twice, with the same colours.")
+            ui::help(locked ? TR("Played in pairs: two games with the same colours, each from an opening of its own.")
                             : TR("Played in pairs: each opening is played twice, with colours reversed."));
             break;
         case MatchMode::Infinite:

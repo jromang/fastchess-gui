@@ -409,13 +409,36 @@ bool TournamentState::openingPerRound() const noexcept {
     return spec_.opening_per_round && spec_.format != Format::Match && spec_.format != Format::Knockout;
 }
 
-fastchess::book::Opening TournamentState::openingFor(const Encounter& encounter) {
+bool TournamentState::ownOpenings() const noexcept { return spec_.format == Format::Match && spec_.coloursLocked(); }
+
+fastchess::book::Opening TournamentState::openingFor(const Encounter& encounter, int game) {
+    if (ownOpenings()) return openings().at(std::size_t{encounter.index} * 2 + static_cast<std::size_t>(game));
     if (!openingPerRound()) return openings().at(encounter.index);
     const auto key = std::pair{encounter.cycle, encounter.round};
     if (const auto it = round_openings_.find(key); it != round_openings_.end()) return it->second;
     const auto opening = openings().at(round_openings_.size());
     round_openings_.emplace(key, opening);
     return opening;
+}
+
+void TournamentState::readStarted(const nlohmann::json& e) {
+    OpeningText text{e.at("fen").get<std::string>(), e.value("moves", std::vector<std::string>{})};
+    const auto encounter = e.at("encounter").get<uint32_t>();
+    // The opening of game 1 of a match with locked colours, after its encounter's (game 0's): replaced with it.
+    if (e.value("game", 0) == 1) {
+        second_[encounter] = fromText(text, frc());
+        return;
+    }
+    // Started again: its opening was replaced, as unbalanced (replaceUnbalanced()).
+    if (started_.count(encounter)) {
+        ++replaced_;
+        ++replacements_[encounter];
+    }
+    started_[encounter] = fromText(text, frc());
+    if (const auto enc = schedule_.at(encounter); enc && openingPerRound()) {
+        round_openings_.emplace(std::pair{enc->cycle, enc->round}, started_[encounter]);
+    }
+    next_encounter_ = std::max(next_encounter_, encounter + 1);
 }
 
 void TournamentState::load() {
@@ -438,18 +461,7 @@ void TournamentState::load() {
             const auto type = e.at("t").get<std::string>();
             if (type == "games_voided" && e.value("network", false)) network_voids_ += e.at("games").size();
             if (type == "encounter_started") {
-                OpeningText text{e.at("fen").get<std::string>(), e.value("moves", std::vector<std::string>{})};
-                const auto encounter = e.at("encounter").get<uint32_t>();
-                // Started again: its opening was replaced, as unbalanced (replaceUnbalanced()).
-                if (started_.count(encounter)) {
-                    ++replaced_;
-                    ++replacements_[encounter];
-                }
-                started_[encounter] = fromText(text, frc());
-                if (const auto enc = schedule_.at(encounter); enc && openingPerRound()) {
-                    round_openings_.emplace(std::pair{enc->cycle, enc->round}, started_[encounter]);
-                }
-                next_encounter_ = std::max(next_encounter_, encounter + 1);
+                readStarted(e);
             } else if (isEditEvent(type)) {
                 applyEvent(e);
             } else if (type == "round_paired" || type == "tiebreak_added") {
@@ -1047,6 +1059,21 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
             {{"t", "encounter_started"}, {"encounter", encounter}, {"fen", text.fen}, {"moves", text.moves}});
         it = started_.emplace(encounter, opening).first;
     }
+    auto opening = it->second;
+    if (ownOpenings() && game == 1) {
+        auto second = second_.find(encounter);
+        if (second == second_.end()) {
+            const auto own  = openingFor(*enc, 1);
+            const auto text = toText(own, frc());
+            journal_->append({{"t", "encounter_started"},
+                              {"encounter", encounter},
+                              {"game", 1},
+                              {"fen", text.fen},
+                              {"moves", text.moves}});
+            second = second_.emplace(encounter, own).first;
+        }
+        opening = second->second;
+    }
 
     const auto* first  = spec_.participant(enc->first);
     const auto* second = spec_.participant(enc->second);
@@ -1056,7 +1083,7 @@ GameTask TournamentState::makeTask(uint32_t encounter, int game) {
     GameTask task;
     task.encounter = *enc;
     task.game      = game;
-    task.opening   = it->second;
+    task.opening   = opening;
     task.white     = first_white ? first->engine : second->engine;
     task.black     = first_white ? second->engine : first->engine;
     // As the engines read them; the spec keeps the UTF-8.
@@ -1300,14 +1327,22 @@ bool TournamentState::replaceUnbalanced(uint32_t encounter) {
     if (n < 2) return false;  // no other opening to play
 
     // One from the end of the book, which the tournament would reach last (in its playing order: shuffled with the
-    // seed in random order): the openings of the encounters to come are not moved. Not the same one again.
-    const auto current = toText(started_[encounter], frc());
-    auto index         = n - 1 - static_cast<std::size_t>(replaced_ % n);
-    auto text          = toText(book.at(index), frc());
-    if (text.fen == current.fen && text.moves == current.moves) {
-        index = (index + n - 1) % n;
-        text  = toText(book.at(index), frc());
-    }
+    // seed in random order): the openings of the encounters to come are not moved. Not the same one again. With
+    // ownOpenings(), two: one for each game.
+    const auto pick = [&](uint64_t k, const fastchess::book::Opening& was) {
+        const auto current = toText(was, frc());
+        auto index         = n - 1 - static_cast<std::size_t>(k % n);
+        auto text          = toText(book.at(index), frc());
+        if (text.fen == current.fen && text.moves == current.moves) {
+            index = (index + n - 1) % n;
+            text  = toText(book.at(index), frc());
+        }
+        return std::pair{index, text};
+    };
+    const bool own           = ownOpenings();
+    const auto [index, text] = pick(own ? 2 * replaced_ : replaced_, started_[encounter]);
+    std::optional<std::pair<std::size_t, OpeningText>> second;
+    if (own) second = pick(2 * replaced_ + 1, second_.count(encounter) ? second_[encounter] : started_[encounter]);
 
     // Its games voided and played again, as a void of the Games tab would, then the encounter started anew from
     // that opening: a resume, and the versions before, read the last opening an encounter started with.
@@ -1322,6 +1357,14 @@ bool TournamentState::replaceUnbalanced(uint32_t encounter) {
     undo_.reset();
     journal_->append({{"t", "encounter_started"}, {"encounter", encounter}, {"fen", text.fen}, {"moves", text.moves}});
     started_[encounter] = book.at(index);
+    if (second) {
+        journal_->append({{"t", "encounter_started"},
+                          {"encounter", encounter},
+                          {"game", 1},
+                          {"fen", second->second.fen},
+                          {"moves", second->second.moves}});
+        second_[encounter] = book.at(second->first);
+    }
     ++replaced_;
     ++replacements_[encounter];
     return true;
@@ -1688,18 +1731,7 @@ bool TournamentState::follow(const nlohmann::json& e, uint64_t end) {
     if (type == "edit_undone") return false;
     if (type == "games_voided" && e.value("network", false)) network_voids_ += e.at("games").size();
     if (type == "encounter_started") {
-        OpeningText text{e.at("fen").get<std::string>(), e.value("moves", std::vector<std::string>{})};
-        const auto encounter = e.at("encounter").get<uint32_t>();
-        // Started again: its opening was replaced, as unbalanced (replaceUnbalanced()).
-        if (started_.count(encounter)) {
-            ++replaced_;
-            ++replacements_[encounter];
-        }
-        started_[encounter] = fromText(text, frc());
-        if (const auto enc = schedule_.at(encounter); enc && openingPerRound()) {
-            round_openings_.emplace(std::pair{enc->cycle, enc->round}, started_[encounter]);
-        }
-        next_encounter_ = std::max(next_encounter_, encounter + 1);
+        readStarted(e);
     } else if (isEditEvent(type)) {
         applyEvent(e);
     } else if (type == "round_paired" || type == "tiebreak_added") {
@@ -1768,6 +1800,21 @@ std::optional<GameResult> TournamentState::resultOf(uint64_t number) const {
 std::map<uint32_t, fastchess::book::Opening> TournamentState::encounterOpenings() const {
     std::lock_guard<std::mutex> lock(mutex_);
     return started_;
+}
+
+std::map<uint64_t, fastchess::book::Opening> TournamentState::gameOpenings() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::map<uint64_t, fastchess::book::Opening> out;
+    const bool own = ownOpenings();
+    for (const auto& [encounter, opening] : started_) {
+        out.emplace(uint64_t{encounter} * 2, opening);
+        if (!own) {
+            out.emplace(uint64_t{encounter} * 2 + 1, opening);
+        } else if (const auto it = second_.find(encounter); it != second_.end()) {
+            out.emplace(uint64_t{encounter} * 2 + 1, it->second);
+        }
+    }
+    return out;
 }
 
 fastchess::Stats TournamentState::pairStats(int a, int b) const {

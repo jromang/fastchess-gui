@@ -107,10 +107,10 @@ struct TournamentSpec {
     // decision before this many games; 0: none.
     double sprt_bias        = 0;
     uint64_t sprt_min_games = 0;
-    // Match: who has White. Locked, an encounter is still two games on the same opening, both with the same colours
-    // (as fastchess plays -noswap -games 2): the pairs, their numbers and the pentanomial stay. A match with locked
-    // colours is of version 5, which versions up to 0.6.2 (that would alternate them) refuse. Alternate in the
-    // other formats.
+    // Match: who has White. Locked, an encounter is still two games, both with the same colours, each from an
+    // opening of its own (TournamentState::ownOpenings(); as fastchess plays -noswap -games 1): the pairs, their
+    // numbers and the pentanomial stay. A match with locked colours is of version 5, which versions up to 0.6.2 (that
+    // would alternate them) refuse. Alternate in the other formats.
     Colours colours = Colours::Alternate;
 
     // A team match: board by board (the first engine of each team against the first of the other, and so on, the

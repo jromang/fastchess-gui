@@ -43,21 +43,21 @@ std::string openingLabel(const ClassifiedOpening& opening) {
 }
 
 std::vector<OpeningStats> resultsByOpening(const std::vector<GameResult>& results,
-                                           const std::map<uint32_t, fastchess::book::Opening>& openings,
+                                           const std::map<uint64_t, fastchess::book::Opening>& openings,
                                            bool chess960) {
     std::vector<OpeningStats> out;
     std::unordered_map<std::string, std::size_t> index;  // starting position -> entry
 
     struct Pair {
-        std::size_t entry = 0;
-        std::vector<double> white;  // White's score in each counted game
-        std::vector<int> winner;    // the participant that won it, -1 for a draw
+        std::vector<std::size_t> entries;  // the position of each counted game
+        std::vector<double> white;         // White's score in each counted game
+        std::vector<int> winner;           // the participant that won it, -1 for a draw
     };
     std::map<uint32_t, Pair> pairs;  // by encounter
 
     for (const auto& r : results) {
         if (r.voided) continue;
-        const auto it = openings.find(r.encounter);
+        const auto it = openings.find(r.number());
         if (it == openings.end()) continue;
 
         auto c                  = classify(it->second, chess960);
@@ -81,16 +81,16 @@ std::vector<OpeningStats> resultsByOpening(const std::vector<GameResult>& result
         s.game_numbers.push_back(r.number() + 1);
 
         auto& pair = pairs[r.encounter];
-        pair.entry = pos->second;
+        pair.entries.push_back(pos->second);
         pair.white.push_back(whiteScore(r));
         pair.winner.push_back(r.result == "1-0" ? r.white : r.result == "0-1" ? r.black : -1);
     }
 
-    // Who won is told by the participants, not the colours: they are reversed in the second game (White winning both
-    // means each engine won once), but not in a match with locked colours.
+    // Who won is told by the participants rather than the colours, reversed in the second game: White winning both
+    // means each engine won once. A pair whose games started from two positions (locked colours) is no pair of one.
     for (const auto& [encounter, pair] : pairs) {
-        if (pair.white.size() != 2) continue;
-        auto& s = out[pair.entry];
+        if (pair.white.size() != 2 || pair.entries[0] != pair.entries[1]) continue;
+        auto& s = out[pair.entries[0]];
         s.pairs++;
         const double a = pair.white[0], b = pair.white[1];
         if (a == 1 && b == 1) s.white_twice++;

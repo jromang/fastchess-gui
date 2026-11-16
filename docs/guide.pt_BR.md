@@ -745,7 +745,7 @@ torneio mantém os próprios valores. Os modelos salvos por versões anteriores 
 recebem os perfis equivalentes ao que jogam. Um nome vazio é formado a partir dos engines.
 
 ### Formato
-<!-- en: format c316d5e2 -->
+<!-- en: format 29a36e7c -->
 
 A dica de cada formato diz o que ele é.
 
@@ -767,11 +767,10 @@ A dica de cada formato diz o que ele é.
   necessário.
   *Cores* (*Alternadas* por padrão) diz quem joga de Brancas: A e B alternadamente, ou *A sempre de Brancas* ou *B
   sempre de Brancas*, como `-noswap` (e `-reverse`) do fastchess, para partidas com handicap em que o engine mais forte
-  deve ficar sempre com o lado em desvantagem, ou uma abertura testada por um só lado. Cada abertura continua sendo
-  jogada duas vezes, as duas partidas com as mesmas cores: os pares e suas estatísticas permanecem, a pontuação inclui a
-  vantagem das Brancas, e o viés RMS, que inverter as cores anula, não é mostrado. Engines que jogam duas vezes a mesma
-  partida (nós ou profundidade fixos, uma thread) jogam igual as duas partidas de um par. O resumo e o cabeçalho do
-  match o indicam.
+  deve ficar sempre com o lado em desvantagem, ou uma abertura testada por um só lado. As partidas continuam em pares,
+  ambas com as mesmas cores, mas cada partida tem sua própria abertura, a seguinte do livro (como `-games 1` do
+  fastchess): os pares e suas estatísticas permanecem, a pontuação inclui a vantagem das Brancas, e o viés RMS, que
+  inverter as cores anula, não é mostrado. O resumo e o cabeçalho do match o indicam.
 - *Todos contra todos*: cada engine joga contra todos os outros, *Ciclos* vezes, cada vez duas partidas com as cores
   invertidas (o que o cutechess chama de rodadas, de 2 partidas por encontro). As rodadas seguem as tabelas de
   Berger, então cada engine joga uma vez por rodada.
@@ -881,12 +880,12 @@ com relógio, dos núcleos físicos). *Jogar em* escolhe a máquina em que o tor
 máquina](#um-torneio-numa-máquina)).
 
 ### Aberturas
-<!-- en: openings 89eaf506 -->
+<!-- en: openings 44656411 -->
 
 Um livro EPD, PGN ou Polyglot (`.bin`) (uma suíte de aberturas), ordem aleatória ou sequencial, o número de
 meios-lances mantidos de um livro PGN, o índice inicial e a semente aleatória (0 = uma nova ordem para cada torneio).
-Cada abertura é jogada duas vezes, com as cores invertidas (com as mesmas cores em um match cujas *Cores* estão
-fixadas).
+Cada abertura é jogada duas vezes, com as cores invertidas (em um match cujas *Cores* estão fixadas, cada partida a
+partir de sua própria abertura).
 
 Um livro Polyglot é seguido a partir da posição inicial até uma profundidade (8 meios-lances, se não for definida),
 deixando de fora os lances com peso menor que um décimo do melhor da sua posição; as posições alcançadas são gravadas
@@ -1123,7 +1122,7 @@ O testador e o local são lembrados.
 joga de novo, a anula ou define o resultado dela (veja [Alterar um torneio em andamento](#alterar-um-torneio-em-andamento)).
 
 ### A aba Aberturas
-<!-- en: the-openings-tab 61c5993e -->
+<!-- en: the-openings-tab c51dd29a -->
 
 Resultados por posição inicial: os pares de partidas dela, a pontuação das Brancas, os empates, e quantos pares as
 Brancas ganharam duas vezes, as Pretas ganharam duas vezes (a abertura favorece uma cor) ou um engine ganhou duas
@@ -1132,7 +1131,8 @@ desequilibradas, as empatadas ou as decisivas, ou para as *Marcadas como desequi
 [Aberturas](#aberturas) na configuração: marcadas com `!`, o número delas ao lado da contagem, com as aberturas
 substituídas). *Exportar como EPD…* grava as posições mostradas, para guardá-las ou limpar um livro, com *Sem as
 desequilibradas* (ligado por padrão, mostrado assim que uma abertura é marcada) deixando de fora as marcadas. Um
-clique mostra a posição e as partidas dela.
+clique mostra a posição e as partidas dela. Em um match cujas *Cores* estão fixadas, cada partida tem sua própria
+abertura: contam-se as partidas, e as colunas e filtros sobre os pares não são mostrados.
 
 ### Painéis e layouts
 <!-- en: panels-and-layouts 9ed9b915 -->

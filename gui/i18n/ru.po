@@ -554,8 +554,8 @@ msgstr "Также в zip"
 msgid "Alternate"
 msgstr "Поочерёдно"
 
-msgid "Alternate: each opening is played twice, colours reversed, which cancels out what the opening gives a side. Always White: for odds games, or an opening tried from one side; each opening is still played twice, with the same colours, and the score includes White's advantage."
-msgstr "Поочерёдно: каждый дебют играется дважды, с переменой цветов, что компенсирует преимущество, которое дебют даёт одной из сторон. Всегда белыми: для партий с форой или дебюта, проверяемого за одну сторону; каждый дебют по-прежнему играется дважды, но теми же цветами, и результат включает преимущество белых."
+msgid "Alternate: each opening is played twice, colours reversed, which cancels out what the opening gives a side. Always White: for odds games, or an opening tried from one side; each game then has an opening of its own, and the score includes White's advantage."
+msgstr "Поочерёдно: каждый дебют играется дважды, с переменой цветов, что компенсирует преимущество, которое дебют даёт одной из сторон. Всегда белыми: для партий с форой или дебюта, проверяемого за одну сторону; тогда у каждой партии свой дебют, и результат включает преимущество белых."
 
 msgid "An ECO code or its beginning (B9), a range (B20-B99), or words of the name (sicilian najdorf)."
 msgstr "Код ECO или его начало (B9), диапазон (B20-B99) или слова английского названия (sicilian najdorf)."
@@ -2009,6 +2009,9 @@ msgstr "Партии, проигранные по времени, из-за вы
 msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine, and you can say which engine another player is."
 msgstr "Партии других программ или рейтинг-листов, учитываемые вместе с турнирными. Движки узнаются по имени, как в PGN; игрок, чьё имя совпадает с именем движка библиотеки без учёта регистра и пробелов, считается этим движком, а для другого игрока можно указать, какой это движок."
 
+msgid "Games played from this position."
+msgstr "Партии, сыгранные из этой позиции."
+
 msgid "Games written to {}"
 msgstr "Партии записаны в {}"
 
@@ -3221,26 +3224,14 @@ msgstr "Пары (очки A из 2)"
 msgid "Pairs of games played from this position, colours reversed."
 msgstr "Пары партий, сыгранные из этой позиции с переменой цветов."
 
-msgid "Pairs of games played from this position, with the same colours."
-msgstr "Пары партий, сыгранные из этой позиции теми же цветами."
-
 msgid "Pairs scoring more than 1 for A, over those scoring less."
 msgstr "Пары, где A набрал больше 1 очка, по отношению к парам, где меньше."
-
-msgid "Pairs where Black won both games."
-msgstr "Пары, где чёрные выиграли обе партии."
 
 msgid "Pairs where Black won both games: the opening favours Black."
 msgstr "Пары, где чёрные выиграли обе партии: дебют в пользу чёрных."
 
-msgid "Pairs where White won both games."
-msgstr "Пары, где белые выиграли обе партии."
-
 msgid "Pairs where White won both games: the opening favours White."
 msgstr "Пары, где белые выиграли обе партии: дебют в пользу белых."
-
-msgid "Pairs where the same engine won both games."
-msgstr "Пары, где один и тот же движок выиграл обе партии."
 
 msgid "Pairs where the same engine won both games: the opening tells the engines apart."
 msgstr "Пары, где один и тот же движок выиграл обе партии: дебют выявляет разницу между движками."
@@ -3341,8 +3332,8 @@ msgstr "Переиграть эту партию"
 msgid "Played in pairs: each opening is played twice, with colours reversed."
 msgstr "Игра парами: каждый дебют играется дважды, с переменой цветов."
 
-msgid "Played in pairs: each opening is played twice, with the same colours."
-msgstr "Игра парами: каждый дебют играется дважды, теми же цветами."
+msgid "Played in pairs: two games with the same colours, each from an opening of its own."
+msgstr "Игра парами: две партии теми же цветами, каждая из своего дебюта."
 
 msgid "Player"
 msgstr "Игрок"
@@ -3713,8 +3704,8 @@ msgstr "Результаты A"
 msgid "Results per game pair (same opening, colours reversed), in points for A: 0, 0.5, 1, 1.5, 2."
 msgstr "Результаты по парам партий (один дебют, перемена цветов), в очках A: 0, 0.5, 1, 1.5, 2."
 
-msgid "Results per game pair (same opening, same colours), in points for A: 0, 0.5, 1, 1.5, 2."
-msgstr "Результаты по парам партий (один дебют, те же цвета), в очках A: 0, 0.5, 1, 1.5, 2."
+msgid "Results per game pair (two openings, same colours), in points for A: 0, 0.5, 1, 1.5, 2."
+msgstr "Результаты по парам партий (два дебюта, те же цвета), в очках A: 0, 0.5, 1, 1.5, 2."
 
 msgid "Resume"
 msgstr "Продолжить"

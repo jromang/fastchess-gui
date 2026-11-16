@@ -193,7 +193,7 @@ void App::drawResults() {
                             s.penta_WD, s.penta_WW);
         ui::help(info.colours == tour::Colours::Alternate
                      ? TR("Results per game pair (same opening, colours reversed), in points for A: 0, 0.5, 1, 1.5, 2.")
-                     : TR("Results per game pair (same opening, same colours), in points for A: 0, 0.5, 1, 1.5, 2."));
+                     : TR("Results per game pair (two openings, same colours), in points for A: 0, 0.5, 1, 1.5, 2."));
     }
 
     if (info.sprt && sprt_) {

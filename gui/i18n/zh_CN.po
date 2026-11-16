@@ -542,8 +542,8 @@ msgstr "同时生成 zip"
 msgid "Alternate"
 msgstr "交替"
 
-msgid "Alternate: each opening is played twice, colours reversed, which cancels out what the opening gives a side. Always White: for odds games, or an opening tried from one side; each opening is still played twice, with the same colours, and the score includes White's advantage."
-msgstr "交替：每个开局下两次，交换颜色，以抵消开局给某一方带来的优势。始终执白：用于让子棋，或只从一方测试某个开局；每个开局仍下两次，但颜色不变，得分包含白方的先手优势。"
+msgid "Alternate: each opening is played twice, colours reversed, which cancels out what the opening gives a side. Always White: for odds games, or an opening tried from one side; each game then has an opening of its own, and the score includes White's advantage."
+msgstr "交替：每个开局下两次，交换颜色，以抵消开局给某一方带来的优势。始终执白：用于让子棋，或只从一方测试某个开局；此时每局都有自己的开局，得分包含白方的先手优势。"
 
 msgid "An ECO code or its beginning (B9), a range (B20-B99), or words of the name (sicilian najdorf)."
 msgstr "ECO 代码或其开头（B9）、范围（B20-B99），或开局名称中的英文单词（sicilian najdorf）。"
@@ -1997,6 +1997,9 @@ msgstr "超时判负、崩溃或非法着法而输掉的对局"
 msgid "Games of other programs or rating lists counted with the tournaments'. Engines are known by their name, as in the PGN; a player whose name is a library engine's, letter case and spaces aside, is that engine, and you can say which engine another player is."
 msgstr "其他程序或等级分列表的对局，与锦标赛的对局一起计入。引擎按名称识别，与 PGN 中相同；名称与库中某引擎相同（不计大小写和空格）的棋手即为该引擎，你也可以指定其他棋手是哪个引擎。"
 
+msgid "Games played from this position."
+msgstr "从此局面下的对局。"
+
 msgid "Games written to {}"
 msgstr "对局已写入 {}"
 
@@ -3203,26 +3206,14 @@ msgstr "对局对（A 在 2 分中的得分）"
 msgid "Pairs of games played from this position, colours reversed."
 msgstr "从此局面交换颜色下的对局对。"
 
-msgid "Pairs of games played from this position, with the same colours."
-msgstr "从此局面以相同颜色下的对局对。"
-
 msgid "Pairs scoring more than 1 for A, over those scoring less."
 msgstr "A 得分超过 1 的对局对与得分低于 1 的对局对之比。"
-
-msgid "Pairs where Black won both games."
-msgstr "黑方两局皆胜的对局对。"
 
 msgid "Pairs where Black won both games: the opening favours Black."
 msgstr "黑方两局皆胜的对局对：该开局有利于黑方。"
 
-msgid "Pairs where White won both games."
-msgstr "白方两局皆胜的对局对。"
-
 msgid "Pairs where White won both games: the opening favours White."
 msgstr "白方两局皆胜的对局对：该开局有利于白方。"
-
-msgid "Pairs where the same engine won both games."
-msgstr "同一引擎两局皆胜的对局对。"
 
 msgid "Pairs where the same engine won both games: the opening tells the engines apart."
 msgstr "同一引擎两局皆胜的对局对：该开局能区分引擎强弱。"
@@ -3321,8 +3312,8 @@ msgstr "重下这局对局"
 msgid "Played in pairs: each opening is played twice, with colours reversed."
 msgstr "成对进行：每个开局下两次，交换颜色。"
 
-msgid "Played in pairs: each opening is played twice, with the same colours."
-msgstr "成对进行：每个开局下两次，颜色不变。"
+msgid "Played in pairs: two games with the same colours, each from an opening of its own."
+msgstr "成对进行：两局颜色相同，各自从不同的开局开始。"
 
 msgid "Player"
 msgstr "棋手"
@@ -3685,8 +3676,8 @@ msgstr "A 的成绩"
 msgid "Results per game pair (same opening, colours reversed), in points for A: 0, 0.5, 1, 1.5, 2."
 msgstr "每对对局（同一开局，交换颜色）的结果，以 A 的得分计：0、0.5、1、1.5、2。"
 
-msgid "Results per game pair (same opening, same colours), in points for A: 0, 0.5, 1, 1.5, 2."
-msgstr "每对对局（同一开局，颜色不变）的结果，以 A 的得分计：0、0.5、1、1.5、2。"
+msgid "Results per game pair (two openings, same colours), in points for A: 0, 0.5, 1, 1.5, 2."
+msgstr "每对对局（两个开局，颜色不变）的结果，以 A 的得分计：0、0.5、1、1.5、2。"
 
 msgid "Resume"
 msgstr "继续"

@@ -697,12 +697,12 @@ The tooltip of each format says what it is.
   short test against an early lucky stop: an LLR beyond a bound before then is said under the LLR bar and the match
   goes on; once the games are there, the next pair that ends with the LLR beyond a bound ends the match. A maximum
   of games below the minimum ends the match without a decision. This is the quickest way to compare two versions of
-  an engine, and nothing else is needed. *Colours* (*Alternate* by default) says who has White: A and B in turn, or
-  *A always White* or *B always White*, as fastchess' `-noswap` (and `-reverse`), for odds games where the stronger
-  engine must always have the handicapped side, or an opening tried from one side. Each opening is still played
-  twice, both games with the same colours: the pairs and their statistics stay, the score includes White's advantage,
-  and the RMS bias, which reversing the colours cancels out, is not shown. Engines that play the same game twice
-  (fixed nodes or depth, one thread) play the two games of a pair alike. The summary and the match's header say it.
+  an engine, and nothing else is needed. *Colours* (*Alternate* by default) says who has White: A and B in turn, or *A
+  always White* or *B always White*, as fastchess' `-noswap` (and `-reverse`), for odds games where the stronger engine
+  must always have the handicapped side, or an opening tried from one side. The games still go in pairs, both with the
+  same colours, but each game has an opening of its own, the next of the book (as fastchess' `-games 1`): the pairs and
+  their statistics stay, the score includes White's advantage, and the RMS bias, which reversing the colours cancels
+  out, is not shown. The summary and the match's header say it.
 - *Round robin*: every engine plays every other one, *Cycles* times, each time two games with colours reversed
   (what cutechess calls rounds, of 2 games per encounter). The rounds follow Berger tables, so every engine plays
   once per round.
@@ -802,7 +802,7 @@ machine](#a-tournament-on-a-machine)).
 
 An EPD, PGN or Polyglot (`.bin`) book (an opening suite), random or sequential order, the number of plies kept from a
 PGN book, the starting index and the random seed (0 = a new order for every tournament). Every opening is played
-twice, with colours reversed (with the same colours in a match whose *Colours* are locked).
+twice, with colours reversed (in a match whose *Colours* are locked, each game from an opening of its own).
 
 A Polyglot book is followed from the initial position to a depth (8 plies unless set), leaving out the moves that
 weigh less than a tenth of the best one of their position; the positions reached are written once to
@@ -1019,7 +1019,8 @@ Sorted by any column, filtered to the unbalanced, the drawn or the decisive ones
 during the games* (see [Openings](#openings) in the setup: marked `!`, their number beside the count, with the
 openings replaced). *Export as EPD…* writes the positions shown, to keep them or to clean a book, *Without the
 unbalanced* (on by default, shown once an opening is flagged) leaving out the flagged ones. A click shows the position
-and its games.
+and its games. In a match whose *Colours* are locked, each game has an opening of its own: the count is of games, and
+the columns and filters about pairs are not shown.
 
 ### Panels and layouts
 

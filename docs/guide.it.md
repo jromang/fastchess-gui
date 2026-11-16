@@ -759,7 +759,7 @@ caricano com'erano, e le loro sezioni ricevono i profili a cui corrispondono. Un
 motori.
 
 ### Formato
-<!-- en: format c316d5e2 -->
+<!-- en: format 29a36e7c -->
 
 Il tooltip di ogni formato dice di cosa si tratta.
 
@@ -781,11 +781,10 @@ Il tooltip di ogni formato dice di cosa si tratta.
   decisione. È il modo più rapido per confrontare due versioni di un motore, e non serve altro.
   *Colori* (*Alternati* per impostazione predefinita) dice chi ha il Bianco: A e B a turno, oppure *A sempre col Bianco*
   o *B sempre col Bianco*, come `-noswap` (e `-reverse`) di fastchess, per le partite con handicap in cui il motore più
-  forte deve avere sempre il lato svantaggiato, o un'apertura provata da un solo lato. Ogni apertura viene comunque
-  giocata due volte, entrambe le partite con gli stessi colori: le coppie e le loro statistiche restano, il punteggio
-  include il vantaggio del Bianco, e il bias RMS, che invertire i colori annulla, non viene mostrato. I motori che
-  giocano due volte la stessa partita (nodi o profondità fissi, un solo thread) giocano allo stesso modo le due partite
-  di una coppia. Il riepilogo e l'intestazione del match lo indicano.
+  forte deve avere sempre il lato svantaggiato, o un'apertura provata da un solo lato. Le partite vanno sempre a coppie,
+  entrambe con gli stessi colori, ma ogni partita ha la propria apertura, la successiva del libro (come `-games 1` di
+  fastchess): le coppie e le loro statistiche restano, il punteggio include il vantaggio del Bianco, e il bias RMS, che
+  invertire i colori annulla, non viene mostrato. Il riepilogo e l'intestazione del match lo indicano.
 - *Girone all'italiana*: ogni motore gioca contro ogni altro, *Cicli* volte, ogni volta due partite a colori invertiti
   (ciò che cutechess chiama round, da 2 partite per incontro). I turni seguono le tabelle Berger, quindi ogni motore
   gioca una volta per turno.
@@ -894,11 +893,12 @@ thread hardware (o, con un orologio, i core fisici). *Gioca su* sceglie la macch
 torneo su una macchina](#un-torneo-su-una-macchina)).
 
 ### Aperture
-<!-- en: openings 89eaf506 -->
+<!-- en: openings 44656411 -->
 
 Un libro EPD, PGN o Polyglot (`.bin`) (una suite di aperture), ordine casuale o sequenziale, il numero di semimosse
 tenute da un libro PGN, l'indice di partenza e il seme casuale (0 = un nuovo ordine per ogni torneo). Ogni apertura
-viene giocata due volte, a colori invertiti (con gli stessi colori in un match i cui *Colori* sono fissati).
+viene giocata due volte, a colori invertiti (in un match i cui *Colori* sono fissati, ogni partita dalla propria
+apertura).
 
 Un libro Polyglot viene seguito dalla posizione iniziale fino a una profondità (8 semimosse se non impostata),
 escludendo le mosse che pesano meno di un decimo della migliore della loro posizione; le posizioni raggiunte vengono
@@ -1138,7 +1138,7 @@ tester e il sito vengono ricordati.
 rigioca, la annulla o ne fissa il risultato (vedi [Modificare un torneo in corso](#modificare-un-torneo-in-corso)).
 
 ### La scheda Aperture
-<!-- en: the-openings-tab 61c5993e -->
+<!-- en: the-openings-tab c51dd29a -->
 
 Risultati per posizione di partenza: le sue coppie di partite, il punteggio del Bianco, le patte, e quante coppie il
 Bianco ha vinto due volte, il Nero ha vinto due volte (l'apertura favorisce un colore) o un motore ha vinto due volte
@@ -1147,7 +1147,8 @@ patte o sulle decisive, o su quelle *Segnalate come sbilanciate durante le parti
 configurazione: marcate `!`, il loro numero accanto al conteggio, con le aperture sostituite). *Esporta come EPD…*
 scrive le posizioni mostrate, per conservarle o per ripulire un libro, con *Senza le sbilanciate* (attivo per
 impostazione predefinita, mostrato appena un'apertura viene segnalata) che esclude quelle segnalate. Un clic mostra la
-posizione e le sue partite.
+posizione e le sue partite. In un match i cui *Colori* sono fissati, ogni partita ha la propria apertura: si contano le
+partite, e le colonne e i filtri sulle coppie non vengono mostrati.
 
 ### Pannelli e layout
 <!-- en: panels-and-layouts 9ed9b915 -->
