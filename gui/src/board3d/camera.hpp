@@ -6,6 +6,7 @@
 #include "board3d/piece_pack.hpp"
 
 #include <array>
+#include <cstdint>
 #include <optional>
 #include <span>
 #include <vector>
@@ -57,9 +58,21 @@ inline constexpr float kHalfBoard = 4.0f, kFrame = 0.62f, kThickness = 0.32f;
 // The centre of a square on the playing surface (0 = a1 ... 63 = h8): White at +z, the a-file at -x.
 [[nodiscard]] Vec3 squareCentre(int square);
 
+// The slices of a piece's height its profile has.
+inline constexpr int PROFILE_SLICES = 48;
+
 struct PieceShape {
     float radius = 0, height = 0;  // the bounding cylinder of a piece standing on its square
+    // Its radius in each of PROFILE_SLICES slices of its height, from the base: how far from its axis its surface
+    // gets there. A ray meets the piece where it meets this stack of thin cylinders, so that the neck of a pawn or
+    // the space beside a king's cross is not taken for the piece. Empty: the bounding cylinder.
+    std::vector<float> profile;
 };
+
+// The profile of a mesh standing on y = 0, `height` tall (see PieceShape::profile): each triangle clipped to each
+// slice it crosses, its farthest point from the axis there. Whichever way the piece is turned, it is the same.
+[[nodiscard]] std::vector<float> profileOf(std::span<const float> positions, std::span<const std::uint32_t> indices,
+                                           float height);
 struct PlacedPiece {
     int square = 0;  // 0 = a1 ... 63 = h8
     Kind kind  = Kind::Pawn;
@@ -67,8 +80,8 @@ struct PlacedPiece {
     bool operator==(const PlacedPiece&) const = default;
 };
 
-// The square a ray points at: the nearest piece it meets (its bounding cylinder), else the square of the playing
-// surface it reaches; -1 off the board. `shapes` in the order of Kind.
+// The square a ray points at: the nearest piece it meets (its profile, or its bounding cylinder), else the square of
+// the playing surface it reaches; -1 off the board. `shapes` in the order of Kind.
 [[nodiscard]] int squareAt(const Ray& ray, std::span<const PlacedPiece> pieces, std::span<const PieceShape> shapes);
 
 }  // namespace fcg::board3d

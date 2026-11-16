@@ -135,6 +135,41 @@ TEST_CASE("board 3D: the square under the mouse, a piece before the board behind
     CHECK(squareAt(r, king, SHAPES) == 4);
 }
 
+TEST_CASE("board 3D: a piece's profile follows its surface, and a ray beside its neck passes it") {
+    // A pawn of two parts: a base 0.3 from the axis up to 0.1, a column 0.1 from it up to 0.8, each a quad facing +x
+    // (the profile does not depend on which way a piece is turned).
+    const std::vector<float> positions       = {0.3f, 0,    0, 0.3f, 0.1f, 0, 0, 0.1f, 0.3f, 0, 0,    0.3f,
+                                                0.1f, 0.1f, 0, 0.1f, 0.8f, 0, 0, 0.8f, 0.1f, 0, 0.1f, 0.1f};
+    const std::vector<std::uint32_t> indices = {0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 99, 0, 1};  // a bad index skipped
+    const auto profile                       = profileOf(positions, indices, 0.8f);
+    REQUIRE(profile.size() == std::size_t(PROFILE_SLICES));
+    const auto at_height = [&](float y) { return profile[std::size_t(y / 0.8f * PROFILE_SLICES)]; };
+    CHECK(at_height(0.05f) == doctest::Approx(0.3f));
+    CHECK(at_height(0.5f) == doctest::Approx(0.1f));
+    CHECK(at_height(0.79f) == doctest::Approx(0.1f));
+    CHECK(profileOf(positions, indices, 0).size() == std::size_t(PROFILE_SLICES));
+
+    // On e4, seen from White: a ray at the height of the column, 0.2 beside its axis, meets the bounding cylinder but
+    // not the pawn, and goes on to the board behind it; one at the column meets it.
+    Camera c;
+    c.pitch       = 0.5f;
+    c             = framed(c, 1, 1.65f);
+    const View v  = viewOf(c, 1);
+    const auto at = [&](Vec3 p) {
+        const auto q = project(v, p);
+        REQUIRE(q.has_value());
+        return rayAt(v, (*q)[0], (*q)[1]);
+    };
+    const std::vector<PlacedPiece> pawn = {{28, Kind::Pawn, false}};
+    std::vector<PieceShape> cylinder    = {{0.3f, 0.8f}};
+    std::vector<PieceShape> profiled    = {{0.3f, 0.8f, profile}};
+    const Vec3 beside                   = squareCentre(28) + Vec3{0.2f, 0.5f, 0};
+    CHECK(squareAt(at(beside), pawn, cylinder) == 28);
+    CHECK(squareAt(at(beside), pawn, profiled) != 28);
+    CHECK(squareAt(at(squareCentre(28) + Vec3{0.05f, 0.5f, 0}), pawn, profiled) == 28);
+    CHECK(squareAt(at(squareCentre(28) + Vec3{0.25f, 0.05f, 0}), pawn, profiled) == 28);  // the base
+}
+
 TEST_CASE("board 3D: the pieces of a position, and what a decor lays over them") {
     const chess::Board start;
     const auto pieces = piecesOf(start);

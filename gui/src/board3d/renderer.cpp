@@ -267,7 +267,8 @@ bool Renderer::init(const ShaderSources& shaders, const unsigned char* pack, std
     }
     if (!reloadShaders(shaders, why)) return false;
     shapes_.clear();
-    for (const PieceMesh& m : meshes_) shapes_.push_back({m.radius, m.height});
+    for (const PieceMesh& m : meshes_)
+        shapes_.push_back({m.radius, m.height, profileOf(m.positions, m.indices, m.height)});
 
     const auto& f    = fn();
     const GpuBvh bvh = buildBvh(meshes_);

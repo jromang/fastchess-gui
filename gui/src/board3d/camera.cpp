@@ -89,10 +89,10 @@ Vec3 squareCentre(int square) {
 
 namespace {
 
-// Where a ray enters a standing cylinder of radius r from y = 0 to y = h round (cx, cz), by its side or its top;
-// infinity if it does not.
-float enterCylinder(const Ray& ray, float cx, float cz, float r, float h) {
-    float best    = std::numeric_limits<float>::infinity();
+// Where a ray enters a standing cylinder of radius r from y = y0 to y = y1 round (cx, cz), by its side, its top or
+// its bottom; infinity if it does not.
+float enterBand(const Ray& ray, float cx, float cz, float r, float y0, float y1) {
+    float best     = std::numeric_limits<float>::infinity();
     const float ox = ray.origin.x - cx, oz = ray.origin.z - cz;
     const float a = ray.dir.x * ray.dir.x + ray.dir.z * ray.dir.z;
     if (a > 1e-9f) {
@@ -101,13 +101,29 @@ float enterCylinder(const Ray& ray, float cx, float cz, float r, float h) {
         if (disc >= 0) {
             const float t = (-b - std::sqrt(disc)) / a;
             const float y = ray.origin.y + t * ray.dir.y;
-            if (t > 0 && y >= 0 && y <= h) best = t;
+            if (t > 0 && y >= y0 && y <= y1) best = t;
         }
     }
     if (std::fabs(ray.dir.y) > 1e-9f) {
-        const float t = (h - ray.origin.y) / ray.dir.y;
-        const float x = ox + t * ray.dir.x, z = oz + t * ray.dir.z;
-        if (t > 0 && x * x + z * z <= r * r) best = std::min(best, t);
+        for (const float y : {y0, y1}) {
+            const float t = (y - ray.origin.y) / ray.dir.y;
+            const float x = ox + t * ray.dir.x, z = oz + t * ray.dir.z;
+            if (t > 0 && x * x + z * z <= r * r) best = std::min(best, t);
+        }
+    }
+    return best;
+}
+
+// Where a ray enters a piece standing on (cx, cz): its bounding cylinder first, then the slices of its profile.
+float enterPiece(const Ray& ray, float cx, float cz, const PieceShape& shape) {
+    const float bound = enterBand(ray, cx, cz, shape.radius, 0, shape.height);
+    if (shape.profile.empty() || std::isinf(bound)) return bound;
+    float best        = std::numeric_limits<float>::infinity();
+    const auto slices = shape.profile.size();
+    for (std::size_t i = 0; i < slices; ++i) {
+        if (shape.profile[i] <= 0) continue;
+        const float y0 = shape.height * float(i) / float(slices), y1 = shape.height * float(i + 1) / float(slices);
+        best = std::min(best, enterBand(ray, cx, cz, shape.profile[i], y0, y1));
     }
     return best;
 }
@@ -121,7 +137,7 @@ int squareAt(const Ray& ray, std::span<const PlacedPiece> pieces, std::span<cons
         const auto kind = std::size_t(p.kind);
         if (kind >= shapes.size() || p.square < 0 || p.square > 63) continue;
         const Vec3 c  = squareCentre(p.square);
-        const float t = enterCylinder(ray, c.x, c.z, shapes[kind].radius, shapes[kind].height);
+        const float t = enterPiece(ray, c.x, c.z, shapes[kind]);
         if (t < nearest) nearest = t, square = p.square;
     }
     if (square >= 0) return square;
@@ -132,6 +148,47 @@ int squareAt(const Ray& ray, std::span<const PlacedPiece> pieces, std::span<cons
     const int file = int(std::floor(x + kHalfBoard)), rank = int(std::floor(kHalfBoard - z));
     if (file < 0 || file > 7 || rank < 0 || rank > 7) return -1;
     return rank * 8 + file;
+}
+
+std::vector<float> profileOf(std::span<const float> positions, std::span<const std::uint32_t> indices, float height) {
+    std::vector<float> profile(PROFILE_SLICES, 0.0f);
+    if (height <= 0) return profile;
+    const std::size_t vertices = positions.size() / 3;
+    const float slice          = height / PROFILE_SLICES;
+    for (std::size_t i = 0; i + 2 < indices.size(); i += 3) {
+        std::array<Vec3, 3> tri;
+        bool inside = true;
+        for (std::size_t k = 0; k < 3; ++k) {
+            const auto v = indices[i + k];
+            if (v >= vertices) inside = false;
+            if (inside) tri[k] = {positions[3 * v], positions[3 * v + 1], positions[3 * v + 2]};
+        }
+        if (!inside) continue;
+        const float low  = std::min({tri[0].y, tri[1].y, tri[2].y});
+        const float high = std::max({tri[0].y, tri[1].y, tri[2].y});
+        const int first  = std::clamp(int(std::floor(low / slice)), 0, PROFILE_SLICES - 1);
+        const int last   = std::clamp(int(std::floor(high / slice)), 0, PROFILE_SLICES - 1);
+        for (int s = first; s <= last; ++s) {
+            // The triangle clipped to the slice (above y0, then below y1): the farthest of its corners from the axis
+            // is the farthest of its points, the distance to the axis being convex.
+            const float y0 = s * slice, y1 = (s + 1) * slice;
+            std::vector<Vec3> polygon(tri.begin(), tri.end());
+            for (const int side : {0, 1}) {
+                std::vector<Vec3> kept;
+                const auto in = [&](const Vec3& p) { return side == 0 ? p.y >= y0 : p.y <= y1; };
+                const float y = side == 0 ? y0 : y1;
+                for (std::size_t k = 0; k < polygon.size(); ++k) {
+                    const Vec3 a = polygon[k], b = polygon[(k + 1) % polygon.size()];
+                    if (in(a)) kept.push_back(a);
+                    if (in(a) != in(b)) kept.push_back(a + (b - a) * ((y - a.y) / (b.y - a.y)));
+                }
+                polygon = std::move(kept);
+            }
+            for (const Vec3& p : polygon)
+                profile[std::size_t(s)] = std::max(profile[std::size_t(s)], std::sqrt(p.x * p.x + p.z * p.z));
+        }
+    }
+    return profile;
 }
 
 }  // namespace fcg::board3d
