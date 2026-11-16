@@ -412,6 +412,9 @@ msgstr "Circa {} con {} partite in parallelo"
 msgid "About {} {}"
 msgstr "Circa {} {}"
 
+msgid "Accuracy by each analysis: {}"
+msgstr "Precisione secondo ogni analisi: {}"
+
 msgid "Add"
 msgstr "Aggiungi"
 
@@ -587,11 +590,17 @@ msgstr "Analizza"
 msgid "Analyse the game"
 msgstr "Analizza la partita"
 
+msgid "Analyse the game (G) to review it: each side's accuracy, its mistakes, the key moments, and who saw them coming."
+msgstr "Analizza la partita (G) per il suo resoconto: la precisione di ciascun lato, i suoi errori, i momenti chiave e chi li ha visti arrivare."
+
 msgid "Analyse the game followed"
 msgstr "Analizza la partita seguita"
 
 msgid "Analyse the game shown"
 msgstr "Analizza la partita mostrata"
+
+msgid "Analysed by {}, {} per position."
+msgstr "Analizzata da {}, {} per posizione."
 
 msgid "Analysis"
 msgstr "Analisi"
@@ -695,8 +704,14 @@ msgstr "Parallelismo automatico"
 msgid "Average"
 msgstr "Media"
 
+msgid "Average depth"
+msgstr "Profondità media"
+
 msgid "Average length of the games, in moves."
 msgstr "Lunghezza media delle partite, in mosse."
+
+msgid "Average loss"
+msgstr "Perdita media"
 
 msgid "Avg NPS"
 msgstr "NPS medi"
@@ -751,6 +766,9 @@ msgstr "Prima"
 
 msgid "Being built from {}"
 msgstr "In costruzione da {}"
+
+msgid "Best {}."
+msgstr "Migliore {}."
 
 msgid "Best: {} ({})"
 msgstr "Migliore: {} ({})"
@@ -1300,6 +1318,12 @@ msgstr "Copia FEN"
 
 msgid "Copy PGN"
 msgstr "Copia PGN"
+
+msgid "Copy PGN with the analysis"
+msgstr "Copia il PGN con l'analisi"
+
+msgid "Copy as BBCode"
+msgstr "Copia come BBCode"
 
 msgid "Copy the variation"
 msgstr "Copia la variante"
@@ -1946,6 +1970,9 @@ msgstr "Per una partita che il programma non ha saputo decidere bene: un blocco 
 msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
 msgstr "Per una partita che il programma non concluderebbe bene: un blocco che non rileva, un finale vinto in cui i motori girano a vuoto.\nIl motore al tratto viene fermato (riparte per la sua partita successiva), e la partita conta con questo risultato: Termination \"adjudicated by the operator\" nelle esportazioni, il motivo in un commento.\nIl suo risultato si può cambiare poi nella scheda Partite."
 
+msgid "For each engine, the first position, from 12 plies before the turning point, where it gave the side that gains a pawn or more."
+msgstr "Per ogni motore, la prima posizione, da 12 semimosse prima della svolta, in cui dava un pedone o più al lato che guadagna."
+
 msgid "For each path: the program is there, can be run, and answers uci (xboard for a WinBoard engine) within 10 seconds; and whether it is the same build as this computer's (their SHA-256)."
 msgstr "Per ogni percorso: il programma c'è, si può avviare e risponde a uci (xboard per un motore WinBoard) entro 10 secondi; e se è la stessa build di questo computer (il loro SHA-256)."
 
@@ -2437,6 +2464,9 @@ msgstr "Il suo spazio di lavoro: classifica, partite in diretta, calendario"
 msgid "Judge the moves with it"
 msgstr "Giudicare le mosse con essa"
 
+msgid "KEY MOMENTS"
+msgstr "MOMENTI CHIAVE"
+
 msgid "Keep"
 msgstr "Tieni"
 
@@ -2882,6 +2912,9 @@ msgstr "Nessun match"
 
 msgid "No match yet. Choose two engines, then click Start."
 msgstr "Ancora nessun match. Scegli due motori, poi clicca su Avvia."
+
+msgid "No mistake: the game was lost little by little, or not at all."
+msgstr "Nessun errore: la partita è stata persa a poco a poco, o per niente."
 
 msgid "No more engines marked \"Uses a GPU\" (on their card) play at once than there are GPUs, in a tournament and across tournaments: two games never share a GPU without you knowing."
 msgstr "Non giocano insieme più motori segnati «Usa una GPU» (sulla loro scheda) di quante GPU ci sono, in un torneo e tra tornei: due partite non condividono mai una GPU a tua insaputa."
@@ -3789,6 +3822,9 @@ msgstr "Ripristina"
 msgid "Revert to {}"
 msgstr "Torna a {}"
 
+msgid "Review"
+msgstr "Resoconto"
+
 msgid "Right click: change it, or take it back."
 msgstr "Clic destro: cambialo, o torna indietro."
 
@@ -3872,6 +3908,9 @@ msgstr "SPRT non regressione [-5, 0]"
 
 msgid "SSH agent"
 msgstr "Agente SSH"
+
+msgid "Same move as the analysis"
+msgstr "Stessa mossa dell'analisi"
 
 msgid "Same number of games"
 msgstr "Stesso numero di partite"
@@ -4560,6 +4599,9 @@ msgstr "La profondità di ogni mossa, con la seldepth."
 msgid "The directories are this computer's: no profile holds them."
 msgstr "Le cartelle sono di questo computer: nessun profilo le contiene."
 
+msgid "The endgame starts."
+msgstr "Inizia il finale."
+
 msgid "The engine does not answer isready."
 msgstr "Il motore non risponde a isready."
 
@@ -4598,6 +4640,9 @@ msgstr "I motori non concordano"
 
 msgid "The engines disagree: their evaluations differ by this much for 3 moves each in a row.\nAn evaluation swings: an engine's evaluation changes by this much from one of its moves to the next.\nLost after a winning score: the loser thought it was this much better.\nA game opens at that moment."
 msgstr "I motori non concordano: le loro valutazioni differiscono di tanto per 3 mosse ciascuno di fila.\nUna valutazione oscilla: la valutazione di un motore cambia di tanto da una sua mossa alla successiva.\nPersa dopo una valutazione vincente: il perdente pensava di essere meglio di tanto.\nUna partita si apre in quel momento."
+
+msgid "The engines disagreed: {} against {}."
+msgstr "I motori non erano d'accordo: {} contro {}."
 
 msgid "The engines on machines cannot be started: {}"
 msgstr "I motori sulle macchine non possono essere avviati: {}"
@@ -4652,6 +4697,9 @@ msgstr "La cartella {} non c'è più."
 
 msgid "The folder {} is not there."
 msgstr "La cartella {} non c'è."
+
+msgid "The game as PGN with the analysis written in: each position's evaluation ([%eval]), the judgements as NAGs, the line the analysis preferred after a marked move."
+msgstr "La partita in PGN con l'analisi scritta dentro: la valutazione di ogni posizione ([%eval]), i giudizi come NAG, la linea preferita dall'analisi dopo una mossa segnata."
 
 msgid "The game being played ends without a result."
 msgstr "La partita in corso finisce senza risultato."
@@ -5008,6 +5056,9 @@ msgstr "Il sistema non è riuscito ad aprire:"
 msgid "The tablebase adjudication's Max pieces, in this tournament's Adjudication section."
 msgstr "I Pezzi max dell'aggiudicazione con le tablebase, nella sezione Aggiudicazione di questo torneo."
 
+msgid "The tablebases know the result from here."
+msgstr "Da qui le tablebase conoscono il risultato."
+
 msgid "The teams made again from the list: its upper half against its lower half."
 msgstr "Le squadre rifatte dalla lista: la metà superiore contro quella inferiore."
 
@@ -5256,6 +5307,9 @@ msgstr "Handicap di tempo: la sua quota della cadenza, 100 = lo stesso orologio 
 msgid "Time per move"
 msgstr "Tempo per mossa"
 
+msgid "Time used"
+msgstr "Tempo usato"
+
 msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
 msgstr "Per tenere invece tutto accanto al programma (una chiavetta USB, una cartella copiata tra macchine), metti un file vuoto chiamato «portable» accanto a esso: il profilo diventa allora la cartella «data» accanto a esso. Copia lì i file di questa cartella per tenerli."
 
@@ -5330,6 +5384,9 @@ msgstr "Disattiva i suoni delle mosse"
 
 msgid "Turn the move sounds on"
 msgstr "Attiva i suoni delle mosse"
+
+msgid "Turning point: {} → {}."
+msgstr "Svolta: {} → {}."
 
 msgid "Turns them into finished tournaments of the list."
 msgstr "Li trasforma in tornei finiti della lista."
@@ -5451,6 +5508,9 @@ msgstr "V {:.0f} · P {:.0f} · S {:.0f} %"
 
 msgid "WDL"
 msgstr "V/P/S"
+
+msgid "WHO SAW IT FIRST"
+msgstr "CHI L'HA VISTO PER PRIMO"
 
 msgid "Waiting for the book of {}…"
 msgstr "In attesa del libro di {}…"
@@ -5741,6 +5801,9 @@ msgstr[1] "circa {} partite"
 msgid "accepted: {:.1f} %"
 msgstr "accettata: {:.1f} %"
 
+msgid "accuracy"
+msgstr "precisione"
+
 msgid "adjudication with tablebases"
 msgstr "aggiudicazione con le tablebase"
 
@@ -5773,8 +5836,14 @@ msgstr[1] "al massimo {} partite"
 msgid "at most {} moves"
 msgstr "al massimo {} mosse"
 
+msgid "at the start"
+msgstr "dall'inizio"
+
 msgid "automatic"
 msgstr "automatico"
+
+msgid "average loss"
+msgstr "perdita media"
 
 msgid "bars: the analyses apart"
 msgstr "barre: distanza tra le analisi"
@@ -6024,6 +6093,9 @@ msgstr "giudice"
 msgid "length unknown"
 msgstr "durata sconosciuta"
 
+msgid "lichess's accuracy: each move's from the winning chances it lost, the moves of the game's sharp moments weighing more."
+msgstr "La precisione di lichess: quella di ogni mossa secondo le probabilità di vittoria perse, con più peso alle mosse dei momenti tesi della partita."
+
 msgid "lines starting with %, ignored"
 msgstr "righe che iniziano con %, ignorate"
 
@@ -6067,6 +6139,9 @@ msgstr[1] "mosse di {} partite o più"
 
 msgid "nElo of A (95% CI)"
 msgstr "nElo di A (IC 95%)"
+
+msgid "never"
+msgstr "mai"
 
 msgid "never tested: test its connection in Settings > Machines"
 msgstr "mai provata: prova la sua connessione in Impostazioni > Macchine"
@@ -6394,6 +6469,9 @@ msgstr "{}  ({} aperture)"
 msgid "{} % of the time"
 msgstr "{} % del tempo"
 
+msgid "{} (analysis)"
+msgstr "{} (analisi)"
+
 msgid "{} (preparing the book: {} %)"
 msgstr "{} (preparazione del libro: {} %)"
 
@@ -6449,6 +6527,9 @@ msgstr "{} e {}"
 
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} chiede di essere riavviato a ogni partita: «Riavvia il motore a ogni partita» è selezionato."
+
+msgid "{} at {}"
+msgstr "{} a {}"
 
 msgid "{} blunder"
 msgid_plural "{} blunders"

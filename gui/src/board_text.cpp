@@ -254,7 +254,9 @@ BoardText readBoardText(std::string_view text) {
 
 std::string gamePgn(const ReplayGame& game, bool chess960) { return gamePgn(GameTree{game, {}}, chess960); }
 
-std::string gamePgn(const GameTree& tree, bool chess960) {
+std::string gamePgn(const GameTree& tree, bool chess960) { return gamePgn(tree, chess960, nullptr); }
+
+std::string gamePgn(const GameTree& tree, bool chess960, const std::function<std::string(int)>& annotate) {
     const auto& game = tree.main;
     const auto tag = [](const std::string& name, const std::string& value) {
         return fmt::format("[{} \"{}\"]\n", name, tour::pgnTagValue(value));
@@ -321,6 +323,9 @@ std::string gamePgn(const GameTree& tree, bool chess960) {
                 move += " {" + commentScore(*m.score) + "/" + std::to_string(m.depth);
                 if (m.time_ms >= 0) move += fmt::format(" {:.3f}s", static_cast<double>(m.time_ms) / 1000.0);
                 move += "}";
+            }
+            if (which < 0 && annotate) {
+                if (const auto extra = annotate(ply + 1); !extra.empty()) move += " " + extra;
             }
             put(move);
             for (std::size_t v = 0; v < tree.variations.size(); ++v) {

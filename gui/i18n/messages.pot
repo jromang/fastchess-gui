@@ -412,6 +412,9 @@ msgstr ""
 msgid "About {} {}"
 msgstr ""
 
+msgid "Accuracy by each analysis: {}"
+msgstr ""
+
 msgid "Add"
 msgstr ""
 
@@ -587,10 +590,16 @@ msgstr ""
 msgid "Analyse the game"
 msgstr ""
 
+msgid "Analyse the game (G) to review it: each side's accuracy, its mistakes, the key moments, and who saw them coming."
+msgstr ""
+
 msgid "Analyse the game followed"
 msgstr ""
 
 msgid "Analyse the game shown"
+msgstr ""
+
+msgid "Analysed by {}, {} per position."
 msgstr ""
 
 msgid "Analysis"
@@ -695,7 +704,13 @@ msgstr ""
 msgid "Average"
 msgstr ""
 
+msgid "Average depth"
+msgstr ""
+
 msgid "Average length of the games, in moves."
+msgstr ""
+
+msgid "Average loss"
 msgstr ""
 
 msgid "Avg NPS"
@@ -750,6 +765,9 @@ msgid "Before"
 msgstr ""
 
 msgid "Being built from {}"
+msgstr ""
+
+msgid "Best {}."
 msgstr ""
 
 msgid "Best: {} ({})"
@@ -1299,6 +1317,12 @@ msgid "Copy FEN"
 msgstr ""
 
 msgid "Copy PGN"
+msgstr ""
+
+msgid "Copy PGN with the analysis"
+msgstr ""
+
+msgid "Copy as BBCode"
 msgstr ""
 
 msgid "Copy the variation"
@@ -1946,6 +1970,9 @@ msgstr ""
 msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
 msgstr ""
 
+msgid "For each engine, the first position, from 12 plies before the turning point, where it gave the side that gains a pawn or more."
+msgstr ""
+
 msgid "For each path: the program is there, can be run, and answers uci (xboard for a WinBoard engine) within 10 seconds; and whether it is the same build as this computer's (their SHA-256)."
 msgstr ""
 
@@ -2437,6 +2464,9 @@ msgstr ""
 msgid "Judge the moves with it"
 msgstr ""
 
+msgid "KEY MOMENTS"
+msgstr ""
+
 msgid "Keep"
 msgstr ""
 
@@ -2881,6 +2911,9 @@ msgid "No match"
 msgstr ""
 
 msgid "No match yet. Choose two engines, then click Start."
+msgstr ""
+
+msgid "No mistake: the game was lost little by little, or not at all."
 msgstr ""
 
 msgid "No more engines marked \"Uses a GPU\" (on their card) play at once than there are GPUs, in a tournament and across tournaments: two games never share a GPU without you knowing."
@@ -3789,6 +3822,9 @@ msgstr ""
 msgid "Revert to {}"
 msgstr ""
 
+msgid "Review"
+msgstr ""
+
 msgid "Right click: change it, or take it back."
 msgstr ""
 
@@ -3871,6 +3907,9 @@ msgid "SPRT non-regression [-5, 0]"
 msgstr ""
 
 msgid "SSH agent"
+msgstr ""
+
+msgid "Same move as the analysis"
 msgstr ""
 
 msgid "Same number of games"
@@ -4560,6 +4599,9 @@ msgstr ""
 msgid "The directories are this computer's: no profile holds them."
 msgstr ""
 
+msgid "The endgame starts."
+msgstr ""
+
 msgid "The engine does not answer isready."
 msgstr ""
 
@@ -4597,6 +4639,9 @@ msgid "The engines disagree"
 msgstr ""
 
 msgid "The engines disagree: their evaluations differ by this much for 3 moves each in a row.\nAn evaluation swings: an engine's evaluation changes by this much from one of its moves to the next.\nLost after a winning score: the loser thought it was this much better.\nA game opens at that moment."
+msgstr ""
+
+msgid "The engines disagreed: {} against {}."
 msgstr ""
 
 msgid "The engines on machines cannot be started: {}"
@@ -4651,6 +4696,9 @@ msgid "The folder {} is not there any more."
 msgstr ""
 
 msgid "The folder {} is not there."
+msgstr ""
+
+msgid "The game as PGN with the analysis written in: each position's evaluation ([%eval]), the judgements as NAGs, the line the analysis preferred after a marked move."
 msgstr ""
 
 msgid "The game being played ends without a result."
@@ -5008,6 +5056,9 @@ msgstr ""
 msgid "The tablebase adjudication's Max pieces, in this tournament's Adjudication section."
 msgstr ""
 
+msgid "The tablebases know the result from here."
+msgstr ""
+
 msgid "The teams made again from the list: its upper half against its lower half."
 msgstr ""
 
@@ -5256,6 +5307,9 @@ msgstr ""
 msgid "Time per move"
 msgstr ""
 
+msgid "Time used"
+msgstr ""
+
 msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
 msgstr ""
 
@@ -5329,6 +5383,9 @@ msgid "Turn the move sounds off"
 msgstr ""
 
 msgid "Turn the move sounds on"
+msgstr ""
+
+msgid "Turning point: {} → {}."
 msgstr ""
 
 msgid "Turns them into finished tournaments of the list."
@@ -5450,6 +5507,9 @@ msgid "W {:.0f} · D {:.0f} · L {:.0f} %"
 msgstr ""
 
 msgid "WDL"
+msgstr ""
+
+msgid "WHO SAW IT FIRST"
 msgstr ""
 
 msgid "Waiting for the book of {}…"
@@ -5741,6 +5801,9 @@ msgstr[1] ""
 msgid "accepted: {:.1f} %"
 msgstr ""
 
+msgid "accuracy"
+msgstr ""
+
 msgid "adjudication with tablebases"
 msgstr ""
 
@@ -5773,7 +5836,13 @@ msgstr[1] ""
 msgid "at most {} moves"
 msgstr ""
 
+msgid "at the start"
+msgstr ""
+
 msgid "automatic"
+msgstr ""
+
+msgid "average loss"
 msgstr ""
 
 msgid "bars: the analyses apart"
@@ -6024,6 +6093,9 @@ msgstr ""
 msgid "length unknown"
 msgstr ""
 
+msgid "lichess's accuracy: each move's from the winning chances it lost, the moves of the game's sharp moments weighing more."
+msgstr ""
+
 msgid "lines starting with %, ignored"
 msgstr ""
 
@@ -6066,6 +6138,9 @@ msgstr[0] ""
 msgstr[1] ""
 
 msgid "nElo of A (95% CI)"
+msgstr ""
+
+msgid "never"
 msgstr ""
 
 msgid "never tested: test its connection in Settings > Machines"
@@ -6394,6 +6469,9 @@ msgstr ""
 msgid "{} % of the time"
 msgstr ""
 
+msgid "{} (analysis)"
+msgstr ""
+
 msgid "{} (preparing the book: {} %)"
 msgstr ""
 
@@ -6448,6 +6526,9 @@ msgid "{} and {}"
 msgstr ""
 
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
+msgstr ""
+
+msgid "{} at {}"
 msgstr ""
 
 msgid "{} blunder"

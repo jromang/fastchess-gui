@@ -363,7 +363,9 @@ class App {
     void drawBoardColumn(float size);  // the board, the buttons under it
     void drawBoardAnalysis();
     void drawBoardMoves(float height);
-    void drawBoardTable();  // the Table tab: each move with its engine's score, depth and time
+    void drawBoardTable();   // the Table tab: each move with its engine's score, depth and time
+    void drawBoardReview();  // the Review tab: each side's accuracy and figures, the key moments, who saw them
+    [[nodiscard]] std::string boardMoveLabel(int ply) const;  // "12…Qa5", the game's move leading to `ply`
     // The line shown on the board: the game (-1) or a variation, at its position `ply`.
     void showBoardLine(int line, int ply);
     // The position of the game the board's position is on, or leaves it at (a variation).

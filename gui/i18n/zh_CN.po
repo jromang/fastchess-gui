@@ -408,6 +408,9 @@ msgstr "约 {}，同时进行 {} 局"
 msgid "About {} {}"
 msgstr "约 {} {}"
 
+msgid "Accuracy by each analysis: {}"
+msgstr "各分析给出的准确率：{}"
+
 msgid "Add"
 msgstr "添加"
 
@@ -581,11 +584,17 @@ msgstr "分析"
 msgid "Analyse the game"
 msgstr "分析对局"
 
+msgid "Analyse the game (G) to review it: each side's accuracy, its mistakes, the key moments, and who saw them coming."
+msgstr "分析这盘棋（G）以查看复盘：双方的准确率、错误、关键时刻，以及谁先看出来。"
+
 msgid "Analyse the game followed"
 msgstr "分析正在关注的对局"
 
 msgid "Analyse the game shown"
 msgstr "分析显示的对局"
+
+msgid "Analysed by {}, {} per position."
+msgstr "由 {} 分析，每个局面 {}。"
 
 msgid "Analysis"
 msgstr "分析"
@@ -689,8 +698,14 @@ msgstr "自动并发"
 msgid "Average"
 msgstr "平均"
 
+msgid "Average depth"
+msgstr "平均深度"
+
 msgid "Average length of the games, in moves."
 msgstr "对局的平均长度，以步数计。"
+
+msgid "Average loss"
+msgstr "平均损失"
 
 msgid "Avg NPS"
 msgstr "平均 NPS"
@@ -745,6 +760,9 @@ msgstr "之前"
 
 msgid "Being built from {}"
 msgstr "正在由 {} 生成"
+
+msgid "Best {}."
+msgstr "最佳 {}。"
 
 msgid "Best: {} ({})"
 msgstr "最佳：{}（{}）"
@@ -1294,6 +1312,12 @@ msgstr "复制 FEN"
 
 msgid "Copy PGN"
 msgstr "复制 PGN"
+
+msgid "Copy PGN with the analysis"
+msgstr "复制含分析的 PGN"
+
+msgid "Copy as BBCode"
+msgstr "复制为 BBCode"
 
 msgid "Copy the variation"
 msgstr "复制此变化"
@@ -1940,6 +1964,9 @@ msgstr "用于程序未能正确判定的对局：未被发现的卡死、引擎
 msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
 msgstr "用于程序无法正确结束的对局：未被发现的卡死、引擎在必胜残局中来回走子。\n轮到走子的引擎会被停止（下一局时重新启动），对局按此结果计分：导出时为 Termination \"adjudicated by the operator\"，原因写在注释中。\n之后可在“对局”标签页修改其结果。"
 
+msgid "For each engine, the first position, from 12 plies before the turning point, where it gave the side that gains a pawn or more."
+msgstr "对每个引擎：从转折点前 12 个半回合起，第一次给得利一方一兵或更多优势的局面。"
+
 msgid "For each path: the program is there, can be run, and answers uci (xboard for a WinBoard engine) within 10 seconds; and whether it is the same build as this computer's (their SHA-256)."
 msgstr "对每个路径：程序存在、可以运行，并在 10 秒内响应 uci（WinBoard 引擎为 xboard）；以及它是否与本机的构建版本相同（比较 SHA-256）。"
 
@@ -2430,6 +2457,9 @@ msgstr "它的工作区：排名、实时对局、赛程"
 msgid "Judge the moves with it"
 msgstr "用它评判着法"
 
+msgid "KEY MOMENTS"
+msgstr "关键时刻"
+
 msgid "Keep"
 msgstr "保留"
 
@@ -2874,6 +2904,9 @@ msgstr "无比赛"
 
 msgid "No match yet. Choose two engines, then click Start."
 msgstr "还没有比赛。选择两个引擎，然后点击“开始”。"
+
+msgid "No mistake: the game was lost little by little, or not at all."
+msgstr "没有错误：这盘棋是一点点输掉的，或根本没输。"
 
 msgid "No more engines marked \"Uses a GPU\" (on their card) play at once than there are GPUs, in a tournament and across tournaments: two games never share a GPU without you knowing."
 msgstr "同时下棋的标为“使用 GPU”（在其卡片上）的引擎不会多于 GPU 数，在一个锦标赛内和各锦标赛之间都是如此：两局对局绝不会在你不知情时共用一块 GPU。"
@@ -3775,6 +3808,9 @@ msgstr "恢复"
 msgid "Revert to {}"
 msgstr "恢复为 {}"
 
+msgid "Review"
+msgstr "复盘"
+
 msgid "Right click: change it, or take it back."
 msgstr "右键：修改或撤回。"
 
@@ -3858,6 +3894,9 @@ msgstr "SPRT 无退步 [-5, 0]"
 
 msgid "SSH agent"
 msgstr "SSH 代理"
+
+msgid "Same move as the analysis"
+msgstr "与分析着法相同"
 
 msgid "Same number of games"
 msgstr "对局数不变"
@@ -4537,6 +4576,9 @@ msgstr "每步的深度，含 seldepth。"
 msgid "The directories are this computer's: no profile holds them."
 msgstr "这些目录属于本机：没有配置包含它们。"
 
+msgid "The endgame starts."
+msgstr "进入残局。"
+
 msgid "The engine does not answer isready."
 msgstr "引擎没有响应 isready。"
 
@@ -4575,6 +4617,9 @@ msgstr "引擎意见分歧"
 
 msgid "The engines disagree: their evaluations differ by this much for 3 moves each in a row.\nAn evaluation swings: an engine's evaluation changes by this much from one of its moves to the next.\nLost after a winning score: the loser thought it was this much better.\nA game opens at that moment."
 msgstr "引擎意见分歧：双方评估相差这么多，并各自连续保持 3 步。\n评估出现大幅波动：某个引擎的评估在其相邻两步之间变化这么多。\n领先后输掉：输家曾认为自己领先这么多。\n对局在该时刻打开。"
+
+msgid "The engines disagreed: {} against {}."
+msgstr "引擎意见不一：{} 对 {}。"
 
 msgid "The engines on machines cannot be started: {}"
 msgstr "无法启动机器上的引擎：{}"
@@ -4629,6 +4674,9 @@ msgstr "文件夹 {} 已不存在。"
 
 msgid "The folder {} is not there."
 msgstr "文件夹 {} 不存在。"
+
+msgid "The game as PGN with the analysis written in: each position's evaluation ([%eval]), the judgements as NAGs, the line the analysis preferred after a marked move."
+msgstr "写入分析的 PGN：每个局面的评估（[%eval]）、以 NAG 表示的评判，以及标记着法后分析偏好的变化。"
 
 msgid "The game being played ends without a result."
 msgstr "正在进行的对局将无结果结束。"
@@ -4983,6 +5031,9 @@ msgstr "系统无法打开："
 msgid "The tablebase adjudication's Max pieces, in this tournament's Adjudication section."
 msgstr "残局库裁定的最大棋子数，位于本赛事的裁定部分。"
 
+msgid "The tablebases know the result from here."
+msgstr "从这里起残局库知道结果。"
+
 msgid "The teams made again from the list: its upper half against its lower half."
 msgstr "按列表重新分队：上半部分对下半部分。"
 
@@ -5230,6 +5281,9 @@ msgstr "时间让步：它占时限的比例，100 = 与其他引擎相同。"
 msgid "Time per move"
 msgstr "每步时间"
 
+msgid "Time used"
+msgstr "用时"
+
 msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
 msgstr "若要把所有内容放在程序旁边（U 盘、在多台机器间复制的文件夹），请在程序旁放一个名为“portable”的空文件：配置文件夹随即变为程序旁的“data”文件夹。将此文件夹中的文件复制过去即可保留它们。"
 
@@ -5304,6 +5358,9 @@ msgstr "关闭走棋声音"
 
 msgid "Turn the move sounds on"
 msgstr "开启走棋声音"
+
+msgid "Turning point: {} → {}."
+msgstr "转折点：{} → {}。"
 
 msgid "Turns them into finished tournaments of the list."
 msgstr "将它们转为列表中已结束的锦标赛。"
@@ -5423,6 +5480,9 @@ msgstr "胜 {:.0f} · 和 {:.0f} · 负 {:.0f} %"
 
 msgid "WDL"
 msgstr "胜/和/负"
+
+msgid "WHO SAW IT FIRST"
+msgstr "谁先看出来"
 
 msgid "Waiting for the book of {}…"
 msgstr "正在等待 {} 的开局库…"
@@ -5711,6 +5771,9 @@ msgstr[0] "约 {} 局"
 msgid "accepted: {:.1f} %"
 msgstr "接受：{:.1f} %"
 
+msgid "accuracy"
+msgstr "准确率"
+
 msgid "adjudication with tablebases"
 msgstr "用残局库裁定"
 
@@ -5742,8 +5805,14 @@ msgstr[0] "最多 {} 局"
 msgid "at most {} moves"
 msgstr "最多 {} 步"
 
+msgid "at the start"
+msgstr "从一开始"
+
 msgid "automatic"
 msgstr "自动"
+
+msgid "average loss"
+msgstr "平均损失"
 
 msgid "bars: the analyses apart"
 msgstr "柱：各分析之间的分歧"
@@ -5992,6 +6061,9 @@ msgstr "评判"
 msgid "length unknown"
 msgstr "时长未知"
 
+msgid "lichess's accuracy: each move's from the winning chances it lost, the moves of the game's sharp moments weighing more."
+msgstr "lichess 的准确率：每步按其失去的胜率计算，对局紧张时刻的着法权重更大。"
+
 msgid "lines starting with %, ignored"
 msgstr "以 % 开头的行，已忽略"
 
@@ -6034,6 +6106,9 @@ msgstr[0] "至少 {} 局对局走出的着法"
 
 msgid "nElo of A (95% CI)"
 msgstr "A 的 nElo（95% 置信区间）"
+
+msgid "never"
+msgstr "从未"
 
 msgid "never tested: test its connection in Settings > Machines"
 msgstr "从未测试：请在 设置 > 机器 中测试其连接"
@@ -6357,6 +6432,9 @@ msgstr "{}  （{} 个开局）"
 msgid "{} % of the time"
 msgstr "{} % 的时间"
 
+msgid "{} (analysis)"
+msgstr "{}（分析）"
+
 msgid "{} (preparing the book: {} %)"
 msgstr "{}（正在准备开局库：{} %）"
 
@@ -6411,6 +6489,9 @@ msgstr "{} 和 {}"
 
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} 要求每局都重新启动：已勾选“每局对局都重启引擎”。"
+
+msgid "{} at {}"
+msgstr "{}：{}"
 
 msgid "{} blunder"
 msgid_plural "{} blunders"

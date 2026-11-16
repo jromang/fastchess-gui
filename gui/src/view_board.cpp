@@ -21,6 +21,7 @@
 #include "console.hpp"
 #include "i18n.hpp"
 #include "notation_view.hpp"
+#include "review_stats.hpp"
 #include "run.hpp"
 #include "storage.hpp"
 #include "ui.hpp"
@@ -1562,6 +1563,7 @@ void App::drawBoardMoves(float height) {
         };
         tab(TR("Moves###board_moves_tab"), 0);
         tab(TR("Table###board_table_tab"), 2);
+        tab(TR("Review###board_review_tab"), 3);
         if (b.pgn && b.pgn->index->size() > 1)
             tab(fmt::format("{} ({})###board_games_tab", b.pgn->name, b.pgn->index->size()).c_str(), 1);
         else if (b.game_tab == 1)
@@ -1598,11 +1600,12 @@ void App::drawBoardMoves(float height) {
         b.reviews = !main.moves.empty() ? loadReviews(storage_.root() / "analyses", main) : std::vector<GameReview>{};
         b.judged  = b.reviews.empty() ? std::vector<MoveReview>{} : reviewMoves(main, b.chess960, b.reviews.front());
     }
-    drawGameReview();
 
     const float strip = b.ply > 0 && b.ply <= total ? thisMoveHeight() : 0.0f;
     ImGui::BeginChild("##board_moves", ImVec2(0, -strip), ImGuiChildFlags_Borders);
-    if (b.game_tab == 2) {
+    if (b.game_tab == 3) {
+        drawBoardReview();
+    } else if (b.game_tab == 2) {
         drawBoardTable();
     } else if (total == 0 && main.moves.empty()) {
         ImGui::TextDisabled("%s", TR("Play a move on the board, or open a game."));
@@ -2090,6 +2093,234 @@ void App::drawBoardGraph(float height) {
         ImGui::EndPopup();
     }
     ui::endCard();
+}
+
+std::string App::boardMoveLabel(int ply) const {
+    const auto& main = board_.tree.main;
+    if (ply <= 0 || ply > static_cast<int>(main.moves.size())) return {};
+    const auto before = boardAt(main, board_.chess960, ply - 1);
+    const auto& m     = main.moves[static_cast<std::size_t>(ply - 1)];
+    return fmt::format("{}{}{}", before.fullMoveNumber(), m.mover == chess::Color::WHITE ? "." : "…", m.san);
+}
+
+void App::drawBoardReview() {
+    auto& b          = board_;
+    const auto& main = b.tree.main;
+    if (b.reviews.empty() || !b.reviews.front().complete(main.moves.size())) {
+        ImGui::TextWrapped("%s", TR("Analyse the game (G) to review it: each side's accuracy, its mistakes, the key "
+                                    "moments, and who saw them coming."));
+        if (!b.reviewing() && !main.moves.empty() && ImGui::Button(TR("Analyse the game"))) startGameReview();
+        return;
+    }
+    const auto& review = b.reviews.front();
+    const auto phases  = gamePhases(main, b.chess960);
+    const auto stats   = gameStats(main, b.chess960, review, b.judged, phases);
+    const float gap    = px(10);
+    const float half   = (ImGui::GetContentRegionAvail().x - gap) / 2;
+    const ImU32 box = ui::currentTheme() == ui::Theme::Light ? IM_COL32(243, 245, 248, 255) : IM_COL32(32, 36, 43, 255);
+    const auto name_of = [&](int side) {
+        auto name = main.header(side == 0 ? "White" : "Black");
+        return name.empty() || name == "?" ? std::string(side == 0 ? TR("White") : TR("Black")) : name;
+    };
+    const auto percent = [](const std::optional<double>& v, double scale = 1.0) {
+        return v ? fmt::format("{:.0f} %", *v * scale) : std::string("–");
+    };
+
+    // Each side: its accuracy, then its figures.
+    const float rows  = ImGui::GetTextLineHeightWithSpacing();
+    const float box_h = ImGui::GetFontSize() * 2.4f + rows * 5.4f + px(16);
+    const ImVec2 top  = ImGui::GetCursorScreenPos();
+    auto* dl          = ImGui::GetWindowDrawList();
+    for (int side = 0; side < 2; ++side) {
+        const auto& st = stats[static_cast<std::size_t>(side)];
+        const ImVec2 p0(top.x + static_cast<float>(side) * (half + gap), top.y);
+        dl->AddRectFilled(p0, ImVec2(p0.x + half, p0.y + box_h), box, px(8));
+        ImGui::SetCursorScreenPos(ImVec2(p0.x + px(12), p0.y + px(8)));
+        ImGui::BeginGroup();
+        const ImVec2 dot = ImGui::GetCursorScreenPos();
+        const float r    = ImGui::GetFontSize() * 0.35f;
+        const ImVec2 c(dot.x + r, dot.y + ImGui::GetTextLineHeight() / 2);
+        if (side == 1) dl->AddCircleFilled(c, r, ImGui::GetColorU32(ImGuiCol_Text));
+        dl->AddCircle(c, r, ImGui::GetColorU32(ImGuiCol_Text), 0, px(1.5f));
+        ImGui::Dummy(ImVec2(r * 2 + px(4), ImGui::GetTextLineHeight()));
+        ImGui::SameLine();
+        ImGui::TextUnformatted(name_of(side).c_str());
+        ImGui::PushFont(ui::titleFont(), ImGui::GetFontSize() * 1.8f);
+        ImGui::TextUnformatted(percent(st.accuracy).c_str());
+        ImGui::PopFont();
+        ImGui::SameLine();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("%s", TR("accuracy"));
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", TR("lichess's accuracy: each move's from the winning chances it lost, the moves "
+                                       "of the game's sharp moments weighing more."));
+        const float value_x = half - px(24);
+        const auto kv       = [&](const char* label, const std::string& value) {
+            ImGui::TextDisabled("%s", label);
+            ImGui::SameLine(value_x - ImGui::CalcTextSize(value.c_str()).x);
+            ImGui::TextUnformatted(value.c_str());
+        };
+        kv("?! · ? · ??", fmt::format("{} · {} · {}", st.judgements[0], st.judgements[1], st.judgements[2]));
+        kv(TR("Average loss"), st.average_loss ? fmt::format("{:.0f} cp", *st.average_loss) : std::string("–"));
+        kv(TR("Same move as the analysis"), percent(st.agreement, 100.0));
+        kv(TR("Average depth"), st.depth ? fmt::format("{:.1f}", *st.depth) : std::string("–"));
+        kv(TR("Time used"), st.time_ms > 0 ? ui::formatClock(st.time_ms) : std::string("–"));
+        ImGui::EndGroup();
+    }
+    ImGui::SetCursorScreenPos(ImVec2(top.x, top.y + box_h + px(8)));
+
+    // The accuracy in each phase.
+    {
+        const char* names[] = {TR("Opening"), TR("Middlegame"), TR("Endgame")};
+        const float label_w = std::max({ImGui::CalcTextSize(names[0]).x, ImGui::CalcTextSize(names[1]).x,
+                                        ImGui::CalcTextSize(names[2]).x}) +
+                              px(12);
+        const float bar_w   = (ImGui::GetContentRegionAvail().x - label_w - gap) / 2;
+        for (std::size_t p = 0; p < 3; ++p) {
+            if (!stats[0].phase_accuracy[p] && !stats[1].phase_accuracy[p]) continue;
+            ImGui::TextDisabled("%s", names[p]);
+            for (std::size_t side = 0; side < 2; ++side) {
+                ImGui::SameLine(label_w + static_cast<float>(side) * (bar_w + gap));
+                const ImVec2 q = ImGui::GetCursorScreenPos();
+                const float h  = ImGui::GetTextLineHeight() * 0.45f;
+                const float y  = q.y + (ImGui::GetTextLineHeight() - h) / 2;
+                dl->AddRectFilled(ImVec2(q.x, y), ImVec2(q.x + bar_w - px(40), y + h), ui::SELECT, h / 2);
+                if (const auto& a = stats[side].phase_accuracy[p]) {
+                    dl->AddRectFilled(ImVec2(q.x, y),
+                                      ImVec2(q.x + (bar_w - px(40)) * static_cast<float>(*a) / 100.0f, y + h),
+                                      ui::ACCENT, h / 2);
+                    dl->AddText(ImVec2(q.x + bar_w - px(34), q.y), ui::MUTED, fmt::format("{:.0f}", *a).c_str());
+                }
+                ImGui::Dummy(ImVec2(bar_w, ImGui::GetTextLineHeight()));
+            }
+        }
+    }
+
+    // Several analyses: each one's accuracies.
+    if (b.reviews.size() > 1) {
+        std::string line;
+        for (const auto& r : b.reviews) {
+            if (!r.complete(main.moves.size())) continue;
+            const auto judged = reviewMoves(main, b.chess960, r);
+            const auto s      = gameStats(main, b.chess960, r, judged, phases);
+            line += (line.empty() ? "" : " · ") +
+                    fmt::format("{}: {} / {}", r.engine, percent(s[0].accuracy), percent(s[1].accuracy));
+        }
+        ImGui::TextDisabled("%s", trf("Accuracy by each analysis: {}", line).c_str());
+    }
+
+    // The key moments, each a click away.
+    ImGui::Spacing();
+    ImGui::TextDisabled("%s", TR("KEY MOMENTS"));
+    const auto moments = keyMoments(main, review, b.judged, phases, -1);
+    if (moments.empty())
+        ImGui::TextDisabled("%s", TR("No mistake: the game was lost little by little, or not at all."));
+    const auto pawns = [](double v) {
+        return std::fabs(v) >= MATE_PAWNS * 0.99 ? std::string(v > 0 ? "+M" : "-M") : fmt::format("{:+.2f}", v);
+    };
+    const auto best_of = [&](int ply) -> std::string {
+        if (ply <= 0 || static_cast<std::size_t>(ply - 1) >= review.positions.size()) return {};
+        const auto& before = review.positions[static_cast<std::size_t>(ply - 1)];
+        const auto board   = boardAt(main, b.chess960, ply - 1);
+        const auto best    = legalPrefix(board, {before.best}, 1);
+        return best.empty() ? std::string() : chess::uci::moveToSan(board, best.front());
+    };
+    const float move_w = px(96);
+    for (std::size_t k = 0; k < moments.size(); ++k) {
+        const auto& m = moments[k];
+        std::string what;
+        switch (m.kind) {
+            case KeyMoment::Kind::TurningPoint:
+                what = trf("Turning point: {} → {}.", pawns(m.before), pawns(m.after));
+                if (const auto best = best_of(m.ply); !best.empty()) what += " " + trf("Best {}.", best);
+                break;
+            case KeyMoment::Kind::Judged:
+                what = trf("{}: {:.0f} % of the winning chances lost.",
+                           m.judgement == Judgement::Blunder ? TR("Blunder") : TR("Mistake"),
+                           b.judged[static_cast<std::size_t>(m.ply - 1)].loss);
+                if (const auto best = best_of(m.ply); !best.empty()) what += " " + trf("Best {}.", best);
+                break;
+            case KeyMoment::Kind::Disagreement:
+                what = trf("The engines disagreed: {} against {}.", pawns(m.before), pawns(m.after));
+                break;
+            case KeyMoment::Kind::Endgame:
+                what = TR("The endgame starts.");
+                break;
+            case KeyMoment::Kind::Tablebase:
+                what = TR("The tablebases know the result from here.");
+                break;
+        }
+        ImGui::PushID(static_cast<int>(k));
+        const bool current = boardMainPly() == m.ply && b.line < 0;
+        if (ImGui::Selectable("##moment", current, ImGuiSelectableFlags_None)) showBoardLine(-1, m.ply);
+        ImGui::SameLine(px(4));
+        auto label = boardMoveLabel(m.ply);
+        if (m.judgement != Judgement::None) label += judgementMark(m.judgement);
+        ImGui::TextUnformatted(label.c_str());
+        ImGui::SameLine(move_w);
+        ImGui::TextWrapped("%s", what.c_str());
+        ImGui::PopID();
+    }
+
+    // Who saw the turning point coming first: the engines that played, the analyses.
+    const auto turning = std::find_if(moments.begin(), moments.end(),
+                                      [](const auto& m) { return m.kind == KeyMoment::Kind::TurningPoint; });
+    if (turning != moments.end()) {
+        const int sign = turning->after > turning->before ? 1 : -1;
+        std::vector<GraphAnalysis> analyses;
+        for (const auto& r : b.reviews) analyses.push_back({r.engine, "", 0, &r});
+        const auto graph = buildGameGraph(main, b.chess960, GraphChart::Eval, analyses, b.judged);
+        std::vector<std::pair<int, std::string>> seen;
+        for (const auto& c : graph.players)
+            if (!c.x.empty()) seen.emplace_back(sawItAt(c, turning->ply, sign), c.name);
+        for (const auto& c : graph.analyses)
+            seen.emplace_back(sawItAt(c, turning->ply, sign), trf("{} (analysis)", c.name));
+        std::stable_sort(seen.begin(), seen.end(), [](const auto& x, const auto& y) {
+            return (x.first < 0 ? 1 << 20 : x.first) < (y.first < 0 ? 1 << 20 : y.first);
+        });
+        std::string text;
+        for (const auto& [ply, who] : seen) {
+            const auto at = ply < 0    ? std::string(TR("never"))
+                            : ply == 0 ? std::string(TR("at the start"))
+                                       : boardMoveLabel(ply);
+            text += (text.empty() ? "" : " · ") + trf("{} at {}", who, at);
+        }
+        ImGui::Spacing();
+        ImGui::TextDisabled("%s", TR("WHO SAW IT FIRST"));
+        ImGui::TextWrapped("%s", text.c_str());
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("For each engine, the first position, from 12 plies before the turning point, "
+                                       "where it gave the side that gains a pawn or more."));
+        }
+    }
+
+    // The game with its analysis, to the clipboard; the review for a forum.
+    ImGui::Spacing();
+    if (ImGui::Button(TR("Copy PGN with the analysis")))
+        ImGui::SetClipboardText(pgnWithAnalysis(b.tree, b.chess960, review, b.judged).c_str());
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("The game as PGN with the analysis written in: each position's evaluation "
+                                   "([%eval]), the judgements as NAGs, the line the analysis preferred after a marked "
+                                   "move."));
+    }
+    ImGui::SameLine();
+    if (ImGui::Button(TR("Copy as BBCode"))) {
+        std::string out = fmt::format("[b]{} – {}[/b] {}\n", name_of(0), name_of(1), main.result);
+        out += trf("Analysed by {}, {} per position.", review.engine, ui::formatClock(review.movetime_ms)) + "\n";
+        for (int side = 0; side < 2; ++side) {
+            const auto& st = stats[static_cast<std::size_t>(side)];
+            out += fmt::format("[b]{}[/b]: {} {} · ?! {} · ? {} · ?? {} · {} {}\n", name_of(side), TR("accuracy"),
+                               percent(st.accuracy), st.judgements[0], st.judgements[1], st.judgements[2],
+                               TR("average loss"), st.average_loss ? fmt::format("{:.0f}", *st.average_loss) : "–");
+        }
+        for (const auto& m : moments) {
+            if (m.kind != KeyMoment::Kind::TurningPoint && m.kind != KeyMoment::Kind::Judged) continue;
+            out += fmt::format("{}{} ({} → {})\n", boardMoveLabel(m.ply), judgementMark(m.judgement), pawns(m.before),
+                               pawns(m.after));
+        }
+        ImGui::SetClipboardText(out.c_str());
+    }
+    ui::topic(guide::topics::GameAnalysis);
 }
 
 std::string App::judgementTip(int ply, const MoveReview& judged) const {

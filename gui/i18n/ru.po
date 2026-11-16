@@ -416,6 +416,9 @@ msgstr "Около {}; одновременных партий: {}"
 msgid "About {} {}"
 msgstr "Примерно {} {}"
 
+msgid "Accuracy by each analysis: {}"
+msgstr "Точность по каждому анализу: {}"
+
 msgid "Add"
 msgstr "Добавить"
 
@@ -593,11 +596,17 @@ msgstr "Анализировать"
 msgid "Analyse the game"
 msgstr "Анализировать партию"
 
+msgid "Analyse the game (G) to review it: each side's accuracy, its mistakes, the key moments, and who saw them coming."
+msgstr "Проанализируйте партию (G) для разбора: точность каждой стороны, её ошибки, ключевые моменты и кто их предвидел."
+
 msgid "Analyse the game followed"
 msgstr "Анализировать отслеживаемую партию"
 
 msgid "Analyse the game shown"
 msgstr "Анализировать показанную партию"
+
+msgid "Analysed by {}, {} per position."
+msgstr "Проанализирована {}, {} на позицию."
 
 msgid "Analysis"
 msgstr "Анализ"
@@ -701,8 +710,14 @@ msgstr "Автоматическая параллельность"
 msgid "Average"
 msgstr "Среднее"
 
+msgid "Average depth"
+msgstr "Средняя глубина"
+
 msgid "Average length of the games, in moves."
 msgstr "Средняя длина партий в ходах."
+
+msgid "Average loss"
+msgstr "Средняя потеря"
 
 msgid "Avg NPS"
 msgstr "Средн. NPS"
@@ -757,6 +772,9 @@ msgstr "Было"
 
 msgid "Being built from {}"
 msgstr "Строится из {}"
+
+msgid "Best {}."
+msgstr "Лучше {}."
 
 msgid "Best: {} ({})"
 msgstr "Лучший: {} ({})"
@@ -1306,6 +1324,12 @@ msgstr "Копировать FEN"
 
 msgid "Copy PGN"
 msgstr "Копировать PGN"
+
+msgid "Copy PGN with the analysis"
+msgstr "Копировать PGN с анализом"
+
+msgid "Copy as BBCode"
+msgstr "Копировать как BBCode"
 
 msgid "Copy the variation"
 msgstr "Копировать вариант"
@@ -1952,6 +1976,9 @@ msgstr "Для партии, которую программа не смогла
 msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
 msgstr "Для партии, которую программа не завершила бы правильно: зависание, которое она не замечает, выигранный эндшпиль, в котором движки ходят по кругу.\nДвижок, чей ход, останавливается (он запустится заново к своей следующей партии), и партия засчитывается с этим результатом: Termination \"adjudicated by the operator\" при экспорте, причина в комментарии.\nРезультат можно потом изменить на вкладке «Партии»."
 
+msgid "For each engine, the first position, from 12 plies before the turning point, where it gave the side that gains a pawn or more."
+msgstr "Для каждого движка — первая позиция, начиная за 12 полуходов до перелома, где он давал выигрывающей стороне пешку или больше."
+
 msgid "For each path: the program is there, can be run, and answers uci (xboard for a WinBoard engine) within 10 seconds; and whether it is the same build as this computer's (their SHA-256)."
 msgstr "Для каждого пути: программа на месте, запускается и отвечает на uci (xboard для движка WinBoard) за 10 секунд; и та же ли это сборка, что на этом компьютере (их SHA-256)."
 
@@ -2444,6 +2471,9 @@ msgstr "Его рабочая область: турнирная таблица,
 msgid "Judge the moves with it"
 msgstr "Оценивать ходы по нему"
 
+msgid "KEY MOMENTS"
+msgstr "КЛЮЧЕВЫЕ МОМЕНТЫ"
+
 msgid "Keep"
 msgstr "Оставить"
 
@@ -2890,6 +2920,9 @@ msgstr "Нет матча"
 
 msgid "No match yet. Choose two engines, then click Start."
 msgstr "Матча пока нет. Выберите два движка и нажмите «Запустить»."
+
+msgid "No mistake: the game was lost little by little, or not at all."
+msgstr "Ошибок нет: партия проиграна понемногу или не проиграна вовсе."
 
 msgid "No more engines marked \"Uses a GPU\" (on their card) play at once than there are GPUs, in a tournament and across tournaments: two games never share a GPU without you knowing."
 msgstr "Одновременно играет не больше движков с отметкой «Использует GPU» (на их карточке), чем есть GPU, в одном турнире и между турнирами: две партии никогда не делят GPU без вашего ведома."
@@ -3803,6 +3836,9 @@ msgstr "Вернуть"
 msgid "Revert to {}"
 msgstr "Вернуться к {}"
 
+msgid "Review"
+msgstr "Разбор"
+
 msgid "Right click: change it, or take it back."
 msgstr "Правый щелчок: изменить или вернуть."
 
@@ -3886,6 +3922,9 @@ msgstr "SPRT без регрессии [-5, 0]"
 
 msgid "SSH agent"
 msgstr "Агент SSH"
+
+msgid "Same move as the analysis"
+msgstr "Тот же ход, что у анализа"
 
 msgid "Same number of games"
 msgstr "Число партий не меняется"
@@ -4583,6 +4622,9 @@ msgstr "Глубина каждого хода, с seldepth."
 msgid "The directories are this computer's: no profile holds them."
 msgstr "Папки принадлежат этому компьютеру: ни один профиль их не содержит."
 
+msgid "The endgame starts."
+msgstr "Начинается эндшпиль."
+
 msgid "The engine does not answer isready."
 msgstr "Движок не отвечает на isready."
 
@@ -4621,6 +4663,9 @@ msgstr "Движки расходятся в оценке"
 
 msgid "The engines disagree: their evaluations differ by this much for 3 moves each in a row.\nAn evaluation swings: an engine's evaluation changes by this much from one of its moves to the next.\nLost after a winning score: the loser thought it was this much better.\nA game opens at that moment."
 msgstr "Движки расходятся в оценке: их оценки отличаются на эту величину 3 хода подряд у каждого.\nРезкий скачок оценки: оценка движка меняется на эту величину от одного его хода к следующему.\nПроигрыш после выигрышной оценки: проигравший считал, что у него перевес на эту величину.\nПартия открывается на этом моменте."
+
+msgid "The engines disagreed: {} against {}."
+msgstr "Движки расходились: {} против {}."
 
 msgid "The engines on machines cannot be started: {}"
 msgstr "Движки на машинах не удаётся запустить: {}"
@@ -4675,6 +4720,9 @@ msgstr "Папки {} больше нет."
 
 msgid "The folder {} is not there."
 msgstr "Папки {} нет."
+
+msgid "The game as PGN with the analysis written in: each position's evaluation ([%eval]), the judgements as NAGs, the line the analysis preferred after a marked move."
+msgstr "Партия в PGN с вписанным анализом: оценка каждой позиции ([%eval]), оценки ходов как NAG, вариант, который предпочитал анализ после отмеченного хода."
 
 msgid "The game being played ends without a result."
 msgstr "Текущая партия заканчивается без результата."
@@ -5033,6 +5081,9 @@ msgstr "Системе не удалось открыть:"
 msgid "The tablebase adjudication's Max pieces, in this tournament's Adjudication section."
 msgstr "«Макс. фигур» присуждения по таблицам, в разделе «Присуждение результата» этого турнира."
 
+msgid "The tablebases know the result from here."
+msgstr "Отсюда таблицы знают результат."
+
 msgid "The teams made again from the list: its upper half against its lower half."
 msgstr "Команды заново из списка: верхняя половина против нижней."
 
@@ -5282,6 +5333,9 @@ msgstr "Фора по времени: его доля контроля врем�
 msgid "Time per move"
 msgstr "Время на ход"
 
+msgid "Time used"
+msgstr "Затрачено времени"
+
 msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
 msgstr "Чтобы хранить всё рядом с программой (на USB-накопителе, в папке, которую копируют между компьютерами), положите рядом с ней пустой файл с именем «portable»: профилем станет папка «data» рядом с ней. Скопируйте туда файлы этой папки, чтобы сохранить их."
 
@@ -5356,6 +5410,9 @@ msgstr "Выключить звуки ходов"
 
 msgid "Turn the move sounds on"
 msgstr "Включить звуки ходов"
+
+msgid "Turning point: {} → {}."
+msgstr "Перелом: {} → {}."
 
 msgid "Turns them into finished tournaments of the list."
 msgstr "Превращает их в завершённые турниры списка."
@@ -5479,6 +5536,9 @@ msgstr "В {:.0f} · Н {:.0f} · П {:.0f} %"
 
 msgid "WDL"
 msgstr "В/Н/П"
+
+msgid "WHO SAW IT FIRST"
+msgstr "КТО УВИДЕЛ ПЕРВЫМ"
 
 msgid "Waiting for the book of {}…"
 msgstr "Ожидание книги {}…"
@@ -5771,6 +5831,9 @@ msgstr[2] "около {} партий"
 msgid "accepted: {:.1f} %"
 msgstr "принята: {:.1f} %"
 
+msgid "accuracy"
+msgstr "точность"
+
 msgid "adjudication with tablebases"
 msgstr "присуждение по таблицам"
 
@@ -5804,8 +5867,14 @@ msgstr[2] "не более {} партий"
 msgid "at most {} moves"
 msgstr "не более {} ходов"
 
+msgid "at the start"
+msgstr "с самого начала"
+
 msgid "automatic"
 msgstr "автоматически"
+
+msgid "average loss"
+msgstr "средняя потеря"
 
 msgid "bars: the analyses apart"
 msgstr "столбцы: расхождение анализов"
@@ -6056,6 +6125,9 @@ msgstr "судья"
 msgid "length unknown"
 msgstr "длительность неизвестна"
 
+msgid "lichess's accuracy: each move's from the winning chances it lost, the moves of the game's sharp moments weighing more."
+msgstr "Точность lichess: точность каждого хода по потерянным шансам на выигрыш; ходы острых моментов партии весят больше."
+
 msgid "lines starting with %, ignored"
 msgstr "строки, начинающиеся с %, пропущены"
 
@@ -6100,6 +6172,9 @@ msgstr[2] "ходы, сыгранные в {} партиях и более"
 
 msgid "nElo of A (95% CI)"
 msgstr "nElo A (ДИ 95%)"
+
+msgid "never"
+msgstr "никогда"
 
 msgid "never tested: test its connection in Settings > Machines"
 msgstr "ни разу не проверялась: проверьте её подключение в разделе Параметры > Машины"
@@ -6431,6 +6506,9 @@ msgstr "{}  (дебютов: {})"
 msgid "{} % of the time"
 msgstr "{} % времени"
 
+msgid "{} (analysis)"
+msgstr "{} (анализ)"
+
 msgid "{} (preparing the book: {} %)"
 msgstr "{} (подготовка книги: {} %)"
 
@@ -6487,6 +6565,9 @@ msgstr "{} и {}"
 
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} требует перезапуска для каждой партии: отмечено «Перезапускать движок для каждой партии»."
+
+msgid "{} at {}"
+msgstr "{} на {}"
 
 msgid "{} blunder"
 msgid_plural "{} blunders"

@@ -412,6 +412,9 @@ msgstr "Etwa {} mit {} Partien gleichzeitig"
 msgid "About {} {}"
 msgstr "Etwa {} {}"
 
+msgid "Accuracy by each analysis: {}"
+msgstr "Genauigkeit nach jeder Analyse: {}"
+
 msgid "Add"
 msgstr "Hinzufügen"
 
@@ -587,11 +590,17 @@ msgstr "Analysieren"
 msgid "Analyse the game"
 msgstr "Partie analysieren"
 
+msgid "Analyse the game (G) to review it: each side's accuracy, its mistakes, the key moments, and who saw them coming."
+msgstr "Analysiere die Partie (G) für ihre Auswertung: die Genauigkeit jeder Seite, ihre Fehler, die Schlüsselmomente und wer sie kommen sah."
+
 msgid "Analyse the game followed"
 msgstr "Die verfolgte Partie analysieren"
 
 msgid "Analyse the game shown"
 msgstr "Die gezeigte Partie analysieren"
+
+msgid "Analysed by {}, {} per position."
+msgstr "Analysiert von {}, {} pro Stellung."
 
 msgid "Analysis"
 msgstr "Analyse"
@@ -695,8 +704,14 @@ msgstr "Automatische Parallelität"
 msgid "Average"
 msgstr "Durchschnitt"
 
+msgid "Average depth"
+msgstr "Mittlere Tiefe"
+
 msgid "Average length of the games, in moves."
 msgstr "Durchschnittliche Länge der Partien, in Zügen."
+
+msgid "Average loss"
+msgstr "Mittlerer Verlust"
 
 msgid "Avg NPS"
 msgstr "Ø NPS"
@@ -751,6 +766,9 @@ msgstr "Vorher"
 
 msgid "Being built from {}"
 msgstr "Wird erstellt aus {}"
+
+msgid "Best {}."
+msgstr "Am besten {}."
 
 msgid "Best: {} ({})"
 msgstr "Bester Zug: {} ({})"
@@ -1300,6 +1318,12 @@ msgstr "FEN kopieren"
 
 msgid "Copy PGN"
 msgstr "PGN kopieren"
+
+msgid "Copy PGN with the analysis"
+msgstr "PGN mit der Analyse kopieren"
+
+msgid "Copy as BBCode"
+msgstr "Als BBCode kopieren"
 
 msgid "Copy the variation"
 msgstr "Variante kopieren"
@@ -1946,6 +1970,9 @@ msgstr "Für eine Partie, die das Programm nicht richtig entscheiden konnte: ein
 msgid "For a game the program would not end well: a hang it does not catch, a won ending the engines keep shuffling.\nThe engine on move is stopped (it starts again for its next game), and the game counts with this result: Termination \"adjudicated by the operator\" in the exports, the reason in a comment.\nIts result can be changed afterwards in the Games tab."
 msgstr "Für eine Partie, die das Programm nicht richtig beenden würde: ein Hänger, den es nicht erkennt, ein gewonnenes Endspiel, in dem die Engines hin und her ziehen.\nDie Engine am Zug wird gestoppt (sie startet für ihre nächste Partie neu), und die Partie zählt mit diesem Ergebnis: Termination \"adjudicated by the operator\" in den Exporten, der Grund in einem Kommentar.\nIhr Ergebnis lässt sich danach im Reiter Partien ändern."
 
+msgid "For each engine, the first position, from 12 plies before the turning point, where it gave the side that gains a pawn or more."
+msgstr "Für jede Engine die erste Stellung ab 12 Halbzügen vor dem Wendepunkt, in der sie der gewinnenden Seite einen Bauern oder mehr gab."
+
 msgid "For each path: the program is there, can be run, and answers uci (xboard for a WinBoard engine) within 10 seconds; and whether it is the same build as this computer's (their SHA-256)."
 msgstr "Für jeden Pfad: das Programm ist da, lässt sich starten und antwortet innerhalb von 10 Sekunden auf uci (xboard für eine WinBoard-Engine); und ob es derselbe Build wie der dieses Computers ist (ihr SHA-256)."
 
@@ -2437,6 +2464,9 @@ msgstr "Sein Arbeitsbereich: Tabelle, laufende Partien, Spielplan"
 msgid "Judge the moves with it"
 msgstr "Die Züge damit beurteilen"
 
+msgid "KEY MOMENTS"
+msgstr "SCHLÜSSELMOMENTE"
+
 msgid "Keep"
 msgstr "Behalten"
 
@@ -2882,6 +2912,9 @@ msgstr "Kein Match"
 
 msgid "No match yet. Choose two engines, then click Start."
 msgstr "Noch kein Match. Wähle zwei Engines und klicke dann auf Start."
+
+msgid "No mistake: the game was lost little by little, or not at all."
+msgstr "Kein Fehler: Die Partie ging nach und nach verloren, oder gar nicht."
 
 msgid "No more engines marked \"Uses a GPU\" (on their card) play at once than there are GPUs, in a tournament and across tournaments: two games never share a GPU without you knowing."
 msgstr "Nicht mehr als „Nutzt eine GPU“ markierte Engines (auf ihrer Karte) spielen gleichzeitig, als es GPUs gibt, in einem Turnier und über Turniere hinweg: Zwei Partien teilen sich nie eine GPU, ohne dass du es weißt."
@@ -3789,6 +3822,9 @@ msgstr "Zurücksetzen"
 msgid "Revert to {}"
 msgstr "Zurück zu {}"
 
+msgid "Review"
+msgstr "Auswertung"
+
 msgid "Right click: change it, or take it back."
 msgstr "Rechtsklick: ändern oder zurücknehmen."
 
@@ -3872,6 +3908,9 @@ msgstr "SPRT keine Verschlechterung [-5, 0]"
 
 msgid "SSH agent"
 msgstr "SSH-Agent"
+
+msgid "Same move as the analysis"
+msgstr "Gleicher Zug wie die Analyse"
 
 msgid "Same number of games"
 msgstr "Gleiche Anzahl Partien"
@@ -4560,6 +4599,9 @@ msgstr "Die Tiefe jedes Zuges, mit der Seldepth."
 msgid "The directories are this computer's: no profile holds them."
 msgstr "Die Verzeichnisse gehören zu diesem Computer: kein Profil enthält sie."
 
+msgid "The endgame starts."
+msgstr "Das Endspiel beginnt."
+
 msgid "The engine does not answer isready."
 msgstr "Die Engine antwortet nicht auf isready."
 
@@ -4598,6 +4640,9 @@ msgstr "Die Engines sind uneins"
 
 msgid "The engines disagree: their evaluations differ by this much for 3 moves each in a row.\nAn evaluation swings: an engine's evaluation changes by this much from one of its moves to the next.\nLost after a winning score: the loser thought it was this much better.\nA game opens at that moment."
 msgstr "Die Engines sind uneins: ihre Bewertungen unterscheiden sich so stark, 3 Züge jede in Folge.\nEine Bewertung kippt: die Bewertung einer Engine ändert sich so stark von einem ihrer Züge zum nächsten.\nVerloren nach Gewinnstellung: der Verlierer glaubte, so viel besser zu stehen.\nEine Partie öffnet sich an dieser Stelle."
+
+msgid "The engines disagreed: {} against {}."
+msgstr "Die Engines waren uneins: {} gegen {}."
 
 msgid "The engines on machines cannot be started: {}"
 msgstr "Die Engines auf Maschinen können nicht gestartet werden: {}"
@@ -4652,6 +4697,9 @@ msgstr "Der Ordner {} ist nicht mehr da."
 
 msgid "The folder {} is not there."
 msgstr "Der Ordner {} ist nicht da."
+
+msgid "The game as PGN with the analysis written in: each position's evaluation ([%eval]), the judgements as NAGs, the line the analysis preferred after a marked move."
+msgstr "Die Partie als PGN mit eingetragener Analyse: die Bewertung jeder Stellung ([%eval]), die Urteile als NAGs, die von der Analyse bevorzugte Variante nach einem markierten Zug."
 
 msgid "The game being played ends without a result."
 msgstr "Die laufende Partie endet ohne Ergebnis."
@@ -5008,6 +5056,9 @@ msgstr "Das System konnte nicht öffnen:"
 msgid "The tablebase adjudication's Max pieces, in this tournament's Adjudication section."
 msgstr "Max. Steine der Tablebase-Abschätzung, im Abschnitt Abschätzung dieses Turniers."
 
+msgid "The tablebases know the result from here."
+msgstr "Ab hier kennen die Endspieldatenbanken das Ergebnis."
+
 msgid "The teams made again from the list: its upper half against its lower half."
 msgstr "Die Mannschaften neu aus der Liste gebildet: ihre obere Hälfte gegen ihre untere."
 
@@ -5256,6 +5307,9 @@ msgstr "Zeitvorgabe: ihr Anteil an der Bedenkzeit, 100 = dieselbe Uhr wie die an
 msgid "Time per move"
 msgstr "Zeit pro Zug"
 
+msgid "Time used"
+msgstr "Verbrauchte Zeit"
+
 msgid "To keep everything beside the program instead (a USB stick, a folder copied between machines), put an empty file named \"portable\" beside it: the profile is then the folder \"data\" beside it. Copy this folder's files there to keep them."
 msgstr "Um stattdessen alles neben dem Programm zu behalten (ein USB-Stick, ein Ordner, der zwischen Rechnern kopiert wird), lege eine leere Datei namens „portable“ daneben: Das Profil ist dann der Ordner „data“ daneben. Kopiere die Dateien dieses Ordners dorthin, um sie zu behalten."
 
@@ -5330,6 +5384,9 @@ msgstr "Zugtöne ausschalten"
 
 msgid "Turn the move sounds on"
 msgstr "Zugtöne einschalten"
+
+msgid "Turning point: {} → {}."
+msgstr "Wendepunkt: {} → {}."
 
 msgid "Turns them into finished tournaments of the list."
 msgstr "Macht sie zu beendeten Turnieren der Liste."
@@ -5451,6 +5508,9 @@ msgstr "S {:.0f} · R {:.0f} · N {:.0f} %"
 
 msgid "WDL"
 msgstr "S/R/N"
+
+msgid "WHO SAW IT FIRST"
+msgstr "WER ES ZUERST SAH"
 
 msgid "Waiting for the book of {}…"
 msgstr "Warte auf das Buch von {}…"
@@ -5741,6 +5801,9 @@ msgstr[1] "etwa {} Partien"
 msgid "accepted: {:.1f} %"
 msgstr "angenommen: {:.1f} %"
 
+msgid "accuracy"
+msgstr "Genauigkeit"
+
 msgid "adjudication with tablebases"
 msgstr "Abschätzung per Tablebases"
 
@@ -5773,8 +5836,14 @@ msgstr[1] "höchstens {} Partien"
 msgid "at most {} moves"
 msgstr "höchstens {} Züge"
 
+msgid "at the start"
+msgstr "von Anfang an"
+
 msgid "automatic"
 msgstr "automatisch"
+
+msgid "average loss"
+msgstr "mittlerer Verlust"
 
 msgid "bars: the analyses apart"
 msgstr "Balken: Abstand der Analysen"
@@ -6024,6 +6093,9 @@ msgstr "Richter"
 msgid "length unknown"
 msgstr "Dauer unbekannt"
 
+msgid "lichess's accuracy: each move's from the winning chances it lost, the moves of the game's sharp moments weighing more."
+msgstr "Die Genauigkeit von lichess: die jedes Zuges aus den verlorenen Gewinnchancen, die Züge der scharfen Momente zählen mehr."
+
 msgid "lines starting with %, ignored"
 msgstr "Zeilen, die mit % beginnen, ignoriert"
 
@@ -6067,6 +6139,9 @@ msgstr[1] "Züge von {} Partien oder mehr"
 
 msgid "nElo of A (95% CI)"
 msgstr "nElo von A (95 % KI)"
+
+msgid "never"
+msgstr "nie"
 
 msgid "never tested: test its connection in Settings > Machines"
 msgstr "nie getestet: Teste ihre Verbindung in Einstellungen > Maschinen"
@@ -6394,6 +6469,9 @@ msgstr "{}  ({} Eröffnungen)"
 msgid "{} % of the time"
 msgstr "{} % der Zeit"
 
+msgid "{} (analysis)"
+msgstr "{} (Analyse)"
+
 msgid "{} (preparing the book: {} %)"
 msgstr "{} (Buch wird vorbereitet: {} %)"
 
@@ -6449,6 +6527,9 @@ msgstr "{} und {}"
 
 msgid "{} asks to be started again for every game: Restart the engine for every game is ticked."
 msgstr "{} möchte für jede Partie neu gestartet werden: „Die Engine für jede Partie neu starten“ ist angehakt."
+
+msgid "{} at {}"
+msgstr "{} bei {}"
 
 msgid "{} blunder"
 msgid_plural "{} blunders"

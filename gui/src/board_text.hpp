@@ -3,6 +3,7 @@
 // The texts of the Board page: what a pasted text holds (a FEN, a PGN, a bare list of moves), a game read from a PGN,
 // what is wrong with a position, and a game written back as PGN.
 
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -45,6 +46,8 @@ struct BoardText {
 [[nodiscard]] std::string gamePgn(const ReplayGame& game, bool chess960);
 // The same with its variations, each in brackets after the move it replaces.
 [[nodiscard]] std::string gamePgn(const GameTree& tree, bool chess960);
+// The same, `annotate` adding what it returns after each move of the game (its ply: the position after it).
+[[nodiscard]] std::string gamePgn(const GameTree& tree, bool chess960, const std::function<std::string(int)>& annotate);
 // The variations of a PGN game whose main line is `main` (as readPgnGame() read it): those it can play, each from
 // the position it starts in. Comments, numbers, annotations and results are skipped.
 [[nodiscard]] std::vector<Variation> readVariations(const std::string& pgn, const ReplayGame& main, bool chess960);
