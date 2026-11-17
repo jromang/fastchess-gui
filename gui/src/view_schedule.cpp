@@ -541,6 +541,9 @@ void App::drawEditPanel() {
             if (edit.games.empty()) ready = false;
             break;
         }
+        case tour::Edit::Kind::SetResult:  // from the Games tab and the live boards, never from this panel
+            ready = false;
+            break;
     }
 
     // What it would change, computed by making the change on a copy.

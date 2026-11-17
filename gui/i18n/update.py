@@ -23,7 +23,8 @@ LITS = r'((?:"(?:[^"\\]|\\.)*"\s*)+)'  # "a" "b": clang-format splits long liter
 
 
 def joined(lits):
-    return ''.join(re.findall(STR, lits))
+    # "?\?" in the sources is "??" without a trigraph ("??)" is one).
+    return ''.join(re.findall(STR, lits)).replace('\\?', '?')
 
 
 def extract():

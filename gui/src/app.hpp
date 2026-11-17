@@ -343,7 +343,7 @@ class App {
     void handleBigScreenKeys();  // F11, Esc, the arrows, + and -; the mouse moving shows the controls
     void drawBigScreen();        // the main window's, instead of the pages
     void drawBigGame(BigView& big, bool main_window);
-    void drawBigControls(BigView& big, bool main_window, ImVec2 origin, ImVec2 size, int slots);
+    void drawBigControls(BigView& big, bool main_window, ImVec2 origin, int slots);
     void drawGames();
     void drawOpenings();
     void refreshOpenings();
@@ -1435,7 +1435,7 @@ class App {
     void forgetPassphrases();  // wiped
     void pollMachines();
     void drawMachineSettings(float label);
-    void drawMachineCard(std::size_t index, float label);
+    void drawMachineCard(std::size_t index);
     void drawMachineEngines(Machine& machine, MachineActivity& activity);
     void drawMachineFiles(Machine& machine, MachineActivity& activity);
     void drawEngineCopy(Machine& machine, MachineActivity& activity);

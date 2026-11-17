@@ -718,7 +718,8 @@ refresh();setInterval(refresh,1000);
 // The pieces, the GUI's default set, as images in the page's styles: a class per piece ("pwK"), its picture in --pc.
 std::string pieceStyles() {
     static constexpr const char* names[] = {"wK", "wQ", "wR", "wB", "wN", "wP", "bK", "bQ", "bR", "bB", "bN", "bP"};
-    const auto& svgs                     = assets::pieceSets().front().svgs;
+    const auto sets                      = assets::pieceSets();
+    const auto& svgs                     = sets.front().svgs;
     std::string css;
     for (std::size_t i = 0; i < svgs.size(); ++i) {
         css += std::string(".p") + names[i] + "{--pc:url(\"data:image/svg+xml,";

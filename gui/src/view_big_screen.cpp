@@ -281,14 +281,14 @@ void App::drawBigGame(BigView& big, bool main_window) {
     };
     if (slots == 0 || big.slot >= static_cast<int>(slot_views_.size())) {
         centered(TR("No game is being played."));
-        drawBigControls(big, main_window, origin, size, slots);
+        drawBigControls(big, main_window, origin, slots);
         return;
     }
     auto& v        = slot_views_[static_cast<std::size_t>(big.slot)];
     const auto& st = v.state;
     if (!st.has_game) {
         centered(TR("Waiting for the next game…"));
-        drawBigControls(big, main_window, origin, size, slots);
+        drawBigControls(big, main_window, origin, slots);
         return;
     }
 
@@ -460,10 +460,10 @@ void App::drawBigGame(BigView& big, bool main_window) {
         middle(ImVec2(x, board_at.y + player_h() + m), width, bottom_y - m);
     }
 
-    drawBigControls(big, main_window, origin, size, slots);
+    drawBigControls(big, main_window, origin, slots);
 }
 
-void App::drawBigControls(BigView& big, bool main_window, ImVec2 origin, ImVec2 size, int slots) {
+void App::drawBigControls(BigView& big, bool main_window, ImVec2 origin, int slots) {
     // Shown for a few seconds once the mouse moved, and while it is over them; the pointer hidden with them.
     const bool recent = Clock::now() - big_.moved < CONTROLS_FOR;
     if (!recent && !big.controls_hovered && !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId)) {

@@ -293,7 +293,7 @@ void App::drawMachineSettings(float label) {
     }
     ImGui::SameLine();
     if (ImGui::Button(TR("Add a machine"))) addMachine();
-    for (std::size_t i = 0; i < machines_.size(); ++i) drawMachineCard(i, label);
+    for (std::size_t i = 0; i < machines_.size(); ++i) drawMachineCard(i);
     // A copy offered from elsewhere (a start refused, the palette): its panel in sight.
     if (copy_panel_y_ >= 0) {
         ImGui::SetScrollFromPosY(copy_panel_y_ - ImGui::GetWindowPos().y, 0.25f);
@@ -302,7 +302,7 @@ void App::drawMachineSettings(float label) {
     ImGui::PopID();
 }
 
-void App::drawMachineCard(std::size_t index, float label) {
+void App::drawMachineCard(std::size_t index) {
     auto& m         = machines_[index];
     auto& activity  = machine_activity_[m.id];
     const bool busy = activity.job != nullptr;

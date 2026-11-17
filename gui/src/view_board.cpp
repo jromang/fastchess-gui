@@ -104,6 +104,12 @@ void playerDot(ImDrawList* dl, ImVec2 c, float r, chess::Color side) {
     dl->AddCircle(c, r, edge, 0, px(1.5f));
 }
 
+// chess::Board has virtual functions but no virtual destructor, which clang warns about when an optional destroys
+// one; a final class of it is destroyed knowing its type.
+struct LineBoard final : chess::Board {
+    explicit LineBoard(const chess::Board& board) : chess::Board(board) {}
+};
+
 }  // namespace
 
 void App::loadBoardSettings() {
@@ -1265,12 +1271,12 @@ void App::drawBoardColumn(float size) {
     }
 
     // A line shown on the board instead of the game: its last position, framed.
-    std::optional<chess::Board> line_board;
+    std::optional<LineBoard> line_board;
     if (b.preview) {
         auto at = boardAt(b.game, b.chess960, std::clamp(b.preview->ply, 0, static_cast<int>(b.game.moves.size())));
         const auto moves = legalPrefix(at, b.preview->moves, b.preview->moves.size());
         for (const auto& mv : moves) at.makeMove(mv);
-        line_board       = at;
+        line_board.emplace(at);
         const float bar  = decor.eval_white;  // kept: the board does not move
         decor            = BoardDecor{};
         decor.flipped    = b.flip;
@@ -1278,7 +1284,7 @@ void App::drawBoardColumn(float size) {
         if (!moves.empty()) decor.last_move = moves.back();
         decor.frame = ui::ACCENT;
     }
-    const auto& shown = line_board ? *line_board : board;
+    const chess::Board& shown = line_board ? *line_board : board;
 
     const bool strips = boardStrips() && !line_board;
     std::vector<std::optional<int64_t>> clocks;
@@ -1376,13 +1382,13 @@ void App::drawBoardColumn(float size) {
         if (ImGui::Button("< ?##prev_judged")) showBoardLine(-1, prev);
         ImGui::EndDisabled();
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-            ImGui::SetTooltip("%s", TR("Shift+N: the previous move the analysis marked (?!, ?, ??)."));
+            ImGui::SetTooltip("%s", TR("Shift+N: the previous move the analysis marked (?!, ?, ?\?)."));
         ImGui::SameLine(0, px(2));
         ImGui::BeginDisabled(next < 0);
         if (ImGui::Button("? >##next_judged")) showBoardLine(-1, next);
         ImGui::EndDisabled();
         if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-            ImGui::SetTooltip("%s", TR("N: the next move the analysis marked (?!, ?, ??)."));
+            ImGui::SetTooltip("%s", TR("N: the next move the analysis marked (?!, ?, ?\?)."));
         ImGui::SameLine();
     }
     if (ImGui::Button(TR("Copy FEN"))) ImGui::SetClipboardText(board.getFen().c_str());
@@ -2582,7 +2588,7 @@ void App::drawGameReview() {
         const auto how = review.depth > 0 ? trf("depth {}", review.depth)
                                           : trf("{:g} s per move", static_cast<double>(review.movetime_ms) / 1000.0);
         ImGui::SetTooltip("%s", trf("By {}, {}. Losses of 10, 20 and 30 % of the winning chances are an "
-                                    "inaccuracy (?!), a mistake (?) and a blunder (??).",
+                                    "inaccuracy (?!), a mistake (?) and a blunder (?\?).",
                                     review.engine, how)
                                     .c_str());
     }

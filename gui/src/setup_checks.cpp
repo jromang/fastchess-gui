@@ -589,7 +589,8 @@ std::vector<Notice> remoteNotices(const MatchSetup& setup, const std::vector<Eng
             continue;
         }
         if (setup.machine == m->id) {
-            out.push_back({Notice::Level::Ok, trf("{} plays on {}, where the tournament runs", e->name, where)});
+            out.push_back(
+                {Notice::Level::Ok, trf("{} plays on {}, where the tournament runs", e->name, where), {}, {}});
             continue;
         }
         if (m->system.checked.empty()) {
@@ -615,9 +616,11 @@ std::vector<Notice> remoteNotices(const MatchSetup& setup, const std::vector<Eng
                            {setMarginFix(marginFor(rtt))}});
             continue;
         }
-        out.push_back({Notice::Level::Ok, rtt > 0 ? trf("{} plays on {} · round trip {:.1f} ms", e->name, where, rtt)
-                                                  : trf("{} plays on {} (Check measures the round trip)", e->name,
-                                                        where)});
+        out.push_back({Notice::Level::Ok,
+                       rtt > 0 ? trf("{} plays on {} · round trip {:.1f} ms", e->name, where, rtt)
+                               : trf("{} plays on {} (Check measures the round trip)", e->name, where),
+                       {},
+                       {}});
     }
     return out;
 }

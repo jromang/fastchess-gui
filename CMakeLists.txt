@@ -239,6 +239,15 @@ if(FCG_BUILD_GUI)
     # SOURCE_SUBDIR points nowhere for the header/source-only dependencies,
     # so MakeAvailable only downloads them.
     FetchContent_MakeAvailable(sdl3 imgui implot nanosvg stb inter lucide md4c)
+    # SDL's sources are not ours: the warnings a newer compiler finds in them (clang's unused-but-set-global) are left
+    # out of the build's output.
+    if(NOT MSVC)
+        foreach(sdl_target SDL3-static SDL_uclibc)
+            if(TARGET ${sdl_target})
+                target_compile_options(${sdl_target} PRIVATE -w)
+            endif()
+        endforeach()
+    endif()
 
     # The patches below are run by FetchContent once after the download, and again on the same sources whenever their
     # command changes, never otherwise: the command has the script's hash, so that a script changed is run again, and

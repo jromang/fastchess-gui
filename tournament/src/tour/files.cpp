@@ -263,7 +263,7 @@ std::string fileNameOf(std::string name) {
     const bool device = stem == "CON" || stem == "PRN" || stem == "AUX" || stem == "NUL" ||
                         (stem.size() == 4 && (stem.rfind("COM", 0) == 0 || stem.rfind("LPT", 0) == 0) &&
                          stem[3] >= '1' && stem[3] <= '9');
-    if (device) name.insert(0, "_");
+    if (device) name.insert(name.begin(), '_');
     return name;
 }
 

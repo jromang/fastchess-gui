@@ -246,7 +246,12 @@ void LichessRelay::offer(std::vector<LichessGame> live, std::vector<LichessGame>
 }
 
 HttpResult LichessRelay::Session::post(const std::string& path, const std::string& type, const std::string& body) {
-    return httpPost({settings_.base + path, settings_.token, type, body});
+    HttpRequest request;
+    request.url          = settings_.base + path;
+    request.token        = settings_.token;
+    request.content_type = type;
+    request.body         = body;
+    return httpPost(request);
 }
 
 void LichessRelay::Session::save() { writeJson(settings_.dir / "lichess.json", target_); }
