@@ -4083,6 +4083,9 @@ msgstr "设置 > 机器：连接到 {}，显示并信任其主机密钥，然后
 msgid "Settings > Machines: copies this computer's program of {} to {}, sets its path there and checks it."
 msgstr "设置 > 机器：将本机的 {} 程序复制到 {}，在那里设置其路径并检查。"
 
+msgid "Settings of its own"
+msgstr "自己的设置"
+
 msgid "Setup"
 msgstr "配置"
 
@@ -5149,6 +5152,9 @@ msgstr "锦标赛进程已不存在。"
 msgid "The tournament's process speaks another version of the program ({}): restart the window."
 msgstr "锦标赛进程使用的是另一版本的程序（{}）：请重新启动窗口。"
 
+msgid "The tournament's settings: {}"
+msgstr "锦标赛的设置：{}"
+
 msgid "The tournaments playing at once share the cores of the budget (Settings) by their weights, set on each card: one game's worth each first, then by weight, none above its own concurrency."
 msgstr "同时进行的锦标赛按各自的权重（在每张卡片上设置）分享预算（设置）中的核心：先每个一局，再按权重分配，均不超过其自身的并发数。"
 
@@ -5266,6 +5272,9 @@ msgstr "本锦标赛：其“运行于”，位于“并发”中。"
 
 msgid "This tournament: the time an engine may go over its clock before it loses on time (its time control's Margin)."
 msgstr "本锦标赛：引擎在超时判负前可超出其棋钟的时间（其时限的“余量”）。"
+
+msgid "Those of its first engine: the tournament was made by an older version, which did not record its own. Give the engine settings of its own if they are not the right ones."
+msgstr "取自它的第一个引擎：该锦标赛由旧版本创建，旧版本不记录锦标赛自己的设置。如果这些设置不对，请为引擎指定它自己的设置。"
 
 msgid "Those whose name starts with a dot."
 msgstr "名称以点开头的文件。"

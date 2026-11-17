@@ -72,6 +72,8 @@ void App::applyTournamentEdit(const tour::Edit& edit) {
         return;
     }
     result_set_game_ = ~uint64_t{0};
+    // The next engine added takes the tournament's settings again, unless told otherwise.
+    edit_own_settings_ = false;
     if (edit.kind == tour::Edit::Kind::SetResult && edit.games.size() == 1) {
         const auto number = uint64_t{edit.games[0].first} * 2 + edit.games[0].second;
         result_set_game_  = number;
@@ -443,10 +445,52 @@ void App::drawEditPanel() {
             ready = false;
             return;
         }
-        edit.engine = participantConfig(*it, spec);
+        edit.engine = participantConfig(*it, spec, edit_own_settings_ ? edit_own_ : ParticipantSetup{});
         edit.elo    = it->elo;
         edit.gpu    = it->gpu;
         edit.remote = remoteEngine(*it);
+    };
+    // The newcomer's settings: the tournament's, or its own as a participant's on the setup page.
+    const auto settingsChoice = [&] {
+        const auto d = tournamentDefaults(spec);
+        auto text    = limitText(d.limit);
+        if (d.hash > 0) text += " · " + trf("Hash {} MB", d.hash);
+        if (d.threads > 0) text += " · " + trn("{} thread", "{} threads", d.threads, d.threads);
+        ImGui::TextDisabled("%s", trf("The tournament's settings: {}", text).c_str());
+        if (!spec.defaults) {
+            ui::help(
+                TR("Those of its first engine: the tournament was made by an older version, which did not record "
+                   "its own. Give the engine settings of its own if they are not the right ones."));
+        }
+        ImGui::Checkbox(TR("Settings of its own"), &edit_own_settings_);
+        if (!edit_own_settings_) return;
+        auto& own           = edit_own_;
+        const float label_w = px(130), field_w = px(120);
+        const auto field = [&](const char* label, const char* id, int& value, int min, int max,
+                               const std::string& tip) {
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(label);
+            ImGui::SameLine(label_w);
+            ImGui::SetNextItemWidth(field_w);
+            if (ui::inputInt(id, &value)) value = std::clamp(value, min, max);
+            ui::help(tip.c_str());
+        };
+        const auto common = [](int value, const char* unit) {
+            return value > 0 ? trf("0 = the common setting: {}", fmt::format("{}{}", value, unit))
+                             : std::string(TR("0 = the common setting, or the engine's own."));
+        };
+        field(TR("Hash (MB)"), "##edit_hash", own.hash, 0, 1 << 20, common(d.hash, " MB"));
+        field(TR("Threads"), "##edit_threads", own.threads, 0, 1024, common(d.threads, ""));
+        if (d.limit.nodes > 0) {
+            int nodes = static_cast<int>(std::min<uint64_t>(own.nodes, INT32_MAX));
+            field(TR("Nodes"), "##edit_nodes", nodes, 0, INT32_MAX, trf("0 = the common value: {}", d.limit.nodes));
+            own.nodes = static_cast<uint64_t>(std::max(0, nodes));
+        } else if (d.limit.plies > 0) {
+            field(TR("Depth"), "##edit_depth", own.depth, 0, 200, trf("0 = the common value: {}", d.limit.plies));
+        } else {
+            field(TR("Time %"), "##edit_time", own.time_percent, 1, 1000,
+                  TR("Time odds: its share of the time control, 100 = the same clock as the others."));
+        }
     };
     // An active participant.
     const auto participantChoice = [&](const char* label) {
@@ -477,6 +521,7 @@ void App::drawEditPanel() {
                 break;
             }
             engineChoice(TR("Engine to add"));
+            settingsChoice();
             if (spec.format == tour::Format::TeamMatch) {
                 ImGui::AlignTextToFramePadding();
                 ImGui::TextUnformatted(TR("Team"));
@@ -494,6 +539,7 @@ void App::drawEditPanel() {
         case tour::Edit::Kind::ReplaceParticipant:
             participantChoice(TR("Engine to replace"));
             engineChoice(TR("Replaced by"));
+            settingsChoice();
             ImGui::TextDisabled("%s", TR("Its games stop counting and are played again by the new engine."));
             break;
         case tour::Edit::Kind::Withdraw:

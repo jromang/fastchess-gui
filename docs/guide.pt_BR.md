@@ -1420,7 +1420,7 @@ não inicia*, em *PGN e outros* da configuração, o para imediatamente em vez d
 esgotam.
 
 ### Alterar um torneio em andamento
-<!-- en: changing-a-running-tournament 10d21730 -->
+<!-- en: changing-a-running-tournament aebe63e2 -->
 
 O painel **Alterar o torneio** da aba *Calendário* funciona sem parar nada: as partidas em andamento continuam e
 nenhuma partida jogada é perdida. Cada alteração mostra o impacto antes de ser aplicada.
@@ -1433,6 +1433,12 @@ nenhuma partida jogada é perdida. Cada alteração mostra o impacto antes de se
 - **Jogar partidas de novo**: todas as partidas de um engine, ou as perdas por tempo e os crashes.
 - Clique direito numa partida (aqui, ou na aba *Partidas*): jogá-la de novo, anulá-la (sem repetição), ou definir o
   resultado dela.
+
+Um engine adicionado ou que entra como substituto joga com as configurações do torneio (seu controle de tempo, Hash e
+Threads, mostrados abaixo do engine), ou com *Configurações próprias*: Hash, Threads, parte do tempo (ou nós,
+profundidade), como as configurações próprias de um participante na página *Novo torneio*. Um torneio criado antes da
+0.6.6 não registrava suas configurações: as do seu primeiro engine fazem as vezes delas, e podiam ser as próprias desse
+engine.
 
 Num match por equipes, um engine adicionado entra na equipe escolhida e joga contra todos os engines da outra equipe;
 tabuleiro a tabuleiro, não é possível adicionar um engine (o tabuleiro dele não teria adversário): substitua um em

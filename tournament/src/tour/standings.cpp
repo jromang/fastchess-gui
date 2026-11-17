@@ -565,7 +565,7 @@ std::string forumDetails(const TournamentSpec& spec, const Table& table) {
 
     std::string out = FORMATS[static_cast<int>(spec.format)];
     if (spec.format != Format::Match) out += fmt::format(", {} engines", table.rows.size());
-    if (!spec.participants.empty()) out += ", " + timeControlText(spec.participants.front().engine.limit);
+    if (!spec.participants.empty()) out += ", " + timeControlText(spec.limit());
     out += fmt::format(", {} game{}", games, games == 1 ? "" : "s");
     if (const auto book = bookText(spec); !book.empty()) out += ", book " + book;
     if (spec.conditions.variant == fastchess::VariantType::FRC) out += ", Chess960";
@@ -629,7 +629,7 @@ std::string footerLine(const TournamentSpec& spec, const Table& table, std::opti
                               : fmt::format("{} games", games);
     out += fmt::format(", {:.0f}% draws", games ? 100.0 * draws / games : 0.0);
     if (!spec.participants.empty()) {
-        out += ", time control:" + timeControlText(spec.participants.front().engine.limit);
+        out += ", time control:" + timeControlText(spec.limit());
     }
     if (const auto book = bookText(spec); !book.empty()) out += ", book:" + book;
     if (!spec.name.empty()) out += ", event: " + spec.name;

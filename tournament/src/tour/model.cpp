@@ -159,6 +159,10 @@ void to_json(nlohmann::json& j, const TournamentSpec& s) {
         auto& forced = j["forced_options"] = nlohmann::json::object();
         for (const auto& [name, value] : s.forced_options) forced[name] = value;
     }
+    // Older versions do without it, as they did: no new version.
+    if (s.defaults) {
+        j["defaults"] = {{"limit", s.defaults->limit}, {"hash", s.defaults->hash}, {"threads", s.defaults->threads}};
+    }
 }
 
 void from_json(const nlohmann::json& j, TournamentSpec& s) {
@@ -201,6 +205,14 @@ void from_json(const nlohmann::json& j, TournamentSpec& s) {
     s.forced_options.clear();
     if (const auto it = j.find("forced_options"); it != j.end() && it->is_object()) {
         for (const auto& [name, value] : it->items()) s.forced_options.emplace_back(name, value.get<std::string>());
+    }
+    s.defaults.reset();
+    if (const auto it = j.find("defaults"); it != j.end() && it->is_object()) {
+        Defaults d;
+        if (const auto limit = it->find("limit"); limit != it->end()) limit->get_to(d.limit);
+        d.hash     = std::max(0, it->value("hash", 0));
+        d.threads  = std::max(0, it->value("threads", 0));
+        s.defaults = d;
     }
 
     // A file of the folder, nothing else: the games are written to it.

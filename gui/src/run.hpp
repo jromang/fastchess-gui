@@ -62,11 +62,19 @@ struct BuiltRun {
 // What the toolbar and the views show about a match, from its stored settings.
 [[nodiscard]] RunInfo runInfo(const tour::TournamentSpec& spec, const std::filesystem::path& dir);
 
-// An engine of the list as a new participant of `spec`: the tournament's time control (or nodes) and its common
-// Hash and Threads, taken from the first participant; SyzygyPath and OwnBook if the setup forced them (as
-// TournamentSpec::forced_options records), its own options otherwise.
+// "40/60+0.6", "1 s/move", "1000 nodes", "depth 12".
+[[nodiscard]] std::string limitText(const fastchess::Limit& limit);
+
+// The settings of `spec`'s participants without settings of their own: those it recorded, or, in a tournament of 0.6.5
+// or earlier, its first participant's (which may have had its own).
+[[nodiscard]] tour::Defaults tournamentDefaults(const tour::TournamentSpec& spec);
+
+// An engine of the list as a new participant of `spec`: the tournament's settings (tournamentDefaults()) unless `own`
+// gives its own Hash, Threads, share of the time, nodes or depth (0, 100 %: the tournament's); SyzygyPath and OwnBook
+// if the setup forced them (as TournamentSpec::forced_options records), its own options otherwise.
 [[nodiscard]] fastchess::EngineConfiguration participantConfig(const EngineEntry& entry,
-                                                               const tour::TournamentSpec& spec);
+                                                               const tour::TournamentSpec& spec,
+                                                               const ParticipantSetup& own = {});
 
 // Sets fastchess' global configuration to play `spec` (one tournament at a time, fastchess keeps it in globals).
 void configureFastchess(const tour::TournamentSpec& spec);

@@ -4099,6 +4099,9 @@ msgstr "Réglages > Machines : se connecte à {}, montre sa clé d'hôte et l'ap
 msgid "Settings > Machines: copies this computer's program of {} to {}, sets its path there and checks it."
 msgstr "Réglages > Machines : copie le programme de {} de cet ordinateur sur {}, règle son chemin là-bas et le vérifie."
 
+msgid "Settings of its own"
+msgstr "Réglages propres"
+
 msgid "Setup"
 msgstr "Configuration"
 
@@ -5175,6 +5178,9 @@ msgstr "Le processus du tournoi n'est plus là."
 msgid "The tournament's process speaks another version of the program ({}): restart the window."
 msgstr "Le processus du tournoi parle une autre version du programme ({}) : redémarre la fenêtre."
 
+msgid "The tournament's settings: {}"
+msgstr "Réglages du tournoi : {}"
+
 msgid "The tournaments playing at once share the cores of the budget (Settings) by their weights, set on each card: one game's worth each first, then by weight, none above its own concurrency."
 msgstr "Les tournois qui jouent en même temps se partagent les cœurs du budget (Réglages) selon leurs poids, réglés sur chaque carte : d'abord une partie chacun, puis selon le poids, aucun au-delà de sa propre concurrence."
 
@@ -5293,6 +5299,9 @@ msgstr "Ce tournoi : son « Jouer sur », dans Parallélisme."
 
 msgid "This tournament: the time an engine may go over its clock before it loses on time (its time control's Margin)."
 msgstr "Ce tournoi : le temps qu'un moteur peut prendre au-delà de sa pendule avant de perdre au temps (la Marge de sa cadence)."
+
+msgid "Those of its first engine: the tournament was made by an older version, which did not record its own. Give the engine settings of its own if they are not the right ones."
+msgstr "Ceux de son premier moteur : le tournoi a été créé par une version plus ancienne, qui n'enregistrait pas les siens. Donne au moteur des réglages propres s'ils ne sont pas les bons."
 
 msgid "Those whose name starts with a dot."
 msgstr "Ceux dont le nom commence par un point."

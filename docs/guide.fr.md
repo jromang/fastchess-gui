@@ -1469,7 +1469,7 @@ suivant. *Reprendre* réessaie chaque moteur à neuf. Une pause retient les essa
 démarre pas*, dans *PGN et divers* de la configuration, l'arrête plutôt tout de suite, une fois les essais épuisés.
 
 ### Modifier un tournoi en cours
-<!-- en: changing-a-running-tournament 10d21730 -->
+<!-- en: changing-a-running-tournament aebe63e2 -->
 
 Le panneau **Modifier le tournoi** de l'onglet *Calendrier* fonctionne sans rien arrêter : les parties en cours
 continuent et aucune partie jouée n'est perdue. Chaque modification montre son impact avant d'être appliquée.
@@ -1481,6 +1481,11 @@ continuent et aucune partie jouée n'est perdue. Chaque modification montre son 
 - **Rejouer des parties** : toutes les parties d'un moteur, ou les pertes au temps et les plantages.
 - Clic droit sur une partie (ici, ou dans l'onglet *Parties*) : la rejouer, l'annuler (sans la rejouer), ou fixer son
   résultat.
+
+Un moteur ajouté ou remplaçant joue avec les réglages du tournoi (sa cadence, son Hash et ses Threads, affichés sous le
+moteur), ou avec des *Réglages propres* : Hash, Threads, part du temps (ou nœuds, profondeur), comme les réglages
+propres d'un participant sur la page *Nouveau tournoi*. Un tournoi créé avant la 0.6.6 n'enregistrait pas ses réglages :
+ceux de son premier moteur en tiennent lieu, et ce pouvaient être ses réglages propres.
 
 Dans un match par équipes, un moteur ajouté rejoint l'équipe choisie et joue contre chaque moteur de l'autre équipe ;
 échiquier par échiquier, on ne peut pas ajouter de moteur (son échiquier n'aurait pas d'adversaire) : remplaces-en un

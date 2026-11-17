@@ -4099,6 +4099,9 @@ msgstr "Einstellungen > Maschinen: verbindet sich mit {}, zeigt den Host-Schlüs
 msgid "Settings > Machines: copies this computer's program of {} to {}, sets its path there and checks it."
 msgstr "Einstellungen > Maschinen: kopiert das Programm von {} dieses Computers nach {}, setzt seinen Pfad dort und prüft es."
 
+msgid "Settings of its own"
+msgstr "Eigene Einstellungen"
+
 msgid "Setup"
 msgstr "Setup"
 
@@ -5175,6 +5178,9 @@ msgstr "Der Turnierprozess ist nicht mehr da."
 msgid "The tournament's process speaks another version of the program ({}): restart the window."
 msgstr "Der Turnierprozess spricht eine andere Version des Programms ({}): Starte das Fenster neu."
 
+msgid "The tournament's settings: {}"
+msgstr "Einstellungen des Turniers: {}"
+
 msgid "The tournaments playing at once share the cores of the budget (Settings) by their weights, set on each card: one game's worth each first, then by weight, none above its own concurrency."
 msgstr "Die gleichzeitig laufenden Turniere teilen sich die Kerne des Budgets (Einstellungen) nach ihren Gewichten, die auf jeder Karte eingestellt werden: zuerst eine Partie für jedes, dann nach Gewicht, keines über seine eigene Parallelität hinaus."
 
@@ -5293,6 +5299,9 @@ msgstr "Dieses Turnier: sein „Spielen auf“, unter Parallelität."
 
 msgid "This tournament: the time an engine may go over its clock before it loses on time (its time control's Margin)."
 msgstr "Dieses Turnier: die Zeit, um die eine Engine ihre Uhr überziehen darf, bevor sie auf Zeit verliert (die „Toleranz“ ihrer Bedenkzeit)."
+
+msgid "Those of its first engine: the tournament was made by an older version, which did not record its own. Give the engine settings of its own if they are not the right ones."
+msgstr "Die seiner ersten Engine: Das Turnier wurde mit einer älteren Version erstellt, die seine eigenen nicht speicherte. Gib der Engine eigene Einstellungen, wenn diese nicht die richtigen sind."
 
 msgid "Those whose name starts with a dot."
 msgstr "Die, deren Name mit einem Punkt beginnt."

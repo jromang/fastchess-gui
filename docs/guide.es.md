@@ -1451,7 +1451,7 @@ motor no arranca*, en *PGN y otros* de la configuración, lo detiene en cambio d
 intentos.
 
 ### Modificar un torneo en curso
-<!-- en: changing-a-running-tournament 10d21730 -->
+<!-- en: changing-a-running-tournament aebe63e2 -->
 
 El panel **Modificar el torneo** de la pestaña *Calendario* funciona sin detener nada: las partidas en curso
 continúan y no se pierde ninguna partida jugada. Cada cambio muestra su impacto antes de aplicarse.
@@ -1464,6 +1464,11 @@ continúan y no se pierde ninguna partida jugada. Cada cambio muestra su impacto
 - **Volver a jugar partidas**: todas las partidas de un motor, o las pérdidas por tiempo y los cuelgues.
 - Clic derecho en una partida (aquí, o en la pestaña *Partidas*): volver a jugarla, anularla (sin volver a jugarla)
   o fijar su resultado.
+
+Un motor añadido o que entra como sustituto juega con los ajustes del torneo (su ritmo de juego, Hash y Threads,
+mostrados bajo el motor), o con *Ajustes propios*: Hash, Threads, parte del tiempo (o nodos, profundidad), como los
+ajustes propios de un participante en la página *Nuevo torneo*. Un torneo creado antes de la 0.6.6 no guardaba sus
+ajustes: los de su primer motor ocupan su lugar, y podían ser los propios de ese motor.
 
 En un encuentro por equipos, un motor añadido se une al equipo elegido y juega contra todos los motores del otro
 equipo; tablero a tablero no se puede añadir un motor (su tablero no tendría rival): sustituye uno en su lugar. Un

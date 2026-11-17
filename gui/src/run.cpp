@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <charconv>
 #include <cmath>
 #include <ctime>
 #include <fstream>
@@ -81,6 +82,50 @@ void overrideOption(fastchess::EngineConfiguration& config, const EngineEntry& e
     setOption(config, name, std::to_string(value));
 }
 
+// The limit of a participant with `participant`'s settings (time odds, its own nodes or depth).
+fastchess::Limit setupLimit(const MatchSetup& setup, const ParticipantSetup& participant) {
+    fastchess::Limit limit;
+    const double share = std::max(1, participant.time_percent) / 100.0;
+    switch (setup.limit) {
+        case LimitKind::Time:
+            limit.tc.time       = static_cast<int64_t>(std::llround(setup.tc_base_s * 1000.0 * share));
+            limit.tc.increment  = static_cast<int64_t>(std::llround(setup.tc_inc_s * 1000.0 * share));
+            limit.tc.moves      = setup.tc_moves;
+            limit.tc.timemargin = setup.tc_margin_ms;
+            break;
+        case LimitKind::MoveTime:
+            limit.tc.fixed_time = std::max<int64_t>(1, std::llround(setup.move_s * 1000.0 * share));
+            limit.tc.timemargin = setup.tc_margin_ms;
+            break;
+        case LimitKind::Nodes:
+            limit.nodes = participant.nodes > 0 ? participant.nodes : setup.nodes;
+            break;
+        case LimitKind::Depth:
+            limit.plies = static_cast<uint64_t>(participant.depth > 0 ? participant.depth : setup.depth);
+            break;
+    }
+    return limit;
+}
+
+// The tournament's `limit` with a participant's own share of the time, nodes or depth.
+fastchess::Limit ownLimit(fastchess::Limit limit, const ParticipantSetup& own) {
+    if (limit.nodes > 0) {
+        if (own.nodes > 0) limit.nodes = own.nodes;
+        return limit;
+    }
+    if (limit.plies > 0) {
+        if (own.depth > 0) limit.plies = static_cast<uint64_t>(own.depth);
+        return limit;
+    }
+    if (own.time_percent == 100) return limit;
+    const double share = std::max(1, own.time_percent) / 100.0;
+    const auto scaled = [&](int64_t ms) { return static_cast<int64_t>(std::llround(static_cast<double>(ms) * share)); };
+    limit.tc.time     = scaled(limit.tc.time);
+    limit.tc.increment = scaled(limit.tc.increment);
+    if (limit.tc.fixed_time > 0) limit.tc.fixed_time = std::max<int64_t>(1, scaled(limit.tc.fixed_time));
+    return limit;
+}
+
 fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSetup& setup,
                                         const ParticipantSetup& participant = {}) {
     fastchess::EngineConfiguration config;
@@ -102,26 +147,7 @@ fastchess::EngineConfiguration toConfig(const EngineEntry& entry, const MatchSet
     if (setup.engine_syzygy && hasOption(entry, "SyzygyPath")) setOption(config, "SyzygyPath", setup.tb_paths);
     if (setup.engine_ownbook_off && hasOption(entry, "OwnBook")) setOption(config, "OwnBook", "false");
 
-    const double share = std::max(1, participant.time_percent) / 100.0;
-    switch (setup.limit) {
-        case LimitKind::Time:
-            config.limit.tc.time       = static_cast<int64_t>(std::llround(setup.tc_base_s * 1000.0 * share));
-            config.limit.tc.increment  = static_cast<int64_t>(std::llround(setup.tc_inc_s * 1000.0 * share));
-            config.limit.tc.moves      = setup.tc_moves;
-            config.limit.tc.timemargin = setup.tc_margin_ms;
-            break;
-        case LimitKind::MoveTime:
-            config.limit.tc.fixed_time = std::max<int64_t>(1, std::llround(setup.move_s * 1000.0 * share));
-            config.limit.tc.timemargin = setup.tc_margin_ms;
-            break;
-        case LimitKind::Nodes:
-            config.limit.nodes = participant.nodes > 0 ? participant.nodes : setup.nodes;
-            break;
-        case LimitKind::Depth:
-            config.limit.plies = static_cast<uint64_t>(participant.depth > 0 ? participant.depth : setup.depth);
-            break;
-    }
-
+    config.limit = setupLimit(setup, participant);
     return config;
 }
 
@@ -138,6 +164,8 @@ std::string timestamp() {
     return stamp;
 }
 
+}  // namespace
+
 std::string limitText(const fastchess::Limit& limit) {
     if (limit.nodes > 0) return trf("{} nodes", limit.nodes);
     if (limit.plies > 0) return trf("depth {}", limit.plies);
@@ -146,8 +174,6 @@ std::string limitText(const fastchess::Limit& limit) {
     return fmt::format("{}{}+{}", tc.moves > 0 ? fmt::format("{}/", tc.moves) : "", formatSeconds(tc.time / 1000.0),
                        formatSeconds(tc.increment / 1000.0));
 }
-
-}  // namespace
 
 RunInfo runInfo(const tour::TournamentSpec& spec, const fs::path& dir) {
     const auto& t = spec.conditions;
@@ -160,7 +186,7 @@ RunInfo runInfo(const tour::TournamentSpec& spec, const fs::path& dir) {
     info.engine_b     = spec.participants.at(1).engine.name;
     info.dir          = dir;
     info.mode         = t.sprt.enabled ? MatchMode::Sprt : spec.max_games > 0 ? MatchMode::Fixed : MatchMode::Infinite;
-    const auto& limit = spec.participants[0].engine.limit;
+    const auto& limit     = spec.limit();
     info.limit        = limit.nodes > 0           ? LimitKind::Nodes
                         : limit.plies > 0         ? LimitKind::Depth
                         : limit.tc.fixed_time > 0 ? LimitKind::MoveTime
@@ -183,7 +209,24 @@ RunInfo runInfo(const tour::TournamentSpec& spec, const fs::path& dir) {
     return info;
 }
 
-fastchess::EngineConfiguration participantConfig(const EngineEntry& entry, const tour::TournamentSpec& spec) {
+tour::Defaults tournamentDefaults(const tour::TournamentSpec& spec) {
+    if (spec.defaults) return *spec.defaults;
+    tour::Defaults d;
+    if (spec.participants.empty()) return d;
+    const auto& first = spec.participants.front().engine;
+    d.limit           = first.limit;
+    for (const auto& [name, value] : first.options) {
+        int n                  = 0;
+        const auto [end, fail] = std::from_chars(value.data(), value.data() + value.size(), n);
+        if (fail != std::errc() || end != value.data() + value.size() || n <= 0) continue;
+        if (name == "Hash") d.hash = n;
+        if (name == "Threads") d.threads = n;
+    }
+    return d;
+}
+
+fastchess::EngineConfiguration participantConfig(const EngineEntry& entry, const tour::TournamentSpec& spec,
+                                                 const ParticipantSetup& own) {
     fastchess::EngineConfiguration config;
     const auto start = engineStart(entry);
     config.name      = entry.name;
@@ -197,18 +240,11 @@ fastchess::EngineConfiguration participantConfig(const EngineEntry& entry, const
     config.start_timeout_ms = entry.start_timeout * 1000LL;
     if (spec.participants.empty()) return config;
 
-    const auto& model = spec.participants.front().engine;
-    config.limit      = model.limit;
-    config.variant    = model.variant;
-    for (const auto& [k, v] : model.options) {
-        if (k != "Hash" && k != "Threads") continue;
-        if (!entry.uci_options.empty() && !hasOption(entry, k)) continue;
-        bool set = false;
-        for (auto& [ck, cv] : config.options) {
-            if (ck == k) cv = v, set = true;
-        }
-        if (!set) config.options.emplace_back(k, v);
-    }
+    const auto settings = tournamentDefaults(spec);
+    config.variant      = spec.participants.front().engine.variant;
+    config.limit        = ownLimit(settings.limit, own);
+    overrideOption(config, entry, "Hash", own.hash, settings.hash);
+    overrideOption(config, entry, "Threads", own.threads, settings.threads);
     // SyzygyPath and OwnBook, if the setup forced them (they are not options every engine has). Never taken from
     // another participant: its options are also its own, which this engine keeps.
     for (const auto& [name, value] : spec.forced_options) {
@@ -657,6 +693,8 @@ BuiltRun buildRun(const MatchSetup& setup, const std::vector<EngineEntry>& engin
     spec.stop_on_start_failure = setup.stop_on_start_failure;
     if (setup.engine_syzygy) spec.forced_options.emplace_back("SyzygyPath", setup.tb_paths);
     if (setup.engine_ownbook_off) spec.forced_options.emplace_back("OwnBook", "false");
+    spec.defaults =
+        tour::Defaults{setupLimit(setup, {}), std::max(0, setup.common_hash), std::max(0, setup.common_threads)};
     const bool teams = setup.format == TournamentFormat::TeamMatch;
     if (teams) {
         spec.team_boards = setup.team_boards;

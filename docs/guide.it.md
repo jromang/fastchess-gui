@@ -1441,7 +1441,7 @@ successivo. *Riprendi* riprova ogni motore da capo. Una pausa trattiene i tentat
 non parte*, in *PGN e varie* della configurazione, lo ferma invece subito, una volta esauriti i tentativi.
 
 ### Modificare un torneo in corso
-<!-- en: changing-a-running-tournament 10d21730 -->
+<!-- en: changing-a-running-tournament aebe63e2 -->
 
 Il pannello **Modifica il torneo** della scheda *Calendario* funziona senza fermare nulla: le partite in corso
 proseguono e nessuna partita giocata va persa. Ogni modifica mostra il suo impatto prima di essere applicata.
@@ -1453,6 +1453,12 @@ proseguono e nessuna partita giocata va persa. Ogni modifica mostra il suo impat
 - **Rigioca partite**: tutte le partite di un motore, o le sconfitte per tempo e i crash.
 - Clic destro su una partita (qui, o nella scheda *Partite*): rigiocarla, annullarla (senza rigiocarla), o fissarne il
   risultato.
+
+Un motore aggiunto o entrato come sostituto gioca con le impostazioni del torneo (la sua cadenza, Hash e Threads,
+mostrati sotto il motore), o con *Impostazioni proprie*: Hash, Threads, quota del tempo (o nodi, profondità), come le
+impostazioni proprie di un partecipante nella pagina *Nuovo torneo*. Un torneo creato prima della 0.6.6 non registrava
+le sue impostazioni: le sostituiscono quelle del suo primo motore, che potevano essere le impostazioni proprie di quel
+motore.
 
 In un incontro a squadre un motore aggiunto entra nella squadra scelta e gioca contro ogni motore dell'altra squadra;
 scacchiera per scacchiera non si può aggiungere un motore (la sua scacchiera non avrebbe avversario): sostituiscine

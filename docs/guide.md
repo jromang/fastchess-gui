@@ -1287,6 +1287,11 @@ played game is lost. Each change shows its impact before it is applied.
 - **Play games again**: every game of an engine, or the losses on time and crashes.
 - Right click on a game (here, or in the *Games* tab): play it again, void it (no replay), or set its result.
 
+An engine added or brought in plays with the tournament's settings (its time control, Hash and Threads, shown under
+the engine), or with *Settings of its own*: Hash, Threads, share of the time (or nodes, depth), as a participant's
+own settings on the setup page. A tournament made before 0.6.6 did not record its settings: those of its first engine
+stand in for them, which may have been its own.
+
 In a team match an engine added joins the team chosen and plays every engine of the other team; board by board an
 engine cannot be added (its board would have no opponent): replace one instead. A replacement takes the team and the
 board of the engine it replaces; more cycles pair the engines still playing (board by board, on the boards of the

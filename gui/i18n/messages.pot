@@ -4099,6 +4099,9 @@ msgstr ""
 msgid "Settings > Machines: copies this computer's program of {} to {}, sets its path there and checks it."
 msgstr ""
 
+msgid "Settings of its own"
+msgstr ""
+
 msgid "Setup"
 msgstr ""
 
@@ -5175,6 +5178,9 @@ msgstr ""
 msgid "The tournament's process speaks another version of the program ({}): restart the window."
 msgstr ""
 
+msgid "The tournament's settings: {}"
+msgstr ""
+
 msgid "The tournaments playing at once share the cores of the budget (Settings) by their weights, set on each card: one game's worth each first, then by weight, none above its own concurrency."
 msgstr ""
 
@@ -5292,6 +5298,9 @@ msgid "This tournament: its Run on, in Concurrency."
 msgstr ""
 
 msgid "This tournament: the time an engine may go over its clock before it loses on time (its time control's Margin)."
+msgstr ""
+
+msgid "Those of its first engine: the tournament was made by an older version, which did not record its own. Give the engine settings of its own if they are not the right ones."
 msgstr ""
 
 msgid "Those whose name starts with a dot."

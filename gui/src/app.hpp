@@ -1143,6 +1143,9 @@ class App {
     // Schedule tab and edits.
     int edit_kind_ = 0;        // tour::Edit::Kind
     std::string edit_engine_;  // engine list entry to add or bring in
+    // Its settings of its own, when given (0, 100 %: the tournament's); otherwise the tournament's.
+    bool edit_own_settings_ = false;
+    ParticipantSetup edit_own_;
     std::string name_draft_of_;  // engine whose Name field is being edited, and the name typed so far
     std::string name_draft_;
     bool edit_catch_up_     = true;

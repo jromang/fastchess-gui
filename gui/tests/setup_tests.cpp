@@ -188,6 +188,108 @@ TEST_CASE("the setup's Syzygy path and OwnBook off are given to the engines that
     fs::remove_all(dir);
 }
 
+TEST_CASE("an engine added later takes the tournament's settings or its own, not the first engine's own") {
+    const auto dir = fs::temp_directory_path() / "fcg-tests-added-settings";
+    fs::create_directories(dir);
+    const auto binary = dir / "engine.exe";
+    std::ofstream(binary) << "x";
+
+    std::vector<EngineEntry> engines(3);
+    for (auto& e : engines) {
+        e.cmd         = binary.string();
+        e.uci_options = {{"Hash", "spin", "16", "1", "1024"}, {"Threads", "spin", "1", "1", "64"}};
+    }
+    engines[0].name        = "first";
+    engines[1].name        = "second";
+    engines[2].name        = "later";
+    engines[2].uci_options = {{"Hash", "spin", "16", "1", "1024"}};  // no Threads: none given
+
+    MatchSetup setup;
+    setup.format         = TournamentFormat::RoundRobin;
+    setup.participants   = {{"first"}, {"second"}};
+    setup.limit          = LimitKind::Time;
+    setup.tc_base_s      = 10;
+    setup.tc_inc_s       = 0.1;
+    setup.common_hash    = 64;
+    setup.common_threads = 1;
+    // The first engine with settings of its own: half the time, more hash, more threads.
+    setup.participants[0].hash         = 256;
+    setup.participants[0].threads      = 4;
+    setup.participants[0].time_percent = 50;
+
+    const auto topology = topologyFromCores({{0, 0}, {0, 1}});
+    const auto option   = [](const fastchess::EngineConfiguration& c, const std::string& name) -> std::string {
+        for (const auto& [k, v] : c.options) {
+            if (k == name) return v;
+        }
+        return "-";
+    };
+
+    auto run = buildRun(setup, engines, topology, dir);
+    CHECK(run.engines[0].limit.tc.time == 5000);
+    CHECK(option(run.engines[0], "Hash") == "256");
+
+    // The tournament's settings, kept with it and read back from its folder.
+    const auto stored = nlohmann::json(run.spec).get<tour::TournamentSpec>();
+    REQUIRE(stored.defaults);
+    for (const tour::TournamentSpec* spec : {static_cast<const tour::TournamentSpec*>(&run.spec), &stored}) {
+        const auto config = participantConfig(engines[1], *spec);
+        CHECK(config.limit.tc.time == 10000);
+        CHECK(config.limit.tc.increment == 100);
+        CHECK(option(config, "Hash") == "64");
+        CHECK(option(config, "Threads") == "1");
+    }
+    // The tournament's time control is its own, not the first engine's with its time odds.
+    CHECK(limitText(stored.limit()) == "10+0.1");
+    CHECK(runInfo(stored, dir).limit_text == "10+0.1");
+
+    // Its own: twice the time, its own hash; the tournament's threads, which an engine without Threads is not given.
+    ParticipantSetup own;
+    own.hash         = 128;
+    own.time_percent = 200;
+    auto config      = participantConfig(engines[1], stored, own);
+    CHECK(config.limit.tc.time == 20000);
+    CHECK(config.limit.tc.increment == 200);
+    CHECK(option(config, "Hash") == "128");
+    CHECK(option(config, "Threads") == "1");
+    config = participantConfig(engines[2], stored, own);
+    CHECK(option(config, "Hash") == "128");
+    CHECK(option(config, "Threads") == "-");
+
+    // A tournament of 0.6.5 or earlier did not record them: the first engine's stand in, as they did.
+    auto old = stored;
+    old.defaults.reset();
+    CHECK_FALSE(nlohmann::json(old).contains("defaults"));
+    CHECK_FALSE(nlohmann::json(old).get<tour::TournamentSpec>().defaults);
+    CHECK(limitText(old.limit()) == "5+0.05");
+    config = participantConfig(engines[1], old);
+    CHECK(config.limit.tc.time == 5000);
+    CHECK(option(config, "Hash") == "256");
+    CHECK(option(config, "Threads") == "4");
+    // Settings of its own correct them.
+    own              = {};
+    own.hash         = 64;
+    own.threads      = 1;
+    own.time_percent = 200;
+    config           = participantConfig(engines[1], old, own);
+    CHECK(config.limit.tc.time == 10000);
+    CHECK(option(config, "Hash") == "64");
+    CHECK(option(config, "Threads") == "1");
+
+    // By nodes: the tournament's, or its own.
+    setup.limit                 = LimitKind::Nodes;
+    setup.nodes                 = 1000;
+    setup.participants[0].nodes = 5000;
+    run                         = buildRun(setup, engines, topology, dir);
+    CHECK(run.engines[0].limit.nodes == 5000);
+    CHECK(participantConfig(engines[1], run.spec).limit.nodes == 1000);
+    own       = {};
+    own.nodes = 3000;
+    CHECK(participantConfig(engines[1], run.spec, own).limit.nodes == 3000);
+
+    fs::remove_all(dir);
+}
+
 TEST_CASE("the PGN fields the charts read: on by default, and on for a setup saved with the old default") {
     const auto fields = [](const MatchSetup& s) {
         return std::vector<bool>{s.pgn_nodes, s.pgn_seldepth, s.pgn_nps, s.pgn_pv, s.pgn_tbhits, s.pgn_decision};

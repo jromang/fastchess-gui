@@ -93,6 +93,14 @@ struct Participant {
     std::optional<RemoteEngine> remote;
 };
 
+// A tournament's own settings, those of a participant without settings of its own (time odds, its own Hash...): an
+// engine added or brought in while it runs takes them, unless given its own.
+struct Defaults {
+    fastchess::Limit limit;  // the time control, time per move, nodes or depth
+    int hash    = 0;         // MB; 0: each engine's own
+    int threads = 0;         // 0: each engine's own
+};
+
 struct TournamentSpec {
     int version = 1;
     std::string name;
@@ -166,6 +174,16 @@ struct TournamentSpec {
     // that an engine added later gets them too; the engines' own options are in their configuration. Empty when
     // the setup forced none, and in the tournaments of 0.4.13 and earlier.
     std::vector<std::pair<std::string, std::string>> forced_options;
+
+    // Its own settings, recorded when it is created. Not in the tournaments of 0.6.5 and earlier, where the first
+    // participant's settings stand in for them (tournamentDefaults() on the GUI's side).
+    std::optional<Defaults> defaults;
+
+    // Its time control, time per move, nodes or depth: its own, else its first participant's (which may have had time
+    // odds). Not for a tournament without participants.
+    [[nodiscard]] const fastchess::Limit& limit() const {
+        return defaults ? defaults->limit : participants.front().engine.limit;
+    }
 
     // Whether an encounter's `first` participant (A in a match) has White in its game `game` (0 or 1).
     [[nodiscard]] bool firstHasWhite(int game) const noexcept {

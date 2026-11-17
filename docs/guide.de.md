@@ -1483,7 +1483,7 @@ hält die Versuche an. *Das Turnier anhalten, wenn eine Engine nicht startet*, u
 Einrichtung, hält es stattdessen sofort an, sobald die Versuche aufgebraucht sind.
 
 ### Ein laufendes Turnier ändern
-<!-- en: changing-a-running-tournament 10d21730 -->
+<!-- en: changing-a-running-tournament aebe63e2 -->
 
 Der Bereich **Turnier ändern** des Tabs *Spielplan* arbeitet, ohne etwas anzuhalten: Laufende Partien gehen weiter, und
 keine gespielte Partie geht verloren. Jede Änderung zeigt ihre Auswirkung, bevor sie angewendet wird.
@@ -1496,6 +1496,12 @@ keine gespielte Partie geht verloren. Jede Änderung zeigt ihre Auswirkung, bevo
 - **Partien neu spielen**: jede Partie einer Engine, oder die Zeitverluste und Abstürze.
 - Rechtsklick auf eine Partie (hier oder im Tab *Partien*): sie neu spielen, sie annullieren (ohne Neuspielen) oder
   ihr Ergebnis setzen.
+
+Eine hinzugefügte oder eingewechselte Engine spielt mit den Einstellungen des Turniers (seiner Bedenkzeit, Hash und
+Threads, unter der Engine angezeigt) oder mit *Eigene Einstellungen*: Hash, Threads, Anteil an der Zeit (oder Knoten,
+Tiefe), wie die eigenen Einstellungen eines Teilnehmers auf der Seite *Neues Turnier*. Ein Turnier, das vor 0.6.6
+erstellt wurde, hat seine Einstellungen nicht gespeichert: Die seiner ersten Engine treten an ihre Stelle, und das
+können deren eigene gewesen sein.
 
 In einem Mannschaftskampf tritt eine hinzugefügte Engine der gewählten Mannschaft bei und spielt gegen jede Engine der
 anderen Mannschaft; bei Brett gegen Brett lässt sich keine Engine hinzufügen (ihr Brett hätte keinen Gegner): Ersetze

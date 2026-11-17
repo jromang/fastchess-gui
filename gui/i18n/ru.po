@@ -4115,6 +4115,9 @@ msgstr "Параметры > Машины: подключается к {}, по�
 msgid "Settings > Machines: copies this computer's program of {} to {}, sets its path there and checks it."
 msgstr "Настройки > Машины: копирует программу {} этого компьютера на {}, задаёт там её путь и проверяет её."
 
+msgid "Settings of its own"
+msgstr "Собственные настройки"
+
 msgid "Setup"
 msgstr "Настройка"
 
@@ -5201,6 +5204,9 @@ msgstr "Процесса турнира больше нет."
 msgid "The tournament's process speaks another version of the program ({}): restart the window."
 msgstr "Процесс турнира работает с другой версией программы ({}): перезапустите окно."
 
+msgid "The tournament's settings: {}"
+msgstr "Настройки турнира: {}"
+
 msgid "The tournaments playing at once share the cores of the budget (Settings) by their weights, set on each card: one game's worth each first, then by weight, none above its own concurrency."
 msgstr "Одновременно идущие турниры делят ядра бюджета (Настройки) по своим весам, заданным на каждой карточке: сначала каждому по одной партии, затем по весу, никому сверх его собственного параллелизма."
 
@@ -5320,6 +5326,9 @@ msgstr "Этот турнир: его поле «Где играть» в раз
 
 msgid "This tournament: the time an engine may go over its clock before it loses on time (its time control's Margin)."
 msgstr "Этот турнир: время, на которое движок может превысить свои часы, прежде чем проиграет по времени (поле «Запас» его контроля времени)."
+
+msgid "Those of its first engine: the tournament was made by an older version, which did not record its own. Give the engine settings of its own if they are not the right ones."
+msgstr "Это настройки его первого движка: турнир создан более старой версией, которая не сохраняла собственные настройки турнира. Задайте движку собственные настройки, если эти не подходят."
 
 msgid "Those whose name starts with a dot."
 msgstr "Файлы, имя которых начинается с точки."

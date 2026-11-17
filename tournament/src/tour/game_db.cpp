@@ -186,7 +186,7 @@ void readTournament(const fs::path& dir, GameDb& db, Builder& builder) {
 
     const auto source = static_cast<uint32_t>(db.sources.size());
     db.sources.push_back({dir, dir / spec.pgnFile(), spec.name.empty() ? dir.filename().string() : spec.name, false});
-    const auto tc = builder.timeControl(timeControlText(spec.participants.front().engine.limit));
+    const auto tc = builder.timeControl(timeControlText(spec.limit()));
 
     for (const auto& r : replayed.results) {
         const auto* w = spec.participant(r.white);
