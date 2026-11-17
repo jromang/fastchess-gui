@@ -264,7 +264,7 @@ void App::drawResumedPrograms() {
     std::string paths;
     for (const auto& p : resumed_programs_) {
         (p.missing ? missing : changed).push_back(p.name);
-        paths += (paths.empty() ? "" : "\n") + fmt::format("{}: {}", p.name, p.cmd);
+        paths += fmt::format("{}{}: {}", paths.empty() ? "" : "\n", p.name, p.cmd);
     }
     std::string text;
     if (!changed.empty()) {
@@ -276,8 +276,8 @@ void App::drawResumedPrograms() {
                 changed.size(), joinNames(changed));
     }
     if (!missing.empty()) {
-        text += (text.empty() ? "" : " ") +
-                trn("The program of {} is missing: its games cannot start until it is back.",
+        if (!text.empty()) text += ' ';
+        text += trn("The program of {} is missing: its games cannot start until it is back.",
                     "The programs of {} are missing: their games cannot start until they are back.", missing.size(),
                     joinNames(missing));
     }

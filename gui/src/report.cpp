@@ -27,7 +27,7 @@ std::string cut(std::string_view text, std::size_t max) {
 }
 
 std::string field(std::string_view name, std::string_view value) {
-    return "&" + std::string(name) + "=" + percentEncode(value);
+    return fmt::format("&{}={}", name, percentEncode(value));
 }
 
 // One line of the log is rarely worth more than this: an engine's long info line, an option list.

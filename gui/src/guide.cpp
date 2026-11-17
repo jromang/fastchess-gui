@@ -188,7 +188,7 @@ std::vector<Heading> headings(std::string_view markdown, bool translation) {
                 h.level  = static_cast<int>(hashes);
                 h.title  = std::string(text);
                 h.anchor = slug(text);
-                if (const int n = seen[h.anchor]++; n > 0) h.anchor += "-" + std::to_string(n);
+                if (const int n = seen[h.anchor]++; n > 0) h.anchor.append("-").append(std::to_string(n));
                 h.id   = translation ? "" : h.anchor;
                 h.line = at;
                 h.body = next_at;

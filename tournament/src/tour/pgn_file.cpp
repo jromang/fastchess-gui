@@ -195,7 +195,7 @@ std::string pgnTagValue(std::string_view value) {
 }
 
 std::pair<std::size_t, std::size_t> pgnTagLine(std::string_view game, std::string_view tag) {
-    const auto prefix = "[" + std::string(tag) + " \"";
+    const auto prefix = std::string("[").append(tag).append(" \"");
     for (std::size_t at = 0; at < game.size();) {
         auto end = game.find('\n', at);
         if (end == std::string_view::npos) end = game.size();

@@ -250,12 +250,12 @@ void App::writeSubmissionExport(const std::string& path) {
     std::string message = trn("{} game exported to {}", "{} games exported to {}", out.games, out.games, path);
     const auto left_out = out.voided + out.duplicates + out.crashes;
     if (left_out > 0) {
-        message +=
-            " " + trf("(left out: {} voided, {} duplicates, {} crashes)", out.voided, out.duplicates, out.crashes);
+        message += ' ';
+        message += trf("(left out: {} voided, {} duplicates, {} crashes)", out.voided, out.duplicates, out.crashes);
     }
     if (out.unreadable > 0) {
-        message +=
-            " " + trn("{} game could not be read.", "{} games could not be read.", out.unreadable, out.unreadable);
+        message += ' ';
+        message += trn("{} game could not be read.", "{} games could not be read.", out.unreadable, out.unreadable);
     }
     Console::instance().add(message, out.unreadable > 0);
 

@@ -119,7 +119,7 @@ void Analyser::fail(std::string message) {
     // What the engine wrote last tells why, most often.
     std::string words;
     for (const auto& w : last_words_) words += "\n" + w;
-    if (!words.empty()) error_ += "\n" + std::string(TR("The engine wrote:")) + words;
+    if (!words.empty()) error_.append("\n").append(TR("The engine wrote:")).append(words);
     if (process_.started()) process_.stop(std::chrono::milliseconds(200));
     state_ = State::Failed;
 }

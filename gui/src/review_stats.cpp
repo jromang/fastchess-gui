@@ -219,7 +219,7 @@ std::string pgnWithAnalysis(const GameTree& tree, bool chess960, const GameRevie
                     comment +=
                         " " + review.engine + ": " + pvToSan(boardAt(game, chess960, static_cast<int>(i)), pv, 8);
                 }
-                out += (out.empty() ? "" : " ") + std::string("{") + comment + "}";
+                out.append(out.empty() ? "" : " ").append("{").append(comment).append("}");
             }
         }
         return out;
