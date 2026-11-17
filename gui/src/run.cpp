@@ -968,15 +968,6 @@ void stopEngineProcess(int64_t pid) {
 
 std::string RunController::endGame(int slot, uint64_t number, const std::string& result, const std::string& why) {
     if (!running() || !tournament_ || !observer_) return TR("No game is being played.");
-#ifdef __APPLE__
-    // On GitHub's Macs the game did not end once its engine was stopped, and the tournament waited for it: not offered
-    // there until it is understood.
-    (void)slot;
-    (void)result;
-    (void)why;
-    return TR("Ending a game in progress is not available on macOS yet: set its result once it is over, in the Games "
-              "tab.");
-#endif
     // Without it, fastchess stops the tournament when an engine disconnects.
     if (!tournament_->spec().conditions.recover) {
         return TR(

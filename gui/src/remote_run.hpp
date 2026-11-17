@@ -98,7 +98,6 @@ class RemoteRun final : public Run {
     // again in a moment), or never again when `gone` says why (the process is not there any more).
     using Reconnect = std::function<std::unique_ptr<Link>(std::string& gone)>;
     void setReconnect(Reconnect reconnect) { reconnect_ = std::move(reconnect); }
-    [[nodiscard]] bool onMachine() const noexcept { return static_cast<bool>(reconnect_); }
     // Still waiting to connect to the process it started (detached), which is making its socket.
     [[nodiscard]] bool connecting() const noexcept { return connecting_; }
 

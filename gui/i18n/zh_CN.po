@@ -1652,9 +1652,6 @@ msgstr "在对局进行中由操作员结束。"
 msgid "Endgame"
 msgstr "残局"
 
-msgid "Ending a game in progress is not available on macOS yet: set its result once it is over, in the Games tab."
-msgstr "在 macOS 上暂时无法结束正在进行的对局：请在对局结束后，在“对局”标签页中设置其结果。"
-
 msgid "Ends about {} (in {})"
 msgstr "预计 {} 结束（还需 {}）"
 

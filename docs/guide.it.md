@@ -1439,7 +1439,7 @@ successivo. *Riprendi* riprova ogni motore da capo. Una pausa trattiene i tentat
 non parte*, in *PGN e varie* della configurazione, lo ferma invece subito, una volta esauriti i tentativi.
 
 ### Modificare un torneo in corso
-<!-- en: changing-a-running-tournament 91731bb5 -->
+<!-- en: changing-a-running-tournament 10d21730 -->
 
 Il pannello **Modifica il torneo** della scheda *Calendario* funziona senza fermare nulla: le partite in corso
 proseguono e nessuna partita giocata va persa. Ogni modifica mostra il suo impatto prima di essere applicata.
@@ -1467,8 +1467,7 @@ tooltip che indica il motivo e come è finita la partita giocata, e *Torna al ri
 partita in corso si termina allo stesso modo: clic destro sulla sua scacchiera nella scheda *Diretta*, *Termina con un
 risultato* (anche nella tavolozza dei comandi per la partita seguita). Il motore al tratto viene fermato, fastchess
 termina subito la partita e questa conta con il risultato scelto; il motore riparte per la sua partita successiva.
-Richiede *Riavvia un motore che va in crash* (configurazione, *PGN e varie*, attivo per impostazione predefinita). Non
-ancora su macOS, dove nei test la partita non terminava: lì, fissa il risultato una volta finita la partita.
+Richiede *Riavvia un motore che va in crash* (configurazione, *PGN e varie*, attivo per impostazione predefinita).
 
 Le partite annullate e i risultati fissati a mano restano nei file PGN e nel diario come sono stati giocati: ai file
 PGN si aggiunge soltanto. Ciò che legge le partite li applica: le partite annullate vengono escluse, e un risultato

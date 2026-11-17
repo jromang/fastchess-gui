@@ -360,13 +360,6 @@ std::string RemoteRun::undoEdit() {
 
 std::string RemoteRun::endGame(int slot, uint64_t number, const std::string& result, const std::string& why) {
     if (state_ != State::Running) return TR("No game is being played.");
-#ifdef __APPLE__
-    // Played on this Mac: see RunController::endGame(). On another machine, its engine is stopped there.
-    if (!onMachine()) {
-        return TR("Ending a game in progress is not available on macOS yet: set its result once it is over, in the "
-                  "Games tab.");
-    }
-#endif
     if (replica_ && !replica_->spec().conditions.recover) {
         return TR(
             "This tournament was started without \"Restart an engine that crashes\" (setup, PGN and misc): "

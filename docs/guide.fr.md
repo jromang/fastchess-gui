@@ -1466,7 +1466,7 @@ suivant. *Reprendre* réessaie chaque moteur à neuf. Une pause retient les essa
 démarre pas*, dans *PGN et divers* de la configuration, l'arrête plutôt tout de suite, une fois les essais épuisés.
 
 ### Modifier un tournoi en cours
-<!-- en: changing-a-running-tournament 91731bb5 -->
+<!-- en: changing-a-running-tournament 10d21730 -->
 
 Le panneau **Modifier le tournoi** de l'onglet *Calendrier* fonctionne sans rien arrêter : les parties en cours
 continuent et aucune partie jouée n'est perdue. Chaque modification montre son impact avant d'être appliquée.
@@ -1495,8 +1495,7 @@ joué* revient en arrière. Une partie en cours se termine de la même façon : 
 *Direct*, *Terminer avec un résultat* (aussi dans la palette de commandes pour la partie suivie). Le moteur au trait est
 arrêté, fastchess termine aussitôt la partie et elle compte avec le résultat choisi ; le moteur redémarre pour sa
 partie suivante. Il faut pour cela *Relancer un moteur qui plante* (configuration, *PGN et divers*, activé par
-défaut). Pas encore sur macOS, où la partie ne se terminait pas dans les tests : là, fixe le résultat une fois la
-partie finie.
+défaut).
 
 Les parties annulées et les résultats fixés à la main restent dans les fichiers PGN et le journal tels qu'ils ont été
 joués : les fichiers PGN ne font jamais que s'allonger. Tout ce qui lit les parties en tient compte : les parties

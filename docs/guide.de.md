@@ -1481,7 +1481,7 @@ hält die Versuche an. *Das Turnier anhalten, wenn eine Engine nicht startet*, u
 Einrichtung, hält es stattdessen sofort an, sobald die Versuche aufgebraucht sind.
 
 ### Ein laufendes Turnier ändern
-<!-- en: changing-a-running-tournament 91731bb5 -->
+<!-- en: changing-a-running-tournament 10d21730 -->
 
 Der Bereich **Turnier ändern** des Tabs *Spielplan* arbeitet, ohne etwas anzuhalten: Laufende Partien gehen weiter, und
 keine gespielte Partie geht verloren. Jede Änderung zeigt ihre Auswirkung, bevor sie angewendet wird.
@@ -1512,8 +1512,7 @@ Tab *Partien* markiert es mit einem `*`, dessen Tooltip den Grund angibt und wie
 ihr Brett im Tab *Live*, *Mit einem Ergebnis beenden* (für die verfolgte Partie auch in der Befehlspalette). Die Engine
 am Zug wird gestoppt, fastchess beendet die Partie sofort, und sie zählt mit dem gewählten Ergebnis; die Engine startet
 für ihre nächste Partie neu. Das setzt *Eine abgestürzte Engine neu starten* voraus (Einrichtung, *PGN und Sonstiges*,
-standardmäßig an). Noch nicht unter macOS, wo die Partie in den Tests nicht endete: Setze dort das Ergebnis, wenn die
-Partie vorbei ist.
+standardmäßig an).
 
 Annullierte Partien und von Hand gesetzte Ergebnisse bleiben in den PGN-Dateien und im Journal so, wie sie gespielt
 wurden: An die PGN-Dateien wird immer nur angehängt. Alles, was die Partien liest, berücksichtigt das: Annullierte Partien werden

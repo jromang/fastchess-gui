@@ -1449,7 +1449,7 @@ motor no arranca*, en *PGN y otros* de la configuración, lo detiene en cambio d
 intentos.
 
 ### Modificar un torneo en curso
-<!-- en: changing-a-running-tournament 91731bb5 -->
+<!-- en: changing-a-running-tournament 10d21730 -->
 
 El panel **Modificar el torneo** de la pestaña *Calendario* funciona sin detener nada: las partidas en curso
 continúan y no se pierde ninguna partida jugada. Cada cambio muestra su impacto antes de aplicarse.
@@ -1479,8 +1479,7 @@ lo revierte. Una partida en juego se termina del mismo modo: clic derecho en su 
 *Terminar con un resultado* (también en la paleta de comandos para la partida seguida). El motor al que le toca mover
 se detiene, fastchess termina la partida de inmediato y esta cuenta con el resultado elegido; el motor vuelve a
 arrancar para su siguiente partida. Necesita *Reiniciar un motor que se cuelga* (configuración, *PGN y otros*,
-activado por defecto). Todavía no en macOS, donde la partida no terminaba en las pruebas: allí, fija el resultado una
-vez terminada la partida.
+activado por defecto).
 
 Las partidas anuladas y los resultados fijados a mano se quedan en los archivos PGN y en el diario tal como se
 jugaron: a los archivos PGN solo se les añade contenido. Lo que lee las partidas los aplica: las partidas anuladas se

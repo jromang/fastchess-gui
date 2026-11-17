@@ -914,10 +914,6 @@ TEST_CASE("a game ended by the operator while it is played counts with their res
         MESSAGE("random mover not available on this platform, skipped");
         return;
     }
-#ifdef __APPLE__
-    MESSAGE("ending a game in progress is not offered on macOS yet, skipped");
-    return;
-#endif
 
     const auto root = fs::temp_directory_path() / "fcg-run-tests-end-game";
     fs::remove_all(root);

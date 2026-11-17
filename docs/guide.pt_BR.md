@@ -1418,7 +1418,7 @@ não inicia*, em *PGN e outros* da configuração, o para imediatamente em vez d
 esgotam.
 
 ### Alterar um torneio em andamento
-<!-- en: changing-a-running-tournament 91731bb5 -->
+<!-- en: changing-a-running-tournament 10d21730 -->
 
 O painel **Alterar o torneio** da aba *Calendário* funciona sem parar nada: as partidas em andamento continuam e
 nenhuma partida jogada é perdida. Cada alteração mostra o impacto antes de ser aplicada.
@@ -1447,8 +1447,7 @@ a dica dando o motivo e como a partida terminou quando foi jogada, e *Voltar ao 
 partida em andamento é encerrada do mesmo jeito: clique direito no tabuleiro dela na aba *Ao vivo*, *Encerrar com um
 resultado* (também na paleta de comandos para a partida acompanhada). O engine que tem a vez é parado, o fastchess
 encerra a partida imediatamente e ela conta com o resultado escolhido; o engine inicia de novo para a próxima
-partida. Isso precisa de *Reiniciar um engine que der crash* (configuração, *PGN e outros*, ligado por padrão). Ainda
-não funciona no macOS, onde a partida não terminou nos testes: lá, defina o resultado depois que a partida terminar.
+partida. Isso precisa de *Reiniciar um engine que der crash* (configuração, *PGN e outros*, ligado por padrão).
 
 As partidas anuladas e os resultados definidos à mão ficam nos arquivos PGN e no diário como foram jogados: os
 arquivos PGN só recebem acréscimos. O que lê as partidas os aplica: as partidas anuladas ficam de fora, e um resultado

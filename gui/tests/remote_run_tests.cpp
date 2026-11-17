@@ -301,11 +301,6 @@ TEST_CASE("remote: a game ended by the operator, then the window going away stop
             return false;
         }));
         const auto number = slot.game_id - 1;
-#ifdef __APPLE__
-        // Not offered on macOS yet (see RunController::endGame()).
-        CHECK_FALSE(h.run.endGame(playing, number, "1/2-1/2", "a test").empty());
-        return;
-#endif
         CHECK(h.run.endGame(playing, number, "1/2-1/2", "a test").empty());
         REQUIRE(h.waitFor([&] {
             const auto r = h.run.tournament()->resultOf(number);
