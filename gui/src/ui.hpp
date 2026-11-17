@@ -74,10 +74,11 @@ enum class Icon {
     Pencil,  // edit in place
     More,    // ⋯: a menu of what else can be done
     Star,    // a seed
-    Board,  // a knight: the Board page
+    Board,   // a knight: the Board page
     Paste,
     Edit,
     Analyse,
+    Unload,  // power: ends an engine's process
     // Through a game's moves, under the boards.
     First,
     Previous,

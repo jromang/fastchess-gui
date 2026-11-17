@@ -391,6 +391,9 @@ class App {
     void openPositionOnBoard(const std::string& fen, bool chess960, std::string title, bool analyse);
     void setBoardAnalysis(bool on);
     void setBoardThreat(bool on);  // X: the opponent's best move were it to move again
+    // Ends the analysis engine and the threat engine, the analysis and the threat off: stopped, an engine stays
+    // started, its hash table (a GPU's memory) held, for the next search.
+    void unloadBoardEngines();
     [[nodiscard]] std::optional<AnalysisPosition> threatPosition() const;  // the board's, the turn passed
     // Key A, pressed for a board now: once a frame, not while a text field or a popup has the keys.
     [[nodiscard]] bool boardKey();

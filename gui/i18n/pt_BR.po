@@ -5481,6 +5481,12 @@ msgstr "Desfazer a última alteração"
 msgid "Unknown engine: {}"
 msgstr "Engine desconhecido: {}"
 
+msgid "Unload the engine"
+msgstr "Descarregar o engine"
+
+msgid "Unload the engine: it ends and frees its memory. Analyse starts it again."
+msgstr "Descarregar o engine: ele é encerrado e libera sua memória. Analisar o inicia de novo."
+
 msgid "Unreadable PGN."
 msgstr "PGN ilegível."
 

@@ -5481,6 +5481,12 @@ msgstr "Annulla l'ultima modifica"
 msgid "Unknown engine: {}"
 msgstr "Motore sconosciuto: {}"
 
+msgid "Unload the engine"
+msgstr "Scarica il motore"
+
+msgid "Unload the engine: it ends and frees its memory. Analyse starts it again."
+msgstr "Scarica il motore: termina e libera la sua memoria. Analizza lo riavvia."
+
 msgid "Unreadable PGN."
 msgstr "PGN illeggibile."
 

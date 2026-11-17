@@ -5510,6 +5510,12 @@ msgstr "Отменить последнее изменение"
 msgid "Unknown engine: {}"
 msgstr "Неизвестный движок: {}"
 
+msgid "Unload the engine"
+msgstr "Выгрузить движок"
+
+msgid "Unload the engine: it ends and frees its memory. Analyse starts it again."
+msgstr "Выгрузить движок: он завершается и освобождает память. «Анализировать» снова запускает его."
+
 msgid "Unreadable PGN."
 msgstr "Нечитаемый PGN."
 

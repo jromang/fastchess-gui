@@ -430,6 +430,8 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
         page_ = Page::Board;
         setBoardAnalysis(!board_.analysing);
     });
+    if (board_.analyser.active() || board_.threat.active())
+        add(TR("Unload the engine"), TR("Board"), [this] { unloadBoardEngines(); });
     add(TR("Copy FEN"), TR("Board"), [this] { ImGui::SetClipboardText(boardFen().c_str()); });
     add(TR("Open a PGN…"), TR("Board"), [this] {
         page_ = Page::Board;

@@ -613,7 +613,7 @@ do `[%clk]` dos lances quando a partida os tem; senão, são reconstruídos a pa
 `10+0.1`: segundos e incremento) e do tempo de cada lance, os lances de livro não gastando nenhum.
 
 ### A análise
-<!-- en: the-analysis 63237b12 -->
+<!-- en: the-analysis 1e6120de -->
 
 Um engine da biblioteca analisa a posição mostrada e acompanha o tabuleiro. O cartão mostra o engine dela, depois um
 botão com *Threads*, *Hash* (0: o do próprio engine) e *Linhas* (MultiPV), que um clique abre: as configurações
@@ -636,7 +636,9 @@ em xeque).
 
 A análise espera enquanto outra página é mostrada, e continua quando a página Tabuleiro volta; *Parar a análise* (ou
 A) a para, e um ponto no botão *Tabuleiro* da barra indica quando ela está rodando. O engine dela não é um dos
-processos do torneio: o fim de um torneio não o encerra.
+processos do torneio: o fim de um torneio não o encerra. Parada a análise, o engine dela continua iniciado para a
+próxima busca, com sua tabela hash (e a memória de GPU de um engine de rede neural): o botão de ligar/desligar ao lado
+do engine, *Descarregar o engine* (também na paleta de comandos), o encerra, e também o da ameaça.
 
 ### Analisar uma partida inteira
 <!-- en: analysing-a-whole-game a7e6166c -->

@@ -273,6 +273,14 @@ void App::setBoardThreat(bool on) {
     b.threat_on = true;
 }
 
+void App::unloadBoardEngines() {
+    auto& b     = board_;
+    b.analysing = false;
+    b.threat_on = false;
+    b.analyser.stop();
+    b.threat.stop();
+}
+
 void App::pollBoard() {
     board_key_taken_ = false;
     board_.analyser.poll();
@@ -1449,13 +1457,21 @@ void App::drawBoardAnalysis() {
                                    "than those beside are the library's, sent as a game sends them."));
     }
     ui::topic(guide::topics::Analysis);
+    // Stopped, the engine stays started for the next search, its memory held: this ends it.
+    ImGui::SameLine(0, px(4));
+    if (ui::iconOnlyButton("##analysis_unload", ui::Icon::Unload,
+                           TR("Unload the engine: it ends and frees its memory. Analyse starts it again."),
+                           a.active() || b.threat.active())) {
+        unloadBoardEngines();
+    }
 
-    // Threads, hash and lines, folded into one line: a click opens them.
-    ImGui::SameLine();
+    // Threads, hash and lines, folded into one line: a click opens them. The row wraps where the card is narrow.
     {
         const auto summary = trf("{} · {} · {}", trn("{} thread", "{} threads", s.threads, s.threads),
                                  s.hash > 0 ? fmt::format("{} MB", s.hash) : std::string(TR("hash of the engine")),
                                  trn("{} line", "{} lines", s.multipv, s.multipv));
+        ui::sameLineOrWrap(ImGui::CalcTextSize(summary.c_str()).x + ImGui::GetFrameHeight() +
+                           ImGui::GetStyle().FramePadding.x * 2);
         if (ui::iconButton("analysis_settings", ui::Icon::Settings, summary.c_str()))
             ImGui::OpenPopup("##analysis_settings_popup");
         if (ImGui::IsItemHovered()) {
@@ -1491,7 +1507,8 @@ void App::drawBoardAnalysis() {
         b.threat.update(one);
     }
     // The threat: the opponent's best move, were it to move again.
-    ImGui::SameLine();
+    ui::sameLineOrWrap(ImGui::CalcTextSize(TR("Threat")).x + ImGui::GetStyle().FramePadding.x * 2 + px(4) +
+                       ImGui::CalcTextSize("X").x);
     {
         const bool on = b.threat_on;
         if (on) ImGui::PushStyleColor(ImGuiCol_Button, ui::SELECT);
@@ -1510,8 +1527,9 @@ void App::drawBoardAnalysis() {
         const int busy    = tournamentThreads();
         auto chip         = trf("{} / {} threads", threads, topology_.logical);
         if (busy > 0) chip += " · " + trf("tournament on {}", busy);
-        ImGui::SameLine(std::max(ImGui::GetCursorPosX() + px(8),
-                                 ImGui::GetContentRegionMax().x - ImGui::CalcTextSize(chip.c_str()).x - px(4)));
+        const float width = ImGui::CalcTextSize(chip.c_str()).x;
+        ui::sameLineOrWrap(width + px(8), px(8));
+        ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(), ImGui::GetContentRegionMax().x - width - px(4)));
         ImGui::AlignTextToFramePadding();
         if (busy > 0)
             ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ui::WARN), "%s", chip.c_str());

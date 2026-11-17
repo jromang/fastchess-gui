@@ -581,7 +581,9 @@ were it to move again, drawn as a red arrow and written under the lines (none wh
 
 The analysis waits while another page is shown, and goes on when the Board page comes back; *Stop the analysis* (or
 A) stops it, and a dot on the rail's *Board* button tells when it runs. Its engine is not one of the tournament's
-processes: the end of a tournament does not end it.
+processes: the end of a tournament does not end it. Stopped, the engine stays started for the next search, with its
+hash table (and a network engine's GPU memory): the power button beside the engine, *Unload the engine* (also in the
+command palette), ends it and the threat's.
 
 ### Analysing a whole game
 

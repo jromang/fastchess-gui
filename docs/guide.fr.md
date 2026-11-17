@@ -638,7 +638,7 @@ celles des `[%clk]` des coups quand la partie en a ; sinon elles sont reconstitu
 aucun.
 
 ### Analyse
-<!-- en: the-analysis 63237b12 -->
+<!-- en: the-analysis 1e6120de -->
 
 Un moteur de la bibliothèque analyse la position affichée et suit l'échiquier. La carte montre son moteur, puis un
 bouton avec ses *Threads*, son *Hash* (0 : celui du moteur) et ses *Lignes* (MultiPV), qu'un clic ouvre : les
@@ -662,7 +662,10 @@ est en échec).
 
 L'analyse attend pendant qu'une autre page est affichée, et reprend quand la page Échiquier revient ; *Arrêter
 l'analyse* (ou A) l'arrête, et un point sur le bouton *Échiquier* de la barre de navigation indique qu'elle tourne.
-Son moteur ne fait pas partie des processus du tournoi : la fin d'un tournoi ne l'arrête pas.
+Son moteur ne fait pas partie des processus du tournoi : la fin d'un tournoi ne l'arrête pas. Une fois l'analyse
+arrêtée, son moteur reste démarré pour la recherche suivante, avec sa table de hachage (et la mémoire GPU d'un moteur à
+réseau) : le bouton d'alimentation à côté du moteur, *Décharger le moteur* (aussi dans la palette de commandes),
+l'arrête, ainsi que celui de la menace.
 
 ### Analyser une partie entière
 <!-- en: analysing-a-whole-game a7e6166c -->

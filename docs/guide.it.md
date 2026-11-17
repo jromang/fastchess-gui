@@ -625,7 +625,7 @@ suo tag `TimeControl` (`300+2`, `10+0.1`: secondi e incremento) e dal tempo di o
 ne consumino.
 
 ### Analisi
-<!-- en: the-analysis 63237b12 -->
+<!-- en: the-analysis 1e6120de -->
 
 Un motore della libreria analizza la posizione mostrata e segue la scacchiera. La scheda mostra il suo motore, poi un
 pulsante con i suoi *Threads*, *Hash* (0: quello del motore) e *Linee* (MultiPV), che un clic apre: le impostazioni
@@ -648,7 +648,9 @@ lato che muove è sotto scacco).
 
 L'analisi attende mentre è mostrata un'altra pagina, e prosegue quando si torna alla pagina Scacchiera; *Ferma
 l'analisi* (o A) la ferma, e un punto sul pulsante *Scacchiera* della barra indica quando è in corso. Il suo motore non
-è uno dei processi del torneo: la fine di un torneo non lo termina.
+è uno dei processi del torneo: la fine di un torneo non lo termina. Fermata l'analisi, il suo motore resta avviato per
+la ricerca successiva, con la sua tabella hash (e la memoria GPU di un motore a rete neurale): il pulsante di accensione
+accanto al motore, *Scarica il motore* (anche nella tavolozza dei comandi), lo termina, insieme a quello della minaccia.
 
 ### Analizzare una partita intera
 <!-- en: analysing-a-whole-game a7e6166c -->

@@ -293,6 +293,8 @@ const char* glyph(Icon icon) {
             return "\uE172";  // square-pen
         case Icon::Analyse:
             return "\uE3C6";  // brain
+        case Icon::Unload:
+            return "\uE140";  // power
         case Icon::First:
             return "\uE243";  // chevron-first
         case Icon::Previous:

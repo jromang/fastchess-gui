@@ -628,7 +628,7 @@ de su etiqueta `TimeControl` (`300+2`, `10+0.1`: segundos e incremento) y del ti
 jugadas de libro consuman ninguno.
 
 ### El análisis
-<!-- en: the-analysis 63237b12 -->
+<!-- en: the-analysis 1e6120de -->
 
 Un motor de la biblioteca busca en la posición mostrada y sigue al tablero. La tarjeta muestra su motor y luego un
 botón con sus *Threads*, su *Hash* (0: el del motor) y sus *Líneas* (MultiPV), que se abre con un clic: los ajustes
@@ -651,7 +651,9 @@ mover está en jaque).
 
 El análisis espera mientras se muestra otra página, y continúa cuando se vuelve a la página Tablero; *Detener el
 análisis* (o A) lo detiene, y un punto en el botón *Tablero* de la barra indica cuándo está en marcha. Su motor no es
-uno de los procesos del torneo: el final de un torneo no lo detiene.
+uno de los procesos del torneo: el final de un torneo no lo detiene. Detenido el análisis, su motor sigue iniciado para
+la siguiente búsqueda, con su tabla hash (y la memoria de GPU de un motor de red neuronal): el botón de encendido junto
+al motor, *Descargar el motor* (también en la paleta de comandos), lo cierra, y también el de la amenaza.
 
 ### Analizar una partida entera
 <!-- en: analysing-a-whole-game a7e6166c -->

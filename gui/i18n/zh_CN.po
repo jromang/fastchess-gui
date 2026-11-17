@@ -5452,6 +5452,12 @@ msgstr "撤销上一次修改"
 msgid "Unknown engine: {}"
 msgstr "未知引擎：{}"
 
+msgid "Unload the engine"
+msgstr "卸载引擎"
+
+msgid "Unload the engine: it ends and frees its memory. Analyse starts it again."
+msgstr "卸载引擎：结束引擎进程并释放其内存。点击“分析”会再次启动它。"
+
 msgid "Unreadable PGN."
 msgstr "无法读取的 PGN。"
 

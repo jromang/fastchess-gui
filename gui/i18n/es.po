@@ -5481,6 +5481,12 @@ msgstr "Deshacer el último cambio"
 msgid "Unknown engine: {}"
 msgstr "Motor desconocido: {}"
 
+msgid "Unload the engine"
+msgstr "Descargar el motor"
+
+msgid "Unload the engine: it ends and frees its memory. Analyse starts it again."
+msgstr "Descargar el motor: se cierra y libera su memoria. Analizar lo vuelve a iniciar."
+
 msgid "Unreadable PGN."
 msgstr "PGN ilegible."
 

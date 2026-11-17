@@ -643,7 +643,7 @@ am Zug ist. Die Uhren sind die der `[%clk]` der Züge, wenn die Partie sie hat; 
 Zeit verbrauchen.
 
 ### Die Analyse
-<!-- en: the-analysis 63237b12 -->
+<!-- en: the-analysis 1e6120de -->
 
 Eine Engine der Bibliothek durchsucht die gezeigte Stellung und folgt dem Brett. Die Karte zeigt ihre Engine, dann
 einen Knopf mit ihren *Threads*, ihrem *Hash* (0: der eigene der Engine) und ihren *Linien* (MultiPV), den ein Klick
@@ -667,7 +667,9 @@ solange die Seite am Zug im Schach steht).
 
 Die Analyse wartet, während eine andere Seite gezeigt wird, und geht weiter, wenn die Seite Brett wiederkommt;
 *Analyse beenden* (oder A) beendet sie, und ein Punkt auf dem Knopf *Brett* der Leiste zeigt an, dass sie läuft. Ihre
-Engine ist keiner der Prozesse des Turniers: Das Ende eines Turniers beendet sie nicht.
+Engine ist keiner der Prozesse des Turniers: Das Ende eines Turniers beendet sie nicht. Nach dem Beenden bleibt die
+Engine für die nächste Suche gestartet, mit ihrer Hashtabelle (und dem GPU-Speicher einer Netz-Engine): Der
+Ein/Aus-Knopf neben der Engine, *Engine entladen* (auch in der Befehlspalette), beendet sie und die der Drohung.
 
 ### Eine ganze Partie analysieren
 <!-- en: analysing-a-whole-game a7e6166c -->

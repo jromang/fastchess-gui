@@ -5481,6 +5481,12 @@ msgstr ""
 msgid "Unknown engine: {}"
 msgstr ""
 
+msgid "Unload the engine"
+msgstr ""
+
+msgid "Unload the engine: it ends and frees its memory. Analyse starts it again."
+msgstr ""
+
 msgid "Unreadable PGN."
 msgstr ""
 
