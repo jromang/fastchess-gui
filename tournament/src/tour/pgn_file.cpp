@@ -210,7 +210,7 @@ std::pair<std::size_t, std::size_t> pgnTagLine(std::string_view game, std::strin
 }
 
 void setPgnTag(std::string& game, std::string_view tag, const std::string& value, bool add) {
-    const auto line         = "[" + std::string(tag) + " \"" + pgnTagValue(value) + "\"]";
+    const auto line         = std::string("[").append(tag).append(" \"").append(pgnTagValue(value)).append("\"]");
     const auto [begin, end] = pgnTagLine(game, tag);
     if (begin != std::string_view::npos) {
         game.replace(begin, end - begin, line);
