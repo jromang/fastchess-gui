@@ -941,6 +941,9 @@ GraphEvents drawGameGraph(const char* id, const GameGraph& g, GraphView& view, c
                         dl->AddRect(ImVec2(x - bw / 2, mid - h), ImVec2(x + bw / 2, mid), withAlpha(ui::MUTED, 0.5f));
                 } else {
                     dl->AddRectFilled(ImVec2(x - bw / 2, mid), ImVec2(x + bw / 2, mid + h), blackSide());
+                    // In the dark theme Black's bars are as dark as the strip: outlined, as White's are in the light.
+                    if (!light())
+                        dl->AddRect(ImVec2(x - bw / 2, mid), ImVec2(x + bw / 2, mid + h), withAlpha(ui::MUTED, 0.8f));
                 }
             }
         }
