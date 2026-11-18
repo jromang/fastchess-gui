@@ -971,10 +971,11 @@ void App::drawAllTournaments() {
                            ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_PadOuterX;
     // The space left, and enough for a few rows when the cards above took it: the page scrolls then.
     const float height = std::max(ImGui::GetContentRegionAvail().y, px(260));
-    if (!ImGui::BeginTable("tournaments", 6, flags, ImVec2(0, height))) return;
+    if (!ImGui::BeginTable("tournaments", 7, flags, ImVec2(0, height))) return;
     ImGui::TableSetupScrollFreeze(0, 1);
     ImGui::TableSetupColumn(TR("Tournament"), ImGuiTableColumnFlags_WidthStretch, 3.0f);
     ImGui::TableSetupColumn(TR("Format"), ImGuiTableColumnFlags_WidthStretch, 1.0f);
+    ImGui::TableSetupColumn(TR("Time control"), ImGuiTableColumnFlags_WidthStretch, 1.0f);
     ImGui::TableSetupColumn(TR("Games"), ImGuiTableColumnFlags_WidthStretch, 1.0f);
     ImGui::TableSetupColumn(TR("State"), ImGuiTableColumnFlags_WidthStretch, 1.2f);
     ImGui::TableSetupColumn(TR("Date"), ImGuiTableColumnFlags_WidthStretch, 1.3f);
@@ -999,6 +1000,8 @@ void App::drawAllTournaments() {
             ImGui::TextUnformatted(s.spec.name.c_str());
             ImGui::TableNextColumn();
             ImGui::TextUnformatted(formatLabel(s.spec.format).c_str());
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(limitText(s.spec.limit()).c_str());  // as the tournament's header writes it
             ImGui::TableNextColumn();
             ImGui::TextUnformatted(
                 (s.total ? fmt::format("{} / {}", s.played, *s.total) : fmt::format("{}", s.played)).c_str());
