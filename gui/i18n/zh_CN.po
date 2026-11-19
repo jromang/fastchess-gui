@@ -94,6 +94,9 @@ msgstr "（重复：请给它另一个开局库）"
 msgid "(withdrawn)"
 msgstr "（已退赛）"
 
+msgid "({} pieces or fewer)"
+msgstr "（{} 子及以下）"
+
 msgid "+ Engine"
 msgstr "+ 引擎"
 
@@ -106,6 +109,12 @@ msgstr "，CPU 亲和性"
 msgid ", and {} tournament of unknown length"
 msgid_plural ", and {} tournaments of unknown length"
 msgstr[0] "，另有 {} 个锦标赛时长未知"
+
+msgid ", at its last move"
+msgstr "，其上一步时"
+
+msgid ", decided at {}"
+msgstr "，决定于 {}"
 
 msgid "0 = a new random order for every match."
 msgstr "0 = 每场比赛都使用新的随机顺序。"
@@ -800,6 +809,9 @@ msgstr "黑方裁定获胜"
 msgid "Black wins by adjudication: SyzygyTB"
 msgstr "黑方裁定获胜：Syzygy 残局库"
 
+msgid "Black wins without it"
+msgstr "若无此规则黑方胜"
+
 msgid "Black ×2"
 msgstr "黑方 ×2"
 
@@ -1409,6 +1421,9 @@ msgstr "循环 {} · {} / {} 局"
 msgid "Cycles"
 msgstr "循环数"
 
+msgid "DTZ {}: half-moves to a capture or a pawn move"
+msgstr "DTZ {}：距吃子或兵步的半回合数"
+
 msgid "Dark"
 msgstr "深色"
 
@@ -1825,6 +1840,9 @@ msgstr "已全部继续。"
 
 msgid "Expected number of games"
 msgstr "预计对局数"
+
+msgid "Expected reply: {}"
+msgstr "预期应着：{}"
 
 msgid "Export CSV…"
 msgstr "导出 CSV…"
@@ -3968,6 +3986,18 @@ msgstr "得分率"
 msgid "Score (cp)"
 msgstr "分数 (cp)"
 
+msgid "Score of White"
+msgstr "白方视角评分"
+
+msgid "Score of the side to move"
+msgstr "走棋方视角评分"
+
+msgid "Score · White"
+msgstr "评分 · 白方"
+
+msgid "Score · to move"
+msgstr "评分 · 走棋方"
+
 msgid "Score: points per game."
 msgstr "得分：每局积分。"
 
@@ -4389,6 +4419,18 @@ msgstr "残局库"
 msgid "Tablebases folder"
 msgstr "残局库文件夹"
 
+msgid "Tablebases: Black wins"
+msgstr "残局库：黑方胜"
+
+msgid "Tablebases: White wins"
+msgstr "残局库：白方胜"
+
+msgid "Tablebases: draw"
+msgstr "残局库：和棋"
+
+msgid "Tablebases: draw by the 50-move rule"
+msgstr "残局库：五十步规则和棋"
+
 msgid "Tabs"
 msgstr "标签页"
 
@@ -4667,8 +4709,14 @@ msgstr "具有 SyzygyPath 选项的引擎会获得这些目录（即裁定所用
 msgid "The engines waiting are not checked; the check under way goes on."
 msgstr "等待中的引擎不再检查；正在进行的检查会继续。"
 
+msgid "The engines' lines under the search: the side to move's as it searches, the other's from its last move."
+msgstr "在搜索信息下方显示引擎的变化：走棋方为其搜索中的变化，另一方为其上一步时的变化。"
+
 msgid "The engines' own books are off"
 msgstr "引擎自带开局库已关闭"
+
+msgid "The engines' scores in this tab: from the side to move's point of view, as fastchess writes them in the PGN, or from White's. The evaluation bar and the big screen are always from White's side."
+msgstr "此标签页中引擎的评分：按走棋方视角（fastchess 写入 PGN 的方式），或按白方视角。评估条和大屏幕始终按白方视角。"
 
 msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
 msgstr "恢复初始的曝光、质量、清漆和光泽；布光保持不变。"
@@ -5575,6 +5623,12 @@ msgstr "更改内容"
 msgid "What changed: {}"
 msgstr "更改内容：{}"
 
+msgid "What it said when it played."
+msgstr "这是它走棋时的输出。"
+
+msgid "What it said when it played; decided at {}."
+msgstr "这是它走棋时的输出；决定于 {}。"
+
 msgid "What the tournaments on this machine may use at once. 0 takes what the test found: every thread but one, and 80 % of the memory."
 msgstr "此机器上的比赛同时可以使用的资源。0 表示采用测试结果：除一个外的全部线程，以及 80 % 的内存。"
 
@@ -5640,6 +5694,9 @@ msgstr "白方裁定获胜"
 
 msgid "White wins by adjudication: SyzygyTB"
 msgstr "白方裁定获胜：Syzygy 残局库"
+
+msgid "White wins without it"
+msgstr "若无此规则白方胜"
 
 msgid "White ×2"
 msgstr "白方 ×2"
@@ -5890,6 +5947,9 @@ msgstr "开局库"
 msgid "book move"
 msgstr "开局库着法"
 
+msgid "book up to {}"
+msgstr "开局库至 {}"
+
 msgid "both"
 msgstr "两者"
 
@@ -6070,6 +6130,9 @@ msgstr "已移除"
 
 msgid "hash of the engine"
 msgstr "引擎自身的哈希"
+
+msgid "hash {} %"
+msgstr "哈希 {}%"
 
 msgid "here: {}"
 msgstr "本机：{}"
@@ -6359,6 +6422,9 @@ msgstr "已停止"
 msgid "tablebase"
 msgstr "残局库"
 
+msgid "tb {}"
+msgstr "残局库 {}"
+
 msgid "the best moves only"
 msgstr "只选最佳着法"
 
@@ -6388,6 +6454,9 @@ msgstr "{} 的快速测试"
 
 msgid "the resume of the interrupted tournament"
 msgstr "恢复被中断的锦标赛"
+
+msgid "thinking"
+msgstr "思考中"
 
 msgid "this analysis only"
 msgstr "仅限本次分析"
@@ -7397,6 +7466,15 @@ msgstr "{} · 深度 {} · {}"
 
 msgid "{} · opening {}"
 msgstr "{} · 开局 {}"
+
+msgid "{} · played {}"
+msgstr "{} · 走了 {}"
+
+msgid "{} · thinking"
+msgstr "{} · 思考中"
+
+msgid "{} · to move"
+msgstr "{} · 轮到走棋"
 
 msgid "{} · {} / {} games · {} playing"
 msgstr "{} · {} / {} 局 · {} 局进行中"

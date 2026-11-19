@@ -1208,7 +1208,7 @@ começou, quando a rodada compartilha uma), e as alterações do torneio (veja [
 andamento](#alterar-um-torneio-em-andamento)).
 
 ### Ao vivo
-<!-- en: live 48ceada0 -->
+<!-- en: live 5561ed9b -->
 
 As partidas em andamento, como um mosaico de tabuleiros ou uma partida em foco com os relógios, a busca em curso de
 cada engine (profundidade, pontuação, nós, nps, PV em SAN), a lista de lances e o gráfico da partida (veja [O gráfico
@@ -1217,6 +1217,25 @@ tempo por lance com o tempo de decisão, a profundidade com a seldepth, os nós,
 tablebases, quanto eles se afastam, ou quantos meios-lances uma PV repete do que a PV do outro engine previa. As
 parcelas de vitória/empate/derrota (`UCI_ShowWDL`, ligado para os engines que o têm quando são adicionados)
 acompanham cada linha de busca; a aba *V/E/D* as desenha como faixas, as vitórias das Brancas embaixo.
+
+Quando há espaço (uma partida em foco, um painel grande), cada engine tem seu cartão: o logo tão alto quanto o nome e o
+relógio, o que ele faz (pensa, ou o lance que jogou), a busca número a número (profundidade e seldepth, avaliação, nós,
+velocidade, os acessos às tablebases e o preenchimento do hash quando o engine os envia, o tempo gasto no lance até
+agora) e toda a PV; o engine que espera mostra o que dizia ao jogar, com o momento em que se decidiu. Ao lado do
+mosaico, o painel mantém uma linha de números e os 12 primeiros meios-lances da PV. *Avaliação do lado a jogar* |
+*Avaliação das brancas*, à direita da aba, escolhe o lado de todas as avaliações dela: o do lado a jogar, como o
+fastchess as escreve no PGN, ou o das brancas; a barra de avaliação e a tela grande mostram sempre o das brancas.
+
+Acima dos lances: a abertura, o código ECO e o nome da posição mais avançada da partida que a tabela de aberturas
+nomeadas conhece (lances do livro e dos engines igualmente, de modo que uma transposição depois do livro também recebe
+nome), com o último lance do livro; e, assim que as tablebases Syzygy do torneio (as da adjudicação dele, senão as dadas
+aos engines) conhecem a posição mostrada, o veredito delas: o lado que vence com a DTZ (os meios-lances até a próxima
+captura ou lance de peão: as tablebases Syzygy não têm distância até o mate), ou o empate, com a regra dos 50 lances
+contada pelo contador da partida, a menos que a adjudicação a ignore. Cada posição é consultada uma vez, fora das
+threads que jogam as partidas. Na lista, cada lance de um engine tem sua avaliação, profundidade e tempo; ao passar o
+mouse, aparecem o momento em que o engine se decidiu e a resposta que ele esperava (o segundo lance da PV: o fastchess
+joga sem ponder). Os lances do livro dizem *livro*, uma linha marca o fim do livro, e o lance em que se pensa diz
+*pensando*.
 
 O mosaico tem um tabuleiro por partida em andamento, não por partida que o paralelismo permite: perto do fim de um
 torneio, ou com menos partidas que isso, os tabuleiros restantes crescem. Um tabuleiro cuja partida terminou fica 10
@@ -1241,13 +1260,15 @@ resultado (veja [Alterar um torneio em andamento](#alterar-um-torneio-em-andamen
 acompanhada ocupando a janela (veja [Tela grande](#tela-grande)).
 
 ### Tela grande
-<!-- en: big-screen 973ba25b -->
+<!-- en: big-screen 14c8f0d6 -->
 
 Para uma TV, um clube ou uma transmissão ao vivo, *Tela grande* (na aba *Ao vivo*, num tabuleiro destacado, ou na
 paleta de comandos) mostra uma partida ocupando a janela, em claro sobre preto: os nomes dos jogadores e os relógios
 em letras grandes (o lado que tem a vez e o relógio dele correndo em amarelo, um relógio abaixo de dez segundos em
 vermelho), a barra de avaliação, a avaliação, a profundidade e a velocidade da busca, o último lance enquadrado no
-tabuleiro e escrito em letras grandes, e os lances em letras grandes, o último marcado; o resultado sobre o tabuleiro
+tabuleiro e escrito em letras grandes, a abertura, as linhas dos engines (*Linhas*, ligado por padrão: a do lado a
+jogar enquanto busca, em amarelo, a do outro desde o seu último lance, no máximo duas linhas cada), o veredito das
+tablebases assim que conhecem a posição, e os lances em letras grandes, o último marcado; o resultado sobre o tabuleiro
 quando a partida termina. O texto acompanha o tamanho da janela e tem um tamanho próprio (*A-* / *A+*, ou as teclas +
 e -). Ela mostra a partida acompanhada, ou alterna entre as partidas em andamento a cada N segundos (*Cada partida por
 vez*), ou acompanha *A mais interessante*: a mais próxima do equilíbrio, a mais longa entre as igualmente próximas,

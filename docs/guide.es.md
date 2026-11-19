@@ -1233,7 +1233,7 @@ cuando la ronda comparte una), y los cambios en el torneo (consulta [Modificar u
 curso](#modificar-un-torneo-en-curso)).
 
 ### Directo
-<!-- en: live 48ceada0 -->
+<!-- en: live 5561ed9b -->
 
 Las partidas en curso, como un mosaico de tableros o una partida en primer plano con los relojes, la búsqueda en curso
 de cada motor (profundidad, puntuación, nodos, nps, PV en SAN), la lista de jugadas y el gráfico de la partida (consulta
@@ -1243,6 +1243,26 @@ la velocidad, los accesos a tablas de finales, cuánto se separan, o cuántas me
 otro motor repite una PV. Las proporciones de victoria/tablas/derrota (`UCI_ShowWDL`, activado para los motores que lo
 tienen cuando se añaden) siguen cada línea de búsqueda; la pestaña *V/T/D* las dibuja como bandas, con las victorias de
 las blancas abajo.
+
+Cuando hay sitio (una partida en primer plano, un panel grande), cada motor tiene su tarjeta: su logo tan alto como su
+nombre y su reloj, lo que hace (piensa, o la jugada que hizo), su búsqueda cifra por cifra (profundidad y seldepth,
+evaluación, nodos, velocidad, los accesos a tablas de finales y el llenado del hash cuando el motor los envía, el tiempo
+dedicado a la jugada hasta ahora) y toda su PV; el motor que espera muestra lo que decía al jugar, con el momento en que
+se decidió. Junto al mosaico, el panel conserva una línea de cifras y las 12 primeras medias jugadas de la PV.
+*Evaluación del bando que juega* | *Evaluación de las blancas*, a la derecha de la pestaña, elige el lado de todas sus
+evaluaciones: el del bando que juega, como fastchess las escribe en el PGN, o el de las blancas; la barra de evaluación
+y la pantalla grande siempre muestran el de las blancas.
+
+Encima de las jugadas: la apertura, el código ECO y el nombre de la posición más avanzada de la partida que conoce la
+tabla de aperturas con nombre (jugadas del libro y de los motores por igual, de modo que también se nombra una
+transposición después del libro), con la última jugada del libro; y en cuanto las tablas Syzygy del torneo (las de su
+adjudicación, si no las que se dan a los motores) conocen la posición mostrada, su veredicto: el bando que gana con la
+DTZ (las medias jugadas hasta la próxima captura o movimiento de peón: las tablas Syzygy no tienen distancia al mate), o
+el empate, con la regla de los 50 movimientos contada desde el contador de la partida salvo que la adjudicación la
+ignore. Cada posición se consulta una vez, fuera de los hilos que juegan las partidas. En la lista, cada jugada de un
+motor tiene su evaluación, su profundidad y su tiempo; al pasar el ratón se añaden el momento en que el motor se decidió
+y la respuesta que esperaba (la segunda jugada de su PV: fastchess juega sin ponder). Las jugadas del libro dicen
+*libro*, una línea marca el fin del libro, y la jugada en la que se piensa dice *piensa*.
 
 El mosaico tiene un tablero por partida en curso, no por partida que permita la concurrencia: hacia el final de un
 torneo, o con menos partidas que eso, los tableros que quedan crecen. Un tablero cuya partida terminó se queda 10
@@ -1268,13 +1288,16 @@ partida con un resultado (consulta [Modificar un torneo en curso](#modificar-un-
 muestra la partida seguida llenando la ventana (consulta [Pantalla grande](#pantalla-grande)).
 
 ### Pantalla grande
-<!-- en: big-screen 973ba25b -->
+<!-- en: big-screen 14c8f0d6 -->
 
 Para una televisión, un club o un stream, *Pantalla grande* (en la pestaña *Directo*, en un tablero separado o en la
 paleta de comandos) muestra una partida llenando la ventana, en claro sobre negro: los nombres de los jugadores y los
 relojes en letra grande (el bando al que le toca mover y su reloj en marcha en amarillo, un reloj por debajo de diez
 segundos en rojo), la barra de evaluación, la evaluación, la profundidad y la velocidad de la búsqueda, la última
-jugada enmarcada en el tablero y escrita en grande, y las jugadas en letra grande, con la última marcada; el
+jugada enmarcada en el tablero y escrita en grande, la apertura, las líneas de los motores (*Líneas*, activado por
+defecto: la del bando que juega mientras busca, en amarillo, la del otro desde su última jugada, dos renglones cada una
+como mucho), el veredicto de las tablas de finales cuando conocen la posición, y las jugadas en letra grande, con la
+última marcada; el
 resultado sobre el tablero una vez terminada la partida. Su texto sigue el tamaño de la ventana y tiene un tamaño
 propio (*A-* / *A+*, o las teclas + y -). Muestra la partida seguida, o va pasando de una partida en curso a otra cada
 N segundos (*Cada partida por turnos*), o sigue *La más interesante*: la más cercana a la igualdad, la más larga de

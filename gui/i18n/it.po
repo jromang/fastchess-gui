@@ -96,6 +96,9 @@ msgstr "(due volte: dagli un altro libro)"
 msgid "(withdrawn)"
 msgstr "(ritirato)"
 
+msgid "({} pieces or fewer)"
+msgstr "({} pezzi o meno)"
+
 msgid "+ Engine"
 msgstr "+ Motore"
 
@@ -109,6 +112,12 @@ msgid ", and {} tournament of unknown length"
 msgid_plural ", and {} tournaments of unknown length"
 msgstr[0] ", e {} torneo di durata sconosciuta"
 msgstr[1] ", e {} tornei di durata sconosciuta"
+
+msgid ", at its last move"
+msgstr ", alla sua ultima mossa"
+
+msgid ", decided at {}"
+msgstr ", deciso a {}"
 
 msgid "0 = a new random order for every match."
 msgstr "0 = un nuovo ordine casuale per ogni match."
@@ -806,6 +815,9 @@ msgstr "Il Nero vince per aggiudicazione"
 msgid "Black wins by adjudication: SyzygyTB"
 msgstr "Il Nero vince per aggiudicazione: Syzygy"
 
+msgid "Black wins without it"
+msgstr "senza di essa vince il Nero"
+
 msgid "Black ×2"
 msgstr "Nero ×2"
 
@@ -1415,6 +1427,9 @@ msgstr "Ciclo {} · {} / {} partite"
 msgid "Cycles"
 msgstr "Cicli"
 
+msgid "DTZ {}: half-moves to a capture or a pawn move"
+msgstr "DTZ {}: semimosse fino a una cattura o una mossa di pedone"
+
 msgid "Dark"
 msgstr "Scuro"
 
@@ -1831,6 +1846,9 @@ msgstr "Tutto ripreso."
 
 msgid "Expected number of games"
 msgstr "Numero di partite previsto"
+
+msgid "Expected reply: {}"
+msgstr "Risposta attesa: {}"
 
 msgid "Export CSV…"
 msgstr "Esporta CSV…"
@@ -3983,6 +4001,18 @@ msgstr "Punteggio %"
 msgid "Score (cp)"
 msgstr "Valutazione (cp)"
 
+msgid "Score of White"
+msgstr "Valutazione del Bianco"
+
+msgid "Score of the side to move"
+msgstr "Valutazione del lato al tratto"
+
+msgid "Score · White"
+msgstr "Valutazione · Bianco"
+
+msgid "Score · to move"
+msgstr "Valutazione · al tratto"
+
 msgid "Score: points per game."
 msgstr "Punteggio: punti per partita."
 
@@ -4411,6 +4441,18 @@ msgstr "Tablebase"
 msgid "Tablebases folder"
 msgstr "Cartella delle tablebase"
 
+msgid "Tablebases: Black wins"
+msgstr "Tablebase: vince il Nero"
+
+msgid "Tablebases: White wins"
+msgstr "Tablebase: vince il Bianco"
+
+msgid "Tablebases: draw"
+msgstr "Tablebase: patta"
+
+msgid "Tablebases: draw by the 50-move rule"
+msgstr "Tablebase: patta per la regola delle 50 mosse"
+
 msgid "Tabs"
 msgstr "Schede"
 
@@ -4691,8 +4733,14 @@ msgstr "I motori che hanno un'opzione SyzygyPath ricevono queste cartelle, quell
 msgid "The engines waiting are not checked; the check under way goes on."
 msgstr "I motori in attesa non vengono verificati; la verifica in corso continua."
 
+msgid "The engines' lines under the search: the side to move's as it searches, the other's from its last move."
+msgstr "Le linee dei motori sotto la ricerca: quella del lato al tratto mentre cerca, quella dell'altro dalla sua ultima mossa."
+
 msgid "The engines' own books are off"
 msgstr "I libri propri dei motori sono disattivati"
+
+msgid "The engines' scores in this tab: from the side to move's point of view, as fastchess writes them in the PGN, or from White's. The evaluation bar and the big screen are always from White's side."
+msgstr "Le valutazioni dei motori in questa scheda: dal punto di vista del lato al tratto, come fastchess le scrive nel PGN, o da quello del Bianco. La barra di valutazione e lo schermo grande mostrano sempre quello del Bianco."
 
 msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
 msgstr "Esposizione, qualità, vernice e lucentezza come all'inizio; l'illuminazione resta."
@@ -5604,6 +5652,12 @@ msgstr "Cosa è cambiato"
 msgid "What changed: {}"
 msgstr "Cosa è cambiato: {}"
 
+msgid "What it said when it played."
+msgstr "Ciò che diceva quando ha giocato."
+
+msgid "What it said when it played; decided at {}."
+msgstr "Ciò che diceva quando ha giocato; deciso a {}."
+
 msgid "What the tournaments on this machine may use at once. 0 takes what the test found: every thread but one, and 80 % of the memory."
 msgstr "Ciò che i tornei su questa macchina possono usare insieme. 0 prende ciò che ha trovato il test: tutti i thread tranne uno e l'80 % della memoria."
 
@@ -5669,6 +5723,9 @@ msgstr "Il Bianco vince per aggiudicazione"
 
 msgid "White wins by adjudication: SyzygyTB"
 msgstr "Il Bianco vince per aggiudicazione: Syzygy"
+
+msgid "White wins without it"
+msgstr "senza di essa vince il Bianco"
 
 msgid "White ×2"
 msgstr "Bianco ×2"
@@ -5922,6 +5979,9 @@ msgstr "libro"
 msgid "book move"
 msgstr "mossa di libro"
 
+msgid "book up to {}"
+msgstr "libro fino a {}"
+
 msgid "both"
 msgstr "entrambe"
 
@@ -6103,6 +6163,9 @@ msgstr "sparita"
 
 msgid "hash of the engine"
 msgstr "hash del motore"
+
+msgid "hash {} %"
+msgstr "hash {} %"
 
 msgid "here: {}"
 msgstr "qui: {}"
@@ -6395,6 +6458,9 @@ msgstr "fermata"
 msgid "tablebase"
 msgstr "tablebase"
 
+msgid "tb {}"
+msgstr "tb {}"
+
 msgid "the best moves only"
 msgstr "solo le mosse migliori"
 
@@ -6424,6 +6490,9 @@ msgstr "il test rapido di {}"
 
 msgid "the resume of the interrupted tournament"
 msgstr "la ripresa del torneo interrotto"
+
+msgid "thinking"
+msgstr "pensa"
 
 msgid "this analysis only"
 msgstr "solo questa analisi"
@@ -7515,6 +7584,15 @@ msgstr "{} · profondità {} · {}"
 
 msgid "{} · opening {}"
 msgstr "{} · apertura {}"
+
+msgid "{} · played {}"
+msgstr "{} · ha giocato {}"
+
+msgid "{} · thinking"
+msgstr "{} · pensa"
+
+msgid "{} · to move"
+msgstr "{} · al tratto"
 
 msgid "{} · {} / {} games · {} playing"
 msgstr "{} · {} / {} partite · {} in corso"

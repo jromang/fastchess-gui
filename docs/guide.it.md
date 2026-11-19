@@ -1226,7 +1226,7 @@ iniziata, o una volta iniziato il suo turno quando il turno ne condivide una), e
 [Modificare un torneo in corso](#modificare-un-torneo-in-corso)).
 
 ### Diretta
-<!-- en: live 48ceada0 -->
+<!-- en: live 5561ed9b -->
 
 Le partite in corso, come un mosaico di scacchiere o una sola partita in primo piano con gli orologi, la ricerca in
 corso di ogni motore (profondità, valutazione, nodi, nps, PV in SAN), l'elenco delle mosse e il grafico della partita
@@ -1236,6 +1236,26 @@ velocità, gli accessi alle tablebase, quanto distano, o quante semimosse una PV
 motore aveva previsto. Le quote di vittoria/patta/sconfitta (`UCI_ShowWDL`, attivato per i motori che lo hanno quando
 vengono aggiunti) seguono ogni riga di ricerca; la scheda *V/P/S* le disegna come fasce, le vittorie del Bianco in
 basso.
+
+Quando c'è spazio (una partita in primo piano, un pannello grande), ogni motore ha il suo riquadro: il logo alto quanto
+il nome e l'orologio, cosa fa (pensa, o la mossa che ha giocato), la sua ricerca cifra per cifra (profondità e seldepth,
+valutazione, nodi, velocità, gli accessi alle tablebase e il riempimento dell'hash quando il motore li invia, il tempo
+speso sulla mossa finora) e tutta la sua PV; il motore che attende mostra ciò che diceva quando ha giocato, con il
+momento in cui si è deciso. Accanto al mosaico, il pannello tiene una riga di cifre e le prime 12 semimosse della PV.
+*Valutazione del lato al tratto* | *Valutazione del Bianco*, a destra della scheda, sceglie il lato di tutte le sue
+valutazioni: quello del lato al tratto, come fastchess le scrive nel PGN, o quello del Bianco; la barra di valutazione e
+lo schermo grande mostrano sempre quello del Bianco.
+
+Sopra le mosse: l'apertura, il codice ECO e il nome della posizione più avanzata della partita che la tabella delle
+aperture con nome conosce (mosse del libro e dei motori allo stesso modo, così che anche una trasposizione dopo il libro
+abbia un nome), con l'ultima mossa del libro; e appena le tablebase Syzygy del torneo (quelle della sua aggiudicazione,
+altrimenti quelle date ai motori) conoscono la posizione mostrata, il loro verdetto: il lato che vince con la DTZ (le
+semimosse fino alla prossima cattura o mossa di pedone: le tablebase Syzygy non hanno la distanza dal matto), o la
+patta, con la regola delle 50 mosse contata dal contatore della partita salvo che l'aggiudicazione la ignori. Ogni
+posizione viene interrogata una volta, fuori dai thread che giocano le partite. Nell'elenco, ogni mossa di un motore ha
+la sua valutazione, profondità e tempo; passandoci sopra si aggiungono il momento in cui il motore si è deciso e la
+risposta che si aspettava (la seconda mossa della sua PV: fastchess gioca senza ponder). Le mosse del libro dicono
+*libro*, una riga segna la fine del libro, e la mossa su cui si pensa dice *pensa*.
 
 Il mosaico ha una scacchiera per ogni partita in corso, non per ogni partita che il parallelismo consente: verso la
 fine di un torneo, o con meno partite di così, le scacchiere rimaste si ingrandiscono. Una scacchiera la cui partita è
@@ -1262,13 +1282,15 @@ corso](#modificare-un-torneo-in-corso)). *Schermo grande* mostra la partita segu
 grande](#schermo-grande)).
 
 ### Schermo grande
-<!-- en: big-screen 973ba25b -->
+<!-- en: big-screen 14c8f0d6 -->
 
 Per una televisione, un circolo o uno stream, *Schermo grande* (nella scheda *Diretta*, su una scacchiera staccata, o
 nella tavolozza dei comandi) mostra una partita a tutta finestra, chiaro su nero: i nomi dei giocatori e gli orologi a
 caratteri grandi (il lato che muove e il suo orologio che scorre in giallo, un orologio sotto i dieci secondi in rosso),
 la barra di valutazione, la valutazione, la profondità e la velocità della ricerca, l'ultima mossa incorniciata sulla
-scacchiera e scritta in grande, e le mosse a caratteri grandi, con l'ultima segnata; il risultato sopra la scacchiera
+scacchiera e scritta in grande, l'apertura, le linee dei motori (*Linee*, attivo per impostazione predefinita: quella
+del lato al tratto mentre cerca, in giallo, quella dell'altro dalla sua ultima mossa, al massimo due righe ciascuna),
+il verdetto delle tablebase appena conoscono la posizione, e le mosse a caratteri grandi, con l'ultima segnata; il risultato sopra la scacchiera
 quando la partita è finita. Il suo testo segue la dimensione della finestra e ha una dimensione propria (*A-* / *A+*,
 o i tasti + e -). Mostra la partita seguita, o passa da una partita in corso all'altra ogni N secondi (*Ogni partita a
 turno*), o segue *La più interessante*: la più vicina alla parità, la più lunga tra quelle altrettanto vicine, tenuta

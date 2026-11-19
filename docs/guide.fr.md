@@ -1252,7 +1252,7 @@ commencée quand la ronde en partage une), et les modifications du tournoi (voir
 [Modifier un tournoi en cours](#modifier-un-tournoi-en-cours)).
 
 ### Direct
-<!-- en: live 48ceada0 -->
+<!-- en: live 5561ed9b -->
 
 Les parties en cours, en mosaïque d'échiquiers ou en une partie mise en avant avec les pendules, la recherche en cours
 de chaque moteur (profondeur, score, nœuds, nps, PV en SAN), la liste des coups et le graphe de la partie (voir
@@ -1261,6 +1261,26 @@ chances de gain, le temps par coup avec le temps de décision, la profondeur ave
 les accès aux tables, leur écart, ou combien de demi-coups une PV reprend de ce que la PV de l'autre moteur avait
 prévu. Les parts de victoire, de nulle et de défaite (`UCI_ShowWDL`, activé pour les moteurs qui l'ont quand ils sont
 ajoutés) suivent chaque ligne de recherche ; l'onglet *G/N/P* les dessine en bandes, les victoires des Blancs en bas.
+
+Quand la place le permet (une partie mise en avant, un grand panneau), chaque moteur a sa carte : son logo aussi haut
+que son nom et sa pendule, ce qu'il fait (il réfléchit, ou le coup qu'il a joué), sa recherche chiffre par chiffre
+(profondeur et seldepth, score, nœuds, vitesse, les accès aux tables et le remplissage du hash quand le moteur les
+envoie, le temps passé sur le coup jusque-là) et toute sa PV ; le moteur qui attend montre ce qu'il disait au moment de
+jouer, avec l'instant où il s'est décidé. À côté de la mosaïque, le panneau garde une ligne de chiffres et les 12
+premiers demi-coups de la PV. *Score du camp au trait* | *Score des Blancs*, à droite de l'onglet, choisit le côté de
+tous ses scores : celui du camp au trait, comme fastchess les écrit dans le PGN, ou celui des Blancs ; la barre
+d'évaluation et le grand écran sont toujours du côté des Blancs.
+
+Au-dessus des coups : l'ouverture, le code ECO et le nom de la position la plus avancée de la partie que la table des
+ouvertures nommées connaît (coups du livre et des moteurs confondus, si bien qu'une transposition après le livre est
+nommée aussi), avec le dernier coup du livre ; et dès que les tables Syzygy du tournoi (celles de son adjudication,
+sinon celles données aux moteurs) connaissent la position affichée, leur verdict : le camp qui gagne avec la DTZ (les
+demi-coups jusqu'à la prochaine prise ou au prochain coup de pion : les tables Syzygy n'ont pas de distance au mat), ou
+la nulle, la règle des 50 coups comptée d'après le compteur de la partie sauf si l'adjudication l'ignore. Chaque
+position est sondée une fois, hors des fils qui font jouer les parties. Dans la liste, chaque coup d'un moteur a son
+score, sa profondeur et son temps ; le survol y ajoute l'instant où le moteur s'est décidé et la réponse qu'il attendait
+(le second coup de sa PV : fastchess fait jouer sans réflexion sur le temps de l'adversaire). Les coups du livre disent
+*livre*, une ligne marque la fin du livre, et le coup en réflexion dit *réfléchit*.
 
 La mosaïque a un échiquier par partie en cours, et non par partie que le parallélisme permet : vers la fin d'un
 tournoi, ou avec moins de parties que cela, les échiquiers restants grandissent. Un échiquier dont la partie s'est
@@ -1286,13 +1306,15 @@ toujours jusqu'à la partie suivante. *Détacher* ouvre un échiquier dans sa pr
 *Grand écran* montre la partie suivie en remplissant la fenêtre (voir [Grand écran](#grand-écran)).
 
 ### Grand écran
-<!-- en: big-screen 973ba25b -->
+<!-- en: big-screen 14c8f0d6 -->
 
 Pour une télévision, un club ou un stream, *Grand écran* (dans l'onglet *Direct*, sur un échiquier détaché, ou dans
 la palette de commandes) montre une partie qui remplit la fenêtre, en clair sur fond noir : les noms des joueurs et
 leurs pendules en gros caractères (le camp au trait et sa pendule qui tourne en jaune, une pendule sous dix secondes en
 rouge), la barre d'évaluation, l'évaluation, la profondeur et la vitesse de la recherche, le dernier coup encadré sur
-l'échiquier et écrit en grand, et les coups en gros caractères, le dernier marqué ; le résultat par-dessus l'échiquier
+l'échiquier et écrit en grand, l'ouverture, les lignes des moteurs (*Lignes*, activé par défaut : celle du camp au
+trait pendant qu'il cherche, en jaune, celle de l'autre à son dernier coup, deux lignes chacune au plus), le verdict
+des tables une fois qu'elles connaissent la position, et les coups en gros caractères, le dernier marqué ; le résultat par-dessus l'échiquier
 une fois la partie finie. Son texte suit la taille de la fenêtre et a une taille propre (*A-* / *A+*, ou les touches
 + et -). Il montre la partie suivie, ou passe d'une partie en cours à l'autre toutes les N secondes (*Chaque partie à
 tour de rôle*), ou suit *La plus intéressante* : la plus proche de l'équilibre, la plus longue parmi celles qui le

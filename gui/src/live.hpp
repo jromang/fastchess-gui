@@ -121,6 +121,21 @@ struct OpeningName {
     std::string name;
 };
 
+// The opening of a game as far as it went: the deepest of its positions that fastchess' table names (the ECO code and
+// name its PGN gets once over), book moves and engine moves alike, so that a transposition after the book is named
+// too; and where its book ended. No name in Chess960, nor when no position of the game is in the table.
+struct LiveOpening {
+    std::optional<OpeningName> name;
+    int last_book = -1;  // index of the last book move, -1 without one
+};
+[[nodiscard]] LiveOpening liveOpening(const SlotState& st, bool chess960);
+
+// The position of a game after its first `ply` moves.
+[[nodiscard]] chess::Board slotBoard(const SlotState& st, int ply);
+
+// "13.Kb1" or "13…Nf6": move `index` of a game with its number.
+[[nodiscard]] std::string numberedSan(const SlotState& st, std::size_t index);
+
 // Per engine counters collected from finished games.
 struct EngineTotals {
     uint64_t moves            = 0;

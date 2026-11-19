@@ -98,6 +98,9 @@ msgstr "(дважды: дайте ему другую книгу)"
 msgid "(withdrawn)"
 msgstr "(снят)"
 
+msgid "({} pieces or fewer)"
+msgstr "(не больше {} фигур)"
+
 msgid "+ Engine"
 msgstr "+ Движок"
 
@@ -112,6 +115,12 @@ msgid_plural ", and {} tournaments of unknown length"
 msgstr[0] ", и ещё {} турнир неизвестной длительности"
 msgstr[1] ", и ещё {} турнира неизвестной длительности"
 msgstr[2] ", и ещё {} турниров неизвестной длительности"
+
+msgid ", at its last move"
+msgstr ", на его последнем ходу"
+
+msgid ", decided at {}"
+msgstr ", решение на {}"
 
 msgid "0 = a new random order for every match."
 msgstr "0 = новый случайный порядок для каждого матча."
@@ -812,6 +821,9 @@ msgstr "Победа чёрных по присуждению"
 msgid "Black wins by adjudication: SyzygyTB"
 msgstr "Победа чёрных по присуждению: Syzygy"
 
+msgid "Black wins without it"
+msgstr "без него чёрные выигрывают"
+
 msgid "Black ×2"
 msgstr "Чёрные ×2"
 
@@ -1421,6 +1433,9 @@ msgstr "Цикл {} · партий: {} / {}"
 msgid "Cycles"
 msgstr "Циклы"
 
+msgid "DTZ {}: half-moves to a capture or a pawn move"
+msgstr "DTZ {}: полуходов до взятия или хода пешкой"
+
 msgid "Dark"
 msgstr "Тёмная"
 
@@ -1837,6 +1852,9 @@ msgstr "Всё продолжено."
 
 msgid "Expected number of games"
 msgstr "Ожидаемое число партий"
+
+msgid "Expected reply: {}"
+msgstr "Ожидаемый ответ: {}"
 
 msgid "Export CSV…"
 msgstr "Экспорт в CSV…"
@@ -3998,6 +4016,18 @@ msgstr "% очков"
 msgid "Score (cp)"
 msgstr "Оценка (cp)"
 
+msgid "Score of White"
+msgstr "Оценка за белых"
+
+msgid "Score of the side to move"
+msgstr "Оценка за сторону, чей ход"
+
+msgid "Score · White"
+msgstr "Оценка · белые"
+
+msgid "Score · to move"
+msgstr "Оценка · за ходящего"
+
 msgid "Score: points per game."
 msgstr "Результат: очки за партию."
 
@@ -4433,6 +4463,18 @@ msgstr "Таблицы эндшпиля"
 msgid "Tablebases folder"
 msgstr "Папка эндшпильных таблиц"
 
+msgid "Tablebases: Black wins"
+msgstr "Таблицы: чёрные выигрывают"
+
+msgid "Tablebases: White wins"
+msgstr "Таблицы: белые выигрывают"
+
+msgid "Tablebases: draw"
+msgstr "Таблицы: ничья"
+
+msgid "Tablebases: draw by the 50-move rule"
+msgstr "Таблицы: ничья по правилу 50 ходов"
+
 msgid "Tabs"
 msgstr "Вкладки"
 
@@ -4715,8 +4757,14 @@ msgstr "Движки с опцией SyzygyPath получают эти папк
 msgid "The engines waiting are not checked; the check under way goes on."
 msgstr "Ожидающие движки не проверяются; текущая проверка продолжается."
 
+msgid "The engines' lines under the search: the side to move's as it searches, the other's from its last move."
+msgstr "Линии движков под поиском: линия стороны, чей ход, пока она ищет, и линия другой — с её последнего хода."
+
 msgid "The engines' own books are off"
 msgstr "Собственные книги движков выключены"
+
+msgid "The engines' scores in this tab: from the side to move's point of view, as fastchess writes them in the PGN, or from White's. The evaluation bar and the big screen are always from White's side."
+msgstr "Оценки движков на этой вкладке: с точки зрения стороны, чей ход, как fastchess пишет их в PGN, или с точки зрения белых. Шкала оценки и большой экран всегда показывают её с точки зрения белых."
 
 msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
 msgstr "Экспозиция, качество, лак и глянец как вначале; освещение остаётся."
@@ -5633,6 +5681,12 @@ msgstr "Что изменилось"
 msgid "What changed: {}"
 msgstr "Что изменилось: {}"
 
+msgid "What it said when it played."
+msgstr "Что он показывал в момент хода."
+
+msgid "What it said when it played; decided at {}."
+msgstr "Что он показывал в момент хода; решение на {}."
+
 msgid "What the tournaments on this machine may use at once. 0 takes what the test found: every thread but one, and 80 % of the memory."
 msgstr "Что турниры на этой машине могут использовать одновременно. 0 берёт найденное проверкой: все потоки, кроме одного, и 80 % памяти."
 
@@ -5698,6 +5752,9 @@ msgstr "Победа белых по присуждению"
 
 msgid "White wins by adjudication: SyzygyTB"
 msgstr "Победа белых по присуждению: Syzygy"
+
+msgid "White wins without it"
+msgstr "без него белые выигрывают"
 
 msgid "White ×2"
 msgstr "Белые ×2"
@@ -5954,6 +6011,9 @@ msgstr "книга"
 msgid "book move"
 msgstr "ход из книги"
 
+msgid "book up to {}"
+msgstr "книга до {}"
+
 msgid "both"
 msgstr "и то и другое"
 
@@ -6136,6 +6196,9 @@ msgstr "исчезла"
 
 msgid "hash of the engine"
 msgstr "хеш движка"
+
+msgid "hash {} %"
+msgstr "хеш {} %"
 
 msgid "here: {}"
 msgstr "здесь: {}"
@@ -6431,6 +6494,9 @@ msgstr "остановлен"
 msgid "tablebase"
 msgstr "таблицы"
 
+msgid "tb {}"
+msgstr "tb {}"
+
 msgid "the best moves only"
 msgstr "только лучшие ходы"
 
@@ -6460,6 +6526,9 @@ msgstr "быстрый тест {}"
 
 msgid "the resume of the interrupted tournament"
 msgstr "возобновление прерванного турнира"
+
+msgid "thinking"
+msgstr "думает"
 
 msgid "this analysis only"
 msgstr "только этот анализ"
@@ -7633,6 +7702,15 @@ msgstr "{} · глубина {} · {}"
 
 msgid "{} · opening {}"
 msgstr "{} · дебют {}"
+
+msgid "{} · played {}"
+msgstr "{} · сыграли {}"
+
+msgid "{} · thinking"
+msgstr "{} · думают"
+
+msgid "{} · to move"
+msgstr "{} · их ход"
 
 msgid "{} · {} / {} games · {} playing"
 msgstr "{} · {} / {} партий · идёт: {}"

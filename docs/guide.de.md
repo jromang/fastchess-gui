@@ -1260,7 +1260,7 @@ begonnen hat, oder sobald seine Runde begonnen hat, wenn sich die Runde eine tei
 (siehe [Ein laufendes Turnier ändern](#ein-laufendes-turnier-ändern)).
 
 ### Live
-<!-- en: live 48ceada0 -->
+<!-- en: live 5561ed9b -->
 
 Die laufenden Partien, als Mosaik von Brettern oder als eine Partie im Fokus mit den Uhren, der laufenden Suche jeder
 Engine (Tiefe, Bewertung, Knoten, nps, PV in SAN), der Zugliste und der Partiegrafik (siehe
@@ -1270,6 +1270,26 @@ Tablebase-Treffer, wie weit sie auseinanderliegen, oder wie viele Halbzüge eine
 anderen Engine vorhergesagt hat. Die Anteile für Sieg/Remis/Niederlage (`UCI_ShowWDL`, beim Hinzufügen für die Engines
 eingeschaltet, die es haben) folgen jeder Suchzeile; der Tab *S/R/N* zeichnet sie als Bänder, die Siege von Weiß
 unten.
+
+Wenn der Platz reicht (eine Partie im Fokus, ein großes Panel), hat jede Engine eine Karte: ihr Logo so hoch wie Name
+und Uhr, was sie tut (sie denkt nach, oder der Zug, den sie spielte), ihre Suche Zahl für Zahl (Tiefe und seldepth,
+Bewertung, Knoten, Geschwindigkeit, die Tablebase-Treffer und die Hash-Füllung, wenn die Engine sie sendet, die bisher
+auf den Zug verwendete Zeit) und ihre ganze PV; die wartende Engine zeigt, was sie beim Zug sagte, mit dem Moment, in
+dem sie sich entschied. Neben dem Mosaik behält das Panel eine Zeile mit Zahlen und die ersten 12 Halbzüge der PV.
+*Bewertung für die Seite am Zug* | *Bewertung für Weiß* rechts im Tab legt die Seite aller Bewertungen darin fest: die
+der Seite am Zug, wie fastchess sie ins PGN schreibt, oder die von Weiß; die Bewertungsleiste und das Großbild zeigen
+immer die Sicht von Weiß.
+
+Über den Zügen: die Eröffnung, der ECO-Code und der Name der tiefsten Stellung der Partie, die die Tabelle der benannten
+Eröffnungen kennt (Buch- und Engine-Züge gleichermaßen, sodass auch eine Zugumstellung nach dem Buch benannt wird), mit
+dem letzten Buchzug; und sobald die Syzygy-Tablebases des Turniers (die seiner Abschätzung, sonst die den Engines
+gegebenen) die gezeigte Stellung kennen, ihr Urteil: die Seite, die gewinnt, mit der DTZ (die Halbzüge bis zum nächsten
+Schlag oder Bauernzug: Syzygy-Tablebases kennen keine Distanz zum Matt), oder Remis, die 50-Züge-Regel nach dem Zähler
+der Partie gezählt, außer die Abschätzung ignoriert sie. Jede Stellung wird einmal abgefragt, außerhalb der Threads, die
+die Partien spielen. In der Liste hat jeder Engine-Zug seine Bewertung, Tiefe und Zeit; beim Darüberfahren kommen der
+Moment, in dem sich die Engine entschied, und die Antwort hinzu, die sie erwartete (der zweite Zug ihrer PV: fastchess
+spielt ohne Pondern). Buchzüge sagen *Buch*, eine Zeile markiert das Ende des Buchs, und der Zug, über den nachgedacht
+wird, sagt *denkt nach*.
 
 Das Mosaik hat ein Brett je laufender Partie, nicht je Partie, die die Parallelität erlaubt: gegen Ende eines Turniers
 oder mit weniger Partien als das werden die übrigen Bretter größer. Ein Brett, dessen Partie beendet ist, bleibt 10
@@ -1295,13 +1315,15 @@ Ergebnis (siehe [Ein laufendes Turnier ändern](#ein-laufendes-turnier-ändern))
 fensterfüllend (siehe [Großbild](#großbild)).
 
 ### Großbild
-<!-- en: big-screen 973ba25b -->
+<!-- en: big-screen 14c8f0d6 -->
 
 Für einen Fernseher, einen Verein oder einen Stream zeigt *Großbild* (im Tab *Live*, auf einem abgetrennten Brett
 oder in der Befehlspalette) eine Partie fensterfüllend, hell auf Schwarz: die Namen und Uhren der Spieler in großer
 Schrift (die Seite am Zug und ihre laufende Uhr in Gelb, eine Uhr unter zehn Sekunden in Rot), die Bewertungsleiste,
-die Bewertung, Tiefe und Geschwindigkeit der Suche, den letzten Zug auf dem Brett umrahmt und groß geschrieben, und die
-Züge in großer Schrift, der letzte markiert; das Ergebnis über dem Brett, sobald die Partie vorbei ist. Sein Text folgt
+die Bewertung, Tiefe und Geschwindigkeit der Suche, den letzten Zug auf dem Brett umrahmt und groß geschrieben, die
+Eröffnung, die Linien der Engines (*Linien*, standardmäßig an: die der Seite am Zug, während sie sucht, in Gelb, die
+der anderen von ihrem letzten Zug, höchstens zwei Zeilen je), das Urteil der Tablebases, sobald sie die Stellung
+kennen, und die Züge in großer Schrift, der letzte markiert; das Ergebnis über dem Brett, sobald die Partie vorbei ist. Sein Text folgt
 der Größe des Fensters und hat eine eigene Größe (*A-* / *A+* oder die Tasten + und -). Es zeigt die verfolgte Partie,
 wechselt alle N Sekunden zwischen den laufenden Partien (*Jede Partie der Reihe nach*) oder folgt *Die
 interessanteste*: der Partie, die dem Ausgleich am nächsten ist (unter gleich nahen der längsten), und bleibt bei ihr,

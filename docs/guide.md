@@ -1099,6 +1099,24 @@ seldepth, nodes, speed, tablebase hits, how far apart they are, or how many plie
 engine's PV predicted. The win/draw/loss shares (`UCI_ShowWDL`, switched on for the engines that have it when they are
 added) follow each search line; the *WDL* tab draws them as bands, White's wins at the bottom.
 
+Given the room (one game in focus, a large panel), each engine has a card: its logo as high as its name and clock, what
+it does (thinking, or the move it played), its search figure by figure (depth and seldepth, score, nodes, speed, the
+tablebase hits and the hash fill when the engine sends them, the time spent on the move so far) and its whole PV; the
+engine that waits shows what it said when it played, with the moment it settled on its move. Beside the mosaic, the
+panel keeps one line of figures and the PV's first 12 plies. *Score of the side to move* | *Score of White*, at the
+right of the tab, sets the side of every score in it: the side to move's, as fastchess writes them in the PGN, or
+White's; the evaluation bar and the big screen are always from White's side.
+
+Above the moves: the opening, the ECO code and name of the deepest position of the game that the table of named
+openings has (book and engine moves alike, so that a transposition after the book is named too), with the book's last
+move; and once the tournament's Syzygy tables (its adjudication's, else those given to the engines) know the position
+shown, their verdict: the side that wins with the DTZ (the half-moves to the next capture or pawn move: Syzygy tables
+have no distance to mate), or a draw, the 50-move rule counted from the game's own counter unless the adjudication
+ignores it. Each position is probed once, outside the threads that play the games. In the list, each engine move has
+its score, depth and time; hovering over it adds the moment the engine settled on it and the reply it expected (the
+second move of its PV: fastchess plays without pondering). Book moves say *book*, a line marks the end of the book, and
+the move being thought of says *thinking*.
+
 The mosaic has a board for each game being played, not for each game the concurrency allows: near the end of a
 tournament, or with fewer games than that, the boards left grow. A board whose game ended stays 10 seconds (the next
 game of its slot starts there), the one followed stays, and when nothing plays the last games stay. When the boards
@@ -1125,8 +1143,10 @@ screen](#big-screen)).
 For a television, a club or a stream, *Big screen* (in the *Live* tab, on a detached board, or in the command
 palette) shows one game filling the window, light on black: the players' names and clocks in large type (the side to
 move and its running clock in yellow, a clock under ten seconds in red), the evaluation bar, the evaluation, depth and
-speed of the search, the last move framed on the board and written large, and the moves in large type, the last one
-marked; the result over the board once the game is over. Its text follows the size of the window and has a size of
+speed of the search, the last move framed on the board and written large, the opening, the engines' lines (*Lines*, on
+by default: the side to move's as it searches, in yellow, the other's from its last move, two lines each at most), the
+tablebases' verdict once they know the position, and the moves in large type, the last one marked; the result over the
+board once the game is over. Its text follows the size of the window and has a size of
 its own (*A-* / *A+*, or the + and - keys). It shows the game followed, or switches between the games in progress
 every N seconds (*Every game in turn*), or follows *The most interesting* one: the closest to level, the longest of
 those as close, kept while it stays so. The controls show for three seconds when the mouse moves (the pointer hides

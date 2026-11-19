@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include <core/config/config.hpp>
+#include <game/pgn/openings_data.hpp>
 #include <tour/files.hpp>
 
 namespace fcg {
@@ -1019,6 +1020,42 @@ std::vector<std::pair<std::string, EngineTotals>> GuiObserver::namedTotals() con
     std::vector<std::pair<std::string, EngineTotals>> out;
     for (std::size_t i = 0; i < names_.size() && i < totals_.size(); ++i) out.emplace_back(names_[i], totals_[i]);
     return out;
+}
+
+LiveOpening liveOpening(const SlotState& st, bool chess960) {
+    LiveOpening out;
+    while (out.last_book + 1 < static_cast<int>(st.moves.size()) && st.moves[out.last_book + 1].book) ++out.last_book;
+    if (chess960 || st.start_fen.empty()) return out;
+    chess::Board board;
+    board.setFen(st.start_fen);
+    const auto name = [&] {
+        const auto it = fastchess::pgn::EPD_TO_OPENING.find(board.getFen(false));
+        if (it != fastchess::pgn::EPD_TO_OPENING.end())
+            out.name = OpeningName{std::string(it->second.eco), std::string(it->second.name)};
+    };
+    name();
+    for (const auto& m : st.moves) {
+        board.makeMove<true>(m.move);
+        name();
+    }
+    return out;
+}
+
+chess::Board slotBoard(const SlotState& st, int ply) {
+    chess::Board board;
+    board.setFen(st.start_fen);
+    for (int i = 0; i < ply && i < static_cast<int>(st.moves.size()); ++i)
+        board.makeMove<true>(st.moves[static_cast<std::size_t>(i)].move);
+    return board;
+}
+
+std::string numberedSan(const SlotState& st, std::size_t index) {
+    if (index >= st.moves.size()) return {};
+    chess::Board start;
+    start.setFen(st.start_fen);
+    const std::size_t ply = index + (start.sideToMove() == chess::Color::BLACK ? 1 : 0);
+    const int number      = start.fullMoveNumber() + static_cast<int>(ply / 2);
+    return fmt::format("{}{}{}", number, ply % 2 == 0 ? "." : "…", st.moves[index].san);
 }
 
 ReplayGame replayOfSlot(const SlotState& st) {

@@ -378,12 +378,14 @@ struct MatchSetup {
     bool live_seed_side  = true;         // live boards of a gauntlet turned to the seed's side
     bool live_arrows     = true;         // live board: the PV move of the side to move and the reply it expects
     bool nav_buttons     = true;         // first, previous, next, last and Flip under the boards that show a game
+    bool live_white_score = false;        // live game: the engines' scores from White's side, not the side to move's
     std::map<std::string, float> panes;  // the list's share of the width on list + detail pages, by page
     // Big screen: the size of its text (on top of what the window gives), what it follows (BigFollow: this game,
     // every game in turn, the most interesting) and how many seconds a game stays before the next one is chosen.
     float big_scale = 1.0f;
     int big_follow  = 0;
     int big_seconds = 20;
+    bool big_lines  = true;  // big screen: the engines' principal variations under the search
 
     // Broadcast.
     bool broadcast_files = false;  // live.pgn, standings.html, tournament.json
@@ -429,6 +431,8 @@ inline void keepProgramSettings(MatchSetup& next, const MatchSetup& current) {
     next.big_scale        = current.big_scale;
     next.big_follow       = current.big_follow;
     next.big_seconds      = current.big_seconds;
+    next.big_lines        = current.big_lines;
+    next.live_white_score = current.live_white_score;
     next.panes            = current.panes;
     next.notify           = current.notify;
     next.resume_at_launch = current.resume_at_launch;
@@ -460,6 +464,8 @@ void to_json(BasicJsonType& nlohmann_json_j, const MatchSetup& nlohmann_json_t) 
     NLOHMANN_JSON_TO(team_a)
     NLOHMANN_JSON_TO(team_b)
     NLOHMANN_JSON_TO(colours)
+    NLOHMANN_JSON_TO(live_white_score)
+    NLOHMANN_JSON_TO(big_lines)
     if (!nlohmann_json_t.machine.empty()) nlohmann_json_j["machine"] = nlohmann_json_t.machine;
 }
 template <typename BasicJsonType,
@@ -473,6 +479,8 @@ void from_json(const BasicJsonType& nlohmann_json_j, MatchSetup& nlohmann_json_t
     NLOHMANN_JSON_FROM_WITH_DEFAULT(team_a)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(team_b)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(colours)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(live_white_score)
+    NLOHMANN_JSON_FROM_WITH_DEFAULT(big_lines)
     NLOHMANN_JSON_FROM_WITH_DEFAULT(machine)
 }
 #undef FCG_MATCH_SETUP_FIELDS_1

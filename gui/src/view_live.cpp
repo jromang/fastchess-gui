@@ -2,7 +2,10 @@
 // moves, chart), beside it or each in a panel of its own; detached boards.
 
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
+#include <future>
+#include <sstream>
 
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -105,8 +108,9 @@ namespace {
 
 float px(float v) { return v * ImGui::GetFontSize() / 16.0f; }
 
-// Width of the panel beside the followed board: players, moves and charts.
-float sidePanel() { return px(330); }
+// Width of the panel beside the followed board: players, moves and charts; two moves a row in the list, each with its
+// score, depth and time.
+float sidePanel() { return px(400); }
 
 // Height of a mosaic card `card` wide: the board, two name rows, the details and the evaluation bar, inside the
 // card's padding.
@@ -199,6 +203,94 @@ std::vector<BoardArrow> pvArrows(const SlotState& st, const chess::Board& board)
 
 namespace {
 
+// A panel `width` wide shows the game followed at large: each engine's search figure by figure with the whole line,
+// its logo as high as its name and clock. Narrower (beside the mosaic), the short line of the cards.
+bool largePanel(float width) { return width >= px(440); }
+
+// `text` wrapped `width` wide in the current font, cut after the last word that keeps it within `lines` lines, with "…"
+// when cut.
+std::string withinLines(const std::string& text, float width, int lines) {
+    const float most = ImGui::GetFontSize() * static_cast<float>(lines) + 0.5f;
+    if (ImGui::CalcTextSize(text.c_str(), nullptr, false, width).y <= most) return text;
+    std::string out;
+    std::istringstream words(text);
+    for (std::string w; words >> w;) {
+        auto next = out.empty() ? w : out + " " + w;
+        if (ImGui::CalcTextSize((next + " …").c_str(), nullptr, false, width).y > most) break;
+        out = std::move(next);
+    }
+    return out + " …";
+}
+
+// Figures each under its name, in chips that wrap to the width of the panel.
+void figureChips(const std::vector<std::pair<std::string, std::string>>& figures) {
+    ImFont* font         = ImGui::GetFont();
+    ImFont* bold         = ui::titleFont() ? ui::titleFont() : font;
+    const float fs       = ImGui::GetFontSize();
+    const float label_px = fs * 0.78f;
+    const ImVec2 pad(px(8), px(4));
+    const float right = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
+    float end         = -1.0f;  // the right edge of the last chip, -1 before the first
+    for (const auto& [name, value] : figures) {
+        const ImVec2 ns = font->CalcTextSizeA(label_px, FLT_MAX, 0.0f, name.c_str());
+        const ImVec2 vs = bold->CalcTextSizeA(fs, FLT_MAX, 0.0f, value.c_str());
+        const float w   = std::max({ns.x, vs.x, px(48)}) + 2 * pad.x;
+        const float h   = ns.y + vs.y + 2 * pad.y;
+        if (end >= 0 && end + px(6) + w <= right) ImGui::SameLine(0, px(6));
+        const ImVec2 at = ImGui::GetCursorScreenPos();
+        auto* dl        = ImGui::GetWindowDrawList();
+        dl->AddRectFilled(at, ImVec2(at.x + w, at.y + h), ImGui::GetColorU32(ImGuiCol_FrameBg), px(6));
+        dl->AddText(font, label_px, ImVec2(at.x + pad.x, at.y + pad.y), ui::MUTED, name.c_str());
+        dl->AddText(bold, fs, ImVec2(at.x + pad.x, at.y + pad.y + ns.y), ImGui::GetColorU32(ImGuiCol_Text),
+                    value.c_str());
+        ImGui::Dummy(ImVec2(w, h));
+        end = ImGui::GetItemRectMax().x;
+    }
+}
+
+// Two choices side by side in a strip, the one chosen raised. True when the choice changed.
+bool segmented(const char* id, const char* first, const char* second, bool& chose_second) {
+    ImGui::PushID(id);
+    const float edge      = px(3);
+    const float h         = ImGui::GetFrameHeight() - 2 * edge;
+    const float pad_x     = px(9);
+    const char* labels[2] = {first, second};
+    const float w[2]      = {ImGui::CalcTextSize(first).x + 2 * pad_x, ImGui::CalcTextSize(second).x + 2 * pad_x};
+    const ImVec2 at       = ImGui::GetCursorScreenPos();
+    const ImVec2 size(w[0] + w[1] + px(2) + 2 * edge, h + 2 * edge);
+    auto* dl = ImGui::GetWindowDrawList();
+    dl->AddRectFilled(at, ImVec2(at.x + size.x, at.y + size.y), ImGui::GetColorU32(ImGuiCol_FrameBg), px(7));
+    bool changed = false;
+    float x      = at.x + edge;
+    for (int i = 0; i < 2; ++i) {
+        const bool chosen = (i == 1) == chose_second;
+        ImGui::SetCursorScreenPos(ImVec2(x, at.y + edge));
+        if (ImGui::InvisibleButton(i == 0 ? "##first" : "##second", ImVec2(w[i], h)) && !chosen) {
+            chose_second = i == 1;
+            changed      = true;
+        }
+        const ImVec2 a = ImGui::GetItemRectMin(), b = ImGui::GetItemRectMax();
+        if (chosen) {
+            dl->AddRectFilled(a, b, ui::CARD_BG, px(5));
+            dl->AddRect(a, b, ui::CARD_BD, px(5));
+        } else if (ImGui::IsItemHovered()) {
+            dl->AddRectFilled(a, b, ImGui::GetColorU32(ImGuiCol_FrameBgHovered), px(5));
+        }
+        const float ty = a.y + (h - ImGui::GetTextLineHeight()) / 2;
+        dl->AddText(ImVec2(a.x + pad_x, ty), chosen ? ImGui::GetColorU32(ImGuiCol_Text) : ui::MUTED, labels[i]);
+        x += w[i] + px(2);
+    }
+    ImGui::SetCursorScreenPos(at);
+    ImGui::Dummy(size);
+    ImGui::PopID();
+    return changed;
+}
+
+// The width segmented() takes for these labels.
+float segmentedWidth(const char* first, const char* second) {
+    return ImGui::CalcTextSize(first).x + ImGui::CalcTextSize(second).x + 4 * px(9) + px(2) + 2 * px(3);
+}
+
 std::string clockText(const SlotState& st, chess::Color color, int64_t elapsed) {
     const bool thinks = st.active && st.stm == color && st.thinking;
     if (st.clocks) {
@@ -243,6 +335,16 @@ void App::refreshSlot(int slot) {
             v.board.makeMove<true>(m.move);
         }
         v.board_version = v.state.version;
+    }
+    // Its opening, read again when a move comes.
+    if (v.state.has_game) {
+        const std::pair<std::size_t, std::size_t> at{v.state.game_id, v.state.moves.size()};
+        if (at != v.opening_at) {
+            const auto* t       = run_->tournament();
+            const bool chess960 = t && t->spec().conditions.variant == fastchess::VariantType::FRC;
+            v.opening           = liveOpening(v.state, chess960);
+            v.opening_at        = at;
+        }
     }
 }
 
@@ -320,6 +422,20 @@ void App::drawLive() {
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("%s", TR("The game followed filling the window, in large type, for a television, a club or a "
                                    "stream. F11: full screen, Esc: back."));
+    }
+    // The side the scores of this tab are from, at the right of the line.
+    {
+        const char* mover = TR("Score of the side to move");
+        const char* white = TR("Score of White");
+        ImGui::SameLine();
+        const float x = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - segmentedWidth(mover, white);
+        ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(), x));
+        if (segmented("##score_side", mover, white, setup_.live_white_score)) saveSetupSoon();
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("%s", TR("The engines' scores in this tab: from the side to move's point of view, as "
+                                       "fastchess writes them in the PGN, or from White's. The evaluation bar and the "
+                                       "big screen are always from White's side."));
+        }
     }
     if (mosaic) ImGui::SameLine(0, px(24));  // the line ends below; the tabs of one game go under it
 
@@ -615,8 +731,10 @@ void App::drawLiveBoardFitted(SlotView& view) {
 }
 
 // A player: the name and the clock, and with `search` what its engine is searching (else what its last move
-// reported).
-void App::drawLivePlayer(SlotView& view, chess::Color color, bool search) {
+// reported). In a large panel, a card (drawLivePlayerCard).
+float App::drawLivePlayer(SlotView& view, chess::Color color, bool search, float pv_room) {
+    if (const float width = ImGui::GetContentRegionAvail().x; largePanel(width))
+        return drawLivePlayerCard(view, color, search, width, pv_room);
     auto* obs          = run_->observer();
     const auto& st     = view.state;
     const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - st.think_start).count();
@@ -652,19 +770,26 @@ void App::drawLivePlayer(SlotView& view, chess::Color color, bool search) {
         ImGui::TextUnformatted(clock.c_str());
         if (thinks) ImGui::PopStyleColor();
     }
-    if (!search) return;
+    if (!search) return 0.0f;
 
     // Search info: the running search for the side to move, else what its last move reported. Wrapped in a
-    // narrow panel.
+    // narrow panel. The tablebase hits and the hash fill when the engine sends them.
     ImGui::PushTextWrapPos(0);
     const auto& line = st.info[white ? 0 : 1];
+    const auto info  = line.empty() ? fastchess::engine::UciInfo{} : fastchess::engine::UciEngine::parseInfo(line);
+    const auto extra = [&info] {
+        std::string out;
+        if (info.tbhits) out += "  " + trf("tb {}", ui::formatCount(*info.tbhits));
+        if (info.hashfull) out += "  " + trf("hash {} %", *info.hashfull / 10);
+        return out;
+    };
     if (thinks && !line.empty()) {
-        const auto info  = fastchess::engine::UciEngine::parseInfo(line);
         const auto score = info.score ? std::optional<fastchess::Score>(*info.score) : std::nullopt;
-        ImGui::TextColored(ui::MUTED4, "d%lld/%lld  %s  %s n  %s n/s", static_cast<long long>(info.depth.value_or(0)),
-                           static_cast<long long>(info.seldepth.value_or(0)), ui::formatScore(score).c_str(),
-                           ui::formatCount(info.nodes.value_or(0)).c_str(),
-                           ui::formatCount(info.nps.value_or(0)).c_str());
+        const auto figures =
+            fmt::format("d{}/{}  {}  {} n  {} n/s  {}{}", info.depth.value_or(0), info.seldepth.value_or(0),
+                        ui::formatScore(liveScore(score, color)), ui::formatCount(info.nodes.value_or(0)),
+                        ui::formatCount(info.nps.value_or(0)), ui::formatClock(elapsed), extra());
+        ImGui::TextColored(ui::MUTED4, "%s", figures.c_str());
         if (info.wdl) wdlLine(*info.wdl);
         const auto pv = pvToSan(view.board, info.pv, 12);
         ImGui::TextUnformatted(pv.empty() ? " " : pv.c_str());
@@ -679,10 +804,11 @@ void App::drawLivePlayer(SlotView& view, chess::Color color, bool search) {
         if (last) {
             const auto decision =
                 last->decision_ms ? trf(" (decided at {})", ui::formatClock(*last->decision_ms)) : std::string();
-            ImGui::TextColored(ui::MUTED4, "d%lld/%lld  %s  %s n  %s n/s  %s%s", static_cast<long long>(last->depth),
-                               static_cast<long long>(last->seldepth), ui::formatScore(last->score).c_str(),
-                               ui::formatCount(last->nodes).c_str(), ui::formatCount(last->nps).c_str(),
-                               ui::formatClock(last->time_ms).c_str(), decision.c_str());
+            const auto figures =
+                fmt::format("d{}/{}  {}  {} n  {} n/s  {}{}{}", last->depth, last->seldepth,
+                            ui::formatScore(liveScore(last->score, color)), ui::formatCount(last->nodes),
+                            ui::formatCount(last->nps), ui::formatClock(last->time_ms), decision, extra());
+            ImGui::TextColored(ui::MUTED4, "%s", figures.c_str());
             if (last->wdl) wdlLine(*last->wdl);
         } else {
             ImGui::TextDisabled("—");
@@ -690,6 +816,172 @@ void App::drawLivePlayer(SlotView& view, chess::Color color, bool search) {
         ImGui::TextUnformatted(" ");
     }
     ImGui::PopTextWrapPos();
+    return 0.0f;
+}
+
+float App::drawLivePlayerCard(SlotView& view, chess::Color color, bool search, float width, float pv_room) {
+    auto* obs          = run_->observer();
+    const auto& st     = view.state;
+    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - st.think_start).count();
+    const bool white   = color == chess::Color::WHITE;
+    const bool to_move = st.active && st.stm == color;
+    const bool thinks  = to_move && st.thinking;
+    // Its last move, and the last that its engine searched (a book move has no search).
+    int last = -1, searched = -1;
+    for (int i = static_cast<int>(st.moves.size()) - 1; i >= 0 && searched < 0; --i) {
+        const auto& m = st.moves[static_cast<std::size_t>(i)];
+        if (m.mover != color) continue;
+        if (last < 0) last = i;
+        if (!m.book) searched = i;
+    }
+
+    // The card, framed in the accent colour for the side to move.
+    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(ui::CARD_BG));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImGui::ColorConvertU32ToFloat4(to_move ? ui::ACCENT : ui::CARD_BD));
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(px(12), px(10)));
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, px(10));
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, to_move ? std::max(1.0f, px(2)) : 1.0f);
+    ImGui::BeginChild(white ? "##card_white" : "##card_black", ImVec2(0, 0),
+                      ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeY,
+                      ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+
+    // The header: the side's disc, the logo, the name and what the side does, the clock at the right.
+    ImDrawList* dl       = ImGui::GetWindowDrawList();
+    ImFont* font         = ImGui::GetFont();
+    ImFont* bold         = ui::titleFont() ? ui::titleFont() : font;
+    const float fs       = ImGui::GetFontSize();
+    const float inner    = ImGui::GetContentRegionAvail().x;
+    const float name_px  = fs * 1.15f;
+    const float clock_px = fs * 1.75f;
+    const float line_h   = ImGui::GetTextLineHeight();
+    const float name_h   = bold->CalcTextSizeA(name_px, FLT_MAX, 0.0f, "Ag").y;
+    const float header_h = std::max(name_h + line_h + px(2), bold->CalcTextSizeA(clock_px, FLT_MAX, 0.0f, "0:").y);
+    const ImVec2 p       = ImGui::GetCursorScreenPos();
+    float x              = p.x;
+    const float r        = fs * 0.32f;
+    dl->AddCircleFilled(ImVec2(x + r, p.y + header_h / 2), r,
+                        white ? IM_COL32(236, 236, 236, 255) : IM_COL32(25, 25, 25, 255), 16);
+    dl->AddCircle(ImVec2(x + r, p.y + header_h / 2), r, IM_COL32(130, 130, 130, 255), 16);
+    x += 2 * r + px(8);
+    // The logo grows with the panel, up to the height of the name and what follows it.
+    const auto& name = white ? st.white : st.black;
+    if (const auto* logo = engineLogo(name); logo && logo->width > 0 && logo->height > 0) {
+        const float high = std::clamp(line_h + (width - px(440)) * 0.12f, line_h, header_h);
+        const float w    = std::min(high * logo->width / logo->height, high * 2.5f);
+        const float h    = w * logo->height / logo->width;
+        dl->AddImage(logo->texture(h * ImGui::GetIO().DisplayFramebufferScale.y), ImVec2(x, p.y + (header_h - h) / 2),
+                     ImVec2(x + w, p.y + (header_h + h) / 2));
+        x += w + px(10);
+    }
+    const auto clock     = clockText(st, color, elapsed);
+    const float clock_w  = clock.empty() ? 0.0f : bold->CalcTextSizeA(clock_px, FLT_MAX, 0.0f, clock.c_str()).x;
+    const float name_y   = p.y + (header_h - name_h - line_h) / 2;
+    const float name_end = p.x + inner - clock_w - px(12);
+    {
+        std::string shown = name;
+        if (isMatch() && obs) shown += name == obs->engineA() ? "  (A)" : "  (B)";
+        ImGui::PushFont(bold, ImGui::GetStyle().FontSizeBase * 1.15f);  // name_px, before the interface scale
+        ImGui::RenderTextEllipsis(dl, ImVec2(x, name_y), ImVec2(name_end, name_y + name_h), name_end, shown.c_str(),
+                                  nullptr, nullptr);
+        ImGui::PopFont();
+        const char* side = white ? TR("White") : TR("Black");
+        std::string doing;
+        if (thinks) {
+            doing = trf("{} · thinking", side);
+        } else if (to_move) {
+            doing = trf("{} · to move", side);
+        } else if (last >= 0) {
+            doing = trf("{} · played {}", side, numberedSan(st, static_cast<std::size_t>(last)));
+        } else {
+            doing = side;
+        }
+        ImGui::RenderTextEllipsis(dl, ImVec2(x, name_y + name_h + px(2)),
+                                  ImVec2(name_end, name_y + name_h + px(2) + line_h), name_end, doing.c_str(), nullptr,
+                                  nullptr);
+    }
+    if (!clock.empty()) {
+        const float clock_h = bold->CalcTextSizeA(clock_px, FLT_MAX, 0.0f, clock.c_str()).y;
+        dl->AddText(bold, clock_px, ImVec2(p.x + inner - clock_w, p.y + (header_h - clock_h) / 2),
+                    thinks ? ui::ACCENT : ImGui::GetColorU32(ImGuiCol_Text), clock.c_str());
+    }
+    ImGui::Dummy(ImVec2(inner, header_h));
+
+    float pv_h = 0.0f;
+    if (search) {
+        // Its search: the running one for the side to move, else what its last move reported, figure by figure; the
+        // tablebase hits and the hash fill when the engine sends them.
+        const auto& line = st.info[white ? 0 : 1];
+        const auto info  = line.empty() ? fastchess::engine::UciInfo{} : fastchess::engine::UciEngine::parseInfo(line);
+        std::optional<fastchess::Score> score;
+        std::optional<std::array<int64_t, 3>> wdl;
+        int64_t depth = 0, seldepth = 0, spent = 0;
+        uint64_t nodes = 0, nps = 0;
+        std::string pv;
+        const bool running = thinks && !line.empty();
+        if (running) {
+            if (info.score) score = *info.score;
+            depth    = info.depth.value_or(0);
+            seldepth = info.seldepth.value_or(0);
+            nodes    = info.nodes.value_or(0);
+            nps      = info.nps.value_or(0);
+            spent    = elapsed;
+            wdl      = info.wdl;
+            pv       = pvToSan(view.board, info.pv, info.pv.size());
+        } else if (searched >= 0) {
+            const auto& m = st.moves[static_cast<std::size_t>(searched)];
+            score         = m.score;
+            depth         = m.depth;
+            seldepth      = m.seldepth;
+            nodes         = m.nodes;
+            nps           = m.nps;
+            spent         = m.time_ms;
+            wdl           = m.wdl;
+            std::vector<std::string> moves;
+            std::istringstream words(m.pv);
+            for (std::string w; words >> w;) moves.push_back(w);
+            pv = pvToSan(slotBoard(st, searched), moves, moves.size());
+        }
+        if (running || searched >= 0) {
+            std::vector<std::pair<std::string, std::string>> figures;
+            figures.emplace_back(TR("Depth"), fmt::format("{}/{}", depth, seldepth));
+            figures.emplace_back(setup_.live_white_score ? TR("Score · White") : TR("Score · to move"),
+                                 score ? ui::formatScore(liveScore(score, color)) : std::string("—"));
+            figures.emplace_back(TR("Nodes"), ui::formatCount(nodes));
+            figures.emplace_back(TR("Speed"), trf("{} n/s", ui::formatCount(nps)));
+            if (info.tbhits) figures.emplace_back(TR("TB hits"), ui::formatCount(*info.tbhits));
+            if (info.hashfull) figures.emplace_back(TR("Hash"), fmt::format("{} %", *info.hashfull / 10));
+            figures.emplace_back(TR("This move"), ui::formatClock(spent));
+            figureChips(figures);
+            if (wdl) wdlLine(*wdl);
+            // The whole line, wrapped, in a larger type; as much of it as the room left to the moves allows.
+            if (!pv.empty()) {
+                ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.08f);
+                const int lines =
+                    pv_room >= FLT_MAX / 2 ? 1000 : std::max(1, static_cast<int>(pv_room / ImGui::GetFontSize()));
+                const auto shown = withinLines(pv, ImGui::GetContentRegionAvail().x, lines);
+                ImGui::PushTextWrapPos(0);
+                ImGui::TextUnformatted(shown.c_str());
+                ImGui::PopTextWrapPos();
+                pv_h = ImGui::GetItemRectSize().y;
+                ImGui::PopFont();
+            }
+            if (!running) {
+                const auto& m = st.moves[static_cast<std::size_t>(searched)];
+                const auto said =
+                    m.decision_ms ? trf("What it said when it played; decided at {}.", ui::formatClock(*m.decision_ms))
+                                  : std::string(TR("What it said when it played."));
+                ImGui::PushTextWrapPos(0);
+                ImGui::TextColored(ui::MUTED4, "%s", said.c_str());
+                ImGui::PopTextWrapPos();
+            }
+        } else {
+            ImGui::TextDisabled("—");
+        }
+    }
+    ImGui::EndChild();
+    ImGui::PopStyleVar(3);
+    ImGui::PopStyleColor(2);
+    return pv_h;
 }
 
 // The game and round, the result once over, and the board's buttons: Detach (not in a detached board), Arrows, and Flip
@@ -743,14 +1035,119 @@ void App::drawLiveGameLine(SlotView& view, int slot, bool allow_detach) {
     }
 }
 
-// The moves played, kept scrolled to the last one while the list is at its end. A click on a move shows the position
-// after it on the board; the wheel scrolls the list.
+std::optional<fastchess::Score> App::liveScore(std::optional<fastchess::Score> score, chess::Color mover) const {
+    if (score && setup_.live_white_score && mover == chess::Color::BLACK) score->value = -score->value;
+    return score;
+}
+
+const TableVerdict* App::liveVerdict(const chess::Board& board) {
+    // Seven pieces at most and no castling: what Syzygy tables can know.
+    if (board.occ().count() > 7 || !board.castlingRights().isEmpty()) return nullptr;
+    const auto* t = run_->tournament();
+    if (!t) return nullptr;
+    std::string paths;
+    bool ignore50  = false;
+    const auto& tb = t->spec().conditions.tb_adjudication;
+    if (tb.enabled) {
+        paths    = tb.syzygy_dirs;
+        ignore50 = tb.ignore_50_move_rule;
+    } else {
+        for (const auto& [option, value] : t->spec().forced_options)
+            if (option == "SyzygyPath") paths = value;
+    }
+    if (paths.empty()) return nullptr;
+    // A tournament on a thread of this process has the tables of the process for its games.
+    if (run_->running() && !run_->remote()) return nullptr;
+
+    auto& lt = live_tables_;
+    if (lt.job.valid() && lt.job.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+        auto verdict = lt.job.get();
+        if (lt.known.size() > 50'000) lt.known.clear();
+        lt.known[lt.job_fen] = verdict;
+    }
+    if (paths != lt.paths || ignore50 != lt.ignore50) {
+        lt.known.clear();
+        lt.paths    = paths;
+        lt.ignore50 = ignore50;
+    }
+    auto fen = board.getFen();
+    if (const auto it = lt.known.find(fen); it != lt.known.end()) return it->second ? &*it->second : nullptr;
+    if (!lt.job.valid()) {
+        lt.job_fen = std::move(fen);
+        lt.job     = std::async(std::launch::async, [board, paths, ignore50] {
+            const auto lock = lockSyzygy();
+            return probeTables(board, paths, ignore50);
+        });
+    }
+    return nullptr;
+}
+
+void App::drawLiveFacts(SlotView& view) {
+    const auto& st      = view.state;
+    const auto& opening = view.opening;
+    ImGui::PushTextWrapPos(0);
+    if (opening.name) {
+        ImGui::PushFont(ui::titleFont(), 0.0f);
+        ImGui::TextUnformatted(opening.name->eco.c_str());
+        ImGui::PopFont();
+        ImGui::SameLine();
+        auto text = opening.name->name;
+        if (opening.last_book >= 0 && opening.last_book < static_cast<int>(st.moves.size())) {
+            text += "  ·  " + trf("book up to {}", numberedSan(st, static_cast<std::size_t>(opening.last_book)));
+        }
+        ImGui::TextUnformatted(text.c_str());
+    }
+    // The tables' verdict on the position shown.
+    const int total     = static_cast<int>(st.moves.size());
+    const int ply       = view.nav.shown(total);
+    const auto* verdict = liveVerdict(ply == total ? view.board : slotBoard(st, ply));
+    if (verdict) {
+        const chess::Color stm = (ply == total ? view.board : slotBoard(st, ply)).sideToMove();
+        const bool white_wins  = (verdict->result > 0) == (stm == chess::Color::WHITE);
+        std::string headline, detail;
+        if (verdict->result == 0) {
+            headline = TR("Tablebases: draw");
+        } else if (verdict->rule50) {
+            headline = TR("Tablebases: draw by the 50-move rule");
+            detail   = white_wins ? TR("White wins without it") : TR("Black wins without it");
+        } else {
+            headline = white_wins ? TR("Tablebases: White wins") : TR("Tablebases: Black wins");
+        }
+        if (verdict->result != 0 && verdict->dtz) {
+            if (!detail.empty()) detail += ", ";
+            detail += trf("DTZ {}: half-moves to a capture or a pawn move", *verdict->dtz);
+        }
+        // A disc: green when a side wins.
+        const float r  = ImGui::GetTextLineHeight() * 0.22f;
+        const ImVec2 p = ImGui::GetCursorScreenPos();
+        ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(p.x + r, p.y + ImGui::GetTextLineHeight() / 2), r,
+                                                    verdict->result != 0 && !verdict->rule50 ? ui::GOOD : ui::MUTED,
+                                                    12);
+        ImGui::Dummy(ImVec2(2 * r, ImGui::GetTextLineHeight()));
+        ImGui::SameLine();
+        ImGui::PushFont(ui::titleFont(), 0.0f);
+        ImGui::TextUnformatted(headline.c_str());
+        ImGui::PopFont();
+        if (!detail.empty()) {
+            ImGui::SameLine();
+            ImGui::TextColored(ui::MUTED4, "· %s", detail.c_str());
+        }
+    }
+    ImGui::PopTextWrapPos();
+}
+
+// The moves played, kept scrolled to the last one while the list is at its end. Each engine move with its score, depth
+// and time, the reply it expected on hover; the book moves marked, then where the book ends. A click on a move shows
+// the position after it on the board; the wheel scrolls the list.
 void App::drawLiveMoves(SlotView& view, float height) {
     const auto& st   = view.state;
     const int total  = static_cast<int>(st.moves.size());
     const bool held  = view.nav.held(total);
     const int shown  = view.nav.shown(total);
     const bool moved = shown != view.listed_ply;  // keys or buttons: the move shown kept in sight
+    const float top  = ImGui::GetCursorPosY();
+    drawLiveFacts(view);
+    height = std::max(ImGui::GetFrameHeight(), height - (ImGui::GetCursorPosY() - top));
     ImGui::BeginChild("##moves", ImVec2(0, height), ImGuiChildFlags_Borders);
     if (ImGui::BeginTable("##movetable", 3, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_RowBg)) {
         ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed, ImGui::CalcTextSize("000.").x);
@@ -759,10 +1156,44 @@ void App::drawLiveMoves(SlotView& view, float height) {
 
         chess::Board start;
         start.setFen(st.start_fen);
-        int number      = start.fullMoveNumber();
-        std::size_t i   = 0;
-        const auto cell = [&](const LiveMove& m) {
-            const int index    = static_cast<int>(&m - st.moves.data());
+        const int offset    = start.sideToMove() == chess::Color::BLACK ? 1 : 0;  // "1… e5" fills a row
+        const int last_book = view.opening.last_book;
+        // The move being thought of, after the last one.
+        const bool thinking = st.active && st.thinking;
+        const int plies     = total + (thinking ? 1 : 0);
+
+        // What the engine said when it played the move, and the reply it expected: the second move of its line, where
+        // its pondering would have started (fastchess plays without it).
+        const auto tip = [&](int index) {
+            const auto& m = st.moves[static_cast<std::size_t>(index)];
+            auto text     = fmt::format("{} · {} · {} d{}/{} · {}", numberedSan(st, static_cast<std::size_t>(index)),
+                                        m.mover == chess::Color::WHITE ? st.white : st.black,
+                                        ui::formatScore(liveScore(m.score, m.mover)), m.depth, m.seldepth,
+                                        ui::formatClock(m.time_ms));
+            if (m.decision_ms) text += trf(", decided at {}", ui::formatClock(*m.decision_ms));
+            std::istringstream words(m.pv);
+            std::string played, reply;
+            words >> played >> reply;
+            if (!reply.empty()) {
+                auto board      = slotBoard(st, index + 1);
+                const auto move = chess::uci::uciToMove(board, reply);
+                chess::Movelist legal;
+                chess::movegen::legalmoves(legal, board);
+                if (move != chess::Move::NO_MOVE && std::find(legal.begin(), legal.end(), move) != legal.end()) {
+                    const auto san = fmt::format("{}{}{}", board.fullMoveNumber(),
+                                                 board.sideToMove() == chess::Color::WHITE ? "." : "…",
+                                                 chess::uci::moveToSan(board, move));
+                    text += "\n" + trf("Expected reply: {}", san);
+                }
+            }
+            ImGui::SetTooltip("%s", text.c_str());
+        };
+        const auto cell = [&](int index) {
+            if (index == total) {
+                ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(ui::ACCENT), "…  %s", TR("thinking"));
+                return;
+            }
+            const auto& m      = st.moves[static_cast<std::size_t>(index)];
             const bool current = held && index + 1 == shown;
             if (m.book) ImGui::PushStyleColor(ImGuiCol_Text, ui::MUTED4);
             const auto label = fmt::format("{}##lm{}", m.san, index);
@@ -770,35 +1201,42 @@ void App::drawLiveMoves(SlotView& view, float height) {
                                   ImGui::CalcTextSize(m.san.c_str())))
                 view.nav.show(index + 1, total);
             if (m.book) ImGui::PopStyleColor();
+            if (!m.book && ImGui::IsItemHovered()) tip(index);
             if (current && moved && !ImGui::IsItemVisible()) ImGui::SetScrollHereY();
-            if (m.book) return;
             ImGui::SameLine();
-            ImGui::TextColored(ui::MUTED4, "%s/%lld", ui::formatScore(m.score).c_str(),
-                               static_cast<long long>(m.depth));
+            if (m.book) {
+                ImGui::PushFont(ui::italicFont(), 0.0f);
+                ImGui::TextColored(ui::MUTED4, "%s", TR("book"));
+                ImGui::PopFont();
+            } else {
+                ImGui::TextColored(ui::MUTED4, "%s d%lld · %s", ui::formatScore(liveScore(m.score, m.mover)).c_str(),
+                                   static_cast<long long>(m.depth), ui::formatClock(m.time_ms).c_str());
+            }
         };
 
-        if (!st.moves.empty() && st.moves.front().mover == chess::Color::BLACK) {
+        const int rows = (plies + offset + 1) / 2;
+        for (int r = 0; r < rows; ++r) {
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            ImGui::TextDisabled("%d.", number);
-            ImGui::TableNextColumn();
-            ImGui::TextDisabled("…");
-            ImGui::TableNextColumn();
-            cell(st.moves[0]);
-            i = 1;
-            number++;
+            ImGui::TextDisabled("%d.", start.fullMoveNumber() + r);
+            for (int c = 0; c < 2; ++c) {
+                ImGui::TableNextColumn();
+                const int index = r * 2 + c - offset;
+                if (index < 0) {
+                    ImGui::TextDisabled("…");
+                } else if (index < plies) {
+                    cell(index);
+                }
+            }
+            // The end of the book, after the row of its last move, once a move follows it.
+            const int first = r * 2 - offset;
+            if (last_book >= 0 && last_book >= first && last_book <= first + 1 && plies > last_book + 1) {
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+                ImGui::TableNextColumn();
+                ImGui::TextDisabled("%s", TR("· end of book ·"));
+            }
         }
-
-        for (; i < st.moves.size(); i += 2, number++) {
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            ImGui::TextDisabled("%d.", number);
-            ImGui::TableNextColumn();
-            cell(st.moves[i]);
-            ImGui::TableNextColumn();
-            if (i + 1 < st.moves.size()) cell(st.moves[i + 1]);
-        }
-
         ImGui::EndTable();
     }
     // Follow the game, if the list was at its end (or the game is a new one): earlier moves being read stay in sight,
@@ -843,10 +1281,20 @@ void App::drawLiveChart(SlotView& view) {
 void App::drawLiveSide(SlotView& view, unsigned parts, int slot, bool allow_detach) {
     const bool players = parts & LivePlayers, searches = parts & LiveSearches;
     if (players || searches) {
-        drawLivePlayer(view, view.flip ? chess::Color::WHITE : chess::Color::BLACK, searches);
+        // In cards, the moves below keep room for a few rows: the engines' lines give way, each to half of what is
+        // left once the rest of the cards (measured the last frame) is drawn.
+        const bool cards = largePanel(ImGui::GetContentRegionAvail().x);
+        float pv_room    = FLT_MAX;
+        if (cards && searches && (parts & LiveMoves)) {
+            const float line = ImGui::GetTextLineHeightWithSpacing();
+            pv_room          = std::max(line, (ImGui::GetContentRegionAvail().y - view.cards_fixed - 11 * line) / 2);
+        }
+        const float top = ImGui::GetCursorPosY();
+        float lines = drawLivePlayer(view, view.flip ? chess::Color::WHITE : chess::Color::BLACK, searches, pv_room);
         ImGui::Separator();
-        drawLivePlayer(view, view.flip ? chess::Color::BLACK : chess::Color::WHITE, searches);
+        lines += drawLivePlayer(view, view.flip ? chess::Color::BLACK : chess::Color::WHITE, searches, pv_room);
         ImGui::Separator();
+        if (cards) view.cards_fixed = ImGui::GetCursorPosY() - top - lines;
     }
     if (players) drawLiveGameLine(view, slot, allow_detach);
 

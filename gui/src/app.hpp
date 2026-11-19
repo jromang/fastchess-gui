@@ -2,6 +2,7 @@
 
 #include <array>
 #include <atomic>
+#include <cfloat>
 #include <chrono>
 #include <deque>
 #include <filesystem>
@@ -197,6 +198,11 @@ class App {
         std::size_t nav_game = ~std::size_t{0};
         int listed_ply       = -1;  // nav's ply the move list was last scrolled to
         Clock::time_point last_active{};  // the last frame its game was being played (shownSlots)
+        // Its opening and the end of its book, read again when a move comes (liveOpening): for the game and the
+        // number of moves it was read at.
+        LiveOpening opening;
+        std::pair<std::size_t, std::size_t> opening_at{~std::size_t{0}, ~std::size_t{0}};
+        float cards_fixed = 0;  // what the two engine cards took besides their lines, the last frame
     };
 
     enum class Page { Home, NewMatch, Tournament, Engines, Books, Board, Suites, Ratings, Log, Settings };
@@ -317,9 +323,19 @@ class App {
     void liveNavKeys(SlotView& view);
     // The room the buttons take under a live board: none when the setting hides them.
     [[nodiscard]] float liveNavHeight() const;
-    void drawLivePlayer(SlotView& view, chess::Color color, bool search);
+    // The height its line took (in a card), `pv_room` at most.
+    float drawLivePlayer(SlotView& view, chess::Color color, bool search, float pv_room = FLT_MAX);
+    // The same in a large panel: a card with the logo as high as the name and the clock, and its search figure by
+    // figure with the whole line, as much of it as `pv_room` holds.
+    float drawLivePlayerCard(SlotView& view, chess::Color color, bool search, float width, float pv_room);
     void drawLiveGameLine(SlotView& view, int slot, bool allow_detach);
+    // Above the moves: the game's opening, with where its book ended, and the tables' verdict once they know the
+    // position shown.
+    void drawLiveFacts(SlotView& view);
     void drawLiveMoves(SlotView& view, float height);
+    // The score of a move or a search, from its mover's side, as the Live tab shows it: the mover's, or White's.
+    [[nodiscard]] std::optional<fastchess::Score> liveScore(std::optional<fastchess::Score> score,
+                                                            chess::Color mover) const;
     void drawLiveChart(SlotView& view);
     void drawLiveSide(SlotView& view, unsigned parts, int slot, bool allow_detach);
     [[nodiscard]] unsigned livePartsHere() const;  // the parts whose panel is closed
@@ -963,6 +979,17 @@ class App {
     int tbPieces();
     const tour::TournamentState* tb_tournament_ = nullptr;
     int tb_pieces_                              = 0;
+    // The verdict of the tournament's Syzygy tables (its adjudication's, else those forced on its engines) on `board`,
+    // once probed; nullptr until then, or when they say nothing of it. Each position is probed once, off the GUI
+    // thread, one at a time (live_tables_).
+    [[nodiscard]] const TableVerdict* liveVerdict(const chess::Board& board);
+    struct LiveTables {
+        std::string paths;
+        bool ignore50 = false;
+        std::map<std::string, std::optional<TableVerdict>> known;  // by FEN; nullopt: the tables do not know it
+        std::future<std::optional<TableVerdict>> job;
+        std::string job_fen;
+    } live_tables_;
 
     // Games view.
     int games_filter_     = 0;

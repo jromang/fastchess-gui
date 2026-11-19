@@ -3,8 +3,10 @@
 // moves in large type, light on black; the controls show for a few seconds when the mouse moves.
 
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
 #include <cstdint>
+#include <sstream>
 #include <string_view>
 
 #include <SDL3/SDL.h>
@@ -49,11 +51,12 @@ float fitted(ImFont* font, float size, float width, std::string& text) {
     const float wide = textSize(font, size, text).x;
     if (wide <= width) return size;
     const float smaller = std::max(size * 0.7f, size * width / wide);
+    if (textSize(font, smaller, text).x <= width) return smaller;
     while (text.size() > 1 && textSize(font, smaller, text + "…").x > width) {
         text.pop_back();
         while (!text.empty() && (static_cast<unsigned char>(text.back()) & 0xC0) == 0x80) text.pop_back();
     }
-    if (textSize(font, smaller, text).x > width) text += "…";
+    text += "…";
     return smaller;
 }
 
@@ -119,6 +122,57 @@ std::string numbered(const SlotState& st, std::size_t index) {
     const std::size_t ply  = index + (black_first ? 1 : 0);
     const int number       = start.fullMoveNumber() + static_cast<int>(ply / 2);
     return fmt::format("{}{} {}", number, ply % 2 == 0 ? "." : "…", st.moves[index].san);
+}
+
+// An engine's line: the side to move's running search, else what its last move said; the score from White's side.
+struct BigLine {
+    std::optional<fastchess::Score> white;
+    int64_t depth = 0;
+    std::string pv;  // in SAN, with move numbers
+    bool running = false;
+};
+
+BigLine bigLine(const SlotState& st, const chess::Board& board, chess::Color color) {
+    BigLine line;
+    const auto& info_line = st.info[color == chess::Color::WHITE ? 0 : 1];
+    const auto from_white = [&](std::optional<fastchess::Score> score) {
+        if (score && color == chess::Color::BLACK) score->value = -score->value;
+        return score;
+    };
+    if (st.active && st.stm == color && st.thinking && !info_line.empty()) {
+        const auto info = fastchess::engine::UciEngine::parseInfo(info_line);
+        if (info.score) line.white = from_white(*info.score);
+        line.depth   = info.depth.value_or(0);
+        line.pv      = pvToSan(board, info.pv, info.pv.size());
+        line.running = true;
+        return line;
+    }
+    for (int i = static_cast<int>(st.moves.size()) - 1; i >= 0; --i) {
+        const auto& m = st.moves[static_cast<std::size_t>(i)];
+        if (m.mover != color || m.book) continue;
+        std::vector<std::string> moves;
+        std::istringstream words(m.pv);
+        for (std::string w; words >> w;) moves.push_back(w);
+        line.white = from_white(m.score);
+        line.depth = m.depth;
+        line.pv    = pvToSan(slotBoard(st, i), moves, moves.size());
+        break;
+    }
+    return line;
+}
+
+// `text` cut after the last word that keeps it within `lines` lines `width` wide at `size`, with "…" when cut.
+std::string withinLines(ImFont* font, float size, float width, const std::string& text, int lines) {
+    const float most = textSize(font, size, "Ag").y * static_cast<float>(lines) + 0.5f;
+    if (font->CalcTextSizeA(size, FLT_MAX, width, text.c_str()).y <= most) return text;
+    std::string out;
+    std::istringstream words(text);
+    for (std::string w; words >> w;) {
+        auto next = out.empty() ? w : out + " " + w;
+        if (font->CalcTextSizeA(size, FLT_MAX, width, (next + " …").c_str()).y > most) break;
+        out = std::move(next);
+    }
+    return out + " …";
 }
 
 SDL_Window* windowOf(const ImGuiViewport* viewport) {
@@ -392,6 +446,18 @@ void App::drawBigGame(BigView& big, bool main_window) {
         text(dl, font, info_px, at, BIG_MUTED, info);
         at.y += textSize(font, info_px, info).y + u * 0.35f;
 
+        // The opening, as far as the game went.
+        if (v.opening.name) {
+            const float open_px   = u * 0.72f;
+            const std::string eco = v.opening.name->eco;
+            std::string name      = v.opening.name->name;
+            const float eco_w     = textSize(bold, open_px, eco).x + u * 0.35f;
+            text(dl, bold, open_px, at, BIG_TEXT, eco);
+            const float fit = fitted(font, open_px, width - eco_w, name);
+            text(dl, font, fit, ImVec2(at.x + eco_w, at.y), BIG_TEXT, name);
+            at.y += textSize(font, open_px, "Ag").y + u * 0.35f;
+        }
+
         if (!st.moves.empty()) {
             auto last       = numbered(st, st.moves.size() - 1);
             const float fit = fitted(bold, u * 1.6f, width, last);
@@ -408,6 +474,79 @@ void App::drawBigGame(BigView& big, bool main_window) {
             const float fit = fitted(font, u, width, line);
             text(dl, font, fit, at, BIG_TEXT, line);
             at.y += textSize(font, fit, line).y + u * 0.45f;
+        }
+
+        // The engines' lines: the side to move's as it searches, the other's from its last move, two lines each at
+        // most.
+        if (setup_.big_lines) {
+            const float head_px = u * 0.68f, pv_px = u * 0.8f, pad = u * 0.4f;
+            const ImVec2 box(at.x, at.y);
+            dl->ChannelsSplit(2);
+            dl->ChannelsSetCurrent(1);
+            float y   = at.y + pad;
+            bool none = true;
+            for (const auto color : {st.stm, ~st.stm}) {
+                const auto line = bigLine(st, v.board, color);
+                if (line.pv.empty()) continue;
+                none             = false;
+                const bool white = color == chess::Color::WHITE;
+                const float disc = head_px * 0.3f, head_h = textSize(bold, head_px, "Ag").y;
+                const ImVec2 c(at.x + pad + disc, y + head_h / 2);
+                dl->AddCircleFilled(c, disc, white ? IM_COL32(245, 245, 245, 255) : IM_COL32(20, 20, 20, 255), 20);
+                dl->AddCircle(c, disc, line.running ? BIG_MOVE : BIG_BAR_BD, 20, line.running ? 2.0f : 1.0f);
+                float x          = at.x + pad + 2 * disc + u * 0.3f;
+                std::string name = white ? st.white : st.black;
+                std::string said = ui::formatScore(line.white);
+                if (line.depth > 0) said += fmt::format(" · d{}", line.depth);
+                if (!line.running) said += TR(", at its last move");
+                const float said_w = textSize(font, head_px * 0.9f, said).x;
+                const float fit = fitted(bold, head_px, width - 2 * pad - (x - at.x - pad) - said_w - u * 0.4f, name);
+                text(dl, bold, fit, ImVec2(x, y), BIG_TEXT, name);
+                x += textSize(bold, fit, name).x + u * 0.4f;
+                text(dl, font, head_px * 0.9f, ImVec2(x, y + head_h * 0.05f), BIG_MUTED, said);
+                y += head_h + u * 0.12f;
+                const float pv_w = width - 2 * pad;
+                const auto pv    = withinLines(font, pv_px, pv_w, line.pv, 2);
+                dl->AddText(font, pv_px, ImVec2(std::floor(at.x + pad), std::floor(y)),
+                            line.running ? BIG_MOVE : IM_COL32(214, 218, 224, 255), pv.c_str(), nullptr, pv_w);
+                y += font->CalcTextSizeA(pv_px, FLT_MAX, pv_w, pv.c_str()).y + u * 0.3f;
+            }
+            dl->ChannelsSetCurrent(0);
+            if (!none) {
+                y += pad - u * 0.3f;
+                dl->AddRectFilled(box, ImVec2(box.x + width, y), IM_COL32(22, 26, 33, 255), u * 0.4f);
+                at.y = y + u * 0.35f;
+            }
+            dl->ChannelsMerge();
+        }
+
+        // The tables' verdict, once they know the position.
+        if (const auto* verdict = liveVerdict(v.board)) {
+            const float tb_px     = u * 0.72f;
+            const bool white_wins = (verdict->result > 0) == (v.board.sideToMove() == chess::Color::WHITE);
+            const bool decisive   = verdict->result != 0 && !verdict->rule50;
+            std::string head      = verdict->result == 0 ? TR("Tablebases: draw")
+                                    : verdict->rule50    ? TR("Tablebases: draw by the 50-move rule")
+                                    : white_wins         ? TR("Tablebases: White wins")
+                                                         : TR("Tablebases: Black wins");
+            std::string tail;
+            if (verdict->result != 0 && verdict->dtz) tail = fmt::format("· DTZ {}", *verdict->dtz);
+            if (verdict->pieces > 0) tail += (tail.empty() ? "" : "  ") + trf("({} pieces or fewer)", verdict->pieces);
+            const float h = textSize(font, tb_px, "Ag").y, r = tb_px * 0.22f;
+            dl->AddCircleFilled(ImVec2(at.x + r, at.y + h / 2), r, decisive ? IM_COL32(63, 178, 127, 255) : BIG_MUTED,
+                                16);
+            const float x  = at.x + 2 * r + u * 0.3f;
+            const float fw = fitted(font, tb_px, width - (x - at.x), head);
+            text(dl, font, fw, ImVec2(x, at.y), BIG_TEXT, head);
+            if (!tail.empty()) {
+                const float tx = x + textSize(font, fw, head).x + u * 0.3f;
+                if (tx < at.x + width) {
+                    std::string rest = tail;
+                    const float ft   = fitted(font, tb_px * 0.9f, at.x + width - tx, rest);
+                    text(dl, font, ft, ImVec2(tx, at.y + h * 0.05f), BIG_MUTED, rest);
+                }
+            }
+            at.y += h + u * 0.45f;
         }
 
         // The moves, two to a row, the last one marked, as many of the last ones as fit.
@@ -543,6 +682,12 @@ void App::drawBigControls(BigView& big, bool main_window, ImVec2 origin, int slo
     if (big.slot < static_cast<int>(slot_views_.size())) {
         ImGui::SameLine(0, px(18));
         ImGui::Checkbox(TR("Flip"), &slot_views_[static_cast<std::size_t>(big.slot)].flip);
+    }
+    ImGui::SameLine(0, px(18));
+    if (ImGui::Checkbox(TR("Lines"), &setup_.big_lines)) saveSetupSoon();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", TR("The engines' lines under the search: the side to move's as it searches, the "
+                                   "other's from its last move."));
     }
     ImGui::SameLine(0, px(18));
     if (ImGui::Button(TR("Full screen (F11)"))) {

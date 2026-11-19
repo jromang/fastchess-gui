@@ -2183,6 +2183,56 @@ TEST_CASE("processor use: a process tree takes each process once, a parent id re
     CHECK(descendants(1, chain).size() == MAX_PROCESS_TREE);
 }
 
+TEST_CASE("live: the game's opening named by its deepest known position, and where its book ended") {
+    SlotState st;
+    st.start_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    chess::Board board(st.start_fen);
+    const auto play = [&](const char* uci, bool book) {
+        LiveMove m;
+        m.move  = chess::uci::uciToMove(board, uci);
+        m.san   = chess::uci::moveToSan(board, m.move);
+        m.mover = board.sideToMove();
+        m.book  = book;
+        board.makeMove<true>(m.move);
+        st.moves.push_back(m);
+    };
+    CHECK(liveOpening(st, false).last_book == -1);
+    // The book to 4...Nf6, the engines then: 5.Nc3 a6 is the Najdorf, named after the book.
+    for (const char* uci : {"e2e4", "c7c5", "g1f3", "d7d6", "d2d4", "c5d4", "f3d4", "g8f6"}) play(uci, true);
+    play("b1c3", false);
+    play("a7a6", false);
+    auto opening = liveOpening(st, false);
+    REQUIRE(opening.name);
+    CHECK(opening.name->eco == "B90");
+    CHECK(opening.name->name == "Sicilian Defense: Najdorf Variation");
+    CHECK(opening.last_book == 7);
+    CHECK(numberedSan(st, 7) == "4…Nf6");
+    CHECK(numberedSan(st, 8) == "5.Nc3");
+    CHECK(numberedSan(st, 99).empty());
+    // A deeper line named, 6.Be3; then a move no table names keeps it.
+    play("c1e3", false);
+    CHECK(liveOpening(st, false).name->name == "Sicilian Defense: Najdorf Variation, English Attack");
+    play("h7h6", false);
+    play("e1d2", false);
+    CHECK(liveOpening(st, false).name->name == "Sicilian Defense: Najdorf Variation, English Attack");
+    CHECK(slotBoard(st, 10).getFen() == "rnbqkb1r/1p2pppp/p2p1n2/8/3NP3/2N5/PPP2PPP/R1BQKB1R w KQkq - 0 6");
+    // Chess960: no name, the book's end still told.
+    CHECK_FALSE(liveOpening(st, true).name);
+    CHECK(liveOpening(st, true).last_book == 7);
+
+    // From a position after Black's move: its numbers.
+    SlotState black;
+    black.start_fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1";
+    chess::Board b(black.start_fen);
+    LiveMove m;
+    m.move  = chess::uci::uciToMove(b, "c7c5");
+    m.san   = "c5";
+    m.mover = chess::Color::BLACK;
+    black.moves.push_back(m);
+    CHECK(numberedSan(black, 0) == "1…c5");
+    CHECK(liveOpening(black, false).name->eco == "B20");
+}
+
 TEST_CASE("live view: as many cards as games, not as fastchess' threads") {
     using namespace std::chrono_literals;
     const auto now = Clock::now();
