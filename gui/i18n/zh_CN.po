@@ -194,8 +194,8 @@ msgstr "PGN 开局库按其对局中出现的频率走出对局中的着法；�
 msgid "A PGN file of the games shown, in the comment style chosen: the voided games left out, the results set by hand applied."
 msgstr "所显示对局的 PGN 文件，采用所选的注释格式：不含作废的对局，并应用手动设定的结果。"
 
-msgid "A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live, on the big screen and on the broadcast web page. A copy is kept in the profile's folder logos: the picture chosen can be moved or deleted."
-msgstr "PNG、JPEG 或 SVG 图片，最大 2 MB，显示在实时页、大屏幕和直播网页中引擎名称的旁边。副本保存在配置文件夹的 logos 文件夹中：所选图片之后可以移动或删除。"
+msgid "A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live and on the big screen (when the logos are on, in Settings › Appearance) and on the broadcast web page. A copy is kept in the profile's folder logos: the picture chosen can be moved or deleted."
+msgstr "PNG、JPEG 或 SVG 图片，最大 2 MB，显示在实时页和大屏幕（在“设置 › 外观”中开启标志时）以及直播网页中引擎名称的旁边。副本保存在配置文件夹的 logos 文件夹中：所选图片之后可以移动或删除。"
 
 msgid "A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves weighing less than a tenth of the best one; the positions reached are the openings."
 msgstr "从初始局面沿 Polyglot 开局库走到此深度（-1 = {}），去掉权重不足最佳着法十分之一的着法；到达的局面即为开局。"
@@ -2226,6 +2226,9 @@ msgstr "隐藏文件"
 msgid "Hide"
 msgstr "隐藏"
 
+msgid "Hide the engines' logos"
+msgstr "隐藏引擎标志"
+
 msgid "Hide the navigation buttons"
 msgstr "隐藏导航按钮"
 
@@ -2641,6 +2644,9 @@ msgid "Logistic Elo, with its 95 % interval."
 msgstr "逻辑斯谛 Elo，及其 95 % 区间。"
 
 msgid "Logo"
+msgstr "标志"
+
+msgid "Logos"
 msgstr "标志"
 
 msgid "Logs in, then tells the machine's system, threads, memory and free space, and whether fastchess-gui is installed in its folder."
@@ -3074,6 +3080,9 @@ msgstr "内存不足，无法绘制。"
 
 msgid "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the setup."
 msgstr "不在本局 PGN 中：其锦标赛进行时，设置的 PGN 选项中“{}”是关闭的。"
+
+msgid "Not shown: the logos are off in Settings › Appearance."
+msgstr "未显示：标志已在“设置 › 外观”中关闭。"
 
 msgid "Not started: another start is waiting ({}). Cancel it first."
 msgstr "未开始：另一个启动正在等待（{}）。请先取消它。"
@@ -4131,11 +4140,17 @@ msgstr "显示"
 msgid "Show it"
 msgstr "显示它"
 
+msgid "Show the engines' logos"
+msgstr "显示引擎标志"
+
 msgid "Show the games from unbalanced openings"
 msgstr "显示来自失衡开局的对局"
 
 msgid "Show the graph"
 msgstr "显示图表"
+
+msgid "Show the logos"
+msgstr "显示标志"
 
 msgid "Show the navigation buttons under the boards"
 msgstr "显示棋盘下方的导航按钮"
@@ -4712,6 +4727,9 @@ msgstr "等待中的引擎不再检查；正在进行的检查会继续。"
 msgid "The engines' lines under the search: the side to move's as it searches, the other's from its last move."
 msgstr "在搜索信息下方显示引擎的变化：走棋方为其搜索中的变化，另一方为其上一步时的变化。"
 
+msgid "The engines' logos in Live and on the big screen"
+msgstr "在实时页和大屏幕上显示引擎标志"
+
 msgid "The engines' own books are off"
 msgstr "引擎自带开局库已关闭"
 
@@ -4960,6 +4978,9 @@ msgstr "{} 的口令，用于 {}"
 
 msgid "The paused tournament goes on, and the queue starts its next tournament when the running one ends."
 msgstr "暂停的锦标赛继续进行，当前锦标赛结束后队列开始下一个锦标赛。"
+
+msgid "The picture chosen on an engine's card (Engines page) beside its name: in Live, on its cards, and on the big screen. Without them, the names alone; the broadcast web page keeps its logos."
+msgstr "在引擎信息卡（引擎页）上选择的图片，显示在其名称旁边：实时页、其卡片和大屏幕上。关闭后只显示名称；直播网页仍保留标志。"
 
 msgid "The picture could not be made a texture."
 msgstr "无法将图片转换为纹理。"

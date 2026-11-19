@@ -2,7 +2,8 @@
 
 // The engines' logos: a picture per engine of the library (PNG, JPEG or SVG), chosen on its card and copied into the
 // profile's logos folder (Storage::logosDir), so that the original can move. Shown beside the engine's name in Live
-// and on the big screen, and offered to the broadcast web page as small PNG files the program writes itself.
+// and on the big screen when the appearance asks for them (off by default), and offered to the broadcast web page as
+// small PNG files the program writes itself.
 
 #include <cstdint>
 #include <filesystem>

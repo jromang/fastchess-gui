@@ -87,6 +87,7 @@ struct Settings {
     bool sounds = false;              // a sound for each move of the game followed
     int volume  = 70;                 // percent
     bool figurines = true;               // the pieces of the set in the notation, instead of letters
+    bool engine_logos = false;              // each engine's logo beside its name in Live and on the big screen
     Board3d board3d;
 
     [[nodiscard]] const Board& board(ui::Theme theme) const {

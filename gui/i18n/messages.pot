@@ -197,7 +197,7 @@ msgstr ""
 msgid "A PGN file of the games shown, in the comment style chosen: the voided games left out, the results set by hand applied."
 msgstr ""
 
-msgid "A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live, on the big screen and on the broadcast web page. A copy is kept in the profile's folder logos: the picture chosen can be moved or deleted."
+msgid "A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live and on the big screen (when the logos are on, in Settings › Appearance) and on the broadcast web page. A copy is kept in the profile's folder logos: the picture chosen can be moved or deleted."
 msgstr ""
 
 msgid "A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves weighing less than a tenth of the best one; the positions reached are the openings."
@@ -2233,6 +2233,9 @@ msgstr ""
 msgid "Hide"
 msgstr ""
 
+msgid "Hide the engines' logos"
+msgstr ""
+
 msgid "Hide the navigation buttons"
 msgstr ""
 
@@ -2648,6 +2651,9 @@ msgid "Logistic Elo, with its 95 % interval."
 msgstr ""
 
 msgid "Logo"
+msgstr ""
+
+msgid "Logos"
 msgstr ""
 
 msgid "Logs in, then tells the machine's system, threads, memory and free space, and whether fastchess-gui is installed in its folder."
@@ -3083,6 +3089,9 @@ msgid "Not enough memory to draw it."
 msgstr ""
 
 msgid "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the setup."
+msgstr ""
+
+msgid "Not shown: the logos are off in Settings › Appearance."
 msgstr ""
 
 msgid "Not started: another start is waiting ({}). Cancel it first."
@@ -4147,10 +4156,16 @@ msgstr ""
 msgid "Show it"
 msgstr ""
 
+msgid "Show the engines' logos"
+msgstr ""
+
 msgid "Show the games from unbalanced openings"
 msgstr ""
 
 msgid "Show the graph"
+msgstr ""
+
+msgid "Show the logos"
 msgstr ""
 
 msgid "Show the navigation buttons under the boards"
@@ -4736,6 +4751,9 @@ msgstr ""
 msgid "The engines' lines under the search: the side to move's as it searches, the other's from its last move."
 msgstr ""
 
+msgid "The engines' logos in Live and on the big screen"
+msgstr ""
+
 msgid "The engines' own books are off"
 msgstr ""
 
@@ -4983,6 +5001,9 @@ msgid "The passphrase of {}, for {}"
 msgstr ""
 
 msgid "The paused tournament goes on, and the queue starts its next tournament when the running one ends."
+msgstr ""
+
+msgid "The picture chosen on an engine's card (Engines page) beside its name: in Live, on its cards, and on the big screen. Without them, the names alone; the broadcast web page keeps its logos."
 msgstr ""
 
 msgid "The picture could not be made a texture."

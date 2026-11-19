@@ -413,7 +413,7 @@ void App::drawBigGame(BigView& big, bool main_window) {
         auto name  = white ? st.white : st.black;
         float left = disc * 2 + u * 0.35f;
         // The engine's logo as high as its name and clock together, at most twice as wide.
-        if (const auto* logo = engineLogo(name)) {
+        if (const auto* logo = appearance::current().engine_logos ? engineLogo(name) : nullptr) {
             const float high = player_h();
             const float w    = std::min(high * logo->width / logo->height, high * 2.0f);
             const float h    = w * logo->height / logo->width;

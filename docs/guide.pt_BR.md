@@ -185,7 +185,7 @@ nenhum, inicie o programa com `SDL_VIDEODRIVER=x11`. Quando nenhuma forma de des
 antes de o programa terminar.
 
 ### Aparência
-<!-- en: appearance decda352 -->
+<!-- en: appearance 312266af -->
 
 **Preferências** > *Aparência* escolhe a aparência de todos os tabuleiros do programa (o mosaico ao vivo e a partida
 acompanhada, os tabuleiros destacados, a tela grande, uma partida reproduzida em *Partidas*, a aba *Aberturas*, as
@@ -214,16 +214,20 @@ aberturas de um livro), com um pequeno tabuleiro ao lado das opções que as mos
 
 - **Figuras na notação** (ligadas por padrão): os lances da página Tabuleiro, nos lances dela e nas linhas da sua
   análise, são escritos com as peças do conjunto escolhido acima (Nf3 vira um cavalo e f3); desligadas, com letras.
+- **Logotipos** (desligados por padrão): *Os logotipos dos engines em Ao vivo e na tela grande* desenha o logo de cada
+  engine, escolhido na sua ficha (veja abaixo), ao lado do nome dele em *Ao vivo*, nos seus cartões e na tela grande;
+  desligados, só os nomes. A página web da transmissão os mostra de qualquer forma.
 
-A paleta de comandos também tem essas opções (*Cores do tabuleiro: Marrom*, *Peças: Celtic*, *Ligar os sons dos
-lances*…). Elas são guardadas em `settings.json` no perfil; no modo portátil, a pasta de peças é guardada em relação
-à pasta do programa.
+A paleta de comandos também tem essas opções (*Cores do tabuleiro: Marrom*, *Peças: Celtic*, *Ligar os sons dos lances*,
+*Mostrar os logotipos dos engines*…). Elas são guardadas em `settings.json` no perfil; no modo portátil, a pasta de
+peças é guardada em relação à pasta do programa.
 
-**Logos dos engines**: a ficha de um engine na página **Engines** tem *Logo* > *Escolher…*, uma imagem PNG, JPEG ou
-SVG de no máximo 2 MB (no máximo 4096 pixels em cada direção), mostrada ao lado do nome do engine em *Ao vivo*, na
-tela grande e na página web da transmissão. A imagem é copiada para a pasta `logos` do perfil, de modo que o original
-pode ser movido ou apagado e o perfil movido inteiro; *Remover* a retira (e a cópia dela, a menos que outro engine a
-use). O logo pode ser trocado enquanto o engine joga.
+**Logos dos engines**: a ficha de um engine na página **Engines** tem *Logo* > *Escolher…*, uma imagem PNG, JPEG ou SVG
+de no máximo 2 MB (no máximo 4096 pixels em cada direção), mostrada ao lado do nome do engine em *Ao vivo* e na tela
+grande quando *Logotipos* está ligado (acima), e na página web da transmissão. A imagem é copiada para a pasta `logos`
+do perfil, de modo que o original pode ser movido ou apagado e o perfil movido inteiro; *Remover* a retira (e a cópia
+dela, a menos que outro engine a use). O logo pode ser trocado enquanto o engine joga. Enquanto os logotipos estão
+desligados, a ficha avisa, com *Mostrar os logotipos*.
 
 ### O tabuleiro 3D
 <!-- en: the-3d-board cc0dd596 -->
@@ -385,12 +389,12 @@ engine são enviados com `setoption` no início de cada partida. `Threads` e `Ha
   teste rápido é guardado, em `tests/` no perfil (com os logs dos engines das partidas dele que terminaram mal).
 
 ### Uma biblioteca grande
-<!-- en: a-large-library beb231ed -->
+<!-- en: a-large-library d118bc02 -->
 
-- **Grupos**: rótulos livres separados por vírgulas (`pool A`, `list 40/15`…). A lista pode ser filtrada por grupo
-  ou pesquisada, e um grupo pode ser adicionado a um torneio com um clique. *Notas*: qualquer coisa a lembrar sobre o
-  engine. *Logo*: uma imagem mostrada ao lado do nome dele em *Ao vivo*, na tela grande e na página web da transmissão
-  (veja [Aparência](#aparência)).
+- **Grupos**: rótulos livres separados por vírgulas (`pool A`, `list 40/15`…). A lista pode ser filtrada por grupo ou
+  pesquisada, e um grupo pode ser adicionado a um torneio com um clique. *Notas*: qualquer coisa a lembrar sobre o
+  engine. *Logo*: uma imagem mostrada ao lado do nome dele em *Ao vivo* e na tela grande quando os logotipos estão
+  ligados, e na página web da transmissão (veja [Aparência](#aparência)).
 - **Busca e filtros**: toda busca de engines (a biblioteca, e as listas de engines das outras páginas) encontra um
   nome, o nome que o engine informa, o autor, o caminho do programa ou as notas; o filtro de estado mostra os engines
   que funcionam, que falharam ou mudaram, que nunca foram verificados, que perderam o programa, que falam WinBoard, ou
@@ -1208,7 +1212,7 @@ começou, quando a rodada compartilha uma), e as alterações do torneio (veja [
 andamento](#alterar-um-torneio-em-andamento)).
 
 ### Ao vivo
-<!-- en: live 5561ed9b -->
+<!-- en: live ed374625 -->
 
 As partidas em andamento, como um mosaico de tabuleiros ou uma partida em foco com os relógios, a busca em curso de
 cada engine (profundidade, pontuação, nós, nps, PV em SAN), a lista de lances e o gráfico da partida (veja [O gráfico
@@ -1219,12 +1223,13 @@ parcelas de vitória/empate/derrota (`UCI_ShowWDL`, ligado para os engines que o
 acompanham cada linha de busca; a aba *V/E/D* as desenha como faixas, as vitórias das Brancas embaixo.
 
 Quando há espaço (uma partida em foco, um painel grande), cada engine tem seu cartão: o logo tão alto quanto o nome e o
-relógio, o que ele faz (pensa, ou o lance que jogou), a busca número a número (profundidade e seldepth, avaliação, nós,
-velocidade, os acessos às tablebases e o preenchimento do hash quando o engine os envia, o tempo gasto no lance até
-agora) e toda a PV; o engine que espera mostra o que dizia ao jogar, com o momento em que se decidiu. Ao lado do
-mosaico, o painel mantém uma linha de números e os 12 primeiros meios-lances da PV. *Avaliação do lado a jogar* |
-*Avaliação das brancas*, à direita da aba, escolhe o lado de todas as avaliações dela: o do lado a jogar, como o
-fastchess as escreve no PGN, ou o das brancas; a barra de avaliação e a tela grande mostram sempre o das brancas.
+relógio (quando os logotipos estão ligados, veja [Aparência](#aparência)), o que ele faz (pensa, ou o lance que jogou),
+a busca número a número (profundidade e seldepth, avaliação, nós, velocidade, os acessos às tablebases e o preenchimento
+do hash quando o engine os envia, o tempo gasto no lance até agora) e toda a PV; o engine que espera mostra o que dizia
+ao jogar, com o momento em que se decidiu. Ao lado do mosaico, o painel mantém uma linha de números e os 12 primeiros
+meios-lances da PV. *Avaliação do lado a jogar* | *Avaliação das brancas*, à direita da aba, escolhe o lado de todas as
+avaliações dela: o do lado a jogar, como o fastchess as escreve no PGN, ou o das brancas; a barra de avaliação e a tela
+grande mostram sempre o das brancas.
 
 Acima dos lances: a abertura, o código ECO e o nome da posição mais avançada da partida que a tabela de aberturas
 nomeadas conhece (lances do livro e dos engines igualmente, de modo que uma transposição depois do livro também recebe

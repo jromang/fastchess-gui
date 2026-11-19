@@ -108,6 +108,7 @@ void to_json(nlohmann::json& j, const Settings& s) {
          {"sounds", s.sounds},
          {"volume", s.volume},
          {"figurines", s.figurines},
+         {"engine_logos", s.engine_logos},
          {"board3d",
           {{"on", s.board3d.on},
            {"lighting", s.board3d.lighting},
@@ -127,6 +128,7 @@ void from_json(const nlohmann::json& j, Settings& s) {
     s.sounds       = value(j, "sounds", s.sounds);
     s.volume       = std::clamp(value(j, "volume", s.volume), 0, 100);
     s.figurines    = value(j, "figurines", s.figurines);
+    s.engine_logos = value(j, "engine_logos", s.engine_logos);
     if (j.contains("board3d") && j["board3d"].is_object()) {
         const auto& b      = j["board3d"];
         s.board3d.on       = value(b, "on", s.board3d.on);

@@ -193,7 +193,7 @@ gezeigt; gibt es keinen, starte das Programm mit `SDL_VIDEODRIVER=x11`. Funktion
 eine Meldung das, bevor das Programm endet.
 
 ### Darstellung
-<!-- en: appearance decda352 -->
+<!-- en: appearance 312266af -->
 
 **Einstellungen** > *Darstellung* legt fest, wie jedes Brett des Programms aussieht (das Live-Mosaik und die
 verfolgte Partie, die abgetrennten Bretter, das Großbild, eine in *Partien* nachgespielte Partie, der Tab
@@ -221,18 +221,21 @@ verfolgte Partie, die abgetrennten Bretter, das Großbild, eine in *Partien* nac
   warum, und das Programm bleibt stumm.
 
 - **Figurinen in der Notation** (standardmäßig an): Die Züge der Seite Brett, in ihren Zügen und in den Linien ihrer
-  Analyse, werden mit den Figuren des oben gewählten Satzes geschrieben (aus Nf3 werden ein Springer und f3); aus, mit
-  Buchstaben.
+  Analyse, werden mit den Figuren des oben gewählten Satzes geschrieben (aus Nf3 werden ein Springer und f3); aus, mit Buchstaben.
+- **Logos** (standardmäßig aus): *Die Logos der Engines in Live und auf dem Großbild* zeichnet das Logo jeder Engine,
+  auf ihrer Karte gewählt (siehe unten), neben ihren Namen in *Live*, auf ihren Karten und auf dem Großbild; aus, nur
+  die Namen. Die Webseite der Übertragung zeigt sie in jedem Fall.
 
-Die Befehlspalette bietet diese Wahl auch (*Brettfarben: Braun*, *Figuren: Celtic*, *Zugtöne einschalten*…). Sie wird
-in `settings.json` im Profil gespeichert; der Figurenordner wird im portablen Modus relativ zum Programmordner
-gespeichert.
+Die Befehlspalette bietet diese Wahl auch (*Brettfarben: Braun*, *Figuren: Celtic*, *Zugtöne einschalten*, *Logos der
+Engines anzeigen*…). Sie wird in `settings.json` im Profil gespeichert; der Figurenordner wird im portablen Modus
+relativ zum Programmordner gespeichert.
 
-**Engine-Logos**: Die Karte einer Engine auf der Seite **Engines** hat *Logo* > *Wählen…*, ein PNG-, JPEG- oder
-SVG-Bild von höchstens 2 MB (höchstens 4096 Pixel in jeder Richtung), gezeigt neben dem Namen der Engine in *Live*, auf
-dem Großbild und auf der Webseite der Übertragung. Das Bild wird in den Ordner `logos` des Profils kopiert, so dass das
-Original verschoben oder gelöscht und das Profil als Ganzes verschoben werden kann; *Entfernen* nimmt es weg (und
-seine Kopie, sofern keine andere Engine sie hat). Das Logo lässt sich ändern, während die Engine spielt.
+**Engine-Logos**: Die Karte einer Engine auf der Seite **Engines** hat *Logo* > *Wählen…*, ein PNG-, JPEG- oder SVG-Bild
+von höchstens 2 MB (höchstens 4096 Pixel in jeder Richtung), gezeigt neben dem Namen der Engine in *Live* und auf dem
+Großbild, wenn *Logos* eingeschaltet ist (oben), und auf der Webseite der Übertragung. Das Bild wird in den Ordner
+`logos` des Profils kopiert, so dass das Original verschoben oder gelöscht und das Profil als Ganzes verschoben werden
+kann; *Entfernen* nimmt es weg (und seine Kopie, sofern keine andere Engine sie hat). Das Logo lässt sich ändern,
+während die Engine spielt. Solange die Logos aus sind, sagt die Karte es, mit *Logos anzeigen*.
 
 ### Das 3D-Brett
 <!-- en: the-3d-board cc0dd596 -->
@@ -400,12 +403,12 @@ Werte, die vom Standard der Engine abweichen, werden zu Beginn jeder Partie mit 
   Engine-Logs seiner Partien, die schlecht endeten).
 
 ### Eine große Bibliothek
-<!-- en: a-large-library beb231ed -->
+<!-- en: a-large-library d118bc02 -->
 
-- **Gruppen**: freie, durch Kommas getrennte Bezeichnungen (`pool A`, `list 40/15`…). Die Liste lässt sich nach
-  Gruppe filtern oder durchsuchen, und eine Gruppe lässt sich mit einem Klick zu einem Turnier hinzufügen. *Notizen*:
-  alles, was man sich über die Engine merken will. *Logo*: ein Bild, gezeigt neben ihrem Namen in *Live*, auf dem
-  Großbild und auf der Webseite der Übertragung (siehe [Darstellung](#darstellung)).
+- **Gruppen**: freie, durch Kommas getrennte Bezeichnungen (`pool A`, `list 40/15`…). Die Liste lässt sich nach Gruppe
+  filtern oder durchsuchen, und eine Gruppe lässt sich mit einem Klick zu einem Turnier hinzufügen. *Notizen*: alles,
+  was man sich über die Engine merken will. *Logo*: ein Bild, gezeigt neben ihrem Namen in *Live* und auf dem Großbild,
+  wenn die Logos eingeschaltet sind, und auf der Webseite der Übertragung (siehe [Darstellung](#darstellung)).
 - **Suche und Filter**: Jede Engine-Suche (die Bibliothek und die Engine-Listen der anderen Seiten) findet einen Namen,
   den Namen, den die Engine meldet, ihren Autor, ihren Programmpfad oder ihre Notizen; der Zustandsfilter zeigt die
   Engines, die funktionieren, fehlgeschlagen sind oder sich geändert haben, nie geprüft wurden, ihr Programm verloren
@@ -1260,7 +1263,7 @@ begonnen hat, oder sobald seine Runde begonnen hat, wenn sich die Runde eine tei
 (siehe [Ein laufendes Turnier ändern](#ein-laufendes-turnier-ändern)).
 
 ### Live
-<!-- en: live 5561ed9b -->
+<!-- en: live ed374625 -->
 
 Die laufenden Partien, als Mosaik von Brettern oder als eine Partie im Fokus mit den Uhren, der laufenden Suche jeder
 Engine (Tiefe, Bewertung, Knoten, nps, PV in SAN), der Zugliste und der Partiegrafik (siehe
@@ -1272,13 +1275,13 @@ eingeschaltet, die es haben) folgen jeder Suchzeile; der Tab *S/R/N* zeichnet si
 unten.
 
 Wenn der Platz reicht (eine Partie im Fokus, ein großes Panel), hat jede Engine eine Karte: ihr Logo so hoch wie Name
-und Uhr, was sie tut (sie denkt nach, oder der Zug, den sie spielte), ihre Suche Zahl für Zahl (Tiefe und seldepth,
-Bewertung, Knoten, Geschwindigkeit, die Tablebase-Treffer und die Hash-Füllung, wenn die Engine sie sendet, die bisher
-auf den Zug verwendete Zeit) und ihre ganze PV; die wartende Engine zeigt, was sie beim Zug sagte, mit dem Moment, in
-dem sie sich entschied. Neben dem Mosaik behält das Panel eine Zeile mit Zahlen und die ersten 12 Halbzüge der PV.
-*Bewertung für die Seite am Zug* | *Bewertung für Weiß* rechts im Tab legt die Seite aller Bewertungen darin fest: die
-der Seite am Zug, wie fastchess sie ins PGN schreibt, oder die von Weiß; die Bewertungsleiste und das Großbild zeigen
-immer die Sicht von Weiß.
+und Uhr (wenn die Logos eingeschaltet sind, siehe [Darstellung](#darstellung)), was sie tut (sie denkt nach, oder der
+Zug, den sie spielte), ihre Suche Zahl für Zahl (Tiefe und seldepth, Bewertung, Knoten, Geschwindigkeit, die
+Tablebase-Treffer und die Hash-Füllung, wenn die Engine sie sendet, die bisher auf den Zug verwendete Zeit) und ihre
+ganze PV; die wartende Engine zeigt, was sie beim Zug sagte, mit dem Moment, in dem sie sich entschied. Neben dem Mosaik
+behält das Panel eine Zeile mit Zahlen und die ersten 12 Halbzüge der PV. *Bewertung für die Seite am Zug* | *Bewertung
+für Weiß* rechts im Tab legt die Seite aller Bewertungen darin fest: die der Seite am Zug, wie fastchess sie ins PGN
+schreibt, oder die von Weiß; die Bewertungsleiste und das Großbild zeigen immer die Sicht von Weiß.
 
 Über den Zügen: die Eröffnung, der ECO-Code und der Name der tiefsten Stellung der Partie, die die Tabelle der benannten
 Eröffnungen kennt (Buch- und Engine-Züge gleichermaßen, sodass auch eine Zugumstellung nach dem Buch benannt wird), mit

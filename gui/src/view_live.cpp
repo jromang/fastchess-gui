@@ -752,7 +752,7 @@ float App::drawLivePlayer(SlotView& view, chess::Color color, bool search, float
     dl->AddCircle(c, r, IM_COL32(130, 130, 130, 255), 16);
     ImGui::Dummy(ImVec2(r * 2, ImGui::GetTextLineHeight()));
     ImGui::SameLine();
-    if (drawEngineLogo(name, ImGui::GetTextLineHeight()) > 0) ImGui::SameLine();
+    if (appearance::current().engine_logos && drawEngineLogo(name, ImGui::GetTextLineHeight()) > 0) ImGui::SameLine();
 
     if (to_move) ImGui::PushStyleColor(ImGuiCol_Text, ui::ACCENT);
     if (isMatch() && obs) {
@@ -865,7 +865,8 @@ float App::drawLivePlayerCard(SlotView& view, chess::Color color, bool search, f
     x += 2 * r + px(8);
     // The logo grows with the panel, up to the height of the name and what follows it.
     const auto& name = white ? st.white : st.black;
-    if (const auto* logo = engineLogo(name); logo && logo->width > 0 && logo->height > 0) {
+    if (const auto* logo = appearance::current().engine_logos ? engineLogo(name) : nullptr;
+        logo && logo->width > 0 && logo->height > 0) {
         const float high = std::clamp(line_h + (width - px(440)) * 0.12f, line_h, header_h);
         const float w    = std::min(high * logo->width / logo->height, high * 2.5f);
         const float h    = w * logo->height / logo->width;

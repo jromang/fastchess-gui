@@ -101,6 +101,7 @@ TEST_CASE("appearance: colours as #rrggbbaa, and the settings in settings.json")
     s.piece_folder                 = "/some/pieces";
     s.sounds                       = true;
     s.volume                       = 35;
+    s.engine_logos                 = true;
     s.board3d.on                   = true;
     s.board3d.lighting             = "golden_hour";
     s.board3d.exposure             = -0.5f;
@@ -122,6 +123,12 @@ TEST_CASE("appearance: colours as #rrggbbaa, and the settings in settings.json")
     CHECK(odd.board3d == appearance::Board3d{});
     CHECK(odd.volume == 100);
     CHECK(odd.dark_board == appearance::Board{});
+    // The engines' logos are off unless asked for, a profile of before included.
+    CHECK_FALSE(appearance::Settings{}.engine_logos);
+    CHECK_FALSE(odd.engine_logos);
+    appearance::Settings logos;
+    appearance::from_json(nlohmann::json::parse(R"({"engine_logos": true})"), logos);
+    CHECK(logos.engine_logos);
     // The 3D board's values held in their ranges.
     appearance::Settings held;
     appearance::from_json(

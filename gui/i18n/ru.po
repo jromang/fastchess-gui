@@ -200,8 +200,8 @@ msgstr "Книга PGN играет ходы своих партий так ча
 msgid "A PGN file of the games shown, in the comment style chosen: the voided games left out, the results set by hand applied."
 msgstr "Файл PGN с показанными партиями в выбранном стиле комментариев: без аннулированных партий, с результатами, заданными вручную."
 
-msgid "A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live, on the big screen and on the broadcast web page. A copy is kept in the profile's folder logos: the picture chosen can be moved or deleted."
-msgstr "Изображение PNG, JPEG или SVG размером не более 2 МБ, показываемое рядом с именем движка в разделе «Онлайн», на большом экране и на веб-странице трансляции. Копия хранится в папке logos профиля: выбранное изображение можно переместить или удалить."
+msgid "A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live and on the big screen (when the logos are on, in Settings › Appearance) and on the broadcast web page. A copy is kept in the profile's folder logos: the picture chosen can be moved or deleted."
+msgstr "Изображение PNG, JPEG или SVG размером не более 2 МБ, показываемое рядом с именем движка в разделе «Онлайн» и на большом экране (когда логотипы включены в «Параметры › Внешний вид») и на веб-странице трансляции. Копия хранится в папке logos профиля: выбранное изображение можно переместить или удалить."
 
 msgid "A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves weighing less than a tenth of the best one; the positions reached are the openings."
 msgstr "Книга Polyglot просматривается от начальной позиции до этой глубины (-1 = {}), без ходов, вес которых меньше десятой доли веса лучшего; полученные позиции и есть дебюты."
@@ -2240,6 +2240,9 @@ msgstr "Скрытые файлы"
 msgid "Hide"
 msgstr "Скрыть"
 
+msgid "Hide the engines' logos"
+msgstr "Скрыть логотипы движков"
+
 msgid "Hide the navigation buttons"
 msgstr "Скрыть кнопки навигации"
 
@@ -2656,6 +2659,9 @@ msgstr "Elo по логистической шкале, с интервалом 
 
 msgid "Logo"
 msgstr "Логотип"
+
+msgid "Logos"
+msgstr "Логотипы"
 
 msgid "Logs in, then tells the machine's system, threads, memory and free space, and whether fastchess-gui is installed in its folder."
 msgstr "Входит, затем сообщает систему машины, потоки, память и свободное место, а также установлен ли fastchess-gui в её папке."
@@ -3094,6 +3100,9 @@ msgstr "Недостаточно памяти, чтобы его нарисов�
 
 msgid "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the setup."
 msgstr "Нет в PGN этой партии: её турнир игрался с выключенным «{}» в параметрах PGN настройки."
+
+msgid "Not shown: the logos are off in Settings › Appearance."
+msgstr "Не показывается: логотипы выключены в «Параметры › Внешний вид»."
 
 msgid "Not started: another start is waiting ({}). Cancel it first."
 msgstr "Не запущено: ожидает другой запуск ({}). Сначала отмените его."
@@ -4163,11 +4172,17 @@ msgstr "Показать"
 msgid "Show it"
 msgstr "Показать её"
 
+msgid "Show the engines' logos"
+msgstr "Показать логотипы движков"
+
 msgid "Show the games from unbalanced openings"
 msgstr "Показать партии из неравных дебютов"
 
 msgid "Show the graph"
 msgstr "Показать график"
+
+msgid "Show the logos"
+msgstr "Показывать логотипы"
 
 msgid "Show the navigation buttons under the boards"
 msgstr "Показать кнопки навигации под досками"
@@ -4760,6 +4775,9 @@ msgstr "Ожидающие движки не проверяются; текущ�
 msgid "The engines' lines under the search: the side to move's as it searches, the other's from its last move."
 msgstr "Линии движков под поиском: линия стороны, чей ход, пока она ищет, и линия другой — с её последнего хода."
 
+msgid "The engines' logos in Live and on the big screen"
+msgstr "Логотипы движков в разделе «Онлайн» и на большом экране"
+
 msgid "The engines' own books are off"
 msgstr "Собственные книги движков выключены"
 
@@ -5008,6 +5026,9 @@ msgstr "Парольная фраза {} для {}"
 
 msgid "The paused tournament goes on, and the queue starts its next tournament when the running one ends."
 msgstr "Приостановленный турнир продолжается, а очередь запустит следующий турнир, когда текущий закончится."
+
+msgid "The picture chosen on an engine's card (Engines page) beside its name: in Live, on its cards, and on the big screen. Without them, the names alone; the broadcast web page keeps its logos."
+msgstr "Изображение, выбранное в карточке движка (страница «Движки»), рядом с его именем: в разделе «Онлайн», на его карточках и на большом экране. Без них — только имена; веб-страница трансляции сохраняет свои логотипы."
 
 msgid "The picture could not be made a texture."
 msgstr "Не удалось превратить изображение в текстуру."

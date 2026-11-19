@@ -191,7 +191,7 @@ grafico; se non ce n'è uno, avvia il programma con `SDL_VIDEODRIVER=x11`. Quand
 un messaggio lo dice prima che il programma termini.
 
 ### Aspetto
-<!-- en: appearance decda352 -->
+<!-- en: appearance 312266af -->
 
 **Impostazioni** > *Aspetto* sceglie l'aspetto di tutte le scacchiere del programma (il mosaico in diretta e la
 partita seguita, le scacchiere staccate, lo schermo grande, una partita rivista in *Partite*, la scheda *Aperture*,
@@ -221,16 +221,20 @@ le aperture di un libro), con una piccola scacchiera accanto alle scelte che le 
 - **Figurine nella notazione** (attive per impostazione predefinita): le mosse della pagina Scacchiera, nelle sue mosse
   e nelle linee della sua analisi, sono scritte con i pezzi del set scelto sopra (Nf3 diventa un cavallo e f3);
   disattivate, con le lettere.
+- **Loghi** (disattivati per impostazione predefinita): *I loghi dei motori in Diretta e sullo schermo grande* disegna
+  il logo di ogni motore, scelto sulla sua scheda (vedi sotto), accanto al suo nome in *Diretta*, sui suoi riquadri e
+  sullo schermo grande; disattivati, solo i nomi. La pagina web della trasmissione li mostra comunque.
 
 Anche la tavolozza dei comandi ha queste scelte (*Colori della scacchiera: Marrone*, *Pezzi: Celtic*, *Attiva i suoni
-delle mosse*…). Sono conservate in `settings.json` nel profilo; nella modalità portatile la cartella dei pezzi viene
-conservata relativa alla cartella del programma.
+delle mosse*, *Mostra i loghi dei motori*…). Sono conservate in `settings.json` nel profilo; nella modalità portatile la
+cartella dei pezzi viene conservata relativa alla cartella del programma.
 
-**Loghi dei motori**: la scheda di un motore nella pagina **Motori** ha *Logo* > *Scegli…*, un'immagine PNG, JPEG o
-SVG di 2 MB al massimo (4096 pixel al massimo per lato), mostrata accanto al nome del motore in *Diretta*, sullo
-schermo grande e sulla pagina web della trasmissione. L'immagine viene copiata nella cartella `logos` del profilo,
-quindi l'originale può essere spostato o cancellato e il profilo spostato per intero; *Rimuovi* la toglie (con la sua
-copia, a meno che un altro motore non la usi). Il logo si può cambiare mentre il motore gioca.
+**Loghi dei motori**: la scheda di un motore nella pagina **Motori** ha *Logo* > *Scegli…*, un'immagine PNG, JPEG o SVG
+di 2 MB al massimo (4096 pixel al massimo per lato), mostrata accanto al nome del motore in *Diretta* e sullo schermo
+grande quando i *Loghi* sono attivi (sopra), e sulla pagina web della trasmissione. L'immagine viene copiata nella
+cartella `logos` del profilo, quindi l'originale può essere spostato o cancellato e il profilo spostato per intero;
+*Rimuovi* la toglie (con la sua copia, a meno che un altro motore non la usi). Il logo si può cambiare mentre il motore
+gioca. Finché i loghi sono disattivati, la scheda lo dice, con *Mostra i loghi*.
 
 ### La scacchiera 3D
 <!-- en: the-3d-board cc0dd596 -->
@@ -392,12 +396,12 @@ primi.
   delle sue partite finite male).
 
 ### Una libreria grande
-<!-- en: a-large-library beb231ed -->
+<!-- en: a-large-library d118bc02 -->
 
 - **Gruppi**: etichette libere separate da virgole (`pool A`, `list 40/15`…). L'elenco si può filtrare per gruppo o
   cercare, e un gruppo si può aggiungere a un torneo con un clic. *Note*: qualsiasi cosa da ricordare sul motore.
-  *Logo*: un'immagine mostrata accanto al suo nome in *Diretta*, sullo schermo grande e sulla pagina web della
-  trasmissione (vedi [Aspetto](#aspetto)).
+  *Logo*: un'immagine mostrata accanto al suo nome in *Diretta* e sullo schermo grande quando i loghi sono attivi, e
+  sulla pagina web della trasmissione (vedi [Aspetto](#aspetto)).
 - **Ricerca e filtri**: ogni ricerca di motori (la libreria, e gli elenchi di motori delle altre pagine) trova un
   nome, il nome che il motore dichiara, il suo autore, il percorso del suo programma o le sue note; il filtro di stato
   mostra i motori che funzionano, che hanno fallito o sono cambiati, mai verificati, che hanno perso il loro
@@ -1226,7 +1230,7 @@ iniziata, o una volta iniziato il suo turno quando il turno ne condivide una), e
 [Modificare un torneo in corso](#modificare-un-torneo-in-corso)).
 
 ### Diretta
-<!-- en: live 5561ed9b -->
+<!-- en: live ed374625 -->
 
 Le partite in corso, come un mosaico di scacchiere o una sola partita in primo piano con gli orologi, la ricerca in
 corso di ogni motore (profondità, valutazione, nodi, nps, PV in SAN), l'elenco delle mosse e il grafico della partita
@@ -1238,13 +1242,13 @@ vengono aggiunti) seguono ogni riga di ricerca; la scheda *V/P/S* le disegna com
 basso.
 
 Quando c'è spazio (una partita in primo piano, un pannello grande), ogni motore ha il suo riquadro: il logo alto quanto
-il nome e l'orologio, cosa fa (pensa, o la mossa che ha giocato), la sua ricerca cifra per cifra (profondità e seldepth,
-valutazione, nodi, velocità, gli accessi alle tablebase e il riempimento dell'hash quando il motore li invia, il tempo
-speso sulla mossa finora) e tutta la sua PV; il motore che attende mostra ciò che diceva quando ha giocato, con il
-momento in cui si è deciso. Accanto al mosaico, il pannello tiene una riga di cifre e le prime 12 semimosse della PV.
-*Valutazione del lato al tratto* | *Valutazione del Bianco*, a destra della scheda, sceglie il lato di tutte le sue
-valutazioni: quello del lato al tratto, come fastchess le scrive nel PGN, o quello del Bianco; la barra di valutazione e
-lo schermo grande mostrano sempre quello del Bianco.
+il nome e l'orologio (quando i loghi sono attivi, vedi [Aspetto](#aspetto)), cosa fa (pensa, o la mossa che ha giocato),
+la sua ricerca cifra per cifra (profondità e seldepth, valutazione, nodi, velocità, gli accessi alle tablebase e il
+riempimento dell'hash quando il motore li invia, il tempo speso sulla mossa finora) e tutta la sua PV; il motore che
+attende mostra ciò che diceva quando ha giocato, con il momento in cui si è deciso. Accanto al mosaico, il pannello
+tiene una riga di cifre e le prime 12 semimosse della PV. *Valutazione del lato al tratto* | *Valutazione del Bianco*, a
+destra della scheda, sceglie il lato di tutte le sue valutazioni: quello del lato al tratto, come fastchess le scrive
+nel PGN, o quello del Bianco; la barra di valutazione e lo schermo grande mostrano sempre quello del Bianco.
 
 Sopra le mosse: l'apertura, il codice ECO e il nome della posizione più avanzata della partita che la tabella delle
 aperture con nome conosce (mosse del libro e dei motori allo stesso modo, così che anche una trasposizione dopo il libro

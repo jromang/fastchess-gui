@@ -191,16 +191,20 @@ a small board beside the choices showing them:
 
 - **Figurines in the notation** (on by default): the moves of the Board page, in its moves and its analysis's lines,
   are written with the pieces of the set chosen above (Nf3 becomes a knight and f3); off, with letters.
+- **Logos** (off by default): *The engines' logos in Live and on the big screen* draws each engine's logo, chosen on its
+  card (see below), beside its name in *Live*, on its cards and on the big screen; off, the names alone. The broadcast
+  web page shows them either way.
 
-The command palette has these choices too (*Board colours: Brown*, *Pieces: Celtic*, *Turn the move sounds on*…).
-They are kept in `settings.json` in the profile; the folder of pieces is kept relative to the program's folder in
-the portable mode.
+The command palette has these choices too (*Board colours: Brown*, *Pieces: Celtic*, *Turn the move sounds on*, *Show
+the engines' logos*…). They are kept in `settings.json` in the profile; the folder of pieces is kept relative to the
+program's folder in the portable mode.
 
-**Engine logos**: the card of an engine in the **Engines** page has *Logo* > *Choose…*, a PNG, JPEG or SVG picture
-of 2 MB at most (4096 pixels each way at most), shown beside the engine's name in *Live*, on the big screen and on
-the broadcast web page. The picture is copied into the folder `logos` of the profile, so the original can be moved
-or deleted and the profile moved whole; *Remove* takes it away (and its copy, unless another engine has it). The
-logo can be changed while the engine plays.
+**Engine logos**: the card of an engine in the **Engines** page has *Logo* > *Choose…*, a PNG, JPEG or SVG picture of 2
+MB at most (4096 pixels each way at most), shown beside the engine's name in *Live* and on the big screen when *Logos*
+is on (above), and on the broadcast web page. The picture is copied into the folder `logos` of the profile, so the
+original can be moved or deleted and the profile moved whole; *Remove* takes it away (and its copy, unless another
+engine has it). The logo can be changed while the engine plays. While the logos are off, the card says so, with *Show
+the logos*.
 
 ### The 3D board
 
@@ -350,10 +354,10 @@ sent with `setoption` at the start of every game. `Threads` and `Hash` come firs
 
 ### A large library
 
-- **Groups**: free labels separated by commas (`pool A`, `list 40/15`…). The list can be filtered by group or
-  searched, and a group can be added to a tournament in one click. *Notes*: anything to remember about the engine.
-  *Logo*: a picture shown beside its name in *Live*, on the big screen and on the broadcast web page (see
-  [Appearance](#appearance)).
+- **Groups**: free labels separated by commas (`pool A`, `list 40/15`…). The list can be filtered by group or searched,
+  and a group can be added to a tournament in one click. *Notes*: anything to remember about the engine. *Logo*: a
+  picture shown beside its name in *Live* and on the big screen when the logos are on, and on the broadcast web page
+  (see [Appearance](#appearance)).
 - **Search and filters**: every engine search (the library, and the engine lists of the other pages) finds a name,
   the name the engine reports, its author, its program path or its notes; the state filter shows the engines that
   work, failed or changed, were never checked, have lost their program, speak WinBoard, or are inactive. Ctrl or
@@ -1099,13 +1103,14 @@ seldepth, nodes, speed, tablebase hits, how far apart they are, or how many plie
 engine's PV predicted. The win/draw/loss shares (`UCI_ShowWDL`, switched on for the engines that have it when they are
 added) follow each search line; the *WDL* tab draws them as bands, White's wins at the bottom.
 
-Given the room (one game in focus, a large panel), each engine has a card: its logo as high as its name and clock, what
-it does (thinking, or the move it played), its search figure by figure (depth and seldepth, score, nodes, speed, the
-tablebase hits and the hash fill when the engine sends them, the time spent on the move so far) and its whole PV; the
-engine that waits shows what it said when it played, with the moment it settled on its move. Beside the mosaic, the
-panel keeps one line of figures and the PV's first 12 plies. *Score of the side to move* | *Score of White*, at the
-right of the tab, sets the side of every score in it: the side to move's, as fastchess writes them in the PGN, or
-White's; the evaluation bar and the big screen are always from White's side.
+Given the room (one game in focus, a large panel), each engine has a card: its logo as high as its name and clock (when
+the logos are on, see [Appearance](#appearance)), what it does (thinking, or the move it played), its search figure by
+figure (depth and seldepth, score, nodes, speed, the tablebase hits and the hash fill when the engine sends them, the
+time spent on the move so far) and its whole PV; the engine that waits shows what it said when it played, with the
+moment it settled on its move. Beside the mosaic, the panel keeps one line of figures and the PV's first 12 plies.
+*Score of the side to move* | *Score of White*, at the right of the tab, sets the side of every score in it: the side to
+move's, as fastchess writes them in the PGN, or White's; the evaluation bar and the big screen are always from White's
+side.
 
 Above the moves: the opening, the ECO code and name of the deepest position of the game that the table of named
 openings has (book and engine moves alike, so that a transposition after the book is named too), with the book's last

@@ -197,8 +197,8 @@ msgstr "Ein PGN-Buch spielt die Züge seiner Partien, so oft, wie sie dort gespi
 msgid "A PGN file of the games shown, in the comment style chosen: the voided games left out, the results set by hand applied."
 msgstr "Eine PGN-Datei der angezeigten Partien, im gewählten Kommentarstil: ohne die annullierten Partien, mit den von Hand gesetzten Ergebnissen."
 
-msgid "A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live, on the big screen and on the broadcast web page. A copy is kept in the profile's folder logos: the picture chosen can be moved or deleted."
-msgstr "Ein PNG-, JPEG- oder SVG-Bild von höchstens 2 MB, neben dem Namen der Engine in Live, auf dem Großbild und auf der Webseite der Übertragung gezeigt. Eine Kopie bleibt im Ordner logos des Profils: Das gewählte Bild kann verschoben oder gelöscht werden."
+msgid "A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live and on the big screen (when the logos are on, in Settings › Appearance) and on the broadcast web page. A copy is kept in the profile's folder logos: the picture chosen can be moved or deleted."
+msgstr "Ein PNG-, JPEG- oder SVG-Bild von höchstens 2 MB, neben dem Namen der Engine in Live und auf dem Großbild (wenn die Logos in Einstellungen › Darstellung eingeschaltet sind) und auf der Webseite der Übertragung gezeigt. Eine Kopie bleibt im Ordner logos des Profils: Das gewählte Bild kann verschoben oder gelöscht werden."
 
 msgid "A Polyglot book is followed from the initial position to this depth (-1 = {}), leaving out the moves weighing less than a tenth of the best one; the positions reached are the openings."
 msgstr "Ein Polyglot-Buch wird von der Grundstellung bis zu dieser Tiefe verfolgt (-1 = {}), ohne die Züge, die weniger als ein Zehntel des besten wiegen; die erreichten Stellungen sind die Eröffnungen."
@@ -2233,6 +2233,9 @@ msgstr "Versteckte Dateien"
 msgid "Hide"
 msgstr "Ausblenden"
 
+msgid "Hide the engines' logos"
+msgstr "Logos der Engines ausblenden"
+
 msgid "Hide the navigation buttons"
 msgstr "Navigationsknöpfe ausblenden"
 
@@ -2649,6 +2652,9 @@ msgstr "Logistische Elo, mit ihrem 95-%-Intervall."
 
 msgid "Logo"
 msgstr "Logo"
+
+msgid "Logos"
+msgstr "Logos"
 
 msgid "Logs in, then tells the machine's system, threads, memory and free space, and whether fastchess-gui is installed in its folder."
 msgstr "Meldet sich an und zeigt dann System, Threads, Arbeitsspeicher und freien Platz der Maschine, und ob fastchess-gui in ihrem Ordner installiert ist."
@@ -3084,6 +3090,9 @@ msgstr "Nicht genug Speicher, um es zu zeichnen."
 
 msgid "Not in this game's PGN: its tournament was played with \"{}\" off in the PGN options of the setup."
 msgstr "Nicht im PGN dieser Partie: ihr Turnier wurde mit ausgeschaltetem „{}“ in den PGN-Optionen der Einrichtung gespielt."
+
+msgid "Not shown: the logos are off in Settings › Appearance."
+msgstr "Nicht angezeigt: Die Logos sind in Einstellungen › Darstellung ausgeschaltet."
 
 msgid "Not started: another start is waiting ({}). Cancel it first."
 msgstr "Nicht gestartet: Ein anderer Start wartet ({}). Brich ihn zuerst ab."
@@ -4147,11 +4156,17 @@ msgstr "Zeigen"
 msgid "Show it"
 msgstr "Anzeigen"
 
+msgid "Show the engines' logos"
+msgstr "Logos der Engines anzeigen"
+
 msgid "Show the games from unbalanced openings"
 msgstr "Die Partien aus unausgeglichenen Eröffnungen zeigen"
 
 msgid "Show the graph"
 msgstr "Grafik anzeigen"
+
+msgid "Show the logos"
+msgstr "Logos anzeigen"
 
 msgid "Show the navigation buttons under the boards"
 msgstr "Navigationsknöpfe unter den Brettern anzeigen"
@@ -4736,6 +4751,9 @@ msgstr "Die wartenden Engines werden nicht geprüft; die laufende Prüfung geht 
 msgid "The engines' lines under the search: the side to move's as it searches, the other's from its last move."
 msgstr "Die Linien der Engines unter der Suche: die der Seite am Zug, während sie sucht, die der anderen von ihrem letzten Zug."
 
+msgid "The engines' logos in Live and on the big screen"
+msgstr "Die Logos der Engines in Live und auf dem Großbild"
+
 msgid "The engines' own books are off"
 msgstr "Die eigenen Bücher der Engines sind aus"
 
@@ -4984,6 +5002,9 @@ msgstr "Die Passphrase von {}, für {}"
 
 msgid "The paused tournament goes on, and the queue starts its next tournament when the running one ends."
 msgstr "Das pausierte Turnier läuft weiter, und die Warteschlange startet ihr nächstes Turnier, wenn das laufende endet."
+
+msgid "The picture chosen on an engine's card (Engines page) beside its name: in Live, on its cards, and on the big screen. Without them, the names alone; the broadcast web page keeps its logos."
+msgstr "Das auf der Karte einer Engine (Seite Engines) gewählte Bild neben ihrem Namen: in Live, auf ihren Karten und auf dem Großbild. Ohne sie nur die Namen; die Webseite der Übertragung behält ihre Logos."
 
 msgid "The picture could not be made a texture."
 msgstr "Aus dem Bild konnte keine Textur gemacht werden."

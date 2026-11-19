@@ -192,7 +192,7 @@ graphique ; s'il n'y en a pas, lance le programme avec `SDL_VIDEODRIVER=x11`. Qu
 fonctionne, un message le dit avant que le programme se termine.
 
 ### Apparence
-<!-- en: appearance decda352 -->
+<!-- en: appearance 312266af -->
 
 **Réglages** > *Apparence* choisit l'aspect de chaque échiquier du programme (la mosaïque en direct et la partie
 suivie, les échiquiers détachés, le grand écran, une partie rejouée dans *Parties*, l'onglet *Ouvertures*, les
@@ -222,16 +222,20 @@ ouvertures d'un livre), avec, à côté des choix, un petit échiquier qui les m
 - **Figurines dans la notation** (activées par défaut) : les coups de la page Échiquier, dans ses coups et dans les
   lignes de son analyse, sont écrits avec les pièces du jeu choisi plus haut (Nf3 devient un cavalier et f3) ;
   désactivées, avec des lettres.
+- **Logos** (désactivés par défaut) : *Les logos des moteurs dans Direct et sur le grand écran* dessine le logo de
+  chaque moteur, choisi sur sa fiche (voir plus bas), à côté de son nom dans *Direct*, sur ses cartes et sur le grand
+  écran ; désactivés, les noms seuls. La page web de la diffusion les montre dans tous les cas.
 
-La palette de commandes propose aussi ces choix (*Couleurs de l'échiquier : Brun*, *Pièces : Celtic*, *Activer les
-sons des coups*…). Ils sont gardés dans `settings.json`, dans le profil ; le dossier des pièces est gardé relatif au
-dossier du programme en mode portable.
+La palette de commandes propose aussi ces choix (*Couleurs de l'échiquier : Brun*, *Pièces : Celtic*, *Activer les sons
+des coups*, *Afficher les logos des moteurs*…). Ils sont gardés dans `settings.json`, dans le profil ; le dossier des
+pièces est gardé relatif au dossier du programme en mode portable.
 
-**Logos des moteurs** : la fiche d'un moteur, dans la page **Moteurs**, a *Logo* > *Choisir…*, une image PNG, JPEG
-ou SVG de 2 Mo au plus (4096 pixels au plus dans chaque sens), montrée à côté du nom du moteur dans *Direct*, sur le
-grand écran et sur la page web de la diffusion. L'image est copiée dans le dossier `logos` du profil : l'original
-peut donc être déplacé ou supprimé, et le profil déplacé en entier ; *Retirer* l'enlève (avec sa copie, à moins
-qu'un autre moteur ne l'ait). Le logo peut être changé pendant que le moteur joue.
+**Logos des moteurs** : la fiche d'un moteur, dans la page **Moteurs**, a *Logo* > *Choisir…*, une image PNG, JPEG ou
+SVG de 2 Mo au plus (4096 pixels au plus dans chaque sens), montrée à côté du nom du moteur dans *Direct* et sur le
+grand écran quand les *Logos* sont activés (plus haut), et sur la page web de la diffusion. L'image est copiée dans le
+dossier `logos` du profil : l'original peut donc être déplacé ou supprimé, et le profil déplacé en entier ; *Retirer*
+l'enlève (avec sa copie, à moins qu'un autre moteur ne l'ait). Le logo peut être changé pendant que le moteur joue. Tant
+que les logos sont désactivés, la fiche le dit, avec *Afficher les logos*.
 
 ### L'échiquier 3D
 <!-- en: the-3d-board cc0dd596 -->
@@ -397,12 +401,12 @@ en premier.
   fini).
 
 ### Une grande bibliothèque
-<!-- en: a-large-library beb231ed -->
+<!-- en: a-large-library d118bc02 -->
 
 - **Groupes** : des étiquettes libres séparées par des virgules (`pool A`, `list 40/15`…). La liste peut être filtrée
-  par groupe ou par une recherche, et un groupe peut être ajouté à un tournoi en un clic. *Notes* : tout ce
-  qu'il faut retenir sur le moteur. *Logo* : une image montrée à côté de son nom dans *Direct*, sur le grand écran et
-  sur la page web de la diffusion (voir [Apparence](#apparence)).
+  par groupe ou par une recherche, et un groupe peut être ajouté à un tournoi en un clic. *Notes* : tout ce qu'il faut
+  retenir sur le moteur. *Logo* : une image montrée à côté de son nom dans *Direct* et sur le grand écran quand les
+  logos sont activés, et sur la page web de la diffusion (voir [Apparence](#apparence)).
 - **Recherche et filtres** : chaque recherche de moteur (la bibliothèque, et les listes de moteurs des autres pages)
   trouve un nom, le nom que le moteur annonce, son auteur, le chemin de son programme ou ses notes ; le filtre d'état
   montre les moteurs qui fonctionnent, en échec ou modifiés, jamais vérifiés, qui ont perdu leur programme, qui
@@ -1252,7 +1256,7 @@ commencée quand la ronde en partage une), et les modifications du tournoi (voir
 [Modifier un tournoi en cours](#modifier-un-tournoi-en-cours)).
 
 ### Direct
-<!-- en: live 5561ed9b -->
+<!-- en: live ed374625 -->
 
 Les parties en cours, en mosaïque d'échiquiers ou en une partie mise en avant avec les pendules, la recherche en cours
 de chaque moteur (profondeur, score, nœuds, nps, PV en SAN), la liste des coups et le graphe de la partie (voir
@@ -1263,13 +1267,13 @@ prévu. Les parts de victoire, de nulle et de défaite (`UCI_ShowWDL`, activé p
 ajoutés) suivent chaque ligne de recherche ; l'onglet *G/N/P* les dessine en bandes, les victoires des Blancs en bas.
 
 Quand la place le permet (une partie mise en avant, un grand panneau), chaque moteur a sa carte : son logo aussi haut
-que son nom et sa pendule, ce qu'il fait (il réfléchit, ou le coup qu'il a joué), sa recherche chiffre par chiffre
-(profondeur et seldepth, score, nœuds, vitesse, les accès aux tables et le remplissage du hash quand le moteur les
-envoie, le temps passé sur le coup jusque-là) et toute sa PV ; le moteur qui attend montre ce qu'il disait au moment de
-jouer, avec l'instant où il s'est décidé. À côté de la mosaïque, le panneau garde une ligne de chiffres et les 12
-premiers demi-coups de la PV. *Score du camp au trait* | *Score des Blancs*, à droite de l'onglet, choisit le côté de
-tous ses scores : celui du camp au trait, comme fastchess les écrit dans le PGN, ou celui des Blancs ; la barre
-d'évaluation et le grand écran sont toujours du côté des Blancs.
+que son nom et sa pendule (quand les logos sont activés, voir [Apparence](#apparence)), ce qu'il fait (il réfléchit, ou
+le coup qu'il a joué), sa recherche chiffre par chiffre (profondeur et seldepth, score, nœuds, vitesse, les accès aux
+tables et le remplissage du hash quand le moteur les envoie, le temps passé sur le coup jusque-là) et toute sa PV ; le
+moteur qui attend montre ce qu'il disait au moment de jouer, avec l'instant où il s'est décidé. À côté de la mosaïque,
+le panneau garde une ligne de chiffres et les 12 premiers demi-coups de la PV. *Score du camp au trait* | *Score des
+Blancs*, à droite de l'onglet, choisit le côté de tous ses scores : celui du camp au trait, comme fastchess les écrit
+dans le PGN, ou celui des Blancs ; la barre d'évaluation et le grand écran sont toujours du côté des Blancs.
 
 Au-dessus des coups : l'ouverture, le code ECO et le nom de la position la plus avancée de la partie que la table des
 ouvertures nommées connaît (coups du livre et des moteurs confondus, si bien qu'une transposition après le livre est

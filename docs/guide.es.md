@@ -189,7 +189,7 @@ gráfico; si no lo hay, inicia el programa con `SDL_VIDEODRIVER=x11`. Cuando nin
 mensaje lo indica antes de que el programa termine.
 
 ### Apariencia
-<!-- en: appearance decda352 -->
+<!-- en: appearance 312266af -->
 
 **Ajustes** > *Apariencia* elige el aspecto de todos los tableros del programa (el mosaico en directo y la partida
 seguida, los tableros separados, la pantalla grande, una partida reproducida en *Partidas*, la pestaña *Aperturas*,
@@ -220,16 +220,20 @@ las aperturas de un libro), con un pequeño tablero junto a las opciones que las
 - **Figuras en la notación** (activado por defecto): las jugadas de la página Tablero, en su lista de jugadas y en las
   líneas de su análisis, se escriben con las piezas del juego elegido arriba (Nf3 pasa a ser un caballo y f3);
   desactivado, con letras.
+- **Logotipos** (desactivado por defecto): *Los logotipos de los motores en Directo y en la pantalla grande* dibuja el
+  logo de cada motor, elegido en su ficha (ver más abajo), junto a su nombre en *Directo*, en sus tarjetas y en la
+  pantalla grande; desactivado, solo los nombres. La página web de la retransmisión los muestra en cualquier caso.
 
 La paleta de comandos también tiene estas opciones (*Colores del tablero: Marrón*, *Piezas: Celtic*, *Activar los
-sonidos de las jugadas*…). Se guardan en `settings.json`, en el perfil; en el modo portátil, la carpeta de piezas se
-guarda relativa a la carpeta del programa.
+sonidos de las jugadas*, *Mostrar los logotipos de los motores*…). Se guardan en `settings.json`, en el perfil; en el
+modo portátil, la carpeta de piezas se guarda relativa a la carpeta del programa.
 
-**Logos de los motores**: la ficha de un motor en la página **Motores** tiene *Logo* > *Elegir…*, una imagen PNG,
-JPEG o SVG de 2 MB como máximo (4096 píxeles de lado como máximo), mostrada junto al nombre del motor en *Directo*, en
-la pantalla grande y en la página web de la retransmisión. La imagen se copia en la carpeta `logos` del perfil, así
-que el original puede moverse o borrarse y el perfil trasladarse entero; *Quitar* la retira (y su copia, salvo que
-otro motor la tenga). El logo puede cambiarse mientras el motor juega.
+**Logos de los motores**: la ficha de un motor en la página **Motores** tiene *Logo* > *Elegir…*, una imagen PNG, JPEG o
+SVG de 2 MB como máximo (4096 píxeles de lado como máximo), mostrada junto al nombre del motor en *Directo* y en la
+pantalla grande cuando *Logotipos* está activado (arriba), y en la página web de la retransmisión. La imagen se copia en
+la carpeta `logos` del perfil, así que el original puede moverse o borrarse y el perfil trasladarse entero; *Quitar* la
+retira (y su copia, salvo que otro motor la tenga). El logo puede cambiarse mientras el motor juega. Mientras los
+logotipos estén desactivados, la ficha lo dice, con *Mostrar los logotipos*.
 
 ### El tablero 3D
 <!-- en: the-3d-board cc0dd596 -->
@@ -392,12 +396,12 @@ por defecto del motor se envían con `setoption` al inicio de cada partida. `Thr
   terminaron mal).
 
 ### Una biblioteca grande
-<!-- en: a-large-library beb231ed -->
+<!-- en: a-large-library d118bc02 -->
 
 - **Grupos**: etiquetas libres separadas por comas (`pool A`, `list 40/15`…). La lista puede filtrarse por grupo o
   buscarse, y un grupo puede añadirse a un torneo en un clic. *Notas*: cualquier cosa que recordar sobre el motor.
-  *Logo*: una imagen mostrada junto a su nombre en *Directo*, en la pantalla grande y en la página web de la
-  retransmisión (consulta [Apariencia](#apariencia)).
+  *Logo*: una imagen mostrada junto a su nombre en *Directo* y en la pantalla grande cuando los logotipos están
+  activados, y en la página web de la retransmisión (consulta [Apariencia](#apariencia)).
 - **Búsqueda y filtros**: toda búsqueda de motores (la biblioteca, y las listas de motores de las demás páginas)
   encuentra un nombre, el nombre que comunica el motor, su autor, la ruta de su programa o sus notas; el filtro de
   estado muestra los motores que funcionan, que fallaron o cambiaron, que nunca se comprobaron, que han perdido su
@@ -1233,7 +1237,7 @@ cuando la ronda comparte una), y los cambios en el torneo (consulta [Modificar u
 curso](#modificar-un-torneo-en-curso)).
 
 ### Directo
-<!-- en: live 5561ed9b -->
+<!-- en: live ed374625 -->
 
 Las partidas en curso, como un mosaico de tableros o una partida en primer plano con los relojes, la búsqueda en curso
 de cada motor (profundidad, puntuación, nodos, nps, PV en SAN), la lista de jugadas y el gráfico de la partida (consulta
@@ -1245,13 +1249,14 @@ tienen cuando se añaden) siguen cada línea de búsqueda; la pestaña *V/T/D* l
 las blancas abajo.
 
 Cuando hay sitio (una partida en primer plano, un panel grande), cada motor tiene su tarjeta: su logo tan alto como su
-nombre y su reloj, lo que hace (piensa, o la jugada que hizo), su búsqueda cifra por cifra (profundidad y seldepth,
-evaluación, nodos, velocidad, los accesos a tablas de finales y el llenado del hash cuando el motor los envía, el tiempo
-dedicado a la jugada hasta ahora) y toda su PV; el motor que espera muestra lo que decía al jugar, con el momento en que
-se decidió. Junto al mosaico, el panel conserva una línea de cifras y las 12 primeras medias jugadas de la PV.
-*Evaluación del bando que juega* | *Evaluación de las blancas*, a la derecha de la pestaña, elige el lado de todas sus
-evaluaciones: el del bando que juega, como fastchess las escribe en el PGN, o el de las blancas; la barra de evaluación
-y la pantalla grande siempre muestran el de las blancas.
+nombre y su reloj (cuando los logotipos están activados, consulta [Apariencia](#apariencia)), lo que hace (piensa, o la
+jugada que hizo), su búsqueda cifra por cifra (profundidad y seldepth, evaluación, nodos, velocidad, los accesos a
+tablas de finales y el llenado del hash cuando el motor los envía, el tiempo dedicado a la jugada hasta ahora) y toda su
+PV; el motor que espera muestra lo que decía al jugar, con el momento en que se decidió. Junto al mosaico, el panel
+conserva una línea de cifras y las 12 primeras medias jugadas de la PV. *Evaluación del bando que juega* | *Evaluación
+de las blancas*, a la derecha de la pestaña, elige el lado de todas sus evaluaciones: el del bando que juega, como
+fastchess las escribe en el PGN, o el de las blancas; la barra de evaluación y la pantalla grande siempre muestran el de
+las blancas.
 
 Encima de las jugadas: la apertura, el código ECO y el nombre de la posición más avanzada de la partida que conoce la
 tabla de aperturas con nombre (jugadas del libro y de los motores por igual, de modo que también se nombra una

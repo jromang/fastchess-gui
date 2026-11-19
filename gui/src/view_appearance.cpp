@@ -263,6 +263,16 @@ void App::drawAppearanceSettings(float label) {
                                    "(Nf3 becomes a knight and f3), in its moves and its analysis's lines."));
     ImGui::EndGroup();
 
+    // The engines' logos beside their names, off unless asked for.
+    ImGui::Spacing();
+    ui::label(TR("Logos"), label);
+    ImGui::BeginGroup();
+    changed |= ImGui::Checkbox(TR("The engines' logos in Live and on the big screen"), &s.engine_logos);
+    ImGui::SetItemTooltip("%s", TR("The picture chosen on an engine's card (Engines page) beside its name: in Live, on "
+                                   "its cards, and on the big screen. Without them, the names alone; the broadcast "
+                                   "web page keeps its logos."));
+    ImGui::EndGroup();
+
     // The Board page's board in 3D, and its light.
     ImGui::Spacing();
     ui::label(TR("3D board"), label);
@@ -439,9 +449,10 @@ void App::drawLogoRow(int index, float label) {
                           {{TR("Pictures (PNG, JPEG, SVG)"), "png;jpg;jpeg;svg"}, {TR("All files"), "*"}});
     }
     ImGui::SetItemTooltip("%s",
-                          TR("A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live, "
-                             "on the big screen and on the broadcast web page. A copy is kept in the profile's "
-                             "folder logos: the picture chosen can be moved or deleted."));
+                          TR("A PNG, JPEG or SVG picture of 2 MB at most, shown beside the engine's name in Live "
+                             "and on the big screen (when the logos are on, in Settings › Appearance) and on the "
+                             "broadcast web page. A copy is kept in the profile's folder logos: the picture chosen "
+                             "can be moved or deleted."));
     if (!e.logo.empty()) {
         ImGui::SameLine();
         if (ImGui::Button(TR("Remove##logo"))) {
@@ -450,6 +461,16 @@ void App::drawLogoRow(int index, float label) {
         }
         ImGui::SetItemTooltip("%s", TR("Takes the logo away from this engine, and its copy from the profile's folder "
                                        "logos unless another engine has it."));
+    }
+    if (!e.logo.empty() && !appearance::current().engine_logos) {
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + label);
+        ImGui::TextDisabled("%s", TR("Not shown: the logos are off in Settings › Appearance."));
+        ImGui::SameLine();
+        if (ImGui::SmallButton(TR("Show the logos"))) {
+            auto s         = appearance::current();
+            s.engine_logos = true;
+            applyAppearance(s);
+        }
     }
     // Why it is not shown: the copy in the logos folder gone or damaged, or the picture chosen refused.
     std::string problem;

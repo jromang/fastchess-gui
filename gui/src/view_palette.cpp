@@ -592,6 +592,12 @@ std::vector<App::PaletteEntry> App::paletteEntries() {
             s.sounds = !s.sounds;
             applyAppearance(s);
         });
+    add(appearance::current().engine_logos ? TR("Hide the engines' logos") : TR("Show the engines' logos"),
+        TR("Settings"), [this] {
+            auto s         = appearance::current();
+            s.engine_logos = !s.engine_logos;
+            applyAppearance(s);
+        });
     // The logo of the engine whose card is open.
     if (page_ == Page::Engines && selected_engine_ >= 0 && selected_engine_ < static_cast<int>(engines_.size())) {
         add(trf("Choose a logo for {}…", engines_[static_cast<std::size_t>(selected_engine_)].name), TR("Engines"),
