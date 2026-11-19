@@ -93,6 +93,13 @@ set(FC_CORE_SOURCES
 )
 
 add_library(fastchess_core STATIC ${FC_CORE_SOURCES})
+# Pyrrhic reads the 32-bit words of the DTZ tables where they lie, unaligned: what x86-64 and ARM64 do without a
+# fault, and what UBSan's alignment check reports when the Live view or the tests probe them. app/ stays as fastchess
+# has it: the check is turned off for that file alone.
+if(CMAKE_CXX_FLAGS MATCHES "sanitize=[^ ]*undefined" OR FCG_FUZZ)
+    set_source_files_properties(${FC_APP}/third_party/pyrrhic/tbprobe.cpp PROPERTIES COMPILE_OPTIONS
+                                                                                     -fno-sanitize=alignment)
+endif()
 set_target_properties(fastchess_core PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
 target_include_directories(fastchess_core PUBLIC
     ${FC_APP}/src
