@@ -6,9 +6,12 @@
 #include <cstddef>
 #include <future>
 #include <map>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <vector>
+
+#include <chess.hpp>
 
 namespace fcg {
 
@@ -58,5 +61,31 @@ class TablebaseChecks {
     std::future<TablebaseCheck> job_;  // one check at a time
     std::string job_paths_;
 };
+
+// The Syzygy tables of this process. fastchess keeps them in globals, one set per process: the window probes them
+// under this lock, after loadSyzygy(), and a tournament played on a thread of this process loads and frees them under
+// it too (run.cpp); the window probes nothing while such a tournament plays (its games probe them without the lock).
+[[nodiscard]] std::unique_lock<std::mutex> lockSyzygy();
+
+// With lockSyzygy() held: the tables of `paths` loaded, unless they are the ones loaded. The most pieces they cover,
+// 0 when none could be loaded.
+int loadSyzygy(const std::string& paths);
+
+// What the tables say of a position, for the side to move.
+struct TableVerdict {
+    int result  = 0;      // +1 wins, 0 draws, -1 loses, whatever the 50-move rule says
+    bool rule50 = false;  // the 50-move rule turns this win or loss into a draw
+    // The half-moves to the next capture or pawn move along the best play (DTZ), when the DTZ tables are there: the
+    // Syzygy tables have no distance to mate.
+    std::optional<int> dtz;
+    int pieces                                 = 0;  // the most pieces the tables loaded cover
+    bool operator==(const TableVerdict&) const = default;
+};
+
+// The tables of `paths` probed on `board`, with lockSyzygy() held: nullopt when they do not cover it (too many pieces,
+// castling rights, a table missing) or the game is over there. The 50-move rule counts, from the board's own counter,
+// unless `ignore50`.
+[[nodiscard]] std::optional<TableVerdict> probeTables(const chess::Board& board, const std::string& paths,
+                                                      bool ignore50);
 
 }  // namespace fcg

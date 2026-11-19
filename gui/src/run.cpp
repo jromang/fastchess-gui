@@ -1086,8 +1086,11 @@ std::string playTournament(tour::TournamentState& tournament, fastchess::observe
     std::string error;
     try {
         const auto& tb = fastchess::config::TournamentConfig->tb_adjudication;
-        if (tb.enabled && fastchess::initSyzygy(tb.syzygy_dirs) == 0) {
-            throw fastchess_exception(TR("Cannot load the Syzygy tablebases from ") + tb.syzygy_dirs);
+        if (tb.enabled) {
+            const auto lock = lockSyzygy();  // the window may be probing the tables, which this replaces
+            if (fastchess::initSyzygy(tb.syzygy_dirs) == 0) {
+                throw fastchess_exception(TR("Cannot load the Syzygy tablebases from ") + tb.syzygy_dirs);
+            }
         }
 
         // The runner is fastchess' observer while it plays, and forwards everything to ours.
@@ -1106,7 +1109,10 @@ std::string playTournament(tour::TournamentState& tournament, fastchess::observe
     }
 
     // The tournament has joined its workers: no callback can arrive any more.
-    fastchess::tearDownSyzygy();
+    {
+        const auto lock = lockSyzygy();
+        fastchess::tearDownSyzygy();
+    }
     fastchess::stopProcesses();
 
     // The runner sets fastchess' stop flag to interrupt the games still running when it ends (SPRT decided, or

@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <set>
@@ -141,4 +142,58 @@ TEST_CASE("Syzygy checks: off the UI thread, the last result kept by path") {
     CHECK(found->largest == 3);
     CHECK(found->missing.at(3).size() == 4);
     fs::remove_all(root);
+}
+
+TEST_CASE("Syzygy verdict: the side to move's result, with the DTZ when its tables are there") {
+    const char* env = std::getenv("FCG_SOURCE_DIR");
+    const auto root = fs::path(env ? env : FCG_SOURCE_DIR);
+    const auto both = (root / "gui" / "tests" / "data" / "syzygy3").string();  // WDL and DTZ, three pieces
+    const auto wdl  = (root / "app" / "tests" / "data" / "syzygy_wdl3").string();
+    if (!fs::is_directory(both) || !fs::is_directory(wdl)) return;
+    const auto lock = lockSyzygy();
+
+    // King and queen against king: White to move wins, Black to move loses; the DTZ counts the half-moves to the
+    // mate, the next zeroing move here.
+    const chess::Board white_to_move("8/8/8/8/8/8/1Q6/K6k w - - 0 1");
+    const auto win = probeTables(white_to_move, both, false);
+    REQUIRE(win);
+    CHECK(win->result == 1);
+    CHECK_FALSE(win->rule50);
+    REQUIRE(win->dtz);
+    CHECK(*win->dtz > 0);
+    CHECK(*win->dtz <= 20);
+    CHECK(win->pieces == 3);
+    const auto loss = probeTables(chess::Board("8/8/8/8/8/8/1Q6/K6k b - - 0 1"), both, false);
+    REQUIRE(loss);
+    CHECK(loss->result == -1);
+    REQUIRE(loss->dtz);
+
+    // King and bishop against king: a draw, no distance.
+    const auto draw = probeTables(chess::Board("8/8/8/8/8/8/1B6/K6k w - - 0 1"), both, false);
+    REQUIRE(draw);
+    CHECK(draw->result == 0);
+    CHECK_FALSE(draw->dtz);
+
+    // The same win with 95 half-moves gone since the last capture or pawn move: the 50-move rule comes first, unless
+    // the tournament ignores it.
+    const chess::Board late("8/8/8/8/8/8/1Q6/K6k w - - 95 90");
+    const auto spoilt = probeTables(late, both, false);
+    REQUIRE(spoilt);
+    CHECK(spoilt->result == 1);
+    CHECK(spoilt->rule50);
+    const auto ignored = probeTables(late, both, true);
+    REQUIRE(ignored);
+    CHECK_FALSE(ignored->rule50);
+
+    // WDL tables alone: the result without the distance.
+    const auto only = probeTables(white_to_move, wdl, false);
+    REQUIRE(only);
+    CHECK(only->result == 1);
+    CHECK_FALSE(only->dtz);
+
+    // What the tables cannot know: too many pieces, castling rights, no tables; a mate on the board ends the game.
+    CHECK_FALSE(probeTables(chess::Board(), both, false));
+    CHECK_FALSE(probeTables(chess::Board("4k3/8/8/8/8/8/8/R3K3 w Q - 0 1"), both, false));
+    CHECK_FALSE(probeTables(white_to_move, "", false));
+    CHECK_FALSE(probeTables(chess::Board("7k/6Q1/6K1/8/8/8/8/8 b - - 0 1"), both, false));
 }

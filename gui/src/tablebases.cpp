@@ -3,6 +3,10 @@
 #include <algorithm>
 #include <filesystem>
 #include <set>
+#include <sstream>
+
+#include <pyrrhic/tbprobe.h>
+#include <matchmaking/syzygy.hpp>
 
 namespace fcg {
 
@@ -154,6 +158,77 @@ const TablebaseCheck* TablebaseChecks::get(const std::string& paths) {
         job_       = std::async(std::launch::async, [paths] { return checkTablebases(paths); });
     }
     return entry.check ? &*entry.check : nullptr;
+}
+
+std::unique_lock<std::mutex> lockSyzygy() {
+    static std::mutex mutex;
+    return std::unique_lock<std::mutex>(mutex);
+}
+
+int loadSyzygy(const std::string& paths) {
+    static std::string loaded;
+    static int largest = 0;
+    // A tournament of this process frees the tables when it ends: loaded again then.
+    static const chess::Board kqk("8/8/8/8/8/8/8/KQ5k w - - 0 1");
+    if (paths.empty()) return 0;
+    if (loaded != paths || (largest > 0 && !fastchess::canProbeSyzgyWdl(kqk))) {
+        largest = fastchess::initSyzygy(paths);
+        loaded  = paths;
+    }
+    return largest;
+}
+
+std::optional<TableVerdict> probeTables(const chess::Board& board, const std::string& paths, bool ignore50) {
+    const int largest = loadSyzygy(paths);
+    if (largest <= 0 || board.occ().count() > largest || !board.castlingRights().isEmpty()) return std::nullopt;
+    const auto ep       = board.enpassantSq();
+    const unsigned epsq = ep == chess::Square::NO_SQ ? 0u : static_cast<unsigned>(ep.index());
+    const auto bits     = [&](chess::PieceType type) { return board.pieces(type).getBits(); };
+    const unsigned rule = std::min<unsigned>(board.halfMoveClock(), 255);
+    const unsigned found =
+        tb_probe_root(board.us(chess::Color::WHITE).getBits(), board.us(chess::Color::BLACK).getBits(),
+                      bits(chess::PieceType::KING), bits(chess::PieceType::QUEEN), bits(chess::PieceType::ROOK),
+                      bits(chess::PieceType::BISHOP), bits(chess::PieceType::KNIGHT), bits(chess::PieceType::PAWN),
+                      rule, epsq, board.sideToMove() == chess::Color::WHITE, nullptr);
+    if (found == TB_RESULT_CHECKMATE || found == TB_RESULT_STALEMATE) return std::nullopt;
+    TableVerdict verdict;
+    verdict.pieces = largest;
+    if (found != TB_RESULT_FAILED) {
+        switch (TB_GET_WDL(found)) {
+            case TB_WIN:
+                verdict.result = 1;
+                break;
+            case TB_CURSED_WIN:
+                verdict.result = 1;
+                verdict.rule50 = !ignore50;
+                break;
+            case TB_BLESSED_LOSS:
+                verdict.result = -1;
+                verdict.rule50 = !ignore50;
+                break;
+            case TB_LOSS:
+                verdict.result = -1;
+                break;
+            default:
+                break;
+        }
+        if (verdict.result != 0) verdict.dtz = static_cast<int>(TB_GET_DTZ(found));
+        return verdict;
+    }
+    // No DTZ tables for it: the WDL tables, the position as if right after a capture or a pawn move (they only know
+    // those), which errs only where the 50-move rule is near.
+    auto zeroed = board;
+    if (board.halfMoveClock() != 0) {
+        std::istringstream fields(board.getFen());
+        std::string placement, side, castling, square;
+        fields >> placement >> side >> castling >> square;
+        zeroed.setFen(placement + " " + side + " " + castling + " " + square + " 0 1");
+    }
+    if (!fastchess::canProbeSyzgyWdl(zeroed)) return std::nullopt;
+    const auto r = fastchess::probeSyzygyWdl(zeroed, ignore50);
+    if (r == chess::GameResult::NONE) return std::nullopt;
+    verdict.result = r == chess::GameResult::WIN ? 1 : r == chess::GameResult::LOSE ? -1 : 0;
+    return verdict;
 }
 
 }  // namespace fcg

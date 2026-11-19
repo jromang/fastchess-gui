@@ -8,6 +8,8 @@
 #include <matchmaking/syzygy.hpp>
 #include <tour/pgn_file.hpp>
 
+#include "tablebases.hpp"
+
 namespace fcg {
 
 chess::Board boardAt(const ReplayGame& game, bool chess960, int ply) {
@@ -356,13 +358,8 @@ const char* tablebaseScore(int result, chess::Color stm) {
 std::vector<int8_t> tablebaseResults(const ReplayGame& game, bool chess960, const std::string& paths) {
     std::vector<int8_t> out(game.moves.size() + 1, -2);
     if (paths.empty()) return out;
-    static std::string loaded;
-    static int largest = 0;
-    static const chess::Board kqk("8/8/8/8/8/8/8/KQ5k w - - 0 1");
-    if (loaded != paths || (largest > 0 && !fastchess::canProbeSyzgyWdl(kqk))) {
-        largest = fastchess::initSyzygy(paths);
-        loaded  = paths;
-    }
+    const auto lock   = lockSyzygy();
+    const int largest = loadSyzygy(paths);
     if (largest <= 0) return out;
     auto board = boardAt(game, chess960, 0);
     for (std::size_t p = 0; p <= game.moves.size(); ++p) {
