@@ -203,6 +203,11 @@ class App {
         LiveOpening opening;
         std::pair<std::size_t, std::size_t> opening_at{~std::size_t{0}, ~std::size_t{0}};
         float cards_fixed = 0;  // what the two engine cards took besides their lines, the last frame
+        // What each side's card, or its search lines in a narrow panel, has needed so far in this game (reset for
+        // each game): they keep that height, so that the moves and the curve under them stay where they are (#193).
+        std::array<int, 2> pv_rows{};
+        std::array<float, 2> card_h{};
+        std::array<float, 2> search_h{};
     };
 
     enum class Page { Home, NewMatch, Tournament, Engines, Books, Board, Suites, Ratings, Log, Settings };

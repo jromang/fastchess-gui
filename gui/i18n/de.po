@@ -4649,6 +4649,9 @@ msgstr "Die Änderung wurde rückgängig gemacht."
 msgid "The charts appear with the first results."
 msgstr "Die Diagramme erscheinen mit den ersten Ergebnissen."
 
+msgid "The charts are left out: the window is too low for them."
+msgstr "Die Diagramme werden ausgelassen: Das Fenster ist zu niedrig dafür."
+
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "Die Prüfung von {} wird für den Start unterbrochen: Sie wird später wiederholt."
 
@@ -4759,6 +4762,9 @@ msgstr "Die eigenen Bücher der Engines sind aus"
 
 msgid "The engines' scores in this tab: from the side to move's point of view, as fastchess writes them in the PGN, or from White's. The evaluation bar and the big screen are always from White's side."
 msgstr "Die Bewertungen der Engines in diesem Tab: aus Sicht der Seite am Zug, wie fastchess sie ins PGN schreibt, oder aus Sicht von Weiß. Die Bewertungsleiste und das Großbild zeigen immer die Sicht von Weiß."
+
+msgid "The evaluation curve is left out: the window is too low for it."
+msgstr "Die Bewertungskurve wird ausgelassen: Das Fenster ist zu niedrig dafür."
 
 msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
 msgstr "Belichtung, Qualität, Lack und Glanz wie anfangs; die Beleuchtung bleibt."

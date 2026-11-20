@@ -270,10 +270,13 @@ void App::drawTournamentOverview() {
         ui::endCard();
     }
 
-    // The ratings and their intervals, in the height left under the table.
-    const float chart_h = ImGui::GetContentRegionAvail().y - ImGui::GetStyle().ItemSpacing.y;
+    // The ratings and their intervals, in the height left under the tables, and never lower than its engines need: the
+    // column then scrolls down to it (#194).
     const auto rated    = std::count_if(table_.rows.begin(), table_.rows.end(), [](const auto& r) { return r.rated; });
-    if (rated >= 2 && chart_h >= px(160)) {
+    const float needed  = std::max(px(180), static_cast<float>(rated) * ImGui::GetTextLineHeightWithSpacing() +
+                                                ImGui::GetFrameHeightWithSpacing() * 3);
+    const float chart_h = std::max(needed, ImGui::GetContentRegionAvail().y - ImGui::GetStyle().ItemSpacing.y);
+    if (rated >= 2) {
         ImGui::Spacing();
         ui::beginCard("elo_card", ImVec2(0, chart_h));
         ImGui::TextUnformatted("Elo");

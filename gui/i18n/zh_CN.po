@@ -4625,6 +4625,9 @@ msgstr "修改已撤销。"
 msgid "The charts appear with the first results."
 msgstr "图表会随第一批结果出现。"
 
+msgid "The charts are left out: the window is too low for them."
+msgstr "图表已隐藏：窗口高度不够。"
+
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "为了开始，{} 的检查已中断：稍后会重新进行。"
 
@@ -4735,6 +4738,9 @@ msgstr "引擎自带开局库已关闭"
 
 msgid "The engines' scores in this tab: from the side to move's point of view, as fastchess writes them in the PGN, or from White's. The evaluation bar and the big screen are always from White's side."
 msgstr "此标签页中引擎的评分：按走棋方视角（fastchess 写入 PGN 的方式），或按白方视角。评估条和大屏幕始终按白方视角。"
+
+msgid "The evaluation curve is left out: the window is too low for it."
+msgstr "评估曲线已隐藏：窗口高度不够。"
 
 msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
 msgstr "恢复初始的曝光、质量、清漆和光泽；布光保持不变。"

@@ -222,6 +222,14 @@ std::string withinLines(const std::string& text, float width, int lines) {
     return out + " …";
 }
 
+// The cursor moved down to `top` + `height` when what was drawn since `top` took less: the room kept left blank.
+// Heights are counted as the cursor moves, the spacing under the last item included.
+void keepHeight(float top, float height) {
+    if (height <= 0.0f || ImGui::GetCursorPosY() >= top + height) return;
+    ImGui::SetCursorPosY(top + height - ImGui::GetStyle().ItemSpacing.y);
+    ImGui::Dummy(ImVec2(0.0f, 0.0f));
+}
+
 // Figures each under its name, in chips that wrap to the width of the panel.
 void figureChips(const std::vector<std::pair<std::string, std::string>>& figures) {
     ImFont* font         = ImGui::GetFont();
@@ -325,6 +333,9 @@ void App::refreshSlot(int slot) {
         v.nav_game = v.state.game_id;
         v.nav.follow();
         v.listed_ply = -1;
+        v.pv_rows    = {};
+        v.card_h     = {};
+        v.search_h   = {};
     }
     if (v.state.has_game && v.state.version != v.board_version) {
         v.board = chess::Board();
@@ -773,7 +784,9 @@ float App::drawLivePlayer(SlotView& view, chess::Color color, bool search, float
     if (!search) return 0.0f;
 
     // Search info: the running search for the side to move, else what its last move reported. Wrapped in a
-    // narrow panel. The tablebase hits and the hash fill when the engine sends them.
+    // narrow panel. The tablebase hits and the hash fill when the engine sends them. It keeps the most rows it has
+    // taken in this game, so that what is under it does not move with each line (#193).
+    const float search_top = ImGui::GetCursorPosY();
     ImGui::PushTextWrapPos(0);
     const auto& line = st.info[white ? 0 : 1];
     const auto info  = line.empty() ? fastchess::engine::UciInfo{} : fastchess::engine::UciEngine::parseInfo(line);
@@ -816,6 +829,10 @@ float App::drawLivePlayer(SlotView& view, chess::Color color, bool search, float
         ImGui::TextUnformatted(" ");
     }
     ImGui::PopTextWrapPos();
+    auto& kept       = view.search_h[white ? 0 : 1];
+    const float used = ImGui::GetCursorPosY() - search_top;
+    keepHeight(search_top, kept);
+    kept = std::max(kept, used);
     return 0.0f;
 }
 
@@ -844,6 +861,9 @@ float App::drawLivePlayerCard(SlotView& view, chess::Color color, bool search, f
     ImGui::BeginChild(white ? "##card_white" : "##card_black", ImVec2(0, 0),
                       ImGuiChildFlags_Borders | ImGuiChildFlags_AlwaysUseWindowPadding | ImGuiChildFlags_AutoResizeY,
                       ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+    // The card keeps its height through the game (#193): its line the most rows a line has needed, the rest (a row of
+    // chips, the W/D/L line, what it said when it played) the most it has taken.
+    const float card_top = ImGui::GetCursorPosY();
 
     // The header: the side's disc, the logo, the name and what the side does, the clock at the right.
     ImDrawList* dl       = ImGui::GetWindowDrawList();
@@ -954,31 +974,52 @@ float App::drawLivePlayerCard(SlotView& view, chess::Color color, bool search, f
             figures.emplace_back(TR("This move"), ui::formatClock(spent));
             figureChips(figures);
             if (wdl) wdlLine(*wdl);
-            // The whole line, wrapped, in a larger type; as much of it as the room left to the moves allows.
-            if (!pv.empty()) {
+            // The whole line, wrapped, in a larger type; as much of it as the room left to the moves allows. It keeps
+            // the most rows a line has needed in this game, a shorter line leaving them blank.
+            {
                 ImGui::PushFont(nullptr, ImGui::GetStyle().FontSizeBase * 1.08f);
-                const int lines =
-                    pv_room >= FLT_MAX / 2 ? 1000 : std::max(1, static_cast<int>(pv_room / ImGui::GetFontSize()));
-                const auto shown = withinLines(pv, ImGui::GetContentRegionAvail().x, lines);
-                ImGui::PushTextWrapPos(0);
-                ImGui::TextUnformatted(shown.c_str());
-                ImGui::PopTextWrapPos();
-                pv_h = ImGui::GetItemRectSize().y;
+                const float row  = ImGui::GetFontSize();
+                const int room   = pv_room >= FLT_MAX / 2 ? 1000 : std::max(1, static_cast<int>(pv_room / row));
+                const float wide = ImGui::GetContentRegionAvail().x;
+                const auto shown = pv.empty() ? std::string() : withinLines(pv, wide, room);
+                const int used = shown.empty() ? 0
+                                               : static_cast<int>(std::lround(
+                                                     ImGui::CalcTextSize(shown.c_str(), nullptr, false, wide).y / row));
+                auto& rows     = view.pv_rows[white ? 0 : 1];
+                rows           = std::min(room, std::max(rows, used));
+                const float top = ImGui::GetCursorPosY();
+                if (!shown.empty()) {
+                    ImGui::PushTextWrapPos(0);
+                    ImGui::TextUnformatted(shown.c_str());
+                    ImGui::PopTextWrapPos();
+                }
+                keepHeight(top, rows > 0 ? rows * row + ImGui::GetStyle().ItemSpacing.y : 0.0f);
+                pv_h = ImGui::GetCursorPosY() - top;
                 ImGui::PopFont();
             }
+            // What it said when it played; while it thinks, the room of that sentence kept.
+            const LiveMove* told = searched >= 0 ? &st.moves[static_cast<std::size_t>(searched)] : nullptr;
+            const auto said      = told && told->decision_ms ? trf("What it said when it played; decided at {}.",
+                                                                   ui::formatClock(*told->decision_ms))
+                                                             : std::string(TR("What it said when it played."));
             if (!running) {
-                const auto& m = st.moves[static_cast<std::size_t>(searched)];
-                const auto said =
-                    m.decision_ms ? trf("What it said when it played; decided at {}.", ui::formatClock(*m.decision_ms))
-                                  : std::string(TR("What it said when it played."));
                 ImGui::PushTextWrapPos(0);
                 ImGui::TextColored(ui::MUTED4, "%s", said.c_str());
                 ImGui::PopTextWrapPos();
+            } else {
+                const float h = ImGui::CalcTextSize(said.c_str(), nullptr, false, ImGui::GetContentRegionAvail().x).y;
+                keepHeight(ImGui::GetCursorPosY(), h + ImGui::GetStyle().ItemSpacing.y);
             }
         } else {
             ImGui::TextDisabled("—");
         }
     }
+    // The rest of the card, besides its line, keeps the most it has taken: the line's rows are counted apart, so that
+    // the room the line is given does not shrink with the blank kept here.
+    auto& kept       = view.card_h[white ? 0 : 1];
+    const float used = ImGui::GetCursorPosY() - card_top - pv_h;
+    if (used < kept) keepHeight(card_top, kept + pv_h);
+    kept = std::max(kept, used);
     ImGui::EndChild();
     ImGui::PopStyleVar(3);
     ImGui::PopStyleColor(2);
@@ -1311,12 +1352,17 @@ void App::drawLiveSide(SlotView& view, unsigned parts, int slot, bool allow_deta
     // Moves, then the evaluation curve.
     const float plot_h = std::max(px(110), ImGui::GetContentRegionAvail().y * 0.30f) +
                          ImGui::GetFrameHeightWithSpacing();  // and its menu
-    // Too low for both (a small window): the moves only.
+    // Too low for both (a small window): the moves only, and a line that says the curve is left out (#194).
     const float left    = ImGui::GetContentRegionAvail().y;
     const bool chart    = left - plot_h >= ImGui::GetFrameHeightWithSpacing() * 4;
-    const float moves_h = chart ? left - plot_h - ImGui::GetStyle().ItemSpacing.y : left;
+    const float note_h  = chart ? 0.0f : ImGui::GetTextLineHeightWithSpacing();
+    const float moves_h = chart ? left - plot_h - ImGui::GetStyle().ItemSpacing.y : left - note_h;
     drawLiveMoves(view, std::max(ImGui::GetFrameHeight(), moves_h));
-    if (chart) drawLiveChart(view);
+    if (chart) {
+        drawLiveChart(view);
+    } else {
+        ImGui::TextDisabled("%s", TR("The evaluation curve is left out: the window is too low for it."));
+    }
 }
 
 void App::drawLiveGame(SlotView& view, const char* id, unsigned parts, int slot, bool allow_detach) {

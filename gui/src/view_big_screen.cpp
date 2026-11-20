@@ -509,7 +509,10 @@ void App::drawBigGame(BigView& big, bool main_window) {
                 const auto pv    = withinLines(font, pv_px, pv_w, line.pv, 2);
                 dl->AddText(font, pv_px, ImVec2(std::floor(at.x + pad), std::floor(y)),
                             line.running ? BIG_MOVE : IM_COL32(214, 218, 224, 255), pv.c_str(), nullptr, pv_w);
-                y += font->CalcTextSizeA(pv_px, FLT_MAX, pv_w, pv.c_str()).y + u * 0.3f;
+                // Two rows whatever the line takes, so that what is under the box does not move with it (#193).
+                y += std::max(font->CalcTextSizeA(pv_px, FLT_MAX, pv_w, pv.c_str()).y,
+                              2 * font->CalcTextSizeA(pv_px, FLT_MAX, 0.0f, "Ag").y) +
+                     u * 0.3f;
             }
             dl->ChannelsSetCurrent(0);
             if (!none) {

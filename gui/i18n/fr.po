@@ -4649,6 +4649,9 @@ msgstr "La modification a été annulée."
 msgid "The charts appear with the first results."
 msgstr "Les graphiques apparaissent avec les premiers résultats."
 
+msgid "The charts are left out: the window is too low for them."
+msgstr "Les graphiques sont masqués : la fenêtre est trop basse pour eux."
+
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "La vérification de {} est interrompue pour le démarrage : elle sera refaite plus tard."
 
@@ -4759,6 +4762,9 @@ msgstr "Les livres propres des moteurs sont désactivés"
 
 msgid "The engines' scores in this tab: from the side to move's point of view, as fastchess writes them in the PGN, or from White's. The evaluation bar and the big screen are always from White's side."
 msgstr "Les scores des moteurs dans cet onglet : du point de vue du camp au trait, comme fastchess les écrit dans le PGN, ou de celui des Blancs. La barre d'évaluation et le grand écran sont toujours du côté des Blancs."
+
+msgid "The evaluation curve is left out: the window is too low for it."
+msgstr "La courbe d'évaluation est masquée : la fenêtre est trop basse pour elle."
 
 msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
 msgstr "L'exposition, la qualité, le vernis et la brillance d'origine ; l'éclairage reste."

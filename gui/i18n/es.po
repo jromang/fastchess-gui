@@ -4649,6 +4649,9 @@ msgstr "El cambio se ha deshecho."
 msgid "The charts appear with the first results."
 msgstr "Los gráficos aparecen con los primeros resultados."
 
+msgid "The charts are left out: the window is too low for them."
+msgstr "Los gráficos se omiten: la ventana es demasiado baja para ellos."
+
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "La comprobación de {} se interrumpe para el inicio: se volverá a hacer más tarde."
 
@@ -4759,6 +4762,9 @@ msgstr "Los libros propios de los motores están desactivados"
 
 msgid "The engines' scores in this tab: from the side to move's point of view, as fastchess writes them in the PGN, or from White's. The evaluation bar and the big screen are always from White's side."
 msgstr "Las evaluaciones de los motores en esta pestaña: desde el punto de vista del bando que juega, como fastchess las escribe en el PGN, o desde el de las blancas. La barra de evaluación y la pantalla grande siempre muestran el de las blancas."
+
+msgid "The evaluation curve is left out: the window is too low for it."
+msgstr "La curva de evaluación se omite: la ventana es demasiado baja para ella."
 
 msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
 msgstr "La exposición, la calidad, el barniz y el brillo como estaban al principio; la iluminación se mantiene."

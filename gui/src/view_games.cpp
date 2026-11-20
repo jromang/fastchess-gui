@@ -621,7 +621,9 @@ void App::drawGames() {
         replay_followed_ = replay_ply_;
     }
     ImGui::EndChild();
-    if (ImGui::GetContentRegionAvail().y < chart_min) {  // a window too low for it
+    if (ImGui::GetContentRegionAvail().y < chart_min) {  // a window too low for it, said when a line fits (#194)
+        if (ImGui::GetContentRegionAvail().y >= ImGui::GetTextLineHeight())
+            ImGui::TextDisabled("%s", TR("The charts are left out: the window is too low for them."));
         ImGui::EndChild();
         ui::endPanel();
         return;

@@ -4649,6 +4649,9 @@ msgstr ""
 msgid "The charts appear with the first results."
 msgstr ""
 
+msgid "The charts are left out: the window is too low for them."
+msgstr ""
+
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr ""
 
@@ -4758,6 +4761,9 @@ msgid "The engines' own books are off"
 msgstr ""
 
 msgid "The engines' scores in this tab: from the side to move's point of view, as fastchess writes them in the PGN, or from White's. The evaluation bar and the big screen are always from White's side."
+msgstr ""
+
+msgid "The evaluation curve is left out: the window is too low for it."
 msgstr ""
 
 msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."

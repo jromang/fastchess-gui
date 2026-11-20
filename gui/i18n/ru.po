@@ -4673,6 +4673,9 @@ msgstr "Изменение отменено."
 msgid "The charts appear with the first results."
 msgstr "Графики появятся с первыми результатами."
 
+msgid "The charts are left out: the window is too low for them."
+msgstr "Графики скрыты: окно слишком низкое для них."
+
 msgid "The check of {} is interrupted for the start: it is done again later."
 msgstr "Проверка {} прервана для запуска: она будет повторена позже."
 
@@ -4783,6 +4786,9 @@ msgstr "Собственные книги движков выключены"
 
 msgid "The engines' scores in this tab: from the side to move's point of view, as fastchess writes them in the PGN, or from White's. The evaluation bar and the big screen are always from White's side."
 msgstr "Оценки движков на этой вкладке: с точки зрения стороны, чей ход, как fastchess пишет их в PGN, или с точки зрения белых. Шкала оценки и большой экран всегда показывают её с точки зрения белых."
+
+msgid "The evaluation curve is left out: the window is too low for it."
+msgstr "Кривая оценки скрыта: окно слишком низкое для неё."
 
 msgid "The exposure, quality, varnish and gloss as they were at first; the lighting stays."
 msgstr "Экспозиция, качество, лак и глянец как вначале; освещение остаётся."
