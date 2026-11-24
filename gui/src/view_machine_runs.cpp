@@ -75,6 +75,7 @@ std::string App::openMachineRun(const fs::path& dir, const Machine& machine, con
         const auto index = static_cast<std::size_t>(i);
         open.weight      = runs_[index].weight;
         stashRunView();
+        retired_runs_.push_back(std::move(runs_[index].run));  // what this frame drew from it stays valid (#192)
         runs_[index]       = std::move(open);
         shown_run_         = index;
         run_               = runs_[index].run.get();

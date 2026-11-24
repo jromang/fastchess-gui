@@ -255,27 +255,15 @@ void App::drawTournamentOverview() {
     drawStandingsTable(true);
     ui::endCard();
 
-    // How each engine searched, in the order of the standings, once one has played a move.
-    if (std::any_of(totals_.begin(), totals_.end(), [](const EngineTotals& e) { return e.moves > 0; })) {
-        ImGui::Spacing();
-        ui::beginCard("search_card");
-        ImGui::TextUnformatted(TR("Search per engine"));
-        ImGui::SameLine();
-        ImGui::TextDisabled("%s", TR("on average per move, book moves left out"));
-        std::vector<std::size_t> order;
-        for (const auto& r : table_.rows) {
-            if (const int i = indexOf(t->spec(), r.id); i >= 0) order.push_back(static_cast<std::size_t>(i));
-        }
-        drawSearchTable(order);
-        ui::endCard();
-    }
-
-    // The ratings and their intervals, in the height left under the tables, and never lower than its engines need: the
-    // column then scrolls down to it (#194).
+    // The ratings and their intervals right under the standings they draw (#195), never lower than its engines need:
+    // the column then scrolls down to it (#194). In the height left when Search per engine is not under it yet.
+    const bool searched =
+        std::any_of(totals_.begin(), totals_.end(), [](const EngineTotals& e) { return e.moves > 0; });
     const auto rated    = std::count_if(table_.rows.begin(), table_.rows.end(), [](const auto& r) { return r.rated; });
     const float needed  = std::max(px(180), static_cast<float>(rated) * ImGui::GetTextLineHeightWithSpacing() +
                                                 ImGui::GetFrameHeightWithSpacing() * 3);
-    const float chart_h = std::max(needed, ImGui::GetContentRegionAvail().y - ImGui::GetStyle().ItemSpacing.y);
+    const float chart_h =
+        searched ? needed : std::max(needed, ImGui::GetContentRegionAvail().y - ImGui::GetStyle().ItemSpacing.y);
     if (rated >= 2) {
         ImGui::Spacing();
         ui::beginCard("elo_card", ImVec2(0, chart_h));
@@ -315,6 +303,21 @@ void App::drawTournamentOverview() {
             ImPlot::PlotScatter("Elo", elo.data(), rank.data(), n, dots);
             ImPlot::EndPlot();
         }
+        ui::endCard();
+    }
+
+    // How each engine searched, in the order of the standings, once one has played a move.
+    if (searched) {
+        ImGui::Spacing();
+        ui::beginCard("search_card");
+        ImGui::TextUnformatted(TR("Search per engine"));
+        ImGui::SameLine();
+        ImGui::TextDisabled("%s", TR("on average per move, book moves left out"));
+        std::vector<std::size_t> order;
+        for (const auto& r : table_.rows) {
+            if (const int i = indexOf(t->spec(), r.id); i >= 0) order.push_back(static_cast<std::size_t>(i));
+        }
+        drawSearchTable(order);
         ui::endCard();
     }
     ImGui::EndChild();

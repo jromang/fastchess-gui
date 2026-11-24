@@ -183,6 +183,9 @@ class TournamentState {
 
     [[nodiscard]] const std::filesystem::path& dir() const noexcept { return dir_; }
     [[nodiscard]] bool readOnly() const noexcept { return read_only_; }
+    // Lets go of the folder: its lock and its files closed, read-only from now on, as shown. The window's view of a
+    // stopped tournament does so before the process that resumes it starts, which takes the folder's lock (#191).
+    void letGo();
     [[nodiscard]] const TournamentSpec& spec() const noexcept { return spec_; }
     [[nodiscard]] std::filesystem::path pgnPath() const { return dir_ / spec_.pgnFile(); }
     [[nodiscard]] std::filesystem::path chessbasePgnPath() const { return dir_ / spec_.chessbasePgnFile(); }

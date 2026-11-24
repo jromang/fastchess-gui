@@ -504,8 +504,12 @@ void App::drawWorkspaceHeader() {
     } else if (t) {
         if (unfinished_ && unfinished_->dir == t->dir()) {
             if (!drawStartWaiting("resume_match", resumeKey(unfinished_->dir)) &&
-                ui::iconButton("resume_match", ui::Icon::Play, TR("Resume")))
+                ui::iconButton("resume_match", ui::Icon::Play, TR("Resume"))) {
                 resumeRun();
+                // Its tab may be taken over by the tournament's process: the header is drawn again with it at the next
+                // frame, not from the tab before (#192).
+                if (run_->tournament() != t) return;
+            }
             ImGui::SameLine();
         }
         if (isMatch()) {

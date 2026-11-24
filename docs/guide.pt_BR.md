@@ -1148,7 +1148,7 @@ Um torneio em andamento ou aberto tem um espaço de trabalho com um cabeçalho (
 | Aberturas | Os resultados por posição inicial |
 
 ### Visão geral
-<!-- en: overview 6985cebb -->
+<!-- en: overview 4199cd3c -->
 
 **Um match**: Elo e nElo com o intervalo de confiança de 95 %, LOS, placar, contagens pentanomiais, limites do SPRT e
 LLR. *Estatísticas* (recolhido) dá os números do fishtest a partir das partidas e dos pares: placar, Elo, nElo e
@@ -1158,8 +1158,9 @@ inclui. Depois os gráficos: Elo e LLR ao longo do tempo, duração das partidas
 engine*.
 
 **Um torneio**: a classificação (com *TF*, as perdas por tempo de cada engine, em laranja assim que houver uma; um *!*
-ao lado de um engine que deu crash ou jogou um lance ilegal), *Busca por engine* logo abaixo, o progresso por ciclo ou
-rodada, partidas por hora e tempo restante, os últimos resultados.
+ao lado de um engine que deu crash ou jogou um lance ilegal), o Elo de cada engine com seu intervalo de 95 % em um
+gráfico logo abaixo, depois *Busca por engine*, o progresso por ciclo ou rodada, partidas por hora e tempo restante, os
+últimos resultados.
 
 *Busca por engine* dá a média de cada engine nos lances que ele buscou, sem os lances de livro: profundidade, NPS, tempo
 por lance, tempo de decisão e uso do processador; um clique numa coluna ordena os engines por ela. Ao lado do NPS, ×4
@@ -1212,7 +1213,7 @@ começou, quando a rodada compartilha uma), e as alterações do torneio (veja [
 andamento](#alterar-um-torneio-em-andamento)).
 
 ### Ao vivo
-<!-- en: live ed374625 -->
+<!-- en: live 59d5ab65 -->
 
 As partidas em andamento, como um mosaico de tabuleiros ou uma partida em foco com os relógios, a busca em curso de
 cada engine (profundidade, pontuação, nós, nps, PV em SAN), a lista de lances e o gráfico da partida (veja [O gráfico
@@ -1242,11 +1243,11 @@ mouse, aparecem o momento em que o engine se decidiu e a resposta que ele espera
 joga sem ponder). Os lances do livro dizem *livro*, uma linha marca o fim do livro, e o lance em que se pensa diz
 *pensando*.
 
-O mosaico tem um tabuleiro por partida em andamento, não por partida que o paralelismo permite: perto do fim de um
-torneio, ou com menos partidas que isso, os tabuleiros restantes crescem. Um tabuleiro cuja partida terminou fica 10
-segundos (a próxima partida da sua vaga começa ali), o da partida acompanhada fica, e quando nada está sendo jogado, as
-últimas partidas ficam. Quando os tabuleiros precisariam de uma barra de rolagem, o mosaico tira largura da partida em
-foco, até deixar 40 % da página para ela.
+O mosaico tem um tabuleiro por partida que o torneio jogou ao mesmo tempo, não por partida que o paralelismo permite:
+com menos partidas que isso, os tabuleiros crescem. Um tabuleiro cuja partida terminou mantém a posição final até que a
+próxima partida da sua vaga comece ali: perto do fim de um torneio, os tabuleiros ficam no lugar, cada um com o final da
+sua última partida. Quando os tabuleiros precisariam de uma barra de rolagem, o mosaico tira largura da partida em foco,
+até deixar 40 % da página para ela.
 
 Sob o tabuleiro: o contador dos 50 lances (meios-lances desde a última captura ou lance de peão, de 100), a diferença
 de material com as peças que um lado tem a mais, e as peças restantes, marcadas com *TB* quando a adjudicação por

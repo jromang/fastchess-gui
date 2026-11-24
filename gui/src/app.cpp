@@ -203,6 +203,7 @@ void App::forceQuit() {
 
 void App::frame() {
     ui::beginTopicFrame();
+    retired_runs_.clear();  // the runs taken over during the last frame
     // Before the engines are read: nothing is read yet, so a resume at launch starts at once, and the queue reads only
     // the engines it plays first.
     if (!launch_checked_) {

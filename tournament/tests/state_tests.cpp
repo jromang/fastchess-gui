@@ -509,6 +509,48 @@ TEST_CASE("state: one program at a time writes a tournament folder; others can r
 #endif
 }
 
+TEST_CASE("state: a tournament looked at lets go of its folder for the process that resumes it (#191)") {
+    const auto dir = freshDir("state-let-go");
+    auto state     = TournamentState::create(dir, matchSpec(4));
+    {
+        const auto task = state->claimNext();
+        state->complete(*task, gameData(*task, "1-0"));
+    }
+    state.reset();
+    // Opened to look at it, as the window does: it holds the folder.
+    auto shown = TournamentState::open(dir);
+    REQUIRE_FALSE(shown->readOnly());
+    const auto journal = readAll(dir / "journal.jsonl");
+    shown->letGo();
+    // Shown as it stands, read-only, nothing more written.
+    CHECK(shown->readOnly());
+    CHECK(shown->results().size() == 1);
+    Edit edit;
+    edit.kind  = Edit::Kind::VoidGames;
+    edit.games = {{0, 0}};
+    CHECK_THROWS_AS(shown->applyEdit(edit), std::runtime_error);
+    CHECK(readAll(dir / "journal.jsonl") == journal);
+#ifndef _WIN32
+    // Another program takes the folder at once.
+    const pid_t child = fork();
+    if (child == 0) {
+        int code = 3;
+        try {
+            (void)TournamentState::open(dir);
+            code = 0;
+        } catch (const FolderBusy&) {
+            code = 1;
+        } catch (...) {
+            code = 2;
+        }
+        _exit(code);
+    }
+    int status = 0;
+    waitpid(child, &status, 0);
+    CHECK((WIFEXITED(status) ? WEXITSTATUS(status) : -1) == 0);
+#endif
+}
+
 TEST_CASE("files: a replaced file keeps its permissions, and the old content as .bak when asked") {
     const auto dir = freshDir("files");
     fs::create_directories(dir);

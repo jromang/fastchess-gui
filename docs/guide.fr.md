@@ -1189,7 +1189,7 @@ Un tournoi en cours ou ouvert a un espace de travail avec un en-tête (nom, prog
 | Ouvertures | Les résultats par position de départ |
 
 ### Vue d'ensemble
-<!-- en: overview 6985cebb -->
+<!-- en: overview 4199cd3c -->
 
 **Un match** : l'Elo et le nElo avec leur intervalle de confiance à 95 %, la LOS, le score, les comptes pentanomiaux,
 les bornes du SPRT et le LLR. *Statistiques* (replié) donne les chiffres de fishtest à partir des parties et à partir
@@ -1199,8 +1199,9 @@ perdues, que *Copier* inclut. Puis les graphiques : Elo et LLR au fil du temps, 
 parties se sont terminées, et *Recherche par moteur*.
 
 **Un tournoi** : le classement (avec *TF*, les pertes au temps de chaque moteur, en orange dès qu'il y en a une ; un *!*
-à côté d'un moteur qui a planté ou joué un coup illégal), *Recherche par moteur* en dessous, la progression par cycle ou
-par ronde, les parties par heure et le temps restant, les derniers résultats.
+à côté d'un moteur qui a planté ou joué un coup illégal), l'Elo de chaque moteur avec son intervalle à 95 % en graphique
+en dessous, puis *Recherche par moteur*, la progression par cycle ou par ronde, les parties par heure et le temps
+restant, les derniers résultats.
 
 *Recherche par moteur* donne la moyenne de chaque moteur sur les coups qu'il a cherchés, hors coups du livre :
 profondeur, NPS, temps par coup, temps de décision et utilisation du processeur ; un clic sur une colonne trie les
@@ -1256,7 +1257,7 @@ commencée quand la ronde en partage une), et les modifications du tournoi (voir
 [Modifier un tournoi en cours](#modifier-un-tournoi-en-cours)).
 
 ### Direct
-<!-- en: live ed374625 -->
+<!-- en: live 59d5ab65 -->
 
 Les parties en cours, en mosaïque d'échiquiers ou en une partie mise en avant avec les pendules, la recherche en cours
 de chaque moteur (profondeur, score, nœuds, nps, PV en SAN), la liste des coups et le graphe de la partie (voir
@@ -1286,11 +1287,11 @@ score, sa profondeur et son temps ; le survol y ajoute l'instant où le moteur s
 (le second coup de sa PV : fastchess fait jouer sans réflexion sur le temps de l'adversaire). Les coups du livre disent
 *livre*, une ligne marque la fin du livre, et le coup en réflexion dit *réfléchit*.
 
-La mosaïque a un échiquier par partie en cours, et non par partie que le parallélisme permet : vers la fin d'un
-tournoi, ou avec moins de parties que cela, les échiquiers restants grandissent. Un échiquier dont la partie s'est
-terminée reste 10 secondes (la partie suivante de son emplacement y commence), celui de la partie suivie reste, et
-quand rien ne joue, les dernières parties restent. Quand les échiquiers demanderaient une barre de défilement, la
-mosaïque prend de la largeur à la partie mise en avant, jusqu'à lui laisser 40 % de la page.
+La mosaïque a un échiquier par partie que le tournoi a jouée en même temps, et non par partie que le parallélisme permet
+: avec moins de parties que cela, les échiquiers grandissent. Un échiquier dont la partie s'est terminée garde sa
+position finale jusqu'à ce que la partie suivante de son emplacement y commence : vers la fin d'un tournoi, les
+échiquiers restent à leur place, chacun avec la fin de sa dernière partie. Quand les échiquiers demanderaient une barre
+de défilement, la mosaïque prend de la largeur à la partie mise en avant, jusqu'à lui laisser 40 % de la page.
 
 Sous l'échiquier : le compteur des 50 coups (demi-coups depuis la dernière prise ou le dernier coup de pion, sur 100),
 la différence de matériel avec les pièces qu'un camp a en plus, et les pièces restantes, marquées *TB* quand

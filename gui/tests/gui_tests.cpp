@@ -2233,22 +2233,19 @@ TEST_CASE("live: the game's opening named by its deepest known position, and whe
     CHECK(liveOpening(black, false).name->eco == "B20");
 }
 
-TEST_CASE("live view: as many cards as games, not as fastchess' threads") {
-    using namespace std::chrono_literals;
-    const auto now = Clock::now();
-    // The last four games of a tournament on 32 threads, in slots 3, 9, 17 and 30; slot 5 ended its game 3 s ago (its
-    // next one starts), slot 6 a minute ago, the others never played.
+TEST_CASE("live view: a card for each slot that played, which keeps its last game (#196)") {
+    // The last four games of a tournament on 32 threads, in slots 3, 9, 17 and 30; slots 5 and 6 ended theirs and have
+    // no game left to play, the others never played (fewer games than threads).
     std::vector<SlotSeen> slots(32);
-    for (const int i : {3, 9, 17, 30}) slots[static_cast<std::size_t>(i)] = {true, true, now};
-    slots[5] = {false, true, now - 3s};
-    slots[6] = {false, true, now - 60s};
-    CHECK(shownSlots(slots, 0, now) == std::vector<int>{3, 5, 9, 17, 30});
-    // The game followed stays, however long ago it ended.
-    CHECK(shownSlots(slots, 6, now) == std::vector<int>{3, 5, 6, 9, 17, 30});
-    // Nothing playing any more (paused, finished): the last games played, within the grace of the last one.
-    for (const int i : {3, 9, 17, 30}) slots[static_cast<std::size_t>(i)] = {false, true, now - 2s};
-    slots[5].last_active = now - 30s;
-    CHECK(shownSlots(slots, 0, now + 1h) == std::vector<int>{3, 9, 17, 30});
+    for (const int i : {3, 9, 17, 30}) slots[static_cast<std::size_t>(i)] = {true, true};
+    slots[5] = {false, true};
+    slots[6] = {false, true};
+    CHECK(shownSlots(slots, 0) == std::vector<int>{3, 5, 6, 9, 17, 30});
+    // The last games end: their cards stay, each with its final position, in their places.
+    for (const int i : {3, 9, 17}) slots[static_cast<std::size_t>(i)] = {false, true};
+    CHECK(shownSlots(slots, 30) == std::vector<int>{3, 5, 6, 9, 17, 30});
+    slots[30] = {false, true};
+    CHECK(shownSlots(slots, 0) == std::vector<int>{3, 5, 6, 9, 17, 30});
     // No game yet: the slot followed alone.
-    CHECK(shownSlots(std::vector<SlotSeen>(32), 4, now) == std::vector<int>{4});
+    CHECK(shownSlots(std::vector<SlotSeen>(32), 4) == std::vector<int>{4});
 }

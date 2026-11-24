@@ -265,6 +265,9 @@ class Run {
     [[nodiscard]] virtual bool remote() const { return false; }
     // Shown by another window, which its process talks with: this one shows it no more, and leaves it be.
     [[nodiscard]] virtual bool elsewhere() const { return false; }
+    // A tournament looked at, not playing: lets go of its folder, shown as it stands, before the process that resumes
+    // it takes the folder's lock (#191).
+    virtual void letGoOfFolder() {}
 };
 
 // Owns the thread a tournament runs on, and the tournament's state. Only one runs at a time in a process, because
@@ -283,6 +286,7 @@ class RunController final : public Run {
 
     // Opens the match stored in `dir` to look at it, without playing; returns an error message, empty on success.
     std::string view(const std::filesystem::path& dir);
+    void letGoOfFolder() override;
 
     std::string applyEdit(const tour::Edit& edit) override;
     std::string undoEdit() override;

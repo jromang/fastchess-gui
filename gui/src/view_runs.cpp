@@ -154,6 +154,10 @@ std::string App::launchTournament(const fs::path& dir) {
     } catch (const std::exception&) {
         // Said by the start below.
     }
+    // The tab of the same tournament (stopped, looked at) lets go of its folder first: the process takes the folder's
+    // lock as it starts, and reading a large journal again below takes seconds (#191).
+    if (const int i = findRun(dir); i >= 0 && !runs_[static_cast<std::size_t>(i)].run->running())
+        runs_[static_cast<std::size_t>(i)].run->letGoOfFolder();
     auto remote = std::make_unique<RemoteRun>();
     remote->setSecrets(std::move(secrets));
     if (auto error = remote->start(start); !error.empty()) return error;
@@ -165,6 +169,7 @@ std::string App::launchTournament(const fs::path& dir) {
         const auto index = static_cast<std::size_t>(i);
         open.weight      = runs_[index].weight;
         stashRunView();
+        retired_runs_.push_back(std::move(runs_[index].run));  // what this frame drew from it stays valid (#192)
         runs_[index]       = std::move(open);
         shown_run_         = index;
         run_               = runs_[index].run.get();

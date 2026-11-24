@@ -1049,8 +1049,8 @@ openings, the kinds of balanced pairs and the pairs won over lost, which *Copy* 
 over time, game lengths, how games ended, and *Search per engine*.
 
 **A tournament**: the standings (with *TF*, each engine's losses on time, in orange as soon as there is one; a *!*
-beside an engine that crashed or played an illegal move), *Search per engine* under them, progress by cycle or round,
-games per hour and time left, the latest results.
+beside an engine that crashed or played an illegal move), the Elo of each engine with its 95 % interval as a chart under
+them, then *Search per engine*, progress by cycle or round, games per hour and time left, the latest results.
 
 *Search per engine* gives each engine's average over the moves it searched, book moves left out: depth, NPS, time per
 move, decision time and processor use; a click on a column sorts the engines by it. Beside its NPS, ×4 says the
@@ -1122,10 +1122,11 @@ its score, depth and time; hovering over it adds the moment the engine settled o
 second move of its PV: fastchess plays without pondering). Book moves say *book*, a line marks the end of the book, and
 the move being thought of says *thinking*.
 
-The mosaic has a board for each game being played, not for each game the concurrency allows: near the end of a
-tournament, or with fewer games than that, the boards left grow. A board whose game ended stays 10 seconds (the next
-game of its slot starts there), the one followed stays, and when nothing plays the last games stay. When the boards
-would need a scroll bar, the mosaic takes width from the game in focus, down to 40 % of the page for it.
+The mosaic has a board for each game the tournament has played at once, not for each game the concurrency allows: with
+fewer games than that, the boards grow. A board whose game ended keeps its final position until the next game of its
+slot starts there: near the end of a tournament the boards stay in their places, each with the end of its last game.
+When the boards would need a scroll bar, the mosaic takes width from the game in focus, down to 40 % of the page for
+it.
 
 Under the board: the 50-move counter (plies since the last capture or pawn move, out of 100), the material difference
 with the pieces one side has more of, and the pieces left, marked *TB* when the tablebase adjudication can end the

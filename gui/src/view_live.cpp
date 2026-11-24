@@ -320,7 +320,6 @@ void App::refreshSlot(int slot) {
 
     auto& v = slot_views_[static_cast<std::size_t>(slot)];
     obs->copySlot(slot, v.state);
-    if (v.state.active) v.last_active = Clock::now();
     // A gauntlet's new game, from its seed's side; Flip turns it over until the next game.
     if (setup_.live_seed_side && v.state.has_game && v.state.game_id != v.turned_for) {
         v.turned_for = v.state.game_id;
@@ -384,16 +383,16 @@ void App::drawLive() {
     const int slots = obs->slotCount();
     live_slot_      = std::clamp(live_slot_, 0, slots - 1);
     for (int i = 0; i < slots; ++i) refreshSlot(i);
-    // As many cards as games, not as threads: a tournament's last games, or fewer games than threads, leave most
-    // slots idle. The game followed is one of those shown.
+    // A card for each slot that played, not for each thread: with fewer games than threads, some never play. A slot
+    // keeps its last game until its next one (#196). The game followed is one of those shown.
     {
         std::vector<SlotSeen> seen;
         seen.reserve(static_cast<std::size_t>(slots));
         for (int i = 0; i < slots; ++i) {
             const auto& v = slot_views_[static_cast<std::size_t>(i)];
-            seen.push_back({v.state.active, v.state.has_game, v.last_active});
+            seen.push_back({v.state.active, v.state.has_game});
         }
-        live_shown_ = shownSlots(seen, live_slot_, Clock::now());
+        live_shown_ = shownSlots(seen, live_slot_);
         if (!live_shown_.empty() && std::find(live_shown_.begin(), live_shown_.end(), live_slot_) == live_shown_.end())
             live_slot_ = live_shown_.front();
     }

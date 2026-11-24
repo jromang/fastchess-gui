@@ -16,6 +16,7 @@
 #include <core/globals/globals.hpp>
 #include <matchmaking/elo/elo_pentanomial.hpp>
 #include <matchmaking/sprt/sprt.hpp>
+#include <tour/files.hpp>
 #include <tour/pgn_book.hpp>
 #include <tour/sprt_rules.hpp>
 #include <tour/standings.hpp>
@@ -711,7 +712,18 @@ int runControlled(const std::string& target, const Storage& storage, const Headl
     std::unique_ptr<tour::TournamentState> state;
     try {
         if (!tour::TournamentState::isTournament(dir)) throw std::runtime_error("no tournament in " + target);
-        state = tour::TournamentState::open(dir);
+        // The window that starts it may hold the folder a moment more (its view of the tournament lets go of it as
+        // the process starts, #191): the lock is waited for a little, then refused.
+        const auto until = std::chrono::steady_clock::now() + std::chrono::seconds(15);
+        for (;;) {
+            try {
+                state = tour::TournamentState::open(dir);
+                break;
+            } catch (const tour::FolderBusy&) {
+                if (std::chrono::steady_clock::now() >= until) throw;
+                std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            }
+        }
     } catch (const std::exception& e) {
         end.error = e.what();
         console.add(end.error, true);

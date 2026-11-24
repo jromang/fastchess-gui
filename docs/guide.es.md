@@ -1171,7 +1171,7 @@ Un torneo en marcha o abierto tiene un espacio de trabajo con una cabecera (nomb
 | Aperturas | Los resultados por posición inicial |
 
 ### Vista general
-<!-- en: overview 6985cebb -->
+<!-- en: overview 4199cd3c -->
 
 **Un match**: Elo y nElo con su intervalo de confianza del 95 %, LOS, puntuación, recuentos pentanomiales, límites del
 SPRT y LLR. *Estadísticas* (plegado) da las cifras de fishtest a partir de las partidas y de los pares: puntuación, Elo,
@@ -1181,8 +1181,9 @@ perdidos, que *Copiar* incluye. Luego los gráficos: Elo y LLR a lo largo del ti
 terminaron las partidas y *Búsqueda por motor*.
 
 **Un torneo**: la clasificación (con *TF*, las pérdidas por tiempo de cada motor, en naranja en cuanto hay una; un *!*
-junto a un motor que se colgó o hizo una jugada ilegal), *Búsqueda por motor* debajo, el progreso por ciclo o ronda, las
-partidas por hora y el tiempo restante, los últimos resultados.
+junto a un motor que se colgó o hizo una jugada ilegal), el Elo de cada motor con su intervalo del 95 % en un gráfico
+debajo, luego *Búsqueda por motor*, el progreso por ciclo o ronda, las partidas por hora y el tiempo restante, los
+últimos resultados.
 
 *Búsqueda por motor* da la media de cada motor en las jugadas que buscó, sin las jugadas de libro: profundidad, NPS,
 tiempo por jugada, tiempo de decisión y uso del procesador; un clic en una columna ordena los motores por ella. Junto a
@@ -1237,7 +1238,7 @@ cuando la ronda comparte una), y los cambios en el torneo (consulta [Modificar u
 curso](#modificar-un-torneo-en-curso)).
 
 ### Directo
-<!-- en: live ed374625 -->
+<!-- en: live 59d5ab65 -->
 
 Las partidas en curso, como un mosaico de tableros o una partida en primer plano con los relojes, la búsqueda en curso
 de cada motor (profundidad, puntuación, nodos, nps, PV en SAN), la lista de jugadas y el gráfico de la partida (consulta
@@ -1269,11 +1270,11 @@ motor tiene su evaluación, su profundidad y su tiempo; al pasar el ratón se a�
 y la respuesta que esperaba (la segunda jugada de su PV: fastchess juega sin ponder). Las jugadas del libro dicen
 *libro*, una línea marca el fin del libro, y la jugada en la que se piensa dice *piensa*.
 
-El mosaico tiene un tablero por partida en curso, no por partida que permita la concurrencia: hacia el final de un
-torneo, o con menos partidas que eso, los tableros que quedan crecen. Un tablero cuya partida terminó se queda 10
-segundos (la siguiente partida de su hueco empieza ahí), el de la partida seguida se queda, y cuando no se juega nada,
-se quedan las últimas partidas. Cuando los tableros necesitarían una barra de desplazamiento, el mosaico le quita
-anchura a la partida en primer plano, hasta dejarle el 40 % de la página.
+El mosaico tiene un tablero por cada partida que el torneo ha jugado a la vez, no por partida que permita la
+concurrencia: con menos partidas que eso, los tableros crecen. Un tablero cuya partida terminó conserva su posición
+final hasta que la siguiente partida de su hueco empieza ahí: hacia el final de un torneo, los tableros se quedan en su
+sitio, cada uno con el final de su última partida. Cuando los tableros necesitarían una barra de desplazamiento, el
+mosaico le quita anchura a la partida en primer plano, hasta dejarle el 40 % de la página.
 
 Bajo el tablero: el contador de las 50 jugadas (medias jugadas desde la última captura o jugada de peón, sobre 100),
 la diferencia de material con las piezas que un bando tiene de más, y las piezas que quedan, marcadas *TB* cuando la

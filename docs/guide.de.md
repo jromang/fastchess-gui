@@ -1196,7 +1196,7 @@ Ein laufendes oder geöffnetes Turnier hat einen Arbeitsbereich mit einem Kopf (
 | Eröffnungen | Die Ergebnisse nach Startstellung |
 
 ### Übersicht
-<!-- en: overview 6985cebb -->
+<!-- en: overview 4199cd3c -->
 
 **Ein Match**: Elo und nElo mit ihrem 95-%-Konfidenzintervall, LOS, Punktzahl, Pentanomial-Zählungen, SPRT-Grenzen und
 LLR. *Statistik* (zugeklappt) gibt die Zahlen von fishtest aus den Partien und aus den Paaren an: Punktzahl, Elo, nElo
@@ -1206,8 +1206,9 @@ Paaren, die *Kopieren* mitnimmt. Dann die Diagramme: Elo und LLR im Zeitverlauf,
 *Suche pro Engine*.
 
 **Ein Turnier**: die Tabelle (mit *TF*, den Zeitverlusten jeder Engine, orange, sobald es einen gibt; ein *!* neben
-einer Engine, die abgestürzt ist oder einen illegalen Zug gespielt hat), *Suche pro Engine* darunter, der Fortschritt
-nach Zyklus oder Runde, Partien pro Stunde und verbleibende Zeit, die neuesten Ergebnisse.
+einer Engine, die abgestürzt ist oder einen illegalen Zug gespielt hat), darunter die Elo jeder Engine mit ihrem
+95-%-Intervall als Diagramm, dann *Suche pro Engine*, der Fortschritt nach Zyklus oder Runde, Partien pro Stunde und
+verbleibende Zeit, die neuesten Ergebnisse.
 
 *Suche pro Engine* gibt für jede Engine den Schnitt über die Züge, die sie gesucht hat, ohne Buchzüge: Tiefe, NPS, Zeit
 pro Zug, Entscheidungszeit und Prozessornutzung; ein Klick auf eine Spalte sortiert die Engines danach. Neben ihren NPS
@@ -1263,7 +1264,7 @@ begonnen hat, oder sobald seine Runde begonnen hat, wenn sich die Runde eine tei
 (siehe [Ein laufendes Turnier ändern](#ein-laufendes-turnier-ändern)).
 
 ### Live
-<!-- en: live ed374625 -->
+<!-- en: live 59d5ab65 -->
 
 Die laufenden Partien, als Mosaik von Brettern oder als eine Partie im Fokus mit den Uhren, der laufenden Suche jeder
 Engine (Tiefe, Bewertung, Knoten, nps, PV in SAN), der Zugliste und der Partiegrafik (siehe
@@ -1294,11 +1295,11 @@ Moment, in dem sich die Engine entschied, und die Antwort hinzu, die sie erwarte
 spielt ohne Pondern). Buchzüge sagen *Buch*, eine Zeile markiert das Ende des Buchs, und der Zug, über den nachgedacht
 wird, sagt *denkt nach*.
 
-Das Mosaik hat ein Brett je laufender Partie, nicht je Partie, die die Parallelität erlaubt: gegen Ende eines Turniers
-oder mit weniger Partien als das werden die übrigen Bretter größer. Ein Brett, dessen Partie beendet ist, bleibt 10
-Sekunden (die nächste Partie seines Platzes beginnt dort), das der verfolgten Partie bleibt, und wenn nichts spielt,
-bleiben die letzten Partien. Bräuchten die Bretter einen Rollbalken, nimmt das Mosaik der Partie im Fokus Breite weg,
-bis ihr 40 % der Seite bleiben.
+Das Mosaik hat ein Brett je Partie, die das Turnier gleichzeitig gespielt hat, nicht je Partie, die die Parallelität
+erlaubt: mit weniger Partien als das werden die Bretter größer. Ein Brett, dessen Partie beendet ist, behält seine
+Endstellung, bis die nächste Partie seines Platzes dort beginnt: gegen Ende eines Turniers bleiben die Bretter an ihrem
+Platz, jedes mit dem Ende seiner letzten Partie. Bräuchten die Bretter einen Rollbalken, nimmt das Mosaik der Partie im
+Fokus Breite weg, bis ihr 40 % der Seite bleiben.
 
 Unter dem Brett: der 50-Züge-Zähler (Halbzüge seit dem letzten Schlagen oder Bauernzug, von 100), der
 Materialunterschied mit den Figuren, die eine Seite mehr hat, und die verbleibenden Steine, mit *TB* markiert, wenn die

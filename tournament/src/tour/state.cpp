@@ -1712,6 +1712,15 @@ nlohmann::json gameResultJson(const GameResult& result) { return toJson(result);
 
 GameResult gameResultFromJson(const nlohmann::json& j) { return resultFromJson(j); }
 
+void TournamentState::letGo() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    read_only_ = true;
+    journal_.reset();  // pairIfReady() and the writes stop at it
+    pgn_.reset();
+    pgn_chessbase_.reset();
+    lock_.reset();
+}
+
 void TournamentState::setJournalListener(Journal::Listener listener) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (journal_) journal_->setListener(std::move(listener));

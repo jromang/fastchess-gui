@@ -1085,21 +1085,12 @@ ReplayGame replayOfSlot(const SlotState& st) {
     return game;
 }
 
-std::vector<int> shownSlots(const std::vector<SlotSeen>& slots, int followed, Clock::time_point now) {
+std::vector<int> shownSlots(const std::vector<SlotSeen>& slots, int followed) {
     const int n = static_cast<int>(slots.size());
     std::vector<int> shown;
     for (int i = 0; i < n; ++i) {
         const auto& s = slots[static_cast<std::size_t>(i)];
-        if (s.active || (s.has_game && (i == followed || now - s.last_active < LIVE_SLOT_GRACE))) shown.push_back(i);
-    }
-    if (!shown.empty()) return shown;
-    Clock::time_point latest{};
-    for (const auto& s : slots) {
-        if (s.has_game) latest = std::max(latest, s.last_active);
-    }
-    for (int i = 0; i < n; ++i) {
-        const auto& s = slots[static_cast<std::size_t>(i)];
-        if (s.has_game && latest - s.last_active < LIVE_SLOT_GRACE) shown.push_back(i);
+        if (s.active || s.has_game) shown.push_back(i);
     }
     if (shown.empty() && followed >= 0 && followed < n) shown.push_back(followed);
     return shown;

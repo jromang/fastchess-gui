@@ -197,7 +197,6 @@ class App {
         FollowedPly nav;
         std::size_t nav_game = ~std::size_t{0};
         int listed_ply       = -1;  // nav's ply the move list was last scrolled to
-        Clock::time_point last_active{};  // the last frame its game was being played (shownSlots)
         // Its opening and the end of its book, read again when a move comes (liveOpening): for the game and the
         // number of moves it was read at.
         LiveOpening opening;
@@ -854,6 +853,9 @@ class App {
     // quick test (played here, RunController), and those opened to look at them. The views show `run_`, the tab
     // chosen; what they showed of another tab is kept with it (OpenRun) while it is not shown.
     std::vector<OpenRun> runs_;
+    // A tab's run taken over during a frame (a stopped tournament resumed in its process): destroyed at the next frame,
+    // so that what the frame drew from it so far stays valid to its end (#192).
+    std::vector<std::unique_ptr<Run>> retired_runs_;
     std::size_t shown_run_ = 0;
     RunController idle_run_;  // what the views read while no tournament is open
     Run* run_ = &idle_run_;

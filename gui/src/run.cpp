@@ -970,6 +970,10 @@ std::string RunController::view(const fs::path& dir) {
     return {};
 }
 
+void RunController::letGoOfFolder() {
+    if (state_ != State::Running && tournament_) tournament_->letGo();
+}
+
 std::string RunController::applyEdit(const tour::Edit& edit) {
     if (!tournament_) return TR("No tournament is open.");
     try {

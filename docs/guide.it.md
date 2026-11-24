@@ -1164,7 +1164,7 @@ Un torneo in corso o aperto ha uno spazio di lavoro con un'intestazione (nome, a
 | Aperture | I risultati per posizione di partenza |
 
 ### Panoramica
-<!-- en: overview 6985cebb -->
+<!-- en: overview 4199cd3c -->
 
 **Un match**: Elo e nElo con il loro intervallo di confidenza al 95 %, LOS, punteggio, conteggi pentanomiali, limiti
 dell'SPRT e LLR. *Statistiche* (ripiegato) dà i numeri di fishtest calcolati sulle partite e sulle coppie: punteggio,
@@ -1174,8 +1174,9 @@ partite singole, il bias RMS delle aperture, i tipi di coppie in equilibrio e le
 motore*.
 
 **Un torneo**: la classifica (con *TF*, le sconfitte per tempo di ogni motore, in arancione appena ce n'è una; un *!*
-accanto a un motore che è andato in crash o ha giocato una mossa illegale), *Ricerca per motore* sotto di essa,
-l'avanzamento per ciclo o per turno, le partite all'ora e il tempo rimanente, gli ultimi risultati.
+accanto a un motore che è andato in crash o ha giocato una mossa illegale), sotto di essa l'Elo di ogni motore con il
+suo intervallo al 95 % in un grafico, poi *Ricerca per motore*, l'avanzamento per ciclo o per turno, le partite all'ora
+e il tempo rimanente, gli ultimi risultati.
 
 *Ricerca per motore* dà la media di ogni motore sulle mosse che ha cercato, escluse le mosse di libro: profondità, NPS,
 tempo per mossa, tempo di decisione e uso del processore; un clic su una colonna ordina i motori secondo quella. Accanto
@@ -1230,7 +1231,7 @@ iniziata, o una volta iniziato il suo turno quando il turno ne condivide una), e
 [Modificare un torneo in corso](#modificare-un-torneo-in-corso)).
 
 ### Diretta
-<!-- en: live ed374625 -->
+<!-- en: live 59d5ab65 -->
 
 Le partite in corso, come un mosaico di scacchiere o una sola partita in primo piano con gli orologi, la ricerca in
 corso di ogni motore (profondità, valutazione, nodi, nps, PV in SAN), l'elenco delle mosse e il grafico della partita
@@ -1261,11 +1262,12 @@ la sua valutazione, profondità e tempo; passandoci sopra si aggiungono il momen
 risposta che si aspettava (la seconda mossa della sua PV: fastchess gioca senza ponder). Le mosse del libro dicono
 *libro*, una riga segna la fine del libro, e la mossa su cui si pensa dice *pensa*.
 
-Il mosaico ha una scacchiera per ogni partita in corso, non per ogni partita che il parallelismo consente: verso la
-fine di un torneo, o con meno partite di così, le scacchiere rimaste si ingrandiscono. Una scacchiera la cui partita è
-finita resta 10 secondi (la partita successiva del suo posto inizia lì), quella della partita seguita resta, e quando
-non si gioca nulla restano le ultime partite. Quando le scacchiere richiederebbero una barra di scorrimento, il mosaico
-toglie larghezza alla partita in primo piano, fino a lasciarle il 40 % della pagina.
+Il mosaico ha una scacchiera per ogni partita che il torneo ha giocato contemporaneamente, non per ogni partita che il
+parallelismo consente: con meno partite di così, le scacchiere si ingrandiscono. Una scacchiera la cui partita è finita
+mantiene la posizione finale finché la partita successiva del suo posto non inizia lì: verso la fine di un torneo le
+scacchiere restano al loro posto, ciascuna con la fine della sua ultima partita. Quando le scacchiere richiederebbero
+una barra di scorrimento, il mosaico toglie larghezza alla partita in primo piano, fino a lasciarle il 40 % della
+pagina.
 
 Sotto la scacchiera: il contatore delle 50 mosse (semimosse dall'ultima cattura o mossa di pedone, su 100), la
 differenza di materiale con i pezzi che una parte ha in più, e i pezzi rimasti, marcati *TB* quando l'aggiudicazione
