@@ -912,7 +912,7 @@ GraphEvents drawGameGraph(const char* id, const GameGraph& g, GraphView& view, c
                     end = starts[k];
                     break;
                 }
-            if (end <= starts[i] && i < 2) continue;
+            if (i < 2 && end <= starts[i]) continue;
             const float x0 = X(static_cast<float>(starts[i])), x1 = X(static_cast<float>(std::max(end, starts[i])));
             if (i > 0) dl->AddLine(ImVec2(x0, axis_y - axis_h * 0.45f), ImVec2(x0, axis_y + axis_h * 0.45f), ui::MUTED);
             const float w = font->CalcTextSizeA(tiny, FLT_MAX, 0, names[i]).x;

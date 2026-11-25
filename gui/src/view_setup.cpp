@@ -1589,9 +1589,9 @@ void App::drawSetupSummary() {
                 per_engine = trn("{} game per engine", "{} games per engine", 2 * cycles, 2 * cycles);
             } else {
                 formula    = trf("{} × {} pairings × 2 games × {} cycles", a, b, cycles);
-                per_engine = a == b
-                                 ? trn("{} game per engine", "{} games per engine", 2 * cycles * b, 2 * cycles * b)
-                                 : trf("{} games per engine of team A, {} of team B", 2 * cycles * b, 2 * cycles * a);
+                per_engine =
+                    a == b ? trn("{} game per engine", "{} games per engine", uint64_t{2} * cycles * b, 2 * cycles * b)
+                           : trf("{} games per engine of team A, {} of team B", 2 * cycles * b, 2 * cycles * a);
             }
             break;
         }
