@@ -1572,6 +1572,18 @@ TEST_CASE("names that cannot be file names are made fit for one") {
     CHECK(fileNameOf("Console") == "Console");
 }
 
+TEST_CASE("a name from a remote machine's listing is taken only when it stays a file of the folder") {
+    for (const char* name : {"game.pgn", "Blitz 3+2 Ã©tÃ©.pgn", "start-Gaia 4.4.4.log", "journal.jsonl", ".hidden"}) {
+        CAPTURE(name);
+        CHECK(tour::plainFileName(name));
+    }
+    for (const char* name : {"", ".", "..", "../games.pgn", "..\\games.pgn", "logs/game-1.log", "C:games.pgn",
+                             "games.pgn:stream", "a\nb.pgn"}) {
+        CAPTURE(name);
+        CHECK_FALSE(tour::plainFileName(name));
+    }
+}
+
 TEST_CASE("search statistics are read back from the move comments, without replaying the moves") {
     fastchess::config::Pgn config;
     config.track_nps = true;

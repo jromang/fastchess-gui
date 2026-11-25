@@ -6,6 +6,8 @@
 #include <fstream>
 #include <set>
 
+#include <tour/files.hpp>
+
 #include "i18n.hpp"
 #include "machine_jobs.hpp"
 #include "ssh_tunnel.hpp"
@@ -544,7 +546,7 @@ std::optional<uint64_t> MachineSync::pass(SshClient& client, const std::string& 
             std::error_code ec;
             fs::create_directories(local_dir / "logs", ec);
             for (const auto& log : *logs) {
-                if (log.regular && log.name.ends_with(".log") &&
+                if (log.regular && log.name.ends_with(".log") && tour::plainFileName(log.name) &&
                     !copy(sftpPath(remoteJoin(remoteJoin(remote_dir, "logs"), log.name)), local_dir / "logs" / log.name,
                           log.size)) {
                     return std::nullopt;
@@ -552,7 +554,8 @@ std::optional<uint64_t> MachineSync::pass(SshClient& client, const std::string& 
             }
             continue;
         }
-        if (!e.regular || !copiedBack(e.name)) continue;
+        // The names come from the machine: one that would leave the tournament's folder is not copied back.
+        if (!e.regular || !tour::plainFileName(e.name) || !copiedBack(e.name)) continue;
         if (!copy(sftpPath(remoteJoin(remote_dir, e.name)), local_dir / e.name, e.size)) return std::nullopt;
     }
     return copied;

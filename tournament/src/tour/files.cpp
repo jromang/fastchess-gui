@@ -267,4 +267,11 @@ std::string fileNameOf(std::string name) {
     return name;
 }
 
+bool plainFileName(std::string_view name) {
+    if (name.empty() || name == "." || name == "..") return false;
+    for (const char c : name)
+        if (static_cast<unsigned char>(c) < 32 || c == '/' || c == '\\' || c == ':') return false;
+    return true;
+}
+
 }  // namespace fcg::tour

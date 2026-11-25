@@ -36,6 +36,11 @@ void replaceFile(const std::filesystem::path& file, std::string_view text, bool 
 // characters, accents included, stay.
 [[nodiscard]] std::string fileNameOf(std::string name);
 
+// Whether a name received from elsewhere, a remote machine's listing for one, stays a file of the folder it is joined
+// to: not empty, not "." nor "..", without a separator ('/' or '\'), a colon (a drive or a stream on Windows) or a
+// control character.
+[[nodiscard]] bool plainFileName(std::string_view name);
+
 // Another program holds the lock of a tournament folder.
 class FolderBusy : public std::runtime_error {
    public:
