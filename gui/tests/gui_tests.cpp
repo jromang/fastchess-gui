@@ -1293,7 +1293,7 @@ TEST_CASE("opponents are suggested around a rating, among the active engines tha
 }
 
 TEST_CASE("a folder is opened by a file URL that spaces, accents and # cannot break") {
-    CHECK(ui::fileUrl("/home/jeff/runs/2026_RR") == "file:///home/jeff/runs/2026_RR");
+    CHECK(ui::fileUrl("/home/user/runs/2026_RR") == "file:///home/user/runs/2026_RR");
     CHECK(ui::fileUrl(std::filesystem::path(u8"/home/Hélène/Mes tournois #2")) ==
           "file:///home/H%C3%A9l%C3%A8ne/Mes%20tournois%20%232");
     CHECK(ui::fileUrl("C:/Users/x") == "file:///C:/Users/x");
